@@ -1093,3 +1093,14 @@ TEST_F(S3PutObjectActionTest, SendFailedResponse) {
   action_under_test->send_response_to_s3_client();
 }
 
+TEST_F(S3PutObjectActionTest, ValidateMissingContentLength) {
+  EXPECT_CALL(*ptr_mock_request, get_object_name())
+      .WillOnce(ReturnRef(object_name));
+  EXPECT_CALL(*ptr_mock_request, is_header_present("Content-Length"))
+      .WillOnce(Return(false));
+
+  action_under_test->validate_put_request();
+
+  EXPECT_STREQ("MissingContentLength",
+               action_under_test->get_s3_error_code().c_str());
+}

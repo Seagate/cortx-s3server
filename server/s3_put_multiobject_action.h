@@ -62,6 +62,7 @@ class S3PutMultiObjectAction : public S3ObjectAction {
   void chunk_auth_successful();
   void chunk_auth_failed();
   void send_chunk_details_if_any();
+  void validate_multipart_request();
   void check_part_details();
 
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
@@ -200,6 +201,8 @@ class S3PutMultiObjectAction : public S3ObjectAction {
               ValidateMetadataLengthNegativeCase);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
               ValidateUserMetadataLengthNegativeCase);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              ValidateMissingContentLength);
 };
 
 #endif

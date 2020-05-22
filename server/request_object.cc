@@ -861,3 +861,19 @@ void RequestObject::respond_retry_after(int retry_after_in_secs) {
   s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
 }
 
+bool RequestObject::is_header_present(const std::string& key) {
+  bool header_present = false;
+  if (!in_headers_copied) {
+    get_in_headers_copy();
+  }
+
+  auto header = in_headers_copy.begin();
+  while (header != in_headers_copy.end()) {
+    if (!strcasecmp(header->first.c_str(), key.c_str())) {
+      header_present = true;
+      break;
+    }
+    header++;
+  }
+  return header_present;
+}

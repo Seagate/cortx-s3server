@@ -143,6 +143,7 @@ class RequestObject {
   virtual void restart_client_read_timer();
   virtual void free_client_read_timer(bool s3_client_read_timedout = false);
   virtual void trigger_client_read_timeout_callback();
+  virtual bool is_header_present(const std::string& key);
 
  protected:
   // protected so mocks can override

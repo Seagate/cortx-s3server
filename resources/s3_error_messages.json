@@ -171,12 +171,16 @@
     "Description": "The specified method is not allowed against this resource",
     "httpcode": 405
   },
- "MalformedPolicy": {
+  "MalformedPolicy": {
     "Description": "The policy you provided is not valid",
     "httpcode": 400
   },
- "UnresolvableGrantByEmailAddress": {
+  "UnresolvableGrantByEmailAddress": {
     "Description": "The email address you provided does not match any account on record.",
     "httpcode": 400
-   }
+  },
+  "MissingContentLength": {
+    "Description": "You must provide the Content-Length HTTP header.",
+    "httpcode": 411
+  }
 }

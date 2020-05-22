@@ -81,6 +81,7 @@ S3PutMultiObjectAction::S3PutMultiObjectAction(
 void S3PutMultiObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
 
+  ACTION_TASK_ADD(S3PutMultiObjectAction::validate_multipart_request, this);
   ACTION_TASK_ADD(S3PutMultiObjectAction::check_part_details, this);
   ACTION_TASK_ADD(S3PutMultiObjectAction::fetch_multipart_metadata, this);
   if (part_number == 1) {
@@ -105,6 +106,19 @@ void S3PutMultiObjectAction::setup_steps() {
   ACTION_TASK_ADD(S3PutMultiObjectAction::save_metadata, this);
   ACTION_TASK_ADD(S3PutMultiObjectAction::send_response_to_s3_client, this);
   // ...
+}
+
+void S3PutMultiObjectAction::validate_multipart_request() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  if (!request->is_chunked() && !request->is_header_present("Content-Length")) {
+    // For non-chunked upload, the Header 'Content-Length' is missing
+    s3_log(S3_LOG_INFO, request_id, "Missing Content-Length header");
+    set_s3_error("MissingContentLength");
+    send_response_to_s3_client();
+  } else {
+    next();
+  }
+  s3_log(S3_LOG_INFO, request_id, "Exiting\n");
 }
 
 void S3PutMultiObjectAction::check_part_details() {

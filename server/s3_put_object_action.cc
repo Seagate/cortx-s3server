@@ -152,6 +152,11 @@ void S3PutObjectAction::validate_put_request() {
     s3_put_action_state = S3PutObjectActionState::validationFailed;
     set_s3_error("BadRequest");
     send_response_to_s3_client();
+  } else if (!request->is_header_present("Content-Length")) {
+    // 'Content-Length' header is required and missing
+    s3_log(S3_LOG_INFO, request_id, "Missing Content-Length header");
+    set_s3_error("MissingContentLength");
+    send_response_to_s3_client();
   } else {
     next();
   }

@@ -1108,4 +1108,13 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SendFailedResponse) {
   action_under_test->send_response_to_s3_client();
 }
 
+TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ValidateMissingContentLength) {
+  EXPECT_CALL(*ptr_mock_request, is_chunked()).WillOnce(Return(false));
+  EXPECT_CALL(*ptr_mock_request, is_header_present("Content-Length"))
+      .WillOnce(Return(false));
 
+  action_under_test->validate_multipart_request();
+
+  EXPECT_STREQ("MissingContentLength",
+               action_under_test->get_s3_error_code().c_str());
+}
