@@ -431,8 +431,9 @@ void S3PutObjectAction::consume_incoming_content() {
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_object_action_consume_incoming_content_shutdown_fail");
   if (request->is_s3_client_read_error()) {
-    if (!write_in_progress) {
-      client_read_error();
+    if (request->get_s3_client_read_error() == "RequestTimeout") {
+      set_s3_error(request->get_s3_client_read_error());
+      send_response_to_s3_client();
     }
     return;
   }

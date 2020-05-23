@@ -755,6 +755,16 @@ TEST_F(S3PutObjectActionTest,
   action_under_test->consume_incoming_content();
 }
 
+TEST_F(S3PutObjectActionTest, ConsumeIncomingContentRequestTimeout) {
+  ptr_mock_request->s3_client_read_error = "RequestTimeout";
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
+
+  action_under_test->consume_incoming_content();
+  EXPECT_STREQ("RequestTimeout",
+               action_under_test->get_s3_error_code().c_str());
+}
+
 TEST_F(S3PutObjectActionTest, WriteObjectShouldWriteContentAndMarkProgress) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
   action_under_test->_set_layout_id(layout_id);
