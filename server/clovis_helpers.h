@@ -57,5 +57,6 @@ int init_clovis(void);
 void fini_clovis(void);
 int create_new_instance_id(struct m0_uint128 *ufid);
 void teardown_clovis_op(struct m0_clovis_op *op);
-
+void teardown_clovis_wait_op(struct m0_clovis_op *op);
+void global_clovis_teardown();
 #endif

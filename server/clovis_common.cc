@@ -38,6 +38,10 @@ static struct m0_idx_cass_config cass_conf;
 const char *clovis_indices = "./indices";
 
 // extern struct m0_addb_ctx m0_clovis_addb_ctx;
+extern std::set<struct s3_clovis_op_context *> global_clovis_object_ops_list;
+extern std::set<struct s3_clovis_idx_op_context *> global_clovis_idx_ops_list;
+extern std::set<struct s3_clovis_idx_context *> global_clovis_idx;
+extern std::set<struct s3_clovis_obj_context *> global_clovis_obj;
 
 int init_clovis(void) {
   s3_log(S3_LOG_INFO, "", "Entering!\n");
@@ -175,4 +179,65 @@ void teardown_clovis_op(struct m0_clovis_op *op) {
       m0_clovis_op_free(op);
     }
   }
+}
+
+void teardown_clovis_cancel_wait_op(struct m0_clovis_op *op) {
+  if (op != NULL) {
+    if (op->op_sm.sm_state == M0_CLOVIS_OS_LAUNCHED) {
+      m0_clovis_op_cancel(&op, 1);
+      m0_clovis_op_wait(op, M0_BITS(M0_CLOVIS_OS_FAILED, M0_CLOVIS_OS_STABLE),
+                        M0_TIME_NEVER);
+    }
+    if (op->op_sm.sm_state == M0_CLOVIS_OS_INITIALISED ||
+        op->op_sm.sm_state == M0_CLOVIS_OS_STABLE ||
+        op->op_sm.sm_state == M0_CLOVIS_OS_FAILED) {
+      m0_clovis_op_fini(op);
+    }
+    if (op->op_sm.sm_state == M0_CLOVIS_OS_UNINITIALISED) {
+      m0_clovis_op_free(op);
+    }
+  }
+}
+// This function being called during shutdown to teardown
+// various index and object operations in progress
+void global_clovis_teardown() {
+  s3_log(S3_LOG_INFO, "", "Calling teardown of object operations...\n");
+  for (auto op_ctx : global_clovis_object_ops_list) {
+    for (size_t i = 0; i < op_ctx->op_count; i++) {
+      if (op_ctx->ops[i] != NULL) {
+        teardown_clovis_cancel_wait_op(op_ctx->ops[i]);
+      }
+    }
+  }
+  global_clovis_object_ops_list.clear();
+  s3_log(S3_LOG_INFO, "", "Calling m0_clovis_obj_fini...\n");
+  for (auto obj_ctx : global_clovis_obj) {
+    for (size_t i = 0; i < obj_ctx->n_initialized_contexts; i++) {
+      if (obj_ctx->objs[i].ob_entity.en_sm.sm_state != 0) {
+        m0_clovis_obj_fini(&obj_ctx->objs[i]);
+      }
+    }
+  }
+  global_clovis_obj.clear();
+  s3_log(S3_LOG_INFO, "", "Calling teardown of index operations...\n");
+  for (auto idx_op_ctx : global_clovis_idx_ops_list) {
+    for (size_t i = 0; i < idx_op_ctx->op_count; i++) {
+      if (idx_op_ctx->ops[i] != NULL) {
+        teardown_clovis_cancel_wait_op(idx_op_ctx->ops[i]);
+      }
+    }
+    if (idx_op_ctx->sync_op != NULL) {
+      teardown_clovis_cancel_wait_op(idx_op_ctx->sync_op);
+    }
+  }
+  global_clovis_idx_ops_list.clear();
+  s3_log(S3_LOG_INFO, "", "Calling m0_clovis_idx_fini...\n");
+  for (auto idx_ctx : global_clovis_idx) {
+    for (size_t i = 0; i < idx_ctx->n_initialized_contexts; i++) {
+      if (idx_ctx->idx[i].in_entity.en_sm.sm_state != 0) {
+        m0_clovis_idx_fini(&idx_ctx->idx[i]);
+      }
+    }
+  }
+  global_clovis_idx.clear();
 }

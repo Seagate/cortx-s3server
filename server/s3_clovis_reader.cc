@@ -28,6 +28,9 @@
 #include "s3_addb.h"
 
 extern struct m0_clovis_realm clovis_uber_realm;
+extern std::set<struct s3_clovis_op_context *> global_clovis_object_ops_list;
+extern std::set<struct s3_clovis_obj_context *> global_clovis_obj;
+extern int shutdown_clovis_teardown_called;
 
 S3ClovisReader::S3ClovisReader(std::shared_ptr<RequestObject> req,
                                struct m0_uint128 id, int layoutid,
@@ -60,12 +63,15 @@ void S3ClovisReader::clean_up_contexts() {
   // op contexts need to be free'ed before object
   open_context = nullptr;
   reader_context = nullptr;
-  if (obj_ctx) {
+  if (!shutdown_clovis_teardown_called) {
+    global_clovis_obj.erase(obj_ctx);
+    if (obj_ctx) {
     for (size_t i = 0; i < obj_ctx->n_initialized_contexts; i++) {
       s3_clovis_api->clovis_obj_fini(&obj_ctx->objs[i]);
     }
     free_obj_context(obj_ctx);
     obj_ctx = nullptr;
+  }
   }
 }
 
@@ -177,6 +183,7 @@ int S3ClovisReader::open_object(std::function<void(void)> on_success,
 
   s3_clovis_api->clovis_op_launch(request->addb_request_id, ctx->ops, 1,
                                   ClovisOpType::openobj);
+  global_clovis_object_ops_list.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return rc;
 }
@@ -286,6 +293,7 @@ bool S3ClovisReader::read_object() {
 
   s3_clovis_api->clovis_op_launch(request->addb_request_id, ctx->ops, 1,
                                   ClovisOpType::readobj);
+  global_clovis_object_ops_list.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return true;
 }
