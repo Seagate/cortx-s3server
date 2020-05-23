@@ -24,6 +24,7 @@
 
 #include "s3_common.h"
 #include "s3_log.h"
+#include <set>
 
 EXTERN_C_BLOCK_BEGIN
 

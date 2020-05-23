@@ -1,4 +1,3 @@
-
 /*
  * COPYRIGHT 2015 SEAGATE LLC
  *
@@ -36,6 +35,9 @@
 
 extern struct m0_clovis_realm clovis_uber_realm;
 extern S3Option *g_option_instance;
+extern std::set<struct s3_clovis_op_context *> global_clovis_object_ops_list;
+extern std::set<struct s3_clovis_obj_context *> global_clovis_obj;
+extern int shutdown_clovis_teardown_called;
 
 S3ClovisWriterContext::S3ClovisWriterContext(
     std::shared_ptr<RequestObject> req, std::function<void()> success_callback,
@@ -132,12 +134,15 @@ void S3ClovisWriter::clean_up_contexts() {
   create_context = nullptr;
   writer_context = nullptr;
   delete_context = nullptr;
-  if (obj_ctx) {
-    for (size_t i = 0; i < obj_ctx->n_initialized_contexts; ++i) {
-      s3_clovis_api->clovis_obj_fini(&obj_ctx->objs[i]);
+  if (!shutdown_clovis_teardown_called) {
+    global_clovis_obj.erase(obj_ctx);
+    if (obj_ctx) {
+      for (size_t i = 0; i < obj_ctx->n_initialized_contexts; ++i) {
+        s3_clovis_api->clovis_obj_fini(&obj_ctx->objs[i]);
+      }
+      free_obj_context(obj_ctx);
+      obj_ctx = nullptr;
     }
-    free_obj_context(obj_ctx);
-    obj_ctx = nullptr;
   }
 }
 
@@ -201,6 +206,7 @@ int S3ClovisWriter::open_objects() {
          oid_list_stream.str().c_str());
   s3_clovis_api->clovis_op_launch(request->addb_request_id, ctx->ops, ops_count,
                                   ClovisOpType::openobj);
+  global_clovis_object_ops_list.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return 0;
 }
@@ -312,7 +318,7 @@ void S3ClovisWriter::create_object(std::function<void(void)> on_success,
 
   s3_clovis_api->clovis_op_launch(request->addb_request_id, ctx->ops, 1,
                                   ClovisOpType::createobj);
-
+  global_clovis_object_ops_list.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -478,7 +484,7 @@ void S3ClovisWriter::write_content() {
          size_in_current_write);
   s3_clovis_api->clovis_op_launch(request->addb_request_id, ctx->ops, 1,
                                   ClovisOpType::writeobj);
-
+  global_clovis_object_ops_list.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -584,6 +590,7 @@ void S3ClovisWriter::delete_objects() {
          oid_list_stream.str().c_str());
   s3_clovis_api->clovis_op_launch(request->addb_request_id, ctx->ops, ops_count,
                                   ClovisOpType::deleteobj);
+  global_clovis_object_ops_list.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

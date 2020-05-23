@@ -31,6 +31,9 @@
 
 extern struct m0_clovis_realm clovis_uber_realm;
 extern struct m0_clovis_container clovis_container;
+extern std::set<struct s3_clovis_idx_op_context *> global_clovis_idx_ops_list;
+extern std::set<struct s3_clovis_idx_context *> global_clovis_idx;
+extern int shutdown_clovis_teardown_called;
 
 S3ClovisKVSReader::S3ClovisKVSReader(std::shared_ptr<RequestObject> req,
                                      std::shared_ptr<ClovisAPI> clovis_api)
@@ -54,12 +57,15 @@ S3ClovisKVSReader::~S3ClovisKVSReader() { clean_up_contexts(); }
 
 void S3ClovisKVSReader::clean_up_contexts() {
   reader_context = nullptr;
-  if (idx_ctx) {
-    for (size_t i = 0; i < idx_ctx->n_initialized_contexts; i++) {
-      s3_clovis_api->clovis_idx_fini(&idx_ctx->idx[i]);
+  if (!shutdown_clovis_teardown_called) {
+    global_clovis_idx.erase(idx_ctx);
+    if (idx_ctx) {
+      for (size_t i = 0; i < idx_ctx->n_initialized_contexts; i++) {
+        s3_clovis_api->clovis_idx_fini(&idx_ctx->idx[i]);
+      }
+      free_idx_context(idx_ctx);
+      idx_ctx = nullptr;
     }
-    free_idx_context(idx_ctx);
-    idx_ctx = nullptr;
   }
 }
 
@@ -153,6 +159,7 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid,
 
   s3_clovis_api->clovis_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
                                   ClovisOpType::getkv);
+  global_clovis_idx_ops_list.insert(idx_op_ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return;
 }
@@ -379,6 +386,7 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
 
   s3_clovis_api->clovis_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
                                   ClovisOpType::getkv);
+  global_clovis_idx_ops_list.insert(idx_op_ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return;
 }

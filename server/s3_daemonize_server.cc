@@ -56,6 +56,14 @@ static void s3_kickoff_graceful_shutdown(int ignore) {
   // event_base_loopexit() will let event loop serve all events as usual
   // till loopexit_timeout (2 sec). After the timeout, all active events will be
   // served and then the event loop breaks.
+
+  //
+  // There was intermitent deadlock seen during shutdown due to
+  // event_base_loopexit calling calloc when malloc was being executed
+  // by clovis threads and change being done in libevent's event.c for
+  // event_base_loopexit to avoid call to calloc by making use of
+  // preallocated buffer being allocated during event_base_new()
+  //
   event_base_loopexit(global_evbase_handle, &loopexit_timeout);
   }
   return;

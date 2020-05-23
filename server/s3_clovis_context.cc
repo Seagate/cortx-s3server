@@ -24,6 +24,12 @@
 #include "s3_mem_pool_manager.h"
 #include "clovis_helpers.h"
 
+extern std::set<struct s3_clovis_op_context *> global_clovis_object_ops_list;
+extern std::set<struct s3_clovis_idx_op_context *> global_clovis_idx_ops_list;
+extern std::set<struct s3_clovis_idx_context *> global_clovis_idx;
+extern std::set<struct s3_clovis_obj_context *> global_clovis_obj;
+extern int shutdown_clovis_teardown_called;
+
 // Helper methods to free m0_bufvec array which holds
 // Memory buffers from custom memory pool
 static void s3_bufvec_free_aligned(struct m0_bufvec *bufvec, size_t unit_size,
@@ -106,7 +112,7 @@ struct s3_clovis_obj_context *create_obj_context(size_t count) {
   ctx->objs =
       (struct m0_clovis_obj *)calloc(count, sizeof(struct m0_clovis_obj));
   ctx->obj_count = count;
-
+  global_clovis_obj.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return ctx;
 }
@@ -140,16 +146,17 @@ struct s3_clovis_op_context *create_basic_op_ctx(size_t op_count) {
 
 int free_basic_op_ctx(struct s3_clovis_op_context *ctx) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
-
-  for (size_t i = 0; i < ctx->op_count; i++) {
-    if (ctx->ops[i] != NULL) {
-      teardown_clovis_op(ctx->ops[i]);
+  if (!shutdown_clovis_teardown_called) {
+    global_clovis_object_ops_list.erase(ctx);
+    for (size_t i = 0; i < ctx->op_count; i++) {
+      if (ctx->ops[i] != NULL) {
+        teardown_clovis_op(ctx->ops[i]);
+      }
     }
+    free(ctx->ops);
+    free(ctx->cbs);
+    free(ctx);
   }
-  free(ctx->ops);
-  free(ctx->cbs);
-  free(ctx);
-
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return 0;
 }
@@ -232,7 +239,7 @@ struct s3_clovis_idx_context *create_idx_context(size_t idx_count) {
   ctx->idx =
       (struct m0_clovis_idx *)calloc(idx_count, sizeof(struct m0_clovis_idx));
   ctx->idx_count = idx_count;
-
+  global_clovis_idx.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return ctx;
 }
@@ -265,21 +272,24 @@ struct s3_clovis_idx_op_context *create_basic_idx_op_ctx(int op_count) {
 
 int free_basic_idx_op_ctx(struct s3_clovis_idx_op_context *ctx) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  if (!shutdown_clovis_teardown_called) {
+    global_clovis_idx_ops_list.erase(ctx);
 
-  for (size_t i = 0; i < ctx->op_count; i++) {
-    if (ctx->ops[i] == NULL) {
-      continue;
+    for (size_t i = 0; i < ctx->op_count; i++) {
+      if (ctx->ops[i] == NULL) {
+        continue;
+      }
+      teardown_clovis_op(ctx->ops[i]);
     }
-    teardown_clovis_op(ctx->ops[i]);
-  }
 
-  if (ctx->sync_op != NULL) {
-    teardown_clovis_op(ctx->sync_op);
-  }
+    if (ctx->sync_op != NULL) {
+      teardown_clovis_op(ctx->sync_op);
+    }
 
-  free(ctx->ops);
-  free(ctx->cbs);
-  free(ctx);
+    free(ctx->ops);
+    free(ctx->cbs);
+    free(ctx);
+  }
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return 0;

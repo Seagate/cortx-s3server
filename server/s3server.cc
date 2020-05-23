@@ -20,6 +20,7 @@
 
 #include <tuple>
 #include <vector>
+#include <set>
 #include <sstream>
 
 #include <openssl/md5.h>
@@ -81,6 +82,11 @@ struct m0_uint128 global_probable_dead_object_list_index_oid;
 int global_shutdown_in_progress;
 
 struct m0_uint128 global_instance_id;
+int shutdown_clovis_teardown_called;
+std::set<struct s3_clovis_op_context *> global_clovis_object_ops_list;
+std::set<struct s3_clovis_idx_op_context *> global_clovis_idx_ops_list;
+std::set<struct s3_clovis_idx_context *> global_clovis_idx;
+std::set<struct s3_clovis_obj_context *> global_clovis_obj;
 
 extern "C" void s3_handler(evhtp_request_t *req, void *a) {
   // placeholder, required to complete the request processing.
@@ -1013,6 +1019,9 @@ int main(int argc, char **argv) {
            "Event base loop exited due to unhandled exception in libevent's "
            "backend\n");
   }
+
+  shutdown_clovis_teardown_called = 1;
+  global_clovis_teardown();
 
   s3_perf_metrics_fini();
 

@@ -52,6 +52,11 @@ evhtp_ssl_ctx_t *g_ssl_auth_ctx;
 extern S3Stats *g_stats_instance;
 
 int global_shutdown_in_progress;
+int shutdown_clovis_teardown_called;
+std::set<struct s3_clovis_op_context *> global_clovis_object_ops_list;
+std::set<struct s3_clovis_idx_op_context *> global_clovis_idx_ops_list;
+std::set<struct s3_clovis_idx_context *> global_clovis_idx;
+std::set<struct s3_clovis_obj_context *> global_clovis_obj;
 
 struct m0 instance;
 
