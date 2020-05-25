@@ -14,6 +14,13 @@
             </filters>
         </Console>
 
+        <Console name="STDOUT">
+            <PatternLayout pattern="AuthServer: %m%n"/>
+            <filters>
+                <RegexFilter regex=".*IEC.*" onMatch="ACCEPT" onMismatch="DENY" />
+            </filters>
+        </Console>
+
         <RollingFile name="ROLLINGFILE" fileName="${baseDir}/app.log"
                      filePattern="${baseDir}/$${date:yyyy-MM-dd}/app-%d{yyyy-MM-dd-HH}.log.gz">
             <PatternLayout pattern="%d %p [ReqId:%X{ReqId}] %C{1.} [%t] %m%n"/>
@@ -31,13 +38,12 @@
                 </Delete>
             </DefaultRolloverStrategy>
         </RollingFile>
-
-        <Socket name="RFC5424" host="localhost" port="514" protocol="UDP">
+        <!-- For reference of RFC5424 impementation for syslog -->
+        <!--<Socket name="RFC5424" host="localhost" port="514" protocol="UDP">
             <RFC5424Layout facility="local5"/>
             <filters>
-                <RegexFilter regex=".*IEC.*" onMatch="ACCEPT" onMismatch="DENY" />
             </filters>
-        </Socket>
+        </Socket>-->
     </Appenders>
 
     <Loggers>
