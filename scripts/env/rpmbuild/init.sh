@@ -5,7 +5,7 @@ BASEDIR=$(dirname "$SCRIPT_PATH")
 S3_SRC_DIR="$BASEDIR/../../../"
 CURRENT_DIR=`pwd`
 
-source ${S3_SRC_DIR}/scripts/env/common.sh
+source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
 
 yum install -y ansible facter rpm-build
 

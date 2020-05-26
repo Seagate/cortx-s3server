@@ -11,6 +11,7 @@ OS=$(cat /etc/os-release | grep -w ID | cut -d '=' -f 2)
 VERSION=`cat /etc/os-release | sed -n 's/VERSION_ID=\"\([0-9].*\)\"/\1/p'`
 major_version=`echo ${VERSION} | awk -F '.' '{ print $1 }'`
 
+source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
 
 yum install rpm-build -y
 
@@ -70,8 +71,6 @@ if [ "$major_version" = "7" ];
 then
   ./s3mero-build-depencies.sh
 fi
-
-source ${S3_SRC_DIR}/scripts/env/common.sh
 
 # Update ansible/hosts file with local ip
 cp -f ./hosts ./hosts_local
