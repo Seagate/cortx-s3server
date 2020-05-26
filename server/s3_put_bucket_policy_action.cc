@@ -64,6 +64,18 @@ void S3PutBucketPolicyAction::validate_request() {
 
 void S3PutBucketPolicyAction::validate_policy() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  // Check bucket policy length before sending to auth server.
+  // for more info please refer
+  // https://docs.aws.amazon.com/AmazonS3/latest/dev/example-bucket-policies.html
+  if (new_bucket_policy.length() > 20480) {
+    std::string error_code = "MalformedPolicy";
+    std::string error_msg =
+        "Normalized policy document exceeds the maximum allowed size of 20480 "
+        "bytes";
+    set_s3_error(error_code);
+    set_s3_error_message(error_msg);
+    send_response_to_s3_client();
+  } else {
     auth_client->set_acl_and_policy(
         "", base64_encode((const unsigned char*)new_bucket_policy.c_str(),
                           new_bucket_policy.size()));
@@ -72,6 +84,8 @@ void S3PutBucketPolicyAction::validate_policy() {
         std::bind(&S3PutBucketPolicyAction::on_policy_validation_success, this),
         std::bind(&S3PutBucketPolicyAction::on_policy_validation_failure,
                   this));
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PutBucketPolicyAction::on_policy_validation_success() {
