@@ -18,7 +18,7 @@ jobs:
     - name: comment non-required bazel commands
       run: |
         sed -i "/bazel\sclean/s/^/#/" rebuildall.sh
-        sed -i "/bazel\sshutdown/s/^/#/" rebuildall.sh
+        sed -i "s/bazel\sshutdown/:/g" rebuildall.sh
     - name: GitHub registry login
       run: docker login docker.pkg.github.com -u ${{secrets.DOCKER_USERNAME}} -p $GITHUB_TOKEN
       env:
