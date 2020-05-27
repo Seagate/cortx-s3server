@@ -9,7 +9,6 @@ USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ]
                                     [--help | -h]
 
 where:
-
 --use_http_client        Use HTTP client for ST's. Default is use HTTPS client.
 --s3server_enable_ssl    Use ssl for s3server, by default its disabled
 --use_ipv6	   Use ipv6 for ST's
