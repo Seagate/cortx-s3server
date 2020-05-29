@@ -47,7 +47,7 @@ int S3AuditInfoLogger::init() {
           S3Option::get_instance()->get_eventbase(),
           S3Option::get_instance()->get_audit_logger_host(),
           S3Option::get_instance()->get_audit_logger_port(),
-          S3Option::get_instance()->get_max_retry_count(),
+          S3Option::get_instance()->get_audit_max_retry_count(),
           S3Option::get_instance()->get_audit_logger_rsyslog_msgid());
       audit_info_logger_enabled = true;
     }

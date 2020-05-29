@@ -112,6 +112,7 @@ class S3Option {
   std::string audit_logger_host;
   int audit_logger_port;
   std::string audit_logger_rsyslog_msgid;
+  unsigned short max_audit_retry_count;
   std::string s3server_ssl_cert_file;
   std::string s3server_ssl_pem_file;
   int s3server_ssl_session_timeout_in_sec;
@@ -215,6 +216,7 @@ class S3Option {
     audit_logger_host = "localhost";
     audit_logger_port = 514;
     audit_logger_rsyslog_msgid = "s3server-audit-logging";
+    max_audit_retry_count = 5;
 
     clovis_layout_id = FLAGS_clovislayoutid;
     clovis_local_addr = FLAGS_clovislocal;
@@ -313,6 +315,7 @@ class S3Option {
   std::string get_audit_logger_host();
   int get_audit_logger_port();
   std::string get_audit_logger_rsyslog_msgid();
+  unsigned short get_audit_max_retry_count();
   unsigned short get_s3_bind_port();
   unsigned short get_mero_http_bind_port();
   const char* get_s3server_ssl_cert_file();

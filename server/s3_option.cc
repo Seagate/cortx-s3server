@@ -146,6 +146,9 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MAX_RETRY_COUNT");
       max_retry_count =
           s3_option_node["S3_MAX_RETRY_COUNT"].as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_MAX_RETRY_COUNT");
+      max_audit_retry_count =
+          s3_option_node["S3_AUDIT_MAX_RETRY_COUNT"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_RETRY_INTERVAL_MILLISEC");
       retry_interval_millisec =
           s3_option_node["S3_RETRY_INTERVAL_MILLISEC"].as<unsigned short>();
@@ -428,6 +431,9 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MAX_RETRY_COUNT");
       max_retry_count =
           s3_option_node["S3_MAX_RETRY_COUNT"].as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_MAX_RETRY_COUNT");
+      max_audit_retry_count =
+          s3_option_node["S3_AUDIT_MAX_RETRY_COUNT"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_RETRY_INTERVAL_MILLISEC");
       retry_interval_millisec =
           s3_option_node["S3_RETRY_INTERVAL_MILLISEC"].as<unsigned short>();
@@ -1154,6 +1160,10 @@ bool S3Option::is_sync_kvs_allowed() {
 }
 
 unsigned short S3Option::get_max_retry_count() { return max_retry_count; }
+
+unsigned short S3Option::get_audit_max_retry_count() {
+  return max_audit_retry_count;
+}
 
 unsigned short S3Option::get_retry_interval_in_millisec() {
   return retry_interval_millisec;

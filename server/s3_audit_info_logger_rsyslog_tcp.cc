@@ -28,7 +28,7 @@ void S3AuditInfoLoggerRsyslogTcp::eventcb(struct bufferevent *bev, short events,
   s3_log(S3_LOG_DEBUG, "", "Entering event %d ptr %p\n", (int)events, ptr);
 
   if (ptr == nullptr) {
-    s3_log(S3_LOG_FATAL, "", "Exiting. Unexpected event param\n");
+    s3_log(S3_LOG_ERROR, "", "Exiting. Unexpected event param\n");
     return;
   }
 
@@ -41,7 +41,7 @@ void S3AuditInfoLoggerRsyslogTcp::eventcb(struct bufferevent *bev, short events,
       evutil_socket_t fd = bufferevent_getfd(bev);
       int one = 1;
       if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one)) != 0) {
-        s3_log(S3_LOG_FATAL, "", "Exiting. setsockopt errno %d\n", errno);
+        s3_log(S3_LOG_ERROR, "", "Exiting. setsockopt errno %d\n", errno);
         self->curr_retry = self->max_retry + 1;
       }
     }
@@ -70,7 +70,7 @@ void S3AuditInfoLoggerRsyslogTcp::connect() {
   connecting = (0 == socket_api->bufferevent_socket_connect_hostname(
                          bev, base_dns, AF_UNSPEC, host.c_str(), port));
   if (!connecting) {
-    s3_log(S3_LOG_FATAL, "", "Cannot connect to %s:%d\n", host.c_str(), port);
+    s3_log(S3_LOG_ERROR, "", "Cannot connect to %s:%d\n", host.c_str(), port);
     curr_retry = max_retry + 1;
   }
 
@@ -172,7 +172,7 @@ int S3AuditInfoLoggerRsyslogTcp::save_msg(
   int ret =
       socket_api->evbuffer_add(output, msg_to_snd.c_str(), msg_to_snd.length());
   if (ret != 0) {
-    s3_log(S3_LOG_FATAL, cur_request_id, "Exiting. Cannot write to buffer\n");
+    s3_log(S3_LOG_ERROR, cur_request_id, "Exiting. Cannot write to buffer\n");
     curr_retry = max_retry + 1;
     return -1;
   }
