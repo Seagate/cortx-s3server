@@ -45,6 +45,7 @@ ram_usage="$tmp_dir/ram_usage.txt"
 s3server_pids="$tmp_dir/s3server_pids.txt"
 haproxy_pids="$tmp_dir/haproxy_pids.txt"
 m0d_pids="$tmp_dir/m0d_pids.txt"
+s3_core_files="$tmp_dir/s3_core_files"
 
 # LDAP data
 ldap_dir="$tmp_dir/ldap"
@@ -60,10 +61,36 @@ then
     exit 1
 fi
 
+# Check gzip is installed or not
+# if its not installed, install it
+if rpm -q "gzip"  > /dev/null;
+then
+    yum install -y gzip > /dev/null
+fi
+
 # 1. Get log directory path from config file
 s3server_logdir=`cat $s3server_config | grep "S3_LOG_DIR:" | cut -f2 -d: | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
 authserver_logdir=`cat $authserver_config | grep "logFilePath=" | cut -f2 -d'=' | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
 backgrounddelete_logdir=`cat $backgrounddelete_config | grep "logger_directory:" | cut -f2 -d: | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
+
+# Compress each core file present in /var/mero/s3server-* directory
+# these core file will be available in /tmp/s3_support_bundle_<pid>/s3_core_files/<s3instance-name> directory
+compress_core_files(){
+  core_filename_pattern="*/core.*"
+  m0trace_filename_pattern="*/m0trace.*"
+  for file in $s3_core_dir/*
+  do
+    if [[ -f "$file" && ( $file == $core_filename_pattern || $file == $m0trace_filename_pattern ) ]];
+    then
+        s3instance_name=$(basename $(dirname "$file")) # e.g s3server-0x7200000000000000:0
+        file_name=$(basename "$file")                  # e.g m0trace.13927 or core.234678
+        # compressed file path will be /tmp/s3_support_bundle_<pid>/s3_core_files/<s3instance-name>
+        compressed_file_path=$s3_core_files/$s3instance_name
+        mkdir -p $compressed_file_path
+        gzip -f -c $file > $compressed_file_path/"$file_name".gz 2> /dev/null
+    fi
+  done
+}
 
 # Check if auth serve log directory point to auth folder instead of "auth/server" in properties file
 if [[ "$authserver_logdir" = *"auth/server" ]];
@@ -77,7 +104,15 @@ fi
 # check if s3server name with compgen globpat is available
 if compgen -G $s3_core_dir > /dev/null;
 then
+    # Compress core files
+    compress_core_files
+    # Collect other files like clovis_addb directory
     args=$args" "$s3_core_dir
+    # Collect compressed core files
+    if [ -d "$s3_core_files" ];
+    then
+        args=$args" "$s3_core_files
+    fi
 fi
 
 # Collect ldap logs if available
@@ -242,10 +277,12 @@ rm -rf /tmp/s3_support_bundle_$pid_value
 
 ## 2. Build tar.gz file with bundleid at bundle_path location
 # Create folder with component name at given destination
+
 mkdir -p $s3_bundle_location
 
+# we are already collecting compressed core files hence exclude the original core files
 # Build tar file
-tar -czPf $s3_bundle_location/$bundle_name $args --warning=no-file-changed
+tar -czPf $s3_bundle_location/$bundle_name $args --warning=no-file-changed --exclude={$s3_core_dir/core.*,$s3_core_dir/m0trace.*}
 
 # Check exit code of above operation
 # While doing tar operation if file gets modified, 'tar' raises warning with
