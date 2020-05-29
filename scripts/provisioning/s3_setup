@@ -350,7 +350,7 @@ create_background_delete_account()
     if [[ $output == *"No such object"* ]]
     then
       # Create s3background delete account
-      sh /opt/seagate/s3/install/ldap/create_background_delete_account.sh
+      sh /opt/seagate/s3/install/ldap/create_background_delete_account.sh $ldappasswd
       echo "Created s3backgrounddelete account successfully..."
     else
       echo "s3backgrounddelete account already exists"
@@ -361,7 +361,7 @@ create_background_delete_account()
 delete_background_delete_account()
 {
    # Delete s3background delete account
-   sh /opt/seagate/s3/install/ldap/delete_background_delete_account.sh
+   sh /opt/seagate/s3/install/ldap/delete_background_delete_account.sh $ldappasswd
    echo "Deleted s3backgrounddelete account successfully..."
 }
 

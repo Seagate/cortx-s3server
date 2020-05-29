@@ -23,6 +23,18 @@ else
     exit 0
 fi
 
+ldappasswd=""
+if rpm -q "salt"  > /dev/null;
+then
+    ldappasswd=$(salt-call pillar.get openldap:iam_admin:secret --output=newline_values_only)
+    ldappasswd=$(salt-call lyveutil.decrypt ${ldappasswd} openldap --output=newline_values_only)
+fi
+
+if [[ -z "$ldappasswd" ]]
+then
+    ldappasswd=ldapadmin
+fi
+
 USAGE="USAGE: bash $(basename "$0") [--help]
 Run S3 sanity test.
 where:
@@ -43,7 +55,7 @@ cleanup() {
 
     if [ "$externalcleanup" = true ]
     then
-        output=$(s3iamcli resetaccountaccesskey -n SanityAccountToDeleteAfterUse --ldapuser sgiamadmin --ldappasswd ldapadmin)
+        output=$(s3iamcli resetaccountaccesskey -n SanityAccountToDeleteAfterUse --ldapuser sgiamadmin --ldappasswd $ldappasswd)
         echo $output
         access_key=$(echo -e "$output" | tr ',' '\n' | grep "AccessKeyId" | awk '{print $3}')
         secret_key=$(echo -e "$output" | tr ',' '\n' | grep "SecretKey" | awk '{print $3}')
@@ -76,7 +88,8 @@ trap "cleanup" ERR
 echo -e "\n\n*** S3 Sanity ***"
 echo -e "\n\n**** Create Account *******"
 
-output=$(s3iamcli createaccount -n SanityAccountToDeleteAfterUse  -e SanityAccountToDeleteAfterUse@sanitybucket.com --ldapuser sgiamadmin --ldappasswd ldapadmin)
+
+output=$(s3iamcli createaccount -n SanityAccountToDeleteAfterUse  -e SanityAccountToDeleteAfterUse@sanitybucket.com --ldapuser sgiamadmin --ldappasswd $ldappasswd)
 
 echo $output
 access_key=$(echo -e "$output" | tr ',' '\n' | grep "AccessKeyId" | awk '{print $3}')
