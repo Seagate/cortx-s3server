@@ -91,6 +91,9 @@ class S3GetBucketAction : public S3BucketAction {
   FRIEND_TEST(S3GetBucketActionTest, SendResponseToClientNoSuchBucket);
   FRIEND_TEST(S3GetBucketActionTest, SendResponseToClientSuccess);
   FRIEND_TEST(S3GetBucketActionTest, SendResponseToClientInternalError);
+  FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsSuccessfulMultiComponentKey);
+  FRIEND_TEST(S3GetBucketActionTest,
+              GetNextObjectsSuccessfulPrefixDelimMultiComponentKey);
 };
 
 #endif

@@ -379,6 +379,71 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefixDelimiter) {
   EXPECT_EQ(1, action_under_test_ptr->object_list.common_prefixes_size());
 }
 
+// Prefix in multi-component object names
+TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulMultiComponentKey) {
+  CREATE_ACTION_UNDER_TEST_OBJ;
+  CREATE_BUCKET_METADATA_OBJ;
+  CREATE_KVS_READER_OBJ;
+
+  action_under_test_ptr->request_prefix.assign("");
+  action_under_test_ptr->request_delimiter.assign("/");
+  action_under_test_ptr->request_marker_key.assign("boo/");
+  action_under_test_ptr->max_keys = 1;
+  // keys=['boo/bar', 'boo/baz/xyzzy', 'cquux/thud', 'cquux/bla']
+  result_keys_values.insert(
+      std::make_pair("boo/bar", std::make_pair(0, "keyval")));
+  result_keys_values.insert(
+      std::make_pair("boo/baz/xyzzy", std::make_pair(0, "keyval")));
+  result_keys_values.insert(
+      std::make_pair("cquux/thud", std::make_pair(0, "keyval")));
+  result_keys_values.insert(
+      std::make_pair("cquux/bla", std::make_pair(0, "keyval")));
+
+  OBJ_METADATA_EXPECTATIONS;
+  SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
+
+  action_under_test_ptr->get_next_objects_successful();
+  EXPECT_EQ(0, action_under_test_ptr->object_list.size());
+  EXPECT_EQ(1, action_under_test_ptr->object_list.common_prefixes_size());
+  // Ensure that common prefixes contain "cquux/"
+  std::set<std::string> common_prexes =
+      action_under_test_ptr->object_list.get_common_prefixes();
+  EXPECT_STREQ((*(common_prexes.begin())).c_str(), "cquux/");
+}
+
+// Prefix in multi-component object names, with both prefix and delimiter string
+TEST_F(S3GetBucketActionTest,
+       GetNextObjectsSuccessfulPrefixDelimMultiComponentKey) {
+  CREATE_ACTION_UNDER_TEST_OBJ;
+  CREATE_BUCKET_METADATA_OBJ;
+  CREATE_KVS_READER_OBJ;
+  // Prefix ends with delimiter character '/'
+  action_under_test_ptr->request_prefix.assign("boo/");
+  action_under_test_ptr->request_delimiter.assign("/");
+  action_under_test_ptr->max_keys = 3;
+  // keys=['boo/bar', 'boo/baz/xyzzy', 'cquux/thud', 'cquux/bla']
+  result_keys_values.insert(
+      std::make_pair("boo/bar", std::make_pair(0, "keyval")));
+  result_keys_values.insert(
+      std::make_pair("boo/baz/xyzzy", std::make_pair(0, "keyval")));
+  result_keys_values.insert(
+      std::make_pair("cquux/thud", std::make_pair(0, "keyval")));
+  result_keys_values.insert(
+      std::make_pair("cquux/bla", std::make_pair(0, "keyval")));
+
+  OBJ_METADATA_EXPECTATIONS;
+  SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
+
+  action_under_test_ptr->get_next_objects_successful();
+  EXPECT_EQ(1, action_under_test_ptr->object_list.size());
+  EXPECT_EQ(1, action_under_test_ptr->object_list.common_prefixes_size());
+  // Ensure that common prefixes contain {"boo/baz/"}
+  std::set<std::string> common_prexes =
+      action_under_test_ptr->object_list.get_common_prefixes();
+  auto it = common_prexes.begin();
+  EXPECT_STREQ((*it).c_str(), "boo/baz/");
+}
+
 TEST_F(S3GetBucketActionTest, SendResponseToClientServiceUnavailable) {
   CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;

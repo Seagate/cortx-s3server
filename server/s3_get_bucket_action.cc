@@ -167,12 +167,40 @@ void S3GetBucketAction::get_next_objects_successful() {
   m0_uint128 object_list_index_oid =
       bucket_metadata->get_object_list_index_oid();
   bool atleast_one_json_error = false;
+  bool last_key_in_common_prefix = false;
+  std::string last_common_prefix;
   auto& kvps = clovis_kv_reader->get_key_values();
   size_t length = kvps.size();
   for (auto& kv : kvps) {
     s3_log(S3_LOG_DEBUG, request_id, "Read Object = %s\n", kv.first.c_str());
     s3_log(S3_LOG_DEBUG, request_id, "Read Object Value = %s\n",
            kv.second.second.c_str());
+
+    if (last_key_in_common_prefix) {
+      bool prefix_match = (kv.first.find(request_prefix) == 0) ? true : false;
+      if (!prefix_match) {
+        // Prefix does not match, skip the key
+        if (--length == 0) {
+          break;
+        } else {
+          continue;
+        }
+      }
+      // Check if the current key cannot be rolled into the last common prefix.
+      // In such situation, reset 'last_key_in_common_prefix'
+      size_t common_prefix_pos = kv.first.find(last_common_prefix);
+      if (common_prefix_pos == std::string::npos) {
+        // We didn't find current key with same last common prefix.
+        // Reset 'last_key_in_common_prefix'
+        last_key_in_common_prefix = false;
+        // Check if we reached the max keys requested. If yes, break
+        if ((object_list.size() + object_list.common_prefixes_size()) ==
+            max_keys) {
+          break;
+        }
+      }
+    }
+
     auto object = object_metadata_factory->create_object_metadata_obj(request);
     size_t delimiter_pos = std::string::npos;
     if (request_prefix.empty() && request_delimiter.empty()) {
@@ -185,6 +213,7 @@ void S3GetBucketAction::get_next_objects_successful() {
                kv.first.c_str(), kv.second.second.c_str());
       } else {
         object_list.add_object(object);
+        last_key = kv.first;
       }
     } else if (!request_prefix.empty() && request_delimiter.empty()) {
       // Filter out by prefix
@@ -198,6 +227,7 @@ void S3GetBucketAction::get_next_objects_successful() {
                  kv.first.c_str(), kv.second.second.c_str());
         } else {
           object_list.add_object(object);
+          last_key = kv.first;
         }
       }
     } else if (request_prefix.empty() && !request_delimiter.empty()) {
@@ -212,13 +242,27 @@ void S3GetBucketAction::get_next_objects_successful() {
                  kv.first.c_str(), kv.second.second.c_str());
         } else {
           object_list.add_object(object);
+          last_key = kv.first;
         }
       } else {
         // Roll up
+        // All keys under a common prefix are counted as a single key
+        // When we encounter a key that belongs to common prefix, the code
+        // maintains a state
+        // 'last_key_in_common_prefix', indicating a key with common prefix.
         s3_log(S3_LOG_DEBUG, request_id,
                "Delimiter %s found at pos %zu in string %s\n",
                request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
-        object_list.add_common_prefix(kv.first.substr(0, delimiter_pos + 1));
+        std::string common_prefix = kv.first.substr(0, delimiter_pos + 1);
+        if (common_prefix != request_marker_key) {
+          // If marker is specified, and if this key gets rolled up
+          // in common prefix, we add to common prefix only if it is not the
+          // same as specified marker
+          object_list.add_common_prefix(common_prefix);
+          last_key = common_prefix;
+          last_common_prefix = last_key;
+          last_key_in_common_prefix = true;
+        }
       }
     } else {
       // both prefix and delimiter are not empty
@@ -236,22 +280,45 @@ void S3GetBucketAction::get_next_objects_successful() {
                    kv.first.c_str(), kv.second.second.c_str());
           } else {
             object_list.add_object(object);
+            last_key = kv.first;
           }
         } else {
+          // Roll up
+          // All keys under a common prefix are counted as a single key
+          // When we encounter a key that belongs to common prefix, the code
+          // maintains a state 'last_key_in_common_prefix', indicating a key
+          // with common prefix.
           s3_log(S3_LOG_DEBUG, request_id,
                  "Delimiter %s found at pos %zu in string %s\n",
                  request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
-          object_list.add_common_prefix(kv.first.substr(0, delimiter_pos + 1));
+          std::string common_prefix = kv.first.substr(0, delimiter_pos + 1);
+          if (common_prefix != request_marker_key) {
+            // If marker is specified, and if this key gets rolled up
+            // in common prefix, we add to common prefix only if it is not the
+            // same as specified marker
+            object_list.add_common_prefix(common_prefix);
+            last_key = common_prefix;
+            last_common_prefix = last_key;
+            last_key_in_common_prefix = true;
+          }
         }
       }  // else no prefix match, filter it out
     }
 
-    if (--length == 0 || object_list.size() == max_keys) {
-      // this is the last element returned or we reached limit requested
-      last_key = kv.first;
+    if (--length == 0 || (!last_key_in_common_prefix &&
+                          (object_list.size() +
+                           object_list.common_prefixes_size()) == max_keys)) {
+      // This is the last element returned or we reached limit requested, we
+      // break.
+      // When the state 'last_key_in_common_prefix' is true, we don't want to
+      // check whether we reached max_keys,
+      // because there may be still some more keys in the result KV set that
+      // starts with the same last common prefix.
+      // So, we want to stop breaking from the 'if' condition here, and
+      // enumerate further keys with same last common prefix.
       break;
     }
-  }
+  }  // end of For loop
 
   if (atleast_one_json_error) {
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
@@ -262,9 +329,11 @@ void S3GetBucketAction::get_next_objects_successful() {
   size_t count_we_requested =
       S3Option::get_instance()->get_clovis_idx_fetch_count();
 
-  if ((object_list.size() == max_keys) || (kvps.size() < count_we_requested)) {
+  if (((object_list.size() + object_list.common_prefixes_size()) == max_keys) ||
+      (kvps.size() < count_we_requested)) {
     // Go ahead and respond.
-    if (object_list.size() == max_keys) {
+    if ((object_list.size() + object_list.common_prefixes_size()) == max_keys &&
+        length != 0) {
       object_list.set_response_is_truncated(true);
       object_list.set_next_marker_key(last_key);
     }

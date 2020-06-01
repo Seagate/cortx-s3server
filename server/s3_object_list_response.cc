@@ -65,11 +65,11 @@ void S3ObjectListResponse::set_object_name(std::string name) {
 }
 
 void S3ObjectListResponse::set_request_prefix(std::string prefix) {
-  request_prefix = get_response_format_key_value(prefix);
+  request_prefix = prefix;
 }
 
 void S3ObjectListResponse::set_request_delimiter(std::string delimiter) {
-  request_delimiter = get_response_format_key_value(delimiter);
+  request_delimiter = delimiter;
 }
 
 void S3ObjectListResponse::set_request_marker_key(std::string marker) {
@@ -174,16 +174,24 @@ std::string& S3ObjectListResponse::get_xml(
   response_xml += S3CommonUtilities::format_xml_string("Name", bucket_name);
   response_xml +=
       S3CommonUtilities::format_xml_string("Prefix", request_prefix);
-  response_xml +=
-      S3CommonUtilities::format_xml_string("Delimiter", request_delimiter);
+  // When 'Delimiter' is specified in the request, the response should have
+  // 'Delimiter'
+  if (!this->get_request_delimiter().empty()) {
+    response_xml +=
+        S3CommonUtilities::format_xml_string("Delimiter", request_delimiter);
+  }
   if (encoding_type == "url") {
     response_xml += S3CommonUtilities::format_xml_string("EncodingType", "url");
   }
   response_xml +=
       S3CommonUtilities::format_xml_string("Marker", request_marker_key);
   response_xml += S3CommonUtilities::format_xml_string("MaxKeys", max_keys);
-  response_xml +=
-      S3CommonUtilities::format_xml_string("NextMarker", next_marker_key);
+  // When is_truncated is true, the response should have "NextMarker".
+  // Refer AWS S3 ListObjects documentation for NextMarker.
+  if (this->response_is_truncated) {
+    response_xml +=
+        S3CommonUtilities::format_xml_string("NextMarker", next_marker_key);
+  }
   response_xml += S3CommonUtilities::format_xml_string(
       "IsTruncated", (response_is_truncated ? "true" : "false"));
 

@@ -101,6 +101,8 @@ class S3ObjectListResponse {
   std::string& get_account_name();
   std::string& get_storage_class();
   std::string& get_upload_id();
+  std::string& get_request_delimiter() { return request_delimiter; }
+  std::set<std::string>& get_common_prefixes() { return common_prefixes; }
 
   // Google tests.
   FRIEND_TEST(S3GetMultipartPartActionTest, ConstructorTest);
