@@ -125,6 +125,7 @@ void Action::check_authorization_header() {
   for (auto it : base_request->get_in_headers_copy()) {
     if (strcmp(it.first.c_str(), "Authorization") == 0) {
       is_authorizationheader_present = true;
+      break;
     }
   }
   auth_client->set_is_authheader_present(is_authorizationheader_present);

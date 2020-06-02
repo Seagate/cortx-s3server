@@ -4,7 +4,7 @@ Backup the Configuration Directory
 
 Backup the Data Directories
 
- - slapcat -n 3 -l data.ldif
+ - slapcat -n 2 -l data.ldif
 
 Restore OpenLDAP
 
@@ -41,7 +41,7 @@ Restore OpenLDAP
 
   * Restore the data directory with slapadd
 
-    - slapadd -n 3 -F /etc/openldap/slapd.d -l data.ldif
+    - slapadd -n 2 -F /etc/openldap/slapd.d -l data.ldif
 
   * change the ownership and permissions of the configuration directory to what it was previously.
 

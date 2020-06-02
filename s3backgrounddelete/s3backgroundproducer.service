@@ -1,14 +1,11 @@
 [Unit]
 Description=S3 Background Producer for stale oid cleanup
-After=rabbitmq-server.service
-Requires=rabbitmq-server.service
 
 [Service]
 Type=simple
 ExecStart=/opt/seagate/s3/s3backgrounddelete/s3backgroundproducer
 ExecStop=/bin/kill -TERM $MAINPID
 TimeoutSec=300
-Restart=on-failure
 # Other restart options: always, on-abort, etc
 
 # The install section is needed to use

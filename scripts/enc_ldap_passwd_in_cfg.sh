@@ -77,9 +77,9 @@ if [ "$change_ldap_passwd" = true ] ; then
     # Setup iam admin and necessary permissions
     ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $ROOTDNPASSWORD -f $ADMIN_USERS_FILE
     rm -f $ADMIN_USERS_FILE
+    echo -e "\n OpenLdap password Updated Successfully,You need to Restart Slapd"
 fi
 
-echo -e "\n OpenLdap password Updated Successfully,You need to Restart Slapd"
 # Encrypt the password
 encrypted_pass=`java -jar $encrypt_cli -s $ldap_passwd`
 

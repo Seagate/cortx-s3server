@@ -1,7 +1,5 @@
 [Unit]
 Description=S3 Background Consumer for stale oid cleanup
-After=rabbitmq-server.service
-Requires=rabbitmq-server.service
 
 [Service]
 Environment="PYTHONPATH=/usr/lib/python3.6/site-packages/"
@@ -9,7 +7,6 @@ Type=simple
 ExecStart=/opt/seagate/s3/s3backgrounddelete/s3backgroundconsumer
 ExecStop=/bin/kill -TERM $MAINPID
 TimeoutSec=300
-Restart=on-failure
 # Other restart options: always, on-abort, etc
 
 # The install section is needed to use
