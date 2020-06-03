@@ -34,7 +34,9 @@ authserver_config="/opt/seagate/auth/resources/authserver.properties"
 backgrounddelete_config="/opt/seagate/s3/s3backgrounddelete/config.yaml"
 s3startsystem_script="/opt/seagate/s3/s3startsystem.sh"
 s3server_binary="/opt/seagate/s3/bin/s3server"
-s3_core_dir="/var/mero/s3server-*"
+s3_mero_dir="/var/mero/s3server-*"
+s3_core_dir="/var/crash"
+
 
 # Create tmp folder with pid value to allow parallel execution
 pid_value=$$
@@ -45,6 +47,8 @@ ram_usage="$tmp_dir/ram_usage.txt"
 s3server_pids="$tmp_dir/s3server_pids.txt"
 haproxy_pids="$tmp_dir/haproxy_pids.txt"
 m0d_pids="$tmp_dir/m0d_pids.txt"
+s3_core_files="$tmp_dir/s3_core_files"
+s3_m0trace_files="$tmp_dir/s3_m0trace_files"
 
 # LDAP data
 ldap_dir="$tmp_dir/ldap"
@@ -65,6 +69,39 @@ s3server_logdir=`cat $s3server_config | grep "S3_LOG_DIR:" | cut -f2 -d: | sed -
 authserver_logdir=`cat $authserver_config | grep "logFilePath=" | cut -f2 -d'=' | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
 backgrounddelete_logdir=`cat $backgrounddelete_config | grep "logger_directory:" | cut -f2 -d: | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
 
+# Compress each s3server core file present in /var/crash directory if available
+# these compressed core file will be available in /tmp/s3_support_bundle_<pid>/s3_core_files directory
+compress_core_files(){
+  core_filename_pattern="*/core-s3server.*"
+  for file in $s3_core_dir/*
+  do
+    if [[ -f "$file" && $file == $core_filename_pattern ]];
+    then
+        mkdir -p $s3_core_files
+        file_name=$(basename "$file")      # e.g core-s3server.234678
+        gzip -f -c $file > $s3_core_files/"$file_name".gz 2> /dev/null
+    fi
+  done
+}
+
+# Compress each m0trace files present in /var/mero/s3server-* directory if available
+# compressed m0trace files will be available in /tmp/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
+compress_m0trace_files(){
+  m0trace_filename_pattern="*/m0trace.*"
+  for file in $s3_mero_dir/*
+  do
+    if [[ -f "$file" && $file == $m0trace_filename_pattern ]];
+    then
+        s3instance_name=$(basename $(dirname "$file")) # e.g s3server-0x7200000000000000:0
+        file_name=$(basename "$file")                  # e.g m0trace.13927
+        # compressed file path will be /tmp/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
+        compressed_file_path=$s3_m0trace_files/$s3instance_name
+        mkdir -p $compressed_file_path
+        gzip -f -c $file > $compressed_file_path/"$file_name".gz 2> /dev/null
+    fi
+  done
+}
+
 # Check if auth serve log directory point to auth folder instead of "auth/server" in properties file
 if [[ "$authserver_logdir" = *"auth/server" ]];
 then
@@ -72,12 +109,24 @@ then
 fi
 
 ## Add file/directory locations for bundling
-# Collect s3 core files from mero location
+
+# Compress and collect s3 core files if available
+compress_core_files
+if [ -d "$s3_core_files" ];
+then
+    args=$args" "$s3_core_files
+fi
+
+# Compress and collect m0trace files from /var/mero/s3server-* directory
 # S3server name is generated with random name e.g s3server-0x7200000000000001:0x22
 # check if s3server name with compgen globpat is available
-if compgen -G $s3_core_dir > /dev/null;
+if compgen -G $s3_mero_dir > /dev/null;
 then
-    args=$args" "$s3_core_dir
+    compress_m0trace_files
+    if [ -d "$s3_m0trace_files" ];
+    then
+        args=$args" "$s3_m0trace_files
+    fi
 fi
 
 # Collect ldap logs if available
