@@ -385,6 +385,6 @@ fi
 if [[ $cleanup_dependencies == true ]]
 then
     echo "removing s3 dependencies"
-    yum -y remove log4cxx_eos || echo ""
+    yum -y remove log4cxx_cortx || echo ""
 fi
 
