@@ -107,6 +107,47 @@ static void on_client_request_error(evhtp_request_t *p_evhtp_req,
   }
 }
 
+static void s3_kickoff_graceful_shutdown(int ignore) {
+  if (!global_shutdown_in_progress) {
+    global_shutdown_in_progress = 1;
+    // signal handler
+    // https://stackoverflow.com/questions/40049751/malloc-inside-linux-signal-handler-cause-deadlock
+    S3Option *option_instance = S3Option::get_instance();
+    int grace_period_sec = option_instance->get_s3_grace_period_sec();
+    struct timeval loopexit_timeout = {.tv_sec = 0, .tv_usec = 0};
+
+    // trigger rollbacks & stop handling new requests
+    option_instance->set_is_s3_shutting_down(true);
+
+    if (grace_period_sec > 6) {
+      loopexit_timeout.tv_sec = grace_period_sec - 6;
+    }
+    // event_base_loopexit() will let event loop serve all events as usual
+    // till loopexit_timeout (1 sec). After the timeout, all active events will
+    // be served and then the event loop breaks.
+    s3_log(S3_LOG_INFO, "", "Calling event_base_loopexit\n");
+    event_base_loopexit(global_evbase_handle, &loopexit_timeout);
+  }
+  return;
+}
+
+//
+// As per document http://www.wangafu.net/~nickm/libevent-book/Ref4_event.html
+// Its safe to call all functions from the callback as
+// libevent run in the event loop after the signal occurs
+//
+static void s3_signal_cb(evutil_socket_t sig, short events, void *user_data) {
+  s3_log(S3_LOG_INFO, "", "Entering\n");
+  s3_log(S3_LOG_INFO, "", "About to trigger shutdown\n");
+  s3_kickoff_graceful_shutdown(1);
+  s3_log(S3_LOG_INFO, "", "Exiting\n");
+  return;
+}
+
+void set_fatal_handler_exit() { s3_fatal_handler = exit; }
+
+void set_graceful_handler() { s3_fatal_handler = s3_kickoff_graceful_shutdown; }
+
 extern "C" int log_http_header(evhtp_header_t *header, void *arg) {
   s3_log(S3_LOG_DEBUG, "", "http header(key = '%s', val = '%s')\n", header->key,
          header->val);
@@ -624,6 +665,8 @@ void free_evhtp_handle(evhtp_t *htp) {
 
 int main(int argc, char **argv) {
   int rc = 0;
+  struct event *signal_sigint_event;
+  struct event *signal_sigterm_event;
   // map will have s3server { fid, instance_id } information
   std::map<std::string, std::string> s3server_instance_id;
 
@@ -661,7 +704,7 @@ int main(int argc, char **argv) {
   }
 
   S3Daemonize s3daemon;
-  s3daemon.set_fatal_handler_exit();
+  set_fatal_handler_exit();
   s3daemon.daemonize();
   s3daemon.register_signals();
 
@@ -1019,8 +1062,20 @@ int main(int argc, char **argv) {
            strerror(-rc));
   }
 
-  /* Set the fatal handler */
-  s3daemon.set_fatal_handler_graceful();
+  signal_sigint_event = evsignal_new(global_evbase_handle, SIGINT, s3_signal_cb,
+                                     (void *)global_evbase_handle);
+  if (!signal_sigint_event || event_add(signal_sigint_event, NULL) < 0) {
+    s3_log(S3_LOG_FATAL, "", "Could not create/add a signal SIGINT event!\n");
+  }
+  signal_sigterm_event =
+      evsignal_new(global_evbase_handle, SIGTERM, s3_signal_cb,
+                   (void *)global_evbase_handle);
+  if (!signal_sigterm_event || event_add(signal_sigterm_event, NULL) < 0) {
+    s3_log(S3_LOG_FATAL, "", "Could not create/add a signal SIGTERM event!\n");
+  }
+
+  /* Set the fatal handler to graceful shutdown*/
+  set_graceful_handler();
 
   // new flag in Libevent 2.1
   // EVLOOP_NO_EXIT_ON_EMPTY tells event_base_loop()
@@ -1067,6 +1122,8 @@ int main(int argc, char **argv) {
   fini_log();
 
   event_destroy_mempool();
+  event_free(signal_sigint_event);
+  event_free(signal_sigterm_event);
   event_base_free(global_evbase_handle);
   // free all globally held resources
   // so that leak-check tools dont complain

@@ -37,50 +37,6 @@
 extern evbase_t *global_evbase_handle;
 extern int global_shutdown_in_progress;
 
-static void s3_kickoff_graceful_shutdown(int ignore) {
-  if (!global_shutdown_in_progress) {
-  global_shutdown_in_progress = 1;
-  // glog does dynamic allocation, its not safe to call many functions within
-  // signal handler
-  // https://stackoverflow.com/questions/40049751/malloc-inside-linux-signal-handler-cause-deadlock
-  S3Option *option_instance = S3Option::get_instance();
-  int grace_period_sec = option_instance->get_s3_grace_period_sec();
-  struct timeval loopexit_timeout = {.tv_sec = 0, .tv_usec = 0};
-
-  // trigger rollbacks & stop handling new requests
-  option_instance->set_is_s3_shutting_down(true);
-
-  if (grace_period_sec > 5) {
-    loopexit_timeout.tv_sec = grace_period_sec - 5;
-  }
-  // event_base_loopexit() will let event loop serve all events as usual
-  // till loopexit_timeout (2 sec). After the timeout, all active events will be
-  // served and then the event loop breaks.
-
-  //
-  // There was intermitent deadlock seen during shutdown due to
-  // event_base_loopexit calling calloc when malloc was being executed
-  // by clovis threads and change being done in libevent's event.c for
-  // event_base_loopexit to avoid call to calloc by making use of
-  // preallocated buffer being allocated during event_base_new()
-  //
-  event_base_loopexit(global_evbase_handle, &loopexit_timeout);
-  }
-  return;
-}
-
-void s3_terminate_sig_handler(int signum) {
-  // When a daemon has been told to shutdown, there is a possibility of OS
-  // sending SIGTERM when s3server runs as service hence ignore subsequent
-  // SIGTERM signal.
-  struct sigaction sigterm_action = {0};
-  sigterm_action.sa_handler = SIG_IGN;
-  sigterm_action.sa_flags = 0;
-  sigaction(SIGTERM, &sigterm_action, NULL);
-
-  s3_kickoff_graceful_shutdown(1);
-  return;
-}
 
 /*
  *  <IEM_INLINE_DOCUMENTATION>
@@ -131,12 +87,6 @@ S3Daemonize::S3Daemonize() : noclose(0) {
     noclose = 1;
   }
   pidfilename = option_instance->get_s3_pidfile();
-}
-
-void S3Daemonize::set_fatal_handler_exit() { s3_fatal_handler = exit; }
-
-void S3Daemonize::set_fatal_handler_graceful() {
-  s3_fatal_handler = s3_kickoff_graceful_shutdown;
 }
 
 void S3Daemonize::daemonize() {
@@ -247,13 +197,6 @@ int S3Daemonize::delete_pidfile() {
 }
 
 void S3Daemonize::register_signals() {
-  struct sigaction s3action;
-  memset(&s3action, 0, sizeof s3action);
-
-  s3action.sa_handler = s3_terminate_sig_handler;
-  sigaction(SIGTERM, &s3action, NULL);
-  sigaction(SIGINT, &s3action, NULL);
-
   struct sigaction fatal_action;
   memset(&fatal_action, 0, sizeof fatal_action);
 

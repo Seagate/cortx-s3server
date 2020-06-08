@@ -443,7 +443,7 @@ index d09b4f1..44fe4e5 100644
  /** Assert that we are holding the lock on an evbuffer */
  #define ASSERT_EVBUFFER_LOCKED(buffer)			\
 diff --git a/event.c b/event.c
-index a778f96..d5dc81a 100644
+index a778f96..c74208b 100644
 --- a/event.c
 +++ b/event.c
 @@ -26,7 +26,7 @@
@@ -455,7 +455,7 @@ index a778f96..d5dc81a 100644
  #ifdef _WIN32
  #include <winsock2.h>
  #define WIN32_LEAN_AND_MEAN
-@@ -134,6 +134,14 @@ struct event_base *event_global_current_base_ = NULL;
+@@ -134,6 +134,10 @@ struct event_base *event_global_current_base_ = NULL;
  
  static void *event_self_cbarg_ptr_ = NULL;
  
@@ -463,54 +463,19 @@ index a778f96..d5dc81a 100644
 +MemoryPoolHandle g_pool_handle;
 +/* global max allowed read */
 +size_t g_event_max_read;
-+/* global shutdown in progress */
-+size_t g_shutdown_in_progress;
-+/* global struct event_once pointer */
-+struct event_once *g_eonce;
  /* Prototypes */
  static void	event_queue_insert_active(struct event_base *, struct event_callback *);
  static void	event_queue_insert_active_later(struct event_base *, struct event_callback *);
-@@ -525,6 +533,12 @@ event_base_new(void)
- 		base = event_base_new_with_config(cfg);
- 		event_config_free(cfg);
- 	}
-+        if (!g_shutdown_in_progress) {
-+          if ((g_eonce = mm_calloc(1, sizeof(struct event_once))) == NULL) {
-+            event_errx(1, "%s: Unable to allocate memory", __func__);
-+            return NULL;
-+          }
-+        }
- 	return base;
- }
- 
-@@ -1844,6 +1858,7 @@ event_loopexit(const struct timeval *tv)
- int
- event_base_loopexit(struct event_base *event_base, const struct timeval *tv)
- {
-+        g_shutdown_in_progress = 1;
- 	return (event_base_once(event_base, -1, EV_TIMEOUT, event_loopexit_cb,
- 		    event_base, tv));
- }
-@@ -2062,8 +2077,16 @@ event_base_once(struct event_base *base, evutil_socket_t fd, short events,
- 	if (events & (EV_SIGNAL|EV_PERSIST))
+@@ -2063,7 +2067,7 @@ event_base_once(struct event_base *base, evutil_socket_t fd, short events,
  		return (-1);
  
--	if ((eonce = mm_calloc(1, sizeof(struct event_once))) == NULL)
+ 	if ((eonce = mm_calloc(1, sizeof(struct event_once))) == NULL)
 -		return (-1);
-+        if (g_shutdown_in_progress && g_eonce != NULL) {
-+          /*
-+           * Assign preallocated buffer, since malloc from clovis and
-+           * calloc here creates deadlock in case of shutdown
-+           */
-+          eonce = g_eonce;
-+        } else {
-+	  if ((eonce = mm_calloc(1, sizeof(struct event_once))) == NULL)
-+	   	  return (-1);
-+        }
++	  return (-1);
  
  	eonce->cb = callback;
  	eonce->arg = arg;
-@@ -2763,6 +2786,38 @@ event_add_nolock_(struct event *ev, const struct timeval *tv,
+@@ -2763,6 +2767,38 @@ event_add_nolock_(struct event *ev, const struct timeval *tv,
  	return (res);
  }
  
