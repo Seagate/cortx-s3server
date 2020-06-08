@@ -4,8 +4,8 @@
 %bcond_without eos_core
 %endif
 
-# eos-core version
-%define h_eoscore_version %(rpm -q --queryformat '%{VERSION}-%{RELEASE}' eos-core)
+# cortx-motr version
+%define h_eoscore_version %(rpm -q --queryformat '%{VERSION}-%{RELEASE}' cortx-motr)
 
 # build number
 %define build_num  %( test -n "$build_number" && echo "$build_number" || echo 1 )
@@ -27,10 +27,10 @@
 #%global py36_sitelib %{_libdir}/python%{py_ver}
 %global py36_sitelib /usr/lib/python%{py_ver}/site-packages
 
-Name:       eos-s3server
+Name:       cortx-s3server
 Version:    %{_s3_version}
 Release:    %{build_num}_%{_s3_git_ver}_%{?dist:el7}
-Summary:    EOS s3server
+Summary:    CORTX s3server
 
 Group:      Development/Tools
 License:    Seagate
@@ -42,7 +42,7 @@ BuildRequires: bazel
 BuildRequires: cmake >= 2.8.12
 BuildRequires: libtool
 %if %{with eos_core}
-BuildRequires: eos-core eos-core-devel
+BuildRequires: cortx-motr cortx-motr-devel
 %endif
 BuildRequires: openssl openssl-devel
 BuildRequires: java-1.8.0-openjdk
@@ -57,7 +57,7 @@ BuildRequires: glog glog-devel
 BuildRequires: gtest gtest-devel
 BuildRequires: gmock gmock-devel
 BuildRequires: git git-clang-format
-BuildRequires: log4cxx_eos log4cxx_eos-devel
+BuildRequires: log4cxx_cortx log4cxx_cortx-devel
 BuildRequires: hiredis hiredis-devel
 # Required by S3 background delete based on python
 BuildRequires: python3-rpm-macros
@@ -73,7 +73,7 @@ BuildRequires: python-keyring python-futures
 # TODO for rhel 8
 
 %if %{with eos_core}
-Requires: eos-core = %{h_eoscore_version}
+Requires: cortx-motr = %{h_eoscore_version}
 %endif
 Requires: libxml2
 Requires: libyaml
@@ -83,7 +83,7 @@ Requires: yaml-cpp
 Requires: gflags
 Requires: glog
 Requires: pkgconfig
-Requires: log4cxx_eos log4cxx_eos-devel
+Requires: log4cxx_cortx log4cxx_cortx-devel
 # Required by S3 background delete based on python
 Requires: python36
 Requires: python%{py_short_ver}-yaml
@@ -98,7 +98,7 @@ Requires: PyYAML
 Requires: hiredis
 
 %description
-S3 server provides S3 REST API interface support for Mero object storage.
+S3 server provides S3 REST API interface support for Motr object storage.
 
 %prep
 %setup -n %{name}-%{version}-%{_s3_git_ver}
