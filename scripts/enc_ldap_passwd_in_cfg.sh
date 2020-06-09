@@ -4,7 +4,7 @@ set -e
 
 # This script can be used to update encrpted password in authserver.properties
 # file. Performs below steps
-# 1. Encrypts given password using /opt/seagate/auth/AuthPassEncryptCLI-1.0-0.jar
+# 1. Encrypts given password using /opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar
 # 2. Updates encrypted password in given authserver.properites file
 # 3. Updates ldap password if provided by user
 
@@ -24,7 +24,7 @@ fi
 
 ldap_passwd=
 auth_properties=
-encrypt_cli=/opt/seagate/auth/AuthPassEncryptCLI-1.0-0.jar
+encrypt_cli=/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar
 change_ldap_passwd=false
 
 # read the options

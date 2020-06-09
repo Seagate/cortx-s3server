@@ -82,7 +82,7 @@ S3cmdTest('s3cmd can upload 18MB file').upload_test("seagatebucket", "18MBfile",
 S3cmdTest('s3cmd should not have objects after rollback').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('18MBfile')
 S3fiTest('s3cmd can disable Fault injection').disable_fi("clovis_idx_create_fail").execute_test().command_is_successful()
 
-is_object_leak_track_enabled=yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"]
+is_object_leak_track_enabled=yaml.load(open("/opt/seagate/cortx/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"]
 fi_off="2"
 if is_object_leak_track_enabled:
         fi_off="4"

@@ -16,7 +16,7 @@ $(SERVER): $(THIS_DIR)/server.cpp
 	-I $(BUILD_ROOT_DIR)/third_party/libevent/s3_dist/include \
 	-L $(BUILD_ROOT_DIR)/third_party/libevent/s3_dist/lib \
 	-lgflags -levent \
-	-Wl,-rpath,/opt/seagate/s3/libevent
+	-Wl,-rpath,/opt/seagate/cortx/s3/libevent
 
 $(CLIENT): $(THIS_DIR)/client.cpp
 	g++ -o $@ --std=c++11 -lgflags $<

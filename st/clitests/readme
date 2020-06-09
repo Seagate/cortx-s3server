@@ -88,7 +88,7 @@ How to run?
 - Add s3server binary path to sudo secure path
   - Run visudo to edit the /etc/sudoers file
   - Find line with variable "secure_path". Edit to add below path
-  - /opt/seagate/s3/bin
+  - /opt/seagate/cortx/s3/bin
 - cd to clitests directory
 - Note: For Dev environment, we use mero libs built from the source code. So before executing
   standalone systems tests or runallsystest.sh, export LD_LIBRARY_PATH variable pointing it

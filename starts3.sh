@@ -1,7 +1,7 @@
 #!/bin/sh -x
 
 # Start the s3server
-export PATH=$PATH:/opt/seagate/s3/bin
+export PATH=$PATH:/opt/seagate/cortx/s3/bin
 if [ $# -eq 0 ]; then
   systemctl start s3server
 else

@@ -128,41 +128,41 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
-%config(noreplace) /opt/seagate/auth/resources/authserver.properties
-%config(noreplace) /opt/seagate/auth/resources/authserver-log4j2.xml
-%config(noreplace) /opt/seagate/auth/resources/authencryptcli-log4j2.xml
-%config(noreplace) /opt/seagate/auth/resources/keystore.properties
-%config(noreplace) /opt/seagate/auth/resources/static/saml-metadata.xml
-%config(noreplace) /opt/seagate/auth/resources/s3authserver.jks
-%config(noreplace) /opt/seagate/s3/conf/s3config.yaml
-%config(noreplace) /opt/seagate/s3/conf/s3server_audit_log.properties
-%config(noreplace) /opt/seagate/s3/conf/s3_obj_layout_mapping.yaml
-%config(noreplace) /opt/seagate/s3/conf/s3stats-whitelist.yaml
-%config(noreplace) /opt/seagate/auth/resources/defaultAclTemplate.xml
-%config(noreplace) /opt/seagate/auth/resources/AmazonS3.xsd
-%config(noreplace) /opt/seagate/s3/s3backgrounddelete/config.yaml
+%config(noreplace) /opt/seagate/cortx/auth/resources/authserver.properties
+%config(noreplace) /opt/seagate/cortx/auth/resources/authserver-log4j2.xml
+%config(noreplace) /opt/seagate/cortx/auth/resources/authencryptcli-log4j2.xml
+%config(noreplace) /opt/seagate/cortx/auth/resources/keystore.properties
+%config(noreplace) /opt/seagate/cortx/auth/resources/static/saml-metadata.xml
+%config(noreplace) /opt/seagate/cortx/auth/resources/s3authserver.jks
+%config(noreplace) /opt/seagate/cortx/s3/conf/s3config.yaml
+%config(noreplace) /opt/seagate/cortx/s3/conf/s3server_audit_log.properties
+%config(noreplace) /opt/seagate/cortx/s3/conf/s3_obj_layout_mapping.yaml
+%config(noreplace) /opt/seagate/cortx/s3/conf/s3stats-whitelist.yaml
+%config(noreplace) /opt/seagate/cortx/auth/resources/defaultAclTemplate.xml
+%config(noreplace) /opt/seagate/cortx/auth/resources/AmazonS3.xsd
+%config(noreplace) /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
 
-%attr(4600, root, root) /opt/seagate/auth/resources/authserver.properties
-%attr(4600, root, root) /opt/seagate/auth/resources/authserver-log4j2.xml
-%attr(4600, root, root) /opt/seagate/auth/resources/authencryptcli-log4j2.xml
-%attr(4600, root, root) /opt/seagate/auth/resources/keystore.properties
-%attr(4600, root, root) /opt/seagate/auth/resources/defaultAclTemplate.xml
-%attr(4600, root, root) /opt/seagate/auth/resources/AmazonS3.xsd
-%attr(4600, root, root) /opt/seagate/auth/resources/s3authserver.jks
+%attr(4600, root, root) /opt/seagate/cortx/auth/resources/authserver.properties
+%attr(4600, root, root) /opt/seagate/cortx/auth/resources/authserver-log4j2.xml
+%attr(4600, root, root) /opt/seagate/cortx/auth/resources/authencryptcli-log4j2.xml
+%attr(4600, root, root) /opt/seagate/cortx/auth/resources/keystore.properties
+%attr(4600, root, root) /opt/seagate/cortx/auth/resources/defaultAclTemplate.xml
+%attr(4600, root, root) /opt/seagate/cortx/auth/resources/AmazonS3.xsd
+%attr(4600, root, root) /opt/seagate/cortx/auth/resources/s3authserver.jks
 
-%dir /opt/seagate/
-%dir /opt/seagate/auth
-%dir /opt/seagate/auth/resources
-%dir /opt/seagate/auth/resources/static
-%dir /opt/seagate/s3
-%dir /opt/seagate/s3/addb-plugin
-%dir /opt/seagate/s3/bin
-%dir /opt/seagate/s3/conf
-%dir /opt/seagate/s3/libevent
-%dir /opt/seagate/s3/libevent/pkgconfig
-%dir /opt/seagate/s3/nodejs
-%dir /opt/seagate/s3/resources
-%dir /opt/seagate/s3/install/haproxy
+%dir /opt/seagate/cortx/
+%dir /opt/seagate/cortx/auth
+%dir /opt/seagate/cortx/auth/resources
+%dir /opt/seagate/cortx/auth/resources/static
+%dir /opt/seagate/cortx/s3
+%dir /opt/seagate/cortx/s3/addb-plugin
+%dir /opt/seagate/cortx/s3/bin
+%dir /opt/seagate/cortx/s3/conf
+%dir /opt/seagate/cortx/s3/libevent
+%dir /opt/seagate/cortx/s3/libevent/pkgconfig
+%dir /opt/seagate/cortx/s3/nodejs
+%dir /opt/seagate/cortx/s3/resources
+%dir /opt/seagate/cortx/s3/install/haproxy
 %dir /var/log/seagate/
 %dir /var/log/seagate/auth
 %dir /var/log/seagate/s3
@@ -171,95 +171,95 @@ rm -rf %{buildroot}
 /lib/systemd/system/s3server@.service
 /lib/systemd/system/s3backgroundproducer.service
 /lib/systemd/system/s3backgroundconsumer.service
-/opt/seagate/auth/AuthServer-1.0-0.jar
-/opt/seagate/auth/AuthPassEncryptCLI-1.0-0.jar
-/opt/seagate/auth/startauth.sh
-/opt/seagate/auth/scripts/enc_ldap_passwd_in_cfg.sh
-/opt/seagate/auth/scripts/change_ldap_passwd.ldif
-/opt/seagate/auth/resources/s3authserver.jks
-/opt/seagate/s3/scripts/s3-sanity-test.sh
-/opt/seagate/s3/scripts/s3_bundle_generate.sh
-/opt/seagate/s3/docs/openldap_backup_readme
-/opt/seagate/s3/docs/s3_log_rotation_guide.txt
-/opt/seagate/s3/addb-plugin/libs3addbplugin.so
-/opt/seagate/s3/bin/cloviskvscli
-/opt/seagate/s3/bin/s3server
-/opt/seagate/s3/libevent/libevent-2.1.so.6
-/opt/seagate/s3/libevent/libevent-2.1.so.6.0.4
-/opt/seagate/s3/libevent/libevent.a
-/opt/seagate/s3/libevent/libevent.la
-/opt/seagate/s3/libevent/libevent.so
-/opt/seagate/s3/libevent/libevent_core-2.1.so.6
-/opt/seagate/s3/libevent/libevent_core-2.1.so.6.0.4
-/opt/seagate/s3/libevent/libevent_core.a
-/opt/seagate/s3/libevent/libevent_core.la
-/opt/seagate/s3/libevent/libevent_core.so
-/opt/seagate/s3/libevent/libevent_extra-2.1.so.6
-/opt/seagate/s3/libevent/libevent_extra-2.1.so.6.0.4
-/opt/seagate/s3/libevent/libevent_extra.a
-/opt/seagate/s3/libevent/libevent_extra.la
-/opt/seagate/s3/libevent/libevent_extra.so
-/opt/seagate/s3/libevent/libevent_openssl-2.1.so.6
-/opt/seagate/s3/libevent/libevent_openssl-2.1.so.6.0.4
-/opt/seagate/s3/libevent/libevent_openssl.a
-/opt/seagate/s3/libevent/libevent_openssl.la
-/opt/seagate/s3/libevent/libevent_openssl.so
-/opt/seagate/s3/libevent/libevent_pthreads-2.1.so.6
-/opt/seagate/s3/libevent/libevent_pthreads-2.1.so.6.0.4
-/opt/seagate/s3/libevent/libevent_pthreads.a
-/opt/seagate/s3/libevent/libevent_pthreads.la
-/opt/seagate/s3/libevent/libevent_pthreads.so
-/opt/seagate/s3/libevent/pkgconfig/libevent.pc
-/opt/seagate/s3/libevent/pkgconfig/libevent_openssl.pc
-/opt/seagate/s3/libevent/pkgconfig/libevent_pthreads.pc
-/opt/seagate/s3/libevent/pkgconfig/libevent_core.pc
-/opt/seagate/s3/libevent/pkgconfig/libevent_extra.pc
-/opt/seagate/s3/install/haproxy/503.http
-/opt/seagate/s3/install/haproxy/haproxy_osver7.cfg
-/opt/seagate/s3/install/haproxy/haproxy_osver8.cfg
-/opt/seagate/s3/install/haproxy/logrotate/haproxy
-/opt/seagate/s3/install/haproxy/logrotate/logrotate
-/opt/seagate/s3/install/haproxy/rsyslog.d/haproxy.conf
-/opt/seagate/s3/install/haproxy/ssl/s3.seagate.com.crt
-/opt/seagate/s3/install/haproxy/ssl/s3.seagate.com.pem
-/opt/seagate/s3/install/haproxy/503.http
-/opt/seagate/s3/install/ldap/syncprov_mod.ldif
-/opt/seagate/s3/install/ldap/syncprov.ldif
-/opt/seagate/s3/install/ldap/replicate.ldif
-/opt/seagate/s3/install/ldap/check_ldap_replication.sh
-/opt/seagate/s3/install/ldap/create_replication_account.ldif
-/opt/seagate/s3/install/ldap/replication/syncprov_mod.ldif
-/opt/seagate/s3/install/ldap/replication/olcserverid.ldif
-/opt/seagate/s3/install/ldap/replication/syncprov.ldif
-/opt/seagate/s3/install/ldap/replication/data.ldif
-/opt/seagate/s3/install/ldap/replication/config.ldif
-/opt/seagate/s3/install/ldap/replication/syncprov_config.ldif
-/opt/seagate/s3/install/ldap/slapdlog.ldif
-/opt/seagate/s3/install/ldap/s3slapdindex.ldif
-/opt/seagate/s3/install/ldap/rsyslog.d/slapdlog.conf
-/opt/seagate/s3/install/ldap/background_delete_account.ldif
-/opt/seagate/s3/install/ldap/create_background_delete_account.sh
-/opt/seagate/s3/install/ldap/delete_background_delete_account.sh
-/opt/seagate/s3/install/ldap/cfg_ldap.ldif
-/opt/seagate/s3/install/ldap/cn={1}s3user.ldif
-/opt/seagate/s3/install/ldap/iam-admin-access.ldif
-/opt/seagate/s3/install/ldap/iam-admin.ldif
-/opt/seagate/s3/install/ldap/iam-constraints.ldif
-/opt/seagate/s3/install/ldap/ldap-init.ldif
-/opt/seagate/s3/install/ldap/olcDatabase={2}mdb.ldif
-/opt/seagate/s3/install/ldap/ppolicy-default.ldif
-/opt/seagate/s3/install/ldap/ppolicymodule.ldif
-/opt/seagate/s3/install/ldap/ppolicyoverlay.ldif
-/opt/seagate/s3/install/ldap/setup_ldap.sh
-/opt/seagate/s3/resources/s3_error_messages.json
-/opt/seagate/s3/s3startsystem.sh
-/opt/seagate/s3/s3stopsystem.sh
-/opt/seagate/eos/s3server/reset/precheck.py
-/opt/seagate/eos/s3server/reset/reset_s3.sh
-/opt/seagate/eos/s3server/conf/setup.yaml
-%attr(755, root, root) /opt/seagate/eos/s3server/bin/s3_setup
-%attr(755, root, root) /opt/seagate/s3/s3backgrounddelete/s3backgroundconsumer
-%attr(755, root, root) /opt/seagate/s3/s3backgrounddelete/s3backgroundproducer
+/opt/seagate/cortx/auth/AuthServer-1.0-0.jar
+/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar
+/opt/seagate/cortx/auth/startauth.sh
+/opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh
+/opt/seagate/cortx/auth/scripts/change_ldap_passwd.ldif
+/opt/seagate/cortx/auth/resources/s3authserver.jks
+/opt/seagate/cortx/s3/scripts/s3-sanity-test.sh
+/opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh
+/opt/seagate/cortx/s3/docs/openldap_backup_readme
+/opt/seagate/cortx/s3/docs/s3_log_rotation_guide.txt
+/opt/seagate/cortx/s3/addb-plugin/libs3addbplugin.so
+/opt/seagate/cortx/s3/bin/cloviskvscli
+/opt/seagate/cortx/s3/bin/s3server
+/opt/seagate/cortx/s3/libevent/libevent-2.1.so.6
+/opt/seagate/cortx/s3/libevent/libevent-2.1.so.6.0.4
+/opt/seagate/cortx/s3/libevent/libevent.a
+/opt/seagate/cortx/s3/libevent/libevent.la
+/opt/seagate/cortx/s3/libevent/libevent.so
+/opt/seagate/cortx/s3/libevent/libevent_core-2.1.so.6
+/opt/seagate/cortx/s3/libevent/libevent_core-2.1.so.6.0.4
+/opt/seagate/cortx/s3/libevent/libevent_core.a
+/opt/seagate/cortx/s3/libevent/libevent_core.la
+/opt/seagate/cortx/s3/libevent/libevent_core.so
+/opt/seagate/cortx/s3/libevent/libevent_extra-2.1.so.6
+/opt/seagate/cortx/s3/libevent/libevent_extra-2.1.so.6.0.4
+/opt/seagate/cortx/s3/libevent/libevent_extra.a
+/opt/seagate/cortx/s3/libevent/libevent_extra.la
+/opt/seagate/cortx/s3/libevent/libevent_extra.so
+/opt/seagate/cortx/s3/libevent/libevent_openssl-2.1.so.6
+/opt/seagate/cortx/s3/libevent/libevent_openssl-2.1.so.6.0.4
+/opt/seagate/cortx/s3/libevent/libevent_openssl.a
+/opt/seagate/cortx/s3/libevent/libevent_openssl.la
+/opt/seagate/cortx/s3/libevent/libevent_openssl.so
+/opt/seagate/cortx/s3/libevent/libevent_pthreads-2.1.so.6
+/opt/seagate/cortx/s3/libevent/libevent_pthreads-2.1.so.6.0.4
+/opt/seagate/cortx/s3/libevent/libevent_pthreads.a
+/opt/seagate/cortx/s3/libevent/libevent_pthreads.la
+/opt/seagate/cortx/s3/libevent/libevent_pthreads.so
+/opt/seagate/cortx/s3/libevent/pkgconfig/libevent.pc
+/opt/seagate/cortx/s3/libevent/pkgconfig/libevent_openssl.pc
+/opt/seagate/cortx/s3/libevent/pkgconfig/libevent_pthreads.pc
+/opt/seagate/cortx/s3/libevent/pkgconfig/libevent_core.pc
+/opt/seagate/cortx/s3/libevent/pkgconfig/libevent_extra.pc
+/opt/seagate/cortx/s3/install/haproxy/503.http
+/opt/seagate/cortx/s3/install/haproxy/haproxy_osver7.cfg
+/opt/seagate/cortx/s3/install/haproxy/haproxy_osver8.cfg
+/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy
+/opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate
+/opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf
+/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.crt
+/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem
+/opt/seagate/cortx/s3/install/haproxy/503.http
+/opt/seagate/cortx/s3/install/ldap/syncprov_mod.ldif
+/opt/seagate/cortx/s3/install/ldap/syncprov.ldif
+/opt/seagate/cortx/s3/install/ldap/replicate.ldif
+/opt/seagate/cortx/s3/install/ldap/check_ldap_replication.sh
+/opt/seagate/cortx/s3/install/ldap/create_replication_account.ldif
+/opt/seagate/cortx/s3/install/ldap/replication/syncprov_mod.ldif
+/opt/seagate/cortx/s3/install/ldap/replication/olcserverid.ldif
+/opt/seagate/cortx/s3/install/ldap/replication/syncprov.ldif
+/opt/seagate/cortx/s3/install/ldap/replication/data.ldif
+/opt/seagate/cortx/s3/install/ldap/replication/config.ldif
+/opt/seagate/cortx/s3/install/ldap/replication/syncprov_config.ldif
+/opt/seagate/cortx/s3/install/ldap/slapdlog.ldif
+/opt/seagate/cortx/s3/install/ldap/s3slapdindex.ldif
+/opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf
+/opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
+/opt/seagate/cortx/s3/install/ldap/create_background_delete_account.sh
+/opt/seagate/cortx/s3/install/ldap/delete_background_delete_account.sh
+/opt/seagate/cortx/s3/install/ldap/cfg_ldap.ldif
+/opt/seagate/cortx/s3/install/ldap/cn={1}s3user.ldif
+/opt/seagate/cortx/s3/install/ldap/iam-admin-access.ldif
+/opt/seagate/cortx/s3/install/ldap/iam-admin.ldif
+/opt/seagate/cortx/s3/install/ldap/iam-constraints.ldif
+/opt/seagate/cortx/s3/install/ldap/ldap-init.ldif
+/opt/seagate/cortx/s3/install/ldap/olcDatabase={2}mdb.ldif
+/opt/seagate/cortx/s3/install/ldap/ppolicy-default.ldif
+/opt/seagate/cortx/s3/install/ldap/ppolicymodule.ldif
+/opt/seagate/cortx/s3/install/ldap/ppolicyoverlay.ldif
+/opt/seagate/cortx/s3/install/ldap/setup_ldap.sh
+/opt/seagate/cortx/s3/resources/s3_error_messages.json
+/opt/seagate/cortx/s3/s3startsystem.sh
+/opt/seagate/cortx/s3/s3stopsystem.sh
+/opt/seagate/cortx/s3/reset/precheck.py
+/opt/seagate/cortx/s3/reset/reset_s3.sh
+/opt/seagate/cortx/s3/conf/setup.yaml
+%attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_setup
+%attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer
+%attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer
 /etc/rsyslog.d/rsyslog-tcp-audit.conf
 /etc/rsyslog.d/elasticsearch.conf
 /etc/keepalived/keepalived.conf.master
@@ -273,8 +273,8 @@ rm -rf %{buildroot}
 %exclude %{py36_sitelib}/s3backgrounddelete/*.py
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundconsumer
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundproducer
-%exclude /opt/seagate/eos/s3server/reset/precheck.pyc
-%exclude /opt/seagate/eos/s3server/reset/precheck.pyo
+%exclude /opt/seagate/cortx/s3/reset/precheck.pyc
+%exclude /opt/seagate/cortx/s3/reset/precheck.pyo
 
 %post
 systemctl daemon-reload

@@ -25,17 +25,16 @@ else
 fi
 
 INSTALL_PREFIX=$1
-AUTH_INSTALL_LOCATION=$INSTALL_PREFIX/opt/seagate/auth
-S3_INSTALL_LOCATION=$INSTALL_PREFIX/opt/seagate/s3
-S3_CONFIG_FILE_LOCATION=$INSTALL_PREFIX/opt/seagate/s3/conf
+AUTH_INSTALL_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/auth
+S3_INSTALL_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/s3
+S3_CONFIG_FILE_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/s3/conf
 S3_LOG_ROTATE_FILE_LOCATION=$INSTALL_PREFIX/etc/cron.hourly
 SERVICE_FILE_LOCATION=$INSTALL_PREFIX/lib/systemd/system
 LOG_DIR_LOCATION=$INSTALL_PREFIX/var/log/seagate
-NODEJS_DIR_LOCATION=$INSTALL_PREFIX/opt/seagate/s3/nodejs
+NODEJS_DIR_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/s3/nodejs
 RSYSLOG_CFG_DIR_LOCATION=$INSTALL_PREFIX/etc/rsyslog.d
 LOGROTATE_CFG_DIR_LOCATION=$INSTALL_PREFIX/etc/logrotate.d/
 KEEPALIVED_CFG_DIR_LOCATION=$INSTALL_PREFIX/etc/keepalived
-S3_PROVISIONER_LOCATION=$INSTALL_PREFIX/opt/seagate/eos/s3server
 
 rm -rf $AUTH_INSTALL_LOCATION
 rm -rf $S3_INSTALL_LOCATION
@@ -53,9 +52,9 @@ mkdir -p $S3_INSTALL_LOCATION/install/ldap/replication
 mkdir -p $S3_INSTALL_LOCATION/install/haproxy
 mkdir -p $S3_INSTALL_LOCATION/docs
 mkdir -p $S3_INSTALL_LOCATION/s3backgrounddelete
-mkdir -p $S3_PROVISIONER_LOCATION/conf
-mkdir -p $S3_PROVISIONER_LOCATION/bin
-mkdir -p $S3_PROVISIONER_LOCATION/reset
+mkdir -p $S3_INSTALL_LOCATION/conf
+mkdir -p $S3_INSTALL_LOCATION/bin
+mkdir -p $S3_INSTALL_LOCATION/reset
 mkdir -p $S3_CONFIG_FILE_LOCATION
 mkdir -p $S3_LOG_ROTATE_FILE_LOCATION
 mkdir -p $KEEPALIVED_CFG_DIR_LOCATION
@@ -72,13 +71,13 @@ mkdir -p $LOGROTATE_CFG_DIR_LOCATION
 cp -R scripts/haproxy/* $S3_INSTALL_LOCATION/install/haproxy
 
 # Copy the provisioning config
-cp scripts/provisioning/setup.yaml $S3_PROVISIONER_LOCATION/conf
+cp scripts/provisioning/setup.yaml $S3_INSTALL_LOCATION/conf
 
 # Copy the provisioning script
-cp scripts/provisioning/s3_setup $S3_PROVISIONER_LOCATION/bin
+cp scripts/provisioning/s3_setup $S3_INSTALL_LOCATION/bin
 
 # Copy the S3 reset scripts
-cp scripts/reset/* $S3_PROVISIONER_LOCATION/reset
+cp scripts/reset/* $S3_INSTALL_LOCATION/reset
 
 # Copy the s3 dependencies
 cp -R third_party/libevent/s3_dist/lib/* $S3_INSTALL_LOCATION/libevent/

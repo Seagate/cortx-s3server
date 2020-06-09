@@ -9,4 +9,4 @@ fi
 
 ldap_passwd=$1
 
-ldapadd -w $ldap_passwd -x -D "cn=sgiamadmin,dc=seagate,dc=com" -f /opt/seagate/s3/install/ldap/background_delete_account.ldif -H ldapi:///
+ldapadd -w $ldap_passwd -x -D "cn=sgiamadmin,dc=seagate,dc=com" -f /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif -H ldapi:///
