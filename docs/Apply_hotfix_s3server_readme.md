@@ -5,25 +5,25 @@
 - e.g. if s3.config file is newly added or user want this file will not replace at the time for s3 rpm update then
   following file path need to be add in s3rpm.spec with noreplace tag.
 
-	%config(noreplace) /opt/seagate/s3/conf/s3.config
+	%config(noreplace) /opt/seagate/cortx/s3/conf/s3.config
 
 - %config(noreplace) will not replace your config file if you changed it.
   If you did not touch the config file, it will always be overwritten with the new config file.
 
 - Following config files currently included for not to overwrite.
 
-	%config(noreplace) /opt/seagate/auth/resources/authserver.properties
-	%config(noreplace) /opt/seagate/auth/resources/authserver-log4j2.xml
-	%config(noreplace) /opt/seagate/auth/resources/authencryptcli-log4j2.xml
-	%config(noreplace) /opt/seagate/auth/resources/keystore.properties
-	%config(noreplace) /opt/seagate/auth/resources/static/saml-metadata.xml
-	%config(noreplace) /opt/seagate/s3/conf/s3config.yaml
-	%config(noreplace) /opt/seagate/s3/conf/s3server_audit_log.properties
-	%config(noreplace) /opt/seagate/s3/conf/s3_obj_layout_mapping.yaml
-	%config(noreplace) /opt/seagate/s3/conf/s3stats-whitelist.yaml
-	%config(noreplace) /opt/seagate/auth/resources/defaultAclTemplate.xml
-	%config(noreplace) /opt/seagate/auth/resources/AmazonS3.xsd
-	%config(noreplace) /opt/seagate/s3/s3backgrounddelete/config.yaml
+	%config(noreplace) /opt/seagate/cortx/auth/resources/authserver.properties
+	%config(noreplace) /opt/seagate/cortx/auth/resources/authserver-log4j2.xml
+	%config(noreplace) /opt/seagate/cortx/auth/resources/authencryptcli-log4j2.xml
+	%config(noreplace) /opt/seagate/cortx/auth/resources/keystore.properties
+	%config(noreplace) /opt/seagate/cortx/auth/resources/static/saml-metadata.xml
+	%config(noreplace) /opt/seagate/cortx/s3/conf/s3config.yaml
+	%config(noreplace) /opt/seagate/cortx/s3/conf/s3server_audit_log.properties
+	%config(noreplace) /opt/seagate/cortx/s3/conf/s3_obj_layout_mapping.yaml
+	%config(noreplace) /opt/seagate/cortx/s3/conf/s3stats-whitelist.yaml
+	%config(noreplace) /opt/seagate/cortx/auth/resources/defaultAclTemplate.xml
+	%config(noreplace) /opt/seagate/cortx/auth/resources/AmazonS3.xsd
+	%config(noreplace) /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
 
 
 # Before rpm upadtes steps:
@@ -32,9 +32,9 @@
 # Config files backup (optional):
 
         1. User can take the following folder backup before update of the s3 server rpm.
-                 /opt/seagate/auth/resources/
-                 /opt/seagate/s3/conf/
-                 /opt/seagate/s3/s3backgrounddelete/
+                 /opt/seagate/cortx/auth/resources/
+                 /opt/seagate/cortx/s3/conf/
+                 /opt/seagate/cortx/s3/s3backgrounddelete/
 
 # How to Upgrade a s3 server RPM Package:
 

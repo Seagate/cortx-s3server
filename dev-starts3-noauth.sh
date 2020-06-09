@@ -83,7 +83,7 @@ s3_log_dir="/var/log/seagate/s3/"
 mkdir -p $s3_log_dir
 
 # Start the s3server
-export PATH=$PATH:/opt/seagate/s3/bin
+export PATH=$PATH:/opt/seagate/cortx/s3/bin
 counter=1
 
 while [[ $counter -le $num_instances ]]

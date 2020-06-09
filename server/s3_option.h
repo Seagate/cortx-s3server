@@ -249,9 +249,9 @@ class S3Option {
     auth_ip_addr = FLAGS_authhost;
     auth_port = FLAGS_authport;
 
-    option_file = "/opt/seagate/s3/conf/s3config.yaml";
+    option_file = "/opt/seagate/cortx/s3/conf/s3config.yaml";
     layout_recommendation_file =
-        "/opt/seagate/s3/conf/s3_obj_layout_mapping.yaml";
+        "/opt/seagate/cortx/s3/conf/s3_obj_layout_mapping.yaml";
 
     s3_daemon_dir = "/";
     s3_daemon_redirect = 1;
@@ -270,7 +270,8 @@ class S3Option {
     statsd_ip_addr = FLAGS_statsd_host;
     statsd_port = FLAGS_statsd_port;
     statsd_max_send_retry = 3;
-    stats_whitelist_filename = "/opt/seagate/s3/conf/s3stats-whitelist.yaml";
+    stats_whitelist_filename =
+        "/opt/seagate/cortx/s3/conf/s3stats-whitelist.yaml";
     perf_stats_inout_bytes_interval_msec = 1000;
 
     redis_srv_addr = "127.0.0.1";

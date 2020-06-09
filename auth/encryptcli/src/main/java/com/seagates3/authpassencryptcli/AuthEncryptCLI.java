@@ -52,7 +52,8 @@ import com.seagates3.exception.CLIInitializationException;
  */
 public class AuthEncryptCLI {
 
-    public static String AUTH_INSTALL_DIR = "/opt/seagate/auth";
+  public
+   static String AUTH_INSTALL_DIR = "/opt/seagate/cortx/auth";
     private static Logger logger;
 
     /**

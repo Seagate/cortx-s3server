@@ -141,7 +141,7 @@ then
     $USE_SUDO yum -q list installed valgrind || $USE_SUDO yum -y install valgrind || (echo "Valgrind package cannot be installed" && exit 1)
 fi
 
-export PATH=/opt/seagate/s3/bin/:$PATH
+export PATH=/opt/seagate/cortx/s3/bin/:$PATH
 echo $PATH
 
 #git clone --recursive http://es-gerrit.xyus.xyratex.com:8080/s3server
@@ -213,19 +213,19 @@ fi
 # Configuration setting for using HTTP connection
 if [ $use_http_client -eq 1 ]
 then
-  $USE_SUDO sed -i 's/S3_ENABLE_AUTH_SSL:.*$/S3_ENABLE_AUTH_SSL: false/g' /opt/seagate/s3/conf/s3config.yaml
-  $USE_SUDO sed -i 's/S3_AUTH_PORT:.*$/S3_AUTH_PORT: 9085/g' /opt/seagate/s3/conf/s3config.yaml
-  $USE_SUDO sed -i 's/enableSSLToLdap=.*$/enableSSLToLdap=false/g' /opt/seagate/auth/resources/authserver.properties
-  $USE_SUDO sed -i 's/enable_https=.*$/enable_https=false/g' /opt/seagate/auth/resources/authserver.properties
-  $USE_SUDO sed -i 's/enableHttpsToS3=.*$/enableHttpsToS3=false/g' /opt/seagate/auth/resources/authserver.properties
+  $USE_SUDO sed -i 's/S3_ENABLE_AUTH_SSL:.*$/S3_ENABLE_AUTH_SSL: false/g' /opt/seagate/cortx/s3/conf/s3config.yaml
+  $USE_SUDO sed -i 's/S3_AUTH_PORT:.*$/S3_AUTH_PORT: 9085/g' /opt/seagate/cortx/s3/conf/s3config.yaml
+  $USE_SUDO sed -i 's/enableSSLToLdap=.*$/enableSSLToLdap=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
+  $USE_SUDO sed -i 's/enable_https=.*$/enable_https=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
+  $USE_SUDO sed -i 's/enableHttpsToS3=.*$/enableHttpsToS3=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
 fi
 
 # Configuration setting for ipv6 connection
 if [ $use_ipv6 -eq 1 ]
 then
-  $USE_SUDO sed -i 's/S3_SERVER_IPV4_BIND_ADDR:.*$/S3_SERVER_IPV4_BIND_ADDR: ~/g' /opt/seagate/s3/conf/s3config.yaml
-  $USE_SUDO sed -i 's/S3_SERVER_IPV6_BIND_ADDR:.*$/S3_SERVER_IPV6_BIND_ADDR: ::\/128/g' /opt/seagate/s3/conf/s3config.yaml
-  $USE_SUDO sed -i 's/\(\s*S3_AUTH_IP_ADDR:\s*\)ipv4:[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\(\s*.*\)/\1ipv6:::1\2/g' /opt/seagate/s3/conf/s3config.yaml
+  $USE_SUDO sed -i 's/S3_SERVER_IPV4_BIND_ADDR:.*$/S3_SERVER_IPV4_BIND_ADDR: ~/g' /opt/seagate/cortx/s3/conf/s3config.yaml
+  $USE_SUDO sed -i 's/S3_SERVER_IPV6_BIND_ADDR:.*$/S3_SERVER_IPV6_BIND_ADDR: ::\/128/g' /opt/seagate/cortx/s3/conf/s3config.yaml
+  $USE_SUDO sed -i 's/\(\s*S3_AUTH_IP_ADDR:\s*\)ipv4:[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\(\s*.*\)/\1ipv6:::1\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
   # backup
   $USE_SUDO \cp /etc/haproxy/haproxy.cfg{,.bak}
   $USE_SUDO sed -i 's/0\.0\.0\.0/::/g' /etc/haproxy/haproxy.cfg
@@ -234,7 +234,7 @@ fi
 
 if [ $s3server_enable_ssl -eq 1 ]
 then
-  $USE_SUDO sed -i 's/S3_SERVER_SSL_ENABLE:.*$/S3_SERVER_SSL_ENABLE: true/g' /opt/seagate/s3/conf/s3config.yaml
+  $USE_SUDO sed -i 's/S3_SERVER_SSL_ENABLE:.*$/S3_SERVER_SSL_ENABLE: true/g' /opt/seagate/cortx/s3/conf/s3config.yaml
   $USE_SUDO sed -i 's/^\(\s*server\s\+s3-instance.*\)\ check/\1 check ssl verify required ca-file \/etc\/ssl\/stx-s3\/s3\/ca.crt/g' /etc/haproxy/haproxy.cfg
   restart_haproxy=1
 fi
@@ -252,10 +252,10 @@ cd $S3_BUILD_DIR
 
 # Ensure correct ldap credentials are present.
 ./scripts/enc_ldap_passwd_in_cfg.sh -l ldapadmin \
-          -p /opt/seagate/auth/resources/authserver.properties
+          -p /opt/seagate/cortx/auth/resources/authserver.properties
 
 # Enable fault injection in AuthServer
-$USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=true/g' /opt/seagate/auth/resources/authserver.properties
+$USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=true/g' /opt/seagate/cortx/auth/resources/authserver.properties
 
 $USE_SUDO systemctl restart s3authserver
 
@@ -354,7 +354,7 @@ else
 fi
 
 # Disable fault injection in AuthServer
-$USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=false/g' /opt/seagate/auth/resources/authserver.properties
+$USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
 
 $USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
 $USE_SUDO ./dev-stops3.sh $callgraph_cmd || echo "Cannot stop s3 services"
@@ -362,7 +362,7 @@ $USE_SUDO ./dev-stops3.sh $callgraph_cmd || echo "Cannot stop s3 services"
 if [ $s3server_enable_ssl -eq 1 ]
 then
   # Restore the config file
-  $USE_SUDO sed -i 's/S3_SERVER_SSL_ENABLE: true/S3_SERVER_SSL_ENABLE: false                          #Enable s3server SSL/g' /opt/seagate/s3/conf/s3config.yaml
+  $USE_SUDO sed -i 's/S3_SERVER_SSL_ENABLE: true/S3_SERVER_SSL_ENABLE: false                          #Enable s3server SSL/g' /opt/seagate/cortx/s3/conf/s3config.yaml
   $USE_SUDO sed -i 's/^\(\s*server\s\+s3-instance.* check\).*$/\1/g' /etc/haproxy/haproxy.cfg
 fi
 

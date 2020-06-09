@@ -51,7 +51,7 @@ cc_binary(
       "-lpthread -ldl -lm -lrt -lmero-helpers MERO_LINK_LIB -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgflags -lhiredis",
       "-pthread -lglog",
-      "-Wl,-rpath,/opt/seagate/s3/libevent",
+      "-Wl,-rpath,/opt/seagate/cortx/s3/libevent",
     ],
 )
 

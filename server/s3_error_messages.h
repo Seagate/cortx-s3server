@@ -59,7 +59,7 @@ class S3ErrorMessages {
   // Loads messages and creates singleton
   static void init_messages(
       std::string config_file =
-          "/opt/seagate/s3/resources/s3_error_messages.json");
+          "/opt/seagate/cortx/s3/resources/s3_error_messages.json");
 
   // Cleans up the singleton instance
   static void finalize();
