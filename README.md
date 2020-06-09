@@ -66,7 +66,7 @@ needs to be executed only once.
 
 The `./rebuildall.sh --no-mero-rpm` command will build third party libs, S3
 server, Auth server, UTs etc. It will also install S3 server, Auth server &
-third party libs at `/opt/seagate` location. To skip installing S3 use
+third party libs at `/opt/seagate/cortx` location. To skip installing S3 use
 --no-install.
 
 Note the option `--no-mero-rpm` passed to the command. It informs the script that
@@ -156,17 +156,17 @@ sudo systemctl stop s3authserver
 ## Running S3 Authserver listening on IPv4 or IPv6 only or both
 
 Enable IPv6 only
-   Set defaultHost value to ::1 or IPv6 address of local machine in /opt/seagate/auth/resources/authserver.properties
+   Set defaultHost value to ::1 or IPv6 address of local machine in /opt/seagate/cortx/auth/resources/authserver.properties
 
    Restart Authserver
 
 Enable IPv4 only
-   Set defaultHost value to 127.0.0.1 or IPv4 address of local machine in /opt/seagate/auth/resources/authserver.properties
+   Set defaultHost value to 127.0.0.1 or IPv4 address of local machine in /opt/seagate/cortx/auth/resources/authserver.properties
 
    Restart Authserver
 
 Enable both IPv6 and IPv4 on dual stack machine
-   Set defaultHost value to 0.0.0.0 in /opt/seagate/auth/resources/authserver.properties
+   Set defaultHost value to 0.0.0.0 in /opt/seagate/cortx/auth/resources/authserver.properties
 
    Restart Authserver
 
@@ -211,7 +211,7 @@ In /etc/haproxy/haproxy.cfg replace line
 server s3-instance-1 0.0.0.0:8081 check
 with
 server s3-instance-1 0.0.0.0:8081 check ssl verify required ca-file /etc/ssl/stx-s3/s3/ca.crt
-In /opt/seagate/s3/conf/s3config.yaml file have option S3_SERVER_SSL_ENABLE
+In /opt/seagate/cortx/s3/conf/s3config.yaml file have option S3_SERVER_SSL_ENABLE
 set to true
 
 
@@ -272,7 +272,7 @@ sudo visudo
 
 # Now add s3server binary path to sudo secure path
 # Find line with variable `secure_path`, append below to the varible
-:/opt/seagate/s3/bin
+:/opt/seagate/cortx/s3/bin
 ```
 
 Now setup to run STs is complete. Other details of ST setup can be found at
@@ -491,7 +491,7 @@ sudo yum install statsd
 ```
 
 By default, Stats feature is disabled. To enable the same, edit the S3 server
-config file /opt/seagate/s3/conf/s3config.yaml & set the S3_ENABLE_STATS to true.
+config file /opt/seagate/cortx/s3/conf/s3config.yaml & set the S3_ENABLE_STATS to true.
 After above config change, s3server needs to be restarted.
 
 Before starting StatsD daemon, select backends to be used. StatsD can send data
@@ -791,7 +791,7 @@ Following settings are responsible for audit logging
 
 ## log4cxx
 
-* S3_AUDIT_LOG_CONFIG: "/opt/seagate/s3/conf/s3server_audit_log.properties"
+* S3_AUDIT_LOG_CONFIG: "/opt/seagate/cortx/s3/conf/s3server_audit_log.properties"
 * S3_AUDIT_LOGGER_POLICY: "log4cxx"
 
 ## syslog

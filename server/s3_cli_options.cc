@@ -20,10 +20,11 @@
 #include "s3_cli_options.h"
 #include "s3_option.h"
 
-DEFINE_string(s3config, "/opt/seagate/s3/conf/s3config.yaml",
+DEFINE_string(s3config, "/opt/seagate/cortx/s3/conf/s3config.yaml",
               "S3 server config file");
 
-DEFINE_string(s3layoutmap, "/opt/seagate/s3/conf/s3_obj_layout_mapping.yaml",
+DEFINE_string(s3layoutmap,
+              "/opt/seagate/cortx/s3/conf/s3_obj_layout_mapping.yaml",
               "S3 Clovis layout mapping file for different object sizes");
 
 DEFINE_string(s3hostv4, "", "S3 server ipv4 bind address");
@@ -34,7 +35,7 @@ DEFINE_int32(merohttpapiport, 7081, "mero http server bind port");
 DEFINE_string(s3pidfile, "/var/run/s3server.pid", "S3 server pid file");
 
 DEFINE_string(audit_config,
-              "/opt/seagate/s3/conf/s3server_audit_log.properties",
+              "/opt/seagate/cortx/s3/conf/s3server_audit_log.properties",
               "S3 Audit log Config Path");
 DEFINE_string(audit_log_dir, "/var/log/seagate/s3", "S3 Audit log Directory");
 DEFINE_string(s3loglevel, "INFO",

@@ -1,7 +1,7 @@
 #!/bin/sh -x
 
 # Start the s3server
-export PATH=$PATH:/opt/seagate/s3/bin
+export PATH=$PATH:/opt/seagate/cortx/s3/bin
 
 # Get local address
 modprobe lnet

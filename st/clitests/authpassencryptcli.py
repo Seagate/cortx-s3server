@@ -8,7 +8,7 @@ from framework import Config
 from framework import logit
 
 class EncryptCLITest(S3PyCliTest):
-    encryptcli_cmd = "java -jar /opt/seagate/auth/AuthPassEncryptCLI-1.0-0.jar"
+    encryptcli_cmd = "java -jar /opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar"
 
     def __init__(self, description):
         super(EncryptCLITest, self).__init__(description)

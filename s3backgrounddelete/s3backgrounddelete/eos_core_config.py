@@ -25,7 +25,7 @@ class EOSCoreConfig(object):
     def _load_and_fetch_config(self):
         """Populate configuration data."""
         conf_home_dir = os.path.join(
-            '/', 'opt', 'seagate', 's3', 's3backgrounddelete')
+            '/', 'opt', 'seagate', 'cortx', 's3', 's3backgrounddelete')
         self._conf_file = os.path.join(conf_home_dir, 'config.yaml')
         if not os.path.isfile(self._conf_file):
             try:
