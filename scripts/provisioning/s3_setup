@@ -129,7 +129,7 @@ cat >/etc/yum.repos.d/releases_eos_mero.repo <<EOL
 [releases_eos_mero]
 baseurl = http://ci-storage.mero.colo.seagate.com/releases/eos/components/dev/centos-7.7.1908/mero/last_successful/
 gpgcheck = 0
-name = Yum repo for mero
+name = Yum repo for motr
 priority = 1
 EOL
 
