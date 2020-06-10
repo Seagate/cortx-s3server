@@ -1,0 +1,10 @@
+#!/usr/bin/python3.6
+
+import sys
+import os
+from s3recovery.main import S3Recovery
+
+#Call s3recovery command interface
+
+cmd = S3Recovery()
+cmd.run()

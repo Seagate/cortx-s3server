@@ -1,0 +1,31 @@
+Tasks supported
+- Detect S3-Metadata corruption
+- Dry run to recovery S3-Metadata corruption
+- Recovery S3-Metadata corruption
+- Recovery S3-Metadata corruption in interactive mode
+
+Python Version 3.6 required.
+
+Installing Python 3.6 and required dependencies
+   yum install wget epel-release
+   yum install python36
+
+S3backgroundelete should be configured
+
+For configuring S3backgroundelete please refer <s3src>/s3backgroundelete/readme.md
+
+Configuring s3recovery tool
+
+Goto <s3src>/s3recovery
+For cleaning
+Run python36 setup.py clean
+
+For building and installing
+Run python36 setup.py build
+    python36 setup.py install
+
+Usage:
+usage: s3recovery [-h] [--dry_run] [--detect_corruption]
+                  [--recover_corruption] [--interactive_recovery]
+
+S3-Metadata recovery tool
