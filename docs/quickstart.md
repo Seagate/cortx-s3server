@@ -49,7 +49,7 @@ Above will run all system test over HTTPS to run over HTTP specify `--use_http`
 haproxy
 s3authserver
 slapd
-eos-core
+cortx-motr
 
 # How to start, stop or check status of s3server dependent processes/daemons:
 ```sh
@@ -65,9 +65,9 @@ systemctl start|stop|status slapd
 ```
 
 # To build s3 rpms on dev setup
-Install eos-core and eos-core-devel
+Install cortx-motr and cortx-motr-devel
 ```sh
-yum install -y eos-core eos-core-devel
+yum install -y cortx-motr cortx-motr-devel
 ```
 
 # To setup rpmbuild VM and Build S3 rpms
@@ -82,9 +82,9 @@ cd <s3 src>
 ./update-hosts.sh
 ```
 
-Install eos-core and eos-core-devel
+Install cortx-motr and cortx-motr-devel
 ```sh
-yum install -y eos-core eos-core-devel
+yum install -y cortx-motr cortx-motr-devel
 ```
 Obtain short git revision to be built.
 ```sh

@@ -1,5 +1,5 @@
 [Unit]
-Description=Mero-S3 Auth Server
+Description=Motr-S3 Auth Server
 
 [Service]
 Type=simple
