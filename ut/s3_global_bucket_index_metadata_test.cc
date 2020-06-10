@@ -27,6 +27,7 @@
 #include "s3_global_bucket_index_metadata.h"
 #include "s3_callback_test_helpers.h"
 #include "s3_test_utils.h"
+#include <json/json.h>
 
 using ::testing::Invoke;
 using ::testing::AtLeast;
@@ -279,12 +280,22 @@ TEST_F(S3GlobalBucketIndexMetadataTest, RemoveFailedToLaunch) {
 }
 
 TEST_F(S3GlobalBucketIndexMetadataTest, ToJson) {
-  mock_json_string.assign(
-      "{\"account_id\":\"12345\",\"account_name\":\"s3_test\","
-      "\"location_constraint\":\"us-west-2\"}\n");
+  std::string actual_json =
+      global_bucket_idx_metadata_under_test_ptr->to_json();
+  Json::Value root;
+  Json::Reader reader;
+  bool isParsingSuccessful = reader.parse(actual_json.c_str(), root);
+  EXPECT_TRUE(isParsingSuccessful);
 
-  EXPECT_STREQ(mock_json_string.c_str(),
-               global_bucket_idx_metadata_under_test_ptr->to_json().c_str());
+  std::string actual_acc_name = root["account_name"].asString();
+  std::string actual_acc_id = root["account_id"].asString();
+  std::string actual_loc = root["location_constraint"].asString();
+  std::string actual_timestamp = root["create_timestamp"].asString();
+
+  EXPECT_STREQ("s3_test", actual_acc_name.c_str());
+  EXPECT_STREQ("12345", actual_acc_id.c_str());
+  EXPECT_STREQ("us-west-2", actual_loc.c_str());
+  EXPECT_STRNE("", actual_timestamp.c_str());
 }
 
 TEST_F(S3GlobalBucketIndexMetadataTest, Save) {
