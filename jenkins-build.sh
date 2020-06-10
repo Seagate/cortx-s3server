@@ -202,7 +202,7 @@ $USE_SUDO ./m0t1fs/../clovis/st/utils/mero_services.sh stop || echo "Cannot stop
 cd $S3_BUILD_DIR
 
 # Clean up mero and S3 log and data dirs
-$USE_SUDO rm -rf /mnt/store/mero/* /var/log/mero/* /var/mero/* \
+$USE_SUDO rm -rf /mnt/store/motr/* /var/log/motr/* /var/motr/* \
                  /var/log/seagate/s3/* /var/log/seagate/auth/server/* \
                  /var/log/seagate/auth/tools/*
 
