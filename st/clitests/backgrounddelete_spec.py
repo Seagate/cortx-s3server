@@ -23,6 +23,7 @@ from s3backgrounddelete.eos_core_config import EOSCoreConfig
 from s3backgrounddelete.eos_core_object_api import EOSCoreObjectApi
 from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
 from s3backgrounddelete.eos_core_error_respose import EOSCoreErrorResponse
+from s3backgrounddelete.eos_core_success_response import EOSCoreSuccessResponse # for recovery tool test, to be removed.
 
 # Run before all to setup the test environment.
 def before_all():
@@ -604,6 +605,16 @@ else:
 # ****** Delete bucket "seagatebucket" using s3-background-delete-svc account*****
 AwsTest('Delete Bucket "seagatebucket"').delete_bucket("seagatebucket")\
    .execute_test().command_is_successful()
+
+# Move this test scenario to separate new spec file
+# TODO: Corruption_detection
+#Test Scenario 8
+replica_bucket_list_index_oid = 'AAAAAAAAAHg=-BQAQAAAAAAA=' # base64 conversion of 0x7800000000000000" and "0x100005
+# Test if Replica of global bucket list index OID present.
+config = EOSCoreConfig()
+status, res = EOSCoreIndexApi(config).head(replica_bucket_list_index_oid)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
 
 #Clear probable delete list index
 s3kvs.clean_all_data()

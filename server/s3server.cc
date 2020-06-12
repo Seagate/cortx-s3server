@@ -67,12 +67,16 @@
 #define OBJECT_PROBABLE_DEAD_OID_LIST_INDEX_OID_U_LO 3
 #define GLOBAL_INSTANCE_INDEX_U_LO 4
 
+#define REPLICA_GLOBAL_BUCKET_LIST_INDEX_OID_U_LO 5
+
 S3Option *g_option_instance = NULL;
 evhtp_ssl_ctx_t *g_ssl_auth_ctx = NULL;
 evbase_t *global_evbase_handle;
 extern struct m0_clovis_realm clovis_uber_realm;
 // index will have bucket and account information
 struct m0_uint128 global_bucket_list_index_oid;
+// replica index of global_bucket_list_index_oid
+struct m0_uint128 replica_global_bucket_list_index_oid;
 // index will have bucket metada information
 struct m0_uint128 bucket_metadata_list_index_oid;
 // index will have s3server instance information
@@ -582,6 +586,11 @@ FAIL:
   return rc;
 }
 
+int create_global_replica_index(struct m0_uint128 &root_index_oid,
+                                const uint64_t &u_lo_index_offset) {
+  return create_global_index(root_index_oid, u_lo_index_offset);
+}
+
 void log_resource_limits() {
   int rc;
   struct rlimit rlimit;
@@ -908,6 +917,20 @@ int main(int argc, char **argv) {
     fini_clovis();
     // fatal message will call exit
     s3_log(S3_LOG_FATAL, "", "Failed to create a global bucket KVS index\n");
+  }
+
+  // create replica copy of global_bucket_list_index_oid. It will be used
+  // by s3 recovery tool to recover global_bucket_list_index_oid,
+  // incase of metadata corruption.
+  rc = create_global_replica_index(replica_global_bucket_list_index_oid,
+                                   REPLICA_GLOBAL_BUCKET_LIST_INDEX_OID_U_LO);
+  if (rc < 0) {
+    s3daemon.delete_pidfile();
+    fini_auth_ssl();
+    fini_clovis();
+    // fatal message will call exit
+    s3_log(S3_LOG_FATAL, "",
+           "Failed to create replica for global bucket KVS index\n");
   }
 
   // bucket_metadata_list_index_oid - will hold accountid/bucket_name as key,
