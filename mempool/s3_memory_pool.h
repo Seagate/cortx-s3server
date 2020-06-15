@@ -42,13 +42,16 @@ extern "C" {
 struct mempool;
 typedef struct mempool *MemoryPoolHandle;
 
-// This call back is supposed to return the total space used.
-// Useful when outside memory should be considered for max threshold cap.
-// Outside memory could be case when multiple memory pools are used.
+/* This call back is supposed to return the total space used.
+   Useful when outside memory should be considered for max threshold cap.
+   Outside memory could be case when multiple memory pools are used.
+*/
 typedef size_t (*func_mem_available_callback_type)(void);
 
 typedef void (*func_mark_mem_used_callback_type)(size_t);
 typedef void (*func_mark_mem_free_callback_type)(size_t);
+
+typedef void (*func_log_callback_type)(const char *);
 
 struct pool_info {
   int flags;
@@ -120,13 +123,15 @@ struct pool_info {
  */
 int mempool_create(size_t pool_item_size, size_t pool_initial_size,
                    size_t pool_expansion_size, size_t pool_max_threshold_size,
-                   int flags, MemoryPoolHandle *p_handle);
+                   func_log_callback_type log_callback_func, int flags,
+                   MemoryPoolHandle *p_handle);
 
 int mempool_create_with_shared_mem(
     size_t pool_item_size, size_t pool_initial_size, size_t pool_expansion_size,
     func_mem_available_callback_type mem_get_free_space_func,
     func_mark_mem_used_callback_type mem_mark_used_space_func,
-    func_mark_mem_free_callback_type mem_mark_free_space_func, int flags,
+    func_mark_mem_free_callback_type mem_mark_free_space_func,
+    func_log_callback_type log_callback_func, int flags,
     MemoryPoolHandle *p_handle);
 
 /**
