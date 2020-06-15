@@ -25,6 +25,7 @@
 #include "s3_datetime.h"
 
 extern struct m0_uint128 global_bucket_list_index_oid;
+extern struct m0_uint128 replica_global_bucket_list_index_oid;
 
 S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
@@ -64,7 +65,7 @@ std::string S3GlobalBucketIndexMetadata::get_account_id() { return account_id; }
 
 void S3GlobalBucketIndexMetadata::load(std::function<void(void)> on_success,
                                        std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
@@ -81,7 +82,7 @@ void S3GlobalBucketIndexMetadata::load(std::function<void(void)> on_success,
 }
 
 void S3GlobalBucketIndexMetadata::load_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (this->from_json(clovis_kv_reader->get_value()) != 0) {
     s3_log(S3_LOG_ERROR, request_id,
@@ -102,7 +103,7 @@ void S3GlobalBucketIndexMetadata::load_successful() {
 }
 
 void S3GlobalBucketIndexMetadata::load_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (json_parsing_error) {
     state = S3GlobalBucketIndexMetadataState::failed;
@@ -125,7 +126,7 @@ void S3GlobalBucketIndexMetadata::load_failed() {
 
 void S3GlobalBucketIndexMetadata::save(std::function<void(void)> on_success,
                                        std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -143,16 +144,38 @@ void S3GlobalBucketIndexMetadata::save(std::function<void(void)> on_success,
 }
 
 void S3GlobalBucketIndexMetadata::save_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   state = S3GlobalBucketIndexMetadataState::saved;
+
+  // attempt to save the KV in replica global bucket list index
+  assert(nullptr != clovis_kvs_writer_factory);
+  if (!clovis_kv_writer) {
+    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
+        request, s3_clovis_api);
+  }
+  clovis_kv_writer->put_keyval(
+      replica_global_bucket_list_index_oid, bucket_name, this->to_json(),
+      std::bind(&S3GlobalBucketIndexMetadata::save_replica, this),
+      std::bind(&S3GlobalBucketIndexMetadata::save_replica, this));
+
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3GlobalBucketIndexMetadata::save_replica() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  // PUT Operation pass even if we failed to put KV in replica index.
+  if (clovis_kv_writer->get_state() != S3ClovisKVSWriterOpState::created) {
+    s3_log(S3_LOG_ERROR, request_id, "Failed to save KV in replica index.\n");
+  }
   this->handler_on_success();
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3GlobalBucketIndexMetadata::save_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Saving of root bucket list index failed\n");
   if (clovis_kv_writer->get_state() ==
       S3ClovisKVSWriterOpState::failed_to_launch) {
@@ -167,7 +190,7 @@ void S3GlobalBucketIndexMetadata::save_failed() {
 
 void S3GlobalBucketIndexMetadata::remove(std::function<void(void)> on_success,
                                          std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -183,16 +206,40 @@ void S3GlobalBucketIndexMetadata::remove(std::function<void(void)> on_success,
 }
 
 void S3GlobalBucketIndexMetadata::remove_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   state = S3GlobalBucketIndexMetadataState::deleted;
+
+  // attempt to remove KV from the replica index as well
+  assert(nullptr != clovis_kvs_writer_factory);
+  if (!clovis_kv_writer) {
+    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
+        request, s3_clovis_api);
+  }
+  clovis_kv_writer->delete_keyval(
+      replica_global_bucket_list_index_oid, bucket_name,
+      std::bind(&S3GlobalBucketIndexMetadata::remove_replica, this),
+      std::bind(&S3GlobalBucketIndexMetadata::remove_replica, this));
+
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3GlobalBucketIndexMetadata::remove_replica() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  // DELETE bucket operation pass even if we failed to remove KV
+  // from replica index
+  if (clovis_kv_writer->get_state() != S3ClovisKVSWriterOpState::deleted) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Failed to remove KV from replica index.\n");
+  }
   this->handler_on_success();
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3GlobalBucketIndexMetadata::remove_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Removal of bucket information failed\n");
 
   if (clovis_kv_writer->get_state() ==
@@ -208,7 +255,7 @@ void S3GlobalBucketIndexMetadata::remove_failed() {
 
 // Streaming to json
 std::string S3GlobalBucketIndexMetadata::to_json() {
-  s3_log(S3_LOG_DEBUG, request_id, "Called\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   Json::Value root;
 
   root["account_name"] = account_name;
@@ -224,7 +271,7 @@ std::string S3GlobalBucketIndexMetadata::to_json() {
 }
 
 int S3GlobalBucketIndexMetadata::from_json(std::string content) {
-  s3_log(S3_LOG_DEBUG, request_id, "Called\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   Json::Value root;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), root);

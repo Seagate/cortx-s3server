@@ -36,6 +36,7 @@ const char *auth_ip_addr = "127.0.0.1";
 uint16_t auth_port = 8095;
 extern int s3log_level;
 struct m0_uint128 global_bucket_list_index_oid;
+struct m0_uint128 replica_global_bucket_list_index_oid;
 struct m0_uint128 bucket_metadata_list_index_oid;
 struct m0_uint128 global_probable_dead_object_list_index_oid;
 struct m0_uint128 global_instance_id;
