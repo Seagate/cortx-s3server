@@ -56,6 +56,7 @@ class MempoolTestSuite : public testing::Test {
     handle = NULL;
     //             BUF_SZ , initial  , expandable_size, max
     mempool_create(FOUR_KB, TWELVE_KB, EIGHT_KB, TWENTYFOUR_KB,
+                   (func_log_callback_type)NULL,
                    CREATE_ALIGNED_MEMORY | ENABLE_LOCKING | ZEROED_ALLOCATION,
                    &handle);
   }
@@ -70,6 +71,7 @@ class MempoolTestSuite : public testing::Test {
 TEST_F(MempoolSelfCreateTestSuite, CreatePoolTest) {
   EXPECT_EQ(0, mempool_create(
                    FOUR_KB, TWELVE_KB, EIGHT_KB, TWENTYFOUR_KB,
+                   (func_log_callback_type)NULL,
                    CREATE_ALIGNED_MEMORY | ENABLE_LOCKING | ZEROED_ALLOCATION,
                    &first_handle));
   EXPECT_NE(first_handle, (void *)NULL);
@@ -86,16 +88,19 @@ TEST_F(MempoolSelfCreateTestSuite, CreatePoolTest) {
 }
 
 TEST_F(MempoolSelfCreateTestSuite, CreatePoolNegativeTest) {
-  EXPECT_NE(0, mempool_create(FOUR_KB, 0, 0, 0, 0, &first_handle));
+  EXPECT_NE(0, mempool_create(FOUR_KB, 0, 0, 0, (func_log_callback_type)NULL, 0,
+                              &first_handle));
   EXPECT_EQ(first_handle, (void *)NULL);
-  EXPECT_NE(0, mempool_create(0, 0, 0, 0, 0, &second_handle));
+  EXPECT_NE(0, mempool_create(0, 0, 0, 0, (func_log_callback_type)NULL, 0,
+                              &second_handle));
   EXPECT_EQ(second_handle, (void *)NULL);
-  EXPECT_NE(0, mempool_create(FOUR_KB, 0, 0, TWELVE_KB, 0, NULL));
+  EXPECT_NE(0, mempool_create(FOUR_KB, 0, 0, TWELVE_KB,
+                              (func_log_callback_type)NULL, 0, NULL));
 }
 
 TEST_F(MempoolSelfCreateTestSuite, DestroyPoolTest) {
-  EXPECT_EQ(0, mempool_create(FOUR_KB, TWELVE_KB, EIGHT_KB, TWENTYFOUR_KB, 0,
-                              &first_handle));
+  EXPECT_EQ(0, mempool_create(FOUR_KB, TWELVE_KB, EIGHT_KB, TWENTYFOUR_KB,
+                              (func_log_callback_type)NULL, 0, &first_handle));
   EXPECT_NE(first_handle, (void *)NULL);
   EXPECT_EQ(0, mempool_destroy(&first_handle));
   EXPECT_EQ(first_handle, (void *)NULL);
@@ -107,8 +112,8 @@ TEST_F(MempoolSelfCreateTestSuite, DestroyPoolTest) {
 // (malloc/posix_memalign)
 // gets called when pool's free list is empty
 TEST_F(MempoolSelfCreateTestSuite, MemAllocateNativeTest) {
-  EXPECT_EQ(0,
-            mempool_create(FOUR_KB, 0, EIGHT_KB, TWELVE_KB, 0, &first_handle));
+  EXPECT_EQ(0, mempool_create(FOUR_KB, 0, EIGHT_KB, TWELVE_KB,
+                              (func_log_callback_type)NULL, 0, &first_handle));
   EXPECT_TRUE(first_handle != NULL);
 
   EXPECT_EQ(0, mempool_getinfo(first_handle, &firstpass_pool_details));
@@ -132,8 +137,9 @@ TEST_F(MempoolSelfCreateTestSuite, MemAllocateNativeTest) {
 
 // Test to check whether maximum threshold in pool is reached any time
 TEST_F(MempoolSelfCreateTestSuite, MaxThresholdTest) {
-  EXPECT_EQ(0,
-            mempool_create(FOUR_KB, 0, FOUR_KB, TWELVE_KB, 0, &first_handle));
+  EXPECT_EQ(0, mempool_create(FOUR_KB, 0, FOUR_KB, TWELVE_KB,
+                              (func_log_callback_type)NULL, 0, &first_handle));
+
   void *first_buf = mempool_getbuffer(first_handle, 0);
   EXPECT_TRUE(first_buf != NULL);
 
@@ -156,8 +162,8 @@ TEST_F(MempoolSelfCreateTestSuite, MaxThresholdTest) {
 // Test to check mempool free space
 TEST_F(MempoolSelfCreateTestSuite, MempoolFreeSpace) {
   size_t free_bytes = 0;
-  EXPECT_EQ(0, mempool_create(FOUR_KB, EIGHT_KB, FOUR_KB, TWELVE_KB, 0,
-                              &first_handle));
+  EXPECT_EQ(0, mempool_create(FOUR_KB, EIGHT_KB, FOUR_KB, TWELVE_KB,
+                              (func_log_callback_type)NULL, 0, &first_handle));
 
   EXPECT_EQ(0, mempool_free_space(first_handle, &free_bytes));
   EXPECT_EQ(EIGHT_KB, free_bytes);
@@ -166,16 +172,16 @@ TEST_F(MempoolSelfCreateTestSuite, MempoolFreeSpace) {
 
 // Test to check mempool free space
 TEST_F(MempoolSelfCreateTestSuite, MempoolFreeSpaceInvalid) {
-  EXPECT_EQ(0, mempool_create(FOUR_KB, FOUR_KB, FOUR_KB, TWELVE_KB, 0,
-                              &first_handle));
+  EXPECT_EQ(0, mempool_create(FOUR_KB, FOUR_KB, FOUR_KB, TWELVE_KB,
+                              (func_log_callback_type)NULL, 0, &first_handle));
   EXPECT_EQ(S3_MEMPOOL_INVALID_ARG, mempool_free_space(first_handle, NULL));
   mempool_destroy(&first_handle);
 }
 
 // Test to check the pool expansion
 TEST_F(MempoolSelfCreateTestSuite, PoolExpansionTest) {
-  EXPECT_EQ(0, mempool_create(FOUR_KB, FOUR_KB, TWELVE_KB, SIXTEEN_KB, 0,
-                              &first_handle));
+  EXPECT_EQ(0, mempool_create(FOUR_KB, FOUR_KB, TWELVE_KB, SIXTEEN_KB,
+                              (func_log_callback_type)NULL, 0, &first_handle));
 
   void *first_buf = mempool_getbuffer(first_handle, 0);
   EXPECT_TRUE(first_buf != NULL);

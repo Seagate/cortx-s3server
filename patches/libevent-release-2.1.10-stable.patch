@@ -1,5 +1,5 @@
 diff --git a/Makefile.am b/Makefile.am
-index 240d014..d376ade 100644
+index 240d0146..d376ade3 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -231,6 +231,7 @@ CORE_SRC =					\
@@ -28,7 +28,7 @@ index 240d014..d376ade 100644
  	evthread-internal.h			\
  	ht-internal.h				\
 diff --git a/buffer.c b/buffer.c
-index 5e3d91b..c26641b 100644
+index 5e3d91b5..c26641b9 100644
 --- a/buffer.c
 +++ b/buffer.c
 @@ -140,6 +140,7 @@
@@ -197,7 +197,7 @@ index 5e3d91b..c26641b 100644
  	}
  	evbuffer_chain_insert(outbuf, chain);
 diff --git a/bufferevent.c b/bufferevent.c
-index 08c0486..7b5643d 100644
+index 08c0486c..7b5643dd 100644
 --- a/bufferevent.c
 +++ b/bufferevent.c
 @@ -587,9 +587,19 @@ bufferevent_disable(struct bufferevent *bufev, short event)
@@ -222,7 +222,7 @@ index 08c0486..7b5643d 100644
  bufferevent_setwatermark(struct bufferevent *bufev, short events,
      size_t lowmark, size_t highmark)
 diff --git a/bufferevent_openssl.c b/bufferevent_openssl.c
-index b51b834..1b14e77 100644
+index b51b834b..1b14e779 100644
 --- a/bufferevent_openssl.c
 +++ b/bufferevent_openssl.c
 @@ -67,6 +67,8 @@
@@ -363,7 +363,7 @@ index b51b834..1b14e77 100644
 +}
 +/* S3 edit ends */
 diff --git a/bufferevent_sock.c b/bufferevent_sock.c
-index f275b02..9db766f 100644
+index f275b023..9db766fc 100644
 --- a/bufferevent_sock.c
 +++ b/bufferevent_sock.c
 @@ -179,6 +179,10 @@ bufferevent_readcb(evutil_socket_t fd, short event, void *arg)
@@ -387,7 +387,7 @@ index f275b02..9db766f 100644
  
  	/* Invoke the user callback - must always be called last */
 diff --git a/epoll.c b/epoll.c
-index a0df0d2..2731329 100644
+index a0df0d21..27313294 100644
 --- a/epoll.c
 +++ b/epoll.c
 @@ -126,7 +126,7 @@ const struct eventop epollops = {
@@ -400,7 +400,7 @@ index a0df0d2..2731329 100644
  
  /* On Linux kernels at least up to 2.6.24.4, epoll can't handle timeout
 diff --git a/evbuffer-internal.h b/evbuffer-internal.h
-index d09b4f1..44fe4e5 100644
+index d09b4f1d..44fe4e5b 100644
 --- a/evbuffer-internal.h
 +++ b/evbuffer-internal.h
 @@ -54,7 +54,7 @@ extern "C" {
@@ -443,7 +443,7 @@ index d09b4f1..44fe4e5 100644
  /** Assert that we are holding the lock on an evbuffer */
  #define ASSERT_EVBUFFER_LOCKED(buffer)			\
 diff --git a/event.c b/event.c
-index a778f96..c74208b 100644
+index a778f96c..b6683646 100644
 --- a/event.c
 +++ b/event.c
 @@ -26,7 +26,7 @@
@@ -487,7 +487,7 @@ index a778f96..c74208b 100644
 +{
 +        int rc;
 +        rc = mempool_create(item_size, pool_initial_size, pool_expansion_size,
-+                        pool_max_threshold_size, flags, &g_pool_handle);
++                        pool_max_threshold_size, (func_log_callback_type)NULL, flags, &g_pool_handle);
 +        if (rc != 0)
 +                return rc;
 +
@@ -515,7 +515,7 @@ index a778f96..c74208b 100644
  event_del_(struct event *ev, int blocking)
  {
 diff --git a/include/event2/buffer.h b/include/event2/buffer.h
-index 468588b..8a048e9 100644
+index 468588b9..8a048e92 100644
 --- a/include/event2/buffer.h
 +++ b/include/event2/buffer.h
 @@ -1052,6 +1052,10 @@ struct event_base;
@@ -530,13 +530,14 @@ index 468588b..8a048e9 100644
  /**
    Append data from 1 or more iovec's to an evbuffer
 diff --git a/include/event2/bufferevent.h b/include/event2/bufferevent.h
-index dac34dc..bc5ef66 100644
+index dac34dc7..bc5ef66d 100644
 --- a/include/event2/bufferevent.h
 +++ b/include/event2/bufferevent.h
-@@ -513,6 +513,18 @@ int bufferevent_set_timeouts(struct bufferevent *bufev,
+@@ -512,6 +512,18 @@ EVENT2_EXPORT_SYMBOL
+ int bufferevent_set_timeouts(struct bufferevent *bufev,
      const struct timeval *timeout_read, const struct timeval *timeout_write);
  
- /**
++/**
 +  Gets the low water mark for the buffer set during memory pool creation.
 +*/
 +EVENT2_EXPORT_SYMBOL
@@ -548,12 +549,11 @@ index dac34dc..bc5ef66 100644
 +EVENT2_EXPORT_SYMBOL
 +void bufferevent_set_read_data(struct bufferevent *bufev, size_t max_val);
 +
-+/**
+ /**
    Sets the watermarks for read and write events.
  
-   On input, a bufferevent does not invoke the user read callback unless
 diff --git a/include/event2/bufferevent_ssl.h b/include/event2/bufferevent_ssl.h
-index bf39b84..4bffe01 100644
+index bf39b844..4bffe01d 100644
 --- a/include/event2/bufferevent_ssl.h
 +++ b/include/event2/bufferevent_ssl.h
 @@ -125,6 +125,11 @@ int bufferevent_ssl_renegotiate(struct bufferevent *bev);
@@ -569,7 +569,7 @@ index bf39b84..4bffe01 100644
  
  #ifdef __cplusplus
 diff --git a/include/event2/bufferevent_struct.h b/include/event2/bufferevent_struct.h
-index e84c082..1848430 100644
+index e84c082c..1848430c 100644
 --- a/include/event2/bufferevent_struct.h
 +++ b/include/event2/bufferevent_struct.h
 @@ -107,6 +107,7 @@ struct bufferevent {
@@ -581,13 +581,14 @@ index e84c082..1848430 100644
  
  #ifdef __cplusplus
 diff --git a/include/event2/event.h b/include/event2/event.h
-index ff20851..54854b0 100644
+index ff208517..54854b00 100644
 --- a/include/event2/event.h
 +++ b/include/event2/event.h
-@@ -299,6 +299,51 @@ struct event_config
+@@ -298,6 +298,51 @@ struct event_config
+ #endif
  ;
  
- /**
++/**
 + * Enable use of memory pool for libevent.
 + * Memory pool is created with some pre allocated buffers of fixed size.
 + * Memory will be allocated/released from/to the buffer pool for the libevent
@@ -632,12 +633,11 @@ index ff20851..54854b0 100644
 +EVENT2_EXPORT_SYMBOL
 +void event_set_max_read(size_t max_read);
 +
-+/**
+ /**
   * Enable some relatively expensive debugging checks in Libevent that
   * would normally be turned off.  Generally, these checks cause code that
-  * would otherwise crash mysteriously to fail earlier with an assertion
 diff --git a/mm-internal.h b/mm-internal.h
-index 7a95c99..d9c971f 100644
+index 7a95c995..d9c971ff 100644
 --- a/mm-internal.h
 +++ b/mm-internal.h
 @@ -27,6 +27,7 @@

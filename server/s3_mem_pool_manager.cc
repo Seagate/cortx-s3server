@@ -35,6 +35,10 @@ extern "C" void mem_mark_free_space_func(size_t space_freed) {
   S3MempoolManager::free_space += space_freed;
 }
 
+extern "C" void mempool_log_msg_func(const char *msg) {
+  s3_log(S3_LOG_DEBUG, "", "%s\n", msg);
+}
+
 S3MempoolManager::S3MempoolManager(size_t max_mem)
     : total_memory_threshold(max_mem) {}
 
@@ -56,7 +60,7 @@ int S3MempoolManager::initialize(std::vector<int> unit_sizes,
         unit_size, initial_buffer_count_per_pool * unit_size,
         expandable_count * unit_size, mem_get_free_space_func,
         mem_mark_used_space_func, mem_mark_free_space_func,
-        CREATE_ALIGNED_MEMORY, &handle);
+        mempool_log_msg_func, CREATE_ALIGNED_MEMORY, &handle);
 
     if (rc != 0) {
       s3_log(S3_LOG_ERROR, "", "FATAL: Memory pool creation failed!\n");

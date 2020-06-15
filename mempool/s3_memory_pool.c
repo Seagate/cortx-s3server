@@ -17,7 +17,46 @@
  * Original creation date: 5-Dec-2016
  */
 
+#include <pthread.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "s3_memory_pool.h"
+
+struct memory_pool_element {
+  struct memory_pool_element *next;
+};
+
+struct mempool {
+  int flags;                 /* Buffer Bitflags */
+  int free_bufs_in_pool;     /* Number of items on free list */
+  int number_of_bufs_shared; /* Number of bufs shared from pool to pool user */
+  int total_bufs_allocated_by_pool; /* Total buffers currently allocated by
+                                         pool via native method */
+  func_mem_available_callback_type
+      mem_get_free_space_func; /* If this pool shares the max_memory_threshold
+                                  with say other pool, this callback should
+                                  return the available space which can be
+                                  allocated */
+  func_mark_mem_used_callback_type
+      mem_mark_used_space_func; /* This is used to indicate to user of pool that
+                                   new memory is allocated
+                                   (posix_memalign/malloc) within pool, so user
+                                   of pool can track it w.r.t max threshold. */
+  func_mark_mem_free_callback_type mem_mark_free_space_func;
+  func_log_callback_type log_callback_func; /* Used to log mempool messages */
+  /* Whenever pool frees any memory, use this to
+     indicate to user of pool that memory was
+     free'd with actual free() sys call. */
+  int alignment;               /* Memory aligment */
+  size_t max_memory_threshold; /* Maximum memory that the system can have from
+                                  pool */
+  size_t mempool_item_size; /* Size of items managed by this pool */
+  size_t expandable_size;   /* pool expansion rate when free list is empty */
+  pthread_mutex_t lock;     /* lock, in case of synchronous operation */
+  struct memory_pool_element *free_list; /* list of free items available for
+                                            reuse */
+};
 
 /**
  * Return the number of buffers we can allocate w.r.t max threshold and
@@ -58,6 +97,8 @@ int freelist_allocate(struct mempool *pool, int items_count_to_allocate) {
   int rc = 0;
   void *buf = NULL;
   struct memory_pool_element *pool_item = NULL;
+  char *log_msg_fmt = "mempool(%p): %s(%zu). Allocated address(%p)";
+  char log_msg[200];
 
   if (pool == NULL) {
     return S3_MEMPOOL_INVALID_ARG;
@@ -68,6 +109,16 @@ int freelist_allocate(struct mempool *pool, int items_count_to_allocate) {
       rc = posix_memalign(&buf, pool->alignment, pool->mempool_item_size);
     } else {
       buf = malloc(pool->mempool_item_size);
+    }
+    if (pool->log_callback_func) {
+      if (pool->flags & CREATE_ALIGNED_MEMORY) {
+        snprintf(log_msg, 200, log_msg_fmt, (void *)pool, "posix_memalign",
+                 pool->mempool_item_size, buf);
+      } else {
+        snprintf(log_msg, 200, log_msg_fmt, (void *)pool, "malloc",
+                 pool->mempool_item_size, buf);
+      }
+      pool->log_callback_func(log_msg);
     }
     if (buf == NULL || rc != 0) {
       return S3_MEMPOOL_ERROR;
@@ -91,7 +142,8 @@ int freelist_allocate(struct mempool *pool, int items_count_to_allocate) {
 
 int mempool_create(size_t pool_item_size, size_t pool_initial_size,
                    size_t pool_expansion_size, size_t pool_max_threshold_size,
-                   int flags, MemoryPoolHandle *handle) {
+                   func_log_callback_type log_callback_func, int flags,
+                   MemoryPoolHandle *handle) {
   int rc;
   int bufs_to_allocate;
   struct mempool *pool = NULL;
@@ -136,6 +188,7 @@ int mempool_create(size_t pool_item_size, size_t pool_initial_size,
 
   *handle = (MemoryPoolHandle)pool;
 
+  pool->log_callback_func = log_callback_func;
   pool->expandable_size = pool_expansion_size;
   pool->max_memory_threshold = pool_max_threshold_size;
   /* Figure out the size of free list to be preallocated from given initial pool
@@ -161,7 +214,8 @@ int mempool_create_with_shared_mem(
     size_t pool_item_size, size_t pool_initial_size, size_t pool_expansion_size,
     func_mem_available_callback_type mem_get_free_space_func,
     func_mark_mem_used_callback_type mem_mark_used_space_func,
-    func_mark_mem_free_callback_type mem_mark_free_space_func, int flags,
+    func_mark_mem_free_callback_type mem_mark_free_space_func,
+    func_log_callback_type log_callback_func, int flags,
     MemoryPoolHandle *p_handle) {
   int rc = 0;
   struct mempool *pool = NULL;
@@ -175,7 +229,7 @@ int mempool_create_with_shared_mem(
   }
 
   rc = mempool_create(pool_item_size, pool_initial_size, pool_expansion_size, 0,
-                      flags, p_handle);
+                      log_callback_func, flags, p_handle);
   if (rc != 0) {
     return rc;
   }
@@ -347,6 +401,9 @@ int mempool_downsize(MemoryPoolHandle handle, size_t mem_to_free) {
   struct memory_pool_element *pool_item = NULL;
   int bufs_to_free = 0;
   int count = 0;
+  char *log_msg_fmt =
+      "mempool(%p): free(%p) called for pool item size(%zu) mem_to_free(%zu)";
+  char log_msg[200];
 
   if (handle == NULL) {
     return S3_MEMPOOL_INVALID_ARG;
@@ -376,6 +433,12 @@ int mempool_downsize(MemoryPoolHandle handle, size_t mem_to_free) {
     while (count < bufs_to_free && pool_item != NULL) {
       count++;
       pool->free_list = pool_item->next;
+      /* Log message about free()'ed item */
+      if (pool->log_callback_func) {
+        snprintf(log_msg, 200, log_msg_fmt, (void *)pool, (void *)pool_item,
+                 pool->mempool_item_size, mem_to_free);
+        pool->log_callback_func(log_msg);
+      }
       free(pool_item);
       pool->total_bufs_allocated_by_pool--;
       pool->free_bufs_in_pool--;
@@ -395,6 +458,8 @@ int mempool_downsize(MemoryPoolHandle handle, size_t mem_to_free) {
 int mempool_destroy(MemoryPoolHandle *handle) {
   struct mempool *pool = NULL;
   struct memory_pool_element *pool_item;
+  char *log_msg_fmt = "mempool(%p): free(%p) called for buffer size(%zu)";
+  char log_msg[200];
 
   if (handle == NULL) {
     return S3_MEMPOOL_INVALID_ARG;
@@ -419,6 +484,12 @@ int mempool_destroy(MemoryPoolHandle *handle) {
   pool_item = pool->free_list;
   while (pool_item != NULL) {
     pool->free_list = pool_item->next;
+    /* Log message about free()'ed item */
+    if (pool->log_callback_func) {
+      snprintf(log_msg, 200, log_msg_fmt, (void *)pool, (void *)pool_item,
+               pool->mempool_item_size);
+      pool->log_callback_func(log_msg);
+    }
     free(pool_item);
 #if 0
     /* Need this if below asserts are there */
