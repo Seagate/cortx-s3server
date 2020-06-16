@@ -49,6 +49,7 @@ mkdir -p $S3_INSTALL_LOCATION/libevent
 mkdir -p $S3_INSTALL_LOCATION/resources
 mkdir -p $S3_INSTALL_LOCATION/scripts
 mkdir -p $S3_INSTALL_LOCATION/install/ldap/rsyslog.d
+mkdir -p $S3_INSTALL_LOCATION/install/ldap/replication
 mkdir -p $S3_INSTALL_LOCATION/install/haproxy
 mkdir -p $S3_INSTALL_LOCATION/docs
 mkdir -p $S3_INSTALL_LOCATION/s3backgrounddelete
@@ -157,9 +158,19 @@ cp -f auth/resources/AmazonS3.xsd $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/s3authserver.jks $AUTH_INSTALL_LOCATION/resources/
 
 # Copy LDAP replication to install location
+# remove this once changes are done in provisioning
 cp -f scripts/ldap/syncprov_mod.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/syncprov.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/replicate.ldif $S3_INSTALL_LOCATION/install/ldap/
+
+# Copy LDAP replication to install location
+cp -f scripts/ldap/replication/syncprov_mod.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
+cp -f scripts/ldap/replication/syncprov.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
+cp -f scripts/ldap/replication/config.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
+cp -f scripts/ldap/replication/data.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
+cp -f scripts/ldap/replication/olcserverid.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
+cp -f scripts/ldap/replication/syncprov_config.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
+
 
 # Copy slapd log config to install location
 cp -f scripts/ldap/slapdlog.ldif $S3_INSTALL_LOCATION/install/ldap/
