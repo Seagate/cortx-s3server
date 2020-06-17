@@ -108,6 +108,9 @@ class S3ClovisWriter {
   struct s3_clovis_obj_context* obj_ctx;
 
   void* place_holder_for_last_unit;
+  // layout_id for place_holder_for_last_unit can be changed if
+  // the object already exists and has another layout_id
+  int last_unit_size = -1;
 
   // buffer currently used to write, will be freed on completion
   std::shared_ptr<S3AsyncBufferOptContainer> write_async_buffer;

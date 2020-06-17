@@ -121,9 +121,7 @@ S3ClovisWriter::S3ClovisWriter(std::shared_ptr<RequestObject> req,
 S3ClovisWriter::~S3ClovisWriter() {
   if (place_holder_for_last_unit) {
     S3MempoolManager::get_instance()->release_buffer_for_unit_size(
-        place_holder_for_last_unit,
-        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
-            layout_ids[0]));
+        place_holder_for_last_unit, last_unit_size);
   }
   clean_up_contexts();
 }
@@ -664,10 +662,12 @@ void S3ClovisWriter::set_up_clovis_data_buffers(
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (place_holder_for_last_unit == NULL) {
+    last_unit_size =
+        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
+            layout_ids[0]);
     place_holder_for_last_unit =
         (void *)S3MempoolManager::get_instance()->get_buffer_for_unit_size(
-            S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
-                layout_ids[0]));
+            last_unit_size);
   }
 
   size_in_current_write = 0;
