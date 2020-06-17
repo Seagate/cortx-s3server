@@ -20,6 +20,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/mman.h>
 
 #include "s3_memory_pool.h"
 
@@ -124,6 +125,9 @@ int freelist_allocate(struct mempool *pool, int items_count_to_allocate) {
     if (buf == NULL || rc != 0) {
       return S3_MEMPOOL_ERROR;
     }
+
+    /* exclude this buffer while geneating core dump*/
+    madvise(buf, pool->mempool_item_size, MADV_DONTDUMP);
 
     if ((pool->flags & ZEROED_BUFFER) != 0) {
       memset(buf, 0, pool->mempool_item_size);
