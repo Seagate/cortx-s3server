@@ -78,6 +78,8 @@ enum S3AddbActionTypeId {
   S3_ADDB_MERO_HEAD_OBJECT_ACTION_ID,
   /* MeroKVSListingAction: */
   S3_ADDB_MERO_KVS_LISTING_ACTION_ID,
+  /* MeroPutKeyValueAction: */
+  S3_ADDB_MERO_PUT_KEY_VALUE_ACTION_ID,
   /* S3AbortMultipartAction: */
   S3_ADDB_S3_ABORT_MULTIPART_ACTION_ID,
   /* S3AccountDeleteMetadataAction: */

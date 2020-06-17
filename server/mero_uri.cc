@@ -163,6 +163,7 @@ MeroPathStyleURI::MeroPathStyleURI(std::shared_ptr<MeroRequestObject> req)
 
 // list kv                -> http://s3.seagate.com/indexes/<indiex-id>
 // get kv                 -> http://s3.seagate.com/indexes/<indiex-id>/<key>
+// put kv                 -> http://s3.seagate.com/indexes/<indiex-id>/<key>
 // delete kv              -> http://s3.seagate.com/indexes/<indiex-id>/<key>
 // delete object oid      ->
 // http://s3.seagate.com/objects/<object-oid>?layout-id=1
