@@ -1,0 +1,72 @@
+#!/bin/sh
+
+# You should provide Host_list in a file,and give this file as a argument to script.say there are three nodes in cluster with A,B and c.file that contains this hosts should look like below.
+# suppose file created is hostlist.txt, cat hostlist.txt should be
+# hostname -f  of A
+# hostname -f of B
+# hostname -f of c
+
+cluster_replication=true
+
+usage() { echo "Usage: [-s <provide file containing hostnames of nodes in cluster>],[-p <ldap password>]" 1>&2; exit 1; }
+
+while getopts ":s:p:" o; do
+    case "${o}" in
+        s)
+            host_list=${OPTARG}
+            ;;
+        p)
+            ldappasswd=${OPTARG}
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+shift $((OPTIND-1))
+
+if [ ! -s "$host_list" ]
+then
+  echo "file $host_list is empty"
+  exit 1
+fi
+
+echo "Check Ldap replication for below nodes"
+
+while read p; do
+  echo "$p"
+done <$host_list
+
+#add account
+
+node1=$(head -n 1 $host_list)
+
+ldapadd -w $ldappasswd -x -D "cn=sgiamadmin,dc=seagate,dc=com" -f create_replication_account.ldif  -H ldap://$node1 || exit 0
+
+#adding some delay for successful replication
+
+sleep 2s
+
+# check replication on node 2
+while read node; do
+  output=$(ldapsearch -b "o=sanity-test-repl-account,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://$node) || echo "failed to search"
+  if [[ $output == *"No such object"* ]]
+  then
+    cluster_replication=false
+    echo "Replication is not setup properly on node $node"
+  else
+    echo "Replication is setup properly on node $node"
+  fi
+done <$host_list
+
+if [ "$cluster_replication" = true ]
+then
+  echo "Replication is setup properly on cluster"
+else
+   echo "Setup replication on nodes,which are not configured correctly for replication"
+fi
+
+#delete account created
+
+ldapdelete -x -w $ldappasswd -r "o=sanity-test-repl-account,ou=accounts,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://$node1 || exit 1
+
