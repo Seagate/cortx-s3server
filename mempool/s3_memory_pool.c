@@ -114,13 +114,13 @@ int freelist_allocate(struct mempool *pool, int items_count_to_allocate) {
     }
     if (pool->log_callback_func) {
       if (pool->flags & CREATE_ALIGNED_MEMORY) {
-        snprintf(log_msg, 200, log_msg_fmt, (void *)pool, "posix_memalign",
-                 pool->mempool_item_size, buf);
+        snprintf(log_msg, sizeof(log_msg), log_msg_fmt, (void *)pool,
+                 "posix_memalign", pool->mempool_item_size, buf);
       } else {
-        snprintf(log_msg, 200, log_msg_fmt, (void *)pool, "malloc",
+        snprintf(log_msg, sizeof(log_msg), log_msg_fmt, (void *)pool, "malloc",
                  pool->mempool_item_size, buf);
       }
-      pool->log_callback_func(log_msg);
+      pool->log_callback_func(MEMPOOL_LOG_DEBUG, log_msg);
     }
     if (buf == NULL || rc != 0) {
       return S3_MEMPOOL_ERROR;
@@ -252,15 +252,30 @@ int mempool_create_with_shared_mem(
   return 0;
 }
 
-void *mempool_getbuffer(MemoryPoolHandle handle) {
+void *mempool_getbuffer(MemoryPoolHandle handle, size_t expected_buffer_size) {
   int rc;
   int bufs_to_allocate;
   int bufs_that_can_be_allocated = 0;
   struct memory_pool_element *pool_item = NULL;
   struct mempool *pool = (struct mempool *)handle;
+  char *log_msg_fmt =
+      "mempool(%p): mempool_getbuffer called for invalid "
+      "expected_buffer_size(%zu), current pool manages only "
+      "mempool_item_size(%zu)";
+  char log_msg[300];
 
   if (pool == NULL) {
     return NULL;
+  }
+
+  if (pool->mempool_item_size != expected_buffer_size) {
+    // This should never happen unless mempool is used wrongly.
+    if (pool->log_callback_func) {
+      snprintf(log_msg, sizeof(log_msg), log_msg_fmt, (void *)pool,
+               expected_buffer_size, pool->mempool_item_size);
+      pool->log_callback_func(MEMPOOL_LOG_FATAL, log_msg);
+      return NULL;
+    }
   }
 
   if ((pool->flags & ENABLE_LOCKING) != 0) {
@@ -316,12 +331,28 @@ void *mempool_getbuffer(MemoryPoolHandle handle) {
   return (void *)pool_item;
 }
 
-int mempool_releasebuffer(MemoryPoolHandle handle, void *buf) {
+int mempool_releasebuffer(MemoryPoolHandle handle, void *buf,
+                          size_t released_buffer_size) {
   struct mempool *pool = (struct mempool *)handle;
   struct memory_pool_element *pool_item = (struct memory_pool_element *)buf;
+  char *log_msg_fmt =
+      "mempool(%p): mempool_releasebuffer called for invalid "
+      "released_buffer_size(%zu), current pool manages only "
+      "mempool_item_size(%zu)";
+  char log_msg[300];
 
   if ((pool == NULL) || (pool_item == NULL)) {
     return S3_MEMPOOL_INVALID_ARG;
+  }
+
+  if (pool->mempool_item_size != released_buffer_size) {
+    // This should never happen unless mempool is used wrongly.
+    if (pool->log_callback_func) {
+      snprintf(log_msg, sizeof(log_msg), log_msg_fmt, (void *)pool,
+               released_buffer_size, pool->mempool_item_size);
+      pool->log_callback_func(MEMPOOL_LOG_FATAL, log_msg);
+      return S3_MEMPOOL_INVALID_ARG;
+    }
   }
 
   if ((pool->flags & ENABLE_LOCKING) != 0) {
@@ -462,9 +493,9 @@ int mempool_downsize(MemoryPoolHandle handle, size_t mem_to_free) {
       pool->free_list = pool_item->next;
       /* Log message about free()'ed item */
       if (pool->log_callback_func) {
-        snprintf(log_msg, 200, log_msg_fmt, (void *)pool, (void *)pool_item,
-                 pool->mempool_item_size, mem_to_free);
-        pool->log_callback_func(log_msg);
+        snprintf(log_msg, sizeof(log_msg), log_msg_fmt, (void *)pool,
+                 (void *)pool_item, pool->mempool_item_size, mem_to_free);
+        pool->log_callback_func(MEMPOOL_LOG_DEBUG, log_msg);
       }
       free(pool_item);
       pool->total_bufs_allocated_by_pool--;
@@ -513,9 +544,9 @@ int mempool_destroy(MemoryPoolHandle *handle) {
     pool->free_list = pool_item->next;
     /* Log message about free()'ed item */
     if (pool->log_callback_func) {
-      snprintf(log_msg, 200, log_msg_fmt, (void *)pool, (void *)pool_item,
-               pool->mempool_item_size);
-      pool->log_callback_func(log_msg);
+      snprintf(log_msg, sizeof(log_msg), log_msg_fmt, (void *)pool,
+               (void *)pool_item, pool->mempool_item_size);
+      pool->log_callback_func(MEMPOOL_LOG_DEBUG, log_msg);
     }
     free(pool_item);
 #if 0

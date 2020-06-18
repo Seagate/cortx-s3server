@@ -51,7 +51,12 @@ typedef size_t (*func_mem_available_callback_type)(void);
 typedef void (*func_mark_mem_used_callback_type)(size_t);
 typedef void (*func_mark_mem_free_callback_type)(size_t);
 
-typedef void (*func_log_callback_type)(const char *);
+#define MEMPOOL_LOG_FATAL 4
+#define MEMPOOL_LOG_ERROR 3
+#define MEMPOOL_LOG_WARN 2
+#define MEMPOOL_LOG_INFO 1
+#define MEMPOOL_LOG_DEBUG 0
+typedef void (*func_log_callback_type)(int log_level, const char *);
 
 struct pool_info {
   int flags;
@@ -139,9 +144,10 @@ int mempool_create_with_shared_mem(
  * args:
  * handle (in) handle to memory pool obtained from mempool_create
  * returns:
+ * expected_buffer_size - used for assertion.
  * 0 on success, otherwise an error
  */
-void *mempool_getbuffer(MemoryPoolHandle handle);
+void *mempool_getbuffer(MemoryPoolHandle handle, size_t expected_buffer_size);
 
 /**
  * Hook/Free the item that was allocated earlier from the memory pool
@@ -149,10 +155,12 @@ void *mempool_getbuffer(MemoryPoolHandle handle);
  * args:
  * handle (in) Pool handle as returned by mempool_create
  * buf (in) item allocated earlier via mempool_getbuffer()
+ * released_buffer_size - used for assertion
  * returns:
  * 0 on success, otherwise an error
  */
-int mempool_releasebuffer(MemoryPoolHandle handle, void *buf);
+int mempool_releasebuffer(MemoryPoolHandle handle, void *buf,
+                          size_t released_buffer_size);
 
 /**
  * Returns info about the memory pool

@@ -122,7 +122,8 @@ TEST_F(MempoolSelfCreateTestSuite, MemAllocateNativeTest) {
   // free list is empty
   EXPECT_EQ(0, firstpass_pool_details.free_bufs_in_pool);
 
-  void *buf = mempool_getbuffer(first_handle);
+  void *buf =
+      mempool_getbuffer(first_handle, firstpass_pool_details.mempool_item_size);
   EXPECT_TRUE(buf != NULL);
 
   EXPECT_EQ(0, mempool_getinfo(first_handle, &secondpass_pool_details));
@@ -131,7 +132,8 @@ TEST_F(MempoolSelfCreateTestSuite, MemAllocateNativeTest) {
   EXPECT_EQ(1, secondpass_pool_details.free_bufs_in_pool);
   EXPECT_EQ(1, secondpass_pool_details.number_of_bufs_shared);
 
-  mempool_releasebuffer(first_handle, buf);
+  mempool_releasebuffer(first_handle, buf,
+                        firstpass_pool_details.mempool_item_size);
   mempool_destroy(&first_handle);
 }
 
@@ -143,40 +145,25 @@ TEST_F(MempoolSelfCreateTestSuite, MaxThresholdTest) {
   mempool_available_space(first_handle, &avail_space);
   EXPECT_EQ(avail_space, TWELVE_KB);
 
-  void *first_buf = mempool_getbuffer(first_handle);
+  void *first_buf = mempool_getbuffer(first_handle, FOUR_KB);
   EXPECT_TRUE(first_buf != NULL);
 
-  mempool_available_space(first_handle, &avail_space);
-  EXPECT_EQ(avail_space, EIGHT_KB);
-
-  void *second_buf = mempool_getbuffer(first_handle);
+  void *second_buf = mempool_getbuffer(first_handle, FOUR_KB);
   EXPECT_TRUE(second_buf != NULL);
 
-  mempool_available_space(first_handle, &avail_space);
-  EXPECT_EQ(avail_space, FOUR_KB);
-
-  void *third_buf = mempool_getbuffer(first_handle);
+  void *third_buf = mempool_getbuffer(first_handle, FOUR_KB);
   EXPECT_TRUE(third_buf != NULL);
 
   mempool_available_space(first_handle, &avail_space);
   EXPECT_EQ(avail_space, 0);
 
   // This time allocation will cross the threshold value
-  void *fourth_buf = mempool_getbuffer(first_handle);
+  void *fourth_buf = mempool_getbuffer(first_handle, FOUR_KB);
   EXPECT_TRUE(fourth_buf == NULL);
 
-  mempool_releasebuffer(first_handle, first_buf);
-  mempool_available_space(first_handle, &avail_space);
-  EXPECT_EQ(avail_space, FOUR_KB);
-
-  mempool_releasebuffer(first_handle, second_buf);
-  mempool_available_space(first_handle, &avail_space);
-  EXPECT_EQ(avail_space, EIGHT_KB);
-
-  mempool_releasebuffer(first_handle, third_buf);
-  mempool_available_space(first_handle, &avail_space);
-  EXPECT_EQ(avail_space, TWELVE_KB);
-
+  mempool_releasebuffer(first_handle, first_buf, FOUR_KB);
+  mempool_releasebuffer(first_handle, second_buf, FOUR_KB);
+  mempool_releasebuffer(first_handle, third_buf, FOUR_KB);
   mempool_destroy(&first_handle);
 }
 
@@ -214,12 +201,12 @@ TEST_F(MempoolSelfCreateTestSuite, PoolExpansionTest) {
   EXPECT_EQ(0, mempool_create(FOUR_KB, FOUR_KB, TWELVE_KB, SIXTEEN_KB,
                               (func_log_callback_type)NULL, 0, &first_handle));
 
-  void *first_buf = mempool_getbuffer(first_handle);
+  void *first_buf = mempool_getbuffer(first_handle, FOUR_KB);
   EXPECT_TRUE(first_buf != NULL);
 
   // Now there is no buffer in pool's free list
   // mempool_alloc should increase the pool's free list by three buffers
-  void *second_buf = mempool_getbuffer(first_handle);
+  void *second_buf = mempool_getbuffer(first_handle, FOUR_KB);
   EXPECT_TRUE(second_buf != NULL);
 
   EXPECT_EQ(0, mempool_getinfo(first_handle, &firstpass_pool_details));
@@ -228,18 +215,18 @@ TEST_F(MempoolSelfCreateTestSuite, PoolExpansionTest) {
   EXPECT_EQ(2, firstpass_pool_details.free_bufs_in_pool);
 
   // Consume two buffers
-  void *third_buf = mempool_getbuffer(first_handle);
-  void *fourth_buf = mempool_getbuffer(first_handle);
+  void *third_buf = mempool_getbuffer(first_handle, FOUR_KB);
+  void *fourth_buf = mempool_getbuffer(first_handle, FOUR_KB);
 
   // Max threshold
-  void *fifth_buf = mempool_getbuffer(first_handle);
+  void *fifth_buf = mempool_getbuffer(first_handle, FOUR_KB);
   EXPECT_TRUE(fifth_buf == NULL);
 
   // Release buffers back to pool
-  mempool_releasebuffer(first_handle, first_buf);
-  mempool_releasebuffer(first_handle, second_buf);
-  mempool_releasebuffer(first_handle, third_buf);
-  mempool_releasebuffer(first_handle, fourth_buf);
+  mempool_releasebuffer(first_handle, first_buf, FOUR_KB);
+  mempool_releasebuffer(first_handle, second_buf, FOUR_KB);
+  mempool_releasebuffer(first_handle, third_buf, FOUR_KB);
+  mempool_releasebuffer(first_handle, fourth_buf, FOUR_KB);
 
   mempool_destroy(&first_handle);
 }
@@ -247,10 +234,11 @@ TEST_F(MempoolSelfCreateTestSuite, PoolExpansionTest) {
 TEST_F(MempoolTestSuite, MemPoolFreeTest) {
   EXPECT_EQ(0, mempool_getinfo(handle, &firstpass_pool_details));
 
-  void *buf = mempool_getbuffer(handle);
+  void *buf =
+      mempool_getbuffer(handle, firstpass_pool_details.mempool_item_size);
   EXPECT_TRUE(buf != NULL);
 
-  mempool_releasebuffer(handle, buf);
+  mempool_releasebuffer(handle, buf, firstpass_pool_details.mempool_item_size);
 
   EXPECT_EQ(0, mempool_getinfo(handle, &secondpass_pool_details));
   EXPECT_EQ(firstpass_pool_details.free_bufs_in_pool,
@@ -270,13 +258,14 @@ TEST_F(MempoolTestSuite, MemPoolNegativeBufferSizeTest) {
 }
 
 TEST_F(MempoolTestSuite, AllocateMemMemoryPoolTest) {
-  void *buf = mempool_getbuffer(handle);
+  void *buf =
+      mempool_getbuffer(handle, firstpass_pool_details.mempool_item_size);
   EXPECT_TRUE(buf != NULL);
 
   EXPECT_EQ(0, mempool_getinfo(handle, &firstpass_pool_details));
   EXPECT_EQ(FOUR_KB, firstpass_pool_details.mempool_item_size);
 
-  buf = mempool_getbuffer(handle);
+  buf = mempool_getbuffer(handle, firstpass_pool_details.mempool_item_size);
   EXPECT_TRUE(buf != NULL);
 
   EXPECT_EQ(0, mempool_getinfo(handle, &secondpass_pool_details));

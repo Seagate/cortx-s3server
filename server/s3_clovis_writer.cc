@@ -105,6 +105,8 @@ S3ClovisWriter::S3ClovisWriter(std::shared_ptr<RequestObject> req,
   layout_ids.clear();
 
   place_holder_for_last_unit = NULL;
+  last_op_was_write = false;
+  unit_size_for_place_holder = -1;
 }
 
 S3ClovisWriter::S3ClovisWriter(std::shared_ptr<RequestObject> req,
@@ -119,11 +121,26 @@ S3ClovisWriter::S3ClovisWriter(std::shared_ptr<RequestObject> req,
 }
 
 S3ClovisWriter::~S3ClovisWriter() {
-  if (place_holder_for_last_unit) {
-    S3MempoolManager::get_instance()->release_buffer_for_unit_size(
-        place_holder_for_last_unit, last_unit_size);
-  }
+  reset_buffers_if_any(unit_size_for_place_holder);
   clean_up_contexts();
+}
+
+void S3ClovisWriter::reset_buffers_if_any(int buf_unit_sz) {
+  s3_log(
+      S3_LOG_DEBUG, request_id,
+      "place_holder_for_last_unit(%p), last_op_was_write(%d), buf_unit_sz(%d)",
+      place_holder_for_last_unit, last_op_was_write, buf_unit_sz);
+  if (place_holder_for_last_unit) {
+    if (last_op_was_write && (buf_unit_sz != -1)) {
+      S3MempoolManager::get_instance()->release_buffer_for_unit_size(
+          place_holder_for_last_unit, buf_unit_sz);
+      place_holder_for_last_unit = NULL;
+    } else {
+      s3_log(S3_LOG_FATAL, request_id,
+             "Possible bug: place_holder_for_last_unit non empty when last op "
+             "was not write or buf_unit_sz = -1.");
+    }
+  }
 }
 
 void S3ClovisWriter::clean_up_contexts() {
@@ -262,6 +279,10 @@ void S3ClovisWriter::create_object(std::function<void(void)> on_success,
   handler_on_success = std::move(on_success);
   handler_on_failed = std::move(on_failed);
 
+  if (last_op_was_write && !layout_ids.empty()) {
+    reset_buffers_if_any(unit_size_for_place_holder);
+  }
+  last_op_was_write = false;
   layout_ids.clear();
   layout_ids.push_back(layoutid);
   is_object_opened = false;
@@ -457,6 +478,7 @@ void S3ClovisWriter::write_content() {
   ctx->cbs[0].oop_stable = s3_clovis_op_stable;
   ctx->cbs[0].oop_failed = s3_clovis_op_failed;
   set_up_clovis_data_buffers(rw_ctx, data_items, clovis_buf_count);
+  last_op_was_write = true;
 
   /* Create the write request */
   rc = s3_clovis_api->clovis_obj_op(&obj_ctx->objs[0], M0_CLOVIS_OC_WRITE,
@@ -523,6 +545,10 @@ void S3ClovisWriter::delete_object(std::function<void(void)> on_success,
   handler_on_failed = std::move(on_failed);
 
   assert(oid_list.size() == 1);
+  if (last_op_was_write && !layout_ids.empty()) {
+    reset_buffers_if_any(unit_size_for_place_holder);
+  }
+  last_op_was_write = false;
   layout_ids.clear();
   layout_ids.push_back(layoutid);
 
@@ -661,15 +687,6 @@ void S3ClovisWriter::set_up_clovis_data_buffers(
     size_t clovis_buf_count) {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
-  if (place_holder_for_last_unit == NULL) {
-    last_unit_size =
-        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
-            layout_ids[0]);
-    place_holder_for_last_unit =
-        (void *)S3MempoolManager::get_instance()->get_buffer_for_unit_size(
-            last_unit_size);
-  }
-
   size_in_current_write = 0;
   size_t size_of_each_buf = g_option_instance->get_libevent_pool_buffer_size();
   size_t buf_count = 0;
@@ -718,6 +735,18 @@ void S3ClovisWriter::set_up_clovis_data_buffers(
 
     size_in_current_write += len_in_buf;
     free(vec_in);
+  }
+
+  if (buf_count < clovis_buf_count) {
+    // Allocate place_holder_for_last_unit only if its required.
+    // Its required when writing last block of object.
+    reset_buffers_if_any(unit_size_for_place_holder);
+    unit_size_for_place_holder =
+        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
+            layout_ids[0]);
+    place_holder_for_last_unit =
+        (void *)S3MempoolManager::get_instance()->get_buffer_for_unit_size(
+            unit_size_for_place_holder);
   }
 
   while (buf_count < clovis_buf_count) {

@@ -35,8 +35,20 @@ extern "C" void mem_mark_free_space_func(size_t space_freed) {
   S3MempoolManager::free_space += space_freed;
 }
 
-extern "C" void mempool_log_msg_func(const char *msg) {
-  s3_log(S3_LOG_DEBUG, "", "%s\n", msg);
+extern "C" void mempool_log_msg_func(int mempool_log_level, const char *msg) {
+  if (mempool_log_level == MEMPOOL_LOG_INFO) {
+    s3_log(S3_LOG_INFO, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_FATAL) {
+    s3_log(S3_LOG_FATAL, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_ERROR) {
+    s3_log(S3_LOG_ERROR, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_WARN) {
+    s3_log(S3_LOG_WARN, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_DEBUG) {
+    s3_log(S3_LOG_DEBUG, "", "%s\n", msg);
+  } else {
+    s3_log(S3_LOG_FATAL, "", "Invalid mempool log level. %s\n", msg);
+  }
 }
 
 S3MempoolManager::S3MempoolManager(size_t max_mem)
@@ -116,10 +128,10 @@ void *S3MempoolManager::get_buffer_for_unit_size(size_t unit_size) {
     MemoryPoolHandle handle = item->second;
     int max_retries = 3;
     while (max_retries > 0) {
-      void *buffer = (void *)mempool_getbuffer(handle);
+      void *buffer = (void *)mempool_getbuffer(handle, unit_size);
       // If buffer is NULL, check if other pool can release some memory
       if (buffer == NULL) {
-        s3_log(S3_LOG_DEBUG, "", "Allocation error for unit_size[%zu]\n",
+        s3_log(S3_LOG_WARN, "", "Allocation error for unit_size[%zu]\n",
                unit_size);
         if (free_any_unused()) {
           max_retries--;
@@ -132,7 +144,7 @@ void *S3MempoolManager::get_buffer_for_unit_size(size_t unit_size) {
       return buffer;
     }
   }
-  s3_log(S3_LOG_DEBUG, "", "Failed allocation for unit_size[%zu]\n", unit_size);
+  s3_log(S3_LOG_ERROR, "", "Failed allocation for unit_size[%zu]\n", unit_size);
   // Should never be here
   return NULL;
 }
@@ -147,9 +159,9 @@ int S3MempoolManager::release_buffer_for_unit_size(void *buf,
            "Found pool for unit_size[%zu] to release memory\n", unit_size);
     // We have required memory pool.
     MemoryPoolHandle handle = item->second;
-    return mempool_releasebuffer(handle, buf);
+    return mempool_releasebuffer(handle, buf, unit_size);
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting: Not found unit_size[%zu]\n", unit_size);
+  s3_log(S3_LOG_ERROR, "", "Exiting: Not found unit_size[%zu]\n", unit_size);
   // Should never be here
   return S3_MEMPOOL_ERROR;
 }

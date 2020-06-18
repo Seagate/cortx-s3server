@@ -109,8 +109,12 @@ class S3ClovisWriter {
 
   void* place_holder_for_last_unit;
   // layout_id for place_holder_for_last_unit can be changed if
-  // the object already exists and has another layout_id
-  int last_unit_size = -1;
+  // the clovis_writer object is reused after use for writing data.
+  // create clovis_writer and use for write data with layout id = 9
+  // followed by reusing same object for deleting obj layout id =1
+  // This causes buffer to be returned to pool with wrong id.
+  bool last_op_was_write;
+  int unit_size_for_place_holder;
 
   // buffer currently used to write, will be freed on completion
   std::shared_ptr<S3AsyncBufferOptContainer> write_async_buffer;
@@ -138,6 +142,7 @@ class S3ClovisWriter {
   S3ClovisWriter(std::shared_ptr<RequestObject> req, uint64_t offset = 0,
                  std::shared_ptr<ClovisAPI> clovis_api = nullptr);
   virtual ~S3ClovisWriter();
+  void reset_buffers_if_any(int buf_unit_sz);
 
   virtual S3ClovisWriterOpState get_state() { return state; }
 
