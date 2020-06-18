@@ -28,7 +28,7 @@ index 240d0146..d376ade3 100644
  	evthread-internal.h			\
  	ht-internal.h				\
 diff --git a/buffer.c b/buffer.c
-index 5e3d91b5..c26641b9 100644
+index 5e3d91b5..ed206539 100644
 --- a/buffer.c
 +++ b/buffer.c
 @@ -140,6 +140,7 @@
@@ -54,7 +54,7 @@ index 5e3d91b5..c26641b9 100644
  	/* get the next largest memory that can hold the buffer */
  	if (size < EVBUFFER_CHAIN_MAX / 2) {
  		to_alloc = MIN_BUFFER_SIZE;
-@@ -174,18 +173,32 @@ evbuffer_chain_new(size_t size)
+@@ -174,18 +173,33 @@ evbuffer_chain_new(size_t size)
  		to_alloc = size;
  	}
  
@@ -76,8 +76,9 @@ index 5e3d91b5..c26641b9 100644
 -	chain->buffer = EVBUFFER_CHAIN_EXTRA(unsigned char, chain);
 +	memset(chain, 0, EVBUFFER_CHAIN_SIZE);
 +        if ((pool_item_size >= to_alloc) && (pool_item_size % to_alloc == 0)) {
-+                if ((chain->buffer = (unsigned char *)mempool_getbuffer(
-+                        g_pool_handle, ZEROED_ALLOCATION)) == NULL) {
++                chain->buffer = (unsigned char *)mempool_getbuffer(
++                	g_pool_handle, ZEROED_ALLOCATION, pool_item_size);
++                if (chain->buffer == NULL) {
 +                        mm_free(chain);
 +                        return NULL;
 +                }
@@ -96,7 +97,7 @@ index 5e3d91b5..c26641b9 100644
  
  	chain->refcnt = 1;
  
-@@ -195,6 +208,7 @@ evbuffer_chain_new(size_t size)
+@@ -195,6 +209,7 @@ evbuffer_chain_new(size_t size)
  static inline void
  evbuffer_chain_free(struct evbuffer_chain *chain)
  {
@@ -104,7 +105,7 @@ index 5e3d91b5..c26641b9 100644
  	EVUTIL_ASSERT(chain->refcnt > 0);
  	if (--chain->refcnt > 0) {
  		/* chain is still referenced by other chains */
-@@ -249,6 +263,15 @@ evbuffer_chain_free(struct evbuffer_chain *chain)
+@@ -249,6 +264,16 @@ evbuffer_chain_free(struct evbuffer_chain *chain)
  		evbuffer_decref_and_unlock_(info->source);
  	}
  
@@ -113,14 +114,15 @@ index 5e3d91b5..c26641b9 100644
 +	if (chain->chain_buffer_len == pool_item_size) {
 +		/* If the buffer size is same as that of pool's buffer size then
 +		 * this have been allocated from pool, so release to pool */
-+		mempool_releasebuffer(g_pool_handle, chain->chain_buffer);
++		mempool_releasebuffer(g_pool_handle, chain->chain_buffer,
++				      chain->chain_buffer_len);	
 +	} else {
 +		mm_free(chain->chain_buffer);
 +	}
  	mm_free(chain);
  }
  
-@@ -690,8 +713,13 @@ evbuffer_reserve_space(struct evbuffer *buf, ev_ssize_t size,
+@@ -690,8 +715,13 @@ evbuffer_reserve_space(struct evbuffer *buf, ev_ssize_t size,
  	} else {
  		if (evbuffer_expand_fast_(buf, size, n_vecs)<0)
  			goto done;
@@ -135,7 +137,7 @@ index 5e3d91b5..c26641b9 100644
  	}
  
  done:
-@@ -2204,7 +2232,7 @@ evbuffer_expand(struct evbuffer *buf, size_t datlen)
+@@ -2204,7 +2234,7 @@ evbuffer_expand(struct evbuffer *buf, size_t datlen)
  #endif
  #define NUM_READ_IOVEC 4
  
@@ -144,7 +146,7 @@ index 5e3d91b5..c26641b9 100644
  
  /** Helper function to figure out which space to use for reading data into
      an evbuffer.  Internal use only.
-@@ -2267,12 +2295,23 @@ get_n_bytes_readable_on_socket(evutil_socket_t fd)
+@@ -2267,12 +2297,23 @@ get_n_bytes_readable_on_socket(evutil_socket_t fd)
  	/* Can overflow, but mostly harmlessly. XXXX */
  	return (int)lng;
  #elif defined(FIONREAD)
@@ -170,7 +172,7 @@ index 5e3d91b5..c26641b9 100644
  #endif
  }
  
-@@ -2300,11 +2339,14 @@ evbuffer_read(struct evbuffer *buf, evutil_socket_t fd, int howmuch)
+@@ -2300,11 +2341,14 @@ evbuffer_read(struct evbuffer *buf, evutil_socket_t fd, int howmuch)
  	}
  
  	n = get_n_bytes_readable_on_socket(fd);
@@ -188,7 +190,7 @@ index 5e3d91b5..c26641b9 100644
  #ifdef USE_IOVEC_IMPL
  	/* Since we can use iovecs, we're willing to use the last
  	 * NUM_READ_IOVEC chains. */
-@@ -2941,6 +2983,7 @@ evbuffer_add_reference(struct evbuffer *outbuf,
+@@ -2941,6 +2985,7 @@ evbuffer_add_reference(struct evbuffer *outbuf,
  		/* don't call chain_free; we do not want to actually invoke
  		 * the cleanup function */
  		mm_free(chain);
@@ -443,7 +445,7 @@ index d09b4f1d..44fe4e5b 100644
  /** Assert that we are holding the lock on an evbuffer */
  #define ASSERT_EVBUFFER_LOCKED(buffer)			\
 diff --git a/event.c b/event.c
-index a778f96c..b6683646 100644
+index a778f96c..29c69342 100644
 --- a/event.c
 +++ b/event.c
 @@ -26,7 +26,7 @@
