@@ -720,10 +720,19 @@ int main(int argc, char **argv) {
   S3ClovisLayoutMap::get_instance()->load_layout_recommendations(
       g_option_instance->get_layout_recommendation_file());
 
+  /* Initialise mero and Clovis */
+  rc = init_clovis();
+  if (rc < 0) {
+    s3daemon.delete_pidfile();
+    finalize_cli_options();
+    s3_log(S3_LOG_FATAL, "", "clovis_init failed!\n");
+  }
+
   // Init stats
   rc = s3_stats_init();
   if (rc < 0) {
     s3daemon.delete_pidfile();
+    fini_clovis();
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "Stats Init failed!!\n");
   }
@@ -737,6 +746,7 @@ int main(int argc, char **argv) {
                          CREATE_ALIGNED_MEMORY);
   if (rc != 0) {
     s3daemon.delete_pidfile();
+    fini_clovis();
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "Memory pool creation for libevent failed!\n");
   }
@@ -755,6 +765,7 @@ int main(int argc, char **argv) {
 
   if (evthread_make_base_notifiable(global_evbase_handle) < 0) {
     s3daemon.delete_pidfile();
+    fini_clovis();
     s3_log(S3_LOG_ERROR, "", "Couldn't make base notifiable!");
     finalize_cli_options();
     return 1;
@@ -762,6 +773,7 @@ int main(int argc, char **argv) {
 
   if (S3AuditInfoLogger::init() != 0) {
     s3daemon.delete_pidfile();
+    fini_clovis();
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "Couldn't init audit logger!");
   }
@@ -770,6 +782,7 @@ int main(int argc, char **argv) {
   if (g_option_instance->is_s3_ssl_auth_enabled()) {
     if (!init_auth_ssl()) {
       s3daemon.delete_pidfile();
+      fini_clovis();
       finalize_cli_options();
       s3_log(S3_LOG_FATAL, "",
              "SSL initialization for communication with Auth server failed!\n");
@@ -801,6 +814,7 @@ int main(int argc, char **argv) {
     htp_ipv4 = create_evhtp_handle(global_evbase_handle, s3_router, NULL);
     if (htp_ipv4 == NULL) {
       s3daemon.delete_pidfile();
+      fini_clovis();
       fini_log();
       finalize_cli_options();
       return 1;
@@ -811,6 +825,7 @@ int main(int argc, char **argv) {
     htp_ipv6 = create_evhtp_handle(global_evbase_handle, s3_router, NULL);
     if (htp_ipv6 == NULL) {
       s3daemon.delete_pidfile();
+      fini_clovis();
       fini_log();
       finalize_cli_options();
       return 1;
@@ -822,6 +837,7 @@ int main(int argc, char **argv) {
         create_evhtp_handle_for_mero(global_evbase_handle, mero_router, NULL);
     if (htp_mero == NULL) {
       s3daemon.delete_pidfile();
+      fini_clovis();
       fini_log();
       finalize_cli_options();
       return 1;
@@ -832,6 +848,7 @@ int main(int argc, char **argv) {
     if (htp_ipv4 != NULL) {
       if (!init_ssl(htp_ipv4)) {
         s3daemon.delete_pidfile();
+        fini_clovis();
         finalize_cli_options();
         s3_log(S3_LOG_FATAL, "",
                "SSL initialization failed for s3server for IPV4!\n");
@@ -840,6 +857,7 @@ int main(int argc, char **argv) {
     if (htp_ipv6 != NULL) {
       if (!init_ssl(htp_ipv6)) {
         s3daemon.delete_pidfile();
+        fini_clovis();
         finalize_cli_options();
         s3_log(S3_LOG_FATAL, "",
                "SSL initialization failed for s3server for IPV6!\n");
@@ -856,6 +874,7 @@ int main(int argc, char **argv) {
 
   if (rc != 0) {
     s3daemon.delete_pidfile();
+    fini_clovis();
     fini_auth_ssl();
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "",
@@ -863,15 +882,6 @@ int main(int argc, char **argv) {
   }
 
   log_resource_limits();
-
-  /* Initialise mero and Clovis */
-  rc = init_clovis();
-  if (rc < 0) {
-    s3daemon.delete_pidfile();
-    fini_auth_ssl();
-    finalize_cli_options();
-    s3_log(S3_LOG_FATAL, "", "clovis_init failed!\n");
-  }
 
   // Init addb
   rc = s3_addb_init();
