@@ -1,3 +1,5 @@
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/e6eb70488ee34228936ba4d764359931)](https://www.codacy.com?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Seagate/cortx-s3server&amp;utm_campaign=Badge_Grade)
+
 # For now dev centric readme
 All the steps below are automated using ansible.
 Please see <source>/ansible/readme
