@@ -62,6 +62,7 @@ then
 fi
 
 yum install -y openldap-servers openldap-clients
+cp -f olcDatabase\=\{2\}mdb.ldif /etc/openldap/slapd.d/cn\=config/
 
 ROOTDNPASSWORD="seagate"
 LDAPADMINPASS="ldapadmin"
@@ -126,11 +127,11 @@ ldapadd -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f iam-constraints.ldif
 ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f /etc/openldap/schema/ppolicy.ldif -H ldapi:///
 
 # Enable password policy and configure
-ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f /tmp/s3ldap/ppolicymodule.ldif -H ldapi:///
+ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f ppolicymodule.ldif -H ldapi:///
 
-ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f /tmp/s3ldap/ppolicyoverlay.ldif -H ldapi:///
+ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f ppolicyoverlay.ldif -H ldapi:///
 
-ldapmodify -x -a -H ldapi:/// -D cn=admin,dc=seagate,dc=com -w $ROOTDNPASSWORD -f /tmp/s3ldap/ppolicy-default.ldif
+ldapmodify -x -a -H ldapi:/// -D cn=admin,dc=seagate,dc=com -w $ROOTDNPASSWORD -f ppolicy-default.ldif
 
 # Enable slapd log with logLevel as "none"
 # for more info : http://www.openldap.org/doc/admin24/slapdconfig.html

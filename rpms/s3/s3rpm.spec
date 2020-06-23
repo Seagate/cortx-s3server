@@ -240,6 +240,17 @@ rm -rf %{buildroot}
 /opt/seagate/s3/install/ldap/background_delete_account.ldif
 /opt/seagate/s3/install/ldap/create_background_delete_account.sh
 /opt/seagate/s3/install/ldap/delete_background_delete_account.sh
+/opt/seagate/s3/install/ldap/cfg_ldap.ldif
+/opt/seagate/s3/install/ldap/cn={1}s3user.ldif
+/opt/seagate/s3/install/ldap/iam-admin-access.ldif
+/opt/seagate/s3/install/ldap/iam-admin.ldif
+/opt/seagate/s3/install/ldap/iam-constraints.ldif
+/opt/seagate/s3/install/ldap/ldap-init.ldif
+/opt/seagate/s3/install/ldap/olcDatabase={2}mdb.ldif
+/opt/seagate/s3/install/ldap/ppolicy-default.ldif
+/opt/seagate/s3/install/ldap/ppolicymodule.ldif
+/opt/seagate/s3/install/ldap/ppolicyoverlay.ldif
+/opt/seagate/s3/install/ldap/setup_ldap.sh
 /opt/seagate/s3/resources/s3_error_messages.json
 /opt/seagate/s3/s3startsystem.sh
 /opt/seagate/s3/s3stopsystem.sh
