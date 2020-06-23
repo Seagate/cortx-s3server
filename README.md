@@ -15,6 +15,7 @@ tar -xvJf clang+llvm-3.8.0-linux-x86_64-centos6.tar.xz
 sudo ln -s ~/Downloads/clang+llvm-3.8.0-linux-x86_64-centos6/bin/clang-format /bin/clang-format
 ```
 
+
 ## How to install git-clang-format
 Install git-clang-format to run clang-format only on new changes.
 ```sh
