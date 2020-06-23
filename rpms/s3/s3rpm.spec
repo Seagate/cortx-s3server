@@ -226,6 +226,8 @@ rm -rf %{buildroot}
 /opt/seagate/s3/install/ldap/syncprov_mod.ldif
 /opt/seagate/s3/install/ldap/syncprov.ldif
 /opt/seagate/s3/install/ldap/replicate.ldif
+/opt/seagate/s3/install/ldap/check_ldap_replication.sh
+/opt/seagate/s3/install/ldap/create_replication_account.ldif
 /opt/seagate/s3/install/ldap/replication/syncprov_mod.ldif
 /opt/seagate/s3/install/ldap/replication/olcserverid.ldif
 /opt/seagate/s3/install/ldap/replication/syncprov.ldif

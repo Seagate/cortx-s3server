@@ -171,6 +171,9 @@ cp -f scripts/ldap/replication/data.ldif $S3_INSTALL_LOCATION/install/ldap/repli
 cp -f scripts/ldap/replication/olcserverid.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
 cp -f scripts/ldap/replication/syncprov_config.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
 
+# Copy check replication script to install location
+cp -f scripts/ldap/check_ldap_replication.sh $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/create_replication_account.ldif $S3_INSTALL_LOCATION/install/ldap/
 
 # Copy slapd log config to install location
 cp -f scripts/ldap/slapdlog.ldif $S3_INSTALL_LOCATION/install/ldap/
