@@ -7,6 +7,7 @@ set -x
 # S3 sanity test script #
 #########################
 
+
 if command -v s3cmd >/dev/null 2>&1;then
     printf "\nCheck S3CMD...OK"
 else
