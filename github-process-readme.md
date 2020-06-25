@@ -26,15 +26,24 @@ $ git config --global color.ui auto
 
 B) Clone s3server  
 
-a) using ssh: `$ git clone git@github.com:Seagate/cortx-s3server.git` 
+a) Using SSH: 
+```sh
+$ git clone git@github.com:Seagate/cortx-s3server.git 
+```
 
-C) Update the source code:  `$ git submodule-update --init  --recursive` 
+C) Update the source code:  
+```sh
+$ git submodule-update --init  --recursive
+```
 
 D) Work on feature branch  
 
-1)  create new branch: `$ git checkout –b dev/SS/test1` 
+1) Create new branch: 
+```sh
+$ git checkout –b dev/SS/test1
+```
 
-2)  update your code change and add it to git:  
+2) Update your code change and add it to git:  
                            
              $ vim README.md 
 
@@ -42,12 +51,20 @@ D) Work on feature branch
 
              $ git add README.md 
 
-3)  commit your code change: `$ git commit –m “<JIRA ID>:S3:<info about change>” `
+3)  Commit your code change:
+```sh
+$ git commit –m “<JIRA ID>:S3:<info about change>”
+```
 
-4)  check git log: `$ git log –2 (to see last 2 commits)` 
+4)  Check git log:
+```sh
+$ git log –2 (to see last 2 commits)
+```
 
-5)  push your code change:  `$ git push origin dev/SS/test1` (output shows pull request url)
-
+5)  Push your code change:
+```sh
+$ git push origin dev/SS/test1 (output shows pull request url)
+```
 E)  Create pull request for feature branch 
 
 A) Use pull URL showed in prev push command and raise pull requests. 
@@ -69,65 +86,67 @@ C) Add Reviewers, comments for your pull requests
 
 D) Trigger pre-merge jenkins job using commit id of your change 
 
-1) get commit id of your change 
+1) Get commit id of your change 
 
 <img src="images/image4.PNG">
 
-2) start pre-merge jobs using commit id: 
+2) Start pre-merge jobs using commit id: 
 http://eos-jenkins.mero.colo.seagate.com/job/S3server/job/s3-github-test/ 
 
 F) Rebase your changes: 
 
 To rebase your local feature branch off of the latest version of master: 
 
-`$ git checkout master`                  /* ensure you are on the master branch 
+`$ git checkout master`                               /* ensure you are on the master branch 
 
 `$ git pull`                                          /* pull the latest from the remote 
 
-`$ git submodule-update --init  --recursive`   /* pull the latest from the remote  
+`$ git submodule-update --init  --recursive`          /* pull the latest from the remote  
 
-`$ git checkout dev/SS/test1`       /* checkout the feature branch 
+`$ git checkout dev/SS/test1`                         /* checkout the feature branch 
 
 `$ git pull`                                          /* pull the latest from the remote 
 
-`$ git submodule-update --init  --recursive`   /* pull the latest from the remote 
+`$ git submodule-update --init  --recursive`          /* pull the latest from the remote 
 
-`$ git rebase master`                      /* rebase on the master branch 
+`$ git rebase master`                                 /* rebase on the master branch 
 
-`$ git push`                                       /* force update the remote 
+`$ git push`                                          /* force update the remote 
 
  
+This process will ensure that you have the latest version of master then take the commits from your feature branch, temporarily unset them, move to the newest head of the master branch and then re-commit them. As long as there are no conflicts, there should be no issues.
 
-This process will ensure that you have the latest version of master then take the commits from your feature branch, temporarily unset them, move to the newest head of the master branch and then re-commit them. As long as there are no conflicts, there should be no issues. 
- 
-
-G)  How to review others changes: 
-1) go to https://github.com/Seagate/cortx-s3server/pulls 
+G) How to review others changes: 
+1) Go to https://github.com/Seagate/cortx-s3server/pulls 
                    or 
-    https://github.com/pulls/review-requested 
- 2) select pull requests to review e.g. 
+    https://github.com/pulls/review-requested
+    
+2) select pull requests to review e.g. 
  
  <img src="images/image5.PNG">
 
 G)  References: 
 
-1) pre-merge job (Manual):  http://eos-jenkins.mero.colo.seagate.com/job/S3server/job/s3-github-test/ 
+  1) pre-merge job (Manual):
+     http://eos-jenkins.mero.colo.seagate.com/job/S3server/job/s3-github-test/ 
 
- 2) post merge job (Automatic):  
-http://eos-jenkins.colo.seagate.com/job/Release_Engineering/job/github-work/job/S3server/6 
-3) reference link: GitWorkflow created by Shailesh 
-4) https://guides.github.com/activities/hello-world/ 
+  2) post merge job (Automatic):  
+     http://eos-jenkins.colo.seagate.com/job/Release_Engineering/job/github-work/job/S3server/6 
+
+  3) Reference link: GitWorkflow
+
+  4) https://guides.github.com/activities/hello-world/ 
 
 
 3) Using fork branch of master repository: 
 
-    1) Create Personal Access Token on individual user 
-a) Go to your GitHub Settings -> Developer settings -> Personal access tokens 
-b) Click on Generate new token 
-c)  add Note : “submodule_checkins_token” 
-https://github.com/settings/tokens 
+  1) Create Personal Access Token on individual user,
+  
+  a) Go to your GitHub Settings -> Developer settings -> Personal access tokens 
+  b) Click on Generate new token 
+  c) Add Note : “submodule_checkins_token” 
+     https://github.com/settings/tokens 
 
- 
 
 =====================Fork based Workflow ================== 
 
