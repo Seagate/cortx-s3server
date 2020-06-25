@@ -14,6 +14,7 @@ else
     exit 0
 fi
 
+
 # Check s3iamcli is installed
 if command -v s3iamcli >/dev/null 2>&1; then
     printf "\nCheck s3iamcli...OK"
