@@ -2,10 +2,11 @@
 
 ## 1. Configure ssh keys 
 
-  A) Generate new ssh keys 
-    ```sh
-      $ ssh-keygen -o -t rsa -b 4096 -C "<seagate-email-address>"  
-    ```
+  A) Generate new ssh keys
+  
+  ```sh
+    $ ssh-keygen -o -t rsa -b 4096 -C "<seagate-email-address>"  
+  ```
 
   B) Update github settings with this public ssh key
   
@@ -21,7 +22,8 @@
 
 ## 2. Git configuration process 
 
-  A) Configure git 
+  A) Configure git
+  
   ```sh
     $ git config --global user.name ‘Your Name’ 
 
@@ -33,21 +35,24 @@
   B) Clone s3server  
 
     a) Using SSH: 
+    
   ```sh
-      $ git clone git@github.com:Seagate/cortx-s3server.git 
+    $ git clone git@github.com:Seagate/cortx-s3server.git 
   ```
 
-  C) Update the source code:  
+  C) Update the source code: 
+  
   ```sh
     $ git submodule-update --init  --recursive
   ```
 
   D) Work on feature branch  
 
-    1) Create new branch: 
-   ```sh
-      $ git checkout –b dev/SS/test1
-   ```
+    1) Create new branch:
+    
+  ```sh
+    $ git checkout –b dev/SS/test1
+  ```
 
     2) Update your code change and add it to git:  
                            
@@ -58,19 +63,21 @@
          $ git add README.md 
 
     3)  Commit your code change:
-   ```sh
-        $ git commit –m “<JIRA ID>:S3:<info about change>”
-   ```
+    
+  ```sh
+     $ git commit –m “<JIRA ID>:S3:<info about change>”
+  ```
 
     4)  Check git log:
-   ```sh
-        $ git log –2 (to see last 2 commits)
-   ```
+  ```sh
+     $ git log –2 (to see last 2 commits)
+  ```
 
     5)  Push your code change:
-   ```sh
-        $ git push origin dev/SS/test1 (output shows pull request url)
-   ```
+    
+  ```sh
+     $ git push origin dev/SS/test1 (output shows pull request url)
+  ```
     6)  Create pull request for feature branch 
 
         A) Use pull URL showed in prev push command and raise pull requests. 
