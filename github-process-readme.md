@@ -1,151 +1,157 @@
-# Frequently Asked Questions – GITHUB Process 
+# FAQ – GitHub Process 
 
-# 1. Configure ssh keys 
+## 1. Configure ssh keys 
 
-A) Generate new ssh keys 
-```sh
-$ ssh-keygen -o -t rsa -b 4096 -C "<seagate-email-address>"  
-```
-B) Update github settings with this public ssh key
-  - Get id_rsa.pub key (default location: /root/.ssh/id_rsa.pub) 
+  A) Generate new ssh keys 
+    ```sh
+      $ ssh-keygen -o -t rsa -b 4096 -C "<seagate-email-address>"  
+    ```
 
-  - Go to github ssh key setting: https://github.com/settings/keys 
+  B) Update github settings with this public ssh key
+  
+    - Get id_rsa.pub key (default location: /root/.ssh/id_rsa.pub) 
 
-  - Add new ssh key and then select Enable SSO option and Authorize for this key
+    - Go to github ssh key setting: https://github.com/settings/keys 
 
-# 2. Git configuration process 
+    - Add new ssh key and then select Enable SSO option and Authorize for this key
+    
+    - Check if your GitHub-id is associated with Seagate email address as Primary email else SSO will not work
+    
+    - Add new SSH key and then select Enable SSO option and Authorize for this key
 
-A) Configure git 
-```sh
-$ git config --global user.name ‘Your Name’ 
+## 2. Git configuration process 
 
-$ git config --global user.email ‘Your.Name@seagate.com’ 
+  A) Configure git 
+  ```sh
+    $ git config --global user.name ‘Your Name’ 
 
-$ git config --global color.ui auto 
-```
+    $ git config --global user.email ‘Your.Name@seagate.com’ 
 
-B) Clone s3server  
+    $ git config --global color.ui auto 
+  ```
 
-a) Using SSH: 
-```sh
-$ git clone git@github.com:Seagate/cortx-s3server.git 
-```
+  B) Clone s3server  
 
-C) Update the source code:  
-```sh
-$ git submodule-update --init  --recursive
-```
+    a) Using SSH: 
+    ```sh
+      $ git clone git@github.com:Seagate/cortx-s3server.git 
+    ```
 
-D) Work on feature branch  
+  C) Update the source code:  
+    ```sh
+    $ git submodule-update --init  --recursive
+    ```
 
-1) Create new branch: 
-```sh
-$ git checkout –b dev/SS/test1
-```
+  D) Work on feature branch  
 
-2) Update your code change and add it to git:  
+    1) Create new branch: 
+      ```sh
+      $ git checkout –b dev/SS/test1
+      ```
+
+    2) Update your code change and add it to git:  
                            
-             $ vim README.md 
+         $ vim README.md 
 
-             $ git diff README.md 
+         $ git diff README.md 
 
-             $ git add README.md 
+         $ git add README.md 
 
-3)  Commit your code change:
-```sh
-$ git commit –m “<JIRA ID>:S3:<info about change>”
-```
+    3)  Commit your code change:
+        ```sh
+        $ git commit –m “<JIRA ID>:S3:<info about change>”
+        ```
 
-4)  Check git log:
-```sh
-$ git log –2 (to see last 2 commits)
-```
+    4)  Check git log:
+        ```sh
+        $ git log –2 (to see last 2 commits)
+        ```
 
-5)  Push your code change:
-```sh
-$ git push origin dev/SS/test1 (output shows pull request url)
-```
-E)  Create pull request for feature branch 
+    5)  Push your code change:
+        ```sh
+        $ git push origin dev/SS/test1 (output shows pull request url)
+        ```
+    6)  Create pull request for feature branch 
 
-A) Use pull URL showed in prev push command and raise pull requests. 
+        A) Use pull URL showed in prev push command and raise pull requests. 
 
-<img src="images/image1.PNG">
+        <img src="images/image1.PNG">
 
-Or  
+        Or  
 
-B) Use GitHub console,  
+        B) Use GitHub console,  
 
 On GitHub, navigate to the main page of the repository.   
 In the "Branch" menu, choose the branch that contains your commits. 
 
-<img src="images/image2.PNG">
+        <img src="images/image2.PNG">
 
-C) Add Reviewers, comments for your pull requests 
+        C) Add Reviewers, comments for your pull requests 
 
-<img src="images/image3.PNG">
+          <img src="images/image3.PNG">
 
-D) Trigger pre-merge jenkins job using commit id of your change 
+        D) Trigger pre-merge jenkins job using commit id of your change 
 
-1) Get commit id of your change 
+            1) Get commit id of your change 
 
-<img src="images/image4.PNG">
+              <img src="images/image4.PNG">
 
-2) Start pre-merge jobs using commit id: 
-http://eos-jenkins.mero.colo.seagate.com/job/S3server/job/s3-github-test/ 
+            2) Start pre-merge jobs using commit id: 
+               http://eos-jenkins.mero.colo.seagate.com/job/S3server/job/s3-github-test/ 
 
-F) Rebase your changes: 
+        E) Rebase your changes: 
 
 To rebase your local feature branch off of the latest version of master: 
 
-`$ git checkout master`                               /* ensure you are on the master branch 
+      `$ git checkout master`                               /* ensure you are on the master branch 
 
-`$ git pull`                                          /* pull the latest from the remote 
+      `$ git pull`                                          /* pull the latest from the remote 
 
-`$ git submodule-update --init  --recursive`          /* pull the latest from the remote  
+      `$ git submodule-update --init  --recursive`          /* pull the latest from the remote  
 
-`$ git checkout dev/SS/test1`                         /* checkout the feature branch 
+      `$ git checkout dev/SS/test1`                         /* checkout the feature branch 
 
-`$ git pull`                                          /* pull the latest from the remote 
+      `$ git pull`                                          /* pull the latest from the remote 
 
-`$ git submodule-update --init  --recursive`          /* pull the latest from the remote 
+      `$ git submodule-update --init  --recursive`          /* pull the latest from the remote 
 
-`$ git rebase master`                                 /* rebase on the master branch 
+      `$ git rebase master`                                 /* rebase on the master branch 
 
-`$ git push`                                          /* force update the remote 
+      `$ git push`                                          /* force update the remote 
 
  
 This process will ensure that you have the latest version of master then take the commits from your feature branch, temporarily unset them, move to the newest head of the master branch and then re-commit them. As long as there are no conflicts, there should be no issues.
 
-G) How to review others changes: 
-1) Go to https://github.com/Seagate/cortx-s3server/pulls 
+        F) How to review others changes: 
+            1) Go to https://github.com/Seagate/cortx-s3server/pulls 
                    or 
-    https://github.com/pulls/review-requested
+              https://github.com/pulls/review-requested
     
-2) select pull requests to review e.g. 
+            2) select pull requests to review e.g. 
  
- <img src="images/image5.PNG">
+              <img src="images/image5.PNG">
 
-G)  References: 
+        G)  References: 
 
-  1) pre-merge job (Manual):
-     http://eos-jenkins.mero.colo.seagate.com/job/S3server/job/s3-github-test/ 
+            1) pre-merge job (Manual):
+               http://eos-jenkins.mero.colo.seagate.com/job/S3server/job/s3-github-test/ 
 
-  2) post merge job (Automatic):  
-     http://eos-jenkins.colo.seagate.com/job/Release_Engineering/job/github-work/job/S3server/6 
+            2) post merge job (Automatic):  
+               http://eos-jenkins.colo.seagate.com/job/Release_Engineering/job/github-work/job/S3server/6 
 
-  3) Reference link: GitWorkflow
+            3) Reference link: GitWorkflow
 
-  4) https://guides.github.com/activities/hello-world/ 
+            4) https://guides.github.com/activities/hello-world/ 
 
 
 3) Using fork branch of master repository: 
 
   1) Create Personal Access Token on individual user,
   
-  a) Go to your GitHub Settings -> Developer settings -> Personal access tokens 
-  b) Click on Generate new token 
-  c) Add Note : “submodule_checkins_token” 
-     https://github.com/settings/tokens 
+      a) Go to your GitHub Settings -> Developer settings -> Personal access tokens 
+      b) Click on Generate new token 
+      c) Add Note : “submodule_checkins_token” 
+         https://github.com/settings/tokens 
 
 
 =====================Fork based Workflow ================== 
