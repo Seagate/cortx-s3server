@@ -36,13 +36,13 @@
 
    a) Using SSH: 
     
-```
+```sh
     $ git clone git@github.com:Seagate/cortx-s3server.git 
 ```
 
   C) Update the source code: 
   
-```
+```sh
     $ git submodule-update --init  --recursive
 ```
 
@@ -50,13 +50,13 @@
 
     1) Create new branch:
     
-```
+```sh
     $ git checkout –b dev/SS/test1
 ```
 
     2) Update your code change and add it to git:  
           
-```
+```sh
           $ vim README.md 
 
           $ git diff README.md 
@@ -66,94 +66,94 @@
 
     3)  Commit your code change:
     
-```
+```sh
      $ git commit –m “<JIRA ID>:S3:<info about change>”
 ```
 
     4)  Check git log:
     
-```
+```sh
      $ git log –2 (to see last 2 commits)
 ```
 
     5)  Push your code change:
     
-```
+```sh
      $ git push origin dev/SS/test1 (output shows pull request url)
 ```
 
     6)  Create pull request for feature branch 
 
-      A) Use pull URL showed in prev push command and raise pull requests. 
+    A) Use pull URL showed in prev push command and raise pull requests. 
 
    <img src="images/image1.PNG">
 
        Or  
 
-      B) Use GitHub console,  
+    B) Use GitHub console,  
 
 On GitHub, navigate to the main page of the repository.   
 In the "Branch" menu, choose the branch that contains your commits. 
 
    <img src="images/image2.PNG">
 
-      C) Add Reviewers, comments for your pull requests 
+    C) Add Reviewers, comments for your pull requests 
 
    <img src="images/image3.PNG">
 
-      D) Trigger pre-merge jenkins job using commit id of your change 
+    D) Trigger pre-merge jenkins job using commit id of your change 
 
-         1) Get commit id of your change 
+       1) Get commit id of your change 
 
    <img src="images/image4.PNG">
 
-         2) Start pre-merge jobs using commit id: 
-               http://eos-jenkins.mero.colo.seagate.com/job/S3server/job/s3-github-test/ 
+       2) Start pre-merge jobs using commit id: 
+         http://eos-jenkins.mero.colo.seagate.com/job/S3server/job/s3-github-test/ 
 
-      E) Rebase your changes: 
+    E) Rebase your changes: 
 
 To rebase your local feature branch off of the latest version of master: 
 
-```
-      `$ git checkout master`                               /* ensure you are on the master branch 
+```sh
+      $ git checkout master                               /* ensure you are on the master branch 
 
-      `$ git pull`                                          /* pull the latest from the remote 
+      $ git pull                                          /* pull the latest from the remote 
 
-      `$ git submodule-update --init  --recursive`          /* pull the latest from the remote  
+      $ git submodule-update --init  --recursive          /* pull the latest from the remote  
 
-      `$ git checkout dev/SS/test1`                         /* checkout the feature branch 
+      $ git checkout dev/SS/test1                         /* checkout the feature branch 
 
-      `$ git pull`                                          /* pull the latest from the remote 
+      $ git pull                                          /* pull the latest from the remote 
 
-      `$ git submodule-update --init  --recursive`          /* pull the latest from the remote 
+      $ git submodule-update --init  --recursive          /* pull the latest from the remote 
 
-      `$ git rebase master`                                 /* rebase on the master branch 
+      $ git rebase master                                 /* rebase on the master branch 
 
-      `$ git push`                                          /* force update the remote 
+      $ git push                                          /* force update the remote 
 ```
  
 This process will ensure that you have the latest version of master then take the commits from your feature branch, temporarily unset them, move to the newest head of the master branch and then re-commit them. As long as there are no conflicts, there should be no issues.
 
-      F) How to review others changes: 
-           1) Go to https://github.com/Seagate/cortx-s3server/pulls 
+     F) How to review others changes: 
+        1) Go to https://github.com/Seagate/cortx-s3server/pulls 
                    or 
-              https://github.com/pulls/review-requested
+           https://github.com/pulls/review-requested
     
-           2) select pull requests to review e.g. 
+        2) select pull requests to review e.g. 
  
    <img src="images/image5.PNG">
 
-      G)  References: 
+     G)  References: 
 
-            1) pre-merge job (Manual):
-               http://eos-jenkins.mero.colo.seagate.com/job/S3server/job/s3-github-test/ 
+         1) pre-merge job (Manual):
+            http://eos-jenkins.mero.colo.seagate.com/job/S3server/job/s3-github-test/ 
 
-            2) post merge job (Automatic):  
-               http://eos-jenkins.colo.seagate.com/job/Release_Engineering/job/github-work/job/S3server/6 
+         2) post merge job (Automatic):  
+            http://eos-jenkins.colo.seagate.com/job/Release_Engineering/job/github-work/job/S3server/6 
 
-            3) Reference link: GitWorkflow
+         3) Reference link: GitWorkflow
 
-            4) https://guides.github.com/activities/hello-world/ 
+         4) https://guides.github.com/activities/hello-world/ 
 
 
 3) Using fork branch of master repository: 
