@@ -1,17 +1,17 @@
 [submodule "third_party/jsoncpp"]
 	path = third_party/jsoncpp
-	url = ../jsoncpp
+	url = https://github.com/Seagate/jsoncpp.git
 	ignore = dirty
 [submodule "third_party/libevent"]
 	path = third_party/libevent
-	url = ../libevent
+	url = https://github.com/Seagate/libevent.git
 	ignore = dirty
 [submodule "third_party/libevhtp"]
 	path = third_party/libevhtp
-	url = ../libevhtp
+	url = https://github.com/Seagate/libevhtp.git
 	branch = develop
 	ignore = dirty
 [submodule "third_party/mero"]
 	path = third_party/mero
-	url = ../mero
+	url = https://github.com/Seagate/cortx-motr.git
 	ignore = dirty
