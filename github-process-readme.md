@@ -4,55 +4,55 @@
 
   A) Generate new ssh keys
   
-  ```sh
+```sh
     $ ssh-keygen -o -t rsa -b 4096 -C "<seagate-email-address>"  
-  ```
+```
 
   B) Update github settings with this public ssh key
   
-    - Get id_rsa.pub key (default location: /root/.ssh/id_rsa.pub) 
+  - Get id_rsa.pub key (default location: /root/.ssh/id_rsa.pub) 
 
-    - Go to github ssh key setting: https://github.com/settings/keys 
+  - Go to github ssh key setting: https://github.com/settings/keys 
 
-    - Add new ssh key and then select Enable SSO option and Authorize for this key
+  - Add new ssh key and then select Enable SSO option and Authorize for this key
     
-    - Check if your GitHub-id is associated with Seagate email address as Primary email else SSO will not work
+  - Check if your GitHub-id is associated with Seagate email address as Primary email else SSO will not work
     
-    - Add new SSH key and then select Enable SSO option and Authorize for this key
+  - Add new SSH key and then select Enable SSO option and Authorize for this key
 
 ## 2. Git configuration process 
 
   A) Configure git
   
-  ```sh
+```sh
     $ git config --global user.name ‘Your Name’ 
 
     $ git config --global user.email ‘Your.Name@seagate.com’ 
 
     $ git config --global color.ui auto 
-  ```
+```
 
   B) Clone s3server  
 
-    a) Using SSH: 
+   a) Using SSH: 
     
-  ```sh
+```
     $ git clone git@github.com:Seagate/cortx-s3server.git 
-  ```
+```
 
   C) Update the source code: 
   
-  ```sh
+```
     $ git submodule-update --init  --recursive
-  ```
+```
 
   D) Work on feature branch  
 
     1) Create new branch:
     
-  ```sh
+```sh
     $ git checkout –b dev/SS/test1
-  ```
+```
 
     2) Update your code change and add it to git:  
                            
@@ -64,49 +64,51 @@
 
     3)  Commit your code change:
     
-  ```sh
+```sh
      $ git commit –m “<JIRA ID>:S3:<info about change>”
-  ```
+```
 
     4)  Check git log:
-  ```sh
+    
+```sh
      $ git log –2 (to see last 2 commits)
-  ```
+```
 
     5)  Push your code change:
     
-  ```sh
+```sh
      $ git push origin dev/SS/test1 (output shows pull request url)
-  ```
+```
+
     6)  Create pull request for feature branch 
 
-        A) Use pull URL showed in prev push command and raise pull requests. 
+       A) Use pull URL showed in prev push command and raise pull requests. 
 
 <img src="images/image1.PNG">
 
         Or  
 
-        B) Use GitHub console,  
+       B) Use GitHub console,  
 
 On GitHub, navigate to the main page of the repository.   
 In the "Branch" menu, choose the branch that contains your commits. 
 
 <img src="images/image2.PNG">
 
-        C) Add Reviewers, comments for your pull requests 
+       C) Add Reviewers, comments for your pull requests 
 
 <img src="images/image3.PNG">
 
-        D) Trigger pre-merge jenkins job using commit id of your change 
+       D) Trigger pre-merge jenkins job using commit id of your change 
 
-            1) Get commit id of your change 
+          1) Get commit id of your change 
 
 <img src="images/image4.PNG">
 
-            2) Start pre-merge jobs using commit id: 
+          2) Start pre-merge jobs using commit id: 
                http://eos-jenkins.mero.colo.seagate.com/job/S3server/job/s3-github-test/ 
 
-        E) Rebase your changes: 
+       E) Rebase your changes: 
 
 To rebase your local feature branch off of the latest version of master: 
 
@@ -129,7 +131,7 @@ To rebase your local feature branch off of the latest version of master:
  
 This process will ensure that you have the latest version of master then take the commits from your feature branch, temporarily unset them, move to the newest head of the master branch and then re-commit them. As long as there are no conflicts, there should be no issues.
 
-        F) How to review others changes: 
+       F) How to review others changes: 
             1) Go to https://github.com/Seagate/cortx-s3server/pulls 
                    or 
               https://github.com/pulls/review-requested
@@ -138,7 +140,7 @@ This process will ensure that you have the latest version of master then take th
  
 <img src="images/image5.PNG">
 
-        G)  References: 
+       G)  References: 
 
             1) pre-merge job (Manual):
                http://eos-jenkins.mero.colo.seagate.com/job/S3server/job/s3-github-test/ 
