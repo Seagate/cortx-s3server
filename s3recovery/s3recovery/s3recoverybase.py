@@ -26,6 +26,7 @@ from s3backgrounddelete.eos_core_config import EOSCoreConfig
 from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
 from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
 from s3recovery.config import Config
+from json import JSONDecodeError
 
 class S3RecoveryBase:
     def __init__(self):
@@ -55,8 +56,22 @@ class S3RecoveryBase:
         :union_result: Structurized form of result in KV.
 
         """
-        if (data_to_restore is None) or (item_replica is None):
-            print("Invalid values while parsing. Skip validation")
+        if (data_to_restore is None):
+            try:
+                bucket_metadata_replica = json.loads(item_replica)
+            except JSONDecodeError:
+                print("Failed to parse JSON")
+                return
+            union_result[key] = item_replica
+            return
+
+        if (item_replica is None):
+            try:
+                bucket_metadata_replica = json.loads(data_to_restore)
+            except JSONDecodeError:
+                print("Failed to parse JSON")
+                return
+            union_result[key] = data_to_restore
             return
 
         p_corruption = False
@@ -76,7 +91,7 @@ class S3RecoveryBase:
             union_result[key] = data_to_restore
         elif s_corruption and (not p_corruption):
             union_result[key] = item_replica
-        else:
+        elif (not p_corruption) and (not s_corruption):
             # Compare epoch here
             bucket_metadata_date = dateutil.parser.parse(bucket_metadata["create_timestamp"])
             bucket_metadata_replica_date = dateutil.parser.parse(bucket_metadata_replica["create_timestamp"])
@@ -86,6 +101,9 @@ class S3RecoveryBase:
                 union_result[key] = item_replica
             else:
                 union_result[key] = data_to_restore
+        else:
+            # Both entries corrupted
+            pass
 
     def list_index(self, index_id):
         """
@@ -174,7 +192,17 @@ class S3RecoveryBase:
 
         """
         for key in self.result:
-            self.perform_validation(key, self.data_as_dict[key], self.replica_as_dict[key], union_result)
+            try:
+                metadata_value = self.data_as_dict[key]
+            except KeyError:
+                metadata_value = None
+
+            try:
+                replica_value = self.replica_as_dict[key]
+            except KeyError:
+                replica_value = None
+
+            self.perform_validation(key, metadata_value, replica_value, union_result)
 
         print("\nData recovered from both indexes for {} \n".format(index_name))
         self.print_content(union_result)
