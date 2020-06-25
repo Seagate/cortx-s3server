@@ -46,7 +46,7 @@
     $ git submodule-update --init  --recursive
 ```
 
-  D) Work on feature branch  
+  D) Work on feature branch: 
 
     1) Create new branch:
     
@@ -64,25 +64,25 @@
           $ git add README.md
 ```
 
-    3)  Commit your code change:
+    3) Commit your code change:
     
 ```sh
      $ git commit –m “<JIRA ID>:S3:<info about change>”
 ```
 
-    4)  Check git log:
+    4) Check git log:
     
 ```sh
      $ git log –2 (to see last 2 commits)
 ```
 
-    5)  Push your code change:
+    5) Push your code change:
     
 ```sh
      $ git push origin dev/SS/test1 (output shows pull request url)
 ```
 
-    6)  Create pull request for feature branch 
+    6) Create pull request for feature branch:
 
     A) Use pull URL showed in prev push command and raise pull requests. 
 
@@ -134,7 +134,8 @@ To rebase your local feature branch off of the latest version of master:
  
 This process will ensure that you have the latest version of master then take the commits from your feature branch, temporarily unset them, move to the newest head of the master branch and then re-commit them. As long as there are no conflicts, there should be no issues.
 
-     F) How to review others changes: 
+     F) How to review others changes:
+     
         1) Go to https://github.com/Seagate/cortx-s3server/pulls 
                    or 
            https://github.com/pulls/review-requested
