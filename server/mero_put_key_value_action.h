@@ -52,5 +52,13 @@ class MeroPutKeyValueAction : public MeroAction {
   void put_key_value_failed();
   void consume_incoming_content();
   void send_response_to_s3_client();
+
+  FRIEND_TEST(MeroPutKeyValueActionTest, ValidateKeyValueValidIndexValidValue);
+  FRIEND_TEST(MeroPutKeyValueActionTest, PutKeyValueSuccessful);
+  FRIEND_TEST(MeroPutKeyValueActionTest, PutKeyValue);
+  FRIEND_TEST(MeroPutKeyValueActionTest, PutKeyValueFailed);
+  FRIEND_TEST(MeroPutKeyValueActionTest, ConsumeIncomingContentReadError);
+  FRIEND_TEST(MeroPutKeyValueActionTest, ValidJson);
+  FRIEND_TEST(MeroPutKeyValueActionTest, InvalidJson);
 };
 #endif
