@@ -227,6 +227,24 @@ TEST_F(MeroPutKeyValueActionTest, ConsumeIncomingContentHasAllBodyContent) {
   action_under_test->consume_incoming_content();
 }
 
+TEST_F(MeroPutKeyValueActionTest, ConsumeIncomingContentEmptyJsonValue) {
+  EXPECT_CALL(*ptr_mock_request, has_all_body_content()).Times(1).WillOnce(
+      Return(true));
+
+  std::string invalid_value = "";
+  EXPECT_CALL(*ptr_mock_request, get_full_body_content_as_string())
+      .Times(1)
+      .WillOnce(ReturnRef(invalid_value));
+
+  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
+      .WillOnce(Return("/indexes/123-456"));
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(400, _)).Times(AtLeast(1));
+
+  action_under_test->consume_incoming_content();
+}
+
 TEST_F(MeroPutKeyValueActionTest, ConsumeIncomingContentResume) {
   EXPECT_CALL(*ptr_mock_request, has_all_body_content()).Times(1).WillOnce(
       Return(false));
