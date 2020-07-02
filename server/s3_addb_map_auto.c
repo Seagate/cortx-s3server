@@ -24,7 +24,7 @@
 
 #include "s3_addb_map.h"
 
-const uint64_t g_s3_to_addb_idx_func_name_map_size = 194;
+const uint64_t g_s3_to_addb_idx_func_name_map_size = 195;
 
 const char* g_s3_to_addb_idx_func_name_map[] = {
     "Action::check_authentication",
@@ -56,6 +56,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "MeroPutKeyValueAction::put_key_value",
     "MeroPutKeyValueAction::read_and_validate_key_value",
     "MeroPutKeyValueAction::send_response_to_s3_client",
+    "MeroPutKeyValueActionTest::func_callback",
     "S3APIHandlerTest::func_callback_one",
     "S3AbortMultipartAction::add_object_oid_to_probable_dead_oid_list",
     "S3AbortMultipartAction::delete_multipart_metadata",
