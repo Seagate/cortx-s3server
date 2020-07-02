@@ -57,7 +57,7 @@ class MockMeroRequestObject : public MeroRequestObject {
   MOCK_METHOD1(set_object_oid_hi, void(const std::string &oid_hi));
   MOCK_METHOD1(set_index_id_lo, void(const std::string &index_lo));
   MOCK_METHOD1(set_index_id_hi, void(const std::string &index_hi));
-  MOCK_METHOD0(has_all_body_content, bool());
+  MOCK_CONST_METHOD0(has_all_body_content, bool());
   MOCK_METHOD0(is_chunked, bool());
   MOCK_METHOD0(pause, void());
   MOCK_METHOD1(resume, void(bool set_read_timeout_timer));
