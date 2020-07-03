@@ -129,7 +129,7 @@ cat >/etc/yum.repos.d/releases_eos_mero.repo <<EOL
 [releases_eos_mero]
 baseurl = http://ci-storage.mero.colo.seagate.com/releases/eos/components/dev/centos-7.7.1908/mero/last_successful/
 gpgcheck = 0
-name = Yum repo for mero
+name = Yum repo for motr
 priority = 1
 EOL
 
@@ -223,18 +223,18 @@ fi
 
 setup_ldap_replication()
 {
-    ldapadd -Y EXTERNAL -H ldapi:/// -f /opt/seagate/s3/install/ldap/syncprov_mod.ldif
-    ldapadd -Y EXTERNAL -H ldapi:/// -f /opt/seagate/s3/install/ldap/syncprov.ldif
+    ldapadd -Y EXTERNAL -H ldapi:/// -f /opt/seagate/cortx/s3/install/ldap/syncprov_mod.ldif
+    ldapadd -Y EXTERNAL -H ldapi:/// -f /opt/seagate/cortx/s3/install/ldap/syncprov.ldif
     firewall-cmd --zone=public --add-port=389/tcp --permanent
     firewall-cmd --reload
 
     # Openldap replication for 2 node setup for EES.
-    sed -i 's/#//g' /opt/seagate/s3/install/ldap/replicate.ldif
+    sed -i 's/#//g' /opt/seagate/cortx/s3/install/ldap/replicate.ldif
     sed -i '0,/<sample_provider_URI>/ s/<sample_provider_URI>/$ees_node1/g' scripts/ldap/replicate.ldif
     sed -i '0,/<sample_provider_URI>/ s/<sample_provider_URI>/$ees_node2/g' scripts/ldap/replicate.ldif
     sed -i 's/olcServerID: /olcServerID: $olc_server_id/g' scripts/ldap/replicate.ldif
 
-    ldapmodify -Y EXTERNAL  -H ldapi:/// -f /opt/seagate/s3/install/ldap/replicate.ldif
+    ldapmodify -Y EXTERNAL  -H ldapi:/// -f /opt/seagate/cortx/s3/install/ldap/replicate.ldif
 }
 
 # Install and Configure Openldap over Non-SSL.
@@ -248,13 +248,13 @@ fi
 
 if [[ $config_ldap == true ]]
 then
-    /opt/seagate/auth/scripts/enc_ldap_passwd_in_cfg.sh -l $ldappasswd \
-          -p /opt/seagate/auth/resources/authserver.properties
-    if [[ -f /opt/seagate/s3/install/ldap/rsyslog.d/slapdlog.conf ]]
+    /opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh -l $ldappasswd \
+          -p /opt/seagate/cortx/auth/resources/authserver.properties
+    if [[ -f /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf ]]
     then
         # Enable slapd logging in rsyslog config
         mkdir -p /etc/rsyslog.d
-        cp /opt/seagate/s3/install/ldap/rsyslog.d/slapdlog.conf /etc/rsyslog.d/slapdlog.conf
+        cp /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf /etc/rsyslog.d/slapdlog.conf
     fi
     systemctl restart s3authserver
     systemctl restart rsyslog
@@ -263,7 +263,7 @@ elif [[ $purge_config_ldap == true ]]
 then
     $S3_DIR/scripts/ldap/setup_ldap.sh --defaultpasswd --forceclean --skipssl
     $S3_DIR/scripts/enc_ldap_passwd_in_cfg.sh -l $ldappasswd \
-          -p /opt/seagate/auth/resources/authserver.properties
+          -p /opt/seagate/cortx/auth/resources/authserver.properties
 fi
 
 # Setup Openldap replication for EES setup.
@@ -279,25 +279,25 @@ then
     # Copy haproxy config and rsyslog dependencies
     if [ "$major_version" = "7" ];
     then
-        cp /opt/seagate/s3/install/haproxy/haproxy_osver7.cfg /etc/haproxy/haproxy.cfg
+        cp /opt/seagate/cortx/s3/install/haproxy/haproxy_osver7.cfg /etc/haproxy/haproxy.cfg
     elif [ "$major_version" = "8" ];
     then
-        cp /opt/seagate/s3/install/haproxy/haproxy_osver8.cfg /etc/haproxy/haproxy.cfg
+        cp /opt/seagate/cortx/s3/install/haproxy/haproxy_osver8.cfg /etc/haproxy/haproxy.cfg
     fi
 
-    cp /opt/seagate/s3/install/haproxy/503.http /etc/haproxy/errors/
-    cp /opt/seagate/s3/install/haproxy/logrotate/haproxy /etc/logrotate.d/haproxy
-    cp /opt/seagate/s3/install/haproxy/rsyslog.d/haproxy.conf /etc/rsyslog.d/haproxy.conf
+    cp /opt/seagate/cortx/s3/install/haproxy/503.http /etc/haproxy/errors/
+    cp /opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy /etc/logrotate.d/haproxy
+    cp /opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf /etc/rsyslog.d/haproxy.conf
 
     if [ -f /etc/cron.daily/logrotate ];
     then
         rm -rf /etc/cron.daily/logrotate
     fi
 
-    cp /opt/seagate/s3/install/haproxy/logrotate/logrotate /etc/cron.hourly/logrotate
+    cp /opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate /etc/cron.hourly/logrotate
 
     # Enable slapd logging in rsyslog config
-    cp /opt/seagate/s3/install/ldap/rsyslog.d/slapdlog.conf /etc/rsyslog.d/slapdlog.conf
+    cp /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf /etc/rsyslog.d/slapdlog.conf
 
     if [ "$selinux_status" = "enabled" ];
     then
@@ -350,7 +350,7 @@ create_background_delete_account()
     if [[ $output == *"No such object"* ]]
     then
       # Create s3background delete account
-      sh /opt/seagate/s3/install/ldap/create_background_delete_account.sh $ldappasswd
+      sh /opt/seagate/cortx/s3/install/ldap/create_background_delete_account.sh $ldappasswd
       echo "Created s3backgrounddelete account successfully..."
     else
       echo "s3backgrounddelete account already exists"
@@ -361,7 +361,7 @@ create_background_delete_account()
 delete_background_delete_account()
 {
    # Delete s3background delete account
-   sh /opt/seagate/s3/install/ldap/delete_background_delete_account.sh $ldappasswd
+   sh /opt/seagate/cortx/s3/install/ldap/delete_background_delete_account.sh $ldappasswd
    echo "Deleted s3backgrounddelete account successfully..."
 }
 
@@ -385,6 +385,6 @@ fi
 if [[ $cleanup_dependencies == true ]]
 then
     echo "removing s3 dependencies"
-    yum -y remove log4cxx_eos || echo ""
+    yum -y remove log4cxx_cortx || echo ""
 fi
 

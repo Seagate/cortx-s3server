@@ -1,4 +1,4 @@
-Name: log4cxx_eos
+Name: log4cxx_cortx
 Version: 0.10.0
 Release: 1
 
@@ -21,14 +21,14 @@ Apache log4cxx is a logging framework for C++ patterned after Apache log4j.
 Apache log4cxx uses Apache Portable Runtime for most platform-specific code
 and should be usable on any platform supported by APR.
 
-%package -n log4cxx_eos-devel
+%package -n log4cxx_cortx-devel
 License:        Apache
 Group:          Development/Libraries/C and C++
 Requires:       %{name} = %{version}
 Summary:        The development files for log4cxx
 #Requires:	unixODBC-devel libapr-util1-devel openldap2-devel libdb-4_5 libexpat-devel libapr1-devel glibc-devel
 
-%description -n log4cxx_eos-devel
+%description -n log4cxx_cortx-devel
 Apache log4cxx is a logging framework for C++ patterned after Apache log4j.
 Apache log4cxx uses Apache Portable Runtime for most platform-specific code
 and should be usable on any platform supported by APR.
@@ -66,7 +66,7 @@ rm $RPM_BUILD_DIR/file.list
 %{_libdir}/liblog4cxx.so.10
 %{_libdir}/liblog4cxx.so.10.0.0
 
-%files -n log4cxx_eos-devel -f ../file.list
+%files -n log4cxx_cortx-devel -f ../file.list
 %defattr(-,root,root,-)
 %{_libdir}/liblog4cxx.a
 %{_libdir}/liblog4cxx.la

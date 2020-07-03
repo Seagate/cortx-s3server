@@ -23,7 +23,7 @@
 
 #include <gtest/gtest.h>
 #include "s3_error_messages.h"
-/* /opt/seagate/s3/resources/s3_error_messages.json */
+/* /opt/seagate/cortx/s3/resources/s3_error_messages.json */
 
 TEST(S3ErrorDetailsTest, DefaultConstructor) {
   S3ErrorDetails error_msg;

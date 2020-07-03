@@ -18,7 +18,7 @@
 #%global py36_sitelib %{_libdir}/python%{py_ver}
 %global py36_sitelib /usr/lib/python%{py_ver}/site-packages
 
-Name:       eos-s3iamcli
+Name:       cortx-s3iamcli
 Version:    %{_s3iamcli_version}
 Release:    %{build_num}_%{_s3iamcli_git_ver}
 Summary:    Seagate S3 IAM CLI.
