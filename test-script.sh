@@ -1,2 +1,2 @@
 #!/bin/bash
-echo "This is test script #2"
+echo "This is test script #3"
