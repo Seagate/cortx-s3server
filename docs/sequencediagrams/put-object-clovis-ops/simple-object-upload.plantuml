@@ -5,8 +5,8 @@ title Simple Object Upload
 
 participant "S3 Client" as client
 participant "S3 Server" as server
-participant "Mero\nKVS API" as kvs
-participant "Mero\nObject API" as object
+participant "Motr\nKVS API" as kvs
+participant "Motr\nObject API" as object
 
 autoactivate on
 

@@ -18,24 +18,24 @@ This script sends statistics from haproxy to statsd server.
 
 %install
 rm -rf %{buildroot}
-mkdir -p %{buildroot}/opt/seagate/s3-haproxy-statsd/
-cp haproxy-statsd.* %{buildroot}/opt/seagate/s3-haproxy-statsd/
-cp LICENSE  %{buildroot}/opt/seagate/s3-haproxy-statsd/
-cp README.md  %{buildroot}/opt/seagate/s3-haproxy-statsd/
+mkdir -p %{buildroot}/opt/seagate/cortx/s3-haproxy-statsd/
+cp haproxy-statsd.* %{buildroot}/opt/seagate/cortx/s3-haproxy-statsd/
+cp LICENSE  %{buildroot}/opt/seagate/cortx/s3-haproxy-statsd/
+cp README.md  %{buildroot}/opt/seagate/cortx/s3-haproxy-statsd/
 
 %clean
 rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
-%dir /opt/seagate/s3-haproxy-statsd/
-%attr(0755, root, root) /opt/seagate/s3-haproxy-statsd/haproxy-statsd.py
-/opt/seagate/s3-haproxy-statsd/haproxy-statsd.conf
-/opt/seagate/s3-haproxy-statsd/LICENSE
-/opt/seagate/s3-haproxy-statsd/README.md
+%dir /opt/seagate/cortx/s3-haproxy-statsd/
+%attr(0755, root, root) /opt/seagate/cortx/s3-haproxy-statsd/haproxy-statsd.py
+/opt/seagate/cortx/s3-haproxy-statsd/haproxy-statsd.conf
+/opt/seagate/cortx/s3-haproxy-statsd/LICENSE
+/opt/seagate/cortx/s3-haproxy-statsd/README.md
 
-%exclude /opt/seagate/s3-haproxy-statsd/*.pyc
-%exclude /opt/seagate/s3-haproxy-statsd/*.pyo
+%exclude /opt/seagate/cortx/s3-haproxy-statsd/*.pyc
+%exclude /opt/seagate/cortx/s3-haproxy-statsd/*.pyo
 
 %license LICENSE
 %doc README.md

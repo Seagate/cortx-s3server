@@ -5,7 +5,7 @@ rm -rf protobuf
 git clone -b v3.0.0-alpha-3.1 https://github.com/google/protobuf.git
 
 cd protobuf
-INSTALL_DIR=/opt/seagate/s3/gprotobuf
+INSTALL_DIR=/opt/seagate/cortx/s3/gprotobuf
 mkdir $INSTALL_DIR
 
 ./autogen.sh

@@ -19,5 +19,5 @@ $ ./generate_multidomain_certificate.sh -f multidomain_input.conf
 
 ## Encrypt and decrypt ldap password by authserver
 -we are using static s3authserver.jks file to encrypt and decrypt the ldap password.
--keystore file location is /opt/seagate/auth/resources/s3authserver.jks
+-keystore file location is /opt/seagate/cortx/auth/resources/s3authserver.jks
 

@@ -29,12 +29,12 @@ haproxy_status_log="/var/log/haproxy-status.log"
 haproxy_log="/var/log/haproxy.log"
 ldap_log="/var/log/slapd.log"
 
-s3server_config="/opt/seagate/s3/conf/s3config.yaml"
-authserver_config="/opt/seagate/auth/resources/authserver.properties"
-backgrounddelete_config="/opt/seagate/s3/s3backgrounddelete/config.yaml"
-s3startsystem_script="/opt/seagate/s3/s3startsystem.sh"
-s3server_binary="/opt/seagate/s3/bin/s3server"
-s3_mero_dir="/var/mero/s3server-*"
+s3server_config="/opt/seagate/cortx/s3/conf/s3config.yaml"
+authserver_config="/opt/seagate/cortx/auth/resources/authserver.properties"
+backgrounddelete_config="/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
+s3startsystem_script="/opt/seagate/cortx/s3/s3startsystem.sh"
+s3server_binary="/opt/seagate/cortx/s3/bin/s3server"
+s3_motr_dir="/var/motr/s3server-*"
 s3_core_dir="/var/crash"
 
 
@@ -91,11 +91,11 @@ compress_core_files(){
   done
 }
 
-# Compress each m0trace files present in /var/mero/s3server-* directory if available
+# Compress each m0trace files present in /var/motr/s3server-* directory if available
 # compressed m0trace files will be available in /tmp/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
 compress_m0trace_files(){
   m0trace_filename_pattern="*/m0trace.*"
-  for file in $s3_mero_dir/*
+  for file in $s3_motr_dir/*
   do
     if [[ -f "$file" && $file == $m0trace_filename_pattern ]];
     then
@@ -124,10 +124,10 @@ then
     args=$args" "$s3_core_files
 fi
 
-# Compress and collect m0trace files from /var/mero/s3server-* directory
+# Compress and collect m0trace files from /var/motr/s3server-* directory
 # S3server name is generated with random name e.g s3server-0x7200000000000001:0x22
 # check if s3server name with compgen globpat is available
-if compgen -G $s3_mero_dir > /dev/null;
+if compgen -G $s3_motr_dir > /dev/null;
 then
     compress_m0trace_files
     if [ -d "$s3_m0trace_files" ];

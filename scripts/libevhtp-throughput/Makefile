@@ -18,7 +18,7 @@ $(SERVER): $(THIS_DIR)/server.cpp
 	-L $(BUILD_ROOT_DIR)/third_party/libevent/s3_dist/lib \
 	-L $(BUILD_ROOT_DIR)/third_party/libevhtp/s3_dist/lib \
 	-lgflags -levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto \
-	-pthread -Wl,-rpath,/opt/seagate/s3/libevent
+	-pthread -Wl,-rpath,/opt/seagate/cortx/s3/libevent
 
 $(CLIENT): $(THIS_DIR)/client.cpp
 	g++ -o $@ --std=c++11 -lgflags -lcurl $<

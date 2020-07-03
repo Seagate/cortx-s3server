@@ -51,9 +51,9 @@ int main() {
 
 ## How to Build & Install S3 server, Auth server, UTs & third party libs?
 Build steps for Dev environment and for release environment differ slightly.
-In case of Dev, we locally build the mero source and use the mero libs from
-the source code location. Whereas in case of Release, we assume that mero rpms
-are pre-installed and use mero libs from standard location.
+In case of Dev, we locally build the motr source and use the motr libs from
+the source code location. Whereas in case of Release, we assume that motr rpms
+are pre-installed and use motr libs from standard location.
 
 Steps for Dev environment:
 ```sh
@@ -68,15 +68,15 @@ needs to be executed only once.
 
 The `./rebuildall.sh --no-mero-rpm` command will build third party libs, S3
 server, Auth server, UTs etc. It will also install S3 server, Auth server &
-third party libs at `/opt/seagate` location. To skip installing S3 use
+third party libs at `/opt/seagate/cortx` location. To skip installing S3 use
 --no-install.
 
 Note the option `--no-mero-rpm` passed to the command. It informs the script that
-mero source was built and mero libs from the source code location would be used.
-If this option is absent, mero libs are used from mero rpm installed on system.
+motr source was built and motr libs from the source code location would be used.
+If this option is absent, motr libs are used from motr rpm installed on system.
 To skip installing S3 use --no-install.
 
-`--use-build-cache` is useful when building with third_party, mero used from
+`--use-build-cache` is useful when building with third_party, motr used from
 local builds. Normally third party libs needs to be built only once after fresh
 repo clone. If builds are not already cached, it will be built.
 Note that this option is ignored in rpm based builds.
@@ -158,17 +158,17 @@ sudo systemctl stop s3authserver
 ## Running S3 Authserver listening on IPv4 or IPv6 only or both
 
 Enable IPv6 only
-   Set defaultHost value to ::1 or IPv6 address of local machine in /opt/seagate/auth/resources/authserver.properties
+   Set defaultHost value to ::1 or IPv6 address of local machine in /opt/seagate/cortx/auth/resources/authserver.properties
 
    Restart Authserver
 
 Enable IPv4 only
-   Set defaultHost value to 127.0.0.1 or IPv4 address of local machine in /opt/seagate/auth/resources/authserver.properties
+   Set defaultHost value to 127.0.0.1 or IPv4 address of local machine in /opt/seagate/cortx/auth/resources/authserver.properties
 
    Restart Authserver
 
 Enable both IPv6 and IPv4 on dual stack machine
-   Set defaultHost value to 0.0.0.0 in /opt/seagate/auth/resources/authserver.properties
+   Set defaultHost value to 0.0.0.0 in /opt/seagate/cortx/auth/resources/authserver.properties
 
    Restart Authserver
 
@@ -213,7 +213,7 @@ In /etc/haproxy/haproxy.cfg replace line
 server s3-instance-1 0.0.0.0:8081 check
 with
 server s3-instance-1 0.0.0.0:8081 check ssl verify required ca-file /etc/ssl/stx-s3/s3/ca.crt
-In /opt/seagate/s3/conf/s3config.yaml file have option S3_SERVER_SSL_ENABLE
+In /opt/seagate/cortx/s3/conf/s3config.yaml file have option S3_SERVER_SSL_ENABLE
 set to true
 
 
@@ -221,7 +221,7 @@ set to true
 Execute below command from `s3server` top level directory. Before executing below
 commands, make sure that S3 Server, Auth server, third party libs etc are  built
 & installed using `./rebuildall.sh --no-mero-rpm` command. Also make sure S3 Auth
-server and Mero services are up & running.
+server and Motr services are up & running.
 ```sh
 sudo ./dev-starts3.sh
 ```
@@ -249,7 +249,7 @@ cd -
 ./runalltest.sh --no-mero-rpm --no-st-run
 ```
 Above command runs S3 server UTs. Note the option `--no-mero-rpm` passed
-to the command. It informs the script to use mero libs from the source code
+to the command. It informs the script to use motr libs from the source code
 location at the run time. In case of Release environment, simply skip passing
 the option to the script.
 
@@ -274,7 +274,7 @@ sudo visudo
 
 # Now add s3server binary path to sudo secure path
 # Find line with variable `secure_path`, append below to the varible
-:/opt/seagate/s3/bin
+:/opt/seagate/cortx/s3/bin
 ```
 
 Now setup to run STs is complete. Other details of ST setup can be found at
@@ -292,7 +292,7 @@ the script.
 ```
 Above command runs S3 server ossperf tool tests(Parallel/Sequential workloads).
 Note the option `--no-mero-rpm` passed to the command. It informs the script
-to use mero libs from the source code location at the run time.
+to use motr libs from the source code location at the run time.
 In case of Release environment, simply skip passing the option to the script.
 
 ## How to run systemtest over HTTP during jenkins (Default uses HTTPS in jenkins).
@@ -431,7 +431,7 @@ cd auth
 $ ./mvnbuild.sh clean
 $ ./mvnbuild.sh package
 
-# Start Mero server
+# Start Motr server
 $ cd s3server/third_party/mero
 $ ./m0t1fs/../clovis/st/utils/mero_services.sh start
 
@@ -458,7 +458,7 @@ $ python3 auth_spec.py
 
 # Stop auth server [ Ctrl + c ].
 
-# Stop Mero, s3 server
+# Stop Motr, s3 server
 $ cd s3server/third_party/mero
 $ ./m0t1fs/../clovis/st/utils/mero_services.sh stop
 $ cd s3server/
@@ -493,7 +493,7 @@ sudo yum install statsd
 ```
 
 By default, Stats feature is disabled. To enable the same, edit the S3 server
-config file /opt/seagate/s3/conf/s3config.yaml & set the S3_ENABLE_STATS to true.
+config file /opt/seagate/cortx/s3/conf/s3config.yaml & set the S3_ENABLE_STATS to true.
 After above config change, s3server needs to be restarted.
 
 Before starting StatsD daemon, select backends to be used. StatsD can send data
@@ -681,7 +681,7 @@ vi /etc/bareos/bareos-dir.d/storage/s3_storage.conf
 >The "Password" field should match "Password" of /etc/bareos/bareos-sd.d/director/bareos-dir.conf**
 
 
-* Ensure port 80/443 in s3server/Mero Node is open
+* Ensure port 80/443 in s3server/Motr Node is open
 
 ```sh
 iptables -I INPUT -p tcp -m tcp --dport 80 -j ACCEPT
@@ -793,7 +793,7 @@ Following settings are responsible for audit logging
 
 ## log4cxx
 
-* S3_AUDIT_LOG_CONFIG: "/opt/seagate/s3/conf/s3server_audit_log.properties"
+* S3_AUDIT_LOG_CONFIG: "/opt/seagate/cortx/s3/conf/s3server_audit_log.properties"
 * S3_AUDIT_LOGGER_POLICY: "log4cxx"
 
 ## syslog
@@ -903,7 +903,7 @@ There will be two output files created
 
 # Deployment from rpm
 
-The **rpm-deploy.sh** is used to deploy s3server, mero and halon on test node.
+The **rpm-deploy.sh** is used to deploy s3server, motr and halon on test node.
 
 Note: **dev/init.sh** script should be run before rpm deployment
 
@@ -913,7 +913,7 @@ Deployment on a clean node:
 
 1 - Run **dev/init.sh** or make sure it was already run
 
-2 - Update yum repos to install mero and halon from; By default hermi repos are
+2 - Update yum repos to install motr and halon from; By default hermi repos are
 used - **http://ci-storage.mero.colo.seagate.com/releases/hermi/last_successful/mero/repo**;
 if one needs to use binaries from specific sprint following command should be run
 ```
@@ -934,13 +934,13 @@ To be able to restore default repos one should run
 ./rpm-deploy.sh -R
 ```
 this cmd will try to uninstall following pkgs: s3server, s3server-debuginfo,
-mero, mero-devel, halon, s3iamcli
+cortx-motr, cortx-motr-devel, halon, s3iamcli
 
 4 - Install packages
 ```
 ./rpm-deploy.sh -I
 ```
-mero, mero-devel, halon and s3iamcli packages will be installed from the yum repo;
+cortx-motr, cortx-motr-devel, halon and s3iamcli packages will be installed from the yum repo;
 s3server package will be built from the current source tree
 
 5 - Run status command and make sure all packages installed and configured

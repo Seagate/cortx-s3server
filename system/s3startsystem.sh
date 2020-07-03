@@ -23,7 +23,7 @@ fi
 # Ensure default working dir is present
 s3_working_dir=`python -c '
 import yaml;
-print yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_DAEMON_WORKING_DIR"];
+print yaml.load(open("/opt/seagate/cortx/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_DAEMON_WORKING_DIR"];
 ' | tr -d '\r\n'
 `"s3server-$1"
 
@@ -32,7 +32,7 @@ mkdir -p $s3_working_dir
 # Log dir configured in s3config.yaml
 s3_log_dir=`python -c '
 import yaml;
-print yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_LOG_DIR"];
+print yaml.load(open("/opt/seagate/cortx/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_LOG_DIR"];
 ' | tr -d '\r\n'
 `"/s3server-$1"
 mkdir -p $s3_log_dir
@@ -44,7 +44,7 @@ ulimit -c unlimited
 ulimit -n 10240
 
 # Start the s3server
-export PATH=$PATH:/opt/seagate/s3/bin
+export PATH=$PATH:/opt/seagate/cortx/s3/bin
 local_ep=$MERO_S3SERVER_EP
 ha_ep=$MERO_HA_EP
 profile_fid="<$MERO_PROFILE_FID>"

@@ -48,12 +48,12 @@ declare -a link_libs_array
 # -I/usr/src/lustre-client-2.12.3/lnet/include -I/usr/src/lustre-client-2.12.3/lnet/include/uapi/linux -I/usr/src/lustre-client-2.12.3/lustre/include \
 # -I/usr/src/lustre-client-2.12.3/lustre/include/uapi/linux
 #
-# CMD: PKG_CONFIG_PATH=./third_party/mero pkg-config --libs mero
-# OUTPUT: -L/root/s3server/third_party/mero/mero/.libs -lmero
+# CMD: PKG_CONFIG_PATH=./third_party/mero pkg-config --libs motr
+# OUTPUT: -L/root/s3server/third_party/mero/mero/.libs -lmotr
 #
 get_mero_pkg_config_dev() {
   s3_src_dir=$1
-  includes=$(PKG_CONFIG_PATH=$s3_src_dir/third_party/mero pkg-config --cflags-only-I mero)
+  includes=$(PKG_CONFIG_PATH=$s3_src_dir/third_party/mero pkg-config --cflags-only-I motr)
   for include in $includes
   do
     if [[ "$include" == *"third_party"* ]] # exclude other paths
@@ -63,7 +63,7 @@ get_mero_pkg_config_dev() {
     fi
   done
   #printf '%s\t\n' "${dev_includes_array[@]}"
-  libs=$(PKG_CONFIG_PATH=$s3_src_dir/third_party/mero pkg-config --libs mero)
+  libs=$(PKG_CONFIG_PATH=$s3_src_dir/third_party/mero pkg-config --libs motr)
   for lib in $libs
   do
     if [[ "$lib" == *"third_party"* ]] # this is 'L' part
@@ -83,12 +83,12 @@ get_mero_pkg_config_dev() {
 # -I/usr/src/lustre-client-2.12.3/lnet/include/uapi/linux -I/usr/src/lustre-client-2.12.3/lustre/include \
 # -I/usr/src/lustre-client-2.12.3/lustre/include/uapi/linux \
 #
-# CMD: pkg-config --libs mero
-# OUTPUT: -lmero
+# CMD: pkg-config --libs motr
+# OUTPUT: -lmotr
 get_mero_pkg_config_rpm() {
   s3_src_dir=$1
   pkg_config_path="$PKG_CONFIG_PATH:$s3_src_dir"
-  includes=$(PKG_CONFIG_PATH=$pkg_config_path pkg-config --cflags-only-I mero)
+  includes=$(PKG_CONFIG_PATH=$pkg_config_path pkg-config --cflags-only-I motr)
   for include in $includes
   do
     if [[ "$include" != *"lustre-client"* ]] # exclude include paths from 'lustre-client*'
@@ -99,7 +99,7 @@ get_mero_pkg_config_rpm() {
   done
   #printf '%s\t\n' "${rpm_includes_array[@]}"
 
-  libs=$(PKG_CONFIG_PATH=$pkg_config_path pkg-config --libs mero)
+  libs=$(PKG_CONFIG_PATH=$pkg_config_path pkg-config --libs motr)
   for lib in $libs
   do
     if [[ ${lib:0:2} == '-L' ]] # this is 'L' part
