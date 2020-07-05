@@ -19,6 +19,13 @@ yum install rpm-build -y
 #for s3 system test we need patched s3cmd(1.6.1), which s3 ansible installs
 rpm -q s3cmd && rpm -e s3cmd --nodeps
 
+# Cleanup obsolete rpms if already installed on this system
+# rpms are renamed from eos -> cortx as part of EOS-7750
+yum remove -y log4cxx_eos log4cxx_eos-devel log4cxx_eos-debuginfo || /bin/true
+yum remove -y eos-s3iamcli eos-s3iamcli-devel || /bin/true
+yum remove -y eos-s3server eos-s3server-debuginfo || /bin/true
+yum remove -y eos-core eos-core-devel eos-core-debuginfo || /bin/true
+
 if [ "$os_major_version" = "8" ]; then
   yum install @development -y
 fi
@@ -83,7 +90,7 @@ rm -f ./hosts_local
 
 systemctl restart haproxy
 
-sed  -ie '/secure_path/s/$/:\/opt\/seagate\/s3\/bin/' /etc/sudoers
+sed  -ie '/secure_path/s/$/:\/opt\/seagate\/cortx\/s3\/bin/' /etc/sudoers
 
 if ! command -v python36 &>/dev/null; then
   if command -v python3.6 &>/dev/null; then
