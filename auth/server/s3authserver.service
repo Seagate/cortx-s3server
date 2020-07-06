@@ -1,9 +1,9 @@
 [Unit]
-Description=Mero-S3 Auth Server
+Description=Motr-S3 Auth Server
 
 [Service]
 Type=simple
-ExecStart=/opt/seagate/auth/startauth.sh
+ExecStart=/opt/seagate/cortx/auth/startauth.sh
 ExecStop=/bin/kill -TERM $MAINPID
 TimeoutSec=300
 

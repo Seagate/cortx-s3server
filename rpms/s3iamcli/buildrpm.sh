@@ -46,27 +46,27 @@ echo "Using [GIT_VER=${GIT_VER}] ..."
 
 mkdir -p ~/rpmbuild/SOURCES/
 cd ~/rpmbuild/SOURCES/
-rm -rf eos-s3iamcli*
+rm -rf cortx-s3iamcli*
 if ! [ -z "${GIT_VER}" ]; then
   # Setup the source tar for rpm build
-  git clone http://gerrit.mero.colo.seagate.com:8080/s3server eos-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}
-  cd eos-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}
+  git clone http://gerrit.mero.colo.seagate.com:8080/s3server cortx-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}
+  cd cortx-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}
   # For sake of test, attempt checkout of version
   git checkout ${GIT_VER}
 elif ! [ -z "${PATH_SRC}" ]; then
     GIT_VER=$(git --git-dir "${PATH_SRC}"/.git rev-parse --short HEAD)
-    mkdir -p eos-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}
-    cp -ar "${PATH_SRC}"/. ./eos-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}
-    cd eos-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}
+    mkdir -p cortx-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}
+    cp -ar "${PATH_SRC}"/. ./cortx-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}
+    cd cortx-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}
 fi
 
 cd auth-utils
-mv s3iamcli eos-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}
-tar -zcvf eos-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}.tar.gz eos-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}
+mv s3iamcli cortx-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}
+tar -zcvf cortx-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}.tar.gz cortx-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}
 
-cp eos-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}.tar.gz ~/rpmbuild/SOURCES/
+cp cortx-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}.tar.gz ~/rpmbuild/SOURCES/
 cd ~/rpmbuild/SOURCES/
-rm -rf eos-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}
+rm -rf cortx-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}
 
 extra_defines=()
 if [ $VERSION = "\"8.0\"" ]; then

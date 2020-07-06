@@ -321,7 +321,7 @@ for i, type in enumerate(config_types):
         disable_fi("clovis_idx_op_fail").\
         execute_test().command_is_successful()
 
-    is_object_leak_track_enabled=yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"]
+    is_object_leak_track_enabled=yaml.load(open("/opt/seagate/cortx/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"]
     fi_off="5"
     if is_object_leak_track_enabled:
         fi_off="6"
@@ -563,7 +563,7 @@ for i, type in enumerate(config_types):
         disable_fi("clovis_idx_op_fail").\
         execute_test().command_is_successful()
 
-    is_object_leak_track_enabled=yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"]
+    is_object_leak_track_enabled=yaml.load(open("/opt/seagate/cortx/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"]
     fi_off="20"
     if is_object_leak_track_enabled:
         fi_off="22"

@@ -10,7 +10,7 @@
 header S3 Metadata structure\n By Kaustubh Deorukhkar\n2019-12-02
 title S3 Metadata
 
-center footer Index Classes here represent EOS-Core (mero) KVS Index, a list of Key-Value pairs
+center footer Index Classes here represent CORTX-MOTR (motr) KVS Index, a list of Key-Value pairs
 
 package "Global Root Indexes" #DDDDDD {
     class GlobalBucketListIndex

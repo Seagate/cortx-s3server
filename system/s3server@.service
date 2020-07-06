@@ -1,10 +1,10 @@
 [Unit]
-Description=Mero-S3 Core instance Server
+Description=Motr-S3 Core instance Server
 
 [Service]
 Type=forking
-ExecStart=/opt/seagate/s3/s3startsystem.sh %i
-ExecStop=/opt/seagate/s3/s3stopsystem.sh %i
+ExecStart=/opt/seagate/cortx/s3/s3startsystem.sh %i
+ExecStop=/opt/seagate/cortx/s3/s3stopsystem.sh %i
 TimeoutStopSec=7
 
 [Install]

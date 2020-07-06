@@ -55,12 +55,12 @@ set -xe
 
 mkdir -p ~/rpmbuild/SOURCES/
 cd ~/rpmbuild/SOURCES/
-rm -rf eos-s3server*
+rm -rf cortx-s3server*
 
 if ! [ -z "${GIT_VER}" ]; then
     # Setup the source tar for rpm build
-    git clone http://gerrit.mero.colo.seagate.com:8080/s3server eos-s3server-${S3_VERSION}-git${GIT_VER}
-    cd eos-s3server-${S3_VERSION}-git${GIT_VER}
+    git clone http://gerrit.mero.colo.seagate.com:8080/s3server cortx-s3server-${S3_VERSION}-git${GIT_VER}
+    cd cortx-s3server-${S3_VERSION}-git${GIT_VER}
     if [ $ENABLE_DEBUG_LOG == 1 ]; then
         sed -i 's/#logLevel=DEBUG.*$/logLevel=DEBUG/g' auth/resources/authserver.properties
         sed -i 's/S3_LOG_MODE:.*$/S3_LOG_MODE: DEBUG/g' s3config.release.yaml
@@ -69,18 +69,18 @@ if ! [ -z "${GIT_VER}" ]; then
     git checkout ${GIT_VER}
 elif ! [ -z "${PATH_SRC}" ]; then
     GIT_VER=$(git --git-dir "${PATH_SRC}"/.git rev-parse --short HEAD)
-    mkdir -p eos-s3server-${S3_VERSION}-git${GIT_VER}
-    cp -ar "${PATH_SRC}"/. ./eos-s3server-${S3_VERSION}-git${GIT_VER}
+    mkdir -p cortx-s3server-${S3_VERSION}-git${GIT_VER}
+    cp -ar "${PATH_SRC}"/. ./cortx-s3server-${S3_VERSION}-git${GIT_VER}
     if [ $ENABLE_DEBUG_LOG == 1 ]; then
-        sed -i 's/#logLevel=DEBUG.*$/logLevel=DEBUG/g' eos-s3server-${S3_VERSION}-git${GIT_VER}/auth/resources/authserver.properties
-        sed -i 's/S3_LOG_MODE:.*$/S3_LOG_MODE: DEBUG/g' eos-s3server-${S3_VERSION}-git${GIT_VER}/s3config.release.yaml
+        sed -i 's/#logLevel=DEBUG.*$/logLevel=DEBUG/g' cortx-s3server-${S3_VERSION}-git${GIT_VER}/auth/resources/authserver.properties
+        sed -i 's/S3_LOG_MODE:.*$/S3_LOG_MODE: DEBUG/g' cortx-s3server-${S3_VERSION}-git${GIT_VER}/s3config.release.yaml
     fi
-    find ./eos-s3server-${S3_VERSION}-git${GIT_VER} -type f -name CMakeCache.txt -delete;
+    find ./cortx-s3server-${S3_VERSION}-git${GIT_VER} -type f -name CMakeCache.txt -delete;
 fi
 
 cd ~/rpmbuild/SOURCES/
-tar -zcvf eos-s3server-${S3_VERSION}-git${GIT_VER}.tar.gz eos-s3server-${S3_VERSION}-git${GIT_VER}
-rm -rf eos-s3server-${S3_VERSION}-git${GIT_VER}
+tar -zcvf cortx-s3server-${S3_VERSION}-git${GIT_VER}.tar.gz cortx-s3server-${S3_VERSION}-git${GIT_VER}
+rm -rf cortx-s3server-${S3_VERSION}-git${GIT_VER}
 
 cd ~/rpmbuild/SOURCES/
 
@@ -95,7 +95,7 @@ if [ $INSTALL_AFTER_BUILD == 1 ]; then
     RPM_ARCH=$(rpm --eval "%{_arch}")
     RPM_DIST=$(rpm --eval "%{?dist:el7}")
     RPM_BUILD_VER=$(test -n "$build_number" && echo "$build_number" || echo 1 )
-    RPM_PATH=~/rpmbuild/RPMS/${RPM_ARCH}/eos-s3server-${S3_VERSION}-${RPM_BUILD_VER}_git${GIT_VER}_${RPM_DIST}.${RPM_ARCH}.rpm
+    RPM_PATH=~/rpmbuild/RPMS/${RPM_ARCH}/cortx-s3server-${S3_VERSION}-${RPM_BUILD_VER}_git${GIT_VER}_${RPM_DIST}.${RPM_ARCH}.rpm
     echo "Installing $RPM_PATH..."
     rpm -i $RPM_PATH
 fi

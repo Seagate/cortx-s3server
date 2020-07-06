@@ -9,6 +9,6 @@ error_handler() {
 trap error_handler ERR
 set -e
 
-cloviskvscli $*
+/opt/seagate/cortx/s3/bin/cloviskvscli $*
 
 rm -f m0trace*

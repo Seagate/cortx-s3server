@@ -109,10 +109,12 @@ then
                  -p '<0x7000000000000001:0>' -I 'v|1:20' -d 'v|1:20' -a create
 fi
 
+s3_config_file="/opt/seagate/cortx/s3/conf/s3config.yaml"
+
 # Ensure default working dir is present
 s3_working_dir=`python -c '
 import yaml;
-print yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_DAEMON_WORKING_DIR"];
+print yaml.load(open("'$s3_config_file'"))["S3_SERVER_CONFIG"]["S3_DAEMON_WORKING_DIR"];
 ' | tr -d '\r\n'
 `"/s3server-0x7200000000000000:0"
 
@@ -121,7 +123,7 @@ mkdir -p $s3_working_dir
 # Log dir configured in s3config.yaml
 s3_log_dir=`python -c '
 import yaml;
-print yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_LOG_DIR"];
+print yaml.load(open("'$s3_config_file'"))["S3_SERVER_CONFIG"]["S3_LOG_DIR"];
 ' | tr -d '\r\n'
 `"/s3server-0x7200000000000000:0"
 mkdir -p $s3_log_dir
@@ -129,11 +131,11 @@ mkdir -p $s3_log_dir
 # s3 port configured in s3config.yaml
 s3_port_from_config=`python -c '
 import yaml;
-print yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_SERVER_BIND_PORT"];
+print yaml.load(open("'$s3_config_file'"))["S3_SERVER_CONFIG"]["S3_SERVER_BIND_PORT"];
 ' | tr -d '\r\n'`
 
 # Start the s3server
-export PATH=$PATH:/opt/seagate/s3/bin
+export PATH=$PATH:/opt/seagate/cortx/s3/bin
 counter=0
 
 # s3server cmd parameters allowing to fake some clovis functionality

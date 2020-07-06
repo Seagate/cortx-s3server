@@ -74,8 +74,8 @@ status_srv() {
     case "$1" in
         s3server) echo -e "\t\t PIDs:> $(pgrep $1 | tr '\n' ' ')"
                   echo -e "\t\t s3authserver:> $(sysctl_stat s3authserver)"
-                  echo -e "\t\t $($USE_SUDO grep -o -e "S3_LOG_MODE:\s*\S*" /opt/seagate/s3/conf/s3config.yaml)"
-                  echo -e "\t\t $($USE_SUDO grep -o -e "S3_LOG_ENABLE_BUFFERING:\s*\S*" /opt/seagate/s3/conf/s3config.yaml)"
+                  echo -e "\t\t $($USE_SUDO grep -o -e "S3_LOG_MODE:\s*\S*" /opt/seagate/cortx/s3/conf/s3config.yaml)"
+                  echo -e "\t\t $($USE_SUDO grep -o -e "S3_LOG_ENABLE_BUFFERING:\s*\S*" /opt/seagate/cortx/s3/conf/s3config.yaml)"
                   ;;
         haproxy) echo -e "\t\t $(sysctl_stat $1)"
                  echo -e "\t\t keepalive $(haproxy_ka_status)"
@@ -140,7 +140,7 @@ priority = 1
 }
 
 up_cluster() {
-    $USE_SUDO ./scripts/enc_ldap_passwd_in_cfg.sh -l ldapadmin -p /opt/seagate/auth/resources/authserver.properties
+    $USE_SUDO ./scripts/enc_ldap_passwd_in_cfg.sh -l ldapadmin -p /opt/seagate/cortx/auth/resources/authserver.properties
     $USE_SUDO systemctl start haproxy
     $USE_SUDO systemctl start slapd
     $USE_SUDO systemctl start s3authserver
@@ -184,10 +184,10 @@ while getopts ":IRSy:p:UD" o; do
            if [ "$copy_path" == "@" ]; then
                copy_path=${BASEDIR}/s3config.release.yaml
            fi
-           echo "Copy config ${copy_path} to /opt/seagate/s3/conf/s3config.yaml"
-           $USE_SUDO mkdir -p /opt/seagate/s3/conf/
-           [ -f /opt/seagate/s3/conf/s3config.yaml ] && $USE_SUDO cp -f /opt/seagate/s3/conf/s3config.yaml /opt/seagate/s3/conf/s3config.yaml_bak
-           $USE_SUDO cp "${copy_path}" /opt/seagate/s3/conf/s3config.yaml
+           echo "Copy config ${copy_path} to /opt/seagate/cortx/s3/conf/s3config.yaml"
+           $USE_SUDO mkdir -p /opt/seagate/cortx/s3/conf/
+           [ -f /opt/seagate/cortx/s3/conf/s3config.yaml ] && $USE_SUDO cp -f /opt/seagate/cortx/s3/conf/s3config.yaml /opt/seagate/cortx/s3/conf/s3config.yaml_bak
+           $USE_SUDO cp "${copy_path}" /opt/seagate/cortx/s3/conf/s3config.yaml
            ;;
         U) echo "Up"
            up_cluster

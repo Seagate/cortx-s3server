@@ -29,7 +29,7 @@ multipath -ll
 
 Full path are located in /dev/disk/by-id/dm-name-mpath*.
 
-NOTE: make sure you do not specify the volume which is holding /var/mero! check
+NOTE: make sure you do not specify the volume which is holding /var/motr! check
 lsblk output, it shows which one is used.
 
 Example command line for quick test:

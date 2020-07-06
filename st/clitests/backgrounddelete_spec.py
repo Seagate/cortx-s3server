@@ -40,7 +40,7 @@ S3ClientConfig.ldappasswd = 'ldapadmin'
 
 # Config files used by scheduler and processor
 origional_bgdelete_config_file = os.path.join(os.path.dirname(__file__), 's3_background_delete_config_test.yaml')
-bgdelete_config_dir = os.path.join('/', 'opt', 'seagate', 's3', 's3backgrounddelete')
+bgdelete_config_dir = os.path.join('/', 'opt', 'seagate', 'cortx', 's3', 's3backgrounddelete')
 bgdelete_config_file = os.path.join(bgdelete_config_dir, 'config.yaml')
 backup_bgdelete_config_file = os.path.join(bgdelete_config_dir, 'backup_config.yaml')
 

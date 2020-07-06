@@ -22,10 +22,10 @@ package com.seagates3.authserver;
 public
 class AuthServerConstants {
  public
-  final static String INSTALL_DIR = "/opt/seagate/auth";
+  final static String INSTALL_DIR = "/opt/seagate/cortx/auth";
 
  public
-  final static String RESOURCE_DIR = "/opt/seagate/auth/resources";
+  final static String RESOURCE_DIR = "/opt/seagate/cortx/auth/resources";
 
  public
   final static int MAX_AND_DEFAULT_ROOT_USER_DURATION = 3600;
