@@ -121,6 +121,8 @@ class S3RequestObject : public RequestObject {
   FRIEND_TEST(S3RequestObjectTest, FreeReadTimerNull);
   FRIEND_TEST(S3RequestObjectTest, TriggerClientReadTimeoutNoCallback);
   FRIEND_TEST(S3RequestObjectTest, TriggerClientReadTimeout);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              ConsumeIncomingContentRequestTimeout);
 };
 
 #endif
