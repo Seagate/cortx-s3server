@@ -1294,4 +1294,13 @@ TEST_F(S3PutChunkUploadObjectActionTestWithAuth,
   S3Option::get_instance()->set_is_s3_shutting_down(false);
 }
 
+TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
+       ConsumeIncomingContentRequestTimeout) {
+  mock_request->s3_client_read_error = "RequestTimeout";
+  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*mock_request, send_response(_, _)).Times(AtLeast(1));
 
+  action_under_test->consume_incoming_content();
+  EXPECT_STREQ("RequestTimeout",
+               action_under_test->get_s3_error_code().c_str());
+}

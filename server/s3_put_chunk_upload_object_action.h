@@ -254,6 +254,8 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase1);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase2);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase3);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              ConsumeIncomingContentRequestTimeout);
 };
 
 #endif

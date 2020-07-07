@@ -123,6 +123,8 @@ class S3RequestObject : public RequestObject {
   FRIEND_TEST(S3RequestObjectTest, TriggerClientReadTimeout);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
               ConsumeIncomingContentRequestTimeout);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              ConsumeIncomingContentRequestTimeout);
 };
 
 #endif
