@@ -200,8 +200,6 @@ void S3BucketMetadataV1::save(std::function<void(void)> on_success,
                               std::function<void(void)> on_failed) {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  assert(state == S3BucketMetadataState::missing);
-
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
