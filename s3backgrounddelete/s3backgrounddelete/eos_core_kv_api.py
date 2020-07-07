@@ -77,7 +77,7 @@ class EOSCoreKVApi(EOSCoreClient):
 
 
 
-        if response['status'] == 201:
+        if response['status'] == 200:
             self._logger.info("Key value details added successfully.")
             return True, EOSCoreSuccessResponse(response['body'])
         else:

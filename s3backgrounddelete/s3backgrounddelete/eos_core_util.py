@@ -18,14 +18,25 @@ class EOSCoreUtil(object):
         else:
             self._config = config
 
+   def get_headers(self, host, epoch_t):
+        headers = {
+           'host': host,
+           'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
+           'x-amz-date': self.get_amz_timestamp(epoch_t)
+        }
+        return headers
+
    def create_canonical_request(self, method, canonical_uri, canonical_query_string, body, epoch_t, host):
        """Create canonical request based on uri and query string."""
-       signed_headers = 'host;x-amz-date'
-       payload_hash = hashlib.sha256(body.encode('utf-8')).hexdigest()
-       canonical_headers = 'host:' + host + '\n' + \
-           'x-amz-date:' + self.get_amz_timestamp(epoch_t) + '\n'
-       canonical_request = method + '\n' + canonical_uri + '\n' + canonical_query_string + '\n' + \
-           canonical_headers + '\n' + signed_headers + '\n' + payload_hash
+       headers = self.get_headers(host, epoch_t)
+       sorted_headers = sorted([k for k in headers])
+       Canonical_headers = ""
+       for key in sorted_headers:
+           Canonical_headers += "{}:{}\n".format(key.lower(), headers[key])
+
+       signed_headers = "{}".format(";".join(sorted_headers))
+       canonical_request = "{}\n{}\n{}\n{}\n{}\n{}"\
+           .format(method, canonical_uri, canonical_query_string, Canonical_headers, signed_headers, 'UNSIGNED-PAYLOAD')
        return canonical_request
 
    def sign(self, key, msg):
@@ -46,11 +57,11 @@ class EOSCoreUtil(object):
 
        canonical_request = self.create_canonical_request(method, canonical_uri,canonical_query_string,
                                                     body, epoch_t, host)
-       credential_scope = self.get_date(epoch_t) + '/' + \
-           region + '/' + service + '/' + 'aws4_request'
 
-       string_to_sign = algorithm + '\n' + self.get_amz_timestamp(epoch_t) + '\n' + credential_scope \
-           + '\n' + hashlib.sha256(canonical_request.encode('utf-8')).hexdigest()
+       credential_scope = "{}/{}/{}/{}".format(self.get_date(epoch_t), region, service, 'aws4_request')
+
+       string_to_sign = "{}\n{}\n{}\n{}"\
+           .format(algorithm, self.get_amz_timestamp(epoch_t), credential_scope, hashlib.sha256(canonical_request.encode('utf-8')).hexdigest())
        return string_to_sign
 
    def sign_request_v4(self, method=None, canonical_uri='/', canonical_query_string='', body='', epoch_t='',
@@ -62,13 +73,13 @@ class EOSCoreUtil(object):
        credential_scope = self.get_date(epoch_t) + '/' + region + \
            '/' + service + '/' + 'aws4_request'
 
-       signed_headers = 'host;x-amz-date'
-
-       algorithm = 'AWS4-HMAC-SHA256'
+       headers = self.get_headers(host, epoch_t)
+       sorted_headers = sorted([k for k in headers])
 
        access_key = self._config.get_eos_core_access_key()
        secret_key = self._config.get_eos_core_secret_key()
 
+       algorithm = "AWS4-HMAC-SHA256"
        string_to_sign = self.create_string_to_sign_v4(method, canonical_uri, canonical_query_string, body, epoch_t,
                                                  algorithm, host, service, region)
 
@@ -80,9 +91,9 @@ class EOSCoreUtil(object):
            (string_to_sign).encode('utf-8'),
            hashlib.sha256).hexdigest()
 
-       authorization_header = algorithm + ' ' + 'Credential=' + access_key + '/' + \
-           credential_scope + ', ' + 'SignedHeaders=' + signed_headers + \
-           ', ' + 'Signature=' + signature
+       authorization_header = "AWS4-HMAC-SHA256 Credential={}/{},SignedHeaders={},Signature={}"\
+           .format(access_key, credential_scope, ";".join(sorted_headers), signature)
+
        return authorization_header
 
    def get_date(self, epoch_t):
@@ -96,10 +107,11 @@ class EOSCoreUtil(object):
    def prepare_signed_header(self, http_request, request_uri, query_params, body):
        """Generate headers used for authorization requests."""
        url_parse_result  = urllib.parse.urlparse(self._config.get_eos_core_endpoint())
-       epoch_t = datetime.datetime.utcnow();
+       epoch_t = datetime.datetime.utcnow()
        headers = {'content-type': 'application/x-www-form-urlencoded',
                'Accept': 'text/plain'}
        headers['Authorization'] = self.sign_request_v4(http_request, request_uri ,query_params, body, epoch_t, url_parse_result.netloc,
-           self._config.get_eos_core_service(), self._config.get_eos_core_region());
-       headers['X-Amz-Date'] = self.get_amz_timestamp(epoch_t);
+           self._config.get_eos_core_service(), self._config.get_eos_core_region())
+       headers['x-amz-date'] = self.get_amz_timestamp(epoch_t)
+       headers['x-amz-content-sha256'] = 'UNSIGNED-PAYLOAD'
        return headers
