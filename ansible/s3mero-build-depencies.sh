@@ -1,5 +1,5 @@
 #!/bin/sh
 set -x
-git clone http://gerrit.mero.colo.seagate.com/mero
-./mero/scripts/install-build-deps
-rm -rf mero
+git clone git@github.com:Seagate/cortx-motr.git
+./cortx-motr/scripts/install-build-deps
+rm -rf cortx-motr
