@@ -485,10 +485,8 @@ void S3PutChunkUploadObjectAction::consume_incoming_content() {
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_chunk_upload_object_action_consume_incoming_content_shutdown_fail");
   if (request->is_s3_client_read_error()) {
-    const std::string& s3_error = request->get_s3_client_read_error();
-    if ("RequestTimeout" == s3_error) {
-      set_s3_error(s3_error);
-      send_response_to_s3_client();
+    if (!clovis_write_in_progress) {
+      client_read_error();
     }
     return;
   }

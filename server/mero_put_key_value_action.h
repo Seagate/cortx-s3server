@@ -57,7 +57,6 @@ class MeroPutKeyValueAction : public MeroAction {
   FRIEND_TEST(MeroPutKeyValueActionTest, PutKeyValueSuccessful);
   FRIEND_TEST(MeroPutKeyValueActionTest, PutKeyValue);
   FRIEND_TEST(MeroPutKeyValueActionTest, PutKeyValueFailed);
-  FRIEND_TEST(MeroPutKeyValueActionTest, ConsumeIncomingContentReadError);
   FRIEND_TEST(MeroPutKeyValueActionTest, ValidJson);
   FRIEND_TEST(MeroPutKeyValueActionTest, InvalidJson);
 };

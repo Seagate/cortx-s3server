@@ -203,8 +203,6 @@ class S3PutMultiObjectAction : public S3ObjectAction {
               ValidateUserMetadataLengthNegativeCase);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
               ValidateMissingContentLength);
-  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
-              ConsumeIncomingContentRequestTimeout);
 };
 
 #endif
