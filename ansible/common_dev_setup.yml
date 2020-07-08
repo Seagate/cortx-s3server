@@ -19,7 +19,7 @@
 - name: Install patched s3cmd
   yum:
     name: s3cmd-1.6.1-1.el7.centos.noarch
-    enablerepo: releases_eos_s3deps
+    enablerepo: releases_cortx_s3deps
     state: present
 
 - name: Install tools for ST
