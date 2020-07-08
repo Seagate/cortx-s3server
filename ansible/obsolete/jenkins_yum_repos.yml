@@ -38,7 +38,11 @@
       yum_repository:
         name: releases_cortx_lustre_s3server_halon_motr
         description: Yum repo for lustre s3server halon motr
+<<<<<<< HEAD
         baseurl: http://cortx-storage.colo.seagate.com/releases/eos/github/dev/rhel-7.7.1908/s3server_last_successful/
+=======
+        baseurl: http://ci-storage.mero.colo.seagate.com/releases/eos/integration/centos-7.7.1908/last_successful/
+>>>>>>> EOS-9539:S3: Update ansible scripts for rename work (#39)
         gpgcheck: no
         priority: 1
 
@@ -57,7 +61,11 @@
       yum_repository:
         name: releases_cortx_motr
         description: Yum repo for motr
+<<<<<<< HEAD
         baseurl: http://cortx-storage.colo.seagate.com/releases/master/last_successful/motr/repo/
+=======
+        baseurl: http://ci-storage.mero.colo.seagate.com/releases/master/last_successful/mero/repo/
+>>>>>>> EOS-9539:S3: Update ansible scripts for rename work (#39)
         gpgcheck: no
         priority: 1
 
