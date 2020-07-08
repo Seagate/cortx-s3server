@@ -55,39 +55,9 @@ using ::testing::DefaultValue;
 
 class S3BucketMetadataV1Test : public testing::Test {
  protected:
-  S3BucketMetadataV1Test() {
-    evhtp_request_t *req = NULL;
-    EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
-    call_count_one = 0;
-    bucket_name = "seagatebucket";
-    ptr_mock_request =
-        std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
-    EXPECT_CALL(*ptr_mock_request, get_bucket_name())
-        .WillRepeatedly(ReturnRef(bucket_name));
-
-    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
-    EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
-        .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
-
-    clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
-        ptr_mock_request, ptr_mock_s3_clovis_api);
-
-    clovis_kvs_writer_factory = std::make_shared<MockS3ClovisKVSWriterFactory>(
-        ptr_mock_request, ptr_mock_s3_clovis_api);
-
-    s3_global_bucket_index_metadata_factory =
-        std::make_shared<MockS3GlobalBucketIndexMetadataFactory>(
-            ptr_mock_request);
-
-    ptr_mock_request->set_account_name("s3account");
-    ptr_mock_request->set_account_id("s3accountid");
-    ptr_mock_request->set_user_name("s3user");
-    ptr_mock_request->set_user_id("s3userid");
-
-    action_under_test.reset(new S3BucketMetadataV1(
-        ptr_mock_request, ptr_mock_s3_clovis_api, clovis_kvs_reader_factory,
-        clovis_kvs_writer_factory, s3_global_bucket_index_metadata_factory));
-  }
+  S3BucketMetadataV1Test();
+  virtual ~S3BucketMetadataV1Test();
+  void SetUp() override;
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
   std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
@@ -96,13 +66,53 @@ class S3BucketMetadataV1Test : public testing::Test {
   std::shared_ptr<MockS3GlobalBucketIndexMetadataFactory>
       s3_global_bucket_index_metadata_factory;
   S3CallBack s3bucketmetadata_callbackobj;
-  std::shared_ptr<S3BucketMetadataV1> action_under_test;
-  int call_count_one;
+  std::unique_ptr<S3BucketMetadataV1> action_under_test;
+  int call_count_one = 0;
   std::string bucket_name;
 
  public:
   void func_callback_one() { call_count_one += 1; }
 };
+
+S3BucketMetadataV1Test::S3BucketMetadataV1Test()
+    : bucket_name("seagatebucket") {
+
+  ptr_mock_request =
+      std::make_shared<MockS3RequestObject>(nullptr, new EvhtpWrapper());
+
+  EXPECT_CALL(*ptr_mock_request, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
+
+  ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
+
+  EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+      .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
+
+  clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
+      ptr_mock_request, ptr_mock_s3_clovis_api);
+
+  clovis_kvs_writer_factory = std::make_shared<MockS3ClovisKVSWriterFactory>(
+      ptr_mock_request, ptr_mock_s3_clovis_api);
+
+  s3_global_bucket_index_metadata_factory =
+      std::make_shared<MockS3GlobalBucketIndexMetadataFactory>(
+          ptr_mock_request);
+
+  ptr_mock_request->set_account_name("s3account");
+  ptr_mock_request->set_account_id("s3accountid");
+  ptr_mock_request->set_user_name("s3user");
+  ptr_mock_request->set_user_id("s3userid");
+}
+
+S3BucketMetadataV1Test::~S3BucketMetadataV1Test() {
+  action_under_test.reset(nullptr);
+}
+
+void S3BucketMetadataV1Test::SetUp() {
+  action_under_test.reset(new S3BucketMetadataV1(
+      ptr_mock_request, ptr_mock_s3_clovis_api, clovis_kvs_reader_factory,
+      clovis_kvs_writer_factory, s3_global_bucket_index_metadata_factory));
+}
 
 TEST_F(S3BucketMetadataV1Test, ConstructorTest) {
   struct m0_uint128 zero_oid = {0ULL, 0ULL};
@@ -307,24 +317,6 @@ TEST_F(S3BucketMetadataV1Test, SaveMetadataIndexOIDMissing) {
   action_under_test->save(
       std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj),
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj));
-}
-
-TEST_F(S3BucketMetadataV1Test, SaveMetadataIndexOIDPresent) {
-  action_under_test->state = S3BucketMetadataState::present;
-
-  action_under_test->global_bucket_index_metadata =
-      s3_global_bucket_index_metadata_factory
-          ->mock_global_bucket_index_metadata;
-
-  EXPECT_CALL(*(s3_global_bucket_index_metadata_factory
-                    ->mock_global_bucket_index_metadata),
-              save(_, _)).Times(0);
-
-  ASSERT_DEATH(
-      action_under_test->save(
-          std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj),
-          std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj)),
-      ".*");
 }
 
 TEST_F(S3BucketMetadataV1Test, UpdateMetadataIndexOIDPresent) {

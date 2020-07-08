@@ -230,9 +230,6 @@ void S3BucketMetadataV1::save_global_bucket_account_id_info() {
         global_bucket_index_metadata_factory
             ->create_s3_global_bucket_index_metadata(request);
   }
-  assert(!(global_bucket_index_metadata->get_account_id().empty()));
-  assert(!(global_bucket_index_metadata->get_account_name().empty()));
-
   // set location_constraint attributes & save
   global_bucket_index_metadata->set_location_constraint(
       system_defined_attribute["LocationConstraint"]);
