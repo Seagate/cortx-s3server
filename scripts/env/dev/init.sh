@@ -73,10 +73,10 @@ cd ${BASEDIR}/../../../ansible
 
 #Install mero build dependencies
 
-# TODO Currently mero is not supported for CentOS 8, when support is there remove below check
+# TODO Currently motr is not supported for CentOS 8, when support is there remove below check
 if [ "$major_version" = "7" ];
 then
-  ./s3mero-build-depencies.sh
+  ./s3motr-build-depencies.sh
 fi
 
 # Update ansible/hosts file with local ip
