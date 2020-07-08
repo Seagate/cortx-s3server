@@ -33,6 +33,7 @@ class S3RecoveryBase:
         self.config = EOSCoreConfig()
         self.index_api = EOSCoreIndexApi(self.config)
         self.kv_api = EOSCoreKVApi(self.config)
+        self.log_result = False
 
     def put_kv(self, index_id, key, value):
         """
@@ -148,10 +149,11 @@ class S3RecoveryBase:
         data_list = list(data.keys())
         replica_list = list(replica.keys())
 
-        print("\nPrimary index content for {} \n".format(index_name))
-        self.print_content(data)
-        print("\nReplica index content for {} \n".format(index_name))
-        self.print_content(replica)
+        if (self.log_result):
+            print("\nPrimary index content for {} \n".format(index_name))
+            self.print_content(data)
+            print("\nReplica index content for {} \n".format(index_name))
+            self.print_content(replica)
 
         result_list = data_list
         result_list.extend(item for item in replica_list if item not in data_list)
@@ -178,19 +180,24 @@ class S3RecoveryBase:
         """
         Prints KV content in readable format
 
-        :kv:  Conent to be printed
+        :kv:  Content to be printed
 
         """
-        for key, value in kv.items() :
-            print (key, value)
+        if bool(kv):
+            for key, value in kv.items() :
+                print (key, value)
+        else:
+            print("Empty\n")
 
-    def dry_run(self, index_name, union_result):
+    def dry_run(self, index_name, union_result, log_output = False):
         """
         Gets latest value from index and its replica
 
         :return: A structurized dictonary of data to be restored
 
         """
+        self.log_result = log_output
+
         for key in self.result:
             try:
                 metadata_value = self.data_as_dict[key]
@@ -204,7 +211,10 @@ class S3RecoveryBase:
 
             self.perform_validation(key, metadata_value, replica_value, union_result)
 
-        print("\nData recovered from both indexes for {} \n".format(index_name))
-        self.print_content(union_result)
+        if (self.log_result):
+            print("\nData recovered from both indexes for {} \n".format(index_name))
+            self.print_content(union_result)
+
+        return union_result
 
 
