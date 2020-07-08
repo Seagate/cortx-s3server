@@ -20,5 +20,5 @@
 [releases_eos]
 baseurl = http://cortx-storage.colo.seagate.com/releases/eos/github/dev/rhel-7.7.1908/s3server_last_successful/
 gpgcheck = 0
-name = Yum repo for eos builds - OS Centos 7.7.1908
+name = Yum repo for CORTX builds - OS Centos 7.7.1908
 priority = 1
