@@ -38,7 +38,7 @@
       yum_repository:
         name: releases_cortx_motr
         description: Yum repo for motr
-        baseurl: http://cortx-storage.colo.seagate.com/releases/master/last_successful/mero/repo/
+        baseurl: http://cortx-storage.colo.seagate.com/releases/master/last_successful/motr/repo/
         gpgcheck: no
         priority: 1
 
