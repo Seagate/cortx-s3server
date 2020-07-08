@@ -1,7 +1,7 @@
 ---
   # Mostly we wont need this as the DEV VM base image has these installed.
-- name: Setup mero dev vm dependencies
-  hosts: merodevvm
+- name: Setup motr dev vm dependencies
+  hosts: motrdevvm
   remote_user: root
   gather_facts: yes
   vars:
@@ -49,7 +49,7 @@
     - name: Test lnet
       command: lctl list_nids
 
-    - name: Install mero development utils
+    - name: Install motr development utils
       yum: pkg={{item}} state=installed
       with_items:
         - asciidoc
