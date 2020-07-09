@@ -257,6 +257,7 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/reset/precheck.py
 /opt/seagate/cortx/s3/reset/reset_s3.sh
 /opt/seagate/cortx/s3/conf/setup.yaml
+/opt/seagate/cortx/s3/s3datarecovery/s3_data_recovery.sh
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_setup
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer
