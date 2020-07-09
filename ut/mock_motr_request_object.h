@@ -20,20 +20,20 @@
 
 #pragma once
 
-#ifndef __S3_UT_MOCK_MERO_REQUEST_OBJECT_H__
-#define __S3_UT_MOCK_MERO_REQUEST_OBJECT_H__
+#ifndef __S3_UT_MOCK_MOTR_REQUEST_OBJECT_H__
+#define __S3_UT_MOCK_MOTR_REQUEST_OBJECT_H__
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "mero_request_object.h"
+#include "motr_request_object.h"
 
-class MockMeroRequestObject : public MeroRequestObject {
+class MockMotrRequestObject : public MotrRequestObject {
  public:
-  MockMeroRequestObject(
+  MockMotrRequestObject(
       evhtp_request_t *req, EvhtpInterface *evhtp_obj_ptr,
       std::shared_ptr<S3AsyncBufferOptContainerFactory> async_buf_factory =
           nullptr)
-      : MeroRequestObject(req, evhtp_obj_ptr, async_buf_factory) {}
+      : MotrRequestObject(req, evhtp_obj_ptr, async_buf_factory) {}
   MOCK_METHOD0(c_get_full_path, const char *());
   MOCK_METHOD0(c_get_full_encoded_path, const char *());
   MOCK_METHOD0(get_host_header, std::string());
@@ -62,9 +62,9 @@ class MockMeroRequestObject : public MeroRequestObject {
   MOCK_METHOD0(pause, void());
   MOCK_METHOD1(resume, void(bool set_read_timeout_timer));
   MOCK_METHOD1(has_query_param_key, bool(std::string key));
-  MOCK_METHOD1(set_api_type, void(MeroApiType));
+  MOCK_METHOD1(set_api_type, void(MotrApiType));
   MOCK_METHOD1(get_query_string_value, std::string(std::string key));
-  MOCK_METHOD0(get_api_type, MeroApiType());
+  MOCK_METHOD0(get_api_type, MotrApiType());
   MOCK_METHOD1(respond_retry_after, void(int retry_after_in_secs));
   MOCK_METHOD2(set_out_header_value, void(std::string, std::string));
   MOCK_METHOD0(get_in_headers_copy, std::map<std::string, std::string> &());
@@ -81,4 +81,3 @@ class MockMeroRequestObject : public MeroRequestObject {
 };
 
 #endif
-

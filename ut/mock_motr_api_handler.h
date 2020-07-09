@@ -20,44 +20,44 @@
 
 #pragma once
 
-#ifndef __S3_UT_MOCK_MERO_API_HANDLER_H__
-#define __S3_UT_MOCK_MERO_API_HANDLER_H__
+#ifndef __S3_UT_MOCK_MOTR_API_HANDLER_H__
+#define __S3_UT_MOCK_MOTR_API_HANDLER_H__
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "mero_api_handler.h"
+#include "motr_api_handler.h"
 
-class MockMeroIndexAPIHandler : public MeroIndexAPIHandler {
+class MockMotrIndexAPIHandler : public MotrIndexAPIHandler {
  public:
-  MockMeroIndexAPIHandler(std::shared_ptr<MeroRequestObject> req,
-                          MeroOperationCode op_code)
-      : MeroIndexAPIHandler(req, op_code) {}
+  MockMotrIndexAPIHandler(std::shared_ptr<MotrRequestObject> req,
+                          MotrOperationCode op_code)
+      : MotrIndexAPIHandler(req, op_code) {}
   MOCK_METHOD0(dispatch, void());
 };
 
-class MockMeroKeyValueAPIHandler : public MeroKeyValueAPIHandler {
+class MockMotrKeyValueAPIHandler : public MotrKeyValueAPIHandler {
  public:
-  MockMeroKeyValueAPIHandler(std::shared_ptr<MeroRequestObject> req,
-                             MeroOperationCode op_code)
-      : MeroKeyValueAPIHandler(req, op_code) {}
+  MockMotrKeyValueAPIHandler(std::shared_ptr<MotrRequestObject> req,
+                             MotrOperationCode op_code)
+      : MotrKeyValueAPIHandler(req, op_code) {}
   MOCK_METHOD0(dispatch, void());
 };
 
-class MockMeroObjectAPIHandler : public MeroObjectAPIHandler {
+class MockMotrObjectAPIHandler : public MotrObjectAPIHandler {
  public:
-  MockMeroObjectAPIHandler(std::shared_ptr<MeroRequestObject> req,
-                           MeroOperationCode op_code)
-      : MeroObjectAPIHandler(req, op_code) {}
+  MockMotrObjectAPIHandler(std::shared_ptr<MotrRequestObject> req,
+                           MotrOperationCode op_code)
+      : MotrObjectAPIHandler(req, op_code) {}
   MOCK_METHOD0(dispatch, void());
 };
 
-class MockMeroAPIHandlerFactory : public MeroAPIHandlerFactory {
+class MockMotrAPIHandlerFactory : public MotrAPIHandlerFactory {
  public:
   MOCK_METHOD3(create_api_handler,
-               std::shared_ptr<MeroAPIHandler>(
-                   MeroApiType api_type,
-                   std::shared_ptr<MeroRequestObject> request,
-                   MeroOperationCode op_code));
+               std::shared_ptr<MotrAPIHandler>(
+                   MotrApiType api_type,
+                   std::shared_ptr<MotrRequestObject> request,
+                   MotrOperationCode op_code));
 };
 
 #endif

@@ -23,9 +23,9 @@
 #include "s3_error_codes.h"
 #include "s3_router.h"
 
-#include "mock_mero_api_handler.h"
-#include "mock_mero_request_object.h"
-#include "mock_mero_uri.h"
+#include "mock_motr_api_handler.h"
+#include "mock_motr_request_object.h"
+#include "mock_motr_uri.h"
 
 using ::testing::_;
 using ::testing::Eq;
@@ -35,31 +35,31 @@ using ::testing::Return;
 using ::testing::Mock;
 using ::testing::ReturnRef;
 
-class MeroRouterDispatchTest : public testing::Test {
+class MotrRouterDispatchTest : public testing::Test {
  protected:  // You should make the members protected s.t. they can be
              // accessed from sub-classes.
 
-  MeroRouterDispatchTest() {
-    mock_api_handler_factory = new MockMeroAPIHandlerFactory();
-    uri_factory = new MeroUriFactory();
-    router = new MeroRouter(mock_api_handler_factory, uri_factory);
+  MotrRouterDispatchTest() {
+    mock_api_handler_factory = new MockMotrAPIHandlerFactory();
+    uri_factory = new MotrUriFactory();
+    router = new MotrRouter(mock_api_handler_factory, uri_factory);
 
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
-    mock_request = std::make_shared<MockMeroRequestObject>(req, evhtp_obj_ptr);
+    mock_request = std::make_shared<MockMotrRequestObject>(req, evhtp_obj_ptr);
   }
 
-  ~MeroRouterDispatchTest() { delete router; }
+  ~MotrRouterDispatchTest() { delete router; }
 
   // Declares the variables your tests want to use.
-  MeroRouter *router;
+  MotrRouter *router;
 
-  MockMeroAPIHandlerFactory *mock_api_handler_factory;
-  MeroUriFactory *uri_factory;
-  std::shared_ptr<MockMeroRequestObject> mock_request;
+  MockMotrAPIHandlerFactory *mock_api_handler_factory;
+  MotrUriFactory *uri_factory;
+  std::shared_ptr<MockMotrRequestObject> mock_request;
 };
 
-TEST_F(MeroRouterDispatchTest, InvokesKeyValueApiWithPathStyle) {
+TEST_F(MotrRouterDispatchTest, InvokesKeyValueApiWithPathStyle) {
   std::map<std::string, std::string, compare> query_params;
 
   EXPECT_CALL(*mock_request, get_query_parameters())
@@ -76,13 +76,13 @@ TEST_F(MeroRouterDispatchTest, InvokesKeyValueApiWithPathStyle) {
   EXPECT_CALL(*mock_request, has_query_param_key(_))
       .WillRepeatedly(Return(false));
 
-  std::shared_ptr<MockMeroKeyValueAPIHandler> mock_api_handler =
-      std::make_shared<MockMeroKeyValueAPIHandler>(mock_request,
-                                                   MeroOperationCode::none);
+  std::shared_ptr<MockMotrKeyValueAPIHandler> mock_api_handler =
+      std::make_shared<MockMotrKeyValueAPIHandler>(mock_request,
+                                                   MotrOperationCode::none);
 
   EXPECT_CALL(*mock_api_handler_factory,
-              create_api_handler(Eq(MeroApiType::keyval), Eq(mock_request),
-                                 Eq(MeroOperationCode::none)))
+              create_api_handler(Eq(MotrApiType::keyval), Eq(mock_request),
+                                 Eq(MotrOperationCode::none)))
       .WillOnce(Return(mock_api_handler));
 
   EXPECT_CALL(*mock_api_handler, dispatch()).Times(1);
@@ -93,7 +93,7 @@ TEST_F(MeroRouterDispatchTest, InvokesKeyValueApiWithPathStyle) {
   mock_api_handler->i_am_done();
 }
 
-TEST_F(MeroRouterDispatchTest, InvokesIndexApiWithPathStyle) {
+TEST_F(MotrRouterDispatchTest, InvokesIndexApiWithPathStyle) {
   std::map<std::string, std::string, compare> query_params;
   query_params["location"] = "";
 
@@ -109,13 +109,13 @@ TEST_F(MeroRouterDispatchTest, InvokesIndexApiWithPathStyle) {
   EXPECT_CALL(*mock_request, set_index_id_lo(StrEq("456"))).Times(1);
   EXPECT_CALL(*mock_request, set_index_id_hi(StrEq("123"))).Times(1);
 
-  std::shared_ptr<MockMeroIndexAPIHandler> mock_api_handler =
-      std::make_shared<MockMeroIndexAPIHandler>(mock_request,
-                                                MeroOperationCode::none);
+  std::shared_ptr<MockMotrIndexAPIHandler> mock_api_handler =
+      std::make_shared<MockMotrIndexAPIHandler>(mock_request,
+                                                MotrOperationCode::none);
 
   EXPECT_CALL(*mock_api_handler_factory,
-              create_api_handler(Eq(MeroApiType::index), Eq(mock_request),
-                                 Eq(MeroOperationCode::none)))
+              create_api_handler(Eq(MotrApiType::index), Eq(mock_request),
+                                 Eq(MotrOperationCode::none)))
       .WillOnce(Return(mock_api_handler));
 
   EXPECT_CALL(*mock_api_handler, dispatch()).Times(1);
@@ -126,7 +126,7 @@ TEST_F(MeroRouterDispatchTest, InvokesIndexApiWithPathStyle) {
   mock_api_handler->i_am_done();
 }
 
-TEST_F(MeroRouterDispatchTest, InvokesObjectOidApiWithPathStyle) {
+TEST_F(MotrRouterDispatchTest, InvokesObjectOidApiWithPathStyle) {
   std::map<std::string, std::string, compare> query_params;
   query_params["acl"] = "";
 
@@ -142,13 +142,13 @@ TEST_F(MeroRouterDispatchTest, InvokesObjectOidApiWithPathStyle) {
   EXPECT_CALL(*mock_request, set_index_id_lo(StrEq(""))).Times(1);
   EXPECT_CALL(*mock_request, set_index_id_hi(StrEq(""))).Times(1);
 
-  std::shared_ptr<MockMeroObjectAPIHandler> mock_api_handler =
-      std::make_shared<MockMeroObjectAPIHandler>(mock_request,
-                                                 MeroOperationCode::none);
+  std::shared_ptr<MockMotrObjectAPIHandler> mock_api_handler =
+      std::make_shared<MockMotrObjectAPIHandler>(mock_request,
+                                                 MotrOperationCode::none);
 
   EXPECT_CALL(*mock_api_handler_factory,
-              create_api_handler(Eq(MeroApiType::object), Eq(mock_request),
-                                 Eq(MeroOperationCode::none)))
+              create_api_handler(Eq(MotrApiType::object), Eq(mock_request),
+                                 Eq(MotrOperationCode::none)))
       .WillOnce(Return(mock_api_handler));
 
   EXPECT_CALL(*mock_api_handler, dispatch()).Times(1);

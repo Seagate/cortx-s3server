@@ -18,19 +18,19 @@
  */
 
 #include "mock_s3_clovis_wrapper.h"
-#include "mock_mero_request_object.h"
+#include "mock_motr_request_object.h"
 #include "mock_s3_factory.h"
 #include "s3_m0_uint128_helper.h"
 
-#include "mero_put_key_value_action.h"
+#include "motr_put_key_value_action.h"
 
 using ::testing::ReturnRef;
 using ::testing::Return;
 using ::testing::AtLeast;
 
-class MeroPutKeyValueActionTest : public testing::Test {
+class MotrPutKeyValueActionTest : public testing::Test {
  protected:
-  MeroPutKeyValueActionTest() {
+  MotrPutKeyValueActionTest() {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
     index_id = {0x1ffff, 0x1ffff};
@@ -41,7 +41,7 @@ class MeroPutKeyValueActionTest : public testing::Test {
     index_id_str_lo = index_id_str_pair.second;
 
     ptr_mock_request =
-        std::make_shared<MockMeroRequestObject>(req, evhtp_obj_ptr);
+        std::make_shared<MockMotrRequestObject>(req, evhtp_obj_ptr);
 
     std::map<std::string, std::string> input_headers;
     input_headers["Authorization"] = "1";
@@ -55,7 +55,7 @@ class MeroPutKeyValueActionTest : public testing::Test {
                                                        ptr_mock_s3_clovis_api);
 
     action_under_test.reset(
-        new MeroPutKeyValueAction(ptr_mock_request, ptr_mock_s3_clovis_api,
+        new MotrPutKeyValueAction(ptr_mock_request, ptr_mock_s3_clovis_api,
                                   mock_clovis_kvs_writer_factory));
   }
 
@@ -63,16 +63,16 @@ class MeroPutKeyValueActionTest : public testing::Test {
   struct m0_uint128 index_id;
   std::string index_id_str_lo;
   std::string index_id_str_hi;
-  std::shared_ptr<MockMeroRequestObject> ptr_mock_request;
+  std::shared_ptr<MockMotrRequestObject> ptr_mock_request;
   std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
   std::shared_ptr<MockS3ClovisKVSWriterFactory> mock_clovis_kvs_writer_factory;
-  std::shared_ptr<MeroPutKeyValueAction> action_under_test;
+  std::shared_ptr<MotrPutKeyValueAction> action_under_test;
 
  public:
   void func_callback() { call_count += 1; }
 };
 
-TEST_F(MeroPutKeyValueActionTest, ValidateKeyValueInvalidIndex) {
+TEST_F(MotrPutKeyValueActionTest, ValidateKeyValueInvalidIndex) {
   struct m0_uint128 zero_index_id = {0ULL, 0ULL};
 
   auto zero_index_id_str_pair =
@@ -93,7 +93,7 @@ TEST_F(MeroPutKeyValueActionTest, ValidateKeyValueInvalidIndex) {
   action_under_test->read_and_validate_key_value();
 }
 
-TEST_F(MeroPutKeyValueActionTest, ValidateKeyValueValidIndexInvalidValue) {
+TEST_F(MotrPutKeyValueActionTest, ValidateKeyValueValidIndexInvalidValue) {
   EXPECT_CALL(*ptr_mock_request, get_index_id_hi()).Times(1).WillOnce(
       ReturnRef(index_id_str_hi));
   EXPECT_CALL(*ptr_mock_request, get_index_id_lo()).Times(1).WillOnce(
@@ -115,7 +115,7 @@ TEST_F(MeroPutKeyValueActionTest, ValidateKeyValueValidIndexInvalidValue) {
   action_under_test->read_and_validate_key_value();
 }
 
-TEST_F(MeroPutKeyValueActionTest, ValidateKeyValueValidIndexValidValue) {
+TEST_F(MotrPutKeyValueActionTest, ValidateKeyValueValidIndexValidValue) {
   EXPECT_CALL(*ptr_mock_request, get_index_id_hi()).Times(1).WillOnce(
       ReturnRef(index_id_str_hi));
   EXPECT_CALL(*ptr_mock_request, get_index_id_lo()).Times(1).WillOnce(
@@ -131,14 +131,14 @@ TEST_F(MeroPutKeyValueActionTest, ValidateKeyValueValidIndexValidValue) {
 
   action_under_test->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test,
-                         MeroPutKeyValueActionTest::func_callback, this);
+                         MotrPutKeyValueActionTest::func_callback, this);
 
   action_under_test->read_and_validate_key_value();
 
   ASSERT_EQ(1, call_count);
 }
 
-TEST_F(MeroPutKeyValueActionTest,
+TEST_F(MotrPutKeyValueActionTest,
        ValidateKeyValueValidIndexValidValueListenIncomingData) {
   EXPECT_CALL(*ptr_mock_request, get_index_id_hi()).Times(1).WillOnce(
       ReturnRef(index_id_str_hi));
@@ -153,7 +153,7 @@ TEST_F(MeroPutKeyValueActionTest,
   action_under_test->read_and_validate_key_value();
 }
 
-TEST_F(MeroPutKeyValueActionTest, PutKeyValue) {
+TEST_F(MotrPutKeyValueActionTest, PutKeyValue) {
   action_under_test->clovis_kv_writer =
       mock_clovis_kvs_writer_factory->mock_clovis_kvs_writer;
 
@@ -167,17 +167,17 @@ TEST_F(MeroPutKeyValueActionTest, PutKeyValue) {
   action_under_test->put_key_value();
 }
 
-TEST_F(MeroPutKeyValueActionTest, PutKeyValueSuccessful) {
+TEST_F(MotrPutKeyValueActionTest, PutKeyValueSuccessful) {
   action_under_test->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test,
-                         MeroPutKeyValueActionTest::func_callback, this);
+                         MotrPutKeyValueActionTest::func_callback, this);
 
   action_under_test->put_key_value_successful();
 
   ASSERT_EQ(1, call_count);
 }
 
-TEST_F(MeroPutKeyValueActionTest, PutKeyValueFailed) {
+TEST_F(MotrPutKeyValueActionTest, PutKeyValueFailed) {
   action_under_test->clovis_kv_writer =
       mock_clovis_kvs_writer_factory->mock_clovis_kvs_writer;
 
@@ -195,7 +195,21 @@ TEST_F(MeroPutKeyValueActionTest, PutKeyValueFailed) {
   action_under_test->put_key_value_failed();
 }
 
-TEST_F(MeroPutKeyValueActionTest, ConsumeIncomingContentHasAllBodyContent) {
+TEST_F(MotrPutKeyValueActionTest, ConsumeIncomingContentReadError) {
+  ptr_mock_request->s3_client_read_error = "RequestTimeout";
+
+  action_under_test->clear_tasks();
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         MotrPutKeyValueActionTest::func_callback, this);
+
+  action_under_test->consume_incoming_content();
+
+  EXPECT_STREQ("RequestTimeout",
+               action_under_test->get_s3_error_code().c_str());
+  ASSERT_EQ(0, call_count);
+}
+
+TEST_F(MotrPutKeyValueActionTest, ConsumeIncomingContentHasAllBodyContent) {
   EXPECT_CALL(*ptr_mock_request, has_all_body_content()).Times(1).WillOnce(
       Return(true));
 
@@ -213,7 +227,7 @@ TEST_F(MeroPutKeyValueActionTest, ConsumeIncomingContentHasAllBodyContent) {
   action_under_test->consume_incoming_content();
 }
 
-TEST_F(MeroPutKeyValueActionTest, ConsumeIncomingContentEmptyJsonValue) {
+TEST_F(MotrPutKeyValueActionTest, ConsumeIncomingContentEmptyJsonValue) {
   EXPECT_CALL(*ptr_mock_request, has_all_body_content()).Times(1).WillOnce(
       Return(true));
 
@@ -231,7 +245,7 @@ TEST_F(MeroPutKeyValueActionTest, ConsumeIncomingContentEmptyJsonValue) {
   action_under_test->consume_incoming_content();
 }
 
-TEST_F(MeroPutKeyValueActionTest, ConsumeIncomingContentResume) {
+TEST_F(MotrPutKeyValueActionTest, ConsumeIncomingContentResume) {
   EXPECT_CALL(*ptr_mock_request, has_all_body_content()).Times(1).WillOnce(
       Return(false));
 
@@ -240,20 +254,20 @@ TEST_F(MeroPutKeyValueActionTest, ConsumeIncomingContentResume) {
   action_under_test->consume_incoming_content();
 }
 
-TEST_F(MeroPutKeyValueActionTest, ValidJson) {
+TEST_F(MotrPutKeyValueActionTest, ValidJson) {
   std::string valid_json = "{\"Valid-key\":\"Valid-Value\"}";
 
   bool actual_retval = action_under_test->is_valid_json(valid_json);
   ASSERT_EQ(true, actual_retval);
 }
 
-TEST_F(MeroPutKeyValueActionTest, InvalidJson) {
+TEST_F(MotrPutKeyValueActionTest, InvalidJson) {
   std::string invalid_json = "Invalid-json-string";
   bool actual_retval = action_under_test->is_valid_json(invalid_json);
   ASSERT_EQ(false, actual_retval);
 }
 
-TEST_F(MeroPutKeyValueActionTest, SendFailedResponse) {
+TEST_F(MotrPutKeyValueActionTest, SendFailedResponse) {
   action_under_test->set_s3_error("InternalError");
 
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
@@ -265,7 +279,7 @@ TEST_F(MeroPutKeyValueActionTest, SendFailedResponse) {
   action_under_test->send_response_to_s3_client();
 }
 
-TEST_F(MeroPutKeyValueActionTest, SendSuccessResponse) {
+TEST_F(MotrPutKeyValueActionTest, SendSuccessResponse) {
   action_under_test->set_s3_error("");
   EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(AtLeast(1));
 
