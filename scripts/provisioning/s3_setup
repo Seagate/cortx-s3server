@@ -30,6 +30,7 @@ where:
 --eesnode2            EES node 2 for LDAP replication
 --olcserverid         Host olcServerID (Unique for different nodes)
 --s3backgrounddelete  Configure s3backgrounddelete and its dependencies
+--s3recoverytool      Configure s3recoverytool and its dependencies
 --cleanup             Cleanup S3 accounts created for backgroundelete.
 --help                Display this help and exit"
 
@@ -52,6 +53,7 @@ purge_config_ldap=false
 config_ldap=false
 setup_jenkins_yum_repo=false
 setup_s3backgrounddelete=false
+setup_s3recoverytool=false
 is_rabbitmq_clustered=false
 cleanup_accounts=false
 cleanup_dependencies=false
@@ -94,6 +96,9 @@ do
         ;;
     --s3backgrounddelete )
         setup_s3backgrounddelte=true
+        ;;
+    --s3recoverytool )
+        setup_s3recoverytool=true
         ;;
     --cleanup )
         cleanup_accounts=true
@@ -208,10 +213,10 @@ then
     yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-certs*
     yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
 
-    # Install rabbitmq requried for s3background delete on all s3 nodes
+    # Install rabbitmq requried for s3background delete  / recoverytool on all s3 nodes
     curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | sudo bash || exit 1
 
-    # Install python3 pika on all nodes requried for s3backgrounddelete (BSD 3-Clause license)
+    # Install python3 pika on all nodes requried for s3backgrounddelete  / recoverytool (BSD 3-Clause license)
     if [ "$major_version" = "7" ];
     then
         yum -y install  python36-pika
@@ -343,6 +348,30 @@ add_s3backgrounddelete_rabbitmq_user()
     echo "Rabbitmq configuration for this node is completed..."
 }
 
+
+# Create s3 account for s3 recoverytool
+create_recovery_tool_account()
+{
+    output=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
+    if [[ $output == *"No such object"* ]]
+    then
+      # Create s3background delete account
+      sh /opt/seagate/cortx/s3/install/ldap/create_s3_recovery_tool_account.sh $ldappasswd
+      echo "Created s3recovery tool account successfully..."
+    else
+      echo "s3recovery tool account already exists"
+    fi
+}
+
+# Delete s3 account which was used by s3recoverytool
+delete_recovery_tool_account()
+{
+   # Delete s3background delete account
+   sh /opt/seagate/cortx/s3/install/ldap/delete_s3_recovery_tool_account.sh $ldappasswd
+   echo "Deleted s3recovery tool account successfully..."
+}
+
+
 # Create s3 account for s3 backgrounddelete
 create_background_delete_account()
 {
@@ -365,7 +394,7 @@ delete_background_delete_account()
    echo "Deleted s3backgrounddelete account successfully..."
 }
 
-# Setup rabbitmq and its dependencies
+# Setup s3 background delete and its dependencies
 if [[ $setup_s3backgrounddelte == true ]]
 then
     echo "Setting up rabbitmq server for S3backgroundelete"
@@ -374,11 +403,20 @@ then
     create_background_delete_account
 fi
 
+# Setup recovery tool dependancies
+if [[ $setup_s3recoverytool == true ]]
+then
+    echo "Creating the s3 recovery tool account"
+	create_recovery_tool_account
+fi
+
 # Clean up backgrounddelete account
 if [[ $cleanup_accounts == true ]]
 then
     echo "Deleting the s3background delete account"
     delete_background_delete_account
+    echo "Deleting the s3recovery tool account"
+	delete_recovery_tool_account
 fi
 
 # Clean up s3 dependencies

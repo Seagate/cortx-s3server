@@ -1,0 +1,43 @@
+#Creating account
+dn: o=s3-recovery-tool-svc,ou=accounts,dc=s3,dc=seagate,dc=com
+o: s3-recovery-tool-svc
+accountid: 67892
+objectclass: Account
+mail: s3-recovery-tool-svc@seagate.com
+canonicalId: C67892
+
+#Creating user under above account
+dn: ou=users,o=s3-recovery-tool-svc,ou=accounts,dc=s3,dc=seagate,dc=com
+ou: users
+objectclass: organizationalunit
+
+#Creating role
+dn: ou=roles,o=s3-recovery-tool-svc,ou=accounts,dc=s3,dc=seagate,dc=com
+ou: roles
+objectclass: organizationalunit
+
+#Creatng iamuser
+dn: s3userid=450,ou=users,o=s3-recovery-tool-svc,ou=accounts,dc=s3,dc=seagate,dc=com
+path: /
+cn: root
+s3userid: 451
+arn: arn:aws:iam::67891:root
+objectclass: iamUser
+
+#Keys 
+dn: ak=A9IAJPINPFRBTPASATAZ,ou=accesskeys,dc=s3,dc=seagate,dc=com
+ak: A9IAJPINPFRBTPASATAZ
+s3userid: 451
+sk: h98ntpB9DoChDrneKZHvPVTm+1mHbs7UdCyNVME5
+status: Active
+objectclass: accessKey
+
+#Groups			 
+dn: ou=groups,o=s3-recovery-tool-svc,ou=accounts,dc=s3,dc=seagate,dc=com
+ou: groups
+objectClass: organizationalUnit
+
+#Policies
+dn: ou=policies,o=s3-recovery-tool-svc,ou=accounts,dc=s3,dc=seagate,dc=com
+ou: policies
+objectClass: organizationalUnit
