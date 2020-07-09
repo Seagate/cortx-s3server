@@ -28,7 +28,7 @@
 
 EXTERN_C_BLOCK_BEGIN
 
-#include "mero/init.h"
+#include "motr/init.h"
 #include "module/instance.h"
 
 #include "clovis/clovis.h"

@@ -18,7 +18,7 @@
  */
 
 #include "clovis_helpers.h"
-#include "s3_uri_to_mero_oid.h"
+#include "s3_uri_to_motr_oid.h"
 #include "fid/fid.h"
 #include "murmur3_hash.h"
 #include "s3_common.h"
@@ -28,7 +28,7 @@
 #include "s3_timer.h"
 #include "s3_iem.h"
 
-int S3UriToMeroOID(std::shared_ptr<ClovisAPI> s3_clovis_api, const char *name,
+int S3UriToMotrOID(std::shared_ptr<ClovisAPI> s3_clovis_api, const char *name,
                    const std::string &request_id, m0_uint128 *ufid,
                    S3ClovisEntityType type) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
@@ -66,7 +66,7 @@ int S3UriToMeroOID(std::shared_ptr<ClovisAPI> s3_clovis_api, const char *name,
     MurmurHash3_x64_128(name, len, 0, &hash128_64);
 
     //
-    // Reset the higher 37 bits, will be used by Mero
+    // Reset the higher 37 bits, will be used by Motr
     // The lower 91 bits used by S3
     // https://jts.seagate.com/browse/CASTOR-2155
 
@@ -94,7 +94,7 @@ int S3UriToMeroOID(std::shared_ptr<ClovisAPI> s3_clovis_api, const char *name,
     }
     *ufid = tmp_uint128;
   } else {
-    // Unique OID generation by mero.
+    // Unique OID generation by motr.
     if (s3_clovis_api == NULL) {
       s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
     }
@@ -120,9 +120,9 @@ int S3UriToMeroOID(std::shared_ptr<ClovisAPI> s3_clovis_api, const char *name,
          name, clovis_entity_type_to_string(type).c_str(), ufid->u_hi,
          ufid->u_lo);
   timer.stop();
-  LOG_PERF("S3UriToMeroOID_ns", request_id.c_str(),
+  LOG_PERF("S3UriToMotrOID_ns", request_id.c_str(),
            timer.elapsed_time_in_nanosec());
-  s3_stats_timing("uri_to_mero_oid", timer.elapsed_time_in_millisec());
+  s3_stats_timing("uri_to_motr_oid", timer.elapsed_time_in_millisec());
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return 0;

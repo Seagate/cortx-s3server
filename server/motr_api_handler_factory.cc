@@ -17,34 +17,34 @@
  * Original creation date: 1-June-2019
  */
 
-#include "mero_api_handler.h"
+#include "motr_api_handler.h"
 #include "s3_log.h"
 
-std::shared_ptr<MeroAPIHandler> MeroAPIHandlerFactory::create_api_handler(
-    MeroApiType api_type, std::shared_ptr<MeroRequestObject> request,
-    MeroOperationCode op_code) {
-  std::shared_ptr<MeroAPIHandler> handler;
+std::shared_ptr<MotrAPIHandler> MotrAPIHandlerFactory::create_api_handler(
+    MotrApiType api_type, std::shared_ptr<MotrRequestObject> request,
+    MotrOperationCode op_code) {
+  std::shared_ptr<MotrAPIHandler> handler;
   std::string request_id = request->get_request_id();
   request->set_operation_code(op_code);
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   switch (api_type) {
-    case MeroApiType::index:
-      s3_log(S3_LOG_DEBUG, request_id, "api_type = MeroApiType::index\n");
-      handler = std::make_shared<MeroIndexAPIHandler>(request, op_code);
+    case MotrApiType::index:
+      s3_log(S3_LOG_DEBUG, request_id, "api_type = MotrApiType::index\n");
+      handler = std::make_shared<MotrIndexAPIHandler>(request, op_code);
       break;
-    case MeroApiType::keyval:
-      s3_log(S3_LOG_DEBUG, request_id, "api_type = MeroApiType::keyval\n");
-      handler = std::make_shared<MeroKeyValueAPIHandler>(request, op_code);
+    case MotrApiType::keyval:
+      s3_log(S3_LOG_DEBUG, request_id, "api_type = MotrApiType::keyval\n");
+      handler = std::make_shared<MotrKeyValueAPIHandler>(request, op_code);
       break;
-    case MeroApiType::object:
-      s3_log(S3_LOG_DEBUG, request_id, "api_type = MeroApiType::object\n");
-      handler = std::make_shared<MeroObjectAPIHandler>(request, op_code);
+    case MotrApiType::object:
+      s3_log(S3_LOG_DEBUG, request_id, "api_type = MotrApiType::object\n");
+      handler = std::make_shared<MotrObjectAPIHandler>(request, op_code);
       break;
-    case MeroApiType::faultinjection:
+    case MotrApiType::faultinjection:
       s3_log(S3_LOG_DEBUG, request_id,
-             "api_type = MeroApiType::faultinjection\n");
+             "api_type = MotrApiType::faultinjection\n");
       // TODO
-      // handler = std::make_shared<MeroFaultinjectionAPIHandler>(request,
+      // handler = std::make_shared<MotrFaultinjectionAPIHandler>(request,
       // op_code);
       break;
     default:

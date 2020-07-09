@@ -19,23 +19,23 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_MERO_URI_H__
-#define __S3_SERVER_MERO_URI_H__
+#ifndef __S3_SERVER_MOTR_URI_H__
+#define __S3_SERVER_MOTR_URI_H__
 
 #include <memory>
 #include <string>
 
 #include "s3_common.h"
-#include "mero_request_object.h"
+#include "motr_request_object.h"
 
-enum class MeroUriType {
+enum class MotrUriType {
   path_style,
   unsupported
 };
 
-class MeroURI {
+class MotrURI {
  protected:
-  std::shared_ptr<MeroRequestObject> request;
+  std::shared_ptr<MotrRequestObject> request;
 
   std::string key_name;
   std::string index_id_lo;
@@ -43,8 +43,8 @@ class MeroURI {
   std::string object_oid_lo;
   std::string object_oid_hi;
 
-  MeroOperationCode operation_code;
-  MeroApiType mero_api_type;
+  MotrOperationCode operation_code;
+  MotrApiType motr_api_type;
 
   std::string request_id;
 
@@ -52,29 +52,29 @@ class MeroURI {
   void setup_operation_code();
 
  public:
-  explicit MeroURI(std::shared_ptr<MeroRequestObject> req);
-  virtual ~MeroURI() {}
+  explicit MotrURI(std::shared_ptr<MotrRequestObject> req);
+  virtual ~MotrURI() {}
 
-  virtual MeroApiType get_mero_api_type();
+  virtual MotrApiType get_motr_api_type();
   virtual std::string& get_key_name();
   virtual std::string& get_object_oid_lo();
   virtual std::string& get_object_oid_hi();
   virtual std::string& get_index_id_lo();
   virtual std::string& get_index_id_hi();
-  virtual MeroOperationCode get_operation_code();
+  virtual MotrOperationCode get_operation_code();
 };
 
-class MeroPathStyleURI : public MeroURI {
+class MotrPathStyleURI : public MotrURI {
  public:
-  explicit MeroPathStyleURI(std::shared_ptr<MeroRequestObject> req);
+  explicit MotrPathStyleURI(std::shared_ptr<MotrRequestObject> req);
 };
 
-class MeroUriFactory {
+class MotrUriFactory {
  public:
-  virtual ~MeroUriFactory() {}
+  virtual ~MotrUriFactory() {}
 
-  virtual MeroURI* create_uri_object(
-      MeroUriType uri_type, std::shared_ptr<MeroRequestObject> request);
+  virtual MotrURI* create_uri_object(
+      MotrUriType uri_type, std::shared_ptr<MotrRequestObject> request);
 };
 
 #endif

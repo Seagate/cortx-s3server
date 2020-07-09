@@ -19,16 +19,16 @@
 
 #pragma once
 
-#ifndef __MERO_HEAD_OBJECT_ACTION_H__
-#define __MERO_HEAD_OBJECT_ACTION_H__
+#ifndef __MOTR_HEAD_OBJECT_ACTION_H__
+#define __MOTR_HEAD_OBJECT_ACTION_H__
 
 #include <gtest/gtest_prod.h>
 #include <memory>
 
 #include "s3_factory.h"
-#include "mero_action_base.h"
+#include "motr_action_base.h"
 
-class MeroHeadObjectAction : public MeroAction {
+class MotrHeadObjectAction : public MotrAction {
   int layout_id;
   m0_uint128 oid;
   std::shared_ptr<S3ClovisReader> clovis_reader;
@@ -36,7 +36,7 @@ class MeroHeadObjectAction : public MeroAction {
   std::shared_ptr<S3ClovisReaderFactory> clovis_reader_factory;
 
  public:
-  MeroHeadObjectAction(std::shared_ptr<MeroRequestObject> req,
+  MotrHeadObjectAction(std::shared_ptr<MotrRequestObject> req,
                        std::shared_ptr<S3ClovisReaderFactory> reader_factory =
                            nullptr);
 

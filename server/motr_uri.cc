@@ -22,35 +22,35 @@
 
 #include "s3_log.h"
 #include "s3_option.h"
-#include "mero_uri.h"
+#include "motr_uri.h"
 #include "base64.h"
 
-MeroURI::MeroURI(std::shared_ptr<MeroRequestObject> req)
+MotrURI::MotrURI(std::shared_ptr<MotrRequestObject> req)
     : request(req),
-      operation_code(MeroOperationCode::none),
-      mero_api_type(MeroApiType::unsupported) {
+      operation_code(MotrOperationCode::none),
+      motr_api_type(MotrApiType::unsupported) {
   request_id = request->get_request_id();
   setup_operation_code();
 }
 
-MeroApiType MeroURI::get_mero_api_type() { return mero_api_type; }
+MotrApiType MotrURI::get_motr_api_type() { return motr_api_type; }
 
-std::string& MeroURI::get_key_name() { return key_name; }
-std::string& MeroURI::get_object_oid_lo() { return object_oid_lo; }
-std::string& MeroURI::get_object_oid_hi() { return object_oid_hi; }
-std::string& MeroURI::get_index_id_lo() { return index_id_lo; }
-std::string& MeroURI::get_index_id_hi() { return index_id_hi; }
+std::string& MotrURI::get_key_name() { return key_name; }
+std::string& MotrURI::get_object_oid_lo() { return object_oid_lo; }
+std::string& MotrURI::get_object_oid_hi() { return object_oid_hi; }
+std::string& MotrURI::get_index_id_lo() { return index_id_lo; }
+std::string& MotrURI::get_index_id_hi() { return index_id_hi; }
 
-MeroOperationCode MeroURI::get_operation_code() { return operation_code; }
+MotrOperationCode MotrURI::get_operation_code() { return operation_code; }
 
-void MeroURI::setup_operation_code() {
-  // Currently, operation codes are not defined for mero apis
+void MotrURI::setup_operation_code() {
+  // Currently, operation codes are not defined for motr apis
   // so it is always 'none'
-  operation_code = MeroOperationCode::none;
+  operation_code = MotrOperationCode::none;
 }
 
-MeroPathStyleURI::MeroPathStyleURI(std::shared_ptr<MeroRequestObject> req)
-    : MeroURI(req) {
+MotrPathStyleURI::MotrPathStyleURI(std::shared_ptr<MotrRequestObject> req)
+    : MotrURI(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   std::string full_uri;
   const char* full_path = request->c_get_full_encoded_path();
@@ -64,10 +64,10 @@ MeroPathStyleURI::MeroPathStyleURI(std::shared_ptr<MeroRequestObject> req)
       std::string header_value =
           request->get_header_value("x-seagate-faultinjection");
       if (S3Option::get_instance()->is_fi_enabled() && !header_value.empty()) {
-        mero_api_type = MeroApiType::faultinjection;
+        motr_api_type = MotrApiType::faultinjection;
       }
     } else {
-      // check for index operation on mero kvs
+      // check for index operation on motr kvs
       std::string index_match = "/indexes/";
       std::string object_match = "/objects/";
       if (full_uri.find(index_match) == 0) {
@@ -92,7 +92,7 @@ MeroPathStyleURI::MeroPathStyleURI(std::shared_ptr<MeroRequestObject> req)
             s3_log(S3_LOG_DEBUG, request_id, "index_id_lo %s\n",
                    index_id_lo.c_str());
             free(decoded_index_id_lo);
-            mero_api_type = MeroApiType::index;
+            motr_api_type = MotrApiType::index;
           }
         } else {
           // get index id and key
@@ -119,7 +119,7 @@ MeroPathStyleURI::MeroPathStyleURI(std::shared_ptr<MeroRequestObject> req)
             s3_log(S3_LOG_DEBUG, request_id, "index_id_lo %s\n",
                    index_id_lo.c_str());
             free(decoded_index_id_lo);
-            mero_api_type = MeroApiType::keyval;
+            motr_api_type = MotrApiType::keyval;
           }
         }
 
@@ -147,7 +147,7 @@ MeroPathStyleURI::MeroPathStyleURI(std::shared_ptr<MeroRequestObject> req)
                    object_oid_lo.c_str());
             free(decoded_object_oid_lo);
 
-            mero_api_type = MeroApiType::object;
+            motr_api_type = MotrApiType::object;
           }
         }
       }
@@ -156,10 +156,10 @@ MeroPathStyleURI::MeroPathStyleURI(std::shared_ptr<MeroRequestObject> req)
     s3_log(S3_LOG_DEBUG, request_id, "Empty Encoded request URI.\n");
   }
 
-  request->set_api_type(mero_api_type);
+  request->set_api_type(motr_api_type);
 }
 
-// mero http URL Patterns for various APIs.
+// motr http URL Patterns for various APIs.
 
 // list kv                -> http://s3.seagate.com/indexes/<indiex-id>
 // get kv                 -> http://s3.seagate.com/indexes/<indiex-id>/<key>

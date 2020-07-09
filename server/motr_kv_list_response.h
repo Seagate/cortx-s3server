@@ -19,8 +19,8 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_MERO_KV_LIST_RESPONSE_H__
-#define __S3_SERVER_MERO_KV_LIST_RESPONSE_H__
+#ifndef __S3_SERVER_MOTR_KV_LIST_RESPONSE_H__
+#define __S3_SERVER_MOTR_KV_LIST_RESPONSE_H__
 
 #include <gtest/gtest_prod.h>
 #include <memory>
@@ -28,7 +28,7 @@
 #include <unordered_set>
 #include <map>
 
-class MeroKVListResponse {
+class MotrKVListResponse {
   // value can be url or empty string
   std::string encoding_type;
 
@@ -50,7 +50,7 @@ class MeroKVListResponse {
   std::string get_response_format_key_value(const std::string& key_value);
 
  public:
-  MeroKVListResponse(std::string encoding_type = "");
+  MotrKVListResponse(std::string encoding_type = "");
 
   void set_index_id(std::string name);
   void set_request_prefix(std::string prefix);

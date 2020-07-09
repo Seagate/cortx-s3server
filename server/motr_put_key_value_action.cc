@@ -19,24 +19,24 @@
  */
 
 #include <json/json.h>
-#include "mero_put_key_value_action.h"
+#include "motr_put_key_value_action.h"
 #include "s3_error_codes.h"
 #include "s3_m0_uint128_helper.h"
 
-MeroPutKeyValueAction::MeroPutKeyValueAction(
-    std::shared_ptr<MeroRequestObject> req,
+MotrPutKeyValueAction::MotrPutKeyValueAction(
+    std::shared_ptr<MotrRequestObject> req,
     std::shared_ptr<ClovisAPI> clovis_api,
-    std::shared_ptr<S3ClovisKVSWriterFactory> clovis_mero_kvs_writer_factory)
-    : MeroAction(req) {
+    std::shared_ptr<S3ClovisKVSWriterFactory> clovis_motr_kvs_writer_factory)
+    : MotrAction(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
   if (clovis_api) {
-    mero_clovis_api = clovis_api;
+    motr_clovis_api = clovis_api;
   } else {
-    mero_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    motr_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
 
-  if (clovis_mero_kvs_writer_factory) {
-    clovis_kvs_writer_factory = clovis_mero_kvs_writer_factory;
+  if (clovis_motr_kvs_writer_factory) {
+    clovis_kvs_writer_factory = clovis_motr_kvs_writer_factory;
   } else {
     clovis_kvs_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
   }
@@ -44,14 +44,14 @@ MeroPutKeyValueAction::MeroPutKeyValueAction(
   setup_steps();
 }
 
-void MeroPutKeyValueAction::setup_steps() {
+void MotrPutKeyValueAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  ACTION_TASK_ADD(MeroPutKeyValueAction::read_and_validate_key_value, this);
-  ACTION_TASK_ADD(MeroPutKeyValueAction::put_key_value, this);
-  ACTION_TASK_ADD(MeroPutKeyValueAction::send_response_to_s3_client, this);
+  ACTION_TASK_ADD(MotrPutKeyValueAction::read_and_validate_key_value, this);
+  ACTION_TASK_ADD(MotrPutKeyValueAction::put_key_value, this);
+  ACTION_TASK_ADD(MotrPutKeyValueAction::send_response_to_s3_client, this);
 }
 
-void MeroPutKeyValueAction::read_and_validate_key_value() {
+void MotrPutKeyValueAction::read_and_validate_key_value() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   index_id = S3M0Uint128Helper::to_m0_uint128(request->get_index_id_lo(),
@@ -62,7 +62,7 @@ void MeroPutKeyValueAction::read_and_validate_key_value() {
     send_response_to_s3_client();
   } else {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, mero_clovis_api);
+        request, motr_clovis_api);
     if (request->has_all_body_content()) {
       std::string value = request->get_full_body_content_as_string();
       if (!is_valid_json(value)) {
@@ -75,7 +75,7 @@ void MeroPutKeyValueAction::read_and_validate_key_value() {
     } else {
       // Start streaming, logically pausing action till we get data.
       request->listen_for_incoming_data(
-          std::bind(&MeroPutKeyValueAction::consume_incoming_content, this),
+          std::bind(&MotrPutKeyValueAction::consume_incoming_content, this),
           request->get_data_length() /* we ask for all */
           );
     }
@@ -83,24 +83,24 @@ void MeroPutKeyValueAction::read_and_validate_key_value() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void MeroPutKeyValueAction::put_key_value() {
+void MotrPutKeyValueAction::put_key_value() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   clovis_kv_writer->put_keyval(
       index_id, request->get_key_name(), json_value,
-      std::bind(&MeroPutKeyValueAction::put_key_value_successful, this),
-      std::bind(&MeroPutKeyValueAction::put_key_value_failed, this));
+      std::bind(&MotrPutKeyValueAction::put_key_value_successful, this),
+      std::bind(&MotrPutKeyValueAction::put_key_value_failed, this));
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void MeroPutKeyValueAction::put_key_value_successful() {
+void MotrPutKeyValueAction::put_key_value_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void MeroPutKeyValueAction::put_key_value_failed() {
+void MotrPutKeyValueAction::put_key_value_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (clovis_kv_writer->get_state() ==
       S3ClovisKVSWriterOpState::failed_to_launch) {
@@ -114,7 +114,7 @@ void MeroPutKeyValueAction::put_key_value_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void MeroPutKeyValueAction::consume_incoming_content() {
+void MotrPutKeyValueAction::consume_incoming_content() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (request->is_s3_client_read_error()) {
     client_read_error();
@@ -134,7 +134,7 @@ void MeroPutKeyValueAction::consume_incoming_content() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-bool MeroPutKeyValueAction::is_valid_json(std::string json_str) {
+bool MotrPutKeyValueAction::is_valid_json(std::string json_str) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   Json::Value root;
   Json::Reader reader;
@@ -148,7 +148,7 @@ bool MeroPutKeyValueAction::is_valid_json(std::string json_str) {
   return true;
 }
 
-void MeroPutKeyValueAction::send_response_to_s3_client() {
+void MotrPutKeyValueAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (is_error_state() && !get_s3_error_code().empty()) {

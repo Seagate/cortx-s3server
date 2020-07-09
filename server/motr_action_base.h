@@ -19,8 +19,8 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_MERO_ACTION_BASE_H__
-#define __S3_SERVER_MERO_ACTION_BASE_H__
+#ifndef __S3_SERVER_MOTR_ACTION_BASE_H__
+#define __S3_SERVER_MOTR_ACTION_BASE_H__
 
 #include <functional>
 #include <memory>
@@ -30,7 +30,7 @@
 #include "s3_factory.h"
 #include "s3_fi_common.h"
 #include "s3_log.h"
-#include "mero_request_object.h"
+#include "motr_request_object.h"
 
 #define BACKGROUND_STALE_OBJECT_DELETE_ACCOUNT "s3-background-delete-svc"
 #define S3RECOVERY_STALE_OBJECT_DELETE_ACCOUNT "s3-recovery-svc"
@@ -41,15 +41,15 @@
 // we do not want to block the main thread that manages the
 // action. The async callbacks should ensure to call next or
 // done/abort etc depending on the result of the operation.
-class MeroAction : public Action {
+class MotrAction : public Action {
  protected:
-  std::shared_ptr<MeroRequestObject> request;
+  std::shared_ptr<MotrRequestObject> request;
 
  public:
-  MeroAction(std::shared_ptr<MeroRequestObject> req, bool check_shutdown = true,
+  MotrAction(std::shared_ptr<MotrRequestObject> req, bool check_shutdown = true,
              std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr,
              bool skip_auth = false);
-  virtual ~MeroAction();
+  virtual ~MotrAction();
 
   // Register all the member functions required to complete the action.
   // This can register the function as
@@ -60,16 +60,16 @@ class MeroAction : public Action {
   // Common steps for all Actions like Authorization.
   void check_authorization();
 
-  FRIEND_TEST(MeroActionTest, Constructor);
-  FRIEND_TEST(MeroActionTest, ClientReadTimeoutCallBackRollback);
-  FRIEND_TEST(MeroActionTest, ClientReadTimeoutCallBack);
-  FRIEND_TEST(MeroActionTest, AddTask);
-  FRIEND_TEST(MeroActionTest, AddTaskRollback);
-  FRIEND_TEST(MeroActionTest, TasklistRun);
-  FRIEND_TEST(MeroActionTest, RollbacklistRun);
-  FRIEND_TEST(MeroActionTest, SkipAuthTest);
-  FRIEND_TEST(MeroActionTest, EnableAuthTest);
-  FRIEND_TEST(MeroActionTest, SetSkipAuthFlagAndSetS3OptionDisableAuthFlag);
+  FRIEND_TEST(MotrActionTest, Constructor);
+  FRIEND_TEST(MotrActionTest, ClientReadTimeoutCallBackRollback);
+  FRIEND_TEST(MotrActionTest, ClientReadTimeoutCallBack);
+  FRIEND_TEST(MotrActionTest, AddTask);
+  FRIEND_TEST(MotrActionTest, AddTaskRollback);
+  FRIEND_TEST(MotrActionTest, TasklistRun);
+  FRIEND_TEST(MotrActionTest, RollbacklistRun);
+  FRIEND_TEST(MotrActionTest, SkipAuthTest);
+  FRIEND_TEST(MotrActionTest, EnableAuthTest);
+  FRIEND_TEST(MotrActionTest, SetSkipAuthFlagAndSetS3OptionDisableAuthFlag);
   FRIEND_TEST(S3APIHandlerTest, DispatchActionTest);
 };
 

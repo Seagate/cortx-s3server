@@ -17,18 +17,18 @@
  * Original creation date: 06-Apr-2020
  */
 
-#ifndef __MERO_HEAD_INDEX_ACTION_H__
-#define __MERO_HEAD_INDEX_ACTION_H__
+#ifndef __MOTR_HEAD_INDEX_ACTION_H__
+#define __MOTR_HEAD_INDEX_ACTION_H__
 
 #include <memory>
 #include <gtest/gtest_prod.h>
 
 #include "s3_factory.h"
-#include "mero_action_base.h"
+#include "motr_action_base.h"
 
-class MeroHeadIndexAction : public MeroAction {
+class MotrHeadIndexAction : public MotrAction {
   m0_uint128 index_id;
-  std::shared_ptr<ClovisAPI> mero_clovis_api;
+  std::shared_ptr<ClovisAPI> motr_clovis_api;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
 
@@ -40,20 +40,20 @@ class MeroHeadIndexAction : public MeroAction {
   void send_response_to_s3_client();
 
  public:
-  MeroHeadIndexAction(
-      std::shared_ptr<MeroRequestObject> req,
-      std::shared_ptr<S3ClovisKVSReaderFactory> clovis_mero_kvs_reader_factory =
+  MotrHeadIndexAction(
+      std::shared_ptr<MotrRequestObject> req,
+      std::shared_ptr<S3ClovisKVSReaderFactory> clovis_motr_kvs_reader_factory =
           nullptr);
 
-  FRIEND_TEST(MeroHeadIndexActionTest, ValidIndexId);
-  FRIEND_TEST(MeroHeadIndexActionTest, InvalidIndexId);
-  FRIEND_TEST(MeroHeadIndexActionTest, EmptyIndexId);
-  FRIEND_TEST(MeroHeadIndexActionTest, CheckIndexExist);
-  FRIEND_TEST(MeroHeadIndexActionTest, CheckIndexExistSuccess);
-  FRIEND_TEST(MeroHeadIndexActionTest, CheckIndexExistFailureMissing);
-  FRIEND_TEST(MeroHeadIndexActionTest, CheckIndexExistFailureInternalError);
-  FRIEND_TEST(MeroHeadIndexActionTest, CheckIndexExistFailureFailedToLaunch);
-  FRIEND_TEST(MeroHeadIndexActionTest, SendSuccessResponse);
-  FRIEND_TEST(MeroHeadIndexActionTest, SendBadRequestResponse);
+  FRIEND_TEST(MotrHeadIndexActionTest, ValidIndexId);
+  FRIEND_TEST(MotrHeadIndexActionTest, InvalidIndexId);
+  FRIEND_TEST(MotrHeadIndexActionTest, EmptyIndexId);
+  FRIEND_TEST(MotrHeadIndexActionTest, CheckIndexExist);
+  FRIEND_TEST(MotrHeadIndexActionTest, CheckIndexExistSuccess);
+  FRIEND_TEST(MotrHeadIndexActionTest, CheckIndexExistFailureMissing);
+  FRIEND_TEST(MotrHeadIndexActionTest, CheckIndexExistFailureInternalError);
+  FRIEND_TEST(MotrHeadIndexActionTest, CheckIndexExistFailureFailedToLaunch);
+  FRIEND_TEST(MotrHeadIndexActionTest, SendSuccessResponse);
+  FRIEND_TEST(MotrHeadIndexActionTest, SendBadRequestResponse);
 };
 #endif

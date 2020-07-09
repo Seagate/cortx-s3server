@@ -378,7 +378,7 @@ class RequestObject {
   FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest14);
   FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest15);
   FRIEND_TEST(S3PutObjectActionTest, ConsumeIncomingContentRequestTimeout);
-  FRIEND_TEST(MeroPutKeyValueActionTest, ConsumeIncomingContentReadError);
+  FRIEND_TEST(MotrPutKeyValueActionTest, ConsumeIncomingContentReadError);
   FRIEND_TEST(RequestObjectTest, SetStartClientRequestReadTimeout);
   FRIEND_TEST(RequestObjectTest, StopClientReadTimerNull);
   FRIEND_TEST(RequestObjectTest, StopClientReadTimer);

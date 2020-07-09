@@ -21,8 +21,8 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_MERO_REQUEST_OBJECT_H__
-#define __S3_SERVER_MERO_REQUEST_OBJECT_H__
+#ifndef __S3_SERVER_MOTR_REQUEST_OBJECT_H__
+#define __S3_SERVER_MOTR_REQUEST_OBJECT_H__
 
 #include <map>
 #include <memory>
@@ -48,7 +48,7 @@
 
 class S3AsyncBufferOptContainerFactory;
 
-class MeroRequestObject : public RequestObject {
+class MotrRequestObject : public RequestObject {
  private:
   std::string object_oid_lo;
   std::string object_oid_hi;
@@ -56,21 +56,21 @@ class MeroRequestObject : public RequestObject {
   std::string index_id_hi;
   std::string key_name;
 
-  MeroApiType mero_api_type;
-  MeroOperationCode mero_operation_code;
+  MotrApiType motr_api_type;
+  MotrOperationCode motr_operation_code;
 
  public:
-  MeroRequestObject(
+  MotrRequestObject(
       evhtp_request_t* req, EvhtpInterface* evhtp_obj_ptr,
       std::shared_ptr<S3AsyncBufferOptContainerFactory> async_buf_factory =
           nullptr,
       EventInterface* event_obj_ptr = nullptr);
-  virtual ~MeroRequestObject();
+  virtual ~MotrRequestObject();
 
-  void set_api_type(MeroApiType apitype);
-  virtual MeroApiType get_api_type();
-  void set_operation_code(MeroOperationCode operation_code);
-  virtual MeroOperationCode get_operation_code();
+  void set_api_type(MotrApiType apitype);
+  virtual MotrApiType get_api_type();
+  void set_operation_code(MotrOperationCode operation_code);
+  virtual MotrOperationCode get_operation_code();
 
  public:
   virtual void set_key_name(const std::string& key);

@@ -17,32 +17,27 @@
  * Original creation date: 1-June-2019
  */
 
-#include "mero_api_handler.h"
-#include "mero_get_key_value_action.h"
-#include "mero_put_key_value_action.h"
-#include "mero_delete_key_value_action.h"
+#include "motr_api_handler.h"
+#include "motr_delete_object_action.h"
+#include "motr_head_object_action.h"
 #include "s3_log.h"
 #include "s3_stats.h"
 
-void MeroKeyValueAPIHandler::create_action() {
+void MotrObjectAPIHandler::create_action() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   s3_log(S3_LOG_DEBUG, request_id, "Operation code = %d\n", operation_code);
 
   switch (operation_code) {
-    case MeroOperationCode::none:
+    case MotrOperationCode::none:
       // Perform operation on Object.
       switch (request->http_verb()) {
-        case S3HttpVerb::GET:
-          action = std::make_shared<MeroGetKeyValueAction>(request);
-          s3_stats_inc("mero_http_get_keyvalue_request_count");
-          break;
-        case S3HttpVerb::PUT:
-          action = std::make_shared<MeroPutKeyValueAction>(request);
-          s3_stats_inc("mero_http_put_keyvalue_request_count");
-          break;
         case S3HttpVerb::DELETE:
-          action = std::make_shared<MeroDeleteKeyValueAction>(request);
-          s3_stats_inc("mero_http_delete_keyvalue_request_count");
+          action = std::make_shared<MotrDeleteObjectAction>(request);
+          s3_stats_inc("motr_http_delete_object_request_count");
+          break;
+        case S3HttpVerb::HEAD:
+          action = std::make_shared<MotrHeadObjectAction>(request);
+          s3_stats_inc("motr_http_head_object_request_count");
           break;
         default:
           // should never be here.

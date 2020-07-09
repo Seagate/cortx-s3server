@@ -17,12 +17,12 @@
  * Original creation date: 1-JUNE-2019
  */
 
-#include "mero_action_base.h"
+#include "motr_action_base.h"
 #include "s3_error_codes.h"
 #include "s3_option.h"
 #include "s3_stats.h"
 
-MeroAction::MeroAction(std::shared_ptr<MeroRequestObject> req,
+MotrAction::MotrAction(std::shared_ptr<MotrRequestObject> req,
                        bool check_shutdown,
                        std::shared_ptr<S3AuthClientFactory> auth_factory,
                        bool skip_auth)
@@ -32,20 +32,20 @@ MeroAction::MeroAction(std::shared_ptr<MeroRequestObject> req,
   setup_steps();
 }
 
-MeroAction::~MeroAction() { s3_log(S3_LOG_DEBUG, request_id, "Destructor\n"); }
+MotrAction::~MotrAction() { s3_log(S3_LOG_DEBUG, request_id, "Destructor\n"); }
 
-void MeroAction::setup_steps() {
+void MotrAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setup the action\n");
   s3_log(S3_LOG_DEBUG, request_id,
          "S3Option::is_auth_disabled: (%d), skip_auth: (%d)\n",
          S3Option::get_instance()->is_auth_disabled(), skip_auth);
 
   if (!S3Option::get_instance()->is_auth_disabled() && !skip_auth) {
-    ACTION_TASK_ADD(MeroAction::check_authorization, this);
+    ACTION_TASK_ADD(MotrAction::check_authorization, this);
   }
 }
 
-void MeroAction::check_authorization() {
+void MotrAction::check_authorization() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if ((request->get_account_name() == BACKGROUND_STALE_OBJECT_DELETE_ACCOUNT) ||
       (request->get_account_name() == S3RECOVERY_STALE_OBJECT_DELETE_ACCOUNT)) {

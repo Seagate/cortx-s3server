@@ -21,7 +21,7 @@
 #include "s3_error_codes.h"
 #include "s3_iem.h"
 #include "s3_log.h"
-#include "s3_uri_to_mero_oid.h"
+#include "s3_uri_to_motr_oid.h"
 
 S3DeleteBucketAction::S3DeleteBucketAction(
     std::shared_ptr<S3RequestObject> req,
@@ -284,7 +284,7 @@ void S3DeleteBucketAction::delete_multipart_objects_successful() {
     } else {
       s3_log(
           S3_LOG_ERROR, request_id,
-          "Failed to delete multipart object, this oid will be stale in Mero: "
+          "Failed to delete multipart object, this oid will be stale in Motr: "
           "%" SCNx64 " : %" SCNx64 "\n",
           multipart_obj_oid.u_hi, multipart_obj_oid.u_lo);
       atleast_one_error = true;
@@ -315,7 +315,7 @@ void S3DeleteBucketAction::delete_multipart_objects_failed() {
     if (op_ret_code != -ENOENT && op_ret_code != 0) {
       s3_log(
           S3_LOG_ERROR, request_id,
-          "Failed to delete multipart object, this oid will be stale in Mero: "
+          "Failed to delete multipart object, this oid will be stale in Motr: "
           "%" SCNx64 " : %" SCNx64 "\n",
           multipart_obj_oid.u_hi, multipart_obj_oid.u_lo);
       atleast_one_error = true;
@@ -439,10 +439,10 @@ void S3DeleteBucketAction::remove_object_list_index() {
  *    <event_code>047006002</event_code>
  *    <application>S3 Server</application>
  *    <submodule>S3 Actions</submodule>
- *    <description>Delete index failed causing stale data in Mero</description>
+ *    <description>Delete index failed causing stale data in Motr</description>
  *    <audience>Development</audience>
  *    <details>
- *      Delete index op failed. It may cause stale data in Mero.
+ *      Delete index op failed. It may cause stale data in Motr.
  *      The data section of the event has following keys:
  *        time - timestamp.
  *        node - node name.
@@ -460,7 +460,7 @@ void S3DeleteBucketAction::remove_object_list_index() {
 void S3DeleteBucketAction::remove_object_list_index_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id,
-         "Failed to delete index, this will be stale in Mero: %" SCNx64
+         "Failed to delete index, this will be stale in Motr: %" SCNx64
          " : %" SCNx64 "\n",
          object_list_index_oid.u_hi, object_list_index_oid.u_lo);
   s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
@@ -503,7 +503,7 @@ void S3DeleteBucketAction::remove_objects_version_list_index() {
 void S3DeleteBucketAction::remove_objects_version_list_index_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id,
-         "Failed to delete index, this will be stale in Mero: %" SCNx64
+         "Failed to delete index, this will be stale in Motr: %" SCNx64
          " : %" SCNx64 "\n",
          objects_version_list_index_oid.u_hi,
          objects_version_list_index_oid.u_lo);

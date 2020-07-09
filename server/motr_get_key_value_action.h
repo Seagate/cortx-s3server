@@ -19,27 +19,27 @@
 
 #pragma once
 
-#ifndef __MERO_GET_KEY_VALUE_ACTION_H__
-#define __MERO_GET_KEY_VALUE_ACTION_H__
+#ifndef __MOTR_GET_KEY_VALUE_ACTION_H__
+#define __MOTR_GET_KEY_VALUE_ACTION_H__
 
 #include <gtest/gtest_prod.h>
 #include <memory>
 
 #include "s3_factory.h"
-#include "mero_action_base.h"
+#include "motr_action_base.h"
 
-class MeroGetKeyValueAction : public MeroAction {
+class MotrGetKeyValueAction : public MotrAction {
   m0_uint128 index_id;
-  std::shared_ptr<ClovisAPI> mero_clovis_api;
+  std::shared_ptr<ClovisAPI> motr_clovis_api;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
 
   std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
 
  public:
-  MeroGetKeyValueAction(
-      std::shared_ptr<MeroRequestObject> req,
+  MotrGetKeyValueAction(
+      std::shared_ptr<MotrRequestObject> req,
       std::shared_ptr<ClovisAPI> clovis_api = nullptr,
-      std::shared_ptr<S3ClovisKVSReaderFactory> clovis_mero_kvs_reader_factory =
+      std::shared_ptr<S3ClovisKVSReaderFactory> clovis_motr_kvs_reader_factory =
           nullptr);
 
   void setup_steps();

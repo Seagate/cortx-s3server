@@ -19,20 +19,20 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_MERO_KVS_LIST_ACTION_H__
-#define __S3_SERVER_MERO_KVS_LIST_ACTION_H__
+#ifndef __S3_SERVER_MOTR_KVS_LIST_ACTION_H__
+#define __S3_SERVER_MOTR_KVS_LIST_ACTION_H__
 
 #include <memory>
 
-#include "mero_action_base.h"
+#include "motr_action_base.h"
 #include "s3_clovis_kvs_reader.h"
-#include "mero_kv_list_response.h"
+#include "motr_kv_list_response.h"
 
-class MeroKVSListingAction : public MeroAction {
+class MotrKVSListingAction : public MotrAction {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
-  std::shared_ptr<ClovisAPI> mero_clovis_api;
-  std::shared_ptr<S3ClovisKVSReaderFactory> mero_clovis_kvs_reader_factory;
-  MeroKVListResponse kvs_response_list;
+  std::shared_ptr<ClovisAPI> motr_clovis_api;
+  std::shared_ptr<S3ClovisKVSReaderFactory> motr_clovis_kvs_reader_factory;
+  MotrKVListResponse kvs_response_list;
   m0_uint128 index_id;
   std::string last_key;  // last key during each iteration
   bool fetch_successful;
@@ -44,8 +44,8 @@ class MeroKVSListingAction : public MeroAction {
   size_t max_keys;
 
  public:
-  MeroKVSListingAction(
-      std::shared_ptr<MeroRequestObject> req,
+  MotrKVSListingAction(
+      std::shared_ptr<MotrRequestObject> req,
       std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory =
           nullptr);
   void setup_steps();

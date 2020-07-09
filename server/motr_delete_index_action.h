@@ -19,25 +19,25 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_MERO_INDEX_DELETE_ACTION_H__
-#define __S3_SERVER_MERO_INDEX_DELETE_ACTION_H__
+#ifndef __S3_SERVER_MOTR_INDEX_DELETE_ACTION_H__
+#define __S3_SERVER_MOTR_INDEX_DELETE_ACTION_H__
 
 #include <memory>
 #include <gtest/gtest_prod.h>
 
-#include "mero_action_base.h"
+#include "motr_action_base.h"
 #include "s3_clovis_kvs_writer.h"
 
-class MeroDeleteIndexAction : public MeroAction {
+class MotrDeleteIndexAction : public MotrAction {
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
-  std::shared_ptr<ClovisAPI> mero_clovis_api;
-  std::shared_ptr<S3ClovisKVSWriterFactory> mero_clovis_kvs_writer_factory;
+  std::shared_ptr<ClovisAPI> motr_clovis_api;
+  std::shared_ptr<S3ClovisKVSWriterFactory> motr_clovis_kvs_writer_factory;
 
   m0_uint128 index_id;
 
  public:
-  MeroDeleteIndexAction(
-      std::shared_ptr<MeroRequestObject> req,
+  MotrDeleteIndexAction(
+      std::shared_ptr<MotrRequestObject> req,
       std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kvs_reader_factory =
           nullptr);
   void setup_steps();
@@ -49,17 +49,17 @@ class MeroDeleteIndexAction : public MeroAction {
 
   void send_response_to_s3_client();
 
-  FRIEND_TEST(MeroDeleteIndexActionTest, ConstructorTest);
-  FRIEND_TEST(MeroDeleteIndexActionTest, ValidIndexId);
-  FRIEND_TEST(MeroDeleteIndexActionTest, InvalidIndexId);
-  FRIEND_TEST(MeroDeleteIndexActionTest, EmptyIndexId);
-  FRIEND_TEST(MeroDeleteIndexActionTest, DeleteIndex);
-  FRIEND_TEST(MeroDeleteIndexActionTest, DeleteIndexSuccess);
-  FRIEND_TEST(MeroDeleteIndexActionTest, DeleteIndexFailedIndexMissing);
-  FRIEND_TEST(MeroDeleteIndexActionTest, DeleteIndexFailed);
-  FRIEND_TEST(MeroDeleteIndexActionTest, DeleteIndexFailedToLaunch);
-  FRIEND_TEST(MeroDeleteIndexActionTest, SendSuccessResponse);
-  FRIEND_TEST(MeroDeleteIndexActionTest, SendBadRequestResponse);
+  FRIEND_TEST(MotrDeleteIndexActionTest, ConstructorTest);
+  FRIEND_TEST(MotrDeleteIndexActionTest, ValidIndexId);
+  FRIEND_TEST(MotrDeleteIndexActionTest, InvalidIndexId);
+  FRIEND_TEST(MotrDeleteIndexActionTest, EmptyIndexId);
+  FRIEND_TEST(MotrDeleteIndexActionTest, DeleteIndex);
+  FRIEND_TEST(MotrDeleteIndexActionTest, DeleteIndexSuccess);
+  FRIEND_TEST(MotrDeleteIndexActionTest, DeleteIndexFailedIndexMissing);
+  FRIEND_TEST(MotrDeleteIndexActionTest, DeleteIndexFailed);
+  FRIEND_TEST(MotrDeleteIndexActionTest, DeleteIndexFailedToLaunch);
+  FRIEND_TEST(MotrDeleteIndexActionTest, SendSuccessResponse);
+  FRIEND_TEST(MotrDeleteIndexActionTest, SendBadRequestResponse);
 };
 
 #endif

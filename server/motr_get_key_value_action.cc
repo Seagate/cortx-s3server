@@ -17,24 +17,24 @@
  * Original creation date: 30-May-2019
  */
 
-#include "mero_get_key_value_action.h"
+#include "motr_get_key_value_action.h"
 #include "s3_error_codes.h"
 #include "s3_m0_uint128_helper.h"
 
-MeroGetKeyValueAction::MeroGetKeyValueAction(
-    std::shared_ptr<MeroRequestObject> req,
+MotrGetKeyValueAction::MotrGetKeyValueAction(
+    std::shared_ptr<MotrRequestObject> req,
     std::shared_ptr<ClovisAPI> clovis_api,
-    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_mero_kvs_reader_factory)
-    : MeroAction(req) {
+    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_motr_kvs_reader_factory)
+    : MotrAction(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
   if (clovis_api) {
-    mero_clovis_api = clovis_api;
+    motr_clovis_api = clovis_api;
   } else {
-    mero_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    motr_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
 
-  if (clovis_mero_kvs_reader_factory) {
-    clovis_kvs_reader_factory = clovis_mero_kvs_reader_factory;
+  if (clovis_motr_kvs_reader_factory) {
+    clovis_kvs_reader_factory = clovis_motr_kvs_reader_factory;
   } else {
     clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
   }
@@ -42,14 +42,14 @@ MeroGetKeyValueAction::MeroGetKeyValueAction(
   setup_steps();
 }
 
-void MeroGetKeyValueAction::setup_steps() {
+void MotrGetKeyValueAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  ACTION_TASK_ADD(MeroGetKeyValueAction::fetch_key_value, this);
-  ACTION_TASK_ADD(MeroGetKeyValueAction::send_response_to_s3_client, this);
+  ACTION_TASK_ADD(MotrGetKeyValueAction::fetch_key_value, this);
+  ACTION_TASK_ADD(MotrGetKeyValueAction::send_response_to_s3_client, this);
   // ...
 }
 
-void MeroGetKeyValueAction::fetch_key_value() {
+void MotrGetKeyValueAction::fetch_key_value() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   index_id = S3M0Uint128Helper::to_m0_uint128(request->get_index_id_lo(),
@@ -60,23 +60,23 @@ void MeroGetKeyValueAction::fetch_key_value() {
     send_response_to_s3_client();
   } else {
     clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
-        request, mero_clovis_api);
+        request, motr_clovis_api);
     clovis_kv_reader->get_keyval(
         index_id, request->get_key_name(),
-        std::bind(&MeroGetKeyValueAction::fetch_key_value_successful, this),
-        std::bind(&MeroGetKeyValueAction::fetch_key_value_failed, this));
+        std::bind(&MotrGetKeyValueAction::fetch_key_value_successful, this),
+        std::bind(&MotrGetKeyValueAction::fetch_key_value_failed, this));
   }
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void MeroGetKeyValueAction::fetch_key_value_successful() {
+void MotrGetKeyValueAction::fetch_key_value_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void MeroGetKeyValueAction::fetch_key_value_failed() {
+void MotrGetKeyValueAction::fetch_key_value_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
     set_s3_error("NoSuchKey");
@@ -92,7 +92,7 @@ void MeroGetKeyValueAction::fetch_key_value_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void MeroGetKeyValueAction::send_response_to_s3_client() {
+void MotrGetKeyValueAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (is_error_state() && !get_s3_error_code().empty()) {
     S3Error error(get_s3_error_code(), request->get_request_id(),

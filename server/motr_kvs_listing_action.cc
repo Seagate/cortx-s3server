@@ -20,41 +20,41 @@
 #include <string>
 
 #include "s3_error_codes.h"
-#include "mero_kvs_listing_action.h"
+#include "motr_kvs_listing_action.h"
 #include "s3_common_utilities.h"
 #include "s3_iem.h"
 #include "s3_log.h"
 #include "s3_option.h"
 #include "s3_m0_uint128_helper.h"
 
-MeroKVSListingAction::MeroKVSListingAction(
-    std::shared_ptr<MeroRequestObject> req,
+MotrKVSListingAction::MotrKVSListingAction(
+    std::shared_ptr<MotrRequestObject> req,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory)
-    : MeroAction(req), last_key(""), fetch_successful(false) {
+    : MotrAction(req), last_key(""), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-  mero_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  motr_clovis_api = std::make_shared<ConcreteClovisAPI>();
 
-  s3_log(S3_LOG_INFO, request_id, "Mero API: kvs list Service.\n");
+  s3_log(S3_LOG_INFO, request_id, "Motr API: kvs list Service.\n");
 
   if (clovis_kvs_reader_factory) {
-    mero_clovis_kvs_reader_factory = clovis_kvs_reader_factory;
+    motr_clovis_kvs_reader_factory = clovis_kvs_reader_factory;
   } else {
-    mero_clovis_kvs_reader_factory =
+    motr_clovis_kvs_reader_factory =
         std::make_shared<S3ClovisKVSReaderFactory>();
   }
 
   setup_steps();
 }
 
-void MeroKVSListingAction::setup_steps() {
+void MotrKVSListingAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  ACTION_TASK_ADD(MeroKVSListingAction::validate_request, this);
-  ACTION_TASK_ADD(MeroKVSListingAction::get_next_key_value, this);
-  ACTION_TASK_ADD(MeroKVSListingAction::send_response_to_s3_client, this);
+  ACTION_TASK_ADD(MotrKVSListingAction::validate_request, this);
+  ACTION_TASK_ADD(MotrKVSListingAction::get_next_key_value, this);
+  ACTION_TASK_ADD(MotrKVSListingAction::send_response_to_s3_client, this);
   // ...
 }
 
-void MeroKVSListingAction::validate_request() {
+void MotrKVSListingAction::validate_request() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   index_id = S3M0Uint128Helper::to_m0_uint128(request->get_index_id_lo(),
@@ -103,12 +103,12 @@ void MeroKVSListingAction::validate_request() {
   next();
 }
 
-void MeroKVSListingAction::get_next_key_value() {
+void MotrKVSListingAction::get_next_key_value() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
 
-  clovis_kv_reader = mero_clovis_kvs_reader_factory->create_clovis_kvs_reader(
-      request, mero_clovis_api);
+  clovis_kv_reader = motr_clovis_kvs_reader_factory->create_clovis_kvs_reader(
+      request, motr_clovis_api);
 
   if (max_keys == 0) {
     // as requested max_keys is 0
@@ -121,8 +121,8 @@ void MeroKVSListingAction::get_next_key_value() {
     // input key is returned in result.
     clovis_kv_reader->next_keyval(
         index_id, last_key, count,
-        std::bind(&MeroKVSListingAction::get_next_key_value_successful, this),
-        std::bind(&MeroKVSListingAction::get_next_key_value_failed, this));
+        std::bind(&MotrKVSListingAction::get_next_key_value_successful, this),
+        std::bind(&MotrKVSListingAction::get_next_key_value_failed, this));
   }
 
   // for shutdown testcases, check FI and set shutdown signal
@@ -131,7 +131,7 @@ void MeroKVSListingAction::get_next_key_value() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void MeroKVSListingAction::get_next_key_value_successful() {
+void MotrKVSListingAction::get_next_key_value_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -207,7 +207,7 @@ void MeroKVSListingAction::get_next_key_value_successful() {
   }
 }
 
-void MeroKVSListingAction::get_next_key_value_failed() {
+void MotrKVSListingAction::get_next_key_value_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "No keys found in kv listing\n");
@@ -226,7 +226,7 @@ void MeroKVSListingAction::get_next_key_value_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void MeroKVSListingAction::send_response_to_s3_client() {
+void MotrKVSListingAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (reject_if_shutting_down() ||

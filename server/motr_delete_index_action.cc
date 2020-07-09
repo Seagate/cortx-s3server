@@ -20,40 +20,40 @@
 #include <string>
 
 #include "s3_error_codes.h"
-#include "mero_delete_index_action.h"
+#include "motr_delete_index_action.h"
 #include "s3_common_utilities.h"
 #include "s3_iem.h"
 #include "s3_log.h"
 #include "s3_m0_uint128_helper.h"
 
-MeroDeleteIndexAction::MeroDeleteIndexAction(
-    std::shared_ptr<MeroRequestObject> req,
+MotrDeleteIndexAction::MotrDeleteIndexAction(
+    std::shared_ptr<MotrRequestObject> req,
     std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kvs_writer_factory)
-    : MeroAction(req) {
+    : MotrAction(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-  mero_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  motr_clovis_api = std::make_shared<ConcreteClovisAPI>();
 
-  s3_log(S3_LOG_INFO, request_id, "Mero API: Index delete.\n");
+  s3_log(S3_LOG_INFO, request_id, "Motr API: Index delete.\n");
 
   if (clovis_kvs_writer_factory) {
-    mero_clovis_kvs_writer_factory = clovis_kvs_writer_factory;
+    motr_clovis_kvs_writer_factory = clovis_kvs_writer_factory;
   } else {
-    mero_clovis_kvs_writer_factory =
+    motr_clovis_kvs_writer_factory =
         std::make_shared<S3ClovisKVSWriterFactory>();
   }
 
   setup_steps();
 }
 
-void MeroDeleteIndexAction::setup_steps() {
+void MotrDeleteIndexAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  ACTION_TASK_ADD(MeroDeleteIndexAction::validate_request, this);
-  ACTION_TASK_ADD(MeroDeleteIndexAction::delete_index, this);
-  ACTION_TASK_ADD(MeroDeleteIndexAction::send_response_to_s3_client, this);
+  ACTION_TASK_ADD(MotrDeleteIndexAction::validate_request, this);
+  ACTION_TASK_ADD(MotrDeleteIndexAction::delete_index, this);
+  ACTION_TASK_ADD(MotrDeleteIndexAction::send_response_to_s3_client, this);
   // ...
 }
 
-void MeroDeleteIndexAction::validate_request() {
+void MotrDeleteIndexAction::validate_request() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   index_id = S3M0Uint128Helper::to_m0_uint128(request->get_index_id_lo(),
@@ -68,29 +68,29 @@ void MeroDeleteIndexAction::validate_request() {
   next();
 }
 
-void MeroDeleteIndexAction::delete_index() {
+void MotrDeleteIndexAction::delete_index() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  clovis_kv_writer = mero_clovis_kvs_writer_factory->create_clovis_kvs_writer(
-      request, mero_clovis_api);
+  clovis_kv_writer = motr_clovis_kvs_writer_factory->create_clovis_kvs_writer(
+      request, motr_clovis_api);
 
   clovis_kv_writer->delete_index(
       index_id,
-      std::bind(&MeroDeleteIndexAction::delete_index_successful, this),
-      std::bind(&MeroDeleteIndexAction::delete_index_failed, this));
+      std::bind(&MotrDeleteIndexAction::delete_index_successful, this),
+      std::bind(&MotrDeleteIndexAction::delete_index_failed, this));
 
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL("delete_index_action_shutdown_fail");
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void MeroDeleteIndexAction::delete_index_successful() {
+void MotrDeleteIndexAction::delete_index_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void MeroDeleteIndexAction::delete_index_failed() {
+void MotrDeleteIndexAction::delete_index_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Index is missing.\n");
@@ -106,7 +106,7 @@ void MeroDeleteIndexAction::delete_index_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void MeroDeleteIndexAction::send_response_to_s3_client() {
+void MotrDeleteIndexAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (reject_if_shutting_down() ||

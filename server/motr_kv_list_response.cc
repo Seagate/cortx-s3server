@@ -19,11 +19,11 @@
 
 #include <json/json.h>
 #include <evhttp.h>
-#include "mero_kv_list_response.h"
+#include "motr_kv_list_response.h"
 #include "s3_common_utilities.h"
 #include "s3_log.h"
 
-MeroKVListResponse::MeroKVListResponse(std::string encoding_type)
+MotrKVListResponse::MotrKVListResponse(std::string encoding_type)
     : encoding_type(encoding_type),
       request_prefix(""),
       request_delimiter(""),
@@ -34,14 +34,14 @@ MeroKVListResponse::MeroKVListResponse(std::string encoding_type)
   s3_log(S3_LOG_DEBUG, "", "Constructor\n");
 }
 
-void MeroKVListResponse::set_index_id(std::string name) { index_id = name; }
+void MotrKVListResponse::set_index_id(std::string name) { index_id = name; }
 
 // Encoding type used by S3 to encode object key names in the XML response.
 // If you specify encoding-type request parameter, S3 includes this element in
 // the response, and returns encoded key name values in the following response
 // elements:
 // Delimiter, KeyMarker, Prefix, NextKeyMarker, Key.
-std::string MeroKVListResponse::get_response_format_key_value(
+std::string MotrKVListResponse::get_response_format_key_value(
     const std::string& key_value) {
   std::string format_key_value;
   if (encoding_type == "url") {
@@ -54,44 +54,44 @@ std::string MeroKVListResponse::get_response_format_key_value(
   return format_key_value;
 }
 
-void MeroKVListResponse::set_request_prefix(std::string prefix) {
+void MotrKVListResponse::set_request_prefix(std::string prefix) {
   request_prefix = get_response_format_key_value(prefix);
 }
 
-void MeroKVListResponse::set_request_delimiter(std::string delimiter) {
+void MotrKVListResponse::set_request_delimiter(std::string delimiter) {
   request_delimiter = get_response_format_key_value(delimiter);
 }
 
-void MeroKVListResponse::set_request_marker_key(std::string marker) {
+void MotrKVListResponse::set_request_marker_key(std::string marker) {
   request_marker_key = get_response_format_key_value(marker);
 }
 
-void MeroKVListResponse::set_max_keys(std::string count) { max_keys = count; }
+void MotrKVListResponse::set_max_keys(std::string count) { max_keys = count; }
 
-void MeroKVListResponse::set_response_is_truncated(bool flag) {
+void MotrKVListResponse::set_response_is_truncated(bool flag) {
   response_is_truncated = flag;
 }
 
-void MeroKVListResponse::set_next_marker_key(std::string next) {
+void MotrKVListResponse::set_next_marker_key(std::string next) {
   next_marker_key = get_response_format_key_value(next);
 }
 
-void MeroKVListResponse::add_kv(const std::string& key,
+void MotrKVListResponse::add_kv(const std::string& key,
                                 const std::string& value) {
   kv_list[key] = value;
 }
 
-unsigned int MeroKVListResponse::size() { return kv_list.size(); }
+unsigned int MotrKVListResponse::size() { return kv_list.size(); }
 
-unsigned int MeroKVListResponse::common_prefixes_size() {
+unsigned int MotrKVListResponse::common_prefixes_size() {
   return common_prefixes.size();
 }
 
-void MeroKVListResponse::add_common_prefix(std::string common_prefix) {
+void MotrKVListResponse::add_common_prefix(std::string common_prefix) {
   common_prefixes.insert(common_prefix);
 }
 
-std::string MeroKVListResponse::as_json() {
+std::string MotrKVListResponse::as_json() {
   // clang-format off
   Json::Value root;
   root["Index-Id"] = index_id;
