@@ -31,7 +31,7 @@ class S3RecoveryDryRun(S3RecoveryBase):
 
     def dry_run(self, index_name, index_id, index_id_replica):
         """
-        Performes dry run on the index to be restored
+        Performs dry run on the index to be restored
 
         :index_name:  Name of index being processed
         :index_id: Id of index being processed
@@ -40,12 +40,14 @@ class S3RecoveryDryRun(S3RecoveryBase):
         """
         union_result = dict()
         super(S3RecoveryDryRun, self).initiate(index_name, index_id, index_id_replica)
-        super(S3RecoveryDryRun, self).dry_run(index_name, union_result)
+        super(S3RecoveryDryRun, self).dry_run(index_name, union_result, log_output = True)
 
     def start(self):
         """
         Entry point for dry run algorithm
 
         """
-        self.dry_run("Global bucket index", Config.global_bucket_index_id, Config.global_bucket_index_id_replica)
-        self.dry_run("Bucket metadata index", Config.bucket_metadata_index_id, Config.bucket_metadata_index_id_replica)
+        self.dry_run("Global bucket index", Config.global_bucket_index_id,
+                Config.global_bucket_index_id_replica)
+        self.dry_run("Bucket metadata index", Config.bucket_metadata_index_id,
+                Config.bucket_metadata_index_id_replica)
