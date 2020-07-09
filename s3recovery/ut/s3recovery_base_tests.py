@@ -34,6 +34,7 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
     def test_list_index_empty(self, mock_list):
         # Tests 'list_index' when index is empty
         mockS3RecoveryBase = S3RecoveryBase()
+
         # setup mock
         mock_res = '{"Delimiter":"","Index-Id":"mock-index-id","IsTruncated":"false","Keys":null,"Marker":"","MaxKeys":"1000","NextMarker":"","Prefix":""}'
         mock_list.return_value = True, EOSCoreListIndexResponse(mock_res.encode())
@@ -47,6 +48,7 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
     def test_list_index_not_empty(self, mock_get_index_content, mock_list):
         # Tests 'list_index' when index is not empty
         mockS3RecoveryBase = S3RecoveryBase()
+
         # setup mock
         mock_json_res = '{}'
         mock_list.return_value = True, EOSCoreListIndexResponse(mock_json_res.encode("utf-8"))
@@ -56,3 +58,32 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
 
         self.assertNotEqual(keys_list, None)
         self.assertEqual(len(keys_list), 2)
+
+    @mock.patch.object(EOSCoreIndexApi, 'list')
+    def test_list_index_failed(self, mock_list):
+        # Tests 'list_index' when EOSCoreIndexApi.list returned False
+        mockS3RecoveryBase = S3RecoveryBase()
+
+        # setup mock
+        mock_res = '{}'
+        mock_list.return_value = False, EOSCoreListIndexResponse(mock_res.encode())
+
+        with self.assertRaises(SystemExit) as cm:
+            mockS3RecoveryBase.list_index('global_index_id')
+
+        self.assertEqual(cm.exception.code, 1)
+
+    @mock.patch.object(EOSCoreIndexApi, 'list')
+    @mock.patch.object(EOSCoreListIndexResponse, 'get_index_content')
+    def test_initiate_list_called(self, mock_get_index_content, mock_list):
+        # Test 'initiate' function for EOSCoreIndexApi.list called or not
+        mockS3RecoveryBase = S3RecoveryBase()
+
+        # setup mock
+        mock_res = '{}'
+        mock_list.return_value = True, EOSCoreListIndexResponse(mock_res.encode())
+        mock_get_index_content.return_value = {"Delimiter":"","Index-Id":"mock-index-id","IsTruncated":"false","Keys":[{"Key":"key-1","Value":"value-1"}],"Marker":"","MaxKeys":"1000","NextMarker":"","Prefix":""}
+        mockS3RecoveryBase.initiate('global_index', 'global_index_id', 'global_index_id_replica')
+        
+        self.assertEqual(mock_list.call_count, 2)
+
