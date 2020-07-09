@@ -34,7 +34,6 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
     def test_list_index_empty(self, mock_list):
         # Tests 'list_index' when index is empty
         mockS3RecoveryBase = S3RecoveryBase()
-
         # setup mock
         mock_res = '{"Delimiter":"","Index-Id":"mock-index-id","IsTruncated":"false","Keys":null,"Marker":"","MaxKeys":"1000","NextMarker":"","Prefix":""}'
         mock_list.return_value = True, EOSCoreListIndexResponse(mock_res.encode())
@@ -48,7 +47,6 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
     def test_list_index_not_empty(self, mock_get_index_content, mock_list):
         # Tests 'list_index' when index is not empty
         mockS3RecoveryBase = S3RecoveryBase()
-
         # setup mock
         mock_json_res = '{}'
         mock_list.return_value = True, EOSCoreListIndexResponse(mock_json_res.encode("utf-8"))
