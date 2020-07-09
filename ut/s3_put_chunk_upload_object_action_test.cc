@@ -1293,5 +1293,3 @@ TEST_F(S3PutChunkUploadObjectActionTestWithAuth,
   EXPECT_TRUE(action_under_test->auth_completed);
   S3Option::get_instance()->set_is_s3_shutting_down(false);
 }
-
-
