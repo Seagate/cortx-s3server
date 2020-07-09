@@ -19,30 +19,30 @@
 
 #pragma once
 
-#ifndef __S3_UT_MOCK_MERO_URI_H__
-#define __S3_UT_MOCK_MERO_URI_H__
+#ifndef __S3_UT_MOCK_MOTR_URI_H__
+#define __S3_UT_MOCK_MOTR_URI_H__
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "mero_uri.h"
+#include "motr_uri.h"
 
-class MockMeroPathStyleURI : public MeroPathStyleURI {
+class MockMotrPathStyleURI : public MotrPathStyleURI {
  public:
-  MockMeroPathStyleURI(std::shared_ptr<MeroRequestObject> req)
-      : MeroPathStyleURI(req) {}
+  MockMotrPathStyleURI(std::shared_ptr<MotrRequestObject> req)
+      : MotrPathStyleURI(req) {}
   MOCK_METHOD0(get_key_name, std::string&());
   MOCK_METHOD0(get_object_oid_lo, std::string&());
   MOCK_METHOD0(get_object_oid_ho, std::string&());
   MOCK_METHOD0(get_index_id_lo, std::string&());
   MOCK_METHOD0(get_index_id_hi, std::string&());
-  MOCK_METHOD0(get_operation_code, MeroOperationCode());
-  MOCK_METHOD0(get_mero_api_type, MeroApiType());
+  MOCK_METHOD0(get_operation_code, MotrOperationCode());
+  MOCK_METHOD0(get_motr_api_type, MotrApiType());
 };
 
-class MockMeroUriFactory : public MeroUriFactory {
+class MockMotrUriFactory : public MotrUriFactory {
  public:
   MOCK_METHOD2(create_uri_object,
-               MeroURI*(MeroUriType uri_type,
-                        std::shared_ptr<MeroRequestObject> request));
+               MotrURI*(MotrUriType uri_type,
+                        std::shared_ptr<MotrRequestObject> request));
 };
 #endif
