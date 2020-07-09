@@ -44,7 +44,7 @@
 #include "s3_router.h"
 #include "s3_stats.h"
 #include "s3_timer.h"
-#include "s3_uri_to_mero_oid.h"
+#include "s3_uri_to_motr_oid.h"
 #include "s3_audit_info.h"
 #include "s3_audit_info_logger.h"
 #include "s3_fake_clovis_redis_kvs.h"
@@ -288,7 +288,7 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
   return EVHTP_RES_OK;
 }
 
-extern "C" evhtp_res dispatch_mero_api_request(evhtp_request_t *req,
+extern "C" evhtp_res dispatch_motr_api_request(evhtp_request_t *req,
                                                evhtp_headers_t *hdrs,
                                                void *arg) {
   s3_log(S3_LOG_INFO, "", "Received Request with uri [%s].\n",
@@ -301,68 +301,68 @@ extern "C" evhtp_res dispatch_mero_api_request(evhtp_request_t *req,
   // Log http headers
   evhtp_headers_for_each(hdrs, log_http_header, NULL);
 
-  Router *mero_router = static_cast<Router *>(arg);
+  Router *motr_router = static_cast<Router *>(arg);
 
   EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
   EventInterface *event_obj_ptr = new EventWrapper();
-  std::shared_ptr<MeroRequestObject> mero_request =
-      std::make_shared<MeroRequestObject>(req, evhtp_obj_ptr, nullptr,
+  std::shared_ptr<MotrRequestObject> motr_request =
+      std::make_shared<MotrRequestObject>(req, evhtp_obj_ptr, nullptr,
                                           event_obj_ptr);
 
   // validate content length against out of range
   // and invalid argument
-  if (!mero_request->validate_content_length()) {
-    mero_request->pause();
+  if (!motr_request->validate_content_length()) {
+    motr_request->pause();
     evhtp_unset_all_hooks(&req->conn->hooks);
     // Send response with 'Bad Request' code.
     s3_log(
         S3_LOG_DEBUG, "",
         "sending 'Bad Request' response to client due to invalid request...\n");
-    S3Error error("BadRequest", mero_request->get_request_id(), "");
+    S3Error error("BadRequest", motr_request->get_request_id(), "");
     std::string &response_xml = error.to_xml();
-    mero_request->set_out_header_value("Content-Type", "application/xml");
-    mero_request->set_out_header_value("Content-Length",
+    motr_request->set_out_header_value("Content-Type", "application/xml");
+    motr_request->set_out_header_value("Content-Length",
                                        std::to_string(response_xml.length()));
 
-    mero_request->send_response(error.get_http_status_code(), response_xml);
+    motr_request->send_response(error.get_http_status_code(), response_xml);
     return EVHTP_RES_OK;
   }
 
   // request validation is done and we are ready to use request
   // so initialise the s3 request;
-  mero_request->initialise();
+  motr_request->initialise();
 
   if (S3Option::get_instance()->get_is_s3_shutting_down() &&
       !s3_fi_is_enabled("shutdown_system_tests_in_progress")) {
     // We are shutting down, so don't entertain new requests.
-    mero_request->pause();
+    motr_request->pause();
     evhtp_unset_all_hooks(&req->conn->hooks);
     // Send response with 'Service Unavailable' code.
     s3_log(S3_LOG_DEBUG, "", "sending 'Service Unavailable' response...\n");
-    S3Error error("ServiceUnavailable", mero_request->get_request_id(), "");
+    S3Error error("ServiceUnavailable", motr_request->get_request_id(), "");
     std::string &response_xml = error.to_xml();
-    mero_request->set_out_header_value("Content-Type", "application/xml");
-    mero_request->set_out_header_value("Content-Length",
+    motr_request->set_out_header_value("Content-Type", "application/xml");
+    motr_request->set_out_header_value("Content-Length",
                                        std::to_string(response_xml.length()));
-    mero_request->set_out_header_value("Connection", "close");
+    motr_request->set_out_header_value("Connection", "close");
     int shutdown_grace_period =
         S3Option::get_instance()->get_s3_grace_period_sec();
-    mero_request->set_out_header_value("Retry-After",
+    motr_request->set_out_header_value("Retry-After",
                                        std::to_string(shutdown_grace_period));
-    mero_request->send_response(error.get_http_status_code(), response_xml);
+    motr_request->send_response(error.get_http_status_code(), response_xml);
     return EVHTP_RES_OK;
   }
 
-  req->cbarg = static_cast<RequestObject *>(mero_request.get());
+  req->cbarg = static_cast<RequestObject *>(motr_request.get());
 
   evhtp_set_hook(&req->hooks, evhtp_hook_on_error,
                  (evhtp_hook)on_client_request_error, NULL);
   evhtp_set_hook(&req->hooks, evhtp_hook_on_request_fini,
                  (evhtp_hook)on_client_request_fini, NULL);
 
-  mero_router->dispatch(mero_request);
-  if (!mero_request->get_buffered_input()->is_freezed()) {
-    mero_request->set_start_client_request_read_timeout();
+  motr_router->dispatch(motr_request);
+  if (!motr_request->get_buffered_input()->is_freezed()) {
+    motr_request->set_start_client_request_read_timeout();
   }
 
   return EVHTP_RES_OK;
@@ -400,10 +400,10 @@ static evhtp_res process_request_data(evhtp_request_t *p_evhtp_req,
   return EVHTP_RES_OK;
 }
 
-extern "C" evhtp_res process_mero_api_request_data(evhtp_request_t *req,
+extern "C" evhtp_res process_motr_api_request_data(evhtp_request_t *req,
                                                    evbuf_t *buf, void *arg) {
   RequestObject *request = static_cast<RequestObject *>(req->cbarg);
-  s3_log(S3_LOG_DEBUG, "", "MeroRequestObject(%p)\n", request);
+  s3_log(S3_LOG_DEBUG, "", "MotrRequestObject(%p)\n", request);
   if (request && !request->is_incoming_data_ignored()) {
     s3_log(S3_LOG_DEBUG, request->get_request_id().c_str(),
            "Received Request body %zu bytes for sock = %d\n",
@@ -422,7 +422,7 @@ extern "C" evhtp_res process_mero_api_request_data(evhtp_request_t *req,
     evhtp_unset_all_hooks(&req->conn->hooks);
     evhtp_unset_all_hooks(&req->hooks);
     s3_log(S3_LOG_DEBUG, "",
-           "Mero request failed, Ignoring data for this request \n");
+           "Motr request failed, Ignoring data for this request \n");
   }
 
   return EVHTP_RES_OK;
@@ -437,12 +437,12 @@ extern "C" evhtp_res set_s3_connection_handlers(evhtp_connection_t *conn,
   return EVHTP_RES_OK;
 }
 
-extern "C" evhtp_res set_mero_http_api_connection_handlers(
+extern "C" evhtp_res set_motr_http_api_connection_handlers(
     evhtp_connection_t *conn, void *arg) {
   evhtp_set_hook(&conn->hooks, evhtp_hook_on_headers,
-                 (evhtp_hook)dispatch_mero_api_request, arg);
+                 (evhtp_hook)dispatch_motr_api_request, arg);
   evhtp_set_hook(&conn->hooks, evhtp_hook_on_read,
-                 (evhtp_hook)process_mero_api_request_data, NULL);
+                 (evhtp_hook)process_motr_api_request_data, NULL);
   return EVHTP_RES_OK;
 }
 
@@ -635,15 +635,15 @@ evhtp_t *create_evhtp_handle(evbase_t *evbase_handle, Router *router,
   return htp;
 }
 
-evhtp_t *create_evhtp_handle_for_mero(evbase_t *evbase_handle,
-                                      Router *mero_router, void *arg) {
+evhtp_t *create_evhtp_handle_for_motr(evbase_t *evbase_handle,
+                                      Router *motr_router, void *arg) {
   evhtp_t *htp = evhtp_new(global_evbase_handle, NULL);
 #if defined SO_REUSEPORT
-  if (g_option_instance->is_mero_http_reuseport_enabled()) {
+  if (g_option_instance->is_motr_http_reuseport_enabled()) {
     htp->enable_reuseport = 1;
   }
 #else
-  if (g_option_instance->is_mero_http_reuseport_enabled()) {
+  if (g_option_instance->is_motr_http_reuseport_enabled()) {
     s3_log(
         S3_LOG_ERROR,
         "Option --reuseport is true however OS Doesn't support SO_REUSEPORT\n");
@@ -657,8 +657,8 @@ evhtp_t *create_evhtp_handle_for_mero(evbase_t *evbase_handle,
                                   EVHTP_PARSE_QUERY_FLAG_ALLOW_EMPTY_VALS);
 
   // Main request processing (processing headers & body) is done in hooks
-  evhtp_set_post_accept_cb(htp, set_mero_http_api_connection_handlers,
-                           mero_router);
+  evhtp_set_post_accept_cb(htp, set_motr_http_api_connection_handlers,
+                           motr_router);
 
   // This handler is just like complete the request processing & respond
   evhtp_set_gencb(htp, s3_handler, NULL);
@@ -797,19 +797,19 @@ int main(int argc, char **argv) {
   Router *s3_router =
       new S3Router(new S3APIHandlerFactory(), new S3UriFactory());
 
-  Router *mero_router =
-      new MeroRouter(new MeroAPIHandlerFactory(), new MeroUriFactory());
+  Router *motr_router =
+      new MotrRouter(new MotrAPIHandlerFactory(), new MotrUriFactory());
 
   std::string ipv4_bind_addr;
   std::string ipv6_bind_addr;
-  std::string mero_addr = g_option_instance->get_mero_http_bind_addr();
-  uint16_t mero_http_bind_port = g_option_instance->get_mero_http_bind_port();
+  std::string motr_addr = g_option_instance->get_motr_http_bind_addr();
+  uint16_t motr_http_bind_port = g_option_instance->get_motr_http_bind_port();
   uint16_t bind_port;
 
   evhtp_t *htp_ipv4 = NULL;
   evhtp_t *htp_ipv6 = NULL;
 
-  evhtp_t *htp_mero = NULL;
+  evhtp_t *htp_motr = NULL;
 
   bind_port = g_option_instance->get_s3_bind_port();
   ipv4_bind_addr = g_option_instance->get_ipv4_bind_addr();
@@ -835,10 +835,10 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (!mero_addr.empty()) {
-    htp_mero =
-        create_evhtp_handle_for_mero(global_evbase_handle, mero_router, NULL);
-    if (htp_mero == NULL) {
+  if (!motr_addr.empty()) {
+    htp_motr =
+        create_evhtp_handle_for_motr(global_evbase_handle, motr_router, NULL);
+    if (htp_motr == NULL) {
       s3daemon.delete_pidfile();
       fini_log();
       finalize_cli_options();
@@ -888,7 +888,7 @@ int main(int argc, char **argv) {
 
   log_resource_limits();
 
-  /* Initialise mero and Clovis */
+  /* Initialise motr and Clovis */
   rc = init_clovis();
   if (rc < 0) {
     s3daemon.delete_pidfile();
@@ -1057,17 +1057,17 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (htp_mero) {
+  if (htp_motr) {
     // apend ipv4: prefix to identify by evhtp_bind_socket
-    // ipv4_bind_addr = "ipv4:" + mero_addr;
+    // ipv4_bind_addr = "ipv4:" + motr_addr;
     s3_log(S3_LOG_INFO, "",
-           "Starting s3 mero_addr listener on host = %s and port = %d!\n",
-           mero_addr.c_str(), mero_http_bind_port);
-    if ((rc = evhtp_bind_socket(htp_mero, mero_addr.c_str(),
-                                mero_http_bind_port, 1024)) < 0) {
+           "Starting s3 motr_addr listener on host = %s and port = %d!\n",
+           motr_addr.c_str(), motr_http_bind_port);
+    if ((rc = evhtp_bind_socket(htp_motr, motr_addr.c_str(),
+                                motr_http_bind_port, 1024)) < 0) {
       s3daemon.delete_pidfile();
       fini_auth_ssl();
-      evhtp_free(htp_mero);
+      evhtp_free(htp_motr);
       fini_clovis();
       finalize_cli_options();
       s3_log(S3_LOG_FATAL, "", "Could not bind socket: %s\n", strerror(errno));
@@ -1078,7 +1078,7 @@ int main(int argc, char **argv) {
   if (rc != 0) {
     s3daemon.delete_pidfile();
     fini_auth_ssl();
-    evhtp_free(htp_mero);
+    evhtp_free(htp_motr);
     fini_clovis();
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "Could not init perf metrics: %s\n",
@@ -1122,7 +1122,7 @@ int main(int argc, char **argv) {
 
   free_evhtp_handle(htp_ipv4);
   free_evhtp_handle(htp_ipv6);
-  free_evhtp_handle(htp_mero);
+  free_evhtp_handle(htp_motr);
 
   fini_auth_ssl();
 
@@ -1130,7 +1130,7 @@ int main(int argc, char **argv) {
   fini_clovis();
 
   delete s3_router;
-  delete mero_router;
+  delete motr_router;
   S3ErrorMessages::finalize();
   s3_log(S3_LOG_DEBUG, "", "S3server exiting...\n");
   s3daemon.delete_pidfile();

@@ -72,7 +72,7 @@ void S3DeleteObjectAction::setup_steps() {
   // metadata will point to someone else's object leading 2 problems:
   // accessing someone else's object and second retrying delete, deleting
   // someone else's object. Whereas deleting metadata first will worst case
-  // lead to object leak in mero which can handle separately.
+  // lead to object leak in motr which can handle separately.
   // To delete stale objects: ref: MINT-602
   ACTION_TASK_ADD(
       S3DeleteObjectAction::add_object_oid_to_probable_dead_oid_list, this);

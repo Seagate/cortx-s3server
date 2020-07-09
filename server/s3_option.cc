@@ -46,7 +46,7 @@ bool S3Option::load_section(std::string section_name,
           s3_option_node["S3_DAEMON_DO_REDIRECTION"].as<unsigned short>();
       s3_enable_auth_ssl = s3_option_node["S3_ENABLE_AUTH_SSL"].as<bool>();
       s3_reuseport = s3_option_node["S3_REUSEPORT"].as<bool>();
-      mero_http_reuseport = s3_option_node["S3_MERO_HTTP_REUSEPORT"].as<bool>();
+      motr_http_reuseport = s3_option_node["S3_MOTR_HTTP_REUSEPORT"].as<bool>();
       s3_iam_cert_file = s3_option_node["S3_IAM_CERT_FILE"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_CERT_FILE");
       s3server_ssl_cert_file =
@@ -59,8 +59,8 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_BIND_PORT");
       s3_bind_port = s3_option_node["S3_SERVER_BIND_PORT"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_BIND_PORT");
-      mero_http_bind_port =
-          s3_option_node["S3_SERVER_MERO_HTTP_BIND_PORT"].as<unsigned short>();
+      motr_http_bind_port =
+          s3_option_node["S3_SERVER_MOTR_HTTP_BIND_PORT"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
                                "S3_SERVER_SHUTDOWN_GRACE_PERIOD");
       s3_grace_period_sec = s3_option_node["S3_SERVER_SHUTDOWN_GRACE_PERIOD"]
@@ -121,9 +121,9 @@ bool S3Option::load_section(std::string section_name,
       if (S3CommonUtilities::is_yaml_value_null(s3_ipv6_bind_addr)) {
         s3_ipv6_bind_addr = "";
       }
-      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_MERO_HTTP_BIND_ADDR");
-      mero_http_bind_addr =
-          s3_option_node["S3_SERVER_MERO_HTTP_BIND_ADDR"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_MOTR_HTTP_BIND_ADDR");
+      motr_http_bind_addr =
+          s3_option_node["S3_SERVER_MOTR_HTTP_BIND_ADDR"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_ENABLE_PERF");
       perf_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_SSL_ENABLE");
@@ -329,10 +329,10 @@ bool S3Option::load_section(std::string section_name,
         s3_bind_port =
             s3_option_node["S3_SERVER_BIND_PORT"].as<unsigned short>();
       }
-      if (!(cmd_opt_flag & S3_OPTION_MERO_BIND_PORT)) {
+      if (!(cmd_opt_flag & S3_OPTION_MOTR_BIND_PORT)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node,
-                                 "S3_SERVER_MERO_HTTP_BIND_PORT");
-        mero_http_bind_port = s3_option_node["S3_SERVER_MERO_HTTP_BIND_PORT"]
+                                 "S3_SERVER_MOTR_HTTP_BIND_PORT");
+        motr_http_bind_port = s3_option_node["S3_SERVER_MOTR_HTTP_BIND_PORT"]
                                   .as<unsigned short>();
       }
       if (!(cmd_opt_flag & S3_OPTION_LOG_DIR)) {
@@ -371,11 +371,11 @@ bool S3Option::load_section(std::string section_name,
         s3_ipv6_bind_addr =
             s3_option_node["S3_SERVER_IPV6_BIND_ADDR"].as<std::string>();
       }
-      if (!(cmd_opt_flag & S3_OPTION_MERO_BIND_ADDR)) {
+      if (!(cmd_opt_flag & S3_OPTION_MOTR_BIND_ADDR)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node,
-                                 "S3_SERVER_MERO_HTTP_BIND_ADDR");
-        mero_http_bind_addr =
-            s3_option_node["S3_SERVER_MERO_HTTP_BIND_ADDR"].as<std::string>();
+                                 "S3_SERVER_MOTR_HTTP_BIND_ADDR");
+        motr_http_bind_addr =
+            s3_option_node["S3_SERVER_MOTR_HTTP_BIND_ADDR"].as<std::string>();
       }
       if (!(cmd_opt_flag & S3_OPTION_STATSD_PORT)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_PORT");
@@ -407,8 +407,8 @@ bool S3Option::load_section(std::string section_name,
       s3_enable_auth_ssl = s3_option_node["S3_ENABLE_AUTH_SSL"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_REUSEPORT");
       s3_reuseport = s3_option_node["S3_REUSEPORT"].as<bool>();
-      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MERO_HTTP_REUSEPORT");
-      mero_http_reuseport = s3_option_node["S3_MERO_HTTP_REUSEPORT"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_HTTP_REUSEPORT");
+      motr_http_reuseport = s3_option_node["S3_MOTR_HTTP_REUSEPORT"].as<bool>();
       s3_iam_cert_file = s3_option_node["S3_IAM_CERT_FILE"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_CERT_FILE");
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_PEM_FILE");
@@ -658,12 +658,12 @@ void S3Option::set_cmdline_option(int option_flag, const char* optarg) {
     s3_ipv4_bind_addr = optarg;
   } else if (option_flag & S3_OPTION_IPV6_BIND_ADDR) {
     s3_ipv6_bind_addr = optarg;
-  } else if (option_flag & S3_OPTION_MERO_BIND_ADDR) {
-    mero_http_bind_addr = optarg;
+  } else if (option_flag & S3_OPTION_MOTR_BIND_ADDR) {
+    motr_http_bind_addr = optarg;
   } else if (option_flag & S3_OPTION_BIND_PORT) {
     s3_bind_port = atoi(optarg);
-  } else if (option_flag & S3_OPTION_MERO_BIND_PORT) {
-    mero_http_bind_port = atoi(optarg);
+  } else if (option_flag & S3_OPTION_MOTR_BIND_PORT) {
+    motr_http_bind_port = atoi(optarg);
   } else if (option_flag & S3_OPTION_CLOVIS_LOCAL_ADDR) {
     clovis_local_addr = optarg;
   } else if (option_flag & S3_OPTION_CLOVIS_HA_ADDR) {
@@ -702,11 +702,11 @@ void S3Option::set_cmdline_option(int option_flag, const char* optarg) {
     } else {
       s3_reuseport = false;
     }
-  } else if (option_flag & S3_OPTION_MERO_HTTP_REUSEPORT) {
+  } else if (option_flag & S3_OPTION_MOTR_HTTP_REUSEPORT) {
     if (strcmp(optarg, "true") == 0) {
-      mero_http_reuseport = true;
+      motr_http_reuseport = true;
     } else {
-      mero_http_reuseport = false;
+      motr_http_reuseport = false;
     }
   }
   cmd_opt_flag |= option_flag;
@@ -749,18 +749,18 @@ void S3Option::dump_options() {
          (s3_enable_auth_ssl) ? "true" : "false");
   s3_log(S3_LOG_INFO, "", "S3_REUSEPORT = %s\n",
          (s3_reuseport) ? "true" : "false");
-  s3_log(S3_LOG_INFO, "", "S3_MERO_HTTP_REUSEPORT = %s\n",
-         (mero_http_reuseport) ? "true" : "false");
+  s3_log(S3_LOG_INFO, "", "S3_MOTR_HTTP_REUSEPORT = %s\n",
+         (motr_http_reuseport) ? "true" : "false");
   s3_log(S3_LOG_INFO, "", "S3_IAM_CERT_FILE = %s\n", s3_iam_cert_file.c_str());
   s3_log(S3_LOG_INFO, "", "S3_SERVER_IPV4_BIND_ADDR = %s\n",
          s3_ipv4_bind_addr.c_str());
   s3_log(S3_LOG_INFO, "", "S3_SERVER_IPV6_BIND_ADDR = %s\n",
          s3_ipv6_bind_addr.c_str());
-  s3_log(S3_LOG_INFO, "", "S3_SERVER_MERO_HTTP_BIND_ADDR = %s\n",
-         mero_http_bind_addr.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_MOTR_HTTP_BIND_ADDR = %s\n",
+         motr_http_bind_addr.c_str());
   s3_log(S3_LOG_INFO, "", "S3_SERVER_BIND_PORT = %d\n", s3_bind_port);
-  s3_log(S3_LOG_INFO, "", "S3_SERVER_MERO_HTTP_BIND_PORT = %d\n",
-         mero_http_bind_port);
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_MOTR_HTTP_BIND_PORT = %d\n",
+         motr_http_bind_port);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_SHUTDOWN_GRACE_PERIOD = %d\n",
          s3_grace_period_sec);
   s3_log(S3_LOG_INFO, "", "S3_ENABLE_PERF = %d\n", perf_enabled);
@@ -890,8 +890,8 @@ std::string S3Option::get_s3_nodename() { return s3_nodename; }
 
 unsigned short S3Option::get_s3_bind_port() { return s3_bind_port; }
 
-unsigned short S3Option::get_mero_http_bind_port() {
-  return mero_http_bind_port;
+unsigned short S3Option::get_motr_http_bind_port() {
+  return motr_http_bind_port;
 }
 
 std::string S3Option::get_s3_pidfile() { return s3_pidfile; }
@@ -1030,7 +1030,7 @@ std::string S3Option::get_ipv4_bind_addr() { return s3_ipv4_bind_addr; }
 
 std::string S3Option::get_ipv6_bind_addr() { return s3_ipv6_bind_addr; }
 
-std::string S3Option::get_mero_http_bind_addr() { return mero_http_bind_addr; }
+std::string S3Option::get_motr_http_bind_addr() { return motr_http_bind_addr; }
 
 std::string S3Option::get_default_endpoint() { return s3_default_endpoint; }
 
@@ -1209,7 +1209,7 @@ void S3Option::enable_reuseport() { FLAGS_reuseport = true; }
 
 bool S3Option::is_s3_reuseport_enabled() { return s3_reuseport; }
 
-bool S3Option::is_mero_http_reuseport_enabled() { return mero_http_reuseport; }
+bool S3Option::is_motr_http_reuseport_enabled() { return motr_http_reuseport; }
 
 bool S3Option::is_fi_enabled() { return FLAGS_fault_injection; }
 
