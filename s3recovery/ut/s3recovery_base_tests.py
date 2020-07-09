@@ -56,6 +56,3 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
 
         self.assertNotEqual(keys_list, None)
         self.assertEqual(len(keys_list), 2)
-
-#if __name__ == '__main__':
-#    unittest.main()
