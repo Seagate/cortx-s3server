@@ -463,7 +463,15 @@ then
       python36 setup.py install
     fi
     cd -
-fi
+  fi
+  cd s3recovery
+  if [ $no_clean_build -eq 0 ]
+  then
+    python36 setup.py install --force
+  else
+    python36 setup.py install
+  fi
+  cd -
 fi
 
 if [ $no_mero_rpm -eq 1 ]

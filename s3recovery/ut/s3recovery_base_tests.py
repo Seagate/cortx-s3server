@@ -87,3 +87,97 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
         
         self.assertEqual(mock_list.call_count, 2)
 
+    def test_parse_index_list_response_none_data(self):
+        # Test parse_index_list_response when argument passed is None
+        mockS3RecoveryBase = S3RecoveryBase()
+        ret_dict = mockS3RecoveryBase.parse_index_list_response(None)
+
+        self.assertDictEqual(ret_dict, {})
+
+    def test_parse_index_list_response_empty_data(self):
+        # Test parse_index_list_response when argument passed is empty
+        key_list = []
+        mockS3RecoveryBase = S3RecoveryBase()
+        ret_dict = mockS3RecoveryBase.parse_index_list_response(key_list)
+
+        self.assertDictEqual(ret_dict, {})
+
+    def test_parse_index_list_response_success(self):
+        # Test parse_index_list_response when argument passed is valid
+        key_list = [{"Key":"key-1","Value":"value-1"}, {"Key":"key-2","Value":"value-2"}]
+        mockS3RecoveryBase = S3RecoveryBase()
+        ret_dict = mockS3RecoveryBase.parse_index_list_response(key_list)
+
+        self.assertEqual(len(ret_dict), 2)
+
+    def test_merge_keys_none_args(self):
+        # Test merge_keys when the arguments passed are None
+        mockS3RecoveryBase = S3RecoveryBase()
+
+        ret_list = mockS3RecoveryBase.merge_keys('global_index_id', None, None)
+        self.assertEqual(len(ret_list), 0)
+
+    def test_merge_keys_same_content(self):
+        # Test merge_keys when both data and replica dict have same keys
+        data_dict = {
+            "key1": "value1",
+            "key2": "value2"
+        }
+        replica_dict = {
+            "key1": "value1",
+            "key2": "value2"
+        }
+        mockS3RecoveryBase = S3RecoveryBase()
+
+        ret_list = mockS3RecoveryBase.merge_keys('global_index_id', data_dict, replica_dict)
+
+        self.assertEqual(len(ret_list), 2)
+
+    def test_merge_keys_diff_content(self):
+        # Test merge_keys when both data and replica have different keys
+        data_dict = {
+            "key1": "value1",
+            "key2": "value2"
+        }
+        replica_dict = {
+            "key1": "value1",
+            "key3": "value3"
+        }
+        mockS3RecoveryBase = S3RecoveryBase()
+
+        ret_list = mockS3RecoveryBase.merge_keys('global_index_id', data_dict, replica_dict)
+
+        self.assertEqual(len(ret_list), 3)
+
+    def test_perform_validation_data_is_none(self):
+        # Test perform_validation when data_to_restore is None
+        mock_item_replica = '{"key1": "value1"}'
+        mock_union_result = dict()
+
+        mockS3RecoveryBase = S3RecoveryBase()
+
+        mockS3RecoveryBase.perform_validation('key1', None, mock_item_replica, mock_union_result)
+
+        self.assertEqual(len(mock_union_result), 1)
+        self.assertDictEqual(mock_union_result, {'key1': '{"key1": "value1"}'})
+
+    def test_perform_validation_replica_is_none(self):
+        # Test perform_validation when item_replica is None
+        mock_data = '{"key1": "value1"}'
+        mock_union_result = dict()
+
+        mockS3RecoveryBase = S3RecoveryBase()
+        mockS3RecoveryBase.perform_validation('key1', mock_data, None, mock_union_result)
+
+        self.assertEqual(len(mock_union_result), 1)
+        self.assertDictEqual(mock_union_result, {'key1': '{"key1": "value1"}'})
+
+    def test_perform_validation_all_none(self):
+        # Test perform_validation when both data & item_replica are None
+        mock_union_result = dict()
+
+        mockS3RecoveryBase = S3RecoveryBase()
+        mockS3RecoveryBase.perform_validation('key1', None, None, mock_union_result)
+
+        self.assertEqual(len(mock_union_result), 0)
+
