@@ -63,4 +63,3 @@ void MotrIndexAPIHandler::create_action() {
   };  // switch operation_code
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
-

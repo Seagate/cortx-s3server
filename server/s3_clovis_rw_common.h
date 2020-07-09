@@ -25,7 +25,7 @@
 #include "s3_common.h"
 
 EXTERN_C_BLOCK_BEGIN
-#include "motr/init.h"
+#include "mero/init.h"
 #include "module/instance.h"
 
 #include "clovis/clovis.h"
