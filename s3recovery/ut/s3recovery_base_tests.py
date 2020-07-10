@@ -78,7 +78,7 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
 
         # setup mock
         mock_list.return_value = False, EOSCoreErrorResponse(
-            500, 
+            500,
             "",
             "InternalServerError"
         )
