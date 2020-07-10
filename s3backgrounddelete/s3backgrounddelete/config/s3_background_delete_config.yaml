@@ -7,6 +7,13 @@ eos_core:                                   # Section for S3 background delete c
    daemon_mode: "True"                                     # S3background process run in daemon mode and ST's run in non-daemon mode.
    s3_instance_count: 22                                   # Number of active s3 instances in release setup
 
+# Piggy-backing in to background-delete for recovery tool 
+# Should be addressed by EOS-9538 
+recovery_tool:
+    access_key: "A9IAJPINPFRBTPASATAZ"
+    secret_key: "h98ntpB9DoChDrneKZHvPVTm+1mHbs7UdCyNVME5"
+
+
 logconfig:                                  # Section for scheduler & processor loggers.
 
    # Logging facility for Python https://docs.python.org/3/library/logging.html

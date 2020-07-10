@@ -352,7 +352,7 @@ add_s3backgrounddelete_rabbitmq_user()
 # Create s3 account for s3 recoverytool
 create_recovery_tool_account()
 {
-    output=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
+    output=$(ldapsearch -b "o=s3-recovery-tool-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
     if [[ $output == *"No such object"* ]]
     then
       # Create s3background delete account

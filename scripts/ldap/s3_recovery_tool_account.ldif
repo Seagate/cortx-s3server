@@ -24,7 +24,7 @@ s3userid: 451
 arn: arn:aws:iam::67891:root
 objectclass: iamUser
 
-#Keys 
+#Keys
 dn: ak=A9IAJPINPFRBTPASATAZ,ou=accesskeys,dc=s3,dc=seagate,dc=com
 ak: A9IAJPINPFRBTPASATAZ
 s3userid: 451
@@ -32,7 +32,7 @@ sk: h98ntpB9DoChDrneKZHvPVTm+1mHbs7UdCyNVME5
 status: Active
 objectclass: accessKey
 
-#Groups			 
+#Groups
 dn: ou=groups,o=s3-recovery-tool-svc,ou=accounts,dc=s3,dc=seagate,dc=com
 ou: groups
 objectClass: organizationalUnit
