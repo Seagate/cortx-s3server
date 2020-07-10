@@ -74,7 +74,7 @@ TEST_F(S3DeleteBucketPolicyActionTest, DeleteBucketPolicy) {
               get_policy_as_json()).WillRepeatedly(ReturnRef(MockJsonResponse));
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), deletepolicy())
       .Times(AtLeast(1));
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), save(_, _))
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), update(_, _))
       .Times(AtLeast(1));
   action_under_test_ptr->delete_bucket_policy();
 }
