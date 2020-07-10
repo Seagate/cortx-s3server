@@ -1,4 +1,3 @@
-#!/usr/bin/python3.6
 '''
  COPYRIGHT 2020 SEAGATE LLC
 
@@ -17,16 +16,14 @@
  Original author: Amit Kumar  <amit.kumar@seagate.com>
  Original creation date: 08-July-2020
 '''
+#!/usr/bin/python3.6
 
 import mock
 import unittest
-import json
 
 from s3recovery.s3recoverybase import S3RecoveryBase
 
-from s3backgrounddelete.eos_core_config import EOSCoreConfig
 from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
-from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
 from s3backgrounddelete.eos_list_index_response import EOSCoreListIndexResponse
 
 class S3RecoveryBaseTestCase(unittest.TestCase):
@@ -100,7 +97,7 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
             "NextMarker":"","Prefix":""
         }
         mockS3RecoveryBase.initiate('global_index', 'global_index_id', 'global_index_id_replica')
-        
+
         self.assertEqual(mock_list.call_count, 2)
 
     def test_parse_index_list_response_none_data(self):

@@ -24,7 +24,6 @@ usage() {
   echo '          --no-s3mempoolmgrut-build  : Do not build Memory pool Manager UT, Default (false)'
   echo '          --no-s3server-build        : Do not build S3 Server, Default (false)'
   echo '          --no-cloviskvscli-build    : Do not build cloviskvscli tool, Default (false)'
-  echo '          --no-s3background-build    : Do not build s3background process, Default (false)'
   echo '          --no-s3addbplugin-build    : Do not build s3 addb plugin library, Default (false)'
   echo '          --no-auth-build            : Do not build Auth Server, Default (false)'
   echo '          --no-jclient-build         : Do not build jclient, Default (false)'
@@ -115,7 +114,7 @@ get_mero_pkg_config_rpm() {
 # read the options
 OPTS=`getopt -o h --long no-mero-rpm,use-build-cache,no-check-code,no-clean-build,\
 no-s3ut-build,no-s3mempoolut-build,no-s3mempoolmgrut-build,no-s3server-build,\
-no-cloviskvscli-build,no-s3background-build,no-s3addbplugin-build,no-auth-build,\
+no-cloviskvscli-build,no-s3addbplugin-build,no-auth-build,\
 no-jclient-build,no-jcloudclient-build,no-s3iamcli-build,no-install,\
 just-gen-build-file,help -n 'rebuildall.sh' -- "$@"`
 
@@ -151,7 +150,6 @@ while true; do
     --no-s3mempoolmgrut-build) no_s3mempoolmgrut_build=1; shift ;;
     --no-s3server-build) no_s3server_build=1; shift ;;
     --no-cloviskvscli-build) no_cloviskvscli_build=1; shift ;;
-    --no-s3background-build) no_s3background_build=1; shift ;;
     --no-s3addbplugin-build) no_s3addbplugin_build=1; shift ;;
     --no-auth-build) no_auth_build=1; shift ;;
     --no-jclient-build) no_jclient_build=1; shift ;;
@@ -453,18 +451,15 @@ fi
 
 if [ $no_mero_rpm -eq 1 ]
 then
-  if [ $no_s3background_build -eq 0 ]
+  cd s3backgrounddelete
+  if [ $no_clean_build -eq 0 ]
   then
-    cd s3backgrounddelete
-    if [ $no_clean_build -eq 0 ]
-    then
-      python36 setup.py install --force
-    else
-      python36 setup.py install
-    fi
-    cd -
+    python36 setup.py install --force
+  else
+    python36 setup.py install
   fi
-  cd s3recovery
+  cd -
+  cd s3recovery # s3backgrounddelete should be installed before s3recoverytool
   if [ $no_clean_build -eq 0 ]
   then
     python36 setup.py install --force
