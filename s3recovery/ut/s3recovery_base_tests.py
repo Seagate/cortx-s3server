@@ -25,6 +25,7 @@ from s3recovery.s3recoverybase import S3RecoveryBase
 
 from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
 from s3backgrounddelete.eos_list_index_response import EOSCoreListIndexResponse
+from s3backgrounddelete.eos_core_error_respose import EOSCoreErrorResponse
 
 class S3RecoveryBaseTestCase(unittest.TestCase):
 
@@ -70,8 +71,7 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
         mockS3RecoveryBase = S3RecoveryBase()
 
         # setup mock
-        mock_res = '{}'
-        mock_list.return_value = False, EOSCoreListIndexResponse(mock_res.encode())
+        mock_list.return_value = False, EOSCoreErrorResponse(500, "", "InternalServerError")
 
         with self.assertRaises(SystemExit) as cm:
             mockS3RecoveryBase.list_index('global_index_id')

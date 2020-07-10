@@ -137,7 +137,7 @@ then
   type $UT_S3RECOVERYTOOL >/dev/null
   printf "OK \n"
 
-  $UT_S3RECOVERYTOOL 2>/dev/null
+  $UT_S3RECOVERYTOOL 2>&1
 fi
 
 if [ $no_st_run -eq 0 ]
