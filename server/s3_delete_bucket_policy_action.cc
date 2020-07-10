@@ -66,7 +66,7 @@ void S3DeleteBucketPolicyAction::delete_bucket_policy() {
       send_response_to_s3_client();
     } else {
       bucket_metadata->deletepolicy();
-      bucket_metadata->save(
+      bucket_metadata->update(
           std::bind(
               &S3DeleteBucketPolicyAction::delete_bucket_policy_successful,
               this),
