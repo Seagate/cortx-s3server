@@ -92,9 +92,9 @@ class S3RecoveryBase:
             s_corruption = True
 
         if p_corruption and (not s_corruption):
-            union_result[key] = data_to_restore
-        elif s_corruption and (not p_corruption):
             union_result[key] = item_replica
+        elif s_corruption and (not p_corruption):
+            union_result[key] = data_to_restore
         elif (not p_corruption) and (not s_corruption):
             # Compare epoch here
             bucket_metadata_date = dateutil.parser.parse(bucket_metadata["create_timestamp"])

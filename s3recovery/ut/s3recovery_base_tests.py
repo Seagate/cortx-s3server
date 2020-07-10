@@ -20,6 +20,7 @@
 
 import mock
 import unittest
+import json
 
 from s3recovery.s3recoverybase import S3RecoveryBase
 
@@ -35,7 +36,8 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
         # Tests 'list_index' when index is empty
         mockS3RecoveryBase = S3RecoveryBase()
         # setup mock
-        mock_res = '{"Delimiter":"","Index-Id":"mock-index-id","IsTruncated":"false","Keys":null,"Marker":"","MaxKeys":"1000","NextMarker":"","Prefix":""}'
+        mock_res = \
+            '{"Delimiter":"","Index-Id":"mock-index-id","IsTruncated":"false","Keys":null,"Marker":"","MaxKeys":"1000","NextMarker":"","Prefix":""}'
         mock_list.return_value = True, EOSCoreListIndexResponse(mock_res.encode())
 
         keys = mockS3RecoveryBase.list_index('global_index_id')
@@ -50,8 +52,16 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
         # setup mock
         mock_json_res = '{}'
         mock_list.return_value = True, EOSCoreListIndexResponse(mock_json_res.encode("utf-8"))
-        mock_get_index_content.return_value = {"Delimiter":"","Index-Id":"mock-index-id","IsTruncated":"false","Keys":[{"Key":"key-1","Value":"value-1"},{"Key":"key-2","Value":"value-2"}],"Marker":"","MaxKeys":"1000","NextMarker":"","Prefix":""}
-
+        mock_get_index_content.return_value = {
+            "Delimiter":"",
+            "Index-Id":"mock-index-id",
+            "IsTruncated":"false",
+            "Keys":[{"Key":"key-1","Value":"value-1"},{"Key":"key-2","Value":"value-2"}],
+            "Marker":"",
+            "MaxKeys":"1000",
+            "NextMarker":"",
+            "Prefix":""
+        }
         keys_list = mockS3RecoveryBase.list_index('global_index_id')
 
         self.assertNotEqual(keys_list, None)
@@ -80,7 +90,15 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
         # setup mock
         mock_res = '{}'
         mock_list.return_value = True, EOSCoreListIndexResponse(mock_res.encode())
-        mock_get_index_content.return_value = {"Delimiter":"","Index-Id":"mock-index-id","IsTruncated":"false","Keys":[{"Key":"key-1","Value":"value-1"}],"Marker":"","MaxKeys":"1000","NextMarker":"","Prefix":""}
+        mock_get_index_content.return_value = {
+            "Delimiter":"",
+            "Index-Id":"mock-index-id",
+            "IsTruncated":"false",
+            "Keys":[{"Key":"key-1","Value":"value-1"}],
+            "Marker":"",
+            "MaxKeys":"1000",
+            "NextMarker":"","Prefix":""
+        }
         mockS3RecoveryBase.initiate('global_index', 'global_index_id', 'global_index_id_replica')
         
         self.assertEqual(mock_list.call_count, 2)
@@ -161,11 +179,11 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
 
     def test_perform_validation_replica_is_none(self):
         # Test perform_validation when item_replica is None
-        mock_data = '{"key1": "value1"}'
+        mock_data_to_restore = '{"key1": "value1"}'
         mock_union_result = dict()
 
         mockS3RecoveryBase = S3RecoveryBase()
-        mockS3RecoveryBase.perform_validation('key1', mock_data, None, mock_union_result)
+        mockS3RecoveryBase.perform_validation('key1', mock_data_to_restore, None, mock_union_result)
 
         self.assertEqual(len(mock_union_result), 1)
         self.assertDictEqual(mock_union_result, {'key1': '{"key1": "value1"}'})
@@ -178,4 +196,46 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
         mockS3RecoveryBase.perform_validation('key1', None, None, mock_union_result)
 
         self.assertEqual(len(mock_union_result), 0)
+
+    def test_perform_validation_corrupt_data(self):
+        # Test perform_validation when data_to_restore is corrupt
+        mock_data_to_restore = "Invalid-JSON"
+        mock_item_replica = '{"key1": "value1"}'
+        mock_union_result = dict()
+        mockS3RecoveryBase = S3RecoveryBase()
+
+        mockS3RecoveryBase.perform_validation('key1', mock_data_to_restore, mock_item_replica, mock_union_result)
+
+        self.assertEqual(len(mock_union_result), 1)
+        self.assertDictEqual(mock_union_result, {'key1': '{"key1": "value1"}'})
+
+    def test_perform_validation_all_corrupt(self):
+        # Test perform_validation when both data_to_restore and item_replica are corrupt
+        mock_data_to_restore = "Invalid-JSON"
+        mock_item_replica = "Invalid-JSON"
+        mock_union_result = dict()
+        mockS3RecoveryBase = S3RecoveryBase()
+
+        mockS3RecoveryBase.perform_validation('key1', mock_data_to_restore, mock_item_replica, mock_union_result)
+
+        self.assertEqual(len(mock_union_result), 0)
+
+    def test_perform_validation_success(self):
+        # Test perfrom_validation when both data_to_restore and item_replica are valid JSON
+        mock_data_to_restore = \
+            '{\"account_id\":\"123\",\"account_name\":\"amit-vc\",\"create_timestamp\":\"2020-06-16T05:45:41.000Z\",\"location_constraint\":\"us-west-2\"}'
+        mock_item_replica = \
+            '{\"account_id\":\"123\",\"account_name\":\"amit-vc\",\"create_timestamp\":\"2020-06-16T05:50:41.000Z\",\"location_constraint\":\"us-west-2\"}'
+        mock_union_result = dict()
+        mockS3RecoveryBase = S3RecoveryBase()
+
+        mockS3RecoveryBase.perform_validation('my-bucket1', mock_data_to_restore, mock_item_replica, mock_union_result)
+
+        self.assertEqual(len(mock_union_result), 1)
+
+        expected_union_result = {
+            'my-bucket1': '{"account_id":"123","account_name":"amit-vc","create_timestamp":"2020-06-16T05:50:41.000Z","location_constraint":"us-west-2"}'
+        } # This is mock_item_replica as its create_timestamp is greater than mock_data_to_restore
+
+        self.assertDictEqual(mock_union_result, expected_union_result)
 
