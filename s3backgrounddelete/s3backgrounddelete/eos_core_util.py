@@ -28,12 +28,8 @@ class EOSCoreUtil(object):
 
    def create_canonical_request(self, method, canonical_uri, canonical_query_string, body, epoch_t, host):
        """Create canonical request based on uri and query string."""
-       empty_body_256hash_hex = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
 
-       if body == "":
-           body_256sha_hex = empty_body_256hash_hex
-       else:
-           body_256sha_hex =  hashlib.sha256(body.encode('utf-8')).hexdigest()
+       body_256sha_hex =  hashlib.sha256(body.encode('utf-8')).hexdigest()
 
        self.body_hash_hex = body_256sha_hex
        headers = self.get_headers(host, epoch_t, body_256sha_hex)
