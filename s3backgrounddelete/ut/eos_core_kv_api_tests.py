@@ -139,7 +139,7 @@ def test_put_success():
     """Test PUT api, it should return success response."""
     httpconnection = Mock(spec=HTTPConnection)
     httpresponse = Mock(spec=HTTPResponse)
-    httpresponse.status = 201
+    httpresponse.status = 200
     httpresponse.getheaders.return_value = \
         'Content-Type:text/html;Content-Length:14'
     httpresponse.read.return_value = b'{}'
