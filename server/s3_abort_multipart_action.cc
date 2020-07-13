@@ -300,7 +300,7 @@ void S3AbortMultipartAction::delete_part_index_with_parts_failed() {
   // Not checking part metatdata state for failed_to_launch here as we wont
   // return 503
   s3_log(S3_LOG_ERROR, request_id,
-         "Failed to delete part index, this oid will be stale in Mero: "
+         "Failed to delete part index, this oid will be stale in Motr: "
          "%" SCNx64 " : %" SCNx64,
          part_index_oid.u_hi, part_index_oid.u_lo);
   s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
