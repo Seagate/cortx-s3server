@@ -124,6 +124,7 @@ print(account_response_elements)
 # ********** Update s3background delete config file with AccesskeyId and SecretKey**********************
 load_and_update_config(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])
 
+<<<<<<< HEAD
 replica_bucket_list_index_oid = 'AAAAAAAAAHg=-BQAQAAAAAAA=' # base64 conversion of "0x7800000000000000" and "0x100005"
 primary_bucket_list_index_oid = 'AAAAAAAAAHg=-AQAQAAAAAAA='
 primary_bucket_list_index = S3kvTest('KvTest fetch root bucket account index')\
@@ -136,11 +137,15 @@ replica_bucket_metadata_index_oid = "AAAAAAAAAHg=-BgAQAAAAAAA="
 primary_bucket_metadata_index = S3kvTest('KvTest fetch root buket metadata index')\
     .root_bucket_metadata_index()
 
+=======
+replica_bucket_list_index_oid = 'AAAAAAAAAHg=-BQAQAAAAAAA=' # base64 conversion of 0x7800000000000000" and "0x100005
+>>>>>>> EOS-9543:S3:Update STs for rename mero -> motr & eos -> cortx (#44)
 config = CORTXMotrConfig()
 
 # ======================================================================================================
 
 # Test Scenario 1
+<<<<<<< HEAD
 # Test if bucket replica indexes are present.
 print("\nvalidate if bucket replica indexes exist.\n")
 status, res = CORTXMotrIndexApi(config).head(replica_bucket_list_index_oid)
@@ -152,6 +157,14 @@ assert status == True
 assert isinstance(res, CortxMotrSuccessResponse)
 
 print("\nHEAD 'replica bucket indexes' validation completed.\n")
+=======
+# Test if Replica of global bucket list index OID present.
+print("\nvalidate if replica global bucket index exists.\n")
+status, res = CORTXMotrIndexApi(config).head(replica_bucket_list_index_oid)
+assert status == True
+assert isinstance(res, CORTXMotrSuccessResponse)
+print("\nHEAD 'replica index' validation completed.\n")
+>>>>>>> EOS-9543:S3:Update STs for rename mero -> motr & eos -> cortx (#44)
 
 # ******************************************************************************************************
 
@@ -161,6 +174,7 @@ print("\nvalidate if KV created in replica bucket indexes at PUT bucket\n")
 AwsTest('Create Bucket "seagatebucket" using s3-recovery-svc account')\
     .create_bucket("seagatebucket").execute_test().command_is_successful()
 
+<<<<<<< HEAD
 # list KV in replica bucket list index
 status, res = CortxMotrIndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
@@ -210,6 +224,36 @@ assert len(primary_KV_list) == 1
 for primary_kv, replica_kv in zip(primary_KV_list, replica_KV_list):
     assert primary_kv['Key'] == replica_kv['Key']
     assert primary_kv['Value'] == replica_kv['Value']
+=======
+status, res = CORTXMotrIndexApi(config).list(replica_bucket_list_index_oid)
+assert status == True
+assert isinstance(res, CORTXMotrListIndexResponse)
+# Example index_content:
+# {'Delimiter': '',
+#  'Index-Id': 'AAAAAAAAAHg=-BQAQAAAAAAA=',
+#  'IsTruncated': 'false',
+#  'Keys': [
+#       {'Key': 'seagatebucket',
+#        'Value': '{"account_id":"293986807303","account_name":"s3-recovery-svc","create_timestamp":"2020-06-16T04:46:46.000Z","location_constraint":"us-west-2"}\n'}
+#   ],
+#   'Marker': '',
+#   'MaxKeys': '1000',
+#   'NextMarker': '', 'Prefix': ''
+# }
+index_content = res.get_index_content()
+assert index_content["Index-Id"] == "AAAAAAAAAHg=-BQAQAAAAAAA="
+
+bucket_key_value_list = index_content["Keys"]
+bucket_key_value = (bucket_key_value_list[0])
+bucket_key = bucket_key_value["Key"]
+bucket_value = bucket_key_value["Value"]
+
+value_json = json.loads(bucket_value)
+
+assert bucket_key == "seagatebucket"
+assert value_json['account_id'] == account_response_elements["AccountId"]
+assert value_json['create_timestamp'] != ''
+>>>>>>> EOS-9543:S3:Update STs for rename mero -> motr & eos -> cortx (#44)
 
 # ******************************************************************************************************
 
@@ -219,6 +263,7 @@ print("\nvalidate if KV deleted from replica bucket indexes at DELETE bucket\n")
 AwsTest('Delete Bucket "seagatebucket"').delete_bucket("seagatebucket")\
    .execute_test().command_is_successful()
 
+<<<<<<< HEAD
 status, res = CortxMotrIndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
 assert isinstance(res, CortxMotrListIndexResponse)
@@ -586,6 +631,9 @@ assert len(key_value_primary_index_before_recovery_list) == 4
 status, res = EOSCoreIndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
 assert isinstance(res, EOSCoreListIndexResponse)
+=======
+status, res = CORTXMotrIndexApi(config).list(replica_bucket_list_index_oid)
+>>>>>>> EOS-9543:S3:Update STs for rename mero -> motr & eos -> cortx (#44)
 
 index_content = res.get_index_content()
 key_value_replica_index_before_recovery_list = index_content["Keys"]
@@ -601,7 +649,7 @@ result = S3RecoveryTest("s3recovery --recover (corrupted and missing KVs)")\
 # List Primary Index
 status, res = EOSCoreIndexApi(config).list(primary_bucket_list_index_oid)
 assert status == True
-assert isinstance(res, EOSCoreListIndexResponse)
+assert isinstance(res, CORTXMotrListIndexResponse)
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == primary_bucket_list_index_oid
