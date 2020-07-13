@@ -130,9 +130,10 @@ class S3RecoveryBase:
 
         """
         kv_data = {}
-        for item in data:
-            key = item['Key']
-            kv_data[key] = item['Value']
+        if data is not None:
+            for item in data:
+                key = item['Key']
+                kv_data[key] = item['Value']
         return kv_data
 
     def merge_keys(self, index_name, data, replica):
