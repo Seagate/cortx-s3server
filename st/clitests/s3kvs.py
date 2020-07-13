@@ -58,7 +58,7 @@ def _extract_oid(json_keyval, bucket=True):
         dec_string_oid_hi = base64.b64decode(oid_list[0])
         dec_string_oid_lo = base64.b64decode(oid_list[1])
     else:
-        string_oid = keyval['mero_object_list_index_oid']
+        string_oid = keyval['motr_object_list_index_oid']
         oid_list = string_oid.split("-")
         dec_string_oid_hi = base64.b64decode(oid_list[0])
         dec_string_oid_lo = base64.b64decode(oid_list[1])
@@ -139,18 +139,18 @@ def _fetch_bucket_acl(bucket_name):
     return bucket_keyval['ACL']
 
 
-# Check if bucket is empty by checking against mero_object_list_index_oid_u_*
+# Check if bucket is empty by checking against motr_object_list_index_oid_u_*
 def _check_bucket_not_empty(bucket_record):
     default_empty_object_list_index_oid = "AAAAAAAAAAA="
     bucket_json_keyval = _find_keyval_json(bucket_record)
     bucket_keyval = json.loads(bucket_json_keyval)
-    string_oid = bucket_keyval['mero_object_list_index_oid']
+    string_oid = bucket_keyval['motr_object_list_index_oid']
     oid_list = string_oid.split("-")
-    mero_object_list_index_oid_u_hi = base64.b64decode(oid_list[0])
-    mero_object_list_index_oid_u_lo = base64.b64decode(oid_list[1])
+    motr_object_list_index_oid_u_hi = base64.b64decode(oid_list[0])
+    motr_object_list_index_oid_u_lo = base64.b64decode(oid_list[1])
 
-    if (mero_object_list_index_oid_u_hi == default_empty_object_list_index_oid and
-        mero_object_list_index_oid_u_lo == default_empty_object_list_index_oid):
+    if (motr_object_list_index_oid_u_hi == default_empty_object_list_index_oid and
+        motr_object_list_index_oid_u_lo == default_empty_object_list_index_oid):
         return False
     return True
 
