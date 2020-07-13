@@ -213,7 +213,7 @@ then
     yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-certs*
     yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
 
-    # Install rabbitmq requried for s3background delete  / recoverytool on all s3 nodes
+    # Install rabbitmq requried for s3background delete on all s3 nodes
     curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | sudo bash || exit 1
 
     # Install python3 pika on all nodes requried for s3backgrounddelete  / recoverytool (BSD 3-Clause license)
@@ -355,7 +355,7 @@ create_recovery_tool_account()
     output=$(ldapsearch -b "o=s3-recovery-tool-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
     if [[ $output == *"No such object"* ]]
     then
-      # Create s3background delete account
+      # Create s3recovery tool account
       sh /opt/seagate/cortx/s3/install/ldap/create_s3_recovery_tool_account.sh $ldappasswd
       echo "Created s3recovery tool account successfully..."
     else
@@ -366,9 +366,13 @@ create_recovery_tool_account()
 # Delete s3 account which was used by s3recoverytool
 delete_recovery_tool_account()
 {
-   # Delete s3background delete account
-   sh /opt/seagate/cortx/s3/install/ldap/delete_s3_recovery_tool_account.sh $ldappasswd
-   echo "Deleted s3recovery tool account successfully..."
+    output=$(ldapsearch -b "o=s3-recovery-tool-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
+    if [[ $output == *"No such object"* ]]
+    then
+   		# Delete s3recovery tool account
+   		sh /opt/seagate/cortx/s3/install/ldap/delete_s3_recovery_tool_account.sh $ldappasswd
+   		echo "Deleted s3recovery tool account successfully..."
+	fi
 }
 
 
@@ -389,9 +393,13 @@ create_background_delete_account()
 # Delete s3 account which was used by s3background delete
 delete_background_delete_account()
 {
-   # Delete s3background delete account
-   sh /opt/seagate/cortx/s3/install/ldap/delete_background_delete_account.sh $ldappasswd
-   echo "Deleted s3backgrounddelete account successfully..."
+    output=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
+    if [[ $output == *"No such object"* ]]
+    then
+	   # Delete s3background delete account
+	   sh /opt/seagate/cortx/s3/install/ldap/delete_background_delete_account.sh $ldappasswd
+	   echo "Deleted s3backgrounddelete account successfully..."
+	fi
 }
 
 # Setup s3 background delete and its dependencies
