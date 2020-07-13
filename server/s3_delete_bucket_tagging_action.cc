@@ -57,7 +57,7 @@ void S3DeleteBucketTaggingAction::fetch_bucket_info_failed() {
 void S3DeleteBucketTaggingAction::delete_bucket_tags() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   bucket_metadata->delete_bucket_tags();
-  bucket_metadata->save(
+  bucket_metadata->update(
       std::bind(&S3DeleteBucketTaggingAction::next, this),
       std::bind(&S3DeleteBucketTaggingAction::delete_bucket_tags_failed, this));
 
