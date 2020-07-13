@@ -22,7 +22,7 @@
 #include "s3_clovis_kvs_reader.h"
 #include "s3_clovis_kvs_writer.h"
 #include "s3_clovis_rw_common.h"
-#include "mock_mero_request_object.h"
+#include "mock_motr_request_object.h"
 
 TEST(RedisKvs, parse_key) {
   char kv[] = {'k', 'e', 'y', 0, 'v', 'a', 'l', 0};
@@ -186,7 +186,7 @@ class RedisKVSBaseTest : public testing::Test {
   struct m0_clovis_op op;
   s3_redis_context_obj* rco;
   s3_clovis_context_obj* prev_ctx;
-  std::shared_ptr<MockMeroRequestObject> request;
+  std::shared_ptr<MockMotrRequestObject> request;
   redisReply rr;
   redisAsyncContext rac;
 
@@ -202,7 +202,7 @@ class RedisKVSBaseTest : public testing::Test {
     prev_ctx = (s3_clovis_context_obj*)calloc(1, sizeof(s3_clovis_context_obj));
     rco->prev_ctx = prev_ctx;
 
-    request = std::make_shared<MockMeroRequestObject>(nullptr, nullptr);
+    request = std::make_shared<MockMotrRequestObject>(nullptr, nullptr);
 
     rr = {0};
     rac = {0};

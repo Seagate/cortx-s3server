@@ -24,7 +24,7 @@
 #include "s3_datetime.h"
 #include "s3_factory.h"
 #include "s3_iem.h"
-#include "s3_uri_to_mero_oid.h"
+#include "s3_uri_to_motr_oid.h"
 #include "s3_common_utilities.h"
 #include "s3_stats.h"
 
@@ -284,7 +284,7 @@ void S3BucketMetadataV1::create_object_list_index() {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
         request, s3_clovis_api);
   }
-  S3UriToMeroOID(s3_clovis_api, salted_object_list_index_name.c_str(),
+  S3UriToMotrOID(s3_clovis_api, salted_object_list_index_name.c_str(),
                  request_id, &object_list_index_oid, S3ClovisEntityType::index);
 
   clovis_kv_writer->create_index_with_oid(
@@ -329,7 +329,7 @@ void S3BucketMetadataV1::create_multipart_list_index() {
         request, s3_clovis_api);
   }
 
-  S3UriToMeroOID(s3_clovis_api, salted_multipart_list_index_name.c_str(),
+  S3UriToMotrOID(s3_clovis_api, salted_multipart_list_index_name.c_str(),
                  request_id, &multipart_index_oid, S3ClovisEntityType::index);
 
   clovis_kv_writer->create_index_with_oid(
@@ -374,7 +374,7 @@ void S3BucketMetadataV1::create_objects_version_list_index() {
         request, s3_clovis_api);
   }
   // version list index oid
-  S3UriToMeroOID(s3_clovis_api, salted_objects_version_list_index_name.c_str(),
+  S3UriToMotrOID(s3_clovis_api, salted_objects_version_list_index_name.c_str(),
                  request_id, &objects_version_list_index_oid,
                  S3ClovisEntityType::index);
 

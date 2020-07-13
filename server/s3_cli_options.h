@@ -30,9 +30,9 @@ DECLARE_string(s3layoutmap);
 
 DECLARE_string(s3hostv4);
 DECLARE_string(s3hostv6);
-DECLARE_string(merohttpapihost);
+DECLARE_string(motrhttpapihost);
 DECLARE_int32(s3port);
-DECLARE_int32(merohttpapiport);
+DECLARE_int32(motrhttpapiport);
 DECLARE_string(s3pidfile);
 
 DECLARE_string(s3loglevel);
