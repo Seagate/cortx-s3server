@@ -102,30 +102,6 @@ class MotrKeyValueAPIHandler : public MotrAPIHandler {
 
   virtual void create_action();
 
-  // FRIEND_TEST(MotrKeyValueAPIHandlerTest, ConstructorTest);
-  // FRIEND_TEST(MotrKeyValueAPIHandlerTest, ManageSelfAndReset);
-  // FRIEND_TEST(MotrKeyValueAPIHandlerTest,
-  // ShouldCreateS3GetBucketlocationAction);
-  // FRIEND_TEST(MotrKeyValueAPIHandlerTest,
-  // ShouldNotCreateS3PutBucketlocationAction);
-  // FRIEND_TEST(MotrKeyValueAPIHandlerTest, ShouldNotHaveAction4OtherHttpOps);
-  // FRIEND_TEST(MotrKeyValueAPIHandlerTest,
-  //             ShouldCreateS3DeleteMultipleObjectsAction);
-  // FRIEND_TEST(MotrKeyValueAPIHandlerTest, ShouldCreateS3GetBucketACLAction);
-  // FRIEND_TEST(MotrKeyValueAPIHandlerTest, ShouldCreateS3PutBucketACLAction);
-  // FRIEND_TEST(MotrKeyValueAPIHandlerTest,
-  // ShouldCreateS3GetMultipartBucketAction);
-  // FRIEND_TEST(MotrKeyValueAPIHandlerTest,
-  // ShouldCreateS3GetBucketPolicyAction);
-  // FRIEND_TEST(MotrKeyValueAPIHandlerTest,
-  // ShouldCreateS3PutBucketPolicyAction);
-  // FRIEND_TEST(MotrKeyValueAPIHandlerTest,
-  // ShouldCreateS3DeleteBucketPolicyAction);
-  // FRIEND_TEST(MotrKeyValueAPIHandlerTest, ShouldCreateS3HeadBucketAction);
-  // FRIEND_TEST(MotrKeyValueAPIHandlerTest, ShouldCreateS3GetBucketAction);
-  // FRIEND_TEST(MotrKeyValueAPIHandlerTest, ShouldCreateS3PutBucketAction);
-  // FRIEND_TEST(MotrKeyValueAPIHandlerTest, ShouldCreateS3DeleteBucketAction);
-  // FRIEND_TEST(MotrKeyValueAPIHandlerTest, OperationNoneDefaultNoAction);
 };
 
 class MotrObjectAPIHandler : public MotrAPIHandler {
@@ -136,27 +112,6 @@ class MotrObjectAPIHandler : public MotrAPIHandler {
 
   virtual void create_action();
 
-  // FRIEND_TEST(MotrObjectAPIHandlerTest, ConstructorTest);
-  // FRIEND_TEST(MotrObjectAPIHandlerTest, ManageSelfAndReset);
-  // FRIEND_TEST(MotrObjectAPIHandlerTest, ShouldCreateS3GetObjectACLAction);
-  // FRIEND_TEST(MotrObjectAPIHandlerTest, ShouldCreateS3PutObjectACLAction);
-  // FRIEND_TEST(MotrObjectAPIHandlerTest, ShouldNotHaveAction4OtherHttpOps);
-  // FRIEND_TEST(MotrObjectAPIHandlerTest, ShouldCreateS3PostCompleteAction);
-  // FRIEND_TEST(MotrObjectAPIHandlerTest,
-  // ShouldCreateS3PostMultipartObjectAction);
-  // FRIEND_TEST(MotrObjectAPIHandlerTest, DoesNotSupportCopyPart);
-  // FRIEND_TEST(MotrObjectAPIHandlerTest, ShouldCreateS3PutMultiObjectAction);
-  // FRIEND_TEST(MotrObjectAPIHandlerTest,
-  // ShouldCreateS3GetMultipartPartAction);
-  // FRIEND_TEST(MotrObjectAPIHandlerTest, ShouldCreateS3AbortMultipartAction);
-  // FRIEND_TEST(MotrObjectAPIHandlerTest, ShouldCreateS3HeadObjectAction);
-  // FRIEND_TEST(MotrObjectAPIHandlerTest,
-  // ShouldCreateS3PutChunkUploadObjectAction);
-  // FRIEND_TEST(MotrObjectAPIHandlerTest, DoesNotSupportCopyObject);
-  // FRIEND_TEST(MotrObjectAPIHandlerTest, ShouldCreateS3PutObjectAction);
-  // FRIEND_TEST(MotrObjectAPIHandlerTest, ShouldCreateS3GetObjectAction);
-  // FRIEND_TEST(MotrObjectAPIHandlerTest, ShouldCreateS3DeleteObjectAction);
-  // FRIEND_TEST(MotrObjectAPIHandlerTest, NoAction);
 };
 
 class MotrFaultinjectionAPIHandler : public MotrAPIHandler {
@@ -176,11 +131,6 @@ class MotrAPIHandlerFactory {
       MotrApiType api_type, std::shared_ptr<MotrRequestObject> request,
       MotrOperationCode op_code);
 
-  // FRIEND_TEST(MotrAPIHandlerFactoryTest, ShouldCreateMotrIndexAPIHandler);
-  // FRIEND_TEST(MotrAPIHandlerFactoryTest, ShouldCreateMotrKeyValueAPIHandler);
-  // FRIEND_TEST(MotrAPIHandlerFactoryTest, ShouldCreateS3ObjectAPIHandler);
-  // FRIEND_TEST(MotrAPIHandlerFactoryTest,
-  // ShouldCreateS3FaultinjectionAPIHandler);
 };
 
 #endif
