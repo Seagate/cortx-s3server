@@ -2,7 +2,7 @@
 
 ## How to run
 
-FLASK_APP=eoscorehttp.py python -m flask run
+FLASK_APP=cortxmotrhttp.py python -m flask run
 
 ## Test examples
 
