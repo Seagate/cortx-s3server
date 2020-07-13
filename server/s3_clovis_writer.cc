@@ -30,7 +30,7 @@
 #include "s3_perf_logger.h"
 #include "s3_stats.h"
 #include "s3_timer.h"
-#include "s3_uri_to_mero_oid.h"
+#include "s3_uri_to_motr_oid.h"
 #include "s3_addb.h"
 
 extern struct m0_clovis_realm clovis_uber_realm;
@@ -98,7 +98,7 @@ S3ClovisWriter::S3ClovisWriter(std::shared_ptr<RequestObject> req,
   } else {
     uri_name = request->c_get_full_path();
   }
-  S3UriToMeroOID(s3_clovis_api, uri_name.c_str(), request_id, &oid);
+  S3UriToMotrOID(s3_clovis_api, uri_name.c_str(), request_id, &oid);
 
   oid_list.clear();
   oid_list.push_back(oid);
@@ -424,7 +424,7 @@ void S3ClovisWriter::write_content() {
   }
 
   if (estimated_write_length > clovis_write_payload_size) {
-    // TODO : we should just write whatever is buffered, but mero has error
+    // TODO : we should just write whatever is buffered, but motr has error
     // where if we have high block count, it fails, failure seen around 800k+
     // data.
     estimated_write_length = clovis_write_payload_size;

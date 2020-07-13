@@ -73,12 +73,12 @@ extern S3Option* g_option_instance;
 
 #define S3_IEM_DELETE_OBJ_FAIL "0030060001"
 #define S3_IEM_DELETE_OBJ_FAIL_STR \
-  "Delete object failed causing stale data in Mero"
+  "Delete object failed causing stale data in Motr"
 #define S3_IEM_DELETE_OBJ_FAIL_JSON ""
 
 #define S3_IEM_DELETE_IDX_FAIL "0030060002"
 #define S3_IEM_DELETE_IDX_FAIL_STR \
-  "Delete index failed causing stale data in Mero"
+  "Delete index failed causing stale data in Motr"
 #define S3_IEM_DELETE_IDX_FAIL_JSON ""
 
 #define S3_IEM_METADATA_CORRUPTED "0030060003"

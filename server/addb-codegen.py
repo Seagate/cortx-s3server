@@ -71,9 +71,9 @@ def load_classes():
   #   class S3BucketAction : public S3Action {
   #   class S3Action : public Action {
   #
-  # MeroDeleteObjectAction:
-  #   class MeroDeleteObjectAction : public MeroAction {
-  #   class MeroAction : public Action {
+  # MotrDeleteObjectAction:
+  #   class MotrDeleteObjectAction : public MotrAction {
+  #   class MotrAction : public Action {
 
   # We'll return two dictionaries:
   #   parents[ActionClassName] = ParentClassName
