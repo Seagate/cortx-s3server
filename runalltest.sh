@@ -101,6 +101,7 @@ then
   UT_MEMPOOL_BIN=./bazel-bin/s3mempoolut
   UT_MEMPOOLMGR_BIN=./bazel-bin/s3mempoolmgrut
   UT_S3BACKGROUNDDELETE=./s3backgrounddelete/scripts/run_all_ut.sh
+  UT_S3RECOVERYTOOL=./s3recovery/scripts/run_all_ut.sh
 
   printf "\nCheck s3ut..."
   type  $UT_BIN >/dev/null
@@ -131,6 +132,12 @@ then
   printf "OK \n"
 
   $UT_S3BACKGROUNDDELETE 2>&1
+
+  printf "\nCheck s3recoverytoolut..."
+  type $UT_S3RECOVERYTOOL >/dev/null
+  printf "OK \n"
+
+  $UT_S3RECOVERYTOOL 2>&1
 fi
 
 if [ $no_st_run -eq 0 ]
