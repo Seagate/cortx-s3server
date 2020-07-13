@@ -46,19 +46,17 @@ class S3RecoveryBase:
         """
         response, data = self.kv_api.put(index_id, key, value)
 
-    def perform_cleanup(self, key, index_id, index_id_replica, recovery = False):
+    def perform_cleanup(self, key, index_id, index_id_replica):
         """
         Clean KV from indexid and its replica
 
         :key: Key which needs to be cleaned up
         :index_id: Index Id for which KV needs to be cleaned
         :index_id_replica: Replica Index Id for which KV needs to be cleaned
-        :recovery: Cleanup flag for recovery operation
 
         """
-        if (recovery):
-            response, data = self.kv_api.delete(index_id, key)
-            response, data = self.kv_api.delete(index_id_replica, key)
+        response, data = self.kv_api.delete(index_id, key)
+        response, data = self.kv_api.delete(index_id_replica, key)
 
 
     def perform_validation(self, key, data_to_restore, item_replica, union_result):
@@ -213,8 +211,6 @@ class S3RecoveryBase:
 
         """
 
-        self.recovery = recovery_flag
-
         for key in self.result:
             try:
                 metadata_value = self.data_as_dict[key]
@@ -227,7 +223,10 @@ class S3RecoveryBase:
                 replica_value = None
 
             self.perform_validation(key, metadata_value, replica_value, union_result)
-            self.perform_cleanup(key, index_id, index_id_replica, self.recovery)
+
+            # Perform cleanup for existing indices during recovery
+            if (recovery_flag):
+                self.perform_cleanup(key, index_id, index_id_replica)
 
         if (self.log_result):
             print("\nData recovered from both indexes for {} \n".format(index_name))
