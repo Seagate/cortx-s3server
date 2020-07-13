@@ -24,7 +24,7 @@
 #include "s3_datetime.h"
 #include "s3_factory.h"
 #include "s3_iem.h"
-#include "s3_uri_to_mero_oid.h"
+#include "s3_uri_to_motr_oid.h"
 #include "s3_common_utilities.h"
 #include "s3_m0_uint128_helper.h"
 
@@ -218,13 +218,13 @@ std::string S3BucketMetadata::to_json() {
     root["User-Defined-Tags"][tag.first] = tag.second;
   }
 
-  root["mero_object_list_index_oid"] =
+  root["motr_object_list_index_oid"] =
       S3M0Uint128Helper::to_string(object_list_index_oid);
 
-  root["mero_multipart_index_oid"] =
+  root["motr_multipart_index_oid"] =
       S3M0Uint128Helper::to_string(multipart_index_oid);
 
-  root["mero_objects_version_list_index_oid"] =
+  root["motr_objects_version_list_index_oid"] =
       S3M0Uint128Helper::to_string(objects_version_list_index_oid);
 
   S3DateTime current_time;
@@ -262,13 +262,13 @@ int S3BucketMetadata::from_json(std::string content) {
   account_id = system_defined_attribute["Owner-Account-id"];
 
   object_list_index_oid = S3M0Uint128Helper::to_m0_uint128(
-      newroot["mero_object_list_index_oid"].asString());
+      newroot["motr_object_list_index_oid"].asString());
 
   multipart_index_oid = S3M0Uint128Helper::to_m0_uint128(
-      newroot["mero_multipart_index_oid"].asString());
+      newroot["motr_multipart_index_oid"].asString());
 
   objects_version_list_index_oid = S3M0Uint128Helper::to_m0_uint128(
-      newroot["mero_objects_version_list_index_oid"].asString());
+      newroot["motr_objects_version_list_index_oid"].asString());
 
   acl_from_json((newroot["ACL"]).asString());
   bucket_policy = base64_decode(newroot["Policy"].asString());
