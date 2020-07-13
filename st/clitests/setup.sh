@@ -25,8 +25,8 @@
 # It also installs all the dependencies required for system tests.
 
 pip install virtualenv
-virtualenv -p /usr/local/bin/python3.5 mero_st
-source mero_st/bin/activate
+virtualenv -p /usr/local/bin/python3.5 motr_st
+source motr_st/bin/activate
 pip install python-dateutil==2.4.2
 pip install pyyaml==3.11
 pip install xmltodict==0.9.2

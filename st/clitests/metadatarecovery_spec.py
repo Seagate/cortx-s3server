@@ -34,11 +34,12 @@ from auth import AuthTest
 from awss3api import AwsTest
 from s3kvstool import S3kvTest
 
-from s3backgrounddelete.eos_core_config import EOSCoreConfig
-from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
-from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
-from s3backgrounddelete.eos_list_index_response import EOSCoreListIndexResponse
-from s3backgrounddelete.eos_core_success_response import EOSCoreSuccessResponse
+from s3backgrounddelete.cortx_motr_config import CORTXMotrConfig
+from s3backgrounddelete.cortx_motr_object_api import CORTXMotrObjectApi
+from s3backgrounddelete.cortx_motr_index_api import CORTXMotrIndexApi
+from s3backgrounddelete.cortx_motr_error_respose import CORTXMotrErrorResponse
+from s3backgrounddelete.cortx_list_index_response import CORTXMotrListIndexResponse
+from s3backgrounddelete.cortx_motr_success_response import CORTXMotrSuccessResponse
 
 # Run before all to setup the test environment.
 def before_all():
@@ -56,7 +57,7 @@ S3ClientConfig.ldapuser = 'sgiamadmin'
 S3ClientConfig.ldappasswd = 'ldapadmin'
 
 # Config files used by s3backgrounddelete
-# We are using s3backgrounddelete config file as EOSCoreConfig is tightly coupled with it.
+# We are using s3backgrounddelete config file as CORTXMotrConfig is tightly coupled with it.
 origional_bgdelete_config_file = os.path.join(os.path.dirname(__file__), 's3_background_delete_config_test.yaml')
 bgdelete_config_dir = os.path.join('/', 'opt', 'seagate', 'cortx', 's3', 's3backgrounddelete')
 bgdelete_config_file = os.path.join(bgdelete_config_dir, 'config.yaml')
@@ -79,7 +80,7 @@ def load_and_update_config(access_key_value, secret_key_value):
             config = yaml.safe_load(f)
             config['s3_recovery']['access_key'] = access_key_value
             config['s3_recovery']['secret_key'] = secret_key_value
-            config['eos_core']['daemon_mode'] = "False"
+            config['cortx_motr']['daemon_mode'] = "False"
             config['leakconfig']['leak_processing_delay_in_mins'] = 0
             config['leakconfig']['version_processing_delay_in_mins'] = 0
 
@@ -135,20 +136,20 @@ replica_bucket_metadata_index_oid = "AAAAAAAAAHg=-BgAQAAAAAAA="
 primary_bucket_metadata_index = S3kvTest('KvTest fetch root buket metadata index')\
     .root_bucket_metadata_index()
 
-config = EOSCoreConfig()
+config = CORTXMotrConfig()
 
 # ======================================================================================================
 
 # Test Scenario 1
 # Test if bucket replica indexes are present.
 print("\nvalidate if bucket replica indexes exist.\n")
-status, res = EOSCoreIndexApi(config).head(replica_bucket_list_index_oid)
+status, res = CORTXMotrIndexApi(config).head(replica_bucket_list_index_oid)
 assert status == True
-assert isinstance(res, EOSCoreSuccessResponse)
+assert isinstance(res, CORTXMotrSuccessResponse)
 
-status, res = EOSCoreIndexApi(config).head(replica_bucket_metadata_index_oid)
+status, res = CortxMotrIndexApi(config).head(replica_bucket_metadata_index_oid)
 assert status == True
-assert isinstance(res, EOSCoreSuccessResponse)
+assert isinstance(res, CortxMotrSuccessResponse)
 
 print("\nHEAD 'replica bucket indexes' validation completed.\n")
 
@@ -161,9 +162,9 @@ AwsTest('Create Bucket "seagatebucket" using s3-recovery-svc account')\
     .create_bucket("seagatebucket").execute_test().command_is_successful()
 
 # list KV in replica bucket list index
-status, res = EOSCoreIndexApi(config).list(replica_bucket_list_index_oid)
+status, res = CortxMotrIndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
-assert isinstance(res, EOSCoreListIndexResponse)
+assert isinstance(res, CortxMotrListIndexResponse)
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == replica_bucket_list_index_oid
@@ -172,9 +173,9 @@ replica_KV_list = index_content['Keys']
 assert len(replica_KV_list) == 1
 
 # list KV in primary bucket list index
-status, res = EOSCoreIndexApi(config).list(primary_bucket_list_index_oid)
+status, res = CortxMotrIndexApi(config).list(primary_bucket_list_index_oid)
 assert status == True
-assert isinstance(res, EOSCoreListIndexResponse)
+assert isinstance(res, CortxMotrListIndexResponse)
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == primary_bucket_list_index_oid
@@ -188,9 +189,9 @@ for primary_kv, replica_kv in zip(primary_KV_list, replica_KV_list):
     assert primary_kv['Value'] == replica_kv['Value']
 
 # list KV in replica bucket metadata index
-status, res = EOSCoreIndexApi(config).list(replica_bucket_metadata_index_oid)
+status, res = CortxMotrIndexApi(config).list(replica_bucket_metadata_index_oid)
 assert status == True
-assert isinstance(res, EOSCoreListIndexResponse)
+assert isinstance(res, CortxMotrListIndexResponse)
 
 index_content = res.get_index_content()
 replica_KV_list = index_content['Keys']
@@ -218,9 +219,9 @@ print("\nvalidate if KV deleted from replica bucket indexes at DELETE bucket\n")
 AwsTest('Delete Bucket "seagatebucket"').delete_bucket("seagatebucket")\
    .execute_test().command_is_successful()
 
-status, res = EOSCoreIndexApi(config).list(replica_bucket_list_index_oid)
+status, res = CortxMotrIndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
-assert isinstance(res, EOSCoreListIndexResponse)
+assert isinstance(res, CortxMotrListIndexResponse)
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == replica_bucket_list_index_oid
@@ -228,7 +229,7 @@ assert index_content["Keys"] == None
 
 status, res = EOSCoreIndexApi(config).list(replica_bucket_metadata_index_oid)
 assert status == True
-assert isinstance(res, EOSCoreListIndexResponse)
+assert isinstance(res, CORTXMotrListIndexResponse)
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == replica_bucket_metadata_index_oid

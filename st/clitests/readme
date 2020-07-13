@@ -84,21 +84,21 @@ current directory i.e st/clitests from the respective build directories.
 Configuration:
 cfg directory contains configuration files used by some system tests.
 Edit corresponding configuration file to modify adjustable parameters
-eg: To configure Mero-KVS as backend for System Test runs set S3_CLOVIS_IDX_SERVICE_ID: 1
+eg: To configure Motr-KVS as backend for System Test runs set S3_CLOVIS_IDX_SERVICE_ID: 1
 ```sh
 cd cfg/
 edit cloviskvscli.yaml
 ```
 
 How to run?
-- Ensure you have s3server, auth server and mero running with test data.
+- Ensure you have s3server, auth server and motr running with test data.
 - Update access keys in pathstyle.s3cfg and virtualhoststyle.s3cfg if required.
 - Update /etc/hosts file to add following entry for tests.
   127.0.0.1 seagatebucket.s3.seagate.com s3.seagate.com
   127.0.0.1 seagate-bucket.s3.seagate.com seagatebucket123.s3.seagate.com seagate.bucket.s3.seagate.com
   127.0.0.1 s3-us-west-2.seagate.com seagatebucket.s3-us-west-2.seagate.com
   127.0.0.1 iam.seagate.com sts.seagate.com
-- Ensure you have sourced mero_st (python version 3.5) with virtualenv.
+- Ensure you have sourced motr_st (python version 3.5) with virtualenv.
 - If you are not running as root add user to /etc/sudoers file
   - Run visudo to edit the /etc/sudoers file
   - Find section "User privilege specification". Add below line under it
@@ -109,10 +109,10 @@ How to run?
   - Find line with variable "secure_path". Edit to add below path
   - /opt/seagate/cortx/s3/bin
 - cd to clitests directory
-- Note: For Dev environment, we use mero libs built from the source code. So before executing
+- Note: For Dev environment, we use motr libs built from the source code. So before executing
   standalone systems tests or runallsystest.sh, export LD_LIBRARY_PATH variable pointing it
-  to the source code mero libs location as below:
-  # export LD_LIBRARY_PATH="$(pwd)/../../third_party/mero/mero/.libs/:$(pwd)/../../third_party/mero/extra-libs/gf-complete/src/.libs/"
+  to the source code motr libs location as below:
+  # export LD_LIBRARY_PATH="$(pwd)/../../third_party/motr/motr/.libs/:$(pwd)/../../third_party/motr/extra-libs/gf-complete/src/.libs/"
 
   After the tests are done, unset the LD_LIBRARY_PATH variable as below:
   # unset LD_LIBRARY_PATH
