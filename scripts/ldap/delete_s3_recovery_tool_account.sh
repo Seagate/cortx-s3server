@@ -1,5 +1,5 @@
 #!/bin/sh
-USAGE="USAGE: delete_background_delete_account.sh <ldap passwd> "
+USAGE="USAGE: delete_s3_recovery_tool_account.sh <ldap passwd> "
 
 if [ "$#" -ne 1 ]; then
     echo "$USAGE"
