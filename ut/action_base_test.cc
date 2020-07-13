@@ -125,6 +125,12 @@ TEST_F(ActionTest, ClientReadTimeoutCallBack) {
   EXPECT_TRUE(ptr_Actionobject->response_called == 0);
 }
 
+TEST_F(ActionTest, ClientReadTimeoutSendResponseToClient) {
+  ptr_mock_request->s3_client_read_error = "RequestTimeout";
+  ptr_Actionobject->client_read_error();
+  EXPECT_TRUE(ptr_Actionobject->response_called == 1);
+}
+
 TEST_F(ActionTest, AddTask) {
   ptr_Actionobject->set_defaults();
   ACTION_TASK_ADD_OBJPTR(ptr_Actionobject, ActionTest::func_callback_one, this);

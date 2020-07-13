@@ -88,7 +88,14 @@ void Action::set_s3_error_message(std::string message) {
 }
 
 void Action::client_read_error() {
-  set_s3_error(base_request->get_s3_client_read_error());
+  const std::string& s3_error = base_request->get_s3_client_read_error();
+  set_s3_error(s3_error);
+  if ("RequestTimeout" == s3_error) {
+    // Respond to client with RequestTimeout
+    send_response_to_s3_client();
+    return;
+  }
+
   if (action_uses_cleanup) {
     startcleanup();
   } else {

@@ -44,6 +44,7 @@ mkdir -p $AUTH_INSTALL_LOCATION/resources
 mkdir -p $AUTH_INSTALL_LOCATION/scripts
 mkdir -p $S3_INSTALL_LOCATION/addb-plugin
 mkdir -p $S3_INSTALL_LOCATION/bin
+mkdir -p $S3_INSTALL_LOCATION/s3datarecovery
 mkdir -p $S3_INSTALL_LOCATION/libevent
 mkdir -p $S3_INSTALL_LOCATION/resources
 mkdir -p $S3_INSTALL_LOCATION/scripts
@@ -133,6 +134,9 @@ cp s3backgrounddelete/s3backgrounddelete/s3backgroundconsumer $S3_INSTALL_LOCATI
 
 # Copy the s3 background configuration file.
 cp s3backgrounddelete/s3backgrounddelete/config/s3_background_delete_config.yaml $S3_INSTALL_LOCATION/s3backgrounddelete/config.yaml
+
+# Copy s3 data recovery script.
+cp -f s3_data_recovery.sh $S3_INSTALL_LOCATION/s3datarecovery/
 
 # Copy the s3 background producer file for systemctl support.
 cp s3backgrounddelete/s3backgroundproducer.service $SERVICE_FILE_LOCATION
