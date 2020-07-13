@@ -57,7 +57,6 @@ class MotrPutKeyValueAction : public MotrAction {
   FRIEND_TEST(MotrPutKeyValueActionTest, PutKeyValueSuccessful);
   FRIEND_TEST(MotrPutKeyValueActionTest, PutKeyValue);
   FRIEND_TEST(MotrPutKeyValueActionTest, PutKeyValueFailed);
-  FRIEND_TEST(MotrPutKeyValueActionTest, ConsumeIncomingContentReadError);
   FRIEND_TEST(MotrPutKeyValueActionTest, ValidJson);
   FRIEND_TEST(MotrPutKeyValueActionTest, InvalidJson);
 };

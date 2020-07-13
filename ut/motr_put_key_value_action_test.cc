@@ -195,19 +195,6 @@ TEST_F(MotrPutKeyValueActionTest, PutKeyValueFailed) {
   action_under_test->put_key_value_failed();
 }
 
-TEST_F(MotrPutKeyValueActionTest, ConsumeIncomingContentReadError) {
-  ptr_mock_request->s3_client_read_error = "RequestTimeout";
-
-  action_under_test->clear_tasks();
-  ACTION_TASK_ADD_OBJPTR(action_under_test,
-                         MotrPutKeyValueActionTest::func_callback, this);
-
-  action_under_test->consume_incoming_content();
-
-  EXPECT_STREQ("RequestTimeout",
-               action_under_test->get_s3_error_code().c_str());
-  ASSERT_EQ(0, call_count);
-}
 
 TEST_F(MotrPutKeyValueActionTest, ConsumeIncomingContentHasAllBodyContent) {
   EXPECT_CALL(*ptr_mock_request, has_all_body_content()).Times(1).WillOnce(
