@@ -152,6 +152,7 @@ assert isinstance(res, CORTXS3SuccessResponse)
 
 print("\nHEAD 'replica bucket indexes' validation completed.\n")
 
+
 # ******************************************************************************************************
 
 # Test Scenario 2
