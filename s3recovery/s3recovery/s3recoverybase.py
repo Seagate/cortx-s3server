@@ -159,7 +159,7 @@ class S3RecoveryBase:
         result_list.extend(item for item in replica_list if item not in data_list)
         return result_list
 
-    def initiate(self, index_name, index_id, index_id_replica):
+    def initiate(self, index_name, index_id, index_id_replica, log_output = False):
         """
         Initiates the dry run process
 
@@ -168,6 +168,8 @@ class S3RecoveryBase:
         :index_id_replica: Id of replica index being processed
 
         """
+        self.log_result = log_output
+
         data = self.list_index(index_id)
         data_replica = self.list_index(index_id_replica)
 
@@ -189,14 +191,13 @@ class S3RecoveryBase:
         else:
             print("Empty\n")
 
-    def dry_run(self, index_name, union_result, log_output = False):
+    def dry_run(self, index_name, union_result):
         """
         Gets latest value from index and its replica
 
         :return: A structurized dictonary of data to be restored
 
         """
-        self.log_result = log_output
 
         for key in self.result:
             try:
