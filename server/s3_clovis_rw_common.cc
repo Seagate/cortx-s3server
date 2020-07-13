@@ -43,7 +43,7 @@
  *        line - line number within file where error occurred.
  *    </details>
  *    <service_actions>
- *      Save the S3 server log files. Check status of Mero service, restart it
+ *      Save the S3 server log files. Check status of Motr service, restart it
  *      if needed. Restart S3 server if needed.
  *      If problem persists, contact development team for further investigation.
  *    </service_actions>
@@ -83,7 +83,7 @@ void clovis_op_done_on_main_thread(evutil_socket_t, short events,
     if ((error_code == -ETIMEDOUT) || (error_code == -ESHUTDOWN) ||
         (error_code == -ECONNREFUSED) || (error_code == -EHOSTUNREACH) ||
         (error_code == -ENOTCONN) || (error_code == -ECANCELED)) {
-      // fatal iem are genrated in mero as a result of appropriate action
+      // fatal iem are genrated in motr as a result of appropriate action
       s3_iem(LOG_ERR, S3_IEM_CLOVIS_CONN_FAIL, S3_IEM_CLOVIS_CONN_FAIL_STR,
              S3_IEM_CLOVIS_CONN_FAIL_JSON);
     }
