@@ -47,18 +47,18 @@ backup_bgdelete_config_file = os.path.join(bgdelete_config_dir, 'backup_config.y
 
 # Update S3 Background delete config file with account access key and secretKey.
 def load_and_update_config(access_key_value, secret_key_value):
-    # Update config file
-    if os.path.isfile(bgdelete_config_file):
-       shutil.copy2(bgdelete_config_file, backup_bgdelete_config_file)
-    else:
-       try:
-           os.stat(bgdelete_config_dir)
-       except:
-           os.mkdir(bgdelete_config_dir)
-       shutil.copy2(origional_bgdelete_config_file, bgdelete_config_file)
+# Update config file
+if os.path.isfile(bgdelete_config_file):
+shutil.copy2(bgdelete_config_file, backup_bgdelete_config_file)
+else:
+try:
+   os.stat(bgdelete_config_dir)
+except:
+   os.mkdir(bgdelete_config_dir)
+shutil.copy2(origional_bgdelete_config_file, bgdelete_config_file)
 
-    with open(bgdelete_config_file, 'r') as f:
-            config = yaml.safe_load(f)
+with open(bgdelete_config_file, 'r') as f:
+    config = yaml.safe_load(f)
             config['cortx_s3']['access_key'] = access_key_value
             config['cortx_s3']['secret_key'] = secret_key_value
             config['cortx_s3']['daemon_mode'] = "False"
