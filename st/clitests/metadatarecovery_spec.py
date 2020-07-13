@@ -32,11 +32,11 @@ from auth import AuthTest
 from awss3api import AwsTest
 from s3kvstool import S3kvTest
 
-from s3backgrounddelete.eos_core_config import EOSCoreConfig
-from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
-from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
-from s3backgrounddelete.eos_list_index_response import EOSCoreListIndexResponse
-from s3backgrounddelete.eos_core_success_response import EOSCoreSuccessResponse
+from s3backgrounddelete.cortx_motr_config import CORTXMotrConfig
+from s3backgrounddelete.cortx_motr_kv_api import CORTXMotrKVApi
+from s3backgrounddelete.cortx_motr_index_api import CORTXMotrIndexApi
+from s3backgrounddelete.cortx_list_index_response import CORTXMotrListIndexResponse
+from s3backgrounddelete.cortx_motr_success_response import CORTXMotrSuccessResponse
 
 # Run before all to setup the test environment.
 def before_all():
@@ -121,7 +121,7 @@ print(account_response_elements)
 # ********** Update s3background delete config file with AccesskeyId and SecretKey**********************
 load_and_update_config(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])
 
-replica_bucket_list_index_oid = 'AAAAAAAAAHg=-BQAQAAAAAAA=' # base64 conversion of "0x7800000000000000" and "0x100005"
+replica_bucket_list_index_oid = 'AAAAAAAAAHg=-BQAQAAAAAAA=' # base64 conversion of 0x7800000000000000" and "0x100005
 primary_bucket_list_index_oid = 'AAAAAAAAAHg=-AQAQAAAAAAA='
 primary_bucket_list_index = S3kvTest('KvTest fetch root bucket account index')\
     .root_bucket_account_index()
@@ -132,7 +132,7 @@ primary_bucket_metadata_index_oid = "AAAAAAAAAHg=-AgAQAAAAAAA="
 primary_bucket_metadata_index = S3kvTest('KvTest fetch root buket metadata index')\
     .root_bucket_metadata_index()
 
-config = EOSCoreConfig()
+config = CORTXMotrConfig()
 
 # ======================================================================================================
 
