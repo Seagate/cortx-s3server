@@ -57,6 +57,9 @@ sh ./prechecksystest.sh
 #Using Python 3.6 version for Running System Tests
 PythonV="python3.6"
 
+echo "`date -u` : Running metadatarecovery_spec.py..."
+$PythonV metadatarecovery_spec.py
+
 echo "`date -u`: Running auth_spec.py..."
 $PythonV auth_spec.py
 
