@@ -78,8 +78,13 @@ def load_and_update_config(access_key_value, secret_key_value):
 
     with open(bgdelete_config_file, 'r') as f:
             config = yaml.safe_load(f)
+<<<<<<< HEAD
             config['s3_recovery']['access_key'] = access_key_value
             config['s3_recovery']['secret_key'] = secret_key_value
+=======
+            config['cortx_motr']['access_key'] = access_key_value
+            config['cortx_motr']['secret_key'] = secret_key_value
+>>>>>>> EOS-9543:S3:Update STs for rename mero -> motr & eos -> cortx (#44)
             config['cortx_motr']['daemon_mode'] = "False"
             config['leakconfig']['leak_processing_delay_in_mins'] = 0
             config['leakconfig']['version_processing_delay_in_mins'] = 0
@@ -179,6 +184,7 @@ AwsTest('Create Bucket "seagatebucket" using s3-recovery-svc account')\
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 # list KV in replica bucket list index
 status, res = CortxMotrIndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
@@ -235,6 +241,10 @@ assert status == True
 status, res = CORTXMotrIndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
 >>>>>>> EOS-9543:S3:Update STs for rename mero -> motr & eos -> cortx (#44)
+=======
+status, res = CORTXMotrIndexApi(config).list(replica_bucket_list_index_oid)
+assert status == True
+>>>>>>> EOS-9543:S3:Update STs for rename mero -> motr & eos -> cortx (#44)
 assert isinstance(res, CORTXMotrListIndexResponse)
 # Example index_content:
 # {'Delimiter': '',
@@ -273,9 +283,13 @@ AwsTest('Delete Bucket "seagatebucket"').delete_bucket("seagatebucket")\
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 status, res = CortxMotrIndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
 assert isinstance(res, CortxMotrListIndexResponse)
+=======
+status, res = CORTXMotrIndexApi(config).list(replica_bucket_list_index_oid)
+>>>>>>> EOS-9543:S3:Update STs for rename mero -> motr & eos -> cortx (#44)
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == replica_bucket_list_index_oid
