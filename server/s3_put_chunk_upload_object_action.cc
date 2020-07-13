@@ -27,7 +27,7 @@
 #include "s3_perf_logger.h"
 #include "s3_put_tag_body.h"
 #include "s3_stats.h"
-#include "s3_uri_to_mero_oid.h"
+#include "s3_uri_to_motr_oid.h"
 #include "s3_m0_uint128_helper.h"
 #include <evhttp.h>
 
@@ -76,7 +76,7 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
   old_object_oid = {0ULL, 0ULL};
   old_layout_id = -1;
   new_object_oid = {0ULL, 0ULL};
-  S3UriToMeroOID(s3_clovis_api, request->get_object_uri().c_str(), request_id,
+  S3UriToMotrOID(s3_clovis_api, request->get_object_uri().c_str(), request_id,
                  &new_object_oid);
   tried_count = 0;
   salt = "uri_salt_";
@@ -247,7 +247,7 @@ void S3PutChunkUploadObjectAction::fetch_object_info_failed() {
   if ((object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) ||
       (objects_version_list_oid.u_hi == 0ULL &&
        objects_version_list_oid.u_lo == 0ULL)) {
-    // Rare/unlikely: Mero KVS data corruption:
+    // Rare/unlikely: Motr KVS data corruption:
     // object_list_oid/objects_version_list_oid is null only when bucket
     // metadata is corrupted.
     // user has to delete and recreate the bucket again to make it work.
@@ -434,7 +434,7 @@ void S3PutChunkUploadObjectAction::create_new_oid(
     salted_uri = request->get_object_uri() + salt +
                  std::to_string(salt_counter) + std::to_string(tried_count);
 
-    S3UriToMeroOID(s3_clovis_api, salted_uri.c_str(), request_id,
+    S3UriToMotrOID(s3_clovis_api, salted_uri.c_str(), request_id,
                    &new_object_oid);
 
     ++salt_counter;

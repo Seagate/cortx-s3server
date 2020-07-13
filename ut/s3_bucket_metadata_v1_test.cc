@@ -679,9 +679,9 @@ TEST_F(S3BucketMetadataV1Test, FromJson) {
       "{\"ACL\":\"PD94+Cg==\",\"Bucket-Name\":\"seagatebucket\",\"System-"
       "Defined\":{\"Date\":\"2016-10-18T16:01:00.000Z\",\"Owner-Account\":\"s3_"
       "test\",\"Owner-Account-id\":\"s3accountid\",\"Owner-User\":\"tester\",\""
-      "Owner-User-id\":\"s3userid\"},\"mero_multipart_index_oid\":\""
+      "Owner-User-id\":\"s3userid\"},\"motr_multipart_index_oid\":\""
       "g1qTetGfvWk=-lvH6Q65xFAI=\","
-      "\"mero_object_list_index_oid\":\"AAAAAAAAAAA=-AAAAAAAAAAA=\"}";
+      "\"motr_object_list_index_oid\":\"AAAAAAAAAAA=-AAAAAAAAAAA=\"}";
 
   action_under_test->from_json(json_str);
   EXPECT_STREQ("seagatebucket", action_under_test->bucket_name.c_str());
