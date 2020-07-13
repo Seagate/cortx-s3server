@@ -139,6 +139,9 @@ primary_bucket_metadata_index = S3kvTest('KvTest fetch root buket metadata index
 
 =======
 replica_bucket_list_index_oid = 'AAAAAAAAAHg=-BQAQAAAAAAA=' # base64 conversion of 0x7800000000000000" and "0x100005
+<<<<<<< HEAD
+>>>>>>> EOS-9543:S3:Update STs for rename mero -> motr & eos -> cortx (#44)
+=======
 >>>>>>> EOS-9543:S3:Update STs for rename mero -> motr & eos -> cortx (#44)
 config = CORTXMotrConfig()
 
@@ -174,6 +177,7 @@ print("\nvalidate if KV created in replica bucket indexes at PUT bucket\n")
 AwsTest('Create Bucket "seagatebucket" using s3-recovery-svc account')\
     .create_bucket("seagatebucket").execute_test().command_is_successful()
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 # list KV in replica bucket list index
 status, res = CortxMotrIndexApi(config).list(replica_bucket_list_index_oid)
@@ -227,6 +231,10 @@ for primary_kv, replica_kv in zip(primary_KV_list, replica_KV_list):
 =======
 status, res = CORTXMotrIndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
+=======
+status, res = CORTXMotrIndexApi(config).list(replica_bucket_list_index_oid)
+assert status == True
+>>>>>>> EOS-9543:S3:Update STs for rename mero -> motr & eos -> cortx (#44)
 assert isinstance(res, CORTXMotrListIndexResponse)
 # Example index_content:
 # {'Delimiter': '',
@@ -263,6 +271,7 @@ print("\nvalidate if KV deleted from replica bucket indexes at DELETE bucket\n")
 AwsTest('Delete Bucket "seagatebucket"').delete_bucket("seagatebucket")\
    .execute_test().command_is_successful()
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 status, res = CortxMotrIndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
@@ -654,11 +663,14 @@ assert isinstance(res, CORTXMotrListIndexResponse)
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == primary_bucket_list_index_oid
 actual_primary_index_key_value_list = index_content["Keys"]
+=======
+status, res = CORTXMotrIndexApi(config).list(replica_bucket_list_index_oid)
+>>>>>>> EOS-9543:S3:Update STs for rename mero -> motr & eos -> cortx (#44)
 
 # List replica Index
 status, res = EOSCoreIndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
-assert isinstance(res, EOSCoreListIndexResponse)
+assert isinstance(res, CORTXMotrListIndexResponse)
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == replica_bucket_list_index_oid
