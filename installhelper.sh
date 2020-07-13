@@ -132,6 +132,9 @@ cp s3backgrounddelete/s3backgrounddelete/s3backgroundproducer $S3_INSTALL_LOCATI
 # Copy the s3 background consumer binary file into rpm location.
 cp s3backgrounddelete/s3backgrounddelete/s3backgroundconsumer $S3_INSTALL_LOCATION/s3backgrounddelete/
 
+# Copy s3recovery binary into rpm location
+cp s3recovery/s3recovery/s3recovery $S3_INSTALL_LOCATION/s3datarecovery/
+
 # Copy the s3 background configuration file.
 cp s3backgrounddelete/s3backgrounddelete/config/s3_background_delete_config.yaml $S3_INSTALL_LOCATION/s3backgrounddelete/config.yaml
 
