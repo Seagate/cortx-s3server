@@ -123,7 +123,7 @@ print(account_response_elements)
 # ********** Update s3background delete config file with AccesskeyId and SecretKey**********************
 load_and_update_config(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])
 
-replica_bucket_list_index_oid = 'AAAAAAAAAHg=-BQAQAAAAAAA=' # base64 conversion of "0x7800000000000000" and "0x100005"
+replica_bucket_list_index_oid = 'AAAAAAAAAHg=-BQAQAAAAAAA=' # base64 conversion of 0x7800000000000000" and "0x100005
 primary_bucket_list_index_oid = 'AAAAAAAAAHg=-AQAQAAAAAAA='
 primary_bucket_list_index = S3kvTest('KvTest fetch root bucket account index')\
     .root_bucket_account_index()
