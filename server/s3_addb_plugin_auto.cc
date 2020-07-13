@@ -35,14 +35,14 @@
 // function initializes that map, lookup function searches through it.
 
 // Include all action classes' headers:
-#include "mero_delete_index_action.h"
-#include "mero_delete_key_value_action.h"
-#include "mero_delete_object_action.h"
-#include "mero_get_key_value_action.h"
-#include "mero_head_index_action.h"
-#include "mero_head_object_action.h"
-#include "mero_kvs_listing_action.h"
-#include "mero_put_key_value_action.h"
+#include "motr_delete_index_action.h"
+#include "motr_delete_key_value_action.h"
+#include "motr_delete_object_action.h"
+#include "motr_get_key_value_action.h"
+#include "motr_head_index_action.h"
+#include "motr_head_object_action.h"
+#include "motr_kvs_listing_action.h"
+#include "motr_put_key_value_action.h"
 #include "s3_abort_multipart_action.h"
 #include "s3_account_delete_metadata_action.h"
 #include "s3_delete_bucket_action.h"
@@ -84,22 +84,22 @@ int s3_addb_init() {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   // Sorry for the format, this had to be done this way to pass
   // git-clang-format check.
-  gs_addb_map[std::type_index(typeid(MeroDeleteIndexAction))] =
-      S3_ADDB_MERO_DELETE_INDEX_ACTION_ID;
-  gs_addb_map[std::type_index(typeid(MeroDeleteKeyValueAction))] =
-      S3_ADDB_MERO_DELETE_KEY_VALUE_ACTION_ID;
-  gs_addb_map[std::type_index(typeid(MeroDeleteObjectAction))] =
-      S3_ADDB_MERO_DELETE_OBJECT_ACTION_ID;
-  gs_addb_map[std::type_index(typeid(MeroGetKeyValueAction))] =
-      S3_ADDB_MERO_GET_KEY_VALUE_ACTION_ID;
-  gs_addb_map[std::type_index(typeid(MeroHeadIndexAction))] =
-      S3_ADDB_MERO_HEAD_INDEX_ACTION_ID;
-  gs_addb_map[std::type_index(typeid(MeroHeadObjectAction))] =
-      S3_ADDB_MERO_HEAD_OBJECT_ACTION_ID;
-  gs_addb_map[std::type_index(typeid(MeroKVSListingAction))] =
-      S3_ADDB_MERO_KVS_LISTING_ACTION_ID;
-  gs_addb_map[std::type_index(typeid(MeroPutKeyValueAction))] =
-      S3_ADDB_MERO_PUT_KEY_VALUE_ACTION_ID;
+  gs_addb_map[std::type_index(typeid(MotrDeleteIndexAction))] =
+      S3_ADDB_MOTR_DELETE_INDEX_ACTION_ID;
+  gs_addb_map[std::type_index(typeid(MotrDeleteKeyValueAction))] =
+      S3_ADDB_MOTR_DELETE_KEY_VALUE_ACTION_ID;
+  gs_addb_map[std::type_index(typeid(MotrDeleteObjectAction))] =
+      S3_ADDB_MOTR_DELETE_OBJECT_ACTION_ID;
+  gs_addb_map[std::type_index(typeid(MotrGetKeyValueAction))] =
+      S3_ADDB_MOTR_GET_KEY_VALUE_ACTION_ID;
+  gs_addb_map[std::type_index(typeid(MotrHeadIndexAction))] =
+      S3_ADDB_MOTR_HEAD_INDEX_ACTION_ID;
+  gs_addb_map[std::type_index(typeid(MotrHeadObjectAction))] =
+      S3_ADDB_MOTR_HEAD_OBJECT_ACTION_ID;
+  gs_addb_map[std::type_index(typeid(MotrKVSListingAction))] =
+      S3_ADDB_MOTR_KVS_LISTING_ACTION_ID;
+  gs_addb_map[std::type_index(typeid(MotrPutKeyValueAction))] =
+      S3_ADDB_MOTR_PUT_KEY_VALUE_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3AbortMultipartAction))] =
       S3_ADDB_S3_ABORT_MULTIPART_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3AccountDeleteMetadataAction))] =
@@ -171,51 +171,51 @@ int s3_addb_init() {
 
   s3_log(S3_LOG_DEBUG, "",
          "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
-         ": class MeroDeleteIndexAction\n",
-         (uint64_t)S3_ADDB_MERO_DELETE_INDEX_ACTION_ID,
-         (int64_t)S3_ADDB_MERO_DELETE_INDEX_ACTION_ID);
+         ": class MotrDeleteIndexAction\n",
+         (uint64_t)S3_ADDB_MOTR_DELETE_INDEX_ACTION_ID,
+         (int64_t)S3_ADDB_MOTR_DELETE_INDEX_ACTION_ID);
 
   s3_log(S3_LOG_DEBUG, "",
          "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
-         ": class MeroDeleteKeyValueAction\n",
-         (uint64_t)S3_ADDB_MERO_DELETE_KEY_VALUE_ACTION_ID,
-         (int64_t)S3_ADDB_MERO_DELETE_KEY_VALUE_ACTION_ID);
+         ": class MotrDeleteKeyValueAction\n",
+         (uint64_t)S3_ADDB_MOTR_DELETE_KEY_VALUE_ACTION_ID,
+         (int64_t)S3_ADDB_MOTR_DELETE_KEY_VALUE_ACTION_ID);
 
   s3_log(S3_LOG_DEBUG, "",
          "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
-         ": class MeroDeleteObjectAction\n",
-         (uint64_t)S3_ADDB_MERO_DELETE_OBJECT_ACTION_ID,
-         (int64_t)S3_ADDB_MERO_DELETE_OBJECT_ACTION_ID);
+         ": class MotrDeleteObjectAction\n",
+         (uint64_t)S3_ADDB_MOTR_DELETE_OBJECT_ACTION_ID,
+         (int64_t)S3_ADDB_MOTR_DELETE_OBJECT_ACTION_ID);
 
   s3_log(S3_LOG_DEBUG, "",
          "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
-         ": class MeroGetKeyValueAction\n",
-         (uint64_t)S3_ADDB_MERO_GET_KEY_VALUE_ACTION_ID,
-         (int64_t)S3_ADDB_MERO_GET_KEY_VALUE_ACTION_ID);
+         ": class MotrGetKeyValueAction\n",
+         (uint64_t)S3_ADDB_MOTR_GET_KEY_VALUE_ACTION_ID,
+         (int64_t)S3_ADDB_MOTR_GET_KEY_VALUE_ACTION_ID);
 
   s3_log(S3_LOG_DEBUG, "",
          "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
-         ": class MeroHeadIndexAction\n",
-         (uint64_t)S3_ADDB_MERO_HEAD_INDEX_ACTION_ID,
-         (int64_t)S3_ADDB_MERO_HEAD_INDEX_ACTION_ID);
+         ": class MotrHeadIndexAction\n",
+         (uint64_t)S3_ADDB_MOTR_HEAD_INDEX_ACTION_ID,
+         (int64_t)S3_ADDB_MOTR_HEAD_INDEX_ACTION_ID);
 
   s3_log(S3_LOG_DEBUG, "",
          "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
-         ": class MeroHeadObjectAction\n",
-         (uint64_t)S3_ADDB_MERO_HEAD_OBJECT_ACTION_ID,
-         (int64_t)S3_ADDB_MERO_HEAD_OBJECT_ACTION_ID);
+         ": class MotrHeadObjectAction\n",
+         (uint64_t)S3_ADDB_MOTR_HEAD_OBJECT_ACTION_ID,
+         (int64_t)S3_ADDB_MOTR_HEAD_OBJECT_ACTION_ID);
 
   s3_log(S3_LOG_DEBUG, "",
          "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
-         ": class MeroKVSListingAction\n",
-         (uint64_t)S3_ADDB_MERO_KVS_LISTING_ACTION_ID,
-         (int64_t)S3_ADDB_MERO_KVS_LISTING_ACTION_ID);
+         ": class MotrKVSListingAction\n",
+         (uint64_t)S3_ADDB_MOTR_KVS_LISTING_ACTION_ID,
+         (int64_t)S3_ADDB_MOTR_KVS_LISTING_ACTION_ID);
 
   s3_log(S3_LOG_DEBUG, "",
          "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
-         ": class MeroPutKeyValueAction\n",
-         (uint64_t)S3_ADDB_MERO_PUT_KEY_VALUE_ACTION_ID,
-         (int64_t)S3_ADDB_MERO_PUT_KEY_VALUE_ACTION_ID);
+         ": class MotrPutKeyValueAction\n",
+         (uint64_t)S3_ADDB_MOTR_PUT_KEY_VALUE_ACTION_ID,
+         (int64_t)S3_ADDB_MOTR_PUT_KEY_VALUE_ACTION_ID);
 
   s3_log(S3_LOG_DEBUG, "",
          "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning

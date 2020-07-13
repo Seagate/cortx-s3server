@@ -255,18 +255,18 @@ TEST_F(S3ObjectMetadataTest, GetSet) {
 
   metadata_obj_under_test->set_oid(myoid);
   EXPECT_OID_EQ(myoid, metadata_obj_under_test->oid);
-  EXPECT_TRUE(metadata_obj_under_test->mero_oid_str != "");
+  EXPECT_TRUE(metadata_obj_under_test->motr_oid_str != "");
 
   metadata_obj_under_test->object_list_index_oid = myoid;
   EXPECT_OID_EQ(myoid, metadata_obj_under_test->get_object_list_index_oid());
 
   metadata_obj_under_test->set_old_oid(myoid);
   EXPECT_OID_EQ(myoid, metadata_obj_under_test->old_oid);
-  EXPECT_TRUE(metadata_obj_under_test->mero_old_oid_str != "");
+  EXPECT_TRUE(metadata_obj_under_test->motr_old_oid_str != "");
 
   metadata_obj_under_test->set_part_index_oid(myoid);
   EXPECT_OID_EQ(myoid, metadata_obj_under_test->part_index_oid);
-  EXPECT_TRUE(metadata_obj_under_test->mero_part_oid_str != "");
+  EXPECT_TRUE(metadata_obj_under_test->motr_part_oid_str != "");
 
   metadata_obj_under_test->bucket_name = "seagatebucket";
   EXPECT_STREQ("BUCKET/seagatebucket",
@@ -595,13 +595,13 @@ TEST_F(S3ObjectMetadataTest, FromJson) {
 TEST_F(S3MultipartObjectMetadataTest, FromJson) {
   int ret_status;
   std::string json_str =
-      "{\"ACL\":\"PD94+Cg==\",\"Bucket-Name\":\"seagatebucket\",\"mero_old_"
+      "{\"ACL\":\"PD94+Cg==\",\"Bucket-Name\":\"seagatebucket\",\"motr_old_"
       "oid\":\"123-456\"}";
 
   ret_status = metadata_obj_under_test->from_json(json_str);
   EXPECT_TRUE(ret_status == 0);
   EXPECT_STREQ("seagatebucket", metadata_obj_under_test->bucket_name.c_str());
-  EXPECT_STREQ("123-456", metadata_obj_under_test->mero_old_oid_str.c_str());
+  EXPECT_STREQ("123-456", metadata_obj_under_test->motr_old_oid_str.c_str());
 }
 
 TEST_F(S3ObjectMetadataTest, GetEncodedBucketAcl) {

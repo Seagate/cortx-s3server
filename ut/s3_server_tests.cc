@@ -118,17 +118,17 @@ static void _cleanup_option_and_instance() {
 
 static int clovis_ut_init() {
   int rc;
-  // Mero lib initialization routines
+  // Motr lib initialization routines
   m0_node_uuid_string_set(NULL);
   rc = m0_init(&instance);
   if (rc != 0) {
-    EXPECT_EQ(rc, 0) << "Mero lib initialization failed";
+    EXPECT_EQ(rc, 0) << "Motr lib initialization failed";
   }
   return rc;
 }
 
 static void clovis_ut_fini() {
-  // Mero lib cleanup
+  // Motr lib cleanup
   m0_fini();
 }
 

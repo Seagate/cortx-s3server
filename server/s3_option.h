@@ -43,9 +43,9 @@
 #define S3_OPTION_REUSEPORT 0x20000
 #define S3_OPTION_IPV6_BIND_ADDR 0x40000
 #define S3_OPTION_AUDIT_CONFIG 0x80000
-#define S3_OPTION_MERO_BIND_PORT 0x100000
-#define S3_OPTION_MERO_BIND_ADDR 0x200000
-#define S3_OPTION_MERO_HTTP_REUSEPORT 0x400000
+#define S3_OPTION_MOTR_BIND_PORT 0x100000
+#define S3_OPTION_MOTR_BIND_ADDR 0x200000
+#define S3_OPTION_MOTR_HTTP_REUSEPORT 0x400000
 #define S3_OPTION_AUDIT_LOG_DIR 0x800000
 
 #define S3_OPTION_ASSERT_AND_RET(node, option)                              \
@@ -84,10 +84,10 @@ class S3Option {
   std::string s3_nodename;
   std::string s3_ipv4_bind_addr;
   std::string s3_ipv6_bind_addr;
-  std::string mero_http_bind_addr;
+  std::string motr_http_bind_addr;
   std::string s3_pidfile;
   unsigned short s3_bind_port;
-  unsigned short mero_http_bind_port;
+  unsigned short motr_http_bind_port;
   unsigned short max_retry_count;
   unsigned short retry_interval_millisec;
   unsigned short s3_client_req_read_timeout_secs;
@@ -127,7 +127,7 @@ class S3Option {
   bool s3server_ssl_enabled;
   bool s3server_objectleak_tracking_enabled;
   bool s3_reuseport;
-  bool mero_http_reuseport;
+  bool motr_http_reuseport;
   bool log_buffering_enable;
   bool s3_enable_murmurhash_oid;
   int log_flush_frequency_sec;
@@ -187,9 +187,9 @@ class S3Option {
 
     s3_ipv4_bind_addr = FLAGS_s3hostv4;
     s3_ipv6_bind_addr = FLAGS_s3hostv6;
-    mero_http_bind_addr = FLAGS_merohttpapihost;
+    motr_http_bind_addr = FLAGS_motrhttpapihost;
     s3_bind_port = FLAGS_s3port;
-    mero_http_bind_port = FLAGS_merohttpapiport;
+    motr_http_bind_port = FLAGS_motrhttpapiport;
     s3_pidfile = "/var/run/s3server.pid";
 
     read_ahead_multiple = 1;
@@ -311,7 +311,7 @@ class S3Option {
   std::string get_s3_nodename();
   std::string get_ipv4_bind_addr();
   std::string get_ipv6_bind_addr();
-  std::string get_mero_http_bind_addr();
+  std::string get_motr_http_bind_addr();
   std::string get_s3_pidfile();
   std::string get_s3_audit_config();
   AuditFormatType get_s3_audit_format_type();
@@ -323,7 +323,7 @@ class S3Option {
   std::string get_audit_logger_kafka_web_path();
   unsigned short get_audit_max_retry_count();
   unsigned short get_s3_bind_port();
-  unsigned short get_mero_http_bind_port();
+  unsigned short get_motr_http_bind_port();
   const char* get_s3server_ssl_cert_file();
   const char* get_s3server_ssl_pem_file();
   int get_s3server_ssl_session_timeout();
@@ -361,7 +361,7 @@ class S3Option {
   bool is_s3server_objectleak_tracking_enabled();
   void set_s3server_objectleak_tracking_enabled(const bool& flag);
   bool is_s3_reuseport_enabled();
-  bool is_mero_http_reuseport_enabled();
+  bool is_motr_http_reuseport_enabled();
   const char* get_iam_cert_file();
   bool is_log_buffering_enabled();
   bool is_murmurhash_oid_enabled();

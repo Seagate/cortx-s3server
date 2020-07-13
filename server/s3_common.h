@@ -67,7 +67,7 @@ enum class S3ApiType {
   unsupported      // Invalid or Unsupported API
 };
 
-enum class MeroApiType {
+enum class MotrApiType {
   index,
   keyval,
   object,
@@ -75,7 +75,7 @@ enum class MeroApiType {
   unsupported  // Invalid or Unsupported API
 };
 
-enum class MeroOperationCode {
+enum class MotrOperationCode {
   none
 };
 
@@ -207,17 +207,17 @@ inline std::string api_type_to_str(S3ApiType type) {
   }
 }
 
-inline std::string api_type_to_str(MeroApiType type) {
+inline std::string api_type_to_str(MotrApiType type) {
   switch (type) {
-    case MeroApiType::index:
+    case MotrApiType::index:
       return "INDEX";
-    case MeroApiType::keyval:
+    case MotrApiType::keyval:
       return "KEYVAL";
-    case MeroApiType::object:
+    case MotrApiType::object:
       return "OBJECT";
-    case MeroApiType::faultinjection:
+    case MotrApiType::faultinjection:
       return "FAULTINJECTION";
-    case MeroApiType::unsupported:
+    case MotrApiType::unsupported:
       return "UNSUPPORTED";
     default:
       return "UNKNOWN";
@@ -289,9 +289,9 @@ inline std::string operation_code_to_audit_str(S3OperationCode code) {
   }
 }
 
-inline std::string operation_code_to_audit_str(MeroOperationCode code) {
+inline std::string operation_code_to_audit_str(MotrOperationCode code) {
   switch (code) {
-    case MeroOperationCode::none:
+    case MotrOperationCode::none:
       return "NONE";
     default:
       return "UNKNOWN";

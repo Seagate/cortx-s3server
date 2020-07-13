@@ -27,7 +27,7 @@
 #include "s3_log.h"
 #include "s3_md5_hash.h"
 #include "s3_post_complete_action.h"
-#include "s3_uri_to_mero_oid.h"
+#include "s3_uri_to_motr_oid.h"
 #include "s3_m0_uint128_helper.h"
 
 extern struct m0_uint128 global_probable_dead_object_list_index_oid;
@@ -658,7 +658,7 @@ void S3PostCompleteAction::delete_part_list_index_failed() {
   part_index_oid = part_metadata->get_part_index_oid();
   // S3 backgrounddelete should cleanup/remove part index
   s3_log(S3_LOG_ERROR, request_id,
-         "Deletion of part index failed, this oid will be stale in Mero"
+         "Deletion of part index failed, this oid will be stale in Motr"
          "%" SCNx64 " : %" SCNx64 "\n",
          part_index_oid.u_hi, part_index_oid.u_lo);
   next();

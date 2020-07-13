@@ -26,7 +26,7 @@
 #include "s3_log.h"
 #include "s3_m0_uint128_helper.h"
 #include "s3_stats.h"
-#include "s3_uri_to_mero_oid.h"
+#include "s3_uri_to_motr_oid.h"
 #include "s3_post_multipartobject_action.h"
 #include "s3_m0_uint128_helper.h"
 #include <evhttp.h>
@@ -61,7 +61,7 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
   oid = {0ULL, 0ULL};
-  S3UriToMeroOID(s3_clovis_api, request->get_object_uri().c_str(), request_id,
+  S3UriToMotrOID(s3_clovis_api, request->get_object_uri().c_str(), request_id,
                  &oid);
 
   tried_count = 0;
@@ -272,7 +272,7 @@ void S3PostMultipartObjectAction::check_multipart_object_info_status() {
     // Bailing out in case if the multipart upload is already in progress,
     // this will ensure that object doesn't go to inconsistent state
 
-    // Once multipart is taken care in mero, it may not be needed
+    // Once multipart is taken care in motr, it may not be needed
     // Note - Currently as per aws doc.
     // (http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListMPUpload.html)
     // multipart upload details
@@ -418,7 +418,7 @@ void S3PostMultipartObjectAction::create_new_oid(
     salted_uri = request->get_object_uri() + salt +
                  std::to_string(salt_counter) + std::to_string(tried_count);
 
-    S3UriToMeroOID(s3_clovis_api, salted_uri.c_str(), request_id, &oid);
+    S3UriToMotrOID(s3_clovis_api, salted_uri.c_str(), request_id, &oid);
     ++salt_counter;
   } while ((oid.u_hi == current_oid.u_hi) && (oid.u_lo == current_oid.u_lo));
 
@@ -473,7 +473,7 @@ void S3PostMultipartObjectAction::rollback_create_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (clovis_writer->get_state() != S3ClovisWriterOpState::missing) {
     s3_log(S3_LOG_ERROR, request_id,
-           "Deletion of object failed, this oid will be stale in Mero: "
+           "Deletion of object failed, this oid will be stale in Motr: "
            "%" SCNx64 " : %" SCNx64 "\n",
            oid.u_hi, oid.u_lo);
     s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
@@ -497,7 +497,7 @@ void S3PostMultipartObjectAction::rollback_create_part_meta_index_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   m0_uint128 part_index_oid = part_metadata->get_part_index_oid();
   s3_log(S3_LOG_ERROR, request_id,
-         "Deletion of index failed, this oid will be stale in Mero"
+         "Deletion of index failed, this oid will be stale in Motr"
          "%" SCNx64 " : %" SCNx64 "\n",
          part_index_oid.u_hi, part_index_oid.u_lo);
   s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,

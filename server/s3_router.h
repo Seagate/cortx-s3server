@@ -30,9 +30,9 @@
 #include <gtest/gtest_prod.h>
 
 #include "s3_api_handler.h"
-#include "mero_api_handler.h"
+#include "motr_api_handler.h"
 #include "s3_uri.h"
-#include "mero_uri.h"
+#include "motr_uri.h"
 
 class Router {
  protected:
@@ -76,14 +76,14 @@ class S3Router : public Router {
   FRIEND_TEST(S3RouterTest, ReturnsTrueForMatchingEUSubRegionEP);
 };
 
-class MeroRouter : public Router {
+class MotrRouter : public Router {
  private:
-  MeroAPIHandlerFactory *api_handler_factory;
-  MeroUriFactory *uri_factory;
+  MotrAPIHandlerFactory *api_handler_factory;
+  MotrUriFactory *uri_factory;
 
  public:
-  MeroRouter(MeroAPIHandlerFactory *api_creator, MeroUriFactory *uri_creator);
-  virtual ~MeroRouter();
+  MotrRouter(MotrAPIHandlerFactory *api_creator, MotrUriFactory *uri_creator);
+  virtual ~MotrRouter();
   // Dispatch to registered handlers.
   void dispatch(std::shared_ptr<RequestObject> request);
 
