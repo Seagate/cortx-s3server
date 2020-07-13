@@ -51,12 +51,15 @@ class S3RecoveryBase:
         """
         Compare epoch value and merges the value part of index and replica.
 
-        :data_to_restore:  Structurized form of index to restore in KV.
         :key: Key for which epoch needs to be validated
+        :data_to_restore:  Structurized form of index to restore in KV.
         :item_replica: Replica index content corresponding to "Key"
         :union_result: Structurized form of result in KV.
 
         """
+        if data_to_restore is None and item_replica is None:
+            return
+
         if (data_to_restore is None):
             try:
                 bucket_metadata_replica = json.loads(item_replica)
@@ -89,9 +92,9 @@ class S3RecoveryBase:
             s_corruption = True
 
         if p_corruption and (not s_corruption):
-            union_result[key] = data_to_restore
-        elif s_corruption and (not p_corruption):
             union_result[key] = item_replica
+        elif s_corruption and (not p_corruption):
+            union_result[key] = data_to_restore
         elif (not p_corruption) and (not s_corruption):
             # Compare epoch here
             bucket_metadata_date = dateutil.parser.parse(bucket_metadata["create_timestamp"])
@@ -130,9 +133,11 @@ class S3RecoveryBase:
 
         """
         kv_data = {}
-        for item in data:
-            key = item['Key']
-            kv_data[key] = item['Value']
+        if data is not None:
+            for item in data:
+                key = item['Key']
+                kv_data[key] = item['Value']
+
         return kv_data
 
     def merge_keys(self, index_name, data, replica):
@@ -146,8 +151,13 @@ class S3RecoveryBase:
         :return: A structurized list representation of the keys.
 
         """
-        data_list = list(data.keys())
-        replica_list = list(replica.keys())
+        data_list = list()
+        replica_list = list()
+
+        if data is not None:
+            data_list = list(data.keys())
+        if replica is not None:
+            replica_list = list(replica.keys())
 
         if (self.log_result):
             print("\nPrimary index content for {} \n".format(index_name))
