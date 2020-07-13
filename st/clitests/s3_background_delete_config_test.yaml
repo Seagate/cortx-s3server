@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -19,18 +17,10 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-=======
->>>>>>> EOS-9543:S3:Update STs for rename mero -> motr & eos -> cortx (#44)
-cortx_motr:                                   # Section for S3 background delete config
-   endpoint: "http://127.0.0.1:7081"                       # Service specified for CORTX motr client
-   service: "cortxmotr"                                    # Default region specified for CORTX motr client
-   default_region: "us-west2"                              # CORTX motr client will use the specified host
-=======
 cortx_s3:                                   # Section for S3 background delete config
    endpoint: "http://127.0.0.1:7081"                       # Service specified for CORTX s3 client
    service: "cortxs3"                                      # Default region specified for CORTX s3 client
    default_region: "us-west2"                              # CORTX s3 client will use the specified host
->>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59)
    access_key: "AKIAJPINPFRBTPAYXAHZ"                      # Access Key corresponding to account-name "s3-background-delete-svc"
    secret_key: "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"  # Secret Key corresponding to account-name "s3-background-delete-svc"
    daemon_mode: "True"                                     # S3background process run in daemon mode and ST's run in non-daemon mode.
