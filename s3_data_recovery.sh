@@ -31,13 +31,13 @@ do
 done
 
 # enable Haproxy on both nodes
-pcs resource enable haproxy-c1 || { echo "Haproxy is not disabled" && exit 1; }
-pcs resource enable haproxy-c2 || { echo "Haproxy is not disabled" && exit 1; }
+pcs resource enable haproxy-c1 || { echo "Haproxy is not enabled" && exit 1; }
+pcs resource enable haproxy-c2 || { echo "Haproxy is not enabled" && exit 1; }
 
 # enable BackgroundConsumers on both nodes"
-pcs resource enable s3backcons-c1 || { echo "s3backgroundconsumer is not disabled" && exit 1; }
-pcs resource enable s3backcons-c2 || { echo "s3backgroundconsumer is not disabled" && exit 1; }
+pcs resource enable s3backcons-c1 || { echo "s3backgroundconsumer is not enabled" && exit 1; }
+pcs resource enable s3backcons-c2 || { echo "s3backgroundconsumer is not enabled" && exit 1; }
 
 # enable BackgroundProducer
-pcs resource enable s3backprod || { echo "s3backgroundproducer is not disabled" && exit 1; }
+pcs resource enable s3backprod || { echo "s3backgroundproducer is not enabled" && exit 1; }
 
