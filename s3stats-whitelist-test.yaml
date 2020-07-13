@@ -4,7 +4,7 @@
 ############################################################
 # Timer metrics
 - total_request_time
-- uri_to_mero_oid
+- uri_to_motr_oid
 - copy_to_clovis_buf
 - total_buffering_time
 - create_object_success
