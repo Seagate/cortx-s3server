@@ -24,7 +24,7 @@
 #include "s3_clovis_reader.h"
 #include "s3_clovis_rw_common.h"
 #include "s3_option.h"
-#include "s3_uri_to_mero_oid.h"
+#include "s3_uri_to_motr_oid.h"
 #include "s3_addb.h"
 
 extern struct m0_clovis_realm clovis_uber_realm;
