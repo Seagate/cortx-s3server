@@ -125,16 +125,6 @@ replica_bucket_list_index_oid = 'AAAAAAAAAHg=-BQAQAAAAAAA=' # base64 conversion 
 primary_bucket_list_index_oid = 'AAAAAAAAAHg=-AQAQAAAAAAA='
 config = EOSCoreConfig()
 
-# build s3recovery tool
-cwd = os.getcwd()
-s3recovery_dir = os.path.dirname(os.path.realpath(__file__)) + r"/../../s3recovery/"
-os.chdir(s3recovery_dir)
-os.system('python3.6 setup.py clean')
-os.system('python3.6 setup.py build')
-os.system('python3.6 setup.py install')
-
-os.chdir(cwd)
-
 # ======================================================================================================
 
 # Test Scenario 1
@@ -201,23 +191,19 @@ assert index_content["Keys"] == None
 
 # ********************** System Tests for s3 recovery tool: dry_run option ********************************************
 # Run s3 recovery tool: dry_run option
-print("Test: validate dry_run option of s3recovery tool")
-result = S3RecoveryTest("run s3recovery tool").s3recovery_dry_run().execute_test().command_is_successful()
-success_msg = "Data recovered from both indexes for Global bucket index"
-result.command_response_should_have(success_msg)
-
-'''
-# ********************** System Tests for s3 recovery tool: Global bucket account list Index **************************
-
-# ST: 1
-# KV missing from primary index, but present in replica index
+# Test: KV missing from primary index, but present in replica index
 # Step 1: PUT Key-Value in replica index
-# Step 2: Run s3 recoverytool
-# Step 3: Validate that the Key-Value is present in root index
-# Step 4: Delete the Key-Value from both primary and replica indexes
+# Step 2: Run s3 recoverytool with --dry_run option
+# Step 3: Validate that the Key-Value is shown on the console as data recovered
+# Step 4: Delete the Key-Value from the replica index
+
+print("Test: validate dry_run: KV missing from primary index, but present in replica index\n")
 
 st1key = "ST-1-BK"
-st1value = '{"account_id":"838334245437", "account_name":"s3-recovery-svc", "create_timestamp":"2020-07-02T05:45:41.000Z", "location_constraint":"us-west-2"}'
+st1value = '{"account_id":"838334245437",\
+     "account_name":"s3-recovery-svc",\
+     "create_timestamp":"2020-07-02T05:45:41.000Z",\
+     "location_constraint":"us-west-2"}'
 
 # ***************** PUT KV in replica index **********************************
 status, res = EOSCoreKVApi(config).put(replica_bucket_list_index_oid, st1key, st1value)
@@ -226,7 +212,6 @@ assert isinstance(res, EOSCoreSuccessResponse)
 
 # Make sure that root index is empty currently
 status, res = EOSCoreIndexApi(config).list(primary_bucket_list_index_oid)
-
 assert status == True
 assert isinstance(res, EOSCoreListIndexResponse)
 
@@ -235,38 +220,19 @@ assert index_content["Index-Id"] == "AAAAAAAAAHg=-AQAQAAAAAAA="
 assert index_content["Keys"] == None
 
 # Run s3 recovery tool
-S3RecoveryTest("run s3recovery tool").s3recovery_recover().execute_test().command_is_successful()
+result = S3RecoveryTest("run s3recovery tool")\
+    .s3recovery_dry_run()\
+    .execute_test()\
+    .command_is_successful()
+print(result.status.stdout)
+success_msg = "Data recovered from both indexes for Global bucket index"
+result.command_response_should_have(success_msg)
 
-# ***************** Validate if the Key-Value restored in primary index by the s3 recovery tool *********
-status, res = EOSCoreIndexApi(config).list(primary_bucket_list_index_oid)
-assert status == True
-assert isinstance(res, EOSCoreListIndexResponse)
-
-index_content = res.get_index_content()
-assert index_content["Index-Id"] == "AAAAAAAAAHg=-AQAQAAAAAAA="
-assert index_content["Keys"] != None
-
-bucket_key_value_list = index_content["Keys"]
-bucket_key_value = (bucket_key_value_list[0])
-bucket_key = bucket_key_value["Key"]
-bucket_value = bucket_key_value["Value"]
-
-value_json = json.loads(bucket_value)
-
-assert bucket_key == st1key
-assert value_json['account_id'] == '838334245437'
-assert value_json['account_name'] == 's3-recovery-svc'
-
-# ***************** Delete the Key-Value ****************************************************************
-status, res = EOSCoreKVApi(config).delete(primary_bucket_list_index_oid, st1key)
-assert status == True
-assert isinstance(res, EOSCoreSuccessResponse)
-
+# Delete the key-value from replica index
 status, res = EOSCoreKVApi(config).delete(replica_bucket_list_index_oid, st1key)
 assert status == True
 assert isinstance(res, EOSCoreSuccessResponse)
 
-'''
 # ================================================= CLEANUP =============================================
 
 # ************ Delete Account*******************************
