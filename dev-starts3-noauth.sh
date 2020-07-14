@@ -52,8 +52,9 @@ fi
 
 set -x
 
-export LD_LIBRARY_PATH="$(pwd)/third_party/mero/mero/.libs/:"\
-"$(pwd)/third_party/mero/extra-libs/gf-complete/src/.libs/"
+export LD_LIBRARY_PATH="$(pwd)/third_party/motr/mero/.libs/:"\
+"$(pwd)/third_party/motr/helpers/.libs/:"\
+"$(pwd)/third_party/motr/extra-libs/gf-complete/src/.libs/"
 
 # Get local address
 modprobe lnet
@@ -64,14 +65,14 @@ ha_ep=$local_nid:12345:34:1
 
 # Run m0dixinit
 set +e
-./third_party/mero/dix/utils/m0dixinit -l $local_nid:12345:34:100 -H $local_nid:12345:34:1 \
+./third_party/motr/dix/utils/m0dixinit -l $local_nid:12345:34:100 -H $local_nid:12345:34:1 \
                  -p '<0x7000000000000001:0>' -I 'v|1:20' -d 'v|1:20' -a check 2> /dev/null \
                  | grep -E 'Metadata exists: false' > /dev/null
 rc=$?
 set -e
 if [ $rc -eq 0 ]
 then
-./third_party/mero/dix/utils/m0dixinit -l $local_nid:12345:34:100 -H $local_nid:12345:34:1 \
+./third_party/motr/dix/utils/m0dixinit -l $local_nid:12345:34:100 -H $local_nid:12345:34:1 \
                  -p '<0x7000000000000001:0>' -I 'v|1:20' -d 'v|1:20' -a create
 fi
 

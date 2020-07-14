@@ -1,6 +1,6 @@
 ## Steps to update LDAP schema
 NOTE - Perform these steps from the current directory
-       i.e mero/fe/s3/auth-utils/ldap
+       i.e motr/fe/s3/auth-utils/ldap
 
 1. Add/Edit attributetype and objectClass in s3user.schema. This is a user
 readable file.
