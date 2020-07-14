@@ -11,4 +11,4 @@ RUN yum install -y http://ci-storage.mero.colo.seagate.com/releases/master/mero_
     && yum install -y git-clang-format \
     && yum-builddep -y --define 'python3_other_pkgversion 36' s3rpm.spec \
     && rm -f s3rpm.spec \
-    && yum remove -y mero mero-devel
+    && yum remove -y cortx-motr cortx-motr-devel

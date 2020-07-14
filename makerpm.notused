@@ -59,15 +59,15 @@ printf "Creating rpm package, it may take couple of minutes..."
 # Create rpm
 fpm -s dir -t rpm -C $S3_RPM_SANDBOX_DIR \
     --name $S3_RPM_PKG_NAME \
-    --config-files opt/seagate/s3/conf/s3config.yaml \
-    --config-files opt/seagate/s3/conf/s3stats-whitelist.yaml \
-    --config-files opt/seagate/s3/statsd/s3statsd-config.js \
-    --config-files opt/seagate/auth/resources/authserver.properties \
-    --config-files opt/seagate/auth/resources/static/saml-metadata.xml \
-    --directories opt/seagate/ \
+    --config-files opt/seagate/cortx/s3/conf/s3config.yaml \
+    --config-files opt/seagate/cortx/s3/conf/s3stats-whitelist.yaml \
+    --config-files opt/seagate/cortx/s3/statsd/s3statsd-config.js \
+    --config-files opt/seagate/cortx/auth/resources/authserver.properties \
+    --config-files opt/seagate/cortx/auth/resources/static/saml-metadata.xml \
+    --directories opt/seagate/cortx/ \
     --directories var/log/seagate/ \
-    --depends "mero" \
+    --depends "cortx-motr" \
     --version $S3_RPM_VERSION \
-    --description "Seagate S3 Server - Mero"
+    --description "Seagate S3 Server - Motr"
 
 printf "%s\n" "Done!"
