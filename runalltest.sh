@@ -22,13 +22,13 @@
 set -e
 
 usage() {
-  echo 'Usage: ./runalltest.sh [--no-mero-rpm][--no-ut-run][--no-st-run][--no-ossperf-run][--no-https]
+  echo 'Usage: ./runalltest.sh [--no-motr-rpm][--no-ut-run][--no-st-run][--no-ossperf-run][--no-https]
         [--use-ipv6][--basic-s3cmd-rand | --basic-s3cmd-zero]'
   echo '                       [--help]'
   echo 'Optional params as below:'
-  echo '          --no-mero-rpm    : Use mero libs from source code (third_party/mero)'
-  echo '                             Default is (false) i.e. use mero libs from pre-installed'
-  echo '                             mero rpm location (/usr/lib64)'
+  echo '          --no-motr-rpm    : Use motr libs from source code (third_party/motr)'
+  echo '                             Default is (false) i.e. use motr libs from pre-installed'
+  echo '                             motr rpm location (/usr/lib64)'
   echo '          --no-ut-run      : Do not run UTs, Default (false)'
   echo '          --no-st-run      : Do not run STs, Default (false)'
   echo '          --no-https       : Use http for STs, Default (false)'
@@ -40,11 +40,11 @@ usage() {
 }
 
 # read the options
-OPTS=`getopt -o h --long no-mero-rpm,no-ut-run,no-st-run,no-https,use-ipv6,no-ossperf-run,basic-s3cmd-rand,basic-s3cmd-zero,help -n 'runalltest.sh' -- "$@"`
+OPTS=`getopt -o h --long no-motr-rpm,no-ut-run,no-st-run,no-https,use-ipv6,no-ossperf-run,basic-s3cmd-rand,basic-s3cmd-zero,help -n 'runalltest.sh' -- "$@"`
 
 eval set -- "$OPTS"
 
-no_mero_rpm=0
+no_motr_rpm=0
 no_ut_run=0
 no_st_run=0
 use_http=0
@@ -58,7 +58,7 @@ cont_zero_param=""
 # extract options and their arguments into variables.
 while true; do
   case "$1" in
-    --no-mero-rpm) no_mero_rpm=1; shift ;;
+    --no-motr-rpm) no_motr_rpm=1; shift ;;
     --no-ut-run) no_ut_run=1; shift ;;
     --no-st-run) no_st_run=1; shift ;;
     --no-https) use_http=1; shift ;;
@@ -91,12 +91,12 @@ abort()
 }
 trap 'abort' 0
 
-if [ $no_mero_rpm -eq 1 ]
+if [ $no_motr_rpm -eq 1 ]
 then
-# use mero libs from source code
-export LD_LIBRARY_PATH="$(pwd)/third_party/mero/mero/.libs/:"\
-"$(pwd)/third_party/mero/helpers/.libs/:"\
-"$(pwd)/third_party/mero/extra-libs/gf-complete/src/.libs/"
+# use motr libs from source code
+export LD_LIBRARY_PATH="$(pwd)/third_party/motr/mero/.libs/:"\
+"$(pwd)/third_party/motr/helpers/.libs/:"\
+"$(pwd)/third_party/motr/extra-libs/gf-complete/src/.libs/"
 fi
 
 WORKING_DIR=`pwd`

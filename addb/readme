@@ -62,7 +62,7 @@ To parse ADDB logs, you will need m0addb2dump utility, which is a part of Mero
 development environment would be:
 
   s3_path="your/path/to/s3server.git"
-  $s3_path/rs3/third_party/mero/utils/m0addb2dump -f \
+  $s3_path/rs3/third_party/motr/utils/m0addb2dump -f \
      -p $s3_path/bazel-bin/libs3addbplugin.so -- \
      /var/motr/s3server-0x7200000000000000:0/./clovis_addb/o/100000000000000:2 \
      > dump_s.txt

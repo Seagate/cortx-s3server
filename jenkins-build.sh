@@ -189,23 +189,23 @@ if [[ $is_authsrv_running -eq 1 ]]; then
   $USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
 fi
 
-# Check if mero build is cached and is latest, else rebuild mero as well
+# Check if motr build is cached and is latest, else rebuild motr as well
 THIRD_PARTY=$S3_BUILD_DIR/third_party
-MERO_SRC=$THIRD_PARTY/mero
+MOTR_SRC=$THIRD_PARTY/motr
 BUILD_CACHE_DIR=$HOME/.seagate_src_cache
 
-cd $MERO_SRC && current_mero_rev=`git rev-parse HEAD` && cd $S3_BUILD_DIR
-cached_mero_rev=`cat $BUILD_CACHE_DIR/cached_mero.git.rev` || echo "Mero not cached at $BUILD_CACHE_DIR"
+cd $MOTR_SRC && current_motr_rev=`git rev-parse HEAD` && cd $S3_BUILD_DIR
+cached_motr_rev=`cat $BUILD_CACHE_DIR/cached_motr.git.rev` || echo "Motr not cached at $BUILD_CACHE_DIR"
 
-if [ "$current_mero_rev" != "$cached_mero_rev" ]
+if [ "$current_motr_rev" != "$cached_motr_rev" ]
 then
-  # we need to rebuild mero, clean old cache
+  # we need to rebuild motr, clean old cache
   rm -rf $BUILD_CACHE_DIR
 fi
 
 if [ $skip_build -eq 0 ]
 then
-    ./rebuildall.sh --no-mero-rpm --use-build-cache
+    ./rebuildall.sh --no-motr-rpm --use-build-cache
 fi
 
 # Stop any old running S3 instances
@@ -214,14 +214,14 @@ $USE_SUDO ./dev-stops3.sh
 
 $USE_SUDO systemctl stop s3authserver
 
-# Stop any old running mero
-cd $MERO_SRC
-echo "Stopping any old running mero services"
-$USE_SUDO ./m0t1fs/../clovis/st/utils/mero_services.sh stop || echo "Cannot stop mero services"
+# Stop any old running motr
+cd $MOTR_SRC
+echo "Stopping any old running motr services"
+$USE_SUDO ./m0t1fs/../clovis/st/utils/mero_services.sh stop || echo "Cannot stop motr services"
 cd $S3_BUILD_DIR
 
-# Clean up mero and S3 log and data dirs
-$USE_SUDO rm -rf /mnt/store/motr/* /var/log/motr/* /var/mero /var/motr/* \
+# Clean up motr and S3 log and data dirs
+$USE_SUDO rm -rf /mnt/store/motr/* /var/log/motr/* /var/motr/* \
                  /var/log/seagate/s3/* /var/log/seagate/auth/server/* \
                  /var/log/seagate/auth/tools/* /var/crash/*
 
@@ -263,9 +263,9 @@ then
   $USE_SUDO systemctl restart haproxy
 fi
 
-# Start mero for new tests
-cd $MERO_SRC
-echo "Starting new built mero services"
+# Start motr for new tests
+cd $MOTR_SRC
+echo "Starting new built motr services"
 $USE_SUDO ./m0t1fs/../clovis/st/utils/mero_services.sh start
 cd $S3_BUILD_DIR
 
@@ -320,7 +320,7 @@ do
     echo "S3 service started successfully..."
     break
   else
-    # Sometimes if mero is not ready, S3 may fail to connect
+    # Sometimes if motr is not ready, S3 may fail to connect
     # cleanup and restart
     $USE_SUDO ./dev-stops3.sh
     sleep 1
@@ -367,9 +367,9 @@ fi
 S3_TEST_RET_CODE=0
 if [ $use_http_client -eq 1 ]
 then
-  ./runalltest.sh --no-mero-rpm --no-https $use_ipv6_arg $basic_test_cmd_par || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
+  ./runalltest.sh --no-motr-rpm --no-https $use_ipv6_arg $basic_test_cmd_par || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
 else
-  ./runalltest.sh --no-mero-rpm $use_ipv6_arg $basic_test_cmd_par || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
+  ./runalltest.sh --no-motr-rpm $use_ipv6_arg $basic_test_cmd_par || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
 fi
 
 # Disable fault injection in AuthServer
@@ -391,8 +391,8 @@ tail -50 /var/log/seagate/s3/s3server.INFO
 # To debug if there are any errors
 tail -50 /var/log/seagate/s3/s3server.ERROR || echo "No Errors"
 
-cd $MERO_SRC
-$USE_SUDO ./m0t1fs/../clovis/st/utils/mero_services.sh stop || echo "Cannot stop mero services"
+cd $MOTR_SRC
+$USE_SUDO ./m0t1fs/../clovis/st/utils/mero_services.sh stop || echo "Cannot stop motr services"
 cd $S3_BUILD_DIR
 # revert ipv6 settings
 if [ $use_ipv6 -eq 1 ]

@@ -2,9 +2,9 @@
 cc_binary(
     # How to run build
     # bazel build //:s3server --cxxopt="-std=c++11"
-    #                         --define MERO_INC=<mero headers path>
-    #                         --define MERO_LIB=<mero lib path>
-    #                         --define MERO_HELPERS_LIB=<mero helpers lib path>
+    #                         --define MOTR_INC=<motr headers path>
+    #                         --define MOTR_LIB=<motr lib path>
+    #                         --define MOTR_HELPERS_LIB=<motr helpers lib path>
     # To build s3server with debug symbols (to be able to analyze core files,
     # or to run under GDB) add the following option to the command line
     # arguments listed above:
@@ -23,9 +23,9 @@ cc_binary(
       "-DHAVE_CONFIG_H", "-DM0_TARGET=ClovisTest", "-D_REENTRANT",
       "-D_GNU_SOURCE", "-DM0_INTERNAL=", "-DM0_EXTERN=extern",
       # Do NOT change the order of strings in below line
-      "-iquote", "$(MERO_INC)", "-isystem", "$(MERO_INC)",
+      "-iquote", "$(MOTR_INC)", "-isystem", "$(MOTR_INC)",
       "-iquote", ".", "-include", "config.h", "-I/usr/include/libxml2",
-      MERO_DYNAMIC_INCLUDES,
+      MOTR_DYNAMIC_INCLUDES,
       "-fno-common", "-Wall", "-Wno-attributes", "-fno-strict-aliasing",
       "-fno-omit-frame-pointer", "-Werror", "-ggdb3", "-O3", "-DNDEBUG",
     ],
@@ -34,7 +34,7 @@ cc_binary(
       "third_party/libevent/s3_dist/include/",
       "third_party/libevhtp/s3_dist/include/evhtp",
       "third_party/jsoncpp/dist",
-      "$(MERO_INC)",
+      "$(MOTR_INC)",
       "mempool",
     ],
 
@@ -43,12 +43,12 @@ cc_binary(
     # https://www.gnu.org/software/libc/manual/html_node/Backtraces.html
     linkopts = [
       "-rdynamic",
-      "-L$(MERO_LIB)",
-      "-L$(MERO_HELPERS_LIB)",
+      "-L$(MOTR_LIB)",
+      "-L$(MOTR_HELPERS_LIB)",
       "-Lthird_party/libevent/s3_dist/lib/",
       "-Lthird_party/libevhtp/s3_dist/lib",
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto -llog4cxx",
-      "-lpthread -ldl -lm -lrt -lmotr-helpers MERO_LINK_LIB -laio",
+      "-lpthread -ldl -lm -lrt -lmotr-helpers MOTR_LINK_LIB -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgflags -lhiredis",
       "-pthread -lglog",
       "-Wl,-rpath,/opt/seagate/cortx/s3/libevent",
@@ -58,9 +58,9 @@ cc_binary(
 cc_test(
     # How to run build
     # bazel build //:s3ut --cxxopt="-std=c++11"
-    #                     --define MERO_INC=<mero headers path>
-    #                     --define MERO_LIB=<mero lib path>
-    #                     --define MERO_HELPERS_LIB=<mero helpers lib path>
+    #                     --define MOTR_INC=<motr headers path>
+    #                     --define MOTR_LIB=<motr lib path>
+    #                     --define MOTR_HELPERS_LIB=<motr helpers lib path>
 
     name = "s3ut",
 
@@ -75,27 +75,27 @@ cc_test(
       "-D_REENTRANT", "-D_GNU_SOURCE", "-DM0_INTERNAL=", "-DS3_GOOGLE_TEST",
       "-DM0_EXTERN=extern", "-pie", "-Wno-attributes", "-O3", "-Werror",
       # Do NOT change the order of strings in below line
-      "-iquote", "$(MERO_INC)", "-isystem", "$(MERO_INC)",
-      "-I/usr/include/libxml2", MERO_DYNAMIC_INCLUDES,
+      "-iquote", "$(MOTR_INC)", "-isystem", "$(MOTR_INC)",
+      "-I/usr/include/libxml2", MOTR_DYNAMIC_INCLUDES,
     ],
 
     includes = [
       "third_party/libevent/s3_dist/include/",
       "third_party/libevhtp/s3_dist/include/evhtp",
       "third_party/jsoncpp/dist",
-      "$(MERO_INC)",
+      "$(MOTR_INC)",
       "server/",
       "mempool",
     ],
 
     linkopts = [
       "-rdynamic",
-      "-L$(MERO_LIB)",
-      "-L$(MERO_HELPERS_LIB)",
+      "-L$(MOTR_LIB)",
+      "-L$(MOTR_HELPERS_LIB)",
       "-Lthird_party/libevent/s3_dist/lib/",
       "-Lthird_party/libevhtp/s3_dist/lib",
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto -llog4cxx",
-      "-lpthread -ldl -lm -lrt MERO_LINK_LIB -lmotr-helpers -laio",
+      "-lpthread -ldl -lm -lrt MOTR_LINK_LIB -lmotr-helpers -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgtest -lgmock -lgflags",
       "-pthread -lglog -lhiredis",
       "-Wl,-rpath,third_party/libevent/s3_dist/lib",
@@ -109,9 +109,9 @@ cc_test(
 cc_test(
     # How to run build
     # bazel build //:s3utdeathtests --cxxopt="-std=c++11"
-    #                               --define MERO_INC=<mero headers path>
-    #                               --define MERO_LIB=<mero lib path>
-    #                               --define MERO_HELPERS_LIB=<mero helpers lib path>
+    #                               --define MOTR_INC=<motr headers path>
+    #                               --define MOTR_LIB=<motr lib path>
+    #                               --define MOTR_HELPERS_LIB=<motr helpers lib path>
 
     name = "s3utdeathtests",
 
@@ -126,8 +126,8 @@ cc_test(
       "-D_REENTRANT", "-D_GNU_SOURCE", "-DM0_INTERNAL=",
       "-DM0_EXTERN=extern", "-pie", "-Wno-attributes", "-O3", "-Werror",
       # Do NOT change the order of strings in below line
-      "-iquote", "$(MERO_INC)", "-isystem", "$(MERO_INC)",
-      "-I/usr/include/libxml2", MERO_DYNAMIC_INCLUDES,
+      "-iquote", "$(MOTR_INC)", "-isystem", "$(MOTR_INC)",
+      "-I/usr/include/libxml2", MOTR_DYNAMIC_INCLUDES,
     ],
 
     includes = [
@@ -135,19 +135,19 @@ cc_test(
       "third_party/libevhtp/s3_dist/include/evhtp",
       "third_party/jsoncpp/dist",
       "ut/",
-      "$(MERO_INC)",
+      "$(MOTR_INC)",
       "server/",
       "mempool",
     ],
 
     linkopts = [
       "-rdynamic",
-      "-L$(MERO_LIB)",
-      "-L$(MERO_HELPERS_LIB)",
+      "-L$(MOTR_LIB)",
+      "-L$(MOTR_HELPERS_LIB)",
       "-Lthird_party/libevent/s3_dist/lib/",
       "-Lthird_party/libevhtp/s3_dist/lib",
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto -llog4cxx",
-      "-lpthread -ldl -lm -lrt -lmotr-helpers MERO_LINK_LIB -laio",
+      "-lpthread -ldl -lm -lrt -lmotr-helpers MOTR_LINK_LIB -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgtest -lgmock -lgflags",
       "-pthread -lglog -lhiredis",
       "-Wl,-rpath,third_party/libevent/s3_dist/lib",
@@ -182,9 +182,9 @@ cc_binary(
 cc_binary(
     # How to run build
     # bazel build //:cloviskvscli --cxxopt="-std=c++11"
-    #                             --define MERO_INC=<mero headers path>
-    #                             --define MERO_LIB=<mero lib path>
-    #                             --define MERO_HELPERS_LIB=<mero helpers lib path>
+    #                             --define MOTR_INC=<motr headers path>
+    #                             --define MOTR_LIB=<motr lib path>
+    #                             --define MOTR_HELPERS_LIB=<motr helpers lib path>
 
     name = "cloviskvscli",
 
@@ -195,21 +195,21 @@ cc_binary(
       "-DHAVE_CONFIG_H", "-DM0_TARGET=ClovisTest", "-D_REENTRANT",
       "-D_GNU_SOURCE", "-DM0_INTERNAL=", "-DM0_EXTERN=extern",
       # Do NOT change the order of strings in below line
-      "-iquote", "$(MERO_INC)", "-isystem", "$(MERO_INC)",
+      "-iquote", "$(MOTR_INC)", "-isystem", "$(MOTR_INC)",
       "-iquote", ".", "-include", "config.h",
       "-fno-common", "-Wall", "-Wno-attributes", "-fno-strict-aliasing",
       "-fno-omit-frame-pointer", "-Werror", "-ggdb3", "-O3", "-DNDEBUG",
     ],
 
     includes = [
-      "$(MERO_INC)",
+      "$(MOTR_INC)",
     ],
 
     linkopts = [
       "-rdynamic",
-      "-L$(MERO_LIB)",
-      "-L$(MERO_HELPERS_LIB)",
-      "-lpthread -ldl -lm -lrt -lmotr-helpers MERO_LINK_LIB -laio",
+      "-L$(MOTR_LIB)",
+      "-L$(MOTR_HELPERS_LIB)",
+      "-lpthread -ldl -lm -lrt -lmotr-helpers MOTR_LINK_LIB -laio",
       "-lgflags",
       "-pthread -lglog",
     ],
@@ -238,9 +238,9 @@ cc_test(
 cc_test(
     # How to run build
     # bazel build //:s3mempoolmgrut --cxxopt="-std=c++11"
-    #                     --define MERO_INC=<mero headers path>
-    #                     --define MERO_LIB=<mero lib path>
-    #                     --define MERO_HELPERS_LIB=<mero helpers lib path>
+    #                     --define MOTR_INC=<motr headers path>
+    #                     --define MOTR_LIB=<motr lib path>
+    #                     --define MOTR_HELPERS_LIB=<motr helpers lib path>
 
     name = "s3mempoolmgrut",
 
@@ -255,27 +255,27 @@ cc_test(
       "-D_REENTRANT", "-D_GNU_SOURCE", "-DM0_INTERNAL=", "-DS3_GOOGLE_TEST",
       "-DM0_EXTERN=extern", "-pie", "-Wno-attributes", "-O3", "-Werror",
       # Do NOT change the order of strings in below line
-      "-iquote", "$(MERO_INC)", "-isystem", "$(MERO_INC)",
-      "-I/usr/include/libxml2", MERO_DYNAMIC_INCLUDES,
+      "-iquote", "$(MOTR_INC)", "-isystem", "$(MOTR_INC)",
+      "-I/usr/include/libxml2", MOTR_DYNAMIC_INCLUDES,
     ],
 
     includes = [
       "third_party/libevent/s3_dist/include/",
       "third_party/libevhtp/s3_dist/include/evhtp",
       "third_party/jsoncpp/dist",
-      "$(MERO_INC)",
+      "$(MOTR_INC)",
       "server/",
       "mempool",
     ],
 
     linkopts = [
       "-rdynamic",
-      "-L$(MERO_LIB)",
-      "-L$(MERO_HELPERS_LIB)",
+      "-L$(MOTR_LIB)",
+      "-L$(MOTR_HELPERS_LIB)",
       "-Lthird_party/libevent/s3_dist/lib/",
       "-Lthird_party/libevhtp/s3_dist/lib",
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto -llog4cxx",
-      "-lpthread -ldl -lm -lrt -lmotr-helpers MERO_LINK_LIB -laio",
+      "-lpthread -ldl -lm -lrt -lmotr-helpers MOTR_LINK_LIB -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgtest -lgmock -lgflags",
       "-pthread -lglog -lhiredis",
       "-Wl,-rpath,third_party/libevent/s3_dist/lib",
@@ -284,9 +284,9 @@ cc_test(
 
 cc_library(
     # How to run build
-    # bazel build //:s3addbplugin --define MERO_INC=<mero headers path>
-    #                             --define MERO_LIB=<mero lib path>
-    #                             --define MERO_HELPERS_LIB=<mero helpers lib path>
+    # bazel build //:s3addbplugin --define MOTR_INC=<motr headers path>
+    #                             --define MOTR_LIB=<motr lib path>
+    #                             --define MOTR_HELPERS_LIB=<motr helpers lib path>
     # To build with debug symbols (to be able to analyze core files,
     # or to run under GDB) add the following option to the command line
     # arguments listed above:
@@ -304,14 +304,14 @@ cc_library(
       "-DHAVE_CONFIG_H", "-DM0_TARGET=ClovisTest", "-D_REENTRANT",
       "-D_GNU_SOURCE", "-DM0_INTERNAL=", "-DM0_EXTERN=extern",
       # Do NOT change the order of strings in below line
-      "-iquote", "$(MERO_INC)", "-isystem", "$(MERO_INC)",
-      "-iquote", ".", "-include", "config.h", "-I/usr/include/libxml2", MERO_DYNAMIC_INCLUDES,
+      "-iquote", "$(MOTR_INC)", "-isystem", "$(MOTR_INC)",
+      "-iquote", ".", "-include", "config.h", "-I/usr/include/libxml2", MOTR_DYNAMIC_INCLUDES,
       "-iquote", "server/", "-fno-common", "-Wall", "-Wno-attributes",
       "-fno-strict-aliasing", "-fno-omit-frame-pointer", "-Werror", "-ggdb3",
       "-O3", "-DNDEBUG",
     ],
 
     includes = [
-      "$(MERO_INC)",
+      "$(MOTR_INC)",
     ],
 )
