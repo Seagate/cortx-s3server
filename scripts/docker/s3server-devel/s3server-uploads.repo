@@ -1,5 +1,5 @@
-[mero-s3server-uploads]
-name=Mero S3server uploads
+[motr-s3server-uploads]
+name=Motr S3server uploads
 baseurl=http://cortx-storage.colo.seagate.com/releases/eos/uploads/centos/centos-7.7.1908/s3server_uploads/
 gpgcheck=0
 enabled=1

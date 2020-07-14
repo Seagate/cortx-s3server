@@ -3,17 +3,17 @@
 set -e
 
 usage() {
-  echo 'Usage: ./rebuildall.sh [--no-mero-rpm][--use-build-cache][--no-check-code]'
+  echo 'Usage: ./rebuildall.sh [--no-motr-rpm][--use-build-cache][--no-check-code]'
   echo '                       [--no-clean-build][--no-s3ut-build][--no-s3mempoolut-build][--no-s3mempoolmgrut-build]'
   echo '                       [--no-s3server-build][--no-cloviskvscli-build][--no-auth-build]'
   echo '                       [--no-jclient-build][--no-jcloudclient-build][--no-install]'
   echo '                       [--just-gen-build-file][--help]'
   echo 'Optional params as below:'
-  echo '          --no-mero-rpm              : Use mero libs from source code (third_party/mero) location'
-  echo '                                       Default is (false) i.e. use mero libs from pre-installed'
-  echo '                                       mero rpm location (/usr/lib64)'
-  echo '          --use-build-cache          : Use build cache for third_party and mero, Default (false)'
-  echo '                                      If cache is missing, third_party and mero will be rebuilt'
+  echo '          --no-motr-rpm              : Use motr libs from source code (third_party/motr) location'
+  echo '                                       Default is (false) i.e. use motr libs from pre-installed'
+  echo '                                       motr rpm location (/usr/lib64)'
+  echo '          --use-build-cache          : Use build cache for third_party and motr, Default (false)'
+  echo '                                      If cache is missing, third_party and motr will be rebuilt'
   echo '                                      Ensuring consistency of cache is responsibility of caller'
   echo '          --no-check-code            : Do not check code for formatting style, Default (false)'
   echo '          --no-clean-build           : Do not clean before build, Default (false)'
@@ -44,17 +44,17 @@ declare -a rpm_lib_search_paths_array
 declare -a link_libs_array
 
 # Example cmd run and output
-# CMD: PKG_CONFIG_PATH=./third_party/mero pkg-config --cflags-only-I mero
-# OUTPUT: -I/root/s3server/third_party/mero -I/root/s3server/third_party/mero/extra-libs/gf-complete/include -I/usr/src/lustre-client-2.12.3/libcfs/include \
+# CMD: PKG_CONFIG_PATH=./third_party/motr pkg-config --cflags-only-I motr
+# OUTPUT: -I/root/s3server/third_party/motr -I/root/s3server/third_party/motr/extra-libs/gf-complete/include -I/usr/src/lustre-client-2.12.3/libcfs/include \
 # -I/usr/src/lustre-client-2.12.3/lnet/include -I/usr/src/lustre-client-2.12.3/lnet/include/uapi/linux -I/usr/src/lustre-client-2.12.3/lustre/include \
 # -I/usr/src/lustre-client-2.12.3/lustre/include/uapi/linux
 #
-# CMD: PKG_CONFIG_PATH=./third_party/mero pkg-config --libs motr
-# OUTPUT: -L/root/s3server/third_party/mero/mero/.libs -lmotr
+# CMD: PKG_CONFIG_PATH=./third_party/motr pkg-config --libs motr
+# OUTPUT: -L/root/s3server/third_party/motr/mero/.libs -lmotr
 #
-get_mero_pkg_config_dev() {
+get_motr_pkg_config_dev() {
   s3_src_dir=$1
-  includes=$(PKG_CONFIG_PATH=$s3_src_dir/third_party/mero pkg-config --cflags-only-I motr)
+  includes=$(PKG_CONFIG_PATH=$s3_src_dir/third_party/motr pkg-config --cflags-only-I motr)
   for include in $includes
   do
     if [[ "$include" == *"third_party"* ]] # exclude other paths
@@ -64,7 +64,7 @@ get_mero_pkg_config_dev() {
     fi
   done
   #printf '%s\t\n' "${dev_includes_array[@]}"
-  libs=$(PKG_CONFIG_PATH=$s3_src_dir/third_party/mero pkg-config --libs motr)
+  libs=$(PKG_CONFIG_PATH=$s3_src_dir/third_party/motr pkg-config --libs motr)
   for lib in $libs
   do
     if [[ "$lib" == *"third_party"* ]] # this is 'L' part
@@ -79,14 +79,14 @@ get_mero_pkg_config_dev() {
 }
 
 # Example cmd run and output
-# CMD: pkg-config --cflags-only-I mero
-# OUTPUT: -I/usr/include/mero -I/usr/src/lustre-client-2.12.3/libcfs/include -I/usr/src/lustre-client-2.12.3/lnet/include \
+# CMD: pkg-config --cflags-only-I motr
+# OUTPUT: -I/usr/include/motr -I/usr/src/lustre-client-2.12.3/libcfs/include -I/usr/src/lustre-client-2.12.3/lnet/include \
 # -I/usr/src/lustre-client-2.12.3/lnet/include/uapi/linux -I/usr/src/lustre-client-2.12.3/lustre/include \
 # -I/usr/src/lustre-client-2.12.3/lustre/include/uapi/linux \
 #
 # CMD: pkg-config --libs motr
 # OUTPUT: -lmotr
-get_mero_pkg_config_rpm() {
+get_motr_pkg_config_rpm() {
   s3_src_dir=$1
   pkg_config_path="$PKG_CONFIG_PATH:$s3_src_dir"
   includes=$(PKG_CONFIG_PATH=$pkg_config_path pkg-config --cflags-only-I motr)
@@ -114,7 +114,7 @@ get_mero_pkg_config_rpm() {
 }
 
 # read the options
-OPTS=`getopt -o h --long no-mero-rpm,use-build-cache,no-check-code,no-clean-build,\
+OPTS=`getopt -o h --long no-motr-rpm,use-build-cache,no-check-code,no-clean-build,\
 no-s3ut-build,no-s3mempoolut-build,no-s3mempoolmgrut-build,no-s3server-build,\
 no-cloviskvscli-build,no-s3background-build,no-s3recoverytool-build,\
 no-s3addbplugin-build,no-auth-build,no-jclient-build,no-jcloudclient-build,\
@@ -122,7 +122,7 @@ no-s3iamcli-build,no-install,just-gen-build-file,help -n 'rebuildall.sh' -- "$@"
 
 eval set -- "$OPTS"
 
-no_mero_rpm=0
+no_motr_rpm=0
 use_build_cache=0
 no_check_code=0
 no_clean_build=0
@@ -144,7 +144,7 @@ just_gen_build_file=0
 # extract options and their arguments into variables.
 while true; do
   case "$1" in
-    --no-mero-rpm) no_mero_rpm=1; shift ;;
+    --no-motr-rpm) no_motr_rpm=1; shift ;;
     --use-build-cache) use_build_cache=1; shift ;;
     --no-check-code) no_check_code=1; shift ;;
     --no-clean-build)no_clean_build=1; shift ;;
@@ -180,90 +180,90 @@ fi
 S3_SRC_DIR=`pwd`
 BUILD_CACHE_DIR=$HOME/.seagate_src_cache
 
-# Used to store mero include paths which are read from 'pkg-config --cflags'
-mero_include_path="\"-I"
-declare MERO_LINK_LIB_
+# Used to store motr include paths which are read from 'pkg-config --cflags'
+motr_include_path="\"-I"
+declare MOTR_LINK_LIB_
 
 prepare_BUILD_file() {
   # Prepare BUILD file
 
   # Defined as a function because it's needed in two places.  Place 1 at start
   # of process (to handle cases when cmdline args requiest to just generate
-  # BUILD).  Second place -- after mero build.  Note: if mero was not build
+  # BUILD).  Second place -- after motr build.  Note: if motr was not build
   # before, this function will generate error, this is why two places are
   # needed.
 
   # Define the paths
-  if [ $no_mero_rpm -eq 1 ] # use mero libs from source code (built location or cache)
+  if [ $no_motr_rpm -eq 1 ] # use motr libs from source code (built location or cache)
   then
-    MERO_INC_="MERO_INC=./third_party/mero/"
+    MOTR_INC_="MOTR_INC=./third_party/motr/"
 
-    # set mero_include_path for 'copts' in BUILD file
-    get_mero_pkg_config_dev $S3_SRC_DIR
+    # set motr_include_path for 'copts' in BUILD file
+    get_motr_pkg_config_dev $S3_SRC_DIR
     for path in "${dev_includes_array[@]}"
     do
-      mero_include_path=$mero_include_path"."$path"\", \"-I"
+      motr_include_path=$motr_include_path"."$path"\", \"-I"
     done
-    # remove last ', "-I' # mero_include_path='"-I./third_party/mero", "-I./third_party/mero/extra-libs/gf-complete/include", \"-I'
-    mero_include_path=${mero_include_path%", \"-I"}
+    # remove last ', "-I' # motr_include_path='"-I./third_party/motr", "-I./third_party/motr/extra-libs/gf-complete/include", \"-I'
+    motr_include_path=${motr_include_path%", \"-I"}
 
-    MERO_LIB_="MERO_LIB=."
+    MOTR_LIB_="MOTR_LIB=."
     for lib_path in "${dev_lib_search_paths_array[@]}"
     do
-      MERO_LIB_=$MERO_LIB_$lib_path"\", -L."  # '-L' is being appended at first index in 'BUILD' file itself
+      MOTR_LIB_=$MOTR_LIB_$lib_path"\", -L."  # '-L' is being appended at first index in 'BUILD' file itself
     done
     # remove last '\", -L.'
-    MERO_LIB_=${MERO_LIB_%"\", -L."}
+    MOTR_LIB_=${MOTR_LIB_%"\", -L."}
 
     for lib in "${link_libs_array[@]}"
     do
-      MERO_LINK_LIB_=$lib" "
+      MOTR_LINK_LIB_=$lib" "
     done
     # remove last white space
-    MERO_LINK_LIB_=${MERO_LINK_LIB_%" "}
+    MOTR_LINK_LIB_=${MOTR_LINK_LIB_%" "}
 
-    MERO_HELPERS_LIB_="MERO_HELPERS_LIB=./third_party/mero/helpers/.libs/"
+    MOTR_HELPERS_LIB_="MOTR_HELPERS_LIB=./third_party/motr/helpers/.libs/"
   else
-    # use mero libs from pre-installed mero rpm location
-    get_mero_pkg_config_rpm $S3_SRC_DIR
+    # use motr libs from pre-installed motr rpm location
+    get_motr_pkg_config_rpm $S3_SRC_DIR
     for path in "${rpm_includes_array[@]}"
     do
-      mero_include_path=$mero_include_path$path"\", \"-I"
+      motr_include_path=$motr_include_path$path"\", \"-I"
     done
     # remove last ', "-I'
-    mero_include_path=${mero_include_path%", \"-I"}
+    motr_include_path=${motr_include_path%", \"-I"}
 
-    MERO_INC_="MERO_INC=/usr/include/mero/"
+    MOTR_INC_="MOTR_INC=/usr/include/motr/"
     if [ ${#rpm_lib_search_paths_array[@]} -eq 0 ]
     then
-      MERO_LIB_="MERO_LIB=/usr/lib64/"
+      MOTR_LIB_="MOTR_LIB=/usr/lib64/"
     else
-      MERO_LIB_="MERO_LIB=."
+      MOTR_LIB_="MOTR_LIB=."
       for lib_path in "${rpm_lib_search_paths_array[@]}"
       do
-        MERO_LIB_=$MERO_LIB_$lib_path"\", -L."  # '-L' is being appended at first index in 'BUILD' file itself
+        MOTR_LIB_=$MOTR_LIB_$lib_path"\", -L."  # '-L' is being appended at first index in 'BUILD' file itself
       done
       # remove last '\", -L.'
-      MERO_LIB_=${MERO_LIB_%"\", -L."}
+      MOTR_LIB_=${MOTR_LIB_%"\", -L."}
     fi
 
-    MERO_HELPERS_LIB_="MERO_HELPERS_LIB=/usr/lib64/"
+    MOTR_HELPERS_LIB_="MOTR_HELPERS_LIB=/usr/lib64/"
 
     for lib in "${link_libs_array[@]}"
     do
-      MERO_LINK_LIB_=$lib" "
+      MOTR_LINK_LIB_=$lib" "
     done
     # remove last white space
-    MERO_LINK_LIB_=${MERO_LINK_LIB_%" "}
+    MOTR_LINK_LIB_=${MOTR_LINK_LIB_%" "}
   fi
 
   cat BUILD.template > BUILD
 
-  # set mero library search path in 'BUILD' file
-  sed -i 's|MERO_DYNAMIC_INCLUDES|'"$mero_include_path"'|g' BUILD
+  # set motr library search path in 'BUILD' file
+  sed -i 's|MOTR_DYNAMIC_INCLUDES|'"$motr_include_path"'|g' BUILD
 
-  # set mero link library in 'BUILD' file
-  sed -i 's/MERO_LINK_LIB/'"$MERO_LINK_LIB_"'/g' BUILD
+  # set motr link library in 'BUILD' file
+  sed -i 's/MOTR_LINK_LIB/'"$MOTR_LINK_LIB_"'/g' BUILD
 }
 
 if [ $just_gen_build_file -eq 1 ]; then
@@ -277,11 +277,11 @@ then
   ./checkcodeformat.sh
 fi
 
-# Build steps for third_party and mero
-if [ $no_mero_rpm -eq 0 ]
+# Build steps for third_party and motr
+if [ $no_motr_rpm -eq 0 ]
 then
-  # RPM based build, build third_party except mero
-  ./build_thirdparty.sh --no-mero-build
+  # RPM based build, build third_party except motr
+  ./build_thirdparty.sh --no-motr-build
 else
   if [ $use_build_cache -eq 0 ]
   then
@@ -298,9 +298,9 @@ else
       rm -rf ${BUILD_CACHE_DIR}
       mkdir -p ${BUILD_CACHE_DIR}
 
-      echo "Sync third_party(,mero) binaries from third_party/"
-      rsync -aW $S3_SRC_DIR/third_party/mero/ $BUILD_CACHE_DIR/mero
-      cd $S3_SRC_DIR/third_party/mero/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_mero.git.rev && cd -
+      echo "Sync third_party(,motr) binaries from third_party/"
+      rsync -aW $S3_SRC_DIR/third_party/motr/ $BUILD_CACHE_DIR/motr
+      cd $S3_SRC_DIR/third_party/motr/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_motr.git.rev && cd -
 
       mkdir -p $BUILD_CACHE_DIR/libevent
       rsync -aW $S3_SRC_DIR/third_party/libevent/s3_dist $BUILD_CACHE_DIR/libevent
@@ -317,7 +317,7 @@ else
     # Copy from cache
     rsync -aW $BUILD_CACHE_DIR/ $S3_SRC_DIR/third_party/
   fi  # if [ $use_build_cache -eq 0 ]
-fi  # if [ $no_mero_rpm -eq 0 ]
+fi  # if [ $no_motr_rpm -eq 0 ]
 
 cp -f $S3_SRC_DIR/third_party/jsoncpp/dist/jsoncpp.cpp $S3_SRC_DIR/server/jsoncpp.cc
 
@@ -339,13 +339,13 @@ prepare_BUILD_file
 
 if [ $no_s3ut_build -eq 0 ]
 then
-  bazel build //:s3ut --cxxopt="-std=c++11" --define $MERO_INC_ \
-                      --define $MERO_LIB_ --define $MERO_HELPERS_LIB_ \
+  bazel build //:s3ut --cxxopt="-std=c++11" --define $MOTR_INC_ \
+                      --define $MOTR_LIB_ --define $MOTR_HELPERS_LIB_ \
                       --spawn_strategy=standalone \
                       --strip=never
 
-  bazel build //:s3utdeathtests --cxxopt="-std=c++11" --define $MERO_INC_ \
-                                --define $MERO_LIB_ --define $MERO_HELPERS_LIB_ \
+  bazel build //:s3utdeathtests --cxxopt="-std=c++11" --define $MOTR_INC_ \
+                                --define $MOTR_LIB_ --define $MOTR_HELPERS_LIB_ \
                                 --spawn_strategy=standalone \
                                 --strip=never
 fi
@@ -358,8 +358,8 @@ fi
 
 if [ $no_s3mempoolmgrut_build -eq 0 ]
 then
-  bazel build //:s3mempoolmgrut --cxxopt="-std=c++11" --define $MERO_INC_ \
-                      --define $MERO_LIB_ --define $MERO_HELPERS_LIB_ \
+  bazel build //:s3mempoolmgrut --cxxopt="-std=c++11" --define $MOTR_INC_ \
+                      --define $MOTR_LIB_ --define $MOTR_HELPERS_LIB_ \
                       --spawn_strategy=standalone \
                       --strip=never
 fi
@@ -380,8 +380,8 @@ assert_addb_plugin_autogenerated_sources_are_correct() {
 if [ $no_s3server_build -eq 0 ]
 then
   assert_addb_plugin_autogenerated_sources_are_correct
-  bazel build //:s3server --cxxopt="-std=c++11" --define $MERO_INC_ \
-                          --define $MERO_LIB_ --define $MERO_HELPERS_LIB_ \
+  bazel build //:s3server --cxxopt="-std=c++11" --define $MOTR_INC_ \
+                          --define $MOTR_LIB_ --define $MOTR_HELPERS_LIB_ \
                           --spawn_strategy=standalone \
                           --strip=never
 fi
@@ -389,16 +389,16 @@ fi
 if [ $no_s3addbplugin_build -eq 0 ]
 then
   assert_addb_plugin_autogenerated_sources_are_correct
-  bazel build //:s3addbplugin --define $MERO_INC_ \
-                              --define $MERO_LIB_ --define $MERO_HELPERS_LIB_ \
+  bazel build //:s3addbplugin --define $MOTR_INC_ \
+                              --define $MOTR_LIB_ --define $MOTR_HELPERS_LIB_ \
                               --spawn_strategy=standalone \
                               --strip=never
 fi
 
 if [ $no_cloviskvscli_build -eq 0 ]
 then
-  bazel build //:cloviskvscli --cxxopt="-std=c++11" --define $MERO_INC_ \
-                              --define $MERO_LIB_ --define $MERO_HELPERS_LIB_ \
+  bazel build //:cloviskvscli --cxxopt="-std=c++11" --define $MOTR_INC_ \
+                              --define $MOTR_LIB_ --define $MOTR_HELPERS_LIB_ \
                               --spawn_strategy=standalone \
                               --strip=never
 fi
@@ -459,7 +459,7 @@ then
   fi
 fi
 
-if [ $no_mero_rpm -eq 1 ]
+if [ $no_motr_rpm -eq 1 ]
 then
   if [ $no_s3background_build -eq 0 ]
   then
@@ -485,7 +485,7 @@ then
   fi
 fi
 
-if [ $no_mero_rpm -eq 1 ]
+if [ $no_motr_rpm -eq 1 ]
 then
   if [ $no_s3iamcli_build -eq 0 ]
   then

@@ -58,7 +58,7 @@ are pre-installed and use motr libs from standard location.
 Steps for Dev environment:
 ```sh
 ./refresh_thirdparty.sh
-./rebuildall.sh --no-mero-rpm
+./rebuildall.sh --no-motr-rpm
 ```
 
 The `./refresh_thirdparty.sh` command refreshes the third party source code.
@@ -66,12 +66,12 @@ It will undo any changes made in third party submodules source code and will
 clone missing submodules. Normally after a fresh repo clone, this command
 needs to be executed only once.
 
-The `./rebuildall.sh --no-mero-rpm` command will build third party libs, S3
+The `./rebuildall.sh --no-motr-rpm` command will build third party libs, S3
 server, Auth server, UTs etc. It will also install S3 server, Auth server &
 third party libs at `/opt/seagate/cortx` location. To skip installing S3 use
 --no-install.
 
-Note the option `--no-mero-rpm` passed to the command. It informs the script that
+Note the option `--no-motr-rpm` passed to the command. It informs the script that
 motr source was built and motr libs from the source code location would be used.
 If this option is absent, motr libs are used from motr rpm installed on system.
 To skip installing S3 use --no-install.
@@ -86,7 +86,7 @@ To skip rebuilding third party libs on subsequent runs of
 `--use-build-cache` option indicates that previously built third_party libs
 are present in $HOME/.seagate_src_cache and will be used in current build.
 ```sh
-./rebuildall.sh --no-mero-rpm --use-build-cache
+./rebuildall.sh --no-motr-rpm --use-build-cache
 ```
 
 ## Build SSL certificates and install (use defaults)
@@ -138,7 +138,7 @@ If current third_party/* revision does not match with previous revision
 cached in $HOME/.seagate_src_cache/, user should clean the cache and rebuild.
 
 Steps for Release environment:
-Make sure mero rpms are installed on the build machine before executing
+Make sure motr rpms are installed on the build machine before executing
 below commands.
 ```sh
 ./refresh_thirdparty.sh
@@ -220,7 +220,7 @@ set to true
 ## How to start/stop single instance of S3 server in Dev environment for testing?
 Execute below command from `s3server` top level directory. Before executing below
 commands, make sure that S3 Server, Auth server, third party libs etc are  built
-& installed using `./rebuildall.sh --no-mero-rpm` command. Also make sure S3 Auth
+& installed using `./rebuildall.sh --no-motr-rpm` command. Also make sure S3 Auth
 server and Motr services are up & running.
 ```sh
 sudo ./dev-starts3.sh
@@ -246,9 +246,9 @@ cd -
 
 ## How to run S3 server Unit tests in Dev environment?
 ```sh
-./runalltest.sh --no-mero-rpm --no-st-run
+./runalltest.sh --no-motr-rpm --no-st-run
 ```
-Above command runs S3 server UTs. Note the option `--no-mero-rpm` passed
+Above command runs S3 server UTs. Note the option `--no-motr-rpm` passed
 to the command. It informs the script to use motr libs from the source code
 location at the run time. In case of Release environment, simply skip passing
 the option to the script.
@@ -281,17 +281,17 @@ Now setup to run STs is complete. Other details of ST setup can be found at
 `st/clitests/readme`.
 Use below command to run (ST + UT) tests in Dev environment.
 ```sh
-./runalltest.sh --no-mero-rpm
+./runalltest.sh --no-motr-rpm
 ```
-In case of Release environment, simply skip passing the option `--no-mero-rpm` to
+In case of Release environment, simply skip passing the option `--no-motr-rpm` to
 the script.
 
 ## How to run S3 server ossperf tests in Dev environment?
 ```sh
-./runalltest.sh --no-mero-rpm --no-st-run --no-ut-run
+./runalltest.sh --no-motr-rpm --no-st-run --no-ut-run
 ```
 Above command runs S3 server ossperf tool tests(Parallel/Sequential workloads).
-Note the option `--no-mero-rpm` passed to the command. It informs the script
+Note the option `--no-motr-rpm` passed to the command. It informs the script
 to use motr libs from the source code location at the run time.
 In case of Release environment, simply skip passing the option to the script.
 
@@ -327,7 +327,7 @@ vim jenkins-build.sh
 ```
 Specify `--no-https` to below script so that jenkins would excecute ST's over HTTP.
 
-./runalltest.sh --no-mero-rpm --no-https
+./runalltest.sh --no-motr-rpm --no-https
 
 
 ## How to run tests for unsupported S3 APIs?
@@ -432,7 +432,7 @@ $ ./mvnbuild.sh clean
 $ ./mvnbuild.sh package
 
 # Start Motr server
-$ cd s3server/third_party/mero
+$ cd s3server/third_party/motr
 $ ./m0t1fs/../clovis/st/utils/mero_services.sh start
 
 # Run authserver with jacoco agent
@@ -459,7 +459,7 @@ $ python3 auth_spec.py
 # Stop auth server [ Ctrl + c ].
 
 # Stop Motr, s3 server
-$ cd s3server/third_party/mero
+$ cd s3server/third_party/motr
 $ ./m0t1fs/../clovis/st/utils/mero_services.sh stop
 $ cd s3server/
 $ ./dev-stops3.sh
@@ -722,7 +722,7 @@ systemctl start bareos-fd
 
 ```
 
-* Storage Daemon Node should be able to resolve s3server/mero host <Bucket Name>.s3.seagate.com
+* Storage Daemon Node should be able to resolve s3server/motr host <Bucket Name>.s3.seagate.com
 
 * Append following entries to /etc/hosts
 
