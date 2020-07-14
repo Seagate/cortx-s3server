@@ -44,8 +44,20 @@ class S3RecoveryBase:
         :value: Value to be inserted
 
         """
-        # Check for S3 putkv support
-        response, data = self.kv_api.put(index_id, key, value)
+        self.kv_api.put(index_id, key, value)
+
+    def perform_cleanup(self, key, index_id, index_id_replica):
+        """
+        Clean KV from indexid and its replica
+
+        :key: Key which needs to be cleaned up
+        :index_id: Index Id for which KV needs to be cleaned
+        :index_id_replica: Replica Index Id for which KV needs to be cleaned
+
+        """
+        self.kv_api.delete(index_id, key)
+        self.kv_api.delete(index_id_replica, key)
+
 
     def perform_validation(self, key, data_to_restore, item_replica, union_result):
         """
@@ -168,7 +180,7 @@ class S3RecoveryBase:
         result_list.extend(item for item in replica_list if item not in data_list)
         return result_list
 
-    def initiate(self, index_name, index_id, index_id_replica):
+    def initiate(self, index_name, index_id, index_id_replica, log_output = False):
         """
         Initiates the dry run process
 
@@ -177,6 +189,8 @@ class S3RecoveryBase:
         :index_id_replica: Id of replica index being processed
 
         """
+        self.log_result = log_output
+
         data = self.list_index(index_id)
         data_replica = self.list_index(index_id_replica)
 
@@ -198,14 +212,13 @@ class S3RecoveryBase:
         else:
             print("Empty\n")
 
-    def dry_run(self, index_name, union_result, log_output = False):
+    def dry_run(self, index_name, index_id, index_id_replica, union_result, recover_flag = False):
         """
         Gets latest value from index and its replica
 
         :return: A structurized dictonary of data to be restored
 
         """
-        self.log_result = log_output
 
         for key in self.result:
             try:
@@ -219,6 +232,10 @@ class S3RecoveryBase:
                 replica_value = None
 
             self.perform_validation(key, metadata_value, replica_value, union_result)
+
+            # Perform cleanup for existing indices during recovery
+            if (recover_flag):
+                self.perform_cleanup(key, index_id, index_id_replica)
 
         if (self.log_result):
             print("\nData recovered from both indexes for {} \n".format(index_name))
