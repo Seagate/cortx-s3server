@@ -103,15 +103,15 @@ class S3RecoverCorruption(S3RecoveryBase):
         """
         union_result = dict()
         super(S3RecoverCorruption, self).initiate(list_index_name, list_index_id,
-                list_index_id_replica)
-        self.list_result = super(S3RecoverCorruption, self).dry_run(list_index_name,
-                union_result, log_output = False)
+                list_index_id_replica, log_output = False)
+        self.list_result = super(S3RecoverCorruption, self).dry_run(list_index_name, list_index_id,
+                list_index_id_replica, union_result, recover_flag=True)
 
         metadata_result = dict()
         super(S3RecoverCorruption, self).initiate(metadata_index_name, metadata_index_id,
-                metadata_index_id_replica)
-        self.metadata_result = super(S3RecoverCorruption, self).dry_run(metadata_index_name,
-                metadata_result, log_output = False)
+                metadata_index_id_replica, log_output = False)
+        self.metadata_result = super(S3RecoverCorruption, self).dry_run(metadata_index_name, metadata_index_id,
+                metadata_index_id_replica, metadata_result, recover_flag=True)
 
         self.check_consistency()
         self.restore_data(list_index_id, list_index_id_replica, metadata_index_id,
