@@ -11,3 +11,6 @@
 	url = https://github.com/Seagate/libevhtp.git
 	branch = develop
 	ignore = dirty
+[submodule "third_party/motr"]
+	path = third_party/motr
+	url = https://github.com/Seagate/cortx-motr.git
