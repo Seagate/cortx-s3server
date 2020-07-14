@@ -57,9 +57,6 @@ sh ./prechecksystest.sh
 #Using Python 3.6 version for Running System Tests
 PythonV="python3.6"
 
-echo "`date -u` : Running metadatarecovery_spec.py..."
-$PythonV metadatarecovery_spec.py
-
 echo "`date -u`: Running auth_spec.py..."
 $PythonV auth_spec.py
 
@@ -104,6 +101,9 @@ $PythonV policy_spec.py
 
 echo "`date -u`: Running authpassencryptcli_spec.py..."
 $PythonV authpassencryptcli_spec.py
+
+echo "`date -u` : Running metadatarecovery_spec.py..."
+$PythonV metadatarecovery_spec.py
 
 git checkout -- $BASEDIR/framework.py
 
