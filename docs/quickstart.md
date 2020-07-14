@@ -56,7 +56,7 @@ cortx-motr
 systemctl start|stop|status haproxy
 systemctl start|stop|status s3authserver
 systemctl start|stop|status slapd
-./third_party/mero/clovis/st/utils/mero_services.sh start|stop
+./third_party/motr/clovis/st/utils/motr_services.sh start|stop
 ```
 
 # To stop s3server
