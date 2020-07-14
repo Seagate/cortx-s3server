@@ -72,7 +72,7 @@ rc=$?
 set -e
 if [ $rc -eq 0 ]
 then
-./third_party/mero/dix/utils/m0dixinit -l $local_nid:12345:34:100 -H $local_nid:12345:34:1 \
+./third_party/motr/dix/utils/m0dixinit -l $local_nid:12345:34:100 -H $local_nid:12345:34:1 \
                  -p '<0x7000000000000001:0>' -I 'v|1:20' -d 'v|1:20' -a create
 fi
 
