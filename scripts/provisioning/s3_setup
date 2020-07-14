@@ -123,8 +123,8 @@ name = Yum repo for lustre
 priority = 1
 EOL
 
-cat >/etc/yum.repos.d/releases_cortx_halon.repo <<EOL
-[releases_cortx_halon]
+cat >/etc/yum.repos.d/releases_cortx_hare.repo <<EOL
+[releases_cortx_hare]
 baseurl = http://cortx-storage.colo.seagate.com/releases/eos/github/release/rhel-7.7.1908/last_successful/
 gpgcheck = 0
 name = Yum repo for hare
