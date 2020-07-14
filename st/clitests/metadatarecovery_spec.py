@@ -190,14 +190,11 @@ assert index_content["Index-Id"] == "AAAAAAAAAHg=-BQAQAAAAAAA="
 assert index_content["Keys"] == None
 
 # ********************** System Tests for s3 recovery tool: dry_run option ********************************************
-# Run s3 recovery tool: dry_run option
 # Test: KV missing from primary index, but present in replica index
 # Step 1: PUT Key-Value in replica index
 # Step 2: Run s3 recoverytool with --dry_run option
 # Step 3: Validate that the Key-Value is shown on the console as data recovered
 # Step 4: Delete the Key-Value from the replica index
-
-print("Test: validate dry_run: KV missing from primary index, but present in replica index\n")
 
 st1key = "ST-1-BK"
 st1value = '{"account_id":"838334245437",\
@@ -210,26 +207,88 @@ status, res = EOSCoreKVApi(config).put(replica_bucket_list_index_oid, st1key, st
 assert status == True
 assert isinstance(res, EOSCoreSuccessResponse)
 
-# Make sure that root index is empty currently
-status, res = EOSCoreIndexApi(config).list(primary_bucket_list_index_oid)
-assert status == True
-assert isinstance(res, EOSCoreListIndexResponse)
-
-index_content = res.get_index_content()
-assert index_content["Index-Id"] == "AAAAAAAAAHg=-AQAQAAAAAAA="
-assert index_content["Keys"] == None
-
 # Run s3 recovery tool
-result = S3RecoveryTest("run s3recovery tool")\
+result = S3RecoveryTest(
+    "s3recovery --dry_run (KV missing from primary index, but present in replica index)"
+    )\
     .s3recovery_dry_run()\
     .execute_test()\
     .command_is_successful()
-print(result.status.stdout)
+
 success_msg = "Data recovered from both indexes for Global bucket index"
 result.command_response_should_have(success_msg)
 
+result_stdout_list = (result.status.stdout).split('\n')
+assert result_stdout_list[3] != 'Empty'
+assert st1key in result_stdout_list[3]
+assert '"account_name":"s3-recovery-svc"' in result_stdout_list[3]
+assert '"create_timestamp":"2020-07-02T05:45:41.000Z"' in result_stdout_list[3]
+
 # Delete the key-value from replica index
 status, res = EOSCoreKVApi(config).delete(replica_bucket_list_index_oid, st1key)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+# ************************************************************************************************
+
+# Test: Different Key-Value in primary and replica indexes
+# Step 1: PUT Key1-Value1 in primary index
+# Step 2: PUT Key2-Value2 in replica index
+# Step 2: Run s3 recoverytool with --dry_run option
+# Step 3: Validate that both the Key-Values are shown on the console as data recovered
+# Step 4: Delete the Key-Values from the both the indexes
+
+primary_index_key = 'my-bucket1'
+primary_index_value = '{"account_id":"123456789",\
+     "account_name":"s3-recovery-svc",\
+     "create_timestamp":"2020-07-14T05:45:41.000Z",\
+     "location_constraint":"us-west-2"}'
+
+replica_index_key = 'my-bucket2'
+replica_index_value = '{"account_id":"123456789",\
+     "account_name":"s3-recovery-svc",\
+     "create_timestamp":"2020-08-14T06:45:41.000Z",\
+     "location_constraint":"us-east-1"}'
+
+# ***************** PUT the KVs in both the primary and replica indexes *********************************
+status, res = EOSCoreKVApi(config)\
+    .put(primary_bucket_list_index_oid, primary_index_key, primary_index_value)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+status, res = EOSCoreKVApi(config)\
+    .put(replica_bucket_list_index_oid, replica_index_key, replica_index_value)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+# Run s3 recovery tool
+result = S3RecoveryTest(
+    "s3recovery --dry_run (Different Key-Value in primary and replica indexes)"
+    )\
+    .s3recovery_dry_run()\
+    .execute_test()\
+    .command_is_successful()
+
+success_msg = "Data recovered from both indexes for Global bucket index"
+result.command_response_should_have(success_msg)
+
+result_stdout_list = (result.status.stdout).split('\n')
+assert result_stdout_list[3] != 'Empty'
+assert primary_index_key in result_stdout_list[3]
+assert '"create_timestamp":"2020-07-14T05:45:41.000Z"' in result_stdout_list[3]
+assert '"location_constraint":"us-west-2"' in result_stdout_list[3]
+
+assert result_stdout_list[4] != 'Empty'
+assert replica_index_key in result_stdout_list[4]
+assert '"create_timestamp":"2020-08-14T06:45:41.000Z"' in result_stdout_list[4]
+assert '"location_constraint":"us-east-1"' in result_stdout_list[4]
+
+# Delete the key-values from both primary and replica indexes
+status, res = EOSCoreKVApi(config).delete(primary_bucket_list_index_oid, primary_index_key)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+status, res = EOSCoreKVApi(config).delete(replica_bucket_list_index_oid, replica_index_key)
 assert status == True
 assert isinstance(res, EOSCoreSuccessResponse)
 
