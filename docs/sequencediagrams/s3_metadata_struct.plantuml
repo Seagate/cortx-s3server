@@ -70,7 +70,7 @@ class GlobalBucketListIndex {
 }
 
 class BucketAccountEntry {
-    ' Sample BucketForEOSGroup
+    ' Sample BucketForCORTXGroup
     bucket_name : String
     bucket_account_mapping : BucketAccountMapping
 }
@@ -98,7 +98,7 @@ class GlobalAccountBucketListIndex {
 }
 
 class AccountBucketEntry {
-    ' Sample A1/B1 or SeagateAccount/BucketForEOSGroup
+    ' Sample A1/B1 or SeagateAccount/BucketForCORTXGroup
     account_slash_bucket_name : String
     bucket_metadata : BucketMetadata
 }

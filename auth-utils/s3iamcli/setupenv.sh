@@ -6,8 +6,8 @@
 # It also installs all the dependencies required for pyclient.
 
 pip install virtualenv
-virtualenv -p /usr/local/bin/python3.6 mero_st
-source mero_st/bin/activate
+virtualenv -p /usr/local/bin/python3.6 motr_st
+source motr_st/bin/activate
 pip3 install python-dateutil==2.4.2
 pip3 install pyyaml==3.11
 pip3 install xmltodict==0.9.2
