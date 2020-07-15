@@ -17,14 +17,14 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-%if 0%{?disable_eoscore_dependencies:1}
-%bcond_with eos_core
+%if 0%{?disable_cortxmotr_dependencies:1}
+%bcond_with cortx_motr
 %else
-%bcond_without eos_core
+%bcond_without cortx_motr
 %endif
 
 # cortx-motr version
-%define h_eoscore_version %(rpm -q --queryformat '%{VERSION}-%{RELEASE}' cortx-motr)
+%define h_cortxmotr_version %(rpm -q --queryformat '%{VERSION}-%{RELEASE}' cortx-motr)
 
 # build number
 %define build_num  %( test -n "$build_number" && echo "$build_number" || echo 1 )
@@ -60,7 +60,7 @@ BuildRequires: automake
 BuildRequires: bazel
 BuildRequires: cmake >= 2.8.12
 BuildRequires: libtool
-%if %{with eos_core}
+%if %{with cortx_motr}
 BuildRequires: cortx-motr cortx-motr-devel
 %endif
 BuildRequires: openssl openssl-devel
@@ -91,8 +91,8 @@ BuildRequires: python-keyring python-futures
 %endif
 # TODO for rhel 8
 
-%if %{with eos_core}
-Requires: cortx-motr = %{h_eoscore_version}
+%if %{with cortx_motr}
+Requires: cortx-motr = %{h_cortxmotr_version}
 %endif
 Requires: libxml2
 Requires: libyaml

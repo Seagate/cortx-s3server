@@ -39,7 +39,6 @@ yum install rpm-build -y
 rpm -q s3cmd && rpm -e s3cmd --nodeps
 
 # Cleanup obsolete rpms if already installed on this system
-# rpms are renamed from eos -> cortx as part of EOS-7750
 yum remove -y log4cxx_eos log4cxx_eos-devel log4cxx_eos-debuginfo || /bin/true
 yum remove -y eos-s3iamcli eos-s3iamcli-devel || /bin/true
 yum remove -y eos-s3server eos-s3server-debuginfo || /bin/true

@@ -35,9 +35,10 @@ fi
 MAX_S3_INSTANCES_NUM=20
 
 # s3 port configured in s3config.yaml
+s3_config_file="/opt/seagate/cortx/s3/conf/s3config.yaml"
 s3_port_from_config=`python -c '
 import yaml;
-print yaml.load(open("/opt/seagate/cortx/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_SERVER_BIND_PORT"];
+print yaml.load(open("'$s3_config_file'"))["S3_SERVER_CONFIG"]["S3_SERVER_BIND_PORT"];
 ' | tr -d '\r\n'`
 
 instance=0
