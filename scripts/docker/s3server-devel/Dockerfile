@@ -1,5 +1,5 @@
 ARG  CENTOS_RELEASE=7
-FROM registry.gitlab.mero.colo.seagate.com/mero/mero:${CENTOS_RELEASE}
+FROM registry.gitlab.mero.colo.seagate.com/motr/motr:${CENTOS_RELEASE}
 
 COPY s3server-uploads.repo /etc/yum.repos.d/
 COPY s3rpm.spec .
