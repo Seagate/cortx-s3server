@@ -1,6 +1,6 @@
 Facts:
 -----
-- There are 2 mero services we are using,
+- There are 2 motr services we are using,
   ios - for object operations
   kvs - cas/dix - for KVS operations
 - There can be following failure scenarios in S3 operations
