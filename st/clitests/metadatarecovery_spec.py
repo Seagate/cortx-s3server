@@ -30,12 +30,11 @@ from s3client_config import S3ClientConfig
 from s3recoverytool import S3RecoveryTest
 from auth import AuthTest
 from awss3api import AwsTest
-import s3kvs
+from s3kvstool import S3kvTest
 
 from s3backgrounddelete.eos_core_config import EOSCoreConfig
 from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
 from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
-from s3backgrounddelete.eos_core_error_respose import EOSCoreErrorResponse
 from s3backgrounddelete.eos_list_index_response import EOSCoreListIndexResponse
 from s3backgrounddelete.eos_core_success_response import EOSCoreSuccessResponse
 
@@ -324,6 +323,65 @@ assert '"create_timestamp":"2020-08-14T06:45:41.000Z"' in result_stdout_list[12]
 
 assert '"location_constraint":"us-east-1"' in result_stdout_list[7]
 assert '"location_constraint":"us-east-1"' in result_stdout_list[12]
+
+# Delete the key-values from both primary and replica indexes
+status, res = EOSCoreKVApi(config).delete(primary_bucket_list_index_oid, primary_index_key)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+status, res = EOSCoreKVApi(config).delete(replica_bucket_list_index_oid, replica_index_key)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+# ************************************************************************************************
+
+# Test: Corrupted Value for a key in primary index
+# Step 1: PUT corrupted Key1-Value1 in primary index
+# Step 2: PUT Key2-Value2 in replica index
+# Step 2: Run s3 recoverytool with --dry_run option
+# Step 3: Validate that the corrupted Key-Value ins not shown on the console as data recovered
+# Step 4: Delete the Key-Values from the both the indexes
+
+root_bucket_account_list_index = S3kvTest('KvTest fetch root bucket account index')\
+    .root_bucket_account_index()
+
+primary_index_key = "my-bucket3"
+primary_index_corrupted_value = "Corrupted-JSON-value"
+S3kvTest('KvTest put corrupted key-value in root bucket account index')\
+    .put_keyval(root_bucket_account_list_index, primary_index_key, primary_index_corrupted_value)\
+    .execute_test()
+
+replica_index_key = "my-bucket4"
+replica_index_value = '{"account_id":"123456789",\
+     "account_name":"s3-recovery-svc",\
+     "create_timestamp":"2020-12-11T06:45:41.000Z",\
+     "location_constraint":"mumbai"}'
+
+status, res = EOSCoreKVApi(config)\
+    .put(replica_bucket_list_index_oid, replica_index_key, replica_index_value)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+# Run s3 recovery tool
+result = S3RecoveryTest(
+    "s3recovery --dry_run (Corrupted Value for a key in primary index)"
+    )\
+    .s3recovery_dry_run()\
+    .execute_test()\
+    .command_is_successful()
+
+success_msg = "Data recovered from both indexes for Global bucket index"
+result.command_response_should_have(success_msg)
+result_stdout_list = (result.status.stdout).split('\n')
+
+assert replica_index_key in result_stdout_list[12]
+assert primary_index_key not in result_stdout_list[12]
+assert '"create_timestamp":"2020-12-11T06:45:41.000Z"' in result_stdout_list[12]
+assert '"location_constraint":"mumbai"' in result_stdout_list[12]
+
+assert primary_index_key not in result_stdout_list[13]
+assert result_stdout_list[13] == ''
+assert 'Primary index content for Bucket metadata index' in result_stdout_list[14]
 
 # Delete the key-values from both primary and replica indexes
 status, res = EOSCoreKVApi(config).delete(primary_bucket_list_index_oid, primary_index_key)
