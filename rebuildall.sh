@@ -233,7 +233,7 @@ prepare_BUILD_file() {
     # remove last ', "-I'
     motr_include_path=${motr_include_path%", \"-I"}
 
-    MOTR_INC_="MOTR_INC=/usr/include/motr/"
+    MOTR_INC_="MOTR_INC=/usr/include/mero/"
     if [ ${#rpm_lib_search_paths_array[@]} -eq 0 ]
     then
       MOTR_LIB_="MOTR_LIB=/usr/lib64/"
