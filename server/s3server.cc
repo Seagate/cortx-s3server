@@ -737,7 +737,6 @@ int main(int argc, char **argv) {
   g_option_instance->dump_options();
 
   if (g_option_instance->get_libevent_pool_max_threshold() < MIN_RESERVE_SIZE) {
-    // https://jts.seagate.com/browse/EOS-5876
     s3_log(
         S3_LOG_FATAL, "",
         "S3_LIBEVENT_POOL_RESERVE_SIZE in s3config.yaml cannot be less than %d",

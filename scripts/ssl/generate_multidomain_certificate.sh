@@ -114,7 +114,6 @@ function generate_s3_certs()
 
   # Use mulitdomain name in dns list to use single certificate
   # with *.seagate.com as SAN list
-  # Please refer EOS-6038 for more details
   echo $issuer_name > $dns_list_file
   echo $multi_domain_endpoint >> $dns_list_file
   #echo $s3_default_endpoint >> $dns_list_file
