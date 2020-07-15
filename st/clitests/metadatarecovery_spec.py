@@ -1,4 +1,23 @@
 #!/usr/bin/python3.6
+'''
+ COPYRIGHT 2020 SEAGATE LLC
+
+ THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
+ HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
+ LIMITED, ISSUED IN STRICT CONFIDENCE AND SHALL NOT, WITHOUT
+ THE PRIOR WRITTEN PERMISSION OF SEAGATE TECHNOLOGY LIMITED,
+ BE REPRODUCED, COPIED, OR DISCLOSED TO A THIRD PARTY, OR
+ USED FOR ANY PURPOSE WHATSOEVER, OR STORED IN A RETRIEVAL SYSTEM
+ EXCEPT AS ALLOWED BY THE TERMS OF SEAGATE LICENSES AND AGREEMENTS.
+
+ YOU SHOULD HAVE RECEIVED A COPY OF SEAGATE'S LICENSE ALONG WITH
+ THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
+ http://www.seagate.com/contact
+
+ Original author: Amit Kumar  <amit.kumar@seagate.com>
+ Original creation date: 02-July-2020
+'''
+
 import sys
 import os
 import yaml
@@ -8,14 +27,14 @@ import json
 from framework import Config
 from framework import S3PyCliTest
 from s3client_config import S3ClientConfig
+from s3recoverytool import S3RecoveryTest
 from auth import AuthTest
 from awss3api import AwsTest
-import s3kvs
+from s3kvstool import S3kvTest
 
 from s3backgrounddelete.eos_core_config import EOSCoreConfig
-from s3backgrounddelete.eos_core_object_api import EOSCoreObjectApi
+from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
 from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
-from s3backgrounddelete.eos_core_error_respose import EOSCoreErrorResponse
 from s3backgrounddelete.eos_list_index_response import EOSCoreListIndexResponse
 from s3backgrounddelete.eos_core_success_response import EOSCoreSuccessResponse
 
@@ -36,7 +55,7 @@ S3ClientConfig.ldappasswd = 'ldapadmin'
 # Config files used by s3backgrounddelete
 # We are using s3backgrounddelete config file as EOSCoreConfig is tightly coupled with it.
 origional_bgdelete_config_file = os.path.join(os.path.dirname(__file__), 's3_background_delete_config_test.yaml')
-bgdelete_config_dir = os.path.join('/', 'opt', 'seagate', 's3', 's3backgrounddelete')
+bgdelete_config_dir = os.path.join('/', 'opt', 'seagate', 'cortx', 's3', 's3backgrounddelete')
 bgdelete_config_file = os.path.join(bgdelete_config_dir, 'config.yaml')
 backup_bgdelete_config_file = os.path.join(bgdelete_config_dir, 'backup_config.yaml')
 
@@ -101,7 +120,8 @@ print(account_response_elements)
 # ********** Update s3background delete config file with AccesskeyId and SecretKey**********************
 load_and_update_config(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])
 
-replica_bucket_list_index_oid = 'AAAAAAAAAHg=-BQAQAAAAAAA=' # base64 conversion of 0x7800000000000000" and "0x100005
+replica_bucket_list_index_oid = 'AAAAAAAAAHg=-BQAQAAAAAAA=' # base64 conversion of "0x7800000000000000" and "0x100005"
+primary_bucket_list_index_oid = 'AAAAAAAAAHg=-AQAQAAAAAAA='
 config = EOSCoreConfig()
 
 # ======================================================================================================
@@ -168,12 +188,216 @@ index_content = res.get_index_content()
 assert index_content["Index-Id"] == "AAAAAAAAAHg=-BQAQAAAAAAA="
 assert index_content["Keys"] == None
 
-# ================================================= CLEANUP ===============================================================
+# ********************** System Tests for s3 recovery tool: dry_run option ********************************************
+# Test: KV missing from primary index, but present in replica index
+# Step 1: PUT Key-Value in replica index
+# Step 2: Run s3 recoverytool with --dry_run option
+# Step 3: Validate that the Key-Value is shown on the console as data recovered
+# Step 4: Delete the Key-Value from the replica index
+
+st1key = "ST-1-BK"
+st1value = '{"account_id":"838334245437",\
+     "account_name":"s3-recovery-svc",\
+     "create_timestamp":"2020-07-02T05:45:41.000Z",\
+     "location_constraint":"us-west-2"}'
+
+# ***************** PUT KV in replica index **********************************
+status, res = EOSCoreKVApi(config).put(replica_bucket_list_index_oid, st1key, st1value)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+# Run s3 recovery tool
+result = S3RecoveryTest(
+    "s3recovery --dry_run (KV missing from primary index, but present in replica index)"
+    )\
+    .s3recovery_dry_run()\
+    .execute_test()\
+    .command_is_successful()
+
+success_msg = "Data recovered from both indexes for Global bucket index"
+result.command_response_should_have(success_msg)
+
+result_stdout_list = (result.status.stdout).split('\n')
+assert result_stdout_list[12] != 'Empty'
+assert st1key in result_stdout_list[12]
+assert '"account_name":"s3-recovery-svc"' in result_stdout_list[12]
+assert '"create_timestamp":"2020-07-02T05:45:41.000Z"' in result_stdout_list[12]
+
+# Delete the key-value from replica index
+status, res = EOSCoreKVApi(config).delete(replica_bucket_list_index_oid, st1key)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+# ************************************************************************************************
+
+# Test: Different Key-Value in primary and replica indexes
+# Step 1: PUT Key1-Value1 in primary index
+# Step 2: PUT Key2-Value2 in replica index
+# Step 2: Run s3 recoverytool with --dry_run option
+# Step 3: Validate that both the Key-Values are shown on the console as data recovered
+# Step 4: Delete the Key-Values from the both the indexes
+
+primary_index_key = 'my-bucket1'
+primary_index_value = '{"account_id":"123456789",\
+     "account_name":"s3-recovery-svc",\
+     "create_timestamp":"2020-07-14T05:45:41.000Z",\
+     "location_constraint":"us-west-2"}'
+
+replica_index_key = 'my-bucket2'
+replica_index_value = '{"account_id":"123456789",\
+     "account_name":"s3-recovery-svc",\
+     "create_timestamp":"2020-08-14T06:45:41.000Z",\
+     "location_constraint":"us-east-1"}'
+
+# ***************** PUT the KVs in both the primary and replica indexes *********************************
+status, res = EOSCoreKVApi(config)\
+    .put(primary_bucket_list_index_oid, primary_index_key, primary_index_value)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+status, res = EOSCoreKVApi(config)\
+    .put(replica_bucket_list_index_oid, replica_index_key, replica_index_value)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+# Run s3 recovery tool
+result = S3RecoveryTest(
+    "s3recovery --dry_run (Different Key-Value in primary and replica indexes)"
+    )\
+    .s3recovery_dry_run()\
+    .execute_test()\
+    .command_is_successful()
+
+success_msg = "Data recovered from both indexes for Global bucket index"
+result.command_response_should_have(success_msg)
+
+result_stdout_list = (result.status.stdout).split('\n')
+# Example result.status.stdout:
+# |-----------------------------------------------------------------------------------------------------------------------------|
+#
+# Primary index content for Global bucket index
+#
+# my-bucket2 {"account_id":"123","account_name":"amit-vc","create_timestamp":"2020-06-17T05:45:41.000Z","location_constraint":"us-west-2"}
+#
+# Replica index content for Global bucket index
+#
+# my-bucket1 {"account_id":"123","account_name":"amit-vc","create_timestamp":"2020-06-17T05:45:41.000Z","location_constraint":"us-west-2"}
+#
+# Data recovered from both indexes for Global bucket index
+#
+# my-bucket2 {"account_id":"123","account_name":"amit-vc","create_timestamp":"2020-06-17T05:45:41.000Z","location_constraint":"us-west-2"}
+# my-bucket1 {"account_id":"123","account_name":"amit-vc","create_timestamp":"2020-06-17T05:45:41.000Z","location_constraint":"us-west-2"}
+#
+# Primary index content for Bucket metadata index
+#
+# Empty
+#
+#
+# Replica index content for Bucket metadata index
+#
+# Empty
+#
+#
+# Data recovered from both indexes for Bucket metadata index
+#
+# Empty
+#
+# |-----------------------------------------------------------------------------------------------------------------------------|
+assert result_stdout_list[3] != 'Empty'
+
+assert primary_index_key in result_stdout_list[3]
+assert primary_index_key in result_stdout_list[11]
+
+assert '"create_timestamp":"2020-07-14T05:45:41.000Z"' in result_stdout_list[3]
+assert '"create_timestamp":"2020-07-14T05:45:41.000Z"' in result_stdout_list[11]
+
+assert '"location_constraint":"us-west-2"' in result_stdout_list[3]
+assert '"location_constraint":"us-west-2"' in result_stdout_list[11]
+
+assert result_stdout_list[7] != 'Empty'
+
+assert replica_index_key in result_stdout_list[7]
+assert replica_index_key in result_stdout_list[12]
+assert '"create_timestamp":"2020-08-14T06:45:41.000Z"' in result_stdout_list[7]
+assert '"create_timestamp":"2020-08-14T06:45:41.000Z"' in result_stdout_list[12]
+
+assert '"location_constraint":"us-east-1"' in result_stdout_list[7]
+assert '"location_constraint":"us-east-1"' in result_stdout_list[12]
+
+# Delete the key-values from both primary and replica indexes
+status, res = EOSCoreKVApi(config).delete(primary_bucket_list_index_oid, primary_index_key)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+status, res = EOSCoreKVApi(config).delete(replica_bucket_list_index_oid, replica_index_key)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+# ************************************************************************************************
+
+# Test: Corrupted Value for a key in primary index
+# Step 1: PUT corrupted Key1-Value1 in primary index
+# Step 2: PUT Key2-Value2 in replica index
+# Step 2: Run s3 recoverytool with --dry_run option
+# Step 3: Validate that the corrupted Key-Value ins not shown on the console as data recovered
+# Step 4: Delete the Key-Values from the both the indexes
+
+root_bucket_account_list_index = S3kvTest('KvTest fetch root bucket account index')\
+    .root_bucket_account_index()
+
+primary_index_key = "my-bucket3"
+primary_index_corrupted_value = "Corrupted-JSON-value"
+S3kvTest('KvTest put corrupted key-value in root bucket account index')\
+    .put_keyval(root_bucket_account_list_index, primary_index_key, primary_index_corrupted_value)\
+    .execute_test()
+
+replica_index_key = "my-bucket4"
+replica_index_value = '{"account_id":"123456789",\
+     "account_name":"s3-recovery-svc",\
+     "create_timestamp":"2020-12-11T06:45:41.000Z",\
+     "location_constraint":"mumbai"}'
+
+status, res = EOSCoreKVApi(config)\
+    .put(replica_bucket_list_index_oid, replica_index_key, replica_index_value)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+# Run s3 recovery tool
+result = S3RecoveryTest(
+    "s3recovery --dry_run (Corrupted Value for a key in primary index)"
+    )\
+    .s3recovery_dry_run()\
+    .execute_test()\
+    .command_is_successful()
+
+success_msg = "Data recovered from both indexes for Global bucket index"
+result.command_response_should_have(success_msg)
+result_stdout_list = (result.status.stdout).split('\n')
+
+assert replica_index_key in result_stdout_list[12]
+assert primary_index_key not in result_stdout_list[12]
+assert '"create_timestamp":"2020-12-11T06:45:41.000Z"' in result_stdout_list[12]
+assert '"location_constraint":"mumbai"' in result_stdout_list[12]
+
+assert primary_index_key not in result_stdout_list[13]
+assert result_stdout_list[13] == ''
+assert 'Primary index content for Bucket metadata index' in result_stdout_list[14]
+
+# Delete the key-values from both primary and replica indexes
+status, res = EOSCoreKVApi(config).delete(primary_bucket_list_index_oid, primary_index_key)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+status, res = EOSCoreKVApi(config).delete(replica_bucket_list_index_oid, replica_index_key)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+# ================================================= CLEANUP =============================================
 
 # ************ Delete Account*******************************
 test_msg = "Delete account s3-recovery-svc"
 account_args = {'AccountName': 's3-recovery-svc',\
-                'Email': 's3-recovery-svc@seagate.com', 'force': True}
+               'Email': 's3-recovery-svc@seagate.com', 'force': True}
 AuthTest(test_msg).delete_account(**account_args).execute_test()\
     .command_response_should_have("Account deleted successfully")
 

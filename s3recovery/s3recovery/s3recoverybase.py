@@ -149,7 +149,6 @@ class S3RecoveryBase:
             for item in data:
                 key = item['Key']
                 kv_data[key] = item['Value']
-
         return kv_data
 
     def merge_keys(self, index_name, data, replica):
