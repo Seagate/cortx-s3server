@@ -139,11 +139,26 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
         self.assertEqual(len(ret_dict), 2)
 
     def test_merge_keys_none_args(self):
-        # Test merge_keys when the arguments passed are None
+        # Test merge_keys when both the arguments passed are None
         mockS3RecoveryBase = S3RecoveryBase()
 
         ret_list = mockS3RecoveryBase.merge_keys('global_index_id', None, None)
         self.assertEqual(len(ret_list), 0)
+
+    def test_merge_keys_only_one_arg_none(self):
+        # Test merge_keys when only one of the argument is None
+        mock_data_dict = {
+            "key1": "value1",
+            "key2": "value2"
+        }
+        mockS3RecoveryBase = S3RecoveryBase()
+        mock_ret_list = mockS3RecoveryBase.merge_keys(
+            'global_index_id',
+            mock_data_dict,
+            None
+        )
+        self.assertEqual(len(mock_ret_list), 2)
+        self.assertListEqual(mock_ret_list, ['key1', 'key2'])
 
     def test_merge_keys_same_content(self):
         # Test merge_keys when both data and replica dict have same keys
@@ -182,6 +197,7 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
             replica_dict
         )
         self.assertEqual(len(ret_list), 3)
+        self.assertListEqual(ret_list, ['key1', 'key2', 'key3'])
 
     def test_perform_validation_data_is_none(self):
         # Test perform_validation when data_to_restore is None
