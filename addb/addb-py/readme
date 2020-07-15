@@ -1,7 +1,7 @@
 Folder contains python scripts to draw s3 request timeline and histogram.
 
-Based on mero/scripts/addb-py/chronometry
-mero-git: 973035e25f03421d5a774af3275008733298e5ea
+Based on motr/scripts/addb-py/chronometry
+motr-git: 973035e25f03421d5a774af3275008733298e5ea
 
 Workflow:
 

@@ -23,7 +23,7 @@
 #include "s3_addb_plugin_auto.h"
 #include "s3_addb_map.h"
 
-/* Borrowed from addb2/dump.c, hope Mero will publish it as API in future */
+/* Borrowed from addb2/dump.c, hope Motr will publish it as API in future */
 
 static void dec(struct m0_addb2__context *ctx, const uint64_t *v, char *buf) {
   sprintf(buf, "%" PRId64, v[0]);
