@@ -63,7 +63,7 @@ DEFINE_string(value, "", "KVS operation value");
 DEFINE_int32(op_count, 10, "number of keys");
 DEFINE_string(index_hi, "", "KVS operation oid HI <0xhex64bitOidString>");
 DEFINE_string(index_lo, "", "KVS operation oid LO <0xhex64bitOidString>");
-DEFINE_int32(kvstore, 2, "Type of index service: 1:MERO; 2:CASSANDRA");
+DEFINE_int32(kvstore, 2, "Type of index service: 1:MOTR; 2:CASSANDRA");
 
 DEFINE_string(clovis_local_addr, "local@tcp:12345:33:100",
               "Clovis local address");
@@ -73,9 +73,9 @@ DEFINE_string(clovis_proc, "<0x7200000000000000:0>", "Clovis proc");
 DEFINE_string(clovis_kvs_keyspace, "clovis_index_keyspace", "Clovis keyspace");
 DEFINE_string(clovis_cluster_ep, "127.0.0.1", "Cluster EP");
 DEFINE_int32(recv_queue_min_len, 16,
-             "Recv Queue min length: default 16");  // As Suggested by Mero team
+             "Recv Queue min length: default 16");  // As Suggested by Motr team
 DEFINE_int32(max_rpc_msg_size, 65536,
-             "RPC msg size max: default 65536");  // As Suggested by Mero team
+             "RPC msg size max: default 65536");  // As Suggested by Motr team
 
 static struct m0_idx_dix_config dix_conf;
 static struct m0_idx_cass_config cass_conf;
