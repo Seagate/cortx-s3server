@@ -268,7 +268,6 @@ public class UserImpl implements UserDAO {
             LDAPEntry entry;
             try {
               // Prevent client failure for fetching more than 500 entries
-              // for more details please refer EOS-7271
               if (ldapResultCount < 500) {
                 entry = ldapResults.next();
               } else {
