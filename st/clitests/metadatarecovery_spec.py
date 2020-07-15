@@ -219,10 +219,10 @@ success_msg = "Data recovered from both indexes for Global bucket index"
 result.command_response_should_have(success_msg)
 
 result_stdout_list = (result.status.stdout).split('\n')
-assert result_stdout_list[3] != 'Empty'
-assert st1key in result_stdout_list[3]
-assert '"account_name":"s3-recovery-svc"' in result_stdout_list[3]
-assert '"create_timestamp":"2020-07-02T05:45:41.000Z"' in result_stdout_list[3]
+assert result_stdout_list[12] != 'Empty'
+assert st1key in result_stdout_list[12]
+assert '"account_name":"s3-recovery-svc"' in result_stdout_list[12]
+assert '"create_timestamp":"2020-07-02T05:45:41.000Z"' in result_stdout_list[12]
 
 # Delete the key-value from replica index
 status, res = EOSCoreKVApi(config).delete(replica_bucket_list_index_oid, st1key)
@@ -273,15 +273,57 @@ success_msg = "Data recovered from both indexes for Global bucket index"
 result.command_response_should_have(success_msg)
 
 result_stdout_list = (result.status.stdout).split('\n')
+# Example result.status.stdout:
+# |-----------------------------------------------------------------------------------------------------------------------------|
+#
+# Primary index content for Global bucket index
+#
+# my-bucket2 {"account_id":"123","account_name":"amit-vc","create_timestamp":"2020-06-17T05:45:41.000Z","location_constraint":"us-west-2"}
+#
+# Replica index content for Global bucket index
+#
+# my-bucket1 {"account_id":"123","account_name":"amit-vc","create_timestamp":"2020-06-17T05:45:41.000Z","location_constraint":"us-west-2"}
+#
+# Data recovered from both indexes for Global bucket index
+#
+# my-bucket2 {"account_id":"123","account_name":"amit-vc","create_timestamp":"2020-06-17T05:45:41.000Z","location_constraint":"us-west-2"}
+# my-bucket1 {"account_id":"123","account_name":"amit-vc","create_timestamp":"2020-06-17T05:45:41.000Z","location_constraint":"us-west-2"}
+#
+# Primary index content for Bucket metadata index
+#
+# Empty
+#
+#
+# Replica index content for Bucket metadata index
+#
+# Empty
+#
+#
+# Data recovered from both indexes for Bucket metadata index
+#
+# Empty
+#
+# |-----------------------------------------------------------------------------------------------------------------------------|
 assert result_stdout_list[3] != 'Empty'
-assert primary_index_key in result_stdout_list[3]
-assert '"create_timestamp":"2020-07-14T05:45:41.000Z"' in result_stdout_list[3]
-assert '"location_constraint":"us-west-2"' in result_stdout_list[3]
 
-assert result_stdout_list[4] != 'Empty'
-assert replica_index_key in result_stdout_list[4]
-assert '"create_timestamp":"2020-08-14T06:45:41.000Z"' in result_stdout_list[4]
-assert '"location_constraint":"us-east-1"' in result_stdout_list[4]
+assert primary_index_key in result_stdout_list[3]
+assert primary_index_key in result_stdout_list[11]
+
+assert '"create_timestamp":"2020-07-14T05:45:41.000Z"' in result_stdout_list[3]
+assert '"create_timestamp":"2020-07-14T05:45:41.000Z"' in result_stdout_list[11]
+
+assert '"location_constraint":"us-west-2"' in result_stdout_list[3]
+assert '"location_constraint":"us-west-2"' in result_stdout_list[11]
+
+assert result_stdout_list[7] != 'Empty'
+
+assert replica_index_key in result_stdout_list[7]
+assert replica_index_key in result_stdout_list[12]
+assert '"create_timestamp":"2020-08-14T06:45:41.000Z"' in result_stdout_list[7]
+assert '"create_timestamp":"2020-08-14T06:45:41.000Z"' in result_stdout_list[12]
+
+assert '"location_constraint":"us-east-1"' in result_stdout_list[7]
+assert '"location_constraint":"us-east-1"' in result_stdout_list[12]
 
 # Delete the key-values from both primary and replica indexes
 status, res = EOSCoreKVApi(config).delete(primary_bucket_list_index_oid, primary_index_key)
