@@ -19,8 +19,8 @@
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_S3_MEMORY_POOL_H__
-#define __MERO_FE_S3_SERVER_S3_MEMORY_POOL_H__
+#ifndef __MOTR_FE_S3_SERVER_S3_MEMORY_POOL_H__
+#define __MOTR_FE_S3_SERVER_S3_MEMORY_POOL_H__
 
 #ifdef __cplusplus
 extern "C" {
