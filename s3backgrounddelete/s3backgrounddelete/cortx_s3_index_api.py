@@ -1,4 +1,4 @@
-"""This class provides Index  REST API i.e. List, PUT."""
+"""CORTXS3IndexApi class provides Index  REST API i.e. List, PUT."""
 
 import logging
 import urllib
@@ -14,6 +14,7 @@ from s3backgrounddelete.IEMutil import IEMutil
 # CORTXS3IndexApi supports index REST-API's List & Put
 
 class CORTXS3IndexApi(CORTXS3Client):
+
     """CORTXS3IndexApi provides index REST-API's List and Put."""
     _logger = None
 

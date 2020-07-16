@@ -1,4 +1,4 @@
-"""This is an s3 client which will do GET,PUT,DELETE and HEAD requests."""
+"""CORTXS3Client is an s3 client which will do GET,PUT,DELETE and HEAD requests."""
 
 import sys
 import logging
@@ -7,6 +7,7 @@ import urllib
 
 
 class CORTXS3Client(object):
+
     """creates s3 client."""
     _config = None
     _logger = None

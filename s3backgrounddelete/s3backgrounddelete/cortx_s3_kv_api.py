@@ -1,4 +1,4 @@
-"""This class provides Key-value REST API i.e. GET,PUT and DELETE."""
+"""CORTXS3KVApi class provides Key-value REST API i.e. GET,PUT and DELETE."""
 import logging
 import urllib
 
@@ -13,6 +13,7 @@ from s3backgrounddelete.IEMutil import IEMutil
 
 
 class CORTXS3KVApi(CORTXS3Client):
+
     """CORTXS3KVApi provides key-value REST-API's Put, Get & Delete."""
     _logger = None
 

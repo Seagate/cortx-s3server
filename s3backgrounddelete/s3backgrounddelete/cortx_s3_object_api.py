@@ -1,4 +1,4 @@
-"""This class provides Object  REST API i.e. GET,PUT,DELETE and HEAD."""
+"""CORTXS3ObjectApi class provides Object  REST API i.e. GET,PUT,DELETE and HEAD."""
 import logging
 import urllib
 
@@ -12,6 +12,7 @@ from s3backgrounddelete.IEMutil import IEMutil
 
 
 class CORTXS3ObjectApi(CORTXS3Client):
+
     """CORTXS3ObjectApi provides object REST-API's Get, Put and Delete."""
     _logger = None
 

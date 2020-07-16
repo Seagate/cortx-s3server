@@ -1,8 +1,9 @@
-"""CORTXS3ListIndexResponse will list out index response"""
+"""CORTXS3ListIndexResponse will list out index response."""
 import json
 
 
 class CORTXS3ListIndexResponse(object):
+
     """CORTXS3ListIndexResponse will list index response."""
     _index_content = ""
 
