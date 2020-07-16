@@ -23,6 +23,7 @@
 #include "s3_audit_info_logger_rsyslog_tcp.h"
 #include "s3_audit_info_logger_log4cxx.h"
 #include "s3_audit_info_logger_syslog.h"
+#include "s3_audit_info_logger_kafka_bridge.h"
 
 #include <stdexcept>
 
@@ -75,6 +76,26 @@ int S3AuditInfoLogger::init() {
     audit_info_logger = new S3AuditInfoLoggerSyslog(
         S3Option::get_instance()->get_audit_logger_rsyslog_msgid());
     audit_info_logger_enabled = true;
+  } else if (policy == "kafka-bridge") {
+    s3_log(
+        S3_LOG_INFO, "", "Audit logger:> kafka-bridge %s:%u%s",
+        S3Option::get_instance()->get_audit_logger_host().c_str(),
+        (unsigned)S3Option::get_instance()->get_audit_logger_port(),
+        S3Option::get_instance()->get_audit_logger_kafka_bridge_path().c_str());
+    try {
+      audit_info_logger = new S3AuditInfoLoggerKafkaBridge(
+          S3Option::get_instance()->get_eventbase(),
+          S3Option::get_instance()->get_audit_logger_host(),
+          S3Option::get_instance()->get_audit_logger_port(),
+          S3Option::get_instance()->get_audit_logger_kafka_bridge_path());
+      audit_info_logger_enabled = true;
+    }
+    catch (std::exception const& ex) {
+      s3_log(S3_LOG_ERROR, "", "Cannot create Kafka-Bridge logger %s",
+             ex.what());
+      audit_info_logger = nullptr;
+      ret = -1;
+    }
   } else {
     s3_log(S3_LOG_INFO, "", "Audit logger disabled by unknown policy %s\n",
            policy.c_str());
