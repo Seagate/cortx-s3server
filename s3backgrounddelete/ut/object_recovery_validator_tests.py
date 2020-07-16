@@ -6,24 +6,24 @@ import json
 from unittest.mock import Mock, MagicMock
 import pytest
 
-from s3backgrounddelete.eos_core_config import EOSCoreConfig
-from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
-from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
-from s3backgrounddelete.eos_core_object_api import EOSCoreObjectApi
-from s3backgrounddelete.eos_core_error_respose import EOSCoreErrorResponse
-from s3backgrounddelete.eos_get_kv_response import EOSCoreGetKVResponse
-from s3backgrounddelete.eos_list_index_response import EOSCoreListIndexResponse
+from s3backgrounddelete.cortx_s3_config import CORTXS3Config
+from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
+from s3backgrounddelete.cortx_s3_kv_api import CORTXS3KVApi
+from s3backgrounddelete.cortx_s3_object_api import CORTXS3ObjectApi
+from s3backgrounddelete.cortx_s3_error_respose import CORTXS3ErrorResponse
+from s3backgrounddelete.cortx_get_kv_response import CORTXS3GetKVResponse
+from s3backgrounddelete.cortx_list_index_response import CORTXS3ListIndexResponse
 from s3backgrounddelete.object_recovery_validator import ObjectRecoveryValidator
 
 
 def test_list_instance_index_fail():
     """Test if ObjectRecoveryValidator skips processing successfully if listing instance index fails"""
-    index_api_mock = Mock(spec=EOSCoreIndexApi)
-    object_api_mock = Mock(spec=EOSCoreObjectApi)
+    index_api_mock = Mock(spec=CORTXS3IndexApi)
+    object_api_mock = Mock(spec=CORTXS3ObjectApi)
 
     index_api_mock.list.return_value = False, {}
 
-    config = EOSCoreConfig()
+    config = CORTXS3Config()
     probable_delete_records = {'Key': 'TAcGAQAAAAA=-AwAAAAAAhEs=', \
         'Value':'{"clovis_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
         "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \
@@ -44,25 +44,25 @@ def test_list_instance_index_fail():
 
 def test_object_metadata_not_exists():
     """Test to check if ObjectRecoveryValidator attempts delete for object oid """
-    index_api_mock = Mock(spec=EOSCoreIndexApi)
-    kv_api_mock = Mock(spec=EOSCoreKVApi)
-    object_api_mock = Mock(spec=EOSCoreObjectApi)
+    index_api_mock = Mock(spec=CORTXS3IndexApi)
+    kv_api_mock = Mock(spec=CORTXS3KVApi)
+    object_api_mock = Mock(spec=CORTXS3ObjectApi)
 
     ol_res_val = {'ACL':'','Bucket-Name':'mybucket','Object-Name':'test_object','Object-URI':'mybucket\\test_object',
-        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9,'mero_oid':'Tgj8AgAAAAA=-dQAAAAAABCY='}
+        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9,'motr_oid':'Tgj8AgAAAAA=-dQAAAAAABCY='}
 
     index_content = {'Delimiter': '', 'Index-Id': 'AAAAAAAAAHg=-BAAQAAAAAAA=',
                     'IsTruncated': 'false', 'Keys': [{'Key': 'test_object', 'Value': ol_res_val}],
                     'Marker': '', 'MaxKeys': '1000', 'NextMarker': '', 'Prefix': ''}
-    index_response = EOSCoreListIndexResponse(json.dumps(index_content).encode())
-    error_response = EOSCoreErrorResponse(404, "Not found", "Not found")
+    index_response = CORTXS3ListIndexResponse(json.dumps(index_content).encode())
+    error_response = CORTXS3ErrorResponse(404, "Not found", "Not found")
 
     index_api_mock.list.return_value = True, index_response
     kv_api_mock.get.return_value = False, error_response
     object_api_mock.delete.return_value = True, {}
 
 
-    config = EOSCoreConfig()
+    config = CORTXS3Config()
     probable_delete_records = {'Key': 'TAcGAQAAAAA=-AwAAAAAAhEs=', \
         'Value':'{"clovis_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
         "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \
@@ -84,30 +84,30 @@ def test_object_metadata_not_exists():
 
 def test_object_metadata_exists_and_matches():
     """Test if ObjectRecoveryValidator should attempt delete for old object oid """
-    index_api_mock = Mock(spec=EOSCoreIndexApi)
-    kv_api_mock = Mock(spec=EOSCoreKVApi)
-    object_api_mock = Mock(spec=EOSCoreObjectApi)
+    index_api_mock = Mock(spec=CORTXS3IndexApi)
+    kv_api_mock = Mock(spec=CORTXS3KVApi)
+    object_api_mock = Mock(spec=CORTXS3ObjectApi)
 
     ol_res_val = {'ACL':'','Bucket-Name':'mybucket','Object-Name':'test_object','Object-URI':'mybucket\\test_object',
-        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9,'mero_oid':'Tgj8AgAAAAA=-dQAAAAAABCY='}
+        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9,'motr_oid':'Tgj8AgAAAAA=-dQAAAAAABCY='}
 
     index_content = {'Delimiter': '', 'Index-Id': 'AAAAAAAAAHg=-BAAQAAAAAAA=',
                     'IsTruncated': 'false', 'Keys': [{'Key': 'test_object', 'Value': ol_res_val}],
                     'Marker': '', 'MaxKeys': '1000', 'NextMarker': '', 'Prefix': ''}
 
-    index_response = EOSCoreListIndexResponse(json.dumps(index_content).encode())
+    index_response = CORTXS3ListIndexResponse(json.dumps(index_content).encode())
     object_key = ol_res_val["Object-Name"]
     # oid mismatches in object metadata
     object_metadata = ol_res_val
 
-    kv_response = EOSCoreGetKVResponse(object_key, json.dumps(object_metadata).encode())
+    kv_response = CORTXS3GetKVResponse(object_key, json.dumps(object_metadata).encode())
 
     index_api_mock.list.return_value = True, index_response
     kv_api_mock.get.return_value = True, kv_response
     object_api_mock.delete.return_value = True, {}
 
 
-    config = EOSCoreConfig()
+    config = CORTXS3Config()
     probable_delete_records = {'Key': 'Tgj8AgAAAAA=-dQAAAAAABCY=', \
         'Value':'{"clovis_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
         "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \
@@ -130,31 +130,31 @@ def test_object_metadata_exists_and_matches():
 
 def test_object_metadata_exists_mismatches():
     """Test if ObjectRecoveryValidator should attempt delete for object oid """
-    index_api_mock = Mock(spec=EOSCoreIndexApi)
-    kv_api_mock = Mock(spec=EOSCoreKVApi)
-    object_api_mock = Mock(spec=EOSCoreObjectApi)
+    index_api_mock = Mock(spec=CORTXS3IndexApi)
+    kv_api_mock = Mock(spec=CORTXS3KVApi)
+    object_api_mock = Mock(spec=CORTXS3ObjectApi)
 
     ol_res_val = {'ACL':'','Bucket-Name':'mybucket','Object-Name':'test_object','Object-URI':'mybucket\\test_object',
-        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9,'mero_oid':'TAifBwAAAHg=-AQAAAAAA2lk='}
+        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9,'motr_oid':'TAifBwAAAHg=-AQAAAAAA2lk='}
 
     index_content = {'Delimiter': '', 'Index-Id': 'AAAAAAAAAHg=-BAAQAAAAAAA=',
                     'IsTruncated': 'false', 'Keys': [{'Key': 'test_object', 'Value': ol_res_val}],
                     'Marker': '', 'MaxKeys': '1000', 'NextMarker': '', 'Prefix': ''}
 
-    index_response = EOSCoreListIndexResponse(json.dumps(index_content).encode())
+    index_response = CORTXS3ListIndexResponse(json.dumps(index_content).encode())
     object_key = ol_res_val["Object-Name"]
     # oid mismatches in object metadata
     object_metadata = ol_res_val
 
 
-    kv_response = EOSCoreGetKVResponse(object_key, json.dumps(object_metadata).encode())
+    kv_response = CORTXS3GetKVResponse(object_key, json.dumps(object_metadata).encode())
 
     index_api_mock.list.return_value = True, index_response
     kv_api_mock.get.return_value = True, kv_response
     object_api_mock.delete.return_value = True, {}
 
 
-    config = EOSCoreConfig()
+    config = CORTXS3Config()
     probable_delete_records = {'Key': 'Tgj8AgAAAAA=-dQAAAAAABCY=', \
         'Value':'{"clovis_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
         "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \

@@ -2,34 +2,34 @@
 import logging
 import urllib
 
-from s3backgrounddelete.eos_core_client import EOSCoreClient
-from s3backgrounddelete.eos_get_kv_response import EOSCoreGetKVResponse
-from s3backgrounddelete.eos_core_error_respose import EOSCoreErrorResponse
-from s3backgrounddelete.eos_core_success_response import EOSCoreSuccessResponse
-from s3backgrounddelete.eos_core_util import EOSCoreUtil
+from s3backgrounddelete.cortx_s3_client import CORTXS3Client
+from s3backgrounddelete.cortx_get_kv_response import CORTXS3GetKVResponse
+from s3backgrounddelete.cortx_s3_error_respose import CORTXS3ErrorResponse
+from s3backgrounddelete.cortx_s3_success_response import CORTXS3SuccessResponse
+from s3backgrounddelete.cortx_s3_util import CORTXS3Util
 from s3backgrounddelete.IEMutil import IEMutil
 
-# EOSCoreKVApi supports key-value REST-API's Put, Get & Delete
+# CORTXS3KVApi supports key-value REST-API's Put, Get & Delete
 
 
-class EOSCoreKVApi(EOSCoreClient):
-    """EOSCoreKVApi provides key-value REST-API's Put, Get & Delete."""
+class CORTXS3KVApi(CORTXS3Client):
+    """CORTXS3KVApi provides key-value REST-API's Put, Get & Delete."""
     _logger = None
 
     def __init__(self, config, logger=None, connection=None):
         """Initialise logger and config."""
         if (logger is None):
-            self._logger = logging.getLogger("EOSCoreKVApi")
+            self._logger = logging.getLogger("CORTXS3KVApi")
         else:
             self._logger = logger
         self._logger = logging.getLogger()
         self.config = config
-        self.core_util = EOSCoreUtil(self.config)
+        self.s3_util = CORTXS3Util(self.config)
 
         if (connection is None):
-            super(EOSCoreKVApi, self).__init__(self.config, logger=self._logger)
+            super(CORTXS3KVApi, self).__init__(self.config, logger=self._logger)
         else:
-            super(EOSCoreKVApi, self).__init__(self.config, logger=self._logger, connection=connection)
+            super(CORTXS3KVApi, self).__init__(self.config, logger=self._logger, connection=connection)
 
 
     def put(self, index_id=None, object_key_name=None, value=""):
@@ -54,7 +54,7 @@ class EOSCoreKVApi(EOSCoreClient):
         request_uri = '/indexes/' + \
             urllib.parse.quote(index_id, safe='') + '/' + \
             urllib.parse.quote(object_key_name)
-        headers = self.core_util.prepare_signed_header('PUT', request_uri, query_params, request_body)
+        headers = self.s3_util.prepare_signed_header('PUT', request_uri, query_params, request_body)
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")
@@ -62,7 +62,7 @@ class EOSCoreKVApi(EOSCoreClient):
 
         try:
             response = super(
-                EOSCoreKVApi,
+                CORTXS3KVApi,
                 self).put(
                 request_uri,
                 request_body,
@@ -70,19 +70,19 @@ class EOSCoreKVApi(EOSCoreClient):
         except ConnectionRefusedError as ex:
             IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
+            return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(500,"","InternalServerError")
+            return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
 
 
         if response['status'] == 200:
             self._logger.info("Key value details added successfully.")
-            return True, EOSCoreSuccessResponse(response['body'])
+            return True, CORTXS3SuccessResponse(response['body'])
         else:
             self._logger.info('Failed to add key value details.')
-            return False, EOSCoreErrorResponse(
+            return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])
 
     def get(self, index_id=None, object_key_name=None):
@@ -107,7 +107,7 @@ class EOSCoreKVApi(EOSCoreClient):
 
         query_params = ""
         body = ""
-        headers = self.core_util.prepare_signed_header('GET', request_uri, query_params, body)
+        headers = self.s3_util.prepare_signed_header('GET', request_uri, query_params, body)
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")
@@ -115,25 +115,25 @@ class EOSCoreKVApi(EOSCoreClient):
 
         try:
             response = super(
-                EOSCoreKVApi,
+                CORTXS3KVApi,
                 self).get(
                 request_uri,
                 headers=headers)
         except ConnectionRefusedError as ex:
             IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
+            return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(500,"","InternalServerError")
+            return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 200:
             self._logger.info("Get kv operation successfully.")
-            return True, EOSCoreGetKVResponse(
+            return True, CORTXS3GetKVResponse(
                 object_key_name, response['body'])
         else:
             self._logger.info('Failed to get kv details.')
-            return False, EOSCoreErrorResponse(
+            return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])
 
     def delete(self, index_id=None, object_key_name=None):
@@ -158,7 +158,7 @@ class EOSCoreKVApi(EOSCoreClient):
 
         body = ""
         query_params = ""
-        headers = self.core_util.prepare_signed_header('DELETE', request_uri, query_params, body)
+        headers = self.s3_util.prepare_signed_header('DELETE', request_uri, query_params, body)
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")
@@ -166,22 +166,22 @@ class EOSCoreKVApi(EOSCoreClient):
 
         try:
             response = super(
-                EOSCoreKVApi,
+                CORTXS3KVApi,
                 self).delete(
                 request_uri,
                 headers=headers)
         except ConnectionRefusedError as ex:
             IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
+            return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(500,"","InternalServerError")
+            return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 204:
             self._logger.info('Key value deleted.')
-            return True, EOSCoreSuccessResponse(response['body'])
+            return True, CORTXS3SuccessResponse(response['body'])
         else:
             self._logger.info('Failed to delete key value.')
-            return False, EOSCoreErrorResponse(
+            return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])
