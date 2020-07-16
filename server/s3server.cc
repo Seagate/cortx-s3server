@@ -210,6 +210,22 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
 
     s3_request->send_response(error.get_http_status_code(), response_xml);
     return EVHTP_RES_OK;
+  } else if (s3_request->is_header_present("content-md5") &&
+             !s3_request->validate_content_md5()) {
+    // Send HTTP 400 response, with S3 error 'InvalidDigest' to client
+    s3_request->pause();
+    evhtp_unset_all_hooks(&req->conn->hooks);
+    s3_log(S3_LOG_DEBUG, "",
+           "Sending 'Invalid Digest' response to client due to invalid md5 "
+           "digest...\n");
+    S3Error error("InvalidDigest", s3_request->get_request_id(), "");
+    std::string &response_xml = error.to_xml();
+    s3_request->set_out_header_value("Content-Type", "application/xml");
+    s3_request->set_out_header_value("Content-Length",
+                                     std::to_string(response_xml.length()));
+
+    s3_request->send_response(error.get_http_status_code(), response_xml);
+    return EVHTP_RES_OK;
   }
 
   // request validation is done and we are ready to use request

@@ -143,6 +143,10 @@
     "Description": "The Content-MD5 you specified did not match what we received.",
     "httpcode": 400
   },
+  "InvalidDigest": {
+    "Description": "The Content-MD5 you specified is not valid",
+    "httpcode": 400
+  },  
   "MaxMessageLengthExceeded": {
     "Description": "Your request was too big.",
     "httpcode": 400
