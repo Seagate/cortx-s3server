@@ -247,6 +247,9 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
 /opt/seagate/cortx/s3/install/ldap/create_background_delete_account.sh
 /opt/seagate/cortx/s3/install/ldap/delete_background_delete_account.sh
+/opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif
+/opt/seagate/cortx/s3/install/ldap/create_s3_recovery_account.sh
+/opt/seagate/cortx/s3/install/ldap/delete_s3_recovery_account.sh
 /opt/seagate/cortx/s3/install/ldap/cfg_ldap.ldif
 /opt/seagate/cortx/s3/install/ldap/cn={1}s3user.ldif
 /opt/seagate/cortx/s3/install/ldap/iam-admin-access.ldif

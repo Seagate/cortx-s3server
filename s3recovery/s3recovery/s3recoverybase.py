@@ -19,9 +19,12 @@
 
 #!/usr/bin/python3.6
 
+import os
 import sys
 import json
 import dateutil.parser
+import logging
+import datetime
 from s3backgrounddelete.eos_core_config import EOSCoreConfig
 from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
 from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
@@ -30,10 +33,62 @@ from json import JSONDecodeError
 
 class S3RecoveryBase:
     def __init__(self):
-        self.config = EOSCoreConfig()
+        self.config = EOSCoreConfig(s3recovery_flag = True)
         self.index_api = EOSCoreIndexApi(self.config)
         self.kv_api = EOSCoreKVApi(self.config)
         self.log_result = False
+
+    def create_logger(self, logger_name):
+        """
+        Create logger, file handler and formatter
+
+        """
+        self.logger = logging.getLogger(logger_name)
+        self.logger.setLevel(level=logging.DEBUG)
+
+        logfile = str(Config.log_dir + "/" + "s3recovery-" +
+                datetime.datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S.%f")
+                + ".log")
+
+        fhandler = logging.FileHandler(logfile)
+        fhandler.setLevel(level=logging.DEBUG)
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        fhandler.setFormatter(formatter)
+        self.logger.addHandler(fhandler)
+
+    def create_logger_directory(self):
+        """
+        Create log directory if not exists
+
+        """
+        self._logger_directory = os.path.join(Config.log_dir)
+        if not os.path.isdir(self._logger_directory):
+            try:
+                os.mkdir(self._logger_directory)
+            except BaseException:
+                self.s3recovery_log("error","Unable to create log directory at " + str(Config.log_dir))
+
+    def s3recovery_log(self, log_level, msg):
+        """
+        Logger for s3recovery tool
+
+        """
+        # Display log message on console
+        print(msg)
+
+        # Log levels https://docs.python.org/3/library/logging.html#levels
+
+        if self.logger is not None:
+            if log_level == "info":
+                self.logger.info(msg)
+            elif log_level == "debug":
+                self.logger.debug(msg)
+            elif log_level == "warning":
+                self.logger.warning(msg)
+            elif log_level == "error":
+                self.logger.error(msg)
+            elif log_level == "critical":
+                self.logger.critical(msg)
 
     def put_kv(self, index_id, key, value):
         """
@@ -76,7 +131,7 @@ class S3RecoveryBase:
             try:
                 bucket_metadata_replica = json.loads(item_replica)
             except JSONDecodeError:
-                print("Failed to parse JSON")
+                self.s3recovery_log("error", "Failed to parse JSON")
                 return
             union_result[key] = item_replica
             return
@@ -85,7 +140,7 @@ class S3RecoveryBase:
             try:
                 bucket_metadata_replica = json.loads(data_to_restore)
             except JSONDecodeError:
-                print("Failed to parse JSON")
+                self.s3recovery_log("error", "Failed to parse JSON")
                 return
             union_result[key] = data_to_restore
             return
@@ -131,7 +186,7 @@ class S3RecoveryBase:
         response, data = self.index_api.list(index_id)
 
         if not response:
-            print("Error while listing index {}".format(index_id))
+            self.s3recovery_log("error", "Error while listing index {}".format(index_id))
             sys.exit(1)
 
         index_list_response = data.get_index_content()
@@ -171,9 +226,9 @@ class S3RecoveryBase:
             replica_list = list(replica.keys())
 
         if (self.log_result):
-            print("\nPrimary index content for {} \n".format(index_name))
+            self.s3recovery_log("info", "\nPrimary index content for {} \n".format(index_name))
             self.print_content(data)
-            print("\nReplica index content for {} \n".format(index_name))
+            self.s3recovery_log("info", "\nReplica index content for {} \n".format(index_name))
             self.print_content(replica)
 
         result_list = data_list
@@ -208,9 +263,9 @@ class S3RecoveryBase:
         """
         if bool(kv):
             for key, value in kv.items() :
-                print (key, value)
+                self.s3recovery_log("info", str(key+" "+value))
         else:
-            print("Empty\n")
+            self.s3recovery_log("info", "Empty\n")
 
     def dry_run(self, index_name, index_id, index_id_replica, union_result, recover_flag = False):
         """
@@ -239,6 +294,7 @@ class S3RecoveryBase:
 
         if (self.log_result):
             print("\nData recovered from both indexes for {} \n".format(index_name))
+            self.logger.info(union_result)
             self.print_content(union_result)
 
         return union_result

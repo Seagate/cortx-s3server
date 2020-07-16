@@ -22,12 +22,16 @@
 import sys
 import json
 import dateutil.parser
+import logging
+from logging import handlers
 from s3recovery.s3recoverybase import S3RecoveryBase
 from s3recovery.config import Config
 
 class S3RecoveryDryRun(S3RecoveryBase):
     def __init__(self):
         super(S3RecoveryDryRun, self).__init__()
+        super(S3RecoveryDryRun, self).create_logger_directory()
+        super(S3RecoveryDryRun, self).create_logger("S3RecoveryDryRun")
 
     def dry_run(self, index_name, index_id, index_id_replica):
         """

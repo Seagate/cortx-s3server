@@ -12,9 +12,10 @@ class EOSCoreConfig(object):
     _config = None
     _conf_file = None
 
-    def __init__(self):
+    def __init__(self, s3recovery_flag = False):
         """Initialise logger and configuration."""
         self.logger = logging.getLogger(__name__ + "EOSCoreConfig")
+        self.s3recovery_flag = s3recovery_flag
         self._load_and_fetch_config()
 
     @staticmethod
@@ -46,6 +47,9 @@ class EOSCoreConfig(object):
             sys.exit()
         with open(self._conf_file, 'r') as file_config:
             self._config = yaml.safe_load(file_config)
+
+    def get_s3recovery_flag(self):
+        return self.s3recovery_flag
 
     def get_logger_directory(self):
         """Return logger directory path for background delete from config file or KeyError."""
@@ -340,3 +344,20 @@ class EOSCoreConfig(object):
                 "Could not find s3_instance_count from config file " +
                 self._conf_file)
 
+    def get_s3_recovery_access_key(self):
+        """Return access_key from config file or KeyError."""
+        if 's3_recovery' in self._config and self._config['s3_recovery']['access_key']:
+            return self._config['s3_recovery']['access_key']
+        else:
+            raise KeyError(
+                "Could not find s3_recovery access_key from config file " +
+                self._conf_file)
+
+    def get_s3_recovery_secret_key(self):
+        """Return secret_key from config file or KeyError."""
+        if 's3_recovery' in self._config and self._config['s3_recovery']['secret_key']:
+            return self._config['s3_recovery']['secret_key']
+        else:
+            raise KeyError(
+                "Could not find s3_recovery secret_key from config file " +
+                self._conf_file)
