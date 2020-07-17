@@ -86,19 +86,19 @@
    >rabbitmqctl cluster_status
 
 
-10) Create a user (In this case user is eos-s3 with password as password)
+10) Create a user (In this case user is cortx-s3 with password as password)
 
-    >rabbitmqctl add_user eos-s3 password
+    >rabbitmqctl add_user cortx-s3 password
 
 
-11) Setup the eos-s3 user as an administrator.
+11) Setup the cortx-s3 user as an administrator.
 
-    >rabbitmqctl set_user_tags eos-s3 administrator
+    >rabbitmqctl set_user_tags cortx-s3 administrator
 
 
 11) Set permission
 
-    >rabbitmqctl set_permissions -p / eos-s3 ".*" ".*" ".*"
+    >rabbitmqctl set_permissions -p / cortx-s3 ".*" ".*" ".*"
 
 
 12) Check users on cluster nodes (all nodes will list them)
@@ -115,6 +115,6 @@
 
     >http://192.168.64.170:15672/
 
-    Type username 'eos-s3' with password 'password'
+    Type username 'cortx-s3' with password 'password'
 
     Note:Ensure that port 15672 is open

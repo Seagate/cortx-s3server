@@ -1,18 +1,18 @@
 """
-Unit Test for EOSCoreClient API.
+Unit Test for CORTXS3Client API.
 """
 from http.client import HTTPConnection
 from http.client import HTTPResponse
 from unittest.mock import Mock
 import pytest
 
-from s3backgrounddelete.eos_core_client import EOSCoreClient
-from s3backgrounddelete.eos_core_config import EOSCoreConfig
+from s3backgrounddelete.cortx_s3_client import CORTXS3Client
+from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 
 def test_get_connection_success():
     """Test if HTTPConnection object is returned"""
-    config = EOSCoreConfig()
-    response = EOSCoreClient(config)._get_connection()
+    config = CORTXS3Config()
+    response = CORTXS3Client(config)._get_connection()
     assert isinstance(response, HTTPConnection)
 
 
@@ -21,9 +21,9 @@ def test_get_connection_as_none():
     Test if get_connection does not has endpoint configured then
     it should return "None"
     """
-    config = Mock(spec=EOSCoreConfig)
-    config.get_eos_core_endpoint = Mock(side_effect=KeyError())
-    assert EOSCoreClient(config)._get_connection() is None
+    config = Mock(spec=CORTXS3Config)
+    config.get_cortx_s3_endpoint = Mock(side_effect=KeyError())
+    assert CORTXS3Client(config)._get_connection() is None
 
 
 def test_get_failure():
@@ -31,9 +31,9 @@ def test_get_failure():
     Test if connection object is "None" then GET method should throw TypeError.
     """
     with pytest.raises(TypeError):
-        config = Mock(spec=EOSCoreConfig)
-        config.get_eos_core_endpoint = Mock(side_effect=KeyError())
-        assert EOSCoreClient(config).get('/indexes/test_index1')
+        config = Mock(spec=CORTXS3Config)
+        config.get_cortx_s3_endpoint = Mock(side_effect=KeyError())
+        assert CORTXS3Client(config).get('/indexes/test_index1')
 
 
 def test_get_success():
@@ -48,8 +48,8 @@ def test_get_success():
     httpresponse.reason = 'OK'
     httpconnection.getresponse.return_value = httpresponse
 
-    config = EOSCoreConfig()
-    response = EOSCoreClient(config, connection=httpconnection).get(
+    config = CORTXS3Config()
+    response = CORTXS3Client(config, connection=httpconnection).get(
         '/indexes/test_index1')
     assert response['status'] == 200
 
@@ -59,9 +59,9 @@ def test_put_failure():
     Test if connection object is "None" then PUT method should throw TypeError.
     """
     with pytest.raises(TypeError):
-        config = Mock(spec=EOSCoreConfig)
-        config.get_eos_core_endpoint = Mock(side_effect=KeyError())
-        assert EOSCoreClient(config).put('/indexes/test_index1')
+        config = Mock(spec=CORTXS3Config)
+        config.get_cortx_s3_endpoint = Mock(side_effect=KeyError())
+        assert CORTXS3Client(config).put('/indexes/test_index1')
 
 
 def test_put_success():
@@ -75,9 +75,9 @@ def test_put_success():
     httpresponse.reason = 'CREATED'
     httpconnection.getresponse.return_value = httpresponse
 
-    config = EOSCoreConfig()
+    config = CORTXS3Config()
     request_uri = '/indexes/test_index1'
-    response = EOSCoreClient(config, connection=httpconnection).put(request_uri)
+    response = CORTXS3Client(config, connection=httpconnection).put(request_uri)
     assert response['status'] == 201
 
 
@@ -86,9 +86,9 @@ def test_delete_failure():
     Test if connection object is "None" then DELETE should throw TypeError.
     """
     with pytest.raises(TypeError):
-        config = Mock(spec=EOSCoreConfig)
-        config.get_eos_core_endpoint = Mock(side_effect=KeyError())
-        assert EOSCoreClient(config).delete('/indexes/test_index1')
+        config = Mock(spec=CORTXS3Config)
+        config.get_cortx_s3_endpoint = Mock(side_effect=KeyError())
+        assert CORTXS3Client(config).delete('/indexes/test_index1')
 
 
 def test_delete_success():
@@ -102,8 +102,8 @@ def test_delete_success():
     httpresponse.reason = 'OK'
     httpconnection.getresponse.return_value = httpresponse
 
-    config = EOSCoreConfig()
-    response = EOSCoreClient(config, connection=httpconnection).delete(
+    config = CORTXS3Config()
+    response = CORTXS3Client(config, connection=httpconnection).delete(
         '/indexes/test_index1')
     assert response['status'] == 204
 
@@ -112,9 +112,9 @@ def test_head_failure():
     Test if connection object is "None" then HEAD should throw TypeError.
     """
     with pytest.raises(TypeError):
-        config = Mock(spec=EOSCoreConfig)
-        config.get_eos_core_endpoint = Mock(side_effect=KeyError())
-        assert EOSCoreClient(config).head('/indexes/test_index1')
+        config = Mock(spec=CORTXS3Config)
+        config.get_cortx_s3_endpoint = Mock(side_effect=KeyError())
+        assert CORTXS3Client(config).head('/indexes/test_index1')
 
 
 def test_head_success():
@@ -128,8 +128,8 @@ def test_head_success():
     httpresponse.reason = 'OK'
     httpconnection.getresponse.return_value = httpresponse
 
-    config = EOSCoreConfig()
-    response = EOSCoreClient(config, connection=httpconnection).head(
+    config = CORTXS3Config()
+    response = CORTXS3Client(config, connection=httpconnection).head(
         '/indexes/test_index1')
     assert response['status'] == 200
 
