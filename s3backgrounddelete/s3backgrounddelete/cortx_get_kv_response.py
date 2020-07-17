@@ -1,7 +1,7 @@
 """This will generate GET Key-value response."""
 
 
-class EOSCoreGetKVResponse(object):
+class CORTXS3GetKVResponse(object):
     """Generate Get Key-Value reponse."""
     _key = ""
     _value = ""
