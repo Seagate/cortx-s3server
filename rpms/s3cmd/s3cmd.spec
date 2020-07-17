@@ -22,7 +22,7 @@ Summary:        Tool for accessing Amazon Simple Storage Service
 
 Group:          Applications/Internet
 License:        GPLv2
-URL:            http://gerrit.mero.colo.seagate.com:8080/s3cmd
+URL:            https://github.com/Seagate/s3cmd
 # git clone https://github.com/s3tools/s3cmd
 # python setup.py sdist
 Source0:        %{name}-%{version}-%{shortcommit}.tar.gz
