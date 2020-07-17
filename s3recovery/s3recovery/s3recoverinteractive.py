@@ -3,16 +3,16 @@
 import sys
 import json
 import dateutil.parser
-from s3backgrounddelete.eos_core_config import EOSCoreConfig
-from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
-from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
+from s3backgrounddelete.cortx_s3_config import CORTXS3Config
+from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
+from s3backgrounddelete.cortx_s3_kv_api import CORTXS3KVApi
 from s3recovery.config import Config
 
 class S3RecoverInteractive:
     def __init__(self):
-        self.config = EOSCoreConfig()
-        self.index_api = EOSCoreIndexApi(self.config)
-        self.kv_api = EOSCoreKVApi(self.config)
+        self.config = CORTXS3Config()
+        self.index_api = CORTXS3IndexApi(self.config)
+        self.kv_api = CORTXS3KVApi(self.config)
 
     def put_kv(self, index_id, key, value):
         # Check for S3 putkv support

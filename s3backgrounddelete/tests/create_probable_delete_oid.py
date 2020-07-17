@@ -6,27 +6,27 @@ import os
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 
-from eos_core_config import EOSCoreConfig
-from eos_core_kv_api import EOSCoreKVApi
-from eos_core_index_api import EOSCoreIndexApi
-from eos_core_object_api import EOSCoreObjectApi
+from cortx_s3_config import CORTXS3Config
+from cortx_s3_kv_api import CORTXS3KVApi
+from cortx_s3_index_api import CORTXS3IndexApi
+from cortx_s3_object_api import CORTXS3ObjectApi
 
 
 # Create sample data for s3 background delete.
 if __name__ == "__main__":
-    CONFIG = EOSCoreConfig()
-    EOSCoreIndexApi(CONFIG).put("probable_delete_index_id")
-    EOSCoreKVApi(CONFIG).put(
+    CONFIG = CORTXS3Config()
+    CORTXS3IndexApi(CONFIG).put("probable_delete_index_id")
+    CORTXS3KVApi(CONFIG).put(
         "probable_delete_index_id",
         "oid-1",
         "{ \"obj-name\" : \"bucket_1/obj_1\"}")
-    EOSCoreKVApi(CONFIG).put(
+    CORTXS3KVApi(CONFIG).put(
         "probable_delete_index_id",
         "oid-2",
         "{ \"obj-name\" : \"bucket_1/obj_2\"}")
-    EOSCoreIndexApi(CONFIG).list("probable_delete_index_id")
-    EOSCoreKVApi(CONFIG).get("probable_delete_index_id", "oid-1")
-    EOSCoreKVApi(CONFIG).get("probable_delete_index_id", "oid-3")
+    CORTXS3IndexApi(CONFIG).list("probable_delete_index_id")
+    CORTXS3KVApi(CONFIG).get("probable_delete_index_id", "oid-1")
+    CORTXS3KVApi(CONFIG).get("probable_delete_index_id", "oid-3")
 
     # Sample object metadata
     '''{
@@ -54,31 +54,31 @@ if __name__ == "__main__":
         },
         "User-Defined": {
             "x-amz-meta-s3cmd": "true",
-            "mero_oid_u_hi" : "CzhfWNjoNAA=",
-            "mero_oid_u_lo" : "FzVUkUG8V+0=",
+            "motr_oid_u_hi" : "CzhfWNjoNAA=",
+            "motr_oid_u_lo" : "FzVUkUG8V+0=",
             }
     '''
 
     OBJECTID1_METADATA = "{\"Object-Name\":\"bucket_1/obj_1\", \
                            \"x-amz-meta-s3cmd\": \"true\", \
-                           \"mero_oid_u_hi\" : \"oid-1\", \
-                           \"mero_oid_u_lo\" : \"FzVUkUG8V+0=\"}"
+                           \"motr_oid_u_hi\" : \"oid-1\", \
+                           \"motr_oid_u_lo\" : \"FzVUkUG8V+0=\"}"
 
     OBJECTID2_METADATA = "{\"Object-Name\":\"bucket_1/obj_2\", \
                            \"x-amz-meta-s3cmd\": \"true\", \
-                           \"mero_oid_u_hi\" : \"oid-2\", \
-                           \"mero_oid_u_lo\" : \"FzVUkUG8V+0=\"}"
+                           \"motr_oid_u_hi\" : \"oid-2\", \
+                           \"motr_oid_u_lo\" : \"FzVUkUG8V+0=\"}"
 
-    EOSCoreIndexApi(CONFIG).put("object_metadata_index_id")
-    EOSCoreKVApi(CONFIG).put(
+    CORTXS3IndexApi(CONFIG).put("object_metadata_index_id")
+    CORTXS3KVApi(CONFIG).put(
         "object_metadata_index_id",
         "oid-1",
         OBJECTID1_METADATA)
-    EOSCoreKVApi(CONFIG).put(
+    CORTXS3KVApi(CONFIG).put(
         "object_metadata_index_id",
         "oid-2",
         OBJECTID2_METADATA)
-    EOSCoreIndexApi(CONFIG).list("object_metadata_index_id")
-    EOSCoreKVApi(CONFIG).get("object_metadata_index_id", "oid-1")
-    EOSCoreKVApi(CONFIG).get("object_metadata_index_id", "oid-2")
-    EOSCoreObjectApi(CONFIG).delete("0x-7200000000000000x0","test")
+    CORTXS3IndexApi(CONFIG).list("object_metadata_index_id")
+    CORTXS3KVApi(CONFIG).get("object_metadata_index_id", "oid-1")
+    CORTXS3KVApi(CONFIG).get("object_metadata_index_id", "oid-2")
+    CORTXS3ObjectApi(CONFIG).delete("0x-7200000000000000x0","test")

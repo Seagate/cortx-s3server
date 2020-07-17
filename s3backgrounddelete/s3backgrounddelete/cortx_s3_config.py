@@ -7,14 +7,14 @@ import logging
 import yaml
 
 
-class EOSCoreConfig(object):
+class CORTXS3Config(object):
     """Configuration for s3 background delete."""
     _config = None
     _conf_file = None
 
     def __init__(self, s3recovery_flag = False):
         """Initialise logger and configuration."""
-        self.logger = logging.getLogger(__name__ + "EOSCoreConfig")
+        self.logger = logging.getLogger(__name__ + "CORTXS3Config")
         self.s3recovery_flag = s3recovery_flag
         self._load_and_fetch_config()
 
@@ -123,56 +123,56 @@ class EOSCoreConfig(object):
                 "Could not parse log format from config file " +
                 self._conf_file)
 
-    def get_eos_core_endpoint(self):
+    def get_cortx_s3_endpoint(self):
         """Return endpoint from config file or KeyError."""
-        if 'eos_core' in self._config and self._config['eos_core']['endpoint']:
-            return self._config['eos_core']['endpoint']
+        if 'cortx_s3' in self._config and self._config['cortx_s3']['endpoint']:
+            return self._config['cortx_s3']['endpoint']
         else:
             raise KeyError(
-                "Could not find eos_core endpoint from config file " +
+                "Could not find cortx_s3 endpoint from config file " +
                 self._conf_file)
 
-    def get_eos_core_service(self):
+    def get_cortx_s3_service(self):
         """Return service from config file or KeyError."""
-        if 'eos_core' in self._config and self._config['eos_core']['service']:
-            return self._config['eos_core']['service']
+        if 'cortx_s3' in self._config and self._config['cortx_s3']['service']:
+            return self._config['cortx_s3']['service']
         else:
             raise KeyError(
-                "Could not find eos_core service from config file " +
+                "Could not find cortx_s3 service from config file " +
                 self._conf_file)
 
-    def get_eos_core_region(self):
+    def get_cortx_s3_region(self):
         """Return region from config file or KeyError."""
-        if 'eos_core' in self._config and self._config['eos_core']['default_region']:
-            return self._config['eos_core']['default_region']
+        if 'cortx_s3' in self._config and self._config['cortx_s3']['default_region']:
+            return self._config['cortx_s3']['default_region']
         else:
             raise KeyError(
-                "Could not find eos_core default_region from config file " +
+                "Could not find cortx_s3 default_region from config file " +
                 self._conf_file)
 
-    def get_eos_core_access_key(self):
+    def get_cortx_s3_access_key(self):
         """Return access_key from config file or KeyError."""
-        if 'eos_core' in self._config and self._config['eos_core']['access_key']:
-            return self._config['eos_core']['access_key']
+        if 'cortx_s3' in self._config and self._config['cortx_s3']['access_key']:
+            return self._config['cortx_s3']['access_key']
         else:
             raise KeyError(
-                "Could not find eos_core access_key from config file " +
+                "Could not find cortx_s3 access_key from config file " +
                 self._conf_file)
 
-    def get_eos_core_secret_key(self):
+    def get_cortx_s3_secret_key(self):
         """Return secret_key from config file or KeyError."""
-        if 'eos_core' in self._config and self._config['eos_core']['secret_key']:
-            return self._config['eos_core']['secret_key']
+        if 'cortx_s3' in self._config and self._config['cortx_s3']['secret_key']:
+            return self._config['cortx_s3']['secret_key']
         else:
             raise KeyError(
-                "Could not find eos_core secret_key from config file " +
+                "Could not find cortx_s3 secret_key from config file " +
                 self._conf_file)
 
     def get_daemon_mode(self):
         """Return daemon_mode flag value for scheduler from config file\
            else it should return default as "True"."""
-        if 'eos_core' in self._config and self._config['eos_core']['daemon_mode']:
-            return self._config['eos_core']['daemon_mode']
+        if 'cortx_s3' in self._config and self._config['cortx_s3']['daemon_mode']:
+            return self._config['cortx_s3']['daemon_mode']
         else:
             #Return default mode as daemon mode i.e. "True"
             return "True"
@@ -337,8 +337,8 @@ class EOSCoreConfig(object):
 
     def get_s3_instance_count(self):
         """Return secret_key from config file or KeyError."""
-        if 'eos_core' in self._config and self._config['eos_core']['s3_instance_count']:
-            return self._config['eos_core']['s3_instance_count']
+        if 'cortx_s3' in self._config and self._config['cortx_s3']['s3_instance_count']:
+            return self._config['cortx_s3']['s3_instance_count']
         else:
             raise KeyError(
                 "Could not find s3_instance_count from config file " +

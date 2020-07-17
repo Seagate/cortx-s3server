@@ -1,7 +1,7 @@
-eos_core:                                   # Section for S3 background delete config
-   endpoint: "http://127.0.0.1:7081"                       # Service specified for EOS mero client
-   service: "eoscore"                                      # Default region specified for EOS mero client
-   default_region: "us-west2"                              # EOS mero client will use the specified host
+cortx_s3:                                   # Section for S3 background delete config
+   endpoint: "http://127.0.0.1:7081"                       # Service specified for CORTX s3 client
+   service: "cortxs3"                                      # Default region specified for CORTX s3 client
+   default_region: "us-west2"                              # CORTX s3 client will use the specified host
    access_key: "AKIAJPINPFRBTPAYXAHZ"                      # Access Key corresponding to account-name "s3-background-delete-svc"
    secret_key: "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"  # Secret Key corresponding to account-name "s3-background-delete-svc"
    daemon_mode: "True"                                     # S3background process run in daemon mode and ST's run in non-daemon mode.
@@ -31,7 +31,7 @@ rabbitmq:                                    # Section for RabbitMQ configs
 
    # RabbitMQ overview:  https://www.rabbitmq.com/getstarted.html
 
-    username: "eos-s3"                                      # Username used to communicate with RabbitMQ
+    username: "cortx-s3"                                      # Username used to communicate with RabbitMQ
     password: "password"                                    # Password corresponding to username
     host: "127.0.0.1"                                       # Host on which RabbitMQ is runnning
     queue: "s3_delete_obj_job_queue"                        # Queue name used in RabbitMQ

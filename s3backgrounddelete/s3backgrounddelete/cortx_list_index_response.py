@@ -1,9 +1,10 @@
-"""EOSCoreListIndexResponse will list out index response"""
+"""CORTXS3ListIndexResponse will list out index response."""
 import json
 
 
-class EOSCoreListIndexResponse(object):
-    """EOSCoreListIndexResponse will list index response."""
+class CORTXS3ListIndexResponse(object):
+
+    """CORTXS3ListIndexResponse will list index response."""
     _index_content = ""
 
     def __init__(self, index_content):
