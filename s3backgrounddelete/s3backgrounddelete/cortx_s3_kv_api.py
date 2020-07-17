@@ -29,7 +29,6 @@ from s3backgrounddelete.cortx_s3_util import CORTXS3Util
 from s3backgrounddelete.IEMutil import IEMutil
 
 # CORTXS3KVApi supports key-value REST-API's Put, Get & Delete
-
 class CORTXS3KVApi(CORTXS3Client):
     """CORTXS3KVApi provides key-value REST-API's Put, Get & Delete."""
     _logger = None
