@@ -3,11 +3,11 @@
 USAGE="USAGE: $(basename "$0") [-I | -R | -S | -y <configure-yum-repo> | -p <path-to-prod-cfg> | -U | -D]
 
 where:
--I	Install mero, mero-devel, halon, s3iamcli from rpms
+-I	Install cortx-motr, cortx-motr-devel, halon, cortx-s3iamcli from rpms
 	s3server will be built from local sources
--R	Remove mero, mero-devel, halon, s3iamcli, s3server, s3server-debuginfo packages
+-R	Remove cortx-motr, cortx-motr-devel, halon, cortx-s3iamcli, cortx-s3server, cortx-s3server-debuginfo packages
 -S	Show status
--y <configure-yum-repo>	Configure yum repo to install mero and halon from
+-y <configure-yum-repo>	Configure yum repo to install motr and halon from
                        	'hermi' - hermi repos
                        	'<sprint>' - i.e. 'ees1.0.0-PI.1-sprint4' repos
 -p <path-to-prod-cfg>  	Use path as s3server config
@@ -40,8 +40,8 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 install_pkgs() {
-    $USE_SUDO yum -t -y install mero
-    $USE_SUDO yum -t -y install mero-devel
+    $USE_SUDO yum -t -y install cortx-motr
+    $USE_SUDO yum -t -y install cortx-motr-devel
     $USE_SUDO yum -t -y install halon
 
     # option "-P" will build s3server rpm from the source tree
@@ -51,7 +51,7 @@ install_pkgs() {
 }
 
 remove_pkgs() {
-    $USE_SUDO yum -t -y remove s3iamcli s3server-debuginfo s3server halon mero-devel mero 
+    $USE_SUDO yum -t -y remove cortx-s3iamcli cortx-s3server-debuginfo cortx-s3server halon cortx-motr-devel cortx-motr 
 }
 
 sysctl_stat() {
@@ -84,7 +84,7 @@ status_srv() {
                ;;
         openldap) echo -e "\t\t $(sysctl_stat slapd)"
                   ;;
-        mero) $USE_SUDO hctl mero status
+        motr) $USE_SUDO hctl cortx-motr status
               ;;
         *)
               ;;
@@ -92,7 +92,7 @@ status_srv() {
 }
 
 status_pkgs() {
-    for test_pkg in s3server-debuginfo s3server halon mero-devel haproxy openldap mero
+    for test_pkg in cortx-s3server-debuginfo cortx-s3server halon cortx-motr-devel haproxy openldap cortx-motr
     do
         set +e
         $USE_SUDO yum list installed $test_pkg &> /dev/null
@@ -123,10 +123,10 @@ gpgcheck = 0
 name = Yum repo for halon sprints build
 priority = 1
 
-[sprints_mero]
+[sprints_motr]
 baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/mero/repo
 gpgcheck = 0
-name = Yum repo for mero sprints build
+name = Yum repo for motr sprints build
 priority = 1
 " > /etc/yum.repos.d/releases_sprint.repo
                       for f in /etc/yum.repos.d/*hermi*repo; do $USE_SUDO sed -i 's/priority.*/priority = 2/' $f; done
@@ -144,21 +144,21 @@ up_cluster() {
     $USE_SUDO systemctl start haproxy
     $USE_SUDO systemctl start slapd
     $USE_SUDO systemctl start s3authserver
-    $USE_SUDO rm -fR /var/mero/*
+    $USE_SUDO rm -fR /var/motr/*
     $USE_SUDO m0setup -P 1 -N 1 -K 0 -vH
     $USE_SUDO sed -i 's/- name: m0t1fs/- name: s3server/' /etc/halon/halon_facts.yaml
-    $USE_SUDO awk 'BEGIN {in_section=0} {if ($0 ~ /^- name:/) {in_section=0; if ($0 ~ /^- name: "s3server"/) {in_section=1;} } {if (in_section==1) {gsub("multiplicity: 4", "multiplicity: 2");} print;} }' /etc/halon/mero_role_mappings > /tmp/mero_role_mappings
-    $USE_SUDO cp /tmp/mero_role_mappings /etc/halon/mero_role_mappings
-    $USE_SUDO rm /tmp/mero_role_mappings
+    $USE_SUDO awk 'BEGIN {in_section=0} {if ($0 ~ /^- name:/) {in_section=0; if ($0 ~ /^- name: "s3server"/) {in_section=1;} } {if (in_section==1) {gsub("multiplicity: 4", "multiplicity: 2");} print;} }' /etc/halon/motr_role_mappings > /tmp/motr_role_mappings
+    $USE_SUDO cp /tmp/motr_role_mappings /etc/halon/motr_role_mappings
+    $USE_SUDO rm /tmp/motr_role_mappings
     $USE_SUDO systemctl start halon-cleanup
     $USE_SUDO systemctl start halond
-    $USE_SUDO hctl mero bootstrap
+    $USE_SUDO hctl cortx-motr bootstrap
     sleep 2
-    $USE_SUDO hctl mero status
+    $USE_SUDO hctl cortx-motr status
 }
 
 down_cluster() {
-    $USE_SUDO hctl mero stop
+    $USE_SUDO hctl cortx-motr stop
     $USE_SUDO systemctl stop halond
     $USE_SUDO systemctl stop halon-cleanup
     $USE_SUDO systemctl stop s3authserver

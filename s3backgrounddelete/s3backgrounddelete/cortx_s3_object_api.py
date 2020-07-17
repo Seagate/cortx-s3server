@@ -1,33 +1,34 @@
-"""This class provides Object  REST API i.e. GET,PUT,DELETE and HEAD."""
+"""CORTXS3ObjectApi class provides Object  REST API i.e. GET,PUT,DELETE and HEAD."""
 import logging
 import urllib
 
-from s3backgrounddelete.eos_core_error_respose import EOSCoreErrorResponse
-from s3backgrounddelete.eos_core_success_response import EOSCoreSuccessResponse
-from s3backgrounddelete.eos_core_client import EOSCoreClient
-from s3backgrounddelete.eos_core_util import EOSCoreUtil
+from s3backgrounddelete.cortx_s3_error_respose import CORTXS3ErrorResponse
+from s3backgrounddelete.cortx_s3_success_response import CORTXS3SuccessResponse
+from s3backgrounddelete.cortx_s3_client import CORTXS3Client
+from s3backgrounddelete.cortx_s3_util import CORTXS3Util
 from s3backgrounddelete.IEMutil import IEMutil
 
-# EOSCoreObjectApi supports object REST-API's Put, Get & Delete
+# CORTXS3ObjectApi supports object REST-API's Put, Get & Delete
 
 
-class EOSCoreObjectApi(EOSCoreClient):
-    """EOSCoreObjectApi provides object REST-API's Get, Put and Delete."""
+class CORTXS3ObjectApi(CORTXS3Client):
+
+    """CORTXS3ObjectApi provides object REST-API's Get, Put and Delete."""
     _logger = None
 
     def __init__(self, config, logger=None, connection=None):
         """Initialise logger and config."""
         if (logger is None):
-            self._logger = logging.getLogger("EOSCoreObjectApi")
+            self._logger = logging.getLogger("CORTXS3ObjectApi")
         else:
             self._logger = logger
         self.config = config
-        self.core_util = EOSCoreUtil(self.config)
+        self.s3_util = CORTXS3Util(self.config)
 
         if (connection is None):
-            super(EOSCoreObjectApi, self).__init__(self.config, logger = self._logger)
+            super(CORTXS3ObjectApi, self).__init__(self.config, logger = self._logger)
         else:
-            super(EOSCoreObjectApi, self).__init__(self.config, logger=self._logger, connection=connection)
+            super(CORTXS3ObjectApi, self).__init__(self.config, logger=self._logger, connection=connection)
 
 
     def put(self, oid, value):
@@ -46,7 +47,7 @@ class EOSCoreObjectApi(EOSCoreClient):
 
         request_uri = '/objects/' + urllib.parse.quote(oid, safe='')
 
-        headers = self.core_util.prepare_signed_header('PUT', request_uri, query_params, request_body)
+        headers = self.s3_util.prepare_signed_header('PUT', request_uri, query_params, request_body)
 
         if headers['Authorization'] is None:
             self._logger.error("Failed to generate v4 signature")
@@ -54,7 +55,7 @@ class EOSCoreObjectApi(EOSCoreClient):
 
         try:
             response = super(
-                EOSCoreObjectApi,
+                CORTXS3ObjectApi,
                 self).put(
                 request_uri,
                 request_body,
@@ -62,17 +63,17 @@ class EOSCoreObjectApi(EOSCoreClient):
         except ConnectionRefusedError as ex:
             IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
+            return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(500,"","InternalServerError")
+            return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 201:
             self._logger.info("Object added successfully.")
-            return True, EOSCoreSuccessResponse(response['body'])
+            return True, CORTXS3SuccessResponse(response['body'])
         else:
             self._logger.info('Failed to add Object.')
-            return False, EOSCoreErrorResponse(
+            return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])
 
     def get(self, oid):
@@ -90,7 +91,7 @@ class EOSCoreObjectApi(EOSCoreClient):
         # For example if oid is 'JwZSAwAAAAA=-AgAAAAAA4Ag=' urllib.parse.quote(oid, safe='') yields 'JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D'
         # And request_uri is '/objects/JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D'
 
-        headers = self.core_util.prepare_signed_header('GET', request_uri, query_params, body)
+        headers = self.s3_util.prepare_signed_header('GET', request_uri, query_params, body)
 
         if headers['Authorization'] is None:
             self._logger.error("Failed to generate v4 signature")
@@ -98,24 +99,24 @@ class EOSCoreObjectApi(EOSCoreClient):
 
         try:
             response = super(
-                EOSCoreObjectApi,
+                CORTXS3ObjectApi,
                 self).get(
                 request_uri,
                 headers=headers)
         except ConnectionRefusedError as ex:
             IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
+            return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(500,"","InternalServerError")
+            return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 200:
             self._logger.info('Successfully fetched object details.')
-            return True, EOSCoreSuccessResponse(response['body'])
+            return True, CORTXS3SuccessResponse(response['body'])
         else:
             self._logger.info('Failed to fetch object details.')
-            return False, EOSCoreErrorResponse(
+            return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])
 
     def delete(self, oid, layout_id):
@@ -140,7 +141,7 @@ class EOSCoreObjectApi(EOSCoreClient):
         absolute_request_uri = request_uri + '?' + query_params
 
         body = ''
-        headers = self.core_util.prepare_signed_header('DELETE', request_uri, query_params, body)
+        headers = self.s3_util.prepare_signed_header('DELETE', request_uri, query_params, body)
 
         if headers['Authorization'] is None:
             self._logger.error("Failed to generate v4 signature")
@@ -148,7 +149,7 @@ class EOSCoreObjectApi(EOSCoreClient):
 
         try:
             response = super(
-                EOSCoreObjectApi,
+                CORTXS3ObjectApi,
                 self).delete(
                 absolute_request_uri,
                 body,
@@ -156,17 +157,17 @@ class EOSCoreObjectApi(EOSCoreClient):
         except ConnectionRefusedError as ex:
             IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
+            return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(500,"","InternalServerError")
+            return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 204:
             self._logger.info('Object deleted successfully.')
-            return True, EOSCoreSuccessResponse(response['body'])
+            return True, CORTXS3SuccessResponse(response['body'])
         else:
             self._logger.info('Failed to delete Object.')
-            return False, EOSCoreErrorResponse(
+            return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])
 
 
@@ -192,7 +193,7 @@ class EOSCoreObjectApi(EOSCoreClient):
         absolute_request_uri = request_uri + '?' + query_params
 
         body = ''
-        headers = self.core_util.prepare_signed_header('HEAD', request_uri, query_params, body)
+        headers = self.s3_util.prepare_signed_header('HEAD', request_uri, query_params, body)
 
         if headers['Authorization'] is None:
             self._logger.error("Failed to generate v4 signature")
@@ -200,7 +201,7 @@ class EOSCoreObjectApi(EOSCoreClient):
 
         try:
             response = super(
-                EOSCoreObjectApi,
+                CORTXS3ObjectApi,
                 self).head(
                 absolute_request_uri,
                 body,
@@ -208,18 +209,18 @@ class EOSCoreObjectApi(EOSCoreClient):
         except ConnectionRefusedError as ex:
             IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
+            return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(500,"","InternalServerError")
+            return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 200:
             self._logger.info("HEAD Object called successfully with status code: "\
                  + str(response['status']) + " response body: " + str(response['body']))
-            return True, EOSCoreSuccessResponse(response['body'])
+            return True, CORTXS3SuccessResponse(response['body'])
         else:
             self._logger.info("Failed to do HEAD Object with status code: "\
                  + str(response['status']) + " response body: " + str(response['body']))
-            return False, EOSCoreErrorResponse(
+            return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])
 
