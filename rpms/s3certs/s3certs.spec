@@ -14,7 +14,7 @@ Release:        %{build_num}_%{_s3_deploy_tag}
 Summary:        SSL certificates for S3 [%{_s3_domain_tag}].
 
 License:        Seagate
-URL:            http://gerrit.mero.colo.seagate.com:8080/s3server
+URL:            https://github.com/Seagate/cortx-s3server
 Source:         %{_s3_certs_src}.tar.gz
 
 BuildRequires:  openssl
