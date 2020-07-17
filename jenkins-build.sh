@@ -163,7 +163,7 @@ fi
 export PATH=/opt/seagate/cortx/s3/bin/:$PATH
 echo $PATH
 
-#git clone --recursive http://es-gerrit.xyus.xyratex.com:8080/s3server
+#git clone --recursive https://github.com/Seagate/cortx-s3server.git
 
 S3_BUILD_DIR=`pwd`
 
@@ -217,7 +217,7 @@ $USE_SUDO systemctl stop s3authserver
 # Stop any old running motr
 cd $MOTR_SRC
 echo "Stopping any old running motr services"
-$USE_SUDO ./m0t1fs/../clovis/st/utils/mero_services.sh stop || echo "Cannot stop motr services"
+$USE_SUDO ./m0t1fs/../clovis/st/utils/motr_services.sh stop || echo "Cannot stop motr services"
 cd $S3_BUILD_DIR
 
 # Clean up motr and S3 log and data dirs
@@ -266,7 +266,7 @@ fi
 # Start motr for new tests
 cd $MOTR_SRC
 echo "Starting new built motr services"
-$USE_SUDO ./m0t1fs/../clovis/st/utils/mero_services.sh start
+$USE_SUDO ./m0t1fs/../clovis/st/utils/motr_services.sh start
 cd $S3_BUILD_DIR
 
 # Ensure correct ldap credentials are present.
@@ -392,7 +392,7 @@ tail -50 /var/log/seagate/s3/s3server.INFO
 tail -50 /var/log/seagate/s3/s3server.ERROR || echo "No Errors"
 
 cd $MOTR_SRC
-$USE_SUDO ./m0t1fs/../clovis/st/utils/mero_services.sh stop || echo "Cannot stop motr services"
+$USE_SUDO ./m0t1fs/../clovis/st/utils/motr_services.sh stop || echo "Cannot stop motr services"
 cd $S3_BUILD_DIR
 # revert ipv6 settings
 if [ $use_ipv6 -eq 1 ]

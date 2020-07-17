@@ -44,7 +44,7 @@ Summary:    Seagate S3 IAM CLI.
 
 Group:      Development/Tools
 License:    Seagate
-URL:        http://gerrit.mero.colo.seagate.com:8080/s3server
+URL:        https://github.com/Seagate/cortx-s3server
 Source0:    %{name}-%{version}-%{_s3iamcli_git_ver}.tar.gz
 
 BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-buildroot

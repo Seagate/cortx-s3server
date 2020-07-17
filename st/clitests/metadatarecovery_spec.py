@@ -77,13 +77,8 @@ def load_and_update_config(access_key_value, secret_key_value):
 
     with open(bgdelete_config_file, 'r') as f:
             config = yaml.safe_load(f)
-<<<<<<< HEAD
             config['s3_recovery']['access_key'] = access_key_value
             config['s3_recovery']['secret_key'] = secret_key_value
-=======
-            config['cortx_s3']['access_key'] = access_key_value
-            config['cortx_s3']['secret_key'] = secret_key_value
->>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59)
             config['cortx_s3']['daemon_mode'] = "False"
             config['leakconfig']['leak_processing_delay_in_mins'] = 0
             config['leakconfig']['version_processing_delay_in_mins'] = 0
@@ -128,7 +123,7 @@ print(account_response_elements)
 # ********** Update s3background delete config file with AccesskeyId and SecretKey**********************
 load_and_update_config(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])
 
-replica_bucket_list_index_oid = 'AAAAAAAAAHg=-BQAQAAAAAAA=' # base64 conversion of 0x7800000000000000" and "0x100005
+replica_bucket_list_index_oid = 'AAAAAAAAAHg=-BQAQAAAAAAA=' # base64 conversion of "0x7800000000000000" and "0x100005"
 primary_bucket_list_index_oid = 'AAAAAAAAAHg=-AQAQAAAAAAA='
 primary_bucket_list_index = S3kvTest('KvTest fetch root bucket account index')\
     .root_bucket_account_index()
@@ -140,7 +135,6 @@ replica_bucket_metadata_index_oid = "AAAAAAAAAHg=-BgAQAAAAAAA="
 primary_bucket_metadata_index = S3kvTest('KvTest fetch root buket metadata index')\
     .root_bucket_metadata_index()
 
-replica_bucket_list_index_oid = 'AAAAAAAAAHg=-BQAQAAAAAAA=' # base64 conversion of 0x7800000000000000" and "0x100005
 config = CORTXS3Config()
 
 # ======================================================================================================
@@ -148,27 +142,15 @@ config = CORTXS3Config()
 # Test Scenario 1
 # Test if bucket replica indexes are present.
 print("\nvalidate if bucket replica indexes exist.\n")
-status, res = CORTXMotrIndexApi(config).head(replica_bucket_list_index_oid)
+status, res = CORTXS3IndexApi(config).head(replica_bucket_list_index_oid)
 assert status == True
-assert isinstance(res, CORTXMotrSuccessResponse)
+assert isinstance(res, CORTXS3SuccessResponse)
 
-status, res = CortxMotrIndexApi(config).head(replica_bucket_metadata_index_oid)
+status, res = CORTXS3IndexApi(config).head(replica_bucket_metadata_index_oid)
 assert status == True
-assert isinstance(res, CortxMotrSuccessResponse)
+assert isinstance(res, CORTXS3SuccessResponse)
 
 print("\nHEAD 'replica bucket indexes' validation completed.\n")
-# Test if Replica of global bucket list index OID present.
-print("\nvalidate if replica global bucket index exists.\n")
-status, res = CORTXS3IndexApi(config).head(replica_bucket_list_index_oid)
-<<<<<<< HEAD
-assert status == True
-assert isinstance(res, CORTXS3SuccessResponse)
-status, res = CORTXMotrIndexApi(config).head(replica_bucket_list_index_oid)
-=======
->>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59)
-assert status == True
-assert isinstance(res, CORTXS3SuccessResponse)
-print("\nHEAD 'replica index' validation completed.\n")
 
 # ******************************************************************************************************
 
@@ -178,11 +160,10 @@ print("\nvalidate if KV created in replica bucket indexes at PUT bucket\n")
 AwsTest('Create Bucket "seagatebucket" using s3-recovery-svc account')\
     .create_bucket("seagatebucket").execute_test().command_is_successful()
 
-<<<<<<< HEAD
 # list KV in replica bucket list index
-status, res = CortxMotrIndexApi(config).list(replica_bucket_list_index_oid)
+status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
-assert isinstance(res, CortxMotrListIndexResponse)
+assert isinstance(res, CORTXS3ListIndexResponse)
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == replica_bucket_list_index_oid
@@ -191,9 +172,9 @@ replica_KV_list = index_content['Keys']
 assert len(replica_KV_list) == 1
 
 # list KV in primary bucket list index
-status, res = CortxMotrIndexApi(config).list(primary_bucket_list_index_oid)
+status, res = CORTXS3IndexApi(config).list(primary_bucket_list_index_oid)
 assert status == True
-assert isinstance(res, CortxMotrListIndexResponse)
+assert isinstance(res, CORTXS3ListIndexResponse)
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == primary_bucket_list_index_oid
@@ -207,18 +188,18 @@ for primary_kv, replica_kv in zip(primary_KV_list, replica_KV_list):
     assert primary_kv['Value'] == replica_kv['Value']
 
 # list KV in replica bucket metadata index
-status, res = CortxMotrIndexApi(config).list(replica_bucket_metadata_index_oid)
+status, res = CORTXS3IndexApi(config).list(replica_bucket_metadata_index_oid)
 assert status == True
-assert isinstance(res, CortxMotrListIndexResponse)
+assert isinstance(res, CORTXS3ListIndexResponse)
 
 index_content = res.get_index_content()
 replica_KV_list = index_content['Keys']
 assert len(replica_KV_list) == 1
 
 # list KV in primary bucket metadata index
-status, res = EOSCoreIndexApi(config).list(primary_bucket_metadata_index_oid)
+status, res = CORTXS3IndexApi(config).list(primary_bucket_metadata_index_oid)
 assert status == True
-assert isinstance(res, EOSCoreListIndexResponse)
+assert isinstance(res, CORTXS3ListIndexResponse)
 
 index_content = res.get_index_content()
 primary_KV_list = index_content['Keys']
@@ -228,47 +209,6 @@ assert len(primary_KV_list) == 1
 for primary_kv, replica_kv in zip(primary_KV_list, replica_KV_list):
     assert primary_kv['Key'] == replica_kv['Key']
     assert primary_kv['Value'] == replica_kv['Value']
-status, res = CORTXMotrIndexApi(config).list(replica_bucket_list_index_oid)
-assert status == True
-status, res = CORTXMotrIndexApi(config).list(replica_bucket_list_index_oid)
-assert status == True
-status, res = CORTXMotrIndexApi(config).list(replica_bucket_list_index_oid)
-assert status == True
-assert isinstance(res, CORTXMotrListIndexResponse)
-status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
-assert status == True
-assert isinstance(res, CORTXS3ListIndexResponse)
-status, res = CORTXMotrIndexApi(config).list(replica_bucket_list_index_oid)
-=======
-status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
->>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59)
-assert status == True
-assert isinstance(res, CORTXS3ListIndexResponse)
-# Example index_content:
-# {'Delimiter': '',
-#  'Index-Id': 'AAAAAAAAAHg=-BQAQAAAAAAA=',
-#  'IsTruncated': 'false',
-#  'Keys': [
-#       {'Key': 'seagatebucket',
-#        'Value': '{"account_id":"293986807303","account_name":"s3-recovery-svc","create_timestamp":"2020-06-16T04:46:46.000Z","location_constraint":"us-west-2"}\n'}
-#   ],
-#   'Marker': '',
-#   'MaxKeys': '1000',
-#   'NextMarker': '', 'Prefix': ''
-# }
-index_content = res.get_index_content()
-assert index_content["Index-Id"] == "AAAAAAAAAHg=-BQAQAAAAAAA="
-
-bucket_key_value_list = index_content["Keys"]
-bucket_key_value = (bucket_key_value_list[0])
-bucket_key = bucket_key_value["Key"]
-bucket_value = bucket_key_value["Value"]
-
-value_json = json.loads(bucket_value)
-
-assert bucket_key == "seagatebucket"
-assert value_json['account_id'] == account_response_elements["AccountId"]
-assert value_json['create_timestamp'] != ''
 
 # ******************************************************************************************************
 
@@ -278,27 +218,17 @@ print("\nvalidate if KV deleted from replica bucket indexes at DELETE bucket\n")
 AwsTest('Delete Bucket "seagatebucket"').delete_bucket("seagatebucket")\
    .execute_test().command_is_successful()
 
-<<<<<<< HEAD
-status, res = CortxMotrIndexApi(config).list(replica_bucket_list_index_oid)
-assert status == True
-assert isinstance(res, CortxMotrListIndexResponse)
-status, res = CORTXMotrIndexApi(config).list(replica_bucket_list_index_oid)
-status, res = CORTXMotrIndexApi(config).list(replica_bucket_list_index_oid)
-=======
 status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
->>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59)
+assert status == True
+assert isinstance(res, CORTXS3ListIndexResponse)
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == replica_bucket_list_index_oid
 assert index_content["Keys"] == None
 
-status, res = EOSCoreIndexApi(config).list(replica_bucket_metadata_index_oid)
+status, res = CORTXS3IndexApi(config).list(replica_bucket_metadata_index_oid)
 assert status == True
 assert isinstance(res, CORTXS3ListIndexResponse)
-<<<<<<< HEAD
-assert isinstance(res, CORTXMotrListIndexResponse)
-=======
->>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59)
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == replica_bucket_metadata_index_oid
@@ -502,7 +432,6 @@ assert status == True
 assert isinstance(res, CORTXS3SuccessResponse)
 
 status, res = CORTXS3KVApi(config).delete(replica_bucket_list_index_oid, replica_index_key)
-<<<<<<< HEAD
 assert status == True
 assert isinstance(res, CORTXS3SuccessResponse)
 
@@ -601,20 +530,20 @@ def put_kvs_in_indexes(index_with_corrupt_kvs,
             if KV['Key'] == "my-bucket9":
                 # skip this Key, to check if "recover" put this key in the index
                 continue
-            status, res = EOSCoreKVApi(config)\
+            status, res = CORTXS3KVApi(config)\
                 .put(index_with_corrupt_kvs, KV['Key'], KV['Value'])
             assert status == True
-            assert isinstance(res, EOSCoreSuccessResponse)
+            assert isinstance(res, CORTXS3SuccessResponse)
 
     # PUT KVs in second index id: index_with_correct_kvs
     for KV in key_value_list_with_all_good_values:
         # we need to skip this key to validate if "recover" restores this key in the index
         if KV['Key'] == "my-bucket8":
             continue
-        status, res = EOSCoreKVApi(config)\
+        status, res = CORTXS3KVApi(config)\
             .put(index_with_correct_kvs, KV['Key'], KV['Value'])
         assert status == True
-        assert isinstance(res, EOSCoreSuccessResponse)
+        assert isinstance(res, CORTXS3SuccessResponse)
 
     # PUT KVs in global bucket metadata index
     # TODO: As of now we are adding correct KVs in global bucket metadata index
@@ -622,10 +551,10 @@ def put_kvs_in_indexes(index_with_corrupt_kvs,
     # for global bucket metadata index
     for KV in key_value_list_with_all_good_values:
         key = r'123456789/' + KV['Key']
-        status, res = EOSCoreKVApi(config)\
+        status, res = CORTXS3KVApi(config)\
             .put(primary_bucket_metadata_index_oid, key, KV['Value'])
         assert status == True
-        assert isinstance(res, EOSCoreSuccessResponse)
+        assert isinstance(res, CORTXS3SuccessResponse)
 
 # ***************************************************************************************************
 # Test: recover corrupted, old and missing key-values in primary index from replica index 
@@ -644,19 +573,18 @@ def put_kvs_in_indexes(index_with_corrupt_kvs,
 put_kvs_in_indexes(primary_bucket_list_index_oid, replica_bucket_list_index_oid)
 
 # Validate that primary and replica indexes had 4 keys before running the s3recoverytool
-status, res = EOSCoreIndexApi(config).list(primary_bucket_list_index_oid)
+status, res = CORTXS3IndexApi(config).list(primary_bucket_list_index_oid)
 assert status == True
-assert isinstance(res, EOSCoreListIndexResponse)
+assert isinstance(res, CORTXS3ListIndexResponse)
 
 index_content = res.get_index_content()
 key_value_primary_index_before_recovery_list = index_content["Keys"]
 assert index_content["Index-Id"] == primary_bucket_list_index_oid
 assert len(key_value_primary_index_before_recovery_list) == 4
 
-status, res = EOSCoreIndexApi(config).list(replica_bucket_list_index_oid)
+status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
-assert isinstance(res, EOSCoreListIndexResponse)
-status, res = CORTXMotrIndexApi(config).list(replica_bucket_list_index_oid)
+assert isinstance(res, CORTXS3ListIndexResponse)
 
 index_content = res.get_index_content()
 key_value_replica_index_before_recovery_list = index_content["Keys"]
@@ -670,19 +598,18 @@ result = S3RecoveryTest("s3recovery --recover (corrupted and missing KVs)")\
     .command_is_successful()
 
 # List Primary Index
-status, res = EOSCoreIndexApi(config).list(primary_bucket_list_index_oid)
+status, res = CORTXS3IndexApi(config).list(primary_bucket_list_index_oid)
 assert status == True
-assert isinstance(res, CORTXMotrListIndexResponse)
+assert isinstance(res, CORTXS3ListIndexResponse)
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == primary_bucket_list_index_oid
 actual_primary_index_key_value_list = index_content["Keys"]
-status, res = CORTXMotrIndexApi(config).list(replica_bucket_list_index_oid)
 
 # List replica Index
-status, res = EOSCoreIndexApi(config).list(replica_bucket_list_index_oid)
+status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
-assert isinstance(res, CORTXMotrListIndexResponse)
+assert isinstance(res, CORTXS3ListIndexResponse)
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == replica_bucket_list_index_oid
@@ -694,19 +621,19 @@ validate_if_same_kvs(actual_primary_index_key_value_list,
 
 # Delete the key-values from both primary and replica indexes
 for KV in key_value_list_with_not_good_values:
-    status, res = EOSCoreKVApi(config).delete(primary_bucket_list_index_oid, KV['Key'])
+    status, res = CORTXS3KVApi(config).delete(primary_bucket_list_index_oid, KV['Key'])
     assert status == True
-    assert isinstance(res, EOSCoreSuccessResponse)
+    assert isinstance(res, CORTXS3SuccessResponse)
 
-    status, res = EOSCoreKVApi(config).delete(replica_bucket_list_index_oid, KV['Key'])
+    status, res = CORTXS3KVApi(config).delete(replica_bucket_list_index_oid, KV['Key'])
     assert status == True
-    assert isinstance(res, EOSCoreSuccessResponse)
+    assert isinstance(res, CORTXS3SuccessResponse)
 
     metadata_index_key = r'123456789/' + KV['Key']
-    status, res = EOSCoreKVApi(config)\
+    status, res = CORTXS3KVApi(config)\
         .delete(primary_bucket_metadata_index_oid, metadata_index_key)
     assert status == True
-    assert isinstance(res, EOSCoreSuccessResponse)
+    assert isinstance(res, CORTXS3SuccessResponse)
 
 # ***************************************************************************************************
 # Test: recover corrupted, old and missing key-values in replica index from primary index 
@@ -725,18 +652,18 @@ for KV in key_value_list_with_not_good_values:
 put_kvs_in_indexes(replica_bucket_list_index_oid, primary_bucket_list_index_oid)
 
 # Validate that primary and replica indexes had 4 keys before running the s3recoverytool
-status, res = EOSCoreIndexApi(config).list(primary_bucket_list_index_oid)
+status, res = CORTXS3IndexApi(config).list(primary_bucket_list_index_oid)
 assert status == True
-assert isinstance(res, EOSCoreListIndexResponse)
+assert isinstance(res, CORTXS3ListIndexResponse)
 
 index_content = res.get_index_content()
 key_value_primary_index_before_recovery_list = index_content["Keys"]
 assert index_content["Index-Id"] == primary_bucket_list_index_oid
 assert len(key_value_primary_index_before_recovery_list) == 4
 
-status, res = EOSCoreIndexApi(config).list(replica_bucket_list_index_oid)
+status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
-assert isinstance(res, EOSCoreListIndexResponse)
+assert isinstance(res, CORTXS3ListIndexResponse)
 
 index_content = res.get_index_content()
 key_value_replica_index_before_recovery_list = index_content["Keys"]
@@ -750,18 +677,18 @@ result = S3RecoveryTest("s3recovery --recover (corrupted and missing KVs)")\
     .command_is_successful()
 
 # List Primary Index
-status, res = EOSCoreIndexApi(config).list(primary_bucket_list_index_oid)
+status, res = CORTXS3IndexApi(config).list(primary_bucket_list_index_oid)
 assert status == True
-assert isinstance(res, EOSCoreListIndexResponse)
+assert isinstance(res, CORTXS3ListIndexResponse)
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == primary_bucket_list_index_oid
 actual_primary_index_key_value_list = index_content["Keys"]
 
 # List replica Index
-status, res = EOSCoreIndexApi(config).list(replica_bucket_list_index_oid)
+status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
-assert isinstance(res, EOSCoreListIndexResponse)
+assert isinstance(res, CORTXS3ListIndexResponse)
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == replica_bucket_list_index_oid
@@ -773,19 +700,19 @@ validate_if_same_kvs(actual_primary_index_key_value_list,
 
 # Delete the key-values from both primary and replica indexes
 for KV in key_value_list_with_not_good_values:
-    status, res = EOSCoreKVApi(config).delete(primary_bucket_list_index_oid, KV['Key'])
+    status, res = CORTXS3KVApi(config).delete(primary_bucket_list_index_oid, KV['Key'])
     assert status == True
-    assert isinstance(res, EOSCoreSuccessResponse)
+    assert isinstance(res, CORTXS3SuccessResponse)
 
-    status, res = EOSCoreKVApi(config).delete(replica_bucket_list_index_oid, KV['Key'])
+    status, res = CORTXS3KVApi(config).delete(replica_bucket_list_index_oid, KV['Key'])
     assert status == True
-    assert isinstance(res, EOSCoreSuccessResponse)
+    assert isinstance(res, CORTXS3SuccessResponse)
 
     metadata_index_key = r'123456789/' + KV['Key']
-    status, res = EOSCoreKVApi(config)\
+    status, res = CORTXS3KVApi(config)\
         .delete(primary_bucket_metadata_index_oid, metadata_index_key)
     assert status == True
-    assert isinstance(res, EOSCoreSuccessResponse)
+    assert isinstance(res, CORTXS3SuccessResponse)
 
 #-------------------------------------------------------------------------------------------------------
 
@@ -828,28 +755,28 @@ global_bucket_metadata_index_key_value_list = [
 
 # PUT KV in global bucket list index, primary and replica both
 for KV in global_bucket_list_index_key_value_list:
-    status, res = EOSCoreKVApi(config)\
+    status, res = CORTXS3KVApi(config)\
         .put(primary_bucket_list_index_oid, KV['Key'], KV['Value'])
     assert status == True
-    assert isinstance(res, EOSCoreSuccessResponse)
+    assert isinstance(res, CORTXS3SuccessResponse)
 
-    status, res = EOSCoreKVApi(config)\
+    status, res = CORTXS3KVApi(config)\
         .put(replica_bucket_list_index_oid, KV['Key'], KV['Value'])
     assert status == True
-    assert isinstance(res, EOSCoreSuccessResponse)
+    assert isinstance(res, CORTXS3SuccessResponse)
 
 # PUT KV in global bucket metadata index
 for KV in global_bucket_metadata_index_key_value_list:
     key = r'123456789/' + KV['Key']
-    status, res = EOSCoreKVApi(config)\
+    status, res = CORTXS3KVApi(config)\
         .put(primary_bucket_metadata_index_oid, key, KV['Value'])
     assert status == True
-    assert isinstance(res, EOSCoreSuccessResponse)
+    assert isinstance(res, CORTXS3SuccessResponse)
 
 # Validate 3 KVs in global bucket list index
-status, res = EOSCoreIndexApi(config).list(primary_bucket_list_index_oid)
+status, res = CORTXS3IndexApi(config).list(primary_bucket_list_index_oid)
 assert status == True
-assert isinstance(res, EOSCoreListIndexResponse)
+assert isinstance(res, CORTXS3ListIndexResponse)
 
 index_content = res.get_index_content()
 key_value_primary_index_before_recovery_list = index_content["Keys"]
@@ -863,9 +790,9 @@ result = S3RecoveryTest("s3recovery --recover (consistency check)")\
     .command_is_successful()
 
 # Validate 2 KVs in global bucket list index after doing 's3recovery --recover' 
-status, res = EOSCoreIndexApi(config).list(primary_bucket_list_index_oid)
+status, res = CORTXS3IndexApi(config).list(primary_bucket_list_index_oid)
 assert status == True
-assert isinstance(res, EOSCoreListIndexResponse)
+assert isinstance(res, CORTXS3ListIndexResponse)
 
 index_content = res.get_index_content()
 key_value_primary_index_before_recovery_list = index_content["Keys"]
@@ -873,9 +800,9 @@ assert index_content["Index-Id"] == primary_bucket_list_index_oid
 assert len(key_value_primary_index_before_recovery_list) == 2
 
 # Validate 2 KVs in global bucket metadata index after doing 's3recovery --recover' 
-status, res = EOSCoreIndexApi(config).list(primary_bucket_metadata_index_oid)
+status, res = CORTXS3IndexApi(config).list(primary_bucket_metadata_index_oid)
 assert status == True
-assert isinstance(res, EOSCoreListIndexResponse)
+assert isinstance(res, CORTXS3ListIndexResponse)
 
 index_content = res.get_index_content()
 key_value_primary_index_before_recovery_list = index_content["Keys"]
@@ -884,24 +811,20 @@ assert len(key_value_primary_index_before_recovery_list) == 2
  
 # Delete the key-values from both primary and replica indexes
 for KV in global_bucket_list_index_key_value_list:
-    status, res = EOSCoreKVApi(config).delete(primary_bucket_list_index_oid, KV['Key'])
+    status, res = CORTXS3KVApi(config).delete(primary_bucket_list_index_oid, KV['Key'])
     assert status == True
-    assert isinstance(res, EOSCoreSuccessResponse)
+    assert isinstance(res, CORTXS3SuccessResponse)
 
-    status, res = EOSCoreKVApi(config).delete(replica_bucket_list_index_oid, KV['Key'])
+    status, res = CORTXS3KVApi(config).delete(replica_bucket_list_index_oid, KV['Key'])
     assert status == True
-    assert isinstance(res, EOSCoreSuccessResponse)
+    assert isinstance(res, CORTXS3SuccessResponse)
 
 for KV in global_bucket_metadata_index_key_value_list:
     metadata_index_key = r'123456789/' + KV['Key']
-    status, res = EOSCoreKVApi(config)\
+    status, res = CORTXS3KVApi(config)\
         .delete(primary_bucket_metadata_index_oid, metadata_index_key)
     assert status == True
-    assert isinstance(res, EOSCoreSuccessResponse)
-=======
-assert status == True
-assert isinstance(res, CORTXS3SuccessResponse)
->>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59)
+    assert isinstance(res, CORTXS3SuccessResponse)
 
 # ================================================= CLEANUP =============================================
 

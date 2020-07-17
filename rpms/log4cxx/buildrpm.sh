@@ -29,7 +29,7 @@ VERSION=0.10.0
 cd ~/rpmbuild/SOURCES/
 rm -rf apache-log4cxx*
 
-# Todo : log4cxx should be added to our gerrit repo to clone here
+# Todo : log4cxx should be added to our github repo to clone here
 git clone https://gitbox.apache.org/repos/asf/logging-log4cxx.git apache-log4cxx-${VERSION}
 cd apache-log4cxx-${VERSION}
 git checkout c60dda4770ce848403f475ab9fa6accd8173d2d8
