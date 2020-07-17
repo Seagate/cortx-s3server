@@ -1,3 +1,4 @@
+<<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/cortx_s3_object_api.py
 <<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/eos_core_object_api.py
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
@@ -22,6 +23,9 @@
 =======
 """CORTXS3ObjectApi class provides Object  REST API i.e. GET,PUT,DELETE and HEAD."""
 >>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_s3_object_api.py
+=======
+"""CORTXS3ObjectApi class provides Object  REST API i.e. GET,PUT,DELETE and HEAD."""
+>>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_s3_object_api.py
 import logging
 import urllib
 
@@ -32,10 +36,18 @@ from s3backgrounddelete.cortx_s3_util import CORTXS3Util
 from s3backgrounddelete.IEMutil import IEMutil
 
 # CORTXS3ObjectApi supports object REST-API's Put, Get & Delete
+<<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/cortx_s3_object_api.py
 
+=======
+>>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_s3_object_api.py
 
 class CORTXS3ObjectApi(CORTXS3Client):
 
+<<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/cortx_s3_object_api.py
+=======
+class CORTXS3ObjectApi(CORTXS3Client):
+
+>>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_s3_object_api.py
     """CORTXS3ObjectApi provides object REST-API's Get, Put and Delete."""
     _logger = None
 

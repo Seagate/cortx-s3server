@@ -24,11 +24,17 @@ import sys
 import json
 import dateutil.parser
 <<<<<<< HEAD
+<<<<<<< HEAD
 import logging
 import datetime
 from s3backgrounddelete.eos_core_config import EOSCoreConfig
 from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
 from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
+=======
+from s3backgrounddelete.cortx_s3_config import CORTXS3Config
+from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
+from s3backgrounddelete.cortx_s3_kv_api import CORTXS3KVApi
+>>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59)
 =======
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
@@ -40,9 +46,15 @@ from json import JSONDecodeError
 class S3RecoveryBase:
     def __init__(self):
 <<<<<<< HEAD
+<<<<<<< HEAD
         self.config = EOSCoreConfig(s3recovery_flag = True)
         self.index_api = EOSCoreIndexApi(self.config)
         self.kv_api = EOSCoreKVApi(self.config)
+=======
+        self.config = CORTXS3Config()
+        self.index_api = CORTXS3IndexApi(self.config)
+        self.kv_api = CORTXS3KVApi(self.config)
+>>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59)
 =======
         self.config = CORTXS3Config()
         self.index_api = CORTXS3IndexApi(self.config)

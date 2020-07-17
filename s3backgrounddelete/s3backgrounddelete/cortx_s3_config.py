@@ -33,9 +33,13 @@ class CORTXS3Config(object):
 
     def __init__(self, s3recovery_flag = False):
         """Initialise logger and configuration."""
+<<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/cortx_s3_config.py
 <<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/eos_core_config.py
         self.logger = logging.getLogger(__name__ + "EOSCoreConfig")
         self.s3recovery_flag = s3recovery_flag
+=======
+        self.logger = logging.getLogger(__name__ + "CORTXS3Config")
+>>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_s3_config.py
 =======
         self.logger = logging.getLogger(__name__ + "CORTXS3Config")
 >>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_s3_config.py

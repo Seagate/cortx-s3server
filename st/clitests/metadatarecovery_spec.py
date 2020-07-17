@@ -77,8 +77,13 @@ def load_and_update_config(access_key_value, secret_key_value):
 
     with open(bgdelete_config_file, 'r') as f:
             config = yaml.safe_load(f)
+<<<<<<< HEAD
             config['s3_recovery']['access_key'] = access_key_value
             config['s3_recovery']['secret_key'] = secret_key_value
+=======
+            config['cortx_s3']['access_key'] = access_key_value
+            config['cortx_s3']['secret_key'] = secret_key_value
+>>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59)
             config['cortx_s3']['daemon_mode'] = "False"
             config['leakconfig']['leak_processing_delay_in_mins'] = 0
             config['leakconfig']['version_processing_delay_in_mins'] = 0
@@ -155,11 +160,14 @@ print("\nHEAD 'replica bucket indexes' validation completed.\n")
 # Test if Replica of global bucket list index OID present.
 print("\nvalidate if replica global bucket index exists.\n")
 status, res = CORTXS3IndexApi(config).head(replica_bucket_list_index_oid)
+<<<<<<< HEAD
 assert status == True
 assert isinstance(res, CORTXS3SuccessResponse)
 status, res = CORTXMotrIndexApi(config).head(replica_bucket_list_index_oid)
+=======
+>>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59)
 assert status == True
-assert isinstance(res, CORTXMotrSuccessResponse)
+assert isinstance(res, CORTXS3SuccessResponse)
 print("\nHEAD 'replica index' validation completed.\n")
 
 # ******************************************************************************************************
@@ -170,6 +178,7 @@ print("\nvalidate if KV created in replica bucket indexes at PUT bucket\n")
 AwsTest('Create Bucket "seagatebucket" using s3-recovery-svc account')\
     .create_bucket("seagatebucket").execute_test().command_is_successful()
 
+<<<<<<< HEAD
 # list KV in replica bucket list index
 status, res = CortxMotrIndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
@@ -230,8 +239,11 @@ status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
 assert isinstance(res, CORTXS3ListIndexResponse)
 status, res = CORTXMotrIndexApi(config).list(replica_bucket_list_index_oid)
+=======
+status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
+>>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59)
 assert status == True
-assert isinstance(res, CORTXMotrListIndexResponse)
+assert isinstance(res, CORTXS3ListIndexResponse)
 # Example index_content:
 # {'Delimiter': '',
 #  'Index-Id': 'AAAAAAAAAHg=-BQAQAAAAAAA=',
@@ -266,11 +278,15 @@ print("\nvalidate if KV deleted from replica bucket indexes at DELETE bucket\n")
 AwsTest('Delete Bucket "seagatebucket"').delete_bucket("seagatebucket")\
    .execute_test().command_is_successful()
 
+<<<<<<< HEAD
 status, res = CortxMotrIndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
 assert isinstance(res, CortxMotrListIndexResponse)
 status, res = CORTXMotrIndexApi(config).list(replica_bucket_list_index_oid)
 status, res = CORTXMotrIndexApi(config).list(replica_bucket_list_index_oid)
+=======
+status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
+>>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59)
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == replica_bucket_list_index_oid
@@ -279,7 +295,10 @@ assert index_content["Keys"] == None
 status, res = EOSCoreIndexApi(config).list(replica_bucket_metadata_index_oid)
 assert status == True
 assert isinstance(res, CORTXS3ListIndexResponse)
+<<<<<<< HEAD
 assert isinstance(res, CORTXMotrListIndexResponse)
+=======
+>>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59)
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == replica_bucket_metadata_index_oid
@@ -483,6 +502,7 @@ assert status == True
 assert isinstance(res, CORTXS3SuccessResponse)
 
 status, res = CORTXS3KVApi(config).delete(replica_bucket_list_index_oid, replica_index_key)
+<<<<<<< HEAD
 assert status == True
 assert isinstance(res, CORTXS3SuccessResponse)
 
@@ -878,6 +898,10 @@ for KV in global_bucket_metadata_index_key_value_list:
         .delete(primary_bucket_metadata_index_oid, metadata_index_key)
     assert status == True
     assert isinstance(res, EOSCoreSuccessResponse)
+=======
+assert status == True
+assert isinstance(res, CORTXS3SuccessResponse)
+>>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59)
 
 # ================================================= CLEANUP =============================================
 

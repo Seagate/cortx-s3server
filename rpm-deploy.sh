@@ -143,7 +143,11 @@ name = Yum repo for halon sprints build
 priority = 1
 
 [sprints_motr]
+<<<<<<< HEAD
 baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/mero/repo
+=======
+baseurl = http://ci-storage.mero.colo.seagate.com/releases/eos/${1}/mero/repo
+>>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59)
 gpgcheck = 0
 name = Yum repo for motr sprints build
 priority = 1

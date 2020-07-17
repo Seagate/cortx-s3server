@@ -1,3 +1,4 @@
+<<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/cortx_s3_index_api.py
 <<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/eos_core_index_api.py
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
@@ -22,6 +23,9 @@
 =======
 """CORTXS3IndexApi class provides Index  REST API i.e. List, PUT."""
 >>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_s3_index_api.py
+=======
+"""CORTXS3IndexApi class provides Index  REST API i.e. List, PUT."""
+>>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_s3_index_api.py
 
 import logging
 import urllib
@@ -35,9 +39,15 @@ from s3backgrounddelete.IEMutil import IEMutil
 
 
 # CORTXS3IndexApi supports index REST-API's List & Put
+<<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/cortx_s3_index_api.py
 
 class CORTXS3IndexApi(CORTXS3Client):
 
+=======
+
+class CORTXS3IndexApi(CORTXS3Client):
+
+>>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_s3_index_api.py
     """CORTXS3IndexApi provides index REST-API's List and Put."""
     _logger = None
 
