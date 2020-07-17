@@ -27,6 +27,7 @@ fi
 INSTALL_PREFIX=$1
 AUTH_INSTALL_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/auth
 S3_INSTALL_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/s3
+DATA_RECOVERY_INSTALL_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/datarecovery
 S3_CONFIG_FILE_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/s3/conf
 S3_LOG_ROTATE_FILE_LOCATION=$INSTALL_PREFIX/etc/cron.hourly
 SERVICE_FILE_LOCATION=$INSTALL_PREFIX/lib/systemd/system
@@ -38,8 +39,11 @@ KEEPALIVED_CFG_DIR_LOCATION=$INSTALL_PREFIX/etc/keepalived
 
 rm -rf $AUTH_INSTALL_LOCATION
 rm -rf $S3_INSTALL_LOCATION
+rm -rf $DATA_RECOVERY_INSTALL_LOCATION
+
 
 mkdir -p $AUTH_INSTALL_LOCATION
+mkdir -p $DATA_RECOVERY_INSTALL_LOCATION
 mkdir -p $AUTH_INSTALL_LOCATION/resources
 mkdir -p $AUTH_INSTALL_LOCATION/scripts
 mkdir -p $S3_INSTALL_LOCATION/addb-plugin
@@ -140,6 +144,9 @@ cp s3backgrounddelete/s3backgrounddelete/config/s3_background_delete_config.yaml
 
 # Copy s3 data recovery script.
 cp -f s3_data_recovery.sh $S3_INSTALL_LOCATION/s3datarecovery/
+
+# Copy orchastrator script
+cp -f orchastrator.sh $DATA_RECOVERY_INSTALL_LOCATION/
 
 # Copy the s3 background producer file for systemctl support.
 cp s3backgrounddelete/s3backgroundproducer.service $SERVICE_FILE_LOCATION
