@@ -20,10 +20,12 @@ else
   source $ha_config
 fi
 
+s3_config_file="/opt/seagate/cortx/s3/conf/s3config.yaml"
+
 # Ensure default working dir is present
 s3_working_dir=`python -c '
 import yaml;
-print yaml.load(open("/opt/seagate/cortx/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_DAEMON_WORKING_DIR"];
+print yaml.load(open("'$s3_config_file'"))["S3_SERVER_CONFIG"]["S3_DAEMON_WORKING_DIR"];
 ' | tr -d '\r\n'
 `"s3server-$1"
 
@@ -32,7 +34,7 @@ mkdir -p $s3_working_dir
 # Log dir configured in s3config.yaml
 s3_log_dir=`python -c '
 import yaml;
-print yaml.load(open("/opt/seagate/cortx/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_LOG_DIR"];
+print yaml.load(open("'$s3_config_file'"))["S3_SERVER_CONFIG"]["S3_LOG_DIR"];
 ' | tr -d '\r\n'
 `"/s3server-$1"
 mkdir -p $s3_log_dir
@@ -45,11 +47,11 @@ ulimit -n 10240
 
 # Start the s3server
 export PATH=$PATH:/opt/seagate/cortx/s3/bin
-local_ep=$MERO_S3SERVER_EP
-ha_ep=$MERO_HA_EP
-profile_fid="<$MERO_PROFILE_FID>"
-process_fid="<$MERO_PROCESS_FID>"
-s3port=$MERO_S3SERVER_PORT
+local_ep=$MOTR_S3SERVER_EP
+ha_ep=$MOTR_HA_EP
+profile_fid="<$MOTR_PROFILE_FID>"
+process_fid="<$MOTR_PROCESS_FID>"
+s3port=$MOTR_S3SERVER_PORT
 
 
 # s3server cmd parameters allowing to fake some clovis functionality

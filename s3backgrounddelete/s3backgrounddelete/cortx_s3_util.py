@@ -5,16 +5,16 @@ import hashlib
 from hashlib import sha1, sha256
 import urllib
 import datetime
-from s3backgrounddelete.eos_core_config import EOSCoreConfig
+from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 
-class EOSCoreUtil(object):
+class CORTXS3Util(object):
    """Generate Authorization headers to validate requests."""
    _config = None
 
    def __init__(self, config):
         """Initialise config."""
         if (config is None):
-            self._config = EOSCoreConfig()
+            self._config = CORTXS3Config()
         else:
             self._config = config
 
@@ -87,8 +87,8 @@ class EOSCoreUtil(object):
            access_key = self._config.get_s3_recovery_access_key()
            secret_key = self._config.get_s3_recovery_secret_key()
        else:
-           access_key = self._config.get_eos_core_access_key()
-           secret_key = self._config.get_eos_core_secret_key()
+           access_key = self._config.get_cortx_s3_access_key()
+           secret_key = self._config.get_cortx_s3_secret_key()
 
        string_to_sign = self.create_string_to_sign_v4(method, canonical_uri, canonical_query_string, body, epoch_t,
                                                  algorithm, host, service, region)
@@ -116,12 +116,12 @@ class EOSCoreUtil(object):
 
    def prepare_signed_header(self, http_request, request_uri, query_params, body):
        """Generate headers used for authorization requests."""
-       url_parse_result  = urllib.parse.urlparse(self._config.get_eos_core_endpoint())
+       url_parse_result  = urllib.parse.urlparse(self._config.get_cortx_s3_endpoint())
        epoch_t = datetime.datetime.utcnow()
        headers = {'content-type': 'application/x-www-form-urlencoded',
                'Accept': 'text/plain'}
        headers['Authorization'] = self.sign_request_v4(http_request, request_uri ,query_params, body, epoch_t, url_parse_result.netloc,
-           self._config.get_eos_core_service(), self._config.get_eos_core_region())
+           self._config.get_cortx_s3_service(), self._config.get_cortx_s3_region())
        headers['x-amz-date'] = self.get_amz_timestamp(epoch_t)
        headers['x-amz-content-sha256'] = self.body_hash_hex
        return headers
