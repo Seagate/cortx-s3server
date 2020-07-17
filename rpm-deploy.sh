@@ -54,7 +54,7 @@ remove_pkgs() {
     $USE_SUDO yum -t -y remove cortx-s3iamcli cortx-s3server-debuginfo cortx-s3server halon cortx-motr-devel cortx-motr 
 }
 
-siysctl_stat() {
+sysctl_stat() {
     $USE_SUDO systemctl status $1 &> /dev/null
     local st=$?
     case $st in
