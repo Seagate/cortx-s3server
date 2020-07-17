@@ -32,11 +32,11 @@ from auth import AuthTest
 from awss3api import AwsTest
 from s3kvstool import S3kvTest
 
-from s3backgrounddelete.cortx_motr_config import CORTXMotrConfig
-from s3backgrounddelete.cortx_motr_kv_api import CORTXMotrKVApi
-from s3backgrounddelete.cortx_motr_index_api import CORTXMotrIndexApi
-from s3backgrounddelete.cortx_list_index_response import CORTXMotrListIndexResponse
-from s3backgrounddelete.cortx_motr_success_response import CORTXMotrSuccessResponse
+from s3backgrounddelete.cortx_s3_config import CORTXS3Config
+from s3backgrounddelete.cortx_s3_kv_api import CORTXS3KVApi
+from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
+from s3backgrounddelete.cortx_list_index_response import CORTXS3ListIndexResponse
+from s3backgrounddelete.cortx_s3_success_response import CORTXS3SuccessResponse
 
 # Run before all to setup the test environment.
 def before_all():
@@ -122,7 +122,7 @@ load_and_update_config(account_response_elements['AccessKeyId'], account_respons
 
 replica_bucket_list_index_oid = 'AAAAAAAAAHg=-BQAQAAAAAAA=' # base64 conversion of 0x7800000000000000" and "0x100005
 primary_bucket_list_index_oid = 'AAAAAAAAAHg=-AQAQAAAAAAA='
-config = CORTXMotrConfig()
+config = CORTXS3Config()
 
 # ======================================================================================================
 
