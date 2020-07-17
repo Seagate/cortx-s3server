@@ -106,8 +106,8 @@ class CORTXS3Util(object):
            access_key = self._config.get_s3_recovery_access_key()
            secret_key = self._config.get_s3_recovery_secret_key()
        else:
-           access_key = self._config.get_eos_core_access_key()
-           secret_key = self._config.get_eos_core_secret_key()
+           access_key = self._config.get_cortx_s3_access_key()
+           secret_key = self._config.get_cortx_s3_secret_key()
 
        string_to_sign = self.create_string_to_sign_v4(method, canonical_uri, canonical_query_string, body, epoch_t,
                                                  algorithm, host, service, region)
