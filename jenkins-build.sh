@@ -144,7 +144,7 @@ fi
 export PATH=/opt/seagate/cortx/s3/bin/:$PATH
 echo $PATH
 
-#git clone --recursive http://es-gerrit.xyus.xyratex.com:8080/s3server
+#git clone --recursive https://github.com/Seagate/cortx-s3server.git
 
 S3_BUILD_DIR=`pwd`
 
