@@ -20,7 +20,7 @@
 """This will generate success response"""
 
 
-class EOSCoreSuccessResponse(object):
+class CORTXS3SuccessResponse(object):
     """Generate success response."""
     _body = ""
 

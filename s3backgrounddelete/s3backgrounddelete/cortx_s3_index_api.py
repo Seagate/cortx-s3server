@@ -1,3 +1,4 @@
+<<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/eos_core_index_api.py
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -18,38 +19,42 @@
 #
 
 """This class provides Index  REST API i.e. List, PUT."""
+=======
+"""CORTXS3IndexApi class provides Index  REST API i.e. List, PUT."""
+>>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_s3_index_api.py
 
 import logging
 import urllib
 
-from s3backgrounddelete.eos_list_index_response import EOSCoreListIndexResponse
-from s3backgrounddelete.eos_core_client import EOSCoreClient
-from s3backgrounddelete.eos_core_error_respose import EOSCoreErrorResponse
-from s3backgrounddelete.eos_core_success_response import EOSCoreSuccessResponse
-from s3backgrounddelete.eos_core_util import EOSCoreUtil
+from s3backgrounddelete.cortx_list_index_response import CORTXS3ListIndexResponse
+from s3backgrounddelete.cortx_s3_client import CORTXS3Client
+from s3backgrounddelete.cortx_s3_error_respose import CORTXS3ErrorResponse
+from s3backgrounddelete.cortx_s3_success_response import CORTXS3SuccessResponse
+from s3backgrounddelete.cortx_s3_util import CORTXS3Util
 from s3backgrounddelete.IEMutil import IEMutil
 
 
-# EOSCoreIndexApi supports index REST-API's List & Put
+# CORTXS3IndexApi supports index REST-API's List & Put
 
-class EOSCoreIndexApi(EOSCoreClient):
-    """EOSCoreIndexApi provides index REST-API's List and Put."""
+class CORTXS3IndexApi(CORTXS3Client):
+
+    """CORTXS3IndexApi provides index REST-API's List and Put."""
     _logger = None
 
     def __init__(self, config, logger=None, connection=None):
         """Initialise logger and config."""
         if (logger is None):
-            self._logger = logging.getLogger("EOSCoreIndexApi")
+            self._logger = logging.getLogger("CORTXS3IndexApi")
         else:
             self._logger = logger
         self.config = config
-        self.core_util = EOSCoreUtil(self.config)
+        self.s3_util = CORTXS3Util(self.config)
 
         #for testing scenarios, pass the mocked http connection object in init method..
         if (connection is None):
-            super(EOSCoreIndexApi, self).__init__(self.config, logger = self._logger)
+            super(CORTXS3IndexApi, self).__init__(self.config, logger = self._logger)
         else:
-            super(EOSCoreIndexApi, self).__init__(self.config, logger = self._logger, connection=connection)
+            super(CORTXS3IndexApi, self).__init__(self.config, logger = self._logger, connection=connection)
 
 
     def list(self, index_id, max_keys=1000, next_marker=None, additional_Query_params=None):
@@ -88,31 +93,31 @@ class EOSCoreIndexApi(EOSCoreClient):
         absolute_request_uri = request_uri + '?' + query_params
 
         body = ""
-        headers = self.core_util.prepare_signed_header('GET', request_uri, query_params, body)
+        headers = self.s3_util.prepare_signed_header('GET', request_uri, query_params, body)
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")
             return False, None
         try:
             response = super(
-                EOSCoreIndexApi,
+                CORTXS3IndexApi,
                 self).get(
                 absolute_request_uri,
                 headers=headers)
         except ConnectionRefusedError as ex:
             IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
+            return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(500,"","InternalServerError")
+            return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 200:
             self._logger.info('Successfully listed Index details.')
-            return True, EOSCoreListIndexResponse(response['body'])
+            return True, CORTXS3ListIndexResponse(response['body'])
         else:
             self._logger.info('Failed to list Index details.')
-            return False, EOSCoreErrorResponse(
+            return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])
 
     def put(self, index_id):
@@ -130,7 +135,7 @@ class EOSCoreIndexApi(EOSCoreClient):
 
         query_params = ""
         body = ""
-        headers = self.core_util.prepare_signed_header('PUT', request_uri, query_params, body)
+        headers = self.s3_util.prepare_signed_header('PUT', request_uri, query_params, body)
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")
@@ -138,24 +143,24 @@ class EOSCoreIndexApi(EOSCoreClient):
 
         try:
             response = super(
-                EOSCoreIndexApi,
+                CORTXS3IndexApi,
                 self).put(
                 request_uri,
                 headers=headers)
         except ConnectionRefusedError as ex:
             IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
+            return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(500,"","InternalServerError")
+            return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 201:
             self._logger.info('Successfully added Index.')
-            return True, EOSCoreSuccessResponse(response['body'])
+            return True, CORTXS3SuccessResponse(response['body'])
         else:
             self._logger.info('Failed to add Index.')
-            return False, EOSCoreErrorResponse(
+            return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])
 
     def delete(self, index_id):
@@ -173,7 +178,7 @@ class EOSCoreIndexApi(EOSCoreClient):
 
         query_params = ""
         body = ""
-        headers = self.core_util.prepare_signed_header('DELETE', request_uri, query_params, body)
+        headers = self.s3_util.prepare_signed_header('DELETE', request_uri, query_params, body)
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")
@@ -181,24 +186,24 @@ class EOSCoreIndexApi(EOSCoreClient):
 
         try:
             response = super(
-                EOSCoreIndexApi,
+                CORTXS3IndexApi,
                 self).delete(
                 request_uri,
                 headers=headers)
         except ConnectionRefusedError as ex:
             IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
+            return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
             self._logger.error(repr(ex))
-            return False, EOSCoreErrorResponse(500,"","InternalServerError")
+            return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 204:
             self._logger.info('Successfully deleted Index.')
-            return True, EOSCoreSuccessResponse(response['body'])
+            return True, CORTXS3SuccessResponse(response['body'])
         else:
             self._logger.info('Failed to delete Index.')
-            return False, EOSCoreErrorResponse(
+            return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])
 
 
@@ -218,7 +223,7 @@ class EOSCoreIndexApi(EOSCoreClient):
 
             query_params = ""
             body = ""
-            headers = self.core_util.prepare_signed_header('HEAD', request_uri, query_params, body)
+            headers = self.s3_util.prepare_signed_header('HEAD', request_uri, query_params, body)
 
             if headers['Authorization'] is None:
                 self._logger.error("Failed to generate v4 signature")
@@ -226,7 +231,7 @@ class EOSCoreIndexApi(EOSCoreClient):
 
             try:
                 response = super(
-                    EOSCoreIndexApi,
+                    CORTXS3IndexApi,
                     self).head(
                     request_uri,
                     body,
@@ -234,17 +239,17 @@ class EOSCoreIndexApi(EOSCoreClient):
             except ConnectionRefusedError as ex:
                 IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
                 self._logger.error(repr(ex))
-                return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
+                return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
             except Exception as ex:
                 self._logger.error(repr(ex))
-                return False, EOSCoreErrorResponse(500,"","InternalServerError")
+                return False, CORTXS3ErrorResponse(500,"","InternalServerError")
 
             if response['status'] == 200:
                 self._logger.info("HEAD Index called successfully with status code: "\
                     + str(response['status']) + " response body: " + str(response['body']))
-                return True, EOSCoreSuccessResponse(response['body'])
+                return True, CORTXS3SuccessResponse(response['body'])
             else:
                 self._logger.info("Failed to do HEAD Index with status code: "\
                     + str(response['status']) + " response body: " + str(response['body']))
-                return False, EOSCoreErrorResponse(
+                return False, CORTXS3ErrorResponse(
                     response['status'], response['reason'], response['body'])

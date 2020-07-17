@@ -1,3 +1,4 @@
+<<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/eos_core_client.py
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -18,6 +19,9 @@
 #
 
 """This is an core client which will do GET,PUT,DELETE and HEAD requests."""
+=======
+"""CORTXS3Client is an s3 client which will do GET,PUT,DELETE and HEAD requests."""
+>>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_s3_client.py
 
 import sys
 import logging
@@ -25,16 +29,17 @@ import http.client
 import urllib
 
 
-class EOSCoreClient(object):
-    """creates core client."""
+class CORTXS3Client(object):
+
+    """creates s3 client."""
     _config = None
     _logger = None
     _conn = None
 
     def __init__(self, config, logger=None, connection=None):
-        """Initialise core client using config, connection object and logger."""
+        """Initialise s3 client using config, connection object and logger."""
         if (logger is None):
-            self._logger = logging.getLogger("EOSCoreClient")
+            self._logger = logging.getLogger("CORTXS3Client")
         else:
             self._logger = logger
         self._config = config
@@ -47,7 +52,7 @@ class EOSCoreClient(object):
         """Creates new connection."""
         try:
             endpoint_url = urllib.parse.urlparse(
-                self._config.get_eos_core_endpoint()).netloc
+                self._config.get_cortx_s3_endpoint()).netloc
         except KeyError as ex:
             self._logger.error(str(ex))
             return None

@@ -1,3 +1,4 @@
+<<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/eos_list_index_response.py
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -18,11 +19,15 @@
 #
 
 """EOSCoreListIndexResponse will list out index response"""
+=======
+"""CORTXS3ListIndexResponse will list out index response."""
+>>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_list_index_response.py
 import json
 
 
-class EOSCoreListIndexResponse(object):
-    """EOSCoreListIndexResponse will list index response."""
+class CORTXS3ListIndexResponse(object):
+
+    """CORTXS3ListIndexResponse will list index response."""
     _index_content = ""
 
     def __init__(self, index_content):

@@ -38,10 +38,10 @@ sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__),  '../../s3backgrounddelete/s3backgrounddelete')))
 from s3backgrounddelete.object_recovery_scheduler import ObjectRecoveryScheduler
 from s3backgrounddelete.object_recovery_processor import ObjectRecoveryProcessor
-from s3backgrounddelete.cortx_motr_config import CORTXMotrConfig
-from s3backgrounddelete.cortx_motr_object_api import CORTXMotrObjectApi
-from s3backgrounddelete.cortx_motr_index_api import CORTXMotrIndexApi
-from s3backgrounddelete.cortx_motr_error_respose import CORTXMotrErrorResponse
+from s3backgrounddelete.cortx_s3_config import CORTXS3Config
+from s3backgrounddelete.cortx_s3_object_api import CORTXS3ObjectApi
+from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
+from s3backgrounddelete.cortx_s3_error_respose import CORTXS3ErrorResponse
 
 # Run before all to setup the test environment.
 def before_all():
@@ -78,9 +78,9 @@ def load_and_update_config(access_key_value, secret_key_value):
 
     with open(bgdelete_config_file, 'r') as f:
             config = yaml.safe_load(f)
-            config['cortx_motr']['access_key'] = access_key_value
-            config['cortx_motr']['secret_key'] = secret_key_value
-            config['cortx_motr']['daemon_mode'] = "False"
+            config['cortx_s3']['access_key'] = access_key_value
+            config['cortx_s3']['secret_key'] = secret_key_value
+            config['cortx_s3']['daemon_mode'] = "False"
             config['leakconfig']['leak_processing_delay_in_mins'] = 0
             config['leakconfig']['version_processing_delay_in_mins'] = 0
 
@@ -113,12 +113,12 @@ def restore_configuration():
 def perform_head_object(oid_dict):
     print("Validating non-existence of oids using HEAD object api")
     print("Probable dead list should not contain :" + str(list(oid_dict.keys())))
-    config = CORTXMotrConfig()
+    config = CORTXS3Config()
     for oid,layout_id in oid_dict.items():
-        response = CORTXMotrObjectApi(config).head(oid, layout_id)
+        response = CORTXS3ObjectApi(config).head(oid, layout_id)
         assert response is not None
         assert response[0] is False
-        assert isinstance(response[1], CORTXMotrErrorResponse)
+        assert isinstance(response[1], CORTXS3ErrorResponse)
         assert response[1].get_error_status() == 404
         assert response[1].get_error_reason() == "Not Found"
         print("Object oid \"" + oid + "\" is not present in list..")
@@ -546,7 +546,7 @@ Along with object leak, Background delete should take care of deleting the leake
     9. verify cleanup of Object using aws s3api head-object api
    10. verify cleanup of part index oid
 """
-CONFIG = CORTXMotrConfig()
+CONFIG = CORTXS3Config()
 # ************** Create a multipart upload *********
 result=AwsTest('Aws can upload object8 10Mb file in multipart form')\
     .create_multipart_upload("seagatebucket", "object8", 10485760, "domain=storage", debug_flag="True" )\
@@ -608,10 +608,10 @@ AwsTest('Do head-object for "object8" on bucket "seagatebucket"')\
 # ************* Verify part list index is deleted *************
 # Use HEAD /indexes/<index oid> API to ensure that
 # the part list index is deleted by the object leak task.
-status, res = CORTXMotrIndexApi(CONFIG).head(part_index)
+status, res = CORTXS3IndexApi(CONFIG).head(part_index)
 if (not status):
     if (res):
-        assert isinstance(res, CORTXMotrErrorResponse)
+        assert isinstance(res, CORTXS3ErrorResponse)
         assert res.get_error_status() == 404
         assert res.get_error_reason() == "Not Found"
         print("Index id \"" + part_index + "\" does not exist")

@@ -18,19 +18,19 @@
 #
 
 """
-Unit Test for EOSCoreIndex API.
+Unit Test for CORTXS3Index API.
 """
 from http.client import HTTPConnection
 from http.client import HTTPResponse
 from unittest.mock import Mock
 
-from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
-from s3backgrounddelete.eos_core_config import EOSCoreConfig
+from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
+from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 
 def test_list_no_index_id():
     """Test List api without index_id should return response as "None"."""
-    config = EOSCoreConfig()
-    response = EOSCoreIndexApi(config).list(None)
+    config = CORTXS3Config()
+    response = CORTXS3IndexApi(config).list(None)
     if (response is not None):
         assert response[0] is False
         assert response[1] is None
@@ -49,8 +49,8 @@ def test_list_success():
     httpresponse.reason = 'OK'
     httpconnection.getresponse.return_value = httpresponse
 
-    config = EOSCoreConfig()
-    response = EOSCoreIndexApi(config, connection=httpconnection).list("test_index1")
+    config = CORTXS3Config()
+    response = CORTXS3IndexApi(config, connection=httpconnection).list("test_index1")
     if (response is not None):
         assert response[0] is True
         assert response[1] is not None
@@ -67,8 +67,8 @@ def test_list_failure():
     httpresponse.reason = 'NOT FOUND'
     httpconnection.getresponse.return_value = httpresponse
 
-    config = EOSCoreConfig()
-    response = EOSCoreIndexApi(config, connection=httpconnection).list("test_index2")
+    config = CORTXS3Config()
+    response = CORTXS3IndexApi(config, connection=httpconnection).list("test_index2")
     if (response is not None):
         assert response[0] is False
         assert response[1] is not None
@@ -85,8 +85,8 @@ def test_put_success():
     httpresponse.reason = 'CREATED'
     httpconnection.getresponse.return_value = httpresponse
 
-    config = EOSCoreConfig()
-    response = EOSCoreIndexApi(config, connection=httpconnection).put("test_index1")
+    config = CORTXS3Config()
+    response = CORTXS3IndexApi(config, connection=httpconnection).put("test_index1")
     if (response is not None):
         assert response[0] is True
 
@@ -102,15 +102,15 @@ def test_put_failure():
     httpresponse.reason = 'CONFLICT'
     httpconnection.getresponse.return_value = httpresponse
 
-    config = EOSCoreConfig()
-    response = EOSCoreIndexApi(config, connection=httpconnection).put("test_index1")
+    config = CORTXS3Config()
+    response = CORTXS3IndexApi(config, connection=httpconnection).put("test_index1")
     if (response is not None):
         assert response[0] is False
 
 
 def test_put_no_index_id():
     """Test PUT request without index_id, it should return response as "None"."""
-    config = EOSCoreConfig()
-    response = EOSCoreIndexApi(config).put(None)
+    config = CORTXS3Config()
+    response = CORTXS3IndexApi(config).put(None)
     if (response is not None):
         assert response[0] is False

@@ -20,7 +20,7 @@
 """This will generate error response"""
 
 
-class EOSCoreErrorResponse(object):
+class CORTXS3ErrorResponse(object):
     """Generate error message and reason."""
     _http_status = -1
     _error_message = ""
