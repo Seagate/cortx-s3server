@@ -102,22 +102,12 @@ class CORTXS3Util(object):
 
        algorithm = 'AWS4-HMAC-SHA256'
 
-<<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/cortx_s3_util.py
-<<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/eos_core_util.py
        if self._config.get_s3recovery_flag :
            access_key = self._config.get_s3_recovery_access_key()
            secret_key = self._config.get_s3_recovery_secret_key()
        else:
            access_key = self._config.get_eos_core_access_key()
            secret_key = self._config.get_eos_core_secret_key()
-=======
-       access_key = self._config.get_cortx_s3_access_key()
-       secret_key = self._config.get_cortx_s3_secret_key()
->>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_s3_util.py
-=======
-       access_key = self._config.get_cortx_s3_access_key()
-       secret_key = self._config.get_cortx_s3_secret_key()
->>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_s3_util.py
 
        string_to_sign = self.create_string_to_sign_v4(method, canonical_uri, canonical_query_string, body, epoch_t,
                                                  algorithm, host, service, region)

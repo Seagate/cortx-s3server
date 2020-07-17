@@ -1,5 +1,3 @@
-<<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/cortx_s3_kv_api.py
-<<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/eos_core_kv_api.py
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -20,12 +18,6 @@
 #
 
 """This class provides Key-value REST API i.e. GET,PUT and DELETE."""
-=======
-"""CORTXS3KVApi class provides Key-value REST API i.e. GET,PUT and DELETE."""
->>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_s3_kv_api.py
-=======
-"""CORTXS3KVApi class provides Key-value REST API i.e. GET,PUT and DELETE."""
->>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_s3_kv_api.py
 import logging
 import urllib
 
@@ -37,18 +29,8 @@ from s3backgrounddelete.cortx_s3_util import CORTXS3Util
 from s3backgrounddelete.IEMutil import IEMutil
 
 # CORTXS3KVApi supports key-value REST-API's Put, Get & Delete
-<<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/cortx_s3_kv_api.py
-
-=======
->>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_s3_kv_api.py
 
 class CORTXS3KVApi(CORTXS3Client):
-
-<<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/cortx_s3_kv_api.py
-=======
-class CORTXS3KVApi(CORTXS3Client):
-
->>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_s3_kv_api.py
     """CORTXS3KVApi provides key-value REST-API's Put, Get & Delete."""
     _logger = None
 

@@ -1,5 +1,3 @@
-<<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/cortx_s3_client.py
-<<<<<<< HEAD:s3backgrounddelete/s3backgrounddelete/eos_core_client.py
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -19,13 +17,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-"""This is an core client which will do GET,PUT,DELETE and HEAD requests."""
-=======
-"""CORTXS3Client is an s3 client which will do GET,PUT,DELETE and HEAD requests."""
->>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_s3_client.py
-=======
-"""CORTXS3Client is an s3 client which will do GET,PUT,DELETE and HEAD requests."""
->>>>>>> EOS-9544: Rename work for bgdelete and recovery tool (#59):s3backgrounddelete/s3backgrounddelete/cortx_s3_client.py
+"""This is an s3 client which will do GET,PUT,DELETE and HEAD requests."""
 
 import sys
 import logging
@@ -34,7 +26,6 @@ import urllib
 
 
 class CORTXS3Client(object):
-
     """creates s3 client."""
     _config = None
     _logger = None
