@@ -5,9 +5,9 @@ import logging
 import json
 from datetime import datetime
 
-from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
-from s3backgrounddelete.eos_core_object_api import EOSCoreObjectApi
-from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
+from s3backgrounddelete.cortx_s3_kv_api import CORTXS3KVApi
+from s3backgrounddelete.cortx_s3_object_api import CORTXS3ObjectApi
+from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
 import math
 
 #zero/null object oid in base64 encoded format
@@ -27,15 +27,15 @@ class ObjectRecoveryValidator:
         else:
             self._logger = logger
         if(objectapi is None):
-            self._objectapi = EOSCoreObjectApi(self.config, logger=self._logger)
+            self._objectapi = CORTXS3ObjectApi(self.config, logger=self._logger)
         else:
             self._objectapi = objectapi
         if(kvapi is None):
-            self._kvapi = EOSCoreKVApi(self.config, logger=self._logger)
+            self._kvapi = CORTXS3KVApi(self.config, logger=self._logger)
         else:
             self._kvapi = kvapi
         if(indexapi is None):
-            self._indexapi = EOSCoreIndexApi(self.config, logger=self._logger)
+            self._indexapi = CORTXS3IndexApi(self.config, logger=self._logger)
         else:
             self._indexapi = indexapi
 
@@ -55,12 +55,12 @@ class ObjectRecoveryValidator:
         ret, response = self._objectapi.delete(obj_oid, layout_id)
         if (ret):
             status = ret
-            self._logger.info("Deleted obj " + obj_oid + " from mero store")
+            self._logger.info("Deleted obj " + obj_oid + " from motr store")
         elif (response.get_error_status() == 404):
             self._logger.info("The specified object " + obj_oid + " does not exist")
             status = True
         else:
-            self._logger.info("Failed to delete obj " + obj_oid + " from mero store")
+            self._logger.info("Failed to delete obj " + obj_oid + " from motr store")
             self.logAPIResponse("VERSION DEL", "", obj_oid, response)
         return status
 
@@ -143,7 +143,7 @@ class ObjectRecoveryValidator:
             obj_ver_key = self.object_leak_info["version_key_in_index"]
 
         if (delete_obj_from_store):
-            # Delete mero object associated with version. Also, delete version entry
+            # Delete motr object associated with version. Also, delete version entry
             if all(v is not None for v in [object_version_list_index_id, obj_ver_key]):
                 status = self.del_obj_from_version_list(object_version_list_index_id, obj_ver_key)
                 if (not status):
@@ -172,16 +172,16 @@ class ObjectRecoveryValidator:
                 return status
 
             if (versionInfo is not None):
-                obj_oid = versionInfo["mero_oid"]
+                obj_oid = versionInfo["motr_oid"]
                 layout_id = versionInfo["layout_id"]
-                #Delete version object from mero store
+                #Delete version object from motr store
                 status = self.delete_object_from_storage(obj_oid, layout_id)
                 if (status):
-                    self._logger.info("Deleted object version with oid " + obj_oid + " from mero store")
+                    self._logger.info("Deleted object version with oid " + obj_oid + " from motr store")
                 else:
-                    self._logger.info("Failed to delete object version with oid [" + obj_oid + "] from mero store")
+                    self._logger.info("Failed to delete object version with oid [" + obj_oid + "] from motr store")
             else:
-                self._logger.info("The version key: " + versionKey + " does not exist. Delete mero object")
+                self._logger.info("The version key: " + versionKey + " does not exist. Delete motr object")
                 status = self.delete_object_from_storage(self.object_leak_id, self.object_leak_layout_id)
 
             if (status):
@@ -266,7 +266,7 @@ class ObjectRecoveryValidator:
             return False
 
         # Check if version entry is same as the current_oid
-        if (versionEntry["mero_oid"] == current_oid):
+        if (versionEntry["motr_oid"] == current_oid):
             self.current_obj_in_VersionList = versionEntry
             return False
 
@@ -274,7 +274,7 @@ class ObjectRecoveryValidator:
         if (not self.isVersionEntryOlderThan(versionEntry, timeVersionEntry)):
             return False
 
-        if (versionEntry["mero_oid"] != current_oid):
+        if (versionEntry["motr_oid"] != current_oid):
             return True
 
 
@@ -321,7 +321,7 @@ class ObjectRecoveryValidator:
                                 self._logger.info("Deleted leaked object at key: " + obj_ver_key)
                                 # Delete entry from probbale delete list as well, if any
                                 indx = self.config.get_probable_delete_index_id()
-                                indx_key = obj_ver_md["mero_oid"]
+                                indx_key = obj_ver_md["motr_oid"]
                                 self._logger.info("Deleting entry: " + indx_key + " from probbale list")
                                 status = self.delete_key_from_index(indx, indx_key, "PROBABLE INDEX DEL")
                                 if (status):
@@ -445,7 +445,7 @@ class ObjectRecoveryValidator:
             if (current_object_md is None):
                 # Object does not exist.
                 self._logger.info("Object key " + obj_key + " does not exist in object list index. " +
-                    "Delete mero oid and the leak entry")
+                    "Delete motr oid and the leak entry")
                 status = self.process_probable_delete_record(True, True)
                 if (status):
                     self._logger.info("Leak oid " + self.object_leak_id + " processed successfully and deleted")
@@ -461,7 +461,7 @@ class ObjectRecoveryValidator:
             return
 
         # Object leak detection algo: Step #3 - For old object
-        current_oid = current_object_md["mero_oid"]
+        current_oid = current_object_md["motr_oid"]
         # If leak entry is corresponding to old object
         if (self.object_leak_info["old_oid"] == NULL_OBJ_OID):
             # If old object is different than current object in metadata
