@@ -124,6 +124,8 @@ replica_bucket_list_index_oid = 'AAAAAAAAAHg=-BQAQAAAAAAA=' # base64 conversion 
 primary_bucket_list_index_oid = 'AAAAAAAAAHg=-AQAQAAAAAAA='
 primary_bucket_list_index = S3kvTest('KvTest fetch root bucket account index')\
     .root_bucket_account_index()
+replica_bucket_list_index = S3kvTest('KvTest fetch replica bucket account index')\
+    .replica_bucket_account_index()
 
 primary_bucket_metadata_index_oid = "AAAAAAAAAHg=-AgAQAAAAAAA="
 primary_bucket_metadata_index = S3kvTest('KvTest fetch root buket metadata index')\
@@ -165,7 +167,7 @@ assert isinstance(res, EOSCoreListIndexResponse)
 #   'NextMarker': '', 'Prefix': ''
 # }
 index_content = res.get_index_content()
-assert index_content["Index-Id"] == "AAAAAAAAAHg=-BQAQAAAAAAA="
+assert index_content["Index-Id"] == replica_bucket_list_index_oid
 
 bucket_key_value_list = index_content["Keys"]
 bucket_key_value = (bucket_key_value_list[0])
@@ -192,7 +194,7 @@ assert status == True
 assert isinstance(res, EOSCoreListIndexResponse)
 
 index_content = res.get_index_content()
-assert index_content["Index-Id"] == "AAAAAAAAAHg=-BQAQAAAAAAA="
+assert index_content["Index-Id"] == replica_bucket_list_index_oid
 assert index_content["Keys"] == None
 
 # ********************** System Tests for s3 recovery tool: dry_run option ********************************************
@@ -396,25 +398,18 @@ status, res = EOSCoreKVApi(config).delete(replica_bucket_list_index_oid, replica
 assert status == True
 assert isinstance(res, EOSCoreSuccessResponse)
 
-
 # ********************** System Tests for s3 recovery tool: recover option ********************************************
-# Test: recover corrupted, old and missing key-values in primary index and replica index 
-# Step 1: PUT 4 Key-Values (KV1, KV2, KV3, KV4) in primary index, including 2 corrupted key-values.
-# Step 2: Put 4 Keys but different Values (KV'1, KV'2, KV'3, KV5) in replica index.
-# Step 3: Run s3 recoverytool with --recover option.
-# Step 4: Validate that both primary and replica index have 5 key-values, with no key having corrupted value.
-# Step 5: Delete the Key-Values from the primary and replica indexes.
-
-primary_key_value_list = [
+key_value_list_with_not_good_values = [
     # corrupted key
     {
         'Key': 'my-bucket5',
         'Value': 'Corrupted-JSON-Value1'
     },
-    # corrupted key
+    # key having value same as its counterpart in replica index
     {
         'Key': 'my-bucket6',
-        'Value': 'Corrupted-JSON-Value1'
+        'Value': '{"account_id":"123456789", "account_name":"s3-recovery-svc",\
+             "create_timestamp":"2020-11-02T00:01:40.000Z", "location_constraint":"us-east-1"}'
     },
     # key having timestamp less than its counterpart in replica index
     {
@@ -422,31 +417,31 @@ primary_key_value_list = [
         'Value': '{"account_id":"123456789", "account_name":"s3-recovery-svc",\
              "create_timestamp":"2020-01-01T00:01:40.000Z", "location_constraint":"mumbai"}'
     },
-    # key having value same as its counterpart in replica index
+    # this key would be missing from replica index
     {
         'Key': 'my-bucket8',
         'Value': '{"account_id":"123456789", "account_name":"s3-recovery-svc",\
              "create_timestamp":"2020-01-02T00:01:40.000Z", "location_constraint":"us-east-1"}'
     },
-    # key having value same as its counterpart in replica index
+    # this key would be missing from primary index
     {
         'Key': 'my-bucket9',
         'Value': '{"account_id":"123456789", "account_name":"s3-recovery-svc",\
-             "create_timestamp":"2020-01-02T00:10:40.000Z", "location_constraint":"us-west-2"}'
+             "create_timestamp":"2020-01-02T00:10:40.000Z", "location_constraint":"us-west-2"}' 
     }
 ]
-replica_key_value_list = [
+key_value_list_with_all_good_values = [
     # this key has good value, as compared to its counterpart in primary index
     {
         'Key': 'my-bucket5',
         'Value': '{"account_id":"123456789", "account_name":"s3-recovery-svc",\
              "create_timestamp":"2020-01-01T06:01:40.000Z", "location_constraint":"EU"}'
     },
-    # this key has good value, as compared to its counterpart in primary index
+    # this key has same value as its counterpart in primary index
     {
         'Key': 'my-bucket6',
         'Value': '{"account_id":"123456789", "account_name":"s3-recovery-svc",\
-             "create_timestamp":"2020-01-01T06:05:40.000Z", "location_constraint":"sa-east-1"}'
+             "create_timestamp":"2020-11-02T00:01:40.000Z", "location_constraint":"us-east-1"}'
     },
     # this key has timestamp greater than its counterpart in primary index
     {
@@ -454,80 +449,110 @@ replica_key_value_list = [
         'Value': '{"account_id":"123456789", "account_name":"s3-recovery-svc",\
              "create_timestamp":"2020-06-01T00:01:40.000Z", "location_constraint":"mumbai"}'
     },
-    # key having value same as its counterpart in primary index
+    # this key would be missing from replica index
     {
         'Key': 'my-bucket8',
         'Value': '{"account_id":"123456789", "account_name":"s3-recovery-svc",\
              "create_timestamp":"2020-01-02T00:01:40.000Z", "location_constraint":"us-east-1"}'
     },
-    # key having value same as its counterpart in primary index
+    # this key would be missing from primary index
     {
         'Key': 'my-bucket9',
         'Value': '{"account_id":"123456789", "account_name":"s3-recovery-svc",\
-             "create_timestamp":"2020-01-02T00:10:40.000Z", "location_constraint":"us-west-2"}' 
+             "create_timestamp":"2020-01-02T00:10:40.000Z", "location_constraint":"us-west-2"}'
     }
 ]
 
-# PUT KVs in primary index of global bucket list
-for KV in primary_key_value_list[0:4]:
-    if KV['Key'] == 'my-bucket5' or KV['Key'] == 'my-bucket6':
-        S3kvTest('KvTest put corrupted KV in root bucket account index')\
-        .put_keyval(primary_bucket_list_index, KV['Key'], KV['Value'])\
-        .execute_test().command_is_successful()
-    else:
+def validate_if_same_kvs(index1_kv_list, index2_kv_list):
+    """
+    check if both index1 and index2 have same key-value pairs or not.
+    """
+    assert len(index1_kv_list) == len(index2_kv_list)
+    for KV in index1_kv_list:
+        assert KV in index2_kv_list 
+
+def put_kvs_in_indexes(index_with_corrupt_kvs,
+    index_with_correct_kvs):
+    """
+    put key-values in the given indexes
+    index_with_corrupt_kvs: index id which will have corrupt key-values in it
+    index_with_correct_kvs: index id which will have all key-values as good
+    """
+    # PUT KVs in first index id: index_with_corrupt_kvs
+    for KV in key_value_list_with_not_good_values:
+        # 'my-bucket5' has corrupted value, use s3cloviscli to PUT it
+        if KV['Key'] == 'my-bucket5':
+            if index_with_corrupt_kvs == primary_bucket_list_index_oid:
+                put_in_index = primary_bucket_list_index
+            else:
+                put_in_index = replica_bucket_list_index
+            S3kvTest('KvTest put corrupted KV in index_with_corrupt_kvs')\
+            .put_keyval(put_in_index, KV['Key'], KV['Value'])\
+            .execute_test().command_is_successful()
+        else:
+            if KV['Key'] == "my-bucket9":
+                # skip this Key, to check if "recover" put this key in the index
+                continue
+            status, res = EOSCoreKVApi(config)\
+                .put(index_with_corrupt_kvs, KV['Key'], KV['Value'])
+            assert status == True
+            assert isinstance(res, EOSCoreSuccessResponse)
+
+    # PUT KVs in second index id: index_with_correct_kvs
+    for KV in key_value_list_with_all_good_values:
+        # we need to skip this key to validate if "recover" restores this key in the index
+        if KV['Key'] == "my-bucket8":
+            continue
         status, res = EOSCoreKVApi(config)\
-            .put(primary_bucket_list_index_oid, KV['Key'], KV['Value'])
+            .put(index_with_correct_kvs, KV['Key'], KV['Value'])
         assert status == True
         assert isinstance(res, EOSCoreSuccessResponse)
 
-# PUT same KVs in primary index of global bucket metadata
-# Put all good values for each key in global metadata index bucket,
-# as we have not yet developed the metadata index recovery part
-# TODO: add corrupted values for bucket 5 and bucket 6, as is done in bucket list index
-for KV in replica_key_value_list[0:2]:
-    key = r'123456789/' + KV['Key']
-    status, res = EOSCoreKVApi(config)\
-        .put(primary_bucket_metadata_index_oid, key, KV['Value'])
-    assert status == True
-    assert isinstance(res, EOSCoreSuccessResponse)
+    # PUT KVs in global bucket metadata index
+    # TODO: As of now we are adding correct KVs in global bucket metadata index
+    # as it does not have replcia index. Fix this once replica index is added
+    # for global bucket metadata index
+    for KV in key_value_list_with_all_good_values:
+        key = r'123456789/' + KV['Key']
+        status, res = EOSCoreKVApi(config)\
+            .put(primary_bucket_metadata_index_oid, key, KV['Value'])
+        assert status == True
+        assert isinstance(res, EOSCoreSuccessResponse)
 
-for KV in primary_key_value_list[2:5]:
-    key = r'123456789/' + KV['Key']
-    status, res = EOSCoreKVApi(config)\
-        .put(primary_bucket_metadata_index_oid, key, KV['Value'])
-    assert status == True
-    assert isinstance(res, EOSCoreSuccessResponse)
+# ***************************************************************************************************
+# Test: recover corrupted, old and missing key-values in primary index from replica index 
+# Step 1: PUT 4 Key-Values (K1V1, K2V2, K3V3, K4V4) in primary index, including 1 corrupted key-value.
+# Step 2: Put 4 Keys but different Values (K1V'1, K2V2, K3V'3, K5V5) in replica index.
+# Step 3: Put 5 keys in global bucket metadata index. (Global bucket metadata index do not have replica index
+# as of now, so we need to put all 5 keys with good values to the index) 
+# Step 4: Run s3 recoverytool with --recover option.
+# Step 5: Validate that both primary and replica index have 5 key-values,
+# with no key having corrupted value, both still having the same K2V2 and K3 has V'3 value in both indexes.
+# Step 6: Delete the Key-Values from the primary and replica indexes.
 
-# PUT KVs in replica index of global bucket list
-for KV in replica_key_value_list:
-    if KV['Key'] == "my-bucket8":
-        # skip putting this bucket,
-        # to test if s3recovery restores replica index as well
-        continue
-    status, res = EOSCoreKVApi(config)\
-        .put(replica_bucket_list_index_oid, KV['Key'], KV['Value'])
-    assert status == True
-    assert isinstance(res, EOSCoreSuccessResponse)
+# PUT KVs in the primary and replica indexes of global bucket list
+# primary index would have corrupt and old KVs, replica index would have
+# correct and latest KVS
+put_kvs_in_indexes(primary_bucket_list_index_oid, replica_bucket_list_index_oid)
 
-# Validate that primary index had 4 keys before running the s3recoverytool
+# Validate that primary and replica indexes had 4 keys before running the s3recoverytool
 status, res = EOSCoreIndexApi(config).list(primary_bucket_list_index_oid)
 assert status == True
 assert isinstance(res, EOSCoreListIndexResponse)
 
 index_content = res.get_index_content()
 key_value_primary_index_before_recovery_list = index_content["Keys"]
-assert index_content["Index-Id"] == "AAAAAAAAAHg=-AQAQAAAAAAA="
+assert index_content["Index-Id"] == primary_bucket_list_index_oid
 assert len(key_value_primary_index_before_recovery_list) == 4
 
-# Validate that replica index had 4 keys before running the s3recoverytool
 status, res = EOSCoreIndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
 assert isinstance(res, EOSCoreListIndexResponse)
 
 index_content = res.get_index_content()
-key_value_primary_index_before_recovery_list = index_content["Keys"]
-assert index_content["Index-Id"] == "AAAAAAAAAHg=-BQAQAAAAAAA="
-assert len(key_value_primary_index_before_recovery_list) == 4
+key_value_replica_index_before_recovery_list = index_content["Keys"]
+assert index_content["Index-Id"] == replica_bucket_list_index_oid
+assert len(key_value_replica_index_before_recovery_list) == 4
 
 # Run s3 recovery tool
 result = S3RecoveryTest("s3recovery --recover (corrupted and missing KVs)")\
@@ -535,65 +560,109 @@ result = S3RecoveryTest("s3recovery --recover (corrupted and missing KVs)")\
     .execute_test()\
     .command_is_successful()
 
-# List Primary Index and validate the keys count and their values
+# List Primary Index
 status, res = EOSCoreIndexApi(config).list(primary_bucket_list_index_oid)
 assert status == True
 assert isinstance(res, EOSCoreListIndexResponse)
 
 index_content = res.get_index_content()
-assert index_content["Index-Id"] == "AAAAAAAAAHg=-AQAQAAAAAAA="
-assert index_content["Keys"] != None
-
+assert index_content["Index-Id"] == primary_bucket_list_index_oid
 actual_primary_index_key_value_list = index_content["Keys"]
-assert len(actual_primary_index_key_value_list) == 5
 
-for KV in actual_primary_index_key_value_list:
-    actual_bucket_key = KV["Key"]
-    actual_bucket_value = KV["Value"]
-    if actual_bucket_key == "my-bucket5":
-        # match the value with corresponding value in replica_key_value_list
-        assert '"create_timestamp":"2020-01-01T06:01:40.000Z"' in KV['Value']
-        assert '"location_constraint":"EU"' in KV['Value']
-    elif actual_bucket_key == "my-bucket6":
-        # match the value with corresponding value in replica_key_value_list
-        assert '"create_timestamp":"2020-01-01T06:05:40.000Z"' in KV['Value']
-        assert '"location_constraint":"sa-east-1"' in KV['Value']
-    elif actual_bucket_key == "my-bucket7":
-        # this bucket had greater timestamp in replica index
-        # validate if the timestamp in value here is that of replica index 
-        assert '"create_timestamp":"2020-06-01T00:01:40.000Z"' in KV['Value']
-        assert '"location_constraint":"mumbai"' in KV['Value']
-    elif actual_bucket_key == "my-bucket8":
-        # this bucket had same value in both primary and replia indexes
-        # validate if the value is same as in primary index
-        assert '"create_timestamp":"2020-01-02T00:01:40.000Z"' in KV['Value']
-        assert '"location_constraint":"us-east-1"' in KV['Value']
-    elif actual_bucket_key == "my-bucket9":
-        # this bucket was not present in primary index before running s3recovery tool
-        # validate if this bucket is now in primary index
-        assert '"account_id":"123456789"' in KV['Value']
-        assert '"location_constraint":"us-west-2"' in KV['Value']
-    else:
-        print('the bucket: '\
-            + actual_bucket_key +\
-            ' was not expected in the primary index after running s3recovery tool.')
-        print(actual_primary_index_key_value_list)
-        assert False
-
-# List replica Index and validate the keys count
+# List replica Index
 status, res = EOSCoreIndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
 assert isinstance(res, EOSCoreListIndexResponse)
 
 index_content = res.get_index_content()
-assert index_content["Index-Id"] == "AAAAAAAAAHg=-BQAQAAAAAAA="
-assert index_content["Keys"] != None
-
+assert index_content["Index-Id"] == replica_bucket_list_index_oid
 actual_replica_index_key_value_list = index_content["Keys"]
-assert len(actual_replica_index_key_value_list) == 5
+
+# validate if both primary and replica index have same keys and values
+validate_if_same_kvs(actual_primary_index_key_value_list,
+    actual_replica_index_key_value_list)
 
 # Delete the key-values from both primary and replica indexes
-for KV in primary_key_value_list:
+for KV in key_value_list_with_not_good_values:
+    status, res = EOSCoreKVApi(config).delete(primary_bucket_list_index_oid, KV['Key'])
+    assert status == True
+    assert isinstance(res, EOSCoreSuccessResponse)
+
+    status, res = EOSCoreKVApi(config).delete(replica_bucket_list_index_oid, KV['Key'])
+    assert status == True
+    assert isinstance(res, EOSCoreSuccessResponse)
+
+    metadata_index_key = r'123456789/' + KV['Key']
+    status, res = EOSCoreKVApi(config)\
+        .delete(primary_bucket_metadata_index_oid, metadata_index_key)
+    assert status == True
+    assert isinstance(res, EOSCoreSuccessResponse)
+
+# ***************************************************************************************************
+# Test: recover corrupted, old and missing key-values in replica index from primary index 
+# Step 1: PUT 4 Key-Values (K1V1, K2V2, K3V3, K4V4) in replica index, including 1 corrupted key-value.
+# Step 2: Put 4 Keys but different Values (K1V'1, K2V2, K3V'3, K5V5) in primary index.
+# Step 3: Put 5 keys in global bucket metadata index. (Global bucket metadata index do not have replica index
+# as of now, so we need to put all 5 keys with good values to the index) 
+# Step 4: Run s3 recoverytool with --recover option.
+# Step 5: Validate that both primary and replica index have 5 key-values,
+# with no key having corrupted value, both still having the same K2V2 and K3 has V'3 value in both indexes.
+# Step 6: Delete the Key-Values from the primary and replica indexes.
+
+# PUT KVs in the replica and primary indexes of global bucket list
+# replica index would have corrupt and old KVs, primary index would have
+# correct and latest KVS
+put_kvs_in_indexes(replica_bucket_list_index_oid, primary_bucket_list_index_oid)
+
+# Validate that primary and replica indexes had 4 keys before running the s3recoverytool
+status, res = EOSCoreIndexApi(config).list(primary_bucket_list_index_oid)
+assert status == True
+assert isinstance(res, EOSCoreListIndexResponse)
+
+index_content = res.get_index_content()
+key_value_primary_index_before_recovery_list = index_content["Keys"]
+assert index_content["Index-Id"] == primary_bucket_list_index_oid
+assert len(key_value_primary_index_before_recovery_list) == 4
+
+status, res = EOSCoreIndexApi(config).list(replica_bucket_list_index_oid)
+assert status == True
+assert isinstance(res, EOSCoreListIndexResponse)
+
+index_content = res.get_index_content()
+key_value_replica_index_before_recovery_list = index_content["Keys"]
+assert index_content["Index-Id"] == replica_bucket_list_index_oid
+assert len(key_value_replica_index_before_recovery_list) == 4
+
+# Run s3 recovery tool
+result = S3RecoveryTest("s3recovery --recover (corrupted and missing KVs)")\
+    .s3recovery_recover()\
+    .execute_test()\
+    .command_is_successful()
+
+# List Primary Index
+status, res = EOSCoreIndexApi(config).list(primary_bucket_list_index_oid)
+assert status == True
+assert isinstance(res, EOSCoreListIndexResponse)
+
+index_content = res.get_index_content()
+assert index_content["Index-Id"] == primary_bucket_list_index_oid
+actual_primary_index_key_value_list = index_content["Keys"]
+
+# List replica Index
+status, res = EOSCoreIndexApi(config).list(replica_bucket_list_index_oid)
+assert status == True
+assert isinstance(res, EOSCoreListIndexResponse)
+
+index_content = res.get_index_content()
+assert index_content["Index-Id"] == replica_bucket_list_index_oid
+actual_replica_index_key_value_list = index_content["Keys"]
+
+# validate if both primary and replica index have same keys and values
+validate_if_same_kvs(actual_primary_index_key_value_list,
+    actual_replica_index_key_value_list)
+
+# Delete the key-values from both primary and replica indexes
+for KV in key_value_list_with_not_good_values:
     status, res = EOSCoreKVApi(config).delete(primary_bucket_list_index_oid, KV['Key'])
     assert status == True
     assert isinstance(res, EOSCoreSuccessResponse)
@@ -674,7 +743,7 @@ assert isinstance(res, EOSCoreListIndexResponse)
 
 index_content = res.get_index_content()
 key_value_primary_index_before_recovery_list = index_content["Keys"]
-assert index_content["Index-Id"] == "AAAAAAAAAHg=-AQAQAAAAAAA="
+assert index_content["Index-Id"] == primary_bucket_list_index_oid
 assert len(key_value_primary_index_before_recovery_list) == 3
 
 # Run s3 recovery tool
@@ -702,7 +771,7 @@ index_content = res.get_index_content()
 key_value_primary_index_before_recovery_list = index_content["Keys"]
 assert index_content["Index-Id"] == primary_bucket_metadata_index_oid
 assert len(key_value_primary_index_before_recovery_list) == 2
-
+ 
 # Delete the key-values from both primary and replica indexes
 for KV in global_bucket_list_index_key_value_list:
     status, res = EOSCoreKVApi(config).delete(primary_bucket_list_index_oid, KV['Key'])
