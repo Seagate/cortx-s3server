@@ -37,6 +37,7 @@ class S3RecoveryBase:
         self.index_api = EOSCoreIndexApi(self.config)
         self.kv_api = EOSCoreKVApi(self.config)
         self.log_result = False
+        self.logger = None
 
     def create_logger(self, logger_name):
         """
@@ -293,8 +294,8 @@ class S3RecoveryBase:
                 self.perform_cleanup(key, index_id, index_id_replica)
 
         if (self.log_result):
-            print("\nData recovered from both indexes for {} \n".format(index_name))
-            self.logger.info(union_result)
+            self.s3recovery_log("info", "\nData recovered from both indexes for {} \n".format(index_name))
+            self.s3recovery_log("info", union_result)
             self.print_content(union_result)
 
         return union_result

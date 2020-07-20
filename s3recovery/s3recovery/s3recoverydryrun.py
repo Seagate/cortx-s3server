@@ -22,8 +22,6 @@
 import sys
 import json
 import dateutil.parser
-import logging
-from logging import handlers
 from s3recovery.s3recoverybase import S3RecoveryBase
 from s3recovery.config import Config
 
