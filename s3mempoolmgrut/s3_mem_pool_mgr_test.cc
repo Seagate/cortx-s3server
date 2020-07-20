@@ -22,7 +22,7 @@
 #include "gtest/gtest.h"
 
 extern "C" {
-#include "mero/init.h"
+#include "motr/init.h"
 #include "module/instance.h"
 }
 

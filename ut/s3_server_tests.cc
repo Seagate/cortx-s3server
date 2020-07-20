@@ -26,7 +26,7 @@
 extern "C" {
 #include "clovis/clovis.h"
 #include "lib/uuid.h"  // for m0_node_uuid_string_set();
-#include "mero/init.h"
+#include "motr/init.h"
 #include "module/instance.h"
 }
 
