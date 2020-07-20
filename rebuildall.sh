@@ -50,7 +50,7 @@ declare -a link_libs_array
 # -I/usr/src/lustre-client-2.12.3/lustre/include/uapi/linux
 #
 # CMD: PKG_CONFIG_PATH=./third_party/motr pkg-config --libs motr
-# OUTPUT: -L/root/s3server/third_party/motr/mero/.libs -lmotr
+# OUTPUT: -L/root/s3server/third_party/motr/motr/.libs -lmotr
 #
 get_motr_pkg_config_dev() {
   s3_src_dir=$1
@@ -233,7 +233,7 @@ prepare_BUILD_file() {
     # remove last ', "-I'
     motr_include_path=${motr_include_path%", \"-I"}
 
-    MOTR_INC_="MOTR_INC=/usr/include/mero/"
+    MOTR_INC_="MOTR_INC=/usr/include/motr/"
     if [ ${#rpm_lib_search_paths_array[@]} -eq 0 ]
     then
       MOTR_LIB_="MOTR_LIB=/usr/lib64/"
