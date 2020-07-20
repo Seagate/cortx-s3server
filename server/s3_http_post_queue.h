@@ -46,7 +46,7 @@ class S3HttpPostQueue {
  private:
   bool connect();
   bool post_msg_from_queue();
-  void request_finished();
+  void request_finished(evhtp_request_t *);
   void unset_all_hooks();
 
   static evhtp_res on_conn_err_cb(evhtp_connection_t *, evhtp_error_flags,
@@ -75,14 +75,14 @@ class S3HttpPostQueue {
   size_t n_read;
 
   enum {
-    MAX_CONN_ERR = 5
+    MAX_ERR = 100
   };
-  unsigned n_conn_err = 0;
+  unsigned n_err = 0;
 
   std::map<std::string, std::string> headers;
 
   enum {
-    MAX_MSG_IN_QUEUE = 100
+    MAX_MSG_IN_QUEUE = 1024
   };
   std::queue<std::string> msg_queue;
 };

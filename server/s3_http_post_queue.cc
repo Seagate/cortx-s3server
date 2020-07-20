@@ -92,7 +92,7 @@ evhtp_res S3HttpPostQueue::on_conn_err_cb(evhtp_connection_t *p_conn,
           evutil_socket_error_to_string(evutil_socket_geterror(p_conn->sock)),
           evutil_socket_geterror(p_conn->sock), s_errtype.c_str());
 
-      ++p_inst->n_conn_err;
+      ++p_inst->n_err;
     } else {
       s3_log(S3_LOG_DEBUG, nullptr,
              "Probably a client has closed the connection");
@@ -101,7 +101,7 @@ evhtp_res S3HttpPostQueue::on_conn_err_cb(evhtp_connection_t *p_conn,
     p_inst->p_conn = nullptr;
 
     p_inst->unset_all_hooks();
-    p_inst->request_finished();
+    p_inst->request_finished(p_conn->request);
   }
   catch (const std::exception &ex) {
     s3_log(S3_LOG_ERROR, nullptr, "%s", ex.what());
@@ -139,7 +139,7 @@ bool S3HttpPostQueue::connect() {
   if (p_conn) {
     return true;
   }
-  if (n_conn_err >= MAX_CONN_ERR) {
+  if (n_err >= MAX_ERR) {
     s3_log(S3_LOG_DEBUG, nullptr,
            "The number of errors exceeded the threshold");
     return false;
@@ -148,7 +148,7 @@ bool S3HttpPostQueue::connect() {
 
   if (!p_conn) {
     s3_log(S3_LOG_ERROR, nullptr, "evhtp_connection_new() failed");
-    ++n_conn_err;
+    ++n_err;
     return false;
   }
   evhtp_set_hook(&p_conn->hooks, evhtp_hook_on_conn_error,
@@ -161,6 +161,7 @@ bool S3HttpPostQueue::connect() {
 evhtp_res S3HttpPostQueue::on_headers_start_cb(evhtp_request_t *p_evhtp_req,
                                                void *p_arg) noexcept {
   assert(p_evhtp_req != nullptr);
+  assert(p_arg != nullptr);
 
   try {
     s3_log(S3_LOG_DEBUG, nullptr, "HTTP status: %d",
@@ -210,8 +211,7 @@ evhtp_res S3HttpPostQueue::on_headers_cb(evhtp_request_t *p_evhtp_req,
 
     if (!p_inst->response_content_length) {
       s3_log(S3_LOG_DEBUG, nullptr, "None data in the response");
-      evhtp_unset_all_hooks(&p_evhtp_req->hooks);
-      p_inst->request_finished();
+      p_inst->request_finished(p_evhtp_req);
     } else {
       s3_log(S3_LOG_DEBUG, nullptr, "Waiting data...");
     }
@@ -250,8 +250,7 @@ evhtp_res S3HttpPostQueue::on_response_data_cb(evhtp_request_t *p_evhtp_req,
     p_inst->n_read += n_bytes;
 
     if (p_inst->n_read >= p_inst->response_content_length) {
-      evhtp_unset_all_hooks(&p_evhtp_req->hooks);
-      p_inst->request_finished();
+      p_inst->request_finished(p_evhtp_req);
     }
   }
   catch (const std::exception &ex) {
@@ -274,14 +273,14 @@ bool S3HttpPostQueue::post_msg_from_queue() {
 
   if (!p_ev_buf) {
     s3_log(S3_LOG_ERROR, nullptr, "evbuffer_new() failed");
-    ++n_conn_err;
+    ++n_err;
     return false;
   }
   evhtp_request_t *p_evhtp_req = evhtp_request_new(nullptr, nullptr);
 
   if (!p_evhtp_req) {
     s3_log(S3_LOG_ERROR, nullptr, "evhtp_request_new() failed");
-    ++n_conn_err;
+    ++n_err;
     evbuffer_free(p_ev_buf);
     return false;
   }
@@ -309,10 +308,10 @@ bool S3HttpPostQueue::post_msg_from_queue() {
                  (evhtp_hook)on_response_data_cb, this);
 
   evbuffer_add(p_ev_buf, msg.c_str(), msg.length());
-  msg_queue.pop();
 
   evhtp_make_request(p_conn, p_evhtp_req, htp_method_POST, path.c_str());
   evhtp_send_reply_body(p_evhtp_req, p_ev_buf);
+
   evbuffer_free(p_ev_buf);
 
   request_in_progress = true;
@@ -343,13 +342,35 @@ void S3HttpPostQueue::on_schedule_cb(evutil_socket_t, short events,
   }
 }
 
-void S3HttpPostQueue::request_finished() {
+static bool is_request_succeed(evhtp_request_t *p_evhtp_req) {
+  if (!p_evhtp_req) {
+    return false;
+  }
+  const auto status = evhtp_request_status(p_evhtp_req);
+  return status >= EVHTP_RES_OK && status < EVHTP_RES_300;
+}
+
+const struct timeval tv = {0, 100000};  // 0.1 sec
+
+void S3HttpPostQueue::request_finished(evhtp_request_t *p_evhtp_req) {
   if (!request_in_progress) {
     s3_log(S3_LOG_DEBUG, nullptr, "Double invocation");
     return;
   }
+  if (p_evhtp_req) {
+    evhtp_unset_all_hooks(&p_evhtp_req->hooks);
+  }
   request_in_progress = false;
+  const bool is_succeed = is_request_succeed(p_evhtp_req);
 
+  if (is_succeed) {
+    assert(!msg_queue.empty());
+    msg_queue.pop();
+
+    n_err = 0;
+  } else {
+    s3_log(S3_LOG_ERROR, nullptr, "Sending of a message failed");
+  }
   if (msg_queue.empty()) {
     s3_log(S3_LOG_DEBUG, nullptr, "None messages in the queue");
     return;
@@ -361,9 +382,14 @@ void S3HttpPostQueue::request_finished() {
 
     if (!p_event) {
       s3_log(S3_LOG_ERROR, nullptr, "event_new() failed");
-      ++n_conn_err;
+      ++n_err;
       return;
     }
   }
-  event_active(p_event, 0, 1);
+  if (is_succeed) {
+    event_active(p_event, 0, 1);
+  } else if (event_add(p_event, &tv)) {
+    s3_log(S3_LOG_ERROR, nullptr, "event_add() failed");
+    ++n_err;
+  }
 }
