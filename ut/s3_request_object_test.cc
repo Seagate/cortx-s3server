@@ -304,6 +304,39 @@ TEST_F(S3RequestObjectTest, ValidateContentLengthValidTest2) {
   EXPECT_TRUE(request->validate_content_length());
 }
 
+TEST_F(S3RequestObjectTest, ValidateContentMD5Empty) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["content-md5"] = "";
+  fake_in_headers(input_headers);
+
+  EXPECT_FALSE(request->validate_content_md5());
+}
+
+TEST_F(S3RequestObjectTest, ValidateContentMD5Short) {
+  std::map<std::string, std::string> input_headers;
+  // MD5 value is less than 16 bytes
+  input_headers["content-md5"] = "YWJyYWNhZGFicmE=";
+  fake_in_headers(input_headers);
+
+  EXPECT_FALSE(request->validate_content_md5());
+}
+
+TEST_F(S3RequestObjectTest, ValidateContentMD5GarbageInvalid) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["content-md5"] = "AWS HAHAHA";
+  fake_in_headers(input_headers);
+
+  EXPECT_FALSE(request->validate_content_md5());
+}
+
+TEST_F(S3RequestObjectTest, ValidateContentMD5Valid) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["content-md5"] = "RfyyiTBjdeeYZXU50B05MQ==";
+  fake_in_headers(input_headers);
+
+  EXPECT_TRUE(request->validate_content_md5());
+}
+
 TEST_F(S3RequestObjectTest, ReturnsValidContentBody) {
   std::string content = "Hello World";
   std::map<std::string, std::string> input_headers;

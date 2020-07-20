@@ -177,6 +177,7 @@ class RequestObject {
   // care of both above headers (chunked and non-chunked cases)
   virtual size_t get_data_length();
   virtual std::string get_data_length_str();
+  virtual bool validate_content_md5();
   virtual bool validate_content_length();
   virtual size_t get_content_length();
   virtual std::string get_content_length_str();
