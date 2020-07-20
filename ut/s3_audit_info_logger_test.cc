@@ -170,3 +170,19 @@ TEST(S3AuditInfoLoggerTest, PolicyRsyslogTcpBaseNULL) {
   EXPECT_EQ(false, S3AuditInfoLogger::is_enabled());
   EXPECT_EQ(1, S3AuditInfoLogger::save_msg("test_req_id", "test_audit_msg"));
 }
+
+TEST(S3AuditInfoLoggerTest, PolicyKafkaWeb) {
+  OptionsWrapper ow("kafka-web");
+
+  EXPECT_EQ(0, S3AuditInfoLogger::init());
+  EXPECT_NE(nullptr, S3AuditInfoLogger::audit_info_logger);
+  EXPECT_EQ(true, S3AuditInfoLogger::audit_info_logger_enabled);
+  EXPECT_EQ(true, S3AuditInfoLogger::is_enabled());
+  EXPECT_EQ(0, S3AuditInfoLogger::save_msg("test_req_id", "{unit_tests=true}"));
+
+  S3AuditInfoLogger::finalize();
+  EXPECT_EQ(nullptr, S3AuditInfoLogger::audit_info_logger);
+  EXPECT_EQ(false, S3AuditInfoLogger::audit_info_logger_enabled);
+  EXPECT_EQ(false, S3AuditInfoLogger::is_enabled());
+  EXPECT_EQ(1, S3AuditInfoLogger::save_msg("test_req_id", "{unit_tests=true}"));
+}

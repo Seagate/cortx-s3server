@@ -14,14 +14,13 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Evgeniy Brazhnikov   <evgeniy.brazhnikov@seagate.com>
- * Author:  Evgeniy Brazhnikov   <evgeniy.brazhnikov@seagate.com>
  * Original creation date: 14-Jul-2020
  */
 
 #pragma once
 
-#ifndef __S3_SERVER_AUDIT_LOGGER_KAFKA_BRIDGE__
-#define __S3_SERVER_AUDIT_LOGGER_KAFKA_BRIDGE__
+#ifndef __S3_SERVER_AUDIT_LOGGER_KAFKA_WEB__
+#define __S3_SERVER_AUDIT_LOGGER_KAFKA_WEB__
 
 #include <string>
 #include <memory>
@@ -48,4 +47,4 @@ class S3AuditInfoLoggerKafkaWeb : public S3AuditInfoLoggerBase {
   std::unique_ptr<S3HttpPostQueue> p_s3_post_queue;
 };
 
-#endif  // __S3_SERVER_AUDIT_LOGGER_KAFKA_BRIDGE__
+#endif  // __S3_SERVER_AUDIT_LOGGER_KAFKA_WEB__

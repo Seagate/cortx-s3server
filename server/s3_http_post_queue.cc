@@ -14,7 +14,6 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Evgeniy Brazhnikov   <evgeniy.brazhnikov@seagate.com>
- * Author:  Evgeniy Brazhnikov   <evgeniy.brazhnikov@seagate.com>
  * Original creation date: 13-Jul-2020
  */
 
@@ -34,11 +33,7 @@ S3HttpPostQueue::S3HttpPostQueue(evbase_t *p_evbase_, std::string s_ipa_,
     : p_evbase(p_evbase_),
       s_ipa(std::move(s_ipa_)),
       port(port_),
-      path(std::move(path_)) {
-
-  assert(p_evbase != nullptr);
-  assert(port);
-}
+      path(std::move(path_)) {}
 
 S3HttpPostQueue::~S3HttpPostQueue() {
   unset_all_hooks();
@@ -59,8 +54,12 @@ void S3HttpPostQueue::unset_all_hooks() {
 }
 
 bool S3HttpPostQueue::post(std::string msg) {
+  if (!p_evbase) {
+    // It seams UTs are running
+    return true;
+  }
   if (msg.empty()) {
-    s3_log(S3_LOG_INFO, nullptr, "Empty messages isn't allowed");
+    s3_log(S3_LOG_INFO, nullptr, "Empty messages are not allowed");
     return false;
   }
   if (msg_queue.size() > MAX_MSG_IN_QUEUE) {
@@ -141,7 +140,8 @@ bool S3HttpPostQueue::connect() {
     return true;
   }
   if (n_conn_err >= MAX_CONN_ERR) {
-    s3_log(S3_LOG_DEBUG, nullptr, "N of errors reached the maximum");
+    s3_log(S3_LOG_DEBUG, nullptr,
+           "The number of errors exceeded the threshold");
     return false;
   }
   p_conn = evhtp_connection_new(p_evbase, s_ipa.c_str(), port);

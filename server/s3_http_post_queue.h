@@ -14,7 +14,6 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Evgeniy Brazhnikov   <evgeniy.brazhnikov@seagate.com>
- * Author:  Evgeniy Brazhnikov   <evgeniy.brazhnikov@seagate.com>
  * Original creation date: 13-Jul-2020
  */
 
