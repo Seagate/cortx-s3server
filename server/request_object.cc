@@ -31,6 +31,7 @@
 #include "request_object.h"
 #include "s3_stats.h"
 #include "s3_addb.h"
+#include "base64.h"
 
 extern S3Option* g_option_instance;
 
@@ -478,6 +479,22 @@ std::string RequestObject::get_content_length_str() {
     len = "0";
   }
   return len;
+}
+
+bool RequestObject::validate_content_md5() {
+  bool is_content_md5_valid = true;
+  std::string content_md5 = get_header_value("content-md5");
+  if (content_md5.empty()) {
+    // Invalid digest: content-md5 is with empty value
+    return false;
+  } else {
+    std::string decoded_md5 = base64_decode(content_md5);
+    if (decoded_md5.empty() || (decoded_md5.size() != MD5_DIGEST_LENGTH)) {
+      // Invalid digest: MD5 hash is empty or hash size is not 16
+      is_content_md5_valid = false;
+    }
+  }
+  return is_content_md5_valid;
 }
 
 bool RequestObject::validate_content_length() {
