@@ -106,6 +106,47 @@ class ObjectRecoveryScheduler(object):
                     pass
             else:
                 self.logger.error("Failed to retrive Index listing:")
+# ********* hybrid-cloud changes ******************************************************
+            mq_replication = ObjectRecoveryRabbitMq(
+                self.config,
+                self.config.get_rabbitmq_username(),
+                self.config.get_rabbitmq_password(),
+                self.config.get_rabbitmq_host(),
+                self.config.get_rabbitmq_exchange(),
+                self.config.get_rabbitmq_replication_queue_name(),
+                self.config.get_rabbitmq_mode(),
+                self.config.get_rabbitmq_durable(),
+                self.logger)
+
+            result, index_response = EOSCoreIndexApi(
+                self.config, logger=self.logger).list(
+                    self.config.get_bucket_metadata_index_id(), self.config.get_max_keys(), marker)
+            if result is True:
+                index_content = index_response.get_index_content()
+                bucket_key_value_list = index_content["Keys"]
+                for KV in bucket_key_value_list:
+                    bucket = KV["Key"]
+                    value = json.loads(KV["Value"])
+                    if "replication" in value:
+                        self.logger.info("[" + bucket + "] has replication set. Details: "
+                         + value["replication"])
+                         # TODO:send this bucket into the replication queue of rabbitmq
+                        self.logger.info(
+                            "sending data to replication-queue:" + str(KV))
+                        ret, msg = mq_replication.send_data(
+                            KV, self.config.get_rabbitmq_replication_queue_name())
+                        if not ret:
+                            IEMutil("ERROR", IEMutil.RABBIT_MQ_CONN_FAILURE, IEMutil.RABBIT_MQ_CONN_FAILURE_STR)
+                            self.logger.error(
+                                "replication-queue send data "+ str(KV) +
+                                " failed :" + msg)
+                        else:
+                            self.logger.info(
+                                "replication-queue send data successfully :" +
+                                str(KV))
+                    else:
+                        self.logger.info("replication is not set for bucket: [" + bucket + "]")
+# ********* hybrid-cloud changes ******************************************************
         except BaseException:
             self.logger.error(
                 "Object recovery queue send data exception:" + traceback.format_exc())

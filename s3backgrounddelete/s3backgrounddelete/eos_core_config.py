@@ -213,6 +213,15 @@ class EOSCoreConfig(object):
                 "Could not parse rabbitmq queue from config file " +
                 self._conf_file)
 
+    def get_rabbitmq_replication_queue_name(self):
+        """Return replication queue name of rabbitmq from config file."""
+        if 'rabbitmq' in self._config and self._config['rabbitmq']['r-queue']:
+            return self._config['rabbitmq']['r-queue']
+        else:
+            raise KeyError(
+                "Could not parse rabbitmq r-queue from config file " +
+                self._conf_file)
+
     def get_rabbitmq_exchange(self):
         """
         Return exchange name of rabbitmq from config file.

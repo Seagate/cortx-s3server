@@ -35,7 +35,7 @@ class ObjectRecoveryProcessor(object):
                 self.config.get_rabbitmq_password(),
                 self.config.get_rabbitmq_host(),
                 self.config.get_rabbitmq_exchange(),
-                self.config.get_rabbitmq_queue_name(),
+                self.config.get_rabbitmq_replication_queue_name(),
                 self.config.get_rabbitmq_mode(),
                 self.config.get_rabbitmq_durable(),
                 self.logger)
