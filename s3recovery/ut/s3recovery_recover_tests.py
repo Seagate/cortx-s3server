@@ -20,8 +20,6 @@
 
 import mock
 import unittest
-import json
-import dateutil.parser
 
 from s3recovery.s3recovercorruption import S3RecoverCorruption
 from s3recovery.s3recoverybase import S3RecoveryBase
@@ -39,7 +37,7 @@ class S3RecoverCorruptionTestCase(unittest.TestCase):
         mock_initiate.return_value = None
         mock_dry_run.return_value = {}
         mock_check_consistency.return_value = None
-        mockS3RecoverCorruption.recover_corruption("Global bucket index", 
+        mockS3RecoverCorruption.recover_corruption("Global bucket index",
             Config.global_bucket_index_id,
             Config.global_bucket_index_id_replica,
             "Bucket metadata index",
@@ -64,7 +62,7 @@ class S3RecoverCorruptionTestCase(unittest.TestCase):
         mock_initiate.return_value = None
         mock_dry_run.return_value = {}
         mock_restore_data.return_value = None
-        mockS3RecoverCorruption.recover_corruption("Global bucket index", 
+        mockS3RecoverCorruption.recover_corruption("Global bucket index",
             Config.global_bucket_index_id,
             Config.global_bucket_index_id_replica,
             "Bucket metadata index",
