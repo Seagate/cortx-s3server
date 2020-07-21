@@ -195,10 +195,15 @@ cp -f scripts/ldap/rsyslog.d/slapdlog.conf $S3_INSTALL_LOCATION/install/ldap/rsy
 # Copy s3 slapd index file to install location
 cp -f scripts/ldap/s3slapdindex.ldif $S3_INSTALL_LOCATION/install/ldap/
 
-# Copy backgrounddelete account creation script to install location
+# Copy backgrounddelete account scripts to install location
 cp -f scripts/ldap/background_delete_account.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/create_background_delete_account.sh $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/delete_background_delete_account.sh $S3_INSTALL_LOCATION/install/ldap/
+
+# Copy s3recovery account scripts to install location
+cp -f scripts/ldap/s3_recovery_account.ldif $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/create_s3_recovery_account.sh $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/delete_s3_recovery_account.sh $S3_INSTALL_LOCATION/install/ldap/
 
 cp -f scripts/ldap/cfg_ldap.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/cn={1}s3user.ldif $S3_INSTALL_LOCATION/install/ldap/

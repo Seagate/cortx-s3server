@@ -47,6 +47,7 @@ def before_all():
 before_all()
 
 # Set basic properties
+# Config.log_enabled = True
 Config.config_file = "pathstyle.s3cfg"
 S3ClientConfig.pathstyle = False
 S3ClientConfig.ldapuser = 'sgiamadmin'
@@ -74,8 +75,8 @@ def load_and_update_config(access_key_value, secret_key_value):
 
     with open(bgdelete_config_file, 'r') as f:
             config = yaml.safe_load(f)
-            config['eos_core']['access_key'] = access_key_value
-            config['eos_core']['secret_key'] = secret_key_value
+            config['s3_recovery']['access_key'] = access_key_value
+            config['s3_recovery']['secret_key'] = secret_key_value
             config['eos_core']['daemon_mode'] = "False"
             config['leakconfig']['leak_processing_delay_in_mins'] = 0
             config['leakconfig']['version_processing_delay_in_mins'] = 0
@@ -317,12 +318,12 @@ assert '"location_constraint":"us-west-2"' in result_stdout_list[11]
 assert result_stdout_list[7] != 'Empty'
 
 assert replica_index_key in result_stdout_list[7]
-assert replica_index_key in result_stdout_list[12]
+assert replica_index_key in result_stdout_list[13]
 assert '"create_timestamp":"2020-08-14T06:45:41.000Z"' in result_stdout_list[7]
-assert '"create_timestamp":"2020-08-14T06:45:41.000Z"' in result_stdout_list[12]
+assert '"create_timestamp":"2020-08-14T06:45:41.000Z"' in result_stdout_list[13]
 
 assert '"location_constraint":"us-east-1"' in result_stdout_list[7]
-assert '"location_constraint":"us-east-1"' in result_stdout_list[12]
+assert '"location_constraint":"us-east-1"' in result_stdout_list[13]
 
 # Delete the key-values from both primary and replica indexes
 status, res = EOSCoreKVApi(config).delete(primary_bucket_list_index_oid, primary_index_key)
@@ -379,9 +380,9 @@ assert primary_index_key not in result_stdout_list[12]
 assert '"create_timestamp":"2020-12-11T06:45:41.000Z"' in result_stdout_list[12]
 assert '"location_constraint":"mumbai"' in result_stdout_list[12]
 
-assert primary_index_key not in result_stdout_list[13]
-assert result_stdout_list[13] == ''
-assert 'Primary index content for Bucket metadata index' in result_stdout_list[14]
+assert primary_index_key not in result_stdout_list[14]
+assert result_stdout_list[14] == ''
+assert 'Primary index content for Bucket metadata index' in result_stdout_list[15]
 
 # Delete the key-values from both primary and replica indexes
 status, res = EOSCoreKVApi(config).delete(primary_bucket_list_index_oid, primary_index_key)

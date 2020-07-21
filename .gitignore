@@ -11,6 +11,7 @@ bazel-*
 s3mempoolmgrut.*
 s3ut.*
 s3backgrounddelete/*.pyc
+s3recovery/*.pyc
 server/jsoncpp.cc
 st/clitests/jclient.jar
 st/clitests/jcloudclient.jar
@@ -47,6 +48,10 @@ mempool/.libs/
 s3backgrounddelete/build/
 s3backgrounddelete/dist/
 s3backgrounddelete/s3backgrounddelete.egg-info/
+s3recovery/build/
+s3recovery/dist/
+s3recovery/s3recovery.egg-info/
 st/clitests/jclient.properties
 st/clitests/jcloud.properties
 .vscode/*
+
