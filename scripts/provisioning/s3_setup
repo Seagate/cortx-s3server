@@ -116,7 +116,7 @@ setup_release_repo()
 {
 cat >/etc/yum.repos.d/releases_eos_lustre.repo <<EOL
 [releases_eos_lustre]
-baseurl = http://ci-storage.mero.colo.seagate.com/releases/eos/integration/centos-7.7.1908/last_successful/
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/integration/centos-7.7.1908/last_successful/
 gpgcheck = 0
 name = Yum repo for lustre
 priority = 1
@@ -124,7 +124,7 @@ EOL
 
 cat >/etc/yum.repos.d/releases_eos_halon.repo <<EOL
 [releases_eos_halon]
-baseurl = http://ci-storage.mero.colo.seagate.com/releases/eos/components/dev/centos-7.7.1908/halon/last_successful/
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/components/dev/centos-7.7.1908/halon/last_successful/
 gpgcheck = 0
 name = Yum repo for halon
 priority = 1
@@ -132,7 +132,7 @@ EOL
 
 cat >/etc/yum.repos.d/releases_eos_mero.repo <<EOL
 [releases_eos_mero]
-baseurl = http://ci-storage.mero.colo.seagate.com/releases/eos/components/dev/centos-7.7.1908/mero/last_successful/
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/components/dev/centos-7.7.1908/mero/last_successful/
 gpgcheck = 0
 name = Yum repo for motr
 priority = 1
@@ -140,7 +140,7 @@ EOL
 
 cat >/etc/yum.repos.d/releases_eos_s3server.repo <<EOL
 [releases_eos_s3server]
-baseurl = http://ci-storage.mero.colo.seagate.com/releases/eos/components/dev/centos-7.7.1908/s3server/last_successful/
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/components/dev/centos-7.7.1908/s3server/last_successful/
 gpgcheck = 0
 name = Yum repo for s3server
 priority = 1
@@ -151,7 +151,7 @@ then
 
 cat >/etc/yum.repos.d/releases_s3server_uploads <<EOL
 [releases_s3server_uploads]
-baseurl = http://ci-storage.mero.colo.seagate.com/releases/eos/s3server_uploads/
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/s3server_uploads/
 gpgcheck = 0
 name = Yum repo for S3 server dependencies
 priority = 1
@@ -159,7 +159,7 @@ EOL
 
 cat >/etc/yum.repos.d/prvsnr_local_repository <<EOL
 [prvsnr_local_repository]
-baseurl = http://ci-storage.mero.colo.seagate.com/prvsnr/vendor/centos/epel/
+baseurl = http://cortx-storage.colo.seagate.com/prvsnr/vendor/centos/epel/
 gpgcheck = 0
 name = Yum local repo for S3 server dependencies
 priority = 1
@@ -170,7 +170,7 @@ then
 
 cat >/etc/yum.repos.d/releases_s3server_uploads <<EOL
 [releases_s3server_uploads]
-baseurl = http://ci-storage.mero.colo.seagate.com/releases/eos/s3server_uploads/centos8/
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/s3server_uploads/centos8/
 gpgcheck = 0
 name = Yum repo for S3 server dependencies
 priority = 1
