@@ -21,6 +21,9 @@
 import mock
 import unittest
 
+from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
+from s3backgrounddelete.eos_core_success_response import EOSCoreSuccessResponse
+
 from s3recovery.s3recovercorruption import S3RecoverCorruption
 from s3recovery.s3recoverybase import S3RecoveryBase
 
@@ -131,3 +134,66 @@ class S3RecoverCorruptionTestCase(unittest.TestCase):
         # Assert inconsistent data should not be recovered
         self.assertEqual(len(mockS3RecoverCorruption.common_keys), 1)
         self.assertEqual(mockS3RecoverCorruption.common_keys, ["key3"])
+
+    @mock.patch.object(EOSCoreKVApi, 'put')
+    def test_restore_data_none_index_list(self, mock_put):
+        # Test 'restore_data' when list: 'list_result' is None 
+        mockS3RecoverCorruption = S3RecoverCorruption()
+        mockS3RecoverCorruption.list_result = None
+
+        mockS3RecoverCorruption.restore_data('global_list_index_id',
+        'replica_list_index_id',
+        'global_metadata_index_id',
+        'replica_metadata_index_id'
+        )
+        self.assertEqual(mock_put.call_count, 0)
+
+    @mock.patch.object(EOSCoreKVApi, 'put')
+    def test_restore_data_none_metadata_list(self, mock_put):
+        # Test 'restore_data' when dict: 'metadata_result' is None
+        mockS3RecoverCorruption = S3RecoverCorruption()
+        mockS3RecoverCorruption.list_result = dict()
+        mockS3RecoverCorruption.metadata_result = None
+
+        mockS3RecoverCorruption.restore_data('global_list_index_id',
+        'replica_list_index_id',
+        'global_metadata_index_id',
+        'replica_metadata_index_id'
+        )
+        self.assertEqual(mock_put.call_count, 0)
+
+    @mock.patch.object(EOSCoreKVApi, 'put')
+    def test_restore_data_empty_index_list(self, mock_put):
+        # Test 'restore_data' when dict: 'list_result' is empty 
+        mockS3RecoverCorruption = S3RecoverCorruption()
+        mockS3RecoverCorruption.list_result = dict()
+        mockS3RecoverCorruption.metadata_result = dict()
+
+        mockS3RecoverCorruption.restore_data('global_list_index_id',
+        'replica_list_index_id',
+        'global_metadata_index_id',
+        'replica_metadata_index_id'
+        )
+        self.assertEqual(mock_put.call_count, 0)
+
+    @mock.patch.object(EOSCoreKVApi, 'put')
+    def test_restore_data_non_empty_index_list(self, mock_put):
+        # Test 'restore_data' when dict: 'list_result' & 'metadata_result' is not empty
+        mockS3RecoverCorruption = S3RecoverCorruption()
+
+        mockS3RecoverCorruption.metadata_result = {
+        r'123/key3': 'value3'
+        }
+        mockS3RecoverCorruption.list_result = {
+        'key1': 'value1',
+        'key2': 'value2'
+        }
+        mockS3RecoverCorruption.common_keys = ['key1', 'key3']
+
+        mock_put.return_value = True, EOSCoreSuccessResponse("body".encode('utf-8'))
+
+        mockS3RecoverCorruption.restore_data('global_list_index_id',
+        'replica_list_index_id',
+        'global_metadata_index_id',
+        'replica_metadata_index_id')
+        self.assertEqual(mock_put.call_count, 4) # 2 calls each to EOSCoreKVApi::put, for key1 and key3
