@@ -14,10 +14,11 @@ S3_SERVER_CONFIG:                                     # Section for S3 Server
    S3_AUDIT_LOG_DIR: "/var/log/seagate/s3"              # S3 Audit log directory
    S3_AUDIT_LOG_CONFIG: "/opt/seagate/cortx/s3/conf/s3server_audit_log.properties" # S3 Server Audit log configuration file.
    S3_AUDIT_LOG_FORMAT_TYPE: "JSON"                     # S3 Server Audit log format type. JSON logs in json format & S3_FORMAT logs in s3 format.
-   S3_AUDIT_LOGGER_POLICY: "disabled"                   # Audit info logger policy: disabled - logger disabled; rsyslog-tcp - send logs to rsyslog via tcp socket; log4cxx - use log4cxx; syslog - send logs to rsyslog via syslog call;
+   S3_AUDIT_LOGGER_POLICY: "disabled"                   # Audit info logger policy: disabled - logger disabled; rsyslog-tcp - send logs to rsyslog via tcp socket; log4cxx - use log4cxx; syslog - send logs to rsyslog via syslog call; kafka-web - send logs to Kafka Web;
    S3_AUDIT_LOGGER_HOST: "localhost"                    # Remote host name to connect to if logger needs to work via network
    S3_AUDIT_LOGGER_PORT: 514                            # Remote port to connect to if logger needs to work via network
    S3_AUDIT_LOGGER_RSYSLOG_MSGID: "s3server-audit-logging"  # Rsyslog msgid to filter messages
+   S3_AUDIT_LOGGER_KAFKA_WEB_PATH: "/topics/s3auditlogs" # URL path for POST requests
    S3_AUDIT_MAX_RETRY_COUNT: 5                          # Max retry count in case of audit log failure
    S3_SERVER_IPV4_BIND_ADDR: 10.10.1.1                  # S3 Server ipv4 bind address, 0.0.0.0 is default. ~ means option is ignored/not to listen on IPv4 address.
    S3_SERVER_IPV6_BIND_ADDR: ~                          # S3 Server ipv6 bind address, ::/128 is default. ~ means option is ignored/not to listen on IPv6 address.

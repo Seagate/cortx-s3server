@@ -28,6 +28,8 @@ from s3recovery.config import Config
 class S3RecoverCorruption(S3RecoveryBase):
     def __init__(self):
         super(S3RecoverCorruption, self).__init__()
+        super(S3RecoverCorruption, self).create_logger_directory()
+        super(S3RecoverCorruption, self).create_logger("S3RecoverCorruption")
 
     def restore_data(self, list_index_id, list_index_id_replica, metadata_index_id,
             metadata_index_id_replica):
@@ -36,12 +38,13 @@ class S3RecoverCorruption(S3RecoveryBase):
 
         """
         if ((not self.list_result) or (not self.metadata_result)):
+            self.s3recovery_log("info", "No any data to recover\n")
             return
 
-        print("Recovering global list index table\n")
+        self.s3recovery_log("info", "Recovering global list index table\n")
         for key, value in self.list_result.items():
             if key in self.common_keys:
-                print("Recovering {} {}".format(key,value))
+                self.s3recovery_log("info", "Recovering {} {}".format(key,value))
                 super(S3RecoverCorruption, self).put_kv(list_index_id, key, value)
                 super(S3RecoverCorruption, self).put_kv(list_index_id_replica, key, value)
 
@@ -58,14 +61,14 @@ class S3RecoverCorruption(S3RecoveryBase):
         }
         """
 
-        print("Recovering bucket metadata table\n")
+        self.s3recovery_log("info", "Recovering bucket metadata table\n")
         for key, value in self.metadata_result.items():
             if key.split('/')[1] in self.common_keys:
-                print("Recovering {} {}".format(key,value))
+                self.s3recovery_log("info", "Recovering {} {}".format(key,value))
                 super(S3RecoverCorruption, self).put_kv(metadata_index_id, key, value)
                 super(S3RecoverCorruption, self).put_kv(metadata_index_id_replica, key, value)
 
-        print("Success")
+        self.s3recovery_log("info", "Success")
 
 
     def check_consistency(self):
