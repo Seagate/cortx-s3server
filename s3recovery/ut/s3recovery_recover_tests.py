@@ -137,7 +137,7 @@ class S3RecoverCorruptionTestCase(unittest.TestCase):
 
     @mock.patch.object(EOSCoreKVApi, 'put')
     def test_restore_data_none_index_list(self, mock_put):
-        # Test 'restore_data' when list: 'list_result' is None 
+        # Test 'restore_data' when list: 'list_result' is None
         mockS3RecoverCorruption = S3RecoverCorruption()
         mockS3RecoverCorruption.list_result = None
 
@@ -164,7 +164,7 @@ class S3RecoverCorruptionTestCase(unittest.TestCase):
 
     @mock.patch.object(EOSCoreKVApi, 'put')
     def test_restore_data_empty_index_list(self, mock_put):
-        # Test 'restore_data' when dict: 'list_result' is empty 
+        # Test 'restore_data' when dict: 'list_result' is empty
         mockS3RecoverCorruption = S3RecoverCorruption()
         mockS3RecoverCorruption.list_result = dict()
         mockS3RecoverCorruption.metadata_result = dict()
