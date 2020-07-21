@@ -83,8 +83,12 @@ class EOSCoreUtil(object):
 
        algorithm = 'AWS4-HMAC-SHA256'
 
-       access_key = self._config.get_eos_core_access_key()
-       secret_key = self._config.get_eos_core_secret_key()
+       if self._config.get_s3recovery_flag :
+           access_key = self._config.get_s3_recovery_access_key()
+           secret_key = self._config.get_s3_recovery_secret_key()
+       else:
+           access_key = self._config.get_eos_core_access_key()
+           secret_key = self._config.get_eos_core_secret_key()
 
        string_to_sign = self.create_string_to_sign_v4(method, canonical_uri, canonical_query_string, body, epoch_t,
                                                  algorithm, host, service, region)
