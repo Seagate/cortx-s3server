@@ -115,6 +115,40 @@ class ObjectRecoveryRabbitMq(object):
             self._channel.basic_consume(callback, self._queue, no_ack=False)
             self._channel.start_consuming()
 
+    def replication_worker(self, queue_msg_count=None):
+        def callback(channel, method, properties, body):
+            """Process the result and send acknowledge."""
+            try:
+                self.logger.info(
+                    "Received " + body.decode("utf-8") + "at consumer end"
+                )
+                replication_record = json.loads(body.decode("utf-8"))
+                if (replication_record is not None):
+                    self.logger.info(
+                        "Processing following records in consumer " +
+                        str(replication_record))
+                channel.basic_ack(delivery_tag=method.delivery_tag)
+
+            except BaseException:
+                self.logger.error(
+                    "msg_queue callback failed." + traceback.format_exc())
+
+        self._channel.basic_qos(prefetch_count=1)
+
+        # If service is running in non-daemon mode,
+        # then consume messages till the queue is empty and then stop
+        # else start consuming the message till service stops.
+        if (queue_msg_count is not None):
+            self.logger.info("Queue contains " +  str(queue_msg_count) + " messages")
+            for msg in range(queue_msg_count, 0, -1):
+                method, properties, body = self._channel.basic_get(self._queue, no_ack=False)
+                callback(self._channel, method, properties, body)
+            self.logger.info("Consumed all messages and queue is empty")
+            return
+        else:
+            self._channel.basic_consume(callback, self._queue, no_ack=False)
+            self._channel.start_consuming()
+
 
     def receive_data(self):
         """Receive data and create msg queue."""
@@ -126,12 +160,13 @@ class ObjectRecoveryRabbitMq(object):
                 queue_state = self._channel.queue_declare(
                     queue=self._queue, durable=self._durable)
                 queue_msg_count = queue_state.method.message_count
-                self.worker(queue_msg_count)
+                #self.worker(queue_msg_count)
+                self.replication_worker(queue_msg_count)
                 return
             else:
                 self._channel.queue_declare(
                     queue=self._queue, durable=self._durable)
-                self.worker()
+                self.replication_worker(queue_msg_count)
 
         except Exception as exception:
             err_msg = "error:%s, %s" % (exception, traceback.format_exc())
