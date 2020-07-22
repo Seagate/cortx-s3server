@@ -151,7 +151,7 @@ then
 
 cat >/etc/yum.repos.d/releases_s3server_uploads <<EOL
 [releases_s3server_uploads]
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/s3server_uploads/
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/uploads/centos/centos-7.7.1908/s3server_uploads/
 gpgcheck = 0
 name = Yum repo for S3 server dependencies
 priority = 1
@@ -167,10 +167,10 @@ EOL
 
 elif [ "$major_version" = "8" ];
 then
-
+#TODO Currently we are maintaing Centos 7.7 and RHEL 7.7 repo
 cat >/etc/yum.repos.d/releases_s3server_uploads <<EOL
 [releases_s3server_uploads]
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/s3server_uploads/centos8/
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/uploads/centos/centos-7.7.1908/s3server_uploads/
 gpgcheck = 0
 name = Yum repo for S3 server dependencies
 priority = 1

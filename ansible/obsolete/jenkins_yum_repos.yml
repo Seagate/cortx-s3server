@@ -51,21 +51,39 @@
         gpgcheck: no
         priority: 1
 
-    - name: Add S3 deps repository for major version 7
-      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
+    - name: Add S3 deps repository for CentOS and major version 7
+      when: (ansible_distribution == 'CentOS') and (ansible_distribution_major_version == '7')
       yum_repository:
         name: releases_s3server_uploads
         description: Yum repo for S3 server dependencies
-        baseurl: http://cortx-storage.colo.seagate.com/releases/eos/s3server_uploads/
+        baseurl: http://cortx-storage.colo.seagate.com/releases/eos/uploads/centos/centos-7.7.1908/s3server_uploads/
         gpgcheck: no
         priority: 1
 
-    - name: Add S3 deps repository for major version 8
-      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '8')
+    - name: Add S3 deps repository for RHEL OS and major version 7
+      when: (ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
+      yum_repository:
+        name: releases_s3server_uploads
+        description: Yum repo for S3 server dependencies
+        baseurl: http://cortx-storage.colo.seagate.com/releases/eos/uploads/rhel/rhel-7.7.1908/s3server_uploads/
+        gpgcheck: no
+        priority: 1
+
+    - name: Add S3 deps repository for CentOS and major version 8
+      when: (ansible_distribution == 'CentOS') and (ansible_distribution_major_version == '8')
       yum_repository:
         name: releases_s3server_uploads
         description: Yum repo for S3 server dependencies for version 8
-        baseurl: http://cortx-storage.colo.seagate.com/releases/eos/s3server_uploads/centos8/
+        baseurl: http://cortx-storage.colo.seagate.com/releases/eos/uploads/centos/centos8/s3server_uploads/
+        gpgcheck: no
+        priority: 1
+
+    - name: Add S3 deps repository for RHEL OS and major version 8
+      when: (ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '8')
+      yum_repository:
+        name: releases_s3server_uploads
+        description: Yum repo for S3 server dependencies for version 8
+        baseurl: http://cortx-storage.colo.seagate.com/releases/eos/uploads/rhel/rhel8/s3server_uploads/
         gpgcheck: no
         priority: 1
 
