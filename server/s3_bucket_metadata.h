@@ -76,6 +76,7 @@ class S3BucketMetadata {
   std::map<std::string, std::string> bucket_tags;
   std::map<std::string, std::string> system_defined_attribute;
   std::map<std::string, std::string> user_defined_attribute;
+  std::map<std::string, std::string> hybrid_cloud_attribute;
 
   struct m0_uint128 multipart_index_oid;
   struct m0_uint128 object_list_index_oid;
