@@ -115,6 +115,12 @@ class ObjectRecoveryRabbitMq(object):
             self._channel.basic_consume(callback, self._queue, no_ack=False)
             self._channel.start_consuming()
 
+    def upload_objects_to_cloud(self, source_bucket, destination_bucket):
+        # list and download source_bucket objets
+        self.logger.info("List seagate bucket: " + source_bucket)
+        # upload object to destination_bucket
+        self.logger.info("upload to cloud bucket: " + destination_bucket)
+
     def replication_worker(self, queue_msg_count=None):
         def callback(channel, method, properties, body):
             """Process the result and send acknowledge."""
@@ -127,8 +133,17 @@ class ObjectRecoveryRabbitMq(object):
                     self.logger.info(
                         "Processing following records in consumer " +
                         str(replication_record))
-                channel.basic_ack(delivery_tag=method.delivery_tag)
+                    # process the record
+                    record_value_str = replication_record['Value']
+                    record_value_json = json.loads(record_value_str)
+                    
+                    seagate_bucket = record_value_json['Bucket-Name']
+                    hybrid_cloud_dict = record_value_json['Hybrid-Cloud']
+                    upload_bucket = hybrid_cloud_dict['DestBucket']
+                    
+                    self.upload_objects_to_cloud(seagate_bucket, upload_bucket)
 
+                channel.basic_ack(delivery_tag=method.delivery_tag)
             except BaseException:
                 self.logger.error(
                     "msg_queue callback failed." + traceback.format_exc())
@@ -148,7 +163,6 @@ class ObjectRecoveryRabbitMq(object):
         else:
             self._channel.basic_consume(callback, self._queue, no_ack=False)
             self._channel.start_consuming()
-
 
     def receive_data(self):
         """Receive data and create msg queue."""

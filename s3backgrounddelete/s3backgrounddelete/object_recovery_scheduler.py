@@ -127,10 +127,9 @@ class ObjectRecoveryScheduler(object):
                 for KV in bucket_key_value_list:
                     bucket = KV["Key"]
                     value = json.loads(KV["Value"])
-                    if "replication" in value:
-                        self.logger.info("[" + bucket + "] has replication set. Details: "
-                         + value["replication"])
-                         # TODO:send this bucket into the replication queue of rabbitmq
+                    if "Hybrid-Cloud" in value:
+                        self.logger.info("[" + bucket + "] has Hybrid-Cloud attribute set: "
+                         + str(value["Hybrid-Cloud"]))
                         self.logger.info(
                             "sending data to replication-queue:" + str(KV))
                         ret, msg = mq_replication.send_data(
