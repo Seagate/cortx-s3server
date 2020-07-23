@@ -517,9 +517,25 @@ TEST_F(S3BucketMetadataV1Test, SaveBucketInfo) {
 }
 
 TEST_F(S3BucketMetadataV1Test, SaveBucketInfoSuccess) {
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              put_keyval(_, _, _, _, _)).Times(1);
+
+  action_under_test->save_bucket_info_successful();
+}
+
+TEST_F(S3BucketMetadataV1Test, SaveReplica) {
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
   action_under_test->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj);
-  action_under_test->save_bucket_info_successful();
+
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              get_state()).WillOnce(Return(S3ClovisKVSWriterOpState::created));
+  action_under_test->save_replica();
+
   EXPECT_TRUE(s3bucketmetadata_callbackobj.success_called);
 }
 
@@ -582,6 +598,22 @@ TEST_F(S3BucketMetadataV1Test, RemoveBucketInfo) {
 }
 
 TEST_F(S3BucketMetadataV1Test, RemoveBucketInfoSuccessful) {
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              delete_keyval(_, _, _, _)).Times(1);
+
+  action_under_test->remove_bucket_info_successful();
+}
+
+TEST_F(S3BucketMetadataV1Test, RemoveReplica) {
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              get_state()).WillOnce(Return(S3ClovisKVSWriterOpState::deleted));
+
   action_under_test->global_bucket_index_metadata =
       s3_global_bucket_index_metadata_factory
           ->mock_global_bucket_index_metadata;
@@ -590,7 +622,7 @@ TEST_F(S3BucketMetadataV1Test, RemoveBucketInfoSuccessful) {
                     ->mock_global_bucket_index_metadata),
               remove(_, _)).Times(1);
 
-  action_under_test->remove_bucket_info_successful();
+  action_under_test->remove_replica();
 }
 
 TEST_F(S3BucketMetadataV1Test, RemoveBucketAccountidInfoSuccessful) {

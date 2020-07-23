@@ -38,6 +38,7 @@ extern int s3log_level;
 struct m0_uint128 global_bucket_list_index_oid;
 struct m0_uint128 replica_global_bucket_list_index_oid;
 struct m0_uint128 bucket_metadata_list_index_oid;
+struct m0_uint128 replica_bucket_metadata_list_index_oid;
 struct m0_uint128 global_probable_dead_object_list_index_oid;
 struct m0_uint128 global_instance_id;
 S3Option *g_option_instance = NULL;
