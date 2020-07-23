@@ -129,6 +129,7 @@ replica_bucket_list_index = S3kvTest('KvTest fetch replica bucket account index'
     .replica_bucket_account_index()
 
 primary_bucket_metadata_index_oid = "AAAAAAAAAHg=-AgAQAAAAAAA="
+replica_bucket_metadata_index_oid = "AAAAAAAAAHg=-BgAQAAAAAAA="
 primary_bucket_metadata_index = S3kvTest('KvTest fetch root buket metadata index')\
     .root_bucket_metadata_index()
 
@@ -137,65 +138,98 @@ config = EOSCoreConfig()
 # ======================================================================================================
 
 # Test Scenario 1
-# Test if Replica of global bucket list index OID present.
-print("\nvalidate if replica global bucket index exists.\n")
+# Test if bucket replica indexes are present.
+print("\nvalidate if bucket replica indexes exist.\n")
 status, res = EOSCoreIndexApi(config).head(replica_bucket_list_index_oid)
 assert status == True
 assert isinstance(res, EOSCoreSuccessResponse)
-print("\nHEAD 'replica index' validation completed.\n")
+
+status, res = EOSCoreIndexApi(config).head(replica_bucket_metadata_index_oid)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+print("\nHEAD 'replica bucket indexes' validation completed.\n")
 
 # ******************************************************************************************************
 
 # Test Scenario 2
-# Test if KV is created in replica global bucket list index at PUT bucket
-print("\nvalidate if KV created in replica global bucket list index at PUT bucket\n")
+# Test if KV is created in bucket replica indexes at PUT bucket
+print("\nvalidate if KV created in replica bucket indexes at PUT bucket\n")
 AwsTest('Create Bucket "seagatebucket" using s3-recovery-svc account')\
     .create_bucket("seagatebucket").execute_test().command_is_successful()
 
+# list KV in replica bucket list index
 status, res = EOSCoreIndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
 assert isinstance(res, EOSCoreListIndexResponse)
-# Example index_content:
-# {'Delimiter': '',
-#  'Index-Id': 'AAAAAAAAAHg=-BQAQAAAAAAA=',
-#  'IsTruncated': 'false',
-#  'Keys': [
-#       {'Key': 'seagatebucket',
-#        'Value': '{"account_id":"293986807303","account_name":"s3-recovery-svc","create_timestamp":"2020-06-16T04:46:46.000Z","location_constraint":"us-west-2"}\n'}
-#   ],
-#   'Marker': '',
-#   'MaxKeys': '1000',
-#   'NextMarker': '', 'Prefix': ''
-# }
+
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == replica_bucket_list_index_oid
 
-bucket_key_value_list = index_content["Keys"]
-bucket_key_value = (bucket_key_value_list[0])
-bucket_key = bucket_key_value["Key"]
-bucket_value = bucket_key_value["Value"]
+replica_KV_list = index_content['Keys']
+assert len(replica_KV_list) == 1
 
-value_json = json.loads(bucket_value)
+# list KV in primary bucket list index
+status, res = EOSCoreIndexApi(config).list(primary_bucket_list_index_oid)
+assert status == True
+assert isinstance(res, EOSCoreListIndexResponse)
 
-assert bucket_key == "seagatebucket"
-assert value_json['account_id'] == account_response_elements["AccountId"]
-assert value_json['create_timestamp'] != ''
+index_content = res.get_index_content()
+assert index_content["Index-Id"] == primary_bucket_list_index_oid
+
+primary_KV_list = index_content['Keys']
+assert len(primary_KV_list) == 1
+
+# Validate if KV in primary and replica indexes of bucket list are same
+for primary_kv, replica_kv in zip(primary_KV_list, replica_KV_list):
+    assert primary_kv['Key'] == replica_kv['Key']
+    assert primary_kv['Value'] == replica_kv['Value']
+
+# list KV in replica bucket metadata index
+status, res = EOSCoreIndexApi(config).list(replica_bucket_metadata_index_oid)
+assert status == True
+assert isinstance(res, EOSCoreListIndexResponse)
+
+index_content = res.get_index_content()
+replica_KV_list = index_content['Keys']
+assert len(replica_KV_list) == 1
+
+# list KV in primary bucket metadata index
+status, res = EOSCoreIndexApi(config).list(primary_bucket_metadata_index_oid)
+assert status == True
+assert isinstance(res, EOSCoreListIndexResponse)
+
+index_content = res.get_index_content()
+primary_KV_list = index_content['Keys']
+assert len(primary_KV_list) == 1
+
+# Validate if KV in primary and replica indexes of bucket metadata are same.
+for primary_kv, replica_kv in zip(primary_KV_list, replica_KV_list):
+    assert primary_kv['Key'] == replica_kv['Key']
+    assert primary_kv['Value'] == replica_kv['Value']
 
 # ******************************************************************************************************
 
 # Test Scenario 3
 # Test if KV is removed from replica global bucket list index at DELETE bucket
-print("\nvalidate if KV deleted from replica global bucket list index at DELETE bucket\n")
+print("\nvalidate if KV deleted from replica bucket indexes at DELETE bucket\n")
 AwsTest('Delete Bucket "seagatebucket"').delete_bucket("seagatebucket")\
    .execute_test().command_is_successful()
 
 status, res = EOSCoreIndexApi(config).list(replica_bucket_list_index_oid)
-
 assert status == True
 assert isinstance(res, EOSCoreListIndexResponse)
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == replica_bucket_list_index_oid
+assert index_content["Keys"] == None
+
+status, res = EOSCoreIndexApi(config).list(replica_bucket_metadata_index_oid)
+assert status == True
+assert isinstance(res, EOSCoreListIndexResponse)
+
+index_content = res.get_index_content()
+assert index_content["Index-Id"] == replica_bucket_metadata_index_oid
 assert index_content["Keys"] == None
 
 # ********************** System Tests for s3 recovery tool: dry_run option ********************************************
