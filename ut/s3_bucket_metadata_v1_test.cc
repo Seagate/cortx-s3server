@@ -532,8 +532,8 @@ TEST_F(S3BucketMetadataV1Test, SaveReplica) {
   action_under_test->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj);
 
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              get_state()).WillOnce(Return(S3ClovisKVSWriterOpState::created));
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .WillOnce(Return(S3ClovisKVSWriterOpState::created));
   action_under_test->save_replica();
 
   EXPECT_TRUE(s3bucketmetadata_callbackobj.success_called);
@@ -611,8 +611,8 @@ TEST_F(S3BucketMetadataV1Test, RemoveReplica) {
   action_under_test->clovis_kv_writer =
       clovis_kvs_writer_factory->mock_clovis_kvs_writer;
 
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              get_state()).WillOnce(Return(S3ClovisKVSWriterOpState::deleted));
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .WillOnce(Return(S3ClovisKVSWriterOpState::deleted));
 
   action_under_test->global_bucket_index_metadata =
       s3_global_bucket_index_metadata_factory
