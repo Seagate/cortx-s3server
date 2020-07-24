@@ -3,6 +3,7 @@ import traceback
 import time
 import json
 import pika
+import os
 
 from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
 from s3backgrounddelete.eos_core_object_api import EOSCoreObjectApi
@@ -120,6 +121,8 @@ class ObjectRecoveryRabbitMq(object):
         self.logger.info("List seagate bucket: " + source_bucket)
         # upload object to destination_bucket
         self.logger.info("upload to cloud bucket: " + destination_bucket)
+        stream = os.popen('aws --version')
+        print(stream.read())
 
     def replication_worker(self, queue_msg_count=None):
         def callback(channel, method, properties, body):
