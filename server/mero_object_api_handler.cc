@@ -20,6 +20,7 @@
 #include "mero_api_handler.h"
 #include "mero_delete_object_action.h"
 #include "mero_head_object_action.h"
+#include "mero_get_object_action.h"
 #include "s3_log.h"
 #include "s3_stats.h"
 
@@ -38,6 +39,10 @@ void MeroObjectAPIHandler::create_action() {
         case S3HttpVerb::HEAD:
           action = std::make_shared<MeroHeadObjectAction>(request);
           s3_stats_inc("mero_http_head_object_request_count");
+          break;
+        case S3HttpVerb::GET:
+          action = std::make_shared<MeroGetObjectAction>(request);
+          s3_stats_inc("mero_http_get_object_request_count");
           break;
         default:
           // should never be here.
