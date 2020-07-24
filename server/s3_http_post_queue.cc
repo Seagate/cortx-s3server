@@ -50,6 +50,10 @@ bool S3HttpPostQueueImpl::post(std::string msg) {
     s3_log(S3_LOG_INFO, nullptr, "Empty messages are not allowed");
     return false;
   }
+  if (msg_queue.size() >= MAX_MSG_IN_QUEUE) {
+    s3_log(S3_LOG_DEBUG, nullptr, "Too many messages in the queue");
+    return false;
+  }
   msg_queue.push(std::move(msg));
 
   if (!msg_in_progress) {
@@ -81,14 +85,15 @@ void S3HttpPostQueueImpl::on_error() {
 
   msg_in_progress = false;
 
-  if (++n_err >= MAX_ERR) {
+  if (++n_err > MAX_ERR) {
     s3_log(S3_LOG_ERROR, nullptr,
            "The number of errors has exceeded the threshold");
     while (!msg_queue.empty()) {
       msg_queue.pop();
     }
   } else {
-    s3_log(S3_LOG_DEBUG, nullptr, "Message hasn't been sent. Repeat...");
+    s3_log(S3_LOG_DEBUG, nullptr,
+           "Message hasn't been sent %u times. Repeat...", n_err);
     send_front();
   }
 }
@@ -97,8 +102,9 @@ void S3HttpPostQueueImpl::send_front() {
   assert(!msg_in_progress);
   assert(!msg_queue.empty());
 
-  auto ret = http_post_engine->post(msg_queue.front());
+  bool ret = http_post_engine->post(msg_queue.front());
   assert(ret);
+  (void)ret;
 
   msg_in_progress = true;
 }
@@ -210,9 +216,6 @@ bool S3HttpPostEngineImpl::connect() {
                  (evhtp_hook)on_conn_err_cb, this);
   evhtp_set_hook(&p_conn->hooks, evhtp_hook_on_connection_fini,
                  (evhtp_hook)on_conn_fini_cb, this);
-
-  s3_log(S3_LOG_DEBUG, nullptr, "\"evhtp_connection\" has been established");
-
   return true;
 }
 
@@ -428,8 +431,7 @@ void S3HttpPostEngineImpl::request_finished(evhtp_request_t *p_evhtp_req) {
     assert(on_success);
     on_success();
   } else {
-    assert(on_fail);
-    on_fail();
+    call_error_callback();
   }
   request_in_progress = false;
 }
@@ -440,9 +442,8 @@ bool S3HttpPostEngineImpl::prepare_scheduling() {
 
     if (!p_event) {
       s3_log(S3_LOG_ERROR, nullptr, "event_new() failed");
-
-      assert(this->on_fail);
-      this->on_fail();
+      assert(on_fail);
+      on_fail();
     }
   }
   return p_event;
@@ -456,8 +457,8 @@ void S3HttpPostEngineImpl::call_error_callback() {
   }
   if (event_add(p_event, &tv)) {
     s3_log(S3_LOG_ERROR, nullptr, "event_add() failed");
-    assert(this->on_fail);
-    this->on_fail();
+    assert(on_fail);
+    on_fail();
   } else {
     f_error = true;
   }

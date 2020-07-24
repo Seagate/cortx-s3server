@@ -27,6 +27,7 @@
 #include <memory>
 #include <queue>
 
+#include <gtest/gtest_prod.h>
 #include <evhtp.h>
 
 #include "s3_http_post_queue.h"
@@ -53,10 +54,10 @@ class S3HttpPostQueueImpl : public S3HttpPostQueue {
  private:
   void send_front();
 
-  enum {
+  enum : unsigned {
     MAX_ERR = 100
   };
-  enum {
+  enum : unsigned {
     MAX_MSG_IN_QUEUE = 1024
   };
   unsigned n_err = 0;
@@ -64,6 +65,11 @@ class S3HttpPostQueueImpl : public S3HttpPostQueue {
 
   std::queue<std::string> msg_queue;
   std::unique_ptr<S3HttpPostEngine> http_post_engine;
+
+  FRIEND_TEST(S3HttpPostQueueTest, Basic);
+  FRIEND_TEST(S3HttpPostQueueTest, InProgress);
+  FRIEND_TEST(S3HttpPostQueueTest, ErrorCount);
+  FRIEND_TEST(S3HttpPostQueueTest, Thresholds);
 };
 
 class S3HttpPostEngineImpl : public S3HttpPostEngine {
