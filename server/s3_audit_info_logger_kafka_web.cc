@@ -16,6 +16,10 @@
  * Original author:  Evgeniy Brazhnikov   <evgeniy.brazhnikov@seagate.com>
  * Original creation date: 14-Jul-2020
  */
+
+#include <string>
+#include <map>
+
 #include "s3_log.h"
 #include "s3_audit_info_logger_kafka_web.h"
 #include "s3_http_post_queue.h"
@@ -25,10 +29,12 @@ S3AuditInfoLoggerKafkaWeb::S3AuditInfoLoggerKafkaWeb(evbase_t* p_base,
                                                      uint16_t port,
                                                      std::string path) {
   s3_log(S3_LOG_INFO, nullptr, "Constructor");
-  p_s3_post_queue.reset(
-      new S3HttpPostQueue(p_base, std::move(host_ip), port, std::move(path)));
-  p_s3_post_queue->add_header("Content-Type",
-                              "application/vnd.kafka.json.v2+json");
+
+  std::map<std::string, std::string> headers;
+  headers["Content-Type"] = "application/vnd.kafka.json.v2+json";
+
+  p_s3_post_queue.reset(create_http_post_queue(
+      p_base, std::move(host_ip), port, std::move(path), std::move(headers)));
 }
 
 S3AuditInfoLoggerKafkaWeb::~S3AuditInfoLoggerKafkaWeb() = default;
