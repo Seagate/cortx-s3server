@@ -112,19 +112,19 @@ yum_repo_conf() {
                ;;
         ees*-sprint*) echo "Use sprint $1 builds"
                       $USE_SUDO echo "[sprints_s3server]
-baseurl = http://ci-storage.mero.colo.seagate.com/releases/eos/${1}/s3server/repo
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/s3server/repo
 gpgcheck = 0
 name = Yum repo for s3server sprints build
 priority = 1
 
 [sprints_halon]
-baseurl = http://ci-storage.mero.colo.seagate.com/releases/eos/${1}/halon/repo
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/halon/repo
 gpgcheck = 0
 name = Yum repo for halon sprints build
 priority = 1
 
 [sprints_mero]
-baseurl = http://ci-storage.mero.colo.seagate.com/releases/eos/${1}/mero/repo
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/mero/repo
 gpgcheck = 0
 name = Yum repo for mero sprints build
 priority = 1

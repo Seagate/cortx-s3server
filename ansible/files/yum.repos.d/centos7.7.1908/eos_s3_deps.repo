@@ -1,5 +1,5 @@
 [releases_eos_s3deps]
-baseurl = http://ci-storage.mero.colo.seagate.com/releases/eos/s3server_uploads/centos7/
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/uploads/centos/centos-7.7.1908/s3server_uploads/
 gpgcheck = 0
 name = Yum repo for s3 dependencies rpms built for eos - OS Centos/rhel 7
 priority = 1

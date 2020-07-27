@@ -10,7 +10,7 @@
       yum_repository:
         name: releases_eos_lustre
         description: Yum repo for lustre
-        baseurl: http://ci-storage.mero.colo.seagate.com/releases/master/last_successful/lustre/repo/
+        baseurl: http://cortx-storage.colo.seagate.com/releases/master/last_successful/lustre/repo/
         gpgcheck: no
         priority: 1
 
@@ -19,7 +19,7 @@
       yum_repository:
         name: releases_eos_lustre_s3server_halon_mero
         description: Yum repo for lustre s3server halon mero
-        baseurl: http://ci-storage.mero.colo.seagate.com/releases/eos/integration/centos-7.7.1908/last_successful/
+        baseurl: http://cortx-storage.colo.seagate.com/releases/eos/github/dev/rhel-7.7.1908/s3server_last_successful/
         gpgcheck: no
         priority: 1
 
@@ -29,7 +29,7 @@
       yum_repository:
         name: releases_eos_halon
         description: Yum repo for halon
-        baseurl: http://ci-storage.mero.colo.seagate.com/releases/master/last_successful/halon/repo/
+        baseurl: http://cortx-storage.colo.seagate.com/releases/master/last_successful/halon/repo/
         gpgcheck: no
         priority: 1
 
@@ -38,7 +38,7 @@
       yum_repository:
         name: releases_eos_mero
         description: Yum repo for mero
-        baseurl: http://ci-storage.mero.colo.seagate.com/releases/master/last_successful/mero/repo/
+        baseurl: http://cortx-storage.colo.seagate.com/releases/master/last_successful/mero/repo/
         gpgcheck: no
         priority: 1
 
@@ -47,25 +47,43 @@
       yum_repository:
         name: releases_eos_s3server
         description: Yum repo for s3server
-        baseurl: http://ci-storage.mero.colo.seagate.com/releases/master/last_successful/s3server/repo/
+        baseurl: http://cortx-storage.colo.seagate.com/releases/master/last_successful/s3server/repo/
         gpgcheck: no
         priority: 1
 
-    - name: Add S3 deps repository for major version 7
-      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
+    - name: Add S3 deps repository for CentOS and major version 7
+      when: (ansible_distribution == 'CentOS') and (ansible_distribution_major_version == '7')
       yum_repository:
         name: releases_s3server_uploads
         description: Yum repo for S3 server dependencies
-        baseurl: http://ci-storage.mero.colo.seagate.com/releases/eos/s3server_uploads/
+        baseurl: http://cortx-storage.colo.seagate.com/releases/eos/uploads/centos/centos-7.7.1908/s3server_uploads/
         gpgcheck: no
         priority: 1
 
-    - name: Add S3 deps repository for major version 8
-      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '8')
+    - name: Add S3 deps repository for RHEL OS and major version 7
+      when: (ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
+      yum_repository:
+        name: releases_s3server_uploads
+        description: Yum repo for S3 server dependencies
+        baseurl: http://cortx-storage.colo.seagate.com/releases/eos/uploads/rhel/rhel-7.7.1908/s3server_uploads/
+        gpgcheck: no
+        priority: 1
+
+    - name: Add S3 deps repository for CentOS and major version 8
+      when: (ansible_distribution == 'CentOS') and (ansible_distribution_major_version == '8')
       yum_repository:
         name: releases_s3server_uploads
         description: Yum repo for S3 server dependencies for version 8
-        baseurl: http://ci-storage.mero.colo.seagate.com/releases/eos/s3server_uploads/centos8/
+        baseurl: http://cortx-storage.colo.seagate.com/releases/eos/uploads/centos/centos-8.0.1905/s3server_uploads/
+        gpgcheck: no
+        priority: 1
+
+    - name: Add S3 deps repository for RHEL OS and major version 8
+      when: (ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '8')
+      yum_repository:
+        name: releases_s3server_uploads
+        description: Yum repo for S3 server dependencies for version 8
+        baseurl: http://cortx-storage.colo.seagate.com/releases/eos/uploads/rhel/rhel-8/s3server_uploads/
         gpgcheck: no
         priority: 1
 
@@ -74,7 +92,7 @@
       yum_repository:
         name: prvsnr_local_repository
         description: Yum local repo for S3 server dependencies
-        baseurl: http://ci-storage.mero.colo.seagate.com/prvsnr/vendor/centos/epel/
+        baseurl: http://cortx-storage.colo.seagate.com/prvsnr/vendor/centos/epel/
         gpgcheck: no
         priority: 1
 
