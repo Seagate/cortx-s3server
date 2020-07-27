@@ -82,7 +82,7 @@ then
 else
   echo -e  "Before running any other option, it is recommended to first run with dry-run option. The dry-run option informs you about recovery items to be worked upon. \n\n"
 
-  echo -e "Choose one of the options to run data recovery tool with\n 1.dry_run \n 2.interactive \n 3.recover \n 4.stop \n For example: If you wish to run data recovery tool in interactive mode enter your option as interactive\n stop is for exit\n\n"  
+  echo -e "Choose one of the options to run data recovery tool with\n 1.dry_run \n 2.recover \n 3.stop \n For example: If you wish to run data recovery tool in dry_run mode enter your option as dry_run\n stop is for exit\n\n"
 
   read -p "Option chosen is: " choice
   choice=${choice,,}

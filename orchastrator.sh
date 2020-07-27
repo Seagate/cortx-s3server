@@ -1,7 +1,7 @@
 #!/bin/sh
 set -x
 USAGE=" Script will run motr recovery followed by s3 recovery.
-USAGE: bash $(basename "$0") [--interactive]
+USAGE: bash $(basename "$0") [--reciprocative]
 where:
 --reciprocative        Use reciprocative, If s3 recovery tool needs to be run in user input mode. "
 
