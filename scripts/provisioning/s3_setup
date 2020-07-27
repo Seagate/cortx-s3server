@@ -116,23 +116,23 @@ setup_release_repo()
 {
 cat >/etc/yum.repos.d/releases_eos_lustre.repo <<EOL
 [releases_eos_lustre]
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/integration/centos-7.7.1908/last_successful/
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/github/release/rhel-7.7.1908/last_successful/
 gpgcheck = 0
 name = Yum repo for lustre
 priority = 1
 EOL
 
-cat >/etc/yum.repos.d/releases_eos_halon.repo <<EOL
-[releases_eos_halon]
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/components/dev/centos-7.7.1908/halon/last_successful/
+cat >/etc/yum.repos.d/releases_eos_hare.repo <<EOL
+[releases_eos_hare]
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/github/release/rhel-7.7.1908/last_successful/
 gpgcheck = 0
-name = Yum repo for halon
+name = Yum repo for hare
 priority = 1
 EOL
 
 cat >/etc/yum.repos.d/releases_eos_mero.repo <<EOL
 [releases_eos_mero]
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/components/dev/centos-7.7.1908/mero/last_successful/
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/components/github/dev/rhel-7.7.1908/dev/motr/last_successful/
 gpgcheck = 0
 name = Yum repo for motr
 priority = 1
@@ -167,10 +167,9 @@ EOL
 
 elif [ "$major_version" = "8" ];
 then
-#TODO Currently we are maintaing Centos 7.7 and RHEL 7.7 repo
 cat >/etc/yum.repos.d/releases_s3server_uploads <<EOL
 [releases_s3server_uploads]
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/uploads/centos/centos-7.7.1908/s3server_uploads/
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/uploads/centos/centos-8.0.1905/s3server_uploads/
 gpgcheck = 0
 name = Yum repo for S3 server dependencies
 priority = 1

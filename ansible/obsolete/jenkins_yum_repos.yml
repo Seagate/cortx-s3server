@@ -19,7 +19,7 @@
       yum_repository:
         name: releases_eos_lustre_s3server_halon_mero
         description: Yum repo for lustre s3server halon mero
-        baseurl: http://cortx-storage.colo.seagate.com/releases/eos/integration/centos-7.7.1908/last_successful/
+        baseurl: http://cortx-storage.colo.seagate.com/releases/eos/github/dev/rhel-7.7.1908/s3server_last_successful/
         gpgcheck: no
         priority: 1
 
@@ -74,7 +74,7 @@
       yum_repository:
         name: releases_s3server_uploads
         description: Yum repo for S3 server dependencies for version 8
-        baseurl: http://cortx-storage.colo.seagate.com/releases/eos/uploads/centos/centos8/s3server_uploads/
+        baseurl: http://cortx-storage.colo.seagate.com/releases/eos/uploads/centos/centos-8.0.1905/s3server_uploads/
         gpgcheck: no
         priority: 1
 
@@ -83,7 +83,7 @@
       yum_repository:
         name: releases_s3server_uploads
         description: Yum repo for S3 server dependencies for version 8
-        baseurl: http://cortx-storage.colo.seagate.com/releases/eos/uploads/rhel/rhel8/s3server_uploads/
+        baseurl: http://cortx-storage.colo.seagate.com/releases/eos/uploads/rhel/rhel-8/s3server_uploads/
         gpgcheck: no
         priority: 1
 

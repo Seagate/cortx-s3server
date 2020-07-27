@@ -1,6 +1,0 @@
-[releases_eos]
-#CentOS 7.5 repo is not maintained hence pointing to latest repo
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/github/master/rhel-7.7.1908/last_successful/
-gpgcheck = 0
-name = Yum repo for rpms built for eos - OS Centos 7.5.1804
-priority = 1
