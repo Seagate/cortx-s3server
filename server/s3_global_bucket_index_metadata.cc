@@ -149,7 +149,6 @@ void S3GlobalBucketIndexMetadata::save_successful() {
   state = S3GlobalBucketIndexMetadataState::saved;
 
   // attempt to save the KV in replica global bucket list index
-  assert(nullptr != clovis_kvs_writer_factory);
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
         request, s3_clovis_api);
@@ -168,6 +167,10 @@ void S3GlobalBucketIndexMetadata::save_replica() {
   // PUT Operation pass even if we failed to put KV in replica index.
   if (clovis_kv_writer->get_state() != S3ClovisKVSWriterOpState::created) {
     s3_log(S3_LOG_ERROR, request_id, "Failed to save KV in replica index.\n");
+
+    s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
+                  "Failed to save KV in replica index for bucket: %s",
+                  bucket_name.c_str());
   }
   this->handler_on_success();
 
@@ -211,7 +214,6 @@ void S3GlobalBucketIndexMetadata::remove_successful() {
   state = S3GlobalBucketIndexMetadataState::deleted;
 
   // attempt to remove KV from the replica index as well
-  assert(nullptr != clovis_kvs_writer_factory);
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
         request, s3_clovis_api);
@@ -232,6 +234,10 @@ void S3GlobalBucketIndexMetadata::remove_replica() {
   if (clovis_kv_writer->get_state() != S3ClovisKVSWriterOpState::deleted) {
     s3_log(S3_LOG_ERROR, request_id,
            "Failed to remove KV from replica index.\n");
+
+    s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
+                  "Failed to remove KV from replica index of bucket: %s",
+                  bucket_name.c_str());
   }
   this->handler_on_success();
 
