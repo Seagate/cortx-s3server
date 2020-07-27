@@ -450,7 +450,6 @@ void S3BucketMetadataV1::save_bucket_info_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   // attempt to save the KV in replica bucket metadata index
-  assert(nullptr != clovis_kvs_writer_factory);
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
         request, s3_clovis_api);
@@ -467,9 +466,13 @@ void S3BucketMetadataV1::save_bucket_info_successful() {
 void S3BucketMetadataV1::save_replica() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  // PUT Operation pass even if we failed to put KV in replica index.
+  // PUT Operation passes even if we failed to put KV in replica index.
   if (clovis_kv_writer->get_state() != S3ClovisKVSWriterOpState::created) {
     s3_log(S3_LOG_ERROR, request_id, "Failed to save KV in replica index.\n");
+
+    s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
+                  "Failed to save metadata in replica index for bucket: %s",
+                  get_bucket_metadata_index_key_name().c_str());
   }
   this->handler_on_success();
 
@@ -523,7 +526,6 @@ void S3BucketMetadataV1::remove_bucket_info_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   // Attempt to remove KV from replica bucket metadata index
-  assert(nullptr != clovis_kvs_writer_factory);
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
         request, s3_clovis_api);
@@ -544,6 +546,9 @@ void S3BucketMetadataV1::remove_replica() {
   if (clovis_kv_writer->get_state() != S3ClovisKVSWriterOpState::deleted) {
     s3_log(S3_LOG_ERROR, request_id,
            "Removal of Bucket metadata from replica index failed\n");
+    s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
+                  "Failed to remove KV from replica index of bucket: %s",
+                  get_bucket_metadata_index_key_name().c_str());
   }
   // If FI: 'kv_delete_failed_from_global_index' is set, then do not remove KV
   // from global_bucket_list_index_oid. This is to simulate possible "partial"

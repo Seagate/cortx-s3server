@@ -49,6 +49,19 @@ extern S3Option* g_option_instance;
     }                                                                       \
   } while (0)
 
+// Note: Logs IEM message into syslog only.
+// Use this macro to send addtional information to CSM
+#define s3_iem_syslog(loglevel, event_code, event_description, ...)  \
+  do {                                                               \
+    if (loglevel == LOG_INFO) {                                      \
+      s3_syslog(loglevel, "IEC:IS" event_code ":" event_description, \
+                ##__VA_ARGS__);                                      \
+    } else {                                                         \
+      s3_syslog(LOG_ERR, "IEC:ES" event_code ":" event_description,  \
+                ##__VA_ARGS__);                                      \
+    }                                                                \
+  } while (0)
+
 // IEM helper macros
 // S3 Server IEM Event codes, description string & json data format
 #define S3_IEM_AUTH_CONN_FAIL "0030010001"
