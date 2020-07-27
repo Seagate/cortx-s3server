@@ -45,7 +45,7 @@ ldapadd -w $ldappasswd -x -D "cn=sgiamadmin,dc=seagate,dc=com" -f create_replica
 
 #adding some delay for successful replication
 
-sleep 2s
+sleep 1s
 
 # check replication on node 2
 while read node; do
@@ -75,7 +75,7 @@ ldapdelete -x -w $ldappasswd -r "o=sanity-test-repl-account,ou=accounts,dc=s3,dc
 
 ldapadd -w seagate -x -D "cn=admin,dc=seagate,dc=com" -f test_data.ldif
 
-#sleep 0.2s
+sleep 1s
 
 # check replication on other nodes
 while read node; do
