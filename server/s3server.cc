@@ -68,6 +68,7 @@
 #define GLOBAL_INSTANCE_INDEX_U_LO 4
 
 #define REPLICA_GLOBAL_BUCKET_LIST_INDEX_OID_U_LO 5
+#define REPLICA_BUCKET_METADATA_LIST_INDEX_OID_U_LO 6
 
 S3Option *g_option_instance = NULL;
 evhtp_ssl_ctx_t *g_ssl_auth_ctx = NULL;
@@ -79,6 +80,8 @@ struct m0_uint128 global_bucket_list_index_oid;
 struct m0_uint128 replica_global_bucket_list_index_oid;
 // index will have bucket metada information
 struct m0_uint128 bucket_metadata_list_index_oid;
+// replica index of bucket_metadata_list_index_oid
+struct m0_uint128 replica_bucket_metadata_list_index_oid;
 // index will have s3server instance information
 struct m0_uint128 global_instance_list_index;
 // objects listed in this index are probable delete candidates and not absolute.
@@ -959,6 +962,20 @@ int main(int argc, char **argv) {
     fini_clovis();
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "Failed to create a bucket metadata KVS index\n");
+  }
+
+  // create replica copy of bucket_metadata_list_index_oid. It will be used
+  // by s3 recovery tool to recover bucket_metadata_list_index_oid,
+  // incase of metadata corruption.
+  rc = create_global_replica_index(replica_bucket_metadata_list_index_oid,
+                                   REPLICA_BUCKET_METADATA_LIST_INDEX_OID_U_LO);
+  if (rc < 0) {
+    s3daemon.delete_pidfile();
+    fini_auth_ssl();
+    fini_clovis();
+    // fatal message will call exit
+    s3_log(S3_LOG_FATAL, "",
+           "Failed to create replica for global bucket metadata index\n");
   }
 
   // global_probable_dead_object_list_index_oid - will have stale object oid
