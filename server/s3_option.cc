@@ -96,6 +96,10 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_LOGGER_RSYSLOG_MSGID");
       audit_logger_rsyslog_msgid =
           s3_option_node["S3_AUDIT_LOGGER_RSYSLOG_MSGID"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_AUDIT_LOGGER_KAFKA_WEB_PATH");
+      audit_logger_kafka_web_path =
+          s3_option_node["S3_AUDIT_LOGGER_KAFKA_WEB_PATH"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_FILE_MAX_SIZE");
       log_file_max_size_mb = s3_option_node["S3_LOG_FILE_MAX_SIZE"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_ENABLE_BUFFERING");
@@ -470,6 +474,10 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_LOGGER_RSYSLOG_MSGID");
       audit_logger_rsyslog_msgid =
           s3_option_node["S3_AUDIT_LOGGER_RSYSLOG_MSGID"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_AUDIT_LOGGER_KAFKA_WEB_PATH");
+      audit_logger_kafka_web_path =
+          s3_option_node["S3_AUDIT_LOGGER_KAFKA_WEB_PATH"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_REDIS_SERVER_ADDRESS");
       redis_srv_addr =
           s3_option_node["S3_REDIS_SERVER_ADDRESS"].as<std::string>();
@@ -741,6 +749,8 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_AUDIT_LOGGER_PORT = %d\n", audit_logger_port);
   s3_log(S3_LOG_INFO, "", "S3_AUDIT_LOGGER_RSYSLOG_MSGID = %s\n",
          audit_logger_rsyslog_msgid.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_AUDIT_LOGGER_KAFKA_WEB_PATH = %s\n",
+         audit_logger_kafka_web_path.c_str());
   s3_log(S3_LOG_INFO, "", "S3_ENABLE_MURMURHASH_OID = %s\n",
          (s3_enable_murmurhash_oid ? "true" : "false"));
   s3_log(S3_LOG_INFO, "", "S3_LOG_FLUSH_FREQUENCY = %d\n",
@@ -914,6 +924,10 @@ int S3Option::get_audit_logger_port() { return audit_logger_port; }
 
 std::string S3Option::get_audit_logger_rsyslog_msgid() {
   return audit_logger_rsyslog_msgid;
+}
+
+std::string S3Option::get_audit_logger_kafka_web_path() {
+  return audit_logger_kafka_web_path;
 }
 
 unsigned short S3Option::get_s3_grace_period_sec() {
