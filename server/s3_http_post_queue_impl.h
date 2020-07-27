@@ -117,8 +117,8 @@ class S3HttpPostEngineImpl : public S3HttpPostEngine {
   event_t *p_event = nullptr;
   bool request_in_progress = false;
   bool f_error = false;
-  size_t response_content_length;
-  size_t n_read;
+  size_t response_content_length = 0;
+  size_t n_read = 0;
 
   std::function<void(void)> on_success;
   std::function<void(void)> on_fail;
