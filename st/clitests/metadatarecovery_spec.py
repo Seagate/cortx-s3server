@@ -130,10 +130,12 @@ replica_bucket_list_index = S3kvTest('KvTest fetch replica bucket account index'
 
 primary_bucket_metadata_index_oid = "AAAAAAAAAHg=-AgAQAAAAAAA="
 replica_bucket_metadata_index_oid = "AAAAAAAAAHg=-BgAQAAAAAAA="
-primary_bucket_metadata_index = S3kvTest('KvTest fetch root buket metadata index')\
+primary_bucket_metadata_index = S3kvTest('KvTest fetch root bucket metadata index')\
     .root_bucket_metadata_index()
+replica_bucket_metadata_index = S3kvTest('KvTest fetch replica bucket metadata index')\
+    .replica_bucket_metadata_index()
 
-config = EOSCoreConfig()
+config = EOSCoreConfig(True)
 
 # ======================================================================================================
 
@@ -233,20 +235,36 @@ assert index_content["Index-Id"] == replica_bucket_metadata_index_oid
 assert index_content["Keys"] == None
 
 # ********************** System Tests for s3 recovery tool: dry_run option ********************************************
-# Test: KV missing from primary index, but present in replica index
-# Step 1: PUT Key-Value in replica index
+# Test: KV missing from primary index, but present in replica index of both bucket list and metadata indexes
+# Step 1: PUT Key-Value in replica index of both bucket list and metadata indexes
 # Step 2: Run s3 recoverytool with --dry_run option
-# Step 3: Validate that the Key-Value is shown on the console as data recovered
-# Step 4: Delete the Key-Value from the replica index
+# Step 3: Validate that the Key-Value is shown on the console as data recovered for both indexes
+# Step 4: Delete the Key-Value from the replica index of both bucket list and metadata indexes
 
 st1key = "ST-1-BK"
-st1value = '{"account_id":"838334245437",\
+st1value_list_index = '{"account_id":"838334245437",\
      "account_name":"s3-recovery-svc",\
      "create_timestamp":"2020-07-02T05:45:41.000Z",\
      "location_constraint":"us-west-2"}'
 
-# ***************** PUT KV in replica index **********************************
-status, res = EOSCoreKVApi(config).put(replica_bucket_list_index_oid, st1key, st1value)
+st1value_metadata_index = '{"ACL":"", "Bucket-Name":"ST-1-BK", "Policy":"",\
+     "System-Defined": { "Date":"2020-07-20T09:08:11.000Z", "LocationConstraint":"us-west-2",\
+     "Owner-Account":"temp-acc", "Owner-Account-id":"286991820398", "Owner-User":"root",\
+     "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" },\
+     "create_timestamp":"2020-07-20T09:08:11.000Z",\
+     "mero_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=",\
+     "mero_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=",\
+     "mero_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko=" }'
+
+# PUT KV in replica index of global bucket list index
+status, res = EOSCoreKVApi(config)\
+    .put(replica_bucket_list_index_oid, st1key, st1value_list_index)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+# PUT KV in replica index of global bucket metadata index
+status, res = EOSCoreKVApi(config)\
+    .put(replica_bucket_metadata_index_oid, r'838334245437/' + st1key, st1value_metadata_index)
 assert status == True
 assert isinstance(res, EOSCoreSuccessResponse)
 
@@ -258,49 +276,87 @@ result = S3RecoveryTest(
     .execute_test()\
     .command_is_successful()
 
-success_msg = "Data recovered from both indexes for Global bucket index"
-result.command_response_should_have(success_msg)
+success_msg_list_index = "Data recovered from both indexes for Global bucket index"
+success_msg_metadata_index = "Data recovered from both indexes for Bucket metadata index"
+
+result.command_response_should_have(success_msg_list_index)
+result.command_response_should_have(success_msg_metadata_index)
 
 result_stdout_list = (result.status.stdout).split('\n')
+assert result_stdout_list[8] != 'Empty'
 assert result_stdout_list[12] != 'Empty'
 assert st1key in result_stdout_list[12]
 assert '"account_name":"s3-recovery-svc"' in result_stdout_list[12]
 assert '"create_timestamp":"2020-07-02T05:45:41.000Z"' in result_stdout_list[12]
+
+assert result_stdout_list[21] != 'Empty'
+assert result_stdout_list[25] != 'Empty'
+assert r'838334245437/' + st1key in result_stdout_list[25]
+assert 'ACL' in result_stdout_list[25]
+assert 'System-Defined' in result_stdout_list[25]
 
 # Delete the key-value from replica index
 status, res = EOSCoreKVApi(config).delete(replica_bucket_list_index_oid, st1key)
 assert status == True
 assert isinstance(res, EOSCoreSuccessResponse)
 
-# ************************************************************************************************
+status, res = EOSCoreKVApi(config).delete(replica_bucket_metadata_index_oid, r'838334245437/' + st1key)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
 
+# ********************** System Tests for s3 recovery tool: dry_run option ********************************************
 # Test: Different Key-Value in primary and replica indexes
-# Step 1: PUT Key1-Value1 in primary index
-# Step 2: PUT Key2-Value2 in replica index
+# Step 1: PUT Key1-Value1 in primary index of both bucket list and metadata
+# Step 2: PUT Key2-Value2 in replica index of both bucket list and metadata
 # Step 2: Run s3 recoverytool with --dry_run option
 # Step 3: Validate that both the Key-Values are shown on the console as data recovered
-# Step 4: Delete the Key-Values from the both the indexes
+# Step 4: Delete the Key-Values from all indexes
 
 primary_index_key = 'my-bucket1'
-primary_index_value = '{"account_id":"123456789",\
+primary_list_index_value = '{"account_id":"123456789",\
      "account_name":"s3-recovery-svc",\
      "create_timestamp":"2020-07-14T05:45:41.000Z",\
      "location_constraint":"us-west-2"}'
+primary_metadata_index_value = '{"ACL":"", "Bucket-Name":"my-bucket1", "Policy":"",\
+     "System-Defined": { "Date":"2020-07-14T05:45:41.000Z", "LocationConstraint":"us-west-2",\
+     "Owner-Account":"s3-recovery-svc", "Owner-Account-id":"123456789", "Owner-User":"root",\
+     "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-07-14T05:45:41.000Z",\
+     "mero_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=",\
+     "mero_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=",\
+     "mero_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}'
 
 replica_index_key = 'my-bucket2'
-replica_index_value = '{"account_id":"123456789",\
+replica_list_index_value = '{"account_id":"123456789",\
      "account_name":"s3-recovery-svc",\
      "create_timestamp":"2020-08-14T06:45:41.000Z",\
      "location_constraint":"us-east-1"}'
+replica_metadata_index_value = '{"ACL":"", "Bucket-Name":"my-bucket2", "Policy":"",\
+     "System-Defined": { "Date":"2020-08-14T06:45:41.000Z", "LocationConstraint":"us-east-1",\
+     "Owner-Account":"s3-recovery-svc", "Owner-Account-id":"123456789", "Owner-User":"root",\
+     "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-08-14T06:45:41.000Z",\
+     "mero_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=",\
+     "mero_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=",\
+     "mero_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}'
 
-# ***************** PUT the KVs in both the primary and replica indexes *********************************
+# PUT the KVs in primary and replica indexes of bucket list index
 status, res = EOSCoreKVApi(config)\
-    .put(primary_bucket_list_index_oid, primary_index_key, primary_index_value)
+    .put(primary_bucket_list_index_oid, primary_index_key, primary_list_index_value)
 assert status == True
 assert isinstance(res, EOSCoreSuccessResponse)
 
 status, res = EOSCoreKVApi(config)\
-    .put(replica_bucket_list_index_oid, replica_index_key, replica_index_value)
+    .put(replica_bucket_list_index_oid, replica_index_key, replica_list_index_value)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+# PUT the KVs in primary and replica indexes of bucket metadata index
+status, res = EOSCoreKVApi(config)\
+    .put(primary_bucket_metadata_index_oid, r'123456789/' + primary_index_key, primary_metadata_index_value)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+status, res = EOSCoreKVApi(config)\
+    .put(replica_bucket_metadata_index_oid, r'123456789/' + replica_index_key, replica_metadata_index_value)
 assert status == True
 assert isinstance(res, EOSCoreSuccessResponse)
 
@@ -318,34 +374,33 @@ result.command_response_should_have(success_msg)
 result_stdout_list = (result.status.stdout).split('\n')
 # Example result.status.stdout:
 # |-----------------------------------------------------------------------------------------------------------------------------|
+# s3recovery --dry_run
 #
 # Primary index content for Global bucket index
 #
-# my-bucket2 {"account_id":"123","account_name":"amit-vc","create_timestamp":"2020-06-17T05:45:41.000Z","location_constraint":"us-west-2"}
+# my-bucket1 {"account_id":"123456789", "account_name":"s3-recovery-svc", "create_timestamp":"2020-07-14T05:45:41.000Z", "location_constraint":"us-west-2"}
 #
 # Replica index content for Global bucket index
 #
-# my-bucket1 {"account_id":"123","account_name":"amit-vc","create_timestamp":"2020-06-17T05:45:41.000Z","location_constraint":"us-west-2"}
+# my-bucket2 {"account_id":"123456789", "account_name":"s3-recovery-svc", "create_timestamp":"2020-08-14T06:45:41.000Z", "location_constraint":"us-east-1"}
 #
 # Data recovered from both indexes for Global bucket index
 #
-# my-bucket2 {"account_id":"123","account_name":"amit-vc","create_timestamp":"2020-06-17T05:45:41.000Z","location_constraint":"us-west-2"}
-# my-bucket1 {"account_id":"123","account_name":"amit-vc","create_timestamp":"2020-06-17T05:45:41.000Z","location_constraint":"us-west-2"}
+# my-bucket1 {"account_id":"123456789", "account_name":"s3-recovery-svc", "create_timestamp":"2020-07-14T05:45:41.000Z", "location_constraint":"us-west-2"}
+# my-bucket2 {"account_id":"123456789", "account_name":"s3-recovery-svc", "create_timestamp":"2020-08-14T06:45:41.000Z", "location_constraint":"us-east-1"}
 #
 # Primary index content for Bucket metadata index
 #
-# Empty
-#
+# 123456789/my-bucket1 {"ACL":"", "Bucket-Name":"my-bucket1", "Policy":"", "System-Defined": { "Date":"2020-07-14T05:45:41.000Z", "LocationConstraint":"us-west-2", "Owner-Account":"s3-recovery-svc", "Owner-Account-id":"123456789", "Owner-User":"root", "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-07-14T05:45:41.000Z", "mero_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=", "mero_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=", "mero_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}
 #
 # Replica index content for Bucket metadata index
 #
-# Empty
-#
+# 123456789/my-bucket2 {"ACL":"", "Bucket-Name":"my-bucket1", "Policy":"", "System-Defined": { "Date":"2020-08-14T06:45:41.000Z", "LocationConstraint":"us-east-1", "Owner-Account":"s3-recovery-svc", "Owner-Account-id":"123456789", "Owner-User":"root", "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-08-14T06:45:41.000Z", "mero_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=", "mero_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=", "mero_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}
 #
 # Data recovered from both indexes for Bucket metadata index
 #
-# Empty
-#
+# 123456789/my-bucket1 {"ACL":"", "Bucket-Name":"my-bucket1", "Policy":"", "System-Defined": { "Date":"2020-07-14T05:45:41.000Z", "LocationConstraint":"us-west-2", "Owner-Account":"s3-recovery-svc", "Owner-Account-id":"123456789", "Owner-User":"root", "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-07-14T05:45:41.000Z", "mero_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=", "mero_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=", "mero_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}
+# 123456789/my-bucket2 {"ACL":"", "Bucket-Name":"my-bucket1", "Policy":"", "System-Defined": { "Date":"2020-08-14T06:45:41.000Z", "LocationConstraint":"us-east-1", "Owner-Account":"s3-recovery-svc", "Owner-Account-id":"123456789", "Owner-User":"root", "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-08-14T06:45:41.000Z", "mero_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=", "mero_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=", "mero_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}
 # |-----------------------------------------------------------------------------------------------------------------------------|
 assert result_stdout_list[3] != 'Empty'
 
@@ -377,31 +432,63 @@ status, res = EOSCoreKVApi(config).delete(replica_bucket_list_index_oid, replica
 assert status == True
 assert isinstance(res, EOSCoreSuccessResponse)
 
-# ************************************************************************************************
+status, res = EOSCoreKVApi(config).delete(primary_bucket_metadata_index_oid, r'123456789/' + primary_index_key)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
 
+status, res = EOSCoreKVApi(config).delete(replica_bucket_metadata_index_oid, r'123456789/' + replica_index_key)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+# ********************** System Tests for s3 recovery tool: dry_run option ********************************************
 # Test: Corrupted Value for a key in primary index
-# Step 1: PUT corrupted Key1-Value1 in primary index
-# Step 2: PUT Key2-Value2 in replica index
-# Step 2: Run s3 recoverytool with --dry_run option
-# Step 3: Validate that the corrupted Key-Value ins not shown on the console as data recovered
-# Step 4: Delete the Key-Values from the both the indexes
+# Step 1: PUT corrupted Key1-Value1 in primary bucket list index
+# Step 2: PUT correct Key2-Value2 in replica bucket list index
+# Step 3: PUT correct Key3-Value3 in primary bucket metadata index
+# Step 4: PUT corrupted Key3-Value3' in replica bucket metadata index
+# Step 5: Run s3 recoverytool with --dry_run option
+# Step 6: Validate that the corrupted Key1-Value1 is not shown on the console\
+# as data recovered for global bucket list index, and Key3 has correct value (value3, not value3')\
+#  shown as data recovered for bucket metadata index.
+# Step 7: Delete the Key-Values from the both the indexes.
 
-primary_index_key = "my-bucket3"
-primary_index_corrupted_value = "Corrupted-JSON-value"
+primary_list_index_key = "my-bucket3"
+primary_list_index_corrupted_value = "Corrupted-JSON-value1"
 S3kvTest('KvTest put corrupted key-value in root bucket account index')\
-    .put_keyval(primary_bucket_list_index, primary_index_key, primary_index_corrupted_value)\
+    .put_keyval(primary_bucket_list_index, primary_list_index_key, primary_list_index_corrupted_value)\
     .execute_test()
 
-replica_index_key = "my-bucket4"
-replica_index_value = '{"account_id":"123456789",\
+replica_list_index_key = "my-bucket4"
+replica_list_index_value = '{"account_id":"123456789",\
      "account_name":"s3-recovery-svc",\
      "create_timestamp":"2020-12-11T06:45:41.000Z",\
      "location_constraint":"mumbai"}'
 
 status, res = EOSCoreKVApi(config)\
-    .put(replica_bucket_list_index_oid, replica_index_key, replica_index_value)
+    .put(replica_bucket_list_index_oid, replica_list_index_key, replica_list_index_value)
 assert status == True
 assert isinstance(res, EOSCoreSuccessResponse)
+
+primary_metadata_index_key = "my-bucket5"
+primary_metadata_index_value = '{"ACL":"", "Bucket-Name":"my-bucket5", "Policy":"",\
+     "System-Defined": { "Date":"2020-08-14T06:45:41.000Z", "LocationConstraint":"us-east-1",\
+     "Owner-Account":"s3-recovery-svc", "Owner-Account-id":"123456789", "Owner-User":"root",\
+     "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-08-14T06:45:41.000Z",\
+     "mero_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=",\
+     "mero_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=",\
+     "mero_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}'
+
+status, res = EOSCoreKVApi(config)\
+    .put(primary_bucket_metadata_index_oid, r'123456789/' + primary_metadata_index_key,\
+         primary_metadata_index_value)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+replica_metadata_index_corrupted_value = "Corrupted-JSON-value2"
+S3kvTest('KvTest put corrupted key-value in replica bucket metadata index')\
+    .put_keyval(replica_bucket_metadata_index, r'123456789/' + primary_metadata_index_key,\
+         replica_metadata_index_corrupted_value)\
+    .execute_test()
 
 # Run s3 recovery tool
 result = S3RecoveryTest(
@@ -411,25 +498,39 @@ result = S3RecoveryTest(
     .execute_test()\
     .command_is_successful()
 
-success_msg = "Data recovered from both indexes for Global bucket index"
-result.command_response_should_have(success_msg)
+success_msg_list_index = "Data recovered from both indexes for Global bucket index"
+result.command_response_should_have(success_msg_list_index)
+
+success_msg_metadata_index = "Data recovered from both indexes for Bucket metadata index"
+result.command_response_should_have(success_msg_metadata_index)
+
 result_stdout_list = (result.status.stdout).split('\n')
 
-assert replica_index_key in result_stdout_list[12]
-assert primary_index_key not in result_stdout_list[12]
-assert '"create_timestamp":"2020-12-11T06:45:41.000Z"' in result_stdout_list[12]
-assert '"location_constraint":"mumbai"' in result_stdout_list[12]
+# Validate the dry_run output
+assert replica_list_index_key in result_stdout_list[12]
+assert primary_list_index_key not in result_stdout_list[13]
+assert result_stdout_list[13] == ''
+assert replica_list_index_value in result_stdout_list[12]
 
 assert primary_index_key not in result_stdout_list[13]
 assert result_stdout_list[13] == ''
 assert 'Primary index content for Bucket metadata index' in result_stdout_list[14]
 
 # Delete the key-values from both primary and replica indexes
-status, res = EOSCoreKVApi(config).delete(primary_bucket_list_index_oid, primary_index_key)
+status, res = EOSCoreKVApi(config).delete(primary_bucket_list_index_oid, primary_list_index_key)
 assert status == True
 assert isinstance(res, EOSCoreSuccessResponse)
 
-status, res = EOSCoreKVApi(config).delete(replica_bucket_list_index_oid, replica_index_key)
+status, res = EOSCoreKVApi(config).delete(replica_bucket_list_index_oid, replica_list_index_key)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+status, res = EOSCoreKVApi(config)\
+    .delete(primary_bucket_metadata_index_oid, r'123456789/' + primary_metadata_index_key)
+assert status == True
+assert isinstance(res, EOSCoreSuccessResponse)
+
+status, res = EOSCoreKVApi(config).delete(replica_bucket_metadata_index_oid, r'123456789/' + primary_metadata_index_key)
 assert status == True
 assert isinstance(res, EOSCoreSuccessResponse)
 
@@ -568,6 +669,7 @@ def put_kvs_in_indexes(index_with_corrupt_kvs,
 # PUT KVs in the primary and replica indexes of global bucket list
 # primary index would have corrupt and old KVs, replica index would have
 # correct and latest KVS
+
 put_kvs_in_indexes(primary_bucket_list_index_oid, replica_bucket_list_index_oid)
 
 # Validate that primary and replica indexes had 4 keys before running the s3recoverytool
@@ -821,6 +923,11 @@ for KV in global_bucket_metadata_index_key_value_list:
     metadata_index_key = r'123456789/' + KV['Key']
     status, res = EOSCoreKVApi(config)\
         .delete(primary_bucket_metadata_index_oid, metadata_index_key)
+    assert status == True
+    assert isinstance(res, EOSCoreSuccessResponse)
+
+    status, res = EOSCoreKVApi(config)\
+        .delete(replica_bucket_metadata_index_oid, metadata_index_key)
     assert status == True
     assert isinstance(res, EOSCoreSuccessResponse)
 
