@@ -75,20 +75,15 @@ class EOSCoreObjectApi(EOSCoreClient):
             return False, EOSCoreErrorResponse(
                 response['status'], response['reason'], response['body'])
 
-    def get(self, oid, layout_id):
+    def get(self, oid):
         """Perform GET request and generate response."""
         if oid is None:
             self._logger.error("Object Id is required.")
             return False, None
-        if layout_id is None:
-            self._logger.error("Layout Id is required.")
-            return False, None
+        request_uri = '/objects/' + urllib.parse.quote(oid, safe='')
 
         query_params = ""
         body = ""
-        query_params = urllib.parse.urlencode({'layout-id': layout_id})
-        request_uri = '/objects/' + urllib.parse.quote(oid, safe='')
-        absolute_request_uri = request_uri + '?' + query_params
 
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
         # https://docs.python.org/3/library/urllib.parse.html
@@ -105,7 +100,7 @@ class EOSCoreObjectApi(EOSCoreClient):
             response = super(
                 EOSCoreObjectApi,
                 self).get(
-                absolute_request_uri,
+                request_uri,
                 headers=headers)
         except ConnectionRefusedError as ex:
             IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
