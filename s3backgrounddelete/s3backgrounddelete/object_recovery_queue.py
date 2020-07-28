@@ -120,24 +120,17 @@ class ObjectRecoveryRabbitMq(object):
     def upload_objects_to_cloud(self, source_bucket, object_index_oid, destination_bucket):
         # list and download source_bucket objets
         self.logger.info("List seagate bucket: " + source_bucket)
-        status, res = EOSCoreIndexApi(EOSCoreConfig()).list(object_index_oid)
-        if status == True:
-            index_content = res.get_index_content()
-            object_kv_list = index_content['Keys']
-            for KV in object_kv_list:
-                value_str = KV['Value']
-                value_json = json.loads(value_str)
-                system_defined_dict = value_json['System-Defined']
-
-                object_name = value_json['Object-Name']
-                content_length = system_defined_dict['Content-Length']
-                self.logger.info("download object: " + object_name + ", with content-length: "
-                 + content_length + " from bucket: " + source_bucket)
-                
-                # upload object to destination_bucket
-                self.logger.info("upload to cloud bucket: " + destination_bucket)
-                stream = os.popen('aws --version')
-                print(stream.read())
+        cmd = 's3cmd ls s3://' + source_bucket
+        stream = os.popen(cmd)
+        output = stream.read()
+        output_list = output.split('\n')
+        for str in output_list:
+            if str != '':
+                object_str = str.split()
+                self.logger.info("download object: " + object_str[3])
+                os.system('s3cmd get ' + object_str[3])
+        # upload object to destination_bucket
+        self.logger.info("upload to cloud bucket: " + destination_bucket)
 
     def replication_worker(self, queue_msg_count=None):
         def callback(channel, method, properties, body):
