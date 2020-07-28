@@ -84,7 +84,7 @@ cp -f ./hosts ./hosts_local
 sed -i "s/^xx.xx.xx.xx/127.0.0.1/" ./hosts_local
 
 # Setup dev env
-ansible-playbook -i ./hosts_local --connection local setup_s3dev_centos75_8.yml -v  -k --extra-vars "s3_src=${S3_SRC_DIR}"
+ansible-playbook -i ./hosts_local --connection local setup_s3dev_centos77_8.yml -v  -k --extra-vars "s3_src=${S3_SRC_DIR}"
 
 rm -f ./hosts_local
 

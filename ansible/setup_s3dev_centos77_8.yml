@@ -4,7 +4,7 @@
 
 - import_playbook: openldap.yml
 
-- name: S3 dev vm setup (Centos 75)
+- name: S3 dev vm setup (Centos 77)
   hosts: s3devvm
   remote_user: root
   gather_facts: yes
