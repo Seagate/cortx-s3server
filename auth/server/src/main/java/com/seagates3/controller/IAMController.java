@@ -191,6 +191,11 @@ class IAMController {
         requestor.setName(requestBody.get("RequestorUserName"));
         requestor.setAccount(account);
 
+        if(requestor.getAccount().getName().equals("s3-background-delete-svc")){
+          ServerResponse backgroundResponse= new ServerResponse(HttpResponseStatus.OK, "Skip authorization for background account");
+          return backgroundResponse;
+        }
+
         LOGGER.info("Authorizing user: " + requestor.getName() + " account: " +
                     requestor.getAccount().getName());
         serverResponse = new Authorizer().authorize(requestor, requestBody);
