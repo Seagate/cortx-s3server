@@ -5,6 +5,7 @@ import json
 import pika
 import os
 
+from s3backgrounddelete.eos_core_config import EOSCoreConfig
 from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
 from s3backgrounddelete.eos_core_object_api import EOSCoreObjectApi
 from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
@@ -116,13 +117,27 @@ class ObjectRecoveryRabbitMq(object):
             self._channel.basic_consume(callback, self._queue, no_ack=False)
             self._channel.start_consuming()
 
-    def upload_objects_to_cloud(self, source_bucket, destination_bucket):
+    def upload_objects_to_cloud(self, source_bucket, object_index_oid, destination_bucket):
         # list and download source_bucket objets
         self.logger.info("List seagate bucket: " + source_bucket)
-        # upload object to destination_bucket
-        self.logger.info("upload to cloud bucket: " + destination_bucket)
-        stream = os.popen('aws --version')
-        print(stream.read())
+        status, res = EOSCoreIndexApi(EOSCoreConfig()).list(object_index_oid)
+        if status == True:
+            index_content = res.get_index_content()
+            object_kv_list = index_content['Keys']
+            for KV in object_kv_list:
+                value_str = KV['Value']
+                value_json = json.loads(value_str)
+                system_defined_dict = value_json['System-Defined']
+
+                object_name = value_json['Object-Name']
+                content_length = system_defined_dict['Content-Length']
+                self.logger.info("download object: " + object_name + ", with content-length: "
+                 + content_length + " from bucket: " + source_bucket)
+                
+                # upload object to destination_bucket
+                self.logger.info("upload to cloud bucket: " + destination_bucket)
+                stream = os.popen('aws --version')
+                print(stream.read())
 
     def replication_worker(self, queue_msg_count=None):
         def callback(channel, method, properties, body):
@@ -143,8 +158,9 @@ class ObjectRecoveryRabbitMq(object):
                     seagate_bucket = record_value_json['Bucket-Name']
                     hybrid_cloud_dict = record_value_json['Hybrid-Cloud']
                     upload_bucket = hybrid_cloud_dict['DestBucket']
+                    object_index_oid = record_value_json['mero_object_list_index_oid']
                     
-                    self.upload_objects_to_cloud(seagate_bucket, upload_bucket)
+                    self.upload_objects_to_cloud(seagate_bucket, object_index_oid, upload_bucket)
 
                 channel.basic_ack(delivery_tag=method.delivery_tag)
             except BaseException:
