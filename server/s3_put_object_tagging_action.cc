@@ -99,12 +99,7 @@ void S3PutObjectTaggingAction::validate_request_body(std::string content) {
 void S3PutObjectTaggingAction::validate_request_xml_tags() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
-  if (put_object_tag_body->validate_object_xml_tags(object_tags_map)) {
     next();
-  } else {
-    set_s3_error("InvalidTagError");
-    send_response_to_s3_client();
-  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
