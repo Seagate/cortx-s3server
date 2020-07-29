@@ -27,7 +27,9 @@ from s3recovery.s3recovercorruption import S3RecoverCorruption
 class S3Recovery:
 
     def run(self):
-        parser = argparse.ArgumentParser(description='S3-Metadata recovery tool')
+        parser = argparse.ArgumentParser(description='S3-Metadata recovery tool',add_help=False)
+        parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
+                    help='Show this help message and exit')
         parser.add_argument("--dry_run", help="Dry run of S3-Metadata corruption recovery",
                     action="store_true")
         parser.add_argument("--recover", help="Recover S3-Metadata corruption (Silent)",
