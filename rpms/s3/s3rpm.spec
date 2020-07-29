@@ -234,6 +234,8 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/install/ldap/syncprov.ldif
 /opt/seagate/cortx/s3/install/ldap/replicate.ldif
 /opt/seagate/cortx/s3/install/ldap/check_ldap_replication.sh
+/opt/seagate/cortx/s3/install/ldap/test_data.ldif
+/opt/seagate/cortx/s3/install/ldap/run_check_ldap_replication_in_loop.sh
 /opt/seagate/cortx/s3/install/ldap/create_replication_account.ldif
 /opt/seagate/cortx/s3/install/ldap/replication/syncprov_mod.ldif
 /opt/seagate/cortx/s3/install/ldap/replication/olcserverid.ldif
@@ -241,6 +243,7 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/install/ldap/replication/data.ldif
 /opt/seagate/cortx/s3/install/ldap/replication/config.ldif
 /opt/seagate/cortx/s3/install/ldap/replication/syncprov_config.ldif
+/opt/seagate/cortx/s3/install/ldap/replication/deltaReplication.ldif
 /opt/seagate/cortx/s3/install/ldap/slapdlog.ldif
 /opt/seagate/cortx/s3/install/ldap/s3slapdindex.ldif
 /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf
