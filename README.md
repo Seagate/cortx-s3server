@@ -914,15 +914,15 @@ Deployment on a clean node:
 1 - Run **dev/init.sh** or make sure it was already run
 
 2 - Update yum repos to install motr and halon from; By default hermi repos are
-used - **http://ci-storage.mero.colo.seagate.com/releases/hermi/last_successful/mero/repo**;
+used - **http://cortx-storage.colo.seagate.com/releases/hermi/last_successful/mero/repo**;
 if one needs to use binaries from specific sprint following command should be run
 ```
 ./rpm-deploy.sh -y ees1.0.0-PI.1-sprint4
 ```
 where **ees1.0.0-PI.1-sprint4** is a sprint name, after that repos named
-**http://ci-storage.mero.colo.seagate.com/releases/eos/ees1.0.0-PI.1-sprint4/mero/repo**,
-**http://ci-storage.mero.colo.seagate.com/releases/eos/ees1.0.0-PI.1-sprint4/halon/repo**,
-**http://ci-storage.mero.colo.seagate.com/releases/eos/ees1.0.0-PI.1-sprint4/s3server/repo**
+**http://cortx-storage.colo.seagate.com/releases/eos/ees1.0.0-PI.1-sprint4/mero/repo**,
+**http://cortx-storage.colo.seagate.com/releases/eos/ees1.0.0-PI.1-sprint4/halon/repo**,
+**http://cortx-storage.colo.seagate.com/releases/eos/ees1.0.0-PI.1-sprint4/s3server/repo**
 will be added and prioritized against hermi repos;
 To be able to restore default repos one should run
 ```

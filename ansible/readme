@@ -41,7 +41,7 @@ Centos 75 VM image is available at
 
 6. Run ansible to setup the dev vm using appropriate .yml file. If you want to run
    with same VM, use option "--connection local" to below command.
-   $ ansible-playbook -i hosts setup_s3dev_centos75_8.yml -v  -k
+   $ ansible-playbook -i hosts setup_s3dev_centos77_8.yml -v  -k
 
    It will prompt for ssh password and ldap password.
    For ldap password on dev vm, use "seagate" for rootDN and "ldapadmin" for IAM admin. These

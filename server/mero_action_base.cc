@@ -48,7 +48,7 @@ void MeroAction::setup_steps() {
 void MeroAction::check_authorization() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if ((request->get_account_name() == BACKGROUND_STALE_OBJECT_DELETE_ACCOUNT) ||
-      (request->get_account_name() == S3RECOVERY_STALE_OBJECT_DELETE_ACCOUNT)) {
+      (request->get_account_name() == S3RECOVERY_ACCOUNT)) {
     next();
   } else {
     if (request->client_connected()) {
