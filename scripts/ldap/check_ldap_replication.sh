@@ -25,6 +25,12 @@ while getopts ":s:p:" o; do
 done
 shift $((OPTIND-1))
 
+if [ -z ${host_list} ]
+then
+    usage
+    exit 1
+fi
+
 if [ ! -s "$host_list" ]
 then
   echo "file $host_list is empty"
