@@ -343,11 +343,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         .thenCallRealMethod();
 
     ServerResponse response = controller.serve(httpRequest, requestBody);
-    assertThat(response.getResponseBody(),
-               containsString(
-                   "The AWS access key Id you provided does not exist in our " +
-                   "records."));
-    assertEquals(HttpResponseStatus.UNAUTHORIZED, response.getResponseStatus());
+    assertThat(response.getResponseBody(), containsString("Invalid Argument"));
+    assertEquals(HttpResponseStatus.BAD_REQUEST, response.getResponseStatus());
   }
 
   @Test public void serveTest_AccessKeyWithSpace() throws Exception {
