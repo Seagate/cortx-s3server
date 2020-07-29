@@ -1,43 +1,71 @@
-dn: o=s3_test,ou=accounts,dc=s3,dc=seagate,dc=com
-o: s3_test
-accountid: 12345
+dn: o=s3_test3,ou=accounts,dc=s3,dc=seagate,dc=com
+o: s3_test3
+accountid: 1234567
 objectclass: Account
-mail: test@seagate.com
-canonicalId: C12345
+mail: s3_test3@seagate.com
+canonicalId: C1234567
 
-dn: ou=users,o=s3_test,ou=accounts,dc=s3,dc=seagate,dc=com
+dn: ou=users,o=s3_test3,ou=accounts,dc=s3,dc=seagate,dc=com
 ou: users
 objectclass: organizationalunit
 
-dn: ou=roles,o=s3_test,ou=accounts,dc=s3,dc=seagate,dc=com
+dn: ou=roles,o=s3_test3,ou=accounts,dc=s3,dc=seagate,dc=com
 ou: roles
 objectclass: organizationalunit
 
-dn: s3userid=123,ou=users,o=s3_test,ou=accounts,dc=s3,dc=seagate,dc=com
+dn: s3userid=123,ou=users,o=s3_test3,ou=accounts,dc=s3,dc=seagate,dc=com
 path: /
 cn: root
 s3userid: 123
-arn: arn:aws:iam::12345:root
+arn: arn:aws:iam::1234567:root
 objectclass: iamUser
 
-dn: ak=AKIAJPINPFRBTPAYOGNA,ou=accesskeys,dc=s3,dc=seagate,dc=com
-ak: AKIAJPINPFRBTPAYOGNA
+dn: s3userid=1225,ou=users,o=s3_test3,ou=accounts,dc=s3,dc=seagate,dc=com
+path: /
+cn: user1
+s3userid: 1225
+arn: arn:aws:iam::1234567:user1
+objectclass: iamUser
+
+dn: s3userid=1226,ou=users,o=s3_test3,ou=accounts,dc=s3,dc=seagate,dc=com
+path: /
+cn: user2
+s3userid: 1226
+arn: arn:aws:iam::1234567:user2
+objectclass: iamUser
+
+dn: s3userid=1227,ou=users,o=s3_test3,ou=accounts,dc=s3,dc=seagate,dc=com
+path: /
+cn: user3
+s3userid: 1227
+arn: arn:aws:iam::1234567:user3
+objectclass: iamUser
+
+dn: ak=AKIAJPINPFR1TPAYOGPA,ou=accesskeys,dc=s3,dc=seagate,dc=com
+ak: AKIAJPINPFR1TPAYOGPA
 s3userid: 123
-sk: ht8ntpB9DoChDrneKZHvPVTm+1mHbs7UdCyYZ5Hd
+sk: ht8ntpB9DoCHDrneKZHvPVTm+1mHbs7UdCyYZ5H1
 status: Active
 objectclass: accessKey
 
-dn: ak=AKIAJTYX36YCKQSAJT7Q,ou=accesskeys,dc=s3,dc=seagate,dc=com
-ak: AKIAJTYX36YCKQSAJT7Q
-s3userid: 123
-sk: A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt
+dn: ak=AKIAJTYX16YCKQSAJT8Q,ou=accesskeys,dc=s3,dc=seagate,dc=com
+ak: AKIAJTYX16YCKQSAJT8Q
+s3userid: 1225
+sk: A6k2z84BWwZmee4WUUS2oWwM/tha7Wrd4Hc/8yRt
 status: Active
 objectclass: accessKey
 
-dn: ou=groups,o=s3_test,ou=accounts,dc=s3,dc=seagate,dc=com
-ou: groups
-objectClass: organizationalUnit
+dn: ak=BKIAJTYX16YCKQSAJT8Q,ou=accesskeys,dc=s3,dc=seagate,dc=com
+ak: BKIAJTYX16YCKQSAJT8Q
+s3userid: 1226
+sk: B6k2z84BWwZmee4WUUS2oWwM/tha7Wrd4Hc/8yRt
+status: Active
+objectclass: accessKey
 
-dn: ou=policies,o=s3_test,ou=accounts,dc=s3,dc=seagate,dc=com
-ou: policies
-objectClass: organizationalUnit
+dn: ak=CKIAJTYX16YCKQSAJT8Q,ou=accesskeys,dc=s3,dc=seagate,dc=com
+ak: CKIAJTYX16YCKQSAJT8Q
+s3userid: 1227
+sk: C6k2z84BWwZmee4WUUS2oWwM/tha7Wrd4Hc/8yRt
+status: Active
+objectclass: accessKey
+

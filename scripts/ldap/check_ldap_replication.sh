@@ -25,6 +25,12 @@ while getopts ":s:p:" o; do
 done
 shift $((OPTIND-1))
 
+if [ -z ${host_list} ]
+then
+    usage
+    exit 1
+fi
+
 if [ ! -s "$host_list" ]
 then
   echo "file $host_list is empty"
@@ -45,7 +51,7 @@ ldapadd -w $ldappasswd -x -D "cn=sgiamadmin,dc=seagate,dc=com" -f create_replica
 
 #adding some delay for successful replication
 
-sleep 2s
+sleep 1s
 
 # check replication on node 2
 while read node; do
@@ -70,3 +76,36 @@ fi
 
 ldapdelete -x -w $ldappasswd -r "o=sanity-test-repl-account,ou=accounts,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://$node1 || exit 1
 
+
+##################create IAM users and their respective accesskeys testing ####################
+
+ldapadd -w seagate -x -D "cn=admin,dc=seagate,dc=com" -f test_data.ldif
+
+sleep 1s
+
+# check replication on other nodes
+while read node; do
+  output=$(ldapsearch -b "ak=CKIAJTYX16YCKQSAJT8Q,ou=accesskeys,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://$node) || echo "failed to search"
+  if [[ $output == *"No such object"* ]]
+  then
+    cluster_replication=false
+    echo "Replication is not setup properly on node $node"
+  else
+    echo "Replication is setup properly on node $node"
+  fi
+done <$host_list
+
+if [ "$cluster_replication" = true ]
+then
+  echo "Replication is setup properly on cluster"
+else
+   echo "Setup replication on nodes,which are not configured correctly for replication"
+fi
+
+#delete created account and accesskeys
+
+ldapdelete -x -w ldapadmin -r "o=s3_test3,ou=accounts,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///
+ldapdelete -x -w ldapadmin -r "ak=AKIAJPINPFR1TPAYOGPA,ou=accesskeys,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///
+ldapdelete -x -w ldapadmin -r "ak=AKIAJTYX16YCKQSAJT8Q,ou=accesskeys,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///
+ldapdelete -x -w ldapadmin -r "ak=BKIAJTYX16YCKQSAJT8Q,ou=accesskeys,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi://
+ldapdelete -x -w ldapadmin -r "ak=CKIAJTYX16YCKQSAJT8Q,ou=accesskeys,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi://
