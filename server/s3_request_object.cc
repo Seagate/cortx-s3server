@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #include <evhttp.h>
 #include <string>
 #include <algorithm>

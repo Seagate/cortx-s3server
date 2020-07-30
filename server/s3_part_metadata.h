@@ -18,10 +18,6 @@
  *
  */
 
-
- * Original creation date: 21-Jan-2016
- */
-
 #pragma once
 
 #ifndef __S3_SERVER_S3_PART_METADATA_H__

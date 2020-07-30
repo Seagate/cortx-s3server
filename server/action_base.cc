@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #include "action_base.h"
 #include "s3_clovis_layout.h"
 #include "s3_error_codes.h"

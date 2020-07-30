@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #pragma once
 
 #ifndef __S3_UT_S3_CALLBACK_TEST_HELPERS_H__

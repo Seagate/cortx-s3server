@@ -18,10 +18,6 @@
  *
  */
 
-
- * Original creation date: 13-Jan-2016
- */
-
 #pragma once
 
 #ifndef __S3_SERVER_S3_GET_MULTIPART_BUCKET_ACTION_H__

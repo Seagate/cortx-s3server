@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #pragma once
 
 #ifndef __S3_UT_MOCK_EVENT_WRAPPER_H__

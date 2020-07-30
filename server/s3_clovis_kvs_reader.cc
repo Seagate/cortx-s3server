@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #include <assert.h>
 #include <unistd.h>
 

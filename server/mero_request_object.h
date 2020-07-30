@@ -18,10 +18,6 @@
  *
  */
 
-
- * Original creation date: 1-JULY-2019
- */
-
 #pragma once
 
 #ifndef __S3_SERVER_MERO_REQUEST_OBJECT_H__

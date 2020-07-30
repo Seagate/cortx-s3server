@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #pragma once
 
 #ifndef __S3_UT_MOCK_MERO_REQUEST_OBJECT_H__

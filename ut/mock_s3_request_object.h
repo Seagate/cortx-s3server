@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #pragma once
 
 #ifndef __S3_UT_MOCK_S3_REQUEST_OBJECT_H__

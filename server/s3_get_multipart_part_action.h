@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #pragma once
 
 #ifndef __S3_SERVER_S3_GET_MULTIPART_PART_ACTION_H__

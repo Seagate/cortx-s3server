@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #pragma once
 
 #ifndef __S3_SERVER_S3_PUT_MULTIOBJECT_ACTION_H__

@@ -18,10 +18,6 @@
  *
  */
 
-
- * Original creation date: 1-JULY-2019
- */
-
 #include <evhttp.h>
 #include <string>
 #include <algorithm>

@@ -18,10 +18,6 @@
  *
  */
 
-
- * Original creation date: 13-Jan-2016
- */
-
 #include <string>
 
 #include "s3_error_codes.h"

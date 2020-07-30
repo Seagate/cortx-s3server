@@ -16,7 +16,6 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-
 # AUTO-GENERATED FILE - DO NOT EDIT!! Use ldapmodify.
 # CRC32 c6272005
 dn: olcDatabase={2}mdb

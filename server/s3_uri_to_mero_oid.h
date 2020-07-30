@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #pragma once
 
 #ifndef __S3_SERVER_S3_URI_TO_MERO_OID_H__

@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #include "s3_post_to_main_loop.h"
 #include "s3_option.h"
 

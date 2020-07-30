@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #include "s3_get_multipart_part_action.h"
 #include <string>
 #include "s3_error_codes.h"

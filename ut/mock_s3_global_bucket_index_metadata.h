@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #pragma once
 
 #ifndef __S3_UT_GLOBAL_BUCKET_INDEX_METADATA_H__
