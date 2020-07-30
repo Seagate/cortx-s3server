@@ -16,7 +16,6 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-
 # OlcserverId is unique ID given to each server in replicatio cluster
 # for other nodes change olcserverID to 2,3 respectively depending on
 # number of nodes you have in cluster.

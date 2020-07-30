@@ -16,7 +16,6 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-
 ou=accesskeys,dc=s3,dc=seagate,dc=com
 ou=accounts,dc=s3,dc=seagate,dc=com
 ou=idp,dc=s3,dc=seagate,dc=com

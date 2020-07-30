@@ -16,7 +16,6 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-
 dn: o=sanity-test-repl-account,ou=accounts,dc=s3,dc=seagate,dc=com
 o: replication-account
 accountid: 78981

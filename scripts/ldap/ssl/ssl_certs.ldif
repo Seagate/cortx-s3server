@@ -16,7 +16,6 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-
 dn: cn=config
 replace: olcTLSCACertificateFile
 olcTLSCACertificateFile: /etc/ssl/stx-s3/openldap/ca.crt

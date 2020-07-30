@@ -16,10 +16,8 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-
 # S3 IAM ldap schema constraints
 # email id is unique attribute
-
 dn: cn=module{0},cn=config
 cn: module{0}
 objectClass: olcModuleList
@@ -31,4 +29,3 @@ objectClass: olcOverlayConfig
 objectClass: olcUniqueConfig
 olcOverlay: unique
 olcUniqueUri: ldap:///?mail?sub?
-

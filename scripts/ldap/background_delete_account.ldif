@@ -16,7 +16,6 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-
 dn: o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com
 o: s3-background-delete-svc
 accountid: 67891

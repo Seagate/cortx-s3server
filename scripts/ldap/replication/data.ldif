@@ -16,7 +16,6 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-
 # Sample replation configuration data file for N-way multi-master setup
 # This file should be replicated on all Master nodes, replacing following fields
 # in accordance to your setup.
@@ -43,7 +42,6 @@
 # it will be copied as config replication is in place.
 # Command to add configuration to ldap:
 # ldapmodify -Y EXTERNAL  -H ldapi:/// -f data.ldif
-
 dn: olcDatabase={2}mdb,cn=config
 changetype: modify
 add: olcSyncRepl
