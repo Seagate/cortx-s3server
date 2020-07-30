@@ -157,6 +157,8 @@ class ObjectRecoveryRabbitMq(object):
         for object in objects_list:
             self.logger.info("Uploading object: " + object + " to bucket: " + bucket)
             cmd += object
+            cmd += " --body "
+            cmd += object
             os.system(cmd)
 
     def get_public_cloud_info(self, bucket):
