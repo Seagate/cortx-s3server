@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <!--
   Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 
@@ -17,8 +18,6 @@
   please email opensource@seagate.com or cortx-questions@seagate.com.
 
 -->
-
-<?xml version="1.0"?>
 <EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" entityID="urn:seagate:webservices" validUntil="2016-10-21T00:00:00Z">
   <SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol" WantAssertionsSigned="true">
     <KeyDescriptor use="signing">

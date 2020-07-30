@@ -17,17 +17,15 @@
  * please email opensource@seagate.com or cortx-questions@seagate.com.
  *
  */
+package com.seagates3.response.formatter.xml;
 
+import com.seagates3.response.ServerResponse;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import org.junit.Assert;
+import org.junit.Test;
 
- * EXCEPT AS ALLOWED BY THE TERMS OF SEAGATE LICENSES AND AGREEMENTS.
- *
- * YOU SHOULD HAVE RECEIVED A COPY OF SEAGATE'S LICENSE ALONG WITH
- * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
- * http://www.seagate.com/contact
- *
- * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 17-Dec-2015
- */
 public
 class XMLResponseFormatterTest {
 

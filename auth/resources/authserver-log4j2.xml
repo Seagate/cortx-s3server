@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 
@@ -17,8 +18,6 @@
   please email opensource@seagate.com or cortx-questions@seagate.com.
 
 -->
-
-<?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="fatal" name="AuthServer" monitorInterval="30">
     <Properties>
         <Property name="baseDir">/var/log/seagate/auth/server</Property>

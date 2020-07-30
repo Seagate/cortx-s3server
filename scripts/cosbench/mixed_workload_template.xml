@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 
@@ -17,8 +18,6 @@
   please email opensource@seagate.com or cortx-questions@seagate.com.
 
 -->
-
-<?xml version="1.0" encoding="UTF-8"?>
 <workload name="_SIZE_ MB, _BUCKETS_ buckets, _OBJECTS_ objects, _WORKERS_ workers, MIXED Workloadtype" description="_SIZE_ MB S3 Benchmark">
   <storage type="s3" config="accesskey=_ACCESSKEY_;secretkey=_SECRETKEY_;endpoint=_S3ENDPOINT_;path_style_access=true" />
   <workflow>
