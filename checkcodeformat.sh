@@ -1,4 +1,4 @@
-#
+#!/bin/bash
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-#!/bin/bash
 # Script to check whether coding style complies with clang-format.
 #   Note: Only C/C++/Header files are checked for coding style.
 
