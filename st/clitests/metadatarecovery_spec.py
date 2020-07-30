@@ -361,12 +361,12 @@ assert '"location_constraint":"us-west-2"' in result_stdout_list[11]
 assert result_stdout_list[7] != 'Empty'
 
 assert replica_index_key in result_stdout_list[7]
-assert replica_index_key in result_stdout_list[13]
+assert replica_index_key in result_stdout_list[12]
 assert '"create_timestamp":"2020-08-14T06:45:41.000Z"' in result_stdout_list[7]
-assert '"create_timestamp":"2020-08-14T06:45:41.000Z"' in result_stdout_list[13]
+assert '"create_timestamp":"2020-08-14T06:45:41.000Z"' in result_stdout_list[12]
 
 assert '"location_constraint":"us-east-1"' in result_stdout_list[7]
-assert '"location_constraint":"us-east-1"' in result_stdout_list[13]
+assert '"location_constraint":"us-east-1"' in result_stdout_list[12]
 
 # Delete the key-values from both primary and replica indexes
 status, res = EOSCoreKVApi(config).delete(primary_bucket_list_index_oid, primary_index_key)
@@ -420,9 +420,9 @@ assert primary_index_key not in result_stdout_list[12]
 assert '"create_timestamp":"2020-12-11T06:45:41.000Z"' in result_stdout_list[12]
 assert '"location_constraint":"mumbai"' in result_stdout_list[12]
 
-assert primary_index_key not in result_stdout_list[14]
-assert result_stdout_list[14] == ''
-assert 'Primary index content for Bucket metadata index' in result_stdout_list[15]
+assert primary_index_key not in result_stdout_list[13]
+assert result_stdout_list[13] == ''
+assert 'Primary index content for Bucket metadata index' in result_stdout_list[14]
 
 # Delete the key-values from both primary and replica indexes
 status, res = EOSCoreKVApi(config).delete(primary_bucket_list_index_oid, primary_index_key)

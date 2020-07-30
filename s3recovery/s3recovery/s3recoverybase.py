@@ -295,7 +295,6 @@ class S3RecoveryBase:
 
         if (self.log_result):
             self.s3recovery_log("info", "\nData recovered from both indexes for {} \n".format(index_name))
-            self.s3recovery_log("info", union_result)
             self.print_content(union_result)
 
         return union_result

@@ -1,8 +1,7 @@
 Tasks supported
 - Detect S3-Metadata corruption
-- Dry run to recovery S3-Metadata corruption
-- Recovery S3-Metadata corruption
-- Recovery S3-Metadata corruption in interactive mode
+- Dry run to recover S3-Metadata corruption
+- Recover S3-Metadata corruption
 
 Python Version 3.6 required.
 
@@ -24,8 +23,11 @@ For building and installing
 Run python36 setup.py build
     python36 setup.py install
 
-Usage:
-usage: s3recovery [-h] [--dry_run] [--detect_corruption]
-                  [--recover_corruption] [--interactive_recovery]
+usage: s3recovery [-h] [--dry_run] [--recover]
 
 S3-Metadata recovery tool
+
+optional arguments:
+  -h, --help  show this help message and exit
+  --dry_run   Dry run of S3-Metadata corruption recovery
+  --recover   Recover S3-Metadata corruption (Silent)
