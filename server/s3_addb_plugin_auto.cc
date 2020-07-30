@@ -18,13 +18,6 @@
  *
  */
 
-
- * http://www.seagate.com/contact
- *
- * Original author:  Ivan Tishchenko   <ivan.tishchenko@seagate.com>
- * Original creation date: 28-Oct-2019
- */
-
 #include <typeinfo>
 #include <typeindex>
 #include <unordered_map>

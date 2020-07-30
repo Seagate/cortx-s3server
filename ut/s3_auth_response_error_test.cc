@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #include "s3_auth_response_error.h"
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
