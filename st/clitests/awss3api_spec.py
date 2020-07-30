@@ -26,6 +26,19 @@ S3PyCliTest('Before_all').before_all()
 #******** Create Bucket ********
 AwsTest('Aws can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
 
+# ************ Put object with specified content-type ************
+in_headers = {
+    "content-type" : "application/blabla"
+    }
+AwsTest('Aws can upload object with specific content-type').put_object("seagatebucket", "3kfile", 3000)\
+    .add_headers(in_headers).execute_test().command_is_successful()
+
+AwsTest('Aws can get object with the same content-type').get_object("seagatebucket", "3kfile")\
+    .execute_test().command_is_successful().command_response_should_have("application/blabla")
+
+AwsTest('Aws can delete object').delete_object("seagatebucket", "3kfile")\
+    .execute_test().command_is_successful()
+
 #******** Put Bucket Tag ********
 AwsTest('Aws can create bucket tag').put_bucket_tagging("seagatebucket", [{'Key': 'organization','Value': 'marketing'}])\
     .execute_test().command_is_successful()

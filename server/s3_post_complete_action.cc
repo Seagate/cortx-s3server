@@ -585,6 +585,8 @@ void S3PostCompleteAction::save_metadata() {
     new_object_metadata->reset_date_time_to_current();
     new_object_metadata->set_tags(multipart_metadata->get_tags());
     new_object_metadata->set_content_length(std::to_string(object_size));
+    new_object_metadata->set_content_type(
+        multipart_metadata->get_content_type());
     new_object_metadata->set_md5(etag);
 
     new_object_metadata->save(

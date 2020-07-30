@@ -481,6 +481,13 @@ std::string RequestObject::get_content_length_str() {
   return len;
 }
 
+std::string RequestObject::get_content_type() {
+  std::string content_type = "Content-Type";
+  std::string type = get_header_value(content_type);
+  type = S3CommonUtilities::trim(type);
+  return type;
+}
+
 bool RequestObject::validate_content_md5() {
   bool is_content_md5_valid = true;
   std::string content_md5 = get_header_value("content-md5");

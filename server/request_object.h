@@ -180,6 +180,7 @@ class RequestObject {
   virtual bool validate_content_md5();
   virtual bool validate_content_length();
   virtual size_t get_content_length();
+  virtual std::string get_content_type();
   virtual std::string get_content_length_str();
 
   virtual std::string& get_full_body_content_as_string();

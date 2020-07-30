@@ -28,6 +28,14 @@ class AwsTest(S3PyCliTest):
     def run(self):
         super(AwsTest, self).run()
 
+    def add_headers(self, headers=None):
+        add_header_option = ""
+        if headers and len(headers):
+            for key, val in headers.items():
+                add_header_option +=  " --{} {}".format(key.lower(),val)
+        self.command = self.command + add_header_option
+        return self
+
     def with_cli(self, cmd):
         if cmd.startswith("curl"):
            cmd = cmd
@@ -244,10 +252,15 @@ class AwsTest(S3PyCliTest):
         self.with_cli(cmd)
         return self
 
-    def get_object(self, bucket_name, object_name):
+    def get_object(self, bucket_name, object_name, outfile=None, debug_flag=None):
         self.bucket_name = bucket_name
         self.object_name = object_name
-        self.with_cli("aws s3api " + "get-object " + "--bucket " + bucket_name + " --key " + object_name + " outfile")
+        if outfile is None:
+            outfile = object_name
+        cmd = "aws s3api get-object --bucket " + bucket_name + " --key " + object_name + " " + outfile
+        self.with_cli(cmd)
+        if debug_flag is not None:
+           self.command += " --debug"
         return self
 
     def head_object(self, bucket_name, object_name):

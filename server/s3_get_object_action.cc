@@ -132,6 +132,8 @@ void S3GetObjectAction::validate_object_info() {
                                   object_metadata->get_last_modified_gmt());
     request->set_out_header_value("ETag", e_tag);
     request->set_out_header_value("Accept-Ranges", "bytes");
+    request->set_out_header_value("Content-Type",
+                                  object_metadata->get_content_type());
     request->set_out_header_value("Content-Length",
                                   object_metadata->get_content_length_str());
     for (auto it : object_metadata->get_user_attributes()) {
@@ -398,6 +400,8 @@ void S3GetObjectAction::send_data_to_client() {
 
     request->set_out_header_value("Last-Modified",
                                   object_metadata->get_last_modified_gmt());
+    request->set_out_header_value("Content-Type",
+                                  object_metadata->get_content_type());
     request->set_out_header_value("ETag", e_tag);
     s3_log(S3_LOG_INFO, request_id, "e_tag= %s", e_tag.c_str());
     request->set_out_header_value("Accept-Ranges", "bytes");

@@ -521,6 +521,7 @@ void S3PostMultipartObjectAction::save_upload_metadata() {
   // to rest Date and Last-Modfied time object metadata
   object_multipart_metadata->reset_date_time_to_current();
   object_multipart_metadata->set_oid(oid);
+  object_multipart_metadata->set_content_type(request->get_content_type());
   object_multipart_metadata->set_part_index_oid(
       part_metadata->get_part_index_oid());
   object_multipart_metadata->save(

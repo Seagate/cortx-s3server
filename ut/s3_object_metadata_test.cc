@@ -249,6 +249,10 @@ TEST_F(S3ObjectMetadataTest, GetSet) {
   EXPECT_STREQ("100",
                metadata_obj_under_test->get_content_length_str().c_str());
   EXPECT_EQ(100, metadata_obj_under_test->get_content_length());
+
+  metadata_obj_under_test->set_content_type("application/bla");
+  EXPECT_EQ("application/bla", metadata_obj_under_test->get_content_type());
+
   metadata_obj_under_test->set_md5("avbxy");
   EXPECT_STREQ("avbxy", metadata_obj_under_test->get_md5().c_str());
 
