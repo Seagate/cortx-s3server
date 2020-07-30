@@ -73,15 +73,6 @@ S3BucketMetadata::S3BucketMetadata(
   multipart_index_oid = {0ULL, 0ULL};    // Multipart index default id
   objects_version_list_index_oid = {0ULL, 0ULL};  // objects versions list id
 
-  // TODO: Parse these values from request headers
-
-  hybrid_cloud_attribute["ApiType"] = "S3";
-  hybrid_cloud_attribute["Endpoint"] = "https://s3.amazonaws.com";
-  hybrid_cloud_attribute["DestBucket"] = "awsbucket";
-
-  // TODO: Define and implement these rules LeastUsed, NonPII
-  hybrid_cloud_attribute["Rule"] = "LeastUsed";
-
   // Set the defaults
   S3DateTime current_time;
   current_time.init_current_time();
@@ -215,9 +206,6 @@ std::string S3BucketMetadata::to_json() {
   for (auto uit : user_defined_attribute) {
     root["User-Defined"][uit.first] = uit.second;
   }
-  for (auto uit : hybrid_cloud_attribute) {
-    root["Hybrid-Cloud"][uit.first] = uit.second;
-  }
   if (encoded_acl == "") {
     root["ACL"] = request->get_default_acl();
   } else {
@@ -267,10 +255,6 @@ int S3BucketMetadata::from_json(std::string content) {
   members = newroot["User-Defined"].getMemberNames();
   for (auto it : members) {
     user_defined_attribute[it.c_str()] = newroot["User-Defined"][it].asString();
-  }
-  members = newroot["Hybrid-Cloud"].getMemberNames();
-  for (auto it : members) {
-    hybrid_cloud_attribute[it.c_str()] = newroot["Hybrid-Cloud"][it].asString();
   }
   user_name = system_defined_attribute["Owner-User"];
   user_id = system_defined_attribute["Owner-User-id"];
