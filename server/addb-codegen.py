@@ -1,3 +1,4 @@
+#!/usr/bin/python3.6
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,11 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-# class.
-#
-# 2) We need to be able to get addb_action_type_id at run time for a given
-# instance to use that ID in ADDB log entry.  This needs a lot of mundane
-# repetitive code, so this codegen creates that code.
 
 import re
 import glob
