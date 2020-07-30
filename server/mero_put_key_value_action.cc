@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #include <json/json.h>
 #include "mero_put_key_value_action.h"
 #include "s3_error_codes.h"

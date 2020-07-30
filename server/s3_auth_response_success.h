@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #pragma once
 
 #ifndef __S3_SERVER_S3_AUTH_RESPONSE_SUCCESS_H__

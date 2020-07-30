@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #include <event2/thread.h>
 
 #include "s3_auth_context.h"

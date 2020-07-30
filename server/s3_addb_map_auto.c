@@ -19,12 +19,6 @@
  */
 
 
- * http://www.seagate.com/contact
- *
- * Original author:  Ivan Tishchenko   <ivan.tishchenko@seagate.com>
- * Original creation date: 28-Oct-2019
- */
-
 #include "s3_addb_map.h"
 
 const uint64_t g_s3_to_addb_idx_func_name_map_size = 195;

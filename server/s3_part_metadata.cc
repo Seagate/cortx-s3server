@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #include <json/json.h>
 #include <stdlib.h>
 

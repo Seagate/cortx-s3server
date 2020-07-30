@@ -18,10 +18,6 @@
  *
  */
 
-
- * Original creation date: 2-March-2016
- */
-
 #pragma once
 
 #ifndef __S3_SERVER_LOG_H__

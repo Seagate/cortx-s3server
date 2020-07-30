@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #include <cstring>
 
 #include "s3_url_encode.h"

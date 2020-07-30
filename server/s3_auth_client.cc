@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #include <event2/event.h>
 #include <evhttp.h>
 #include <unistd.h>
