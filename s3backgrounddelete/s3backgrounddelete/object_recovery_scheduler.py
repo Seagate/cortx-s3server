@@ -39,6 +39,16 @@ class ObjectRecoveryScheduler(object):
         timeDeltaInMns = math.floor(timeDelta.total_seconds()/60)
         return (timeDeltaInMns >= OlderInMins)
 
+    def if_hybrid_cloud_in_taglist(self, tags_list):
+        hybrid_cloud_tag = {
+            "Key": "Hybrid-Cloud-Enabled",
+            "Value": "True"
+        }
+        if hybrid_cloud_tag in tags_list:
+            return True
+        else:
+            return False
+
     def add_kv_to_queue(self, marker = None):
         """Add object key value to object recovery queue."""
         self.logger.info("Adding kv list to queue")
@@ -117,34 +127,39 @@ class ObjectRecoveryScheduler(object):
                 self.config.get_rabbitmq_mode(),
                 self.config.get_rabbitmq_durable(),
                 self.logger)
-
-            result, index_response = EOSCoreIndexApi(
-                self.config, logger=self.logger).list(
-                    self.config.get_bucket_metadata_index_id(), self.config.get_max_keys(), marker)
-            if result is True:
-                index_content = index_response.get_index_content()
-                bucket_key_value_list = index_content["Keys"]
-                for KV in bucket_key_value_list:
-                    bucket = KV["Key"]
-                    value = json.loads(KV["Value"])
-                    if "Hybrid-Cloud" in value:
-                        self.logger.info("[" + bucket + "] has Hybrid-Cloud attribute set: "
-                         + str(value["Hybrid-Cloud"]))
-                        self.logger.info(
-                            "sending data to replication-queue:" + str(KV))
+            # list buckets
+            cmd = "aws s3api --endpoint http://s3.seagate.com --profile seagate list-buckets"
+            stream = os.popen(cmd)
+            output = stream.read()
+            output_json = json.loads(output)
+            buckets_list = output_json["Buckets"]
+            for bucket in buckets_list:
+                bucket_name = bucket['Name']
+                #print(bucket_name)
+                # get the tags of the bucket
+                cmd = "aws s3api --endpoint http://s3.seagate.com --profile seagate get-bucket-tagging --bucket "
+                cmd += bucket_name
+                stream = os.popen(cmd)
+                output = stream.read()
+                if output != '':
+                    output_json = json.loads(output)
+                    tags_list = output_json["TagSet"]
+                    #print(tags_list)
+                    # check if hybrid-cloud is enabled
+                    if self.if_hybrid_cloud_in_taglist(tags_list):
+                        # put this bucket replication-queue
                         ret, msg = mq_replication.send_data(
-                            KV, self.config.get_rabbitmq_replication_queue_name())
+                            bucket_name, self.config.get_rabbitmq_replication_queue_name())
                         if not ret:
                             IEMutil("ERROR", IEMutil.RABBIT_MQ_CONN_FAILURE, IEMutil.RABBIT_MQ_CONN_FAILURE_STR)
                             self.logger.error(
-                                "replication-queue send data "+ str(KV) +
-                                " failed :" + msg)
+                                "replication-queue send data "+ bucket_name + " failed :" + msg)
                         else:
-                            self.logger.info(
-                                "replication-queue send data successfully :" +
-                                str(KV))
+                            self.logger.info("replication-queue send data successfully.")
                     else:
-                        self.logger.info("replication is not set for bucket: [" + bucket + "]")
+                        self.logger.info("hybrid-cloud tag is not set for bucket: " + bucket_name)
+                else:
+                    self.logger.info("tags not set for the bucket: " + bucket_name)
 # ********* hybrid-cloud changes ******************************************************
         except BaseException:
             self.logger.error(

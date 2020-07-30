@@ -117,20 +117,65 @@ class ObjectRecoveryRabbitMq(object):
             self._channel.basic_consume(callback, self._queue, no_ack=False)
             self._channel.start_consuming()
 
-    def upload_objects_to_cloud(self, source_bucket, object_index_oid, destination_bucket):
-        # list and download source_bucket objets
-        self.logger.info("List seagate bucket: " + source_bucket)
-        cmd = 's3cmd ls s3://' + source_bucket
+    def download_objects_from_seagate(self, source_bucket):
+        cmd = "aws s3api --endpoint http://s3.seagate.com --profile seagate list-objects --bucket "
+        cmd += source_bucket
+        downloaded_object_list = list()
         stream = os.popen(cmd)
         output = stream.read()
-        output_list = output.split('\n')
-        for str in output_list:
-            if str != '':
-                object_str = str.split()
-                self.logger.info("download object: " + object_str[3])
-                os.system('s3cmd get ' + object_str[3])
-        # upload object to destination_bucket
-        self.logger.info("upload to cloud bucket: " + destination_bucket)
+        if output != '':
+            output_json = json.loads(output)
+            objects_list = output_json["Contents"]
+            for object in objects_list:
+                key = object["Key"]
+                size = object["Size"]
+                cmd = "aws s3api --endpoint http://s3.seagate.com --profile seagate get-object --bucket "
+                cmd += source_bucket
+                cmd += " --key "
+                cmd += key
+                cmd += " "
+                cmd += key
+                stream = os.popen(cmd)
+                output = stream.read()
+                output_json = json.loads(output)
+                if output_json["ContentLength"] == size:
+                    self.logger.info("Successfully downloaded object: " + key)
+                    downloaded_object_list.append(key)
+                else:
+                    self.logger.info("Failed to downloaded object: " + key)
+        return downloaded_object_list
+
+
+    def upload_objects_to_cloud(self, objects_list, bucket, access_key, secret_key):
+        # list and download source_bucket objets
+        os.environ["AWS_ACCESS_KEY_ID"] = access_key
+        os.environ["AWS_SECRET_ACCESS_KEY"] = secret_key
+
+        cmd = "aws s3api --endpoint http://s3.amazonaws.com put-object --bucket "
+        cmd += bucket
+        cmd += " --key "
+        for object in objects_list:
+            self.logger.info("Uploading object: " + object + " to bucket: " + bucket)
+            cmd += object
+            os.system(cmd)
+
+    def get_public_cloud_info(self, bucket):
+        cmd = "aws s3api --endpoint http://s3.seagate.com --profile seagate get-bucket-tagging --bucket "
+        cmd += bucket
+        stream = os.popen(cmd)
+        output = stream.read()
+        if output != '':
+            output_json = json.loads(output)
+            tags_list = output_json["TagSet"]
+            for tag in tags_list:
+                if tag["Key"] == "Access-Key":
+                    access_key = tag["Value"]
+                elif tag["Key"] == "DestBucket":
+                    upload_bucket = tag["Value"]
+                elif tag["Key"] == "Secret-Key":
+                    secret_key = tag["Value"]
+
+        return access_key, secret_key, upload_bucket
 
     def replication_worker(self, queue_msg_count=None):
         def callback(channel, method, properties, body):
@@ -145,15 +190,14 @@ class ObjectRecoveryRabbitMq(object):
                         "Processing following records in consumer " +
                         str(replication_record))
                     # process the record
-                    record_value_str = replication_record['Value']
-                    record_value_json = json.loads(record_value_str)
-                    
-                    seagate_bucket = record_value_json['Bucket-Name']
-                    hybrid_cloud_dict = record_value_json['Hybrid-Cloud']
-                    upload_bucket = hybrid_cloud_dict['DestBucket']
-                    object_index_oid = record_value_json['mero_object_list_index_oid']
-                    
-                    self.upload_objects_to_cloud(seagate_bucket, object_index_oid, upload_bucket)
+                    seagate_bucket = replication_record
+
+                    # download the objects of the bucket
+                    upload_objects_list = self.download_objects_from_seagate(seagate_bucket)
+
+                    # upload the downloaded objects to public cloud
+                    access_key, secret_key, upload_bucket = self.get_public_cloud_info(seagate_bucket)
+                    self.upload_objects_to_cloud(upload_objects_list, upload_bucket, access_key, secret_key)
 
                 channel.basic_ack(delivery_tag=method.delivery_tag)
             except BaseException:
