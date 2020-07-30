@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #include "s3_put_object_acl_action.h"
 #include "s3_error_codes.h"
 #include "s3_log.h"

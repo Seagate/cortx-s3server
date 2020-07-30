@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #include <string>
 #include <algorithm>
 

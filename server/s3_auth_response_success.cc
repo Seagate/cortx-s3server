@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #include "s3_auth_response_success.h"
 #include "s3_log.h"
 

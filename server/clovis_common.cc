@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #include <stdio.h>
 #include "clovis_helpers.h"
 #include "s3_log.h"

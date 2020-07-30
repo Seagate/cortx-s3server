@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #include "mock_s3_clovis_wrapper.h"
 #include "s3_put_multiobject_action.h"
 #include "mock_s3_clovis_wrapper.h"

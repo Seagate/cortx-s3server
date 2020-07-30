@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #include "gtest/gtest.h"
 
 #include "s3_error_codes.h"

@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #include "s3_get_bucket_acl_action.h"
 #include "gtest/gtest.h"
 #include "mock_s3_factory.h"

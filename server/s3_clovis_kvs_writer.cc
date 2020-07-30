@@ -18,9 +18,6 @@
  *
  */
 
-
- */
-
 #include <unistd.h>
 
 #include "s3_common.h"
