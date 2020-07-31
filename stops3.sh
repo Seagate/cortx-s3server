@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,7 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-#!/bin/sh
 for s3unit in `systemctl list-units | grep s3server@  | grep "loaded active running"  | awk '{print $1}'`
 do
   systemctl stop $s3unit

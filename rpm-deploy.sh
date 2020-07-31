@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,7 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-#!/bin/sh
 
 USAGE="USAGE: $(basename "$0") [-I | -R | -S | -y <configure-yum-repo> | -p <path-to-prod-cfg> | -U | -D]
 

@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,7 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-#!/bin/sh
 # script is used to delete the old s3server logs
 # script will retain recent modified files of given count based on severity and remove older files
 # argument1: <number of latest log files to retain>
