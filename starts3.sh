@@ -1,3 +1,4 @@
+#!/bin/sh -x
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,7 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-#!/bin/sh -x
 
 # Start the s3server
 export PATH=$PATH:/opt/seagate/cortx/s3/bin
