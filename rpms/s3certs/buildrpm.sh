@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,7 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-#!/bin/sh
 
 # Note: This is currently interactive script since following script is
 #  interactive: <s3 src>/scripts/ssl/generate_certificate.sh

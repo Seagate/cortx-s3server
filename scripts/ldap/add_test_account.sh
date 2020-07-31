@@ -1,3 +1,4 @@
+#!/bin/s
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,6 +18,5 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-#!/bin/sh
 
 ldapadd -w seagate -x -D "cn=admin,dc=seagate,dc=com" -f test_data.ldif

@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,7 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-#!/bin/sh
 
 # You should provide Host_list in a file,and give this file as a argument to script.say there are three nodes in cluster with A,B and c.file that contains this hosts should look like below.
 # suppose file created is hostlist.txt, cat hostlist.txt should be

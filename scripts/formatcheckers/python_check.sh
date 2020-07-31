@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,7 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-#!/bin/bash
 
 #Script to check Python coding style and formatting issues.
 #Note: Only Python files are checked for coding style.

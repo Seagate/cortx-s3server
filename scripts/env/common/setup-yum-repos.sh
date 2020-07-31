@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,7 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-#!/bin/sh
 
 # sample redhat-release contents for CentOS: CentOS Linux release 7.7.1908 (Core)
 # sample redhat-release contents for RedHat: Red Hat Enterprise Linux Server release 7.7 (Maipo)

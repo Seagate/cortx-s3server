@@ -1,3 +1,4 @@
+#!/bin/bash -e
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,7 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-#!/bin/bash -e
 # Script to update schema and initialize ldap for S3 Authserver.
 # CAUTION: This scipt will delete existing S3 user data.
 

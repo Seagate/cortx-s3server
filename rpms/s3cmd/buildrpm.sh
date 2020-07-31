@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,7 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-#!/bin/sh
 
 set -xe
 OS_VERSION=$(cat /etc/os-release | grep -w VERSION_ID | cut -d '=' -f 2)

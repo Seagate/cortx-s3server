@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,7 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-#!/bin/sh
 out=`systemctl list-units | grep s3server[@]*[0-9]*.service`
 if [ "$out" != "" ]; then
   echo "Status of s3 service(s)"

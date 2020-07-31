@@ -1,3 +1,4 @@
+#!/bin/bash -e
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,7 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-#!/bin/bash -e
 # This script deploys SSL certs and enables SSL in OpenLDAP
 # performs below steps
 # 1. Copy certificates and key to /etc/ssl/openldap
