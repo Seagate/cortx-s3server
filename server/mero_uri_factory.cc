@@ -1,21 +1,23 @@
 /*
- * COPYRIGHT 2019 SEAGATE LLC
+ * Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
  *
- * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
- * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
- * LIMITED, ISSUED IN STRICT CONFIDENCE AND SHALL NOT, WITHOUT
- * THE PRIOR WRITTEN PERMISSION OF SEAGATE TECHNOLOGY LIMITED,
- * BE REPRODUCED, COPIED, OR DISCLOSED TO A THIRD PARTY, OR
- * USED FOR ANY PURPOSE WHATSOEVER, OR STORED IN A RETRIEVAL SYSTEM
- * EXCEPT AS ALLOWED BY THE TERMS OF SEAGATE LICENSES AND AGREEMENTS.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
- * YOU SHOULD HAVE RECEIVED A COPY OF SEAGATE'S LICENSE ALONG WITH
- * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
- * http://www.seagate.com/contact
+ * For any questions about this software or licensing,
+ * please email opensource@seagate.com or cortx-questions@seagate.com.
  *
- * Original author:  Prashanth Vanaparthy   <prashanth.vanaparthy@seagate.com>
- * Original creation date: 1-June-2010
  */
+
 
 #include "mero_uri.h"
 #include "s3_log.h"
