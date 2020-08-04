@@ -1,3 +1,4 @@
+#!/usr/bin/python3.6
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,7 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-#!/usr/bin/python3.6
 import sys
 import os
 import yaml
