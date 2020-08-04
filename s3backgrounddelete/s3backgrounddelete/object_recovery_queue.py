@@ -151,15 +151,16 @@ class ObjectRecoveryRabbitMq(object):
         os.environ["AWS_ACCESS_KEY_ID"] = access_key
         os.environ["AWS_SECRET_ACCESS_KEY"] = secret_key
 
-        cmd = "aws s3api --endpoint http://s3.amazonaws.com put-object --bucket "
-        cmd += bucket
-        cmd += " --key "
+        basecmd = "aws s3api --endpoint http://s3.amazonaws.com put-object --bucket "
+        basecmd += bucket
+        basecmd += " --key "
         for object in objects_list:
-            self.logger.info("Uploading object: " + object + " to bucket: " + bucket)
-            cmd += object
+            cmd = basecmd + object
             cmd += " --body "
             cmd += object
+            self.logger.info("Executing upload object cmd: " + cmd)
             os.system(cmd)
+            cmd = ''
 
     def get_public_cloud_info(self, bucket):
         cmd = "aws s3api --endpoint http://s3.seagate.com --profile seagate get-bucket-tagging --bucket "
