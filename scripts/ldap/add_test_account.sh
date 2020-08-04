@@ -1,4 +1,4 @@
-#!/bin/s
+#!/bin/sh
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
