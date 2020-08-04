@@ -482,8 +482,7 @@ std::string RequestObject::get_content_length_str() {
 }
 
 std::string RequestObject::get_content_type() {
-  std::string content_type = "Content-Type";
-  std::string type = get_header_value(content_type);
+  std::string type = get_header_value("Content-Type");
   type = S3CommonUtilities::trim(type);
   return type;
 }

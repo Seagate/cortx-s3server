@@ -214,7 +214,7 @@ void S3ObjectMetadata::set_content_length(std::string length) {
 }
 
 void S3ObjectMetadata::set_content_type(std::string content_type) {
-  system_defined_attribute["Content-Type"] = content_type;
+  system_defined_attribute["Content-Type"] = std::move(content_type);
 }
 
 std::string S3ObjectMetadata::get_content_type() {
