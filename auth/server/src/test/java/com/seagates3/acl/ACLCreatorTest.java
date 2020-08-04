@@ -20,8 +20,12 @@
 
 package com.seagates3.acl;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -29,12 +33,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import com.seagates3.authserver.AuthServerConfig;
-import com.seagates3.exception.InternalServerException;
-import com.seagates3.model.Group;
+
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,8 +48,11 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.xml.sax.SAXException;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.exception.GrantListFullException;
+import com.seagates3.exception.InternalServerException;
 import com.seagates3.model.Account;
+import com.seagates3.model.Group;
 import com.seagates3.model.Requestor;
 import com.seagates3.util.BinaryUtil;
 
@@ -76,9 +82,30 @@ import com.seagates3.util.BinaryUtil;
     requestor = new Requestor();
     requestor.setAccount(account1);
     spyAclCreator = Mockito.spy(new ACLCreator());
-    aclXmlPath = "../resources/defaultAclTemplate.xml";
+    aclXmlPath = "../resources/defaultAclTemplateWithoutCopyRight.xml";
     xmlFile = new File(aclXmlPath);
     AuthServerConfig.authResourceDir = "../resources";
+    FileWriter fw = null;
+    try {
+      fw = new FileWriter(xmlFile);
+    }
+    catch (IOException e1) {
+    }
+    try {
+      FileInputStream fis =
+          new FileInputStream("../resources/defaultAclTemplate.xml");
+      BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+      String line = null;
+      for (int lineno = 0; (line = br.readLine()) != null; lineno++) {
+        if ((lineno == 0 || lineno > 19) && fw != null) {
+          fw.write(line);
+        }
+      }
+      fw.close();
+      fis.close();
+    }
+    catch (IOException e) {
+    }
   }
 
   /**
@@ -741,6 +768,12 @@ import com.seagates3.util.BinaryUtil;
       Assert.assertEquals("FULL_CONTROL", grant.permission);
     }
   }
+
+  @AfterClass public static void cleanUp() {
+    File f = new File("../resources/defaultAclTemplateWithoutCopyRight.xml");
+    f.delete ();
+  }
 }
+
 
 

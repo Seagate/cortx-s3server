@@ -20,6 +20,11 @@
 
 package com.seagates3.acl;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -186,10 +191,35 @@ class ACLCreator {
    protected
     String checkAndCreateDefaultAcp() throws IOException,
         ParserConfigurationException, SAXException, GrantListFullException {
+
       if (defaultACP == null) {
-        defaultACP = new String(
-            Files.readAllBytes(Paths.get(AuthServerConfig.authResourceDir +
-                                         AuthServerConfig.DEFAULT_ACL_XML)));
+        String aclXmlPath = AuthServerConfig.authResourceDir +
+                            "/defaultAclTemplateWithoutCopyRight.xml";
+        File xmlFile = new File(aclXmlPath);
+        FileWriter fw = null;
+        try {
+          fw = new FileWriter(xmlFile);
+        }
+        catch (IOException e1) {
+        }
+        try {
+          FileInputStream fis =
+              new FileInputStream(AuthServerConfig.authResourceDir +
+                                  AuthServerConfig.DEFAULT_ACL_XML);
+          BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+          String line = null;
+          for (int lineno = 0; (line = br.readLine()) != null; lineno++) {
+            if ((lineno == 0 || lineno > 19) && fw != null) {
+              fw.write(line);
+            }
+          }
+          fw.close();
+          fis.close();
+        }
+        catch (IOException e) {
+        }
+        defaultACP = new String(Files.readAllBytes(Paths.get(aclXmlPath)));
+        new File(aclXmlPath).delete ();
       }
       return defaultACP;
     }

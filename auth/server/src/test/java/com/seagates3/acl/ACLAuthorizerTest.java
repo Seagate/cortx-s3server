@@ -22,17 +22,24 @@ package com.seagates3.acl;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.exception.BadRequestException;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.exception.GrantListFullException;
@@ -45,7 +52,7 @@ class ACLAuthorizerTest {
 
   static Requestor requestor = new Requestor();
   static Map<String, String> requestBody = new HashMap<String, String>();
-  static String aclXmlPath = "../resources/defaultAclTemplate.xml";
+  static String aclXmlPath;
   static AccessControlPolicy defaultAcp;
   static AccessControlPolicy acp;
   static AccessControlList acl;
@@ -107,6 +114,30 @@ class ACLAuthorizerTest {
 
   @Before public void setUp() throws Exception {
     requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acpXmlString));
+    aclXmlPath = "../resources/defaultAclTemplateWithoutCopyRight.xml";
+    File xmlFile = new File(aclXmlPath);
+    AuthServerConfig.authResourceDir = "../resources";
+    FileWriter fw = null;
+    try {
+      fw = new FileWriter(xmlFile);
+    }
+    catch (IOException e1) {
+    }
+    try {
+      FileInputStream fis =
+          new FileInputStream("../resources/defaultAclTemplate.xml");
+      BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+      String line = null;
+      for (int lineno = 0; (line = br.readLine()) != null; lineno++) {
+        if ((lineno == 0 || lineno > 19) && fw != null) {
+          fw.write(line);
+        }
+      }
+      fw.close();
+      fis.close();
+    }
+    catch (IOException e) {
+    }
   }
 
   // READ permission should grant GET access.
@@ -1042,4 +1073,10 @@ class ACLAuthorizerTest {
     requestor.setAccount(acc);
     new ACLAuthorizer().isAuthorized(requestor, requestBody);
   }
+
+  @AfterClass public static void cleanUp() {
+    File f = new File("../resources/defaultAclTemplateWithoutCopyRight.xml");
+    f.delete ();
+  }
 }
+

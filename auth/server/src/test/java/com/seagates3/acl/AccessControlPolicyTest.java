@@ -20,19 +20,25 @@
 
 package com.seagates3.acl;
 
-import com.seagates3.acl.AccessControlPolicy;
-import com.seagates3.exception.GrantListFullException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import org.junit.Test;
-import org.xml.sax.SAXException;
-import javax.xml.parsers.ParserConfigurationException;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
-import org.junit.Before;
-import java.io.*;
-import com.seagates3.acl.AccessControlList;
+import java.io.InputStreamReader;
+
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
-import static org.junit.Assert.*;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.Test;
+import org.xml.sax.SAXException;
+
+import com.seagates3.exception.GrantListFullException;
 
 public
 class AccessControlPolicyTest {
@@ -41,7 +47,7 @@ class AccessControlPolicyTest {
    *  Set up for tests
    */
 
-  String aclXmlPath = "../resources/defaultAclTemplate.xml";
+  String aclXmlPath;
   AccessControlPolicy accessControlPolicy;
   static AccessControlList acl;
   String acpXmlString =
@@ -72,7 +78,30 @@ class AccessControlPolicyTest {
 
   @Before public void setUp() throws ParserConfigurationException, SAXException,
       IOException, GrantListFullException {
+    // File xmlFile = new File(aclXmlPath);
+    aclXmlPath = "../resources/defaultAclTemplateWithoutCopyRight.xml";
     File xmlFile = new File(aclXmlPath);
+    FileWriter fw = null;
+    try {
+      fw = new FileWriter(xmlFile);
+    }
+    catch (IOException e1) {
+    }
+    try {
+      FileInputStream fis =
+          new FileInputStream("../resources/defaultAclTemplate.xml");
+      BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+      String line = null;
+      for (int lineno = 0; (line = br.readLine()) != null; lineno++) {
+        if ((lineno == 0 || lineno > 19) && fw != null) {
+          fw.write(line);
+        }
+      }
+      fw.close();
+      fis.close();
+    }
+    catch (IOException e) {
+    }
     accessControlPolicy = new AccessControlPolicy(xmlFile);
     acl = new AccessControlList();
     Grant grant;
@@ -411,4 +440,10 @@ class AccessControlPolicyTest {
       System.out.println(ex.getMessage());
     }
   }
+
+  @AfterClass public static void cleanUp() {
+    File f = new File("../resources/defaultAclTemplateWithoutCopyRight.xml");
+    f.delete ();
+  }
 }
+
