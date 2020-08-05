@@ -187,7 +187,7 @@ class ObjectRecoveryRabbitMq(object):
         output = stream.read()
         if output != '':
             move_after_days = 60 # default value
-            expire_after_copy = True # default value
+            expire_after_copy = "True" # default value
             output_json = json.loads(output)
             tags_list = output_json["TagSet"]
             for tag in tags_list:
