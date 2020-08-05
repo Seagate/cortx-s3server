@@ -642,6 +642,7 @@ void S3PutChunkUploadObjectAction::save_metadata() {
   // to rest Date and Last-Modfied time object metadata
   new_object_metadata->reset_date_time_to_current();
   new_object_metadata->set_content_length(request->get_data_length_str());
+  new_object_metadata->set_content_type(request->get_content_type());
   new_object_metadata->set_md5(clovis_writer->get_content_md5());
   new_object_metadata->set_tags(new_object_tags_map);
 
