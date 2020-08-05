@@ -213,6 +213,14 @@ void S3ObjectMetadata::set_content_length(std::string length) {
   system_defined_attribute["Content-Length"] = length;
 }
 
+void S3ObjectMetadata::set_content_type(std::string content_type) {
+  system_defined_attribute["Content-Type"] = std::move(content_type);
+}
+
+std::string S3ObjectMetadata::get_content_type() {
+  return system_defined_attribute["Content-Type"];
+}
+
 size_t S3ObjectMetadata::get_content_length() {
   return atol(system_defined_attribute["Content-Length"].c_str());
 }
