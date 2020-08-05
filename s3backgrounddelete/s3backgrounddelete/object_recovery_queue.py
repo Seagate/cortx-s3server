@@ -4,6 +4,8 @@ import time
 import json
 import pika
 import os
+import datetime
+import math
 
 from s3backgrounddelete.eos_core_config import EOSCoreConfig
 from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
@@ -117,7 +119,20 @@ class ObjectRecoveryRabbitMq(object):
             self._channel.basic_consume(callback, self._queue, no_ack=False)
             self._channel.start_consuming()
 
-    def download_objects_from_seagate(self, source_bucket):
+    def is_object_older_than_movedays(self, last_modified_date, move_after_days):
+        if move_after_days == -1:
+            return True
+        now = datetime.datetime.utcnow()
+        self.logger.info("last modified date of object: " + last_modified_date)
+        self.logger.info("Now time: " + str(now))
+
+        date_time_obj = datetime.datetime.strptime(last_modified_date, "%Y-%m-%dT%H:%M:%S.000Z")
+        time_delta = now - date_time_obj
+        time_delta_in_days = math.floor(time_delta.total_seconds()/86400)
+
+        return (time_delta_in_days >= int(move_after_days))
+
+    def download_objects_from_seagate(self, source_bucket, days):
         cmd = "aws s3api --endpoint http://s3.seagate.com --profile seagate list-objects --bucket "
         cmd += source_bucket
         downloaded_object_list = list()
@@ -129,22 +144,25 @@ class ObjectRecoveryRabbitMq(object):
             for object in objects_list:
                 key = object["Key"]
                 size = object["Size"]
-                cmd = "aws s3api --endpoint http://s3.seagate.com --profile seagate get-object --bucket "
-                cmd += source_bucket
-                cmd += " --key "
-                cmd += key
-                cmd += " "
-                cmd += key
-                stream = os.popen(cmd)
-                output = stream.read()
-                output_json = json.loads(output)
-                if output_json["ContentLength"] == size:
-                    self.logger.info("Successfully downloaded object: " + key)
-                    downloaded_object_list.append(key)
+                last_modified = object["LastModified"]
+                if self.is_object_older_than_movedays(last_modified, days) == True:
+                    cmd = "aws s3api --endpoint http://s3.seagate.com --profile seagate get-object --bucket "
+                    cmd += source_bucket
+                    cmd += " --key "
+                    cmd += key
+                    cmd += " "
+                    cmd += key
+                    stream = os.popen(cmd)
+                    output = stream.read()
+                    output_json = json.loads(output)
+                    if output_json["ContentLength"] == size:
+                        self.logger.info("Successfully downloaded object: " + key)
+                        downloaded_object_list.append(key)
+                    else:
+                        self.logger.info("Failed to downloaded object: " + key)
                 else:
-                    self.logger.info("Failed to downloaded object: " + key)
+                    self.logger.info("Key: " + key + "'s modified date is not older than: " + str(days))
         return downloaded_object_list
-
 
     def upload_objects_to_cloud(self, objects_list, bucket, access_key, secret_key):
         # list and download source_bucket objets
@@ -168,6 +186,8 @@ class ObjectRecoveryRabbitMq(object):
         stream = os.popen(cmd)
         output = stream.read()
         if output != '':
+            move_after_days = 60 # default value
+            expire_after_copy = True # default value
             output_json = json.loads(output)
             tags_list = output_json["TagSet"]
             for tag in tags_list:
@@ -177,8 +197,23 @@ class ObjectRecoveryRabbitMq(object):
                     upload_bucket = tag["Value"]
                 elif tag["Key"] == "Secret-Key":
                     secret_key = tag["Value"]
+                elif tag["Key"] == "MoveAfterDays":
+                    move_after_days = tag["Value"]
+                elif tag["Key"] == "ExpireAfterCopy":
+                    expire_after_copy = tag["Value"]
 
-        return access_key, secret_key, upload_bucket
+        return access_key, secret_key, upload_bucket, move_after_days, expire_after_copy
+
+    def delete_objects(self, bucket_name, objects_list):
+        deletecmd = "aws s3api --endpoint http://s3.seagate.com --profile seagate delete-object --bucket "
+        deletecmd += bucket_name
+        deletecmd += " --key "
+        for object in objects_list:
+            self.logger.info("Executing delete-object cmd: " + (deletecmd + object))
+            os.system(deletecmd + object)
+            #output = stream.read()
+            #output_json = json.loads(output)
+            #if output_json["DeleteMarker"] == True:
 
     def replication_worker(self, queue_msg_count=None):
         def callback(channel, method, properties, body):
@@ -194,13 +229,20 @@ class ObjectRecoveryRabbitMq(object):
                         str(replication_record))
                     # process the record
                     seagate_bucket = replication_record
+                    access_key, secret_key, upload_bucket, move_after_days, expire_after_copy = self\
+                        .get_public_cloud_info(seagate_bucket)
 
                     # download the objects of the bucket
-                    upload_objects_list = self.download_objects_from_seagate(seagate_bucket)
+                    upload_objects_list = self.download_objects_from_seagate(seagate_bucket, move_after_days)
 
                     # upload the downloaded objects to public cloud
-                    access_key, secret_key, upload_bucket = self.get_public_cloud_info(seagate_bucket)
-                    self.upload_objects_to_cloud(upload_objects_list, upload_bucket, access_key, secret_key)
+                    if len(upload_objects_list) > 0:
+                        self.upload_objects_to_cloud(upload_objects_list, upload_bucket, access_key, secret_key)
+                        if expire_after_copy == "True":
+                            # delete the objects
+                            self.delete_objects(seagate_bucket, upload_objects_list)
+                    else:
+                        self.logger.info("No object of bucket: " + seagate_bucket + " is eligible for upload.")
 
                 channel.basic_ack(delivery_tag=method.delivery_tag)
             except BaseException:
