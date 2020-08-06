@@ -158,7 +158,7 @@ class Authorizer {
 
     // After ALLUser Requested Permission is Authorized.
     if (requestor == null && !("true".equals(requestBody.get("Request-ACL")))) {
-      return responseGenerator.ok();
+      return responseGenerator.generateAuthorizationResponse(null, null);
     }
 
     // Initialize a default AccessControlPolicy object and generate

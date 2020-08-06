@@ -1043,7 +1043,35 @@ AwsTest('Secondary account cannot put object to seagate bucket').put_object("sea
 del os.environ["AWS_ACCESS_KEY_ID"]
 del os.environ["AWS_SECRET_ACCESS_KEY"]
 
+##################################### policy validation for AllUsers through CURL ##########################
 
+policy_put_bucket_allusers = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_put_bucket_with_all_users_permission.txt')
+policy_put_bucket_allusers = "file://" + os.path.abspath(policy_put_bucket_allusers)
+AwsTest("Put Bucket Policy with valid Principal in policy json").put_bucket_policy("seagate", policy_put_bucket_allusers).execute_test().command_is_successful()
+
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+
+cmd = "curl -s -X GET -H \"Accept: application/json\" -H \"Content-Type: application/json\"  https://s3.seagate.com/seagate/testObject --cacert /etc/ssl/stx-s3-clients/s3/ca.crt"
+AwsTest('Accessible For allusers').execute_curl(cmd).execute_test().command_is_successful()
+
+##################################### policy validation for AllUsers through CURL negative test ##########################
+
+policy_put_bucket_allusers_negative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_put_bucket_with_all_users_permission_negative.txt')
+policy_put_bucket_allusers_negative = "file://" + os.path.abspath(policy_put_bucket_allusers_negative)
+AwsTest("Put Bucket Policy with valid Principal in policy json").put_bucket_policy("seagate", policy_put_bucket_allusers_negative).execute_test().command_is_successful()
+
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject2")\
+.execute_test().command_is_successful()
+
+cmd = "curl -s -X GET -H \"Accept: application/json\" -H \"Content-Type: application/json\"  https://s3.seagate.com/seagate/testObject --cacert /etc/ssl/stx-s3-clients/s3/ca.crt"
+AwsTest('Denied For AllUsers').execute_curl(cmd).\
+execute_test().command_is_successful().command_response_should_have("AccessDenied")
 ################## clean up #####################
 
 os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
@@ -1062,4 +1090,5 @@ AuthTest(test_msg).delete_account(**account_args).execute_test()
 print("Authorizing policy tests end....")
 
 AwsTest('Aws can delete object owned by itself').delete_object("seagate","testObject").execute_test().command_is_successful()
+AwsTest('Aws can delete object owned by itself').delete_object("seagate","testObject2").execute_test().command_is_successful()
 AwsTest('Aws can delete bucket seagate').delete_bucket("seagate").execute_test().command_is_successful()

@@ -1,0 +1,17 @@
+{
+  "Id": "Policy146256893193",
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "Stmt1462526862401",
+      "Action": [
+        "s3:GetObject"
+      ],
+      "Effect": "Allow",
+      "Resource": "arn:aws:s3:::seagate/testObject2",
+      "Principal": {
+        "AWS": "*"
+      }
+    }
+  ]
+}
