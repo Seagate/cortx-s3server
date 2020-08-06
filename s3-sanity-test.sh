@@ -46,7 +46,7 @@ ldappasswd=""
 if rpm -q "salt"  > /dev/null;
 then
     ldappasswd=$(salt-call pillar.get openldap:iam_admin:secret --output=newline_values_only)
-    ldappasswd=$(salt-call lyveutil.decrypt ${ldappasswd} openldap --output=newline_values_only)
+    ldappasswd=$(salt-call lyveutil.decrypt openldap ${ldappasswd} --output=newline_values_only)
 fi
 
 if [[ -z "$ldappasswd" ]]
