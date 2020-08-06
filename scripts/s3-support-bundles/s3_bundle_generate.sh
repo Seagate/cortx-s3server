@@ -276,7 +276,7 @@ rootdnpasswd=""
 if rpm -q "salt"  > /dev/null;
 then
     rootdnpasswd=$(salt-call pillar.get openldap:admin:secret --output=newline_values_only)
-    rootdnpasswd=$(salt-call lyveutil.decrypt ${rootdnpasswd} openldap --output=newline_values_only)
+    rootdnpasswd=$(salt-call lyveutil.decrypt openldap ${rootdnpasswd} --output=newline_values_only)
 fi
 
 if [[ -z "$rootdnpasswd" ]]
