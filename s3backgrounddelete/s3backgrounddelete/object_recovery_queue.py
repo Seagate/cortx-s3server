@@ -281,7 +281,7 @@ class ObjectRecoveryRabbitMq(object):
             else:
                 self._channel.queue_declare(
                     queue=self._queue, durable=self._durable)
-                self.replication_worker(queue_msg_count)
+                self.replication_worker()
 
         except Exception as exception:
             err_msg = "error:%s, %s" % (exception, traceback.format_exc())
