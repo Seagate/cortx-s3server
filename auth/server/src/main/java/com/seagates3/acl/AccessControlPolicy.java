@@ -68,6 +68,7 @@ class AccessControlPolicy {
       SAXException, IOException, GrantListFullException {
 
     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+    factory.setIgnoringComments(true);
     DocumentBuilder builder = null;
     builder = factory.newDocumentBuilder();
     doc = builder.parse(new InputSource(new StringReader(xmlString)));
