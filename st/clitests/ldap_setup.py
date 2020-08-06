@@ -37,18 +37,12 @@ class LdapSetup:
         obj = call(cmd, shell=True)
 
     def ldap_delete_all(self):
-        ldap_delete_file = os.path.join(self.test_data_dir, 'clean_test_data.ldif')
-        f = open(ldap_delete_file)
-        lines=f.readlines()
-        ldap_delete_without_copyright_file = os.path.join(self.test_data_dir, 'clean_test_data_without_copyright.ldif')
-        fp = open(ldap_delete_without_copyright_file , "w")
-        fp.write(lines[18])
-        fp.write(lines[19])
-        fp.write(lines[20])
-        f.close()
-        fp.close()
-        cmd = "ldapdelete -r -h %s -p %s -w %s -x -D %s -f %s" % (self.ldap_config['host'],
-                   self.ldap_config['port'], self.ldap_config['password'],
-                                   self.ldap_config['login_dn'], ldap_delete_without_copyright_file)
-        obj = call(cmd, shell=True)
-        os.remove(ldap_delete_without_copyright_file)
+        cleanup_records = ["ou=accesskeys,dc=s3,dc=seagate,dc=com",
+                        "ou=accounts,dc=s3,dc=seagate,dc=com",
+                        "ou=idp,dc=s3,dc=seagate,dc=com"]
+
+        for entry in cleanup_records:
+                cmd = "ldapdelete -r -h %s -p %s -w %s -x -D %s -r %s" % (self.ldap_config['host'],
+                        self.ldap_config['port'], self.ldap_config['password'],
+                        self.ldap_config['login_dn'], entry)
+                obj = call(cmd, shell=True)
