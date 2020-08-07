@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
+=======
+﻿<!--
+>>>>>>> Added copyright header to the s3server source files.
  Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +22,10 @@
  please email opensource@seagate.com or cortx-questions@seagate.com.
 -->
 
+<<<<<<< HEAD
+=======
+<?xml version="1.0" encoding="utf-8"?>
+>>>>>>> Added copyright header to the s3server source files.
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
