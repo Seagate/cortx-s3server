@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <!--
  Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 
@@ -17,7 +18,6 @@
  please email opensource@seagate.com or cortx-questions@seagate.com.
 -->
 
-<?xml version="1.0"?>
 <EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata" ID="_9c4387d8-5519-41c7-893c-fb79fcdae1eb" entityID="http://WIN-FJHF4ON0G18.test.org/adfs/services/trust">
 <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
 <ds:SignedInfo>
