@@ -47,6 +47,7 @@ haproxy_config="/etc/haproxy/haproxy.cfg"
 haproxy_status_log="/var/log/haproxy-status.log"
 haproxy_log="/var/log/haproxy.log"
 ldap_log="/var/log/slapd.log"
+audit_log="/var/log/audit/audit.log"
 
 s3server_config="/opt/seagate/cortx/s3/conf/s3config.yaml"
 authserver_config="/opt/seagate/cortx/auth/resources/authserver.properties"
