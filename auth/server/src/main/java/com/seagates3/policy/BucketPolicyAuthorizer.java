@@ -131,7 +131,6 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
 
     List<Statement> statementList =
         new ArrayList<Statement>(existingPolicy.getStatements());
-    if (requestor != null) {
     for (Statement stmt : statementList) {
       List<Principal> principalList = stmt.getPrincipals();
       List<Condition> conditions = stmt.getConditions();
@@ -153,13 +152,11 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
         }
       }
     }
-    }
-    if (requestor == null) {
-        return responseGenerator.AccessDenied();
-      }
-
       // Below will handle Get/Put/Delete Bucket Policy
       if (PolicyUtil.isPolicyOperation(requestedOperation)) {
+        if (requestor == null) {
+          return responseGenerator.AccessDenied();
+        }
       if (response != null &&
           response.getResponseStatus() == HttpResponseStatus.OK) {
         Account ownerAccount =
@@ -179,6 +176,9 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
         }
       }
       } else {
+        if (requestor == null && response != null) {
+          return responseGenerator.generateAuthorizationResponse(null, null);
+        }
         if (response != null &&
             response.getResponseStatus() == HttpResponseStatus.OK) {
           boolean isRootUser = Authorizer.isRootUser(
@@ -212,6 +212,9 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
       String principalId = principal.getId();
       if ("*".equals(principalId)) {
         return true;
+      }
+      if (requestor == null) {
+        return false;
       }
       switch (provider) {
         case "AWS":
