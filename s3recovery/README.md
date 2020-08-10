@@ -26,40 +26,45 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
 **Python Version 3.6 required.**
 
 * Installing Python 3.6 and required dependencies
-1.   yum install wget epel-release
-2.   yum install python36
+    1. yum install wget epel-release
+    2. yum install python36
 
 **S3backgroundelete should be configured before using s3recovery tool**
-* s3recoverytool uses cortx-s3 APIs defined in s3backgrounddelete
+* s3recoverytool uses cortx-s3 APIs defined in s3backgrounddelete, so these
+  should be installed before using s3recovery tool.
 
-* Configuring S3backgroundelete cortx-S3 APIs
-1. Goto <s3src>/s3backgrounddelete
-2. ```sh
-python36 setup.py clean
-```
-3. ```sh
-python36 setup.py build
-````
-4. ```sh
-python36 setup.py install
-```
+** Installing S3backgroundelete cortx-S3 APIs**
+  1. ```sh
+     cd 's3server-repo-root'/s3backgrounddelete
+     ```
+  2. ```sh
+     python36 setup.py clean
+     ```
+  3. ```sh
+     python36 setup.py build
+     ````
+  4. ```sh
+     python36 setup.py install
+     ```
 
 ## Configuring s3recovery tool
 
-1. Goto <s3src>/s3recovery
-2. For cleaning:
-```sh
-python36 setup.py clean
-```
-3. For building and installing:
-```sh
-python36 setup.py build
-python36 setup.py install
-```
-
-## usage: s3recovery [-h] [--dry_run] [--recover]
+  1. ```sh
+     cd 's3server-repo-root'/s3recovery
+     ```
+  2. For cleaning:
+     ```sh
+     python36 setup.py clean
+     ```
+  3. For building and installing:
+     ```sh
+     python36 setup.py build
+     python36 setup.py install
+     ```
 
 # S3-Metadata recovery tool
+
+## usage: s3recovery [-h] [--dry_run] [--recover]
 
 * optional arguments:
   * -h, --help  show this help message and exit
