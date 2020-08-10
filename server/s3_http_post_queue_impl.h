@@ -73,8 +73,10 @@ class S3HttpPostQueueImpl : public S3HttpPostQueue {
 };
 
 class S3HttpPostEngineImpl : public S3HttpPostEngine {
+  typedef struct evdns_base evdns_base_t;
+
  public:
-  S3HttpPostEngineImpl(evbase_t *p_evbase, std::string s_ipa, uint16_t port,
+  S3HttpPostEngineImpl(evbase_t *p_evbase, std::string s_host, uint16_t port,
                        std::string path,
                        std::map<std::string, std::string> headers);
   ~S3HttpPostEngineImpl();
@@ -109,10 +111,11 @@ class S3HttpPostEngineImpl : public S3HttpPostEngine {
   static void on_schedule_cb(evutil_socket_t, short, void *) noexcept;
 
   evbase_t *const p_evbase;
-  const std::string s_ipa;
+  const std::string s_host;
   const uint16_t port;
   const std::string path;
 
+  evdns_base_t *p_evdns_base = nullptr;
   evhtp_connection_t *p_conn = nullptr;
   event_t *p_event = nullptr;
   bool request_in_progress = false;
