@@ -33,7 +33,7 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
 * s3recoverytool uses cortx-s3 APIs defined in s3backgrounddelete, so these
   should be installed before using s3recovery tool.
 
-** Installing S3backgroundelete cortx-S3 APIs**
+**Installing S3backgroundelete cortx-S3 APIs**
   1. ```sh
      cd 's3server-repo-root'/s3backgrounddelete
      ```
