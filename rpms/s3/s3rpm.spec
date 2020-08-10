@@ -1,3 +1,22 @@
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+
 %if 0%{?disable_eoscore_dependencies:1}
 %bcond_with eos_core
 %else
@@ -234,6 +253,8 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/install/ldap/syncprov.ldif
 /opt/seagate/cortx/s3/install/ldap/replicate.ldif
 /opt/seagate/cortx/s3/install/ldap/check_ldap_replication.sh
+/opt/seagate/cortx/s3/install/ldap/test_data.ldif
+/opt/seagate/cortx/s3/install/ldap/run_check_ldap_replication_in_loop.sh
 /opt/seagate/cortx/s3/install/ldap/create_replication_account.ldif
 /opt/seagate/cortx/s3/install/ldap/replication/syncprov_mod.ldif
 /opt/seagate/cortx/s3/install/ldap/replication/olcserverid.ldif
@@ -241,6 +262,7 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/install/ldap/replication/data.ldif
 /opt/seagate/cortx/s3/install/ldap/replication/config.ldif
 /opt/seagate/cortx/s3/install/ldap/replication/syncprov_config.ldif
+/opt/seagate/cortx/s3/install/ldap/replication/deltaReplication.ldif
 /opt/seagate/cortx/s3/install/ldap/slapdlog.ldif
 /opt/seagate/cortx/s3/install/ldap/s3slapdindex.ldif
 /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf

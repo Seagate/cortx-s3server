@@ -1,3 +1,22 @@
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+
 #!/bin/sh
 # Helper script for S3/Auth install.
 #   - Creates necessary directories for installation, logging etc.
@@ -183,10 +202,13 @@ cp -f scripts/ldap/replication/config.ldif $S3_INSTALL_LOCATION/install/ldap/rep
 cp -f scripts/ldap/replication/data.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
 cp -f scripts/ldap/replication/olcserverid.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
 cp -f scripts/ldap/replication/syncprov_config.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
+cp -f scripts/ldap/replication/deltaReplication.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
 
 # Copy check replication script to install location
 cp -f scripts/ldap/check_ldap_replication.sh $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/create_replication_account.ldif $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/test_data.ldif $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/run_check_ldap_replication_in_loop.sh $S3_INSTALL_LOCATION/install/ldap/
 
 # Copy slapd log config to install location
 cp -f scripts/ldap/slapdlog.ldif $S3_INSTALL_LOCATION/install/ldap/

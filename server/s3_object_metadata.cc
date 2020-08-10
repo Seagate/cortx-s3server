@@ -1,20 +1,21 @@
 /*
- * COPYRIGHT 2015 SEAGATE LLC
+ * Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
  *
- * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
- * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
- * LIMITED, ISSUED IN STRICT CONFIDENCE AND SHALL NOT, WITHOUT
- * THE PRIOR WRITTEN PERMISSION OF SEAGATE TECHNOLOGY LIMITED,
- * BE REPRODUCED, COPIED, OR DISCLOSED TO A THIRD PARTY, OR
- * USED FOR ANY PURPOSE WHATSOEVER, OR STORED IN A RETRIEVAL SYSTEM
- * EXCEPT AS ALLOWED BY THE TERMS OF SEAGATE LICENSES AND AGREEMENTS.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * YOU SHOULD HAVE RECEIVED A COPY OF SEAGATE'S LICENSE ALONG WITH
- * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
- * http://www.seagate.com/contact
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
- * Original creation date: 1-Oct-2015
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * For any questions about this software or licensing,
+ * please email opensource@seagate.com or cortx-questions@seagate.com.
+ *
  */
 
 #include <json/json.h>
@@ -210,6 +211,14 @@ std::string S3ObjectMetadata::get_storage_class() {
 
 void S3ObjectMetadata::set_content_length(std::string length) {
   system_defined_attribute["Content-Length"] = length;
+}
+
+void S3ObjectMetadata::set_content_type(std::string content_type) {
+  system_defined_attribute["Content-Type"] = std::move(content_type);
+}
+
+std::string S3ObjectMetadata::get_content_type() {
+  return system_defined_attribute["Content-Type"];
 }
 
 size_t S3ObjectMetadata::get_content_length() {

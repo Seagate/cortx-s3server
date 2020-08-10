@@ -1,3 +1,22 @@
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+
 import os
 from framework import Config
 from framework import S3PyCliTest
@@ -25,6 +44,19 @@ S3PyCliTest('Before_all').before_all()
 
 #******** Create Bucket ********
 AwsTest('Aws can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+
+# ************ Put object with specified content-type ************
+in_headers = {
+    "content-type" : "application/blabla"
+    }
+AwsTest('Aws can upload object with specific content-type').put_object("seagatebucket", "3kfile", 3000)\
+    .add_headers(in_headers).execute_test().command_is_successful()
+
+AwsTest('Aws can get object with the same content-type').get_object("seagatebucket", "3kfile")\
+    .execute_test().command_is_successful().command_response_should_have("application/blabla")
+
+AwsTest('Aws can delete object').delete_object("seagatebucket", "3kfile")\
+    .execute_test().command_is_successful()
 
 #******** Put Bucket Tag ********
 AwsTest('Aws can create bucket tag').put_bucket_tagging("seagatebucket", [{'Key': 'organization','Value': 'marketing'}])\

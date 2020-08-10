@@ -1,20 +1,21 @@
 /*
- * COPYRIGHT 2015 SEAGATE LLC
+ * Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
  *
- * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
- * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
- * LIMITED, ISSUED IN STRICT CONFIDENCE AND SHALL NOT, WITHOUT
- * THE PRIOR WRITTEN PERMISSION OF SEAGATE TECHNOLOGY LIMITED,
- * BE REPRODUCED, COPIED, OR DISCLOSED TO A THIRD PARTY, OR
- * USED FOR ANY PURPOSE WHATSOEVER, OR STORED IN A RETRIEVAL SYSTEM
- * EXCEPT AS ALLOWED BY THE TERMS OF SEAGATE LICENSES AND AGREEMENTS.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * YOU SHOULD HAVE RECEIVED A COPY OF SEAGATE'S LICENSE ALONG WITH
- * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
- * http://www.seagate.com/contact
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 22-Oct-2015
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * For any questions about this software or licensing,
+ * please email opensource@seagate.com or cortx-questions@seagate.com.
+ *
  */
 
 package com.seagates3.authentication;
@@ -177,7 +178,7 @@ public class ClientRequestParser {
         //V2 Pattern to match "AWS "
         //AuthorizationHeader of v4 is of type AWS4-HMAC-SHA256 Credential=AK IAJTYX36YCKQSAJT7Q/20190314/US/s3/          aws4_request,SignedHeaders=host;x-amz-content-sha256;x-amz-date,Signature=310b0122f12459dfea171cac82bd          4930626d5a8db695fef6bc7bfd2a30a39ea3
 
-        if ((V2_PATTERN.matcher(authorizationHeader)).lookingAt()) {
+        if (authorizationHeader.matches(AWS_V2_AUTHRORIAZATION_PATTERN)) {
             tokens = authorizationHeader.split(":");
             subTokens = tokens[0].split(" ");
             if (subTokens.length != 2) {
@@ -185,9 +186,8 @@ public class ClientRequestParser {
                 throw new InvalidArgumentException(serverResponse);
             }
             access_key=subTokens[1];
-        }
-        else if ((V4_PATTERN.matcher(authorizationHeader)).lookingAt())
-        {
+        } else if (authorizationHeader.matches(
+                       AWS_V4_AUTHRORIAZATION_PATTERN)) {
             tokens = authorizationHeader.split(",");
             String[] credTokens;
             subTokens = tokens[0].split("=");

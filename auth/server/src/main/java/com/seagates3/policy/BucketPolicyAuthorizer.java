@@ -1,20 +1,21 @@
 /*
- * COPYRIGHT 2019 SEAGATE LLC
+ * Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
  *
- * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
- * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
- * LIMITED, ISSUED IN STRICT CONFIDENCE AND SHALL NOT, WITHOUT
- * THE PRIOR WRITTEN PERMISSION OF SEAGATE TECHNOLOGY LIMITED,
- * BE REPRODUCED, COPIED, OR DISCLOSED TO A THIRD PARTY, OR
- * USED FOR ANY PURPOSE WHATSOEVER, OR STORED IN A RETRIEVAL SYSTEM
- * EXCEPT AS ALLOWED BY THE TERMS OF SEAGATE LICENSES AND AGREEMENTS.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * YOU SHOULD HAVE RECEIVED A COPY OF SEAGATE'S LICENSE ALONG WITH
- * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
- * http://www.seagate.com/contact
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Original author:  Shalaka Dharap
- * Original creation date: 13-December-2019
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * For any questions about this software or licensing,
+ * please email opensource@seagate.com or cortx-questions@seagate.com.
+ *
  */
 
 package com.seagates3.policy;
@@ -130,7 +131,6 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
 
     List<Statement> statementList =
         new ArrayList<Statement>(existingPolicy.getStatements());
-    if (requestor != null) {
     for (Statement stmt : statementList) {
       List<Principal> principalList = stmt.getPrincipals();
       List<Condition> conditions = stmt.getConditions();
@@ -152,13 +152,11 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
         }
       }
     }
-    }
-    if (requestor == null) {
-        return responseGenerator.AccessDenied();
-      }
-
       // Below will handle Get/Put/Delete Bucket Policy
       if (PolicyUtil.isPolicyOperation(requestedOperation)) {
+        if (requestor == null) {
+          return responseGenerator.AccessDenied();
+        }
       if (response != null &&
           response.getResponseStatus() == HttpResponseStatus.OK) {
         Account ownerAccount =
@@ -178,6 +176,9 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
         }
       }
       } else {
+        if (requestor == null && response != null) {
+          return responseGenerator.generateAuthorizationResponse(null, null);
+        }
         if (response != null &&
             response.getResponseStatus() == HttpResponseStatus.OK) {
           boolean isRootUser = Authorizer.isRootUser(
@@ -211,6 +212,9 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
       String principalId = principal.getId();
       if ("*".equals(principalId)) {
         return true;
+      }
+      if (requestor == null) {
+        return false;
       }
       switch (provider) {
         case "AWS":

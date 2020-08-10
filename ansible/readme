@@ -1,3 +1,22 @@
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+
 For latest, see <s3 src>/doc/quickstart.md
 
 
@@ -41,7 +60,7 @@ Centos 75 VM image is available at
 
 6. Run ansible to setup the dev vm using appropriate .yml file. If you want to run
    with same VM, use option "--connection local" to below command.
-   $ ansible-playbook -i hosts setup_s3dev_centos75_8.yml -v  -k
+   $ ansible-playbook -i hosts setup_s3dev_centos77_8.yml -v  -k
 
    It will prompt for ssh password and ldap password.
    For ldap password on dev vm, use "seagate" for rootDN and "ldapadmin" for IAM admin. These

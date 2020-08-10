@@ -1,20 +1,21 @@
 /*
- * COPYRIGHT 2016 SEAGATE LLC
+ * Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
  *
- * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
- * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
- * LIMITED, ISSUED IN STRICT CONFIDENCE AND SHALL NOT, WITHOUT
- * THE PRIOR WRITTEN PERMISSION OF SEAGATE TECHNOLOGY LIMITED,
- * BE REPRODUCED, COPIED, OR DISCLOSED TO A THIRD PARTY, OR
- * USED FOR ANY PURPOSE WHATSOEVER, OR STORED IN A RETRIEVAL SYSTEM
- * EXCEPT AS ALLOWED BY THE TERMS OF SEAGATE LICENSES AND AGREEMENTS.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * YOU SHOULD HAVE RECEIVED A COPY OF SEAGATE'S LICENSE ALONG WITH
- * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
- * http://www.seagate.com/contact
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Original author:  Rajesh Nambiar   <rajesh.nambiar@seagate.com>
- * Original creation date: 6-Jan-2016
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * For any questions about this software or licensing,
+ * please email opensource@seagate.com or cortx-questions@seagate.com.
+ *
  */
 
 #include <sstream>
@@ -521,6 +522,7 @@ void S3PostMultipartObjectAction::save_upload_metadata() {
   // to rest Date and Last-Modfied time object metadata
   object_multipart_metadata->reset_date_time_to_current();
   object_multipart_metadata->set_oid(oid);
+  object_multipart_metadata->set_content_type(request->get_content_type());
   object_multipart_metadata->set_part_index_oid(
       part_metadata->get_part_index_oid());
   object_multipart_metadata->save(

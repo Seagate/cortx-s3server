@@ -1,20 +1,21 @@
 /*
- * COPYRIGHT 2019 SEAGATE LLC
+ * Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
  *
- * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
- * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
- * LIMITED, ISSUED IN STRICT CONFIDENCE AND SHALL NOT, WITHOUT
- * THE PRIOR WRITTEN PERMISSION OF SEAGATE TECHNOLOGY LIMITED,
- * BE REPRODUCED, COPIED, OR DISCLOSED TO A THIRD PARTY, OR
- * USED FOR ANY PURPOSE WHATSOEVER, OR STORED IN A RETRIEVAL SYSTEM
- * EXCEPT AS ALLOWED BY THE TERMS OF SEAGATE LICENSES AND AGREEMENTS.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * YOU SHOULD HAVE RECEIVED A COPY OF SEAGATE'S LICENSE ALONG WITH
- * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
- * http://www.seagate.com/contact
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Original author:  Prashanth Vanaparthy   <prashanth.vanaparthy@seagate.com>
- * Original creation date: 01-Feb-2019
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * For any questions about this software or licensing,
+ * please email opensource@seagate.com or cortx-questions@seagate.com.
+ *
  */
 
 #include <json/json.h>
@@ -517,9 +518,25 @@ TEST_F(S3BucketMetadataV1Test, SaveBucketInfo) {
 }
 
 TEST_F(S3BucketMetadataV1Test, SaveBucketInfoSuccess) {
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              put_keyval(_, _, _, _, _)).Times(1);
+
+  action_under_test->save_bucket_info_successful();
+}
+
+TEST_F(S3BucketMetadataV1Test, SaveReplica) {
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
   action_under_test->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj);
-  action_under_test->save_bucket_info_successful();
+
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .WillOnce(Return(S3ClovisKVSWriterOpState::created));
+  action_under_test->save_replica();
+
   EXPECT_TRUE(s3bucketmetadata_callbackobj.success_called);
 }
 
@@ -582,6 +599,22 @@ TEST_F(S3BucketMetadataV1Test, RemoveBucketInfo) {
 }
 
 TEST_F(S3BucketMetadataV1Test, RemoveBucketInfoSuccessful) {
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              delete_keyval(_, _, _, _)).Times(1);
+
+  action_under_test->remove_bucket_info_successful();
+}
+
+TEST_F(S3BucketMetadataV1Test, RemoveReplica) {
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .WillOnce(Return(S3ClovisKVSWriterOpState::deleted));
+
   action_under_test->global_bucket_index_metadata =
       s3_global_bucket_index_metadata_factory
           ->mock_global_bucket_index_metadata;
@@ -590,7 +623,7 @@ TEST_F(S3BucketMetadataV1Test, RemoveBucketInfoSuccessful) {
                     ->mock_global_bucket_index_metadata),
               remove(_, _)).Times(1);
 
-  action_under_test->remove_bucket_info_successful();
+  action_under_test->remove_replica();
 }
 
 TEST_F(S3BucketMetadataV1Test, RemoveBucketAccountidInfoSuccessful) {

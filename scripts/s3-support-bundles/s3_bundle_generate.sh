@@ -1,4 +1,23 @@
 #!/bin/bash -e
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+
 
 #######################################################
 # Generate Support bundle for S3Server #
@@ -36,7 +55,7 @@ s3startsystem_script="/opt/seagate/cortx/s3/s3startsystem.sh"
 s3server_binary="/opt/seagate/cortx/s3/bin/s3server"
 s3_motr_dir="/var/motr/s3server-*"
 s3_core_dir="/var/crash"
-
+sys_auditlog_dir="/var/log/audit"
 
 # Create tmp folder with pid value to allow parallel execution
 pid_value=$$
@@ -140,6 +159,12 @@ fi
 if [ -f "$ldap_log" ];
 then
     args=$args" "$ldap_log
+fi
+
+# Collect System Audit logs if available
+if [ -d "$sys_auditlog_dir" ];
+then
+    args=$args" "$sys_auditlog_dir
 fi
 
 # Collect s3 backgrounddelete logs if available
@@ -257,7 +282,7 @@ rootdnpasswd=""
 if rpm -q "salt"  > /dev/null;
 then
     rootdnpasswd=$(salt-call pillar.get openldap:admin:secret --output=newline_values_only)
-    rootdnpasswd=$(salt-call lyveutil.decrypt ${rootdnpasswd} openldap --output=newline_values_only)
+    rootdnpasswd=$(salt-call lyveutil.decrypt openldap ${rootdnpasswd} --output=newline_values_only)
 fi
 
 if [[ -z "$rootdnpasswd" ]]

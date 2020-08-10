@@ -1,4 +1,23 @@
 #!/bin/sh
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+
 
 USAGE="USAGE: $(basename "$0") [-I | -R | -S | -y <configure-yum-repo> | -p <path-to-prod-cfg> | -U | -D]
 
@@ -112,19 +131,19 @@ yum_repo_conf() {
                ;;
         ees*-sprint*) echo "Use sprint $1 builds"
                       $USE_SUDO echo "[sprints_s3server]
-baseurl = http://ci-storage.mero.colo.seagate.com/releases/eos/${1}/s3server/repo
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/s3server/repo
 gpgcheck = 0
 name = Yum repo for s3server sprints build
 priority = 1
 
 [sprints_halon]
-baseurl = http://ci-storage.mero.colo.seagate.com/releases/eos/${1}/halon/repo
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/halon/repo
 gpgcheck = 0
 name = Yum repo for halon sprints build
 priority = 1
 
 [sprints_mero]
-baseurl = http://ci-storage.mero.colo.seagate.com/releases/eos/${1}/mero/repo
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/mero/repo
 gpgcheck = 0
 name = Yum repo for mero sprints build
 priority = 1

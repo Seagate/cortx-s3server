@@ -1,20 +1,21 @@
 /*
- * COPYRIGHT 2019 SEAGATE LLC
+ * Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
  *
- * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
- * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
- * LIMITED, ISSUED IN STRICT CONFIDENCE AND SHALL NOT, WITHOUT
- * THE PRIOR WRITTEN PERMISSION OF SEAGATE TECHNOLOGY LIMITED,
- * BE REPRODUCED, COPIED, OR DISCLOSED TO A THIRD PARTY, OR
- * USED FOR ANY PURPOSE WHATSOEVER, OR STORED IN A RETRIEVAL SYSTEM
- * EXCEPT AS ALLOWED BY THE TERMS OF SEAGATE LICENSES AND AGREEMENTS.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * YOU SHOULD HAVE RECEIVED A COPY OF SEAGATE'S LICENSE ALONG WITH
- * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
- * http://www.seagate.com/contact
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Original author:  Prashanth Vanaparthy   <prashanth.vanaparthy@seagate.com>
- * Original creation date: 30-Jan-2019
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * For any questions about this software or licensing,
+ * please email opensource@seagate.com or cortx-questions@seagate.com.
+ *
  */
 
 #include "s3_bucket_metadata_v1.h"
@@ -29,6 +30,7 @@
 #include "s3_stats.h"
 
 extern struct m0_uint128 bucket_metadata_list_index_oid;
+extern struct m0_uint128 replica_bucket_metadata_list_index_oid;
 
 S3BucketMetadataV1::S3BucketMetadataV1(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
@@ -436,7 +438,6 @@ void S3BucketMetadataV1::save_bucket_info() {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
         request, s3_clovis_api);
   }
-
   clovis_kv_writer->put_keyval(
       bucket_metadata_list_index_oid, get_bucket_metadata_index_key_name(),
       this->to_json(),
@@ -448,7 +449,34 @@ void S3BucketMetadataV1::save_bucket_info() {
 
 void S3BucketMetadataV1::save_bucket_info_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  // attempt to save the KV in replica bucket metadata index
+  if (!clovis_kv_writer) {
+    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
+        request, s3_clovis_api);
+  }
+  clovis_kv_writer->put_keyval(
+      replica_bucket_metadata_list_index_oid,
+      get_bucket_metadata_index_key_name(), this->to_json(),
+      std::bind(&S3BucketMetadataV1::save_replica, this),
+      std::bind(&S3BucketMetadataV1::save_replica, this));
+
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3BucketMetadataV1::save_replica() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  // PUT Operation passes even if we failed to put KV in replica index.
+  if (clovis_kv_writer->get_state() != S3ClovisKVSWriterOpState::created) {
+    s3_log(S3_LOG_ERROR, request_id, "Failed to save KV in replica index.\n");
+
+    s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
+                  "Failed to save metadata in replica index for bucket: %s",
+                  get_bucket_metadata_index_key_name().c_str());
+  }
   this->handler_on_success();
+
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -497,6 +525,32 @@ void S3BucketMetadataV1::remove_bucket_info() {
 
 void S3BucketMetadataV1::remove_bucket_info_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  // Attempt to remove KV from replica bucket metadata index
+  if (!clovis_kv_writer) {
+    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
+        request, s3_clovis_api);
+  }
+  clovis_kv_writer->delete_keyval(
+      replica_bucket_metadata_list_index_oid,
+      get_bucket_metadata_index_key_name(),
+      std::bind(&S3BucketMetadataV1::remove_replica, this),
+      std::bind(&S3BucketMetadataV1::remove_replica, this));
+
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3BucketMetadataV1::remove_replica() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  // delete KV from replia index is not fatal error
+  if (clovis_kv_writer->get_state() != S3ClovisKVSWriterOpState::deleted) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Removal of Bucket metadata from replica index failed\n");
+    s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
+                  "Failed to remove KV from replica index of bucket: %s",
+                  get_bucket_metadata_index_key_name().c_str());
+  }
   // If FI: 'kv_delete_failed_from_global_index' is set, then do not remove KV
   // from global_bucket_list_index_oid. This is to simulate possible "partial"
   // delete bucket action, where the KV got deleted from
@@ -505,6 +559,7 @@ void S3BucketMetadataV1::remove_bucket_info_successful() {
   if (!s3_fi_is_enabled("kv_delete_failed_from_global_index")) {
     remove_global_bucket_account_id_info();
   }
+
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

@@ -1,3 +1,22 @@
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+
 import os
 import sys
 import time
@@ -81,6 +100,12 @@ class S3kvTest(S3PyCliTest):
     def root_bucket_metadata_index(self):
         root_oid = S3OID("0x7800000000000000", "0x100002")
         return root_oid
+
+# Replica bucket metadata index table OID used by S3server is a constant derived by
+# adding 6 to  M0_CLOVIS_ID_APP define and packing it using M0_FID_TINIT
+    def replica_bucket_metadata_index(self):
+        replica_oid = S3OID("0x7800000000000000", "0x100006")
+        return replica_oid
 
 # Root probable dead object list index table OID used by S3server is a constant derived by
 # adding 3 to  M0_CLOVIS_ID_APP define and packing it using M0_FID_TINIT

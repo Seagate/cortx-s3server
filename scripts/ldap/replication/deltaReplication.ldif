@@ -1,0 +1,148 @@
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+# OlcserverId is unique ID given to each server in replication cluster
+# for other nodes change olcserverID to 2,3 respectively depending on
+# number of nodes you have in cluster.
+# Command to add configuration to ldap:
+# ldapmodify -Y EXTERNAL  -H ldapi:/// -f config.ldif
+dn: cn=config
+changetype: modify
+add: olcServerID
+olcServerID: 1
+
+# syncprov overlay module file
+# Command to add module to ldap:
+# ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov_mod.ldif
+dn: cn=module,cn=config
+objectClass: olcModuleList
+cn: module
+olcModulePath: /usr/lib64/openldap
+olcModuleLoad: syncprov.la
+
+# syncprov data file
+# Command to add configuration to ldap:
+# ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov.ldif
+dn: olcOverlay=syncprov,olcDatabase={2}mdb,cn=config
+objectClass: olcOverlayConfig
+objectClass: olcSyncProvConfig
+olcOverlay:  syncprov
+olcSpCheckpoint: 100 10
+olcSpSessionLog: 10000
+
+#Load the syncprov and accesslog modules.
+dn: cn=module{0},cn=config
+changetype: modify
+add: olcModuleLoad
+olcModuleLoad: syncprov
+-
+add: olcModuleLoad
+olcModuleLoad: accesslog
+# Accesslog database definitions
+dn: olcDatabase={1}mdb,cn=config
+objectClass: olcMdbConfig
+objectClass: olcDatabaseConfig
+olcDatabase: {1}mdb
+olcDbDirectory: /var/lib/ldap/accesslog
+olcDbIndex: default eq
+olcDbIndex: objectClass eq
+olcDbIndex: entryCSN eq
+olcDbIndex: reqDN eq
+olcDbIndex: reqStart eq
+olcDbIndex: reqEnd eq
+olcDbIndex: reqResult eq
+#This directive specifies the maximum number of threads that may have concurrent read access to the database.Defaul is 126.
+olcDbMaxReaders: 0
+olcDbMaxSize: 5120000
+olcRootDN: cn=config
+olcSuffix: cn=accesslog
+
+# Accesslog db syncprov.
+dn: olcOverlay=syncprov,olcDatabase={1}mdb,cn=config
+changetype: add
+objectClass: olcOverlayConfig
+objectClass: olcSyncProvConfig
+olcOverlay: syncprov
+#If set TRUE, the Present phase of refreshing will be bypassed. This value should only be set TRUE for a syncprov instance used with a log database such as one managed using the accesslog overlay. The default is FALSE.
+olcSpNoPresent: TRUE
+#Indicates the overlay should honor the reloadHint flag in the Sync Control (Note: certain version 2.3 clients did not set the reloadhint flag correctly). It must be set TRUE when using the accesslog overlay for delta-synchonization. The default is FALSE.
+olcSpReloadHint: TRUE
+
+# syncrepl Provider for primary db
+dn: olcOverlay=syncprov,olcDatabase={4}mdb,cn=config
+changetype: add
+objectClass: olcOverlayConfig
+objectClass: olcSyncProvConfig
+olcOverlay: syncprov
+# update the contextCSN in the database after either
+# 100 successful write operations OR
+# more than 10 minutes have elapsed
+# since the last time the contextCSN was written to the database
+olcSpCheckpoint: 100 10
+#Indicates that a session log for recording information about write operations made on the database should be maintained by the provider
+olcSpSessionLog: 10000
+
+# accesslog overlay definitions for primary db
+# define access log overlay entry and attributes
+# prunes the accesslog every day:
+# deletes entries more than 7 days old
+# log writes (covers add, delete, modify, modrdn)
+# log only successful operations
+# log has base suffix of cn=accesslog
+dn: olcOverlay=accesslog,olcDatabase={4}mdb,cn=config
+objectClass: olcOverlayConfig
+objectClass: olcAccessLogConfig
+olcOverlay: accesslog
+olcAccessLogDB: cn=accesslog
+olcAccessLogOps: writes
+olcAccessLogSuccess: TRUE
+olcAccessLogPurge: 07+00:00 01+00:00
+
+dn: olcDatabase={4}mdb,cn=config
+changetype: modify
+add: olcSyncrepl
+olcSyncrepl: rid=001
+  provider=ldap://{hostName of Node2}
+  bindmethod=simple
+  binddn="cn=admin,dc=seagate,dc=com"
+  credentials=seagate
+  searchbase="dc=seagate,dc=com"
+  logbase="cn=accesslog"
+  logfilter="(&(objectClass=auditWriteObject)(reqResult=0))"
+  schemachecking=on
+  type=refreshAndPersist retry="60 +"
+  syncdata=accesslog
+  network-timeout=30
+  keepalive=180:3:60
+  olcSyncrepl: rid=002
+  provider=ldap://{hostName of Node3}
+  bindmethod=simple
+  binddn="cn=admin,dc=seagate,dc=com"
+  credentials=seagate
+  searchbase="dc=seagate,dc=com"
+  logbase="cn=accesslog"
+  logfilter="(&(objectClass=auditWriteObject)(reqResult=0))"
+  schemachecking=on
+  type=refreshAndPersist retry="60 +"
+  syncdata=accesslog
+  network-timeout=30
+  keepalive=180:3:60
+-
+add: olcMirrorMode
+olcMirrorMode: TRUE
+

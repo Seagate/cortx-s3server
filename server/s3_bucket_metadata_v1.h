@@ -1,20 +1,21 @@
 /*
- * COPYRIGHT 2019 SEAGATE LLC
+ * Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
  *
- * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
- * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
- * LIMITED, ISSUED IN STRICT CONFIDENCE AND SHALL NOT, WITHOUT
- * THE PRIOR WRITTEN PERMISSION OF SEAGATE TECHNOLOGY LIMITED,
- * BE REPRODUCED, COPIED, OR DISCLOSED TO A THIRD PARTY, OR
- * USED FOR ANY PURPOSE WHATSOEVER, OR STORED IN A RETRIEVAL SYSTEM
- * EXCEPT AS ALLOWED BY THE TERMS OF SEAGATE LICENSES AND AGREEMENTS.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * YOU SHOULD HAVE RECEIVED A COPY OF SEAGATE'S LICENSE ALONG WITH
- * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
- * http://www.seagate.com/contact
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Original author:  Prashanth Vanaparthy   <prashanth.vanaparthy@seagate.com>
- * Original creation date: 30-Jan-2019
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * For any questions about this software or licensing,
+ * please email opensource@seagate.com or cortx-questions@seagate.com.
+ *
  */
 
 #pragma once
@@ -72,10 +73,12 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
   void save_bucket_info();
   void save_bucket_info_successful();
   void save_bucket_info_failed();
+  void save_replica();
 
   void remove_bucket_info();
   void remove_bucket_info_successful();
   void remove_bucket_info_failed();
+  void remove_replica();
 
   void remove_global_bucket_account_id_info();
   void remove_global_bucket_account_id_info_successful();
@@ -179,11 +182,13 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
   FRIEND_TEST(S3BucketMetadataV1Test, SaveBucketListIndexOIDFailedToLaunch);
   FRIEND_TEST(S3BucketMetadataV1Test, SaveBucketInfo);
   FRIEND_TEST(S3BucketMetadataV1Test, SaveBucketInfoSuccess);
+  FRIEND_TEST(S3BucketMetadataV1Test, SaveReplica);
   FRIEND_TEST(S3BucketMetadataV1Test, SaveBucketInfoFailed);
   FRIEND_TEST(S3BucketMetadataV1Test, SaveBucketInfoFailedToLaunch);
   FRIEND_TEST(S3BucketMetadataV1Test, RemovePresentMetadata);
   FRIEND_TEST(S3BucketMetadataV1Test, RemoveAbsentMetadata);
   FRIEND_TEST(S3BucketMetadataV1Test, RemoveBucketInfo);
+  FRIEND_TEST(S3BucketMetadataV1Test, RemoveReplica);
   FRIEND_TEST(S3BucketMetadataV1Test, RemoveBucketInfoSuccessful);
   FRIEND_TEST(S3BucketMetadataV1Test, RemoveBucketAccountidInfoSuccessful);
   FRIEND_TEST(S3BucketMetadataV1Test, RemoveBucketAccountidInfoFailedToLaunch);

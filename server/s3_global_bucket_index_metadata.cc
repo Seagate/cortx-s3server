@@ -1,20 +1,21 @@
 /*
- * COPYRIGHT 2019 SEAGATE LLC
+ * Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
  *
- * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
- * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
- * LIMITED, ISSUED IN STRICT CONFIDENCE AND SHALL NOT, WITHOUT
- * THE PRIOR WRITTEN PERMISSION OF SEAGATE TECHNOLOGY LIMITED,
- * BE REPRODUCED, COPIED, OR DISCLOSED TO A THIRD PARTY, OR
- * USED FOR ANY PURPOSE WHATSOEVER, OR STORED IN A RETRIEVAL SYSTEM
- * EXCEPT AS ALLOWED BY THE TERMS OF SEAGATE LICENSES AND AGREEMENTS.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * YOU SHOULD HAVE RECEIVED A COPY OF SEAGATE'S LICENSE ALONG WITH
- * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
- * http://www.seagate.com/contact
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Original author:  Prashanth Vanaparthy   <prashanth.vanaparthy@seagate.com>
- * Original creation date: 30-Jan-2019
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * For any questions about this software or licensing,
+ * please email opensource@seagate.com or cortx-questions@seagate.com.
+ *
  */
 
 #include "s3_global_bucket_index_metadata.h"
@@ -149,7 +150,6 @@ void S3GlobalBucketIndexMetadata::save_successful() {
   state = S3GlobalBucketIndexMetadataState::saved;
 
   // attempt to save the KV in replica global bucket list index
-  assert(nullptr != clovis_kvs_writer_factory);
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
         request, s3_clovis_api);
@@ -168,6 +168,10 @@ void S3GlobalBucketIndexMetadata::save_replica() {
   // PUT Operation pass even if we failed to put KV in replica index.
   if (clovis_kv_writer->get_state() != S3ClovisKVSWriterOpState::created) {
     s3_log(S3_LOG_ERROR, request_id, "Failed to save KV in replica index.\n");
+
+    s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
+                  "Failed to save KV in replica index for bucket: %s",
+                  bucket_name.c_str());
   }
   this->handler_on_success();
 
@@ -211,7 +215,6 @@ void S3GlobalBucketIndexMetadata::remove_successful() {
   state = S3GlobalBucketIndexMetadataState::deleted;
 
   // attempt to remove KV from the replica index as well
-  assert(nullptr != clovis_kvs_writer_factory);
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
         request, s3_clovis_api);
@@ -232,6 +235,10 @@ void S3GlobalBucketIndexMetadata::remove_replica() {
   if (clovis_kv_writer->get_state() != S3ClovisKVSWriterOpState::deleted) {
     s3_log(S3_LOG_ERROR, request_id,
            "Failed to remove KV from replica index.\n");
+
+    s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
+                  "Failed to remove KV from replica index of bucket: %s",
+                  bucket_name.c_str());
   }
   this->handler_on_success();
 
