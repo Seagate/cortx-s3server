@@ -137,11 +137,7 @@ primary_bucket_metadata_index = S3kvTest('KvTest fetch root bucket metadata inde
 replica_bucket_metadata_index = S3kvTest('KvTest fetch replica bucket metadata index')\
     .replica_bucket_metadata_index()
 
-<<<<<<< HEAD
 config = CORTXS3Config(True)
-=======
-config = CORTXS3Config(True)
->>>>>>> dev
 
 # ======================================================================================================
 
@@ -258,7 +254,6 @@ st1value_metadata_index = '{"ACL":"", "Bucket-Name":"ST-1-BK", "Policy":"",\
      "Owner-Account":"temp-acc", "Owner-Account-id":"286991820398", "Owner-User":"root",\
      "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" },\
      "create_timestamp":"2020-07-20T09:08:11.000Z",\
-<<<<<<< HEAD
      "motr_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=",\
      "motr_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=",\
      "motr_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko=" }'
@@ -266,21 +261,6 @@ st1value_metadata_index = '{"ACL":"", "Bucket-Name":"ST-1-BK", "Policy":"",\
 # PUT KV in replica index of global bucket list index
 status, res = CORTXS3KVApi(config)\
     .put(replica_bucket_list_index_oid, st1key, st1value_list_index)
-=======
-     "mero_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=",\
-     "mero_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=",\
-     "mero_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko=" }'
-
-# PUT KV in replica index of global bucket list index
-status, res = CORTXS3KVApi(config)\
-    .put(replica_bucket_list_index_oid, st1key, st1value_list_index)
-assert status == True
-assert isinstance(res, CORTXS3SuccessResponse)
-
-# PUT KV in replica index of global bucket metadata index
-status, res = CORTXS3KVApi(config)\
-    .put(replica_bucket_metadata_index_oid, r'838334245437/' + st1key, st1value_metadata_index)
->>>>>>> dev
 assert status == True
 assert isinstance(res, CORTXS3SuccessResponse)
 
@@ -322,15 +302,9 @@ status, res = CORTXS3KVApi(config).delete(replica_bucket_list_index_oid, st1key)
 assert status == True
 assert isinstance(res, CORTXS3SuccessResponse)
 
-<<<<<<< HEAD
 status, res = CORTXS3KVApi(config).delete(replica_bucket_metadata_index_oid, r'838334245437/' + st1key)
 assert status == True
 assert isinstance(res, CORTXS3SuccessResponse)
-=======
-status, res = CORTXS3KVApi(config).delete(replica_bucket_metadata_index_oid, r'838334245437/' + st1key)
-assert status == True
-assert isinstance(res, CORTXS3SuccessResponse)
->>>>>>> dev
 
 # ********************** System Tests for s3 recovery tool: dry_run option ********************************************
 # Test: Different Key-Value in primary and replica indexes
@@ -349,15 +323,9 @@ primary_metadata_index_value = '{"ACL":"", "Bucket-Name":"my-bucket1", "Policy":
      "System-Defined": { "Date":"2020-07-14T05:45:41.000Z", "LocationConstraint":"us-west-2",\
      "Owner-Account":"s3-recovery-svc", "Owner-Account-id":"123456789", "Owner-User":"root",\
      "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-07-14T05:45:41.000Z",\
-<<<<<<< HEAD
      "motr_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=",\
      "motr_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=",\
      "motr_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}'
-=======
-     "mero_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=",\
-     "mero_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=",\
-     "mero_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}'
->>>>>>> dev
 
 replica_index_key = 'my-bucket2'
 replica_list_index_value = '{"account_id":"123456789",\
@@ -368,7 +336,6 @@ replica_metadata_index_value = '{"ACL":"", "Bucket-Name":"my-bucket2", "Policy":
      "System-Defined": { "Date":"2020-08-14T06:45:41.000Z", "LocationConstraint":"us-east-1",\
      "Owner-Account":"s3-recovery-svc", "Owner-Account-id":"123456789", "Owner-User":"root",\
      "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-08-14T06:45:41.000Z",\
-<<<<<<< HEAD
      "motr_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=",\
      "motr_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=",\
      "motr_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}'
@@ -387,34 +354,10 @@ assert isinstance(res, CORTXS3SuccessResponse)
 # PUT the KVs in primary and replica indexes of bucket metadata index
 status, res = CORTXS3KVApi(config)\
     .put(primary_bucket_metadata_index_oid, r'123456789/' + primary_index_key, primary_metadata_index_value)
-=======
-     "mero_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=",\
-     "mero_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=",\
-     "mero_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}'
-
-# PUT the KVs in primary and replica indexes of bucket list index
-status, res = CORTXS3KVApi(config)\
-    .put(primary_bucket_list_index_oid, primary_index_key, primary_list_index_value)
 assert status == True
 assert isinstance(res, CORTXS3SuccessResponse)
 
 status, res = CORTXS3KVApi(config)\
-    .put(replica_bucket_list_index_oid, replica_index_key, replica_list_index_value)
->>>>>>> dev
-assert status == True
-assert isinstance(res, CORTXS3SuccessResponse)
-
-<<<<<<< HEAD
-status, res = CORTXS3KVApi(config)\
-=======
-# PUT the KVs in primary and replica indexes of bucket metadata index
-status, res = CORTXS3KVApi(config)\
-    .put(primary_bucket_metadata_index_oid, r'123456789/' + primary_index_key, primary_metadata_index_value)
-assert status == True
-assert isinstance(res, CORTXS3SuccessResponse)
-
-status, res = CORTXS3KVApi(config)\
->>>>>>> dev
     .put(replica_bucket_metadata_index_oid, r'123456789/' + replica_index_key, replica_metadata_index_value)
 assert status == True
 assert isinstance(res, CORTXS3SuccessResponse)
@@ -450,7 +393,6 @@ result_stdout_list = (result.status.stdout).split('\n')
 #
 # Primary index content for Bucket metadata index
 #
-<<<<<<< HEAD
 # 123456789/my-bucket1 {"ACL":"", "Bucket-Name":"my-bucket1", "Policy":"", "System-Defined": { "Date":"2020-07-14T05:45:41.000Z", "LocationConstraint":"us-west-2", "Owner-Account":"s3-recovery-svc", "Owner-Account-id":"123456789", "Owner-User":"root", "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-07-14T05:45:41.000Z", "motr_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=", "motr_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=", "motr_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}
 #
 # Replica index content for Bucket metadata index
@@ -461,18 +403,6 @@ result_stdout_list = (result.status.stdout).split('\n')
 #
 # 123456789/my-bucket1 {"ACL":"", "Bucket-Name":"my-bucket1", "Policy":"", "System-Defined": { "Date":"2020-07-14T05:45:41.000Z", "LocationConstraint":"us-west-2", "Owner-Account":"s3-recovery-svc", "Owner-Account-id":"123456789", "Owner-User":"root", "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-07-14T05:45:41.000Z", "motr_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=", "motr_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=", "motr_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}
 # 123456789/my-bucket2 {"ACL":"", "Bucket-Name":"my-bucket1", "Policy":"", "System-Defined": { "Date":"2020-08-14T06:45:41.000Z", "LocationConstraint":"us-east-1", "Owner-Account":"s3-recovery-svc", "Owner-Account-id":"123456789", "Owner-User":"root", "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-08-14T06:45:41.000Z", "motr_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=", "motr_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=", "motr_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}
-=======
-# 123456789/my-bucket1 {"ACL":"", "Bucket-Name":"my-bucket1", "Policy":"", "System-Defined": { "Date":"2020-07-14T05:45:41.000Z", "LocationConstraint":"us-west-2", "Owner-Account":"s3-recovery-svc", "Owner-Account-id":"123456789", "Owner-User":"root", "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-07-14T05:45:41.000Z", "mero_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=", "mero_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=", "mero_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}
-#
-# Replica index content for Bucket metadata index
-#
-# 123456789/my-bucket2 {"ACL":"", "Bucket-Name":"my-bucket1", "Policy":"", "System-Defined": { "Date":"2020-08-14T06:45:41.000Z", "LocationConstraint":"us-east-1", "Owner-Account":"s3-recovery-svc", "Owner-Account-id":"123456789", "Owner-User":"root", "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-08-14T06:45:41.000Z", "mero_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=", "mero_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=", "mero_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}
-#
-# Data recovered from both indexes for Bucket metadata index
-#
-# 123456789/my-bucket1 {"ACL":"", "Bucket-Name":"my-bucket1", "Policy":"", "System-Defined": { "Date":"2020-07-14T05:45:41.000Z", "LocationConstraint":"us-west-2", "Owner-Account":"s3-recovery-svc", "Owner-Account-id":"123456789", "Owner-User":"root", "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-07-14T05:45:41.000Z", "mero_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=", "mero_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=", "mero_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}
-# 123456789/my-bucket2 {"ACL":"", "Bucket-Name":"my-bucket1", "Policy":"", "System-Defined": { "Date":"2020-08-14T06:45:41.000Z", "LocationConstraint":"us-east-1", "Owner-Account":"s3-recovery-svc", "Owner-Account-id":"123456789", "Owner-User":"root", "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-08-14T06:45:41.000Z", "mero_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=", "mero_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=", "mero_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}
->>>>>>> dev
 # |-----------------------------------------------------------------------------------------------------------------------------|
 assert result_stdout_list[3] != 'Empty'
 
@@ -504,7 +434,6 @@ status, res = CORTXS3KVApi(config).delete(replica_bucket_list_index_oid, replica
 assert status == True
 assert isinstance(res, CORTXS3SuccessResponse)
 
-<<<<<<< HEAD
 status, res = CORTXS3KVApi(config).delete(primary_bucket_metadata_index_oid, r'123456789/' + primary_index_key)
 assert status == True
 assert isinstance(res, CORTXS3SuccessResponse)
@@ -512,15 +441,6 @@ assert isinstance(res, CORTXS3SuccessResponse)
 status, res = CORTXS3KVApi(config).delete(replica_bucket_metadata_index_oid, r'123456789/' + replica_index_key)
 assert status == True
 assert isinstance(res, CORTXS3SuccessResponse)
-=======
-status, res = CORTXS3KVApi(config).delete(primary_bucket_metadata_index_oid, r'123456789/' + primary_index_key)
-assert status == True
-assert isinstance(res, CORTXS3SuccessResponse)
-
-status, res = CORTXS3KVApi(config).delete(replica_bucket_metadata_index_oid, r'123456789/' + replica_index_key)
-assert status == True
-assert isinstance(res, CORTXS3SuccessResponse)
->>>>>>> dev
 
 # ********************** System Tests for s3 recovery tool: dry_run option ********************************************
 # Test: Corrupted Value for a key in primary index
@@ -546,11 +466,7 @@ replica_list_index_value = '{"account_id":"123456789",\
      "create_timestamp":"2020-12-11T06:45:41.000Z",\
      "location_constraint":"mumbai"}'
 
-<<<<<<< HEAD
 status, res = CORTXS3KVApi(config)\
-=======
-status, res = CORTXS3KVApi(config)\
->>>>>>> dev
     .put(replica_bucket_list_index_oid, replica_list_index_key, replica_list_index_value)
 assert status == True
 assert isinstance(res, CORTXS3SuccessResponse)
@@ -563,27 +479,6 @@ primary_metadata_index_value = '{"ACL":"", "Bucket-Name":"my-bucket5", "Policy":
      "motr_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=",\
      "motr_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=",\
      "motr_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}'
-
-status, res = CORTXS3KVApi(config)\
-    .put(primary_bucket_metadata_index_oid, r'123456789/' + primary_metadata_index_key,\
-         primary_metadata_index_value)
-assert status == True
-assert isinstance(res, CORTXS3SuccessResponse)
-
-replica_metadata_index_corrupted_value = "Corrupted-JSON-value2"
-S3kvTest('KvTest put corrupted key-value in replica bucket metadata index')\
-    .put_keyval(replica_bucket_metadata_index, r'123456789/' + primary_metadata_index_key,\
-         replica_metadata_index_corrupted_value)\
-    .execute_test()
-
-primary_metadata_index_key = "my-bucket5"
-primary_metadata_index_value = '{"ACL":"", "Bucket-Name":"my-bucket5", "Policy":"",\
-     "System-Defined": { "Date":"2020-08-14T06:45:41.000Z", "LocationConstraint":"us-east-1",\
-     "Owner-Account":"s3-recovery-svc", "Owner-Account-id":"123456789", "Owner-User":"root",\
-     "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-08-14T06:45:41.000Z",\
-     "mero_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=",\
-     "mero_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=",\
-     "mero_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}'
 
 status, res = CORTXS3KVApi(config)\
     .put(primary_bucket_metadata_index_oid, r'123456789/' + primary_metadata_index_key,\
@@ -624,33 +519,16 @@ assert result_stdout_list[13] == ''
 assert 'Primary index content for Bucket metadata index' in result_stdout_list[14]
 
 # Delete the key-values from both primary and replica indexes
-<<<<<<< HEAD
 status, res = CORTXS3KVApi(config).delete(primary_bucket_list_index_oid, primary_list_index_key)
 assert status == True
 assert isinstance(res, CORTXS3SuccessResponse)
 
-status, res = CORTXS3KVApi(config).delete(replica_bucket_list_index_oid, replica_list_index_key)
-=======
-status, res = CORTXS3KVApi(config).delete(primary_bucket_list_index_oid, primary_list_index_key)
->>>>>>> dev
-assert status == True
-assert isinstance(res, CORTXS3SuccessResponse)
-
-<<<<<<< HEAD
-status, res = CORTXS3KVApi(config)\
-    .delete(primary_bucket_metadata_index_oid, r'123456789/' + primary_metadata_index_key)
-=======
 status, res = CORTXS3KVApi(config).delete(replica_bucket_list_index_oid, replica_list_index_key)
 assert status == True
 assert isinstance(res, CORTXS3SuccessResponse)
 
 status, res = CORTXS3KVApi(config)\
     .delete(primary_bucket_metadata_index_oid, r'123456789/' + primary_metadata_index_key)
-assert status == True
-assert isinstance(res, CORTXS3SuccessResponse)
-
-status, res = CORTXS3KVApi(config).delete(replica_bucket_metadata_index_oid, r'123456789/' + primary_metadata_index_key)
->>>>>>> dev
 assert status == True
 assert isinstance(res, CORTXS3SuccessResponse)
 
@@ -766,11 +644,7 @@ def put_kvs_in_indexes(index_with_corrupt_kvs,
                 key = r'123456789/' + KV['Key']
             else:
                 key = KV['Key']
-<<<<<<< HEAD
             status, res = CORTXS3KVApi(config)\
-=======
-            status, res = CORTXS3KVApi(config)\
->>>>>>> dev
                 .put(index_with_corrupt_kvs, key, KV['Value'])
             assert status == True
             assert isinstance(res, CORTXS3SuccessResponse)
@@ -785,11 +659,7 @@ def put_kvs_in_indexes(index_with_corrupt_kvs,
             key = r'123456789/' + KV['Key']
         else:
             key = KV['Key']        
-<<<<<<< HEAD
         status, res = CORTXS3KVApi(config)\
-=======
-        status, res = CORTXS3KVApi(config)\
->>>>>>> dev
             .put(index_with_correct_kvs, key, KV['Value'])
         assert status == True
         assert isinstance(res, CORTXS3SuccessResponse)
@@ -814,11 +684,7 @@ put_kvs_in_indexes(primary_bucket_list_index_oid, replica_bucket_list_index_oid)
 put_kvs_in_indexes(primary_bucket_metadata_index_oid, replica_bucket_metadata_index_oid)
 
 # Validate that primary indexes had 4 keys before running the s3recoverytool
-<<<<<<< HEAD
 status, res = CORTXS3IndexApi(config).list(primary_bucket_list_index_oid)
-=======
-status, res = CORTXS3IndexApi(config).list(primary_bucket_list_index_oid)
->>>>>>> dev
 assert status == True
 assert isinstance(res, CORTXS3ListIndexResponse)
 
@@ -827,15 +693,9 @@ key_value_primary_index_before_recovery_list = index_content["Keys"]
 assert index_content["Index-Id"] == primary_bucket_list_index_oid
 assert len(key_value_primary_index_before_recovery_list) == 4
 
-<<<<<<< HEAD
 status, res = CORTXS3IndexApi(config).list(primary_bucket_metadata_index_oid)
 assert status == True
 assert isinstance(res, CORTXS3ListIndexResponse)
-=======
-status, res = CORTXS3IndexApi(config).list(primary_bucket_metadata_index_oid)
-assert status == True
-assert isinstance(res, CORTXS3ListIndexResponse)
->>>>>>> dev
 
 index_content = res.get_index_content()
 key_value_primary_index_before_recovery_list = index_content["Keys"]
@@ -843,11 +703,7 @@ assert index_content["Index-Id"] == primary_bucket_metadata_index_oid
 assert len(key_value_primary_index_before_recovery_list) == 4
 
 # Validate that replica indexes had 4 keys before running the s3recoverytool
-<<<<<<< HEAD
 status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
-=======
-status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
->>>>>>> dev
 assert status == True
 assert isinstance(res, CORTXS3ListIndexResponse)
 
@@ -856,15 +712,9 @@ key_value_replica_index_before_recovery_list = index_content["Keys"]
 assert index_content["Index-Id"] == replica_bucket_list_index_oid
 assert len(key_value_replica_index_before_recovery_list) == 4
 
-<<<<<<< HEAD
 status, res = CORTXS3IndexApi(config).list(replica_bucket_metadata_index_oid)
 assert status == True
 assert isinstance(res, CORTXS3ListIndexResponse)
-=======
-status, res = CORTXS3IndexApi(config).list(replica_bucket_metadata_index_oid)
-assert status == True
-assert isinstance(res, CORTXS3ListIndexResponse)
->>>>>>> dev
 
 index_content = res.get_index_content()
 key_value_replica_index_before_recovery_list = index_content["Keys"]
@@ -878,11 +728,7 @@ result = S3RecoveryTest("s3recovery --recover (corrupted and missing KVs in prim
     .command_is_successful()
 
 # List Primary Indexes
-<<<<<<< HEAD
 status, res = CORTXS3IndexApi(config).list(primary_bucket_list_index_oid)
-=======
-status, res = CORTXS3IndexApi(config).list(primary_bucket_list_index_oid)
->>>>>>> dev
 assert status == True
 assert isinstance(res, CORTXS3ListIndexResponse)
 
@@ -891,15 +737,9 @@ assert index_content["Index-Id"] == primary_bucket_list_index_oid
 actual_primary_list_index_key_value_list = index_content["Keys"]
 assert len(actual_primary_list_index_key_value_list) == 5
 
-<<<<<<< HEAD
 status, res = CORTXS3IndexApi(config).list(primary_bucket_metadata_index_oid)
 assert status == True
 assert isinstance(res, CORTXS3ListIndexResponse)
-=======
-status, res = CORTXS3IndexApi(config).list(primary_bucket_metadata_index_oid)
-assert status == True
-assert isinstance(res, CORTXS3ListIndexResponse)
->>>>>>> dev
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == primary_bucket_metadata_index_oid
@@ -907,11 +747,7 @@ actual_primary_metadata_index_key_value_list = index_content["Keys"]
 assert len(actual_primary_metadata_index_key_value_list) == 5
 
 # List replica Indexes
-<<<<<<< HEAD
 status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
-=======
-status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
->>>>>>> dev
 assert status == True
 assert isinstance(res, CORTXS3ListIndexResponse)
 
@@ -920,15 +756,9 @@ assert index_content["Index-Id"] == replica_bucket_list_index_oid
 actual_replica_list_index_key_value_list = index_content["Keys"]
 assert len(actual_replica_list_index_key_value_list) == 5
 
-<<<<<<< HEAD
 status, res = CORTXS3IndexApi(config).list(replica_bucket_metadata_index_oid)
 assert status == True
 assert isinstance(res, CORTXS3ListIndexResponse)
-=======
-status, res = CORTXS3IndexApi(config).list(replica_bucket_metadata_index_oid)
-assert status == True
-assert isinstance(res, CORTXS3ListIndexResponse)
->>>>>>> dev
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == replica_bucket_metadata_index_oid
@@ -955,11 +785,6 @@ for KV in key_value_list_with_not_good_values:
     metadata_index_key = r'123456789/' + KV['Key']
     status, res = CORTXS3KVApi(config)\
         .delete(primary_bucket_metadata_index_oid, metadata_index_key)
-    assert status == True
-    assert isinstance(res, CORTXS3SuccessResponse)
-
-    status, res = CORTXS3KVApi(config)\
-        .delete(replica_bucket_metadata_index_oid, metadata_index_key)
     assert status == True
     assert isinstance(res, CORTXS3SuccessResponse)
 
@@ -988,11 +813,7 @@ put_kvs_in_indexes(replica_bucket_list_index_oid, primary_bucket_list_index_oid)
 put_kvs_in_indexes(replica_bucket_metadata_index_oid, primary_bucket_metadata_index_oid)
 
 # Validate that primary indexes have 4 keys before running the s3recoverytool
-<<<<<<< HEAD
 status, res = CORTXS3IndexApi(config).list(primary_bucket_list_index_oid)
-=======
-status, res = CORTXS3IndexApi(config).list(primary_bucket_list_index_oid)
->>>>>>> dev
 assert status == True
 assert isinstance(res, CORTXS3ListIndexResponse)
 
@@ -1001,21 +822,7 @@ key_value_primary_index_before_recovery_list = index_content["Keys"]
 assert index_content["Index-Id"] == primary_bucket_list_index_oid
 assert len(key_value_primary_index_before_recovery_list) == 4
 
-<<<<<<< HEAD
 status, res = CORTXS3IndexApi(config).list(primary_bucket_metadata_index_oid)
-=======
-status, res = CORTXS3IndexApi(config).list(primary_bucket_metadata_index_oid)
-assert status == True
-assert isinstance(res, CORTXS3ListIndexResponse)
-
-index_content = res.get_index_content()
-key_value_primary_index_before_recovery_list = index_content["Keys"]
-assert index_content["Index-Id"] == primary_bucket_metadata_index_oid
-assert len(key_value_primary_index_before_recovery_list) == 4
-
-# Validate that replica indexes have 4 keys before running the s3recoverytool
-status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
->>>>>>> dev
 assert status == True
 assert isinstance(res, CORTXS3ListIndexResponse)
 
@@ -1034,15 +841,9 @@ key_value_replica_index_before_recovery_list = index_content["Keys"]
 assert index_content["Index-Id"] == replica_bucket_list_index_oid
 assert len(key_value_replica_index_before_recovery_list) == 4
 
-<<<<<<< HEAD
 status, res = CORTXS3IndexApi(config).list(replica_bucket_metadata_index_oid)
 assert status == True
 assert isinstance(res, CORTXS3ListIndexResponse)
-=======
-status, res = CORTXS3IndexApi(config).list(replica_bucket_metadata_index_oid)
-assert status == True
-assert isinstance(res, CORTXS3ListIndexResponse)
->>>>>>> dev
 
 index_content = res.get_index_content()
 key_value_replica_index_before_recovery_list = index_content["Keys"]
@@ -1056,11 +857,7 @@ result = S3RecoveryTest("s3recovery --recover (corrupted and missing KVs in repl
     .command_is_successful()
 
 # List Primary Indexes
-<<<<<<< HEAD
 status, res = CORTXS3IndexApi(config).list(primary_bucket_list_index_oid)
-=======
-status, res = CORTXS3IndexApi(config).list(primary_bucket_list_index_oid)
->>>>>>> dev
 assert status == True
 assert isinstance(res, CORTXS3ListIndexResponse)
 
@@ -1069,21 +866,7 @@ assert index_content["Index-Id"] == primary_bucket_list_index_oid
 actual_primary_list_index_key_value_list = index_content["Keys"]
 assert len(actual_primary_list_index_key_value_list) == 5
 
-<<<<<<< HEAD
 status, res = CORTXS3IndexApi(config).list(primary_bucket_metadata_index_oid)
-=======
-status, res = CORTXS3IndexApi(config).list(primary_bucket_metadata_index_oid)
-assert status == True
-assert isinstance(res, CORTXS3ListIndexResponse)
-
-index_content = res.get_index_content()
-assert index_content["Index-Id"] == primary_bucket_metadata_index_oid
-actual_primary_metadata_index_key_value_list = index_content["Keys"]
-assert len(actual_primary_metadata_index_key_value_list) == 5
-
-# List replica Indexes
-status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
->>>>>>> dev
 assert status == True
 assert isinstance(res, CORTXS3ListIndexResponse)
 
@@ -1102,15 +885,9 @@ assert index_content["Index-Id"] == replica_bucket_list_index_oid
 actual_replica_list_index_key_value_list = index_content["Keys"]
 assert len(actual_replica_list_index_key_value_list) == 5
 
-<<<<<<< HEAD
 status, res = CORTXS3IndexApi(config).list(replica_bucket_metadata_index_oid)
 assert status == True
 assert isinstance(res, CORTXS3ListIndexResponse)
-=======
-status, res = CORTXS3IndexApi(config).list(replica_bucket_metadata_index_oid)
-assert status == True
-assert isinstance(res, CORTXS3ListIndexResponse)
->>>>>>> dev
 
 index_content = res.get_index_content()
 assert index_content["Index-Id"] == replica_bucket_metadata_index_oid
@@ -1137,11 +914,6 @@ for KV in key_value_list_with_not_good_values:
     metadata_index_key = r'123456789/' + KV['Key']
     status, res = CORTXS3KVApi(config)\
         .delete(primary_bucket_metadata_index_oid, metadata_index_key)
-    assert status == True
-    assert isinstance(res, CORTXS3SuccessResponse)
-
-    status, res = CORTXS3KVApi(config)\
-        .delete(replica_bucket_metadata_index_oid, metadata_index_key)
     assert status == True
     assert isinstance(res, CORTXS3SuccessResponse)
 
@@ -1183,15 +955,9 @@ global_bucket_metadata_index_key_value_list = [
              "System-Defined": { "Date":"2020-01-01T06:01:40.000Z", "LocationConstraint":"EU",\
              "Owner-Account":"temp-acc", "Owner-Account-id":"123456789", "Owner-User":"root",\
              "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-01-01T06:01:40.000Z",\
-<<<<<<< HEAD
              "motr_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=",\
              "motr_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=",\
              "motr_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko=" }'
-=======
-             "mero_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=",\
-             "mero_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=",\
-             "mero_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko=" }'
->>>>>>> dev
     },
     {
         'Key': r'123456789/my-bucket11',
@@ -1199,15 +965,9 @@ global_bucket_metadata_index_key_value_list = [
              "System-Defined": { "Date":"2020-01-01T06:05:40.000Z", "LocationConstraint":"sa-east-1",\
              "Owner-Account":"temp-acc", "Owner-Account-id":"123456789", "Owner-User":"root",\
              "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-01-01T06:05:40.000Z",\
-<<<<<<< HEAD
              "motr_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=",\
              "motr_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=",\
              "motr_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko=" }'
-=======
-             "mero_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=",\
-             "mero_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=",\
-             "mero_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko=" }'
->>>>>>> dev
     }
 ]
 
@@ -1225,21 +985,12 @@ for KV in global_bucket_list_index_key_value_list:
 
 # PUT KV in global bucket metadata index
 for KV in global_bucket_metadata_index_key_value_list:
-<<<<<<< HEAD
     status, res = CORTXS3KVApi(config)\
         .put(primary_bucket_metadata_index_oid, KV['Key'], KV['Value'])
     assert status == True
     assert isinstance(res, CORTXS3SuccessResponse)
 
     status, res = CORTXS3KVApi(config)\
-=======
-    status, res = CORTXS3KVApi(config)\
-        .put(primary_bucket_metadata_index_oid, KV['Key'], KV['Value'])
-    assert status == True
-    assert isinstance(res, CORTXS3SuccessResponse)
-
-    status, res = CORTXS3KVApi(config)\
->>>>>>> dev
         .put(replica_bucket_metadata_index_oid, KV['Key'], KV['Value'])
     assert status == True
     assert isinstance(res, CORTXS3SuccessResponse)
@@ -1270,15 +1021,9 @@ key_value_primary_list_index_after_recovery_list = index_content["Keys"]
 assert index_content["Index-Id"] == primary_bucket_list_index_oid
 assert len(key_value_primary_list_index_after_recovery_list) == 2
 
-<<<<<<< HEAD
 status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
 assert status == True
 assert isinstance(res, CORTXS3ListIndexResponse)
-=======
-status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
-assert status == True
-assert isinstance(res, CORTXS3ListIndexResponse)
->>>>>>> dev
 
 index_content = res.get_index_content()
 key_value_replica_list_index_after_recovery_list = index_content["Keys"]
@@ -1306,21 +1051,12 @@ for KV in global_bucket_list_index_key_value_list:
     assert isinstance(res, CORTXS3SuccessResponse)
 
 for KV in global_bucket_metadata_index_key_value_list:
-<<<<<<< HEAD
     status, res = CORTXS3KVApi(config)\
         .delete(primary_bucket_metadata_index_oid, KV['Key'])
     assert status == True
     assert isinstance(res, CORTXS3SuccessResponse)
 
     status, res = CORTXS3KVApi(config)\
-=======
-    status, res = CORTXS3KVApi(config)\
-        .delete(primary_bucket_metadata_index_oid, KV['Key'])
-    assert status == True
-    assert isinstance(res, CORTXS3SuccessResponse)
-
-    status, res = CORTXS3KVApi(config)\
->>>>>>> dev
         .delete(replica_bucket_metadata_index_oid, KV['Key'])
     assert status == True
     assert isinstance(res, CORTXS3SuccessResponse)
