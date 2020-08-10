@@ -24,6 +24,7 @@
 #include <algorithm>
 
 #include <event2/util.h>
+#include <event2/dns.h>
 
 #include "s3_log.h"
 #include "s3_http_post_queue_impl.h"
@@ -111,10 +112,10 @@ void S3HttpPostQueueImpl::send_front() {
 }
 
 S3HttpPostEngineImpl::S3HttpPostEngineImpl(
-    evbase_t *p_evbase_, std::string s_ipa_, uint16_t port_, std::string path_,
+    evbase_t *p_evbase_, std::string s_host_, uint16_t port_, std::string path_,
     std::map<std::string, std::string> headers_)
     : p_evbase(p_evbase_),
-      s_ipa(std::move(s_ipa_)),
+      s_host(std::move(s_host_)),
       port(port_),
       path(std::move(path_)),
       headers(std::move(headers_)) {}
@@ -126,6 +127,9 @@ S3HttpPostEngineImpl::~S3HttpPostEngineImpl() {
       evhtp_unset_all_hooks(&p_conn->request->hooks);
     }
     evhtp_unset_all_hooks(&p_conn->hooks);
+  }
+  if (p_evdns_base) {
+    evdns_base_free(p_evdns_base, 0);
   }
   if (p_event) {
     event_del(p_event);
@@ -207,10 +211,19 @@ bool S3HttpPostEngineImpl::connect() {
   if (p_conn) {
     return true;
   }
-  p_conn = evhtp_connection_new(p_evbase, s_ipa.c_str(), port);
+  if (!p_evdns_base) {
+    p_evdns_base = evdns_base_new(p_evbase, EVDNS_BASE_INITIALIZE_NAMESERVERS);
+
+    if (!p_evdns_base) {
+      s3_log(S3_LOG_ERROR, nullptr, "evdns_base_new() failed");
+      return false;
+    }
+  }
+  p_conn =
+      evhtp_connection_new_dns(p_evbase, p_evdns_base, s_host.c_str(), port);
 
   if (!p_conn) {
-    s3_log(S3_LOG_ERROR, nullptr, "evhtp_connection_new() failed");
+    s3_log(S3_LOG_ERROR, nullptr, "evhtp_connection_new_dns() failed");
     return false;
   }
   evhtp_set_hook(&p_conn->hooks, evhtp_hook_on_conn_error,
@@ -503,9 +516,9 @@ bool S3HttpPostEngineImpl::post(const std::string &msg) {
 
 template <>
 S3HttpPostQueue *create_http_post_queue(
-    evbase_t *p_evbase, std::string s_ipa, uint16_t port, std::string path,
+    evbase_t *p_evbase, std::string s_host, uint16_t port, std::string path,
     std::map<std::string, std::string> headers) {
 
   return new S3HttpPostQueueImpl(new S3HttpPostEngineImpl(
-      p_evbase, std::move(s_ipa), port, std::move(path), std::move(headers)));
+      p_evbase, std::move(s_host), port, std::move(path), std::move(headers)));
 }
