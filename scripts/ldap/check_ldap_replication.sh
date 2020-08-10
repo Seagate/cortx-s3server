@@ -123,8 +123,8 @@ fi
 
 #delete created account and accesskeys
 
-ldapdelete -x -w ldapadmin -r "o=s3_test3,ou=accounts,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///
-ldapdelete -x -w ldapadmin -r "ak=AKIAJPINPFR1TPAYOGPA,ou=accesskeys,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///
-ldapdelete -x -w ldapadmin -r "ak=AKIAJTYX16YCKQSAJT8Q,ou=accesskeys,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///
-ldapdelete -x -w ldapadmin -r "ak=BKIAJTYX16YCKQSAJT8Q,ou=accesskeys,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi://
-ldapdelete -x -w ldapadmin -r "ak=CKIAJTYX16YCKQSAJT8Q,ou=accesskeys,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi://
+ldapdelete -x -w $ldappasswd -r "o=s3_test3,ou=accounts,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///
+ldapdelete -x -w $ldappasswd -r "ak=AKIAJPINPFR1TPAYOGPA,ou=accesskeys,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///
+ldapdelete -x -w $ldappasswd -r "ak=AKIAJTYX16YCKQSAJT8Q,ou=accesskeys,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///
+ldapdelete -x -w $ldappasswd -r "ak=BKIAJTYX16YCKQSAJT8Q,ou=accesskeys,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi://
+ldapdelete -x -w $ldappasswd -r "ak=CKIAJTYX16YCKQSAJT8Q,ou=accesskeys,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi://
