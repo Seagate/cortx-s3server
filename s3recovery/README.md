@@ -61,6 +61,8 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
      python36 setup.py build
      python36 setup.py install
      ```
+  4. Create S3 account with name *s3-recovery-svc* and update *access_key* and
+     *secret_key* in _/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml_
 
 # S3-Metadata recovery tool
 
