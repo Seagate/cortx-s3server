@@ -317,8 +317,8 @@ class ADDB2PP:
         return yml.translate(str.maketrans("><-","''_"))
 
     @staticmethod
-    def to_unix(mero_time):
-        mt = list(mero_time)
+    def to_unix(motr_time):
+        mt = list(motr_time)
         mt[10] = 'T'
         np_time = numpy.datetime64("".join(mt))
         return np_time.item()

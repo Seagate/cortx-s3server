@@ -27,15 +27,15 @@
     state: installed
 
 - name: Install S3 server development build dependencies & tools
-  # TODO Currently mero is not supported for CentOS 8, when support is there remove below check
+  # TODO Currently motr is not supported for CentOS 8, when support is there remove below check
   when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
-  command: yum-builddep -v -y {{ s3_src }}/rpms/s3/s3rpm.spec --define "disable_eoscore_dependencies 1"
+  command: yum-builddep -v -y {{ s3_src }}/rpms/s3/s3rpm.spec --define "disable_cortxmotr_dependencies 1"
 
 - name: Install S3 server development build dependencies & tools
-  # TODO Currently mero is not supported for CentOS 8, when support is there, above yum-builddep (without disabling mero)
+  # TODO Currently motr is not supported for CentOS 8, when support is there, above yum-builddep (without disabling motr)
   # will suffice for both CentOS 7 and 8, remove this one
   when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '8')
-  command: yum-builddep -v -y {{ s3_src }}/rpms/s3/s3rpm.spec --define "disable_eoscore_dependencies 1"
+  command: yum-builddep -v -y {{ s3_src }}/rpms/s3/s3rpm.spec --define "disable_cortxmotr_dependencies 1"
 
 - name: Install s3iamcli development build dependencies & tools
   command: yum-builddep -y {{ s3_src }}/rpms/s3iamcli/s3iamcli.spec

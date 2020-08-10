@@ -6,7 +6,7 @@
 2. Create s3backgrounddelete log folder
     >mkdir -p /var/log/seagate/s3/s3backgrounddelete
 
-3. Start S3 and mero services after setting S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING to true in
+3. Start S3 and motr services after setting S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING to true in
     /opt/seagate/cortx/s3/conf/s3config.yaml.
 
 4. Create an account with account name s3-background-delete-svc and update

@@ -1,5 +1,5 @@
 ARG  CENTOS_RELEASE=7
-FROM registry.gitlab.mero.colo.seagate.com/mero/mero:${CENTOS_RELEASE}
+FROM registry.gitlab.mero.colo.seagate.com/motr/motr:${CENTOS_RELEASE}
 
 COPY s3server-uploads.repo /etc/yum.repos.d/
 COPY s3rpm.spec .
@@ -11,4 +11,4 @@ RUN yum install -y http://cortx-storage.colo.seagate.com/releases/master/mero_st
     && yum install -y git-clang-format \
     && yum-builddep -y --define 'python3_other_pkgversion 36' s3rpm.spec \
     && rm -f s3rpm.spec \
-    && yum remove -y mero mero-devel
+    && yum remove -y cortx-motr cortx-motr-devel

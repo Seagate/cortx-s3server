@@ -24,13 +24,13 @@ import unittest
 
 from s3recovery.s3recoverybase import S3RecoveryBase
 
-from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
-from s3backgrounddelete.eos_list_index_response import EOSCoreListIndexResponse
-from s3backgrounddelete.eos_core_error_respose import EOSCoreErrorResponse
+from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
+from s3backgrounddelete.cortx_list_index_response import CORTXS3ListIndexResponse
+from s3backgrounddelete.cortx_s3_error_respose import CORTXS3ErrorResponse
 
 class S3RecoveryBaseTestCase(unittest.TestCase):
 
-    @mock.patch.object(EOSCoreIndexApi, 'list')
+    @mock.patch.object(CORTXS3IndexApi, 'list')
     def test_list_index_empty(self, mock_list):
         # Tests 'list_index' when index is empty
         mockS3RecoveryBase = S3RecoveryBase()
@@ -38,20 +38,20 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
         mock_res = \
             '{"Delimiter":"","Index-Id":"mock-index-id","IsTruncated":"false",\
                 "Keys":null,"Marker":"","MaxKeys":"1000","NextMarker":"","Prefix":""}'
-        mock_list.return_value = True, EOSCoreListIndexResponse(mock_res.encode())
+        mock_list.return_value = True, CORTXS3ListIndexResponse(mock_res.encode())
 
         keys = mockS3RecoveryBase.list_index('global_index_id')
 
         self.assertEqual(keys, None)
 
-    @mock.patch.object(EOSCoreIndexApi, 'list')
-    @mock.patch.object(EOSCoreListIndexResponse, 'get_index_content')
+    @mock.patch.object(CORTXS3IndexApi, 'list')
+    @mock.patch.object(CORTXS3ListIndexResponse, 'get_index_content')
     def test_list_index_not_empty(self, mock_get_index_content, mock_list):
         # Tests 'list_index' when index is not empty
         mockS3RecoveryBase = S3RecoveryBase()
         # setup mock
         mock_json_res = '{}'
-        mock_list.return_value = True, EOSCoreListIndexResponse(
+        mock_list.return_value = True, CORTXS3ListIndexResponse(
             mock_json_res.encode("utf-8")
             )
         mock_get_index_content.return_value = {
@@ -72,13 +72,13 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
         self.assertNotEqual(keys_list, None)
         self.assertEqual(len(keys_list), 2)
 
-    @mock.patch.object(EOSCoreIndexApi, 'list')
+    @mock.patch.object(CORTXS3IndexApi, 'list')
     def test_list_index_failed(self, mock_list):
-        # Tests 'list_index' when EOSCoreIndexApi.list returned False
+        # Tests 'list_index' when CORTXS3IndexApi.list returned False
         mockS3RecoveryBase = S3RecoveryBase()
 
         # setup mock
-        mock_list.return_value = False, EOSCoreErrorResponse(
+        mock_list.return_value = False, CORTXS3ErrorResponse(
             500,
             "",
             "InternalServerError"
@@ -88,15 +88,15 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
 
         self.assertEqual(cm.exception.code, 1)
 
-    @mock.patch.object(EOSCoreIndexApi, 'list')
-    @mock.patch.object(EOSCoreListIndexResponse, 'get_index_content')
+    @mock.patch.object(CORTXS3IndexApi, 'list')
+    @mock.patch.object(CORTXS3ListIndexResponse, 'get_index_content')
     def test_initiate_list_called(self, mock_get_index_content, mock_list):
-        # Test 'initiate' function for EOSCoreIndexApi.list called or not
+        # Test 'initiate' function for CORTXS3IndexApi.list called or not
         mockS3RecoveryBase = S3RecoveryBase()
 
         # setup mock
         mock_res = '{}'
-        mock_list.return_value = True, EOSCoreListIndexResponse(mock_res.encode())
+        mock_list.return_value = True, CORTXS3ListIndexResponse(mock_res.encode())
         mock_get_index_content.return_value = {
             "Delimiter":"",
             "Index-Id":"mock-index-id",

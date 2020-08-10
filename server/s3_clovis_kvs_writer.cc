@@ -25,7 +25,7 @@
 #include "s3_clovis_kvs_writer.h"
 #include "s3_clovis_rw_common.h"
 #include "s3_option.h"
-#include "s3_uri_to_mero_oid.h"
+#include "s3_uri_to_motr_oid.h"
 #include "s3_stats.h"
 
 extern struct m0_clovis_realm clovis_uber_realm;
@@ -88,7 +88,7 @@ void S3ClovisKVSWriter::create_index(std::string index_name,
          index_name.c_str());
 
   struct m0_uint128 id = {0ULL, 0ULL};
-  S3UriToMeroOID(s3_clovis_api, index_name.c_str(), request_id, &id,
+  S3UriToMotrOID(s3_clovis_api, index_name.c_str(), request_id, &id,
                  S3ClovisEntityType::index);
 
   create_index_with_oid(id, on_success, on_failed);
@@ -692,7 +692,7 @@ void S3ClovisKVSWriter::put_keyval_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_stats_inc("put_keyval_success_count");
   // todo: Add check, verify if (kvs_ctx->rcs == 0)
-  // do this when cassandra + mero-kvs rcs implementation completed
+  // do this when cassandra + motr-kvs rcs implementation completed
   // in clovis
   state = S3ClovisKVSWriterOpState::created;
   this->handler_on_success();
@@ -895,7 +895,7 @@ void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid,
 void S3ClovisKVSWriter::delete_keyval_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // todo: Add check, verify if (kvs_ctx->rcs == 0)
-  // do this when cassandra + mero-kvs rcs implementation completed
+  // do this when cassandra + motr-kvs rcs implementation completed
   // in clovis
   state = S3ClovisKVSWriterOpState::deleted;
   this->handler_on_success();

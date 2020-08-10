@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_S3_ASYNC_BUFFER_OPT_H__
-#define __MERO_FE_S3_SERVER_S3_ASYNC_BUFFER_OPT_H__
+#ifndef __MOTR_FE_S3_SERVER_S3_ASYNC_BUFFER_OPT_H__
+#define __MOTR_FE_S3_SERVER_S3_ASYNC_BUFFER_OPT_H__
 
 #include <deque>
 #include <string>

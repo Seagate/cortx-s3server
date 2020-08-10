@@ -101,7 +101,7 @@ TEST_F(S3StatsTest, Init) {
 }
 
 TEST_F(S3StatsTest, Whitelist) {
-  EXPECT_TRUE(g_stats_instance->is_allowed_to_publish("uri_to_mero_oid"));
+  EXPECT_TRUE(g_stats_instance->is_allowed_to_publish("uri_to_motr_oid"));
   EXPECT_TRUE(g_stats_instance->is_allowed_to_publish(
       "delete_object_from_clovis_failed"));
   EXPECT_TRUE(g_stats_instance->is_allowed_to_publish("total_request_time"));

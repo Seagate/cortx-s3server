@@ -8,7 +8,7 @@ CNAME = $(@:%-container=%)
 .PHONY: images
 images: docker-image-latest \
         docker-image-7.6 \
-        docker-image-eos
+        docker-image-cortx
 
 .PHONY: docker-image-latest docker-image-7
 docker-image-latest docker-image-7: s3server-devel-image
@@ -17,9 +17,9 @@ docker-image-latest docker-image-7: s3server-devel-image
 docker-image-7.6: CENTOS_RELEASE := 7.6
 docker-image-7.6: s3server-devel-image
 
-.PHONY: docker-image-eos
-docker-image-eos: CENTOS_RELEASE := eos
-docker-image-eos: s3server-devel-image
+.PHONY: docker-image-cortx
+docker-image-cortx: CENTOS_RELEASE := cortx
+docker-image-cortx: s3server-devel-image
 
 
 .PHONY: s3server-devel-image
@@ -29,7 +29,7 @@ s3server-devel-image:
 	   | $(DOCKER) build \
 			--build-arg CENTOS_RELEASE=$(CENTOS_RELEASE) \
 			-t $(NAMESPACE)/$(INAME):$(CENTOS_RELEASE) \
-			-t $(NAMESPACE)/mero/s3server:$(CENTOS_RELEASE) \
+			-t $(NAMESPACE)/motr/s3server:$(CENTOS_RELEASE) \
 			$(DOCKER_OPTS) -
 
 .PHONY: push
@@ -38,7 +38,7 @@ tag  := *
 push:
 	@for img in $$(docker images --filter=reference='$(NAMESPACE)/$(name):$(tag)' \
 				    --format '{{.Repository}}:{{.Tag}}' | grep -v none) \
-		    $$(docker images --filter=reference='$(NAMESPACE)/mero/$(name):$(tag)' \
+		    $$(docker images --filter=reference='$(NAMESPACE)/motr/$(name):$(tag)' \
 				    --format '{{.Repository}}:{{.Tag}}' | grep -v none) ; \
 	do \
 		echo "---> $$img" ; \
@@ -49,7 +49,7 @@ push:
 clean:
 	@for img in $$(docker images --filter=reference='$(NAMESPACE)/$(name):$(tag)' \
 				    --format '{{.Repository}}:{{.Tag}}') \
-		    $$(docker images --filter=reference='$(NAMESPACE)/mero/$(name):$(tag)' \
+		    $$(docker images --filter=reference='$(NAMESPACE)/motr/$(name):$(tag)' \
 				    --format '{{.Repository}}:{{.Tag}}') ; \
 	do \
 		echo "---> $$img" ; \

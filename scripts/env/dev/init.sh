@@ -34,12 +34,11 @@ source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
 
 yum install rpm-build -y
 
-#It seems mero dependency script install s3cmd(2.0.0)
+#It seems motr dependency script install s3cmd(2.0.0)
 #for s3 system test we need patched s3cmd(1.6.1), which s3 ansible installs
 rpm -q s3cmd && rpm -e s3cmd --nodeps
 
 # Cleanup obsolete rpms if already installed on this system
-# rpms are renamed from eos -> cortx as part of EOS-7750
 yum remove -y log4cxx_eos log4cxx_eos-devel log4cxx_eos-debuginfo || /bin/true
 yum remove -y eos-s3iamcli eos-s3iamcli-devel || /bin/true
 yum remove -y eos-s3server eos-s3server-debuginfo || /bin/true
@@ -90,12 +89,12 @@ yum install -y ansible facter
 
 cd ${BASEDIR}/../../../ansible
 
-#Install mero build dependencies
+#Install motr build dependencies
 
-# TODO Currently mero is not supported for CentOS 8, when support is there remove below check
+# TODO Currently motr is not supported for CentOS 8, when support is there remove below check
 if [ "$major_version" = "7" ];
 then
-  ./s3mero-build-depencies.sh
+  ./s3motr-build-depencies.sh
 fi
 
 # Update ansible/hosts file with local ip
