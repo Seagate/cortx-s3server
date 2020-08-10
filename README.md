@@ -773,10 +773,11 @@ md5sum /root/file.txt
 
 # Audit logging
 
-Audit logging supports 3 types of loggers:
+Audit logging supports 4 types of loggers:
 * rsyslog via tcp
 * rsyslog via syslog call
 * log4cxx.
+* kafka via web adapter
 * also it could be disabled.
 
 Following settings are responsible for audit logging
@@ -787,9 +788,11 @@ Following settings are responsible for audit logging
      - rsyslog-tcp - log to rsyslog via tcp
      - syslog - log to rsyslog via syslog call
      - log4cxx - log with log4cxx
+     - kafka-web - log to Kafka via web adapter
 * S3_AUDIT_LOGGER_HOST - rsyslog host name to connect to
 * S3_AUDIT_LOGGER_PORT - rsyslog port to connect to
 * S3_AUDIT_LOGGER_RSYSLOG_MSGID - rsyslog msgid to filter messages
+* S3_AUDIT_LOGGER_KAFKA_WEB_PATH - URL path (contains topic name)
 
 ## log4cxx
 
@@ -807,6 +810,13 @@ Following settings are responsible for audit logging
 * S3_AUDIT_LOGGER_HOST: localhost
 * S3_AUDIT_LOGGER_PORT: 514
 * S3_AUDIT_LOGGER_RSYSLOG_MSGID: "s3server-audit-logging"
+
+## kafka-web
+
+* S3_AUDIT_LOGGER_POLICY: "kafka-web"
+* S3_AUDIT_LOGGER_HOST: "localhost"
+* S3_AUDIT_LOGGER_PORT: \<TCP port used by Kafka web adapter\>
+* S3_AUDIT_LOGGER_KAFKA_WEB_PATH: "/topics/s3auditlogs"
 
 ## disabled
 
