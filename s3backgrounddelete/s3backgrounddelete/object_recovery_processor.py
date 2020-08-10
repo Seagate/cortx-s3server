@@ -30,7 +30,7 @@ import datetime
 from logging import handlers
 
 from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
-from s3backgrounddelete.eos_core_config import EOSCoreConfig
+from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 
 
 class ObjectRecoveryProcessor(object):
@@ -39,7 +39,7 @@ class ObjectRecoveryProcessor(object):
     def __init__(self):
         """Initialise Server, config and create logger."""
         self.server = None
-        self.config = EOSCoreConfig()
+        self.config = CORTXS3Config()
         self.create_logger_directory()
         self.create_logger()
         self.logger.info("Initialising the Object Recovery Processor")

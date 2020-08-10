@@ -93,11 +93,11 @@ class S3ObjectMetadata {
   struct m0_uint128 objects_version_list_index_oid;
   struct m0_uint128 part_index_oid;
 
-  std::string mero_oid_str;
-  std::string mero_old_oid_str;
-  std::string mero_old_object_version_id;
+  std::string motr_oid_str;
+  std::string motr_old_oid_str;
+  std::string motr_old_object_version_id;
 
-  std::string mero_part_oid_str;
+  std::string motr_part_oid_str;
   std::string encoded_acl;
 
   std::map<std::string, std::string> system_defined_attribute;
@@ -197,7 +197,7 @@ class S3ObjectMetadata {
 
   void set_version_id(std::string ver_id);
 
-  std::string get_old_obj_version_id() { return mero_old_object_version_id; }
+  std::string get_old_obj_version_id() { return motr_old_object_version_id; }
   void set_old_version_id(std::string old_obj_ver_id);
 
   std::string get_owner_name();

@@ -28,7 +28,7 @@
 #include "s3_log.h"
 #include "s3_object_metadata.h"
 #include "s3_object_versioning_helper.h"
-#include "s3_uri_to_mero_oid.h"
+#include "s3_uri_to_motr_oid.h"
 #include "s3_common_utilities.h"
 #include "s3_m0_uint128_helper.h"
 #include "s3_stats.h"
@@ -251,7 +251,7 @@ std::string S3ObjectMetadata::get_md5() {
 
 void S3ObjectMetadata::set_oid(struct m0_uint128 id) {
   oid = id;
-  mero_oid_str = S3M0Uint128Helper::to_string(oid);
+  motr_oid_str = S3M0Uint128Helper::to_string(oid);
 }
 
 void S3ObjectMetadata::set_version_id(std::string ver_id) {
@@ -262,16 +262,16 @@ void S3ObjectMetadata::set_version_id(std::string ver_id) {
 
 void S3ObjectMetadata::set_old_oid(struct m0_uint128 id) {
   old_oid = id;
-  mero_old_oid_str = S3M0Uint128Helper::to_string(old_oid);
+  motr_old_oid_str = S3M0Uint128Helper::to_string(old_oid);
 }
 
 void S3ObjectMetadata::set_old_version_id(std::string old_obj_ver_id) {
-  mero_old_object_version_id = old_obj_ver_id;
+  motr_old_object_version_id = old_obj_ver_id;
 }
 
 void S3ObjectMetadata::set_part_index_oid(struct m0_uint128 id) {
   part_index_oid = id;
-  mero_part_oid_str = S3M0Uint128Helper::to_string(part_index_oid);
+  motr_part_oid_str = S3M0Uint128Helper::to_string(part_index_oid);
 }
 
 void S3ObjectMetadata::add_system_attribute(std::string key, std::string val) {
@@ -547,13 +547,13 @@ std::string S3ObjectMetadata::to_json() {
 
   if (is_multipart) {
     root["Upload-ID"] = upload_id;
-    root["mero_part_oid"] = mero_part_oid_str;
-    root["mero_old_oid"] = mero_old_oid_str;
+    root["motr_part_oid"] = motr_part_oid_str;
+    root["motr_old_oid"] = motr_old_oid_str;
     root["old_layout_id"] = old_layout_id;
-    root["mero_old_object_version_id"] = mero_old_object_version_id;
+    root["motr_old_object_version_id"] = motr_old_object_version_id;
   }
 
-  root["mero_oid"] = mero_oid_str;
+  root["motr_oid"] = motr_oid_str;
 
   for (auto sit : system_defined_attribute) {
     root["System-Defined"][sit.first] = sit.second;
@@ -590,7 +590,7 @@ std::string S3ObjectMetadata::version_entry_to_json() {
   // required and we can simply use to_json.
 
   // root["Object-Name"] = object_name;
-  root["mero_oid"] = mero_oid_str;
+  root["motr_oid"] = motr_oid_str;
   root["layout_id"] = layout_id;
 
   S3DateTime current_time;
@@ -640,12 +640,12 @@ int S3ObjectMetadata::from_json(std::string content) {
   object_name = newroot["Object-Name"].asString();
   object_key_uri = newroot["Object-URI"].asString();
   upload_id = newroot["Upload-ID"].asString();
-  mero_part_oid_str = newroot["mero_part_oid"].asString();
+  motr_part_oid_str = newroot["motr_part_oid"].asString();
 
-  mero_oid_str = newroot["mero_oid"].asString();
+  motr_oid_str = newroot["motr_oid"].asString();
   layout_id = newroot["layout_id"].asInt();
 
-  oid = S3M0Uint128Helper::to_m0_uint128(mero_oid_str);
+  oid = S3M0Uint128Helper::to_m0_uint128(motr_oid_str);
 
   //
   // Old oid is needed to remove the OID when the object already exists
@@ -654,14 +654,14 @@ int S3ObjectMetadata::from_json(std::string content) {
   // will be used in post complete action.
   //
   if (is_multipart) {
-    mero_old_oid_str = newroot["mero_old_oid"].asString();
-    old_oid = S3M0Uint128Helper::to_m0_uint128(mero_old_oid_str);
+    motr_old_oid_str = newroot["motr_old_oid"].asString();
+    old_oid = S3M0Uint128Helper::to_m0_uint128(motr_old_oid_str);
     old_layout_id = newroot["old_layout_id"].asInt();
-    mero_old_object_version_id =
-        newroot["mero_old_object_version_id"].asString();
+    motr_old_object_version_id =
+        newroot["motr_old_object_version_id"].asString();
   }
 
-  part_index_oid = S3M0Uint128Helper::to_m0_uint128(mero_part_oid_str);
+  part_index_oid = S3M0Uint128Helper::to_m0_uint128(motr_part_oid_str);
 
   Json::Value::Members members = newroot["System-Defined"].getMemberNames();
   for (auto it : members) {

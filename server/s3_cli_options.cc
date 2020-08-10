@@ -30,9 +30,9 @@ DEFINE_string(s3layoutmap,
 
 DEFINE_string(s3hostv4, "", "S3 server ipv4 bind address");
 DEFINE_string(s3hostv6, "", "S3 server ipv6 bind address");
-DEFINE_string(merohttpapihost, "", "S3 server mero http bind address");
+DEFINE_string(motrhttpapihost, "", "S3 server motr http bind address");
 DEFINE_int32(s3port, 8081, "S3 server bind port");
-DEFINE_int32(merohttpapiport, 7081, "mero http server bind port");
+DEFINE_int32(motrhttpapiport, 7081, "motr http server bind port");
 DEFINE_string(s3pidfile, "/var/run/s3server.pid", "S3 server pid file");
 
 DEFINE_string(audit_config,
@@ -75,7 +75,7 @@ DEFINE_bool(fake_clovis_redis_kvs, false,
             "Fake out clovis kvs with redis in-memory storage");
 DEFINE_bool(fault_injection, false, "Enable fault Injection flag for testing");
 DEFINE_bool(loading_indicators, false, "Enable logging load indicators");
-DEFINE_bool(addb, false, "Enable logging via ADDB mero subsystem");
+DEFINE_bool(addb, false, "Enable logging via ADDB motr subsystem");
 
 DEFINE_string(statsd_host, "127.0.0.1", "StatsD daemon host");
 DEFINE_int32(statsd_port, 8125, "StatsD daemon port");
@@ -108,9 +108,9 @@ int parse_and_load_config_options(int argc, char **argv) {
                                         flag_info.current_value.c_str());
   }
 
-  gflags::GetCommandLineFlagInfo("merohttpapihost", &flag_info);
+  gflags::GetCommandLineFlagInfo("motrhttpapihost", &flag_info);
   if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_OPTION_MERO_BIND_ADDR,
+    option_instance->set_cmdline_option(S3_OPTION_MOTR_BIND_ADDR,
                                         flag_info.current_value.c_str());
   }
 
@@ -120,9 +120,9 @@ int parse_and_load_config_options(int argc, char **argv) {
                                         flag_info.current_value.c_str());
   }
 
-  gflags::GetCommandLineFlagInfo("merohttpapiport", &flag_info);
+  gflags::GetCommandLineFlagInfo("motrhttpapiport", &flag_info);
   if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_OPTION_MERO_BIND_PORT,
+    option_instance->set_cmdline_option(S3_OPTION_MOTR_BIND_PORT,
                                         flag_info.current_value.c_str());
   }
 

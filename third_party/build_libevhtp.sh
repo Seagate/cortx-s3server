@@ -20,7 +20,7 @@
 #!/bin/sh -xe
 # Script to build libevhtp.
 # git repo: https://github.com/ellzey/libevhtp.git
-# gerrit repo http://gerrit.mero.colo.seagate.com:8080/libevhtp
+# github repo: git clone https://github.com/Seagate/libevhtp.git
 # previous branch: develop commit: a89d9b3f9fdf2ebef41893b3d5e4466f4b0ecfda
 # previous patch: libevhtp-v1.2.11-prev.patch
 # current branch: develop commit: c84f68d258d07c4015820ceb87fd17decd054bfc

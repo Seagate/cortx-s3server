@@ -27,7 +27,7 @@ id_racks:
       bmc_pass: admin
     enc_hosts:
     - h_cpucount: 8
-      h_fqdn: mero.localhost.com
+      h_fqdn: motr.localhost.com
       h_memsize: 4096
       h_interfaces:
         - if_network: Data
@@ -59,7 +59,7 @@ id_racks:
     enc_id: enclosure2
 
 id_m0_servers:
-- m0h_fqdn: mero.localhost.com
+- m0h_fqdn: motr.localhost.com
   host_mem_as: 1
   host_cores:
   - 1

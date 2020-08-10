@@ -290,7 +290,7 @@ index 7582d9b..16881ed 100644
  		r = _bufferevent_add_event(&bev->ev_read, &bev->timeout_read);
 +		/* S3 edit starts */
 +		/*
-+		 * This is a fix for EOS-198. Server would crash or return
++		 * This is a fix for below scenario, Server would crash or return
 +		 * timeout errors, when is tested with cosbench with SSL
 +		 * enabled.  Specific scenario ivolved writing objects of size
 +		 * 1000000 bytes.  Current settings force libevent to read data

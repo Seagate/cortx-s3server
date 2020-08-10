@@ -78,7 +78,7 @@ rm -rf cortx-s3server*
 
 if ! [ -z "${GIT_VER}" ]; then
     # Setup the source tar for rpm build
-    git clone http://gerrit.mero.colo.seagate.com:8080/s3server cortx-s3server-${S3_VERSION}-git${GIT_VER}
+    git clone --recursive https://github.com/Seagate/cortx-s3server.git cortx-s3server-${S3_VERSION}-git${GIT_VER}
     cd cortx-s3server-${S3_VERSION}-git${GIT_VER}
     if [ $ENABLE_DEBUG_LOG == 1 ]; then
         sed -i 's/#logLevel=DEBUG.*$/logLevel=DEBUG/g' auth/resources/authserver.properties

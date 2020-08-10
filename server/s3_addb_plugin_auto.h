@@ -65,22 +65,22 @@ enum S3AddbActionTypeId {
   /* Auto-generated IDs are listed below. Sorry for strange format, it had to
    * be done this way to pass git-clang-format check. */
 
-  /* MeroDeleteIndexAction: */
-  S3_ADDB_MERO_DELETE_INDEX_ACTION_ID,
-  /* MeroDeleteKeyValueAction: */
-  S3_ADDB_MERO_DELETE_KEY_VALUE_ACTION_ID,
-  /* MeroDeleteObjectAction: */
-  S3_ADDB_MERO_DELETE_OBJECT_ACTION_ID,
-  /* MeroGetKeyValueAction: */
-  S3_ADDB_MERO_GET_KEY_VALUE_ACTION_ID,
-  /* MeroHeadIndexAction: */
-  S3_ADDB_MERO_HEAD_INDEX_ACTION_ID,
-  /* MeroHeadObjectAction: */
-  S3_ADDB_MERO_HEAD_OBJECT_ACTION_ID,
-  /* MeroKVSListingAction: */
-  S3_ADDB_MERO_KVS_LISTING_ACTION_ID,
-  /* MeroPutKeyValueAction: */
-  S3_ADDB_MERO_PUT_KEY_VALUE_ACTION_ID,
+  /* MotrDeleteIndexAction: */
+  S3_ADDB_MOTR_DELETE_INDEX_ACTION_ID,
+  /* MotrDeleteKeyValueAction: */
+  S3_ADDB_MOTR_DELETE_KEY_VALUE_ACTION_ID,
+  /* MotrDeleteObjectAction: */
+  S3_ADDB_MOTR_DELETE_OBJECT_ACTION_ID,
+  /* MotrGetKeyValueAction: */
+  S3_ADDB_MOTR_GET_KEY_VALUE_ACTION_ID,
+  /* MotrHeadIndexAction: */
+  S3_ADDB_MOTR_HEAD_INDEX_ACTION_ID,
+  /* MotrHeadObjectAction: */
+  S3_ADDB_MOTR_HEAD_OBJECT_ACTION_ID,
+  /* MotrKVSListingAction: */
+  S3_ADDB_MOTR_KVS_LISTING_ACTION_ID,
+  /* MotrPutKeyValueAction: */
+  S3_ADDB_MOTR_PUT_KEY_VALUE_ACTION_ID,
   /* S3AbortMultipartAction: */
   S3_ADDB_S3_ABORT_MULTIPART_ACTION_ID,
   /* S3AccountDeleteMetadataAction: */

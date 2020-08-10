@@ -23,9 +23,9 @@ import time
 import json
 import pika
 
-from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
-from s3backgrounddelete.eos_core_object_api import EOSCoreObjectApi
-from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
+from s3backgrounddelete.cortx_s3_kv_api import CORTXS3KVApi
+from s3backgrounddelete.cortx_s3_object_api import CORTXS3ObjectApi
+from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
 from s3backgrounddelete.object_recovery_validator import ObjectRecoveryValidator
 from s3backgrounddelete.IEMutil import IEMutil
 

@@ -55,9 +55,9 @@ class S3RecoverCorruption(S3RecoveryBase):
         :{"Date":"2020-07-07T11:30:53.000Z","LocationConstraint":"us-west-2",
         "Owner-Account":"s3_test","Owner-Account-id":"12345","Owner-User":"tester",
         "Owner-User-id":"123"},"create_timestamp":"2020-07-07T11:30:53.000Z",
-        "mero_multipart_index_oid":"dQmoBAAAAHg=-AgAAAAAAtMU=",
-        "mero_object_list_index_oid":"dQmoBAAAAHg=-AQAAAAAAtMU=",
-        "mero_objects_version_list_index_oid":"dQmoBAAAAHg=-AwAAAAAAtMU="}
+        "motr_multipart_index_oid":"dQmoBAAAAHg=-AgAAAAAAtMU=",
+        "motr_object_list_index_oid":"dQmoBAAAAHg=-AQAAAAAAtMU=",
+        "motr_objects_version_list_index_oid":"dQmoBAAAAHg=-AwAAAAAAtMU="}
         }
         """
 

@@ -228,7 +228,7 @@ S3fiTest('s3cmd disable Fault injection').disable_fi("fail_delete_objects_metada
 
 S3cmdTest('s3cmd can delete multiple objects').multi_delete_test("seagatebucket").execute_test().command_is_successful().command_response_should_have('delete: \'s3://seagatebucket/3kfile0\'').command_response_should_have('delete: \'s3://seagatebucket/3kfile1\'')
 
-# This test will leave stale objects in mero.
+# This test will leave stale objects in motr.
 S3fiTest('s3cmd enable FI OBJ Delete').enable_fi("enable", "always", "clovis_obj_delete_fail").execute_test().command_is_successful()
 file_name = "3kfile"
 for num in range(0, 2):

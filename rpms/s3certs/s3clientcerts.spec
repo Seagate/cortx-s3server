@@ -20,7 +20,7 @@
 # _s3_deploy_tag => tag to identify the deployment.
 # Example: Hermi01
 # _s3_domain_tag => Domain used for S3 service
-# Example: s3.h1.mero.colo.seagate.com
+# Example: s3.h1.motr.colo.seagate.com
 # These can also be any useful identifier to know the targeted deployment.
 # Example: _s3_deploy_tag = hermi.1.1.singapore or hermi01.lco.1.1
 
@@ -33,7 +33,7 @@ Release:        %{build_num}_%{_s3_deploy_tag}
 Summary:        SSL client certificates for S3 [%{_s3_domain_tag}].
 
 License:        Seagate
-URL:            http://gerrit.mero.colo.seagate.com:8080/s3server
+URL:            https://github.com/Seagate/cortx-s3server
 Source:         %{_s3_certs_src}.tar.gz
 
 BuildRequires:  openssl

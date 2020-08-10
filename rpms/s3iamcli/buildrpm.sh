@@ -68,7 +68,7 @@ cd ~/rpmbuild/SOURCES/
 rm -rf cortx-s3iamcli*
 if ! [ -z "${GIT_VER}" ]; then
   # Setup the source tar for rpm build
-  git clone http://gerrit.mero.colo.seagate.com:8080/s3server cortx-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}
+  git clone https://github.com/Seagate/cortx-s3server.git cortx-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}
   cd cortx-s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}
   # For sake of test, attempt checkout of version
   git checkout ${GIT_VER}
