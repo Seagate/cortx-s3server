@@ -1,0 +1,68 @@
+### License
+
+Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+For any questions about this software or licensing,
+please email opensource@seagate.com or cortx-questions@seagate.com.
+
+
+## Tasks supported
+* Detect S3-Metadata corruption
+* Dry run to recover S3-Metadata corruption
+* Recover S3-Metadata corruption
+
+**Python Version 3.6 required.**
+
+* Installing Python 3.6 and required dependencies
+1.   yum install wget epel-release
+2.   yum install python36
+
+**S3backgroundelete should be configured before using s3recovery tool**
+* s3recoverytool uses cortx-s3 APIs defined in s3backgrounddelete
+
+* Configuring S3backgroundelete cortx-S3 APIs
+1. Goto <s3src>/s3backgrounddelete
+2. ```sh
+python36 setup.py clean
+```
+3. ```sh
+python36 setup.py build
+````
+4. ```sh
+python36 setup.py install
+```
+
+## Configuring s3recovery tool
+
+1. Goto <s3src>/s3recovery
+2. For cleaning:
+```sh
+python36 setup.py clean
+```
+3. For building and installing:
+```sh
+python36 setup.py build
+python36 setup.py install
+```
+
+## usage: s3recovery [-h] [--dry_run] [--recover]
+
+# S3-Metadata recovery tool
+
+* optional arguments:
+  * -h, --help  show this help message and exit
+  * --dry_run   Dry run of S3-Metadata corruption recovery
+  * --recover   Recover S3-Metadata corruption (Silent)
+
