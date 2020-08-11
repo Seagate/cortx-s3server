@@ -28,9 +28,9 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
     1. yum install wget epel-release
     2. yum install python36
 
-**S3backgroundelete should be configured before using s3recovery tool**
+**S3backgroundelete must be configured before using s3recovery tool**
 * s3recoverytool uses cortx-s3 APIs defined in s3backgrounddelete, so these
-  should be installed before using s3recovery tool.
+  must be installed before using s3recovery tool.
 
 **Installing S3backgroundelete cortx-S3 APIs**
   1. ```sh
