@@ -17,9 +17,11 @@ limitations under the License.
 For any questions about this software or licensing,
 please email opensource@seagate.com or cortx-questions@seagate.com.
 
-* Note current steps are assumed to be run within VM to be configured.
+> -----------------------------------------------------------------------------------
 
 # To setup dev vm
+
+**Note current steps are assumed to be run within VM to be configured.**
 
 Prerequisite
 

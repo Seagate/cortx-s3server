@@ -17,6 +17,8 @@ limitations under the License.
 For any questions about this software or licensing,
 please email opensource@seagate.com or cortx-questions@seagate.com.
 
+> -------------------------------------------------------------------------------------------------------------
+
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/126c12088f864210931bd550f53e8001)](https://www.codacy.com?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Seagate/cortx-s3server&amp;utm_campaign=Badge_Grade)
 
 # For now dev centric readme

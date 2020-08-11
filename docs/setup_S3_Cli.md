@@ -17,9 +17,11 @@ limitations under the License.
 For any questions about this software or licensing,
 please email opensource@seagate.com or cortx-questions@seagate.com.
 
-* Note current steps are assumed to be run from a development VM.
+> ------------------------------------------------------------------------------------
 
-# install pip
+**Note below steps are assumed to be run from a development VM.**
+
+## Install pip
 ```sh
 easy_install pip
 ```
@@ -31,12 +33,12 @@ yum install python-setuptools python-setuptools-devel
 
 * AWS CLI is installed as part of jenkins build job
 
-# Install awscli-plugin-endpoint
+## Install awscli-plugin-endpoint
 ```sh
 pip install awscli-plugin-endpoint
 ```
 
-# Create S3 Account using s3iamcli tool
+## Create S3 Account using s3iamcli tool
 
 * s3iamcli gets installed as part of jenkins-build.sh run.
 Make sure that s3iamcli directory is in your PATH environment variable.
@@ -52,7 +54,7 @@ s3iamcli CreateAccount -n <account-name> -e <email-address> --ldapuser sgiamadmi
 aws --version
 ```
 
-# configure s3 cli
+## configure s3 cli
 ```sh
 aws configure
 ```
@@ -60,7 +62,7 @@ aws configure
 * Use AccessKeyId and SecretKey obtained from 's3iamcli CreateAccount' command run above in aws configuration.
 Give region as US.
 
-# Set Endpoints
+## Set Endpoints
 ```sh
 aws configure set plugins.endpoint awscli_plugin_endpoint
 aws configure set s3.endpoint_url https://s3.seagate.com
