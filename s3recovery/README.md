@@ -19,9 +19,8 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
 
 
 ## Tasks supported
-* Detect S3-Metadata corruption
-* Dry run to recover S3-Metadata corruption
-* Recover S3-Metadata corruption
+* Dry run to recover possible S3 Bucket Metadata corruption
+* Recover detected S3 Bucket Metadata corruption
 
 **Python Version 3.6 required.**
 
