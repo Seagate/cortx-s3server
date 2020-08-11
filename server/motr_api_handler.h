@@ -102,7 +102,6 @@ class MotrKeyValueAPIHandler : public MotrAPIHandler {
       : MotrAPIHandler(req, op_code) {}
 
   virtual void create_action();
-
 };
 
 class MotrObjectAPIHandler : public MotrAPIHandler {
@@ -112,7 +111,6 @@ class MotrObjectAPIHandler : public MotrAPIHandler {
       : MotrAPIHandler(req, op_code) {}
 
   virtual void create_action();
-
 };
 
 class MotrFaultinjectionAPIHandler : public MotrAPIHandler {
@@ -131,7 +129,6 @@ class MotrAPIHandlerFactory {
   virtual std::shared_ptr<MotrAPIHandler> create_api_handler(
       MotrApiType api_type, std::shared_ptr<MotrRequestObject> request,
       MotrOperationCode op_code);
-
 };
 
 #endif

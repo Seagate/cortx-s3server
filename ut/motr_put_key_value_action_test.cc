@@ -196,7 +196,6 @@ TEST_F(MotrPutKeyValueActionTest, PutKeyValueFailed) {
   action_under_test->put_key_value_failed();
 }
 
-
 TEST_F(MotrPutKeyValueActionTest, ConsumeIncomingContentHasAllBodyContent) {
   EXPECT_CALL(*ptr_mock_request, has_all_body_content()).Times(1).WillOnce(
       Return(true));
