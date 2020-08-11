@@ -73,3 +73,5 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
   * --dry_run   Dry run of S3-Metadata corruption recovery
   * --recover   Recover S3-Metadata corruption (Silent)
 
+* logs are generated at _/var/log/seagate/s3/s3recovery/_
+
