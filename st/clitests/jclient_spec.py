@@ -81,7 +81,7 @@ for i, val in enumerate(pathstyle_values):
     # ************ Create bucket ************
     JClientTest('Jclient can create bucket').create_bucket("seagatebucket", "us-west-2").execute_test().command_is_successful()
 
-    JClientTest('Jclient cannot create bucket if it exists').create_bucket("seagatebucket", "us-west-2").execute_test(negative_case=True).command_should_fail().command_error_should_have("BucketAlreadyExists")
+    JClientTest('Jclient cannot create bucket if it exists for same account').create_bucket("seagatebucket", "us-west-2").execute_test(negative_case=True).command_should_fail().command_error_should_have("BucketAlreadyOwnedByYou")
 
     JClientTest('Jclient can get bucket location').get_bucket_location("seagatebucket").execute_test().command_is_successful().command_response_should_have('us-west-2')
 

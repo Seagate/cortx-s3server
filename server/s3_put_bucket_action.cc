@@ -236,7 +236,11 @@ void S3PutBucketAction::create_bucket() {
     s3_log(S3_LOG_WARN, request_id, "Bucket already exists\n");
 
     // Report 409 bucket exists.
-    set_s3_error("BucketAlreadyExists");
+    if (request->get_account_id() == bucket_metadata->get_bucket_owner_account_id()) {
+      set_s3_error("BucketAlreadyOwnedByYou");
+    } else {
+      set_s3_error("BucketAlreadyExists");
+    }
     send_response_to_s3_client();
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // xxx set attributes & save
