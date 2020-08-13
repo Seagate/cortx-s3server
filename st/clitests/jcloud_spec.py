@@ -79,7 +79,9 @@ for i, val in enumerate(pathstyle_values):
     # ************ Create bucket ************
     JCloudTest('Jcloud can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
 
-    JCloudTest('Jcloud cannot create bucket if it exists').create_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("ResourceAlreadyExists")
+    # Seagate S3 returns S3 error 'BucketAlreadyOwnedByYou' if account/user is creating a bucket with same name that it already owns. It seems JCloud is returning "Bucket created successfully" in such case.
+    # Changing below ST to honor the change in S3 returning 'BucketAlreadyOwnedByYou' and JCloud returning "Bucket created successfully"
+    JCloudTest('Jcloud cannot create bucket if it exists').create_bucket("seagatebucket").execute_test().command_is_successful().command_response_should_have("Bucket created successfully")
 
     JCloudTest('Jcloud can verify bucket existence').check_bucket_exists("seagatebucket").execute_test().command_is_successful().command_response_should_have('Bucket seagatebucket exists')
 
