@@ -18,12 +18,12 @@
  *
  */
 
-#include "mock_s3_clovis_wrapper.h"
+#include "mock_s3_motr_wrapper.h"
 #include "s3_put_multiobject_action.h"
-#include "mock_s3_clovis_wrapper.h"
+#include "mock_s3_motr_wrapper.h"
 #include "mock_s3_factory.h"
 #include "mock_s3_request_object.h"
-#include "s3_clovis_layout.h"
+#include "s3_motr_layout.h"
 #include "s3_ut_common.h"
 
 using ::testing::Eq;

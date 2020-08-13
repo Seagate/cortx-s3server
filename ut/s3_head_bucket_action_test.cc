@@ -22,7 +22,7 @@
 #include <gtest/gtest.h>
 
 #include "mock_s3_bucket_metadata.h"
-#include "mock_s3_clovis_wrapper.h"
+#include "mock_s3_motr_wrapper.h"
 #include "mock_s3_factory.h"
 #include "mock_s3_request_object.h"
 #include "s3_head_bucket_action.h"

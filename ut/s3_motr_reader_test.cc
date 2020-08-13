@@ -21,11 +21,11 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "mock_s3_clovis_wrapper.h"
+#include "mock_s3_motr_wrapper.h"
 #include "mock_s3_request_object.h"
 #include "s3_callback_test_helpers.h"
-#include "s3_clovis_layout.h"
-#include "s3_clovis_reader.h"
+#include "s3_motr_layout.h"
+#include "s3_motr_reader.h"
 
 using ::testing::_;
 using ::testing::Return;

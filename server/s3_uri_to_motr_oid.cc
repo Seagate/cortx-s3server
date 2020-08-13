@@ -18,7 +18,7 @@
  *
  */
 
-#include "clovis_helpers.h"
+#include "motr_helpers.h"
 #include "s3_uri_to_motr_oid.h"
 #include "fid/fid.h"
 #include "murmur3_hash.h"

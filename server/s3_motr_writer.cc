@@ -21,9 +21,9 @@
 #include <unistd.h>
 #include "s3_common.h"
 
-#include "s3_clovis_layout.h"
-#include "s3_clovis_rw_common.h"
-#include "s3_clovis_writer.h"
+#include "s3_motr_layout.h"
+#include "s3_motr_rw_common.h"
+#include "s3_motr_writer.h"
 #include "s3_mem_pool_manager.h"
 #include "s3_memory_pool.h"
 #include "s3_option.h"

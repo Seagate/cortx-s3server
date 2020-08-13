@@ -27,11 +27,11 @@
 #include <event2/thread.h>
 #include <sys/resource.h>
 
-#include "clovis_helpers.h"
+#include "motr_helpers.h"
 #include "evhtp_wrapper.h"
 #include "fid/fid.h"
 #include "murmur3_hash.h"
-#include "s3_clovis_layout.h"
+#include "s3_motr_layout.h"
 #include "s3_common_utilities.h"
 #include "s3_daemonize_server.h"
 #include "s3_error_codes.h"
@@ -47,8 +47,8 @@
 #include "s3_uri_to_motr_oid.h"
 #include "s3_audit_info.h"
 #include "s3_audit_info_logger.h"
-#include "s3_fake_clovis_redis_kvs.h"
-#include "s3_clovis_wrapper.h"
+#include "s3_fake_motr_redis_kvs.h"
+#include "s3_motr_wrapper.h"
 #include "s3_m0_uint128_helper.h"
 #include "s3_perf_metrics.h"
 #include "s3_iem.h"

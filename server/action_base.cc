@@ -19,7 +19,7 @@
  */
 
 #include "action_base.h"
-#include "s3_clovis_layout.h"
+#include "s3_motr_layout.h"
 #include "s3_error_codes.h"
 #include "s3_option.h"
 #include "s3_stats.h"

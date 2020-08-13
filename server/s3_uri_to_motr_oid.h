@@ -24,7 +24,7 @@
 #define __S3_SERVER_S3_URI_TO_MOTR_OID_H__
 
 #include "s3_common.h"
-#include "s3_clovis_wrapper.h"
+#include "s3_motr_wrapper.h"
 
 EXTERN_C_BLOCK_BEGIN
 #include "clovis/clovis.h"

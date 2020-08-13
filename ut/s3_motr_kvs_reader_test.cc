@@ -24,10 +24,10 @@
 #include <iostream>
 
 #include "s3_callback_test_helpers.h"
-#include "s3_clovis_kvs_reader.h"
+#include "s3_motr_kvs_reader.h"
 #include "s3_option.h"
 
-#include "mock_s3_clovis_wrapper.h"
+#include "mock_s3_motr_wrapper.h"
 #include "mock_s3_request_object.h"
 
 using ::testing::_;

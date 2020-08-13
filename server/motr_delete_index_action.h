@@ -27,7 +27,7 @@
 #include <gtest/gtest_prod.h>
 
 #include "motr_action_base.h"
-#include "s3_clovis_kvs_writer.h"
+#include "s3_motr_kvs_writer.h"
 
 class MotrDeleteIndexAction : public MotrAction {
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;

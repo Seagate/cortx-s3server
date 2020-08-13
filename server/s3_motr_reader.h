@@ -27,9 +27,9 @@
 #include <memory>
 
 #include "s3_asyncop_context_base.h"
-#include "s3_clovis_context.h"
-#include "s3_clovis_layout.h"
-#include "s3_clovis_wrapper.h"
+#include "s3_motr_context.h"
+#include "s3_motr_layout.h"
+#include "s3_motr_wrapper.h"
 #include "s3_log.h"
 #include "s3_option.h"
 #include "s3_request_object.h"
@@ -110,9 +110,7 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
     return true;
   }
 
-  struct s3_clovis_op_context* get_clovis_op_ctx() {
-    return clovis_op_context;
-  }
+  struct s3_clovis_op_context* get_clovis_op_ctx() { return clovis_op_context; }
 
   struct s3_clovis_rw_op_context* get_clovis_rw_op_ctx() {
     return clovis_rw_op_context;

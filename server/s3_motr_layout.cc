@@ -22,7 +22,7 @@
 #include <yaml-cpp/yaml.h>
 #include <iostream>
 
-#include "s3_clovis_layout.h"
+#include "s3_motr_layout.h"
 #include "s3_log.h"
 
 S3ClovisLayoutMap* S3ClovisLayoutMap::instance = NULL;
@@ -104,23 +104,27 @@ bool S3ClovisLayoutMap::load_layout_recommendations(std::string filename) {
               filename.c_str());
       return false;
     }
-  } catch (const YAML::RepresentationException& e) {
+  }
+  catch (const YAML::RepresentationException& e) {
     fprintf(stderr, "%s:%d:YAML::RepresentationException caught: %s\n",
             __FILE__, __LINE__, e.what());
     fprintf(stderr, "%s:%d:Yaml file %s is incorrect\n", __FILE__, __LINE__,
             filename.c_str());
     return false;
-  } catch (const YAML::ParserException& e) {
+  }
+  catch (const YAML::ParserException& e) {
     fprintf(stderr, "%s:%d:YAML::ParserException caught: %s\n", __FILE__,
             __LINE__, e.what());
     fprintf(stderr, "%s:%d:Parsing Error in yaml file %s\n", __FILE__, __LINE__,
             filename.c_str());
     return false;
-  } catch (const YAML::EmitterException& e) {
+  }
+  catch (const YAML::EmitterException& e) {
     fprintf(stderr, "%s:%d:YAML::EmitterException caught: %s\n", __FILE__,
             __LINE__, e.what());
     return false;
-  } catch (YAML::Exception& e) {
+  }
+  catch (YAML::Exception& e) {
     fprintf(stderr, "%s:%d:YAML::Exception caught: %s\n", __FILE__, __LINE__,
             e.what());
     return false;

@@ -28,7 +28,7 @@
 #include <memory>
 #include <string>
 
-#include "s3_clovis_wrapper.h"
+#include "s3_motr_wrapper.h"
 #include "s3_common.h"
 #include "s3_request_object.h"
 #include "s3_timer.h"

@@ -19,10 +19,10 @@
  */
 
 #include "s3_test_utils.h"
-#include "s3_fake_clovis_redis_kvs_internal.h"
-#include "s3_clovis_kvs_reader.h"
-#include "s3_clovis_kvs_writer.h"
-#include "s3_clovis_rw_common.h"
+#include "s3_fake_motr_redis_kvs_internal.h"
+#include "s3_motr_kvs_reader.h"
+#include "s3_motr_kvs_writer.h"
+#include "s3_motr_rw_common.h"
 #include "mock_motr_request_object.h"
 
 TEST(RedisKvs, parse_key) {

@@ -28,7 +28,7 @@
 
 #include "s3_object_action_base.h"
 #include "s3_bucket_metadata.h"
-#include "s3_clovis_reader.h"
+#include "s3_motr_reader.h"
 #include "s3_factory.h"
 #include "s3_timer.h"
 
