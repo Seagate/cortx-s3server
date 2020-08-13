@@ -97,9 +97,9 @@ http://eos-jenkins.mero.colo.seagate.com/job/S3server/job/s3-github-test/
 
 F) Rebase your changes: 
 
-To rebase your local feature branch off of the latest version of master: 
+To rebase your local feature branch off of the latest version of dev: 
 
-`$ git checkout master`                  /* ensure you are on the master branch 
+`$ git checkout dev`                  /* ensure you are on the dev branch 
 
 `$ git pull`                                          /* pull the latest from the remote 
 
@@ -111,13 +111,13 @@ To rebase your local feature branch off of the latest version of master:
 
 `$ git submodule-update --init  --recursive`   /* pull the latest from the remote 
 
-`$ git rebase master`                      /* rebase on the master branch 
+`$ git rebase dev`                      /* rebase on the dev branch 
 
 `$ git push`                                       /* force update the remote 
 
  
 
-This process will ensure that you have the latest version of master then take the commits from your feature branch, temporarily unset them, move to the newest head of the master branch and then re-commit them. As long as there are no conflicts, there should be no issues. 
+This process will ensure that you have the latest version of dev then take the commits from your feature branch, temporarily unset them, move to the newest head of the dev branch and then re-commit them. As long as there are no conflicts, there should be no issues. 
  
 
 G)  How to review others changes: 
@@ -138,7 +138,7 @@ http://eos-jenkins.colo.seagate.com/job/Release_Engineering/job/github-work/job/
 4) https://guides.github.com/activities/hello-world/ 
 
 
-3) Using fork branch of master repository: 
+3) Using fork branch of github repository: 
 
     1) Create Personal Access Token on individual user 
 a) Go to your GitHub Settings -> Developer settings -> Personal access tokens 

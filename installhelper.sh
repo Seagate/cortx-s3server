@@ -273,6 +273,6 @@ cp ./scripts/elasticsearch/elasticsearch.conf $RSYSLOG_CFG_DIR_LOCATION
 cp ./scripts/s3-logrotate/s3auditlog $LOGROTATE_CFG_DIR_LOCATION
 
 # Copy the keepalived config
-cp ./scripts/keepalived/keepalived.conf.master $KEEPALIVED_CFG_DIR_LOCATION
+cp ./scripts/keepalived/keepalived.conf.main $KEEPALIVED_CFG_DIR_LOCATION
 
 exit 0

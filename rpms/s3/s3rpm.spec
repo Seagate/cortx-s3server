@@ -297,7 +297,7 @@ rm -rf %{buildroot}
 %attr(755, root, root) /opt/seagate/cortx/s3/s3datarecovery/s3recovery
 /etc/rsyslog.d/rsyslog-tcp-audit.conf
 /etc/rsyslog.d/elasticsearch.conf
-/etc/keepalived/keepalived.conf.master
+/etc/keepalived/keepalived.conf.main
 /etc/logrotate.d/s3auditlog
 %{_bindir}/s3backgroundconsumer
 %{_bindir}/s3backgroundproducer
