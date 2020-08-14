@@ -217,7 +217,7 @@ void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
     S3ClovisKVSReaderContext *read_ctx =
         (S3ClovisKVSReaderContext *)ctx->application_context;
 
-    op->op_rc = S3FakeClovisKvs::instance()->kv_read(
+    op->op_rc = S3FakeMotrKvs::instance()->kv_read(
         op->op_entity->en_id, *read_ctx->get_clovis_kvs_op_ctx());
   } else if (M0_CLOVIS_IC_NEXT == op->op_code) {
     struct s3_clovis_context_obj *ctx =
@@ -226,7 +226,7 @@ void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
     S3ClovisKVSReaderContext *read_ctx =
         (S3ClovisKVSReaderContext *)ctx->application_context;
 
-    op->op_rc = S3FakeClovisKvs::instance()->kv_next(
+    op->op_rc = S3FakeMotrKvs::instance()->kv_next(
         op->op_entity->en_id, *read_ctx->get_clovis_kvs_op_ctx());
   } else if (M0_CLOVIS_IC_PUT == op->op_code) {
     struct s3_clovis_context_obj *ctx =
@@ -235,7 +235,7 @@ void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
     S3AsyncClovisKVSWriterContext *write_ctx =
         (S3AsyncClovisKVSWriterContext *)ctx->application_context;
 
-    op->op_rc = S3FakeClovisKvs::instance()->kv_write(
+    op->op_rc = S3FakeMotrKvs::instance()->kv_write(
         op->op_entity->en_id, *write_ctx->get_clovis_kvs_op_ctx());
   } else if (M0_CLOVIS_IC_DEL == op->op_code) {
     struct s3_clovis_context_obj *ctx =
@@ -244,7 +244,7 @@ void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
     S3AsyncClovisKVSWriterContext *write_ctx =
         (S3AsyncClovisKVSWriterContext *)ctx->application_context;
 
-    op->op_rc = S3FakeClovisKvs::instance()->kv_del(
+    op->op_rc = S3FakeMotrKvs::instance()->kv_del(
         op->op_entity->en_id, *write_ctx->get_clovis_kvs_op_ctx());
   }
 

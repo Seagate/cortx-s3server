@@ -62,7 +62,7 @@ static void s3_test_clovis_op_launch(uint64_t, struct m0_clovis_op **op,
   if (M0_CLOVIS_IC_NEXT == g_opcode) {
     // For M0_CLOVIS_IC_NEXT op, if there are any keys to be returned to the
     // application, clovis overwrites the input key buffer ptr.
-    struct s3_clovis_kvs_op_context *kvs_ctx = app_ctx->get_clovis_kvs_op_ctx();
+    struct s3_motr_kvs_op_context *kvs_ctx = app_ctx->get_clovis_kvs_op_ctx();
     std::string ret_key = "random";
     kvs_ctx->keys->ov_vec.v_count[0] = ret_key.length();
     kvs_ctx->keys->ov_buf[0] = malloc(ret_key.length());

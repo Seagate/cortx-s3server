@@ -112,7 +112,7 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid,
 
   struct s3_clovis_idx_op_context *idx_op_ctx =
       reader_context->get_clovis_idx_op_ctx();
-  struct s3_clovis_kvs_op_context *kvs_ctx =
+  struct s3_motr_kvs_op_context *kvs_ctx =
       reader_context->get_clovis_kvs_op_ctx();
 
   // Remember, so buffers can be iterated.
@@ -253,7 +253,7 @@ void S3ClovisKVSReader::get_keyval_successful() {
   s3_stats_inc("get_keyval_success_count");
   state = S3ClovisKVSReaderOpState::present;
   // remember the response
-  struct s3_clovis_kvs_op_context *kvs_ctx =
+  struct s3_motr_kvs_op_context *kvs_ctx =
       reader_context->get_clovis_kvs_op_ctx();
   int rcs;
   std::string key;
@@ -338,7 +338,7 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
 
   struct s3_clovis_idx_op_context *idx_op_ctx =
       reader_context->get_clovis_idx_op_ctx();
-  struct s3_clovis_kvs_op_context *kvs_ctx =
+  struct s3_motr_kvs_op_context *kvs_ctx =
       reader_context->get_clovis_kvs_op_ctx();
 
   // Remember, so buffers can be iterated.
@@ -397,7 +397,7 @@ void S3ClovisKVSReader::next_keyval_successful() {
   state = S3ClovisKVSReaderOpState::present;
 
   // remember the response
-  struct s3_clovis_kvs_op_context *kvs_ctx =
+  struct s3_motr_kvs_op_context *kvs_ctx =
       reader_context->get_clovis_kvs_op_ctx();
 
   std::string key;

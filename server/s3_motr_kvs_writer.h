@@ -39,7 +39,7 @@ class S3SyncClovisKVSWriterContext {
   bool has_clovis_idx_op_context;
 
   // Read/Write Operation context.
-  struct s3_clovis_kvs_op_context* clovis_kvs_op_context;
+  struct s3_motr_kvs_op_context* clovis_kvs_op_context;
   bool has_clovis_kvs_op_context;
 
   std::string request_id;
@@ -77,7 +77,7 @@ class S3SyncClovisKVSWriterContext {
     has_clovis_kvs_op_context = true;
   }
 
-  struct s3_clovis_kvs_op_context* get_clovis_kvs_op_ctx() {
+  struct s3_motr_kvs_op_context* get_clovis_kvs_op_ctx() {
     return clovis_kvs_op_context;
   }
 };
@@ -224,7 +224,7 @@ class S3ClovisKVSWriter {
   void delete_keyval_successful();
   void delete_keyval_failed();
 
-  void set_up_key_value_store(struct s3_clovis_kvs_op_context* kvs_ctx,
+  void set_up_key_value_store(struct s3_motr_kvs_op_context* kvs_ctx,
                               const std::string& key, const std::string& val,
                               size_t pos = 0);
 

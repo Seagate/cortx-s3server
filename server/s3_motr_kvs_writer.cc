@@ -499,7 +499,7 @@ int S3ClovisKVSWriter::put_keyval_impl(
 
   int rc = 0;
   struct s3_clovis_idx_op_context *idx_op_ctx = NULL;
-  struct s3_clovis_kvs_op_context *kvs_ctx = NULL;
+  struct s3_motr_kvs_op_context *kvs_ctx = NULL;
   struct s3_clovis_context_obj *op_ctx = NULL;
 
   if (is_async) {
@@ -646,7 +646,7 @@ void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
 
   struct s3_clovis_idx_op_context *idx_op_ctx =
       writer_context->get_clovis_idx_op_ctx();
-  struct s3_clovis_kvs_op_context *kvs_ctx =
+  struct s3_motr_kvs_op_context *kvs_ctx =
       writer_context->get_clovis_kvs_op_ctx();
 
   struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj *)calloc(
@@ -845,7 +845,7 @@ void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid,
 
   struct s3_clovis_idx_op_context *idx_op_ctx =
       writer_context->get_clovis_idx_op_ctx();
-  struct s3_clovis_kvs_op_context *kvs_ctx =
+  struct s3_motr_kvs_op_context *kvs_ctx =
       writer_context->get_clovis_kvs_op_ctx();
 
   struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj *)calloc(
@@ -918,7 +918,7 @@ void S3ClovisKVSWriter::delete_keyval_failed() {
 }
 
 void S3ClovisKVSWriter::set_up_key_value_store(
-    struct s3_clovis_kvs_op_context *kvs_ctx, const std::string &key,
+    struct s3_motr_kvs_op_context *kvs_ctx, const std::string &key,
     const std::string &val, size_t pos) {
   // TODO - clean up these buffers
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");

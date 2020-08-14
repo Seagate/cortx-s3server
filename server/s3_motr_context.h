@@ -72,7 +72,7 @@ struct s3_clovis_idx_op_context {
   size_t op_count;
 };
 
-struct s3_clovis_kvs_op_context {
+struct s3_motr_kvs_op_context {
   struct m0_bufvec *keys;
   struct m0_bufvec *values;
   int *rcs;  // per key return status array
@@ -96,8 +96,8 @@ int free_idx_context(struct s3_clovis_idx_context *ctx);
 struct s3_clovis_idx_op_context *create_basic_idx_op_ctx(int op_count);
 int free_basic_idx_op_ctx(struct s3_clovis_idx_op_context *ctx);
 
-struct s3_clovis_kvs_op_context *create_basic_kvs_op_ctx(int no_of_keys);
-int free_basic_kvs_op_ctx(struct s3_clovis_kvs_op_context *ctx);
+struct s3_motr_kvs_op_context *create_basic_kvs_op_ctx(int no_of_keys);
+int free_basic_kvs_op_ctx(struct s3_motr_kvs_op_context *ctx);
 
 struct m0_bufvec *index_bufvec_alloc(int nr);
 void index_bufvec_free(struct m0_bufvec *bv);
