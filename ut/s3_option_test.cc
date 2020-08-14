@@ -41,8 +41,8 @@ class S3OptionsTest : public testing::Test {
     // This is to ensure rest all tests cases in other test files have a
     // good S3option instance as most server/* code is using global ptr.
     g_option_instance = S3Option::get_instance();
-    g_option_instance->set_stats_whitelist_filename(
-        "s3stats-whitelist-test.yaml");
+    g_option_instance->set_stats_allowlist_filename(
+        "s3stats-allowlist-test.yaml");
   }
 
   S3Option *instance;
@@ -123,8 +123,8 @@ TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_EQ(9125, instance->get_statsd_port());
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
   EXPECT_EQ(5, instance->get_client_req_read_timeout_secs());
-  EXPECT_EQ("s3stats-whitelist-test.yaml",
-            instance->get_stats_whitelist_filename());
+  EXPECT_EQ("s3stats-allowlist-test.yaml",
+            instance->get_stats_allowlist_filename());
 }
 
 TEST_F(S3OptionsTest, TestOverrideOptions) {
@@ -168,8 +168,8 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
   EXPECT_EQ(9125, instance->get_statsd_port());
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
-  EXPECT_EQ("s3stats-whitelist-test.yaml",
-            instance->get_stats_whitelist_filename());
+  EXPECT_EQ("s3stats-allowlist-test.yaml",
+            instance->get_stats_allowlist_filename());
   EXPECT_FALSE(instance->is_s3_reuseport_enabled());
 }
 
@@ -209,8 +209,8 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   EXPECT_EQ("192.168.0.9", instance->get_statsd_ip_addr());
   EXPECT_EQ(1234, instance->get_statsd_port());
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
-  EXPECT_EQ("s3stats-whitelist-test.yaml",
-            instance->get_stats_whitelist_filename());
+  EXPECT_EQ("s3stats-allowlist-test.yaml",
+            instance->get_stats_allowlist_filename());
   EXPECT_FALSE(instance->is_s3_reuseport_enabled());
 }
 
@@ -241,8 +241,8 @@ TEST_F(S3OptionsTest, LoadS3SectionFromFile) {
   EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
   EXPECT_EQ(9125, instance->get_statsd_port());
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
-  EXPECT_EQ("s3stats-whitelist-test.yaml",
-            instance->get_stats_whitelist_filename());
+  EXPECT_EQ("s3stats-allowlist-test.yaml",
+            instance->get_stats_allowlist_filename());
 
   // These will come with default values.
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
@@ -282,8 +282,8 @@ TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
   EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
   EXPECT_EQ(9125, instance->get_statsd_port());
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
-  EXPECT_EQ("s3stats-whitelist-test.yaml",
-            instance->get_stats_whitelist_filename());
+  EXPECT_EQ("s3stats-allowlist-test.yaml",
+            instance->get_stats_allowlist_filename());
 
   // These should be default values
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),

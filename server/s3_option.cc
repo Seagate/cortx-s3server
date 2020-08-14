@@ -171,9 +171,9 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_MAX_SEND_RETRY");
       statsd_max_send_retry =
           s3_option_node["S3_STATSD_MAX_SEND_RETRY"].as<unsigned short>();
-      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATS_WHITELIST_FILENAME");
-      stats_whitelist_filename =
-          s3_option_node["S3_STATS_WHITELIST_FILENAME"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATS_ALLOWLIST_FILENAME");
+      stats_allowlist_filename =
+          s3_option_node["S3_STATS_ALLOWLIST_FILENAME"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
                                "S3_PERF_STATS_INOUT_BYTES_INTERVAL_MSEC");
       perf_stats_inout_bytes_interval_msec =
@@ -461,9 +461,9 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_MAX_SEND_RETRY");
       statsd_max_send_retry =
           s3_option_node["S3_STATSD_MAX_SEND_RETRY"].as<unsigned short>();
-      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATS_WHITELIST_FILENAME");
-      stats_whitelist_filename =
-          s3_option_node["S3_STATS_WHITELIST_FILENAME"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATS_ALLOWLIST_FILENAME");
+      stats_allowlist_filename =
+          s3_option_node["S3_STATS_ALLOWLIST_FILENAME"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_LOGGER_POLICY");
       audit_logger_policy =
           s3_option_node["S3_AUDIT_LOGGER_POLICY"].as<std::string>();
@@ -879,8 +879,8 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_STATSD_PORT = %d\n", statsd_port);
   s3_log(S3_LOG_INFO, "", "S3_STATSD_MAX_SEND_RETRY = %d\n",
          statsd_max_send_retry);
-  s3_log(S3_LOG_INFO, "", "S3_STATS_WHITELIST_FILENAME = %s\n",
-         stats_whitelist_filename.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_STATS_ALLOWLIST_FILENAME = %s\n",
+         stats_allowlist_filename.c_str());
   s3_log(S3_LOG_INFO, "",
          "S3_PERF_STATS_INOUT_BYTES_INTERVAL_MSEC = %" PRIu32 "\n",
          perf_stats_inout_bytes_interval_msec);
@@ -1198,16 +1198,16 @@ unsigned short S3Option::get_statsd_max_send_retry() {
   return statsd_max_send_retry;
 }
 
-std::string S3Option::get_stats_whitelist_filename() {
-  return stats_whitelist_filename;
+std::string S3Option::get_stats_allowlist_filename() {
+  return stats_allowlist_filename;
 }
 
 uint32_t S3Option::get_perf_stats_inout_bytes_interval_msec() {
   return perf_stats_inout_bytes_interval_msec;
 }
 
-void S3Option::set_stats_whitelist_filename(std::string filename) {
-  stats_whitelist_filename = filename;
+void S3Option::set_stats_allowlist_filename(std::string filename) {
+  stats_allowlist_filename = filename;
 }
 
 evbase_t* S3Option::get_eventbase() { return eventbase; }

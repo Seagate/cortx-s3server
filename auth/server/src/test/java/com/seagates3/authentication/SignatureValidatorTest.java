@@ -145,7 +145,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     }
 
     @Test public void
-    validateSignatureDateTest_ShouldReturnInvalidSignatureDate_WhenGarbageDate()
+    validateSignatureDateTest_ShouldReturnInvalidSignatureDate_WhenBadDate()
         throws Exception {
       // Arrange
       Requestor requestor = mock(Requestor.class);

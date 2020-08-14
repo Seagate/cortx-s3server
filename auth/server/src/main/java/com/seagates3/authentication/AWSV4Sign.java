@@ -409,7 +409,7 @@ public class AWSV4Sign implements AWSSign {
     /**
      * The canonical headers consist of a list of all the HTTP headers are
      * include as a part of the AWS request. Convert all header names to
-     * lowercase and trim excess white space characters out of the header
+     * lowercase and trim excess blank space characters out of the header
      * values.
      *
      * Canonical Header = CanonicalHeadersEntry0 + CanonicalHeadersEntry1 + ...

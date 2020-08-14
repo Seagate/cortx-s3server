@@ -163,7 +163,7 @@ rm -rf %{buildroot}
 %config(noreplace) /opt/seagate/cortx/s3/conf/s3config.yaml
 %config(noreplace) /opt/seagate/cortx/s3/conf/s3server_audit_log.properties
 %config(noreplace) /opt/seagate/cortx/s3/conf/s3_obj_layout_mapping.yaml
-%config(noreplace) /opt/seagate/cortx/s3/conf/s3stats-whitelist.yaml
+%config(noreplace) /opt/seagate/cortx/s3/conf/s3stats-allowlist.yaml
 %config(noreplace) /opt/seagate/cortx/auth/resources/defaultAclTemplate.xml
 %config(noreplace) /opt/seagate/cortx/auth/resources/AmazonS3.xsd
 %config(noreplace) /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml

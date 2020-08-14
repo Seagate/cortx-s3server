@@ -62,7 +62,7 @@ S3_SERVER_CONFIG:                                     # Section for S3 Server
    S3_STATSD_IP_ADDR: 127.9.7.5                         # StatsD server IP address
    S3_STATSD_PORT: 9125                                 # StatsD server port
    S3_STATSD_MAX_SEND_RETRY: 15                         # Limit the user requested retry count. A retry is attempted in case message delivery to StatsD server fails.
-   S3_STATS_WHITELIST_FILENAME: "s3stats-whitelist-test.yaml"  # White list of Stats metrics to be published to the backend.
+   S3_STATS_ALLOWLIST_FILENAME: "s3stats-allowlist-test.yaml"  # Allow list of Stats metrics to be published to the backend.
    S3_PERF_STATS_INOUT_BYTES_INTERVAL_MSEC: 1000        # Specifies how often to send number of in/out-comping bytes to StatsD. Milliseconds.
    S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING: false         # Enables the object leak feature changes
    S3_REDIS_SERVER_ADDRESS: "127.0.0.1"                 # In case if redis is used for kvs contains redis server address

@@ -238,7 +238,7 @@ prepare_BUILD_file() {
     do
       MOTR_LINK_LIB_=$lib" "
     done
-    # remove last white space
+    # remove last blank space
     MOTR_LINK_LIB_=${MOTR_LINK_LIB_%" "}
 
     MOTR_HELPERS_LIB_="MOTR_HELPERS_LIB=./third_party/motr/helpers/.libs/"
@@ -272,7 +272,7 @@ prepare_BUILD_file() {
     do
       MOTR_LINK_LIB_=$lib" "
     done
-    # remove last white space
+    # remove last blank space
     MOTR_LINK_LIB_=${MOTR_LINK_LIB_%" "}
   fi
 

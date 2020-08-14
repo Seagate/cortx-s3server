@@ -29,7 +29,7 @@ your environment, you can use these simplified workloads defined in scripts in
 this folder.
 
 Note that these scripts might not yield max possible throughput, even if amount
-of available resources is enough.  Somehow, cosbench is better and squeezing
+of available resources is enough. Some how, cosbench is better and squeezing
 out the maximum.
 
 
