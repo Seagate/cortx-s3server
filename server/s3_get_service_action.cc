@@ -35,7 +35,7 @@ S3GetServiceAction::S3GetServiceAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
     : S3Action(req), last_key(""), key_prefix(""), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  s3_motr_api = std::make_shared<ConcreteClovisAPI>();
 
   s3_log(S3_LOG_INFO, request_id, "S3 API: Get Service.\n");
 
@@ -92,7 +92,7 @@ void S3GetServiceAction::get_next_buckets() {
   size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
 
   clovis_kv_reader = s3_clovis_kvs_reader_factory->create_clovis_kvs_reader(
-      request, s3_clovis_api);
+      request, s3_motr_api);
   clovis_kv_reader->next_keyval(
       bucket_metadata_list_index_oid, last_key, count,
       std::bind(&S3GetServiceAction::get_next_buckets_successful, this),

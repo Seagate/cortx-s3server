@@ -137,10 +137,10 @@ class S3ClovisKVSReaderFactory {
   virtual ~S3ClovisKVSReaderFactory() {}
   virtual std::shared_ptr<S3ClovisKVSReader> create_clovis_kvs_reader(
       std::shared_ptr<RequestObject> req,
-      std::shared_ptr<MotrAPI> s3_clovis_api = nullptr) {
+      std::shared_ptr<MotrAPI> s3_motr_api = nullptr) {
     s3_log(S3_LOG_DEBUG, "",
            "S3ClovisKVSReaderFactory::create_clovis_kvs_reader\n");
-    return std::make_shared<S3ClovisKVSReader>(req, s3_clovis_api);
+    return std::make_shared<S3ClovisKVSReader>(req, s3_motr_api);
   }
 };
 
@@ -149,17 +149,16 @@ class S3ClovisKVSWriterFactory {
   virtual ~S3ClovisKVSWriterFactory() {}
   virtual std::shared_ptr<S3ClovisKVSWriter> create_clovis_kvs_writer(
       std::shared_ptr<RequestObject> req,
-      std::shared_ptr<MotrAPI> s3_clovis_api = nullptr) {
+      std::shared_ptr<MotrAPI> s3_motr_api = nullptr) {
     s3_log(S3_LOG_DEBUG, "",
            "S3ClovisKVSWriterFactory::create_clovis_kvs_writer\n");
-    return std::make_shared<S3ClovisKVSWriter>(req, s3_clovis_api);
+    return std::make_shared<S3ClovisKVSWriter>(req, s3_motr_api);
   }
   virtual std::shared_ptr<S3ClovisKVSWriter> create_sync_clovis_kvs_writer(
-      std::string request_id,
-      std::shared_ptr<MotrAPI> s3_clovis_api = nullptr) {
+      std::string request_id, std::shared_ptr<MotrAPI> s3_motr_api = nullptr) {
     s3_log(S3_LOG_INFO, "",
            "S3ClovisKVSWriterFactory::create_sync_clovis_kvs_writer\n");
-    return std::make_shared<S3ClovisKVSWriter>(request_id, s3_clovis_api);
+    return std::make_shared<S3ClovisKVSWriter>(request_id, s3_motr_api);
   }
 };
 

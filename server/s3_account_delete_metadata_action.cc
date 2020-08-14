@@ -36,9 +36,9 @@ S3AccountDeleteMetadataAction::S3AccountDeleteMetadataAction(
   account_id_from_uri = request->c_get_file_name();
 
   if (clovis_api) {
-    s3_clovis_api = clovis_api;
+    s3_motr_api = clovis_api;
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_motr_api = std::make_shared<ConcreteClovisAPI>();
   }
 
   if (kvs_reader_factory) {
@@ -82,8 +82,8 @@ void S3AccountDeleteMetadataAction::validate_request() {
 
 void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
-      request, s3_clovis_api);
+  clovis_kv_reader =
+      clovis_kvs_reader_factory->create_clovis_kvs_reader(request, s3_motr_api);
   bucket_account_id_key_prefix = account_id_from_uri + "/";
   clovis_kv_reader->next_keyval(
       bucket_metadata_list_index_oid, bucket_account_id_key_prefix, 1,

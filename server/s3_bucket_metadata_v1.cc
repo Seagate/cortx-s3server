@@ -137,8 +137,8 @@ void S3BucketMetadataV1::fetch_global_bucket_account_id_info_failed() {
 void S3BucketMetadataV1::load_bucket_info() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
-      request, s3_clovis_api);
+  clovis_kv_reader =
+      clovis_kvs_reader_factory->create_clovis_kvs_reader(request, s3_motr_api);
   // example key "AccountId_1/bucket_x'
   clovis_kv_reader->get_keyval(
       bucket_metadata_list_index_oid, get_bucket_metadata_index_key_name(),
@@ -283,10 +283,10 @@ void S3BucketMetadataV1::create_object_list_index() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
-  S3UriToMotrOID(s3_clovis_api, salted_object_list_index_name.c_str(),
-                 request_id, &object_list_index_oid, S3ClovisEntityType::index);
+  S3UriToMotrOID(s3_motr_api, salted_object_list_index_name.c_str(), request_id,
+                 &object_list_index_oid, S3ClovisEntityType::index);
 
   clovis_kv_writer->create_index_with_oid(
       object_list_index_oid,
@@ -327,10 +327,10 @@ void S3BucketMetadataV1::create_multipart_list_index() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
 
-  S3UriToMotrOID(s3_clovis_api, salted_multipart_list_index_name.c_str(),
+  S3UriToMotrOID(s3_motr_api, salted_multipart_list_index_name.c_str(),
                  request_id, &multipart_index_oid, S3ClovisEntityType::index);
 
   clovis_kv_writer->create_index_with_oid(
@@ -372,10 +372,10 @@ void S3BucketMetadataV1::create_objects_version_list_index() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
   // version list index oid
-  S3UriToMotrOID(s3_clovis_api, salted_objects_version_list_index_name.c_str(),
+  S3UriToMotrOID(s3_motr_api, salted_objects_version_list_index_name.c_str(),
                  request_id, &objects_version_list_index_oid,
                  S3ClovisEntityType::index);
 
@@ -436,7 +436,7 @@ void S3BucketMetadataV1::save_bucket_info() {
 
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
   clovis_kv_writer->put_keyval(
       bucket_metadata_list_index_oid, get_bucket_metadata_index_key_name(),
@@ -453,7 +453,7 @@ void S3BucketMetadataV1::save_bucket_info_successful() {
   // attempt to save the KV in replica bucket metadata index
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
   clovis_kv_writer->put_keyval(
       replica_bucket_metadata_list_index_oid,
@@ -512,7 +512,7 @@ void S3BucketMetadataV1::remove_bucket_info() {
 
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
 
   clovis_kv_writer->delete_keyval(
@@ -529,7 +529,7 @@ void S3BucketMetadataV1::remove_bucket_info_successful() {
   // Attempt to remove KV from replica bucket metadata index
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
   clovis_kv_writer->delete_keyval(
       replica_bucket_metadata_list_index_oid,

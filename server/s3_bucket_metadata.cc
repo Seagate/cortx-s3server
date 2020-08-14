@@ -44,9 +44,9 @@ S3BucketMetadata::S3BucketMetadata(
   state = S3BucketMetadataState::empty;
   current_op = S3BucketMetadataCurrentOp::none;
   if (clovis_api) {
-    s3_clovis_api = clovis_api;
+    s3_motr_api = clovis_api;
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_motr_api = std::make_shared<ConcreteClovisAPI>();
   }
 
   if (clovis_s3_kvs_reader_factory) {
