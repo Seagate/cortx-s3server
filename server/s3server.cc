@@ -1022,15 +1022,15 @@ int main(int argc, char **argv) {
 
     std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
     std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
-    std::shared_ptr<MotrAPI> s3_clovis_api;
+    std::shared_ptr<MotrAPI> s3_motr_api;
 
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_motr_api = std::make_shared<ConcreteClovisAPI>();
     clovis_kv_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
 
     if (!clovis_kv_writer) {
       clovis_kv_writer =
           clovis_kv_writer_factory->create_sync_clovis_kvs_writer(
-              "", s3_clovis_api);
+              "", s3_motr_api);
     }
 
     rc = clovis_kv_writer->put_keyval_sync(global_instance_list_index,

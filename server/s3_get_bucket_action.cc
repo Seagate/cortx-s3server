@@ -41,9 +41,9 @@ S3GetBucketAction::S3GetBucketAction(
   s3_log(S3_LOG_INFO, request_id, "S3 API: Get Bucket(List Objects).\n");
 
   if (clovis_api) {
-    s3_clovis_api = clovis_api;
+    s3_motr_api = clovis_api;
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_motr_api = std::make_shared<ConcreteClovisAPI>();
   }
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;
@@ -131,7 +131,7 @@ void S3GetBucketAction::get_next_objects() {
   m0_uint128 object_list_index_oid =
       bucket_metadata->get_object_list_index_oid();
   clovis_kv_reader = s3_clovis_kvs_reader_factory->create_clovis_kvs_reader(
-      request, s3_clovis_api);
+      request, s3_motr_api);
 
   if (max_keys == 0) {
     // as requested max_keys is 0

@@ -74,9 +74,9 @@ S3DeleteBucketAction::S3DeleteBucketAction(
   }
 
   if (s3_clovis_apis) {
-    s3_clovis_api = s3_clovis_apis;
+    s3_motr_api = s3_clovis_apis;
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_motr_api = std::make_shared<ConcreteClovisAPI>();
   }
 
   multipart_present = false;
@@ -119,7 +119,7 @@ void S3DeleteBucketAction::fetch_first_object_metadata() {
   S3BucketMetadataState bucket_metadata_state = bucket_metadata->get_state();
   if (bucket_metadata_state == S3BucketMetadataState::present) {
     clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
-        request, s3_clovis_api);
+        request, s3_motr_api);
     // Try to fetch one object at least
     object_list_index_oid = bucket_metadata->get_object_list_index_oid();
     objects_version_list_index_oid =
@@ -335,7 +335,7 @@ void S3DeleteBucketAction::remove_part_indexes() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (part_oids.size() != 0) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
     clovis_kv_writer->delete_indexes(
         part_oids,
         std::bind(&S3DeleteBucketAction::remove_part_indexes_successful, this),
@@ -384,7 +384,7 @@ void S3DeleteBucketAction::remove_multipart_index() {
   if (multipart_present) {
     if (clovis_kv_writer == nullptr) {
       clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-          request, s3_clovis_api);
+          request, s3_motr_api);
     }
     clovis_kv_writer->delete_index(
         bucket_metadata->get_multipart_index_oid(),
@@ -425,7 +425,7 @@ void S3DeleteBucketAction::remove_object_list_index() {
     // Can happen when only index is present, no objects in it
     if (clovis_kv_writer == nullptr) {
       clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-          request, s3_clovis_api);
+          request, s3_motr_api);
     }
     clovis_kv_writer->delete_index(
         object_list_index_oid, std::bind(&S3DeleteBucketAction::next, this),
@@ -489,7 +489,7 @@ void S3DeleteBucketAction::remove_objects_version_list_index() {
     // Can happen when only index is present, no objects in it
     if (clovis_kv_writer == nullptr) {
       clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-          request, s3_clovis_api);
+          request, s3_motr_api);
     }
     clovis_kv_writer->delete_index(
         objects_version_list_index_oid,

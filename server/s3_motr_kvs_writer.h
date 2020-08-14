@@ -125,7 +125,7 @@ class S3ClovisKVSWriter {
   std::vector<std::string> keys_list;  // used in delete multiple KV
 
   std::shared_ptr<RequestObject> request;
-  std::shared_ptr<MotrAPI> s3_clovis_api;
+  std::shared_ptr<MotrAPI> s3_motr_api;
   std::unique_ptr<S3AsyncClovisKVSWriterContext> writer_context;
   std::unique_ptr<S3SyncClovisKVSWriterContext> sync_writer_context;
   std::unique_ptr<S3AsyncClovisKVSWriterContext> sync_context;

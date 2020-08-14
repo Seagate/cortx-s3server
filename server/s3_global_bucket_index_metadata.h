@@ -64,7 +64,7 @@ class S3GlobalBucketIndexMetadata {
   std::string request_id;
 
   std::shared_ptr<S3RequestObject> request;
-  std::shared_ptr<MotrAPI> s3_clovis_api;
+  std::shared_ptr<MotrAPI> s3_motr_api;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
   std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
