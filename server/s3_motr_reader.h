@@ -50,9 +50,15 @@ class S3MotrReaderContext : public S3AsyncOpContextBase {
 
  public:
   S3MotrReaderContext(std::shared_ptr<RequestObject> req,
+<<<<<<< HEAD
                         std::function<void()> success_callback,
                         std::function<void()> failed_callback, int layoutid,
                         std::shared_ptr<MotrAPI> motr_api = nullptr)
+=======
+                      std::function<void()> success_callback,
+                      std::function<void()> failed_callback, int layoutid,
+                      std::shared_ptr<MotrAPI> motr_api = nullptr)
+>>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
       // Passing default value of opcount explicitly.
       : S3AsyncOpContextBase(req, success_callback, failed_callback, 1,
                              motr_api) {
@@ -179,8 +185,12 @@ class S3MotrReader {
  public:
   // object id is generated at upper level and passed to this constructor
   S3MotrReader(std::shared_ptr<RequestObject> req, struct m0_uint128 id,
+<<<<<<< HEAD
                  int layout_id,
                  std::shared_ptr<MotrAPI> motr_api = nullptr);
+=======
+               int layout_id, std::shared_ptr<MotrAPI> motr_api = nullptr);
+>>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
   virtual ~S3MotrReader();
 
   virtual S3MotrReaderOpState get_state() { return state; }

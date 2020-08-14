@@ -84,7 +84,11 @@ class S3BucketMetadata {
 
   std::shared_ptr<S3RequestObject> request;
 
+<<<<<<< HEAD
   std::shared_ptr<MotrAPI> s3_motr_api;
+=======
+  std::shared_ptr<MotrAPI> s3_clovis_api;
+>>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
 

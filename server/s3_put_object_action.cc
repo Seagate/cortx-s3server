@@ -34,7 +34,6 @@
 
 extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
-
 S3PutObjectAction::S3PutObjectAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,

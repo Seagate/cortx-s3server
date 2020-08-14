@@ -35,7 +35,11 @@ class S3AccountDeleteMetadataAction : public S3Action {
   std::string account_id_from_uri;
   std::string bucket_account_id_key_prefix;
 
+<<<<<<< HEAD
   std::shared_ptr<MotrAPI> s3_motr_api;
+=======
+  std::shared_ptr<MotrAPI> s3_clovis_api;
+>>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
 

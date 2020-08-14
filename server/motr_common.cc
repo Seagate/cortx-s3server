@@ -141,7 +141,11 @@ void fini_clovis(void) {
 int create_new_instance_id(struct m0_uint128 *ufid) {
   // Unique OID generation by motr.
 
+<<<<<<< HEAD
   std::unique_ptr<MotrAPI> s3_motr_api =
+=======
+  std::unique_ptr<MotrAPI> s3_clovis_api =
+>>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
       std::unique_ptr<ConcreteClovisAPI>(new ConcreteClovisAPI());
 
   int rc;

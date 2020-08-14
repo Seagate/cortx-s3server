@@ -35,7 +35,11 @@ class S3GetBucketAction : public S3BucketAction {
   std::shared_ptr<S3ClovisKVSReaderFactory> s3_clovis_kvs_reader_factory;
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
+<<<<<<< HEAD
   std::shared_ptr<MotrAPI> s3_motr_api;
+=======
+  std::shared_ptr<MotrAPI> s3_clovis_api;
+>>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
   S3ObjectListResponse object_list;
   std::string last_key;  // last key during each iteration
 

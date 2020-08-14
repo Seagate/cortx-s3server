@@ -66,7 +66,11 @@ class S3AsyncOpContextBase {
   S3Timer timer;
   std::string operation_key;  // used to identify operation(metric) name
   // Used for mocking clovis return calls.
+<<<<<<< HEAD
   std::shared_ptr<MotrAPI> s3_motr_api;
+=======
+  std::shared_ptr<MotrAPI> s3_clovis_api;
+>>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
 
   std::string request_id;
 

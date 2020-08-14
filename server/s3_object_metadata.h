@@ -108,7 +108,11 @@ class S3ObjectMetadata {
   bool is_multipart;
 
   std::shared_ptr<S3RequestObject> request;
+<<<<<<< HEAD
   std::shared_ptr<MotrAPI> s3_motr_api;
+=======
+  std::shared_ptr<MotrAPI> s3_clovis_api;
+>>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
@@ -148,12 +152,22 @@ class S3ObjectMetadata {
   }
 
  public:
+<<<<<<< HEAD
   S3ObjectMetadata(
       std::shared_ptr<S3RequestObject> req, bool ismultipart = false,
       std::string uploadid = "",
       std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory = nullptr,
       std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr,
       std::shared_ptr<MotrAPI> clovis_api = nullptr);
+=======
+  S3ObjectMetadata(std::shared_ptr<S3RequestObject> req,
+                   bool ismultipart = false, std::string uploadid = "",
+                   std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory =
+                       nullptr,
+                   std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory =
+                       nullptr,
+                   std::shared_ptr<MotrAPI> clovis_api = nullptr);
+>>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
 
   // Call these when Object metadata save/remove needs to be called.
   // id can be object list index OID or

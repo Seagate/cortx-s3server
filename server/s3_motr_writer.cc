@@ -409,8 +409,12 @@ void S3ClovisWriter::write_content() {
   size_t clovis_write_payload_size =
       g_option_instance->get_clovis_write_payload_size(layout_ids[0]);
   size_t clovis_unit_size =
+<<<<<<< HEAD
       S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
           layout_ids[0]);
+=======
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_ids[0]);
+>>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
   size_t size_of_each_buf = g_option_instance->get_libevent_pool_buffer_size();
 
   size_t estimated_write_length = 0;
@@ -464,8 +468,12 @@ void S3ClovisWriter::write_content() {
 
   struct s3_clovis_op_context *ctx = writer_context->get_motr_op_ctx();
 
+<<<<<<< HEAD
   struct s3_clovis_rw_op_context *rw_ctx =
       writer_context->get_motr_rw_op_ctx();
+=======
+  struct s3_clovis_rw_op_context *rw_ctx = writer_context->get_motr_rw_op_ctx();
+>>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
 
   struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj *)calloc(
       1, sizeof(struct s3_clovis_context_obj));

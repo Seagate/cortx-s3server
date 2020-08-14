@@ -29,7 +29,11 @@
 #include "s3_timer.h"
 #include "s3_iem.h"
 
+<<<<<<< HEAD
 int S3UriToMotrOID(std::shared_ptr<MotrAPI> s3_motr_api, const char *name,
+=======
+int S3UriToMotrOID(std::shared_ptr<MotrAPI> s3_clovis_api, const char *name,
+>>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
                    const std::string &request_id, m0_uint128 *ufid,
                    S3ClovisEntityType type) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");

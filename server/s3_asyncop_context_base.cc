@@ -24,10 +24,18 @@
 #include "s3_stats.h"
 #include "s3_log.h"
 
+<<<<<<< HEAD
 S3AsyncOpContextBase::S3AsyncOpContextBase(
     std::shared_ptr<RequestObject> req, std::function<void(void)> success,
     std::function<void(void)> failed, int ops_cnt,
     std::shared_ptr<MotrAPI> clovis_api)
+=======
+S3AsyncOpContextBase::S3AsyncOpContextBase(std::shared_ptr<RequestObject> req,
+                                           std::function<void(void)> success,
+                                           std::function<void(void)> failed,
+                                           int ops_cnt,
+                                           std::shared_ptr<MotrAPI> clovis_api)
+>>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
     : request(std::move(req)),
       on_success(success),
       on_failed(failed),
@@ -52,7 +60,11 @@ std::shared_ptr<RequestObject> S3AsyncOpContextBase::get_request() {
 }
 
 std::shared_ptr<MotrAPI> S3AsyncOpContextBase::get_clovis_api() {
+<<<<<<< HEAD
   return s3_motr_api;
+=======
+  return s3_clovis_api;
+>>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
 }
 
 std::function<void(void)> S3AsyncOpContextBase::on_success_handler() {
