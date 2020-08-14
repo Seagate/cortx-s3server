@@ -68,7 +68,7 @@ TEST_F(S3OptionsTest, Constructor) {
   EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ(1, instance->get_clovis_idx_service_id());
   EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
-  EXPECT_EQ("clovis_index_keyspace", instance->get_clovis_cass_keyspace());
+  EXPECT_EQ("motr_index_keyspace", instance->get_clovis_cass_keyspace());
   EXPECT_EQ(1, instance->get_clovis_cass_max_column_family_num());
   EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
   EXPECT_FALSE(instance->is_log_buffering_enabled());
@@ -470,7 +470,7 @@ TEST_F(S3OptionsTest, MissingOptions) {
   cfg_file << "S3_AUTH_CONFIG:\n";
   cfg_file << "   S3_AUTH_PORT: 8095\n";
   cfg_file << "S3_MOTR_CONFIG:\n";
-  cfg_file << "   S3_CLOVIS_MAX_BLOCKS_PER_REQUEST: 1\n";
+  cfg_file << "   S3_MOTR_MAX_BLOCKS_PER_REQUEST: 1\n";
   cfg_file.close();
 
   instance->set_option_file(config_file);
