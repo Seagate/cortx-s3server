@@ -40,7 +40,7 @@ class S3ClovisKVSReaderContext : public S3AsyncOpContextBase {
   bool has_clovis_idx_op_context;
 
   // Read/Write Operation context.
-  struct s3_clovis_kvs_op_context* clovis_kvs_op_context;
+  struct s3_motr_kvs_op_context* clovis_kvs_op_context;
   bool has_clovis_kvs_op_context;
 
  public:
@@ -82,7 +82,7 @@ class S3ClovisKVSReaderContext : public S3AsyncOpContextBase {
     has_clovis_kvs_op_context = true;
   }
 
-  struct s3_clovis_kvs_op_context* get_clovis_kvs_op_ctx() {
+  struct s3_motr_kvs_op_context* get_clovis_kvs_op_ctx() {
     return clovis_kvs_op_context;
   }
 };
@@ -113,7 +113,7 @@ class S3ClovisKVSReader {
   S3ClovisKVSReaderOpState state;
 
   // Holds references to keys and values after the read so it can be consumed.
-  struct s3_clovis_kvs_op_context* clovis_kvs_op_context;
+  struct s3_motr_kvs_op_context* clovis_kvs_op_context;
   std::string last_value;
   // Map to hold last result: first element is `key`, the second is a pair of
   // `return status` & the `value` corresponding to the `key`.

@@ -337,13 +337,12 @@ void index_bufvec_free(struct m0_bufvec *bv) {
   free(bv);
 }
 
-struct s3_clovis_kvs_op_context *create_basic_kvs_op_ctx(int no_of_keys) {
+struct s3_motr_kvs_op_context *create_basic_kvs_op_ctx(int no_of_keys) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   s3_log(S3_LOG_DEBUG, "", "no of keys = %d\n", no_of_keys);
 
-  struct s3_clovis_kvs_op_context *ctx =
-      (struct s3_clovis_kvs_op_context *)calloc(
-          1, sizeof(struct s3_clovis_kvs_op_context));
+  struct s3_motr_kvs_op_context *ctx = (struct s3_motr_kvs_op_context *)calloc(
+      1, sizeof(struct s3_motr_kvs_op_context));
 
   ctx->keys = index_bufvec_alloc(no_of_keys);
   if (ctx->keys == NULL) goto FAIL;
@@ -370,7 +369,7 @@ FAIL:
   return NULL;
 }
 
-int free_basic_kvs_op_ctx(struct s3_clovis_kvs_op_context *ctx) {
+int free_basic_kvs_op_ctx(struct s3_motr_kvs_op_context *ctx) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
 
   index_bufvec_free(ctx->keys);
