@@ -23,12 +23,8 @@
 #include "s3_m0_uint128_helper.h"
 
 MotrDeleteKeyValueAction::MotrDeleteKeyValueAction(
-<<<<<<< HEAD
     std::shared_ptr<MotrRequestObject> req,
     std::shared_ptr<MotrAPI> clovis_api,
-=======
-    std::shared_ptr<MotrRequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
->>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
     std::shared_ptr<S3ClovisKVSWriterFactory> clovis_motr_kvs_writer_factory,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_motr_kvs_reader_factory)
     : MotrAction(req) {
