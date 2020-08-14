@@ -43,7 +43,7 @@ class S3AsyncOpResponse {
 
   S3AsyncOpStatus status;
   std::string error_message;
-  int error_code;  // this is same as Mero/Clovis errors
+  int error_code;  // this is same as Motr/Clovis errors
 };
 
 class S3AsyncOpContextBase {

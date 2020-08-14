@@ -25,7 +25,7 @@ variables:
                 # (parent is needed to satisfy `git clang-format --diff --commit HEAD~1`)
   GIT_STRATEGY: clone  # make a fresh `git clone` of the repo for every new CI job
   GIT_SUBMODULE_STRATEGY: normal  # init and check out submodules
-  CENTOS_RELEASE: eos
+  CENTOS_RELEASE: cortx
   M0_VG_NO_SYMLINKS: 'true'
   WORKSPACE_NAME: "${CI_PROJECT_NAME}${CI_PIPELINE_ID}"
   WORKSPACE_DIR:  "/home/gitlab-runner/workspaces/${CI_PROJECT_NAME}${CI_PIPELINE_ID}"
@@ -49,10 +49,10 @@ build:
   stage: build
   tags: [ docker-build ]
   except: [ master, tags ]
-  image: registry.gitlab.mero.colo.seagate.com/mero/s3server:$CENTOS_RELEASE
+  image: registry.gitlab.mero.colo.seagate.com/motr/s3server:$CENTOS_RELEASE
   script:
     - export LATEST_RELEASE_DIR="$(ls -td /releases/master/B* | head -n1)"
-    - yum install -y $LATEST_RELEASE_DIR/mero{,-devel}-[0-9]*.rpm
+    - yum install -y $LATEST_RELEASE_DIR/cortx-motr{,-devel}-[0-9]*.rpm
     - time ./rebuildall.sh --no-install
 
 
@@ -60,11 +60,11 @@ rpmbuild:s3server:
   stage: build
   tags: [ docker-build ]
   except: [ master, tags ]
-  image: registry.gitlab.mero.colo.seagate.com/mero/s3server:$CENTOS_RELEASE
+  image: registry.gitlab.mero.colo.seagate.com/motr/s3server:$CENTOS_RELEASE
 
   script:
     - export LATEST_RELEASE_DIR="$(ls -td /releases/master/B* | head -n1)"
-    - yum install -y $LATEST_RELEASE_DIR/mero{,-devel}-[0-9]*.rpm
+    - yum install -y $LATEST_RELEASE_DIR/cortx-motr{,-devel}-[0-9]*.rpm
     # disable this nasty script that tries to update submodules and expects
     # the source dir to be a real git repo
     - echo '#!/bin/bash' > refresh_thirdparty.sh
@@ -94,10 +94,10 @@ docker:rebuild-images:76:
     DOCKER_IMAGE_TAG: '7.6'
 
 
-docker:rebuild-images:eos:
+docker:rebuild-images:cortx:
   extends: docker:rebuild-images
   variables:
-    DOCKER_IMAGE_TAG: eos
+    DOCKER_IMAGE_TAG: cortx
 
 
 # vim: foldmethod=marker shiftwidth=2 tabstop=2 expandtab

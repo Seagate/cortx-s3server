@@ -299,7 +299,7 @@ class Action {
   FRIEND_TEST(ActionTest, EnableAuthTest);
   FRIEND_TEST(ActionTest, SetSkipAuthFlagAndSetS3OptionDisableAuthFlag);
   FRIEND_TEST(S3APIHandlerTest, DispatchActionTest);
-  FRIEND_TEST(MeroAPIHandlerTest, DispatchActionTest);
+  FRIEND_TEST(MotrAPIHandlerTest, DispatchActionTest);
 };
 
 #endif

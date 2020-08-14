@@ -81,7 +81,6 @@ public class UserController extends AbstractController {
 
         user.setUserType(User.UserType.IAM_USER);
         // UserId should starts with "AIDA".
-        // for more info, please see EOS-2790
         user.setId(USER_ID_PREFIX + KeyGenUtil.createIamUserId());
 
         // create and set arn here

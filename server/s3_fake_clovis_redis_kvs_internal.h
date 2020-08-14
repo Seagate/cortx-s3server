@@ -54,7 +54,7 @@ typedef struct {
                       // async_ops_cnt means op finished
   bool had_error;     // if some of resps failed
 
-  // on next_kv operation mero interface allows skip or include search initial
+  // on next_kv operation motr interface allows skip or include search initial
   // key. on s3server side we always skip it, so in result set it is not incl.
   // due to range requests and key-value concatenation it is hard to filter
   // initial value with single req, so it should be filtered manually

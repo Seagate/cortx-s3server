@@ -28,7 +28,7 @@
 #include "s3_router.h"
 #include "s3_stats.h"
 #include "s3_uri.h"
-#include "mero_request_object.h"
+#include "motr_request_object.h"
 
 bool Router::is_default_endpoint(std::string& endpoint) {
   return S3Option::get_instance()->get_default_endpoint() == endpoint;
@@ -121,61 +121,61 @@ void S3Router::dispatch(std::shared_ptr<RequestObject> request) {
   return;
 }
 
-MeroRouter::MeroRouter(MeroAPIHandlerFactory* api_creator,
-                       MeroUriFactory* uri_creator)
+MotrRouter::MotrRouter(MotrAPIHandlerFactory* api_creator,
+                       MotrUriFactory* uri_creator)
     : api_handler_factory(api_creator), uri_factory(uri_creator) {
   s3_log(S3_LOG_DEBUG, "", "Constructor\n");
 }
 
-MeroRouter::~MeroRouter() {
+MotrRouter::~MotrRouter() {
   s3_log(S3_LOG_DEBUG, "", "Destructor\n");
   delete api_handler_factory;
   delete uri_factory;
 }
 
-void MeroRouter::dispatch(std::shared_ptr<RequestObject> request) {
+void MotrRouter::dispatch(std::shared_ptr<RequestObject> request) {
   std::string request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  std::shared_ptr<MeroRequestObject> mero_request =
-      std::dynamic_pointer_cast<MeroRequestObject>(request);
-  std::shared_ptr<MeroAPIHandler> handler;
+  std::shared_ptr<MotrRequestObject> motr_request =
+      std::dynamic_pointer_cast<MotrRequestObject>(request);
+  std::shared_ptr<MotrAPIHandler> handler;
 
-  std::string host_name = mero_request->get_host_name();
+  std::string host_name = motr_request->get_host_name();
 
   s3_log(S3_LOG_DEBUG, request_id, "host_name = %s\n", host_name.c_str());
   s3_log(S3_LOG_INFO, request_id, "uri = %s\n",
-         mero_request->c_get_full_path());
+         motr_request->c_get_full_path());
 
-  std::unique_ptr<MeroURI> uri;
-  MeroUriType uri_type = MeroUriType::unsupported;
+  std::unique_ptr<MotrURI> uri;
+  MotrUriType uri_type = MotrUriType::unsupported;
 
   if (host_name.empty() || is_exact_valid_endpoint(host_name) ||
-      mero_request->is_valid_ipaddress(host_name) ||
+      motr_request->is_valid_ipaddress(host_name) ||
       !is_subdomain_match(host_name)) {
     // Path style API
     // Request-URI
-    s3_log(S3_LOG_DEBUG, request_id, "Detected Mero PathStyleURI\n");
-    uri_type = MeroUriType::path_style;
+    s3_log(S3_LOG_DEBUG, request_id, "Detected Motr PathStyleURI\n");
+    uri_type = MotrUriType::path_style;
   }
 
-  uri = std::unique_ptr<MeroURI>(
-      uri_factory->create_uri_object(uri_type, mero_request));
+  uri = std::unique_ptr<MotrURI>(
+      uri_factory->create_uri_object(uri_type, motr_request));
 
-  mero_request->set_key_name(uri->get_key_name());
-  mero_request->set_object_oid_lo(uri->get_object_oid_lo());
-  mero_request->set_object_oid_hi(uri->get_object_oid_hi());
-  mero_request->set_index_id_lo(uri->get_index_id_lo());
-  mero_request->set_index_id_hi(uri->get_index_id_hi());
+  motr_request->set_key_name(uri->get_key_name());
+  motr_request->set_object_oid_lo(uri->get_object_oid_lo());
+  motr_request->set_object_oid_hi(uri->get_object_oid_hi());
+  motr_request->set_index_id_lo(uri->get_index_id_lo());
+  motr_request->set_index_id_hi(uri->get_index_id_hi());
 
   handler = api_handler_factory->create_api_handler(
-      uri->get_mero_api_type(), mero_request, uri->get_operation_code());
+      uri->get_motr_api_type(), motr_request, uri->get_operation_code());
 
   if (handler) {
-    s3_stats_inc("total_mero_request_count");
+    s3_stats_inc("total_motr_request_count");
     handler->manage_self(handler);
     handler->dispatch();  // Start processing the request
   } else {
-    mero_request->respond_unsupported_api();
+    motr_request->respond_unsupported_api();
   }
   return;
 }

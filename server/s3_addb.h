@@ -30,9 +30,9 @@
 #include "s3_addb_plugin_auto.h"
 #include "s3_addb_map.h"
 
-// This header defines what is needed to use Mero ADDB.
+// This header defines what is needed to use Motr ADDB.
 //
-// Mero ADDB is a subsystem which allows to efficiently store certain run-time
+// Motr ADDB is a subsystem which allows to efficiently store certain run-time
 // metrics.  They are called ADDB log entries.  Every entry is time stamped
 // (with nanosecond precision), and contains up to 15 unsigned 64 bit integers.
 // It is up to us what information to store there.  The convention is that the

@@ -1,6 +1,27 @@
-* Note current steps are assumed to be run within VM to be configured.
+### License
+
+Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+For any questions about this software or licensing,
+please email opensource@seagate.com or cortx-questions@seagate.com.
+
+> -----------------------------------------------------------------------------------
 
 # To setup dev vm
+
+**Note current steps are assumed to be run within VM to be configured.**
 
 Prerequisite
 
@@ -56,7 +77,7 @@ cortx-motr
 systemctl start|stop|status haproxy
 systemctl start|stop|status s3authserver
 systemctl start|stop|status slapd
-./third_party/mero/clovis/st/utils/mero_services.sh start|stop
+./third_party/motr/clovis/st/utils/motr_services.sh start|stop
 ```
 
 # To stop s3server
@@ -128,10 +149,10 @@ cd <s3 src>
 cd <s3 src>
 ./scripts/env/release/init.sh
 ```
-VM is now ready to install mero halon s3server s3iamcli and configure.
+VM is now ready to install motr halon s3server s3iamcli and configure.
 
 ```sh
-yum install -y halon mero s3server s3iamcli s3cmd
+yum install -y halon cortx-motr cortx-s3server cortx-s3iamcli s3cmd
 ```
 
 Once s3server rpm is installed, run following script to update ldap password
@@ -139,3 +160,4 @@ in authserver config. [ -l <ldap passwd> -p <authserver.properties file path> ]
 
 /opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh -l ldapadmin \
     -p /opt/seagate/cortx/auth/resources/authserver.properties
+
