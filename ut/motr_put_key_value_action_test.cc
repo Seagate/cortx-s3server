@@ -18,7 +18,7 @@
  *
  */
 
-#include "mock_s3_clovis_wrapper.h"
+#include "mock_s3_motr_wrapper.h"
 #include "mock_motr_request_object.h"
 #include "mock_s3_factory.h"
 #include "s3_m0_uint128_helper.h"

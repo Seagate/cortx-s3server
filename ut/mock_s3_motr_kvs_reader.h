@@ -25,7 +25,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "s3_clovis_kvs_reader.h"
+#include "s3_motr_kvs_reader.h"
 #include "s3_request_object.h"
 
 using ::testing::_;

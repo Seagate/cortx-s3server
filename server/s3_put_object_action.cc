@@ -19,7 +19,7 @@
  */
 
 #include "s3_put_object_action.h"
-#include "s3_clovis_layout.h"
+#include "s3_motr_layout.h"
 #include "s3_common.h"
 #include "s3_error_codes.h"
 #include "s3_iem.h"

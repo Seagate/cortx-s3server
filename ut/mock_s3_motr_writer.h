@@ -25,9 +25,9 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "mock_s3_clovis_wrapper.h"
-#include "mock_s3_clovis_wrapper.h"
-#include "s3_clovis_writer.h"
+#include "mock_s3_motr_wrapper.h"
+#include "mock_s3_motr_wrapper.h"
+#include "s3_motr_writer.h"
 #include "s3_request_object.h"
 
 using ::testing::_;

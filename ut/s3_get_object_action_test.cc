@@ -21,7 +21,7 @@
 #include <memory>
 
 #include "mock_s3_factory.h"
-#include "s3_clovis_layout.h"
+#include "s3_motr_layout.h"
 #include "s3_error_codes.h"
 #include "s3_get_object_action.h"
 #include "s3_test_utils.h"

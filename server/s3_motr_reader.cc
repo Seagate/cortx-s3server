@@ -21,8 +21,8 @@
 #include <unistd.h>
 #include "s3_common.h"
 
-#include "s3_clovis_reader.h"
-#include "s3_clovis_rw_common.h"
+#include "s3_motr_reader.h"
+#include "s3_motr_rw_common.h"
 #include "s3_option.h"
 #include "s3_uri_to_motr_oid.h"
 #include "s3_addb.h"
@@ -66,12 +66,12 @@ void S3ClovisReader::clean_up_contexts() {
   if (!shutdown_clovis_teardown_called) {
     global_clovis_obj.erase(obj_ctx);
     if (obj_ctx) {
-    for (size_t i = 0; i < obj_ctx->n_initialized_contexts; i++) {
-      s3_clovis_api->clovis_obj_fini(&obj_ctx->objs[i]);
+      for (size_t i = 0; i < obj_ctx->n_initialized_contexts; i++) {
+        s3_clovis_api->clovis_obj_fini(&obj_ctx->objs[i]);
+      }
+      free_obj_context(obj_ctx);
+      obj_ctx = nullptr;
     }
-    free_obj_context(obj_ctx);
-    obj_ctx = nullptr;
-  }
   }
 }
 

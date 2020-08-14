@@ -20,7 +20,7 @@
 
 #include <sstream>
 #include "s3_post_multipartobject_action.h"
-#include "s3_clovis_layout.h"
+#include "s3_motr_layout.h"
 #include "s3_error_codes.h"
 #include "s3_iem.h"
 #include "s3_log.h"

@@ -21,12 +21,12 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "mock_s3_clovis_wrapper.h"
+#include "mock_s3_motr_wrapper.h"
 #include "mock_s3_request_object.h"
 #include "s3_async_buffer_opt.h"
 #include "s3_callback_test_helpers.h"
-#include "s3_clovis_layout.h"
-#include "s3_clovis_writer.h"
+#include "s3_motr_layout.h"
+#include "s3_motr_writer.h"
 
 using ::testing::_;
 using ::testing::Return;

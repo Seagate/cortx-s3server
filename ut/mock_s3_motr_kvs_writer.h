@@ -62,4 +62,3 @@ class MockS3ClovisKVSWriter : public S3ClovisKVSWriter {
                     std::function<void(void)> on_failed));
 };
 #endif
-

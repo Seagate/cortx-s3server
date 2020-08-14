@@ -28,8 +28,8 @@
 #include <memory>
 
 #include "s3_asyncop_context_base.h"
-#include "s3_clovis_context.h"
-#include "s3_clovis_wrapper.h"
+#include "s3_motr_context.h"
+#include "s3_motr_wrapper.h"
 #include "s3_log.h"
 #include "s3_md5_hash.h"
 #include "s3_request_object.h"

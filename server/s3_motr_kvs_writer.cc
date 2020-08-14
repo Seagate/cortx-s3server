@@ -22,8 +22,8 @@
 
 #include "s3_common.h"
 
-#include "s3_clovis_kvs_writer.h"
-#include "s3_clovis_rw_common.h"
+#include "s3_motr_kvs_writer.h"
+#include "s3_motr_rw_common.h"
 #include "s3_option.h"
 #include "s3_uri_to_motr_oid.h"
 #include "s3_stats.h"
@@ -69,15 +69,15 @@ void S3ClovisKVSWriter::clean_up_contexts() {
   if (!shutdown_clovis_teardown_called) {
     global_clovis_idx.erase(idx_ctx);
     if (idx_ctx) {
-    for (size_t i = 0; i < idx_ctx->n_initialized_contexts; i++) {
-      if (shutdown_clovis_teardown_called) {
-        break;
+      for (size_t i = 0; i < idx_ctx->n_initialized_contexts; i++) {
+        if (shutdown_clovis_teardown_called) {
+          break;
+        }
+        s3_clovis_api->clovis_idx_fini(&idx_ctx->idx[i]);
       }
-      s3_clovis_api->clovis_idx_fini(&idx_ctx->idx[i]);
+      free_idx_context(idx_ctx);
+      idx_ctx = nullptr;
     }
-    free_idx_context(idx_ctx);
-    idx_ctx = nullptr;
-  }
   }
 }
 

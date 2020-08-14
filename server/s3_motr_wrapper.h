@@ -26,14 +26,14 @@
 #include <functional>
 #include <iostream>
 
-#include "s3_clovis_rw_common.h"
+#include "s3_motr_rw_common.h"
 #include "s3_post_to_main_loop.h"
 
-#include "clovis_helpers.h"
+#include "motr_helpers.h"
 #include "s3_fi_common.h"
 #include "s3_log.h"
 #include "s3_option.h"
-#include "s3_fake_clovis_redis_kvs.h"
+#include "s3_fake_motr_redis_kvs.h"
 #include "s3_addb.h"
 
 extern struct m0_ufid_generator s3_ufid_generator;
@@ -55,7 +55,6 @@ enum class ClovisOpType {
 
 class ClovisAPI {
  public:
-
   virtual void clovis_idx_init(struct m0_clovis_idx *idx,
                                struct m0_clovis_realm *parent,
                                const struct m0_uint128 *id) = 0;
@@ -175,7 +174,6 @@ class ConcreteClovisAPI : public ClovisAPI {
   }
 
  public:
-
   void clovis_idx_init(struct m0_clovis_idx *idx,
                        struct m0_clovis_realm *parent,
                        const struct m0_uint128 *id) {

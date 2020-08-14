@@ -21,9 +21,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "s3_clovis_context.h"
+#include "s3_motr_context.h"
 #include "s3_mem_pool_manager.h"
-#include "clovis_helpers.h"
+#include "motr_helpers.h"
 
 extern std::set<struct s3_clovis_op_context *> global_clovis_object_ops_list;
 extern std::set<struct s3_clovis_idx_op_context *> global_clovis_idx_ops_list;

@@ -22,7 +22,7 @@
 #include <inttypes.h>
 #include <yaml-cpp/yaml.h>
 #include <vector>
-#include "s3_clovis_layout.h"
+#include "s3_motr_layout.h"
 #include "s3_log.h"
 #include "s3_common_utilities.h"
 

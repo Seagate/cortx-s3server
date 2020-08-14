@@ -23,7 +23,7 @@
 #ifndef __S3_SERVER_FAKE_CLOVIS_REDIS__H__
 #define __S3_SERVER_FAKE_CLOVIS_REDIS__H__
 
-#include "s3_clovis_context.h"
+#include "s3_motr_context.h"
 #include "s3_log.h"
 #include "s3_option.h"
 

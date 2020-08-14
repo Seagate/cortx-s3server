@@ -24,7 +24,7 @@
 
 #include "mock_evhtp_wrapper.h"
 #include "mock_s3_asyncop_context_base.h"
-#include "mock_s3_clovis_wrapper.h"
+#include "mock_s3_motr_wrapper.h"
 #include "mock_s3_request_object.h"
 #include "s3_callback_test_helpers.h"
 
@@ -132,10 +132,9 @@ TEST_F(S3ClovisReadWriteCommonTest,
       static_cast<void *>(ptr_mock_s3_async_context.get());
 
   EXPECT_CALL(*ptr_mock_s3_async_context, set_op_errno_for(_, _)).Times(1);
-  EXPECT_CALL(
-      *ptr_mock_s3_async_context,
-      set_op_status_for(_, S3AsyncOpStatus::failed, "Operation Failed."))
-      .Times(1);
+  EXPECT_CALL(*ptr_mock_s3_async_context,
+              set_op_status_for(_, S3AsyncOpStatus::failed,
+                                "Operation Failed.")).Times(1);
   ptr_mock_s3_async_context->response_received_count = 0;
   ptr_mock_s3_async_context->ops_count = 1;
   s3_clovis_op_failed(&op);
@@ -153,10 +152,9 @@ TEST_F(S3ClovisReadWriteCommonTest,
       static_cast<void *>(ptr_mock_s3_async_context.get());
 
   EXPECT_CALL(*ptr_mock_s3_async_context, set_op_errno_for(_, _)).Times(1);
-  EXPECT_CALL(
-      *ptr_mock_s3_async_context,
-      set_op_status_for(_, S3AsyncOpStatus::failed, "Operation Failed."))
-      .Times(1);
+  EXPECT_CALL(*ptr_mock_s3_async_context,
+              set_op_status_for(_, S3AsyncOpStatus::failed,
+                                "Operation Failed.")).Times(1);
   ptr_mock_s3_async_context->response_received_count = 0;
   ptr_mock_s3_async_context->ops_count = 3;
   s3_clovis_op_failed(&op);

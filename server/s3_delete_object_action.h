@@ -27,7 +27,7 @@
 #include <memory>
 
 #include "s3_object_action_base.h"
-#include "s3_clovis_writer.h"
+#include "s3_motr_writer.h"
 #include "s3_factory.h"
 #include "s3_log.h"
 #include "s3_object_metadata.h"
