@@ -197,16 +197,20 @@ int S3ClovisWriter::open_objects() {
     oid_list_stream << '(' << oid_list[i].u_hi << ' ' << oid_list[i].u_lo
                     << ") ";
     s3_motr_api->clovis_obj_init(&obj_ctx->objs[i], &clovis_uber_realm,
-                                   &oid_list[i], layout_ids[i]);
-    if (i == 0) {
+                                 << << << < HEAD & oid_list[i], layout_ids[i]);
+=======
+                                 &oid_list[i], layout_ids[i]);
+>>>>>>> 3cfb417969fe8dd43272d7f91946ef70558fe7bf if (i == 0) {
       obj_ctx->n_initialized_contexts = 1;
     } else {
       obj_ctx->n_initialized_contexts += 1;
     }
 
     int rc = s3_motr_api->clovis_entity_open(&(obj_ctx->objs[i].ob_entity),
-                                               &(ctx->ops[i]));
-    if (rc != 0) {
+                                             << << << < HEAD & (ctx->ops[i]));
+=======
+                                             &(ctx->ops[i]));
+>>>>>>> 3cfb417969fe8dd43272d7f91946ef70558fe7bf if (rc != 0) {
       s3_log(S3_LOG_WARN, request_id,
              "Clovis API: clovis_entity_open failed with error code %d\n", rc);
       state = S3ClovisWriterOpState::failed_to_launch;
@@ -220,8 +224,11 @@ int S3ClovisWriter::open_objects() {
   s3_log(S3_LOG_INFO, request_id, "Clovis API: openobj(oid: %s)\n",
          oid_list_stream.str().c_str());
   s3_motr_api->clovis_op_launch(request->addb_request_id, ctx->ops, ops_count,
-                                  ClovisOpType::openobj);
-  global_clovis_object_ops_list.insert(ctx);
+                                << << << < HEAD ClovisOpType::openobj);
+=======
+                                ClovisOpType::openobj);
+>>>>>>> 3cfb417969fe8dd43272d7f91946ef70558fe7bf global_clovis_object_ops_list
+            .insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return 0;
 }
@@ -314,12 +321,18 @@ void S3ClovisWriter::create_object(std::function<void(void)> on_success,
   ctx->cbs[0].oop_failed = s3_clovis_op_failed;
 
   s3_motr_api->clovis_obj_init(&obj_ctx->objs[0], &clovis_uber_realm,
-                                 &oid_list[0], layout_ids[0]);
+                               << << << < HEAD & oid_list[0], layout_ids[0]);
   obj_ctx->n_initialized_contexts = 1;
 
   int rc = s3_motr_api->clovis_entity_create(&(obj_ctx->objs[0].ob_entity),
                                                &(ctx->ops[0]));
-  if (rc != 0) {
+=======
+                               &oid_list[0], layout_ids[0]);
+obj_ctx->n_initialized_contexts = 1;
+
+int rc = s3_motr_api->clovis_entity_create(&(obj_ctx->objs[0].ob_entity),
+                                           &(ctx->ops[0]));
+>>>>>>> 3cfb417969fe8dd43272d7f91946ef70558fe7bf if (rc != 0) {
     state = S3ClovisWriterOpState::failed_to_launch;
     s3_log(S3_LOG_ERROR, request_id,
            "clovis_entity_create failed with return code: (%d)\n", rc);
@@ -336,8 +349,11 @@ void S3ClovisWriter::create_object(std::function<void(void)> on_success,
          oid_list[0].u_hi, oid_list[0].u_lo);
 
   s3_motr_api->clovis_op_launch(request->addb_request_id, ctx->ops, 1,
-                                  ClovisOpType::createobj);
-  global_clovis_object_ops_list.insert(ctx);
+                                << << << < HEAD ClovisOpType::createobj);
+=======
+                                ClovisOpType::createobj);
+>>>>>>> 3cfb417969fe8dd43272d7f91946ef70558fe7bf global_clovis_object_ops_list
+            .insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -480,9 +496,12 @@ void S3ClovisWriter::write_content() {
 
   /* Create the write request */
   rc = s3_motr_api->clovis_obj_op(&obj_ctx->objs[0], M0_CLOVIS_OC_WRITE,
-                                    rw_ctx->ext, rw_ctx->data, rw_ctx->attr, 0,
-                                    &ctx->ops[0]);
-  if (rc != 0) {
+                                  << << << < HEAD rw_ctx->ext, rw_ctx->data,
+                                  rw_ctx->attr, 0, &ctx->ops[0]);
+=======
+                                  rw_ctx->ext, rw_ctx->data, rw_ctx->attr, 0,
+                                  &ctx->ops[0]);
+>>>>>>> 3cfb417969fe8dd43272d7f91946ef70558fe7bf if (rc != 0) {
     s3_log(S3_LOG_WARN, request_id,
            "Clovis API: clovis_obj_op failed with error code %d\n", rc);
     state = S3ClovisWriterOpState::failed_to_launch;
@@ -501,8 +520,11 @@ void S3ClovisWriter::write_content() {
          oid_list[0].u_hi, oid_list[0].u_lo, rw_ctx->ext->iv_index[0],
          size_in_current_write);
   s3_motr_api->clovis_op_launch(request->addb_request_id, ctx->ops, 1,
-                                  ClovisOpType::writeobj);
-  global_clovis_object_ops_list.insert(ctx);
+                                << << << < HEAD ClovisOpType::writeobj);
+=======
+                                ClovisOpType::writeobj);
+>>>>>>> 3cfb417969fe8dd43272d7f91946ef70558fe7bf global_clovis_object_ops_list
+            .insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -591,8 +613,10 @@ void S3ClovisWriter::delete_objects() {
     ctx->cbs[i].oop_failed = s3_clovis_op_failed;
 
     int rc = s3_motr_api->clovis_entity_delete(&(obj_ctx->objs[i].ob_entity),
-                                                 &(ctx->ops[i]));
-    if (rc != 0) {
+                                               << << << < HEAD & (ctx->ops[i]));
+=======
+                                               &(ctx->ops[i]));
+>>>>>>> 3cfb417969fe8dd43272d7f91946ef70558fe7bf if (rc != 0) {
       s3_log(S3_LOG_ERROR, request_id,
              "clovis_entity_delete failed with return code: (%d)\n", rc);
       state = S3ClovisWriterOpState::failed_to_launch;
@@ -611,8 +635,11 @@ void S3ClovisWriter::delete_objects() {
   s3_log(S3_LOG_INFO, request_id, "Clovis API: deleteobj(oid: %s)\n",
          oid_list_stream.str().c_str());
   s3_motr_api->clovis_op_launch(request->addb_request_id, ctx->ops, ops_count,
-                                  ClovisOpType::deleteobj);
-  global_clovis_object_ops_list.insert(ctx);
+                                << << << < HEAD ClovisOpType::deleteobj);
+=======
+                                ClovisOpType::deleteobj);
+>>>>>>> 3cfb417969fe8dd43272d7f91946ef70558fe7bf global_clovis_object_ops_list
+            .insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

@@ -137,13 +137,18 @@ void S3BucketMetadataV1::fetch_global_bucket_account_id_info_failed() {
 void S3BucketMetadataV1::load_bucket_info() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
-      request, s3_motr_api);
-  // example key "AccountId_1/bucket_x'
-  clovis_kv_reader->get_keyval(
-      bucket_metadata_list_index_oid, get_bucket_metadata_index_key_name(),
-      std::bind(&S3BucketMetadataV1::load_bucket_info_successful, this),
-      std::bind(&S3BucketMetadataV1::load_bucket_info_failed, this));
+  << << << < HEAD clovis_kv_reader =
+      clovis_kvs_reader_factory->create_clovis_kvs_reader(request, s3_motr_api);
+  == == == = clovis_kv_reader =
+               clovis_kvs_reader_factory->create_clovis_kvs_reader(request,
+                                                                   s3_motr_api);
+  >>>>>>> 3cfb417969fe8dd43272d7f91946ef70558fe7bf
+          // example key "AccountId_1/bucket_x'
+          clovis_kv_reader->get_keyval(
+              bucket_metadata_list_index_oid,
+              get_bucket_metadata_index_key_name(),
+              std::bind(&S3BucketMetadataV1::load_bucket_info_successful, this),
+              std::bind(&S3BucketMetadataV1::load_bucket_info_failed, this));
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -285,13 +290,21 @@ void S3BucketMetadataV1::create_object_list_index() {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
         request, s3_motr_api);
   }
-  S3UriToMotrOID(s3_motr_api, salted_object_list_index_name.c_str(),
-                 request_id, &object_list_index_oid, S3ClovisEntityType::index);
-
-  clovis_kv_writer->create_index_with_oid(
-      object_list_index_oid,
-      std::bind(&S3BucketMetadataV1::create_object_list_index_successful, this),
-      std::bind(&S3BucketMetadataV1::create_object_list_index_failed, this));
+  << << << < HEAD S3UriToMotrOID(
+                 s3_motr_api, salted_object_list_index_name.c_str(), request_id,
+                 &object_list_index_oid, S3ClovisEntityType::index);
+  == == == = S3UriToMotrOID(s3_motr_api, salted_object_list_index_name.c_str(),
+                            request_id, &object_list_index_oid,
+                            S3ClovisEntityType::index);
+  >>>>>>>
+      3cfb417969fe8dd43272d7f91946ef70558fe7bf clovis_kv_writer
+          ->create_index_with_oid(
+                object_list_index_oid,
+                std::bind(
+                    &S3BucketMetadataV1::create_object_list_index_successful,
+                    this),
+                std::bind(&S3BucketMetadataV1::create_object_list_index_failed,
+                          this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

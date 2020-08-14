@@ -1027,9 +1027,12 @@ int main(int argc, char **argv) {
     clovis_kv_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
 
     if (!clovis_kv_writer) {
-      clovis_kv_writer =
-          clovis_kv_writer_factory->create_sync_clovis_kvs_writer(
-              "", s3_motr_api);
+      clovis_kv_writer = << << << <
+                         HEAD clovis_kv_writer_factory
+                             ->create_sync_clovis_kvs_writer("", s3_motr_api);
+      == == == = clovis_kv_writer_factory->create_sync_clovis_kvs_writer(
+                   "", s3_motr_api);
+      >>>>>>> 3cfb417969fe8dd43272d7f91946ef70558fe7bf
     }
 
     rc = clovis_kv_writer->put_keyval_sync(global_instance_list_index,

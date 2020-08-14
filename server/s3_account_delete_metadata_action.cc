@@ -82,9 +82,14 @@ void S3AccountDeleteMetadataAction::validate_request() {
 
 void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
-      request, s3_motr_api);
-  bucket_account_id_key_prefix = account_id_from_uri + "/";
+  << << << < HEAD clovis_kv_reader =
+      clovis_kvs_reader_factory->create_clovis_kvs_reader(request, s3_motr_api);
+  == == == = clovis_kv_reader =
+               clovis_kvs_reader_factory->create_clovis_kvs_reader(request,
+                                                                   s3_motr_api);
+  >>>>>>>
+      3cfb417969fe8dd43272d7f91946ef70558fe7bf bucket_account_id_key_prefix =
+      account_id_from_uri + "/";
   clovis_kv_reader->next_keyval(
       bucket_metadata_list_index_oid, bucket_account_id_key_prefix, 1,
       std::bind(&S3AccountDeleteMetadataAction::

@@ -298,12 +298,15 @@ void S3ObjectMetadata::load(std::function<void(void)> on_success,
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
-  clovis_kv_reader = clovis_kv_reader_factory->create_clovis_kvs_reader(
-      request, s3_motr_api);
-  clovis_kv_reader->get_keyval(
-      object_list_index_oid, object_name,
-      std::bind(&S3ObjectMetadata::load_successful, this),
-      std::bind(&S3ObjectMetadata::load_failed, this));
+  << << << < HEAD clovis_kv_reader =
+      clovis_kv_reader_factory->create_clovis_kvs_reader(request, s3_motr_api);
+  == == == = clovis_kv_reader =
+               clovis_kv_reader_factory->create_clovis_kvs_reader(request,
+                                                                  s3_motr_api);
+  >>>>>>> 3cfb417969fe8dd43272d7f91946ef70558fe7bf clovis_kv_reader->get_keyval(
+              object_list_index_oid, object_name,
+              std::bind(&S3ObjectMetadata::load_successful, this),
+              std::bind(&S3ObjectMetadata::load_failed, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -373,13 +376,17 @@ void S3ObjectMetadata::save_version_metadata() {
   assert(objects_version_list_index_oid.u_hi ||
          objects_version_list_index_oid.u_lo);
 
-  clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-      request, s3_motr_api);
-  clovis_kv_writer->put_keyval(
-      objects_version_list_index_oid, get_version_key_in_index(),
-      this->version_entry_to_json(),
-      std::bind(&S3ObjectMetadata::save_version_metadata_successful, this),
-      std::bind(&S3ObjectMetadata::save_version_metadata_failed, this));
+  << << << < HEAD clovis_kv_writer =
+      clovis_kv_writer_factory->create_clovis_kvs_writer(request, s3_motr_api);
+  == == == = clovis_kv_writer =
+               clovis_kv_writer_factory->create_clovis_kvs_writer(request,
+                                                                  s3_motr_api);
+  >>>>>>>
+      3cfb417969fe8dd43272d7f91946ef70558fe7bf clovis_kv_writer->put_keyval(
+          objects_version_list_index_oid, get_version_key_in_index(),
+          this->version_entry_to_json(),
+          std::bind(&S3ObjectMetadata::save_version_metadata_successful, this),
+          std::bind(&S3ObjectMetadata::save_version_metadata_failed, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -407,12 +414,15 @@ void S3ObjectMetadata::save_metadata() {
   // object_list_index_oid should be set before using this method
   assert(object_list_index_oid.u_hi || object_list_index_oid.u_lo);
 
-  clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-      request, s3_motr_api);
-  clovis_kv_writer->put_keyval(
-      object_list_index_oid, object_name, this->to_json(),
-      std::bind(&S3ObjectMetadata::save_metadata_successful, this),
-      std::bind(&S3ObjectMetadata::save_metadata_failed, this));
+  << << << < HEAD clovis_kv_writer =
+      clovis_kv_writer_factory->create_clovis_kvs_writer(request, s3_motr_api);
+  == == == = clovis_kv_writer =
+               clovis_kv_writer_factory->create_clovis_kvs_writer(request,
+                                                                  s3_motr_api);
+  >>>>>>> 3cfb417969fe8dd43272d7f91946ef70558fe7bf clovis_kv_writer->put_keyval(
+              object_list_index_oid, object_name, this->to_json(),
+              std::bind(&S3ObjectMetadata::save_metadata_successful, this),
+              std::bind(&S3ObjectMetadata::save_metadata_failed, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -461,12 +471,16 @@ void S3ObjectMetadata::remove_object_metadata() {
   // object_list_index_oid should be set before using this method
   assert(object_list_index_oid.u_hi || object_list_index_oid.u_lo);
 
-  clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-      request, s3_motr_api);
-  clovis_kv_writer->delete_keyval(
-      object_list_index_oid, object_name,
-      std::bind(&S3ObjectMetadata::remove_object_metadata_successful, this),
-      std::bind(&S3ObjectMetadata::remove_object_metadata_failed, this));
+  << << << < HEAD clovis_kv_writer =
+      clovis_kv_writer_factory->create_clovis_kvs_writer(request, s3_motr_api);
+  == == == = clovis_kv_writer =
+               clovis_kv_writer_factory->create_clovis_kvs_writer(request,
+                                                                  s3_motr_api);
+  >>>>>>>
+      3cfb417969fe8dd43272d7f91946ef70558fe7bf clovis_kv_writer->delete_keyval(
+          object_list_index_oid, object_name,
+          std::bind(&S3ObjectMetadata::remove_object_metadata_successful, this),
+          std::bind(&S3ObjectMetadata::remove_object_metadata_failed, this));
 }
 
 void S3ObjectMetadata::remove_object_metadata_successful() {
@@ -510,12 +524,17 @@ void S3ObjectMetadata::remove_version_metadata() {
   assert(objects_version_list_index_oid.u_hi ||
          objects_version_list_index_oid.u_lo);
 
-  clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-      request, s3_motr_api);
-  clovis_kv_writer->delete_keyval(
-      objects_version_list_index_oid, get_version_key_in_index(),
-      std::bind(&S3ObjectMetadata::remove_version_metadata_successful, this),
-      std::bind(&S3ObjectMetadata::remove_version_metadata_failed, this));
+  << << << < HEAD clovis_kv_writer =
+      clovis_kv_writer_factory->create_clovis_kvs_writer(request, s3_motr_api);
+  == == == = clovis_kv_writer =
+               clovis_kv_writer_factory->create_clovis_kvs_writer(request,
+                                                                  s3_motr_api);
+  >>>>>>>
+      3cfb417969fe8dd43272d7f91946ef70558fe7bf clovis_kv_writer->delete_keyval(
+          objects_version_list_index_oid, get_version_key_in_index(),
+          std::bind(&S3ObjectMetadata::remove_version_metadata_successful,
+                    this),
+          std::bind(&S3ObjectMetadata::remove_version_metadata_failed, this));
 }
 
 void S3ObjectMetadata::remove_version_metadata_successful() {

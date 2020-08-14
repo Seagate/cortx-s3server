@@ -72,7 +72,7 @@ S3DeleteMultipleObjectsAction::S3DeleteMultipleObjectsAction(
     clovis_kvs_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
   }
 
-  std::shared_ptr<MotrAPI> s3_motr_api =
+  << << << < HEAD std::shared_ptr<MotrAPI> s3_motr_api =
       std::make_shared<ConcreteClovisAPI>();
 
   clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
@@ -80,8 +80,16 @@ S3DeleteMultipleObjectsAction::S3DeleteMultipleObjectsAction(
 
   clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
       request, s3_motr_api);
+  == == == = std::shared_ptr<MotrAPI> s3_motr_api =
+               std::make_shared<ConcreteClovisAPI>();
 
-  clovis_writer = clovis_writer_factory->create_clovis_writer(request);
+  clovis_kv_reader =
+      clovis_kvs_reader_factory->create_clovis_kvs_reader(request, s3_motr_api);
+
+  clovis_kv_writer =
+      clovis_kvs_writer_factory->create_clovis_kvs_writer(request, s3_motr_api);
+  >>>>>>> 3cfb417969fe8dd43272d7f91946ef70558fe7bf clovis_writer =
+      clovis_writer_factory->create_clovis_writer(request);
 
   setup_steps();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

@@ -73,12 +73,15 @@ void S3GlobalBucketIndexMetadata::load(std::function<void(void)> on_success,
   // Mark missing as we initiate fetch, in case it fails to load due to missing.
   state = S3GlobalBucketIndexMetadataState::missing;
 
-  clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
-      request, s3_motr_api);
-  clovis_kv_reader->get_keyval(
-      global_bucket_list_index_oid, bucket_name,
-      std::bind(&S3GlobalBucketIndexMetadata::load_successful, this),
-      std::bind(&S3GlobalBucketIndexMetadata::load_failed, this));
+  << << << < HEAD clovis_kv_reader =
+      clovis_kvs_reader_factory->create_clovis_kvs_reader(request, s3_motr_api);
+  == == == = clovis_kv_reader =
+               clovis_kvs_reader_factory->create_clovis_kvs_reader(request,
+                                                                   s3_motr_api);
+  >>>>>>> 3cfb417969fe8dd43272d7f91946ef70558fe7bf clovis_kv_reader->get_keyval(
+              global_bucket_list_index_oid, bucket_name,
+              std::bind(&S3GlobalBucketIndexMetadata::load_successful, this),
+              std::bind(&S3GlobalBucketIndexMetadata::load_failed, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -134,12 +137,15 @@ void S3GlobalBucketIndexMetadata::save(std::function<void(void)> on_success,
 
   // Mark missing as we initiate write, in case it fails to write.
   state = S3GlobalBucketIndexMetadataState::missing;
-  clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-      request, s3_motr_api);
-  clovis_kv_writer->put_keyval(
-      global_bucket_list_index_oid, bucket_name, this->to_json(),
-      std::bind(&S3GlobalBucketIndexMetadata::save_successful, this),
-      std::bind(&S3GlobalBucketIndexMetadata::save_failed, this));
+  << << << < HEAD clovis_kv_writer =
+      clovis_kvs_writer_factory->create_clovis_kvs_writer(request, s3_motr_api);
+  == == == = clovis_kv_writer =
+               clovis_kvs_writer_factory->create_clovis_kvs_writer(request,
+                                                                   s3_motr_api);
+  >>>>>>> 3cfb417969fe8dd43272d7f91946ef70558fe7bf clovis_kv_writer->put_keyval(
+              global_bucket_list_index_oid, bucket_name, this->to_json(),
+              std::bind(&S3GlobalBucketIndexMetadata::save_successful, this),
+              std::bind(&S3GlobalBucketIndexMetadata::save_failed, this));
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -199,12 +205,16 @@ void S3GlobalBucketIndexMetadata::remove(std::function<void(void)> on_success,
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
-  clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-      request, s3_motr_api);
-  clovis_kv_writer->delete_keyval(
-      global_bucket_list_index_oid, bucket_name,
-      std::bind(&S3GlobalBucketIndexMetadata::remove_successful, this),
-      std::bind(&S3GlobalBucketIndexMetadata::remove_failed, this));
+  << << << < HEAD clovis_kv_writer =
+      clovis_kvs_writer_factory->create_clovis_kvs_writer(request, s3_motr_api);
+  == == == = clovis_kv_writer =
+               clovis_kvs_writer_factory->create_clovis_kvs_writer(request,
+                                                                   s3_motr_api);
+  >>>>>>>
+      3cfb417969fe8dd43272d7f91946ef70558fe7bf clovis_kv_writer->delete_keyval(
+          global_bucket_list_index_oid, bucket_name,
+          std::bind(&S3GlobalBucketIndexMetadata::remove_successful, this),
+          std::bind(&S3GlobalBucketIndexMetadata::remove_failed, this));
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

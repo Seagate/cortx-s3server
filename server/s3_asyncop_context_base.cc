@@ -35,9 +35,12 @@ S3AsyncOpContextBase::S3AsyncOpContextBase(std::shared_ptr<RequestObject> req,
       ops_count(ops_cnt),
       response_received_count(0),
       at_least_one_success(false),
-      s3_motr_api(clovis_api ? std::move(clovis_api)
-                               : std::make_shared<ConcreteClovisAPI>()) {
-  request_id = request->get_request_id();
+      s3_motr_api(clovis_api ? std::move(clovis_api) << << << < HEAD
+                             : std::make_shared<ConcreteClovisAPI>()) {
+=======
+                             : std::make_shared<ConcreteClovisAPI>()) {
+  >>>>>>> 3cfb417969fe8dd43272d7f91946ef70558fe7bf request_id =
+      request->get_request_id();
   ops_response.resize(ops_count);
 }
 

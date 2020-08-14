@@ -182,13 +182,15 @@ void S3PartMetadata::load(std::function<void(void)> on_success,
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
-  clovis_kv_reader = clovis_kv_reader_factory->create_clovis_kvs_reader(
-      request, s3_motr_api);
-
-  clovis_kv_reader->get_keyval(
-      part_index_name_oid, str_part_num,
-      std::bind(&S3PartMetadata::load_successful, this),
-      std::bind(&S3PartMetadata::load_failed, this));
+  << << << < HEAD clovis_kv_reader =
+      clovis_kv_reader_factory->create_clovis_kvs_reader(request, s3_motr_api);
+  == == == = clovis_kv_reader =
+               clovis_kv_reader_factory->create_clovis_kvs_reader(request,
+                                                                  s3_motr_api);
+  >>>>>>> 3cfb417969fe8dd43272d7f91946ef70558fe7bf clovis_kv_reader->get_keyval(
+              part_index_name_oid, str_part_num,
+              std::bind(&S3PartMetadata::load_successful, this),
+              std::bind(&S3PartMetadata::load_failed, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -250,13 +252,16 @@ void S3PartMetadata::create_part_index() {
   // Mark missing as we initiate write, in case it fails to write.
   state = S3PartMetadataState::missing;
 
-  clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-      request, s3_motr_api);
-
-  clovis_kv_writer->create_index(
-      index_name,
-      std::bind(&S3PartMetadata::create_part_index_successful, this),
-      std::bind(&S3PartMetadata::create_part_index_failed, this));
+  << << << < HEAD clovis_kv_writer =
+      clovis_kv_writer_factory->create_clovis_kvs_writer(request, s3_motr_api);
+  == == == = clovis_kv_writer =
+               clovis_kv_writer_factory->create_clovis_kvs_writer(request,
+                                                                  s3_motr_api);
+  >>>>>>>
+      3cfb417969fe8dd43272d7f91946ef70558fe7bf clovis_kv_writer->create_index(
+          index_name,
+          std::bind(&S3PartMetadata::create_part_index_successful, this),
+          std::bind(&S3PartMetadata::create_part_index_failed, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
