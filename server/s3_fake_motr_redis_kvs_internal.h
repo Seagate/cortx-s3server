@@ -23,8 +23,8 @@
 #ifndef __S3_SERVER_FAKE_CLOVIS_REDIS_INTERNAL__H__
 #define __S3_SERVER_FAKE_CLOVIS_REDIS_INTERNAL__H__
 
-#include "s3_fake_clovis_redis_kvs.h"
-#include "s3_clovis_rw_common.h"
+#include "s3_fake_motr_redis_kvs.h"
+#include "s3_motr_rw_common.h"
 
 // key and val are delimited with zero byte
 // so key is just a begging of the buf

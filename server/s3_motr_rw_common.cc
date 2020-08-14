@@ -18,14 +18,14 @@
  *
  */
 
-#include "s3_clovis_rw_common.h"
+#include "s3_motr_rw_common.h"
 #include "s3_asyncop_context_base.h"
 #include "s3_iem.h"
 #include "s3_log.h"
 #include "s3_post_to_main_loop.h"
-#include "s3_clovis_kvs_reader.h"
-#include "s3_clovis_kvs_writer.h"
-#include "s3_fake_clovis_kvs.h"
+#include "s3_motr_kvs_reader.h"
+#include "s3_motr_kvs_writer.h"
+#include "s3_fake_motr_kvs.h"
 
 /*
  *  <IEM_INLINE_DOCUMENTATION>

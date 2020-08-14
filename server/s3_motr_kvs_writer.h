@@ -28,8 +28,8 @@
 #include <memory>
 
 #include "s3_asyncop_context_base.h"
-#include "s3_clovis_context.h"
-#include "s3_clovis_wrapper.h"
+#include "s3_motr_context.h"
+#include "s3_motr_wrapper.h"
 #include "s3_log.h"
 #include "s3_request_object.h"
 
@@ -153,9 +153,7 @@ class S3ClovisKVSWriter {
 
   virtual S3ClovisKVSWriterOpState get_state() { return state; }
 
-  struct m0_uint128 get_oid() {
-    return oid_list[0];
-  }
+  struct m0_uint128 get_oid() { return oid_list[0]; }
 
   // async create
   virtual void create_index(std::string index_name,

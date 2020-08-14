@@ -21,9 +21,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "mock_s3_clovis_wrapper.h"
+#include "mock_s3_motr_wrapper.h"
 #include "mock_s3_bucket_metadata.h"
-#include "mock_s3_clovis_wrapper.h"
+#include "mock_s3_motr_wrapper.h"
 #include "mock_s3_factory.h"
 #include "s3_post_complete_action.h"
 #include "s3_ut_common.h"

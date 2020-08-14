@@ -26,7 +26,7 @@
 #include <memory>
 
 #include "motr_action_base.h"
-#include "s3_clovis_kvs_reader.h"
+#include "s3_motr_kvs_reader.h"
 #include "motr_kv_list_response.h"
 
 class MotrKVSListingAction : public MotrAction {

@@ -27,9 +27,9 @@
 #include <gtest/gtest.h>
 #include <functional>
 #include <iostream>
-#include "clovis_helpers.h"
-#include "s3_clovis_rw_common.h"
-#include "s3_clovis_wrapper.h"
+#include "motr_helpers.h"
+#include "s3_motr_rw_common.h"
+#include "s3_motr_wrapper.h"
 
 class MockS3Clovis : public ClovisAPI {
  public:

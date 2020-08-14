@@ -26,7 +26,7 @@
 #include <memory>
 
 #include "s3_bucket_action_base.h"
-#include "s3_clovis_writer.h"
+#include "s3_motr_writer.h"
 #include "s3_probable_delete_record.h"
 
 enum class S3AbortMultipartActionState {

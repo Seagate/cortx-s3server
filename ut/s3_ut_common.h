@@ -23,7 +23,7 @@
 #ifndef __S3_UT_COMMON_H__
 #define __S3_UT_COMMON_H__
 
-#include "clovis_helpers.h"
+#include "motr_helpers.h"
 
 // Common functions for ut
 

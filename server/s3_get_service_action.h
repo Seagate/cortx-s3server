@@ -26,7 +26,7 @@
 #include <memory>
 
 #include "s3_action_base.h"
-#include "s3_clovis_kvs_reader.h"
+#include "s3_motr_kvs_reader.h"
 #include "s3_service_list_response.h"
 
 class S3GetServiceAction : public S3Action {

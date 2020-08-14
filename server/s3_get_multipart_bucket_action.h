@@ -26,7 +26,7 @@
 #include <memory>
 
 #include "s3_bucket_action_base.h"
-#include "s3_clovis_kvs_reader.h"
+#include "s3_motr_kvs_reader.h"
 #include "s3_factory.h"
 #include "s3_object_list_response.h"
 

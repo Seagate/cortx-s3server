@@ -20,10 +20,10 @@
 
 #include <memory>
 #include <string>
-#include "mock_s3_clovis_wrapper.h"
+#include "mock_s3_motr_wrapper.h"
 #include "mock_s3_factory.h"
 #include "mock_s3_probable_delete_record.h"
-#include "s3_clovis_layout.h"
+#include "s3_motr_layout.h"
 #include "s3_put_object_action.h"
 #include "s3_test_utils.h"
 #include "s3_ut_common.h"

@@ -29,7 +29,7 @@
 #include "s3_object_action_base.h"
 #include "s3_async_buffer.h"
 #include "s3_bucket_metadata.h"
-#include "s3_clovis_writer.h"
+#include "s3_motr_writer.h"
 #include "s3_factory.h"
 #include "s3_object_metadata.h"
 #include "s3_probable_delete_record.h"

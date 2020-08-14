@@ -21,7 +21,7 @@
 #include "motr_head_index_action.h"
 #include "s3_error_codes.h"
 #include "s3_m0_uint128_helper.h"
-#include "s3_clovis_wrapper.h"
+#include "s3_motr_wrapper.h"
 
 MotrHeadIndexAction::MotrHeadIndexAction(
     std::shared_ptr<MotrRequestObject> req,

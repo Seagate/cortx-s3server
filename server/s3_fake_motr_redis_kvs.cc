@@ -23,11 +23,11 @@
 #include <vector>
 #include <algorithm>
 
-#include "s3_fake_clovis_redis_kvs.h"
-#include "s3_fake_clovis_redis_kvs_internal.h"
-#include "s3_clovis_kvs_reader.h"
-#include "s3_clovis_kvs_writer.h"
-#include "s3_clovis_rw_common.h"
+#include "s3_fake_motr_redis_kvs.h"
+#include "s3_fake_motr_redis_kvs_internal.h"
+#include "s3_motr_kvs_reader.h"
+#include "s3_motr_kvs_writer.h"
+#include "s3_motr_rw_common.h"
 
 std::unique_ptr<S3FakeClovisRedisKvs> S3FakeClovisRedisKvs::inst;
 

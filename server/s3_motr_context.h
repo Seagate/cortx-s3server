@@ -84,8 +84,10 @@ int free_obj_context(struct s3_clovis_obj_context *ctx);
 struct s3_clovis_op_context *create_basic_op_ctx(size_t op_count);
 int free_basic_op_ctx(struct s3_clovis_op_context *ctx);
 
-struct s3_clovis_rw_op_context *create_basic_rw_op_ctx(
-    size_t clovis_buf_count, size_t unit_size, bool allocate_bufs = true);
+struct s3_clovis_rw_op_context *create_basic_rw_op_ctx(size_t clovis_buf_count,
+                                                       size_t unit_size,
+                                                       bool allocate_bufs =
+                                                           true);
 int free_basic_rw_op_ctx(struct s3_clovis_rw_op_context *ctx);
 
 struct s3_clovis_idx_context *create_idx_context(size_t idx_count);

@@ -29,8 +29,8 @@
 #include <memory>
 #include <string>
 
-#include "s3_clovis_kvs_reader.h"
-#include "s3_clovis_kvs_writer.h"
+#include "s3_motr_kvs_reader.h"
+#include "s3_motr_kvs_writer.h"
 #include "s3_log.h"
 #include "s3_request_object.h"
 

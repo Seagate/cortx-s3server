@@ -18,7 +18,7 @@
  *
  */
 
-#include "s3_fake_clovis_kvs.h"
+#include "s3_fake_motr_kvs.h"
 #include "s3_log.h"
 
 #include <algorithm>

@@ -19,7 +19,7 @@
  */
 
 #include <memory>
-#include "mock_s3_clovis_wrapper.h"
+#include "mock_s3_motr_wrapper.h"
 #include "mock_s3_factory.h"
 #include "mock_s3_probable_delete_record.h"
 #include "s3_put_chunk_upload_object_action.h"
