@@ -45,7 +45,7 @@ class S3PostMultipartObjectTest : public testing::Test {
     upload_id = "upload_id";
     call_count_one = 0;
     layout_id =
-        S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+        S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
     bucket_name = "seagatebucket";
     object_name = "objname";
 

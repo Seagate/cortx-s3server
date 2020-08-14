@@ -31,9 +31,9 @@
 #include "s3_motr_rw_common.h"
 #include "s3_motr_wrapper.h"
 
-class MockS3Clovis : public ClovisAPI {
+class MockS3Clovis : public MotrAPI {
  public:
-  MockS3Clovis() : ClovisAPI() {}
+  MockS3Clovis() : MotrAPI() {}
   MOCK_METHOD3(clovis_idx_init,
                void(struct m0_clovis_idx *idx, struct m0_clovis_realm *parent,
                     const struct m0_uint128 *id));

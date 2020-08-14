@@ -36,7 +36,7 @@ extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
 
 S3PutObjectAction::S3PutObjectAction(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory,
@@ -265,7 +265,7 @@ void S3PutObjectAction::create_object() {
     clovis_writer->set_oid(new_object_oid);
   }
 
-  layout_id = S3ClovisLayoutMap::get_instance()->get_layout_for_object_size(
+  layout_id = S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
       request->get_content_length());
 
   clovis_writer->create_object(

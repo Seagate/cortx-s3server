@@ -71,7 +71,7 @@ class S3PutChunkUploadObjectActionTestBase : public testing::Test {
     zero_oid_idx = {0ULL, 0ULL};
 
     layout_id =
-        S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+        S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
 
     call_count_one = 0;
 

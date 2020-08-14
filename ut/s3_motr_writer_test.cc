@@ -65,7 +65,7 @@ static void s3_test_clovis_op_launch(uint64_t, struct m0_clovis_op **op,
 
   S3ClovisWriterContext *app_ctx =
       (S3ClovisWriterContext *)ctx->application_context;
-  struct s3_clovis_op_context *op_ctx = app_ctx->get_clovis_op_ctx();
+  struct s3_clovis_op_context *op_ctx = app_ctx->get_motr_op_ctx();
 
   for (int i = 0; i < (int)nr; i++) {
     struct m0_clovis_op *test_clovis_op = op[i];
@@ -82,7 +82,7 @@ static void s3_dummy_clovis_op_launch(uint64_t, struct m0_clovis_op **op,
 
   S3ClovisWriterContext *app_ctx =
       (S3ClovisWriterContext *)ctx->application_context;
-  struct s3_clovis_op_context *op_ctx = app_ctx->get_clovis_op_ctx();
+  struct s3_clovis_op_context *op_ctx = app_ctx->get_motr_op_ctx();
   op_ctx->op_count = 0;
 }
 
@@ -93,7 +93,7 @@ static void s3_test_clovis_op_launch_fail(uint64_t, struct m0_clovis_op **op,
 
   S3ClovisWriterContext *app_ctx =
       (S3ClovisWriterContext *)ctx->application_context;
-  struct s3_clovis_op_context *op_ctx = app_ctx->get_clovis_op_ctx();
+  struct s3_clovis_op_context *op_ctx = app_ctx->get_motr_op_ctx();
 
   for (int i = 0; i < (int)nr; i++) {
     struct m0_clovis_op *test_clovis_op = op[i];
@@ -120,7 +120,7 @@ class S3ClovisWriterTest : public testing::Test {
                         'A');
     obj_oid = {0xffff, 0xffff};
     layout_id =
-        S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+        S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
   }
 
   ~S3ClovisWriterTest() { event_base_free(evbase); }

@@ -44,7 +44,7 @@ enum class S3DeleteObjectActionState {
 
 class S3DeleteObjectAction : public S3ObjectAction {
   std::shared_ptr<S3ClovisWriter> clovis_writer;
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::shared_ptr<MotrAPI> s3_clovis_api;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
 
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
@@ -62,7 +62,7 @@ class S3DeleteObjectAction : public S3ObjectAction {
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
       std::shared_ptr<S3ClovisWriterFactory> writer_factory = nullptr,
       std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr);
+      std::shared_ptr<MotrAPI> clovis_api = nullptr);
 
   void setup_steps();
 

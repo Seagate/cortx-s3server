@@ -31,7 +31,7 @@
 
 class MotrDeleteKeyValueAction : public MotrAction {
   m0_uint128 index_id;
-  std::shared_ptr<ClovisAPI> motr_clovis_api;
+  std::shared_ptr<MotrAPI> motr_clovis_api;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
 
@@ -41,7 +41,7 @@ class MotrDeleteKeyValueAction : public MotrAction {
  public:
   MotrDeleteKeyValueAction(
       std::shared_ptr<MotrRequestObject> req,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr,
+      std::shared_ptr<MotrAPI> clovis_api = nullptr,
       std::shared_ptr<S3ClovisKVSWriterFactory> clovis_motr_kvs_writer_factory =
           nullptr,
       std::shared_ptr<S3ClovisKVSReaderFactory> clovis_motr_kvs_reader_factory =

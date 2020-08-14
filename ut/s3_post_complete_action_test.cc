@@ -128,7 +128,7 @@ class S3PostCompleteActionTest : public testing::Test {
 
     call_count_one = 0;
     layout_id =
-        S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+        S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
 
     bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
         request_mock, s3_clovis_api_mock);
