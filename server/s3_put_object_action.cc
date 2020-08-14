@@ -58,12 +58,12 @@ S3PutObjectAction::S3PutObjectAction(
   new_object_oid = {0ULL, 0ULL};
 
   if (clovis_api) {
-    s3_clovis_api = std::move(clovis_api);
+    s3_motr_api = std::move(clovis_api);
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_motr_api = std::make_shared<ConcreteClovisAPI>();
   }
 
-  S3UriToMotrOID(s3_clovis_api, request->get_object_uri().c_str(), request_id,
+  S3UriToMotrOID(s3_motr_api, request->get_object_uri().c_str(), request_id,
                  &new_object_oid);
   // Note valid value is set during create object
   layout_id = -1;
@@ -387,7 +387,7 @@ void S3PutObjectAction::create_new_oid(struct m0_uint128 current_oid) {
     salted_uri = request->get_object_uri() + salt +
                  std::to_string(salt_counter) + std::to_string(tried_count);
 
-    S3UriToMotrOID(s3_clovis_api, salted_uri.c_str(), request_id,
+    S3UriToMotrOID(s3_motr_api, salted_uri.c_str(), request_id,
                    &new_object_oid);
 
     ++salt_counter;
@@ -648,7 +648,7 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
 
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
   clovis_kv_writer->put_keyval(
       global_probable_dead_object_list_index_oid, probable_oid_list,
@@ -797,7 +797,7 @@ void S3PutObjectAction::mark_new_oid_for_deletion() {
 
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
   clovis_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
                                new_oid_str, new_probable_del_rec->to_json(),
@@ -819,7 +819,7 @@ void S3PutObjectAction::mark_old_oid_for_deletion() {
 
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
   clovis_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
                                old_oid_rec_key, old_probable_del_rec->to_json(),
@@ -838,7 +838,7 @@ void S3PutObjectAction::remove_old_oid_probable_record() {
 
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
   clovis_kv_writer->delete_keyval(global_probable_dead_object_list_index_oid,
                                   old_oid_rec_key,
@@ -853,7 +853,7 @@ void S3PutObjectAction::remove_new_oid_probable_record() {
 
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
   clovis_kv_writer->delete_keyval(global_probable_dead_object_list_index_oid,
                                   new_oid_str,

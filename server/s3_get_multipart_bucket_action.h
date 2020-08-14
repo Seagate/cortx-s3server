@@ -32,7 +32,7 @@
 
 class S3GetMultipartBucketAction : public S3BucketAction {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
-  std::shared_ptr<MotrAPI> s3_clovis_api;
+  std::shared_ptr<MotrAPI> s3_motr_api;
   std::shared_ptr<S3ClovisKVSReaderFactory> s3_clovis_kvs_reader_factory;
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   S3ObjectListResponse multipart_object_list;

@@ -33,7 +33,7 @@
 
 class S3GetMultipartPartAction : public S3BucketAction {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
-  std::shared_ptr<MotrAPI> s3_clovis_api;
+  std::shared_ptr<MotrAPI> s3_motr_api;
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;
   S3ObjectListResponse multipart_part_list;
   std::string last_key;  // last key during each iteration

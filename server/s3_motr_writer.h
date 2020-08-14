@@ -39,7 +39,7 @@ class S3ClovisWriterContext : public S3AsyncOpContextBase {
   struct s3_clovis_op_context* clovis_op_context = NULL;
 
   // Read/Write Operation context.
-  struct s3_clovis_rw_op_context* clovis_rw_op_context = NULL;
+  struct s3_clovis_rw_op_context* motr_rw_op_context = NULL;
 
  public:
   S3ClovisWriterContext(std::shared_ptr<RequestObject> req,
@@ -54,11 +54,11 @@ class S3ClovisWriterContext : public S3AsyncOpContextBase {
 
   // Call this when you want to do write op.
   void init_write_op_ctx(size_t clovis_buf_count) {
-    clovis_rw_op_context = create_basic_rw_op_ctx(clovis_buf_count, 0, false);
+    motr_rw_op_context = create_basic_rw_op_ctx(clovis_buf_count, 0, false);
   }
 
   struct s3_clovis_rw_op_context* get_motr_rw_op_ctx() {
-    return clovis_rw_op_context;
+    return motr_rw_op_context;
   }
 };
 
@@ -84,7 +84,7 @@ class S3ClovisWriter {
   std::unique_ptr<S3ClovisWriterContext> create_context;
   std::unique_ptr<S3ClovisWriterContext> writer_context;
   std::unique_ptr<S3ClovisWriterContext> delete_context;
-  std::shared_ptr<MotrAPI> s3_clovis_api;
+  std::shared_ptr<MotrAPI> s3_motr_api;
 
   // Used to report to caller
   std::function<void()> handler_on_success;

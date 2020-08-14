@@ -45,9 +45,9 @@ S3DeleteObjectAction::S3DeleteObjectAction(
   s3_del_obj_action_state = S3DeleteObjectActionState::empty;
 
   if (clovis_api) {
-    s3_clovis_api = clovis_api;
+    s3_motr_api = clovis_api;
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_motr_api = std::make_shared<ConcreteClovisAPI>();
   }
 
   if (writer_factory) {
@@ -124,7 +124,7 @@ void S3DeleteObjectAction::add_object_oid_to_probable_dead_oid_list() {
   oid_str = S3M0Uint128Helper::to_string(object_metadata->get_oid());
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
 
   probable_delete_rec.reset(new S3ProbableDeleteRecord(
@@ -242,7 +242,7 @@ void S3DeleteObjectAction::mark_oid_for_deletion() {
 
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
   clovis_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
                                oid_str, probable_delete_rec->to_json(),
@@ -271,7 +271,7 @@ void S3DeleteObjectAction::remove_probable_record() {
 
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
   clovis_kv_writer->delete_keyval(global_probable_dead_object_list_index_oid,
                                   oid_str,

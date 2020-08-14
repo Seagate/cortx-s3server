@@ -42,9 +42,9 @@ S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
   state = S3GlobalBucketIndexMetadataState::empty;
   location_constraint = "us-west-2";
   if (clovis_api) {
-    s3_clovis_api = clovis_api;
+    s3_motr_api = clovis_api;
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_motr_api = std::make_shared<ConcreteClovisAPI>();
   }
   if (clovis_s3_kvs_reader_factory) {
     clovis_kvs_reader_factory = clovis_s3_kvs_reader_factory;
@@ -74,7 +74,7 @@ void S3GlobalBucketIndexMetadata::load(std::function<void(void)> on_success,
   state = S3GlobalBucketIndexMetadataState::missing;
 
   clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
-      request, s3_clovis_api);
+      request, s3_motr_api);
   clovis_kv_reader->get_keyval(
       global_bucket_list_index_oid, bucket_name,
       std::bind(&S3GlobalBucketIndexMetadata::load_successful, this),
@@ -135,7 +135,7 @@ void S3GlobalBucketIndexMetadata::save(std::function<void(void)> on_success,
   // Mark missing as we initiate write, in case it fails to write.
   state = S3GlobalBucketIndexMetadataState::missing;
   clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-      request, s3_clovis_api);
+      request, s3_motr_api);
   clovis_kv_writer->put_keyval(
       global_bucket_list_index_oid, bucket_name, this->to_json(),
       std::bind(&S3GlobalBucketIndexMetadata::save_successful, this),
@@ -152,7 +152,7 @@ void S3GlobalBucketIndexMetadata::save_successful() {
   // attempt to save the KV in replica global bucket list index
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
   clovis_kv_writer->put_keyval(
       replica_global_bucket_list_index_oid, bucket_name, this->to_json(),
@@ -200,7 +200,7 @@ void S3GlobalBucketIndexMetadata::remove(std::function<void(void)> on_success,
   this->handler_on_failed = on_failed;
 
   clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-      request, s3_clovis_api);
+      request, s3_motr_api);
   clovis_kv_writer->delete_keyval(
       global_bucket_list_index_oid, bucket_name,
       std::bind(&S3GlobalBucketIndexMetadata::remove_successful, this),
@@ -217,7 +217,7 @@ void S3GlobalBucketIndexMetadata::remove_successful() {
   // attempt to remove KV from the replica index as well
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
   clovis_kv_writer->delete_keyval(
       replica_global_bucket_list_index_oid, bucket_name,

@@ -102,7 +102,7 @@ class S3ClovisKVSReader {
 
   std::shared_ptr<RequestObject> request;
   std::unique_ptr<S3ClovisKVSReaderContext> reader_context;
-  std::shared_ptr<MotrAPI> s3_clovis_api;
+  std::shared_ptr<MotrAPI> s3_motr_api;
 
   std::string request_id;
 

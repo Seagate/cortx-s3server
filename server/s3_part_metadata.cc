@@ -38,7 +38,7 @@ void S3PartMetadata::initialize(std::string uploadid, int part_num) {
   index_name = get_part_index_name();
   salt = "index_salt_";
   collision_attempt_count = 0;
-  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  s3_motr_api = std::make_shared<ConcreteClovisAPI>();
 
   // Set the defaults
   system_defined_attribute["Date"] = "";
@@ -183,7 +183,7 @@ void S3PartMetadata::load(std::function<void(void)> on_success,
   this->handler_on_failed = on_failed;
 
   clovis_kv_reader = clovis_kv_reader_factory->create_clovis_kvs_reader(
-      request, s3_clovis_api);
+      request, s3_motr_api);
 
   clovis_kv_reader->get_keyval(
       part_index_name_oid, str_part_num,
@@ -251,7 +251,7 @@ void S3PartMetadata::create_part_index() {
   state = S3PartMetadataState::missing;
 
   clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-      request, s3_clovis_api);
+      request, s3_motr_api);
 
   clovis_kv_writer->create_index(
       index_name,
@@ -296,7 +296,7 @@ void S3PartMetadata::save_metadata() {
   system_defined_attribute["Upload-ID"] = upload_id;
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
   clovis_kv_writer->put_keyval(
       part_index_name_oid, part_number, this->to_json(),
@@ -337,7 +337,7 @@ void S3PartMetadata::remove(std::function<void(void)> on_success,
 
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
   clovis_kv_writer->delete_keyval(
       part_index_name_oid, part_removal,
@@ -371,7 +371,7 @@ void S3PartMetadata::remove_index(std::function<void(void)> on_success,
   this->handler_on_failed = on_failed;
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+        request, s3_motr_api);
   }
   clovis_kv_writer->delete_index(
       part_index_name_oid,
