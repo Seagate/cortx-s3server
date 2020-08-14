@@ -88,9 +88,9 @@ S3AbortMultipartAction::S3AbortMultipartAction(
   }
 
   if (s3_clovis_apis) {
-    s3_motr_api = std::move(s3_clovis_apis);
+    s3_clovis_api = std::move(s3_clovis_apis);
   } else {
-    s3_motr_api = std::make_shared<ConcreteClovisAPI>();
+    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
   setup_steps();
 }
@@ -203,7 +203,7 @@ void S3AbortMultipartAction::add_object_oid_to_probable_dead_oid_list() {
 
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-        request, s3_motr_api);
+        request, s3_clovis_api);
   }
 
   clovis_kv_writer->put_keyval(
@@ -385,7 +385,7 @@ void S3AbortMultipartAction::mark_oid_for_deletion() {
 
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-        request, s3_motr_api);
+        request, s3_clovis_api);
   }
   clovis_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
                                oid_str, probable_delete_rec->to_json(),
@@ -417,7 +417,7 @@ void S3AbortMultipartAction::remove_probable_record() {
     // Delete probable record only if object and part list is deleted.
     if (!clovis_kv_writer) {
       clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-          request, s3_motr_api);
+          request, s3_clovis_api);
     }
     clovis_kv_writer->delete_keyval(
         global_probable_dead_object_list_index_oid, oid_str,

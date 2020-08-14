@@ -141,7 +141,7 @@ void fini_clovis(void) {
 int create_new_instance_id(struct m0_uint128 *ufid) {
   // Unique OID generation by motr.
 
-  std::unique_ptr<MotrAPI> s3_motr_api =
+  std::unique_ptr<MotrAPI> s3_clovis_api =
       std::unique_ptr<ConcreteClovisAPI>(new ConcreteClovisAPI());
 
   int rc;
@@ -151,7 +151,7 @@ int create_new_instance_id(struct m0_uint128 *ufid) {
     return -EINVAL;
   }
 
-  rc = s3_motr_api->m0_h_ufid_next(ufid);
+  rc = s3_clovis_api->m0_h_ufid_next(ufid);
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, "", "Failed to generate UFID\n");
     s3_iem(LOG_ALERT, S3_IEM_CLOVIS_CONN_FAIL, S3_IEM_CLOVIS_CONN_FAIL_STR,

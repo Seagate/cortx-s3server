@@ -56,12 +56,12 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
   action_uses_cleanup =
       false;  // since startcleanup is noop and we use rollback
   if (clovis_api) {
-    s3_motr_api = std::move(clovis_api);
+    s3_clovis_api = std::move(clovis_api);
   } else {
-    s3_motr_api = std::make_shared<ConcreteClovisAPI>();
+    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
   oid = {0ULL, 0ULL};
-  S3UriToMotrOID(s3_motr_api, request->get_object_uri().c_str(), request_id,
+  S3UriToMotrOID(s3_clovis_api, request->get_object_uri().c_str(), request_id,
                  &oid);
 
   tried_count = 0;
@@ -418,7 +418,7 @@ void S3PostMultipartObjectAction::create_new_oid(
     salted_uri = request->get_object_uri() + salt +
                  std::to_string(salt_counter) + std::to_string(tried_count);
 
-    S3UriToMotrOID(s3_motr_api, salted_uri.c_str(), request_id, &oid);
+    S3UriToMotrOID(s3_clovis_api, salted_uri.c_str(), request_id, &oid);
     ++salt_counter;
   } while ((oid.u_hi == current_oid.u_hi) && (oid.u_lo == current_oid.u_lo));
 

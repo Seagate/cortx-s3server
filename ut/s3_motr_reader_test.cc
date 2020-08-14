@@ -252,13 +252,8 @@ TEST_F(S3MotrReaderTest, OpenObjectTest) {
 TEST_F(S3MotrReaderTest, OpenObjectFailedTest) {
   S3CallBack s3cloviswriter_callbackobj;
 
-<<<<<<< HEAD
-  clovis_reader_ptr = std::make_shared<S3MotrReader>(request_mock, oid, 1,
-                                                       s3_clovis_api_mock);
-=======
   clovis_reader_ptr =
       std::make_shared<S3MotrReader>(request_mock, oid, 1, s3_clovis_api_mock);
->>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
 
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_init(_, _, _, _)).Times(1);
   EXPECT_CALL(*s3_clovis_api_mock, clovis_entity_open(_, _))
@@ -287,13 +282,8 @@ TEST_F(S3MotrReaderTest, OpenObjectMissingTest) {
 
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_rc(_))
       .WillRepeatedly(Return(-ENOENT));
-<<<<<<< HEAD
-  clovis_reader_ptr->open_context.reset(new S3MotrReaderContext(
-      request_mock, NULL, NULL, 1, s3_clovis_api_mock));
-=======
   clovis_reader_ptr->open_context.reset(
       new S3MotrReaderContext(request_mock, NULL, NULL, 1, s3_clovis_api_mock));
->>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
   clovis_reader_ptr->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3clovisreader_callbackobj);
   clovis_reader_ptr->handler_on_failed =
@@ -312,13 +302,8 @@ TEST_F(S3MotrReaderTest, OpenObjectErrFailedTest) {
 
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_rc(_))
       .WillRepeatedly(Return(-EACCES));
-<<<<<<< HEAD
-  clovis_reader_ptr->open_context.reset(new S3MotrReaderContext(
-      request_mock, NULL, NULL, 1, s3_clovis_api_mock));
-=======
   clovis_reader_ptr->open_context.reset(
       new S3MotrReaderContext(request_mock, NULL, NULL, 1, s3_clovis_api_mock));
->>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
   clovis_reader_ptr->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3clovisreader_callbackobj);
   clovis_reader_ptr->handler_on_failed =
@@ -341,13 +326,8 @@ TEST_F(S3MotrReaderTest, OpenObjectSuccessTest) {
   clovis_reader_ptr->obj_ctx->obj_count = 1;
   clovis_reader_ptr->obj_ctx->n_initialized_contexts = 1;
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_rc(_)).WillRepeatedly(Return(0));
-<<<<<<< HEAD
-  clovis_reader_ptr->open_context.reset(new S3MotrReaderContext(
-      request_mock, NULL, NULL, 1, s3_clovis_api_mock));
-=======
   clovis_reader_ptr->open_context.reset(
       new S3MotrReaderContext(request_mock, NULL, NULL, 1, s3_clovis_api_mock));
->>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
   clovis_reader_ptr->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3clovisreader_callbackobj);
   clovis_reader_ptr->handler_on_failed =

@@ -30,13 +30,7 @@ EXTERN_C_BLOCK_BEGIN
 #include "clovis/clovis.h"
 EXTERN_C_BLOCK_END
 
-<<<<<<< HEAD
-int S3UriToMotrOID(std::shared_ptr<MotrAPI> s3_motr_api,
-                   const char *uri_name, const std::string &request_id,
-                   m0_uint128 *ufid,
-=======
 int S3UriToMotrOID(std::shared_ptr<MotrAPI> s3_clovis_api, const char *uri_name,
                    const std::string &request_id, m0_uint128 *ufid,
->>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
                    S3ClovisEntityType type = S3ClovisEntityType::object);
 #endif

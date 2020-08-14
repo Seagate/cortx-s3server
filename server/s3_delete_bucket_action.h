@@ -36,11 +36,7 @@ class S3DeleteBucketAction : public S3BucketAction {
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
-<<<<<<< HEAD
-  std::shared_ptr<MotrAPI> s3_motr_api;
-=======
   std::shared_ptr<MotrAPI> s3_clovis_api;
->>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
   std::map<std::string, std::string>::iterator multipart_kv;
   std::map<std::string, std::string> multipart_objects;
   std::vector<struct m0_uint128> part_oids;

@@ -56,11 +56,7 @@ class S3PostCompleteAction : public S3ObjectAction {
   std::shared_ptr<S3ObjectMetadata> multipart_metadata;
   std::shared_ptr<S3PartMetadata> part_metadata;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
-<<<<<<< HEAD
-  std::shared_ptr<MotrAPI> s3_motr_api;
-=======
   std::shared_ptr<MotrAPI> s3_clovis_api;
->>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
   std::shared_ptr<S3ClovisWriter> clovis_writer;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
   std::shared_ptr<S3ObjectMetadata> new_object_metadata;

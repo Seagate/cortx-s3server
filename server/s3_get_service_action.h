@@ -31,11 +31,7 @@
 
 class S3GetServiceAction : public S3Action {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
-<<<<<<< HEAD
-  std::shared_ptr<MotrAPI> s3_motr_api;
-=======
   std::shared_ptr<MotrAPI> s3_clovis_api;
->>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
   m0_uint128 bucket_list_index_oid;
   std::string last_key;  // last key during each iteration
   std::string key_prefix;  // holds account id

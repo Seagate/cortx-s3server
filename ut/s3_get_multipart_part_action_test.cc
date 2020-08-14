@@ -106,7 +106,7 @@ TEST_F(S3GetMultipartPartActionTest, ConstructorTest) {
   EXPECT_EQ(0, action_under_test->return_list_size);
   EXPECT_FALSE(action_under_test->fetch_successful);
   EXPECT_FALSE(action_under_test->invalid_upload_id);
-  EXPECT_TRUE(action_under_test->s3_motr_api != nullptr);
+  EXPECT_TRUE(action_under_test->s3_clovis_api != nullptr);
   EXPECT_STREQ(
       "1", action_under_test->multipart_part_list.request_marker_key.c_str());
   EXPECT_STREQ("206440e0-1f5b-4114-9f93-aa96350e4a16",

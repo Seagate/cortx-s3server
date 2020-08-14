@@ -115,7 +115,7 @@ class S3AbortMultipartActionTest : public testing::Test {
 
 TEST_F(S3AbortMultipartActionTest, ConstructorTest) {
   EXPECT_NE(0, action_under_test->number_of_tasks());
-  EXPECT_TRUE(action_under_test->s3_motr_api != NULL);
+  EXPECT_TRUE(action_under_test->s3_clovis_api != NULL);
 }
 
 TEST_F(S3AbortMultipartActionTest, GetMultiPartMetadataTest1) {

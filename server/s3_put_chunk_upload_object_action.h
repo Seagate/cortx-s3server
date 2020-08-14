@@ -83,11 +83,7 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
 
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
   std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
-<<<<<<< HEAD
-  std::shared_ptr<MotrAPI> s3_motr_api;
-=======
   std::shared_ptr<MotrAPI> s3_clovis_api;
->>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
   std::shared_ptr<S3ObjectMetadata> new_object_metadata;
   std::shared_ptr<S3PutTagsBodyFactory> put_object_tag_body_factory;
   std::map<std::string, std::string> new_object_tags_map;

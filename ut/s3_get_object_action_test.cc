@@ -848,12 +848,7 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeLessThanUnitSize) {
   // Object size less than unit size
   int layout_id = 1;
   size_t obj_size =
-<<<<<<< HEAD
-      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id) -
-      1;
-=======
       S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id) - 1;
->>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
@@ -963,12 +958,7 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeMoreThanUnitSize) {
   // Object size less than unit size
   int layout_id = 1;
   size_t obj_size =
-<<<<<<< HEAD
-      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id) +
-      1;
-=======
       S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id) + 1;
->>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
@@ -1025,12 +1015,7 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfGivenRange) {
   // Object size less than unit size
   int layout_id = 1;
   size_t obj_size =
-<<<<<<< HEAD
-      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id) +
-      1;
-=======
       S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id) + 1;
->>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));

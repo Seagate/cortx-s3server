@@ -29,13 +29,8 @@
 class MockS3ClovisKVSWriter : public S3ClovisKVSWriter {
  public:
   MockS3ClovisKVSWriter(std::shared_ptr<RequestObject> req,
-<<<<<<< HEAD
-                        std::shared_ptr<MotrAPI> s3_motr_api)
-      : S3ClovisKVSWriter(req, s3_motr_api) {}
-=======
                         std::shared_ptr<MotrAPI> s3_clovis_api)
       : S3ClovisKVSWriter(req, s3_clovis_api) {}
->>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
   MOCK_METHOD0(get_state, S3ClovisKVSWriterOpState());
   MOCK_METHOD1(get_op_ret_code_for, int(int index));
   MOCK_METHOD1(get_op_ret_code_for_del_kv, int(int index));

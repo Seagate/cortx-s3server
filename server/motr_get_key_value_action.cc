@@ -23,8 +23,7 @@
 #include "s3_m0_uint128_helper.h"
 
 MotrGetKeyValueAction::MotrGetKeyValueAction(
-    std::shared_ptr<MotrRequestObject> req,
-    std::shared_ptr<MotrAPI> clovis_api,
+    std::shared_ptr<MotrRequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_motr_kvs_reader_factory)
     : MotrAction(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");

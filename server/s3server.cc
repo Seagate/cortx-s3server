@@ -275,14 +275,8 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
   // Check if we have enough approx memory to proceed with request
   if (s3_request->get_api_type() == S3ApiType::object &&
       s3_request->http_verb() == S3HttpVerb::PUT) {
-<<<<<<< HEAD
-    int layout_id =
-        S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
-            s3_request->get_data_length());
-=======
     int layout_id = S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
         s3_request->get_data_length());
->>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
     if (!S3MemoryProfile().we_have_enough_memory_for_put_obj(layout_id) ||
         !S3MemoryProfile().free_memory_in_pool_above_threshold_limits()) {
       s3_log(S3_LOG_DEBUG, s3_request->get_request_id().c_str(),
@@ -1027,19 +1021,15 @@ int main(int argc, char **argv) {
 
     std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
     std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
-<<<<<<< HEAD
-    std::shared_ptr<MotrAPI> s3_motr_api;
-=======
     std::shared_ptr<MotrAPI> s3_clovis_api;
->>>>>>> a5b36ec05ce697ba162daa1dbf42806c1eb3e5bd
 
-    s3_motr_api = std::make_shared<ConcreteClovisAPI>();
+    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
     clovis_kv_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
 
     if (!clovis_kv_writer) {
       clovis_kv_writer =
           clovis_kv_writer_factory->create_sync_clovis_kvs_writer(
-              "", s3_motr_api);
+              "", s3_clovis_api);
     }
 
     rc = clovis_kv_writer->put_keyval_sync(global_instance_list_index,

@@ -44,9 +44,9 @@ S3GetMultipartBucketAction::S3GetMultipartBucketAction(
          "S3 API: List Multipart Uploads. Bucket[%s]\n",
          request->get_bucket_name().c_str());
   if (clovis_api) {
-    s3_motr_api = clovis_api;
+    s3_clovis_api = clovis_api;
   } else {
-    s3_motr_api = std::make_shared<ConcreteClovisAPI>();
+    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
   if (clovis_kvs_reader_factory) {
     s3_clovis_kvs_reader_factory = clovis_kvs_reader_factory;
@@ -144,7 +144,7 @@ void S3GetMultipartBucketAction::get_next_objects() {
   } else {
     size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
     clovis_kv_reader = s3_clovis_kvs_reader_factory->create_clovis_kvs_reader(
-        request, s3_motr_api);
+        request, s3_clovis_api);
     clovis_kv_reader->next_keyval(
         bucket_metadata->get_multipart_index_oid(), last_key, count,
         std::bind(&S3GetMultipartBucketAction::get_next_objects_successful,
