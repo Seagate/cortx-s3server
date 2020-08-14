@@ -208,11 +208,9 @@ bool S3Option::load_section(std::string section_name,
         clovis_unit_sizes_for_mem_pool.push_back(unit_sizes[i].as<int>());
       }
 
-      S3_OPTION_ASSERT_AND_RET(s3_option_node,
-                               "S3_MOTR_MAX_UNITS_PER_REQUEST");
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_MAX_UNITS_PER_REQUEST");
       clovis_units_per_request =
-          s3_option_node["S3_MOTR_MAX_UNITS_PER_REQUEST"]
-              .as<unsigned short>();
+          s3_option_node["S3_MOTR_MAX_UNITS_PER_REQUEST"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_MAX_IDX_FETCH_COUNT");
       clovis_idx_fetch_count =
           s3_option_node["S3_MOTR_MAX_IDX_FETCH_COUNT"].as<int>();
@@ -221,8 +219,7 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_IS_READ_VERIFY");
       clovis_is_read_verify =
           s3_option_node["S3_MOTR_IS_READ_VERIFY"].as<bool>();
-      S3_OPTION_ASSERT_AND_RET(s3_option_node,
-                               "S3_MOTR_TM_RECV_QUEUE_MIN_LEN");
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_TM_RECV_QUEUE_MIN_LEN");
       clovis_tm_recv_queue_min_len =
           s3_option_node["S3_MOTR_TM_RECV_QUEUE_MIN_LEN"].as<unsigned int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_MAX_RPC_MSG_SIZE");
@@ -250,8 +247,7 @@ bool S3Option::load_section(std::string section_name,
       clovis_read_mempool_zeroed_buffer =
           s3_option_node["S3_MOTR_READ_MEMPOOL_ZERO_BUFFER"].as<bool>();
 
-      S3_OPTION_ASSERT_AND_RET(s3_option_node,
-                               "S3_MOTR_OPERATION_WAIT_PERIOD");
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_OPERATION_WAIT_PERIOD");
       clovis_op_wait_period =
           s3_option_node["S3_MOTR_OPERATION_WAIT_PERIOD"].as<unsigned int>();
 
@@ -517,11 +513,9 @@ bool S3Option::load_section(std::string section_name,
       for (std::size_t i = 0; i < unit_sizes.size(); i++) {
         clovis_unit_sizes_for_mem_pool.push_back(unit_sizes[i].as<int>());
       }
-      S3_OPTION_ASSERT_AND_RET(s3_option_node,
-                               "S3_MOTR_MAX_UNITS_PER_REQUEST");
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_MAX_UNITS_PER_REQUEST");
       clovis_units_per_request =
-          s3_option_node["S3_MOTR_MAX_UNITS_PER_REQUEST"]
-              .as<unsigned short>();
+          s3_option_node["S3_MOTR_MAX_UNITS_PER_REQUEST"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_MAX_IDX_FETCH_COUNT");
       clovis_idx_fetch_count =
           s3_option_node["S3_MOTR_MAX_IDX_FETCH_COUNT"].as<int>();
@@ -530,8 +524,7 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_IS_READ_VERIFY");
       clovis_is_read_verify =
           s3_option_node["S3_MOTR_IS_READ_VERIFY"].as<bool>();
-      S3_OPTION_ASSERT_AND_RET(s3_option_node,
-                               "S3_MOTR_TM_RECV_QUEUE_MIN_LEN");
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_TM_RECV_QUEUE_MIN_LEN");
       clovis_tm_recv_queue_min_len =
           s3_option_node["S3_MOTR_TM_RECV_QUEUE_MIN_LEN"].as<unsigned int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_MAX_RPC_MSG_SIZE");
@@ -553,8 +546,7 @@ bool S3Option::load_section(std::string section_name,
                                "S3_MOTR_CASS_MAX_COL_FAMILY_NUM");
       clovis_cass_max_column_family_num =
           s3_option_node["S3_MOTR_CASS_MAX_COL_FAMILY_NUM"].as<int>();
-      S3_OPTION_ASSERT_AND_RET(s3_option_node,
-                               "S3_MOTR_OPERATION_WAIT_PERIOD");
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_OPERATION_WAIT_PERIOD");
       clovis_op_wait_period =
           s3_option_node["S3_MOTR_OPERATION_WAIT_PERIOD"].as<unsigned>();
 
