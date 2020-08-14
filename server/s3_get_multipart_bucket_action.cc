@@ -28,7 +28,7 @@
 #include "s3_option.h"
 
 S3GetMultipartBucketAction::S3GetMultipartBucketAction(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)

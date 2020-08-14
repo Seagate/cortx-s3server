@@ -66,7 +66,7 @@ class S3AsyncOpContextBase {
   S3Timer timer;
   std::string operation_key;  // used to identify operation(metric) name
   // Used for mocking clovis return calls.
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::shared_ptr<MotrAPI> s3_clovis_api;
 
   std::string request_id;
 
@@ -74,7 +74,7 @@ class S3AsyncOpContextBase {
   S3AsyncOpContextBase(std::shared_ptr<RequestObject> req,
                        std::function<void(void)> success,
                        std::function<void(void)> failed, int ops_cnt = 1,
-                       std::shared_ptr<ClovisAPI> clovis_api = nullptr);
+                       std::shared_ptr<MotrAPI> clovis_api = nullptr);
   virtual ~S3AsyncOpContextBase() {}
 
   std::shared_ptr<RequestObject> get_request();
@@ -105,7 +105,7 @@ class S3AsyncOpContextBase {
   // Call the logging always on main thread, so we dont need synchronisation of
   // log file.
   void log_timer();
-  std::shared_ptr<ClovisAPI> get_clovis_api();
+  std::shared_ptr<MotrAPI> get_clovis_api();
   // Google tests
   FRIEND_TEST(S3ClovisReadWriteCommonTest, ClovisOpDoneOnMainThreadOnSuccess);
   FRIEND_TEST(S3ClovisReadWriteCommonTest, S3ClovisOpStable);
@@ -119,11 +119,11 @@ class S3AsyncOpContextBase {
               S3ClovisOpFailedResponseCountNotSameAsOpCount);
   FRIEND_TEST(S3ClovisKvsWritterTest, SyncIndexFailedMissingMetadata);
   FRIEND_TEST(S3ClovisKvsWritterTest, SyncIndexFailedFailedMetadata);
-  FRIEND_TEST(S3ClovisReaderTest, ReadObjectDataFailed);
-  FRIEND_TEST(S3ClovisReaderTest, ReadObjectDataFailedMissing);
+  FRIEND_TEST(S3MotrReaderTest, ReadObjectDataFailed);
+  FRIEND_TEST(S3MotrReaderTest, ReadObjectDataFailedMissing);
   FRIEND_TEST(S3ClovisKvsWritterTest, DelIndexFailed);
-  FRIEND_TEST(S3ClovisReaderTest, OpenObjectMissingTest);
-  FRIEND_TEST(S3ClovisReaderTest, OpenObjectErrFailedTest);
+  FRIEND_TEST(S3MotrReaderTest, OpenObjectMissingTest);
+  FRIEND_TEST(S3MotrReaderTest, OpenObjectErrFailedTest);
 };
 
 #endif

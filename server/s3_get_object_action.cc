@@ -144,7 +144,7 @@ void S3GetObjectAction::validate_object_info() {
     send_response_to_s3_client();
   } else {
     size_t clovis_unit_size =
-        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
+        S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
             object_metadata->get_layout_id());
     s3_log(S3_LOG_DEBUG, request_id,
            "clovis_unit_size = %zu for layout_id = %d\n", clovis_unit_size,
@@ -168,7 +168,7 @@ void S3GetObjectAction::set_total_blocks_to_read_from_object() {
   } else {
     // object read for valid range
     size_t clovis_unit_size =
-        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
+        S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
             object_metadata->get_layout_id());
     // get block of first_byte_offset_to_read
     size_t first_byte_offset_block =
@@ -324,7 +324,7 @@ void S3GetObjectAction::read_object() {
   size_t block_start_offset =
       first_byte_offset_to_read -
       (first_byte_offset_to_read %
-       S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
+       S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
            object_metadata->get_layout_id()));
   clovis_reader->set_last_index(block_start_offset);
   read_object_data();
@@ -364,7 +364,7 @@ void S3GetObjectAction::read_object_data() {
           std::bind(&S3GetObjectAction::read_object_data_failed, this));
       if (!op_launched) {
         if (clovis_reader->get_state() ==
-            S3ClovisReaderOpState::failed_to_launch) {
+            S3MotrReaderOpState::failed_to_launch) {
           set_s3_error("ServiceUnavailable");
           s3_log(S3_LOG_ERROR, request_id,
                  "read_object_data called due to clovis_entity_open failure\n");
@@ -448,7 +448,7 @@ void S3GetObjectAction::send_data_to_client() {
       // for a given range 1000-1500 to read from 2mb object
       read_data_start_offset =
           first_byte_offset_to_read %
-          S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
+          S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
               object_metadata->get_layout_id());
       length -= read_data_start_offset;
     }
@@ -523,7 +523,7 @@ void S3GetObjectAction::send_response_to_s3_client() {
   } else if (object_metadata &&
              (object_metadata->get_content_length() == 0 ||
               (clovis_reader &&
-               clovis_reader->get_state() == S3ClovisReaderOpState::success))) {
+               clovis_reader->get_state() == S3MotrReaderOpState::success))) {
     request->send_reply_end();
   } else {
     if (read_object_reply_started) {

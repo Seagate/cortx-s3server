@@ -31,7 +31,7 @@
 
 class MotrDeleteIndexAction : public MotrAction {
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
-  std::shared_ptr<ClovisAPI> motr_clovis_api;
+  std::shared_ptr<MotrAPI> motr_clovis_api;
   std::shared_ptr<S3ClovisKVSWriterFactory> motr_clovis_kvs_writer_factory;
 
   m0_uint128 index_id;

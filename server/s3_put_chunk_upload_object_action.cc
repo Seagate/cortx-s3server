@@ -40,7 +40,7 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory,
     std::shared_ptr<S3AuthClientFactory> auth_factory,
-    std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
@@ -326,7 +326,7 @@ void S3PutChunkUploadObjectAction::create_object() {
     clovis_writer->set_oid(new_object_oid);
   }
 
-  layout_id = S3ClovisLayoutMap::get_instance()->get_layout_for_object_size(
+  layout_id = S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
       request->get_data_length());
 
   clovis_writer->create_object(

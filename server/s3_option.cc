@@ -1082,12 +1082,12 @@ unsigned short S3Option::get_client_req_read_timeout_secs() {
 }
 
 unsigned int S3Option::get_clovis_write_payload_size(int layoutid) {
-  return S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layoutid) *
+  return S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layoutid) *
          clovis_units_per_request;
 }
 
 unsigned int S3Option::get_clovis_read_payload_size(int layoutid) {
-  return S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layoutid) *
+  return S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layoutid) *
          clovis_units_per_request;
 }
 

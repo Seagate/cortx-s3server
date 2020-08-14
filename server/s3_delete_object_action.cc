@@ -31,7 +31,7 @@ S3DeleteObjectAction::S3DeleteObjectAction(
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> writer_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory,
-    std::shared_ptr<ClovisAPI> clovis_api)
+    std::shared_ptr<MotrAPI> clovis_api)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
                      std::move(object_meta_factory), false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");

@@ -35,7 +35,7 @@ extern std::set<struct s3_clovis_idx_context *> global_clovis_idx;
 extern int shutdown_clovis_teardown_called;
 
 S3ClovisKVSWriter::S3ClovisKVSWriter(std::shared_ptr<RequestObject> req,
-                                     std::shared_ptr<ClovisAPI> clovis_api)
+                                     std::shared_ptr<MotrAPI> clovis_api)
     : request(req), state(S3ClovisKVSWriterOpState::start), idx_ctx(nullptr) {
   request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
@@ -47,7 +47,7 @@ S3ClovisKVSWriter::S3ClovisKVSWriter(std::shared_ptr<RequestObject> req,
 }
 
 S3ClovisKVSWriter::S3ClovisKVSWriter(std::string req_id,
-                                     std::shared_ptr<ClovisAPI> clovis_api)
+                                     std::shared_ptr<MotrAPI> clovis_api)
     : state(S3ClovisKVSWriterOpState::start), idx_ctx(nullptr) {
   request_id = std::move(req_id);
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");

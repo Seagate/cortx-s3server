@@ -124,11 +124,11 @@ class S3ClovisReaderFactory {
  public:
   virtual ~S3ClovisReaderFactory() {}
 
-  virtual std::shared_ptr<S3ClovisReader> create_clovis_reader(
+  virtual std::shared_ptr<S3MotrReader> create_clovis_reader(
       std::shared_ptr<RequestObject> req, struct m0_uint128 oid, int layout_id,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr) {
+      std::shared_ptr<MotrAPI> clovis_api = nullptr) {
     s3_log(S3_LOG_DEBUG, "", "S3ClovisReaderFactory::create_clovis_reader\n");
-    return std::make_shared<S3ClovisReader>(req, oid, layout_id, clovis_api);
+    return std::make_shared<S3MotrReader>(req, oid, layout_id, clovis_api);
   }
 };
 
@@ -137,7 +137,7 @@ class S3ClovisKVSReaderFactory {
   virtual ~S3ClovisKVSReaderFactory() {}
   virtual std::shared_ptr<S3ClovisKVSReader> create_clovis_kvs_reader(
       std::shared_ptr<RequestObject> req,
-      std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr) {
+      std::shared_ptr<MotrAPI> s3_clovis_api = nullptr) {
     s3_log(S3_LOG_DEBUG, "",
            "S3ClovisKVSReaderFactory::create_clovis_kvs_reader\n");
     return std::make_shared<S3ClovisKVSReader>(req, s3_clovis_api);
@@ -149,14 +149,14 @@ class S3ClovisKVSWriterFactory {
   virtual ~S3ClovisKVSWriterFactory() {}
   virtual std::shared_ptr<S3ClovisKVSWriter> create_clovis_kvs_writer(
       std::shared_ptr<RequestObject> req,
-      std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr) {
+      std::shared_ptr<MotrAPI> s3_clovis_api = nullptr) {
     s3_log(S3_LOG_DEBUG, "",
            "S3ClovisKVSWriterFactory::create_clovis_kvs_writer\n");
     return std::make_shared<S3ClovisKVSWriter>(req, s3_clovis_api);
   }
   virtual std::shared_ptr<S3ClovisKVSWriter> create_sync_clovis_kvs_writer(
       std::string request_id,
-      std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr) {
+      std::shared_ptr<MotrAPI> s3_clovis_api = nullptr) {
     s3_log(S3_LOG_INFO, "",
            "S3ClovisKVSWriterFactory::create_sync_clovis_kvs_writer\n");
     return std::make_shared<S3ClovisKVSWriter>(request_id, s3_clovis_api);

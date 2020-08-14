@@ -46,7 +46,7 @@ class S3AbortMultipartAction : public S3BucketAction {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::shared_ptr<MotrAPI> s3_clovis_api;
   std::string upload_id;
   std::string bucket_name;
   std::string object_name;
@@ -68,7 +68,7 @@ class S3AbortMultipartAction : public S3BucketAction {
  public:
   S3AbortMultipartAction(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr,
+      std::shared_ptr<MotrAPI> s3_clovis_api = nullptr,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
           nullptr,

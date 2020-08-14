@@ -36,7 +36,7 @@ extern std::set<struct s3_clovis_idx_context *> global_clovis_idx;
 extern int shutdown_clovis_teardown_called;
 
 S3ClovisKVSReader::S3ClovisKVSReader(std::shared_ptr<RequestObject> req,
-                                     std::shared_ptr<ClovisAPI> clovis_api)
+                                     std::shared_ptr<MotrAPI> clovis_api)
     : request(req),
       state(S3ClovisKVSReaderOpState::start),
       last_value(""),

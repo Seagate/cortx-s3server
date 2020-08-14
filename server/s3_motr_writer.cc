@@ -42,7 +42,7 @@ extern int shutdown_clovis_teardown_called;
 S3ClovisWriterContext::S3ClovisWriterContext(
     std::shared_ptr<RequestObject> req, std::function<void()> success_callback,
     std::function<void()> failed_callback, int ops_count,
-    std::shared_ptr<ClovisAPI> clovis_api)
+    std::shared_ptr<MotrAPI> clovis_api)
     : S3AsyncOpContextBase(std::move(req), std::move(success_callback),
                            std::move(failed_callback), ops_count,
                            std::move(clovis_api)) {
@@ -60,7 +60,7 @@ S3ClovisWriterContext::~S3ClovisWriterContext() {
   }
 }
 
-struct s3_clovis_op_context *S3ClovisWriterContext::get_clovis_op_ctx() {
+struct s3_clovis_op_context *S3ClovisWriterContext::get_motr_op_ctx() {
   if (!clovis_op_context) {
     // Create or write, we need op context
     clovis_op_context = create_basic_op_ctx(ops_count);
@@ -70,7 +70,7 @@ struct s3_clovis_op_context *S3ClovisWriterContext::get_clovis_op_ctx() {
 
 S3ClovisWriter::S3ClovisWriter(std::shared_ptr<RequestObject> req,
                                uint64_t offset,
-                               std::shared_ptr<ClovisAPI> clovis_api)
+                               std::shared_ptr<MotrAPI> clovis_api)
     : request(std::move(req)),
       state(S3ClovisWriterOpState::start),
       last_index(offset),
@@ -111,7 +111,7 @@ S3ClovisWriter::S3ClovisWriter(std::shared_ptr<RequestObject> req,
 
 S3ClovisWriter::S3ClovisWriter(std::shared_ptr<RequestObject> req,
                                struct m0_uint128 object_id, uint64_t offset,
-                               std::shared_ptr<ClovisAPI> clovis_api)
+                               std::shared_ptr<MotrAPI> clovis_api)
     : S3ClovisWriter(std::move(req), offset, std::move(clovis_api)) {
 
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
@@ -176,7 +176,7 @@ int S3ClovisWriter::open_objects() {
       std::bind(&S3ClovisWriter::open_objects_failed, this), oid_list.size(),
       s3_clovis_api));
 
-  struct s3_clovis_op_context *ctx = open_context->get_clovis_op_ctx();
+  struct s3_clovis_op_context *ctx = open_context->get_motr_op_ctx();
 
   std::ostringstream oid_list_stream;
   size_t ops_count = oid_list.size();
@@ -301,7 +301,7 @@ void S3ClovisWriter::create_object(std::function<void(void)> on_success,
       request, std::bind(&S3ClovisWriter::create_object_successful, this),
       std::bind(&S3ClovisWriter::create_object_failed, this)));
 
-  struct s3_clovis_op_context *ctx = create_context->get_clovis_op_ctx();
+  struct s3_clovis_op_context *ctx = create_context->get_motr_op_ctx();
 
   struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj *)calloc(
       1, sizeof(struct s3_clovis_context_obj));
@@ -409,8 +409,7 @@ void S3ClovisWriter::write_content() {
   size_t clovis_write_payload_size =
       g_option_instance->get_clovis_write_payload_size(layout_ids[0]);
   size_t clovis_unit_size =
-      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
-          layout_ids[0]);
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_ids[0]);
   size_t size_of_each_buf = g_option_instance->get_libevent_pool_buffer_size();
 
   size_t estimated_write_length = 0;
@@ -462,10 +461,9 @@ void S3ClovisWriter::write_content() {
 
   writer_context->init_write_op_ctx(clovis_buf_count);
 
-  struct s3_clovis_op_context *ctx = writer_context->get_clovis_op_ctx();
+  struct s3_clovis_op_context *ctx = writer_context->get_motr_op_ctx();
 
-  struct s3_clovis_rw_op_context *rw_ctx =
-      writer_context->get_clovis_rw_op_ctx();
+  struct s3_clovis_rw_op_context *rw_ctx = writer_context->get_motr_rw_op_ctx();
 
   struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj *)calloc(
       1, sizeof(struct s3_clovis_context_obj));
@@ -575,7 +573,7 @@ void S3ClovisWriter::delete_objects() {
       std::bind(&S3ClovisWriter::delete_objects_failed, this), oid_list.size(),
       s3_clovis_api));
 
-  struct s3_clovis_op_context *ctx = delete_context->get_clovis_op_ctx();
+  struct s3_clovis_op_context *ctx = delete_context->get_motr_op_ctx();
 
   std::ostringstream oid_list_stream;
   size_t ops_count = oid_list.size();
@@ -742,7 +740,7 @@ void S3ClovisWriter::set_up_clovis_data_buffers(
     // Its required when writing last block of object.
     reset_buffers_if_any(unit_size_for_place_holder);
     unit_size_for_place_holder =
-        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
+        S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
             layout_ids[0]);
     place_holder_for_last_unit =
         (void *)S3MempoolManager::get_instance()->get_buffer_for_unit_size(

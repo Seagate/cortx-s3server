@@ -79,7 +79,7 @@ class S3DeleteMultipleObjectsActionTest : public testing::Test {
     call_count_one = 0;
 
     layout_id =
-        S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+        S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
 
     async_buffer_factory =
         std::make_shared<MockS3AsyncBufferOptContainerFactory>(

@@ -355,7 +355,7 @@ void S3PutMultiObjectAction::compute_part_offset() {
   if (part_number == 1) {
     // Reject during first part itself
     size_t unit_size =
-        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+        S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
     size_t part_size = request->get_data_length();
     s3_log(S3_LOG_DEBUG, request_id,
            "Check part size (%zu) and unit_size (%zu) compatibility\n",

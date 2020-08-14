@@ -25,9 +25,9 @@
 #include "s3_motr_layout.h"
 #include "s3_log.h"
 
-S3ClovisLayoutMap* S3ClovisLayoutMap::instance = NULL;
+S3MotrLayoutMap* S3MotrLayoutMap::instance = NULL;
 
-S3ClovisLayoutMap::S3ClovisLayoutMap() {
+S3MotrLayoutMap::S3MotrLayoutMap() {
   best_layout_id = 11;
   obj_size_cap = 0;
   layout_id_cap = -1;
@@ -47,7 +47,7 @@ S3ClovisLayoutMap::S3ClovisLayoutMap() {
   layout_map[14] = 4096 * 8192;
 }
 
-bool S3ClovisLayoutMap::load_layout_recommendations(std::string filename) {
+bool S3MotrLayoutMap::load_layout_recommendations(std::string filename) {
   s3_log(S3_LOG_DEBUG, "", "Entering with filename = %s\n", filename.c_str());
   try {
     YAML::Node root_node = YAML::LoadFile(filename);
@@ -132,12 +132,12 @@ bool S3ClovisLayoutMap::load_layout_recommendations(std::string filename) {
   return true;
 }
 
-int S3ClovisLayoutMap::get_best_layout_for_object_size() {
+int S3MotrLayoutMap::get_best_layout_for_object_size() {
   return best_layout_id;
 }
 
 // Returns the <layout id and unit size> recommended for give object size.
-int S3ClovisLayoutMap::get_layout_for_object_size(size_t obj_size) {
+int S3MotrLayoutMap::get_layout_for_object_size(size_t obj_size) {
   s3_log(S3_LOG_DEBUG, "", "Entering with obj_size = %zu\n", obj_size);
 
   if (obj_size == 0 || obj_size <= obj_layout_map.begin()->first) {

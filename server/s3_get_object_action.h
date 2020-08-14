@@ -34,7 +34,7 @@
 
 class S3GetObjectAction : public S3ObjectAction {
 
-  std::shared_ptr<S3ClovisReader> clovis_reader;
+  std::shared_ptr<S3MotrReader> clovis_reader;
   // Read state
   size_t total_blocks_in_object;
   size_t blocks_already_read;

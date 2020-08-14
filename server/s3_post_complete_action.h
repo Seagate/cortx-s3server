@@ -56,7 +56,7 @@ class S3PostCompleteAction : public S3ObjectAction {
   std::shared_ptr<S3ObjectMetadata> multipart_metadata;
   std::shared_ptr<S3PartMetadata> part_metadata;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::shared_ptr<MotrAPI> s3_clovis_api;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
   std::shared_ptr<S3ObjectMetadata> new_object_metadata;
@@ -93,7 +93,7 @@ class S3PostCompleteAction : public S3ObjectAction {
  public:
   S3PostCompleteAction(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr,
+      std::shared_ptr<MotrAPI> clovis_api = nullptr,
       std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory =
           nullptr,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,

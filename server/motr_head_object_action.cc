@@ -91,11 +91,11 @@ void MotrHeadObjectAction::check_object_exist_success() {
 
 void MotrHeadObjectAction::check_object_exist_failure() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_reader->get_state() == S3ClovisReaderOpState::missing) {
+  if (clovis_reader->get_state() == S3MotrReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
     set_s3_error("NoSuchKey");
   } else if (clovis_reader->get_state() ==
-             S3ClovisReaderOpState::failed_to_launch) {
+             S3MotrReaderOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id, "Failed to lookup object.\n");
     set_s3_error("ServiceUnavailable");
   } else {

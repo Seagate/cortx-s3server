@@ -53,7 +53,7 @@ enum class ClovisOpType {
   deletekv,
 };
 
-class ClovisAPI {
+class MotrAPI {
  public:
   virtual void clovis_idx_init(struct m0_clovis_idx *idx,
                                struct m0_clovis_realm *parent,
@@ -109,7 +109,7 @@ class ClovisAPI {
   virtual int m0_h_ufid_next(struct m0_uint128 *ufid) = 0;
 };
 
-class ConcreteClovisAPI : public ClovisAPI {
+class ConcreteClovisAPI : public MotrAPI {
  private:
   // xxx This currently assumes only one fake operation is invoked.
   void clovis_fake_op_launch(struct m0_clovis_op **op, uint32_t nr) {

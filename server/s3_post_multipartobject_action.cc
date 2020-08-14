@@ -41,7 +41,7 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory,
     std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
-    std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
                      std::move(object_meta_factory)) {
@@ -72,7 +72,7 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
   // Since we cannot predict the object size during multipart init, we use the
   // best recommended layout for better Performance
   layout_id =
-      S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+      S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
 
   multipart_index_oid = {0ULL, 0ULL};
   salt = "uri_salt_";
