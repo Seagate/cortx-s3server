@@ -24,6 +24,7 @@
 #include "s3_delete_multiple_objects_action.h"
 #include "s3_get_bucket_acl_action.h"
 #include "s3_get_bucket_action.h"
+#include "s3_get_bucket_action_v2.h"
 #include "s3_get_bucket_location_action.h"
 #include "s3_get_bucket_policy_action.h"
 #include "s3_get_multipart_bucket_action.h"
@@ -298,10 +299,18 @@ void S3BucketAPIHandler::create_action() {
           s3_stats_inc("head_bucket_request_count");
           break;
         case S3HttpVerb::GET:
-          // List Objects in bucket
-          request->set_action_str("ListBucket");
-          action = std::make_shared<S3GetBucketAction>(request);
-          s3_stats_inc("get_bucket_request_count");
+          // Check if the request is for ListObjects or  ListObjects V2
+          if (!request->has_query_param_key("list-type")) {
+            // List Objects in bucket
+            request->set_action_str("ListBucket");
+            action = std::make_shared<S3GetBucketAction>(request);
+            s3_stats_inc("get_bucket_request_count");
+          } else {
+            // List Objects (V2) in bucket
+            request->set_action_str("ListBucketV2");
+            action = std::make_shared<S3GetBucketActionV2>(request);
+            s3_stats_inc("get_bucket_v2_request_count");
+          }
           break;
         case S3HttpVerb::PUT:
           request->set_action_str("CreateBucket");

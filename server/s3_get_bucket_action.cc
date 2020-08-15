@@ -34,9 +34,11 @@ S3GetBucketAction::S3GetBucketAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
     : S3BucketAction(req, bucket_meta_factory),
-      object_list(req->get_query_string_value("encoding-type")),
+      object_list(std::make_shared<S3ObjectListResponse>(
+          req->get_query_string_value("encoding-type"))),
       last_key(""),
-      fetch_successful(false) {
+      fetch_successful(false),
+      key_Count(0) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   s3_log(S3_LOG_INFO, request_id, "S3 API: Get Bucket(List Objects).\n");
 
@@ -60,10 +62,11 @@ S3GetBucketAction::S3GetBucketAction(
   } else {
     object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
   }
-
   setup_steps();
   // TODO request param validations
 }
+
+S3GetBucketAction::~S3GetBucketAction() {}
 
 void S3GetBucketAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
@@ -89,19 +92,19 @@ void S3GetBucketAction::fetch_bucket_info_failed() {
 void S3GetBucketAction::validate_request() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  object_list.set_bucket_name(request->get_bucket_name());
+  object_list->set_bucket_name(request->get_bucket_name());
   request_prefix = request->get_query_string_value("prefix");
-  object_list.set_request_prefix(request_prefix);
+  object_list->set_request_prefix(request_prefix);
   s3_log(S3_LOG_DEBUG, request_id, "prefix = %s\n", request_prefix.c_str());
 
   request_delimiter = request->get_query_string_value("delimiter");
-  object_list.set_request_delimiter(request_delimiter);
+  object_list->set_request_delimiter(request_delimiter);
   s3_log(S3_LOG_DEBUG, request_id, "delimiter = %s\n",
          request_delimiter.c_str());
 
   request_marker_key = request->get_query_string_value("marker");
   if (!request_marker_key.empty()) {
-    object_list.set_request_marker_key(request_marker_key);
+    object_list->set_request_marker_key(request_marker_key);
   }
   s3_log(S3_LOG_DEBUG, request_id, "request_marker_key = %s\n",
          request_marker_key.c_str());
@@ -110,7 +113,7 @@ void S3GetBucketAction::validate_request() {
   std::string max_k = request->get_query_string_value("max-keys");
   if (max_k.empty()) {
     max_keys = 1000;
-    object_list.set_max_keys("1000");
+    object_list->set_max_keys("1000");
   } else {
     if (!S3CommonUtilities::stoul(max_k, max_keys)) {
       s3_log(S3_LOG_DEBUG, request_id, "invalid max-keys = %s\n",
@@ -119,11 +122,13 @@ void S3GetBucketAction::validate_request() {
       send_response_to_s3_client();
       return;
     }
-    object_list.set_max_keys(max_k);
+    object_list->set_max_keys(max_k);
   }
   s3_log(S3_LOG_DEBUG, request_id, "max-keys = %s\n", max_k.c_str());
-  next();
+  after_validate_request();
 }
+
+void S3GetBucketAction::after_validate_request() { next(); }
 
 void S3GetBucketAction::get_next_objects() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
@@ -137,10 +142,12 @@ void S3GetBucketAction::get_next_objects() {
     // as requested max_keys is 0
     // Go ahead and respond.
     fetch_successful = true;
+    object_list->set_key_count(key_Count);
     send_response_to_s3_client();
   } else if (object_list_index_oid.u_hi == 0ULL &&
              object_list_index_oid.u_lo == 0ULL) {
     fetch_successful = true;
+    object_list->set_key_count(key_Count);
     send_response_to_s3_client();
   } else {
     // We pass M0_OIF_EXCLUDE_START_KEY flag to Clovis. This flag skips key that
@@ -195,7 +202,7 @@ void S3GetBucketAction::get_next_objects_successful() {
         // Reset 'last_key_in_common_prefix'
         last_key_in_common_prefix = false;
         // Check if we reached the max keys requested. If yes, break
-        if ((object_list.size() + object_list.common_prefixes_size()) ==
+        if ((object_list->size() + object_list->common_prefixes_size()) ==
             max_keys) {
           break;
         }
@@ -213,7 +220,7 @@ void S3GetBucketAction::get_next_objects_successful() {
                object_list_index_oid.u_hi, object_list_index_oid.u_lo,
                kv.first.c_str(), kv.second.second.c_str());
       } else {
-        object_list.add_object(object);
+        object_list->add_object(object);
         last_key = kv.first;
       }
     } else if (!request_prefix.empty() && request_delimiter.empty()) {
@@ -227,7 +234,7 @@ void S3GetBucketAction::get_next_objects_successful() {
                  object_list_index_oid.u_hi, object_list_index_oid.u_lo,
                  kv.first.c_str(), kv.second.second.c_str());
         } else {
-          object_list.add_object(object);
+          object_list->add_object(object);
           last_key = kv.first;
         }
       }
@@ -242,7 +249,7 @@ void S3GetBucketAction::get_next_objects_successful() {
                  object_list_index_oid.u_hi, object_list_index_oid.u_lo,
                  kv.first.c_str(), kv.second.second.c_str());
         } else {
-          object_list.add_object(object);
+          object_list->add_object(object);
           last_key = kv.first;
         }
       } else {
@@ -259,7 +266,7 @@ void S3GetBucketAction::get_next_objects_successful() {
           // If marker is specified, and if this key gets rolled up
           // in common prefix, we add to common prefix only if it is not the
           // same as specified marker
-          object_list.add_common_prefix(common_prefix);
+          object_list->add_common_prefix(common_prefix);
           last_key = common_prefix;
           last_common_prefix = last_key;
           last_key_in_common_prefix = true;
@@ -280,7 +287,7 @@ void S3GetBucketAction::get_next_objects_successful() {
                    object_list_index_oid.u_hi, object_list_index_oid.u_lo,
                    kv.first.c_str(), kv.second.second.c_str());
           } else {
-            object_list.add_object(object);
+            object_list->add_object(object);
             last_key = kv.first;
           }
         } else {
@@ -297,7 +304,7 @@ void S3GetBucketAction::get_next_objects_successful() {
             // If marker is specified, and if this key gets rolled up
             // in common prefix, we add to common prefix only if it is not the
             // same as specified marker
-            object_list.add_common_prefix(common_prefix);
+            object_list->add_common_prefix(common_prefix);
             last_key = common_prefix;
             last_common_prefix = last_key;
             last_key_in_common_prefix = true;
@@ -307,8 +314,8 @@ void S3GetBucketAction::get_next_objects_successful() {
     }
 
     if (--length == 0 || (!last_key_in_common_prefix &&
-                          (object_list.size() +
-                           object_list.common_prefixes_size()) == max_keys)) {
+                          (object_list->size() +
+                           object_list->common_prefixes_size()) == max_keys)) {
       // This is the last element returned or we reached limit requested, we
       // break.
       // When the state 'last_key_in_common_prefix' is true, we don't want to
@@ -329,16 +336,15 @@ void S3GetBucketAction::get_next_objects_successful() {
   // We ask for more if there is any.
   size_t count_we_requested =
       S3Option::get_instance()->get_motr_idx_fetch_count();
-
-  if (((object_list.size() + object_list.common_prefixes_size()) == max_keys) ||
-      (kvps.size() < count_we_requested)) {
+  key_Count = object_list->size() + object_list->common_prefixes_size();
+  if ((key_Count == max_keys) || (kvps.size() < count_we_requested)) {
     // Go ahead and respond.
-    if ((object_list.size() + object_list.common_prefixes_size()) == max_keys &&
-        length != 0) {
-      object_list.set_response_is_truncated(true);
-      object_list.set_next_marker_key(last_key);
+    if (key_Count == max_keys && length != 0) {
+      object_list->set_response_is_truncated(true);
+      object_list->set_next_marker_key(last_key);
     }
     fetch_successful = true;
+    object_list->set_key_count(key_Count);
     send_response_to_s3_client();
   } else {
     get_next_objects();
@@ -350,6 +356,7 @@ void S3GetBucketAction::get_next_objects_failed() {
   if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "No Objects found in Object listing\n");
     fetch_successful = true;  // With no entries.
+    object_list->set_key_count(key_Count);
   } else if (motr_kv_reader->get_state() ==
              S3MotrKVSReaderOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
@@ -387,7 +394,7 @@ void S3GetBucketAction::send_response_to_s3_client() {
     }
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (fetch_successful) {
-    std::string& response_xml = object_list.get_xml(
+    std::string& response_xml = object_list->get_xml(
         request->get_canonical_id(), bucket_metadata->get_owner_id(),
         request->get_user_id());
     request->set_out_header_value("Content-Length",
