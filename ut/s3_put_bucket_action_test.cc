@@ -403,8 +403,26 @@ TEST_F(S3PutBucketActionTest, CreateBucketAlreadyExist) {
       .WillRepeatedly(Return(S3BucketMetadataState::present));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(409, _)).Times(AtLeast(1));
+  request_mock->set_account_id("12345");
+  action_under_test_ptr->bucket_metadata->add_system_attribute(
+      "Owner-Account-id", "54321");
   action_under_test_ptr->create_bucket();
   EXPECT_STREQ("BucketAlreadyExists",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PutBucketActionTest, CreateBucketAlreadyExistForAccount) {
+  CREATE_BUCKET_METADATA_OBJ;
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .WillRepeatedly(Return(S3BucketMetadataState::present));
+  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, send_response(409, _)).Times(AtLeast(1));
+  request_mock->set_account_id("12345");
+  action_under_test_ptr->bucket_metadata->add_system_attribute(
+      "Owner-Account-id", "12345");
+  action_under_test_ptr->create_bucket();
+  EXPECT_STREQ("BucketAlreadyOwnedByYou",
                action_under_test_ptr->get_s3_error_code().c_str());
 }
 

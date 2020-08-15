@@ -15,6 +15,10 @@
     "Description": "The requested bucket name is not available. The bucket namespace is shared by all users of the system. Please select a different name and try again.",
     "httpcode":	409
   },
+  "BucketAlreadyOwnedByYou":	{
+    "Description": "The bucket you tried to create already exists, and you own it.",
+    "httpcode":	409
+  },
   "BucketNotEmpty": {
     "Description": "The bucket you tried to delete is not empty.",
     "httpcode": 409
