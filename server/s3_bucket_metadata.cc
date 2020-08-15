@@ -103,6 +103,10 @@ std::string S3BucketMetadata::get_owner_name() {
   return system_defined_attribute["Owner-User"];
 }
 
+std::string S3BucketMetadata::get_bucket_owner_account_id() {
+  return system_defined_attribute["Owner-Account-id"];
+}
+
 struct m0_uint128 const S3BucketMetadata::get_multipart_index_oid() {
   return multipart_index_oid;
 }

@@ -112,6 +112,9 @@ S3cmdTest('s3cmd can list buckets from s3secondaccount account')\
 # ************ Create bucket ************
 S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
 
+S3cmdTest('s3cmd can not create bucket with name exsting for same account').create_bucket("seagatebucket")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("BucketAlreadyOwnedByYou")
+
 # ************ List buckets of specific account************
 S3cmdTest('s3cmd can list buckets').list_buckets().execute_test()\
     .command_is_successful().command_response_should_have('s3://seagatebucket')\
