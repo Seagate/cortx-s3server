@@ -75,7 +75,7 @@ std::string& S3ObjectListResponseV2::get_xml(
     response_xml += S3CommonUtilities::format_xml_string(
         "NextContinuationToken", next_marker_key);
   }
-  // If 'start-after' specified in reqquest, include it in response
+  // If 'start-after' specified in request, include it in response
   if (!start_after.empty()) {
     response_xml +=
         S3CommonUtilities::format_xml_string("StartAfter", start_after);
