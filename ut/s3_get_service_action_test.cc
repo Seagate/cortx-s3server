@@ -59,7 +59,7 @@ class S3GetServiceActionTest : public testing::Test {
     s3_clovis_api_mock = std::make_shared<MockS3Clovis>();
 
     // Mock factories.
-    clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
+    clovis_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
         ptr_mock_request, s3_clovis_api_mock);
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
@@ -75,7 +75,7 @@ class S3GetServiceActionTest : public testing::Test {
   std::shared_ptr<MockS3Clovis> s3_clovis_api_mock;
   std::shared_ptr<S3GetServiceAction> action_under_test;
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<MockS3MotrKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   struct m0_uint128 object_list_indx_oid;
@@ -131,7 +131,7 @@ TEST_F(S3GetServiceActionTest, GetNextBucketSuccessful) {
 TEST_F(S3GetServiceActionTest, GetNextBucketFailedClovisReaderStateMissing) {
   // Set GTest expectations.
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::missing));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::missing));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(AtLeast(1));
 
@@ -150,7 +150,7 @@ TEST_F(S3GetServiceActionTest, GetNextBucketFailedClovisReaderStateMissing) {
 TEST_F(S3GetServiceActionTest, GetNextBucketFailedClovisReaderStatePresent) {
   // Set GTest expectations.
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::present));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::present));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
 

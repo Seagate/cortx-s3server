@@ -146,18 +146,18 @@ int S3ClovisReader::open_object(std::function<void(void)> on_success,
   obj_ctx = create_obj_context(1);
 
   open_context.reset(
-      new S3ClovisReaderContext(request, on_success, on_failed, layout_id));
+      new S3MotrReaderContext(request, on_success, on_failed, layout_id));
 
-  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj *)calloc(
-      1, sizeof(struct s3_clovis_context_obj));
+  struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
+      1, sizeof(struct s3_motr_context_obj));
 
   op_ctx->op_index_in_launch = 0;
   op_ctx->application_context = (void *)open_context.get();
   struct s3_clovis_op_context *ctx = open_context->get_clovis_op_ctx();
 
   ctx->cbs[0].oop_executed = NULL;
-  ctx->cbs[0].oop_stable = s3_clovis_op_stable;
-  ctx->cbs[0].oop_failed = s3_clovis_op_failed;
+  ctx->cbs[0].oop_stable = s3_motr_op_stable;
+  ctx->cbs[0].oop_failed = s3_motr_op_failed;
 
   s3_clovis_api->clovis_obj_init(&obj_ctx->objs[0], &clovis_uber_realm, &oid,
                                  layout_id);
@@ -169,7 +169,7 @@ int S3ClovisReader::open_object(std::function<void(void)> on_success,
     s3_log(S3_LOG_WARN, request_id,
            "Clovis API: clovis_entity_open failed with error code %d\n", rc);
     state = S3ClovisReaderOpState::failed_to_launch;
-    s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
+    s3_motr_op_pre_launch_failure(op_ctx->application_context, rc);
     return rc;
   }
 
@@ -236,7 +236,7 @@ bool S3ClovisReader::read_object() {
 
   assert(is_object_opened);
 
-  reader_context.reset(new S3ClovisReaderContext(
+  reader_context.reset(new S3MotrReaderContext(
       request, std::bind(&S3ClovisReader::read_object_successful, this),
       std::bind(&S3ClovisReader::read_object_failed, this), layout_id));
 
@@ -259,15 +259,15 @@ bool S3ClovisReader::read_object() {
   clovis_rw_op_context = rw_ctx;
   iteration_index = 0;
 
-  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj *)calloc(
-      1, sizeof(struct s3_clovis_context_obj));
+  struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
+      1, sizeof(struct s3_motr_context_obj));
 
   op_ctx->op_index_in_launch = 0;
   op_ctx->application_context = (void *)reader_context.get();
 
   ctx->cbs[0].oop_executed = NULL;
-  ctx->cbs[0].oop_stable = s3_clovis_op_stable;
-  ctx->cbs[0].oop_failed = s3_clovis_op_failed;
+  ctx->cbs[0].oop_stable = s3_motr_op_stable;
+  ctx->cbs[0].oop_failed = s3_motr_op_failed;
 
   /* Create the read request */
   rc = s3_clovis_api->clovis_obj_op(&obj_ctx->objs[0], M0_CLOVIS_OC_READ,
@@ -277,7 +277,7 @@ bool S3ClovisReader::read_object() {
     s3_log(S3_LOG_WARN, request_id,
            "Clovis API: clovis_obj_op failed with error code %d\n", rc);
     state = S3ClovisReaderOpState::failed_to_launch;
-    s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
+    s3_motr_op_pre_launch_failure(op_ctx->application_context, rc);
     return false;
   }
 

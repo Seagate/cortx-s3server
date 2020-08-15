@@ -31,12 +31,12 @@
 using ::testing::_;
 using ::testing::Return;
 
-class MockS3ClovisKVSReader : public S3ClovisKVSReader {
+class MockS3MotrKVSReader : public S3MotrKVSReader {
  public:
-  MockS3ClovisKVSReader(std::shared_ptr<RequestObject> req,
-                        std::shared_ptr<ClovisAPI> s3clovis_api)
-      : S3ClovisKVSReader(req, s3clovis_api) {}
-  MOCK_METHOD0(get_state, S3ClovisKVSReaderOpState());
+  MockS3MotrKVSReader(std::shared_ptr<RequestObject> req,
+                      std::shared_ptr<ClovisAPI> s3clovis_api)
+      : S3MotrKVSReader(req, s3clovis_api) {}
+  MOCK_METHOD0(get_state, S3MotrKVSReaderOpState());
   MOCK_METHOD0(get_value, std::string());
   MOCK_METHOD0(get_key_values,
                std::map<std::string, std::pair<int, std::string>> &());

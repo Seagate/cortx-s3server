@@ -26,7 +26,7 @@
 #include "motr_helpers.h"
 
 extern std::set<struct s3_clovis_op_context *> global_clovis_object_ops_list;
-extern std::set<struct s3_clovis_idx_op_context *> global_clovis_idx_ops_list;
+extern std::set<struct s3_motr_idx_op_context *> global_clovis_idx_ops_list;
 extern std::set<struct s3_clovis_idx_context *> global_clovis_idx;
 extern std::set<struct s3_clovis_obj_context *> global_clovis_obj;
 extern int shutdown_clovis_teardown_called;
@@ -255,12 +255,11 @@ int free_idx_context(struct s3_clovis_idx_context *ctx) {
   return 0;
 }
 
-struct s3_clovis_idx_op_context *create_basic_idx_op_ctx(int op_count) {
+struct s3_motr_idx_op_context *create_basic_idx_op_ctx(int op_count) {
   s3_log(S3_LOG_DEBUG, "", "Entering with op_count = %d\n", op_count);
 
-  struct s3_clovis_idx_op_context *ctx =
-      (struct s3_clovis_idx_op_context *)calloc(
-          1, sizeof(struct s3_clovis_idx_op_context));
+  struct s3_motr_idx_op_context *ctx = (struct s3_motr_idx_op_context *)calloc(
+      1, sizeof(struct s3_motr_idx_op_context));
   ctx->ops =
       (struct m0_clovis_op **)calloc(op_count, sizeof(struct m0_clovis_op *));
   ctx->cbs = (struct m0_clovis_op_ops *)calloc(op_count,
@@ -271,7 +270,7 @@ struct s3_clovis_idx_op_context *create_basic_idx_op_ctx(int op_count) {
   return ctx;
 }
 
-int free_basic_idx_op_ctx(struct s3_clovis_idx_op_context *ctx) {
+int free_basic_idx_op_ctx(struct s3_motr_idx_op_context *ctx) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   if (!shutdown_clovis_teardown_called) {
     global_clovis_idx_ops_list.erase(ctx);

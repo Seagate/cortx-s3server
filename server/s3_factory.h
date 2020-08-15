@@ -132,15 +132,15 @@ class S3ClovisReaderFactory {
   }
 };
 
-class S3ClovisKVSReaderFactory {
+class S3MotrKVSReaderFactory {
  public:
-  virtual ~S3ClovisKVSReaderFactory() {}
-  virtual std::shared_ptr<S3ClovisKVSReader> create_clovis_kvs_reader(
+  virtual ~S3MotrKVSReaderFactory() {}
+  virtual std::shared_ptr<S3MotrKVSReader> create_clovis_kvs_reader(
       std::shared_ptr<RequestObject> req,
       std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr) {
     s3_log(S3_LOG_DEBUG, "",
-           "S3ClovisKVSReaderFactory::create_clovis_kvs_reader\n");
-    return std::make_shared<S3ClovisKVSReader>(req, s3_clovis_api);
+           "S3MotrKVSReaderFactory::create_clovis_kvs_reader\n");
+    return std::make_shared<S3MotrKVSReader>(req, s3_clovis_api);
   }
 };
 

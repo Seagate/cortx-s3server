@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_S3_CLOVIS_WRITER_H__
-#define __S3_SERVER_S3_CLOVIS_WRITER_H__
+#ifndef __S3_SERVER_S3_MOTR_WRITER_H__
+#define __S3_SERVER_S3_MOTR_WRITER_H__
 
 #include <deque>
 #include <functional>

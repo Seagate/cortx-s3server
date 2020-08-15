@@ -107,15 +107,15 @@ class S3AsyncOpContextBase {
   void log_timer();
   std::shared_ptr<ClovisAPI> get_clovis_api();
   // Google tests
-  FRIEND_TEST(S3ClovisReadWriteCommonTest, ClovisOpDoneOnMainThreadOnSuccess);
-  FRIEND_TEST(S3ClovisReadWriteCommonTest, S3ClovisOpStable);
-  FRIEND_TEST(S3ClovisReadWriteCommonTest,
+  FRIEND_TEST(S3MotrReadWriteCommonTest, ClovisOpDoneOnMainThreadOnSuccess);
+  FRIEND_TEST(S3MotrReadWriteCommonTest, S3ClovisOpStable);
+  FRIEND_TEST(S3MotrReadWriteCommonTest,
               S3ClovisOpStableResponseCountSameAsOpCount);
-  FRIEND_TEST(S3ClovisReadWriteCommonTest,
+  FRIEND_TEST(S3MotrReadWriteCommonTest,
               S3ClovisOpStableResponseCountNotSameAsOpCount);
-  FRIEND_TEST(S3ClovisReadWriteCommonTest,
+  FRIEND_TEST(S3MotrReadWriteCommonTest,
               S3ClovisOpFailedResponseCountSameAsOpCount);
-  FRIEND_TEST(S3ClovisReadWriteCommonTest,
+  FRIEND_TEST(S3MotrReadWriteCommonTest,
               S3ClovisOpFailedResponseCountNotSameAsOpCount);
   FRIEND_TEST(S3ClovisKvsWritterTest, SyncIndexFailedMissingMetadata);
   FRIEND_TEST(S3ClovisKvsWritterTest, SyncIndexFailedFailedMetadata);

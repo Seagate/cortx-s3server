@@ -47,7 +47,7 @@ class S3AccountDeleteMetadataActionTest : public testing::Test {
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
     ptr_mock_request->set_account_id("account_test");
-    clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
+    clovis_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
         ptr_mock_request, ptr_mock_s3_clovis_api);
     std::map<std::string, std::string> input_headers;
     input_headers["Authorization"] = "1";
@@ -59,7 +59,7 @@ class S3AccountDeleteMetadataActionTest : public testing::Test {
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
   std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
-  std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<MockS3MotrKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<S3AccountDeleteMetadataAction> action_under_test;
 
   S3CallBack S3AccountDeleteMetadataAction_callbackobj;
@@ -168,7 +168,7 @@ TEST_F(S3AccountDeleteMetadataActionTest, FetchFirstBucketMetadataMissing) {
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
       .Times(1)
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::missing));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::missing));
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test,
@@ -184,7 +184,7 @@ TEST_F(S3AccountDeleteMetadataActionTest, FetchFirstBucketMetadataFailed) {
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::failed));
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test,

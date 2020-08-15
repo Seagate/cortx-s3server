@@ -32,7 +32,7 @@ S3DeleteBucketAction::S3DeleteBucketAction(
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory,
-    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory)
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory)
     : S3BucketAction(std::move(req), std::move(bucket_meta_factory), false),
       last_key(""),
       is_bucket_empty(false),
@@ -61,10 +61,10 @@ S3DeleteBucketAction::S3DeleteBucketAction(
     clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
   }
 
-  if (clovis_s3_kvs_reader_factory) {
-    clovis_kvs_reader_factory = clovis_s3_kvs_reader_factory;
+  if (motr_s3_kvs_reader_factory) {
+    clovis_kvs_reader_factory = motr_s3_kvs_reader_factory;
   } else {
-    clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+    clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   if (clovis_s3_kvs_writer_factory) {
@@ -152,18 +152,17 @@ void S3DeleteBucketAction::fetch_first_object_metadata_successful() {
 
 void S3DeleteBucketAction::fetch_first_object_metadata_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+  if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "There is no object in bucket\n");
     is_bucket_empty = true;
     next();
-  } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::failed) {
+  } else if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::failed) {
     is_bucket_empty = false;
     s3_log(S3_LOG_ERROR, request_id, "Failed to retrieve object metadata\n");
     set_s3_error("BucketNotEmpty");
     send_response_to_s3_client();
   } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::failed_to_launch) {
+             S3MotrKVSReaderOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Bucket metadata next keyval operation failed due to pre launch "
            "failure\n");

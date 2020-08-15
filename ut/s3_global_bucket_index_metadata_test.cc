@@ -77,7 +77,7 @@ class S3GlobalBucketIndexMetadataTest : public testing::Test {
     account_id.assign("12345");
     account_name.assign("s3_test");
     call_count_one = 0;
-    clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
+    clovis_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
         request_mock, s3_clovis_api_mock);
     clovis_kvs_writer_factory =
         std::make_shared<MockS3ClovisKVSWriterFactory>(request_mock);
@@ -87,7 +87,7 @@ class S3GlobalBucketIndexMetadataTest : public testing::Test {
   std::shared_ptr<MockS3RequestObject> request_mock;
   std::shared_ptr<S3GlobalBucketIndexMetadata>
       global_bucket_idx_metadata_under_test_ptr;
-  std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<MockS3MotrKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
   std::shared_ptr<MockS3Clovis> s3_clovis_api_mock;
 
@@ -187,7 +187,7 @@ TEST_F(S3GlobalBucketIndexMetadataTest, LoadSuccessfulJsonError) {
 TEST_F(S3GlobalBucketIndexMetadataTest, LoadFailed) {
   CREATE_KVS_READER_OBJ;
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::failed));
 
   global_bucket_idx_metadata_under_test_ptr->handler_on_failed =
       std::bind(&S3GlobalBucketIndexMetadataTest::func_callback_one, this);
@@ -200,7 +200,7 @@ TEST_F(S3GlobalBucketIndexMetadataTest, LoadFailed) {
 TEST_F(S3GlobalBucketIndexMetadataTest, LoadFailedMissing) {
   CREATE_KVS_READER_OBJ;
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::missing));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::missing));
 
   global_bucket_idx_metadata_under_test_ptr->handler_on_failed =
       std::bind(&S3GlobalBucketIndexMetadataTest::func_callback_one, this);

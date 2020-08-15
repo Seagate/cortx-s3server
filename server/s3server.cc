@@ -92,7 +92,7 @@ int global_shutdown_in_progress;
 struct m0_uint128 global_instance_id;
 int shutdown_clovis_teardown_called;
 std::set<struct s3_clovis_op_context *> global_clovis_object_ops_list;
-std::set<struct s3_clovis_idx_op_context *> global_clovis_idx_ops_list;
+std::set<struct s3_motr_idx_op_context *> global_clovis_idx_ops_list;
 std::set<struct s3_clovis_idx_context *> global_clovis_idx;
 std::set<struct s3_clovis_obj_context *> global_clovis_obj;
 
@@ -1150,7 +1150,7 @@ int main(int argc, char **argv) {
 
   s3_perf_metrics_fini();
 
-  S3FakeClovisRedisKvs::destroy_instance();
+  S3FakeMotrRedisKvs::destroy_instance();
 
   free_evhtp_handle(htp_ipv4);
   free_evhtp_handle(htp_ipv6);

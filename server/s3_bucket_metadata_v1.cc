@@ -34,12 +34,12 @@ extern struct m0_uint128 replica_bucket_metadata_list_index_oid;
 
 S3BucketMetadataV1::S3BucketMetadataV1(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
-    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory,
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory,
     std::shared_ptr<S3GlobalBucketIndexMetadataFactory>
         s3_global_bucket_index_metadata_factory)
     : S3BucketMetadata(std::move(req), std::move(clovis_api),
-                       std::move(clovis_s3_kvs_reader_factory),
+                       std::move(motr_s3_kvs_reader_factory),
                        std::move(clovis_s3_kvs_writer_factory)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
 
@@ -179,12 +179,11 @@ void S3BucketMetadataV1::load_bucket_info_failed() {
 
   if (json_parsing_error) {
     state = S3BucketMetadataState::failed;
-  } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::missing) {
+  } else if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Bucket metadata is missing\n");
     state = S3BucketMetadataState::missing;
   } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::failed_to_launch) {
+             S3MotrKVSReaderOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id, "Loading of bucket metadata failed\n");
     state = S3BucketMetadataState::failed_to_launch;
   } else {

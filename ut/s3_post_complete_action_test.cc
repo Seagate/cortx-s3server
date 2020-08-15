@@ -132,7 +132,7 @@ class S3PostCompleteActionTest : public testing::Test {
 
     bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
         request_mock, s3_clovis_api_mock);
-    clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
+    clovis_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
         request_mock, s3_clovis_api_mock);
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
         request_mock, s3_clovis_api_mock);
@@ -154,7 +154,7 @@ class S3PostCompleteActionTest : public testing::Test {
 
   std::shared_ptr<MockS3RequestObject> request_mock;
   std::shared_ptr<MockS3Clovis> s3_clovis_api_mock;
-  std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<MockS3MotrKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3ObjectMultipartMetadataFactory> object_mp_meta_factory;
@@ -567,7 +567,7 @@ TEST_F(S3PostCompleteActionTest, GetPartsInfoFailed) {
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::failed));
   EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));

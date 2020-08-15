@@ -62,56 +62,55 @@ int s3_test_clovis_idx_op(struct m0_clovis_idx *idx,
 
 void s3_test_free_clovis_op(struct m0_clovis_op *op) { free(op); }
 
-static void s3_test_clovis_op_launch(uint64_t, struct m0_clovis_op **op,
-                                     uint32_t nr, ClovisOpType type) {
-  struct s3_clovis_context_obj *ctx =
-      (struct s3_clovis_context_obj *)op[0]->op_datum;
+static void s3_test_motr_op_launch(uint64_t, struct m0_clovis_op **op,
+                                   uint32_t nr, ClovisOpType type) {
+  struct s3_motr_context_obj *ctx =
+      (struct s3_motr_context_obj *)op[0]->op_datum;
 
-  S3AsyncClovisKVSWriterContext *app_ctx =
-      (S3AsyncClovisKVSWriterContext *)ctx->application_context;
-  struct s3_clovis_idx_op_context *op_ctx = app_ctx->get_clovis_idx_op_ctx();
+  S3AsyncMotrKVSWriterContext *app_ctx =
+      (S3AsyncMotrKVSWriterContext *)ctx->application_context;
+  struct s3_motr_idx_op_context *op_ctx = app_ctx->get_motr_idx_op_ctx();
 
   for (int i = 0; i < (int)nr; i++) {
-    struct m0_clovis_op *test_clovis_op = op[i];
-    s3_clovis_op_stable(test_clovis_op);
-    s3_test_free_clovis_op(test_clovis_op);
+    struct m0_clovis_op *test_motr_op = op[i];
+    s3_motr_op_stable(test_motr_op);
+    s3_test_free_clovis_op(test_motr_op);
   }
   op_ctx->op_count = 0;
   *op = NULL;
 }
 
-static void s3_test_clovis_op_launch_fail(uint64_t, struct m0_clovis_op **op,
-                                          uint32_t nr, ClovisOpType type) {
-  struct s3_clovis_context_obj *ctx =
-      (struct s3_clovis_context_obj *)op[0]->op_datum;
+static void s3_test_motr_op_launch_fail(uint64_t, struct m0_clovis_op **op,
+                                        uint32_t nr, ClovisOpType type) {
+  struct s3_motr_context_obj *ctx =
+      (struct s3_motr_context_obj *)op[0]->op_datum;
 
-  S3AsyncClovisKVSWriterContext *app_ctx =
-      (S3AsyncClovisKVSWriterContext *)ctx->application_context;
-  struct s3_clovis_idx_op_context *op_ctx = app_ctx->get_clovis_idx_op_ctx();
+  S3AsyncMotrKVSWriterContext *app_ctx =
+      (S3AsyncMotrKVSWriterContext *)ctx->application_context;
+  struct s3_motr_idx_op_context *op_ctx = app_ctx->get_motr_idx_op_ctx();
 
   for (int i = 0; i < (int)nr; i++) {
-    struct m0_clovis_op *test_clovis_op = op[i];
-    s3_clovis_op_failed(test_clovis_op);
-    s3_test_free_clovis_op(test_clovis_op);
+    struct m0_clovis_op *test_motr_op = op[i];
+    s3_motr_op_failed(test_motr_op);
+    s3_test_free_clovis_op(test_motr_op);
   }
   op_ctx->op_count = 0;
 }
 
-static void s3_test_clovis_op_launch_fail_exists(uint64_t,
-                                                 struct m0_clovis_op **op,
-                                                 uint32_t nr,
-                                                 ClovisOpType type) {
-  struct s3_clovis_context_obj *ctx =
-      (struct s3_clovis_context_obj *)op[0]->op_datum;
+static void s3_test_motr_op_launch_fail_exists(uint64_t,
+                                               struct m0_clovis_op **op,
+                                               uint32_t nr, ClovisOpType type) {
+  struct s3_motr_context_obj *ctx =
+      (struct s3_motr_context_obj *)op[0]->op_datum;
 
-  S3AsyncClovisKVSWriterContext *app_ctx =
-      (S3AsyncClovisKVSWriterContext *)ctx->application_context;
-  struct s3_clovis_idx_op_context *op_ctx = app_ctx->get_clovis_idx_op_ctx();
+  S3AsyncMotrKVSWriterContext *app_ctx =
+      (S3AsyncMotrKVSWriterContext *)ctx->application_context;
+  struct s3_motr_idx_op_context *op_ctx = app_ctx->get_motr_idx_op_ctx();
 
   for (int i = 0; i < (int)nr; i++) {
-    struct m0_clovis_op *test_clovis_op = op[i];
-    s3_clovis_op_failed(test_clovis_op);
-    s3_test_free_clovis_op(test_clovis_op);
+    struct m0_clovis_op *test_motr_op = op[i];
+    s3_motr_op_failed(test_motr_op);
+    s3_test_free_clovis_op(test_motr_op);
   }
   op_ctx->op_count = 0;
 }
@@ -176,7 +175,7 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndex) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
-      .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
+      .WillRepeatedly(Invoke(s3_test_motr_op_launch));
 
   action_under_test->create_index(
       "TestIndex", std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
@@ -195,7 +194,7 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndexIdxPresent) {
       .WillOnce(Invoke(s3_test_alloc_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
-      .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
+      .WillRepeatedly(Invoke(s3_test_motr_op_launch));
 
   action_under_test->idx_ctx = (struct s3_clovis_idx_context *)calloc(
       1, sizeof(struct s3_clovis_idx_context));
@@ -265,7 +264,7 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndexFail) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
-      .WillOnce(Invoke(s3_test_clovis_op_launch_fail));
+      .WillOnce(Invoke(s3_test_motr_op_launch_fail));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_))
       .WillRepeatedly(Return(-EPERM));
   action_under_test->create_index(
@@ -288,7 +287,7 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndexFailExists) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
-      .WillOnce(Invoke(s3_test_clovis_op_launch_fail_exists));
+      .WillOnce(Invoke(s3_test_motr_op_launch_fail_exists));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_))
       .WillRepeatedly(Return(-EEXIST));
   action_under_test->create_index(
@@ -311,7 +310,7 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyVal) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
-      .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
+      .WillRepeatedly(Invoke(s3_test_motr_op_launch));
 
   action_under_test->put_keyval(
       oid, "3kfile",
@@ -327,7 +326,7 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValSuccessful) {
   S3CallBack s3cloviskvscallbackobj;
 
   action_under_test->writer_context.reset(
-      new S3AsyncClovisKVSWriterContext(ptr_mock_request, NULL, NULL));
+      new S3AsyncMotrKVSWriterContext(ptr_mock_request, NULL, NULL));
 
   action_under_test->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj);
@@ -350,10 +349,10 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValFailed) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
-      .WillOnce(Invoke(s3_test_clovis_op_launch_fail));
+      .WillOnce(Invoke(s3_test_motr_op_launch_fail));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_))
       .WillRepeatedly(Return(-EPERM));
-  action_under_test->writer_context.reset(new S3AsyncClovisKVSWriterContext(
+  action_under_test->writer_context.reset(new S3AsyncMotrKVSWriterContext(
       ptr_mock_request, NULL, NULL, 1, ptr_mock_s3clovis));
   action_under_test->put_keyval(
       oid, "3kfile",
@@ -377,7 +376,7 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyVal) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
-      .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
+      .WillRepeatedly(Invoke(s3_test_motr_op_launch));
 
   action_under_test->delete_keyval(
       oid, "3kfile",
@@ -397,7 +396,7 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyValSuccess) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
-      .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
+      .WillRepeatedly(Invoke(s3_test_motr_op_launch));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_init(_))
       .WillRepeatedly(Invoke(s3_test_alloc_sync_op));
 
@@ -420,7 +419,7 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyValFailed) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
-      .WillOnce(Invoke(s3_test_clovis_op_launch_fail));
+      .WillOnce(Invoke(s3_test_motr_op_launch_fail));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_))
       .WillRepeatedly(Return(-EPERM));
   action_under_test->delete_keyval(
@@ -443,7 +442,7 @@ TEST_F(S3ClovisKvsWritterTest, DelIndex) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
-      .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
+      .WillRepeatedly(Invoke(s3_test_motr_op_launch));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_entity_open(_, _));
 
   action_under_test->delete_index(
@@ -462,7 +461,7 @@ TEST_F(S3ClovisKvsWritterTest, DelIndexIdxPresent) {
       .WillOnce(Invoke(s3_test_alloc_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
-      .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
+      .WillRepeatedly(Invoke(s3_test_motr_op_launch));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_entity_open(_, _));
 
   action_under_test->idx_ctx = (struct s3_clovis_idx_context *)calloc(
@@ -501,7 +500,7 @@ TEST_F(S3ClovisKvsWritterTest, DelIndexEntityDeleteFailed) {
 TEST_F(S3ClovisKvsWritterTest, DelIndexFailed) {
   S3CallBack s3cloviskvscallbackobj;
   action_under_test->writer_context.reset(
-      new S3AsyncClovisKVSWriterContext(ptr_mock_request, NULL, NULL));
+      new S3AsyncMotrKVSWriterContext(ptr_mock_request, NULL, NULL));
   action_under_test->writer_context->ops_response[0].error_code = -ENOENT;
 
   action_under_test->handler_on_failed =

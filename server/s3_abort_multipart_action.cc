@@ -36,7 +36,7 @@ S3AbortMultipartAction::S3AbortMultipartAction(
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory,
-    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory,
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
     : S3BucketAction(std::move(req), std::move(bucket_meta_factory), false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
@@ -69,10 +69,10 @@ S3AbortMultipartAction::S3AbortMultipartAction(
     clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
   }
 
-  if (clovis_s3_kvs_reader_factory) {
-    clovis_kvs_reader_factory = std::move(clovis_s3_kvs_reader_factory);
+  if (motr_s3_kvs_reader_factory) {
+    clovis_kvs_reader_factory = std::move(motr_s3_kvs_reader_factory);
   } else {
-    clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+    clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   if (part_meta_factory) {

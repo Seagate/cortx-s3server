@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_FAKE_CLOVIS_REDIS_INTERNAL__H__
-#define __S3_SERVER_FAKE_CLOVIS_REDIS_INTERNAL__H__
+#ifndef __S3_SERVER_FAKE_MOTR_REDIS_INTERNAL__H__
+#define __S3_SERVER_FAKE_MOTR_REDIS_INTERNAL__H__
 
 #include "s3_fake_motr_redis_kvs.h"
 #include "s3_motr_rw_common.h"
@@ -48,7 +48,7 @@ redis_key prepare_rkey(const char *key, size_t klen, const char *val,
 redis_key prepare_border(const char *str, size_t slen, bool incl, bool z);
 
 typedef struct {
-  struct s3_clovis_context_obj *prev_ctx;  // previous m0_clovis_op::op_datum
+  struct s3_motr_context_obj *prev_ctx;  // previous m0_clovis_op::op_datum
   int async_ops_cnt;  // number of async ops run for current m0_clovis_op
   int replies_cnt;    // number of replies received so far; replies_cnt ==
                       // async_ops_cnt means op finished
@@ -84,8 +84,8 @@ int redis_reply_check(redisAsyncContext *glob_redis_ctx,
 typedef void op_stable_cb(struct m0_clovis_op *op);
 typedef void op_failed_cb(struct m0_clovis_op *op);
 void finalize_op(struct m0_clovis_op *op,
-                 op_stable_cb stable = s3_clovis_op_stable,
-                 op_failed_cb failed = s3_clovis_op_failed);
+                 op_stable_cb stable = s3_motr_op_stable,
+                 op_failed_cb failed = s3_motr_op_failed);
 
 void kv_status_cb(redisAsyncContext *glob_redis_ctx, void *async_redis_reply,
                   void *privdata);

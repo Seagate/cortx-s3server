@@ -25,7 +25,7 @@
 
 MotrHeadIndexAction::MotrHeadIndexAction(
     std::shared_ptr<MotrRequestObject> req,
-    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_motr_kvs_reader_factory)
+    std::shared_ptr<S3MotrKVSReaderFactory> clovis_motr_kvs_reader_factory)
     : MotrAction(std::move(req)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
   motr_clovis_api = std::make_shared<ConcreteClovisAPI>();
@@ -33,7 +33,7 @@ MotrHeadIndexAction::MotrHeadIndexAction(
   if (clovis_motr_kvs_reader_factory) {
     clovis_kvs_reader_factory = std::move(clovis_motr_kvs_reader_factory);
   } else {
-    clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+    clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   setup_steps();
@@ -76,11 +76,11 @@ void MotrHeadIndexAction::check_index_exist_success() {
 
 void MotrHeadIndexAction::check_index_exist_failure() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+  if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Index not found\n");
     set_s3_error("NoSuchIndex");
   } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::failed_to_launch) {
+             S3MotrKVSReaderOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id, "Failed to launch index lookup.\n");
     set_s3_error("ServiceUnavailable");
   } else {

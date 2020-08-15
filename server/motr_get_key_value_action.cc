@@ -25,7 +25,7 @@
 MotrGetKeyValueAction::MotrGetKeyValueAction(
     std::shared_ptr<MotrRequestObject> req,
     std::shared_ptr<ClovisAPI> clovis_api,
-    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_motr_kvs_reader_factory)
+    std::shared_ptr<S3MotrKVSReaderFactory> clovis_motr_kvs_reader_factory)
     : MotrAction(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
   if (clovis_api) {
@@ -37,7 +37,7 @@ MotrGetKeyValueAction::MotrGetKeyValueAction(
   if (clovis_motr_kvs_reader_factory) {
     clovis_kvs_reader_factory = clovis_motr_kvs_reader_factory;
   } else {
-    clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+    clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   setup_steps();
@@ -79,10 +79,10 @@ void MotrGetKeyValueAction::fetch_key_value_successful() {
 
 void MotrGetKeyValueAction::fetch_key_value_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+  if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     set_s3_error("NoSuchKey");
   } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::failed_to_launch) {
+             S3MotrKVSReaderOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Failed to retrive the key, due to pre launch failure\n");
     set_s3_error("ServiceUnavailable");

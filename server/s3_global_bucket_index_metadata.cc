@@ -30,7 +30,7 @@ extern struct m0_uint128 replica_global_bucket_list_index_oid;
 
 S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
-    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory,
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory)
     : request(req), json_parsing_error(false) {
   request_id = request->get_request_id();
@@ -46,10 +46,10 @@ S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
-  if (clovis_s3_kvs_reader_factory) {
-    clovis_kvs_reader_factory = clovis_s3_kvs_reader_factory;
+  if (motr_s3_kvs_reader_factory) {
+    clovis_kvs_reader_factory = motr_s3_kvs_reader_factory;
   } else {
-    clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+    clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
   if (clovis_s3_kvs_writer_factory) {
     clovis_kvs_writer_factory = clovis_s3_kvs_writer_factory;
@@ -108,12 +108,11 @@ void S3GlobalBucketIndexMetadata::load_failed() {
 
   if (json_parsing_error) {
     state = S3GlobalBucketIndexMetadataState::failed;
-  } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::missing) {
+  } else if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "bucket information is missing\n");
     state = S3GlobalBucketIndexMetadataState::missing;
   } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::failed_to_launch) {
+             S3MotrKVSReaderOpState::failed_to_launch) {
     state = S3GlobalBucketIndexMetadataState::failed_to_launch;
   } else {
     s3_log(S3_LOG_ERROR, request_id,

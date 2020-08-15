@@ -110,7 +110,7 @@ class S3DeleteMultipleObjectsActionTest : public testing::Test {
     clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
         mock_request, oid, ptr_mock_s3_clovis_api);
 
-    clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
+    clovis_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
         mock_request, ptr_mock_s3_clovis_api);
 
     clovis_kvs_writer_factory = std::make_shared<MockS3ClovisKVSWriterFactory>(
@@ -130,7 +130,7 @@ class S3DeleteMultipleObjectsActionTest : public testing::Test {
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3ClovisWriterFactory> clovis_writer_factory;
-  std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<MockS3MotrKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
   std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
   std::vector<std::string> keys;
@@ -304,7 +304,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest, FetchObjectInfoFailed) {
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
       .Times(AtLeast(1))
-      .WillOnce(Return(S3ClovisKVSReaderOpState::failed));
+      .WillOnce(Return(S3MotrKVSReaderOpState::failed));
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpFailed500, _)).Times(1);
@@ -334,7 +334,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
       .Times(AtLeast(1))
-      .WillOnce(Return(S3ClovisKVSReaderOpState::missing));
+      .WillOnce(Return(S3MotrKVSReaderOpState::missing));
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
               get_keyval(_, missing_key, _, _)).Times(AtLeast(1));
   action_under_test->fetch_objects_info_failed();
@@ -360,7 +360,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
       .Times(AtLeast(1))
-      .WillOnce(Return(S3ClovisKVSReaderOpState::missing));
+      .WillOnce(Return(S3MotrKVSReaderOpState::missing));
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _)).Times(1);

@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_S3_CLOVIS_KVS_WRITER_H__
-#define __S3_SERVER_S3_CLOVIS_KVS_WRITER_H__
+#ifndef __S3_SERVER_S3_MOTR_KVS_WRITER_H__
+#define __S3_SERVER_S3_MOTR_KVS_WRITER_H__
 
 #include <gtest/gtest_prod.h>
 #include <functional>
@@ -35,8 +35,8 @@
 
 class S3SyncClovisKVSWriterContext {
   // Basic Operation context.
-  struct s3_clovis_idx_op_context* clovis_idx_op_context;
-  bool has_clovis_idx_op_context;
+  struct s3_motr_idx_op_context* clovis_idx_op_context;
+  bool has_motr_idx_op_context;
 
   // Read/Write Operation context.
   struct s3_motr_kvs_op_context* clovis_kvs_op_context;
@@ -52,14 +52,14 @@ class S3SyncClovisKVSWriterContext {
     s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
     // Create or write, we need op context
     clovis_idx_op_context = create_basic_idx_op_ctx(ops_count);
-    has_clovis_idx_op_context = true;
+    has_motr_idx_op_context = true;
     clovis_kvs_op_context = NULL;
     has_clovis_kvs_op_context = false;
   }
 
   ~S3SyncClovisKVSWriterContext() {
     s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
-    if (has_clovis_idx_op_context) {
+    if (has_motr_idx_op_context) {
       free_basic_idx_op_ctx(clovis_idx_op_context);
     }
     if (has_clovis_kvs_op_context) {
@@ -67,7 +67,7 @@ class S3SyncClovisKVSWriterContext {
     }
   }
 
-  struct s3_clovis_idx_op_context* get_clovis_idx_op_ctx() {
+  struct s3_motr_idx_op_context* get_motr_idx_op_ctx() {
     return clovis_idx_op_context;
   }
 
@@ -77,24 +77,24 @@ class S3SyncClovisKVSWriterContext {
     has_clovis_kvs_op_context = true;
   }
 
-  struct s3_motr_kvs_op_context* get_clovis_kvs_op_ctx() {
+  struct s3_motr_kvs_op_context* get_motr_kvs_op_ctx() {
     return clovis_kvs_op_context;
   }
 };
 
 // Async Clovis context is inherited from Sync Context & S3AsyncOpContextBase
 
-class S3AsyncClovisKVSWriterContext : public S3SyncClovisKVSWriterContext,
-                                      public S3AsyncOpContextBase {
+class S3AsyncMotrKVSWriterContext : public S3SyncClovisKVSWriterContext,
+                                    public S3AsyncOpContextBase {
 
   std::string request_id = "";
 
  public:
-  S3AsyncClovisKVSWriterContext(std::shared_ptr<RequestObject> req,
-                                std::function<void()> success_callback,
-                                std::function<void()> failed_callback,
-                                int ops_count = 1,
-                                std::shared_ptr<ClovisAPI> clovis_api = nullptr)
+  S3AsyncMotrKVSWriterContext(std::shared_ptr<RequestObject> req,
+                              std::function<void()> success_callback,
+                              std::function<void()> failed_callback,
+                              int ops_count = 1,
+                              std::shared_ptr<ClovisAPI> clovis_api = nullptr)
       : S3SyncClovisKVSWriterContext(req ? req->get_request_id() : "",
                                      ops_count),
         S3AsyncOpContextBase(req, success_callback, failed_callback, ops_count,
@@ -103,7 +103,7 @@ class S3AsyncClovisKVSWriterContext : public S3SyncClovisKVSWriterContext,
     s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   }
 
-  ~S3AsyncClovisKVSWriterContext() {
+  ~S3AsyncMotrKVSWriterContext() {
     s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
   }
 };
@@ -126,9 +126,9 @@ class S3ClovisKVSWriter {
 
   std::shared_ptr<RequestObject> request;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
-  std::unique_ptr<S3AsyncClovisKVSWriterContext> writer_context;
+  std::unique_ptr<S3AsyncMotrKVSWriterContext> writer_context;
   std::unique_ptr<S3SyncClovisKVSWriterContext> sync_writer_context;
-  std::unique_ptr<S3AsyncClovisKVSWriterContext> sync_context;
+  std::unique_ptr<S3AsyncMotrKVSWriterContext> sync_context;
   std::string kvs_key;
   std::string kvs_value;
 
@@ -233,7 +233,7 @@ class S3ClovisKVSWriter {
   }
 
   virtual int get_op_ret_code_for_del_kv(int key_i) {
-    return writer_context->get_clovis_kvs_op_ctx()->rcs[key_i];
+    return writer_context->get_motr_kvs_op_ctx()->rcs[key_i];
   }
 
   // For Testing purpose

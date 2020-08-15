@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_S3_CLOVIS_WRAPPER_H__
-#define __S3_SERVER_S3_CLOVIS_WRAPPER_H__
+#ifndef __S3_SERVER_S3_MOTR_WRAPPER_H__
+#define __S3_SERVER_S3_MOTR_WRAPPER_H__
 
 #include <functional>
 #include <iostream>
@@ -118,12 +118,12 @@ class ConcreteClovisAPI : public ClovisAPI {
         1, sizeof(struct user_event_context));
     user_ctx->app_ctx = op[0];
 
-    S3PostToMainLoop((void *)user_ctx)(s3_clovis_dummy_op_stable);
+    S3PostToMainLoop((void *)user_ctx)(s3_motr_dummy_op_stable);
   }
 
   void clovis_fake_redis_op_launch(struct m0_clovis_op **op, uint32_t nr) {
     s3_log(S3_LOG_DEBUG, "", "Entering\n");
-    auto redis_ctx = S3FakeClovisRedisKvs::instance();
+    auto redis_ctx = S3FakeMotrRedisKvs::instance();
 
     for (uint32_t i = 0; i < nr; ++i) {
       struct m0_clovis_op *cop = op[i];
@@ -141,7 +141,7 @@ class ConcreteClovisAPI : public ClovisAPI {
       } else {
         s3_log(S3_LOG_DEBUG, "", "Not a kvs op (%d) - ignore", cop->op_code);
         cop->op_rc = 0;
-        s3_clovis_op_stable(cop);
+        s3_motr_op_stable(cop);
       }
     }
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -154,7 +154,7 @@ class ConcreteClovisAPI : public ClovisAPI {
           1, sizeof(struct user_event_context));
       user_ctx->app_ctx = op[i];
 
-      S3PostToMainLoop((void *)user_ctx)(s3_clovis_dummy_op_failed);
+      S3PostToMainLoop((void *)user_ctx)(s3_motr_dummy_op_failed);
     }
   }
 

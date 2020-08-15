@@ -29,7 +29,7 @@
 
 S3GetMultipartBucketAction::S3GetMultipartBucketAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
-    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory,
+    std::shared_ptr<S3MotrKVSReaderFactory> clovis_kvs_reader_factory,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
     : S3BucketAction(req, std::move(bucket_meta_factory)),
@@ -51,7 +51,7 @@ S3GetMultipartBucketAction::S3GetMultipartBucketAction(
   if (clovis_kvs_reader_factory) {
     s3_clovis_kvs_reader_factory = clovis_kvs_reader_factory;
   } else {
-    s3_clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+    s3_clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
   if (object_meta_factory) {
     object_metadata_factory = object_meta_factory;
@@ -264,11 +264,11 @@ void S3GetMultipartBucketAction::get_next_objects_successful() {
 
 void S3GetMultipartBucketAction::get_next_objects_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+  if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "No more multipart uploads listing\n");
     fetch_successful = true;  // With no entries.
   } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::failed_to_launch) {
+             S3MotrKVSReaderOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Multipart metadata next keyval operation failed due to pre launch "
            "failure\n");

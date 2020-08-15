@@ -34,7 +34,7 @@ extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
 S3PostCompleteAction::S3PostCompleteAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
-    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory,
+    std::shared_ptr<S3MotrKVSReaderFactory> clovis_kvs_reader_factory,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
@@ -64,7 +64,7 @@ S3PostCompleteAction::S3PostCompleteAction(
   if (clovis_kvs_reader_factory) {
     s3_clovis_kvs_reader_factory = std::move(clovis_kvs_reader_factory);
   } else {
-    s3_clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+    s3_clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
   if (object_mp_meta_factory) {
     object_mp_metadata_factory = std::move(object_mp_meta_factory);
@@ -307,7 +307,7 @@ void S3PostCompleteAction::get_next_parts_info_successful() {
 }
 
 void S3PostCompleteAction::get_next_parts_info_failed() {
-  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+  if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     // There may not be any records left
     if ((parts.size() != 0) ||
         (validated_parts_count != std::stoul(total_parts))) {
@@ -324,7 +324,7 @@ void S3PostCompleteAction::get_next_parts_info_failed() {
     next();
   } else {
     if (clovis_kv_reader->get_state() ==
-        S3ClovisKVSReaderOpState::failed_to_launch) {
+        S3MotrKVSReaderOpState::failed_to_launch) {
       s3_log(S3_LOG_ERROR, request_id,
              "Parts metadata next keyval operation failed due to pre launch "
              "failure\n");

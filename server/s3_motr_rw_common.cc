@@ -52,8 +52,8 @@
  */
 
 // This is run on main thread.
-void clovis_op_done_on_main_thread(evutil_socket_t, short events,
-                                   void *user_data) {
+void motr_op_done_on_main_thread(evutil_socket_t, short events,
+                                 void *user_data) {
   std::string request_id;
   if (user_data == NULL) {
     s3_log(S3_LOG_DEBUG, "", "Entering\n");
@@ -97,10 +97,9 @@ void clovis_op_done_on_main_thread(evutil_socket_t, short events,
 }
 
 // Clovis callbacks, run in clovis thread
-void s3_clovis_op_stable(struct m0_clovis_op *op) {
+void s3_motr_op_stable(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
-  struct s3_clovis_context_obj *ctx =
-      (struct s3_clovis_context_obj *)op->op_datum;
+  struct s3_motr_context_obj *ctx = (struct s3_motr_context_obj *)op->op_datum;
 
   S3AsyncOpContextBase *app_ctx =
       (S3AsyncOpContextBase *)ctx->application_context;
@@ -132,18 +131,16 @@ void s3_clovis_op_stable(struct m0_clovis_op *op) {
 #ifdef S3_GOOGLE_TEST
     evutil_socket_t test_sock = 0;
     short events = 0;
-    clovis_op_done_on_main_thread(test_sock, events, (void *)user_ctx);
+    motr_op_done_on_main_thread(test_sock, events, (void *)user_ctx);
 #else
-    S3PostToMainLoop((void *)user_ctx)(clovis_op_done_on_main_thread,
-                                       request_id);
+    S3PostToMainLoop((void *)user_ctx)(motr_op_done_on_main_thread, request_id);
 #endif  // S3_GOOGLE_TEST
   }
   s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
 }
 
-void s3_clovis_op_failed(struct m0_clovis_op *op) {
-  struct s3_clovis_context_obj *ctx =
-      (struct s3_clovis_context_obj *)op->op_datum;
+void s3_motr_op_failed(struct m0_clovis_op *op) {
+  struct s3_motr_context_obj *ctx = (struct s3_motr_context_obj *)op->op_datum;
 
   S3AsyncOpContextBase *app_ctx =
       (S3AsyncOpContextBase *)ctx->application_context;
@@ -172,16 +169,15 @@ void s3_clovis_op_failed(struct m0_clovis_op *op) {
 #ifdef S3_GOOGLE_TEST
     evutil_socket_t test_sock = 0;
     short events = 0;
-    clovis_op_done_on_main_thread(test_sock, events, (void *)user_ctx);
+    motr_op_done_on_main_thread(test_sock, events, (void *)user_ctx);
 #else
-    S3PostToMainLoop((void *)user_ctx)(clovis_op_done_on_main_thread,
-                                       request_id);
+    S3PostToMainLoop((void *)user_ctx)(motr_op_done_on_main_thread, request_id);
 #endif  // S3_GOOGLE_TEST
   }
   s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
 }
 
-void s3_clovis_op_pre_launch_failure(void *application_context, int rc) {
+void s3_motr_op_pre_launch_failure(void *application_context, int rc) {
   S3AsyncOpContextBase *app_ctx = (S3AsyncOpContextBase *)application_context;
   std::string request_id = app_ctx->get_request()->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
@@ -194,14 +190,14 @@ void s3_clovis_op_pre_launch_failure(void *application_context, int rc) {
 #ifdef S3_GOOGLE_TEST
   evutil_socket_t test_sock = 0;
   short events = 0;
-  clovis_op_done_on_main_thread(test_sock, events, (void *)user_ctx);
+  motr_op_done_on_main_thread(test_sock, events, (void *)user_ctx);
 #else
-  S3PostToMainLoop((void *)user_ctx)(clovis_op_done_on_main_thread, request_id);
+  S3PostToMainLoop((void *)user_ctx)(motr_op_done_on_main_thread, request_id);
 #endif  // S3_GOOGLE_TEST
   s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
 }
 
-void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
+void s3_motr_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct user_event_context *user_context =
       (struct user_event_context *)user_data;
@@ -211,56 +207,55 @@ void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
   op->op_rc = 0;  // fake success
 
   if (op->op_code == M0_CLOVIS_IC_GET) {
-    struct s3_clovis_context_obj *ctx =
-        (struct s3_clovis_context_obj *)op->op_datum;
+    struct s3_motr_context_obj *ctx =
+        (struct s3_motr_context_obj *)op->op_datum;
 
-    S3ClovisKVSReaderContext *read_ctx =
-        (S3ClovisKVSReaderContext *)ctx->application_context;
+    S3MotrKVSReaderContext *read_ctx =
+        (S3MotrKVSReaderContext *)ctx->application_context;
 
     op->op_rc = S3FakeMotrKvs::instance()->kv_read(
-        op->op_entity->en_id, *read_ctx->get_clovis_kvs_op_ctx());
+        op->op_entity->en_id, *read_ctx->get_motr_kvs_op_ctx());
   } else if (M0_CLOVIS_IC_NEXT == op->op_code) {
-    struct s3_clovis_context_obj *ctx =
-        (struct s3_clovis_context_obj *)op->op_datum;
+    struct s3_motr_context_obj *ctx =
+        (struct s3_motr_context_obj *)op->op_datum;
 
-    S3ClovisKVSReaderContext *read_ctx =
-        (S3ClovisKVSReaderContext *)ctx->application_context;
+    S3MotrKVSReaderContext *read_ctx =
+        (S3MotrKVSReaderContext *)ctx->application_context;
 
     op->op_rc = S3FakeMotrKvs::instance()->kv_next(
-        op->op_entity->en_id, *read_ctx->get_clovis_kvs_op_ctx());
+        op->op_entity->en_id, *read_ctx->get_motr_kvs_op_ctx());
   } else if (M0_CLOVIS_IC_PUT == op->op_code) {
-    struct s3_clovis_context_obj *ctx =
-        (struct s3_clovis_context_obj *)op->op_datum;
+    struct s3_motr_context_obj *ctx =
+        (struct s3_motr_context_obj *)op->op_datum;
 
-    S3AsyncClovisKVSWriterContext *write_ctx =
-        (S3AsyncClovisKVSWriterContext *)ctx->application_context;
+    S3AsyncMotrKVSWriterContext *write_ctx =
+        (S3AsyncMotrKVSWriterContext *)ctx->application_context;
 
     op->op_rc = S3FakeMotrKvs::instance()->kv_write(
-        op->op_entity->en_id, *write_ctx->get_clovis_kvs_op_ctx());
+        op->op_entity->en_id, *write_ctx->get_motr_kvs_op_ctx());
   } else if (M0_CLOVIS_IC_DEL == op->op_code) {
-    struct s3_clovis_context_obj *ctx =
-        (struct s3_clovis_context_obj *)op->op_datum;
+    struct s3_motr_context_obj *ctx =
+        (struct s3_motr_context_obj *)op->op_datum;
 
-    S3AsyncClovisKVSWriterContext *write_ctx =
-        (S3AsyncClovisKVSWriterContext *)ctx->application_context;
+    S3AsyncMotrKVSWriterContext *write_ctx =
+        (S3AsyncMotrKVSWriterContext *)ctx->application_context;
 
     op->op_rc = S3FakeMotrKvs::instance()->kv_del(
-        op->op_entity->en_id, *write_ctx->get_clovis_kvs_op_ctx());
+        op->op_entity->en_id, *write_ctx->get_motr_kvs_op_ctx());
   }
 
   // Free user event
   event_free((struct event *)user_context->user_event);
-  s3_clovis_op_stable(op);
+  s3_motr_op_stable(op);
   free(user_data);
 }
 
-void s3_clovis_dummy_op_failed(evutil_socket_t, short events, void *user_data) {
+void s3_motr_dummy_op_failed(evutil_socket_t, short events, void *user_data) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct user_event_context *user_context =
       (struct user_event_context *)user_data;
   struct m0_clovis_op *op = (struct m0_clovis_op *)user_context->app_ctx;
-  struct s3_clovis_context_obj *ctx =
-      (struct s3_clovis_context_obj *)op->op_datum;
+  struct s3_motr_context_obj *ctx = (struct s3_motr_context_obj *)op->op_datum;
 
   // This can be mocked from GTest but system tests call this method too
   // where m0_clovis_rc can't be mocked.
@@ -268,6 +263,6 @@ void s3_clovis_dummy_op_failed(evutil_socket_t, short events, void *user_data) {
   ctx->is_fake_failure = 1;
   // Free user event
   event_free((struct event *)user_context->user_event);
-  s3_clovis_op_failed(op);
+  s3_motr_op_failed(op);
   free(user_data);
 }

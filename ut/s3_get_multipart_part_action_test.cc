@@ -67,7 +67,7 @@ class S3GetMultipartPartActionTest : public testing::Test {
         std::make_shared<MockS3ObjectMultipartMetadataFactory>(
             ptr_mock_request, ptr_mock_s3_clovis_api, upload_id);
     object_mp_meta_factory->set_object_list_index_oid(mp_indx_oid);
-    clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
+    clovis_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
         ptr_mock_request, ptr_mock_s3_clovis_api);
 
     part_meta_factory = std::make_shared<MockS3PartMetadataFactory>(
@@ -87,7 +87,7 @@ class S3GetMultipartPartActionTest : public testing::Test {
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3PartMetadataFactory> part_meta_factory;
   std::shared_ptr<MockS3ObjectMultipartMetadataFactory> object_mp_meta_factory;
-  std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<MockS3MotrKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<S3GetMultipartPartAction> action_under_test;
   struct m0_uint128 mp_indx_oid;
   struct m0_uint128 oid;
@@ -339,7 +339,7 @@ TEST_F(S3GetMultipartPartActionTest, GetKeyObjectFailedNoMetadata) {
   action_under_test->clovis_kv_reader =
       clovis_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::missing));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::missing));
   action_under_test->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test,
                          S3GetMultipartPartActionTest::func_callback_one, this);
@@ -352,7 +352,7 @@ TEST_F(S3GetMultipartPartActionTest, GetKeyObjectFailedMetadataFailed) {
   action_under_test->clovis_kv_reader =
       clovis_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::failed));
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);

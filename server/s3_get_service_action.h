@@ -30,7 +30,7 @@
 #include "s3_service_list_response.h"
 
 class S3GetServiceAction : public S3Action {
-  std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
+  std::shared_ptr<S3MotrKVSReader> clovis_kv_reader;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   m0_uint128 bucket_list_index_oid;
   std::string last_key;  // last key during each iteration
@@ -38,7 +38,7 @@ class S3GetServiceAction : public S3Action {
   S3ServiceListResponse bucket_list;
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   bool fetch_successful;
-  std::shared_ptr<S3ClovisKVSReaderFactory> s3_clovis_kvs_reader_factory;
+  std::shared_ptr<S3MotrKVSReaderFactory> s3_clovis_kvs_reader_factory;
 
   std::string get_search_bucket_prefix() {
     return request->get_account_id() + "/";
@@ -47,7 +47,7 @@ class S3GetServiceAction : public S3Action {
  public:
   S3GetServiceAction(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory =
+      std::shared_ptr<S3MotrKVSReaderFactory> clovis_kvs_reader_factory =
           nullptr,
       std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory =
           nullptr);

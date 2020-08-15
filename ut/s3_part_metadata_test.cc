@@ -51,7 +51,7 @@ class S3PartMetadataTest : public testing::Test {
         .WillRepeatedly(ReturnRef(object_name));
     ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
 
-    clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
+    clovis_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
         ptr_mock_request, ptr_mock_s3_clovis_api);
 
     clovis_kvs_writer_factory = std::make_shared<MockS3ClovisKVSWriterFactory>(
@@ -69,7 +69,7 @@ class S3PartMetadataTest : public testing::Test {
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
   std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
-  std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<MockS3MotrKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
   S3CallBack s3objectmetadata_callbackobj;
   std::shared_ptr<S3PartMetadata> metadata_under_test;
@@ -200,7 +200,7 @@ TEST_F(S3PartMetadataTest, LoadPartInfoFailedMetadataMissing) {
       clovis_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
       .Times(1)
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::missing));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::missing));
   metadata_under_test->load_failed();
   EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
   EXPECT_EQ(S3PartMetadataState::missing, metadata_under_test->state);
@@ -213,7 +213,7 @@ TEST_F(S3PartMetadataTest, LoadPartInfoFailedMetadataFailed) {
       clovis_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
       .Times(1)
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::failed));
   metadata_under_test->load_failed();
   EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
   EXPECT_EQ(S3PartMetadataState::failed, metadata_under_test->state);

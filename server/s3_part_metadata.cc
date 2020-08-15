@@ -63,7 +63,7 @@ void S3PartMetadata::initialize(std::string uploadid, int part_num) {
 
 S3PartMetadata::S3PartMetadata(
     std::shared_ptr<S3RequestObject> req, std::string uploadid, int part_num,
-    std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory,
+    std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
     : request(req) {
   request_id = request->get_request_id();
@@ -74,7 +74,7 @@ S3PartMetadata::S3PartMetadata(
   if (kv_reader_factory) {
     clovis_kv_reader_factory = kv_reader_factory;
   } else {
-    clovis_kv_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+    clovis_kv_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   if (kv_writer_factory) {
@@ -87,7 +87,7 @@ S3PartMetadata::S3PartMetadata(
 S3PartMetadata::S3PartMetadata(
     std::shared_ptr<S3RequestObject> req, struct m0_uint128 oid,
     std::string uploadid, int part_num,
-    std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory,
+    std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
     : request(req) {
   request_id = request->get_request_id();
@@ -98,7 +98,7 @@ S3PartMetadata::S3PartMetadata(
   if (kv_reader_factory) {
     clovis_kv_reader_factory = kv_reader_factory;
   } else {
-    clovis_kv_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+    clovis_kv_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   if (kv_writer_factory) {
@@ -215,8 +215,7 @@ void S3PartMetadata::load_failed() {
   s3_log(S3_LOG_WARN, request_id, "Missing part metadata\n");
   if (json_parsing_error) {
     state = S3PartMetadataState::failed;
-  } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::missing) {
+  } else if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     state = S3PartMetadataState::missing;  // Missing
   } else {
     state = S3PartMetadataState::failed;

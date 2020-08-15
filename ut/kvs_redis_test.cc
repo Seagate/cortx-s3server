@@ -167,8 +167,8 @@ TEST(RedisKvs, finalize_op) {
   op_cb_called = 0;
   rco = (s3_redis_context_obj*)calloc(1, sizeof(s3_redis_context_obj));
   ASSERT_NE(rco, nullptr);
-  s3_clovis_context_obj* prev_ctx =
-      (s3_clovis_context_obj*)calloc(1, sizeof(s3_clovis_context_obj));
+  s3_motr_context_obj* prev_ctx =
+      (s3_motr_context_obj*)calloc(1, sizeof(s3_motr_context_obj));
   ASSERT_NE(prev_ctx, nullptr);
   rco->prev_ctx = prev_ctx;
   op.op_datum = (void*)rco;
@@ -186,7 +186,7 @@ class RedisKVSBaseTest : public testing::Test {
   s3_redis_async_ctx* actx;
   struct m0_clovis_op op;
   s3_redis_context_obj* rco;
-  s3_clovis_context_obj* prev_ctx;
+  s3_motr_context_obj* prev_ctx;
   std::shared_ptr<MockMotrRequestObject> request;
   redisReply rr;
   redisAsyncContext rac;
@@ -200,7 +200,7 @@ class RedisKVSBaseTest : public testing::Test {
     rco = (s3_redis_context_obj*)calloc(1, sizeof(s3_redis_context_obj));
     op.op_datum = (void*)rco;
 
-    prev_ctx = (s3_clovis_context_obj*)calloc(1, sizeof(s3_clovis_context_obj));
+    prev_ctx = (s3_motr_context_obj*)calloc(1, sizeof(s3_motr_context_obj));
     rco->prev_ctx = prev_ctx;
 
     request = std::make_shared<MockMotrRequestObject>(nullptr, nullptr);
@@ -231,11 +231,11 @@ class RedisKVSWriterTest : public RedisKVSBaseTest {
   RedisKVSWriterTest() : RedisKVSBaseTest() {}
 
  protected:
-  S3AsyncClovisKVSWriterContext* w_ctx;
+  S3AsyncMotrKVSWriterContext* w_ctx;
 
   void SetUp() {
     check_state();
-    w_ctx = new S3AsyncClovisKVSWriterContext(request, []() {}, []() {});
+    w_ctx = new S3AsyncMotrKVSWriterContext(request, []() {}, []() {});
     ASSERT_NE(w_ctx, nullptr);
     prev_ctx->application_context = w_ctx;
   }
@@ -249,11 +249,11 @@ class RedisKVSReaderTest : public RedisKVSBaseTest {
   RedisKVSReaderTest() : RedisKVSBaseTest() {}
 
  protected:
-  S3ClovisKVSReaderContext* r_ctx;
+  S3MotrKVSReaderContext* r_ctx;
 
   void SetUp() {
     check_state();
-    r_ctx = new S3ClovisKVSReaderContext(request, []() {}, []() {});
+    r_ctx = new S3MotrKVSReaderContext(request, []() {}, []() {});
     ASSERT_NE(r_ctx, nullptr);
     prev_ctx->application_context = r_ctx;
   }
@@ -269,8 +269,8 @@ TEST_F(RedisKVSWriterTest, kv_status_cb_val_succ) {
   rco->had_error = false;
 
   w_ctx->init_kvs_write_op_ctx(1);
-  ASSERT_NE(w_ctx->get_clovis_kvs_op_ctx(), nullptr);
-  w_ctx->get_clovis_kvs_op_ctx()->rcs[0] = 11;
+  ASSERT_NE(w_ctx->get_motr_kvs_op_ctx(), nullptr);
+  w_ctx->get_motr_kvs_op_ctx()->rcs[0] = 11;
 
   rr.type = REDIS_REPLY_INTEGER;
   rr.integer = 1;
@@ -278,7 +278,7 @@ TEST_F(RedisKVSWriterTest, kv_status_cb_val_succ) {
   kv_status_cb(&rac, &rr, actx);
   EXPECT_EQ(rco->replies_cnt, 1);
   EXPECT_EQ(op.op_rc, 0);
-  struct s3_motr_kvs_op_context* kv = w_ctx->get_clovis_kvs_op_ctx();
+  struct s3_motr_kvs_op_context* kv = w_ctx->get_motr_kvs_op_ctx();
   EXPECT_EQ(kv->rcs[0], 0);
 }
 
@@ -290,8 +290,8 @@ TEST_F(RedisKVSWriterTest, kv_status_cb_val_failed) {
   rco->had_error = false;
 
   w_ctx->init_kvs_write_op_ctx(1);
-  ASSERT_NE(w_ctx->get_clovis_kvs_op_ctx(), nullptr);
-  w_ctx->get_clovis_kvs_op_ctx()->rcs[0] = 11;
+  ASSERT_NE(w_ctx->get_motr_kvs_op_ctx(), nullptr);
+  w_ctx->get_motr_kvs_op_ctx()->rcs[0] = 11;
 
   rr.type = REDIS_REPLY_INTEGER;
   rr.integer = 0;
@@ -299,7 +299,7 @@ TEST_F(RedisKVSWriterTest, kv_status_cb_val_failed) {
   kv_status_cb(&rac, &rr, actx);
   EXPECT_EQ(rco->replies_cnt, 1);
   EXPECT_EQ(op.op_rc, -ENOENT);
-  struct s3_motr_kvs_op_context* kv = w_ctx->get_clovis_kvs_op_ctx();
+  struct s3_motr_kvs_op_context* kv = w_ctx->get_motr_kvs_op_ctx();
   EXPECT_EQ(kv->rcs[0], -ENOENT);
 }
 
@@ -311,8 +311,8 @@ TEST_F(RedisKVSReaderTest, kv_read_cb_empty) {
   rco->had_error = false;
 
   r_ctx->init_kvs_read_op_ctx(1);
-  ASSERT_NE(r_ctx->get_clovis_kvs_op_ctx(), nullptr);
-  r_ctx->get_clovis_kvs_op_ctx()->rcs[0] = 11;
+  ASSERT_NE(r_ctx->get_motr_kvs_op_ctx(), nullptr);
+  r_ctx->get_motr_kvs_op_ctx()->rcs[0] = 11;
 
   rr.type = REDIS_REPLY_ARRAY;
   rr.elements = 0;
@@ -320,7 +320,7 @@ TEST_F(RedisKVSReaderTest, kv_read_cb_empty) {
   kv_read_cb(&rac, &rr, actx);
   EXPECT_EQ(rco->replies_cnt, 1);
   EXPECT_EQ(op.op_rc, -ENOENT);
-  struct s3_motr_kvs_op_context* kv = r_ctx->get_clovis_kvs_op_ctx();
+  struct s3_motr_kvs_op_context* kv = r_ctx->get_motr_kvs_op_ctx();
   EXPECT_EQ(kv->rcs[0], -ENOENT);
 }
 
@@ -332,8 +332,8 @@ TEST_F(RedisKVSReaderTest, kv_read_cb_one) {
   rco->had_error = false;
 
   r_ctx->init_kvs_read_op_ctx(2);
-  ASSERT_NE(r_ctx->get_clovis_kvs_op_ctx(), nullptr);
-  struct s3_motr_kvs_op_context* kv = r_ctx->get_clovis_kvs_op_ctx();
+  ASSERT_NE(r_ctx->get_motr_kvs_op_ctx(), nullptr);
+  struct s3_motr_kvs_op_context* kv = r_ctx->get_motr_kvs_op_ctx();
   kv->rcs[0] = kv->rcs[1] = 11;
 
   rr.type = REDIS_REPLY_ARRAY;
@@ -366,8 +366,8 @@ TEST_F(RedisKVSReaderTest, kv_read_cb_several) {
   rco->had_error = false;
 
   r_ctx->init_kvs_read_op_ctx(2);
-  ASSERT_NE(r_ctx->get_clovis_kvs_op_ctx(), nullptr);
-  struct s3_motr_kvs_op_context* kv = r_ctx->get_clovis_kvs_op_ctx();
+  ASSERT_NE(r_ctx->get_motr_kvs_op_ctx(), nullptr);
+  struct s3_motr_kvs_op_context* kv = r_ctx->get_motr_kvs_op_ctx();
   kv->rcs[0] = kv->rcs[1] = 11;
 
   rr.type = REDIS_REPLY_ARRAY;
@@ -390,8 +390,8 @@ TEST_F(RedisKVSReaderTest, kv_next_cb_empty) {
   rco->had_error = false;
 
   r_ctx->init_kvs_read_op_ctx(2);
-  ASSERT_NE(r_ctx->get_clovis_kvs_op_ctx(), nullptr);
-  struct s3_motr_kvs_op_context* kv = r_ctx->get_clovis_kvs_op_ctx();
+  ASSERT_NE(r_ctx->get_motr_kvs_op_ctx(), nullptr);
+  struct s3_motr_kvs_op_context* kv = r_ctx->get_motr_kvs_op_ctx();
   kv->rcs[0] = kv->rcs[1] = 11;
 
   rr.type = REDIS_REPLY_ARRAY;
@@ -416,8 +416,8 @@ TEST_F(RedisKVSReaderTest, kv_next_cb_empty_skip) {
   rco->skip_size = 3;
 
   r_ctx->init_kvs_read_op_ctx(2);
-  ASSERT_NE(r_ctx->get_clovis_kvs_op_ctx(), nullptr);
-  struct s3_motr_kvs_op_context* kv = r_ctx->get_clovis_kvs_op_ctx();
+  ASSERT_NE(r_ctx->get_motr_kvs_op_ctx(), nullptr);
+  struct s3_motr_kvs_op_context* kv = r_ctx->get_motr_kvs_op_ctx();
   kv->rcs[0] = kv->rcs[1] = 11;
 
   rr.type = REDIS_REPLY_ARRAY;
@@ -442,8 +442,8 @@ TEST_F(RedisKVSReaderTest, kv_next_cb_one_skip) {
   rco->skip_size = 4;
 
   r_ctx->init_kvs_read_op_ctx(2);
-  ASSERT_NE(r_ctx->get_clovis_kvs_op_ctx(), nullptr);
-  struct s3_motr_kvs_op_context* kv = r_ctx->get_clovis_kvs_op_ctx();
+  ASSERT_NE(r_ctx->get_motr_kvs_op_ctx(), nullptr);
+  struct s3_motr_kvs_op_context* kv = r_ctx->get_motr_kvs_op_ctx();
   kv->rcs[0] = kv->rcs[1] = 11;
 
   rr.type = REDIS_REPLY_ARRAY;
@@ -473,8 +473,8 @@ TEST_F(RedisKVSReaderTest, kv_next_cb_one) {
   rco->had_error = false;
 
   r_ctx->init_kvs_read_op_ctx(2);
-  ASSERT_NE(r_ctx->get_clovis_kvs_op_ctx(), nullptr);
-  struct s3_motr_kvs_op_context* kv = r_ctx->get_clovis_kvs_op_ctx();
+  ASSERT_NE(r_ctx->get_motr_kvs_op_ctx(), nullptr);
+  struct s3_motr_kvs_op_context* kv = r_ctx->get_motr_kvs_op_ctx();
   kv->rcs[0] = kv->rcs[1] = 11;
 
   rr.type = REDIS_REPLY_ARRAY;
@@ -510,8 +510,8 @@ TEST_F(RedisKVSReaderTest, kv_next_cb_several) {
   rco->had_error = false;
 
   r_ctx->init_kvs_read_op_ctx(2);
-  ASSERT_NE(r_ctx->get_clovis_kvs_op_ctx(), nullptr);
-  struct s3_motr_kvs_op_context* kv = r_ctx->get_clovis_kvs_op_ctx();
+  ASSERT_NE(r_ctx->get_motr_kvs_op_ctx(), nullptr);
+  struct s3_motr_kvs_op_context* kv = r_ctx->get_motr_kvs_op_ctx();
   kv->rcs[0] = kv->rcs[1] = 11;
 
   rr.type = REDIS_REPLY_ARRAY;
@@ -562,8 +562,8 @@ TEST_F(RedisKVSReaderTest, kv_next_cb_several_skip) {
   rco->skip_size = 4;
 
   r_ctx->init_kvs_read_op_ctx(2);
-  ASSERT_NE(r_ctx->get_clovis_kvs_op_ctx(), nullptr);
-  struct s3_motr_kvs_op_context* kv = r_ctx->get_clovis_kvs_op_ctx();
+  ASSERT_NE(r_ctx->get_motr_kvs_op_ctx(), nullptr);
+  struct s3_motr_kvs_op_context* kv = r_ctx->get_motr_kvs_op_ctx();
   kv->rcs[0] = kv->rcs[1] = 11;
 
   rr.type = REDIS_REPLY_ARRAY;

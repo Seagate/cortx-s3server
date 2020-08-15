@@ -60,8 +60,8 @@ class MotrHeadIndexActionTest : public testing::Test {
     ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
     // Owned and deleted by shared_ptr in MotrHeadIndexAction
     mock_clovis_kvs_reader_factory =
-        std::make_shared<MockS3ClovisKVSReaderFactory>(ptr_mock_request,
-                                                       ptr_mock_s3_clovis_api);
+        std::make_shared<MockS3MotrKVSReaderFactory>(ptr_mock_request,
+                                                     ptr_mock_s3_clovis_api);
 
     action_under_test.reset(new MotrHeadIndexAction(
         ptr_mock_request, mock_clovis_kvs_reader_factory));
@@ -69,7 +69,7 @@ class MotrHeadIndexActionTest : public testing::Test {
 
   std::shared_ptr<MockMotrRequestObject> ptr_mock_request;
   std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
-  std::shared_ptr<MockS3ClovisKVSReaderFactory> mock_clovis_kvs_reader_factory;
+  std::shared_ptr<MockS3MotrKVSReaderFactory> mock_clovis_kvs_reader_factory;
   std::shared_ptr<MotrHeadIndexAction> action_under_test;
 
   struct m0_uint128 index_id;
@@ -165,7 +165,7 @@ TEST_F(MotrHeadIndexActionTest, CheckIndexExistFailureMissing) {
       .WillOnce(Return("/indexes/123-456"));
   EXPECT_CALL(*(mock_clovis_kvs_reader_factory->mock_clovis_kvs_reader),
               get_state())
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::missing));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::missing));
 
   EXPECT_CALL(*ptr_mock_request, send_response(404, _)).Times(1);
 
@@ -180,7 +180,7 @@ TEST_F(MotrHeadIndexActionTest, CheckIndexExistFailureInternalError) {
       .WillOnce(Return("/indexes/123-456"));
   EXPECT_CALL(*(mock_clovis_kvs_reader_factory->mock_clovis_kvs_reader),
               get_state())
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::failed));
 
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
 
@@ -192,7 +192,7 @@ TEST_F(MotrHeadIndexActionTest, CheckIndexExistFailureFailedToLaunch) {
       mock_clovis_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(mock_clovis_kvs_reader_factory->mock_clovis_kvs_reader),
               get_state())
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::failed_to_launch));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::failed_to_launch));
 
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
       .WillOnce(Return("/indexes/123-456"));

@@ -58,27 +58,27 @@ static int s3_test_allocate_op(struct m0_clovis_entity *entity,
 }
 static void s3_test_free_clovis_op(struct m0_clovis_op *op) { free(op); }
 
-static void s3_test_clovis_op_launch(uint64_t, struct m0_clovis_op **op,
-                                     uint32_t nr, ClovisOpType type) {
-  struct s3_clovis_context_obj *ctx =
-      (struct s3_clovis_context_obj *)op[0]->op_datum;
+static void s3_test_motr_op_launch(uint64_t, struct m0_clovis_op **op,
+                                   uint32_t nr, ClovisOpType type) {
+  struct s3_motr_context_obj *ctx =
+      (struct s3_motr_context_obj *)op[0]->op_datum;
 
   S3ClovisWriterContext *app_ctx =
       (S3ClovisWriterContext *)ctx->application_context;
   struct s3_clovis_op_context *op_ctx = app_ctx->get_clovis_op_ctx();
 
   for (int i = 0; i < (int)nr; i++) {
-    struct m0_clovis_op *test_clovis_op = op[i];
-    s3_clovis_op_stable(test_clovis_op);
-    s3_test_free_clovis_op(test_clovis_op);
+    struct m0_clovis_op *test_motr_op = op[i];
+    s3_motr_op_stable(test_motr_op);
+    s3_test_free_clovis_op(test_motr_op);
   }
   op_ctx->op_count = 0;
 }
 
 static void s3_dummy_clovis_op_launch(uint64_t, struct m0_clovis_op **op,
                                       uint32_t nr, ClovisOpType type) {
-  struct s3_clovis_context_obj *ctx =
-      (struct s3_clovis_context_obj *)op[0]->op_datum;
+  struct s3_motr_context_obj *ctx =
+      (struct s3_motr_context_obj *)op[0]->op_datum;
 
   S3ClovisWriterContext *app_ctx =
       (S3ClovisWriterContext *)ctx->application_context;
@@ -86,19 +86,19 @@ static void s3_dummy_clovis_op_launch(uint64_t, struct m0_clovis_op **op,
   op_ctx->op_count = 0;
 }
 
-static void s3_test_clovis_op_launch_fail(uint64_t, struct m0_clovis_op **op,
-                                          uint32_t nr, ClovisOpType type) {
-  struct s3_clovis_context_obj *ctx =
-      (struct s3_clovis_context_obj *)op[0]->op_datum;
+static void s3_test_motr_op_launch_fail(uint64_t, struct m0_clovis_op **op,
+                                        uint32_t nr, ClovisOpType type) {
+  struct s3_motr_context_obj *ctx =
+      (struct s3_motr_context_obj *)op[0]->op_datum;
 
   S3ClovisWriterContext *app_ctx =
       (S3ClovisWriterContext *)ctx->application_context;
   struct s3_clovis_op_context *op_ctx = app_ctx->get_clovis_op_ctx();
 
   for (int i = 0; i < (int)nr; i++) {
-    struct m0_clovis_op *test_clovis_op = op[i];
-    s3_clovis_op_failed(test_clovis_op);
-    s3_test_free_clovis_op(test_clovis_op);
+    struct m0_clovis_op *test_motr_op = op[i];
+    s3_motr_op_failed(test_motr_op);
+    s3_test_free_clovis_op(test_motr_op);
   }
   op_ctx->op_count = 0;
 }
@@ -183,7 +183,7 @@ TEST_F(S3ClovisWriterTest, CreateObjectTest) {
       .WillOnce(Invoke(s3_test_clovis_entity));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_setup(_, _, _));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _, _))
-      .WillOnce(Invoke(s3_test_clovis_op_launch));
+      .WillOnce(Invoke(s3_test_motr_op_launch));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_fini(_)).Times(1);
 
   S3Option::get_instance()->set_eventbase(evbase);
@@ -230,7 +230,7 @@ TEST_F(S3ClovisWriterTest, CreateObjectSuccessfulTest) {
       .WillOnce(Invoke(s3_test_clovis_entity));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_setup(_, _, _));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _, _))
-      .WillOnce(Invoke(s3_test_clovis_op_launch));
+      .WillOnce(Invoke(s3_test_motr_op_launch));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_fini(_)).Times(1);
 
   S3Option::get_instance()->set_eventbase(evbase);
@@ -257,7 +257,7 @@ TEST_F(S3ClovisWriterTest, DeleteObjectSuccessfulTest) {
       .WillOnce(Invoke(s3_test_clovis_entity));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_setup(_, _, _)).Times(2);
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _, _))
-      .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
+      .WillRepeatedly(Invoke(s3_test_motr_op_launch));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_fini(_)).Times(1);
 
   S3Option::get_instance()->set_eventbase(evbase);
@@ -283,7 +283,7 @@ TEST_F(S3ClovisWriterTest, DeleteObjectFailedTest) {
 
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_setup(_, _, _));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _, _))
-      .WillOnce(Invoke(s3_test_clovis_op_launch_fail));
+      .WillOnce(Invoke(s3_test_motr_op_launch_fail));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_fini(_)).Times(1);
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_rc(_))
       .WillRepeatedly(Return(-EPERM));
@@ -321,7 +321,7 @@ TEST_F(S3ClovisWriterTest, DeleteObjectclovisEntityDeleteFailedTest) {
       .WillRepeatedly(Return(-1));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_setup(_, _, _)).Times(oids.size());
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _, _))
-      .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
+      .WillRepeatedly(Invoke(s3_test_motr_op_launch));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_fini(_)).Times(oids.size());
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_rc(_)).WillRepeatedly(Return(0));
 
@@ -360,7 +360,7 @@ TEST_F(S3ClovisWriterTest, DeleteObjectsSuccessfulTest) {
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_setup(_, _, _))
       .Times(2 * oids.size());
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _, _))
-      .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
+      .WillRepeatedly(Invoke(s3_test_motr_op_launch));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_fini(_)).Times(oids.size());
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_rc(_)).WillRepeatedly(Return(0));
 
@@ -395,7 +395,7 @@ TEST_F(S3ClovisWriterTest, DeleteObjectsFailedTest) {
       .WillRepeatedly(Invoke(s3_test_allocate_op));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_setup(_, _, _)).Times(oids.size());
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _, _))
-      .WillOnce(Invoke(s3_test_clovis_op_launch_fail));
+      .WillOnce(Invoke(s3_test_motr_op_launch_fail));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_fini(_)).Times(oids.size());
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_rc(_))
       .WillRepeatedly(Return(-EPERM));
@@ -518,7 +518,7 @@ TEST_F(S3ClovisWriterTest, WriteContentSuccessfulTest) {
       .WillOnce(Invoke(s3_test_clovis_obj_op));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_setup(_, _, _)).Times(2);
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _, _))
-      .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
+      .WillRepeatedly(Invoke(s3_test_motr_op_launch));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_fini(_)).Times(1);
 
   S3Option::get_instance()->set_eventbase(evbase);
@@ -551,7 +551,7 @@ TEST_F(S3ClovisWriterTest, WriteContentFailedTest) {
       .WillOnce(Invoke(s3_test_allocate_op));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_setup(_, _, _));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _, _))
-      .WillOnce(Invoke(s3_test_clovis_op_launch_fail));
+      .WillOnce(Invoke(s3_test_motr_op_launch_fail));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_fini(_)).Times(1);
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_rc(_))
       .WillRepeatedly(Return(-EPERM));

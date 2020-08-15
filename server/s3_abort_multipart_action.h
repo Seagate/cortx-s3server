@@ -43,7 +43,7 @@ enum class S3AbortMultipartActionState {
 class S3AbortMultipartAction : public S3BucketAction {
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;
   std::shared_ptr<S3PartMetadata> part_metadata;
-  std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
+  std::shared_ptr<S3MotrKVSReader> clovis_kv_reader;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
@@ -60,7 +60,7 @@ class S3AbortMultipartAction : public S3BucketAction {
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
-  std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<S3MotrKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
 
   S3AbortMultipartActionState s3_abort_mp_action_state;
@@ -74,7 +74,7 @@ class S3AbortMultipartAction : public S3BucketAction {
           nullptr,
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
       std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory = nullptr,
-      std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory =
+      std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory =
           nullptr,
       std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr);
 

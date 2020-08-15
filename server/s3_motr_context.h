@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_S3_CLOVIS_CONTEXT_H__
-#define __S3_SERVER_S3_CLOVIS_CONTEXT_H__
+#ifndef __S3_SERVER_S3_MOTR_CONTEXT_H__
+#define __S3_SERVER_S3_MOTR_CONTEXT_H__
 
 #include "s3_common.h"
 #include "s3_log.h"
@@ -65,7 +65,7 @@ struct s3_clovis_idx_context {
   size_t idx_count;
 };
 
-struct s3_clovis_idx_op_context {
+struct s3_motr_idx_op_context {
   struct m0_clovis_op **ops;
   struct m0_clovis_op *sync_op;
   struct m0_clovis_op_ops *cbs;
@@ -93,8 +93,8 @@ int free_basic_rw_op_ctx(struct s3_clovis_rw_op_context *ctx);
 struct s3_clovis_idx_context *create_idx_context(size_t idx_count);
 int free_idx_context(struct s3_clovis_idx_context *ctx);
 
-struct s3_clovis_idx_op_context *create_basic_idx_op_ctx(int op_count);
-int free_basic_idx_op_ctx(struct s3_clovis_idx_op_context *ctx);
+struct s3_motr_idx_op_context *create_basic_idx_op_ctx(int op_count);
+int free_basic_idx_op_ctx(struct s3_motr_idx_op_context *ctx);
 
 struct s3_motr_kvs_op_context *create_basic_kvs_op_ctx(int no_of_keys);
 int free_basic_kvs_op_ctx(struct s3_motr_kvs_op_context *ctx);

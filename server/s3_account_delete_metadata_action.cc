@@ -29,7 +29,7 @@ extern struct m0_uint128 bucket_metadata_list_index_oid;
 
 S3AccountDeleteMetadataAction::S3AccountDeleteMetadataAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
-    std::shared_ptr<S3ClovisKVSReaderFactory> kvs_reader_factory)
+    std::shared_ptr<S3MotrKVSReaderFactory> kvs_reader_factory)
     : S3Action(req, true, nullptr, false, true) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   // get the account_id from uri
@@ -44,7 +44,7 @@ S3AccountDeleteMetadataAction::S3AccountDeleteMetadataAction(
   if (kvs_reader_factory) {
     clovis_kvs_reader_factory = kvs_reader_factory;
   } else {
-    clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+    clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
   setup_steps();
 }
@@ -118,13 +118,13 @@ void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata_successful() {
 
 void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+  if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id,
            "There is no bucket for the acocunt id: %s\n",
            account_id_from_uri.c_str());
     next();
   } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::failed_to_launch) {
+             S3MotrKVSReaderOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Bucket metadata next keyval operation failed due to pre launch "
            "failure\n");

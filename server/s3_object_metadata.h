@@ -47,7 +47,7 @@ enum class S3ObjectMetadataState {
 };
 
 // Forward declarations.
-class S3ClovisKVSReaderFactory;
+class S3MotrKVSReaderFactory;
 class S3ClovisKVSWriterFactory;
 class S3BucketMetadataFactory;
 
@@ -109,11 +109,11 @@ class S3ObjectMetadata {
 
   std::shared_ptr<S3RequestObject> request;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
-  std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
+  std::shared_ptr<S3MotrKVSReader> clovis_kv_reader;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
 
-  std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kv_reader_factory;
+  std::shared_ptr<S3MotrKVSReaderFactory> clovis_kv_reader_factory;
   std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
 
@@ -148,12 +148,13 @@ class S3ObjectMetadata {
   }
 
  public:
-  S3ObjectMetadata(
-      std::shared_ptr<S3RequestObject> req, bool ismultipart = false,
-      std::string uploadid = "",
-      std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory = nullptr,
-      std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr);
+  S3ObjectMetadata(std::shared_ptr<S3RequestObject> req,
+                   bool ismultipart = false, std::string uploadid = "",
+                   std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory =
+                       nullptr,
+                   std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory =
+                       nullptr,
+                   std::shared_ptr<ClovisAPI> clovis_api = nullptr);
 
   // Call these when Object metadata save/remove needs to be called.
   // id can be object list index OID or

@@ -95,7 +95,7 @@ void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
 S3ObjectMetadata::S3ObjectMetadata(
     std::shared_ptr<S3RequestObject> req, bool ismultipart,
     std::string uploadid,
-    std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory,
+    std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<ClovisAPI> clovis_api)
     : request(std::move(req)) {
@@ -113,7 +113,7 @@ S3ObjectMetadata::S3ObjectMetadata(
   if (kv_reader_factory) {
     clovis_kv_reader_factory = std::move(kv_reader_factory);
   } else {
-    clovis_kv_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+    clovis_kv_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   if (kv_writer_factory) {
@@ -334,13 +334,12 @@ void S3ObjectMetadata::load_successful() {
 void S3ObjectMetadata::load_failed() {
   if (json_parsing_error) {
     state = S3ObjectMetadataState::failed;
-  } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::missing) {
+  } else if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Object metadata missing for %s\n",
            object_name.c_str());
     state = S3ObjectMetadataState::missing;  // Missing
   } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::failed_to_launch) {
+             S3MotrKVSReaderOpState::failed_to_launch) {
     s3_log(S3_LOG_WARN, request_id, "Object metadata load failed\n");
     state = S3ObjectMetadataState::failed_to_launch;
   } else {

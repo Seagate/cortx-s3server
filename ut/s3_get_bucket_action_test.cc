@@ -111,7 +111,7 @@ class S3GetBucketActionTest : public testing::Test {
     s3_clovis_api_mock = std::make_shared<MockS3Clovis>();
     bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
         request_mock, s3_clovis_api_mock);
-    clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
+    clovis_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
         request_mock, s3_clovis_api_mock);
     object_meta_factory =
         std::make_shared<MockS3ObjectMetadataFactory>(request_mock);
@@ -121,7 +121,7 @@ class S3GetBucketActionTest : public testing::Test {
   std::shared_ptr<MockS3RequestObject> request_mock;
   std::shared_ptr<S3GetBucketAction> action_under_test_ptr;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
-  std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<MockS3MotrKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3Clovis> s3_clovis_api_mock;
 
@@ -212,7 +212,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsFailedNoEntries) {
   CREATE_KVS_READER_OBJ;
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::missing));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::missing));
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::present));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
@@ -227,7 +227,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsFailed) {
   CREATE_KVS_READER_OBJ;
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::failed));
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::present));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));

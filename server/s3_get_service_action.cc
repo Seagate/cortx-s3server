@@ -31,7 +31,7 @@ extern struct m0_uint128 bucket_metadata_list_index_oid;
 
 S3GetServiceAction::S3GetServiceAction(
     std::shared_ptr<S3RequestObject> req,
-    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory,
+    std::shared_ptr<S3MotrKVSReaderFactory> clovis_kvs_reader_factory,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
     : S3Action(req), last_key(""), key_prefix(""), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
@@ -47,7 +47,7 @@ S3GetServiceAction::S3GetServiceAction(
   if (clovis_kvs_reader_factory) {
     s3_clovis_kvs_reader_factory = clovis_kvs_reader_factory;
   } else {
-    s3_clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+    s3_clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   setup_steps();
@@ -154,11 +154,11 @@ void S3GetServiceAction::get_next_buckets_successful() {
 
 void S3GetServiceAction::get_next_buckets_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+  if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Buckets list is empty\n");
     fetch_successful = true;  // With no entries.
   } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::failed_to_launch) {
+             S3MotrKVSReaderOpState::failed_to_launch) {
     s3_log(
         S3_LOG_ERROR, request_id,
         "Bucket list next keyval operation failed due to pre launch failure\n");

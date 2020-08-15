@@ -39,7 +39,7 @@ const char *clovis_indices = "./indices";
 
 // extern struct m0_addb_ctx m0_clovis_addb_ctx;
 extern std::set<struct s3_clovis_op_context *> global_clovis_object_ops_list;
-extern std::set<struct s3_clovis_idx_op_context *> global_clovis_idx_ops_list;
+extern std::set<struct s3_motr_idx_op_context *> global_clovis_idx_ops_list;
 extern std::set<struct s3_clovis_idx_context *> global_clovis_idx;
 extern std::set<struct s3_clovis_obj_context *> global_clovis_obj;
 

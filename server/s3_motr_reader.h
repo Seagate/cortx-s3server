@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_S3_CLOVIS_READER_H__
-#define __S3_SERVER_S3_CLOVIS_READER_H__
+#ifndef __S3_SERVER_S3_MOTR_READER_H__
+#define __S3_SERVER_S3_MOTR_READER_H__
 
 #include <functional>
 #include <memory>
@@ -36,7 +36,7 @@
 
 extern S3Option* g_option_instance;
 
-class S3ClovisReaderContext : public S3AsyncOpContextBase {
+class S3MotrReaderContext : public S3AsyncOpContextBase {
   // Basic Operation context.
   struct s3_clovis_op_context* clovis_op_context;
   bool has_clovis_op_context;
@@ -49,10 +49,10 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
   std::string request_id;
 
  public:
-  S3ClovisReaderContext(std::shared_ptr<RequestObject> req,
-                        std::function<void()> success_callback,
-                        std::function<void()> failed_callback, int layoutid,
-                        std::shared_ptr<ClovisAPI> clovis_api = nullptr)
+  S3MotrReaderContext(std::shared_ptr<RequestObject> req,
+                      std::function<void()> success_callback,
+                      std::function<void()> failed_callback, int layoutid,
+                      std::shared_ptr<ClovisAPI> clovis_api = nullptr)
       // Passing default value of opcount explicitly.
       : S3AsyncOpContextBase(req, success_callback, failed_callback, 1,
                              clovis_api) {
@@ -70,7 +70,7 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
     has_clovis_rw_op_context = false;
   }
 
-  ~S3ClovisReaderContext() {
+  ~S3MotrReaderContext() {
     s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
 
     if (has_clovis_op_context) {
@@ -135,8 +135,8 @@ enum class S3ClovisReaderOpState {
 class S3ClovisReader {
  private:
   std::shared_ptr<RequestObject> request;
-  std::unique_ptr<S3ClovisReaderContext> reader_context;
-  std::unique_ptr<S3ClovisReaderContext> open_context;
+  std::unique_ptr<S3MotrReaderContext> reader_context;
+  std::unique_ptr<S3MotrReaderContext> open_context;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
 
   std::string request_id;

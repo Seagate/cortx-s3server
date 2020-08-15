@@ -35,7 +35,7 @@ S3DeleteMultipleObjectsAction::S3DeleteMultipleObjectsAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_md_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_md_factory,
     std::shared_ptr<S3ClovisWriterFactory> writer_factory,
-    std::shared_ptr<S3ClovisKVSReaderFactory> kvs_reader_factory,
+    std::shared_ptr<S3MotrKVSReaderFactory> kvs_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kvs_writer_factory)
     : S3BucketAction(std::move(req), std::move(bucket_md_factory), false),
       delete_index_in_req(0),
@@ -63,7 +63,7 @@ S3DeleteMultipleObjectsAction::S3DeleteMultipleObjectsAction(
   if (kvs_reader_factory) {
     clovis_kvs_reader_factory = std::move(kvs_reader_factory);
   } else {
-    clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+    clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   if (kvs_writer_factory) {
@@ -202,7 +202,7 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info() {
 
 void S3DeleteMultipleObjectsAction::fetch_objects_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+  if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     for (auto& key : keys_to_delete) {
       delete_objects_response.add_success(key);
     }

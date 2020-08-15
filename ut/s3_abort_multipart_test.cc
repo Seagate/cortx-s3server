@@ -77,7 +77,7 @@ class S3AbortMultipartActionTest : public testing::Test {
         ptr_mock_request, oid, upload_id, 0);
     clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
         ptr_mock_request, oid, ptr_mock_s3_clovis_api);
-    clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
+    clovis_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
         ptr_mock_request, ptr_mock_s3_clovis_api);
     clovis_kvs_writer_factory = std::make_shared<MockS3ClovisKVSWriterFactory>(
         ptr_mock_request, ptr_mock_s3_clovis_api);
@@ -97,7 +97,7 @@ class S3AbortMultipartActionTest : public testing::Test {
   std::shared_ptr<MockS3PartMetadataFactory> part_meta_factory;
   std::shared_ptr<MockS3ObjectMultipartMetadataFactory> object_mp_meta_factory;
   std::shared_ptr<MockS3ClovisWriterFactory> clovis_writer_factory;
-  std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<MockS3MotrKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
   std::shared_ptr<S3AbortMultipartAction> action_under_test;
   struct m0_uint128 mp_indx_oid;

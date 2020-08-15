@@ -32,7 +32,7 @@ S3GetMultipartPartAction::S3GetMultipartPartAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
-    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory)
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory)
     : S3BucketAction(req, std::move(bucket_meta_factory)),
       multipart_part_list(req->get_query_string_value("encoding-type")),
       last_key(""),
@@ -64,10 +64,10 @@ S3GetMultipartPartAction::S3GetMultipartPartAction(
         std::make_shared<S3ObjectMultipartMetadataFactory>();
   }
 
-  if (clovis_s3_kvs_reader_factory) {
-    clovis_kvs_reader_factory = clovis_s3_kvs_reader_factory;
+  if (motr_s3_kvs_reader_factory) {
+    clovis_kvs_reader_factory = motr_s3_kvs_reader_factory;
   } else {
-    clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+    clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   if (part_meta_factory) {
@@ -222,7 +222,7 @@ void S3GetMultipartPartAction::get_key_object_successful() {
 
 void S3GetMultipartPartAction::get_key_object_failed() {
   s3_log(S3_LOG_INFO, request_id, "Failed to find part listing\n");
-  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+  if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     fetch_successful = true;  // With no entries.
     next();
   } else {
@@ -317,11 +317,11 @@ void S3GetMultipartPartAction::get_next_objects_successful() {
 
 void S3GetMultipartPartAction::get_next_objects_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+  if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Missing part listing\n");
     fetch_successful = true;  // With no entries.
   } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::failed_to_launch) {
+             S3MotrKVSReaderOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Part metadata next keyval operation failed due to pre launch "
            "failure\n");
