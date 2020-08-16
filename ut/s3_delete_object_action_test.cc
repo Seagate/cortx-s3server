@@ -100,7 +100,7 @@ class S3DeleteObjectActionTest : public testing::Test {
         mock_request, ptr_mock_s3_clovis_api);
     object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
 
-    clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
+    motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
         mock_request, oid, ptr_mock_s3_clovis_api);
     std::map<std::string, std::string> input_headers;
     input_headers["Authorization"] = "1";
@@ -109,14 +109,14 @@ class S3DeleteObjectActionTest : public testing::Test {
 
     action_under_test.reset(
         new S3DeleteObjectAction(mock_request, bucket_meta_factory,
-                                 object_meta_factory, clovis_writer_factory));
+                                 object_meta_factory, motr_writer_factory));
   }
 
   std::shared_ptr<MockS3RequestObject> mock_request;
   std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
-  std::shared_ptr<MockS3ClovisWriterFactory> clovis_writer_factory;
+  std::shared_ptr<MockS3MotrWriterFactory> motr_writer_factory;
   std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
 
   std::shared_ptr<S3DeleteObjectAction> action_under_test;

@@ -39,10 +39,10 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
-    std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory,
+    std::shared_ptr<S3MotrWriterFactory> clovis_s3_factory,
     std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
     std::shared_ptr<ClovisAPI> clovis_api,
-    std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
+    std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
                      std::move(object_meta_factory)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
@@ -85,9 +85,9 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
   }
 
   if (clovis_s3_factory) {
-    clovis_writer_factory = std::move(clovis_s3_factory);
+    motr_writer_factory = std::move(clovis_s3_factory);
   } else {
-    clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
+    motr_writer_factory = std::make_shared<S3MotrWriterFactory>();
   }
 
   if (part_meta_factory) {
@@ -102,9 +102,9 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
   }
 
   if (kv_writer_factory) {
-    clovis_kv_writer_factory = std::move(kv_writer_factory);
+    mote_kv_writer_factory = std::move(kv_writer_factory);
   } else {
-    clovis_kv_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
+    mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
 
   setup_steps();
@@ -318,7 +318,7 @@ void S3PostMultipartObjectAction::create_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   create_object_timer.start();
   if (tried_count == 0) {
-    clovis_writer = clovis_writer_factory->create_clovis_writer(request, oid);
+    clovis_writer = motr_writer_factory->create_motr_writer(request, oid);
   } else {
     clovis_writer->set_oid(oid);
   }

@@ -34,9 +34,9 @@ S3DeleteMultipleObjectsAction::S3DeleteMultipleObjectsAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_md_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_md_factory,
-    std::shared_ptr<S3ClovisWriterFactory> writer_factory,
+    std::shared_ptr<S3MotrWriterFactory> writer_factory,
     std::shared_ptr<S3MotrKVSReaderFactory> kvs_reader_factory,
-    std::shared_ptr<S3ClovisKVSWriterFactory> kvs_writer_factory)
+    std::shared_ptr<S3MotrKVSWriterFactory> kvs_writer_factory)
     : S3BucketAction(std::move(req), std::move(bucket_md_factory), false),
       delete_index_in_req(0),
       at_least_one_delete_successful(false) {
@@ -55,33 +55,33 @@ S3DeleteMultipleObjectsAction::S3DeleteMultipleObjectsAction(
   }
 
   if (writer_factory) {
-    clovis_writer_factory = std::move(writer_factory);
+    motr_writer_factory = std::move(writer_factory);
   } else {
-    clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
+    motr_writer_factory = std::make_shared<S3MotrWriterFactory>();
   }
 
   if (kvs_reader_factory) {
-    clovis_kvs_reader_factory = std::move(kvs_reader_factory);
+    motr_kvs_reader_factory = std::move(kvs_reader_factory);
   } else {
-    clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+    motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   if (kvs_writer_factory) {
-    clovis_kvs_writer_factory = std::move(kvs_writer_factory);
+    motr_kvs_writer_factory = std::move(kvs_writer_factory);
   } else {
-    clovis_kvs_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
+    motr_kvs_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
 
   std::shared_ptr<ClovisAPI> s3_clovis_api =
       std::make_shared<ConcreteClovisAPI>();
 
-  clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
-      request, s3_clovis_api);
+  clovis_kv_reader =
+      motr_kvs_reader_factory->create_clovis_kvs_reader(request, s3_clovis_api);
 
-  clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-      request, s3_clovis_api);
+  clovis_kv_writer =
+      motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
 
-  clovis_writer = clovis_writer_factory->create_clovis_writer(request);
+  clovis_writer = motr_writer_factory->create_motr_writer(request);
 
   setup_steps();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

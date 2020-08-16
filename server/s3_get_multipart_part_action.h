@@ -51,7 +51,7 @@ class S3GetMultipartPartAction : public S3BucketAction {
   size_t max_parts;
 
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
-  std::shared_ptr<S3MotrKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
 
   std::string get_part_index_name() {

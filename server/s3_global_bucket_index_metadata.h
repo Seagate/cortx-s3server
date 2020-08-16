@@ -33,7 +33,7 @@
 
 // Forward declarations
 class S3MotrKVSReaderFactory;
-class S3ClovisKVSWriterFactory;
+class S3MotrKVSWriterFactory;
 
 enum class S3GlobalBucketIndexMetadataState {
   empty,  // Initial state, no lookup done
@@ -67,8 +67,8 @@ class S3GlobalBucketIndexMetadata {
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::shared_ptr<S3MotrKVSReader> clovis_kv_reader;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
-  std::shared_ptr<S3MotrKVSReaderFactory> clovis_kvs_reader_factory;
-  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
+  std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory;
+  std::shared_ptr<S3MotrKVSWriterFactory> motr_kvs_writer_factory;
 
   // Used to report to caller
   std::function<void()> handler_on_success;
@@ -85,7 +85,7 @@ class S3GlobalBucketIndexMetadata {
       std::shared_ptr<ClovisAPI> s3_clovis_apii = nullptr,
       std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory =
           nullptr,
-      std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory =
+      std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory =
           nullptr);
 
   std::string get_account_name();

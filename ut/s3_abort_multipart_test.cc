@@ -75,11 +75,11 @@ class S3AbortMultipartActionTest : public testing::Test {
     object_mp_meta_factory->set_object_list_index_oid(mp_indx_oid);
     part_meta_factory = std::make_shared<MockS3PartMetadataFactory>(
         ptr_mock_request, oid, upload_id, 0);
-    clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
+    motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
         ptr_mock_request, oid, ptr_mock_s3_clovis_api);
-    clovis_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
+    motr_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
         ptr_mock_request, ptr_mock_s3_clovis_api);
-    clovis_kvs_writer_factory = std::make_shared<MockS3ClovisKVSWriterFactory>(
+    motr_kvs_writer_factory = std::make_shared<MockS3MotrKVSWriterFactory>(
         ptr_mock_request, ptr_mock_s3_clovis_api);
     std::map<std::string, std::string> input_headers;
     input_headers["Authorization"] = "1";
@@ -87,8 +87,8 @@ class S3AbortMultipartActionTest : public testing::Test {
         ReturnRef(input_headers));
     action_under_test.reset(new S3AbortMultipartAction(
         ptr_mock_request, ptr_mock_s3_clovis_api, bucket_meta_factory,
-        object_mp_meta_factory, part_meta_factory, clovis_writer_factory,
-        clovis_kvs_reader_factory, clovis_kvs_writer_factory));
+        object_mp_meta_factory, part_meta_factory, motr_writer_factory,
+        motr_kvs_reader_factory, motr_kvs_writer_factory));
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
@@ -96,9 +96,9 @@ class S3AbortMultipartActionTest : public testing::Test {
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3PartMetadataFactory> part_meta_factory;
   std::shared_ptr<MockS3ObjectMultipartMetadataFactory> object_mp_meta_factory;
-  std::shared_ptr<MockS3ClovisWriterFactory> clovis_writer_factory;
-  std::shared_ptr<MockS3MotrKVSReaderFactory> clovis_kvs_reader_factory;
-  std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
+  std::shared_ptr<MockS3MotrWriterFactory> motr_writer_factory;
+  std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
+  std::shared_ptr<MockS3MotrKVSWriterFactory> motr_kvs_writer_factory;
   std::shared_ptr<S3AbortMultipartAction> action_under_test;
   struct m0_uint128 mp_indx_oid;
   struct m0_uint128 object_list_indx_oid, objects_version_list_idx_oid;
@@ -291,12 +291,12 @@ TEST_F(S3AbortMultipartActionTest, Send200SuccessToS3Client) {
       true /* is_multipart */, part_list_idx_oid);
   action_under_test->probable_delete_rec.reset(prob_rec);
   action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
 
   // expectations for mark_oid_for_deletion()
   EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
   EXPECT_CALL(*prob_rec, to_json()).Times(1);
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               put_keyval(_, _, _, _, _)).Times(1);
 
   EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(1);

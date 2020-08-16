@@ -30,8 +30,8 @@ S3DeleteBucketAction::S3DeleteBucketAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
-    std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory,
-    std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory,
+    std::shared_ptr<S3MotrWriterFactory> clovis_s3_writer_factory,
+    std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory,
     std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory)
     : S3BucketAction(std::move(req), std::move(bucket_meta_factory), false),
       last_key(""),
@@ -56,21 +56,21 @@ S3DeleteBucketAction::S3DeleteBucketAction(
   }
 
   if (clovis_s3_writer_factory) {
-    clovis_writer_factory = clovis_s3_writer_factory;
+    motr_writer_factory = clovis_s3_writer_factory;
   } else {
-    clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
+    motr_writer_factory = std::make_shared<S3MotrWriterFactory>();
   }
 
   if (motr_s3_kvs_reader_factory) {
-    clovis_kvs_reader_factory = motr_s3_kvs_reader_factory;
+    motr_kvs_reader_factory = motr_s3_kvs_reader_factory;
   } else {
-    clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+    motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
-  if (clovis_s3_kvs_writer_factory) {
-    clovis_kvs_writer_factory = clovis_s3_kvs_writer_factory;
+  if (motr_s3_kvs_writer_factory) {
+    motr_kvs_writer_factory = motr_s3_kvs_writer_factory;
   } else {
-    clovis_kvs_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
+    motr_kvs_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
 
   if (s3_clovis_apis) {
@@ -118,7 +118,7 @@ void S3DeleteBucketAction::fetch_first_object_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   S3BucketMetadataState bucket_metadata_state = bucket_metadata->get_state();
   if (bucket_metadata_state == S3BucketMetadataState::present) {
-    clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
+    clovis_kv_reader = motr_kvs_reader_factory->create_clovis_kvs_reader(
         request, s3_clovis_api);
     // Try to fetch one object at least
     object_list_index_oid = bucket_metadata->get_object_list_index_oid();
@@ -256,7 +256,7 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
 void S3DeleteBucketAction::delete_multipart_objects() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (multipart_object_oids.size() != 0) {
-    clovis_writer = clovis_writer_factory->create_clovis_writer(request);
+    clovis_writer = motr_writer_factory->create_motr_writer(request);
     clovis_writer->delete_objects(
         multipart_object_oids, multipart_object_layoutids,
         std::bind(&S3DeleteBucketAction::delete_multipart_objects_successful,
@@ -333,8 +333,8 @@ void S3DeleteBucketAction::delete_multipart_objects_failed() {
 void S3DeleteBucketAction::remove_part_indexes() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (part_oids.size() != 0) {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+    clovis_kv_writer =
+        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
     clovis_kv_writer->delete_indexes(
         part_oids,
         std::bind(&S3DeleteBucketAction::remove_part_indexes_successful, this),
@@ -382,7 +382,7 @@ void S3DeleteBucketAction::remove_multipart_index() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (multipart_present) {
     if (clovis_kv_writer == nullptr) {
-      clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
+      clovis_kv_writer = motr_kvs_writer_factory->create_motr_kvs_writer(
           request, s3_clovis_api);
     }
     clovis_kv_writer->delete_index(
@@ -423,7 +423,7 @@ void S3DeleteBucketAction::remove_object_list_index() {
   } else {
     // Can happen when only index is present, no objects in it
     if (clovis_kv_writer == nullptr) {
-      clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
+      clovis_kv_writer = motr_kvs_writer_factory->create_motr_kvs_writer(
           request, s3_clovis_api);
     }
     clovis_kv_writer->delete_index(
@@ -487,7 +487,7 @@ void S3DeleteBucketAction::remove_objects_version_list_index() {
   } else {
     // Can happen when only index is present, no objects in it
     if (clovis_kv_writer == nullptr) {
-      clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
+      clovis_kv_writer = motr_kvs_writer_factory->create_motr_kvs_writer(
           request, s3_clovis_api);
     }
     clovis_kv_writer->delete_index(

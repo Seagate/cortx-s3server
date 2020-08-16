@@ -47,8 +47,8 @@ class S3DeleteObjectAction : public S3ObjectAction {
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
 
-  std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
-  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
+  std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
+  std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
 
   // Probable delete record for object OID to be deleted
   std::string oid_str;  // Key for probable delete rec
@@ -60,8 +60,8 @@ class S3DeleteObjectAction : public S3ObjectAction {
       std::shared_ptr<S3RequestObject> req,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
-      std::shared_ptr<S3ClovisWriterFactory> writer_factory = nullptr,
-      std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr,
+      std::shared_ptr<S3MotrWriterFactory> writer_factory = nullptr,
+      std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr,
       std::shared_ptr<ClovisAPI> clovis_api = nullptr);
 
   void setup_steps();

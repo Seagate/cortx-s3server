@@ -31,7 +31,7 @@ extern struct m0_uint128 bucket_metadata_list_index_oid;
 
 S3GetServiceAction::S3GetServiceAction(
     std::shared_ptr<S3RequestObject> req,
-    std::shared_ptr<S3MotrKVSReaderFactory> clovis_kvs_reader_factory,
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
     : S3Action(req), last_key(""), key_prefix(""), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
@@ -44,10 +44,10 @@ S3GetServiceAction::S3GetServiceAction(
   } else {
     bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
   }
-  if (clovis_kvs_reader_factory) {
-    s3_clovis_kvs_reader_factory = clovis_kvs_reader_factory;
+  if (motr_kvs_reader_factory) {
+    s3_motr_kvs_reader_factory = motr_kvs_reader_factory;
   } else {
-    s3_clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+    s3_motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   setup_steps();
@@ -91,7 +91,7 @@ void S3GetServiceAction::get_next_buckets() {
   s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket list from KV store\n");
   size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
 
-  clovis_kv_reader = s3_clovis_kvs_reader_factory->create_clovis_kvs_reader(
+  clovis_kv_reader = s3_motr_kvs_reader_factory->create_clovis_kvs_reader(
       request, s3_clovis_api);
   clovis_kv_reader->next_keyval(
       bucket_metadata_list_index_oid, last_key, count,

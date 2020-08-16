@@ -32,7 +32,7 @@
 #include "s3_object_list_response.h"
 
 class S3GetBucketAction : public S3BucketAction {
-  std::shared_ptr<S3MotrKVSReaderFactory> s3_clovis_kvs_reader_factory;
+  std::shared_ptr<S3MotrKVSReaderFactory> s3_motr_kvs_reader_factory;
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3MotrKVSReader> clovis_kv_reader;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
@@ -60,8 +60,7 @@ class S3GetBucketAction : public S3BucketAction {
   S3GetBucketAction(
       std::shared_ptr<S3RequestObject> req,
       std::shared_ptr<ClovisAPI> clovis_api = nullptr,
-      std::shared_ptr<S3MotrKVSReaderFactory> clovis_kvs_reader_factory =
-          nullptr,
+      std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory = nullptr,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr);
 

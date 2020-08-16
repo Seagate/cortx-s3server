@@ -59,16 +59,16 @@ class MotrDeleteIndexActionTest : public testing::Test {
         ReturnRef(input_headers));
     ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
     // Owned and deleted by shared_ptr in MotrDeleteIndexAction
-    clovis_kvs_writer_factory = std::make_shared<MockS3ClovisKVSWriterFactory>(
+    motr_kvs_writer_factory = std::make_shared<MockS3MotrKVSWriterFactory>(
         ptr_mock_request, ptr_mock_s3_clovis_api);
 
     action_under_test.reset(
-        new MotrDeleteIndexAction(ptr_mock_request, clovis_kvs_writer_factory));
+        new MotrDeleteIndexAction(ptr_mock_request, motr_kvs_writer_factory));
   }
 
   std::shared_ptr<MockMotrRequestObject> ptr_mock_request;
   std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
-  std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
+  std::shared_ptr<MockS3MotrKVSWriterFactory> motr_kvs_writer_factory;
   std::shared_ptr<MotrDeleteIndexAction> action_under_test;
 
   struct m0_uint128 index_id;
@@ -106,7 +106,7 @@ TEST_F(MotrDeleteIndexActionTest, InvalidIndexId) {
   EXPECT_CALL(*ptr_mock_request, get_index_id_lo()).Times(1).WillOnce(
       ReturnRef(zero_index_id_str_lo));
   // Delete index should not be called
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               delete_index(_, _, _)).Times(0);
   // Report error Bad request
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
@@ -123,7 +123,7 @@ TEST_F(MotrDeleteIndexActionTest, EmptyIndexId) {
   EXPECT_CALL(*ptr_mock_request, get_index_id_lo()).Times(1).WillOnce(
       ReturnRef(empty_index));
   // Delete index should not be called
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               delete_index(_, _, _)).Times(0);
   // Report error Bad request
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
@@ -136,7 +136,7 @@ TEST_F(MotrDeleteIndexActionTest, EmptyIndexId) {
 TEST_F(MotrDeleteIndexActionTest, DeleteIndex) {
   action_under_test->index_id = index_id;
 
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               delete_index(_, _, _)).Times(1);
   action_under_test->delete_index();
   EXPECT_TRUE(action_under_test->clovis_kv_writer != nullptr);
@@ -153,8 +153,8 @@ TEST_F(MotrDeleteIndexActionTest, DeleteIndexSuccess) {
 
 TEST_F(MotrDeleteIndexActionTest, DeleteIndexFailedIndexMissing) {
   action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .WillRepeatedly(Return(S3ClovisKVSWriterOpState::missing));
 
   EXPECT_CALL(*ptr_mock_request, send_response(204, _)).Times(AtLeast(1));
@@ -164,8 +164,8 @@ TEST_F(MotrDeleteIndexActionTest, DeleteIndexFailedIndexMissing) {
 
 TEST_F(MotrDeleteIndexActionTest, DeleteIndexFailed) {
   action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
 
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
@@ -178,8 +178,8 @@ TEST_F(MotrDeleteIndexActionTest, DeleteIndexFailed) {
 
 TEST_F(MotrDeleteIndexActionTest, DeleteIndexFailedToLaunch) {
   action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed_to_launch));
 
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())

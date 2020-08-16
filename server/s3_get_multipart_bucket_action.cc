@@ -29,7 +29,7 @@
 
 S3GetMultipartBucketAction::S3GetMultipartBucketAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
-    std::shared_ptr<S3MotrKVSReaderFactory> clovis_kvs_reader_factory,
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
     : S3BucketAction(req, std::move(bucket_meta_factory)),
@@ -48,10 +48,10 @@ S3GetMultipartBucketAction::S3GetMultipartBucketAction(
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
-  if (clovis_kvs_reader_factory) {
-    s3_clovis_kvs_reader_factory = clovis_kvs_reader_factory;
+  if (motr_kvs_reader_factory) {
+    s3_motr_kvs_reader_factory = motr_kvs_reader_factory;
   } else {
-    s3_clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+    s3_motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
   if (object_meta_factory) {
     object_metadata_factory = object_meta_factory;
@@ -143,7 +143,7 @@ void S3GetMultipartBucketAction::get_next_objects() {
     send_response_to_s3_client();
   } else {
     size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
-    clovis_kv_reader = s3_clovis_kvs_reader_factory->create_clovis_kvs_reader(
+    clovis_kv_reader = s3_motr_kvs_reader_factory->create_clovis_kvs_reader(
         request, s3_clovis_api);
     clovis_kv_reader->next_keyval(
         bucket_metadata->get_multipart_index_oid(), last_key, count,

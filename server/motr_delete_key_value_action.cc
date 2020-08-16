@@ -25,7 +25,7 @@
 MotrDeleteKeyValueAction::MotrDeleteKeyValueAction(
     std::shared_ptr<MotrRequestObject> req,
     std::shared_ptr<ClovisAPI> clovis_api,
-    std::shared_ptr<S3ClovisKVSWriterFactory> clovis_motr_kvs_writer_factory,
+    std::shared_ptr<S3MotrKVSWriterFactory> clovis_motr_kvs_writer_factory,
     std::shared_ptr<S3MotrKVSReaderFactory> clovis_motr_kvs_reader_factory)
     : MotrAction(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
@@ -36,15 +36,15 @@ MotrDeleteKeyValueAction::MotrDeleteKeyValueAction(
   }
 
   if (clovis_motr_kvs_reader_factory) {
-    clovis_kvs_reader_factory = clovis_motr_kvs_reader_factory;
+    motr_kvs_reader_factory = clovis_motr_kvs_reader_factory;
   } else {
-    clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+    motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   if (clovis_motr_kvs_writer_factory) {
-    clovis_kvs_writer_factory = clovis_motr_kvs_writer_factory;
+    motr_kvs_writer_factory = clovis_motr_kvs_writer_factory;
   } else {
-    clovis_kvs_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
+    motr_kvs_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
 
   setup_steps();
@@ -67,7 +67,7 @@ void MotrDeleteKeyValueAction::delete_key_value() {
     send_response_to_s3_client();
   } else {
     if (!clovis_kv_writer) {
-      clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
+      clovis_kv_writer = motr_kvs_writer_factory->create_motr_kvs_writer(
           request, motr_clovis_api);
     }
     clovis_kv_writer->delete_keyval(

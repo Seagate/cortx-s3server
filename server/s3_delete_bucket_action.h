@@ -61,9 +61,9 @@ class S3DeleteBucketAction : public S3BucketAction {
 
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
-  std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
-  std::shared_ptr<S3MotrKVSReaderFactory> clovis_kvs_reader_factory;
-  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
+  std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
+  std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory;
+  std::shared_ptr<S3MotrKVSWriterFactory> motr_kvs_writer_factory;
 
  public:
   S3DeleteBucketAction(
@@ -74,8 +74,8 @@ class S3DeleteBucketAction : public S3BucketAction {
       std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
           nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
-      std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory = nullptr,
-      std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory =
+      std::shared_ptr<S3MotrWriterFactory> clovis_s3_writer_factory = nullptr,
+      std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory =
           nullptr,
       std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory =
           nullptr);

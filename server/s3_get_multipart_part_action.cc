@@ -65,9 +65,9 @@ S3GetMultipartPartAction::S3GetMultipartPartAction(
   }
 
   if (motr_s3_kvs_reader_factory) {
-    clovis_kvs_reader_factory = motr_s3_kvs_reader_factory;
+    motr_kvs_reader_factory = motr_s3_kvs_reader_factory;
   } else {
-    clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+    motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   if (part_meta_factory) {
@@ -157,7 +157,7 @@ void S3GetMultipartPartAction::get_key_object() {
       object_multipart_metadata->get_state();
   if (multipart_object_state == S3ObjectMetadataState::present) {
     if (object_multipart_metadata->get_upload_id() == upload_id) {
-      clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
+      clovis_kv_reader = motr_kvs_reader_factory->create_clovis_kvs_reader(
           request, s3_clovis_api);
       clovis_kv_reader->get_keyval(
           object_multipart_metadata->get_part_index_oid(), last_key,
@@ -244,7 +244,7 @@ void S3GetMultipartPartAction::get_next_objects() {
   if (multipart_object_state == S3ObjectMetadataState::present) {
     size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
 
-    clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
+    clovis_kv_reader = motr_kvs_reader_factory->create_clovis_kvs_reader(
         request, s3_clovis_api);
     clovis_kv_reader->next_keyval(
         object_multipart_metadata->get_part_index_oid(), last_key, count,

@@ -1020,17 +1020,16 @@ int main(int argc, char **argv) {
     s3server_instance_id[s3server_fid] =
         S3M0Uint128Helper::to_string(global_instance_id);
 
-    std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
+    std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
     std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
     std::shared_ptr<ClovisAPI> s3_clovis_api;
 
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
-    clovis_kv_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
+    mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
 
     if (!clovis_kv_writer) {
-      clovis_kv_writer =
-          clovis_kv_writer_factory->create_sync_clovis_kvs_writer(
-              "", s3_clovis_api);
+      clovis_kv_writer = mote_kv_writer_factory->create_sync_clovis_kvs_writer(
+          "", s3_clovis_api);
     }
 
     rc = clovis_kv_writer->put_keyval_sync(global_instance_list_index,

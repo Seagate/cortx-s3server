@@ -37,7 +37,7 @@ class S3AccountDeleteMetadataAction : public S3Action {
 
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::shared_ptr<S3MotrKVSReader> clovis_kv_reader;
-  std::shared_ptr<S3MotrKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory;
 
   void validate_request();
 

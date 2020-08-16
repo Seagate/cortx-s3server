@@ -35,9 +35,9 @@ S3AbortMultipartAction::S3AbortMultipartAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
-    std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory,
+    std::shared_ptr<S3MotrWriterFactory> clovis_s3_writer_factory,
     std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
-    std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
+    std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory)
     : S3BucketAction(std::move(req), std::move(bucket_meta_factory), false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
@@ -64,15 +64,15 @@ S3AbortMultipartAction::S3AbortMultipartAction(
   }
 
   if (clovis_s3_writer_factory) {
-    clovis_writer_factory = std::move(clovis_s3_writer_factory);
+    motr_writer_factory = std::move(clovis_s3_writer_factory);
   } else {
-    clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
+    motr_writer_factory = std::make_shared<S3MotrWriterFactory>();
   }
 
   if (motr_s3_kvs_reader_factory) {
-    clovis_kvs_reader_factory = std::move(motr_s3_kvs_reader_factory);
+    motr_kvs_reader_factory = std::move(motr_s3_kvs_reader_factory);
   } else {
-    clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+    motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   if (part_meta_factory) {
@@ -82,9 +82,9 @@ S3AbortMultipartAction::S3AbortMultipartAction(
   }
 
   if (kv_writer_factory) {
-    clovis_kv_writer_factory = std::move(kv_writer_factory);
+    mote_kv_writer_factory = std::move(kv_writer_factory);
   } else {
-    clovis_kv_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
+    mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
 
   if (s3_clovis_apis) {
@@ -202,8 +202,8 @@ void S3AbortMultipartAction::add_object_oid_to_probable_dead_oid_list() {
       object_multipart_metadata->get_part_index_oid()));
 
   if (!clovis_kv_writer) {
-    clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+    clovis_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
   }
 
   clovis_kv_writer->put_keyval(
@@ -384,8 +384,8 @@ void S3AbortMultipartAction::mark_oid_for_deletion() {
   probable_delete_rec->set_force_delete(true);
 
   if (!clovis_kv_writer) {
-    clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+    clovis_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
   }
   clovis_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
                                oid_str, probable_delete_rec->to_json(),
@@ -398,7 +398,7 @@ void S3AbortMultipartAction::delete_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // process to delete object
   if (!clovis_writer) {
-    clovis_writer = clovis_writer_factory->create_clovis_writer(
+    clovis_writer = motr_writer_factory->create_motr_writer(
         request, object_multipart_metadata->get_oid());
   }
   clovis_writer->delete_object(
@@ -416,7 +416,7 @@ void S3AbortMultipartAction::remove_probable_record() {
       S3AbortMultipartActionState::partsListIndexDeleted) {
     // Delete probable record only if object and part list is deleted.
     if (!clovis_kv_writer) {
-      clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
+      clovis_kv_writer = mote_kv_writer_factory->create_motr_kvs_writer(
           request, s3_clovis_api);
     }
     clovis_kv_writer->delete_keyval(

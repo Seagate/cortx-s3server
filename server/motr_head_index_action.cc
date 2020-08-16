@@ -31,9 +31,9 @@ MotrHeadIndexAction::MotrHeadIndexAction(
   motr_clovis_api = std::make_shared<ConcreteClovisAPI>();
 
   if (clovis_motr_kvs_reader_factory) {
-    clovis_kvs_reader_factory = std::move(clovis_motr_kvs_reader_factory);
+    motr_kvs_reader_factory = std::move(clovis_motr_kvs_reader_factory);
   } else {
-    clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+    motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   setup_steps();
@@ -60,7 +60,7 @@ void MotrHeadIndexAction::validate_request() {
 }
 
 void MotrHeadIndexAction::check_index_exist() {
-  clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
+  clovis_kv_reader = motr_kvs_reader_factory->create_clovis_kvs_reader(
       request, motr_clovis_api);
   clovis_kv_reader->lookup_index(
       index_id,

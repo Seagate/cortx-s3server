@@ -140,35 +140,34 @@ class MockS3ObjectMultipartMetadataFactory
   std::shared_ptr<MockS3ObjectMultipartMetadata> mock_object_mp_metadata;
 };
 
-class MockS3ClovisWriterFactory : public S3ClovisWriterFactory {
+class MockS3MotrWriterFactory : public S3MotrWriterFactory {
  public:
-  MockS3ClovisWriterFactory(
-      std::shared_ptr<RequestObject> req, m0_uint128 oid,
-      std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api = nullptr)
-      : S3ClovisWriterFactory() {
+  MockS3MotrWriterFactory(std::shared_ptr<RequestObject> req, m0_uint128 oid,
+                          std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api =
+                              nullptr)
+      : S3MotrWriterFactory() {
     mock_clovis_writer =
         std::make_shared<MockS3ClovisWriter>(req, oid, ptr_mock_s3_clovis_api);
   }
 
-  MockS3ClovisWriterFactory(
-      std::shared_ptr<RequestObject> req,
-      std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api)
-      : S3ClovisWriterFactory() {
+  MockS3MotrWriterFactory(std::shared_ptr<RequestObject> req,
+                          std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api)
+      : S3MotrWriterFactory() {
     mock_clovis_writer =
         std::make_shared<MockS3ClovisWriter>(req, ptr_mock_s3_clovis_api);
   }
 
-  std::shared_ptr<S3ClovisWriter> create_clovis_writer(
+  std::shared_ptr<S3ClovisWriter> create_motr_writer(
       std::shared_ptr<RequestObject> req, struct m0_uint128 oid) override {
     return mock_clovis_writer;
   }
 
-  std::shared_ptr<S3ClovisWriter> create_clovis_writer(
+  std::shared_ptr<S3ClovisWriter> create_motr_writer(
       std::shared_ptr<RequestObject> req) override {
     return mock_clovis_writer;
   }
 
-  std::shared_ptr<S3ClovisWriter> create_clovis_writer(
+  std::shared_ptr<S3ClovisWriter> create_motr_writer(
       std::shared_ptr<RequestObject> req, struct m0_uint128 oid,
       uint64_t offset) override {
     return mock_clovis_writer;
@@ -215,17 +214,17 @@ class MockS3MotrKVSReaderFactory : public S3MotrKVSReaderFactory {
   std::shared_ptr<MockS3MotrKVSReader> mock_clovis_kvs_reader;
 };
 
-class MockS3ClovisKVSWriterFactory : public S3ClovisKVSWriterFactory {
+class MockS3MotrKVSWriterFactory : public S3MotrKVSWriterFactory {
  public:
-  MockS3ClovisKVSWriterFactory(std::shared_ptr<RequestObject> req,
-                               std::shared_ptr<MockS3Clovis> s3_clovis_api =
-                                   nullptr)
-      : S3ClovisKVSWriterFactory() {
+  MockS3MotrKVSWriterFactory(std::shared_ptr<RequestObject> req,
+                             std::shared_ptr<MockS3Clovis> s3_clovis_api =
+                                 nullptr)
+      : S3MotrKVSWriterFactory() {
     mock_clovis_kvs_writer =
         std::make_shared<MockS3ClovisKVSWriter>(req, s3_clovis_api);
   }
 
-  std::shared_ptr<S3ClovisKVSWriter> create_clovis_kvs_writer(
+  std::shared_ptr<S3ClovisKVSWriter> create_motr_kvs_writer(
       std::shared_ptr<RequestObject> req,
       std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr) override {
     return mock_clovis_kvs_writer;

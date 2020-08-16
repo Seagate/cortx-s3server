@@ -48,7 +48,7 @@ enum class S3ObjectMetadataState {
 
 // Forward declarations.
 class S3MotrKVSReaderFactory;
-class S3ClovisKVSWriterFactory;
+class S3MotrKVSWriterFactory;
 class S3BucketMetadataFactory;
 
 class S3ObjectMetadata {
@@ -114,7 +114,7 @@ class S3ObjectMetadata {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
 
   std::shared_ptr<S3MotrKVSReaderFactory> clovis_kv_reader_factory;
-  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
+  std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
 
   // Used to report to caller.
@@ -152,7 +152,7 @@ class S3ObjectMetadata {
                    bool ismultipart = false, std::string uploadid = "",
                    std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory =
                        nullptr,
-                   std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory =
+                   std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory =
                        nullptr,
                    std::shared_ptr<ClovisAPI> clovis_api = nullptr);
 

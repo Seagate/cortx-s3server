@@ -30,17 +30,17 @@
 
 MotrKVSListingAction::MotrKVSListingAction(
     std::shared_ptr<MotrRequestObject> req,
-    std::shared_ptr<S3MotrKVSReaderFactory> clovis_kvs_reader_factory)
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory)
     : MotrAction(req), last_key(""), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   motr_clovis_api = std::make_shared<ConcreteClovisAPI>();
 
   s3_log(S3_LOG_INFO, request_id, "Motr API: kvs list Service.\n");
 
-  if (clovis_kvs_reader_factory) {
-    motr_clovis_kvs_reader_factory = clovis_kvs_reader_factory;
+  if (motr_kvs_reader_factory) {
+    motr_motr_kvs_reader_factory = motr_kvs_reader_factory;
   } else {
-    motr_clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+    motr_motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   setup_steps();
@@ -107,7 +107,7 @@ void MotrKVSListingAction::get_next_key_value() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
 
-  clovis_kv_reader = motr_clovis_kvs_reader_factory->create_clovis_kvs_reader(
+  clovis_kv_reader = motr_motr_kvs_reader_factory->create_clovis_kvs_reader(
       request, motr_clovis_api);
 
   if (max_keys == 0) {

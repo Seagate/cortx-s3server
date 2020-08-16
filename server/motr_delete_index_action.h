@@ -32,14 +32,14 @@
 class MotrDeleteIndexAction : public MotrAction {
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
   std::shared_ptr<ClovisAPI> motr_clovis_api;
-  std::shared_ptr<S3ClovisKVSWriterFactory> motr_clovis_kvs_writer_factory;
+  std::shared_ptr<S3MotrKVSWriterFactory> motr_motr_kvs_writer_factory;
 
   m0_uint128 index_id;
 
  public:
   MotrDeleteIndexAction(
       std::shared_ptr<MotrRequestObject> req,
-      std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kvs_reader_factory =
+      std::shared_ptr<S3MotrKVSWriterFactory> motr_kvs_reader_factory =
           nullptr);
   void setup_steps();
 

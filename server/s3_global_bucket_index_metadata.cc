@@ -31,7 +31,7 @@ extern struct m0_uint128 replica_global_bucket_list_index_oid;
 S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
     std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
-    std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory)
+    std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory)
     : request(req), json_parsing_error(false) {
   request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
@@ -47,14 +47,14 @@ S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
   if (motr_s3_kvs_reader_factory) {
-    clovis_kvs_reader_factory = motr_s3_kvs_reader_factory;
+    motr_kvs_reader_factory = motr_s3_kvs_reader_factory;
   } else {
-    clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+    motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
-  if (clovis_s3_kvs_writer_factory) {
-    clovis_kvs_writer_factory = clovis_s3_kvs_writer_factory;
+  if (motr_s3_kvs_writer_factory) {
+    motr_kvs_writer_factory = motr_s3_kvs_writer_factory;
   } else {
-    clovis_kvs_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
+    motr_kvs_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
 }
 
@@ -73,8 +73,8 @@ void S3GlobalBucketIndexMetadata::load(std::function<void(void)> on_success,
   // Mark missing as we initiate fetch, in case it fails to load due to missing.
   state = S3GlobalBucketIndexMetadataState::missing;
 
-  clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
-      request, s3_clovis_api);
+  clovis_kv_reader =
+      motr_kvs_reader_factory->create_clovis_kvs_reader(request, s3_clovis_api);
   clovis_kv_reader->get_keyval(
       global_bucket_list_index_oid, bucket_name,
       std::bind(&S3GlobalBucketIndexMetadata::load_successful, this),
@@ -133,8 +133,8 @@ void S3GlobalBucketIndexMetadata::save(std::function<void(void)> on_success,
 
   // Mark missing as we initiate write, in case it fails to write.
   state = S3GlobalBucketIndexMetadataState::missing;
-  clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-      request, s3_clovis_api);
+  clovis_kv_writer =
+      motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
   clovis_kv_writer->put_keyval(
       global_bucket_list_index_oid, bucket_name, this->to_json(),
       std::bind(&S3GlobalBucketIndexMetadata::save_successful, this),
@@ -150,8 +150,8 @@ void S3GlobalBucketIndexMetadata::save_successful() {
 
   // attempt to save the KV in replica global bucket list index
   if (!clovis_kv_writer) {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+    clovis_kv_writer =
+        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
   }
   clovis_kv_writer->put_keyval(
       replica_global_bucket_list_index_oid, bucket_name, this->to_json(),
@@ -198,8 +198,8 @@ void S3GlobalBucketIndexMetadata::remove(std::function<void(void)> on_success,
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
-  clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-      request, s3_clovis_api);
+  clovis_kv_writer =
+      motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
   clovis_kv_writer->delete_keyval(
       global_bucket_list_index_oid, bucket_name,
       std::bind(&S3GlobalBucketIndexMetadata::remove_successful, this),
@@ -215,8 +215,8 @@ void S3GlobalBucketIndexMetadata::remove_successful() {
 
   // attempt to remove KV from the replica index as well
   if (!clovis_kv_writer) {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+    clovis_kv_writer =
+        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
   }
   clovis_kv_writer->delete_keyval(
       replica_global_bucket_list_index_oid, bucket_name,

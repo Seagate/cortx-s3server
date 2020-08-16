@@ -48,7 +48,7 @@ enum class S3PartMetadataState {
 
 // Forward declarations.
 class S3MotrKVSReaderFactory;
-class S3ClovisKVSWriterFactory;
+class S3MotrKVSWriterFactory;
 
 class S3PartMetadata {
   // Holds system-defined metadata (creation date etc).
@@ -90,7 +90,7 @@ class S3PartMetadata {
   bool json_parsing_error;
 
   std::shared_ptr<S3MotrKVSReaderFactory> clovis_kv_reader_factory;
-  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
+  std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
 
  private:
   // Any validations we want to do on metadata.
@@ -105,14 +105,14 @@ class S3PartMetadata {
                  int part_num,
                  std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory =
                      nullptr,
-                 std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory =
+                 std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory =
                      nullptr);
 
   S3PartMetadata(std::shared_ptr<S3RequestObject> req, struct m0_uint128 oid,
                  std::string uploadid, int part_num,
                  std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory =
                      nullptr,
-                 std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory =
+                 std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory =
                      nullptr);
 
   std::string get_part_index_name() {

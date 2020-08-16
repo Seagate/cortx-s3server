@@ -35,9 +35,9 @@ MotrGetKeyValueAction::MotrGetKeyValueAction(
   }
 
   if (clovis_motr_kvs_reader_factory) {
-    clovis_kvs_reader_factory = clovis_motr_kvs_reader_factory;
+    motr_kvs_reader_factory = clovis_motr_kvs_reader_factory;
   } else {
-    clovis_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+    motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   setup_steps();
@@ -60,7 +60,7 @@ void MotrGetKeyValueAction::fetch_key_value() {
     set_s3_error("BadRequest");
     send_response_to_s3_client();
   } else {
-    clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
+    clovis_kv_reader = motr_kvs_reader_factory->create_clovis_kvs_reader(
         request, motr_clovis_api);
     clovis_kv_reader->get_keyval(
         index_id, request->get_key_name(),

@@ -48,11 +48,11 @@ enum class S3PostCompleteActionState {
 
 class S3PostCompleteAction : public S3ObjectAction {
   S3PostCompleteActionState s3_post_complete_action_state;
-  std::shared_ptr<S3MotrKVSReaderFactory> s3_clovis_kvs_reader_factory;
+  std::shared_ptr<S3MotrKVSReaderFactory> s3_motr_kvs_reader_factory;
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
-  std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
-  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
+  std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
+  std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
   std::shared_ptr<S3ObjectMetadata> multipart_metadata;
   std::shared_ptr<S3PartMetadata> part_metadata;
   std::shared_ptr<S3MotrKVSReader> clovis_kv_reader;
@@ -94,15 +94,14 @@ class S3PostCompleteAction : public S3ObjectAction {
   S3PostCompleteAction(
       std::shared_ptr<S3RequestObject> req,
       std::shared_ptr<ClovisAPI> clovis_api = nullptr,
-      std::shared_ptr<S3MotrKVSReaderFactory> clovis_kvs_reader_factory =
-          nullptr,
+      std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory = nullptr,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
           nullptr,
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
-      std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory = nullptr,
-      std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr);
+      std::shared_ptr<S3MotrWriterFactory> clovis_s3_writer_factory = nullptr,
+      std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr);
 
   void setup_steps();
 

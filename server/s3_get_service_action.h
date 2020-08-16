@@ -38,7 +38,7 @@ class S3GetServiceAction : public S3Action {
   S3ServiceListResponse bucket_list;
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   bool fetch_successful;
-  std::shared_ptr<S3MotrKVSReaderFactory> s3_clovis_kvs_reader_factory;
+  std::shared_ptr<S3MotrKVSReaderFactory> s3_motr_kvs_reader_factory;
 
   std::string get_search_bucket_prefix() {
     return request->get_account_id() + "/";
@@ -47,8 +47,7 @@ class S3GetServiceAction : public S3Action {
  public:
   S3GetServiceAction(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<S3MotrKVSReaderFactory> clovis_kvs_reader_factory =
-          nullptr,
+      std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory = nullptr,
       std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory =
           nullptr);
   void setup_steps();

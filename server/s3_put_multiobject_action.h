@@ -67,7 +67,7 @@ class S3PutMultiObjectAction : public S3ObjectAction {
 
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
-  std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
+  std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
   std::shared_ptr<S3AuthClientFactory> auth_factory;
 
   // Used only for UT
@@ -79,7 +79,7 @@ class S3PutMultiObjectAction : public S3ObjectAction {
       std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
           nullptr,
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
-      std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory = nullptr,
+      std::shared_ptr<S3MotrWriterFactory> clovis_s3_factory = nullptr,
       std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr);
 
   void setup_steps();
