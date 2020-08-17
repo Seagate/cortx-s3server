@@ -34,7 +34,7 @@ DISABLE_MOTR=""
 
 usage() { echo "Usage: $0 [-S <S3 version>] [-i] (-G <git short revision> | -P <path to sources>)" \
                "(specify [-l] to enable debug level logging)" \
-               "(specify [-a] build s3 rpm autonomously without motr rpm dependency)" 1>&2; exit 1; }
+               "(specify [-a] to build s3 rpm autonomously without motr rpm dependency)" 1>&2; exit 1; }
 
 while getopts ":G:S:P:i:l:a" x; do
     case "${x}" in
