@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __S3_UT_MOCK_S3_CLOVIS_KVS_READER_H__
-#define __S3_UT_MOCK_S3_CLOVIS_KVS_READER_H__
+#ifndef __S3_UT_MOCK_S3_MOTR_KVS_READER_H__
+#define __S3_UT_MOCK_S3_MOTR_KVS_READER_H__
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -34,7 +34,7 @@ using ::testing::Return;
 class MockS3MotrKVSReader : public S3MotrKVSReader {
  public:
   MockS3MotrKVSReader(std::shared_ptr<RequestObject> req,
-                      std::shared_ptr<ClovisAPI> s3clovis_api)
+                      std::shared_ptr<MotrAPI> s3clovis_api)
       : S3MotrKVSReader(req, s3clovis_api) {}
   MOCK_METHOD0(get_state, S3MotrKVSReaderOpState());
   MOCK_METHOD0(get_value, std::string());

@@ -40,9 +40,9 @@
 
 class S3DeleteMultipleObjectsAction : public S3BucketAction {
   std::vector<std::shared_ptr<S3ObjectMetadata>> objects_metadata;
-  std::shared_ptr<S3ClovisWriter> clovis_writer;
-  std::shared_ptr<S3MotrKVSReader> clovis_kv_reader;
-  std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
+  std::shared_ptr<S3MotrWiter> clovis_writer;
+  std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
+  std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
 
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;

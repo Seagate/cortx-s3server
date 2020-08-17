@@ -74,7 +74,7 @@ class S3DeleteObjectActionTest : public testing::Test {
     call_count_one = 0;
 
     layout_id =
-        S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+        S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
 
     async_buffer_factory =
         std::make_shared<MockS3AsyncBufferOptContainerFactory>(
@@ -87,21 +87,21 @@ class S3DeleteObjectActionTest : public testing::Test {
     EXPECT_CALL(*mock_request, get_object_name())
         .WillRepeatedly(ReturnRef(object_name));
 
-    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
+    ptr_mock_s3_motr_api = std::make_shared<MockS3Clovis>();
 
-    EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+    EXPECT_CALL(*ptr_mock_s3_motr_api, m0_h_ufid_next(_))
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
     // Owned and deleted by shared_ptr in S3DeleteObjectAction
     bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
-        mock_request, ptr_mock_s3_clovis_api);
+        mock_request, ptr_mock_s3_motr_api);
 
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
-        mock_request, ptr_mock_s3_clovis_api);
+        mock_request, ptr_mock_s3_motr_api);
     object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
 
     motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
-        mock_request, oid, ptr_mock_s3_clovis_api);
+        mock_request, oid, ptr_mock_s3_motr_api);
     std::map<std::string, std::string> input_headers;
     input_headers["Authorization"] = "1";
     EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
@@ -113,7 +113,7 @@ class S3DeleteObjectActionTest : public testing::Test {
   }
 
   std::shared_ptr<MockS3RequestObject> mock_request;
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_motr_api;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3MotrWriterFactory> motr_writer_factory;

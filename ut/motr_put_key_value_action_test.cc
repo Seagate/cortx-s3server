@@ -49,14 +49,13 @@ class MotrPutKeyValueActionTest : public testing::Test {
     EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
         ReturnRef(input_headers));
 
-    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
+    ptr_mock_s3_motr_api = std::make_shared<MockS3Clovis>();
 
     mock_motr_kvs_writer_factory = std::make_shared<MockS3MotrKVSWriterFactory>(
-        ptr_mock_request, ptr_mock_s3_clovis_api);
+        ptr_mock_request, ptr_mock_s3_motr_api);
 
-    action_under_test.reset(
-        new MotrPutKeyValueAction(ptr_mock_request, ptr_mock_s3_clovis_api,
-                                  mock_motr_kvs_writer_factory));
+    action_under_test.reset(new MotrPutKeyValueAction(
+        ptr_mock_request, ptr_mock_s3_motr_api, mock_motr_kvs_writer_factory));
   }
 
   int call_count;
@@ -64,7 +63,7 @@ class MotrPutKeyValueActionTest : public testing::Test {
   std::string index_id_str_lo;
   std::string index_id_str_hi;
   std::shared_ptr<MockMotrRequestObject> ptr_mock_request;
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_motr_api;
   std::shared_ptr<MockS3MotrKVSWriterFactory> mock_motr_kvs_writer_factory;
   std::shared_ptr<MotrPutKeyValueAction> action_under_test;
 
@@ -154,7 +153,7 @@ TEST_F(MotrPutKeyValueActionTest,
 }
 
 TEST_F(MotrPutKeyValueActionTest, PutKeyValue) {
-  action_under_test->clovis_kv_writer =
+  action_under_test->motr_kv_writer =
       mock_motr_kvs_writer_factory->mock_clovis_kvs_writer;
 
   std::string key = "my-buket";
@@ -178,13 +177,13 @@ TEST_F(MotrPutKeyValueActionTest, PutKeyValueSuccessful) {
 }
 
 TEST_F(MotrPutKeyValueActionTest, PutKeyValueFailed) {
-  action_under_test->clovis_kv_writer =
+  action_under_test->motr_kv_writer =
       mock_motr_kvs_writer_factory->mock_clovis_kvs_writer;
 
   EXPECT_CALL(*(mock_motr_kvs_writer_factory->mock_clovis_kvs_writer),
               get_state())
       .Times(1)
-      .WillOnce(Return(S3ClovisKVSWriterOpState::failed_to_launch));
+      .WillOnce(Return(S3MotrKVSWriterOpState::failed_to_launch));
 
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
       .WillOnce(Return("/indexes/123-456"));

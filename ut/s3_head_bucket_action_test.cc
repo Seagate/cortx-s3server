@@ -63,7 +63,7 @@ class S3HeadBucketActionTest : public testing::Test {
   std::shared_ptr<S3HeadBucketAction> action_under_test_ptr;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
-  std::shared_ptr<ClovisAPI> s3_clovis_api_mock;
+  std::shared_ptr<MotrAPI> s3_motr_api_mock;
   std::string bucket_name;
 };
 

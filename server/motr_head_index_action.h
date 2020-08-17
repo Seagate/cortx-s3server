@@ -29,8 +29,8 @@
 
 class MotrHeadIndexAction : public MotrAction {
   m0_uint128 index_id;
-  std::shared_ptr<ClovisAPI> motr_clovis_api;
-  std::shared_ptr<S3MotrKVSReader> clovis_kv_reader;
+  std::shared_ptr<MotrAPI> motr_clovis_api;
+  std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
   std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory;
 
   void setup_steps();

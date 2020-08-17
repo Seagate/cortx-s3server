@@ -20,18 +20,18 @@
 
 #pragma once
 
-#ifndef __S3_UT_MOCK_S3_CLOVIS_KVS_WRITER_H__
-#define __S3_UT_MOCK_S3_CLOVIS_KVS_WRITER_H__
+#ifndef __S3_UT_MOCK_S3_MOTR_KVS_WRITER_H__
+#define __S3_UT_MOCK_S3_MOTR_KVS_WRITER_H__
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-class MockS3ClovisKVSWriter : public S3ClovisKVSWriter {
+class MockS3MotrKVSWriter : public S3MotrKVSWriter {
  public:
-  MockS3ClovisKVSWriter(std::shared_ptr<RequestObject> req,
-                        std::shared_ptr<ClovisAPI> s3_clovis_api)
-      : S3ClovisKVSWriter(req, s3_clovis_api) {}
-  MOCK_METHOD0(get_state, S3ClovisKVSWriterOpState());
+  MockS3MotrKVSWriter(std::shared_ptr<RequestObject> req,
+                      std::shared_ptr<MotrAPI> s3_motr_api)
+      : S3MotrKVSWriter(req, s3_motr_api) {}
+  MOCK_METHOD0(get_state, S3MotrKVSWriterOpState());
   MOCK_METHOD1(get_op_ret_code_for, int(int index));
   MOCK_METHOD1(get_op_ret_code_for_del_kv, int(int index));
   MOCK_METHOD3(create_index, void(std::string index_name,

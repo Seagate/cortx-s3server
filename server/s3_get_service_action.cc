@@ -35,7 +35,7 @@ S3GetServiceAction::S3GetServiceAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
     : S3Action(req), last_key(""), key_prefix(""), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  s3_motr_api = std::make_shared<ConcreteMotrAPI>();
 
   s3_log(S3_LOG_INFO, request_id, "S3 API: Get Service.\n");
 
@@ -91,9 +91,9 @@ void S3GetServiceAction::get_next_buckets() {
   s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket list from KV store\n");
   size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
 
-  clovis_kv_reader = s3_motr_kvs_reader_factory->create_clovis_kvs_reader(
-      request, s3_clovis_api);
-  clovis_kv_reader->next_keyval(
+  motr_kv_reader =
+      s3_motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
+  motr_kv_reader->next_keyval(
       bucket_metadata_list_index_oid, last_key, count,
       std::bind(&S3GetServiceAction::get_next_buckets_successful, this),
       std::bind(&S3GetServiceAction::get_next_buckets_failed, this));
@@ -110,7 +110,7 @@ void S3GetServiceAction::get_next_buckets_successful() {
     return;
   }
   s3_log(S3_LOG_DEBUG, request_id, "Found buckets listing\n");
-  auto& kvps = clovis_kv_reader->get_key_values();
+  auto& kvps = motr_kv_reader->get_key_values();
   size_t length = kvps.size();
   bool atleast_one_json_error = false;
   bool retrived_all_keys = false;
@@ -154,10 +154,10 @@ void S3GetServiceAction::get_next_buckets_successful() {
 
 void S3GetServiceAction::get_next_buckets_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
+  if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Buckets list is empty\n");
     fetch_successful = true;  // With no entries.
-  } else if (clovis_kv_reader->get_state() ==
+  } else if (motr_kv_reader->get_state() ==
              S3MotrKVSReaderOpState::failed_to_launch) {
     s3_log(
         S3_LOG_ERROR, request_id,

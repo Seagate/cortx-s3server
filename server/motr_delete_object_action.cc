@@ -91,7 +91,7 @@ void MotrDeleteObjectAction::delete_object_successful() {
 void MotrDeleteObjectAction::delete_object_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // Object missing is treated as object deleted similar to S3 object delete.
-  if (clovis_writer->get_state() == S3ClovisWriterOpState::missing) {
+  if (clovis_writer->get_state() == S3MotrWiterOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id,
            "Object with oid %" SCNx64 " : %" SCNx64 " is missing\n", oid.u_hi,
            oid.u_lo);

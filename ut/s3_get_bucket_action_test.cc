@@ -40,11 +40,11 @@ using ::testing::_;
             ->create_bucket_metadata_obj(request_mock); \
   } while (0)
 
-#define CREATE_KVS_READER_OBJ                                             \
-  do {                                                                    \
-    action_under_test_ptr->clovis_kv_reader =                             \
-        action_under_test_ptr->s3_motr_kvs_reader_factory                 \
-            ->create_clovis_kvs_reader(request_mock, s3_clovis_api_mock); \
+#define CREATE_KVS_READER_OBJ                                         \
+  do {                                                                \
+    action_under_test_ptr->motr_kv_reader =                           \
+        action_under_test_ptr->s3_motr_kvs_reader_factory             \
+            ->create_motr_kvs_reader(request_mock, s3_motr_api_mock); \
   } while (0)
 
 #define CREATE_ACTION_UNDER_TEST_OBJ                                     \
@@ -57,7 +57,7 @@ using ::testing::_;
     EXPECT_CALL(*request_mock, get_in_headers_copy()).Times(1).WillOnce( \
         ReturnRef(input_headers));                                       \
     action_under_test_ptr = std::make_shared<S3GetBucketAction>(         \
-        request_mock, s3_clovis_api_mock, motr_kvs_reader_factory,       \
+        request_mock, s3_motr_api_mock, motr_kvs_reader_factory,         \
         bucket_meta_factory, object_meta_factory);                       \
   } while (0)
 
@@ -107,11 +107,11 @@ class S3GetBucketActionTest : public testing::Test {
     EXPECT_CALL(*request_mock, get_object_name())
         .WillRepeatedly(ReturnRef(object_name));
 
-    s3_clovis_api_mock = std::make_shared<MockS3Clovis>();
+    s3_motr_api_mock = std::make_shared<MockS3Clovis>();
     bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
-        request_mock, s3_clovis_api_mock);
+        request_mock, s3_motr_api_mock);
     motr_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
-        request_mock, s3_clovis_api_mock);
+        request_mock, s3_motr_api_mock);
     object_meta_factory =
         std::make_shared<MockS3ObjectMetadataFactory>(request_mock);
     object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
@@ -122,7 +122,7 @@ class S3GetBucketActionTest : public testing::Test {
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
-  std::shared_ptr<MockS3Clovis> s3_clovis_api_mock;
+  std::shared_ptr<MockS3Clovis> s3_motr_api_mock;
 
   struct m0_uint128 object_list_indx_oid;
   std::map<std::string, std::pair<int, std::string>> result_keys_values;
@@ -135,7 +135,7 @@ TEST_F(S3GetBucketActionTest, Constructor) {
   EXPECT_CALL(*request_mock, get_in_headers_copy()).Times(1).WillOnce(
       ReturnRef(input_headers));
   action_under_test_ptr = std::make_shared<S3GetBucketAction>(
-      request_mock, s3_clovis_api_mock, motr_kvs_reader_factory,
+      request_mock, s3_motr_api_mock, motr_kvs_reader_factory,
       bucket_meta_factory, object_meta_factory);
   EXPECT_NE(0, action_under_test_ptr->number_of_tasks());
   EXPECT_TRUE(action_under_test_ptr->bucket_metadata_factory != nullptr);

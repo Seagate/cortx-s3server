@@ -73,9 +73,9 @@ class S3PartMetadata {
   std::map<std::string, std::string> user_defined_attribute;
 
   std::shared_ptr<S3RequestObject> request;
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
-  std::shared_ptr<S3MotrKVSReader> clovis_kv_reader;
-  std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
+  std::shared_ptr<MotrAPI> s3_motr_api;
+  std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
+  std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   bool put_metadata;
   struct m0_uint128 part_index_name_oid;
 
@@ -89,7 +89,7 @@ class S3PartMetadata {
   // `true` in case of json parsing failure.
   bool json_parsing_error;
 
-  std::shared_ptr<S3MotrKVSReaderFactory> clovis_kv_reader_factory;
+  std::shared_ptr<S3MotrKVSReaderFactory> motr_kv_reader_factory;
   std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
 
  private:

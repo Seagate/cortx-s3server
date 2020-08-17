@@ -23,8 +23,7 @@
 #include "s3_m0_uint128_helper.h"
 
 MotrDeleteKeyValueAction::MotrDeleteKeyValueAction(
-    std::shared_ptr<MotrRequestObject> req,
-    std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<MotrRequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3MotrKVSWriterFactory> clovis_motr_kvs_writer_factory,
     std::shared_ptr<S3MotrKVSReaderFactory> clovis_motr_kvs_reader_factory)
     : MotrAction(req) {
@@ -32,7 +31,7 @@ MotrDeleteKeyValueAction::MotrDeleteKeyValueAction(
   if (clovis_api) {
     motr_clovis_api = clovis_api;
   } else {
-    motr_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    motr_clovis_api = std::make_shared<ConcreteMotrAPI>();
   }
 
   if (clovis_motr_kvs_reader_factory) {
@@ -66,11 +65,11 @@ void MotrDeleteKeyValueAction::delete_key_value() {
     set_s3_error("BadRequest");
     send_response_to_s3_client();
   } else {
-    if (!clovis_kv_writer) {
-      clovis_kv_writer = motr_kvs_writer_factory->create_motr_kvs_writer(
+    if (!motr_kv_writer) {
+      motr_kv_writer = motr_kvs_writer_factory->create_motr_kvs_writer(
           request, motr_clovis_api);
     }
-    clovis_kv_writer->delete_keyval(
+    motr_kv_writer->delete_keyval(
         index_id, request->get_key_name(),
         std::bind(&MotrDeleteKeyValueAction::delete_key_value_successful, this),
         std::bind(&MotrDeleteKeyValueAction::delete_key_value_failed, this));
@@ -87,7 +86,7 @@ void MotrDeleteKeyValueAction::delete_key_value_successful() {
 
 void MotrDeleteKeyValueAction::delete_key_value_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::missing) {
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::missing) {
     next();
   } else {
     set_s3_error("InternalError");

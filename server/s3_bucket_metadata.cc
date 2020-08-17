@@ -30,7 +30,7 @@
 #include "s3_m0_uint128_helper.h"
 
 S3BucketMetadata::S3BucketMetadata(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory)
     : request(req), json_parsing_error(false) {
@@ -44,9 +44,9 @@ S3BucketMetadata::S3BucketMetadata(
   state = S3BucketMetadataState::empty;
   current_op = S3BucketMetadataCurrentOp::none;
   if (clovis_api) {
-    s3_clovis_api = clovis_api;
+    s3_motr_api = clovis_api;
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
 
   if (motr_s3_kvs_reader_factory) {

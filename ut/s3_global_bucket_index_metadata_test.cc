@@ -38,26 +38,26 @@ using ::testing::_;
 
 #define CREATE_KVS_WRITER_OBJ                                              \
   do {                                                                     \
-    global_bucket_idx_metadata_under_test_ptr->clovis_kv_writer =          \
+    global_bucket_idx_metadata_under_test_ptr->motr_kv_writer =            \
         global_bucket_idx_metadata_under_test_ptr->motr_kvs_writer_factory \
-            ->create_motr_kvs_writer(request_mock, s3_clovis_api_mock);    \
+            ->create_motr_kvs_writer(request_mock, s3_motr_api_mock);      \
   } while (0)
 
 #define CREATE_KVS_READER_OBJ                                              \
   do {                                                                     \
-    global_bucket_idx_metadata_under_test_ptr->clovis_kv_reader =          \
+    global_bucket_idx_metadata_under_test_ptr->motr_kv_reader =            \
         global_bucket_idx_metadata_under_test_ptr->motr_kvs_reader_factory \
-            ->create_clovis_kvs_reader(request_mock, s3_clovis_api_mock);  \
+            ->create_motr_kvs_reader(request_mock, s3_motr_api_mock);      \
   } while (0)
 
-#define CREATE_ACTION_UNDER_TEST_OBJ                                   \
-  do {                                                                 \
-    request_mock->set_account_name(account_name);                      \
-    request_mock->set_account_id(account_id);                          \
-    global_bucket_idx_metadata_under_test_ptr =                        \
-        std::make_shared<S3GlobalBucketIndexMetadata>(                 \
-            request_mock, s3_clovis_api_mock, motr_kvs_reader_factory, \
-            motr_kvs_writer_factory);                                  \
+#define CREATE_ACTION_UNDER_TEST_OBJ                                 \
+  do {                                                               \
+    request_mock->set_account_name(account_name);                    \
+    request_mock->set_account_id(account_id);                        \
+    global_bucket_idx_metadata_under_test_ptr =                      \
+        std::make_shared<S3GlobalBucketIndexMetadata>(               \
+            request_mock, s3_motr_api_mock, motr_kvs_reader_factory, \
+            motr_kvs_writer_factory);                                \
   } while (0)
 
 class S3GlobalBucketIndexMetadataTest : public testing::Test {
@@ -72,13 +72,13 @@ class S3GlobalBucketIndexMetadataTest : public testing::Test {
     EXPECT_CALL(*request_mock, get_bucket_name())
         .WillRepeatedly(ReturnRef(bucket_name));
 
-    s3_clovis_api_mock = std::make_shared<MockS3Clovis>();
+    s3_motr_api_mock = std::make_shared<MockS3Clovis>();
 
     account_id.assign("12345");
     account_name.assign("s3_test");
     call_count_one = 0;
     motr_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
-        request_mock, s3_clovis_api_mock);
+        request_mock, s3_motr_api_mock);
     motr_kvs_writer_factory =
         std::make_shared<MockS3MotrKVSWriterFactory>(request_mock);
     CREATE_ACTION_UNDER_TEST_OBJ;
@@ -89,7 +89,7 @@ class S3GlobalBucketIndexMetadataTest : public testing::Test {
       global_bucket_idx_metadata_under_test_ptr;
   std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
   std::shared_ptr<MockS3MotrKVSWriterFactory> motr_kvs_writer_factory;
-  std::shared_ptr<MockS3Clovis> s3_clovis_api_mock;
+  std::shared_ptr<MockS3Clovis> s3_motr_api_mock;
 
   S3CallBack s3globalbucketindex_callbackobj;
   std::string account_name;
@@ -214,7 +214,7 @@ TEST_F(S3GlobalBucketIndexMetadataTest, SaveReplica) {
   CREATE_KVS_WRITER_OBJ;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(AtLeast(1))
-      .WillOnce(Return(S3ClovisKVSWriterOpState::created));
+      .WillOnce(Return(S3MotrKVSWriterOpState::created));
 
   global_bucket_idx_metadata_under_test_ptr->handler_on_success =
       std::bind(&S3GlobalBucketIndexMetadataTest::func_callback_one, this);
@@ -239,7 +239,7 @@ TEST_F(S3GlobalBucketIndexMetadataTest, SaveFailed) {
   CREATE_KVS_WRITER_OBJ;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
   global_bucket_idx_metadata_under_test_ptr->handler_on_failed =
       std::bind(&S3GlobalBucketIndexMetadataTest::func_callback_one, this);
   global_bucket_idx_metadata_under_test_ptr->save_failed();
@@ -252,7 +252,7 @@ TEST_F(S3GlobalBucketIndexMetadataTest, SaveFailedToLaunch) {
   CREATE_KVS_WRITER_OBJ;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed_to_launch));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed_to_launch));
   global_bucket_idx_metadata_under_test_ptr->handler_on_failed =
       std::bind(&S3GlobalBucketIndexMetadataTest::func_callback_one, this);
   global_bucket_idx_metadata_under_test_ptr->save_failed();
@@ -265,7 +265,7 @@ TEST_F(S3GlobalBucketIndexMetadataTest, RemoveReplica) {
   CREATE_KVS_WRITER_OBJ;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(AtLeast(1))
-      .WillOnce(Return(S3ClovisKVSWriterOpState::deleted));
+      .WillOnce(Return(S3MotrKVSWriterOpState::deleted));
   global_bucket_idx_metadata_under_test_ptr->handler_on_success =
       std::bind(&S3GlobalBucketIndexMetadataTest::func_callback_one, this);
 
@@ -289,7 +289,7 @@ TEST_F(S3GlobalBucketIndexMetadataTest, RemoveFailed) {
   CREATE_KVS_WRITER_OBJ;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
   global_bucket_idx_metadata_under_test_ptr->handler_on_failed =
       std::bind(&S3GlobalBucketIndexMetadataTest::func_callback_one, this);
   global_bucket_idx_metadata_under_test_ptr->remove_failed();
@@ -302,7 +302,7 @@ TEST_F(S3GlobalBucketIndexMetadataTest, RemoveFailedToLaunch) {
   CREATE_KVS_WRITER_OBJ;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed_to_launch));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed_to_launch));
   global_bucket_idx_metadata_under_test_ptr->handler_on_failed =
       std::bind(&S3GlobalBucketIndexMetadataTest::func_callback_one, this);
   global_bucket_idx_metadata_under_test_ptr->remove_failed();

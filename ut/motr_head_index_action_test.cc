@@ -57,17 +57,17 @@ class MotrHeadIndexActionTest : public testing::Test {
     input_headers["Authorization"] = "1";
     EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
         ReturnRef(input_headers));
-    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
+    ptr_mock_s3_motr_api = std::make_shared<MockS3Clovis>();
     // Owned and deleted by shared_ptr in MotrHeadIndexAction
     mock_motr_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
-        ptr_mock_request, ptr_mock_s3_clovis_api);
+        ptr_mock_request, ptr_mock_s3_motr_api);
 
     action_under_test.reset(new MotrHeadIndexAction(
         ptr_mock_request, mock_motr_kvs_reader_factory));
   }
 
   std::shared_ptr<MockMotrRequestObject> ptr_mock_request;
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_motr_api;
   std::shared_ptr<MockS3MotrKVSReaderFactory> mock_motr_kvs_reader_factory;
   std::shared_ptr<MotrHeadIndexAction> action_under_test;
 
@@ -145,7 +145,7 @@ TEST_F(MotrHeadIndexActionTest, CheckIndexExist) {
               lookup_index(_, _, _)).Times(1);
 
   action_under_test->check_index_exist();
-  EXPECT_TRUE(action_under_test->clovis_kv_reader != nullptr);
+  EXPECT_TRUE(action_under_test->motr_kv_reader != nullptr);
 }
 
 TEST_F(MotrHeadIndexActionTest, CheckIndexExistSuccess) {
@@ -157,7 +157,7 @@ TEST_F(MotrHeadIndexActionTest, CheckIndexExistSuccess) {
 }
 
 TEST_F(MotrHeadIndexActionTest, CheckIndexExistFailureMissing) {
-  action_under_test->clovis_kv_reader =
+  action_under_test->motr_kv_reader =
       mock_motr_kvs_reader_factory->mock_clovis_kvs_reader;
 
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
@@ -172,7 +172,7 @@ TEST_F(MotrHeadIndexActionTest, CheckIndexExistFailureMissing) {
 }
 
 TEST_F(MotrHeadIndexActionTest, CheckIndexExistFailureInternalError) {
-  action_under_test->clovis_kv_reader =
+  action_under_test->motr_kv_reader =
       mock_motr_kvs_reader_factory->mock_clovis_kvs_reader;
 
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
@@ -187,7 +187,7 @@ TEST_F(MotrHeadIndexActionTest, CheckIndexExistFailureInternalError) {
 }
 
 TEST_F(MotrHeadIndexActionTest, CheckIndexExistFailureFailedToLaunch) {
-  action_under_test->clovis_kv_reader =
+  action_under_test->motr_kv_reader =
       mock_motr_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(mock_motr_kvs_reader_factory->mock_clovis_kvs_reader),
               get_state())

@@ -33,7 +33,7 @@ MotrKVSListingAction::MotrKVSListingAction(
     std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory)
     : MotrAction(req), last_key(""), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-  motr_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  motr_clovis_api = std::make_shared<ConcreteMotrAPI>();
 
   s3_log(S3_LOG_INFO, request_id, "Motr API: kvs list Service.\n");
 
@@ -107,7 +107,7 @@ void MotrKVSListingAction::get_next_key_value() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
 
-  clovis_kv_reader = motr_motr_kvs_reader_factory->create_clovis_kvs_reader(
+  motr_kv_reader = motr_motr_kvs_reader_factory->create_motr_kvs_reader(
       request, motr_clovis_api);
 
   if (max_keys == 0) {
@@ -119,7 +119,7 @@ void MotrKVSListingAction::get_next_key_value() {
     // We pass M0_OIF_EXCLUDE_START_KEY flag to Clovis. This flag skips key that
     // is passed during listing of all keys. If this flag is not passed then
     // input key is returned in result.
-    clovis_kv_reader->next_keyval(
+    motr_kv_reader->next_keyval(
         index_id, last_key, count,
         std::bind(&MotrKVSListingAction::get_next_key_value_successful, this),
         std::bind(&MotrKVSListingAction::get_next_key_value_failed, this));
@@ -138,7 +138,7 @@ void MotrKVSListingAction::get_next_key_value_successful() {
     return;
   }
   s3_log(S3_LOG_DEBUG, request_id, "Found kv listing\n");
-  auto& kvps = clovis_kv_reader->get_key_values();
+  auto& kvps = motr_kv_reader->get_key_values();
   size_t length = kvps.size();
   for (auto& kv : kvps) {
     s3_log(S3_LOG_DEBUG, request_id, "Read key = %s\n", kv.first.c_str());
@@ -209,10 +209,10 @@ void MotrKVSListingAction::get_next_key_value_successful() {
 
 void MotrKVSListingAction::get_next_key_value_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
+  if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "No keys found in kv listing\n");
     fetch_successful = true;  // With no entries.
-  } else if (clovis_kv_reader->get_state() ==
+  } else if (motr_kv_reader->get_state() ==
              S3MotrKVSReaderOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Next keyval operation failed due to pre launch failure\n");

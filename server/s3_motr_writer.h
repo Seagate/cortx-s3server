@@ -34,7 +34,7 @@
 #include "s3_md5_hash.h"
 #include "s3_request_object.h"
 
-class S3ClovisWriterContext : public S3AsyncOpContextBase {
+class S3MotrWiterContext : public S3AsyncOpContextBase {
   // Basic Operation context.
   struct s3_clovis_op_context* clovis_op_context = NULL;
 
@@ -42,13 +42,12 @@ class S3ClovisWriterContext : public S3AsyncOpContextBase {
   struct s3_clovis_rw_op_context* clovis_rw_op_context = NULL;
 
  public:
-  S3ClovisWriterContext(std::shared_ptr<RequestObject> req,
-                        std::function<void()> success_callback,
-                        std::function<void()> failed_callback,
-                        int ops_count = 1,
-                        std::shared_ptr<ClovisAPI> clovis_api = nullptr);
+  S3MotrWiterContext(std::shared_ptr<RequestObject> req,
+                     std::function<void()> success_callback,
+                     std::function<void()> failed_callback, int ops_count = 1,
+                     std::shared_ptr<MotrAPI> clovis_api = nullptr);
 
-  ~S3ClovisWriterContext();
+  ~S3MotrWiterContext();
 
   struct s3_clovis_op_context* get_clovis_op_ctx();
 
@@ -62,7 +61,7 @@ class S3ClovisWriterContext : public S3AsyncOpContextBase {
   }
 };
 
-enum class S3ClovisWriterOpState {
+enum class S3MotrWiterOpState {
   start,
   failed_to_launch,
   failed,
@@ -77,14 +76,14 @@ enum class S3ClovisWriterOpState {
   missing,  // Object does not exists
 };
 
-class S3ClovisWriter {
+class S3MotrWiter {
 
   std::shared_ptr<RequestObject> request;
-  std::unique_ptr<S3ClovisWriterContext> open_context;
-  std::unique_ptr<S3ClovisWriterContext> create_context;
-  std::unique_ptr<S3ClovisWriterContext> writer_context;
-  std::unique_ptr<S3ClovisWriterContext> delete_context;
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::unique_ptr<S3MotrWiterContext> open_context;
+  std::unique_ptr<S3MotrWiterContext> create_context;
+  std::unique_ptr<S3MotrWiterContext> writer_context;
+  std::unique_ptr<S3MotrWiterContext> delete_context;
+  std::shared_ptr<MotrAPI> s3_motr_api;
 
   // Used to report to caller
   std::function<void()> handler_on_success;
@@ -93,7 +92,7 @@ class S3ClovisWriter {
   std::vector<struct m0_uint128> oid_list;
   std::vector<int> layout_ids;
 
-  S3ClovisWriterOpState state;
+  S3MotrWiterOpState state;
 
   std::string content_md5;
   uint64_t last_index;
@@ -137,15 +136,15 @@ class S3ClovisWriter {
 
  public:
   // struct m0_uint128 id;
-  S3ClovisWriter(std::shared_ptr<RequestObject> req,
-                 struct m0_uint128 object_id, uint64_t offset = 0,
-                 std::shared_ptr<ClovisAPI> clovis_api = nullptr);
-  S3ClovisWriter(std::shared_ptr<RequestObject> req, uint64_t offset = 0,
-                 std::shared_ptr<ClovisAPI> clovis_api = nullptr);
-  virtual ~S3ClovisWriter();
+  S3MotrWiter(std::shared_ptr<RequestObject> req, struct m0_uint128 object_id,
+              uint64_t offset = 0,
+              std::shared_ptr<MotrAPI> clovis_api = nullptr);
+  S3MotrWiter(std::shared_ptr<RequestObject> req, uint64_t offset = 0,
+              std::shared_ptr<MotrAPI> clovis_api = nullptr);
+  virtual ~S3MotrWiter();
   void reset_buffers_if_any(int buf_unit_sz);
 
-  virtual S3ClovisWriterOpState get_state() { return state; }
+  virtual S3MotrWiterOpState get_state() { return state; }
 
   virtual struct m0_uint128 get_oid() {
     assert(oid_list.size() == 1);
@@ -212,25 +211,25 @@ class S3ClovisWriter {
                                   size_t clovis_buf_count);
 
   // For Testing purpose
-  FRIEND_TEST(S3ClovisWriterTest, Constructor);
-  FRIEND_TEST(S3ClovisWriterTest, Constructor2);
-  FRIEND_TEST(S3ClovisWriterTest, CreateObjectTest);
-  FRIEND_TEST(S3ClovisWriterTest, CreateObjectSuccessfulTest);
-  FRIEND_TEST(S3ClovisWriterTest, CreateObjectFailedTest);
-  FRIEND_TEST(S3ClovisWriterTest, CreateObjectEntityCreateFailTest);
-  FRIEND_TEST(S3ClovisWriterTest, DeleteObjectTest);
-  FRIEND_TEST(S3ClovisWriterTest, DeleteObjectSuccessfulTest);
-  FRIEND_TEST(S3ClovisWriterTest, DeleteObjectFailedTest);
-  FRIEND_TEST(S3ClovisWriterTest, DeleteObjectsTest);
-  FRIEND_TEST(S3ClovisWriterTest, DeleteObjectsSuccessfulTest);
-  FRIEND_TEST(S3ClovisWriterTest, DeleteObjectsFailedTest);
-  FRIEND_TEST(S3ClovisWriterTest, DeleteObjectclovisEntityDeleteFailedTest);
-  FRIEND_TEST(S3ClovisWriterTest, OpenObjectsTest);
-  FRIEND_TEST(S3ClovisWriterTest, OpenObjectsEntityOpenFailedTest);
-  FRIEND_TEST(S3ClovisWriterTest, OpenObjectsFailedTest);
-  FRIEND_TEST(S3ClovisWriterTest, OpenObjectsFailedMissingTest);
-  FRIEND_TEST(S3ClovisWriterTest, WriteContentSuccessfulTest);
-  FRIEND_TEST(S3ClovisWriterTest, WriteContentFailedTest);
+  FRIEND_TEST(S3MotrWiterTest, Constructor);
+  FRIEND_TEST(S3MotrWiterTest, Constructor2);
+  FRIEND_TEST(S3MotrWiterTest, CreateObjectTest);
+  FRIEND_TEST(S3MotrWiterTest, CreateObjectSuccessfulTest);
+  FRIEND_TEST(S3MotrWiterTest, CreateObjectFailedTest);
+  FRIEND_TEST(S3MotrWiterTest, CreateObjectEntityCreateFailTest);
+  FRIEND_TEST(S3MotrWiterTest, DeleteObjectTest);
+  FRIEND_TEST(S3MotrWiterTest, DeleteObjectSuccessfulTest);
+  FRIEND_TEST(S3MotrWiterTest, DeleteObjectFailedTest);
+  FRIEND_TEST(S3MotrWiterTest, DeleteObjectsTest);
+  FRIEND_TEST(S3MotrWiterTest, DeleteObjectsSuccessfulTest);
+  FRIEND_TEST(S3MotrWiterTest, DeleteObjectsFailedTest);
+  FRIEND_TEST(S3MotrWiterTest, DeleteObjectclovisEntityDeleteFailedTest);
+  FRIEND_TEST(S3MotrWiterTest, OpenObjectsTest);
+  FRIEND_TEST(S3MotrWiterTest, OpenObjectsEntityOpenFailedTest);
+  FRIEND_TEST(S3MotrWiterTest, OpenObjectsFailedTest);
+  FRIEND_TEST(S3MotrWiterTest, OpenObjectsFailedMissingTest);
+  FRIEND_TEST(S3MotrWiterTest, WriteContentSuccessfulTest);
+  FRIEND_TEST(S3MotrWiterTest, WriteContentFailedTest);
 };
 
 #endif

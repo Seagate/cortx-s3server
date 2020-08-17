@@ -51,8 +51,8 @@ enum class S3PutChunkUploadObjectActionState {
 
 class S3PutChunkUploadObjectAction : public S3ObjectAction {
   S3PutChunkUploadObjectActionState s3_put_chunk_action_state;
-  std::shared_ptr<S3ClovisWriter> clovis_writer;
-  std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
+  std::shared_ptr<S3MotrWiter> clovis_writer;
+  std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   int layout_id;
   struct m0_uint128 old_object_oid;
   int old_layout_id;
@@ -83,7 +83,7 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
 
   std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
   std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::shared_ptr<MotrAPI> s3_motr_api;
   std::shared_ptr<S3ObjectMetadata> new_object_metadata;
   std::shared_ptr<S3PutTagsBodyFactory> put_object_tag_body_factory;
   std::map<std::string, std::string> new_object_tags_map;
@@ -102,7 +102,7 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
       std::shared_ptr<S3MotrWriterFactory> clovis_s3_factory = nullptr,
       std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr,
+      std::shared_ptr<MotrAPI> clovis_api = nullptr,
       std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory = nullptr,
       std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr);
 

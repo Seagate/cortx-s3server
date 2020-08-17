@@ -36,7 +36,7 @@
 class S3PutMultiObjectAction : public S3ObjectAction {
   std::shared_ptr<S3PartMetadata> part_metadata = NULL;
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata = NULL;
-  std::shared_ptr<S3ClovisWriter> clovis_writer = NULL;
+  std::shared_ptr<S3MotrWiter> clovis_writer = NULL;
 
   size_t total_data_to_stream;
   S3Timer create_object_timer;

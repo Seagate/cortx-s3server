@@ -33,13 +33,13 @@
 extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
 S3PostCompleteAction::S3PostCompleteAction(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
-    std::shared_ptr<S3MotrWriterFactory> clovis_s3_writer_factory,
+    std::shared_ptr<S3MotrWriterFactory> motr_s3_writer_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
                      std::move(object_meta_factory), false) {
@@ -57,9 +57,9 @@ S3PostCompleteAction::S3PostCompleteAction(
   action_uses_cleanup = true;
   s3_post_complete_action_state = S3PostCompleteActionState::empty;
   if (clovis_api) {
-    s3_clovis_api = std::move(clovis_api);
+    s3_motr_api = std::move(clovis_api);
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
   if (motr_kvs_reader_factory) {
     s3_motr_kvs_reader_factory = std::move(motr_kvs_reader_factory);
@@ -77,8 +77,8 @@ S3PostCompleteAction::S3PostCompleteAction(
   } else {
     part_metadata_factory = std::make_shared<S3PartMetadataFactory>();
   }
-  if (clovis_s3_writer_factory) {
-    motr_writer_factory = std::move(clovis_s3_writer_factory);
+  if (motr_s3_writer_factory) {
+    motr_writer_factory = std::move(motr_s3_writer_factory);
   } else {
     motr_writer_factory = std::make_shared<S3MotrWriterFactory>();
   }
@@ -248,9 +248,9 @@ void S3PostCompleteAction::fetch_multipart_info_failed() {
 void S3PostCompleteAction::get_next_parts_info() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_DEBUG, request_id, "Fetching parts list from KV store\n");
-  clovis_kv_reader = s3_motr_kvs_reader_factory->create_clovis_kvs_reader(
-      request, s3_clovis_api);
-  clovis_kv_reader->next_keyval(
+  motr_kv_reader =
+      s3_motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
+  motr_kv_reader->next_keyval(
       multipart_metadata->get_part_index_oid(), last_key, count_we_requested,
       std::bind(&S3PostCompleteAction::get_next_parts_info_successful, this),
       std::bind(&S3PostCompleteAction::get_next_parts_info_failed, this));
@@ -258,9 +258,8 @@ void S3PostCompleteAction::get_next_parts_info() {
 
 void S3PostCompleteAction::get_next_parts_info_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering with size %d while requested %d\n",
-         (int)clovis_kv_reader->get_key_values().size(),
-         (int)count_we_requested);
-  if (clovis_kv_reader->get_key_values().size() > 0) {
+         (int)motr_kv_reader->get_key_values().size(), (int)count_we_requested);
+  if (motr_kv_reader->get_key_values().size() > 0) {
     // Do validation of parts
     if (!validate_parts()) {
       s3_log(S3_LOG_DEBUG, request_id, "validate_parts failed");
@@ -272,9 +271,9 @@ void S3PostCompleteAction::get_next_parts_info_successful() {
     s3_log(S3_LOG_DEBUG, request_id, "aborting multipart");
     next();
   } else {
-    if (clovis_kv_reader->get_key_values().size() < count_we_requested) {
+    if (motr_kv_reader->get_key_values().size() < count_we_requested) {
       // Fetched all parts
-      validated_parts_count += clovis_kv_reader->get_key_values().size();
+      validated_parts_count += motr_kv_reader->get_key_values().size();
       if ((parts.size() != 0) ||
           (validated_parts_count != std::stoul(total_parts))) {
         s3_log(S3_LOG_DEBUG, request_id,
@@ -296,8 +295,8 @@ void S3PostCompleteAction::get_next_parts_info_successful() {
     } else {
       // Continue fetching
       validated_parts_count += count_we_requested;
-      if (!clovis_kv_reader->get_key_values().empty()) {
-        last_key = clovis_kv_reader->get_key_values().rbegin()->first;
+      if (!motr_kv_reader->get_key_values().empty()) {
+        last_key = motr_kv_reader->get_key_values().rbegin()->first;
       }
       s3_log(S3_LOG_DEBUG, request_id, "continue fetching with %s",
              last_key.c_str());
@@ -307,7 +306,7 @@ void S3PostCompleteAction::get_next_parts_info_successful() {
 }
 
 void S3PostCompleteAction::get_next_parts_info_failed() {
-  if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
+  if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     // There may not be any records left
     if ((parts.size() != 0) ||
         (validated_parts_count != std::stoul(total_parts))) {
@@ -323,7 +322,7 @@ void S3PostCompleteAction::get_next_parts_info_failed() {
     etag = awsetag.finalize();
     next();
   } else {
-    if (clovis_kv_reader->get_state() ==
+    if (motr_kv_reader->get_state() ==
         S3MotrKVSReaderOpState::failed_to_launch) {
       s3_log(S3_LOG_ERROR, request_id,
              "Parts metadata next keyval operation failed due to pre launch "
@@ -359,7 +358,7 @@ bool S3PostCompleteAction::validate_parts() {
   }
   struct m0_uint128 part_index_oid = multipart_metadata->get_part_index_oid();
   std::map<std::string, std::pair<int, std::string>>& parts_batch_from_kvs =
-      clovis_kv_reader->get_key_values();
+      motr_kv_reader->get_key_values();
   for (auto part_kv = parts.begin(); part_kv != parts.end();) {
     auto store_kv = parts_batch_from_kvs.find(part_kv->first);
     if (store_kv == parts_batch_from_kvs.end()) {
@@ -483,9 +482,9 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
   // Generate version id for the new obj as it will become live to s3 clients.
   new_object_metadata->regenerate_version_id();
 
-  if (!clovis_kv_writer) {
-    clovis_kv_writer =
-        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
 
   if (is_abort_multipart()) {
@@ -502,7 +501,7 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
         multipart_metadata->get_part_index_oid()));
     // backgrounddelete will delete this entry if multipart metadata has
     // been deleted
-    clovis_kv_writer->put_keyval(
+    motr_kv_writer->put_keyval(
         global_probable_dead_object_list_index_oid, new_oid_str,
         new_probable_del_rec->to_json(),
         std::bind(&S3PostCompleteAction::
@@ -532,7 +531,7 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
           ));
       // backgrounddelete will delete this entry if current object metadata has
       // moved on
-      clovis_kv_writer->put_keyval(
+      motr_kv_writer->put_keyval(
           global_probable_dead_object_list_index_oid, old_oid_rec_key,
           old_probable_del_rec->to_json(),
           std::bind(&S3PostCompleteAction::
@@ -561,8 +560,7 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_post_complete_action_state =
       S3PostCompleteActionState::probableEntryRecordFailed;
-  if (clovis_kv_writer->get_state() ==
-      S3ClovisKVSWriterOpState::failed_to_launch) {
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
   } else {
     set_s3_error("InternalError");
@@ -862,14 +860,14 @@ void S3PostCompleteAction::mark_old_oid_for_deletion() {
   // update old oid, force_del = true
   old_probable_del_rec->set_force_delete(true);
 
-  if (!clovis_kv_writer) {
-    clovis_kv_writer =
-        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  clovis_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
-                               old_oid_rec_key, old_probable_del_rec->to_json(),
-                               std::bind(&S3PostCompleteAction::next, this),
-                               std::bind(&S3PostCompleteAction::next, this));
+  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
+                             old_oid_rec_key, old_probable_del_rec->to_json(),
+                             std::bind(&S3PostCompleteAction::next, this),
+                             std::bind(&S3PostCompleteAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -916,14 +914,14 @@ void S3PostCompleteAction::remove_old_oid_probable_record() {
   // key = oldoid + "-" + newoid
   std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
 
-  if (!clovis_kv_writer) {
-    clovis_kv_writer =
-        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  clovis_kv_writer->delete_keyval(global_probable_dead_object_list_index_oid,
-                                  old_oid_rec_key,
-                                  std::bind(&S3PostCompleteAction::next, this),
-                                  std::bind(&S3PostCompleteAction::next, this));
+  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_oid,
+                                old_oid_rec_key,
+                                std::bind(&S3PostCompleteAction::next, this),
+                                std::bind(&S3PostCompleteAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -935,14 +933,14 @@ void S3PostCompleteAction::mark_new_oid_for_deletion() {
   // update new oid, key = newoid, force_del = true
   new_probable_del_rec->set_force_delete(true);
 
-  if (!clovis_kv_writer) {
-    clovis_kv_writer =
-        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  clovis_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
-                               new_oid_str, new_probable_del_rec->to_json(),
-                               std::bind(&S3PostCompleteAction::next, this),
-                               std::bind(&S3PostCompleteAction::next, this));
+  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
+                             new_oid_str, new_probable_del_rec->to_json(),
+                             std::bind(&S3PostCompleteAction::next, this),
+                             std::bind(&S3PostCompleteAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -967,14 +965,14 @@ void S3PostCompleteAction::remove_new_oid_probable_record() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   assert(!new_oid_str.empty());
 
-  if (!clovis_kv_writer) {
-    clovis_kv_writer =
-        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  clovis_kv_writer->delete_keyval(global_probable_dead_object_list_index_oid,
-                                  new_oid_str,
-                                  std::bind(&S3PostCompleteAction::next, this),
-                                  std::bind(&S3PostCompleteAction::next, this));
+  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_oid,
+                                new_oid_str,
+                                std::bind(&S3PostCompleteAction::next, this),
+                                std::bind(&S3PostCompleteAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

@@ -54,30 +54,30 @@ class S3DeleteBucketActionTest : public testing::Test {
     EXPECT_CALL(*ptr_mock_request, get_object_name())
         .WillRepeatedly(ReturnRef(object_name));
 
-    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
+    ptr_mock_s3_motr_api = std::make_shared<MockS3Clovis>();
 
-    EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+    EXPECT_CALL(*ptr_mock_s3_motr_api, m0_h_ufid_next(_))
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
     // Owned and deleted by shared_ptr in S3PostMultipartObjectAction
     bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
-        ptr_mock_request, ptr_mock_s3_clovis_api);
+        ptr_mock_request, ptr_mock_s3_motr_api);
     motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
-        ptr_mock_request, ptr_mock_s3_clovis_api);
+        ptr_mock_request, ptr_mock_s3_motr_api);
 
     motr_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
-        ptr_mock_request, ptr_mock_s3_clovis_api);
+        ptr_mock_request, ptr_mock_s3_motr_api);
 
     motr_kvs_writer_factory = std::make_shared<MockS3MotrKVSWriterFactory>(
-        ptr_mock_request, ptr_mock_s3_clovis_api);
+        ptr_mock_request, ptr_mock_s3_motr_api);
 
     object_mp_meta_factory =
         std::make_shared<MockS3ObjectMultipartMetadataFactory>(
-            ptr_mock_request, ptr_mock_s3_clovis_api, upload_id);
+            ptr_mock_request, ptr_mock_s3_motr_api, upload_id);
     object_mp_meta_factory->set_object_list_index_oid(mp_indx_oid);
 
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
-        ptr_mock_request, ptr_mock_s3_clovis_api);
+        ptr_mock_request, ptr_mock_s3_motr_api);
     object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
 
     std::map<std::string, std::string> input_headers;
@@ -85,13 +85,13 @@ class S3DeleteBucketActionTest : public testing::Test {
     EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
         ReturnRef(input_headers));
     action_under_test.reset(new S3DeleteBucketAction(
-        ptr_mock_request, ptr_mock_s3_clovis_api, bucket_meta_factory,
+        ptr_mock_request, ptr_mock_s3_motr_api, bucket_meta_factory,
         object_mp_meta_factory, object_meta_factory, motr_writer_factory,
         motr_kvs_writer_factory, motr_kvs_reader_factory));
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_motr_api;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3ObjectMultipartMetadataFactory> object_mp_meta_factory;
@@ -131,7 +131,7 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataPresent) {
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
               next_keyval(_, _, _, _, _, _)).Times(1);
   action_under_test->fetch_first_object_metadata();
-  EXPECT_TRUE(action_under_test->clovis_kv_reader != nullptr);
+  EXPECT_TRUE(action_under_test->motr_kv_reader != nullptr);
 }
 
 TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataEmptyBucket) {
@@ -151,7 +151,7 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataEmptyBucket) {
   action_under_test->fetch_first_object_metadata();
 
   EXPECT_TRUE(action_under_test->is_bucket_empty == true);
-  EXPECT_TRUE(action_under_test->clovis_kv_reader != nullptr);
+  EXPECT_TRUE(action_under_test->motr_kv_reader != nullptr);
   EXPECT_EQ(1, call_count_one);
 }
 
@@ -167,7 +167,7 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataBucketMissing) {
   action_under_test->fetch_bucket_info_failed();
 
   EXPECT_STREQ("NoSuchBucket", action_under_test->get_s3_error_code().c_str());
-  EXPECT_TRUE(action_under_test->clovis_kv_reader == nullptr);
+  EXPECT_TRUE(action_under_test->motr_kv_reader == nullptr);
 }
 
 TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataBucketFailedToLaunch) {
@@ -183,7 +183,7 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataBucketFailedToLaunch) {
 
   EXPECT_STREQ("ServiceUnavailable",
                action_under_test->get_s3_error_code().c_str());
-  EXPECT_TRUE(action_under_test->clovis_kv_reader == nullptr);
+  EXPECT_TRUE(action_under_test->motr_kv_reader == nullptr);
 }
 
 TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataBucketfailure) {
@@ -198,7 +198,7 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataBucketfailure) {
   action_under_test->fetch_bucket_info_failed();
 
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
-  EXPECT_TRUE(action_under_test->clovis_kv_reader == nullptr);
+  EXPECT_TRUE(action_under_test->motr_kv_reader == nullptr);
 }
 
 TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataSuccess) {
@@ -213,7 +213,7 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataSuccess) {
 
 TEST_F(S3DeleteBucketActionTest,
        FetchFirstObjectMetadataFailedObjectMetaMissing) {
-  action_under_test->clovis_kv_reader =
+  action_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
       .WillRepeatedly(Return(S3MotrKVSReaderOpState::missing));
@@ -228,7 +228,7 @@ TEST_F(S3DeleteBucketActionTest,
 
 TEST_F(S3DeleteBucketActionTest,
        FetchFirstObjectMetadataFailedObjectRetrievalFailed) {
-  action_under_test->clovis_kv_reader =
+  action_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
       .WillRepeatedly(Return(S3MotrKVSReaderOpState::failed));
@@ -246,7 +246,7 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectsMultipartPresent) {
       bucket_meta_factory->mock_bucket_metadata;
   action_under_test->bucket_metadata->set_multipart_index_oid(oid);
 
-  action_under_test->clovis_kv_reader =
+  action_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
               next_keyval(_, _, _, _, _, _)).Times(1);
@@ -284,7 +284,7 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectSuccess) {
       bucket_meta_factory->mock_bucket_metadata;
   action_under_test->bucket_metadata->set_multipart_index_oid(oid);
 
-  action_under_test->clovis_kv_reader =
+  action_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
               get_key_values())
@@ -311,7 +311,7 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectSuccessIllegalJson) {
       bucket_meta_factory->mock_bucket_metadata;
   action_under_test->bucket_metadata->set_multipart_index_oid(oid);
 
-  action_under_test->clovis_kv_reader =
+  action_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
               get_key_values())
@@ -347,7 +347,7 @@ TEST_F(S3DeleteBucketActionTest,
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
 
-  action_under_test->clovis_kv_reader =
+  action_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
               get_key_values())
@@ -369,7 +369,7 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectSuccessNoMultipart) {
   std::map<std::string, std::pair<int, std::string>> mymap;
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
-  action_under_test->clovis_kv_reader =
+  action_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
               get_key_values())
@@ -438,7 +438,7 @@ TEST_F(S3DeleteBucketActionTest, DeleteMultipartObjectsFailed) {
                          S3DeleteBucketActionTest::func_callback_one, this);
   action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), get_state())
-      .WillOnce(Return(S3ClovisWriterOpState::failed));
+      .WillOnce(Return(S3MotrWiterOpState::failed));
   action_under_test->delete_multipart_objects_failed();
   EXPECT_EQ(1, call_count_one);
 
@@ -447,7 +447,7 @@ TEST_F(S3DeleteBucketActionTest, DeleteMultipartObjectsFailed) {
                          S3DeleteBucketActionTest::func_callback_one, this);
   action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), get_state())
-      .WillOnce(Return(S3ClovisWriterOpState::failed_to_launch));
+      .WillOnce(Return(S3MotrWiterOpState::failed_to_launch));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
   action_under_test->delete_multipart_objects_failed();
@@ -497,11 +497,11 @@ TEST_F(S3DeleteBucketActionTest, RemovePartIndexesSuccess) {
 }
 
 TEST_F(S3DeleteBucketActionTest, RemovePartIndexesFailed) {
-  action_under_test->clovis_kv_writer =
+  action_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(1)
-      .WillOnce(Return(S3ClovisKVSWriterOpState::failed));
+      .WillOnce(Return(S3MotrKVSWriterOpState::failed));
   action_under_test->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test,
                          S3DeleteBucketActionTest::func_callback_one, this);
@@ -511,11 +511,11 @@ TEST_F(S3DeleteBucketActionTest, RemovePartIndexesFailed) {
 }
 
 TEST_F(S3DeleteBucketActionTest, RemovePartIndexesFailedToLaunch) {
-  action_under_test->clovis_kv_writer =
+  action_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(1)
-      .WillOnce(Return(S3ClovisKVSWriterOpState::failed_to_launch));
+      .WillOnce(Return(S3MotrKVSWriterOpState::failed_to_launch));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
   action_under_test->remove_part_indexes_failed();
@@ -525,7 +525,7 @@ TEST_F(S3DeleteBucketActionTest, RemovePartIndexesFailedToLaunch) {
 
 TEST_F(S3DeleteBucketActionTest, RemoveMultipartIndexMultipartPresent) {
   action_under_test->multipart_present = true;
-  action_under_test->clovis_kv_writer =
+  action_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
@@ -546,10 +546,10 @@ TEST_F(S3DeleteBucketActionTest, RemoveMultipartIndexMultipartNotPresent) {
 }
 
 TEST_F(S3DeleteBucketActionTest, RemoveMultipartIndexFailed) {
-  action_under_test->clovis_kv_writer =
+  action_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
   action_under_test->bucket_metadata->set_multipart_index_oid(oid);
@@ -561,10 +561,10 @@ TEST_F(S3DeleteBucketActionTest, RemoveMultipartIndexFailed) {
 }
 
 TEST_F(S3DeleteBucketActionTest, RemoveMultipartIndexFailedToLaunch) {
-  action_under_test->clovis_kv_writer =
+  action_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed_to_launch));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed_to_launch));
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
   action_under_test->bucket_metadata->set_multipart_index_oid(oid);
@@ -592,10 +592,10 @@ TEST_F(S3DeleteBucketActionTest, RemoveObjectListIndex) {
 }
 
 TEST_F(S3DeleteBucketActionTest, RemoveObjectListIndexFailed) {
-  action_under_test->clovis_kv_writer =
+  action_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
 
@@ -604,10 +604,10 @@ TEST_F(S3DeleteBucketActionTest, RemoveObjectListIndexFailed) {
 }
 
 TEST_F(S3DeleteBucketActionTest, RemoveObjectListIndexFailedToLaunch) {
-  action_under_test->clovis_kv_writer =
+  action_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed_to_launch));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed_to_launch));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
   action_under_test->remove_object_list_index_failed();

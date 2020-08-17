@@ -30,12 +30,11 @@
 extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
 S3AbortMultipartAction::S3AbortMultipartAction(
-    std::shared_ptr<S3RequestObject> req,
-    std::shared_ptr<ClovisAPI> s3_clovis_apis,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> s3_motr_apis,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
-    std::shared_ptr<S3MotrWriterFactory> clovis_s3_writer_factory,
+    std::shared_ptr<S3MotrWriterFactory> motr_s3_writer_factory,
     std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory)
     : S3BucketAction(std::move(req), std::move(bucket_meta_factory), false) {
@@ -63,8 +62,8 @@ S3AbortMultipartAction::S3AbortMultipartAction(
         std::make_shared<S3ObjectMultipartMetadataFactory>();
   }
 
-  if (clovis_s3_writer_factory) {
-    motr_writer_factory = std::move(clovis_s3_writer_factory);
+  if (motr_s3_writer_factory) {
+    motr_writer_factory = std::move(motr_s3_writer_factory);
   } else {
     motr_writer_factory = std::make_shared<S3MotrWriterFactory>();
   }
@@ -87,10 +86,10 @@ S3AbortMultipartAction::S3AbortMultipartAction(
     mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
 
-  if (s3_clovis_apis) {
-    s3_clovis_api = std::move(s3_clovis_apis);
+  if (s3_motr_apis) {
+    s3_motr_api = std::move(s3_motr_apis);
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
   setup_steps();
 }
@@ -201,12 +200,12 @@ void S3AbortMultipartAction::add_object_oid_to_probable_dead_oid_list() {
       true /* is_multipart */,
       object_multipart_metadata->get_part_index_oid()));
 
-  if (!clovis_kv_writer) {
-    clovis_kv_writer =
-        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
 
-  clovis_kv_writer->put_keyval(
+  motr_kv_writer->put_keyval(
       global_probable_dead_object_list_index_oid, oid_str,
       probable_delete_rec->to_json(),
       std::bind(&S3AbortMultipartAction::next, this),
@@ -221,8 +220,7 @@ void S3AbortMultipartAction::add_object_oid_to_probable_dead_oid_list_failed() {
   s3_abort_mp_action_state =
       S3AbortMultipartActionState::probableEntryRecordFailed;
 
-  if (clovis_kv_writer->get_state() ==
-      S3ClovisKVSWriterOpState::failed_to_launch) {
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
   } else {
     set_s3_error("InternalError");
@@ -383,14 +381,14 @@ void S3AbortMultipartAction::mark_oid_for_deletion() {
 
   probable_delete_rec->set_force_delete(true);
 
-  if (!clovis_kv_writer) {
-    clovis_kv_writer =
-        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  clovis_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
-                               oid_str, probable_delete_rec->to_json(),
-                               std::bind(&S3AbortMultipartAction::next, this),
-                               std::bind(&S3AbortMultipartAction::next, this));
+  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
+                             oid_str, probable_delete_rec->to_json(),
+                             std::bind(&S3AbortMultipartAction::next, this),
+                             std::bind(&S3AbortMultipartAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -415,11 +413,11 @@ void S3AbortMultipartAction::remove_probable_record() {
   if (s3_abort_mp_action_state ==
       S3AbortMultipartActionState::partsListIndexDeleted) {
     // Delete probable record only if object and part list is deleted.
-    if (!clovis_kv_writer) {
-      clovis_kv_writer = mote_kv_writer_factory->create_motr_kvs_writer(
-          request, s3_clovis_api);
+    if (!motr_kv_writer) {
+      motr_kv_writer =
+          mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
     }
-    clovis_kv_writer->delete_keyval(
+    motr_kv_writer->delete_keyval(
         global_probable_dead_object_list_index_oid, oid_str,
         std::bind(&S3AbortMultipartAction::next, this),
         std::bind(&S3AbortMultipartAction::next, this));

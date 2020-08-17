@@ -69,7 +69,7 @@ class S3PutBucketActionTest : public testing::Test {
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
   std::shared_ptr<MockS3PutBucketBodyFactory> bucket_body_factory_mock;
-  std::shared_ptr<ClovisAPI> s3_clovis_api_mock;
+  std::shared_ptr<MotrAPI> s3_motr_api_mock;
   std::string MockBucketBody;
   int call_count_one;
   std::string bucket_name;

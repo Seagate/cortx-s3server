@@ -49,13 +49,13 @@ class S3PartMetadataTest : public testing::Test {
         .WillRepeatedly(ReturnRef(bucket_name));
     EXPECT_CALL(*ptr_mock_request, get_object_name())
         .WillRepeatedly(ReturnRef(object_name));
-    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
+    ptr_mock_s3_motr_api = std::make_shared<MockS3Clovis>();
 
     motr_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
-        ptr_mock_request, ptr_mock_s3_clovis_api);
+        ptr_mock_request, ptr_mock_s3_motr_api);
 
     motr_kvs_writer_factory = std::make_shared<MockS3MotrKVSWriterFactory>(
-        ptr_mock_request, ptr_mock_s3_clovis_api);
+        ptr_mock_request, ptr_mock_s3_motr_api);
 
     part_indx_oid = {0xffff, 0xffff};
 
@@ -68,7 +68,7 @@ class S3PartMetadataTest : public testing::Test {
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_motr_api;
   std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
   std::shared_ptr<MockS3MotrKVSWriterFactory> motr_kvs_writer_factory;
   S3CallBack s3objectmetadata_callbackobj;
@@ -154,7 +154,7 @@ TEST_F(S3PartMetadataTest, Load) {
 }
 
 TEST_F(S3PartMetadataTest, LoadSuccessful) {
-  metadata_under_test->clovis_kv_reader =
+  metadata_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_clovis_kvs_reader;
 
   metadata_under_test->handler_on_success =
@@ -169,7 +169,7 @@ TEST_F(S3PartMetadataTest, LoadSuccessful) {
 }
 
 TEST_F(S3PartMetadataTest, LoadSuccessInvalidJson) {
-  metadata_under_test->clovis_kv_reader =
+  metadata_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_clovis_kvs_reader;
 
   metadata_under_test->handler_on_failed =
@@ -195,7 +195,7 @@ TEST_F(S3PartMetadataTest, LoadPartInfoFailedJsonParsingFailed) {
 TEST_F(S3PartMetadataTest, LoadPartInfoFailedMetadataMissing) {
   metadata_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
-  metadata_under_test->clovis_kv_reader =
+  metadata_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
       .Times(1)
@@ -208,7 +208,7 @@ TEST_F(S3PartMetadataTest, LoadPartInfoFailedMetadataMissing) {
 TEST_F(S3PartMetadataTest, LoadPartInfoFailedMetadataFailed) {
   metadata_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
-  metadata_under_test->clovis_kv_reader =
+  metadata_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
       .Times(1)
@@ -240,9 +240,9 @@ TEST_F(S3PartMetadataTest, CreatePartIndex) {
 TEST_F(S3PartMetadataTest, CreatePartIndexSuccessful) {
   metadata_under_test->put_metadata = true;
   struct m0_uint128 myoid = {0xfff, 0xffff};
-  metadata_under_test->clovis_kv_writer =
+  metadata_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
-  metadata_under_test->clovis_kv_writer->oid_list.push_back(myoid);
+  metadata_under_test->motr_kv_writer->oid_list.push_back(myoid);
 
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               put_keyval(_, _, _, _, _)).Times(1);
@@ -253,9 +253,9 @@ TEST_F(S3PartMetadataTest, CreatePartIndexSuccessful) {
 TEST_F(S3PartMetadataTest, CreatePartIndexSuccessfulSaveMetadata) {
   metadata_under_test->put_metadata = true;
   struct m0_uint128 myoid = {0xfff, 0xffff};
-  metadata_under_test->clovis_kv_writer =
+  metadata_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
-  metadata_under_test->clovis_kv_writer->oid_list.push_back(myoid);
+  metadata_under_test->motr_kv_writer->oid_list.push_back(myoid);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               put_keyval(_, _, _, _, _)).Times(1);
   metadata_under_test->create_part_index_successful();
@@ -264,10 +264,10 @@ TEST_F(S3PartMetadataTest, CreatePartIndexSuccessfulSaveMetadata) {
 
 TEST_F(S3PartMetadataTest, CreatePartIndexSuccessfulOnlyCreateIndex) {
   struct m0_uint128 myoid = {0xfff, 0xffff};
-  metadata_under_test->clovis_kv_writer =
+  metadata_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
   metadata_under_test->put_metadata = false;
-  metadata_under_test->clovis_kv_writer->oid_list.push_back(myoid);
+  metadata_under_test->motr_kv_writer->oid_list.push_back(myoid);
   metadata_under_test->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3objectmetadata_callbackobj);
 
@@ -277,12 +277,12 @@ TEST_F(S3PartMetadataTest, CreatePartIndexSuccessfulOnlyCreateIndex) {
 }
 
 TEST_F(S3PartMetadataTest, CreatePartIndexFailedCollisionHappened) {
-  metadata_under_test->clovis_kv_writer =
+  metadata_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
   metadata_under_test->collision_attempt_count = 1;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(1)
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::exists));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::exists));
 
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               create_index(_, _, _)).Times(1);
@@ -294,11 +294,11 @@ TEST_F(S3PartMetadataTest, CreatePartIndexFailedCollisionHappened) {
 TEST_F(S3PartMetadataTest, CreateBucketListIndexFailed) {
   metadata_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
-  metadata_under_test->clovis_kv_writer =
+  metadata_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(2)
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
   metadata_under_test->create_part_index_failed();
   EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
   EXPECT_EQ(metadata_under_test->state, S3PartMetadataState::failed);
@@ -307,11 +307,11 @@ TEST_F(S3PartMetadataTest, CreateBucketListIndexFailed) {
 TEST_F(S3PartMetadataTest, CreateBucketListIndexFailedToLaunch) {
   metadata_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
-  metadata_under_test->clovis_kv_writer =
+  metadata_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(2)
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed_to_launch));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed_to_launch));
   metadata_under_test->create_part_index_failed();
   EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
   EXPECT_EQ(metadata_under_test->state, S3PartMetadataState::failed_to_launch);
@@ -320,7 +320,7 @@ TEST_F(S3PartMetadataTest, CreateBucketListIndexFailedToLaunch) {
 TEST_F(S3PartMetadataTest, CollisionDetected) {
   metadata_under_test->index_name = "/BUCKET/seagatebucket/w121";
   metadata_under_test->collision_attempt_count = 1;
-  metadata_under_test->clovis_kv_writer =
+  metadata_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               create_index(_, _, _)).Times(1);
@@ -342,7 +342,7 @@ TEST_F(S3PartMetadataTest, CollisionDetectedMaxAttemptExceeded) {
 }
 
 TEST_F(S3PartMetadataTest, SaveMetadata) {
-  metadata_under_test->clovis_kv_writer =
+  metadata_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               put_keyval(_, _, _, _, _)).Times(1);
@@ -362,26 +362,26 @@ TEST_F(S3PartMetadataTest, SaveMetadataSuccessful) {
 }
 
 TEST_F(S3PartMetadataTest, SaveMetadataFailed) {
-  metadata_under_test->clovis_kv_writer =
+  metadata_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
   metadata_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(1)
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
   metadata_under_test->save_metadata_failed();
   EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
   EXPECT_EQ(S3PartMetadataState::failed, metadata_under_test->state);
 }
 
 TEST_F(S3PartMetadataTest, SaveMetadataFailedToLaunch) {
-  metadata_under_test->clovis_kv_writer =
+  metadata_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
   metadata_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(1)
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed_to_launch));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed_to_launch));
   metadata_under_test->save_metadata_failed();
   EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
   EXPECT_EQ(S3PartMetadataState::failed_to_launch, metadata_under_test->state);
@@ -408,33 +408,33 @@ TEST_F(S3PartMetadataTest, RemoveSuccessful) {
 }
 
 TEST_F(S3PartMetadataTest, RemoveFailed) {
-  metadata_under_test->clovis_kv_writer =
+  metadata_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
   metadata_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(1)
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
   metadata_under_test->remove_failed();
   EXPECT_EQ(S3PartMetadataState::failed, metadata_under_test->state);
   EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
 }
 
 TEST_F(S3PartMetadataTest, RemoveFailedToLaunch) {
-  metadata_under_test->clovis_kv_writer =
+  metadata_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
   metadata_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(1)
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed_to_launch));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed_to_launch));
   metadata_under_test->remove_failed();
   EXPECT_EQ(S3PartMetadataState::failed_to_launch, metadata_under_test->state);
   EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
 }
 
 TEST_F(S3PartMetadataTest, RemoveIndex) {
-  metadata_under_test->clovis_kv_writer =
+  metadata_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
 
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
@@ -454,13 +454,13 @@ TEST_F(S3PartMetadataTest, RemoveIndexSucessful) {
 }
 
 TEST_F(S3PartMetadataTest, RemoveIndexFailed) {
-  metadata_under_test->clovis_kv_writer =
+  metadata_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_clovis_kvs_writer;
   metadata_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(1)
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
 
   metadata_under_test->remove_index_failed();
   EXPECT_EQ(S3PartMetadataState::failed, metadata_under_test->state);

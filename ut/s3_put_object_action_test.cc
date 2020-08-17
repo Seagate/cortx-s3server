@@ -94,12 +94,12 @@ class S3PutObjectActionTest : public testing::Test {
     zero_oid_idx = {0ULL, 0ULL};
 
     layout_id =
-        S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+        S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
 
     call_count_one = 0;
 
-    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
-    EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+    ptr_mock_s3_motr_api = std::make_shared<MockS3Clovis>();
+    EXPECT_CALL(*ptr_mock_s3_motr_api, m0_h_ufid_next(_))
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
     async_buffer_factory =
@@ -121,30 +121,30 @@ class S3PutObjectActionTest : public testing::Test {
         std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
 
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
-        ptr_mock_request, ptr_mock_s3_clovis_api);
+        ptr_mock_request, ptr_mock_s3_motr_api);
     object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
 
     motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
-        ptr_mock_request, oid, ptr_mock_s3_clovis_api);
+        ptr_mock_request, oid, ptr_mock_s3_motr_api);
 
     bucket_tag_body_factory_mock = std::make_shared<MockS3PutTagBodyFactory>(
         MockObjectTagsStr, MockRequestId);
 
     motr_kvs_writer_factory = std::make_shared<MockS3MotrKVSWriterFactory>(
-        ptr_mock_request, ptr_mock_s3_clovis_api);
+        ptr_mock_request, ptr_mock_s3_motr_api);
     std::map<std::string, std::string> input_headers;
     input_headers["Authorization"] = "1";
     EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
         ReturnRef(input_headers));
     // EXPECT_CALL(*ptr_mock_request, get_header_value(_));
     action_under_test.reset(new S3PutObjectAction(
-        ptr_mock_request, ptr_mock_s3_clovis_api, bucket_meta_factory,
+        ptr_mock_request, ptr_mock_s3_motr_api, bucket_meta_factory,
         object_meta_factory, motr_writer_factory, bucket_tag_body_factory_mock,
         motr_kvs_writer_factory));
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_motr_api;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3MotrWriterFactory> motr_writer_factory;
@@ -536,7 +536,7 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedWithCollisionExceededRetry) {
   action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), get_state())
       .Times(1)
-      .WillOnce(Return(S3ClovisWriterOpState::exists));
+      .WillOnce(Return(S3MotrWiterOpState::exists));
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
@@ -552,7 +552,7 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedWithCollisionRetry) {
   action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), get_state())
       .Times(1)
-      .WillOnce(Return(S3ClovisWriterOpState::exists));
+      .WillOnce(Return(S3MotrWiterOpState::exists));
   EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
       Return(1024));
 
@@ -573,7 +573,7 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedTest) {
 
   EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), get_state())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3ClovisWriterOpState::failed));
+      .WillRepeatedly(Return(S3MotrWiterOpState::failed));
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
@@ -592,7 +592,7 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedToLaunchTest) {
 
   EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), get_state())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3ClovisWriterOpState::failed_to_launch));
+      .WillRepeatedly(Return(S3MotrWiterOpState::failed_to_launch));
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
@@ -799,7 +799,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectFailedShouldUndoMarkProgress) {
 
   EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), get_state())
       .Times(1)
-      .WillOnce(Return(S3ClovisWriterOpState::failed));
+      .WillOnce(Return(S3MotrWiterOpState::failed));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
   EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
@@ -831,7 +831,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure) {
 
   EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), get_state())
       .Times(1)
-      .WillOnce(Return(S3ClovisWriterOpState::failed_to_launch));
+      .WillOnce(Return(S3MotrWiterOpState::failed_to_launch));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
   EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);

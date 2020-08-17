@@ -31,15 +31,15 @@
 
 class MotrGetKeyValueAction : public MotrAction {
   m0_uint128 index_id;
-  std::shared_ptr<ClovisAPI> motr_clovis_api;
-  std::shared_ptr<S3MotrKVSReader> clovis_kv_reader;
+  std::shared_ptr<MotrAPI> motr_clovis_api;
+  std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
 
   std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory;
 
  public:
   MotrGetKeyValueAction(
       std::shared_ptr<MotrRequestObject> req,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr,
+      std::shared_ptr<MotrAPI> clovis_api = nullptr,
       std::shared_ptr<S3MotrKVSReaderFactory> clovis_motr_kvs_reader_factory =
           nullptr);
 

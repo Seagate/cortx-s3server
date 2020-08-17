@@ -275,9 +275,8 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
   // Check if we have enough approx memory to proceed with request
   if (s3_request->get_api_type() == S3ApiType::object &&
       s3_request->http_verb() == S3HttpVerb::PUT) {
-    int layout_id =
-        S3ClovisLayoutMap::get_instance()->get_layout_for_object_size(
-            s3_request->get_data_length());
+    int layout_id = S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
+        s3_request->get_data_length());
     if (!S3MemoryProfile().we_have_enough_memory_for_put_obj(layout_id) ||
         !S3MemoryProfile().free_memory_in_pool_above_threshold_limits()) {
       s3_log(S3_LOG_DEBUG, s3_request->get_request_id().c_str(),
@@ -746,7 +745,7 @@ int main(int argc, char **argv) {
         MIN_RESERVE_SIZE);
   }
 
-  S3ClovisLayoutMap::get_instance()->load_layout_recommendations(
+  S3MotrLayoutMap::get_instance()->load_layout_recommendations(
       g_option_instance->get_layout_recommendation_file());
 
   // Init stats
@@ -1021,19 +1020,19 @@ int main(int argc, char **argv) {
         S3M0Uint128Helper::to_string(global_instance_id);
 
     std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
-    std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
-    std::shared_ptr<ClovisAPI> s3_clovis_api;
+    std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
+    std::shared_ptr<MotrAPI> s3_motr_api;
 
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
     mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
 
-    if (!clovis_kv_writer) {
-      clovis_kv_writer = mote_kv_writer_factory->create_sync_clovis_kvs_writer(
-          "", s3_clovis_api);
+    if (!motr_kv_writer) {
+      motr_kv_writer = mote_kv_writer_factory->create_sync_clovis_kvs_writer(
+          "", s3_motr_api);
     }
 
-    rc = clovis_kv_writer->put_keyval_sync(global_instance_list_index,
-                                           s3server_instance_id);
+    rc = motr_kv_writer->put_keyval_sync(global_instance_list_index,
+                                         s3server_instance_id);
     if (rc != 0) {
       s3daemon.delete_pidfile();
       fini_auth_ssl();
@@ -1171,7 +1170,7 @@ int main(int argc, char **argv) {
   finalize_cli_options();
 
   S3MempoolManager::destroy_instance();
-  S3ClovisLayoutMap::destroy_instance();
+  S3MotrLayoutMap::destroy_instance();
   S3Option::destroy_instance();
   fini_log();
 

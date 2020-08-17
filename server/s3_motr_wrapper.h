@@ -38,7 +38,7 @@
 
 extern struct m0_ufid_generator s3_ufid_generator;
 
-enum class ClovisOpType {
+enum class MotrOpType {
   unknown,
   openobj,
   createobj,
@@ -53,7 +53,7 @@ enum class ClovisOpType {
   deletekv,
 };
 
-class ClovisAPI {
+class MotrAPI {
  public:
   virtual void clovis_idx_init(struct m0_clovis_idx *idx,
                                struct m0_clovis_realm *parent,
@@ -102,14 +102,14 @@ class ClovisAPI {
 
   virtual void clovis_op_launch(uint64_t addb_request_id,
                                 struct m0_clovis_op **op, uint32_t nr,
-                                ClovisOpType type = ClovisOpType::unknown) = 0;
+                                MotrOpType type = MotrOpType::unknown) = 0;
   virtual int clovis_op_wait(m0_clovis_op *op, uint64_t bits, m0_time_t to) = 0;
 
   virtual int clovis_op_rc(const struct m0_clovis_op *op) = 0;
   virtual int m0_h_ufid_next(struct m0_uint128 *ufid) = 0;
 };
 
-class ConcreteClovisAPI : public ClovisAPI {
+class ConcreteMotrAPI : public MotrAPI {
  private:
   // xxx This currently assumes only one fake operation is invoked.
   void clovis_fake_op_launch(struct m0_clovis_op **op, uint32_t nr) {
@@ -263,53 +263,48 @@ class ConcreteClovisAPI : public ClovisAPI {
     return m0_clovis_obj_op(obj, opcode, ext, data, attr, mask, op);
   }
 
-  bool is_kvs_op(ClovisOpType type) {
-    return type == ClovisOpType::getkv || type == ClovisOpType::putkv ||
-           type == ClovisOpType::deletekv;
+  bool is_kvs_op(MotrOpType type) {
+    return type == MotrOpType::getkv || type == MotrOpType::putkv ||
+           type == MotrOpType::deletekv;
   }
 
-  bool is_redis_kvs_op(S3Option *opts, ClovisOpType type) {
+  bool is_redis_kvs_op(S3Option *opts, MotrOpType type) {
     return opts && opts->is_fake_clovis_redis_kvs() && is_kvs_op(type);
   }
 
   void clovis_op_launch(uint64_t addb_request_id, struct m0_clovis_op **op,
-                        uint32_t nr,
-                        ClovisOpType type = ClovisOpType::unknown) {
+                        uint32_t nr, MotrOpType type = MotrOpType::unknown) {
     S3Option *config = S3Option::get_instance();
     clovis_op_launch_addb_add(addb_request_id, op, nr);
-    if ((config->is_fake_clovis_createobj() &&
-         type == ClovisOpType::createobj) ||
-        (config->is_fake_clovis_writeobj() && type == ClovisOpType::writeobj) ||
-        (config->is_fake_clovis_readobj() && type == ClovisOpType::readobj) ||
-        (config->is_fake_clovis_deleteobj() &&
-         type == ClovisOpType::deleteobj) ||
-        (config->is_fake_clovis_createidx() &&
-         type == ClovisOpType::createidx) ||
-        (config->is_fake_clovis_deleteidx() &&
-         type == ClovisOpType::deleteidx) ||
-        (config->is_fake_clovis_getkv() && type == ClovisOpType::getkv) ||
-        (config->is_fake_clovis_putkv() && type == ClovisOpType::putkv) ||
-        (config->is_fake_clovis_deletekv() && type == ClovisOpType::deletekv)) {
+    if ((config->is_fake_clovis_createobj() && type == MotrOpType::createobj) ||
+        (config->is_fake_clovis_writeobj() && type == MotrOpType::writeobj) ||
+        (config->is_fake_clovis_readobj() && type == MotrOpType::readobj) ||
+        (config->is_fake_clovis_deleteobj() && type == MotrOpType::deleteobj) ||
+        (config->is_fake_clovis_createidx() && type == MotrOpType::createidx) ||
+        (config->is_fake_clovis_deleteidx() && type == MotrOpType::deleteidx) ||
+        (config->is_fake_clovis_getkv() && type == MotrOpType::getkv) ||
+        (config->is_fake_clovis_putkv() && type == MotrOpType::putkv) ||
+        (config->is_fake_clovis_deletekv() && type == MotrOpType::deletekv)) {
       clovis_fake_op_launch(op, nr);
     } else if (is_redis_kvs_op(config, type)) {
       clovis_fake_redis_op_launch(op, nr);
-    } else if ((type == ClovisOpType::createobj &&
+    } else if ((type == MotrOpType::createobj &&
                 s3_fi_is_enabled("clovis_obj_create_fail")) ||
-               (type == ClovisOpType::openobj &&
+               (type == MotrOpType::openobj &&
                 s3_fi_is_enabled("clovis_obj_open_fail")) ||
-               (type == ClovisOpType::writeobj &&
+               (type == MotrOpType::writeobj &&
                 s3_fi_is_enabled("clovis_obj_write_fail")) ||
-               (type == ClovisOpType::deleteobj &&
+               (type == MotrOpType::deleteobj &&
                 s3_fi_is_enabled("clovis_obj_delete_fail")) ||
-               (type == ClovisOpType::createidx &&
+               (type == MotrOpType::createidx &&
                 s3_fi_is_enabled("clovis_idx_create_fail")) ||
-               (type == ClovisOpType::deleteidx &&
+               (type == MotrOpType::deleteidx &&
                 s3_fi_is_enabled("clovis_idx_delete_fail")) ||
-               (type == ClovisOpType::deletekv &&
+               (type == MotrOpType::deletekv &&
                 s3_fi_is_enabled("clovis_kv_delete_fail")) ||
-               (type == ClovisOpType::putkv &&
+               (type == MotrOpType::putkv &&
                 s3_fi_is_enabled("clovis_kv_put_fail")) ||
-               (type == ClovisOpType::getkv &&
+               (type == MotrOpType::getkv &&
                 s3_fi_is_enabled("clovis_kv_get_fail"))) {
       clovis_fi_op_launch(op, nr);
     } else {

@@ -100,7 +100,7 @@ static int _init_option_and_instance() {
       "s3stats-whitelist-test.yaml");
   g_stats_instance = S3Stats::get_instance();
   g_option_instance->dump_options();
-  S3ClovisLayoutMap::get_instance()->load_layout_recommendations(
+  S3MotrLayoutMap::get_instance()->load_layout_recommendations(
       g_option_instance->get_layout_recommendation_file());
 
   return 0;
@@ -113,7 +113,7 @@ static void _cleanup_option_and_instance() {
   if (g_option_instance) {
     S3Option::destroy_instance();
   }
-  S3ClovisLayoutMap::destroy_instance();
+  S3MotrLayoutMap::destroy_instance();
 }
 
 static int clovis_ut_init() {

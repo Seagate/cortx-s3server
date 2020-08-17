@@ -40,7 +40,7 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3MotrWriterFactory> clovis_s3_factory,
     std::shared_ptr<S3AuthClientFactory> auth_factory,
-    std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
@@ -61,9 +61,9 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
 
   action_uses_cleanup = true;
   if (clovis_api) {
-    s3_clovis_api = clovis_api;
+    s3_motr_api = clovis_api;
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
 
   if (S3Option::get_instance()->is_auth_disabled()) {
@@ -77,7 +77,7 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
   old_object_oid = {0ULL, 0ULL};
   old_layout_id = -1;
   new_object_oid = {0ULL, 0ULL};
-  S3UriToMotrOID(s3_clovis_api, request->get_object_uri().c_str(), request_id,
+  S3UriToMotrOID(s3_motr_api, request->get_object_uri().c_str(), request_id,
                  &new_object_oid);
   tried_count = 0;
   salt = "uri_salt_";
@@ -326,7 +326,7 @@ void S3PutChunkUploadObjectAction::create_object() {
     clovis_writer->set_oid(new_object_oid);
   }
 
-  layout_id = S3ClovisLayoutMap::get_instance()->get_layout_for_object_size(
+  layout_id = S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
       request->get_data_length());
 
   clovis_writer->create_object(
@@ -364,10 +364,10 @@ void S3PutChunkUploadObjectAction::create_object_failed() {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
-  if (clovis_writer->get_state() == S3ClovisWriterOpState::exists) {
+  if (clovis_writer->get_state() == S3MotrWiterOpState::exists) {
     collision_detected();
   } else if (clovis_writer->get_state() ==
-             S3ClovisWriterOpState::failed_to_launch) {
+             S3MotrWiterOpState::failed_to_launch) {
     s3_put_chunk_action_state =
         S3PutChunkUploadObjectActionState::newObjOidCreationFailed;
     create_object_timer.stop();
@@ -435,7 +435,7 @@ void S3PutChunkUploadObjectAction::create_new_oid(
     salted_uri = request->get_object_uri() + salt +
                  std::to_string(salt_counter) + std::to_string(tried_count);
 
-    S3UriToMotrOID(s3_clovis_api, salted_uri.c_str(), request_id,
+    S3UriToMotrOID(s3_motr_api, salted_uri.c_str(), request_id,
                    &new_object_oid);
 
     ++salt_counter;
@@ -615,7 +615,7 @@ void S3PutChunkUploadObjectAction::write_object_failed() {
     client_read_error();
     return;
   }
-  if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
+  if (clovis_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
     s3_log(S3_LOG_ERROR, request_id,
            "write_object_failed called due to clovis_entity_open failure\n");
@@ -721,11 +721,11 @@ void S3PutChunkUploadObjectAction::add_object_oid_to_probable_dead_oid_list() {
   // store new oid, key = newoid
   probable_oid_list[new_oid_str] = new_probable_del_rec->to_json();
 
-  if (!clovis_kv_writer) {
-    clovis_kv_writer =
-        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  clovis_kv_writer->put_keyval(
+  motr_kv_writer->put_keyval(
       global_probable_dead_object_list_index_oid, probable_oid_list,
       std::bind(&S3PutChunkUploadObjectAction::next, this),
       std::bind(&S3PutChunkUploadObjectAction::
@@ -739,8 +739,7 @@ void S3PutChunkUploadObjectAction::
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_put_chunk_action_state =
       S3PutChunkUploadObjectActionState::probableEntryRecordFailed;
-  if (clovis_kv_writer->get_state() ==
-      S3ClovisKVSWriterOpState::failed_to_launch) {
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
   } else {
     set_s3_error("InternalError");
@@ -880,11 +879,11 @@ void S3PutChunkUploadObjectAction::mark_new_oid_for_deletion() {
   // update new oid, key = newoid, force_del = true
   new_probable_del_rec->set_force_delete(true);
 
-  if (!clovis_kv_writer) {
-    clovis_kv_writer =
-        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  clovis_kv_writer->put_keyval(
+  motr_kv_writer->put_keyval(
       global_probable_dead_object_list_index_oid, new_oid_str,
       new_probable_del_rec->to_json(),
       std::bind(&S3PutChunkUploadObjectAction::next, this),
@@ -903,11 +902,11 @@ void S3PutChunkUploadObjectAction::mark_old_oid_for_deletion() {
   // update old oid, force_del = true
   old_probable_del_rec->set_force_delete(true);
 
-  if (!clovis_kv_writer) {
-    clovis_kv_writer =
-        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  clovis_kv_writer->put_keyval(
+  motr_kv_writer->put_keyval(
       global_probable_dead_object_list_index_oid, old_oid_rec_key,
       old_probable_del_rec->to_json(),
       std::bind(&S3PutChunkUploadObjectAction::next, this),
@@ -923,11 +922,11 @@ void S3PutChunkUploadObjectAction::remove_old_oid_probable_record() {
   // key = oldoid + "-" + newoid
   std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
 
-  if (!clovis_kv_writer) {
-    clovis_kv_writer =
-        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  clovis_kv_writer->delete_keyval(
+  motr_kv_writer->delete_keyval(
       global_probable_dead_object_list_index_oid, old_oid_rec_key,
       std::bind(&S3PutChunkUploadObjectAction::next, this),
       std::bind(&S3PutChunkUploadObjectAction::next, this));
@@ -938,11 +937,11 @@ void S3PutChunkUploadObjectAction::remove_new_oid_probable_record() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   assert(!new_oid_str.empty());
 
-  if (!clovis_kv_writer) {
-    clovis_kv_writer =
-        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  clovis_kv_writer->delete_keyval(
+  motr_kv_writer->delete_keyval(
       global_probable_dead_object_list_index_oid, new_oid_str,
       std::bind(&S3PutChunkUploadObjectAction::next, this),
       std::bind(&S3PutChunkUploadObjectAction::next, this));

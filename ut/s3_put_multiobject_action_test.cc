@@ -71,7 +71,7 @@ class S3PutMultipartObjectActionTest : public testing::Test {
     object_name = "objname";
 
     layout_id =
-        S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+        S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
 
     async_buffer_factory =
         std::make_shared<MockS3AsyncBufferOptContainerFactory>(
@@ -84,9 +84,9 @@ class S3PutMultipartObjectActionTest : public testing::Test {
     EXPECT_CALL(*ptr_mock_request, get_object_name())
         .WillRepeatedly(ReturnRef(object_name));
 
-    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
+    ptr_mock_s3_motr_api = std::make_shared<MockS3Clovis>();
 
-    EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+    EXPECT_CALL(*ptr_mock_s3_motr_api, m0_h_ufid_next(_))
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
     EXPECT_CALL(*ptr_mock_request, get_query_string_value("uploadId"))
@@ -95,19 +95,19 @@ class S3PutMultipartObjectActionTest : public testing::Test {
         .WillRepeatedly(Return("1"));
 
     bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
-        ptr_mock_request, ptr_mock_s3_clovis_api);
+        ptr_mock_request, ptr_mock_s3_motr_api);
     object_mp_meta_factory =
         std::make_shared<MockS3ObjectMultipartMetadataFactory>(
-            ptr_mock_request, ptr_mock_s3_clovis_api, upload_id);
+            ptr_mock_request, ptr_mock_s3_motr_api, upload_id);
     object_mp_meta_factory->set_object_list_index_oid(mp_indx_oid);
     part_meta_factory = std::make_shared<MockS3PartMetadataFactory>(
         ptr_mock_request, oid, upload_id, 0);
     motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
-        ptr_mock_request, oid, ptr_mock_s3_clovis_api);
+        ptr_mock_request, oid, ptr_mock_s3_motr_api);
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_motr_api;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3PartMetadataFactory> part_meta_factory;
   std::shared_ptr<MockS3ObjectMultipartMetadataFactory> object_mp_meta_factory;
@@ -133,7 +133,7 @@ class S3PutMultipartObjectActionTestNoMockAuth
   S3PutMultipartObjectActionTestNoMockAuth()
       : S3PutMultipartObjectActionTest() {
     S3Option::get_instance()->disable_auth();
-    EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+    EXPECT_CALL(*ptr_mock_s3_motr_api, m0_h_ufid_next(_))
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
     EXPECT_CALL(*ptr_mock_request, is_chunked()).WillRepeatedly(Return(false));
@@ -413,7 +413,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMultipartMetadata) {
   action_under_test->part_number = 1;
 
   size_t unit_size =
-      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
   EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata,
               get_part_one_size()).WillRepeatedly(Return(0));
   EXPECT_CALL(*ptr_mock_request, get_content_length())
@@ -432,7 +432,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMultipartMetadataError) {
   action_under_test->part_number = 1;
 
   size_t unit_size =
-      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
   EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata,
               get_part_one_size()).WillRepeatedly(Return(unit_size));
   EXPECT_CALL(*ptr_mock_request, get_data_length())
@@ -488,7 +488,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMultipartMetadataAssert) {
   action_under_test->part_number = 2;
 
   size_t unit_size =
-      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
   EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata,
               get_part_one_size()).WillRepeatedly(Return(0));
   EXPECT_CALL(*ptr_mock_request, get_content_length())
@@ -543,7 +543,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffsetPart1) {
 
   m0_uint128 oid = {0x1ffff, 0x1ffff};
   size_t unit_size =
-      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
   EXPECT_CALL(*part_meta_factory->mock_part_metadata, get_content_length())
       .WillRepeatedly(Return(unit_size - 2));
   EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_layout_id())
@@ -572,7 +572,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffset) {
   EXPECT_CALL(*(ptr_mock_request), is_chunked()).WillOnce(Return(true));
 
   size_t unit_size =
-      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
   EXPECT_CALL(*part_meta_factory->mock_part_metadata, get_content_length())
       .WillRepeatedly(Return(unit_size));
   EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_oid())
@@ -600,7 +600,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffsetNoChunk) {
   EXPECT_CALL(*(ptr_mock_request), is_chunked()).WillOnce(Return(false));
 
   size_t unit_size =
-      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
   EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata,
               get_part_one_size()).WillRepeatedly(Return(unit_size));
   EXPECT_CALL(*ptr_mock_request, get_content_length())

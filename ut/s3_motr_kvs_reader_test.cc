@@ -51,7 +51,7 @@ int s3_kvs_test_clovis_idx_op(struct m0_clovis_idx *idx,
 void s3_kvs_test_free_op(struct m0_clovis_op *op) { free(op); }
 
 static void s3_test_motr_op_launch(uint64_t, struct m0_clovis_op **op,
-                                   uint32_t nr, ClovisOpType type) {
+                                   uint32_t nr, MotrOpType type) {
   struct s3_motr_context_obj *ctx =
       (struct s3_motr_context_obj *)op[0]->op_datum;
 
@@ -78,7 +78,7 @@ static void s3_test_motr_op_launch(uint64_t, struct m0_clovis_op **op,
 }
 
 static void s3_test_motr_op_launch_fail(uint64_t, struct m0_clovis_op **op,
-                                        uint32_t nr, ClovisOpType type) {
+                                        uint32_t nr, MotrOpType type) {
   struct s3_motr_context_obj *ctx =
       (struct s3_motr_context_obj *)op[0]->op_datum;
 
@@ -96,7 +96,7 @@ static void s3_test_motr_op_launch_fail(uint64_t, struct m0_clovis_op **op,
 
 static void s3_test_motr_op_launch_fail_enoent(uint64_t,
                                                struct m0_clovis_op **op,
-                                               uint32_t nr, ClovisOpType type) {
+                                               uint32_t nr, MotrOpType type) {
   struct s3_motr_context_obj *ctx =
       (struct s3_motr_context_obj *)op[0]->op_datum;
 
@@ -164,7 +164,7 @@ TEST_F(S3MotrKVSReaderTest, CleanupContexts) {
 }
 
 TEST_F(S3MotrKVSReaderTest, GetKeyvalTest) {
-  S3CallBack s3cloviskvscallbackobj;
+  S3CallBack s3motrkvscallbackobj;
 
   test_key = "utTestKey";
 
@@ -178,15 +178,15 @@ TEST_F(S3MotrKVSReaderTest, GetKeyvalTest) {
 
   ptr_cloviskvs_reader->get_keyval(
       index_oid, test_key,
-      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+      std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
-  EXPECT_TRUE(s3cloviskvscallbackobj.success_called);
-  EXPECT_FALSE(s3cloviskvscallbackobj.fail_called);
+  EXPECT_TRUE(s3motrkvscallbackobj.success_called);
+  EXPECT_FALSE(s3motrkvscallbackobj.fail_called);
 }
 
 TEST_F(S3MotrKVSReaderTest, GetKeyvalFailTest) {
-  S3CallBack s3cloviskvscallbackobj;
+  S3CallBack s3motrkvscallbackobj;
 
   test_key = "utTestKey";
 
@@ -199,15 +199,15 @@ TEST_F(S3MotrKVSReaderTest, GetKeyvalFailTest) {
 
   ptr_cloviskvs_reader->get_keyval(
       index_oid, test_key,
-      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+      std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
-  EXPECT_FALSE(s3cloviskvscallbackobj.success_called);
-  EXPECT_TRUE(s3cloviskvscallbackobj.fail_called);
+  EXPECT_FALSE(s3motrkvscallbackobj.success_called);
+  EXPECT_TRUE(s3motrkvscallbackobj.fail_called);
 }
 
 TEST_F(S3MotrKVSReaderTest, GetKeyvalIdxPresentTest) {
-  S3CallBack s3cloviskvscallbackobj;
+  S3CallBack s3motrkvscallbackobj;
 
   test_key = "utTestKey";
 
@@ -228,16 +228,16 @@ TEST_F(S3MotrKVSReaderTest, GetKeyvalIdxPresentTest) {
 
   ptr_cloviskvs_reader->get_keyval(
       index_oid, test_key,
-      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+      std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
   EXPECT_EQ(1, ptr_cloviskvs_reader->idx_ctx->idx_count);
-  EXPECT_TRUE(s3cloviskvscallbackobj.success_called);
-  EXPECT_FALSE(s3cloviskvscallbackobj.fail_called);
+  EXPECT_TRUE(s3motrkvscallbackobj.success_called);
+  EXPECT_FALSE(s3motrkvscallbackobj.fail_called);
 }
 
 TEST_F(S3MotrKVSReaderTest, GetKeyvalTestEmpty) {
-  S3CallBack s3cloviskvscallbackobj;
+  S3CallBack s3motrkvscallbackobj;
 
   test_key = "";  // Empty key string
 
@@ -251,15 +251,15 @@ TEST_F(S3MotrKVSReaderTest, GetKeyvalTestEmpty) {
 
   ptr_cloviskvs_reader->get_keyval(
       index_oid, test_key,
-      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+      std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
-  EXPECT_TRUE(s3cloviskvscallbackobj.success_called);
-  EXPECT_FALSE(s3cloviskvscallbackobj.fail_called);
+  EXPECT_TRUE(s3motrkvscallbackobj.success_called);
+  EXPECT_FALSE(s3motrkvscallbackobj.fail_called);
 }
 
 TEST_F(S3MotrKVSReaderTest, GetKeyvalSuccessfulTest) {
-  S3CallBack s3cloviskvscallbackobj;
+  S3CallBack s3motrkvscallbackobj;
   test_key = "utTestKey";
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
@@ -272,18 +272,18 @@ TEST_F(S3MotrKVSReaderTest, GetKeyvalSuccessfulTest) {
 
   ptr_cloviskvs_reader->get_keyval(
       index_oid, test_key,
-      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+      std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
   ptr_cloviskvs_reader->get_keyval_successful();
   EXPECT_TRUE(ptr_cloviskvs_reader->get_state() ==
               S3MotrKVSReaderOpState::present);
-  EXPECT_TRUE(s3cloviskvscallbackobj.success_called);
-  EXPECT_FALSE(s3cloviskvscallbackobj.fail_called);
+  EXPECT_TRUE(s3motrkvscallbackobj.success_called);
+  EXPECT_FALSE(s3motrkvscallbackobj.fail_called);
 }
 
 TEST_F(S3MotrKVSReaderTest, GetKeyvalFailedTest) {
-  S3CallBack s3cloviskvscallbackobj;
+  S3CallBack s3motrkvscallbackobj;
   test_key = "utTestKey";
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
@@ -299,18 +299,18 @@ TEST_F(S3MotrKVSReaderTest, GetKeyvalFailedTest) {
       .WillRepeatedly(Return(-EPERM));
   ptr_cloviskvs_reader->get_keyval(
       index_oid, test_key,
-      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+      std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
   ptr_cloviskvs_reader->get_keyval_failed();
   EXPECT_TRUE(ptr_cloviskvs_reader->get_state() ==
               S3MotrKVSReaderOpState::failed);
-  EXPECT_TRUE(s3cloviskvscallbackobj.fail_called);
-  EXPECT_FALSE(s3cloviskvscallbackobj.success_called);
+  EXPECT_TRUE(s3motrkvscallbackobj.fail_called);
+  EXPECT_FALSE(s3motrkvscallbackobj.success_called);
 }
 
 TEST_F(S3MotrKVSReaderTest, GetKeyvalFailedTestMissing) {
-  S3CallBack s3cloviskvscallbackobj;
+  S3CallBack s3motrkvscallbackobj;
   test_key = "utTestKey";
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
@@ -326,18 +326,18 @@ TEST_F(S3MotrKVSReaderTest, GetKeyvalFailedTestMissing) {
       .WillRepeatedly(Return(-ENOENT));
   ptr_cloviskvs_reader->get_keyval(
       index_oid, test_key,
-      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+      std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
   ptr_cloviskvs_reader->get_keyval_failed();
   EXPECT_TRUE(ptr_cloviskvs_reader->get_state() ==
               S3MotrKVSReaderOpState::missing);
-  EXPECT_TRUE(s3cloviskvscallbackobj.fail_called);
-  EXPECT_FALSE(s3cloviskvscallbackobj.success_called);
+  EXPECT_TRUE(s3motrkvscallbackobj.fail_called);
+  EXPECT_FALSE(s3motrkvscallbackobj.success_called);
 }
 
 TEST_F(S3MotrKVSReaderTest, NextKeyvalTest) {
-  S3CallBack s3cloviskvscallbackobj;
+  S3CallBack s3motrkvscallbackobj;
   test_key = "utTestKey";
   nr_kvp = 5;
 
@@ -350,15 +350,15 @@ TEST_F(S3MotrKVSReaderTest, NextKeyvalTest) {
       .WillOnce(Invoke(s3_test_motr_op_launch));
   ptr_cloviskvs_reader->next_keyval(
       index_oid, test_key, nr_kvp,
-      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+      std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
-  EXPECT_TRUE(s3cloviskvscallbackobj.success_called);
-  EXPECT_FALSE(s3cloviskvscallbackobj.fail_called);
+  EXPECT_TRUE(s3motrkvscallbackobj.success_called);
+  EXPECT_FALSE(s3motrkvscallbackobj.fail_called);
 }
 
 TEST_F(S3MotrKVSReaderTest, NextKeyvalIdxPresentTest) {
-  S3CallBack s3cloviskvscallbackobj;
+  S3CallBack s3motrkvscallbackobj;
   test_key = "utTestKey";
   nr_kvp = 5;
 
@@ -378,16 +378,16 @@ TEST_F(S3MotrKVSReaderTest, NextKeyvalIdxPresentTest) {
 
   ptr_cloviskvs_reader->next_keyval(
       index_oid, test_key, nr_kvp,
-      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+      std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
   EXPECT_EQ(1, ptr_cloviskvs_reader->idx_ctx->idx_count);
-  EXPECT_TRUE(s3cloviskvscallbackobj.success_called);
-  EXPECT_FALSE(s3cloviskvscallbackobj.fail_called);
+  EXPECT_TRUE(s3motrkvscallbackobj.success_called);
+  EXPECT_FALSE(s3motrkvscallbackobj.fail_called);
 }
 
 TEST_F(S3MotrKVSReaderTest, NextKeyvalSuccessfulTest) {
-  S3CallBack s3cloviskvscallbackobj;
+  S3CallBack s3motrkvscallbackobj;
 
   index_name = "ACCOUNT/s3ut_test";
   test_key = "utTestKey";
@@ -403,18 +403,18 @@ TEST_F(S3MotrKVSReaderTest, NextKeyvalSuccessfulTest) {
 
   ptr_cloviskvs_reader->next_keyval(
       index_oid, test_key, nr_kvp,
-      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+      std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
   EXPECT_TRUE(ptr_cloviskvs_reader->get_state() ==
               S3MotrKVSReaderOpState::present);
   EXPECT_EQ(ptr_cloviskvs_reader->last_result_keys_values.size(), 1);
-  EXPECT_TRUE(s3cloviskvscallbackobj.success_called);
-  EXPECT_FALSE(s3cloviskvscallbackobj.fail_called);
+  EXPECT_TRUE(s3motrkvscallbackobj.success_called);
+  EXPECT_FALSE(s3motrkvscallbackobj.fail_called);
 }
 
 TEST_F(S3MotrKVSReaderTest, NextKeyvalFailedTest) {
-  S3CallBack s3cloviskvscallbackobj;
+  S3CallBack s3motrkvscallbackobj;
   index_name = "ACCOUNT/s3ut_test";
   test_key = "utTestKey";
   nr_kvp = 5;
@@ -433,18 +433,18 @@ TEST_F(S3MotrKVSReaderTest, NextKeyvalFailedTest) {
       ptr_mock_s3request, NULL, NULL, ptr_mock_s3clovis));
   ptr_cloviskvs_reader->next_keyval(
       index_oid, test_key, nr_kvp,
-      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+      std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
   ptr_cloviskvs_reader->next_keyval_failed();
   EXPECT_TRUE(ptr_cloviskvs_reader->get_state() ==
               S3MotrKVSReaderOpState::failed);
-  EXPECT_TRUE(s3cloviskvscallbackobj.fail_called);
-  EXPECT_FALSE(s3cloviskvscallbackobj.success_called);
+  EXPECT_TRUE(s3motrkvscallbackobj.fail_called);
+  EXPECT_FALSE(s3motrkvscallbackobj.success_called);
 }
 
 TEST_F(S3MotrKVSReaderTest, NextKeyvalFailedTestMissing) {
-  S3CallBack s3cloviskvscallbackobj;
+  S3CallBack s3motrkvscallbackobj;
   index_name = "ACCOUNT/s3ut_test";
   test_key = "utTestKey";
   nr_kvp = 5;
@@ -460,12 +460,12 @@ TEST_F(S3MotrKVSReaderTest, NextKeyvalFailedTestMissing) {
       .WillRepeatedly(Return(-ENOENT));
   ptr_cloviskvs_reader->next_keyval(
       index_oid, test_key, nr_kvp,
-      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+      std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
   ptr_cloviskvs_reader->next_keyval_failed();
   EXPECT_TRUE(ptr_cloviskvs_reader->get_state() ==
               S3MotrKVSReaderOpState::missing);
-  EXPECT_TRUE(s3cloviskvscallbackobj.fail_called);
-  EXPECT_FALSE(s3cloviskvscallbackobj.success_called);
+  EXPECT_TRUE(s3motrkvscallbackobj.fail_called);
+  EXPECT_FALSE(s3motrkvscallbackobj.success_called);
 }

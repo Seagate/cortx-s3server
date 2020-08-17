@@ -47,7 +47,7 @@ class S3MotrKVSReaderContext : public S3AsyncOpContextBase {
   S3MotrKVSReaderContext(std::shared_ptr<RequestObject> req,
                          std::function<void()> success_callback,
                          std::function<void()> failed_callback,
-                         std::shared_ptr<ClovisAPI> clovis_api = nullptr)
+                         std::shared_ptr<MotrAPI> clovis_api = nullptr)
       : S3AsyncOpContextBase(req, success_callback, failed_callback, 1,
                              clovis_api) {
     request_id = request->get_request_id();
@@ -102,7 +102,7 @@ class S3MotrKVSReader {
 
   std::shared_ptr<RequestObject> request;
   std::unique_ptr<S3MotrKVSReaderContext> reader_context;
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::shared_ptr<MotrAPI> s3_motr_api;
 
   std::string request_id;
 
@@ -130,7 +130,7 @@ class S3MotrKVSReader {
 
  public:
   S3MotrKVSReader(std::shared_ptr<RequestObject> req,
-                  std::shared_ptr<ClovisAPI> clovis_api = nullptr);
+                  std::shared_ptr<MotrAPI> clovis_api = nullptr);
   virtual ~S3MotrKVSReader();
 
   virtual S3MotrKVSReaderOpState get_state() { return state; }

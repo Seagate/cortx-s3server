@@ -23,15 +23,14 @@
 #include "s3_m0_uint128_helper.h"
 
 MotrGetKeyValueAction::MotrGetKeyValueAction(
-    std::shared_ptr<MotrRequestObject> req,
-    std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<MotrRequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3MotrKVSReaderFactory> clovis_motr_kvs_reader_factory)
     : MotrAction(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
   if (clovis_api) {
     motr_clovis_api = clovis_api;
   } else {
-    motr_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    motr_clovis_api = std::make_shared<ConcreteMotrAPI>();
   }
 
   if (clovis_motr_kvs_reader_factory) {
@@ -60,9 +59,9 @@ void MotrGetKeyValueAction::fetch_key_value() {
     set_s3_error("BadRequest");
     send_response_to_s3_client();
   } else {
-    clovis_kv_reader = motr_kvs_reader_factory->create_clovis_kvs_reader(
+    motr_kv_reader = motr_kvs_reader_factory->create_motr_kvs_reader(
         request, motr_clovis_api);
-    clovis_kv_reader->get_keyval(
+    motr_kv_reader->get_keyval(
         index_id, request->get_key_name(),
         std::bind(&MotrGetKeyValueAction::fetch_key_value_successful, this),
         std::bind(&MotrGetKeyValueAction::fetch_key_value_failed, this));
@@ -79,9 +78,9 @@ void MotrGetKeyValueAction::fetch_key_value_successful() {
 
 void MotrGetKeyValueAction::fetch_key_value_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
+  if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     set_s3_error("NoSuchKey");
-  } else if (clovis_kv_reader->get_state() ==
+  } else if (motr_kv_reader->get_state() ==
              S3MotrKVSReaderOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Failed to retrive the key, due to pre launch failure\n");
@@ -111,7 +110,7 @@ void MotrGetKeyValueAction::send_response_to_s3_client() {
     }
     request->send_response(error.get_http_status_code(), response_xml);
   } else {
-    request->send_response(S3HttpSuccess200, clovis_kv_reader->get_value());
+    request->send_response(S3HttpSuccess200, motr_kv_reader->get_value());
   }
   done();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

@@ -38,7 +38,7 @@ void S3PartMetadata::initialize(std::string uploadid, int part_num) {
   index_name = get_part_index_name();
   salt = "index_salt_";
   collision_attempt_count = 0;
-  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  s3_motr_api = std::make_shared<ConcreteMotrAPI>();
 
   // Set the defaults
   system_defined_attribute["Date"] = "";
@@ -72,9 +72,9 @@ S3PartMetadata::S3PartMetadata(
   part_index_name_oid = {0ULL, 0ULL};
 
   if (kv_reader_factory) {
-    clovis_kv_reader_factory = kv_reader_factory;
+    motr_kv_reader_factory = kv_reader_factory;
   } else {
-    clovis_kv_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+    motr_kv_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   if (kv_writer_factory) {
@@ -96,9 +96,9 @@ S3PartMetadata::S3PartMetadata(
   part_index_name_oid = oid;
 
   if (kv_reader_factory) {
-    clovis_kv_reader_factory = kv_reader_factory;
+    motr_kv_reader_factory = kv_reader_factory;
   } else {
-    clovis_kv_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+    motr_kv_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   if (kv_writer_factory) {
@@ -182,24 +182,23 @@ void S3PartMetadata::load(std::function<void(void)> on_success,
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
-  clovis_kv_reader = clovis_kv_reader_factory->create_clovis_kvs_reader(
-      request, s3_clovis_api);
+  motr_kv_reader =
+      motr_kv_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
 
-  clovis_kv_reader->get_keyval(
-      part_index_name_oid, str_part_num,
-      std::bind(&S3PartMetadata::load_successful, this),
-      std::bind(&S3PartMetadata::load_failed, this));
+  motr_kv_reader->get_keyval(part_index_name_oid, str_part_num,
+                             std::bind(&S3PartMetadata::load_successful, this),
+                             std::bind(&S3PartMetadata::load_failed, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PartMetadata::load_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Found part metadata\n");
-  if (this->from_json(clovis_kv_reader->get_value()) != 0) {
+  if (this->from_json(motr_kv_reader->get_value()) != 0) {
     s3_log(S3_LOG_ERROR, request_id,
            "Json Parsing failed. Index oid = "
            "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
            part_index_name_oid.u_hi, part_index_name_oid.u_lo,
-           str_part_num.c_str(), clovis_kv_reader->get_value().c_str());
+           str_part_num.c_str(), motr_kv_reader->get_value().c_str());
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
            S3_IEM_METADATA_CORRUPTED_JSON);
 
@@ -215,7 +214,7 @@ void S3PartMetadata::load_failed() {
   s3_log(S3_LOG_WARN, request_id, "Missing part metadata\n");
   if (json_parsing_error) {
     state = S3PartMetadataState::failed;
-  } else if (clovis_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
+  } else if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     state = S3PartMetadataState::missing;  // Missing
   } else {
     state = S3PartMetadataState::failed;
@@ -249,10 +248,10 @@ void S3PartMetadata::create_part_index() {
   // Mark missing as we initiate write, in case it fails to write.
   state = S3PartMetadataState::missing;
 
-  clovis_kv_writer =
-      mote_kv_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
+  motr_kv_writer =
+      mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
 
-  clovis_kv_writer->create_index(
+  motr_kv_writer->create_index(
       index_name,
       std::bind(&S3PartMetadata::create_part_index_successful, this),
       std::bind(&S3PartMetadata::create_part_index_failed, this));
@@ -261,7 +260,7 @@ void S3PartMetadata::create_part_index() {
 
 void S3PartMetadata::create_part_index_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Created index for part info\n");
-  part_index_name_oid = clovis_kv_writer->get_oid();
+  part_index_name_oid = motr_kv_writer->get_oid();
   if (put_metadata) {
     save_metadata();
   } else {
@@ -272,15 +271,15 @@ void S3PartMetadata::create_part_index_successful() {
 
 void S3PartMetadata::create_part_index_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Failed to create index for part info\n");
-  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::exists) {
     // Since part index name comprises of bucket name + object name + upload id,
     // upload id is unique
     // hence if clovis returns exists then its due to collision, resolve it
     s3_log(S3_LOG_WARN, request_id, "Collision detected for Index %s\n",
            index_name.c_str());
     handle_collision();
-  } else if (clovis_kv_writer->get_state() ==
-             S3ClovisKVSWriterOpState::failed_to_launch) {
+  } else if (motr_kv_writer->get_state() ==
+             S3MotrKVSWriterOpState::failed_to_launch) {
     state = S3PartMetadataState::failed_to_launch;
     this->handler_on_failed();
   } else {
@@ -293,11 +292,11 @@ void S3PartMetadata::save_metadata() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   // Set up system attributes
   system_defined_attribute["Upload-ID"] = upload_id;
-  if (!clovis_kv_writer) {
-    clovis_kv_writer =
-        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  clovis_kv_writer->put_keyval(
+  motr_kv_writer->put_keyval(
       part_index_name_oid, part_number, this->to_json(),
       std::bind(&S3PartMetadata::save_metadata_successful, this),
       std::bind(&S3PartMetadata::save_metadata_failed, this));
@@ -313,8 +312,7 @@ void S3PartMetadata::save_metadata_successful() {
 void S3PartMetadata::save_metadata_failed() {
   // TODO - do anything more for failure?
   s3_log(S3_LOG_ERROR, request_id, "Failed to save part metadata\n");
-  if (clovis_kv_writer->get_state() ==
-      S3ClovisKVSWriterOpState::failed_to_launch) {
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
     state = S3PartMetadataState::failed_to_launch;
   } else {
     state = S3PartMetadataState::failed;
@@ -334,11 +332,11 @@ void S3PartMetadata::remove(std::function<void(void)> on_success,
   s3_log(S3_LOG_DEBUG, request_id, "Deleting part info for part = %s\n",
          part_removal.c_str());
 
-  if (!clovis_kv_writer) {
-    clovis_kv_writer =
-        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  clovis_kv_writer->delete_keyval(
+  motr_kv_writer->delete_keyval(
       part_index_name_oid, part_removal,
       std::bind(&S3PartMetadata::remove_successful, this),
       std::bind(&S3PartMetadata::remove_failed, this));
@@ -353,8 +351,7 @@ void S3PartMetadata::remove_successful() {
 
 void S3PartMetadata::remove_failed() {
   s3_log(S3_LOG_WARN, request_id, "Failed to delete part info\n");
-  if (clovis_kv_writer->get_state() ==
-      S3ClovisKVSWriterOpState::failed_to_launch) {
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
     state = S3PartMetadataState::failed_to_launch;
   } else {
     state = S3PartMetadataState::failed;
@@ -368,11 +365,11 @@ void S3PartMetadata::remove_index(std::function<void(void)> on_success,
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
-  if (!clovis_kv_writer) {
-    clovis_kv_writer =
-        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  clovis_kv_writer->delete_index(
+  motr_kv_writer->delete_index(
       part_index_name_oid,
       std::bind(&S3PartMetadata::remove_index_successful, this),
       std::bind(&S3PartMetadata::remove_index_failed, this));
@@ -389,10 +386,10 @@ void S3PartMetadata::remove_index_failed() {
   s3_log(S3_LOG_WARN, request_id, "Failed to remove index for part info\n");
   s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
          S3_IEM_DELETE_IDX_FAIL_JSON);
-  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::failed) {
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed) {
     state = S3PartMetadataState::failed;
-  } else if (clovis_kv_writer->get_state() ==
-             S3ClovisKVSWriterOpState::failed_to_launch) {
+  } else if (motr_kv_writer->get_state() ==
+             S3MotrKVSWriterOpState::failed_to_launch) {
     state = S3PartMetadataState::failed_to_launch;
   }
   this->handler_on_failed();
