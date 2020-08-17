@@ -39,10 +39,10 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
-    std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory,
+    std::shared_ptr<S3MotrWriterFactory> clovis_s3_factory,
     std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
-    std::shared_ptr<ClovisAPI> clovis_api,
-    std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
+    std::shared_ptr<MotrAPI> clovis_api,
+    std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
                      std::move(object_meta_factory)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
@@ -56,12 +56,12 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
   action_uses_cleanup =
       false;  // since startcleanup is noop and we use rollback
   if (clovis_api) {
-    s3_clovis_api = std::move(clovis_api);
+    s3_motr_api = std::move(clovis_api);
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
   oid = {0ULL, 0ULL};
-  S3UriToMotrOID(s3_clovis_api, request->get_object_uri().c_str(), request_id,
+  S3UriToMotrOID(s3_motr_api, request->get_object_uri().c_str(), request_id,
                  &oid);
 
   tried_count = 0;
@@ -72,7 +72,7 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
   // Since we cannot predict the object size during multipart init, we use the
   // best recommended layout for better Performance
   layout_id =
-      S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+      S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
 
   multipart_index_oid = {0ULL, 0ULL};
   salt = "uri_salt_";
@@ -85,9 +85,9 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
   }
 
   if (clovis_s3_factory) {
-    clovis_writer_factory = std::move(clovis_s3_factory);
+    motr_writer_factory = std::move(clovis_s3_factory);
   } else {
-    clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
+    motr_writer_factory = std::make_shared<S3MotrWriterFactory>();
   }
 
   if (part_meta_factory) {
@@ -102,9 +102,9 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
   }
 
   if (kv_writer_factory) {
-    clovis_kv_writer_factory = std::move(kv_writer_factory);
+    mote_kv_writer_factory = std::move(kv_writer_factory);
   } else {
-    clovis_kv_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
+    mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
 
   setup_steps();
@@ -318,7 +318,7 @@ void S3PostMultipartObjectAction::create_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   create_object_timer.start();
   if (tried_count == 0) {
-    clovis_writer = clovis_writer_factory->create_clovis_writer(request, oid);
+    clovis_writer = motr_writer_factory->create_motr_writer(request, oid);
   } else {
     clovis_writer->set_oid(oid);
   }
@@ -363,10 +363,10 @@ void S3PostMultipartObjectAction::create_object_failed() {
     return;
   }
 
-  if (clovis_writer->get_state() == S3ClovisWriterOpState::exists) {
+  if (clovis_writer->get_state() == S3MotrWiterOpState::exists) {
     collision_occured();
   } else if (clovis_writer->get_state() ==
-             S3ClovisWriterOpState::failed_to_launch) {
+             S3MotrWiterOpState::failed_to_launch) {
     s3_log(S3_LOG_WARN, request_id, "Create object failed.\n");
     set_s3_error("ServiceUnavailable");
     send_response_to_s3_client();
@@ -418,7 +418,7 @@ void S3PostMultipartObjectAction::create_new_oid(
     salted_uri = request->get_object_uri() + salt +
                  std::to_string(salt_counter) + std::to_string(tried_count);
 
-    S3UriToMotrOID(s3_clovis_api, salted_uri.c_str(), request_id, &oid);
+    S3UriToMotrOID(s3_motr_api, salted_uri.c_str(), request_id, &oid);
     ++salt_counter;
   } while ((oid.u_hi == current_oid.u_hi) && (oid.u_lo == current_oid.u_lo));
 
@@ -471,7 +471,7 @@ void S3PostMultipartObjectAction::rollback_create() {
 
 void S3PostMultipartObjectAction::rollback_create_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_writer->get_state() != S3ClovisWriterOpState::missing) {
+  if (clovis_writer->get_state() != S3MotrWiterOpState::missing) {
     s3_log(S3_LOG_ERROR, request_id,
            "Deletion of object failed, this oid will be stale in Motr: "
            "%" SCNx64 " : %" SCNx64 "\n",

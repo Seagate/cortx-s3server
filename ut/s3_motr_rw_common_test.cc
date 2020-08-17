@@ -34,9 +34,9 @@ using ::testing::Invoke;
 using ::testing::_;
 using ::testing::AtLeast;
 
-class S3ClovisReadWriteCommonTest : public testing::Test {
+class S3MotrReadWriteCommonTest : public testing::Test {
  protected:
-  S3ClovisReadWriteCommonTest() {
+  S3MotrReadWriteCommonTest() {
     evbase_t *evbase = event_base_new();
     evhtp_request_t *req = evhtp_request_new(NULL, evbase);
     ptr_mock_request =
@@ -65,22 +65,21 @@ class S3ClovisReadWriteCommonTest : public testing::Test {
   struct user_event_context *user_context;
 };
 
-TEST_F(S3ClovisReadWriteCommonTest, ClovisOpDoneOnMainThreadOnSuccess) {
+TEST_F(S3MotrReadWriteCommonTest, MotrOpDoneOnMainThreadOnSuccess) {
   ptr_mock_s3_async_context->at_least_one_success = true;
-  clovis_op_done_on_main_thread(1, 1, (void *)user_context);
+  motr_op_done_on_main_thread(1, 1, (void *)user_context);
   EXPECT_TRUE(s3objectmetadata_callbackobj.success_called);
 }
 
-TEST_F(S3ClovisReadWriteCommonTest, ClovisOpDoneOnMainThreadOnFail) {
-  clovis_op_done_on_main_thread(1, 1, (void *)user_context);
+TEST_F(S3MotrReadWriteCommonTest, MotrOpDoneOnMainThreadOnFail) {
+  motr_op_done_on_main_thread(1, 1, (void *)user_context);
   EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
 }
 
-TEST_F(S3ClovisReadWriteCommonTest,
-       S3ClovisOpStableResponseCountSameAsOpCount) {
+TEST_F(S3MotrReadWriteCommonTest, S3MotrOpStableResponseCountSameAsOpCount) {
   struct m0_clovis_op op;
-  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj *)calloc(
-      1, sizeof(struct s3_clovis_context_obj));
+  struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
+      1, sizeof(struct s3_motr_context_obj));
   op.op_datum = op_ctx;
   ptr_mock_s3_async_context->at_least_one_success = true;
   op_ctx->application_context =
@@ -93,15 +92,14 @@ TEST_F(S3ClovisReadWriteCommonTest,
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_)).WillOnce(Return(0));
   ptr_mock_s3_async_context->response_received_count = 0;
   ptr_mock_s3_async_context->ops_count = 1;
-  s3_clovis_op_stable(&op);
+  s3_motr_op_stable(&op);
   EXPECT_TRUE(s3objectmetadata_callbackobj.success_called);
 }
 
-TEST_F(S3ClovisReadWriteCommonTest,
-       S3ClovisOpStableResponseCountNotSameAsOpCount) {
+TEST_F(S3MotrReadWriteCommonTest, S3MotrOpStableResponseCountNotSameAsOpCount) {
   struct m0_clovis_op op;
-  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj *)calloc(
-      1, sizeof(struct s3_clovis_context_obj));
+  struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
+      1, sizeof(struct s3_motr_context_obj));
   op.op_datum = op_ctx;
   ptr_mock_s3_async_context->at_least_one_success = true;
   op_ctx->application_context =
@@ -116,16 +114,15 @@ TEST_F(S3ClovisReadWriteCommonTest,
       .WillRepeatedly(Return(-EPERM));
   ptr_mock_s3_async_context->response_received_count = 1;
   ptr_mock_s3_async_context->ops_count = 3;
-  s3_clovis_op_stable(&op);
+  s3_motr_op_stable(&op);
   EXPECT_FALSE(s3objectmetadata_callbackobj.success_called);
   EXPECT_FALSE(s3objectmetadata_callbackobj.fail_called);
 }
 
-TEST_F(S3ClovisReadWriteCommonTest,
-       S3ClovisOpFailedResponseCountSameAsOpCount) {
+TEST_F(S3MotrReadWriteCommonTest, S3MotrOpFailedResponseCountSameAsOpCount) {
   struct m0_clovis_op op;
-  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj *)calloc(
-      1, sizeof(struct s3_clovis_context_obj));
+  struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
+      1, sizeof(struct s3_motr_context_obj));
   op.op_datum = op_ctx;
   ptr_mock_s3_async_context->at_least_one_success = true;
   op_ctx->application_context =
@@ -137,15 +134,14 @@ TEST_F(S3ClovisReadWriteCommonTest,
                                 "Operation Failed.")).Times(1);
   ptr_mock_s3_async_context->response_received_count = 0;
   ptr_mock_s3_async_context->ops_count = 1;
-  s3_clovis_op_failed(&op);
+  s3_motr_op_failed(&op);
   EXPECT_TRUE(s3objectmetadata_callbackobj.success_called);
 }
 
-TEST_F(S3ClovisReadWriteCommonTest,
-       S3ClovisOpFailedResponseCountNotSameAsOpCount) {
+TEST_F(S3MotrReadWriteCommonTest, S3MotrOpFailedResponseCountNotSameAsOpCount) {
   struct m0_clovis_op op;
-  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj *)calloc(
-      1, sizeof(struct s3_clovis_context_obj));
+  struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
+      1, sizeof(struct s3_motr_context_obj));
   op.op_datum = op_ctx;
   ptr_mock_s3_async_context->at_least_one_success = true;
   op_ctx->application_context =
@@ -157,7 +153,7 @@ TEST_F(S3ClovisReadWriteCommonTest,
                                 "Operation Failed.")).Times(1);
   ptr_mock_s3_async_context->response_received_count = 0;
   ptr_mock_s3_async_context->ops_count = 3;
-  s3_clovis_op_failed(&op);
+  s3_motr_op_failed(&op);
   EXPECT_FALSE(s3objectmetadata_callbackobj.success_called);
   EXPECT_FALSE(s3objectmetadata_callbackobj.fail_called);
 }

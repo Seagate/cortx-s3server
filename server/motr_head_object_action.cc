@@ -25,14 +25,14 @@
 
 MotrHeadObjectAction::MotrHeadObjectAction(
     std::shared_ptr<MotrRequestObject> req,
-    std::shared_ptr<S3ClovisReaderFactory> reader_factory)
+    std::shared_ptr<S3MotrReaderFactory> reader_factory)
     : MotrAction(std::move(req)), layout_id(0) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
   oid = {0ULL, 0ULL};
   if (reader_factory) {
-    clovis_reader_factory = std::move(reader_factory);
+    motr_reader_factory = std::move(reader_factory);
   } else {
-    clovis_reader_factory = std::make_shared<S3ClovisReaderFactory>();
+    motr_reader_factory = std::make_shared<S3MotrReaderFactory>();
   }
 
   setup_steps();
@@ -74,7 +74,7 @@ void MotrHeadObjectAction::check_object_exist() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   clovis_reader =
-      clovis_reader_factory->create_clovis_reader(request, oid, layout_id);
+      motr_reader_factory->create_motr_reader(request, oid, layout_id);
 
   clovis_reader->check_object_exist(
       std::bind(&MotrHeadObjectAction::check_object_exist_success, this),
@@ -91,11 +91,11 @@ void MotrHeadObjectAction::check_object_exist_success() {
 
 void MotrHeadObjectAction::check_object_exist_failure() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_reader->get_state() == S3ClovisReaderOpState::missing) {
+  if (clovis_reader->get_state() == S3MotrReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
     set_s3_error("NoSuchKey");
   } else if (clovis_reader->get_state() ==
-             S3ClovisReaderOpState::failed_to_launch) {
+             S3MotrReaderOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id, "Failed to lookup object.\n");
     set_s3_error("ServiceUnavailable");
   } else {

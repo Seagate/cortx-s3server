@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_S3_CLOVIS_READER_H__
-#define __S3_SERVER_S3_CLOVIS_READER_H__
+#ifndef __S3_SERVER_S3_MOTR_READER_H__
+#define __S3_SERVER_S3_MOTR_READER_H__
 
 #include <functional>
 #include <memory>
@@ -36,7 +36,7 @@
 
 extern S3Option* g_option_instance;
 
-class S3ClovisReaderContext : public S3AsyncOpContextBase {
+class S3MotrReaderContext : public S3AsyncOpContextBase {
   // Basic Operation context.
   struct s3_clovis_op_context* clovis_op_context;
   bool has_clovis_op_context;
@@ -49,10 +49,10 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
   std::string request_id;
 
  public:
-  S3ClovisReaderContext(std::shared_ptr<RequestObject> req,
-                        std::function<void()> success_callback,
-                        std::function<void()> failed_callback, int layoutid,
-                        std::shared_ptr<ClovisAPI> clovis_api = nullptr)
+  S3MotrReaderContext(std::shared_ptr<RequestObject> req,
+                      std::function<void()> success_callback,
+                      std::function<void()> failed_callback, int layoutid,
+                      std::shared_ptr<MotrAPI> clovis_api = nullptr)
       // Passing default value of opcount explicitly.
       : S3AsyncOpContextBase(req, success_callback, failed_callback, 1,
                              clovis_api) {
@@ -70,7 +70,7 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
     has_clovis_rw_op_context = false;
   }
 
-  ~S3ClovisReaderContext() {
+  ~S3MotrReaderContext() {
     s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
 
     if (has_clovis_op_context) {
@@ -88,7 +88,7 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
       return false;
     }
     size_t unit_size =
-        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+        S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
     clovis_rw_op_context = create_basic_rw_op_ctx(clovis_buf_count, unit_size);
     if (clovis_rw_op_context == NULL) {
       // out of memory
@@ -122,7 +122,7 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
   }
 };
 
-enum class S3ClovisReaderOpState {
+enum class S3MotrReaderOpState {
   start,
   failed_to_launch,
   failed,
@@ -132,12 +132,12 @@ enum class S3ClovisReaderOpState {
   ooo,      // out-of-memory
 };
 
-class S3ClovisReader {
+class S3MotrReader {
  private:
   std::shared_ptr<RequestObject> request;
-  std::unique_ptr<S3ClovisReaderContext> reader_context;
-  std::unique_ptr<S3ClovisReaderContext> open_context;
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::unique_ptr<S3MotrReaderContext> reader_context;
+  std::unique_ptr<S3MotrReaderContext> open_context;
+  std::shared_ptr<MotrAPI> s3_motr_api;
 
   std::string request_id;
 
@@ -148,7 +148,7 @@ class S3ClovisReader {
   struct m0_uint128 oid;
   int layout_id;
 
-  S3ClovisReaderOpState state;
+  S3MotrReaderOpState state;
 
   // Holds references to buffers after the read so it can be consumed.
   struct s3_clovis_rw_op_context* clovis_rw_op_context;
@@ -178,12 +178,11 @@ class S3ClovisReader {
 
  public:
   // object id is generated at upper level and passed to this constructor
-  S3ClovisReader(std::shared_ptr<RequestObject> req, struct m0_uint128 id,
-                 int layout_id,
-                 std::shared_ptr<ClovisAPI> clovis_api = nullptr);
-  virtual ~S3ClovisReader();
+  S3MotrReader(std::shared_ptr<RequestObject> req, struct m0_uint128 id,
+               int layout_id, std::shared_ptr<MotrAPI> clovis_api = nullptr);
+  virtual ~S3MotrReader();
 
-  virtual S3ClovisReaderOpState get_state() { return state; }
+  virtual S3MotrReaderOpState get_state() { return state; }
   virtual struct m0_uint128 get_oid() { return oid; }
 
   virtual void set_oid(struct m0_uint128 id) { oid = id; }
@@ -208,18 +207,18 @@ class S3ClovisReader {
   virtual void set_last_index(size_t index) { last_index = index; }
 
   // For Testing purpose
-  FRIEND_TEST(S3ClovisReaderTest, Constructor);
-  FRIEND_TEST(S3ClovisReaderTest, OpenObjectDataTest);
-  FRIEND_TEST(S3ClovisReaderTest, ReadObjectDataTest);
-  FRIEND_TEST(S3ClovisReaderTest, ReadObjectDataSuccessful);
-  FRIEND_TEST(S3ClovisReaderTest, ReadObjectDataFailed);
-  FRIEND_TEST(S3ClovisReaderTest, CleanupContexts);
-  FRIEND_TEST(S3ClovisReaderTest, OpenObjectTest);
-  FRIEND_TEST(S3ClovisReaderTest, OpenObjectFailedTest);
-  FRIEND_TEST(S3ClovisReaderTest, ReadObjectDataFailedMissing);
-  FRIEND_TEST(S3ClovisReaderTest, OpenObjectMissingTest);
-  FRIEND_TEST(S3ClovisReaderTest, OpenObjectErrFailedTest);
-  FRIEND_TEST(S3ClovisReaderTest, OpenObjectSuccessTest);
+  FRIEND_TEST(S3MotrReaderTest, Constructor);
+  FRIEND_TEST(S3MotrReaderTest, OpenObjectDataTest);
+  FRIEND_TEST(S3MotrReaderTest, ReadObjectDataTest);
+  FRIEND_TEST(S3MotrReaderTest, ReadObjectDataSuccessful);
+  FRIEND_TEST(S3MotrReaderTest, ReadObjectDataFailed);
+  FRIEND_TEST(S3MotrReaderTest, CleanupContexts);
+  FRIEND_TEST(S3MotrReaderTest, OpenObjectTest);
+  FRIEND_TEST(S3MotrReaderTest, OpenObjectFailedTest);
+  FRIEND_TEST(S3MotrReaderTest, ReadObjectDataFailedMissing);
+  FRIEND_TEST(S3MotrReaderTest, OpenObjectMissingTest);
+  FRIEND_TEST(S3MotrReaderTest, OpenObjectErrFailedTest);
+  FRIEND_TEST(S3MotrReaderTest, OpenObjectSuccessTest);
 };
 
 #endif

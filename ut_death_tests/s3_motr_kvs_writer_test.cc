@@ -62,9 +62,9 @@ int s3_test_clovis_idx_op(struct m0_clovis_idx *idx,
 
 void s3_test_free_clovis_op(struct m0_clovis_op *op) { free(op); }
 
-class S3ClovisKvsWriterTest : public testing::Test {
+class S3MotrKVSWriterTest : public testing::Test {
  protected:
-  S3ClovisKvsWriterTest() {
+  S3MotrKVSWriterTest() {
     evbase = event_base_new();
     req = evhtp_request_new(dummy_request_cb, evbase);
     EvhtpWrapper *evhtp_obj_ptr = new EvhtpWrapper();
@@ -76,38 +76,38 @@ class S3ClovisKvsWriterTest : public testing::Test {
 
     EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_)).WillRepeatedly(Return(0));
 
-    action_under_test = std::make_shared<S3ClovisKVSWriter>(ptr_mock_request,
-                                                            ptr_mock_s3clovis);
+    action_under_test =
+        std::make_shared<S3MotrKVSWriter>(ptr_mock_request, ptr_mock_s3clovis);
     oid = {0xffff, 0xfff1f};
   }
 
-  ~S3ClovisKvsWriterTest() { event_base_free(evbase); }
+  ~S3MotrKVSWriterTest() { event_base_free(evbase); }
 
   evbase_t *evbase;
   evhtp_request_t *req;
   struct m0_uint128 oid;
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
   std::shared_ptr<MockS3Clovis> ptr_mock_s3clovis;
-  std::shared_ptr<S3ClovisKVSWriter> action_under_test;
-  S3ClovisKVSWriter *p_cloviskvs;
+  std::shared_ptr<S3MotrKVSWriter> action_under_test;
+  S3MotrKVSWriter *p_cloviskvs;
 };
 
-TEST_F(S3ClovisKvsWriterTest, PutKeyValEmpty) {
-  S3CallBack s3cloviskvscallbackobj;
+TEST_F(S3MotrKVSWriterTest, PutKeyValEmpty) {
+  S3CallBack s3motrkvscallbackobj;
 
   ASSERT_DEATH((action_under_test->put_keyval(
                    oid, "", "",
-                   std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
-                   std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj))),
+                   std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+                   std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj))),
                ".*");
 }
 
-TEST_F(S3ClovisKvsWriterTest, DelKeyValEmpty) {
-  S3CallBack s3cloviskvscallbackobj;
+TEST_F(S3MotrKVSWriterTest, DelKeyValEmpty) {
+  S3CallBack s3motrkvscallbackobj;
 
   ASSERT_DEATH(
       (action_under_test->delete_keyval(
-          oid, "", std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
-          std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj))),
+          oid, "", std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+          std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj))),
       ".*");
 }

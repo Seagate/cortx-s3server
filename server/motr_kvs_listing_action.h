@@ -30,9 +30,9 @@
 #include "motr_kv_list_response.h"
 
 class MotrKVSListingAction : public MotrAction {
-  std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
-  std::shared_ptr<ClovisAPI> motr_clovis_api;
-  std::shared_ptr<S3ClovisKVSReaderFactory> motr_clovis_kvs_reader_factory;
+  std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
+  std::shared_ptr<MotrAPI> motr_clovis_api;
+  std::shared_ptr<S3MotrKVSReaderFactory> motr_motr_kvs_reader_factory;
   MotrKVListResponse kvs_response_list;
   m0_uint128 index_id;
   std::string last_key;  // last key during each iteration
@@ -47,7 +47,7 @@ class MotrKVSListingAction : public MotrAction {
  public:
   MotrKVSListingAction(
       std::shared_ptr<MotrRequestObject> req,
-      std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory =
+      std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory =
           nullptr);
   void setup_steps();
   void validate_request();

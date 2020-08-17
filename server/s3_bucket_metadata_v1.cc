@@ -33,14 +33,14 @@ extern struct m0_uint128 bucket_metadata_list_index_oid;
 extern struct m0_uint128 replica_bucket_metadata_list_index_oid;
 
 S3BucketMetadataV1::S3BucketMetadataV1(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
-    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory,
-    std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
+    std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory,
     std::shared_ptr<S3GlobalBucketIndexMetadataFactory>
         s3_global_bucket_index_metadata_factory)
     : S3BucketMetadata(std::move(req), std::move(clovis_api),
-                       std::move(clovis_s3_kvs_reader_factory),
-                       std::move(clovis_s3_kvs_writer_factory)) {
+                       std::move(motr_s3_kvs_reader_factory),
+                       std::move(motr_s3_kvs_writer_factory)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
 
   if (s3_global_bucket_index_metadata_factory) {
@@ -137,10 +137,10 @@ void S3BucketMetadataV1::fetch_global_bucket_account_id_info_failed() {
 void S3BucketMetadataV1::load_bucket_info() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
-      request, s3_clovis_api);
+  motr_kv_reader =
+      motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
   // example key "AccountId_1/bucket_x'
-  clovis_kv_reader->get_keyval(
+  motr_kv_reader->get_keyval(
       bucket_metadata_list_index_oid, get_bucket_metadata_index_key_name(),
       std::bind(&S3BucketMetadataV1::load_bucket_info_successful, this),
       std::bind(&S3BucketMetadataV1::load_bucket_info_failed, this));
@@ -150,13 +150,13 @@ void S3BucketMetadataV1::load_bucket_info() {
 
 void S3BucketMetadataV1::load_bucket_info_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (this->from_json(clovis_kv_reader->get_value()) != 0) {
+  if (this->from_json(motr_kv_reader->get_value()) != 0) {
     s3_log(S3_LOG_ERROR, request_id,
            "Json Parsing failed. Index oid ="
            "%" SCNx64 " : %" SCNx64 ", Key = %s Value = %s\n",
            bucket_metadata_list_index_oid.u_hi,
            bucket_metadata_list_index_oid.u_lo, bucket_name.c_str(),
-           clovis_kv_reader->get_value().c_str());
+           motr_kv_reader->get_value().c_str());
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
            S3_IEM_METADATA_CORRUPTED_JSON);
 
@@ -179,12 +179,11 @@ void S3BucketMetadataV1::load_bucket_info_failed() {
 
   if (json_parsing_error) {
     state = S3BucketMetadataState::failed;
-  } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::missing) {
+  } else if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Bucket metadata is missing\n");
     state = S3BucketMetadataState::missing;
-  } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::failed_to_launch) {
+  } else if (motr_kv_reader->get_state() ==
+             S3MotrKVSReaderOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id, "Loading of bucket metadata failed\n");
     state = S3BucketMetadataState::failed_to_launch;
   } else {
@@ -281,14 +280,14 @@ void S3BucketMetadataV1::save_global_bucket_account_id_info_failed() {
 
 void S3BucketMetadataV1::create_object_list_index() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (!clovis_kv_writer) {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  S3UriToMotrOID(s3_clovis_api, salted_object_list_index_name.c_str(),
-                 request_id, &object_list_index_oid, S3ClovisEntityType::index);
+  S3UriToMotrOID(s3_motr_api, salted_object_list_index_name.c_str(), request_id,
+                 &object_list_index_oid, S3ClovisEntityType::index);
 
-  clovis_kv_writer->create_index_with_oid(
+  motr_kv_writer->create_index_with_oid(
       object_list_index_oid,
       std::bind(&S3BucketMetadataV1::create_object_list_index_successful, this),
       std::bind(&S3BucketMetadataV1::create_object_list_index_failed, this));
@@ -304,14 +303,14 @@ void S3BucketMetadataV1::create_object_list_index_successful() {
 
 void S3BucketMetadataV1::create_object_list_index_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::exists) {
     // create_object_list_index is called when there is no bucket,
     // Hence if clovis returned its present, then its due to collision.
     handle_collision(
         get_object_list_index_name(), salted_object_list_index_name,
         std::bind(&S3BucketMetadataV1::create_object_list_index, this));
-  } else if (clovis_kv_writer->get_state() ==
-             S3ClovisKVSWriterOpState::failed_to_launch) {
+  } else if (motr_kv_writer->get_state() ==
+             S3MotrKVSWriterOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id, "Object list Index creation failed.\n");
     state = S3BucketMetadataState::failed_to_launch;
     this->handler_on_failed();
@@ -325,15 +324,15 @@ void S3BucketMetadataV1::create_object_list_index_failed() {
 
 void S3BucketMetadataV1::create_multipart_list_index() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (!clovis_kv_writer) {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
 
-  S3UriToMotrOID(s3_clovis_api, salted_multipart_list_index_name.c_str(),
+  S3UriToMotrOID(s3_motr_api, salted_multipart_list_index_name.c_str(),
                  request_id, &multipart_index_oid, S3ClovisEntityType::index);
 
-  clovis_kv_writer->create_index_with_oid(
+  motr_kv_writer->create_index_with_oid(
       multipart_index_oid,
       std::bind(&S3BucketMetadataV1::create_multipart_list_index_successful,
                 this),
@@ -349,14 +348,14 @@ void S3BucketMetadataV1::create_multipart_list_index_successful() {
 
 void S3BucketMetadataV1::create_multipart_list_index_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::exists) {
     // create_multipart_list_index is called when there is no bucket,
     // Hence if clovis returned its present, then its due to collision.
     handle_collision(
         get_multipart_index_name(), salted_multipart_list_index_name,
         std::bind(&S3BucketMetadataV1::create_multipart_list_index, this));
-  } else if (clovis_kv_writer->get_state() ==
-             S3ClovisKVSWriterOpState::failed_to_launch) {
+  } else if (motr_kv_writer->get_state() ==
+             S3MotrKVSWriterOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id, "Multipart list Index creation failed.\n");
     state = S3BucketMetadataState::failed_to_launch;
     this->handler_on_failed();
@@ -370,16 +369,16 @@ void S3BucketMetadataV1::create_multipart_list_index_failed() {
 
 void S3BucketMetadataV1::create_objects_version_list_index() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (!clovis_kv_writer) {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
   // version list index oid
-  S3UriToMotrOID(s3_clovis_api, salted_objects_version_list_index_name.c_str(),
+  S3UriToMotrOID(s3_motr_api, salted_objects_version_list_index_name.c_str(),
                  request_id, &objects_version_list_index_oid,
                  S3ClovisEntityType::index);
 
-  clovis_kv_writer->create_index_with_oid(
+  motr_kv_writer->create_index_with_oid(
       objects_version_list_index_oid,
       std::bind(
           &S3BucketMetadataV1::create_objects_version_list_index_successful,
@@ -398,15 +397,15 @@ void S3BucketMetadataV1::create_objects_version_list_index_successful() {
 
 void S3BucketMetadataV1::create_objects_version_list_index_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::exists) {
     // create_objects_version_list_index is called when there is no bucket,
     // Hence if clovis returned its present then its due to collision.
     handle_collision(
         get_version_list_index_name(), salted_objects_version_list_index_name,
         std::bind(&S3BucketMetadataV1::create_objects_version_list_index,
                   this));
-  } else if (clovis_kv_writer->get_state() ==
-             S3ClovisKVSWriterOpState::failed_to_launch) {
+  } else if (motr_kv_writer->get_state() ==
+             S3MotrKVSWriterOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Object version list Index creation failed.\n");
     state = S3BucketMetadataState::failed_to_launch;
@@ -434,11 +433,11 @@ void S3BucketMetadataV1::save_bucket_info() {
   system_defined_attribute["Owner-Account"] = account_name;
   system_defined_attribute["Owner-Account-id"] = account_id;
 
-  if (!clovis_kv_writer) {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  clovis_kv_writer->put_keyval(
+  motr_kv_writer->put_keyval(
       bucket_metadata_list_index_oid, get_bucket_metadata_index_key_name(),
       this->to_json(),
       std::bind(&S3BucketMetadataV1::save_bucket_info_successful, this),
@@ -451,11 +450,11 @@ void S3BucketMetadataV1::save_bucket_info_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   // attempt to save the KV in replica bucket metadata index
-  if (!clovis_kv_writer) {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  clovis_kv_writer->put_keyval(
+  motr_kv_writer->put_keyval(
       replica_bucket_metadata_list_index_oid,
       get_bucket_metadata_index_key_name(), this->to_json(),
       std::bind(&S3BucketMetadataV1::save_replica, this),
@@ -468,7 +467,7 @@ void S3BucketMetadataV1::save_replica() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   // PUT Operation passes even if we failed to put KV in replica index.
-  if (clovis_kv_writer->get_state() != S3ClovisKVSWriterOpState::created) {
+  if (motr_kv_writer->get_state() != S3MotrKVSWriterOpState::created) {
     s3_log(S3_LOG_ERROR, request_id, "Failed to save KV in replica index.\n");
 
     s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
@@ -483,8 +482,7 @@ void S3BucketMetadataV1::save_replica() {
 void S3BucketMetadataV1::save_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Saving of Bucket metadata failed\n");
-  if (clovis_kv_writer->get_state() ==
-      S3ClovisKVSWriterOpState::failed_to_launch) {
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
     state = S3BucketMetadataState::failed_to_launch;
   } else {
     state = S3BucketMetadataState::failed;
@@ -510,12 +508,12 @@ void S3BucketMetadataV1::remove(std::function<void(void)> on_success,
 void S3BucketMetadataV1::remove_bucket_info() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  if (!clovis_kv_writer) {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
 
-  clovis_kv_writer->delete_keyval(
+  motr_kv_writer->delete_keyval(
       bucket_metadata_list_index_oid, get_bucket_metadata_index_key_name(),
       std::bind(&S3BucketMetadataV1::remove_bucket_info_successful, this),
       std::bind(&S3BucketMetadataV1::remove_bucket_info_failed, this));
@@ -527,11 +525,11 @@ void S3BucketMetadataV1::remove_bucket_info_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   // Attempt to remove KV from replica bucket metadata index
-  if (!clovis_kv_writer) {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  clovis_kv_writer->delete_keyval(
+  motr_kv_writer->delete_keyval(
       replica_bucket_metadata_list_index_oid,
       get_bucket_metadata_index_key_name(),
       std::bind(&S3BucketMetadataV1::remove_replica, this),
@@ -544,7 +542,7 @@ void S3BucketMetadataV1::remove_replica() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   // delete KV from replia index is not fatal error
-  if (clovis_kv_writer->get_state() != S3ClovisKVSWriterOpState::deleted) {
+  if (motr_kv_writer->get_state() != S3MotrKVSWriterOpState::deleted) {
     s3_log(S3_LOG_ERROR, request_id,
            "Removal of Bucket metadata from replica index failed\n");
     s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
@@ -566,8 +564,7 @@ void S3BucketMetadataV1::remove_replica() {
 void S3BucketMetadataV1::remove_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Removal of Bucket metadata failed\n");
-  if (clovis_kv_writer->get_state() ==
-      S3ClovisKVSWriterOpState::failed_to_launch) {
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
     state = S3BucketMetadataState::failed_to_launch;
   } else {
     state = S3BucketMetadataState::failed;

@@ -66,15 +66,15 @@ class S3BucketMetadataV1Test : public testing::Test {
     EXPECT_CALL(*ptr_mock_request, get_bucket_name())
         .WillRepeatedly(ReturnRef(bucket_name));
 
-    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
-    EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+    ptr_mock_s3_motr_api = std::make_shared<MockS3Clovis>();
+    EXPECT_CALL(*ptr_mock_s3_motr_api, m0_h_ufid_next(_))
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
-    clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
-        ptr_mock_request, ptr_mock_s3_clovis_api);
+    motr_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
+        ptr_mock_request, ptr_mock_s3_motr_api);
 
-    clovis_kvs_writer_factory = std::make_shared<MockS3ClovisKVSWriterFactory>(
-        ptr_mock_request, ptr_mock_s3_clovis_api);
+    motr_kvs_writer_factory = std::make_shared<MockS3MotrKVSWriterFactory>(
+        ptr_mock_request, ptr_mock_s3_motr_api);
 
     s3_global_bucket_index_metadata_factory =
         std::make_shared<MockS3GlobalBucketIndexMetadataFactory>(
@@ -86,14 +86,14 @@ class S3BucketMetadataV1Test : public testing::Test {
     ptr_mock_request->set_user_id("s3userid");
 
     action_under_test.reset(new S3BucketMetadataV1(
-        ptr_mock_request, ptr_mock_s3_clovis_api, clovis_kvs_reader_factory,
-        clovis_kvs_writer_factory, s3_global_bucket_index_metadata_factory));
+        ptr_mock_request, ptr_mock_s3_motr_api, motr_kvs_reader_factory,
+        motr_kvs_writer_factory, s3_global_bucket_index_metadata_factory));
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
-  std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
-  std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_motr_api;
+  std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
+  std::shared_ptr<MockS3MotrKVSWriterFactory> motr_kvs_writer_factory;
   std::shared_ptr<MockS3GlobalBucketIndexMetadataFactory>
       s3_global_bucket_index_metadata_factory;
   S3CallBack s3bucketmetadata_callbackobj;
@@ -237,7 +237,7 @@ TEST_F(S3BucketMetadataV1Test, Load) {
 }
 
 TEST_F(S3BucketMetadataV1Test, LoadBucketInfo) {
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
               get_keyval(_, "12345/seagate", _, _)).Times(1);
   action_under_test->bucket_owner_account_id = "12345";
   action_under_test->bucket_name = "seagate";
@@ -256,11 +256,11 @@ TEST_F(S3BucketMetadataV1Test, LoadBucketInfoFailedJsonParsingFailed) {
 TEST_F(S3BucketMetadataV1Test, LoadBucketInfoFailedMetadataMissing) {
   action_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
-  action_under_test->clovis_kv_reader =
-      clovis_kvs_reader_factory->mock_clovis_kvs_reader;
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
+  action_under_test->motr_kv_reader =
+      motr_kvs_reader_factory->mock_clovis_kvs_reader;
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
       .Times(1)
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::missing));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::missing));
   action_under_test->load_bucket_info_failed();
   EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
   EXPECT_EQ(S3BucketMetadataState::missing, action_under_test->state);
@@ -269,11 +269,11 @@ TEST_F(S3BucketMetadataV1Test, LoadBucketInfoFailedMetadataMissing) {
 TEST_F(S3BucketMetadataV1Test, LoadBucketInfoFailedMetadataFailed) {
   action_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
-  action_under_test->clovis_kv_reader =
-      clovis_kvs_reader_factory->mock_clovis_kvs_reader;
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
+  action_under_test->motr_kv_reader =
+      motr_kvs_reader_factory->mock_clovis_kvs_reader;
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::failed));
   action_under_test->load_bucket_info_failed();
   EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
   EXPECT_EQ(S3BucketMetadataState::failed, action_under_test->state);
@@ -282,11 +282,11 @@ TEST_F(S3BucketMetadataV1Test, LoadBucketInfoFailedMetadataFailed) {
 TEST_F(S3BucketMetadataV1Test, LoadBucketInfoFailedMetadataFailedToLaunch) {
   action_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
-  action_under_test->clovis_kv_reader =
-      clovis_kvs_reader_factory->mock_clovis_kvs_reader;
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
+  action_under_test->motr_kv_reader =
+      motr_kvs_reader_factory->mock_clovis_kvs_reader;
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::failed_to_launch));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::failed_to_launch));
   action_under_test->load_bucket_info_failed();
   EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
   EXPECT_EQ(S3BucketMetadataState::failed_to_launch, action_under_test->state);
@@ -335,7 +335,7 @@ TEST_F(S3BucketMetadataV1Test, UpdateMetadataIndexOIDPresent) {
   action_under_test->state = S3BucketMetadataState::present;
   action_under_test->bucket_owner_account_id = "12345";
 
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               put_keyval(_, _, _, _, _)).Times(1);
 
   action_under_test->update(
@@ -346,7 +346,7 @@ TEST_F(S3BucketMetadataV1Test, UpdateMetadataIndexOIDPresent) {
 TEST_F(S3BucketMetadataV1Test, UpdateMetadataIndexOIDMissing) {
   action_under_test->state = S3BucketMetadataState::missing;
 
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               put_keyval(_, _, _, _, _)).Times(0);
 
   ASSERT_DEATH(
@@ -358,34 +358,34 @@ TEST_F(S3BucketMetadataV1Test, UpdateMetadataIndexOIDMissing) {
 
 TEST_F(S3BucketMetadataV1Test, CreateObjectListIndexCollisionCount0) {
   action_under_test->collision_attempt_count = 0;
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               create_index_with_oid(_, _, _)).Times(1);
   action_under_test->create_object_list_index();
 }
 
 TEST_F(S3BucketMetadataV1Test, CreateMultipartListIndexCollisionCount0) {
   action_under_test->collision_attempt_count = 0;
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               create_index_with_oid(_, _, _)).Times(1);
   action_under_test->create_multipart_list_index();
 }
 
 TEST_F(S3BucketMetadataV1Test, CreateObjectListIndexSuccessful) {
   action_under_test->collision_attempt_count = 0;
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               create_index_with_oid(_, _, _)).Times(1);
   action_under_test->create_object_list_index_successful();
 }
 
 TEST_F(S3BucketMetadataV1Test, CreateObjectListIndexFailedCollisionHappened) {
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
   action_under_test->collision_attempt_count = 1;
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(1)
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::exists));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::exists));
 
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               create_index_with_oid(_, _, _)).Times(1);
 
   action_under_test->create_object_list_index_failed();
@@ -394,14 +394,14 @@ TEST_F(S3BucketMetadataV1Test, CreateObjectListIndexFailedCollisionHappened) {
 
 TEST_F(S3BucketMetadataV1Test,
        CreateMultipartListIndexFailedCollisionHappened) {
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
   action_under_test->collision_attempt_count = 1;
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(1)
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::exists));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::exists));
 
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               create_index_with_oid(_, _, _)).Times(1);
 
   action_under_test->create_multipart_list_index_failed();
@@ -411,11 +411,11 @@ TEST_F(S3BucketMetadataV1Test,
 TEST_F(S3BucketMetadataV1Test, CreateObjectListIndexFailed) {
   action_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(2)
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
   action_under_test->create_object_list_index_failed();
   EXPECT_EQ(action_under_test->state, S3BucketMetadataState::failed);
 }
@@ -423,11 +423,11 @@ TEST_F(S3BucketMetadataV1Test, CreateObjectListIndexFailed) {
 TEST_F(S3BucketMetadataV1Test, CreateObjectListIndexFailedToLaunch) {
   action_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(2)
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed_to_launch));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed_to_launch));
   action_under_test->create_object_list_index_failed();
   EXPECT_EQ(action_under_test->state, S3BucketMetadataState::failed_to_launch);
 }
@@ -435,11 +435,11 @@ TEST_F(S3BucketMetadataV1Test, CreateObjectListIndexFailedToLaunch) {
 TEST_F(S3BucketMetadataV1Test, CreateMultipartListIndexFailed) {
   action_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(2)
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
   action_under_test->create_multipart_list_index_failed();
   EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
   EXPECT_EQ(action_under_test->state, S3BucketMetadataState::failed);
@@ -448,11 +448,11 @@ TEST_F(S3BucketMetadataV1Test, CreateMultipartListIndexFailed) {
 TEST_F(S3BucketMetadataV1Test, CreateMultipartListIndexFailedToLaunch) {
   action_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(2)
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed_to_launch));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed_to_launch));
   action_under_test->create_multipart_list_index_failed();
   EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
   EXPECT_EQ(action_under_test->state, S3BucketMetadataState::failed_to_launch);
@@ -496,9 +496,9 @@ TEST_F(S3BucketMetadataV1Test, RegeneratedNewIndexName) {
 }
 
 TEST_F(S3BucketMetadataV1Test, SaveBucketInfo) {
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               put_keyval(_, _, _, _, _)).Times(1);
 
   action_under_test->bucket_owner_account_id = "12345";
@@ -518,47 +518,47 @@ TEST_F(S3BucketMetadataV1Test, SaveBucketInfo) {
 }
 
 TEST_F(S3BucketMetadataV1Test, SaveBucketInfoSuccess) {
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
 
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               put_keyval(_, _, _, _, _)).Times(1);
 
   action_under_test->save_bucket_info_successful();
 }
 
 TEST_F(S3BucketMetadataV1Test, SaveReplica) {
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
   action_under_test->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj);
 
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
-      .WillOnce(Return(S3ClovisKVSWriterOpState::created));
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .WillOnce(Return(S3MotrKVSWriterOpState::created));
   action_under_test->save_replica();
 
   EXPECT_TRUE(s3bucketmetadata_callbackobj.success_called);
 }
 
 TEST_F(S3BucketMetadataV1Test, SaveBucketInfoFailed) {
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
   action_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
   action_under_test->save_bucket_info_failed();
   EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
   EXPECT_EQ(S3BucketMetadataState::failed, action_under_test->state);
 }
 
 TEST_F(S3BucketMetadataV1Test, SaveBucketInfoFailedToLaunch) {
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
   action_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed_to_launch));
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed_to_launch));
   action_under_test->save_bucket_info_failed();
   EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
   EXPECT_EQ(S3BucketMetadataState::failed_to_launch, action_under_test->state);
@@ -566,7 +566,7 @@ TEST_F(S3BucketMetadataV1Test, SaveBucketInfoFailedToLaunch) {
 
 TEST_F(S3BucketMetadataV1Test, RemovePresentMetadata) {
   action_under_test->state = S3BucketMetadataState::present;
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               delete_keyval(_, _, _, _)).Times(1);
 
   action_under_test->remove(
@@ -579,7 +579,7 @@ TEST_F(S3BucketMetadataV1Test, RemovePresentMetadata) {
 TEST_F(S3BucketMetadataV1Test, RemoveAbsentMetadata) {
   action_under_test->state = S3BucketMetadataState::missing;
 
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               delete_keyval(_, _, _, _)).Times(0);
 
   ASSERT_DEATH(
@@ -590,30 +590,30 @@ TEST_F(S3BucketMetadataV1Test, RemoveAbsentMetadata) {
 }
 
 TEST_F(S3BucketMetadataV1Test, RemoveBucketInfo) {
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
 
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               delete_keyval(_, _, _, _)).Times(1);
   action_under_test->remove_bucket_info();
 }
 
 TEST_F(S3BucketMetadataV1Test, RemoveBucketInfoSuccessful) {
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
 
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               delete_keyval(_, _, _, _)).Times(1);
 
   action_under_test->remove_bucket_info_successful();
 }
 
 TEST_F(S3BucketMetadataV1Test, RemoveReplica) {
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
 
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
-      .WillOnce(Return(S3ClovisKVSWriterOpState::deleted));
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .WillOnce(Return(S3MotrKVSWriterOpState::deleted));
 
   action_under_test->global_bucket_index_metadata =
       s3_global_bucket_index_metadata_factory
@@ -672,26 +672,26 @@ TEST_F(S3BucketMetadataV1Test, RemoveBucketAccountidInfoFailed) {
 }
 
 TEST_F(S3BucketMetadataV1Test, RemoveBucketInfoFailed) {
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
   action_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(1)
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
   action_under_test->remove_bucket_info_failed();
   EXPECT_EQ(S3BucketMetadataState::failed, action_under_test->state);
   EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
 }
 
 TEST_F(S3BucketMetadataV1Test, RemoveBucketInfoFailedToLaunch) {
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_clovis_kvs_writer;
   action_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
       .Times(1)
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed_to_launch));
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed_to_launch));
   action_under_test->remove_bucket_info_failed();
   EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
   EXPECT_EQ(S3BucketMetadataState::failed_to_launch, action_under_test->state);
