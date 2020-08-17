@@ -16,19 +16,18 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+"""ObjectRecoveryKafka reads messages about objects oid to be deleted from Kafka."""
 
-"""
-ObjectRecoveryKafka reads messages about objects oid to be deleted from Kafka.
-"""
 import json
-from confluent_kafka import Consumer, KafkaError, KafkaException
-from s3backgrounddelete.cortx_s3_config import CORTXS3Config
+from confluent_kafka import Consumer
 from s3backgrounddelete.object_recovery_validator import ObjectRecoveryValidator
-from s3backgrounddelete.IEMutil import IEMutil
 
 
 class ObjectRecoveryKafka:
+    """This class reads messages from Kafka and forwards them for handling"""
+
     def __init__(self, config, logger):
+        """Initialize Kafka Consumer"""
         self._config = config
         self._logger = logger
         self._consumer = None
