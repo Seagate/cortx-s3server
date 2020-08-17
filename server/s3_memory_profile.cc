@@ -20,7 +20,7 @@
 
 #include <event2/event.h>
 
-#include "s3_clovis_layout.h"
+#include "s3_motr_layout.h"
 #include "s3_log.h"
 #include "s3_memory_pool.h"
 #include "s3_memory_profile.h"

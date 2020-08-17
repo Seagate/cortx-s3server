@@ -21,8 +21,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include "clovis_helpers.h"
-#include "s3_clovis_layout.h"
+#include "motr_helpers.h"
+#include "s3_motr_layout.h"
 #include "s3_error_messages.h"
 #include "s3_log.h"
 #include "s3_mem_pool_manager.h"

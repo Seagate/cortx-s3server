@@ -28,9 +28,9 @@
 #include <memory>
 
 #include "s3_bucket_action_base.h"
-#include "s3_clovis_kvs_reader.h"
-#include "s3_clovis_kvs_writer.h"
-#include "s3_clovis_writer.h"
+#include "s3_motr_kvs_reader.h"
+#include "s3_motr_kvs_writer.h"
+#include "s3_motr_writer.h"
 #include "s3_delete_multiple_objects_body.h"
 #include "s3_delete_multiple_objects_response_body.h"
 #include "s3_factory.h"
@@ -40,14 +40,14 @@
 
 class S3DeleteMultipleObjectsAction : public S3BucketAction {
   std::vector<std::shared_ptr<S3ObjectMetadata>> objects_metadata;
-  std::shared_ptr<S3ClovisWriter> clovis_writer;
-  std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
-  std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
+  std::shared_ptr<S3MotrWiter> clovis_writer;
+  std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
+  std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
 
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
-  std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
-  std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
-  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
+  std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
+  std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory;
+  std::shared_ptr<S3MotrKVSWriterFactory> motr_kvs_writer_factory;
 
   // index within delete object list
   struct m0_uint128 object_list_index_oid;
@@ -72,9 +72,9 @@ class S3DeleteMultipleObjectsAction : public S3BucketAction {
       std::shared_ptr<S3RequestObject> req,
       std::shared_ptr<S3BucketMetadataFactory> bucket_md_factory = nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_md_factory = nullptr,
-      std::shared_ptr<S3ClovisWriterFactory> writer_factory = nullptr,
-      std::shared_ptr<S3ClovisKVSReaderFactory> kvs_reader_factory = nullptr,
-      std::shared_ptr<S3ClovisKVSWriterFactory> kvs_writer_factory = nullptr);
+      std::shared_ptr<S3MotrWriterFactory> writer_factory = nullptr,
+      std::shared_ptr<S3MotrKVSReaderFactory> kvs_reader_factory = nullptr,
+      std::shared_ptr<S3MotrKVSWriterFactory> kvs_writer_factory = nullptr);
 
   // Helpers
   void setup_steps();

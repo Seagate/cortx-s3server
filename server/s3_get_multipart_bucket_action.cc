@@ -28,8 +28,8 @@
 #include "s3_option.h"
 
 S3GetMultipartBucketAction::S3GetMultipartBucketAction(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
-    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
     : S3BucketAction(req, std::move(bucket_meta_factory)),
@@ -44,14 +44,14 @@ S3GetMultipartBucketAction::S3GetMultipartBucketAction(
          "S3 API: List Multipart Uploads. Bucket[%s]\n",
          request->get_bucket_name().c_str());
   if (clovis_api) {
-    s3_clovis_api = clovis_api;
+    s3_motr_api = clovis_api;
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
-  if (clovis_kvs_reader_factory) {
-    s3_clovis_kvs_reader_factory = clovis_kvs_reader_factory;
+  if (motr_kvs_reader_factory) {
+    s3_motr_kvs_reader_factory = motr_kvs_reader_factory;
   } else {
-    s3_clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+    s3_motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
   if (object_meta_factory) {
     object_metadata_factory = object_meta_factory;
@@ -143,9 +143,9 @@ void S3GetMultipartBucketAction::get_next_objects() {
     send_response_to_s3_client();
   } else {
     size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
-    clovis_kv_reader = s3_clovis_kvs_reader_factory->create_clovis_kvs_reader(
-        request, s3_clovis_api);
-    clovis_kv_reader->next_keyval(
+    motr_kv_reader = s3_motr_kvs_reader_factory->create_motr_kvs_reader(
+        request, s3_motr_api);
+    motr_kv_reader->next_keyval(
         bucket_metadata->get_multipart_index_oid(), last_key, count,
         std::bind(&S3GetMultipartBucketAction::get_next_objects_successful,
                   this),
@@ -163,7 +163,7 @@ void S3GetMultipartBucketAction::get_next_objects_successful() {
   struct m0_uint128 indx_oid = bucket_metadata->get_multipart_index_oid();
   bool atleast_one_json_error = false;
   bool skip_marker_key = true;
-  auto& kvps = clovis_kv_reader->get_key_values();
+  auto& kvps = motr_kv_reader->get_key_values();
   size_t length = kvps.size();
   for (auto& kv : kvps) {
     s3_log(S3_LOG_DEBUG, request_id, "Read Object = %s\n", kv.first.c_str());
@@ -264,11 +264,11 @@ void S3GetMultipartBucketAction::get_next_objects_successful() {
 
 void S3GetMultipartBucketAction::get_next_objects_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+  if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "No more multipart uploads listing\n");
     fetch_successful = true;  // With no entries.
-  } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::failed_to_launch) {
+  } else if (motr_kv_reader->get_state() ==
+             S3MotrKVSReaderOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Multipart metadata next keyval operation failed due to pre launch "
            "failure\n");

@@ -36,11 +36,11 @@ class ClovisConfig():
         config_file =  os.path.join(self.cfg_dir, 'cloviskvscli.yaml')
         with open(config_file, 'r') as f:
             s3config = yaml.safe_load(f)
-            self.KVS_IDX = str(s3config['S3_CLOVIS_IDX_SERVICE_ID'])
-            self.LOCAL_EP = s3config['S3_CLOVIS_LOCAL_EP']
-            self.HA_EP = s3config['S3_CLOVIS_HA_EP']
-            self.PROFILE_FID = s3config['S3_CLOVIS_PROF']
-            self.PROCESS_FID = s3config['S3_CLOVIS_PROCESS_FID']
+            self.KVS_IDX = str(s3config['S3_MOTR_IDX_SERVICE_ID'])
+            self.LOCAL_EP = s3config['S3_MOTR_LOCAL_EP']
+            self.HA_EP = s3config['S3_MOTR_HA_EP']
+            self.PROFILE_FID = s3config['S3_MOTR_PROF']
+            self.PROCESS_FID = s3config['S3_MOTR_PROCESS_FID']
 
         self.LOCAL_EP = self.LOCAL_NID + self.LOCAL_EP
         self.HA_EP = self.LOCAL_NID + self.HA_EP
@@ -84,31 +84,31 @@ class S3kvTest(S3PyCliTest):
         return self
 
 # Root index table OID used by S3server is a constant derived by
-# adding 1 to  M0_CLOVIS_ID_APP define and packing it using M0_FID_TINIT
+# adding 1 to  M0_MOTR_ID_APP define and packing it using M0_FID_TINIT
     def root_bucket_account_index(self):
         root_oid = S3OID("0x7800000000000000", "0x100001")
         return root_oid
 
 # Replica index table OID used by S3server is a constant derived by
-# adding 5 to  M0_CLOVIS_ID_APP define and packing it using M0_FID_TINIT
+# adding 5 to  M0_MOTR_ID_APP define and packing it using M0_FID_TINIT
     def replica_bucket_account_index(self):
         replica_oid = S3OID("0x7800000000000000", "0x100005")
         return replica_oid
 
 # Root bucket metadata index table OID used by S3server is a constant derived by
-# adding 2 to  M0_CLOVIS_ID_APP define and packing it using M0_FID_TINIT
+# adding 2 to  M0_MOTR_ID_APP define and packing it using M0_FID_TINIT
     def root_bucket_metadata_index(self):
         root_oid = S3OID("0x7800000000000000", "0x100002")
         return root_oid
 
 # Replica bucket metadata index table OID used by S3server is a constant derived by
-# adding 6 to  M0_CLOVIS_ID_APP define and packing it using M0_FID_TINIT
+# adding 6 to  M0_MOTR_ID_APP define and packing it using M0_FID_TINIT
     def replica_bucket_metadata_index(self):
         replica_oid = S3OID("0x7800000000000000", "0x100006")
         return replica_oid
 
 # Root probable dead object list index table OID used by S3server is a constant derived by
-# adding 3 to  M0_CLOVIS_ID_APP define and packing it using M0_FID_TINIT
+# adding 3 to  M0_MOTR_ID_APP define and packing it using M0_FID_TINIT
     def root_probable_dead_object_list_index(self):
         root_oid = S3OID("0x7800000000000000", "0x100003")
         return root_oid

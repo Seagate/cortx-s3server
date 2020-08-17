@@ -29,18 +29,17 @@
 
 MotrDeleteIndexAction::MotrDeleteIndexAction(
     std::shared_ptr<MotrRequestObject> req,
-    std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kvs_writer_factory)
+    std::shared_ptr<S3MotrKVSWriterFactory> motr_kvs_writer_factory)
     : MotrAction(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-  motr_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  motr_clovis_api = std::make_shared<ConcreteMotrAPI>();
 
   s3_log(S3_LOG_INFO, request_id, "Motr API: Index delete.\n");
 
-  if (clovis_kvs_writer_factory) {
-    motr_clovis_kvs_writer_factory = clovis_kvs_writer_factory;
+  if (motr_kvs_writer_factory) {
+    motr_motr_kvs_writer_factory = motr_kvs_writer_factory;
   } else {
-    motr_clovis_kvs_writer_factory =
-        std::make_shared<S3ClovisKVSWriterFactory>();
+    motr_motr_kvs_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
 
   setup_steps();
@@ -72,10 +71,10 @@ void MotrDeleteIndexAction::validate_request() {
 void MotrDeleteIndexAction::delete_index() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  clovis_kv_writer = motr_clovis_kvs_writer_factory->create_clovis_kvs_writer(
+  motr_kv_writer = motr_motr_kvs_writer_factory->create_motr_kvs_writer(
       request, motr_clovis_api);
 
-  clovis_kv_writer->delete_index(
+  motr_kv_writer->delete_index(
       index_id,
       std::bind(&MotrDeleteIndexAction::delete_index_successful, this),
       std::bind(&MotrDeleteIndexAction::delete_index_failed, this));
@@ -93,10 +92,10 @@ void MotrDeleteIndexAction::delete_index_successful() {
 
 void MotrDeleteIndexAction::delete_index_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::missing) {
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Index is missing.\n");
-  } else if (clovis_kv_writer->get_state() ==
-             S3ClovisKVSWriterOpState::failed_to_launch) {
+  } else if (motr_kv_writer->get_state() ==
+             S3MotrKVSWriterOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id, "Failed to launch.\n");
     set_s3_error("ServiceUnavailable");
   } else {

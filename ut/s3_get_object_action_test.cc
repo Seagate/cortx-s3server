@@ -21,7 +21,7 @@
 #include <memory>
 
 #include "mock_s3_factory.h"
-#include "s3_clovis_layout.h"
+#include "s3_motr_layout.h"
 #include "s3_error_codes.h"
 #include "s3_get_object_action.h"
 #include "s3_test_utils.h"
@@ -101,9 +101,9 @@ class S3GetObjectActionTest : public testing::Test {
     object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
 
     layout_id =
-        S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+        S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
 
-    clovis_reader_factory = std::make_shared<MockS3ClovisReaderFactory>(
+    motr_reader_factory = std::make_shared<MockS3MotrReaderFactory>(
         ptr_mock_request, oid, layout_id);
     std::map<std::string, std::string> input_headers;
     input_headers["Authorization"] = "1";
@@ -111,13 +111,13 @@ class S3GetObjectActionTest : public testing::Test {
         ReturnRef(input_headers));
     action_under_test.reset(
         new S3GetObjectAction(ptr_mock_request, bucket_meta_factory,
-                              object_meta_factory, clovis_reader_factory));
+                              object_meta_factory, motr_reader_factory));
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
-  std::shared_ptr<MockS3ClovisReaderFactory> clovis_reader_factory;
+  std::shared_ptr<MockS3MotrReaderFactory> motr_reader_factory;
   std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
 
   std::shared_ptr<S3GetObjectAction> action_under_test;
@@ -848,8 +848,7 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeLessThanUnitSize) {
   // Object size less than unit size
   int layout_id = 1;
   size_t obj_size =
-      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id) -
-      1;
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id) - 1;
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
@@ -869,20 +868,20 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeLessThanUnitSize) {
 
   EXPECT_CALL(*ptr_mock_request, send_reply_start(Eq(S3HttpSuccess200)))
       .Times(AtLeast(1));
-  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_first_block(_))
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_first_block(_))
       .WillOnce(Return(obj_size));
-  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_next_block(_))
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_next_block(_))
       .WillOnce(Return(0));
   EXPECT_CALL(*ptr_mock_request, send_reply_body(_, Eq(obj_size))).Times(1);
   EXPECT_CALL(*ptr_mock_request, send_reply_end()).Times(1);
 
-  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader),
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader),
               read_object_data(_, _, _))
       .Times(1)
       .WillOnce(Invoke(test_read_object_data_success));
-  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_state())
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_state())
       .Times(AtLeast(1))
-      .WillOnce(Return(S3ClovisReaderOpState::success));
+      .WillOnce(Return(S3MotrReaderOpState::success));
   action_under_test->validate_object_info();
   action_under_test->read_object();
 }
@@ -901,7 +900,7 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSize) {
   // Object size less than unit size
   int layout_id = 1;
   size_t obj_size =
-      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
@@ -921,20 +920,20 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSize) {
 
   EXPECT_CALL(*ptr_mock_request, send_reply_start(Eq(S3HttpSuccess200)))
       .Times(AtLeast(1));
-  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_first_block(_))
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_first_block(_))
       .WillOnce(Return(obj_size));
-  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_next_block(_))
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_next_block(_))
       .WillOnce(Return(0));
   EXPECT_CALL(*ptr_mock_request, send_reply_body(_, Eq(obj_size))).Times(1);
   EXPECT_CALL(*ptr_mock_request, send_reply_end()).Times(1);
 
-  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader),
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader),
               read_object_data(_, _, _))
       .Times(1)
       .WillOnce(Invoke(test_read_object_data_success));
-  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_state())
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_state())
       .Times(AtLeast(1))
-      .WillOnce(Return(S3ClovisReaderOpState::success));
+      .WillOnce(Return(S3MotrReaderOpState::success));
   action_under_test->validate_object_info();
   action_under_test->read_object();
 }
@@ -959,8 +958,7 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeMoreThanUnitSize) {
   // Object size less than unit size
   int layout_id = 1;
   size_t obj_size =
-      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id) +
-      1;
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id) + 1;
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
@@ -978,19 +976,19 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeMoreThanUnitSize) {
   EXPECT_CALL(*ptr_mock_request, send_reply_body(_, Eq(1)));
   EXPECT_CALL(*ptr_mock_request, send_reply_body(_, Eq(obj_size - 1)));
   EXPECT_CALL(*ptr_mock_request, send_reply_end()).Times(1);
-  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_first_block(_))
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_first_block(_))
       .WillOnce(Return(obj_size - 1));
-  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_next_block(_))
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_next_block(_))
       .WillOnce(Return(1))
       .WillOnce(Return(0));
 
-  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader),
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader),
               read_object_data(_, _, _))
       .Times(1)
       .WillOnce(Invoke(test_read_object_data_success));
-  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_state())
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_state())
       .Times(AtLeast(1))
-      .WillOnce(Return(S3ClovisReaderOpState::success));
+      .WillOnce(Return(S3MotrReaderOpState::success));
   action_under_test->validate_object_info();
   action_under_test->read_object();
 }
@@ -1017,8 +1015,7 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfGivenRange) {
   // Object size less than unit size
   int layout_id = 1;
   size_t obj_size =
-      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id) +
-      1;
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id) + 1;
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
@@ -1036,19 +1033,19 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfGivenRange) {
   EXPECT_CALL(*ptr_mock_request, send_reply_body(_, Eq(1)));
   EXPECT_CALL(*ptr_mock_request, send_reply_body(_, Eq(obj_size - 1)));
   EXPECT_CALL(*ptr_mock_request, send_reply_end()).Times(1);
-  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_first_block(_))
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_first_block(_))
       .WillOnce(Return(obj_size - 1));
-  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_next_block(_))
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_next_block(_))
       .WillOnce(Return(1))
       .WillOnce(Return(0));
 
-  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader),
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader),
               read_object_data(_, _, _))
       .Times(1)
       .WillOnce(Invoke(test_read_object_data_success));
-  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_state())
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_state())
       .Times(AtLeast(1))
-      .WillOnce(Return(S3ClovisReaderOpState::success));
+      .WillOnce(Return(S3MotrReaderOpState::success));
   action_under_test->validate_object_info();
   action_under_test->read_object();
 }
@@ -1137,7 +1134,7 @@ TEST_F(S3GetObjectActionTest, SendNoSuchKeyErrorResponse) {
 }
 
 TEST_F(S3GetObjectActionTest, SendSuccessResponseForZeroSizeObject) {
-  action_under_test->clovis_reader = clovis_reader_factory->mock_clovis_reader;
+  action_under_test->clovis_reader = motr_reader_factory->mock_motr_reader;
 
   action_under_test->object_metadata =
       object_meta_factory->create_object_metadata_obj(ptr_mock_request,
@@ -1156,7 +1153,7 @@ TEST_F(S3GetObjectActionTest, SendSuccessResponseForZeroSizeObject) {
 }
 
 TEST_F(S3GetObjectActionTest, SendSuccessResponseForNonZeroSizeObject) {
-  action_under_test->clovis_reader = clovis_reader_factory->mock_clovis_reader;
+  action_under_test->clovis_reader = motr_reader_factory->mock_motr_reader;
 
   action_under_test->object_metadata =
       object_meta_factory->create_object_metadata_obj(ptr_mock_request,
@@ -1166,9 +1163,9 @@ TEST_F(S3GetObjectActionTest, SendSuccessResponseForNonZeroSizeObject) {
               get_content_length())
       .Times(AtLeast(1))
       .WillOnce(Return(1024));
-  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_state())
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_state())
       .Times(AtLeast(1))
-      .WillOnce(Return(S3ClovisReaderOpState::success));
+      .WillOnce(Return(S3MotrReaderOpState::success));
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(0);
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(0);
@@ -1179,7 +1176,7 @@ TEST_F(S3GetObjectActionTest, SendSuccessResponseForNonZeroSizeObject) {
 
 // Reply not started
 TEST_F(S3GetObjectActionTest, SendErrorResponseForErrorReadingObject) {
-  action_under_test->clovis_reader = clovis_reader_factory->mock_clovis_reader;
+  action_under_test->clovis_reader = motr_reader_factory->mock_motr_reader;
 
   action_under_test->object_metadata =
       object_meta_factory->create_object_metadata_obj(ptr_mock_request,
@@ -1189,9 +1186,9 @@ TEST_F(S3GetObjectActionTest, SendErrorResponseForErrorReadingObject) {
               get_content_length())
       .Times(AtLeast(1))
       .WillOnce(Return(1024));
-  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_state())
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_state())
       .Times(AtLeast(1))
-      .WillOnce(Return(S3ClovisReaderOpState::failed));
+      .WillOnce(Return(S3MotrReaderOpState::failed));
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);

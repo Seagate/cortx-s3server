@@ -28,13 +28,13 @@
 
 #include "s3_object_action_base.h"
 #include "s3_bucket_metadata.h"
-#include "s3_clovis_reader.h"
+#include "s3_motr_reader.h"
 #include "s3_factory.h"
 #include "s3_timer.h"
 
 class S3GetObjectAction : public S3ObjectAction {
 
-  std::shared_ptr<S3ClovisReader> clovis_reader;
+  std::shared_ptr<S3MotrReader> clovis_reader;
   // Read state
   size_t total_blocks_in_object;
   size_t blocks_already_read;
@@ -46,7 +46,7 @@ class S3GetObjectAction : public S3ObjectAction {
   size_t total_blocks_to_read;
 
   bool read_object_reply_started;
-  std::shared_ptr<S3ClovisReaderFactory> clovis_reader_factory;
+  std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
   S3Timer s3_timer;
 
   size_t get_requested_content_length() const {
@@ -58,7 +58,7 @@ class S3GetObjectAction : public S3ObjectAction {
       std::shared_ptr<S3RequestObject> req,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
-      std::shared_ptr<S3ClovisReaderFactory> clovis_s3_factory = nullptr);
+      std::shared_ptr<S3MotrReaderFactory> clovis_s3_factory = nullptr);
 
   void setup_steps();
 

@@ -22,7 +22,7 @@
 #include <gtest/gtest.h>
 
 #include "mock_s3_bucket_metadata.h"
-#include "mock_s3_clovis_wrapper.h"
+#include "mock_s3_motr_wrapper.h"
 #include "mock_s3_factory.h"
 #include "mock_s3_request_object.h"
 #include "s3_put_bucket_action.h"
@@ -67,9 +67,9 @@ class S3PutBucketActionTest : public testing::Test {
   std::shared_ptr<MockS3RequestObject> request_mock;
   std::shared_ptr<S3PutBucketAction> action_under_test_ptr;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
-  std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
   std::shared_ptr<MockS3PutBucketBodyFactory> bucket_body_factory_mock;
-  std::shared_ptr<ClovisAPI> s3_clovis_api_mock;
+  std::shared_ptr<MotrAPI> s3_motr_api_mock;
   std::string MockBucketBody;
   int call_count_one;
   std::string bucket_name;
@@ -403,8 +403,26 @@ TEST_F(S3PutBucketActionTest, CreateBucketAlreadyExist) {
       .WillRepeatedly(Return(S3BucketMetadataState::present));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(409, _)).Times(AtLeast(1));
+  request_mock->set_account_id("12345");
+  action_under_test_ptr->bucket_metadata->add_system_attribute(
+      "Owner-Account-id", "54321");
   action_under_test_ptr->create_bucket();
   EXPECT_STREQ("BucketAlreadyExists",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PutBucketActionTest, CreateBucketAlreadyExistForAccount) {
+  CREATE_BUCKET_METADATA_OBJ;
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .WillRepeatedly(Return(S3BucketMetadataState::present));
+  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, send_response(409, _)).Times(AtLeast(1));
+  request_mock->set_account_id("12345");
+  action_under_test_ptr->bucket_metadata->add_system_attribute(
+      "Owner-Account-id", "12345");
+  action_under_test_ptr->create_bucket();
+  EXPECT_STREQ("BucketAlreadyOwnedByYou",
                action_under_test_ptr->get_s3_error_code().c_str());
 }
 

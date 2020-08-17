@@ -23,8 +23,8 @@
 #ifndef __S3_UT_S3_CALLBACK_TEST_HELPERS_H__
 #define __S3_UT_S3_CALLBACK_TEST_HELPERS_H__
 
-#include "clovis_helpers.h"
-#include "s3_clovis_rw_common.h"
+#include "motr_helpers.h"
+#include "s3_motr_rw_common.h"
 
 class S3CallBack {
  public:
