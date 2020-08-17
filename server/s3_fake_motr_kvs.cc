@@ -1,3 +1,5 @@
+
+
 /*
  * Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
  *
@@ -23,12 +25,12 @@
 
 #include <algorithm>
 
-std::unique_ptr<S3FakeClovisKvs> S3FakeClovisKvs::inst;
+std::unique_ptr<S3FakeMotrKvs> S3FakeMotrKvs::inst;
 
-S3FakeClovisKvs::S3FakeClovisKvs() : in_mem_kv() {}
+S3FakeMotrKvs::S3FakeMotrKvs() : in_mem_kv() {}
 
-int S3FakeClovisKvs::kv_read(struct m0_uint128 const &oid,
-                             struct s3_clovis_kvs_op_context const &kv) {
+int S3FakeMotrKvs::kv_read(struct m0_uint128 const &oid,
+                           struct s3_motr_kvs_op_context const &kv) {
   s3_log(S3_LOG_DEBUG, "", "Entering with oid %" SCNx64 " : %" SCNx64 "\n",
          oid.u_hi, oid.u_lo);
   if (in_mem_kv.count(oid) == 0) {
@@ -59,8 +61,8 @@ int S3FakeClovisKvs::kv_read(struct m0_uint128 const &oid,
   return 0;
 }
 
-int S3FakeClovisKvs::kv_next(struct m0_uint128 const &oid,
-                             struct s3_clovis_kvs_op_context const &kv) {
+int S3FakeMotrKvs::kv_next(struct m0_uint128 const &oid,
+                           struct s3_motr_kvs_op_context const &kv) {
   s3_log(S3_LOG_DEBUG, "", "Entering with oid %" SCNx64 " : %" SCNx64 "\n",
          oid.u_hi, oid.u_lo);
   if (in_mem_kv.count(oid) == 0) {
@@ -122,8 +124,8 @@ int S3FakeClovisKvs::kv_next(struct m0_uint128 const &oid,
   return 0;
 }
 
-int S3FakeClovisKvs::kv_write(struct m0_uint128 const &oid,
-                              struct s3_clovis_kvs_op_context const &kv) {
+int S3FakeMotrKvs::kv_write(struct m0_uint128 const &oid,
+                            struct s3_motr_kvs_op_context const &kv) {
   s3_log(S3_LOG_DEBUG, "", "Entering with oid %" SCNx64 " : %" SCNx64 "\n",
          oid.u_hi, oid.u_lo);
   KeyVal &obj_kv = in_mem_kv[oid];
@@ -144,8 +146,8 @@ int S3FakeClovisKvs::kv_write(struct m0_uint128 const &oid,
   return 0;
 }
 
-int S3FakeClovisKvs::kv_del(struct m0_uint128 const &oid,
-                            struct s3_clovis_kvs_op_context const &kv) {
+int S3FakeMotrKvs::kv_del(struct m0_uint128 const &oid,
+                          struct s3_motr_kvs_op_context const &kv) {
   s3_log(S3_LOG_DEBUG, "", "Entering with oid %" SCNx64 " : %" SCNx64 "\n",
          oid.u_hi, oid.u_lo);
   if (in_mem_kv.count(oid) == 0) {

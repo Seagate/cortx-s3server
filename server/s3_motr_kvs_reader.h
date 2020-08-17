@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_S3_CLOVIS_KVS_READER_H__
-#define __S3_SERVER_S3_CLOVIS_KVS_READER_H__
+#ifndef __S3_SERVER_S3_MOTR_KVS_READER_H__
+#define __S3_SERVER_S3_MOTR_KVS_READER_H__
 
 #include <functional>
 #include <memory>
@@ -34,60 +34,60 @@
 #include "s3_log.h"
 #include "s3_request_object.h"
 
-class S3ClovisKVSReaderContext : public S3AsyncOpContextBase {
+class S3MotrKVSReaderContext : public S3AsyncOpContextBase {
   // Basic Operation context.
-  struct s3_clovis_idx_op_context* clovis_idx_op_context;
-  bool has_clovis_idx_op_context;
+  struct s3_motr_idx_op_context* motr_idx_op_context;
+  bool has_motr_idx_op_context;
 
   // Read/Write Operation context.
-  struct s3_clovis_kvs_op_context* clovis_kvs_op_context;
-  bool has_clovis_kvs_op_context;
+  struct s3_motr_kvs_op_context* motr_kvs_op_context;
+  bool has_motr_kvs_op_context;
 
  public:
-  S3ClovisKVSReaderContext(std::shared_ptr<RequestObject> req,
-                           std::function<void()> success_callback,
-                           std::function<void()> failed_callback,
-                           std::shared_ptr<ClovisAPI> clovis_api = nullptr)
+  S3MotrKVSReaderContext(std::shared_ptr<RequestObject> req,
+                         std::function<void()> success_callback,
+                         std::function<void()> failed_callback,
+                         std::shared_ptr<MotrAPI> clovis_api = nullptr)
       : S3AsyncOpContextBase(req, success_callback, failed_callback, 1,
                              clovis_api) {
     request_id = request->get_request_id();
     s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
     // Create or write, we need op context
-    clovis_idx_op_context = create_basic_idx_op_ctx(1);
-    has_clovis_idx_op_context = true;
+    motr_idx_op_context = create_basic_idx_op_ctx(1);
+    has_motr_idx_op_context = true;
 
-    clovis_kvs_op_context = NULL;
-    has_clovis_kvs_op_context = false;
+    motr_kvs_op_context = NULL;
+    has_motr_kvs_op_context = false;
   }
 
-  ~S3ClovisKVSReaderContext() {
+  ~S3MotrKVSReaderContext() {
     s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
 
-    if (has_clovis_idx_op_context) {
-      free_basic_idx_op_ctx(clovis_idx_op_context);
+    if (has_motr_idx_op_context) {
+      free_basic_idx_op_ctx(motr_idx_op_context);
     }
-    if (has_clovis_kvs_op_context) {
-      free_basic_kvs_op_ctx(clovis_kvs_op_context);
+    if (has_motr_kvs_op_context) {
+      free_basic_kvs_op_ctx(motr_kvs_op_context);
     }
   }
 
-  struct s3_clovis_idx_op_context* get_clovis_idx_op_ctx() {
-    return clovis_idx_op_context;
+  struct s3_motr_idx_op_context* get_motr_idx_op_ctx() {
+    return motr_idx_op_context;
   }
 
   // Call this when you want to do write op.
   void init_kvs_read_op_ctx(int no_of_keys) {
-    clovis_kvs_op_context = create_basic_kvs_op_ctx(no_of_keys);
-    has_clovis_kvs_op_context = true;
+    motr_kvs_op_context = create_basic_kvs_op_ctx(no_of_keys);
+    has_motr_kvs_op_context = true;
   }
 
-  struct s3_clovis_kvs_op_context* get_clovis_kvs_op_ctx() {
-    return clovis_kvs_op_context;
+  struct s3_motr_kvs_op_context* get_motr_kvs_op_ctx() {
+    return motr_kvs_op_context;
   }
 };
 
-enum class S3ClovisKVSReaderOpState {
+enum class S3MotrKVSReaderOpState {
   empty,
   start,
   failed_to_launch,
@@ -96,24 +96,23 @@ enum class S3ClovisKVSReaderOpState {
   missing,
 };
 
-class S3ClovisKVSReader {
+class S3MotrKVSReader {
  private:
   struct m0_uint128 id;
 
   std::shared_ptr<RequestObject> request;
-  std::unique_ptr<S3ClovisKVSReaderContext> reader_context;
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::unique_ptr<S3MotrKVSReaderContext> reader_context;
+  std::shared_ptr<MotrAPI> s3_motr_api;
 
   std::string request_id;
 
   // Used to report to caller
   std::function<void()> handler_on_success;
   std::function<void()> handler_on_failed;
-
-  S3ClovisKVSReaderOpState state;
+  S3MotrKVSReaderOpState state;
 
   // Holds references to keys and values after the read so it can be consumed.
-  struct s3_clovis_kvs_op_context* clovis_kvs_op_context;
+  struct s3_motr_kvs_op_context* clovis_kvs_op_context;
   std::string last_value;
   // Map to hold last result: first element is `key`, the second is a pair of
   // `return status` & the `value` corresponding to the `key`.
@@ -130,11 +129,11 @@ class S3ClovisKVSReader {
   void clean_up_contexts();
 
  public:
-  S3ClovisKVSReader(std::shared_ptr<RequestObject> req,
-                    std::shared_ptr<ClovisAPI> clovis_api = nullptr);
-  virtual ~S3ClovisKVSReader();
+  S3MotrKVSReader(std::shared_ptr<RequestObject> req,
+                  std::shared_ptr<MotrAPI> clovis_api = nullptr);
+  virtual ~S3MotrKVSReader();
 
-  virtual S3ClovisKVSReaderOpState get_state() { return state; }
+  virtual S3MotrKVSReaderOpState get_state() { return state; }
 
   // Async get operation.
   // Note -- get_keyval() is called with oid of index
@@ -184,20 +183,20 @@ class S3ClovisKVSReader {
   }
 
   // friends declaration for Unit test
-  FRIEND_TEST(S3ClovisKvsReaderTest, Constructor);
-  FRIEND_TEST(S3ClovisKvsReaderTest, CleanupContexts);
-  FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalTest);
-  FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalFailTest);
-  FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalIdxPresentTest);
-  FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalTestEmpty);
-  FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalSuccessfulTest);
-  FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalFailedTest);
-  FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalFailedTestMissing);
-  FRIEND_TEST(S3ClovisKvsReaderTest, NextKeyvalTest);
-  FRIEND_TEST(S3ClovisKvsReaderTest, NextKeyvalIdxPresentTest);
-  FRIEND_TEST(S3ClovisKvsReaderTest, NextKeyvalSuccessfulTest);
-  FRIEND_TEST(S3ClovisKvsReaderTest, NextKeyvalFailedTest);
-  FRIEND_TEST(S3ClovisKvsReaderTest, NextKeyvalFailedTestMissing);
+  FRIEND_TEST(S3MotrKVSReaderTest, Constructor);
+  FRIEND_TEST(S3MotrKVSReaderTest, CleanupContexts);
+  FRIEND_TEST(S3MotrKVSReaderTest, GetKeyvalTest);
+  FRIEND_TEST(S3MotrKVSReaderTest, GetKeyvalFailTest);
+  FRIEND_TEST(S3MotrKVSReaderTest, GetKeyvalIdxPresentTest);
+  FRIEND_TEST(S3MotrKVSReaderTest, GetKeyvalTestEmpty);
+  FRIEND_TEST(S3MotrKVSReaderTest, GetKeyvalSuccessfulTest);
+  FRIEND_TEST(S3MotrKVSReaderTest, GetKeyvalFailedTest);
+  FRIEND_TEST(S3MotrKVSReaderTest, GetKeyvalFailedTestMissing);
+  FRIEND_TEST(S3MotrKVSReaderTest, NextKeyvalTest);
+  FRIEND_TEST(S3MotrKVSReaderTest, NextKeyvalIdxPresentTest);
+  FRIEND_TEST(S3MotrKVSReaderTest, NextKeyvalSuccessfulTest);
+  FRIEND_TEST(S3MotrKVSReaderTest, NextKeyvalFailedTest);
+  FRIEND_TEST(S3MotrKVSReaderTest, NextKeyvalFailedTestMissing);
 };
 
 #endif

@@ -39,7 +39,7 @@ const char *clovis_indices = "./indices";
 
 // extern struct m0_addb_ctx m0_clovis_addb_ctx;
 extern std::set<struct s3_clovis_op_context *> global_clovis_object_ops_list;
-extern std::set<struct s3_clovis_idx_op_context *> global_clovis_idx_ops_list;
+extern std::set<struct s3_motr_idx_op_context *> global_clovis_idx_ops_list;
 extern std::set<struct s3_clovis_idx_context *> global_clovis_idx;
 extern std::set<struct s3_clovis_obj_context *> global_clovis_obj;
 
@@ -141,8 +141,8 @@ void fini_clovis(void) {
 int create_new_instance_id(struct m0_uint128 *ufid) {
   // Unique OID generation by motr.
 
-  std::unique_ptr<ClovisAPI> s3_clovis_api =
-      std::unique_ptr<ConcreteClovisAPI>(new ConcreteClovisAPI());
+  std::unique_ptr<MotrAPI> s3_motr_api =
+      std::unique_ptr<ConcreteMotrAPI>(new ConcreteMotrAPI());
 
   int rc;
 
@@ -151,7 +151,7 @@ int create_new_instance_id(struct m0_uint128 *ufid) {
     return -EINVAL;
   }
 
-  rc = s3_clovis_api->m0_h_ufid_next(ufid);
+  rc = s3_motr_api->m0_h_ufid_next(ufid);
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, "", "Failed to generate UFID\n");
     s3_iem(LOG_ALERT, S3_IEM_CLOVIS_CONN_FAIL, S3_IEM_CLOVIS_CONN_FAIL_STR,

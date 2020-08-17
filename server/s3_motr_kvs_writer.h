@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_S3_CLOVIS_KVS_WRITER_H__
-#define __S3_SERVER_S3_CLOVIS_KVS_WRITER_H__
+#ifndef __S3_SERVER_S3_MOTR_KVS_WRITER_H__
+#define __S3_SERVER_S3_MOTR_KVS_WRITER_H__
 
 #include <gtest/gtest_prod.h>
 #include <functional>
@@ -35,11 +35,11 @@
 
 class S3SyncClovisKVSWriterContext {
   // Basic Operation context.
-  struct s3_clovis_idx_op_context* clovis_idx_op_context;
-  bool has_clovis_idx_op_context;
+  struct s3_motr_idx_op_context* clovis_idx_op_context;
+  bool has_motr_idx_op_context;
 
   // Read/Write Operation context.
-  struct s3_clovis_kvs_op_context* clovis_kvs_op_context;
+  struct s3_motr_kvs_op_context* clovis_kvs_op_context;
   bool has_clovis_kvs_op_context;
 
   std::string request_id;
@@ -52,14 +52,14 @@ class S3SyncClovisKVSWriterContext {
     s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
     // Create or write, we need op context
     clovis_idx_op_context = create_basic_idx_op_ctx(ops_count);
-    has_clovis_idx_op_context = true;
+    has_motr_idx_op_context = true;
     clovis_kvs_op_context = NULL;
     has_clovis_kvs_op_context = false;
   }
 
   ~S3SyncClovisKVSWriterContext() {
     s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
-    if (has_clovis_idx_op_context) {
+    if (has_motr_idx_op_context) {
       free_basic_idx_op_ctx(clovis_idx_op_context);
     }
     if (has_clovis_kvs_op_context) {
@@ -67,7 +67,7 @@ class S3SyncClovisKVSWriterContext {
     }
   }
 
-  struct s3_clovis_idx_op_context* get_clovis_idx_op_ctx() {
+  struct s3_motr_idx_op_context* get_motr_idx_op_ctx() {
     return clovis_idx_op_context;
   }
 
@@ -77,24 +77,24 @@ class S3SyncClovisKVSWriterContext {
     has_clovis_kvs_op_context = true;
   }
 
-  struct s3_clovis_kvs_op_context* get_clovis_kvs_op_ctx() {
+  struct s3_motr_kvs_op_context* get_motr_kvs_op_ctx() {
     return clovis_kvs_op_context;
   }
 };
 
 // Async Clovis context is inherited from Sync Context & S3AsyncOpContextBase
 
-class S3AsyncClovisKVSWriterContext : public S3SyncClovisKVSWriterContext,
-                                      public S3AsyncOpContextBase {
+class S3AsyncMotrKVSWriterContext : public S3SyncClovisKVSWriterContext,
+                                    public S3AsyncOpContextBase {
 
   std::string request_id = "";
 
  public:
-  S3AsyncClovisKVSWriterContext(std::shared_ptr<RequestObject> req,
-                                std::function<void()> success_callback,
-                                std::function<void()> failed_callback,
-                                int ops_count = 1,
-                                std::shared_ptr<ClovisAPI> clovis_api = nullptr)
+  S3AsyncMotrKVSWriterContext(std::shared_ptr<RequestObject> req,
+                              std::function<void()> success_callback,
+                              std::function<void()> failed_callback,
+                              int ops_count = 1,
+                              std::shared_ptr<MotrAPI> clovis_api = nullptr)
       : S3SyncClovisKVSWriterContext(req ? req->get_request_id() : "",
                                      ops_count),
         S3AsyncOpContextBase(req, success_callback, failed_callback, ops_count,
@@ -103,12 +103,12 @@ class S3AsyncClovisKVSWriterContext : public S3SyncClovisKVSWriterContext,
     s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   }
 
-  ~S3AsyncClovisKVSWriterContext() {
+  ~S3AsyncMotrKVSWriterContext() {
     s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
   }
 };
 
-enum class S3ClovisKVSWriterOpState {
+enum class S3MotrKVSWriterOpState {
   start,
   failed_to_launch,
   failed,
@@ -119,16 +119,16 @@ enum class S3ClovisKVSWriterOpState {
   deleting  // Key is being deleted.
 };
 
-class S3ClovisKVSWriter {
+class S3MotrKVSWriter {
  private:
   std::vector<struct m0_uint128> oid_list;
   std::vector<std::string> keys_list;  // used in delete multiple KV
 
   std::shared_ptr<RequestObject> request;
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
-  std::unique_ptr<S3AsyncClovisKVSWriterContext> writer_context;
+  std::shared_ptr<MotrAPI> s3_motr_api;
+  std::unique_ptr<S3AsyncMotrKVSWriterContext> writer_context;
   std::unique_ptr<S3SyncClovisKVSWriterContext> sync_writer_context;
-  std::unique_ptr<S3AsyncClovisKVSWriterContext> sync_context;
+  std::unique_ptr<S3AsyncMotrKVSWriterContext> sync_context;
   std::string kvs_key;
   std::string kvs_value;
 
@@ -137,21 +137,21 @@ class S3ClovisKVSWriter {
   std::function<void()> handler_on_success;
   std::function<void()> handler_on_failed;
 
-  S3ClovisKVSWriterOpState state;
+  S3MotrKVSWriterOpState state;
 
   struct s3_clovis_idx_context* idx_ctx;
 
   void clean_up_contexts();
 
  public:
-  S3ClovisKVSWriter(std::shared_ptr<RequestObject> req,
-                    std::shared_ptr<ClovisAPI> clovis_api = nullptr);
+  S3MotrKVSWriter(std::shared_ptr<RequestObject> req,
+                  std::shared_ptr<MotrAPI> clovis_api = nullptr);
 
-  S3ClovisKVSWriter(std::string request_id,
-                    std::shared_ptr<ClovisAPI> clovis_api = nullptr);
-  virtual ~S3ClovisKVSWriter();
+  S3MotrKVSWriter(std::string request_id,
+                  std::shared_ptr<MotrAPI> clovis_api = nullptr);
+  virtual ~S3MotrKVSWriter();
 
-  virtual S3ClovisKVSWriterOpState get_state() { return state; }
+  virtual S3MotrKVSWriterOpState get_state() { return state; }
 
   struct m0_uint128 get_oid() { return oid_list[0]; }
 
@@ -224,7 +224,7 @@ class S3ClovisKVSWriter {
   void delete_keyval_successful();
   void delete_keyval_failed();
 
-  void set_up_key_value_store(struct s3_clovis_kvs_op_context* kvs_ctx,
+  void set_up_key_value_store(struct s3_motr_kvs_op_context* kvs_ctx,
                               const std::string& key, const std::string& val,
                               size_t pos = 0);
 
@@ -233,36 +233,36 @@ class S3ClovisKVSWriter {
   }
 
   virtual int get_op_ret_code_for_del_kv(int key_i) {
-    return writer_context->get_clovis_kvs_op_ctx()->rcs[key_i];
+    return writer_context->get_motr_kvs_op_ctx()->rcs[key_i];
   }
 
   // For Testing purpose
-  FRIEND_TEST(S3ClovisKvsWritterTest, Constructor);
-  FRIEND_TEST(S3ClovisKvsWritterTest, CleanupContexts);
-  FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexIdxPresent);
-  FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndex);
-  FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexSuccessful);
-  FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexEntityCreateFailed);
-  FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexFail);
-  FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexFailExists);
-  FRIEND_TEST(S3ClovisKvsWritterTest, SyncIndex);
-  FRIEND_TEST(S3ClovisKvsWritterTest, SyncIndexSuccessful);
-  FRIEND_TEST(S3ClovisKvsWritterTest, SyncIndexFailedMissingMetadata);
-  FRIEND_TEST(S3ClovisKvsWritterTest, SyncIndexFailedFailedMetadata);
-  FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyVal);
-  FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyValSuccessful);
-  FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyValFailed);
-  FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyValEmpty);
-  FRIEND_TEST(S3ClovisKvsWritterTest, DelIndexIdxPresent);
-  FRIEND_TEST(S3ClovisKvsWritterTest, DelIndexEntityDeleteFailed);
-  FRIEND_TEST(S3ClovisKvsWritterTest, DelIndexFailed);
-  FRIEND_TEST(S3ClovisKvsWritterTest, SyncKeyVal);
-  FRIEND_TEST(S3ClovisKvsWritterTest, SyncKeyvalSuccessful);
-  FRIEND_TEST(S3ClovisKvsWritterTest, SyncKeyValFailed);
-  FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyVal);
-  FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValSuccess);
-  FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValFailed);
-  FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValEmpty);
+  FRIEND_TEST(S3MotrKVSWritterTest, Constructor);
+  FRIEND_TEST(S3MotrKVSWritterTest, CleanupContexts);
+  FRIEND_TEST(S3MotrKVSWritterTest, CreateIndexIdxPresent);
+  FRIEND_TEST(S3MotrKVSWritterTest, CreateIndex);
+  FRIEND_TEST(S3MotrKVSWritterTest, CreateIndexSuccessful);
+  FRIEND_TEST(S3MotrKVSWritterTest, CreateIndexEntityCreateFailed);
+  FRIEND_TEST(S3MotrKVSWritterTest, CreateIndexFail);
+  FRIEND_TEST(S3MotrKVSWritterTest, CreateIndexFailExists);
+  FRIEND_TEST(S3MotrKVSWritterTest, SyncIndex);
+  FRIEND_TEST(S3MotrKVSWritterTest, SyncIndexSuccessful);
+  FRIEND_TEST(S3MotrKVSWritterTest, SyncIndexFailedMissingMetadata);
+  FRIEND_TEST(S3MotrKVSWritterTest, SyncIndexFailedFailedMetadata);
+  FRIEND_TEST(S3MotrKVSWritterTest, PutKeyVal);
+  FRIEND_TEST(S3MotrKVSWritterTest, PutKeyValSuccessful);
+  FRIEND_TEST(S3MotrKVSWritterTest, PutKeyValFailed);
+  FRIEND_TEST(S3MotrKVSWritterTest, PutKeyValEmpty);
+  FRIEND_TEST(S3MotrKVSWritterTest, DelIndexIdxPresent);
+  FRIEND_TEST(S3MotrKVSWritterTest, DelIndexEntityDeleteFailed);
+  FRIEND_TEST(S3MotrKVSWritterTest, DelIndexFailed);
+  FRIEND_TEST(S3MotrKVSWritterTest, SyncKeyVal);
+  FRIEND_TEST(S3MotrKVSWritterTest, SyncKeyvalSuccessful);
+  FRIEND_TEST(S3MotrKVSWritterTest, SyncKeyValFailed);
+  FRIEND_TEST(S3MotrKVSWritterTest, DelKeyVal);
+  FRIEND_TEST(S3MotrKVSWritterTest, DelKeyValSuccess);
+  FRIEND_TEST(S3MotrKVSWritterTest, DelKeyValFailed);
+  FRIEND_TEST(S3MotrKVSWritterTest, DelKeyValEmpty);
   FRIEND_TEST(S3BucketMetadataV1Test, CreateBucketListIndexSuccessful);
   FRIEND_TEST(S3PartMetadataTest, CreatePartIndexSuccessful);
   FRIEND_TEST(S3PartMetadataTest, CreatePartIndexSuccessfulOnlyCreateIndex);

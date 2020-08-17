@@ -68,7 +68,7 @@ TEST_F(S3OptionsTest, Constructor) {
   EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ(1, instance->get_clovis_idx_service_id());
   EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
-  EXPECT_EQ("clovis_index_keyspace", instance->get_clovis_cass_keyspace());
+  EXPECT_EQ("motr_index_keyspace", instance->get_clovis_cass_keyspace());
   EXPECT_EQ(1, instance->get_clovis_cass_max_column_family_num());
   EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
   EXPECT_FALSE(instance->is_log_buffering_enabled());
@@ -134,7 +134,7 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR, "localhost@test");
   instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR, "192.192.191");
   instance->set_cmdline_option(S3_OPTION_AUTH_PORT, "2");
-  instance->set_cmdline_option(S3_CLOVIS_LAYOUT_ID, "123");
+  instance->set_cmdline_option(S3_MOTR_LAYOUT_ID, "123");
   instance->set_cmdline_option(S3_OPTION_LOG_DIR, "/tmp/");
   instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
   instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
@@ -180,7 +180,7 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR, "localhost@test");
   instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR, "ipv4:192.168.15.131");
   instance->set_cmdline_option(S3_OPTION_AUTH_PORT, "2");
-  instance->set_cmdline_option(S3_CLOVIS_LAYOUT_ID, "123");
+  instance->set_cmdline_option(S3_MOTR_LAYOUT_ID, "123");
   instance->set_cmdline_option(S3_OPTION_LOG_DIR, "/tmp/");
   instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
   instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
@@ -361,7 +361,7 @@ TEST_F(S3OptionsTest, LoadSelectiveAuthSectionFromFile) {
 }
 
 TEST_F(S3OptionsTest, LoadClovisSectionFromFile) {
-  EXPECT_TRUE(instance->load_section("S3_CLOVIS_CONFIG", false));
+  EXPECT_TRUE(instance->load_section("S3_MOTR_CONFIG", false));
 
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
             instance->get_clovis_local_addr());
@@ -388,7 +388,7 @@ TEST_F(S3OptionsTest, LoadClovisSectionFromFile) {
 
 TEST_F(S3OptionsTest, LoadSelectiveClovisSectionFromFile) {
   instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR, "localhost@test");
-  EXPECT_TRUE(instance->load_section("S3_CLOVIS_CONFIG", true));
+  EXPECT_TRUE(instance->load_section("S3_MOTR_CONFIG", true));
 
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
             instance->get_clovis_local_addr());
@@ -421,7 +421,7 @@ TEST_F(S3OptionsTest, SetCmdOptionFlag) {
   instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR, "localhost@test");
   instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR, "192.192.191");
   instance->set_cmdline_option(S3_OPTION_AUTH_PORT, "2");
-  instance->set_cmdline_option(S3_CLOVIS_LAYOUT_ID, "123");
+  instance->set_cmdline_option(S3_MOTR_LAYOUT_ID, "123");
   instance->set_cmdline_option(S3_OPTION_LOG_DIR, "/tmp/");
   instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
   instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
@@ -433,7 +433,7 @@ TEST_F(S3OptionsTest, SetCmdOptionFlag) {
 
   flag = S3_OPTION_IPV4_BIND_ADDR | S3_OPTION_IPV6_BIND_ADDR |
          S3_OPTION_BIND_PORT | S3_OPTION_CLOVIS_LOCAL_ADDR |
-         S3_OPTION_AUTH_IP_ADDR | S3_OPTION_AUTH_PORT | S3_CLOVIS_LAYOUT_ID |
+         S3_OPTION_AUTH_IP_ADDR | S3_OPTION_AUTH_PORT | S3_MOTR_LAYOUT_ID |
          S3_OPTION_LOG_DIR | S3_OPTION_LOG_MODE | S3_OPTION_LOG_FILE_MAX_SIZE |
          S3_OPTION_STATSD_IP_ADDR | S3_OPTION_STATSD_PORT |
          S3_OPTION_CLOVIS_PROF | S3_OPTION_CLOVIS_PROCESS_FID;
@@ -464,23 +464,23 @@ TEST_F(S3OptionsTest, MissingOptions) {
   std::string config_file("s3config-temp-test.yaml");
   cfg_file.open(config_file);
   cfg_file << "S3Config_Sections: [S3_SERVER_CONFIG, S3_AUTH_CONFIG, "
-              "S3_CLOVIS_CONFIG]\n";
+              "S3_MOTR_CONFIG]\n";
   cfg_file << "S3_SERVER_CONFIG:\n";
   cfg_file << "   S3_LOG_MODE: INFO\n";
   cfg_file << "S3_AUTH_CONFIG:\n";
   cfg_file << "   S3_AUTH_PORT: 8095\n";
-  cfg_file << "S3_CLOVIS_CONFIG:\n";
-  cfg_file << "   S3_CLOVIS_MAX_BLOCKS_PER_REQUEST: 1\n";
+  cfg_file << "S3_MOTR_CONFIG:\n";
+  cfg_file << "   S3_MOTR_MAX_BLOCKS_PER_REQUEST: 1\n";
   cfg_file.close();
 
   instance->set_option_file(config_file);
-  EXPECT_FALSE(instance->load_section("S3_CLOVIS_CONFIG", false));
+  EXPECT_FALSE(instance->load_section("S3_MOTR_CONFIG", false));
   EXPECT_FALSE(instance->load_section("S3_AUTH_CONFIG", false));
-  EXPECT_FALSE(instance->load_section("S3_CLOVIS_CONFIG", false));
+  EXPECT_FALSE(instance->load_section("S3_MOTR_CONFIG", false));
 
-  EXPECT_FALSE(instance->load_section("S3_CLOVIS_CONFIG", true));
+  EXPECT_FALSE(instance->load_section("S3_MOTR_CONFIG", true));
   EXPECT_FALSE(instance->load_section("S3_AUTH_CONFIG", true));
-  EXPECT_FALSE(instance->load_section("S3_CLOVIS_CONFIG", true));
+  EXPECT_FALSE(instance->load_section("S3_MOTR_CONFIG", true));
 
   EXPECT_FALSE(instance->load_all_sections(false));
   EXPECT_FALSE(instance->load_all_sections(true));

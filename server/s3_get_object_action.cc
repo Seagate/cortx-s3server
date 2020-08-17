@@ -32,7 +32,7 @@ S3GetObjectAction::S3GetObjectAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
-    std::shared_ptr<S3ClovisReaderFactory> clovis_s3_factory)
+    std::shared_ptr<S3MotrReaderFactory> clovis_s3_factory)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
                      std::move(object_meta_factory)),
       total_blocks_in_object(0),
@@ -50,9 +50,9 @@ S3GetObjectAction::S3GetObjectAction(
          request->get_object_name().c_str());
 
   if (clovis_s3_factory) {
-    clovis_reader_factory = std::move(clovis_s3_factory);
+    motr_reader_factory = std::move(clovis_s3_factory);
   } else {
-    clovis_reader_factory = std::make_shared<S3ClovisReaderFactory>();
+    motr_reader_factory = std::make_shared<S3MotrReaderFactory>();
   }
 
   setup_steps();
@@ -144,7 +144,7 @@ void S3GetObjectAction::validate_object_info() {
     send_response_to_s3_client();
   } else {
     size_t clovis_unit_size =
-        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
+        S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
             object_metadata->get_layout_id());
     s3_log(S3_LOG_DEBUG, request_id,
            "clovis_unit_size = %zu for layout_id = %d\n", clovis_unit_size,
@@ -168,7 +168,7 @@ void S3GetObjectAction::set_total_blocks_to_read_from_object() {
   } else {
     // object read for valid range
     size_t clovis_unit_size =
-        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
+        S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
             object_metadata->get_layout_id());
     // get block of first_byte_offset_to_read
     size_t first_byte_offset_block =
@@ -317,14 +317,14 @@ void S3GetObjectAction::read_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // get total number of blocks to read from an object
   set_total_blocks_to_read_from_object();
-  clovis_reader = clovis_reader_factory->create_clovis_reader(
+  clovis_reader = motr_reader_factory->create_motr_reader(
       request, object_metadata->get_oid(), object_metadata->get_layout_id());
   // get the block,in which first_byte_offset_to_read is present
   // and initilaize the last index with starting offset the block
   size_t block_start_offset =
       first_byte_offset_to_read -
       (first_byte_offset_to_read %
-       S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
+       S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
            object_metadata->get_layout_id()));
   clovis_reader->set_last_index(block_start_offset);
   read_object_data();
@@ -364,7 +364,7 @@ void S3GetObjectAction::read_object_data() {
           std::bind(&S3GetObjectAction::read_object_data_failed, this));
       if (!op_launched) {
         if (clovis_reader->get_state() ==
-            S3ClovisReaderOpState::failed_to_launch) {
+            S3MotrReaderOpState::failed_to_launch) {
           set_s3_error("ServiceUnavailable");
           s3_log(S3_LOG_ERROR, request_id,
                  "read_object_data called due to clovis_entity_open failure\n");
@@ -448,7 +448,7 @@ void S3GetObjectAction::send_data_to_client() {
       // for a given range 1000-1500 to read from 2mb object
       read_data_start_offset =
           first_byte_offset_to_read %
-          S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
+          S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
               object_metadata->get_layout_id());
       length -= read_data_start_offset;
     }
@@ -523,7 +523,7 @@ void S3GetObjectAction::send_response_to_s3_client() {
   } else if (object_metadata &&
              (object_metadata->get_content_length() == 0 ||
               (clovis_reader &&
-               clovis_reader->get_state() == S3ClovisReaderOpState::success))) {
+               clovis_reader->get_state() == S3MotrReaderOpState::success))) {
     request->send_reply_end();
   } else {
     if (read_object_reply_started) {

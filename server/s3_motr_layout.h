@@ -20,13 +20,13 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_S3_CLOVIS_LAYOUT_H__
-#define __S3_SERVER_S3_CLOVIS_LAYOUT_H__
+#ifndef __S3_SERVER_S3_MOTR_LAYOUT_H__
+#define __S3_SERVER_S3_MOTR_LAYOUT_H__
 
 #include <map>
 #include <utility>
 
-class S3ClovisLayoutMap {
+class S3MotrLayoutMap {
   // Map<Layout_id, Unit_size>
   std::map<int, size_t> layout_map;
 
@@ -38,9 +38,9 @@ class S3ClovisLayoutMap {
   int layout_id_cap;
   int best_layout_id;
 
-  static S3ClovisLayoutMap* instance;
+  static S3MotrLayoutMap* instance;
 
-  S3ClovisLayoutMap();
+  S3MotrLayoutMap();
 
  public:
   // Loads config file with layout recommendations
@@ -53,9 +53,9 @@ class S3ClovisLayoutMap {
 
   int get_best_layout_for_object_size();
 
-  static S3ClovisLayoutMap* get_instance() {
+  static S3MotrLayoutMap* get_instance() {
     if (!instance) {
-      instance = new S3ClovisLayoutMap();
+      instance = new S3MotrLayoutMap();
     }
     return instance;
   }
