@@ -94,7 +94,7 @@ class S3AsyncClovisKVSWriterContext : public S3SyncClovisKVSWriterContext,
                                 std::function<void()> success_callback,
                                 std::function<void()> failed_callback,
                                 int ops_count = 1,
-                                std::shared_ptr<ClovisAPI> clovis_api = nullptr)
+                                std::shared_ptr<MotrAPI> clovis_api = nullptr)
       : S3SyncClovisKVSWriterContext(req ? req->get_request_id() : "",
                                      ops_count),
         S3AsyncOpContextBase(req, success_callback, failed_callback, ops_count,
@@ -125,7 +125,7 @@ class S3ClovisKVSWriter {
   std::vector<std::string> keys_list;  // used in delete multiple KV
 
   std::shared_ptr<RequestObject> request;
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::shared_ptr<MotrAPI> s3_clovis_api;
   std::unique_ptr<S3AsyncClovisKVSWriterContext> writer_context;
   std::unique_ptr<S3SyncClovisKVSWriterContext> sync_writer_context;
   std::unique_ptr<S3AsyncClovisKVSWriterContext> sync_context;
@@ -145,10 +145,10 @@ class S3ClovisKVSWriter {
 
  public:
   S3ClovisKVSWriter(std::shared_ptr<RequestObject> req,
-                    std::shared_ptr<ClovisAPI> clovis_api = nullptr);
+                    std::shared_ptr<MotrAPI> clovis_api = nullptr);
 
   S3ClovisKVSWriter(std::string request_id,
-                    std::shared_ptr<ClovisAPI> clovis_api = nullptr);
+                    std::shared_ptr<MotrAPI> clovis_api = nullptr);
   virtual ~S3ClovisKVSWriter();
 
   virtual S3ClovisKVSWriterOpState get_state() { return state; }
@@ -166,7 +166,7 @@ class S3ClovisKVSWriter {
                                      std::function<void(void)> on_success,
                                      std::function<void(void)> on_failed);
 
-  // Sync clovis is currently done using clovis_idx_op
+  // Sync clovis is currently done using motr_idx_op
 
   // void sync_index(std::function<void(void)> on_success,
   //                 std::function<void(void)> on_failed, int index_count = 1);

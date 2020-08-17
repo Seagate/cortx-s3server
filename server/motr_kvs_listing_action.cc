@@ -33,7 +33,7 @@ MotrKVSListingAction::MotrKVSListingAction(
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory)
     : MotrAction(req), last_key(""), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-  motr_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  motr_clovis_api = std::make_shared<ConcreteMotrAPI>();
 
   s3_log(S3_LOG_INFO, request_id, "Motr API: kvs list Service.\n");
 

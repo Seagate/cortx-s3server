@@ -31,7 +31,7 @@ extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
 S3AbortMultipartAction::S3AbortMultipartAction(
     std::shared_ptr<S3RequestObject> req,
-    std::shared_ptr<ClovisAPI> s3_clovis_apis,
+    std::shared_ptr<MotrAPI> s3_clovis_apis,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
@@ -90,7 +90,7 @@ S3AbortMultipartAction::S3AbortMultipartAction(
   if (s3_clovis_apis) {
     s3_clovis_api = std::move(s3_clovis_apis);
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_clovis_api = std::make_shared<ConcreteMotrAPI>();
   }
   setup_steps();
 }

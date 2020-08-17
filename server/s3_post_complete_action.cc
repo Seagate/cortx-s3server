@@ -33,7 +33,7 @@
 extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
 S3PostCompleteAction::S3PostCompleteAction(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
@@ -59,7 +59,7 @@ S3PostCompleteAction::S3PostCompleteAction(
   if (clovis_api) {
     s3_clovis_api = std::move(clovis_api);
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_clovis_api = std::make_shared<ConcreteMotrAPI>();
   }
   if (clovis_kvs_reader_factory) {
     s3_clovis_kvs_reader_factory = std::move(clovis_kvs_reader_factory);

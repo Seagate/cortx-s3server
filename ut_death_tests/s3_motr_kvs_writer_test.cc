@@ -74,7 +74,7 @@ class S3ClovisKvsWriterTest : public testing::Test {
     EXPECT_CALL(*ptr_mock_s3clovis, m0_h_ufid_next(_))
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
-    EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_)).WillRepeatedly(Return(0));
+    EXPECT_CALL(*ptr_mock_s3clovis, motr_op_rc(_)).WillRepeatedly(Return(0));
 
     action_under_test = std::make_shared<S3ClovisKVSWriter>(ptr_mock_request,
                                                             ptr_mock_s3clovis);

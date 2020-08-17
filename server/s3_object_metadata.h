@@ -108,7 +108,7 @@ class S3ObjectMetadata {
   bool is_multipart;
 
   std::shared_ptr<S3RequestObject> request;
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::shared_ptr<MotrAPI> s3_clovis_api;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
@@ -153,7 +153,7 @@ class S3ObjectMetadata {
       std::string uploadid = "",
       std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory = nullptr,
       std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr);
+      std::shared_ptr<MotrAPI> clovis_api = nullptr);
 
   // Call these when Object metadata save/remove needs to be called.
   // id can be object list index OID or

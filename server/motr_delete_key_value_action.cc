@@ -24,7 +24,7 @@
 
 MotrDeleteKeyValueAction::MotrDeleteKeyValueAction(
     std::shared_ptr<MotrRequestObject> req,
-    std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3ClovisKVSWriterFactory> clovis_motr_kvs_writer_factory,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_motr_kvs_reader_factory)
     : MotrAction(req) {
@@ -32,7 +32,7 @@ MotrDeleteKeyValueAction::MotrDeleteKeyValueAction(
   if (clovis_api) {
     motr_clovis_api = clovis_api;
   } else {
-    motr_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    motr_clovis_api = std::make_shared<ConcreteMotrAPI>();
   }
 
   if (clovis_motr_kvs_reader_factory) {

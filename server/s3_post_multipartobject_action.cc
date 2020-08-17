@@ -41,7 +41,7 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory,
     std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
-    std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
                      std::move(object_meta_factory)) {
@@ -58,7 +58,7 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
   if (clovis_api) {
     s3_clovis_api = std::move(clovis_api);
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_clovis_api = std::make_shared<ConcreteMotrAPI>();
   }
   oid = {0ULL, 0ULL};
   S3UriToMotrOID(s3_clovis_api, request->get_object_uri().c_str(), request_id,

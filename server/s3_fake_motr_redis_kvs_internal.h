@@ -84,7 +84,7 @@ int redis_reply_check(redisAsyncContext *glob_redis_ctx,
 typedef void op_stable_cb(struct m0_clovis_op *op);
 typedef void op_failed_cb(struct m0_clovis_op *op);
 void finalize_op(struct m0_clovis_op *op,
-                 op_stable_cb stable = s3_clovis_op_stable,
+                 op_stable_cb stable = s3_motr_op_stable,
                  op_failed_cb failed = s3_clovis_op_failed);
 
 void kv_status_cb(redisAsyncContext *glob_redis_ctx, void *async_redis_reply,

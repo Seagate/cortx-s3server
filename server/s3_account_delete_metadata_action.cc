@@ -28,7 +28,7 @@
 extern struct m0_uint128 bucket_metadata_list_index_oid;
 
 S3AccountDeleteMetadataAction::S3AccountDeleteMetadataAction(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3ClovisKVSReaderFactory> kvs_reader_factory)
     : S3Action(req, true, nullptr, false, true) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
@@ -38,7 +38,7 @@ S3AccountDeleteMetadataAction::S3AccountDeleteMetadataAction(
   if (clovis_api) {
     s3_clovis_api = clovis_api;
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_clovis_api = std::make_shared<ConcreteMotrAPI>();
   }
 
   if (kvs_reader_factory) {

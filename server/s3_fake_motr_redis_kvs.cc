@@ -29,7 +29,7 @@
 #include "s3_motr_kvs_writer.h"
 #include "s3_motr_rw_common.h"
 
-std::unique_ptr<S3FakeClovisRedisKvs> S3FakeClovisRedisKvs::inst;
+std::unique_ptr<S3FakeMotrRedisKvs> S3FakeMotrRedisKvs::inst;
 
 void finalize_op(struct m0_clovis_op *op, op_stable_cb stable,
                  op_failed_cb failed) {
@@ -189,7 +189,7 @@ void kv_read_cb(redisAsyncContext *glob_redis_ctx, void *async_redis_reply,
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3FakeClovisRedisKvs::kv_read(struct m0_clovis_op *op) {
+void S3FakeMotrRedisKvs::kv_read(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct s3_clovis_context_obj *ctx =
       (struct s3_clovis_context_obj *)op->op_datum;
@@ -313,7 +313,7 @@ void kv_next_cb(redisAsyncContext *glob_redis_ctx, void *async_redis_reply,
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3FakeClovisRedisKvs::kv_next(struct m0_clovis_op *op) {
+void S3FakeMotrRedisKvs::kv_next(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct s3_clovis_context_obj *ctx =
       (struct s3_clovis_context_obj *)op->op_datum;
@@ -424,7 +424,7 @@ static void schedule_delete_key_op(redisAsyncContext *ac,
   free(max_b.buf);
 }
 
-void S3FakeClovisRedisKvs::kv_write(struct m0_clovis_op *op) {
+void S3FakeMotrRedisKvs::kv_write(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct s3_clovis_context_obj *ctx =
       (struct s3_clovis_context_obj *)op->op_datum;
@@ -468,7 +468,7 @@ void S3FakeClovisRedisKvs::kv_write(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3FakeClovisRedisKvs::kv_del(struct m0_clovis_op *op) {
+void S3FakeMotrRedisKvs::kv_del(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct s3_clovis_context_obj *ctx =
       (struct s3_clovis_context_obj *)op->op_datum;

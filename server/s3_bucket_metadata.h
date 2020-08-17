@@ -84,7 +84,7 @@ class S3BucketMetadata {
 
   std::shared_ptr<S3RequestObject> request;
 
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::shared_ptr<MotrAPI> s3_clovis_api;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
 
@@ -112,7 +112,7 @@ class S3BucketMetadata {
  public:
   S3BucketMetadata(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr,
+      std::shared_ptr<MotrAPI> clovis_api = nullptr,
       std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory =
           nullptr,
       std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory =

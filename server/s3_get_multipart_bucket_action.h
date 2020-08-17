@@ -32,7 +32,7 @@
 
 class S3GetMultipartBucketAction : public S3BucketAction {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::shared_ptr<MotrAPI> s3_clovis_api;
   std::shared_ptr<S3ClovisKVSReaderFactory> s3_clovis_kvs_reader_factory;
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   S3ObjectListResponse multipart_object_list;
@@ -56,7 +56,7 @@ class S3GetMultipartBucketAction : public S3BucketAction {
  public:
   S3GetMultipartBucketAction(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr,
+      std::shared_ptr<MotrAPI> clovis_api = nullptr,
       std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory =
           nullptr,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,

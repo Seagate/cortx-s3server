@@ -34,7 +34,7 @@ extern int shutdown_clovis_teardown_called;
 
 S3ClovisReader::S3ClovisReader(std::shared_ptr<RequestObject> req,
                                struct m0_uint128 id, int layoutid,
-                               std::shared_ptr<ClovisAPI> clovis_api)
+                               std::shared_ptr<MotrAPI> clovis_api)
     : request(req),
       s3_clovis_api(clovis_api),
       state(S3ClovisReaderOpState::start),
@@ -50,7 +50,7 @@ S3ClovisReader::S3ClovisReader(std::shared_ptr<RequestObject> req,
   if (clovis_api) {
     s3_clovis_api = clovis_api;
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_clovis_api = std::make_shared<ConcreteMotrAPI>();
   }
 
   oid = id;
@@ -67,7 +67,7 @@ void S3ClovisReader::clean_up_contexts() {
     global_clovis_obj.erase(obj_ctx);
     if (obj_ctx) {
       for (size_t i = 0; i < obj_ctx->n_initialized_contexts; i++) {
-        s3_clovis_api->clovis_obj_fini(&obj_ctx->objs[i]);
+        s3_clovis_api->motr_obj_fini(&obj_ctx->objs[i]);
       }
       free_obj_context(obj_ctx);
       obj_ctx = nullptr;
@@ -156,33 +156,33 @@ int S3ClovisReader::open_object(std::function<void(void)> on_success,
   struct s3_clovis_op_context *ctx = open_context->get_clovis_op_ctx();
 
   ctx->cbs[0].oop_executed = NULL;
-  ctx->cbs[0].oop_stable = s3_clovis_op_stable;
+  ctx->cbs[0].oop_stable = s3_motr_op_stable;
   ctx->cbs[0].oop_failed = s3_clovis_op_failed;
 
-  s3_clovis_api->clovis_obj_init(&obj_ctx->objs[0], &clovis_uber_realm, &oid,
+  s3_clovis_api->motr_obj_init(&obj_ctx->objs[0], &clovis_uber_realm, &oid,
                                  layout_id);
   obj_ctx->n_initialized_contexts = 1;
 
-  rc = s3_clovis_api->clovis_entity_open(&(obj_ctx->objs[0].ob_entity),
+  rc = s3_clovis_api->motr_entity_open(&(obj_ctx->objs[0].ob_entity),
                                          &(ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_WARN, request_id,
-           "Clovis API: clovis_entity_open failed with error code %d\n", rc);
+           "Clovis API: motr_entity_open failed with error code %d\n", rc);
     state = S3ClovisReaderOpState::failed_to_launch;
     s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
     return rc;
   }
 
   ctx->ops[0]->op_datum = (void *)op_ctx;
-  s3_clovis_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
+  s3_clovis_api->motr_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
 
   s3_log(S3_LOG_INFO, request_id,
          "Clovis API: openobj(oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid.u_hi, oid.u_lo);
 
-  s3_clovis_api->clovis_op_launch(request->addb_request_id, ctx->ops, 1,
-                                  ClovisOpType::openobj);
+  s3_clovis_api->motr_op_launch(request->addb_request_id, ctx->ops, 1,
+                                  MotrOpType::openobj);
   global_clovis_object_ops_list.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return rc;
@@ -266,23 +266,23 @@ bool S3ClovisReader::read_object() {
   op_ctx->application_context = (void *)reader_context.get();
 
   ctx->cbs[0].oop_executed = NULL;
-  ctx->cbs[0].oop_stable = s3_clovis_op_stable;
+  ctx->cbs[0].oop_stable = s3_motr_op_stable;
   ctx->cbs[0].oop_failed = s3_clovis_op_failed;
 
   /* Create the read request */
-  rc = s3_clovis_api->clovis_obj_op(&obj_ctx->objs[0], M0_CLOVIS_OC_READ,
+  rc = s3_clovis_api->motr_obj_op(&obj_ctx->objs[0], M0_CLOVIS_OC_READ,
                                     rw_ctx->ext, rw_ctx->data, rw_ctx->attr, 0,
                                     &ctx->ops[0]);
   if (rc != 0) {
     s3_log(S3_LOG_WARN, request_id,
-           "Clovis API: clovis_obj_op failed with error code %d\n", rc);
+           "Clovis API: motr_obj_op failed with error code %d\n", rc);
     state = S3ClovisReaderOpState::failed_to_launch;
     s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
     return false;
   }
 
   ctx->ops[0]->op_datum = (void *)op_ctx;
-  s3_clovis_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
+  s3_clovis_api->motr_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
 
   reader_context->start_timer_for("read_object_data");
 
@@ -291,8 +291,8 @@ bool S3ClovisReader::read_object() {
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid.u_hi, oid.u_lo);
 
-  s3_clovis_api->clovis_op_launch(request->addb_request_id, ctx->ops, 1,
-                                  ClovisOpType::readobj);
+  s3_clovis_api->motr_op_launch(request->addb_request_id, ctx->ops, 1,
+                                  MotrOpType::readobj);
   global_clovis_object_ops_list.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return true;

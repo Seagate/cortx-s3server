@@ -1139,33 +1139,33 @@ void S3Option::set_s3server_objectleak_tracking_enabled(const bool& flag) {
   s3server_objectleak_tracking_enabled = flag;
 }
 
-bool S3Option::is_fake_clovis_createobj() {
+bool S3Option::is_fake_motr_createobj() {
   return FLAGS_fake_clovis_createobj;
 }
 
-bool S3Option::is_fake_clovis_writeobj() { return FLAGS_fake_clovis_writeobj; }
+bool S3Option::is_fake_motr_writeobj() { return FLAGS_fake_clovis_writeobj; }
 
-bool S3Option::is_fake_clovis_readobj() { return FLAGS_fake_clovis_readobj; }
+bool S3Option::is_fake_motr_readobj() { return FLAGS_fake_clovis_readobj; }
 
-bool S3Option::is_fake_clovis_deleteobj() {
+bool S3Option::is_fake_motr_deleteobj() {
   return FLAGS_fake_clovis_deleteobj;
 }
 
-bool S3Option::is_fake_clovis_createidx() {
+bool S3Option::is_fake_motr_createidx() {
   return FLAGS_fake_clovis_createidx;
 }
 
-bool S3Option::is_fake_clovis_deleteidx() {
+bool S3Option::is_fake_motr_deleteidx() {
   return FLAGS_fake_clovis_deleteidx;
 }
 
-bool S3Option::is_fake_clovis_getkv() { return FLAGS_fake_clovis_getkv; }
+bool S3Option::is_fake_motr_getkv() { return FLAGS_fake_clovis_getkv; }
 
-bool S3Option::is_fake_clovis_putkv() { return FLAGS_fake_clovis_putkv; }
+bool S3Option::is_fake_motr_putkv() { return FLAGS_fake_clovis_putkv; }
 
-bool S3Option::is_fake_clovis_deletekv() { return FLAGS_fake_clovis_deletekv; }
+bool S3Option::is_fake_motr_deletekv() { return FLAGS_fake_clovis_deletekv; }
 
-bool S3Option::is_fake_clovis_redis_kvs() {
+bool S3Option::is_fake_motr_redis_kvs() {
   return FLAGS_fake_clovis_redis_kvs;
 }
 

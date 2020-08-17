@@ -28,7 +28,7 @@ MotrHeadIndexAction::MotrHeadIndexAction(
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_motr_kvs_reader_factory)
     : MotrAction(std::move(req)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
-  motr_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  motr_clovis_api = std::make_shared<ConcreteMotrAPI>();
 
   if (clovis_motr_kvs_reader_factory) {
     clovis_kvs_reader_factory = std::move(clovis_motr_kvs_reader_factory);

@@ -26,7 +26,7 @@
 
 S3DeleteBucketAction::S3DeleteBucketAction(
     std::shared_ptr<S3RequestObject> req,
-    std::shared_ptr<ClovisAPI> s3_clovis_apis,
+    std::shared_ptr<MotrAPI> s3_clovis_apis,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
@@ -76,7 +76,7 @@ S3DeleteBucketAction::S3DeleteBucketAction(
   if (s3_clovis_apis) {
     s3_clovis_api = s3_clovis_apis;
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_clovis_api = std::make_shared<ConcreteMotrAPI>();
   }
 
   multipart_present = false;

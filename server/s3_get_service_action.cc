@@ -35,7 +35,7 @@ S3GetServiceAction::S3GetServiceAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
     : S3Action(req), last_key(""), key_prefix(""), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  s3_clovis_api = std::make_shared<ConcreteMotrAPI>();
 
   s3_log(S3_LOG_INFO, request_id, "S3 API: Get Service.\n");
 

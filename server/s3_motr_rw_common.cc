@@ -97,14 +97,14 @@ void clovis_op_done_on_main_thread(evutil_socket_t, short events,
 }
 
 // Clovis callbacks, run in clovis thread
-void s3_clovis_op_stable(struct m0_clovis_op *op) {
+void s3_motr_op_stable(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct s3_clovis_context_obj *ctx =
       (struct s3_clovis_context_obj *)op->op_datum;
 
   S3AsyncOpContextBase *app_ctx =
       (S3AsyncOpContextBase *)ctx->application_context;
-  int clovis_rc = app_ctx->get_clovis_api()->clovis_op_rc(op);
+  int clovis_rc = app_ctx->get_clovis_api()->motr_op_rc(op);
   std::string request_id = app_ctx->get_request()->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   s3_log(S3_LOG_DEBUG, request_id, "Return code = %d op_code = %d\n", clovis_rc,
@@ -149,7 +149,7 @@ void s3_clovis_op_failed(struct m0_clovis_op *op) {
       (S3AsyncOpContextBase *)ctx->application_context;
   std::string request_id = app_ctx->get_request()->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  int clovis_rc = app_ctx->get_clovis_api()->clovis_op_rc(op);
+  int clovis_rc = app_ctx->get_clovis_api()->motr_op_rc(op);
   s3_log(S3_LOG_ERROR, request_id, "Error code = %d\n", clovis_rc);
 
   s3_log(S3_LOG_DEBUG, request_id, "op_index_in_launch = %d\n",
@@ -201,7 +201,7 @@ void s3_clovis_op_pre_launch_failure(void *application_context, int rc) {
   s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
 }
 
-void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
+void s3_motr_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct user_event_context *user_context =
       (struct user_event_context *)user_data;
@@ -250,11 +250,11 @@ void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
 
   // Free user event
   event_free((struct event *)user_context->user_event);
-  s3_clovis_op_stable(op);
+  s3_motr_op_stable(op);
   free(user_data);
 }
 
-void s3_clovis_dummy_op_failed(evutil_socket_t, short events, void *user_data) {
+void s3_motr_dummy_op_failed(evutil_socket_t, short events, void *user_data) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct user_event_context *user_context =
       (struct user_event_context *)user_data;

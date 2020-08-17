@@ -1022,9 +1022,9 @@ int main(int argc, char **argv) {
 
     std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
     std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
-    std::shared_ptr<ClovisAPI> s3_clovis_api;
+    std::shared_ptr<MotrAPI> s3_clovis_api;
 
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_clovis_api = std::make_shared<ConcreteMotrAPI>();
     clovis_kv_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
 
     if (!clovis_kv_writer) {
@@ -1150,7 +1150,7 @@ int main(int argc, char **argv) {
 
   s3_perf_metrics_fini();
 
-  S3FakeClovisRedisKvs::destroy_instance();
+  S3FakeMotrRedisKvs::destroy_instance();
 
   free_evhtp_handle(htp_ipv4);
   free_evhtp_handle(htp_ipv6);

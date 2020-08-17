@@ -230,7 +230,7 @@ for i, type in enumerate(config_types):
         delete_test("seagatebucket", "3Kfile").\
         execute_test().command_is_successful()
 
-   # clovis_idx_op failure
+   # motr_idx_op failure
     S3cmdTest('s3cmd can upload 3K file').\
         upload_test("seagatebucket", "3Kfile", 3000).\
         execute_test().command_is_successful()
@@ -508,13 +508,13 @@ for i, type in enumerate(config_types):
     JClientTest('Jclient can upload 3k file in chunked mode').\
         put_object("seagatebucket", "3Kfile", 3000, chunked=True).\
         execute_test().command_is_successful()
-    S3fiTest('s3cmd can enable FI clovis_entity_delete').\
+    S3fiTest('s3cmd can enable FI motr_entity_delete').\
         enable_fi("enable", "always", "clovis_entity_delete_fail").\
         execute_test().command_is_successful()
     S3cmdTest('s3cmd can delete 3k file').\
         delete_test("seagatebucket", "3Kfile").\
         execute_test().command_is_successful()
-    S3fiTest('s3cmd can disable FI clovis_entity_delete').\
+    S3fiTest('s3cmd can disable FI motr_entity_delete').\
         disable_fi("clovis_entity_delete_fail").\
         execute_test().command_is_successful()
 
@@ -717,7 +717,7 @@ for i, type in enumerate(config_types):
         execute_test().command_is_successful()
 
     # multipart object metadata negative test
-    # Multipart listing shall return an error on clovis_idx_op
+    # Multipart listing shall return an error on motr_idx_op
     JClientTest('Jclient can upload partial parts').\
         partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 2).\
         execute_test().command_is_successful()

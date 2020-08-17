@@ -37,14 +37,14 @@ EXTERN_C_BLOCK_BEGIN
 void clovis_op_done_on_main_thread(evutil_socket_t, short events,
                                    void *user_data);
 
-void s3_clovis_op_stable(struct m0_clovis_op *op);
+void s3_motr_op_stable(struct m0_clovis_op *op);
 
 void s3_clovis_op_failed(struct m0_clovis_op *op);
 // funtion is to handle clovis pre launch opeariton failures in async way
 void s3_clovis_op_pre_launch_failure(void *application_context, int rc);
-void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data);
+void s3_motr_dummy_op_stable(evutil_socket_t, short events, void *user_data);
 
-void s3_clovis_dummy_op_failed(evutil_socket_t, short events, void *user_data);
+void s3_motr_dummy_op_failed(evutil_socket_t, short events, void *user_data);
 
 EXTERN_C_BLOCK_END
 

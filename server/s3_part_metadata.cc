@@ -38,7 +38,7 @@ void S3PartMetadata::initialize(std::string uploadid, int part_num) {
   index_name = get_part_index_name();
   salt = "index_salt_";
   collision_attempt_count = 0;
-  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  s3_clovis_api = std::make_shared<ConcreteMotrAPI>();
 
   // Set the defaults
   system_defined_attribute["Date"] = "";

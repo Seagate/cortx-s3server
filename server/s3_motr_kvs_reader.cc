@@ -36,7 +36,7 @@ extern std::set<struct s3_clovis_idx_context *> global_clovis_idx;
 extern int shutdown_clovis_teardown_called;
 
 S3ClovisKVSReader::S3ClovisKVSReader(std::shared_ptr<RequestObject> req,
-                                     std::shared_ptr<ClovisAPI> clovis_api)
+                                     std::shared_ptr<MotrAPI> clovis_api)
     : request(req),
       state(S3ClovisKVSReaderOpState::start),
       last_value(""),
@@ -49,7 +49,7 @@ S3ClovisKVSReader::S3ClovisKVSReader(std::shared_ptr<RequestObject> req,
   if (clovis_api) {
     s3_clovis_api = clovis_api;
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_clovis_api = std::make_shared<ConcreteMotrAPI>();
   }
 }
 
@@ -61,7 +61,7 @@ void S3ClovisKVSReader::clean_up_contexts() {
     global_clovis_idx.erase(idx_ctx);
     if (idx_ctx) {
       for (size_t i = 0; i < idx_ctx->n_initialized_contexts; i++) {
-        s3_clovis_api->clovis_idx_fini(&idx_ctx->idx[i]);
+        s3_clovis_api->motr_idx_fini(&idx_ctx->idx[i]);
       }
       free_idx_context(idx_ctx);
       idx_ctx = nullptr;
@@ -125,7 +125,7 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid,
   op_ctx->application_context = (void *)reader_context.get();
 
   idx_op_ctx->cbs->oop_executed = NULL;
-  idx_op_ctx->cbs->oop_stable = s3_clovis_op_stable;
+  idx_op_ctx->cbs->oop_stable = s3_motr_op_stable;
   idx_op_ctx->cbs->oop_failed = s3_clovis_op_failed;
 
   int i = 0;
@@ -136,11 +136,11 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid,
     ++i;
   }
 
-  s3_clovis_api->clovis_idx_init(&idx_ctx->idx[0], &clovis_container.co_realm,
+  s3_clovis_api->motr_idx_init(&idx_ctx->idx[0], &clovis_container.co_realm,
                                  &id);
   idx_ctx->n_initialized_contexts = 1;
 
-  rc = s3_clovis_api->clovis_idx_op(&idx_ctx->idx[0], M0_CLOVIS_IC_GET,
+  rc = s3_clovis_api->motr_idx_op(&idx_ctx->idx[0], M0_CLOVIS_IC_GET,
                                     kvs_ctx->keys, kvs_ctx->values,
                                     kvs_ctx->rcs, 0, &(idx_op_ctx->ops[0]));
   if (rc != 0) {
@@ -153,12 +153,12 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid,
   }
 
   idx_op_ctx->ops[0]->op_datum = (void *)op_ctx;
-  s3_clovis_api->clovis_op_setup(idx_op_ctx->ops[0], idx_op_ctx->cbs, 0);
+  s3_clovis_api->motr_op_setup(idx_op_ctx->ops[0], idx_op_ctx->cbs, 0);
 
   reader_context->start_timer_for("get_keyval");
 
-  s3_clovis_api->clovis_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
-                                  ClovisOpType::getkv);
+  s3_clovis_api->motr_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
+                                  MotrOpType::getkv);
   global_clovis_idx_ops_list.insert(idx_op_ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return;
@@ -197,15 +197,15 @@ void S3ClovisKVSReader::lookup_index(struct m0_uint128 oid,
 
   if (idx_op_ctx && idx_op_ctx->cbs) {
     idx_op_ctx->cbs->oop_executed = NULL;
-    idx_op_ctx->cbs->oop_stable = s3_clovis_op_stable;
+    idx_op_ctx->cbs->oop_stable = s3_motr_op_stable;
     idx_op_ctx->cbs->oop_failed = s3_clovis_op_failed;
   }
 
-  s3_clovis_api->clovis_idx_init(&idx_ctx->idx[0], &clovis_container.co_realm,
+  s3_clovis_api->motr_idx_init(&idx_ctx->idx[0], &clovis_container.co_realm,
                                  &id);
   idx_ctx->n_initialized_contexts = 1;
 
-  rc = s3_clovis_api->clovis_idx_op(&idx_ctx->idx[0], M0_CLOVIS_IC_LOOKUP, NULL,
+  rc = s3_clovis_api->motr_idx_op(&idx_ctx->idx[0], M0_CLOVIS_IC_LOOKUP, NULL,
                                     NULL, NULL, 0, &(idx_op_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_clovis_idx_op failed\n");
@@ -217,12 +217,12 @@ void S3ClovisKVSReader::lookup_index(struct m0_uint128 oid,
   }
 
   idx_op_ctx->ops[0]->op_datum = (void *)op_ctx;
-  s3_clovis_api->clovis_op_setup(idx_op_ctx->ops[0], idx_op_ctx->cbs, 0);
+  s3_clovis_api->motr_op_setup(idx_op_ctx->ops[0], idx_op_ctx->cbs, 0);
 
   reader_context->start_timer_for("lookup_index");
 
-  s3_clovis_api->clovis_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
-                                  ClovisOpType::headidx);
+  s3_clovis_api->motr_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
+                                  MotrOpType::headidx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return;
 }
@@ -351,7 +351,7 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
   op_ctx->application_context = (void *)reader_context.get();
 
   idx_op_ctx->cbs->oop_executed = NULL;
-  idx_op_ctx->cbs->oop_stable = s3_clovis_op_stable;
+  idx_op_ctx->cbs->oop_stable = s3_motr_op_stable;
   idx_op_ctx->cbs->oop_failed = s3_clovis_op_failed;
 
   if (key.empty()) {
@@ -363,11 +363,11 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
     memcpy(kvs_ctx->keys->ov_buf[0], (void *)key.c_str(), key.length());
   }
 
-  s3_clovis_api->clovis_idx_init(&idx_ctx->idx[0], &clovis_container.co_realm,
+  s3_clovis_api->motr_idx_init(&idx_ctx->idx[0], &clovis_container.co_realm,
                                  &idx_oid);
   idx_ctx->n_initialized_contexts = 1;
 
-  rc = s3_clovis_api->clovis_idx_op(&idx_ctx->idx[0], M0_CLOVIS_IC_NEXT,
+  rc = s3_clovis_api->motr_idx_op(&idx_ctx->idx[0], M0_CLOVIS_IC_NEXT,
                                     kvs_ctx->keys, kvs_ctx->values,
                                     kvs_ctx->rcs, flag, &(idx_op_ctx->ops[0]));
   if (rc != 0) {
@@ -380,12 +380,12 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
   }
 
   idx_op_ctx->ops[0]->op_datum = (void *)op_ctx;
-  s3_clovis_api->clovis_op_setup(idx_op_ctx->ops[0], idx_op_ctx->cbs, 0);
+  s3_clovis_api->motr_op_setup(idx_op_ctx->ops[0], idx_op_ctx->cbs, 0);
 
   reader_context->start_timer_for("get_keyval");
 
-  s3_clovis_api->clovis_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
-                                  ClovisOpType::getkv);
+  s3_clovis_api->motr_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
+                                  MotrOpType::getkv);
   global_clovis_idx_ops_list.insert(idx_op_ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return;

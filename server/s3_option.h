@@ -409,16 +409,16 @@ class S3Option {
   int get_cmd_opt_flag();
 
   // Check if any fake out options are provided.
-  bool is_fake_clovis_createobj();
-  bool is_fake_clovis_writeobj();
-  bool is_fake_clovis_readobj();
-  bool is_fake_clovis_deleteobj();
-  bool is_fake_clovis_createidx();
-  bool is_fake_clovis_deleteidx();
-  bool is_fake_clovis_getkv();
-  bool is_fake_clovis_putkv();
-  bool is_fake_clovis_deletekv();
-  bool is_fake_clovis_redis_kvs();
+  bool is_fake_motr_createobj();
+  bool is_fake_motr_writeobj();
+  bool is_fake_motr_readobj();
+  bool is_fake_motr_deleteobj();
+  bool is_fake_motr_createidx();
+  bool is_fake_motr_deleteidx();
+  bool is_fake_motr_getkv();
+  bool is_fake_motr_putkv();
+  bool is_fake_motr_deletekv();
+  bool is_fake_motr_redis_kvs();
 
   /* For the moment sync kvs operation for fake kvs is not supported */
   bool is_sync_kvs_allowed();

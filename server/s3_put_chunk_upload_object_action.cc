@@ -40,7 +40,7 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory,
     std::shared_ptr<S3AuthClientFactory> auth_factory,
-    std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
@@ -63,7 +63,7 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
   if (clovis_api) {
     s3_clovis_api = clovis_api;
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_clovis_api = std::make_shared<ConcreteMotrAPI>();
   }
 
   if (S3Option::get_instance()->is_auth_disabled()) {
@@ -618,7 +618,7 @@ void S3PutChunkUploadObjectAction::write_object_failed() {
   if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
     s3_log(S3_LOG_ERROR, request_id,
-           "write_object_failed called due to clovis_entity_open failure\n");
+           "write_object_failed called due to motr_entity_open failure\n");
   } else {
     set_s3_error("InternalError");
   }

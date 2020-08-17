@@ -29,7 +29,7 @@
 #include "s3_common_utilities.h"
 
 S3GetBucketAction::S3GetBucketAction(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
@@ -43,7 +43,7 @@ S3GetBucketAction::S3GetBucketAction(
   if (clovis_api) {
     s3_clovis_api = clovis_api;
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_clovis_api = std::make_shared<ConcreteMotrAPI>();
   }
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;

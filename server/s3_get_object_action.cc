@@ -367,7 +367,7 @@ void S3GetObjectAction::read_object_data() {
             S3ClovisReaderOpState::failed_to_launch) {
           set_s3_error("ServiceUnavailable");
           s3_log(S3_LOG_ERROR, request_id,
-                 "read_object_data called due to clovis_entity_open failure\n");
+                 "read_object_data called due to motr_entity_open failure\n");
         } else {
           set_s3_error("InternalError");
         }

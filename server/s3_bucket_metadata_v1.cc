@@ -33,7 +33,7 @@ extern struct m0_uint128 bucket_metadata_list_index_oid;
 extern struct m0_uint128 replica_bucket_metadata_list_index_oid;
 
 S3BucketMetadataV1::S3BucketMetadataV1(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory,
     std::shared_ptr<S3GlobalBucketIndexMetadataFactory>

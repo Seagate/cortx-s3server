@@ -72,8 +72,8 @@ S3DeleteMultipleObjectsAction::S3DeleteMultipleObjectsAction(
     clovis_kvs_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
   }
 
-  std::shared_ptr<ClovisAPI> s3_clovis_api =
-      std::make_shared<ConcreteClovisAPI>();
+  std::shared_ptr<MotrAPI> s3_clovis_api =
+      std::make_shared<ConcreteMotrAPI>();
 
   clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
       request, s3_clovis_api);
@@ -455,7 +455,7 @@ void S3DeleteMultipleObjectsAction::cleanup_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
-           "delete_objects_failed called due to clovis_entity_open failure\n");
+           "delete_objects_failed called due to motr_entity_open failure\n");
     // failed to to perform delete object operation, so clear probable_oid_list
     // map to retain all the object oids entries in probable list index id
     probable_oid_list.clear();

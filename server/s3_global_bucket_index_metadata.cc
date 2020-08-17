@@ -29,7 +29,7 @@ extern struct m0_uint128 global_bucket_list_index_oid;
 extern struct m0_uint128 replica_global_bucket_list_index_oid;
 
 S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory)
     : request(req), json_parsing_error(false) {
@@ -44,7 +44,7 @@ S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
   if (clovis_api) {
     s3_clovis_api = clovis_api;
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_clovis_api = std::make_shared<ConcreteMotrAPI>();
   }
   if (clovis_s3_kvs_reader_factory) {
     clovis_kvs_reader_factory = clovis_s3_kvs_reader_factory;

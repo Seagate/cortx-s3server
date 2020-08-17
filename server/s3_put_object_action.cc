@@ -36,7 +36,7 @@ extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
 
 S3PutObjectAction::S3PutObjectAction(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory,
@@ -61,7 +61,7 @@ S3PutObjectAction::S3PutObjectAction(
   if (clovis_api) {
     s3_clovis_api = std::move(clovis_api);
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_clovis_api = std::make_shared<ConcreteMotrAPI>();
   }
 
   S3UriToMotrOID(s3_clovis_api, request->get_object_uri().c_str(), request_id,

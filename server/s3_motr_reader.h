@@ -52,7 +52,7 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
   S3ClovisReaderContext(std::shared_ptr<RequestObject> req,
                         std::function<void()> success_callback,
                         std::function<void()> failed_callback, int layoutid,
-                        std::shared_ptr<ClovisAPI> clovis_api = nullptr)
+                        std::shared_ptr<MotrAPI> clovis_api = nullptr)
       // Passing default value of opcount explicitly.
       : S3AsyncOpContextBase(req, success_callback, failed_callback, 1,
                              clovis_api) {
@@ -137,7 +137,7 @@ class S3ClovisReader {
   std::shared_ptr<RequestObject> request;
   std::unique_ptr<S3ClovisReaderContext> reader_context;
   std::unique_ptr<S3ClovisReaderContext> open_context;
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::shared_ptr<MotrAPI> s3_clovis_api;
 
   std::string request_id;
 
@@ -180,7 +180,7 @@ class S3ClovisReader {
   // object id is generated at upper level and passed to this constructor
   S3ClovisReader(std::shared_ptr<RequestObject> req, struct m0_uint128 id,
                  int layout_id,
-                 std::shared_ptr<ClovisAPI> clovis_api = nullptr);
+                 std::shared_ptr<MotrAPI> clovis_api = nullptr);
   virtual ~S3ClovisReader();
 
   virtual S3ClovisReaderOpState get_state() { return state; }
