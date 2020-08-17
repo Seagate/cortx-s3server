@@ -29,8 +29,8 @@
 #include <memory>
 #include <string>
 
-#include "s3_clovis_kvs_reader.h"
-#include "s3_clovis_kvs_writer.h"
+#include "s3_motr_kvs_reader.h"
+#include "s3_motr_kvs_writer.h"
 #include "s3_log.h"
 #include "s3_request_object.h"
 
@@ -43,8 +43,8 @@ enum class S3BucketMetadataState {
 };
 
 // Forward declarations
-class S3ClovisKVSReaderFactory;
-class S3ClovisKVSWriterFactory;
+class S3MotrKVSReaderFactory;
+class S3MotrKVSWriterFactory;
 
 class S3BucketMetadata {
   // Holds mainly system-defined metadata (creation date etc)
@@ -84,12 +84,12 @@ class S3BucketMetadata {
 
   std::shared_ptr<S3RequestObject> request;
 
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
-  std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
-  std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
+  std::shared_ptr<MotrAPI> s3_motr_api;
+  std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
+  std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
 
-  std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
-  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
+  std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory;
+  std::shared_ptr<S3MotrKVSWriterFactory> motr_kvs_writer_factory;
 
   // Used to report to caller
   std::function<void()> handler_on_success;
@@ -112,10 +112,10 @@ class S3BucketMetadata {
  public:
   S3BucketMetadata(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr,
-      std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory =
+      std::shared_ptr<MotrAPI> clovis_api = nullptr,
+      std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory =
           nullptr,
-      std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory =
+      std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory =
           nullptr);
 
   std::string get_bucket_name();
@@ -123,6 +123,7 @@ class S3BucketMetadata {
   std::string get_location_constraint();
   std::string get_owner_id();
   std::string get_owner_name();
+  std::string get_bucket_owner_account_id();
 
   std::string& get_encoded_bucket_acl();
   virtual std::string get_tags_as_xml();

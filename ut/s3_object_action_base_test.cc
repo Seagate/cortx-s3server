@@ -23,7 +23,7 @@
 
 #include "mock_s3_bucket_metadata.h"
 #include "mock_s3_object_metadata.h"
-#include "mock_s3_clovis_wrapper.h"
+#include "mock_s3_motr_wrapper.h"
 #include "mock_s3_factory.h"
 #include "mock_s3_request_object.h"
 #include "s3_object_action_base.h"
@@ -114,8 +114,8 @@ class S3ObjectActionTest : public testing::Test {
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3AuthClientFactory> mock_auth_factory;
-  // std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
-  // std::shared_ptr<ClovisAPI> s3_clovis_api_mock;
+  // std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
+  // std::shared_ptr<MotrAPI> s3_motr_api_mock;
   int call_count_one;
   std::string bucket_name, object_name;
 

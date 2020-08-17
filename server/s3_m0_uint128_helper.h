@@ -24,7 +24,7 @@
 #define __S3_M0_UINT128_HELPER_h__
 
 #include <string>
-#include "clovis_helpers.h"
+#include "motr_helpers.h"
 
 class S3M0Uint128Helper {
  public:

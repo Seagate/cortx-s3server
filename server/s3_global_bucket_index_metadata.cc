@@ -29,9 +29,9 @@ extern struct m0_uint128 global_bucket_list_index_oid;
 extern struct m0_uint128 replica_global_bucket_list_index_oid;
 
 S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
-    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory,
-    std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory)
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
+    std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory)
     : request(req), json_parsing_error(false) {
   request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
@@ -42,19 +42,19 @@ S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
   state = S3GlobalBucketIndexMetadataState::empty;
   location_constraint = "us-west-2";
   if (clovis_api) {
-    s3_clovis_api = clovis_api;
+    s3_motr_api = clovis_api;
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
-  if (clovis_s3_kvs_reader_factory) {
-    clovis_kvs_reader_factory = clovis_s3_kvs_reader_factory;
+  if (motr_s3_kvs_reader_factory) {
+    motr_kvs_reader_factory = motr_s3_kvs_reader_factory;
   } else {
-    clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+    motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
-  if (clovis_s3_kvs_writer_factory) {
-    clovis_kvs_writer_factory = clovis_s3_kvs_writer_factory;
+  if (motr_s3_kvs_writer_factory) {
+    motr_kvs_writer_factory = motr_s3_kvs_writer_factory;
   } else {
-    clovis_kvs_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
+    motr_kvs_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
 }
 
@@ -73,9 +73,9 @@ void S3GlobalBucketIndexMetadata::load(std::function<void(void)> on_success,
   // Mark missing as we initiate fetch, in case it fails to load due to missing.
   state = S3GlobalBucketIndexMetadataState::missing;
 
-  clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
-      request, s3_clovis_api);
-  clovis_kv_reader->get_keyval(
+  motr_kv_reader =
+      motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
+  motr_kv_reader->get_keyval(
       global_bucket_list_index_oid, bucket_name,
       std::bind(&S3GlobalBucketIndexMetadata::load_successful, this),
       std::bind(&S3GlobalBucketIndexMetadata::load_failed, this));
@@ -85,12 +85,12 @@ void S3GlobalBucketIndexMetadata::load(std::function<void(void)> on_success,
 void S3GlobalBucketIndexMetadata::load_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  if (this->from_json(clovis_kv_reader->get_value()) != 0) {
+  if (this->from_json(motr_kv_reader->get_value()) != 0) {
     s3_log(S3_LOG_ERROR, request_id,
            "Json Parsing failed. Index oid = "
            "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
            global_bucket_list_index_oid.u_hi, global_bucket_list_index_oid.u_lo,
-           bucket_name.c_str(), clovis_kv_reader->get_value().c_str());
+           bucket_name.c_str(), motr_kv_reader->get_value().c_str());
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
            S3_IEM_METADATA_CORRUPTED_JSON);
 
@@ -108,12 +108,11 @@ void S3GlobalBucketIndexMetadata::load_failed() {
 
   if (json_parsing_error) {
     state = S3GlobalBucketIndexMetadataState::failed;
-  } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::missing) {
+  } else if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "bucket information is missing\n");
     state = S3GlobalBucketIndexMetadataState::missing;
-  } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::failed_to_launch) {
+  } else if (motr_kv_reader->get_state() ==
+             S3MotrKVSReaderOpState::failed_to_launch) {
     state = S3GlobalBucketIndexMetadataState::failed_to_launch;
   } else {
     s3_log(S3_LOG_ERROR, request_id,
@@ -134,9 +133,9 @@ void S3GlobalBucketIndexMetadata::save(std::function<void(void)> on_success,
 
   // Mark missing as we initiate write, in case it fails to write.
   state = S3GlobalBucketIndexMetadataState::missing;
-  clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-      request, s3_clovis_api);
-  clovis_kv_writer->put_keyval(
+  motr_kv_writer =
+      motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+  motr_kv_writer->put_keyval(
       global_bucket_list_index_oid, bucket_name, this->to_json(),
       std::bind(&S3GlobalBucketIndexMetadata::save_successful, this),
       std::bind(&S3GlobalBucketIndexMetadata::save_failed, this));
@@ -150,11 +149,11 @@ void S3GlobalBucketIndexMetadata::save_successful() {
   state = S3GlobalBucketIndexMetadataState::saved;
 
   // attempt to save the KV in replica global bucket list index
-  if (!clovis_kv_writer) {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  clovis_kv_writer->put_keyval(
+  motr_kv_writer->put_keyval(
       replica_global_bucket_list_index_oid, bucket_name, this->to_json(),
       std::bind(&S3GlobalBucketIndexMetadata::save_replica, this),
       std::bind(&S3GlobalBucketIndexMetadata::save_replica, this));
@@ -166,7 +165,7 @@ void S3GlobalBucketIndexMetadata::save_replica() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   // PUT Operation pass even if we failed to put KV in replica index.
-  if (clovis_kv_writer->get_state() != S3ClovisKVSWriterOpState::created) {
+  if (motr_kv_writer->get_state() != S3MotrKVSWriterOpState::created) {
     s3_log(S3_LOG_ERROR, request_id, "Failed to save KV in replica index.\n");
 
     s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
@@ -181,8 +180,7 @@ void S3GlobalBucketIndexMetadata::save_replica() {
 void S3GlobalBucketIndexMetadata::save_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Saving of root bucket list index failed\n");
-  if (clovis_kv_writer->get_state() ==
-      S3ClovisKVSWriterOpState::failed_to_launch) {
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
     state = S3GlobalBucketIndexMetadataState::failed_to_launch;
   } else {
     state = S3GlobalBucketIndexMetadataState::failed;
@@ -199,9 +197,9 @@ void S3GlobalBucketIndexMetadata::remove(std::function<void(void)> on_success,
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
-  clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-      request, s3_clovis_api);
-  clovis_kv_writer->delete_keyval(
+  motr_kv_writer =
+      motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+  motr_kv_writer->delete_keyval(
       global_bucket_list_index_oid, bucket_name,
       std::bind(&S3GlobalBucketIndexMetadata::remove_successful, this),
       std::bind(&S3GlobalBucketIndexMetadata::remove_failed, this));
@@ -215,11 +213,11 @@ void S3GlobalBucketIndexMetadata::remove_successful() {
   state = S3GlobalBucketIndexMetadataState::deleted;
 
   // attempt to remove KV from the replica index as well
-  if (!clovis_kv_writer) {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  clovis_kv_writer->delete_keyval(
+  motr_kv_writer->delete_keyval(
       replica_global_bucket_list_index_oid, bucket_name,
       std::bind(&S3GlobalBucketIndexMetadata::remove_replica, this),
       std::bind(&S3GlobalBucketIndexMetadata::remove_replica, this));
@@ -232,7 +230,7 @@ void S3GlobalBucketIndexMetadata::remove_replica() {
 
   // DELETE bucket operation pass even if we failed to remove KV
   // from replica index
-  if (clovis_kv_writer->get_state() != S3ClovisKVSWriterOpState::deleted) {
+  if (motr_kv_writer->get_state() != S3MotrKVSWriterOpState::deleted) {
     s3_log(S3_LOG_ERROR, request_id,
            "Failed to remove KV from replica index.\n");
 
@@ -249,8 +247,7 @@ void S3GlobalBucketIndexMetadata::remove_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Removal of bucket information failed\n");
 
-  if (clovis_kv_writer->get_state() ==
-      S3ClovisKVSWriterOpState::failed_to_launch) {
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
     state = S3GlobalBucketIndexMetadataState::failed_to_launch;
   } else {
     state = S3GlobalBucketIndexMetadataState::failed;

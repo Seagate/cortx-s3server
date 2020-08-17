@@ -32,13 +32,13 @@
 class MotrHeadObjectAction : public MotrAction {
   int layout_id;
   m0_uint128 oid;
-  std::shared_ptr<S3ClovisReader> clovis_reader;
+  std::shared_ptr<S3MotrReader> clovis_reader;
 
-  std::shared_ptr<S3ClovisReaderFactory> clovis_reader_factory;
+  std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
 
  public:
   MotrHeadObjectAction(std::shared_ptr<MotrRequestObject> req,
-                       std::shared_ptr<S3ClovisReaderFactory> reader_factory =
+                       std::shared_ptr<S3MotrReaderFactory> reader_factory =
                            nullptr);
 
   void setup_steps();

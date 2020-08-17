@@ -85,6 +85,7 @@ class S3PutBucketAction : public S3Action {
   FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest9);
   FRIEND_TEST(S3PutBucketActionTest, ReadMetaData);
   FRIEND_TEST(S3PutBucketActionTest, CreateBucketAlreadyExist);
+  FRIEND_TEST(S3PutBucketActionTest, CreateBucketAlreadyExistForAccount);
   FRIEND_TEST(S3PutBucketActionTest, CreateBucketSuccess);
   FRIEND_TEST(S3PutBucketActionTest, CreateBucketFailed);
   FRIEND_TEST(S3PutBucketActionTest, SendResponseToClientServiceUnavailable);

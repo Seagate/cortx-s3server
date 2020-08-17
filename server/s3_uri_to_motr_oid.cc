@@ -18,7 +18,7 @@
  *
  */
 
-#include "clovis_helpers.h"
+#include "motr_helpers.h"
 #include "s3_uri_to_motr_oid.h"
 #include "fid/fid.h"
 #include "murmur3_hash.h"
@@ -29,7 +29,7 @@
 #include "s3_timer.h"
 #include "s3_iem.h"
 
-int S3UriToMotrOID(std::shared_ptr<ClovisAPI> s3_clovis_api, const char *name,
+int S3UriToMotrOID(std::shared_ptr<MotrAPI> s3_motr_api, const char *name,
                    const std::string &request_id, m0_uint128 *ufid,
                    S3ClovisEntityType type) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
@@ -96,10 +96,10 @@ int S3UriToMotrOID(std::shared_ptr<ClovisAPI> s3_clovis_api, const char *name,
     *ufid = tmp_uint128;
   } else {
     // Unique OID generation by motr.
-    if (s3_clovis_api == NULL) {
-      s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    if (s3_motr_api == NULL) {
+      s3_motr_api = std::make_shared<ConcreteMotrAPI>();
     }
-    rc = s3_clovis_api->m0_h_ufid_next(ufid);
+    rc = s3_motr_api->m0_h_ufid_next(ufid);
     if (rc != 0) {
       s3_log(S3_LOG_ERROR, request_id, "Failed to generate UFID\n");
       // May need to change error code to something better in future -- TODO

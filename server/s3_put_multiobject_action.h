@@ -28,7 +28,7 @@
 #include "s3_object_action_base.h"
 #include "s3_async_buffer.h"
 #include "s3_bucket_metadata.h"
-#include "s3_clovis_writer.h"
+#include "s3_motr_writer.h"
 #include "s3_object_metadata.h"
 #include "s3_part_metadata.h"
 #include "s3_timer.h"
@@ -36,7 +36,7 @@
 class S3PutMultiObjectAction : public S3ObjectAction {
   std::shared_ptr<S3PartMetadata> part_metadata = NULL;
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata = NULL;
-  std::shared_ptr<S3ClovisWriter> clovis_writer = NULL;
+  std::shared_ptr<S3MotrWiter> clovis_writer = NULL;
 
   size_t total_data_to_stream;
   S3Timer create_object_timer;
@@ -67,7 +67,7 @@ class S3PutMultiObjectAction : public S3ObjectAction {
 
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
-  std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
+  std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
   std::shared_ptr<S3AuthClientFactory> auth_factory;
 
   // Used only for UT
@@ -79,7 +79,7 @@ class S3PutMultiObjectAction : public S3ObjectAction {
       std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
           nullptr,
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
-      std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory = nullptr,
+      std::shared_ptr<S3MotrWriterFactory> clovis_s3_factory = nullptr,
       std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr);
 
   void setup_steps();
