@@ -24,10 +24,11 @@ from s3backgrounddelete.object_recovery_validator import ObjectRecoveryValidator
 
 
 class ObjectRecoveryKafka:
+
     """This class reads messages from Kafka and forwards them for handling"""
 
     def __init__(self, config, logger):
-        """Initialize Kafka Consumer"""
+        """Initialize Kafka Consumer."""
         self._config = config
         self._logger = logger
         self._consumer = None
