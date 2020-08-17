@@ -36,7 +36,6 @@
 #include <string>
 #include <vector>
 
-// http://stackoverflow.com/a/8132440
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
