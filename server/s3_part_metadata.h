@@ -47,8 +47,8 @@ enum class S3PartMetadataState {
 };
 
 // Forward declarations.
-class S3ClovisKVSReaderFactory;
-class S3ClovisKVSWriterFactory;
+class S3MotrKVSReaderFactory;
+class S3MotrKVSWriterFactory;
 
 class S3PartMetadata {
   // Holds system-defined metadata (creation date etc).
@@ -73,9 +73,9 @@ class S3PartMetadata {
   std::map<std::string, std::string> user_defined_attribute;
 
   std::shared_ptr<S3RequestObject> request;
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
-  std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
-  std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
+  std::shared_ptr<MotrAPI> s3_motr_api;
+  std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
+  std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   bool put_metadata;
   struct m0_uint128 part_index_name_oid;
 
@@ -89,8 +89,8 @@ class S3PartMetadata {
   // `true` in case of json parsing failure.
   bool json_parsing_error;
 
-  std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kv_reader_factory;
-  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
+  std::shared_ptr<S3MotrKVSReaderFactory> motr_kv_reader_factory;
+  std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
 
  private:
   // Any validations we want to do on metadata.
@@ -101,16 +101,19 @@ class S3PartMetadata {
   void regenerate_new_indexname();
 
  public:
-  S3PartMetadata(
-      std::shared_ptr<S3RequestObject> req, std::string uploadid, int part_num,
-      std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory = nullptr,
-      std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr);
+  S3PartMetadata(std::shared_ptr<S3RequestObject> req, std::string uploadid,
+                 int part_num,
+                 std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory =
+                     nullptr,
+                 std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory =
+                     nullptr);
 
-  S3PartMetadata(
-      std::shared_ptr<S3RequestObject> req, struct m0_uint128 oid,
-      std::string uploadid, int part_num,
-      std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory = nullptr,
-      std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr);
+  S3PartMetadata(std::shared_ptr<S3RequestObject> req, struct m0_uint128 oid,
+                 std::string uploadid, int part_num,
+                 std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory =
+                     nullptr,
+                 std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory =
+                     nullptr);
 
   std::string get_part_index_name() {
     return "BUCKET/" + bucket_name + "/" + object_name + "/" + upload_id;

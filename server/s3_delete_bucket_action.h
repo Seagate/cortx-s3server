@@ -32,11 +32,11 @@
 #include "s3_factory.h"
 
 class S3DeleteBucketAction : public S3BucketAction {
-  std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
+  std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;
-  std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
-  std::shared_ptr<S3ClovisWriter> clovis_writer;
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
+  std::shared_ptr<S3MotrWiter> clovis_writer;
+  std::shared_ptr<MotrAPI> s3_motr_api;
   std::map<std::string, std::string>::iterator multipart_kv;
   std::map<std::string, std::string> multipart_objects;
   std::vector<struct m0_uint128> part_oids;
@@ -61,23 +61,23 @@ class S3DeleteBucketAction : public S3BucketAction {
 
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
-  std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
-  std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
-  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
+  std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
+  std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory;
+  std::shared_ptr<S3MotrKVSWriterFactory> motr_kvs_writer_factory;
 
  public:
   S3DeleteBucketAction(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<ClovisAPI> s3_clovis_apis = nullptr,
+      std::shared_ptr<MotrAPI> s3_motr_apis = nullptr,
       std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory =
           nullptr,
       std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
           nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
-      std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory = nullptr,
-      std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory =
+      std::shared_ptr<S3MotrWriterFactory> motr_s3_writer_factory = nullptr,
+      std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory =
           nullptr,
-      std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory =
+      std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory =
           nullptr);
 
   void setup_steps();

@@ -71,7 +71,7 @@ class S3PutMultipartObjectActionTest : public testing::Test {
     object_name = "objname";
 
     layout_id =
-        S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+        S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
 
     async_buffer_factory =
         std::make_shared<MockS3AsyncBufferOptContainerFactory>(
@@ -84,9 +84,9 @@ class S3PutMultipartObjectActionTest : public testing::Test {
     EXPECT_CALL(*ptr_mock_request, get_object_name())
         .WillRepeatedly(ReturnRef(object_name));
 
-    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
+    ptr_mock_s3_motr_api = std::make_shared<MockS3Clovis>();
 
-    EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+    EXPECT_CALL(*ptr_mock_s3_motr_api, m0_h_ufid_next(_))
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
     EXPECT_CALL(*ptr_mock_request, get_query_string_value("uploadId"))
@@ -95,23 +95,23 @@ class S3PutMultipartObjectActionTest : public testing::Test {
         .WillRepeatedly(Return("1"));
 
     bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
-        ptr_mock_request, ptr_mock_s3_clovis_api);
+        ptr_mock_request, ptr_mock_s3_motr_api);
     object_mp_meta_factory =
         std::make_shared<MockS3ObjectMultipartMetadataFactory>(
-            ptr_mock_request, ptr_mock_s3_clovis_api, upload_id);
+            ptr_mock_request, ptr_mock_s3_motr_api, upload_id);
     object_mp_meta_factory->set_object_list_index_oid(mp_indx_oid);
     part_meta_factory = std::make_shared<MockS3PartMetadataFactory>(
         ptr_mock_request, oid, upload_id, 0);
-    clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
-        ptr_mock_request, oid, ptr_mock_s3_clovis_api);
+    motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
+        ptr_mock_request, oid, ptr_mock_s3_motr_api);
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_motr_api;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3PartMetadataFactory> part_meta_factory;
   std::shared_ptr<MockS3ObjectMultipartMetadataFactory> object_mp_meta_factory;
-  std::shared_ptr<MockS3ClovisWriterFactory> clovis_writer_factory;
+  std::shared_ptr<MockS3MotrWriterFactory> motr_writer_factory;
   std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
   std::shared_ptr<S3PutMultiObjectAction> action_under_test;
   struct m0_uint128 mp_indx_oid;
@@ -133,7 +133,7 @@ class S3PutMultipartObjectActionTestNoMockAuth
   S3PutMultipartObjectActionTestNoMockAuth()
       : S3PutMultipartObjectActionTest() {
     S3Option::get_instance()->disable_auth();
-    EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+    EXPECT_CALL(*ptr_mock_s3_motr_api, m0_h_ufid_next(_))
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
     EXPECT_CALL(*ptr_mock_request, is_chunked()).WillRepeatedly(Return(false));
@@ -143,7 +143,7 @@ class S3PutMultipartObjectActionTestNoMockAuth
         ReturnRef(input_headers));
     action_under_test.reset(
         new S3PutMultiObjectAction(ptr_mock_request, object_mp_meta_factory,
-                                   part_meta_factory, clovis_writer_factory));
+                                   part_meta_factory, motr_writer_factory));
   }
 };
 
@@ -162,7 +162,7 @@ class S3PutMultipartObjectActionTestWithMockAuth
         ReturnRef(input_headers));
     action_under_test.reset(new S3PutMultiObjectAction(
         ptr_mock_request, object_mp_meta_factory, part_meta_factory,
-        clovis_writer_factory, mock_auth_factory));
+        motr_writer_factory, mock_auth_factory));
   }
   std::shared_ptr<MockS3AuthClientFactory> mock_auth_factory;
 };
@@ -208,8 +208,8 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        ChunkAuthSucessfulWriteFailed) {
   action_under_test->clovis_write_completed = true;
   action_under_test->write_failed = true;
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_content_md5())
+  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
+  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), get_content_md5())
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
@@ -413,7 +413,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMultipartMetadata) {
   action_under_test->part_number = 1;
 
   size_t unit_size =
-      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
   EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata,
               get_part_one_size()).WillRepeatedly(Return(0));
   EXPECT_CALL(*ptr_mock_request, get_content_length())
@@ -432,7 +432,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMultipartMetadataError) {
   action_under_test->part_number = 1;
 
   size_t unit_size =
-      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
   EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata,
               get_part_one_size()).WillRepeatedly(Return(unit_size));
   EXPECT_CALL(*ptr_mock_request, get_data_length())
@@ -488,7 +488,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMultipartMetadataAssert) {
   action_under_test->part_number = 2;
 
   size_t unit_size =
-      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
   EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata,
               get_part_one_size()).WillRepeatedly(Return(0));
   EXPECT_CALL(*ptr_mock_request, get_content_length())
@@ -539,11 +539,11 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffsetPart1) {
   action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
 
   m0_uint128 oid = {0x1ffff, 0x1ffff};
   size_t unit_size =
-      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
   EXPECT_CALL(*part_meta_factory->mock_part_metadata, get_content_length())
       .WillRepeatedly(Return(unit_size - 2));
   EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_layout_id())
@@ -572,7 +572,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffset) {
   EXPECT_CALL(*(ptr_mock_request), is_chunked()).WillOnce(Return(true));
 
   size_t unit_size =
-      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
   EXPECT_CALL(*part_meta_factory->mock_part_metadata, get_content_length())
       .WillRepeatedly(Return(unit_size));
   EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_oid())
@@ -600,7 +600,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffsetNoChunk) {
   EXPECT_CALL(*(ptr_mock_request), is_chunked()).WillOnce(Return(false));
 
   size_t unit_size =
-      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
   EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata,
               get_part_one_size()).WillRepeatedly(Return(unit_size));
   EXPECT_CALL(*ptr_mock_request, get_content_length())
@@ -621,7 +621,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffsetNoChunk) {
 
 TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
        InitiateDataStreamingForZeroSizeObject) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*ptr_mock_request, get_data_length()).Times(1).WillOnce(
       Return(0));
   EXPECT_CALL(*(mock_auth_factory->mock_auth_client),
@@ -653,14 +653,14 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        InitiateDataStreamingWeHaveAllData) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*ptr_mock_request, get_data_length())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(1024));
   EXPECT_CALL(*ptr_mock_request, has_all_body_content()).Times(1).WillOnce(
       Return(true));
 
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(1);
 
   action_under_test->initiate_data_streaming();
@@ -671,13 +671,13 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 // Write not in progress and we have all the data
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        ConsumeIncomingShouldWriteIfWeAllData) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(true));
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .WillRepeatedly(Return(1024));
 
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(1);
   action_under_test->consume_incoming_content();
 
@@ -687,7 +687,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 // Write not in progress, expecting more, we have exact what we can write
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        ConsumeIncomingShouldWriteIfWeExactData) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(false));
   // S3Option::get_instance()->get_clovis_write_payload_size() = 1048576 * 1
@@ -696,7 +696,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
       .WillRepeatedly(Return(
            S3Option::get_instance()->get_clovis_write_payload_size(layout_id)));
 
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(1);
 
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
@@ -709,7 +709,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 // Write not in progress, expecting more, we have more than we can write
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        ConsumeIncomingShouldWriteIfWeHaveMoreData) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(false));
   // S3Option::get_instance()->get_clovis_write_payload_size() = 1048576 * 1
@@ -718,7 +718,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
            S3Option::get_instance()->get_clovis_write_payload_size(layout_id) +
            1024));
 
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(1);
 
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
@@ -731,7 +731,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 // we are expecting more data
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        ConsumeIncomingShouldPauseWhenWeHaveTooMuch) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(false));
   // S3Option::get_instance()->get_clovis_write_payload_size() = 1048576 * 1
@@ -741,7 +741,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
            S3Option::get_instance()->get_clovis_write_payload_size(layout_id) *
            S3Option::get_instance()->get_read_ahead_multiple() * 2));
 
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(1);
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   action_under_test->consume_incoming_content();
@@ -751,12 +751,12 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        ConsumeIncomingShouldNotWriteWhenWriteInprogress) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
   action_under_test->clovis_write_in_progress = true;
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(true));
 
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(0);
 
   action_under_test->consume_incoming_content();
@@ -842,8 +842,8 @@ TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
 }
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth, WriteObject) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
+  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(1);
 
   action_under_test->write_object(async_buffer_factory->get_mock_buffer());
@@ -852,7 +852,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, WriteObject) {
 
 TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
        WriteObjectShouldSendChunkDetailsForAuth) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
 
   S3ChunkDetail detail;
   detail.add_size(10);
@@ -867,7 +867,7 @@ TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
   EXPECT_CALL(*ptr_mock_request, pop_chunk_detail()).Times(1).WillOnce(
       Return(detail));
 
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(1);
 
   EXPECT_CALL(*(mock_auth_factory->mock_auth_client),
@@ -910,7 +910,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        WriteObjectSuccessfulShouldWriteStateAllData) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
   action_under_test->_set_layout_id(layout_id);
 
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
@@ -919,7 +919,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   // S3_READ_AHEAD_MULTIPLE: 1
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .WillRepeatedly(Return(1024));
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(1);
 
   action_under_test->write_object_successful();
@@ -930,7 +930,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 // We have some data but not all and exact to write
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        WriteObjectSuccessfulShouldWriteWhenExactWritableSize) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
   action_under_test->_set_layout_id(layout_id);
 
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
@@ -941,7 +941,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
       .WillRepeatedly(Return(
            S3Option::get_instance()->get_clovis_write_payload_size(layout_id)));
 
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(1);
 
   action_under_test->write_object_successful();
@@ -952,7 +952,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 // We have some data but not all and but have more to write
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        WriteObjectSuccessfulDoNextStepWhenAllIsWritten) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
   action_under_test->_set_layout_id(layout_id);
 
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
@@ -960,7 +960,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .WillRepeatedly(Return(0));
 
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(0);
 
   // Mock out the next calls on action.
@@ -978,7 +978,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 // We expecting more and not enough to write
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        WriteObjectSuccessfulShouldRestartReadingData) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
   action_under_test->_set_layout_id(layout_id);
 
   // mock mark progress
@@ -991,7 +991,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
            S3Option::get_instance()->get_clovis_write_payload_size(layout_id) -
            1024));
 
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(0);
 
   EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
@@ -1006,14 +1006,14 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMetadata) {
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
 
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
 
   EXPECT_CALL(*ptr_mock_request, get_data_length_str()).Times(1).WillOnce(
       Return("1024"));
 
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata),
               set_content_length(Eq("1024"))).Times(AtLeast(1));
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_content_md5())
+  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), get_content_md5())
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata),
@@ -1045,7 +1045,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMetadata) {
 
 TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
        WriteObjectSuccessfulShouldSendChunkDetailsForAuth) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
   action_under_test->_set_layout_id(layout_id);
 
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
@@ -1087,8 +1087,8 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SendErrorResponse) {
 }
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SendSuccessResponse) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_content_md5())
+  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
+  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), get_content_md5())
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
 

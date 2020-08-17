@@ -20,17 +20,17 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_FAKE_CLOVIS_KVS__H__
-#define __S3_SERVER_FAKE_CLOVIS_KVS__H__
+#ifndef __S3_SERVER_FAKE_MOTR_KVS__H__
+#define __S3_SERVER_FAKE_MOTR_KVS__H__
 
 #include "s3_motr_context.h"
 
 #include <memory>
 #include <string>
 
-class S3FakeClovisKvs {
+class S3FakeMotrKvs {
  private:
-  S3FakeClovisKvs();
+  S3FakeMotrKvs();
 
   typedef std::map<std::string, std::string> KeyVal;
   struct Uint128Comp {
@@ -43,27 +43,27 @@ class S3FakeClovisKvs {
   std::map<struct m0_uint128, KeyVal, Uint128Comp> in_mem_kv;
 
  private:
-  static std::unique_ptr<S3FakeClovisKvs> inst;
+  static std::unique_ptr<S3FakeMotrKvs> inst;
 
  public:
-  virtual ~S3FakeClovisKvs() {}
+  virtual ~S3FakeMotrKvs() {}
 
   int kv_read(struct m0_uint128 const &oid,
-              struct s3_clovis_kvs_op_context const &kv);
+              struct s3_motr_kvs_op_context const &kv);
 
   int kv_next(struct m0_uint128 const &oid,
-              struct s3_clovis_kvs_op_context const &kv);
+              struct s3_motr_kvs_op_context const &kv);
 
   int kv_write(struct m0_uint128 const &oid,
-               struct s3_clovis_kvs_op_context const &kv);
+               struct s3_motr_kvs_op_context const &kv);
 
   int kv_del(struct m0_uint128 const &oid,
-             struct s3_clovis_kvs_op_context const &kv);
+             struct s3_motr_kvs_op_context const &kv);
 
  public:
-  static S3FakeClovisKvs *instance() {
+  static S3FakeMotrKvs *instance() {
     if (!inst) {
-      inst = std::unique_ptr<S3FakeClovisKvs>(new S3FakeClovisKvs());
+      inst = std::unique_ptr<S3FakeMotrKvs>(new S3FakeMotrKvs());
     }
     return inst.get();
   }

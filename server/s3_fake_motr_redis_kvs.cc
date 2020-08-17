@@ -29,7 +29,7 @@
 #include "s3_motr_kvs_writer.h"
 #include "s3_motr_rw_common.h"
 
-std::unique_ptr<S3FakeClovisRedisKvs> S3FakeClovisRedisKvs::inst;
+std::unique_ptr<S3FakeMotrRedisKvs> S3FakeMotrRedisKvs::inst;
 
 void finalize_op(struct m0_clovis_op *op, op_stable_cb stable,
                  op_failed_cb failed) {
@@ -166,9 +166,9 @@ void kv_read_cb(redisAsyncContext *glob_redis_ctx, void *async_redis_reply,
   s3_redis_context_obj *redis_ctx = (s3_redis_context_obj *)actx->op->op_datum;
 
   if (repl_chk == REPL_CONTINUE) {
-    S3ClovisKVSReaderContext *read_ctx =
-        (S3ClovisKVSReaderContext *)redis_ctx->prev_ctx->application_context;
-    struct s3_clovis_kvs_op_context *kv = read_ctx->get_clovis_kvs_op_ctx();
+    S3MotrKVSReaderContext *read_ctx =
+        (S3MotrKVSReaderContext *)redis_ctx->prev_ctx->application_context;
+    struct s3_motr_kvs_op_context *kv = read_ctx->get_motr_kvs_op_ctx();
 
     kv->rcs[actx->processing_idx] = -ENOENT;
     actx->op->op_rc = -ENOENT;
@@ -189,13 +189,12 @@ void kv_read_cb(redisAsyncContext *glob_redis_ctx, void *async_redis_reply,
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3FakeClovisRedisKvs::kv_read(struct m0_clovis_op *op) {
+void S3FakeMotrRedisKvs::kv_read(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
-  struct s3_clovis_context_obj *ctx =
-      (struct s3_clovis_context_obj *)op->op_datum;
-  S3ClovisKVSReaderContext *read_ctx =
-      (S3ClovisKVSReaderContext *)ctx->application_context;
-  struct s3_clovis_kvs_op_context *kv = read_ctx->get_clovis_kvs_op_ctx();
+  struct s3_motr_context_obj *ctx = (struct s3_motr_context_obj *)op->op_datum;
+  S3MotrKVSReaderContext *read_ctx =
+      (S3MotrKVSReaderContext *)ctx->application_context;
+  struct s3_motr_kvs_op_context *kv = read_ctx->get_motr_kvs_op_ctx();
   int cnt = kv->keys->ov_vec.v_nr;
 
   s3_redis_context_obj *new_ctx =
@@ -252,9 +251,9 @@ void kv_next_cb(redisAsyncContext *glob_redis_ctx, void *async_redis_reply,
   s3_redis_context_obj *redis_ctx = (s3_redis_context_obj *)actx->op->op_datum;
 
   if (repl_chk == REPL_CONTINUE) {
-    S3ClovisKVSReaderContext *read_ctx =
-        (S3ClovisKVSReaderContext *)redis_ctx->prev_ctx->application_context;
-    struct s3_clovis_kvs_op_context *kv = read_ctx->get_clovis_kvs_op_ctx();
+    S3MotrKVSReaderContext *read_ctx =
+        (S3MotrKVSReaderContext *)redis_ctx->prev_ctx->application_context;
+    struct s3_motr_kvs_op_context *kv = read_ctx->get_motr_kvs_op_ctx();
 
     actx->op->op_rc = -ENOENT;
     size_t cnt = kv->values->ov_vec.v_nr;
@@ -313,13 +312,12 @@ void kv_next_cb(redisAsyncContext *glob_redis_ctx, void *async_redis_reply,
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3FakeClovisRedisKvs::kv_next(struct m0_clovis_op *op) {
+void S3FakeMotrRedisKvs::kv_next(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
-  struct s3_clovis_context_obj *ctx =
-      (struct s3_clovis_context_obj *)op->op_datum;
-  S3ClovisKVSReaderContext *read_ctx =
-      (S3ClovisKVSReaderContext *)ctx->application_context;
-  struct s3_clovis_kvs_op_context *kv = read_ctx->get_clovis_kvs_op_ctx();
+  struct s3_motr_context_obj *ctx = (struct s3_motr_context_obj *)op->op_datum;
+  S3MotrKVSReaderContext *read_ctx =
+      (S3MotrKVSReaderContext *)ctx->application_context;
+  struct s3_motr_kvs_op_context *kv = read_ctx->get_motr_kvs_op_ctx();
 
   s3_redis_context_obj *new_ctx =
       (s3_redis_context_obj *)calloc(1, sizeof(s3_redis_context_obj));
@@ -391,11 +389,10 @@ void kv_status_cb(redisAsyncContext *glob_redis_ctx, void *async_redis_reply,
   s3_redis_context_obj *redis_ctx = (s3_redis_context_obj *)actx->op->op_datum;
 
   if (repl_chk == REPL_CONTINUE) {
-    S3AsyncClovisKVSWriterContext *write_ctx =
-        (S3AsyncClovisKVSWriterContext *)
-        redis_ctx->prev_ctx->application_context;
+    S3AsyncMotrKVSWriterContext *write_ctx =
+        (S3AsyncMotrKVSWriterContext *)redis_ctx->prev_ctx->application_context;
 
-    struct s3_clovis_kvs_op_context *kv = write_ctx->get_clovis_kvs_op_ctx();
+    struct s3_motr_kvs_op_context *kv = write_ctx->get_motr_kvs_op_ctx();
     // reply->type is REDIS_REPLY_INTEGER)
     s3_log(S3_LOG_INFO, "", "Reply integer :>%lld", reply->integer);
     kv->rcs[actx->processing_idx] = (reply->integer > 0) ? 0 : -ENOENT;
@@ -424,13 +421,12 @@ static void schedule_delete_key_op(redisAsyncContext *ac,
   free(max_b.buf);
 }
 
-void S3FakeClovisRedisKvs::kv_write(struct m0_clovis_op *op) {
+void S3FakeMotrRedisKvs::kv_write(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
-  struct s3_clovis_context_obj *ctx =
-      (struct s3_clovis_context_obj *)op->op_datum;
-  S3AsyncClovisKVSWriterContext *write_ctx =
-      (S3AsyncClovisKVSWriterContext *)ctx->application_context;
-  struct s3_clovis_kvs_op_context *kv = write_ctx->get_clovis_kvs_op_ctx();
+  struct s3_motr_context_obj *ctx = (struct s3_motr_context_obj *)op->op_datum;
+  S3AsyncMotrKVSWriterContext *write_ctx =
+      (S3AsyncMotrKVSWriterContext *)ctx->application_context;
+  struct s3_motr_kvs_op_context *kv = write_ctx->get_motr_kvs_op_ctx();
   int cnt = kv->keys->ov_vec.v_nr;
 
   s3_redis_context_obj *new_ctx =
@@ -468,13 +464,12 @@ void S3FakeClovisRedisKvs::kv_write(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3FakeClovisRedisKvs::kv_del(struct m0_clovis_op *op) {
+void S3FakeMotrRedisKvs::kv_del(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
-  struct s3_clovis_context_obj *ctx =
-      (struct s3_clovis_context_obj *)op->op_datum;
-  S3AsyncClovisKVSWriterContext *write_ctx =
-      (S3AsyncClovisKVSWriterContext *)ctx->application_context;
-  struct s3_clovis_kvs_op_context *kv = write_ctx->get_clovis_kvs_op_ctx();
+  struct s3_motr_context_obj *ctx = (struct s3_motr_context_obj *)op->op_datum;
+  S3AsyncMotrKVSWriterContext *write_ctx =
+      (S3AsyncMotrKVSWriterContext *)ctx->application_context;
+  struct s3_motr_kvs_op_context *kv = write_ctx->get_motr_kvs_op_ctx();
   int cnt = kv->keys->ov_vec.v_nr;
 
   s3_redis_context_obj *new_ctx =

@@ -56,11 +56,11 @@ class S3GetServiceActionTest : public testing::Test {
         req, evhtp_obj_ptr, async_buffer_factory);
     EXPECT_CALL(*ptr_mock_request, get_bucket_name())
         .WillRepeatedly(ReturnRef(bucket_name));
-    s3_clovis_api_mock = std::make_shared<MockS3Clovis>();
+    s3_motr_api_mock = std::make_shared<MockS3Clovis>();
 
     // Mock factories.
-    clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
-        ptr_mock_request, s3_clovis_api_mock);
+    motr_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
+        ptr_mock_request, s3_motr_api_mock);
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
     std::map<std::string, std::string> input_headers;
@@ -69,13 +69,13 @@ class S3GetServiceActionTest : public testing::Test {
         ReturnRef(input_headers));
     // Object to be tested.
     action_under_test.reset(new S3GetServiceAction(
-        ptr_mock_request, clovis_kvs_reader_factory, bucket_meta_factory));
+        ptr_mock_request, motr_kvs_reader_factory, bucket_meta_factory));
   }
 
-  std::shared_ptr<MockS3Clovis> s3_clovis_api_mock;
+  std::shared_ptr<MockS3Clovis> s3_motr_api_mock;
   std::shared_ptr<S3GetServiceAction> action_under_test;
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
   std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   struct m0_uint128 object_list_indx_oid;
@@ -95,7 +95,7 @@ TEST_F(S3GetServiceActionTest, ConstructorTest) {
 }
 
 TEST_F(S3GetServiceActionTest, GetNextBucketTest) {
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
               next_keyval(_, _, _, _, _, _)).Times(1);
   action_under_test->get_next_buckets();
 }
@@ -109,11 +109,10 @@ TEST_F(S3GetServiceActionTest, GetNextBucketSuccessful) {
   result_keys_values.insert(
       std::make_pair("testkey2", std::make_pair(0, "keyval")));
 
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              get_key_values())
-      .WillRepeatedly(ReturnRef(result_keys_values));
-  action_under_test->clovis_kv_reader =
-      clovis_kvs_reader_factory->mock_clovis_kvs_reader;
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
+              get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
+  action_under_test->motr_kv_reader =
+      motr_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(AtLeast(1));
 
@@ -130,14 +129,14 @@ TEST_F(S3GetServiceActionTest, GetNextBucketSuccessful) {
 // with HTTP 200.
 TEST_F(S3GetServiceActionTest, GetNextBucketFailedClovisReaderStateMissing) {
   // Set GTest expectations.
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::missing));
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::missing));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(AtLeast(1));
 
   // Perform action on test object.
-  action_under_test->clovis_kv_reader =
-      clovis_kvs_reader_factory->mock_clovis_kvs_reader;
+  action_under_test->motr_kv_reader =
+      motr_kvs_reader_factory->mock_clovis_kvs_reader;
   action_under_test->get_next_buckets_failed();
 
   // Check state of the object.
@@ -149,14 +148,14 @@ TEST_F(S3GetServiceActionTest, GetNextBucketFailedClovisReaderStateMissing) {
 // with HTTP 500.
 TEST_F(S3GetServiceActionTest, GetNextBucketFailedClovisReaderStatePresent) {
   // Set GTest expectations.
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::present));
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::present));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
 
   // Perform action on test object.
-  action_under_test->clovis_kv_reader =
-      clovis_kvs_reader_factory->mock_clovis_kvs_reader;
+  action_under_test->motr_kv_reader =
+      motr_kvs_reader_factory->mock_clovis_kvs_reader;
   action_under_test->get_next_buckets_failed();
 
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());

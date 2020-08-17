@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_FAKE_CLOVIS_REDIS__H__
-#define __S3_SERVER_FAKE_CLOVIS_REDIS__H__
+#ifndef __S3_SERVER_FAKE_MOTR_REDIS__H__
+#define __S3_SERVER_FAKE_MOTR_REDIS__H__
 
 #include "s3_motr_context.h"
 #include "s3_log.h"
@@ -33,12 +33,12 @@
 #include <hiredis/async.h>
 #include <hiredis/adapters/libevent.h>
 
-class S3FakeClovisRedisKvs {
+class S3FakeMotrRedisKvs {
  private:
   redisAsyncContext *redis_ctx = nullptr;
 
  private:
-  static std::unique_ptr<S3FakeClovisRedisKvs> inst;
+  static std::unique_ptr<S3FakeMotrRedisKvs> inst;
 
   static void connect_cb(const redisAsyncContext *c, int status) {
     s3_log(S3_LOG_DEBUG, "", "Entering");
@@ -53,7 +53,7 @@ class S3FakeClovisRedisKvs {
   }
 
  private:
-  S3FakeClovisRedisKvs() {
+  S3FakeMotrRedisKvs() {
     s3_log(S3_LOG_DEBUG, "", "Entering");
     auto opts = S3Option::get_instance();
     redis_ctx = redisAsyncConnect(opts->get_redis_srv_addr().c_str(),
@@ -75,7 +75,7 @@ class S3FakeClovisRedisKvs {
   }
 
  public:
-  ~S3FakeClovisRedisKvs() { close(); }
+  ~S3FakeMotrRedisKvs() { close(); }
 
   void kv_read(struct m0_clovis_op *op);
 
@@ -86,9 +86,9 @@ class S3FakeClovisRedisKvs {
   void kv_del(struct m0_clovis_op *op);
 
  public:
-  static S3FakeClovisRedisKvs *instance() {
+  static S3FakeMotrRedisKvs *instance() {
     if (!inst) {
-      inst = std::unique_ptr<S3FakeClovisRedisKvs>(new S3FakeClovisRedisKvs());
+      inst = std::unique_ptr<S3FakeMotrRedisKvs>(new S3FakeMotrRedisKvs());
     }
 
     return inst.get();

@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __S3_UT_MOCK_S3_CLOVIS_WRITER_H__
-#define __S3_UT_MOCK_S3_CLOVIS_WRITER_H__
+#ifndef __S3_UT_MOCK_S3_MOTR_WRITER_H__
+#define __S3_UT_MOCK_S3_MOTR_WRITER_H__
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -33,16 +33,16 @@
 using ::testing::_;
 using ::testing::Return;
 
-class MockS3ClovisWriter : public S3ClovisWriter {
+class MockS3MotrWiter : public S3MotrWiter {
  public:
-  MockS3ClovisWriter(std::shared_ptr<RequestObject> req, struct m0_uint128 oid,
-                     std::shared_ptr<MockS3Clovis> s3_clovis_mock_ptr)
-      : S3ClovisWriter(req, oid, 0, s3_clovis_mock_ptr) {}
-  MockS3ClovisWriter(std::shared_ptr<RequestObject> req,
-                     std::shared_ptr<MockS3Clovis> s3_clovis_mock_ptr)
-      : S3ClovisWriter(req, 0, s3_clovis_mock_ptr) {}
+  MockS3MotrWiter(std::shared_ptr<RequestObject> req, struct m0_uint128 oid,
+                  std::shared_ptr<MockS3Clovis> s3_clovis_mock_ptr)
+      : S3MotrWiter(req, oid, 0, s3_clovis_mock_ptr) {}
+  MockS3MotrWiter(std::shared_ptr<RequestObject> req,
+                  std::shared_ptr<MockS3Clovis> s3_clovis_mock_ptr)
+      : S3MotrWiter(req, 0, s3_clovis_mock_ptr) {}
 
-  MOCK_METHOD0(get_state, S3ClovisWriterOpState());
+  MOCK_METHOD0(get_state, S3MotrWiterOpState());
   MOCK_METHOD0(get_oid, struct m0_uint128());
   MOCK_METHOD0(get_content_md5, std::string());
   MOCK_METHOD1(get_op_ret_code_for, int(int));

@@ -200,7 +200,7 @@ int parse_and_load_config_options(int argc, char **argv) {
 
   gflags::GetCommandLineFlagInfo("clovislayoutid", &flag_info);
   if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_CLOVIS_LAYOUT_ID,
+    option_instance->set_cmdline_option(S3_MOTR_LAYOUT_ID,
                                         flag_info.current_value.c_str());
   }
 
