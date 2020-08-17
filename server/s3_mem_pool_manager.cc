@@ -81,9 +81,9 @@ int S3MempoolManager::initialize(std::vector<int> unit_sizes,
       if (rc == S3_MEMPOOL_THRESHOLD_EXCEEDED) {
         s3_log(S3_LOG_ERROR, "",
                "Pool allocation crossing current threshold value %zu, increase "
-               "threshold value (S3_CLOVIS_READ_POOL_MAX_THRESHOLD) or "
+               "threshold value (S3_MOTR_READ_POOL_MAX_THRESHOLD) or "
                "decrease pool allocation size "
-               "(S3_CLOVIS_READ_POOL_INITIAL_BUFFER_COUNT) \n",
+               "(S3_MOTR_READ_POOL_INITIAL_BUFFER_COUNT) \n",
                mem_get_free_space_func());
       }
       return rc;
