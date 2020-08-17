@@ -123,7 +123,12 @@ S3 server provides S3 REST API interface support for Motr object storage.
 %setup -n %{name}-%{version}-%{_s3_git_ver}
 
 %build
+%if %{with cortx_motr}
 ./rebuildall.sh --no-check-code --no-install
+%else
+./rebuildall.sh --no-check-code --no-install --no-motr-rpm --use-build-cache
+%endif
+
 mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3backgrounddelete/build/lib/s3backgrounddelete
 # Build the background delete python module.
 cd s3backgrounddelete/s3backgrounddelete
