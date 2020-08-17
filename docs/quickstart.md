@@ -117,6 +117,9 @@ git rev-parse --short HEAD
 Build S3 rpm (here 44a07d2 is obtained from previous git rev-parse command)
 ./rpms/s3/buildrpm.sh -G 44a07d2
 
+Build S3 rpm without motr rpm dependency
+./rpms/s3/buildrpm.sh -a -G 44a07d2
+
 Build s3iamcli rpm
 ./rpms/s3iamcli/buildrpm.sh -G 44a07d2
 
