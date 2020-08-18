@@ -34,7 +34,7 @@ id_racks:
           if_macAddress: '10-00-00-00-00'
           if_ipAddrs:
           - 192.168.0.2
-      h_halon:
+      h_hare:
         address: "192.168.0.2:9000"
         roles:
           - name: station
@@ -52,7 +52,7 @@ id_racks:
         - if_network: Data
           if_macAddress: '10-00-00-00-00'
           if_ipAddrs: [192.168.0.1]
-      h_halon:
+      h_hare:
         address: "192.168.0.1:9000"
         roles:
           - name: station
