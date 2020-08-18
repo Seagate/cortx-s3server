@@ -16,6 +16,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+
 """ObjectRecoveryKafka reads messages about objects oid to be deleted from Kafka."""
 
 import json
@@ -24,7 +25,6 @@ from s3backgrounddelete.object_recovery_validator import ObjectRecoveryValidator
 
 
 class ObjectRecoveryKafka:
-
     """This class reads messages from Kafka and forwards them for handling"""
 
     def __init__(self, config, logger):
@@ -32,7 +32,7 @@ class ObjectRecoveryKafka:
         self._config = config
         self._logger = logger
         self._consumer = None
-        self._daemon_mode = False if config.get_daemon_mode() == "False" else True
+        self._daemon_mode = True if config.get_daemon_mode() == "True" else False
 
     def close(self):
         if self._consumer is not None:

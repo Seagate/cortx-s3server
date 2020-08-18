@@ -410,7 +410,7 @@ class CORTXS3Config(object):
 
     def get_s3_use_kafka(self):
         """Return use_kafka from config file or KeyError."""
-        if 'cortx_s3' in self._config and self._config['cortx_s3']['use_kafka']:
+        if 'cortx_s3' in self._config and 'use_kafka' in self._config['cortx_s3']:
             return self._config['cortx_s3']['use_kafka']
         else:
             raise KeyError(
