@@ -192,7 +192,6 @@ bool S3PutTagBody::validate_bucket_xml_tags(
     /* To encode 256 unicode chars, last char can use upto 2 bytes.
      Core reason is std::string stores utf-8 bytes and hence .length()
      returns bytes and not number of chars.
-     For refrence : https://stackoverflow.com/a/31652705
      */
     // Maximum key length: 128 Unicode characters &
     // Maximum value length: 256 Unicode characters
@@ -302,7 +301,6 @@ bool S3PutTagBody::validate_object_xml_tags(
     /* To encode 256 unicode chars, last char can use upto 2 bytes.
      Core reason is std::string stores utf-8 bytes and hence .length()
      returns bytes and not number of chars.
-     For refrence : https://stackoverflow.com/a/31652705
      */
     // Maximum key length: 128 Unicode characters &
     // Maximum value length: 256 Unicode characters
