@@ -22,11 +22,11 @@
 USAGE="USAGE: $(basename "$0") [-I | -R | -S | -y <configure-yum-repo> | -p <path-to-prod-cfg> | -U | -D]
 
 where:
--I	Install cortx-motr, cortx-motr-devel, halon, cortx-s3iamcli from rpms
+-I	Install cortx-motr, cortx-motr-devel, hare, cortx-s3iamcli from rpms
 	s3server will be built from local sources
--R	Remove cortx-motr, cortx-motr-devel, halon, cortx-s3iamcli, cortx-s3server, cortx-s3server-debuginfo packages
+-R	Remove cortx-motr, cortx-motr-devel, hare, cortx-s3iamcli, cortx-s3server, cortx-s3server-debuginfo packages
 -S	Show status
--y <configure-yum-repo>	Configure yum repo to install motr and halon from
+-y <configure-yum-repo>	Configure yum repo to install motr and hare from
                        	'hermi' - hermi repos
                        	'<sprint>' - i.e. 'ees1.0.0-PI.1-sprint4' repos
 -p <path-to-prod-cfg>  	Use path as s3server config
@@ -61,7 +61,7 @@ fi
 install_pkgs() {
     $USE_SUDO yum -t -y install cortx-motr
     $USE_SUDO yum -t -y install cortx-motr-devel
-    $USE_SUDO yum -t -y install halon
+    $USE_SUDO yum -t -y install hare
 
     # option "-P" will build s3server rpm from the source tree
     # option "-i" will install s3server from the built rpm
@@ -70,7 +70,7 @@ install_pkgs() {
 }
 
 remove_pkgs() {
-    $USE_SUDO yum -t -y remove cortx-s3iamcli cortx-s3server-debuginfo cortx-s3server halon cortx-motr-devel cortx-motr 
+    $USE_SUDO yum -t -y remove cortx-s3iamcli cortx-s3server-debuginfo cortx-s3server hare cortx-motr-devel cortx-motr 
 }
 
 sysctl_stat() {
@@ -99,7 +99,7 @@ status_srv() {
         haproxy) echo -e "\t\t $(sysctl_stat $1)"
                  echo -e "\t\t keepalive $(haproxy_ka_status)"
                  ;;
-        halon) echo -e "\t\t halond:> $(sysctl_stat halond)"
+        hare) echo -e "\t\t hared:> $(sysctl_stat hared)"
                ;;
         openldap) echo -e "\t\t $(sysctl_stat slapd)"
                   ;;
@@ -111,7 +111,7 @@ status_srv() {
 }
 
 status_pkgs() {
-    for test_pkg in cortx-s3server-debuginfo cortx-s3server halon cortx-motr-devel haproxy openldap cortx-motr
+    for test_pkg in cortx-s3server-debuginfo cortx-s3server hare cortx-motr-devel haproxy openldap cortx-motr
     do
         set +e
         $USE_SUDO yum list installed $test_pkg &> /dev/null
@@ -136,10 +136,10 @@ gpgcheck = 0
 name = Yum repo for s3server sprints build
 priority = 1
 
-[sprints_halon]
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/halon/repo
+[sprints_hare]
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/hare/repo
 gpgcheck = 0
-name = Yum repo for halon sprints build
+name = Yum repo for hare sprints build
 priority = 1
 
 [sprints_motr]
@@ -165,12 +165,12 @@ up_cluster() {
     $USE_SUDO systemctl start s3authserver
     $USE_SUDO rm -fR /var/motr/*
     $USE_SUDO m0setup -P 1 -N 1 -K 0 -vH
-    $USE_SUDO sed -i 's/- name: m0t1fs/- name: s3server/' /etc/halon/halon_facts.yaml
-    $USE_SUDO awk 'BEGIN {in_section=0} {if ($0 ~ /^- name:/) {in_section=0; if ($0 ~ /^- name: "s3server"/) {in_section=1;} } {if (in_section==1) {gsub("multiplicity: 4", "multiplicity: 2");} print;} }' /etc/halon/motr_role_mappings > /tmp/motr_role_mappings
-    $USE_SUDO cp /tmp/motr_role_mappings /etc/halon/motr_role_mappings
+    $USE_SUDO sed -i 's/- name: m0t1fs/- name: s3server/' /etc/hare/hare_facts.yaml
+    $USE_SUDO awk 'BEGIN {in_section=0} {if ($0 ~ /^- name:/) {in_section=0; if ($0 ~ /^- name: "s3server"/) {in_section=1;} } {if (in_section==1) {gsub("multiplicity: 4", "multiplicity: 2");} print;} }' /etc/hare/motr_role_mappings > /tmp/motr_role_mappings
+    $USE_SUDO cp /tmp/motr_role_mappings /etc/hare/motr_role_mappings
     $USE_SUDO rm /tmp/motr_role_mappings
-    $USE_SUDO systemctl start halon-cleanup
-    $USE_SUDO systemctl start halond
+    $USE_SUDO systemctl start hare-cleanup
+    $USE_SUDO systemctl start hared
     $USE_SUDO hctl cortx-motr bootstrap
     sleep 2
     $USE_SUDO hctl cortx-motr status
@@ -178,8 +178,8 @@ up_cluster() {
 
 down_cluster() {
     $USE_SUDO hctl cortx-motr stop
-    $USE_SUDO systemctl stop halond
-    $USE_SUDO systemctl stop halon-cleanup
+    $USE_SUDO systemctl stop hared
+    $USE_SUDO systemctl stop hare-cleanup
     $USE_SUDO systemctl stop s3authserver
     $USE_SUDO systemctl stop slapd
     $USE_SUDO systemctl stop haproxy
