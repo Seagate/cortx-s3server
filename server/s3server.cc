@@ -118,7 +118,6 @@ static void s3_kickoff_graceful_shutdown(int ignore) {
   if (!global_shutdown_in_progress) {
     global_shutdown_in_progress = 1;
     // signal handler
-    // https://stackoverflow.com/questions/40049751/malloc-inside-linux-signal-handler-cause-deadlock
     S3Option *option_instance = S3Option::get_instance();
     int grace_period_sec = option_instance->get_s3_grace_period_sec();
     struct timeval loopexit_timeout = {.tv_sec = 0, .tv_usec = 0};
@@ -1165,7 +1164,6 @@ int main(int argc, char **argv) {
   s3_log(S3_LOG_DEBUG, "", "S3server exiting...\n");
   s3daemon.delete_pidfile();
   s3_stats_fini();
-  // https://stackoverflow.com/questions/6704522/log4cxx-is-throwing-exception-on-logger
   S3AuditInfoLogger::finalize();
   finalize_cli_options();
 

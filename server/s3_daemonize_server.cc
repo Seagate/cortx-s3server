@@ -64,13 +64,9 @@ extern int global_shutdown_in_progress;
  */
 
 void s3_terminate_fatal_handler(int signum) {
-  // https://stackoverflow.com/questions/40049751/malloc-inside-linux-signal-handler-cause-deadlock
-  // https://github.com/google/glog/releases (see google-glog 0.3.4)
-  // ie reduce dynamic allocation from 3 to 1 per log message
 
   if (S3Option::get_instance()->do_redirection() == 0) {
     void *trace[S3_BACKTRACE_DEPTH_MAX];
-    // https://stackoverflow.com/questions/46863569/receiving-signal-during-malloc
     int rc = backtrace(trace, S3_ARRAY_SIZE(trace));
     backtrace_symbols_fd(trace, rc, STDERR_FILENO);
   }

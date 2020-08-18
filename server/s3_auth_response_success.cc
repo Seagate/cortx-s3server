@@ -121,8 +121,6 @@ bool S3AuthResponseSuccess::parse_and_validate() {
   xmlNodePtr root_node = xmlDocGetRootElement(document);
   if (root_node == NULL) {
     s3_log(S3_LOG_ERROR, "", "Auth response xml body is invalid.\n");
-    // proper clenup reference:
-    // https://stackoverflow.com/questions/41032013/valgrind-memory-leak-in-xmlstrndup
     xmlFreeDoc(document);
     xmlCleanupCharEncodingHandlers();
     xmlCleanupParser();
