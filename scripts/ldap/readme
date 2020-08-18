@@ -60,8 +60,8 @@ rm cn\=config.ldif
 ```
 
 # Steps to configure directory replication for LDAP
-# Following steps should be replicated on each Master node
-# for an N-Way Multi-Master replication setup.
+# Following steps should be replicated on each primary node
+# for an N-Way Multi-Main replication setup.
 1. Set syncrepl as a provider
 ```sh
   ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov_mod.ldif
@@ -72,7 +72,7 @@ rm cn\=config.ldif
   ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov.ldif
 ```
 
-     # For an N-Way Multi-Master replication setup over SSL/TLS
+     # For an N-Way Multi-Main replication setup over SSL/TLS
      # Following steps should be replicated on each node only if SSL needs to be enabled.
 
      a. Check hostname if hostname is localhost change it using ```hostname -f```
@@ -98,8 +98,8 @@ rm cn\=config.ldif
         ```sh
 
 
-3. Setup Master node for replication
-   Edit replicate.ldif to localize for current Master. Refer comments
+3. Setup Main node for replication
+   Edit replicate.ldif to localize for current Main. Refer comments
    in replicate.ldiff for details.
 ```sh
   vim replicate.ldif

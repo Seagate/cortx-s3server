@@ -30,7 +30,7 @@ global_defs {
 vrrp_instance VI_1 {
   interface ens33 # interface to monitor
 
-  state MASTER # MASTER on haproxy1, BACKUP on haproxy2
+  state MAIN # MAIN on haproxy1, BACKUP on haproxy2
 
   # Unique router id used for VIP setup,
   # Unique for VIP cluster of load balancers.

@@ -131,8 +131,8 @@ cp s3server_audit_log.properties $S3_CONFIG_FILE_LOCATION
 # Copy the S3 Clovis layout mapping file for different object sizes
 cp s3_obj_layout_mapping.yaml $S3_CONFIG_FILE_LOCATION
 
-# Copy the S3 Stats whitelist file
-cp s3stats-whitelist.yaml $S3_CONFIG_FILE_LOCATION
+# Copy the S3 Stats allowlist file
+cp s3stats-allowlist.yaml $S3_CONFIG_FILE_LOCATION
 
 # Copy the s3 server startup script for multiple instance
 cp ./system/s3startsystem.sh $S3_INSTALL_LOCATION/
@@ -273,6 +273,6 @@ cp ./scripts/elasticsearch/elasticsearch.conf $RSYSLOG_CFG_DIR_LOCATION
 cp ./scripts/s3-logrotate/s3auditlog $LOGROTATE_CFG_DIR_LOCATION
 
 # Copy the keepalived config
-cp ./scripts/keepalived/keepalived.conf.master $KEEPALIVED_CFG_DIR_LOCATION
+cp ./scripts/keepalived/keepalived.conf.main $KEEPALIVED_CFG_DIR_LOCATION
 
 exit 0

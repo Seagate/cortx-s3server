@@ -139,7 +139,7 @@ public class AWSV2Sign implements AWSSign {
      * 'x-amz-meta-username: barney' would be combined into the single header
      * 'x-amz-meta-username: fred,barney'.
      *
-     * 5. Trim any whitespace around the colon in the header
+     * 5. Trim any Blankspace around the colon in the header
      *
      * 6. Finally, append a newline character (U+000A) to each canonicalized
      * header in the resulting list.

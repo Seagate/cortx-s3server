@@ -41,7 +41,7 @@ class BoolConditionTest {
   Map<String, String> requestBody = null;
   String key = "SecureTransport";
   String invalidKeyHeader = "x-amz";
-  String invalidValue = "garbage";
+  String invalidValue = "invalid-value";
 
   @Before public void setUp() throws Exception {
     values = new ArrayList<>();

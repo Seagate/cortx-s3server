@@ -18,7 +18,6 @@
 @@
 
 From 06e0d35ef026c69bb9fa8e788fa796009645cb81 Mon Sep 17 00:00:00 2001
-From: Ashay Shirwadkar <ashay.shirwadkar@seagate.com>
 Date: Wed, 3 Oct 2018 19:01:47 +0530
 Subject: [PATCH] COSTOR-227: Changed config file and provisioned script with
  running only single instance.

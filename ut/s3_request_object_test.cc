@@ -323,7 +323,7 @@ TEST_F(S3RequestObjectTest, ValidateContentMD5Short) {
   EXPECT_FALSE(request->validate_content_md5());
 }
 
-TEST_F(S3RequestObjectTest, ValidateContentMD5GarbageInvalid) {
+TEST_F(S3RequestObjectTest, ValidateContentMD5Bad) {
   std::map<std::string, std::string> input_headers;
   input_headers["content-md5"] = "AWS HAHAHA";
   fake_in_headers(input_headers);
