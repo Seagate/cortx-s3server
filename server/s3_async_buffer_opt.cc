@@ -29,7 +29,7 @@ S3AsyncBufferOptContainer::S3AsyncBufferOptContainer(size_t size_of_each_buf)
       count_bufs_shared_for_read(0) {
   s3_log(S3_LOG_DEBUG, "", "Constructor with size_of_each_buf = %zu\n",
          size_of_each_buf);
-  // Should be multiple of 4k (Clovis requirement)
+  // Should be multiple of 4k (Motr requirement)
   assert(size_of_each_evbuf % 4096 == 0);
 }
 

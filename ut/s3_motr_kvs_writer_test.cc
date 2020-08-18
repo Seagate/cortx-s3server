@@ -40,30 +40,27 @@ using ::testing::AtLeast;
 
 static void dummy_request_cb(evhtp_request_t *req, void *arg) {}
 
-int s3_test_alloc_op(struct m0_clovis_entity *entity,
-                     struct m0_clovis_op **op) {
-  *op = (struct m0_clovis_op *)calloc(1, sizeof(struct m0_clovis_op));
+int s3_test_alloc_op(struct m0_entity *entity, struct m0_op **op) {
+  *op = (struct m0_op *)calloc(1, sizeof(struct m0_op));
   return 0;
 }
 
-int s3_test_alloc_sync_op(struct m0_clovis_op **sync_op) {
-  *sync_op = (struct m0_clovis_op *)calloc(1, sizeof(struct m0_clovis_op));
+int s3_test_alloc_sync_op(struct m0_op **sync_op) {
+  *sync_op = (struct m0_op *)calloc(1, sizeof(struct m0_op));
   return 0;
 }
 
-int s3_test_motr_idx_op(struct m0_clovis_idx *idx,
-                        enum m0_clovis_idx_opcode opcode,
+int s3_test_motr_idx_op(struct m0_idx *idx, enum m0_idx_opcode opcode,
                         struct m0_bufvec *keys, struct m0_bufvec *vals,
-                        int *rcs, unsigned int flags,
-                        struct m0_clovis_op **op) {
-  *op = (struct m0_clovis_op *)calloc(1, sizeof(struct m0_clovis_op));
+                        int *rcs, unsigned int flags, struct m0_op **op) {
+  *op = (struct m0_op *)calloc(1, sizeof(struct m0_op));
   return 0;
 }
 
-void s3_test_free_motr_op(struct m0_clovis_op *op) { free(op); }
+void s3_test_free_motr_op(struct m0_op *op) { free(op); }
 
-static void s3_test_motr_op_launch(uint64_t, struct m0_clovis_op **op,
-                                   uint32_t nr, MotrOpType type) {
+static void s3_test_motr_op_launch(uint64_t, struct m0_op **op, uint32_t nr,
+                                   MotrOpType type) {
   struct s3_motr_context_obj *ctx =
       (struct s3_motr_context_obj *)op[0]->op_datum;
 
@@ -72,7 +69,7 @@ static void s3_test_motr_op_launch(uint64_t, struct m0_clovis_op **op,
   struct s3_motr_idx_op_context *op_ctx = app_ctx->get_motr_idx_op_ctx();
 
   for (int i = 0; i < (int)nr; i++) {
-    struct m0_clovis_op *test_motr_op = op[i];
+    struct m0_op *test_motr_op = op[i];
     s3_motr_op_stable(test_motr_op);
     s3_test_free_motr_op(test_motr_op);
   }
@@ -80,7 +77,7 @@ static void s3_test_motr_op_launch(uint64_t, struct m0_clovis_op **op,
   *op = NULL;
 }
 
-static void s3_test_motr_op_launch_fail(uint64_t, struct m0_clovis_op **op,
+static void s3_test_motr_op_launch_fail(uint64_t, struct m0_op **op,
                                         uint32_t nr, MotrOpType type) {
   struct s3_motr_context_obj *ctx =
       (struct s3_motr_context_obj *)op[0]->op_datum;
@@ -90,15 +87,14 @@ static void s3_test_motr_op_launch_fail(uint64_t, struct m0_clovis_op **op,
   struct s3_motr_idx_op_context *op_ctx = app_ctx->get_motr_idx_op_ctx();
 
   for (int i = 0; i < (int)nr; i++) {
-    struct m0_clovis_op *test_motr_op = op[i];
+    struct m0_op *test_motr_op = op[i];
     s3_motr_op_failed(test_motr_op);
     s3_test_free_motr_op(test_motr_op);
   }
   op_ctx->op_count = 0;
 }
 
-static void s3_test_motr_op_launch_fail_exists(uint64_t,
-                                               struct m0_clovis_op **op,
+static void s3_test_motr_op_launch_fail_exists(uint64_t, struct m0_op **op,
                                                uint32_t nr, MotrOpType type) {
   struct s3_motr_context_obj *ctx =
       (struct s3_motr_context_obj *)op[0]->op_datum;
@@ -108,7 +104,7 @@ static void s3_test_motr_op_launch_fail_exists(uint64_t,
   struct s3_motr_idx_op_context *op_ctx = app_ctx->get_motr_idx_op_ctx();
 
   for (int i = 0; i < (int)nr; i++) {
-    struct m0_clovis_op *test_motr_op = op[i];
+    struct m0_op *test_motr_op = op[i];
     s3_motr_op_failed(test_motr_op);
     s3_test_free_motr_op(test_motr_op);
   }
@@ -123,11 +119,11 @@ class S3MotrKVSWritterTest : public testing::Test {
     EvhtpWrapper *evhtp_obj_ptr = new EvhtpWrapper();
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
-    ptr_mock_s3motr = std::make_shared<MockS3Clovis>();
+    ptr_mock_s3motr = std::make_shared<MockS3Motr>();
     EXPECT_CALL(*ptr_mock_s3motr, m0_h_ufid_next(_))
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
-    EXPECT_CALL(*ptr_mock_s3motr, clovis_op_rc(_)).WillRepeatedly(Return(0));
+    EXPECT_CALL(*ptr_mock_s3motr, motr_op_rc(_)).WillRepeatedly(Return(0));
 
     action_under_test =
         std::make_shared<S3MotrKVSWriter>(ptr_mock_request, ptr_mock_s3motr);
@@ -140,7 +136,7 @@ class S3MotrKVSWritterTest : public testing::Test {
   evhtp_request_t *req;
   struct m0_uint128 oid;
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3motr;
+  std::shared_ptr<MockS3Motr> ptr_mock_s3motr;
   std::shared_ptr<S3MotrKVSWriter> action_under_test;
   S3MotrKVSWriter *p_motrkvs;
 };
@@ -156,10 +152,10 @@ TEST_F(S3MotrKVSWritterTest, CleanupContexts) {
   action_under_test->idx_ctx = (struct s3_motr_idx_context *)calloc(
       1, sizeof(struct s3_motr_idx_context));
   action_under_test->idx_ctx->idx =
-      (struct m0_clovis_idx *)calloc(2, sizeof(struct m0_clovis_idx));
+      (struct m0_idx *)calloc(2, sizeof(struct m0_idx));
   action_under_test->idx_ctx->idx_count = 2;
   action_under_test->idx_ctx->n_initialized_contexts = 1;
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_fini(_)).Times(1);
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(1);
   action_under_test->clean_up_contexts();
   EXPECT_TRUE(action_under_test->sync_context == nullptr);
   EXPECT_TRUE(action_under_test->writer_context == nullptr);
@@ -169,12 +165,12 @@ TEST_F(S3MotrKVSWritterTest, CleanupContexts) {
 TEST_F(S3MotrKVSWritterTest, CreateIndex) {
   S3CallBack s3motrkvscallbackobj;
 
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_entity_create(_, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_init(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_entity_create(_, _))
       .WillOnce(Invoke(s3_test_alloc_op));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_fini(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_setup(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_launch(_, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(1);
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_setup(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_launch(_, _, _, _))
       .WillRepeatedly(Invoke(s3_test_motr_op_launch));
 
   action_under_test->create_index(
@@ -189,20 +185,20 @@ TEST_F(S3MotrKVSWritterTest, CreateIndex) {
 TEST_F(S3MotrKVSWritterTest, CreateIndexIdxPresent) {
   S3CallBack s3motrkvscallbackobj;
 
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_entity_create(_, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_init(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_entity_create(_, _))
       .WillOnce(Invoke(s3_test_alloc_op));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_setup(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_launch(_, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_setup(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_launch(_, _, _, _))
       .WillRepeatedly(Invoke(s3_test_motr_op_launch));
 
   action_under_test->idx_ctx = (struct s3_motr_idx_context *)calloc(
       1, sizeof(struct s3_motr_idx_context));
   action_under_test->idx_ctx->idx =
-      (struct m0_clovis_idx *)calloc(2, sizeof(struct m0_clovis_idx));
+      (struct m0_idx *)calloc(2, sizeof(struct m0_idx));
   action_under_test->idx_ctx->idx_count = 2;
   action_under_test->idx_ctx->n_initialized_contexts = 2;
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_fini(_)).Times(3);
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(3);
 
   action_under_test->create_index(
       "TestIndex", std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
@@ -216,11 +212,11 @@ TEST_F(S3MotrKVSWritterTest, CreateIndexIdxPresent) {
 
 TEST_F(S3MotrKVSWritterTest, CreateIndexSuccessful) {
   S3CallBack s3motrkvscallbackobj;
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_fini(_)).Times(1);
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(1);
   action_under_test->idx_ctx = (struct s3_motr_idx_context *)calloc(
       1, sizeof(struct s3_motr_idx_context));
   action_under_test->idx_ctx->idx =
-      (struct m0_clovis_idx *)calloc(1, sizeof(struct m0_clovis_idx));
+      (struct m0_idx *)calloc(1, sizeof(struct m0_idx));
   action_under_test->idx_ctx->idx_count = 1;
   action_under_test->idx_ctx->n_initialized_contexts = 1;
 
@@ -239,10 +235,9 @@ TEST_F(S3MotrKVSWritterTest, CreateIndexSuccessful) {
 TEST_F(S3MotrKVSWritterTest, CreateIndexEntityCreateFailed) {
   S3CallBack s3motrkvscallbackobj;
 
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_entity_create(_, _))
-      .WillOnce(Return(-1));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_fini(_)).Times(1);
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_init(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_entity_create(_, _)).WillOnce(Return(-1));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(1);
 
   action_under_test->create_index(
       "TestIndex", std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
@@ -258,14 +253,14 @@ TEST_F(S3MotrKVSWritterTest, CreateIndexEntityCreateFailed) {
 TEST_F(S3MotrKVSWritterTest, CreateIndexFail) {
   S3CallBack s3motrkvscallbackobj;
 
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_entity_create(_, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_init(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_entity_create(_, _))
       .WillOnce(Invoke(s3_test_alloc_op));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_fini(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_setup(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_launch(_, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(1);
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_setup(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_launch(_, _, _, _))
       .WillOnce(Invoke(s3_test_motr_op_launch_fail));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_rc(_)).WillRepeatedly(Return(-EPERM));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_rc(_)).WillRepeatedly(Return(-EPERM));
   action_under_test->create_index(
       "BUCKET/seagate_bucket",
       std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
@@ -280,15 +275,14 @@ TEST_F(S3MotrKVSWritterTest, CreateIndexFail) {
 TEST_F(S3MotrKVSWritterTest, CreateIndexFailExists) {
   S3CallBack s3motrkvscallbackobj;
 
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_entity_create(_, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_init(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_entity_create(_, _))
       .WillOnce(Invoke(s3_test_alloc_op));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_fini(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_setup(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_launch(_, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(1);
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_setup(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_launch(_, _, _, _))
       .WillOnce(Invoke(s3_test_motr_op_launch_fail_exists));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_rc(_))
-      .WillRepeatedly(Return(-EEXIST));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_rc(_)).WillRepeatedly(Return(-EEXIST));
   action_under_test->create_index(
       "BUCKET/seagate_bucket",
       std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
@@ -303,12 +297,12 @@ TEST_F(S3MotrKVSWritterTest, CreateIndexFailExists) {
 TEST_F(S3MotrKVSWritterTest, PutKeyVal) {
   S3CallBack s3motrkvscallbackobj;
 
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_op(_, _, _, _, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_init(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_op(_, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_motr_idx_op));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_fini(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_setup(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_launch(_, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(1);
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_setup(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_launch(_, _, _, _))
       .WillRepeatedly(Invoke(s3_test_motr_op_launch));
 
   action_under_test->put_keyval(
@@ -342,14 +336,14 @@ TEST_F(S3MotrKVSWritterTest, PutKeyValSuccessful) {
 TEST_F(S3MotrKVSWritterTest, PutKeyValFailed) {
   S3CallBack s3motrkvscallbackobj;
 
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_op(_, _, _, _, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_init(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_op(_, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_motr_idx_op));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_fini(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_setup(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_launch(_, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(1);
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_setup(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_launch(_, _, _, _))
       .WillOnce(Invoke(s3_test_motr_op_launch_fail));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_rc(_)).WillRepeatedly(Return(-EPERM));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_rc(_)).WillRepeatedly(Return(-EPERM));
   action_under_test->writer_context.reset(new S3AsyncMotrKVSWriterContext(
       ptr_mock_request, NULL, NULL, 1, ptr_mock_s3motr));
   action_under_test->put_keyval(
@@ -368,12 +362,12 @@ TEST_F(S3MotrKVSWritterTest, PutKeyValFailed) {
 TEST_F(S3MotrKVSWritterTest, DelKeyVal) {
   S3CallBack s3motrkvscallbackobj;
 
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_op(_, _, _, _, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_init(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_op(_, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_motr_idx_op));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_fini(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_setup(_, _, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_launch(_, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(1);
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_setup(_, _, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_launch(_, _, _, _))
       .WillRepeatedly(Invoke(s3_test_motr_op_launch));
 
   action_under_test->delete_keyval(
@@ -387,14 +381,14 @@ TEST_F(S3MotrKVSWritterTest, DelKeyVal) {
 TEST_F(S3MotrKVSWritterTest, DelKeyValSuccess) {
   S3CallBack s3motrkvscallbackobj;
 
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_op(_, _, _, _, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_init(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_op(_, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_motr_idx_op));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_fini(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_setup(_, _, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_launch(_, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(1);
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_setup(_, _, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_launch(_, _, _, _))
       .WillRepeatedly(Invoke(s3_test_motr_op_launch));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_sync_op_init(_))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_sync_op_init(_))
       .WillRepeatedly(Invoke(s3_test_alloc_sync_op));
 
   action_under_test->delete_keyval(
@@ -409,14 +403,14 @@ TEST_F(S3MotrKVSWritterTest, DelKeyValSuccess) {
 TEST_F(S3MotrKVSWritterTest, DelKeyValFailed) {
   S3CallBack s3motrkvscallbackobj;
 
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_op(_, _, _, _, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_init(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_op(_, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_motr_idx_op));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_fini(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_setup(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_launch(_, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(1);
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_setup(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_launch(_, _, _, _))
       .WillOnce(Invoke(s3_test_motr_op_launch_fail));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_rc(_)).WillRepeatedly(Return(-EPERM));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_rc(_)).WillRepeatedly(Return(-EPERM));
   action_under_test->delete_keyval(
       oid, "3kfile", std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
@@ -430,14 +424,14 @@ TEST_F(S3MotrKVSWritterTest, DelKeyValFailed) {
 TEST_F(S3MotrKVSWritterTest, DelIndex) {
   S3CallBack s3motrkvscallbackobj;
 
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_entity_delete(_, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_init(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_entity_delete(_, _))
       .WillOnce(Invoke(s3_test_alloc_op));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_fini(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_setup(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_launch(_, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(1);
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_setup(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_launch(_, _, _, _))
       .WillRepeatedly(Invoke(s3_test_motr_op_launch));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_entity_open(_, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_entity_open(_, _));
 
   action_under_test->delete_index(
       oid, std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
@@ -450,21 +444,21 @@ TEST_F(S3MotrKVSWritterTest, DelIndex) {
 TEST_F(S3MotrKVSWritterTest, DelIndexIdxPresent) {
   S3CallBack s3motrkvscallbackobj;
 
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_entity_delete(_, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_init(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_entity_delete(_, _))
       .WillOnce(Invoke(s3_test_alloc_op));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_setup(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_launch(_, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_setup(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_launch(_, _, _, _))
       .WillRepeatedly(Invoke(s3_test_motr_op_launch));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_entity_open(_, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_entity_open(_, _));
 
   action_under_test->idx_ctx = (struct s3_motr_idx_context *)calloc(
       1, sizeof(struct s3_motr_idx_context));
   action_under_test->idx_ctx->idx =
-      (struct m0_clovis_idx *)calloc(2, sizeof(struct m0_clovis_idx));
+      (struct m0_idx *)calloc(2, sizeof(struct m0_idx));
   action_under_test->idx_ctx->idx_count = 2;
   action_under_test->idx_ctx->n_initialized_contexts = 2;
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_fini(_)).Times(3);
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(3);
 
   action_under_test->delete_index(
       oid, std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
@@ -477,11 +471,10 @@ TEST_F(S3MotrKVSWritterTest, DelIndexIdxPresent) {
 TEST_F(S3MotrKVSWritterTest, DelIndexEntityDeleteFailed) {
   S3CallBack s3motrkvscallbackobj;
 
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_entity_delete(_, _))
-      .WillOnce(Return(-1));
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_idx_fini(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_entity_open(_, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_init(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_entity_delete(_, _)).WillOnce(Return(-1));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(1);
+  EXPECT_CALL(*ptr_mock_s3motr, motr_entity_open(_, _));
 
   action_under_test->delete_index(
       oid, std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),

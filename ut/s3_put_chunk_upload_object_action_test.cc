@@ -82,7 +82,7 @@ class S3PutChunkUploadObjectActionTestBase : public testing::Test {
     mock_request = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr,
                                                          async_buffer_factory);
 
-    ptr_mock_s3_motr_api = std::make_shared<MockS3Clovis>();
+    ptr_mock_s3_motr_api = std::make_shared<MockS3Motr>();
 
     EXPECT_CALL(*mock_request, get_bucket_name())
         .WillRepeatedly(ReturnRef(bucket_name));
@@ -113,7 +113,7 @@ class S3PutChunkUploadObjectActionTestBase : public testing::Test {
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3MotrWriterFactory> motr_writer_factory;
   std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3_motr_api;
+  std::shared_ptr<MockS3Motr> ptr_mock_s3_motr_api;
   std::shared_ptr<MockS3MotrKVSWriterFactory> motr_kvs_writer_factory;
 
   std::shared_ptr<S3PutChunkUploadObjectAction> action_under_test;

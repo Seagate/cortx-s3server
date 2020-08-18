@@ -26,7 +26,7 @@ DEFINE_string(s3config, "/opt/seagate/cortx/s3/conf/s3config.yaml",
 
 DEFINE_string(s3layoutmap,
               "/opt/seagate/cortx/s3/conf/s3_obj_layout_mapping.yaml",
-              "S3 Clovis layout mapping file for different object sizes");
+              "S3 Motr layout mapping file for different object sizes");
 
 DEFINE_string(s3hostv4, "", "S3 server ipv4 bind address");
 DEFINE_string(s3hostv6, "", "S3 server ipv6 bind address");
@@ -47,11 +47,11 @@ DEFINE_bool(reuseport, false, "Enable reusing s3 server port");
 DEFINE_string(perflogfile, "/var/log/seagate/s3/perf.log",
               "Performance log path");
 
-DEFINE_string(motrlocal, "localhost@tcp:12345:33:100", "Clovis local address");
-DEFINE_string(motrha, "CLOVIS_DEFAULT_HA_ADDR", "Clovis ha address");
+DEFINE_string(motrlocal, "localhost@tcp:12345:33:100", "Motr local address");
+DEFINE_string(motrha, "MOTR_DEFAULT_HA_ADDR", "Motr ha address");
 DEFINE_int32(motrlayoutid, 9, "For options please see the readme");
-DEFINE_string(motrprofilefid, "<0x7000000000000001:0>", "Clovis profile FID");
-DEFINE_string(motrprocessfid, "<0x7200000000000000:0>", "Clovis process FID");
+DEFINE_string(motrprofilefid, "<0x7000000000000001:0>", "Motr profile FID");
+DEFINE_string(motrprocessfid, "<0x7200000000000000:0>", "Motr process FID");
 
 DEFINE_string(authhost, "ipv4:127.0.0.1", "Auth server host");
 DEFINE_int32(authport, 8095, "Auth server port");

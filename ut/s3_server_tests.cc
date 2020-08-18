@@ -24,7 +24,7 @@
 #include "gtest/gtest.h"
 
 extern "C" {
-#include "clovis/clovis.h"
+#include "motr/client.h"
 #include "lib/uuid.h"  // for m0_node_uuid_string_set();
 #include "motr/init.h"
 #include "module/instance.h"
@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
 
   S3ErrorMessages::init_messages("resources/s3_error_messages.json");
 
-  // Clovis Initialization
+  // Motr Initialization
   rc = motr_ut_init();
   if (rc != 0) {
     _cleanup_option_and_instance();

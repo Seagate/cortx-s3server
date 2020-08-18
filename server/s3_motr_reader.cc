@@ -27,7 +27,7 @@
 #include "s3_uri_to_motr_oid.h"
 #include "s3_addb.h"
 
-extern struct m0_clovis_realm motr_uber_realm;
+extern struct m0_realm motr_uber_realm;
 extern std::set<struct s3_motr_op_context *> global_motr_object_ops_list;
 extern std::set<struct s3_motr_obj_context *> global_motr_obj;
 extern int shutdown_motr_teardown_called;
@@ -67,7 +67,7 @@ void S3MotrReader::clean_up_contexts() {
     global_motr_obj.erase(obj_ctx);
     if (obj_ctx) {
       for (size_t i = 0; i < obj_ctx->n_initialized_contexts; i++) {
-        s3_motr_api->clovis_obj_fini(&obj_ctx->objs[i]);
+        s3_motr_api->motr_obj_fini(&obj_ctx->objs[i]);
       }
       free_obj_context(obj_ctx);
       obj_ctx = nullptr;
@@ -159,12 +159,12 @@ int S3MotrReader::open_object(std::function<void(void)> on_success,
   ctx->cbs[0].oop_stable = s3_motr_op_stable;
   ctx->cbs[0].oop_failed = s3_motr_op_failed;
 
-  s3_motr_api->clovis_obj_init(&obj_ctx->objs[0], &motr_uber_realm, &oid,
-                               layout_id);
+  s3_motr_api->motr_obj_init(&obj_ctx->objs[0], &motr_uber_realm, &oid,
+                             layout_id);
   obj_ctx->n_initialized_contexts = 1;
 
-  rc = s3_motr_api->clovis_entity_open(&(obj_ctx->objs[0].ob_entity),
-                                       &(ctx->ops[0]));
+  rc = s3_motr_api->motr_entity_open(&(obj_ctx->objs[0].ob_entity),
+                                     &(ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_WARN, request_id,
            "Motr API: motr_entity_open failed with error code %d\n", rc);
@@ -174,15 +174,15 @@ int S3MotrReader::open_object(std::function<void(void)> on_success,
   }
 
   ctx->ops[0]->op_datum = (void *)op_ctx;
-  s3_motr_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
+  s3_motr_api->motr_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
 
   s3_log(S3_LOG_INFO, request_id,
          "Motr API: openobj(oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid.u_hi, oid.u_lo);
 
-  s3_motr_api->clovis_op_launch(request->addb_request_id, ctx->ops, 1,
-                                MotrOpType::openobj);
+  s3_motr_api->motr_op_launch(request->addb_request_id, ctx->ops, 1,
+                              MotrOpType::openobj);
   global_motr_object_ops_list.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return rc;
@@ -269,9 +269,8 @@ bool S3MotrReader::read_object() {
   ctx->cbs[0].oop_failed = s3_motr_op_failed;
 
   /* Create the read request */
-  rc = s3_motr_api->clovis_obj_op(&obj_ctx->objs[0], M0_CLOVIS_OC_READ,
-                                  rw_ctx->ext, rw_ctx->data, rw_ctx->attr, 0,
-                                  &ctx->ops[0]);
+  rc = s3_motr_api->motr_obj_op(&obj_ctx->objs[0], M0_OC_READ, rw_ctx->ext,
+                                rw_ctx->data, rw_ctx->attr, 0, &ctx->ops[0]);
   if (rc != 0) {
     s3_log(S3_LOG_WARN, request_id,
            "Motr API: motr_obj_op failed with error code %d\n", rc);
@@ -281,17 +280,17 @@ bool S3MotrReader::read_object() {
   }
 
   ctx->ops[0]->op_datum = (void *)op_ctx;
-  s3_motr_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
+  s3_motr_api->motr_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
 
   reader_context->start_timer_for("read_object_data");
 
   s3_log(S3_LOG_INFO, request_id,
-         "Motr API: readobj(operation: M0_CLOVIS_OC_READ, oid: ("
+         "Motr API: readobj(operation: M0_OC_READ, oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid.u_hi, oid.u_lo);
 
-  s3_motr_api->clovis_op_launch(request->addb_request_id, ctx->ops, 1,
-                                MotrOpType::readobj);
+  s3_motr_api->motr_op_launch(request->addb_request_id, ctx->ops, 1,
+                              MotrOpType::readobj);
   global_motr_object_ops_list.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return true;

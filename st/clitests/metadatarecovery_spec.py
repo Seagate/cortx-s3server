@@ -618,7 +618,7 @@ def put_kvs_in_indexes(index_with_corrupt_kvs,
     """
     # PUT KVs in first index id: index_with_corrupt_kvs
     for KV in key_value_list_with_not_good_values:
-        # 'my-bucket5' has corrupted value, use s3cloviscli to PUT it
+        # 'my-bucket5' has corrupted value, use s3motrcli to PUT it
         if KV['Key'] == 'my-bucket5':
             if index_with_corrupt_kvs == primary_bucket_list_index_oid:
                 put_in_index = primary_bucket_list_index

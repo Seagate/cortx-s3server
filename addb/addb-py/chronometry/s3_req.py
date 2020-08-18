@@ -52,8 +52,8 @@ def main():
                         help="requests ids to draw")
     parser.add_argument('--db', type=str, required=False, default="m0play.db",
                         help="input database file")
-    parser.add_argument('--no_clovis', action='store_true', required=False,
-                        default=False, help="exclude clovis requests from timeline")
+    parser.add_argument('--no_motr', action='store_true', required=False,
+                        default=False, help="exclude motr requests from timeline")
     args = parser.parse_args()
 
     db_init(args.db)
@@ -72,15 +72,15 @@ def main():
         ref_time.append(min([t['time'] for t in s3_req_d]))
         time_table.append(s3_req_d)
 
-        if not args.no_clovis:
-            s3_to_clovis_d = query2dlist(s3_request_to_clovis.select().where(s3_request_to_clovis.s3_request_id == s3_req_rel.s3_request_id))
+        if not args.no_motr:
+            s3_to_motr_d = query2dlist(s3_request_to_motr.select().where(s3_request_to_motr.s3_request_id == s3_req_rel.s3_request_id))
 
-            for s3c in s3_to_clovis_d:
-                clovis = query2dlist(clovis_req.select().where(clovis_req.id == s3c['clovis_id']))
-                l = "      {}".format(s3c['clovis_id'])
-                for c in clovis:
+            for s3c in s3_to_motr_d:
+                motr = query2dlist(motr_req.select().where(motr_req.id == s3c['motr_id']))
+                l = "      {}".format(s3c['motr_id'])
+                for c in motr:
                     c['label'] = l
-                time_table.append(clovis)
+                time_table.append(motr)
 
     db_close()
 

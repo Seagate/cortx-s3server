@@ -56,7 +56,7 @@ class S3GetServiceActionTest : public testing::Test {
         req, evhtp_obj_ptr, async_buffer_factory);
     EXPECT_CALL(*ptr_mock_request, get_bucket_name())
         .WillRepeatedly(ReturnRef(bucket_name));
-    s3_motr_api_mock = std::make_shared<MockS3Clovis>();
+    s3_motr_api_mock = std::make_shared<MockS3Motr>();
 
     // Mock factories.
     motr_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
@@ -72,7 +72,7 @@ class S3GetServiceActionTest : public testing::Test {
         ptr_mock_request, motr_kvs_reader_factory, bucket_meta_factory));
   }
 
-  std::shared_ptr<MockS3Clovis> s3_motr_api_mock;
+  std::shared_ptr<MockS3Motr> s3_motr_api_mock;
   std::shared_ptr<S3GetServiceAction> action_under_test;
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
   std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
@@ -127,7 +127,7 @@ TEST_F(S3GetServiceActionTest, GetNextBucketSuccessful) {
 // Verify that get_next_buckets_failed sets boolean flag to true if user
 // index metadata is missing.i This calls send_response_to_s3_client
 // with HTTP 200.
-TEST_F(S3GetServiceActionTest, GetNextBucketFailedClovisReaderStateMissing) {
+TEST_F(S3GetServiceActionTest, GetNextBucketFailedMotrReaderStateMissing) {
   // Set GTest expectations.
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_state())
       .WillRepeatedly(Return(S3MotrKVSReaderOpState::missing));
@@ -146,7 +146,7 @@ TEST_F(S3GetServiceActionTest, GetNextBucketFailedClovisReaderStateMissing) {
 // Verify that get_next_buckets_failed sets boolean flag to false if user
 // index metadata is present. This calls send_response_to_s3_client
 // with HTTP 500.
-TEST_F(S3GetServiceActionTest, GetNextBucketFailedClovisReaderStatePresent) {
+TEST_F(S3GetServiceActionTest, GetNextBucketFailedMotrReaderStatePresent) {
   // Set GTest expectations.
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_state())
       .WillRepeatedly(Return(S3MotrKVSReaderOpState::present));

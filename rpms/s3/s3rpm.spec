@@ -213,7 +213,7 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/docs/openldap_backup_readme
 /opt/seagate/cortx/s3/docs/s3_log_rotation_guide.txt
 /opt/seagate/cortx/s3/addb-plugin/libs3addbplugin.so
-/opt/seagate/cortx/s3/bin/cloviskvscli
+/opt/seagate/cortx/s3/bin/motrkvscli
 /opt/seagate/cortx/s3/bin/s3server
 /opt/seagate/cortx/s3/libevent/libevent-2.1.so.6
 /opt/seagate/cortx/s3/libevent/libevent-2.1.so.6.0.4

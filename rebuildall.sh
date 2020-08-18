@@ -24,7 +24,7 @@ set -e
 usage() {
   echo 'Usage: ./rebuildall.sh [--no-motr-rpm][--use-build-cache][--no-check-code]'
   echo '                       [--no-clean-build][--no-s3ut-build][--no-s3mempoolut-build][--no-s3mempoolmgrut-build]'
-  echo '                       [--no-s3server-build][--no-cloviskvscli-build][--no-auth-build]'
+  echo '                       [--no-s3server-build][--no-motrkvscli-build][--no-auth-build]'
   echo '                       [--no-jclient-build][--no-jcloudclient-build][--no-install]'
   echo '                       [--just-gen-build-file][--help]'
   echo 'Optional params as below:'
@@ -42,7 +42,7 @@ usage() {
   echo '          --no-s3mempoolut-build     : Do not build Memory pool UT, Default (false)'
   echo '          --no-s3mempoolmgrut-build  : Do not build Memory pool Manager UT, Default (false)'
   echo '          --no-s3server-build        : Do not build S3 Server, Default (false)'
-  echo '          --no-cloviskvscli-build    : Do not build cloviskvscli tool, Default (false)'
+  echo '          --no-motrkvscli-build    : Do not build motrkvscli tool, Default (false)'
   echo '          --no-s3background-build    : Do not build s3background process, Default (false)'
   echo '          --no-s3recoverytool-build    : Do not build s3recoverytool process, Default (false)'
   echo '          --no-s3addbplugin-build    : Do not build s3 addb plugin library, Default (false)'
@@ -135,7 +135,7 @@ get_motr_pkg_config_rpm() {
 # read the options
 OPTS=`getopt -o h --long no-motr-rpm,use-build-cache,no-check-code,no-clean-build,\
 no-s3ut-build,no-s3mempoolut-build,no-s3mempoolmgrut-build,no-s3server-build,\
-no-cloviskvscli-build,no-s3background-build,no-s3recoverytool-build,\
+no-motrkvscli-build,no-s3background-build,no-s3recoverytool-build,\
 no-s3addbplugin-build,no-auth-build,no-jclient-build,no-jcloudclient-build,\
 no-s3iamcli-build,no-install,just-gen-build-file,help -n 'rebuildall.sh' -- "$@"`
 
@@ -149,7 +149,7 @@ no_s3ut_build=0
 no_s3mempoolut_build=0
 no_s3mempoolmgrut_build=0
 no_s3server_build=0
-no_cloviskvscli_build=0
+no_motrkvscli_build=0
 no_s3background_build=0
 no_s3recoverytool_build=0
 no_s3addbplugin_build=0
@@ -171,7 +171,7 @@ while true; do
     --no-s3mempoolut-build) no_s3mempoolut_build=1; shift ;;
     --no-s3mempoolmgrut-build) no_s3mempoolmgrut_build=1; shift ;;
     --no-s3server-build) no_s3server_build=1; shift ;;
-    --no-cloviskvscli-build) no_cloviskvscli_build=1; shift ;;
+    --no-motrkvscli-build) no_motrkvscli_build=1; shift ;;
     --no-s3background-build) no_s3background_build=1; shift ;;
     --no-s3recoverytool-build) no_s3recoverytool_build=1; shift ;;
     --no-s3addbplugin-build) no_s3addbplugin_build=1; shift ;;
@@ -345,7 +345,7 @@ if [ $no_clean_build -eq 0 ]
 then
   if [[ $no_s3ut_build -eq 0   || \
       $no_s3server_build -eq 0 || \
-      $no_cloviskvscli_build -eq 0 || \
+      $no_motrkvscli_build -eq 0 || \
       $no_s3mempoolmgrut_build -eq 0 || \
       $no_s3mempoolut_build -eq 0 ]]
   then
@@ -414,9 +414,9 @@ then
                               --strip=never
 fi
 
-if [ $no_cloviskvscli_build -eq 0 ]
+if [ $no_motrkvscli_build -eq 0 ]
 then
-  bazel build //:cloviskvscli --cxxopt="-std=c++11" --define $MOTR_INC_ \
+  bazel build //:motrkvscli --cxxopt="-std=c++11" --define $MOTR_INC_ \
                               --define $MOTR_LIB_ --define $MOTR_HELPERS_LIB_ \
                               --spawn_strategy=standalone \
                               --strip=never

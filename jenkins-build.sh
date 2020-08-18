@@ -34,10 +34,10 @@ where:
 --skip_build	   Do not run build step
 --skip_tests	   Do not run tests, exit before test run
 --cleanup_only	   Do cleanup and stop everything; don't run anything.
---fake_obj	   Run s3server with stubs for clovis object read/write ops
---fake_kvs	   Run s3server with stubs for clovis kvs put/get/delete
+--fake_obj	   Run s3server with stubs for motr object read/write ops
+--fake_kvs	   Run s3server with stubs for motr kvs put/get/delete
 		   create idx/remove idx
---redis_kvs	   Run s3server with redis stubs for clovis kvs put/get/delete
+--redis_kvs	   Run s3server with redis stubs for motr kvs put/get/delete
 		   create idx/remove idx
 --basic_test_only	   Do not run all the tests. Only basic s3cmd regression
 		   tests will be run. If --fake* params provided, tests will use
@@ -99,7 +99,7 @@ else
           echo "Skip test step";
           ;;
       --fake_obj ) fake_obj=1;
-          echo "Stubs for clovis object read/write ops";
+          echo "Stubs for motr object read/write ops";
           ;;
       --fake_kvs ) fake_kvs=1;
           if [ $redis_kvs -eq 1 ]
@@ -108,7 +108,7 @@ else
               echo "$USAGE"
               exit 1
           fi
-          echo "Stubs for clovis kvs put/get/delete/create idx/remove idx";
+          echo "Stubs for motr kvs put/get/delete/create idx/remove idx";
           ;;
       --redis_kvs ) redis_kvs=1;
           if [ $fake_kvs -eq 1 ]
@@ -117,7 +117,7 @@ else
               echo "$USAGE"
               exit 1
           fi
-          echo "Stubs for clovis kvs put/get/delete/create idx/remove idx";
+          echo "Stubs for motr kvs put/get/delete/create idx/remove idx";
           ;;
       --basic_test_only ) basic_test_only=1;
           echo "Run basic s3cmd regression tests only";
@@ -217,7 +217,7 @@ $USE_SUDO systemctl stop s3authserver
 # Stop any old running motr
 cd $MOTR_SRC
 echo "Stopping any old running motr services"
-$USE_SUDO ./m0t1fs/../clovis/st/utils/motr_services.sh stop || echo "Cannot stop motr services"
+$USE_SUDO ./m0t1fs/../motr/st/utils/motr_services.sh stop || echo "Cannot stop motr services"
 cd $S3_BUILD_DIR
 
 # Clean up motr and S3 log and data dirs
@@ -266,7 +266,7 @@ fi
 # Start motr for new tests
 cd $MOTR_SRC
 echo "Starting new built motr services"
-$USE_SUDO ./m0t1fs/../clovis/st/utils/motr_services.sh start
+$USE_SUDO ./m0t1fs/../motr/st/utils/motr_services.sh start
 cd $S3_BUILD_DIR
 
 # Ensure correct ldap credentials are present.
@@ -392,7 +392,7 @@ tail -50 /var/log/seagate/s3/s3server.INFO
 tail -50 /var/log/seagate/s3/s3server.ERROR || echo "No Errors"
 
 cd $MOTR_SRC
-$USE_SUDO ./m0t1fs/../clovis/st/utils/motr_services.sh stop || echo "Cannot stop motr services"
+$USE_SUDO ./m0t1fs/../motr/st/utils/motr_services.sh stop || echo "Cannot stop motr services"
 cd $S3_BUILD_DIR
 # revert ipv6 settings
 if [ $use_ipv6 -eq 1 ]

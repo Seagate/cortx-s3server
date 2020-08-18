@@ -72,7 +72,7 @@ class S3GlobalBucketIndexMetadataTest : public testing::Test {
     EXPECT_CALL(*request_mock, get_bucket_name())
         .WillRepeatedly(ReturnRef(bucket_name));
 
-    s3_motr_api_mock = std::make_shared<MockS3Clovis>();
+    s3_motr_api_mock = std::make_shared<MockS3Motr>();
 
     account_id.assign("12345");
     account_name.assign("s3_test");
@@ -89,7 +89,7 @@ class S3GlobalBucketIndexMetadataTest : public testing::Test {
       global_bucket_idx_metadata_under_test_ptr;
   std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
   std::shared_ptr<MockS3MotrKVSWriterFactory> motr_kvs_writer_factory;
-  std::shared_ptr<MockS3Clovis> s3_motr_api_mock;
+  std::shared_ptr<MockS3Motr> s3_motr_api_mock;
 
   S3CallBack s3globalbucketindex_callbackobj;
   std::string account_name;

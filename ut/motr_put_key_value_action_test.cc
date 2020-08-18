@@ -49,7 +49,7 @@ class MotrPutKeyValueActionTest : public testing::Test {
     EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
         ReturnRef(input_headers));
 
-    ptr_mock_s3_motr_api = std::make_shared<MockS3Clovis>();
+    ptr_mock_s3_motr_api = std::make_shared<MockS3Motr>();
 
     mock_motr_kvs_writer_factory = std::make_shared<MockS3MotrKVSWriterFactory>(
         ptr_mock_request, ptr_mock_s3_motr_api);
@@ -63,7 +63,7 @@ class MotrPutKeyValueActionTest : public testing::Test {
   std::string index_id_str_lo;
   std::string index_id_str_hi;
   std::shared_ptr<MockMotrRequestObject> ptr_mock_request;
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3_motr_api;
+  std::shared_ptr<MockS3Motr> ptr_mock_s3_motr_api;
   std::shared_ptr<MockS3MotrKVSWriterFactory> mock_motr_kvs_writer_factory;
   std::shared_ptr<MotrPutKeyValueAction> action_under_test;
 
