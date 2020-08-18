@@ -363,7 +363,7 @@ This script verifies if for all unimplemented S3 APIs we are returning correct e
 ```sh
 sudo systemctl start "s3server@0x7200000000000001:0x30"
 ```
-where `0x7200000000000001:0x30` is the process FID assigned by halon
+where `0x7200000000000001:0x30` is the process FID assigned by hare
 
 ## How to stop s3 server service via systemctl on deployment m/c
 ```sh
@@ -934,7 +934,7 @@ There will be two output files created
 
 # Deployment from rpm
 
-The **rpm-deploy.sh** is used to deploy s3server, motr and halon on test node.
+The **rpm-deploy.sh** is used to deploy s3server, motr and hare on test node.
 
 Note: **dev/init.sh** script should be run before rpm deployment
 
@@ -944,7 +944,7 @@ Deployment on a clean node:
 
 1 - Run **dev/init.sh** or make sure it was already run
 
-2 - Update yum repos to install motr and halon from; By default hermi repos are
+2 - Update yum repos to install motr and hare from; By default hermi repos are
 used - **http://cortx-storage.colo.seagate.com/releases/hermi/last_successful/mero/repo**;
 if one needs to use binaries from specific sprint following command should be run
 ```
@@ -965,13 +965,13 @@ To be able to restore default repos one should run
 ./rpm-deploy.sh -R
 ```
 this cmd will try to uninstall following pkgs: s3server, s3server-debuginfo,
-cortx-motr, cortx-motr-devel, halon, s3iamcli
+cortx-motr, cortx-motr-devel, hare, s3iamcli
 
 4 - Install packages
 ```
 ./rpm-deploy.sh -I
 ```
-cortx-motr, cortx-motr-devel, halon and s3iamcli packages will be installed from the yum repo;
+cortx-motr, cortx-motr-devel, hare and s3iamcli packages will be installed from the yum repo;
 s3server package will be built from the current source tree
 
 5 - Run status command and make sure all packages installed and configured
