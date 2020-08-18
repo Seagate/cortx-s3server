@@ -66,6 +66,12 @@ void S3ObjectAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+void S3ObjectAction::fetch_bucket_info_success() {
+  request->get_audit_info().set_bucket_owner_canonical_id(
+      bucket_metadata->get_owner_id());
+  fetch_object_info();
+}
+
 void S3ObjectAction::fetch_object_info() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   // Object create case no object metadata exist
@@ -100,7 +106,7 @@ void S3ObjectAction::fetch_object_info() {
 }
 
 void S3ObjectAction::fetch_object_info_success() { next(); }
-void S3ObjectAction::fetch_bucket_info_success() { fetch_object_info(); }
+
 void S3ObjectAction::load_metadata() { fetch_bucket_info(); }
 
 void S3ObjectAction::set_authorization_meta() {

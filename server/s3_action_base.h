@@ -48,8 +48,6 @@ class S3Action : public Action {
  protected:
   std::shared_ptr<S3RequestObject> request;
  private:
-  std::shared_ptr<S3ObjectMetadata> object_metadata;
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
   bool skip_authorization;
 
  public:
