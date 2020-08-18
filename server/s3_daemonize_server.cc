@@ -64,8 +64,6 @@ extern int global_shutdown_in_progress;
  */
 
 void s3_terminate_fatal_handler(int signum) {
-  // https://github.com/google/glog/releases (see google-glog 0.3.4)
-  // ie reduce dynamic allocation from 3 to 1 per log message
 
   if (S3Option::get_instance()->do_redirection() == 0) {
     void *trace[S3_BACKTRACE_DEPTH_MAX];
