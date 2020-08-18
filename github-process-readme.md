@@ -97,9 +97,9 @@ http://eos-jenkins.mero.colo.seagate.com/job/S3server/job/s3-github-test/
 
 F) Rebase your changes: 
 
-To rebase your local feature branch off of the latest version of dev: 
+To rebase your local feature branch off of the latest version of main:
 
-`$ git checkout dev`                  /* ensure you are on the dev branch 
+`$ git checkout main`                  /* ensure you are on the main branch
 
 `$ git pull`                                          /* pull the latest from the remote 
 
@@ -111,13 +111,14 @@ To rebase your local feature branch off of the latest version of dev:
 
 `$ git submodule-update --init  --recursive`   /* pull the latest from the remote 
 
-`$ git rebase dev`                      /* rebase on the dev branch 
+`$ git rebase main`                      /* rebase on the main branch
 
 `$ git push`                                       /* force update the remote 
 
  
 
-This process will ensure that you have the latest version of dev then take the commits from your feature branch, temporarily unset them, move to the newest head of the dev branch and then re-commit them. As long as there are no conflicts, there should be no issues. 
+This process will ensure that you have the latest version of main then take the commits from your feature branch,
+temporarily unset them, move to the newest head of the main branch and then re-commit them. As long as there are no conflicts, there should be no issues.
  
 
 G)  How to review others changes: 
