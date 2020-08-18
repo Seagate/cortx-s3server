@@ -85,8 +85,8 @@ std::string S3ProbableDeleteRecord::to_json() {
       S3M0Uint128Helper::to_string(object_list_idx_oid);
   root["objects_version_list_index_oid"] =
       S3M0Uint128Helper::to_string(objects_version_list_idx_oid);
-  root["clovis_process_fid"] =
-      S3Option::get_instance()->get_clovis_process_fid().c_str();
+  root["motr_process_fid"] =
+      S3Option::get_instance()->get_motr_process_fid().c_str();
   // LC - LIfecyle counter
   root["global_instance_id"] = S3M0Uint128Helper::to_string(global_instance_id);
   root["force_delete"] = force_delete ? "true" : "false";

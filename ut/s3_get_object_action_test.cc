@@ -660,7 +660,7 @@ TEST_F(S3GetObjectActionTest,
   action_under_test->check_full_or_range_object_read();
 
   EXPECT_STREQ("InvalidRange", action_under_test->get_s3_error_code().c_str());
-  EXPECT_TRUE(action_under_test->clovis_reader == NULL);
+  EXPECT_TRUE(action_under_test->motr_reader == NULL);
 }
 
 TEST_F(S3GetObjectActionTest,
@@ -688,7 +688,7 @@ TEST_F(S3GetObjectActionTest,
   action_under_test->check_full_or_range_object_read();
 
   EXPECT_STREQ("InvalidRange", action_under_test->get_s3_error_code().c_str());
-  EXPECT_TRUE(action_under_test->clovis_reader == NULL);
+  EXPECT_TRUE(action_under_test->motr_reader == NULL);
 }
 
 TEST_F(S3GetObjectActionTest,
@@ -715,7 +715,7 @@ TEST_F(S3GetObjectActionTest,
   action_under_test->check_full_or_range_object_read();
 
   EXPECT_STREQ("InvalidRange", action_under_test->get_s3_error_code().c_str());
-  EXPECT_TRUE(action_under_test->clovis_reader == NULL);
+  EXPECT_TRUE(action_under_test->motr_reader == NULL);
 }
 
 TEST_F(S3GetObjectActionTest,
@@ -743,7 +743,7 @@ TEST_F(S3GetObjectActionTest,
   action_under_test->check_full_or_range_object_read();
 
   EXPECT_STREQ("InvalidRange", action_under_test->get_s3_error_code().c_str());
-  EXPECT_TRUE(action_under_test->clovis_reader == NULL);
+  EXPECT_TRUE(action_under_test->motr_reader == NULL);
 }
 
 TEST_F(S3GetObjectActionTest,
@@ -771,7 +771,7 @@ TEST_F(S3GetObjectActionTest,
   action_under_test->check_full_or_range_object_read();
 
   EXPECT_STREQ("InvalidRange", action_under_test->get_s3_error_code().c_str());
-  EXPECT_TRUE(action_under_test->clovis_reader == NULL);
+  EXPECT_TRUE(action_under_test->motr_reader == NULL);
 }
 
 TEST_F(S3GetObjectActionTest,
@@ -799,7 +799,7 @@ TEST_F(S3GetObjectActionTest,
   action_under_test->check_full_or_range_object_read();
 
   EXPECT_STREQ("InvalidRange", action_under_test->get_s3_error_code().c_str());
-  EXPECT_TRUE(action_under_test->clovis_reader == NULL);
+  EXPECT_TRUE(action_under_test->motr_reader == NULL);
 }
 
 TEST_F(S3GetObjectActionTest,
@@ -1134,7 +1134,7 @@ TEST_F(S3GetObjectActionTest, SendNoSuchKeyErrorResponse) {
 }
 
 TEST_F(S3GetObjectActionTest, SendSuccessResponseForZeroSizeObject) {
-  action_under_test->clovis_reader = motr_reader_factory->mock_motr_reader;
+  action_under_test->motr_reader = motr_reader_factory->mock_motr_reader;
 
   action_under_test->object_metadata =
       object_meta_factory->create_object_metadata_obj(ptr_mock_request,
@@ -1153,7 +1153,7 @@ TEST_F(S3GetObjectActionTest, SendSuccessResponseForZeroSizeObject) {
 }
 
 TEST_F(S3GetObjectActionTest, SendSuccessResponseForNonZeroSizeObject) {
-  action_under_test->clovis_reader = motr_reader_factory->mock_motr_reader;
+  action_under_test->motr_reader = motr_reader_factory->mock_motr_reader;
 
   action_under_test->object_metadata =
       object_meta_factory->create_object_metadata_obj(ptr_mock_request,
@@ -1176,7 +1176,7 @@ TEST_F(S3GetObjectActionTest, SendSuccessResponseForNonZeroSizeObject) {
 
 // Reply not started
 TEST_F(S3GetObjectActionTest, SendErrorResponseForErrorReadingObject) {
-  action_under_test->clovis_reader = motr_reader_factory->mock_motr_reader;
+  action_under_test->motr_reader = motr_reader_factory->mock_motr_reader;
 
   action_under_test->object_metadata =
       object_meta_factory->create_object_metadata_obj(ptr_mock_request,

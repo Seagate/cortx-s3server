@@ -47,9 +47,9 @@ class S3MotrKVSReaderContext : public S3AsyncOpContextBase {
   S3MotrKVSReaderContext(std::shared_ptr<RequestObject> req,
                          std::function<void()> success_callback,
                          std::function<void()> failed_callback,
-                         std::shared_ptr<MotrAPI> clovis_api = nullptr)
+                         std::shared_ptr<MotrAPI> motr_api = nullptr)
       : S3AsyncOpContextBase(req, success_callback, failed_callback, 1,
-                             clovis_api) {
+                             motr_api) {
     request_id = request->get_request_id();
     s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
@@ -112,7 +112,7 @@ class S3MotrKVSReader {
   S3MotrKVSReaderOpState state;
 
   // Holds references to keys and values after the read so it can be consumed.
-  struct s3_motr_kvs_op_context* clovis_kvs_op_context;
+  struct s3_motr_kvs_op_context* motr_kvs_op_context;
   std::string last_value;
   // Map to hold last result: first element is `key`, the second is a pair of
   // `return status` & the `value` corresponding to the `key`.
@@ -120,7 +120,7 @@ class S3MotrKVSReader {
   std::map<std::string, std::pair<int, std::string>> last_result_keys_values;
   size_t iteration_index;
 
-  struct s3_clovis_idx_context* idx_ctx;
+  struct s3_motr_idx_context* idx_ctx;
 
   // save reference of key buffer in case of next_keyval op. It needs to be
   // freed post op if any keys were returned successfully.
@@ -130,7 +130,7 @@ class S3MotrKVSReader {
 
  public:
   S3MotrKVSReader(std::shared_ptr<RequestObject> req,
-                  std::shared_ptr<MotrAPI> clovis_api = nullptr);
+                  std::shared_ptr<MotrAPI> motr_api = nullptr);
   virtual ~S3MotrKVSReader();
 
   virtual S3MotrKVSReaderOpState get_state() { return state; }

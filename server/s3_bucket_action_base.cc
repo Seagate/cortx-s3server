@@ -47,7 +47,7 @@ S3BucketAction::~S3BucketAction() {
 void S3BucketAction::fetch_bucket_info() {
   s3_log(S3_LOG_INFO, request_id, "Fetching bucket metadata\n");
   if (s3_fi_is_enabled("fail_fetch_bucket_info")) {
-    s3_fi_enable_once("clovis_kv_get_fail");
+    s3_fi_enable_once("motr_kv_get_fail");
   }
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);

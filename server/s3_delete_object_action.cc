@@ -31,7 +31,7 @@ S3DeleteObjectAction::S3DeleteObjectAction(
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3MotrWriterFactory> writer_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
-    std::shared_ptr<MotrAPI> clovis_api)
+    std::shared_ptr<MotrAPI> motr_api)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
                      std::move(object_meta_factory), false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
@@ -44,8 +44,8 @@ S3DeleteObjectAction::S3DeleteObjectAction(
   action_uses_cleanup = true;
   s3_del_obj_action_state = S3DeleteObjectActionState::empty;
 
-  if (clovis_api) {
-    s3_motr_api = clovis_api;
+  if (motr_api) {
+    s3_motr_api = motr_api;
   } else {
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
@@ -254,11 +254,11 @@ void S3DeleteObjectAction::mark_oid_for_deletion() {
 void S3DeleteObjectAction::delete_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // process to delete object
-  if (!clovis_writer) {
-    clovis_writer = motr_writer_factory->create_motr_writer(
+  if (!motr_writer) {
+    motr_writer = motr_writer_factory->create_motr_writer(
         request, object_metadata->get_oid());
   }
-  clovis_writer->delete_object(
+  motr_writer->delete_object(
       std::bind(&S3DeleteObjectAction::remove_probable_record, this),
       std::bind(&S3DeleteObjectAction::next, this),
       object_metadata->get_layout_id());

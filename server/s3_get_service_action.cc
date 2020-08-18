@@ -89,7 +89,7 @@ void S3GetServiceAction::get_next_buckets() {
   }
 
   s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket list from KV store\n");
-  size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
+  size_t count = S3Option::get_instance()->get_motr_idx_fetch_count();
 
   motr_kv_reader =
       s3_motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
@@ -142,7 +142,7 @@ void S3GetServiceAction::get_next_buckets_successful() {
   }
   // We ask for more if there is any.
   size_t count_we_requested =
-      S3Option::get_instance()->get_clovis_idx_fetch_count();
+      S3Option::get_instance()->get_motr_idx_fetch_count();
   if ((kvps.size() < count_we_requested) || retrived_all_keys) {
     // Go ahead and respond.
     fetch_successful = true;

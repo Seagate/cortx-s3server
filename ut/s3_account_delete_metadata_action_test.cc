@@ -110,9 +110,9 @@ TEST_F(S3AccountDeleteMetadataActionTest, ValidateRequestFailed) {
 
 TEST_F(S3AccountDeleteMetadataActionTest, FetchFirstBucketMetadata) {
   action_under_test->motr_kv_reader =
-      motr_kvs_reader_factory->mock_clovis_kvs_reader;
+      motr_kvs_reader_factory->mock_motr_kvs_reader;
   action_under_test->account_id_from_uri = "account_test123";
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
               next_keyval(_, _, _, _, _, _)).Times(1);
 
   action_under_test->fetch_first_bucket_metadata();
@@ -127,8 +127,8 @@ TEST_F(S3AccountDeleteMetadataActionTest, FetchFirstBucketMetadataExist) {
           0,
           "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"file1\"}")));
   action_under_test->motr_kv_reader =
-      motr_kvs_reader_factory->mock_clovis_kvs_reader;
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
+      motr_kvs_reader_factory->mock_motr_kvs_reader;
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
               get_key_values())
       .Times(1)
       .WillOnce(ReturnRef(mymap));
@@ -148,8 +148,8 @@ TEST_F(S3AccountDeleteMetadataActionTest, FetchFirstBucketMetadataNotExist) {
           0,
           "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"file1\"}")));
   action_under_test->motr_kv_reader =
-      motr_kvs_reader_factory->mock_clovis_kvs_reader;
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
+      motr_kvs_reader_factory->mock_motr_kvs_reader;
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
               get_key_values())
       .Times(1)
       .WillOnce(ReturnRef(mymap));
@@ -164,9 +164,9 @@ TEST_F(S3AccountDeleteMetadataActionTest, FetchFirstBucketMetadataNotExist) {
 
 TEST_F(S3AccountDeleteMetadataActionTest, FetchFirstBucketMetadataMissing) {
   action_under_test->motr_kv_reader =
-      motr_kvs_reader_factory->mock_clovis_kvs_reader;
+      motr_kvs_reader_factory->mock_motr_kvs_reader;
 
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_state())
       .Times(1)
       .WillRepeatedly(Return(S3MotrKVSReaderOpState::missing));
   // Mock out the next calls on action.
@@ -179,10 +179,10 @@ TEST_F(S3AccountDeleteMetadataActionTest, FetchFirstBucketMetadataMissing) {
 
 TEST_F(S3AccountDeleteMetadataActionTest, FetchFirstBucketMetadataFailed) {
   action_under_test->motr_kv_reader =
-      motr_kvs_reader_factory->mock_clovis_kvs_reader;
+      motr_kvs_reader_factory->mock_motr_kvs_reader;
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_state())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(S3MotrKVSReaderOpState::failed));
   // Mock out the next calls on action.

@@ -270,7 +270,7 @@ void S3AbortMultipartAction::delete_part_index_with_parts() {
     next();
   } else {
     if (s3_fi_is_enabled("fail_remove_part_mindex")) {
-      s3_fi_enable_once("clovis_idx_delete_fail");
+      s3_fi_enable_once("motr_idx_delete_fail");
     }
     part_metadata = part_metadata_factory->create_part_metadata_obj(
         request, part_index_oid, upload_id, 1);
@@ -395,11 +395,11 @@ void S3AbortMultipartAction::mark_oid_for_deletion() {
 void S3AbortMultipartAction::delete_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // process to delete object
-  if (!clovis_writer) {
-    clovis_writer = motr_writer_factory->create_motr_writer(
+  if (!motr_writer) {
+    motr_writer = motr_writer_factory->create_motr_writer(
         request, object_multipart_metadata->get_oid());
   }
-  clovis_writer->delete_object(
+  motr_writer->delete_object(
       std::bind(&S3AbortMultipartAction::remove_probable_record, this),
       std::bind(&S3AbortMultipartAction::next, this),
       object_multipart_metadata->get_layout_id());

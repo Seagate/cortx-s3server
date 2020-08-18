@@ -154,13 +154,13 @@ TEST_F(MotrPutKeyValueActionTest,
 
 TEST_F(MotrPutKeyValueActionTest, PutKeyValue) {
   action_under_test->motr_kv_writer =
-      mock_motr_kvs_writer_factory->mock_clovis_kvs_writer;
+      mock_motr_kvs_writer_factory->mock_motr_kvs_writer;
 
   std::string key = "my-buket";
   EXPECT_CALL(*ptr_mock_request, get_key_name()).Times(1).WillOnce(
       ReturnRef(key));
 
-  EXPECT_CALL(*(mock_motr_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(mock_motr_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, key, _, _, _)).Times(1);
 
   action_under_test->put_key_value();
@@ -178,9 +178,9 @@ TEST_F(MotrPutKeyValueActionTest, PutKeyValueSuccessful) {
 
 TEST_F(MotrPutKeyValueActionTest, PutKeyValueFailed) {
   action_under_test->motr_kv_writer =
-      mock_motr_kvs_writer_factory->mock_clovis_kvs_writer;
+      mock_motr_kvs_writer_factory->mock_motr_kvs_writer;
 
-  EXPECT_CALL(*(mock_motr_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(mock_motr_kvs_writer_factory->mock_motr_kvs_writer),
               get_state())
       .Times(1)
       .WillOnce(Return(S3MotrKVSWriterOpState::failed_to_launch));

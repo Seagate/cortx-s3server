@@ -65,7 +65,7 @@ class S3AsyncOpContextBase {
   // To measure performance
   S3Timer timer;
   std::string operation_key;  // used to identify operation(metric) name
-  // Used for mocking clovis return calls.
+  // Used for mocking motr return calls.
   std::shared_ptr<MotrAPI> s3_motr_api;
 
   std::string request_id;
@@ -74,7 +74,7 @@ class S3AsyncOpContextBase {
   S3AsyncOpContextBase(std::shared_ptr<RequestObject> req,
                        std::function<void(void)> success,
                        std::function<void(void)> failed, int ops_cnt = 1,
-                       std::shared_ptr<MotrAPI> clovis_api = nullptr);
+                       std::shared_ptr<MotrAPI> motr_api = nullptr);
   virtual ~S3AsyncOpContextBase() {}
 
   std::shared_ptr<RequestObject> get_request();

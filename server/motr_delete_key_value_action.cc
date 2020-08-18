@@ -23,27 +23,27 @@
 #include "s3_m0_uint128_helper.h"
 
 MotrDeleteKeyValueAction::MotrDeleteKeyValueAction(
-    std::shared_ptr<MotrRequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
-    std::shared_ptr<S3MotrKVSWriterFactory> clovis_motr_kvs_writer_factory,
-    std::shared_ptr<S3MotrKVSReaderFactory> clovis_motr_kvs_reader_factory)
+    std::shared_ptr<MotrRequestObject> req, std::shared_ptr<MotrAPI> motr_api,
+    std::shared_ptr<S3MotrKVSWriterFactory> motr_kvs_writer_factory,
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory)
     : MotrAction(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
-  if (clovis_api) {
-    motr_clovis_api = clovis_api;
+  if (motr_api) {
+    s3_motr_api = motr_api;
   } else {
-    motr_clovis_api = std::make_shared<ConcreteMotrAPI>();
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
 
-  if (clovis_motr_kvs_reader_factory) {
-    motr_kvs_reader_factory = clovis_motr_kvs_reader_factory;
+  if (motr_kvs_reader_factory) {
+    motr_kvs_reader_factory_ptr = motr_kvs_reader_factory;
   } else {
-    motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+    motr_kvs_reader_factory_ptr = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
-  if (clovis_motr_kvs_writer_factory) {
-    motr_kvs_writer_factory = clovis_motr_kvs_writer_factory;
+  if (motr_kvs_writer_factory) {
+    motr_kvs_writer_factory_ptr = motr_kvs_writer_factory;
   } else {
-    motr_kvs_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
+    motr_kvs_writer_factory_ptr = std::make_shared<S3MotrKVSWriterFactory>();
   }
 
   setup_steps();
@@ -66,8 +66,8 @@ void MotrDeleteKeyValueAction::delete_key_value() {
     send_response_to_s3_client();
   } else {
     if (!motr_kv_writer) {
-      motr_kv_writer = motr_kvs_writer_factory->create_motr_kvs_writer(
-          request, motr_clovis_api);
+      motr_kv_writer = motr_kvs_writer_factory_ptr->create_motr_kvs_writer(
+          request, s3_motr_api);
     }
     motr_kv_writer->delete_keyval(
         index_id, request->get_key_name(),

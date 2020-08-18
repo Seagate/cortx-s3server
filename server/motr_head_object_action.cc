@@ -73,10 +73,10 @@ void MotrHeadObjectAction::validate_request() {
 void MotrHeadObjectAction::check_object_exist() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  clovis_reader =
+  motr_reader =
       motr_reader_factory->create_motr_reader(request, oid, layout_id);
 
-  clovis_reader->check_object_exist(
+  motr_reader->check_object_exist(
       std::bind(&MotrHeadObjectAction::check_object_exist_success, this),
       std::bind(&MotrHeadObjectAction::check_object_exist_failure, this));
 
@@ -91,10 +91,10 @@ void MotrHeadObjectAction::check_object_exist_success() {
 
 void MotrHeadObjectAction::check_object_exist_failure() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_reader->get_state() == S3MotrReaderOpState::missing) {
+  if (motr_reader->get_state() == S3MotrReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
     set_s3_error("NoSuchKey");
-  } else if (clovis_reader->get_state() ==
+  } else if (motr_reader->get_state() ==
              S3MotrReaderOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id, "Failed to lookup object.\n");
     set_s3_error("ServiceUnavailable");

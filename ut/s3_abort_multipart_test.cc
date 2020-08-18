@@ -291,12 +291,12 @@ TEST_F(S3AbortMultipartActionTest, Send200SuccessToS3Client) {
       true /* is_multipart */, part_list_idx_oid);
   action_under_test->probable_delete_rec.reset(prob_rec);
   action_under_test->motr_kv_writer =
-      motr_kvs_writer_factory->mock_clovis_kvs_writer;
+      motr_kvs_writer_factory->mock_motr_kvs_writer;
 
   // expectations for mark_oid_for_deletion()
   EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
   EXPECT_CALL(*prob_rec, to_json()).Times(1);
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, _, _, _, _)).Times(1);
 
   EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(1);

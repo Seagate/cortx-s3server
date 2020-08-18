@@ -51,7 +51,7 @@ enum class S3PutChunkUploadObjectActionState {
 
 class S3PutChunkUploadObjectAction : public S3ObjectAction {
   S3PutChunkUploadObjectActionState s3_put_chunk_action_state;
-  std::shared_ptr<S3MotrWiter> clovis_writer;
+  std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   int layout_id;
   struct m0_uint128 old_object_oid;
@@ -69,8 +69,8 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   // These 2 flags help respond to client gracefully when either auth or write
   // fails.
   // Both write and chunk auth happen in parallel.
-  bool clovis_write_in_progress;
-  bool clovis_write_completed;  // full object write
+  bool motr_write_in_progress;
+  bool motr_write_completed;  // full object write
   bool auth_in_progress;
   bool auth_completed;  // all chunk auth
 
@@ -100,9 +100,9 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
       std::shared_ptr<S3RequestObject> req,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
-      std::shared_ptr<S3MotrWriterFactory> clovis_s3_factory = nullptr,
+      std::shared_ptr<S3MotrWriterFactory> motr_s3_factory = nullptr,
       std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr,
-      std::shared_ptr<MotrAPI> clovis_api = nullptr,
+      std::shared_ptr<MotrAPI> motr_api = nullptr,
       std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory = nullptr,
       std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr);
 

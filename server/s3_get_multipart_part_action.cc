@@ -28,7 +28,7 @@
 #include "s3_part_metadata.h"
 
 S3GetMultipartPartAction::S3GetMultipartPartAction(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
@@ -76,8 +76,8 @@ S3GetMultipartPartAction::S3GetMultipartPartAction(
     part_metadata_factory = std::make_shared<S3PartMetadataFactory>();
   }
 
-  if (clovis_api) {
-    s3_motr_api = clovis_api;
+  if (motr_api) {
+    s3_motr_api = motr_api;
   } else {
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
@@ -242,7 +242,7 @@ void S3GetMultipartPartAction::get_next_objects() {
   S3ObjectMetadataState multipart_object_state =
       object_multipart_metadata->get_state();
   if (multipart_object_state == S3ObjectMetadataState::present) {
-    size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
+    size_t count = S3Option::get_instance()->get_motr_idx_fetch_count();
 
     motr_kv_reader =
         motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
@@ -301,7 +301,7 @@ void S3GetMultipartPartAction::get_next_objects_successful() {
   }
   // We ask for more if there is any.
   size_t count_we_requested =
-      S3Option::get_instance()->get_clovis_idx_fetch_count();
+      S3Option::get_instance()->get_motr_idx_fetch_count();
   if ((return_list_size == max_parts) || (kvps.size() < count_we_requested)) {
     // Go ahead and respond.
     if (return_list_size == max_parts) {

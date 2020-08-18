@@ -110,7 +110,7 @@ TEST_F(MotrHeadIndexActionTest, InvalidIndexId) {
   EXPECT_CALL(*ptr_mock_request, get_index_id_lo()).Times(1).WillOnce(
       ReturnRef(zero_index_id_str_lo));
   // lookup index should not be called
-  EXPECT_CALL(*(mock_motr_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(mock_motr_kvs_reader_factory->mock_motr_kvs_reader),
               lookup_index(_, _, _)).Times(0);
   // Report error Bad request
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
@@ -128,7 +128,7 @@ TEST_F(MotrHeadIndexActionTest, EmptyIndexId) {
   EXPECT_CALL(*ptr_mock_request, get_index_id_lo()).Times(1).WillOnce(
       ReturnRef(empty_index));
   // lookup_index should not be called
-  EXPECT_CALL(*(mock_motr_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(mock_motr_kvs_reader_factory->mock_motr_kvs_reader),
               lookup_index(_, _, _)).Times(0);
   // Report error - Bad request
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
@@ -141,7 +141,7 @@ TEST_F(MotrHeadIndexActionTest, EmptyIndexId) {
 TEST_F(MotrHeadIndexActionTest, CheckIndexExist) {
   action_under_test->index_id = index_id;
 
-  EXPECT_CALL(*(mock_motr_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(mock_motr_kvs_reader_factory->mock_motr_kvs_reader),
               lookup_index(_, _, _)).Times(1);
 
   action_under_test->check_index_exist();
@@ -158,11 +158,11 @@ TEST_F(MotrHeadIndexActionTest, CheckIndexExistSuccess) {
 
 TEST_F(MotrHeadIndexActionTest, CheckIndexExistFailureMissing) {
   action_under_test->motr_kv_reader =
-      mock_motr_kvs_reader_factory->mock_clovis_kvs_reader;
+      mock_motr_kvs_reader_factory->mock_motr_kvs_reader;
 
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
       .WillOnce(Return("/indexes/123-456"));
-  EXPECT_CALL(*(mock_motr_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(mock_motr_kvs_reader_factory->mock_motr_kvs_reader),
               get_state())
       .WillRepeatedly(Return(S3MotrKVSReaderOpState::missing));
 
@@ -173,11 +173,11 @@ TEST_F(MotrHeadIndexActionTest, CheckIndexExistFailureMissing) {
 
 TEST_F(MotrHeadIndexActionTest, CheckIndexExistFailureInternalError) {
   action_under_test->motr_kv_reader =
-      mock_motr_kvs_reader_factory->mock_clovis_kvs_reader;
+      mock_motr_kvs_reader_factory->mock_motr_kvs_reader;
 
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
       .WillOnce(Return("/indexes/123-456"));
-  EXPECT_CALL(*(mock_motr_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(mock_motr_kvs_reader_factory->mock_motr_kvs_reader),
               get_state())
       .WillRepeatedly(Return(S3MotrKVSReaderOpState::failed));
 
@@ -188,8 +188,8 @@ TEST_F(MotrHeadIndexActionTest, CheckIndexExistFailureInternalError) {
 
 TEST_F(MotrHeadIndexActionTest, CheckIndexExistFailureFailedToLaunch) {
   action_under_test->motr_kv_reader =
-      mock_motr_kvs_reader_factory->mock_clovis_kvs_reader;
-  EXPECT_CALL(*(mock_motr_kvs_reader_factory->mock_clovis_kvs_reader),
+      mock_motr_kvs_reader_factory->mock_motr_kvs_reader;
+  EXPECT_CALL(*(mock_motr_kvs_reader_factory->mock_motr_kvs_reader),
               get_state())
       .WillRepeatedly(Return(S3MotrKVSReaderOpState::failed_to_launch));
 

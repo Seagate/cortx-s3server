@@ -47,11 +47,11 @@ evhtp_ssl_ctx_t *g_ssl_auth_ctx = NULL;
 extern S3Stats *g_stats_instance;
 evbase_t *global_evbase_handle = nullptr;
 int global_shutdown_in_progress;
-int shutdown_clovis_teardown_called;
-std::set<struct s3_clovis_op_context *> global_clovis_object_ops_list;
-std::set<struct s3_clovis_idx_op_context *> global_clovis_idx_ops_list;
-std::set<struct s3_clovis_idx_context *> global_clovis_idx;
-std::set<struct s3_clovis_obj_context *> global_clovis_obj;
+int shutdown_motr_teardown_called;
+std::set<struct s3_motr_op_context *> global_motr_object_ops_list;
+std::set<struct s3_motr_idx_op_context *> global_motr_idx_ops_list;
+std::set<struct s3_motr_idx_context *> global_motr_idx;
+std::set<struct s3_motr_obj_context *> global_motr_obj;
 
 static void _init_log() {
   s3log_level = S3_LOG_FATAL;
@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
       g_option_instance->get_libevent_pool_buffer_size();
 
   int clovis_read_mempool_flags = CREATE_ALIGNED_MEMORY;
-  if (g_option_instance->get_clovis_read_mempool_zeroed_buffer()) {
+  if (g_option_instance->get_motr_read_mempool_zeroed_buffer()) {
     clovis_read_mempool_flags = clovis_read_mempool_flags | ZEROED_BUFFER;
   }
 
@@ -100,10 +100,10 @@ int main(int argc, char **argv) {
                     libevent_pool_buffer_size * 500, libevent_mempool_flags);
 
   rc = S3MempoolManager::create_pool(
-      g_option_instance->get_clovis_read_pool_max_threshold(),
-      g_option_instance->get_clovis_unit_sizes_for_mem_pool(),
-      g_option_instance->get_clovis_read_pool_initial_buffer_count(),
-      g_option_instance->get_clovis_read_pool_expandable_count(),
+      g_option_instance->get_motr_read_pool_max_threshold(),
+      g_option_instance->get_motr_unit_sizes_for_mem_pool(),
+      g_option_instance->get_motr_read_pool_initial_buffer_count(),
+      g_option_instance->get_motr_read_pool_expandable_count(),
       clovis_read_mempool_flags);
 
   rc = RUN_ALL_TESTS();
