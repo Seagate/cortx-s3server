@@ -1,13 +1,8 @@
 @startuml
 
 ' Can be previewed in VS Code or other editors.
-' References:
-' 1: https://drive.google.com/open?id=1KngBz2HGdbCv-pmjeu6df_gYxfC3YUtHpWY4CNuZ6NU
-' 2: https://drive.google.com/open?id=1-VkNcDdA0KYwY4WpArMs-ChdI7u_vhd7-7Dp5TqQ-BA
-' 3: https://drive.google.com/open?id=1JQnJnZafl_kzSOocMI-G-jNzXGjJQFfRAS9O6R-IizI
-' 4: https://drive.google.com/open?id=1GjLfZ9VRdkE3UnFCx-jknPFTpFlzY5KNtgB1ujwq-to
 
-header S3 Metadata structure\n By Kaustubh Deorukhkar\n2019-12-02
+header S3 Metadata structure\n
 title S3 Metadata
 
 center footer Index Classes here represent CORTX-MOTR (motr) KVS Index, a list of Key-Value pairs

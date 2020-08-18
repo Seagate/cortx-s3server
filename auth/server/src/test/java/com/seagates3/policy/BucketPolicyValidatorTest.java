@@ -450,7 +450,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
     Condition condition = new Condition()
                               .withType("StringLike")
-                              .withConditionKey("aws:garbage")
+                              .withConditionKey("aws:invalid")
                               .withValues("qwerty");
     ArrayList<Condition> list = new ArrayList<>();
     list.add(condition);

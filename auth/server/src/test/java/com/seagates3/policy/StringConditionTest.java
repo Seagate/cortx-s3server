@@ -40,7 +40,7 @@ class StringConditionTest {
   Map<String, String> requestBody = null;
   String key = "x-amz-acl";
   String invalidKeyHeader = "x-amz";
-  String invalidValue = "garbage";
+  String invalidValue = "invalid-value";
 
   @BeforeClass public static void setUpBeforeClass() {
     values.add("abc");
