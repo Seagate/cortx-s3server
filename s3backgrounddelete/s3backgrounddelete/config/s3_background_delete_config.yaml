@@ -23,9 +23,9 @@ cortx_s3:                                   # Section for S3 background delete c
    default_region: "us-west2"                              # CORTX s3 client will use the specified host
    access_key: "AKIAJPINPFRBTPAYXAHZ"                      # Access Key corresponding to account-name "s3-background-delete-svc"
    secret_key: "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"  # Secret Key corresponding to account-name "s3-background-delete-svc"
-   daemon_mode: "True"                                     # S3background process run in daemon mode and ST's run in non-daemon mode.
+   daemon_mode: True                                       # S3background process run in daemon mode and ST's run in non-daemon mode.
    s3_instance_count: 22                                   # Number of active s3 instances in release setup
-   use_kafka: false
+   use_kafka: False
 
 s3_recovery:                               # Section for S3 recovery config config
    access_key: "A9IAJPINPFRBTPASATAZ"                     # Access Key corresponding to account-name "s3-recovery-svc"

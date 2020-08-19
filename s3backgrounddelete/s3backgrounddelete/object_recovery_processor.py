@@ -30,7 +30,7 @@ import datetime
 from logging import handlers
 
 from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
-from s3backgrounddelete.object_recovery_kafka_consumer import ObjectRecoveryKafka
+from s3backgrounddelete.object_recovery_kafka_consumer import ObjectRecoveryKafkaConsumer
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 
 
@@ -50,7 +50,7 @@ class ObjectRecoveryProcessor(object):
         self.server = None
         try:
             if self.config.get_s3_use_kafka():
-                self.server = ObjectRecoveryKafka(self.config, self.logger)
+                self.server = ObjectRecoveryKafkaConsumer(self.config, self.logger)
             else:
                 self.server = ObjectRecoveryRabbitMq(
                     self.config,

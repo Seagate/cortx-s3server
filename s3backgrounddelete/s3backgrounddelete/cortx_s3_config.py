@@ -190,11 +190,11 @@ class CORTXS3Config(object):
     def get_daemon_mode(self):
         """Return daemon_mode flag value for scheduler from config file\
            else it should return default as "True"."""
-        if 'cortx_s3' in self._config and self._config['cortx_s3']['daemon_mode']:
+        if 'cortx_s3' in self._config and 'daemon_mode' in self._config['cortx_s3']:
             return self._config['cortx_s3']['daemon_mode']
         else:
             #Return default mode as daemon mode i.e. "True"
-            return "True"
+            return True
 
     def get_rabbitmq_username(self):
         """Return username of rabbitmq from config file or KeyError."""
@@ -413,9 +413,7 @@ class CORTXS3Config(object):
         if 'cortx_s3' in self._config and 'use_kafka' in self._config['cortx_s3']:
             return self._config['cortx_s3']['use_kafka']
         else:
-            raise KeyError(
-                "Could not find use_kafka from config file " +
-                self._conf_file)
+            return False
 
     def get_s3_recovery_access_key(self):
         """Return access_key from config file or KeyError."""

@@ -24,7 +24,7 @@ from confluent_kafka import Consumer
 from s3backgrounddelete.object_recovery_validator import ObjectRecoveryValidator
 
 
-class ObjectRecoveryKafka:
+class ObjectRecoveryKafkaConsumer:
     """This class reads messages from Kafka and forwards them for handling"""
 
     def __init__(self, config, logger):
@@ -32,31 +32,30 @@ class ObjectRecoveryKafka:
         self._config = config
         self._logger = logger
         self._consumer = None
-        self._daemon_mode = True if config.get_daemon_mode() == "True" else False
+        self._daemon_mode = config.get_daemon_mode()
 
     def close(self):
         if self._consumer is not None:
             self._consumer.close()
 
     def _treat_msg(self, msg):
+        self._logger.info(
+            "Processing following records in consumer: " + msg)
         try:
             probable_delete_records = json.loads(msg)
-        except Exception as ex:
-            self._logger.info(str(ex))
-            return True                     # Bad formatted message. Will discard it
-        self._logger.info(
-            "Processing following records in consumer: " +
-            str(probable_delete_records))
-        if probable_delete_records is None:
-            return True                     # Improbable situation
-        try:
-            validator = ObjectRecoveryValidator(
-                self._config, probable_delete_records, self._logger)
-            validator.process_results()
+
+            if probable_delete_records:
+                validator = ObjectRecoveryValidator(
+                    self._config, probable_delete_records, self._logger)
+                validator.process_results()
+
+        except (KeyError, ValueError) as ex:    # Bad formatted message. Will discard it
+            self._logger.error("Failed to parse JSON data due to: " + str(ex))
             return True
         except Exception as ex:
             self._logger.error(str(ex))
             return False
+        return True
 
     def receive_data(self):
         if not self._consumer:
