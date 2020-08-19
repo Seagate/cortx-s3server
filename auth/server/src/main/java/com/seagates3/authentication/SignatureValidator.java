@@ -154,7 +154,6 @@ public class SignatureValidator {
         return responseGenerator.ok();
       }
 
-      // Handle error code messages for ceph s3tests
 
       // If request time stamp is before epoch time then returns
       // InvalidSignatureDate

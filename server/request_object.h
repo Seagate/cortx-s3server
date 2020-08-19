@@ -217,7 +217,7 @@ class RequestObject {
     request_error = req_error;
   }
 
-  /* INFO: https://github.com/ellzey/libevhtp/issues/93
+  /*
      Pause and resume will essentially stop and start attempting to read from
      the client socket.
      But also has some extra logic around it. Since the parser is a state

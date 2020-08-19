@@ -52,7 +52,7 @@ void S3BucketAction::fetch_bucket_info() {
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(
-      std::bind(&S3BucketAction::next, this),
+      std::bind(&S3BucketAction::fetch_bucket_info_success, this),
       std::bind(&S3BucketAction::fetch_bucket_info_failed, this));
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
@@ -61,6 +61,12 @@ void S3BucketAction::fetch_bucket_info() {
       "put_bucket_policy_action_get_metadata_shutdown_fail");
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_object_tagging_action_fetch_bucket_info_shutdown_fail");
+}
+
+void S3BucketAction::fetch_bucket_info_success() {
+  request->get_audit_info().set_bucket_owner_canonical_id(
+      bucket_metadata->get_owner_id());
+  next();
 }
 
 void S3BucketAction::load_metadata() { fetch_bucket_info(); }
