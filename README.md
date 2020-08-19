@@ -195,7 +195,7 @@ Enable both IPv6 and IPv4 on dual stack machine
 
 ## Load balancer for S3
 We use haproxy as a load balancer, as well as have support for nginx. We started with
-nginx and moved to haproxy during Hermi release.
+nginx and moved to haproxy during Cortx release.
 Haproxy listens on port 80(http)/443(https) and forwards traffic to running S3 instances.
 
 In case of CentOS 7:
@@ -944,35 +944,35 @@ Deployment on a clean node:
 
 1 - Run **dev/init.sh** or make sure it was already run
 
-2 - Update yum repos to install motr and hare from; By default hermi repos are
-used - **http://cortx-storage.colo.seagate.com/releases/hermi/last_successful/mero/repo**;
+2 - Update yum repos to install motr and hare from; By default cortx repos are
+used - **http://cortx-storage.colo.seagate.com/releases/eos/github/release/rhel-7.7.1908/last_successful/**;
 if one needs to use binaries from specific sprint following command should be run
 ```
-./rpm-deploy.sh -y ees1.0.0-PI.1-sprint4
+./rpm-deploy.sh -y Cortx-1.0.0-34-rc13
 ```
-where **ees1.0.0-PI.1-sprint4** is a sprint name, after that repos named
-**http://cortx-storage.colo.seagate.com/releases/eos/ees1.0.0-PI.1-sprint4/mero/repo**,
-**http://cortx-storage.colo.seagate.com/releases/eos/ees1.0.0-PI.1-sprint4/halon/repo**,
-**http://cortx-storage.colo.seagate.com/releases/eos/ees1.0.0-PI.1-sprint4/s3server/repo**
-will be added and prioritized against hermi repos;
+where **Cortx-1.0.0-34-rc13** is a sprint name, after that repos named
+**http://cortx-storage.colo.seagate.com/releases/eos/Cortx-1.0.0-34-rc13**,
+**http://cortx-storage.colo.seagate.com/releases/eos/Cortx-1.0.0-34-rc13**,
+**http://cortx-storage.colo.seagate.com/releases/eos/Cortx-1.0.0-34-rc13**
+will be added and prioritized against cortx repos;
 To be able to restore default repos one should run
 ```
-./rpm-deploy.sh -y hermi
+./rpm-deploy.sh -y cortx
 ```
 
 3 - Remove all existing packages if any
 ```
 ./rpm-deploy.sh -R
 ```
-this cmd will try to uninstall following pkgs: s3server, s3server-debuginfo,
-cortx-motr, cortx-motr-devel, hare, s3iamcli
+this cmd will try to uninstall following pkgs: cortx-s3server, cortx-s3server-debuginfo,
+cortx-motr, cortx-motr-devel, cortx-hare, cortx-s3iamcli
 
 4 - Install packages
 ```
 ./rpm-deploy.sh -I
 ```
-cortx-motr, cortx-motr-devel, hare and s3iamcli packages will be installed from the yum repo;
-s3server package will be built from the current source tree
+cortx-motr, cortx-motr-devel, cortx-hare and cortx-s3iamcli packages will be installed from the yum repo;
+cortx-s3server package will be built from the current source tree
 
 5 - Run status command and make sure all packages installed and configured
 ```
@@ -998,7 +998,7 @@ should be used
 
 Commands 2-7 could be combined
 ```
-./rpm-deploy.sh -y ees1.0.0-PI.1-sprint4 -RI -p @ -US
+./rpm-deploy.sh -y Cortx-1.0.0-34-rc13 -RI -p @ -US
 ```
 this command will update repos, remove pkgs, install pkgs, update s3server config,
 run cluster and print statuses of all installed pkgs

@@ -155,7 +155,7 @@ cd <s3 src>
 VM is now ready to install motr, hare, s3server, s3iamcli and configure.
 
 ```sh
-yum install -y hare cortx-motr cortx-s3server cortx-s3iamcli s3cmd
+yum install -y cortx-hare cortx-motr cortx-s3server cortx-s3iamcli s3cmd
 ```
 
 Once s3server rpm is installed, run following script to update ldap password
