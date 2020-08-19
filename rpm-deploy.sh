@@ -26,7 +26,7 @@ where:
 	cortx-s3server will be built from local sources
 -R	Remove cortx-motr, cortx-motr-devel, cortx-hare, cortx-s3iamcli, cortx-s3server, cortx-s3server-debuginfo packages
 -S	Show status
--y <configure-yum-repo>	Configure yum repo to install motr and hare from cortx repos.
+-y <configure-yum-repo>	Configure yum repo to install cortx-motr and cortx-hare from cortx repos.
                        	'<sprint>' - i.e. 'Cortx-1.0.0-34-rc13' repos
 -p <path-to-prod-cfg>  	Use path as s3server config
                        	@ - for s3server/s3config.release.yaml config
@@ -62,10 +62,10 @@ install_pkgs() {
     $USE_SUDO yum -t -y install cortx-motr-devel
     $USE_SUDO yum -t -y install cortx-hare
 
-    # option "-P" will build s3server rpm from the source tree
-    # option "-i" will install s3server from the built rpm
+    # option "-P" will build cortx-s3server rpm from the source tree
+    # option "-i" will install cortx-s3server from the built rpm
     $USE_SUDO ${BASEDIR}/rpms/s3/buildrpm.sh -P ${BASEDIR} -i
-    $USE_SUDO yum -t -y install s3iamcli
+    $USE_SUDO yum -t -y install cortx-s3iamcli
 }
 
 remove_pkgs() {
@@ -132,13 +132,13 @@ yum_repo_conf() {
                       $USE_SUDO echo "[sprints_s3server]
 baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/
 gpgcheck = 0
-name = Yum repo for s3server sprints build
+name = Yum repo for cortx-s3server sprints build
 priority = 1
 
 [sprints_hare]
 baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/
 gpgcheck = 0
-name = Yum repo for hare sprints build
+name = Yum repo for cortx-hare sprints build
 priority = 1
 
 [sprints_motr]
