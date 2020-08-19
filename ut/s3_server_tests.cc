@@ -24,7 +24,7 @@
 #include "gtest/gtest.h"
 
 extern "C" {
-#include "clovis/clovis.h"
+#include "motr/client.h"
 #include "lib/uuid.h"  // for m0_node_uuid_string_set();
 #include "motr/init.h"
 #include "module/instance.h"

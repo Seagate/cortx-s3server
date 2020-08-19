@@ -33,7 +33,7 @@
 #include "s3_uri_to_motr_oid.h"
 #include "s3_addb.h"
 
-extern struct m0_clovis_realm clovis_uber_realm;
+extern struct m0_realm motr_uber_realm;
 extern S3Option *g_option_instance;
 extern std::set<struct s3_clovis_op_context *> global_clovis_object_ops_list;
 extern std::set<struct s3_clovis_obj_context *> global_clovis_obj;
@@ -153,7 +153,7 @@ void S3MotrWiter::clean_up_contexts() {
     global_clovis_obj.erase(obj_ctx);
     if (obj_ctx) {
       for (size_t i = 0; i < obj_ctx->n_initialized_contexts; ++i) {
-        s3_motr_api->clovis_obj_fini(&obj_ctx->objs[i]);
+        s3_motr_api->motr_obj_fini(&obj_ctx->objs[i]);
       }
       free_obj_context(obj_ctx);
       obj_ctx = nullptr;
@@ -195,7 +195,7 @@ int S3MotrWiter::open_objects() {
 
     oid_list_stream << '(' << oid_list[i].u_hi << ' ' << oid_list[i].u_lo
                     << ") ";
-    s3_motr_api->clovis_obj_init(&obj_ctx->objs[i], &clovis_uber_realm,
+    s3_motr_api->clovis_obj_init(&obj_ctx->objs[i], &motr_uber_realm,
                                  &oid_list[i], layout_ids[i]);
     if (i == 0) {
       obj_ctx->n_initialized_contexts = 1;
@@ -310,7 +310,7 @@ void S3MotrWiter::create_object(std::function<void(void)> on_success,
   ctx->cbs[0].oop_stable = s3_motr_op_stable;
   ctx->cbs[0].oop_failed = s3_motr_op_failed;
 
-  s3_motr_api->clovis_obj_init(&obj_ctx->objs[0], &clovis_uber_realm,
+  s3_motr_api->clovis_obj_init(&obj_ctx->objs[0], &motr_uber_realm,
                                &oid_list[0], layout_ids[0]);
   obj_ctx->n_initialized_contexts = 1;
 
@@ -477,9 +477,8 @@ void S3MotrWiter::write_content() {
   last_op_was_write = true;
 
   /* Create the write request */
-  rc = s3_motr_api->clovis_obj_op(&obj_ctx->objs[0], M0_CLOVIS_OC_WRITE,
-                                  rw_ctx->ext, rw_ctx->data, rw_ctx->attr, 0,
-                                  &ctx->ops[0]);
+  rc = s3_motr_api->clovis_obj_op(&obj_ctx->objs[0], M0_OC_WRITE, rw_ctx->ext,
+                                  rw_ctx->data, rw_ctx->attr, 0, &ctx->ops[0]);
   if (rc != 0) {
     s3_log(S3_LOG_WARN, request_id,
            "Clovis API: clovis_obj_op failed with error code %d\n", rc);
@@ -493,7 +492,7 @@ void S3MotrWiter::write_content() {
   writer_context->start_timer_for("write_to_clovis_op");
 
   s3_log(S3_LOG_INFO, request_id,
-         "Clovis API: Write (operation: M0_CLOVIS_OC_WRITE, oid: ("
+         "Clovis API: Write (operation: M0_OC_WRITE, oid: ("
          "%" SCNx64 " : %" SCNx64
          " start_offset_in_object(%zu), total_bytes_written_at_offset(%zu))\n",
          oid_list[0].u_hi, oid_list[0].u_lo, rw_ctx->ext->iv_index[0],

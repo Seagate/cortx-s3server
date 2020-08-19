@@ -454,7 +454,7 @@ $ ./mvnbuild.sh package
 
 # Start Motr server
 $ cd s3server/third_party/motr
-$ ./m0t1fs/../clovis/st/utils/motr_services.sh start
+$ ./m0t1fs/../motr/st/utils/motr_services.sh start
 
 # Run authserver with jacoco agent
 $ java -javaagent:/path/to/jacocoagent.jar=destfile=target/coverage-reports/jacoco.exec,append=false \
@@ -481,7 +481,7 @@ $ python3 auth_spec.py
 
 # Stop Motr, s3 server
 $ cd s3server/third_party/motr
-$ ./m0t1fs/../clovis/st/utils/motr_services.sh stop
+$ ./m0t1fs/../motr/st/utils/motr_services.sh stop
 $ cd s3server/
 $ ./dev-stops3.sh
 

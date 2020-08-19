@@ -22,8 +22,8 @@
 #       eg: - total_request_count
 ############################################################
 # Timer metrics -- Its in milliseconds
-# Operations which involve clovis/motr, in that case the elapsed time is the time from when
-# clovis operation is launched till the time when clovis successful/failure callback is called
+# Operations which involve motr, in that case the elapsed time is the time from when
+# motr operation is launched till the time when motr successful/failure callback is called
 # Time from the arrival of request to s3server till response send to client
 - total_request_time
 # Time to convert from uri string to oid

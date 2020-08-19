@@ -47,7 +47,7 @@ void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
   state = S3ObjectMetadataState::empty;
   is_multipart = ismultipart;
   upload_id = uploadid;
-  oid = M0_CLOVIS_ID_APP;
+  oid = M0_ID_APP;
   old_oid = {0ULL, 0ULL};
   layout_id = 0;
   old_layout_id = 0;

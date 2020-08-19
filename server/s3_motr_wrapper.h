@@ -55,64 +55,58 @@ enum class MotrOpType {
 
 class MotrAPI {
  public:
-  virtual void clovis_idx_init(struct m0_clovis_idx *idx,
-                               struct m0_clovis_realm *parent,
+  virtual void clovis_idx_init(struct m0_idx *idx, struct m0_realm *parent,
                                const struct m0_uint128 *id) = 0;
 
-  virtual void clovis_idx_fini(struct m0_clovis_idx *idx) = 0;
+  virtual void motr_idx_fini(struct m0_idx *idx) = 0;
 
-  virtual int clovis_sync_op_init(struct m0_clovis_op **sync_op) = 0;
+  virtual int clovis_sync_op_init(struct m0_op **sync_op) = 0;
 
-  virtual int clovis_sync_entity_add(struct m0_clovis_op *sync_op,
-                                     struct m0_clovis_entity *entity) = 0;
+  virtual int clovis_sync_entity_add(struct m0_op *sync_op,
+                                     struct m0_entity *entity) = 0;
 
-  virtual int clovis_sync_op_add(struct m0_clovis_op *sync_op,
-                                 struct m0_clovis_op *op) = 0;
+  virtual int clovis_sync_op_add(struct m0_op *sync_op, struct m0_op *op) = 0;
 
-  virtual void clovis_obj_init(struct m0_clovis_obj *obj,
-                               struct m0_clovis_realm *parent,
+  virtual void clovis_obj_init(struct m0_obj *obj, struct m0_realm *parent,
                                const struct m0_uint128 *id, int layout_id) = 0;
 
-  virtual void clovis_obj_fini(struct m0_clovis_obj *obj) = 0;
+  virtual void motr_obj_fini(struct m0_obj *obj) = 0;
 
-  virtual int clovis_entity_open(struct m0_clovis_entity *entity,
-                                 struct m0_clovis_op **op) = 0;
+  virtual int clovis_entity_open(struct m0_entity *entity,
+                                 struct m0_op **op) = 0;
 
-  virtual int clovis_entity_create(struct m0_clovis_entity *entity,
-                                   struct m0_clovis_op **op) = 0;
+  virtual int clovis_entity_create(struct m0_entity *entity,
+                                   struct m0_op **op) = 0;
 
-  virtual int clovis_entity_delete(struct m0_clovis_entity *entity,
-                                   struct m0_clovis_op **op) = 0;
+  virtual int clovis_entity_delete(struct m0_entity *entity,
+                                   struct m0_op **op) = 0;
 
-  virtual void clovis_op_setup(struct m0_clovis_op *op,
-                               const struct m0_clovis_op_ops *ops,
+  virtual void clovis_op_setup(struct m0_op *op, const struct m0_op_ops *ops,
                                m0_time_t linger) = 0;
 
-  virtual int clovis_idx_op(struct m0_clovis_idx *idx,
-                            enum m0_clovis_idx_opcode opcode,
+  virtual int clovis_idx_op(struct m0_idx *idx, enum m0_idx_opcode opcode,
                             struct m0_bufvec *keys, struct m0_bufvec *vals,
                             int *rcs, unsigned int flags,
-                            struct m0_clovis_op **op) = 0;
+                            struct m0_op **op) = 0;
 
-  virtual int clovis_obj_op(struct m0_clovis_obj *obj,
-                            enum m0_clovis_obj_opcode opcode,
+  virtual int clovis_obj_op(struct m0_obj *obj, enum m0_obj_opcode opcode,
                             struct m0_indexvec *ext, struct m0_bufvec *data,
                             struct m0_bufvec *attr, uint64_t mask,
-                            struct m0_clovis_op **op) = 0;
+                            struct m0_op **op) = 0;
 
-  virtual void clovis_op_launch(uint64_t addb_request_id,
-                                struct m0_clovis_op **op, uint32_t nr,
+  virtual void clovis_op_launch(uint64_t addb_request_id, struct m0_op **op,
+                                uint32_t nr,
                                 MotrOpType type = MotrOpType::unknown) = 0;
-  virtual int clovis_op_wait(m0_clovis_op *op, uint64_t bits, m0_time_t to) = 0;
+  virtual int clovis_op_wait(m0_op *op, uint64_t bits, m0_time_t to) = 0;
 
-  virtual int clovis_op_rc(const struct m0_clovis_op *op) = 0;
+  virtual int clovis_op_rc(const struct m0_op *op) = 0;
   virtual int m0_h_ufid_next(struct m0_uint128 *ufid) = 0;
 };
 
 class ConcreteMotrAPI : public MotrAPI {
  private:
   // xxx This currently assumes only one fake operation is invoked.
-  void clovis_fake_op_launch(struct m0_clovis_op **op, uint32_t nr) {
+  void clovis_fake_op_launch(struct m0_op **op, uint32_t nr) {
     s3_log(S3_LOG_DEBUG, "", "Called\n");
     struct user_event_context *user_ctx = (struct user_event_context *)calloc(
         1, sizeof(struct user_event_context));
@@ -121,22 +115,22 @@ class ConcreteMotrAPI : public MotrAPI {
     S3PostToMainLoop((void *)user_ctx)(s3_motr_dummy_op_stable);
   }
 
-  void clovis_fake_redis_op_launch(struct m0_clovis_op **op, uint32_t nr) {
+  void clovis_fake_redis_op_launch(struct m0_op **op, uint32_t nr) {
     s3_log(S3_LOG_DEBUG, "", "Entering\n");
     auto redis_ctx = S3FakeMotrRedisKvs::instance();
 
     for (uint32_t i = 0; i < nr; ++i) {
-      struct m0_clovis_op *cop = op[i];
+      struct m0_op *cop = op[i];
 
       assert(cop);
 
-      if (cop->op_code == M0_CLOVIS_IC_GET) {
+      if (cop->op_code == M0_IC_GET) {
         redis_ctx->kv_read(cop);
-      } else if (M0_CLOVIS_IC_NEXT == cop->op_code) {
+      } else if (M0_IC_NEXT == cop->op_code) {
         redis_ctx->kv_next(cop);
-      } else if (M0_CLOVIS_IC_PUT == cop->op_code) {
+      } else if (M0_IC_PUT == cop->op_code) {
         redis_ctx->kv_write(cop);
-      } else if (M0_CLOVIS_IC_DEL == cop->op_code) {
+      } else if (M0_IC_DEL == cop->op_code) {
         redis_ctx->kv_del(cop);
       } else {
         s3_log(S3_LOG_DEBUG, "", "Not a kvs op (%d) - ignore", cop->op_code);
@@ -147,7 +141,7 @@ class ConcreteMotrAPI : public MotrAPI {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   }
 
-  void clovis_fi_op_launch(struct m0_clovis_op **op, uint32_t nr) {
+  void clovis_fi_op_launch(struct m0_op **op, uint32_t nr) {
     s3_log(S3_LOG_DEBUG, "", "Called\n");
     for (uint32_t i = 0; i < nr; ++i) {
       struct user_event_context *user_ctx = (struct user_event_context *)calloc(
@@ -164,7 +158,7 @@ class ConcreteMotrAPI : public MotrAPI {
   }
 
   static void clovis_op_launch_addb_add(uint64_t addb_request_id,
-                                        struct m0_clovis_op **op, uint32_t nr) {
+                                        struct m0_op **op, uint32_t nr) {
     for (uint32_t i = 0; i < nr; ++i) {
       s3_log(S3_LOG_DEBUG, "", "request-to-clovis: request_id %" PRId64
                                ", clovis id %" PRId64 "\n",
@@ -174,93 +168,85 @@ class ConcreteMotrAPI : public MotrAPI {
   }
 
  public:
-  void clovis_idx_init(struct m0_clovis_idx *idx,
-                       struct m0_clovis_realm *parent,
+  void clovis_idx_init(struct m0_idx *idx, struct m0_realm *parent,
                        const struct m0_uint128 *id) {
-    m0_clovis_idx_init(idx, parent, id);
+    m0_idx_init(idx, parent, id);
   }
 
-  void clovis_obj_init(struct m0_clovis_obj *obj,
-                       struct m0_clovis_realm *parent,
+  void clovis_obj_init(struct m0_obj *obj, struct m0_realm *parent,
                        const struct m0_uint128 *id, int layout_id) {
-    m0_clovis_obj_init(obj, parent, id, layout_id);
+    m0_obj_init(obj, parent, id, layout_id);
   }
 
-  void clovis_obj_fini(struct m0_clovis_obj *obj) { m0_clovis_obj_fini(obj); }
+  void motr_obj_fini(struct m0_obj *obj) { m0_obj_fini(obj); }
 
-  int clovis_sync_op_init(struct m0_clovis_op **sync_op) {
+  int clovis_sync_op_init(struct m0_op **sync_op) {
     if (s3_fi_is_enabled("clovis_sync_op_init_fail")) {
       return -1;
     } else {
-      return m0_clovis_sync_op_init(sync_op);
+      return m0_sync_op_init(sync_op);
     }
   }
 
-  int clovis_sync_entity_add(struct m0_clovis_op *sync_op,
-                             struct m0_clovis_entity *entity) {
+  int clovis_sync_entity_add(struct m0_op *sync_op, struct m0_entity *entity) {
     if (is_clovis_sync_should_be_faked()) {
       return 0;
     }
-    return m0_clovis_sync_entity_add(sync_op, entity);
+    return m0_sync_entity_add(sync_op, entity);
   }
 
-  int clovis_sync_op_add(struct m0_clovis_op *sync_op,
-                         struct m0_clovis_op *op) {
+  int clovis_sync_op_add(struct m0_op *sync_op, struct m0_op *op) {
     if (is_clovis_sync_should_be_faked()) {
       return 0;
     }
-    return m0_clovis_sync_op_add(sync_op, op);
+    return m0_sync_op_add(sync_op, op);
   }
 
-  int clovis_entity_open(struct m0_clovis_entity *entity,
-                         struct m0_clovis_op **op) {
+  int clovis_entity_open(struct m0_entity *entity, struct m0_op **op) {
     if (s3_fi_is_enabled("clovis_entity_open_fail")) {
       return -1;
     } else {
-      return m0_clovis_entity_open(entity, op);
+      return m0_entity_open(entity, op);
     }
   }
 
-  int clovis_entity_create(struct m0_clovis_entity *entity,
-                           struct m0_clovis_op **op) {
+  int clovis_entity_create(struct m0_entity *entity, struct m0_op **op) {
     if (s3_fi_is_enabled("clovis_entity_create_fail")) {
       return -1;
     } else {
-      return m0_clovis_entity_create(NULL, entity, op);
+      return m0_entity_create(NULL, entity, op);
     }
   }
 
-  int clovis_entity_delete(struct m0_clovis_entity *entity,
-                           struct m0_clovis_op **op) {
+  int clovis_entity_delete(struct m0_entity *entity, struct m0_op **op) {
     if (s3_fi_is_enabled("clovis_entity_delete_fail")) {
       return -1;
     } else {
-      return m0_clovis_entity_delete(entity, op);
+      return m0_entity_delete(entity, op);
     }
   }
 
-  void clovis_op_setup(struct m0_clovis_op *op,
-                       const struct m0_clovis_op_ops *ops, m0_time_t linger) {
-    m0_clovis_op_setup(op, ops, linger);
+  void clovis_op_setup(struct m0_op *op, const struct m0_op_ops *ops,
+                       m0_time_t linger) {
+    m0_op_setup(op, ops, linger);
   }
 
-  int clovis_idx_op(struct m0_clovis_idx *idx, enum m0_clovis_idx_opcode opcode,
+  int clovis_idx_op(struct m0_idx *idx, enum m0_idx_opcode opcode,
                     struct m0_bufvec *keys, struct m0_bufvec *vals, int *rcs,
-                    unsigned int flags, struct m0_clovis_op **op) {
+                    unsigned int flags, struct m0_op **op) {
     if (s3_fi_is_enabled("clovis_idx_op_fail")) {
       return -1;
     } else {
-      return m0_clovis_idx_op(idx, opcode, keys, vals, rcs, flags, op);
+      return m0_idx_op(idx, opcode, keys, vals, rcs, flags, op);
     }
   }
 
-  void clovis_idx_fini(struct m0_clovis_idx *idx) { m0_clovis_idx_fini(idx); }
+  void motr_idx_fini(struct m0_idx *idx) { m0_idx_fini(idx); }
 
-  int clovis_obj_op(struct m0_clovis_obj *obj, enum m0_clovis_obj_opcode opcode,
+  int clovis_obj_op(struct m0_obj *obj, enum m0_obj_opcode opcode,
                     struct m0_indexvec *ext, struct m0_bufvec *data,
-                    struct m0_bufvec *attr, uint64_t mask,
-                    struct m0_clovis_op **op) {
-    return m0_clovis_obj_op(obj, opcode, ext, data, attr, mask, op);
+                    struct m0_bufvec *attr, uint64_t mask, struct m0_op **op) {
+    return m0_obj_op(obj, opcode, ext, data, attr, mask, op);
   }
 
   bool is_kvs_op(MotrOpType type) {
@@ -272,7 +258,7 @@ class ConcreteMotrAPI : public MotrAPI {
     return opts && opts->is_fake_clovis_redis_kvs() && is_kvs_op(type);
   }
 
-  void clovis_op_launch(uint64_t addb_request_id, struct m0_clovis_op **op,
+  void clovis_op_launch(uint64_t addb_request_id, struct m0_op **op,
                         uint32_t nr, MotrOpType type = MotrOpType::unknown) {
     S3Option *config = S3Option::get_instance();
     clovis_op_launch_addb_add(addb_request_id, op, nr);
@@ -308,18 +294,17 @@ class ConcreteMotrAPI : public MotrAPI {
                 s3_fi_is_enabled("clovis_kv_get_fail"))) {
       clovis_fi_op_launch(op, nr);
     } else {
-      s3_log(S3_LOG_DEBUG, "", "m0_clovis_op_launch will be used");
-      m0_clovis_op_launch(op, nr);
+      s3_log(S3_LOG_DEBUG, "", "m0_op_launch will be used");
+      m0_op_launch(op, nr);
     }
   }
 
   // Used for sync clovis calls
-  int clovis_op_wait(m0_clovis_op *op, uint64_t bits,
-                     m0_time_t op_wait_period) {
-    return m0_clovis_op_wait(op, bits, op_wait_period);
+  int clovis_op_wait(m0_op *op, uint64_t bits, m0_time_t op_wait_period) {
+    return m0_op_wait(op, bits, op_wait_period);
   }
 
-  int clovis_op_rc(const struct m0_clovis_op *op) { return m0_clovis_rc(op); }
+  int clovis_op_rc(const struct m0_op *op) { return m0_rc(op); }
   int m0_h_ufid_next(struct m0_uint128 *ufid) {
     return m0_ufid_next(&s3_ufid_generator, 1, ufid);
   }

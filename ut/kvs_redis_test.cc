@@ -104,7 +104,7 @@ TEST(RedisKvs, prepare_border) {
 }
 
 TEST(RedisKvs, redis_reply_check) {
-  struct m0_clovis_op op;
+  struct m0_op op;
   s3_redis_context_obj rco;
   op.op_datum = &rco;
 
@@ -141,15 +141,15 @@ TEST(RedisKvs, redis_reply_check) {
 
 static int op_cb_called = 0;
 
-static void op_is_stable(struct m0_clovis_op*) { op_cb_called |= 0x01; }
+static void op_is_stable(struct m0_op*) { op_cb_called |= 0x01; }
 
-static void op_is_failed(struct m0_clovis_op*) { op_cb_called |= 0x02; }
+static void op_is_failed(struct m0_op*) { op_cb_called |= 0x02; }
 
 TEST(RedisKvs, finalize_op) {
   finalize_op(nullptr, op_is_stable, op_is_failed);
   EXPECT_EQ(op_cb_called, 0);
 
-  struct m0_clovis_op op = {0};
+  struct m0_op op = {0};
   s3_redis_context_obj* rco =
       (s3_redis_context_obj*)calloc(1, sizeof(s3_redis_context_obj));
   ASSERT_NE(rco, nullptr);
@@ -184,7 +184,7 @@ TEST(RedisKvs, finalize_op) {
 class RedisKVSBaseTest : public testing::Test {
  protected:
   s3_redis_async_ctx* actx;
-  struct m0_clovis_op op;
+  struct m0_op op;
   s3_redis_context_obj* rco;
   s3_motr_context_obj* prev_ctx;
   std::shared_ptr<MockMotrRequestObject> request;

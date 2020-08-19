@@ -97,7 +97,7 @@ void motr_op_done_on_main_thread(evutil_socket_t, short events,
 }
 
 // Clovis callbacks, run in clovis thread
-void s3_motr_op_stable(struct m0_clovis_op *op) {
+void s3_motr_op_stable(struct m0_op *op) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct s3_motr_context_obj *ctx = (struct s3_motr_context_obj *)op->op_datum;
 
@@ -139,7 +139,7 @@ void s3_motr_op_stable(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
 }
 
-void s3_motr_op_failed(struct m0_clovis_op *op) {
+void s3_motr_op_failed(struct m0_op *op) {
   struct s3_motr_context_obj *ctx = (struct s3_motr_context_obj *)op->op_datum;
 
   S3AsyncOpContextBase *app_ctx =
@@ -201,12 +201,12 @@ void s3_motr_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct user_event_context *user_context =
       (struct user_event_context *)user_data;
-  struct m0_clovis_op *op = (struct m0_clovis_op *)user_context->app_ctx;
+  struct m0_op *op = (struct m0_op *)user_context->app_ctx;
   // This can be mocked from GTest but system tests call this method too,
-  // where m0_clovis_rc can't be mocked.
+  // where m0_rc can't be mocked.
   op->op_rc = 0;  // fake success
 
-  if (op->op_code == M0_CLOVIS_IC_GET) {
+  if (op->op_code == M0_IC_GET) {
     struct s3_motr_context_obj *ctx =
         (struct s3_motr_context_obj *)op->op_datum;
 
@@ -215,7 +215,7 @@ void s3_motr_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
 
     op->op_rc = S3FakeMotrKvs::instance()->kv_read(
         op->op_entity->en_id, *read_ctx->get_motr_kvs_op_ctx());
-  } else if (M0_CLOVIS_IC_NEXT == op->op_code) {
+  } else if (M0_IC_NEXT == op->op_code) {
     struct s3_motr_context_obj *ctx =
         (struct s3_motr_context_obj *)op->op_datum;
 
@@ -224,7 +224,7 @@ void s3_motr_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
 
     op->op_rc = S3FakeMotrKvs::instance()->kv_next(
         op->op_entity->en_id, *read_ctx->get_motr_kvs_op_ctx());
-  } else if (M0_CLOVIS_IC_PUT == op->op_code) {
+  } else if (M0_IC_PUT == op->op_code) {
     struct s3_motr_context_obj *ctx =
         (struct s3_motr_context_obj *)op->op_datum;
 
@@ -233,7 +233,7 @@ void s3_motr_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
 
     op->op_rc = S3FakeMotrKvs::instance()->kv_write(
         op->op_entity->en_id, *write_ctx->get_motr_kvs_op_ctx());
-  } else if (M0_CLOVIS_IC_DEL == op->op_code) {
+  } else if (M0_IC_DEL == op->op_code) {
     struct s3_motr_context_obj *ctx =
         (struct s3_motr_context_obj *)op->op_datum;
 
@@ -254,11 +254,11 @@ void s3_motr_dummy_op_failed(evutil_socket_t, short events, void *user_data) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct user_event_context *user_context =
       (struct user_event_context *)user_data;
-  struct m0_clovis_op *op = (struct m0_clovis_op *)user_context->app_ctx;
+  struct m0_op *op = (struct m0_op *)user_context->app_ctx;
   struct s3_motr_context_obj *ctx = (struct s3_motr_context_obj *)op->op_datum;
 
   // This can be mocked from GTest but system tests call this method too
-  // where m0_clovis_rc can't be mocked.
+  // where m0_rc can't be mocked.
   op->op_rc = -ETIMEDOUT;  // fake network failure
   ctx->is_fake_failure = 1;
   // Free user event

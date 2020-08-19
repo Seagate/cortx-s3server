@@ -28,8 +28,8 @@
 #include "s3_uri_to_motr_oid.h"
 #include "s3_stats.h"
 
-extern struct m0_clovis_realm clovis_uber_realm;
-extern struct m0_clovis_container clovis_container;
+extern struct m0_realm motr_uber_realm;
+extern struct m0_container motr_container;
 extern std::set<struct s3_motr_idx_op_context *> global_clovis_idx_ops_list;
 extern std::set<struct s3_clovis_idx_context *> global_clovis_idx;
 extern int shutdown_clovis_teardown_called;
@@ -73,7 +73,7 @@ void S3MotrKVSWriter::clean_up_contexts() {
         if (shutdown_clovis_teardown_called) {
           break;
         }
-        s3_motr_api->clovis_idx_fini(&idx_ctx->idx[i]);
+        s3_motr_api->motr_idx_fini(&idx_ctx->idx[i]);
       }
       free_idx_context(idx_ctx);
       idx_ctx = nullptr;
@@ -132,8 +132,7 @@ void S3MotrKVSWriter::create_index_with_oid(
   idx_op_ctx->cbs->oop_stable = s3_motr_op_stable;
   idx_op_ctx->cbs->oop_failed = s3_motr_op_failed;
 
-  s3_motr_api->clovis_idx_init(&(idx_ctx->idx[0]), &clovis_uber_realm,
-                               &idx_oid);
+  s3_motr_api->clovis_idx_init(&(idx_ctx->idx[0]), &motr_uber_realm, &idx_oid);
   idx_ctx->n_initialized_contexts = 1;
 
   rc = s3_motr_api->clovis_entity_create(&(idx_ctx->idx[0].in_entity),
@@ -208,7 +207,7 @@ void S3MotrKVSWriter::create_index_failed() {
 //   idx_op_ctx->cbs->oop_failed = s3_motr_op_failed;
 //   rc = s3_motr_api->clovis_sync_op_init(&idx_op_ctx->sync_op);
 //   if (rc != 0) {
-//     s3_log(S3_LOG_ERROR, request_id, "m0_clovis_sync_op_init\n");
+//     s3_log(S3_LOG_ERROR, request_id, "m0_sync_op_init\n");
 //     state = S3MotrKVSWriterOpState::failed_to_launch;
 //     s3_motr_op_pre_launch_failure(op_ctx->application_context, rc);
 //     return;
@@ -217,7 +216,7 @@ void S3MotrKVSWriter::create_index_failed() {
 //     rc = s3_motr_api->clovis_sync_entity_add(idx_op_ctx->sync_op,
 //                                                &(idx_ctx->idx[i].in_entity));
 //     if (rc != 0) {
-//       s3_log(S3_LOG_ERROR, request_id, "m0_clovis_sync_entity_add failed\n");
+//       s3_log(S3_LOG_ERROR, request_id, "m0_sync_entity_add failed\n");
 //       state = S3MotrKVSWriterOpState::failed_to_launch;
 //       s3_motr_op_pre_launch_failure(op_ctx->application_context, rc);
 //       return;
@@ -297,8 +296,7 @@ void S3MotrKVSWriter::delete_index(struct m0_uint128 idx_oid,
   idx_op_ctx->cbs->oop_stable = s3_motr_op_stable;
   idx_op_ctx->cbs->oop_failed = s3_motr_op_failed;
 
-  s3_motr_api->clovis_idx_init(&(idx_ctx->idx[0]), &clovis_uber_realm,
-                               &idx_oid);
+  s3_motr_api->clovis_idx_init(&(idx_ctx->idx[0]), &motr_uber_realm, &idx_oid);
   idx_ctx->n_initialized_contexts = 1;
   int rc = s3_motr_api->clovis_entity_open(&(idx_ctx->idx[0].in_entity),
                                            &(idx_op_ctx->ops[0]));
@@ -398,7 +396,7 @@ void S3MotrKVSWriter::delete_indexes(std::vector<struct m0_uint128> oids,
     idx_op_ctx->cbs[i].oop_stable = s3_motr_op_stable;
     idx_op_ctx->cbs[i].oop_failed = s3_motr_op_failed;
 
-    s3_motr_api->clovis_idx_init(&idx_ctx->idx[i], &clovis_uber_realm,
+    s3_motr_api->clovis_idx_init(&idx_ctx->idx[i], &motr_uber_realm,
                                  &oid_list[i]);
 
     idx_ctx->n_initialized_contexts += 1;
@@ -531,19 +529,19 @@ int S3MotrKVSWriter::put_keyval_impl(
     set_up_key_value_store(kvs_ctx, kv.first, kv.second, i);
     i++;
   }
-  s3_motr_api->clovis_idx_init(&(idx_ctx->idx[0]), &clovis_container.co_realm,
+  s3_motr_api->clovis_idx_init(&(idx_ctx->idx[0]), &motr_container.co_realm,
                                &oid_list[0]);
   idx_ctx->n_initialized_contexts = 1;
   rc = s3_motr_api->clovis_idx_op(
-      &(idx_ctx->idx[0]), M0_CLOVIS_IC_PUT, kvs_ctx->keys, kvs_ctx->values,
+      &(idx_ctx->idx[0]), M0_IC_PUT, kvs_ctx->keys, kvs_ctx->values,
       kvs_ctx->rcs, M0_OIF_OVERWRITE | M0_OIF_SYNC_WAIT, &(idx_op_ctx->ops[0]));
   if (rc != 0) {
-    s3_log(S3_LOG_ERROR, request_id, "m0_clovis_idx_op failed\n");
+    s3_log(S3_LOG_ERROR, request_id, "m0_idx_op failed\n");
     state = S3MotrKVSWriterOpState::failed_to_launch;
     s3_motr_op_pre_launch_failure(op_ctx->application_context, rc);
     return rc;
   } else {
-    s3_log(S3_LOG_DEBUG, request_id, "m0_clovis_idx_op suceeded\n");
+    s3_log(S3_LOG_DEBUG, request_id, "m0_idx_op suceeded\n");
   }
 
   idx_op_ctx->ops[0]->op_datum = (void *)op_ctx;
@@ -563,7 +561,7 @@ int S3MotrKVSWriter::put_keyval_impl(
   if (!is_async) {
     s3_log(S3_LOG_DEBUG, request_id, "Waiting for clovis put KV to complete\n");
     rc = s3_motr_api->clovis_op_wait(
-        (idx_op_ctx->ops[0]), M0_BITS(M0_CLOVIS_OS_FAILED, M0_CLOVIS_OS_STABLE),
+        (idx_op_ctx->ops[0]), M0_BITS(M0_OS_FAILED, M0_OS_STABLE),
         m0_time_from_now(S3Option::get_instance()->get_clovis_op_wait_period(),
                          0));
     if (rc < 0) {
@@ -656,20 +654,20 @@ void S3MotrKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
 
   set_up_key_value_store(kvs_ctx, key, val);
 
-  s3_motr_api->clovis_idx_init(&(idx_ctx->idx[0]), &clovis_container.co_realm,
+  s3_motr_api->clovis_idx_init(&(idx_ctx->idx[0]), &motr_container.co_realm,
                                &oid_list[0]);
   idx_ctx->n_initialized_contexts = 1;
 
-  rc = s3_motr_api->clovis_idx_op(&(idx_ctx->idx[0]), M0_CLOVIS_IC_PUT,
-                                  kvs_ctx->keys, kvs_ctx->values, kvs_ctx->rcs,
+  rc = s3_motr_api->clovis_idx_op(&(idx_ctx->idx[0]), M0_IC_PUT, kvs_ctx->keys,
+                                  kvs_ctx->values, kvs_ctx->rcs,
                                   M0_OIF_OVERWRITE, &(idx_op_ctx->ops[0]));
   if (rc != 0) {
-    s3_log(S3_LOG_ERROR, request_id, "m0_clovis_idx_op failed\n");
+    s3_log(S3_LOG_ERROR, request_id, "m0_idx_op failed\n");
     state = S3MotrKVSWriterOpState::failed_to_launch;
     s3_motr_op_pre_launch_failure(op_ctx->application_context, rc);
     return;
   } else {
-    s3_log(S3_LOG_DEBUG, request_id, "m0_clovis_idx_op suceeded\n");
+    s3_log(S3_LOG_DEBUG, request_id, "m0_idx_op suceeded\n");
   }
 
   idx_op_ctx->ops[0]->op_datum = (void *)op_ctx;
@@ -734,7 +732,7 @@ void S3MotrKVSWriter::put_keyval_failed() {
 
 //   rc = s3_motr_api->clovis_sync_op_init(&idx_op_ctx->sync_op);
 //   if (rc != 0) {
-//     s3_log(S3_LOG_ERROR, request_id, "m0_clovis_sync_op_init failed\n");
+//     s3_log(S3_LOG_ERROR, request_id, "m0_sync_op_init failed\n");
 //     state = S3MotrKVSWriterOpState::failed_to_launch;
 //     s3_motr_op_pre_launch_failure(op_ctx->application_context, rc);
 //     return;
@@ -743,7 +741,7 @@ void S3MotrKVSWriter::put_keyval_failed() {
 //   rc = s3_motr_api->clovis_sync_op_add(
 //       idx_op_ctx->sync_op, writer_context->get_motr_idx_op_ctx()->ops[0]);
 //   if (rc != 0) {
-//     s3_log(S3_LOG_ERROR, request_id, "m0_clovis_sync_entity_add failed\n");
+//     s3_log(S3_LOG_ERROR, request_id, "m0_sync_entity_add failed\n");
 //     state = S3MotrKVSWriterOpState::failed_to_launch;
 //     s3_motr_op_pre_launch_failure(op_ctx->application_context, rc);
 //     return;
@@ -860,19 +858,19 @@ void S3MotrKVSWriter::delete_keyval(struct m0_uint128 oid,
     ++i;
   }
 
-  s3_motr_api->clovis_idx_init(&(idx_ctx->idx[0]), &clovis_container.co_realm,
+  s3_motr_api->clovis_idx_init(&(idx_ctx->idx[0]), &motr_container.co_realm,
                                &oid_list[0]);
   idx_ctx->n_initialized_contexts = 1;
-  rc = s3_motr_api->clovis_idx_op(&(idx_ctx->idx[0]), M0_CLOVIS_IC_DEL,
-                                  kvs_ctx->keys, NULL, kvs_ctx->rcs,
-                                  M0_OIF_SYNC_WAIT, &(idx_op_ctx->ops[0]));
+  rc = s3_motr_api->clovis_idx_op(&(idx_ctx->idx[0]), M0_IC_DEL, kvs_ctx->keys,
+                                  NULL, kvs_ctx->rcs, M0_OIF_SYNC_WAIT,
+                                  &(idx_op_ctx->ops[0]));
   if (rc != 0) {
-    s3_log(S3_LOG_ERROR, request_id, "m0_clovis_idx_op failed\n");
+    s3_log(S3_LOG_ERROR, request_id, "m0_idx_op failed\n");
     state = S3MotrKVSWriterOpState::failed_to_launch;
     s3_motr_op_pre_launch_failure(op_ctx->application_context, rc);
     return;
   } else {
-    s3_log(S3_LOG_DEBUG, request_id, "m0_clovis_idx_op suceeded\n");
+    s3_log(S3_LOG_DEBUG, request_id, "m0_idx_op suceeded\n");
   }
 
   idx_op_ctx->ops[0]->op_datum = (void *)op_ctx;

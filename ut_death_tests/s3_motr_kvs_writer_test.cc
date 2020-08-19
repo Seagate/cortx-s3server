@@ -40,27 +40,24 @@ using ::testing::AtLeast;
 
 static void dummy_request_cb(evhtp_request_t *req, void *arg) {}
 
-int s3_test_alloc_op(struct m0_clovis_entity *entity,
-                     struct m0_clovis_op **op) {
-  *op = (struct m0_clovis_op *)calloc(1, sizeof(struct m0_clovis_op));
+int s3_test_alloc_op(struct m0_entity *entity, struct m0_op **op) {
+  *op = (struct m0_op *)calloc(1, sizeof(struct m0_op));
   return 0;
 }
 
-int s3_test_alloc_sync_op(struct m0_clovis_op **sync_op) {
-  *sync_op = (struct m0_clovis_op *)calloc(1, sizeof(struct m0_clovis_op));
+int s3_test_alloc_sync_op(struct m0_op **sync_op) {
+  *sync_op = (struct m0_op *)calloc(1, sizeof(struct m0_op));
   return 0;
 }
 
-int s3_test_clovis_idx_op(struct m0_clovis_idx *idx,
-                          enum m0_clovis_idx_opcode opcode,
+int s3_test_clovis_idx_op(struct m0_idx *idx, enum m0_idx_opcode opcode,
                           struct m0_bufvec *keys, struct m0_bufvec *vals,
-                          int *rcs, unsigned int flags,
-                          struct m0_clovis_op **op) {
-  *op = (struct m0_clovis_op *)calloc(1, sizeof(struct m0_clovis_op));
+                          int *rcs, unsigned int flags, struct m0_op **op) {
+  *op = (struct m0_op *)calloc(1, sizeof(struct m0_op));
   return 0;
 }
 
-void s3_test_free_clovis_op(struct m0_clovis_op *op) { free(op); }
+void s3_test_free_clovis_op(struct m0_op *op) { free(op); }
 
 class S3MotrKVSWriterTest : public testing::Test {
  protected:

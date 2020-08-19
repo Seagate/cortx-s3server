@@ -27,7 +27,7 @@
 #include "s3_uri_to_motr_oid.h"
 #include "s3_addb.h"
 
-extern struct m0_clovis_realm clovis_uber_realm;
+extern struct m0_realm motr_uber_realm;
 extern std::set<struct s3_clovis_op_context *> global_clovis_object_ops_list;
 extern std::set<struct s3_clovis_obj_context *> global_clovis_obj;
 extern int shutdown_clovis_teardown_called;
@@ -67,7 +67,7 @@ void S3MotrReader::clean_up_contexts() {
     global_clovis_obj.erase(obj_ctx);
     if (obj_ctx) {
       for (size_t i = 0; i < obj_ctx->n_initialized_contexts; i++) {
-        s3_motr_api->clovis_obj_fini(&obj_ctx->objs[i]);
+        s3_motr_api->motr_obj_fini(&obj_ctx->objs[i]);
       }
       free_obj_context(obj_ctx);
       obj_ctx = nullptr;
@@ -159,7 +159,7 @@ int S3MotrReader::open_object(std::function<void(void)> on_success,
   ctx->cbs[0].oop_stable = s3_motr_op_stable;
   ctx->cbs[0].oop_failed = s3_motr_op_failed;
 
-  s3_motr_api->clovis_obj_init(&obj_ctx->objs[0], &clovis_uber_realm, &oid,
+  s3_motr_api->clovis_obj_init(&obj_ctx->objs[0], &motr_uber_realm, &oid,
                                layout_id);
   obj_ctx->n_initialized_contexts = 1;
 
@@ -270,9 +270,8 @@ bool S3MotrReader::read_object() {
   ctx->cbs[0].oop_failed = s3_motr_op_failed;
 
   /* Create the read request */
-  rc = s3_motr_api->clovis_obj_op(&obj_ctx->objs[0], M0_CLOVIS_OC_READ,
-                                  rw_ctx->ext, rw_ctx->data, rw_ctx->attr, 0,
-                                  &ctx->ops[0]);
+  rc = s3_motr_api->clovis_obj_op(&obj_ctx->objs[0], M0_OC_READ, rw_ctx->ext,
+                                  rw_ctx->data, rw_ctx->attr, 0, &ctx->ops[0]);
   if (rc != 0) {
     s3_log(S3_LOG_WARN, request_id,
            "Clovis API: clovis_obj_op failed with error code %d\n", rc);
@@ -287,7 +286,7 @@ bool S3MotrReader::read_object() {
   reader_context->start_timer_for("read_object_data");
 
   s3_log(S3_LOG_INFO, request_id,
-         "Clovis API: readobj(operation: M0_CLOVIS_OC_READ, oid: ("
+         "Clovis API: readobj(operation: M0_OC_READ, oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid.u_hi, oid.u_lo);
 

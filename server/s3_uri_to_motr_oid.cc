@@ -80,14 +80,14 @@ int S3UriToMotrOID(std::shared_ptr<MotrAPI> s3_motr_api, const char *name,
     s3_range.u_lo = S3_OID_RESERVED_COUNT;
 
     struct m0_uint128 reserved_range = {0ULL, 0ULL};
-    m0_uint128_add(&reserved_range, &M0_CLOVIS_ID_APP, &s3_range);
+    m0_uint128_add(&reserved_range, &M0_ID_APP, &s3_range);
 
     rc = m0_uint128_cmp(&reserved_range, &tmp_uint128);
     if (rc >= 0) {
       struct m0_uint128 res;
-      // ID should be more than M0_CLOVIS_ID_APP
+      // ID should be more than M0_ID_APP
       s3_log(S3_LOG_DEBUG, "",
-             "Id from Murmur hash algorithm less than M0_CLOVIS_ID_APP\n");
+             "Id from Murmur hash algorithm less than M0_ID_APP\n");
       m0_uint128_add(&res, &reserved_range, &tmp_uint128);
       tmp_uint128.u_hi = res.u_hi;
       tmp_uint128.u_lo = res.u_lo;

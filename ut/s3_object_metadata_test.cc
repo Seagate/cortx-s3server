@@ -173,7 +173,7 @@ TEST_F(S3ObjectMetadataTest, ConstructorTest) {
   EXPECT_OID_EQ(object_list_index_oid,
                 metadata_obj_under_test_with_oid->object_list_index_oid);
   EXPECT_OID_EQ(zero_oid, metadata_obj_under_test->old_oid);
-  EXPECT_OID_EQ(M0_CLOVIS_ID_APP, metadata_obj_under_test->oid);
+  EXPECT_OID_EQ(M0_ID_APP, metadata_obj_under_test->oid);
   EXPECT_STREQ(
       "s3user",
       metadata_obj_under_test->system_defined_attribute["Owner-User"].c_str());
@@ -202,7 +202,7 @@ TEST_F(S3MultipartObjectMetadataTest, ConstructorTest) {
   EXPECT_OID_EQ(object_list_index_oid,
                 metadata_obj_under_test_with_oid->object_list_index_oid);
   EXPECT_OID_EQ(zero_oid, metadata_obj_under_test->old_oid);
-  EXPECT_OID_EQ(M0_CLOVIS_ID_APP, metadata_obj_under_test->oid);
+  EXPECT_OID_EQ(M0_ID_APP, metadata_obj_under_test->oid);
   EXPECT_STREQ(
       "s3user",
       metadata_obj_under_test->system_defined_attribute["Owner-User"].c_str());

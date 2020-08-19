@@ -57,12 +57,12 @@ class S3OID():
 
 class S3kvTest(S3PyCliTest):
     def __init__(self, description):
-        clovis_conf = ClovisConfig()
+        motr_conf = ClovisConfig()
         if "LD_LIBRARY_PATH" in os.environ:
             self.cmd = "sudo env LD_LIBRARY_PATH=%s ../cloviskvscli.sh" % os.environ["LD_LIBRARY_PATH"]
         else:
             self.cmd = "sudo ../cloviskvscli.sh"
-        self.common_args = " --clovis_local_addr=" + clovis_conf.LOCAL_EP  + " --clovis_ha_addr=" + clovis_conf.HA_EP + " --clovis_profile=" + clovis_conf.PROFILE_FID + " --clovis_proc=" + clovis_conf.PROCESS_FID + " --kvstore=" + clovis_conf.KVS_IDX + " "
+        self.common_args = " --clovis_local_addr=" + motr_conf.LOCAL_EP  + " --clovis_ha_addr=" + motr_conf.HA_EP + " --clovis_profile=" + motr_conf.PROFILE_FID + " --clovis_proc=" + motr_conf.PROCESS_FID + " --kvstore=" + motr_conf.KVS_IDX + " "
         super(S3kvTest, self).__init__(description)
 
     def root_bucket_account_index_records(self):

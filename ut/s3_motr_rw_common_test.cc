@@ -77,7 +77,7 @@ TEST_F(S3MotrReadWriteCommonTest, MotrOpDoneOnMainThreadOnFail) {
 }
 
 TEST_F(S3MotrReadWriteCommonTest, S3MotrOpStableResponseCountSameAsOpCount) {
-  struct m0_clovis_op op;
+  struct m0_op op;
   struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
       1, sizeof(struct s3_motr_context_obj));
   op.op_datum = op_ctx;
@@ -97,7 +97,7 @@ TEST_F(S3MotrReadWriteCommonTest, S3MotrOpStableResponseCountSameAsOpCount) {
 }
 
 TEST_F(S3MotrReadWriteCommonTest, S3MotrOpStableResponseCountNotSameAsOpCount) {
-  struct m0_clovis_op op;
+  struct m0_op op;
   struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
       1, sizeof(struct s3_motr_context_obj));
   op.op_datum = op_ctx;
@@ -120,7 +120,7 @@ TEST_F(S3MotrReadWriteCommonTest, S3MotrOpStableResponseCountNotSameAsOpCount) {
 }
 
 TEST_F(S3MotrReadWriteCommonTest, S3MotrOpFailedResponseCountSameAsOpCount) {
-  struct m0_clovis_op op;
+  struct m0_op op;
   struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
       1, sizeof(struct s3_motr_context_obj));
   op.op_datum = op_ctx;
@@ -139,7 +139,7 @@ TEST_F(S3MotrReadWriteCommonTest, S3MotrOpFailedResponseCountSameAsOpCount) {
 }
 
 TEST_F(S3MotrReadWriteCommonTest, S3MotrOpFailedResponseCountNotSameAsOpCount) {
-  struct m0_clovis_op op;
+  struct m0_op op;
   struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
       1, sizeof(struct s3_motr_context_obj));
   op.op_datum = op_ctx;
