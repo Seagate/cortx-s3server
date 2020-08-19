@@ -200,7 +200,7 @@ bool S3PutTagBody::validate_bucket_xml_tags(
       s3_log(S3_LOG_WARN, request_id, "XML key-value tag Invalid.\n");
       return false;
     }
-    // Allowed characters are Unicode letters, whitespace, and numbers, plus the
+    // Allowed characters are Unicode letters, blankspace, and numbers, plus the
     // following special characters: + - = . _ : /
     // Insignificant check, as it matches all entries.
     /*
@@ -309,7 +309,7 @@ bool S3PutTagBody::validate_object_xml_tags(
       s3_log(S3_LOG_WARN, request_id, "XML key-value tag Invalid.\n");
       return false;
     }
-    // Allowed characters are Unicode letters, whitespace, and numbers, plus the
+    // Allowed characters are Unicode letters, blankspace, and numbers, plus the
     // following special characters: + - = . _ : /
     // Insignificant check, as it matches all entries.
     /*

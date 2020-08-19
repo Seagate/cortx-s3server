@@ -88,38 +88,38 @@ int S3Stats::count_unique(const std::string& key, const std::string& value,
   return form_and_send_msg(key, "s", value, retry, 1.0);
 }
 
-int S3Stats::load_whitelist() {
+int S3Stats::load_allowlist() {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
-  std::string whitelist_filename =
-      g_option_instance->get_stats_whitelist_filename();
-  s3_log(S3_LOG_DEBUG, "", "Loading whitelist file: %s\n",
-         whitelist_filename.c_str());
-  std::ifstream fstream(whitelist_filename.c_str());
+  std::string allowlist_filename =
+      g_option_instance->get_stats_allowlist_filename();
+  s3_log(S3_LOG_DEBUG, "", "Loading allowlist file: %s\n",
+         allowlist_filename.c_str());
+  std::ifstream fstream(allowlist_filename.c_str());
   if (!fstream.good()) {
-    s3_log(S3_LOG_ERROR, "", "Stats whitelist file does not exist: %s\n",
-           whitelist_filename.c_str());
+    s3_log(S3_LOG_ERROR, "", "Stats allowlist file does not exist: %s\n",
+           allowlist_filename.c_str());
     return -1;
   }
   try {
-    YAML::Node root_node = YAML::LoadFile(whitelist_filename);
+    YAML::Node root_node = YAML::LoadFile(allowlist_filename);
     if (root_node.IsNull()) {
-      s3_log(S3_LOG_DEBUG, "", "Stats whitelist file is empty: %s\n",
-             whitelist_filename.c_str());
+      s3_log(S3_LOG_DEBUG, "", "Stats allowlist file is empty: %s\n",
+             allowlist_filename.c_str());
       return 0;
     }
     for (auto it = root_node.begin(); it != root_node.end(); ++it) {
-      metrics_whitelist.insert(it->as<std::string>());
+      metrics_allowlist.insert(it->as<std::string>());
     }
   } catch (const YAML::RepresentationException& e) {
     s3_log(S3_LOG_ERROR, "", "YAML::RepresentationException caught: %s\n",
            e.what());
     s3_log(S3_LOG_ERROR, "", "Yaml file [%s] is incorrect\n",
-           whitelist_filename.c_str());
+           allowlist_filename.c_str());
     return -1;
   } catch (const YAML::ParserException& e) {
     s3_log(S3_LOG_ERROR, "", "YAML::ParserException caught: %s\n", e.what());
     s3_log(S3_LOG_ERROR, "", "Parsing Error in yaml file %s\n",
-           whitelist_filename.c_str());
+           allowlist_filename.c_str());
     return -1;
   } catch (const YAML::EmitterException& e) {
     s3_log(S3_LOG_ERROR, "", "YAML::EmitterException caught: %s\n", e.what());
@@ -134,9 +134,9 @@ int S3Stats::load_whitelist() {
 
 int S3Stats::init() {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
-  if (load_whitelist() == -1) {
-    s3_log(S3_LOG_ERROR, "", "load_whitelist failed parsing the file: %s\n",
-           g_option_instance->get_stats_whitelist_filename().c_str());
+  if (load_allowlist() == -1) {
+    s3_log(S3_LOG_ERROR, "", "load_allowlist failed parsing the file: %s\n",
+           g_option_instance->get_stats_allowlist_filename().c_str());
     return -1;
   }
   sock = socket_obj->socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -209,9 +209,9 @@ int S3Stats::form_and_send_msg(const std::string& key, const std::string& type,
   assert(is_keyname_valid(key));
   assert(is_keyname_valid(value));
 
-  // check if metric is present in the whitelist
+  // check if metric is present in the allowlist
   if (!is_allowed_to_publish(key)) {
-    s3_log(S3_LOG_DEBUG, "", "Metric not found in whitelist: [%s]\n",
+    s3_log(S3_LOG_DEBUG, "", "Metric not found in allowlist: [%s]\n",
            key.c_str());
     return 0;
   }

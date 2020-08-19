@@ -96,8 +96,8 @@ static int _init_option_and_instance() {
     return -1;
   }
 
-  g_option_instance->set_stats_whitelist_filename(
-      "s3stats-whitelist-test.yaml");
+  g_option_instance->set_stats_allowlist_filename(
+      "s3stats-allowlist-test.yaml");
   g_stats_instance = S3Stats::get_instance();
   g_option_instance->dump_options();
   S3MotrLayoutMap::get_instance()->load_layout_recommendations(

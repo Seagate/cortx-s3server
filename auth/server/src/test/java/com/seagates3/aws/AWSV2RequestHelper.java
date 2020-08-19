@@ -201,7 +201,7 @@ public class AWSV2RequestHelper {
         requestBody.put("Content-Type", "application/unknown");
         requestBody.put("Date", "Mon, 04 Apr 2016 06:25:22 GMT");
         requestBody.put("Host", "s3.seagate.com");
-        requestBody.put("Mehod", "PUT");
+        requestBody.put("Method", "PUT");
         requestBody.put("User-Agent", "jclouds/1.9.2 java/1.8.0_60");
         requestBody.put("Version", "2010-05-08");
 

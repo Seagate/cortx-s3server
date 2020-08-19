@@ -85,7 +85,7 @@ TEST_F(S3StatsTest, Init) {
   EXPECT_EQ(g_stats_instance->host, g_option_instance->get_statsd_ip_addr());
   EXPECT_EQ(g_stats_instance->port, g_option_instance->get_statsd_port());
   EXPECT_NE(g_stats_instance->sock, -1);
-  EXPECT_FALSE(g_stats_instance->metrics_whitelist.empty());
+  EXPECT_FALSE(g_stats_instance->metrics_allowlist.empty());
 
   // test private utility functions
   EXPECT_TRUE(g_stats_instance->is_fequal(1.0, 1.0));
@@ -100,7 +100,7 @@ TEST_F(S3StatsTest, Init) {
   EXPECT_FALSE(g_stats_instance->is_keyname_valid("@bucket|object:"));
 }
 
-TEST_F(S3StatsTest, Whitelist) {
+TEST_F(S3StatsTest, Allowlist) {
   EXPECT_TRUE(g_stats_instance->is_allowed_to_publish("uri_to_motr_oid"));
   EXPECT_TRUE(g_stats_instance->is_allowed_to_publish(
       "delete_object_from_clovis_failed"));
@@ -113,12 +113,12 @@ TEST_F(S3StatsTest, Whitelist) {
       g_stats_instance->is_allowed_to_publish("get_service_request_count"));
   EXPECT_FALSE(g_stats_instance->is_allowed_to_publish("xyz"));
 
-  // test loading of non-existing whitelist yaml file
-  g_option_instance->set_stats_whitelist_filename(
-      "non-existing-whitelist.yaml");
-  EXPECT_NE(g_stats_instance->load_whitelist(), 0);
-  g_option_instance->set_stats_whitelist_filename(
-      "s3stats-whitelist-test.yaml");
+  // test loading of non-existing allowlist yaml file
+  g_option_instance->set_stats_allowlist_filename(
+      "non-existing-allowlist.yaml");
+  EXPECT_NE(g_stats_instance->load_allowlist(), 0);
+  g_option_instance->set_stats_allowlist_filename(
+      "s3stats-allowlist-test.yaml");
 }
 
 // Tests that make use of mock_socket interface to check behaviour of s3stats.

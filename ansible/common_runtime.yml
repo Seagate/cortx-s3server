@@ -101,10 +101,10 @@
     name: keepalived
     state: present
 
-- name: Setup keepalived master config (sample, manually updated)
+- name: Setup keepalived main config (sample, manually updated)
   copy:
-    src: ./files/keepalived/keepalived.conf.master
-    dest: /etc/keepalived/keepalived.conf.master
+    src: ./files/keepalived/keepalived.conf.main
+    dest: /etc/keepalived/keepalived.conf.main
 
 - name: Create working directory for S3 server.
   file: path=/var/seagate/s3 state=directory

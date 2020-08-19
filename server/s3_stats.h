@@ -61,7 +61,7 @@ class S3Stats {
           SocketInterface* socket_obj_ptr = NULL)
       : host(host_addr), port(port_num), sock(-1) {
     s3_log(S3_LOG_DEBUG, "", "Constructor\n");
-    metrics_whitelist.clear();
+    metrics_allowlist.clear();
     if (socket_obj_ptr) {
       socket_obj.reset(socket_obj_ptr);
     } else {
@@ -72,12 +72,12 @@ class S3Stats {
   int init();
   void finish();
 
-  // Load & parse the whitelist file
-  int load_whitelist();
+  // Load & parse the allowlist file
+  int load_allowlist();
 
-  // Check if metric is present in whitelist
+  // Check if metric is present in allowlist
   bool is_allowed_to_publish(const std::string& key) {
-    return metrics_whitelist.find(key) != metrics_whitelist.end();
+    return metrics_allowlist.find(key) != metrics_allowlist.end();
   }
 
   // Send message to server
@@ -108,11 +108,11 @@ class S3Stats {
   struct sockaddr_in server;
   std::unique_ptr<SocketInterface> socket_obj;
 
-  // metrics whitelist
-  std::unordered_set<std::string> metrics_whitelist;
+  // metrics allowlist
+  std::unordered_set<std::string> metrics_allowlist;
 
   FRIEND_TEST(S3StatsTest, Init);
-  FRIEND_TEST(S3StatsTest, Whitelist);
+  FRIEND_TEST(S3StatsTest, Allowlist);
   FRIEND_TEST(S3StatsTest, S3StatsSendMustSucceedIfSocketSendToSucceeds);
   FRIEND_TEST(S3StatsTest, S3StatsSendMustRetryAndFailIfRetriesFail);
 };

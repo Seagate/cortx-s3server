@@ -113,7 +113,7 @@
 14) Tests
     Open your web browser and type the IP address of the node with port '15672'.
 
-    >http://192.168.64.170:15672/
+    >http://xxx.xxx.xx.xxx:15672/
 
     Type username 'cortx-s3' with password 'password'
 

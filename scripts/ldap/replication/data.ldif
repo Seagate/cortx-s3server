@@ -16,16 +16,16 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# Sample replation configuration data file for N-way multi-master setup
-# This file should be replicated on all Master nodes, replacing following fields
+# Sample replication configuration data file for N-way multi-provider setup.
+# This file should be replicated on all Main nodes, replacing following fields
 # in accordance to your setup.
 # Change the olcServerID: <Int> , rid=<XXX > information, this should be unique
 # for each server. Update provider field, provider=ldap://<provider_IP> with
-# URI of LDAP providers(Masters)
+# URI of LDAP providers
 #
 # Replication over SSL/TLS
 # Update provider field, provider=ldaps://<provider_IP>:port with fully qualified domain name
-# of LDAP providers(Masters) & port= 636
+# of LDAP providers & port= 636
 # Note: The fully qualified domain name of ldap node must match CN in ssl certificate.
 # Example: If the fully qualified domain name is openldap_node1.s3.seagate.com
            the certificate subject field can be C=IN, L=Pune, O=Seagate Tech, CN=*.s3.seagate.com
