@@ -139,7 +139,7 @@ public class AWSV2Sign implements AWSSign {
      * 'x-amz-meta-username: barney' would be combined into the single header
      * 'x-amz-meta-username: fred,barney'.
      *
-     * 5. Trim any whitespace around the colon in the header
+     * 5. Trim any Blankspace around the colon in the header
      *
      * 6. Finally, append a newline character (U+000A) to each canonicalized
      * header in the resulting list.
@@ -172,14 +172,6 @@ public class AWSV2Sign implements AWSSign {
      *
      * 2. Append the path part of the un-decoded HTTP Request-URI,
      * up-to but not including the query string.
-     *
-     * 2.a. For a virtual hosted-style request
-     * "https://johnsmith.s3.amazonaws.com/photos/puppy.jpg",
-     * the CanonicalizedResource is "/johnsmith/photos/puppy.jpg".
-     *
-     * 2.b. For a path-style request,
-     * "https://s3.amazonaws.com/johnsmith/photos/puppy.jpg",
-     * the CanonicalizedResource is "/johnsmith/photos/puppy.jpg"
      *
      * 3. Create sub resource string.
      */

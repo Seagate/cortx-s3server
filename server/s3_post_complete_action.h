@@ -26,7 +26,7 @@
 #include <memory>
 
 #include "s3_object_action_base.h"
-#include "s3_clovis_writer.h"
+#include "s3_motr_writer.h"
 #include "s3_factory.h"
 #include "s3_part_metadata.h"
 #include "s3_probable_delete_record.h"
@@ -48,17 +48,17 @@ enum class S3PostCompleteActionState {
 
 class S3PostCompleteAction : public S3ObjectAction {
   S3PostCompleteActionState s3_post_complete_action_state;
-  std::shared_ptr<S3ClovisKVSReaderFactory> s3_clovis_kvs_reader_factory;
+  std::shared_ptr<S3MotrKVSReaderFactory> s3_motr_kvs_reader_factory;
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
-  std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
-  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
+  std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
+  std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
   std::shared_ptr<S3ObjectMetadata> multipart_metadata;
   std::shared_ptr<S3PartMetadata> part_metadata;
-  std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
-  std::shared_ptr<S3ClovisWriter> clovis_writer;
-  std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
+  std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
+  std::shared_ptr<MotrAPI> s3_motr_api;
+  std::shared_ptr<S3MotrWiter> clovis_writer;
+  std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   std::shared_ptr<S3ObjectMetadata> new_object_metadata;
   std::string upload_id;
   std::string bucket_name;
@@ -93,16 +93,15 @@ class S3PostCompleteAction : public S3ObjectAction {
  public:
   S3PostCompleteAction(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr,
-      std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory =
-          nullptr,
+      std::shared_ptr<MotrAPI> clovis_api = nullptr,
+      std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory = nullptr,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
           nullptr,
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
-      std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory = nullptr,
-      std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr);
+      std::shared_ptr<S3MotrWriterFactory> motr_s3_writer_factory = nullptr,
+      std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr);
 
   void setup_steps();
 

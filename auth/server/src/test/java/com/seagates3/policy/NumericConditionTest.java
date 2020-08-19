@@ -40,7 +40,7 @@ class NumericConditionTest {
   Map<String, String> requestBody = null;
   String key = "max-keys";
   String invalidKeyHeader = "x-amz-acl";
-  String invalidValue = "garbage";
+  String invalidValue = "invalid-value";
 
   @BeforeClass public static void setUpBeforeClass() throws Exception {
     values.add("10");

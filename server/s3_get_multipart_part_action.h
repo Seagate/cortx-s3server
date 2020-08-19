@@ -27,13 +27,13 @@
 #include <memory>
 
 #include "s3_bucket_action_base.h"
-#include "s3_clovis_kvs_reader.h"
+#include "s3_motr_kvs_reader.h"
 #include "s3_factory.h"
 #include "s3_object_list_response.h"
 
 class S3GetMultipartPartAction : public S3BucketAction {
-  std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
-  std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
+  std::shared_ptr<MotrAPI> s3_motr_api;
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;
   S3ObjectListResponse multipart_part_list;
   std::string last_key;  // last key during each iteration
@@ -51,7 +51,7 @@ class S3GetMultipartPartAction : public S3BucketAction {
   size_t max_parts;
 
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
-  std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
 
   std::string get_part_index_name() {
@@ -61,12 +61,12 @@ class S3GetMultipartPartAction : public S3BucketAction {
  public:
   S3GetMultipartPartAction(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr,
+      std::shared_ptr<MotrAPI> clovis_api = nullptr,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
           nullptr,
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
-      std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory =
+      std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory =
           nullptr);
 
   void setup_steps();

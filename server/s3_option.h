@@ -30,7 +30,7 @@
 #define S3_OPTION_CLOVIS_HA_ADDR 0x0010
 #define S3_OPTION_AUTH_IP_ADDR 0x0020
 #define S3_OPTION_AUTH_PORT 0x0040
-#define S3_CLOVIS_LAYOUT_ID 0x0080
+#define S3_MOTR_LAYOUT_ID 0x0080
 #define S3_OPTION_LOG_DIR 0x0100
 #define S3_OPTION_LOG_MODE 0x0200
 #define S3_OPTION_PERF_LOG_FILE 0x0400
@@ -175,7 +175,7 @@ class S3Option {
   std::string statsd_ip_addr;
   unsigned short statsd_port;
   unsigned short statsd_max_send_retry;
-  std::string stats_whitelist_filename;
+  std::string stats_allowlist_filename;
   uint32_t perf_stats_inout_bytes_interval_msec;
   evbase_t* eventbase;
 
@@ -276,8 +276,8 @@ class S3Option {
     statsd_ip_addr = FLAGS_statsd_host;
     statsd_port = FLAGS_statsd_port;
     statsd_max_send_retry = 3;
-    stats_whitelist_filename =
-        "/opt/seagate/cortx/s3/conf/s3stats-whitelist.yaml";
+    stats_allowlist_filename =
+        "/opt/seagate/cortx/s3/conf/s3stats-allowlist.yaml";
     perf_stats_inout_bytes_interval_msec = 1000;
 
     redis_srv_addr = "127.0.0.1";
@@ -437,9 +437,9 @@ class S3Option {
   std::string get_statsd_ip_addr();
   unsigned short get_statsd_port();
   unsigned short get_statsd_max_send_retry();
-  std::string get_stats_whitelist_filename();
+  std::string get_stats_allowlist_filename();
   uint32_t get_perf_stats_inout_bytes_interval_msec();
-  void set_stats_whitelist_filename(std::string filename);
+  void set_stats_allowlist_filename(std::string filename);
 
   // Fault injection Option
   void enable_fault_injection();

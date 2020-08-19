@@ -26,7 +26,7 @@
 #include <gtest/gtest_prod.h>
 #include <string>
 
-#include "s3_clovis_rw_common.h"
+#include "s3_motr_rw_common.h"
 
 // Record is stored as a value in global probable delete records list index and
 // the "key" is

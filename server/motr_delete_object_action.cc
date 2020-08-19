@@ -25,14 +25,14 @@
 
 MotrDeleteObjectAction::MotrDeleteObjectAction(
     std::shared_ptr<MotrRequestObject> req,
-    std::shared_ptr<S3ClovisWriterFactory> writer_factory)
+    std::shared_ptr<S3MotrWriterFactory> writer_factory)
     : MotrAction(std::move(req)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
 
   if (writer_factory) {
-    clovis_writer_factory = std::move(writer_factory);
+    motr_writer_factory = std::move(writer_factory);
   } else {
-    clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
+    motr_writer_factory = std::make_shared<S3MotrWriterFactory>();
   }
 
   setup_steps();
@@ -73,7 +73,7 @@ void MotrDeleteObjectAction::validate_request() {
 void MotrDeleteObjectAction::delete_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  clovis_writer = clovis_writer_factory->create_clovis_writer(request, oid);
+  clovis_writer = motr_writer_factory->create_motr_writer(request, oid);
   clovis_writer->delete_object(
       std::bind(&MotrDeleteObjectAction::delete_object_successful, this),
       std::bind(&MotrDeleteObjectAction::delete_object_failed, this),
@@ -91,7 +91,7 @@ void MotrDeleteObjectAction::delete_object_successful() {
 void MotrDeleteObjectAction::delete_object_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // Object missing is treated as object deleted similar to S3 object delete.
-  if (clovis_writer->get_state() == S3ClovisWriterOpState::missing) {
+  if (clovis_writer->get_state() == S3MotrWiterOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id,
            "Object with oid %" SCNx64 " : %" SCNx64 " is missing\n", oid.u_hi,
            oid.u_lo);

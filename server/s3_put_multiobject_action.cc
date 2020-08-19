@@ -29,7 +29,7 @@ S3PutMultiObjectAction::S3PutMultiObjectAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
-    std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory,
+    std::shared_ptr<S3MotrWriterFactory> motr_s3_writer_factory,
     std::shared_ptr<S3AuthClientFactory> auth_factory)
     : S3ObjectAction(std::move(req), nullptr, nullptr, true,
                      std::move(auth_factory)),
@@ -69,10 +69,10 @@ S3PutMultiObjectAction::S3PutMultiObjectAction(
     part_metadata_factory = std::make_shared<S3PartMetadataFactory>();
   }
 
-  if (clovis_s3_writer_factory) {
-    clovis_writer_factory = clovis_s3_writer_factory;
+  if (motr_s3_writer_factory) {
+    motr_writer_factory = motr_s3_writer_factory;
   } else {
-    clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
+    motr_writer_factory = std::make_shared<S3MotrWriterFactory>();
   }
 
   setup_steps();
@@ -344,7 +344,7 @@ void S3PutMultiObjectAction::compute_part_offset() {
     s3_log(S3_LOG_DEBUG, request_id, "Offset for clovis write = %zu\n", offset);
   }
   // Create writer to write from given offset as per the partnumber
-  clovis_writer = clovis_writer_factory->create_clovis_writer(
+  clovis_writer = motr_writer_factory->create_motr_writer(
       request, object_multipart_metadata->get_oid(), offset);
   layout_id = object_multipart_metadata->get_layout_id();
   clovis_writer->set_layout_id(layout_id);
@@ -355,7 +355,7 @@ void S3PutMultiObjectAction::compute_part_offset() {
   if (part_number == 1) {
     // Reject during first part itself
     size_t unit_size =
-        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+        S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
     size_t part_size = request->get_data_length();
     s3_log(S3_LOG_DEBUG, request_id,
            "Check part size (%zu) and unit_size (%zu) compatibility\n",
@@ -534,7 +534,7 @@ void S3PutMultiObjectAction::write_object_failed() {
     client_read_error();
     return;
   }
-  if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
+  if (clovis_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
   } else {
     set_s3_error("InternalError");

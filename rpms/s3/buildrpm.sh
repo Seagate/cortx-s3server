@@ -30,11 +30,14 @@ PATH_SRC=""
 VER_PATH_EXCL=0
 INSTALL_AFTER_BUILD=0
 ENABLE_DEBUG_LOG=0
+DISABLE_MOTR=""
 
-usage() { echo "Usage: $0 [-S <S3 version>] [-i] (-G <git short revision> | -P <path to sources>) (specify [-l] to enable debug level logging" 1>&2; exit 1; }
+usage() { echo "Usage: $0 [-S <S3 version>] [-i] (-G <git short revision> | -P <path to sources>)" \
+               "(specify [-l] to enable debug level logging)" \
+               "(specify [-a] to build s3 rpm autonomously without motr rpm dependency)" 1>&2; exit 1; }
 
-while getopts ":G:S:P:i:l" o; do
-    case "${o}" in
+while getopts ":G:S:P:ila" x; do
+    case "${x}" in
         G)
             GIT_VER=${OPTARG}
             [ -z "${GIT_VER}" ] && (echo "Git revision cannot be empty"; usage)
@@ -55,6 +58,9 @@ while getopts ":G:S:P:i:l" o; do
             ;;
         l)
             ENABLE_DEBUG_LOG=1;
+            ;;
+        a)
+            DISABLE_MOTR="disable_cortxmotr_dependencies 1"
             ;;
         *)
             usage
@@ -103,12 +109,24 @@ rm -rf cortx-s3server-${S3_VERSION}-git${GIT_VER}
 
 cd ~/rpmbuild/SOURCES/
 
-yum-builddep -y ${BASEDIR}/s3rpm.spec
+if [ -z "${DISABLE_MOTR}" ]; then
+  yum-builddep -y ${BASEDIR}/s3rpm.spec
 
-rpmbuild -ba \
-         --define "_s3_version ${S3_VERSION}" \
-         --define "_s3_git_ver git${GIT_VER}" \
-         ${BASEDIR}/s3rpm.spec --with python3
+  rpmbuild -ba \
+           --define "_s3_version ${S3_VERSION}" \
+           --define "_s3_git_ver git${GIT_VER}" \
+           ${BASEDIR}/s3rpm.spec --with python3
+
+else
+  yum-builddep -y ${BASEDIR}/s3rpm.spec --define "$DISABLE_MOTR"
+
+  rpmbuild -ba \
+           --define "_s3_version ${S3_VERSION}" \
+           --define "_s3_git_ver git${GIT_VER}" \
+           ${BASEDIR}/s3rpm.spec --with python3 \
+           --define "$DISABLE_MOTR"
+fi
+
 
 if [ $INSTALL_AFTER_BUILD == 1 ]; then
     RPM_ARCH=$(rpm --eval "%{_arch}")

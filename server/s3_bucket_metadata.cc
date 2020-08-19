@@ -30,9 +30,9 @@
 #include "s3_m0_uint128_helper.h"
 
 S3BucketMetadata::S3BucketMetadata(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
-    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory,
-    std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory)
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
+    std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory)
     : request(req), json_parsing_error(false) {
   request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
@@ -44,21 +44,21 @@ S3BucketMetadata::S3BucketMetadata(
   state = S3BucketMetadataState::empty;
   current_op = S3BucketMetadataCurrentOp::none;
   if (clovis_api) {
-    s3_clovis_api = clovis_api;
+    s3_motr_api = clovis_api;
   } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
 
-  if (clovis_s3_kvs_reader_factory) {
-    clovis_kvs_reader_factory = clovis_s3_kvs_reader_factory;
+  if (motr_s3_kvs_reader_factory) {
+    motr_kvs_reader_factory = motr_s3_kvs_reader_factory;
   } else {
-    clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+    motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
-  if (clovis_s3_kvs_writer_factory) {
-    clovis_kvs_writer_factory = clovis_s3_kvs_writer_factory;
+  if (motr_s3_kvs_writer_factory) {
+    motr_kvs_writer_factory = motr_s3_kvs_writer_factory;
   } else {
-    clovis_kvs_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
+    motr_kvs_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
   bucket_policy = "";
 
@@ -101,6 +101,10 @@ std::string S3BucketMetadata::get_owner_id() {
 
 std::string S3BucketMetadata::get_owner_name() {
   return system_defined_attribute["Owner-User"];
+}
+
+std::string S3BucketMetadata::get_bucket_owner_account_id() {
+  return system_defined_attribute["Owner-Account-id"];
 }
 
 struct m0_uint128 const S3BucketMetadata::get_multipart_index_oid() {

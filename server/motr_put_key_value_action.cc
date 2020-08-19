@@ -24,21 +24,20 @@
 #include "s3_m0_uint128_helper.h"
 
 MotrPutKeyValueAction::MotrPutKeyValueAction(
-    std::shared_ptr<MotrRequestObject> req,
-    std::shared_ptr<ClovisAPI> clovis_api,
-    std::shared_ptr<S3ClovisKVSWriterFactory> clovis_motr_kvs_writer_factory)
+    std::shared_ptr<MotrRequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
+    std::shared_ptr<S3MotrKVSWriterFactory> clovis_motr_kvs_writer_factory)
     : MotrAction(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
   if (clovis_api) {
     motr_clovis_api = clovis_api;
   } else {
-    motr_clovis_api = std::make_shared<ConcreteClovisAPI>();
+    motr_clovis_api = std::make_shared<ConcreteMotrAPI>();
   }
 
   if (clovis_motr_kvs_writer_factory) {
-    clovis_kvs_writer_factory = clovis_motr_kvs_writer_factory;
+    motr_kvs_writer_factory = clovis_motr_kvs_writer_factory;
   } else {
-    clovis_kvs_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
+    motr_kvs_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
 
   setup_steps();
@@ -61,7 +60,7 @@ void MotrPutKeyValueAction::read_and_validate_key_value() {
     set_s3_error("BadRequest");
     send_response_to_s3_client();
   } else {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
+    motr_kv_writer = motr_kvs_writer_factory->create_motr_kvs_writer(
         request, motr_clovis_api);
     if (request->has_all_body_content()) {
       std::string value = request->get_full_body_content_as_string();
@@ -86,7 +85,7 @@ void MotrPutKeyValueAction::read_and_validate_key_value() {
 void MotrPutKeyValueAction::put_key_value() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  clovis_kv_writer->put_keyval(
+  motr_kv_writer->put_keyval(
       index_id, request->get_key_name(), json_value,
       std::bind(&MotrPutKeyValueAction::put_key_value_successful, this),
       std::bind(&MotrPutKeyValueAction::put_key_value_failed, this));
@@ -102,8 +101,7 @@ void MotrPutKeyValueAction::put_key_value_successful() {
 
 void MotrPutKeyValueAction::put_key_value_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_kv_writer->get_state() ==
-      S3ClovisKVSWriterOpState::failed_to_launch) {
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Failed to retrive the key, due to pre launch failure\n");
     set_s3_error("ServiceUnavailable");

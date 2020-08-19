@@ -22,7 +22,7 @@
 #include <gtest/gtest.h>
 
 #include "mock_s3_bucket_metadata.h"
-#include "mock_s3_clovis_wrapper.h"
+#include "mock_s3_motr_wrapper.h"
 #include "mock_s3_factory.h"
 #include "mock_s3_request_object.h"
 #include "s3_delete_bucket_policy_action.h"
@@ -41,9 +41,9 @@ class S3DeleteBucketPolicyActionTest : public testing::Test {
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
     EXPECT_CALL(*request_mock, get_bucket_name())
         .WillRepeatedly(ReturnRef(bucket_name));
-    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
+    ptr_mock_s3_motr_api = std::make_shared<MockS3Clovis>();
     bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
-        request_mock, ptr_mock_s3_clovis_api);
+        request_mock, ptr_mock_s3_motr_api);
     std::map<std::string, std::string> input_headers;
     input_headers["Authorization"] = "1";
     EXPECT_CALL(*request_mock, get_in_headers_copy()).Times(1).WillOnce(
@@ -53,7 +53,7 @@ class S3DeleteBucketPolicyActionTest : public testing::Test {
   }
 
   std::shared_ptr<MockS3RequestObject> request_mock;
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_motr_api;
   std::shared_ptr<S3DeleteBucketPolicyAction> action_under_test_ptr;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::string bucket_name;

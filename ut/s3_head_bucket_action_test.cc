@@ -22,7 +22,7 @@
 #include <gtest/gtest.h>
 
 #include "mock_s3_bucket_metadata.h"
-#include "mock_s3_clovis_wrapper.h"
+#include "mock_s3_motr_wrapper.h"
 #include "mock_s3_factory.h"
 #include "mock_s3_request_object.h"
 #include "s3_head_bucket_action.h"
@@ -62,8 +62,8 @@ class S3HeadBucketActionTest : public testing::Test {
   std::shared_ptr<MockS3RequestObject> request_mock;
   std::shared_ptr<S3HeadBucketAction> action_under_test_ptr;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
-  std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
-  std::shared_ptr<ClovisAPI> s3_clovis_api_mock;
+  std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
+  std::shared_ptr<MotrAPI> s3_motr_api_mock;
   std::string bucket_name;
 };
 

@@ -32,17 +32,17 @@
 class MotrPutKeyValueAction : public MotrAction {
   m0_uint128 index_id;
   std::string json_value;
-  std::shared_ptr<ClovisAPI> motr_clovis_api;
-  std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
-  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
+  std::shared_ptr<MotrAPI> motr_clovis_api;
+  std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
+  std::shared_ptr<S3MotrKVSWriterFactory> motr_kvs_writer_factory;
 
   bool is_valid_json(std::string);
 
  public:
   MotrPutKeyValueAction(
       std::shared_ptr<MotrRequestObject> req,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr,
-      std::shared_ptr<S3ClovisKVSWriterFactory> clovis_motr_kvs_writer_factory =
+      std::shared_ptr<MotrAPI> clovis_api = nullptr,
+      std::shared_ptr<S3MotrKVSWriterFactory> clovis_motr_kvs_writer_factory =
           nullptr);
 
   void setup_steps();

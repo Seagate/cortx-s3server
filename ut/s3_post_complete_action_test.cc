@@ -21,9 +21,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "mock_s3_clovis_wrapper.h"
+#include "mock_s3_motr_wrapper.h"
 #include "mock_s3_bucket_metadata.h"
-#include "mock_s3_clovis_wrapper.h"
+#include "mock_s3_motr_wrapper.h"
 #include "mock_s3_factory.h"
 #include "s3_post_complete_action.h"
 #include "s3_ut_common.h"
@@ -68,40 +68,40 @@ using ::testing::_;
             ->create_object_metadata_obj(request_mock, object_list_indx_oid); \
   } while (0)
 
-#define CREATE_KVS_READER_OBJ                                             \
+#define CREATE_KVS_READER_OBJ                                         \
+  do {                                                                \
+    action_under_test_ptr->motr_kv_reader =                           \
+        action_under_test_ptr->s3_motr_kvs_reader_factory             \
+            ->create_motr_kvs_reader(request_mock, s3_motr_api_mock); \
+  } while (0)
+
+#define CREATE_WRITER_OBJ                                               \
+  do {                                                                  \
+    action_under_test_ptr->clovis_writer =                              \
+        action_under_test_ptr->motr_writer_factory->create_motr_writer( \
+            request_mock, oid);                                         \
+  } while (0)
+
+#define CREATE_KVS_WRITER_OBJ                                                  \
+  do {                                                                         \
+    action_under_test_ptr->motr_kv_writer =                                    \
+        action_under_test_ptr->mote_kv_writer_factory->create_motr_kvs_writer( \
+            request_mock);                                                     \
+  } while (0)
+
+#define CREATE_ACTION_UNDER_TEST_OBJ                                      \
   do {                                                                    \
-    action_under_test_ptr->clovis_kv_reader =                             \
-        action_under_test_ptr->s3_clovis_kvs_reader_factory               \
-            ->create_clovis_kvs_reader(request_mock, s3_clovis_api_mock); \
-  } while (0)
-
-#define CREATE_WRITER_OBJ                                                   \
-  do {                                                                      \
-    action_under_test_ptr->clovis_writer =                                  \
-        action_under_test_ptr->clovis_writer_factory->create_clovis_writer( \
-            request_mock, oid);                                             \
-  } while (0)
-
-#define CREATE_KVS_WRITER_OBJ                           \
-  do {                                                  \
-    action_under_test_ptr->clovis_kv_writer =           \
-        action_under_test_ptr->clovis_kv_writer_factory \
-            ->create_clovis_kvs_writer(request_mock);   \
-  } while (0)
-
-#define CREATE_ACTION_UNDER_TEST_OBJ                                          \
-  do {                                                                        \
-    EXPECT_CALL(*request_mock, get_query_string_value("uploadId"))            \
-        .Times(AtLeast(1))                                                    \
-        .WillRepeatedly(Return("uploadId"));                                  \
-    std::map<std::string, std::string> input_headers;                         \
-    input_headers["Authorization"] = "1";                                     \
-    EXPECT_CALL(*request_mock, get_in_headers_copy()).Times(1).WillOnce(      \
-        ReturnRef(input_headers));                                            \
-    action_under_test_ptr = std::make_shared<S3PostCompleteAction>(           \
-        request_mock, s3_clovis_api_mock, clovis_kvs_reader_factory,          \
-        bucket_meta_factory, object_meta_factory, object_mp_meta_factory,     \
-        part_meta_factory, clovis_writer_factory, clovis_kvs_writer_factory); \
+    EXPECT_CALL(*request_mock, get_query_string_value("uploadId"))        \
+        .Times(AtLeast(1))                                                \
+        .WillRepeatedly(Return("uploadId"));                              \
+    std::map<std::string, std::string> input_headers;                     \
+    input_headers["Authorization"] = "1";                                 \
+    EXPECT_CALL(*request_mock, get_in_headers_copy()).Times(1).WillOnce(  \
+        ReturnRef(input_headers));                                        \
+    action_under_test_ptr = std::make_shared<S3PostCompleteAction>(       \
+        request_mock, s3_motr_api_mock, motr_kvs_reader_factory,          \
+        bucket_meta_factory, object_meta_factory, object_mp_meta_factory, \
+        part_meta_factory, motr_writer_factory, motr_kvs_writer_factory); \
   } while (0)
 
 class S3PostCompleteActionTest : public testing::Test {
@@ -117,50 +117,50 @@ class S3PostCompleteActionTest : public testing::Test {
     bucket_name = "seagatebucket";
     object_name = "objname";
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
-    s3_clovis_api_mock = std::make_shared<MockS3Clovis>();
+    s3_motr_api_mock = std::make_shared<MockS3Clovis>();
 
     EXPECT_CALL(*request_mock, get_bucket_name())
         .WillRepeatedly(ReturnRef(bucket_name));
     EXPECT_CALL(*request_mock, get_object_name())
         .WillRepeatedly(ReturnRef(object_name));
-    EXPECT_CALL(*s3_clovis_api_mock, m0_h_ufid_next(_))
+    EXPECT_CALL(*s3_motr_api_mock, m0_h_ufid_next(_))
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
     call_count_one = 0;
     layout_id =
-        S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+        S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
 
     bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
-        request_mock, s3_clovis_api_mock);
-    clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
-        request_mock, s3_clovis_api_mock);
+        request_mock, s3_motr_api_mock);
+    motr_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
+        request_mock, s3_motr_api_mock);
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
-        request_mock, s3_clovis_api_mock);
+        request_mock, s3_motr_api_mock);
     object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
 
-    clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
-        request_mock, s3_clovis_api_mock);
+    motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
+        request_mock, s3_motr_api_mock);
     object_mp_meta_factory =
         std::make_shared<MockS3ObjectMultipartMetadataFactory>(
-            request_mock, s3_clovis_api_mock, upload_id);
+            request_mock, s3_motr_api_mock, upload_id);
     object_mp_meta_factory->set_object_list_index_oid(mp_indx_oid);
     part_meta_factory = std::make_shared<MockS3PartMetadataFactory>(
         request_mock, oid, upload_id, 0);
-    clovis_kvs_writer_factory = std::make_shared<MockS3ClovisKVSWriterFactory>(
-        request_mock, s3_clovis_api_mock);
+    motr_kvs_writer_factory = std::make_shared<MockS3MotrKVSWriterFactory>(
+        request_mock, s3_motr_api_mock);
 
     CREATE_ACTION_UNDER_TEST_OBJ;
   }
 
   std::shared_ptr<MockS3RequestObject> request_mock;
-  std::shared_ptr<MockS3Clovis> s3_clovis_api_mock;
-  std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<MockS3Clovis> s3_motr_api_mock;
+  std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3ObjectMultipartMetadataFactory> object_mp_meta_factory;
   std::shared_ptr<MockS3PartMetadataFactory> part_meta_factory;
-  std::shared_ptr<MockS3ClovisWriterFactory> clovis_writer_factory;
-  std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
+  std::shared_ptr<MockS3MotrWriterFactory> motr_writer_factory;
+  std::shared_ptr<MockS3MotrKVSWriterFactory> motr_kvs_writer_factory;
   std::shared_ptr<S3PostCompleteAction> action_under_test_ptr;
 
   std::string upload_id;
@@ -191,7 +191,7 @@ class S3PostCompleteActionTest : public testing::Test {
 TEST_F(S3PostCompleteActionTest, Constructor) {
   EXPECT_NE(0, action_under_test_ptr->number_of_tasks());
   EXPECT_TRUE(action_under_test_ptr->bucket_metadata_factory != nullptr);
-  EXPECT_TRUE(action_under_test_ptr->s3_clovis_kvs_reader_factory != nullptr);
+  EXPECT_TRUE(action_under_test_ptr->s3_motr_kvs_reader_factory != nullptr);
   EXPECT_TRUE(action_under_test_ptr->object_metadata_factory != nullptr);
   EXPECT_STREQ("uploadId", action_under_test_ptr->upload_id.c_str());
   EXPECT_EQ(0, action_under_test_ptr->object_size);
@@ -365,7 +365,7 @@ TEST_F(S3PostCompleteActionTest, GetNextPartsInfo) {
   CREATE_KVS_READER_OBJ;
   CREATE_MP_METADATA_OBJ;
 
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
               next_keyval(_, _, _, _, _, _)).Times(1);
   action_under_test_ptr->get_next_parts_info();
 }
@@ -380,11 +380,11 @@ TEST_F(S3PostCompleteActionTest, GetNextPartsSuccessful) {
       std::make_pair("testkey1", std::make_pair(11, "keyval2")));
   result_keys_values.insert(
       std::make_pair("testkey2", std::make_pair(12, "keyval3")));
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
               next_keyval(_, _, _, _, _, _)).Times(1);
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata),
               get_part_one_size()).WillRepeatedly(Return(/*4k*/ 4096));
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
               get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
   action_under_test_ptr->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
@@ -399,7 +399,7 @@ TEST_F(S3PostCompleteActionTest, GetNextPartsSuccessfulAbortSet) {
   CREATE_MP_METADATA_OBJ;
   action_under_test_ptr->count_we_requested = 2;
 
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
               get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
   action_under_test_ptr->set_abort_multipart(true);
   action_under_test_ptr->clear_tasks();
@@ -420,12 +420,12 @@ TEST_F(S3PostCompleteActionTest, GetNextPartsSuccessfulNext) {
       std::make_pair("testkey1", std::make_pair(11, "keyval2")));
   result_keys_values.insert(
       std::make_pair("testkey2", std::make_pair(12, "keyval3")));
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
               next_keyval(_, _, _, _, _, _)).Times(0);
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata),
               get_part_one_size()).WillRepeatedly(Return(/*4k*/ 4096));
 
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
               get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
   action_under_test_ptr->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
@@ -444,7 +444,7 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessful) {
   result_keys_values.insert(std::make_pair("1", std::make_pair(11, "keyval2")));
   result_keys_values.insert(std::make_pair("2", std::make_pair(12, "keyval3")));
 
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
               get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata),
               get_part_one_size()).WillRepeatedly(Return(5242880));
@@ -477,7 +477,7 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooSmall) {
   result_keys_values.insert(std::make_pair("1", std::make_pair(11, "keyval2")));
   result_keys_values.insert(std::make_pair("2", std::make_pair(12, "keyval3")));
 
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
               get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata),
               get_part_one_size()).WillRepeatedly(Return(/*4k*/ 4096));
@@ -511,7 +511,7 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooLarge) {
   result_keys_values.insert(std::make_pair("1", std::make_pair(11, "keyval2")));
   result_keys_values.insert(std::make_pair("2", std::make_pair(12, "keyval3")));
 
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
               get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata),
               get_part_one_size()).WillRepeatedly(Return(/*4k*/ 4096));
@@ -544,7 +544,7 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulJsonError) {
 
   result_keys_values.insert(std::make_pair("0", std::make_pair(0, "keyval1")));
 
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
               get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata),
               get_part_one_size()).WillRepeatedly(Return(/*4k*/ 4096));
@@ -565,9 +565,9 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulJsonError) {
 TEST_F(S3PostCompleteActionTest, GetPartsInfoFailed) {
   CREATE_KVS_READER_OBJ;
 
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::failed));
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::failed));
   EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
@@ -655,7 +655,7 @@ TEST_F(S3PostCompleteActionTest, DeleteNewObject) {
   action_under_test_ptr->layout_id = layout_id;
   action_under_test_ptr->set_abort_multipart(true);
 
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
               delete_object(_, _, layout_id)).Times(1);
 
   action_under_test_ptr->delete_new_object();
@@ -671,9 +671,9 @@ TEST_F(S3PostCompleteActionTest, DeleteOldObject) {
   action_under_test_ptr->old_layout_id = old_layout_id;
   action_under_test_ptr->set_abort_multipart(true);
 
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
+  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), set_oid(_))
       .Times(AtLeast(1));
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
               delete_object(_, _, old_layout_id)).Times(1);
 
   action_under_test_ptr->delete_old_object();
@@ -722,13 +722,13 @@ TEST_F(S3PostCompleteActionTest, StartCleanupAbortedSinceValidationFailed) {
           objects_version_list_index_oid, version_key_in_index,
           false /* force_delete */));
   action_under_test_ptr->set_abort_multipart(true);
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
               put_keyval(_, _, _, _, _))
       .Times(1)
       .WillRepeatedly(
            Invoke(this, &S3PostCompleteActionTest::dummy_put_keyval));
 
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
               delete_object(_, _, _))
       .Times(1)
       .WillRepeatedly(

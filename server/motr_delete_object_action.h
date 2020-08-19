@@ -32,13 +32,13 @@
 class MotrDeleteObjectAction : public MotrAction {
   int layout_id;
   m0_uint128 oid;
-  std::shared_ptr<S3ClovisWriter> clovis_writer;
+  std::shared_ptr<S3MotrWiter> clovis_writer;
 
-  std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
+  std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
 
  public:
   MotrDeleteObjectAction(std::shared_ptr<MotrRequestObject> req,
-                         std::shared_ptr<S3ClovisWriterFactory> writer_factory =
+                         std::shared_ptr<S3MotrWriterFactory> writer_factory =
                              nullptr);
 
   void setup_steps();

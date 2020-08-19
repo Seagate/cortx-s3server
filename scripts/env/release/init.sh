@@ -26,12 +26,6 @@ CURRENT_DIR=`pwd`
 
 source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
 
-# Cleanup obsolete rpms if already installed on this system
-yum remove -y log4cxx_eos log4cxx_eos-devel log4cxx_eos-debuginfo || /bin/true
-yum remove -y eos-s3iamcli eos-s3iamcli-devel || /bin/true
-yum remove -y eos-s3server eos-s3server-debuginfo || /bin/true
-yum remove -y eos-core eos-core-devel eos-core-debuginfo || /bin/true
-
 # We are setting up new VM, so just attempt clean openldap
 systemctl stop slapd 2>/dev/null || /bin/true
 yum remove -y openldap-servers openldap-clients || /bin/true

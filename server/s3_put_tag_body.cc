@@ -192,7 +192,6 @@ bool S3PutTagBody::validate_bucket_xml_tags(
     /* To encode 256 unicode chars, last char can use upto 2 bytes.
      Core reason is std::string stores utf-8 bytes and hence .length()
      returns bytes and not number of chars.
-     For refrence : https://stackoverflow.com/a/31652705
      */
     // Maximum key length: 128 Unicode characters &
     // Maximum value length: 256 Unicode characters
@@ -201,7 +200,7 @@ bool S3PutTagBody::validate_bucket_xml_tags(
       s3_log(S3_LOG_WARN, request_id, "XML key-value tag Invalid.\n");
       return false;
     }
-    // Allowed characters are Unicode letters, whitespace, and numbers, plus the
+    // Allowed characters are Unicode letters, blankspace, and numbers, plus the
     // following special characters: + - = . _ : /
     // Insignificant check, as it matches all entries.
     /*
@@ -302,7 +301,6 @@ bool S3PutTagBody::validate_object_xml_tags(
     /* To encode 256 unicode chars, last char can use upto 2 bytes.
      Core reason is std::string stores utf-8 bytes and hence .length()
      returns bytes and not number of chars.
-     For refrence : https://stackoverflow.com/a/31652705
      */
     // Maximum key length: 128 Unicode characters &
     // Maximum value length: 256 Unicode characters
@@ -311,7 +309,7 @@ bool S3PutTagBody::validate_object_xml_tags(
       s3_log(S3_LOG_WARN, request_id, "XML key-value tag Invalid.\n");
       return false;
     }
-    // Allowed characters are Unicode letters, whitespace, and numbers, plus the
+    // Allowed characters are Unicode letters, blankspace, and numbers, plus the
     // following special characters: + - = . _ : /
     // Insignificant check, as it matches all entries.
     /*

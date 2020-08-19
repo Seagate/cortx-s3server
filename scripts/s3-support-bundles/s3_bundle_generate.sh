@@ -332,7 +332,6 @@ tar -czPf $s3_bundle_location/$bundle_name $args --warning=no-file-changed
 # Check exit code of above operation
 # While doing tar operation if file gets modified, 'tar' raises warning with
 # exitcode 1 but it will tar that file.
-# refer https://stackoverflow.com/questions/20318852/tar-file-changed-as-we-read-it
 if [[ ("$?" != "0") && ("$?" != "1") ]];
 then
     echo "Failed to generate S3 support bundle"
