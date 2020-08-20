@@ -19,7 +19,7 @@
 #
 
 
-set -xe
+set -e
 
 SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
@@ -30,7 +30,29 @@ OS=$(cat /etc/os-release | grep -w ID | cut -d '=' -f 2)
 VERSION=`cat /etc/os-release | sed -n 's/VERSION_ID=\"\([0-9].*\)\"/\1/p'`
 major_version=`echo ${VERSION} | awk -F '.' '{ print $1 }'`
 
-source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
+usage() {
+  echo "Usage: $0
+  optional arguments:
+       -a    setup s3dev autonomously
+       -h    show this help message and exit" 1>&2;
+  exit 1; }
+
+if [[ $# -eq 0 ]] ; then
+  source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
+else
+  while getopts "ah" x; do
+      case "${x}" in
+          a)
+              read -p "Git Access Token:" git_access_token
+              source ${S3_SRC_DIR}/scripts/env/common/create-cortx-repo.sh -G $git_access_token
+              ;;
+          *)
+              usage
+              ;;
+      esac
+  done
+  shift $((OPTIND-1))
+fi
 
 yum install rpm-build -y
 
