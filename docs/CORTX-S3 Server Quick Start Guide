@@ -17,28 +17,23 @@ This guide provides a step-by-step walkthrough for getting CORTX-S3 Server-ready
 1. You'll need to set up SSC, Cloud VM, or a local VM on VMWare Fusion or Oracle VirtualBox. To know more, refer to the [LocalVMSetup](LocalVMSetup.md) section.
 
 2. Access codes the right way:
-   our CORTX Contributors will refer, clone, contribute, and commit changes via the GitHub server. Tou can access the latest code via [Github](https://github.com/Seagate/cortx). 
+   our CORTX Contributors will refer, clone, contribute, and commit changes via the GitHub server. You can access the latest code via [Github](https://github.com/Seagate/cortx). 
 
-3. Follow these steps to access the GitHub server: 
-   
-    > You'll need to use the root access to access your Git Repository: 
-    > 1. You'll need to set the root user password using `sudo passwd`. Enter your password.
-    > 2. Type `su -` and enter the root password to switch to the root user mode.
+3. You'll need a valid GitHub account. 
 
 4. Before you clone your Git repository, you'll need to create the following:
     > 1. Follow the link to generate the [SSH Public Key](https://git-scm.com/book/en/v2/Git-on-the-Server-Generating-Your-SSH-Public-Key).
-    >   * Add the newly created SSH Public Key to [Github](https://github.com/settings/keys) and [Enable SSO](https://docs.github.com/en/github/authenticating-to-github/authorizing-an-ssh-key-for-use-with-saml-single-sign-on).
+    >     * Add the newly created SSH Public Key to [Github](https://github.com/settings/keys) and [Enable SSO](https://docs.github.com/en/github/authenticating-to-github/authorizing-an-ssh-key-for-use-with-saml-single-sign-on).
     > 2. When you clone your Github repository, you'll be prompted to enter your GitHub Username and Password.  
-      >     *  Refer to the article to [Generate Personal Access Token or PAT](https://github.com/settings/tokens). Once you generate your Personal Access Token, enable SSO. 
+      >    * Refer to the article to [Generate Personal Access Token or PAT](https://github.com/settings/tokens). Once you generate your Personal Access Token, enable SSO. 
       >    * Copy your newly generated [PAT](https://github.com/settings/tokens) and enter it when prompted.
-       
-3. We've assumed that `git` is preinstalled. If not then follow these steps to install [Git](https://github.com/Seagate/cortx/blob/master/doc/ContributingToCortxS3.md). 
+    > 3. We've assumed that `git` is preinstalled. If not then follow these steps to install [Git](https://github.com/Seagate/cortx/blob/master/doc/ContributingToCortxS3.md). 
 
     * To check your Git Version, use the command `$ git --version`.
     
     **Note:** We recommended that you install Git Version 2.x.x.
 
-4. Ensure that you've installed the following packages on your VM instance: 
+5. Ensure that you've installed the following packages on your VM instance: 
     
   * Python Version 3.0
     >  * To check whether Python is installed on your VM, use one of the following commands: `--version`  , `-V` , or `-VV`
@@ -60,7 +55,7 @@ This guide provides a step-by-step walkthrough for getting CORTX-S3 Server-ready
 
       `uname -r`
 
-5. You'll need to disable selinux and firewall. Follow the steps below:
+6. You'll need to disable selinux and firewall. Follow the steps below:
   
     ```
     $ systemctl stop firewalld
@@ -71,12 +66,12 @@ This guide provides a step-by-step walkthrough for getting CORTX-S3 Server-ready
     
     $ shutdown -r now` - your VM will shut-down. You will need to restart your VM.
     
-    To verify if selinux and firewall are disabled on your VM:
+    Once you restart your VM, verify that selinux and firewall are disabled on your VM by using:
 
     $ getenforce` - you'll get a 'disabled' status.
     ```
 
-6. You'll need to install Lustre. Lustre is an open-source and parallel file system that supports High Performance Computing simulation environments.  
+7. You'll need to install Lustre. Lustre is an open-source and parallel file system that supports High Performance Computing simulation environments.  
 
     * To verify whether Lustre is installed on your VM instance:
     
@@ -122,23 +117,23 @@ If rpms are stored in github release, you can create a local repository on your 
 
 ```
 $ pip install githubrelease
-$ mkdir /root/releases_eos_s3deps
-$ cd /root/releases_eos_s3deps
+$ mkdir /root/releases_cortx_s3deps
+$ cd /root/releases_cortx_s3deps
 $ GITHUB_TOKEN=<AUTH TOKEN GITHUB>
 $ githubrelease --github-token $GITHUB_TOKEN asset seagate/cortx-s3server download $(curl -H "Authorization: token $GITHUB_TOKEN" -s https://api.github.com/repos/Seagate/cortx-s3server/releases/latest | grep "tag_name" | sed -E 's/.*"([^"]+)".*/\1/')`
 ```
 
-Create the file `/etc/yum.repos.d/releases_eos_s3deps.repo` using the following commands:
+Create the file `/etc/yum.repos.d/releases_cortx_s3deps.repo` using the following commands:
 
-> *  `$ createrepo -v /root/releases_eos_s3deps`
+> *  `$ createrepo -v /root/releases_cortx_s3deps`
 > * `$ yum clean all`
 > * `$ yum repolist`
 
 You will see the following details once your file is created:
 ```
-[releases_eos_s3deps]
+[releases_cortx_s3deps]
 name=Cortx-S3 Repository
-baseurl=file:///root/releases_eos_s3deps
+baseurl=file:///root/releases_cortx_s3deps
 gpgcheck=0
 enabled=1
 ```
@@ -287,9 +282,9 @@ Before your test your build, ensure that you have installed and configured the f
 
         * `$ aws configure set plugins.endpoint awscli_plugin_endpoint`
 
-        * `$ aws configure set s3.endpoint_url http://s3.seagate.com`
+        * `$ aws configure set s3.endpoint_url https://s3.seagate.com`
         
-        *  `$ aws configure set s3api.endpoint_url http://s3.seagate.com`
+        *  `$ aws configure set s3api.endpoint_url https://s3.seagate.com`
         
         * Run the following command to view the contents of your aws config file: 
 
