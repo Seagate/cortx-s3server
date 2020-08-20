@@ -37,7 +37,7 @@ class MotrKVListResponse {
   std::map<std::string, std::string> kv_list;
 
   // We use unordered for performance as the keys are already
-  // in sorted order as stored in clovis-kv (cassandra).
+  // in sorted order as stored in motr-kv (cassandra).
   std::unordered_set<std::string> common_prefixes;
 
   // Generated xml response.

@@ -96,25 +96,25 @@ void motr_op_done_on_main_thread(evutil_socket_t, short events,
   s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
 }
 
-// Clovis callbacks, run in clovis thread
+// Clovis callbacks, run in motr thread
 void s3_motr_op_stable(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct s3_motr_context_obj *ctx = (struct s3_motr_context_obj *)op->op_datum;
 
   S3AsyncOpContextBase *app_ctx =
       (S3AsyncOpContextBase *)ctx->application_context;
-  int clovis_rc = app_ctx->get_clovis_api()->clovis_op_rc(op);
+  int motr_rc = app_ctx->get_clovis_api()->clovis_op_rc(op);
   std::string request_id = app_ctx->get_request()->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  s3_log(S3_LOG_DEBUG, request_id, "Return code = %d op_code = %d\n", clovis_rc,
+  s3_log(S3_LOG_DEBUG, request_id, "Return code = %d op_code = %d\n", motr_rc,
          op->op_code);
 
   s3_log(S3_LOG_DEBUG, request_id, "op_index_in_launch = %d\n",
          ctx->op_index_in_launch);
 
-  app_ctx->set_op_errno_for(ctx->op_index_in_launch, clovis_rc);
+  app_ctx->set_op_errno_for(ctx->op_index_in_launch, motr_rc);
 
-  if (0 == clovis_rc) {
+  if (0 == motr_rc) {
     app_ctx->set_op_status_for(ctx->op_index_in_launch,
                                S3AsyncOpStatus::success, "Success.");
   } else {
@@ -146,16 +146,16 @@ void s3_motr_op_failed(struct m0_clovis_op *op) {
       (S3AsyncOpContextBase *)ctx->application_context;
   std::string request_id = app_ctx->get_request()->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  int clovis_rc = app_ctx->get_clovis_api()->clovis_op_rc(op);
-  s3_log(S3_LOG_ERROR, request_id, "Error code = %d\n", clovis_rc);
+  int motr_rc = app_ctx->get_clovis_api()->clovis_op_rc(op);
+  s3_log(S3_LOG_ERROR, request_id, "Error code = %d\n", motr_rc);
 
   s3_log(S3_LOG_DEBUG, request_id, "op_index_in_launch = %d\n",
          ctx->op_index_in_launch);
 
-  app_ctx->set_op_errno_for(ctx->op_index_in_launch, clovis_rc);
+  app_ctx->set_op_errno_for(ctx->op_index_in_launch, motr_rc);
   app_ctx->set_op_status_for(ctx->op_index_in_launch, S3AsyncOpStatus::failed,
                              "Operation Failed.");
-  // If we faked failure reset clovis internal code.
+  // If we faked failure reset motr internal code.
   if (ctx->is_fake_failure) {
     op->op_rc = 0;
     ctx->is_fake_failure = 0;

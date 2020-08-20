@@ -75,7 +75,7 @@ int S3UriToMotrOID(std::shared_ptr<MotrAPI> s3_motr_api, const char *name,
     tmp_uint128.u_hi = hash128_64[0];
     tmp_uint128.u_lo = hash128_64[1];
 
-    // Ensure OID does not fall in clovis and S3 reserved range.
+    // Ensure OID does not fall in motr and S3 reserved range.
     struct m0_uint128 s3_range = {0ULL, 0ULL};
     s3_range.u_lo = S3_OID_RESERVED_COUNT;
 
@@ -118,7 +118,7 @@ int S3UriToMotrOID(std::shared_ptr<MotrAPI> s3_motr_api, const char *name,
   s3_log(S3_LOG_DEBUG, request_id,
          "uri = %s entity = %s oid = "
          "%" SCNx64 " : %" SCNx64 "\n",
-         name, clovis_entity_type_to_string(type).c_str(), ufid->u_hi,
+         name, motr_entity_type_to_string(type).c_str(), ufid->u_hi,
          ufid->u_lo);
   timer.stop();
   LOG_PERF("S3UriToMotrOID_ns", request_id.c_str(),

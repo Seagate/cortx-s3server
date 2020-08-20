@@ -103,7 +103,7 @@ void S3Daemonize::daemonize() {
   sigaction(SIGHUP, &s3hup_act, NULL);
 
   // Set the working directory for current instance as s3server-process_fid
-  std::string process_fid = option_instance->get_clovis_process_fid();
+  std::string process_fid = option_instance->get_motr_process_fid();
   // Remove the surrounding angle brackets <>
   process_fid.erase(0, 1);
   process_fid.erase(process_fid.size() - 1);

@@ -44,7 +44,7 @@ class S3PostMultipartObjectAction : public S3ObjectAction {
   std::string salt;
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;
   std::shared_ptr<S3PartMetadata> part_metadata;
-  std::shared_ptr<S3MotrWiter> clovis_writer;
+  std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   std::string upload_id;
 
@@ -74,7 +74,7 @@ class S3PostMultipartObjectAction : public S3ObjectAction {
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
       std::shared_ptr<S3MotrWriterFactory> motr_writer_factory = nullptr,
       std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory = nullptr,
-      std::shared_ptr<MotrAPI> clovis_api = nullptr,
+      std::shared_ptr<MotrAPI> motr_api = nullptr,
       std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr);
 
   void setup_steps();

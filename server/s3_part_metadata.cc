@@ -274,7 +274,7 @@ void S3PartMetadata::create_part_index_failed() {
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::exists) {
     // Since part index name comprises of bucket name + object name + upload id,
     // upload id is unique
-    // hence if clovis returns exists then its due to collision, resolve it
+    // hence if motr returns exists then its due to collision, resolve it
     s3_log(S3_LOG_WARN, request_id, "Collision detected for Index %s\n",
            index_name.c_str());
     handle_collision();

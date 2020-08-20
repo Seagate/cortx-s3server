@@ -235,14 +235,14 @@ TEST_F(S3PostMultipartObjectTest, CreateObject) {
       object_mp_meta_factory->mock_object_mp_metadata;
 
   action_under_test->tried_count = 0;
-  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
-              create_object(_, _, _)).Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
+      .Times(1);
   action_under_test->create_object();
 
   action_under_test->tried_count = 1;
-  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
-              create_object(_, _, _)).Times(1);
-  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), set_oid(_)).Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
+      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_)).Times(1);
   action_under_test->create_object();
 }
 
@@ -253,11 +253,11 @@ TEST_F(S3PostMultipartObjectTest, CreateObjectFailed) {
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
 
   action_under_test->create_object_failed();
-  EXPECT_TRUE(action_under_test->clovis_writer == NULL);
+  EXPECT_TRUE(action_under_test->motr_writer == NULL);
   S3Option::get_instance()->set_is_s3_shutting_down(false);
 
-  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), get_state())
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(S3MotrWiterOpState::failed));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
@@ -273,11 +273,11 @@ TEST_F(S3PostMultipartObjectTest, CreateObjectFailedToLaunch) {
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
 
   action_under_test->create_object_failed();
-  EXPECT_TRUE(action_under_test->clovis_writer == NULL);
+  EXPECT_TRUE(action_under_test->motr_writer == NULL);
   S3Option::get_instance()->set_is_s3_shutting_down(false);
 
-  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), get_state())
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(S3MotrWiterOpState::failed_to_launch));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
@@ -289,14 +289,14 @@ TEST_F(S3PostMultipartObjectTest, CreateObjectFailedToLaunch) {
 
 TEST_F(S3PostMultipartObjectTest, CreateObjectFailedDueToCollision) {
   S3Option::get_instance()->set_is_s3_shutting_down(false);
-  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
 
-  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), get_state())
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(S3MotrWiterOpState::exists));
-  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), set_oid(_)).Times(1);
-  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
-              create_object(_, _, _)).Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_)).Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
+      .Times(1);
   action_under_test->tried_count = 1;
   action_under_test->create_object_failed();
   EXPECT_EQ(2, action_under_test->tried_count);
@@ -304,11 +304,11 @@ TEST_F(S3PostMultipartObjectTest, CreateObjectFailedDueToCollision) {
 
 TEST_F(S3PostMultipartObjectTest, CollisionOccured) {
   S3Option::get_instance()->set_is_s3_shutting_down(false);
-  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   action_under_test->tried_count = 1;
-  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
-              create_object(_, _, _)).Times(AtLeast(1));
-  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), set_oid(_)).Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
+      .Times(AtLeast(1));
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_)).Times(1);
   action_under_test->collision_occured();
   EXPECT_EQ(2, action_under_test->tried_count);
 
@@ -331,16 +331,16 @@ TEST_F(S3PostMultipartObjectTest, CreateNewOid) {
 }
 
 TEST_F(S3PostMultipartObjectTest, RollbackCreate) {
-  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer),
-              delete_object(_, _, _)).Times(1);
-  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), set_oid(_)).Times(1);
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), delete_object(_, _, _))
+      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_)).Times(1);
   action_under_test->rollback_create();
 }
 
 TEST_F(S3PostMultipartObjectTest, RollbackCreateFailedMetadataMissing) {
-  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), get_state())
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
       .WillRepeatedly(Return(S3MotrWiterOpState::missing));
   action_under_test->add_task_rollback(
       std::bind(&S3PostMultipartObjectTest::func_callback_one, this));
@@ -349,10 +349,10 @@ TEST_F(S3PostMultipartObjectTest, RollbackCreateFailedMetadataMissing) {
 }
 
 TEST_F(S3PostMultipartObjectTest, RollbackCreateFailedMetadataFailed) {
-  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   action_under_test->add_task_rollback(
       std::bind(&S3PostMultipartObjectTest::func_callback_one, this));
-  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), get_state())
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
       .WillRepeatedly(Return(S3MotrWiterOpState::failed));
 
   action_under_test->rollback_create_failed();
@@ -360,10 +360,10 @@ TEST_F(S3PostMultipartObjectTest, RollbackCreateFailedMetadataFailed) {
 }
 
 TEST_F(S3PostMultipartObjectTest, RollbackCreateFailedMetadataFailed1) {
-  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   action_under_test->add_task_rollback(
       std::bind(&S3PostMultipartObjectTest::func_callback_one, this));
-  EXPECT_CALL(*(motr_writer_factory->mock_clovis_writer), get_state())
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
       .WillRepeatedly(Return(S3MotrWiterOpState::failed_to_launch));
 
   action_under_test->rollback_create_failed();
@@ -444,7 +444,7 @@ TEST_F(S3PostMultipartObjectTest, Send200ResponseToClient) {
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
   action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
-  action_under_test->clovis_writer = motr_writer_factory->mock_clovis_writer;
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::saved));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_state())

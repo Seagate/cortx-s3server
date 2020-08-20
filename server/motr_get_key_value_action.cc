@@ -23,20 +23,20 @@
 #include "s3_m0_uint128_helper.h"
 
 MotrGetKeyValueAction::MotrGetKeyValueAction(
-    std::shared_ptr<MotrRequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
-    std::shared_ptr<S3MotrKVSReaderFactory> clovis_motr_kvs_reader_factory)
+    std::shared_ptr<MotrRequestObject> req, std::shared_ptr<MotrAPI> motr_api,
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory)
     : MotrAction(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
-  if (clovis_api) {
-    motr_clovis_api = clovis_api;
+  if (motr_api) {
+    s3_motr_api = motr_api;
   } else {
-    motr_clovis_api = std::make_shared<ConcreteMotrAPI>();
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
 
-  if (clovis_motr_kvs_reader_factory) {
-    motr_kvs_reader_factory = clovis_motr_kvs_reader_factory;
+  if (motr_kvs_reader_factory) {
+    motr_kvs_reader_factory_ptr = motr_kvs_reader_factory;
   } else {
-    motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+    motr_kvs_reader_factory_ptr = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   setup_steps();
@@ -59,8 +59,8 @@ void MotrGetKeyValueAction::fetch_key_value() {
     set_s3_error("BadRequest");
     send_response_to_s3_client();
   } else {
-    motr_kv_reader = motr_kvs_reader_factory->create_motr_kvs_reader(
-        request, motr_clovis_api);
+    motr_kv_reader = motr_kvs_reader_factory_ptr->create_motr_kvs_reader(
+        request, s3_motr_api);
     motr_kv_reader->get_keyval(
         index_id, request->get_key_name(),
         std::bind(&MotrGetKeyValueAction::fetch_key_value_successful, this),

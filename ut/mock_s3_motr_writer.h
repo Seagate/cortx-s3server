@@ -36,11 +36,11 @@ using ::testing::Return;
 class MockS3MotrWiter : public S3MotrWiter {
  public:
   MockS3MotrWiter(std::shared_ptr<RequestObject> req, struct m0_uint128 oid,
-                  std::shared_ptr<MockS3Clovis> s3_clovis_mock_ptr)
-      : S3MotrWiter(req, oid, 0, s3_clovis_mock_ptr) {}
+                  std::shared_ptr<MockS3Clovis> s3_motr_mock_ptr)
+      : S3MotrWiter(req, oid, 0, s3_motr_mock_ptr) {}
   MockS3MotrWiter(std::shared_ptr<RequestObject> req,
-                  std::shared_ptr<MockS3Clovis> s3_clovis_mock_ptr)
-      : S3MotrWiter(req, 0, s3_clovis_mock_ptr) {}
+                  std::shared_ptr<MockS3Clovis> s3_motr_mock_ptr)
+      : S3MotrWiter(req, 0, s3_motr_mock_ptr) {}
 
   MOCK_METHOD0(get_state, S3MotrWiterOpState());
   MOCK_METHOD0(get_oid, struct m0_uint128());

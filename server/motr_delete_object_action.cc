@@ -73,8 +73,8 @@ void MotrDeleteObjectAction::validate_request() {
 void MotrDeleteObjectAction::delete_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  clovis_writer = motr_writer_factory->create_motr_writer(request, oid);
-  clovis_writer->delete_object(
+  motr_writer = motr_writer_factory->create_motr_writer(request, oid);
+  motr_writer->delete_object(
       std::bind(&MotrDeleteObjectAction::delete_object_successful, this),
       std::bind(&MotrDeleteObjectAction::delete_object_failed, this),
       layout_id);
@@ -91,7 +91,7 @@ void MotrDeleteObjectAction::delete_object_successful() {
 void MotrDeleteObjectAction::delete_object_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // Object missing is treated as object deleted similar to S3 object delete.
-  if (clovis_writer->get_state() == S3MotrWiterOpState::missing) {
+  if (motr_writer->get_state() == S3MotrWiterOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id,
            "Object with oid %" SCNx64 " : %" SCNx64 " is missing\n", oid.u_hi,
            oid.u_lo);

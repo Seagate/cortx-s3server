@@ -154,7 +154,7 @@ class S3ObjectMetadata {
                        nullptr,
                    std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory =
                        nullptr,
-                   std::shared_ptr<MotrAPI> clovis_api = nullptr);
+                   std::shared_ptr<MotrAPI> motr_api = nullptr);
 
   // Call these when Object metadata save/remove needs to be called.
   // id can be object list index OID or

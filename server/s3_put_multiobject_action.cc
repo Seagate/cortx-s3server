@@ -36,8 +36,8 @@ S3PutMultiObjectAction::S3PutMultiObjectAction(
       total_data_to_stream(0),
       auth_failed(false),
       write_failed(false),
-      clovis_write_in_progress(false),
-      clovis_write_completed(false),
+      motr_write_in_progress(false),
+      motr_write_completed(false),
       auth_in_progress(false),
       auth_completed(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
@@ -147,7 +147,7 @@ void S3PutMultiObjectAction::chunk_auth_successful() {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
-  if (clovis_write_completed) {
+  if (motr_write_completed) {
     if (write_failed) {
       // No need of setting error as its set when we set write_failed
       send_response_to_s3_client();
@@ -168,7 +168,7 @@ void S3PutMultiObjectAction::chunk_auth_failed() {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
-  if (clovis_write_in_progress) {
+  if (motr_write_in_progress) {
     // Do nothing, handle after write returns
   } else {
     send_response_to_s3_client();
@@ -341,16 +341,16 @@ void S3PutMultiObjectAction::compute_part_offset() {
            request->get_content_length(), part_number);
     // Calculate offset
     offset = (part_number - 1) * part_one_size;
-    s3_log(S3_LOG_DEBUG, request_id, "Offset for clovis write = %zu\n", offset);
+    s3_log(S3_LOG_DEBUG, request_id, "Offset for motr write = %zu\n", offset);
   }
   // Create writer to write from given offset as per the partnumber
-  clovis_writer = motr_writer_factory->create_motr_writer(
+  motr_writer = motr_writer_factory->create_motr_writer(
       request, object_multipart_metadata->get_oid(), offset);
   layout_id = object_multipart_metadata->get_layout_id();
-  clovis_writer->set_layout_id(layout_id);
+  motr_writer->set_layout_id(layout_id);
 
   // FIXME multipart uploads are corrupted when partsize is not aligned with
-  // clovis unit size for given layout_id. We block such uploads temporarily
+  // motr unit size for given layout_id. We block such uploads temporarily
   // and it will be fixed as a bug.
   if (part_number == 1) {
     // Reject during first part itself
@@ -398,7 +398,7 @@ void S3PutMultiObjectAction::initiate_data_streaming() {
       // Start streaming, logically pausing action till we get data.
       request->listen_for_incoming_data(
           std::bind(&S3PutMultiObjectAction::consume_incoming_content, this),
-          S3Option::get_instance()->get_clovis_write_payload_size(layout_id));
+          S3Option::get_instance()->get_motr_write_payload_size(layout_id));
     }
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -410,7 +410,7 @@ void S3PutMultiObjectAction::consume_incoming_content() {
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_multiobject_action_consume_incoming_content_shutdown_fail");
   if (request->is_s3_client_read_error()) {
-    if (!clovis_write_in_progress) {
+    if (!motr_write_in_progress) {
       client_read_error();
     }
     return;
@@ -419,13 +419,12 @@ void S3PutMultiObjectAction::consume_incoming_content() {
   log_timed_counter(put_timed_counter, "incoming_object_data_blocks");
   s3_perf_count_incoming_bytes(
       request->get_buffered_input()->get_content_length());
-  if (!clovis_write_in_progress) {
+  if (!motr_write_in_progress) {
     if (request->get_buffered_input()->is_freezed() ||
         request->get_buffered_input()->get_content_length() >=
-            S3Option::get_instance()->get_clovis_write_payload_size(
-                layout_id)) {
+            S3Option::get_instance()->get_motr_write_payload_size(layout_id)) {
       write_object(request->get_buffered_input());
-      if (!clovis_write_in_progress && clovis_write_completed) {
+      if (!motr_write_in_progress && motr_write_completed) {
         s3_log(S3_LOG_DEBUG, "", "Exiting\n");
         return;
       }
@@ -433,7 +432,7 @@ void S3PutMultiObjectAction::consume_incoming_content() {
   }
   if (!request->get_buffered_input()->is_freezed() &&
       request->get_buffered_input()->get_content_length() >=
-          (S3Option::get_instance()->get_clovis_write_payload_size(layout_id) *
+          (S3Option::get_instance()->get_motr_write_payload_size(layout_id) *
            S3Option::get_instance()->get_read_ahead_multiple())) {
     s3_log(S3_LOG_DEBUG, request_id, "Pausing with Buffered length = %zu\n",
            request->get_buffered_input()->get_content_length());
@@ -469,9 +468,9 @@ void S3PutMultiObjectAction::write_object(
     // Also send any ready chunk data for auth
     send_chunk_details_if_any();
   }
-  clovis_write_in_progress = true;
+  motr_write_in_progress = true;
 
-  clovis_writer->write_content(
+  motr_writer->write_content(
       std::bind(&S3PutMultiObjectAction::write_object_successful, this),
       std::bind(&S3PutMultiObjectAction::write_object_failed, this), buffer);
 
@@ -480,7 +479,7 @@ void S3PutMultiObjectAction::write_object(
 
 void S3PutMultiObjectAction::write_object_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  clovis_write_in_progress = false;
+  motr_write_in_progress = false;
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
@@ -497,17 +496,17 @@ void S3PutMultiObjectAction::write_object_successful() {
       return;
     }
   }
-  if (/* buffered data len is at least equal max we can write to clovis in one
+  if (/* buffered data len is at least equal max we can write to motr in one
          write */
       request->get_buffered_input()->get_content_length() >=
-          S3Option::get_instance()->get_clovis_write_payload_size(layout_id) ||
+          S3Option::get_instance()->get_motr_write_payload_size(layout_id) ||
       /* we have all the data buffered and ready to write */
       (request->get_buffered_input()->is_freezed() &&
        request->get_buffered_input()->get_content_length() > 0)) {
     write_object(request->get_buffered_input());
   } else if (request->get_buffered_input()->is_freezed() &&
              request->get_buffered_input()->get_content_length() == 0) {
-    clovis_write_completed = true;
+    motr_write_completed = true;
     if (request->is_chunked()) {
       if (auth_completed) {
         next();
@@ -525,16 +524,16 @@ void S3PutMultiObjectAction::write_object_successful() {
 }
 
 void S3PutMultiObjectAction::write_object_failed() {
-  s3_log(S3_LOG_ERROR, request_id, "Write to clovis failed\n");
+  s3_log(S3_LOG_ERROR, request_id, "Write to motr failed\n");
 
-  clovis_write_in_progress = false;
-  clovis_write_completed = true;
+  motr_write_in_progress = false;
+  motr_write_completed = true;
 
   if (request->is_s3_client_read_error()) {
     client_read_error();
     return;
   }
-  if (clovis_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
+  if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
   } else {
     set_s3_error("InternalError");
@@ -560,7 +559,7 @@ void S3PutMultiObjectAction::save_metadata() {
   // to rest Date and Last-Modfied time object metadata
   part_metadata->reset_date_time_to_current();
   part_metadata->set_content_length(request->get_data_length_str());
-  part_metadata->set_md5(clovis_writer->get_content_md5());
+  part_metadata->set_md5(motr_writer->get_content_md5());
   for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {
       part_metadata->add_user_defined_attribute(it.first, it.second);
@@ -570,7 +569,7 @@ void S3PutMultiObjectAction::save_metadata() {
   check_shutdown_signal_for_next_task(false);
 
   if (s3_fi_is_enabled("fail_save_part_mdata")) {
-    s3_fi_enable_once("clovis_kv_put_fail");
+    s3_fi_enable_once("motr_kv_put_fail");
   }
 
   part_metadata->save(
@@ -624,9 +623,9 @@ void S3PutMultiObjectAction::send_response_to_s3_client() {
     }
 
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if (clovis_writer != NULL) {
+  } else if (motr_writer != NULL) {
     // AWS adds explicit quotes "" to etag values.
-    std::string e_tag = "\"" + clovis_writer->get_content_md5() + "\"";
+    std::string e_tag = "\"" + motr_writer->get_content_md5() + "\"";
 
     request->set_out_header_value("ETag", e_tag);
 

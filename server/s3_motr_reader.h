@@ -38,12 +38,12 @@ extern S3Option* g_option_instance;
 
 class S3MotrReaderContext : public S3AsyncOpContextBase {
   // Basic Operation context.
-  struct s3_clovis_op_context* clovis_op_context;
-  bool has_clovis_op_context;
+  struct s3_motr_op_context* motr_op_context;
+  bool has_motr_op_context;
 
   // Read/Write Operation context.
-  struct s3_clovis_rw_op_context* clovis_rw_op_context;
-  bool has_clovis_rw_op_context;
+  struct s3_motr_rw_op_context* motr_rw_op_context;
+  bool has_motr_rw_op_context;
 
   int layout_id;
   std::string request_id;
@@ -52,10 +52,10 @@ class S3MotrReaderContext : public S3AsyncOpContextBase {
   S3MotrReaderContext(std::shared_ptr<RequestObject> req,
                       std::function<void()> success_callback,
                       std::function<void()> failed_callback, int layoutid,
-                      std::shared_ptr<MotrAPI> clovis_api = nullptr)
+                      std::shared_ptr<MotrAPI> motr_api = nullptr)
       // Passing default value of opcount explicitly.
       : S3AsyncOpContextBase(req, success_callback, failed_callback, 1,
-                             clovis_api) {
+                             motr_api) {
     request_id = request->get_request_id();
     s3_log(S3_LOG_DEBUG, request_id, "Constructor: layout_id = %d\n", layoutid);
     assert(layoutid > 0);
@@ -63,62 +63,62 @@ class S3MotrReaderContext : public S3AsyncOpContextBase {
     layout_id = layoutid;
 
     // Create or write, we need op context
-    clovis_op_context = create_basic_op_ctx(1);
-    has_clovis_op_context = true;
+    motr_op_context = create_basic_op_ctx(1);
+    has_motr_op_context = true;
 
-    clovis_rw_op_context = NULL;
-    has_clovis_rw_op_context = false;
+    motr_rw_op_context = NULL;
+    has_motr_rw_op_context = false;
   }
 
   ~S3MotrReaderContext() {
     s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
 
-    if (has_clovis_op_context) {
-      free_basic_op_ctx(clovis_op_context);
+    if (has_motr_op_context) {
+      free_basic_op_ctx(motr_op_context);
     }
-    if (has_clovis_rw_op_context) {
-      free_basic_rw_op_ctx(clovis_rw_op_context);
+    if (has_motr_rw_op_context) {
+      free_basic_rw_op_ctx(motr_rw_op_context);
     }
   }
 
   // Call this when you want to do read op.
   // param(in/out): last_index - where next read should start
-  bool init_read_op_ctx(size_t clovis_buf_count, uint64_t* last_index) {
+  bool init_read_op_ctx(size_t motr_buf_count, uint64_t* last_index) {
     if (last_index == nullptr) {
       return false;
     }
     size_t unit_size =
         S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
-    clovis_rw_op_context = create_basic_rw_op_ctx(clovis_buf_count, unit_size);
-    if (clovis_rw_op_context == NULL) {
+    motr_rw_op_context = create_basic_rw_op_ctx(motr_buf_count, unit_size);
+    if (motr_rw_op_context == NULL) {
       // out of memory
       return false;
     }
-    has_clovis_rw_op_context = true;
+    has_motr_rw_op_context = true;
 
-    for (size_t i = 0; i < clovis_buf_count; i++) {
+    for (size_t i = 0; i < motr_buf_count; i++) {
       // Overwrite previous v_count to adapt to current layout_id's unit_size
-      clovis_rw_op_context->data->ov_vec.v_count[i] = unit_size;
+      motr_rw_op_context->data->ov_vec.v_count[i] = unit_size;
 
-      clovis_rw_op_context->ext->iv_index[i] = *last_index;
-      clovis_rw_op_context->ext->iv_vec.v_count[i] = unit_size;
+      motr_rw_op_context->ext->iv_index[i] = *last_index;
+      motr_rw_op_context->ext->iv_vec.v_count[i] = unit_size;
       *last_index += unit_size;
 
       /* we don't want any attributes */
-      clovis_rw_op_context->attr->ov_vec.v_count[i] = 0;
+      motr_rw_op_context->attr->ov_vec.v_count[i] = 0;
     }
     return true;
   }
 
-  struct s3_clovis_op_context* get_clovis_op_ctx() { return clovis_op_context; }
+  struct s3_motr_op_context* get_motr_op_ctx() { return motr_op_context; }
 
-  struct s3_clovis_rw_op_context* get_clovis_rw_op_ctx() {
-    return clovis_rw_op_context;
+  struct s3_motr_rw_op_context* get_motr_rw_op_ctx() {
+    return motr_rw_op_context;
   }
 
-  struct s3_clovis_rw_op_context* get_ownership_clovis_rw_op_ctx() {
-    has_clovis_rw_op_context = false;  // release ownership, caller should free.
-    return clovis_rw_op_context;
+  struct s3_motr_rw_op_context* get_ownership_motr_rw_op_ctx() {
+    has_motr_rw_op_context = false;  // release ownership, caller should free.
+    return motr_rw_op_context;
   }
 };
 
@@ -151,7 +151,7 @@ class S3MotrReader {
   S3MotrReaderOpState state;
 
   // Holds references to buffers after the read so it can be consumed.
-  struct s3_clovis_rw_op_context* clovis_rw_op_context;
+  struct s3_motr_rw_op_context* motr_rw_op_context;
   size_t iteration_index;
   // to Help iteration.
   size_t num_of_blocks_to_read;
@@ -159,9 +159,9 @@ class S3MotrReader {
   uint64_t last_index;
 
   bool is_object_opened;
-  struct s3_clovis_obj_context* obj_ctx;
+  struct s3_motr_obj_context* obj_ctx;
 
-  // Internal open operation so clovis can fetch required object metadata
+  // Internal open operation so motr can fetch required object metadata
   // for example object pool version
   int open_object(std::function<void(void)> on_success,
                   std::function<void(void)> on_failed);
@@ -179,7 +179,7 @@ class S3MotrReader {
  public:
   // object id is generated at upper level and passed to this constructor
   S3MotrReader(std::shared_ptr<RequestObject> req, struct m0_uint128 id,
-               int layout_id, std::shared_ptr<MotrAPI> clovis_api = nullptr);
+               int layout_id, std::shared_ptr<MotrAPI> motr_api = nullptr);
   virtual ~S3MotrReader();
 
   virtual S3MotrReaderOpState get_state() { return state; }

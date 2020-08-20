@@ -179,7 +179,7 @@ void S3DeleteBucketAction::fetch_multipart_objects() {
   if (m0_uint128_cmp(&indx_oid, &empty_indx_oid) != 0) {
     multipart_present = true;
     // There is an oid for index present, so read objects from it
-    size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
+    size_t count = S3Option::get_instance()->get_motr_idx_fetch_count();
     motr_kv_reader->next_keyval(
         indx_oid, last_key, count,
         std::bind(&S3DeleteBucketAction::fetch_multipart_objects_successful,
@@ -199,7 +199,7 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
   size_t return_list_size = 0;
   auto& kvps = motr_kv_reader->get_key_values();
   size_t count_we_requested =
-      S3Option::get_instance()->get_clovis_idx_fetch_count();
+      S3Option::get_instance()->get_motr_idx_fetch_count();
   size_t length = kvps.size();
   bool atleast_one_json_error = false;
   struct m0_uint128 multipart_index_oid =
@@ -255,8 +255,8 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
 void S3DeleteBucketAction::delete_multipart_objects() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (multipart_object_oids.size() != 0) {
-    clovis_writer = motr_writer_factory->create_motr_writer(request);
-    clovis_writer->delete_objects(
+    motr_writer = motr_writer_factory->create_motr_writer(request);
+    motr_writer->delete_objects(
         multipart_object_oids, multipart_object_layoutids,
         std::bind(&S3DeleteBucketAction::delete_multipart_objects_successful,
                   this),
@@ -274,7 +274,7 @@ void S3DeleteBucketAction::delete_multipart_objects_successful() {
   int op_ret_code;
   bool atleast_one_error = false;
   for (auto& multipart_obj_oid : multipart_object_oids) {
-    op_ret_code = clovis_writer->get_op_ret_code_for_delete_op(count);
+    op_ret_code = motr_writer->get_op_ret_code_for_delete_op(count);
     if (op_ret_code == 0 || op_ret_code == -ENOENT) {
       s3_log(S3_LOG_DEBUG, request_id,
              "Deleted multipart object, oid is "
@@ -303,14 +303,14 @@ void S3DeleteBucketAction::delete_multipart_objects_failed() {
   uint count = 0;
   int op_ret_code;
   bool atleast_one_error = false;
-  if (clovis_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
+  if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
     s3_log(S3_LOG_ERROR, "", "delete_multipart_objects_failed failed\n");
     send_response_to_s3_client();
     return;
   }
   for (auto& multipart_obj_oid : multipart_object_oids) {
-    op_ret_code = clovis_writer->get_op_ret_code_for_delete_op(count);
+    op_ret_code = motr_writer->get_op_ret_code_for_delete_op(count);
     if (op_ret_code != -ENOENT && op_ret_code != 0) {
       s3_log(
           S3_LOG_ERROR, request_id,

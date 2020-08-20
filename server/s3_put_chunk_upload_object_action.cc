@@ -38,17 +38,17 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
-    std::shared_ptr<S3MotrWriterFactory> clovis_s3_factory,
+    std::shared_ptr<S3MotrWriterFactory> motr_s3_factory,
     std::shared_ptr<S3AuthClientFactory> auth_factory,
-    std::shared_ptr<MotrAPI> clovis_api,
+    std::shared_ptr<MotrAPI> motr_api,
     std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
                      std::move(object_meta_factory), true, auth_factory),
       auth_failed(false),
       write_failed(false),
-      clovis_write_in_progress(false),
-      clovis_write_completed(false),
+      motr_write_in_progress(false),
+      motr_write_completed(false),
       auth_in_progress(false),
       auth_completed(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
@@ -60,8 +60,8 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
          request->get_object_name().c_str());
 
   action_uses_cleanup = true;
-  if (clovis_api) {
-    s3_motr_api = clovis_api;
+  if (motr_api) {
+    s3_motr_api = motr_api;
   } else {
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
@@ -82,8 +82,8 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
   tried_count = 0;
   salt = "uri_salt_";
 
-  if (clovis_s3_factory) {
-    motr_writer_factory = std::move(clovis_s3_factory);
+  if (motr_s3_factory) {
+    motr_writer_factory = std::move(motr_s3_factory);
   } else {
     motr_writer_factory = std::make_shared<S3MotrWriterFactory>();
   }
@@ -128,7 +128,7 @@ void S3PutChunkUploadObjectAction::chunk_auth_successful() {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
-  if (clovis_write_completed) {
+  if (motr_write_completed) {
     if (write_failed) {
       assert(s3_put_chunk_action_state ==
              S3PutChunkUploadObjectActionState::writeFailed);
@@ -154,7 +154,7 @@ void S3PutChunkUploadObjectAction::chunk_auth_failed() {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
-  if (clovis_write_in_progress) {
+  if (motr_write_in_progress) {
     // Do nothing, handle after write returns
   } else {
     // write_failed check not required as cleanup do necessary
@@ -320,16 +320,16 @@ void S3PutChunkUploadObjectAction::create_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   create_object_timer.start();
   if (tried_count == 0) {
-    clovis_writer =
+    motr_writer =
         motr_writer_factory->create_motr_writer(request, new_object_oid);
   } else {
-    clovis_writer->set_oid(new_object_oid);
+    motr_writer->set_oid(new_object_oid);
   }
 
   layout_id = S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
       request->get_data_length());
 
-  clovis_writer->create_object(
+  motr_writer->create_object(
       std::bind(&S3PutChunkUploadObjectAction::create_object_successful, this),
       std::bind(&S3PutChunkUploadObjectAction::create_object_failed, this),
       layout_id);
@@ -351,7 +351,7 @@ void S3PutChunkUploadObjectAction::create_object_successful() {
 
   // Generate a version id for the new object.
   new_object_metadata->regenerate_version_id();
-  new_object_metadata->set_oid(clovis_writer->get_oid());
+  new_object_metadata->set_oid(motr_writer->get_oid());
   new_object_metadata->set_layout_id(layout_id);
 
   add_object_oid_to_probable_dead_oid_list();
@@ -364,10 +364,9 @@ void S3PutChunkUploadObjectAction::create_object_failed() {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
-  if (clovis_writer->get_state() == S3MotrWiterOpState::exists) {
+  if (motr_writer->get_state() == S3MotrWiterOpState::exists) {
     collision_detected();
-  } else if (clovis_writer->get_state() ==
-             S3MotrWiterOpState::failed_to_launch) {
+  } else if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
     s3_put_chunk_action_state =
         S3PutChunkUploadObjectActionState::newObjOidCreationFailed;
     create_object_timer.stop();
@@ -474,7 +473,7 @@ void S3PutChunkUploadObjectAction::initiate_data_streaming() {
       request->listen_for_incoming_data(
           std::bind(&S3PutChunkUploadObjectAction::consume_incoming_content,
                     this),
-          S3Option::get_instance()->get_clovis_write_payload_size(layout_id));
+          S3Option::get_instance()->get_motr_write_payload_size(layout_id));
     }
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -486,19 +485,18 @@ void S3PutChunkUploadObjectAction::consume_incoming_content() {
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_chunk_upload_object_action_consume_incoming_content_shutdown_fail");
   if (request->is_s3_client_read_error()) {
-    if (!clovis_write_in_progress) {
+    if (!motr_write_in_progress) {
       client_read_error();
     }
     return;
   }
 
-  if (!clovis_write_in_progress) {
+  if (!motr_write_in_progress) {
     if (request->get_buffered_input()->is_freezed() ||
         request->get_buffered_input()->get_content_length() >=
-            S3Option::get_instance()->get_clovis_write_payload_size(
-                layout_id)) {
+            S3Option::get_instance()->get_motr_write_payload_size(layout_id)) {
       write_object(request->get_buffered_input());
-      if (!clovis_write_in_progress && write_failed) {
+      if (!motr_write_in_progress && write_failed) {
         s3_log(S3_LOG_DEBUG, "", "Exiting\n");
         return;
       }
@@ -506,7 +504,7 @@ void S3PutChunkUploadObjectAction::consume_incoming_content() {
   }
   if (!request->get_buffered_input()->is_freezed() &&
       request->get_buffered_input()->get_content_length() >=
-          (S3Option::get_instance()->get_clovis_write_payload_size(layout_id) *
+          (S3Option::get_instance()->get_motr_write_payload_size(layout_id) *
            S3Option::get_instance()->get_read_ahead_multiple())) {
     s3_log(S3_LOG_DEBUG, request_id, "Pausing with Buffered length = %zu\n",
            request->get_buffered_input()->get_content_length());
@@ -543,19 +541,19 @@ void S3PutChunkUploadObjectAction::write_object(
   // Also send any ready chunk data for auth
   send_chunk_details_if_any();
 
-  clovis_writer->write_content(
+  motr_writer->write_content(
       std::bind(&S3PutChunkUploadObjectAction::write_object_successful, this),
       std::bind(&S3PutChunkUploadObjectAction::write_object_failed, this),
       buffer);
-  clovis_write_in_progress = true;
+  motr_write_in_progress = true;
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PutChunkUploadObjectAction::write_object_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  s3_log(S3_LOG_DEBUG, request_id, "Write to clovis successful\n");
-  clovis_write_in_progress = false;
+  s3_log(S3_LOG_DEBUG, request_id, "Write to motr successful\n");
+  motr_write_in_progress = false;
 
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -576,10 +574,10 @@ void S3PutChunkUploadObjectAction::write_object_successful() {
     return;
   }
 
-  if (/* buffered data len is at least equal max we can write to clovis in one
+  if (/* buffered data len is at least equal max we can write to motr in one
          write */
       request->get_buffered_input()->get_content_length() >=
-          S3Option::get_instance()->get_clovis_write_payload_size(
+          S3Option::get_instance()->get_motr_write_payload_size(
               layout_id) || /* we have all the data buffered and ready to
                                write */
       (request->get_buffered_input()->is_freezed() &&
@@ -587,7 +585,7 @@ void S3PutChunkUploadObjectAction::write_object_successful() {
     write_object(request->get_buffered_input());
   } else if (request->get_buffered_input()->is_freezed() &&
              request->get_buffered_input()->get_content_length() == 0) {
-    clovis_write_completed = true;
+    motr_write_completed = true;
     if (auth_completed) {
       next();
     } else {
@@ -604,7 +602,7 @@ void S3PutChunkUploadObjectAction::write_object_successful() {
 void S3PutChunkUploadObjectAction::write_object_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  clovis_write_in_progress = false;
+  motr_write_in_progress = false;
   write_failed = true;
   s3_put_chunk_action_state = S3PutChunkUploadObjectActionState::writeFailed;
 
@@ -615,10 +613,10 @@ void S3PutChunkUploadObjectAction::write_object_failed() {
     client_read_error();
     return;
   }
-  if (clovis_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
+  if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
     s3_log(S3_LOG_ERROR, request_id,
-           "write_object_failed called due to clovis_entity_open failure\n");
+           "write_object_failed called due to motr_entity_open failure\n");
   } else {
     set_s3_error("InternalError");
   }
@@ -627,7 +625,7 @@ void S3PutChunkUploadObjectAction::write_object_failed() {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
-  clovis_write_completed = true;
+  motr_write_completed = true;
   if (!auth_in_progress) {
     // Clean up will be done after response.
     send_response_to_s3_client();
@@ -643,7 +641,7 @@ void S3PutChunkUploadObjectAction::save_metadata() {
   new_object_metadata->reset_date_time_to_current();
   new_object_metadata->set_content_length(request->get_data_length_str());
   new_object_metadata->set_content_type(request->get_content_type());
-  new_object_metadata->set_md5(clovis_writer->get_content_md5());
+  new_object_metadata->set_md5(motr_writer->get_content_md5());
   new_object_metadata->set_tags(new_object_tags_map);
 
   for (auto it : request->get_in_headers_copy()) {
@@ -790,7 +788,7 @@ void S3PutChunkUploadObjectAction::send_response_to_s3_client() {
     s3_put_chunk_action_state = S3PutChunkUploadObjectActionState::completed;
 
     // AWS adds explicit quotes "" to etag values.
-    std::string e_tag = "\"" + clovis_writer->get_content_md5() + "\"";
+    std::string e_tag = "\"" + motr_writer->get_content_md5() + "\"";
 
     request->set_out_header_value("ETag", e_tag);
 
@@ -953,8 +951,8 @@ void S3PutChunkUploadObjectAction::delete_old_object() {
   // If PUT is success, we delete old object if present
   assert(old_object_oid.u_hi != 0ULL || old_object_oid.u_lo != 0ULL);
 
-  clovis_writer->set_oid(old_object_oid);
-  clovis_writer->delete_object(
+  motr_writer->set_oid(old_object_oid);
+  motr_writer->delete_object(
       std::bind(
           &S3PutChunkUploadObjectAction::remove_old_object_version_metadata,
           this),
@@ -979,8 +977,8 @@ void S3PutChunkUploadObjectAction::delete_new_object() {
          S3PutChunkUploadObjectActionState::completed);
   assert(new_object_oid.u_hi != 0ULL || new_object_oid.u_lo != 0ULL);
 
-  clovis_writer->set_oid(new_object_oid);
-  clovis_writer->delete_object(
+  motr_writer->set_oid(new_object_oid);
+  motr_writer->delete_object(
       std::bind(&S3PutChunkUploadObjectAction::remove_new_oid_probable_record,
                 this),
       std::bind(&S3PutChunkUploadObjectAction::next, this), layout_id);

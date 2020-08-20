@@ -113,7 +113,7 @@ do
   pid_filename='/var/run/s3server.'$s3port'.pid'
   echo "Starting S3Server in authentication disabled mode.."
   s3server --s3pidfile $pid_filename \
-           --clovislocal $local_ep:${clovis_local_port} --clovisha $ha_ep \
+           --motrlocal $local_ep:${clovis_local_port} --motrha $ha_ep \
            --s3port $s3port --fault_injection true --disable_auth true
   ((counter++))
 done

@@ -29,7 +29,7 @@
 extern S3Option* g_option_instance;
 
 size_t S3MemoryProfile::memory_per_put_request(int layout_id) {
-  return g_option_instance->get_clovis_write_payload_size(layout_id) *
+  return g_option_instance->get_motr_write_payload_size(layout_id) *
          g_option_instance->get_read_ahead_multiple();
 }
 

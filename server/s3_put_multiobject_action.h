@@ -36,7 +36,7 @@
 class S3PutMultiObjectAction : public S3ObjectAction {
   std::shared_ptr<S3PartMetadata> part_metadata = NULL;
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata = NULL;
-  std::shared_ptr<S3MotrWiter> clovis_writer = NULL;
+  std::shared_ptr<S3MotrWiter> motr_writer = NULL;
 
   size_t total_data_to_stream;
   S3Timer create_object_timer;
@@ -54,8 +54,8 @@ class S3PutMultiObjectAction : public S3ObjectAction {
   // These 2 flags help respond to client gracefully when either auth or write
   // fails.
   // Both write and chunk auth happen in parallel.
-  bool clovis_write_in_progress;
-  bool clovis_write_completed;  // full object write
+  bool motr_write_in_progress;
+  bool motr_write_completed;  // full object write
   bool auth_in_progress;
   bool auth_completed;  // all chunk auth
 
@@ -79,7 +79,7 @@ class S3PutMultiObjectAction : public S3ObjectAction {
       std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
           nullptr,
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
-      std::shared_ptr<S3MotrWriterFactory> clovis_s3_factory = nullptr,
+      std::shared_ptr<S3MotrWriterFactory> motr_s3_factory = nullptr,
       std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr);
 
   void setup_steps();

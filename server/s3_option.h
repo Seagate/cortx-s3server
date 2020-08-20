@@ -25,9 +25,9 @@
 
 #define S3_OPTION_IPV4_BIND_ADDR 0x0001
 #define S3_OPTION_BIND_PORT 0x0002
-#define S3_OPTION_CLOVIS_LOCAL_ADDR 0x0004
+#define S3_OPTION_MOTR_LOCAL_ADDR 0x0004
 #define S3_OPTION_PLACE_HOLDER_1 0x0008
-#define S3_OPTION_CLOVIS_HA_ADDR 0x0010
+#define S3_OPTION_MOTR_HA_ADDR 0x0010
 #define S3_OPTION_AUTH_IP_ADDR 0x0020
 #define S3_OPTION_AUTH_PORT 0x0040
 #define S3_MOTR_LAYOUT_ID 0x0080
@@ -38,8 +38,8 @@
 #define S3_OPTION_PIDFILE 0x01000
 #define S3_OPTION_STATSD_IP_ADDR 0x2000
 #define S3_OPTION_STATSD_PORT 0x4000
-#define S3_OPTION_CLOVIS_PROF 0x8000
-#define S3_OPTION_CLOVIS_PROCESS_FID 0x10000
+#define S3_OPTION_MOTR_PROF 0x8000
+#define S3_OPTION_MOTR_PROCESS_FID 0x10000
 #define S3_OPTION_REUSEPORT 0x20000
 #define S3_OPTION_IPV6_BIND_ADDR 0x40000
 #define S3_OPTION_AUDIT_CONFIG 0x80000
@@ -132,30 +132,30 @@ class S3Option {
   bool s3_enable_murmurhash_oid;
   int log_flush_frequency_sec;
 
-  unsigned short clovis_layout_id;
-  unsigned short clovis_units_per_request;
-  std::vector<int> clovis_unit_sizes_for_mem_pool;
-  int clovis_idx_fetch_count;
-  std::string clovis_local_addr;
-  std::string clovis_ha_addr;
-  std::string clovis_profile;
-  bool clovis_is_oostore;
-  bool clovis_is_read_verify;
-  unsigned int clovis_tm_recv_queue_min_len;
-  unsigned int clovis_max_rpc_msg_size;
-  unsigned int clovis_op_wait_period;
-  std::string clovis_process_fid;
-  int clovis_idx_service_id;
-  std::string clovis_cass_cluster_ep;
-  std::string clovis_cass_keyspace;
-  int clovis_cass_max_column_family_num;
+  unsigned short motr_layout_id;
+  unsigned short motr_units_per_request;
+  std::vector<int> motr_unit_sizes_for_mem_pool;
+  int motr_idx_fetch_count;
+  std::string motr_local_addr;
+  std::string motr_ha_addr;
+  std::string motr_profile;
+  bool motr_is_oostore;
+  bool motr_is_read_verify;
+  unsigned int motr_tm_recv_queue_min_len;
+  unsigned int motr_max_rpc_msg_size;
+  unsigned int motr_op_wait_period;
+  std::string motr_process_fid;
+  int motr_idx_service_id;
+  std::string motr_cass_cluster_ep;
+  std::string motr_cass_keyspace;
+  int motr_cass_max_column_family_num;
 
-  bool clovis_read_mempool_zeroed_buffer;
+  bool motr_read_mempool_zeroed_buffer;
   bool libevent_mempool_zeroed_buffer;
 
-  size_t clovis_read_pool_initial_buffer_count;
-  size_t clovis_read_pool_expandable_count;
-  size_t clovis_read_pool_max_threshold;
+  size_t motr_read_pool_initial_buffer_count;
+  size_t motr_read_pool_expandable_count;
+  size_t motr_read_pool_max_threshold;
 
   size_t libevent_pool_initial_size;
   size_t libevent_pool_expandable_size;
@@ -180,7 +180,7 @@ class S3Option {
   evbase_t* eventbase;
 
   static S3Option* option_instance;
-  void set_clovis_idx_fetch_count(short count);
+  void set_motr_idx_fetch_count(short count);
 
   S3Option() {
     cmd_opt_flag = 0;
@@ -222,27 +222,27 @@ class S3Option {
     audit_logger_kafka_web_path = "/topics/test";
     max_audit_retry_count = 5;
 
-    clovis_layout_id = FLAGS_clovislayoutid;
-    clovis_local_addr = FLAGS_clovislocal;
-    clovis_ha_addr = FLAGS_clovisha;
-    clovis_profile = FLAGS_clovisprofilefid;
-    clovis_is_oostore = false;
-    clovis_is_read_verify = false;
-    clovis_tm_recv_queue_min_len = 2;
-    clovis_max_rpc_msg_size = 131072;
-    clovis_process_fid = FLAGS_clovisprocessfid;
-    clovis_idx_service_id = 2;
-    clovis_cass_cluster_ep = "127.0.0.1";
-    clovis_cass_keyspace = "clovis_index_keyspace";
-    clovis_cass_max_column_family_num = 1;
+    motr_layout_id = FLAGS_motrlayoutid;
+    motr_local_addr = FLAGS_motrlocal;
+    motr_ha_addr = FLAGS_motrha;
+    motr_profile = FLAGS_motrprofilefid;
+    motr_is_oostore = false;
+    motr_is_read_verify = false;
+    motr_tm_recv_queue_min_len = 2;
+    motr_max_rpc_msg_size = 131072;
+    motr_process_fid = FLAGS_motrprocessfid;
+    motr_idx_service_id = 2;
+    motr_cass_cluster_ep = "127.0.0.1";
+    motr_cass_keyspace = "motr_index_keyspace";
+    motr_cass_max_column_family_num = 1;
 
-    clovis_read_mempool_zeroed_buffer = 0;
+    motr_read_mempool_zeroed_buffer = 0;
     libevent_mempool_zeroed_buffer = 0;
 
     // libevent_pool_buffer_size is used for each item in this
-    clovis_read_pool_initial_buffer_count = 10;   // 10 buffer
-    clovis_read_pool_expandable_count = 1048576;  // 1mb
-    clovis_read_pool_max_threshold = 104857600;   // 100mb
+    motr_read_pool_initial_buffer_count = 10;   // 10 buffer
+    motr_read_pool_expandable_count = 1048576;  // 1mb
+    motr_read_pool_max_threshold = 104857600;   // 100mb
 
     libevent_pool_buffer_size = 4096;
     libevent_pool_initial_size = 10485760;
@@ -265,8 +265,8 @@ class S3Option {
     perf_enabled = FLAGS_perfenable;
     perf_log_file = FLAGS_perflogfile;
 
-    clovis_units_per_request = 1;
-    clovis_idx_fetch_count = 100;
+    motr_units_per_request = 1;
+    motr_idx_fetch_count = 100;
 
     retry_interval_millisec = 0;
     s3_client_req_read_timeout_secs = 5;
@@ -370,22 +370,22 @@ class S3Option {
   unsigned short s3_performance_enabled();
   std::string get_perf_log_filename();
 
-  std::string get_clovis_local_addr();
-  std::string get_clovis_ha_addr();
-  std::string get_clovis_prof();
-  unsigned short get_clovis_layout_id();
-  std::vector<int> get_clovis_unit_sizes_for_mem_pool();
-  unsigned short get_clovis_units_per_request();
-  unsigned short get_clovis_op_wait_period();
+  std::string get_motr_local_addr();
+  std::string get_motr_ha_addr();
+  std::string get_motr_prof();
+  unsigned short get_motr_layout_id();
+  std::vector<int> get_motr_unit_sizes_for_mem_pool();
+  unsigned short get_motr_units_per_request();
+  unsigned short get_motr_op_wait_period();
   unsigned short get_client_req_read_timeout_secs();
-  unsigned int get_clovis_write_payload_size(int layoutid);
-  unsigned int get_clovis_read_payload_size(int layoutid);
-  int get_clovis_idx_fetch_count();
+  unsigned int get_motr_write_payload_size(int layoutid);
+  unsigned int get_motr_read_payload_size(int layoutid);
+  int get_motr_idx_fetch_count();
   unsigned short get_max_retry_count();
   unsigned short get_retry_interval_in_millisec();
-  size_t get_clovis_read_pool_initial_buffer_count();
-  size_t get_clovis_read_pool_expandable_count();
-  size_t get_clovis_read_pool_max_threshold();
+  size_t get_motr_read_pool_initial_buffer_count();
+  size_t get_motr_read_pool_expandable_count();
+  size_t get_motr_read_pool_max_threshold();
 
   size_t get_libevent_pool_initial_size();
   size_t get_libevent_pool_expandable_size();
@@ -395,30 +395,30 @@ class S3Option {
   size_t get_libevent_pool_reserve_size() const;
   unsigned get_libevent_pool_reserve_percent() const;
 
-  bool get_clovis_is_oostore();
-  bool get_clovis_is_read_verify();
-  unsigned int get_clovis_tm_recv_queue_min_len();
-  unsigned int get_clovis_max_rpc_msg_size();
-  std::string get_clovis_process_fid();
-  int get_clovis_idx_service_id();
-  std::string get_clovis_cass_cluster_ep();
-  std::string get_clovis_cass_keyspace();
-  int get_clovis_cass_max_column_family_num();
+  bool get_motr_is_oostore();
+  bool get_motr_is_read_verify();
+  unsigned int get_motr_tm_recv_queue_min_len();
+  unsigned int get_motr_max_rpc_msg_size();
+  std::string get_motr_process_fid();
+  int get_motr_idx_service_id();
+  std::string get_motr_cass_cluster_ep();
+  std::string get_motr_cass_keyspace();
+  int get_motr_cass_max_column_family_num();
 
   void set_cmdline_option(int option_flag, const char* option);
   int get_cmd_opt_flag();
 
   // Check if any fake out options are provided.
-  bool is_fake_clovis_createobj();
-  bool is_fake_clovis_writeobj();
-  bool is_fake_clovis_readobj();
-  bool is_fake_clovis_deleteobj();
-  bool is_fake_clovis_createidx();
-  bool is_fake_clovis_deleteidx();
-  bool is_fake_clovis_getkv();
-  bool is_fake_clovis_putkv();
-  bool is_fake_clovis_deletekv();
-  bool is_fake_clovis_redis_kvs();
+  bool is_fake_motr_createobj();
+  bool is_fake_motr_writeobj();
+  bool is_fake_motr_readobj();
+  bool is_fake_motr_deleteobj();
+  bool is_fake_motr_createidx();
+  bool is_fake_motr_deleteidx();
+  bool is_fake_motr_getkv();
+  bool is_fake_motr_putkv();
+  bool is_fake_motr_deletekv();
+  bool is_fake_motr_redis_kvs();
 
   /* For the moment sync kvs operation for fake kvs is not supported */
   bool is_sync_kvs_allowed();
@@ -429,7 +429,7 @@ class S3Option {
   std::string get_redis_srv_addr();
   unsigned short get_redis_srv_port();
 
-  bool get_clovis_read_mempool_zeroed_buffer();
+  bool get_motr_read_mempool_zeroed_buffer();
   bool get_libevent_mempool_zeroed_buffer();
 
   bool is_stats_enabled();

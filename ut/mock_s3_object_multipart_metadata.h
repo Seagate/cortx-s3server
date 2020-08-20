@@ -35,9 +35,9 @@ using ::testing::Return;
 class MockS3ObjectMultipartMetadata : public S3ObjectMetadata {
  public:
   MockS3ObjectMultipartMetadata(std::shared_ptr<S3RequestObject> req,
-                                std::shared_ptr<MockS3Clovis> clovis_api,
+                                std::shared_ptr<MockS3Clovis> motr_api,
                                 std::string upload_id)
-      : S3ObjectMetadata(req, true, upload_id, nullptr, nullptr, clovis_api) {}
+      : S3ObjectMetadata(req, true, upload_id, nullptr, nullptr, motr_api) {}
   MOCK_METHOD0(get_state, S3ObjectMetadataState());
   MOCK_METHOD0(get_old_oid, struct m0_uint128());
   MOCK_METHOD0(get_oid, struct m0_uint128());

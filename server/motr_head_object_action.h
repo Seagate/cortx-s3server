@@ -32,7 +32,7 @@
 class MotrHeadObjectAction : public MotrAction {
   int layout_id;
   m0_uint128 oid;
-  std::shared_ptr<S3MotrReader> clovis_reader;
+  std::shared_ptr<S3MotrReader> motr_reader;
 
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
 

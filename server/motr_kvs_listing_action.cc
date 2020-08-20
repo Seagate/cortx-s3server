@@ -33,14 +33,14 @@ MotrKVSListingAction::MotrKVSListingAction(
     std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory)
     : MotrAction(req), last_key(""), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-  motr_clovis_api = std::make_shared<ConcreteMotrAPI>();
+  motr_api = std::make_shared<ConcreteMotrAPI>();
 
   s3_log(S3_LOG_INFO, request_id, "Motr API: kvs list Service.\n");
 
   if (motr_kvs_reader_factory) {
-    motr_motr_kvs_reader_factory = motr_kvs_reader_factory;
+    motr_kvs_reader_factory_ptr = motr_kvs_reader_factory;
   } else {
-    motr_motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+    motr_kvs_reader_factory_ptr = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   setup_steps();
@@ -105,10 +105,10 @@ void MotrKVSListingAction::validate_request() {
 
 void MotrKVSListingAction::get_next_key_value() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
+  size_t count = S3Option::get_instance()->get_motr_idx_fetch_count();
 
-  motr_kv_reader = motr_motr_kvs_reader_factory->create_motr_kvs_reader(
-      request, motr_clovis_api);
+  motr_kv_reader =
+      motr_kvs_reader_factory_ptr->create_motr_kvs_reader(request, motr_api);
 
   if (max_keys == 0) {
     // as requested max_keys is 0
@@ -191,7 +191,7 @@ void MotrKVSListingAction::get_next_key_value_successful() {
 
   // We ask for more if there is any.
   size_t count_we_requested =
-      S3Option::get_instance()->get_clovis_idx_fetch_count();
+      S3Option::get_instance()->get_motr_idx_fetch_count();
 
   if ((kvs_response_list.size() == max_keys) ||
       (kvps.size() < count_we_requested)) {

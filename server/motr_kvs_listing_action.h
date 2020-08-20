@@ -31,8 +31,8 @@
 
 class MotrKVSListingAction : public MotrAction {
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
-  std::shared_ptr<MotrAPI> motr_clovis_api;
-  std::shared_ptr<S3MotrKVSReaderFactory> motr_motr_kvs_reader_factory;
+  std::shared_ptr<MotrAPI> motr_api;
+  std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory_ptr;
   MotrKVListResponse kvs_response_list;
   m0_uint128 index_id;
   std::string last_key;  // last key during each iteration
