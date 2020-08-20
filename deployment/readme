@@ -17,11 +17,11 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-This directory hosts the halon_facts.yaml files for various cluster setups.
+This directory hosts the hare_facts.yaml files for various cluster setups.
 
-List of halon_facts.yaml files:
+List of hare_facts.yaml files:
 
-1) singlenode/halon_facts.yaml
+1) singlenode/hare_facts.yaml
     Cluster is defined in bootstrap-cluster.sh script under `s3single` name.
     Cluster consists of one Motr node and one S3 server node. S3 server node
-    is configured in halon_facts.yaml file to run two instances of s3server.
+    is configured in hare_facts.yaml file to run two instances of s3server.
