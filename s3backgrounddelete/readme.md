@@ -1,28 +1,9 @@
-### License
-
-Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-For any questions about this software or licensing,
-please email opensource@seagate.com or cortx-questions@seagate.com.
-
->---------------------------------------------------------------------------------
-
 ## Steps to configure & run S3backgrounddelete process
-
+In case of LDR-R1 background service uses RabbitMQ and from LDR-R2 onwards Kafka is used
 ----
-1. Install & configure RabbbitMQ as per {s3 src}/s3backgrounddelete/rabbitmq_setup.md
+1. Install & configure RabbbitMQ (In LDR-R1) as per {s3 src}/s3backgrounddelete/rabbitmq_setup.md
+                                             or
+1. Install and configure Kafka as per {s3 src}/s3backgrounddelete/kafka_setup.md
 
 2. Create s3backgrounddelete log folder
     >mkdir -p /var/log/seagate/s3/s3backgrounddelete
