@@ -33,12 +33,12 @@ extern struct m0_uint128 bucket_metadata_list_index_oid;
 extern struct m0_uint128 replica_bucket_metadata_list_index_oid;
 
 S3BucketMetadataV1::S3BucketMetadataV1(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
     std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory,
     std::shared_ptr<S3GlobalBucketIndexMetadataFactory>
         s3_global_bucket_index_metadata_factory)
-    : S3BucketMetadata(std::move(req), std::move(clovis_api),
+    : S3BucketMetadata(std::move(req), std::move(motr_api),
                        std::move(motr_s3_kvs_reader_factory),
                        std::move(motr_s3_kvs_writer_factory)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
@@ -305,7 +305,7 @@ void S3BucketMetadataV1::create_object_list_index_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::exists) {
     // create_object_list_index is called when there is no bucket,
-    // Hence if clovis returned its present, then its due to collision.
+    // Hence if motr returned its present, then its due to collision.
     handle_collision(
         get_object_list_index_name(), salted_object_list_index_name,
         std::bind(&S3BucketMetadataV1::create_object_list_index, this));
@@ -350,7 +350,7 @@ void S3BucketMetadataV1::create_multipart_list_index_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::exists) {
     // create_multipart_list_index is called when there is no bucket,
-    // Hence if clovis returned its present, then its due to collision.
+    // Hence if motr returned its present, then its due to collision.
     handle_collision(
         get_multipart_index_name(), salted_multipart_list_index_name,
         std::bind(&S3BucketMetadataV1::create_multipart_list_index, this));
@@ -399,7 +399,7 @@ void S3BucketMetadataV1::create_objects_version_list_index_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::exists) {
     // create_objects_version_list_index is called when there is no bucket,
-    // Hence if clovis returned its present then its due to collision.
+    // Hence if motr returned its present then its due to collision.
     handle_collision(
         get_version_list_index_name(), salted_objects_version_list_index_name,
         std::bind(&S3BucketMetadataV1::create_objects_version_list_index,

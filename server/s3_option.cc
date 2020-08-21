@@ -192,88 +192,84 @@ bool S3Option::load_section(std::string section_name,
       auth_ip_addr = s3_option_node["S3_AUTH_IP_ADDR"].as<std::string>();
     } else if (section_name == "S3_MOTR_CONFIG") {
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_LOCAL_ADDR");
-      clovis_local_addr =
-          s3_option_node["S3_MOTR_LOCAL_ADDR"].as<std::string>();
+      motr_local_addr = s3_option_node["S3_MOTR_LOCAL_ADDR"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_HA_ADDR");
-      clovis_ha_addr = s3_option_node["S3_MOTR_HA_ADDR"].as<std::string>();
+      motr_ha_addr = s3_option_node["S3_MOTR_HA_ADDR"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_PROF");
-      clovis_profile = s3_option_node["S3_MOTR_PROF"].as<std::string>();
+      motr_profile = s3_option_node["S3_MOTR_PROF"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_LAYOUT_ID");
-      clovis_layout_id =
-          s3_option_node["S3_MOTR_LAYOUT_ID"].as<unsigned short>();
+      motr_layout_id = s3_option_node["S3_MOTR_LAYOUT_ID"].as<unsigned short>();
 
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_UNIT_SIZES_FOR_MEMORY_POOL");
       YAML::Node unit_sizes = s3_option_node["S3_UNIT_SIZES_FOR_MEMORY_POOL"];
       for (std::size_t i = 0; i < unit_sizes.size(); i++) {
-        clovis_unit_sizes_for_mem_pool.push_back(unit_sizes[i].as<int>());
+        motr_unit_sizes_for_mem_pool.push_back(unit_sizes[i].as<int>());
       }
 
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_MAX_UNITS_PER_REQUEST");
-      clovis_units_per_request =
+      motr_units_per_request =
           s3_option_node["S3_MOTR_MAX_UNITS_PER_REQUEST"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_MAX_IDX_FETCH_COUNT");
-      clovis_idx_fetch_count =
+      motr_idx_fetch_count =
           s3_option_node["S3_MOTR_MAX_IDX_FETCH_COUNT"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_IS_OOSTORE");
-      clovis_is_oostore = s3_option_node["S3_MOTR_IS_OOSTORE"].as<bool>();
+      motr_is_oostore = s3_option_node["S3_MOTR_IS_OOSTORE"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_IS_READ_VERIFY");
-      clovis_is_read_verify =
-          s3_option_node["S3_MOTR_IS_READ_VERIFY"].as<bool>();
+      motr_is_read_verify = s3_option_node["S3_MOTR_IS_READ_VERIFY"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_TM_RECV_QUEUE_MIN_LEN");
-      clovis_tm_recv_queue_min_len =
+      motr_tm_recv_queue_min_len =
           s3_option_node["S3_MOTR_TM_RECV_QUEUE_MIN_LEN"].as<unsigned int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_MAX_RPC_MSG_SIZE");
-      clovis_max_rpc_msg_size =
+      motr_max_rpc_msg_size =
           s3_option_node["S3_MOTR_MAX_RPC_MSG_SIZE"].as<unsigned int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_PROCESS_FID");
-      clovis_process_fid =
+      motr_process_fid =
           s3_option_node["S3_MOTR_PROCESS_FID"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_IDX_SERVICE_ID");
-      clovis_idx_service_id =
-          s3_option_node["S3_MOTR_IDX_SERVICE_ID"].as<int>();
+      motr_idx_service_id = s3_option_node["S3_MOTR_IDX_SERVICE_ID"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_CASS_CLUSTER_EP");
-      clovis_cass_cluster_ep =
+      motr_cass_cluster_ep =
           s3_option_node["S3_MOTR_CASS_CLUSTER_EP"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_CASS_KEYSPACE");
-      clovis_cass_keyspace =
+      motr_cass_keyspace =
           s3_option_node["S3_MOTR_CASS_KEYSPACE"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
                                "S3_MOTR_CASS_MAX_COL_FAMILY_NUM");
-      clovis_cass_max_column_family_num =
+      motr_cass_max_column_family_num =
           s3_option_node["S3_MOTR_CASS_MAX_COL_FAMILY_NUM"].as<int>();
 
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
                                "S3_MOTR_READ_MEMPOOL_ZERO_BUFFER");
-      clovis_read_mempool_zeroed_buffer =
+      motr_read_mempool_zeroed_buffer =
           s3_option_node["S3_MOTR_READ_MEMPOOL_ZERO_BUFFER"].as<bool>();
 
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_OPERATION_WAIT_PERIOD");
-      clovis_op_wait_period =
+      motr_op_wait_period =
           s3_option_node["S3_MOTR_OPERATION_WAIT_PERIOD"].as<unsigned int>();
 
-      std::string clovis_read_pool_initial_buffer_count_str;
-      std::string clovis_read_pool_expandable_count_str;
-      std::string clovis_read_pool_max_threshold_str;
+      std::string motr_read_pool_initial_buffer_count_str;
+      std::string motr_read_pool_expandable_count_str;
+      std::string motr_read_pool_max_threshold_str;
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
                                "S3_MOTR_READ_POOL_INITIAL_BUFFER_COUNT");
-      clovis_read_pool_initial_buffer_count_str =
+      motr_read_pool_initial_buffer_count_str =
           s3_option_node["S3_MOTR_READ_POOL_INITIAL_BUFFER_COUNT"]
               .as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
                                "S3_MOTR_READ_POOL_EXPANDABLE_COUNT");
-      clovis_read_pool_expandable_count_str =
+      motr_read_pool_expandable_count_str =
           s3_option_node["S3_MOTR_READ_POOL_EXPANDABLE_COUNT"]
               .as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
                                "S3_MOTR_READ_POOL_MAX_THRESHOLD");
-      clovis_read_pool_max_threshold_str =
+      motr_read_pool_max_threshold_str =
           s3_option_node["S3_MOTR_READ_POOL_MAX_THRESHOLD"].as<std::string>();
-      sscanf(clovis_read_pool_initial_buffer_count_str.c_str(), "%zu",
-             &clovis_read_pool_initial_buffer_count);
-      sscanf(clovis_read_pool_expandable_count_str.c_str(), "%zu",
-             &clovis_read_pool_expandable_count);
-      sscanf(clovis_read_pool_max_threshold_str.c_str(), "%zu",
-             &clovis_read_pool_max_threshold);
+      sscanf(motr_read_pool_initial_buffer_count_str.c_str(), "%zu",
+             &motr_read_pool_initial_buffer_count);
+      sscanf(motr_read_pool_expandable_count_str.c_str(), "%zu",
+             &motr_read_pool_expandable_count);
+      sscanf(motr_read_pool_max_threshold_str.c_str(), "%zu",
+             &motr_read_pool_max_threshold);
 
     } else if (section_name == "S3_THIRDPARTY_CONFIG") {
       std::string libevent_pool_initial_size_str;
@@ -491,88 +487,86 @@ bool S3Option::load_section(std::string section_name,
         auth_ip_addr = s3_option_node["S3_AUTH_IP_ADDR"].as<std::string>();
       }
     } else if (section_name == "S3_MOTR_CONFIG") {
-      if (!(cmd_opt_flag & S3_OPTION_CLOVIS_LOCAL_ADDR)) {
+      if (!(cmd_opt_flag & S3_OPTION_MOTR_LOCAL_ADDR)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_LOCAL_ADDR");
-        clovis_local_addr =
+        motr_local_addr =
             s3_option_node["S3_MOTR_LOCAL_ADDR"].as<std::string>();
       }
-      if (!(cmd_opt_flag & S3_OPTION_CLOVIS_HA_ADDR)) {
+      if (!(cmd_opt_flag & S3_OPTION_MOTR_HA_ADDR)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_HA_ADDR");
-        clovis_ha_addr = s3_option_node["S3_MOTR_HA_ADDR"].as<std::string>();
+        motr_ha_addr = s3_option_node["S3_MOTR_HA_ADDR"].as<std::string>();
       }
       if (!(cmd_opt_flag & S3_MOTR_LAYOUT_ID)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_LAYOUT_ID");
-        clovis_layout_id =
+        motr_layout_id =
             s3_option_node["S3_MOTR_LAYOUT_ID"].as<unsigned short>();
       }
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_PROF");
-      clovis_profile = s3_option_node["S3_MOTR_PROF"].as<std::string>();
+      motr_profile = s3_option_node["S3_MOTR_PROF"].as<std::string>();
 
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_UNIT_SIZES_FOR_MEMORY_POOL");
       YAML::Node unit_sizes = s3_option_node["S3_UNIT_SIZES_FOR_MEMORY_POOL"];
       for (std::size_t i = 0; i < unit_sizes.size(); i++) {
-        clovis_unit_sizes_for_mem_pool.push_back(unit_sizes[i].as<int>());
+        motr_unit_sizes_for_mem_pool.push_back(unit_sizes[i].as<int>());
       }
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_MAX_UNITS_PER_REQUEST");
-      clovis_units_per_request =
+      motr_units_per_request =
           s3_option_node["S3_MOTR_MAX_UNITS_PER_REQUEST"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_MAX_IDX_FETCH_COUNT");
-      clovis_idx_fetch_count =
+      motr_idx_fetch_count =
           s3_option_node["S3_MOTR_MAX_IDX_FETCH_COUNT"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_IS_OOSTORE");
-      clovis_is_oostore = s3_option_node["S3_MOTR_IS_OOSTORE"].as<bool>();
+      motr_is_oostore = s3_option_node["S3_MOTR_IS_OOSTORE"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_IS_READ_VERIFY");
-      clovis_is_read_verify =
-          s3_option_node["S3_MOTR_IS_READ_VERIFY"].as<bool>();
+      motr_is_read_verify = s3_option_node["S3_MOTR_IS_READ_VERIFY"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_TM_RECV_QUEUE_MIN_LEN");
-      clovis_tm_recv_queue_min_len =
+      motr_tm_recv_queue_min_len =
           s3_option_node["S3_MOTR_TM_RECV_QUEUE_MIN_LEN"].as<unsigned int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_MAX_RPC_MSG_SIZE");
-      clovis_max_rpc_msg_size =
+      motr_max_rpc_msg_size =
           s3_option_node["S3_MOTR_MAX_RPC_MSG_SIZE"].as<unsigned int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_PROCESS_FID");
-      clovis_process_fid =
+      motr_process_fid =
           s3_option_node["S3_MOTR_PROCESS_FID"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_IDX_SERVICE_ID");
-      clovis_idx_service_id =
-          s3_option_node["S3_MOTR_IDX_SERVICE_ID"].as<int>();
+      motr_idx_service_id = s3_option_node["S3_MOTR_IDX_SERVICE_ID"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_CASS_CLUSTER_EP");
-      clovis_cass_cluster_ep =
+      motr_cass_cluster_ep =
           s3_option_node["S3_MOTR_CASS_CLUSTER_EP"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_CASS_KEYSPACE");
-      clovis_cass_keyspace =
+      motr_cass_keyspace =
           s3_option_node["S3_MOTR_CASS_KEYSPACE"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
                                "S3_MOTR_CASS_MAX_COL_FAMILY_NUM");
-      clovis_cass_max_column_family_num =
+      motr_cass_max_column_family_num =
           s3_option_node["S3_MOTR_CASS_MAX_COL_FAMILY_NUM"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_OPERATION_WAIT_PERIOD");
-      clovis_op_wait_period =
+      motr_op_wait_period =
           s3_option_node["S3_MOTR_OPERATION_WAIT_PERIOD"].as<unsigned>();
 
-      std::string clovis_read_pool_initial_buffer_count_str;
-      std::string clovis_read_pool_expandable_count_str;
-      std::string clovis_read_pool_max_threshold_str;
+      std::string motr_read_pool_initial_buffer_count_str;
+      std::string motr_read_pool_expandable_count_str;
+      std::string motr_read_pool_max_threshold_str;
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
                                "S3_MOTR_READ_POOL_INITIAL_BUFFER_COUNT");
-      clovis_read_pool_initial_buffer_count_str =
+      motr_read_pool_initial_buffer_count_str =
           s3_option_node["S3_MOTR_READ_POOL_INITIAL_BUFFER_COUNT"]
               .as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
                                "S3_MOTR_READ_POOL_EXPANDABLE_COUNT");
-      clovis_read_pool_expandable_count_str =
+      motr_read_pool_expandable_count_str =
           s3_option_node["S3_MOTR_READ_POOL_EXPANDABLE_COUNT"]
               .as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
                                "S3_MOTR_READ_POOL_MAX_THRESHOLD");
-      clovis_read_pool_max_threshold_str =
+      motr_read_pool_max_threshold_str =
           s3_option_node["S3_MOTR_READ_POOL_MAX_THRESHOLD"].as<std::string>();
-      sscanf(clovis_read_pool_initial_buffer_count_str.c_str(), "%zu",
-             &clovis_read_pool_initial_buffer_count);
-      sscanf(clovis_read_pool_expandable_count_str.c_str(), "%zu",
-             &clovis_read_pool_expandable_count);
-      sscanf(clovis_read_pool_max_threshold_str.c_str(), "%zu",
-             &clovis_read_pool_max_threshold);
+      sscanf(motr_read_pool_initial_buffer_count_str.c_str(), "%zu",
+             &motr_read_pool_initial_buffer_count);
+      sscanf(motr_read_pool_expandable_count_str.c_str(), "%zu",
+             &motr_read_pool_expandable_count);
+      sscanf(motr_read_pool_max_threshold_str.c_str(), "%zu",
+             &motr_read_pool_max_threshold);
 
     } else if (section_name == "S3_THIRDPARTY_CONFIG") {
       std::string libevent_pool_initial_size_str;
@@ -665,16 +659,16 @@ void S3Option::set_cmdline_option(int option_flag, const char* optarg) {
     s3_bind_port = atoi(optarg);
   } else if (option_flag & S3_OPTION_MOTR_BIND_PORT) {
     motr_http_bind_port = atoi(optarg);
-  } else if (option_flag & S3_OPTION_CLOVIS_LOCAL_ADDR) {
-    clovis_local_addr = optarg;
-  } else if (option_flag & S3_OPTION_CLOVIS_HA_ADDR) {
-    clovis_ha_addr = optarg;
+  } else if (option_flag & S3_OPTION_MOTR_LOCAL_ADDR) {
+    motr_local_addr = optarg;
+  } else if (option_flag & S3_OPTION_MOTR_HA_ADDR) {
+    motr_ha_addr = optarg;
   } else if (option_flag & S3_OPTION_AUTH_IP_ADDR) {
     auth_ip_addr = optarg;
   } else if (option_flag & S3_OPTION_AUTH_PORT) {
     auth_port = atoi(optarg);
   } else if (option_flag & S3_MOTR_LAYOUT_ID) {
-    clovis_layout_id = atoi(optarg);
+    motr_layout_id = atoi(optarg);
   } else if (option_flag & S3_OPTION_LOG_DIR) {
     log_dir = optarg;
   } else if (option_flag & S3_OPTION_PERF_LOG_FILE) {
@@ -693,10 +687,10 @@ void S3Option::set_cmdline_option(int option_flag, const char* optarg) {
     statsd_ip_addr = optarg;
   } else if (option_flag & S3_OPTION_STATSD_PORT) {
     statsd_port = atoi(optarg);
-  } else if (option_flag & S3_OPTION_CLOVIS_PROF) {
-    clovis_profile = optarg;
-  } else if (option_flag & S3_OPTION_CLOVIS_PROCESS_FID) {
-    clovis_process_fid = optarg;
+  } else if (option_flag & S3_OPTION_MOTR_PROF) {
+    motr_profile = optarg;
+  } else if (option_flag & S3_OPTION_MOTR_PROCESS_FID) {
+    motr_process_fid = optarg;
   } else if (option_flag & S3_OPTION_REUSEPORT) {
     if (strcmp(optarg, "true") == 0) {
       s3_reuseport = true;
@@ -788,49 +782,47 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_AUTH_IP_ADDR = %s\n", auth_ip_addr.c_str());
   s3_log(S3_LOG_INFO, "", "S3_AUTH_PORT = %d\n", auth_port);
 
-  s3_log(S3_LOG_INFO, "", "S3_MOTR_LOCAL_ADDR = %s\n",
-         clovis_local_addr.c_str());
-  s3_log(S3_LOG_INFO, "", "S3_MOTR_HA_ADDR =  %s\n", clovis_ha_addr.c_str());
-  s3_log(S3_LOG_INFO, "", "S3_MOTR_PROF = %s\n", clovis_profile.c_str());
-  s3_log(S3_LOG_INFO, "", "S3_MOTR_LAYOUT_ID = %d\n", clovis_layout_id);
+  s3_log(S3_LOG_INFO, "", "S3_MOTR_LOCAL_ADDR = %s\n", motr_local_addr.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_MOTR_HA_ADDR =  %s\n", motr_ha_addr.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_MOTR_PROF = %s\n", motr_profile.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_MOTR_LAYOUT_ID = %d\n", motr_layout_id);
 
   std::string unit_sizes = "";
-  for (auto unit_size : clovis_unit_sizes_for_mem_pool) {
+  for (auto unit_size : motr_unit_sizes_for_mem_pool) {
     unit_sizes += std::to_string(unit_size) + ", ";
   }
   s3_log(S3_LOG_INFO, "", "S3_UNIT_SIZES_FOR_MEMORY_POOL = %s\n",
          unit_sizes.c_str());
   s3_log(S3_LOG_INFO, "", "S3_MOTR_MAX_UNITS_PER_REQUEST = %d\n",
-         clovis_units_per_request);
+         motr_units_per_request);
   s3_log(S3_LOG_INFO, "", "S3_MOTR_MAX_IDX_FETCH_COUNT = %d\n",
-         clovis_idx_fetch_count);
+         motr_idx_fetch_count);
   s3_log(S3_LOG_INFO, "", "S3_MOTR_IS_OOSTORE = %s\n",
-         (clovis_is_oostore ? "true" : "false"));
+         (motr_is_oostore ? "true" : "false"));
   s3_log(S3_LOG_INFO, "", "S3_MOTR_IS_READ_VERIFY = %s\n",
-         (clovis_is_read_verify ? "true" : "false"));
+         (motr_is_read_verify ? "true" : "false"));
   s3_log(S3_LOG_INFO, "", "S3_MOTR_TM_RECV_QUEUE_MIN_LEN = %d\n",
-         clovis_tm_recv_queue_min_len);
+         motr_tm_recv_queue_min_len);
   s3_log(S3_LOG_INFO, "", "S3_MOTR_MAX_RPC_MSG_SIZE = %d\n",
-         clovis_max_rpc_msg_size);
+         motr_max_rpc_msg_size);
   s3_log(S3_LOG_INFO, "", "S3_MOTR_PROCESS_FID = %s\n",
-         clovis_process_fid.c_str());
-  s3_log(S3_LOG_INFO, "", "S3_MOTR_IDX_SERVICE_ID = %d\n",
-         clovis_idx_service_id);
+         motr_process_fid.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_MOTR_IDX_SERVICE_ID = %d\n", motr_idx_service_id);
   s3_log(S3_LOG_INFO, "", "S3_MOTR_CASS_CLUSTER_EP = %s\n",
-         clovis_cass_cluster_ep.c_str());
+         motr_cass_cluster_ep.c_str());
   s3_log(S3_LOG_INFO, "", "S3_MOTR_CASS_KEYSPACE = %s\n",
-         clovis_cass_keyspace.c_str());
+         motr_cass_keyspace.c_str());
   s3_log(S3_LOG_INFO, "", "S3_MOTR_CASS_MAX_COL_FAMILY_NUM = %d\n",
-         clovis_cass_max_column_family_num);
+         motr_cass_max_column_family_num);
   s3_log(S3_LOG_INFO, "", "S3_MOTR_OPERATION_WAIT_PERIOD = %d\n",
-         clovis_op_wait_period);
+         motr_op_wait_period);
 
   s3_log(S3_LOG_INFO, "", "S3_MOTR_READ_POOL_INITIAL_BUFFER_COUNT = %zu\n",
-         clovis_read_pool_initial_buffer_count);
+         motr_read_pool_initial_buffer_count);
   s3_log(S3_LOG_INFO, "", "S3_MOTR_READ_POOL_EXPANDABLE_COUNT = %zu\n",
-         clovis_read_pool_expandable_count);
+         motr_read_pool_expandable_count);
   s3_log(S3_LOG_INFO, "", "S3_MOTR_READ_POOL_MAX_THRESHOLD = %zu\n",
-         clovis_read_pool_max_threshold);
+         motr_read_pool_max_threshold);
 
   s3_log(S3_LOG_INFO, "", "S3_LIBEVENT_POOL_INITIAL_SIZE = %zu\n",
          libevent_pool_initial_size);
@@ -843,26 +835,26 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_LIBEVENT_POOL_RESERVE_PERCENT = %u\n",
          libevent_pool_reserve_percent);
 
-  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_createobj = %d\n",
-         FLAGS_fake_clovis_createobj);
-  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_writeobj = %d\n",
-         FLAGS_fake_clovis_writeobj);
-  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_readobj = %d\n",
-         FLAGS_fake_clovis_readobj);
-  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_deleteobj = %d\n",
-         FLAGS_fake_clovis_deleteobj);
-  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_createidx = %d\n",
-         FLAGS_fake_clovis_createidx);
-  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_deleteidx = %d\n",
-         FLAGS_fake_clovis_deleteidx);
-  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_getkv = %d\n",
-         FLAGS_fake_clovis_getkv);
-  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_putkv = %d\n",
-         FLAGS_fake_clovis_putkv);
-  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_deletekv = %d\n",
-         FLAGS_fake_clovis_deletekv);
-  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_redis_kvs = %d\n",
-         FLAGS_fake_clovis_redis_kvs);
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_motr_createobj = %d\n",
+         FLAGS_fake_motr_createobj);
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_motr_writeobj = %d\n",
+         FLAGS_fake_motr_writeobj);
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_motr_readobj = %d\n",
+         FLAGS_fake_motr_readobj);
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_motr_deleteobj = %d\n",
+         FLAGS_fake_motr_deleteobj);
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_motr_createidx = %d\n",
+         FLAGS_fake_motr_createidx);
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_motr_deleteidx = %d\n",
+         FLAGS_fake_motr_deleteidx);
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_motr_getkv = %d\n",
+         FLAGS_fake_motr_getkv);
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_motr_putkv = %d\n",
+         FLAGS_fake_motr_putkv);
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_motr_deletekv = %d\n",
+         FLAGS_fake_motr_deletekv);
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_motr_redis_kvs = %d\n",
+         FLAGS_fake_motr_redis_kvs);
   s3_log(S3_LOG_INFO, "", "FLAGS_disable_auth = %d\n", FLAGS_disable_auth);
 
   s3_log(S3_LOG_INFO, "", "S3_ENABLE_STATS = %s\n",
@@ -882,7 +874,7 @@ void S3Option::dump_options() {
          redis_srv_addr.c_str());
 
   s3_log(S3_LOG_INFO, "", "S3_MOTR_READ_MEMPOOL_ZERO_BUFFER=%s\n",
-         clovis_read_mempool_zeroed_buffer ? "true" : "false");
+         motr_read_mempool_zeroed_buffer ? "true" : "false");
   s3_log(S3_LOG_INFO, "", "S3_LIBEVENT_MEMPOOL_ZERO_BUFFER=%s\n",
          libevent_mempool_zeroed_buffer ? "true" : "false");
 
@@ -935,7 +927,7 @@ void S3Option::set_is_s3_shutting_down(bool is_shutting_down) {
 
 unsigned short S3Option::get_auth_port() { return auth_port; }
 
-unsigned short S3Option::get_clovis_layout_id() { return clovis_layout_id; }
+unsigned short S3Option::get_motr_layout_id() { return motr_layout_id; }
 
 std::string S3Option::get_option_file() { return option_file; }
 
@@ -945,16 +937,16 @@ std::string S3Option::get_layout_recommendation_file() {
 
 std::string S3Option::get_daemon_dir() { return s3_daemon_dir; }
 
-size_t S3Option::get_clovis_read_pool_initial_buffer_count() {
-  return clovis_read_pool_initial_buffer_count;
+size_t S3Option::get_motr_read_pool_initial_buffer_count() {
+  return motr_read_pool_initial_buffer_count;
 }
 
-size_t S3Option::get_clovis_read_pool_expandable_count() {
-  return clovis_read_pool_expandable_count;
+size_t S3Option::get_motr_read_pool_expandable_count() {
+  return motr_read_pool_expandable_count;
 }
 
-size_t S3Option::get_clovis_read_pool_max_threshold() {
-  return clovis_read_pool_max_threshold;
+size_t S3Option::get_motr_read_pool_max_threshold() {
+  return motr_read_pool_max_threshold;
 }
 
 size_t S3Option::get_libevent_pool_initial_size() {
@@ -1045,70 +1037,68 @@ std::set<std::string>& S3Option::get_region_endpoints() {
   return s3_region_endpoints;
 }
 
-std::string S3Option::get_clovis_local_addr() { return clovis_local_addr; }
+std::string S3Option::get_motr_local_addr() { return motr_local_addr; }
 
-std::string S3Option::get_clovis_ha_addr() { return clovis_ha_addr; }
+std::string S3Option::get_motr_ha_addr() { return motr_ha_addr; }
 
-std::string S3Option::get_clovis_prof() { return clovis_profile; }
+std::string S3Option::get_motr_prof() { return motr_profile; }
 
-std::vector<int> S3Option::get_clovis_unit_sizes_for_mem_pool() {
-  return clovis_unit_sizes_for_mem_pool;
+std::vector<int> S3Option::get_motr_unit_sizes_for_mem_pool() {
+  return motr_unit_sizes_for_mem_pool;
 }
 
-unsigned short S3Option::get_clovis_units_per_request() {
-  return clovis_units_per_request;
+unsigned short S3Option::get_motr_units_per_request() {
+  return motr_units_per_request;
 }
 
-unsigned short S3Option::get_clovis_op_wait_period() {
-  return clovis_op_wait_period;
+unsigned short S3Option::get_motr_op_wait_period() {
+  return motr_op_wait_period;
 }
 
-int S3Option::get_clovis_idx_fetch_count() { return clovis_idx_fetch_count; }
+int S3Option::get_motr_idx_fetch_count() { return motr_idx_fetch_count; }
 
-void S3Option::set_clovis_idx_fetch_count(short count) {
-  clovis_idx_fetch_count = count;
+void S3Option::set_motr_idx_fetch_count(short count) {
+  motr_idx_fetch_count = count;
 }
 
 unsigned short S3Option::get_client_req_read_timeout_secs() {
   return s3_client_req_read_timeout_secs;
 }
 
-unsigned int S3Option::get_clovis_write_payload_size(int layoutid) {
+unsigned int S3Option::get_motr_write_payload_size(int layoutid) {
   return S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layoutid) *
-         clovis_units_per_request;
+         motr_units_per_request;
 }
 
-unsigned int S3Option::get_clovis_read_payload_size(int layoutid) {
+unsigned int S3Option::get_motr_read_payload_size(int layoutid) {
   return S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layoutid) *
-         clovis_units_per_request;
+         motr_units_per_request;
 }
 
-bool S3Option::get_clovis_is_oostore() { return clovis_is_oostore; }
+bool S3Option::get_motr_is_oostore() { return motr_is_oostore; }
 
-bool S3Option::get_clovis_is_read_verify() { return clovis_is_read_verify; }
+bool S3Option::get_motr_is_read_verify() { return motr_is_read_verify; }
 
-unsigned int S3Option::get_clovis_tm_recv_queue_min_len() {
-  return clovis_tm_recv_queue_min_len;
+unsigned int S3Option::get_motr_tm_recv_queue_min_len() {
+  return motr_tm_recv_queue_min_len;
 }
 
-unsigned int S3Option::get_clovis_max_rpc_msg_size() {
-  return clovis_max_rpc_msg_size;
+unsigned int S3Option::get_motr_max_rpc_msg_size() {
+  return motr_max_rpc_msg_size;
 }
 
-std::string S3Option::get_clovis_process_fid() { return clovis_process_fid; }
+std::string S3Option::get_motr_process_fid() { return motr_process_fid; }
 
-int S3Option::get_clovis_idx_service_id() { return clovis_idx_service_id; }
+int S3Option::get_motr_idx_service_id() { return motr_idx_service_id; }
 
-std::string S3Option::get_clovis_cass_cluster_ep() {
-  return clovis_cass_cluster_ep;
+std::string S3Option::get_motr_cass_cluster_ep() {
+  return motr_cass_cluster_ep;
 }
 
-std::string S3Option::get_clovis_cass_keyspace() {
-  return clovis_cass_keyspace;
-}
+std::string S3Option::get_motr_cass_keyspace() { return motr_cass_keyspace; }
 
-int S3Option::get_clovis_cass_max_column_family_num() {
-  return clovis_cass_max_column_family_num;
+int S3Option::get_motr_cass_max_column_family_num() {
+  return motr_cass_max_column_family_num;
 }
 
 std::string S3Option::get_auth_ip_addr() { return auth_ip_addr; }
@@ -1131,39 +1121,29 @@ void S3Option::set_s3server_objectleak_tracking_enabled(const bool& flag) {
   s3server_objectleak_tracking_enabled = flag;
 }
 
-bool S3Option::is_fake_clovis_createobj() {
-  return FLAGS_fake_clovis_createobj;
-}
+bool S3Option::is_fake_motr_createobj() { return FLAGS_fake_motr_createobj; }
 
-bool S3Option::is_fake_clovis_writeobj() { return FLAGS_fake_clovis_writeobj; }
+bool S3Option::is_fake_motr_writeobj() { return FLAGS_fake_motr_writeobj; }
 
-bool S3Option::is_fake_clovis_readobj() { return FLAGS_fake_clovis_readobj; }
+bool S3Option::is_fake_motr_readobj() { return FLAGS_fake_motr_readobj; }
 
-bool S3Option::is_fake_clovis_deleteobj() {
-  return FLAGS_fake_clovis_deleteobj;
-}
+bool S3Option::is_fake_motr_deleteobj() { return FLAGS_fake_motr_deleteobj; }
 
-bool S3Option::is_fake_clovis_createidx() {
-  return FLAGS_fake_clovis_createidx;
-}
+bool S3Option::is_fake_motr_createidx() { return FLAGS_fake_motr_createidx; }
 
-bool S3Option::is_fake_clovis_deleteidx() {
-  return FLAGS_fake_clovis_deleteidx;
-}
+bool S3Option::is_fake_motr_deleteidx() { return FLAGS_fake_motr_deleteidx; }
 
-bool S3Option::is_fake_clovis_getkv() { return FLAGS_fake_clovis_getkv; }
+bool S3Option::is_fake_motr_getkv() { return FLAGS_fake_motr_getkv; }
 
-bool S3Option::is_fake_clovis_putkv() { return FLAGS_fake_clovis_putkv; }
+bool S3Option::is_fake_motr_putkv() { return FLAGS_fake_motr_putkv; }
 
-bool S3Option::is_fake_clovis_deletekv() { return FLAGS_fake_clovis_deletekv; }
+bool S3Option::is_fake_motr_deletekv() { return FLAGS_fake_motr_deletekv; }
 
-bool S3Option::is_fake_clovis_redis_kvs() {
-  return FLAGS_fake_clovis_redis_kvs;
-}
+bool S3Option::is_fake_motr_redis_kvs() { return FLAGS_fake_motr_redis_kvs; }
 
 /* For the moment sync kvs operation for fake kvs is not supported */
 bool S3Option::is_sync_kvs_allowed() {
-  return !(FLAGS_fake_clovis_redis_kvs || FLAGS_fake_clovis_putkv);
+  return !(FLAGS_fake_motr_redis_kvs || FLAGS_fake_motr_putkv);
 }
 
 unsigned short S3Option::get_max_retry_count() { return max_retry_count; }
@@ -1226,8 +1206,8 @@ std::string S3Option::get_redis_srv_addr() { return redis_srv_addr; }
 
 unsigned short S3Option::get_redis_srv_port() { return redis_srv_port; }
 
-bool S3Option::get_clovis_read_mempool_zeroed_buffer() {
-  return clovis_read_mempool_zeroed_buffer;
+bool S3Option::get_motr_read_mempool_zeroed_buffer() {
+  return motr_read_mempool_zeroed_buffer;
 }
 
 bool S3Option::get_libevent_mempool_zeroed_buffer() {

@@ -35,12 +35,12 @@
 
 class S3SyncClovisKVSWriterContext {
   // Basic Operation context.
-  struct s3_motr_idx_op_context* clovis_idx_op_context;
+  struct s3_motr_idx_op_context* motr_idx_op_context;
   bool has_motr_idx_op_context;
 
   // Read/Write Operation context.
-  struct s3_motr_kvs_op_context* clovis_kvs_op_context;
-  bool has_clovis_kvs_op_context;
+  struct s3_motr_kvs_op_context* motr_kvs_op_context;
+  bool has_motr_kvs_op_context;
 
   std::string request_id;
   int ops_count = 1;
@@ -51,34 +51,34 @@ class S3SyncClovisKVSWriterContext {
 
     s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
     // Create or write, we need op context
-    clovis_idx_op_context = create_basic_idx_op_ctx(ops_count);
+    motr_idx_op_context = create_basic_idx_op_ctx(ops_count);
     has_motr_idx_op_context = true;
-    clovis_kvs_op_context = NULL;
-    has_clovis_kvs_op_context = false;
+    motr_kvs_op_context = NULL;
+    has_motr_kvs_op_context = false;
   }
 
   ~S3SyncClovisKVSWriterContext() {
     s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
     if (has_motr_idx_op_context) {
-      free_basic_idx_op_ctx(clovis_idx_op_context);
+      free_basic_idx_op_ctx(motr_idx_op_context);
     }
-    if (has_clovis_kvs_op_context) {
-      free_basic_kvs_op_ctx(clovis_kvs_op_context);
+    if (has_motr_kvs_op_context) {
+      free_basic_kvs_op_ctx(motr_kvs_op_context);
     }
   }
 
   struct s3_motr_idx_op_context* get_motr_idx_op_ctx() {
-    return clovis_idx_op_context;
+    return motr_idx_op_context;
   }
 
   // Call this when you want to do write op.
   void init_kvs_write_op_ctx(int no_of_keys) {
-    clovis_kvs_op_context = create_basic_kvs_op_ctx(no_of_keys);
-    has_clovis_kvs_op_context = true;
+    motr_kvs_op_context = create_basic_kvs_op_ctx(no_of_keys);
+    has_motr_kvs_op_context = true;
   }
 
   struct s3_motr_kvs_op_context* get_motr_kvs_op_ctx() {
-    return clovis_kvs_op_context;
+    return motr_kvs_op_context;
   }
 };
 
@@ -94,11 +94,11 @@ class S3AsyncMotrKVSWriterContext : public S3SyncClovisKVSWriterContext,
                               std::function<void()> success_callback,
                               std::function<void()> failed_callback,
                               int ops_count = 1,
-                              std::shared_ptr<MotrAPI> clovis_api = nullptr)
+                              std::shared_ptr<MotrAPI> motr_api = nullptr)
       : S3SyncClovisKVSWriterContext(req ? req->get_request_id() : "",
                                      ops_count),
         S3AsyncOpContextBase(req, success_callback, failed_callback, ops_count,
-                             clovis_api) {
+                             motr_api) {
     request_id = req ? req->get_request_id() : "";
     s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   }
@@ -139,16 +139,16 @@ class S3MotrKVSWriter {
 
   S3MotrKVSWriterOpState state;
 
-  struct s3_clovis_idx_context* idx_ctx;
+  struct s3_motr_idx_context* idx_ctx;
 
   void clean_up_contexts();
 
  public:
   S3MotrKVSWriter(std::shared_ptr<RequestObject> req,
-                  std::shared_ptr<MotrAPI> clovis_api = nullptr);
+                  std::shared_ptr<MotrAPI> motr_api = nullptr);
 
   S3MotrKVSWriter(std::string request_id,
-                  std::shared_ptr<MotrAPI> clovis_api = nullptr);
+                  std::shared_ptr<MotrAPI> motr_api = nullptr);
   virtual ~S3MotrKVSWriter();
 
   virtual S3MotrKVSWriterOpState get_state() { return state; }
@@ -166,7 +166,7 @@ class S3MotrKVSWriter {
                                      std::function<void(void)> on_success,
                                      std::function<void(void)> on_failed);
 
-  // Sync clovis is currently done using clovis_idx_op
+  // Sync motr is currently done using motr_idx_op
 
   // void sync_index(std::function<void(void)> on_success,
   //                 std::function<void(void)> on_failed, int index_count = 1);

@@ -55,11 +55,11 @@ evhtp_ssl_ctx_t *g_ssl_auth_ctx;
 extern S3Stats *g_stats_instance;
 
 int global_shutdown_in_progress;
-int shutdown_clovis_teardown_called;
-std::set<struct s3_clovis_op_context *> global_clovis_object_ops_list;
-std::set<struct s3_clovis_idx_op_context *> global_clovis_idx_ops_list;
-std::set<struct s3_clovis_idx_context *> global_clovis_idx;
-std::set<struct s3_clovis_obj_context *> global_clovis_obj;
+int shutdown_motr_teardown_called;
+std::set<struct s3_motr_op_context *> global_motr_object_ops_list;
+std::set<struct s3_motr_idx_op_context *> global_motr_idx_ops_list;
+std::set<struct s3_motr_idx_context *> global_motr_idx;
+std::set<struct s3_motr_obj_context *> global_motr_obj;
 
 struct m0 instance;
 
@@ -116,7 +116,7 @@ static void _cleanup_option_and_instance() {
   S3MotrLayoutMap::destroy_instance();
 }
 
-static int clovis_ut_init() {
+static int motr_ut_init() {
   int rc;
   // Motr lib initialization routines
   m0_node_uuid_string_set(NULL);
@@ -127,7 +127,7 @@ static int clovis_ut_init() {
   return rc;
 }
 
-static void clovis_ut_fini() {
+static void motr_ut_fini() {
   // Motr lib cleanup
   m0_fini();
 }
@@ -138,9 +138,9 @@ static int mempool_init() {
   size_t libevent_pool_buffer_size =
       g_option_instance->get_libevent_pool_buffer_size();
 
-  int clovis_read_mempool_flags = CREATE_ALIGNED_MEMORY;
-  if (g_option_instance->get_clovis_read_mempool_zeroed_buffer()) {
-    clovis_read_mempool_flags = clovis_read_mempool_flags | ZEROED_BUFFER;
+  int motr_read_mempool_flags = CREATE_ALIGNED_MEMORY;
+  if (g_option_instance->get_motr_read_mempool_zeroed_buffer()) {
+    motr_read_mempool_flags = motr_read_mempool_flags | ZEROED_BUFFER;
   }
 
   int libevent_mempool_flags = CREATE_ALIGNED_MEMORY;
@@ -155,11 +155,11 @@ static int mempool_init() {
   if (rc != 0) return rc;
 
   rc = S3MempoolManager::create_pool(
-      g_option_instance->get_clovis_read_pool_max_threshold(),
-      g_option_instance->get_clovis_unit_sizes_for_mem_pool(),
-      g_option_instance->get_clovis_read_pool_initial_buffer_count(),
-      g_option_instance->get_clovis_read_pool_expandable_count(),
-      clovis_read_mempool_flags);
+      g_option_instance->get_motr_read_pool_max_threshold(),
+      g_option_instance->get_motr_unit_sizes_for_mem_pool(),
+      g_option_instance->get_motr_read_pool_initial_buffer_count(),
+      g_option_instance->get_motr_read_pool_expandable_count(),
+      motr_read_mempool_flags);
 
   return rc;
 }
@@ -201,7 +201,7 @@ int main(int argc, char **argv) {
   S3ErrorMessages::init_messages("resources/s3_error_messages.json");
 
   // Clovis Initialization
-  rc = clovis_ut_init();
+  rc = motr_ut_init();
   if (rc != 0) {
     _cleanup_option_and_instance();
     _fini_log();
@@ -211,7 +211,7 @@ int main(int argc, char **argv) {
   // Mempool Initialization
   rc = mempool_init();
   if (rc != 0) {
-    clovis_ut_fini();
+    motr_ut_fini();
     _cleanup_option_and_instance();
     _fini_log();
     return rc;
@@ -220,7 +220,7 @@ int main(int argc, char **argv) {
   // SSL initialization
   if (init_auth_ssl() != true) {
     mempool_fini();
-    clovis_ut_fini();
+    motr_ut_fini();
     _cleanup_option_and_instance();
     _fini_log();
     return rc;
@@ -229,7 +229,7 @@ int main(int argc, char **argv) {
   rc = RUN_ALL_TESTS();
 
   mempool_fini();
-  clovis_ut_fini();
+  motr_ut_fini();
   _cleanup_option_and_instance();
   _fini_log();
 

@@ -33,44 +33,44 @@
 #include "s3_uri_to_motr_oid.h"
 #include "s3_addb.h"
 
-extern struct m0_clovis_realm clovis_uber_realm;
+extern struct m0_clovis_realm motr_uber_realm;
 extern S3Option *g_option_instance;
-extern std::set<struct s3_clovis_op_context *> global_clovis_object_ops_list;
-extern std::set<struct s3_clovis_obj_context *> global_clovis_obj;
-extern int shutdown_clovis_teardown_called;
+extern std::set<struct s3_motr_op_context *> global_motr_object_ops_list;
+extern std::set<struct s3_motr_obj_context *> global_motr_obj;
+extern int shutdown_motr_teardown_called;
 
 S3MotrWiterContext::S3MotrWiterContext(std::shared_ptr<RequestObject> req,
                                        std::function<void()> success_callback,
                                        std::function<void()> failed_callback,
                                        int ops_count,
-                                       std::shared_ptr<MotrAPI> clovis_api)
+                                       std::shared_ptr<MotrAPI> motr_api)
     : S3AsyncOpContextBase(std::move(req), std::move(success_callback),
                            std::move(failed_callback), ops_count,
-                           std::move(clovis_api)) {
+                           std::move(motr_api)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 }
 
 S3MotrWiterContext::~S3MotrWiterContext() {
   s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
 
-  if (clovis_op_context) {
-    free_basic_op_ctx(clovis_op_context);
+  if (motr_op_context) {
+    free_basic_op_ctx(motr_op_context);
   }
-  if (clovis_rw_op_context) {
-    free_basic_rw_op_ctx(clovis_rw_op_context);
+  if (motr_rw_op_context) {
+    free_basic_rw_op_ctx(motr_rw_op_context);
   }
 }
 
-struct s3_clovis_op_context *S3MotrWiterContext::get_clovis_op_ctx() {
-  if (!clovis_op_context) {
+struct s3_motr_op_context *S3MotrWiterContext::get_motr_op_ctx() {
+  if (!motr_op_context) {
     // Create or write, we need op context
-    clovis_op_context = create_basic_op_ctx(ops_count);
+    motr_op_context = create_basic_op_ctx(ops_count);
   }
-  return clovis_op_context;
+  return motr_op_context;
 }
 
 S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req, uint64_t offset,
-                         std::shared_ptr<MotrAPI> clovis_api)
+                         std::shared_ptr<MotrAPI> motr_api)
     : request(std::move(req)),
       state(S3MotrWiterOpState::start),
       last_index(offset),
@@ -84,8 +84,8 @@ S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req, uint64_t offset,
 
   struct m0_uint128 oid = {0ULL, 0ULL};
 
-  if (clovis_api) {
-    s3_motr_api = std::move(clovis_api);
+  if (motr_api) {
+    s3_motr_api = std::move(motr_api);
   } else {
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
@@ -111,8 +111,8 @@ S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req, uint64_t offset,
 
 S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req,
                          struct m0_uint128 object_id, uint64_t offset,
-                         std::shared_ptr<MotrAPI> clovis_api)
-    : S3MotrWiter(std::move(req), offset, std::move(clovis_api)) {
+                         std::shared_ptr<MotrAPI> motr_api)
+    : S3MotrWiter(std::move(req), offset, std::move(motr_api)) {
 
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
@@ -149,8 +149,8 @@ void S3MotrWiter::clean_up_contexts() {
   create_context = nullptr;
   writer_context = nullptr;
   delete_context = nullptr;
-  if (!shutdown_clovis_teardown_called) {
-    global_clovis_obj.erase(obj_ctx);
+  if (!shutdown_motr_teardown_called) {
+    global_motr_obj.erase(obj_ctx);
     if (obj_ctx) {
       for (size_t i = 0; i < obj_ctx->n_initialized_contexts; ++i) {
         s3_motr_api->clovis_obj_fini(&obj_ctx->objs[i]);
@@ -176,7 +176,7 @@ int S3MotrWiter::open_objects() {
       std::bind(&S3MotrWiter::open_objects_failed, this), oid_list.size(),
       s3_motr_api));
 
-  struct s3_clovis_op_context *ctx = open_context->get_clovis_op_ctx();
+  struct s3_motr_op_context *ctx = open_context->get_motr_op_ctx();
 
   std::ostringstream oid_list_stream;
   size_t ops_count = oid_list.size();
@@ -195,7 +195,7 @@ int S3MotrWiter::open_objects() {
 
     oid_list_stream << '(' << oid_list[i].u_hi << ' ' << oid_list[i].u_lo
                     << ") ";
-    s3_motr_api->clovis_obj_init(&obj_ctx->objs[i], &clovis_uber_realm,
+    s3_motr_api->clovis_obj_init(&obj_ctx->objs[i], &motr_uber_realm,
                                  &oid_list[i], layout_ids[i]);
     if (i == 0) {
       obj_ctx->n_initialized_contexts = 1;
@@ -207,7 +207,7 @@ int S3MotrWiter::open_objects() {
                                              &(ctx->ops[i]));
     if (rc != 0) {
       s3_log(S3_LOG_WARN, request_id,
-             "Clovis API: clovis_entity_open failed with error code %d\n", rc);
+             "Motr API: clovis_entity_open failed with error code %d\n", rc);
       state = S3MotrWiterOpState::failed_to_launch;
       s3_motr_op_pre_launch_failure(op_ctx->application_context, rc);
       return rc;
@@ -216,11 +216,11 @@ int S3MotrWiter::open_objects() {
     ctx->ops[i]->op_datum = (void *)op_ctx;
     s3_motr_api->clovis_op_setup(ctx->ops[i], &ctx->cbs[i], 0);
   }
-  s3_log(S3_LOG_INFO, request_id, "Clovis API: openobj(oid: %s)\n",
+  s3_log(S3_LOG_INFO, request_id, "Motr API: openobj(oid: %s)\n",
          oid_list_stream.str().c_str());
   s3_motr_api->clovis_op_launch(request->addb_request_id, ctx->ops, ops_count,
                                 MotrOpType::openobj);
-  global_clovis_object_ops_list.insert(ctx);
+  global_motr_object_ops_list.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return 0;
 }
@@ -231,11 +231,11 @@ void S3MotrWiter::open_objects_successful() {
   is_object_opened = true;
   if (state == S3MotrWiterOpState::writing) {
     s3_log(S3_LOG_INFO, request_id,
-           "Clovis API Successful: openobj(S3MotrWiterOpState: (writing))\n");
+           "Motr API Successful: openobj(S3MotrWiterOpState: (writing))\n");
     write_content();
   } else if (state == S3MotrWiterOpState::deleting) {
     s3_log(S3_LOG_INFO, request_id,
-           "Clovis API Successful: openobj(S3MotrWiterOpState: (deleting))\n");
+           "Motr API Successful: openobj(S3MotrWiterOpState: (deleting))\n");
     delete_objects();
   } else {
     s3_log(S3_LOG_ERROR, request_id,
@@ -298,7 +298,7 @@ void S3MotrWiter::create_object(std::function<void(void)> on_success,
       request, std::bind(&S3MotrWiter::create_object_successful, this),
       std::bind(&S3MotrWiter::create_object_failed, this)));
 
-  struct s3_clovis_op_context *ctx = create_context->get_clovis_op_ctx();
+  struct s3_motr_op_context *ctx = create_context->get_motr_op_ctx();
 
   struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
       1, sizeof(struct s3_motr_context_obj));
@@ -310,7 +310,7 @@ void S3MotrWiter::create_object(std::function<void(void)> on_success,
   ctx->cbs[0].oop_stable = s3_motr_op_stable;
   ctx->cbs[0].oop_failed = s3_motr_op_failed;
 
-  s3_motr_api->clovis_obj_init(&obj_ctx->objs[0], &clovis_uber_realm,
+  s3_motr_api->clovis_obj_init(&obj_ctx->objs[0], &motr_uber_realm,
                                &oid_list[0], layout_ids[0]);
   obj_ctx->n_initialized_contexts = 1;
 
@@ -328,13 +328,13 @@ void S3MotrWiter::create_object(std::function<void(void)> on_success,
   s3_motr_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
 
   s3_log(S3_LOG_INFO, request_id,
-         "Clovis API: createobj(oid: ("
+         "Motr API: createobj(oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid_list[0].u_hi, oid_list[0].u_lo);
 
   s3_motr_api->clovis_op_launch(request->addb_request_id, ctx->ops, 1,
                                 MotrOpType::createobj);
-  global_clovis_object_ops_list.insert(ctx);
+  global_motr_object_ops_list.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -344,7 +344,7 @@ void S3MotrWiter::create_object_successful() {
   state = S3MotrWiterOpState::created;
 
   s3_log(S3_LOG_INFO, request_id,
-         "Clovis API Successful: createobj(oid: ("
+         "Motr API Successful: createobj(oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid_list[0].u_hi, oid_list[0].u_lo);
 
@@ -403,65 +403,64 @@ void S3MotrWiter::write_content() {
 
   assert(is_object_opened);
 
-  size_t clovis_write_payload_size =
-      g_option_instance->get_clovis_write_payload_size(layout_ids[0]);
-  size_t clovis_unit_size =
+  size_t motr_write_payload_size =
+      g_option_instance->get_motr_write_payload_size(layout_ids[0]);
+  size_t motr_unit_size =
       S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_ids[0]);
   size_t size_of_each_buf = g_option_instance->get_libevent_pool_buffer_size();
 
   size_t estimated_write_length = 0;
   if (write_async_buffer->is_freezed() &&
-      write_async_buffer->get_content_length() < clovis_write_payload_size) {
+      write_async_buffer->get_content_length() < motr_write_payload_size) {
     estimated_write_length = write_async_buffer->get_content_length();
   } else {
     estimated_write_length =
-        (write_async_buffer->get_content_length() / clovis_write_payload_size) *
-        clovis_write_payload_size;
+        (write_async_buffer->get_content_length() / motr_write_payload_size) *
+        motr_write_payload_size;
   }
 
-  if (estimated_write_length > clovis_write_payload_size) {
+  if (estimated_write_length > motr_write_payload_size) {
     // TODO : we should just write whatever is buffered, but motr has error
     // where if we have high block count, it fails, failure seen around 800k+
     // data.
-    estimated_write_length = clovis_write_payload_size;
+    estimated_write_length = motr_write_payload_size;
   }
 
   auto ret = write_async_buffer->get_buffers(estimated_write_length);
   std::deque<evbuffer *> data_items = ret.first;
 
-  size_t clovis_buf_count = ret.second / size_of_each_buf;
+  size_t motr_buf_count = ret.second / size_of_each_buf;
   if (write_async_buffer->is_freezed() &&
       (ret.second % size_of_each_buf != 0)) {
-    clovis_buf_count++;
+    motr_buf_count++;
   }
-  assert(data_items.size() == clovis_buf_count);
+  assert(data_items.size() == motr_buf_count);
 
-  // bump the count so we write at least multiple of clovis_unit_size
-  s3_log(S3_LOG_DEBUG, request_id, "clovis_buf_count without padding: %zu\n",
-         clovis_buf_count);
-  int buffers_per_unit = clovis_unit_size / size_of_each_buf;
+  // bump the count so we write at least multiple of motr_unit_size
+  s3_log(S3_LOG_DEBUG, request_id, "motr_buf_count without padding: %zu\n",
+         motr_buf_count);
+  int buffers_per_unit = motr_unit_size / size_of_each_buf;
   if (buffers_per_unit == 0) {
     buffers_per_unit = 1;
   }
   int buffers_in_last_unit =
-      clovis_buf_count % buffers_per_unit;  // marked to send till now
+      motr_buf_count % buffers_per_unit;  // marked to send till now
   if (buffers_in_last_unit > 0) {
     int pad_buf_count = buffers_per_unit - buffers_in_last_unit;
-    clovis_buf_count += pad_buf_count;
+    motr_buf_count += pad_buf_count;
   }
-  s3_log(S3_LOG_DEBUG, request_id, "clovis_buf_count after padding: %zu\n",
-         clovis_buf_count);
+  s3_log(S3_LOG_DEBUG, request_id, "motr_buf_count after padding: %zu\n",
+         motr_buf_count);
 
   writer_context.reset(new S3MotrWiterContext(
       request, std::bind(&S3MotrWiter::write_content_successful, this),
       std::bind(&S3MotrWiter::write_content_failed, this)));
 
-  writer_context->init_write_op_ctx(clovis_buf_count);
+  writer_context->init_write_op_ctx(motr_buf_count);
 
-  struct s3_clovis_op_context *ctx = writer_context->get_clovis_op_ctx();
+  struct s3_motr_op_context *ctx = writer_context->get_motr_op_ctx();
 
-  struct s3_clovis_rw_op_context *rw_ctx =
-      writer_context->get_clovis_rw_op_ctx();
+  struct s3_motr_rw_op_context *rw_ctx = writer_context->get_motr_rw_op_ctx();
 
   struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
       1, sizeof(struct s3_motr_context_obj));
@@ -473,7 +472,7 @@ void S3MotrWiter::write_content() {
   ctx->cbs[0].oop_executed = NULL;
   ctx->cbs[0].oop_stable = s3_motr_op_stable;
   ctx->cbs[0].oop_failed = s3_motr_op_failed;
-  set_up_clovis_data_buffers(rw_ctx, data_items, clovis_buf_count);
+  set_up_motr_data_buffers(rw_ctx, data_items, motr_buf_count);
   last_op_was_write = true;
 
   /* Create the write request */
@@ -482,7 +481,7 @@ void S3MotrWiter::write_content() {
                                   &ctx->ops[0]);
   if (rc != 0) {
     s3_log(S3_LOG_WARN, request_id,
-           "Clovis API: clovis_obj_op failed with error code %d\n", rc);
+           "Motr API: clovis_obj_op failed with error code %d\n", rc);
     state = S3MotrWiterOpState::failed_to_launch;
     s3_motr_op_pre_launch_failure(op_ctx->application_context, rc);
     return;
@@ -490,27 +489,27 @@ void S3MotrWiter::write_content() {
 
   ctx->ops[0]->op_datum = (void *)op_ctx;
   s3_motr_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
-  writer_context->start_timer_for("write_to_clovis_op");
+  writer_context->start_timer_for("write_to_motr_op");
 
   s3_log(S3_LOG_INFO, request_id,
-         "Clovis API: Write (operation: M0_CLOVIS_OC_WRITE, oid: ("
+         "Motr API: Write (operation: M0_CLOVIS_OC_WRITE, oid: ("
          "%" SCNx64 " : %" SCNx64
          " start_offset_in_object(%zu), total_bytes_written_at_offset(%zu))\n",
          oid_list[0].u_hi, oid_list[0].u_lo, rw_ctx->ext->iv_index[0],
          size_in_current_write);
   s3_motr_api->clovis_op_launch(request->addb_request_id, ctx->ops, 1,
                                 MotrOpType::writeobj);
-  global_clovis_object_ops_list.insert(ctx);
+  global_motr_object_ops_list.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3MotrWiter::write_content_successful() {
   total_written += size_in_current_write;
   s3_log(S3_LOG_INFO, request_id,
-         "Clovis API sucessful: write(total_written = %zu)\n", total_written);
-  s3_stats_inc("write_to_clovis_op_success_count");
+         "Motr API sucessful: write(total_written = %zu)\n", total_written);
+  s3_stats_inc("write_to_motr_op_success_count");
 
-  // We have copied data to clovis buffers.
+  // We have copied data to motr buffers.
   write_async_buffer->flush_used_buffers();
   write_async_buffer.reset();
 
@@ -523,7 +522,7 @@ void S3MotrWiter::write_content_successful() {
 void S3MotrWiter::write_content_failed() {
   s3_log(S3_LOG_ERROR, request_id, "Write to object failed after writing %zu\n",
          total_written);
-  // We have failed coping data to clovis buffers.
+  // We have failed coping data to motr buffers.
   write_async_buffer->flush_used_buffers();
   write_async_buffer.reset();
 
@@ -571,7 +570,7 @@ void S3MotrWiter::delete_objects() {
       std::bind(&S3MotrWiter::delete_objects_failed, this), oid_list.size(),
       s3_motr_api));
 
-  struct s3_clovis_op_context *ctx = delete_context->get_clovis_op_ctx();
+  struct s3_motr_op_context *ctx = delete_context->get_motr_op_ctx();
 
   std::ostringstream oid_list_stream;
   size_t ops_count = oid_list.size();
@@ -603,20 +602,20 @@ void S3MotrWiter::delete_objects() {
                     << ") ";
   }
 
-  delete_context->start_timer_for("delete_objects_from_clovis");
+  delete_context->start_timer_for("delete_objects_from_motr");
 
-  s3_log(S3_LOG_INFO, request_id, "Clovis API: deleteobj(oid: %s)\n",
+  s3_log(S3_LOG_INFO, request_id, "Motr API: deleteobj(oid: %s)\n",
          oid_list_stream.str().c_str());
   s3_motr_api->clovis_op_launch(request->addb_request_id, ctx->ops, ops_count,
                                 MotrOpType::deleteobj);
-  global_clovis_object_ops_list.insert(ctx);
+  global_motr_object_ops_list.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3MotrWiter::delete_objects_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   state = S3MotrWiterOpState::deleted;
-  s3_log(S3_LOG_INFO, request_id, "Clovis API Successful: deleteobj\n");
+  s3_log(S3_LOG_INFO, request_id, "Motr API Successful: deleteobj\n");
   this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -677,9 +676,9 @@ int S3MotrWiter::get_op_ret_code_for_delete_op(int index) {
   return -ENOENT;
 }
 
-void S3MotrWiter::set_up_clovis_data_buffers(
-    struct s3_clovis_rw_op_context *rw_ctx, std::deque<evbuffer *> &data_items,
-    size_t clovis_buf_count) {
+void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
+                                           std::deque<evbuffer *> &data_items,
+                                           size_t motr_buf_count) {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   size_in_current_write = 0;
@@ -703,13 +702,12 @@ void S3MotrWiter::set_up_clovis_data_buffers(
     evbuffer_peek(buf, len_in_buf, NULL /*start of buffer*/, vec_in,
                   num_of_extents);
 
-    // Give the buffer references to Clovis
+    // Give the buffer references to Motr
     for (size_t i = 0; i < num_of_extents; ++i) {
-      s3_log(S3_LOG_DEBUG, request_id, "To Clovis: address(%p), iter(%zu)\n",
+      s3_log(S3_LOG_DEBUG, request_id, "To Motr: address(%p), iter(%zu)\n",
              vec_in[i].iov_base, buf_count);
-      s3_log(S3_LOG_DEBUG, request_id,
-             "To Clovis: len(%zu) at last_index(%zu)\n", vec_in[i].iov_len,
-             last_index);
+      s3_log(S3_LOG_DEBUG, request_id, "To Motr: len(%zu) at last_index(%zu)\n",
+             vec_in[i].iov_len, last_index);
 
       rw_ctx->data->ov_buf[buf_count] = vec_in[i].iov_base;
       rw_ctx->data->ov_vec.v_count[buf_count] = size_of_each_buf;
@@ -717,7 +715,7 @@ void S3MotrWiter::set_up_clovis_data_buffers(
       // Here we use actual length to get md5
       md5crypt.Update((const char *)vec_in[i].iov_base, vec_in[i].iov_len);
 
-      // Init clovis buffer attrs.
+      // Init motr buffer attrs.
       rw_ctx->ext->iv_index[buf_count] = last_index;
       rw_ctx->ext->iv_vec.v_count[buf_count] = /*data_len*/ size_of_each_buf;
       last_index += /*data_len*/ size_of_each_buf;
@@ -732,7 +730,7 @@ void S3MotrWiter::set_up_clovis_data_buffers(
     free(vec_in);
   }
 
-  if (buf_count < clovis_buf_count) {
+  if (buf_count < motr_buf_count) {
     // Allocate place_holder_for_last_unit only if its required.
     // Its required when writing last block of object.
     reset_buffers_if_any(unit_size_for_place_holder);
@@ -744,16 +742,16 @@ void S3MotrWiter::set_up_clovis_data_buffers(
             unit_size_for_place_holder);
   }
 
-  while (buf_count < clovis_buf_count) {
-    s3_log(S3_LOG_DEBUG, request_id, "To Clovis: address(%p), iter(%zu)\n",
+  while (buf_count < motr_buf_count) {
+    s3_log(S3_LOG_DEBUG, request_id, "To Motr: address(%p), iter(%zu)\n",
            place_holder_for_last_unit, buf_count);
-    s3_log(S3_LOG_DEBUG, request_id, "To Clovis: len(%zu) at last_index(%zu)\n",
+    s3_log(S3_LOG_DEBUG, request_id, "To Motr: len(%zu) at last_index(%zu)\n",
            size_of_each_buf, last_index);
 
     rw_ctx->data->ov_buf[buf_count] = place_holder_for_last_unit;
     rw_ctx->data->ov_vec.v_count[buf_count] = size_of_each_buf;
 
-    // Init clovis buffer attrs.
+    // Init motr buffer attrs.
     rw_ctx->ext->iv_index[buf_count] = last_index;
     rw_ctx->ext->iv_vec.v_count[buf_count] = /*data_len*/ size_of_each_buf;
     last_index += /*data_len*/ size_of_each_buf;

@@ -44,7 +44,7 @@ class S3AbortMultipartAction : public S3BucketAction {
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;
   std::shared_ptr<S3PartMetadata> part_metadata;
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
-  std::shared_ptr<S3MotrWiter> clovis_writer;
+  std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   std::shared_ptr<MotrAPI> s3_motr_api;
   std::string upload_id;

@@ -63,7 +63,7 @@ using ::testing::_;
 
 #define SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS                                  \
   do {                                                                        \
-    EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),           \
+    EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),             \
                 get_key_values())                                             \
         .WillRepeatedly(ReturnRef(result_keys_values));                       \
     EXPECT_CALL(*(object_meta_factory->mock_object_metadata), from_json(_))   \
@@ -187,7 +187,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjects) {
   action_under_test_ptr->bucket_metadata->set_object_list_index_oid(
       object_list_indx_oid);
 
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
               next_keyval(_, _, _, _, _, _))
       .Times(1);
   action_under_test_ptr->get_next_objects();
@@ -210,7 +210,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsFailedNoEntries) {
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
 
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_state())
       .WillRepeatedly(Return(S3MotrKVSReaderOpState::missing));
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::present));
@@ -225,7 +225,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsFailed) {
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
 
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_state())
       .WillRepeatedly(Return(S3MotrKVSReaderOpState::failed));
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::present));
@@ -252,7 +252,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessful) {
   action_under_test_ptr->request_prefix.assign("");
   action_under_test_ptr->request_delimiter.assign("");
 
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
               get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), from_json(_))
       .WillRepeatedly(Return(0));
@@ -290,7 +290,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulJsonError) {
   action_under_test_ptr->request_prefix.assign("");
   action_under_test_ptr->request_delimiter.assign("");
 
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
               get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), from_json(_))
       .WillRepeatedly(Return(-1));

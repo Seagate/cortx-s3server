@@ -35,10 +35,10 @@
 extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
 S3PutObjectAction::S3PutObjectAction(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
-    std::shared_ptr<S3MotrWriterFactory> clovis_s3_factory,
+    std::shared_ptr<S3MotrWriterFactory> motr_s3_factory,
     std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
@@ -57,8 +57,8 @@ S3PutObjectAction::S3PutObjectAction(
   old_layout_id = -1;
   new_object_oid = {0ULL, 0ULL};
 
-  if (clovis_api) {
-    s3_motr_api = std::move(clovis_api);
+  if (motr_api) {
+    s3_motr_api = std::move(motr_api);
   } else {
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
@@ -71,8 +71,8 @@ S3PutObjectAction::S3PutObjectAction(
   tried_count = 0;
   salt = "uri_salt_";
 
-  if (clovis_s3_factory) {
-    motr_writer_factory = std::move(clovis_s3_factory);
+  if (motr_s3_factory) {
+    motr_writer_factory = std::move(motr_s3_factory);
   } else {
     motr_writer_factory = std::make_shared<S3MotrWriterFactory>();
   }
@@ -258,16 +258,16 @@ void S3PutObjectAction::create_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_timer.start();
   if (tried_count == 0) {
-    clovis_writer =
+    motr_writer =
         motr_writer_factory->create_motr_writer(request, new_object_oid);
   } else {
-    clovis_writer->set_oid(new_object_oid);
+    motr_writer->set_oid(new_object_oid);
   }
 
   layout_id = S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
       request->get_content_length());
 
-  clovis_writer->create_object(
+  motr_writer->create_object(
       std::bind(&S3PutObjectAction::create_object_successful, this),
       std::bind(&S3PutObjectAction::create_object_failed, this), layout_id);
 
@@ -291,7 +291,7 @@ void S3PutObjectAction::create_object_successful() {
 
   // Generate a version id for the new object.
   new_object_metadata->regenerate_version_id();
-  new_object_metadata->set_oid(clovis_writer->get_oid());
+  new_object_metadata->set_oid(motr_writer->get_oid());
   new_object_metadata->set_layout_id(layout_id);
 
   add_object_oid_to_probable_dead_oid_list();
@@ -304,7 +304,7 @@ void S3PutObjectAction::create_object_failed() {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
-  if (clovis_writer->get_state() == S3MotrWiterOpState::exists) {
+  if (motr_writer->get_state() == S3MotrWiterOpState::exists) {
     collision_detected();
   } else {
     s3_timer.stop();
@@ -314,7 +314,7 @@ void S3PutObjectAction::create_object_failed() {
 
     s3_put_action_state = S3PutObjectActionState::newObjOidCreationFailed;
 
-    if (clovis_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
+    if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
       s3_log(S3_LOG_ERROR, request_id, "Create object failed.\n");
       set_s3_error("ServiceUnavailable");
     } else {
@@ -419,7 +419,7 @@ void S3PutObjectAction::initiate_data_streaming() {
       // Start streaming, logically pausing action till we get data.
       request->listen_for_incoming_data(
           std::bind(&S3PutObjectAction::consume_incoming_content, this),
-          S3Option::get_instance()->get_clovis_write_payload_size(layout_id));
+          S3Option::get_instance()->get_motr_write_payload_size(layout_id));
     }
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -445,14 +445,13 @@ void S3PutObjectAction::consume_incoming_content() {
   if (!write_in_progress) {
     if (request->get_buffered_input()->is_freezed() ||
         request->get_buffered_input()->get_content_length() >=
-            S3Option::get_instance()->get_clovis_write_payload_size(
-                layout_id)) {
+            S3Option::get_instance()->get_motr_write_payload_size(layout_id)) {
       write_object(request->get_buffered_input());
     }
   }
   if (!request->get_buffered_input()->is_freezed() &&
       request->get_buffered_input()->get_content_length() >=
-          (S3Option::get_instance()->get_clovis_write_payload_size(layout_id) *
+          (S3Option::get_instance()->get_motr_write_payload_size(layout_id) *
            S3Option::get_instance()->get_read_ahead_multiple())) {
     s3_log(S3_LOG_DEBUG, request_id, "Pausing with Buffered length = %zu\n",
            request->get_buffered_input()->get_content_length());
@@ -466,7 +465,7 @@ void S3PutObjectAction::write_object(
   s3_log(S3_LOG_DEBUG, request_id, "Entering with buffer length = %zu\n",
          buffer->get_content_length());
 
-  clovis_writer->write_content(
+  motr_writer->write_content(
       std::bind(&S3PutObjectAction::write_object_successful, this),
       std::bind(&S3PutObjectAction::write_object_failed, this),
       std::move(buffer));
@@ -477,7 +476,7 @@ void S3PutObjectAction::write_object(
 
 void S3PutObjectAction::write_object_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  s3_log(S3_LOG_DEBUG, request_id, "Write to clovis successful\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Write to motr successful\n");
   write_in_progress = false;
 
   if (check_shutdown_and_rollback()) {
@@ -494,10 +493,10 @@ void S3PutObjectAction::write_object_successful() {
   if (!is_memory_enough) {
     s3_log(S3_LOG_ERROR, request_id, "Memory pool seems to be exhausted\n");
   }
-  if (/* buffered data len is at least equal to max we can write to clovis in
+  if (/* buffered data len is at least equal to max we can write to motr in
          one write */
       request->get_buffered_input()->get_content_length() >=
-          S3Option::get_instance()->get_clovis_write_payload_size(
+          S3Option::get_instance()->get_motr_write_payload_size(
               layout_id) || /* we have all the data buffered and ready to
                                write */
       (request->get_buffered_input()->is_freezed() &&
@@ -527,7 +526,7 @@ void S3PutObjectAction::write_object_successful() {
 }
 
 void S3PutObjectAction::write_object_failed() {
-  s3_log(S3_LOG_WARN, request_id, "Failed writing to clovis.\n");
+  s3_log(S3_LOG_WARN, request_id, "Failed writing to motr.\n");
 
   write_in_progress = false;
   s3_put_action_state = S3PutObjectActionState::writeFailed;
@@ -536,7 +535,7 @@ void S3PutObjectAction::write_object_failed() {
     client_read_error();
     return;
   }
-  if (clovis_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
+  if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
     s3_log(S3_LOG_ERROR, request_id, "write_object_failed failure\n");
   } else {
@@ -551,7 +550,7 @@ void S3PutObjectAction::save_metadata() {
 
   std::string s_md5_got = request->get_header_value("content-md5");
   if (!s_md5_got.empty()) {
-    std::string s_md5_calc = clovis_writer->get_content_md5_base64();
+    std::string s_md5_calc = motr_writer->get_content_md5_base64();
     s3_log(S3_LOG_DEBUG, request_id, "MD5 calculated: %s, MD5 got %s",
            s_md5_calc.c_str(), s_md5_got.c_str());
 
@@ -572,7 +571,7 @@ void S3PutObjectAction::save_metadata() {
   new_object_metadata->reset_date_time_to_current();
   new_object_metadata->set_content_length(request->get_data_length_str());
   new_object_metadata->set_content_type(request->get_content_type());
-  new_object_metadata->set_md5(clovis_writer->get_content_md5());
+  new_object_metadata->set_md5(motr_writer->get_content_md5());
   new_object_metadata->set_tags(new_object_tags_map);
 
   for (auto it : request->get_in_headers_copy()) {
@@ -715,7 +714,7 @@ void S3PutObjectAction::send_response_to_s3_client() {
     s3_stats_timing("put_object_save_metadata", mss);
     // AWS adds explicit quotes "" to etag values.
     // https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html
-    std::string e_tag = "\"" + clovis_writer->get_content_md5() + "\"";
+    std::string e_tag = "\"" + motr_writer->get_content_md5() + "\"";
 
     request->set_out_header_value("ETag", e_tag);
 
@@ -866,8 +865,8 @@ void S3PutObjectAction::delete_old_object() {
   // If PUT is success, we delete old object if present
   assert(old_object_oid.u_hi != 0ULL || old_object_oid.u_lo != 0ULL);
 
-  clovis_writer->set_oid(old_object_oid);
-  clovis_writer->delete_object(
+  motr_writer->set_oid(old_object_oid);
+  motr_writer->delete_object(
       std::bind(&S3PutObjectAction::remove_old_object_version_metadata, this),
       std::bind(&S3PutObjectAction::next, this), old_layout_id);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -888,8 +887,8 @@ void S3PutObjectAction::delete_new_object() {
   assert(s3_put_action_state != S3PutObjectActionState::completed);
   assert(new_object_oid.u_hi != 0ULL || new_object_oid.u_lo != 0ULL);
 
-  clovis_writer->set_oid(new_object_oid);
-  clovis_writer->delete_object(
+  motr_writer->set_oid(new_object_oid);
+  motr_writer->delete_object(
       std::bind(&S3PutObjectAction::remove_new_oid_probable_record, this),
       std::bind(&S3PutObjectAction::next, this), layout_id);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

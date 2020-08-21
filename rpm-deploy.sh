@@ -22,13 +22,12 @@
 USAGE="USAGE: $(basename "$0") [-I | -R | -S | -y <configure-yum-repo> | -p <path-to-prod-cfg> | -U | -D]
 
 where:
--I	Install cortx-motr, cortx-motr-devel, halon, cortx-s3iamcli from rpms
-	s3server will be built from local sources
--R	Remove cortx-motr, cortx-motr-devel, halon, cortx-s3iamcli, cortx-s3server, cortx-s3server-debuginfo packages
+-I	Install cortx-motr, cortx-motr-devel, cortx-hare, cortx-s3iamcli from rpms
+	cortx-s3server will be built from local sources
+-R	Remove cortx-motr, cortx-motr-devel, cortx-hare, cortx-s3iamcli, cortx-s3server, cortx-s3server-debuginfo packages
 -S	Show status
--y <configure-yum-repo>	Configure yum repo to install motr and halon from
-                       	'hermi' - hermi repos
-                       	'<sprint>' - i.e. 'ees1.0.0-PI.1-sprint4' repos
+-y <configure-yum-repo>	Configure yum repo to install cortx-motr and cortx-hare from cortx repos.
+                       	'<sprint>' - i.e. 'Cortx-1.0.0-34-rc13' repos
 -p <path-to-prod-cfg>  	Use path as s3server config
                        	@ - for s3server/s3config.release.yaml config
 -U	Up - start cluster
@@ -36,7 +35,7 @@ where:
 
 Operations could be combined into single command, i.e.
 
-$(basename "$0") -y ees1.0.0-PI.1-sprint4 -RI -p @ -US
+$(basename "$0") -y Cortx-1.0.0-34-rc13 -RI -p @ -US
 
 the command will update repos, remove pkgs, install pkgs, update s3server config,
 run cluster and print statuses of all installed pkgs
@@ -61,16 +60,16 @@ fi
 install_pkgs() {
     $USE_SUDO yum -t -y install cortx-motr
     $USE_SUDO yum -t -y install cortx-motr-devel
-    $USE_SUDO yum -t -y install halon
+    $USE_SUDO yum -t -y install cortx-hare
 
-    # option "-P" will build s3server rpm from the source tree
-    # option "-i" will install s3server from the built rpm
+    # option "-P" will build cortx-s3server rpm from the source tree
+    # option "-i" will install cortx-s3server from the built rpm
     $USE_SUDO ${BASEDIR}/rpms/s3/buildrpm.sh -P ${BASEDIR} -i
-    $USE_SUDO yum -t -y install s3iamcli
+    $USE_SUDO yum -t -y install cortx-s3iamcli
 }
 
 remove_pkgs() {
-    $USE_SUDO yum -t -y remove cortx-s3iamcli cortx-s3server-debuginfo cortx-s3server halon cortx-motr-devel cortx-motr 
+    $USE_SUDO yum -t -y remove cortx-s3iamcli cortx-s3server-debuginfo cortx-s3server cortx-hare cortx-motr-devel cortx-motr 
 }
 
 sysctl_stat() {
@@ -91,19 +90,19 @@ haproxy_ka_status() {
 
 status_srv() {
     case "$1" in
-        s3server) echo -e "\t\t PIDs:> $(pgrep $1 | tr '\n' ' ')"
+        cortx-s3server) echo -e "\t\t PIDs:> $(pgrep $1 | tr '\n' ' ')"
                   echo -e "\t\t s3authserver:> $(sysctl_stat s3authserver)"
                   echo -e "\t\t $($USE_SUDO grep -o -e "S3_LOG_MODE:\s*\S*" /opt/seagate/cortx/s3/conf/s3config.yaml)"
                   echo -e "\t\t $($USE_SUDO grep -o -e "S3_LOG_ENABLE_BUFFERING:\s*\S*" /opt/seagate/cortx/s3/conf/s3config.yaml)"
                   ;;
-        haproxy) echo -e "\t\t $(sysctl_stat $1)"
+        cortx-haproxy) echo -e "\t\t $(sysctl_stat $1)"
                  echo -e "\t\t keepalive $(haproxy_ka_status)"
                  ;;
-        halon) echo -e "\t\t halond:> $(sysctl_stat halond)"
+        cortx-hare) echo -e "\t\t hared:> $(sysctl_stat hared)"
                ;;
         openldap) echo -e "\t\t $(sysctl_stat slapd)"
                   ;;
-        motr) $USE_SUDO hctl cortx-motr status
+        cortx-motr) $USE_SUDO hctl cortx-motr status
               ;;
         *)
               ;;
@@ -111,7 +110,7 @@ status_srv() {
 }
 
 status_pkgs() {
-    for test_pkg in cortx-s3server-debuginfo cortx-s3server halon cortx-motr-devel haproxy openldap cortx-motr
+    for test_pkg in cortx-s3server-debuginfo cortx-s3server cortx-hare cortx-motr-devel haproxy openldap cortx-motr
     do
         set +e
         $USE_SUDO yum list installed $test_pkg &> /dev/null
@@ -125,30 +124,30 @@ status_pkgs() {
 
 yum_repo_conf() {
     case "$1" in
-        hermi) $USE_SUDO rm -f /etc/yum.repos.d/releases_sprint.repo || true
-               for f in /etc/yum.repos.d/*hermi*repo; do $USE_SUDO sed -i 's/priority.*/priority = 1/' $f; done
+        cortx) $USE_SUDO rm -f /etc/yum.repos.d/releases_sprint.repo || true
+               for f in /etc/yum.repos.d/*cortx*repo; do $USE_SUDO sed -i 's/priority.*/priority = 1/' $f; done
                for f in /etc/yum.repos.d/*s3server*repo; do $USE_SUDO sed -i 's/priority.*/priority = 1/' $f; done
                ;;
         ees*-sprint*) echo "Use sprint $1 builds"
                       $USE_SUDO echo "[sprints_s3server]
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/s3server/repo
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/
 gpgcheck = 0
-name = Yum repo for s3server sprints build
+name = Yum repo for cortx-s3server sprints build
 priority = 1
 
-[sprints_halon]
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/halon/repo
+[sprints_hare]
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/
 gpgcheck = 0
-name = Yum repo for halon sprints build
+name = Yum repo for cortx-hare sprints build
 priority = 1
 
 [sprints_motr]
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/mero/repo
+baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/
 gpgcheck = 0
 name = Yum repo for motr sprints build
 priority = 1
 " > /etc/yum.repos.d/releases_sprint.repo
-                      for f in /etc/yum.repos.d/*hermi*repo; do $USE_SUDO sed -i 's/priority.*/priority = 2/' $f; done
+                      for f in /etc/yum.repos.d/*cortx*repo; do $USE_SUDO sed -i 's/priority.*/priority = 2/' $f; done
                       for f in /etc/yum.repos.d/*s3server*repo; do $USE_SUDO sed -i 's/priority.*/priority = 2/' $f; done
                       ;;
         *) echo "Invalid sprint name provided"
@@ -165,12 +164,12 @@ up_cluster() {
     $USE_SUDO systemctl start s3authserver
     $USE_SUDO rm -fR /var/motr/*
     $USE_SUDO m0setup -P 1 -N 1 -K 0 -vH
-    $USE_SUDO sed -i 's/- name: m0t1fs/- name: s3server/' /etc/halon/halon_facts.yaml
-    $USE_SUDO awk 'BEGIN {in_section=0} {if ($0 ~ /^- name:/) {in_section=0; if ($0 ~ /^- name: "s3server"/) {in_section=1;} } {if (in_section==1) {gsub("multiplicity: 4", "multiplicity: 2");} print;} }' /etc/halon/motr_role_mappings > /tmp/motr_role_mappings
-    $USE_SUDO cp /tmp/motr_role_mappings /etc/halon/motr_role_mappings
+    $USE_SUDO sed -i 's/- name: m0t1fs/- name: s3server/' /etc/hare/hare_facts.yaml
+    $USE_SUDO awk 'BEGIN {in_section=0} {if ($0 ~ /^- name:/) {in_section=0; if ($0 ~ /^- name: "s3server"/) {in_section=1;} } {if (in_section==1) {gsub("multiplicity: 4", "multiplicity: 2");} print;} }' /etc/hare/motr_role_mappings > /tmp/motr_role_mappings
+    $USE_SUDO cp /tmp/motr_role_mappings /etc/hare/motr_role_mappings
     $USE_SUDO rm /tmp/motr_role_mappings
-    $USE_SUDO systemctl start halon-cleanup
-    $USE_SUDO systemctl start halond
+    $USE_SUDO systemctl start hare-cleanup
+    $USE_SUDO systemctl start hared
     $USE_SUDO hctl cortx-motr bootstrap
     sleep 2
     $USE_SUDO hctl cortx-motr status
@@ -178,8 +177,8 @@ up_cluster() {
 
 down_cluster() {
     $USE_SUDO hctl cortx-motr stop
-    $USE_SUDO systemctl stop halond
-    $USE_SUDO systemctl stop halon-cleanup
+    $USE_SUDO systemctl stop hared
+    $USE_SUDO systemctl stop hare-cleanup
     $USE_SUDO systemctl stop s3authserver
     $USE_SUDO systemctl stop slapd
     $USE_SUDO systemctl stop haproxy

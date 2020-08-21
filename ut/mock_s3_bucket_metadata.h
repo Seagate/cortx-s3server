@@ -35,8 +35,8 @@ using ::testing::Return;
 class MockS3BucketMetadata : public S3BucketMetadataV1 {
  public:
   MockS3BucketMetadata(std::shared_ptr<S3RequestObject> req,
-                       std::shared_ptr<MockS3Clovis> s3_mock_clovis_api)
-      : S3BucketMetadataV1(req, s3_mock_clovis_api) {}
+                       std::shared_ptr<MockS3Clovis> s3_mock_motr_api)
+      : S3BucketMetadataV1(req, s3_mock_motr_api) {}
   MOCK_METHOD2(load, void(std::function<void(void)> on_success,
                           std::function<void(void)> on_failed));
   MOCK_METHOD0(get_state, S3BucketMetadataState());

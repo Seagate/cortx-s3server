@@ -32,7 +32,7 @@ S3GetObjectAction::S3GetObjectAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
-    std::shared_ptr<S3MotrReaderFactory> clovis_s3_factory)
+    std::shared_ptr<S3MotrReaderFactory> motr_s3_factory)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
                      std::move(object_meta_factory)),
       total_blocks_in_object(0),
@@ -49,8 +49,8 @@ S3GetObjectAction::S3GetObjectAction(
          request->get_bucket_name().c_str(),
          request->get_object_name().c_str());
 
-  if (clovis_s3_factory) {
-    motr_reader_factory = std::move(clovis_s3_factory);
+  if (motr_s3_factory) {
+    motr_reader_factory = std::move(motr_s3_factory);
   } else {
     motr_reader_factory = std::make_shared<S3MotrReaderFactory>();
   }
@@ -143,15 +143,15 @@ void S3GetObjectAction::validate_object_info() {
     request->send_reply_start(S3HttpSuccess200);
     send_response_to_s3_client();
   } else {
-    size_t clovis_unit_size =
+    size_t motr_unit_size =
         S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
             object_metadata->get_layout_id());
     s3_log(S3_LOG_DEBUG, request_id,
-           "clovis_unit_size = %zu for layout_id = %d\n", clovis_unit_size,
+           "motr_unit_size = %zu for layout_id = %d\n", motr_unit_size,
            object_metadata->get_layout_id());
     /* Count Data blocks from data size */
     total_blocks_in_object =
-        (content_length + (clovis_unit_size - 1)) / clovis_unit_size;
+        (content_length + (motr_unit_size - 1)) / motr_unit_size;
     s3_log(S3_LOG_DEBUG, request_id, "total_blocks_in_object: (%zu)\n",
            total_blocks_in_object);
     next();
@@ -167,15 +167,15 @@ void S3GetObjectAction::set_total_blocks_to_read_from_object() {
     total_blocks_to_read = total_blocks_in_object;
   } else {
     // object read for valid range
-    size_t clovis_unit_size =
+    size_t motr_unit_size =
         S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
             object_metadata->get_layout_id());
     // get block of first_byte_offset_to_read
     size_t first_byte_offset_block =
-        (first_byte_offset_to_read + clovis_unit_size) / clovis_unit_size;
+        (first_byte_offset_to_read + motr_unit_size) / motr_unit_size;
     // get block of last_byte_offset_to_read
     size_t last_byte_offset_block =
-        (last_byte_offset_to_read + clovis_unit_size) / clovis_unit_size;
+        (last_byte_offset_to_read + motr_unit_size) / motr_unit_size;
     // get total number blocks to read for a given valid range
     total_blocks_to_read = last_byte_offset_block - first_byte_offset_block + 1;
   }
@@ -317,7 +317,7 @@ void S3GetObjectAction::read_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // get total number of blocks to read from an object
   set_total_blocks_to_read_from_object();
-  clovis_reader = motr_reader_factory->create_motr_reader(
+  motr_reader = motr_reader_factory->create_motr_reader(
       request, object_metadata->get_oid(), object_metadata->get_layout_id());
   // get the block,in which first_byte_offset_to_read is present
   // and initilaize the last index with starting offset the block
@@ -326,7 +326,7 @@ void S3GetObjectAction::read_object() {
       (first_byte_offset_to_read %
        S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
            object_metadata->get_layout_id()));
-  clovis_reader->set_last_index(block_start_offset);
+  motr_reader->set_last_index(block_start_offset);
   read_object_data();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -339,7 +339,7 @@ void S3GetObjectAction::read_object_data() {
   }
 
   size_t max_blocks_in_one_read_op =
-      S3Option::get_instance()->get_clovis_units_per_request();
+      S3Option::get_instance()->get_motr_units_per_request();
   size_t blocks_to_read = 0;
 
   s3_log(S3_LOG_DEBUG, request_id, "max_blocks_in_one_read_op: (%zu)\n",
@@ -358,16 +358,15 @@ void S3GetObjectAction::read_object_data() {
     s3_log(S3_LOG_DEBUG, request_id, "blocks_to_read: (%zu)\n", blocks_to_read);
 
     if (blocks_to_read > 0) {
-      bool op_launched = clovis_reader->read_object_data(
+      bool op_launched = motr_reader->read_object_data(
           blocks_to_read,
           std::bind(&S3GetObjectAction::send_data_to_client, this),
           std::bind(&S3GetObjectAction::read_object_data_failed, this));
       if (!op_launched) {
-        if (clovis_reader->get_state() ==
-            S3MotrReaderOpState::failed_to_launch) {
+        if (motr_reader->get_state() == S3MotrReaderOpState::failed_to_launch) {
           set_s3_error("ServiceUnavailable");
           s3_log(S3_LOG_ERROR, request_id,
-                 "read_object_data called due to clovis_entity_open failure\n");
+                 "read_object_data called due to motr_entity_open failure\n");
         } else {
           set_s3_error("InternalError");
         }
@@ -435,7 +434,7 @@ void S3GetObjectAction::send_data_to_client() {
   s3_log(S3_LOG_DEBUG, request_id,
          "object requested content length size(%zu).\n",
          requested_content_length);
-  length = clovis_reader->get_first_block(&data);
+  length = motr_reader->get_first_block(&data);
 
   while (length > 0) {
     size_t read_data_start_offset = 0;
@@ -463,7 +462,7 @@ void S3GetObjectAction::send_data_to_client() {
     s3_log(S3_LOG_DEBUG, request_id, "Sending %zu bytes to client.\n", length);
     request->send_reply_body(data + read_data_start_offset, length);
     s3_perf_count_outcoming_bytes(length);
-    length = clovis_reader->get_next_block(&data);
+    length = motr_reader->get_next_block(&data);
   }
   s3_timer.stop();
 
@@ -480,7 +479,7 @@ void S3GetObjectAction::send_data_to_client() {
 }
 
 void S3GetObjectAction::read_object_data_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Failed to read object data from clovis\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Failed to read object data from motr\n");
   // set error only when reply is not started
   if (!read_object_reply_started) {
     set_s3_error("InternalError");
@@ -522,8 +521,8 @@ void S3GetObjectAction::send_response_to_s3_client() {
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_metadata &&
              (object_metadata->get_content_length() == 0 ||
-              (clovis_reader &&
-               clovis_reader->get_state() == S3MotrReaderOpState::success))) {
+              (motr_reader &&
+               motr_reader->get_state() == S3MotrReaderOpState::success))) {
     request->send_reply_end();
   } else {
     if (read_object_reply_started) {

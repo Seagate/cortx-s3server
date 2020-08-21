@@ -49,7 +49,10 @@ class S3BucketAction : public S3Action {
  protected:
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+
   void fetch_bucket_info();
+  void fetch_bucket_info_success();
+
   virtual void fetch_bucket_info_failed() = 0;
 
  public:

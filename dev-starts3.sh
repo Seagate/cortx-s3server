@@ -196,7 +196,7 @@ do
   s3port=`expr $s3_port_from_config + $counter`
   pid_filename='/var/run/s3server.'$s3port'.pid'
   $callgraph_cmd s3server --s3pidfile $pid_filename \
-           --clovislocal $local_ep:${clovis_local_port} --clovisha $ha_ep \
+           --motrlocal $local_ep:${clovis_local_port} --motrha $ha_ep \
            --s3port $s3port --fault_injection true $fake_params --loading_indicators --addb --getoid true
   ((++counter))
 done

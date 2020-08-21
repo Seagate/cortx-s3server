@@ -206,7 +206,7 @@ TEST_F(S3GetMultipartPartActionTest,
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata),
               get_upload_id()).WillRepeatedly(Return(upload_id));
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
               get_keyval(_, "1", _, _)).Times(1);
   action_under_test->get_key_object();
 }
@@ -261,8 +261,8 @@ TEST_F(S3GetMultipartPartActionTest, GetKeyObjectSuccessfulShutdownSet) {
 
 TEST_F(S3GetMultipartPartActionTest, GetKeyObjectSuccessfulValueEmpty) {
   action_under_test->motr_kv_reader =
-      motr_kvs_reader_factory->mock_clovis_kvs_reader;
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_value())
+      motr_kvs_reader_factory->mock_motr_kvs_reader;
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
       .WillRepeatedly(Return(""));
   action_under_test->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test,
@@ -275,10 +275,10 @@ TEST_F(S3GetMultipartPartActionTest, GetKeyObjectSuccessfulValueEmpty) {
 TEST_F(S3GetMultipartPartActionTest,
        GetKeyObjectSuccessfulValueNotEmptyListSizeSameAsMaxAllowed) {
   action_under_test->motr_kv_reader =
-      motr_kvs_reader_factory->mock_clovis_kvs_reader;
+      motr_kvs_reader_factory->mock_motr_kvs_reader;
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_value())
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
       .WillRepeatedly(Return(
            "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
@@ -295,10 +295,10 @@ TEST_F(S3GetMultipartPartActionTest,
 TEST_F(S3GetMultipartPartActionTest,
        GetKeyObjectSuccessfulValueNotEmptyListSizeNotSameAsMaxAllowed) {
   action_under_test->motr_kv_reader =
-      motr_kvs_reader_factory->mock_clovis_kvs_reader;
+      motr_kvs_reader_factory->mock_motr_kvs_reader;
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_value())
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
       .WillRepeatedly(Return(
            "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
@@ -317,10 +317,10 @@ TEST_F(S3GetMultipartPartActionTest,
 TEST_F(S3GetMultipartPartActionTest,
        GetKeyObjectSuccessfulValueNotEmptyJsonFailed) {
   action_under_test->motr_kv_reader =
-      motr_kvs_reader_factory->mock_clovis_kvs_reader;
+      motr_kvs_reader_factory->mock_motr_kvs_reader;
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_value())
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
       .WillRepeatedly(Return(
            "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
@@ -337,8 +337,8 @@ TEST_F(S3GetMultipartPartActionTest,
 
 TEST_F(S3GetMultipartPartActionTest, GetKeyObjectFailedNoMetadata) {
   action_under_test->motr_kv_reader =
-      motr_kvs_reader_factory->mock_clovis_kvs_reader;
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
+      motr_kvs_reader_factory->mock_motr_kvs_reader;
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_state())
       .WillRepeatedly(Return(S3MotrKVSReaderOpState::missing));
   action_under_test->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test,
@@ -350,8 +350,8 @@ TEST_F(S3GetMultipartPartActionTest, GetKeyObjectFailedNoMetadata) {
 
 TEST_F(S3GetMultipartPartActionTest, GetKeyObjectFailedMetadataFailed) {
   action_under_test->motr_kv_reader =
-      motr_kvs_reader_factory->mock_clovis_kvs_reader;
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
+      motr_kvs_reader_factory->mock_motr_kvs_reader;
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_state())
       .WillRepeatedly(Return(S3MotrKVSReaderOpState::failed));
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
@@ -368,8 +368,8 @@ TEST_F(S3GetMultipartPartActionTest, GetNextObjectsMultipartPresent) {
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
   action_under_test->motr_kv_reader =
-      motr_kvs_reader_factory->mock_clovis_kvs_reader;
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
+      motr_kvs_reader_factory->mock_motr_kvs_reader;
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
               next_keyval(_, _, _, _, _, _)).Times(1);
   action_under_test->get_next_objects();
 }
@@ -425,8 +425,8 @@ TEST_F(S3GetMultipartPartActionTest,
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
   action_under_test->motr_kv_reader =
-      motr_kvs_reader_factory->mock_clovis_kvs_reader;
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
+      motr_kvs_reader_factory->mock_motr_kvs_reader;
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
               get_key_values())
       .Times(1)
       .WillOnce(ReturnRef(mymap));
@@ -465,11 +465,11 @@ TEST_F(S3GetMultipartPartActionTest, GetNextObjectsSuccessfulListNotTruncated) {
           1, "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"2\"}")));
 
   action_under_test->motr_kv_reader =
-      motr_kvs_reader_factory->mock_clovis_kvs_reader;
+      motr_kvs_reader_factory->mock_motr_kvs_reader;
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
 
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
               get_key_values())
       .Times(1)
       .WillOnce(ReturnRef(mymap));
@@ -488,15 +488,15 @@ TEST_F(S3GetMultipartPartActionTest, GetNextObjectsSuccessfulListNotTruncated) {
 
   action_under_test->max_parts = 7;
   int old_idx_fetch_count =
-      S3Option::get_instance()->get_clovis_idx_fetch_count();
-  S3Option::get_instance()->set_clovis_idx_fetch_count(3);
+      S3Option::get_instance()->get_motr_idx_fetch_count();
+  S3Option::get_instance()->set_motr_idx_fetch_count(3);
   action_under_test->get_next_objects_successful();
 
   EXPECT_EQ(2, action_under_test->return_list_size);
   EXPECT_TRUE(action_under_test->multipart_part_list.part_list.size() != 0);
   EXPECT_FALSE(action_under_test->multipart_part_list.response_is_truncated);
   EXPECT_TRUE(action_under_test->fetch_successful);
-  S3Option::get_instance()->set_clovis_idx_fetch_count(old_idx_fetch_count);
+  S3Option::get_instance()->set_motr_idx_fetch_count(old_idx_fetch_count);
 }
 
 TEST_F(S3GetMultipartPartActionTest, GetNextObjectsSuccessfulGetMoreObjects) {
@@ -510,11 +510,11 @@ TEST_F(S3GetMultipartPartActionTest, GetNextObjectsSuccessfulGetMoreObjects) {
       std::make_pair(
           1, "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"2\"}")));
   action_under_test->motr_kv_reader =
-      motr_kvs_reader_factory->mock_clovis_kvs_reader;
+      motr_kvs_reader_factory->mock_motr_kvs_reader;
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
 
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
               get_key_values())
       .Times(1)
       .WillOnce(ReturnRef(mymap));
@@ -522,8 +522,8 @@ TEST_F(S3GetMultipartPartActionTest, GetNextObjectsSuccessfulGetMoreObjects) {
       .WillRepeatedly(Return(0));
   action_under_test->max_parts = 7;
   int old_idx_fetch_count =
-      S3Option::get_instance()->get_clovis_idx_fetch_count();
-  S3Option::get_instance()->set_clovis_idx_fetch_count(1);
+      S3Option::get_instance()->get_motr_idx_fetch_count();
+  S3Option::get_instance()->set_motr_idx_fetch_count(1);
   // Expectation in get_next_objects
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
@@ -531,8 +531,8 @@ TEST_F(S3GetMultipartPartActionTest, GetNextObjectsSuccessfulGetMoreObjects) {
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
 
   action_under_test->motr_kv_reader =
-      motr_kvs_reader_factory->mock_clovis_kvs_reader;
-  EXPECT_CALL(*(motr_kvs_reader_factory->mock_clovis_kvs_reader),
+      motr_kvs_reader_factory->mock_motr_kvs_reader;
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
               next_keyval(_, _, _, _, _, _)).Times(1);
 
   action_under_test->get_next_objects_successful();
@@ -542,7 +542,7 @@ TEST_F(S3GetMultipartPartActionTest, GetNextObjectsSuccessfulGetMoreObjects) {
   EXPECT_STREQ("2", action_under_test->last_key.c_str());
   EXPECT_FALSE(action_under_test->multipart_part_list.response_is_truncated);
   EXPECT_FALSE(action_under_test->fetch_successful);
-  S3Option::get_instance()->set_clovis_idx_fetch_count(old_idx_fetch_count);
+  S3Option::get_instance()->set_motr_idx_fetch_count(old_idx_fetch_count);
 }
 
 TEST_F(S3GetMultipartPartActionTest, SendInternalErrorResponse) {

@@ -18,11 +18,11 @@
 #
 
 # _s3_deploy_tag => tag to identify the deployment.
-# Example: Hermi01
+# Example: Cortx01
 # _s3_domain_tag => Domain used for S3 service
 # Example: s3.h1.motr.colo.seagate.com
 # These can also be any useful identifier to know the targeted deployment.
-# Example: _s3_deploy_tag = hermi.1.1.singapore or hermi01.lco.1.1
+# Example: _s3_deploy_tag = cortx.1.1.singapore or cortx01.lco.1.1
 
 # build number
 %define build_num  %( test -n "$build_number" && echo "$build_number" || echo 1 )

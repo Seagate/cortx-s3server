@@ -34,8 +34,8 @@ using ::testing::Return;
 class MockS3MotrKVSReader : public S3MotrKVSReader {
  public:
   MockS3MotrKVSReader(std::shared_ptr<RequestObject> req,
-                      std::shared_ptr<MotrAPI> s3clovis_api)
-      : S3MotrKVSReader(req, s3clovis_api) {}
+                      std::shared_ptr<MotrAPI> s3motr_api)
+      : S3MotrKVSReader(req, s3motr_api) {}
   MOCK_METHOD0(get_state, S3MotrKVSReaderOpState());
   MOCK_METHOD0(get_value, std::string());
   MOCK_METHOD0(get_key_values,

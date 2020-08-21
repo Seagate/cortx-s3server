@@ -55,21 +55,21 @@ TEST_F(S3OptionsTest, Constructor) {
   EXPECT_STREQ("10.10.1.1", instance->get_ipv4_bind_addr().c_str());
   EXPECT_STREQ("", instance->get_ipv6_bind_addr().c_str());
   EXPECT_STREQ("localhost@tcp:12345:33:100",
-               instance->get_clovis_local_addr().c_str());
-  EXPECT_STREQ("<0x7000000000000001:0>", instance->get_clovis_prof().c_str());
+               instance->get_motr_local_addr().c_str());
+  EXPECT_STREQ("<0x7000000000000001:0>", instance->get_motr_prof().c_str());
   EXPECT_STREQ("ipv4:10.10.1.2", instance->get_auth_ip_addr().c_str());
   EXPECT_EQ(9081, instance->get_s3_bind_port());
   EXPECT_EQ(8095, instance->get_auth_port());
-  EXPECT_EQ(1, instance->get_clovis_layout_id());
-  EXPECT_TRUE(instance->get_clovis_is_oostore());
-  EXPECT_FALSE(instance->get_clovis_is_read_verify());
-  EXPECT_EQ(16, instance->get_clovis_tm_recv_queue_min_len());
-  EXPECT_EQ(65536, instance->get_clovis_max_rpc_msg_size());
-  EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
-  EXPECT_EQ(1, instance->get_clovis_idx_service_id());
-  EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
-  EXPECT_EQ("motr_index_keyspace", instance->get_clovis_cass_keyspace());
-  EXPECT_EQ(1, instance->get_clovis_cass_max_column_family_num());
+  EXPECT_EQ(1, instance->get_motr_layout_id());
+  EXPECT_TRUE(instance->get_motr_is_oostore());
+  EXPECT_FALSE(instance->get_motr_is_read_verify());
+  EXPECT_EQ(16, instance->get_motr_tm_recv_queue_min_len());
+  EXPECT_EQ(65536, instance->get_motr_max_rpc_msg_size());
+  EXPECT_EQ("<0x7200000000000000:0>", instance->get_motr_process_fid());
+  EXPECT_EQ(1, instance->get_motr_idx_service_id());
+  EXPECT_EQ("10.10.1.3", instance->get_motr_cass_cluster_ep());
+  EXPECT_EQ("motr_index_keyspace", instance->get_motr_cass_keyspace());
+  EXPECT_EQ(1, instance->get_motr_cass_max_column_family_num());
   EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
   EXPECT_FALSE(instance->is_log_buffering_enabled());
   EXPECT_FALSE(instance->is_murmurhash_oid_enabled());
@@ -98,21 +98,21 @@ TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string("10.10.1.1"), instance->get_ipv4_bind_addr());
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
-            instance->get_clovis_local_addr());
-  EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
-  EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
+            instance->get_motr_local_addr());
+  EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_motr_prof());
+  EXPECT_EQ("<0x7200000000000000:0>", instance->get_motr_process_fid());
   EXPECT_EQ(std::string("ipv4:10.10.1.2"), instance->get_auth_ip_addr());
   EXPECT_EQ(40960, instance->get_libevent_pool_initial_size());
   EXPECT_EQ(20480, instance->get_libevent_pool_expandable_size());
   EXPECT_EQ(104857600, instance->get_libevent_pool_max_threshold());
   EXPECT_EQ(9081, instance->get_s3_bind_port());
   EXPECT_EQ(8095, instance->get_auth_port());
-  EXPECT_EQ(1, instance->get_clovis_layout_id());
+  EXPECT_EQ(1, instance->get_motr_layout_id());
   EXPECT_EQ(0, instance->s3_performance_enabled());
-  EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
-  EXPECT_EQ(1, instance->get_clovis_idx_service_id());
-  EXPECT_TRUE(instance->get_clovis_is_oostore());
-  EXPECT_FALSE(instance->get_clovis_is_read_verify());
+  EXPECT_EQ("10.10.1.3", instance->get_motr_cass_cluster_ep());
+  EXPECT_EQ(1, instance->get_motr_idx_service_id());
+  EXPECT_TRUE(instance->get_motr_is_oostore());
+  EXPECT_FALSE(instance->get_motr_is_read_verify());
   EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
   EXPECT_FALSE(instance->is_log_buffering_enabled());
   EXPECT_FALSE(instance->is_murmurhash_oid_enabled());
@@ -131,7 +131,7 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   instance->set_cmdline_option(S3_OPTION_IPV4_BIND_ADDR, "198.1.1.1");
   instance->set_cmdline_option(S3_OPTION_IPV6_BIND_ADDR, "::1");
   instance->set_cmdline_option(S3_OPTION_BIND_PORT, "1");
-  instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR, "localhost@test");
+  instance->set_cmdline_option(S3_OPTION_MOTR_LOCAL_ADDR, "localhost@test");
   instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR, "192.192.191");
   instance->set_cmdline_option(S3_OPTION_AUTH_PORT, "2");
   instance->set_cmdline_option(S3_MOTR_LAYOUT_ID, "123");
@@ -148,17 +148,17 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   EXPECT_EQ(std::string("10.10.1.1"), instance->get_ipv4_bind_addr());
   EXPECT_EQ(std::string(""), instance->get_ipv6_bind_addr());
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
-            instance->get_clovis_local_addr());
-  EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
-  EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
+            instance->get_motr_local_addr());
+  EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_motr_prof());
+  EXPECT_EQ("<0x7200000000000000:0>", instance->get_motr_process_fid());
   EXPECT_EQ(std::string("ipv4:10.10.1.2"), instance->get_auth_ip_addr());
   EXPECT_EQ(9081, instance->get_s3_bind_port());
   EXPECT_EQ(8095, instance->get_auth_port());
-  EXPECT_EQ(1, instance->get_clovis_layout_id());
-  EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
-  EXPECT_EQ(1, instance->get_clovis_idx_service_id());
-  EXPECT_TRUE(instance->get_clovis_is_oostore());
-  EXPECT_FALSE(instance->get_clovis_is_read_verify());
+  EXPECT_EQ(1, instance->get_motr_layout_id());
+  EXPECT_EQ("10.10.1.3", instance->get_motr_cass_cluster_ep());
+  EXPECT_EQ(1, instance->get_motr_idx_service_id());
+  EXPECT_TRUE(instance->get_motr_is_oostore());
+  EXPECT_FALSE(instance->get_motr_is_read_verify());
   EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
   EXPECT_FALSE(instance->is_log_buffering_enabled());
   EXPECT_FALSE(instance->is_murmurhash_oid_enabled());
@@ -177,7 +177,7 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   instance->set_cmdline_option(S3_OPTION_IPV4_BIND_ADDR, "198.1.1.1");
   instance->set_cmdline_option(S3_OPTION_IPV6_BIND_ADDR, "::1");
   instance->set_cmdline_option(S3_OPTION_BIND_PORT, "1");
-  instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR, "localhost@test");
+  instance->set_cmdline_option(S3_OPTION_MOTR_LOCAL_ADDR, "localhost@test");
   instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR, "ipv4:192.168.15.131");
   instance->set_cmdline_option(S3_OPTION_AUTH_PORT, "2");
   instance->set_cmdline_option(S3_MOTR_LAYOUT_ID, "123");
@@ -194,15 +194,15 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   EXPECT_EQ(std::string("debug"), instance->get_log_level());
   EXPECT_EQ(std::string("198.1.1.1"), instance->get_ipv4_bind_addr());
   EXPECT_EQ(std::string("::1"), instance->get_ipv6_bind_addr());
-  EXPECT_EQ(std::string("localhost@test"), instance->get_clovis_local_addr());
+  EXPECT_EQ(std::string("localhost@test"), instance->get_motr_local_addr());
   EXPECT_EQ(std::string("ipv4:192.168.15.131"), instance->get_auth_ip_addr());
   EXPECT_EQ(1, instance->get_s3_bind_port());
   EXPECT_EQ(2, instance->get_auth_port());
-  EXPECT_EQ(123, instance->get_clovis_layout_id());
-  EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
-  EXPECT_EQ(1, instance->get_clovis_idx_service_id());
-  EXPECT_TRUE(instance->get_clovis_is_oostore());
-  EXPECT_FALSE(instance->get_clovis_is_read_verify());
+  EXPECT_EQ(123, instance->get_motr_layout_id());
+  EXPECT_EQ("10.10.1.3", instance->get_motr_cass_cluster_ep());
+  EXPECT_EQ(1, instance->get_motr_idx_service_id());
+  EXPECT_TRUE(instance->get_motr_is_oostore());
+  EXPECT_FALSE(instance->get_motr_is_read_verify());
   EXPECT_EQ(1, instance->get_log_file_max_size_in_mb());
   EXPECT_TRUE(instance->get_is_s3_shutting_down());
   EXPECT_FALSE(instance->is_stats_enabled());
@@ -246,16 +246,16 @@ TEST_F(S3OptionsTest, LoadS3SectionFromFile) {
 
   // These will come with default values.
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
-            instance->get_clovis_local_addr());
-  EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
-  EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
-  EXPECT_EQ(9, instance->get_clovis_layout_id());
+            instance->get_motr_local_addr());
+  EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_motr_prof());
+  EXPECT_EQ("<0x7200000000000000:0>", instance->get_motr_process_fid());
+  EXPECT_EQ(9, instance->get_motr_layout_id());
   EXPECT_EQ(std::string("ipv4:127.0.0.1"), instance->get_auth_ip_addr());
   EXPECT_EQ(8095, instance->get_auth_port());
-  EXPECT_EQ("127.0.0.1", instance->get_clovis_cass_cluster_ep());
-  EXPECT_EQ(2, instance->get_clovis_idx_service_id());
-  EXPECT_FALSE(instance->get_clovis_is_oostore());
-  EXPECT_FALSE(instance->get_clovis_is_read_verify());
+  EXPECT_EQ("127.0.0.1", instance->get_motr_cass_cluster_ep());
+  EXPECT_EQ(2, instance->get_motr_idx_service_id());
+  EXPECT_FALSE(instance->get_motr_is_oostore());
+  EXPECT_FALSE(instance->get_motr_is_read_verify());
   EXPECT_FALSE(instance->is_s3_reuseport_enabled());
 }
 
@@ -287,16 +287,16 @@ TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
 
   // These should be default values
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
-            instance->get_clovis_local_addr());
-  EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
-  EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
-  EXPECT_EQ(9, instance->get_clovis_layout_id());
+            instance->get_motr_local_addr());
+  EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_motr_prof());
+  EXPECT_EQ("<0x7200000000000000:0>", instance->get_motr_process_fid());
+  EXPECT_EQ(9, instance->get_motr_layout_id());
   EXPECT_EQ(std::string("ipv4:127.0.0.1"), instance->get_auth_ip_addr());
   EXPECT_EQ(8095, instance->get_auth_port());
-  EXPECT_EQ("127.0.0.1", instance->get_clovis_cass_cluster_ep());
-  EXPECT_EQ(2, instance->get_clovis_idx_service_id());
-  EXPECT_FALSE(instance->get_clovis_is_oostore());
-  EXPECT_FALSE(instance->get_clovis_is_read_verify());
+  EXPECT_EQ("127.0.0.1", instance->get_motr_cass_cluster_ep());
+  EXPECT_EQ(2, instance->get_motr_idx_service_id());
+  EXPECT_FALSE(instance->get_motr_is_oostore());
+  EXPECT_FALSE(instance->get_motr_is_read_verify());
   EXPECT_FALSE(instance->is_s3_reuseport_enabled());
 }
 
@@ -313,14 +313,14 @@ TEST_F(S3OptionsTest, LoadAuthSectionFromFile) {
   EXPECT_EQ(std::string(""), instance->get_ipv6_bind_addr());
   EXPECT_EQ(8081, instance->get_s3_bind_port());
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
-            instance->get_clovis_local_addr());
-  EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
-  EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
-  EXPECT_EQ(9, instance->get_clovis_layout_id());
-  EXPECT_EQ("127.0.0.1", instance->get_clovis_cass_cluster_ep());
-  EXPECT_EQ(2, instance->get_clovis_idx_service_id());
-  EXPECT_FALSE(instance->get_clovis_is_oostore());
-  EXPECT_FALSE(instance->get_clovis_is_read_verify());
+            instance->get_motr_local_addr());
+  EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_motr_prof());
+  EXPECT_EQ("<0x7200000000000000:0>", instance->get_motr_process_fid());
+  EXPECT_EQ(9, instance->get_motr_layout_id());
+  EXPECT_EQ("127.0.0.1", instance->get_motr_cass_cluster_ep());
+  EXPECT_EQ(2, instance->get_motr_idx_service_id());
+  EXPECT_FALSE(instance->get_motr_is_oostore());
+  EXPECT_FALSE(instance->get_motr_is_read_verify());
   EXPECT_EQ(100, instance->get_log_file_max_size_in_mb());
   EXPECT_TRUE(instance->is_log_buffering_enabled());
   EXPECT_FALSE(instance->is_stats_enabled());
@@ -344,14 +344,14 @@ TEST_F(S3OptionsTest, LoadSelectiveAuthSectionFromFile) {
   EXPECT_EQ(std::string(""), instance->get_ipv6_bind_addr());
   EXPECT_EQ(8081, instance->get_s3_bind_port());
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
-            instance->get_clovis_local_addr());
-  EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
-  EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
-  EXPECT_EQ(9, instance->get_clovis_layout_id());
-  EXPECT_EQ("127.0.0.1", instance->get_clovis_cass_cluster_ep());
-  EXPECT_EQ(2, instance->get_clovis_idx_service_id());
-  EXPECT_FALSE(instance->get_clovis_is_oostore());
-  EXPECT_FALSE(instance->get_clovis_is_read_verify());
+            instance->get_motr_local_addr());
+  EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_motr_prof());
+  EXPECT_EQ("<0x7200000000000000:0>", instance->get_motr_process_fid());
+  EXPECT_EQ(9, instance->get_motr_layout_id());
+  EXPECT_EQ("127.0.0.1", instance->get_motr_cass_cluster_ep());
+  EXPECT_EQ(2, instance->get_motr_idx_service_id());
+  EXPECT_FALSE(instance->get_motr_is_oostore());
+  EXPECT_FALSE(instance->get_motr_is_read_verify());
   EXPECT_EQ(100, instance->get_log_file_max_size_in_mb());
   EXPECT_TRUE(instance->is_log_buffering_enabled());
   EXPECT_FALSE(instance->is_stats_enabled());
@@ -364,13 +364,13 @@ TEST_F(S3OptionsTest, LoadClovisSectionFromFile) {
   EXPECT_TRUE(instance->load_section("S3_MOTR_CONFIG", false));
 
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
-            instance->get_clovis_local_addr());
-  EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
-  EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
-  EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
-  EXPECT_EQ(1, instance->get_clovis_idx_service_id());
-  EXPECT_TRUE(instance->get_clovis_is_oostore());
-  EXPECT_FALSE(instance->get_clovis_is_read_verify());
+            instance->get_motr_local_addr());
+  EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_motr_prof());
+  EXPECT_EQ("<0x7200000000000000:0>", instance->get_motr_process_fid());
+  EXPECT_EQ("10.10.1.3", instance->get_motr_cass_cluster_ep());
+  EXPECT_EQ(1, instance->get_motr_idx_service_id());
+  EXPECT_TRUE(instance->get_motr_is_oostore());
+  EXPECT_FALSE(instance->get_motr_is_read_verify());
 
   // Others should not be loaded
   EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
@@ -387,17 +387,17 @@ TEST_F(S3OptionsTest, LoadClovisSectionFromFile) {
 }
 
 TEST_F(S3OptionsTest, LoadSelectiveClovisSectionFromFile) {
-  instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR, "localhost@test");
+  instance->set_cmdline_option(S3_OPTION_MOTR_LOCAL_ADDR, "localhost@test");
   EXPECT_TRUE(instance->load_section("S3_MOTR_CONFIG", true));
 
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
-            instance->get_clovis_local_addr());
-  EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
-  EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
-  EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
-  EXPECT_EQ(1, instance->get_clovis_idx_service_id());
-  EXPECT_TRUE(instance->get_clovis_is_oostore());
-  EXPECT_FALSE(instance->get_clovis_is_read_verify());
+            instance->get_motr_local_addr());
+  EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_motr_prof());
+  EXPECT_EQ("<0x7200000000000000:0>", instance->get_motr_process_fid());
+  EXPECT_EQ("10.10.1.3", instance->get_motr_cass_cluster_ep());
+  EXPECT_EQ(1, instance->get_motr_idx_service_id());
+  EXPECT_TRUE(instance->get_motr_is_oostore());
+  EXPECT_FALSE(instance->get_motr_is_read_verify());
 
   // Others should not be loaded
   EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
@@ -418,7 +418,7 @@ TEST_F(S3OptionsTest, SetCmdOptionFlag) {
   instance->set_cmdline_option(S3_OPTION_IPV4_BIND_ADDR, "198.1.1.1");
   instance->set_cmdline_option(S3_OPTION_IPV6_BIND_ADDR, "::1");
   instance->set_cmdline_option(S3_OPTION_BIND_PORT, "1");
-  instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR, "localhost@test");
+  instance->set_cmdline_option(S3_OPTION_MOTR_LOCAL_ADDR, "localhost@test");
   instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR, "192.192.191");
   instance->set_cmdline_option(S3_OPTION_AUTH_PORT, "2");
   instance->set_cmdline_option(S3_MOTR_LAYOUT_ID, "123");
@@ -427,16 +427,16 @@ TEST_F(S3OptionsTest, SetCmdOptionFlag) {
   instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
   instance->set_cmdline_option(S3_OPTION_STATSD_IP_ADDR, "192.168.0.9");
   instance->set_cmdline_option(S3_OPTION_STATSD_PORT, "1234");
-  instance->set_cmdline_option(S3_OPTION_CLOVIS_PROF, "<0x7000000000000001:0>");
-  instance->set_cmdline_option(S3_OPTION_CLOVIS_PROCESS_FID,
+  instance->set_cmdline_option(S3_OPTION_MOTR_PROF, "<0x7000000000000001:0>");
+  instance->set_cmdline_option(S3_OPTION_MOTR_PROCESS_FID,
                                "<0x7200000000000000:0>");
 
   flag = S3_OPTION_IPV4_BIND_ADDR | S3_OPTION_IPV6_BIND_ADDR |
-         S3_OPTION_BIND_PORT | S3_OPTION_CLOVIS_LOCAL_ADDR |
+         S3_OPTION_BIND_PORT | S3_OPTION_MOTR_LOCAL_ADDR |
          S3_OPTION_AUTH_IP_ADDR | S3_OPTION_AUTH_PORT | S3_MOTR_LAYOUT_ID |
          S3_OPTION_LOG_DIR | S3_OPTION_LOG_MODE | S3_OPTION_LOG_FILE_MAX_SIZE |
          S3_OPTION_STATSD_IP_ADDR | S3_OPTION_STATSD_PORT |
-         S3_OPTION_CLOVIS_PROF | S3_OPTION_CLOVIS_PROCESS_FID;
+         S3_OPTION_MOTR_PROF | S3_OPTION_MOTR_PROCESS_FID;
 
   EXPECT_EQ(flag, instance->get_cmd_opt_flag());
 }

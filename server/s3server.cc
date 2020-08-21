@@ -73,7 +73,7 @@
 S3Option *g_option_instance = NULL;
 evhtp_ssl_ctx_t *g_ssl_auth_ctx = NULL;
 evbase_t *global_evbase_handle;
-extern struct m0_clovis_realm clovis_uber_realm;
+extern struct m0_clovis_realm motr_uber_realm;
 // index will have bucket and account information
 struct m0_uint128 global_bucket_list_index_oid;
 // replica index of global_bucket_list_index_oid
@@ -90,11 +90,11 @@ struct m0_uint128 global_probable_dead_object_list_index_oid;
 int global_shutdown_in_progress;
 
 struct m0_uint128 global_instance_id;
-int shutdown_clovis_teardown_called;
-std::set<struct s3_clovis_op_context *> global_clovis_object_ops_list;
-std::set<struct s3_motr_idx_op_context *> global_clovis_idx_ops_list;
-std::set<struct s3_clovis_idx_context *> global_clovis_idx;
-std::set<struct s3_clovis_obj_context *> global_clovis_obj;
+int shutdown_motr_teardown_called;
+std::set<struct s3_motr_op_context *> global_motr_object_ops_list;
+std::set<struct s3_motr_idx_op_context *> global_motr_idx_ops_list;
+std::set<struct s3_motr_idx_context *> global_motr_idx;
+std::set<struct s3_motr_obj_context *> global_motr_obj;
 
 extern "C" void s3_handler(evhtp_request_t *req, void *a) {
   // placeholder, required to complete the request processing.
@@ -540,20 +540,20 @@ int create_global_index(struct m0_uint128 &root_index_oid,
   struct m0_clovis_op *ops[1] = {NULL};
   struct m0_clovis_op *sync_op = NULL;
   struct m0_clovis_idx idx;
-  unsigned short clovis_op_wait_period =
-      g_option_instance->get_clovis_op_wait_period();
+  unsigned short motr_op_wait_period =
+      g_option_instance->get_motr_op_wait_period();
 
   memset(&idx, 0, sizeof(idx));
   ops[0] = NULL;
   // reserving an oid for root index -- M0_CLOVIS_ID_APP + offset
   init_s3_index_oid(root_index_oid, u_lo_index_offset);
-  m0_clovis_idx_init(&idx, &clovis_uber_realm, &root_index_oid);
+  m0_clovis_idx_init(&idx, &motr_uber_realm, &root_index_oid);
   m0_clovis_entity_create(NULL, &idx.in_entity, &ops[0]);
   m0_clovis_op_launch(ops, 1);
 
   rc = m0_clovis_op_wait(ops[0],
                          M0_BITS(M0_CLOVIS_OS_FAILED, M0_CLOVIS_OS_STABLE),
-                         m0_time_from_now(clovis_op_wait_period, 0));
+                         m0_time_from_now(motr_op_wait_period, 0));
   rc = (rc < 0) ? rc : m0_clovis_rc(ops[0]);
   if (rc < 0) {
     if (rc != -EEXIST) {
@@ -573,16 +573,16 @@ int create_global_index(struct m0_uint128 &root_index_oid,
     m0_clovis_op_launch(&sync_op, 1);
     rc = m0_clovis_op_wait(sync_op,
                            M0_BITS(M0_CLOVIS_OS_FAILED, M0_CLOVIS_OS_STABLE),
-                           m0_time_from_now(clovis_op_wait_period, 0));
+                           m0_time_from_now(motr_op_wait_period, 0));
     if (rc < 0) {
       goto FAIL;
     }
   }
   if (ops[0] != NULL) {
-    teardown_clovis_op(ops[0]);
+    teardown_motr_op(ops[0]);
   }
   if (sync_op != NULL) {
-    teardown_clovis_op(sync_op);
+    teardown_motr_op(sync_op);
   }
 
   if (idx.in_entity.en_sm.sm_state != 0) {
@@ -593,10 +593,10 @@ int create_global_index(struct m0_uint128 &root_index_oid,
 
 FAIL:
   if (ops[0] != NULL) {
-    teardown_clovis_op(ops[0]);
+    teardown_motr_op(ops[0]);
   }
   if (sync_op != NULL) {
-    teardown_clovis_op(sync_op);
+    teardown_motr_op(sync_op);
   }
   s3_iem(LOG_ALERT, S3_IEM_CLOVIS_CONN_FAIL, S3_IEM_CLOVIS_CONN_FAIL_STR,
          S3_IEM_CLOVIS_CONN_FAIL_JSON);
@@ -881,36 +881,36 @@ int main(int argc, char **argv) {
     }
   }
 
-  int clovis_read_mempool_flags = CREATE_ALIGNED_MEMORY;
-  if (g_option_instance->get_clovis_read_mempool_zeroed_buffer()) {
-    clovis_read_mempool_flags = clovis_read_mempool_flags | ZEROED_BUFFER;
+  int motr_read_mempool_flags = CREATE_ALIGNED_MEMORY;
+  if (g_option_instance->get_motr_read_mempool_zeroed_buffer()) {
+    motr_read_mempool_flags = motr_read_mempool_flags | ZEROED_BUFFER;
   }
 
-  // Create memory pool for clovis read operations.
+  // Create memory pool for motr read operations.
   rc = S3MempoolManager::create_pool(
-      g_option_instance->get_clovis_read_pool_max_threshold(),
-      g_option_instance->get_clovis_unit_sizes_for_mem_pool(),
-      g_option_instance->get_clovis_read_pool_initial_buffer_count(),
-      g_option_instance->get_clovis_read_pool_expandable_count(),
-      clovis_read_mempool_flags);
+      g_option_instance->get_motr_read_pool_max_threshold(),
+      g_option_instance->get_motr_unit_sizes_for_mem_pool(),
+      g_option_instance->get_motr_read_pool_initial_buffer_count(),
+      g_option_instance->get_motr_read_pool_expandable_count(),
+      motr_read_mempool_flags);
 
   if (rc != 0) {
     s3daemon.delete_pidfile();
     fini_auth_ssl();
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "",
-           "Memory pool creation for clovis read buffers failed!\n");
+           "Memory pool creation for motr read buffers failed!\n");
   }
 
   log_resource_limits();
 
   /* Initialise motr and Clovis */
-  rc = init_clovis();
+  rc = init_motr();
   if (rc < 0) {
     s3daemon.delete_pidfile();
     fini_auth_ssl();
     finalize_cli_options();
-    s3_log(S3_LOG_FATAL, "", "clovis_init failed!\n");
+    s3_log(S3_LOG_FATAL, "", "motr_init failed!\n");
   }
 
   // Init addb
@@ -918,7 +918,7 @@ int main(int argc, char **argv) {
   if (rc < 0) {
     s3daemon.delete_pidfile();
     fini_auth_ssl();
-    fini_clovis();
+    fini_motr();
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "S3 ADDB Init failed!\n");
   }
@@ -930,7 +930,7 @@ int main(int argc, char **argv) {
   if (rc < 0) {
     s3daemon.delete_pidfile();
     fini_auth_ssl();
-    fini_clovis();
+    fini_motr();
     // fatal message will call exit
     s3_log(S3_LOG_FATAL, "", "Failed to create a global bucket KVS index\n");
   }
@@ -943,7 +943,7 @@ int main(int argc, char **argv) {
   if (rc < 0) {
     s3daemon.delete_pidfile();
     fini_auth_ssl();
-    fini_clovis();
+    fini_motr();
     // fatal message will call exit
     s3_log(S3_LOG_FATAL, "",
            "Failed to create replica for global bucket KVS index\n");
@@ -956,7 +956,7 @@ int main(int argc, char **argv) {
   if (rc < 0) {
     s3daemon.delete_pidfile();
     fini_auth_ssl();
-    fini_clovis();
+    fini_motr();
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "Failed to create a bucket metadata KVS index\n");
   }
@@ -969,7 +969,7 @@ int main(int argc, char **argv) {
   if (rc < 0) {
     s3daemon.delete_pidfile();
     fini_auth_ssl();
-    fini_clovis();
+    fini_motr();
     // fatal message will call exit
     s3_log(S3_LOG_FATAL, "",
            "Failed to create replica for global bucket metadata index\n");
@@ -982,7 +982,7 @@ int main(int argc, char **argv) {
   if (rc < 0) {
     s3daemon.delete_pidfile();
     fini_auth_ssl();
-    fini_clovis();
+    fini_motr();
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "Failed to global object leak list KVS index\n");
   }
@@ -994,14 +994,14 @@ int main(int argc, char **argv) {
   if (rc < 0) {
     s3daemon.delete_pidfile();
     fini_auth_ssl();
-    fini_clovis();
+    fini_motr();
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "Failed to create global instance index\n");
   }
 
-  extern struct m0_clovis_config clovis_conf;
+  extern struct m0_clovis_config motr_conf;
 
-  std::string s3server_fid = clovis_conf.cc_process_fid;
+  std::string s3server_fid = motr_conf.cc_process_fid;
   s3_log(S3_LOG_INFO, "", "Process Fid= %s \n", s3server_fid.c_str());
 
   rc = create_new_instance_id(&global_instance_id);
@@ -1009,7 +1009,7 @@ int main(int argc, char **argv) {
   if (rc != 0) {
     s3daemon.delete_pidfile();
     fini_auth_ssl();
-    fini_clovis();
+    fini_motr();
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "Failed to create unique instance id\n");
   }
@@ -1026,8 +1026,8 @@ int main(int argc, char **argv) {
     mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
 
     if (!motr_kv_writer) {
-      motr_kv_writer = mote_kv_writer_factory->create_sync_clovis_kvs_writer(
-          "", s3_motr_api);
+      motr_kv_writer =
+          mote_kv_writer_factory->create_sync_motr_kvs_writer("", s3_motr_api);
     }
 
     rc = motr_kv_writer->put_keyval_sync(global_instance_list_index,
@@ -1035,7 +1035,7 @@ int main(int argc, char **argv) {
     if (rc != 0) {
       s3daemon.delete_pidfile();
       fini_auth_ssl();
-      fini_clovis();
+      fini_motr();
       finalize_cli_options();
       s3_log(S3_LOG_FATAL, "",
              "Failed to add unique instance id to global index\n");
@@ -1063,7 +1063,7 @@ int main(int argc, char **argv) {
       s3daemon.delete_pidfile();
       fini_auth_ssl();
       evhtp_free(htp_ipv4);
-      fini_clovis();
+      fini_motr();
       finalize_cli_options();
       s3_log(S3_LOG_FATAL, "", "Could not bind socket: %s\n", strerror(errno));
     }
@@ -1080,7 +1080,7 @@ int main(int argc, char **argv) {
       s3daemon.delete_pidfile();
       fini_auth_ssl();
       evhtp_free(htp_ipv6);
-      fini_clovis();
+      fini_motr();
       finalize_cli_options();
       s3_log(S3_LOG_FATAL, "", "Could not bind socket: %s\n", strerror(errno));
     }
@@ -1097,7 +1097,7 @@ int main(int argc, char **argv) {
       s3daemon.delete_pidfile();
       fini_auth_ssl();
       evhtp_free(htp_motr);
-      fini_clovis();
+      fini_motr();
       finalize_cli_options();
       s3_log(S3_LOG_FATAL, "", "Could not bind socket: %s\n", strerror(errno));
     }
@@ -1108,7 +1108,7 @@ int main(int argc, char **argv) {
     s3daemon.delete_pidfile();
     fini_auth_ssl();
     evhtp_free(htp_motr);
-    fini_clovis();
+    fini_motr();
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "Could not init perf metrics: %s\n",
            strerror(-rc));
@@ -1142,8 +1142,8 @@ int main(int argc, char **argv) {
            "backend\n");
   }
 
-  shutdown_clovis_teardown_called = 1;
-  global_clovis_teardown();
+  shutdown_motr_teardown_called = 1;
+  global_motr_teardown();
 
   s3_perf_metrics_fini();
 
@@ -1156,7 +1156,7 @@ int main(int argc, char **argv) {
   fini_auth_ssl();
 
   /* Clean-up */
-  fini_clovis();
+  fini_motr();
 
   delete s3_router;
   delete motr_router;

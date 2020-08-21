@@ -34,7 +34,7 @@
 
 class S3GetObjectAction : public S3ObjectAction {
 
-  std::shared_ptr<S3MotrReader> clovis_reader;
+  std::shared_ptr<S3MotrReader> motr_reader;
   // Read state
   size_t total_blocks_in_object;
   size_t blocks_already_read;
@@ -58,7 +58,7 @@ class S3GetObjectAction : public S3ObjectAction {
       std::shared_ptr<S3RequestObject> req,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
-      std::shared_ptr<S3MotrReaderFactory> clovis_s3_factory = nullptr);
+      std::shared_ptr<S3MotrReaderFactory> motr_s3_factory = nullptr);
 
   void setup_steps();
 

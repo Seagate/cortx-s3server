@@ -80,7 +80,7 @@ S3DeleteMultipleObjectsAction::S3DeleteMultipleObjectsAction(
   motr_kv_writer =
       motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
 
-  clovis_writer = motr_writer_factory->create_motr_writer(request);
+  motr_writer = motr_writer_factory->create_motr_writer(request);
 
   setup_steps();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -182,9 +182,9 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info() {
       keys_to_delete.clear();
       keys_to_delete = delete_request.get_keys(
           delete_index_in_req,
-          S3Option::get_instance()->get_clovis_idx_fetch_count());
+          S3Option::get_instance()->get_motr_idx_fetch_count());
       if (s3_fi_is_enabled("fail_fetch_objects_info")) {
-        s3_fi_enable_once("clovis_kv_get_fail");
+        s3_fi_enable_once("motr_kv_get_fail");
       }
       motr_kv_reader->get_keyval(
           object_list_index_oid, keys_to_delete,
@@ -330,7 +330,7 @@ void S3DeleteMultipleObjectsAction::delete_objects_metadata() {
     }
   }
   if (s3_fi_is_enabled("fail_delete_objects_metadata")) {
-    s3_fi_enable_once("clovis_kv_delete_fail");
+    s3_fi_enable_once("motr_kv_delete_fail");
   }
   motr_kv_writer->delete_keyval(
       object_list_index_oid, keys,
@@ -434,7 +434,7 @@ void S3DeleteMultipleObjectsAction::cleanup() {
     cleanup_oid_from_probable_dead_oid_list();
   } else {
     // Now trigger the delete.
-    clovis_writer->delete_objects(
+    motr_writer->delete_objects(
         oids_to_delete, layout_id_for_objs_to_delete,
         std::bind(&S3DeleteMultipleObjectsAction::cleanup_successful, this),
         std::bind(&S3DeleteMultipleObjectsAction::cleanup_failed, this));
@@ -450,16 +450,16 @@ void S3DeleteMultipleObjectsAction::cleanup_successful() {
 
 void S3DeleteMultipleObjectsAction::cleanup_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
+  if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
-           "delete_objects_failed called due to clovis_entity_open failure\n");
+           "delete_objects_failed called due to motr_entity_open failure\n");
     // failed to to perform delete object operation, so clear probable_oid_list
     // map to retain all the object oids entries in probable list index id
     probable_oid_list.clear();
   } else {
     uint obj_index = 0;
     for (auto& oid : oids_to_delete) {
-      if (clovis_writer->get_op_ret_code_for_delete_op(obj_index) != -ENOENT) {
+      if (motr_writer->get_op_ret_code_for_delete_op(obj_index) != -ENOENT) {
         // object oid failed to delete, so erase the object oid from
         // probable_oid_list map and so that this object oid will be retained in
         // global_probable_dead_object_list_index_oid
