@@ -102,16 +102,16 @@ class ObjectRecoveryScheduler(object):
                             str(record))
                         ret = mq_client.send_data(record)
                         if not ret:
-                            # Do Audit logging
+                            # TODO - Do Audit logging
                             self.logger.error(
                                 "Object recovery queue send data "+ str(record) +
-                                " failed :" + msg)
+                                " failed :")
                         else:
                             self.logger.info(
                                 "Object recovery queue send data successfully :" +
                                 str(record))
                     if (is_truncated == "true"):
-                       self.add_kv_to_kafka_queue(probable_delete_json["NextMarker"]) 
+                       self.add_kv_to_kafka_queue(probable_delete_json["NextMarker"])
                 else:
                     self.logger.info(
                         "Index listing result empty. Ignoring adding entry to object recovery queue")

@@ -17,20 +17,19 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-"""Implementation of Kafka for producer"""
-import time
+"""Implementation of Kafka for producer."""
 import json
 from confluent_kafka import Producer
 import confluent_kafka as kafka
-from s3backgrounddelete.IEMutil import IEMutil
 import socket
 
 class ObjectRecoveryKafkaProd(object):
+
     """This class is implementation of Kafka for object recovery."""
 
 
     def __init__(self, config, logger):
-        """Initialize kafka"""
+        """Initialize kafka."""
         self._config = config
         self.prod_config = {'bootstrap.servers': (self._config.get_kafka_host() + ':' +  str(self._config.get_kafka_port())), 'client.id': socket.gethostname()}
         self.logger = logger
@@ -50,16 +49,14 @@ class ObjectRecoveryKafkaProd(object):
 
     def send_data(self, data):
         """Send message data."""
-        #deliver = ObjectDelivery()
-        #producer.produce(self.topic_name, data, callback=deliver.acked)   
-        self.__producer.poll(0) 
+        self.__producer.poll(0)
         try:
           self.__producer.produce(self._config.get_kafka_topic(), json.dumps(data), callback=self.delivery)
         except BufferError as buffer_error:
            self.logger.error(
                "BufferError:{}".format(buffer_error.str()))
            return False
-        
+
         except kafka.KafkaException as kafka_exception:
            self.logger.error("KafkaException:{}".format(kafka_exception.str()))
            return False
@@ -68,5 +65,5 @@ class ObjectRecoveryKafkaProd(object):
 
 
     def close(self):
-        """Block until all messages are delivered/failed"""
+        """Block until all messages are delivered/failed."""
         self.__producer.flush()

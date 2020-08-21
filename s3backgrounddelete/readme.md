@@ -1,5 +1,5 @@
 ## Steps to configure & run S3backgrounddelete process
-In case of LDR-R1 background service uses RabbitMQ and from LDR-R2 onwards Kafka is used
+## In case of LDR-R1 background service uses RabbitMQ and from LDR-R2 onwards Kafka is used
 ----
 1. Install & configure RabbbitMQ (In LDR-R1) as per {s3 src}/s3backgrounddelete/rabbitmq_setup.md
                                              or
