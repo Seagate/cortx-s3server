@@ -1,5 +1,4 @@
-#
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#Copyright 2016 The Bazel Authors. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,10 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# For any questions about this software or licensing,
-# please email opensource@seagate.com or cortx-questions@seagate.com.
-#
 
 %global _enable_debug_package 0
 %global debug_package %{nil}
