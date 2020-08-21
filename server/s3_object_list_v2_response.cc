@@ -23,7 +23,7 @@
 #include "s3_common_utilities.h"
 #include "s3_log.h"
 
-S3ObjectListResponseV2::S3ObjectListResponseV2(std::string encoding_type)
+S3ObjectListResponseV2::S3ObjectListResponseV2(const std::string& encoding_type)
     : S3ObjectListResponse(encoding_type),
       continuation_token(""),
       fetch_owner(false),
@@ -45,9 +45,9 @@ void S3ObjectListResponseV2::set_start_after(
 }
 
 std::string& S3ObjectListResponseV2::get_xml(
-    const std::string requestor_canonical_id,
-    const std::string bucket_owner_user_id,
-    const std::string requestor_user_id) {
+    const std::string& requestor_canonical_id,
+    const std::string& bucket_owner_user_id,
+    const std::string& requestor_user_id) {
   // clang-format off
   response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
   response_xml +=

@@ -74,9 +74,6 @@ void S3GetBucketActionV2::validate_request() {
 }
 
 void S3GetBucketActionV2::after_validate_request() {
-  std::shared_ptr<S3ObjectListResponseV2> obj_v2_list =
-      std::dynamic_pointer_cast<S3ObjectListResponseV2>(object_list);
-
   if (request_cont_token.empty()) {
     last_key = request_start_after;
   } else {

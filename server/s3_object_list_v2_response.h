@@ -36,7 +36,7 @@ class S3ObjectListResponseV2 : public S3ObjectListResponse {
   std::string next_continuation_token;
 
  public:
-  S3ObjectListResponseV2(std::string encoding_type = "");
+  S3ObjectListResponseV2(const std::string &encoding_type = "");
 
   void set_continuation_token(const std::string &token);
   void set_fetch_owner(bool &need_owner_info);
@@ -45,9 +45,9 @@ class S3ObjectListResponseV2 : public S3ObjectListResponse {
   std::string &get_continuation_token() { return continuation_token; }
 
   // Overridden for ListObjects V2
-  std::string &get_xml(const std::string requestor_canonical_id,
-                       const std::string bucket_owner_user_id,
-                       const std::string requestor_user_id);
+  std::string &get_xml(const std::string &requestor_canonical_id,
+                       const std::string &bucket_owner_user_id,
+                       const std::string &requestor_user_id);
 
   /* Google tests.
   FRIEND_TEST(S3GetMultipartPartActionTest, ConstructorTest);
