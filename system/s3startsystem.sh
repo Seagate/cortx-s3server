@@ -88,6 +88,6 @@ s3port=$MOTR_S3SERVER_PORT
 pid_filename='/var/run/s3server.'$1'.pid'
 set -x
 s3server --s3pidfile $pid_filename \
-         --clovislocal $local_ep --clovisha $ha_ep \
-         --clovisprofilefid $profile_fid --clovisprocessfid $process_fid \
+         --motrlocal $local_ep --motrha $ha_ep \
+         --motrprofilefid $profile_fid --motrprocessfid $process_fid \
          --s3port $s3port --log_dir $s3_log_dir

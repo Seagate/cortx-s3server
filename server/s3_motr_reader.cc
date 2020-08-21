@@ -27,18 +27,18 @@
 #include "s3_uri_to_motr_oid.h"
 #include "s3_addb.h"
 
-extern struct m0_clovis_realm clovis_uber_realm;
-extern std::set<struct s3_clovis_op_context *> global_clovis_object_ops_list;
-extern std::set<struct s3_clovis_obj_context *> global_clovis_obj;
-extern int shutdown_clovis_teardown_called;
+extern struct m0_clovis_realm motr_uber_realm;
+extern std::set<struct s3_motr_op_context *> global_motr_object_ops_list;
+extern std::set<struct s3_motr_obj_context *> global_motr_obj;
+extern int shutdown_motr_teardown_called;
 
 S3MotrReader::S3MotrReader(std::shared_ptr<RequestObject> req,
                            struct m0_uint128 id, int layoutid,
-                           std::shared_ptr<MotrAPI> clovis_api)
+                           std::shared_ptr<MotrAPI> motr_api)
     : request(req),
-      s3_motr_api(clovis_api),
+      s3_motr_api(motr_api),
       state(S3MotrReaderOpState::start),
-      clovis_rw_op_context(NULL),
+      motr_rw_op_context(NULL),
       iteration_index(0),
       num_of_blocks_to_read(0),
       last_index(0),
@@ -47,8 +47,8 @@ S3MotrReader::S3MotrReader(std::shared_ptr<RequestObject> req,
   request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
-  if (clovis_api) {
-    s3_motr_api = clovis_api;
+  if (motr_api) {
+    s3_motr_api = motr_api;
   } else {
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
@@ -63,8 +63,8 @@ void S3MotrReader::clean_up_contexts() {
   // op contexts need to be free'ed before object
   open_context = nullptr;
   reader_context = nullptr;
-  if (!shutdown_clovis_teardown_called) {
-    global_clovis_obj.erase(obj_ctx);
+  if (!shutdown_motr_teardown_called) {
+    global_motr_obj.erase(obj_ctx);
     if (obj_ctx) {
       for (size_t i = 0; i < obj_ctx->n_initialized_contexts; i++) {
         s3_motr_api->clovis_obj_fini(&obj_ctx->objs[i]);
@@ -153,13 +153,13 @@ int S3MotrReader::open_object(std::function<void(void)> on_success,
 
   op_ctx->op_index_in_launch = 0;
   op_ctx->application_context = (void *)open_context.get();
-  struct s3_clovis_op_context *ctx = open_context->get_clovis_op_ctx();
+  struct s3_motr_op_context *ctx = open_context->get_motr_op_ctx();
 
   ctx->cbs[0].oop_executed = NULL;
   ctx->cbs[0].oop_stable = s3_motr_op_stable;
   ctx->cbs[0].oop_failed = s3_motr_op_failed;
 
-  s3_motr_api->clovis_obj_init(&obj_ctx->objs[0], &clovis_uber_realm, &oid,
+  s3_motr_api->clovis_obj_init(&obj_ctx->objs[0], &motr_uber_realm, &oid,
                                layout_id);
   obj_ctx->n_initialized_contexts = 1;
 
@@ -167,7 +167,7 @@ int S3MotrReader::open_object(std::function<void(void)> on_success,
                                        &(ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_WARN, request_id,
-           "Clovis API: clovis_entity_open failed with error code %d\n", rc);
+           "Motr API: motr_entity_open failed with error code %d\n", rc);
     state = S3MotrReaderOpState::failed_to_launch;
     s3_motr_op_pre_launch_failure(op_ctx->application_context, rc);
     return rc;
@@ -177,13 +177,13 @@ int S3MotrReader::open_object(std::function<void(void)> on_success,
   s3_motr_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
 
   s3_log(S3_LOG_INFO, request_id,
-         "Clovis API: openobj(oid: ("
+         "Motr API: openobj(oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid.u_hi, oid.u_lo);
 
   s3_motr_api->clovis_op_launch(request->addb_request_id, ctx->ops, 1,
                                 MotrOpType::openobj);
-  global_clovis_object_ops_list.insert(ctx);
+  global_motr_object_ops_list.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return rc;
 }
@@ -191,7 +191,7 @@ int S3MotrReader::open_object(std::function<void(void)> on_success,
 void S3MotrReader::open_object_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_INFO, request_id,
-         "Clovis API Successful: openobj(oid: ("
+         "Motr API Successful: openobj(oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid.u_hi, oid.u_lo);
   is_object_opened = true;
@@ -245,18 +245,17 @@ bool S3MotrReader::read_object() {
     // out-of-memory
     state = S3MotrReaderOpState::ooo;
     s3_log(S3_LOG_ERROR, request_id,
-           "Clovis API failed: openobj(oid: ("
+           "Motr API failed: openobj(oid: ("
            "%" SCNx64 " : %" SCNx64 "), out-of-memory)\n",
            oid.u_hi, oid.u_lo);
     return false;
   }
 
-  struct s3_clovis_op_context *ctx = reader_context->get_clovis_op_ctx();
-  struct s3_clovis_rw_op_context *rw_ctx =
-      reader_context->get_clovis_rw_op_ctx();
+  struct s3_motr_op_context *ctx = reader_context->get_motr_op_ctx();
+  struct s3_motr_rw_op_context *rw_ctx = reader_context->get_motr_rw_op_ctx();
 
   // Remember, so buffers can be iterated.
-  clovis_rw_op_context = rw_ctx;
+  motr_rw_op_context = rw_ctx;
   iteration_index = 0;
 
   struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
@@ -275,7 +274,7 @@ bool S3MotrReader::read_object() {
                                   &ctx->ops[0]);
   if (rc != 0) {
     s3_log(S3_LOG_WARN, request_id,
-           "Clovis API: clovis_obj_op failed with error code %d\n", rc);
+           "Motr API: motr_obj_op failed with error code %d\n", rc);
     state = S3MotrReaderOpState::failed_to_launch;
     s3_motr_op_pre_launch_failure(op_ctx->application_context, rc);
     return false;
@@ -287,13 +286,13 @@ bool S3MotrReader::read_object() {
   reader_context->start_timer_for("read_object_data");
 
   s3_log(S3_LOG_INFO, request_id,
-         "Clovis API: readobj(operation: M0_CLOVIS_OC_READ, oid: ("
+         "Motr API: readobj(operation: M0_CLOVIS_OC_READ, oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid.u_hi, oid.u_lo);
 
   s3_motr_api->clovis_op_launch(request->addb_request_id, ctx->ops, 1,
                                 MotrOpType::readobj);
-  global_clovis_object_ops_list.insert(ctx);
+  global_motr_object_ops_list.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return true;
 }
@@ -301,7 +300,7 @@ bool S3MotrReader::read_object() {
 void S3MotrReader::read_object_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_INFO, request_id,
-         "Clovis API Successful: readobj(oid: ("
+         "Motr API Successful: readobj(oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid.u_hi, oid.u_lo);
   state = S3MotrReaderOpState::success;
@@ -342,8 +341,8 @@ size_t S3MotrReader::get_next_block(char **data) {
     return 0;
   }
 
-  *data = (char *)clovis_rw_op_context->data->ov_buf[iteration_index];
-  data_read = clovis_rw_op_context->data->ov_vec.v_count[iteration_index];
+  *data = (char *)motr_rw_op_context->data->ov_buf[iteration_index];
+  data_read = motr_rw_op_context->data->ov_vec.v_count[iteration_index];
   iteration_index++;
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return data_read;

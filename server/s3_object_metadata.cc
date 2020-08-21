@@ -97,15 +97,15 @@ S3ObjectMetadata::S3ObjectMetadata(
     std::string uploadid,
     std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
-    std::shared_ptr<MotrAPI> clovis_api)
+    std::shared_ptr<MotrAPI> motr_api)
     : request(std::move(req)) {
   request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   initialize(ismultipart, uploadid);
 
-  if (clovis_api) {
-    s3_motr_api = std::move(clovis_api);
+  if (motr_api) {
+    s3_motr_api = std::move(motr_api);
   } else {
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }

@@ -47,12 +47,11 @@ DEFINE_bool(reuseport, false, "Enable reusing s3 server port");
 DEFINE_string(perflogfile, "/var/log/seagate/s3/perf.log",
               "Performance log path");
 
-DEFINE_string(clovislocal, "localhost@tcp:12345:33:100",
-              "Clovis local address");
-DEFINE_string(clovisha, "CLOVIS_DEFAULT_HA_ADDR", "Clovis ha address");
-DEFINE_int32(clovislayoutid, 9, "For options please see the readme");
-DEFINE_string(clovisprofilefid, "<0x7000000000000001:0>", "Clovis profile FID");
-DEFINE_string(clovisprocessfid, "<0x7200000000000000:0>", "Clovis process FID");
+DEFINE_string(motrlocal, "localhost@tcp:12345:33:100", "Clovis local address");
+DEFINE_string(motrha, "CLOVIS_DEFAULT_HA_ADDR", "Clovis ha address");
+DEFINE_int32(motrlayoutid, 9, "For options please see the readme");
+DEFINE_string(motrprofilefid, "<0x7000000000000001:0>", "Clovis profile FID");
+DEFINE_string(motrprocessfid, "<0x7200000000000000:0>", "Clovis process FID");
 
 DEFINE_string(authhost, "ipv4:127.0.0.1", "Auth server host");
 DEFINE_int32(authport, 8095, "Auth server port");
@@ -62,17 +61,17 @@ DEFINE_bool(getoid, false, "Enable getoid in S3 request for testing");
 DEFINE_bool(fake_authenticate, false, "Fake out authenticate");
 DEFINE_bool(fake_authorization, false, "Fake out authorization");
 
-DEFINE_bool(fake_clovis_createobj, false, "Fake out clovis create object");
-DEFINE_bool(fake_clovis_writeobj, false, "Fake out clovis write object data");
-DEFINE_bool(fake_clovis_readobj, false, "Fake out clovis read object data");
-DEFINE_bool(fake_clovis_deleteobj, false, "Fake out clovis delete object");
-DEFINE_bool(fake_clovis_createidx, false, "Fake out clovis create index");
-DEFINE_bool(fake_clovis_deleteidx, false, "Fake out clovis delete index");
-DEFINE_bool(fake_clovis_getkv, false, "Fake out clovis get key-val");
-DEFINE_bool(fake_clovis_putkv, false, "Fake out clovis put key-val");
-DEFINE_bool(fake_clovis_deletekv, false, "Fake out clovis delete key-val");
-DEFINE_bool(fake_clovis_redis_kvs, false,
-            "Fake out clovis kvs with redis in-memory storage");
+DEFINE_bool(fake_motr_createobj, false, "Fake out motr create object");
+DEFINE_bool(fake_motr_writeobj, false, "Fake out motr write object data");
+DEFINE_bool(fake_motr_readobj, false, "Fake out motr read object data");
+DEFINE_bool(fake_motr_deleteobj, false, "Fake out motr delete object");
+DEFINE_bool(fake_motr_createidx, false, "Fake out motr create index");
+DEFINE_bool(fake_motr_deleteidx, false, "Fake out motr delete index");
+DEFINE_bool(fake_motr_getkv, false, "Fake out motr get key-val");
+DEFINE_bool(fake_motr_putkv, false, "Fake out motr put key-val");
+DEFINE_bool(fake_motr_deletekv, false, "Fake out motr delete key-val");
+DEFINE_bool(fake_motr_redis_kvs, false,
+            "Fake out motr kvs with redis in-memory storage");
 DEFINE_bool(fault_injection, false, "Enable fault Injection flag for testing");
 DEFINE_bool(loading_indicators, false, "Enable logging load indicators");
 DEFINE_bool(addb, false, "Enable logging via ADDB motr subsystem");
@@ -186,19 +185,19 @@ int parse_and_load_config_options(int argc, char **argv) {
                                         flag_info.current_value.c_str());
   }
 
-  gflags::GetCommandLineFlagInfo("clovislocal", &flag_info);
+  gflags::GetCommandLineFlagInfo("motrlocal", &flag_info);
   if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR,
+    option_instance->set_cmdline_option(S3_OPTION_MOTR_LOCAL_ADDR,
                                         flag_info.current_value.c_str());
   }
 
-  gflags::GetCommandLineFlagInfo("clovisha", &flag_info);
+  gflags::GetCommandLineFlagInfo("motrha", &flag_info);
   if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_OPTION_CLOVIS_HA_ADDR,
+    option_instance->set_cmdline_option(S3_OPTION_MOTR_HA_ADDR,
                                         flag_info.current_value.c_str());
   }
 
-  gflags::GetCommandLineFlagInfo("clovislayoutid", &flag_info);
+  gflags::GetCommandLineFlagInfo("motrlayoutid", &flag_info);
   if (!flag_info.is_default) {
     option_instance->set_cmdline_option(S3_MOTR_LAYOUT_ID,
                                         flag_info.current_value.c_str());
@@ -216,15 +215,15 @@ int parse_and_load_config_options(int argc, char **argv) {
                                         flag_info.current_value.c_str());
   }
 
-  gflags::GetCommandLineFlagInfo("clovisprofilefid", &flag_info);
+  gflags::GetCommandLineFlagInfo("motrprofilefid", &flag_info);
   if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_OPTION_CLOVIS_PROF,
+    option_instance->set_cmdline_option(S3_OPTION_MOTR_PROF,
                                         flag_info.current_value.c_str());
   }
 
-  gflags::GetCommandLineFlagInfo("clovisprocessfid", &flag_info);
+  gflags::GetCommandLineFlagInfo("motrprocessfid", &flag_info);
   if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_OPTION_CLOVIS_PROCESS_FID,
+    option_instance->set_cmdline_option(S3_OPTION_MOTR_PROCESS_FID,
                                         flag_info.current_value.c_str());
   }
   return 0;

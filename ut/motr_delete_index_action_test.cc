@@ -106,7 +106,7 @@ TEST_F(MotrDeleteIndexActionTest, InvalidIndexId) {
   EXPECT_CALL(*ptr_mock_request, get_index_id_lo()).Times(1).WillOnce(
       ReturnRef(zero_index_id_str_lo));
   // Delete index should not be called
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               delete_index(_, _, _)).Times(0);
   // Report error Bad request
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
@@ -123,7 +123,7 @@ TEST_F(MotrDeleteIndexActionTest, EmptyIndexId) {
   EXPECT_CALL(*ptr_mock_request, get_index_id_lo()).Times(1).WillOnce(
       ReturnRef(empty_index));
   // Delete index should not be called
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               delete_index(_, _, _)).Times(0);
   // Report error Bad request
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
@@ -136,7 +136,7 @@ TEST_F(MotrDeleteIndexActionTest, EmptyIndexId) {
 TEST_F(MotrDeleteIndexActionTest, DeleteIndex) {
   action_under_test->index_id = index_id;
 
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer),
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               delete_index(_, _, _)).Times(1);
   action_under_test->delete_index();
   EXPECT_TRUE(action_under_test->motr_kv_writer != nullptr);
@@ -153,8 +153,8 @@ TEST_F(MotrDeleteIndexActionTest, DeleteIndexSuccess) {
 
 TEST_F(MotrDeleteIndexActionTest, DeleteIndexFailedIndexMissing) {
   action_under_test->motr_kv_writer =
-      motr_kvs_writer_factory->mock_clovis_kvs_writer;
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      motr_kvs_writer_factory->mock_motr_kvs_writer;
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
       .WillRepeatedly(Return(S3MotrKVSWriterOpState::missing));
 
   EXPECT_CALL(*ptr_mock_request, send_response(204, _)).Times(AtLeast(1));
@@ -164,8 +164,8 @@ TEST_F(MotrDeleteIndexActionTest, DeleteIndexFailedIndexMissing) {
 
 TEST_F(MotrDeleteIndexActionTest, DeleteIndexFailed) {
   action_under_test->motr_kv_writer =
-      motr_kvs_writer_factory->mock_clovis_kvs_writer;
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      motr_kvs_writer_factory->mock_motr_kvs_writer;
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
       .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
 
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
@@ -178,8 +178,8 @@ TEST_F(MotrDeleteIndexActionTest, DeleteIndexFailed) {
 
 TEST_F(MotrDeleteIndexActionTest, DeleteIndexFailedToLaunch) {
   action_under_test->motr_kv_writer =
-      motr_kvs_writer_factory->mock_clovis_kvs_writer;
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      motr_kvs_writer_factory->mock_motr_kvs_writer;
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
       .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed_to_launch));
 
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())

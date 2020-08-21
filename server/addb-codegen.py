@@ -244,7 +244,7 @@ enum S3AddbActionTypeId {
    * UUID of the request. */
   S3_ADDB_REQUEST_ID,
 
-  /* ID of ADDB entry which keeps a link between s3 request and clovis op
+  /* ID of ADDB entry which keeps a link between s3 request and motr op
    * request. */
   S3_ADDB_REQUEST_TO_CLOVIS_ID,
 

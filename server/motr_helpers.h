@@ -53,10 +53,10 @@ EXTERN_C_BLOCK_BEGIN
 
 EXTERN_C_BLOCK_END
 
-int init_clovis(void);
-void fini_clovis(void);
+int init_motr(void);
+void fini_motr(void);
 int create_new_instance_id(struct m0_uint128 *ufid);
-void teardown_clovis_op(struct m0_clovis_op *op);
-void teardown_clovis_wait_op(struct m0_clovis_op *op);
-void global_clovis_teardown();
+void teardown_motr_op(struct m0_clovis_op *op);
+void teardown_motr_wait_op(struct m0_clovis_op *op);
+void global_motr_teardown();
 #endif

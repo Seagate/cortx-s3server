@@ -32,14 +32,14 @@ MotrDeleteIndexAction::MotrDeleteIndexAction(
     std::shared_ptr<S3MotrKVSWriterFactory> motr_kvs_writer_factory)
     : MotrAction(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-  motr_clovis_api = std::make_shared<ConcreteMotrAPI>();
+  motr_api = std::make_shared<ConcreteMotrAPI>();
 
   s3_log(S3_LOG_INFO, request_id, "Motr API: Index delete.\n");
 
   if (motr_kvs_writer_factory) {
-    motr_motr_kvs_writer_factory = motr_kvs_writer_factory;
+    motr_kvs_writer_factory_ptr = motr_kvs_writer_factory;
   } else {
-    motr_motr_kvs_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
+    motr_kvs_writer_factory_ptr = std::make_shared<S3MotrKVSWriterFactory>();
   }
 
   setup_steps();
@@ -71,8 +71,8 @@ void MotrDeleteIndexAction::validate_request() {
 void MotrDeleteIndexAction::delete_index() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  motr_kv_writer = motr_motr_kvs_writer_factory->create_motr_kvs_writer(
-      request, motr_clovis_api);
+  motr_kv_writer =
+      motr_kvs_writer_factory_ptr->create_motr_kvs_writer(request, motr_api);
 
   motr_kv_writer->delete_index(
       index_id,

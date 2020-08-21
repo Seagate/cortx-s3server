@@ -317,7 +317,7 @@ struct S3NumStrComparator {
   }
 };
 
-inline std::string clovis_entity_type_to_string(S3ClovisEntityType type) {
+inline std::string motr_entity_type_to_string(S3ClovisEntityType type) {
   switch (type) {
     case S3ClovisEntityType::realm:
       return "realm";

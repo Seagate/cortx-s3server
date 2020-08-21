@@ -33,7 +33,7 @@
 extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
 S3PostCompleteAction::S3PostCompleteAction(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> clovis_api,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
     std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
@@ -56,8 +56,8 @@ S3PostCompleteAction::S3PostCompleteAction(
 
   action_uses_cleanup = true;
   s3_post_complete_action_state = S3PostCompleteActionState::empty;
-  if (clovis_api) {
-    s3_motr_api = std::move(clovis_api);
+  if (motr_api) {
+    s3_motr_api = std::move(motr_api);
   } else {
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
@@ -95,7 +95,7 @@ S3PostCompleteAction::S3PostCompleteAction(
   obj_metadata_updated = false;
   validated_parts_count = 0;
   set_abort_multipart(false);
-  count_we_requested = S3Option::get_instance()->get_clovis_idx_fetch_count();
+  count_we_requested = S3Option::get_instance()->get_motr_idx_fetch_count();
   setup_steps();
 }
 
@@ -872,15 +872,15 @@ void S3PostCompleteAction::mark_old_oid_for_deletion() {
 }
 
 void S3PostCompleteAction::delete_old_object() {
-    if (!clovis_writer) {
-      clovis_writer =
-          motr_writer_factory->create_motr_writer(request, old_object_oid);
+  if (!motr_writer) {
+    motr_writer =
+        motr_writer_factory->create_motr_writer(request, old_object_oid);
     }
     // process to delete old object
     assert(old_object_oid.u_hi || old_object_oid.u_lo);
 
-    clovis_writer->set_oid(old_object_oid);
-    clovis_writer->delete_object(
+    motr_writer->set_oid(old_object_oid);
+    motr_writer->delete_object(
         std::bind(&S3PostCompleteAction::remove_old_object_version_metadata,
                   this),
         std::bind(&S3PostCompleteAction::next, this), old_layout_id);
@@ -949,13 +949,13 @@ void S3PostCompleteAction::delete_new_object() {
   assert(new_object_oid.u_hi || new_object_oid.u_lo);
   assert(is_abort_multipart());
 
-  if (!clovis_writer) {
-    clovis_writer =
+  if (!motr_writer) {
+    motr_writer =
         motr_writer_factory->create_motr_writer(request, new_object_oid);
   } else {
-    clovis_writer->set_oid(new_object_oid);
+    motr_writer->set_oid(new_object_oid);
   }
-  clovis_writer->delete_object(
+  motr_writer->delete_object(
       std::bind(&S3PostCompleteAction::remove_new_oid_probable_record, this),
       std::bind(&S3PostCompleteAction::next, this), layout_id);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

@@ -60,7 +60,7 @@ class S3PutObjectAction : public S3ObjectAction {
   int layout_id;
   // string used for salting the uri
   std::string salt;
-  std::shared_ptr<S3MotrWiter> clovis_writer;
+  std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
 
   size_t total_data_to_stream;
@@ -90,10 +90,10 @@ class S3PutObjectAction : public S3ObjectAction {
  public:
   S3PutObjectAction(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<MotrAPI> clovis_api = nullptr,
+      std::shared_ptr<MotrAPI> motr_api = nullptr,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
-      std::shared_ptr<S3MotrWriterFactory> clovis_s3_factory = nullptr,
+      std::shared_ptr<S3MotrWriterFactory> motr_s3_factory = nullptr,
       std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory = nullptr,
       std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr);
 

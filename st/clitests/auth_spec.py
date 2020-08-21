@@ -1596,7 +1596,6 @@ def delete_account_tests():
     AuthTest(test_msg).delete_account(**account_args).execute_test()\
             .command_response_should_have("Account deleted successfully")
 
-    # TODO  This test will be fixed as part of COSTOR-706
     # Use invalid access key and secret key of account s3test1
     GlobalTestState.root_access_key = "xRZ807dxQEqakueNTBpyNQ#"
     GlobalTestState.root_secret_key = "caEE2plJfA1BrhthYsh9H9siEQZtCMF4etvj1o9B"
@@ -1645,16 +1644,16 @@ def delete_account_tests():
     S3cmdTest('s3cmd can delete bucket').with_credentials(GlobalTestState.root_access_key, GlobalTestState.root_secret_key)\
     .delete_bucket("seagatebucket").execute_test().command_is_successful()
 
-    # Test: Account cannot be deleted on clovis_idx_op fail
-    test_msg = "Cannot delete account s3test1 on clovis_idx_op fail"
-    S3fiTest('s3cmd can enable FI clovis_idx_op_fail').\
-        enable_fi("enable", "always", "clovis_idx_op_fail").\
+    # Test: Account cannot be deleted on motr_idx_op fail
+    test_msg = "Cannot delete account s3test1 on motr_idx_op fail"
+    S3fiTest('s3cmd can enable FI motr_idx_op_fail').\
+        enable_fi("enable", "always", "motr_idx_op_fail").\
         execute_test().command_is_successful()
     account_args = {'AccountName': 's3test1'}
     AuthTest(test_msg).delete_account(**account_args).execute_test(negative_case=True)\
             .command_response_should_have("Account cannot be deleted")
     S3fiTest('s3cmd disable Fault injection').\
-        disable_fi("clovis_idx_op_fail").\
+        disable_fi("motr_idx_op_fail").\
         execute_test().command_is_successful()
 
     test_msg = "Delete account s3test1 contains no buckets"

@@ -29,14 +29,14 @@
 #include "s3_uri_to_motr_oid.h"
 #include "s3_stats.h"
 
-extern struct m0_clovis_realm clovis_uber_realm;
-extern struct m0_clovis_container clovis_container;
-extern std::set<struct s3_motr_idx_op_context *> global_clovis_idx_ops_list;
-extern std::set<struct s3_clovis_idx_context *> global_clovis_idx;
-extern int shutdown_clovis_teardown_called;
+extern struct m0_clovis_realm motr_uber_realm;
+extern struct m0_clovis_container motr_container;
+extern std::set<struct s3_motr_idx_op_context *> global_motr_idx_ops_list;
+extern std::set<struct s3_motr_idx_context *> global_motr_idx;
+extern int shutdown_motr_teardown_called;
 
 S3MotrKVSReader::S3MotrKVSReader(std::shared_ptr<RequestObject> req,
-                                 std::shared_ptr<MotrAPI> clovis_api)
+                                 std::shared_ptr<MotrAPI> motr_api)
     : request(req),
       state(S3MotrKVSReaderOpState::start),
       last_value(""),
@@ -46,8 +46,8 @@ S3MotrKVSReader::S3MotrKVSReader(std::shared_ptr<RequestObject> req,
   request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   last_result_keys_values.clear();
-  if (clovis_api) {
-    s3_motr_api = clovis_api;
+  if (motr_api) {
+    s3_motr_api = motr_api;
   } else {
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
@@ -57,8 +57,8 @@ S3MotrKVSReader::~S3MotrKVSReader() { clean_up_contexts(); }
 
 void S3MotrKVSReader::clean_up_contexts() {
   reader_context = nullptr;
-  if (!shutdown_clovis_teardown_called) {
-    global_clovis_idx.erase(idx_ctx);
+  if (!shutdown_motr_teardown_called) {
+    global_motr_idx.erase(idx_ctx);
     if (idx_ctx) {
       for (size_t i = 0; i < idx_ctx->n_initialized_contexts; i++) {
         s3_motr_api->clovis_idx_fini(&idx_ctx->idx[i]);
@@ -116,7 +116,7 @@ void S3MotrKVSReader::get_keyval(struct m0_uint128 oid,
       reader_context->get_motr_kvs_op_ctx();
 
   // Remember, so buffers can be iterated.
-  clovis_kvs_op_context = kvs_ctx;
+  motr_kvs_op_context = kvs_ctx;
 
   struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
       1, sizeof(struct s3_motr_context_obj));
@@ -136,8 +136,7 @@ void S3MotrKVSReader::get_keyval(struct m0_uint128 oid,
     ++i;
   }
 
-  s3_motr_api->clovis_idx_init(&idx_ctx->idx[0], &clovis_container.co_realm,
-                               &id);
+  s3_motr_api->clovis_idx_init(&idx_ctx->idx[0], &motr_container.co_realm, &id);
   idx_ctx->n_initialized_contexts = 1;
 
   rc = s3_motr_api->clovis_idx_op(&idx_ctx->idx[0], M0_CLOVIS_IC_GET,
@@ -159,7 +158,7 @@ void S3MotrKVSReader::get_keyval(struct m0_uint128 oid,
 
   s3_motr_api->clovis_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
                                 MotrOpType::getkv);
-  global_clovis_idx_ops_list.insert(idx_op_ctx);
+  global_motr_idx_ops_list.insert(idx_op_ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return;
 }
@@ -201,8 +200,7 @@ void S3MotrKVSReader::lookup_index(struct m0_uint128 oid,
     idx_op_ctx->cbs->oop_failed = s3_motr_op_failed;
   }
 
-  s3_motr_api->clovis_idx_init(&idx_ctx->idx[0], &clovis_container.co_realm,
-                               &id);
+  s3_motr_api->clovis_idx_init(&idx_ctx->idx[0], &motr_container.co_realm, &id);
   idx_ctx->n_initialized_contexts = 1;
 
   rc = s3_motr_api->clovis_idx_op(&idx_ctx->idx[0], M0_CLOVIS_IC_LOOKUP, NULL,
@@ -342,7 +340,7 @@ void S3MotrKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
       reader_context->get_motr_kvs_op_ctx();
 
   // Remember, so buffers can be iterated.
-  clovis_kvs_op_context = kvs_ctx;
+  motr_kvs_op_context = kvs_ctx;
 
   struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
       1, sizeof(struct s3_motr_context_obj));
@@ -363,7 +361,7 @@ void S3MotrKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
     memcpy(kvs_ctx->keys->ov_buf[0], (void *)key.c_str(), key.length());
   }
 
-  s3_motr_api->clovis_idx_init(&idx_ctx->idx[0], &clovis_container.co_realm,
+  s3_motr_api->clovis_idx_init(&idx_ctx->idx[0], &motr_container.co_realm,
                                &idx_oid);
   idx_ctx->n_initialized_contexts = 1;
 
@@ -386,7 +384,7 @@ void S3MotrKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
 
   s3_motr_api->clovis_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
                                 MotrOpType::getkv);
-  global_clovis_idx_ops_list.insert(idx_op_ctx);
+  global_motr_idx_ops_list.insert(idx_op_ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return;
 }

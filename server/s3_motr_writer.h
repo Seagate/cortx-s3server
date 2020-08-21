@@ -36,28 +36,28 @@
 
 class S3MotrWiterContext : public S3AsyncOpContextBase {
   // Basic Operation context.
-  struct s3_clovis_op_context* clovis_op_context = NULL;
+  struct s3_motr_op_context* motr_op_context = NULL;
 
   // Read/Write Operation context.
-  struct s3_clovis_rw_op_context* clovis_rw_op_context = NULL;
+  struct s3_motr_rw_op_context* motr_rw_op_context = NULL;
 
  public:
   S3MotrWiterContext(std::shared_ptr<RequestObject> req,
                      std::function<void()> success_callback,
                      std::function<void()> failed_callback, int ops_count = 1,
-                     std::shared_ptr<MotrAPI> clovis_api = nullptr);
+                     std::shared_ptr<MotrAPI> motr_api = nullptr);
 
   ~S3MotrWiterContext();
 
-  struct s3_clovis_op_context* get_clovis_op_ctx();
+  struct s3_motr_op_context* get_motr_op_ctx();
 
   // Call this when you want to do write op.
-  void init_write_op_ctx(size_t clovis_buf_count) {
-    clovis_rw_op_context = create_basic_rw_op_ctx(clovis_buf_count, 0, false);
+  void init_write_op_ctx(size_t motr_buf_count) {
+    motr_rw_op_context = create_basic_rw_op_ctx(motr_buf_count, 0, false);
   }
 
-  struct s3_clovis_rw_op_context* get_clovis_rw_op_ctx() {
-    return clovis_rw_op_context;
+  struct s3_motr_rw_op_context* get_motr_rw_op_ctx() {
+    return motr_rw_op_context;
   }
 };
 
@@ -97,7 +97,7 @@ class S3MotrWiter {
   std::string content_md5;
   uint64_t last_index;
   std::string request_id;
-  // md5 for the content written to clovis.
+  // md5 for the content written to motr.
   MD5hash md5crypt;
 
   // maintain state for debugging.
@@ -105,12 +105,12 @@ class S3MotrWiter {
   size_t total_written;
 
   bool is_object_opened;
-  struct s3_clovis_obj_context* obj_ctx;
+  struct s3_motr_obj_context* obj_ctx;
 
   void* place_holder_for_last_unit;
   // layout_id for place_holder_for_last_unit can be changed if
-  // the clovis_writer object is reused after use for writing data.
-  // create clovis_writer and use for write data with layout id = 9
+  // the motr_writer object is reused after use for writing data.
+  // create motr_writer and use for write data with layout id = 9
   // followed by reusing same object for deleting obj layout id =1
   // This causes buffer to be returned to pool with wrong id.
   bool last_op_was_write;
@@ -137,10 +137,9 @@ class S3MotrWiter {
  public:
   // struct m0_uint128 id;
   S3MotrWiter(std::shared_ptr<RequestObject> req, struct m0_uint128 object_id,
-              uint64_t offset = 0,
-              std::shared_ptr<MotrAPI> clovis_api = nullptr);
+              uint64_t offset = 0, std::shared_ptr<MotrAPI> motr_api = nullptr);
   S3MotrWiter(std::shared_ptr<RequestObject> req, uint64_t offset = 0,
-              std::shared_ptr<MotrAPI> clovis_api = nullptr);
+              std::shared_ptr<MotrAPI> motr_api = nullptr);
   virtual ~S3MotrWiter();
   void reset_buffers_if_any(int buf_unit_sz);
 
@@ -206,9 +205,9 @@ class S3MotrWiter {
   virtual int get_op_ret_code_for(int index);
   virtual int get_op_ret_code_for_delete_op(int index);
 
-  void set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* rw_ctx,
-                                  std::deque<evbuffer*>& data_items,
-                                  size_t clovis_buf_count);
+  void set_up_motr_data_buffers(struct s3_motr_rw_op_context* rw_ctx,
+                                std::deque<evbuffer*>& data_items,
+                                size_t motr_buf_count);
 
   // For Testing purpose
   FRIEND_TEST(S3MotrWiterTest, Constructor);
@@ -223,7 +222,7 @@ class S3MotrWiter {
   FRIEND_TEST(S3MotrWiterTest, DeleteObjectsTest);
   FRIEND_TEST(S3MotrWiterTest, DeleteObjectsSuccessfulTest);
   FRIEND_TEST(S3MotrWiterTest, DeleteObjectsFailedTest);
-  FRIEND_TEST(S3MotrWiterTest, DeleteObjectclovisEntityDeleteFailedTest);
+  FRIEND_TEST(S3MotrWiterTest, DeleteObjectmotrEntityDeleteFailedTest);
   FRIEND_TEST(S3MotrWiterTest, OpenObjectsTest);
   FRIEND_TEST(S3MotrWiterTest, OpenObjectsEntityOpenFailedTest);
   FRIEND_TEST(S3MotrWiterTest, OpenObjectsFailedTest);

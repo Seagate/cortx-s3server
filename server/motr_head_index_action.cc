@@ -25,15 +25,15 @@
 
 MotrHeadIndexAction::MotrHeadIndexAction(
     std::shared_ptr<MotrRequestObject> req,
-    std::shared_ptr<S3MotrKVSReaderFactory> clovis_motr_kvs_reader_factory)
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory)
     : MotrAction(std::move(req)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
-  motr_clovis_api = std::make_shared<ConcreteMotrAPI>();
+  motr_api = std::make_shared<ConcreteMotrAPI>();
 
-  if (clovis_motr_kvs_reader_factory) {
-    motr_kvs_reader_factory = std::move(clovis_motr_kvs_reader_factory);
+  if (motr_kvs_reader_factory) {
+    motr_kvs_reader_factory_ptr = std::move(motr_kvs_reader_factory);
   } else {
-    motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+    motr_kvs_reader_factory_ptr = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   setup_steps();
@@ -61,7 +61,7 @@ void MotrHeadIndexAction::validate_request() {
 
 void MotrHeadIndexAction::check_index_exist() {
   motr_kv_reader =
-      motr_kvs_reader_factory->create_motr_kvs_reader(request, motr_clovis_api);
+      motr_kvs_reader_factory_ptr->create_motr_kvs_reader(request, motr_api);
   motr_kv_reader->lookup_index(
       index_id,
       std::bind(&MotrHeadIndexAction::check_index_exist_success, this),

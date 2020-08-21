@@ -39,9 +39,9 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
-    std::shared_ptr<S3MotrWriterFactory> clovis_s3_factory,
+    std::shared_ptr<S3MotrWriterFactory> motr_s3_factory,
     std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
-    std::shared_ptr<MotrAPI> clovis_api,
+    std::shared_ptr<MotrAPI> motr_api,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
                      std::move(object_meta_factory)) {
@@ -55,8 +55,8 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
 
   action_uses_cleanup =
       false;  // since startcleanup is noop and we use rollback
-  if (clovis_api) {
-    s3_motr_api = std::move(clovis_api);
+  if (motr_api) {
+    s3_motr_api = std::move(motr_api);
   } else {
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
@@ -84,8 +84,8 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
         std::make_shared<S3ObjectMultipartMetadataFactory>();
   }
 
-  if (clovis_s3_factory) {
-    motr_writer_factory = std::move(clovis_s3_factory);
+  if (motr_s3_factory) {
+    motr_writer_factory = std::move(motr_s3_factory);
   } else {
     motr_writer_factory = std::make_shared<S3MotrWriterFactory>();
   }
@@ -318,12 +318,12 @@ void S3PostMultipartObjectAction::create_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   create_object_timer.start();
   if (tried_count == 0) {
-    clovis_writer = motr_writer_factory->create_motr_writer(request, oid);
+    motr_writer = motr_writer_factory->create_motr_writer(request, oid);
   } else {
-    clovis_writer->set_oid(oid);
+    motr_writer->set_oid(oid);
   }
 
-  clovis_writer->create_object(
+  motr_writer->create_object(
       std::bind(&S3PostMultipartObjectAction::create_object_successful, this),
       std::bind(&S3PostMultipartObjectAction::create_object_failed, this),
       layout_id);
@@ -363,10 +363,9 @@ void S3PostMultipartObjectAction::create_object_failed() {
     return;
   }
 
-  if (clovis_writer->get_state() == S3MotrWiterOpState::exists) {
+  if (motr_writer->get_state() == S3MotrWiterOpState::exists) {
     collision_occured();
-  } else if (clovis_writer->get_state() ==
-             S3MotrWiterOpState::failed_to_launch) {
+  } else if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
     s3_log(S3_LOG_WARN, request_id, "Create object failed.\n");
     set_s3_error("ServiceUnavailable");
     send_response_to_s3_client();
@@ -461,8 +460,8 @@ void S3PostMultipartObjectAction::create_part_meta_index_failed() {
 
 void S3PostMultipartObjectAction::rollback_create() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  clovis_writer->set_oid(oid);
-  clovis_writer->delete_object(
+  motr_writer->set_oid(oid);
+  motr_writer->delete_object(
       std::bind(&S3PostMultipartObjectAction::rollback_next, this),
       std::bind(&S3PostMultipartObjectAction::rollback_create_failed, this),
       layout_id);
@@ -471,7 +470,7 @@ void S3PostMultipartObjectAction::rollback_create() {
 
 void S3PostMultipartObjectAction::rollback_create_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_writer->get_state() != S3MotrWiterOpState::missing) {
+  if (motr_writer->get_state() != S3MotrWiterOpState::missing) {
     s3_log(S3_LOG_ERROR, request_id,
            "Deletion of object failed, this oid will be stale in Motr: "
            "%" SCNx64 " : %" SCNx64 "\n",
