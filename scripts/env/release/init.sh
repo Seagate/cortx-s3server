@@ -38,6 +38,8 @@ else
   while getopts "ah" x; do
       case "${x}" in
           a)
+              yum install createrepo -y
+              easy_install pip
               read -p "Git Access Token:" git_access_token
               source ${S3_SRC_DIR}/scripts/env/common/create-cortx-repo.sh -G $git_access_token
               ;;
