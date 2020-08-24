@@ -48,40 +48,6 @@ class S3ObjectListResponseV2 : public S3ObjectListResponse {
   std::string &get_xml(const std::string &requestor_canonical_id,
                        const std::string &bucket_owner_user_id,
                        const std::string &requestor_user_id);
-<<<<<<< HEAD
-=======
-
-  /* Google tests.
-  FRIEND_TEST(S3GetMultipartPartActionTest, ConstructorTest);
-  FRIEND_TEST(S3GetMultipartPartActionTest,
-              GetKeyObjectSuccessfulValueNotEmptyListSizeSameAsMaxAllowed);
-  FRIEND_TEST(S3GetMultipartPartActionTest,
-              GetKeyObjectSuccessfulValueNotEmptyListSizeNotSameAsMaxAllowed);
-  FRIEND_TEST(S3GetMultipartPartActionTest,
-              GetKeyObjectSuccessfulValueNotEmptyJsonFailed);
-  FRIEND_TEST(S3GetMultipartPartActionTest,
-              GetNextObjectsSuccessfulListSizeisMaxAllowed);
-  FRIEND_TEST(S3GetMultipartPartActionTest,
-              GetNextObjectsSuccessfulListNotTruncated);
-  FRIEND_TEST(S3GetMultipartPartActionTest,
-              GetNextObjectsSuccessfulGetMoreObjects);
-
-  // Google test for object list response.
-  FRIEND_TEST(S3ObjectListResponseTest, ObjectListResponseConstructorTest);
-  FRIEND_TEST(S3ObjectListResponseTest, TestS3ObjectListResponseSetters);
-  FRIEND_TEST(S3ObjectListResponseTest, TestS3ObjectListResponseGetters);
-  FRIEND_TEST(S3ObjectListResponseTest,
-              ObjectListResponseWithValidObjectsNotTruncated);
-  FRIEND_TEST(S3ObjectListResponseTest,
-              ObjectListResponseWithValidObjectsTruncated);
-  FRIEND_TEST(S3ObjectListResponseTest,
-              ObjectListMultiuploadResponseWithValidObjectNotTruncated);
-  FRIEND_TEST(S3ObjectListResponseTest,
-              ObjectListMultipartResponseWithValidObjectNotTruncated);
-  FRIEND_TEST(S3ObjectListResponseTest,
-              ObjectListMultipartResponseWithValidObjectTruncated);
-  */
->>>>>>> EOS-4168: Support for ListObjects V2 to get count of keys in the returned response.
 };
 
 #endif
