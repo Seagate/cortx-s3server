@@ -1,141 +1,175 @@
-## Code commits and reviews
+# Contribute to S3 Server 
 
-### GitHub setup
+Contributing to the S3 Server repository is a three-step process. You'll need to:
 
-#### Generate SSH key on your development box (Needed if you wish to use SSH for clone)
-> $ $ ssh-keygen -o -t rsa -b 4096 -C "seagate-email-address"
+- [1.0 Prerequisites](#10-Prerequisites)
+- [1.2 Set up Git on your Development Box](#12-Set-up-Git-on-your-Development-Box)
+- [1.3 Submit your changes](#13-Submit-your-changes)
+   * [1.3.1 Clone the cortx-s3server repository](#131-Clone-the-cortx-s3server-repository)
+   * [1.3.2 Code Commits](#132-Code-commits)
+   * [1.3.3 Create a Pull Request](#133-Create-a-Pull-Request)
+- [1.4 Run Jenkins and System Tests](#14-Run-Jenkins-and-System-Tests)
+- [FAQs](FAQs)
 
-#### Add SSH key to GitHub Account
- 1. Copy public key i.e. id_rsa.pub (default location: /root/.ssh/id_rsa.pub)
- 2. Go to GitHub SSH key settings: https://github.com/settings/keys of your account
- 3. Check if your GitHub-id is associated with Seagate email address as Primary email else SSO will not work.
- 4. Add the new SSH key and then select Enable SSO option and Authorize for this key. 
+## 1.0 Prerequisites 
 
-#### Token (personal access) for command line (Required for submodule clone process)
- - Create a personal access token and use it in place of a password when performing Git operations over HTTPS with Git on the command line or the API.
- - A personal access token is required to authenticate to GitHub in the following situations:
-   - When you're using two-factor authentication
-   - To access protected content in an organization that uses SAML single sign-on (SSO). Tokens used with organizations that use SAML SSO must be authorized.
-   - Reference Article, [Creating a personal access token for the command line](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token)
-   - In this new token, please make sure that you have enabled SSO.
+> Before you set up your GitHub, you'll need to  
+>
+> 1. Generate the SSH key on your development box using: 
+>   ```
+>     $ $ ssh-keygen -o -t rsa -b 4096 -C "seagate-email-address"
+>  ```
+> 2. Add the SSH key to your GitHub Account:
+>
+>    1. Copy the public key: `id_rsa.pub`. By default, your  public key is located at `/root/.ssh/id_rsa.pub`. 
+>    2. Navigate to [GitHub SSH key settings](https://github.com/settings/keys) on your GitHub account.
+>   
+>          **Note:** Ensure that you've set your Seagate Email ID as the Primary Email Address associated with your GitHub Account. SSO will not work if you do not set your Seagate Email ID as your Primary Email Address.
+>
+>    3. Paste the SSH key you generated in Step 1 and select *Enable SSO*. 
+>    4. Click **Authorize** to authorize SSO for your SSH key.  
+> 3. [Create a Personal Access Token or PAT](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
+>     - Ensure that you have enabled SSO for your PAT.
 
-### Git setup on development box
-1. Update Git to the latest version
-    - with older git version, you might be getting errors with commit hook, like this one:
+## 1.2 Setup Git on your Development Box
 
-   > $ git commit
-   > git: 'interpret-trailers' is not a git command. See 'git --help'.
-cannot insert change-id line in .git/COMMIT_EDITMSG
-
-   Fix (for CentOS 7.x):
-
-      > $ yum remove git
-
-      > $ yum -y install  https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.7-1.x86_64.rpm
-
-      > $ yum -y install git
+> **Before you begin:**
+>
+> 1. Update Git to the latest version. If you're on an older version of Git, you'll see errors in your commit hooks that look like this: 
+> 
+>     `$ git commit`
+>     ```
+>     git: 'interpret-trailers' is not a git command. 
+>     See 'git --help'.
+>     cannot insert change-id line in .git/COMMIT_EDITMSG
+ >
+ >  2. Install Fix for CentOS 7.x:
+>
+    >      `$ yum remove git`
+    >    
+    >      Download the [RPM file from here](https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.7-1.x86_64.rpm) and run command:
+    >
+    >      `$ yum -y install`
+    > 
+    >      `$ yum -y install git`
+    >
   
-2. Install git-clang-format
+Once you've installed the prerequisites, follow these steps to set up Git on your Development Box: 
 
-   > $ yum install git-clang-format
+1. Install git-clang-format using:
+   
+   `$ yum install git-clang-format`
 
-3. Setup the git config options
+2. Set up git config options using:
 
-    > $ git config --global user.name ‘Your Name’
+   ```
+   $ git config --global user.name ‘Your Name’
+   $ git config --global user.email ‘Your.Name@seagate.com’
+   $ git config --global color.ui auto
+   $ git config --global credential.helper cache 
+   ```
 
-    > $ git config --global user.email ‘Your.Name@seagate.com’
+## 1.3. Submit your changes
 
-    > $ git config --global color.ui auto
+Before you can work on a GitHub feature, you'll need to clone the cortx-s3server repository.
 
-    > $ git config --global credential.helper cache (Required for submodule clone process)
+### 1.3.1 Clone the cortx-s3server repository
+
+Follow these steps to clone the repository to your gitHub account:
+
+You'll need to *fork* the cortx-s3server repository to clone it into your private GitHub repository. 
+
+1. Navigate to the Seagate 'cortx-s3server' repository homepage on GitHub. 
+2. Click **Fork**.
+3. Run the following commands in Git Bash:
  
-### To work on a feature and submit review to GitHub
-
-#### Clone cortx-s3server
-- Each contributor needs to do 'fork' to create their own private cortx-s3server repository.
-   - Go to homepage of 'cortx-s3server' repository on GitHub, there you will see 'fork' at top right corner.
-
-   > $ git clone git@github.com:"your-github-id"/cortx-s3server.git
+   `$ git clone git@github.com:"your-github-id"/cortx-s3server.git`
  
-- Ensure you have checked out “main” branch
+4. Check out to the “main” branch using:
 
-   > $ git checkout main
+      `$ git checkout main`
+     
+      `$ git checkout -b 'your-local-branch-name`
 
-   > $ git checkout -b 'your-local-branch-name'
+### 1.3.2 Code Commits  
 
-- Make code changes
+You can now make changes to the code and save them in your files.Use the command below to add files that need to be pushed to the git staging area:
+         
+- `$ git add foo/somefile.cc`
 
-- Add files to be pushed to git to staged area
+1. To commit your code changes use: 
 
-   > $ git add foo/somefile.cc
+   `$ git commit -m ‘comment’` 
 
-- Add all such files
+   Enter your GID and an appropriate Feature or Change description in comments.
 
-- Now commit your changes
+2. Check out your git log to view the details of your commit and verify the author name using:
 
-   > $ git commit -m ‘GID - Appropriate Feature/Change Description’
+   `$ git log` 
 
-- Check git log to see your commit, verify the author name
+   **Note:** 
+   If you need to change the author name for your commit, refer to the GitHub article on [Changing author info](https://docs.github.com/en/github/using-git/changing-author-info).
 
-   > $ git log 
+3. To Push your changes to GitHub, use:
 
-- If author name is not set properly then set using following command
+   `$ git push origin 'your-local-branch-name'`
 
-- Push your changes to GitHub
-   > $ git push origin 'your-local-branch-name'
+   Your output will look like the Sample Output below: 
+   
+   ```
+   Sample Output
+   ~~~~~~~~~~~~~~
+   Enumerating objects: 4, done.
+   Counting objects: 100% (4/4), done.
+   Delta compression using up to 2 threads
+   Compressing objects: 100% (2/2), done.
+   Writing objects: 100% (3/3), 332 bytes | 332.00 KiB/s, done.
+   Total 3 (delta 1), reused 0 (delta 0)
+   remote: Resolving deltas: 100% (1/1), completed with 1 local object.
+   remote:
+   remote: Create a pull request for 'your-local-branch-name' on GitHub by visiting:
+   remote: https://github.com/<your-GitHub-Id>/cortx-s3server/pull/new/<your-local-branch-name>
+   remote: To github.com:<your-GitHub-Id>/cortx-s3server.git
+   * [new branch] <your-local-branch-name> -> <your-local-branch-name>
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   ```
 
-Example output: 
-~~~
-Enumerating objects: 4, done.
-Counting objects: 100% (4/4), done.
-Delta compression using up to 2 threads
-Compressing objects: 100% (2/2), done.
-Writing objects: 100% (3/3), 332 bytes | 332.00 KiB/s, done.
-Total 3 (delta 1), reused 0 (delta 0)
-remote: Resolving deltas: 100% (1/1), completed with 1 local object.
-remote:
-remote: Create a pull request for 'your-local-branch-name' on GitHub by visiting:
-remote:      https://github.com/<your-GitHub-Id>/cortx-s3server/pull/new/<your-local-branch-name>
-remote:
-To github.com:<your-GitHub-Id>/cortx-s3server.git
- * [new branch]        <your-local-branch-name> -> <your-local-branch-name>
-~~~
+### 1.3.3 Create a Pull Request 
 
-### Open pull request for review
-- Open the URL given in the output of 'git push' command above.
-- Select base:branch as 'main' from the dropdown.
+1. Once you Push changes to GitHub, the output will display a URL for creating a Pull Request. (As shown in the sample code above.) 
+2. You'll be redirected to GitHib remote. 
+3. Select **main** from the Branches/Tags drop-down list.
+4. Click **Create pull request** to create the pull request.
+5. Add reviewers to your pull request to review and provide feedback on your changes.
 
-- click 'Create pull request' to create the pull request.
-- Add reviewers to get feedback on your changes.
+## 1.4 Run Jenkins and System Tests
 
-### Running Jenkins / System tests
-- Jenkins job will get trigerred automatically within 15 minutes of commit push on pull request.
+Creating a pull request automatically triggers Jenkins jobs and System tests. To familiarize yourself with jenkins, please visit the [Jenkins wiki page](https://en.wikipedia.org/wiki/Jenkins_(software)).
 
+## FAQs
 
-### How to rebase your local branch on latest master?
+**Q.** How do I rebase my local branch to the latest main branch?
 
-> $ git checkout master
+**A** Follow the steps mentioned below:
 
 > $ git pull origin master
-
+>
 > $ git submodule update --init --recursive
-
+>
 > $ git checkout 'your-local-branch'
-
+>
 > $ git pull origin 'your-remote-branch-name'
-
+>
 > $ git submodule update --init --recursive
-
+>
 > $ git rebase origin/master
 
-- If you get conflicts, follow the steps mentioned in the error message from git. 
+To resolve conflicts, follow the troubleshooting steps mentioned in git error messages. 
 
-* To get familiar with jenkins please visit [here](https://en.wikipedia.org/wiki/Jenkins_(software)).
+Reach out to our [SUPPORT](SUPPORT.md) team, if you have any questions or need further clarifications.
 
-### You're all set & You're awesome
+## All set & You're Awesome!
 
-In case of any query feel free to write to our [SUPPORT](SUPPORT.md).
+Let's make storage better, efficient, and accessible. Join us in our goal to reinvent a data-driven world, and contribute to CORTX Open Source initiative. 
 
-Let's start without a delay to contribute to seagate's open source initiative and join this movement with us keeping a common goal of making data storage better, more efficient and more accessible.
-
-Seagate welcomes You! :relaxed:
+CORTX Open Source team welcomes you! :relaxed:
