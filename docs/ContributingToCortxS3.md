@@ -9,7 +9,9 @@
 - [1.4 Run Jenkins and System Tests](#14-Run-Jenkins-and-System-Tests)
 - [FAQs](FAQs)
 
-Contributing to the S3 Server repository is a three-step process. You'll need to:
+
+Contributing to the S3 Server repository is a three-step process where you'll need to:
+
 1. [Clone the cortx-s3server repository](#131-Clone-the-cortx-s3server-repository)
 2. [Commit your Code](#132-Code-commits)
 3. [Create a Pull Request](#133-Create-a-Pull-Request)
