@@ -52,7 +52,7 @@
 #include "s3_delete_object_action.h"
 #include "s3_delete_object_tagging_action.h"
 #include "s3_get_bucket_acl_action.h"
-#include "s3_get_bucket_action.h"
+#include "s3_get_bucket_action_v2.h"
 #include "s3_get_bucket_location_action.h"
 #include "s3_get_bucket_policy_action.h"
 #include "s3_get_bucket_tagging_action.h"
@@ -118,8 +118,8 @@ int s3_addb_init() {
       S3_ADDB_S3_DELETE_OBJECT_TAGGING_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3GetBucketACLAction))] =
       S3_ADDB_S3_GET_BUCKET_ACL_ACTION_ID;
-  gs_addb_map[std::type_index(typeid(S3GetBucketAction))] =
-      S3_ADDB_S3_GET_BUCKET_ACTION_ID;
+  gs_addb_map[std::type_index(typeid(S3GetBucketActionV2))] =
+      S3_ADDB_S3_GET_BUCKET_ACTION_V2_ID;
   gs_addb_map[std::type_index(typeid(S3GetBucketPolicyAction))] =
       S3_ADDB_S3_GET_BUCKET_POLICY_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3GetBucketTaggingAction))] =
@@ -273,9 +273,9 @@ int s3_addb_init() {
 
   s3_log(S3_LOG_DEBUG, "",
          "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
-         ": class S3GetBucketAction\n",
-         (uint64_t)S3_ADDB_S3_GET_BUCKET_ACTION_ID,
-         (int64_t)S3_ADDB_S3_GET_BUCKET_ACTION_ID);
+         ": class S3GetBucketActionV2\n",
+         (uint64_t)S3_ADDB_S3_GET_BUCKET_ACTION_V2_ID,
+         (int64_t)S3_ADDB_S3_GET_BUCKET_ACTION_V2_ID);
 
   s3_log(S3_LOG_DEBUG, "",
          "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning

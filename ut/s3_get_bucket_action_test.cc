@@ -272,7 +272,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessful) {
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
 
   action_under_test_ptr->get_next_objects_successful();
-  EXPECT_EQ(3, action_under_test_ptr->object_list.size());
+  EXPECT_EQ(3, action_under_test_ptr->object_list->size());
 }
 
 TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulJsonError) {
@@ -303,7 +303,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulJsonError) {
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
 
   action_under_test_ptr->get_next_objects_successful();
-  EXPECT_EQ(0, action_under_test_ptr->object_list.size());
+  EXPECT_EQ(0, action_under_test_ptr->object_list->size());
 }
 
 TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefix) {
@@ -325,7 +325,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefix) {
   SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
 
   action_under_test_ptr->get_next_objects_successful();
-  EXPECT_EQ(1, action_under_test_ptr->object_list.size());
+  EXPECT_EQ(1, action_under_test_ptr->object_list->size());
 }
 
 TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulDelimiter) {
@@ -350,8 +350,8 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulDelimiter) {
   SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
 
   action_under_test_ptr->get_next_objects_successful();
-  EXPECT_EQ(2, action_under_test_ptr->object_list.size());
-  EXPECT_EQ(1, action_under_test_ptr->object_list.common_prefixes_size());
+  EXPECT_EQ(2, action_under_test_ptr->object_list->size());
+  EXPECT_EQ(1, action_under_test_ptr->object_list->common_prefixes_size());
 }
 
 TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefixDelimiter) {
@@ -373,8 +373,8 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefixDelimiter) {
   SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
 
   action_under_test_ptr->get_next_objects_successful();
-  EXPECT_EQ(2, action_under_test_ptr->object_list.size());
-  EXPECT_EQ(1, action_under_test_ptr->object_list.common_prefixes_size());
+  EXPECT_EQ(2, action_under_test_ptr->object_list->size());
+  EXPECT_EQ(1, action_under_test_ptr->object_list->common_prefixes_size());
 }
 
 // Prefix in multi-component object names
@@ -401,11 +401,11 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulMultiComponentKey) {
   SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
 
   action_under_test_ptr->get_next_objects_successful();
-  EXPECT_EQ(0, action_under_test_ptr->object_list.size());
-  EXPECT_EQ(1, action_under_test_ptr->object_list.common_prefixes_size());
+  EXPECT_EQ(0, action_under_test_ptr->object_list->size());
+  EXPECT_EQ(1, action_under_test_ptr->object_list->common_prefixes_size());
   // Ensure that common prefixes contain "cquux/"
   std::set<std::string> common_prexes =
-      action_under_test_ptr->object_list.get_common_prefixes();
+      action_under_test_ptr->object_list->get_common_prefixes();
   EXPECT_STREQ((*(common_prexes.begin())).c_str(), "cquux/");
 }
 
@@ -433,11 +433,11 @@ TEST_F(S3GetBucketActionTest,
   SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
 
   action_under_test_ptr->get_next_objects_successful();
-  EXPECT_EQ(1, action_under_test_ptr->object_list.size());
-  EXPECT_EQ(1, action_under_test_ptr->object_list.common_prefixes_size());
+  EXPECT_EQ(1, action_under_test_ptr->object_list->size());
+  EXPECT_EQ(1, action_under_test_ptr->object_list->common_prefixes_size());
   // Ensure that common prefixes contain {"boo/baz/"}
   std::set<std::string> common_prexes =
-      action_under_test_ptr->object_list.get_common_prefixes();
+      action_under_test_ptr->object_list->get_common_prefixes();
   auto it = common_prexes.begin();
   EXPECT_STREQ((*it).c_str(), "boo/baz/");
 }
