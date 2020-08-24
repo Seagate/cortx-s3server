@@ -1,7 +1,5 @@
 # Contribute to S3 Server 
 
-Contributing to the S3 Server repository is a three-step process. You'll need to:
-
 - [1.0 Prerequisites](#10-Prerequisites)
 - [1.2 Set up Git on your Development Box](#12-Set-up-Git-on-your-Development-Box)
 - [1.3 Submit your changes](#13-Submit-your-changes)
@@ -10,6 +8,11 @@ Contributing to the S3 Server repository is a three-step process. You'll need to
    * [1.3.3 Create a Pull Request](#133-Create-a-Pull-Request)
 - [1.4 Run Jenkins and System Tests](#14-Run-Jenkins-and-System-Tests)
 - [FAQs](FAQs)
+
+Contributing to the S3 Server repository is a three-step process. You'll need to:
+1. [Clone the cortx-s3server repository](#131-Clone-the-cortx-s3server-repository)
+2. [Commit your Code](#132-Code-commits)
+3. [Create a Pull Request](#133-Create-a-Pull-Request)
 
 ## 1.0 Prerequisites 
 
