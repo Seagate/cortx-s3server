@@ -99,8 +99,8 @@ enum S3AddbActionTypeId {
   S3_ADDB_S3_DELETE_OBJECT_TAGGING_ACTION_ID,
   /* S3GetBucketACLAction: */
   S3_ADDB_S3_GET_BUCKET_ACL_ACTION_ID,
-  /* S3GetBucketAction: */
-  S3_ADDB_S3_GET_BUCKET_ACTION_ID,
+  /* S3GetBucketActionV2: */
+  S3_ADDB_S3_GET_BUCKET_ACTION_V2_ID,
   /* S3GetBucketPolicyAction: */
   S3_ADDB_S3_GET_BUCKET_POLICY_ACTION_ID,
   /* S3GetBucketTaggingAction: */

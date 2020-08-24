@@ -36,9 +36,10 @@ class S3GetBucketAction : public S3BucketAction {
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
   std::shared_ptr<MotrAPI> s3_motr_api;
-  S3ObjectListResponse object_list;
-  std::string last_key;  // last key during each iteration
 
+ protected:
+  std::shared_ptr<S3ObjectListResponse> object_list;
+  std::string last_key;  // last key during each iteration
   bool fetch_successful;
 
   // Helpers
@@ -56,6 +57,10 @@ class S3GetBucketAction : public S3BucketAction {
   std::string request_marker_key;
   size_t max_keys;
 
+ protected:
+  // Number of Keys returned in the List Objects V2 response
+  size_t key_Count;
+
  public:
   S3GetBucketAction(
       std::shared_ptr<S3RequestObject> req,
@@ -64,8 +69,17 @@ class S3GetBucketAction : public S3BucketAction {
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr);
 
+  virtual ~S3GetBucketAction();
   void setup_steps();
-  void validate_request();
+  // Setter method to set the derived object list response (e.g., set Object
+  // list V2 response)
+  void set_object_list_response(
+      const std::shared_ptr<S3ObjectListResponse>& src_obj_list) {
+    object_list = src_obj_list;
+  }
+  // Derived class can override S3 request validation logic
+  virtual void validate_request();
+  virtual void after_validate_request();
   void fetch_bucket_info_failed();
   void get_next_objects();
   void get_next_objects_successful();

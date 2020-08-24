@@ -17,6 +17,7 @@
  * please email opensource@seagate.com or cortx-questions@seagate.com.
  *
  */
+#include <sstream>
 
 #include <evhttp.h>
 #include "s3_object_list_response.h"
@@ -32,9 +33,10 @@ S3ObjectListResponse::S3ObjectListResponse(std::string encoding_type)
       max_keys(""),
       response_is_truncated(false),
       next_marker_key(""),
-      response_xml(""),
       max_uploads(""),
-      next_marker_uploadid("") {
+      next_marker_uploadid(""),
+      key_count(""),
+      response_xml("") {
   s3_log(S3_LOG_DEBUG, "", "Constructor\n");
   object_list.clear();
   part_list.clear();
@@ -82,6 +84,12 @@ void S3ObjectListResponse::set_request_marker_uploadid(std::string marker) {
 }
 
 void S3ObjectListResponse::set_max_keys(std::string count) { max_keys = count; }
+
+void S3ObjectListResponse::set_key_count(size_t& keys) {
+  std::stringstream ss;
+  ss << keys;
+  key_count = ss.str();
+}
 
 void S3ObjectListResponse::set_max_uploads(std::string upload_count) {
   max_uploads = upload_count;

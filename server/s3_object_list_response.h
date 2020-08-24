@@ -34,6 +34,7 @@
 
 class S3ObjectListResponse {
   // value can be url or empty string
+ protected:
   std::string encoding_type;
 
   std::string bucket_name;
@@ -53,10 +54,11 @@ class S3ObjectListResponse {
   bool response_is_truncated;
   std::string next_marker_key;
 
-  std::string response_xml;
   std::string max_uploads;
   std::string max_parts;
   std::string next_marker_uploadid;
+  std::string key_count;
+  std::string response_xml;
 
   std::string get_response_format_key_value(const std::string& key_value);
 
@@ -77,6 +79,7 @@ class S3ObjectListResponse {
   void set_request_marker_key(std::string marker);
   void set_request_marker_uploadid(std::string marker);
   void set_max_keys(std::string count);
+  void set_key_count(size_t& keys);
   void set_max_uploads(std::string count);
   void set_max_parts(std::string count);
   void set_response_is_truncated(bool flag);
@@ -90,9 +93,9 @@ class S3ObjectListResponse {
   unsigned int size();
   unsigned int common_prefixes_size();
 
-  std::string& get_xml(const std::string requestor_canonical_id,
-                       const std::string bucket_owner_user_id,
-                       const std::string requestor_user_id);
+  virtual std::string& get_xml(const std::string requestor_canonical_id,
+                               const std::string bucket_owner_user_id,
+                               const std::string requestor_user_id);
   std::string& get_multipart_xml();
   std::string& get_multiupload_xml();
   std::string& get_user_id();
