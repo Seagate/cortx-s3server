@@ -243,22 +243,17 @@ class ObjectRecoveryValidator:
             return False
 
     def process_results(self):
-        #Execute object leak algorithm by processing each of the entries from RabbitMQ
+        # Execute object leak algorithm by processing each of the entries from RabbitMQ
         probable_delete_oid = self.probable_delete_records["Key"]
         probable_delete_value = self.probable_delete_records["Value"]
 
         self._logger.info(
             "Probable object id to be deleted : " +
             probable_delete_oid)
-        try:
-            self.object_leak_info = json.loads(probable_delete_value)
-            self.object_leak_id = probable_delete_oid
-            self.object_leak_layout_id = self.object_leak_info["object_layout_id"]
 
-        except ValueError as error:
-            self._logger.error(
-                "Failed to parse JSON data for: " + probable_delete_value + " due to: " + error)
-            return
+        self.object_leak_info = json.loads(probable_delete_value)
+        self.object_leak_id = probable_delete_oid
+        self.object_leak_layout_id = self.object_leak_info["object_layout_id"]
 
         # Assumption: Key = <current oid>-<new oid> for
         # an old object of PUT overwrite request
