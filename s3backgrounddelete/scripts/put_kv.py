@@ -1,3 +1,4 @@
+#!/usr/bin/python3.6
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -24,7 +25,6 @@
     value should be a proper json string, for eg:
     \"ACL\":\"asd\". Invalid Json will be rejected by server. """
 
-#!/usr/bin/python3.6
 import sys
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_kv_api import CORTXS3KVApi

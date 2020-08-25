@@ -1,3 +1,5 @@
+#!/usr/bin/python3.6
+
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -21,7 +23,6 @@
     python36 get_kv.py index_id key it's like 
     python36 get_kv.py sys.argv[1] sys.argv[2] """
 
-#!/usr/bin/python3.6
 import sys
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_kv_api import CORTXS3KVApi

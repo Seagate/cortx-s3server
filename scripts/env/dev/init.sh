@@ -26,9 +26,25 @@ BASEDIR=$(dirname "$SCRIPT_PATH")
 S3_SRC_DIR="$BASEDIR/../../../"
 CURRENT_DIR=`pwd`
 
-OS=$(cat /etc/os-release | grep -w ID | cut -d '=' -f 2)
-VERSION=`cat /etc/os-release | sed -n 's/VERSION_ID=\"\([0-9].*\)\"/\1/p'`
-major_version=`echo ${VERSION} | awk -F '.' '{ print $1 }'`
+centos_release=`cat /etc/redhat-release | awk '/CentOS/ {print}'`
+redhat_release=`cat /etc/redhat-release | awk '/Red Hat/ {print}'`
+
+os_full_version=""
+os_major_version=""
+os_minor_version=""
+os_build_num=""
+
+
+unsupported_os() {
+  echo "S3 currently supports only CentOS 7.7.1908 or RHEL 7.7" 1>&2;
+  exit 1; }
+
+check_supported_kernel() {
+  kernel_version=`uname -r`
+  if [ "$kernel_version" != "3.10.0-1062.el7.x86_64" ]; then
+        echo "S3 supports kernel 3.10.0-1062.el7.x86_64" 1>&2;
+        exit 1
+  fi }
 
 usage() {
   echo "Usage: $0
@@ -37,12 +53,49 @@ usage() {
        -h    show this help message and exit" 1>&2;
   exit 1; }
 
+if [ ! -z "$centos_release" ]; then
+  os_full_version=`cat /etc/redhat-release | awk  '{ print $4 }'`
+  os_major_version=`echo $os_full_version | awk -F '.' '{ print $1 }'`
+  os_minor_version=`echo $os_full_version | awk -F '.' '{ print $2 }'`
+  os_build_num=`echo $os_full_version | awk -F '.' '{ print $3 }'`
+elif [ ! -z "$redhat_release" ]; then
+  os_full_version=`cat /etc/redhat-release | awk  '{ print $7 }'`
+  os_major_version=`echo $os_full_version | awk -F '.' '{ print $1 }'`
+  os_minor_version=`echo $os_full_version | awk -F '.' '{ print $2 }'`
+fi
+
+# OS version and Kernel Checks
+if [ "$os_major_version" = "7" ]; then
+  if [ "$os_minor_version" = "7" ]; then
+    # Centos 7.7
+    if [ ! -z "$centos_release" ]; then
+      if [ "$os_build_num" != "1908" ]; then
+        echo "CentOS build $os_build_num is currently not supported"
+        exit 1
+      fi
+      check_supported_kernel
+    # RHEL 7.7
+    elif [ ! -z "$redhat_release" ]; then
+      check_supported_kernel
+    # Other OS 7.7
+    else
+      unsupported_os
+    fi
+  else
+    unsupported_os
+  fi
+else
+ unsupported_os
+fi
+
 if [[ $# -eq 0 ]] ; then
   source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
 else
   while getopts "ah" x; do
       case "${x}" in
           a)
+              yum install createrepo -y
+              easy_install pip
               read -p "Git Access Token:" git_access_token
               source ${S3_SRC_DIR}/scripts/env/common/create-cortx-repo.sh -G $git_access_token
               ;;
@@ -60,9 +113,9 @@ yum install rpm-build -y
 #for s3 system test we need patched s3cmd(1.6.1), which s3 ansible installs
 rpm -q s3cmd && rpm -e s3cmd --nodeps
 
-if [ "$os_major_version" = "8" ]; then
-  yum install @development -y
-fi
+# if [ "$os_major_version" = "8" ]; then
+#   yum install @development -y
+# fi
 
 cd $BASEDIR
 
@@ -108,7 +161,7 @@ cd ${BASEDIR}/../../../ansible
 #Install motr build dependencies
 
 # TODO Currently motr is not supported for CentOS 8, when support is there remove below check
-if [ "$major_version" = "7" ];
+if [ "$os_major_version" = "7" ];
 then
   ./s3motr-build-depencies.sh
 fi
