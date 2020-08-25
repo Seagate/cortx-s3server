@@ -38,26 +38,25 @@ Contributing to the S3 Server repository is a three-step process where you'll ne
 
 ## 1.2 Setup Git on your Development Box
 
-> **Before you begin:**
->
-> 1. Update Git to the latest version. If you're on an older version of Git, you'll see errors in your commit hooks that look like this: 
-> 
+**Before you begin:**
+
+1. Updated Git to the latest version. If you're on an older version, you'll see errors in your commit hooks that look like this: 
+
 >     `$ git commit`
 >     ```
 >     git: 'interpret-trailers' is not a git command. 
 >     See 'git --help'.
 >     cannot insert change-id line in .git/COMMIT_EDITMSG
- >
- >  2. Install Fix for CentOS 7.x:
->
-    >      `$ yum remove git`
-    >    
-    >      Download the [RPM file from here](https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.7-1.x86_64.rpm) and run command:
-    >
+
+2. Install Fix for CentOS 7.x by using:
+
+>     `$ yum remove git`
+
+   - Download the [RPM file from here](https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.7-1.x86_64.rpm) and run the following commands:
+    
     >      `$ yum -y install`
-    > 
     >      `$ yum -y install git`
-    >
+    
   
 Once you've installed the prerequisites, follow these steps to set up Git on your Development Box: 
 
