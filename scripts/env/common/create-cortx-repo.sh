@@ -52,8 +52,6 @@ rm -rf /root/releases_cortx_s3deps /etc/yum.repos.d/releases_cortx_s3deps.repo
 mkdir -p /root/releases_cortx_s3deps
 cd /root/releases_cortx_s3deps
 
-echo $GITHUB_TOKEN
-
 TAG_NAME=$(curl -H "Authorization: token $GITHUB_TOKEN" -s https://api.github.com/repos/Seagate/cortx-s3server/releases/latest | grep "tag_name" | sed -E 's/.*"([^"]+)".*/\1/')
 
 if [ -z "${TAG_NAME}" ]; then
