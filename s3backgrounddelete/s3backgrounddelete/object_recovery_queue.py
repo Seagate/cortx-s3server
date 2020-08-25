@@ -141,7 +141,7 @@ class ObjectRecoveryRabbitMq(object):
         try:
             # Check if service is running in non-daemon mode
             # then consumer should stop once queue is empty.
-            if (self.config.get_daemon_mode() == "False"):
+            if not self.config.get_daemon_mode():
                 queue_state = self._channel.queue_declare(
                     queue=self._queue, durable=self._durable)
                 queue_msg_count = queue_state.method.message_count
