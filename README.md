@@ -12,11 +12,11 @@ You can easily manage data and access controls using CORTX-S3 Server data manage
 
 Refer to the [CORTX-S3 Server Quickstart Guide](CORTX-S3%20%Server%20%Quick%20%Start%20%Guide.md) to build and test the CORTX-S3 Server.
 
-## Contribute to CORTX-S3 Server
+## Contribute to CORTX-S3 Server 
 
-We welcome all Source Code and Documentation contributions to the CORTX-S3 Server component repository. Refer to the [Contributing to CORTX-S3 Server](ContributingToCortxS3.md) document to submit your contributions.
+We welcome all Source Code and Documentation contributions to the CORTX-S3 Server component repository. Refer to the [Contributing to CORTX](ContributingToCortxS3.md) document to submit your contributions.
 
-### CORTX Community
+## CORTX Community
 
 We are excited about your interest in CORTX and hope you will join us. Refer to the CORTX Community Guide <link placeholder> that hosts all information about community values, code of conduct, how to contribute code and documentation, community and code style guide, and how to reach out to us.
 
