@@ -53,6 +53,7 @@ class S3BucketMetadata {
   std::string account_name;
   std::string account_id;
   std::string user_name;
+  std::string owner_canonical_id;
   std::string user_id;
   std::string salted_object_list_index_name;
   std::string salted_multipart_list_index_name;
@@ -124,6 +125,7 @@ class S3BucketMetadata {
   std::string get_owner_id();
   std::string get_owner_name();
   std::string get_bucket_owner_account_id();
+  std::string get_owner_canonical_id();
 
   std::string& get_encoded_bucket_acl();
   virtual std::string get_tags_as_xml();

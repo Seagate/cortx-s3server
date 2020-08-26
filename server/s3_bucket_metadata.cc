@@ -33,35 +33,37 @@ S3BucketMetadata::S3BucketMetadata(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
     std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory)
-    : request(req), json_parsing_error(false) {
+    : request(std::move(req)), json_parsing_error(false) {
   request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
+
   account_name = request->get_account_name();
   account_id = request->get_account_id();
   user_name = request->get_user_name();
+  owner_canonical_id = request->get_canonical_id();
   user_id = request->get_user_id();
   bucket_name = request->get_bucket_name();
+
   state = S3BucketMetadataState::empty;
   current_op = S3BucketMetadataCurrentOp::none;
+
   if (motr_api) {
-    s3_motr_api = motr_api;
+    s3_motr_api = std::move(motr_api);
   } else {
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
 
   if (motr_s3_kvs_reader_factory) {
-    motr_kvs_reader_factory = motr_s3_kvs_reader_factory;
+    motr_kvs_reader_factory = std::move(motr_s3_kvs_reader_factory);
   } else {
     motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
 
   if (motr_s3_kvs_writer_factory) {
-    motr_kvs_writer_factory = motr_s3_kvs_writer_factory;
+    motr_kvs_writer_factory = std::move(motr_s3_kvs_writer_factory);
   } else {
     motr_kvs_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
-  bucket_policy = "";
-
   collision_salt = "index_salt_";
   collision_attempt_count = 0;
 
@@ -77,9 +79,11 @@ S3BucketMetadata::S3BucketMetadata(
   // Set the defaults
   S3DateTime current_time;
   current_time.init_current_time();
+
   system_defined_attribute["Date"] = current_time.get_isoformat_string();
   system_defined_attribute["LocationConstraint"] = "us-west-2";
   system_defined_attribute["Owner-User"] = "";
+  system_defined_attribute["Owner-Canonical-id"] = owner_canonical_id;
   system_defined_attribute["Owner-User-id"] = "";
   system_defined_attribute["Owner-Account"] = "";
   system_defined_attribute["Owner-Account-id"] = "";
@@ -105,6 +109,10 @@ std::string S3BucketMetadata::get_owner_name() {
 
 std::string S3BucketMetadata::get_bucket_owner_account_id() {
   return system_defined_attribute["Owner-Account-id"];
+}
+
+std::string S3BucketMetadata::get_owner_canonical_id() {
+  return system_defined_attribute["Owner-Canonical-id"];
 }
 
 struct m0_uint128 const S3BucketMetadata::get_multipart_index_oid() {
@@ -265,6 +273,7 @@ int S3BucketMetadata::from_json(std::string content) {
   user_id = system_defined_attribute["Owner-User-id"];
   account_name = system_defined_attribute["Owner-Account"];
   account_id = system_defined_attribute["Owner-Account-id"];
+  owner_canonical_id = system_defined_attribute["Owner-Canonical-id"];
 
   object_list_index_oid = S3M0Uint128Helper::to_m0_uint128(
       newroot["motr_object_list_index_oid"].asString());
