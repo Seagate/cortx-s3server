@@ -13,93 +13,70 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
 
 ## 1.1 Prerequisites
 
+<details>
+<summary>Click to expand </summary>
+<p>
+
 1. You'll need to set up SSC, Cloud VM, or a local VM on VMWare Fusion or Oracle VirtualBox. To know more, refer to the [LocalVMSetup](LocalVMSetup.md) section.
-
-2. Access codes the right way:
-   our CORTX Contributors will refer, clone, contribute, and commit changes via the GitHub server. You can access the latest code via [Github](https://github.com/Seagate/cortx). 
-
+2. Our CORTX Contributors will refer, clone, contribute, and commit changes via the GitHub server. You can access the latest code via [Github](https://github.com/Seagate/cortx). 
 3. You'll need a valid GitHub Account. 
-
 4. Before you clone your Git repository, you'll need to create the following:
-    > 1. Follow the link to generate the [SSH Public Key](https://git-scm.com/book/en/v2/Git-on-the-Server-Generating-Your-SSH-Public-Key).
-    >       * Add the newly created SSH Public Key to [Github](https://github.com/settings/keys) and [Enable SSO](https://docs.github.com/en/github/authenticating-to-github/authorizing-an-ssh-key-for-use-with-saml-single-sign-on).
-    > 2. When you clone your Github repository, you'll be prompted to enter your GitHub Username and Password.  
-      >     *  Refer to the article to [Generate Personal Access Token or PAT](https://github.com/settings/tokens). Once you generate your Personal Access Token, enable SSO. 
-      >    * Copy your newly generated [PAT](https://github.com/settings/tokens) and enter it when prompted.
-       
-3. We've assumed that `git` is preinstalled. If not then follow these steps to install [Git](https://github.com/Seagate/cortx/blob/master/doc/ContributingToCortxS3.md). 
-
-    * To check your Git Version, use the command `$ git --version`.
+    1. Follow the link to generate the [SSH Public Key](https://git-scm.com/book/en/v2/Git-on-the-Server-Generating-Your-SSH-Public-Key).
+        * Add the newly created SSH Public Key to [Github](https://github.com/settings/keys) and [Enable SSO](https://docs.github.com/en/github/authenticating-to-github/authorizing-an-ssh-key-for-use-with-saml-single-sign-on).
+    2. When you clone your Github repository, you'll be prompted to enter your GitHub Username and Password.  
+        * Refer to the article to [Generate Personal Access Token or PAT](https://github.com/settings/tokens). Once you generate your Personal Access Token, enable SSO. 
+        * Copy your newly generated [PAT](https://github.com/settings/tokens) and enter it when prompted.   
+5. You'll need to run all commands on your Virtual Machine as a **Root User**.
+6. We've assumed that `git` is preinstalled. If not then follow these steps to install [Git](https://github.com/Seagate/cortx/blob/master/doc/ContributingToCortxS3.md).
+   * To check your Git Version, use the command: `$ git --version`.
+   
+   **Note: We recommended that you install Git Version 2.x.x.**
+7. Ensure that you've installed the following packages on your VM instance: 
     
-    **Note:** We recommended that you install Git Version 2.x.x.
+    * Python Version 3.0
+      * To check whether Python is installed on your VM, use one of the following commands: `--version`  , `-V` , or `-VV`
+      * To install Python version 3.0, use: `$ yum install -y python3`
+    * pip version 3.0: 
+      * To verify your pip version use: `pip --version` 
+      * To install pip3 use: `yum install python-pip3`  
+    * Ansible: `$ yum install -y ansible` 
+    * Extra Packages for Enterprise Linux: `$ yum install -y epel-release`
+    * Verify if kernel-devel-3.10.0-1062 version package is installed, use: `uname -r`
+8. You'll need to disable selinux and firewall. Run the following commands:
 
-4. Ensure that you've installed the following packages on your VM instance: 
-    
-  * Python Version 3.0
-    >  * To check whether Python is installed on your VM, use one of the following commands: `--version`  , `-V` , or `-VV`
-    >  * To install Python version 3.0: `$ yum install -y python3`
-  
-  * pip version 3.0: 
-    > * To verify your pip version: `pip --version` 
-    > * To install pip3: `yum install python-pip3` 
-       
-  * To install ansible:
-
-      `$ yum install -y ansible`
-        
-   * To install Extra Packages for Enterprise Linux:
-
-      `$ yum install -y epel-release`
-
-  * To verify that kernel-devel-3.10.0-1062 version package is installed: 
-
-      `uname -r`
-
-5. You'll need to disable selinux and firewall. Follow the steps below:
-  
-    ```
+    ```shell
     $ systemctl stop firewalld
     $ systemctl disable firewalld
     $ sestatus
     $ setenforce 0
     sed 's/SELINUX=enforcing/SELINUX=disabled/' /etc/sysconfig/selinux
-    
-    $ shutdown -r now` - your VM will shut-down. You will need to restart your VM.
-    
-    Once you power on your VM, you can verify if selinux and firewall are disabled by using:
-
-    $ getenforce` - you'll get a 'disabled' status.
     ```
-
-6. You'll need to install Lustre. Lustre is an open-source and parallel file system that supports High Performance Computing simulation environments.  
-
-    * To verify whether Lustre is installed on your VM instance:
-    
-      `$rpm -qa | grep lustre`
-  
-    * If you haven't installed Lustre on your VM, you'll have to copy the Lustre repository from the server where you've installed MOTR. You'll also need to install the lustre client.
-    
+   1. To shutdown your VM, use: `$ shutdown -r now` 
+   2. You will need to restart your VM. Once you power on your VM, you can verify if selinux and firewall are disabled by using: `$ getenforce` 
+      You'll get a 'disabled' status.
+9. You'll need to install Lustre. Lustre is an open-source and parallel file system that supports High Performance Computing simulation environments.  
+   1. To verify whether Lustre is installed on your VM instance, use: `$rpm -qa | grep lustre`
+   2. If you haven't installed Lustre on your VM, you'll have to copy the Lustre repository from the server where you've installed MOTR using:
       `$ ls -lrt /var/lib/yum/localrepos/lustre-local` 
-
-      ```
+       You'll see the following output:
+      
+      ```shell
       -rw-r--r--. 1 root root 417384 Jul  6 21:04 lustre-client-devel-2.12.4-99.el7.x86_64.rpm
       drwxr-xr-x. 2 root root   4096 Jul  6 21:05 repodata
-    
       ```
+   3. You'll also need to install the lustre client using: `$ ls -lrt /etc/yum.repos.d/lustre-`
+      You'll see the following output:
 
-      `$ ls -lrt /etc/yum.repos.d/lustre-`
-      
-      ```
+      ```shell
       -rw-r--r--. 1 root root 1327 Jul  6 21:03 /etc/yum.repos.d/lustre-whamcloud.repo
       -rw-r--r--. 1 root root  115 Jul  6 21:03 /etc/yum.repos.d/lustre-local.repo
-
       ```
-
-    * To install Lustre from the cloned repository:
-      
-      `$ yum install -y lustre*` 
+   4. To install Lustre from the cloned repository, use: `$ yum install -y lustre*` 
 
 All done! You are now ready for fetching CORTX-S3 Server repository!  
+
+</p>
+</details>  
 
 
 ## 1.2 Clone the CORTX-S3 Server Repository
@@ -401,3 +378,7 @@ In case of any queries, feel free to reach out to our [SUPPORT](SUPPORT.md) team
 Contribute to Seagate's open-source initiative and join our movement to make data storage better, efficient, and more accessible.
 
 Seagate CORTX Community Welcomes You! :relaxed:
+
+```diff
+@@ text in blue @@
+```
