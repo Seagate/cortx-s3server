@@ -10,19 +10,15 @@ You can easily manage data and access controls using CORTX-S3 Server data manage
 
 ## Get CORTX-S3 Server ready! 
 
-Refer to the [CORTX-S3 Server Quickstart Guide](CORTX-S3%20%Server%20%Quick%20%Start%20%Guide.md) to build and test the CORTX-S3 Server Component.
+Refer to the [CORTX-S3 Server Quickstart Guide](CORTX-S3%20%Server%20%Quick%20%Start%20%Guide.md) to build and test the CORTX-S3 Server.
 
 ## Contribute to CORTX-S3 Server
 
-We welcome all Source Code and Documentation contributions to the CORTX-S3 Server component repository. Refer to the CORTX Coding <Link placeholder> and Contribution Style Guides <Link placeholder> before submitting your contributions.
-
-Refer to the [Contributing to CORTX-S3 Server](ContributingToCortxS3.md) document to submit your contributions.
+We welcome all Source Code and Documentation contributions to the CORTX-S3 Server component repository. Refer to the [Contributing to CORTX-S3 Server](ContributingToCortxS3.md) document to submit your contributions.
 
 ### CORTX Community
 
-We are excited about your interest in CORTX and hope you will join us. We take our community very seriously, and we are committed to creating a community built on respectful interactions and inclusivity, as documented in our [Code of conduct](CODE_OF_CONDUCT.md).
-
-Refer to the CORTX Community Guide <link placeholder> that hosts all information about community values, code of conduct, how to contribute code and documentation, community and code style guide, and how to reach out to us.
+We are excited about your interest in CORTX and hope you will join us. Refer to the CORTX Community Guide <link placeholder> that hosts all information about community values, code of conduct, how to contribute code and documentation, community and code style guide, and how to reach out to us.
 
 ## Additional Resources
 
@@ -30,4 +26,4 @@ Refer to the [AWS S3 documentation](https://docs.aws.amazon.com/AmazonS3/latest/
 
 ## Thank You!
 
-We thank you for stopping by to check out the CORTX Community. Seagate is fully dedicated to its mission to build open source technologies that help the world save unlimited data and solve challenging data problems. Join our mission to help reinvent a data-driven world.
+We thank you for stopping by to check out the CORTX Community. We are fully dedicated to our mission to build open source technologies that help the world save unlimited data and solve challenging data problems. Join our mission to help reinvent a data-driven world.
