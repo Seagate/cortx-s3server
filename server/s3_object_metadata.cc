@@ -87,6 +87,9 @@ void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
   } else {
     index_name = get_object_list_index_name();
   }
+  //SMALL-OBJECT
+  system_defined_attribute["data_in_kvs"] = "";
+
 
   object_list_index_oid = {0ULL, 0ULL};
   objects_version_list_index_oid = {0ULL, 0ULL};
@@ -413,6 +416,20 @@ void S3ObjectMetadata::save_metadata() {
       std::bind(&S3ObjectMetadata::save_metadata_failed, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
+//SMALL-Object
+void S3ObjectMetadata::save_kvs_data(string &kvs_data_buffer) {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  // object_list_index_oid should be set before using this method
+  assert(small_object_data_index_oid.u_hi || small_object_data_index_oid.u_lo);
+
+  motr_kv_writer =
+      mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+  motr_kv_writer->put_keyval(
+      small_object_data_index_oid, object_name, kvs_data_buffer,
+      std::bind(&S3ObjectMetadata::save_kvs_data_successful, this),
+      std::bind(&S3ObjectMetadata::save_kvs_data_failed, this));
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
 
 // Save to objects list index
 void S3ObjectMetadata::save_metadata(std::function<void(void)> on_success,
@@ -441,6 +458,25 @@ void S3ObjectMetadata::save_metadata_failed() {
   }
   this->handler_on_failed();
 }
+//SMALL-Object
+void S3ObjectMetadata::save_kvs_data_successful() {
+  s3_log(S3_LOG_DEBUG, request_id, "Object metadata saved for Object [%s].\n",
+         object_name.c_str());
+  state = S3ObjectKVSDataState::saved;
+  this->handler_on_success();
+}
+
+void S3ObjectMetadata::save_kvs_data_failed() {
+  s3_log(S3_LOG_ERROR, request_id,
+         "Object metadata save failed for Object [%s].\n", object_name.c_str());
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
+    state = S3ObjectKVSDataState::failed_to_launch;
+  } else {
+    state = S3ObjectKVSDataState::failed;
+  }
+  this->handler_on_failed();
+}
+
 
 void S3ObjectMetadata::remove(std::function<void(void)> on_success,
                               std::function<void(void)> on_failed) {
@@ -548,7 +584,11 @@ std::string S3ObjectMetadata::to_json() {
     root["old_layout_id"] = old_layout_id;
     root["motr_old_object_version_id"] = motr_old_object_version_id;
   }
-
+  //SMALL-OBJECT  also check custom header
+  if(get_content_length() <= 204800) {
+    root["data_in_kvs"] = "true";
+  }
+    
   root["motr_oid"] = motr_oid_str;
 
   for (auto sit : system_defined_attribute) {

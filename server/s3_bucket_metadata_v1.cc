@@ -298,6 +298,7 @@ void S3BucketMetadataV1::create_object_list_index_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   collision_attempt_count = 0;
   create_multipart_list_index();
+//  create_small_object_data_index();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -337,8 +338,57 @@ void S3BucketMetadataV1::create_multipart_list_index() {
       std::bind(&S3BucketMetadataV1::create_multipart_list_index_successful,
                 this),
       std::bind(&S3BucketMetadataV1::create_multipart_list_index_failed, this));
+
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
+//SMALL-OBJECT
+void S3BucketMetadataV1::create_small_object_data_index() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+  }
+
+  S3UriToMotrOID(s3_motr_api, salted_small_object_data_index_name.c_str(),
+                 request_id, &small_object_index_oid, S3ClovisEntityType::index);
+
+  motr_kv_writer->create_index_with_oid(
+      small_object_data_index_oid,
+      std::bind(&S3BucketMetadataV1::create_small_object_data_index_successful,
+                this),
+      std::bind(&S3BucketMetadataV1::create_small_object_data_index_failed, this));
+
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3BucketMetadataV1::create_small_object_data_index_successful() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  save_bucket_info();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3BucketMetadataV1::create_small_object_data_index_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::exists) {
+    // create_multipart_list_index is called when there is no bucket,
+    // Hence if motr returned its present, then its due to collision.
+    handle_collision(
+        get_multipart_index_name(), salted_small_object_data_index_name,
+        std::bind(&S3BucketMetadataV1::create_small_object_data_index, this));
+  } else if (motr_kv_writer->get_state() ==
+             S3MotrKVSWriterOpState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id, "Small Object list Index creation failed.\n");
+    state = S3BucketMetadataState::failed_to_launch;
+    this->handler_on_failed();
+  } else {
+    s3_log(S3_LOG_ERROR, request_id, "Small Object list Index creation failed.\n");
+    state = S3BucketMetadataState::failed;
+    this->handler_on_failed();
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+
 
 void S3BucketMetadataV1::create_multipart_list_index_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
@@ -367,6 +417,9 @@ void S3BucketMetadataV1::create_multipart_list_index_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+
+
+
 void S3BucketMetadataV1::create_objects_version_list_index() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (!motr_kv_writer) {
@@ -391,7 +444,8 @@ void S3BucketMetadataV1::create_objects_version_list_index() {
 void S3BucketMetadataV1::create_objects_version_list_index_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   collision_attempt_count = 0;
-  save_bucket_info();
+ // save_bucket_info();
+   create_small_object_data_index();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

@@ -56,7 +56,11 @@ S3PutObjectAction::S3PutObjectAction(
   old_object_oid = {0ULL, 0ULL};
   old_layout_id = -1;
   new_object_oid = {0ULL, 0ULL};
-
+  
+  //SMALL-Object
+  is_kvs_data = false;
+  //string kvs_data_buffer;
+ 
   if (motr_api) {
     s3_motr_api = std::move(motr_api);
   } else {
@@ -256,6 +260,10 @@ void S3PutObjectAction::fetch_object_info_success() {
 
 void S3PutObjectAction::create_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  //SMALL-Object
+  if (request->get_content_length() <= 204800) {
+    is_kvs_data = true;
+  }
   s3_timer.start();
   if (tried_count == 0) {
     motr_writer =
@@ -405,14 +413,20 @@ void S3PutObjectAction::initiate_data_streaming() {
   s3_stats_timing("create_object_success", mss);
 
   total_data_to_stream = request->get_content_length();
-
+  
   if (total_data_to_stream == 0) {
     next();  // Zero size object.
   } else {
     if (request->has_all_body_content()) {
       s3_log(S3_LOG_DEBUG, request_id,
              "We have all the data, so just write it.\n");
-      write_object(request->get_buffered_input());
+      if(is_kvs_data) {
+             kvs_data_buffer = request->get_buffered_input();
+             save_data_to_kvs(kvs_data_buffer);
+      }
+      else {
+              write_object(request->get_buffered_input());
+      }
     } else {
       s3_log(S3_LOG_DEBUG, request_id,
              "We do not have all the data, start listening...\n");
@@ -446,7 +460,15 @@ void S3PutObjectAction::consume_incoming_content() {
     if (request->get_buffered_input()->is_freezed() ||
         request->get_buffered_input()->get_content_length() >=
             S3Option::get_instance()->get_motr_write_payload_size(layout_id)) {
-      write_object(request->get_buffered_input());
+      if(is_kvs_data) {
+             kvs_data_buffer += request->get_buffered_input();
+             if (request->has_all_body_content()) {
+               save_data_to_kvs();
+             }
+          //   save_data_to_kvs(kvs_data_buffer);
+      } else {
+        write_object(request->get_buffered_input());
+      }
     }
   }
   if (!request->get_buffered_input()->is_freezed() &&
@@ -544,7 +566,12 @@ void S3PutObjectAction::write_object_failed() {
   // Clean up will be done after response.
   send_response_to_s3_client();
 }
+//SMALL-Object
+void save_data_to_kvs(string &kvs_data_buffer) {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+}
 void S3PutObjectAction::save_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 

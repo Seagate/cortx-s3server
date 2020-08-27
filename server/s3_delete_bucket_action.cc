@@ -92,6 +92,9 @@ void S3DeleteBucketAction::setup_steps() {
   ACTION_TASK_ADD(S3DeleteBucketAction::remove_object_list_index, this);
   ACTION_TASK_ADD(S3DeleteBucketAction::remove_objects_version_list_index,
                   this);
+  //SMALL-OBJECT
+  ACTION_TASK_ADD(S3DeleteBucketAction::remove_small_object_data_index, this);
+  
   ACTION_TASK_ADD(S3DeleteBucketAction::delete_bucket, this);
   ACTION_TASK_ADD(S3DeleteBucketAction::send_response_to_s3_client, this);
   // ...
@@ -391,6 +394,40 @@ void S3DeleteBucketAction::remove_multipart_index() {
     next();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+//SMALL-OBJECT
+void S3DeleteBucketAction::remove_small_object_data_index() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  if (multipart_present) {
+    if (motr_kv_writer == nullptr) {
+      motr_kv_writer =
+          motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+    }
+    motr_kv_writer->delete_index(
+        bucket_metadata->get_small_object_data_index_oid(),
+        std::bind(&S3DeleteBucketAction::next, this),
+        std::bind(&S3DeleteBucketAction::small_object_data_index_failed, this));
+  } else {
+    next();
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+void S3DeleteBucketAction::remove_small_object_data_index_failed() {
+  struct m0_uint128 multipart_index =
+      bucket_metadata->get_small_object_data_index_oid();
+  s3_log(S3_LOG_WARN, request_id,
+         "Failed to delete multipart index oid "
+         "%" SCNx64 " : %" SCNx64 "\n",
+         multipart_index.u_hi, multipart_index.u_lo);
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
+  } else if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed) {
+    set_s3_error("InternalError");
+    send_response_to_s3_client();
+  } else {
+    next();
+  }
 }
 
 void S3DeleteBucketAction::remove_multipart_index_failed() {
