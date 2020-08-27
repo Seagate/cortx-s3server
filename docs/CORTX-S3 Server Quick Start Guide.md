@@ -14,7 +14,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
 ## 1.1 Prerequisites
 
 <details>
-<summary>Click to expand </summary>
+<summary>Click to expand!</summary>
 <p>
 
 1. You'll need to set up SSC, Cloud VM, or a local VM on VMWare Fusion or Oracle VirtualBox. To know more, refer to the [LocalVMSetup](LocalVMSetup.md) section.
@@ -87,51 +87,35 @@ All done! You are now ready for fetching CORTX-S3 Server repository!
 </p>
 </details>  
 
-
 ## 1.2 Clone the CORTX-S3 Server Repository
 
-You'll need to clone the S3 Server Repository from the main branch. To clone the S3 Server Repository, follow these steps: 
+You'll need to clone the S3 Server Repository from the main branch. To clone the S3 Server Repository, follow these steps:
 
-```
+<details>
+<summary>Click to expand!</summary>
+<p> 
+
+```shell
 $ git clone --recursive git@github.com:Seagate/cortx-s3server.git -b main   
 $ cd cortx-s3server
 $ git submodule update --init --recursive && git status
 ``` 
-### 1.2.1 Create a local repository 
-
-If rpms are stored in github release, you can create a local repository on your VM. Follow these steps to create and configure a local repository:
-
-```
-$ pip install githubrelease
-$ mkdir /root/releases_cortx_s3deps
-$ cd /root/releases_cortx_s3deps
-$ GITHUB_TOKEN=<AUTH TOKEN GITHUB>
-$ githubrelease --github-token $GITHUB_TOKEN asset seagate/cortx-s3server download $(curl -H "Authorization: token $GITHUB_TOKEN" -s https://api.github.com/repos/Seagate/cortx-s3server/releases/latest | grep "tag_name" | sed -E 's/.*"([^"]+)".*/\1/')`
-```
-
-Create the file `/etc/yum.repos.d/releases_cortx_s3deps.repo` using the following commands:
-
-> * `vim /etc/yum.repos.d/releases_cortx_s3deps.repo`
-> * `$ createrepo -v /root/releases_cortx_s3deps`
-> * `$ yum clean all`
-> * `$ yum repolist`
-
-You will see the following details once your file is created:
-```
-[releases_cortx_s3deps]
-name=Cortx-S3 Repository
-baseurl=file:///root/releases_cortx_s3deps
-gpgcheck=0
-enabled=1
-```
+</p>
+</details>  
     
 ## 1.3 Installing dependencies
 
-> **Before you begin:**
-> At some point during the execution of the `init.sh` script, it will prompt for the following passwords. Enter them as mentioned below:
->  * SSH password: `<Enter root password of VM>`
->  * Enter new password for openldap rootDN:: `seagate`
-        * Enter new password for openldap IAM admin:: `ldapadmin`
+<details>
+<summary>Before you begin:</summary>
+<p>
+ 
+At some point during the execution of the `init.sh` script, it will prompt for the following passwords. Enter them as mentioned below:
+* SSH password: `<Enter root password of VM>`
+* Enter new password for openldap rootDN:: `seagate`
+  * Enter new password for openldap IAM admin:: `ldapadmin`
+
+</p>
+</details> 
 
 Whenever you clone your repository or make changes to the dependent packages, you'll be need to initialize your package:
    
@@ -140,15 +124,17 @@ Whenever you clone your repository or make changes to the dependent packages, yo
    $ ./init.sh
 ```
     
-> * In some cases, the `./init.sh` fails to run. 
-> * If the above command fails, run `./upgrade-enablerepo.sh` and then run `./init.sh`.
+* In some cases, the `./init.sh` fails to run. 
+* If the above command fails, run `./upgrade-enablerepo.sh` and then run `./init.sh`.
   
 Refer to the image below to view the output of a successful `./init.sh` run.
 The where `failed` field value should be zero.
 
-<p align="center"><img src="../../assets/images/init_script_output.PNG?raw=true"></p>
+<img src="../assets/images/init_script_output.PNG?raw=true"></p>
 
 Please refer to our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Build-Installation-FAQ.md) for troubleshooting errors.
+
+
 
 ## 1.4 Code Compilation and Unit Test
 
