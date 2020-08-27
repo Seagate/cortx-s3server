@@ -17,18 +17,18 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
 <summary>Click to expand!</summary>
 <p>
 
-1. You'll need to set up SSC, Cloud VM, or a local VM on VMWare Fusion or Oracle VirtualBox. To know more, refer to the [LocalVMSetup](LocalVMSetup.md) section.
+1. You'll need to set up SSC, Cloud VM, or a local VM on VMWare Fusion or Oracle VirtualBox. To know more, refer to the [LocalVMSetup](https://github.com/Seagate/cortx/blob/main/doc/LocalVMSetup.md) section.
 2. Our CORTX Contributors will refer, clone, contribute, and commit changes via the GitHub server. You can access the latest code via [Github](https://github.com/Seagate/cortx). 
 3. You'll need a valid GitHub Account. 
 4. Before you clone your Git repository, you'll need to create the following:
     1. Follow the link to generate the [SSH Public Key](https://git-scm.com/book/en/v2/Git-on-the-Server-Generating-Your-SSH-Public-Key).
     2. Add the newly created SSH Public Key to [Github](https://github.com/settings/keys) and [Enable SSO](https://docs.github.com/en/github/authenticating-to-github/authorizing-an-ssh-key-for-use-with-saml-single-sign-on).
-    3. When you clone your Github repository, you'll be prompted to enter your GitHub Username and Password. Refer to the article to [Generate Personal Access Token or PAT](https://github.com/settings/tokens). Once you generate your Personal Access Token, enable SSO. 
+    3. When you clone your Github repository, you'll be prompted to enter your GitHub Username and Password. Refer to the article to [Generate Personal Access Token or PAT](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). Once you generate your Personal Access Token, enable SSO. 
     4. Copy your newly generated [PAT](https://github.com/settings/tokens) and enter it when prompted.   
 
 :page_with_curl: **Note:** From this point onwards, you'll need to execute all steps logged in as a **Root User**.
 
-5. We've assumed that `git` is preinstalled. If not then follow these steps to install [Git](https://github.com/Seagate/cortx/blob/master/doc/ContributingToCortxS3.md).
+5. We've assumed that `git` is preinstalled. If not then follow these steps to install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
    * To check your Git Version, use the command: `$ git --version`.
    
     :page_with_curl:**Note: We recommended that you install Git Version 2.x.x.**
@@ -104,12 +104,17 @@ Whenever you clone your repository or make changes to the dependent packages, yo
    $ cd ./scripts/env/dev
    $ ./init.sh -a
 ```
-    
-* In some cases, the `./init.sh` fails to run. 
-* If the above command fails, run `./upgrade-enablerepo.sh` and then run `./init.sh`.
+
+
+In some cases, the `./init.sh` fails to run. 
+  * If the above command fails, run:
+       
+   `./upgrade-enablerepo.sh` and then run 
+        
+    `./init.sh`.
   
 Refer to the image below to view the output of a successful `./init.sh` run.
-The where `failed` field value should be zero.
+Where the `failed` field value should be zero.
 
 ![Successful ./init.sh run](https://github.com/Seagate/cortx/blob/assets/images/init_script_output.PNG?raw=true)
 
