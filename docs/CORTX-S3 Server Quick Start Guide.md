@@ -58,29 +58,6 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
       `$ getenforce` 
       
       You'll get a 'disabled' status.
-8. You'll need to install Lustre. Lustre is an open-source and parallel file system that supports High Performance Computing simulation environments.  
-   1. To verify whether Lustre is installed on your VM instance, use: `$rpm -qa | grep lustre`
-   2. If you haven't installed Lustre on your VM, you'll have to copy the Lustre repository from the server where you've installed MOTR using:
-      
-       `$ ls -lrt /var/lib/yum/localrepos/lustre-local` 
-       
-       You'll see the following output:
-      
-       ```shell
-       -rw-r--r--. 1 root root 417384 Jul  6 21:04 lustre-client-devel-2.12.4-99.el7.x86_64.rpm
-       drwxr-xr-x. 2 root root   4096 Jul  6 21:05 repodata
-       ```
-   3. You'll also need to install the lustre client using: 
-   
-      `$ ls -lrt /etc/yum.repos.d/lustre-`
-     
-      You'll see the following output:
-
-      ```shell
-      -rw-r--r--. 1 root root 1327 Jul  6 21:03 /etc/yum.repos.d/lustre-whamcloud.repo
-      -rw-r--r--. 1 root root  115 Jul  6 21:03 /etc/yum.repos.d/lustre-local.repo
-      ```
-   4. To install Lustre from the cloned repository, use: `$ yum install -y lustre*` 
 
 All done! You are now ready for fetching CORTX-S3 Server repository!  
 
