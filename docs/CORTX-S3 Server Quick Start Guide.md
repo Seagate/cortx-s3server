@@ -298,24 +298,24 @@ Your success log will look like the output in the image below:
 
 1. Obtain the short git revision that has to be built using:
 
-```sh
-
-git rev-parse --short HEAD
-44a07d2
-```
+    ```shell
+    
+    git rev-parse --short HEAD
+    44a07d2
+    ```
 2. To build S3 rpm, use:
 
-`./rpms/s3/buildrpm.sh -G 44a07d2`
+    `./rpms/s3/buildrpm.sh -G 44a07d2`
 
 :page_with_curl:**Note:** `44a07d2` is generated in Step 1. 
 
 3. To build S3 rpm without Motr rpm dependency, use:
 
-`./rpms/s3/buildrpm.sh -a -G 44a07d2`
+    `./rpms/s3/buildrpm.sh -a -G 44a07d2`
 
 4. To build s3iamcli rpm, use:
 
-`./rpms/s3iamcli/buildrpm.sh -G 44a07d2`
+    `./rpms/s3iamcli/buildrpm.sh -G 44a07d2`
 
 All the built rpms will be available at `~/rpmbuild/RPMS/x86_64/`. You can copy these rpms to release VM for testing.
 
