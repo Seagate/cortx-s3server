@@ -17,10 +17,10 @@ Contributing to the S3 Server repository is a three-step process where you'll ne
 
 ## 1.0 Prerequisites 
 
-<div>
-  <summary>Before you begin<summary>
+<display>
+  <summary>Before you begin</summary>
     <p>
-      
+ 
 Before you set up your GitHub, you'll need to  
 1. Generate the SSH key on your development box using: 
 
