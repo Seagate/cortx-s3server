@@ -106,7 +106,7 @@ $ git submodule update --init --recursive && git status
 ## 1.3 Installing dependencies
 
 <details>
-<summary>Before you begin:</summary>
+<summary>Before you begin</summary>
 <p>
  
 At some point during the execution of the `init.sh` script, it will prompt for the following passwords. Enter them as mentioned below:
@@ -118,10 +118,14 @@ At some point during the execution of the `init.sh` script, it will prompt for t
 </details> 
 
 Whenever you clone your repository or make changes to the dependent packages, you'll be need to initialize your package:
+
+<details>
+<summary>Click to expand!</summary>
+<p>
    
-```
+```shell
    $ cd ./scripts/env/dev
-   $ ./init.sh
+   $ ./init.sh -a
 ```
     
 * In some cases, the `./init.sh` fails to run. 
@@ -373,7 +377,3 @@ In case of any queries, feel free to reach out to our [SUPPORT](SUPPORT.md) team
 Contribute to Seagate's open-source initiative and join our movement to make data storage better, efficient, and more accessible.
 
 Seagate CORTX Community Welcomes You! :relaxed:
-
-```diff
-@@ text in blue @@
-```
