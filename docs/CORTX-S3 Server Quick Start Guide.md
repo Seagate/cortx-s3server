@@ -24,7 +24,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
     3. When you clone your Github repository, you'll be prompted to enter your GitHub Username and Password. Refer to the article to [Generate Personal Access Token or PAT](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). Once you generate your Personal Access Token, enable SSO. 
     4. Copy your newly generated [PAT](https://github.com/settings/tokens) and enter it when prompted.   
 
-:page_with_curl: **Note:** From this point onwards, you'll need to execute all steps logged in as a **Root User**.
+    :page_with_curl: **Note:** From this point onwards, you'll need to execute all steps logged in as a **Root User**.
 
 5. We've assumed that `git` is preinstalled. If not then follow these steps to install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
    * To check your Git Version, use the command: `$ git --version`.
@@ -55,12 +55,12 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
     
      `$ shutdown -r now` should reboot your system. 
     
-   :page_with_curl: **Notes:**
+    :page_with_curl: **Notes:**
     
     1. If you're using cloud VM, go to your cloud VM website and select the VM. 
-       * First stop the VM and then start it again to complete the reboot process
-    2. To use command line to shutdown your VM, use: `$ shutdown -r now` 
-       * Restart your VM.
+    2. First stop the VM and then start it again to complete the reboot process
+    3. To use command line to shutdown your VM, use: `$ shutdown -r now` 
+    4. Restart your VM.
                            
    Once you power on your VM, you can verify if selinux and firewall are disabled by using: `$ getenforce` you'll get a 'disabled' status.
 
