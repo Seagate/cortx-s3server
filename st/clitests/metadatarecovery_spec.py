@@ -566,7 +566,13 @@ key_value_list_with_not_good_values = [
         'Key': 'my-bucket9',
         'Value': '{"account_id":"123456789", "account_name":"s3-recovery-svc",\
              "create_timestamp":"2020-01-02T00:10:40.000Z", "location_constraint":"us-west-2"}' 
+    },
+    # this key will have missing epoch entry
+    {
+        'Key': 'my-bucket10',
+        'Value': '{"account_id":"123456789", "account_name":"s3-recovery-svc","location_constraint":"us-west-2"}'
     }
+
 ]
 key_value_list_with_all_good_values = [
     # this key has good value, as compared to its counterpart in primary index
@@ -683,7 +689,7 @@ put_kvs_in_indexes(primary_bucket_list_index_oid, replica_bucket_list_index_oid)
 # correct and latest KVS
 put_kvs_in_indexes(primary_bucket_metadata_index_oid, replica_bucket_metadata_index_oid)
 
-# Validate that primary indexes had 4 keys before running the s3recoverytool
+# Validate that primary indexes had 5 keys before running the s3recoverytool
 status, res = CORTXS3IndexApi(config).list(primary_bucket_list_index_oid)
 assert status == True
 assert isinstance(res, CORTXS3ListIndexResponse)
@@ -691,7 +697,7 @@ assert isinstance(res, CORTXS3ListIndexResponse)
 index_content = res.get_index_content()
 key_value_primary_index_before_recovery_list = index_content["Keys"]
 assert index_content["Index-Id"] == primary_bucket_list_index_oid
-assert len(key_value_primary_index_before_recovery_list) == 4
+assert len(key_value_primary_index_before_recovery_list) == 5
 
 status, res = CORTXS3IndexApi(config).list(primary_bucket_metadata_index_oid)
 assert status == True
@@ -700,7 +706,7 @@ assert isinstance(res, CORTXS3ListIndexResponse)
 index_content = res.get_index_content()
 key_value_primary_index_before_recovery_list = index_content["Keys"]
 assert index_content["Index-Id"] == primary_bucket_metadata_index_oid
-assert len(key_value_primary_index_before_recovery_list) == 4
+assert len(key_value_primary_index_before_recovery_list) == 5
 
 # Validate that replica indexes had 4 keys before running the s3recoverytool
 status, res = CORTXS3IndexApi(config).list(replica_bucket_list_index_oid)
@@ -839,7 +845,7 @@ assert isinstance(res, CORTXS3ListIndexResponse)
 index_content = res.get_index_content()
 key_value_replica_index_before_recovery_list = index_content["Keys"]
 assert index_content["Index-Id"] == replica_bucket_list_index_oid
-assert len(key_value_replica_index_before_recovery_list) == 4
+assert len(key_value_replica_index_before_recovery_list) == 5
 
 status, res = CORTXS3IndexApi(config).list(replica_bucket_metadata_index_oid)
 assert status == True
@@ -848,7 +854,7 @@ assert isinstance(res, CORTXS3ListIndexResponse)
 index_content = res.get_index_content()
 key_value_replica_index_before_recovery_list = index_content["Keys"]
 assert index_content["Index-Id"] == replica_bucket_metadata_index_oid
-assert len(key_value_replica_index_before_recovery_list) == 4
+assert len(key_value_replica_index_before_recovery_list) == 5
 
 # Run s3 recovery tool
 result = S3RecoveryTest("s3recovery --recover (corrupted and missing KVs in replica index)")\
