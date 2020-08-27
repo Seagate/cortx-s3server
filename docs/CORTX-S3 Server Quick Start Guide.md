@@ -37,15 +37,15 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
       * To check whether Python is installed on your VM, use one of the following commands: `--version`  , `-V` , or `-VV`
       * To install Python version 3.0, use: `$ yum install -y python3`
     * pip version 3.0: 
-      * To check if pip is installed, use: `pip --version` 
-      * To install pip3 use: `yum install python-pip3`  
+      * To check if pip is installed, use: `$ pip --version` 
+      * To install pip3 use: `$ yum install python-pip3`  
     * Ansible: `$ yum install -y ansible` 
     * Extra Packages for Enterprise Linux: 
-        * To checl if epel is installed, use: $ yum repolist 
+        * To check if epel is installed, use: `$ yum repolist` 
             * If epel was installed, you'll see it in the output list.
             * You might also see exclamation mark in front of the repositories id. Refer to the [Redhat Knowledge Base](https://access.redhat.com/solutions/2267871)
         * `$ yum install -y epel-release`
-    * Verify if kernel-devel-3.10.0-1062 version package is installed, use: `uname -r`
+    * Verify if kernel-devel-3.10.0-1062 version package is installed, use: `$ uname -r`
     
 7. You'll need to disable selinux and firewall. Run the following commands:
 
@@ -104,15 +104,16 @@ Whenever you clone your repository or make changes to the dependent packages, yo
 1. Run the command:
 
 ```shell
+
    $ cd ./scripts/env/dev
    $ ./init.sh -a
 ```
 
 2. You'll be prompted to provide your GitHub token, enter the PAT token that you generated in Step 4.iv. from the [1.0 Prerequisites section](https://github.com/cortx-s3server/blob/dev/docs/CORTX-S3%20Server%20Quick%20Start%20Guide.md#11-prerequisites).
-3. In some cases, the `./init.sh` fails to run. 
-4. If the above command fails, run: `./upgrade-enablerepo.sh` and then run: `./init.sh`.
+3. In some cases, the `$ ./init.sh` fails to run. 
+4. If the above command fails, run: `$ ./upgrade-enablerepo.sh` and then run: `$ ./init.sh`.
 
-Refer to the image below to view the output of a successful `./init.sh` run, where the `failed` field value should be zero.
+Refer to the image below to view the output of a successful `$ ./init.sh` run, where the `failed` field value should be zero.
 
 ![Successful ./init.sh run](https://github.com/Seagate/cortx/blob/assets/images/init_script_output.PNG)
 
@@ -132,12 +133,12 @@ Please read our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Build-In
 
 To perform Unit and System Tests:
 
-* Run the script `jenkins-build.sh`
+* Run the script `$ jenkins-build.sh`
   
-:page_with_curl: **Notes:** 
+    :page_with_curl: **Notes:** 
 
 * The above script automatically builds the code, and runs the unit & system tests in your local system. 
-* For more details, check help: `./jenkins-build.sh --help`
+* For more details, check help: `$ ./jenkins-build.sh --help`
     
 The image below illustrates the output log of a system test that is successful.
   
@@ -186,14 +187,17 @@ Before your test your build, ensure that you have installed and configured the f
    2. Configure the aws plugin Endpoint using:
     
         ```shell
+        
         $ aws configure set plugins.endpoint awscli_plugin_endpoint
         $ aws configure set s3.endpoint_url https://s3.seagate.com
         $ aws configure set s3api.endpoint_url https://s3.seagate.com
         ```
    3. Run the following command to view the contents of your aws config file: `$ cat ~/.aws/config`
-        The output is as shown below:
+       
+      The output is as shown below:
 
           ```shell
+          
           [default]
           output = text
           region = US
@@ -231,7 +235,7 @@ Run the following test cases to check if your aws S3 Server build is working pro
    
    If you want to create a test_data file, use the command:
 
-    `touch filepath/test_data`
+    `$ touch filepath/test_data`
 
 4. To Move your local file to remote (PUT):
 
@@ -263,14 +267,14 @@ Let's say there is a version change in the Motr repository, and you want to skip
 
 1. You'll need to copy the commit-id of your Motr code. You can search for specific commit-ids using:
 
-    `git log`
+    `$ git log`
 
     While viewing the log, to find the next commit, type `/^commit`, then use `n` and `N` to move to the next or previous commit. To search for the previous commit, use `?^commit`.
 2. You'll have to work out of the main directory of your S3 Server repository.
 3. Run `$ cd third_party/motr`. 
 4. Paste the commit-id shown below:
    
-   `git checkout Id41cd2b41cb77f1d106651c267072f29f8c81d0f`
+   `$ git checkout Id41cd2b41cb77f1d106651c267072f29f8c81d0f`
    
 5. Update your submodules:
 
@@ -278,17 +282,17 @@ Let's say there is a version change in the Motr repository, and you want to skip
 
 6. Build Motr:
 
-    `cd ..`
+    `$ cd ..`
     
-    `./build_motr.sh` 
+    `$ ./build_motr.sh` 
 </p>
 </details>
 
 Run the jenkins script to make sure that build and test is passed:
 
-`cd ..`
+`$ cd ..`
 
-`./jenkins-build.sh`
+`$ ./jenkins-build.sh`
 
 Your success log will look like the output in the image below:
 
@@ -300,22 +304,22 @@ Your success log will look like the output in the image below:
 
     ```shell
     
-    git rev-parse --short HEAD
+    $ git rev-parse --short HEAD
     44a07d2
     ```
 2. To build S3 rpm, use:
 
-    `./rpms/s3/buildrpm.sh -G 44a07d2`
+    `$ ./rpms/s3/buildrpm.sh -G 44a07d2`
 
     :page_with_curl:**Note:** `44a07d2` is generated in Step 1. 
 
 3. To build S3 rpm without Motr rpm dependency, use:
 
-    `./rpms/s3/buildrpm.sh -a -G 44a07d2`
+    `$ ./rpms/s3/buildrpm.sh -a -G 44a07d2`
 
 4. To build s3iamcli rpm, use:
 
-    `./rpms/s3iamcli/buildrpm.sh -G 44a07d2`
+    `$ ./rpms/s3iamcli/buildrpm.sh -G 44a07d2`
 
 All the built rpms will be available at `~/rpmbuild/RPMS/x86_64/`. You can copy these rpms to release VM for testing.
 
