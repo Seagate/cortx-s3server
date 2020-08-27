@@ -135,14 +135,14 @@ To perform Unit and System Tests:
 <summary>Click to expand!</summary>
 <p>
  
- 1. Run the `jenkins-build.sh` script.
+1. Run the `jenkins-build.sh` script.
     * The above script automatically builds the code, and runs the unit & system tests in your local system. 
     * Check help for more details.  
 2. If the `/usr/local/bin` does not exist, you'll need to add the path using:  
 
     `$PATH=$PATH:/usr/local/bin`
   
-   * The image below illustrates the output log of a system test that is successful.
+The image below illustrates the output log of a system test that is successful.
   
 ![Successful System Test Log](https://github.com/Seagate/cortx/blob/assets/images/jenkins_script_output.PNG)
 
@@ -151,110 +151,54 @@ To perform Unit and System Tests:
 
 ## 1.5 Test your Build using S3-CLI
 
-**Before you begin:**
-
+<details>
+<summary>Before you begin</summary>
+<p>
+    
 Before your test your build, ensure that you have installed and configured the following:
 
 1. Make sure you have installed `easy_install`.
-
-    * To check if you have `easy_install`, run the command: 
-   
-      `$ easy_install --version`
-    * To install `easy_install`, run the command: 
-    
-      `$ yum install python-setuptools python-setuptools-devel`
+    * To check if you have `easy_install`, run the command: `$ easy_install --version`
+    * To install `easy_install`, run the command: `$ yum install python-setuptools python-setuptools-devel`
 2. Ensure you've installed `pip`.
-    
-    * To check if you have pip installed, run the command: 
-    
-      `$ pip --version`
-    
-    * To install pip, run the command: 
-    
-      `$ python --version`
-
-3. If you don't have Python Version 2.6.5+, then install python using: 
-
-      `$ python3 --version`.    
-
-    *  If you don't have Python Version 3.3, then install python3 using:
-
-        `$ easy_install pip`
-
+    * To check if you have pip installed, run the command: `$ pip --version`
+    * To install pip, run the command: `$ python --version`
+3. If you don't have Python Version 2.6.5+, then install python using: `$ python3 --version`.    
+    *  If you don't have Python Version 3.3, then install python3 using: `$ easy_install pip`
 4. Ensure that CORTX-S3 Server and its dependent services are running.
-
-    1. To start CORTX-S3 Server and its dependent services, run the command:
-        
-         `$ ./jenkins-build.sh --skip_build --skip_tests` 
-
-    2. To view the `PID` of the active S3 service, run the command:
-      
-        `$ pgrep s3` 
-
-    3. To view the `PID` of the active Motr service, run the command: 
-    
-        `$ pgrep m0`
-
+    1. To start CORTX-S3 Server and its dependent services, run the command: `$ ./jenkins-build.sh --skip_build --skip_tests` 
+    2. To view the `PID` of the active S3 service, run the command: `$ pgrep s3` 
+    3. To view the `PID` of the active Motr service, run the command: `$ pgrep m0`
 5. Install the aws client and plugin
-
-    1. To install aws client, use:
-          
-          `$ pip install awscli`
-
-      2. To install the aws plugin, use:
-      
-          `$ pip install awscli-plugin-endpoint`
-  
-      3. To generate the aws Access Key ID and aws Secret Key, run commands:
-        
-         1. To check for help messages, run the command:
-          
-            `$ s3iamcli -h`
-            
-         2. Run the following command to create a new User:
-          
-              `$ s3iamcli CreateAccount -n < Account Name > -e < Email Id >` 
-          
-               *   Enter the following ldap credentials:
-            
+    1. To install aws client, use: `$ pip install awscli`
+    2. To install the aws plugin, use: `$ pip install awscli-plugin-endpoint`
+    3. To generate the aws Access Key ID and aws Secret Key, run commands:
+         1. To check for help messages, run the command: `$ s3iamcli -h`
+         2. Run the following command to create a new User: `$ s3iamcli CreateAccount -n < Account Name > -e < Email Id >` 
+               * Enter the following ldap credentials:
                   User Id : `sgiamadmin`
-          
                   Password : `ldapadmin`
-               
               > * Running the above command lists details of the newly created user including the `aws Access Key ID` and the `aws Secret Key`. 
               > * Copy and save the Access and Secret Keys for the new user. 
-  
+
 6. To Configure AWS run the following commands:
-
-    **Before you begin:**
-    
-    You'll need to keep the Access and Secret Keys generated in Step - 3.2 handy. 
-
+   Keep the Access and Secret Keys generated in Step - 3.2 handy. 
    1.  Run `$ aws configure` and enter the following details:
-
         * `AWS Access Key ID [None]: < ACCESS KEY >`
-
         * `AWS Secret Access Key [None]: < SECRET KEY >`
-
         * `Default region name [None]: US`
-
         * `Default output format [None]: text`
+   2. Configure the aws plugin Endpoint using:
+    
+        ```shell
+        $ aws configure set plugins.endpoint awscli_plugin_endpoint
+        $ aws configure set s3.endpoint_url https://s3.seagate.com
+        $ aws configure set s3api.endpoint_url https://s3.seagate.com
+        ```
+        * Run the following command to view the contents of your aws config file: `$ cat ~/.aws/config`
+        The output is as shown below:
 
-    2. Configure the aws plugin Endpoint using:
-
-        * `$ aws configure set plugins.endpoint awscli_plugin_endpoint`
-
-        * `$ aws configure set s3.endpoint_url https://s3.seagate.com`
-        
-        *  `$ aws configure set s3api.endpoint_url https://s3.seagate.com`
-        
-        * Run the following command to view the contents of your aws config file: 
-
-          `$ cat ~/.aws/config`
-
-        * The output is as shown below:
-
-          ```
+          ```shell
           [default]
           output = text
           region = US
@@ -266,9 +210,10 @@ Before your test your build, ensure that you have installed and configured the f
           endpoint = awscli_plugin_endpoint
           ```
           
-    3. Ensure that your aws credential file contains your Access Key Id and Secret Key by using: 
+    3. Ensure that your aws credential file contains your Access Key Id and Secret Key by using: `$ cat ~/.aws/credentials`
 
-        `$ cat ~/.aws/credentials`
+        </p>
+            </details>
 
 ### 1.5.1 Test Cases
 
