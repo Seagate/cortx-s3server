@@ -200,9 +200,8 @@ Before your test your build, ensure that you have installed and configured the f
           ```
           
     3. Ensure that your aws credential file contains your Access Key Id and Secret Key by using: `$ cat ~/.aws/credentials`
-
-        </p>
-        </details>
+</p>
+</details>
 
 Run the following test cases to check if your aws S3 Server build is working properly.
 
@@ -276,9 +275,8 @@ Let's say there is a version change in the Motr repository, and you want to skip
     `cd ..`
     
     `./build_motr.sh` 
-
-    </p>
-    </details>
+</p>
+</details>
 
 Run the jenkins script to make sure that build and test is passed:
 
