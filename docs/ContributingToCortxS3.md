@@ -17,7 +17,7 @@ Contributing to the S3 Server repository is a three-step process where you'll ne
 
 ## 1.0 Prerequisites 
 
-<display>
+<details>
   <summary>Before you begin</summary>
     <p>
  
@@ -35,7 +35,8 @@ Before you set up your GitHub, you'll need to
    3. Paste the SSH key you generated in Step 1 and select *Enable SSO*. 
    4. Click **Authorize** to authorize SSO for your SSH key.  
    5. [Create a Personal Access Token or PAT](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
-  - Ensure that you have enabled SSO for your PAT.
+  
+    :page_with_curl:**Note:** Ensure that you have enabled SSO for your PAT.
   
    </p>
     </details>
@@ -48,9 +49,10 @@ Before you set up your GitHub, you'll need to
 
 1. Update Git to the latest version. If you're on an older version, you'll see errors in your commit hooks that look like this: 
    
-   `$ git commit`
+  `$ git commit`
 
    ```shell
+   
    git: 'interpret-trailers' is not a git command. 
    See 'git --help'
    cannot insert change-id line in .git/COMMIT_EDITMSG
@@ -60,9 +62,10 @@ Before you set up your GitHub, you'll need to
 
 `$ yum remove git`
 
-  * Download the [RPM file from here](https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.7-1.x86_64.rpm) and run the following commands:
+Download the [RPM file from here](https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.7-1.x86_64.rpm) and run the following commands:
     
     ```shell
+    
     $ yum -y install
     $ yum -y install git
     ```
@@ -71,13 +74,12 @@ Before you set up your GitHub, you'll need to
 
 Once you've installed the prerequisites, follow these steps to set up Git on your Development Box: 
 
-1. Install git-clang-format using:
-   
-   `$ yum install git-clang-format`
+1. Install git-clang-format using: `$ yum install git-clang-format`
 
 2. Set up git config options using:
 
    ```shell
+   
    $ git config --global user.name ‘Your Name’
    $ git config --global user.email ‘Your.Name@seagate.com’
    $ git config --global color.ui auto
@@ -113,23 +115,18 @@ You can make changes to the code and save them in your files.
 
 2. To commit your code changes use: 
 
-   `$ git commit -m ‘comment’` 
+   `$ git commit -m ‘comment’` - Enter your GID and an appropriate Feature or Change description in comment.
 
-   Enter your GID and an appropriate Feature or Change description in comments.
-
-3. Check out your git log to view the details of your commit and verify the author name using:
-
-   `$ git log` 
+3. Check out your git log to view the details of your commit and verify the author name using: `$ git log` 
    
 :page_with_curl:**Note:** If you need to change the author name for your commit, refer to the GitHub article on [Changing author info](https://docs.github.com/en/github/using-git/changing-author-info).
 
-4. To Push your changes to GitHub, use:
-
-   `$ git push origin 'your-local-branch-name'`
+4. To Push your changes to GitHub, use: `$ git push origin 'your-local-branch-name'`
 
    Your output will look like the Sample Output below: 
    
    ```shell
+   
    Enumerating objects: 4, done.
    Counting objects: 100% (4/4), done.
    Delta compression using up to 2 threads
@@ -146,7 +143,7 @@ You can make changes to the code and save them in your files.
 
 ### 1.3.3 Create a Pull Request 
 
-1. Once you Push changes to GitHub, the output will display a URL for creating a Pull Request. (As shown in the sample code above.) 
+1. Once you Push changes to GitHub, the output will display a URL for creating a Pull Request, as shown in the sample code above.
 2. You'll be redirected to GitHib remote. 
 3. Select **main** from the Branches/Tags drop-down list.
 4. Click **Create pull request** to create the pull request.
