@@ -1,15 +1,15 @@
 # CORTX-S3 Server Quick Start Guide
 This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-ready.
 
-- [1.1 Prerequisites](#11-prerequisites)
-- [1.2 Clone the CORTX-S3 Server Repository](#12-clone-the-cortx-s3-server-repository)
-- [1.3 Installing dependencies](#13-installing-dependencies)
-- [1.4 Code Compilation and Unit Test](#14-code-compilation-and-unit-test)
-- [1.5 Test your Build using S3-CLI](#15-test-your-build-using-s3-cli)
-    + [1.5.1 Test Cases](#151-test-cases)
-- [1.6 Test a specific MOTR Version using CORX-S3 Server](#16-test-a-specific-motr-version-using-corx-s3-server)
+- [1.0 Prerequisites](#11-prerequisites)
+- [1.1 Clone the CORTX-S3 Server Repository](#12-clone-the-cortx-s3-server-repository)
+- [1.2 Installing dependencies](#13-installing-dependencies)
+- [1.3 Code Compilation and Unit Test](#14-code-compilation-and-unit-test)
+- [1.4 Test your Build using S3-CLI](#15-test-your-build-using-s3-cli)
+    + [1.4.1 Test Cases](#151-test-cases)
+- [1.5 Test a specific MOTR Version using CORX-S3 Server](#16-test-a-specific-motr-version-using-corx-s3-server)
 
-## 1.1 Prerequisites
+## 1.0 Prerequisites
 
 <details>
 <summary>Click to expand!</summary>
@@ -69,62 +69,50 @@ All done! You are now ready for fetching CORTX-S3 Server repository!
 </p>
 </details>  
 
-## 1.2 Clone the CORTX-S3 Server Repository
+## 1.1 Clone the CORTX-S3 Server Repository
 
 You'll need to clone the S3 Server Repository from the main branch. To clone the S3 Server Repository, follow these steps:
-
-<details>
-<summary>Click to expand!</summary>
-<p> 
 
 ```shell
 $ git clone --recursive git@github.com:Seagate/cortx-s3server.git -b main   
 $ cd cortx-s3server
 $ git submodule update --init --recursive && git status
 ``` 
-</p>
-</details>  
     
-## 1.3 Installing dependencies
+## 1.2 Installing dependencies
 
 <details>
 <summary>Before you begin</summary>
 <p>
  
 At some point during the execution of the `init.sh` script, it will prompt for the following passwords. Enter them as mentioned below:
-  > * SSH password: `<Enter root password of VM>`
-  > * Enter new password for openldap rootDN:: `seagate`
-  >
-  >   * Enter new password for openldap IAM admin:: `ldapadmin`
+   * SSH password: `<Enter root password of VM>`
+   * Enter new password for openldap rootDN:: `seagate`
+   * Enter new password for openldap IAM admin:: `ldapadmin`
 
 </p>
 </details> 
 
 Whenever you clone your repository or make changes to the dependent packages, you'll be need to initialize your package:
 
-<details>
-<summary>Click to expand!</summary>
-<p>
-   
+1. Run the command:
+
 ```shell
    $ cd ./scripts/env/dev
    $ ./init.sh -a
 ```
 
-> In some cases, the `./init.sh` fails to run. 
->   * If the above command fails, run: `./upgrade-enablerepo.sh` and then run: `./init.sh`.
-  
-Refer to the image below to view the output of a successful `./init.sh` run.
-Where the `failed` field value should be zero.
+2. You'll be prompted to provide your GitHub token, enter the PAT token that you generated in Step 4.iv. from the [1.0 Prerequisites section](https://github.com/cortx-s3server/blob/dev/docs/CORTX-S3%20Server%20Quick%20Start%20Guide.md#11-prerequisites)
+3. In some cases, the `./init.sh` fails to run. 
+4. If the above command fails, run: `./upgrade-enablerepo.sh` and then run: `./init.sh`.
+
+Refer to the image below to view the output of a successful `./init.sh` run, where the `failed` field value should be zero.
 
 ![Successful ./init.sh run](https://github.com/Seagate/cortx/blob/assets/images/init_script_output.PNG?raw=true)
 
-Please refer to our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Build-Installation-FAQ.md) for troubleshooting errors.
+Please read our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Build-Installation-FAQ.md) for troubleshooting errors.
 
-</p>
-</details>
-
-## 1.4 Code Compilation and Unit Test
+## 1.3 Code Compilation and Unit Test
 
 <details>
 <summary>Before you begin</summary>
@@ -138,23 +126,17 @@ Please refer to our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Buil
 
 To perform Unit and System Tests:
 
-<details>
-<summary>Click to expand!</summary>
-<p>
- 
-1. Run the `jenkins-build.sh` script.
-    * The above script automatically builds the code, and runs the unit & system tests in your local system. 
-    * Check help for more details.  
-2. If the `/usr/local/bin` does not exist, you'll need to add the path using:  
-
-    `$PATH=$PATH:/usr/local/bin`
+* Run the script `jenkins-build.sh`
   
+:page_with_curl: **Notes:** 
+
+* The above script automatically builds the code, and runs the unit & system tests in your local system. 
+* Check help for more details.  
+    
 The image below illustrates the output log of a system test that is successful.
   
-![Successful System Test Log](https://github.com/Seagate/cortx/blob/assets/images/jenkins_script_output.PNG)
+![Successful System Test Log](https://raw.githubusercontent.com/Seagate/cortx/assets/images/jenkins_script_output.PNG?token=AQJGZB6SHID2AXELMYSDZMK7KDYLU)
 
-</p>
-</details>
 
 ## 1.5 Test your Build using S3-CLI
 
@@ -220,9 +202,7 @@ Before your test your build, ensure that you have installed and configured the f
     3. Ensure that your aws credential file contains your Access Key Id and Secret Key by using: `$ cat ~/.aws/credentials`
 
         </p>
-            </details>
-
-### 1.5.1 Test Cases
+        </details>
 
 Run the following test cases to check if your aws S3 Server build is working properly.
 
@@ -272,47 +252,51 @@ Run the following test cases to check if your aws S3 Server build is working pro
 
 Let's say there is a version change in the Motr repository, and you want to skip re-installing the S3 Server. You can do so by using specific Motr commits and test the same on your S3 Server.
 
-You'll need to copy the commit-id of your Motr code. You can search for specific commit-ids using:
+<details>
+<summary>Before you begin<summary>
+<p>
 
-`git log`
+1. You'll need to copy the commit-id of your Motr code. You can search for specific commit-ids using:
 
-While viewing the log, to find the next commit, type `/^commit`, then use `n` and `N` to move to the next or previous commit. To search for the previous commit, use `?^commit`.
+    `git log`
 
-**Before you begin**
-
-You'll need to work out of the main directory of your S3 Server repository.
-
-
-1. Run `$ cd third_party/motr`. 
-
-2. Paste the commit-id shown below:
+    While viewing the log, to find the next commit, type `/^commit`, then use `n` and `N` to move to the next or previous commit. To search for the previous commit, use `?^commit`.
+2. You'll have to work out of the main directory of your S3 Server repository.
+3. Run `$ cd third_party/motr`. 
+4. Paste the commit-id shown below:
    
    `git checkout Id41cd2b41cb77f1d106651c267072f29f8c81d0f`
    
-3. Update your submodules:
+5. Update your submodules:
 
     `$ git submodule update --init --recursive`
 
-4. Build Motr:
+6. Build Motr:
 
     `cd ..`
     
     `./build_motr.sh` 
 
-6. Run the jenkins script to make sure that build and test is passed:
+    </p>
+    </details>
 
-    `cd ..`
+Run the jenkins script to make sure that build and test is passed:
 
-    `./jenkins-build.sh`
+`cd ..`
 
-    Your success log will look like the output in the image below:
+`./jenkins-build.sh`
 
-<p align="center"><img src="../../assets/images/jenkins_script_output.PNG?raw=true"></p>
+Your success log will look like the output in the image below:
+
+![Successful test log](https://raw.githubusercontent.com/Seagate/cortx/assets/images/jenkins_script_output.PNG?token=AQJGZB62MLLTZRMAGHPYPPK7KDYA6)
+
 
 ## You're all set & you're awesome!
 
-In case of any queries, feel free to reach out to our [SUPPORT](SUPPORT.md) team.
+If you have any queries, feel free to reach out to our [SUPPORT](SUPPORT.md) team.
 
-Contribute to Seagate's open-source initiative and join our movement to make data storage better, efficient, and more accessible.
+## Contribute to CORTX S3 Server
 
-Seagate CORTX Community Welcomes You! :relaxed:
+Contribute to the CORTX Open Source initiative and join our movement to make data storage better, efficient, and more accessible.
+
+CORTX Community Welcomes You! :relaxed:
