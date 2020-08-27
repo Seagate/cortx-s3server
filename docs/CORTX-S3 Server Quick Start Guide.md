@@ -2,11 +2,9 @@
 This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-ready.
 
 - [1.1 Prerequisites](#11-prerequisites)
-  * [1.2 Clone the CORTX-S3 Server Repository](#12-clone-the-cortx-s3-server-repository)
-    + [1.2.1 Create a local repository](#121-create-a-local-repository)
+- [1.2 Clone the CORTX-S3 Server Repository](#12-clone-the-cortx-s3-server-repository)
 - [1.3 Installing dependencies](#13-installing-dependencies)
 - [1.4 Code Compilation and Unit Test](#14-code-compilation-and-unit-test)
-    + [1.4.1 Perform Unit and System Tests](#141-perform-unit-and-system-tests)
 - [1.5 Test your Build using S3-CLI](#15-test-your-build-using-s3-cli)
     + [1.5.1 Test Cases](#151-test-cases)
 - [1.6 Test a specific MOTR Version using CORX-S3 Server](#16-test-a-specific-motr-version-using-corx-s3-server)
@@ -107,9 +105,7 @@ Whenever you clone your repository or make changes to the dependent packages, yo
 ```
 
 > In some cases, the `./init.sh` fails to run. 
->   * If the above command fails, run:
->    `./upgrade-enablerepo.sh` and then run 
->    `./init.sh`.
+>   * If the above command fails, run: `./upgrade-enablerepo.sh` and then run: `./init.sh`.
   
 Refer to the image below to view the output of a successful `./init.sh` run.
 Where the `failed` field value should be zero.
@@ -123,15 +119,22 @@ Please refer to our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Buil
 
 ## 1.4 Code Compilation and Unit Test
 
-**Before you begin**
+<details>
+<summary>Before you begin</summary>
+<p>
 
-You'll need to run the following commands from the main source directory.
+- Run the following commands from the main source directory.
+- Set up the host system before you test your build, using the command: `$ ./update-hosts.sh`
 
-### 1.4.1 Perform Unit and System Tests
+</p>
+</details>
 
-> Before you test your build, you'll need to setup the host system using the command:
-> `$ ./update-hosts.sh`
+To perform Unit and System Tests:
 
+<details>
+<summary>Click to expand!</summary>
+<p>
+ 
  1. Run the `jenkins-build.sh` script.
     * The above script automatically builds the code, and runs the unit & system tests in your local system. 
     * Check help for more details.  
@@ -141,7 +144,10 @@ You'll need to run the following commands from the main source directory.
   
    * The image below illustrates the output log of a system test that is successful.
   
-<p align="center"><img src="../../assets/images/jenkins_script_output.PNG?raw=true"></p>
+![Successful System Test Log](https://github.com/Seagate/cortx/blob/assets/images/jenkins_script_output.PNG)
+
+</p>
+</details>
 
 ## 1.5 Test your Build using S3-CLI
 
