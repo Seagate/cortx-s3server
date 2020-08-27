@@ -9,7 +9,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
     + [1.4.1 Test Cases](#151-test-cases)
 - [1.5 Test a specific MOTR Version using CORX-S3 Server](#16-test-a-specific-motr-version-using-corx-s3-server)
 
-## 1.0 Prerequisites
+### 1.0 Prerequisites
 
 <details>
 <summary>Click to expand!</summary>
@@ -32,15 +32,21 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
     :page_with_curl:**Note: We recommended that you install Git Version 2.x.x.**
    
 6. Ensure that you've installed the following packages on your VM instance: 
+
     * Python Version 3.0
       * To check whether Python is installed on your VM, use one of the following commands: `--version`  , `-V` , or `-VV`
       * To install Python version 3.0, use: `$ yum install -y python3`
     * pip version 3.0: 
-      * To verify your pip version use: `pip --version` 
+      * To check if pip is installed, use: `pip --version` 
       * To install pip3 use: `yum install python-pip3`  
     * Ansible: `$ yum install -y ansible` 
-    * Extra Packages for Enterprise Linux: `$ yum install -y epel-release`
+    * Extra Packages for Enterprise Linux: 
+        * To checl if epel is installed, use: $ yum repolist 
+            * If epel was installed, you'll see it in the output list.
+            * You might also see exclamation mark in front of the repositories id. Refer to the [Redhat Knowledge Base](https://access.redhat.com/solutions/2267871)
+        * `$ yum install -y epel-release`
     * Verify if kernel-devel-3.10.0-1062 version package is installed, use: `uname -r`
+    
 7. You'll need to disable selinux and firewall. Run the following commands:
 
      `$ systemctl stop firewalld` no output
@@ -69,7 +75,7 @@ All done! You are now ready for fetching CORTX-S3 Server repository!
 </p>
 </details>  
 
-## 1.1 Clone the CORTX-S3 Server Repository
+### 1.1 Clone the CORTX-S3 Server Repository
 
 You'll need to clone the S3 Server Repository from the main branch. To clone the S3 Server Repository, follow these steps:
 
@@ -79,7 +85,7 @@ $ cd cortx-s3server
 $ git submodule update --init --recursive && git status
 ``` 
     
-## 1.2 Installing dependencies
+### 1.2 Installing dependencies
 
 <details>
 <summary>Before you begin</summary>
@@ -112,7 +118,7 @@ Refer to the image below to view the output of a successful `./init.sh` run, whe
 
 Please read our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Build-Installation-FAQ.md) for troubleshooting errors.
 
-## 1.3 Code Compilation and Unit Test
+### 1.3 Code Compilation and Unit Test
 
 <details>
 <summary>Before you begin</summary>
@@ -138,7 +144,7 @@ The image below illustrates the output log of a system test that is successful.
 ![Successful System Test Log](https://raw.githubusercontent.com/Seagate/cortx/assets/images/jenkins_script_output.PNG?token=AQJGZB6SHID2AXELMYSDZMK7KDYLU)
 
 
-## 1.5 Test your Build using S3-CLI
+### 1.4 Test your Build using S3-CLI
 
 <details>
 <summary>Before you begin</summary>
@@ -164,11 +170,11 @@ Before your test your build, ensure that you have installed and configured the f
     3. To generate the aws Access Key ID and aws Secret Key, run commands:
          1. To check for help messages, run the command: `$ s3iamcli -h`
          2. Run the following command to create a new User: `$ s3iamcli CreateAccount -n < Account Name > -e < Email Id >` 
-               * Enter the following ldap credentials:
+              * Enter the following ldap credentials:
                   User Id : `sgiamadmin`
                   Password : `ldapadmin`
-              > * Running the above command lists details of the newly created user including the `aws Access Key ID` and the `aws Secret Key`. 
-              > * Copy and save the Access and Secret Keys for the new user. 
+              * Running the above command lists details of the newly created user including the `aws Access Key ID` and the `aws Secret Key`. 
+              * Copy and save the Access and Secret Keys for the new user. 
 
 6. To Configure AWS run the following commands:
    Keep the Access and Secret Keys generated in Step - 3.2 handy. 
@@ -184,7 +190,7 @@ Before your test your build, ensure that you have installed and configured the f
         $ aws configure set s3.endpoint_url https://s3.seagate.com
         $ aws configure set s3api.endpoint_url https://s3.seagate.com
         ```
-        * Run the following command to view the contents of your aws config file: `$ cat ~/.aws/config`
+   3. Run the following command to view the contents of your aws config file: `$ cat ~/.aws/config`
         The output is as shown below:
 
           ```shell
@@ -199,7 +205,7 @@ Before your test your build, ensure that you have installed and configured the f
           endpoint = awscli_plugin_endpoint
           ```
           
-    3. Ensure that your aws credential file contains your Access Key Id and Secret Key by using: `$ cat ~/.aws/credentials`
+    4. Ensure that your aws credential file contains your Access Key Id and Secret Key by using: `$ cat ~/.aws/credentials`
 </p>
 </details>
 
@@ -247,12 +253,12 @@ Run the following test cases to check if your aws S3 Server build is working pro
     
     `$ aws s3 rb s3://seagatebuckettest`
 
-## 1.6 Test a specific MOTR Version using CORX-S3 Server
+### 1.5 Test a specific MOTR Version using CORX-S3 Server
 
 Let's say there is a version change in the Motr repository, and you want to skip re-installing the S3 Server. You can do so by using specific Motr commits and test the same on your S3 Server.
 
 <details>
-<summary>Before you begin<summary>
+<summary>Before you begin</summary>
 <p>
 
 1. You'll need to copy the commit-id of your Motr code. You can search for specific commit-ids using:
@@ -288,6 +294,30 @@ Your success log will look like the output in the image below:
 
 ![Successful test log](https://raw.githubusercontent.com/Seagate/cortx/assets/images/jenkins_script_output.PNG?token=AQJGZB62MLLTZRMAGHPYPPK7KDYA6)
 
+### 1.6 Build S3 rpms
+
+1. Obtain the short git revision that has to be built using:
+
+```sh
+
+git rev-parse --short HEAD
+44a07d2
+```
+2. To build S3 rpm, use:
+
+`./rpms/s3/buildrpm.sh -G 44a07d2`
+
+:page_with_curl:**Note:** `44a07d2` is generated in Step 1. 
+
+3. To build S3 rpm without Motr rpm dependency, use:
+
+`./rpms/s3/buildrpm.sh -a -G 44a07d2`
+
+4. To build s3iamcli rpm, use:
+
+`./rpms/s3iamcli/buildrpm.sh -G 44a07d2`
+
+All the built rpms will be available at `~/rpmbuild/RPMS/x86_64/`. You can copy these rpms to release VM for testing.
 
 ## You're all set & you're awesome!
 
