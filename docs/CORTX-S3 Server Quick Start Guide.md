@@ -133,7 +133,7 @@ Please read our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Build-In
 
 To perform Unit and System Tests:
 
-* Run the script `$ jenkins-build.sh`
+* Run the script `$ ./jenkins-build.sh -h`
   
 :page_with_curl: **Notes:** 
 
