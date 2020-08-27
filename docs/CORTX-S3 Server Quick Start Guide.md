@@ -6,8 +6,8 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
 - [1.2 Installing dependencies](#13-installing-dependencies)
 - [1.3 Code Compilation and Unit Test](#14-code-compilation-and-unit-test)
 - [1.4 Test your Build using S3-CLI](#15-test-your-build-using-s3-cli)
-    + [1.4.1 Test Cases](#151-test-cases)
 - [1.5 Test a specific MOTR Version using CORX-S3 Server](#16-test-a-specific-motr-version-using-corx-s3-server)
+- [1.6 Build S3 rpms](#16-Build-S3-rpms)
 
 ### 1.0 Prerequisites
 
