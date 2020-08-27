@@ -135,7 +135,7 @@ To perform Unit and System Tests:
 
 * Run the script `$ jenkins-build.sh`
   
-    :page_with_curl: **Notes:** 
+:page_with_curl: **Notes:** 
 
 * The above script automatically builds the code, and runs the unit & system tests in your local system. 
 * For more details, check help: `$ ./jenkins-build.sh --help`
@@ -196,18 +196,18 @@ Before your test your build, ensure that you have installed and configured the f
        
       The output is as shown below:
 
-          ```shell
-          
-          [default]
-          output = text
-          region = US
-          s3 = 
-          endpoint_url = http://s3.seagate.com
-          s3api =
-          endpoint_url = http://s3.seagate.com
-          [plugins]
-          endpoint = awscli_plugin_endpoint
-          ```
+      ```shell
+       
+      [default]
+      output = text
+      region = US
+      s3 = 
+      endpoint_url = http://s3.seagate.com
+      s3api =
+      endpoint_url = http://s3.seagate.com
+      [plugins]
+      endpoint = awscli_plugin_endpoint
+      ```
           
     4. Ensure that your aws credential file contains your Access Key Id and Secret Key by using: `$ cat ~/.aws/credentials`
 </p>
