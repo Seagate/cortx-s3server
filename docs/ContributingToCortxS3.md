@@ -36,7 +36,7 @@ Before you set up your GitHub, you'll need to
    4. Click **Authorize** to authorize SSO for your SSH key.  
    5. [Create a Personal Access Token or PAT](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
   
-    :page_with_curl:**Note:** Ensure that you have enabled SSO for your PAT.
+      :page_with_curl:**Note:** Ensure that you have enabled SSO for your PAT.
   
    </p>
     </details>
@@ -119,7 +119,7 @@ You can make changes to the code and save them in your files.
 
 3. Check out your git log to view the details of your commit and verify the author name using: `$ git log` 
    
-:page_with_curl:**Note:** If you need to change the author name for your commit, refer to the GitHub article on [Changing author info](https://docs.github.com/en/github/using-git/changing-author-info).
+  :page_with_curl:**Note:** If you need to change the author name for your commit, refer to the GitHub article on [Changing author info](https://docs.github.com/en/github/using-git/changing-author-info).
 
 4. To Push your changes to GitHub, use: `$ git push origin 'your-local-branch-name'`
 
@@ -149,6 +149,8 @@ You can make changes to the code and save them in your files.
 4. Click **Create pull request** to create the pull request.
 5. Add reviewers to your pull request to review and provide feedback on your changes.
 
+:page_with_curl:**Note:** To resolve conflicts, follow the troubleshooting steps mentioned in git error messages.
+
 ## 1.4 Run Jenkins and System Tests
 
 Creating a pull request automatically triggers Jenkins jobs and System tests. To familiarize yourself with jenkins, please visit the [Jenkins wiki page](https://en.wikipedia.org/wiki/Jenkins_(software)).
@@ -169,12 +171,8 @@ $ git submodule update --init --recursive
 $ git rebase origin/master
 ```
 
-To resolve conflicts, follow the troubleshooting steps mentioned in git error messages. 
-
-Reach out to our [SUPPORT](SUPPORT.md) team, if you have any questions or need further clarifications.
-
 ## All set & You're Awesome!
 
 Let's make storage better, efficient, and accessible. Join us in our goal to reinvent a data-driven world, and contribute to CORTX Open Source initiative. 
-
+Reach out to our [SUPPORT](SUPPORT.md) team, if you have any questions or need further clarifications.
 CORTX Open Source team welcomes you! :relaxed:
