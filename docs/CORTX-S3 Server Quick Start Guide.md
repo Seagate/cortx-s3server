@@ -7,7 +7,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
 - [1.3 Code Compilation and Unit Test](#14-code-compilation-and-unit-test)
 - [1.4 Test your Build using S3-CLI](#15-test-your-build-using-s3-cli)
 - [1.5 Test a specific MOTR Version using CORX-S3 Server](#16-test-a-specific-motr-version-using-corx-s3-server)
-- [1.6 Build S3 rpms](#16-Build-S3-rpms)
+- [1.6 Build S3 RPMs](#16-Build-S3-RPMs)
 
 ### 1.0 Prerequisites
 
@@ -99,7 +99,7 @@ At some point during the execution of the `init.sh` script, it will prompt for t
 </p>
 </details> 
 
-Whenever you clone your repository or make changes to the dependent packages, you'll be need to initialize your package:
+Whenever you clone your repository or make changes to the dependent packages, you'll need to initialize your package:
 
 1. Run the command:
 
@@ -109,7 +109,7 @@ Whenever you clone your repository or make changes to the dependent packages, yo
    $ ./init.sh -a
 ```
 
-2. You'll be prompted to provide your GitHub token, enter the PAT token that you generated in Step 4.iv. from the [1.0 Prerequisites section](https://github.com/cortx-s3server/blob/dev/docs/CORTX-S3%20Server%20Quick%20Start%20Guide.md#11-prerequisites).
+2. You'll be prompted to provide your GitHub token, enter the PAT token that you generated in Step 4.iv. from the [1.0 Prerequisites Section](#11-prerequisites).
 3. In some cases, the `$ ./init.sh` fails to run. 
 4. If the above command fails, run: `$ ./upgrade-enablerepo.sh` and then run: `$ ./init.sh`.
 
@@ -137,7 +137,7 @@ To perform Unit and System Tests:
   
 :page_with_curl: **Notes:** 
 
-* The above script automatically builds the code, and runs the unit & system tests in your local system. 
+* The above script automatically builds the code and runs the unit & system tests in your local system. 
 * For more details, check help: `$ ./jenkins-build.sh --help`
     
 The image below illustrates the output log of a system test that is successful.
@@ -159,32 +159,32 @@ Before your test your build, ensure that you have installed and configured the f
 2. Ensure you've installed `pip`.
     * To check if you have pip installed, run the command: `$ pip --version`
     * To install pip, run the command: `$ python --version`
-3. If you don't have Python Version 2.6.5+, then install python using: `$ python3 --version`.    
+3. If you don't have Python Version 2.6.5+, then install Python using: `$ python3 --version`.    
     *  If you don't have Python Version 3.3, then install python3 using: `$ easy_install pip`
 4. Ensure that CORTX-S3 Server and its dependent services are running.
     1. To start CORTX-S3 Server and its dependent services, run the command: `$ ./jenkins-build.sh --skip_build --skip_tests` 
     2. To view the `PID` of the active S3 service, run the command: `$ pgrep s3` 
     3. To view the `PID` of the active Motr service, run the command: `$ pgrep m0`
-5. Install the aws client and plugin
-    1. To install aws client, use: `$ pip install awscli`
-    2. To install the aws plugin, use: `$ pip install awscli-plugin-endpoint`
-    3. To generate the aws Access Key ID and aws Secret Key, run commands:
+5. Follow these steps to install the AWS client and plugin:
+    1. To install the AWS client, use: `$ pip install awscli`
+    2. To install the AWS plugin, use: `$ pip install awscli-plugin-endpoint`
+    3. To generate the AWS Access Key ID and Secret Key, run commands:
          1. To check for help messages, run the command: `$ s3iamcli -h`
          2. Run the following command to create a new User: `$ s3iamcli CreateAccount -n < Account Name > -e < Email Id >` 
-              * Enter the following ldap credentials:
+              * Enter the following LDAP credentials:
                   User Id : `sgiamadmin`
                   Password : `ldapadmin`
               * Running the above command lists details of the newly created user including the `aws Access Key ID` and the `aws Secret Key`. 
               * Copy and save the Access and Secret Keys for the new user. 
 
 6. To Configure AWS run the following commands:
-   Keep the Access and Secret Keys generated in Step 4.iv. from the [1.0 Prerequisites section](https://github.com/cortx-s3server/blob/dev/docs/CORTX-S3%20Server%20Quick%20Start%20Guide.md#11-prerequisites) handy. 
+   Keep the Access and Secret Keys generated in Step 4.iv. from the [1.0 Prerequisites Section](#11-prerequisites). 
    1.  Run `$ aws configure` and enter the following details:
         * `AWS Access Key ID [None]: < ACCESS KEY >`
         * `AWS Secret Access Key [None]: < SECRET KEY >`
         * `Default region name [None]: US`
         * `Default output format [None]: text`
-   2. Configure the aws plugin Endpoint using:
+   2. Configure the AWS plugin Endpoint using:
     
         ```shell
         
@@ -192,7 +192,7 @@ Before your test your build, ensure that you have installed and configured the f
         $ aws configure set s3.endpoint_url https://s3.seagate.com
         $ aws configure set s3api.endpoint_url https://s3.seagate.com
         ```
-   3. Run the following command to view the contents of your aws config file: `$ cat ~/.aws/config`
+   3. Run the following command to view the contents of your AWS config file: `$ cat ~/.aws/config`
        
       The output is as shown below:
 
@@ -209,11 +209,11 @@ Before your test your build, ensure that you have installed and configured the f
       endpoint = awscli_plugin_endpoint
       ```
           
-    4. Ensure that your aws credential file contains your Access Key Id and Secret Key by using: `$ cat ~/.aws/credentials`
+    4. Ensure that your AWS credential file contains your Access Key Id and Secret Key by using: `$ cat ~/.aws/credentials`
 </p>
 </details>
 
-Run the following test cases to check if your aws S3 Server build is working properly.
+Run the following test cases to check if your AWS S3 Server build is working correctly.
 
 1. To Make a Bucket:
 
@@ -231,7 +231,7 @@ Run the following test cases to check if your aws S3 Server build is working pro
   
     `$ aws s3 cp test_data s3://seagatebucket/`
 
-   This will create a test_data object in your bucket. You can use any file for to test this step. 
+   This will create a test_data object in your bucket. You can use any file to test this step. 
    
    If you want to create a test_data file, use the command:
 
@@ -241,7 +241,7 @@ Run the following test cases to check if your aws S3 Server build is working pro
 
     `$ aws s3 mv test_data s3://seagatebucket/` 
     
-    This command moves your local file test_data to the bucket and create a test_data object. 
+    This command moves your local file test_data to the bucket and creates a test_data object. 
 
 5. To List your moved object:
 
@@ -288,7 +288,7 @@ Let's say there is a version change in the Motr repository, and you want to skip
 </p>
 </details>
 
-Run the jenkins script to make sure that build and test is passed:
+Run the Jenkins script to make sure that the build and test are passed:
 
 `$ cd ..`
 
@@ -298,7 +298,7 @@ Your success log will look like the output in the image below:
 
 ![Successful test log](https://raw.githubusercontent.com/Seagate/cortx/assets/images/jenkins_script_output.PNG?token=AQJGZB62MLLTZRMAGHPYPPK7KDYA6)
 
-### 1.6 Build S3 rpms
+### 1.6 Build S3 RPMs
 
 1. Obtain the short git revision that has to be built using:
 
@@ -307,21 +307,21 @@ Your success log will look like the output in the image below:
     $ git rev-parse --short HEAD
     44a07d2
     ```
-2. To build S3 rpm, use:
+2. To build S3 RPM, use:
 
     `$ ./rpms/s3/buildrpm.sh -G 44a07d2`
 
     :page_with_curl:**Note:** `44a07d2` is generated in Step 1. 
 
-3. To build S3 rpm without Motr rpm dependency, use:
+3. To build S3 RPM without Motr RPM dependency, use:
 
     `$ ./rpms/s3/buildrpm.sh -a -G 44a07d2`
 
-4. To build s3iamcli rpm, use:
+4. To build s3iamcli RPM, use:
 
     `$ ./rpms/s3iamcli/buildrpm.sh -G 44a07d2`
 
-All the built rpms will be available at `~/rpmbuild/RPMS/x86_64/`. You can copy these rpms to release VM for testing.
+All the built RPMs will be available at `~/rpmbuild/RPMS/x86_64/`. You can copy these RPMs to release VM for testing.
 
 ## You're all set & you're awesome!
 
@@ -329,6 +329,6 @@ If you have any queries, feel free to reach out to our [SUPPORT](SUPPORT.md) tea
 
 ## Contribute to CORTX S3 Server
 
-Contribute to the CORTX Open Source initiative and join our movement to make data storage better, efficient, and more accessible.
+Please contribute to the CORTX Open Source initiative and join our movement to make data storage better, efficient, and more accessible.
 
 CORTX Community Welcomes You! :relaxed:
