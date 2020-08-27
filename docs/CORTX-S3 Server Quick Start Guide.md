@@ -111,11 +111,12 @@ Whenever you clone your repository or make changes to the dependent packages, yo
 Refer to the image below to view the output of a successful `./init.sh` run.
 The where `failed` field value should be zero.
 
-<img src="../assets/images/init_script_output.PNG?raw=true"></p>
+![Successful ./init.sh run](https://github.com/Seagate/cortx/blob/assets/images/init_script_output.PNG?raw=true)
 
 Please refer to our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Build-Installation-FAQ.md) for troubleshooting errors.
 
-
+</p>
+</details>
 
 ## 1.4 Code Compilation and Unit Test
 
