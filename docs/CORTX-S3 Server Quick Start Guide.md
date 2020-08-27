@@ -87,9 +87,10 @@ $ git submodule update --init --recursive && git status
 <p>
  
 At some point during the execution of the `init.sh` script, it will prompt for the following passwords. Enter them as mentioned below:
-* SSH password: `<Enter root password of VM>`
-* Enter new password for openldap rootDN:: `seagate`
-  * Enter new password for openldap IAM admin:: `ldapadmin`
+  > * SSH password: `<Enter root password of VM>`
+  > * Enter new password for openldap rootDN:: `seagate`
+  >
+  >   * Enter new password for openldap IAM admin:: `ldapadmin`
 
 </p>
 </details> 
@@ -105,13 +106,10 @@ Whenever you clone your repository or make changes to the dependent packages, yo
    $ ./init.sh -a
 ```
 
-
-In some cases, the `./init.sh` fails to run. 
-  * If the above command fails, run:
-       
-   `./upgrade-enablerepo.sh` and then run 
-        
-    `./init.sh`.
+> In some cases, the `./init.sh` fails to run. 
+>   * If the above command fails, run:
+>    `./upgrade-enablerepo.sh` and then run 
+>    `./init.sh`.
   
 Refer to the image below to view the output of a successful `./init.sh` run.
 Where the `failed` field value should be zero.
