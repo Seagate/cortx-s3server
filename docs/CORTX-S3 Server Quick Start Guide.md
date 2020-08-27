@@ -115,7 +115,7 @@ Whenever you clone your repository or make changes to the dependent packages, yo
 
 Refer to the image below to view the output of a successful `$ ./init.sh` run, where the `failed` field value should be zero.
 
-![Successful ./init.sh run](https://github.com/Seagate/cortx/blob/assets/images/init_script_output.PNG)
+![Successful ./init.sh run](https://raw.githubusercontent.com/Seagate/cortx/assets/images/init_script_output.PNG?token=AQJGZB3IEIPSAAW6ESJAUKK7KEO36)
 
 Please read our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Build-Installation-FAQ.md) for troubleshooting errors.
 
