@@ -43,19 +43,26 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
     * Verify if kernel-devel-3.10.0-1062 version package is installed, use: `uname -r`
 7. You'll need to disable selinux and firewall. Run the following commands:
 
-    ```shell
-    $ systemctl stop firewalld
-    $ systemctl disable firewalld
-    $ sestatus
-    $ setenforce 0
-    sed 's/SELINUX=enforcing/SELINUX=disabled/' /etc/sysconfig/selinux
-    ```
-   1. To shutdown your VM, use: `$ shutdown -r now` 
-   2. You will need to restart your VM. Once you power on your VM, you can verify if selinux and firewall are disabled by using: 
-      
-      `$ getenforce` 
-      
-      You'll get a 'disabled' status.
+     `$ systemctl stop firewalld` no output
+    
+     `$ systemctl disable firewalld` no output
+    
+     `$ sestatus` should see `SELinux status: disabled'
+    
+     `$ setenforce 0` should see `setenforce: SELinux is disabled'
+    
+     `$ sed 's/SELINUX=enforcing/SELINUX=disabled/' /etc/sysconfig/selinux` should see `SELINUX=disabled'
+    
+     `$ shutdown -r now` should reboot your system. 
+    
+   :page_with_curl: **Notes:**
+    
+    1. If you're using cloud VM, go to your cloud VM website and select the VM. 
+       * First stop the VM and then start it again to complete the reboot process
+    2. To use command line to shutdown your VM, use: `$ shutdown -r now` 
+       * Restart your VM.
+                           
+   Once you power on your VM, you can verify if selinux and firewall are disabled by using: `$ getenforce` you'll get a 'disabled' status.
 
 All done! You are now ready for fetching CORTX-S3 Server repository!  
 
