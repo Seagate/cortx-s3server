@@ -108,7 +108,7 @@ Whenever you clone your repository or make changes to the dependent packages, yo
    $ ./init.sh -a
 ```
 
-2. You'll be prompted to provide your GitHub token, enter the PAT token that you generated in Step 4.iv. from the [1.0 Prerequisites section](https://github.com/cortx-s3server/blob/dev/docs/CORTX-S3%20Server%20Quick%20Start%20Guide.md#11-prerequisites)
+2. You'll be prompted to provide your GitHub token, enter the PAT token that you generated in Step 4.iv. from the [1.0 Prerequisites section](https://github.com/cortx-s3server/blob/dev/docs/CORTX-S3%20Server%20Quick%20Start%20Guide.md#11-prerequisites).
 3. In some cases, the `./init.sh` fails to run. 
 4. If the above command fails, run: `./upgrade-enablerepo.sh` and then run: `./init.sh`.
 
@@ -137,7 +137,7 @@ To perform Unit and System Tests:
 :page_with_curl: **Notes:** 
 
 * The above script automatically builds the code, and runs the unit & system tests in your local system. 
-* Check help for more details.  
+* For more details, check help: `./jenkins-build.sh --help`
     
 The image below illustrates the output log of a system test that is successful.
   
@@ -177,7 +177,7 @@ Before your test your build, ensure that you have installed and configured the f
               * Copy and save the Access and Secret Keys for the new user. 
 
 6. To Configure AWS run the following commands:
-   Keep the Access and Secret Keys generated in Step - 3.2 handy. 
+   Keep the Access and Secret Keys generated in Step 4.iv. from the [1.0 Prerequisites section](https://github.com/cortx-s3server/blob/dev/docs/CORTX-S3%20Server%20Quick%20Start%20Guide.md#11-prerequisites) handy. 
    1.  Run `$ aws configure` and enter the following details:
         * `AWS Access Key ID [None]: < ACCESS KEY >`
         * `AWS Secret Access Key [None]: < SECRET KEY >`
