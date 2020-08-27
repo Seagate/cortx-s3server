@@ -307,7 +307,7 @@ Your success log will look like the output in the image below:
 
     `./rpms/s3/buildrpm.sh -G 44a07d2`
 
-:page_with_curl:**Note:** `44a07d2` is generated in Step 1. 
+    :page_with_curl:**Note:** `44a07d2` is generated in Step 1. 
 
 3. To build S3 rpm without Motr rpm dependency, use:
 
