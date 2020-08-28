@@ -41,7 +41,7 @@ unsupported_os() {
 
 check_supported_kernel() {
   kernel_version=`uname -r`
-  if [ "$kernel_version" != "3.10.0-1062.el7.x86_64" ]; then
+  if [[ "$kernel_version" != 3.10.0-1062.* ]]; then
         echo "S3 supports kernel 3.10.0-1062.el7.x86_64" 1>&2;
         exit 1
   fi }
