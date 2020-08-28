@@ -111,6 +111,21 @@ TEST_F(S3BucketActionTest, LoadMetadata) {
   action_under_test_ptr->load_metadata();
 }
 
+TEST_F(S3BucketActionTest, FetchBucketInfoSuccess) {
+  S3AuditInfo s3_audit_info;
+
+  auto bucket_metadata =
+      std::make_shared<MockS3BucketMetadata>(request_mock, nullptr);
+  action_under_test_ptr->bucket_metadata = bucket_metadata;
+  action_under_test_ptr->clear_tasks();
+
+  EXPECT_CALL(*request_mock, get_audit_info())
+      .WillOnce(ReturnRef(s3_audit_info));
+  EXPECT_CALL(*bucket_metadata, get_owner_canonical_id()).Times(1);
+
+  action_under_test_ptr->fetch_bucket_info_success();
+}
+
 TEST_F(S3BucketActionTest, SetAuthorizationMeta) {
   action_under_test_ptr->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,

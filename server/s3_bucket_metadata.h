@@ -125,7 +125,7 @@ class S3BucketMetadata {
   std::string get_owner_id();
   std::string get_owner_name();
   std::string get_bucket_owner_account_id();
-  std::string get_owner_canonical_id();
+  virtual std::string get_owner_canonical_id();
 
   std::string& get_encoded_bucket_acl();
   virtual std::string get_tags_as_xml();
