@@ -110,8 +110,7 @@ struct s3_motr_obj_context *create_obj_context(size_t count) {
   struct s3_motr_obj_context *ctx = (struct s3_motr_obj_context *)calloc(
       1, sizeof(struct s3_motr_obj_context));
 
-  ctx->objs =
-      (struct m0_clovis_obj *)calloc(count, sizeof(struct m0_clovis_obj));
+  ctx->objs = (struct m0_obj *)calloc(count, sizeof(struct m0_obj));
   ctx->obj_count = count;
   global_motr_obj.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -135,10 +134,8 @@ struct s3_motr_op_context *create_basic_op_ctx(size_t op_count) {
   struct s3_motr_op_context *ctx =
       (struct s3_motr_op_context *)calloc(1, sizeof(struct s3_motr_op_context));
 
-  ctx->ops =
-      (struct m0_clovis_op **)calloc(op_count, sizeof(struct m0_clovis_op *));
-  ctx->cbs = (struct m0_clovis_op_ops *)calloc(op_count,
-                                               sizeof(struct m0_clovis_op_ops));
+  ctx->ops = (struct m0_op **)calloc(op_count, sizeof(struct m0_op *));
+  ctx->cbs = (struct m0_op_ops *)calloc(op_count, sizeof(struct m0_op_ops));
   ctx->op_count = op_count;
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -230,14 +227,13 @@ int free_basic_rw_op_ctx(struct s3_motr_rw_op_context *ctx) {
   return 0;
 }
 
-/* Clovis index API */
+/* Motr index API */
 struct s3_motr_idx_context *create_idx_context(size_t idx_count) {
   s3_log(S3_LOG_DEBUG, "", "Entering with idx_count = %zu\n", idx_count);
 
   struct s3_motr_idx_context *ctx = (struct s3_motr_idx_context *)calloc(
       1, sizeof(struct s3_motr_idx_context));
-  ctx->idx =
-      (struct m0_clovis_idx *)calloc(idx_count, sizeof(struct m0_clovis_idx));
+  ctx->idx = (struct m0_idx *)calloc(idx_count, sizeof(struct m0_idx));
   ctx->idx_count = idx_count;
   global_motr_idx.insert(ctx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -259,10 +255,8 @@ struct s3_motr_idx_op_context *create_basic_idx_op_ctx(int op_count) {
 
   struct s3_motr_idx_op_context *ctx = (struct s3_motr_idx_op_context *)calloc(
       1, sizeof(struct s3_motr_idx_op_context));
-  ctx->ops =
-      (struct m0_clovis_op **)calloc(op_count, sizeof(struct m0_clovis_op *));
-  ctx->cbs = (struct m0_clovis_op_ops *)calloc(op_count,
-                                               sizeof(struct m0_clovis_op_ops));
+  ctx->ops = (struct m0_op **)calloc(op_count, sizeof(struct m0_op *));
+  ctx->cbs = (struct m0_op_ops *)calloc(op_count, sizeof(struct m0_op_ops));
   ctx->op_count = op_count;
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

@@ -150,7 +150,7 @@ void S3GetBucketAction::get_next_objects() {
     object_list->set_key_count(key_Count);
     send_response_to_s3_client();
   } else {
-    // We pass M0_OIF_EXCLUDE_START_KEY flag to Clovis. This flag skips key that
+    // We pass M0_OIF_EXCLUDE_START_KEY flag to Motr. This flag skips key that
     // is passed during listing of all keys. If this flag is not passed then
     // input key is returned in result.
     motr_kv_reader->next_keyval(

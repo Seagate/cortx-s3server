@@ -52,7 +52,7 @@ std::shared_ptr<RequestObject> S3AsyncOpContextBase::get_request() {
   return request;
 }
 
-std::shared_ptr<MotrAPI> S3AsyncOpContextBase::get_clovis_api() {
+std::shared_ptr<MotrAPI> S3AsyncOpContextBase::get_motr_api() {
   return s3_motr_api;
 }
 

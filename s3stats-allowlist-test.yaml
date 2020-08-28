@@ -24,7 +24,7 @@
 # Timer metrics
 - total_request_time
 - uri_to_motr_oid
-- copy_to_clovis_buf
+- copy_to_motr_buf
 - total_buffering_time
 - create_object_success
 - create_object_failed
@@ -42,12 +42,12 @@
 - put_keyval_failed
 - delete_keyval_success
 - delete_keyval_failed
-- delete_object_from_clovis_success
-- delete_object_from_clovis_failed
-- delete_objects_from_clovis_success
-- delete_objects_from_clovis_failed
-- write_to_clovis_op_success
-- write_to_clovis_op_failed
+- delete_object_from_motr_success
+- delete_object_from_motr_failed
+- delete_objects_from_motr_success
+- delete_objects_from_motr_failed
+- write_to_motr_op_success
+- write_to_motr_op_failed
 - read_object_data_success
 - read_object_data_failed
 - check_authentication
@@ -128,7 +128,7 @@
 - sync_index_op_success_count
 - sync_keyval_op_success_count
 - read_object_data_success_count
-- write_to_clovis_op_success_count
+- write_to_motr_op_success_count
 # PUT/GET callbacks from libevhtp
 - incoming_object_data_blocks_count
 - outgoing_object_data_blocks_count

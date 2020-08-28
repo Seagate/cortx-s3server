@@ -73,16 +73,16 @@ process_fid="<$MOTR_PROCESS_FID>"
 s3port=$MOTR_S3SERVER_PORT
 
 
-# s3server cmd parameters allowing to fake some clovis functionality
-# --fake_clovis_writeobj - stub for clovis write object with all zeros
-# --fake_clovis_readobj - stub for clovis read object with all zeros
-# --fake_clovis_createidx - stub for clovis create idx - does nothing
-# --fake_clovis_deleteidx - stub for clovis delete idx - does nothing
-# --fake_clovis_getkv - stub for clovis get key-value - read from memory hash map
-# --fake_clovis_putkv - stub for clovis put kye-value - stores in memory hash map
-# --fake_clovis_deletekv - stub for clovis delete key-value - deletes from memory hash map
+# s3server cmd parameters allowing to fake some motr functionality
+# --fake_motr_writeobj - stub for motr write object with all zeros
+# --fake_motr_readobj - stub for motr read object with all zeros
+# --fake_motr_createidx - stub for motr create idx - does nothing
+# --fake_motr_deleteidx - stub for motr delete idx - does nothing
+# --fake_motr_getkv - stub for motr get key-value - read from memory hash map
+# --fake_motr_putkv - stub for motr put kye-value - stores in memory hash map
+# --fake_motr_deletekv - stub for motr delete key-value - deletes from memory hash map
 # for proper KV mocking one should use following combination
-#    --fake_clovis_createidx true --fake_clovis_deleteidx true --fake_clovis_getkv true --fake_clovis_putkv true --fake_clovis_deletekv true
+#    --fake_motr_createidx true --fake_motr_deleteidx true --fake_motr_getkv true --fake_motr_putkv true --fake_motr_deletekv true
 
 
 pid_filename='/var/run/s3server.'$1'.pid'

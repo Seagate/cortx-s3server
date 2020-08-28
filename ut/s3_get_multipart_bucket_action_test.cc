@@ -121,7 +121,7 @@ class S3GetMultipartBucketActionTest : public testing::Test {
         .WillRepeatedly(ReturnRef(bucket_name));
     EXPECT_CALL(*request_mock, get_object_name())
         .WillRepeatedly(ReturnRef(object_name));
-    s3_motr_api_mock = std::make_shared<MockS3Clovis>();
+    s3_motr_api_mock = std::make_shared<MockS3Motr>();
 
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(request_mock);
@@ -139,7 +139,7 @@ class S3GetMultipartBucketActionTest : public testing::Test {
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
-  std::shared_ptr<MockS3Clovis> s3_motr_api_mock;
+  std::shared_ptr<MockS3Motr> s3_motr_api_mock;
 
   struct m0_uint128 object_list_indx_oid;
   std::map<std::string, std::pair<int, std::string>> result_keys_values;

@@ -45,7 +45,7 @@
 class MockS3BucketMetadataFactory : public S3BucketMetadataFactory {
  public:
   MockS3BucketMetadataFactory(std::shared_ptr<S3RequestObject> req,
-                              std::shared_ptr<MockS3Clovis> s3_motr_mock_ptr =
+                              std::shared_ptr<MockS3Motr> s3_motr_mock_ptr =
                                   nullptr)
       : S3BucketMetadataFactory() {
     //  We create object here since we want to set some expectations
@@ -66,7 +66,7 @@ class MockS3BucketMetadataFactory : public S3BucketMetadataFactory {
 class MockS3ObjectMetadataFactory : public S3ObjectMetadataFactory {
  public:
   MockS3ObjectMetadataFactory(std::shared_ptr<S3RequestObject> req,
-                              std::shared_ptr<MockS3Clovis> s3_motr_mock_ptr =
+                              std::shared_ptr<MockS3Motr> s3_motr_mock_ptr =
                                   nullptr)
       : S3ObjectMetadataFactory() {
     mock_object_metadata =
@@ -117,7 +117,7 @@ class MockS3ObjectMultipartMetadataFactory
  public:
   MockS3ObjectMultipartMetadataFactory(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<MockS3Clovis> s3_motr_mock_ptr, std::string upload_id)
+      std::shared_ptr<MockS3Motr> s3_motr_mock_ptr, std::string upload_id)
       : S3ObjectMultipartMetadataFactory() {
     //  We create object here since we want to set some expectations
     // Before create_bucket_metadata_obj() is called
@@ -143,7 +143,7 @@ class MockS3ObjectMultipartMetadataFactory
 class MockS3MotrWriterFactory : public S3MotrWriterFactory {
  public:
   MockS3MotrWriterFactory(std::shared_ptr<RequestObject> req, m0_uint128 oid,
-                          std::shared_ptr<MockS3Clovis> ptr_mock_s3_motr_api =
+                          std::shared_ptr<MockS3Motr> ptr_mock_s3_motr_api =
                               nullptr)
       : S3MotrWriterFactory() {
     mock_motr_writer =
@@ -151,7 +151,7 @@ class MockS3MotrWriterFactory : public S3MotrWriterFactory {
   }
 
   MockS3MotrWriterFactory(std::shared_ptr<RequestObject> req,
-                          std::shared_ptr<MockS3Clovis> ptr_mock_s3_motr_api)
+                          std::shared_ptr<MockS3Motr> ptr_mock_s3_motr_api)
       : S3MotrWriterFactory() {
     mock_motr_writer =
         std::make_shared<MockS3MotrWiter>(req, ptr_mock_s3_motr_api);
@@ -180,7 +180,7 @@ class MockS3MotrReaderFactory : public S3MotrReaderFactory {
  public:
   MockS3MotrReaderFactory(std::shared_ptr<RequestObject> req, m0_uint128 oid,
                           int layout_id,
-                          std::shared_ptr<MockS3Clovis> s3_motr_mock_apis =
+                          std::shared_ptr<MockS3Motr> s3_motr_mock_apis =
                               nullptr)
       : S3MotrReaderFactory() {
     mock_motr_reader = std::make_shared<MockS3MotrReader>(req, oid, layout_id,
@@ -199,7 +199,7 @@ class MockS3MotrReaderFactory : public S3MotrReaderFactory {
 class MockS3MotrKVSReaderFactory : public S3MotrKVSReaderFactory {
  public:
   MockS3MotrKVSReaderFactory(std::shared_ptr<RequestObject> req,
-                             std::shared_ptr<MockS3Clovis> s3_motr_mock_api)
+                             std::shared_ptr<MockS3Motr> s3_motr_mock_api)
       : S3MotrKVSReaderFactory() {
     mock_motr_kvs_reader =
         std::make_shared<MockS3MotrKVSReader>(req, s3_motr_mock_api);
@@ -217,8 +217,7 @@ class MockS3MotrKVSReaderFactory : public S3MotrKVSReaderFactory {
 class MockS3MotrKVSWriterFactory : public S3MotrKVSWriterFactory {
  public:
   MockS3MotrKVSWriterFactory(std::shared_ptr<RequestObject> req,
-                             std::shared_ptr<MockS3Clovis> s3_motr_api =
-                                 nullptr)
+                             std::shared_ptr<MockS3Motr> s3_motr_api = nullptr)
       : S3MotrKVSWriterFactory() {
     mock_motr_kvs_writer =
         std::make_shared<MockS3MotrKVSWriter>(req, s3_motr_api);

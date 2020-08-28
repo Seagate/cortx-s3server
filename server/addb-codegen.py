@@ -246,7 +246,7 @@ enum S3AddbActionTypeId {
 
   /* ID of ADDB entry which keeps a link between s3 request and motr op
    * request. */
-  S3_ADDB_REQUEST_TO_CLOVIS_ID,
+  S3_ADDB_REQUEST_TO_MOTR_ID,
 
   /* Action classes identifiers: */
   S3_ADDB_FIRST_REQUEST_ID,

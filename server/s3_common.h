@@ -42,9 +42,9 @@
 
 #define ACCOUNT_USER_INDEX_NAME "ACCOUNTUSERINDEX"
 
-// We reserve 255 oids after M0_CLOVIS_ID_APP for S3 servers internal use.
+// We reserve 255 oids after M0_ID_APP for S3 servers internal use.
 #define S3_OID_RESERVED_COUNT 255
-// First OID after M0_CLOVIS_ID_APP is reserved for S3 root AccountUserIndex.
+// First OID after M0_ID_APP is reserved for S3 root AccountUserIndex.
 // see s3_user_account_index_metadata.h/cc
 #define S3_ROOT_ACC_USER_IDX_OFFSET 1
 
@@ -308,7 +308,11 @@ enum class S3AsyncOpStatus {
 
 enum class S3IOOpStatus { saved, failed };
 
-enum class S3ClovisEntityType { realm, object, index };
+enum class S3MotrEntityType {
+  realm,
+  object,
+  index
+};
 
 // returns 'true' if numeric value of string 'x' is less than that of 'y'
 struct S3NumStrComparator {
@@ -317,13 +321,13 @@ struct S3NumStrComparator {
   }
 };
 
-inline std::string motr_entity_type_to_string(S3ClovisEntityType type) {
+inline std::string motr_entity_type_to_string(S3MotrEntityType type) {
   switch (type) {
-    case S3ClovisEntityType::realm:
+    case S3MotrEntityType::realm:
       return "realm";
-    case S3ClovisEntityType::object:
+    case S3MotrEntityType::object:
       return "object";
-    case S3ClovisEntityType::index:
+    case S3MotrEntityType::index:
       return "index";
     default:
       return "Unknown entity type";
