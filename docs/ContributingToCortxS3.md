@@ -79,7 +79,7 @@ Once you've installed the prerequisites, follow these steps to set up Git on you
 2. Set up git config options using:
 
    ```shell
-   
+ 
    $ git config --global user.name ‘Your Name’
    $ git config --global user.email ‘Your.Name@seagate.com’
    $ git config --global color.ui auto
@@ -143,6 +143,7 @@ You can make changes to the code and save them in your files.
 
 ### 1.3.3 Create a Pull Request 
 
+
 1. Once you Push changes to GitHub, the output will display a URL for creating a Pull Request, as shown in the sample code above.
 2. You'll be redirected to GitHib remote. 
 3. Select **main** from the Branches/Tags drop-down list.
@@ -171,8 +172,9 @@ $ git submodule update --init --recursive
 $ git rebase origin/master
 ```
 
+To resolve conflicts, follow the troubleshooting steps mentioned in git error messages. Reach out to our [SUPPORT](SUPPORT.md) team, if you have any questions or need further clarifications.
+
 ## All set & You're Awesome!
 
 Let's make storage better, efficient, and accessible. Join us in our goal to reinvent a data-driven world, and contribute to CORTX Open Source initiative. 
-Reach out to our [SUPPORT](SUPPORT.md) team, if you have any questions or need further clarifications.
 CORTX Open Source team welcomes you! :relaxed:
