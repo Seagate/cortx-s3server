@@ -56,7 +56,7 @@ int shutdown_motr_teardown_called;
 std::set<struct s3_motr_op_context *> global_motr_object_ops_list;
 std::set<struct s3_motr_idx_op_context *> global_motr_idx_ops_list;
 std::set<struct s3_motr_idx_context *> global_motr_idx;
-std::set<struct s3_clovis_motr_context *> global_motr_obj;
+std::set<struct s3_motr_motr_context *> global_motr_obj;
 
 static void _init_log() {
   s3log_level = S3_LOG_DEBUG;

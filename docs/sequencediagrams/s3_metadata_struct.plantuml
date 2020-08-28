@@ -30,7 +30,7 @@ class GlobalS3ServiceInstanceListIndex {
 }
 
 class S3ServiceInstanceEntry {
-    process_fid : ClovisProcessFid
+    process_fid : MotrProcessFid
     ' Lifecycle counter: Created on service startup or
     ' refresh service on unrecoverable failures - equal to fresh start
     instance_uuid : UUID

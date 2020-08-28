@@ -109,8 +109,8 @@ cp -R third_party/libevent/s3_dist/lib/* $S3_INSTALL_LOCATION/libevent/
 # Copy the s3 server
 cp bazel-bin/s3server $S3_INSTALL_LOCATION/bin/
 
-# Copy cloviskvscli tool
-cp bazel-bin/cloviskvscli $S3_INSTALL_LOCATION/bin/
+# Copy motrkvscli tool
+cp bazel-bin/motrkvscli $S3_INSTALL_LOCATION/bin/
 
 # Copy addb plugin
 cp bazel-bin/libs3addbplugin.so $S3_INSTALL_LOCATION/addb-plugin/
@@ -128,7 +128,7 @@ fi
 # Copy the S3 Audit Log Config file
 cp s3server_audit_log.properties $S3_CONFIG_FILE_LOCATION
 
-# Copy the S3 Clovis layout mapping file for different object sizes
+# Copy the S3 Motr layout mapping file for different object sizes
 cp s3_obj_layout_mapping.yaml $S3_CONFIG_FILE_LOCATION
 
 # Copy the S3 Stats allowlist file

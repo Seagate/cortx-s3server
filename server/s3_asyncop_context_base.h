@@ -43,7 +43,7 @@ class S3AsyncOpResponse {
 
   S3AsyncOpStatus status;
   std::string error_message;
-  int error_code;  // this is same as Motr/Clovis errors
+  int error_code;  // this is same as Motr/Motr errors
 };
 
 class S3AsyncOpContextBase {
@@ -105,7 +105,7 @@ class S3AsyncOpContextBase {
   // Call the logging always on main thread, so we dont need synchronisation of
   // log file.
   void log_timer();
-  std::shared_ptr<MotrAPI> get_clovis_api();
+  std::shared_ptr<MotrAPI> get_motr_api();
   // Google tests
   FRIEND_TEST(S3MotrReadWriteCommonTest, MotrOpDoneOnMainThreadOnSuccess);
   FRIEND_TEST(S3MotrReadWriteCommonTest, S3MotrOpStable);

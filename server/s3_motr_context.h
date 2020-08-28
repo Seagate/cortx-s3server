@@ -32,22 +32,22 @@ EXTERN_C_BLOCK_BEGIN
 #include "motr/init.h"
 #include "module/instance.h"
 
-#include "clovis/clovis.h"
+#include "motr/client.h"
 
 EXTERN_C_BLOCK_END
 
 #include "s3_memory_pool.h"
 
 struct s3_motr_obj_context {
-  struct m0_clovis_obj *objs;
+  struct m0_obj *objs;
   size_t n_initialized_contexts;
   size_t obj_count;
 };
 
 // To create a basic motr operation
 struct s3_motr_op_context {
-  struct m0_clovis_op **ops;
-  struct m0_clovis_op_ops *cbs;
+  struct m0_op **ops;
+  struct m0_op_ops *cbs;
   size_t op_count;
 };
 
@@ -60,15 +60,15 @@ struct s3_motr_rw_op_context {
 };
 
 struct s3_motr_idx_context {
-  struct m0_clovis_idx *idx;
+  struct m0_idx *idx;
   size_t n_initialized_contexts;
   size_t idx_count;
 };
 
 struct s3_motr_idx_op_context {
-  struct m0_clovis_op **ops;
-  struct m0_clovis_op *sync_op;
-  struct m0_clovis_op_ops *cbs;
+  struct m0_op **ops;
+  struct m0_op *sync_op;
+  struct m0_op_ops *cbs;
   size_t op_count;
 };
 

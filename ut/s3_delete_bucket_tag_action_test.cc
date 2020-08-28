@@ -41,7 +41,7 @@ class S3DeleteBucketTaggingActionTest : public testing::Test {
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
     EXPECT_CALL(*request_mock, get_bucket_name())
         .WillRepeatedly(ReturnRef(bucket_name));
-    ptr_mock_s3_motr_api = std::make_shared<MockS3Clovis>();
+    ptr_mock_s3_motr_api = std::make_shared<MockS3Motr>();
     bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
         request_mock, ptr_mock_s3_motr_api);
     std::map<std::string, std::string> input_headers;
@@ -53,7 +53,7 @@ class S3DeleteBucketTaggingActionTest : public testing::Test {
   }
 
   std::shared_ptr<MockS3RequestObject> request_mock;
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3_motr_api;
+  std::shared_ptr<MockS3Motr> ptr_mock_s3_motr_api;
   std::shared_ptr<S3DeleteBucketTaggingAction> action_under_test_ptr;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   int call_count_one;

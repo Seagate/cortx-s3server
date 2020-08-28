@@ -43,7 +43,7 @@
 // The very first basic usage for ADDB is performance monitoring: s3 server
 // will track every API request, and create ADDB log entries when the request
 // goes through it's stages, and when it changes state, and also track which
-// Clovis operations it executes.
+// Motr operations it executes.
 
 // Initialize addb subsystem (see detailed comments in the implementation).
 // Depends on s3_log.

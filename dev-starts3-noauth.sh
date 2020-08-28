@@ -108,12 +108,12 @@ counter=1
 
 while [[ $counter -le $num_instances ]]
 do
-  clovis_local_port=`expr 100 + $counter`
+  motr_local_port=`expr 100 + $counter`
   s3port=`expr 8080 + $counter`
   pid_filename='/var/run/s3server.'$s3port'.pid'
   echo "Starting S3Server in authentication disabled mode.."
   s3server --s3pidfile $pid_filename \
-           --motrlocal $local_ep:${clovis_local_port} --motrha $ha_ep \
+           --motrlocal $local_ep:${motr_local_port} --motrha $ha_ep \
            --s3port $s3port --fault_injection true --disable_auth true
   ((counter++))
 done

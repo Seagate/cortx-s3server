@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_CLOVIS_HELPERS_H__
-#define __S3_SERVER_CLOVIS_HELPERS_H__
+#ifndef __S3_SERVER_MOTR_HELPERS_H__
+#define __S3_SERVER_MOTR_HELPERS_H__
 
 #ifdef __cplusplus
 #define EXTERN_C_BLOCK_BEGIN extern "C" {
@@ -44,8 +44,8 @@ EXTERN_C_BLOCK_BEGIN
 #include <math.h>
 #include <sys/stat.h>
 
-#include "clovis/clovis.h"
-#include "clovis/clovis_idx.h"
+#include "motr/client.h"
+#include "motr/idx.h"
 #include "helpers/helpers.h"
 
 /* For htonl */
@@ -56,7 +56,7 @@ EXTERN_C_BLOCK_END
 int init_motr(void);
 void fini_motr(void);
 int create_new_instance_id(struct m0_uint128 *ufid);
-void teardown_motr_op(struct m0_clovis_op *op);
-void teardown_motr_wait_op(struct m0_clovis_op *op);
+void teardown_motr_op(struct m0_op *op);
+void teardown_motr_wait_op(struct m0_op *op);
 void global_motr_teardown();
 #endif

@@ -57,7 +57,7 @@ class MotrHeadIndexActionTest : public testing::Test {
     input_headers["Authorization"] = "1";
     EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
         ReturnRef(input_headers));
-    ptr_mock_s3_motr_api = std::make_shared<MockS3Clovis>();
+    ptr_mock_s3_motr_api = std::make_shared<MockS3Motr>();
     // Owned and deleted by shared_ptr in MotrHeadIndexAction
     mock_motr_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
         ptr_mock_request, ptr_mock_s3_motr_api);
@@ -67,7 +67,7 @@ class MotrHeadIndexActionTest : public testing::Test {
   }
 
   std::shared_ptr<MockMotrRequestObject> ptr_mock_request;
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3_motr_api;
+  std::shared_ptr<MockS3Motr> ptr_mock_s3_motr_api;
   std::shared_ptr<MockS3MotrKVSReaderFactory> mock_motr_kvs_reader_factory;
   std::shared_ptr<MotrHeadIndexAction> action_under_test;
 

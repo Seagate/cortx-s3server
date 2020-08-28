@@ -85,9 +85,9 @@ int main(int argc, char **argv) {
   size_t libevent_pool_buffer_size =
       g_option_instance->get_libevent_pool_buffer_size();
 
-  int clovis_read_mempool_flags = CREATE_ALIGNED_MEMORY;
+  int motr_read_mempool_flags = CREATE_ALIGNED_MEMORY;
   if (g_option_instance->get_motr_read_mempool_zeroed_buffer()) {
-    clovis_read_mempool_flags = clovis_read_mempool_flags | ZEROED_BUFFER;
+    motr_read_mempool_flags = motr_read_mempool_flags | ZEROED_BUFFER;
   }
 
   int libevent_mempool_flags = CREATE_ALIGNED_MEMORY;
@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
       g_option_instance->get_motr_unit_sizes_for_mem_pool(),
       g_option_instance->get_motr_read_pool_initial_buffer_count(),
       g_option_instance->get_motr_read_pool_expandable_count(),
-      clovis_read_mempool_flags);
+      motr_read_mempool_flags);
 
   rc = RUN_ALL_TESTS();
 

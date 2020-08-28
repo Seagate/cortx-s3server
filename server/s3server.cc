@@ -73,7 +73,7 @@
 S3Option *g_option_instance = NULL;
 evhtp_ssl_ctx_t *g_ssl_auth_ctx = NULL;
 evbase_t *global_evbase_handle;
-extern struct m0_clovis_realm motr_uber_realm;
+extern struct m0_realm motr_uber_realm;
 // index will have bucket and account information
 struct m0_uint128 global_bucket_list_index_oid;
 // replica index of global_bucket_list_index_oid
@@ -473,8 +473,8 @@ void init_s3_index_oid(struct m0_uint128 &global_index_oid,
                        const uint64_t &u_lo_index_offset) {
   struct m0_uint128 temp = {0ULL, 0ULL};
   temp.u_lo = u_lo_index_offset;
-  // reserving an oid for global index -- M0_CLOVIS_ID_APP + u_lo_index_offset
-  m0_uint128_add(&global_index_oid, &M0_CLOVIS_ID_APP, &temp);
+  // reserving an oid for global index -- M0_ID_APP + u_lo_index_offset
+  m0_uint128_add(&global_index_oid, &M0_ID_APP, &temp);
   struct m0_fid index_fid =
       M0_FID_TINIT('x', global_index_oid.u_hi, global_index_oid.u_lo);
   global_index_oid.u_hi = index_fid.f_container;
@@ -537,43 +537,41 @@ void fini_auth_ssl() {
 int create_global_index(struct m0_uint128 &root_index_oid,
                         const uint64_t &u_lo_index_offset) {
   int rc;
-  struct m0_clovis_op *ops[1] = {NULL};
-  struct m0_clovis_op *sync_op = NULL;
-  struct m0_clovis_idx idx;
+  struct m0_op *ops[1] = {NULL};
+  struct m0_op *sync_op = NULL;
+  struct m0_idx idx;
   unsigned short motr_op_wait_period =
       g_option_instance->get_motr_op_wait_period();
 
   memset(&idx, 0, sizeof(idx));
   ops[0] = NULL;
-  // reserving an oid for root index -- M0_CLOVIS_ID_APP + offset
+  // reserving an oid for root index -- M0_ID_APP + offset
   init_s3_index_oid(root_index_oid, u_lo_index_offset);
-  m0_clovis_idx_init(&idx, &motr_uber_realm, &root_index_oid);
-  m0_clovis_entity_create(NULL, &idx.in_entity, &ops[0]);
-  m0_clovis_op_launch(ops, 1);
+  m0_idx_init(&idx, &motr_uber_realm, &root_index_oid);
+  m0_entity_create(NULL, &idx.in_entity, &ops[0]);
+  m0_op_launch(ops, 1);
 
-  rc = m0_clovis_op_wait(ops[0],
-                         M0_BITS(M0_CLOVIS_OS_FAILED, M0_CLOVIS_OS_STABLE),
-                         m0_time_from_now(motr_op_wait_period, 0));
-  rc = (rc < 0) ? rc : m0_clovis_rc(ops[0]);
+  rc = m0_op_wait(ops[0], M0_BITS(M0_OS_FAILED, M0_OS_STABLE),
+                  m0_time_from_now(motr_op_wait_period, 0));
+  rc = (rc < 0) ? rc : m0_rc(ops[0]);
   if (rc < 0) {
     if (rc != -EEXIST) {
       goto FAIL;
     }
   }
   if (rc != -EEXIST) {
-    rc = m0_clovis_sync_op_init(&sync_op);
+    rc = m0_sync_op_init(&sync_op);
     if (rc != 0) {
       goto FAIL;
     }
 
-    rc = m0_clovis_sync_entity_add(sync_op, &idx.in_entity);
+    rc = m0_sync_entity_add(sync_op, &idx.in_entity);
     if (rc != 0) {
       goto FAIL;
     }
-    m0_clovis_op_launch(&sync_op, 1);
-    rc = m0_clovis_op_wait(sync_op,
-                           M0_BITS(M0_CLOVIS_OS_FAILED, M0_CLOVIS_OS_STABLE),
-                           m0_time_from_now(motr_op_wait_period, 0));
+    m0_op_launch(&sync_op, 1);
+    rc = m0_op_wait(sync_op, M0_BITS(M0_OS_FAILED, M0_OS_STABLE),
+                    m0_time_from_now(motr_op_wait_period, 0));
     if (rc < 0) {
       goto FAIL;
     }
@@ -586,7 +584,7 @@ int create_global_index(struct m0_uint128 &root_index_oid,
   }
 
   if (idx.in_entity.en_sm.sm_state != 0) {
-    m0_clovis_idx_fini(&idx);
+    m0_idx_fini(&idx);
   }
 
   return 0;
@@ -598,8 +596,8 @@ FAIL:
   if (sync_op != NULL) {
     teardown_motr_op(sync_op);
   }
-  s3_iem(LOG_ALERT, S3_IEM_CLOVIS_CONN_FAIL, S3_IEM_CLOVIS_CONN_FAIL_STR,
-         S3_IEM_CLOVIS_CONN_FAIL_JSON);
+  s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
+         S3_IEM_MOTR_CONN_FAIL_JSON);
   return rc;
 }
 
@@ -904,7 +902,7 @@ int main(int argc, char **argv) {
 
   log_resource_limits();
 
-  /* Initialise motr and Clovis */
+  /* Initialise motr and Motr */
   rc = init_motr();
   if (rc < 0) {
     s3daemon.delete_pidfile();
@@ -999,9 +997,9 @@ int main(int argc, char **argv) {
     s3_log(S3_LOG_FATAL, "", "Failed to create global instance index\n");
   }
 
-  extern struct m0_clovis_config motr_conf;
+  extern struct m0_config motr_conf;
 
-  std::string s3server_fid = motr_conf.cc_process_fid;
+  std::string s3server_fid = motr_conf.mc_process_fid;
   s3_log(S3_LOG_INFO, "", "Process Fid= %s \n", s3server_fid.c_str());
 
   rc = create_new_instance_id(&global_instance_id);

@@ -22,13 +22,13 @@
 #       eg: - total_request_count
 ############################################################
 # Timer metrics -- Its in milliseconds
-# Operations which involve clovis/motr, in that case the elapsed time is the time from when
-# clovis operation is launched till the time when clovis successful/failure callback is called
+# Operations which involve motr, in that case the elapsed time is the time from when
+# motr operation is launched till the time when motr successful/failure callback is called
 # Time from the arrival of request to s3server till response send to client
 - total_request_time
 # Time to convert from uri string to oid
 - uri_to_motr_oid
-- copy_to_clovis_buf
+- copy_to_motr_buf
 # buffering time till someone starts listening.
 - total_buffering_time
 # Successful object creation time before actual write
@@ -64,18 +64,18 @@
 - delete_keyval_success
 # Time taken for failed delete key value
 - delete_keyval_failed
-# Time taken for deleting single object from clovis
-- delete_object_from_clovis_success
+# Time taken for deleting single object from motr
+- delete_object_from_motr_success
 # Time taken in case if single object deletion fails
-- delete_object_from_clovis_failed
-# Time taken for sucessfully deleting objects from clovis (depends on number of objects to be deleted)
-- delete_objects_from_clovis_success
+- delete_object_from_motr_failed
+# Time taken for sucessfully deleting objects from motr (depends on number of objects to be deleted)
+- delete_objects_from_motr_success
 # Time taken in case if objects deletion fails
-- delete_objects_from_clovis_failed
-# Time taken for sucessful write data to clovis (depends on size of data written)
-- write_to_clovis_op_success
-# Time taken in case if write data to clovis fails
-- write_to_clovis_op_failed
+- delete_objects_from_motr_failed
+# Time taken for sucessful write data to motr (depends on size of data written)
+- write_to_motr_op_success
+# Time taken in case if write data to motr fails
+- write_to_motr_op_failed
 # Time taken for sucessful read data (depends on number of blocks to be read)
 - read_object_data_success
 # Time taken in case of read data failure
@@ -136,7 +136,7 @@
 - sync_index_op_success_count
 - sync_keyval_op_success_count
 - read_object_data_success_count
-- write_to_clovis_op_success_count
+- write_to_motr_op_success_count
 # PUT/GET callbacks from libevhtp
 - incoming_object_data_blocks_count
 - outgoing_object_data_blocks_count

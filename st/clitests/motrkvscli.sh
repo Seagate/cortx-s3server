@@ -28,6 +28,6 @@ error_handler() {
 trap error_handler ERR
 set -e
 
-/opt/seagate/cortx/s3/bin/cloviskvscli $*
+/opt/seagate/cortx/s3/bin/motrkvscli $*
 
 rm -f m0trace*

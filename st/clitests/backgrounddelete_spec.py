@@ -175,14 +175,14 @@ object1_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
 
 # ********** Delete objects with fault injection enabled*******
-S3fiTest('Enable FI clovis entity delete fail')\
-   .enable_fi("enable", "always", "clovis_entity_delete_fail")\
+S3fiTest('Enable FI motr entity delete fail')\
+   .enable_fi("enable", "always", "motr_entity_delete_fail")\
    .execute_test().command_is_successful()
 
 AwsTest('Delete Object "object1" from bucket "seagatebucket"')\
    .delete_object("seagatebucket", "object1").execute_test().command_is_successful()
 
-S3fiTest('Disable FI clovis entity delete').disable_fi("clovis_entity_delete_fail")\
+S3fiTest('Disable FI motr entity delete').disable_fi("motr_entity_delete_fail")\
    .execute_test().command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
@@ -218,12 +218,12 @@ Scenario: New object oid leak test(PUT api test)
     7. verify cleanup of Object using aws s3api head-object api
 """
 # *********** Upload Object in bucket*************************
-S3fiTest('Enable FI clovis object write fail')\
-   .enable_fi("enable", "always", "clovis_obj_write_fail").execute_test()\
+S3fiTest('Enable FI motr object write fail')\
+   .enable_fi("enable", "always", "motr_obj_write_fail").execute_test()\
    .command_is_successful()
 
-S3fiTest('Enable FI clovis entity delete fail')\
-   .enable_fi("enable", "always", "clovis_entity_delete_fail").execute_test()\
+S3fiTest('Enable FI motr entity delete fail')\
+   .enable_fi("enable", "always", "motr_entity_delete_fail").execute_test()\
    .command_is_successful()
 
 result = AwsTest('Upload Object "object2" to bucket "seagatebucket"')\
@@ -231,10 +231,10 @@ result = AwsTest('Upload Object "object2" to bucket "seagatebucket"')\
     .execute_test(ignore_err=True, negative_case=True)\
     .command_should_fail().command_error_should_have("InternalError")
 
-S3fiTest('Disable FI clovis obj write fail').disable_fi("clovis_obj_write_fail")\
+S3fiTest('Disable FI motr obj write fail').disable_fi("motr_obj_write_fail")\
    .execute_test().command_is_successful()
 
-S3fiTest('Disable FI clovis entity delete fail').disable_fi("clovis_entity_delete_fail")\
+S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fail")\
    .execute_test().command_is_successful()
 
 object2_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
@@ -283,11 +283,11 @@ time.sleep(1)
 object3_old_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
 # ********** Upload same object again in same bucket*************************
-S3fiTest('Enable FI clovis object write fail')\
-   .enable_fi("enable", "always", "clovis_obj_write_fail").execute_test()\
+S3fiTest('Enable FI motr object write fail')\
+   .enable_fi("enable", "always", "motr_obj_write_fail").execute_test()\
    .command_is_successful()
-S3fiTest('Enable FI clovis entity delete fail')\
-   .enable_fi("enable", "always", "clovis_entity_delete_fail")\
+S3fiTest('Enable FI motr entity delete fail')\
+   .enable_fi("enable", "always", "motr_entity_delete_fail")\
    .execute_test().command_is_successful()
 
 result = AwsTest('Upload Object "object3" to bucket "seagatebucket"')\
@@ -298,9 +298,9 @@ result = AwsTest('Upload Object "object3" to bucket "seagatebucket"')\
 # wait till cleanup process completes and s3server sends response to client
 time.sleep(1)
 
-S3fiTest('Disable FI clovis object write fail').disable_fi("clovis_obj_write_fail")\
+S3fiTest('Disable FI motr object write fail').disable_fi("motr_obj_write_fail")\
    .execute_test().command_is_successful()
-S3fiTest('Disable FI clovis entity delete fail').disable_fi("clovis_entity_delete_fail")\
+S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fail")\
    .execute_test().command_is_successful()
 
 object3_new_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
@@ -348,8 +348,8 @@ result = AwsTest('Upload Object "object5" to bucket "seagatebucket"')\
 object5_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
 # ********** Delete objects with fault injection enabled*******
-S3fiTest('Enable FI clovis entity delete fail')\
-    .enable_fi("enable", "always", "clovis_entity_delete_fail")\
+S3fiTest('Enable FI motr entity delete fail')\
+    .enable_fi("enable", "always", "motr_entity_delete_fail")\
     .execute_test().command_is_successful()
 
 S3cmdTest('s3cmd can delete multiple objects "object4" and "object5"')\
@@ -359,8 +359,8 @@ S3cmdTest('s3cmd can delete multiple objects "object4" and "object5"')\
 # wait till cleanup process completes and s3server sends response to client
 time.sleep(1)
 
-S3fiTest('Disable FI clovis entity delete fail')\
-    .disable_fi("clovis_entity_delete_fail").execute_test()\
+S3fiTest('Disable FI motr entity delete fail')\
+    .disable_fi("motr_entity_delete_fail").execute_test()\
     .command_is_successful()
 
 # ************ Start Schedular*****************************
@@ -439,8 +439,8 @@ parts="Parts=[{ETag="+e_tag_1.strip('\n')+",PartNumber="+str(1)+"},\
 print(parts)
 
 #************** Complete multipart upload ********
-S3fiTest('Enable FI clovis entity delete fail')\
-    .enable_fi_offnonm("enable", "clovis_entity_delete_fail", "1", "99")\
+S3fiTest('Enable FI motr entity delete fail')\
+    .enable_fi_offnonm("enable", "motr_entity_delete_fail", "1", "99")\
     .execute_test().command_is_successful()
 
 result=AwsTest('Aws can complete multipart upload object6 10Mb file')\
@@ -451,7 +451,7 @@ result=AwsTest('Aws can complete multipart upload object6 10Mb file')\
 # wait till cleanup process completes and s3server sends response to client
 time.sleep(1)
 
-S3fiTest('Disable FI clovis entity delete fail').disable_fi("clovis_entity_delete_fail")\
+S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fail")\
     .execute_test().command_is_successful()
 
 # ************ Start Schedular*****************************
@@ -499,8 +499,8 @@ result=AwsTest('Aws can upload 5Mb first part')\
     .execute_test().command_is_successful()
 
 #************** Abort multipart upload ********
-S3fiTest('Enable FI clovis entity delete fail')\
-    .enable_fi_offnonm("enable", "clovis_entity_delete_fail", "1", "99")\
+S3fiTest('Enable FI motr entity delete fail')\
+    .enable_fi_offnonm("enable", "motr_entity_delete_fail", "1", "99")\
     .execute_test().command_is_successful()
 
 result=AwsTest('Aws can abort multipart upload object7 10Mb file')\
@@ -510,7 +510,7 @@ result=AwsTest('Aws can abort multipart upload object7 10Mb file')\
 # wait till cleanup process completes and s3server sends response to client
 time.sleep(1)
 
-S3fiTest('Disable FI clovis entity delete fail').disable_fi("clovis_entity_delete_fail")\
+S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fail")\
     .execute_test().command_is_successful()
 
 # ************ Start Schedular*****************************
@@ -537,7 +537,7 @@ Scenario: Abort multipart upload after deleting multipart metadata to create lea
 Along with object leak, Background delete should take care of deleting the leaked part index.
     1. create multipart upload and get oid, layout_id from response
     2. upload first part
-    3. enable fault point "clovis_idx_delete_fail" to leak part index
+    3. enable fault point "motr_idx_delete_fail" to leak part index
     4. abort multipart upload
     5. Read and save probable delete record for multipart oid
     6. disable fault point
@@ -567,7 +567,7 @@ result=AwsTest('Aws can upload 5Mb first part')\
 e_tag_1 = result.status.stdout
 
 # Enable fault point. Force failure in part list index deletion
-S3fiTest('Enable FI clovis entity delete fail').enable_fi("enable", "always", "clovis_entity_delete_fail")\
+S3fiTest('Enable FI motr entity delete fail').enable_fi("enable", "always", "motr_entity_delete_fail")\
     .execute_test().command_is_successful()
 
 # Abort multipart upload
@@ -582,7 +582,7 @@ assert leak_info, "Failed. No probable delete index record"
 part_index = leak_info.get_part_index_oid()
 
 # Disable fault point
-S3fiTest('Disable FI clovis entity delete fail').disable_fi("clovis_entity_delete_fail")\
+S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fail")\
     .execute_test().command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client

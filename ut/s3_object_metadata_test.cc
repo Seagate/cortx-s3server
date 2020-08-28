@@ -60,7 +60,7 @@ class S3ObjectMetadataTest : public testing::Test {
     EXPECT_CALL(*ptr_mock_request, get_bucket_name())
         .WillRepeatedly(ReturnRef(bucket_name));
 
-    ptr_mock_s3_motr_api = std::make_shared<MockS3Clovis>();
+    ptr_mock_s3_motr_api = std::make_shared<MockS3Motr>();
     EXPECT_CALL(*ptr_mock_s3_motr_api, m0_h_ufid_next(_))
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
@@ -89,7 +89,7 @@ class S3ObjectMetadataTest : public testing::Test {
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3_motr_api;
+  std::shared_ptr<MockS3Motr> ptr_mock_s3_motr_api;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
   std::shared_ptr<MockS3MotrKVSWriterFactory> motr_kvs_writer_factory;
@@ -125,7 +125,7 @@ class S3MultipartObjectMetadataTest : public testing::Test {
     EXPECT_CALL(*ptr_mock_request, get_bucket_name())
         .WillRepeatedly(ReturnRef(bucket_name));
 
-    ptr_mock_s3_motr_api = std::make_shared<MockS3Clovis>();
+    ptr_mock_s3_motr_api = std::make_shared<MockS3Motr>();
 
     motr_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
         ptr_mock_request, ptr_mock_s3_motr_api);
@@ -149,7 +149,7 @@ class S3MultipartObjectMetadataTest : public testing::Test {
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3_motr_api;
+  std::shared_ptr<MockS3Motr> ptr_mock_s3_motr_api;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
   std::shared_ptr<MockS3MotrKVSWriterFactory> motr_kvs_writer_factory;
@@ -173,7 +173,7 @@ TEST_F(S3ObjectMetadataTest, ConstructorTest) {
   EXPECT_OID_EQ(object_list_index_oid,
                 metadata_obj_under_test_with_oid->object_list_index_oid);
   EXPECT_OID_EQ(zero_oid, metadata_obj_under_test->old_oid);
-  EXPECT_OID_EQ(M0_CLOVIS_ID_APP, metadata_obj_under_test->oid);
+  EXPECT_OID_EQ(M0_ID_APP, metadata_obj_under_test->oid);
   EXPECT_STREQ(
       "s3user",
       metadata_obj_under_test->system_defined_attribute["Owner-User"].c_str());
@@ -202,7 +202,7 @@ TEST_F(S3MultipartObjectMetadataTest, ConstructorTest) {
   EXPECT_OID_EQ(object_list_index_oid,
                 metadata_obj_under_test_with_oid->object_list_index_oid);
   EXPECT_OID_EQ(zero_oid, metadata_obj_under_test->old_oid);
-  EXPECT_OID_EQ(M0_CLOVIS_ID_APP, metadata_obj_under_test->oid);
+  EXPECT_OID_EQ(M0_ID_APP, metadata_obj_under_test->oid);
   EXPECT_STREQ(
       "s3user",
       metadata_obj_under_test->system_defined_attribute["Owner-User"].c_str());
