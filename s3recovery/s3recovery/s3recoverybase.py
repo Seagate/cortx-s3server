@@ -157,7 +157,6 @@ class S3RecoveryBase:
             bucket_metadata = json.loads(data_to_restore)
             # Missing epoch will be considered as corruption
             primary_epoch = bucket_metadata["create_timestamp"]
-            print(str(primary_epoch))
         except (KeyError, JSONDecodeError):
             p_corruption = True
 
@@ -165,7 +164,6 @@ class S3RecoveryBase:
             bucket_metadata_replica = json.loads(item_replica)
             # Missing epoch will be considered as corruption
             secondary_epoch = bucket_metadata_replica["create_timestamp"]
-            print(str(secondary_epoch))
         except (KeyError, JSONDecodeError):
             s_corruption = True
 
