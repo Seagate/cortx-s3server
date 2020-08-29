@@ -131,17 +131,21 @@ class S3RecoveryBase:
         if (data_to_restore is None):
             try:
                 bucket_metadata_replica = json.loads(item_replica)
-            except JSONDecodeError:
-                self.s3recovery_log("error", "Failed to parse JSON")
+                # Missing epoch will be considered as corruption
+                primary_epoch = bucket_metadata_replica["create_timestamp"]
+            except (KeyError, JSONDecodeError):
+                self.s3recovery_log("error", "Failed to parse JSON or timestamp missing")
                 return
             union_result[key] = item_replica
             return
 
         if (item_replica is None):
             try:
-                bucket_metadata_replica = json.loads(data_to_restore)
-            except JSONDecodeError:
-                self.s3recovery_log("error", "Failed to parse JSON")
+                bucket_metadata = json.loads(data_to_restore)
+                # Missing epoch will be considered as corruption
+                secondary_epoch = bucket_metadata["create_timestamp"]
+            except (KeyError, JSONDecodeError):
+                self.s3recovery_log("error", "Failed to parse JSON or timestamp missing")
                 return
             union_result[key] = data_to_restore
             return
@@ -151,12 +155,16 @@ class S3RecoveryBase:
 
         try:
             bucket_metadata = json.loads(data_to_restore)
-        except JSONDecodeError:
+            # Missing epoch will be considered as corruption
+            primary_epoch = bucket_metadata["create_timestamp"]
+        except (KeyError, JSONDecodeError):
             p_corruption = True
 
         try:
             bucket_metadata_replica = json.loads(item_replica)
-        except JSONDecodeError:
+            # Missing epoch will be considered as corruption
+            secondary_epoch = bucket_metadata_replica["create_timestamp"]
+        except (KeyError, JSONDecodeError):
             s_corruption = True
 
         if p_corruption and (not s_corruption):
@@ -165,8 +173,8 @@ class S3RecoveryBase:
             union_result[key] = data_to_restore
         elif (not p_corruption) and (not s_corruption):
             # Compare epoch here
-            bucket_metadata_date = dateutil.parser.parse(bucket_metadata["create_timestamp"])
-            bucket_metadata_replica_date = dateutil.parser.parse(bucket_metadata_replica["create_timestamp"])
+            bucket_metadata_date = dateutil.parser.parse(primary_epoch)
+            bucket_metadata_replica_date = dateutil.parser.parse(secondary_epoch)
 
             # Overwrite only if replica contains latest datetime
             if bucket_metadata_date < bucket_metadata_replica_date:
