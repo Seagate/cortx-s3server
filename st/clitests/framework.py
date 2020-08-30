@@ -27,6 +27,23 @@ from scripttest import TestFileEnvironment
 from ldap_setup import LdapSetup
 from cloud_setup import CloudGatewaySetup
 
+class LdapInfo(object):
+    ldap_info_prop = dict()
+    ldap_info_initialize = 0
+
+    def init():
+        if LdapInfo.ldap_info_initialize == 0:
+            ldap_info_file = os.path.join(os.path.dirname(__file__),'s3iamcli_test_config.yaml')
+            with open(ldap_info_file, 'r') as f:
+                ldap_info = yaml.safe_load(f)
+                LdapInfo.ldap_info_prop['ldap_admin'] = ldap_info['ldapuser']
+                LdapInfo.ldap_info_prop['ldap_admin_pwd'] = ldap_info['ldappasswd']
+        LdapInfo.ldap_info_initialize = 1
+
+    def get_ldap_admin_pwd():
+        LdapInfo.init()
+        return LdapInfo.ldap_info_prop['ldap_admin_pwd']
+
 class Config:
     log_enabled = False
     dummy_run = False

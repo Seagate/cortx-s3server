@@ -1,4 +1,3 @@
-#!/bin/bash
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -16,16 +15,8 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-#
-source ../../ansible/ldap.prop
 
-a=0
-while true
-do
-        ./check_ldap_replication.sh -s hostname.txt -p "$ldap_admin_pwd"
-        a=$(( $a + 1 ))
-        if [ $a -eq 500 ]
-        then
-                break
-        fi
-done
+# This is LDAP credential file used only for dev environment.
+
+ldap_root_pwd=seagate
+ldap_admin_pwd=Shemdo@17

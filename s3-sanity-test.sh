@@ -22,9 +22,12 @@
 set -e
 set -x
 
+
 #########################
 # S3 sanity test script #
 #########################
+
+source ansible/ldap.prop
 
 if command -v s3cmd >/dev/null 2>&1;then
     printf "\nCheck S3CMD...OK"
@@ -51,7 +54,7 @@ fi
 
 if [[ -z "$ldappasswd" ]]
 then
-    ldappasswd=ldapadmin
+    ldappasswd=$ldap_admin_pwd
 fi
 
 USAGE="USAGE: bash $(basename "$0") [--help]

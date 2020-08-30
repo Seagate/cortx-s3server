@@ -21,6 +21,7 @@
 
 import os
 from framework import Config
+from framework import LdapInfo
 from framework import S3PyCliTest
 from jcloud import JCloudTest
 from jclient import JClientTest
@@ -107,7 +108,7 @@ for i, val in enumerate(pathstyle_values):
     account_args['AccountName'] = 's3secondaccount'
     account_args['Email'] = 's3secondaccount@seagate.com'
     account_args['ldapuser'] = 'sgiamadmin'
-    account_args['ldappasswd'] = 'ldapadmin'
+    account_args['ldappasswd'] = LdapInfo.get_ldap_admin_pwd()
     test_msg = "Create account s3secondaccount"
     s3secondaccount_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
     auth_test = AuthTest(test_msg)

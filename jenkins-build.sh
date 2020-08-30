@@ -25,6 +25,7 @@ USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ]
                                     [--fake_obj] [--fake_kvs | --redis_kvs] [--basic_test_only]
                                     [--local_redis_restart]
                                     [--callgraph /path/to/output/file]
+                                    [--ldap_admin_pwd]
                                     [--help | -h]
 
 where:
@@ -45,6 +46,7 @@ where:
 --local_redis_restart	   In case redis server installed on local machine this option restarts redis-server
 --callgraph /path/to/output/file	   Generate valgrind call graph; Especially usefull
 		   together with --basic_test_only option
+--ldap_admin_pwd   LDAP admin password
 --help (-h)        Display help"
 
 use_http_client=0
@@ -60,6 +62,9 @@ redis_kvs=0
 basic_test_only=0
 callgraph_cmd=""
 local_redis_restart=0
+ldap_admin_pwd=
+
+source ./ansible/ldap.prop
 
 if [ $# -eq 0 ]
 then
@@ -131,6 +136,11 @@ else
                     fi
                     echo "Generate valgrind call graph with params $callgraph_cmd";
                     ;;
+       --ldap_admin_pwd ) shift;
+                          if [ ! -z "$1" ]; then
+                              ldap_admin_pwd=$1;
+                          fi
+                          ;;
       --local_redis_restart ) echo "redis-server will be restarted";
                               local_redis_restart=1;
                               ;;
@@ -270,7 +280,7 @@ $USE_SUDO ./m0t1fs/../motr/st/utils/motr_services.sh start
 cd $S3_BUILD_DIR
 
 # Ensure correct ldap credentials are present.
-./scripts/enc_ldap_passwd_in_cfg.sh -l ldapadmin \
+./scripts/enc_ldap_passwd_in_cfg.sh -l $ldap_admin_pwd \
           -p /opt/seagate/cortx/auth/resources/authserver.properties
 
 # Enable fault injection in AuthServer
