@@ -25,6 +25,7 @@ import shutil
 import re
 import json
 from framework import Config
+from framework import LdapInfo
 from framework import S3PyCliTest
 from s3client_config import S3ClientConfig
 from auth import AuthTest
@@ -55,7 +56,7 @@ before_all()
 Config.config_file = "pathstyle.s3cfg"
 S3ClientConfig.pathstyle = False
 S3ClientConfig.ldapuser = 'sgiamadmin'
-S3ClientConfig.ldappasswd = 'ldapadmin'
+S3ClientConfig.ldappasswd = LdapInfo.get_ldap_admin_pwd()
 
 # Config files used by scheduler and processor
 origional_bgdelete_config_file = os.path.join(os.path.dirname(__file__), 's3_background_delete_config_test.yaml')

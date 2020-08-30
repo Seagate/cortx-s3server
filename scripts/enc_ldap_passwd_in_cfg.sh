@@ -96,6 +96,8 @@ if [ "$change_ldap_passwd" = true ] ; then
     # Setup iam admin and necessary permissions
     ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $ROOTDNPASSWORD -f $ADMIN_USERS_FILE
     rm -f $ADMIN_USERS_FILE
+    # Update common ldap credential file
+    sed -i "/ldap_root_pwd=/c\ldap_root_pwd="$ROOTDNPASSWORD""../ansible/ldap.prop
     echo -e "\n OpenLdap password Updated Successfully,You need to Restart Slapd"
 fi
 

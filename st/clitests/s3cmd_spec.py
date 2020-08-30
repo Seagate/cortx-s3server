@@ -20,6 +20,7 @@
 
 
 from framework import Config
+from framework import LdapInfo
 from framework import S3PyCliTest
 from s3cmd import S3cmdTest
 from s3fi import S3fiTest
@@ -90,7 +91,7 @@ account_args = {}
 account_args['AccountName'] = 's3secondaccount'
 account_args['Email'] = 's3secondaccount@seagate.com'
 account_args['ldapuser'] = 'sgiamadmin'
-account_args['ldappasswd'] = 'ldapadmin'
+account_args['ldappasswd'] = LdapInfo.get_ldap_admin_pwd()
 
 test_msg = "Create account s3secondaccount"
 account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
@@ -643,7 +644,7 @@ account_args = {}
 account_args['AccountName'] = 's3secondaccount'
 account_args['Email'] = 's3secondaccount@seagate.com'
 account_args['ldapuser'] = 'sgiamadmin'
-account_args['ldappasswd'] = 'ldapadmin'
+account_args['ldappasswd'] = LdapInfo.get_ldap_admin_pwd()
 
 result = AuthTest('Create account s3secondaccount').create_account(**account_args).execute_test()
 account_response_elements = get_response_elements(result.status.stdout)

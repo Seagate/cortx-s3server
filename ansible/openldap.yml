@@ -210,6 +210,29 @@
           state: restarted
           enabled: yes
 
+      - name: Create ldap.prop file
+        copy:
+          src: ./t_ldap.prop
+          dest: ./ldap.prop
+          force: yes
+        tags: store_ldap_pwd
+
+      - name: Persist ldap rootDN password
+        replace:
+          path: ./ldap.prop
+          regexp: '^{{item.key}}.*$'
+          replace: "{{item.key}}={{ openldappasswd }}"
+        tags: store_ldap_pwd
+        with_dict: {ldap_root_pwd: }
+
+      - name: Persist ldap admin password
+        replace:
+          path: ./ldap.prop
+          regexp: '^{{item.key}}.*$'
+          replace: "{{item.key}}={{ ldapiamadminpasswd }}"
+        tags: store_ldap_pwd
+        with_dict: {ldap_admin_pwd: }
+
   # handlers:
   #     - name: restart ntpd
   #       service:
