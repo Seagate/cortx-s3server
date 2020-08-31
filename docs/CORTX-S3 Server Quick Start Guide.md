@@ -2,11 +2,11 @@
 This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-ready.
 
 - [1.0 Prerequisites](#10-prerequisites)
-- [1.1 Clone the CORTX-S3 Server Repository](#1.1-clone-the-cortx-s3-server-repository)
-- [1.2 Installing dependencies](#1.2-installing-dependencies)
-- [1.3 Code Compilation and Unit Test](#1.3-code-compilation-and-unit-test)
-- [1.4 Test your Build using S3-CLI](#1.4-test-your-build-using-s3-cli)
-- [1.5 Test a specific MOTR Version using CORX-S3 Server](#1.5-test-a-specific-motr-version-using-corx-s3-server)
+- [1.1 Clone the CORTX-S3 Server Repository](#1.1-Clone-the-CORTX-S3-Server-Repository)
+- [1.2 Installing dependencies](#1.2-Installing-Dependencies)
+- [1.3 Code Compilation and Unit Test](#1.3-Code-Compilation-and-Unit-Test)
+- [1.4 Test your Build using S3-CLI](#1.4-Test-your-Build-using-S3-CLI)
+- [1.5 Test a specific MOTR Version using CORX-S3 Server](#1.5-Test-a-Specific-MOTR-Version-using-CORX-S3-Server)
 - [1.6 Build S3 RPMs](#1.6-Build-S3-RPMs)
 
 ### 1.0 Prerequisites
@@ -16,7 +16,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
 <p>
 
 1. You'll need to set up SSC, Cloud VM, or a local VM on VMWare Fusion or Oracle VirtualBox. To know more, refer to the [LocalVMSetup](https://github.com/Seagate/cortx/blob/main/doc/LocalVMSetup.md) section.
-2. Our CORTX Contributors will refer, clone, contribute, and commit changes via the GitHub server. You can access the latest code via [Github](https://github.com/Seagate/cortx).
+2. As a CORTX contributor you will need to refer, clone, contribute, and commit changes via the GitHub server. You can access the latest code via [Github](https://github.com/Seagate/cortx).
 3. You'll need a valid GitHub Account.
 4. Before you clone your Git repository, you'll need to create the following:
     1. Follow the link to generate the [SSH Public Key](https://git-scm.com/book/en/v2/Git-on-the-Server-Generating-Your-SSH-Public-Key).
@@ -24,12 +24,12 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
     3. When you clone your Github repository, you'll be prompted to enter your GitHub Username and Password. Refer to the article to [Generate Personal Access Token or PAT](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). Once you generate your Personal Access Token, enable SSO.
     4. Copy your newly generated [PAT](https://github.com/settings/tokens) and enter it when prompted.
 
-    :page_with_curl: **Note:** From this point onwards, you'll need to execute all steps logged in as a **Root User**.
+       :page_with_curl: **Note:** From this point onwards, you'll need to execute all steps logged in as a **Root User**.
 
 5. We've assumed that `git` is preinstalled. If not then follow these steps to install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
    * To check your Git Version, use the command: `$ git --version`.
 
-    :page_with_curl:**Note: We recommended that you install Git Version 2.x.x.**
+     :page_with_curl:**Note: We recommended that you install Git Version 2.x.x.**
 
 6. Ensure that you've installed the following packages on your VM instance:
 
@@ -85,7 +85,7 @@ $ cd cortx-s3server
 $ git submodule update --init --recursive && git status
 ```
 
-### 1.2 Installing dependencies
+### 1.2 Installing Dependencies
 
 <details>
 <summary>Before you begin</summary>
@@ -256,7 +256,7 @@ Run the following test cases to check if your AWS S3 Server build is working cor
 
     `$ aws s3 rb s3://seagatebuckettest`
 
-### 1.5 Test a specific MOTR Version using CORX-S3 Server
+### 1.5 Test a Specific MOTR Version using CORX-S3 Server
 
 Let's say there is a version change in the Motr repository, and you want to skip re-installing the S3 Server. You can do so by using specific Motr commits and test the same on your S3 Server.
 
