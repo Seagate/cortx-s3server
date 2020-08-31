@@ -77,8 +77,8 @@ def load_and_update_config(access_key_value, secret_key_value):
 
     with open(bgdelete_config_file, 'r') as f:
             config = yaml.safe_load(f)
-            config['s3_recovery']['access_key'] = access_key_value
-            config['s3_recovery']['secret_key'] = secret_key_value
+            config['s3_recovery']['recovery_account_access_key'] = access_key_value
+            config['s3_recovery']['recovery_account_secret_key'] = secret_key_value
             config['cortx_s3']['daemon_mode'] = "False"
             config['leakconfig']['leak_processing_delay_in_mins'] = 0
             config['leakconfig']['version_processing_delay_in_mins'] = 0
