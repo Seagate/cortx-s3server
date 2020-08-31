@@ -1,13 +1,13 @@
 # CORTX-S3 Server Quick Start Guide
 This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-ready.
 
-- [1.0 Prerequisites](#11-prerequisites)
-- [1.1 Clone the CORTX-S3 Server Repository](#12-clone-the-cortx-s3-server-repository)
-- [1.2 Installing dependencies](#13-installing-dependencies)
-- [1.3 Code Compilation and Unit Test](#14-code-compilation-and-unit-test)
-- [1.4 Test your Build using S3-CLI](#15-test-your-build-using-s3-cli)
-- [1.5 Test a specific MOTR Version using CORX-S3 Server](#16-test-a-specific-motr-version-using-corx-s3-server)
-- [1.6 Build S3 RPMs](#16-Build-S3-RPMs)
+- [1.0 Prerequisites](#10-prerequisites)
+- [1.1 Clone the CORTX-S3 Server Repository](#1.1-clone-the-cortx-s3-server-repository)
+- [1.2 Installing dependencies](#1.2-installing-dependencies)
+- [1.3 Code Compilation and Unit Test](#1.3-code-compilation-and-unit-test)
+- [1.4 Test your Build using S3-CLI](#1.4-test-your-build-using-s3-cli)
+- [1.5 Test a specific MOTR Version using CORX-S3 Server](#1.5-test-a-specific-motr-version-using-corx-s3-server)
+- [1.6 Build S3 RPMs](#1.6-Build-S3-RPMs)
 
 ### 1.0 Prerequisites
 
