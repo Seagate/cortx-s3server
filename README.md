@@ -29,7 +29,7 @@ Refer to the [AWS S3 documentation](https://docs.aws.amazon.com/AmazonS3/latest/
 ## Reach Out To Us
 
 - Join our CORTX-Open Source Slack Channel to interact with your fellow community members and gets your questions answered. [![Slack Channel](https://img.shields.io/badge/chat-on%20Slack-blue)](https://join.slack.com/t/cortxcommunity/shared_invite/zt-femhm3zm-yiCs5V9NBxh89a_709FFXQ?)
-- If you'd like to contact us directly, drop us a mail at: [opensource@seagate.com](opensource@seagate.com).
+- If you'd like to contact us directly, drop us a mail at opensource@seagate.com.
 
 ## Thank You!
 
