@@ -1,7 +1,7 @@
 # CORTX-S3 Server Quick Start Guide
 This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-ready.
 
-- [1.0 Prerequisites](#10-prerequisites)
+- [1.0 Prerequisites](#10-Prerequisites)
 - [1.1 Clone the CORTX-S3 Server Repository](#11-Clone-the-CORTX-S3-Server-Repository)
 - [1.2 Installing dependencies](#12-Installing-Dependencies)
 - [1.3 Code Compilation and Unit Test](#13-Code-Compilation-and-Unit-Test)
@@ -29,7 +29,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
 5. We've assumed that `git` is preinstalled. If not then follow these steps to install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
    * To check your Git Version, use the command: `$ git --version`
 
-     :page_with_curl:**Note: We recommended that you install Git Version 2.x.x.**
+     :page_with_curl:**Note:** We recommended that you install Git Version 2.x.x.
 
 6. Ensure that you've installed the following packages on your VM instance:
 
@@ -108,7 +108,7 @@ Whenever you clone your repository or make changes to dependent packages, you'll
    $ ./init.sh -a
 ```
 
-2. You'll be prompted to provide your GitHub token, enter the PAT token that you generated in Step 4.iv. from the [1.0 Prerequisites Section](#11-Prerequisites).
+2. You'll be prompted to provide your GitHub token, enter the PAT token that you generated in Step 4.iv. from the [1.0 Prerequisites Section](#10-Prerequisites).
 3. In some cases, the `$ ./init.sh` fails to run.
 4. If the above command fails, run: `$ ./upgrade-enablerepo.sh` and then run: `$ ./init.sh`.
 
@@ -176,7 +176,7 @@ Before your test your build, ensure that you have installed and configured the f
               * Copy and save the Access and Secret Keys for the new user.
 
 6. To Configure AWS run the following commands:
-   Keep the Access and Secret Keys generated in Step 4.iv. from the [1.0 Prerequisites Section](#11-prerequisites).
+   Keep the Access and Secret Keys generated in Step 4.iv. from the [1.0 Prerequisites Section](#10-Prerequisites).
    1.  Run `$ aws configure` and enter the following details:
         * `AWS Access Key ID [None]: < ACCESS KEY >`
         * `AWS Secret Access Key [None]: < SECRET KEY >`
