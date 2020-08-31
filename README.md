@@ -24,6 +24,14 @@ We are excited about your interest in CORTX and hope you will join us. Refer to 
 
 Refer to the [AWS S3 documentation](https://docs.aws.amazon.com/AmazonS3/latest/dev/Introduction.html) to understand the S3 Server in detail.
 
+## Reach Out To Us
+
+- Join our CORTX-Open Source Slack channel |Slack| to interact with your fellow community members and gets your questions answered.
+- If you'd like to contact us directly, drop us a mail at: [opensource@seagate.com](opensource@seagate.com).
+
 ## Thank You!
 
 We thank you for stopping by to check out the CORTX Community. We are fully dedicated to our mission to build open source technologies that help the world save unlimited data and solve challenging data problems. Join our mission to help reinvent a data-driven world.
+
+.. |Slack| image:: https://img.shields.io/badge/chat-on%20Slack-blue
+   :target: https://join.slack.com/t/cortxcommunity/shared_invite/zt-femhm3zm-yiCs5V9NBxh89a_709FFXQ?
