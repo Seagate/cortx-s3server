@@ -304,17 +304,19 @@ Your success log will look like the output in the image below:
 
 All the built RPMs will be available at `~/rpmbuild/RPMS/x86_64/`. You can copy these RPMs to release VM for testing.
 
-## You're all set & you're awesome!
+## You're All Set & You're Awesome!
 
 We thank you for stopping by to check out the CORTX Community. We are fully dedicated to our mission to build open source technologies that help the world save unlimited data and solve challenging data problems. Join our mission to help reinvent a data-driven world. 
 
-Reach out to us with your questions, feedback, and comments through our CORTX Communication Channels:
+### Contribute to CORTX S3 Server
+
+Please contribute to the CORTX Open Source initiative and join our movement to make data storage better, efficient, and more accessible.
+
+### Reach Out to Us
+
+You can reach out to us with your questions, feedback, and comments through our CORTX Communication Channels:
 
 - Join our CORTX-Open Source Slack Channel to interact with your fellow community members and gets your questions answered. [![Slack Channel](https://img.shields.io/badge/chat-on%20Slack-blue)](https://join.slack.com/t/cortxcommunity/shared_invite/zt-femhm3zm-yiCs5V9NBxh89a_709FFXQ?)
 - If you'd like to contact us directly, drop us a mail at opensource@seagate.com.
-
-## Contribute to CORTX S3 Server
-
-Please contribute to the CORTX Open Source initiative and join our movement to make data storage better, efficient, and more accessible.
 
 CORTX Community Welcomes You! :relaxed:
