@@ -1,0 +1,13 @@
+# Number of days of inactivity before an issue becomes stale
+daysUntilStale: 4
+# Issues with these labels will never be considered stale
+exemptLabels:
+  - feature
+# Label to use when marking an issue as stale
+staleLabel: auto-stale
+# Comment to post when marking an issue as stale. Set to `false` to disable
+markComment: >
+    This issue/pull request has been automatically marked as stale because it has not had recent activity.
+    We will tag the appropriate person and ensure that it is properly handled.
+    Sorry for the staleness and thanks for your participation.
+    Tagging @shalakadharap @amitwac2608 for assignment
