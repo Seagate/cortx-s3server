@@ -2,7 +2,7 @@
 
 - [1.0 Prerequisites](#10-Prerequisites)
 - [1.2 Set up Git on your Development Box](#12-Set-up-Git-on-your-Development-Box)
-- [1.3 Submit your changes](#13-Submit-your-changes)
+- [1.3 Submit your changes](#13-Submit-your-Changes)
    * [1.3.1 Clone the cortx-s3server repository](#131-Clone-the-cortx-s3server-repository)
    * [1.3.2 Code Commits](#132-Code-commits)
    * [1.3.3 Create a Pull Request](#133-Create-a-Pull-Request)
@@ -24,19 +24,21 @@ Contributing to the S3 Server repository is a three-step process where you'll ne
 Before you set up your GitHub, you'll need to
 1. Generate the SSH key on your development box using:
 
-  ```shell
+    ```shell
 
-  $ ssh-keygen -o -t rsa -b 4096 -C "seagate-email-address"
-  ```
+    $ ssh-keygen -o -t rsa -b 4096 -C "your email-address"
+    ```
 2. Add the SSH key to your GitHub Account:
    1. Copy the public key: `id_rsa.pub`. By default, your public key is located at `/root/.ssh/id_rsa.pub`
    2. Navigate to [GitHub SSH key settings](https://github.com/settings/keys) on your GitHub account.
-      :page_with_curl:**Note:** Ensure that you've set your Seagate Email ID as the Primary Email Address associated with your GitHub Account. SSO will not work if you do not set  your Seagate Email ID as your Primary Email Address.
+      
+    :page_with_curl:**Note:** Ensure that you've set your Seagate Email ID as the Primary Email Address associated with your GitHub Account. SSO will not work if you do not set  your Seagate Email ID as your Primary Email Address.
+   
    3. Paste the SSH key you generated in Step 1 and select *Enable SSO*.
    4. Click **Authorize** to authorize SSO for your SSH key.
    5. [Create a Personal Access Token or PAT](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
 
-      :page_with_curl:**Note:** Ensure that you have enabled SSO for your PAT.
+    :page_with_curl:**Note:** Ensure that you have enabled SSO for your PAT.
 
    </p>
     </details>
@@ -49,44 +51,32 @@ Before you set up your GitHub, you'll need to
 
 1. Update Git to the latest version. If you're on an older version, you'll see errors in your commit hooks that look like this:
 
-  `$ git commit`
+    `$ git commit`
 
-   ```shell
+    ```shell
 
-   git: 'interpret-trailers' is not a git command.
-   See 'git --help'
-   cannot insert change-id line in .git/COMMIT_EDITMSG
-   ```
+    git: 'interpret-trailers' is not a git command.
+    See 'git --help'
+    cannot insert change-id line in .git/COMMIT_EDITMSG
+    ```
 
 2. Install Fix for CentOS 7.x by using:
 
-`$ yum remove git`
+   `$ yum remove git`
 
-Download the [RPM file from here](https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.7-1.x86_64.rpm) and run the following commands:
+    Download the [RPM file from here](https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.7-1.x86_64.rpm) and run the following commands:
 
- ```shell
+    ```shell
    
-  $ yum -y install
-  $ yum -y install git
- ```
+      $ yum -y install
+      $ yum -y install git
+     ```
  </p>
  </details>
 
-Once you've installed the prerequisites, follow these steps to set up Git on your Development Box:
+Once you've installed the prerequisites, [set up Git on your Development Box](https://github.com/Saumya-Sunder/cortx-s3server/blob/dev/docs/CORTX-S3%20Server%20Quick%20Start%20Guide.md#11-clone-the-cortx-s3-server-repository)
 
-1. Install git-clang-format using: `$ yum install git-clang-format`
-
-2. Set up git config options using:
-
-   ```shell
-
-   $ git config --global user.name ‘Your Name’
-   $ git config --global user.email ‘Your.Name@seagate.com’
-   $ git config --global color.ui auto
-   $ git config --global credential.helper cache
-   ```
-
-## 1.3. Submit your changes
+## 1.3. Submit your Changes
 
 Before you can work on a GitHub feature, you'll need to clone the cortx-s3server repository.
 
