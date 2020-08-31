@@ -125,8 +125,7 @@ Please read our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Build-In
 <summary>Before you begin</summary>
 <p>
 
-- Run the following commands from the main source directory.
-- Set up the host system before you test your build, using the command: `$ ./update-hosts.sh`
+- Set up the host system before you test your build. From the main source directory run the command: `$ ./update-hosts.sh`
 
 </p>
 </details>
