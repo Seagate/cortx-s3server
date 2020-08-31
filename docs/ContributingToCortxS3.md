@@ -1,7 +1,7 @@
 # Contribute to S3 Server
 
 - [1.0 Prerequisites](#10-Prerequisites)
-- [1.2 Set up Git on your Development Box](#12-Set-up-Git-on-your-Development-Box)
+- [1.2 Set up Git on your Development Box](#12-Set-Up-Git-on-your-Development-Box)
 - [1.3 Submit your changes](#13-Submit-your-Changes)
    * [1.3.1 Clone the cortx-s3server repository](#131-Clone-the-cortx-s3server-repository)
    * [1.3.2 Code Commits](#132-Code-commits)
@@ -43,7 +43,7 @@ Before you set up your GitHub, you'll need to
    </p>
     </details>
 
-## 1.2 Setup Git on your Development Box
+## 1.2 Set Up Git on your Development Box
 
 <details>
   <summary>Before you begin</summary>
@@ -74,8 +74,19 @@ Before you set up your GitHub, you'll need to
  </p>
  </details>
 
-Once you've installed the prerequisites, [set up Git on your Development Box](https://github.com/Saumya-Sunder/cortx-s3server/blob/dev/docs/CORTX-S3%20Server%20Quick%20Start%20Guide.md#11-clone-the-cortx-s3-server-repository)
+Once you've installed the prerequisites, follow these steps to set up Git on your Development Box:
 
+1. Install git-clang-format using: `$ yum install git-clang-format`
+
+2. Set up git config options using:
+
+   ```shell
+
+   $ git config --global user.name ‘Your Name’
+   $ git config --global user.email ‘Your.Name@seagate.com’
+   $ git config --global color.ui auto
+   $ git config --global credential.helper cache
+   ```
 ## 1.3. Submit your Changes
 
 Before you can work on a GitHub feature, you'll need to clone the cortx-s3server repository.
@@ -105,11 +116,11 @@ You can make changes to the code and save them in your files.
 
 2. To commit your code changes use:
 
-   `$ git commit -m ‘comment` - Enter your GitHub Account ID and an appropriate Feature or Change description in comment.
+   `$ git commit -m 'comment'` - enter your GitHub Account ID and an appropriate Feature or Change description in comment.
 
 3. Check out your git log to view the details of your commit and verify the author name using: `$ git log`
 
-  :page_with_curl:**Note:** If you need to change the author name for your commit, refer to the GitHub article on [Changing author info](https://docs.github.com/en/github/using-git/changing-author-info).
+    :page_with_curl:**Note:** If you need to change the author name for your commit, refer to the GitHub article on [Changing author info](https://docs.github.com/en/github/using-git/changing-author-info).
 
 4. To Push your changes to GitHub, use: `$ git push origin 'your-local-branch-name'`
 
@@ -161,9 +172,17 @@ $ git submodule update --init --recursive
 $ git rebase origin/master
 ```
 
-To resolve conflicts, follow the troubleshooting steps mentioned in git error messages. Reach out to our [SUPPORT](SUPPORT.md) team, if you have any questions or need further clarifications.
+## You're All Set & You're Awesome!
 
-## All set & You're Awesome!
+We thank you for stopping by to check out the CORTX Community. We are fully dedicated to our mission to build open source technologies that help the world save unlimited data and solve challenging data problems. Join our mission to help reinvent a data-driven world. 
 
-Let's make storage better, efficient, and accessible. Join us in our goal to reinvent a data-driven world, and contribute to CORTX Open Source initiative.
-CORTX Open Source team welcomes you! :relaxed:
+### Contribute to CORTX S3 Server
+
+Please contribute to the CORTX Open Source initiative and join our movement to make data storage better, efficient, and more accessible.
+
+### Reach Out to Us
+
+You can reach out to us with your questions, feedback, and comments through our CORTX Communication Channels:
+
+- Join our CORTX-Open Source Slack Channel to interact with your fellow community members and gets your questions answered. [![Slack Channel](https://img.shields.io/badge/chat-on%20Slack-blue)](https://join.slack.com/t/cortxcommunity/shared_invite/zt-femhm3zm-yiCs5V9NBxh89a_709FFXQ?)
+- If you'd like to contact us directly, drop us a mail at opensource@seagate.com.
