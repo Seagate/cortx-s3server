@@ -32,7 +32,7 @@ Before you set up your GitHub, you'll need to
    1. Copy the public key: `id_rsa.pub`. By default, your public key is located at `/root/.ssh/id_rsa.pub`
    2. Navigate to [GitHub SSH key settings](https://github.com/settings/keys) on your GitHub account.
       
-    :page_with_curl:**Note:** Ensure that you've set your Seagate Email ID as the Primary Email Address associated with your GitHub Account. SSO will not work if you do not set  your Seagate Email ID as your Primary Email Address.
+    :page_with_curl:**Note:** Ensure that you've set your GitHub Email ID as the Primary Email Address associated with your GitHub Account. SSO will not work if you do not set  your GitHub Email ID as your Primary Email Address.
    
    3. Paste the SSH key you generated in Step 1 and select *Enable SSO*.
    4. Click **Authorize** to authorize SSO for your SSH key.
@@ -83,7 +83,7 @@ Once you've installed the prerequisites, follow these steps to set up Git on you
    ```shell
 
    $ git config --global user.name ‘Your Name’
-   $ git config --global user.email ‘Your.Name@seagate.com’
+   $ git config --global user.email ‘Your.Name@Domain_Name’
    $ git config --global color.ui auto
    $ git config --global credential.helper cache
    ```
@@ -94,7 +94,7 @@ Before you can work on a GitHub feature, you'll need to clone the cortx-s3server
 ### 1.3.1 Clone the cortx-s3server repository
 
 You'll need to **Fork** the cortx-s3server repository to clone it into your private GitHub repository. Follow these steps to clone the repository to your gitHub account:
-1. Navigate to the Seagate 'cortx-s3server' repository homepage on GitHub.
+1. Navigate to the 'cortx-s3server' repository homepage on GitHub.
 2. Click **Fork**
 3. Run the following commands in Shell:
 
