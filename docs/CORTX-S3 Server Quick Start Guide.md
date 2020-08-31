@@ -27,7 +27,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
        :page_with_curl: **Note:** From this point onwards, you'll need to execute all steps logged in as a **Root User**.
 
 5. We've assumed that `git` is preinstalled. If not then follow these steps to install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
-   * To check your Git Version, use the command: `$ git --version`.
+   * To check your Git Version, use the command: `$ git --version`
 
      :page_with_curl:**Note: We recommended that you install Git Version 2.x.x.**
 
@@ -43,34 +43,32 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
     * Extra Packages for Enterprise Linux:
         * To check if epel is installed, use: `$ yum repolist`
             * If epel was installed, you'll see it in the output list.
-            * You might also see exclamation mark in front of the repositories id. Refer to the [Redhat Knowledge Base](https://access.redhat.com/solutions/2267871)
+            * You might also see exclamation mark in front of the repositories id. Refer to the [Redhat Knowledge Base](https://access.redhat.com/solutions/2267871).
         * `$ yum install -y epel-release`
-    * Verify if kernel-devel-3.10.0-1062 version package is installed, use: `$ uname -r`
+    * Verify if kernel-devel-3.10.0-1062 version package is installed, using: `$ uname -r`
 
 7. You'll need to disable selinux and firewall. Run the following commands:
 
-     `$ systemctl stop firewalld` no output
+     `$ systemctl stop firewalld` 
 
-     `$ systemctl disable firewalld` no output
+     `$ systemctl disable firewalld` 
 
-     `$ sestatus` should see `SELinux status: disabled'
+     `$ sestatus` - you'll get a `SELinux status: disabled` status.
 
-     `$ setenforce 0` should see `setenforce: SELinux is disabled'
+     `$ setenforce 0` - you'll get a `setenforce: SELinux is disabled` status.
 
-     `$ sed 's/SELINUX=enforcing/SELINUX=disabled/' /etc/sysconfig/selinux` should see `SELINUX=disabled'
+     `$ sed 's/SELINUX=enforcing/SELINUX=disabled/' /etc/sysconfig/selinux` - you'll get a `SELINUX=disabled` status.
 
-     `$ shutdown -r now` should reboot your system.
+     Run `$ shutdown -r now` - to reboot your system.
+     
+     :page_with_curl: **Notes:**
+     
+      - If you're using cloud VM, go to your cloud VM website and select the VM. You'll have to stop the VM and then start it again to complete the reboot process
+      - To use command line to shutdown your VM, use: `$ shutdown -r now` and Restart your VM.
+        
+     Once you power on your VM, you can verify if selinux and firewall are disabled by using: `$ getenforce` - you'll get a 'disabled' status.
 
-    :page_with_curl: **Notes:**
-
-    1. If you're using cloud VM, go to your cloud VM website and select the VM.
-    2. First stop the VM and then start it again to complete the reboot process
-    3. To use command line to shutdown your VM, use: `$ shutdown -r now`
-    4. Restart your VM.
-
-   Once you power on your VM, you can verify if selinux and firewall are disabled by using: `$ getenforce` you'll get a 'disabled' status.
-
-All done! You are now ready for fetching CORTX-S3 Server repository!
+All done! You are now ready for cloning the CORTX-S3 Server repository!
 
 </p>
 </details>
@@ -80,6 +78,7 @@ All done! You are now ready for fetching CORTX-S3 Server repository!
 You'll need to clone the S3 Server Repository from the main branch. To clone the S3 Server Repository, follow these steps:
 
 ```shell
+
 $ git clone --recursive git@github.com:Seagate/cortx-s3server.git -b main
 $ cd cortx-s3server
 $ git submodule update --init --recursive && git status
@@ -93,13 +92,13 @@ $ git submodule update --init --recursive && git status
 
 At some point during the execution of the `init.sh` script, it will prompt for the following passwords. Enter them as mentioned below:
    * SSH password: `<Enter root password of VM>`
-   * Enter new password for openldap rootDN:: `seagate`
-   * Enter new password for openldap IAM admin:: `ldapadmin`
+   * Enter new password for openldap rootDN: `seagate`
+   * Enter new password for openldap IAM admin: `ldapadmin`
 
 </p>
 </details>
 
-Whenever you clone your repository or make changes to the dependent packages, you'll need to initialize your package:
+Whenever you clone your repository or make changes to dependent packages, you'll have to initialize the packages:
 
 1. Run the command:
 
@@ -109,7 +108,7 @@ Whenever you clone your repository or make changes to the dependent packages, yo
    $ ./init.sh -a
 ```
 
-2. You'll be prompted to provide your GitHub token, enter the PAT token that you generated in Step 4.iv. from the [1.0 Prerequisites Section](#11-prerequisites).
+2. You'll be prompted to provide your GitHub token, enter the PAT token that you generated in Step 4.iv. from the [1.0 Prerequisites Section](#11-Prerequisites).
 3. In some cases, the `$ ./init.sh` fails to run.
 4. If the above command fails, run: `$ ./upgrade-enablerepo.sh` and then run: `$ ./init.sh`.
 
