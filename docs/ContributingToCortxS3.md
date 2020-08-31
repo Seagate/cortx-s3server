@@ -26,7 +26,7 @@ Before you set up your GitHub, you'll need to
 
   ```shell
 
-  $ $ ssh-keygen -o -t rsa -b 4096 -C "seagate-email-address"
+  $ ssh-keygen -o -t rsa -b 4096 -C "seagate-email-address"
   ```
 2. Add the SSH key to your GitHub Account:
    1. Copy the public key: `id_rsa.pub`. By default, your public key is located at `/root/.ssh/id_rsa.pub`
@@ -64,11 +64,11 @@ Before you set up your GitHub, you'll need to
 
 Download the [RPM file from here](https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.7-1.x86_64.rpm) and run the following commands:
 
-    ```shell
-
-    $ yum -y install
-    $ yum -y install git
-    ```
+ ```shell
+   
+  $ yum -y install
+  $ yum -y install git
+ ```
  </p>
  </details>
 
@@ -95,7 +95,7 @@ Before you can work on a GitHub feature, you'll need to clone the cortx-s3server
 You'll need to **Fork** the cortx-s3server repository to clone it into your private GitHub repository. Follow these steps to clone the repository to your gitHub account:
 1. Navigate to the Seagate 'cortx-s3server' repository homepage on GitHub.
 2. Click **Fork**
-3. Run the following commands in Git Bash:
+3. Run the following commands in Shell:
 
    `$ git clone git@github.com:"your-github-id"/cortx-s3server.git`
 
@@ -111,11 +111,11 @@ You can make changes to the code and save them in your files.
 
 1. Use the command below to add files that need to be pushed to the git staging area:
 
-- `$ git add foo/somefile.cc`
+    `$ git add foo/somefile.cc`
 
 2. To commit your code changes use:
 
-   `$ git commit -m ‘comment’` - Enter your GID and an appropriate Feature or Change description in comment.
+   `$ git commit -m ‘comment` - Enter your GitHub Account ID and an appropriate Feature or Change description in comment.
 
 3. Check out your git log to view the details of your commit and verify the author name using: `$ git log`
 
@@ -145,12 +145,11 @@ You can make changes to the code and save them in your files.
 
 
 1. Once you Push changes to GitHub, the output will display a URL for creating a Pull Request, as shown in the sample code above.
+:page_with_curl:**Note:** To resolve conflicts, follow the troubleshooting steps mentioned in git error messages.
 2. You'll be redirected to GitHib remote.
 3. Select **main** from the Branches/Tags drop-down list.
 4. Click **Create pull request** to create the pull request.
 5. Add reviewers to your pull request to review and provide feedback on your changes.
-
-:page_with_curl:**Note:** To resolve conflicts, follow the troubleshooting steps mentioned in git error messages.
 
 ## 1.4 Run Jenkins and System Tests
 
