@@ -249,16 +249,13 @@ Run the following test cases to check if your AWS S3 Server build is working cor
 
 ### 1.5 Test a Specific MOTR Version using CORX-S3 Server
 
-Let's say there is a version change in the Motr repository, and you want to skip re-installing the S3 Server. You can do so by using specific Motr commits and test the same on your S3 Server.
+Let's say you want to test a specific version of the Motr repository using CORTX-S3 Server. You can do so by retriving the commit-id of the Motr version and run the following commands on the S3 Server:
 
-1. You'll need to copy the commit-id of your Motr code. You can search for specific commit-ids using:
+:page_with_curl: **Note:** You'll have to work out of the main directory of your S3 Server repository.
 
-    `$ git log`
-
- While viewing the log, to find the next commit, type `/^commit`, then use `n` and `N` to move to the next or previous commit. To search for the previous commit, use `?^commit`.
-2. You'll have to work out of the main directory of your S3 Server repository.
-3. Run `$ cd third_party/motr`.
-4. Paste the commit-id shown below:
+1. Copy the commit-id of your Motr code. 
+2. Run the command: `$ cd third_party/motr`
+4. Paste the commit-id as shown below:
 
    `$ git checkout Id41cd2b41cb77f1d106651c267072f29f8c81d0f`
 
@@ -271,14 +268,12 @@ Let's say there is a version change in the Motr repository, and you want to skip
     `$ cd ..`
 
     `$ ./build_motr.sh`
-</p>
-</details>
 
-Run the Jenkins script to make sure that the build and test are passed:
+7. Run the Jenkins script to ensure that the build and test are passed:
 
-`$ cd ..`
+    `$ cd ..`
 
-`$ ./jenkins-build.sh`
+    `$ ./jenkins-build.sh`
 
 Your success log will look like the output in the image below:
 
