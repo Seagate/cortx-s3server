@@ -77,13 +77,13 @@ class S3FakeMotrRedisKvs {
  public:
   ~S3FakeMotrRedisKvs() { close(); }
 
-  void kv_read(struct m0_clovis_op *op);
+  void kv_read(struct m0_op *op);
 
-  void kv_next(struct m0_clovis_op *op);
+  void kv_next(struct m0_op *op);
 
-  void kv_write(struct m0_clovis_op *op);
+  void kv_write(struct m0_op *op);
 
-  void kv_del(struct m0_clovis_op *op);
+  void kv_del(struct m0_op *op);
 
  public:
   static S3FakeMotrRedisKvs *instance() {

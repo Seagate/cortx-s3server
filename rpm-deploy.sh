@@ -130,19 +130,19 @@ yum_repo_conf() {
                ;;
         ees*-sprint*) echo "Use sprint $1 builds"
                       $USE_SUDO echo "[sprints_s3server]
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/
+baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/${1}/
 gpgcheck = 0
 name = Yum repo for cortx-s3server sprints build
 priority = 1
 
 [sprints_hare]
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/
+baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/${1}/
 gpgcheck = 0
 name = Yum repo for cortx-hare sprints build
 priority = 1
 
 [sprints_motr]
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/${1}/
+baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/${1}/
 gpgcheck = 0
 name = Yum repo for motr sprints build
 priority = 1

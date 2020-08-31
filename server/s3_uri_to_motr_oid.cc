@@ -31,7 +31,7 @@
 
 int S3UriToMotrOID(std::shared_ptr<MotrAPI> s3_motr_api, const char *name,
                    const std::string &request_id, m0_uint128 *ufid,
-                   S3ClovisEntityType type) {
+                   S3MotrEntityType type) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   int rc;
   S3Timer timer;
@@ -80,14 +80,14 @@ int S3UriToMotrOID(std::shared_ptr<MotrAPI> s3_motr_api, const char *name,
     s3_range.u_lo = S3_OID_RESERVED_COUNT;
 
     struct m0_uint128 reserved_range = {0ULL, 0ULL};
-    m0_uint128_add(&reserved_range, &M0_CLOVIS_ID_APP, &s3_range);
+    m0_uint128_add(&reserved_range, &M0_ID_APP, &s3_range);
 
     rc = m0_uint128_cmp(&reserved_range, &tmp_uint128);
     if (rc >= 0) {
       struct m0_uint128 res;
-      // ID should be more than M0_CLOVIS_ID_APP
+      // ID should be more than M0_ID_APP
       s3_log(S3_LOG_DEBUG, "",
-             "Id from Murmur hash algorithm less than M0_CLOVIS_ID_APP\n");
+             "Id from Murmur hash algorithm less than M0_ID_APP\n");
       m0_uint128_add(&res, &reserved_range, &tmp_uint128);
       tmp_uint128.u_hi = res.u_hi;
       tmp_uint128.u_lo = res.u_lo;
@@ -103,13 +103,13 @@ int S3UriToMotrOID(std::shared_ptr<MotrAPI> s3_motr_api, const char *name,
     if (rc != 0) {
       s3_log(S3_LOG_ERROR, request_id, "Failed to generate UFID\n");
       // May need to change error code to something better in future -- TODO
-      s3_iem(LOG_ALERT, S3_IEM_CLOVIS_CONN_FAIL, S3_IEM_CLOVIS_CONN_FAIL_STR,
-             S3_IEM_CLOVIS_CONN_FAIL_JSON);
+      s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
+             S3_IEM_MOTR_CONN_FAIL_JSON);
       return rc;
     }
   }
 
-  if (type == S3ClovisEntityType::index) {
+  if (type == S3MotrEntityType::index) {
     index_fid = M0_FID_TINIT('x', ufid->u_hi, ufid->u_lo);
     ufid->u_hi = index_fid.f_container;
     ufid->u_lo = index_fid.f_key;

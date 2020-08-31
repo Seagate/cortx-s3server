@@ -22,7 +22,7 @@ This folder contains source files and scripts that are needed to support ADDB
 integration in S3 server.
 
 ADDB allows to collect very detailed run-time statistics about s3server and
-Clovis performance, without significant influence on resource consumption and
+Motr performance, without significant influence on resource consumption and
 performance impact.
 
   Contents:
@@ -40,7 +40,7 @@ different kinds of log entries that we save to ADDB.  These ID are allocated as
 ranges in Motr sources, every application should use IDs from designated range.
 
 For ADDB logs which show life cycle of a specific request (be it S3 API
-request, or Clovis request, or Motr FOM) the convention is that second integer
+request, or Motr request, or Motr FOM) the convention is that second integer
 in an ADDB entry is a unique ID of this request.  It must be unique within a
 given action type id.  If possible, the combination (activity type id, request
 id) should be unique across the cluster -- this will allow to combine ADDB logs
@@ -52,7 +52,7 @@ command line switch.
 
 ADDB logs are stored in binary format in server folder in /var/motr, e.g.
 
-  /var/motr/s3server-0x7200000000000000:0/./clovis_addb/o/100000000000000:2
+  /var/motr/s3server-0x7200000000000000:0/./motr_addb/o/100000000000000:2
 
 Note that logs are not immediately flushed to disk, so ideally you should stop
 s3server and wait till it completes, before you start parsing ADDB logs.
@@ -64,7 +64,7 @@ development environment would be:
   s3_path="your/path/to/s3server.git"
   $s3_path/rs3/third_party/motr/utils/m0addb2dump -f \
      -p $s3_path/bazel-bin/libs3addbplugin.so -- \
-     /var/motr/s3server-0x7200000000000000:0/./clovis_addb/o/100000000000000:2 \
+     /var/motr/s3server-0x7200000000000000:0/./motr_addb/o/100000000000000:2 \
      > dump_s.txt
 
 This dump_s.txt is the text representation of ADDB log entries.

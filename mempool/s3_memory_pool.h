@@ -115,7 +115,7 @@ struct pool_info {
  * args:
  * pool_item_size (in) Size of each buffer items that this pool will manage,
  * minimum size is size of pointer
- * Note: In case of clovis the minimum buffer size is 4KB
+ * Note: In case of motr the minimum buffer size is 4KB
  * pool_initial_size (in) Initial size of the pool
  * pool_expansion_size (in) pool expansion size when all free memory
  * being used.
