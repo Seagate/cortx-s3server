@@ -19,7 +19,7 @@
 
 import os
 from framework import Config
-from framework import LdapInfo
+from ldap_setup import LdapInfo
 from framework import S3PyCliTest
 from auth import AuthTest
 from s3client_config import S3ClientConfig

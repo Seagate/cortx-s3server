@@ -46,7 +46,8 @@ where:
 --local_redis_restart	   In case redis server installed on local machine this option restarts redis-server
 --callgraph /path/to/output/file	   Generate valgrind call graph; Especially usefull
 		   together with --basic_test_only option
---ldap_admin_pwd   LDAP admin password
+--ldap_admin_pwd   LDAP admin password (optional). If not specified, script will use password set in 'ldap.prop'
+       file under folder ./ansible     
 --help (-h)        Display help"
 
 use_http_client=0

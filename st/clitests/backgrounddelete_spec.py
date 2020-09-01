@@ -25,7 +25,7 @@ import shutil
 import re
 import json
 from framework import Config
-from framework import LdapInfo
+from ldap_setup import LdapInfo
 from framework import S3PyCliTest
 from s3client_config import S3ClientConfig
 from auth import AuthTest

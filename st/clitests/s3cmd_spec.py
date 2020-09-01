@@ -20,7 +20,7 @@
 
 
 from framework import Config
-from framework import LdapInfo
+from ldap_setup import LdapInfo
 from framework import S3PyCliTest
 from s3cmd import S3cmdTest
 from s3fi import S3fiTest
