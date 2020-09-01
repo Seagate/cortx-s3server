@@ -285,7 +285,7 @@ void S3BucketMetadataV1::create_object_list_index() {
         motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
   S3UriToMotrOID(s3_motr_api, salted_object_list_index_name.c_str(), request_id,
-                 &object_list_index_oid, S3ClovisEntityType::index);
+                 &object_list_index_oid, S3MotrEntityType::index);
 
   motr_kv_writer->create_index_with_oid(
       object_list_index_oid,
@@ -330,7 +330,7 @@ void S3BucketMetadataV1::create_multipart_list_index() {
   }
 
   S3UriToMotrOID(s3_motr_api, salted_multipart_list_index_name.c_str(),
-                 request_id, &multipart_index_oid, S3ClovisEntityType::index);
+                 request_id, &multipart_index_oid, S3MotrEntityType::index);
 
   motr_kv_writer->create_index_with_oid(
       multipart_index_oid,
@@ -376,7 +376,7 @@ void S3BucketMetadataV1::create_objects_version_list_index() {
   // version list index oid
   S3UriToMotrOID(s3_motr_api, salted_objects_version_list_index_name.c_str(),
                  request_id, &objects_version_list_index_oid,
-                 S3ClovisEntityType::index);
+                 S3MotrEntityType::index);
 
   motr_kv_writer->create_index_with_oid(
       objects_version_list_index_oid,

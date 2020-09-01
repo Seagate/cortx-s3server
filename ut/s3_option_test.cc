@@ -360,7 +360,7 @@ TEST_F(S3OptionsTest, LoadSelectiveAuthSectionFromFile) {
   EXPECT_EQ(3, instance->get_statsd_max_send_retry());
 }
 
-TEST_F(S3OptionsTest, LoadClovisSectionFromFile) {
+TEST_F(S3OptionsTest, LoadMotrSectionFromFile) {
   EXPECT_TRUE(instance->load_section("S3_MOTR_CONFIG", false));
 
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
@@ -386,7 +386,7 @@ TEST_F(S3OptionsTest, LoadClovisSectionFromFile) {
   EXPECT_EQ(3, instance->get_statsd_max_send_retry());
 }
 
-TEST_F(S3OptionsTest, LoadSelectiveClovisSectionFromFile) {
+TEST_F(S3OptionsTest, LoadSelectiveMotrSectionFromFile) {
   instance->set_cmdline_option(S3_OPTION_MOTR_LOCAL_ADDR, "localhost@test");
   EXPECT_TRUE(instance->load_section("S3_MOTR_CONFIG", true));
 

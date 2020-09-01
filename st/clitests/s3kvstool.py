@@ -26,14 +26,14 @@ from framework import S3PyCliTest
 from framework import Config
 from framework import logit
 
-class ClovisConfig():
+class MotrConfig():
     def __init__(self):
         lctl_cmd = "sudo lctl list_nids | head -1"
         result = subprocess.check_output(lctl_cmd, shell=True).decode().split()[0]
         self.LOCAL_NID = result
 
         self.cfg_dir = os.path.join(os.path.dirname(__file__), 'cfg')
-        config_file =  os.path.join(self.cfg_dir, 'cloviskvscli.yaml')
+        config_file =  os.path.join(self.cfg_dir, 'motrkvscli.yaml')
         with open(config_file, 'r') as f:
             s3config = yaml.safe_load(f)
             self.KVS_IDX = str(s3config['S3_MOTR_IDX_SERVICE_ID'])
@@ -57,12 +57,12 @@ class S3OID():
 
 class S3kvTest(S3PyCliTest):
     def __init__(self, description):
-        clovis_conf = ClovisConfig()
+        motr_conf = MotrConfig()
         if "LD_LIBRARY_PATH" in os.environ:
-            self.cmd = "sudo env LD_LIBRARY_PATH=%s ../cloviskvscli.sh" % os.environ["LD_LIBRARY_PATH"]
+            self.cmd = "sudo env LD_LIBRARY_PATH=%s ../motrkvscli.sh" % os.environ["LD_LIBRARY_PATH"]
         else:
-            self.cmd = "sudo ../cloviskvscli.sh"
-        self.common_args = " --clovis_local_addr=" + clovis_conf.LOCAL_EP  + " --clovis_ha_addr=" + clovis_conf.HA_EP + " --clovis_profile=" + clovis_conf.PROFILE_FID + " --clovis_proc=" + clovis_conf.PROCESS_FID + " --kvstore=" + clovis_conf.KVS_IDX + " "
+            self.cmd = "sudo ../motrkvscli.sh"
+        self.common_args = " --motr_local_addr=" + motr_conf.LOCAL_EP  + " --motr_ha_addr=" + motr_conf.HA_EP + " --motr_profile=" + motr_conf.PROFILE_FID + " --motr_proc=" + motr_conf.PROCESS_FID + " --kvstore=" + motr_conf.KVS_IDX + " "
         super(S3kvTest, self).__init__(description)
 
     def root_bucket_account_index_records(self):

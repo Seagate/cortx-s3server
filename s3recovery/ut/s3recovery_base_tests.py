@@ -212,8 +212,8 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
             mock_item_replica,
             mock_union_result
         )
-        self.assertEqual(len(mock_union_result), 1)
-        self.assertDictEqual(mock_union_result, {'key1': '{"key1": "value1"}'})
+        self.assertEqual(len(mock_union_result), 0)
+        self.assertDictEqual(mock_union_result, {})
 
     def test_perform_validation_replica_is_none(self):
         # Test perform_validation when item_replica is None
@@ -227,8 +227,8 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
             None,
             mock_union_result
         )
-        self.assertEqual(len(mock_union_result), 1)
-        self.assertDictEqual(mock_union_result, {'key1': '{"key1": "value1"}'})
+        self.assertEqual(len(mock_union_result), 0)
+        self.assertDictEqual(mock_union_result, {})
 
     def test_perform_validation_all_none(self):
         # Test perform_validation when both data & item_replica are None
@@ -256,8 +256,8 @@ class S3RecoveryBaseTestCase(unittest.TestCase):
             mock_item_replica,
             mock_union_result
         )
-        self.assertEqual(len(mock_union_result), 1)
-        self.assertDictEqual(mock_union_result, {'key1': '{"key1": "value1"}'})
+        self.assertEqual(len(mock_union_result), 0)
+        self.assertDictEqual(mock_union_result, {})
 
     def test_perform_validation_all_corrupt(self):
         # Test perform_validation when both data_to_restore and item_replica are corrupt

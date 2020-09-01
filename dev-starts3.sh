@@ -66,13 +66,13 @@ fi
 while [ "$1" != "" ]; do
     case "$1" in
         --fake_obj ) fake_obj=1;
-                     echo "Stubs for clovis object read/write ops";
+                     echo "Stubs for motr object read/write ops";
                      ;;
         --fake_kvs ) fake_kvs=1;
-                     echo "Stubs for clovis kvs put/get/delete/create idx/remove idx";
+                     echo "Stubs for motr kvs put/get/delete/create idx/remove idx";
                      ;;
         --redis_kvs ) redis_kvs=1;
-                      echo "Redis based stubs for clovis kvs put/get/delete";
+                      echo "Redis based stubs for motr kvs put/get/delete";
                       ;;
         --callgraph ) callgraph_mode=1;
                       num_instances=1;
@@ -157,31 +157,31 @@ print yaml.load(open("'$s3_config_file'"))["S3_SERVER_CONFIG"]["S3_SERVER_BIND_P
 export PATH=$PATH:/opt/seagate/cortx/s3/bin
 counter=0
 
-# s3server cmd parameters allowing to fake some clovis functionality
-# --fake_clovis_writeobj - stub for clovis write object with all zeros
-# --fake_clovis_readobj - stub for clovis read object with all zeros
-# --fake_clovis_createidx - stub for clovis create idx - does nothing
-# --fake_clovis_deleteidx - stub for clovis delete idx - does nothing
-# --fake_clovis_getkv - stub for clovis get key-value - read from memory hash map
-# --fake_clovis_putkv - stub for clovis put kye-value - stores in memory hash map
-# --fake_clovis_deletekv - stub for clovis delete key-value - deletes from memory hash map
+# s3server cmd parameters allowing to fake some motr functionality
+# --fake_motr_writeobj - stub for motr write object with all zeros
+# --fake_motr_readobj - stub for motr read object with all zeros
+# --fake_motr_createidx - stub for motr create idx - does nothing
+# --fake_motr_deleteidx - stub for motr delete idx - does nothing
+# --fake_motr_getkv - stub for motr get key-value - read from memory hash map
+# --fake_motr_putkv - stub for motr put kye-value - stores in memory hash map
+# --fake_motr_deletekv - stub for motr delete key-value - deletes from memory hash map
 # for proper KV mocking one should use following combination
-#    --fake_clovis_createidx true --fake_clovis_deleteidx true --fake_clovis_getkv true --fake_clovis_putkv true --fake_clovis_deletekv true
+#    --fake_motr_createidx true --fake_motr_deleteidx true --fake_motr_getkv true --fake_motr_putkv true --fake_motr_deletekv true
 
 fake_params=""
 if [ $fake_kvs -eq 1 ]
 then
-    fake_params+=" --fake_clovis_createidx true --fake_clovis_deleteidx true --fake_clovis_getkv true --fake_clovis_putkv true --fake_clovis_deletekv true"
+    fake_params+=" --fake_motr_createidx true --fake_motr_deleteidx true --fake_motr_getkv true --fake_motr_putkv true --fake_motr_deletekv true"
 fi
 
 if [ $redis_kvs -eq 1 ]
 then
-    fake_params+=" --fake_clovis_createidx true --fake_clovis_deleteidx true --fake_clovis_redis_kvs true"
+    fake_params+=" --fake_motr_createidx true --fake_motr_deleteidx true --fake_motr_redis_kvs true"
 fi
 
 if [ $fake_obj -eq 1 ]
 then
-    fake_params+=" --fake_clovis_writeobj true --fake_clovis_readobj true"
+    fake_params+=" --fake_motr_writeobj true --fake_motr_readobj true"
 fi
 
 callgraph_cmd=""
@@ -192,11 +192,11 @@ fi
 
 while [[ $counter -lt $num_instances ]]
 do
-  clovis_local_port=`expr 101 + $counter`
+  motr_local_port=`expr 101 + $counter`
   s3port=`expr $s3_port_from_config + $counter`
   pid_filename='/var/run/s3server.'$s3port'.pid'
   $callgraph_cmd s3server --s3pidfile $pid_filename \
-           --motrlocal $local_ep:${clovis_local_port} --motrha $ha_ep \
+           --motrlocal $local_ep:${motr_local_port} --motrha $ha_ep \
            --s3port $s3port --fault_injection true $fake_params --loading_indicators --addb --getoid true
   ((++counter))
 done

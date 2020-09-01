@@ -41,8 +41,8 @@ class S3MotrReadWriteCommonTest : public testing::Test {
     evhtp_request_t *req = evhtp_request_new(NULL, evbase);
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, new EvhtpWrapper());
-    ptr_mock_s3motr = std::make_shared<MockS3Clovis>();
-    EXPECT_CALL(*ptr_mock_s3motr, clovis_op_rc(_)).WillRepeatedly(Return(0));
+    ptr_mock_s3motr = std::make_shared<MockS3Motr>();
+    EXPECT_CALL(*ptr_mock_s3motr, motr_op_rc(_)).WillRepeatedly(Return(0));
     ptr_mock_s3_async_context = std::make_shared<MockS3AsyncOpContextBase>(
         ptr_mock_request,
         std::bind(&S3CallBack::on_success, &s3objectmetadata_callbackobj),
@@ -57,7 +57,7 @@ class S3MotrReadWriteCommonTest : public testing::Test {
     user_context->user_event = (void *)s3user_event;
   }
 
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3motr;
+  std::shared_ptr<MockS3Motr> ptr_mock_s3motr;
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
   std::shared_ptr<MockS3AsyncOpContextBase> ptr_mock_s3_async_context;
   S3CallBack s3objectmetadata_callbackobj;
@@ -77,7 +77,7 @@ TEST_F(S3MotrReadWriteCommonTest, MotrOpDoneOnMainThreadOnFail) {
 }
 
 TEST_F(S3MotrReadWriteCommonTest, S3MotrOpStableResponseCountSameAsOpCount) {
-  struct m0_clovis_op op;
+  struct m0_op op;
   struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
       1, sizeof(struct s3_motr_context_obj));
   op.op_datum = op_ctx;
@@ -89,7 +89,7 @@ TEST_F(S3MotrReadWriteCommonTest, S3MotrOpStableResponseCountSameAsOpCount) {
   EXPECT_CALL(*ptr_mock_s3_async_context,
               set_op_status_for(_, S3AsyncOpStatus::success, "Success."))
       .Times(1);
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_rc(_)).WillOnce(Return(0));
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_rc(_)).WillOnce(Return(0));
   ptr_mock_s3_async_context->response_received_count = 0;
   ptr_mock_s3_async_context->ops_count = 1;
   s3_motr_op_stable(&op);
@@ -97,7 +97,7 @@ TEST_F(S3MotrReadWriteCommonTest, S3MotrOpStableResponseCountSameAsOpCount) {
 }
 
 TEST_F(S3MotrReadWriteCommonTest, S3MotrOpStableResponseCountNotSameAsOpCount) {
-  struct m0_clovis_op op;
+  struct m0_op op;
   struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
       1, sizeof(struct s3_motr_context_obj));
   op.op_datum = op_ctx;
@@ -109,7 +109,7 @@ TEST_F(S3MotrReadWriteCommonTest, S3MotrOpStableResponseCountNotSameAsOpCount) {
   EXPECT_CALL(*ptr_mock_s3_async_context,
               set_op_status_for(_, S3AsyncOpStatus::success, "Success."))
       .Times(1);
-  EXPECT_CALL(*ptr_mock_s3motr, clovis_op_rc(_))
+  EXPECT_CALL(*ptr_mock_s3motr, motr_op_rc(_))
       .WillOnce(Return(0))
       .WillRepeatedly(Return(-EPERM));
   ptr_mock_s3_async_context->response_received_count = 1;
@@ -120,7 +120,7 @@ TEST_F(S3MotrReadWriteCommonTest, S3MotrOpStableResponseCountNotSameAsOpCount) {
 }
 
 TEST_F(S3MotrReadWriteCommonTest, S3MotrOpFailedResponseCountSameAsOpCount) {
-  struct m0_clovis_op op;
+  struct m0_op op;
   struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
       1, sizeof(struct s3_motr_context_obj));
   op.op_datum = op_ctx;
@@ -139,7 +139,7 @@ TEST_F(S3MotrReadWriteCommonTest, S3MotrOpFailedResponseCountSameAsOpCount) {
 }
 
 TEST_F(S3MotrReadWriteCommonTest, S3MotrOpFailedResponseCountNotSameAsOpCount) {
-  struct m0_clovis_op op;
+  struct m0_op op;
   struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
       1, sizeof(struct s3_motr_context_obj));
   op.op_datum = op_ctx;

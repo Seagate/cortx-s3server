@@ -43,7 +43,7 @@ class S3GetMultipartPartActionTest : public testing::Test {
     call_count_one = 0;
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
-    ptr_mock_s3_motr_api = std::make_shared<MockS3Clovis>();
+    ptr_mock_s3_motr_api = std::make_shared<MockS3Motr>();
 
     EXPECT_CALL(*ptr_mock_request, get_query_string_value("uploadId"))
         .WillRepeatedly(Return("206440e0-1f5b-4114-9f93-aa96350e4a16"));
@@ -83,7 +83,7 @@ class S3GetMultipartPartActionTest : public testing::Test {
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3_motr_api;
+  std::shared_ptr<MockS3Motr> ptr_mock_s3_motr_api;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3PartMetadataFactory> part_meta_factory;
   std::shared_ptr<MockS3ObjectMultipartMetadataFactory> object_mp_meta_factory;

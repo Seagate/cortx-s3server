@@ -25,7 +25,7 @@ object_layout_id = Of current object to be possibly deleted
 object_list_index_oid = Object listing index OID
 objects_version_list_index_oid = Object Version listing OID for a bucket
 
-clovis_process_fid = Process fid identifying S3 process that created this record
+motr_process_fid = Process fid identifying S3 process that created this record
 
 global_instance_id = Lifecycle counter (uuid) when process started, changes on
                      S3 service restart.

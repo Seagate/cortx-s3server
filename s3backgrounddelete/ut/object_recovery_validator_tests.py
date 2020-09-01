@@ -44,7 +44,7 @@ def test_list_instance_index_fail():
 
     config = CORTXS3Config()
     probable_delete_records = {'Key': 'TAcGAQAAAAA=-AwAAAAAAhEs=', \
-        'Value':'{"clovis_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
+        'Value':'{"motr_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
         "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \
         "object_key_in_index":"object_1","object_layout_id":9,"object_list_index_oid":"TAifBwAAAHg=-AQAAAAAA2lk=", \
         "objects_version_list_index_oid":"TAifBwAAAHg=-AwAAAAAA2lk=","old_oid":"AAAAAAAAAAA=-AAAAAAAAAAA=", \
@@ -83,7 +83,7 @@ def test_object_metadata_not_exists():
 
     config = CORTXS3Config()
     probable_delete_records = {'Key': 'TAcGAQAAAAA=-AwAAAAAAhEs=', \
-        'Value':'{"clovis_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
+        'Value':'{"motr_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
         "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \
         "object_key_in_index":"object_1","object_layout_id":9,"object_list_index_oid":"TAifBwAAAHg=-AQAAAAAA2lk=", \
         "objects_version_list_index_oid":"TAifBwAAAHg=-AwAAAAAA2lk=","old_oid":"Tgj8AgAAAAA=-kwAAAAAABCY=", \
@@ -128,7 +128,7 @@ def test_object_metadata_exists_and_matches():
 
     config = CORTXS3Config()
     probable_delete_records = {'Key': 'Tgj8AgAAAAA=-dQAAAAAABCY=', \
-        'Value':'{"clovis_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
+        'Value':'{"motr_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
         "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \
         "object_key_in_index":"object_1","object_layout_id":9,"object_list_index_oid":"TAifBwAAAHg=-AQAAAAAA2lk=", \
         "objects_version_list_index_oid":"TAifBwAAAHg=-AwAAAAAA2lk=","old_oid":"AAAAAAAAAAA=-AAAAAAAAAAA=", \
@@ -175,7 +175,7 @@ def test_object_metadata_exists_mismatches():
 
     config = CORTXS3Config()
     probable_delete_records = {'Key': 'Tgj8AgAAAAA=-dQAAAAAABCY=', \
-        'Value':'{"clovis_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
+        'Value':'{"motr_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
         "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \
         "object_key_in_index":"object_1","object_layout_id":9,"object_list_index_oid":"TAifBwAAAHg=-AQAAAAAA2lk=", \
         "objects_version_list_index_oid":"TAifBwAAAHg=-AwAAAAAA2lk=","old_oid":"AAAAAAAAAAA=-AAAAAAAAAAA=", \

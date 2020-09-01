@@ -25,9 +25,9 @@
 #                                                                                  |   ^
 #                                                                                  V   |
 #                                                                              (sxid_to_rpc)
-#          clovis_to_dix    dix_to_mdix     dix_to_cas       cas_to_rpc             |                                        fom_to_tx
+#          motr_to_dix    dix_to_mdix     dix_to_cas       cas_to_rpc             |                                        fom_to_tx
 #                |              |  (meta_dix)   |               |                   |                                           |
-# clovis_req:id --> dix_req:id --> dix_req:id -----> cas_req:id --> rpc_req:id  ------------> fom_desc:{rpc_sm_id, fom_sm_id}  -----> be_tx:id
+# motr_req:id --> dix_req:id --> dix_req:id -----> cas_req:id --> rpc_req:id  ------------> fom_desc:{rpc_sm_id, fom_sm_id}  -----> be_tx:id
 #                      \               \...
 #                      \               +-----------> cas_req:id --> rpc_req:id  ------------> fom_desc:{rpc_sm_id, fom_sm_id}  -----> be_tx:id
 #                      \
@@ -42,11 +42,11 @@
 #                                                                                  |   ^
 #                                                                                  V   |
 #                                                                              (sxid_to_rpc)
-#                clovis_to_ioo                     ioo_to_rpc                        |                                       fom_to_tx
+#                motr_to_ioo                     ioo_to_rpc                        |                                       fom_to_tx
 #                       |                               |                            |                                           |
-# clovis_req:id ------------------>  ioo_req:id -----------------> rpc_req:id  --------------> fom_desc:{rpc_sm_id, fom_sm_id} ------> be_tx:id
+# motr_req:id ------------------>  ioo_req:id -----------------> rpc_req:id  --------------> fom_desc:{rpc_sm_id, fom_sm_id} ------> be_tx:id
 #            \                                                                      ...
-#             \  clovis_to_cob                     cob_to_rpc                        |                                       fom_to_tx
+#             \  motr_to_cob                     cob_to_rpc                        |                                       fom_to_tx
 #              \        |                               |                            |                                           |
 #               +----------------->  cob_req:id ------------------> rpc_req:id --------------> fom_desc:{rpc_sm_id, fom_sm_id} ------> be_tx:id
 #                                                                            \
@@ -146,7 +146,7 @@ class rpc_req(BaseModel):
     id     = IntegerField()
     state  = TextField()
 
-class clovis_req(BaseModel):
+class motr_req(BaseModel):
     time   = IntegerField()
     pid    = IntegerField()
     id     = IntegerField()
@@ -179,14 +179,14 @@ class dix_to_mdix(BaseModel):
     dix_id  = IntegerField()
     mdix_id = IntegerField()
 
-class clovis_to_dix(BaseModel):
+class motr_to_dix(BaseModel):
     pid       = IntegerField()
-    clovis_id = IntegerField()
+    motr_id = IntegerField()
     dix_id    = IntegerField()
 
-class clovis_to_cob(BaseModel):
+class motr_to_cob(BaseModel):
     pid       = IntegerField()
-    clovis_id = IntegerField()
+    motr_id = IntegerField()
     cob_id    = IntegerField()
 
 class cob_to_rpc(BaseModel):
@@ -194,9 +194,9 @@ class cob_to_rpc(BaseModel):
     cob_id = IntegerField()
     rpc_id = IntegerField()
 
-class clovis_to_ioo(BaseModel):
+class motr_to_ioo(BaseModel):
     pid       = IntegerField()
-    clovis_id = IntegerField()
+    motr_id = IntegerField()
     ioo_id    = IntegerField()
 
 class ioo_to_rpc(BaseModel):
@@ -249,11 +249,11 @@ class queues(BaseModel):
     avg  = FloatField()
     dev  = FloatField()
 
-class s3_request_to_clovis(BaseModel):
+class s3_request_to_motr(BaseModel):
     pid           = IntegerField()
     time          = IntegerField()
     s3_request_id = IntegerField()
-    clovis_id     = IntegerField()
+    motr_id     = IntegerField()
 
 class s3_request_uid(BaseModel):
     pid               = IntegerField()
@@ -267,13 +267,13 @@ class s3_request_state(BaseModel):
     s3_request_id = IntegerField()
     state         = TextField()
 
-db_create_delete_tables = [clovis_to_dix, dix_to_mdix, dix_to_cas, cas_to_rpc,
-                           cas_req, dix_req, clovis_req, rpc_req, rpc_to_sxid,
+db_create_delete_tables = [motr_to_dix, dix_to_mdix, dix_to_cas, cas_to_rpc,
+                           cas_req, dix_req, motr_req, rpc_req, rpc_to_sxid,
                            sxid_to_rpc, fom_desc, fom_to_tx, fom_req, be_tx,
-                           clovis_to_cob, cob_to_rpc, clovis_to_ioo, ioo_to_rpc,
+                           motr_to_cob, cob_to_rpc, motr_to_ioo, ioo_to_rpc,
                            cob_req, ioo_req, fom_req_state, queues, tx_to_gr,
                            fom_to_stio, stio_req, attr, bulk_to_rpc,
-                           s3_request_to_clovis, s3_request_uid,
+                           s3_request_to_motr, s3_request_uid,
                            s3_request_state]
 
 def db_create_tables():
@@ -333,7 +333,7 @@ class ADDB2PP:
         return((table, { 'time': ADDB2PP.to_unix(time), 'state': state, 'id': int(sm_id) }))
 
     # ['*', '2019-08-29-12:16:54.279414683',
-    #  'clovis-to-dix', 'clovis_id:', '1170,', 'dix_id:', '1171']
+    #  'motr-to-dix', 'motr_id:', '1170,', 'dix_id:', '1171']
     def p_1_to_2(measurement, labels, table):
         ret = yaml.safe_load("{"+" ".join(measurement[3:])+"}")
         return((table, ret))
@@ -409,16 +409,16 @@ class ADDB2PP:
 
     # ['*',
     #  '2020-01-26-17:14:56.139032082',
-    #  's3-request-to-clovis',
+    #  's3-request-to-motr',
     #  's3_request_id:'
     #  '1,',
-    #  'clovis_id:',
+    #  'motr_id:',
     #  '2187']
-    def s3req_clovis(measurement, labels, table):
+    def s3req_motr(measurement, labels, table):
         ret = {}
         ret['time'] = ADDB2PP.to_unix(measurement[1])
         ret['s3_request_id'] = int(measurement[4][:-1])
-        ret['clovis_id']     = int(measurement[6])
+        ret['motr_id']     = int(measurement[6])
         return((table, ret))
 
     # ['*',
@@ -478,16 +478,16 @@ class ADDB2PP:
             "cas-to-rpc"        : (ADDB2PP.p_1_to_2,      "cas_to_rpc"),
             "dix-to-cas"        : (ADDB2PP.p_1_to_2,      "dix_to_cas"),
             "dix-to-mdix"       : (ADDB2PP.p_1_to_2,      "dix_to_mdix"),
-            "clovis-to-dix"     : (ADDB2PP.p_1_to_2,      "clovis_to_dix"),
+            "motr-to-dix"     : (ADDB2PP.p_1_to_2,      "motr_to_dix"),
             "rpc-item-id-assign": (ADDB2PP.p_rpc_item_id, "rpc_to_sxid"),
             "rpc-out-phase"     : (ADDB2PP.p_sm_req,      "rpc_req"),
             "rpc-in-phase"      : (ADDB2PP.p_sm_req,      "rpc_req"),
             "cas-req-state"     : (ADDB2PP.p_sm_req,      "cas_req"),
             "dix-req-state"     : (ADDB2PP.p_sm_req,      "dix_req"),
-            "clovis-op-state"   : (ADDB2PP.p_sm_req,      "clovis_req"),
-            "clovis-to-cob"     : (ADDB2PP.p_1_to_2,      "clovis_to_cob"),
+            "motr-op-state"   : (ADDB2PP.p_sm_req,      "motr_req"),
+            "motr-to-cob"     : (ADDB2PP.p_1_to_2,      "motr_to_cob"),
             "cob-to-rpc"        : (ADDB2PP.p_1_to_2,      "cob_to_rpc"),
-            "clovis-to-ioo"     : (ADDB2PP.p_1_to_2,      "clovis_to_ioo"),
+            "motr-to-ioo"     : (ADDB2PP.p_1_to_2,      "motr_to_ioo"),
             "ioo-to-rpc"        : (ADDB2PP.p_1_to_2,      "ioo_to_rpc"),
             "ioo-req-state"     : (ADDB2PP.p_sm_req,      "ioo_req"),
             "cob-req-state"     : (ADDB2PP.p_cob_req,     "cob_req"),
@@ -496,7 +496,7 @@ class ADDB2PP:
             "attr"              : (ADDB2PP.p_attr,        "attr"),
             "bulk-to-rpc"       : (ADDB2PP.p_1_to_2,      "bulk_to_rpc"),
 
-            "s3-request-to-clovis" : (ADDB2PP.s3req_clovis, "s3_request_to_clovis"),
+            "s3-request-to-motr" : (ADDB2PP.s3req_motr, "s3_request_to_motr"),
             "s3-request-uid"       : (ADDB2PP.s3req_uid,    "s3_request_uid"),
             "s3-request-state"     : (ADDB2PP.s3req_state,  "s3_request_state"),
         }

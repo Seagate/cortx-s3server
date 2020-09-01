@@ -64,9 +64,9 @@ class S3GetServiceAction : public S3Action {
               GetNextBucketDoesNotCallsGetBucketListIndexIfMetadataFailed);
   FRIEND_TEST(S3GetServiceActionTest, GetNextBucketSuccessful);
   FRIEND_TEST(S3GetServiceActionTest,
-              GetNextBucketFailedClovisReaderStateMissing);
+              GetNextBucketFailedMotrReaderStateMissing);
   FRIEND_TEST(S3GetServiceActionTest,
-              GetNextBucketFailedClovisReaderStatePresent);
+              GetNextBucketFailedMotrReaderStatePresent);
   FRIEND_TEST(S3GetServiceActionTest, SendResponseToClientInternalError);
   FRIEND_TEST(S3GetServiceActionTest, SendResponseToClientServiceUnavailable);
   FRIEND_TEST(S3GetServiceActionTest, SendResponseToClientSuccess);

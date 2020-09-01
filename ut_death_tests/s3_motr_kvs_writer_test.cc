@@ -40,27 +40,24 @@ using ::testing::AtLeast;
 
 static void dummy_request_cb(evhtp_request_t *req, void *arg) {}
 
-int s3_test_alloc_op(struct m0_clovis_entity *entity,
-                     struct m0_clovis_op **op) {
-  *op = (struct m0_clovis_op *)calloc(1, sizeof(struct m0_clovis_op));
+int s3_test_alloc_op(struct m0_entity *entity, struct m0_op **op) {
+  *op = (struct m0_op *)calloc(1, sizeof(struct m0_op));
   return 0;
 }
 
-int s3_test_alloc_sync_op(struct m0_clovis_op **sync_op) {
-  *sync_op = (struct m0_clovis_op *)calloc(1, sizeof(struct m0_clovis_op));
+int s3_test_alloc_sync_op(struct m0_op **sync_op) {
+  *sync_op = (struct m0_op *)calloc(1, sizeof(struct m0_op));
   return 0;
 }
 
-int s3_test_clovis_idx_op(struct m0_clovis_idx *idx,
-                          enum m0_clovis_idx_opcode opcode,
-                          struct m0_bufvec *keys, struct m0_bufvec *vals,
-                          int *rcs, unsigned int flags,
-                          struct m0_clovis_op **op) {
-  *op = (struct m0_clovis_op *)calloc(1, sizeof(struct m0_clovis_op));
+int s3_test_motr_idx_op(struct m0_idx *idx, enum m0_idx_opcode opcode,
+                        struct m0_bufvec *keys, struct m0_bufvec *vals,
+                        int *rcs, unsigned int flags, struct m0_op **op) {
+  *op = (struct m0_op *)calloc(1, sizeof(struct m0_op));
   return 0;
 }
 
-void s3_test_free_clovis_op(struct m0_clovis_op *op) { free(op); }
+void s3_test_free_motr_op(struct m0_op *op) { free(op); }
 
 class S3MotrKVSWriterTest : public testing::Test {
  protected:
@@ -70,14 +67,14 @@ class S3MotrKVSWriterTest : public testing::Test {
     EvhtpWrapper *evhtp_obj_ptr = new EvhtpWrapper();
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
-    ptr_mock_s3clovis = std::make_shared<MockS3Clovis>();
-    EXPECT_CALL(*ptr_mock_s3clovis, m0_h_ufid_next(_))
+    ptr_mock_s3motr = std::make_shared<MockS3Motr>();
+    EXPECT_CALL(*ptr_mock_s3motr, m0_h_ufid_next(_))
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
-    EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_)).WillRepeatedly(Return(0));
+    EXPECT_CALL(*ptr_mock_s3motr, motr_op_rc(_)).WillRepeatedly(Return(0));
 
     action_under_test =
-        std::make_shared<S3MotrKVSWriter>(ptr_mock_request, ptr_mock_s3clovis);
+        std::make_shared<S3MotrKVSWriter>(ptr_mock_request, ptr_mock_s3motr);
     oid = {0xffff, 0xfff1f};
   }
 
@@ -87,9 +84,9 @@ class S3MotrKVSWriterTest : public testing::Test {
   evhtp_request_t *req;
   struct m0_uint128 oid;
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<MockS3Clovis> ptr_mock_s3clovis;
+  std::shared_ptr<MockS3Motr> ptr_mock_s3motr;
   std::shared_ptr<S3MotrKVSWriter> action_under_test;
-  S3MotrKVSWriter *p_cloviskvs;
+  S3MotrKVSWriter *p_motrkvs;
 };
 
 TEST_F(S3MotrKVSWriterTest, PutKeyValEmpty) {

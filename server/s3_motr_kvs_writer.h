@@ -33,7 +33,7 @@
 #include "s3_log.h"
 #include "s3_request_object.h"
 
-class S3SyncClovisKVSWriterContext {
+class S3SyncMotrKVSWriterContext {
   // Basic Operation context.
   struct s3_motr_idx_op_context* motr_idx_op_context;
   bool has_motr_idx_op_context;
@@ -46,7 +46,7 @@ class S3SyncClovisKVSWriterContext {
   int ops_count = 1;
 
  public:
-  S3SyncClovisKVSWriterContext(std::string req_id, int ops_cnt)
+  S3SyncMotrKVSWriterContext(std::string req_id, int ops_cnt)
       : request_id(std::move(req_id)), ops_count(ops_cnt) {
 
     s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
@@ -57,7 +57,7 @@ class S3SyncClovisKVSWriterContext {
     has_motr_kvs_op_context = false;
   }
 
-  ~S3SyncClovisKVSWriterContext() {
+  ~S3SyncMotrKVSWriterContext() {
     s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
     if (has_motr_idx_op_context) {
       free_basic_idx_op_ctx(motr_idx_op_context);
@@ -82,9 +82,9 @@ class S3SyncClovisKVSWriterContext {
   }
 };
 
-// Async Clovis context is inherited from Sync Context & S3AsyncOpContextBase
+// Async Motr context is inherited from Sync Context & S3AsyncOpContextBase
 
-class S3AsyncMotrKVSWriterContext : public S3SyncClovisKVSWriterContext,
+class S3AsyncMotrKVSWriterContext : public S3SyncMotrKVSWriterContext,
                                     public S3AsyncOpContextBase {
 
   std::string request_id = "";
@@ -95,8 +95,7 @@ class S3AsyncMotrKVSWriterContext : public S3SyncClovisKVSWriterContext,
                               std::function<void()> failed_callback,
                               int ops_count = 1,
                               std::shared_ptr<MotrAPI> motr_api = nullptr)
-      : S3SyncClovisKVSWriterContext(req ? req->get_request_id() : "",
-                                     ops_count),
+      : S3SyncMotrKVSWriterContext(req ? req->get_request_id() : "", ops_count),
         S3AsyncOpContextBase(req, success_callback, failed_callback, ops_count,
                              motr_api) {
     request_id = req ? req->get_request_id() : "";
@@ -127,7 +126,7 @@ class S3MotrKVSWriter {
   std::shared_ptr<RequestObject> request;
   std::shared_ptr<MotrAPI> s3_motr_api;
   std::unique_ptr<S3AsyncMotrKVSWriterContext> writer_context;
-  std::unique_ptr<S3SyncClovisKVSWriterContext> sync_writer_context;
+  std::unique_ptr<S3SyncMotrKVSWriterContext> sync_writer_context;
   std::unique_ptr<S3AsyncMotrKVSWriterContext> sync_context;
   std::string kvs_key;
   std::string kvs_value;

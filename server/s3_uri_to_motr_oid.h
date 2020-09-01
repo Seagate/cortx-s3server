@@ -27,10 +27,10 @@
 #include "s3_motr_wrapper.h"
 
 EXTERN_C_BLOCK_BEGIN
-#include "clovis/clovis.h"
+#include "motr/client.h"
 EXTERN_C_BLOCK_END
 
 int S3UriToMotrOID(std::shared_ptr<MotrAPI> s3_motr_api, const char *uri_name,
                    const std::string &request_id, m0_uint128 *ufid,
-                   S3ClovisEntityType type = S3ClovisEntityType::object);
+                   S3MotrEntityType type = S3MotrEntityType::object);
 #endif

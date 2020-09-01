@@ -56,6 +56,8 @@ where:
 set -e
 
 S3_DIR="/root/s3server"
+access_key=""
+secret_key=""
 
 OS=$(cat /etc/os-release | grep -w ID | cut -d '=' -f 2)
 VERSION=`cat /etc/os-release | sed -n 's/VERSION_ID=\"\([0-9].*\)\"/\1/p'`
@@ -135,7 +137,7 @@ setup_release_repo()
 {
 cat >/etc/yum.repos.d/releases_cortx_lustre.repo <<EOL
 [releases_cortx_lustre]
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/github/release/rhel-7.7.1908/last_successful/
+baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/github/release/rhel-7.7.1908/last_successful/
 gpgcheck = 0
 name = Yum repo for lustre
 priority = 1
@@ -143,7 +145,7 @@ EOL
 
 cat >/etc/yum.repos.d/releases_cortx_hare.repo <<EOL
 [releases_cortx_hare]
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/github/release/rhel-7.7.1908/last_successful/
+baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/github/release/rhel-7.7.1908/last_successful/
 gpgcheck = 0
 name = Yum repo for hare
 priority = 1
@@ -151,7 +153,7 @@ EOL
 
 cat >/etc/yum.repos.d/releases_cortx_motr.repo <<EOL
 [releases_cortx_motr]
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/components/github/dev/rhel-7.7.1908/dev/motr/last_successful/
+baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/components/github/dev/rhel-7.7.1908/dev/motr/last_successful/
 gpgcheck = 0
 name = Yum repo for motr
 priority = 1
@@ -159,7 +161,7 @@ EOL
 
 cat >/etc/yum.repos.d/releases_cortx_s3server.repo <<EOL
 [releases_cortx_s3server]
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/components/dev/centos-7.7.1908/s3server/last_successful/
+baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/components/dev/centos-7.7.1908/s3server/last_successful/
 gpgcheck = 0
 name = Yum repo for s3server
 priority = 1
@@ -170,7 +172,7 @@ then
 
 cat >/etc/yum.repos.d/releases_s3server_uploads <<EOL
 [releases_s3server_uploads]
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/uploads/centos/centos-7.7.1908/s3server_uploads/
+baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/uploads/centos/centos-7.7.1908/s3server_uploads/
 gpgcheck = 0
 name = Yum repo for S3 server dependencies
 priority = 1
@@ -188,7 +190,7 @@ elif [ "$major_version" = "8" ];
 then
 cat >/etc/yum.repos.d/releases_s3server_uploads <<EOL
 [releases_s3server_uploads]
-baseurl = http://cortx-storage.colo.seagate.com/releases/eos/uploads/centos/centos-8.0.1905/s3server_uploads/
+baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/uploads/centos/centos-8.0.1905/s3server_uploads/
 gpgcheck = 0
 name = Yum repo for S3 server dependencies
 priority = 1
@@ -366,7 +368,12 @@ add_s3backgrounddelete_rabbitmq_user()
     echo "Rabbitmq configuration for this node is completed..."
 }
 
-
+# Generate random credentials for accounts
+create_random_keys()
+{
+    access_key=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 23 | head -n 1)
+    secret_key=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9+' | fold -w 41 | head -n 1)
+}
 # Create s3 account for s3 recoverytool
 create_recovery_tool_account()
 {
@@ -374,7 +381,15 @@ create_recovery_tool_account()
     if [[ $output == *"No such object"* ]]
     then
       # Create s3recovery tool account
-      sh /opt/seagate/cortx/s3/install/ldap/create_s3_recovery_account.sh $ldappasswd
+      create_random_keys
+      sed -i "s/recovery_account_access_key:.*$/recovery_account_access_key: \"$access_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+      sed -i "s/recovery_account_secret_key:.*$/recovery_account_secret_key: \"$secret_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+      sed -i "s/ak:.*/ak: $access_key/g" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif
+      sed -i "s/sk:.*/sk: $secret_key/g" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif
+      sed -i "s/ak=.*/ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com/g" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif
+      access_key=""
+      secret_key=""
+      sh /root/cortx-s3server/scripts/ldap/create_s3_recovery_account.sh $ldappasswd
       echo "Created s3recovery tool account successfully..."
     else
       echo "s3recovery tool account already exists"
@@ -401,6 +416,14 @@ create_background_delete_account()
     if [[ $output == *"No such object"* ]]
     then
       # Create s3background delete account
+      create_random_keys
+      sed -i "s/background_account_access_key:.*$/background_account_access_key: \"$access_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+      sed -i "s/background_account_secret_key:.*$/background_account_secret_key: \"$secret_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+      sed -i "s/ak:.*/ak: $access_key/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
+      sed -i "s/sk:.*/sk: $secret_key/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
+      sed -i "s/ak=.*/ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
+      access_key=""
+      secret_key=""
       sh /opt/seagate/cortx/s3/install/ldap/create_background_delete_account.sh $ldappasswd
       echo "Created s3backgrounddelete account successfully..."
     else

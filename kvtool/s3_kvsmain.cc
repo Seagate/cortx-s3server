@@ -40,8 +40,8 @@ EXTERN_C_BLOCK_BEGIN
 #include <math.h>
 #include <sys/stat.h>
 
-#include "clovis/clovis.h"
-#include "clovis/clovis_idx.h"
+#include "motr/client.h"
+#include "motr/idx.h"
 #include "lib/memory.h"
 #include "lib/types.h"
 
@@ -54,7 +54,7 @@ EXTERN_C_BLOCK_END
 #include <gflags/gflags.h>
 #include <inttypes.h>
 
-/* Clovis parameters */
+/* Motr parameters */
 
 DEFINE_string(action, "none",
               "KVS action:get,next,put,del,createidx,deleteidx");
@@ -66,13 +66,12 @@ DEFINE_string(index_hi, "", "KVS operation oid HI <0xhex64bitOidString>");
 DEFINE_string(index_lo, "", "KVS operation oid LO <0xhex64bitOidString>");
 DEFINE_int32(kvstore, 2, "Type of index service: 1:MOTR; 2:CASSANDRA");
 
-DEFINE_string(clovis_local_addr, "local@tcp:12345:33:100",
-              "Clovis local address");
-DEFINE_string(clovis_ha_addr, "local@tcp:12345:34:1", "Clovis ha address");
-DEFINE_string(clovis_profile, "<0x7000000000000001:0>", "Clovis profile");
-DEFINE_string(clovis_proc, "<0x7200000000000000:0>", "Clovis proc");
-DEFINE_string(clovis_kvs_keyspace, "clovis_index_keyspace", "Clovis keyspace");
-DEFINE_string(clovis_cluster_ep, "127.0.0.1", "Cluster EP");
+DEFINE_string(motr_local_addr, "local@tcp:12345:33:100", "Motr local address");
+DEFINE_string(motr_ha_addr, "local@tcp:12345:34:1", "Motr ha address");
+DEFINE_string(motr_profile, "<0x7000000000000001:0>", "Motr profile");
+DEFINE_string(motr_proc, "<0x7200000000000000:0>", "Motr proc");
+DEFINE_string(motr_kvs_keyspace, "motr_index_keyspace", "Motr keyspace");
+DEFINE_string(motr_cluster_ep, "127.0.0.1", "Cluster EP");
 DEFINE_int32(recv_queue_min_len, 16,
              "Recv Queue min length: default 16");  // As Suggested by Motr team
 DEFINE_int32(max_rpc_msg_size, 65536,
@@ -80,110 +79,107 @@ DEFINE_int32(max_rpc_msg_size, 65536,
 
 static struct m0_idx_dix_config dix_conf;
 static struct m0_idx_cass_config cass_conf;
-static struct m0_clovis *clovis_instance = NULL;
-static struct m0_clovis_container clovis_container;
-static struct m0_clovis_realm clovis_uber_realm;
-static struct m0_clovis_config clovis_conf;
+static struct m0_client *motr_instance = NULL;
+static struct m0_container motr_container;
+static struct m0_realm motr_uber_realm;
+static struct m0_config motr_conf;
 
 struct m0_uint128 root_user_index_oid;
 struct m0_uint128 root_user_bucket_list_oid;
 
-static int init_clovis(void) {
+static int init_motr(void) {
   int rc;
 
-  clovis_conf.cc_is_oostore = true;
-  clovis_conf.cc_is_read_verify = false;
-  clovis_conf.cc_local_addr = FLAGS_clovis_local_addr.c_str();
-  clovis_conf.cc_ha_addr = FLAGS_clovis_ha_addr.c_str();
-  clovis_conf.cc_profile = FLAGS_clovis_profile.c_str();
-  clovis_conf.cc_process_fid = FLAGS_clovis_proc.c_str();
-  clovis_conf.cc_tm_recv_queue_min_len = FLAGS_recv_queue_min_len;
-  clovis_conf.cc_max_rpc_msg_size = FLAGS_max_rpc_msg_size;
+  motr_conf.mc_is_oostore = true;
+  motr_conf.mc_is_read_verify = false;
+  motr_conf.mc_local_addr = FLAGS_motr_local_addr.c_str();
+  motr_conf.mc_ha_addr = FLAGS_motr_ha_addr.c_str();
+  motr_conf.mc_profile = FLAGS_motr_profile.c_str();
+  motr_conf.mc_process_fid = FLAGS_motr_proc.c_str();
+  motr_conf.mc_tm_recv_queue_min_len = FLAGS_recv_queue_min_len;
+  motr_conf.mc_max_rpc_msg_size = FLAGS_max_rpc_msg_size;
 
-  cass_conf.cc_cluster_ep = const_cast<char *>(FLAGS_clovis_cluster_ep.c_str());
-  cass_conf.cc_keyspace = const_cast<char *>(FLAGS_clovis_kvs_keyspace.c_str());
+  cass_conf.cc_cluster_ep = const_cast<char *>(FLAGS_motr_cluster_ep.c_str());
+  cass_conf.cc_keyspace = const_cast<char *>(FLAGS_motr_kvs_keyspace.c_str());
 
   cass_conf.cc_max_column_family_num = 1;
   dix_conf.kc_create_meta = false;
-  clovis_conf.cc_idx_service_id = FLAGS_kvstore;
+  motr_conf.mc_idx_service_id = FLAGS_kvstore;
   if (FLAGS_kvstore == 2)
-    clovis_conf.cc_idx_service_conf = &cass_conf;
+    motr_conf.mc_idx_service_conf = &cass_conf;
   else
-    clovis_conf.cc_idx_service_conf = &dix_conf;
+    motr_conf.mc_idx_service_conf = &dix_conf;
 
-  clovis_conf.cc_layout_id = 0;
+  motr_conf.mc_layout_id = 0;
 
-  /* Clovis instance */
-  rc = m0_clovis_init(&clovis_instance, &clovis_conf, true);
+  /* Motr instance */
+  rc = m0_client_init(&motr_instance, &motr_conf, true);
   if (rc != 0) {
-    fprintf(stderr, "Failed to initilise Clovis\n");
+    fprintf(stderr, "Failed to initilise Motr\n");
     goto err_exit;
   }
 
-  /* And finally, clovis root realm */
-  m0_clovis_container_init(&clovis_container, NULL, &M0_CLOVIS_UBER_REALM,
-                           clovis_instance);
+  /* And finally, motr root realm */
+  m0_container_init(&motr_container, NULL, &M0_UBER_REALM, motr_instance);
 
-  clovis_uber_realm = clovis_container.co_realm;
+  motr_uber_realm = motr_container.co_realm;
   return 0;
 
 err_exit:
   return rc;
 }
 
-static void fini_clovis(void) { m0_clovis_fini(clovis_instance, true); }
+static void fini_motr(void) { m0_client_fini(motr_instance, true); }
 
 static int create_index(struct m0_uint128 id) {
   int rc;
-  struct m0_clovis_idx idx;
-  // struct m0_clovis_obj obj;
-  struct m0_clovis_op *ops[1] = {NULL};
+  struct m0_idx idx;
+  // struct m0_obj obj;
+  struct m0_op *ops[1] = {NULL};
 
-  memset(&idx, 0, sizeof(struct m0_clovis_idx));
+  memset(&idx, 0, sizeof(struct m0_idx));
 
-  m0_clovis_idx_init(&idx, &clovis_uber_realm, &id);
-  m0_clovis_entity_create(NULL, &idx.in_entity, &ops[0]);
+  m0_idx_init(&idx, &motr_uber_realm, &id);
+  m0_entity_create(NULL, &idx.in_entity, &ops[0]);
 
-  m0_clovis_op_launch(ops, ARRAY_SIZE(ops));
+  m0_op_launch(ops, ARRAY_SIZE(ops));
 
-  rc = m0_clovis_op_wait(ops[0],
-                         M0_BITS(M0_CLOVIS_OS_FAILED, M0_CLOVIS_OS_STABLE),
-                         m0_time_from_now(3, 0));
-  if (rc < 0) fprintf(stderr, "Clovis Operation failed:%d\n", rc);
-  if (ops[0]->op_sm.sm_state != M0_CLOVIS_OS_STABLE)
+  rc = m0_op_wait(ops[0], M0_BITS(M0_OS_FAILED, M0_OS_STABLE),
+                  m0_time_from_now(3, 0));
+  if (rc < 0) fprintf(stderr, "Motr Operation failed:%d\n", rc);
+  if (ops[0]->op_sm.sm_state != M0_OS_STABLE)
     fprintf(stderr, "Index Operation failed:%d\n", ops[0]->op_sm.sm_state);
 
-  m0_clovis_op_fini(ops[0]);
-  m0_clovis_op_free(ops[0]);
-  m0_clovis_entity_fini(&idx.in_entity);
+  m0_op_fini(ops[0]);
+  m0_op_free(ops[0]);
+  m0_entity_fini(&idx.in_entity);
 
   return rc;
 }
 
 static int delete_index(struct m0_uint128 id) {
   int rc;
-  struct m0_clovis_idx idx;
-  struct m0_clovis_op *ops[1] = {NULL};
+  struct m0_idx idx;
+  struct m0_op *ops[1] = {NULL};
 
-  memset(&idx, 0, sizeof(struct m0_clovis_idx));
+  memset(&idx, 0, sizeof(struct m0_idx));
 
-  m0_clovis_idx_init(&idx, &clovis_uber_realm, &id);
-  m0_clovis_entity_open(&idx.in_entity, &ops[0]);
-  m0_clovis_entity_delete(&idx.in_entity, &ops[0]);
+  m0_idx_init(&idx, &motr_uber_realm, &id);
+  m0_entity_open(&idx.in_entity, &ops[0]);
+  m0_entity_delete(&idx.in_entity, &ops[0]);
 
-  m0_clovis_op_launch(ops, ARRAY_SIZE(ops));
+  m0_op_launch(ops, ARRAY_SIZE(ops));
 
-  rc = m0_clovis_op_wait(ops[0],
-                         M0_BITS(M0_CLOVIS_OS_FAILED, M0_CLOVIS_OS_STABLE),
-                         m0_time_from_now(3, 0));
+  rc = m0_op_wait(ops[0], M0_BITS(M0_OS_FAILED, M0_OS_STABLE),
+                  m0_time_from_now(3, 0));
 
-  if (rc < 0) fprintf(stderr, "Clovis Operation failed:%d\n", rc);
-  if (ops[0]->op_sm.sm_state != M0_CLOVIS_OS_STABLE)
+  if (rc < 0) fprintf(stderr, "Motr Operation failed:%d\n", rc);
+  if (ops[0]->op_sm.sm_state != M0_OS_STABLE)
     fprintf(stderr, "Index Operation failed:%d\n", ops[0]->op_sm.sm_state);
 
-  m0_clovis_op_fini(ops[0]);
-  m0_clovis_op_free(ops[0]);
-  m0_clovis_entity_fini(&idx.in_entity);
+  m0_op_fini(ops[0]);
+  m0_op_free(ops[0]);
+  m0_entity_fini(&idx.in_entity);
 
   return rc;
 }
@@ -223,35 +219,33 @@ FAIL:
   return NULL;
 }
 
-// NOTE: Common func to query opcodes supported via m0_clovis_idx_opcode
-// Refer clovis/clovis.h for opcodes
+// NOTE: Common func to query opcodes supported via m0_idx_opcode
+// Refer motr/client.h for opcodes
 static int execute_kv_query(struct m0_uint128 id, struct m0_bufvec *keys,
                             int *rc_keys, struct m0_bufvec *vals,
-                            unsigned int flags,
-                            enum m0_clovis_idx_opcode opcode) {
+                            unsigned int flags, enum m0_idx_opcode opcode) {
   int rc;
-  struct m0_clovis_op *ops[1] = {NULL};
-  struct m0_clovis_idx idx;
+  struct m0_op *ops[1] = {NULL};
+  struct m0_idx idx;
 
   memset(&idx, 0, sizeof(idx));
   ops[0] = NULL;
 
-  m0_clovis_idx_init(&idx, &clovis_uber_realm, &id);
-  m0_clovis_idx_op(&idx, opcode, keys, vals, rc_keys, flags, &ops[0]);
+  m0_idx_init(&idx, &motr_uber_realm, &id);
+  m0_idx_op(&idx, opcode, keys, vals, rc_keys, flags, &ops[0]);
 
-  m0_clovis_op_launch(ops, 1);
-  rc = m0_clovis_op_wait(
-      ops[0], M0_BITS(M0_CLOVIS_OS_FAILED, M0_CLOVIS_OS_STABLE), M0_TIME_NEVER);
+  m0_op_launch(ops, 1);
+  rc = m0_op_wait(ops[0], M0_BITS(M0_OS_FAILED, M0_OS_STABLE), M0_TIME_NEVER);
   if (rc < 0) {
-    fprintf(stderr, "Clovis op failed:%d \n", rc);
+    fprintf(stderr, "Motr op failed:%d \n", rc);
     return rc;
   }
 
-  rc = m0_clovis_rc(ops[0]);
+  rc = m0_rc(ops[0]);
   /* fini and release */
-  m0_clovis_op_fini(ops[0]);
-  m0_clovis_op_free(ops[0]);
-  m0_clovis_entity_fini(&idx.in_entity);
+  m0_op_fini(ops[0]);
+  m0_op_free(ops[0]);
+  m0_entity_fini(&idx.in_entity);
 
   return 0;
 }
@@ -285,7 +279,7 @@ static int kv_next(struct m0_uint128 id, const char *keystring, int nr_kvp) {
     memcpy(keys->ov_buf[0], keystring, keylen);
   }
 
-  rc = execute_kv_query(id, keys, rc_keys, vals, 0, M0_CLOVIS_IC_NEXT);
+  rc = execute_kv_query(id, keys, rc_keys, vals, 0, M0_IC_NEXT);
   if (rc < 0) {
     fprintf(stderr, "Index Operation failed:%d\n", rc);
     goto ERROR;
@@ -325,8 +319,8 @@ ERROR:
 void fetch_root_index() {
   struct m0_uint128 temp = {0ULL, 0ULL};
   temp.u_lo = 1;
-  // Fixed oid for root index -- M0_CLOVIS_ID_APP + 1
-  m0_uint128_add(&root_user_index_oid, &M0_CLOVIS_ID_APP, &temp);
+  // Fixed oid for root index -- M0_ID_APP + 1
+  m0_uint128_add(&root_user_index_oid, &M0_ID_APP, &temp);
   struct m0_fid index_fid =
       M0_FID_TINIT('x', root_user_index_oid.u_hi, root_user_index_oid.u_lo);
   root_user_index_oid.u_hi = index_fid.f_container;
@@ -354,7 +348,7 @@ static int kv_get(struct m0_uint128 id, const char *keystring) {
   if (keys->ov_buf[0] == NULL) goto ERROR;
   memcpy(keys->ov_buf[0], keystring, keylen);
 
-  rc = execute_kv_query(id, keys, &rc_key, vals, 0, M0_CLOVIS_IC_GET);
+  rc = execute_kv_query(id, keys, &rc_key, vals, 0, M0_IC_GET);
   if (rc < 0 || rc_key < 0) {
     fprintf(stderr, "Index Operation failed:%d\n", rc);
     goto ERROR;
@@ -410,7 +404,7 @@ static int kv_put(struct m0_uint128 id, const char *keystring,
   vals->ov_buf[0] = (char *)malloc(valuelen);
   memcpy(vals->ov_buf[0], keyvalue, valuelen);
 
-  rc = execute_kv_query(id, keys, &rc_key, vals, 0, M0_CLOVIS_IC_PUT);
+  rc = execute_kv_query(id, keys, &rc_key, vals, 0, M0_IC_PUT);
   if (rc < 0 || rc_key < 0) {
     fprintf(stderr, "Index Operation failed:%d\n", rc);
     goto ERROR;
@@ -447,7 +441,7 @@ static int kv_delete(struct m0_uint128 id, const char *keystring) {
   if (keys->ov_buf[0] == NULL) goto ERROR;
   memcpy(keys->ov_buf[0], keystring, keylen);
 
-  rc = execute_kv_query(id, keys, &rc_key, vals, 0, M0_CLOVIS_IC_DEL);
+  rc = execute_kv_query(id, keys, &rc_key, vals, 0, M0_IC_DEL);
   if (rc < 0 || rc_key < 0) {
     fprintf(stderr, "Index Operation failed:%d\n", rc);
     goto ERROR;
@@ -531,7 +525,7 @@ int main(int argc, char **argv) {
 
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
-  rc = init_clovis();
+  rc = init_motr();
   if (rc < 0) {
     return rc;
   }
@@ -557,6 +551,6 @@ int main(int argc, char **argv) {
   }
 
   // Clean-up
-  fini_clovis();
+  fini_motr();
   return rc;
 }

@@ -84,10 +84,10 @@ current directory i.e st/clitests from the respective build directories.
 Configuration:
 cfg directory contains configuration files used by some system tests.
 Edit corresponding configuration file to modify adjustable parameters
-eg: To configure Motr-KVS as backend for System Test runs set S3_CLOVIS_IDX_SERVICE_ID: 1
+eg: To configure Motr-KVS as backend for System Test runs set S3_MOTR_IDX_SERVICE_ID: 1
 ```sh
 cd cfg/
-edit cloviskvscli.yaml
+edit motrkvscli.yaml
 ```
 
 How to run?
