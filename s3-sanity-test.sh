@@ -77,7 +77,7 @@ cleanup() {
 
     if [ "$externalcleanup" = true ]
     then
-        output=$(s3iamcli resetaccountaccesskey -n SanityAccountToDeleteAfterUse --ldapuser sgiamadmin --ldappasswd $ldappasswd)
+        output=$(s3iamcli resetaccountaccesskey -n SanityAccountToDeleteAfterUse --ldapuser sgiamadmin --ldappasswd "$ldappasswd")
         echo $output
         access_key=$(echo -e "$output" | tr ',' '\n' | grep "AccessKeyId" | awk '{print $3}')
         secret_key=$(echo -e "$output" | tr ',' '\n' | grep "SecretKey" | awk '{print $3}')
@@ -111,7 +111,7 @@ echo -e "\n\n*** S3 Sanity ***"
 echo -e "\n\n**** Create Account *******"
 
 
-output=$(s3iamcli createaccount -n SanityAccountToDeleteAfterUse  -e SanityAccountToDeleteAfterUse@sanitybucket.com --ldapuser sgiamadmin --ldappasswd $ldappasswd)
+output=$(s3iamcli createaccount -n SanityAccountToDeleteAfterUse  -e SanityAccountToDeleteAfterUse@sanitybucket.com --ldapuser sgiamadmin --ldappasswd "$ldappasswd")
 
 echo $output
 access_key=$(echo -e "$output" | tr ',' '\n' | grep "AccessKeyId" | awk '{print $3}')

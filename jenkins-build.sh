@@ -64,6 +64,10 @@ callgraph_cmd=""
 local_redis_restart=0
 ldap_admin_pwd=
 
+if [ ! -f  "./ansible/ldap.prop" ]
+then
+  cp -f ./ansible/t_ldap.prop ./ansible/ldap.prop
+fi
 source ./ansible/ldap.prop
 
 if [ $# -eq 0 ]
@@ -280,7 +284,7 @@ $USE_SUDO ./m0t1fs/../motr/st/utils/motr_services.sh start
 cd $S3_BUILD_DIR
 
 # Ensure correct ldap credentials are present.
-./scripts/enc_ldap_passwd_in_cfg.sh -l $ldap_admin_pwd \
+./scripts/enc_ldap_passwd_in_cfg.sh -l "$ldap_admin_pwd" \
           -p /opt/seagate/cortx/auth/resources/authserver.properties
 
 # Enable fault injection in AuthServer
