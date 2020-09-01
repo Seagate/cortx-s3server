@@ -44,7 +44,6 @@ fi
 
 # load ldap credentials
 ldap_root_pwd=
-ldap_admin_pwd=
 if [ ! -f  "./ansible/ldap.prop" ]
 then
   cp -f ./ansible/t_ldap.prop ./ansible/ldap.prop
@@ -107,7 +106,7 @@ if [ "$change_ldap_passwd" = true ] ; then
     cp -f change_ldap_passwd.ldif $ADMIN_USERS_FILE
     sed -i "$EXPR" $ADMIN_USERS_FILE
     # Setup iam admin and necessary permissions
-    ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $ldap_root_pwd -f $ADMIN_USERS_FILE
+    ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ldap_root_pwd" -f "$ADMIN_USERS_FILE"
     rm -f $ADMIN_USERS_FILE
     # Update common ldap credential file
     if [ ! -z "$ROOTDNPASSWORD" ] ; then
