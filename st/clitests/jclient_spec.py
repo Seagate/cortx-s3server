@@ -21,7 +21,7 @@
 
 import os
 from framework import Config
-from framework import LdapInfo
+from ldap_setup import LdapInfo
 from framework import S3PyCliTest
 from jclient import JClientTest
 from auth import AuthTest

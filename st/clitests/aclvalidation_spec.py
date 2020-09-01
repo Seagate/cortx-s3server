@@ -21,7 +21,7 @@ import os
 import yaml
 import json
 from framework import Config
-from framework import LdapInfo
+from ldap_setup import LdapInfo
 from framework import S3PyCliTest
 from awss3api import AwsTest
 from s3cmd import S3cmdTest
