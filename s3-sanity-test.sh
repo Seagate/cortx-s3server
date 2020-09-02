@@ -27,8 +27,6 @@ set -x
 # S3 sanity test script #
 #########################
 
-source ansible/ldap.prop
-
 if command -v s3cmd >/dev/null 2>&1;then
     printf "\nCheck S3CMD...OK"
 else
@@ -50,6 +48,9 @@ if rpm -q "salt"  > /dev/null;
 then
     ldappasswd=$(salt-call pillar.get openldap:iam_admin:secret --output=newline_values_only)
     ldappasswd=$(salt-call lyveutil.decrypt openldap ${ldappasswd} --output=newline_values_only)
+else
+    # Dev environment. Read ldap admin password from ldap.prop
+    source ansible/ldap.prop
 fi
 
 if [[ -z "$ldappasswd" ]]
