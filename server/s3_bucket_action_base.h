@@ -69,6 +69,7 @@ class S3BucketAction : public S3Action {
 
   FRIEND_TEST(S3BucketActionTest, Constructor);
   FRIEND_TEST(S3BucketActionTest, FetchBucketInfo);
+  FRIEND_TEST(S3BucketActionTest, FetchBucketInfoSuccess);
   FRIEND_TEST(S3BucketActionTest, LoadMetadata);
   FRIEND_TEST(S3BucketActionTest, SetAuthorizationMeta);
 };

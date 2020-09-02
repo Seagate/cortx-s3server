@@ -28,20 +28,19 @@ S3PutBucketAction::S3PutBucketAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3PutBucketBodyFactory> bucket_body_factory)
-    : S3Action(req) {
+    : S3Action(std::move(req)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   s3_log(S3_LOG_INFO, request_id, "S3 API: Put Bucket. Bucket[%s]\n",
          request->get_bucket_name().c_str());
 
-  location_constraint = "";
   if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
+    bucket_metadata_factory = std::move(bucket_meta_factory);
   } else {
     bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
   }
   if (bucket_body_factory) {
-    put_bucketbody_factory = bucket_body_factory;
+    put_bucketbody_factory = std::move(bucket_body_factory);
   } else {
     put_bucketbody_factory = std::make_shared<S3PutBucketBodyFactory>();
   }
@@ -297,6 +296,8 @@ void S3PutBucketAction::send_response_to_s3_client() {
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else {
+    request->get_audit_info().set_bucket_owner_canonical_id(
+        request->get_canonical_id());
     request->send_response(S3HttpSuccess200);
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
