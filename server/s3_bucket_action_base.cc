@@ -65,7 +65,7 @@ void S3BucketAction::fetch_bucket_info() {
 
 void S3BucketAction::fetch_bucket_info_success() {
   request->get_audit_info().set_bucket_owner_canonical_id(
-      bucket_metadata->get_owner_id());
+      bucket_metadata->get_owner_canonical_id());
   next();
 }
 
