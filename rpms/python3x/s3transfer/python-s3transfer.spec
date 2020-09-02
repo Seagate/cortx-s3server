@@ -1,3 +1,4 @@
+# Copied from https://github.com/boto/s3transfer
 # Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
