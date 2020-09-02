@@ -389,7 +389,7 @@ create_recovery_tool_account()
       sed -i "s/ak=.*/ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com/g" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif
       access_key=""
       secret_key=""
-      sh /root/cortx-s3server/scripts/ldap/create_s3_recovery_account.sh $ldappasswd
+      sh /opt/seagate/cortx/s3/install/ldap/create_s3_recovery_account.sh $ldappasswd
       echo "Created s3recovery tool account successfully..."
     else
       echo "s3recovery tool account already exists"
