@@ -1,3 +1,4 @@
+# Copied from https://github.com/google/googletest
 # Copyright 2008, Google Inc.
 # All rights reserved.
 #
