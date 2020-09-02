@@ -1,3 +1,4 @@
+# Copied from https://github.com/martinblech/xmltodict
 # (c) 2005-2007 Ian Bicking and contributors; written for Paste
 # Licensed under the MIT license:
 #       http://www.opensource.org/licenses/mit-license.php
