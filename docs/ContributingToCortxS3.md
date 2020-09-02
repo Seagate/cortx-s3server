@@ -31,9 +31,9 @@ Before you set up your GitHub, you'll need to
 2. Add the SSH key to your GitHub Account:
    1. Copy the public key: `id_rsa.pub`. By default, your public key is located at `/root/.ssh/id_rsa.pub`
    2. Navigate to [GitHub SSH key settings](https://github.com/settings/keys) on your GitHub account.
-      
-    :page_with_curl:**Note:** Ensure that you've set your GitHub Email ID as the Primary Email Address associated with your GitHub Account. SSO will not work if you do not set  your GitHub Email ID as your Primary Email Address.
-   
+
+      :page_with_curl:**Note:** Ensure that you've set your Seagate Email ID as the Primary Email Address associated with your GitHub Account. SSO will not work if you do not set  your Seagate Email ID as your Primary Email Address.
+
    3. Paste the SSH key you generated in Step 1 and select *Enable SSO*.
    4. Click **Authorize** to authorize SSO for your SSH key.
    5. [Create a Personal Access Token or PAT](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
@@ -104,7 +104,7 @@ You'll need to **Fork** the cortx-s3server repository to clone it into your priv
 
    `$ git checkout main`
 
-   `$ git checkout -b 'your-local-branch-name`
+   `$ git checkout -b 'your-local-branch-name'
 
 ### 1.3.2 Code Commits
 
@@ -117,6 +117,7 @@ You can make changes to the code and save them in your files.
 2. To commit your code changes use:
 
    `$ git commit -m 'comment'` - enter your GitHub Account ID and an appropriate Feature or Change description in comment.
+
 
 3. Check out your git log to view the details of your commit and verify the author name using: `$ git log`
 
