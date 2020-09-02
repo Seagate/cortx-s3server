@@ -281,13 +281,18 @@ set +e
 rootdnpasswd=""
 if rpm -q "salt"  > /dev/null;
 then
+    # Prod/Release environment
     rootdnpasswd=$(salt-call pillar.get openldap:admin:secret --output=newline_values_only)
     rootdnpasswd=$(salt-call lyveutil.decrypt openldap ${rootdnpasswd} --output=newline_values_only)
+else
+    # Dev environment
+    scrpt_src_dir="$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd)"
+    source $scrpt_src_dir/../../ansible/ldap.prop
 fi
 
 if [[ -z "$rootdnpasswd" ]]
 then
-    rootdnpasswd="seagate"
+    rootdnpasswd=$ldap_root_pwd
 fi
 
 # Run ldap commands

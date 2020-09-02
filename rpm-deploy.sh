@@ -50,8 +50,16 @@ set -e
 
 SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
-# Include ldap dev environment credentials 
-source ./ansible/ldap.prop
+
+if rpm -q "salt"  > /dev/null 2>&1;
+then
+    # Release/Prod environment
+    ldap_admin_pwd=$(salt-call pillar.get openldap:iam_admin:secret --output=newline_values_only)
+    ldap_admin_pwd=$(salt-call lyveutil.decrypt openldap ${ldap_admin_pwd} --output=newline_values_only)
+else
+    # Dev environment. Read ldap admin password from ldap.prop
+    source ansible/ldap.prop
+fi
 
 USE_SUDO=
 if [[ $EUID -ne 0 ]]; then

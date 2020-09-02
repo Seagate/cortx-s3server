@@ -67,6 +67,7 @@ ldap_admin_pwd=
 
 if [ ! -f  "./ansible/ldap.prop" ]
 then
+  # ldap.prop file not available on Jenkin build node
   cp -f ./ansible/t_ldap.prop ./ansible/ldap.prop
 fi
 source ./ansible/ldap.prop
