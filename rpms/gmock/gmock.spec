@@ -1,3 +1,4 @@
+# Copied from https://github.com/google/googlemock
 # Copyright 2007, Google Inc.
 # All rights reserved.
 #
