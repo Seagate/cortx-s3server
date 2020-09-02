@@ -1,3 +1,4 @@
+# Copied from http://pypi.python.org/pypi/ScriptTest/
 # (c) 2005-2007 Ian Bicking and contributors; written for Paste
 # Licensed under the MIT license:
 #       http://www.opensource.org/licenses/mit-license.php
