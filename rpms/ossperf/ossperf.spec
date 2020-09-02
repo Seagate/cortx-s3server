@@ -1,3 +1,4 @@
+# Copied from https://github.com/christianbaun/ossperf
 #GNU GENERAL PUBLIC LICENSE
 #                       Version 3, 29 June 2007
 #
