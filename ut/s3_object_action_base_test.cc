@@ -52,76 +52,86 @@ class S3ObjectActionTestBase : public S3ObjectAction {
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
       bool check_shutdown, std::shared_ptr<S3AuthClientFactory> auth_factory,
-      bool skip_auth)
-      : S3ObjectAction(req, bucket_meta_factory, object_meta_factory,
-                       check_shutdown, auth_factory, skip_auth) {
-    fetch_bucket_info_failed_called = 0;
-    fetch_object_info_failed_called = 0;
-    response_called = 0;
-  };
+      bool skip_auth);
+
   void fetch_bucket_info_failed() { fetch_bucket_info_failed_called = 1; }
   void fetch_object_info_failed() { fetch_object_info_failed_called = 1; }
 
   void send_response_to_s3_client() {
     response_called += 1;
-  };
+  }
 
-  int fetch_bucket_info_failed_called;
-  int fetch_object_info_failed_called;
-  int response_called;
+  int fetch_bucket_info_failed_called = 0;
+  int fetch_object_info_failed_called = 0;
+  int response_called = 0;
 };
+
+S3ObjectActionTestBase::S3ObjectActionTestBase(
+    std::shared_ptr<S3RequestObject> req,
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
+    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
+    bool check_shutdown, std::shared_ptr<S3AuthClientFactory> auth_factory,
+    bool skip_auth)
+    : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
+                     std::move(object_meta_factory), check_shutdown,
+                     std::move(auth_factory), skip_auth) {}
 
 class S3ObjectActionTest : public testing::Test {
  protected:  // You should make the members protected s.t. they can be
              // accessed from sub-classes.
-  S3ObjectActionTest() {
-    call_count_one = 0;
-    evhtp_request_t *req = NULL;
-    EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
-    zero_oid_idx = {0ULL, 0ULL};
-    bucket_name = "seagatebucket";
-    object_name = "objname";
+  S3ObjectActionTest();
+  void SetUp() override;
 
-    request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
-    EXPECT_CALL(*request_mock, get_bucket_name())
-        .WillRepeatedly(ReturnRef(bucket_name));
-    EXPECT_CALL(*request_mock, get_object_name())
-        .WillRepeatedly(ReturnRef(object_name));
+  struct m0_uint128 object_list_indx_oid = {0x11ffff, 0x1ffff};
+  struct m0_uint128 objects_version_list_index_oid = {0x11ffff, 0x1ffff};
+  struct m0_uint128 zero_oid_idx = {0ULL, 0ULL};
 
-    object_list_indx_oid = {0x11ffff, 0x1ffff};
-    objects_version_list_index_oid = {0x11ffff, 0x1ffff};
-    mock_auth_factory = std::make_shared<MockS3AuthClientFactory>(request_mock);
-    bucket_meta_factory =
-        std::make_shared<MockS3BucketMetadataFactory>(request_mock);
-    object_meta_factory =
-        std::make_shared<MockS3ObjectMetadataFactory>(request_mock);
-    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
-
-    std::map<std::string, std::string> input_headers;
-    input_headers["Authorization"] = "1";
-    EXPECT_CALL(*request_mock, get_in_headers_copy()).Times(1).WillOnce(
-        ReturnRef(input_headers));
-    action_under_test_ptr = std::make_shared<S3ObjectActionTestBase>(
-        request_mock, bucket_meta_factory, object_meta_factory, true,
-        mock_auth_factory, false);
-  }
-
-  struct m0_uint128 object_list_indx_oid;
-  struct m0_uint128 objects_version_list_index_oid;
-  struct m0_uint128 zero_oid_idx;
   std::shared_ptr<MockS3RequestObject> request_mock;
-  std::shared_ptr<S3ObjectActionTestBase> action_under_test_ptr;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3AuthClientFactory> mock_auth_factory;
   // std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
   // std::shared_ptr<MotrAPI> s3_motr_api_mock;
-  int call_count_one;
+
+  std::unique_ptr<S3ObjectActionTestBase> action_under_test_ptr;
+
+  int call_count_one = 0;
   std::string bucket_name, object_name;
 
  public:
   void func_callback_one() { call_count_one += 1; }
 };
+
+S3ObjectActionTest::S3ObjectActionTest()
+    : bucket_name("seagatebucket"), object_name("objname") {
+
+  request_mock =
+      std::make_shared<MockS3RequestObject>(nullptr, new EvhtpWrapper);
+
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
+  EXPECT_CALL(*request_mock, get_object_name())
+      .WillRepeatedly(ReturnRef(object_name));
+
+  mock_auth_factory = std::make_shared<MockS3AuthClientFactory>(request_mock);
+  bucket_meta_factory =
+      std::make_shared<MockS3BucketMetadataFactory>(request_mock);
+  object_meta_factory =
+      std::make_shared<MockS3ObjectMetadataFactory>(request_mock);
+  object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
+}
+
+void S3ObjectActionTest::SetUp() {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+
+  EXPECT_CALL(*request_mock, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
+
+  action_under_test_ptr.reset(new S3ObjectActionTestBase(
+      request_mock, bucket_meta_factory, object_meta_factory, true,
+      mock_auth_factory, false));
+}
 
 TEST_F(S3ObjectActionTest, Constructor) {
   EXPECT_NE(0, action_under_test_ptr->number_of_tasks());
@@ -134,12 +144,32 @@ TEST_F(S3ObjectActionTest, FetchBucketInfo) {
       .Times(AtLeast(1));
   action_under_test_ptr->fetch_bucket_info();
 }
+
 TEST_F(S3ObjectActionTest, LoadMetadata) {
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
       .Times(AtLeast(1));
   EXPECT_TRUE(action_under_test_ptr->bucket_metadata_factory != nullptr);
 
   action_under_test_ptr->load_metadata();
+}
+
+TEST_F(S3ObjectActionTest, FetchBucketInfoSuccess) {
+  S3AuditInfo s3_audit_info;
+
+  action_under_test_ptr->load_metadata();
+  action_under_test_ptr->clear_tasks();
+
+  EXPECT_CALL(*request_mock, http_verb()).WillOnce(Return(S3HttpVerb::GET));
+  EXPECT_CALL(*(request_mock), get_operation_code())
+      .WillOnce(Return(S3OperationCode::tagging));
+  EXPECT_CALL(*request_mock, get_audit_info())
+      .WillOnce(ReturnRef(s3_audit_info));
+
+  EXPECT_CALL(*dynamic_cast<MockS3BucketMetadata*>(
+                   action_under_test_ptr->bucket_metadata.get()),
+              get_owner_canonical_id()).Times(1);
+
+  action_under_test_ptr->fetch_bucket_info_success();
 }
 
 TEST_F(S3ObjectActionTest, FetchObjectInfoFailed) {
