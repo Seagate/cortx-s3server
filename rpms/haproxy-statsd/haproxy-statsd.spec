@@ -1,3 +1,4 @@
+# Copied from https://github.com/softlayer/haproxy-statsd
 #Unless otherwise noted, all files are released under the MIT license,
 #exceptions contain licensing information in them.
 # 
