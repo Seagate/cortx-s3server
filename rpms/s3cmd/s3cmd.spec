@@ -1,3 +1,4 @@
+# Copied from https://github.com/Seagate/s3cmd
 #GNU GENERAL PUBLIC LICENSE
 #                       Version 2, June 1991
 #
