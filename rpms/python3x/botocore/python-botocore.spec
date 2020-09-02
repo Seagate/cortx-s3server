@@ -1,3 +1,4 @@
+# Copied from https://github.com/boto/botocore
 # Copyright (c) 2012-2013 Mitch Garnaat http://garnaat.org/
 # Copyright 2012-2014 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
