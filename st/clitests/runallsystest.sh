@@ -31,8 +31,7 @@ usage() {
 
 sed -i 's/no_ssl =.*$/no_ssl = False/g' $BASEDIR/framework.py
 
-
-source ../../ansible/ldap.prop 
+source ../../scripts/ldap/ldap.prop
 
 if [ $# -gt 0 ]
 then

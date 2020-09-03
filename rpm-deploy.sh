@@ -55,10 +55,10 @@ if rpm -q "salt"  > /dev/null 2>&1;
 then
     # Release/Prod environment
     ldap_admin_pwd=$(salt-call pillar.get openldap:iam_admin:secret --output=newline_values_only)
-    ldap_admin_pwd=$(salt-call lyveutil.decrypt openldap ${ldap_admin_pwd} --output=newline_values_only)
+    ldap_admin_pwd=$(salt-call lyveutil.decrypt openldap "${ldap_admin_pwd}" --output=newline_values_only)
 else
     # Dev environment. Read ldap admin password from ldap.prop
-    source ansible/ldap.prop
+    source scripts/ldap/ldap.prop
 fi
 
 USE_SUDO=
