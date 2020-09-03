@@ -105,7 +105,7 @@ Whenever you clone your repository or make changes to dependent packages, you'll
 ```shell
 
    $ cd ./scripts/env/dev
-   $ ./init.sh -a
+   $ init.sh -a
 ```
 
 2. You'll be prompted to provide your GitHub token. Enter the PAT token that you generated in Step 4.iv. of the [1.0 Prerequisites Section](#10-Prerequisites).
