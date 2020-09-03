@@ -213,13 +213,13 @@
       - name: Create ldap.prop file
         copy:
           src: ./t_ldap.prop
-          dest: ./ldap.prop
+          dest: ../scripts/ldap/ldap.prop
           force: yes
         tags: store_ldap_pwd
 
       - name: Persist ldap rootDN password
         replace:
-          path: ./ldap.prop
+          path: ../scripts/ldap/ldap.prop
           regexp: '^{{item.key}}.*$'
           replace: "{{item.key}}={{ openldappasswd }}"
         tags: store_ldap_pwd
@@ -227,7 +227,7 @@
 
       - name: Persist ldap admin password
         replace:
-          path: ./ldap.prop
+          path: ../scripts/ldap/ldap.prop
           regexp: '^{{item.key}}.*$'
           replace: "{{item.key}}={{ ldapiamadminpasswd }}"
         tags: store_ldap_pwd

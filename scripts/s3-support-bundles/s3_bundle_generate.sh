@@ -283,11 +283,11 @@ if rpm -q "salt"  > /dev/null;
 then
     # Prod/Release environment
     rootdnpasswd=$(salt-call pillar.get openldap:admin:secret --output=newline_values_only)
-    rootdnpasswd=$(salt-call lyveutil.decrypt openldap ${rootdnpasswd} --output=newline_values_only)
+    rootdnpasswd=$(salt-call lyveutil.decrypt openldap "${rootdnpasswd}" --output=newline_values_only)
 else
     # Dev environment
     scrpt_src_dir="$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd)"
-    source $scrpt_src_dir/../../ansible/ldap.prop
+    source "${scrpt_src_dir}"/../ldap/ldap.prop
 fi
 
 if [[ -z "$rootdnpasswd" ]]
@@ -296,10 +296,10 @@ then
 fi
 
 # Run ldap commands
-ldapsearch -b "cn=config" -x -w $rootdnpasswd -D "cn=admin,cn=config" -H ldapi:/// > $ldap_config  2>&1
-ldapsearch -s base -b "cn=subschema" objectclasses -x -w $rootdnpasswd -D "cn=admin,dc=seagate,dc=com" -H ldapi:/// > $ldap_subschema  2>&1
-ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $rootdnpasswd -D "cn=admin,dc=seagate,dc=com" "objectClass=Account" -H ldapi:/// -LLL ldapentrycount > $ldap_accounts 2>&1
-ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $rootdnpasswd -D "cn=admin,dc=seagate,dc=com" "objectClass=iamUser" -H ldapi:/// -LLL ldapentrycount > $ldap_users  2>&1
+ldapsearch -b "cn=config" -x -w "$rootdnpasswd" -D "cn=admin,cn=config" -H ldapi:/// > "$ldap_config"  2>&1
+ldapsearch -s base -b "cn=subschema" objectclasses -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" -H ldapi:/// > "$ldap_subschema"  2>&1
+ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" "objectClass=Account" -H ldapi:/// -LLL ldapentrycount > "$ldap_accounts" 2>&1
+ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" "objectClass=iamUser" -H ldapi:/// -LLL ldapentrycount > "$ldap_users"  2>&1
 
 if [ -f "$ldap_config" ];
 then

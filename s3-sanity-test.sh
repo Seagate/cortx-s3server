@@ -50,7 +50,7 @@ then
     ldappasswd=$(salt-call lyveutil.decrypt openldap ${ldappasswd} --output=newline_values_only)
 else
     # Dev environment. Read ldap admin password from ldap.prop
-    source ansible/ldap.prop
+    source scripts/ldap/ldap.prop
 fi
 
 if [[ -z "$ldappasswd" ]]

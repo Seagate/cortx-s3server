@@ -20,11 +20,11 @@
 if rpm -q "salt" > /dev/null 2>&1;
     # Release/prod envirionment
     ldap_admin_pwd=$(salt-call pillar.get openldap:iam_admin:secret --output=newline_values_only)
-    ldap_admin_pwd=$(salt-call lyveutil.decrypt openldap ${ldap_admin_pwd} --output=newline_values_only)
+    ldap_admin_pwd=$(salt-call lyveutil.decrypt openldap "${ldap_admin_pwd}" --output=newline_values_only)
 then
     # Dev environment. Read ldap admin password from ldap.prop
     scrpt_src_dir="$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd)"
-    source $scrpt_src_dir/../../ansible/ldap.prop
+    source "${scrpt_src_dir}"/ldap.prop
 fi
 
 a=0

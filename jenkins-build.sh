@@ -65,12 +65,12 @@ callgraph_cmd=""
 local_redis_restart=0
 ldap_admin_pwd=
 
-if [ ! -f  "./ansible/ldap.prop" ]
+if [ ! -f  "./scripts/ldap/ldap.prop" ]
 then
   # ldap.prop file not available on Jenkin build node
-  cp -f ./ansible/t_ldap.prop ./ansible/ldap.prop
+  cp -f ./ansible/t_ldap.prop ./scripts/ldap/ldap.prop
 fi
-source ./ansible/ldap.prop
+source ./scripts/ldap/ldap.prop
 
 if [ $# -eq 0 ]
 then
