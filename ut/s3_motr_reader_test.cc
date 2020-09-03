@@ -36,7 +36,7 @@ static void dummy_request_cb(evhtp_request_t *req, void *arg) {}
 static int s3_test_motr_obj_op(struct m0_obj *obj, enum m0_obj_opcode opcode,
                                struct m0_indexvec *ext, struct m0_bufvec *data,
                                struct m0_bufvec *attr, uint64_t mask,
-                               struct m0_op **op) {
+                               uint32_t flags, struct m0_op **op) {
   *op = (struct m0_op *)calloc(1, sizeof(struct m0_op));
   return 0;
 }
@@ -132,7 +132,7 @@ TEST_F(S3MotrReaderTest, OpenObjectDataTest) {
   EXPECT_CALL(*s3_motr_api_mock, motr_entity_open(_, _))
       .WillOnce(Invoke(s3_test_allocate_op));
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_fini(_)).Times(1);
-  EXPECT_CALL(*s3_motr_api_mock, motr_obj_op(_, _, _, _, _, _, _))
+  EXPECT_CALL(*s3_motr_api_mock, motr_obj_op(_, _, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_motr_obj_op));
   EXPECT_CALL(*s3_motr_api_mock, motr_op_setup(_, _, _)).Times(2);
   EXPECT_CALL(*s3_motr_api_mock, motr_op_launch(_, _, _, _))
@@ -157,7 +157,7 @@ TEST_F(S3MotrReaderTest, ReadObjectDataTest) {
       (struct m0_obj *)calloc(1, sizeof(struct m0_obj));
   motr_reader_ptr->obj_ctx->obj_count = 1;
   motr_reader_ptr->obj_ctx->n_initialized_contexts = 1;
-  EXPECT_CALL(*s3_motr_api_mock, motr_obj_op(_, _, _, _, _, _, _))
+  EXPECT_CALL(*s3_motr_api_mock, motr_obj_op(_, _, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_motr_obj_op));
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_fini(_)).Times(1);
   EXPECT_CALL(*s3_motr_api_mock, motr_op_setup(_, _, _)).Times(1);
