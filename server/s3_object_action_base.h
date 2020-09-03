@@ -79,6 +79,7 @@ class S3ObjectAction : public S3Action {
 
   FRIEND_TEST(S3ObjectActionTest, Constructor);
   FRIEND_TEST(S3ObjectActionTest, FetchBucketInfo);
+  FRIEND_TEST(S3ObjectActionTest, FetchBucketInfoSuccess);
   FRIEND_TEST(S3ObjectActionTest, LoadMetadata);
   FRIEND_TEST(S3ObjectActionTest, SetAuthorizationMeta);
   FRIEND_TEST(S3ObjectActionTest, FetchObjectInfoFailed);
