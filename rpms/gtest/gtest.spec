@@ -18,8 +18,8 @@
 #
 
 Summary:        Google C++ testing framework
-Name:           gtest
-Version:        1.7.0
+Name:           googletest-release
+Version:        1.10.0
 Release:        1%{?dist}
 License:        BSD
 Group:          Development/Tools
@@ -64,14 +64,14 @@ make %{?_smp_mflags}
 
 %install
 rm -rf %{buildroot}
-# make install doesn't work anymore.
-# need to install them manually.
-install -d $RPM_BUILD_ROOT{%{_bindir},%{_datadir}/aclocal,%{_includedir}/gtest{,/internal},%{_libdir}}
-# just for backward compatibility
-install -p -m 0755 build/libgtest.a build/libgtest_main.a $RPM_BUILD_ROOT%{_libdir}/
+install -d $RPM_BUILD_ROOT{%{_bindir},%{_datadir}/aclocal,%{_includedir}/gtest{,/internal},%{_includedir}/gmock{,/internal},%{_libdir}}
+install -p -m 0755 build/lib/libgtest.a build/lib/libgtest_main.a $RPM_BUILD_ROOT%{_libdir}/
+install -p -m 0755 build/lib/libgmock.a build/lib/libgmock_main.a $RPM_BUILD_ROOT%{_libdir}/
 /sbin/ldconfig -n $RPM_BUILD_ROOT%{_libdir}
-install -p -m 0644 include/gtest/*.h $RPM_BUILD_ROOT%{_includedir}/gtest/
-install -p -m 0644 include/gtest/internal/*.h $RPM_BUILD_ROOT%{_includedir}/gtest/internal/
+install -p -m 0644 googletest/include/gtest/*.h $RPM_BUILD_ROOT%{_includedir}/gtest/
+install -p -m 0644 googletest/include/gtest/internal/*.h $RPM_BUILD_ROOT%{_includedir}/gtest/internal/
+install -p -m 0644 googlemock/include/gmock/*.h $RPM_BUILD_ROOT%{_includedir}/gmock/
+install -p -m 0644 googlemock/include/gmock/internal/*.h $RPM_BUILD_ROOT%{_includedir}/gmock/internal/
 
 %clean
 rm -rf %{buildroot}
@@ -82,16 +82,21 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-, root, root, -)
-%doc CHANGES CONTRIBUTORS LICENSE README
+%doc LICENSE README.md
 %{_libdir}/libgtest.a
 %{_libdir}/libgtest_main.a
+%{_libdir}/libgmock.a
+%{_libdir}/libgmock_main.a
 
 %files devel
 %defattr(-, root, root, -)
-%doc samples
+%doc googletest/samples
 %{_libdir}/libgtest.a
 %{_libdir}/libgtest_main.a
 %{_includedir}/gtest
+%{_libdir}/libgmock.a
+%{_libdir}/libgmock_main.a
+%{_includedir}/gmock
 
 %changelog
 # Refer https://github.com/google/googletest/blob/release-%{version}/CHANGES
