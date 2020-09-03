@@ -109,10 +109,10 @@ Whenever you clone your repository or make changes to dependent packages, you'll
 ```
 
 2. You'll be prompted to provide your GitHub token. Enter the PAT token that you generated in Step 4.iv. of the [1.0 Prerequisites Section](#10-Prerequisites).
-3. In some cases, the `$ ./init.sh` fails to run.
-4. If the above command fails, run: `$ ./upgrade-enablerepo.sh` and then run: `$ ./init.sh`.
+3. In some cases, the `$ init.sh -a` fails to run.
+4. If the above command fails, run: `$ ./upgrade-enablerepo.sh` and then run: `$ init.sh -a`.
 
-Refer to the image below to view the output of a successful `$ ./init.sh` run, where the `failed` field value should be zero.
+Refer to the image below to view the output of a successful `$ init.sh -a` run, where the `failed` field value should be zero.
 
 ![Successful ./init.sh run](https://raw.githubusercontent.com/Seagate/cortx/assets/images/init_script_output.PNG?token=AQJGZB3IEIPSAAW6ESJAUKK7KEO36)
 
