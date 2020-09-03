@@ -53,10 +53,10 @@ class MockS3Motr : public MotrAPI {
                int(struct m0_idx *idx, enum m0_idx_opcode opcode,
                    struct m0_bufvec *keys, struct m0_bufvec *vals, int *rcs,
                    unsigned int flags, struct m0_op **op));
-  MOCK_METHOD7(motr_obj_op,
-               int(struct m0_obj *obj, enum m0_obj_opcode opcode,
-                   struct m0_indexvec *ext, struct m0_bufvec *data,
-                   struct m0_bufvec *attr, uint64_t mask, struct m0_op **op));
+  MOCK_METHOD8(motr_obj_op, int(struct m0_obj *obj, enum m0_obj_opcode opcode,
+                                struct m0_indexvec *ext, struct m0_bufvec *data,
+                                struct m0_bufvec *attr, uint64_t mask,
+                                uint32_t flags, struct m0_op **op));
   MOCK_METHOD4(motr_op_launch,
                void(uint64_t, struct m0_op **, uint32_t, MotrOpType));
   MOCK_METHOD3(motr_op_wait,
