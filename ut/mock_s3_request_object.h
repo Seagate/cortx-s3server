@@ -75,6 +75,7 @@ class MockS3RequestObject : public S3RequestObject {
                void(std::function<void()> callback, size_t notify_on_size));
   MOCK_METHOD1(get_header_value, std::string(std::string key));
   MOCK_METHOD1(is_header_present, bool(const std::string &key));
+  MOCK_METHOD0(get_audit_info, S3AuditInfo &());
 };
 
 #endif
