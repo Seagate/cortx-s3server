@@ -478,8 +478,11 @@ TEST_F(S3PutBucketActionTest, SendResponseToClientNoSuchBucket) {
 
 TEST_F(S3PutBucketActionTest, SendResponseToClientSuccess) {
   CREATE_BUCKET_METADATA_OBJ;
+  S3AuditInfo s3_audit_info;
 
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, get_audit_info())
+      .WillOnce(ReturnRef(s3_audit_info));
   action_under_test_ptr->send_response_to_s3_client();
 }
 
