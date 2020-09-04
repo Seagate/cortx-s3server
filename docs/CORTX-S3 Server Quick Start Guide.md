@@ -114,7 +114,7 @@ Whenever you clone your repository or make changes to dependent packages, you'll
 
 Refer to the image below to view the output of a successful `$ init.sh -a` run, where the `failed` field value should be zero.
 
-![Successful ./init.sh run](https://raw.githubusercontent.com/Seagate/cortx/assets/images/init_script_output.PNG?token=AQJGZB3IEIPSAAW6ESJAUKK7KEO36)
+![Successful ./init.sh run](../images/init_script_output.png)
 
 Please read our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Build-Installation-FAQ.md) for troubleshooting errors.
 
@@ -138,7 +138,7 @@ To perform Unit and System Tests, run the script `$ ./jenkins-build.sh -h`
 
 The image below illustrates the output log of a system test that is successful.
 
-![Successful System Test Log](https://raw.githubusercontent.com/Seagate/cortx/assets/images/jenkins_script_output.PNG?token=AQJGZB6SHID2AXELMYSDZMK7KDYLU)
+![Successful System Test Log](../images/jenkins_script_output.png)
 
 
 ### 1.4 Test your Build using S3-CLI
@@ -277,7 +277,7 @@ Let's say you want to test a specific version of the Motr repository using CORTX
 
 Your success log will look like the output in the image below:
 
-![Successful test log](https://raw.githubusercontent.com/Seagate/cortx/assets/images/jenkins_script_output.PNG?token=AQJGZB62MLLTZRMAGHPYPPK7KDYA6)
+![Successful test log](../images/jenkins_script_output.png)
 
 ### 1.6 Build S3 RPMs
 
