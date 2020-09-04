@@ -64,14 +64,16 @@ make %{?_smp_mflags}
 
 %install
 rm -rf %{buildroot}
-install -d $RPM_BUILD_ROOT{%{_bindir},%{_datadir}/aclocal,%{_includedir}/gtest{,/internal},%{_includedir}/gmock{,/internal},%{_libdir}}
+install -d $RPM_BUILD_ROOT{%{_bindir},%{_datadir}/aclocal,%{_includedir}/gtest{,/internal{,/custom}},%{_includedir}/gmock{,/internal{,/custom}},%{_libdir}}
 install -p -m 0755 build/lib/libgtest.a build/lib/libgtest_main.a $RPM_BUILD_ROOT%{_libdir}/
 install -p -m 0755 build/lib/libgmock.a build/lib/libgmock_main.a $RPM_BUILD_ROOT%{_libdir}/
 /sbin/ldconfig -n $RPM_BUILD_ROOT%{_libdir}
 install -p -m 0644 googletest/include/gtest/*.h $RPM_BUILD_ROOT%{_includedir}/gtest/
 install -p -m 0644 googletest/include/gtest/internal/*.h $RPM_BUILD_ROOT%{_includedir}/gtest/internal/
+install -p -m 0644 googletest/include/gtest/internal/custom/*.h $RPM_BUILD_ROOT%{_includedir}/gtest/internal/custom/
 install -p -m 0644 googlemock/include/gmock/*.h $RPM_BUILD_ROOT%{_includedir}/gmock/
 install -p -m 0644 googlemock/include/gmock/internal/*.h $RPM_BUILD_ROOT%{_includedir}/gmock/internal/
+install -p -m 0644 googlemock/include/gmock/internal/custom/*.h $RPM_BUILD_ROOT%{_includedir}/gmock/internal/custom
 
 %clean
 rm -rf %{buildroot}
