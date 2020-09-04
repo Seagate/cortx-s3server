@@ -104,7 +104,7 @@ You'll need to **Fork** the cortx-s3server repository to clone it into your priv
 
    `$ git checkout main`
 
-   `$ git checkout -b 'your-local-branch-name'
+   `$ git checkout -b "your-local-branch-name"`
 
 ### 1.3.2 Code Commits
 
@@ -116,7 +116,7 @@ You can make changes to the code and save them in your files.
 
 2. To commit your code changes use:
 
-   `$ git commit -m 'comment'` - enter your GitHub Account ID and an appropriate Feature or Change description in comment.
+   `$ git commit -s -m 'comment'` - enter your GitHub Account ID and an appropriate Feature or Change description in comment.
 
 
 3. Check out your git log to view the details of your commit and verify the author name using: `$ git log`
