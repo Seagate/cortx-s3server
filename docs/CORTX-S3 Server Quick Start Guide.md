@@ -317,4 +317,4 @@ Please contribute to the CORTX Open Source initiative and join our movement to m
 You can reach out to us with your questions, feedback, and comments through our CORTX Communication Channels:
 
 - Join our CORTX-Open Source Slack Channel to interact with your fellow community members and gets your questions answered. [![Slack Channel](https://img.shields.io/badge/chat-on%20Slack-blue)](https://join.slack.com/t/cortxcommunity/shared_invite/zt-femhm3zm-yiCs5V9NBxh89a_709FFXQ?)
-- If you'd like to contact us directly, drop us a mail at opensource@seagate.com.
+- If you'd like to contact us directly, drop us a mail at cortx-questions@seagate.com.
