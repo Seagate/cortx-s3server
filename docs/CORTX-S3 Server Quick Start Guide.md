@@ -1,12 +1,12 @@
 # CORTX-S3 Server Quick Start Guide
 This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-ready.
 
-- [1.0 Prerequisites](#11-prerequisites)
-- [1.1 Clone the CORTX-S3 Server Repository](#12-clone-the-cortx-s3-server-repository)
-- [1.2 Installing dependencies](#13-installing-dependencies)
-- [1.3 Code Compilation and Unit Test](#14-code-compilation-and-unit-test)
-- [1.4 Test your Build using S3-CLI](#15-test-your-build-using-s3-cli)
-- [1.5 Test a specific MOTR Version using CORX-S3 Server](#16-test-a-specific-motr-version-using-corx-s3-server)
+- [1.0 Prerequisites](#10-Prerequisites)
+- [1.1 Clone the CORTX-S3 Server Repository](#11-Clone-the-CORTX-S3-Server-Repository)
+- [1.2 Installing dependencies](#12-Installing-Dependencies)
+- [1.3 Code Compilation and Unit Test](#13-Code-Compilation-and-Unit-Test)
+- [1.4 Test your Build using S3-CLI](#14-Test-your-Build-using-S3-CLI)
+- [1.5 Test a specific MOTR Version using CORX-S3 Server](#15-Test-a-Specific-MOTR-Version-using-CORX-S3-Server)
 - [1.6 Build S3 RPMs](#16-Build-S3-RPMs)
 
 ### 1.0 Prerequisites
@@ -16,7 +16,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
 <p>
 
 1. You'll need to set up SSC, Cloud VM, or a local VM on VMWare Fusion or Oracle VirtualBox. To know more, refer to the [LocalVMSetup](https://github.com/Seagate/cortx/blob/main/doc/LocalVMSetup.md) section.
-2. Our CORTX Contributors will refer, clone, contribute, and commit changes via the GitHub server. You can access the latest code via [Github](https://github.com/Seagate/cortx).
+2. As a CORTX contributor you will need to refer, clone, contribute, and commit changes via the GitHub server. You can access the latest code via [Github](https://github.com/Seagate/cortx).
 3. You'll need a valid GitHub Account.
 4. Before you clone your Git repository, you'll need to create the following:
     1. Follow the link to generate the [SSH Public Key](https://git-scm.com/book/en/v2/Git-on-the-Server-Generating-Your-SSH-Public-Key).
@@ -24,12 +24,12 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
     3. When you clone your Github repository, you'll be prompted to enter your GitHub Username and Password. Refer to the article to [Generate Personal Access Token or PAT](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). Once you generate your Personal Access Token, enable SSO.
     4. Copy your newly generated [PAT](https://github.com/settings/tokens) and enter it when prompted.
 
-    :page_with_curl: **Note:** From this point onwards, you'll need to execute all steps logged in as a **Root User**.
+       :page_with_curl: **Note:** From this point onwards, you'll need to execute all steps logged in as a **Root User**.
 
 5. We've assumed that `git` is preinstalled. If not then follow these steps to install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
-   * To check your Git Version, use the command: `$ git --version`.
+   * To check your Git Version, use the command: `$ git --version`
 
-    :page_with_curl:**Note: We recommended that you install Git Version 2.x.x.**
+     :page_with_curl:**Note:** We recommended that you install Git Version 2.x.x.
 
 6. Ensure that you've installed the following packages on your VM instance:
 
@@ -43,34 +43,32 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
     * Extra Packages for Enterprise Linux:
         * To check if epel is installed, use: `$ yum repolist`
             * If epel was installed, you'll see it in the output list.
-            * You might also see exclamation mark in front of the repositories id. Refer to the [Redhat Knowledge Base](https://access.redhat.com/solutions/2267871)
+            * You might also see exclamation mark in front of the repositories id. Refer to the [Redhat Knowledge Base](https://access.redhat.com/solutions/2267871).
         * `$ yum install -y epel-release`
-    * Verify if kernel-devel-3.10.0-1062 version package is installed, use: `$ uname -r`
+    * Verify if kernel-devel-3.10.0-1062 version package is installed, using: `$ uname -r`
 
 7. You'll need to disable selinux and firewall. Run the following commands:
 
-     `$ systemctl stop firewalld` no output
+     `$ systemctl stop firewalld` 
 
-     `$ systemctl disable firewalld` no output
+     `$ systemctl disable firewalld` 
 
-     `$ sestatus` should see `SELinux status: disabled'
+     `$ sestatus` - you'll get a `SELinux status: disabled` status.
 
-     `$ setenforce 0` should see `setenforce: SELinux is disabled'
+     `$ setenforce 0` - you'll get a `setenforce: SELinux is disabled` status.
 
-     `$ sed 's/SELINUX=enforcing/SELINUX=disabled/' /etc/sysconfig/selinux` should see `SELINUX=disabled'
+     `$ sed 's/SELINUX=enforcing/SELINUX=disabled/' /etc/sysconfig/selinux` - you'll get a `SELINUX=disabled` status.
 
-     `$ shutdown -r now` should reboot your system.
+     Run `$ shutdown -r now` - to reboot your system.
+     
+     :page_with_curl: **Notes:**
+     
+      - If you're using cloud VM, go to your cloud VM website and select the VM. You'll have to stop the VM and then start it again to complete the reboot process
+      - To use command line to shutdown your VM, use: `$ shutdown -r now` and Restart your VM.
+        
+     Once you power on your VM, you can verify if selinux and firewall are disabled by using: `$ getenforce` - you'll get a 'disabled' status.
 
-    :page_with_curl: **Notes:**
-
-    1. If you're using cloud VM, go to your cloud VM website and select the VM.
-    2. First stop the VM and then start it again to complete the reboot process
-    3. To use command line to shutdown your VM, use: `$ shutdown -r now`
-    4. Restart your VM.
-
-   Once you power on your VM, you can verify if selinux and firewall are disabled by using: `$ getenforce` you'll get a 'disabled' status.
-
-All done! You are now ready for fetching CORTX-S3 Server repository!
+All done! You are now ready for cloning the CORTX-S3 Server repository.
 
 </p>
 </details>
@@ -80,12 +78,13 @@ All done! You are now ready for fetching CORTX-S3 Server repository!
 You'll need to clone the S3 Server Repository from the main branch. To clone the S3 Server Repository, follow these steps:
 
 ```shell
+
 $ git clone --recursive git@github.com:Seagate/cortx-s3server.git -b main
 $ cd cortx-s3server
 $ git submodule update --init --recursive && git status
 ```
 
-### 1.2 Installing dependencies
+### 1.2 Installing Dependencies
 
 <details>
 <summary>Before you begin</summary>
@@ -93,27 +92,27 @@ $ git submodule update --init --recursive && git status
 
 At some point during the execution of the `init.sh` script, it will prompt for the following passwords. Enter them as mentioned below:
    * SSH password: `<Enter root password of VM>`
-   * Enter new password for openldap rootDN:: `seagate`
-   * Enter new password for openldap IAM admin:: `ldapadmin`
+   * Enter new password for openldap rootDN: `seagate`
+   * Enter new password for openldap IAM admin: `ldapadmin`
 
 </p>
 </details>
 
-Whenever you clone your repository or make changes to the dependent packages, you'll need to initialize your package:
+Whenever you clone your repository or make changes to dependent packages, you'll have to initialize the packages:
 
 1. Run the command:
 
 ```shell
 
    $ cd ./scripts/env/dev
-   $ ./init.sh -a
+   $ init.sh -a
 ```
 
-2. You'll be prompted to provide your GitHub token, enter the PAT token that you generated in Step 4.iv. from the [1.0 Prerequisites Section](#11-prerequisites).
-3. In some cases, the `$ ./init.sh` fails to run.
-4. If the above command fails, run: `$ ./upgrade-enablerepo.sh` and then run: `$ ./init.sh`.
+2. You'll be prompted to provide your GitHub token. Enter the PAT token that you generated in Step 4.iv. of the [1.0 Prerequisites Section](#10-Prerequisites).
+3. In some cases, the `$ init.sh -a` fails to run.
+4. If the above command fails, run: `$ ./upgrade-enablerepo.sh` and then run: `$ init.sh -a`.
 
-Refer to the image below to view the output of a successful `$ ./init.sh` run, where the `failed` field value should be zero.
+Refer to the image below to view the output of a successful `$ init.sh -a` run, where the `failed` field value should be zero.
 
 ![Successful ./init.sh run](https://raw.githubusercontent.com/Seagate/cortx/assets/images/init_script_output.PNG?token=AQJGZB3IEIPSAAW6ESJAUKK7KEO36)
 
@@ -125,15 +124,12 @@ Please read our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Build-In
 <summary>Before you begin</summary>
 <p>
 
-- Run the following commands from the main source directory.
-- Set up the host system before you test your build, using the command: `$ ./update-hosts.sh`
+You'll have to set up the host system before you test your build. To do so, run the following command from the main source directory: `$ ./update-hosts.sh`
 
 </p>
 </details>
 
-To perform Unit and System Tests:
-
-* Run the script `$ ./jenkins-build.sh -h`
+To perform Unit and System Tests, run the script `$ ./jenkins-build.sh -h`
 
 :page_with_curl: **Notes:**
 
@@ -153,13 +149,13 @@ The image below illustrates the output log of a system test that is successful.
 
 Before your test your build, ensure that you have installed and configured the following:
 
-1. Make sure you have installed `easy_install`.
+1. Make sure you have installed `easy_install`
     * To check if you have `easy_install`, run the command: `$ easy_install --version`
     * To install `easy_install`, run the command: `$ yum install python-setuptools python-setuptools-devel`
-2. Ensure you've installed `pip`.
+2. Ensure you've installed `pip`
     * To check if you have pip installed, run the command: `$ pip --version`
     * To install pip, run the command: `$ python --version`
-3. If you don't have Python Version 2.6.5+, then install Python using: `$ python3 --version`.
+3. If you don't have Python Version 2.6.5+, then install Python using: `$ python3 --version`
     *  If you don't have Python Version 3.3, then install python3 using: `$ easy_install pip`
 4. Ensure that CORTX-S3 Server and its dependent services are running.
     1. To start CORTX-S3 Server and its dependent services, run the command: `$ ./jenkins-build.sh --skip_build --skip_tests`
@@ -168,20 +164,20 @@ Before your test your build, ensure that you have installed and configured the f
 5. Follow these steps to install the AWS client and plugin:
     1. To install the AWS client, use: `$ pip install awscli`
     2. To install the AWS plugin, use: `$ pip install awscli-plugin-endpoint`
-    3. To generate the AWS Access Key ID and Secret Key, run commands:
-         1. To check for help messages, run the command: `$ s3iamcli -h`
-         2. Run the following command to create a new User: `$ s3iamcli CreateAccount -n < Account Name > -e < Email Id >`
+    3. Generate the AWS Access Key ID and Secret Key:
+         1. To check for help messages, use: `$ s3iamcli -h`
+         2. To create a new User, run: `$ s3iamcli CreateAccount -n <Account Name> -e <Email Id>`
               * Enter the following LDAP credentials:
                   User Id : `sgiamadmin`
                   Password : `ldapadmin`
-              * Running the above command lists details of the newly created user including the `aws Access Key ID` and the `aws Secret Key`.
+              * Running the above command lists details of the newly created user including the `aws Access Key ID` and the `aws Secret Key`
               * Copy and save the Access and Secret Keys for the new user.
 
 6. To Configure AWS run the following commands:
-   Keep the Access and Secret Keys generated in Step 4.iv. from the [1.0 Prerequisites Section](#11-prerequisites).
+   Keep the Access and Secret Keys generated in Step 4.iv. of the [1.0 Prerequisites Section](#10-Prerequisites).
    1.  Run `$ aws configure` and enter the following details:
-        * `AWS Access Key ID [None]: < ACCESS KEY >`
-        * `AWS Secret Access Key [None]: < SECRET KEY >`
+        * `AWS Access Key ID [None]: <ACCESS KEY>`
+        * `AWS Secret Access Key [None]: <SECRET KEY>`
         * `Default region name [None]: US`
         * `Default output format [None]: text`
    2. Configure the AWS plugin Endpoint using:
@@ -229,50 +225,37 @@ Run the following test cases to check if your AWS S3 Server build is working cor
 
 3. To Copy your local file (test_data) to remote (PUT):
 
-    `$ aws s3 cp test_data s3://seagatebucket/`
+    `$ aws s3 cp test_data s3://seagatebucket/` - creates a test_data object in your bucket. You can use any file to test this step.
 
-   This will create a test_data object in your bucket. You can use any file to test this step.
-
-   If you want to create a test_data file, use the command:
-
-    `$ touch filepath/test_data`
+   :page_with_curl: **Note:** 
+   
+    If you want to create a test_data file, use: `$ touch filepath/test_data`
 
 4. To Move your local file to remote (PUT):
 
-    `$ aws s3 mv test_data s3://seagatebucket/`
+    `$ aws s3 mv test_data s3://seagatebucket/` - moves your local file *test_data* to the bucket and creates a *test_data* object.
 
-    This command moves your local file test_data to the bucket and creates a test_data object.
-
-5. To List your moved object:
+5. To List your moved object, use:
 
     `$ aws s3 ls s3://seagatebucket`
 
-6. To Remove an object:
+6. To Remove an object, use:
 
-    `$ aws s3 rm s3://seagatebucket/test_data`
+    `$ aws s3 rm s3://seagatebucket/test_data` - repeat Step 5 to verify that your object is removed. The removed object will not appear in the list anymore.
 
-    You'll not be able to view the object when you list objects.
-
-7. To Remove Bucket:
+7. To Remove Bucket, use:
 
     `$ aws s3 rb s3://seagatebuckettest`
 
-### 1.5 Test a specific MOTR Version using CORX-S3 Server
+### 1.5 Test a Specific MOTR Version using CORX-S3 Server
 
-Let's say there is a version change in the Motr repository, and you want to skip re-installing the S3 Server. You can do so by using specific Motr commits and test the same on your S3 Server.
+Let's say you want to test a specific version of the Motr repository using CORTX-S3 Server. You can do so by retriving the commit-id of the Motr version and run the following commands on the S3 Server:
 
-<details>
-<summary>Before you begin</summary>
-<p>
+:page_with_curl: **Note:** You'll have to work out of the main directory of your S3 Server repository.
 
-1. You'll need to copy the commit-id of your Motr code. You can search for specific commit-ids using:
-
-    `$ git log`
-
-    While viewing the log, to find the next commit, type `/^commit`, then use `n` and `N` to move to the next or previous commit. To search for the previous commit, use `?^commit`.
-2. You'll have to work out of the main directory of your S3 Server repository.
-3. Run `$ cd third_party/motr`.
-4. Paste the commit-id shown below:
+1. Copy the commit-id of your Motr code. 
+2. Run the command: `$ cd third_party/motr`
+4. Paste the commit-id as shown below:
 
    `$ git checkout Id41cd2b41cb77f1d106651c267072f29f8c81d0f`
 
@@ -285,14 +268,12 @@ Let's say there is a version change in the Motr repository, and you want to skip
     `$ cd ..`
 
     `$ ./build_motr.sh`
-</p>
-</details>
 
-Run the Jenkins script to make sure that the build and test are passed:
+7. Run the Jenkins script to ensure that the build and test are passed:
 
-`$ cd ..`
+    `$ cd ..`
 
-`$ ./jenkins-build.sh`
+    `$ ./jenkins-build.sh`
 
 Your success log will look like the output in the image below:
 
@@ -323,12 +304,17 @@ Your success log will look like the output in the image below:
 
 All the built RPMs will be available at `~/rpmbuild/RPMS/x86_64/`. You can copy these RPMs to release VM for testing.
 
-## You're all set & you're awesome!
+## You're All Set & You're Awesome!
 
-If you have any queries, feel free to reach out to our [SUPPORT](SUPPORT.md) team.
+We thank you for stopping by to check out the CORTX Community. We are fully dedicated to our mission to build open source technologies that help the world save unlimited data and solve challenging data problems. Join our mission to help reinvent a data-driven world. 
 
-## Contribute to CORTX S3 Server
+### Contribute to CORTX S3 Server
 
 Please contribute to the CORTX Open Source initiative and join our movement to make data storage better, efficient, and more accessible.
 
-CORTX Community Welcomes You! :relaxed:
+### Reach Out to Us
+
+You can reach out to us with your questions, feedback, and comments through our CORTX Communication Channels:
+
+- Join our CORTX-Open Source Slack Channel to interact with your fellow community members and gets your questions answered. [![Slack Channel](https://img.shields.io/badge/chat-on%20Slack-blue)](https://join.slack.com/t/cortxcommunity/shared_invite/zt-femhm3zm-yiCs5V9NBxh89a_709FFXQ?)
+- If you'd like to contact us directly, drop us a mail at opensource@seagate.com.
