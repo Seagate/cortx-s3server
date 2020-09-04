@@ -163,4 +163,3 @@ in authserver config. [ -l <ldap passwd> -p <authserver.properties file path> ]
 
 /opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh -l ldapadmin \
     -p /opt/seagate/cortx/auth/resources/authserver.properties
-
