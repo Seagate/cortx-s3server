@@ -19,7 +19,7 @@
 #
 
 
-set -xe
+set -e
 
 SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
