@@ -31,7 +31,7 @@ usage() {
 
 sed -i 's/no_ssl =.*$/no_ssl = False/g' $BASEDIR/framework.py
 
-source ../../scripts/ldap/ldap.prop
+source /root/.s3_ldap_cred_cache.conf
 
 if [ $# -gt 0 ]
 then

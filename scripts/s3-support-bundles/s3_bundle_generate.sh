@@ -324,8 +324,7 @@ then
     rootdnpasswd=$(salt-call lyveutil.decrypt openldap "${rootdnpasswd}" --output=newline_values_only)
 else
     # Dev environment
-    scrpt_src_dir="$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd)"
-    source "${scrpt_src_dir}"/../ldap/ldap.prop
+    source /root/.s3_ldap_cred_cache.conf
 fi
 
 if [[ -z "$rootdnpasswd" ]]

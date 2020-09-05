@@ -210,28 +210,13 @@
           state: restarted
           enabled: yes
 
-      - name: Create ldap.prop file
+      - name: Create ldap credential file
         copy:
-          src: ./t_ldap.prop
-          dest: ../scripts/ldap/ldap.prop
-          force: yes
+          content: |
+            ldap_root_pwd={{ openldappasswd }}
+            ldap_admin_pwd={{ ldapiamadminpasswd }}
+          dest: /root/.s3_ldap_cred_cache.conf
         tags: store_ldap_pwd
-
-      - name: Persist ldap rootDN password
-        replace:
-          path: ../scripts/ldap/ldap.prop
-          regexp: '^{{item.key}}.*$'
-          replace: "{{item.key}}={{ openldappasswd }}"
-        tags: store_ldap_pwd
-        with_dict: {ldap_root_pwd: }
-
-      - name: Persist ldap admin password
-        replace:
-          path: ../scripts/ldap/ldap.prop
-          regexp: '^{{item.key}}.*$'
-          replace: "{{item.key}}={{ ldapiamadminpasswd }}"
-        tags: store_ldap_pwd
-        with_dict: {ldap_admin_pwd: }
 
   # handlers:
   #     - name: restart ntpd

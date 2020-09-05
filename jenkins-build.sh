@@ -46,8 +46,8 @@ where:
 --local_redis_restart	   In case redis server installed on local machine this option restarts redis-server
 --callgraph /path/to/output/file	   Generate valgrind call graph; Especially usefull
 		   together with --basic_test_only option
---ldap_admin_pwd   LDAP admin password (optional). If not specified, script will use password set in 'ldap.prop'
-       file under folder ./ansible     
+--ldap_admin_pwd   LDAP admin password (optional). If not specified, script will use password set in 
+       file '/root/.s3_ldap_cred_cache.conf'
 --help (-h)        Display help"
 
 use_http_client=0
@@ -65,12 +65,7 @@ callgraph_cmd=""
 local_redis_restart=0
 ldap_admin_pwd=
 
-if [ ! -f  "./scripts/ldap/ldap.prop" ]
-then
-  # ldap.prop file not available on Jenkin build node
-  cp -f ./ansible/t_ldap.prop ./scripts/ldap/ldap.prop
-fi
-source ./scripts/ldap/ldap.prop
+source /root/.s3_ldap_cred_cache.conf
 
 if [ $# -eq 0 ]
 then

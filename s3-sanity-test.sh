@@ -49,8 +49,8 @@ then
     ldappasswd=$(salt-call pillar.get openldap:iam_admin:secret --output=newline_values_only)
     ldappasswd=$(salt-call lyveutil.decrypt openldap ${ldappasswd} --output=newline_values_only)
 else
-    # Dev environment. Read ldap admin password from ldap.prop
-    source scripts/ldap/ldap.prop
+    # Dev environment. Read ldap admin password from "/root/.s3_ldap_cred_cache.conf"
+    source /root/.s3_ldap_cred_cache.conf
 fi
 
 if [[ -z "$ldappasswd" ]]
