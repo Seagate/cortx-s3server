@@ -39,9 +39,9 @@ public class AuthEncryptConfigTest {
 
         assertEquals("s3authserver.jks", AuthEncryptConfig.getKeyStoreName());
 
-        assertEquals("seagate", AuthEncryptConfig.getKeyStorePassword());
+        assertEquals(12, AuthEncryptConfig.getKeyStorePassword().length());
 
-        assertEquals("seagate", AuthEncryptConfig.getKeyPassword());
+        assertEquals(12, AuthEncryptConfig.getKeyPassword().length());
         assertEquals("passencrypt", AuthEncryptConfig.getCertAlias());
         assertEquals("DEBUG", AuthEncryptConfig.getLogLevel());
     }
@@ -53,9 +53,9 @@ public class AuthEncryptConfigTest {
 
         assertEquals("s3authserver.jks", AuthEncryptConfig.getKeyStoreName());
 
-        assertEquals("seagate", AuthEncryptConfig.getKeyStorePassword());
+        assertEquals(12, AuthEncryptConfig.getKeyStorePassword().length());
 
-        assertEquals("seagate", AuthEncryptConfig.getKeyPassword());
+        assertEquals(12, AuthEncryptConfig.getKeyPassword().length());
         assertEquals("s3auth_pass", AuthEncryptConfig.getCertAlias());
 
         installDir = "invaliddir";
@@ -71,8 +71,8 @@ public class AuthEncryptConfigTest {
         Properties AuthEncryptConfig = new Properties();
 
         AuthEncryptConfig.setProperty("s3KeyStoreName", "s3authserver.jks");
-        AuthEncryptConfig.setProperty("s3KeyStorePassword", "seagate");
-        AuthEncryptConfig.setProperty("s3KeyPassword", "seagate");
+        AuthEncryptConfig.setProperty("s3KeyStorePassword", "Y2EwZDZmY2Fm");
+        AuthEncryptConfig.setProperty("s3KeyPassword", "Y2EwZDZmY2Fm");
         AuthEncryptConfig.setProperty("s3AuthCertAlias", "passencrypt");
         AuthEncryptConfig.setProperty("logLevel", "DEBUG");
         return AuthEncryptConfig;

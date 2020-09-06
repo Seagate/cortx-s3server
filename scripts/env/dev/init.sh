@@ -34,6 +34,31 @@ os_major_version=""
 os_minor_version=""
 os_build_num=""
 
+AUTH_KEYSTORE_PROPERTIES_FILE="$BASEDIR/../../../auth/resources/keystore.properties"
+AUTH_KEYSTORE_FILE="$BASEDIR/../../../auth/resources/s3authserver.jks"
+auth_key_alias="s3auth_pass"
+
+# Generate random password for jks keystore
+generate_keystore_password(){
+  echo "Generating random password for jks keystore used in authserver..."
+  # Generate random password
+  new_keystore_passwd=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 12 | head -n 1)
+  new_key_passwd=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 12 | head -n 1)
+
+  # Fetch old passwords from keystore.properties file
+  old_keystore_passwd=`cat $AUTH_KEYSTORE_PROPERTIES_FILE | grep "s3KeyStorePassword=" | cut -f2 -d=`
+  old_key_passwd=`cat $AUTH_KEYSTORE_PROPERTIES_FILE | grep "s3KeyPassword=" | cut -f2 -d=`
+
+  # Update keystore password
+  keytool -storepasswd -storepass $old_keystore_passwd -new $new_keystore_passwd -keystore $AUTH_KEYSTORE_FILE
+  keytool -keypasswd --keypass $old_key_passwd -new $new_key_passwd -alias $auth_key_alias -storepass $new_keystore_passwd --keystore $AUTH_KEYSTORE_FILE
+
+  # Update keystore.properties file with new passwords
+  sudo sed -i 's/s3KeyStorePassword=.*$/s3KeyStorePassword='$new_keystore_passwd'/g' $AUTH_KEYSTORE_PROPERTIES_FILE
+  sudo sed -i 's/s3KeyPassword=.*$/s3KeyPassword='$new_key_passwd'/g' $AUTH_KEYSTORE_PROPERTIES_FILE
+
+  echo "jks keystore passwords are updated successfully...."
+}
 
 unsupported_os() {
   echo "S3 currently supports only CentOS 7.7.1908 or RHEL 7.7" 1>&2;
@@ -151,6 +176,8 @@ mkdir -p /etc/ssl
 
 cp -R  ${BASEDIR}/../../../ansible/files/certs/* /etc/ssl/
 
+# Generate random password for jks key and keystore passwords
+generate_keystore_password
 
 # Configure dev env
 yum install -y ansible facter

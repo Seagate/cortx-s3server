@@ -39,9 +39,14 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLException;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
+import java.util.Properties;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
@@ -60,16 +65,41 @@ public class SSLContextProviderTest {
 
     private static Path filePath = Paths.get("..", "resources",
           "s3authserver.jks");
+    private
+     static Path KeyStorePropertiesFilePath =
+         Paths.get("..", "resources", "keystore.properties");
+    private
+     static String keyStorePasswd = "";
+    private
+     static String keyPasswd = "";
 
     @Before
     public void setUp() throws Exception {
         mockStatic(AuthServerConfig.class);
         when(AuthServerConfig.getHttpsPort()).thenReturn(9086);
         when(AuthServerConfig.isHttpsEnabled()).thenReturn(Boolean.TRUE);
+        fetch_keystore_password_from_properties_file();
     }
 
-    @Test
-    public void initTest_HttpsDisabled() throws ServerInitialisationException {
+    /*
+     * Passwords are generated randomly hence need to fetch it before running
+     * tests
+     */
+   private
+    void fetch_keystore_password_from_properties_file() throws IOException {
+      Properties keystoreprop = new Properties();
+      InputStream in =
+          new FileInputStream(KeyStorePropertiesFilePath.toString());
+      keystoreprop.load(in);
+      keyStorePasswd = (String)keystoreprop.get("s3KeyStorePassword");
+      keyPasswd = (String)keystoreprop.get("s3KeyPassword");
+      if (in != null) {
+        in.close();
+      }
+    }
+
+    @Test public void initTest_HttpsDisabled()
+        throws ServerInitialisationException {
         when(AuthServerConfig.isHttpsEnabled()).thenReturn(Boolean.FALSE);
 
         when(AuthServerConfig.getKeyStorePath()).thenReturn(Paths.get("..",
@@ -90,8 +120,8 @@ public class SSLContextProviderTest {
         SslContext sslContext = mock(SslContext.class);
         when(AuthServerConfig.getKeyStorePath()).thenReturn(Paths.get("..",
                 "resources", "s3authserver.jks"));
-        when(AuthServerConfig.getKeyStorePassword()).thenReturn("seagate");
-        when(AuthServerConfig.getKeyPassword()).thenReturn("seagate");
+        when(AuthServerConfig.getKeyStorePassword()).thenReturn(keyStorePasswd);
+        when(AuthServerConfig.getKeyPassword()).thenReturn(keyPasswd);
         when(KeyManagerFactory.getInstance(anyString())).thenReturn(kmf);
         when(SslContextBuilder.forServer(kmf)).thenReturn(contextBuilder);
 
@@ -108,8 +138,8 @@ public class SSLContextProviderTest {
                                     throws ServerInitialisationException {
         when(AuthServerConfig.getKeyStorePath()).thenReturn(Paths.get("..",
                 "resources", "s3authserver.jks"));
-        when(AuthServerConfig.getKeyStorePassword()).thenReturn("seagate");
-        when(AuthServerConfig.getKeyPassword()).thenReturn("seagate");
+        when(AuthServerConfig.getKeyStorePassword()).thenReturn(keyStorePasswd);
+        when(AuthServerConfig.getKeyPassword()).thenReturn(keyPasswd);
 
         SSLContextProvider.init();
     }
