@@ -101,5 +101,5 @@ rm -rf %{buildroot}
 %{_includedir}/gmock
 
 %changelog
-# Refer https://github.com/google/googletest/blob/release-%{version}/CHANGES
+# no changelog available for version 1.10.0
 

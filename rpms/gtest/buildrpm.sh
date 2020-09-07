@@ -37,3 +37,7 @@ cd -
 yum-builddep -y ${BASEDIR}/gtest.spec
 rpmbuild -ba ${BASEDIR}/gtest.spec
 
+mv ~/rpmbuild/SRPMS/googletest-release-1.10.0-1.el7.src.rpm  ~/rpmbuild/SRPMS/gtest-1.10.0-1.el7.src.rpm
+mv ~/rpmbuild/RPMS/x86_64/googletest-release-1.10.0-1.el7.x86_64.rpm ~/rpmbuild/RPMS/x86_64/gtest-1.10.0-1.el7.x86_64.rpm
+mv ~/rpmbuild/RPMS/x86_64/googletest-release-devel-1.10.0-1.el7.x86_64.rpm ~/rpmbuild/RPMS/x86_64/gtest-devel-1.10.0-1.el7.x86_64.rpm
+
