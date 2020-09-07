@@ -56,6 +56,7 @@ s3server_binary="/opt/seagate/cortx/s3/bin/s3server"
 s3_motr_dir="/var/motr/s3server-*"
 s3_core_dir="/var/crash"
 sys_auditlog_dir="/var/log/audit"
+s3_recovery_dir="/var/log/seagate/s3/s3recovery"
 
 # Create tmp folder with pid value to allow parallel execution
 pid_value=$$
@@ -203,6 +204,12 @@ fi
 if [ -d "$sys_auditlog_dir" ];
 then
     args=$args" "$sys_auditlog_dir
+fi
+
+# Collect S3 recovery logs if available
+if [ -d "$s3_recovery_dir" ];
+then
+    args=$args" "$s3_recovery_dir
 fi
 
 # Collect s3 backgrounddelete logs if available
