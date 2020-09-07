@@ -291,6 +291,8 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/resources/s3_error_messages.json
 /opt/seagate/cortx/s3/s3startsystem.sh
 /opt/seagate/cortx/s3/s3stopsystem.sh
+/opt/seagate/cortx/s3/start-s3-iopath-services.sh
+/opt/seagate/cortx/s3/stop-s3-iopath-services.sh
 /opt/seagate/cortx/s3/reset/precheck.py
 /opt/seagate/cortx/s3/reset/reset_s3.sh
 /opt/seagate/cortx/s3/conf/setup.yaml

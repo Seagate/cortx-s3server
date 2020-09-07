@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,18 +18,13 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-[Unit]
-Description=Motr-S3 Core instance Server
-Requires=haproxy.service
-After=haproxy.service
-Requires=s3authserver.service
-After=s3authserver.service
-
-[Service]
-Type=forking
-ExecStart=/opt/seagate/cortx/s3/s3startsystem.sh %i
-ExecStop=/opt/seagate/cortx/s3/s3stopsystem.sh %i
-TimeoutStopSec=7
-
-[Install]
-WantedBy=multi-user.target
+# Haproxy, S3authserver  and S3 server stop script in deployment environment.
+#   Usage:stop-s3-iopath-services.sh 
+for i in $(ls -d  /etc/sysconfig/s3server*)
+do
+  s3server_fid=${i%%/}
+  result=$(basename "$s3server_fid")
+  systemctl is-active --quiet s3server@"${result:9}" && systemctl stop s3server@"${result:9}"
+done
+systemctl stop s3authserver
+systemctl stop haproxy
