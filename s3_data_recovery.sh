@@ -36,7 +36,7 @@ pcs_enable_resources() {
 echo -e "Starting cluster\n"
 pcs cluster start --all || { echo "Failed to start cluster" && exit 1; }
 
-sleep 1m
+sleep 2m
 
 echo -e "Cluster Started Successfully\n"
 

@@ -46,12 +46,12 @@ then
   done
 fi
 
-motr_recovery_install_location=/opt/seagate/cortx/motr/
+motr_recovery_install_location=/opt/seagate/cortx/motr/libexec/
 s3_recovery_install_location=/opt/seagate/cortx/s3/s3datarecovery/
 
 cd $motr_recovery_install_location
 
-./motr_data_recovery.sh || { echo "Motr recovery has failed. Run Orchestration again to recover data." && exit 1; }
+./motrdatarecovery || { echo "Motr recovery has failed. Run Orchestration again to recover data." && exit 1; }
 
 cd $s3_recovery_install_location
 
