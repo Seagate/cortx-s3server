@@ -17,18 +17,15 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-[Unit]
-Description=Motr-S3 Core instance Server
-Requires=haproxy.service
-After=haproxy.service
-Requires=s3authserver.service
-After=s3authserver.service
+# Haproxy, S3authserver  and S3 server stop script in deployment environment.
+#   Usage: stop-s3-iopath-services.sh 
+#/bin/bash
+systemctl stop haproxy
+systemctl stop s3authserver
+for i in $(ls -d  /etc/sysconfig/s3server*)
+do
+  s3server_fid=${i%%/}
+  result=$(basename "$s3server_fid")
+  systemctl stop s3server@${result:9}
+done
 
-[Service]
-Type=forking
-ExecStart=/opt/seagate/cortx/s3/s3startsystem.sh %i
-ExecStop=/opt/seagate/cortx/s3/s3stopsystem.sh %i
-TimeoutStopSec=7
-
-[Install]
-WantedBy=multi-user.target
