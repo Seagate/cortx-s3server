@@ -46,6 +46,16 @@ auth_properties=
 encrypt_cli=/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar
 change_ldap_passwd=false
 
+if rpm -q "salt"  > /dev/null 2>&1;
+then
+    # Release/Prod environment
+    ldap_root_pwd=$(salt-call pillar.get openldap:admin:secret --output=newline_values_only)
+    ldap_root_pwd=$(salt-call lyveutil.decrypt openldap "${ldap_root_pwd}" --output=newline_values_only)
+else
+    # Dev environment. Read ldap admin password from "/root/.s3_ldap_cred_cache.conf"
+    source /root/.s3_ldap_cred_cache.conf
+fi
+
 # read the options
 while getopts ":l:p:c:h:" o; do
     case "${o}" in
@@ -86,7 +96,6 @@ fi
 
 # generate encrypted password for ldap admin
 if [ "$change_ldap_passwd" = true ] ; then
-    read -p "Enter RootDnPasword: " ROOTDNPASSWORD
     SHA=$(slappasswd -s $ldap_passwd)
     ESC_SHA=$(echo $SHA | sed 's/[/]/\\\//g')
     EXPR='s/{{ ldapadminpasswdhash.stdout }}/'$ESC_SHA'/g'
@@ -94,7 +103,7 @@ if [ "$change_ldap_passwd" = true ] ; then
     cp -f change_ldap_passwd.ldif $ADMIN_USERS_FILE
     sed -i "$EXPR" $ADMIN_USERS_FILE
     # Setup iam admin and necessary permissions
-    ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $ROOTDNPASSWORD -f $ADMIN_USERS_FILE
+    ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ldap_root_pwd" -f "$ADMIN_USERS_FILE"
     rm -f $ADMIN_USERS_FILE
     echo -e "\n OpenLdap password Updated Successfully,You need to Restart Slapd"
 fi

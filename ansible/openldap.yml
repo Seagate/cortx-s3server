@@ -210,6 +210,14 @@
           state: restarted
           enabled: yes
 
+      - name: Create ldap credential file
+        copy:
+          content: |
+            ldap_root_pwd={{ openldappasswd }}
+            ldap_admin_pwd={{ ldapiamadminpasswd }}
+          dest: /root/.s3_ldap_cred_cache.conf
+        tags: store_ldap_pwd
+
   # handlers:
   #     - name: restart ntpd
   #       service:
