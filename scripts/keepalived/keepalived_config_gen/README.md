@@ -81,12 +81,12 @@ Config file must be a valid YAML file with the following allowed parameters
     sub-network _base_rid_ could be set to any value
 
 -   _node_list_ - List of Str. List of nodes in form of &lt;host> &lt;iface to config>.
-    Must contain total_nodes items. Could be skipped, in this case _--node_list_
+    Must contain _total_nodes_ items. Could be skipped, in this case _node_list_
     command line paramters must be provided
 
 -   _vip_list_ - List of Str. List of virtual IP addresses to configure in form
     of &lt;ip>/&lt;net mask>. Must contain _total_nodes_ * _ips_p_node_ items. Could be
-    skiiped, in this case _--vip_list_ command line param must be provided
+    skiiped, in this case _vip_list_ command line param must be provided
 
 -   _ip2host_ - List of Int. Describes mapping of virtula IPs to hosts. Each line
     describes a single virtual IP from the _vip_list_. Nodes are referenced as
@@ -98,50 +98,50 @@ Config file must be a valid YAML file with the following allowed parameters
 
 #### example_conf_3nodes_2ip.yaml
 
-    ```yaml
-    # Total number of nodes in cluster
-    total_nodes: 3
+  ```yml
+  # Total number of nodes in cluster
+  total_nodes: 3
 
-    # IPs per each node
-    ips_p_node: 2
+  # IPs per each node
+  ips_p_node: 2
 
-    # auth_pass param for keepalived config
-    auth_pass: ap123456
+  # auth_pass param for keepalived config
+  auth_pass: ap123456
 
-    # Keepalived virtual_router_id param value to start with
-    # vrrp_instances::virtual_router_id is equal base_rid + vrrp idx
-    base_rid: 77
+  # Keepalived virtual_router_id param value to start with
+  # vrrp_instances::virtual_router_id is equal base_rid + vrrp idx
+  base_rid: 77
 
-    # List of nodes in form of <host> <iface to config>
-    # Must contain total_nodes items
-    node_list:
-    - hw0 eth0
-    - hw1 eth1
-    - hw2 eth2
+  # List of nodes in form of <host> <iface to config>
+  # Must contain total_nodes items
+  node_list:
+  - hw0 eth0
+  - hw1 eth1
+  - hw2 eth2
 
-    # List of virtual IP addresses to configure in form of <ip>/<net mask>
-    # Must contain total_nodes * ips_p_node items
-    vip_list:
-    - 192.168.1.0/20
-    - 192.168.1.1/20
-    - 192.168.1.2/20
-    - 192.168.1.3/20
-    - 192.168.1.4/20
-    - 192.168.1.5/20
+  # List of virtual IP addresses to configure in form of <ip>/<net mask>
+  # Must contain total_nodes * ips_p_node items
+  vip_list:
+  - 192.168.1.0/20
+  - 192.168.1.1/20
+  - 192.168.1.2/20
+  - 192.168.1.3/20
+  - 192.168.1.4/20
+  - 192.168.1.5/20
 
-    # Describes mapping of virtula IPs to hosts
-    # Each line describes a single virtual IP from the vip_list
-    # Nodes are referenced as zero based index from node_list
-    # format: <main node> <backup 1> <backup 2> ... <backup n>
-    # number of backups should be equal to total_nodes - 1
-    ip2host:
-    - 0 1 2
-    - 0 2 1
-    - 1 0 2
-    - 1 2 0
-    - 2 0 1
-    - 2 1 0
-    ```
+  # Describes mapping of virtula IPs to hosts
+  # Each line describes a single virtual IP from the vip_list
+  # Nodes are referenced as zero based index from node_list
+  # format: <main node> <backup 1> <backup 2> ... <backup n>
+  # number of backups should be equal to total_nodes - 1
+  ip2host:
+  - 0 1 2
+  - 0 2 1
+  - 1 0 2
+  - 1 2 0
+  - 2 0 1
+  - 2 1 0
+  ```
 
 ## Generate actual keepalived configs based on the mapping
 
