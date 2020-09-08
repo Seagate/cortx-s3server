@@ -171,8 +171,8 @@ class CORTXS3Config(object):
 
     def get_cortx_s3_access_key(self):
         """Return access_key from config file or KeyError."""
-        if 'cortx_s3' in self._config and self._config['cortx_s3']['access_key']:
-            return self._config['cortx_s3']['access_key']
+        if 'cortx_s3' in self._config and self._config['cortx_s3']['background_account_access_key']:
+            return self._config['cortx_s3']['background_account_access_key']
         else:
             raise KeyError(
                 "Could not find cortx_s3 access_key from config file " +
@@ -180,8 +180,8 @@ class CORTXS3Config(object):
 
     def get_cortx_s3_secret_key(self):
         """Return secret_key from config file or KeyError."""
-        if 'cortx_s3' in self._config and self._config['cortx_s3']['secret_key']:
-            return self._config['cortx_s3']['secret_key']
+        if 'cortx_s3' in self._config and self._config['cortx_s3']['background_account_secret_key']:
+            return self._config['cortx_s3']['background_account_secret_key']
         else:
             raise KeyError(
                 "Could not find cortx_s3 secret_key from config file " +
@@ -417,8 +417,8 @@ class CORTXS3Config(object):
 
     def get_s3_recovery_access_key(self):
         """Return access_key from config file or KeyError."""
-        if 's3_recovery' in self._config and self._config['s3_recovery']['access_key']:
-            return self._config['s3_recovery']['access_key']
+        if 's3_recovery' in self._config and self._config['s3_recovery']['recovery_account_access_key']:
+            return self._config['s3_recovery']['recovery_account_access_key']
         else:
             raise KeyError(
                 "Could not find s3_recovery access_key from config file " +
@@ -426,8 +426,8 @@ class CORTXS3Config(object):
 
     def get_s3_recovery_secret_key(self):
         """Return secret_key from config file or KeyError."""
-        if 's3_recovery' in self._config and self._config['s3_recovery']['secret_key']:
-            return self._config['s3_recovery']['secret_key']
+        if 's3_recovery' in self._config and self._config['s3_recovery']['recovery_account_secret_key']:
+            return self._config['s3_recovery']['recovery_account_secret_key']
         else:
             raise KeyError(
                 "Could not find s3_recovery secret_key from config file " +
