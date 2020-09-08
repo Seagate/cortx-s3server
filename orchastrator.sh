@@ -51,7 +51,7 @@ s3_recovery_install_location=/opt/seagate/cortx/s3/s3datarecovery/
 
 cd $motr_recovery_install_location
 
-./motrdatarecovery || { echo "Motr recovery has failed. Run Orchestration again to recover data." && exit 1; }
+./motr_data_recovery.sh || { echo "Motr recovery has failed. Run Orchestration again to recover data." && exit 1; }
 
 cd $s3_recovery_install_location
 
