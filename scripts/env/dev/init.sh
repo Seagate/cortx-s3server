@@ -37,7 +37,8 @@ os_build_num=""
 
 unsupported_os() {
   echo "S3 currently supports only CentOS 7.7.1908 or RHEL 7.7" 1>&2;
-  exit 1; }
+  exit 1; 
+}
 
 check_supported_kernel() {
   kernel_version=`uname -r`
