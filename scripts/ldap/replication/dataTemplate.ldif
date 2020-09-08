@@ -1,0 +1,13 @@
+dn: olcDatabase={2}mdb,cn=config
+changetype: modify
+add: olcSyncRepl
+olcSyncRepl: rid=00${rid}
+  provider=ldap://${provider}:389/
+  bindmethod=simple
+  binddn="cn=admin,dc=seagate,dc=com"
+  credentials=${credentials}
+  searchbase="dc=s3,dc=seagate,dc=com"
+  scope=sub
+  schemachecking=on
+  type=refreshAndPersist
+  retry="10 15 30 30"
