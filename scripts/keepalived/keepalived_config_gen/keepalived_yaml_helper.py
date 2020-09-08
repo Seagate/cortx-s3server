@@ -23,39 +23,62 @@ import yaml
 
 class VIPAddr(yaml.YAMLObject):
     yaml_tag = u'!IPAddr'
+    yaml_loader = yaml.SafeLoader
+
     def __init__(self, ip, mask):
+        """Create VIPAddr from ip and mask"""
         self.vip = ip
         self.mask = mask
+
     def __repr__(self):
+        """Convert VIPAddr to string"""
         return f"{self.vip}/{self.mask}"
 
 class KAHost(yaml.YAMLObject):
     yaml_tag = u'!KAHost'
+    yaml_loader = yaml.SafeLoader
+
     def __init__(self, hst, iface):
+        """Create KAHost from hostname and network interface"""
         self.host = hst
         self.iface = iface
+
     def __repr__(self):
+        """Convert KAHost to string"""
         return f"{self.host}/{self.iface}"
 
 class IP2Host(yaml.YAMLObject):
     yaml_tag = u'!IP2Host'
+    yaml_loader = yaml.SafeLoader
+
     def __init__(self, ip, mnode, backups):
+        """Create mapping of IP address to master node and backups"""
         self.vip = ip
         self.main_node = mnode
         self.backups = backups
+
     def __repr__(self):
+        """Convert IP2Host to string"""
         return f"{self.__class__.__name__}(vip={self.vip}, main_node={self.main_node}, backups={self.backups})"
 
 class IPMapping(yaml.YAMLObject):
     yaml_tag = u'!IPMapping'
+    yaml_loader = yaml.SafeLoader
+
     def __init__(self, nodes, ips, auth_pass, base_rid):
+        """Create mapping for several IP to hosts"""
         self.total_nodes = nodes
         self.ips_p_node = ips
         self.mapping = []
         self.auth_pass = auth_pass
         self.base_rid = base_rid
+
     def __repr__(self):
-        return f"{self.__class__.__name__}(total_nodes={self.total_nodes}, ips_p_node={self.ips_p_node}, mapping={self.mapping}, auth_pass={self.auth_pass}, base_rid={self.base_rid})"
+        """Convert IPMapping to string"""
+        ret_str = f"{self.__class__.__name__}(total_nodes={self.total_nodes}, "
+        ret_str += f"ips_p_node={self.ips_p_node}, mapping={self.mapping}, "
+        ret_str += f"auth_pass={self.auth_pass}, base_rid={self.base_rid})"
+        return ret_str
 
     def set_cfg(self, node_list, vip_list, cfg):
         for c in cfg:
@@ -72,6 +95,6 @@ class IPMapping(yaml.YAMLObject):
 def parse_yaml(yaml_path):
     ret_mapping = None
     with open(yaml_path, "r") as yc:
-        ret_mapping = yaml.load(yc, Loader=yaml.Loader)
+        ret_mapping = yaml.safe_load(yc)
 
     return ret_mapping

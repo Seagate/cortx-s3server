@@ -85,7 +85,7 @@ global_defs {
         prior = base_prior
         chost = m.main_node
         if state == "BACKUP":
-            if args.host not in m.backups:
+            if args.host not in [b.host for b in m.backups]:
                 raise ValueError(f"Host {args.host} is not listed in YAML mapping")
             for b in m.backups:
                 prior -= 1
@@ -100,4 +100,6 @@ global_defs {
     with open(args.conf, "w") as cnf:
         cnf.write(res_cfg)
 
-main()
+
+if __name__ == "__main__":
+    main()

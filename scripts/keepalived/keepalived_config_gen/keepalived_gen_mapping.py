@@ -50,7 +50,7 @@ def process_ip2host(nodes, ips, ip2h):
             raise ValueError(f"Mapping does not describe configuration '{nodes} nodes, with {ips} IPs per node'")
         for cn in cfg_nodes:
             if 0 > cn or cn >= nodes:
-                raise ValueError(f"Node index {cn} is outside the range [0, {Nodes})")
+                raise ValueError(f"Node index {cn} is outside the range [0, {nodes})")
         ret_cfg.append((idx, cfg_nodes[0], cfg_nodes[1:]))
     if len(ret_cfg) != nodes * ips:
         raise ValueError(f"Mapping does not describe configuration '{nodes} nodes, with {ips} IPs per node'")
@@ -62,7 +62,7 @@ def process_list(exp_cnt, list_to_proc, dlm):
         if l:
             vals = l.strip().split(dlm)
             if len(vals) != 2:
-                raise ValueError("Config should include 2 parts, separated with {dlm}")
+                raise ValueError("Config should include 2 parts, separated with <{dlm}>")
 
         ret_list.append(vals)
     if len(ret_list) != exp_cnt:
@@ -78,7 +78,7 @@ def main():
     args = parse_cmd()
     inp_cfg = None
     with open(args.cfg, "r") as icfg:
-        inp_cfg = yaml.load(icfg, Loader=yaml.Loader)
+        inp_cfg = yaml.safe_load(icfg)
 
     node_list = []
     if "node_list" in inp_cfg:
@@ -104,4 +104,6 @@ def main():
     ipm.set_cfg(node_list, vip_list, ip2h)
     ipm.dump(args.output)
 
-main()
+
+if __name__ == "__main__":
+    main()
