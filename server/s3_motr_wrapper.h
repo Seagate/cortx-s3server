@@ -89,7 +89,7 @@ class MotrAPI {
 
   virtual int motr_obj_op(struct m0_obj *obj, enum m0_obj_opcode opcode,
                           struct m0_indexvec *ext, struct m0_bufvec *data,
-                          struct m0_bufvec *attr, uint64_t mask,
+                          struct m0_bufvec *attr, uint64_t mask, uint32_t flags,
                           struct m0_op **op) = 0;
 
   virtual void motr_op_launch(uint64_t addb_request_id, struct m0_op **op,
@@ -243,8 +243,9 @@ class ConcreteMotrAPI : public MotrAPI {
 
   int motr_obj_op(struct m0_obj *obj, enum m0_obj_opcode opcode,
                   struct m0_indexvec *ext, struct m0_bufvec *data,
-                  struct m0_bufvec *attr, uint64_t mask, struct m0_op **op) {
-    return m0_obj_op(obj, opcode, ext, data, attr, mask, op);
+                  struct m0_bufvec *attr, uint64_t mask, uint32_t flags,
+                  struct m0_op **op) {
+    return m0_obj_op(obj, opcode, ext, data, attr, mask, flags, op);
   }
 
   bool is_kvs_op(MotrOpType type) {
