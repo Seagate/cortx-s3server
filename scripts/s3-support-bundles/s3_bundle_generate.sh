@@ -56,6 +56,7 @@ s3server_binary="/opt/seagate/cortx/s3/bin/s3server"
 s3_motr_dir="/var/motr/s3server-*"
 s3_core_dir="/var/crash"
 sys_auditlog_dir="/var/log/audit"
+s3_recovery_dir="/var/log/seagate/s3/s3recovery"
 
 # Create tmp folder with pid value to allow parallel execution
 pid_value=$$
@@ -68,6 +69,8 @@ haproxy_pids="$tmp_dir/haproxy_pids.txt"
 m0d_pids="$tmp_dir/m0d_pids.txt"
 s3_core_files="$tmp_dir/s3_core_files"
 s3_m0trace_files="$tmp_dir/s3_m0trace_files"
+first_s3_m0trace_file="$tmp_dir/first_s3_m0trace_file"
+m0trace_files_count=5
 
 # LDAP data
 ldap_dir="$tmp_dir/ldap"
@@ -113,19 +116,49 @@ compress_core_files(){
 # Compress each m0trace files present in /var/motr/s3server-* directory if available
 # compressed m0trace files will be available in /tmp/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
 compress_m0trace_files(){
-  m0trace_filename_pattern="*/m0trace.*"
-  for file in $s3_motr_dir/*
+  m0trace_filename_pattern="m0trace.*"
+  dir="/var/motr"
+  tmpr_dir="/var/m0trraces_tmp"
+  cwd=$(pwd)
+  cd $dir
+  if [ -d "$tmpr_dir" ]; then
+    rm -rf $tmpr_dir
+  fi
+  for d in s3server-*/;
   do
-    if [[ -f "$file" && $file == $m0trace_filename_pattern ]];
-    then
-        s3instance_name=$(basename $(dirname "$file")) # e.g s3server-0x7200000000000000:0
-        file_name=$(basename "$file")                  # e.g m0trace.13927
-        # compressed file path will be /tmp/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
-        compressed_file_path=$s3_m0trace_files/$s3instance_name
-        mkdir -p $compressed_file_path
-        gzip -f -c $file > $compressed_file_path/"$file_name".gz 2> /dev/null
-    fi
+    cd $dir
+    mkdir $tmpr_dir
+    cd $d
+    (ls -t $m0trace_filename_pattern | head -$m0trace_files_count) | xargs -I '{}' cp '{}' $tmpr_dir
+    s3instance_name=$d   # e.g s3server-0x7200000000000000:0
+    # compressed file path will be /tmp/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
+    compressed_file_path=$s3_m0trace_files/$s3instance_name
+    mkdir -p $compressed_file_path
+    cd $tmpr_dir
+    for file in $tmpr_dir/*
+    do
+      if [[ -f "$file" ]];
+      then
+          file_name=$(basename "$file")
+          gzip -f -c $file > $compressed_file_path/"$file_name".gz 2> /dev/null
+      fi
+    done
+    rm -rf $tmpr_dir
   done
+  cd $cwd
+}
+
+compress_first_m0trace_file(){
+  dir="/var/motr"
+  cwd=$(pwd)
+  m0trace_filename_pattern="*/m0trace.*"
+  cd $dir
+  file_path=$(ls -t */m0trace* | tail -1)
+  file="$(cut -d'/' -f2 <<<"$file_path")"
+  compressed_file_path=$first_s3_m0trace_file
+  mkdir -p $compressed_file_path
+  gzip -f -c $file_path > $compressed_file_path/"$file".gz 2> /dev/null 
+  cd $cwd
 }
 
 # Check if auth serve log directory point to auth folder instead of "auth/server" in properties file
@@ -141,6 +174,12 @@ compress_core_files
 if [ -d "$s3_core_files" ];
 then
     args=$args" "$s3_core_files
+fi
+
+compress_first_m0trace_file
+if [ -d "$first_s3_m0trace_file" ];
+then
+   args=$args" "$first_s3_m0trace_file
 fi
 
 # Compress and collect m0trace files from /var/motr/s3server-* directory
@@ -165,6 +204,12 @@ fi
 if [ -d "$sys_auditlog_dir" ];
 then
     args=$args" "$sys_auditlog_dir
+fi
+
+# Collect S3 recovery logs if available
+if [ -d "$s3_recovery_dir" ];
+then
+    args=$args" "$s3_recovery_dir
 fi
 
 # Collect s3 backgrounddelete logs if available
@@ -281,20 +326,24 @@ set +e
 rootdnpasswd=""
 if rpm -q "salt"  > /dev/null;
 then
+    # Prod/Release environment
     rootdnpasswd=$(salt-call pillar.get openldap:admin:secret --output=newline_values_only)
-    rootdnpasswd=$(salt-call lyveutil.decrypt openldap ${rootdnpasswd} --output=newline_values_only)
+    rootdnpasswd=$(salt-call lyveutil.decrypt openldap "${rootdnpasswd}" --output=newline_values_only)
+else
+    # Dev environment
+    source /root/.s3_ldap_cred_cache.conf
 fi
 
 if [[ -z "$rootdnpasswd" ]]
 then
-    rootdnpasswd="seagate"
+    rootdnpasswd=$ldap_root_pwd
 fi
 
 # Run ldap commands
-ldapsearch -b "cn=config" -x -w $rootdnpasswd -D "cn=admin,cn=config" -H ldapi:/// > $ldap_config  2>&1
-ldapsearch -s base -b "cn=subschema" objectclasses -x -w $rootdnpasswd -D "cn=admin,dc=seagate,dc=com" -H ldapi:/// > $ldap_subschema  2>&1
-ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $rootdnpasswd -D "cn=admin,dc=seagate,dc=com" "objectClass=Account" -H ldapi:/// -LLL ldapentrycount > $ldap_accounts 2>&1
-ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $rootdnpasswd -D "cn=admin,dc=seagate,dc=com" "objectClass=iamUser" -H ldapi:/// -LLL ldapentrycount > $ldap_users  2>&1
+ldapsearch -b "cn=config" -x -w "$rootdnpasswd" -D "cn=admin,cn=config" -H ldapi:/// > "$ldap_config"  2>&1
+ldapsearch -s base -b "cn=subschema" objectclasses -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" -H ldapi:/// > "$ldap_subschema"  2>&1
+ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" "objectClass=Account" -H ldapi:/// -LLL ldapentrycount > "$ldap_accounts" 2>&1
+ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" "objectClass=iamUser" -H ldapi:/// -LLL ldapentrycount > "$ldap_users"  2>&1
 
 if [ -f "$ldap_config" ];
 then

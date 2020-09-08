@@ -27,6 +27,7 @@ import shutil
 import re
 import json
 from framework import Config
+from ldap_setup import LdapInfo
 from framework import S3PyCliTest
 from s3client_config import S3ClientConfig
 from s3recoverytool import S3RecoveryTest
@@ -53,7 +54,7 @@ before_all()
 Config.config_file = "pathstyle.s3cfg"
 S3ClientConfig.pathstyle = False
 S3ClientConfig.ldapuser = 'sgiamadmin'
-S3ClientConfig.ldappasswd = 'ldapadmin'
+S3ClientConfig.ldappasswd = LdapInfo.get_ldap_admin_pwd()
 
 # Config files used by s3backgrounddelete
 # We are using s3backgrounddelete config file as CORTXS3Config is tightly coupled with it.

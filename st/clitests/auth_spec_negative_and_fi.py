@@ -19,6 +19,7 @@
 
 import os
 from framework import Config
+from ldap_setup import LdapInfo
 from framework import S3PyCliTest
 from auth import AuthTest
 from s3client_config import S3ClientConfig
@@ -58,7 +59,7 @@ def account_tests():
     account_args['AccountName'] = 's3test'
     account_args['Email'] = 's3test@seagate.com'
     account_args['ldapuser'] = 'sgiamadmin'
-    account_args['ldappasswd'] = 'ldapadmin'
+    account_args['ldappasswd'] = LdapInfo.get_ldap_admin_pwd()
 
     # CREATE
 

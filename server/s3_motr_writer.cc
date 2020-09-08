@@ -477,7 +477,7 @@ void S3MotrWiter::write_content() {
 
   /* Create the write request */
   rc = s3_motr_api->motr_obj_op(&obj_ctx->objs[0], M0_OC_WRITE, rw_ctx->ext,
-                                rw_ctx->data, rw_ctx->attr, 0, &ctx->ops[0]);
+                                rw_ctx->data, rw_ctx->attr, 0, 0, &ctx->ops[0]);
   if (rc != 0) {
     s3_log(S3_LOG_WARN, request_id,
            "Motr API: motr_obj_op failed with error code %d\n", rc);
