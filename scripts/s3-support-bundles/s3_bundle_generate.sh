@@ -56,6 +56,7 @@ s3server_binary="/opt/seagate/cortx/s3/bin/s3server"
 s3_motr_dir="/var/motr/s3server-*"
 s3_core_dir="/var/crash"
 sys_auditlog_dir="/var/log/audit"
+s3_recovery_dir="/var/log/seagate/s3/s3recovery"
 
 # Create tmp folder with pid value to allow parallel execution
 pid_value=$$
@@ -205,6 +206,12 @@ then
     args=$args" "$sys_auditlog_dir
 fi
 
+# Collect S3 recovery logs if available
+if [ -d "$s3_recovery_dir" ];
+then
+    args=$args" "$s3_recovery_dir
+fi
+
 # Collect s3 backgrounddelete logs if available
 if [ -d "$backgrounddelete_logdir" ];
 then
@@ -319,20 +326,24 @@ set +e
 rootdnpasswd=""
 if rpm -q "salt"  > /dev/null;
 then
+    # Prod/Release environment
     rootdnpasswd=$(salt-call pillar.get openldap:admin:secret --output=newline_values_only)
-    rootdnpasswd=$(salt-call lyveutil.decrypt openldap ${rootdnpasswd} --output=newline_values_only)
+    rootdnpasswd=$(salt-call lyveutil.decrypt openldap "${rootdnpasswd}" --output=newline_values_only)
+else
+    # Dev environment
+    source /root/.s3_ldap_cred_cache.conf
 fi
 
 if [[ -z "$rootdnpasswd" ]]
 then
-    rootdnpasswd="seagate"
+    rootdnpasswd=$ldap_root_pwd
 fi
 
 # Run ldap commands
-ldapsearch -b "cn=config" -x -w $rootdnpasswd -D "cn=admin,cn=config" -H ldapi:/// > $ldap_config  2>&1
-ldapsearch -s base -b "cn=subschema" objectclasses -x -w $rootdnpasswd -D "cn=admin,dc=seagate,dc=com" -H ldapi:/// > $ldap_subschema  2>&1
-ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $rootdnpasswd -D "cn=admin,dc=seagate,dc=com" "objectClass=Account" -H ldapi:/// -LLL ldapentrycount > $ldap_accounts 2>&1
-ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $rootdnpasswd -D "cn=admin,dc=seagate,dc=com" "objectClass=iamUser" -H ldapi:/// -LLL ldapentrycount > $ldap_users  2>&1
+ldapsearch -b "cn=config" -x -w "$rootdnpasswd" -D "cn=admin,cn=config" -H ldapi:/// > "$ldap_config"  2>&1
+ldapsearch -s base -b "cn=subschema" objectclasses -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" -H ldapi:/// > "$ldap_subschema"  2>&1
+ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" "objectClass=Account" -H ldapi:/// -LLL ldapentrycount > "$ldap_accounts" 2>&1
+ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" "objectClass=iamUser" -H ldapi:/// -LLL ldapentrycount > "$ldap_users"  2>&1
 
 if [ -f "$ldap_config" ];
 then

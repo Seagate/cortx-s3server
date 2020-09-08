@@ -31,6 +31,7 @@ usage() {
 
 sed -i 's/no_ssl =.*$/no_ssl = False/g' $BASEDIR/framework.py
 
+source /root/.s3_ldap_cred_cache.conf
 
 if [ $# -gt 0 ]
 then
@@ -72,6 +73,9 @@ git checkout -- $BASEDIR/framework.py
 trap 'abort' 0
 
 sh ./prechecksystest.sh
+
+# Update s3iamcli_test_config.yaml with the correct ldap info
+sed -i "s/ldappasswd:.*/ldappasswd: \'$ldap_admin_pwd\'/g" ./s3iamcli_test_config.yaml
 
 #Using Python 3.6 version for Running System Tests
 PythonV="python3.6"
@@ -125,6 +129,7 @@ echo "`date -u` : Running metadatarecovery_spec.py..."
 $PythonV metadatarecovery_spec.py
 
 git checkout -- $BASEDIR/framework.py
+git checkout -- $BASEDIR/s3iamcli_test_config.yaml
 
 echo >&2 '
 **************************

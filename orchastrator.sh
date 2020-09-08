@@ -46,7 +46,7 @@ then
   done
 fi
 
-motr_recovery_install_location=/opt/seagate/cortx/motr/
+motr_recovery_install_location=/opt/seagate/cortx/motr/libexec/
 s3_recovery_install_location=/opt/seagate/cortx/s3/s3datarecovery/
 
 cd $motr_recovery_install_location

@@ -51,6 +51,16 @@ set -e
 SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
 
+if rpm -q "salt"  > /dev/null 2>&1;
+then
+    # Release/Prod environment
+    ldap_admin_pwd=$(salt-call pillar.get openldap:iam_admin:secret --output=newline_values_only)
+    ldap_admin_pwd=$(salt-call lyveutil.decrypt openldap "${ldap_admin_pwd}" --output=newline_values_only)
+else
+    # Dev environment. Read ldap admin password from "/root/.s3_ldap_cred_cache.conf"
+    source /root/.s3_ldap_cred_cache.conf
+fi
+
 USE_SUDO=
 if [[ $EUID -ne 0 ]]; then
   command -v sudo || (echo "Script should be run as root or sudo required." && exit 1)
@@ -158,7 +168,7 @@ priority = 1
 }
 
 up_cluster() {
-    $USE_SUDO ./scripts/enc_ldap_passwd_in_cfg.sh -l ldapadmin -p /opt/seagate/cortx/auth/resources/authserver.properties
+    $USE_SUDO ./scripts/enc_ldap_passwd_in_cfg.sh -l "$ldap_admin_pwd" -p /opt/seagate/cortx/auth/resources/authserver.properties
     $USE_SUDO systemctl start haproxy
     $USE_SUDO systemctl start slapd
     $USE_SUDO systemctl start s3authserver

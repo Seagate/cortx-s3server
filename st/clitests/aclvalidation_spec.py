@@ -21,6 +21,7 @@ import os
 import yaml
 import json
 from framework import Config
+from ldap_setup import LdapInfo
 from framework import S3PyCliTest
 from awss3api import AwsTest
 from s3cmd import S3cmdTest
@@ -903,7 +904,7 @@ AuthTest(test_msg).delete_account(**account_args).execute_test()\
 #*************** Test Case 1 ***************
 # TODO Enable below tests once permission header feature available
 test_msg = "Create account testAccount"
-account_args = {'AccountName': 'testAccount', 'Email': 'testAccount@seagate.com', 'ldapuser': "sgiamadmin", 'ldappasswd': "ldapadmin"}
+account_args = {'AccountName': 'testAccount', 'Email': 'testAccount@seagate.com', 'ldapuser': "sgiamadmin", 'ldappasswd': LdapInfo.get_ldap_admin_pwd()}
 account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
 result = AuthTest(test_msg).create_account(**account_args).execute_test()
 result.command_should_match_pattern(account_response_pattern)
@@ -923,7 +924,7 @@ AwsTest('Aws can delete object').delete_object("putobjacltestbucket","3kfile").e
 AwsTest('Aws can delete bucket').delete_bucket("putobjacltestbucket").execute_test().command_is_successful()
 #
 test_msg = "Create account testAccount2"
-account_args = {'AccountName': 'testAccount2', 'Email': 'testAccount2@seagate.com', 'ldapuser': "sgiamadmin", 'ldappasswd': "ldapadmin"}
+account_args = {'AccountName': 'testAccount2', 'Email': 'testAccount2@seagate.com', 'ldapuser': "sgiamadmin", 'ldappasswd': LdapInfo.get_ldap_admin_pwd()}
 account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
 result = AuthTest(test_msg).create_account(**account_args).execute_test()
 result.command_should_match_pattern(account_response_pattern)

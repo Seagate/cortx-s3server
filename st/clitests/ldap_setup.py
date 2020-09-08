@@ -46,3 +46,21 @@ class LdapSetup:
                         self.ldap_config['port'], self.ldap_config['password'],
                         self.ldap_config['login_dn'], entry)
                 obj = call(cmd, shell=True)
+
+
+class LdapInfo:
+    ldap_info_prop = dict()
+    ldap_info_initialize = 0
+
+    def init():
+        if LdapInfo.ldap_info_initialize == 0:
+            ldap_info_file = os.path.join(os.path.dirname(__file__),'s3iamcli_test_config.yaml')
+            with open(ldap_info_file, 'r') as f:
+                ldap_info = yaml.safe_load(f)
+                LdapInfo.ldap_info_prop['ldap_admin'] = ldap_info['ldapuser']
+                LdapInfo.ldap_info_prop['ldap_admin_pwd'] = ldap_info['ldappasswd']
+        LdapInfo.ldap_info_initialize = 1
+
+    def get_ldap_admin_pwd():
+        LdapInfo.init()
+        return LdapInfo.ldap_info_prop['ldap_admin_pwd']

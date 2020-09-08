@@ -37,7 +37,8 @@ os_build_num=""
 
 unsupported_os() {
   echo "S3 currently supports only CentOS 7.7.1908 or RHEL 7.7" 1>&2;
-  exit 1; }
+  exit 1;
+}
 
 check_supported_kernel() {
   kernel_version=`uname -r`
@@ -116,6 +117,15 @@ rpm -q s3cmd && rpm -e s3cmd --nodeps
 # if [ "$os_major_version" = "8" ]; then
 #   yum install @development -y
 # fi
+
+# Erase gtest and gmock rpms, if any as most probably they will be of version 1.7.0
+# We have 1.10.0 version gtest rpm (having both googletest and googlemock binaries)
+# now in cortx-storage, which will be installed.
+rpm -q gmock-devel && rpm -e gmock-devel
+rpm -q gmock && rpm -e gmock
+
+rpm -q gtest-devel && rpm -e gtest-devel
+rpm -q gtest && rpm -e gtest
 
 cd $BASEDIR
 
