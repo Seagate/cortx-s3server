@@ -20,6 +20,7 @@
 import os
 import sys
 import yaml
+from ldap_setup import LdapInfo
 from framework import Config
 from framework import S3PyCliTest
 from auth import AuthTest
