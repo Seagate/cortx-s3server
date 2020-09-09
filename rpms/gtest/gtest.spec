@@ -18,7 +18,7 @@
 #
 
 Summary:        Google C++ testing framework
-Name:           googletest-release
+Name:           gtest
 Version:        1.10.0
 Release:        1%{?dist}
 License:        BSD
