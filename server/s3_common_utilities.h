@@ -24,9 +24,26 @@
 #define __S3_COMMON_UTILITIES_h__
 
 #include <cstdint>
+#include <stdint.h>
 #include <string>
 
 namespace S3CommonUtilities {
+
+class S3Obfuscator {
+ public:
+  std::string virtual encode(const std::string &input) = 0;
+  std::string virtual decode(const std::string &input) = 0;
+};
+
+class S3XORObfuscator : public S3Obfuscator {
+ private:
+  std::string obfuscate(const std::string &input);
+
+ public:
+  S3XORObfuscator();
+  std::string virtual encode(const std::string &input);
+  std::string virtual decode(const std::string &input);
+};
 
 // return true, if passed string has only digits
 bool string_has_only_digits(const std::string &str);

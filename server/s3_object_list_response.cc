@@ -172,6 +172,18 @@ void S3ObjectListResponse::set_upload_id(std::string uploadid) {
 
 std::string& S3ObjectListResponse::get_upload_id() { return upload_id; }
 
+std::string S3ObjectListResponse::get_next_marker_key() {
+  std::string raw_value;
+  if (encoding_type == "url") {
+    char* decoded_str = evhttp_uridecode(next_marker_key.c_str(), 1, NULL);
+    raw_value = decoded_str;
+    free(decoded_str);
+  } else {
+    raw_value = next_marker_key;
+  }
+  return raw_value;
+}
+
 std::string& S3ObjectListResponse::get_xml(
     const std::string requestor_canonical_id,
     const std::string bucket_owner_user_id,
