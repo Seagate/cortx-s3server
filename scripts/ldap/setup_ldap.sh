@@ -38,6 +38,7 @@ defaultpasswd=false
 usessl=true
 forceclean=false
 
+echo "Running setup_ldap.sh script"
 if [ $# -lt 1 ]
 then
   echo "$USAGE"
@@ -64,7 +65,7 @@ do
   shift
 done
 
-
+INSTALLDIR="/opt/seagate/cortx/s3/install/ldap"
 # install openldap server and client
 yum list installed selinux-policy && yum update -y selinux-policy
 
@@ -81,12 +82,19 @@ then
 fi
 
 yum install -y openldap-servers openldap-clients
-cp -f olcDatabase\=\{2\}mdb.ldif /etc/openldap/slapd.d/cn\=config/
+cp -f $INSTALLDIR/olcDatabase\=\{2\}mdb.ldif /etc/openldap/slapd.d/cn\=config/
 
-ROOTDNPASSWORD="seagate"
-LDAPADMINPASS="ldapadmin"
-if [[ $defaultpasswd == false ]]
-then
+if [[ $defaultpasswd == true ]]
+then # Fetch Root DN & IAM admin passwords from Salt and decrypt it
+    if rpm -q "salt"  > /dev/null;
+    then
+        LDAPADMINPASS=$(salt-call pillar.get openldap:iam_admin:secret  --output=newline_values_only)
+        LDAPADMINPASS=$(salt-call lyveutil.decrypt openldap ${LDAPADMINPASS} --output=newline_values_only)
+
+        ROOTDNPASSWORD=$(salt-call pillar.get openldap:admin:secret  --output=newline_values_only)
+        ROOTDNPASSWORD=$(salt-call lyveutil.decrypt openldap ${ROOTDNPASSWORD} --output=newline_values_only)
+    fi
+else # Fetch Root DN & IAM admin passwords from User
     echo -en "\nEnter Password for LDAP rootDN: "
     read -s ROOTDNPASSWORD && [[ -z $ROOTDNPASSWORD ]] && echo 'Password can not be null.' && exit 1
 
@@ -94,28 +102,41 @@ then
     read -s LDAPADMINPASS && [[ -z $LDAPADMINPASS ]] && echo 'Password can not be null.' && exit 1
 fi
 
+if [[ -z "$LDAPADMINPASS" ]]
+then
+    echo "\n IAM Admin password not set. Setting default password"
+    LDAPADMINPASS=ldapadmin
+fi
+
+if [[ -z "$ROOTDNPASSWORD" ]]
+then
+    echo "\n Root DN password not set. Setting default password"
+    ROOTDNPASSWORD=seagate
+fi
+
 # generate encrypted password for rootDN
 SHA=$(slappasswd -s $ROOTDNPASSWORD)
 ESC_SHA=$(echo $SHA | sed 's/[/]/\\\//g')
-EXPR='s/{{ slapdpasswdhash.stdout }}/'$ESC_SHA'/g'
+EXPR='s/olcRootPW: *.*/olcRootPW: '$ESC_SHA'/g'
 
 CFG_FILE=$(mktemp XXXX.ldif)
-cp -f cfg_ldap.ldif $CFG_FILE
+cp -f $INSTALLDIR/cfg_ldap.ldif $CFG_FILE
 sed -i "$EXPR" $CFG_FILE
 
 # generate encrypted password for ldap admin
 SHA=$(slappasswd -s $LDAPADMINPASS)
 ESC_SHA=$(echo $SHA | sed 's/[/]/\\\//g')
-EXPR='s/{{ ldapadminpasswdhash.stdout }}/'$ESC_SHA'/g'
-
+EXPR='s/userPassword: *.*/userPassword: '$ESC_SHA'/g'
 ADMIN_USERS_FILE=$(mktemp XXXX.ldif)
-cp -f iam-admin.ldif $ADMIN_USERS_FILE
+cp -f $INSTALLDIR/iam-admin.ldif $ADMIN_USERS_FILE
 sed -i "$EXPR" $ADMIN_USERS_FILE
 
 chkconfig slapd on
 
 # restart slapd
+systemctl enable slapd
 systemctl start slapd
+echo "started slapd"
 
 # configure LDAP
 ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $CFG_FILE
@@ -128,38 +149,46 @@ systemctl start slapd
 rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
 
 # add S3 schema
-ldapadd -x -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -f cn\=\{1\}s3user.ldif -H ldapi:///
+ldapadd -x -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -f $INSTALLDIR/cn\=\{1\}s3user.ldif -H ldapi:///
 
 # initialize ldap
-ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $ROOTDNPASSWORD -f ldap-init.ldif -H ldapi:///
+ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $ROOTDNPASSWORD -f $INSTALLDIR/ldap-init.ldif -H ldapi:///
 
 # Setup iam admin and necessary permissions
 ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $ROOTDNPASSWORD -f $ADMIN_USERS_FILE -H ldapi:///
 rm -f $ADMIN_USERS_FILE
 
-ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f iam-admin-access.ldif
+ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/iam-admin-access.ldif
 
 # Enable IAM constraints
-ldapadd -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f iam-constraints.ldif
+ldapadd -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/iam-constraints.ldif
 
 #Enable ppolicy schema
 ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f /etc/openldap/schema/ppolicy.ldif -H ldapi:///
 
 # Enable password policy and configure
-ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f ppolicymodule.ldif -H ldapi:///
+ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f $INSTALLDIR/ppolicymodule.ldif -H ldapi:///
 
-ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f ppolicyoverlay.ldif -H ldapi:///
+ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f $INSTALLDIR/ppolicyoverlay.ldif -H ldapi:///
 
-ldapmodify -x -a -H ldapi:/// -D cn=admin,dc=seagate,dc=com -w $ROOTDNPASSWORD -f ppolicy-default.ldif
+ldapmodify -x -a -H ldapi:/// -D cn=admin,dc=seagate,dc=com -w $ROOTDNPASSWORD -f $INSTALLDIR/ppolicy-default.ldif
 
 # Enable slapd log with logLevel as "none"
 # for more info : http://www.openldap.org/doc/admin24/slapdconfig.html
-ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f slapdlog.ldif
+echo "Enable slapd log with logLevel"
+ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/slapdlog.ldif
 # Apply indexing on keys for performance improvement
-ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f s3slapdindex.ldif
+ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/s3slapdindex.ldif
 
-# Rstart slapd
+# Restart slapd
+systemctl enable slapd
 systemctl restart slapd
+
+echo "Encrypting Authserver LDAP password"
+/opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh -l $LDAPADMINPASS -p /opt/seagate/cortx/auth/resources/authserver.properties
+
+echo "Restart S3authserver"
+systemctl restart s3authserver
 
 if [[ $usessl == true ]]
 then
