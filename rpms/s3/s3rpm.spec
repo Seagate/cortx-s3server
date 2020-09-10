@@ -304,6 +304,7 @@ rm -rf %{buildroot}
 /etc/rsyslog.d/elasticsearch.conf
 /etc/keepalived/keepalived.conf.main
 /etc/logrotate.d/s3auditlog
+/etc/logrotate.d/openldap
 %{_bindir}/s3backgroundconsumer
 %{_bindir}/s3backgroundproducer
 %{_bindir}/s3recovery
