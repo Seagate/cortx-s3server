@@ -73,8 +73,8 @@ BuildRequires: libyaml libyaml-devel
 BuildRequires: yaml-cpp yaml-cpp-devel
 BuildRequires: gflags gflags-devel
 BuildRequires: glog glog-devel
-BuildRequires: gtest gtest-devel
-BuildRequires: gmock gmock-devel
+BuildRequires: gtest
+BuildRequires: gtest-devel
 BuildRequires: git git-clang-format
 BuildRequires: log4cxx_cortx log4cxx_cortx-devel
 BuildRequires: hiredis hiredis-devel
