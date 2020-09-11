@@ -137,6 +137,12 @@ cp s3stats-allowlist.yaml $S3_CONFIG_FILE_LOCATION
 # Copy the s3 server startup script for multiple instance
 cp ./system/s3startsystem.sh $S3_INSTALL_LOCATION/
 
+# Copy the s3 io stack services startup script for multiple instance
+cp ./system/start-s3-iopath-services.sh $S3_INSTALL_LOCATION/
+
+# Copy the s3 io stack services stop script for multiple instance
+cp ./system/stop-s3-iopath-services.sh $S3_INSTALL_LOCATION/
+
 # Copy the s3 server daemon shutdown script for multiple instance via systemctl
 cp ./system/s3stopsystem.sh $S3_INSTALL_LOCATION/
 
