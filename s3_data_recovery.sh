@@ -82,6 +82,7 @@ fi
 
 #Disable BackgroundProducer
 pcs resource disable s3backprod || { echo "s3backgroundproducer is not disabled" && exit 1; }
+echo -e "s3recovery is running on node $local_node"
 
 if [ $# -eq 0 ]
 then
