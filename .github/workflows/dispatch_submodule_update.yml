@@ -1,7 +1,7 @@
 name: Dispatch event for cortx submodule
 on:
   push:
-    branches: [ release ]
+    branches: [ main ]
 jobs:
   dispatch:
     strategy:
