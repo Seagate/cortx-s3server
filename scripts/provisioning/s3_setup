@@ -374,6 +374,11 @@ create_random_keys()
     access_key=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 23 | head -n 1)
     secret_key=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9+' | fold -w 41 | head -n 1)
 }
+# Check minion is passwordless accessible from master
+check_passwordless_ssh()
+{
+    ssh -oBatchMode=yes srvnode-2 2>&1 | { echo "Passwordless SSH failed for srvnode-2" ; exit 1; }
+}
 # Create s3 account for s3 recoverytool
 create_recovery_tool_account()
 {
@@ -381,12 +386,18 @@ create_recovery_tool_account()
     if [[ $output == *"No such object"* ]]
     then
       # Create s3recovery tool account
+      check_passwordless_ssh
       create_random_keys
       sed -i "s/recovery_account_access_key:.*$/recovery_account_access_key: \"$access_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
       sed -i "s/recovery_account_secret_key:.*$/recovery_account_secret_key: \"$secret_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
       sed -i "s/ak:.*/ak: $access_key/g" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif
       sed -i "s/sk:.*/sk: $secret_key/g" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif
       sed -i "s/ak=.*/ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com/g" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif
+      ssh srvnode-2 sed -i "s/recovery_account_access_key:.*$/recovery_account_access_key: \"$access_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+      ssh srvnode-2 sed -i "s/recovery_account_secret_key:.*$/recovery_account_secret_key: \"$secret_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+      ssh srvnode-2 sed -i "s/ak:.*/ak: $access_key/g" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif
+      ssh srvnode-2 sed -i "s/sk:.*/sk: $secret_key/g" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif
+      ssh srvnode-2 sed -i "s/ak=.*/ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com/g" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif
       access_key=""
       secret_key=""
       sh /opt/seagate/cortx/s3/install/ldap/create_s3_recovery_account.sh $ldappasswd
@@ -416,12 +427,18 @@ create_background_delete_account()
     if [[ $output == *"No such object"* ]]
     then
       # Create s3background delete account
+      check_passwordless_ssh
       create_random_keys
       sed -i "s/background_account_access_key:.*$/background_account_access_key: \"$access_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
       sed -i "s/background_account_secret_key:.*$/background_account_secret_key: \"$secret_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
       sed -i "s/ak:.*/ak: $access_key/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
       sed -i "s/sk:.*/sk: $secret_key/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
       sed -i "s/ak=.*/ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
+      ssh srvnode-2 sed -i "s/background_account_access_key:.*$/background_account_access_key: \"$access_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+      ssh srvnode-2 sed -i "s/background_account_secret_key:.*$/background_account_secret_key: \"$secret_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+      ssh srvnode-2 sed -i "s/ak:.*/ak: $access_key/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
+      ssh srvnode-2 sed -i "s/sk:.*/sk: $secret_key/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
+      ssh srvnode-2 sed -i "s/ak=.*/ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
       access_key=""
       secret_key=""
       sh /opt/seagate/cortx/s3/install/ldap/create_background_delete_account.sh $ldappasswd
