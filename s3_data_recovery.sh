@@ -82,13 +82,16 @@ fi
 
 #Disable BackgroundProducer
 pcs resource disable s3backprod || { echo "s3backgroundproducer is not disabled" && exit 1; }
+echo -e "s3recovery is running on node $local_node"
 
 if [ $# -eq 0 ]
 then
   if [ "$ssh" = "false" ]
   then
+    s3recovery --dry_run
     s3recovery --recover || { echo "Failed to run recovery tool. Fix the failure and run the recovery tool again." && pcs_enable_resources && exit 1; }
   else
+    ssh -t -T "$ssh_node" bash -c "s3recovery --dry_run"
     ssh -t -T "$ssh_node" bash -c "
     s3recovery --recover || { echo \"Failed to run recovery tool\" && exit 1; }
     " 2> /dev/null
