@@ -18,7 +18,6 @@
 #
 
 #!/bin/sh
-set -x
 USAGE=" Script will run motr recovery followed by s3 recovery.
 USAGE: bash $(basename "$0") [--reciprocative]
 where:
@@ -48,6 +47,8 @@ fi
 
 motr_recovery_install_location=/opt/seagate/cortx/motr/libexec/
 s3_recovery_install_location=/opt/seagate/cortx/s3/s3datarecovery/
+
+echo "Orchestration script has been launched on host:$HOSTNAME"
 
 cd $motr_recovery_install_location
 
