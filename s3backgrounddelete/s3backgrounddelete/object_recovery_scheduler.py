@@ -34,7 +34,6 @@ import math
 import json
 
 from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
-from s3backgrounddelete.object_recovery_kafka_queue import ObjectRecoveryKafkaProd
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
 from s3backgrounddelete.IEMutil import IEMutil
@@ -58,73 +57,6 @@ class ObjectRecoveryScheduler(object):
         timeDelta = now - date_time_obj
         timeDeltaInMns = math.floor(timeDelta.total_seconds()/60)
         return (timeDeltaInMns >= OlderInMins)
-
-    def add_kv_to_kafka_queue(self, marker = None):
-        """Add object key value to object recovery queue."""
-        self.logger.info("Adding kv list to queue")
-        try:
-            mq_client = ObjectRecoveryKafkaProd(
-                self.config,
-                self.logger)
-            result, index_response = CORTXS3IndexApi(
-                self.config, logger=self.logger).list(
-                    self.config.get_probable_delete_index_id(), self.config.get_max_keys(), marker)
-            if result:
-                self.logger.info("Index listing result :" +
-                                 str(index_response.get_index_content()))
-                probable_delete_json = index_response.get_index_content()
-                probable_delete_oid_list = probable_delete_json["Keys"]
-                is_truncated = probable_delete_json["IsTruncated"]
-                if (probable_delete_oid_list is not None):
-                    for record in probable_delete_oid_list:
-                        # Check if record is older than the pre-configured 'time to process' delay
-                        leak_processing_delay = self.config.get_leak_processing_delay_in_mins()
-                        try:
-                            objLeakVal = json.loads(record["Value"])
-                        except ValueError as error:
-                            self.logger.error(
-                            "Failed to parse JSON data for: " + str(record) + " due to: " + error)
-                            continue
-
-                        if (objLeakVal is None):
-                            self.logger.error("No value associated with " + str(record) + ". Skipping entry")
-                            continue
-
-                        # Check if object leak entry is older than 15mins or a preconfigured duration
-                        if (not ObjectRecoveryScheduler.isObjectLeakEntryOlderThan(objLeakVal, leak_processing_delay)):
-                            self.logger.info("Object leak entry " + record["Key"] +
-                                              " is NOT older than " + str(leak_processing_delay) +
-                                              "mins. Skipping entry")
-                            continue
-
-                        self.logger.info(
-                            "Object recovery queue sending data :" +
-                            str(record))
-                        ret = mq_client.send_data(record)
-                        if not ret:
-                            # TODO - Do Audit logging
-                            self.logger.error(
-                                "Object recovery queue send data "+ str(record) +
-                                " failed :")
-                        else:
-                            self.logger.info(
-                                "Object recovery queue send data successfully :" +
-                                str(record))
-                    if (is_truncated == "true"):
-                        self.add_kv_to_kafka_queue(probable_delete_json["NextMarker"])
-                else:
-                    self.logger.info(
-                        "Index listing result empty. Ignoring adding entry to object recovery queue")
-                    pass
-            else:
-                self.logger.error("Failed to retrive Index listing:")
-        except BaseException:
-            self.logger.error(
-                "Object recovery queue send data exception:" + traceback.format_exc())
-        finally:
-            if mq_client:
-               self.logger.info("Closing the mqclient")
-               mq_client.close()
 
     def add_kv_to_queue(self, marker = None):
         """Add object key value to object recovery queue."""
@@ -202,17 +134,14 @@ class ObjectRecoveryScheduler(object):
                mq_client.close()
 
     def schedule_periodically(self):
-        """Schedule RabbitMQ/Kafka producer to add key value to queue on hourly basis."""
-        # Run RabbitMQ/Kafka producer periodically on hourly basis
+        """Schedule RabbitMQ producer to add key value to queue on hourly basis."""
+        # Run RabbitMQ producer periodically on hourly basis
         self.logger.info("Producer started at " + str(datetime.datetime.now()))
         scheduled_run = sched.scheduler(time.time, time.sleep)
 
         def periodic_run(scheduler):
             """Add key value to queue using scheduler."""
-            if self.config.get_s3_use_kafka():
-                self.add_kv_to_kafka_queue()
-            else:
-                self.add_kv_to_queue()
+            self.add_kv_to_queue()
             scheduled_run.enter(
                 self.config.get_schedule_interval(), 1, periodic_run, (scheduler,))
 
