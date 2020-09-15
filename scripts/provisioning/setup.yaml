@@ -30,6 +30,7 @@ s3server:
     script: /opt/seagate/cortx/s3/bin/s3_setup
     args:
       - --configldap
+      - --setlogrotate
   reset:
     script: /opt/seagate/cortx/s3/bin/s3_setup
     args:

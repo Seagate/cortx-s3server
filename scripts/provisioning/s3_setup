@@ -35,6 +35,7 @@ USAGE="USAGE: bash $(basename "$0") [--setupjenkinsyumrepo]
                                     [--node1 <Value>]
                                     [--node2 <Value>]
                                     [--cleanup]
+                                    [--setlogrotate]
                                     [--help | -h]
 Install and configure release S3server setup.
 
@@ -51,6 +52,7 @@ where:
 --s3backgrounddelete  Configure s3backgrounddelete and its dependencies
 --s3recoverytool      Configure s3recoverytool and its dependencies
 --cleanup             Cleanup S3 accounts created for backgroundelete.
+--setlogrotate        Set logrotate policy
 --help                Display this help and exit"
 
 set -e
@@ -78,6 +80,7 @@ setup_s3recoverytool=false
 is_rabbitmq_clustered=false
 cleanup_accounts=false
 cleanup_dependencies=false
+setlogrotate=false
 
 if [ $# -lt 1 ]
 then
@@ -124,6 +127,9 @@ do
     --cleanup )
         cleanup_accounts=true
         cleanup_dependencies=true
+        ;;
+    --setlogrotate )
+        setlogrotate=true
         ;;
     --help | -h )
         echo "$USAGE"
@@ -476,3 +482,54 @@ then
     yum -y remove log4cxx_cortx || echo ""
 fi
 
+set_logrotate() {
+    fname=$1
+    set_sz=$2
+    set_fcount=$3
+
+    sed -i "s/rotate [0-9]*/rotate $set_fcount/" $fname
+    sed -i "s/size [0-9bBkKmMgGpPtT]*/size $set_sz/" $fname
+}
+
+set_s3conf_log_sz() {
+    conf_sz=$1
+    conf_path="/opt/seagate/cortx/s3/conf/s3config.yaml"
+
+    sed -i "s/S3_LOG_FILE_MAX_SIZE:\s[0-9]*\(.*\)/S3_LOG_FILE_MAX_SIZE: $conf_sz\1/" $conf_path
+}
+
+set_logrotate_policy_ova() {
+    lgrtd="/etc/logrotate.d/haproxy
+           /etc/logrotate.d/openldap
+           /etc/logrotate.d/s3auditlog"
+
+    for f in $lgrtd
+    do
+        set_logrotate $f 1M 5
+    done
+
+    set_s3conf_log_sz 5
+}
+
+get_platform() {
+    set +e
+    platform=`provisioner get_setup_info --out json 2>&1`
+
+    res=`echo $platform | jq -r .server_type 2>&1`
+    exc=$?
+    if [[ $exc != 0 ]]
+    then
+        echo "WARNING: 'provisioner get_setup_info' invalid JSON output"
+    fi
+    echo $(echo $res | tr '[A-Z]' '[a-z]')
+    set -e
+}
+
+if [[ $setlogrotate == true ]]
+then
+    plt=$(get_platform)
+    if [[ $plt == "ova" ]]
+    then
+        set_logrotate_policy_ova
+    fi
+fi
