@@ -495,7 +495,7 @@ set_s3conf_log_sz() {
     conf_sz=$1
     conf_path="/opt/seagate/cortx/s3/conf/s3config.yaml"
 
-    sed -i "s/S3_LOG_FILE_MAX_SIZE:\s[0-9]*\(.*\)/S3_LOG_FILE_MAX_SIZE: $conf_sz\1/" $conf_path
+    sed -i "s/S3_LOG_FILE_MAX_SIZE:\s*[0-9]*\(.*\)/S3_LOG_FILE_MAX_SIZE: $conf_sz\1/" $conf_path
 }
 
 set_logrotate_policy_ova() {
@@ -528,7 +528,7 @@ get_platform() {
 if [[ $setlogrotate == true ]]
 then
     plt=$(get_platform)
-    if [[ $plt == "ova" ]]
+    if [[ $plt == "virtual" ]]
     then
         set_logrotate_policy_ova
     fi
