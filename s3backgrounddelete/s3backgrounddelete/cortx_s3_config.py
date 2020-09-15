@@ -268,51 +268,6 @@ class CORTXS3Config(object):
                 "Could not parse rabbitmq durable from config file " +
                 self._conf_file)
 
-    def get_kafka_host(self):
-        """Return host of kafka from config file or KeyError."""
-        if 'kafka' in self._config and self._config['kafka']['host']:
-            return self._config['kafka']['host']
-        else:
-            raise KeyError(
-                "Could not parse kafka host from config file " +
-                self._conf_file)
-
-    def get_kafka_port(self):
-        """Return port of kafka from config file or KeyError."""
-        if 'kafka' in self._config and self._config['kafka']['port']:
-            return self._config['kafka']['port']
-        else:
-            raise KeyError(
-                "Could not parse kafka port from config file " +
-                self._conf_file)
-
-    def get_kafka_group_id(self):
-        """Return group_id of kafka from config file or KeyError."""
-        if 'kafka' in self._config and self._config['kafka']['group_id']:
-            return self._config['kafka']['group_id']
-        else:
-            raise KeyError(
-                "Could not parse kafka group_id from config file " +
-                self._conf_file)
-
-    def get_kafka_topic(self):
-        """Return topic of kafka from config file or KeyError."""
-        if 'kafka' in self._config and self._config['kafka']['topic']:
-            return self._config['kafka']['topic']
-        else:
-            raise KeyError(
-                "Could not parse kafka topic from config file " +
-                self._conf_file)
-
-    def get_kafka_poll_timeout(self):
-        """Return poll_timeout of kafka from config file or KeyError."""
-        if 'kafka' in self._config and self._config['kafka']['poll_timeout']:
-            return self._config['kafka']['poll_timeout']
-        else:
-            raise KeyError(
-                "Could not parse kafka poll_timeout from config file " +
-                self._conf_file)
-
     def get_schedule_interval(self):
         """Return schedule interval of rabbitmq from config file or KeyError."""
         if 'rabbitmq' in self._config and self._config['rabbitmq']['schedule_interval_secs']:
@@ -407,13 +362,6 @@ class CORTXS3Config(object):
             raise KeyError(
                 "Could not find s3_instance_count from config file " +
                 self._conf_file)
-
-    def get_s3_use_kafka(self):
-        """Return use_kafka from config file or KeyError."""
-        if 'cortx_s3' in self._config and 'use_kafka' in self._config['cortx_s3']:
-            return self._config['cortx_s3']['use_kafka']
-        else:
-            return False
 
     def get_s3_recovery_access_key(self):
         """Return access_key from config file or KeyError."""
