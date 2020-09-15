@@ -144,7 +144,6 @@ void S3PutBucketPolicyAction::consume_incoming_content() {
   } else if (request->has_all_body_content()) {
     new_bucket_policy = request->get_full_body_content_as_string();
     next();
-    // validate_request_body(new_bucket_policy);
   } else {
     // else just wait till entire body arrives. rare.
     request->resume();
@@ -209,14 +208,11 @@ void S3PutBucketPolicyAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
-    if (get_s3_error_code() == "ServiceUnavailable" ||
-        get_s3_error_code() == "InternalError") {
-      request->set_out_header_value("Connection", "close");
-    }
 
+    request->set_out_header_value("Connection", "close");
     request->set_out_header_value("Retry-After", "1");
-
     request->send_response(error.get_http_status_code(), response_xml);
+
   } else if (is_error_state() && !get_s3_error_code().empty()) {
     S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri(), get_s3_error_message());
@@ -233,7 +229,6 @@ void S3PutBucketPolicyAction::send_response_to_s3_client() {
     }
     request->send_response(error.get_http_status_code(), response_xml);
   } else {
-    // request->set_header_value(...)
     request->send_response(S3HttpSuccess204);
   }
 

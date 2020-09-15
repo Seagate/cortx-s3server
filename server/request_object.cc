@@ -702,7 +702,7 @@ void RequestObject::notify_incoming_data(evbuf_t* buf) {
     if (buffered_input->get_content_length() >= notify_read_watermark ||
         !pending_in_flight || f_s3_client_read_error) {
       s3_log(S3_LOG_DEBUG, request_id, "Sending data to be consumed...\n");
-      incoming_data_callback();
+      return incoming_data_callback();
       // The class instance can be destroyed at this point!
     }
     if (f_s3_client_read_error) {
@@ -717,6 +717,7 @@ void RequestObject::notify_incoming_data(evbuf_t* buf) {
     // and let the handlers resume when required.
     pause();
   }
+
   if (!is_paused && !buffered_input->is_freezed()) {
     // Set the read timeout event, in case if more data is expected.
     s3_log(S3_LOG_DEBUG, request_id, "Setting Read timeout for s3 client\n");
