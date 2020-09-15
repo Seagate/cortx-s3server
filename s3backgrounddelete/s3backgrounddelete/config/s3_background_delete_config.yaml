@@ -25,7 +25,6 @@ cortx_s3:                                   # Section for S3 background delete c
    background_account_secret_key: "ht8ntpB9DoChDrneKZHvPVTm+1mHbs7UdCyYXWK5"  # Secret Key corresponding to account-name "s3-background-delete-svc"
    daemon_mode: True                                       # S3background process run in daemon mode and ST's run in non-daemon mode.
    s3_instance_count: 22                                   # Number of active s3 instances in release setup
-   use_kafka: False
 
 s3_recovery:                               # Section for S3 recovery config config
    recovery_account_access_key: "A9IAJPINPFRBTPASATAZ"                     # Access Key corresponding to account-name "s3-recovery-svc"
@@ -60,14 +59,6 @@ rabbitmq:                                    # Section for RabbitMQ configs
     mode: 2                                                 # Valid values are Non-persistent (1) or persistent (2). persistent ensures that the task_queue queue won't be lost even if RabbitMQ restarts.
     durable: "True"                                         # Ensure that RabbitMQ will never lose our queue.
     schedule_interval_secs: 7200                            # Schedule Interval is time period at which object recovery scheduler will be executed (in seconds). Increasing this value leads to reduced RabbitMQ memory consumption.
-
-kafka:
-    host: "127.0.0.1"
-    port: 9092
-    group_id: "s3bgd"
-    topic: "s3bgd"
-    partition: 0        # Not used now
-    poll_timeout: 1.0
 
 indexid:
 
