@@ -81,7 +81,7 @@ then
             files_to_remove=`ls -tr "$s3_instance_dir" | grep m0trace |sed "1 d" | head -n $remove_file_count`
             for file in $files_to_remove
             do
-              rm -f "$file"
+              rm -f "$s3_instance_dir/$file"
             done
             echo "## deleted ($remove_file_count) m0trace file(s) from log directory($s3_instance_dir) ##"
         else
