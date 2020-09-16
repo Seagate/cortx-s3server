@@ -298,6 +298,10 @@ void S3MotrKVSReader::get_keyval_failed() {
     if (reader_context->get_errno_for(0) == -ENOENT) {
       s3_log(S3_LOG_DEBUG, request_id, "The key doesn't exist\n");
       state = S3MotrKVSReaderOpState::missing;
+    } else if (reader_context->get_errno_for(0) == -E2BIG) {
+      s3_log(S3_LOG_WARN, request_id,
+             "Motr failed to retrieve metadata as RPC threshold exceeded\n");
+      state = S3MotrKVSReaderOpState::failed_e2big;
     } else {
       s3_log(S3_LOG_ERROR, request_id, "Getting the value for a key failed\n");
       state = S3MotrKVSReaderOpState::failed;
@@ -439,6 +443,10 @@ void S3MotrKVSReader::next_keyval_failed() {
     if (reader_context->get_errno_for(0) == -ENOENT) {
       s3_log(S3_LOG_DEBUG, request_id, "The key doesn't exist in metadata\n");
       state = S3MotrKVSReaderOpState::missing;
+    } else if (reader_context->get_errno_for(0) == -E2BIG) {
+      s3_log(S3_LOG_WARN, request_id,
+             "Motr failed to retrieve metadata as RPC threshold exceeded\n");
+      state = S3MotrKVSReaderOpState::failed_e2big;
     } else {
       s3_log(S3_LOG_ERROR, request_id,
              "fetching of next set of key values failed\n");
