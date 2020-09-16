@@ -1,56 +1,47 @@
 ## 3 Node Manual Hare Cluster Setup <h1> 
  
 
-1 . **Below are the steps to configure 3 node cluster manually** - 
+1. **Below are the steps to configure 3 node cluster manually** - 
 
-```
-Order 3 fresh ssc vms from - https://ssc-cloud.colo.seagate.com/ui/service/catalogs 
-```
+   Order 3 fresh ssc vms from -- https://ssc-cloud.colo.seagate.com/ui/service/catalogs
 
-2 . **Perform manual HARE / Motr cluster setup steps mentioned at below location** - 
+2. **Perform manual HARE / Motr cluster setup steps mentioned at below location** - 
 
-```
-https://seagatetechnology.sharepoint.com/:w:/s/gteamdrv1/tdrive1224/EfvqJjlha8pNkOeIfCgDywUBn0YNIYGT6-tWMREx9iGxpw?e=D9OLR8 
-```
+   https://seagatetechnology.sharepoint.com/:w:/s/gteamdrv1/tdrive1224/EfvqJjlha8pNkOeIfCgDywUBn0YNIYGT6-tWMREx9iGxpw?e=D9OLR8 
 
-Confirm the installation is complete and S3 & mero services are up and running - “hctl status” 
+   Confirm the installation is complete and S3 & mero services are up and running - “hctl status” 
+
+3. **OpenLdap Installation** - 
+
+   Go to `/opt/seagate/cortx/s3/install/ldap` location and run `setup_ldap.sh` as below- 
+
+   ```
+   ./setup_ldap.sh --defaultpasswd --skipssl --forceclean 
+   ```
+
+   Once LDAP is set up on all 3 nodes, perform ldap replication changes using below doc - 
+
+   https://seagatetechnology.sharepoint.com/:w:/s/gteamdrv1/tdrive1224/EZIGb3VanyJLlQL3AGlKJGcBVE6m3h-yO3hYRQ5GC06QSg?e=4%3AyapWTJ&at=9&CID=0589639f-81d9-e9b5-e0eb-70a007cbea30
+
+   Kindly skip provisioned vms setup steps and perform ldap replication part only. 
+
+4. **Configure slapd.log on all 3 nodes** - 
+
+   ```
+   cp /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf /etc/rsyslog.d/slapdlog.conf 
+   systemctl restart slapd 
+   systemctl restart rsyslog
+   ```
  
+5. **HAProxy Installation on all nodes** - 
 
-3 . **OpenLdap Installation** - 
+   a. Run the following command to install HAProxy - `yum install haproxy`
 
->Go to /opt/seagate/cortx/s3/install/ldap location and run setup_ldap.sh as below- 
+   b. Copy the file – `s3server.pem` from location - https://github.com/Seagate/cortx-s3server/tree/dev/ansible/files/certs/stx-s3/s3 and paste it to directory - `/etc/ssl/stx-s3/s3/`
 
+   c. Navigate to `/opt/seagate/cortx/s3/install/haproxy`.
 
->./setup_ldap.sh --defaultpasswd --skipssl --forceclean 
- 
-Once LDAP is set up on all 3 nodes, perform ldap replication changes using below doc - 
-```
-https://seagatetechnology.sharepoint.com/:w:/s/gteamdrv1/tdrive1224/EZIGb3VanyJLlQL3AGlKJGcBVE6m3h-yO3hYRQ5GC06QSg?e=4%3AyapWTJ&at=9&CID=0589639f-81d9-e9b5-e0eb-70a007cbea30
-```
- Kindly skip provisioned vms setup steps and perform ldap replication part only. 
-
-4 . **Configure slapd.log on all 3 nodes** - 
-
-```
-a. cp /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf /etc/rsyslog.d/slapdlog.conf 
-
-b. systemctl restart slapd 
-
-c. systemctl restart rsyslog
-
-```
- 
-5 . **HAProxy Installation on all nodes** - 
-
-```
-a. Run the following command to install HAProxy - yum install haproxy 
-
-b. Copy the file – s3server.pem from location - https://github.com/Seagate/cortx-s3server/tree/dev/ansible/files/certs/stx-s3/s3 and paste it to directory - /etc/ssl/stx-s3/s3/ 
-
-c. Navigate to /opt/seagate/cortx/s3/install/haproxy. 
-
-d. Copy entire contents of haproxy_osver7.cfg (or haproxy_osver8.cfg depending on your OS version) to /etc/haproxy/haproxy.cfg
-```
+   d. Copy entire contents of `haproxy_osver7.cfg` (or `haproxy_osver8.cfg` depending on your OS version) to `/etc/haproxy/haproxy.cfg`
  
 6 . **HAProxy scaling** - 
  
