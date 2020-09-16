@@ -74,15 +74,16 @@
 to `/etc/ssl` (you can use [tgz] option then untar on the node and move to proper places). 
 
 3 . **Install s3iamcli** - 
+    
     Create `/etc/yum.repos.d/epel.repo` and add below content - 
     
-    ```
+  ```
     [epel] 
     gpgcheck=0 
     enabled=1 
     baseurl= http://ssc-satellite1.colo.seagate.com/pulp/repos/EOS/Production/CentOS-7_7_1908/custom/EPEL-7/EPEL-7/ 
     name=Yum repo for epel7 
-    ``` 
+  ``` 
 
 4 . **Perform below Steps**- 
 
