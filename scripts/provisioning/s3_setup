@@ -515,7 +515,7 @@ get_platform() {
     set +e
     platform=`provisioner get_setup_info --out json 2>&1`
 
-    res=`echo $platform | jq -r .res.server_type 2>&1`
+    res=`echo $platform | jq -r .ret.server_type 2>&1`
     exc=$?
     if [[ $exc != 0 ]]
     then
