@@ -92,6 +92,7 @@ enum class S3MotrKVSReaderOpState {
   start,
   failed_to_launch,
   failed,
+  failed_e2big,
   present,
   missing,
 };

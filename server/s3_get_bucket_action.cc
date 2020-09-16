@@ -28,6 +28,8 @@
 #include "s3_option.h"
 #include "s3_common_utilities.h"
 
+#define MAX_RETRY_COUNT 5
+
 S3GetBucketAction::S3GetBucketAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
     std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory,
@@ -62,6 +64,7 @@ S3GetBucketAction::S3GetBucketAction(
   } else {
     object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
   }
+  motr_kv_reader = nullptr;
   setup_steps();
   // TODO request param validations
 }
@@ -132,11 +135,22 @@ void S3GetBucketAction::after_validate_request() { next(); }
 
 void S3GetBucketAction::get_next_objects() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  size_t count = S3Option::get_instance()->get_motr_idx_fetch_count();
   m0_uint128 object_list_index_oid =
       bucket_metadata->get_object_list_index_oid();
-  motr_kv_reader =
-      s3_motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
+  if (motr_kv_reader == nullptr) {
+    motr_kv_reader = s3_motr_kvs_reader_factory->create_motr_kvs_reader(
+        request, s3_motr_api);
+  }
+
+  if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::failed_e2big) {
+    if (retry_count > MAX_RETRY_COUNT) {
+      max_record_count = 1;
+    } else {
+      max_record_count = max_record_count / 2;
+    }
+  } else {
+    max_record_count = S3Option::get_instance()->get_motr_idx_fetch_count();
+  }
 
   if (max_keys == 0) {
     // as requested max_keys is 0
@@ -154,7 +168,7 @@ void S3GetBucketAction::get_next_objects() {
     // is passed during listing of all keys. If this flag is not passed then
     // input key is returned in result.
     motr_kv_reader->next_keyval(
-        object_list_index_oid, last_key, count,
+        object_list_index_oid, last_key, max_record_count,
         std::bind(&S3GetBucketAction::get_next_objects_successful, this),
         std::bind(&S3GetBucketAction::get_next_objects_failed, this));
   }
@@ -171,6 +185,7 @@ void S3GetBucketAction::get_next_objects_successful() {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
+  retry_count = 0;
   s3_log(S3_LOG_DEBUG, request_id, "Found Object listing\n");
   m0_uint128 object_list_index_oid =
       bucket_metadata->get_object_list_index_oid();
@@ -334,10 +349,8 @@ void S3GetBucketAction::get_next_objects_successful() {
   }
 
   // We ask for more if there is any.
-  size_t count_we_requested =
-      S3Option::get_instance()->get_motr_idx_fetch_count();
   key_Count = object_list->size() + object_list->common_prefixes_size();
-  if ((key_Count == max_keys) || (kvps.size() < count_we_requested)) {
+  if ((key_Count == max_keys) || (kvps.size() < max_record_count)) {
     // Go ahead and respond.
     if (key_Count == max_keys && length != 0) {
       object_list->set_response_is_truncated(true);
@@ -363,6 +376,21 @@ void S3GetBucketAction::get_next_objects_failed() {
            "Bucket metadata next keyval operation failed due to pre launch "
            "failure\n");
     set_s3_error("ServiceUnavailable");
+  } else if (motr_kv_reader->get_state() ==
+             S3MotrKVSReaderOpState::failed_e2big) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Next keyval operation failed due rpc message size threshold, will "
+           "retry\n");
+    if (max_record_count <= 1) {
+      set_s3_error("InternalError");
+      fetch_successful = false;
+      s3_log(S3_LOG_ERROR, request_id,
+             "Next keyval operation failed due rpc message size threshold, "
+             "even with max record retrieval as one\n");
+    } else {
+      retry_count++;
+      get_next_objects();
+    }
   } else {
     s3_log(S3_LOG_DEBUG, request_id, "Failed to find Object listing\n");
     set_s3_error("InternalError");

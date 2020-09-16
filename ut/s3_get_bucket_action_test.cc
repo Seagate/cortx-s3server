@@ -197,9 +197,13 @@ TEST_F(S3GetBucketActionTest, GetNextObjects) {
 TEST_F(S3GetBucketActionTest, GetNextObjectsWithZeroObjects) {
   CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
+  CREATE_KVS_READER_OBJ;
 
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_state())
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::missing));
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::present));
+
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
   action_under_test_ptr->get_next_objects();
