@@ -49,20 +49,18 @@
  
    https://seagatetechnology.sharepoint.com/:w:/r/sites/gteamdrv1/tdrive1224/_layouts/15/Doc.aspx?sourcedoc=%7B96df4157-f97d-4997-b63f-afd916ee031b%7D&action=edit&wdPreviousSession=061661ac-d9da-47a9-bb1c-15dd0f8cbf94&cid=bf8c7d61-17b8-447d-bbc1-1aa05ec4b577 
    
-   
-     Start haproxy – `systemctl start haproxy`
+    Start haproxy – `systemctl start haproxy`
     
-
 7 . **Start authserver by following command**  
     ```
     systemctl start s3authserver 
     ```
 
 8 . **Update** `/etc/hosts` file on all server nodes and append below entries corresponding to the IP address 127.0.0.1 - 
-         
     `s3.seagate.com sts.seagate.com iam.seagate.com   sts.cloud.seagate.com `
 
  
+
 ***On Client Node*** - 
 
 1 . **Update** `/etc/hosts` file and append below entries corresponding to the IP address of the Master node (Active HAProxy node) - 
@@ -143,16 +141,16 @@ endpoint = awscli_plugin_endpoint
 ```
  
 
-Run command to confirm setup is complete – **aws s3 ls**
+Run command to confirm setup is complete – `aws s3 ls`
 
 This will not return anything and should not return any error. 
 
 
 6 . **S3Bench Install Configure**
-
-    Follow the guide to install and run S3bench - 
-
-    https://seagatetechnology.sharepoint.com/:w:/r/sites/gteamdrv1/tdrive1224/_layouts/15/Doc.aspx?sourcedoc=%7B8F1347B8-DD98-4D0D-9D57-2B2D3D48D135%7D&file=S3bench%20setup.docx&action=default&mobileredirect=true&cid=2e12a38a-ff01-459c-8eaf-2b89ebdc4572 
+     
+     Follow the guide to install and run S3bench - 
+    
+  https://seagatetechnology.sharepoint.com/:w:/r/sites/gteamdrv1/tdrive1224/_layouts/15/Doc.aspx?sourcedoc=%7B8F1347B8-DD98-4D0D-9D57-2B2D3D48D135%7D&file=S3bench%20setup.docx&action=default&mobileredirect=true&cid=2e12a38a-ff01-459c-8eaf-2b89ebdc4572 
 
 
    **References for restarting services** - 
@@ -179,7 +177,7 @@ hctl shutdown (This will bring down mero and s3server on all the nodes in cluste
 
 1. Execute below on master -  
 ```
-hctl bootstrap --mkfs $HOME/threenodes.yaml 
+`hctl bootstrap --mkfs $HOME/threenodes.yaml` 
 This will start s3server and motr on all the nodes of cluster 
 ```
 2. Execute below on all the nodes to start Auth server- 
