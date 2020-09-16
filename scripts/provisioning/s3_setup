@@ -515,7 +515,7 @@ get_platform() {
     set +e
     platform=`provisioner get_setup_info --out json 2>&1`
 
-    res=`echo $platform | jq -r .server_type 2>&1`
+    res=`echo $platform | jq -r .res.server_type 2>&1`
     exc=$?
     if [[ $exc != 0 ]]
     then
@@ -528,7 +528,8 @@ get_platform() {
 if [[ $setlogrotate == true ]]
 then
     plt=$(get_platform)
-    if [[ $plt == "virtual" ]]
+    echo "Server type is $plt"
+    if [[ "$plt" == "virtual" ]]
     then
         set_logrotate_policy_ova
     fi
