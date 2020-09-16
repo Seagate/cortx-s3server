@@ -74,8 +74,8 @@
 to `/etc/ssl` (you can use [tgz] option then untar on the node and move to proper places). 
 
 3 . **Install s3iamcli** - 
-
-     Create `/etc/yum.repos.d/epel.repo` and add below content - 
+    Create `/etc/yum.repos.d/epel.repo` and add below content - 
+    
     ```
     [epel] 
     gpgcheck=0 
@@ -177,7 +177,7 @@ hctl shutdown (This will bring down mero and s3server on all the nodes in cluste
 
 1. Execute below on master -  
 ```
-`hctl bootstrap --mkfs $HOME/threenodes.yaml` 
+hctl bootstrap --mkfs $HOME/threenodes.yaml 
 This will start s3server and motr on all the nodes of cluster 
 ```
 2. Execute below on all the nodes to start Auth server- 
