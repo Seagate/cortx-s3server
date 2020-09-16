@@ -28,6 +28,8 @@
 #include "s3_option.h"
 #include "s3_m0_uint128_helper.h"
 
+#define MAX_RETRY_COUNT 5
+
 MotrKVSListingAction::MotrKVSListingAction(
     std::shared_ptr<MotrRequestObject> req,
     std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory)
@@ -42,7 +44,7 @@ MotrKVSListingAction::MotrKVSListingAction(
   } else {
     motr_kvs_reader_factory_ptr = std::make_shared<S3MotrKVSReaderFactory>();
   }
-
+  motr_kv_reader = nullptr;
   setup_steps();
 }
 
@@ -105,10 +107,24 @@ void MotrKVSListingAction::validate_request() {
 
 void MotrKVSListingAction::get_next_key_value() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  size_t count = S3Option::get_instance()->get_motr_idx_fetch_count();
 
-  motr_kv_reader =
-      motr_kvs_reader_factory_ptr->create_motr_kvs_reader(request, motr_api);
+  if (motr_kv_reader == nullptr) {
+    motr_kv_reader =
+        motr_kvs_reader_factory_ptr->create_motr_kvs_reader(request, motr_api);
+  }
+
+  if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::failed_e2big) {
+    // In case if we fail for MAX_RETRY_COUNT then just reduce the
+    // max_record_count to 1 and then try, if with max_record_count
+    // as 1 we fail then we bail out
+    if (retry_count > MAX_RETRY_COUNT) {
+      max_record_count = 1;
+    } else {
+      max_record_count = max_record_count / 2;
+    }
+  } else {
+    max_record_count = S3Option::get_instance()->get_motr_idx_fetch_count();
+  }
 
   if (max_keys == 0) {
     // as requested max_keys is 0
@@ -120,7 +136,7 @@ void MotrKVSListingAction::get_next_key_value() {
     // is passed during listing of all keys. If this flag is not passed then
     // input key is returned in result.
     motr_kv_reader->next_keyval(
-        index_id, last_key, count,
+        index_id, last_key, max_record_count,
         std::bind(&MotrKVSListingAction::get_next_key_value_successful, this),
         std::bind(&MotrKVSListingAction::get_next_key_value_failed, this));
   }
@@ -137,6 +153,7 @@ void MotrKVSListingAction::get_next_key_value_successful() {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
+  retry_count = 0;
   s3_log(S3_LOG_DEBUG, request_id, "Found kv listing\n");
   auto& kvps = motr_kv_reader->get_key_values();
   size_t length = kvps.size();
@@ -190,11 +207,9 @@ void MotrKVSListingAction::get_next_key_value_successful() {
   }
 
   // We ask for more if there is any.
-  size_t count_we_requested =
-      S3Option::get_instance()->get_motr_idx_fetch_count();
 
   if ((kvs_response_list.size() == max_keys) ||
-      (kvps.size() < count_we_requested)) {
+      (kvps.size() < max_record_count)) {
     // Go ahead and respond.
     if (kvs_response_list.size() == max_keys) {
       kvs_response_list.set_response_is_truncated(true);
@@ -217,6 +232,21 @@ void MotrKVSListingAction::get_next_key_value_failed() {
     s3_log(S3_LOG_ERROR, request_id,
            "Next keyval operation failed due to pre launch failure\n");
     set_s3_error("ServiceUnavailable");
+  } else if (motr_kv_reader->get_state() ==
+             S3MotrKVSReaderOpState::failed_e2big) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Next keyval operation failed due rpc message size threshold, will "
+           "retry\n");
+    if (max_record_count <= 1) {
+      set_s3_error("InternalError");
+      fetch_successful = false;
+      s3_log(S3_LOG_ERROR, request_id,
+             "Next keyval operation failed due rpc message size threshold, "
+             "even with max record retrieval as 1\n");
+    } else {
+      retry_count++;
+      get_next_key_value();
+    }
   } else {
     s3_log(S3_LOG_DEBUG, request_id, "Failed to find kv listing\n");
     set_s3_error("InternalError");
