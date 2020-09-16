@@ -45,55 +45,55 @@
  
 6 . **HAProxy scaling** - 
  
-For scaling on 3 node, follow the instructions from guide - 
- ```
- https://seagatetechnology.sharepoint.com/:w:/r/sites/gteamdrv1/tdrive1224/_layouts/15/Doc.aspx?sourcedoc=%7B96df4157-f97d-4997-b63f-afd916ee031b%7D&action=edit&wdPreviousSession=061661ac-d9da-47a9-bb1c-15dd0f8cbf94&cid=bf8c7d61-17b8-447d-bbc1-1aa05ec4b577 
-```
-Start haproxy – systemctl start haproxy 
-
+    For scaling on 3 node, follow the instructions from guide - 
+ 
+   https://seagatetechnology.sharepoint.com/:w:/r/sites/gteamdrv1/tdrive1224/_layouts/15/Doc.aspx?sourcedoc=%7B96df4157-f97d-4997-b63f-afd916ee031b%7D&action=edit&wdPreviousSession=061661ac-d9da-47a9-bb1c-15dd0f8cbf94&cid=bf8c7d61-17b8-447d-bbc1-1aa05ec4b577 
+   
+   
+     Start haproxy – `systemctl start haproxy`
+    
 
 7 . **Start authserver by following command**  
-```
-systemctl start s3authserver 
-```
+    ```
+    systemctl start s3authserver 
+    ```
 
-8 . Update /etc/hosts file on all server nodes and append below entries corresponding to the IP address 127.0.0.1 - 
-s3.seagate.com sts.seagate.com iam.seagate.com   sts.cloud.seagate.com 
+8 . **Update** `/etc/hosts` file on all server nodes and append below entries corresponding to the IP address 127.0.0.1 - 
+         
+    `s3.seagate.com sts.seagate.com iam.seagate.com   sts.cloud.seagate.com `
 
  
 ***On Client Node*** - 
 
-1 . ***Update*** /etc/hosts file and append below entries corresponding to the IP address of the Master node (Active HAProxy node) - 
-s3.seagate.com sts.seagate.com iam.seagate.com   sts.cloud.seagate.com 
+1 . **Update** `/etc/hosts` file and append below entries corresponding to the IP address of the Master node (Active HAProxy node) - 
+     `s3.seagate.com sts.seagate.com iam.seagate.com   sts.cloud.seagate.com `
 
  
-2 . ***Download and copy stx-s3-clients from*** 
-```
-http://gerrit.mero.colo.seagate.com/plugins/gitiles/s3server/+/master/ansible/files/certs/ 
-```
-to /etc/ssl (you can use [tgz] option then untar on the node and move to proper places). 
+2 . **Download and copy stx-s3-clients from**
+    ```
+    http://gerrit.mero.colo.seagate.com/plugins/gitiles/s3server/+/master/ansible/files/certs/ 
+    ```
+to `/etc/ssl` (you can use [tgz] option then untar on the node and move to proper places). 
 
-3 . ***Install s3iamcli*** - 
+3 . **Install s3iamcli** - 
 
-Create /etc/yum.repos.d/epel.repo and add below content - 
-```
-[epel] 
-gpgcheck=0 
-enabled=1 
-baseurl= http://ssc-satellite1.colo.seagate.com/pulp/repos/EOS/Production/CentOS-7_7_1908/custom/EPEL-7/EPEL-7/ 
-name=Yum repo for epel7 
-``` 
+     Create `/etc/yum.repos.d/epel.repo` and add below content - 
+    ```
+    [epel] 
+    gpgcheck=0 
+    enabled=1 
+    baseurl= http://ssc-satellite1.colo.seagate.com/pulp/repos/EOS/Production/CentOS-7_7_1908/custom/EPEL-7/EPEL-7/ 
+    name=Yum repo for epel7 
+    ``` 
 
-4 . ***Perform below Steps***- 
+4 . **Perform below Steps**- 
 
-```
-yum install -y http://cortx-storage.colo.seagate.com/releases/eos/uploads/rhel/rhel-7.7.1908/s3server_uploads/python36-jmespath-0.9.0-1.el7.noarch.rpm --nogpgcheck 
-```
-```
-yum install -y http://cortx-storage.colo.seagate.com/releases/eos/github/release/rhel-7.7.1908/last_successful/cortx-s3iamcli-1.0.0-1001_git7c59eae.noarch.rpm --nogpgcheck 
-```
+   `yum install -y http://cortx-storage.colo.seagate.com/releases/eos/uploads/rhel/rhel-7.7.1908/s3server_uploads/python36-jmespath-0.9.0-1.el7.noarch.rpm --nogpgcheck`
+
+   `yum install -y http://cortx-storage.colo.seagate.com/releases/eos/github/release/rhel-7.7.1908/last_successful/cortx-s3iamcli-1.0.0-1001_git7c59eae.noarch.rpm --nogpgcheck` 
+
  
-5 . ***Install aws cli*** 
+5 . **Install aws cli** 
 ```
 sudo easy_install pip (or get pip installed through any other method) 
 
@@ -103,13 +103,13 @@ pip install awscli-plugin-endpoint
 ```
   
 
-***Edit config using***
+**Edit config using**
 ```
 aws configure 
 ```
   
 
-***Set Endpoint using*** 
+**Set Endpoint using** 
 ```
 aws configure set plugins.endpoint awscli_plugin_endpoint 
 
@@ -117,13 +117,14 @@ aws configure set s3.endpoint_url http://s3.seagate.com
 
 aws configure set s3api.endpoint_url http://s3.seagate.com 
 ```
-***For SSL Certificate*** – add a line to “~/.aws/config” file above - [plugins] section 
+**For SSL Certificate** – add a line to “~/.aws/config” file above - [plugins] section 
 
-ca_bundle = /etc/stx-s3-clients/ca.crt 
+ca_bundle = `/etc/stx-s3-clients/ca.crt `
 
-The ultimate ~/.aws/config would look something like - 
+The ultimate `~/.aws/config` would look something like - 
 
-***cat ~/.aws/config***  
+**cat ~/.aws/config**  
+
 ```
 [default] 
 
@@ -142,22 +143,21 @@ endpoint = awscli_plugin_endpoint
 ```
  
 
-Run command to confirm setup is complete – ***aws s3 ls*** 
+Run command to confirm setup is complete – **aws s3 ls**
 
 This will not return anything and should not return any error. 
 
 
-6 . ***S3Bench Install Configure***
+6 . **S3Bench Install Configure**
 
-Follow the guide to install and run S3bench - 
+    Follow the guide to install and run S3bench - 
 
-```
-https://seagatetechnology.sharepoint.com/:w:/r/sites/gteamdrv1/tdrive1224/_layouts/15/Doc.aspx?sourcedoc=%7B8F1347B8-DD98-4D0D-9D57-2B2D3D48D135%7D&file=S3bench%20setup.docx&action=default&mobileredirect=true&cid=2e12a38a-ff01-459c-8eaf-2b89ebdc4572 
-```
+    https://seagatetechnology.sharepoint.com/:w:/r/sites/gteamdrv1/tdrive1224/_layouts/15/Doc.aspx?sourcedoc=%7B8F1347B8-DD98-4D0D-9D57-2B2D3D48D135%7D&file=S3bench%20setup.docx&action=default&mobileredirect=true&cid=2e12a38a-ff01-459c-8eaf-2b89ebdc4572 
 
-***References for restarting services*** - 
 
-***Shutdown the services***  
+   **References for restarting services** - 
+
+   **Shutdown the services**
 
 1. Execute below on master -  
 ```
@@ -175,7 +175,7 @@ hctl shutdown (This will bring down mero and s3server on all the nodes in cluste
 ```
    systemctl stop haproxy 
 ```
-***Re-Starting the services*** 
+**Re-Starting the services** 
 
 1. Execute below on master -  
 ```
@@ -192,7 +192,7 @@ This will start s3server and motr on all the nodes of cluster
     systemctl start slapd 
 ```
 4. Execute below on all the nodes to start haproxy- 
-```
+ ```
     systemctl start haproxy 
  ```
 
