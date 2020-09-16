@@ -591,10 +591,31 @@ int create_global_index(struct m0_uint128 &root_index_oid,
 
 FAIL:
   if (ops[0] != NULL) {
-    teardown_motr_op(ops[0]);
+    if (ops[0]->op_sm.sm_state == M0_OS_LAUNCHED) {
+      m0_op_cancel(&ops[0], 1);
+      // crash was observed when m0_op_wait is not called
+      m0_op_wait(ops[0], M0_BITS(M0_OS_FAILED, M0_OS_STABLE),
+                 m0_time_from_now(motr_op_wait_period, 0));
+    } else if (ops[0]->op_sm.sm_state == M0_OS_INITIALISED ||
+               ops[0]->op_sm.sm_state == M0_OS_STABLE ||
+               ops[0]->op_sm.sm_state == M0_OS_FAILED) {
+      m0_op_fini(ops[0]);
+    } else if (ops[0]->op_sm.sm_state == M0_OS_UNINITIALISED) {
+      m0_op_free(ops[0]);
+    }
   }
   if (sync_op != NULL) {
-    teardown_motr_op(sync_op);
+    if (sync_op->op_sm.sm_state == M0_OS_LAUNCHED) {
+      m0_op_cancel(&sync_op, 1);
+      m0_op_wait(sync_op, M0_BITS(M0_OS_FAILED, M0_OS_STABLE),
+                 m0_time_from_now(motr_op_wait_period, 0));
+    } else if (sync_op->op_sm.sm_state == M0_OS_INITIALISED ||
+               sync_op->op_sm.sm_state == M0_OS_STABLE ||
+               sync_op->op_sm.sm_state == M0_OS_FAILED) {
+      m0_op_fini(sync_op);
+    } else if (sync_op->op_sm.sm_state == M0_OS_UNINITIALISED) {
+      m0_op_free(sync_op);
+    }
   }
   s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
          S3_IEM_MOTR_CONN_FAIL_JSON);
