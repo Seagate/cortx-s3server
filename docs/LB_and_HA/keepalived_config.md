@@ -17,12 +17,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 For any questions about this software or licensing,
-please email opensource@seagate.com or cortx-questions@seagate.com.
+please email [opensource@seagate.com](mailto:opensource@seagate.com) or
+[cortx-questions@seagate.com](mailto:cortx-questions@seagate.com).
 
 ## Introduction
 
 This document describes how to setup and configure *keepalived*, daemon that
-could be used to manage virtual IPs and move these IPs accross servers in
+could be used to manage virtual IPs and move these IPs across servers in
 cluster.
 
 *keepalived* can be used to reach two main goals
@@ -47,20 +48,20 @@ times more requests than the third node.
 One possible solution is to assign several IP addresses to each node and for
 each IP address assign different backup nodes.
 In this case after failover all requests from a failed node will be spread
-accross several nodes.
+across several nodes.
 
 Even load distribution in case of failover requires N * (N - 1) IP addresses
 for the cluster of N nodes.
 
 There could be different configurations as well. For example
 4 IP addresses per node for cluster of N nodes - in case of failover
-this configuratons leads to 25% load increase for some nodes.
+this configurations leads to 25% load increase for some nodes.
 5 IP addresses per node for cluster of N nodes - in case of failover
-this configuratons leads to 20% load increase for some nodes.
+this configurations leads to 20% load increase for some nodes.
 
 #### Example configuration 1 - 3 nodes, 2 IPs per node
 
-Total 6 IP addreses
+Total 6 IP addresses
 
 | IP     | Master Node | Backup 1 | Backup 2 |
 | ------ | ----------- | -------- | -------- |
@@ -147,6 +148,11 @@ configured for the node. Only one node could be a *master* across a cluster for 
 same *vrrp_instance*. The order *backup* nodes failover ip addresses is determined by
 the *priority* field - next active node is the node with the highest *priority*. Each
 *vrrp_instance* must have unique *virtual_router_id* in scope of a single sub-network.
+
+### Limitations
+
+*virtual_router_id* is a single byte value from the range 1 to 255, so only 255
+different *vrrp_instance* could co-exist in a sub-network.
 
 ### Configuration for [Example 1](#Example-configuration-1-3-nodes,-2-IPs-per-node)
 
@@ -600,6 +606,35 @@ vrrp_instance VI_3_2_1 {
 
 `#> systemctl enable keepalived`  
 `#> systemctl start keepalived`
+
+## Check Keepalived status
+
+Following command could be used to check status of the keepalived process
+
+`#> systemctl status keepalived`
+
+Output log entries should not contain any errors or warnings. If chosen
+*virtual_router_id* is already in use in sub-network logs entries will contain
+messages about bogus packets received
+
+```ini
+#> systemctl status keepalived
+● keepalived.service - LVS and VRRP High Availability Monitor
+   Loaded: loaded (/usr/lib/systemd/system/keepalived.service; enabled; vendor preset: disabled)
+   Active: active (running) since Tue 2020-09-15 11:52:57 MDT; 13h ago
+  Process: 23245 ExecStart=/usr/sbin/keepalived $KEEPALIVED_OPTIONS (code=exited, status=0/SUCCESS)
+ Main PID: 23246 (keepalived)
+   CGroup: /system.slice/keepalived.service
+           ├─23246 /usr/sbin/keepalived -D
+           ├─23247 /usr/sbin/keepalived -D
+           └─23248 /usr/sbin/keepalived -D
+
+Sep 16 00:56:39 seagate.com Keepalived_vrrp[23248]: bogus VRRP packet received on eth1 !!!
+Sep 16 00:56:39 seagate.com Keepalived_vrrp[23248]: VRRP_Instance(VI_3_1_2) ignoring received advertisment...
+Sep 16 00:56:39 seagate.com Keepalived_vrrp[23248]: (VI_2_1_3): ip address associated with VRID 79 not present in MASTER advert : 192.168.1.2
+```
+
+In this case new *virtual_router_id* value should be selected.
 
 ## Testing Failover Scenarios
 
