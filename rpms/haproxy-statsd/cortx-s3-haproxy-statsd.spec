@@ -37,7 +37,6 @@ This script sends statistics from haproxy to statsd server.
 %patch -p1
 
 %install
-%install
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/opt/seagate/cortx/s3-haproxy-statsd/
 cp haproxy-statsd.* %{buildroot}/opt/seagate/cortx/s3-haproxy-statsd/

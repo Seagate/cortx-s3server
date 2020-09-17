@@ -25,6 +25,7 @@ Summary:	clang-format integration for git
 License:	NCSA
 URL:		http://llvm.org
 Source0:	%{name}-%{version}.tar.gz
+Requires:	clang >= 3.4
 Requires:	wget
 Requires:	git
 
