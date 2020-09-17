@@ -1,11 +1,11 @@
 ## Auth Server Scaling with open ldap replication on 3 Node setup <h1> 
 
 
-After provisioning 3 VMs,  configure ldap replication as explained above on each node. 
+1. After provisioning 3 VMs,  configure ldap replication as explained above on each node. 
  
 `Openldap_Replication_on_3_node_setup` :- 
 
-**Prerequisite** -  openldap is installed and configured correctly. 
+2. **Prerequisite** -  openldap is installed and configured correctly. 
 
 **To ensure this run below on all nodes** – 
 
@@ -13,19 +13,18 @@ After provisioning 3 VMs,  configure ldap replication as explained above on each
 
 This should return successfully without any errors. 
 
-**Setup Replication** - 
+3. **Setup Replication** - 
 
 -  Consider you have 3 nodes. Say node 1, node 2. and node 3. and you have to setup replication among these three nodes. 
+**Note**: Below 4 steps you have to perform on all three nodes with one change in olcseverid.ldif that is `olcseverrid  = 1 for node 1` ,`olcserverId =2 for node 2`                       ,`olcserverId = 3 for node 3`. rest all steps will be same. 
 
-**Note** : Below 4 steps you have to perform on all three nodes with one change in olcseverid.ldif that is `olcseverrid  = 1 for node 1` ,`olcserverId =2 for node 2` ,`olcserverId = 3 for node 3`. rest all steps will be same. 
-
-  Also update the hostname in provider field in `config.ldif` on all 3 nodes if not updated before running command. 
-
+ > Also update the hostname in provider field in `config.ldif` on all 3 nodes if not updated before running command. 
+```
 All the commands should run successfully. Observe the results. There should not be any error statement like – 
 
-* Invalid syntax 
-* No such attribute 
-
+1. Invalid syntax 
+2. No such attribute 
+```
  
 
 **There are few ldif files that you have to push to ldap in same order below (On NODE 1)-**
