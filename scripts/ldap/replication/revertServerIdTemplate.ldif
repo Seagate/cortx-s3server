@@ -1,0 +1,4 @@
+dn: cn=config
+changetype: modify
+delete: olcServerID
+olcServerID: ${serverid}
