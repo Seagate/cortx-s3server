@@ -274,7 +274,8 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessful) {
       .WillRepeatedly(Return(S3BucketMetadataState::present));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
-
+  action_under_test_ptr->max_record_count =
+      S3Option::get_instance()->get_motr_idx_fetch_count();
   action_under_test_ptr->get_next_objects_successful();
   EXPECT_EQ(3, action_under_test_ptr->object_list->size());
 }
@@ -305,7 +306,8 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulJsonError) {
       .WillRepeatedly(Return(S3BucketMetadataState::present));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
-
+  action_under_test_ptr->max_record_count =
+      S3Option::get_instance()->get_motr_idx_fetch_count();
   action_under_test_ptr->get_next_objects_successful();
   EXPECT_EQ(0, action_under_test_ptr->object_list->size());
 }
@@ -327,7 +329,8 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefix) {
 
   OBJ_METADATA_EXPECTATIONS;
   SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
-
+  action_under_test_ptr->max_record_count =
+      S3Option::get_instance()->get_motr_idx_fetch_count();
   action_under_test_ptr->get_next_objects_successful();
   EXPECT_EQ(1, action_under_test_ptr->object_list->size());
 }
@@ -375,7 +378,8 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefixDelimiter) {
 
   OBJ_METADATA_EXPECTATIONS;
   SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
-
+  action_under_test_ptr->max_record_count =
+      S3Option::get_instance()->get_motr_idx_fetch_count();
   action_under_test_ptr->get_next_objects_successful();
   EXPECT_EQ(2, action_under_test_ptr->object_list->size());
   EXPECT_EQ(1, action_under_test_ptr->object_list->common_prefixes_size());
@@ -403,7 +407,8 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulMultiComponentKey) {
 
   OBJ_METADATA_EXPECTATIONS;
   SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
-
+  action_under_test_ptr->max_record_count =
+      S3Option::get_instance()->get_motr_idx_fetch_count();
   action_under_test_ptr->get_next_objects_successful();
   EXPECT_EQ(0, action_under_test_ptr->object_list->size());
   EXPECT_EQ(1, action_under_test_ptr->object_list->common_prefixes_size());
@@ -435,7 +440,8 @@ TEST_F(S3GetBucketActionTest,
 
   OBJ_METADATA_EXPECTATIONS;
   SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
-
+  action_under_test_ptr->max_record_count =
+      S3Option::get_instance()->get_motr_idx_fetch_count();
   action_under_test_ptr->get_next_objects_successful();
   EXPECT_EQ(1, action_under_test_ptr->object_list->size());
   EXPECT_EQ(1, action_under_test_ptr->object_list->common_prefixes_size());
