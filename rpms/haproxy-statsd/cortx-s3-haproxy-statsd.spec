@@ -17,24 +17,26 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-Name:           haproxy-statsd
-Version:        1.0
-Release:        1
-Summary:        tool to send haproxy statistics to statsd
+Name:		haproxy-statsd
+Version:	1.0
+Release:	1
+Summary:	tool to send haproxy statistics to statsd
 
-License:        MIT
-URL:            https://github.com/softlayer/haproxy-statsd
-Source:         %{name}-%{version}.tar.gz
+License:	MIT
+URL:		https://github.com/softlayer/haproxy-statsd
+Source:		%{name}-%{version}.tar.gz
 Patch:          haproxy-statsd.patch
-Requires:       haproxy, python-psutil
+Requires:	haproxy, python-psutil
 
 %description -n haproxy-statsd
 This script sends statistics from haproxy to statsd server.
+
 
 %prep
 %setup -q
 %patch -p1
 
+%install
 %install
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/opt/seagate/cortx/s3-haproxy-statsd/
@@ -44,6 +46,7 @@ cp README.md  %{buildroot}/opt/seagate/cortx/s3-haproxy-statsd/
 
 %clean
 rm -rf %{buildroot}
+
 
 %files
 %defattr(-,root,root,-)
@@ -58,3 +61,4 @@ rm -rf %{buildroot}
 
 %license LICENSE
 %doc README.md
+

@@ -17,37 +17,38 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-Name:		git-clang-format
-Version:	6.0
-Release:	1%{?dist}
-Summary:	clang-format integration for git
+Name:		ossperf
+Version:	3.0
+Release:	1
+Summary:	ossperf tool for test
 
-License:	NCSA
-URL:		http://llvm.org
+License:	GPL
+URL:		https://github.com/christianbaun/ossperf
 Source0:	%{name}-%{version}.tar.gz
-Requires:	clang >= 3.4
-Requires:	wget
-Requires:	git
+Patch:          ossperf.patch
+Requires:	s3cmd >= 1.6.1
+Requires:       parallel
+Requires:       bc
 
-
-%description -n git-clang-format
-clang-format integration for git.
+%description -n ossperf
+ossperf analyzes performance and data integrity of s3 compatible storage solutions.
 
 %prep
 %setup -q
+%patch -p1
+
 
 %install
 rm -rf %{buildroot}
-
 install -d $RPM_BUILD_ROOT%{_bindir}/
-
-cp git-clang-format $RPM_BUILD_ROOT%{_bindir}/
-cp LICENSE.TXT %{_builddir}
+cp  ossperf.sh $RPM_BUILD_ROOT%{_bindir}/
 
 %clean
 rm -rf %{buildroot}
 
-%files -n git-clang-format
-%attr(755, root, root) /usr/bin/git-clang-format
-%license LICENSE.TXT
-%{_bindir}/git-clang-format
+
+%files -n ossperf
+%license LICENSE
+%doc README.md
+%{_bindir}/ossperf.sh
+

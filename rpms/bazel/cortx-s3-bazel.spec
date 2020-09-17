@@ -17,39 +17,44 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-Name:		ossperf
-Version:	3.0
-Release:	1
-Summary:	ossperf tool for test
+%global _enable_debug_package 0
+%global debug_package %{nil}
+%global __os_install_post /usr/lib/rpm/brp-compress %{nil}
 
-License:	GPL
-URL:	        https://github.com/christianbaun/ossperf
-Source:	        %{name}-%{version}.tar.gz
-Patch:          ossperf.patch
-Requires:	s3cmd >= 1.6.1
-Requires:	parallel
-Requires:       bc
+Name:		bazel
+Version:	0.13.0
+Release:	1%{?dist}
+Summary:	Build tool
 
+Group:		Development/Tools
+License:	Apache
+URL:		https://github.com/bazelbuild/bazel
+Source0:	%{name}-%{version}.zip
 
-%description -n ossperf
-This script analyzes the performance and data integrity of
-S3-compatible storage services
+BuildRequires:	java-1.8.0-openjdk-devel
+Requires:	java-1.8.0-openjdk-devel
+
+%description
+Google build tool
 
 %prep
-%setup -q
-%patch -p1
+%setup -c -n %{name}-%{version}
+
+
+%build
+./compile.sh
 
 %install
-rm -rf %{buildroot}
+mkdir -p %{buildroot}/usr/bin
+cp ./output/bazel %{buildroot}/usr/bin
+cp LICENSE %{_builddir}
 
-install -d $RPM_BUILD_ROOT%{_bindir}/
-
-cp  ossperf.sh $RPM_BUILD_ROOT%{_bindir}/
 
 %clean
-rm -rf %{buildroot}
+rm -rf ${buildroot}
 
-%files -n ossperf
+%files
+%defattr(-,root,root)
 %license LICENSE
-%doc README.md
-%{_bindir}/ossperf.sh
+/usr/bin/bazel
+

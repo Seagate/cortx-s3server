@@ -41,4 +41,5 @@ cp ${BASEDIR}/ossperf.patch .
 
 cd ~/rpmbuild/SOURCES/
 
-rpmbuild -ba ${BASEDIR}/ossperf.spec
+rpmbuild -ba ${BASEDIR}/cortx-s3-ossperf.spec
+

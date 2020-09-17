@@ -17,41 +17,35 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-%global _enable_debug_package 0
-%global debug_package %{nil}
-%global __os_install_post /usr/lib/rpm/brp-compress %{nil}
+Name:		git-clang-format
+Version:	6.0
+Release:	1%{?dist}
+Summary:	clang-format integration for git
 
-Name:       bazel
-Version:    0.13.0
-Release:    1%{?dist}
-Summary:    Build tool
+License:	NCSA
+URL:		http://llvm.org
+Source0:	%{name}-%{version}.tar.gz
+Requires:	wget
+Requires:	git
 
-Group:      Development/Tools
-License:    Apache
-URL:        https://github.com/bazelbuild/bazel
-Source0:    %{name}-%{version}.zip
-
-BuildRequires: java-1.8.0-openjdk-devel
-Requires: java-1.8.0-openjdk-devel
-
-%description
-Google build tool
+%description -n git-clang-format
+clang-format integration for git.
 
 %prep
-%setup -c -n %{name}-%{version}
-
-%build
-./compile.sh
+%setup -q
 
 %install
-mkdir -p %{buildroot}/usr/bin
-cp ./output/bazel %{buildroot}/usr/bin
-cp LICENSE %{_builddir}
+rm -rf %{buildroot}
+install -d $RPM_BUILD_ROOT%{_bindir}/
+cp git-clang-format $RPM_BUILD_ROOT%{_bindir}/
+cp LICENSE.TXT %{_builddir}
+
 
 %clean
-rm -rf ${buildroot}
+rm -rf %{buildroot}
 
-%files
-%defattr(-,root,root)
-%license LICENSE
-/usr/bin/bazel
+%files -n git-clang-format
+%attr(755, root, root) /usr/bin/git-clang-format
+%license LICENSE.TXT
+%{_bindir}/git-clang-format
+

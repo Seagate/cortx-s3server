@@ -41,9 +41,9 @@ rm -rf s3cmd-${VERSION}-${SHORT_COMMIT_VER}
 cp ${BASEDIR}/s3cmd_${VERSION}_max_retries.patch .
 
 if [ "$OS_VERSION" = "\"8.0\"" ]; then
-  yum-builddep -y ${BASEDIR}/s3cmd.spec --define 's3_with_python36_ver8 1'
-  rpmbuild -ba ${BASEDIR}/s3cmd.spec --define 's3_with_python36_ver8 1'
+  yum-builddep -y ${BASEDIR}/cortx-s3-s3cmd.spec --define 's3_with_python36_ver8 1'
+  rpmbuild -ba ${BASEDIR}/cortx-s3-s3cmd.spec --define 's3_with_python36_ver8 1'
 else
-  yum-builddep -y ${BASEDIR}/s3cmd.spec --define 's3_with_python36 1'
-  rpmbuild -ba ${BASEDIR}/s3cmd.spec --define 's3_with_python36 1'
+  yum-builddep -y ${BASEDIR}/cortx-s3-s3cmd.spec --define 's3_with_python36 1'
+  rpmbuild -ba ${BASEDIR}/cortx-s3-s3cmd.spec --define 's3_with_python36 1'
 fi

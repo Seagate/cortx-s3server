@@ -40,4 +40,5 @@ rm -rf apache-log4cxx-${VERSION}
 
 cp ${BASEDIR}/apache-log4cxx-${VERSION}.patch .
 
-rpmbuild -ba ${BASEDIR}/apache-log4cxx.spec
+rpmbuild -ba ${BASEDIR}/cortx-s3-apache-log4cxx.spec
+

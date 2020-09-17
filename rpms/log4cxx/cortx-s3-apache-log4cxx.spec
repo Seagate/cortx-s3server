@@ -17,40 +17,38 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-Name: log4cxx_cortx
-Version: 0.10.0
-Release: 1
+Name:		log4cxx_cortx
+Version:	0.10.0
+Release:	1
+Summary:	A logging framework for C++ patterned after Apache log4j
 
-Summary: A logging framework for C++ patterned after Apache log4j
-License: Apache
-Group: Development/Libraries/C and C++
-Url: http://logging.apache.org/log4cxx/
-
-Source: apache-log4cxx-%{version}.tar.bz2
-Patch0: apache-log4cxx-%{version}.patch
-Prefix: %_prefix
-BuildRoot: %{_tmppath}/apache-log4cxx-%{version}-build
-#BuildRequires: gcc-c++  gcc-fortran
-Requires: unixODBC
-BuildRequires: apr
-BuildRequires: apr-util
+Group:		Development/Libraries/C and C++
+License:	Apache
+URL:		http://logging.apache.org/log4cxx
+Source0:	apache-log4cxx-%{version}.tar.bz2
+Patch0: 	apache-log4cxx-%{version}.patch
+Prefix: 	%_prefix
+BuildRoot: 	%{_tmppath}/apache-log4cxx-%{version}-build
+Requires:	unixODBC
+Requires:	apr
+Requires:	apr-util
 
 %description
-Apache log4cxx is a logging framework for C++ patterned after Apache log4j.
-Apache log4cxx uses Apache Portable Runtime for most platform-specific code
-and should be usable on any platform supported by APR.
+Apache log4cxx is a logging framework for C++, based on Apache log4j.
+As Apache log4cxx uses Apache portable runtime for most platofrm specific code,
+it should be usable on any APR supported plaform.
 
 %package -n log4cxx_cortx-devel
 License:        Apache
 Group:          Development/Libraries/C and C++
 Requires:       %{name} = %{version}
 Summary:        The development files for log4cxx
-#Requires:	unixODBC-devel libapr-util1-devel openldap2-devel libdb-4_5 libexpat-devel libapr1-devel glibc-devel
 
 %description -n log4cxx_cortx-devel
-Apache log4cxx is a logging framework for C++ patterned after Apache log4j.
-Apache log4cxx uses Apache Portable Runtime for most platform-specific code
-and should be usable on any platform supported by APR.
+Apache log4cxx is a logging framework for C++, based on Apache log4j.
+As Apache log4cxx uses Apache portable runtime for most platofrm specific code,
+it should be usable on any APR supported plaform.
+
 
 %prep
 %setup -n apache-log4cxx-%{version}
@@ -61,10 +59,11 @@ and should be usable on any platform supported by APR.
 ./configure --prefix=/usr --libdir=%{_libdir}
 make
 
+
 %install
 make install prefix=$RPM_BUILD_ROOT%{prefix} libdir=$RPM_BUILD_ROOT%{_libdir}
 
-# files
+%files
 cd $RPM_BUILD_ROOT
 find .%{_includedir}/log4cxx -print | sed 's,^\.,\%attr(-\,root\,root) ,' >  $RPM_BUILD_DIR/file.list
 find .%{_datadir}/log4cxx    -print | sed 's,^\.,\%attr(-\,root\,root) ,' >> $RPM_BUILD_DIR/file.list
@@ -91,3 +90,4 @@ rm $RPM_BUILD_DIR/file.list
 %{_libdir}/liblog4cxx.la
 %{_libdir}/liblog4cxx.so
 %{_libdir}/pkgconfig/liblog4cxx.pc
+
