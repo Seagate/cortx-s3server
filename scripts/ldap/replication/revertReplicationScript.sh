@@ -20,13 +20,10 @@
 ##################################
 # Configure replication 
 ##################################
-usage() { echo "Usage: [-h <provide file containing hostnames of nodes in cluster>],[-p <ldap admin password>]" 1>&2; exit 1; }
+usage() { echo "Usage: [-p <ldap admin password>]" 1>&2; exit 1; }
 
-while getopts ":h:p:" o; do
+while getopts ":p:" o; do
     case "${o}" in
-        h)
-            host_list=${OPTARG}
-            ;;
         p)
             password=${OPTARG}
             ;;
@@ -37,12 +34,12 @@ while getopts ":h:p:" o; do
 done
 shift $((OPTIND-1))
 
-if [ -z ${host_list} ] || [ -z ${password} ]
+if [ -z ${password} ]
 then
     usage
     exit 1
 fi
-
+host_list=/opt/seagate/cortx/s3/install/ldap/replication/host_list
 #Below function will check if all provided hosts are valid or not
 checkHostValidity()
 {
@@ -55,13 +52,35 @@ checkHostValidity()
         fi
     done <$host_list
 }
+id=1
+#Below will generate serverid from host list provided
+getServerIdFromHostFile()
+{
+    while read host; do
+        if [ "$host" == "$HOSTNAME" ]
+        then
+            break
+        fi
+    id=`expr ${id} + 1`
+    done <$host_list
+}
+#Below will get serverid from salt command
+getServerIdWithSalt()
+{
+    nodeId=$(salt-call grains.get id --output=newline_values_only)
+    IFS='-'
+    read -ra ID <<< "$nodeId"
+    id=${ID[1]}
+}
 
+
+#olcServerId script
 checkHostValidity
-#revert serverid
-result=$(ldapsearch -w seagate -x -D cn=admin,cn=config -b cn=config | grep olcServerID:)
-IFS=' '
-read -ra serverId <<< "$result"
-id=${serverId[1]}
+if hash salt 2>/dev/null; then
+    getServerIdWithSalt
+else
+    getServerIdFromHostFile
+fi
 sed -e "s/\${serverid}/$id/" revertServerIdTemplate.ldif > scriptRevertServerId.ldif
 ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptRevertServerId.ldif
 rm scriptRevertServerId.ldif
@@ -69,30 +88,25 @@ rm scriptRevertServerId.ldif
 rm -rf /etc/openldap/slapd.d/cn\=config/cn\=module{2}.ldif
 rm -rf /etc/openldap/slapd.d/cn\=config/olcDatabase\={2}mdb/olcOverlay\={2}syncprov.ldif
 
-#revert replication config
+#update replicaiton config
+
+rid=1
 while read host; do
-record=1
-ldapsearch -w seagate -x -D cn=admin,cn=config -b cn=config | grep olcSyncrepl | grep "${host}"  |  while read -r line ; do
-IFS=' '
-read -ra rid <<< "$line"
-ridLine=${rid[1]}
-IFS='='
-read -ra ridline <<< "$ridLine"
-ridNumber=${ridline[1]}
-if [ $record -eq 1 ]
-then
-  sed -e "s/\${rid}/$ridNumber/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" revertConfigTemplate.ldif > revertScriptConfig.ldif
+  sed -e "s/\${rid}/$rid/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" revertConfigTemplate.ldif > revertScriptConfig.ldif
   ldapmodify -Y EXTERNAL  -H ldapi:/// -f revertScriptConfig.ldif
   rm revertScriptConfig.ldif
-else
-sed -e "s/\${rid}/$ridNumber/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" revertDataTemplate.ldif > revertScriptData.ldif
-  ldapmodify -Y EXTERNAL  -H ldapi:/// -f revertScriptData.ldif
-  rm revertScriptData.ldif
-fi
-record=`expr ${record} + 1`
-done
+  rid=`expr ${rid} + 1`
 done <$host_list
 ldapmodify -Y EXTERNAL  -H ldapi:/// -f revertMirrorModeConfig.ldif
+iteration=1
+# Update mdb file
+while read host; do
+  sed -e "s/\${rid}/$rid/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" revertDataTemplate.ldif > revertScriptData.ldif
+  ldapmodify -Y EXTERNAL  -H ldapi:/// -f revertScriptData.ldif
+  rm revertScriptData.ldif
+  rid=`expr ${rid} + 1`
+  iteration=`expr ${iteration} + 1`
+done <$host_list
 ldapmodify -Y EXTERNAL  -H ldapi:/// -f revertMirrorModeData.ldif
-
+rm $host_list
 systemctl restart slapd

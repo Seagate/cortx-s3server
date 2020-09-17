@@ -75,10 +75,17 @@ getServerIdWithSalt()
     read -ra ID <<< "$nodeId"
     id=${ID[1]}
 }
+#Below will save host list at /opt/seagate/cortx/s3/install/ldap/replication/ for future use in reverting replication
+saveHostList()
+{
+    while read host; do
+    echo $host >> /opt/seagate/cortx/s3/install/ldap/replication/host_list
+    done <$host_list
+}
 
-
-#olcServerId script
 checkHostValidity
+saveHostList
+#update serverID
 if hash salt 2>/dev/null; then
     getServerIdWithSalt
 else
