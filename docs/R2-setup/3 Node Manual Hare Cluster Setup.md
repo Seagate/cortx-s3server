@@ -52,14 +52,13 @@
     Start haproxy – `systemctl start haproxy`
     
 7 . **Start authserver by following command**
-
-    ```
-    systemctl start s3authserver 
-    ```
+ 
+ ```
+ systemctl start s3authserver 
+ ```
 
 8 . **Update** `/etc/hosts` file on all server nodes and append below entries corresponding to the IP address 127.0.0.1 - 
-    
-    `s3.seagate.com sts.seagate.com iam.seagate.com   sts.cloud.seagate.com `
+`s3.seagate.com sts.seagate.com iam.seagate.com   sts.cloud.seagate.com `
 
  
 
@@ -77,7 +76,8 @@ to `/etc/ssl` (you can use [tgz] option then untar on the node and move to prope
 
 3 . **Install s3iamcli** - 
     
-    Create **/etc/yum.repos.d/epel.repo** and add below content - 
+   
+   Create `/etc/yum.repos.d/epel.repo` and add below content - 
     
   ```
     [epel] 
