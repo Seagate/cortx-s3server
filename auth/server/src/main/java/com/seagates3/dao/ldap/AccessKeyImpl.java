@@ -283,7 +283,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
      */
     @Override
     public int getCount(String userId) throws DataAccessException {
-        String[] attrs = new String[]{LDAPUtils.ACCESS_KEY_ID};
+      String[] attrs = new String[]{LDAPUtils.ACCESS_KEY_ID, LDAPUtils.EXPIRY};
         int count = 0;
 
         String filter = String.format("(&(%s=%s)(%s=%s))",
@@ -304,17 +304,33 @@ public class AccessKeyImpl implements AccessKeyDAO {
              * available.
              */
             while (ldapResults.hasMore()) {
+              LDAPEntry entry = ldapResults.next();
+              boolean temporary_credentials = true;
+              String access_key_id = "", expiry_time = "";
+              try {
+                access_key_id = entry.getAttribute(LDAPUtils.ACCESS_KEY_ID)
+                                    .getStringValue();
+                expiry_time =
+                    entry.getAttribute(LDAPUtils.EXPIRY).getStringValue();
+              }
+              catch (Exception e) {
+                temporary_credentials = false;
+                LOGGER.debug("Failed to get time to expire for access_key" +
+                             access_key_id);
+                LOGGER.error(e.getMessage());
+              }
+              if (!temporary_credentials) {
                 count++;
-                ldapResults.next();
+              }
             }
 
-            return count;
         } catch (LDAPException ex) {
             LOGGER.error("Failed to get the count of user access keys"
                     + " for user id :" + userId);
             throw new DataAccessException("Failed to get the count of user "
                     + "access keys" + ex);
         }
+        return count;
     }
 
     /**

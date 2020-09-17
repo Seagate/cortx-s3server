@@ -61,7 +61,8 @@ import com.seagates3.model.User;
 
     private final String[] FIND_ALL_ATTRS = {"ak", "status", "createtimestamp"};
 
-    private final String[] GETCOUNT_ATTRS = {"ak"};
+    private
+     final String[] GETCOUNT_ATTRS = {"ak", "exp"};
 
     private final String LDAP_DATE;
     private final String EXPECTED_DATE;
@@ -343,13 +344,11 @@ import com.seagates3.model.User;
     public void GetCount_AccessKeySearchFailed_ThrowException()
             throws Exception {
         String filter = "(&(s3userid=123)(objectclass=accesskey))";
-
         PowerMockito.doThrow(new LDAPException()).when(LDAPUtils.class, "search",
                 ACCESSKEY_BASE_DN, 2, filter, GETCOUNT_ATTRS
         );
 
         exception.expect(DataAccessException.class);
-
         accesskeyImpl.getCount("123");
     }
 

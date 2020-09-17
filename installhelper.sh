@@ -278,6 +278,9 @@ cp ./scripts/elasticsearch/elasticsearch.conf $RSYSLOG_CFG_DIR_LOCATION
 # Copy audit logrotate config
 cp ./scripts/s3-logrotate/s3auditlog $LOGROTATE_CFG_DIR_LOCATION
 
+# Copy openldap logrotate config
+cp ./scripts/ldap/logrotate/openldap $LOGROTATE_CFG_DIR_LOCATION
+
 # Copy the keepalived config
 cp ./scripts/keepalived/keepalived.conf.main $KEEPALIVED_CFG_DIR_LOCATION
 
