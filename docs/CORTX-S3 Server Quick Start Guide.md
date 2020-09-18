@@ -36,9 +36,9 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
     * Python Version 3.0
       * To check whether Python is installed on your VM, use one of the following commands: `--version`  , `-V` , or `-VV`
       * To install Python version 3.0, use: `$ yum install -y python3`
-    * pip version 3.0:
+    * pip:
       * To check if pip is installed, use: `$ pip --version`
-      * To install pip3 use: `$ yum install python-pip3`
+      * To install pip use: `$ yum install python-pip`
     * Ansible: `$ yum install -y ansible`
     * Extra Packages for Enterprise Linux:
         * To check if epel is installed, use: `$ yum repolist`
