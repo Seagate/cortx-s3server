@@ -114,3 +114,9 @@
     src: ./files/s3-logrotate/s3logfilerollover.sh
     dest: /etc/cron.hourly/s3logfilerollover.sh
     mode: 0755
+
+- name: Update m0trace logrotate entry in cron to run hourly
+  copy:
+    src: ./files/s3-logrotate/s3m0tracelogfilerollover.sh
+    dest: /etc/cron.hourly/s3m0tracelogfilerollover.sh
+    mode: 0755

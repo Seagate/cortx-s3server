@@ -43,6 +43,8 @@ class MotrKVSListingAction : public MotrAction {
   std::string request_delimiter;
   std::string request_marker_key;
   size_t max_keys;
+  size_t max_record_count;
+  short retry_count;
 
  public:
   MotrKVSListingAction(
