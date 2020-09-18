@@ -274,6 +274,18 @@ then
   $USE_SUDO systemctl restart haproxy
 fi
 
+# Copy jks and keystore.properties file from /root/.cortx_s3_auth_jks directory to Auth install directory
+echo "Updating Authserver keystore with random password.."
+JKS_DIR="/root/.cortx_s3_auth_jks"
+if [ -d "$JKS_DIR" ]
+then
+    cp -f $JKS_DIR/s3authserver.jks /opt/seagate/cortx/auth/resources
+    cp -f $JKS_DIR/keystore.properties /opt/seagate/cortx/auth/resources
+else
+    echo "Auth jksstore and keystore files are missing.Please re-run ansible (init.sh) script to regenerate these files."
+    exit 1;
+fi
+
 # Start motr for new tests
 cd $MOTR_SRC
 echo "Starting new built motr services"

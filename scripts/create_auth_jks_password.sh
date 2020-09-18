@@ -18,30 +18,31 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-
 set -e
+
 SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
 AUTH_INSTALL_PATH="/opt/seagate/cortx/auth"
-
-# Set file path based on setup type i.e. provisioner/dev
-if [[ "$BASEDIR" == "$AUTH_INSTALL_PATH/scripts" ]];
-then
-    AUTH_KEYSTORE_PROPERTIES_FILE="$AUTH_INSTALL_PATH/resources/keystore.properties"
-    AUTH_JKS_TEMPLATE_FILE="$AUTH_INSTALL_PATH/scripts/s3authserver.jks_template"
-    AUTH_JKS_FILE="$AUTH_INSTALL_PATH/resources/s3authserver.jks"
-else
-    AUTH_KEYSTORE_PROPERTIES_FILE="$BASEDIR/../auth/resources/keystore.properties"
-    AUTH_JKS_TEMPLATE_FILE="$BASEDIR/s3authserver.jks_template"
-    AUTH_JKS_FILE="$BASEDIR/../auth/resources/s3authserver.jks"
-fi
-
+DEV_VM_JKS_DIR="/root/.cortx_s3_auth_jks"
 AUTH_KEY_ALIAS="s3auth_pass"
 DEFAULT_KEYSTORE_PASSWD="seagate"
 DEFAULT_KEY_PASSWD="seagate"
 
-#Use template file to change password
-cp -f $AUTH_JKS_TEMPLATE_FILE $AUTH_JKS_FILE
+if [[ "$BASEDIR" == "$AUTH_INSTALL_PATH/scripts" ]];
+then
+    # this is executed for cluster deployment
+    AUTH_KEYSTORE_PROPERTIES_FILE="$AUTH_INSTALL_PATH/resources/keystore.properties"
+    AUTH_JKS_TEMPLATE_FILE="$AUTH_INSTALL_PATH/scripts/s3authserver.jks_template"
+    AUTH_JKS_FILE="$AUTH_INSTALL_PATH/resources/s3authserver.jks"
+    cp -f $AUTH_JKS_TEMPLATE_FILE $AUTH_JKS_FILE
+else
+    # this script executed for dev vm
+    mkdir -p $DEV_VM_JKS_DIR
+    cp -f $BASEDIR/s3authserver.jks_template $DEV_VM_JKS_DIR/s3authserver.jks
+    cp -f $BASEDIR/../auth/resources/keystore.properties $DEV_VM_JKS_DIR/keystore.properties
+    AUTH_KEYSTORE_PROPERTIES_FILE=$DEV_VM_JKS_DIR/keystore.properties
+    AUTH_JKS_FILE=$DEV_VM_JKS_DIR/s3authserver.jks
+fi
 
 # Generate random password for jks keystore
 generate_keystore_password(){
