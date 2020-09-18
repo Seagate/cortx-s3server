@@ -179,7 +179,7 @@ All the commands should run successfully. Observe the results. There should not 
  1.push provider for data replication 
 
     syncprov.ldif 
-
+```
       dn: olcOverlay=syncprov,olcDatabase={2}mdb,cn=config 
 
       objectClass: olcOverlayConfig 
@@ -189,7 +189,7 @@ All the commands should run successfully. Observe the results. There should not 
       olcOverlay: syncprov 
 
       olcSpSessionLog: 100 
-
+```
       command to add - ldapadd -Y EXTERNAL -H ldapi:/// -f  syncprov.ldif 
 
 
@@ -198,7 +198,7 @@ All the commands should run successfully. Observe the results. There should not 
 Update the hostname in provider field in data.ldif on Node 1 if not updated before running command 
 
     data.ldif 
-
+```
       dn: olcDatabase={2}mdb,cn=config 
 
       changetype: modify 
@@ -272,16 +272,13 @@ Update the hostname in provider field in data.ldif on Node 1 if not updated befo
            retry="30 5 300 3" 
 
            interval=00:00:05:00 
+         - 
 
-       - 
+           add: olcMirrorMode 
 
-       add: olcMirrorMode 
+           olcMirrorMode: TRUE 
 
-       olcMirrorMode: TRUE 
-
- 
-
-- command to add - `ldapmodify -Y EXTERNAL -H ldapi:/// -f data.ldif` 
+ - command to add - `ldapmodify -Y EXTERNAL -H ldapi:/// -f data.ldif` 
 
 
 ```
