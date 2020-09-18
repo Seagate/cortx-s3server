@@ -148,6 +148,30 @@ TEST_F(S3MotrReaderTest, OpenObjectDataTest) {
   EXPECT_FALSE(s3motrreader_callbackobj.fail_called);
 }
 
+TEST_F(S3MotrReaderTest, OpenObjectCheckNoHoleFlagTest) {
+  S3CallBack s3motrreader_callbackobj;
+
+  EXPECT_CALL(*s3_motr_api_mock, motr_obj_init(_, _, _, _));
+  EXPECT_CALL(*s3_motr_api_mock, motr_entity_open(_, _))
+      .WillOnce(Invoke(s3_test_allocate_op));
+  EXPECT_CALL(*s3_motr_api_mock, motr_obj_fini(_)).Times(1);
+  EXPECT_CALL(*s3_motr_api_mock,
+              motr_obj_op(_, _, _, _, _, _, M0_OOF_NOHOLE, _))
+      .WillOnce(Invoke(s3_test_motr_obj_op));
+  EXPECT_CALL(*s3_motr_api_mock, motr_op_setup(_, _, _)).Times(2);
+  EXPECT_CALL(*s3_motr_api_mock, motr_op_launch(_, _, _, _))
+      .WillRepeatedly(Invoke(s3_test_motr_op_launch));
+
+  size_t num_of_blocks_to_read = 2;
+  motr_reader_ptr->read_object_data(
+      num_of_blocks_to_read,
+      std::bind(&S3CallBack::on_success, &s3motrreader_callbackobj),
+      std::bind(&S3CallBack::on_failed, &s3motrreader_callbackobj));
+
+  EXPECT_TRUE(s3motrreader_callbackobj.success_called);
+  EXPECT_FALSE(s3motrreader_callbackobj.fail_called);
+}
+
 TEST_F(S3MotrReaderTest, ReadObjectDataTest) {
   S3CallBack s3motrreader_callbackobj;
 
@@ -158,6 +182,34 @@ TEST_F(S3MotrReaderTest, ReadObjectDataTest) {
   motr_reader_ptr->obj_ctx->obj_count = 1;
   motr_reader_ptr->obj_ctx->n_initialized_contexts = 1;
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_op(_, _, _, _, _, _, _, _))
+      .WillOnce(Invoke(s3_test_motr_obj_op));
+  EXPECT_CALL(*s3_motr_api_mock, motr_obj_fini(_)).Times(1);
+  EXPECT_CALL(*s3_motr_api_mock, motr_op_setup(_, _, _)).Times(1);
+  EXPECT_CALL(*s3_motr_api_mock, motr_op_launch(_, _, _, _))
+      .WillRepeatedly(Invoke(s3_test_motr_op_launch));
+
+  size_t num_of_blocks_to_read = 2;
+  motr_reader_ptr->is_object_opened = true;
+  motr_reader_ptr->read_object_data(
+      num_of_blocks_to_read,
+      std::bind(&S3CallBack::on_success, &s3motrreader_callbackobj),
+      std::bind(&S3CallBack::on_failed, &s3motrreader_callbackobj));
+
+  EXPECT_TRUE(s3motrreader_callbackobj.success_called);
+  EXPECT_FALSE(s3motrreader_callbackobj.fail_called);
+}
+
+TEST_F(S3MotrReaderTest, ReadObjectDataCheckNoHoleFlagTest) {
+  S3CallBack s3motrreader_callbackobj;
+
+  motr_reader_ptr->obj_ctx = (struct s3_motr_obj_context *)calloc(
+      1, sizeof(struct s3_motr_obj_context));
+  motr_reader_ptr->obj_ctx->objs =
+      (struct m0_obj *)calloc(1, sizeof(struct m0_obj));
+  motr_reader_ptr->obj_ctx->obj_count = 1;
+  motr_reader_ptr->obj_ctx->n_initialized_contexts = 1;
+  EXPECT_CALL(*s3_motr_api_mock,
+              motr_obj_op(_, _, _, _, _, _, M0_OOF_NOHOLE, _))
       .WillOnce(Invoke(s3_test_motr_obj_op));
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_fini(_)).Times(1);
   EXPECT_CALL(*s3_motr_api_mock, motr_op_setup(_, _, _)).Times(1);
