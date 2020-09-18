@@ -52,7 +52,7 @@ All the commands should run successfully. Observe the results. There should not 
 
          olcServerID: 1 
 
-   > command to add : ldapmodify -Y EXTERNAL -H ldapi:/// -f olcserverid.ldif 
+   > command to add : `ldapmodify -Y EXTERNAL -H ldapi:/// -f olcserverid.ldif`
 
      2.  loading provider module 
 
@@ -68,7 +68,7 @@ All the commands should run successfully. Observe the results. There should not 
 
           olcModuleLoad: syncprov.la 
 
-   > command to add - ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov_mod.ldif 
+   > command to add - `ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov_mod.ldif` 
 
      3.  Push Provider ldif for config replication 
 
@@ -84,7 +84,7 @@ All the commands should run successfully. Observe the results. There should not 
 
            olcSpSessionLog: 100 
 
-   > command to add - ldapadd -Y EXTERNAL -H ldapi:/// -f  syncprov_config.ldif 
+   > command to add - `ldapadd -Y EXTERNAL -H ldapi:/// -f  syncprov_config.ldif` 
 
      4.  Push Config.ldif 
 
@@ -191,7 +191,7 @@ All the commands should run successfully. Observe the results. There should not 
       olcSpSessionLog: 100 
 
       
-  > command to add - ldapadd -Y EXTERNAL -H ldapi:/// -f  syncprov.ldif 
+  > command to add - `ldapadd -Y EXTERNAL -H ldapi:/// -f  syncprov.ldif`
 
 
    2.push data replication ldif 
