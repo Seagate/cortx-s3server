@@ -40,7 +40,7 @@ All the commands should run successfully. Observe the results. There should not 
 **NOTE**: Contents from below files are indentation sensitive. DO NOT alter any indentation / space / line breaks!!! 
 
 
-     1. You have to push unique olcserver Id  
+     1.  You have to push unique olcserver Id  
 
          olcserverid.ldif
 
@@ -54,7 +54,7 @@ All the commands should run successfully. Observe the results. There should not 
 
        command to add : ldapmodify -Y EXTERNAL -H ldapi:/// -f olcserverid.ldif 
 
-     2. loading provider module 
+     2.  loading provider module 
 
           syncprov_mod.ldif 
 
@@ -70,7 +70,7 @@ All the commands should run successfully. Observe the results. There should not 
 
           command to add - ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov_mod.ldif 
 
-     3.Push Provider ldif for config replication 
+     3.  Push Provider ldif for config replication 
 
           syncprov_config.ldif 
 
@@ -86,7 +86,7 @@ All the commands should run successfully. Observe the results. There should not 
 
           command to add - ldapadd -Y EXTERNAL -H ldapi:/// -f  syncprov_config.ldif 
 
-     4.Push Config.ldif 
+     4.  Push Config.ldif 
 
          config.ldif  
 
@@ -168,7 +168,7 @@ All the commands should run successfully. Observe the results. There should not 
 
           olcMirrorMode: TRUE 
 
-`command to add - ldapmodify -Y EXTERNAL  -H ldapi:/// -f config.ldif` 
+     command to add - `ldapmodify -Y EXTERNAL  -H ldapi:/// -f config.ldif` 
 
   
 
@@ -195,7 +195,7 @@ All the commands should run successfully. Observe the results. There should not 
 
    2.push data replication ldif 
 
-Update the hostname in provider field in data.ldif on Node 1 if not updated before running command 
+   Update the hostname in provider field in data.ldif on Node 1 if not updated before running command 
 
     data.ldif 
 
