@@ -52,7 +52,7 @@ All the commands should run successfully. Observe the results. There should not 
 
          olcServerID: 1 
 
-command to add -: ldapmodify -Y EXTERNAL -H ldapi:/// -f olcserverid.ldif 
+       command to add : ldapmodify -Y EXTERNAL -H ldapi:/// -f olcserverid.ldif 
 
      2. loading provider module 
 
@@ -176,7 +176,7 @@ command to add -: ldapmodify -Y EXTERNAL -H ldapi:/// -f olcserverid.ldif
 
 * You need not Push these 2 steps on node 2 and node 3, because you have already pushed config replication on all three nodes, so adding this data.ldif on one node will replicate on all other nodes. 
 
-1. push provider for data replication 
+ 1.push provider for data replication 
 
     syncprov.ldif 
 
@@ -190,12 +190,10 @@ command to add -: ldapmodify -Y EXTERNAL -H ldapi:/// -f olcserverid.ldif
 
       olcSpSessionLog: 100 
 
-      
- command to add - ldapadd -Y EXTERNAL -H ldapi:/// -f  syncprov.ldif 
+      command to add - ldapadd -Y EXTERNAL -H ldapi:/// -f  syncprov.ldif 
 
- 
 
-2. push data replication ldif 
+   2.push data replication ldif 
 
 Update the hostname in provider field in data.ldif on Node 1 if not updated before running command 
 
