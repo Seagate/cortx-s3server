@@ -63,7 +63,7 @@ make
 %install
 make install prefix=$RPM_BUILD_ROOT%{prefix} libdir=$RPM_BUILD_ROOT%{_libdir}
 
-%files
+# files
 cd $RPM_BUILD_ROOT
 find .%{_includedir}/log4cxx -print | sed 's,^\.,\%attr(-\,root\,root) ,' >  $RPM_BUILD_DIR/file.list
 find .%{_datadir}/log4cxx    -print | sed 's,^\.,\%attr(-\,root\,root) ,' >> $RPM_BUILD_DIR/file.list
