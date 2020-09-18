@@ -17,8 +17,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 For any questions about this software or licensing,
-please email [opensource@seagate.com](mailto:opensource@seagate.com) or
-[cortx-questions@seagate.com](mailto:cortx-questions@seagate.com).
+please email opensource@seagate.com or cortx-questions@seagate.com.
 
 ## Introduction
 
@@ -634,7 +633,7 @@ Sep 16 00:56:39 seagate.com Keepalived_vrrp[23248]: VRRP_Instance(VI_3_1_2) igno
 Sep 16 00:56:39 seagate.com Keepalived_vrrp[23248]: (VI_2_1_3): ip address associated with VRID 79 not present in MASTER advert : 192.168.1.2
 ```
 
-In this case new *virtual_router_id* value should be selected.
+In this case new `virtual_router_id` value should be selected for `vrrp_instance VI_2_1_3`.  Repeat this test/fix cycle until you get no warnings.  Check this on all nodes in cluster.
 
 ## Testing Failover Scenarios
 
