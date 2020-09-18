@@ -209,7 +209,9 @@ class S3MotrReader {
   // For Testing purpose
   FRIEND_TEST(S3MotrReaderTest, Constructor);
   FRIEND_TEST(S3MotrReaderTest, OpenObjectDataTest);
+  FRIEND_TEST(S3MotrReaderTest, OpenObjectCheckNoHoleFlagTest);
   FRIEND_TEST(S3MotrReaderTest, ReadObjectDataTest);
+  FRIEND_TEST(S3MotrReaderTest, ReadObjectDataCheckNoHoleFlagTest);
   FRIEND_TEST(S3MotrReaderTest, ReadObjectDataSuccessful);
   FRIEND_TEST(S3MotrReaderTest, ReadObjectDataFailed);
   FRIEND_TEST(S3MotrReaderTest, CleanupContexts);
