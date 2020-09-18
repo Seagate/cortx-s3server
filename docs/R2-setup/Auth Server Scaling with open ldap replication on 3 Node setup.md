@@ -190,7 +190,8 @@ All the commands should run successfully. Observe the results. There should not 
 
       olcSpSessionLog: 100 
 
-      command to add - ldapadd -Y EXTERNAL -H ldapi:/// -f  syncprov.ldif 
+      
+  > command to add - ldapadd -Y EXTERNAL -H ldapi:/// -f  syncprov.ldif 
 
 
    2.push data replication ldif 
@@ -278,7 +279,7 @@ All the commands should run successfully. Observe the results. There should not 
 
            olcMirrorMode: TRUE 
 
- - command to add - `ldapmodify -Y EXTERNAL -H ldapi:/// -f data.ldif` 
+ > command to add - `ldapmodify -Y EXTERNAL -H ldapi:/// -f data.ldif` 
 
 
 
