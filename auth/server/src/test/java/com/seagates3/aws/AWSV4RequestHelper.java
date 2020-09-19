@@ -489,12 +489,12 @@ public class AWSV4RequestHelper {
      * @return
      */
     public static ClientRequestToken getInvalidHttpRequestClientToken() {
-        String authHeader = "AWS4-HMAC-SHA256 Credential="
-                 + "AKIAJTYX36YCKQSAJT7Q/20180719/us-east-1/s3/aws4_request,"
-         + "SignedHeaders=connection;date;"
-         + "host;x-amz-content-sha256;x-amz-date,"
-         + "Signature="
-         + "aad057b69f74b68957f7d32c3c7c19b5a64d78749de4f5b328253629d9a55059";
+       String authHeader =
+           "AWS4-HMAC-SHA256 Credential=" +
+           "AKIAJTYX36YCKQSAJT7Q/20180719/us-east-1/s3/aws4_request," +
+           "SignedHeaders=connection1;date;" +
+           "host;x-amz-content-sha256;x-amz-date," + "Signature=" +
+           "aad057b69f74b68957f7d32c3c7c19b5a64d78749de4f5b328253629d9a55059";
 
         Map<String, String> requestBody
                 = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
@@ -508,8 +508,8 @@ public class AWSV4RequestHelper {
         requestBody.put("x-amz-content-sha256",
         "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
 
-        String signedHeaders = "connection;date;host;"
-                             + "x-amz-content-sha256;x-amz-date";
+        String signedHeaders =
+            "connection1;date;host;" + "x-amz-content-sha256;x-amz-date";
 
         ClientRequestToken requestToken = new ClientRequestToken();
         requestToken.setSignedVersion(ClientRequestToken.AWSSigningVersion.V4);
