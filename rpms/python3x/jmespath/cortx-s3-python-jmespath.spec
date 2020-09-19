@@ -20,17 +20,17 @@
 
 %global pypi_name jmespath
 
-Name:           python-%{pypi_name}
-Version:        0.9.0
-Release:        1%{?dist}
-Summary:        JSON Matching Expressions
+Name:		python-%{pypi_name}
+Version:	0.9.0
+Release:	1%{?dist}
+Summary:	JSON Matching Expressions
 
-License:        MIT
-URL:            https://github.com/jmespath/jmespath.py
-Source0:        https://pypi.python.org/packages/source/j/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
+License:	MIT
+URL:		https://github.com/jmespath/jmespath.py
+Source0:	https://pypi.python.org/packages/source/j/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
 BuildArch:      noarch
 
-BuildRequires:  python2-devel
+BuildRequires:	python2-devel
 BuildRequires:  python-setuptools
 %if 0%{?s3_with_python34:1}
 BuildRequires:  python%{python3_pkgversion}-devel
@@ -42,16 +42,14 @@ BuildRequires:  python36-setuptools
 %endif # with_python36
 
 %description
-JMESPath allows you to declaratively specify how to extract elements from
-a JSON document.
+library to extract elements from a JSON document.
 
 %package -n     python2-%{pypi_name}
 Summary:        JSON Matching Expressions
 %{?python_provide:%python_provide python2-%{pypi_name}}
 
 %description -n python2-%{pypi_name}
-JMESPath allows you to declaratively specify how to extract elements from
-a JSON document.
+library to extract elements from a JSON document.
 
 %if 0%{?s3_with_python34:1}
 %package -n     python%{python3_pkgversion}-%{pypi_name}
@@ -59,8 +57,7 @@ Summary:        JSON Matching Expressions
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{pypi_name}}
 
 %description -n python%{python3_pkgversion}-%{pypi_name}
-JMESPath allows you to declaratively specify how to extract elements from
-a JSON document.
+library to extract elements from a JSON document.
 %endif # with_python3
 
 %if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
@@ -69,13 +66,13 @@ Summary:        JSON Matching Expressions
 %{?python_provide:%python_provide python36-%{pypi_name}}
 
 %description -n python36-%{pypi_name}
-JMESPath allows you to declaratively specify how to extract elements from
-a JSON document.
+library to extract elements from a JSON document.
 %endif # with_python36
 
 %prep
 %setup -n %{pypi_name}-%{version}
 rm -rf %{pypi_name}.egg-info
+
 
 %build
 %py2_build
@@ -85,6 +82,7 @@ rm -rf %{pypi_name}.egg-info
 %if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
 %py3_build
 %endif # with_python36
+
 
 %install
 %if 0%{?s3_with_python34:1}
@@ -101,7 +99,7 @@ cp %{buildroot}/%{_bindir}/jp.py %{buildroot}/%{_bindir}/jp.py-2
 ln -sf %{_bindir}/jp.py-2 %{buildroot}/%{_bindir}/jp.py-%{python2_version}
 
 
-%files -n python2-%{pypi_name}
+%files
 %{!?_licensedir:%global license %doc}
 %doc README.rst
 %license LICENSE.txt
@@ -129,6 +127,7 @@ ln -sf %{_bindir}/jp.py-2 %{buildroot}/%{_bindir}/jp.py-%{python2_version}
 %{python3_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
 %endif # with_python36
 
+
 %changelog
 * Tue Dec 29 2015 Fabio Alessandro Locati <fabio@locati.cc> - 0.9.0-1
 - Upgrade to upstream current version
@@ -149,3 +148,4 @@ ln -sf %{_bindir}/jp.py-2 %{buildroot}/%{_bindir}/jp.py-%{python2_version}
 
 * Fri Jul 25 2014 Lubomir Rintel <lkundrak@v3.sk> - 0.4.1-1
 - Initial packaging
+

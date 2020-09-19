@@ -20,21 +20,19 @@
 
 %global pypi_name boto3
 
-Name:           python-%{pypi_name}
-Version:        1.4.6
-Release:        1%{?dist}
-Summary:        The AWS SDK for Python
+Name:		python-%{pypi_name}
+Version:	1.4.6
+Release:	1%{?dist}
+Summary:	The AWS SDK for Python
 
-License:        ASL 2.0
-URL:            https://github.com/boto/boto3
-Source0:        https://pypi.io/packages/source/b/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
+License:	ASL 2.0
+URL:		https://github.com/boto/boto3
+Source0:	https://pypi.io/packages/source/b/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
 BuildArch:      noarch
 
 %description
-Boto3 is the Amazon Web Services (AWS) Software Development
-Kit (SDK) for Python, which allows Python developers to
-write software that makes use of services like Amazon S3
-and Amazon EC2.
+Boto3 is AWS SDK for python, used to write python applications
+to talk to AWS S3 and compatible services.
 
 %if 0%{?s3_with_python34:1}
 %package -n     python%{python3_pkgversion}-%{pypi_name}
@@ -54,10 +52,8 @@ Requires:       python%{python3_pkgversion}-s3transfer >= 0.1.10
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{pypi_name}}
 
 %description -n python%{python3_pkgversion}-%{pypi_name}
-Boto3 is the Amazon Web Services (AWS) Software Development
-Kit (SDK) for Python, which allows Python developers to
-write software that makes use of services like Amazon S3
-and Amazon EC2.
+Boto3 is AWS SDK for python, used to write python applications
+to talk to AWS S3 and compatible services.
 %endif # with python34
 
 %if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
@@ -78,10 +74,8 @@ Requires:       python36-s3transfer >= 0.1.10
 %{?python_provide:%python_provide python36-%{pypi_name}}
 
 %description -n python36-%{pypi_name}
-Boto3 is the Amazon Web Services (AWS) Software Development
-Kit (SDK) for Python, which allows Python developers to
-write software that makes use of services like Amazon S3
-and Amazon EC2.
+Boto3 is AWS SDK for python, used to write python applications
+to talk to AWS S3 and compatible services.
 %endif # with_python36
 
 %prep
@@ -90,6 +84,7 @@ rm -rf %{pypi_name}.egg-info
 # Remove online tests
 rm -rf tests/integration
 
+
 %build
 %if 0%{?s3_with_python34:1}
 %py3_build
@@ -97,6 +92,7 @@ rm -rf tests/integration
 %if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
 %py3_build
 %endif # with_python36
+
 
 %install
 %if 0%{?s3_with_python34:1}
@@ -179,3 +175,4 @@ python3 setup.py test
 
 * Tue Dec 29 2015 Fabio Alessandro Locati <fale@fedoraproject.org> - 1.2.3-1
 - Initial package.
+

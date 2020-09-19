@@ -20,18 +20,17 @@
 # Disable documentation generation for now
 %bcond_with docs
 
-Name:           python-scripttest
-Version:        1.3.0
-Release:        18%{?dist}
-Summary:        Helper to test command-line scripts
+Name:		python-scripttest
+Version:	1.3.0
+Release:	18%{?dist}
+Summary:	Helper library to test cmd-line scripts
 
-License:        MIT
-URL:            http://pypi.python.org/pypi/ScriptTest/
-Source0:        https://github.com/pypa/scripttest/archive/1.3.0.tar.gz
-
+Group:		
+License:	MIT
+URL:		http://pypi.python.org/pypi/ScriptTest
+Source0:	https://github.com/pypa/scripttest/archive/1.3.0.tar.gz
 BuildArch:      noarch
-
-BuildRequires: python%{python3_pkgversion}-devel
+BuildRequires:	python%{python3_pkgversion}-devel
 BuildRequires: python%{python3_pkgversion}-setuptools
 %if %{with docs}
 BuildRequires: python%{python3_pkgversion}-sphinx
@@ -41,23 +40,14 @@ BuildRequires: python%{python3_pkgversion}-pytest
 %endif
 
 %description
-ScriptTest is a library to help you test your interactive
-command-line applications.
-
-With it you can easily run the command (in a subprocess) and see
-the output (stdout, stderr) and any file modifications.
+library to test interactive cmd-line applications.
 
 %package -n     python36-scripttest
 Summary:        Helper to test command-line scripts
 %{?python_provide:%python_provide python36-scripttest}
 
 %description -n python36-scripttest
-ScriptTest is a library to help you test your interactive
-command-line applications.
-
-With it you can easily run the command (in a subprocess) and see
-the output (stdout, stderr) and any file modifications.
-
+library to test interactive cmd-line applications
 
 %prep
 %setup -q -n scripttest-%{version}
@@ -74,6 +64,7 @@ sphinx-build -b html docs/ docs/html
 %py3_install
 %check
 %{__python3} setup.py test
+
 
 %files -n python36-scripttest
 %if %{with docs}

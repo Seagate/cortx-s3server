@@ -20,18 +20,18 @@
 
 %global pypi_name s3transfer
 
-Name:           python-%{pypi_name}
-Version:        0.1.10
-Release:        1%{?dist}
-Summary:        An Amazon S3 Transfer Manager
+Name:		python-%{pypi_name}
+Version:	0.1.10
+Release:	1%{?dist}
+Summary:	AWS S3 transfer Manager
 
-License:        ASL 2.0
-URL:            https://github.com/boto/s3transfer
-Source0:        https://pypi.io/packages/source/s/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
+License:	ASL 2.0
+URL:		https://github.com/boto/s3transfer
+Source0:	https://pypi.io/packages/source/s/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
 BuildArch:      noarch
 
 %description
-S3transfer is a Python library for managing Amazon S3 transfers.
+A python library to manage Amazon S3 transfers.
 
 %package -n     python2-%{pypi_name}
 Summary:        An Amazon S3 Transfer Manager
@@ -51,7 +51,7 @@ Requires:       python2-botocore
 %{?python_provide:%python_provide python2-%{pypi_name}}
 
 %description -n python2-%{pypi_name}
-S3transfer is a Python library for managing Amazon S3 transfers.
+A python library to manage Amazon S3 transfers.
 
 %if 0%{?s3_with_python34:1}
 %package -n     python%{python3_pkgversion}-%{pypi_name}
@@ -70,7 +70,7 @@ Requires:       python%{python3_pkgversion}-botocore
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{pypi_name}}
 
 %description -n python%{python3_pkgversion}-%{pypi_name}
-S3transfer is a Python library for managing Amazon S3 transfers.
+A python library to manage Amazon S3 transfers.
 %endif # python3
 
 %if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
@@ -90,13 +90,15 @@ Requires:       python36-botocore
 %{?python_provide:%python_provide python36-%{pypi_name}}
 
 %description -n python36-%{pypi_name}
-S3transfer is a Python library for managing Amazon S3 transfers.
+A python library to manage Amazon S3 transfers.
 %endif # with_python36
+
 
 %prep
 %setup -q -n %{pypi_name}-%{version}
 # Remove online tests (see https://github.com/boto/s3transfer/issues/8)
 rm -rf tests/integration
+
 
 %build
 %py2_build
@@ -106,6 +108,7 @@ rm -rf tests/integration
 %if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
 %py3_build
 %endif # with_python36
+
 
 %install
 %py2_install
@@ -126,6 +129,7 @@ nosetests-%{python%{python3_pkgversion}_version} --with-coverage --cover-erase -
 nosetests-%{python36_version} --with-coverage --cover-erase --cover-package s3transfer --with-xunit --cover-xml -v tests/unit/ tests/functional/
 %endif # with_python36
 %endif # tests
+
 
 %files -n python2-%{pypi_name}
 %{!?_licensedir:%global license %doc}
@@ -149,6 +153,7 @@ nosetests-%{python36_version} --with-coverage --cover-erase --cover-package s3tr
 %{python3_sitelib}/%{pypi_name}
 %{python3_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
 %endif # with_python36
+
 
 %changelog
 * Wed Dec 28 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.1.10-1
@@ -190,3 +195,4 @@ nosetests-%{python36_version} --with-coverage --cover-erase --cover-package s3tr
 
 * Tue Feb 23 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.0.1-1
 - Initial package.
+
