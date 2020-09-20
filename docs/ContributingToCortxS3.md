@@ -165,12 +165,12 @@ Creating a pull request automatically triggers Jenkins jobs and System tests. To
 
 ```shell
 
-$ git pull origin master
+$ git pull origin main
 $ git submodule update --init --recursive
 $ git checkout 'your-local-branch'
 $ git pull origin 'your-remote-branch-name'
 $ git submodule update --init --recursive
-$ git rebase origin/master
+$ git rebase origin/main
 ```
 
 ## You're All Set & You're Awesome!
