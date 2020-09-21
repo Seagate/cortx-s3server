@@ -34,8 +34,8 @@ Requires:	apr
 Requires:	apr-util
 
 %description
-Apache log4cxx is a logging framework for C++, based on Apache log4j.
-As Apache log4cxx uses Apache portable runtime for most platofrm specific code,
+Apache log4cxx is a logging framework for C++ patterned after Apache log4j.
+As Apache log4cxx uses Apache portable runtime for most platform specific code,
 it should be usable on any APR supported plaform.
 
 %package -n log4cxx_cortx-devel
