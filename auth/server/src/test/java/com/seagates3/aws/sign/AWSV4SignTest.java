@@ -165,8 +165,9 @@ public class AWSV4SignTest {
             awsv4Sign.authenticate(requestToken, requestor1);
             Assert.fail("Didn't throw BadRequest Exception");
         } catch (InvalidTokenException e) {
-            Assert.assertTrue(e.getMessage().contains("Signed header :"
-                    + "connection is not found in Request header list"));
+          Assert.assertTrue(e.getMessage().contains(
+              "Signed header :" +
+              "connection1 is not found in Request header list"));
         }
     }
 

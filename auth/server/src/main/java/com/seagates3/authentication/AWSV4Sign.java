@@ -421,18 +421,25 @@ public class AWSV4Sign implements AWSSign {
      */
     private String createCanonicalHeader(ClientRequestToken clientRequestToken)
                                                  throws InvalidTokenException {
-        String headerValue;
+       String headerValue = "";
         String canonicalHeader = "";
         Map<String, String> requestHeaders = clientRequestToken.getRequestHeaders();
 
         for (String s : clientRequestToken.getSignedHeaders().split(";")) {
+
             headerValue = requestHeaders.get(s);
             if (headerValue == null) {
+
+              if (s.equalsIgnoreCase("connection")) {
+                canonicalHeader += "connection:Keep-Alive\n";
+              } else {
+
                 String errMsg = "Signed header :" + s +
                                 " is not found in Request header list";
                 LOGGER.error(errMsg);
 
                 throw new InvalidTokenException(errMsg);
+              }
             }
             headerValue = headerValue.trim();
             if (s.equalsIgnoreCase("content-type")) {
