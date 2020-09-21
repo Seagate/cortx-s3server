@@ -47,11 +47,8 @@
  
    For scaling on 3 node, follow the instructions from guide - 
  
-   https://seagatetechnology.sharepoint.com/:w:/r/sites/gteamdrv1/tdrive1224/_layouts/15/Doc.aspx?sourcedoc=%7B96df4157-f97d-4997-b63f-afd916ee031b%7D&action=edit&wdPreviousSession=061661ac-d9da-47a9-bb1c-15dd0f8cbf94&cid=bf8c7d61-17b8-447d-bbc1-1aa05ec4b577 
-   
    [Haproxy 3 Node load balancing.md](Haproxy%203%20Node%20load%20balancing.md).
    
-    
    Start haproxy – `systemctl start haproxy`
     
 7 . **Start authserver by following command**
