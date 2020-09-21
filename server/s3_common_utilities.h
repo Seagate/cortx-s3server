@@ -24,7 +24,6 @@
 #define __S3_COMMON_UTILITIES_h__
 
 #include <cstdint>
-#include <stdint.h>
 #include <string>
 
 namespace S3CommonUtilities {

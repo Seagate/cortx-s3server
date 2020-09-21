@@ -55,7 +55,7 @@ std::string S3ObjectListResponse::get_response_format_key_value(
     const std::string& key_value) {
   std::string format_key_value;
   if (encoding_type == "url") {
-    char* decoded_str = evhttp_uriencode(key_value.c_str(), -1, 1);
+    char* decoded_str = evhttp_uriencode(key_value.c_str(), -1, 0);
     format_key_value = decoded_str;
     free(decoded_str);
   } else {
@@ -242,7 +242,15 @@ std::string& S3ObjectListResponse::get_xml(
 
   for (auto&& prefix : common_prefixes) {
     response_xml += "<CommonPrefixes>";
-    response_xml += S3CommonUtilities::format_xml_string("Prefix", prefix);
+    std::string prefix_no_delimiter = prefix;
+    // Remove the delimiter from the end
+    prefix_no_delimiter.pop_back();
+    std::string uri_encode_prefix =
+        get_response_format_key_value(prefix_no_delimiter);
+    // Add the delimiter at the end
+    uri_encode_prefix += request_delimiter;
+    response_xml +=
+        S3CommonUtilities::format_xml_string("Prefix", uri_encode_prefix);
     response_xml += "</CommonPrefixes>";
   }
 

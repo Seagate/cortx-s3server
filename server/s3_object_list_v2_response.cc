@@ -30,6 +30,7 @@ S3ObjectListResponseV2::S3ObjectListResponseV2(const std::string& encoding_type)
       start_after(""),
       response_v2_xml("") {
   s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "Encoding type = %s", encoding_type.c_str());
 }
 
 void S3ObjectListResponseV2::set_continuation_token(const std::string& token) {
@@ -108,7 +109,15 @@ std::string& S3ObjectListResponseV2::get_xml(
 
   for (auto&& prefix : common_prefixes) {
     response_xml += "<CommonPrefixes>";
-    response_xml += S3CommonUtilities::format_xml_string("Prefix", prefix);
+    std::string prefix_no_delimiter = prefix;
+    // Remove the delimiter from the end
+    prefix_no_delimiter.pop_back();
+    std::string uri_encode_prefix =
+        get_response_format_key_value(prefix_no_delimiter);
+    // Add the delimiter at the end
+    uri_encode_prefix += request_delimiter;
+    response_xml +=
+        S3CommonUtilities::format_xml_string("Prefix", uri_encode_prefix);
     response_xml += "</CommonPrefixes>";
   }
 
