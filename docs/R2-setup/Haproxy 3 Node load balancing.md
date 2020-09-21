@@ -225,3 +225,17 @@ backend s3-auth
     #server s3authserver 0.0.0.0:9085 check             # s3 auth server No SSL 
 [root@ssc-vm-0918 ~]# 
 ```
+
+12. Configure haproxy logs on all the nodes - 
+    ```
+    mkdir /etc/haproxy/errors/ 
+    cp /opt/seagate/cortx/s3/install/haproxy/503.http /etc/haproxy/errors/ 
+    cp /opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy /etc/logrotate.d/haproxy 
+    cp /opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf /etc/rsyslog.d/haproxy.conf 
+    rm -rf /etc/cron.daily/logrotate 
+    cp /opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate /etc/cron.hourly/logrotate 
+    systemctl restart rsyslog 
+    systemctl restart haproxy 
+    systemctl status haproxy         ## (HAProxy should be running and active) 
+    ```
+    
