@@ -42,8 +42,49 @@ def get_upload_id(response):
 print("Configuring LDAP")
 S3PyCliTest('Before_all').before_all()
 
+def create_object_list_file(file_name, obj_list=[], quiet_mode="false"):
+    cwd = os.getcwd()
+    file_to_create = os.path.join(cwd, file_name)
+    objects = "{ \"Objects\": [ { \"Key\": \"" + obj_list[0] + "\" }"
+    for obj in obj_list[1:]:
+        objects += ", { \"Key\": \"" + obj + "\" }"
+    objects += " ], \"Quiet\": " + quiet_mode + " }"
+    with open(file_to_create, 'w') as file:
+        file.write(objects)
+    return file_to_create
+
+def delete_object_list_file(file_name):
+    os.remove(file_name)
+
 #******** Create Bucket ********
 AwsTest('Aws can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+
+# ******** Create hierarchical objects (>30) in bucket and list them *********
+obj_list = []
+for x in range(35):
+    key = "test/test1/key%d" % (x)
+    AwsTest('Aws Upload object with hierarchical key path').put_object_with_key("seagatebucket", "3Kfile", 3000, key_name=key)\
+        .execute_test().command_is_successful()
+    obj_list.append(key)
+
+# Create object list file
+hierarchical_object_list_file = create_object_list_file("obj_list_hierarchical_keys.json", obj_list, "true")
+# Lists hierarchical objects in bucket with delimiter "/"
+# The output of list objects should only have common prefix: test/
+AwsTest('Aws List objects with hierarchical key paths, using delimiter "/"')\
+    .list_objects_prefix_delimiter("seagatebucket", None, None, "/")\
+    .execute_test().command_is_successful().command_response_should_have("test/")
+
+# Delete all hierarchical objects in bucket
+AwsTest('Aws delete multiple objects with hierarchical names in bucket')\
+    .delete_multiple_objects("seagatebucket", hierarchical_object_list_file)\
+    .execute_test()\
+    .command_is_successful()\
+    .command_response_should_be_empty()
+
+# Delete object list file
+delete_object_list_file(hierarchical_object_list_file)
+
 
 # ************ Put object with specified content-type ************
 in_headers = {
@@ -233,22 +274,6 @@ AwsTest('Aws can list object tags for multipart upload').list_object_tagging("se
 
 #************** Delete Object  ********
 AwsTest('Aws can delete object').delete_object("seagatebuckettag","10Mbfile").execute_test().command_is_successful()
-
-#################################################################################
-
-def create_object_list_file(file_name, obj_list=[], quiet_mode="false"):
-    cwd = os.getcwd()
-    file_to_create = os.path.join(cwd, file_name)
-    objects = "{ \"Objects\": [ { \"Key\": \"" + obj_list[0] + "\" }"
-    for obj in obj_list[1:]:
-        objects += ", { \"Key\": \"" + obj + "\" }"
-    objects += " ], \"Quiet\": " + quiet_mode + " }"
-    with open(file_to_create, 'w') as file:
-        file.write(objects)
-    return file_to_create
-
-def delete_object_list_file(file_name):
-    os.remove(file_name)
 
 # ************** Delete multiple objects, all objects exist, Quiet mode = True *****************
 # 1. Create 3 object keys in bucket

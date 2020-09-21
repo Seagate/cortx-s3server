@@ -140,6 +140,19 @@ class AwsTest(S3PyCliTest):
         self.with_cli(cmd)
         return self
 
+    def list_objects_prefix_delimiter(self, bucket_name, max_keys=None, prefix=None, delimiter=None):
+        self.bucket_name = bucket_name
+        cmd = "aws s3api " + "list-objects " + "--bucket " + bucket_name
+        if(max_keys is not None):
+           self.max_keys = max_keys
+           cmd = cmd + " --max-keys " + max_keys
+        if(delimiter is not None):
+           cmd = cmd + " --delimiter " + delimiter
+        if(prefix is not None):
+           cmd = cmd + " --prefix " + prefix
+        self.with_cli(cmd)
+        return self
+
     def delete_object_tagging(self, bucket_name, object_name):
         self.bucket_name = bucket_name
         self.with_cli("aws s3api " + "delete-object-tagging " + "--bucket " + bucket_name + " --key " + object_name)
@@ -200,6 +213,25 @@ class AwsTest(S3PyCliTest):
         self.bucket_name = bucket_name
         self.filename = filename
         cmd = "aws s3api " + "put-object " + "--bucket " + bucket_name + " --key " + filename
+        if(filesize is not None):
+           self.filesize = filesize
+           cmd = cmd + " --body "+ self.filename
+        if(canned_acl is not None):
+           self.canned_acl = canned_acl
+           cmd = cmd + " --acl " + canned_acl
+        if(debug_flag is not None):
+           cmd = cmd + " --debug"
+        self.with_cli(cmd)
+        return self
+
+    def put_object_with_key(self, bucket_name, filename, filesize=None, canned_acl=None, key_name=None, debug_flag=None):
+        self.bucket_name = bucket_name
+        self.filename = filename
+        if(key_name is not None):
+            cmd = "aws s3api " + "put-object " + "--bucket " + bucket_name + " --key " + key_name
+        else:
+            cmd = "aws s3api " + "put-object " + "--bucket " + bucket_name + " --key " + filename
+
         if(filesize is not None):
            self.filesize = filesize
            cmd = cmd + " --body "+ self.filename
