@@ -2,6 +2,40 @@
 
 1. Before configuring HAProxy, check the number of S3 instances from hctl status. 
 
+   ```
+    [root@ssc-vm-1040 ~]# hctl status
+    Profile: 0x7000000000000001:0x72
+    Data pools:
+        0x6f00000000000001:0x73
+    Services:
+    ssc-vm-1040.colo.seagate.com
+    [started]  hax        0x7200000000000001:0x6   10.230.247.96@tcp:12345:1:1
+    [started]  confd      0x7200000000000001:0x9   10.230.247.96@tcp:12345:2:1
+    [started]  ioservice  0x7200000000000001:0xc   10.230.247.96@tcp:12345:2:2
+    [started]  s3server   0x7200000000000001:0x1c  10.230.247.96@tcp:12345:3:1
+    [started]  s3server   0x7200000000000001:0x1f  10.230.247.96@tcp:12345:3:2
+    [unknown]  m0_client  0x7200000000000001:0x22  10.230.247.96@tcp:12345:4:1
+    [unknown]  m0_client  0x7200000000000001:0x25  10.230.247.96@tcp:12345:4:2
+    ssc-vm-1041.colo.seagate.com
+    [started]  hax        0x7200000000000001:0x2b  10.230.247.127@tcp:12345:1:1
+    [started]  confd      0x7200000000000001:0x2e  10.230.247.127@tcp:12345:2:1
+    [started]  ioservice  0x7200000000000001:0x31  10.230.247.127@tcp:12345:2:2
+    [started]  s3server   0x7200000000000001:0x41  10.230.247.127@tcp:12345:3:1
+    [started]  s3server   0x7200000000000001:0x44  10.230.247.127@tcp:12345:3:2
+    [unknown]  m0_client  0x7200000000000001:0x47  10.230.247.127@tcp:12345:4:1
+    [unknown]  m0_client  0x7200000000000001:0x4a  10.230.247.127@tcp:12345:4:2
+    ssc-vm-1099.colo.seagate.com  (RC)
+    [started]  hax        0x7200000000000001:0x50  10.230.242.144@tcp:12345:1:1
+    [started]  confd      0x7200000000000001:0x53  10.230.242.144@tcp:12345:2:1
+    [started]  ioservice  0x7200000000000001:0x56  10.230.242.144@tcp:12345:2:2
+    [started]  s3server   0x7200000000000001:0x66  10.230.242.144@tcp:12345:3:1
+    [started]  s3server   0x7200000000000001:0x69  10.230.242.144@tcp:12345:3:2
+    [unknown]  m0_client  0x7200000000000001:0x6c  10.230.242.144@tcp:12345:4:1
+    [unknown]  m0_client  0x7200000000000001:0x6f  10.230.242.144@tcp:12345:4:2
+    [root@ssc-vm-1040 ~]#
+
+    ```
+
 2. Lets say we have 2 s3server instances each node . Hence each node HAProxy will be configured with 2 s3 instances in the HAProxy’s  “backend” section of app-main.  
 
 3. Open `/etc/haproxy/haproxy.cfg` and navigate to **“backend app-main"** section. 
