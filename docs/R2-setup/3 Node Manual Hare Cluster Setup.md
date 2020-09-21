@@ -118,36 +118,33 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
     pip install awscli 
     pip install awscli-plugin-endpoint 
    ```
-  
-
-  **Edit config using**
+   **Edit config using**
    ```
    aws configure 
    ```
+   **Set Endpoint using** 
+   ```
+   aws configure set plugins.endpoint awscli_plugin_endpoint 
+   aws configure set s3.endpoint_url http://s3.seagate.com 
+   aws configure set s3api.endpoint_url http://s3.seagate.com 
+   ```
   
-  **Set Endpoint using** 
-  ```
-  aws configure set plugins.endpoint awscli_plugin_endpoint 
-  aws configure set s3.endpoint_url http://s3.seagate.com 
-  aws configure set s3api.endpoint_url http://s3.seagate.com 
-  ```
-  
-  **For SSL Certificate** – add a line to “~/.aws/config” file above - [plugins] section 
-   ca_bundle = `/etc/stx-s3-clients/ca.crt `
-   The ultimate `~/.aws/config` would look something like - 
+   **For SSL Certificate** – add a line to “~/.aws/config” file above - [plugins] section 
+    ca_bundle = `/etc/stx-s3-clients/ca.crt `
+    The ultimate `~/.aws/config` would look something like - 
 
-  **cat ~/.aws/config**  
-  ```
-  [default] 
-  region = US 
-  s3 =  endpoint_url = https://s3.seagate.com 
-  s3api = endpoint_url = https://s3.seagate.coma 
-  ca_bundle = /etc/stx-s3-clients/ca.crt 
-  [plugins] 
-  endpoint = awscli_plugin_endpoint 
-  ```
-  Run command to confirm setup is complete – `aws s3 ls`
-  This will not return anything and should not return any error. 
+   **cat ~/.aws/config**  
+   ```
+   [default] 
+   region = US 
+   s3 =  endpoint_url = https://s3.seagate.com 
+   s3api = endpoint_url = https://s3.seagate.coma 
+   ca_bundle = /etc/stx-s3-clients/ca.crt 
+   [plugins] 
+   endpoint = awscli_plugin_endpoint 
+   ```
+   Run command to confirm setup is complete – `aws s3 ls`
+   This will not return anything and should not return any error. 
 
 6. **S3Bench Install Configure**
     Follow the guide to install and run S3bench - 
@@ -163,7 +160,7 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
    ```
    hctl shutdown (This will bring down mero and s3server on all the nodes in cluster) 
    ```
-   2. Execute below on all the nodes to shutdown authserver 
+2. Execute below on all the nodes to shutdown authserver 
    ```
     systemctl stop s3authserver 
    ```
@@ -196,24 +193,4 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
    ```
     systemctl start haproxy 
    ```
-
- 
-
- 
-
- 
-
- 
-
- 
-
- 
-
- 
-
- 
-
- 
-
- 
-
+   
