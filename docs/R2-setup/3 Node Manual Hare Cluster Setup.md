@@ -147,6 +147,7 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
    This will not return anything and should not return any error. 
 
 6. **S3Bench Install Configure**
+    
     Follow the guide to install and run S3bench - 
     
   https://seagatetechnology.sharepoint.com/:w:/r/sites/gteamdrv1/tdrive1224/_layouts/15/Doc.aspx?sourcedoc=%7B8F1347B8-DD98-4D0D-9D57-2B2D3D48D135%7D&file=S3bench%20setup.docx&action=default&mobileredirect=true&cid=2e12a38a-ff01-459c-8eaf-2b89ebdc4572 
@@ -157,40 +158,39 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
    **Shutdown the services**
 
 1. Execute below on master -  
-   ```
-   hctl shutdown (This will bring down mero and s3server on all the nodes in cluster) 
-   ```
+    ```
+    hctl shutdown (This will bring down mero and s3server on all the nodes in cluster) 
+    ```
 2. Execute below on all the nodes to shutdown authserver 
-   ```
+    ```
     systemctl stop s3authserver 
-   ```
+    ```
 3. Execute below on all the nodes to shutdown openldap 
-   ```
+    ```
     systemctl stop slapd 
-   ```
+    ```
 4. Execute below on all the nodes to shutdown haproxy  
-   ```
-   systemctl stop haproxy 
-   ```
+    ```
+    systemctl stop haproxy 
+    ```
   
   **Re-Starting the services** 
 
 1. Execute below on master -  
-   ```
-   hctl bootstrap --mkfs $HOME/threenodes.yaml 
-   This will start s3server and motr on all the nodes of cluster 
-   ```
+    ```
+    hctl bootstrap --mkfs $HOME/threenodes.yaml 
+    This will start s3server and motr on all the nodes of cluster 
+    ```
 2. Execute below on all the nodes to start Auth server- 
-
-   ```
+    ```
     systemctl start s3authserver 
-   ```
+    ```
 3. Execute below on all the nodes to start openldap - 
-   ```
+    ```
     systemctl start slapd 
-   ```
+    ```
 4. Execute below on all the nodes to start haproxy- 
-   ```
+    ```
     systemctl start haproxy 
-   ```
+    ```
    
