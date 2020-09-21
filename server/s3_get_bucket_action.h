@@ -110,6 +110,7 @@ class S3GetBucketAction : public S3BucketAction {
   FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsSuccessfulMultiComponentKey);
   FRIEND_TEST(S3GetBucketActionTest,
               GetNextObjectsSuccessfulPrefixDelimMultiComponentKey);
+  FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsSuccessfulDelimiterLastKey);
 };
 
 #endif
