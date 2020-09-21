@@ -19,7 +19,7 @@
 
 
 
-This Readme document gives instructions on how to create rpm package for 3rd party dependencies of CORTX-S3Server
+This Readme document provides instructions on how to create rpm package for 3rd party dependencies of CORTX-S3Server
 For most of the dependencies, the procedure is straight forward:
 
 1) Goto the 3rd party directory under "rpms" directory.
@@ -33,8 +33,8 @@ for that particular package.
 Bazel:
 Currently we are using Version: 0.13.0.
 To create bazel package, perform below steps:
-1) Make sure the /tmp directory on your VM has atleast 4GiB of free space.
+1) Make sure the /tmp directory on your VM has atleast 4GB of free space.
 2) Run scripts/env/dev/init.sh [-a]
-3) Now your VM hve right version of openjdk (1.8.0_242) installed.
-4) Run the buildrpm script for bazel.
+3) Now your VM have right version of openjdk (1.8.0_242) installed.
+4) Run the <cortx-s3server>/rpms/bazel/buildrpm.sh script for bazel.
 

@@ -41,7 +41,6 @@ install -d $RPM_BUILD_ROOT%{_bindir}/
 cp git-clang-format $RPM_BUILD_ROOT%{_bindir}/
 cp LICENSE.TXT %{_builddir}
 
-
 %clean
 rm -rf %{buildroot}
 

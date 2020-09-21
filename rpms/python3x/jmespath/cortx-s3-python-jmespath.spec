@@ -73,7 +73,6 @@ library to extract elements from a JSON document.
 %setup -n %{pypi_name}-%{version}
 rm -rf %{pypi_name}.egg-info
 
-
 %build
 %py2_build
 %if 0%{?s3_with_python34:1}
@@ -82,7 +81,6 @@ rm -rf %{pypi_name}.egg-info
 %if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
 %py3_build
 %endif # with_python36
-
 
 %install
 %if 0%{?s3_with_python34:1}
@@ -126,26 +124,4 @@ ln -sf %{_bindir}/jp.py-2 %{buildroot}/%{_bindir}/jp.py-%{python2_version}
 %{python3_sitelib}/%{pypi_name}
 %{python3_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
 %endif # with_python36
-
-
-%changelog
-* Tue Dec 29 2015 Fabio Alessandro Locati <fabio@locati.cc> - 0.9.0-1
-- Upgrade to upstream current version
-- Improve the spec file
-- Make possible to build in EL6
-
-* Tue Nov 10 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.5.0-3
-- Rebuilt for https://fedoraproject.org/wiki/Changes/python3.5
-
-* Thu Jun 18 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.5.0-2
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_23_Mass_Rebuild
-
-* Fri Dec 19 2014 Lubomir Rintel <lkundrak@v3.sk> - 0.5.0-1
-- New version
-
-* Fri Jul 25 2014 Lubomir Rintel <lkundrak@v3.sk> - 0.4.1-2
-- Add Python 3 support
-
-* Fri Jul 25 2014 Lubomir Rintel <lkundrak@v3.sk> - 0.4.1-1
-- Initial packaging
 

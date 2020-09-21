@@ -40,7 +40,6 @@ Google build tool
 %prep
 %setup -c -n %{name}-%{version}
 
-
 %build
 ./compile.sh
 
@@ -48,7 +47,6 @@ Google build tool
 mkdir -p %{buildroot}/usr/bin
 cp ./output/bazel %{buildroot}/usr/bin
 cp LICENSE %{_builddir}
-
 
 %clean
 rm -rf ${buildroot}

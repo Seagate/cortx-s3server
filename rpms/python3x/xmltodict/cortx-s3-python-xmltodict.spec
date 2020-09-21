@@ -213,7 +213,6 @@ pushd %{py3dir}
 popd
 %endif #with_python36_ver8 || with_python36_rhel7
 
-
 %install
 %if 0%{?s3_with_python36:1}
 pushd %{py3dir}-for36
@@ -282,32 +281,4 @@ popd
 %{python3_sitelib}/%{srcname}-%{version}-*
 %{python3_sitelib}/__pycache__/%{srcname}*
 %endif
-
-
-%changelog
-* Thu Oct 02 2014 Fabian Affolter <mail@fabian-affolter.ch> - 0.9.0-1
-- Update spec file according guidelines
-- Update to upstream release 0.9.0
-
-* Sun Jun 08 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.2-5
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
-
-* Wed May 28 2014 Kalev Lember <kalevlember@gmail.com> - 0.4.2-4
-- Rebuilt for https://fedoraproject.org/wiki/Changes/Python_3.4
-
-* Sun Aug 04 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.2-3
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
-
-* Thu Feb 14 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.2-2
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
-
-* Fri Jan 04 2013 Ralph Bean <rbean@redhat.com> - 0.4.2-1
-- Latest upstream
-- Included README and LICENSE
-- Running tests now
-- https://github.com/martinblech/xmltodict/pull/11
-- Added Requires python3 to the python3 subpackage.
-
-* Fri Jan 04 2013 Ralph Bean <rbean@redhat.com> - 0.4.1-1
-- Initial packaging for Fedora
 

@@ -31,7 +31,6 @@ Requires:	haproxy, python-psutil
 %description -n haproxy-statsd
 This script sends statistics from haproxy to statsd server.
 
-
 %prep
 %setup -q
 %patch -p1
@@ -45,7 +44,6 @@ cp README.md  %{buildroot}/opt/seagate/cortx/s3-haproxy-statsd/
 
 %clean
 rm -rf %{buildroot}
-
 
 %files
 %defattr(-,root,root,-)

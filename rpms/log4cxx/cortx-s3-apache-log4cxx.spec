@@ -49,7 +49,6 @@ Apache log4cxx is a logging framework for C++, based on Apache log4j.
 As Apache log4cxx uses Apache portable runtime for most platofrm specific code,
 it should be usable on any APR supported plaform.
 
-
 %prep
 %setup -n apache-log4cxx-%{version}
 %patch0 -p1
@@ -58,7 +57,6 @@ it should be usable on any APR supported plaform.
 ./autogen.sh
 ./configure --prefix=/usr --libdir=%{_libdir}
 make
-
 
 %install
 make install prefix=$RPM_BUILD_ROOT%{prefix} libdir=$RPM_BUILD_ROOT%{_libdir}

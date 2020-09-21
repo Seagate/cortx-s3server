@@ -37,7 +37,6 @@ ossperf analyzes performance and data integrity of s3 compatible storage solutio
 %setup -q
 %patch -p1
 
-
 %install
 rm -rf %{buildroot}
 install -d $RPM_BUILD_ROOT%{_bindir}/
@@ -45,7 +44,6 @@ cp  ossperf.sh $RPM_BUILD_ROOT%{_bindir}/
 
 %clean
 rm -rf %{buildroot}
-
 
 %files -n ossperf
 %license LICENSE

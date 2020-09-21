@@ -93,12 +93,10 @@ Requires:       python36-botocore
 A python library to manage Amazon S3 transfers.
 %endif # with_python36
 
-
 %prep
 %setup -q -n %{pypi_name}-%{version}
 # Remove online tests (see https://github.com/boto/s3transfer/issues/8)
 rm -rf tests/integration
-
 
 %build
 %py2_build
@@ -108,7 +106,6 @@ rm -rf tests/integration
 %if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
 %py3_build
 %endif # with_python36
-
 
 %install
 %py2_install
@@ -129,7 +126,6 @@ nosetests-%{python%{python3_pkgversion}_version} --with-coverage --cover-erase -
 nosetests-%{python36_version} --with-coverage --cover-erase --cover-package s3transfer --with-xunit --cover-xml -v tests/unit/ tests/functional/
 %endif # with_python36
 %endif # tests
-
 
 %files -n python2-%{pypi_name}
 %{!?_licensedir:%global license %doc}
@@ -153,46 +149,4 @@ nosetests-%{python36_version} --with-coverage --cover-erase --cover-package s3tr
 %{python3_sitelib}/%{pypi_name}
 %{python3_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
 %endif # with_python36
-
-
-%changelog
-* Wed Dec 28 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.1.10-1
-- Update to 0.1.10
-
-* Mon Dec 19 2016 Miro Hrončok <mhroncok@redhat.com> - 0.1.9-2
-- Rebuild for Python 3.6
-
-* Thu Oct 27 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.1.9-1
-- Update to 0.1.9
-
-* Mon Oct 10 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.1.7-1
-- Uodate to 0.1.7
-
-* Sun Oct 02 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.1.5-1
-- Update to 0.1.5
-
-* Wed Sep 28 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.1.4-1
-- Update to 0.1.4
-
-* Wed Sep 07 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.1.3-1
-- Update to 0.1.3
-
-* Thu Aug 04 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.1.1-1
-- Update to 0.1.1
-
-* Tue Aug 02 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.1.0-1
-- Update to 0.1.0
-
-* Tue Jul 19 2016 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.0.1-4
-- https://fedoraproject.org/wiki/Changes/Automatic_Provides_for_Python_RPM_Packages
-
-* Wed Feb 24 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.0.1-3
-- Cleanup the spec a little bit
-- Remove patch
-
-* Tue Feb 23 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.0.1-2
-- Add patch to remove tests needing web connection
-
-* Tue Feb 23 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.0.1-1
-- Initial package.
 
