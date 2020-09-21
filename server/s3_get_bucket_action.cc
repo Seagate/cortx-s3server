@@ -282,8 +282,8 @@ void S3GetBucketAction::get_next_objects_successful() {
           // in common prefix, we add to common prefix only if it is not the
           // same as specified marker
           object_list->add_common_prefix(common_prefix);
-          last_key = common_prefix;
-          last_common_prefix = last_key;
+          last_key = kv.first;
+          last_common_prefix = common_prefix;
           last_key_in_common_prefix = true;
         }
       }
@@ -320,8 +320,8 @@ void S3GetBucketAction::get_next_objects_successful() {
             // in common prefix, we add to common prefix only if it is not the
             // same as specified marker
             object_list->add_common_prefix(common_prefix);
-            last_key = common_prefix;
-            last_common_prefix = last_key;
+            last_key = kv.first;
+            last_common_prefix = common_prefix;
             last_key_in_common_prefix = true;
           }
         }
