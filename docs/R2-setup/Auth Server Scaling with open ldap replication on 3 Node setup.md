@@ -22,63 +22,81 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
 
 ## Manual Steps to set up Auth Server
 
-1. **Prerequisite** -  openldap is installed and configured correctly.  (Should have 
+### Prerequisites
 
-   **To ensure this run below on all nodes** – 
+OpenLDAP has to be installed and configured correctly.  (Should have been taken care of when doing initial node deployment with provisioner.)
+
+**To ensure this run below on all nodes** – 
+
+```
+ldapsearch -b "dc=s3,dc=seagate,dc=com" -x -w seagate -D "cn=admin,dc=seagate,dc=com"
+```
+
+This should return successfully without any errors. 
+
+### Setup Replication
+
+Consider you have 3 nodes. Say node 1, node 2. and node 3. and you have to setup replication among these three nodes. 
+
+**Note**: Below 4 steps you have to perform on all three nodes with one change in olcseverid.ldif that is:
+
+* `olcSeverrId: 1` for node 1,
+* `olcServerId: 2` for node 2,
+* `olcserverId: 3` for node 3.
+
+Rest all steps will be same. 
+
+**Note 2**: Make sure to update the hostname in `provider` field in `config.ldif` on all 3 nodes if not updated before running command. 
+
+**NOte 3**: All the commands should run successfully. Observe the results. There should not be any error statement like – 
+
+* `Invalid syntax`
+* `No such attribute`
+
+**There are few ldif files that you have to push to ldap in same order below (On NODE 1)-**
+
+Steps:
+
+1. Open the shell to Node 1 and do:
 
    ```
-   ldapsearch -b "dc=s3,dc=seagate,dc=com" -x -w seagate -D "cn=admin,dc=seagate,dc=com"
+   cd /opt/seagate/cortx/s3/install/ldap/replication
    ```
 
-   This should return successfully without any errors. 
+   All the files referenced will be present in this directory. You will not be required to copy the contents of the files from this page -- you can copy and edit those files in `replication` folder. The file contents shown below are just for reference. Edit only the relevant fields as mentioned above (for files - `olcserverid.ldif` and `config.ldif`). 
 
-3. **Setup Replication** - 
+   **NOTE**: Contents in these files is indentation sensitive. DO NOT alter any indentation / space / line breaks!!! 
 
-   Consider you have 3 nodes. Say node 1, node 2. and node 3. and you have to setup replication among these three nodes. 
-     
-   **Note**: Below 4 steps you have to perform on all three nodes with one change in olcseverid.ldif that is `olcseverrid  = 1 for node 1` ,`olcserverId =2 for node 2`                       ,`olcserverId = 3 for node 3`. rest all steps will be same. 
+2. Push unique olcServerId:
 
-  > Also update the hostname in provider field in `config.ldif` on all 3 nodes if not updated before running command. 
+   `olcserverid.ldif`:
 
    ```
-   All the commands should run successfully. Observe the results. There should not be any error statement like – 
-
-   1. Invalid syntax 
-   2. No such attribute 
+   dn: cn=config
+   changetype: modify
+   add: olcServerID
+   olcServerID: 1
    ```
-   **There are few ldif files that you have to push to ldap in same order below (On NODE 1)-**
+   
+   Edit `olsServerID: N` where `N` is the number of current node.
+   
+   Command to apply:
+   
+   ```
+   ldapmodify -Y EXTERNAL -H ldapi:/// -f olcserverid.ldif
+   ```
 
-  ```
-  cd /opt/seagate/cortx/s3/install/ldap/replication
-  ```
+3. Loading provider module 
 
-   - All the below files will be present in this directory. You will not be required to copy the contents of the files from this page. The file contents shown below are just for       reference. Edit only the relevant fields as mentioned above (for files - `olcserverid.ldif` & `config.ldif`). 
-
-   **NOTE**: Contents from below files are indentation sensitive. DO NOT alter any indentation / space / line breaks!!! 
-
-
-  1.  You have to push unique olcserver Id  
-         olcserverid.ldif
-         
-         ```
-         dn: cn=config 
-         changetype: modify 
-         add: olcServerID 
-         olcServerID: 1 
-         ```
-   > command to add : `ldapmodify -Y EXTERNAL -H ldapi:/// -f olcserverid.ldif`
-
-   2.  loading provider module 
-
-       syncprov_mod.ldif 
-        ```
-          dn: cn=module,cn=config 
-          objectClass: olcModuleList 
-          cn: module 
-          olcModulePath: /usr/lib64/openldap 
-          olcModuleLoad: syncprov.la 
-        ```
-   > command to add - `ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov_mod.ldif` 
+    syncprov_mod.ldif 
+     ```
+       dn: cn=module,cn=config 
+       objectClass: olcModuleList 
+       cn: module 
+       olcModulePath: /usr/lib64/openldap 
+       olcModuleLoad: syncprov.la 
+     ```
+> command to add - `ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov_mod.ldif` 
 
    3.  Push Provider ldif for config replication 
 
