@@ -41,7 +41,7 @@ sleep 5m
 
 echo -e "Cluster Started Successfully\n"
 
-echo -e "Checking cluster status..\n"
+echo -e "Cluster status..\n"
 pcs cluster status
 
 output=$(pcs status | grep s3backprod)
