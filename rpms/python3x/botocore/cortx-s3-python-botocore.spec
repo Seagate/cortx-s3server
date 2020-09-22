@@ -30,20 +30,20 @@
 
 %global pypi_name botocore
 
-Name:           python-%{pypi_name}
-Version:        1.6.0
-Release:        1%{?dist}
-Summary:        Low-level, data-driven core of boto 3
+Name:		python-%{pypi_name}
+Version:	1.6.0
+Release:	1%{?dist}
+Summary:	Low-level, data-driven core of boto 3
 
-License:        ASL 2.0
-URL:            https://github.com/boto/botocore
-Source0:        https://pypi.io/packages/source/b/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
+License:	ASL 2.0
+URL:		https://github.com/boto/botocore
+Source0:	https://pypi.io/packages/source/b/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
 Patch0:         botocore-1.5.3-fix_dateutil_version.patch
 BuildArch:      noarch
 
 %description
-A low-level interface to a growing number of Amazon Web Services. The
-botocore package is the foundation for the AWS CLI as well as boto3.
+Low level interface for AWS S3 and compatible services. BotoCore is
+foundation for AWS CLI and boto3.
 
 %package -n     python2-%{pypi_name}
 Summary:        Low-level, data-driven core of boto 3
@@ -75,8 +75,8 @@ Requires:       python-docutils >= 0.10
 %{?python_provide:%python_provide python2-%{pypi_name}}
 
 %description -n python2-%{pypi_name}
-A low-level interface to a growing number of Amazon Web Services. The
-botocore package is the foundation for the AWS CLI as well as boto3.
+Low level interface for AWS S3 and compatible services. BotoCore is
+foundation for AWS CLI and boto3.
 
 %if 0%{?s3_with_python34:1}
 cd test
@@ -109,8 +109,8 @@ Requires:       python%{python3_pkgversion}-docutils >= 0.10
 #%{?python_provide:%python_provide python3-%{pypi_name}}
 
 %description -n python%{python3_pkgversion}-%{pypi_name}
-A low-level interface to a growing number of Amazon Web Services. The
-botocore package is the foundation for the AWS CLI as well as boto3.
+Low level interface for AWS S3 and compatible services. BotoCore is
+foundation for AWS CLI and boto3.
 %endif # with_python34
 
 %if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
@@ -143,8 +143,8 @@ Requires:       python36-docutils >= 0.10
 %{?python_provide:%python_provide python36-%{pypi_name}}
 
 %description -n python36-%{pypi_name}
-A low-level interface to a growing number of Amazon Web Services. The
-botocore package is the foundation for the AWS CLI as well as boto3.
+Low level interface for AWS S3 and compatible services. BotoCore is
+foundation for AWS CLI and boto3.
 %endif # with_python36
 
 %if %{with docs}
@@ -168,10 +168,10 @@ rm -rf tests/integration
 %build
 %py2_build
 %if 0%{?s3_with_python34:1}
-%py3_build
+%py3_install
 %endif # with python3
 %if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
-%py3_build
+%py3_install
 %endif # with_python36
 
 %install
@@ -401,3 +401,4 @@ nosetests-3.5 --with-coverage --cover-erase --cover-package botocore --with-xuni
 
 * Fri Jul 25 2014 Lubomir Rintel <lkundrak@v3.sk> - 0.58.0-1
 - Initial packaging
+

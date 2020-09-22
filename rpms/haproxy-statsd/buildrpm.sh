@@ -38,4 +38,5 @@ cp ${BASEDIR}/haproxy-statsd.patch .
 
 cd -
 
-rpmbuild -ba ${BASEDIR}/haproxy-statsd.spec
+rpmbuild -ba ${BASEDIR}/cortx-s3-haproxy-statsd.spec
+
