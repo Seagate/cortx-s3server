@@ -1,7 +1,7 @@
 #!/bin/sh -xe
 # Script to build motr.
 # github repo: https://github.com/Seagate/cortx-motr
-# branch: master commit: 81793c00bed8d8b60d2fe0e58a3640648e5e3eca
+# branch: master commit: 44bbdb3e9f94ac1339accfbdbb7c55bf961dbae2
 
 cd motr
 # Uncomment following line to compile motr with both KVS and Cassandra
