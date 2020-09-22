@@ -34,6 +34,7 @@ ldapsearch -b "dc=s3,dc=seagate,dc=com" -x -w seagate -D "cn=admin,dc=seagate,dc
 
 This should return successfully without any errors. 
 
+
 ### Setup Replication
 
 Consider you have 3 nodes. Say node 1, node 2. and node 3. and you have to setup replication among these three nodes. 
@@ -48,16 +49,17 @@ Rest all steps will be same.
 
 **Note 2**: Make sure to update the hostname in `provider` field in `config.ldif` on all 3 nodes if not updated before running command. 
 
-**NOte 3**: All the commands should run successfully. Observe the results. There should not be any error statement like – 
+**Note 3**: All the commands should run successfully. Observe the results. There should not be any error statement like – 
 
 * `Invalid syntax`
 * `No such attribute`
 
-**There are few ldif files that you have to push to ldap in same order below (On NODE 1)-**
+
+#### Steps to be run on all nodes in cluster
 
 Steps:
 
-1. Open the shell to Node 1 and do:
+1. Open the console on the node and do:
 
    ```
    cd /opt/seagate/cortx/s3/install/ldap/replication
@@ -88,147 +90,180 @@ Steps:
 
 3. Loading provider module 
 
-    syncprov_mod.ldif 
-     ```
-       dn: cn=module,cn=config 
-       objectClass: olcModuleList 
-       cn: module 
-       olcModulePath: /usr/lib64/openldap 
-       olcModuleLoad: syncprov.la 
-     ```
-> command to add - `ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov_mod.ldif` 
+   `syncprov_mod.ldif`:
 
-   3.  Push Provider ldif for config replication 
+   ```
+   dn: cn=module,cn=config 
+   objectClass: olcModuleList 
+   cn: module 
+   olcModulePath: /usr/lib64/openldap 
+   olcModuleLoad: syncprov.la 
+   ```
 
-          syncprov_config.ldif 
-          ```
-           dn: olcOverlay=syncprov,olcDatabase={0}config,cn=config 
-           objectClass: olcOverlayConfig 
-           objectClass: olcSyncProvConfig 
-           olcOverlay: syncprov 
-           olcSpSessionLog: 100 
-          ```
-   > command to add - `ldapadd -Y EXTERNAL -H ldapi:/// -f  syncprov_config.ldif` 
+   Command to apply:
+   
+   ```
+   ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov_mod.ldif
+   ```
 
-   4.  Push Config.ldif 
+4. Push Provider ldif for config replication 
 
-       config.ldif  
-        ```
-          dn: olcDatabase={0}config,cn=config 
-          changetype: modify 
-          add: olcSyncRepl 
-          olcSyncRepl: rid=001 
-              provider=ldap://<hostname_node-1>:389/ 
-              bindmethod=simple  
-              binddn="cn=admin,cn=config" 
-              credentials=seagate 
-              searchbase="cn=config" 
-              scope=sub 
-              schemachecking=on 
-              type=refreshAndPersist 
-              retry="30 5 300 3" 
-              interval=00:00:05:00 
-       # Enable additional providers 
-       olcSyncRepl: rid=002 
-         provider=ldap://<hostname_node-2>:389/ 
-          bindmethod=simple 
-          binddn="cn=admin,cn=config" 
-          credentials=seagate 
-          searchbase="cn=config" 
-          scope=sub 
-          schemachecking=on 
-          type=refreshAndPersist 
-          retry="30 5 300 3" 
-          interval=00:00:05:00 
-       olcSyncRepl: rid=003 
-          provider=ldap://<hostname_node-3>:389/ 
-          bindmethod=simple 
-          binddn="cn=admin,cn=config" 
-          credentials=seagate 
-          searchbase="cn=config" 
-          scope=sub 
-          schemachecking=on 
-          type=refreshAndPersist 
-          retry="30 5 300 3" 
-          interval=00:00:05:00 
-         -
-          add: olcMirrorMode 
-          olcMirrorMode: TRUE 
-       ```
-  > command to add - `ldapmodify -Y EXTERNAL  -H ldapi:/// -f config.ldif` 
+   `syncprov_config.ldif`:
+   
+   ```
+   dn: olcOverlay=syncprov,olcDatabase={0}config,cn=config 
+   objectClass: olcOverlayConfig 
+   objectClass: olcSyncProvConfig 
+   olcOverlay: syncprov 
+   olcSpSessionLog: 100 
+   ```
+   
+   Command to apply:
+   
+   ```
+   ldapadd -Y EXTERNAL -H ldapi:/// -f  syncprov_config.ldif
+   ```
 
-  * The following 2 steps need to be performed ONLY ON ONE NODE. In our case we will perform it on `PRIMARY NODE` (node with olcserverId=1) 
+5. Push Config.ldif 
 
-  * You need not Push these 2 steps on node 2 and node 3, because you have already pushed config replication on all three nodes, so adding this data.ldif on one node will           replicate on all other nodes. 
+   `config.ldif`:
+   
+   ```
+    dn: olcDatabase={0}config,cn=config 
+    changetype: modify 
+    add: olcSyncRepl 
+    olcSyncRepl: rid=001 
+        provider=ldap://<hostname_node-1>:389/ 
+        bindmethod=simple  
+        binddn="cn=admin,cn=config" 
+        credentials=seagate 
+        searchbase="cn=config" 
+        scope=sub 
+        schemachecking=on 
+        type=refreshAndPersist 
+        retry="30 5 300 3" 
+        interval=00:00:05:00 
+    # Enable additional providers 
+    olcSyncRepl: rid=002 
+      provider=ldap://<hostname_node-2>:389/ 
+       bindmethod=simple 
+       binddn="cn=admin,cn=config" 
+       credentials=seagate 
+       searchbase="cn=config" 
+       scope=sub 
+       schemachecking=on 
+       type=refreshAndPersist 
+       retry="30 5 300 3" 
+       interval=00:00:05:00 
+    olcSyncRepl: rid=003 
+       provider=ldap://<hostname_node-3>:389/ 
+       bindmethod=simple 
+       binddn="cn=admin,cn=config" 
+       credentials=seagate 
+       searchbase="cn=config" 
+       scope=sub 
+       schemachecking=on 
+       type=refreshAndPersist 
+       retry="30 5 300 3" 
+       interval=00:00:05:00 
+      -
+       add: olcMirrorMode 
+       olcMirrorMode: TRUE 
+   ```
+   
+   **Note**: Make sure to update `hostname_node-N` with hostnames of your nodes in the file before applying.
+   
+   Command to apply:
+   
+   ```
+   ldapmodify -Y EXTERNAL  -H ldapi:/// -f config.ldif
+   ```
 
- 1. push provider for data replication 
+6. Repeat the above steps on every node in cluster.
 
-    syncprov.ldif 
-     ```
-      dn: olcOverlay=syncprov,olcDatabase={2}mdb,cn=config 
-      objectClass: olcOverlayConfig 
-      objectClass: olcSyncProvConfig 
-      olcOverlay: syncprov 
-      olcSpSessionLog: 100 
-     ```
+
+#### Steps to be done on primary node
+
+The following steps need to be performed ONLY ON ONE NODE. In our case we will perform it on `PRIMARY NODE` (node with `olcserverId=1`).
+
+1. Update provider for data replication 
+
+   `syncprov.ldif`:
+
+   ```
+   dn: olcOverlay=syncprov,olcDatabase={2}mdb,cn=config 
+   objectClass: olcOverlayConfig 
+   objectClass: olcSyncProvConfig 
+   olcOverlay: syncprov 
+   olcSpSessionLog: 100 
+   ```
       
-  > command to add - `ldapadd -Y EXTERNAL -H ldapi:/// -f  syncprov.ldif`
+   Command to apply:
+   
+   ```
+   ldapadd -Y EXTERNAL -H ldapi:/// -f  syncprov.ldif
+   ```
 
+2. Push data replication ldif 
 
-  2. push data replication ldif 
-
-     Update the hostname in provider field in data.ldif on Node 1 if not updated before running command 
+   **Note**: Make sure to update the hostname in `provider` field in `data.ldif`.
     
-     data.ldif 
-      ```
-      dn: olcDatabase={2}mdb,cn=config 
-      changetype: modify 
-      add: olcSyncRepl 
-      olcSyncRepl: rid=004 
-          provider=ldap://< hostname_of_node_1>:389/ 
-          bindmethod=simple 
-          binddn="cn=admin,dc=seagate,dc=com" 
-          credentials=seagate 
-          searchbase="dc=seagate,dc=com" 
-          scope=sub 
-          schemachecking=on 
-          type=refreshAndPersist 
-          retry="30 5 300 3" 
-          interval=00:00:05:00 
-         # Enable additional providers 
-          olcSyncRepl: rid=005 
-           provider=ldap://< hostname_of_node_2>:389/ 
-           bindmethod=simple 
-           binddn="cn=admin,dc=seagate,dc=com" 
-           credentials=seagate 
-           searchbase="dc=seagate,dc=com" 
-           scope=sub 
-           schemachecking=on 
-           type=refreshAndPersist 
-           retry="30 5 300 3" 
-           interval=00:00:05:00 
-        olcSyncRepl: rid=006 
-          provider=ldap://<hostname_of_node_3>:389/ 
-           bindmethod=simple 
-           binddn="cn=admin,dc=seagate,dc=com" 
-           credentials=seagate 
-           searchbase="dc=seagate,dc=com" 
-           scope=sub 
-           schemachecking=on 
-           type=refreshAndPersist 
-           retry="30 5 300 3" 
-           interval=00:00:05:00 
-         - 
-           add: olcMirrorMode 
-           olcMirrorMode: TRUE 
-
- > command to add - `ldapmodify -Y EXTERNAL -H ldapi:/// -f data.ldif` 
-
- >  Finally perform below on all 3 nodes. 
+   `data.ldif`:
 
    ```
-   systemctl restart slapd 
+   dn: olcDatabase={2}mdb,cn=config 
+   changetype: modify 
+   add: olcSyncRepl 
+   olcSyncRepl: rid=004 
+       provider=ldap://< hostname_of_node_1>:389/ 
+       bindmethod=simple 
+       binddn="cn=admin,dc=seagate,dc=com" 
+       credentials=seagate 
+       searchbase="dc=seagate,dc=com" 
+       scope=sub 
+       schemachecking=on 
+       type=refreshAndPersist 
+       retry="30 5 300 3" 
+       interval=00:00:05:00 
+   # Enable additional providers 
+   olcSyncRepl: rid=005 
+       provider=ldap://< hostname_of_node_2>:389/ 
+       bindmethod=simple 
+       binddn="cn=admin,dc=seagate,dc=com" 
+       credentials=seagate 
+       searchbase="dc=seagate,dc=com" 
+       scope=sub 
+       schemachecking=on 
+       type=refreshAndPersist 
+       retry="30 5 300 3" 
+       interval=00:00:05:00 
+   olcSyncRepl: rid=006 
+       provider=ldap://<hostname_of_node_3>:389/ 
+       bindmethod=simple 
+       binddn="cn=admin,dc=seagate,dc=com" 
+       credentials=seagate 
+       searchbase="dc=seagate,dc=com" 
+       scope=sub 
+       schemachecking=on 
+       type=refreshAndPersist 
+       retry="30 5 300 3" 
+       interval=00:00:05:00 
+   - 
+       add: olcMirrorMode 
+       olcMirrorMode: TRUE 
    ```
+
+   Command to apply:
+   
    ```
-   systemctl restart s3authserver 
+   ldapmodify -Y EXTERNAL -H ldapi:/// -f data.ldif
    ```
+
+#### Finalize the setup - steps to be run on all nodes
+
+Finally perform below on all 3 nodes. 
+
+```
+systemctl restart slapd 
+systemctl restart s3authserver 
+```
