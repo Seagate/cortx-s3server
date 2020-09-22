@@ -53,13 +53,13 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
  
 5. **HAProxy Installation on all nodes** - 
 
-   a. Run the following command to install HAProxy - `yum install haproxy`
+   1. Run the following command to install HAProxy - `yum install haproxy`
 
-   b. Copy the file – `s3server.pem` from location - https://github.com/Seagate/cortx-s3server/tree/dev/ansible/files/certs/stx-s3/s3 and paste it to directory - `/etc/ssl/stx-s3/s3/`
+   2. Copy the file – `s3server.pem` from location - https://github.com/Seagate/cortx-s3server/tree/dev/ansible/files/certs/stx-s3/s3 and paste it to directory - `/etc/ssl/stx-s3/s3/`
 
-   c. Navigate to `/opt/seagate/cortx/s3/install/haproxy`.
+   3. Navigate to `/opt/seagate/cortx/s3/install/haproxy`.
 
-   d. Copy entire contents of `haproxy_osver7.cfg` (or `haproxy_osver8.cfg` depending on your OS version) to `/etc/haproxy/haproxy.cfg`
+   4. Copy entire contents of `haproxy_osver7.cfg` (or `haproxy_osver8.cfg` depending on your OS version) to `/etc/haproxy/haproxy.cfg`
  
 6. **HAProxy scaling** - 
  
@@ -112,42 +112,49 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
  
 5. **Install aws cli** 
 
-   ```
-    sudo easy_install pip (or get pip installed through any other method) 
-    pip install awscli 
-    pip install awscli-plugin-endpoint 
-   ```
-   **Edit config using**
-   ```
-   aws configure 
-   ```
-   **Set Endpoint using** 
-   ```
-   aws configure set plugins.endpoint awscli_plugin_endpoint 
-   aws configure set s3.endpoint_url http://s3.seagate.com 
-   aws configure set s3api.endpoint_url http://s3.seagate.com 
-   ```
-  
-   **For SSL Certificate** – add a line to `~/.aws/config` file above - `[plugins]` section 
-   ```
-    ca_bundle = /etc/stx-s3-clients/ca.crt
-   ```
-   The ultimate `~/.aws/config` would look something like - 
+   1. **Install**
+      ```
+       sudo easy_install pip # (or get pip installed through any other method) 
+       pip install awscli 
+       pip install awscli-plugin-endpoint 
+      ```
 
-   **cat ~/.aws/config**  
-   ```
-   [default] 
-   region = US 
-   s3 =  endpoint_url = https://s3.seagate.com 
-   s3api = endpoint_url = https://s3.seagate.coma 
-   ca_bundle = /etc/stx-s3-clients/ca.crt 
-   [plugins] 
-   endpoint = awscli_plugin_endpoint 
-   ```
+   2. **Edit config using**
+      ```
+      aws configure 
+      ```
+
+   3. **Set Endpoint using** 
+      ```
+      aws configure set plugins.endpoint awscli_plugin_endpoint 
+      aws configure set s3.endpoint_url http://s3.seagate.com 
+      aws configure set s3api.endpoint_url http://s3.seagate.com 
+      ```
+  
+   4. **For SSL Certificate** – add a line to `~/.aws/config` file above - `[plugins]` section 
+      ```
+       ca_bundle = /etc/stx-s3-clients/ca.crt
+      ```
+
+   5. The ultimate `~/.aws/config` would look something like - 
+
+      **cat ~/.aws/config**  
+      ```
+      [default] 
+      region = US 
+      s3 =  endpoint_url = https://s3.seagate.com 
+      s3api = endpoint_url = https://s3.seagate.coma 
+      ca_bundle = /etc/stx-s3-clients/ca.crt 
+      [plugins] 
+      endpoint = awscli_plugin_endpoint 
+      ```
+
+   6. Self-check: run command to confirm setup is complete
+      ```
+      aws s3 ls
+      ```
    
-   Run command to confirm setup is complete – `aws s3 ls`
-   
-   This will not return anything and should not return any error. 
+      This will not return anything and should not return any error. 
 
 6. **S3Bench Install Configure**
     
