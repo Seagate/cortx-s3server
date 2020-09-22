@@ -14,20 +14,18 @@ Refer to the [CORTX-S3 Server Quickstart Guide](https://github.com/Seagate/cortx
 
 ## Contribute to CORTX-S3 Server
 
-We welcome all Source Code and Documentation contributions to the CORTX-S3 Server component repository. Refer to the [Contributing to CORTX](https://github.com/Seagate/cortx-s3server/blob/dev/docs/ContributingToCortxS3.md) document to submit your contributions.
+We welcome all Source Code and Documentation contributions to the CORTX-S3 Server component repository. Refer to the [CORTX-S3 Server Contributing Guide](../dev/docs/ContributingToCortxS3.md) document to submit your contributions.
 
 ## CORTX Community
 
-We are excited about your interest in CORTX and hope you will join us. Refer to the CORTX Community Guide <link placeholder> that hosts all information about community values, code of conduct, how to contribute code and documentation, community and code style guide, and how to reach out to us. We take community very seriously and we are committed to creating a community built on respectful interactions and inclusivity as documented in our [Code of Conduct](https://github.com/Seagate/cortx/blob/main/CODE_OF_CONDUCT.md).
+We are excited about your interest in CORTX and hope you will join us. Refer to the [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/main/doc/CORTXContributionGuide.md) that hosts all information about community values, code of conduct, how to contribute code and documentation, community and code style guide, and how to reach out to us. 
 
-## Additional Resources
-
-Refer to the [AWS S3 documentation](https://docs.aws.amazon.com/AmazonS3/latest/dev/Introduction.html) to understand the S3 Server in detail.
+We take community very seriously and we are committed to creating a community built on respectful interactions and inclusivity as documented in our [Code of Conduct](https://github.com/Seagate/cortx/blob/main/CODE_OF_CONDUCT.md).
 
 ## Reach Out To Us
 
 - Join our CORTX-Open Source Slack Channel to interact with your fellow community members and gets your questions answered. [![Slack Channel](https://img.shields.io/badge/chat-on%20Slack-blue)](https://join.slack.com/t/cortxcommunity/shared_invite/zt-femhm3zm-yiCs5V9NBxh89a_709FFXQ?)
-- If you'd like to contact us directly, drop us a mail at opensource@seagate.com.
+- If you'd like to contact us directly, drop us a mail at cortx-questions@seagate.com.
 
 ## Thank You!
 

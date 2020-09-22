@@ -36,9 +36,9 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
     * Python Version 3.0
       * To check whether Python is installed on your VM, use one of the following commands: `--version`  , `-V` , or `-VV`
       * To install Python version 3.0, use: `$ yum install -y python3`
-    * pip version 3.0:
+    * pip:
       * To check if pip is installed, use: `$ pip --version`
-      * To install pip3 use: `$ yum install python-pip3`
+      * To install pip use: `$ yum install python-pip`
     * Ansible: `$ yum install -y ansible`
     * Extra Packages for Enterprise Linux:
         * To check if epel is installed, use: `$ yum repolist`
@@ -105,16 +105,16 @@ Whenever you clone your repository or make changes to dependent packages, you'll
 ```shell
 
    $ cd ./scripts/env/dev
-   $ init.sh -a
+   $ ./init.sh -a
 ```
 
 2. You'll be prompted to provide your GitHub token. Enter the PAT token that you generated in Step 4.iv. of the [1.0 Prerequisites Section](#10-Prerequisites).
-3. In some cases, the `$ init.sh -a` fails to run.
-4. If the above command fails, run: `$ ./upgrade-enablerepo.sh` and then run: `$ init.sh -a`.
 
 Refer to the image below to view the output of a successful `$ init.sh -a` run, where the `failed` field value should be zero.
 
-![Successful ./init.sh run](../images/init_script_output.png)
+![Successful run](../images/init_script_output.png)
+
+If you still see errors or a failed status, please [reach out to us for support](#Reach-Out-to-Us)
 
 Please read our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Build-Installation-FAQ.md) for troubleshooting errors.
 
@@ -129,7 +129,14 @@ You'll have to set up the host system before you test your build. To do so, run 
 </p>
 </details>
 
-To perform Unit and System Tests, run the script `$ ./jenkins-build.sh -h`
+- To perform Unit and System Tests, run the script `$ ./jenkins-build.sh`
+
+- To perform only Unit test run the script: `./runalltest.sh`. 
+    - You'll need to run the help command for this script to view all the options for running the Unit Tests. 
+    
+    **Example:** 
+
+       `./runalltest.sh --no-motr-rpm --no-st-run --no-https --no-ossperf-run`
 
 :page_with_curl: **Notes:**
 
@@ -310,7 +317,9 @@ We thank you for stopping by to check out the CORTX Community. We are fully dedi
 
 ### Contribute to CORTX S3 Server
 
-Please contribute to the CORTX Open Source initiative and join our movement to make data storage better, efficient, and more accessible.
+Please contribute to the [CORTX Open Source project](https://github.com/Seagate/cortx/blob/main/doc/SuggestedContributions.md) and join our movement to make data storage better, efficient, and more accessible.
+
+Refer to our [CORTX Community Guide](https://github.com/Seagate/cortx/blob/main/doc/CORTXContributionGuide.md) to get started with your first contribution.
 
 ### Reach Out to Us
 
