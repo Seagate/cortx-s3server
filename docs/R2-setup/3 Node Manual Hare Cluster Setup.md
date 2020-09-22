@@ -39,8 +39,8 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
    ```
 
    Once LDAP is set up on all 3 nodes, perform ldap replication changes using below doc - 
-
-   https://seagatetechnology.sharepoint.com/:w:/s/gteamdrv1/tdrive1224/EZIGb3VanyJLlQL3AGlKJGcBVE6m3h-yO3hYRQ5GC06QSg?e=4%3AyapWTJ&at=9&CID=0589639f-81d9-e9b5-e0eb-70a007cbea30
+   
+   [Auth Server Scaling with open ldap replication on 3 Node setup.md](Auth%20Server%20Scaling%20with%20open%20ldap%20replication%20on%203%20Node%20setup.md)
 
    Kindly skip provisioned vms setup steps and perform ldap replication part only. 
 
