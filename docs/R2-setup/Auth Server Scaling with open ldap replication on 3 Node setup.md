@@ -1,17 +1,36 @@
-## Auth Server Scaling with open ldap replication on 3 Node setup <h1> 
+# Auth Server Scaling with open ldap replication on 3 Node setup
+
+### License
+
+Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   <http://www.apache.org/licenses/LICENSE-2.0>
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+For any questions about this software or licensing,
+please email opensource@seagate.com or cortx-questions@seagate.com.
 
 
-1. After provisioning 3 VMs,  configure ldap replication as explained above on each node. 
- 
-   `Openldap_Replication_on_3_node_setup` :- 
+## Manual Steps to set up Auth Server
 
-2. **Prerequisite** -  openldap is installed and configured correctly. 
+1. **Prerequisite** -  openldap is installed and configured correctly.  (Should have 
 
    **To ensure this run below on all nodes** – 
 
-    `ldapsearch -b "dc=s3,dc=seagate,dc=com" -x -w seagate -D "cn=admin,dc=seagate,dc=com"`
+   ```
+   ldapsearch -b "dc=s3,dc=seagate,dc=com" -x -w seagate -D "cn=admin,dc=seagate,dc=com"
+   ```
 
-    This should return successfully without any errors. 
+   This should return successfully without any errors. 
 
 3. **Setup Replication** - 
 
@@ -195,4 +214,3 @@
    ```
    systemctl restart s3authserver 
    ```
- 
