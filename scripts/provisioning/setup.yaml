@@ -33,6 +33,7 @@ s3:
     script: /opt/seagate/cortx/s3/bin/s3_setup
     args:
       - --configldap
+      - --createauthjkspassword
   reset:
     script: /opt/seagate/cortx/s3/bin/s3_setup
     args:

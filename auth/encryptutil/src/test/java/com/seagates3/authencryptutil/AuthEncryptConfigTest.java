@@ -20,15 +20,14 @@
 
 package com.seagates3.authencryptutil;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Properties;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class AuthEncryptConfigTest {
 
@@ -39,9 +38,9 @@ public class AuthEncryptConfigTest {
 
         assertEquals("s3authserver.jks", AuthEncryptConfig.getKeyStoreName());
 
-        assertEquals("seagate", AuthEncryptConfig.getKeyStorePassword());
+        assertNotNull(AuthEncryptConfig.getKeyStorePassword());
 
-        assertEquals("seagate", AuthEncryptConfig.getKeyPassword());
+        assertNotNull(AuthEncryptConfig.getKeyPassword());
         assertEquals("passencrypt", AuthEncryptConfig.getCertAlias());
         assertEquals("DEBUG", AuthEncryptConfig.getLogLevel());
     }
@@ -53,9 +52,9 @@ public class AuthEncryptConfigTest {
 
         assertEquals("s3authserver.jks", AuthEncryptConfig.getKeyStoreName());
 
-        assertEquals("seagate", AuthEncryptConfig.getKeyStorePassword());
+        assertNotNull(AuthEncryptConfig.getKeyStorePassword());
 
-        assertEquals("seagate", AuthEncryptConfig.getKeyPassword());
+        assertNotNull(AuthEncryptConfig.getKeyPassword());
         assertEquals("s3auth_pass", AuthEncryptConfig.getCertAlias());
 
         installDir = "invaliddir";

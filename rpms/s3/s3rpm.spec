@@ -208,6 +208,8 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/auth/startauth.sh
 /opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh
 /opt/seagate/cortx/auth/scripts/change_ldap_passwd.ldif
+/opt/seagate/cortx/auth/scripts/s3authserver.jks_template
+/opt/seagate/cortx/auth/scripts/create_auth_jks_password.sh
 /opt/seagate/cortx/auth/resources/s3authserver.jks
 /opt/seagate/cortx/s3/scripts/s3-sanity-test.sh
 /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh
