@@ -1,6 +1,6 @@
-## 3 Node Manual S3 Cluster Setup <h1> 
- 
-## License
+# 3 Node Manual S3 Cluster Setup
+
+### License
 
 Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 
@@ -18,17 +18,16 @@ limitations under the License.
 
 For any questions about this software or licensing,
 please email opensource@seagate.com or cortx-questions@seagate.com.
- 
 
-1. **Below are the steps to configure 3 node cluster manually** - 
+## Steps to configure 3 node cluster manually
 
-   Order 3 fresh ssc vms from -- https://ssc-cloud.colo.seagate.com/ui/service/catalogs
+1. **Order 3 fresh ssc vms from** -- https://ssc-cloud.colo.seagate.com/ui/service/catalogs
 
 2. **Perform manual HARE / Motr cluster setup steps mentioned at below location** - 
 
    https://seagatetechnology.sharepoint.com/:w:/s/gteamdrv1/tdrive1224/EfvqJjlha8pNkOeIfCgDywUBn0YNIYGT6-tWMREx9iGxpw?e=D9OLR8 
 
-   Confirm the installation is complete and S3 & mero services are up and running - “hctl status” 
+   Confirm the installation is complete and S3 & mero services are up and running - `hctl status`
 
 3. **OpenLdap Installation** - 
 
@@ -56,7 +55,7 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
 
    a. Run the following command to install HAProxy - `yum install haproxy`
 
-   b. Copy the file – `s3server.pem` from location - https://github.com/Seagate/cortx-s3server/tree/dev/ansible/files/certs/stx-s3/s3 and paste it to directory - `/etc/ssl/stx-       s3/s3/`
+   b. Copy the file – `s3server.pem` from location - https://github.com/Seagate/cortx-s3server/tree/dev/ansible/files/certs/stx-s3/s3 and paste it to directory - `/etc/ssl/stx-s3/s3/`
 
    c. Navigate to `/opt/seagate/cortx/s3/install/haproxy`.
 
@@ -71,18 +70,19 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
    Start haproxy – `systemctl start haproxy`
     
 7. **Start authserver by following command**
+
    ```
    systemctl start s3authserver 
    ```
 
 8. **Update** `/etc/hosts` file on all server nodes and append below entries corresponding to the IP address 127.0.0.1 - 
-    `s3.seagate.com sts.seagate.com iam.seagate.com   sts.cloud.seagate.com `
+    `s3.seagate.com sts.seagate.com iam.seagate.com sts.cloud.seagate.com`
 
- 
-  ***On Client Node*** - 
+
+## Setting up the client node
 
 1. **Update** `/etc/hosts` file and append below entries corresponding to the IP address of the Master node (Active HAProxy node) - 
-     `s3.seagate.com sts.seagate.com iam.seagate.com   sts.cloud.seagate.com `
+     `s3.seagate.com sts.seagate.com iam.seagate.com sts.cloud.seagate.com `
 
  
 2. **Download and copy stx-s3-clients from**
@@ -93,16 +93,15 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
 
 3. **Install s3iamcli** - 
     
-   
    Create `/etc/yum.repos.d/epel.repo` and add below content - 
     
-    ```
-    [epel] 
-    gpgcheck=0 
-    enabled=1 
-    baseurl= http://ssc-satellite1.colo.seagate.com/pulp/repos/EOS/Production/CentOS-7_7_1908/custom/EPEL-7/EPEL-7/ 
-    name=Yum repo for epel7 
-    ``` 
+   ```
+   [epel] 
+   gpgcheck=0 
+   enabled=1 
+   baseurl= http://ssc-satellite1.colo.seagate.com/pulp/repos/EOS/Production/CentOS-7_7_1908/custom/EPEL-7/EPEL-7/ 
+   name=Yum repo for epel7 
+   ``` 
 
 4. **Perform below Steps**- 
 
@@ -129,9 +128,11 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
    aws configure set s3api.endpoint_url http://s3.seagate.com 
    ```
   
-   **For SSL Certificate** – add a line to “~/.aws/config” file above - [plugins] section 
-    ca_bundle = `/etc/stx-s3-clients/ca.crt `
-    The ultimate `~/.aws/config` would look something like - 
+   **For SSL Certificate** – add a line to `~/.aws/config` file above - `[plugins]` section 
+   ```
+    ca_bundle = /etc/stx-s3-clients/ca.crt
+   ```
+   The ultimate `~/.aws/config` would look something like - 
 
    **cat ~/.aws/config**  
    ```
@@ -143,54 +144,55 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
    [plugins] 
    endpoint = awscli_plugin_endpoint 
    ```
+   
    Run command to confirm setup is complete – `aws s3 ls`
+   
    This will not return anything and should not return any error. 
 
 6. **S3Bench Install Configure**
     
-    Follow the guide to install and run S3bench - 
+   Follow the guide to install and run S3bench - 
     
-  https://seagatetechnology.sharepoint.com/:w:/r/sites/gteamdrv1/tdrive1224/_layouts/15/Doc.aspx?sourcedoc=%7B8F1347B8-DD98-4D0D-9D57-2B2D3D48D135%7D&file=S3bench%20setup.docx&action=default&mobileredirect=true&cid=2e12a38a-ff01-459c-8eaf-2b89ebdc4572 
+   <https://seagatetechnology.sharepoint.com/:w:/r/sites/gteamdrv1/tdrive1224/_layouts/15/Doc.aspx?sourcedoc=%7B8F1347B8-DD98-4D0D-9D57-2B2D3D48D135%7D&file=S3bench%20setup.docx&action=default&mobileredirect=true&cid=2e12a38a-ff01-459c-8eaf-2b89ebdc4572>
 
 
-   **References for restarting services** - 
+## References for restarting services
 
-   **Shutdown the services**
+### Shutdown the services
 
 1. Execute below on master -  
-    ```
-    hctl shutdown (This will bring down mero and s3server on all the nodes in cluster) 
-    ```
+   ```
+   hctl shutdown (This will bring down mero and s3server on all the nodes in cluster) 
+   ```
 2. Execute below on all the nodes to shutdown authserver 
-    ```
-    systemctl stop s3authserver 
-    ```
+   ```
+   systemctl stop s3authserver 
+   ```
 3. Execute below on all the nodes to shutdown openldap 
-    ```
-    systemctl stop slapd 
-    ```
+   ```
+   systemctl stop slapd 
+   ```
 4. Execute below on all the nodes to shutdown haproxy  
-    ```
-    systemctl stop haproxy 
-    ```
-  
-  **Re-Starting the services** 
+   ```
+   systemctl stop haproxy 
+   ```
+
+### Re-Starting the services
 
 1. Execute below on master -  
-    ```
-    hctl bootstrap --mkfs $HOME/threenodes.yaml 
-    This will start s3server and motr on all the nodes of cluster 
-    ```
+   ```
+   hctl bootstrap --mkfs $HOME/threenodes.yaml 
+   This will start s3server and motr on all the nodes of cluster 
+   ```
 2. Execute below on all the nodes to start Auth server- 
-    ```
-    systemctl start s3authserver 
-    ```
+   ```
+   systemctl start s3authserver 
+   ```
 3. Execute below on all the nodes to start openldap - 
-    ```
-    systemctl start slapd 
-    ```
+   ```
+   systemctl start slapd 
+   ```
 4. Execute below on all the nodes to start haproxy- 
-    ```
-    systemctl start haproxy 
-    ```
-   
+   ```
+   systemctl start haproxy 
+   ```
