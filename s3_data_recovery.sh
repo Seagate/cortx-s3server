@@ -41,6 +41,9 @@ sleep 5m
 
 echo -e "Cluster Started Successfully\n"
 
+echo -e "Checking cluster status..\n"
+pcs cluster status
+
 output=$(pcs status | grep s3backprod)
 ssh_node=$(echo -e "$output" | tr ':' '\n' | grep "srvnode" | awk '{print $2}')
 pcs_backgroundproducer_status=$(echo -e "$output" | tr ':' '\n' | grep "srvnode" | awk '{print $1}')
