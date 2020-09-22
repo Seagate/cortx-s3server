@@ -385,6 +385,33 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefixDelimiter) {
   EXPECT_EQ(1, action_under_test_ptr->object_list->common_prefixes_size());
 }
 
+// Enumerating hierarchical keys using delimiter "/".
+// Verify last key in the key enumeration.
+TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulDelimiterLastKey) {
+  CREATE_ACTION_UNDER_TEST_OBJ;
+  CREATE_BUCKET_METADATA_OBJ;
+  CREATE_KVS_READER_OBJ;
+
+  action_under_test_ptr->request_delimiter.assign("/");
+  result_keys_values.insert(
+      std::make_pair("test/test1/key1", std::make_pair(10, "keyval")));
+  result_keys_values.insert(
+      std::make_pair("test/test1/key2", std::make_pair(10, "keyval")));
+  result_keys_values.insert(
+      std::make_pair("test/test1/key3", std::make_pair(10, "keyval")));
+
+  OBJ_METADATA_EXPECTATIONS;
+  SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
+
+  action_under_test_ptr->max_record_count =
+      S3Option::get_instance()->get_motr_idx_fetch_count();
+
+  action_under_test_ptr->get_next_objects_successful();
+  EXPECT_EQ(0, action_under_test_ptr->object_list->size());
+  EXPECT_EQ(1, action_under_test_ptr->object_list->common_prefixes_size());
+  EXPECT_EQ("test/test1/key3", action_under_test_ptr->last_key);
+}
+
 // Prefix in multi-component object names
 TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulMultiComponentKey) {
   CREATE_ACTION_UNDER_TEST_OBJ;
