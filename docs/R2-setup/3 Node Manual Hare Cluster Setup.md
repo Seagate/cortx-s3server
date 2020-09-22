@@ -142,8 +142,10 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
       ```
       [default] 
       region = US 
-      s3 =  endpoint_url = https://s3.seagate.com 
-      s3api = endpoint_url = https://s3.seagate.coma 
+      s3 =
+          endpoint_url = https://s3.seagate.com 
+      s3api =
+          endpoint_url = https://s3.seagate.coma 
       ca_bundle = /etc/stx-s3-clients/ca.crt 
       [plugins] 
       endpoint = awscli_plugin_endpoint 
