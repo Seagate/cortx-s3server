@@ -34,26 +34,28 @@ USAGE="USAGE: bash $(basename "$0") [--setupjenkinsyumrepo]
                                     [--s3recoverytool]
                                     [--node1 <Value>]
                                     [--node2 <Value>]
+                                    [--createauthjkspassword]
                                     [--cleanup]
                                     [--setlogrotate]
                                     [--help | -h]
 Install and configure release S3server setup.
 
 where:
---setupjenkinsyumrepo Setup required S3 yum repos.
---installdependency   Install all S3server release rpm dependencies.
---postdependency      Configure S3server post installation of dependencies.
---purgeconfigldap     Clear and Setup all LDAP configs
---configldap          Setup all LDAP configs
---ldapreplication     Setup LDAP replication
---eesnode1            EES node 1 for LDAP replication
---eesnode2            EES node 2 for LDAP replication
---olcserverid         Host olcServerID (Unique for different nodes)
---s3backgrounddelete  Configure s3backgrounddelete and its dependencies
---s3recoverytool      Configure s3recoverytool and its dependencies
---cleanup             Cleanup S3 accounts created for backgroundelete.
---setlogrotate        Set logrotate policy
---help                Display this help and exit"
+--setupjenkinsyumrepo    Setup required S3 yum repos.
+--installdependency      Install all S3server release rpm dependencies.
+--postdependency         Configure S3server post installation of dependencies.
+--purgeconfigldap        Clear and Setup all LDAP configs
+--configldap             Setup all LDAP configs
+--ldapreplication        Setup LDAP replication
+--eesnode1               EES node 1 for LDAP replication
+--eesnode2               EES node 2 for LDAP replication
+--olcserverid            Host olcServerID (Unique for different nodes)
+--s3backgrounddelete     Configure s3backgrounddelete and its dependencies
+--s3recoverytool         Configure s3recoverytool and its dependencies
+--cleanup                Cleanup S3 accounts created for backgroundelete.
+--setlogrotate           Set logrotate policy
+--createauthjkspassword  Setup random jks password for Auth server
+--help                   Display this help and exit"
 
 set -e
 
@@ -81,6 +83,7 @@ is_rabbitmq_clustered=false
 cleanup_accounts=false
 cleanup_dependencies=false
 setlogrotate=false
+create_auth_jks_passwrd=false
 
 if [ $# -lt 1 ]
 then
@@ -130,6 +133,9 @@ do
         ;;
     --setlogrotate )
         setlogrotate=true
+        ;;
+    --createauthjkspassword )
+        create_auth_jks_passwrd=true
         ;;
     --help | -h )
         echo "$USAGE"
@@ -450,6 +456,11 @@ delete_background_delete_account()
 	fi
 }
 
+# Create random password for auth jks keystore
+create_auth_jks_password(){
+    sh /opt/seagate/cortx/auth/scripts/create_auth_jks_password.sh
+}
+
 # Setup s3 background delete and its dependencies
 if [[ $setup_s3backgrounddelte == true ]]
 then
@@ -464,6 +475,13 @@ if [[ $setup_s3recoverytool == true ]]
 then
     echo "Creating the s3 recovery tool account"
 	create_recovery_tool_account
+fi
+
+# Setup random jks password for authserver
+if [[ $create_auth_jks_passwrd == true ]]
+then
+    echo "Creating random jks password for Auth server"
+    create_auth_jks_password
 fi
 
 # Clean up backgrounddelete account

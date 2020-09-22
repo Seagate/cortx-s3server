@@ -58,8 +58,9 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @PowerMockIgnore({"javax.management.*"})
 public class SSLContextProviderTest {
 
-    private static Path filePath = Paths.get("..", "resources",
-          "s3authserver.jks");
+ private
+  static Path filePath =
+      Paths.get("..", "..", "scripts", "s3authserver.jks_template");
 
     @Before
     public void setUp() throws Exception {
@@ -72,8 +73,8 @@ public class SSLContextProviderTest {
     public void initTest_HttpsDisabled() throws ServerInitialisationException {
         when(AuthServerConfig.isHttpsEnabled()).thenReturn(Boolean.FALSE);
 
-        when(AuthServerConfig.getKeyStorePath()).thenReturn(Paths.get("..",
-            "resources", "s3authserver.jks"));
+        when(AuthServerConfig.getKeyStorePath()).thenReturn(
+            Paths.get("..", "..", "scripts", "s3authserver.jks_template"));
         SSLContextProvider.init();
 
         assertNull(SSLContextProvider.getServerContext());
@@ -88,8 +89,8 @@ public class SSLContextProviderTest {
         KeyManagerFactory kmf = mock(KeyManagerFactory.class);
         SslContextBuilder contextBuilder = mock(SslContextBuilder.class);
         SslContext sslContext = mock(SslContext.class);
-        when(AuthServerConfig.getKeyStorePath()).thenReturn(Paths.get("..",
-                "resources", "s3authserver.jks"));
+        when(AuthServerConfig.getKeyStorePath()).thenReturn(
+            Paths.get("..", "..", "scripts", "s3authserver.jks_template"));
         when(AuthServerConfig.getKeyStorePassword()).thenReturn("seagate");
         when(AuthServerConfig.getKeyPassword()).thenReturn("seagate");
         when(KeyManagerFactory.getInstance(anyString())).thenReturn(kmf);
@@ -106,8 +107,8 @@ public class SSLContextProviderTest {
     @Test(expected = ServerInitialisationException.class)
     public void initTest_HttpsEnabled_NoSuchAlgorithm()
                                     throws ServerInitialisationException {
-        when(AuthServerConfig.getKeyStorePath()).thenReturn(Paths.get("..",
-                "resources", "s3authserver.jks"));
+      when(AuthServerConfig.getKeyStorePath()).thenReturn(
+          Paths.get("..", "..", "scripts", "s3authserver.jks_template"));
         when(AuthServerConfig.getKeyStorePassword()).thenReturn("seagate");
         when(AuthServerConfig.getKeyPassword()).thenReturn("seagate");
 
