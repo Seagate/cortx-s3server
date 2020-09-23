@@ -100,7 +100,9 @@ int freelist_allocate(struct mempool *pool, int items_count_to_allocate) {
   int rc = 0;
   void *buf = NULL;
   struct memory_pool_element *pool_item = NULL;
-  char *log_msg_fmt = "mempool(%p): %s(%zu). Allocated address(%p)";
+  char *log_msg_fmt =
+      "mempool(%p): %s(%zu). Allocated address(%p)  rc(%d) alignment(%zu) "
+      "size(%zu)";
   char log_msg[200];
 
   if (pool == NULL) {
@@ -109,17 +111,21 @@ int freelist_allocate(struct mempool *pool, int items_count_to_allocate) {
 
   for (i = 0; i < items_count_to_allocate; i++) {
     if (pool->flags & CREATE_ALIGNED_MEMORY) {
-      rc = posix_memalign(&buf, pool->alignment, pool->mempool_item_size);
+      buf = NULL;
+      rc = posix_memalign((void **)&buf, pool->alignment,
+                          pool->mempool_item_size);
     } else {
       buf = malloc(pool->mempool_item_size);
     }
     if (pool->log_callback_func) {
       if (pool->flags & CREATE_ALIGNED_MEMORY) {
         snprintf(log_msg, sizeof(log_msg), log_msg_fmt, (void *)pool,
-                 "posix_memalign", pool->mempool_item_size, buf);
+                 "posix_memalign", pool->mempool_item_size, buf, rc,
+                 pool->alignment, pool->mempool_item_size);
       } else {
         snprintf(log_msg, sizeof(log_msg), log_msg_fmt, (void *)pool, "malloc",
-                 pool->mempool_item_size, buf);
+                 pool->mempool_item_size, buf, rc, pool->alignment,
+                 pool->mempool_item_size);
       }
       pool->log_callback_func(MEMPOOL_LOG_DEBUG, log_msg);
     }
