@@ -707,7 +707,8 @@ public class AccessKeyControllerTest {
         Mockito.when(userDAO.find(ACCOUNT_NAME, USER_NAME))
                 .thenReturn(user);
         Mockito.doThrow(new DataAccessException("Failed to fetch access keys"))
-                .when(accessKeyDAO).findAll(user);
+            .when(accessKeyDAO)
+            .findAllPermanent(user);
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
@@ -738,7 +739,8 @@ public class AccessKeyControllerTest {
 
         Mockito.when(userDAO.find(ACCOUNT_NAME, USER_NAME))
                 .thenReturn(user);
-        Mockito.doReturn(accessKeyList).when(accessKeyDAO).findAll(user);
+        Mockito.doReturn(accessKeyList).when(accessKeyDAO).findAllPermanent(
+            user);
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
@@ -779,7 +781,8 @@ public class AccessKeyControllerTest {
 
         Mockito.when(userDAO.find(ACCOUNT_NAME, USER_NAME))
                 .thenReturn(user);
-        Mockito.doReturn(accessKeyList).when(accessKeyDAO).findAll(user);
+        Mockito.doReturn(accessKeyList).when(accessKeyDAO).findAllPermanent(
+            user);
 
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
@@ -837,7 +840,8 @@ public class AccessKeyControllerTest {
 
         Mockito.when(userDAO.find(ACCOUNT_NAME, REQUESTOR_NAME))
                 .thenReturn(user);
-        Mockito.doReturn(accessKeyList).when(accessKeyDAO).findAll(user);
+        Mockito.doReturn(accessKeyList).when(accessKeyDAO).findAllPermanent(
+            user);
 
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
@@ -1201,3 +1205,4 @@ public class AccessKeyControllerTest {
         Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR, response.getResponseStatus());
     }
 }
+
