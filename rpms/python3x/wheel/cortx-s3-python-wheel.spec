@@ -19,27 +19,19 @@
 
 %global pypi_name wheel
 
-Name:           python-%{pypi_name}
-Version:        0.24.0
-Release:        2%{?dist}
-Summary:        A built-package format for Python
+Name:		python-%{pypi_name}
+Version:	0.24.0
+Release:	2%{?dist}
+Summary:	A built-package format for Python
 
-License:        MIT
-URL:            http://bitbucket.org/dholth/wheel/
-Source0:        https://pypi.python.org/packages/source/w/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
-# Some test files are not present in tarball, so we include them separately.
-# Upstream pull request to include the files in tarball:
-# https://bitbucket.org/dholth/wheel/pull-request/34 (Patch0 below)
-# (version 0.22 doesn't have a tag, so we're using commit hash to point to the
-#  correct testing wheel)
-Source1:        https://bitbucket.org/dholth/wheel/raw/099352e/wheel/test/test-1.0-py2.py3-none-win32.whl
-Source2:        https://bitbucket.org/dholth/wheel/raw/099352e/wheel/test/pydist-schema.json
+License:	MIT
+URL:		http://bitbucket.org/dholth/wheel
+Source0:	https://pypi.python.org/packages/source/w/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
 BuildArch:      noarch
 
 BuildRequires:  python-devel
 BuildRequires:  python-setuptools
 
-BuildRequires:  pytest
 BuildRequires:  python-jsonschema
 BuildRequires:  python-keyring
 
@@ -53,10 +45,8 @@ BuildRequires:  python3-devel
 BuildRequires:  python36-setuptools
 %endif # if with_python36
 
-
 %description
 A built-package format for Python.
-
 A wheel is a ZIP-format archive with a specially formatted filename and the
 .whl extension. It is designed to contain all the files for a PEP 376
 compatible install in a way that is very close to the on-disk format.
@@ -91,15 +81,8 @@ This is package contains Python 3 version of the package.
 %endif # with_python36
 
 
-
 %prep
 %setup -q -n %{pypi_name}-%{version}
-
-# copy test files in place
-cp %{SOURCE1} %{pypi_name}/test/
-cp %{SOURCE2} %{pypi_name}/test/
-# header files just has to be there, even empty
-touch %{pypi_name}/test/headers.dist/header.h
 
 # remove unneeded shebangs
 sed -ie '1d' %{pypi_name}/{egg2wheel,wininst2wheel}.py
@@ -156,26 +139,6 @@ popd
 #%{__python} setup.py install --skip-build --root %{buildroot}
 
 
-%check
-# remove setup.cfg that makes pytest require pytest-cov (unnecessary dep)
-rm setup.cfg
-PYTHONPATH=$(pwd) py.test --ignore build
-# no test for Python 3, no python3-jsonschema yet
-%if 0
-pushd %{py3dir}
-rm setup.cfg
-PYTHONPATH=$(pwd) py.test-%{python%{python3_pkgversion}_version} --ignore build
-popd
-%endif # with_python3
-
-# not tested for python_other, just as for python3 above
-%if 0
-pushd %{py3dir}-for36
-rm setup.cfg
-PYTHONPATH=$(pwd) python36 -m pytest --ignore build
-popd
-%endif # have python3_other
-
 %files
 %if 0%{?s3_with_python34:1}
 %files -n python%{python3_pkgversion}-%{pypi_name}
@@ -213,3 +176,4 @@ popd
 
 * Thu Nov 28 2013 Bohuslav Kabrda <bkabrda@redhat.com> - 0.22.0-1
 - Initial package.
+

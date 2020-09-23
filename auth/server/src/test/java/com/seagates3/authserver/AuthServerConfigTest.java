@@ -20,27 +20,20 @@
 
 package com.seagates3.authserver;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-
-import org.junit.Test;
-
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.Properties;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.doNothing;
-import static org.powermock.api.mockito.PowerMockito.doThrow;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.verifyStatic;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
+import org.junit.Test;
 
 public class AuthServerConfigTest {
 
@@ -59,11 +52,12 @@ public class AuthServerConfigTest {
 
         assertEquals(9086, AuthServerConfig.getHttpsPort());
 
-        assertEquals("s3authserver.jks", AuthServerConfig.getKeyStoreName());
+        assertEquals("s3authserver.jks_template",
+                     AuthServerConfig.getKeyStoreName());
 
-        assertEquals("seagate", AuthServerConfig.getKeyStorePassword());
+        assertNotNull(AuthServerConfig.getKeyStorePassword());
 
-        assertEquals("seagate", AuthServerConfig.getKeyPassword());
+        assertNotNull(AuthServerConfig.getKeyPassword());
 
         assertTrue(AuthServerConfig.isHttpsEnabled());
 
@@ -106,7 +100,7 @@ public class AuthServerConfigTest {
         assertArrayEquals(expectedEndPoints, AuthServerConfig.getEndpoints());
 
         Path keyStorePath =
-             Paths.get("..", "resources", "s3authserver.jks");
+            Paths.get("..", "..", "scripts", "s3authserver.jks_template");
         assertTrue(keyStorePath.toString().equals(
                         AuthServerConfig.getKeyStorePath().toString()));
         assertTrue(AuthServerConfig.isEnableHttpsToS3());
@@ -137,9 +131,9 @@ public class AuthServerConfigTest {
 
         assertEquals("s3authserver.jks", AuthServerConfig.getKeyStoreName());
 
-        assertEquals("seagate", AuthServerConfig.getKeyStorePassword());
+        assertNotNull(AuthServerConfig.getKeyStorePassword());
 
-        assertEquals("seagate", AuthServerConfig.getKeyPassword());
+        assertNotNull(AuthServerConfig.getKeyPassword());
 
         assertFalse(AuthServerConfig.isHttpsEnabled());
 
@@ -189,8 +183,9 @@ public class AuthServerConfigTest {
         authServerConfig.setProperty("enableFaultInjection", "false");
         authServerConfig.setProperty("perfEnabled", "false");
         authServerConfig.setProperty("perfLogFile", "/var/log/seagate/auth/perf.log");
-        authServerConfig.setProperty("s3KeyStorePath", "../resources/");
-        authServerConfig.setProperty("s3KeyStoreName", "s3authserver.jks");
+        authServerConfig.setProperty("s3KeyStorePath", "../../scripts/");
+        authServerConfig.setProperty("s3KeyStoreName",
+                                     "s3authserver.jks_template");
         authServerConfig.setProperty("s3KeyStorePassword", "seagate");
         authServerConfig.setProperty("s3KeyPassword", "seagate");
         authServerConfig.setProperty("s3AuthCertAlias", "s3auth_pass");

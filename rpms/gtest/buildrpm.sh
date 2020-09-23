@@ -39,6 +39,6 @@ rm -rf gtest-${VERSION}
 
 cd -
 
-yum-builddep -y ${BASEDIR}/gtest.spec
-rpmbuild -ba ${BASEDIR}/gtest.spec
+yum-builddep -y ${BASEDIR}/cortx-s3-gtest.spec
+rpmbuild -ba ${BASEDIR}/cortx-s3-gtest.spec
 

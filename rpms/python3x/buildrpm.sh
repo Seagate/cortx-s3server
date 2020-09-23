@@ -244,8 +244,6 @@ rm -rf scripttest*
 
 #wheel
 if need_pkg wheel; then
-  wget https://bitbucket.org/dholth/wheel/raw/099352e/wheel/test/test-1.0-py2.py3-none-win32.whl
-  wget https://bitbucket.org/dholth/wheel/raw/099352e/wheel/test/pydist-schema.json
   wget https://pypi.python.org/packages/source/w/wheel/wheel-${WHEEL_VERSION}.tar.gz
 fi
 
@@ -287,34 +285,34 @@ cd -
 # Install python macros
 yum info python3-rpm-macros > /dev/null || yum install python3-rpm-macros -y
 
-need_pkg wheel      && (yum-builddep -y ${BASEDIR}/wheel/python-wheel.spec "${yumdep_opts[@]}" ; \
-                       rpmbuild -ba ${BASEDIR}/wheel/python-wheel.spec "${rpmbuild_opts[@]}")
+need_pkg wheel      && (yum-builddep -y ${BASEDIR}/wheel/cortx-s3-python-wheel.spec "${yumdep_opts[@]}" ; \
+                       rpmbuild -ba ${BASEDIR}/wheel/cortx-s3-python-wheel.spec "${rpmbuild_opts[@]}")
 
-need_pkg jmespath   && (yum-builddep -y ${BASEDIR}/jmespath/python-jmespath.spec "${yumdep_opts[@]}" ; \
-                       rpmbuild -ba ${BASEDIR}/jmespath/python-jmespath.spec "${rpmbuild_opts[@]}")
+need_pkg jmespath   && (yum-builddep -y ${BASEDIR}/jmespath/cortx-s3-python-jmespath.spec "${yumdep_opts[@]}" ; \
+                       rpmbuild -ba ${BASEDIR}/jmespath/cortx-s3-python-jmespath.spec "${rpmbuild_opts[@]}")
 
-need_pkg xmltodict  && (yum-builddep -y ${BASEDIR}/xmltodict/python-xmltodict.spec "${yumdep_opts[@]}" ; \
-                        rpmbuild -ba ${BASEDIR}/xmltodict/python-xmltodict.spec "${rpmbuild_opts[@]}")
+need_pkg xmltodict  && (yum-builddep -y ${BASEDIR}/xmltodict/cortx-s3-python-xmltodict.spec "${yumdep_opts[@]}" ; \
+                        rpmbuild -ba ${BASEDIR}/xmltodict/cortx-s3-python-xmltodict.spec "${rpmbuild_opts[@]}")
 
-need_pkg botocore   && (yum-builddep -y ${BASEDIR}/botocore/python-botocore.spec "${yumdep_opts[@]}" ; \
-                       rpmbuild -ba ${BASEDIR}/botocore/python-botocore.spec "${rpmbuild_opts[@]}")
+need_pkg botocore   && (yum-builddep -y ${BASEDIR}/botocore/cortx-s3-python-botocore.spec "${yumdep_opts[@]}" ; \
+                       rpmbuild -ba ${BASEDIR}/botocore/cortx-s3-python-botocore.spec "${rpmbuild_opts[@]}")
 
-need_pkg scripttest && (yum-builddep -y ${BASEDIR}/scripttest/python-scripttest.spec; \
-                       rpmbuild -ba ${BASEDIR}/scripttest/python-scripttest.spec)
+need_pkg scripttest && (yum-builddep -y ${BASEDIR}/scripttest/cortx-s3-python-scripttest.spec; \
+                       rpmbuild -ba ${BASEDIR}/scripttest/cortx-s3-python-scripttest.spec)
 
 # These deps are required for s3transfer
 yum localinstall ~/rpmbuild/RPMS/noarch/python3* -y
 
-need_pkg s3transfer && (yum-builddep -y ${BASEDIR}/s3transfer/python-s3transfer.spec "${yumdep_opts[@]}" ; \
-                       rpmbuild -ba ${BASEDIR}/s3transfer/python-s3transfer.spec "${rpmbuild_opts[@]}")
+need_pkg s3transfer && (yum-builddep -y ${BASEDIR}/s3transfer/cortx-s3-python-s3transfer.spec "${yumdep_opts[@]}" ; \
+                       rpmbuild -ba ${BASEDIR}/s3transfer/cortx-s3-python-s3transfer.spec "${rpmbuild_opts[@]}")
 
 # s3transfer dep required for boto3
 yum localinstall ~/rpmbuild/RPMS/noarch/python3* -y
 
 
 if need_pkg boto3; then
-  (yum-builddep -y ${BASEDIR}/boto3/python-boto3.spec "${yumdep_opts[@]}" ; \
-   rpmbuild -ba ${BASEDIR}/boto3/python-boto3.spec "${rpmbuild_opts[@]}")
+  (yum-builddep -y ${BASEDIR}/boto3/cortx-s3-python-boto3.spec "${yumdep_opts[@]}" ; \
+   rpmbuild -ba ${BASEDIR}/boto3/cortx-s3-python-boto3.spec "${rpmbuild_opts[@]}")
 else
    /bin/true
 fi #if package installation is not required then script should return status code as 0 not the return code of "need_pkg" function

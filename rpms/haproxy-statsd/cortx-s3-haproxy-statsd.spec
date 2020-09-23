@@ -17,16 +17,16 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-Name:           haproxy-statsd
-Version:        1.0
-Release:        1
-Summary:        tool to send haproxy statistics to statsd
+Name:		haproxy-statsd
+Version:	1.0
+Release:	1
+Summary:	tool to send haproxy statistics to statsd
 
-License:        MIT
-URL:            https://github.com/softlayer/haproxy-statsd
-Source:         %{name}-%{version}.tar.gz
+License:	MIT
+URL:		https://github.com/softlayer/haproxy-statsd
+Source:		%{name}-%{version}.tar.gz
 Patch:          haproxy-statsd.patch
-Requires:       haproxy, python-psutil
+Requires:	haproxy, python-psutil
 
 %description -n haproxy-statsd
 This script sends statistics from haproxy to statsd server.
@@ -58,3 +58,4 @@ rm -rf %{buildroot}
 
 %license LICENSE
 %doc README.md
+
