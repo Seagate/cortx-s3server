@@ -102,7 +102,7 @@ class CORTXS3Util(object):
 
        algorithm = 'AWS4-HMAC-SHA256'
 
-       if self._config.get_s3recovery_flag :
+       if self._config.get_s3recovery_flag():
            access_key = self._config.get_s3_recovery_access_key()
            secret_key = self._config.get_s3_recovery_secret_key()
        else:
