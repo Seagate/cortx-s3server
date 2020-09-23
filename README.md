@@ -8,6 +8,8 @@ CORTX Simple Storage Service or CORTX-S3 Server is an object storage service wit
 
 You can easily manage data and access controls using CORTX-S3 Server data management features.
 
+
+
 ## Get CORTX-S3 Server ready!
 
 Refer to the [CORTX-S3 Server Quickstart Guide](https://github.com/Seagate/cortx-s3server/blob/dev/docs/CORTX-S3%20Server%20Quick%20Start%20Guide.md) to build and test the CORTX-S3 Server.
