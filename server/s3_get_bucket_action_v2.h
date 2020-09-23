@@ -31,12 +31,14 @@
 #include "s3_factory.h"
 #include "s3_object_list_response.h"
 #include "s3_get_bucket_action.h"
+#include "s3_common_utilities.h"
 
 class S3GetBucketActionV2 : public S3GetBucketAction {
  protected:
   bool request_fetch_owner;
   std::string request_cont_token;
   std::string request_start_after;
+  std::shared_ptr<S3CommonUtilities::S3Obfuscator> obfuscator;
 
  public:
   S3GetBucketActionV2(
@@ -44,7 +46,8 @@ class S3GetBucketActionV2 : public S3GetBucketAction {
       std::shared_ptr<MotrAPI> motr_api = nullptr,
       std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory = nullptr,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
-      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr);
+      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
+      std::shared_ptr<S3CommonUtilities::S3Obfuscator> obfuscator = nullptr);
   ~S3GetBucketActionV2();
 
   void validate_request();

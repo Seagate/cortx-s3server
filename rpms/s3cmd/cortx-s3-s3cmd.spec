@@ -34,27 +34,25 @@
 %global commit 4801552f441cf12dec53099a6abc2b8aa36ccca4
 %global shortcommit 4801552
 
-Name:           s3cmd
-Version:        2.0.2
-Release:        1%{dist}
-Summary:        Tool for accessing Amazon Simple Storage Service
+Name:		s3cmd
+Version:	2.0.2
+Release:	1%{?dist}
+Summary:	Tool for accessing Amazon Simple Storage Service
 
-Group:          Applications/Internet
-License:        GPLv2
-URL:            https://github.com/Seagate/s3cmd
-# git clone https://github.com/s3tools/s3cmd
-# python setup.py sdist
-Source0:        %{name}-%{version}-%{shortcommit}.tar.gz
+Group:		Applications/Internet
+License:	GPLv2
+URL:		https://github.com/Seagate/s3cmd
+Source0:	%{name}-%{version}-%{shortcommit}.tar.gz
+Patch0:         s3cmd_%{version}_max_retries.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:      noarch
-Patch0:         s3cmd_%{version}_max_retries.patch
 
-BuildRequires:  python36-devel
+BuildRequires:	python36-devel
 
 %if 0%{?s3_with_python36_ver8:1}
 BuildRequires:  python3-dateutil
 BuildRequires:  python3-setuptools
-Requires:       python3-magic
+Requires:	python3-magic
 %endif
 %if 0%{?s3_with_python36:1}
 BuildRequires:  python36-dateutil
@@ -63,16 +61,11 @@ Requires:       python-magic
 %endif
 
 %description
-S3cmd lets you copy files from/to Amazon S3
-(Simple Storage Service) using a simple to use
-command line client.
-
+s3cmd is a CLI based s3-client.
 
 %prep
 %setup -q -n %{name}-%{version}-%{shortcommit}
 %patch0 -p1
-
-%build
 
 
 %install
@@ -94,6 +87,3 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/s3cmd*.egg-info
 %doc NEWS README.md
 
-
-%changelog
-# https://github.com/s3tools/s3cmd/blob/v%{version}/ChangeLog

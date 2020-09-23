@@ -32,21 +32,19 @@
 %global srcname xmltodict
 
 %if 0%{?s3_with_python36_ver8:1} || 0%{?s3_with_python36_rhel7:1}
-Name:               python36-xmltodict
+Name:		python36-xmltodict
 %else
 Name:               python-xmltodict
 %endif
-Version:            0.9.0
-Release:            1%{?dist}
-Summary:            Makes working with XML feel like you are working with JSON
+Version:	0.9.0
+Release:	1%{?dist}
+Summary:	Makes working with XML feel like you are working with JSON
 
-Group:              Development/Libraries
-License:            MIT
-URL:                https://github.com/martinblech/xmltodict
-Source0:            http://pypi.python.org/packages/source/x/%{srcname}/%{srcname}-%{version}.tar.gz
-
+Group:		Development/Libraries
+License:	MIT
+URL:		https://github.com/martinblech/xmltodict
+Source0:	http://pypi.python.org/packages/source/x/%{srcname}/%{srcname}-%{version}.tar.gz
 BuildArch:          noarch
-
 %if 0%{?s3_with_python36_ver8:1}
 BuildRequires:      python3-devel
 BuildRequires:      python3-nose
@@ -67,7 +65,7 @@ BuildRequires:  python36-nose
 
 %description
 xmltodict is a Python module that makes working with XML feel like you are
-working with JSON.  It's very fast (Expat-based) and has a streaming mode
+working with JSON. It's very fast (Expat-based) and has a streaming mode
 with a small memory footprint, suitable for big XML dumps like Discogs or
 Wikipedia.
 
@@ -102,7 +100,7 @@ Requires:           python%{python3_pkgversion}
 
 %description -n python%{python3_pkgversion}-xmltodict
 xmltodict is a Python module that makes working with XML feel like you are
-working with JSON.  It's very fast (Expat-based) and has a streaming mode
+working with JSON. It's very fast (Expat-based) and has a streaming mode
 with a small memory footprint, suitable for big XML dumps like Discogs or
 Wikipedia.
 
@@ -137,7 +135,7 @@ Requires:           python36
 
 %description -n python36-xmltodict
 xmltodict is a Python module that makes working with XML feel like you are
-working with JSON.  It's very fast (Expat-based) and has a streaming mode
+working with JSON. It's very fast (Expat-based) and has a streaming mode
 with a small memory footprint, suitable for big XML dumps like Discogs or
 Wikipedia.
 
@@ -169,7 +167,6 @@ Wikipedia.
 Requires:           python36
 
 %endif # with_python36_ver8 || with_python36_rhel7
-
 
 %prep
 %setup -q -n %{srcname}-%{version}
@@ -285,30 +282,3 @@ popd
 %{python3_sitelib}/__pycache__/%{srcname}*
 %endif
 
-
-%changelog
-* Thu Oct 02 2014 Fabian Affolter <mail@fabian-affolter.ch> - 0.9.0-1
-- Update spec file according guidelines
-- Update to upstream release 0.9.0
-
-* Sun Jun 08 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.2-5
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
-
-* Wed May 28 2014 Kalev Lember <kalevlember@gmail.com> - 0.4.2-4
-- Rebuilt for https://fedoraproject.org/wiki/Changes/Python_3.4
-
-* Sun Aug 04 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.2-3
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
-
-* Thu Feb 14 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.2-2
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
-
-* Fri Jan 04 2013 Ralph Bean <rbean@redhat.com> - 0.4.2-1
-- Latest upstream
-- Included README and LICENSE
-- Running tests now
-- https://github.com/martinblech/xmltodict/pull/11
-- Added Requires python3 to the python3 subpackage.
-
-* Fri Jan 04 2013 Ralph Bean <rbean@redhat.com> - 0.4.1-1
-- Initial packaging for Fedora

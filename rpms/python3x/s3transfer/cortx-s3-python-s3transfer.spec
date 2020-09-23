@@ -20,18 +20,18 @@
 
 %global pypi_name s3transfer
 
-Name:           python-%{pypi_name}
-Version:        0.1.10
-Release:        1%{?dist}
-Summary:        An Amazon S3 Transfer Manager
+Name:		python-%{pypi_name}
+Version:	0.1.10
+Release:	1%{?dist}
+Summary:	AWS S3 transfer Manager
 
-License:        ASL 2.0
-URL:            https://github.com/boto/s3transfer
-Source0:        https://pypi.io/packages/source/s/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
+License:	ASL 2.0
+URL:		https://github.com/boto/s3transfer
+Source0:	https://pypi.io/packages/source/s/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
 BuildArch:      noarch
 
 %description
-S3transfer is a Python library for managing Amazon S3 transfers.
+A python library to manage Amazon S3 transfers.
 
 %package -n     python2-%{pypi_name}
 Summary:        An Amazon S3 Transfer Manager
@@ -51,7 +51,7 @@ Requires:       python2-botocore
 %{?python_provide:%python_provide python2-%{pypi_name}}
 
 %description -n python2-%{pypi_name}
-S3transfer is a Python library for managing Amazon S3 transfers.
+A python library to manage Amazon S3 transfers.
 
 %if 0%{?s3_with_python34:1}
 %package -n     python%{python3_pkgversion}-%{pypi_name}
@@ -70,7 +70,7 @@ Requires:       python%{python3_pkgversion}-botocore
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{pypi_name}}
 
 %description -n python%{python3_pkgversion}-%{pypi_name}
-S3transfer is a Python library for managing Amazon S3 transfers.
+A python library to manage Amazon S3 transfers.
 %endif # python3
 
 %if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
@@ -90,7 +90,7 @@ Requires:       python36-botocore
 %{?python_provide:%python_provide python36-%{pypi_name}}
 
 %description -n python36-%{pypi_name}
-S3transfer is a Python library for managing Amazon S3 transfers.
+A python library to manage Amazon S3 transfers.
 %endif # with_python36
 
 %prep
@@ -150,43 +150,3 @@ nosetests-%{python36_version} --with-coverage --cover-erase --cover-package s3tr
 %{python3_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
 %endif # with_python36
 
-%changelog
-* Wed Dec 28 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.1.10-1
-- Update to 0.1.10
-
-* Mon Dec 19 2016 Miro Hrončok <mhroncok@redhat.com> - 0.1.9-2
-- Rebuild for Python 3.6
-
-* Thu Oct 27 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.1.9-1
-- Update to 0.1.9
-
-* Mon Oct 10 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.1.7-1
-- Uodate to 0.1.7
-
-* Sun Oct 02 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.1.5-1
-- Update to 0.1.5
-
-* Wed Sep 28 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.1.4-1
-- Update to 0.1.4
-
-* Wed Sep 07 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.1.3-1
-- Update to 0.1.3
-
-* Thu Aug 04 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.1.1-1
-- Update to 0.1.1
-
-* Tue Aug 02 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.1.0-1
-- Update to 0.1.0
-
-* Tue Jul 19 2016 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.0.1-4
-- https://fedoraproject.org/wiki/Changes/Automatic_Provides_for_Python_RPM_Packages
-
-* Wed Feb 24 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.0.1-3
-- Cleanup the spec a little bit
-- Remove patch
-
-* Tue Feb 23 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.0.1-2
-- Add patch to remove tests needing web connection
-
-* Tue Feb 23 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.0.1-1
-- Initial package.

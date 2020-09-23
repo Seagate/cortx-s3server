@@ -27,6 +27,29 @@
 
 namespace S3CommonUtilities {
 
+S3XORObfuscator::S3XORObfuscator() : S3Obfuscator() {}
+
+// Implement simple XOR obfuscator by xoring each byte of the string with
+// constant = strlen + 255
+std::string S3XORObfuscator::obfuscate(const std::string &input) {
+  std::string output = "";
+  if (!input.empty()) {
+    uint8_t xorbyte = (uint8_t)(input.length() + 255);
+    for (const auto &c : input) {
+      output.push_back(c ^ xorbyte);
+    }
+  }
+  return output;
+}
+
+std::string S3XORObfuscator::encode(const std::string &input) {
+  return obfuscate(input);
+}
+
+std::string S3XORObfuscator::decode(const std::string &input) {
+  return obfuscate(input);
+}
+
 bool string_has_only_digits(const std::string &str) {
   return str.find_first_not_of("0123456789") == std::string::npos;
 }

@@ -39,5 +39,6 @@ tar -zcvf git-clang-format-${VERSION}.tar.gz git-clang-format-${VERSION}
 rm -rf git-clang-format-${VERSION}
 
 cd -
-yum-builddep -y ${BASEDIR}/git-clang-format.spec
-rpmbuild -ba ${BASEDIR}/git-clang-format.spec
+yum-builddep -y ${BASEDIR}/cortx-s3-git-clang-format.spec
+rpmbuild -ba ${BASEDIR}/cortx-s3-git-clang-format.spec
+
