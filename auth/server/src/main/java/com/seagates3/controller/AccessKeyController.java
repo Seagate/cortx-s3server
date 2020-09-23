@@ -193,7 +193,7 @@ public class AccessKeyController extends AbstractController {
 
         AccessKey[] accessKeyList;
         try {
-            accessKeyList = accessKeyDAO.findAll(user);
+          accessKeyList = accessKeyDAO.findAllPermanent(user);
         } catch (DataAccessException ex) {
             LOGGER.error("Failed to fine access keys of user: "
                                                 + user.getName());
@@ -273,3 +273,4 @@ public class AccessKeyController extends AbstractController {
         return accessKeyResponseGenerator.generateUpdateResponse();
     }
 }
+
