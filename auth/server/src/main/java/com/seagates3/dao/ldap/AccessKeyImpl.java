@@ -20,6 +20,11 @@
 
 package com.seagates3.dao.ldap;
 
+import java.util.ArrayList;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.novell.ldap.LDAPAttribute;
 import com.novell.ldap.LDAPAttributeSet;
 import com.novell.ldap.LDAPConnection;
@@ -27,7 +32,6 @@ import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPModification;
 import com.novell.ldap.LDAPSearchResults;
-import com.seagates3.controller.UserController;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.fi.FaultPoints;
@@ -35,12 +39,6 @@ import com.seagates3.model.AccessKey;
 import com.seagates3.model.AccessKey.AccessKeyStatus;
 import com.seagates3.model.User;
 import com.seagates3.util.DateUtil;
-import com.seagates3.util.IEMUtil;
-
-import java.util.ArrayList;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class AccessKeyImpl implements AccessKeyDAO {
 
@@ -202,8 +200,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
     }
 
     /**
-     * Get the access key belonging to the user from LDAP. Federated access keys
-     * belonging to the user should not be displayed.
+     * Get the access key belonging to the user from LDAP.
      *
      * @param user User
      * @return AccessKey List
@@ -211,55 +208,21 @@ public class AccessKeyImpl implements AccessKeyDAO {
      */
     @Override
     public AccessKey[] findAll(User user) throws DataAccessException {
-        ArrayList accessKeys = new ArrayList();
-        AccessKey accessKey;
+      return find(user, true);
+    }
 
-        String[] attrs = {LDAPUtils.ACCESS_KEY_ID, LDAPUtils.STATUS,
-            LDAPUtils.CREATE_TIMESTAMP};
-
-        String accessKeyBaseDN = String.format("%s=accesskeys,%s",
-                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.BASE_DN
-        );
-
-        String filter = String.format("(&(%s=%s)(%s=%s))",
-                LDAPUtils.USER_ID, user.getId(), LDAPUtils.OBJECT_CLASS,
-                LDAPUtils.ACCESS_KEY_OBJECT_CLASS);
-
-        LDAPSearchResults ldapResults;
-        try {
-            ldapResults = LDAPUtils.search(accessKeyBaseDN,
-                    LDAPConnection.SCOPE_SUB, filter, attrs);
-        } catch (LDAPException ex) {
-            LOGGER.error("Failed to search access keys.");
-            throw new DataAccessException("Failed to search access keys" + ex);
-        }
-
-        AccessKeyStatus accessKeystatus;
-        LDAPEntry entry;
-        while (ldapResults.hasMore()) {
-            accessKey = new AccessKey();
-            try {
-                entry = ldapResults.next();
-            } catch (LDAPException ex) {
-                LOGGER.error("Access key find failed.");
-                throw new DataAccessException("Access key find failed.\n" + ex);
-            }
-
-            accessKey.setId(entry.getAttribute(LDAPUtils.ACCESS_KEY_ID).getStringValue());
-            accessKeystatus = AccessKeyStatus.valueOf(
-                    entry.getAttribute(LDAPUtils.STATUS).getStringValue()
-                    .toUpperCase());
-            accessKey.setStatus(accessKeystatus);
-
-            String createTime = DateUtil.toServerResponseFormat(
-                    entry.getAttribute(LDAPUtils.CREATE_TIMESTAMP).getStringValue());
-            accessKey.setCreateDate(createTime);
-
-            accessKeys.add(accessKey);
-        }
-
-        AccessKey[] accessKeyList = new AccessKey[accessKeys.size()];
-        return (AccessKey[]) accessKeys.toArray(accessKeyList);
+    /**
+     * Get the permanent access key belonging to the user from LDAP. Federated
+     *access keys
+     * belonging to the user should not be displayed.
+     *
+     * @param user User
+     * @return AccessKey List
+     * @throws com.seagates3.exception.DataAccessException
+     */
+    @Override public AccessKey[] findAllPermanent(User user)
+        throws DataAccessException {
+      return find(user, false);
     }
 
     /**
@@ -467,5 +430,65 @@ public class AccessKeyImpl implements AccessKeyDAO {
             throw new DataAccessException("Failed to save federated access key" + ex);
         }
     }
+
+   public
+    AccessKey[] find(User user, boolean fetchAll) throws DataAccessException {
+      ArrayList accessKeys = new ArrayList();
+      AccessKey accessKey;
+
+      String[] attrs = {LDAPUtils.ACCESS_KEY_ID,    LDAPUtils.STATUS,
+                        LDAPUtils.CREATE_TIMESTAMP, LDAPUtils.TOKEN};
+
+      String accessKeyBaseDN =
+          String.format("%s=accesskeys,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
+                        LDAPUtils.BASE_DN);
+
+      String filter = String.format("(&(%s=%s)(%s=%s))", LDAPUtils.USER_ID,
+                                    user.getId(), LDAPUtils.OBJECT_CLASS,
+                                    LDAPUtils.ACCESS_KEY_OBJECT_CLASS);
+
+      LDAPSearchResults ldapResults;
+      try {
+        ldapResults = LDAPUtils.search(accessKeyBaseDN,
+                                       LDAPConnection.SCOPE_SUB, filter, attrs);
+      }
+      catch (LDAPException ex) {
+        LOGGER.error("Failed to search access keys.");
+        throw new DataAccessException("Failed to search access keys" + ex);
+      }
+
+      AccessKeyStatus accessKeystatus;
+      LDAPEntry entry;
+      while (ldapResults.hasMore()) {
+        accessKey = new AccessKey();
+        try {
+          entry = ldapResults.next();
+        }
+        catch (LDAPException ex) {
+          LOGGER.error("Access key find failed.");
+          throw new DataAccessException("Access key find failed.\n" + ex);
+        }
+        if (fetchAll || entry.getAttribute(LDAPUtils.TOKEN) == null) {
+
+          accessKey.setId(
+              entry.getAttribute(LDAPUtils.ACCESS_KEY_ID).getStringValue());
+          accessKeystatus =
+              AccessKeyStatus.valueOf(entry.getAttribute(LDAPUtils.STATUS)
+                                          .getStringValue()
+                                          .toUpperCase());
+          accessKey.setStatus(accessKeystatus);
+
+          String createTime = DateUtil.toServerResponseFormat(
+              entry.getAttribute(LDAPUtils.CREATE_TIMESTAMP).getStringValue());
+          accessKey.setCreateDate(createTime);
+
+          accessKeys.add(accessKey);
+        }
+      }
+
+      AccessKey[] accessKeyList = new AccessKey[accessKeys.size()];
+      return (AccessKey[])accessKeys.toArray(accessKeyList);
+    }
 }
+
 
