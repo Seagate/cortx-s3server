@@ -80,6 +80,7 @@ class RequestObject {
   struct event* client_read_timer_event;
 
   std::string request_id;
+  bool is_service_req_head;
 
   std::string error_code_str;
 
@@ -354,6 +355,7 @@ class RequestObject {
 
   void respond_unsupported_api();
   virtual void respond_retry_after(int retry_after_in_secs = 1);
+  void set_head_service() { is_service_req_head = true; }
 
   FRIEND_TEST(S3MockAuthClientCheckTest, CheckAuth);
   FRIEND_TEST(RequestObjectTest, ReturnsValidUriPaths);

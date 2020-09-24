@@ -164,7 +164,7 @@ RequestObject::RequestObject(
     canonical_id = "123456789dummyCANONICALID";
     email = "abc@dummy.com";
   }
-
+  is_service_req_head = false;
   request_error = S3RequestError::None;
   client_read_timer_event = NULL;
   evhtp_obj.reset(evhtp_obj_ptr);
@@ -726,8 +726,14 @@ void RequestObject::notify_incoming_data(evbuf_t* buf) {
 }
 
 void RequestObject::send_response(int code, std::string body) {
-  s3_log(S3_LOG_INFO, request_id, "Response code: [%d]\n", code);
-  s3_log(S3_LOG_INFO, request_id, "Sending response as: [%s]\n", body.c_str());
+  if (!is_service_req_head) {
+    s3_log(S3_LOG_INFO, request_id, "Sending response as: [code:%d] [%s]\n",
+           code, body.c_str());
+  } else {
+    s3_log(S3_LOG_INFO, request_id,
+           "S3Action = HeadService Sending response as: [code:%d] [%s]\n", code,
+           body.c_str());
+  }
 
   http_status = code;
   turn_around_time.stop();
