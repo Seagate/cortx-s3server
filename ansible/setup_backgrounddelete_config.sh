@@ -26,6 +26,11 @@ set -e
 # message between producer and consumer. So we need to configure Rabbitmq
 # on the system. Refer: <cortx-s3server>/s3backgrounddelete/rabbitmq_setup.md
 
+# Install rabbit-mq.
+# As of now rabbit-mq is being installed as part of motr dependency installation.
+# curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | sudo bash
+
+
 centos_release=`cat /etc/centos-release | awk '/CentOS/ {print}'`
 redhat_release=`cat /etc/redhat-release | awk '/Red Hat/ {print}'`
 
