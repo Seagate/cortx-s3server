@@ -49,7 +49,12 @@ systemctl start rabbitmq-server
 systemctl enable rabbitmq-server
 
 # Create a user (In this case user is cortx-s3 with password as password)
-rabbitmqctl add_user cortx-s3 password
+rabbitmquser=`rabbitmqctl list_users | grep cortx-s3`
+
+if [ -z "$rabbitmquser" ]
+then
+    rabbitmqctl add_user cortx-s3 password
+fi
 
 # Setup the cortx-s3 user as an administrator.
 rabbitmqctl set_user_tags cortx-s3 administrator
