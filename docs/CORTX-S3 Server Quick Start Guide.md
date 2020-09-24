@@ -323,4 +323,4 @@ Refer to our [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/ma
 
 ### Reach Out to Us
 
-Please refer to the [Support](SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
+Please refer to the [Support](../SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
