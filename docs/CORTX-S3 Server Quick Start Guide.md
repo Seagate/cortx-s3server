@@ -319,11 +319,8 @@ We thank you for stopping by to check out the CORTX Community. We are fully dedi
 
 Please contribute to the [CORTX Open Source project](https://github.com/Seagate/cortx/blob/main/doc/SuggestedContributions.md) and join our movement to make data storage better, efficient, and more accessible.
 
-Refer to our [CORTX Community Guide](https://github.com/Seagate/cortx/blob/main/doc/CORTXContributionGuide.md) to get started with your first contribution.
+Refer to our [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/main/CONTRIBUTING.md) to get started with your first contribution.
 
 ### Reach Out to Us
 
-You can reach out to us with your questions, feedback, and comments through our CORTX Communication Channels:
-
-- Join our CORTX-Open Source Slack Channel to interact with your fellow community members and gets your questions answered. [![Slack Channel](https://img.shields.io/badge/chat-on%20Slack-blue)](https://join.slack.com/t/cortxcommunity/shared_invite/zt-femhm3zm-yiCs5V9NBxh89a_709FFXQ?)
-- If you'd like to contact us directly, drop us a mail at cortx-questions@seagate.com.
+Please refer to the [Support](SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
