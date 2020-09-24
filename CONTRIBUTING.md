@@ -6,7 +6,6 @@
    * [1.3.1 Clone the cortx-s3server repository](#131-Clone-the-cortx-s3server-repository)
    * [1.3.2 Code Commits](#132-Code-commits)
    * [1.3.3 Create a Pull Request](#133-Create-a-Pull-Request)
-- [1.4 Run Jenkins and System Tests](#14-Run-Jenkins-and-System-Tests)
 - [FAQs](FAQs)
 
 Contributing to the S3 Server repository is a three-step process where you'll need to:
@@ -149,10 +148,6 @@ You can make changes to the code and save them in your files.
 3. Select **main** from the Branches/Tags drop-down list.
 4. Click **Create pull request** to create the pull request.
 5. Add reviewers to your pull request to review and provide feedback on your changes.
-
-## 1.4 Run Jenkins and System Tests
-
-Creating a pull request automatically triggers Jenkins jobs and System tests. To familiarize yourself with jenkins, please visit the [Jenkins wiki page](https://en.wikipedia.org/wiki/Jenkins_(software)).
 
 ## FAQs
 
