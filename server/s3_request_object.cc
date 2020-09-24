@@ -71,7 +71,9 @@ void S3RequestObject::set_bucket_name(const std::string& name) {
 }
 
 void S3RequestObject::set_action_str(const std::string& action) {
-  s3_log(S3_LOG_INFO, request_id, "S3Action =  %s\n", action.c_str());
+  if (action != "HeadService") {
+    s3_log(S3_LOG_INFO, request_id, "S3Action =  %s\n", action.c_str());
+  }
   s3_action = action;
 }
 
