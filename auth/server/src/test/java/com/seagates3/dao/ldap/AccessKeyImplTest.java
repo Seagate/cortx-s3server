@@ -59,7 +59,9 @@ import com.seagates3.model.User;
     private final String[] FIND_ATTRS = {"s3userid", "sk", "exp", "token", "status",
         "createtimestamp", "objectclass"};
 
-    private final String[] FIND_ALL_ATTRS = {"ak", "status", "createtimestamp"};
+    private
+     final String[] FIND_ALL_ATTRS = {"ak",              "status",
+                                      "createtimestamp", "token"};
 
     private
      final String[] GETCOUNT_ATTRS = {"ak", "exp"};
@@ -753,4 +755,5 @@ import com.seagates3.model.User;
         Assert.assertThat(expectedAccessKey, new ReflectionEquals(accessKey));
     }
 }
+
 
