@@ -116,6 +116,7 @@ void S3GetMultipartPartAction::setup_steps() {
 
 void S3GetMultipartPartAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket metadata failed\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
   } else if (bucket_metadata->get_state() ==
@@ -152,7 +153,8 @@ void S3GetMultipartPartAction::get_multipart_metadata() {
 }
 
 void S3GetMultipartPartAction::get_key_object() {
-  s3_log(S3_LOG_INFO, request_id, "Fetching part listing\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Fetching part listing\n");
   S3ObjectMetadataState multipart_object_state =
       object_multipart_metadata->get_state();
   if (multipart_object_state == S3ObjectMetadataState::present) {
@@ -221,7 +223,8 @@ void S3GetMultipartPartAction::get_key_object_successful() {
 }
 
 void S3GetMultipartPartAction::get_key_object_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Failed to find part listing\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Failed to do part listing\n");
   if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     fetch_successful = true;  // With no entries.
     next();
