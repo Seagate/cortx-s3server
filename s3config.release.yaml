@@ -86,7 +86,7 @@ S3_MOTR_CONFIG:                                     # Section for S3 Motr
    S3_MOTR_IS_OOSTORE: true                           # Motr oostore mode is set when this flag is true, default is false (oostore mode is not set)
    S3_MOTR_IS_READ_VERIFY: false                      # Motr Flag for verify-on-read. Parity is checked during READ's if this flag is true, default is false
    S3_MOTR_TM_RECV_QUEUE_MIN_LEN: 16                  # Minimum length of the 'tm' receive queue for motr, default is 2
-   S3_MOTR_MAX_RPC_MSG_SIZE: 262144                   # Maximum rpc message size for motr, default is 131072 (128k)
+   S3_MOTR_MAX_RPC_MSG_SIZE: 524288                   # Maximum rpc message size for motr, default is 131072 (128k)
    S3_MOTR_PROCESS_FID: <0x7200000000000000:0>        # FID of the Resource manager for Motr
    S3_MOTR_IDX_SERVICE_ID: 1                          # Types of index services supported by Motr, mapping is: 0->Mock KVS, 1->Motr KVS, 2->Cassandra KVS, default is 2 (Cassandra KVS)
    S3_MOTR_CASS_CLUSTER_EP: 127.0.0.1                 # Cassandra cluster end point
