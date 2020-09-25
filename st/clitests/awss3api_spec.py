@@ -48,11 +48,11 @@ def get_aws_cli_object(raw_aws_cli_output):
             # E.g. COMMONPREFIXES  quax/
             line = raw_lines[i].split('\t')
             common_prefixes.append(line[1])
-        else if (raw_lines[i].startswith("CONTENTS")):
+        elif (raw_lines[i].startswith("CONTENTS")):
             # E.g. CONTENTS\t"98b5e3f766f63787ea1ddc35319cedf7"\tasdf\t2020-09-25T11:42:54.000Z\t3072\tSTANDARD
             line = raw_lines[i].split('\t')
             content_keys.append(line[2])
-        else if (raw_lines[i].startswith("NEXTTOKEN")):
+        elif (raw_lines[i].startswith("NEXTTOKEN")):
             # E.g. NEXTTOKEN       eyJDb250aW51YXRpb25Ub2tlbiI6IG51bGwsICJib3RvX3RydW5jYXRlX2Ftb3VudCI6IDN9
             line = raw_lines[i].split('\t')
             cli_obj["next_token"] = line[1]
