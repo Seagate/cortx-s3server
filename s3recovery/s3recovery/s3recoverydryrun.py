@@ -42,7 +42,7 @@ class S3RecoveryDryRun(S3RecoveryBase):
         """
         union_result = dict()
         super(S3RecoveryDryRun, self).initiate(index_name, index_id, index_id_replica, log_output = True)
-        super(S3RecoveryDryRun, self).dry_run(index_name, index_id, index_id_replica, union_result, recover_flag = False)
+        super(S3RecoveryDryRun, self).dry_run(index_name, index_id, index_id_replica, union_result)
 
     def start(self):
         """
