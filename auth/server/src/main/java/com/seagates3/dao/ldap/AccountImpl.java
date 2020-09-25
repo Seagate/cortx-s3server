@@ -63,7 +63,7 @@ public class AccountImpl implements AccountDAO {
             throw new DataAccessException("failed to search account.\n" + ex);
         }
 
-        if (ldapResults.hasMore()) {
+        if (ldapResults != null && ldapResults.hasMore()) {
             try {
                 LDAPEntry entry = ldapResults.next();
                 account.setId(accountID);
@@ -105,7 +105,7 @@ public class AccountImpl implements AccountDAO {
             throw new DataAccessException("failed to search account.\n" + ex);
         }
 
-        if (ldapResults.hasMore()) {
+        if (ldapResults != null && ldapResults.hasMore()) {
             try {
                 LDAPEntry entry = ldapResults.next();
                 account.setCanonicalId(canonicalID);
@@ -254,6 +254,7 @@ public class AccountImpl implements AccountDAO {
             throw new DataAccessException("Failed to fetch accounts.\n" + ex);
         }
         int ldapResultCount = 0;
+        if (ldapResults != null) {
         while (ldapResults.hasMore()) {
             LDAPEntry ldapEntry;
             account = new Account();
@@ -289,6 +290,7 @@ public class AccountImpl implements AccountDAO {
                     .getStringValue());
             accounts.add(account);
             ldapResultCount++;
+        }
         }
         Account[] accountList = new Account[accounts.size()];
 
@@ -520,7 +522,7 @@ public class AccountImpl implements AccountDAO {
           throw new DataAccessException("failed to search account.\n" + ex);
         }
 
-        if (ldapResults.hasMore()) {
+        if (ldapResults != null && ldapResults.hasMore()) {
           try {
             LDAPEntry entry = ldapResults.next();
             account.setName(entry.getAttribute(LDAPUtils.ORGANIZATIONAL_NAME)
@@ -541,4 +543,5 @@ public class AccountImpl implements AccountDAO {
         return account;
     }
 }
+
 

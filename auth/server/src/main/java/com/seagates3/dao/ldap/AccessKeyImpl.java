@@ -86,7 +86,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
             ldapResults = lc.search(accessKeyBaseDN, LDAPConnection.SCOPE_SUB,
                                     filter, attrs, false);
           }
-          if (ldapResults.hasMore()) {
+          if (ldapResults != null && ldapResults.hasMore()) {
             LDAPEntry entry;
             try {
               entry = ldapResults.next();
@@ -160,7 +160,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
             throw new DataAccessException("Access key find failed.\n" + ex);
         }
 
-        if (ldapResultsForToken.hasMore()) {
+        if (ldapResultsForToken != null && ldapResultsForToken.hasMore()) {
           LDAPEntry ldapEntry;
             try {
               ldapEntry = ldapResultsForToken.next();
@@ -236,6 +236,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
 
         AccessKeyStatus accessKeystatus;
         LDAPEntry entry;
+        if (ldapResults != null) {
         while (ldapResults.hasMore()) {
             accessKey = new AccessKey();
             try {
@@ -257,7 +258,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
 
             accessKeys.add(accessKey);
         }
-
+        }
         AccessKey[] accessKeyList = new AccessKey[accessKeys.size()];
         return (AccessKey[]) accessKeys.toArray(accessKeyList);
     }
@@ -303,6 +304,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
              * TODO - Replace this iteration with existing getCount method if
              * available.
              */
+            if (ldapResults != null) {
             while (ldapResults.hasMore()) {
               LDAPEntry entry = ldapResults.next();
               boolean temporary_credentials = true;
@@ -323,7 +325,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
                 count++;
               }
             }
-
+            }
         } catch (LDAPException ex) {
             LOGGER.error("Failed to get the count of user access keys"
                     + " for user id :" + userId);

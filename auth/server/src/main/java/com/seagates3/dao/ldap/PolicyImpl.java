@@ -82,7 +82,7 @@ public class PolicyImpl implements PolicyDAO {
             throw new DataAccessException("Failed to find the policy.\n" + ex);
         }
 
-        if (ldapResults.hasMore()) {
+        if (ldapResults != null && ldapResults.hasMore()) {
             try {
                 LDAPEntry entry = ldapResults.next();
                 policy.setPolicyId(entry.getAttribute(LDAPUtils.POLICY_ID).
@@ -159,3 +159,4 @@ public class PolicyImpl implements PolicyDAO {
         }
     }
 }
+
