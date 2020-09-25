@@ -177,8 +177,10 @@ class S3RecoverCorruptionTestCase(unittest.TestCase):
         )
         self.assertEqual(mock_put.call_count, 0)
 
-    @mock.patch.object(CORTXS3KVApi, 'put')
-    def test_restore_data_non_empty_index_list(self, mock_put):
+    @mock.patch.object(S3RecoveryBase, 'put_kv')
+    @mock.patch.object(S3RecoverCorruption, 'cleanup_bucket_list_entries')
+    @mock.patch.object(S3RecoverCorruption, 'cleanup_bucket_metadata_entries')
+    def test_restore_data_non_empty_index_list(self, mock_put_kv, mock_cleanup_bucket_list_entries, mock_cleanup_bucket_metadata_entries):
         # Test 'restore_data' when dict: 'list_result' & 'metadata_result' is not empty
         mockS3RecoverCorruption = S3RecoverCorruption()
 
@@ -191,10 +193,16 @@ class S3RecoverCorruptionTestCase(unittest.TestCase):
         }
         mockS3RecoverCorruption.common_keys = ['key1', 'key3']
 
-        mock_put.return_value = True, CORTXS3SuccessResponse("body".encode('utf-8'))
+        mock_put_kv.return_value = None
+        mock_cleanup_bucket_list_entries.return_value = None
+        mock_cleanup_bucket_metadata_entries.return_value = None
 
         mockS3RecoverCorruption.restore_data('global_list_index_id',
         'replica_list_index_id',
         'global_metadata_index_id',
         'replica_metadata_index_id')
-        self.assertEqual(mock_put.call_count, 4) # 2 calls each to CORTXS3KVApi::put, for key1 and key3
+
+        self.assertEqual(mock_put_kv.call_count, 2) # 1 put_kv call each to CORTXS3KVApi::put, for key1 and key3
+        self.assertEqual(mock_cleanup_bucket_list_entries.call_count, 2)
+        self.assertEqual(mock_cleanup_bucket_metadata_entries.call_count, 4)
+

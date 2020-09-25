@@ -39,6 +39,7 @@ void S3ServiceAPIHandler::create_action() {
           break;
         case S3HttpVerb::HEAD:
           request->set_action_str("HeadService");
+          request->set_head_service();
           action = std::make_shared<S3HeadServiceAction>(request);
           s3_stats_inc("health_check_request_count");
           break;
