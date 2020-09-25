@@ -31,6 +31,33 @@ class S3RecoverCorruption(S3RecoveryBase):
         super(S3RecoverCorruption, self).create_logger_directory()
         super(S3RecoverCorruption, self).create_logger("S3RecoverCorruption")
 
+    def cleanup_bucket_list_entries(self, index_id):
+        """
+        Performs cleanup of stale data entries
+
+        """
+        list_index_response = self.list_index(index_id)
+        data_as_dict = self.parse_index_list_response(list_index_response)
+        key_list = list(data_as_dict.keys())
+        for key in key_list:
+            if key not in self.common_keys:
+                status, response = self.kv_api.delete(index_id, key)
+                super(S3RecoverCorruption, self).check_response(status, "delete", response, index_id, key)
+
+    def cleanup_bucket_metadata_entries(self, index_id):
+        """
+        Performs cleanup of stale data entries
+        """
+
+        list_index_response = self.list_index(index_id)
+        data_as_dict = self.parse_index_list_response(list_index_response)
+        key_list = list(data_as_dict.keys())
+        for key in key_list:
+            key_part = key.split('/')[1]
+            if key_part not in self.common_keys:
+                status, response = self.kv_api.delete(index_id, key)
+                super(S3RecoverCorruption, self).check_response(status, "delete", response, index_id, key)
+
     def restore_data(self, list_index_id, list_index_id_replica, metadata_index_id,
             metadata_index_id_replica):
         """
@@ -41,12 +68,15 @@ class S3RecoverCorruption(S3RecoveryBase):
             self.s3recovery_log("info", "No any data to recover\n")
             return
 
-        self.s3recovery_log("info", "Recovering global list index table\n")
+        self.s3recovery_log("info", "\nRecovering global list index table")
         for key, value in self.list_result.items():
             if key in self.common_keys:
-                self.s3recovery_log("info", "Recovering {} {}".format(key,value))
+                self.s3recovery_log("info", "\nRecovering {} {}".format(key,value))
                 super(S3RecoverCorruption, self).put_kv(list_index_id, key, value)
                 super(S3RecoverCorruption, self).put_kv(list_index_id_replica, key, value)
+
+        self.cleanup_bucket_list_entries(list_index_id)
+        self.cleanup_bucket_list_entries(list_index_id_replica)
 
         """ Sample entry in bucket metadata table
         i.e self.metadata_result contents
@@ -61,14 +91,17 @@ class S3RecoverCorruption(S3RecoveryBase):
         }
         """
 
-        self.s3recovery_log("info", "Recovering bucket metadata table\n")
+        self.s3recovery_log("info", "\nRecovering bucket metadata table")
         for key, value in self.metadata_result.items():
             if key.split('/')[1] in self.common_keys:
-                self.s3recovery_log("info", "Recovering {} {}".format(key,value))
+                self.s3recovery_log("info", "\nRecovering {} {}".format(key,value))
                 super(S3RecoverCorruption, self).put_kv(metadata_index_id, key, value)
                 super(S3RecoverCorruption, self).put_kv(metadata_index_id_replica, key, value)
 
-        self.s3recovery_log("info", "Success")
+        self.cleanup_bucket_metadata_entries(metadata_index_id)
+        self.cleanup_bucket_metadata_entries(metadata_index_id_replica)
+
+        self.s3recovery_log("info", "\nS3recovery passed successfully...!!!")
 
 
     def check_consistency(self):
@@ -106,15 +139,15 @@ class S3RecoverCorruption(S3RecoveryBase):
         """
         union_result = dict()
         super(S3RecoverCorruption, self).initiate(list_index_name, list_index_id,
-                list_index_id_replica, log_output = False)
+                list_index_id_replica, log_output = True)
         self.list_result = super(S3RecoverCorruption, self).dry_run(list_index_name, list_index_id,
-                list_index_id_replica, union_result, recover_flag=True)
+                list_index_id_replica, union_result)
 
         metadata_result = dict()
         super(S3RecoverCorruption, self).initiate(metadata_index_name, metadata_index_id,
-                metadata_index_id_replica, log_output = False)
+                metadata_index_id_replica, log_output = True)
         self.metadata_result = super(S3RecoverCorruption, self).dry_run(metadata_index_name, metadata_index_id,
-                metadata_index_id_replica, metadata_result, recover_flag=True)
+                metadata_index_id_replica, metadata_result)
 
         self.check_consistency()
         self.restore_data(list_index_id, list_index_id_replica, metadata_index_id,
