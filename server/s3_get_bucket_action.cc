@@ -34,6 +34,7 @@ S3GetBucketAction::S3GetBucketAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
     : S3BucketAction(req, bucket_meta_factory),
+      total_keys_visited(0),
       object_list(std::make_shared<S3ObjectListResponse>(
           req->get_query_string_value("encoding-type"))),
       last_key(""),
@@ -179,6 +180,12 @@ void S3GetBucketAction::get_next_objects_successful() {
   std::string last_common_prefix;
   auto& kvps = motr_kv_reader->get_key_values();
   size_t length = kvps.size();
+  // Save the last key for next iteration
+  if (!kvps.empty()) {
+    last_key = (--kvps.end())->first;
+    total_keys_visited += length;
+  }
+
   for (auto& kv : kvps) {
     s3_log(S3_LOG_DEBUG, request_id, "Read Object = %s\n", kv.first.c_str());
     s3_log(S3_LOG_DEBUG, request_id, "Read Object Value = %s\n",
@@ -221,7 +228,6 @@ void S3GetBucketAction::get_next_objects_successful() {
                kv.first.c_str(), kv.second.second.c_str());
       } else {
         object_list->add_object(object);
-        last_key = kv.first;
       }
     } else if (!request_prefix.empty() && request_delimiter.empty()) {
       // Filter out by prefix
@@ -235,7 +241,6 @@ void S3GetBucketAction::get_next_objects_successful() {
                  kv.first.c_str(), kv.second.second.c_str());
         } else {
           object_list->add_object(object);
-          last_key = kv.first;
         }
       }
     } else if (request_prefix.empty() && !request_delimiter.empty()) {
@@ -250,7 +255,6 @@ void S3GetBucketAction::get_next_objects_successful() {
                  kv.first.c_str(), kv.second.second.c_str());
         } else {
           object_list->add_object(object);
-          last_key = kv.first;
         }
       } else {
         // Roll up
@@ -267,8 +271,7 @@ void S3GetBucketAction::get_next_objects_successful() {
           // in common prefix, we add to common prefix only if it is not the
           // same as specified marker
           object_list->add_common_prefix(common_prefix);
-          last_key = common_prefix;
-          last_common_prefix = last_key;
+          last_common_prefix = common_prefix;
           last_key_in_common_prefix = true;
         }
       }
@@ -288,7 +291,6 @@ void S3GetBucketAction::get_next_objects_successful() {
                    kv.first.c_str(), kv.second.second.c_str());
           } else {
             object_list->add_object(object);
-            last_key = kv.first;
           }
         } else {
           // Roll up
@@ -305,8 +307,7 @@ void S3GetBucketAction::get_next_objects_successful() {
             // in common prefix, we add to common prefix only if it is not the
             // same as specified marker
             object_list->add_common_prefix(common_prefix);
-            last_key = common_prefix;
-            last_common_prefix = last_key;
+            last_common_prefix = common_prefix;
             last_key_in_common_prefix = true;
           }
         }
@@ -402,7 +403,9 @@ void S3GetBucketAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Type", "application/xml");
     s3_log(S3_LOG_DEBUG, request_id, "Object list response_xml = %s\n",
            response_xml.c_str());
-
+    // Total visited/touched keys in the bucket
+    s3_log(S3_LOG_INFO, request_id, "Total keys visited = %zu\n",
+           total_keys_visited);
     request->send_response(S3HttpSuccess200, response_xml);
   } else {
     S3Error error("InternalError", request->get_request_id(),

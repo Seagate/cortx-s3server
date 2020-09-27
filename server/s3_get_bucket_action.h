@@ -36,6 +36,8 @@ class S3GetBucketAction : public S3BucketAction {
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
   std::shared_ptr<MotrAPI> s3_motr_api;
+  // Identify total keys visited/touched in the object listing
+  size_t total_keys_visited;
 
  protected:
   std::shared_ptr<S3ObjectListResponse> object_list;
