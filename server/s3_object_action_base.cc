@@ -55,7 +55,7 @@ S3ObjectAction::~S3ObjectAction() {
 }
 
 void S3ObjectAction::fetch_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Fetching bucket metadata\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);

@@ -286,17 +286,18 @@ result.command_response_should_have(success_msg_list_index)
 result.command_response_should_have(success_msg_metadata_index)
 
 result_stdout_list = (result.status.stdout).split('\n')
-assert result_stdout_list[8] != 'Empty'
-assert result_stdout_list[12] != 'Empty'
-assert st1key in result_stdout_list[12]
-assert '"account_name":"s3-recovery-svc"' in result_stdout_list[12]
-assert '"create_timestamp":"2020-07-02T05:45:41.000Z"' in result_stdout_list[12]
 
-assert result_stdout_list[21] != 'Empty'
-assert result_stdout_list[25] != 'Empty'
-assert r'838334245437/' + st1key in result_stdout_list[25]
-assert 'ACL' in result_stdout_list[25]
-assert 'System-Defined' in result_stdout_list[25]
+assert result_stdout_list[10] != 'Empty'
+assert result_stdout_list[15] != 'Empty'
+assert st1key in result_stdout_list[15]
+assert '"account_name":"s3-recovery-svc"' in result_stdout_list[15]
+assert '"create_timestamp":"2020-07-02T05:45:41.000Z"' in result_stdout_list[15]
+
+assert result_stdout_list[26] != 'Empty'
+assert result_stdout_list[31] != 'Empty'
+assert r'838334245437/' + st1key in result_stdout_list[31]
+assert 'ACL' in result_stdout_list[31]
+assert 'System-Defined' in result_stdout_list[31]
 
 # Delete the key-value from replica index
 status, res = CORTXS3KVApi(config).delete(replica_bucket_list_index_oid, st1key)
@@ -375,6 +376,7 @@ success_msg = "Data recovered from both indexes for Global bucket index"
 result.command_response_should_have(success_msg)
 
 result_stdout_list = (result.status.stdout).split('\n')
+
 # Example result.status.stdout:
 # |-----------------------------------------------------------------------------------------------------------------------------|
 # s3recovery --dry_run
@@ -405,26 +407,26 @@ result_stdout_list = (result.status.stdout).split('\n')
 # 123456789/my-bucket1 {"ACL":"", "Bucket-Name":"my-bucket1", "Policy":"", "System-Defined": { "Date":"2020-07-14T05:45:41.000Z", "LocationConstraint":"us-west-2", "Owner-Account":"s3-recovery-svc", "Owner-Account-id":"123456789", "Owner-User":"root", "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-07-14T05:45:41.000Z", "motr_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=", "motr_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=", "motr_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}
 # 123456789/my-bucket2 {"ACL":"", "Bucket-Name":"my-bucket1", "Policy":"", "System-Defined": { "Date":"2020-08-14T06:45:41.000Z", "LocationConstraint":"us-east-1", "Owner-Account":"s3-recovery-svc", "Owner-Account-id":"123456789", "Owner-User":"root", "Owner-User-id":"HzG2EFe-RaWSyeecGAKafQ" }, "create_timestamp":"2020-08-14T06:45:41.000Z", "motr_multipart_index_oid":"lwnlAAAAAHg=-FAAAAAAAlko=", "motr_object_list_index_oid":"lwnlAAAAAHg=-EwAAAAAAlko=", "motr_objects_version_list_index_oid":"lwnlAAAAAHg=-FQAAAAAAlko="}
 # |-----------------------------------------------------------------------------------------------------------------------------|
-assert result_stdout_list[3] != 'Empty'
+assert result_stdout_list[4] != 'Empty'
 
-assert primary_index_key in result_stdout_list[3]
-assert primary_index_key in result_stdout_list[11]
+assert primary_index_key in result_stdout_list[4]
+assert primary_index_key in result_stdout_list[14]
 
-assert '"create_timestamp":"2020-07-14T05:45:41.000Z"' in result_stdout_list[3]
-assert '"create_timestamp":"2020-07-14T05:45:41.000Z"' in result_stdout_list[11]
+assert '"create_timestamp":"2020-07-14T05:45:41.000Z"' in result_stdout_list[4]
+assert '"create_timestamp":"2020-07-14T05:45:41.000Z"' in result_stdout_list[14]
 
-assert '"location_constraint":"us-west-2"' in result_stdout_list[3]
-assert '"location_constraint":"us-west-2"' in result_stdout_list[11]
+assert '"location_constraint":"us-west-2"' in result_stdout_list[4]
+assert '"location_constraint":"us-west-2"' in result_stdout_list[14]
 
-assert result_stdout_list[7] != 'Empty'
+assert result_stdout_list[9] != 'Empty'
 
-assert replica_index_key in result_stdout_list[7]
-assert replica_index_key in result_stdout_list[12]
-assert '"create_timestamp":"2020-08-14T06:45:41.000Z"' in result_stdout_list[7]
-assert '"create_timestamp":"2020-08-14T06:45:41.000Z"' in result_stdout_list[12]
+assert replica_index_key in result_stdout_list[9]
+assert replica_index_key in result_stdout_list[15]
+assert '"create_timestamp":"2020-08-14T06:45:41.000Z"' in result_stdout_list[9]
+assert '"create_timestamp":"2020-08-14T06:45:41.000Z"' in result_stdout_list[15]
 
-assert '"location_constraint":"us-east-1"' in result_stdout_list[7]
-assert '"location_constraint":"us-east-1"' in result_stdout_list[12]
+assert '"location_constraint":"us-east-1"' in result_stdout_list[9]
+assert '"location_constraint":"us-east-1"' in result_stdout_list[15]
 
 # Delete the key-values from both primary and replica indexes
 status, res = CORTXS3KVApi(config).delete(primary_bucket_list_index_oid, primary_index_key)
@@ -510,14 +512,12 @@ result.command_response_should_have(success_msg_metadata_index)
 result_stdout_list = (result.status.stdout).split('\n')
 
 # Validate the dry_run output
-assert replica_list_index_key in result_stdout_list[12]
-assert primary_list_index_key not in result_stdout_list[13]
-assert result_stdout_list[13] == ''
-assert replica_list_index_value in result_stdout_list[12]
+assert replica_list_index_key in result_stdout_list[15]
+assert primary_list_index_key not in result_stdout_list[16]
+assert replica_list_index_value in result_stdout_list[15]
 
-assert primary_index_key not in result_stdout_list[13]
-assert result_stdout_list[13] == ''
-assert 'Primary index content for Bucket metadata index' in result_stdout_list[14]
+assert primary_index_key not in result_stdout_list[16]
+assert 'Primary index content for Bucket metadata index' in result_stdout_list[17]
 
 # Delete the key-values from both primary and replica indexes
 status, res = CORTXS3KVApi(config).delete(primary_bucket_list_index_oid, primary_list_index_key)

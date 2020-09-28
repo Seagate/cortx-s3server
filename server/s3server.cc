@@ -146,7 +146,7 @@ static void s3_signal_cb(evutil_socket_t sig, short events, void *user_data) {
   s3_log(S3_LOG_INFO, "", "Entering\n");
   s3_log(S3_LOG_INFO, "", "About to trigger shutdown\n");
   s3_kickoff_graceful_shutdown(1);
-  s3_log(S3_LOG_INFO, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return;
 }
 
@@ -632,13 +632,18 @@ void log_resource_limits() {
   struct rlimit rlimit;
   rc = getrlimit(RLIMIT_NOFILE, &rlimit);
   if (rc == 0) {
-    s3_log(S3_LOG_INFO, "", "Open file limits: soft = %ld hard = %ld\n",
+    s3_log(S3_LOG_DEBUG, "", "Open file limits: soft = %ld hard = %ld\n",
            rlimit.rlim_cur, rlimit.rlim_max);
+  } else {
+    s3_log(S3_LOG_ERROR, "", "getrlimit failed to set option RLIMIT_NOFILE\n");
   }
   rc = getrlimit(RLIMIT_CORE, &rlimit);
   if (rc == 0) {
-    s3_log(S3_LOG_INFO, "", "Core file size limits: soft = %ld hard = %ld\n",
+    s3_log(S3_LOG_DEBUG, "", "Core file size limits: soft = %ld hard = %ld\n",
            rlimit.rlim_cur, rlimit.rlim_max);
+  } else {
+    s3_log(S3_LOG_WARN, "",
+           "getrlimit call failed to set option RLIMIT_CORE\n");
   }
 }
 

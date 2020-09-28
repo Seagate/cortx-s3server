@@ -91,6 +91,23 @@ class S3RecoveryBase:
             elif log_level == "critical":
                 self.logger.critical(msg)
 
+    def check_response(self, status, request, response, index_id, key):
+        """
+        Validate the response received from s3server
+
+        :status: Boolean response flag which determine success/failure of api.
+        :response: Success/Error response data received from the server.
+
+        """
+        if (status):
+            self.s3recovery_log("info", "Operation "+ request +" KV for key " + key + " on index "+ index_id + " success")
+        elif (response.get_error_status() == 404):
+            self.s3recovery_log("info", "Key " + key + " does not exist in index "+ index_id)
+        else:
+            self.s3recovery_log("error", "Operation "+ request +" KV for key " + key + " on index "+ index_id+ " failed")
+            self.s3recovery_log("error", "Response code "+ response.get_error_status())
+            self.s3recovery_log("error", "Error reason "+ response.get_error_reason())
+
     def put_kv(self, index_id, key, value):
         """
         Puts the given key-value to corresponding index-id
@@ -100,20 +117,8 @@ class S3RecoveryBase:
         :value: Value to be inserted
 
         """
-        self.kv_api.put(index_id, key, value)
-
-    def perform_cleanup(self, key, index_id, index_id_replica):
-        """
-        Clean KV from indexid and its replica
-
-        :key: Key which needs to be cleaned up
-        :index_id: Index Id for which KV needs to be cleaned
-        :index_id_replica: Replica Index Id for which KV needs to be cleaned
-
-        """
-        self.kv_api.delete(index_id, key)
-        self.kv_api.delete(index_id_replica, key)
-
+        status, response = self.kv_api.put(index_id, key, value)
+        self.check_response(status, "put", response, index_id, key)
 
     def perform_validation(self, key, data_to_restore, item_replica, union_result):
         """
@@ -235,9 +240,13 @@ class S3RecoveryBase:
             replica_list = list(replica.keys())
 
         if (self.log_result):
-            self.s3recovery_log("info", "\nPrimary index content for {} \n".format(index_name))
+            self.s3recovery_log("info", '#' * 60)
+            self.s3recovery_log("info", "Primary index content for {}".format(index_name))
+            self.s3recovery_log("info", '#' * 60 + "\n")
             self.print_content(data)
-            self.s3recovery_log("info", "\nReplica index content for {} \n".format(index_name))
+            self.s3recovery_log("info", '#' * 60)
+            self.s3recovery_log("info", "Replica index content for {}   ".format(index_name))
+            self.s3recovery_log("info", '#' * 60 + "\n")
             self.print_content(replica)
 
         result_list = data_list
@@ -276,7 +285,7 @@ class S3RecoveryBase:
         else:
             self.s3recovery_log("info", "Empty\n")
 
-    def dry_run(self, index_name, index_id, index_id_replica, union_result, recover_flag = False):
+    def dry_run(self, index_name, index_id, index_id_replica, union_result):
         """
         Gets latest value from index and its replica
 
@@ -297,12 +306,10 @@ class S3RecoveryBase:
 
             self.perform_validation(key, metadata_value, replica_value, union_result)
 
-            # Perform cleanup for existing indices during recovery
-            if (recover_flag):
-                self.perform_cleanup(key, index_id, index_id_replica)
-
         if (self.log_result):
-            self.s3recovery_log("info", "\nData recovered from both indexes for {} \n".format(index_name))
+            self.s3recovery_log("info", '#' * 60)
+            self.s3recovery_log("info", "Data recovered from both indexes for {}".format(index_name))
+            self.s3recovery_log("info", '#' * 60 + "\n")
             self.print_content(union_result)
 
         return union_result
