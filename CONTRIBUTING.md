@@ -6,7 +6,6 @@
    * [1.3.1 Clone the cortx-s3server repository](#131-Clone-the-cortx-s3server-repository)
    * [1.3.2 Code Commits](#132-Code-commits)
    * [1.3.3 Create a Pull Request](#133-Create-a-Pull-Request)
-- [1.4 Run Jenkins and System Tests](#14-Run-Jenkins-and-System-Tests)
 - [FAQs](FAQs)
 
 Contributing to the S3 Server repository is a three-step process where you'll need to:
@@ -32,13 +31,10 @@ Before you set up your GitHub, you'll need to
    1. Copy the public key: `id_rsa.pub`. By default, your public key is located at `/root/.ssh/id_rsa.pub`
    2. Navigate to [GitHub SSH key settings](https://github.com/settings/keys) on your GitHub account.
 
-      :page_with_curl:**Note:** Ensure that you've set your Seagate Email ID as the Primary Email Address associated with your GitHub Account. SSO will not work if you do not set  your Seagate Email ID as your Primary Email Address.
+      :page_with_curl:**Note:** Ensure that you've set your Email ID as the Primary Email Address associated with your GitHub Account. 
 
-   3. Paste the SSH key you generated in Step 1 and select *Enable SSO*.
-   4. Click **Authorize** to authorize SSO for your SSH key.
-   5. [Create a Personal Access Token or PAT](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
-
-    :page_with_curl:**Note:** Ensure that you have enabled SSO for your PAT.
+   3. Paste the SSH key you generated in Step 1 and select *Add-ssh-key*.
+   4. [Create a Personal Access Token or PAT](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
 
    </p>
     </details>
@@ -98,7 +94,7 @@ You'll need to **Fork** the cortx-s3server repository to clone it into your priv
 2. Click **Fork**
 3. Run the following commands in Shell:
 
-   `$ git clone git@github.com:"your-github-id"/cortx-s3server.git`
+   `git clone --recursive https://github.com/Seagate/cortx-s3server.git -b main`
 
 4. Check out to the “main” branch using:
 
@@ -153,10 +149,6 @@ You can make changes to the code and save them in your files.
 4. Click **Create pull request** to create the pull request.
 5. Add reviewers to your pull request to review and provide feedback on your changes.
 
-## 1.4 Run Jenkins and System Tests
-
-Creating a pull request automatically triggers Jenkins jobs and System tests. To familiarize yourself with jenkins, please visit the [Jenkins wiki page](https://en.wikipedia.org/wiki/Jenkins_(software)).
-
 ## FAQs
 
 **Q.** How do I rebase my local branch to the latest main branch?
@@ -179,11 +171,8 @@ We thank you for stopping by to check out the CORTX Community. We are fully dedi
 
 ### Contribute to CORTX S3 Server
 
-Please contribute to the CORTX Open Source initiative and join our movement to make data storage better, efficient, and more accessible.
+Please contribute to the [CORTX Open Source](https://github.com/Seagate/cortx/blob/main/CONTRIBUTING.md) initiative and join our movement to make data storage better, efficient, and more accessible.
 
 ### Reach Out to Us
 
-You can reach out to us with your questions, feedback, and comments through our CORTX Communication Channels:
-
-- Join our CORTX-Open Source Slack Channel to interact with your fellow community members and gets your questions answered. [![Slack Channel](https://img.shields.io/badge/chat-on%20Slack-blue)](https://join.slack.com/t/cortxcommunity/shared_invite/zt-femhm3zm-yiCs5V9NBxh89a_709FFXQ?)
-- If you'd like to contact us directly, drop us a mail at opensource@seagate.com.
+Please refer to the [Support](SUPPORT.md) section for reaching out to us.

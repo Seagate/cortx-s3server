@@ -1,5 +1,5 @@
 [![ license](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/Seagate/EOS-Sandbox/blob/master/LICENSE) 
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/126c12088f864210931bd550f53e8001)](https://www.codacy.com?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Seagate/cortx-s3server&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/9ceb622a6e4d4d4e9d908a6183d42067)](https://app.codacy.com/gh/Seagate/cortx-s3server?utm_source=github.com&utm_medium=referral&utm_content=Seagate/cortx-s3server&utm_campaign=Badge_Grade)
 ![codacy-analysis-cli](https://github.com/Seagate/EOS-Sandbox/workflows/codacy-analysis-cli/badge.svg)
 
 # CORTX-S3 Server
@@ -18,9 +18,9 @@ We welcome all Source Code and Documentation contributions to the CORTX-S3 Serve
 
 ## CORTX Community
 
-We are excited about your interest in CORTX and hope you will join us. Refer to the [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/main/doc/CORTXContributionGuide.md) that hosts all information about community values, code of conduct, how to contribute code and documentation, community and code style guide, and how to reach out to us. 
+We are excited about your interest in CORTX and hope you will join us. Refer to the [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/main/CONTRIBUTING.md) that hosts all information about community values, code of conduct, how to contribute code and documentation, community and code style guide, and how to reach out to us. 
 
-We take community very seriously and we are committed to creating a community built on respectful interactions and inclusivity as documented in our [Code of Conduct](https://github.com/Seagate/cortx/blob/main/CODE_OF_CONDUCT.md).
+We take community very seriously and we are committed to creating a community built on respectful interactions and inclusivity as documented in our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Reach Out To Us
 
