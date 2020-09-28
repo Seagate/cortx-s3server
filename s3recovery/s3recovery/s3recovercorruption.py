@@ -25,6 +25,8 @@ import dateutil.parser
 from s3recovery.s3recoverybase import S3RecoveryBase
 from s3recovery.config import Config
 
+METADATA_INDEX_DELIMITER = '/'
+
 class S3RecoverCorruption(S3RecoveryBase):
     def __init__(self):
         super(S3RecoverCorruption, self).__init__()
@@ -53,8 +55,8 @@ class S3RecoverCorruption(S3RecoveryBase):
         data_as_dict = self.parse_index_list_response(list_index_response)
         key_list = list(data_as_dict.keys())
         for key in key_list:
-            if (key.count('/') == 1):
-                key_part = key.split('/')[1]
+            if (key.count(METADATA_INDEX_DELIMITER) == 1):
+                key_part = key.split(METADATA_INDEX_DELIMITER)[1]
                 if key_part not in self.common_keys:
                     status, response = self.kv_api.delete(index_id, key)
                     super(S3RecoverCorruption, self).check_response(status, "delete", response, index_id, key)
@@ -102,8 +104,8 @@ class S3RecoverCorruption(S3RecoveryBase):
         self.s3recovery_log("info", "Recovering bucket metadata table")
         self.s3recovery_log("info", '#' * 60 + "\n")
         for key, value in self.metadata_result.items():
-            if (key.count('/') == 1):
-                if key.split('/')[1] in self.common_keys:
+            if (key.count(METADATA_INDEX_DELIMITER) == 1):
+                if key.split(METADATA_INDEX_DELIMITER)[1] in self.common_keys:
                     self.s3recovery_log("info", "\nRecovering {} {}".format(key,value))
                     super(S3RecoverCorruption, self).put_kv(metadata_index_id, key, value)
                     super(S3RecoverCorruption, self).put_kv(metadata_index_id_replica, key, value)
@@ -129,8 +131,8 @@ class S3RecoverCorruption(S3RecoveryBase):
         global_metadata_list = list(self.metadata_result.keys())
 
         for item in global_metadata_list:
-            if (item.count('/') == 1):
-                entry = item.split('/')[1]
+            if (item.count(METADATA_INDEX_DELIMITER) == 1):
+                entry = item.split(METADATA_INDEX_DELIMITER)[1]
                 if (entry in global_key_list):
                     self.common_keys.append(entry)
 
