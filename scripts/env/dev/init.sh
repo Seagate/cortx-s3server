@@ -178,6 +178,9 @@ then
   ./s3motr-build-depencies.sh
 fi
 
+# configure backgrounddelete ST dependencies
+./setup_backgrounddelete_config.sh
+
 # Update ansible/hosts file with local ip
 cp -f ./hosts ./hosts_local
 sed -i "s/^xx.xx.xx.xx/127.0.0.1/" ./hosts_local
