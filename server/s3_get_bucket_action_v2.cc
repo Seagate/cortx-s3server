@@ -24,7 +24,6 @@
 #include "base64.h"
 #include "s3_error_codes.h"
 #include "s3_get_bucket_action_v2.h"
-#include "s3_object_list_v2_response.h"
 
 // TODO:
 // This is partial implementation of List Objects V2 API.
@@ -39,7 +38,7 @@ S3GetBucketActionV2::S3GetBucketActionV2(
     std::shared_ptr<S3CommonUtilities::S3Obfuscator> token_obfuscator)
     : S3GetBucketAction(req, motr_api, motr_kvs_reader_factory,
                         bucket_meta_factory, object_meta_factory),
-      request_fetch_owner(true),
+      request_fetch_owner(false),
       request_cont_token(""),
       request_start_after("") {
   set_object_list_response(std::make_shared<S3ObjectListResponseV2>(

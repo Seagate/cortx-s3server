@@ -135,7 +135,7 @@ class AwsTest(S3PyCliTest):
         self.bucket_name = bucket_name
         cmd = "aws s3api " + "list-objects " + "--bucket " + bucket_name
         if(max_keys is not None):
-           self.max_keys = max_keys;
+           self.max_keys = max_keys
            cmd = cmd + " --max-keys " + max_keys
         self.with_cli(cmd)
         return self
@@ -149,14 +149,14 @@ class AwsTest(S3PyCliTest):
             cmd = cmd + " --delimiter " + kwargs_options['delimiter']
         if("page-size" in kwargs_options.keys()):
            self.max_keys = kwargs_options['page-size']
-           cmd = cmd + " --page-size " + str(max_keys)
+           cmd = cmd + " --page-size " + str(self.max_keys)
         if("start-after" in kwargs_options.keys()):
             cmd = cmd + " --start-after " + kwargs_options['start-after']
         if("starting-token" in kwargs_options.keys()):
             cmd = cmd + " --starting-token " + kwargs_options['starting-token']
         if("max-items" in kwargs_options.keys()):
             cmd = cmd + " --max-items " + str(kwargs_options['max-items'])
-        
+
         self.with_cli(cmd)
         return self
 

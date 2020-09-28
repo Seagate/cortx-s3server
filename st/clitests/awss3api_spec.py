@@ -31,8 +31,8 @@ from aclvalidation import AclTest
 # Config.request_timeout = 300 * 1000
 # Config.socket_timeout = 300 * 1000
 
-# Transform AWS CLI text output into object(dictionary)
-# with content: 
+# Transform AWS CLI text output into an object(dictionary)
+# with content:
 # {
 #   "prefix":<list of common prefix>,
 #   "keys": <list of regular keys>,
@@ -43,18 +43,18 @@ def get_aws_cli_object(raw_aws_cli_output):
     raw_lines = raw_aws_cli_output.split('\n')
     common_prefixes = []
     content_keys = []
-    for i in range(len(raw_lines)):
-        if (raw_lines[i].startswith("COMMONPREFIXES")):
+    for i, item in enumerate(raw_lines):
+        if (item.startswith("COMMONPREFIXES")):
             # E.g. COMMONPREFIXES  quax/
-            line = raw_lines[i].split('\t')
+            line = item.split('\t')
             common_prefixes.append(line[1])
-        elif (raw_lines[i].startswith("CONTENTS")):
+        elif (item.startswith("CONTENTS")):
             # E.g. CONTENTS\t"98b5e3f766f63787ea1ddc35319cedf7"\tasdf\t2020-09-25T11:42:54.000Z\t3072\tSTANDARD
-            line = raw_lines[i].split('\t')
+            line = item.split('\t')
             content_keys.append(line[2])
-        elif (raw_lines[i].startswith("NEXTTOKEN")):
+        elif (item.startswith("NEXTTOKEN")):
             # E.g. NEXTTOKEN       eyJDb250aW51YXRpb25Ub2tlbiI6IG51bGwsICJib3RvX3RydW5jYXRlX2Ftb3VudCI6IDN9
-            line = raw_lines[i].split('\t')
+            line = item.split('\t')
             cli_obj["next_token"] = line[1]
         else:
             continue
