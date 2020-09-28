@@ -69,6 +69,7 @@ public class LdapConnectionManager {
             String msg = "Failed to initialise LDAP.\n" + ex.toString();
             if (retryLdapConnection(ex.getResultCode())) {
               LOGGER.error(msg);
+              LOGGER.debug(msg);
               IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
                           "LDAP exception occurred",
                           String.format("\"cause\": \"%s\"", ex.getCause()));
@@ -136,6 +137,7 @@ public class LdapConnectionManager {
         }
         catch (LDAPException e) {
           LOGGER.error("LDAPException Cause: " + e.getCause() + ". Message: " +
+          LOGGER.debug("LDAPException Cause: " + e.getCause() + ". Message: " +
                        e.getMessage());
           IEMUtil.log(IEMUtil.Level.FATAL, IEMUtil.LDAP_EX,
                       "LDAP exception occurred",
