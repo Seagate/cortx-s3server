@@ -240,9 +240,13 @@ class S3RecoveryBase:
             replica_list = list(replica.keys())
 
         if (self.log_result):
-            self.s3recovery_log("info", "\nPrimary index content for {} \n".format(index_name))
+            self.s3recovery_log("info", '#' * 60)
+            self.s3recovery_log("info", "Primary index content for {}".format(index_name))
+            self.s3recovery_log("info", '#' * 60 + "\n")
             self.print_content(data)
-            self.s3recovery_log("info", "\nReplica index content for {} \n".format(index_name))
+            self.s3recovery_log("info", '#' * 60)
+            self.s3recovery_log("info", "Replica index content for {}   ".format(index_name))
+            self.s3recovery_log("info", '#' * 60 + "\n")
             self.print_content(replica)
 
         result_list = data_list
@@ -303,7 +307,9 @@ class S3RecoveryBase:
             self.perform_validation(key, metadata_value, replica_value, union_result)
 
         if (self.log_result):
-            self.s3recovery_log("info", "\nData recovered from both indexes for {} \n".format(index_name))
+            self.s3recovery_log("info", '#' * 60)
+            self.s3recovery_log("info", "Data recovered from both indexes for {}".format(index_name))
+            self.s3recovery_log("info", '#' * 60 + "\n")
             self.print_content(union_result)
 
         return union_result
