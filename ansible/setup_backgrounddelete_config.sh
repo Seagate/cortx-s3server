@@ -49,7 +49,7 @@ systemctl start rabbitmq-server
 systemctl enable rabbitmq-server
 
 # Create a user (In this case user is cortx-s3 with password as password)
-rabbitmquser=`rabbitmqctl list_users | grep cortx-s3`
+rabbitmquser=`rabbitmqctl list_users | awk '/cortx-s3/ {print}'`
 
 if [ -z "$rabbitmquser" ]
 then
