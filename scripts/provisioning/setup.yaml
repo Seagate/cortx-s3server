@@ -26,7 +26,6 @@ s3server:
     args:
       - --s3backgrounddelete
       - --s3recoverytool
-      - --setlogrotate
   init:
     script: /opt/seagate/cortx/s3/bin/s3_setup
     args: null
@@ -35,6 +34,7 @@ s3server:
     args:
       - --configldap
       - --createauthjkspassword
+      - --setlogrotate
   reset:
     script: /opt/seagate/cortx/s3/bin/s3_setup
     args:
