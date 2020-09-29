@@ -80,6 +80,9 @@ sed -i "s/ldappasswd:.*/ldappasswd: \'$ldap_admin_pwd\'/g" ./s3iamcli_test_confi
 #Using Python 3.6 version for Running System Tests
 PythonV="python3.6"
 
+echo "`date -u`: Running backgrounddelete_spec.py"
+$PythonV backgrounddelete_spec.py
+
 echo "`date -u`: Running auth_spec.py..."
 $PythonV auth_spec.py
 

@@ -151,9 +151,6 @@ void S3RequestObject::populate_and_log_audit_info() {
     audit_log_obj.set_error_code(error_code_str);
   }
 
-  // TODO
-  // audit_log_obj.set_object_size(length);
-
   audit_log_obj.set_bucket_name(bucket_name);
   audit_log_obj.set_remote_ip(get_header_value("X-Forwarded-For"));
   audit_log_obj.set_bytes_received(get_content_length());

@@ -79,9 +79,9 @@ def load_and_update_config(access_key_value, secret_key_value):
 
     with open(bgdelete_config_file, 'r') as f:
             config = yaml.safe_load(f)
-            config['cortx_s3']['access_key'] = access_key_value
-            config['cortx_s3']['secret_key'] = secret_key_value
-            config['cortx_s3']['daemon_mode'] = "False"
+            config['cortx_s3']['background_account_access_key'] = access_key_value
+            config['cortx_s3']['background_account_secret_key'] = secret_key_value
+            config['cortx_s3']['daemon_mode'] = False
             config['leakconfig']['leak_processing_delay_in_mins'] = 0
             config['leakconfig']['version_processing_delay_in_mins'] = 0
 
