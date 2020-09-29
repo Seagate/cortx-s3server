@@ -556,6 +556,7 @@ void S3DeleteBucketAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
+    request->set_bytes_sent(response_xml.length());
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (delete_successful) {
@@ -567,6 +568,7 @@ void S3DeleteBucketAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
+    request->set_bytes_sent(response_xml.length());
     request->set_out_header_value("Retry-After", "1");
     request->send_response(error.get_http_status_code(), response_xml);
   }

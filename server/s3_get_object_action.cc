@@ -459,6 +459,7 @@ void S3GetObjectAction::send_data_to_client() {
       length = requested_content_length - data_sent_to_client;
     }
     data_sent_to_client += length;
+    request->set_bytes_sent(data_sent_to_client);
     s3_log(S3_LOG_DEBUG, request_id, "Sending %zu bytes to client.\n", length);
     request->send_reply_body(data + read_data_start_offset, length);
     s3_perf_count_outcoming_bytes(length);

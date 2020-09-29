@@ -350,6 +350,7 @@ void S3GetMultipartPartAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
+    request->set_bytes_sent(response_xml.length());
     if (get_s3_error_code() == "ServiceUnavailable") {
       request->set_out_header_value("Retry-After", "1");
     }
@@ -366,6 +367,7 @@ void S3GetMultipartPartAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
     request->set_out_header_value("Content-Type", "application/xml");
+    request->set_bytes_sent(response_xml.length());
     s3_log(S3_LOG_DEBUG, request_id, "Object list response_xml = %s\n",
            response_xml.c_str());
 
@@ -376,6 +378,7 @@ void S3GetMultipartPartAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
+    request->set_bytes_sent(response_xml.length());
 
     request->send_response(error.get_http_status_code(), response_xml);
   }

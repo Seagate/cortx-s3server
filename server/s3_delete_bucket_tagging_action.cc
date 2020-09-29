@@ -87,6 +87,7 @@ void S3DeleteBucketTaggingAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
+    request->set_bytes_sent(response_xml.length());
 
     if (get_s3_error_code() == "ServiceUnavailable" ||
         get_s3_error_code() == "InternalError") {
