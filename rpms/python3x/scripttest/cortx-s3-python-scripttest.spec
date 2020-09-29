@@ -25,7 +25,6 @@ Version:	1.3.0
 Release:	18%{?dist}
 Summary:	Helper library to test cmd-line scripts
 
-Group:		
 License:	MIT
 URL:		http://pypi.python.org/pypi/ScriptTest
 Source0:	https://github.com/pypa/scripttest/archive/1.3.0.tar.gz
