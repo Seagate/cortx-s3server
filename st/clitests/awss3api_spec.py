@@ -43,7 +43,7 @@ def get_aws_cli_object(raw_aws_cli_output):
     raw_lines = raw_aws_cli_output.split('\n')
     common_prefixes = []
     content_keys = []
-    for i, item in enumerate(raw_lines):
+    for _, item in enumerate(raw_lines):
         if (item.startswith("COMMONPREFIXES")):
             # E.g. COMMONPREFIXES  quax/
             line = item.split('\t')
