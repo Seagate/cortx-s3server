@@ -224,7 +224,7 @@ class ACLValidation {
       return false;
     }
 
-    if (ldapResults.hasMore()) {
+    if (ldapResults != null && ldapResults.hasMore()) {
       try {
         LDAPEntry entry = ldapResults.next();
         account.setName(
@@ -252,3 +252,4 @@ class ACLValidation {
     return true;
   }
 }
+

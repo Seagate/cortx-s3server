@@ -56,7 +56,7 @@ public class FedUserImpl implements FedUserDAO {
         } catch (LDAPException ex) {
             throw new DataAccessException("Failed to find federated user details.\n" + ex);
         }
-        if (ldapResults.hasMore()) {
+        if (ldapResults != null && ldapResults.hasMore()) {
             LDAPEntry entry;
             try {
                 entry = ldapResults.next();
@@ -91,3 +91,4 @@ public class FedUserImpl implements FedUserDAO {
         }
     }
 }
+

@@ -80,7 +80,7 @@ public class RoleImpl implements RoleDAO {
             throw new DataAccessException("Failed to find the role.\n" + ex);
         }
 
-        if (ldapResults.hasMore()) {
+        if (ldapResults != null && ldapResults.hasMore()) {
             try {
                 LDAPEntry entry = ldapResults.next();
                 role.setRoleId(entry.getAttribute(
@@ -142,7 +142,7 @@ public class RoleImpl implements RoleDAO {
                     + account.getName() + " pathPrefix: " + pathPrefix);
             throw new DataAccessException("Failed to find all roles.\n" + ex);
         }
-
+        if (ldapResults != null) {
         while (ldapResults.hasMore()) {
             role = new Role();
             LDAPEntry entry;
@@ -168,7 +168,7 @@ public class RoleImpl implements RoleDAO {
 
             roles.add(role);
         }
-
+        }
         Role[] roleList = new Role[roles.size()];
         return (Role[]) roles.toArray(roleList);
     }
@@ -233,3 +233,4 @@ public class RoleImpl implements RoleDAO {
         }
     }
 }
+

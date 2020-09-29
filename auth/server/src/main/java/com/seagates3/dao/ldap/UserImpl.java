@@ -88,7 +88,7 @@ public class UserImpl implements UserDAO {
           throw new DataAccessException("Failed to find user details.\n" + ex);
         }
 
-        if (ldapResults.hasMore()) {
+        if (ldapResults != null && ldapResults.hasMore()) {
             LDAPEntry entry;
 
             try {
@@ -191,7 +191,7 @@ public class UserImpl implements UserDAO {
             throw new DataAccessException("Failed to find user details.\n" + e);
         }
 
-        if (ldapResult.hasMore()) {
+        if (ldapResult != null && ldapResult.hasMore()) {
           LDAPEntry ldapEntry;
             try {
               ldapEntry = ldapResult.next();
@@ -265,6 +265,7 @@ public class UserImpl implements UserDAO {
                                           ex);
         }
         int ldapResultCount = 0;
+        if (ldapResults != null) {
         while (ldapResults.hasMore()) {
             user = new User();
             LDAPEntry entry;
@@ -295,7 +296,7 @@ public class UserImpl implements UserDAO {
             users.add(user);
             ldapResultCount++;
         }
-
+        }
         User[] userList = new User[users.size()];
         return (User[]) users.toArray(userList);
     }
@@ -440,7 +441,7 @@ public class UserImpl implements UserDAO {
           LOGGER.error("Failed to find details of user: " + userId);
           throw new DataAccessException("Failed to find user details.\n" + ex);
         }
-        if (ldapResults.hasMore()) {
+        if (ldapResults != null && ldapResults.hasMore()) {
           LDAPEntry entry;
           try {
             entry = ldapResults.next();
@@ -497,7 +498,7 @@ public class UserImpl implements UserDAO {
         LOGGER.error("Failed to find details of user: " + arnToFind);
         throw new DataAccessException("Failed to find user details.\n" + ex);
         }
-        if (ldapResults.hasMore()) {
+        if (ldapResults != null && ldapResults.hasMore()) {
           LOGGER.info("inside search loop");
           LDAPEntry entry;
           try {
@@ -528,4 +529,5 @@ public class UserImpl implements UserDAO {
         return user;
     }
  }
+
 

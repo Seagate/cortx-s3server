@@ -67,7 +67,7 @@ public class SAMLProviderImpl implements SAMLProviderDAO {
         }
 
         LDAPEntry entry;
-        if (ldapResults.hasMore()) {
+        if (ldapResults != null && ldapResults.hasMore()) {
             try {
                 entry = ldapResults.next();
             } catch (LDAPException ex) {
@@ -132,7 +132,7 @@ public class SAMLProviderImpl implements SAMLProviderDAO {
         }
 
         LDAPEntry entry;
-        if (ldapResults.hasMore()) {
+        if (ldapResults != null && ldapResults.hasMore()) {
             try {
                 entry = ldapResults.next();
             } catch (LDAPException ex) {
@@ -188,7 +188,7 @@ public class SAMLProviderImpl implements SAMLProviderDAO {
         } catch (LDAPException ex) {
             throw new DataAccessException("Failed to find IDPs.\n" + ex);
         }
-
+        if (ldapResults != null) {
         while (ldapResults.hasMore()) {
             samlProvider = new SAMLProvider();
             LDAPEntry entry;
@@ -212,7 +212,7 @@ public class SAMLProviderImpl implements SAMLProviderDAO {
 
             samlProviders.add(samlProvider);
         }
-
+        }
         SAMLProvider[] samlProviderList = new SAMLProvider[samlProviders.size()];
         return (SAMLProvider[]) samlProviders.toArray(samlProviderList);
     }
@@ -239,7 +239,7 @@ public class SAMLProviderImpl implements SAMLProviderDAO {
             ldapResults = LDAPUtils.search(LDAPUtils.getBaseDN(),
                     LDAPConnection.SCOPE_SUB, filter, attrs);
 
-            if (ldapResults.hasMore()) {
+            if (ldapResults != null && ldapResults.hasMore()) {
                 return true;
             }
         } catch (LDAPException ex) {
@@ -337,3 +337,4 @@ public class SAMLProviderImpl implements SAMLProviderDAO {
         return accountDAO.findByID(accountId);
     }
 }
+
