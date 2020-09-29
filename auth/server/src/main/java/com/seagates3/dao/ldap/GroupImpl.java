@@ -274,3 +274,4 @@ public class GroupImpl implements GroupDAO {
       return (ALL_USERS_GROUP_URI.equals(uri)) ? true : false;
     }
 }
+

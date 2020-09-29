@@ -337,3 +337,4 @@ public class SAMLProviderImpl implements SAMLProviderDAO {
         return accountDAO.findByID(accountId);
     }
 }
+
