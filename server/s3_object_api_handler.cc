@@ -64,13 +64,11 @@ void S3ObjectAPIHandler::create_action() {
         case S3HttpVerb::POST:
           if (request->has_query_param_key("uploadid")) {
             // Complete multipart upload
-            request->set_object_size(request->get_data_length());
             request->set_action_str("PostComplete");
             action = std::make_shared<S3PostCompleteAction>(request);
             s3_stats_inc("post_multipart_complete_request_count");
           } else {
             // Initiate Multipart
-            request->set_object_size(request->get_data_length());
             request->set_action_str("PostMultipart");
             action = std::make_shared<S3PostMultipartObjectAction>(request);
             s3_stats_inc("post_multipart_initiate_request_count");
