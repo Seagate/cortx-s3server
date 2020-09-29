@@ -38,3 +38,6 @@ To create bazel package, perform below steps:
 3) Now your VM have right version of openjdk (1.8.0_242) installed.
 4) Run the <cortx-s3server>/rpms/bazel/buildrpm.sh script for bazel.
 
+s3cmd:
+Currently we are using 1.6.1 version of s3cmd with our custom patch
+To build s3cmd package, please make sure you have pytho2.7 version available on your development environment.

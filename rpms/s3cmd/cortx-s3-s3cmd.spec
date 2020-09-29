@@ -31,11 +31,11 @@
 
 %{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
-%global commit 4801552f441cf12dec53099a6abc2b8aa36ccca4
-%global shortcommit 4801552
+%global commit 4c2489361d353db1a1815172a6143c8f5a2d1c40
+%global shortcommit 4c24893
 
 Name:		s3cmd
-Version:	2.0.2
+Version:	1.6.1
 Release:	1%{?dist}
 Summary:	Tool for accessing Amazon Simple Storage Service
 
@@ -70,20 +70,17 @@ s3cmd is a CLI based s3-client.
 
 %install
 rm -rf $RPM_BUILD_ROOT
-S3CMD_PACKAGING=Yes python3.6 setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT
+S3CMD_PACKAGING=Yes python setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT%{_mandir}/man1
 install -m 644 s3cmd.1 $RPM_BUILD_ROOT%{_mandir}/man1
 
-
-%clean
-rm -rf $RPM_BUILD_ROOT
 
 
 %files
 %defattr(-,root,root,-)
 %{_bindir}/s3cmd
 %{_mandir}/man1/s3cmd.1*
-%{python3_sitelib}/S3
-%{python3_sitelib}/s3cmd*.egg-info
+%{python2_sitelib}/S3
+%{python2_sitelib}/s3cmd*.egg-info
 %doc NEWS README.md
 

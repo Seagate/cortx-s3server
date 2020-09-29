@@ -23,17 +23,17 @@ set -e
 OS_VERSION=$(cat /etc/os-release | grep -w VERSION_ID | cut -d '=' -f 2)
 SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
-# previously version was 1.6.1, commit version was 4c2489361d353db1a1815172a6143c8f5a2d1c40
-VERSION=2.0.2
-COMMIT_VER=4801552f441cf12dec53099a6abc2b8aa36ccca4
-SHORT_COMMIT_VER=4801552
+# previous build version was 2.0.2 and commit version was 4801552f441cf12dec53099a6abc2b8aa36ccca4
+VERSION=1.6.1
+COMMIT_VER=4c2489361d353db1a1815172a6143c8f5a2d1c40
+SHORT_COMMIT_VER=4c24893
 
 cd ~/rpmbuild/SOURCES/
 rm -rf s3cmd*
 
 git clone -b v${VERSION} http://github.com/s3tools/s3cmd s3cmd-${VERSION}-${SHORT_COMMIT_VER}
 cd s3cmd-${VERSION}-${SHORT_COMMIT_VER}
-git checkout 4801552f441cf12dec53099a6abc2b8aa36ccca4 -f
+git checkout 4c2489361d353db1a1815172a6143c8f5a2d1c40 -f
 cd ~/rpmbuild/SOURCES/
 tar -zcvf s3cmd-${VERSION}-${SHORT_COMMIT_VER}.tar.gz s3cmd-${VERSION}-${SHORT_COMMIT_VER}
 rm -rf s3cmd-${VERSION}-${SHORT_COMMIT_VER}
