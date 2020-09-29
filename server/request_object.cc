@@ -749,7 +749,7 @@ void RequestObject::send_response(int code, std::string body) {
   // If body not empty, write to response body.
   if (!body.empty()) {
     evbuffer_add(ev_req->buffer_out, body.c_str(), body.length());
-    bytes_sent = evbuffer_get_length(ev_req->buffer_out);
+
   } else if (out_headers_copy.find("Content-Length") ==
              out_headers_copy.end()) {  // Content-Length was already set for
                                         // this request, which could be. case
