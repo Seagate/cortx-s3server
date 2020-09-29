@@ -428,6 +428,7 @@ void S3GetBucketAction::send_response_to_s3_client() {
         request->get_user_id());
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
+    request->set_bytes_sent(response_xml.length());
     request->set_out_header_value("Content-Type", "application/xml");
     s3_log(S3_LOG_DEBUG, request_id, "Object list response_xml = %s\n",
            response_xml.c_str());

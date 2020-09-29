@@ -218,6 +218,10 @@ class RequestObject {
     request_error = req_error;
   }
 
+  void set_bytes_sent(size_t total_bytes_sent) {
+    bytes_sent = total_bytes_sent;
+  }
+
   /*
      Pause and resume will essentially stop and start attempting to read from
      the client socket.
