@@ -108,6 +108,7 @@ void S3ObjectAPIHandler::create_action() {
       // Perform operation on Object.
       switch (request->http_verb()) {
         case S3HttpVerb::HEAD:
+          request->set_object_size(request->get_data_length());
           request->set_action_str("HeadObject");
           action = std::make_shared<S3HeadObjectAction>(request);
           s3_stats_inc("head_object_request_count");

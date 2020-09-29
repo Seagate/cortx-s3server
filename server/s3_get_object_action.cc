@@ -112,6 +112,7 @@ void S3GetObjectAction::fetch_object_info_failed() {
 void S3GetObjectAction::validate_object_info() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   content_length = object_metadata->get_content_length();
+  request->set_object_size(content_length);
   // as per RFC last_byte_offset_to_read is taken to be equal to one less than
   // the content length in bytes.
   last_byte_offset_to_read =

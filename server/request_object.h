@@ -218,8 +218,8 @@ class RequestObject {
     request_error = req_error;
   }
 
-  void set_bytes_sent(size_t total_bytes_sent){
-      bytes_sent = total_bytes_sent;
+  void set_bytes_sent(size_t total_bytes_sent) {
+    bytes_sent = total_bytes_sent;
   }
 
   /*

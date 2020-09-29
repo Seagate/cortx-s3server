@@ -146,6 +146,8 @@ void S3GetBucketActionV2::send_response_to_s3_client() {
                   request->get_bucket_name());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->set_bytes_sent(response_xml.length());
 
     request->send_response(error.get_http_status_code(), response_xml);
