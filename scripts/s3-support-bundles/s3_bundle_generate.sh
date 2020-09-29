@@ -56,7 +56,6 @@ s3server_binary="/opt/seagate/cortx/s3/bin/s3server"
 s3_motr_dir="/var/motr/s3server-*"
 s3_core_dir="/var/crash"
 sys_auditlog_dir="/var/log/audit"
-s3_recovery_dir="/var/log/seagate/s3/s3recovery"
 
 # Create tmp folder with pid value to allow parallel execution
 pid_value=$$
@@ -71,6 +70,7 @@ s3_core_files="$tmp_dir/s3_core_files"
 s3_m0trace_files="$tmp_dir/s3_m0trace_files"
 first_s3_m0trace_file="$tmp_dir/first_s3_m0trace_file"
 m0trace_files_count=5
+s3_core_files_max_count=11
 
 # LDAP data
 ldap_dir="$tmp_dir/ldap"
@@ -98,19 +98,20 @@ s3server_logdir=`cat $s3server_config | grep "S3_LOG_DIR:" | cut -f2 -d: | sed -
 authserver_logdir=`cat $authserver_config | grep "logFilePath=" | cut -f2 -d'=' | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
 backgrounddelete_logdir=`cat $backgrounddelete_config | grep "logger_directory:" | cut -f2 -d: | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
 
-# Compress each s3server core file present in /var/crash directory if available
+# Compress latest s3 core with <s3_core_files_max_count> files from /var/crash directory if available
 # these compressed core file will be available in /tmp/s3_support_bundle_<pid>/s3_core_files directory
 compress_core_files(){
-  core_filename_pattern="*/core-s3server.*"
-  for file in $s3_core_dir/*
+  core_filename_pattern="core-s3server.*"
+  # get recent modified core files from directory
+  core_files_list=$(ls -tr "$s3_core_dir" | grep "$core_filename_pattern" | tail -"$s3_core_files_max_count")
+  cwd=$(pwd)
+  cd $s3_core_dir
+  for file in $core_files_list
   do
-    if [[ -f "$file" && $file == $core_filename_pattern ]];
-    then
-        mkdir -p $s3_core_files
-        file_name=$(basename "$file")      # e.g core-s3server.234678
-        gzip -f -c $file > $s3_core_files/"$file_name".gz 2> /dev/null
-    fi
+    mkdir -p "$s3_core_files"
+    gzip -f -c "$file" > "$s3_core_files"/"$file".gz 2> /dev/null
   done
+  cd $cwd
 }
 
 # Compress each m0trace files present in /var/motr/s3server-* directory if available
@@ -206,12 +207,6 @@ then
     args=$args" "$sys_auditlog_dir
 fi
 
-# Collect S3 recovery logs if available
-if [ -d "$s3_recovery_dir" ];
-then
-    args=$args" "$s3_recovery_dir
-fi
-
 # Collect s3 backgrounddelete logs if available
 if [ -d "$backgrounddelete_logdir" ];
 then
@@ -219,6 +214,7 @@ then
 fi
 
 # Collect s3server log directory if available
+# it will collect s3 recovery tool and s3 audit log folders as well
 if [ -d "$s3server_logdir" ];
 then
     args=$args" "$s3server_logdir
