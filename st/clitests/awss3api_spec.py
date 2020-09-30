@@ -149,7 +149,6 @@ result = AwsTest('Aws list-objects-v2: start-after and max-items').list_objects_
     .execute_test().command_is_successful().command_response_should_have("quax/t1/key.log")\
     .command_response_should_have("foo")
 
-#TODO print("Result=", str(result.status.stdout))
 # Process result set
 lv2_response = get_aws_cli_object(result.status.stdout)
 # Get next-token from lv2_response
@@ -159,9 +158,15 @@ if ("next_token" in lv2_response.keys()):
 # Get keys from lv2_response
 obj_keys =  lv2_response["keys"]
 
-# Assert for key existence
+# Assert for key existence in response
 assert "foo" in obj_keys, "Key \"foo\" is expected to be in the result"
 assert "quax/t1/key.log" in obj_keys, "Key \"quax/t1/key.log\" is expected to be in the result"
+# Assert for key non-existence in response
+# key 'boo' and other keys (from key 'quax/t3/key.log' onwards) should not be in the response
+assert "boo" not in obj_keys, "Key \"boo\" should not be in the result"
+# 'quax/t3/key.log' shouldn't be in response, as --max-items=2
+assert "quax/t3/key.log" not in obj_keys, "Key \"quax/t3/key.log\" should not be in the result due to pagination"
+
 assert Next_token is not None
 
 # Further list objects using --starting-token
