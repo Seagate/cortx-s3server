@@ -32,7 +32,7 @@ class S3AuditInfoLoggerRsyslogTcp : public S3AuditInfoLoggerBase {
                               std::string dest_host = "localhost",
                               int dest_port = 514, int retry_cnt = 5,
                               std::string message_id = "s3server-audit-logging",
-                              int facility = 20,  // Rsyslog facility "local4"
+                              int facility = 21,  // Rsyslog facility "local5"
                               int severity = 5,   // Rsyslog severity "notice"
                               std::string hostname = "-",  // no hostname
                               std::string app = "s3server",
