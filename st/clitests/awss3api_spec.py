@@ -31,6 +31,41 @@ from aclvalidation import AclTest
 # Config.request_timeout = 300 * 1000
 # Config.socket_timeout = 300 * 1000
 
+# Transform AWS CLI text output into an object(dictionary)
+# with content:
+# {
+#   "prefix":<list of common prefix>,
+#   "keys": <list of regular keys>,
+#   "next_token": <token>
+# }
+def get_aws_cli_object(raw_aws_cli_output):
+    cli_obj = {}
+    raw_lines = raw_aws_cli_output.split('\n')
+    common_prefixes = []
+    content_keys = []
+    for _, item in enumerate(raw_lines):
+        if (item.startswith("COMMONPREFIXES")):
+            # E.g. COMMONPREFIXES  quax/
+            line = item.split('\t')
+            common_prefixes.append(line[1])
+        elif (item.startswith("CONTENTS")):
+            # E.g. CONTENTS\t"98b5e3f766f63787ea1ddc35319cedf7"\tasdf\t2020-09-25T11:42:54.000Z\t3072\tSTANDARD
+            line = item.split('\t')
+            content_keys.append(line[2])
+        elif (item.startswith("NEXTTOKEN")):
+            # E.g. NEXTTOKEN       eyJDb250aW51YXRpb25Ub2tlbiI6IG51bGwsICJib3RvX3RydW5jYXRlX2Ftb3VudCI6IDN9
+            line = item.split('\t')
+            cli_obj["next_token"] = line[1]
+        else:
+            continue
+
+    if (common_prefixes is not None):
+        cli_obj["prefix"] = common_prefixes
+    if (content_keys is not None):
+        cli_obj["keys"] = content_keys
+
+    return cli_obj
+
 # Extract the upload id from response which has the following format
 # [bucketname    objecctname    uploadid]
 
@@ -98,6 +133,74 @@ AwsTest('Aws can get object with the same content-type').get_object("seagatebuck
 
 AwsTest('Aws can delete object').delete_object("seagatebucket", "3kfile")\
     .execute_test().command_is_successful()
+
+#*********** Verify aws s3api list-objects-v2 ***********
+# Setup objects in bucket
+obj_list = ['asdf', 'quax/t3/key.log', 'foo', 'quax/t1/key.log', 'boo', 'zoo/p2/key.log', 'zoo/p7/key.log']
+# Create above objects in existing bucket 'seagatebucket'
+for x in obj_list:
+    AwsTest(('Aws upload object:%s' % x)).put_object("seagatebucket", "1kfile", 1000, key_name=x)\
+        .execute_test().command_is_successful()
+
+# Start Listing objects using V2 scheme
+# Test #1: List objects using --start-after, --max-items and --starting-token
+list_v2_options = {"start-after":"boo", "max-items":2}
+result = AwsTest('Aws list-objects-v2: start-after and max-items').list_objects_v2("seagatebucket", **list_v2_options)\
+    .execute_test().command_is_successful().command_response_should_have("quax/t1/key.log")\
+    .command_response_should_have("foo")
+
+# Process result set
+lv2_response = get_aws_cli_object(result.status.stdout)
+# Get next-token from lv2_response
+if ("next_token" in lv2_response.keys()):
+    Next_token = lv2_response["next_token"]
+
+# Get keys from lv2_response
+obj_keys =  lv2_response["keys"]
+
+# Assert for key existence in response
+assert "foo" in obj_keys, "Key \"foo\" is expected to be in the result"
+assert "quax/t1/key.log" in obj_keys, "Key \"quax/t1/key.log\" is expected to be in the result"
+# Assert for key non-existence in response
+# key 'boo' and other keys (from key 'quax/t3/key.log' onwards) should not be in the response
+assert "boo" not in obj_keys, "Key \"boo\" should not be in the result"
+# 'quax/t3/key.log' shouldn't be in response, as --max-items=2
+assert "quax/t3/key.log" not in obj_keys, "Key \"quax/t3/key.log\" should not be in the result due to pagination"
+
+assert Next_token is not None
+
+# Further list objects using --starting-token
+list_v2_options = {"starting-token":Next_token}
+result = AwsTest('Aws list-objects-v2: starting-token').list_objects_v2("seagatebucket", **list_v2_options)\
+    .execute_test().command_is_successful().command_response_should_not_have("NextToken")
+# Process result set
+lv2_response = get_aws_cli_object(result.status.stdout)
+# next_token should not be in 'lv2_response' at this point
+if ("next_token" in lv2_response.keys()):
+    Next_token = lv2_response["next_token"]
+else:
+    Next_token = None
+# Get keys from lv2_response
+obj_keys =  lv2_response["keys"]
+# next-token should be None
+assert (Next_token is None)
+assert len(obj_keys) == 5, ("Expected 5, Actual = %d") & (len(obj_keys))
+
+# Test #2: List objects using --delimiter
+# List objects using delimiter="/"
+list_v2_options = {"delimiter":"/"}
+result = AwsTest('Aws list objects using V2 scheme').list_objects_v2("seagatebucket", **list_v2_options)\
+    .execute_test().command_is_successful()
+# Verify contents of the test output
+lv2_response = get_aws_cli_object(result.status.stdout)
+assert len(lv2_response["prefix"]) == 2, (("Expecting common prefixes:{quax/, zoo/}\n. Actual:%s") % str((lv2_response["prefix"])))
+assert len(lv2_response["keys"]) == 3, (("Expecting keys:{asdf, boo, foo} in the output. Actual:%s") % str((lv2_response["keys"])))
+
+# Delete all objects created for list-objects-v2 test
+for x in obj_list:
+    AwsTest(('Aws delete object:%s' % x)).delete_object("seagatebucket", x)\
+        .execute_test().command_is_successful()
+
 
 #******** Put Bucket Tag ********
 AwsTest('Aws can create bucket tag').put_bucket_tagging("seagatebucket", [{'Key': 'organization','Value': 'marketing'}])\

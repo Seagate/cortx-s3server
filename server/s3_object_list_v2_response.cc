@@ -66,8 +66,11 @@ std::string& S3ObjectListResponseV2::get_xml(
     response_xml += S3CommonUtilities::format_xml_string("EncodingType", "url");
   }
   response_xml += S3CommonUtilities::format_xml_string("KeyCount", key_count);
-  response_xml += S3CommonUtilities::format_xml_string("ContinuationToken",
-                                                       continuation_token);
+  // If 'continuation-token' specified in request, include it in the response
+  if (!continuation_token.empty()) {
+    response_xml += S3CommonUtilities::format_xml_string("ContinuationToken",
+                                                         continuation_token);
+  }
   response_xml += S3CommonUtilities::format_xml_string("MaxKeys", max_keys);
   // When is_truncated is true, the response should have
   // "NextContinuationToken".
