@@ -105,7 +105,10 @@ void S3ObjectAction::fetch_object_info() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3ObjectAction::fetch_object_info_success() { next(); }
+void S3ObjectAction::fetch_object_info_success() {
+  request->set_object_size(object_metadata->get_content_length());
+  next();
+}
 
 void S3ObjectAction::load_metadata() { fetch_bucket_info(); }
 
