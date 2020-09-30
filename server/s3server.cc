@@ -58,6 +58,7 @@
 #define MIN_RESERVE_SIZE 32768
 
 #define WEBSTORE "/home/seagate/webstore"
+#define MOTR_INIT_MAX_ALLOWED_TIME 15
 
 /* Program options */
 #include <unistd.h>
@@ -95,6 +96,20 @@ std::set<struct s3_motr_op_context *> global_motr_object_ops_list;
 std::set<struct s3_motr_idx_op_context *> global_motr_idx_ops_list;
 std::set<struct s3_motr_idx_context *> global_motr_idx;
 std::set<struct s3_motr_obj_context *> global_motr_obj;
+
+void s3_motr_init_timeout_cb(evutil_socket_t fd, short event, void *arg) {
+  s3_log(S3_LOG_ERROR, "", "Entering\n");
+  s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
+         S3_IEM_MOTR_CONN_FAIL_JSON);
+  event_base_loopbreak(global_evbase_handle);
+  return;
+}
+
+void *base_loop_thread(void *arg) {
+  pthread_detach(pthread_self());
+  event_base_loop(global_evbase_handle, EVLOOP_NO_EXIT_ON_EMPTY);
+  return NULL;
+}
 
 extern "C" void s3_handler(evhtp_request_t *req, void *a) {
   // placeholder, required to complete the request processing.
@@ -715,6 +730,7 @@ void free_evhtp_handle(evhtp_t *htp) {
 
 int main(int argc, char **argv) {
   int rc = 0;
+  pthread_t tid;
   struct event *signal_sigint_event;
   struct event *signal_sigterm_event;
   // map will have s3server { fid, instance_id } information
@@ -905,6 +921,15 @@ int main(int argc, char **argv) {
     }
   }
 
+  // This thread is created to do event base looping
+  // Its to send IEM message in case of motr initialization hang
+  rc = pthread_create(&tid, NULL, &base_loop_thread, NULL);
+  if (rc != 0) {
+    s3daemon.delete_pidfile();
+    finalize_cli_options();
+    s3_log(S3_LOG_FATAL, "", "Failed to create pthread\n");
+  }
+
   int motr_read_mempool_flags = CREATE_ALIGNED_MEMORY;
   if (g_option_instance->get_motr_read_mempool_zeroed_buffer()) {
     motr_read_mempool_flags = motr_read_mempool_flags | ZEROED_BUFFER;
@@ -927,8 +952,19 @@ int main(int argc, char **argv) {
   }
 
   log_resource_limits();
+  struct timeval tv;
+  tv.tv_usec = 0;
+  tv.tv_sec = MOTR_INIT_MAX_ALLOWED_TIME;
 
-  /* Initialise motr and Motr */
+  struct event *timer_event =
+      event_new(global_evbase_handle, -1, 0, s3_motr_init_timeout_cb, NULL);
+
+  // Register the timer event, in case if Motr initialization hangs, then in
+  // callback
+  // we will send IEM Alert, so that IO stack gets restarted
+  event_add(timer_event, &tv);
+
+  /* Initialise Motr */
   rc = init_motr();
   if (rc < 0) {
     s3daemon.delete_pidfile();
@@ -936,6 +972,11 @@ int main(int argc, char **argv) {
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "motr_init failed!\n");
   }
+  // delete the timer event
+  event_del(timer_event);
+  event_free(timer_event);
+  // Bail out of the event loop
+  event_base_loopbreak(global_evbase_handle);
 
   // Init addb
   rc = s3_addb_init();
