@@ -729,10 +729,6 @@ void RequestObject::send_response(int code, std::string body) {
   if (!is_service_req_head) {
     s3_log(S3_LOG_INFO, request_id, "Sending response as: [code:%d] [%s]\n",
            code, body.c_str());
-  } else {
-    s3_log(S3_LOG_INFO, request_id,
-           "S3Action = HeadService Sending response as: [code:%d] [%s]\n", code,
-           body.c_str());
   }
 
   http_status = code;
