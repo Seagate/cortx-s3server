@@ -29,7 +29,7 @@
 #include "s3_bucket_metadata.h"
 #include "s3_motr_kvs_reader.h"
 #include "s3_factory.h"
-#include "s3_object_list_response.h"
+#include "s3_object_list_v2_response.h"
 #include "s3_get_bucket_action.h"
 #include "s3_common_utilities.h"
 
@@ -54,31 +54,15 @@ class S3GetBucketActionV2 : public S3GetBucketAction {
   void after_validate_request();
   void send_response_to_s3_client();
 
-  /*
     // For Testing purpose
-    FRIEND_TEST(S3GetBucketActionTest, Constructor);
-    FRIEND_TEST(S3GetBucketActionTest, ObjectListSetup);
-    FRIEND_TEST(S3GetBucketActionTest, FetchBucketInfo);
-    FRIEND_TEST(S3GetBucketActionTest, FetchBucketInfoFailedMissing);
-    FRIEND_TEST(S3GetBucketActionTest, FetchBucketInfoFailedInternalError);
-    // FRIEND_TEST(S3GetBucketActionTest, GetNextObjects);
-    FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsWithZeroObjects);
-    FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsSuccessful);
-    FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsSuccessfulJsonError);
-    FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefix);
-    FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsSuccessfulDelimiter);
-    FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefixDelimiter);
-    FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsFailed);
-    FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsFailedNoEntries);
-    FRIEND_TEST(S3GetBucketActionTest, SendResponseToClientServiceUnavailable);
-    FRIEND_TEST(S3GetBucketActionTest, SendResponseToClientNoSuchBucket);
-    FRIEND_TEST(S3GetBucketActionTest, SendResponseToClientSuccess);
-    FRIEND_TEST(S3GetBucketActionTest, SendResponseToClientInternalError);
-    FRIEND_TEST(S3GetBucketActionTest,
-    GetNextObjectsSuccessfulMultiComponentKey);
-    FRIEND_TEST(S3GetBucketActionTest,
-                GetNextObjectsSuccessfulPrefixDelimMultiComponentKey);
-  */
+  FRIEND_TEST(S3GetBucketActionV2Test, Constructor);
+  FRIEND_TEST(S3GetBucketActionV2Test, V2ValidateRequest);
+  FRIEND_TEST(S3GetBucketActionV2Test,
+              after_validate_request_cont_token_non_empty);
+  FRIEND_TEST(S3GetBucketActionV2Test, after_validate_request_cont_token_empty);
+  FRIEND_TEST(S3GetBucketActionV2Test, SendResponseToClientServiceUnavailable);
+  FRIEND_TEST(S3GetBucketActionV2Test, SendResponseToClientNoSuchBucket);
+  FRIEND_TEST(S3GetBucketActionV2Test, SendResponseToClientSuccess);
+  FRIEND_TEST(S3GetBucketActionV2Test, SendResponseToClientInternalError);
 };
-
 #endif
