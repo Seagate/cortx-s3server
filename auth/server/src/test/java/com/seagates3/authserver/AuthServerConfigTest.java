@@ -190,6 +190,8 @@ public class AuthServerConfigTest {
         authServerConfig.setProperty("s3KeyPassword", "seagate");
         authServerConfig.setProperty("s3AuthCertAlias", "s3auth_pass");
         authServerConfig.setProperty("enableHttpsToS3", "true");
+        authServerConfig.setProperty("cortexSecCmd",
+                                     "cortxsec getkey 123 ldap");
 
         return authServerConfig;
     }
