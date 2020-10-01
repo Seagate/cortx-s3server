@@ -84,13 +84,21 @@ class AuthServerGetHandler {
  public
   void run() {
     LOGGER.debug("Get handler called.");
-    // Set Request ID
+
+    // Check if Request_Id is present in request body
+    String reqId = null;
     Map<String, String> requestBody = getHttpRequestBodyAsMap();
-    if (!(requestBody.get("Request_id") == null ||
-          (requestBody.get("Request_id")).isEmpty())) {
-      AuthServerConfig.setReqId(requestBody.get("Request_id"));
-    } else {
-      AuthServerConfig.setReqId(BinaryUtil.getAlphaNumericUUID());
+    if (requestBody != null) reqId = requestBody.get("Request_id");
+    if (reqId != null && !reqId.isEmpty()) {
+      AuthServerConfig.setReqId(reqId);
+    } else {  // Else check if Request_Id is present in request header
+      if (httpRequest.headers() != null)
+        reqId = httpRequest.headers().get("Request_id");
+      if (reqId != null && !reqId.isEmpty()) {
+        AuthServerConfig.setReqId(reqId);
+      } else {  // Else generate a new ID and set
+        AuthServerConfig.setReqId(BinaryUtil.getAlphaNumericUUID());
+      }
     }
 
     if (httpRequest.getUri().startsWith("/static")) {
