@@ -80,14 +80,16 @@ void S3GetBucketTaggingAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
+
     if (get_s3_error_code() == "ServiceUnavailable") {
       request->set_out_header_value("Retry-After", "1");
     }
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else {
-    request->send_response(S3HttpSuccess200,
-                           bucket_metadata->get_tags_as_xml());
+    std::string response_xml = bucket_metadata->get_tags_as_xml();
+    request->set_bytes_sent(response_xml.length());
+    request->send_response(S3HttpSuccess200, response_xml);
   }
 
   s3_log(S3_LOG_INFO, "", "Exiting\n");

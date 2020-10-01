@@ -366,6 +366,7 @@ void S3GetMultipartPartAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
     request->set_out_header_value("Content-Type", "application/xml");
+    request->set_bytes_sent(response_xml.length());
     s3_log(S3_LOG_DEBUG, request_id, "Object list response_xml = %s\n",
            response_xml.c_str());
 
