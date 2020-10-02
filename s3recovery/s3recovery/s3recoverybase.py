@@ -138,7 +138,7 @@ class S3RecoveryBase:
                 bucket_metadata_replica = json.loads(item_replica)
                 # Missing epoch will be considered as corruption
                 primary_epoch = bucket_metadata_replica["create_timestamp"]
-            except (KeyError, JSONDecodeError):
+            except (KeyError, JSONDecodeError, TypeError):
                 self.s3recovery_log("error", "Failed to parse JSON or timestamp missing")
                 return
             union_result[key] = item_replica
@@ -149,7 +149,7 @@ class S3RecoveryBase:
                 bucket_metadata = json.loads(data_to_restore)
                 # Missing epoch will be considered as corruption
                 secondary_epoch = bucket_metadata["create_timestamp"]
-            except (KeyError, JSONDecodeError):
+            except (KeyError, JSONDecodeError, TypeError):
                 self.s3recovery_log("error", "Failed to parse JSON or timestamp missing")
                 return
             union_result[key] = data_to_restore
@@ -162,14 +162,14 @@ class S3RecoveryBase:
             bucket_metadata = json.loads(data_to_restore)
             # Missing epoch will be considered as corruption
             primary_epoch = bucket_metadata["create_timestamp"]
-        except (KeyError, JSONDecodeError):
+        except (KeyError, JSONDecodeError, TypeError):
             p_corruption = True
 
         try:
             bucket_metadata_replica = json.loads(item_replica)
             # Missing epoch will be considered as corruption
             secondary_epoch = bucket_metadata_replica["create_timestamp"]
-        except (KeyError, JSONDecodeError):
+        except (KeyError, JSONDecodeError, TypeError):
             s_corruption = True
 
         if p_corruption and (not s_corruption):
