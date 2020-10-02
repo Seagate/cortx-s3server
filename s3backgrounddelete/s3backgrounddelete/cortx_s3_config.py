@@ -70,6 +70,13 @@ class CORTXS3Config(object):
     def get_s3recovery_flag(self):
         return self.s3recovery_flag
 
+    def get_config_version(self):
+        """Return version of S3 background delete config file or KeyError."""
+        if 'version_config' in self._config and self._config['version_config']['version']:
+            return self._config['version_config']['version']
+        else:
+            raise KeyError("Could not parse version from config file " + self._conf_file)
+
     def get_logger_directory(self):
         """Return logger directory path for background delete from config file or KeyError."""
         if 'logconfig' in self._config and self._config['logconfig']['logger_directory']:
