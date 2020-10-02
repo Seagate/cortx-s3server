@@ -17,6 +17,9 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+version_config:                             # Section for version of S3 background delete config
+   version: 1                                              # Default version for S3 background delete config
+
 cortx_s3:                                   # Section for S3 background delete config
    endpoint: "http://127.0.0.1:7081"                       # Service specified for CORTX s3 client
    service: "cortxs3"                                      # Default region specified for CORTX s3 client

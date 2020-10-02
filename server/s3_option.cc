@@ -318,6 +318,8 @@ bool S3Option::load_section(std::string section_name,
                                "S3_LIBEVENT_POOL_RESERVE_PERCENT");
       libevent_pool_reserve_percent =
           s3_option_node["S3_LIBEVENT_POOL_RESERVE_PERCENT"].as<unsigned>();
+    } else if (section_name == "S3_VERSION_CONFIG") {
+      s3_version = s3_option_node["VERSION"].as<std::string>();
     }
   } else {
     if (section_name == "S3_SERVER_CONFIG") {
@@ -602,6 +604,8 @@ bool S3Option::load_section(std::string section_name,
              &libevent_pool_buffer_size);
       sscanf(libevent_max_read_size_str.c_str(), "%zu",
              &libevent_max_read_size);
+    } else if (section_name == "S3_VERSION_CONFIG") {
+      s3_version = s3_option_node["VERSION"].as<std::string>();
     }
   }
   return true;
@@ -781,6 +785,7 @@ void S3Option::dump_options() {
 
   s3_log(S3_LOG_INFO, "", "S3_AUTH_IP_ADDR = %s\n", auth_ip_addr.c_str());
   s3_log(S3_LOG_INFO, "", "S3_AUTH_PORT = %d\n", auth_port);
+  s3_log(S3_LOG_INFO, "", "S3_version = %s\n", s3_version.c_str());
 
   s3_log(S3_LOG_INFO, "", "S3_MOTR_LOCAL_ADDR = %s\n", motr_local_addr.c_str());
   s3_log(S3_LOG_INFO, "", "S3_MOTR_HA_ADDR =  %s\n", motr_ha_addr.c_str());
@@ -926,6 +931,8 @@ void S3Option::set_is_s3_shutting_down(bool is_shutting_down) {
 }
 
 unsigned short S3Option::get_auth_port() { return auth_port; }
+
+std::string S3Option::get_s3_version() { return s3_version; }
 
 unsigned short S3Option::get_motr_layout_id() { return motr_layout_id; }
 

@@ -17,7 +17,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-S3Config_Sections: [S3_SERVER_CONFIG, S3_AUTH_CONFIG, S3_MOTR_CONFIG, S3_THIRDPARTY_CONFIG]
+S3Config_Sections: [S3_SERVER_CONFIG, S3_AUTH_CONFIG, S3_MOTR_CONFIG, S3_THIRDPARTY_CONFIG, S3_VERSION_CONFIG]
 S3_SERVER_CONFIG:                                     # Section for S3 Server
    S3_DAEMON_WORKING_DIR: "/var/motr/"                # S3 Daemon will run in the specified directory
    S3_DAEMON_DO_REDIRECTION: 1                          # Do redirection of stderr, stdout and stdin to /dev/null
@@ -107,3 +107,5 @@ S3_THIRDPARTY_CONFIG:
    S3_LIBEVENT_POOL_RESERVE_SIZE: 134217728             # 128MB, deny PUT request if mempool free space is less than the mentioned size in bytes
    S3_LIBEVENT_MEMPOOL_ZERO_BUFFER: false               # Enable Libevent Mempool 'zeroing' after use (like secure erase) - disabled by default
    S3_LIBEVENT_POOL_RESERVE_PERCENT: 5                  # 5%, deny PUT request if mempool free space in percent is less than the mentioned percent
+S3_VERSION_CONFIG:
+   VERSION: 1
