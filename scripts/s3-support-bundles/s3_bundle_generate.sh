@@ -54,7 +54,7 @@ backgrounddelete_config="/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
 s3startsystem_script="/opt/seagate/cortx/s3/s3startsystem.sh"
 s3server_binary="/opt/seagate/cortx/s3/bin/s3server"
 s3_motr_dir="/var/motr/s3server-*"
-s3_core_dir="/var/crash"
+s3_core_dir="/var/log/crash"
 sys_auditlog_dir="/var/log/audit"
 
 # Create tmp folder with pid value to allow parallel execution

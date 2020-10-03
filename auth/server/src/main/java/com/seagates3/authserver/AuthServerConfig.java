@@ -342,4 +342,9 @@ public class AuthServerConfig {
       }
       return internalAccountsList;
     }
+
+   public
+    int getVersion() {
+      return Integer.parseInt(authServerConfig.getProperty("version"));
+    }
 }
