@@ -17,7 +17,10 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-s3server:
+# post_install handler is called only for primary node
+# consider config handler if some actions should be
+# called on all nodes before server is run
+s3:
   post_install:
     script: /opt/seagate/cortx/s3/bin/s3_setup
     args:
