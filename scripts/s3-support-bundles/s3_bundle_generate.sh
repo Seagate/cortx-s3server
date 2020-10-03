@@ -54,7 +54,7 @@ backgrounddelete_config="/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
 s3startsystem_script="/opt/seagate/cortx/s3/s3startsystem.sh"
 s3server_binary="/opt/seagate/cortx/s3/bin/s3server"
 s3_motr_dir="/var/motr/s3server-*"
-s3_core_dir="/var/crash"
+s3_core_dir="/var/log/crash"
 sys_auditlog_dir="/var/log/audit"
 s3_recovery_dir="/var/log/seagate/s3/s3recovery"
 
@@ -98,7 +98,7 @@ s3server_logdir=`cat $s3server_config | grep "S3_LOG_DIR:" | cut -f2 -d: | sed -
 authserver_logdir=`cat $authserver_config | grep "logFilePath=" | cut -f2 -d'=' | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
 backgrounddelete_logdir=`cat $backgrounddelete_config | grep "logger_directory:" | cut -f2 -d: | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
 
-# Compress each s3server core file present in /var/crash directory if available
+# Compress each s3server core file present in /var/log/crash directory if available
 # these compressed core file will be available in /tmp/s3_support_bundle_<pid>/s3_core_files directory
 compress_core_files(){
   core_filename_pattern="*/core-s3server.*"
