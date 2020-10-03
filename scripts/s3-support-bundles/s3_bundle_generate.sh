@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -30,7 +30,6 @@ where:
 bundleid     Unique bundle-id used to identify support bundles.
 path         Location at which support bundle needs to be copied."
 
-set -e
 
 if [ $# -lt 2 ]
 then
@@ -108,6 +107,10 @@ collect_core_files(){
   core_filename_pattern="core-s3server.*.gz"
   mkdir -p $s3_core_files
   cwd=$(pwd)
+  if [ ! -d "$s3_core_dir" ];
+  then
+      return;
+  fi
   cd $s3_core_dir
   # get recent modified core files from directory
   (ls -t $core_filename_pattern 2>/dev/null | head -$s3_core_files_max_count) | xargs -I '{}' cp '{}' $s3_core_files
@@ -338,7 +341,6 @@ then
     args=$args" "$haproxy_status_log
 fi
 
-set +e
 # Create temporary directory for creating other files as below
 mkdir -p $tmp_dir
 
@@ -443,17 +445,12 @@ mkdir -p $s3_bundle_location
 
 # Build tar file
 echo "Generating tar..."
-tar -cf - $args --warning=no-file-changed 2>/dev/null | xz -1e --thread=0 > $s3_bundle_location/$bundle_name 2>/dev/null
+# delete old tmp gz fie
+rm -f $s3_bundle_location/tmp.tar.gz
 
-# Check exit code of above operation
-# While doing tar operation if file gets modified, 'tar' raises warning with
-# exitcode 1 but it will tar that file.
-if [[ ("$?" != "0") && ("$?" != "1") ]];
-then
-    echo "Failed to generate S3 support bundle"
-    cleanup_tmp_files
-    exit 1
-fi
+tar -cvzf $s3_bundle_location/tmp.tar.gz $args --warning=no-file-changed 2>/dev/null || gzip -r --best $args $s3_bundle_location/tmp.gz 2>/dev/null
+
+xz -1e --thread=0 $s3_bundle_location/tmp*.gz > $s3_bundle_location/$bundle_name 2>/dev/null || mv $s3_bundle_location/tmp*.gz $s3_bundle_location/$bundle_name 2>/dev/null
 
 # Clean up temp files
 cleanup_tmp_files
