@@ -147,12 +147,13 @@ collect_core_files(){
              printf "\n**************************************************************************\n" >> "$callstack_file"
 
              # generate gdb assembly code
-             printf ""
+             printf "Assembly code:\n\n" >> "$callstack_file"
              gdb --batch --quiet -ex "disassemble" -ex "quit" $s3server_binary\
              "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
              printf "\n**************************************************************************\n" >> "$callstack_file"
 
              # generate gdb memory map
+             printf "Memory map:\n\n" >> "$callstack_file"
              gdb --batch --quiet -ex "info proc mapping" -ex "quit" $s3server_binary\
              "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
              printf "\n**************************************************************************\n" >> "$callstack_file"
