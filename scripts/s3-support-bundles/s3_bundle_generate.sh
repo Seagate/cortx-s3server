@@ -179,6 +179,12 @@ collect_m0trace_files(){
   dir="/var/motr"
   tmpr_dir="$tmp_dir/m0trraces_tmp"
   cwd=$(pwd)
+
+  if [ ! -d "$dir" ];
+  then
+      return;
+  fi
+
   cd $dir
   for s3_dir in s3server-*/;
   do
@@ -215,6 +221,11 @@ collect_first_m0trace_file(){
   dir="/var/motr"
   cwd=$(pwd)
   m0trace_filename_pattern="*/m0trace.*"
+  if [ ! -d "$dir" ];
+  then
+      return;
+  fi
+
   cd $dir
   file_path=$(ls -t */m0trace* 2>/dev/null | tail -1)
   file="$(cut -d'/' -f2 <<<"$file_path")"
@@ -446,7 +457,7 @@ mkdir -p $s3_bundle_location
 # Build tar file
 echo "Generating tar..."
 # delete old tmp gz fie
-rm -f $s3_bundle_location/tmp.tar.gz
+rm -f $s3_bundle_location/tmp*.gz
 
 tar -cvzf $s3_bundle_location/tmp.tar.gz $args --warning=no-file-changed 2>/dev/null || gzip -r --best $args $s3_bundle_location/tmp.gz 2>/dev/null
 
