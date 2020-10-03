@@ -104,6 +104,7 @@ backgrounddelete_logdir=`cat $backgrounddelete_config | grep "logger_directory:"
 # Collect call stack of latest <s3_core_files_max_count> s3server core files
 # from s3_core_dir directory, if available
 collect_core_files(){
+  echo "Collecting core files..."
   core_filename_pattern="core-s3server.*.gz"
   mkdir -p $s3_core_files
   cwd=$(pwd)
@@ -138,6 +139,24 @@ collect_core_files(){
              gdb --batch --quiet -ex "thread apply all bt full" -ex "quit" $s3server_binary\
              "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
              printf "\n**************************************************************************\n" >> "$callstack_file"
+
+             # generate gdb registers dump
+             printf "Register state:\n\n" >> "$callstack_file"
+             gdb --batch --quiet -ex "info registers" -ex "quit" $s3server_binary\
+             "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
+             printf "\n**************************************************************************\n" >> "$callstack_file"
+
+             # generate gdb assembly code
+             printf ""
+             gdb --batch --quiet -ex "disassemble" -ex "quit" $s3server_binary\
+             "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
+             printf "\n**************************************************************************\n" >> "$callstack_file"
+
+             # generate gdb memory map
+             gdb --batch --quiet -ex "info proc mapping" -ex "quit" $s3server_binary\
+             "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
+             printf "\n**************************************************************************\n" >> "$callstack_file"
+
              # delete the inflated core file
              rm -f "$s3_core_files/$core_name"
              # delete the zipped core file
@@ -151,6 +170,7 @@ collect_core_files(){
 # Collect <m0trace_files_count> m0trace files from each s3 instance present in /var/motr/s3server-* directory if available
 # Files will be available at /tmp/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
 collect_m0trace_files(){
+  echo "Collecting m0trace files dump..."
   m0trace_filename_pattern="m0trace.*"
   dir="/var/motr"
   tmpr_dir="$tmp_dir/m0trraces_tmp"
@@ -187,6 +207,7 @@ collect_m0trace_files(){
 }
 
 collect_first_m0trace_file(){
+  echo "Collecting oldest m0trace file dump..."
   dir="/var/motr"
   cwd=$(pwd)
   m0trace_filename_pattern="*/m0trace.*"
@@ -420,7 +441,7 @@ rm -rf /tmp/s3_support_bundle_$pid_value
 mkdir -p $s3_bundle_location
 
 # Build tar file
-echo "Generating tar...."
+echo "Generating tar..."
 tar -cf - $args --warning=no-file-changed 2>/dev/null | xz -1e --thread=0 > $s3_bundle_location/$bundle_name 2>/dev/null
 
 # Check exit code of above operation
