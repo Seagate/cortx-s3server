@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -30,7 +30,6 @@ where:
 bundleid     Unique bundle-id used to identify support bundles.
 path         Location at which support bundle needs to be copied."
 
-set -e
 
 if [ $# -lt 2 ]
 then
@@ -40,11 +39,10 @@ fi
 
 bundle_id=$1
 bundle_path=$2
-bundle_name="s3_$bundle_id.tar.gz"
+bundle_name="s3_$bundle_id.tar.xz"
 s3_bundle_location=$bundle_path/s3
 
 haproxy_config="/etc/haproxy/haproxy.cfg"
-haproxy_status_log="/var/log/haproxy-status.log"
 haproxy_log="/var/log/haproxy.log"
 ldap_log="/var/log/slapd.log"
 
@@ -56,7 +54,6 @@ s3server_binary="/opt/seagate/cortx/s3/bin/s3server"
 s3_motr_dir="/var/motr/s3server-*"
 s3_core_dir="/var/log/crash"
 sys_auditlog_dir="/var/log/audit"
-s3_recovery_dir="/var/log/seagate/s3/s3recovery"
 
 # Create tmp folder with pid value to allow parallel execution
 pid_value=$$
@@ -67,10 +64,14 @@ ram_usage="$tmp_dir/ram_usage.txt"
 s3server_pids="$tmp_dir/s3server_pids.txt"
 haproxy_pids="$tmp_dir/haproxy_pids.txt"
 m0d_pids="$tmp_dir/m0d_pids.txt"
+node_port_info="$tmp_dir/node_port_info.txt"
+rpm_info="$tmp_dir/s3_rpm_info.txt"
 s3_core_files="$tmp_dir/s3_core_files"
 s3_m0trace_files="$tmp_dir/s3_m0trace_files"
 first_s3_m0trace_file="$tmp_dir/first_s3_m0trace_file"
 m0trace_files_count=5
+s3_core_files_max_count=11
+max_allowed_core_size=10737418240 #e.g 10GB byte value
 
 # LDAP data
 ldap_dir="$tmp_dir/ldap"
@@ -98,67 +99,155 @@ s3server_logdir=`cat $s3server_config | grep "S3_LOG_DIR:" | cut -f2 -d: | sed -
 authserver_logdir=`cat $authserver_config | grep "logFilePath=" | cut -f2 -d'=' | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
 backgrounddelete_logdir=`cat $backgrounddelete_config | grep "logger_directory:" | cut -f2 -d: | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
 
-# Compress each s3server core file present in /var/log/crash directory if available
-# these compressed core file will be available in /tmp/s3_support_bundle_<pid>/s3_core_files directory
-compress_core_files(){
-  core_filename_pattern="*/core-s3server.*"
-  for file in $s3_core_dir/*
-  do
-    if [[ -f "$file" && $file == $core_filename_pattern ]];
-    then
-        mkdir -p $s3_core_files
-        file_name=$(basename "$file")      # e.g core-s3server.234678
-        gzip -f -c $file > $s3_core_files/"$file_name".gz 2> /dev/null
-    fi
-  done
+# Collect call stack of latest <s3_core_files_max_count> s3server core files
+# from s3_core_dir directory, if available
+collect_core_files(){
+  echo "Collecting core files..."
+  core_filename_pattern="core-s3server.*.gz"
+  mkdir -p $s3_core_files
+  cwd=$(pwd)
+  if [ ! -d "$s3_core_dir" ];
+  then
+      return;
+  fi
+  cd $s3_core_dir
+  # get recent modified core files from directory
+  (ls -t $core_filename_pattern 2>/dev/null | head -$s3_core_files_max_count) | xargs -I '{}' cp '{}' $s3_core_files
+
+  # check for empty directory for core files
+  if [ -z "$(ls -A $s3_core_files)" ];
+  then
+      rm -rf $s3_core_files
+  else
+      # iterate over the s3_core_files directory and extract call stack for each file
+      for s3corefile in "$s3_core_files"/*
+      do
+         zipped_core_name=$(basename "$s3corefile")
+         core_name=${zipped_core_name%".gz"}
+         callstack_file="$s3_core_files"/callstack."$core_name".txt
+         # Check the uncompressed size of gz core file
+         core_size=$(gunzip -lq $s3corefile)
+         uncompressed_size=$(cut -d' ' -f2 <<< $core_size)
+         if [ $uncompressed_size -gt $max_allowed_core_size ];
+         then
+             echo "Ignoring $core_name because of core size($uncompressed_size Bytes) is greater than 10GB(10737418240 Bytes)" >> ./ignored_core_files.txt
+             rm -f "$s3corefile"
+         else
+             # unzip the core file, to read it using gdb
+             gunzip $s3corefile 2>/dev/null
+             printf "Core name: $core_name\n" >> "$callstack_file"
+             printf "Callstack:\n\n" >> "$callstack_file"
+             # generate gdb bt and append into the callstack_file
+             gdb --batch --quiet -ex "thread apply all bt full" -ex "quit" $s3server_binary\
+             "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
+             printf "\n**************************************************************************\n" >> "$callstack_file"
+
+             # generate gdb registers dump
+             printf "Register state:\n\n" >> "$callstack_file"
+             gdb --batch --quiet -ex "info registers" -ex "quit" $s3server_binary\
+             "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
+             printf "\n**************************************************************************\n" >> "$callstack_file"
+
+             # generate gdb assembly code
+             printf "Assembly code:\n\n" >> "$callstack_file"
+             gdb --batch --quiet -ex "disassemble" -ex "quit" $s3server_binary\
+             "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
+             printf "\n**************************************************************************\n" >> "$callstack_file"
+
+             # generate gdb memory map
+             printf "Memory map:\n\n" >> "$callstack_file"
+             gdb --batch --quiet -ex "info proc mapping" -ex "quit" $s3server_binary\
+             "$s3_core_files/$core_name" 2>/dev/null >> "$callstack_file"
+             printf "\n**************************************************************************\n" >> "$callstack_file"
+
+             # delete the inflated core file
+             rm -f "$s3_core_files/$core_name"
+             # delete the zipped core file
+             rm -f "$s3corefile"
+         fi
+      done
+  fi
+  cd $cwd
 }
 
-# Compress each m0trace files present in /var/motr/s3server-* directory if available
-# compressed m0trace files will be available in /tmp/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
-compress_m0trace_files(){
+# Collect <m0trace_files_count> m0trace files from each s3 instance present in /var/motr/s3server-* directory if available
+# Files will be available at /tmp/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
+collect_m0trace_files(){
+  echo "Collecting m0trace files dump..."
   m0trace_filename_pattern="m0trace.*"
   dir="/var/motr"
-  tmpr_dir="/var/m0trraces_tmp"
+  tmpr_dir="$tmp_dir/m0trraces_tmp"
   cwd=$(pwd)
-  cd $dir
-  if [ -d "$tmpr_dir" ]; then
-    rm -rf $tmpr_dir
+  # if /var/motr missing then return
+  if [ ! -d "$dir" ];
+  then
+      return;
   fi
-  for d in s3server-*/;
+
+  cd $dir
+  for s3_dir in s3server-*/;
   do
     cd $dir
-    mkdir $tmpr_dir
-    cd $d
-    (ls -t $m0trace_filename_pattern | head -$m0trace_files_count) | xargs -I '{}' cp '{}' $tmpr_dir
-    s3instance_name=$d   # e.g s3server-0x7200000000000000:0
-    # compressed file path will be /tmp/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
-    compressed_file_path=$s3_m0trace_files/$s3instance_name
-    mkdir -p $compressed_file_path
+    mkdir -p $tmpr_dir
+    cd $s3_dir
+    (ls -t $m0trace_filename_pattern 2>/dev/null | head -$m0trace_files_count) | xargs -I '{}' cp '{}' $tmpr_dir
+    # No m0trace
+    if [ -z "$(ls -A $tmpr_dir)" ];
+    then
+        rm -rf $tmpr_dir
+        return;
+    fi
+    s3instance_name=$s3_dir   # e.g s3server-0x7200000000000000:0
+    # m0trace file path will be /tmp/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
+    m0trace_file_path=$s3_m0trace_files/$s3instance_name
+    mkdir -p $m0trace_file_path
     cd $tmpr_dir
     for file in $tmpr_dir/*
     do
       if [[ -f "$file" ]];
       then
           file_name=$(basename "$file")
-          gzip -f -c $file > $compressed_file_path/"$file_name".gz 2> /dev/null
+          m0tracedump -s -i $file 2>/dev/null | xz --thread=0 > $m0trace_file_path/"$file_name".yaml.xz 2>/dev/null
       fi
     done
     rm -rf $tmpr_dir
   done
   cd $cwd
+
+  # check for empty directory for m0trace files
+  if [ -z "$(ls -A $m0trace_file_path)" ];
+  then
+      rm -rf $m0trace_file_path
+  fi
 }
 
-compress_first_m0trace_file(){
+collect_first_m0trace_file(){
+  echo "Collecting oldest m0trace file dump..."
   dir="/var/motr"
   cwd=$(pwd)
   m0trace_filename_pattern="*/m0trace.*"
+  if [ ! -d "$dir" ];
+  then
+      return;
+  fi
+
   cd $dir
-  file_path=$(ls -t */m0trace* | tail -1)
-  file="$(cut -d'/' -f2 <<<"$file_path")"
-  compressed_file_path=$first_s3_m0trace_file
-  mkdir -p $compressed_file_path
-  gzip -f -c $file_path > $compressed_file_path/"$file".gz 2> /dev/null 
+  file_path=$(ls -t */m0trace* 2>/dev/null | tail -1)
+  # if m0trace are available
+  if [ -f "$file_path" ];
+  then
+      file="$(cut -d'/' -f2 <<<"$file_path")"
+      m0trace_file_path=$first_s3_m0trace_file
+      mkdir -p $m0trace_file_path
+      m0tracedump -s -i $file_path 2>/dev/null | xz -k --thread=0 > $m0trace_file_path/"$file".yaml.xz 2>/dev/null
+  fi
   cd $cwd
+
+  # check for empty directory for m0trace files
+  if [ -z "$(ls -A $m0trace_file_path)" ];
+  then
+      rm -rf $m0trace_file_path
+  fi
 }
 
 # Check if auth serve log directory point to auth folder instead of "auth/server" in properties file
@@ -169,25 +258,25 @@ fi
 
 ## Add file/directory locations for bundling
 
-# Compress and collect s3 core files if available
-compress_core_files
+# Collect s3 core files if available
+collect_core_files
 if [ -d "$s3_core_files" ];
 then
     args=$args" "$s3_core_files
 fi
 
-compress_first_m0trace_file
+collect_first_m0trace_file
 if [ -d "$first_s3_m0trace_file" ];
 then
    args=$args" "$first_s3_m0trace_file
 fi
 
-# Compress and collect m0trace files from /var/motr/s3server-* directory
+# collect latest 5 m0trace files from /var/motr/s3server-* directory
 # S3server name is generated with random name e.g s3server-0x7200000000000001:0x22
 # check if s3server name with compgen globpat is available
 if compgen -G $s3_motr_dir > /dev/null;
 then
-    compress_m0trace_files
+    collect_m0trace_files
     if [ -d "$s3_m0trace_files" ];
     then
         args=$args" "$s3_m0trace_files
@@ -204,12 +293,6 @@ fi
 if [ -d "$sys_auditlog_dir" ];
 then
     args=$args" "$sys_auditlog_dir
-fi
-
-# Collect S3 recovery logs if available
-if [ -d "$s3_recovery_dir" ];
-then
-    args=$args" "$s3_recovery_dir
 fi
 
 # Collect s3 backgrounddelete logs if available
@@ -272,12 +355,6 @@ then
     args=$args" "$haproxy_log
 fi
 
-# Collect haproxy status log file if available
-if [ -f "$haproxy_status_log" ];
-then
-    args=$args" "$haproxy_status_log
-fi
-
 # Create temporary directory for creating other files as below
 mkdir -p $tmp_dir
 
@@ -293,7 +370,13 @@ args=$args" "$ram_usage
 cat /proc/cpuinfo > $cpu_info
 args=$args" "$cpu_info
 
-set +e
+# Collect listening port numbers
+netstat -tulpn | grep -i listen > $node_port_info 2>&1
+args=$args" "$node_port_info
+
+# Collect rpm package names of s3
+rpm -qa | grep cortx-s3 > $rpm_info 2>&1
+args=$args" "$rpm_info
 
 # Collect statistics of running s3server services
 s3_pids=($(pgrep 's3server'))
@@ -322,21 +405,20 @@ fi
 ## Collect LDAP data
 mkdir -p $ldap_dir
 # Fetch ldap root DN password from provisioning else use default
-set +e
 rootdnpasswd=""
 if rpm -q "salt"  > /dev/null;
 then
     # Prod/Release environment
-    rootdnpasswd=$(salt-call pillar.get openldap:admin:secret --output=newline_values_only)
-    rootdnpasswd=$(salt-call lyveutil.decrypt openldap "${rootdnpasswd}" --output=newline_values_only)
+    rootdnpasswd=$(salt-call pillar.get openldap:admin:secret --output=newline_values_only) 2>/dev/null
+    rootdnpasswd=$(salt-call lyveutil.decrypt openldap "${rootdnpasswd}" --output=newline_values_only) 2>/dev/null
 else
     # Dev environment
-    source /root/.s3_ldap_cred_cache.conf
+    source /root/.s3_ldap_cred_cache.conf 2>/dev/null
 fi
 
 if [[ -z "$rootdnpasswd" ]]
 then
-    rootdnpasswd=$ldap_root_pwd
+    rootdnpasswd=$ldap_root_pwd 2>/dev/null
 fi
 
 # Run ldap commands
@@ -376,18 +458,11 @@ rm -rf /tmp/s3_support_bundle_$pid_value
 mkdir -p $s3_bundle_location
 
 # Build tar file
-tar -czPf $s3_bundle_location/$bundle_name $args --warning=no-file-changed
+echo "Generating tar..."
 
-# Check exit code of above operation
-# While doing tar operation if file gets modified, 'tar' raises warning with
-# exitcode 1 but it will tar that file.
-if [[ ("$?" != "0") && ("$?" != "1") ]];
-then
-    echo "Failed to generate S3 support bundle"
-    cleanup_tmp_files
-    exit 1
-fi
+tar -cf - $args --warning=no-file-changed 2>/dev/null | xz -1e --thread=0 > $s3_bundle_location/$bundle_name 2>/dev/null
 
 # Clean up temp files
 cleanup_tmp_files
-echo "S3 support bundle generated successfully!!!"
+echo "S3 support bundle generated successfully at $s3_bundle_location/$bundle_name !!!"
+
