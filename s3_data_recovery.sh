@@ -21,20 +21,20 @@
 
 pcs_enable_resources() {
    # enable Haproxy on both nodes
-   pcs resource enable haproxy-c1 || { echo "Haproxy is not enabled" && exit 1; }
-   pcs resource enable haproxy-c2 || { echo "Haproxy is not enabled" && exit 1; }
+   pcs resource enable haproxy-c1 || { echo "Haproxy is not enabled"; }
+   pcs resource enable haproxy-c2 || { echo "Haproxy is not enabled"; }
 
    # enable BackgroundConsumers on both nodes"
-   pcs resource enable s3backcons-c1 || { echo "s3backgroundconsumer is not enabled" && exit 1; }
-   pcs resource enable s3backcons-c2 || { echo "s3backgroundconsumer is not enabled" && exit 1; }
+   pcs resource enable s3backcons-c1 || { echo "s3backgroundconsumer is not enabled"; }
+   pcs resource enable s3backcons-c2 || { echo "s3backgroundconsumer is not enabled"; }
 
    # enable BackgroundProducer
-   pcs resource enable s3backprod || { echo "s3backgroundproducer is not enabled" && exit 1; }
+   pcs resource enable s3backprod || { echo "s3backgroundproducer is not enabled"; }
 }
 
 # Start Cluster
 echo -e "Starting cluster\n"
-pcs cluster start --all || { echo "Failed to start cluster" && exit 1; }
+pcs cluster start --all || { echo "Failed to start cluster"; }
 
 echo -e "Sleeping for 5 minutes to make sure cluster comes up completely...\n"
 sleep 5m
