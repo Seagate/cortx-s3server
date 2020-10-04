@@ -178,6 +178,9 @@ class CORTXS3Config(object):
 
     def get_cortx_s3_access_key(self):
         """Return access_key from config file or KeyError."""
+        # LDR R1 check
+        if True:
+            return os.system(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 23 | head -n 1)
         if 'cortx_s3' in self._config and self._config['cortx_s3']['background_account_access_key']:
             return self._config['cortx_s3']['background_account_access_key']
         else:
@@ -187,6 +190,9 @@ class CORTXS3Config(object):
 
     def get_cortx_s3_secret_key(self):
         """Return secret_key from config file or KeyError."""
+         # LDR R1 check
+        if True:
+            return os.system(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 23 | head -n 1)
         if 'cortx_s3' in self._config and self._config['cortx_s3']['background_account_secret_key']:
             return self._config['cortx_s3']['background_account_secret_key']
         else:
@@ -372,6 +378,9 @@ class CORTXS3Config(object):
 
     def get_s3_recovery_access_key(self):
         """Return access_key from config file or KeyError."""
+        # LDR R1 check
+        if True:
+            return os.system(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 23 | head -n 1)
         if 's3_recovery' in self._config and self._config['s3_recovery']['recovery_account_access_key']:
             return self._config['s3_recovery']['recovery_account_access_key']
         else:
@@ -381,6 +390,9 @@ class CORTXS3Config(object):
 
     def get_s3_recovery_secret_key(self):
         """Return secret_key from config file or KeyError."""
+         # LDR R1 check
+        if True:
+            return os.system(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 23 | head -n 1)
         if 's3_recovery' in self._config and self._config['s3_recovery']['recovery_account_secret_key']:
             return self._config['s3_recovery']['recovery_account_secret_key']
         else:

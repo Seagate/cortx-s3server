@@ -387,6 +387,14 @@ create_random_keys()
     secret_key=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9+' | fold -w 41 | head -n 1)
 }
 
+# Generate keys using LDR R1 encryption for accounts
+create_ldr_keys()
+{
+    # Replace here with encryption commands
+    access_key=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 23 | head -n 1)
+    secret_key=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9+' | fold -w 41 | head -n 1)
+}
+
 # Create s3 account for s3 recoverytool
 create_recovery_tool_account()
 {
@@ -394,7 +402,14 @@ create_recovery_tool_account()
     if [[ $output == *"No such object"* ]]
     then
       # Create s3recovery tool account
-      create_random_keys
+      # LDR Check
+      if [ true ]
+      then
+        create_ldr_keys
+      else
+        create_random_keys
+      fi
+
       salt "*" cmd.run "sed -i \"s/recovery_account_access_key:.*$/recovery_account_access_key: \"$access_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
       salt "*" cmd.run "sed -i \"s/recovery_account_secret_key:.*$/recovery_account_secret_key: \"$secret_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
       salt "*" cmd.run "sed -i \"s/ak:.*/ak: $access_key/g\" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif"
@@ -429,7 +444,13 @@ create_background_delete_account()
     if [[ $output == *"No such object"* ]]
     then
       # Create s3background delete account
-      create_random_keys
+      # LDR Check
+      if [ true ]
+      then
+        create_ldr_keys
+      else
+        create_random_keys
+      fi
       salt "*" cmd.run "sed -i \"s/background_account_access_key:.*$/background_account_access_key: \"$access_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
       salt "*" cmd.run "sed -i \"s/background_account_secret_key:.*$/background_account_secret_key: \"$secret_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
       salt "*" cmd.run "sed -i \"s/ak:.*/ak: $access_key/g\" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif"
