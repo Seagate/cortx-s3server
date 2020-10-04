@@ -43,7 +43,6 @@ bundle_name="s3_$bundle_id.tar.xz"
 s3_bundle_location=$bundle_path/s3
 
 haproxy_config="/etc/haproxy/haproxy.cfg"
-haproxy_status_log="/var/log/haproxy-status.log"
 haproxy_log="/var/log/haproxy.log"
 ldap_log="/var/log/slapd.log"
 
@@ -131,7 +130,7 @@ collect_core_files(){
          uncompressed_size=$(cut -d' ' -f2 <<< $core_size)
          if [ $uncompressed_size -gt $max_allowed_core_size ];
          then
-             echo "Ignoring $core_name because of core size($uncompressed_size Bytes) is greater than 10GB(10737418240 Bytes)" >> ./core_files_info.txt
+             echo "Ignoring $core_name because of core size($uncompressed_size Bytes) is greater than 10GB(10737418240 Bytes)" >> ./ignored_core_files.txt
              rm -f "$s3corefile"
          else
              # unzip the core file, to read it using gdb
@@ -179,7 +178,7 @@ collect_m0trace_files(){
   dir="/var/motr"
   tmpr_dir="$tmp_dir/m0trraces_tmp"
   cwd=$(pwd)
-
+  # if /var/motr missing then return
   if [ ! -d "$dir" ];
   then
       return;
@@ -192,6 +191,12 @@ collect_m0trace_files(){
     mkdir -p $tmpr_dir
     cd $s3_dir
     (ls -t $m0trace_filename_pattern 2>/dev/null | head -$m0trace_files_count) | xargs -I '{}' cp '{}' $tmpr_dir
+    # No m0trace
+    if [ -z "$(ls -A $tmpr_dir)" ];
+    then
+        rm -rf $tmpr_dir
+        return;
+    fi
     s3instance_name=$s3_dir   # e.g s3server-0x7200000000000000:0
     # m0trace file path will be /tmp/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
     m0trace_file_path=$s3_m0trace_files/$s3instance_name
@@ -202,7 +207,7 @@ collect_m0trace_files(){
       if [[ -f "$file" ]];
       then
           file_name=$(basename "$file")
-          m0tracedump -s -i $file 2>/dev/null | xz --thread=0 > $m0trace_file_path/"$file_name".yaml.xz 2> /dev/null
+          m0tracedump -s -i $file 2>/dev/null | xz --thread=0 > $m0trace_file_path/"$file_name".yaml.xz 2>/dev/null
       fi
     done
     rm -rf $tmpr_dir
@@ -228,10 +233,14 @@ collect_first_m0trace_file(){
 
   cd $dir
   file_path=$(ls -t */m0trace* 2>/dev/null | tail -1)
-  file="$(cut -d'/' -f2 <<<"$file_path")"
-  m0trace_file_path=$first_s3_m0trace_file
-  mkdir -p $m0trace_file_path
-  m0tracedump -s -i $file_path 2>/dev/null | xz -k --thread=0 > $m0trace_file_path/"$file".yaml.xz 2> /dev/null
+  # if m0trace are available
+  if [ -f "$file_path" ];
+  then
+      file="$(cut -d'/' -f2 <<<"$file_path")"
+      m0trace_file_path=$first_s3_m0trace_file
+      mkdir -p $m0trace_file_path
+      m0tracedump -s -i $file_path 2>/dev/null | xz -k --thread=0 > $m0trace_file_path/"$file".yaml.xz 2>/dev/null
+  fi
   cd $cwd
 
   # check for empty directory for m0trace files
@@ -346,12 +355,6 @@ then
     args=$args" "$haproxy_log
 fi
 
-# Collect haproxy status log file if available
-if [ -f "$haproxy_status_log" ];
-then
-    args=$args" "$haproxy_status_log
-fi
-
 # Create temporary directory for creating other files as below
 mkdir -p $tmp_dir
 
@@ -406,16 +409,16 @@ rootdnpasswd=""
 if rpm -q "salt"  > /dev/null;
 then
     # Prod/Release environment
-    rootdnpasswd=$(salt-call pillar.get openldap:admin:secret --output=newline_values_only)
-    rootdnpasswd=$(salt-call lyveutil.decrypt openldap "${rootdnpasswd}" --output=newline_values_only)
+    rootdnpasswd=$(salt-call pillar.get openldap:admin:secret --output=newline_values_only) 2>/dev/null
+    rootdnpasswd=$(salt-call lyveutil.decrypt openldap "${rootdnpasswd}" --output=newline_values_only) 2>/dev/null
 else
     # Dev environment
-    source /root/.s3_ldap_cred_cache.conf
+    source /root/.s3_ldap_cred_cache.conf 2>/dev/null
 fi
 
 if [[ -z "$rootdnpasswd" ]]
 then
-    rootdnpasswd=$ldap_root_pwd
+    rootdnpasswd=$ldap_root_pwd 2>/dev/null
 fi
 
 # Run ldap commands
@@ -456,13 +459,10 @@ mkdir -p $s3_bundle_location
 
 # Build tar file
 echo "Generating tar..."
-# delete old tmp gz fie
-rm -f $s3_bundle_location/tmp*.gz
 
-tar -cvzf $s3_bundle_location/tmp.tar.gz $args --warning=no-file-changed 2>/dev/null || gzip -r --best $args $s3_bundle_location/tmp.gz 2>/dev/null
-
-xz -1e --thread=0 $s3_bundle_location/tmp*.gz > $s3_bundle_location/$bundle_name 2>/dev/null || mv $s3_bundle_location/tmp*.gz $s3_bundle_location/$bundle_name 2>/dev/null
+tar -cf - $args --warning=no-file-changed 2>/dev/null | xz -1e --thread=0 > $s3_bundle_location/$bundle_name 2>/dev/null
 
 # Clean up temp files
 cleanup_tmp_files
 echo "S3 support bundle generated successfully at $s3_bundle_location/$bundle_name !!!"
+
