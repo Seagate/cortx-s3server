@@ -19,6 +19,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <memory>
 #include "s3_common_utilities.h"
 
 class S3CommonUtilitiesTest : public testing::Test {};
