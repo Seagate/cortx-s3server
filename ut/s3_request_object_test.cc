@@ -85,6 +85,7 @@ class S3RequestObjectTest : public testing::Test {
           ev_request->headers_in,
           evhtp_header_new(itr.first.c_str(), itr.second.c_str(), 0, 0));
     }
+    request->get_in_headers_copy().clear();
     request->initialise();  // reinitialize so proper state can be set
   }
 

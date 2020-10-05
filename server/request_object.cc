@@ -18,6 +18,7 @@
  *
  */
 
+#include <cctype>
 #include <string>
 #include <algorithm>
 
@@ -96,6 +97,36 @@ void RequestObject::listen_for_incoming_data(std::function<void()> callback,
   resume();  // resume reading if it was paused
 }
 
+static void generate_uuid(const std::string& raw_str, char uuid[16]) {
+  unsigned ch_cnt = 0;
+
+  for (auto it = raw_str.rbegin(); it != raw_str.rend(); ++it) {
+    const int ch = *it & 255;
+    int v;
+    if (ch >= '0' && ch <= '9') {
+      v = ch - '0';
+    } else if (ch >= 'a' && ch <= 'f') {
+      v = ch - ('a' - 10);
+    } else if (ch >= 'A' && ch <= 'F') {
+      v = ch - ('A' - 10);
+    } else {
+      continue;
+    }
+    if (ch_cnt & 1) {
+      uuid[ch_cnt >> 1] |= v << 4;
+    } else {
+      uuid[ch_cnt >> 1] = v;
+    }
+    if (++ch_cnt >= 32) break;  // uuid must contain 32 hex digits
+  }
+  const auto arr_idx = (ch_cnt + 1) >> 1;
+
+  if (arr_idx < 16) {  // size of the array
+    // Fill tail of the array with zeroes.
+    memset(uuid + arr_idx, 0, 16 - arr_idx);
+  }
+}
+
 RequestObject::RequestObject(
     evhtp_request_t* req, EvhtpInterface* evhtp_obj_ptr,
     std::shared_ptr<S3AsyncBufferOptContainerFactory> async_buf_factory,
@@ -108,10 +139,10 @@ RequestObject::RequestObject(
       bytes_sent(0),
       header_size(0),
       user_metadata_size(0),
+      evhtp_obj(evhtp_obj_ptr),
       is_client_connected(true),
       ignore_incoming_data(false),
       is_chunked_upload(false),
-      in_headers_copied(false),
       in_query_params_copied(false),
       // FIXME:
       // For the time being, we are generating ADDB request IDs as a simple
@@ -124,13 +155,32 @@ RequestObject::RequestObject(
       addb_request_id(++addb_request_id_gc),
       reply_buffer(NULL) {
 
-  S3Uuid uuid;
-  request_id = uuid.get_string_uuid();
+  std::string request_id_hdr = get_header_value("Request_id");
+
+  if (!request_id_hdr.empty()) {
+    request_id.reserve(request_id_hdr.size());
+
+    std::transform(request_id_hdr.begin(), request_id_hdr.end(),
+                   std::back_inserter(request_id), &::tolower);
+    char uuid[16];
+
+    generate_uuid(request_id, uuid);
+
+    const auto* pn = reinterpret_cast<uint64_t*>(uuid);
+    ADDB(S3_ADDB_REQUEST_ID, addb_request_id, *pn, *(pn + 1));
+
+    request_id_hdr.clear();
+  } else {
+    s3_log(S3_LOG_DEBUG, nullptr,
+           "\"ReqId\" HTTP header is absent or incorrect");
+    S3Uuid uuid;
+    request_id = uuid.get_string_uuid();
+
+    ADDB(S3_ADDB_REQUEST_ID, addb_request_id, *(const uint64_t*)(uuid.ptr()),
+         *(const uint64_t*)(uuid.ptr() + sizeof(uint64_t)));
+  }
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   request_timer.start();
-
-  ADDB(S3_ADDB_REQUEST_ID, addb_request_id, *(const uint64_t*)(uuid.ptr()),
-       *(const uint64_t*)(uuid.ptr() + sizeof(uint64_t)));
 
   if (async_buf_factory) {
     async_buffer_factory = std::move(async_buf_factory);
@@ -164,10 +214,9 @@ RequestObject::RequestObject(
     canonical_id = "123456789dummyCANONICALID";
     email = "abc@dummy.com";
   }
-
   request_error = S3RequestError::None;
   client_read_timer_event = NULL;
-  evhtp_obj.reset(evhtp_obj_ptr);
+
   if (ev_req != NULL) {
     http_method = (S3HttpVerb)ev_req->method;
     if (ev_req->uri != NULL) {
@@ -355,10 +404,11 @@ const char* RequestObject::c_get_uri_query() {
 }
 
 std::map<std::string, std::string>& RequestObject::get_in_headers_copy() {
-  if (!in_headers_copied) {
-    if (client_connected() && (ev_req != NULL)) {
-      evhtp_obj->http_kvs_for_each(ev_req->headers_in, consume_header, this);
-      in_headers_copied = true;
+  if (in_headers_copy.empty()) {
+    if (client_connected()) {
+      if (ev_req) {
+        evhtp_obj->http_kvs_for_each(ev_req->headers_in, consume_header, this);
+      }
     } else {
       s3_log(S3_LOG_WARN, request_id,
              "s3 client disconnected state or ev_req(NULL).\n");
@@ -368,19 +418,17 @@ std::map<std::string, std::string>& RequestObject::get_in_headers_copy() {
 }
 
 std::string RequestObject::get_header_value(std::string key) {
+  get_in_headers_copy();
 
   std::string val_str;
-  if (!in_headers_copied) {
-    get_in_headers_copy();
-  }
-
   auto header = in_headers_copy.begin();
+
   while (header != in_headers_copy.end()) {
     if (!strcasecmp(header->first.c_str(), key.c_str())) {
       val_str = header->second.c_str();
       break;
     }
-    header++;
+    ++header;
   }
   return val_str;
 }
@@ -885,18 +933,14 @@ void RequestObject::respond_retry_after(int retry_after_in_secs) {
 }
 
 bool RequestObject::is_header_present(const std::string& key) {
-  bool header_present = false;
-  if (!in_headers_copied) {
-    get_in_headers_copy();
-  }
+  get_in_headers_copy();
 
   auto header = in_headers_copy.begin();
   while (header != in_headers_copy.end()) {
     if (!strcasecmp(header->first.c_str(), key.c_str())) {
-      header_present = true;
-      break;
+      return true;
     }
-    header++;
+    ++header;
   }
-  return header_present;
+  return false;
 }

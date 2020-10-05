@@ -154,7 +154,6 @@ class RequestObject {
   // value as query parameter value (abc)
   // note: both key and values not url encoded.
   std::map<std::string, std::string, compare> in_query_params_copy;
-  bool in_headers_copied;
   bool in_query_params_copied;
 
   std::string full_request_body;
