@@ -190,6 +190,15 @@ class S3RecoveryBase:
             # Both entries corrupted
             pass
 
+    def append_results(self, result):
+        """
+        Appends the results in case index response is truncated.
+        :result:  Contents of truncated index to be appended
+
+        """
+        if(result):
+            self.list_response.extend(result)
+
     def list_index(self, index_id):
         """
         Lists the corresponding index id.
@@ -197,14 +206,31 @@ class S3RecoveryBase:
         :index_id:  Id of index to be listed
 
         """
+        self.list_response = None
         response, data = self.index_api.list(index_id)
 
-        if not response:
+        if (not response):
             self.s3recovery_log("error", "Error while listing index {}".format(index_id))
             sys.exit(1)
 
-        index_list_response = data.get_index_content()
-        return index_list_response['Keys']
+        self.index_list_response = data.get_index_content()
+        is_truncated = self.index_list_response["IsTruncated"]
+        fetch_marker = self.index_list_response["NextMarker"]
+        self.list_response = self.index_list_response['Keys']
+
+        while(is_truncated == "true"):
+             response, data = self.index_api.list(index_id, next_marker = fetch_marker )
+             if (not response):
+                self.s3recovery_log("error", "Error while listing index {}".format(index_id))
+                sys.exit(1)
+             self.index_list_response = data.get_index_content()
+
+             is_truncated = self.index_list_response["IsTruncated"]
+             fetch_marker = self.index_list_response["NextMarker"]
+             self.append_results(self.index_list_response['Keys'])
+
+        return self.list_response
+
 
     def parse_index_list_response(self, data):
         """
