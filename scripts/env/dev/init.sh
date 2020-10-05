@@ -25,6 +25,7 @@ SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
 S3_SRC_DIR="$BASEDIR/../../../"
 CURRENT_DIR=`pwd`
+S3_LOG_ROTATE_FILE_LOCATION="/etc/cron.hourly/"
 
 centos_release=`cat /etc/redhat-release | awk '/CentOS/ {print}'`
 redhat_release=`cat /etc/redhat-release | awk '/Red Hat/ {print}'`
@@ -189,6 +190,9 @@ sed -i "s/^xx.xx.xx.xx/127.0.0.1/" ./hosts_local
 ansible-playbook -i ./hosts_local --connection local setup_s3dev_centos77_8.yml -v  -k --extra-vars "s3_src=${S3_SRC_DIR}"
 
 rm -f ./hosts_local
+
+# copy s3 support bundle files rotation script for retaining fixed number of latest s3 support bundles
+cp -f ${BASEDIR}/../../s3-logrotate/s3supportbundlefilerollover.sh $S3_LOG_ROTATE_FILE_LOCATION
 
 systemctl restart haproxy
 
