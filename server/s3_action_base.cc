@@ -76,6 +76,8 @@ void S3Action::check_authorization_failed() {
       s3_stats_inc("authorization_failed_invalid_accesskey_count");
     } else if (error_code == "SignatureDoesNotMatch") {
       s3_stats_inc("authorization_failed_signature_mismatch_count");
+    } else if (error_code == "ServiceUnavailable") {
+      request->set_out_header_value("Retry-After", "2");
     } else {
       // Possible error_code values: AccessDenied, MethodNotAllowed.
       // AccessDenied: When the requesting identity does not have
