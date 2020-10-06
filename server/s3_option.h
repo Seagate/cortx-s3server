@@ -93,6 +93,7 @@ class S3Option {
   unsigned short s3_client_req_read_timeout_secs;
 
   std::string auth_ip_addr;
+  std::string s3_version;
   unsigned short auth_port;
 
   std::string s3_default_endpoint;
@@ -208,6 +209,7 @@ class S3Option {
 
     log_dir = "/var/log/seagate/s3";
     audit_log_dir = "/var/log/seagate/s3";
+    s3_version = "1";
     log_level = FLAGS_s3loglevel;
     audit_log_conf_file = FLAGS_audit_config;
     log_file_max_size_mb = 100;  // 100 MB
@@ -336,6 +338,7 @@ class S3Option {
   void set_is_s3_shutting_down(bool is_shutting_down);
 
   std::string get_auth_ip_addr();
+  std::string get_s3_version();
   unsigned short get_auth_port();
   void disable_auth();
   void enable_auth();
