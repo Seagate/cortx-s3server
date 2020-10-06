@@ -26,7 +26,7 @@ usage() { echo "Usage: bash $(basename "$0") [-n s3supportbundleFileCount] [--he
   Retain s3 support bundle files of the 'given' count, and unlink rest of the s3 support bundle files.
 
   where:
-  -n            number of latest s3 support bundle files to retain (Default value: 5)
+  -n            number of latest s3 support bundle files to retain (Default value: 10)
   --help|-h     display this help and exit" 1>&2; exit 1; 
 }
 
