@@ -65,14 +65,17 @@ public class AuthServerPostHandler {
     public void run() {
         Map<String, String> requestBody = getHttpRequestBodyAsMap();
 
-        // Check if Request_Id is present in request body
+        // Check if Request_uid is present in request body
+        // This is when the request is received from S3
         String reqId = null;
-        if (requestBody != null) reqId = requestBody.get("Request_id");
+        if (requestBody != null) reqId = requestBody.get("Request_uid");
         if (reqId != null && !reqId.isEmpty()) {
           AuthServerConfig.setReqId(reqId);
-        } else {  // Else check if Request_Id is present in request header
+        // Else check if Request_Id is present in request header
+        // In case the reqest is received directly from HAProxy
+        } else {
           if (httpRequest.headers() != null)
-            reqId = httpRequest.headers().get("Request_id");
+            reqId = httpRequest.headers().get("Request_uid");
           if (reqId != null && !reqId.isEmpty()) {
             AuthServerConfig.setReqId(reqId);
           } else {  // Else generate a new ID and set

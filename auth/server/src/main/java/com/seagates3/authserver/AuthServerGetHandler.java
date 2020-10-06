@@ -86,14 +86,17 @@ class AuthServerGetHandler {
     LOGGER.debug("Get handler called.");
 
     // Check if Request_Id is present in request body
+    // This is when the request is received from S3 server
     String reqId = null;
     Map<String, String> requestBody = getHttpRequestBodyAsMap();
-    if (requestBody != null) reqId = requestBody.get("Request_id");
+    if (requestBody != null) reqId = requestBody.get("Request_uid");
     if (reqId != null && !reqId.isEmpty()) {
       AuthServerConfig.setReqId(reqId);
-    } else {  // Else check if Request_Id is present in request header
+    // Else check if Request_Id is present in request header
+    // In case the request is received from HAProxy
+    } else {
       if (httpRequest.headers() != null)
-        reqId = httpRequest.headers().get("Request_id");
+        reqId = httpRequest.headers().get("Request_uid");
       if (reqId != null && !reqId.isEmpty()) {
         AuthServerConfig.setReqId(reqId);
       } else {  // Else generate a new ID and set
