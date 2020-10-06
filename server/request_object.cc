@@ -155,24 +155,18 @@ RequestObject::RequestObject(
       addb_request_id(++addb_request_id_gc),
       reply_buffer(NULL) {
 
-  std::string request_id_hdr = get_header_value("Request_id");
+  request_id = get_header_value("Request_id");
 
-  if (!request_id_hdr.empty()) {
-    request_id.reserve(request_id_hdr.size());
-
-    std::transform(request_id_hdr.begin(), request_id_hdr.end(),
-                   std::back_inserter(request_id), &::tolower);
+  if (!request_id.empty()) {
     char uuid[16];
 
     generate_uuid(request_id, uuid);
 
     const auto* pn = reinterpret_cast<uint64_t*>(uuid);
     ADDB(S3_ADDB_REQUEST_ID, addb_request_id, *pn, *(pn + 1));
-
-    request_id_hdr.clear();
   } else {
     s3_log(S3_LOG_DEBUG, nullptr,
-           "\"ReqId\" HTTP header is absent or incorrect");
+           "\"Request_id\" HTTP header is absent or incorrect");
     S3Uuid uuid;
     request_id = uuid.get_string_uuid();
 
