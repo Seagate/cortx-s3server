@@ -92,8 +92,8 @@ class AuthServerGetHandler {
     if (requestBody != null) reqId = requestBody.get("Request_uid");
     if (reqId != null && !reqId.isEmpty()) {
       AuthServerConfig.setReqId(reqId);
-    // Else check if Request_Id is present in request header
-    // In case the request is received from HAProxy
+      // Else check if Request_Id is present in request header
+      // In case the request is received from HAProxy
     } else {
       if (httpRequest.headers() != null)
         reqId = httpRequest.headers().get("Request_uid");
