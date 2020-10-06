@@ -285,6 +285,8 @@ void Action::check_authentication_failed() {
       s3_stats_inc("authentication_failed_invalid_accesskey_count");
     } else if (error_code == "SignatureDoesNotMatch") {
       s3_stats_inc("authentication_failed_signature_mismatch_count");
+    } else if (error_code == "ServiceUnavailable") {
+      base_request->set_out_header_value("Retry-After", "2");
     }
     s3_log(S3_LOG_ERROR, request_id, "Authentication failure: %s\n",
            error_code.c_str());
