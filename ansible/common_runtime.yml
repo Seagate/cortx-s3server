@@ -120,3 +120,9 @@
     src: ./files/s3-logrotate/s3m0tracelogfilerollover.sh
     dest: /etc/cron.hourly/s3m0tracelogfilerollover.sh
     mode: 0755
+
+- name: Update s3 support bundle logrotate entry in cron to run hourly
+  copy:
+    src: ./files/s3-logrotate/s3supportbundlefilerollover.sh
+    dest: /etc/cron.hourly/s3supportbundlefilerollover.sh
+    mode: 0755
