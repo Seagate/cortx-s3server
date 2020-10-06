@@ -155,7 +155,7 @@ RequestObject::RequestObject(
       addb_request_id(++addb_request_id_gc),
       reply_buffer(NULL) {
 
-  request_id = get_header_value("Request_id");
+  request_id = get_header_value("X-Unique-ID");
 
   if (!request_id.empty()) {
     char uuid[16];
@@ -166,7 +166,7 @@ RequestObject::RequestObject(
     ADDB(S3_ADDB_REQUEST_ID, addb_request_id, *pn, *(pn + 1));
   } else {
     s3_log(S3_LOG_DEBUG, nullptr,
-           "\"Request_id\" HTTP header is absent or incorrect");
+           "\"X-Unique-ID\" HTTP header is absent");
     S3Uuid uuid;
     request_id = uuid.get_string_uuid();
 
