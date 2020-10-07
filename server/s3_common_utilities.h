@@ -92,4 +92,7 @@ std::string evhtp_error_flags_description(uint8_t errtype);
 
 }  // namespace S3CommonUtilities
 
+// Common graceful shutdown
+void s3_kickoff_graceful_shutdown(int ignore);
+
 #endif

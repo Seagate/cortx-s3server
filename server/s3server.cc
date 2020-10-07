@@ -131,20 +131,6 @@ static void on_client_request_error(evhtp_request_t *p_evhtp_req,
   }
 }
 
-static void s3_kickoff_graceful_shutdown(int ignore) {
-  if (!global_shutdown_in_progress) {
-    global_shutdown_in_progress = 1;
-    // signal handler
-    S3Option *option_instance = S3Option::get_instance();
-
-    // trigger rollbacks & stop handling new requests
-    option_instance->set_is_s3_shutting_down(true);
-    s3_log(S3_LOG_INFO, "", "Calling event_base_loopexit\n");
-    event_base_loopexit(global_evbase_handle, NULL);
-  }
-  return;
-}
-
 //
 // As per document http://www.wangafu.net/~nickm/libevent-book/Ref4_event.html
 // Its safe to call all functions from the callback as

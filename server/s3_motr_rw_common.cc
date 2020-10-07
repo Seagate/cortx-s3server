@@ -26,6 +26,9 @@
 #include "s3_motr_kvs_reader.h"
 #include "s3_motr_kvs_writer.h"
 #include "s3_fake_motr_kvs.h"
+#include "s3_common_utilities.h"
+
+#include <ctime>
 
 /*
  *  <IEM_INLINE_DOCUMENTATION>
@@ -50,6 +53,12 @@
  *    </service_actions>
  *  </IEM_INLINE_DOCUMENTATION>
  */
+
+// To prevent motr failure in case of rapid ETIMEDOUT errors
+// s3server should stop itself
+// number of errors should not be more than XXX in YYY sec
+static int64_t gs_timeout_window_start = time(NULL);
+static unsigned gs_timeout_cnt = 0;
 
 // This is run on main thread.
 void motr_op_done_on_main_thread(evutil_socket_t, short events,
@@ -89,7 +98,32 @@ void motr_op_done_on_main_thread(evutil_socket_t, short events,
              S3_IEM_MOTR_CONN_FAIL_JSON);
     }
     context->on_failed_handler()();  // Invoke the handler.
+
+    if (error_code == -ETIMEDOUT) {
+      S3Option *optinst = S3Option::get_instance();
+      unsigned err_thr = optinst->get_motr_etimedout_max_threshold();
+      unsigned err_wnd = optinst->get_motr_etimedout_window_sec();
+      int64_t curtime = time(NULL);
+      if (curtime - gs_timeout_window_start > (int64_t)err_wnd) {
+        s3_log(S3_LOG_DEBUG, request_id,
+               "Reset motr ETIMEDOUT window; cur window sec %" PRId64 ";",
+               curtime - gs_timeout_window_start);
+        gs_timeout_window_start = curtime;
+        gs_timeout_cnt = 0;
+      }
+      gs_timeout_cnt++;
+      if (gs_timeout_cnt >= err_thr) {
+        s3_log(
+            S3_LOG_ERROR, request_id,
+            "Shutdown. Motr ETIMEDOUT error cnt %u reached threshold value %u "
+            "for %" PRId64 " sec with allowed window %u sec",
+            gs_timeout_cnt, err_thr, curtime - gs_timeout_window_start,
+            err_wnd);
+        s3_kickoff_graceful_shutdown(0);
+      }
+    }
   }
+
   free(user_data);
   // Free user event
   if (s3user_event) event_free(s3user_event);
