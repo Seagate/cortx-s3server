@@ -42,6 +42,8 @@ s3:
     files:
       - /opt/seagate/cortx/auth/resources/authserver.properties
       - /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+      - /opt/seagate/cortx/auth/resources/s3authserver.jks
+      - /opt/seagate/cortx/auth/resources/keystore.properties
 # Script path used by CSM to generate s3 support bundle
 support_bundle:
   - sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh
