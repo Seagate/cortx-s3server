@@ -1237,11 +1237,11 @@ unsigned short S3Option::get_redis_srv_port() { return redis_srv_port; }
 
 unsigned S3Option::get_motr_etimedout_max_threshold() {
   return motr_etimedout_max_threshold;
-};
+}
 
 unsigned S3Option::get_motr_etimedout_window_sec() {
   return motr_etimedout_window_sec;
-};
+}
 
 bool S3Option::get_motr_read_mempool_zeroed_buffer() {
   return motr_read_mempool_zeroed_buffer;
