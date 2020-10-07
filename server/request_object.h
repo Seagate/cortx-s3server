@@ -240,7 +240,7 @@ class RequestObject {
   // we dont flood with data coming from socket in user buffers.
   virtual void pause() {
     if (!client_connected()) {
-      s3_log(S3_LOG_WARN, request_id, "s3 client disconnected state.\n");
+      s3_log(S3_LOG_INFO, request_id, "s3 client is disconnected.\n");
       return;
     }
     if (is_s3_client_read_error()) {
@@ -261,7 +261,7 @@ class RequestObject {
 
   virtual void resume(bool set_read_timer = true) {
     if (!client_connected()) {
-      s3_log(S3_LOG_WARN, request_id, "s3 client disconnected state.\n");
+      s3_log(S3_LOG_INFO, request_id, "s3 client is disconnected.\n");
       return;
     }
     if (is_paused) {
