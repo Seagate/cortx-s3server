@@ -59,9 +59,11 @@
 // number of errors should not be more than
 // S3_SERVER_MOTR_ETIMEDOUT_MAX_THRESHOLD in S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC
 // seconds
-static int64_t gs_timeout_window_start = time(NULL);
-static unsigned gs_timeout_cnt = 0;
-static bool gs_timeout_shutdown_in_progress = false;
+// Note: these vars are not static because they used as extern in UTs
+int64_t gs_timeout_window_start = time(NULL);
+unsigned gs_timeout_cnt = 0;
+bool gs_timeout_shutdown_in_progress = false;
+void (*gs_motr_timeout_shutdown)(int ignore) = s3_kickoff_graceful_shutdown;
 
 // This is run on main thread.
 void motr_op_done_on_main_thread(evutil_socket_t, short events,
@@ -79,7 +81,7 @@ void motr_op_done_on_main_thread(evutil_socket_t, short events,
   if (context == NULL) {
     s3_log(S3_LOG_ERROR, "", "context pointer is NULL\n");
   }
-  if (context->get_request() != NULL) {
+  if (context->get_request()) {
     request_id = context->get_request()->get_request_id();
   }
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
@@ -128,7 +130,9 @@ void motr_op_done_on_main_thread(evutil_socket_t, short events,
             "for %" PRId64 " sec with allowed window %u sec",
             gs_timeout_cnt, err_thr, curtime - gs_timeout_window_start,
             err_wnd);
-        s3_kickoff_graceful_shutdown(0);
+        if (gs_motr_timeout_shutdown) {
+          gs_motr_timeout_shutdown(0);
+        }
         gs_timeout_shutdown_in_progress = true;
       }
     }

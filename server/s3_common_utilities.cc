@@ -184,6 +184,8 @@ std::string evhtp_error_flags_description(uint8_t errtype) {
 }  // namespace S3CommonUtilities
 
 void s3_kickoff_graceful_shutdown(int ignore) {
+  extern int global_shutdown_in_progress;
+  extern evbase_t *global_evbase_handle;
   if (!global_shutdown_in_progress) {
     global_shutdown_in_progress = 1;
     // signal handler
