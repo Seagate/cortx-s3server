@@ -46,6 +46,8 @@ struct m0_uint128 bucket_metadata_list_index_oid;
 struct m0_uint128 replica_bucket_metadata_list_index_oid;
 struct m0_uint128 global_probable_dead_object_list_index_oid;
 struct m0_uint128 global_instance_id;
+pthread_t global_tid_indexop;
+pthread_t global_tid_objop;
 S3Option *g_option_instance = NULL;
 evhtp_ssl_ctx_t *g_ssl_auth_ctx = NULL;
 extern S3Stats *g_stats_instance;
