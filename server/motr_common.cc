@@ -25,6 +25,7 @@
 #include "s3_m0_uint128_helper.h"
 #include "s3_factory.h"
 #include "s3_iem.h"
+#define MAX_THREAD 20
 
 static struct m0_client *motr_instance = NULL;
 struct m0_ufid_generator s3_ufid_generator;
@@ -42,6 +43,8 @@ extern std::set<struct s3_motr_op_context *> global_motr_object_ops_list;
 extern std::set<struct s3_motr_idx_op_context *> global_motr_idx_ops_list;
 extern std::set<struct s3_motr_idx_context *> global_motr_idx;
 extern std::set<struct s3_motr_obj_context *> global_motr_obj;
+extern pthread_t global_tid_objop;
+extern pthread_t global_tid_indexop;
 
 int init_motr(void) {
   s3_log(S3_LOG_INFO, "", "Entering!\n");
@@ -192,18 +195,39 @@ void teardown_motr_cancel_wait_op(struct m0_op *op) {
     }
   }
 }
-// This function being called during shutdown to teardown
-// various index and object operations in progress
-void global_motr_teardown() {
-  s3_log(S3_LOG_INFO, "", "Calling teardown of object operations...\n");
-  for (auto op_ctx : global_motr_object_ops_list) {
-    for (size_t i = 0; i < op_ctx->op_count; i++) {
-      if (op_ctx->ops[i] != NULL) {
-        teardown_motr_cancel_wait_op(op_ctx->ops[i]);
-      }
+
+void *thread_teardown_obj_ops(void *arg) {
+  auto *op_ctx = static_cast<struct s3_motr_op_context *>(arg);
+  for (size_t i = 0; i < op_ctx->op_count; i++) {
+    if (op_ctx->ops[i] != NULL) {
+      teardown_motr_cancel_wait_op(op_ctx->ops[i]);
     }
   }
-  global_motr_object_ops_list.clear();
+  return NULL;
+}
+
+void *teardown_obj_ops(void *) {
+  pthread_t tids[MAX_THREAD];
+  if (global_motr_object_ops_list.size() != 0) {
+    size_t count = 0;
+    for (auto op_ctx : global_motr_object_ops_list) {
+      int rc = pthread_create(&tids[count++], NULL, &thread_teardown_obj_ops,
+                              (void *)op_ctx);
+      if (rc != 0) {
+        s3_log(S3_LOG_FATAL, "", "Failed to create pthread\n");
+      }
+      if (count == MAX_THREAD) {
+        for (size_t i = 0; i < MAX_THREAD; i++) {
+          pthread_join(tids[i], NULL);
+        }
+        count = 0;
+      }
+    }
+    for (size_t i = 0; i < count; i++) {
+      pthread_join(tids[i], NULL);
+    }
+    global_motr_object_ops_list.clear();
+  }
   s3_log(S3_LOG_INFO, "", "Calling m0_obj_fini...\n");
   for (auto obj_ctx : global_motr_obj) {
     for (size_t i = 0; i < obj_ctx->n_initialized_contexts; i++) {
@@ -213,6 +237,10 @@ void global_motr_teardown() {
     }
   }
   global_motr_obj.clear();
+  return NULL;
+}
+
+void *teardown_index_ops(void *) {
   s3_log(S3_LOG_INFO, "", "Calling teardown of index operations...\n");
   for (auto idx_op_ctx : global_motr_idx_ops_list) {
     for (size_t i = 0; i < idx_op_ctx->op_count; i++) {
@@ -234,4 +262,21 @@ void global_motr_teardown() {
     }
   }
   global_motr_idx.clear();
+  return NULL;
+}
+
+// This function being called during shutdown to teardown
+// various index and object operations in progress
+void global_motr_teardown() {
+  int rc;
+  s3_log(S3_LOG_INFO, "", "Calling teardown of object operations...\n");
+  rc = pthread_create(&global_tid_objop, NULL, &teardown_obj_ops, NULL);
+  if (rc != 0) {
+    s3_log(S3_LOG_FATAL, "", "Failed to create pthread\n");
+  }
+
+  rc = pthread_create(&global_tid_indexop, NULL, &teardown_index_ops, NULL);
+  if (rc != 0) {
+    s3_log(S3_LOG_FATAL, "", "Failed to create pthread\n");
+  }
 }
