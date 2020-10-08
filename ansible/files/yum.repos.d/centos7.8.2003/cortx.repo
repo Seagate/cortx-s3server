@@ -1,0 +1,6 @@
+[releases_cortx]
+# Shailesh will give separate URL for centos 7.8.2003 cortx build, for now using same as 7.7.1908
+baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/github/dev/rhel-7.7.1908/s3server_last_successful/
+gpgcheck = 0
+name = Yum repo for CORTX builds - OS Centos 7.8.2003
+priority = 1
