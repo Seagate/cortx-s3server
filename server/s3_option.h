@@ -169,6 +169,9 @@ class S3Option {
   std::string redis_srv_addr;
   unsigned short redis_srv_port;
 
+  unsigned motr_etimedout_max_threshold;
+  unsigned motr_etimedout_window_sec;
+
   std::string s3_daemon_dir;
   unsigned short s3_daemon_redirect;
 
@@ -284,6 +287,9 @@ class S3Option {
 
     redis_srv_addr = "127.0.0.1";
     redis_srv_port = 6397;
+
+    motr_etimedout_max_threshold = 5;
+    motr_etimedout_window_sec = 60;
 
     eventbase = NULL;
 
@@ -431,6 +437,9 @@ class S3Option {
 
   std::string get_redis_srv_addr();
   unsigned short get_redis_srv_port();
+
+  unsigned get_motr_etimedout_max_threshold();
+  unsigned get_motr_etimedout_window_sec();
 
   bool get_motr_read_mempool_zeroed_buffer();
   bool get_libevent_mempool_zeroed_buffer();
