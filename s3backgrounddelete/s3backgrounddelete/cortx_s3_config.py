@@ -387,3 +387,21 @@ class CORTXS3Config(object):
             raise KeyError(
                 "Could not find s3_recovery secret_key from config file " +
                 self._conf_file)
+
+    def get_cluster_id(self):
+        """Return cluster_id from config file or KeyError."""
+        if 'cortx_s3' in self._config and self._config['cortx_s3']['cluster_id']:
+            return self._config['cortx_s3']['cluster_id']
+        else:
+            raise KeyError(
+                "Could not find cluster_id from config file " +
+                self._conf_file)
+
+    def get_use_cipher(self):
+        """Return use_cipher from config file or KeyError."""
+        if 'cortx_s3' in self._config and self._config['cortx_s3']['use_cipher']:
+            return self._config['cortx_s3']['use_cipher']
+        else:
+            raise KeyError(
+                "Could not find use_cipher from config file " +
+                self._conf_file)

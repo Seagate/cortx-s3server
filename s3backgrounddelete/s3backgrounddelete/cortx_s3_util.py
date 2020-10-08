@@ -25,6 +25,7 @@ from hashlib import sha1, sha256
 import urllib
 import datetime
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
+from s3backgrounddelete.cortx_s3_cipher import CortxS3Cipher
 
 class CORTXS3Util(object):
    """Generate Authorization headers to validate requests."""
@@ -36,6 +37,10 @@ class CORTXS3Util(object):
             self._config = CORTXS3Config()
         else:
             self._config = config
+
+   def generate_key(self, config, use_base64, key_len, const_key):
+        s3cipher = CortxS3Cipher(config, use_base64, key_len, const_key)
+        return s3cipher.get_key()
 
    def get_headers(self, host, epoch_t, body_256hash):
         headers = {
@@ -103,11 +108,19 @@ class CORTXS3Util(object):
        algorithm = 'AWS4-HMAC-SHA256'
 
        if self._config.get_s3recovery_flag():
-           access_key = self._config.get_s3_recovery_access_key()
-           secret_key = self._config.get_s3_recovery_secret_key()
+            if self._config.get_use_cipher():
+                access_key = self.generate_key(self._config, True, 22, "s3backgroundaccesskey")
+                secret_key = self.generate_key(self._config, False, 40, "s3backgroundsecretkey")
+            else:
+                access_key = self._config.get_s3_recovery_access_key()
+                secret_key = self._config.get_s3_recovery_secret_key()
        else:
-           access_key = self._config.get_cortx_s3_access_key()
-           secret_key = self._config.get_cortx_s3_secret_key()
+            if self._config.get_use_cipher():
+                access_key = self.generate_key(self._config, True, 22, "s3recoveryaccesskey")
+                secret_key = self.generate_key(self._config, False, 40, "s3recoverysecretkey")
+            else:
+                access_key = self._config.get_cortx_s3_access_key()
+                secret_key = self._config.get_cortx_s3_secret_key()
 
        string_to_sign = self.create_string_to_sign_v4(method, canonical_uri, canonical_query_string, body, epoch_t,
                                                  algorithm, host, service, region)

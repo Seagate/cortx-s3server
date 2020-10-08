@@ -380,6 +380,20 @@ add_s3backgrounddelete_rabbitmq_user()
     echo "Rabbitmq configuration for this node is completed..."
 }
 
+# Generate s3backgroundelete keys using cipher
+create_s3backgroundelete_keys()
+{
+    access_key=$(s3cipher --use_base64 --key_len  22  --const_key  "s3backgroundaccesskey")
+    secret_key=$(s3cipher --key_len  40  --const_key  "s3backgroundsecretkey")
+}
+
+# Generate s3recovery keys using cipher
+create_s3recovery_keys()
+{
+    access_key=$(s3cipher --use_base64 --key_len  22  --const_key  "s3recoveryaccesskey")
+    secret_key=$(s3cipher --key_len  40  --const_key  "s3recoverysecretkey")
+}
+
 # Generate random credentials for accounts
 create_random_keys()
 {
@@ -394,7 +408,13 @@ create_recovery_tool_account()
     if [[ $output == *"No such object"* ]]
     then
       # Create s3recovery tool account
-      create_random_keys
+      # LDR Check
+      if [ true ]
+      then
+        create_s3recovery_keys
+      else
+        create_random_keys
+      fi
       salt "*" cmd.run "sed -i \"s/recovery_account_access_key:.*$/recovery_account_access_key: \"$access_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
       salt "*" cmd.run "sed -i \"s/recovery_account_secret_key:.*$/recovery_account_secret_key: \"$secret_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
       salt "*" cmd.run "sed -i \"s/ak:.*/ak: $access_key/g\" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif"
@@ -428,8 +448,14 @@ create_background_delete_account()
     output=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
     if [[ $output == *"No such object"* ]]
     then
-      # Create s3background delete account
-      create_random_keys
+    # Create s3background delete account
+    # LDR Check
+      if [ true ]
+      then
+        create_s3backgroundelete_keys
+      else
+        create_random_keys
+      fi
       salt "*" cmd.run "sed -i \"s/background_account_access_key:.*$/background_account_access_key: \"$access_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
       salt "*" cmd.run "sed -i \"s/background_account_secret_key:.*$/background_account_secret_key: \"$secret_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
       salt "*" cmd.run "sed -i \"s/ak:.*/ak: $access_key/g\" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif"

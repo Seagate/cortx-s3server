@@ -28,6 +28,8 @@ cortx_s3:                                   # Section for S3 background delete c
    background_account_secret_key: "ht8ntpB9DoChDrneKZHvPVTm+1mHbs7UdCyYXWK5"  # Secret Key corresponding to account-name "s3-background-delete-svc"
    daemon_mode: True                                       # S3background process run in daemon mode and ST's run in non-daemon mode.
    s3_instance_count: 22                                   # Number of active s3 instances in release setup
+   cluster_id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"      # Cluster id of release setup used for s3cipher generation.
+   use_cipher: True                                        # Generate access/secret keys using cipher.
 
 s3_recovery:                               # Section for S3 recovery config config
    recovery_account_access_key: "A9IAJPINPFRBTPASATAZ"                     # Access Key corresponding to account-name "s3-recovery-svc"
