@@ -67,7 +67,7 @@ class S3Timer {
       end_time = Clock::now();
       state = S3TimerState::stopped;
       duration += end_time - start_time;
-    } else {
+    } else if (state != S3TimerState::stopped) {
       state = S3TimerState::unknown;
     }
   }
