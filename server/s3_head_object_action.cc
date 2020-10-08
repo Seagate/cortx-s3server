@@ -117,6 +117,8 @@ void S3HeadObjectAction::send_response_to_s3_client() {
     request->set_out_header_value("Accept-Ranges", "bytes");
     request->set_out_header_value("Content-Length",
                                   object_metadata->get_content_length_str());
+    request->set_out_header_value("Content-Type",
+                                  object_metadata->get_content_type());
 
     for (auto it : object_metadata->get_user_attributes()) {
       request->set_out_header_value(it.first, it.second);
