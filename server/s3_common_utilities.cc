@@ -23,7 +23,10 @@
 #include <algorithm>
 #include <libxml/parser.h>
 #include <evhtp.h>
+
 #include "s3_common_utilities.h"
+#include "s3_log.h"
+#include "s3_option.h"
 
 namespace S3CommonUtilities {
 
@@ -156,3 +159,19 @@ std::string evhtp_error_flags_description(uint8_t errtype) {
 }
 
 }  // namespace S3CommonUtilities
+
+void s3_kickoff_graceful_shutdown(int ignore) {
+  extern int global_shutdown_in_progress;
+  extern evbase_t *global_evbase_handle;
+  if (!global_shutdown_in_progress) {
+    global_shutdown_in_progress = 1;
+    // signal handler
+    S3Option *option_instance = S3Option::get_instance();
+
+    // trigger rollbacks & stop handling new requests
+    option_instance->set_is_s3_shutting_down(true);
+    s3_log(S3_LOG_INFO, "", "Calling event_base_loopexit\n");
+    event_base_loopexit(global_evbase_handle, NULL);
+  }
+  return;
+}

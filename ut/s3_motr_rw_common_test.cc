@@ -37,7 +37,7 @@ using ::testing::AtLeast;
 class S3MotrReadWriteCommonTest : public testing::Test {
  protected:
   S3MotrReadWriteCommonTest() {
-    evbase_t *evbase = event_base_new();
+    evbase = event_base_new();
     evhtp_request_t *req = evhtp_request_new(NULL, evbase);
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, new EvhtpWrapper());
@@ -48,13 +48,7 @@ class S3MotrReadWriteCommonTest : public testing::Test {
         std::bind(&S3CallBack::on_success, &s3objectmetadata_callbackobj),
         std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj),
         ptr_mock_s3motr);
-    s3user_event =
-        event_new(evbase, -1, EV_WRITE | EV_READ | EV_TIMEOUT, NULL, NULL);
-    user_context = (struct user_event_context *)calloc(
-        1, sizeof(struct user_event_context));
-    user_context->app_ctx =
-        static_cast<void *>(ptr_mock_s3_async_context.get());
-    user_context->user_event = (void *)s3user_event;
+    reset_state();
   }
 
   std::shared_ptr<MockS3Motr> ptr_mock_s3motr;
@@ -63,6 +57,19 @@ class S3MotrReadWriteCommonTest : public testing::Test {
   S3CallBack s3objectmetadata_callbackobj;
   struct event *s3user_event;
   struct user_event_context *user_context;
+  evbase_t *evbase;
+
+  void reset_state() {
+    s3user_event =
+        event_new(evbase, -1, EV_WRITE | EV_READ | EV_TIMEOUT, NULL, NULL);
+    user_context = (struct user_event_context *)calloc(
+        1, sizeof(struct user_event_context));
+    user_context->app_ctx =
+        static_cast<void *>(ptr_mock_s3_async_context.get());
+    user_context->user_event = (void *)s3user_event;
+    s3objectmetadata_callbackobj.success_called = false;
+    s3objectmetadata_callbackobj.fail_called = false;
+  }
 };
 
 TEST_F(S3MotrReadWriteCommonTest, MotrOpDoneOnMainThreadOnSuccess) {
@@ -74,6 +81,82 @@ TEST_F(S3MotrReadWriteCommonTest, MotrOpDoneOnMainThreadOnSuccess) {
 TEST_F(S3MotrReadWriteCommonTest, MotrOpDoneOnMainThreadOnFail) {
   motr_op_done_on_main_thread(1, 1, (void *)user_context);
   EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
+}
+
+TEST_F(S3MotrReadWriteCommonTest, MotrOpTimeoutFailIncrOnTimeoutOnly) {
+  extern unsigned gs_timeout_cnt;
+  gs_timeout_cnt = 0;
+
+  EXPECT_CALL(*ptr_mock_s3_async_context, get_errno_for(0))
+      .WillRepeatedly(Return(-ENOENT));
+  motr_op_done_on_main_thread(1, 1, (void *)user_context);
+  EXPECT_TRUE(gs_timeout_cnt == 0);
+
+  reset_state();
+  EXPECT_CALL(*ptr_mock_s3_async_context, get_errno_for(0))
+      .WillRepeatedly(Return(-ETIMEDOUT));
+  motr_op_done_on_main_thread(1, 1, (void *)user_context);
+  EXPECT_TRUE(gs_timeout_cnt == 1);
+}
+
+TEST_F(S3MotrReadWriteCommonTest, MotrOpTimeoutFailResetAfterWnd) {
+  extern bool gs_timeout_window_start;
+  extern unsigned gs_timeout_cnt;
+  gs_timeout_cnt = 0;
+
+  S3Option *optinst = S3Option::get_instance();
+  unsigned err_thr = optinst->get_motr_etimedout_max_threshold();
+  unsigned err_wnd = optinst->get_motr_etimedout_window_sec();
+
+  EXPECT_TRUE(err_thr > 2);
+
+  EXPECT_CALL(*ptr_mock_s3_async_context, get_errno_for(0))
+      .WillRepeatedly(Return(-ETIMEDOUT));
+
+  motr_op_done_on_main_thread(1, 1, (void *)user_context);
+  reset_state();
+  motr_op_done_on_main_thread(1, 1, (void *)user_context);
+  EXPECT_TRUE(gs_timeout_cnt == 2);
+
+  reset_state();
+  gs_timeout_window_start -= err_wnd + 1;
+  motr_op_done_on_main_thread(1, 1, (void *)user_context);
+  EXPECT_TRUE(gs_timeout_cnt == 1);
+}
+
+TEST_F(S3MotrReadWriteCommonTest, MotrOpTimeoutFailShutOnThresholdOnly) {
+  extern void (*gs_motr_timeout_shutdown)(int ignore);
+  extern bool gs_timeout_shutdown_in_progress;
+  extern unsigned gs_timeout_cnt;
+  gs_timeout_cnt = 0;
+  gs_motr_timeout_shutdown = nullptr;
+
+  S3Option *optinst = S3Option::get_instance();
+  unsigned err_thr = optinst->get_motr_etimedout_max_threshold();
+
+  EXPECT_TRUE(err_thr > 2);
+
+  EXPECT_CALL(*ptr_mock_s3_async_context, get_errno_for(0))
+      .WillRepeatedly(Return(-ETIMEDOUT));
+
+  for (unsigned i = 0; i < err_thr - 1; ++i) {
+    motr_op_done_on_main_thread(1, 1, (void *)user_context);
+    EXPECT_TRUE(gs_timeout_cnt == i + 1);
+    EXPECT_FALSE(gs_timeout_shutdown_in_progress);
+    reset_state();
+  }
+
+  motr_op_done_on_main_thread(1, 1, (void *)user_context);
+  EXPECT_TRUE(gs_timeout_cnt == err_thr);
+  EXPECT_TRUE(gs_timeout_shutdown_in_progress);
+  // Check that OnFail handle was called
+  EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
+
+  // Check that Shutdown called only once, i.e. err counter not changed any more
+  reset_state();
+  motr_op_done_on_main_thread(1, 1, (void *)user_context);
+  EXPECT_TRUE(gs_timeout_cnt == err_thr);
+  EXPECT_TRUE(gs_timeout_shutdown_in_progress);
 }
 
 TEST_F(S3MotrReadWriteCommonTest, S3MotrOpStableResponseCountSameAsOpCount) {
