@@ -751,7 +751,6 @@ int main(int argc, char **argv) {
   S3Daemonize s3daemon;
   set_fatal_handler_exit();
   s3daemon.daemonize();
-  s3daemon.register_signals();
 
   // dump the config
   g_option_instance->dump_options();
