@@ -89,6 +89,8 @@ struct m0_uint128 global_instance_list_index;
 struct m0_uint128 global_probable_dead_object_list_index_oid;
 
 int global_shutdown_in_progress;
+pthread_t global_tid_indexop;
+pthread_t global_tid_objop;
 
 struct m0_uint128 global_instance_id;
 int shutdown_motr_teardown_called;
@@ -127,29 +129,6 @@ static void on_client_request_error(evhtp_request_t *p_evhtp_req,
       p_evhtp_req->cbarg = nullptr;
     }
   }
-}
-
-static void s3_kickoff_graceful_shutdown(int ignore) {
-  if (!global_shutdown_in_progress) {
-    global_shutdown_in_progress = 1;
-    // signal handler
-    S3Option *option_instance = S3Option::get_instance();
-    int grace_period_sec = option_instance->get_s3_grace_period_sec();
-    struct timeval loopexit_timeout = {.tv_sec = 0, .tv_usec = 0};
-
-    // trigger rollbacks & stop handling new requests
-    option_instance->set_is_s3_shutting_down(true);
-
-    if (grace_period_sec > 6) {
-      loopexit_timeout.tv_sec = grace_period_sec - 6;
-    }
-    // event_base_loopexit() will let event loop serve all events as usual
-    // till loopexit_timeout (1 sec). After the timeout, all active events will
-    // be served and then the event loop breaks.
-    s3_log(S3_LOG_INFO, "", "Calling event_base_loopexit\n");
-    event_base_loopexit(global_evbase_handle, &loopexit_timeout);
-  }
-  return;
 }
 
 //
@@ -1209,11 +1188,10 @@ int main(int argc, char **argv) {
 
   shutdown_motr_teardown_called = 1;
   global_motr_teardown();
-
   s3_perf_metrics_fini();
-
+  pthread_join(global_tid_indexop, NULL);
+  pthread_join(global_tid_objop, NULL);
   S3FakeMotrRedisKvs::destroy_instance();
-
   free_evhtp_handle(htp_ipv4);
   free_evhtp_handle(htp_ipv6);
   free_evhtp_handle(htp_motr);
@@ -1231,13 +1209,11 @@ int main(int argc, char **argv) {
   s3_stats_fini();
   S3AuditInfoLogger::finalize();
   finalize_cli_options();
-
   S3MempoolManager::destroy_instance();
   S3MotrLayoutMap::destroy_instance();
   S3Option::destroy_instance();
-  fini_log();
-
   event_destroy_mempool();
+  fini_log();
   event_free(signal_sigint_event);
   event_free(signal_sigterm_event);
   event_base_free(global_evbase_handle);
@@ -1245,6 +1221,5 @@ int main(int argc, char **argv) {
   // so that leak-check tools dont complain
   // Added in libevent 2.1
   libevent_global_shutdown();
-
   return 0;
 }
