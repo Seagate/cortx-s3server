@@ -79,4 +79,3 @@ class MockS3RequestObject : public S3RequestObject {
 };
 
 #endif
-
