@@ -159,19 +159,19 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
-%config /opt/seagate/cortx/auth/resources/authserver.properties
+%config(noreplace) /opt/seagate/cortx/auth/resources/authserver.properties
 %config(noreplace) /opt/seagate/cortx/auth/resources/authserver-log4j2.xml
 %config(noreplace) /opt/seagate/cortx/auth/resources/authencryptcli-log4j2.xml
-%config /opt/seagate/cortx/auth/resources/keystore.properties
+%config(noreplace) /opt/seagate/cortx/auth/resources/keystore.properties
 %config(noreplace) /opt/seagate/cortx/auth/resources/static/saml-metadata.xml
 %config(noreplace) /opt/seagate/cortx/auth/resources/s3authserver.jks
-%config /opt/seagate/cortx/s3/conf/s3config.yaml
+%config(noreplace) /opt/seagate/cortx/s3/conf/s3config.yaml
 %config(noreplace) /opt/seagate/cortx/s3/conf/s3server_audit_log.properties
 %config(noreplace) /opt/seagate/cortx/s3/conf/s3_obj_layout_mapping.yaml
 %config(noreplace) /opt/seagate/cortx/s3/conf/s3stats-allowlist.yaml
 %config(noreplace) /opt/seagate/cortx/auth/resources/defaultAclTemplate.xml
 %config(noreplace) /opt/seagate/cortx/auth/resources/AmazonS3.xsd
-%config /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+%config(noreplace) /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
 
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/authserver.properties
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/authserver-log4j2.xml
