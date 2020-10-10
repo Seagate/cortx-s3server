@@ -103,7 +103,7 @@
     `s3iamcli UpdateAccessKey -k <Access Key Id> -s <Active/Inactive> -n <User Name>`  
 10. List all IAM users of current account, matching the path prefix  
     `s3iamcli ListUsers [-p <Path Prefix>]`  
-11. Change password of an IAM user  
+11. Change the password of an IAM user  
     `s3iamcli ChangePassword --old_password <Old User Password> --new_password <New User Password>`  
 12. Create temporary authentication credential for an account or IAM user  
     `s3iamcli GetTempAuthCredentials -a <Account Name> --password <Account Password> [-d <Duration in seconds>] [-n <User Name>]`  
