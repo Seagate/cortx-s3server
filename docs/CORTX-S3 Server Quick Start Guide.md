@@ -45,7 +45,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
             * If epel was installed, you'll see it in the output list.
             * You might also see exclamation mark in front of the repositories id. Refer to the [Redhat Knowledge Base](https://access.redhat.com/solutions/2267871).
         * `$ yum install -y epel-release`
-    * Verify if kernel-devel-3.10.0-1062 version package is installed, using: `$ uname -r`
+    * Verify if kernel version is 3.10.0-1062 (for centos-7.7) or 3.10.0-1127 (for centos-7.8), using: `$ uname -r`
 
 7. You'll need to disable selinux and firewall. Run the following commands:
 
