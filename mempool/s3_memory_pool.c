@@ -50,7 +50,7 @@ struct mempool {
   /* Whenever pool frees any memory, use this to
      indicate to user of pool that memory was
      free'd with actual free() sys call. */
-  int alignment;               /* Memory aligment */
+  size_t alignment;            /* Memory aligment */
   size_t max_memory_threshold; /* Maximum memory that the system can have from
                                   pool */
   size_t mempool_item_size; /* Size of items managed by this pool */
