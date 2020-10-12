@@ -1042,6 +1042,42 @@ TEST_F(S3PutObjectActionTest, SaveMetadata) {
   action_under_test->save_metadata();
 }
 
+TEST_F(S3PutObjectActionTest, SaveObjectMetadataFailed) {
+  CREATE_OBJECT_METADATA;
+  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
+      object_list_indx_oid);
+  action_under_test->new_object_metadata =
+      object_meta_factory->mock_object_metadata;
+
+  action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
+
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
+
+  MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
+      action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
+      object_list_indx_oid, objects_version_list_idx_oid,
+      "" /* Version does not exists yet */, false /* force_delete */,
+      false /* is_multipart */, {0ULL, 0ULL});
+  action_under_test->new_probable_del_rec.reset(prob_rec);
+  // expectations for mark_new_oid_for_deletion()
+  EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
+  EXPECT_CALL(*prob_rec, to_json()).Times(1);
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+              put_keyval(_, _, _, _, _)).Times(1);
+
+  action_under_test->clear_tasks();
+  action_under_test->save_object_metadata_failed();
+
+  EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
+}
+
 TEST_F(S3PutObjectActionTest, SendResponseWhenShuttingDown) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
 
