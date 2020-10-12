@@ -603,6 +603,9 @@ void S3PutObjectAction::save_object_metadata_failed() {
   if (new_object_metadata->get_state() ==
       S3ObjectMetadataState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
+  } else {
+    s3_log(S3_LOG_ERROR, request_id, "failed to save object metadata.");
+    set_s3_error("InternalError");
   }
   // Clean up will be done after response.
   send_response_to_s3_client();
