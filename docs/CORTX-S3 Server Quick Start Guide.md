@@ -15,7 +15,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
 <summary>Click to expand!</summary>
 <p>
 
-1. You'll need to set up SSC, Cloud VM, or a local VM on VMWare Fusion or Oracle VirtualBox. To know more, refer to the [LocalVMSetup](https://github.com/Seagate/cortx/blob/main/doc/LocalVMSetup.md) section.
+1. You'll need to set up SSC, Cloud VM, or a local VM on VMWare Fusion or Oracle VirtualBox.
 2. As a CORTX contributor you will need to refer, clone, contribute, and commit changes via the GitHub server. You can access the latest code via [Github](https://github.com/Seagate/cortx).
 3. You'll need a valid GitHub Account.
 4. Before you clone your Git repository, you'll need to create the following:
