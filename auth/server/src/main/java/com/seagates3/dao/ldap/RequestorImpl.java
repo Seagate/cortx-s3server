@@ -87,7 +87,7 @@ public class RequestorImpl implements RequestorDAO {
                         "Failed to find requestor details.\n" + ex);
             }
             try {
-            if (ldapResults.hasMore()) {
+              if (ldapResults != null && ldapResults.hasMore()) {
                 LDAPEntry entry;
                     entry = ldapResults.next();
                 requestor.setId(accessKey.getUserId());
