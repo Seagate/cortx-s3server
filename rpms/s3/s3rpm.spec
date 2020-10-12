@@ -172,11 +172,15 @@ rm -rf %{buildroot}
 %config(noreplace) /opt/seagate/cortx/auth/resources/defaultAclTemplate.xml
 %config(noreplace) /opt/seagate/cortx/auth/resources/AmazonS3.xsd
 %config(noreplace) /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+%config /opt/seagate/cortx/auth/resources/authserverPassword.properties
+%config /opt/seagate/cortx/auth/resources/keystorePassword.properties
 
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/authserver.properties
+%attr(4600, root, root) /opt/seagate/cortx/auth/resources/authserverPassword.properties
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/authserver-log4j2.xml
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/authencryptcli-log4j2.xml
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/keystore.properties
+%attr(4600, root, root) /opt/seagate/cortx/auth/resources/keystorePassword.properties
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/defaultAclTemplate.xml
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/AmazonS3.xsd
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/s3authserver.jks

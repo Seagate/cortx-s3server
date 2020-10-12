@@ -72,6 +72,10 @@ public class AuthServerConfig {
         authResourceDir = resourceDir;
         Path authProperties = Paths.get(authResourceDir, "authserver.properties");
         Path authSecureProperties = Paths.get(authResourceDir, "keystore.properties");
+        Path authPasswordProperties =
+            Paths.get(authResourceDir, "authserverPassword.properties");
+        Path authSecurePasswordProperties =
+            Paths.get(authResourceDir, "keystorePassword.properties");
         Properties authServerConfig = new Properties();
         InputStream input = new FileInputStream(authProperties.toString());
         authServerConfig.load(input);
@@ -79,6 +83,16 @@ public class AuthServerConfig {
         InputStream inSecure = new FileInputStream(authSecureProperties.toString());
         authSecureConfig.load(inSecure);
         authServerConfig.putAll(authSecureConfig);
+        Properties authPasswordConfig = new Properties();
+        InputStream inputConfig =
+            new FileInputStream(authPasswordProperties.toString());
+        authPasswordConfig.load(inputConfig);
+        authServerConfig.putAll(authPasswordConfig);
+        Properties authSecurePasswordConfig = new Properties();
+        InputStream inputKeystore =
+            new FileInputStream(authSecurePasswordProperties.toString());
+        authSecurePasswordConfig.load(inputKeystore);
+        authServerConfig.putAll(authSecurePasswordConfig);
         AuthServerConfig.init(authServerConfig);
         if (input != null) input.close();
         if (inSecure != null) inSecure.close();

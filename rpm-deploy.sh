@@ -168,7 +168,7 @@ priority = 1
 }
 
 up_cluster() {
-    $USE_SUDO ./scripts/enc_ldap_passwd_in_cfg.sh -l "$ldap_admin_pwd" -p /opt/seagate/cortx/auth/resources/authserver.properties
+    $USE_SUDO ./scripts/enc_ldap_passwd_in_cfg.sh -l "$ldap_admin_pwd" -p /opt/seagate/cortx/auth/resources/authserverPassword.properties
     $USE_SUDO systemctl start haproxy
     $USE_SUDO systemctl start slapd
     $USE_SUDO systemctl start s3authserver

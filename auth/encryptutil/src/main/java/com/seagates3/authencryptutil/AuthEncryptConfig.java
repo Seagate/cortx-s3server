@@ -54,10 +54,17 @@ public class AuthEncryptConfig {
     public static void readConfig(String installDir) throws FileNotFoundException, IOException {
         AUTH_INSTALL_DIR = installDir;
         Path authPropertiesFile = Paths.get(AUTH_INSTALL_DIR, "resources", "keystore.properties");
+        Path authPasswordPropertiesFile = Paths.get(
+            AUTH_INSTALL_DIR, "resources", "keystorePassword.properties");
 
         Properties authEncryptConfig = new Properties();
+        Properties authPasswordEncryptConfig = new Properties();
         InputStream input = new FileInputStream(authPropertiesFile.toString());
+        InputStream inputPassword =
+            new FileInputStream(authPasswordPropertiesFile.toString());
         authEncryptConfig.load(input);
+        authPasswordEncryptConfig.load(inputPassword);
+        authEncryptConfig.putAll(authPasswordEncryptConfig);
 
         init(authEncryptConfig);
     }

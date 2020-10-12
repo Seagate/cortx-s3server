@@ -335,7 +335,7 @@ JKS_DIR="/root/.cortx_s3_auth_jks"
 if [ -d "$JKS_DIR" ]
 then
     cp -f $JKS_DIR/s3authserver.jks /opt/seagate/cortx/auth/resources
-    cp -f $JKS_DIR/keystore.properties /opt/seagate/cortx/auth/resources
+    cp -f $JKS_DIR/keystorePassword.properties /opt/seagate/cortx/auth/resources
 else
     echo "Auth jksstore and keystore files are missing.Please re-run ansible (init.sh) script to regenerate these files."
     exit 1;
@@ -349,7 +349,7 @@ cd $S3_BUILD_DIR
 
 # Ensure correct ldap credentials are present.
 ./scripts/enc_ldap_passwd_in_cfg.sh -l "$ldap_admin_pwd" \
-          -p /opt/seagate/cortx/auth/resources/authserver.properties
+          -p /opt/seagate/cortx/auth/resources/authserverPassword.properties
 
 # Enable fault injection in AuthServer
 $USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=true/g' /opt/seagate/cortx/auth/resources/authserver.properties

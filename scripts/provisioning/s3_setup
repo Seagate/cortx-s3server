@@ -286,7 +286,7 @@ fi
 if [[ $config_ldap == true ]]
 then
     /opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh -l $ldappasswd \
-          -p /opt/seagate/cortx/auth/resources/authserver.properties
+          -p /opt/seagate/cortx/auth/resources/authserverPassword.properties
     if [[ -f /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf ]]
     then
         # Enable slapd logging in rsyslog config
@@ -300,7 +300,7 @@ elif [[ $purge_config_ldap == true ]]
 then
     $S3_DIR/scripts/ldap/setup_ldap.sh --defaultpasswd --forceclean --skipssl
     $S3_DIR/scripts/enc_ldap_passwd_in_cfg.sh -l $ldappasswd \
-          -p /opt/seagate/cortx/auth/resources/authserver.properties
+          -p /opt/seagate/cortx/auth/resources/authserverPassword.properties
 fi
 
 # Setup Openldap replication for EES setup.
