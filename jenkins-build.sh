@@ -25,6 +25,7 @@ USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ]
                                     [--fake_obj] [--fake_kvs | --redis_kvs] [--basic_test_only]
                                     [--local_redis_restart]
                                     [--callgraph /path/to/output/file]
+                                    [--valgrind_memcheck /path/to/output/file]
                                     [--ldap_admin_pwd]
                                     [--generate_support_bundle]
                                     [--job_id]
@@ -60,6 +61,10 @@ where:
 
 --callgraph              Generate valgrind call graph; Especially usefull
                          together with --basic_test_only option
+
+                         Value: /path/to/output/file
+
+--valgrind_memcheck      Generate valgrind memcheck log
 
                          Value: /path/to/output/file
 
@@ -99,6 +104,7 @@ fake_kvs=0
 redis_kvs=0
 basic_test_only=0
 callgraph_cmd=""
+valgrind_memcheck_cmd=""
 local_redis_restart=0
 ldap_admin_pwd=
 generate_support_bundle=
@@ -177,6 +183,15 @@ else
                     fi
                     echo "Generate valgrind call graph with params $callgraph_cmd";
                     ;;
+      --valgrind_memcheck ) shift;
+                    if [[ $1 =~ ^[[:space:]]*$ ]]
+                    then
+                        valgrind_memcheck_cmd="--valgrind_memcheck /tmp/valgrind_memcheck.out";
+                    else
+                        valgrind_memcheck_cmd="--valgrind_memcheck $1";
+                    fi
+                    echo "Generate valgrind memcheck log with params $valgrind_memcheck_cmd";
+                    ;;
        --ldap_admin_pwd ) shift;
                           if [ ! -z "$1" ]; then
                               ldap_admin_pwd=$1;
@@ -232,7 +247,7 @@ fi
 
 source /root/.s3_ldap_cred_cache.conf
 
-if [ "$callgraph_cmd" != "" ]
+if [ "$callgraph_cmd" != "" ] || [ "$valgrind_memcheck_cmd" != "" ]
 then
     $USE_SUDO yum -q list installed valgrind || $USE_SUDO yum -y install valgrind || (echo "Valgrind package cannot be installed" && exit 1)
 fi
@@ -281,9 +296,15 @@ then
   rm -rf $BUILD_CACHE_DIR
 fi
 
+valgrind_flag=""
+if [ "$valgrind_memcheck_cmd" != "" ]
+then
+    valgrind_flag="--valgrind_memcheck"
+fi
+
 if [ $skip_build -eq 0 ]
 then
-    ./rebuildall.sh --no-motr-rpm --use-build-cache
+    ./rebuildall.sh --no-motr-rpm --use-build-cache $valgrind_flag
 fi
 
 # Stop any old running S3 instances
@@ -400,7 +421,7 @@ fi
 while [[ $retry -le $max_retries ]]
 do
   statuss3=0
-  $USE_SUDO ./dev-starts3.sh $fake_params $callgraph_cmd
+  $USE_SUDO ./dev-starts3.sh $fake_params $callgraph_cmd $valgrind_memcheck_cmd
 
   # Wait s3server to start
   timeout 2m bash -c "while ! ./iss3up.sh; do sleep 1; done"
