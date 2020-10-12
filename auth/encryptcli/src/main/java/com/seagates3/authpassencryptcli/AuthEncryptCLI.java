@@ -20,12 +20,14 @@
 
 package com.seagates3.authpassencryptcli;
 
+import java.io.BufferedReader;
 import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -129,12 +131,35 @@ public class AuthEncryptCLI {
         }
 
         Path s3KeystoreFile = AuthEncryptConfig.getKeyStorePath();
+        String keystorePasswd = null;
+        try {
+          String cmd = AuthEncryptConfig.getCipherUtil();
+          Process s3Cipher = Runtime.getRuntime().exec(cmd);
+          int exitVal = s3Cipher.waitFor();
+          if (exitVal != 0) {
+            logger.debug("S3 Cipher util failed to return keystore password");
+            throw new IOException("S3 cipher util exited with error.");
+          }
+          BufferedReader reader = new BufferedReader(
+              new InputStreamReader(s3Cipher.getInputStream()));
+          String line = reader.readLine();
+          if (line == null || line.isEmpty()) {
+            throw new IOException("S3 cipher returned empty stream.");
+          } else {
+            keystorePasswd = line;
+          }
+        }
+        catch (IOException e) {
+          logger.debug(
+              e.getMessage() +
+              " IO error in S3 cipher. Loading default keystore credentilas.");
+          keystorePasswd = AuthEncryptConfig.getKeyStorePassword();
+        }
 
         logger.debug("Using Java Key Store File: " + s3KeystoreFile.toString());
-        String keyPassword = AuthEncryptConfig.getKeyStorePassword();
         String certAlias = AuthEncryptConfig.getCertAlias();
         PublicKey pKey = JKSUtil.getPublicKeyFromJKS(s3KeystoreFile.toString(),
-                         certAlias, keyPassword);
+                                                     certAlias, keystorePasswd);
 
         if(pKey == null ) {
             logger.error("Failed get public key." );
