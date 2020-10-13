@@ -85,7 +85,7 @@ class S3AsyncOpContextBase {
                        std::function<void(void)> failed);
 
   S3AsyncOpStatus get_op_status_for(int op_idx);
-  int get_errno_for(int op_idx);
+  virtual int get_errno_for(int op_idx);
 
   virtual void set_op_status_for(int op_idx, S3AsyncOpStatus opstatus,
                                  std::string message);
