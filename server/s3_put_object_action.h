@@ -197,6 +197,7 @@ class S3PutObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutObjectActionTest,
               WriteObjectSuccessfulShouldRestartReadingData);
   FRIEND_TEST(S3PutObjectActionTest, SaveMetadata);
+  FRIEND_TEST(S3PutObjectActionTest, SaveObjectMetadataFailed);
   FRIEND_TEST(S3PutObjectActionTest, SendResponseWhenShuttingDown);
   FRIEND_TEST(S3PutObjectActionTest, SendErrorResponse);
   FRIEND_TEST(S3PutObjectActionTest, SendSuccessResponse);

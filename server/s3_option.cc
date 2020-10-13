@@ -185,6 +185,14 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_REDIS_SERVER_PORT");
       redis_srv_port =
           s3_option_node["S3_REDIS_SERVER_PORT"].as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_SERVER_MOTR_ETIMEDOUT_MAX_THRESHOLD");
+      motr_etimedout_max_threshold =
+          s3_option_node["S3_SERVER_MOTR_ETIMEDOUT_MAX_THRESHOLD"].as<uint>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC");
+      motr_etimedout_window_sec =
+          s3_option_node["S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC"].as<uint>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUTH_PORT");
       auth_port = s3_option_node["S3_AUTH_PORT"].as<unsigned short>();
@@ -479,6 +487,15 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_REDIS_SERVER_PORT");
       redis_srv_port =
           s3_option_node["S3_REDIS_SERVER_PORT"].as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_SERVER_MOTR_ETIMEDOUT_MAX_THRESHOLD");
+      motr_etimedout_max_threshold =
+          s3_option_node["S3_SERVER_MOTR_ETIMEDOUT_MAX_THRESHOLD"]
+              .as<unsigned>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC");
+      motr_etimedout_window_sec =
+          s3_option_node["S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC"].as<unsigned>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       if (!(cmd_opt_flag & S3_OPTION_AUTH_PORT)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUTH_PORT");
@@ -878,6 +895,11 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_REDIS_SERVER_ADDRESS = %s\n",
          redis_srv_addr.c_str());
 
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_MOTR_ETIMEDOUT_MAX_THRESHOLD = %u\n",
+         motr_etimedout_max_threshold);
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC = %u\n",
+         motr_etimedout_window_sec);
+
   s3_log(S3_LOG_INFO, "", "S3_MOTR_READ_MEMPOOL_ZERO_BUFFER=%s\n",
          motr_read_mempool_zeroed_buffer ? "true" : "false");
   s3_log(S3_LOG_INFO, "", "S3_LIBEVENT_MEMPOOL_ZERO_BUFFER=%s\n",
@@ -1212,6 +1234,14 @@ bool S3Option::is_getoid_enabled() { return FLAGS_getoid; }
 std::string S3Option::get_redis_srv_addr() { return redis_srv_addr; }
 
 unsigned short S3Option::get_redis_srv_port() { return redis_srv_port; }
+
+unsigned S3Option::get_motr_etimedout_max_threshold() {
+  return motr_etimedout_max_threshold;
+}
+
+unsigned S3Option::get_motr_etimedout_window_sec() {
+  return motr_etimedout_window_sec;
+}
 
 bool S3Option::get_motr_read_mempool_zeroed_buffer() {
   return motr_read_mempool_zeroed_buffer;

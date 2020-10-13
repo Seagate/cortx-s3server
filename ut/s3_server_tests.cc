@@ -53,7 +53,8 @@ struct m0_uint128 global_instance_id;
 S3Option *g_option_instance = NULL;
 evhtp_ssl_ctx_t *g_ssl_auth_ctx;
 extern S3Stats *g_stats_instance;
-
+pthread_t global_tid_indexop;
+pthread_t global_tid_objop;
 int global_shutdown_in_progress;
 int shutdown_motr_teardown_called;
 std::set<struct s3_motr_op_context *> global_motr_object_ops_list;

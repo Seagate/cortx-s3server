@@ -111,53 +111,50 @@
 3.  List accounts  
     `s3iamcli ListAccounts`  
 
-4.  Reset the access key/secret key of an account  
-    `s3iamcli ResetAccountAccessKey -n <Account Name>`  
-
-5.  Create IAM User, with optional path  
+4.  Create IAM User, with optional path  
     `s3iamcli CreateUser -n <User Name> [-p path]`  
 
-6.  Change/update the name of existing IAM user  
+5.  Change/update the name of existing IAM user  
     `s3iamcli UpdateUser -n <Old User Name> --new_user <New User Name> [-p <New Path>]`  
 
-7.  Delete IAM user  
+6.  Delete IAM user  
     `s3iamcli DeleteUser -n <User Name>`  
 
-8.  Create access key for IAM user  
+7.  Create access key for IAM user  
     `s3iamcli CreateAccessKey -n <User Name>`  
 
-9.  List access keys/secret keys of IAM user  
+8.  List access keys/secret keys of IAM user  
     `s3iamcli ListAccessKeys -n <User Name>`  
 
-10. Delete access key of IAM user  
+9.  Delete access key of IAM user  
     `s3iamcli DeleteAccesskey -k <Access Key Id> -n <User Name>`  
 
-11. Update the status of access key of IAM user (Change status to active or inactive)  
+10. Update the status of access key of IAM user (Change status to active or inactive)  
     `s3iamcli UpdateAccessKey -k <Access Key Id> -s <Active/Inactive> -n <User Name>`  
 
-12. List all IAM users of current account, matching the path prefix  
+11. List all IAM users of current account, matching the path prefix  
     `s3iamcli ListUsers [-p <Path Prefix>]`  
 
-13. Change the password of an IAM user  
+12. Change the password of an IAM user  
     `s3iamcli ChangePassword --old_password <Old User Password> --new_password <New User Password>`  
 
-14. Create temporary authentication credential for an account or IAM user  
+13. Create temporary authentication credential for an account or IAM user  
     `s3iamcli GetTempAuthCredentials -a <Account Name> --password <Account Password> [-d <Duration in seconds>] [-n <User Name>]`  
 
-15. Creates a password for the specified account  
+14. Creates a password for the specified account  
     `s3iamcli CreateAccountLoginProfile -n <Account Name> --password <Account Password> [--password-reset-required |--no-password-reset-required]`  
 
-16. Updates/changes password for the specified account  
+15. Updates/changes password for the specified account  
     `UpdateAccountLoginProfile -n <Account Name> [--password <Account Password>] [--password-reset-required|--no-password-reset-required]`  
 
-17. Retrieves the account name and password-creation date for the specified account  
+16. Retrieves the account name and password-creation date for the specified account  
     `s3iamcli GetAccountLoginProfile -n <Account Name>`  
 
-18. Creates a password for the specified IAM user  
+17. Creates a password for the specified IAM user  
     `s3iamcli CreateUserLoginProfile -n <User Name> --password <User Password> [--password-reset-required |--no-password-reset-required]`  
 
-19. Updates/changes password for the specified IAM user  
+18. Updates/changes password for the specified IAM user  
     `s3iamcli UpdateUserLoginProfile -n <User Name> [--password <User Password>] [--password-reset-required |   --no-password-reset-required]`  
 
-20. Retrieves the user name and password-creation date for the specified IAM user  
+19. Retrieves the user name and password-creation date for the specified IAM user  
     `s3iamcli GetUserLoginProfile -n <User Name>`  

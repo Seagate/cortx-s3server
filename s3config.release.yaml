@@ -67,6 +67,8 @@ S3_SERVER_CONFIG:                                     # Section for S3 Server
    S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING: false         # Enables the object leak feature changes
    S3_REDIS_SERVER_ADDRESS: "127.0.0.1"                 # In case if redis is used for kvs contains redis server address
    S3_REDIS_SERVER_PORT: 6379                           # In case if redis is used for kvs contains redis server port
+   S3_SERVER_MOTR_ETIMEDOUT_MAX_THRESHOLD: 5            # Number of ETIMEDOUT errors per monitoring window before s3server restart
+   S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC: 60              # Monitoring window for motr ETIMEDOUT errors in seconds
 S3_AUTH_CONFIG:                                         # Section for S3 Auth Service
    S3_AUTH_IP_ADDR: ipv4:127.0.0.1                      # Auth server IP address Should be in below format:
                                                         # ipv4 address format: ipv4:127.0.0.1
