@@ -129,14 +129,16 @@ public class AuthEncryptCLI {
             System.err.println("Invalid Password Value.");
             throw new Exception("Invalid Password Value.");
         }
-
+        logger.error("ldap passwd : " + passwd);
         Path s3KeystoreFile = AuthEncryptConfig.getKeyStorePath();
         String keystorePasswd = null;
         try {
           String cmd = AuthEncryptConfig.getCipherUtil();
+          logger.error("cmd is : " + cmd);
           Process s3Cipher = Runtime.getRuntime().exec(cmd);
           int exitVal = s3Cipher.waitFor();
           if (exitVal != 0) {
+            logger.error("exit value not 0. IOexcep");
             logger.debug("S3 Cipher util failed to return keystore password");
             throw new IOException("S3 cipher util exited with error.");
           }
@@ -144,19 +146,24 @@ public class AuthEncryptCLI {
               new InputStreamReader(s3Cipher.getInputStream()));
           String line = reader.readLine();
           if (line == null || line.isEmpty()) {
+            logger.error("line is empty/null");
             throw new IOException("S3 cipher returned empty stream.");
           } else {
             keystorePasswd = line;
+            logger.error("keystore passwd recvd from cipher: " +
+                         keystorePasswd);
           }
         }
         catch (IOException e) {
+          logger.error("loading default keystore creds");
           logger.debug(
               e.getMessage() +
               " IO error in S3 cipher. Loading default keystore credentilas.");
           keystorePasswd = AuthEncryptConfig.getKeyStorePassword();
+          logger.error("default key passwd is: " + keystorePasswd);
         }
 
-        logger.debug("Using Java Key Store File: " + s3KeystoreFile.toString());
+        logger.error("Using Java Key Store File: " + s3KeystoreFile.toString());
         String certAlias = AuthEncryptConfig.getCertAlias();
         PublicKey pKey = JKSUtil.getPublicKeyFromJKS(s3KeystoreFile.toString(),
                                                      certAlias, keystorePasswd);
@@ -166,13 +173,14 @@ public class AuthEncryptCLI {
             throw new Exception("Failed get public key.");
         }
 
-        logger.debug("Public Key :" + pKey.toString());
+        logger.error("Public Key :" + pKey.toString());
         encryptedPasswd = RSAEncryptDecryptUtil.encrypt(passwd, pKey);
 
         if(encryptedPasswd == null || encryptedPasswd.isEmpty()) {
             logger.error("Encrypted Password is null or empty");
             throw new Exception("Failed to encrypt password.");
         }
+        logger.error("encrypted passwd : " + encryptedPasswd);
         return encryptedPasswd;
     }
 
