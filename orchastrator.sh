@@ -62,3 +62,6 @@ then
 else
   ./s3_data_recovery.sh || { echo "S3 data recovery has failed. Run only s3 recovery again" && exit 1; }
 fi
+
+echo "/=========                 Recovery completed                 ==========/"
+echo "/=========  Please stop the cluster and reboot all the nodes  ==========/"

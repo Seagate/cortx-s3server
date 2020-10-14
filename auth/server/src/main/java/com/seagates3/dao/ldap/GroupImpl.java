@@ -84,7 +84,7 @@ public class GroupImpl implements GroupDAO {
             throw new DataAccessException("Failed to find the group.\n" + ex);
         }
 
-        if (ldapResults.hasMore()) {
+        if (ldapResults != null && ldapResults.hasMore()) {
             try {
                 LDAPEntry entry = ldapResults.next();
                 group.setGroupId(
@@ -171,7 +171,7 @@ public class GroupImpl implements GroupDAO {
         LOGGER.error("Failed to search group " + "with path -  " + path);
         throw new DataAccessException("failed to search group.\n" + ex);
       }
-      if (ldapResults.hasMore()) {
+      if (ldapResults != null && ldapResults.hasMore()) {
         try {
           LDAPEntry entry = ldapResults.next();
           group.setGroupId(
@@ -224,7 +224,7 @@ public class GroupImpl implements GroupDAO {
         throw new DataAccessException("Failed to find the group.\n" + ex);
       }
 
-      if (ldapResults.hasMore()) {
+      if (ldapResults != null && ldapResults.hasMore()) {
         try {
           LDAPEntry entry = ldapResults.next();
           group.setGroupId(
