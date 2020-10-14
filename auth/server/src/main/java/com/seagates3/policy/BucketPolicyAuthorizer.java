@@ -27,6 +27,7 @@ import java.util.Map;
 import com.amazonaws.auth.policy.Action;
 import com.amazonaws.auth.policy.Condition;
 import com.amazonaws.auth.policy.Policy;
+import com.amazonaws.auth.policy.PolicyReaderOptions;
 import com.amazonaws.auth.policy.Principal;
 import com.amazonaws.auth.policy.Statement;
 import com.amazonaws.auth.policy.Statement.Effect;
@@ -124,7 +125,9 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
     policyString = policyString.replace(
         "CanonicalUser",
         "Service");  // TODO:temporary solution till we implement parser
-    Policy existingPolicy = Policy.fromJson(policyString);
+    PolicyReaderOptions readerOptions = new PolicyReaderOptions();
+    readerOptions.setStripAwsPrincipalIdHyphensEnabled(false);
+    Policy existingPolicy = Policy.fromJson(policyString, readerOptions);
     String requestedResource =
         PolicyUtil.getResourceFromUri(requestBody.get("ClientAbsoluteUri"));
     String resourceOwner = new AccessControlList().getOwner(requestBody);
