@@ -1,0 +1,15 @@
+{
+  "Id": "Policy1462526893193",
+  "Version": "2020-10-17",
+  "Statement": [
+    {
+      "Sid": "Stmt1462526862402",
+      "Action": [
+        "s3:GetObject"
+      ],
+      "Effect": "Allow",
+      "Resource": "arn:aws:s3:::usernametestbucket/*",
+      "Principal":{"AWS" : "arn:aws:iam::12345:user/lyve_-iam101303"}
+    }
+  ]
+}
