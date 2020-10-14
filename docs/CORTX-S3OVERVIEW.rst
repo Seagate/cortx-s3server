@@ -321,37 +321,36 @@
 
 |image18|
 
-
 ..
-
-.. |image0| image:: images/1_EOS_S3_Server_Overview.png
+.. |image0| image:: /images/1_CORTX_S3_Server_Overview.png
 .. :width: 7.6002in
 .. :height: 5.3680in
-.. |image2| image:: images/2_What_is_S3_and_why.png
+
+.. |image2| image:: /images/2_What_is_S3_and_why.png
    
-.. |image4| image:: images/3_S3_Server_Architecture.jpeg
+.. |image4| image:: /images/3_S3_Server_Architecture.jpeg
    
-.. |image5| image:: images/4_S3_Server_Architecture_detail.png
+.. |image5| image:: /images/4_S3_Server_Architecture_detail.png
 
-.. |image6| image:: images/5_S3_Overview.png
+.. |image6| image:: /images/5_S3_Overview.png
 
-.. |image7| image:: images/6_S3_Tech_Stack_Overview.png
+.. |image7| image:: /images/6_S3_Tech_Stack_Overview.png
 
-.. |image8| image:: images/7_S3_Workflow_(Upload_Object).png
+.. |image8| image:: /images/7_S3_Workflow_(Upload_Object).png
 
-.. |image9| image:: images/8_S3_Workflow_(Download_Object).png
+.. |image9| image:: /images/8_S3_Workflow_(Download_Object).png
 
-.. |image10| image:: images/9_S3_Object_to_EOS_Core_Mapping.png
+.. |image10| image:: /images/9_S3_Object_to_CORTX_Core_Mapping.png
 
-.. |image12| image:: images/10_Streaming_Upload_(PUT_Object).png
+.. |image12| image:: /images/10_Streaming_Upload_(PUT_Object).png
 
-.. |image14| image:: images/11_Multipart_Upload_Short_Term_Solution.png
+.. |image14| image:: /images/11_Multipart_Upload_Short_Term_Solution.png
 
-.. |image15| image:: images/12_Multipart_Upload_Long_Term_Solution.png
+.. |image15| image:: /images/12_Multipart_Upload_Long_Term_Solution.png
 
-.. |image16| image:: images/13_S3_APIs_Support.png
+.. |image16| image:: /images/13_S3_APIs_Support.png
 
-.. |image18| image:: images/14_Thank_You.png
+.. |image18| image:: /images/14_Thank_You.png
 .. :width: 7.6002in
 .. :height: 5.3680in
-.. |image19| image:: images/15_S3_Clovis_KV_Interface.png
+.. |image19| image:: /images/15_S3_Motr_KV_Interface.png
