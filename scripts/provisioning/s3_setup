@@ -52,6 +52,7 @@ where:
 --olcserverid            Host olcServerID (Unique for different nodes)
 --s3backgrounddelete     Configure s3backgrounddelete and its dependencies
 --s3recoverytool         Configure s3recoverytool and its dependencies
+--updateclusterid        Fetch and update cluster id in S3 config
 --cleanup                Cleanup S3 accounts created for backgroundelete.
 --setlogrotate           Set logrotate policy
 --createauthjkspassword  Setup random jks password for Auth server
@@ -79,6 +80,7 @@ config_ldap=false
 setup_jenkins_yum_repo=false
 setup_s3backgrounddelete=false
 setup_s3recoverytool=false
+update_cluster_id=false
 is_rabbitmq_clustered=false
 cleanup_accounts=false
 cleanup_dependencies=false
@@ -126,6 +128,9 @@ do
         ;;
     --s3recoverytool )
         setup_s3recoverytool=true
+        ;;
+    --updateclusterid )
+        update_cluster_id=true
         ;;
     --cleanup )
         cleanup_accounts=true
@@ -274,6 +279,31 @@ setup_ldap_replication()
     ldapmodify -Y EXTERNAL  -H ldapi:/// -f /opt/seagate/cortx/s3/install/ldap/replicate.ldif
 }
 
+# Fetch and update cluster_id
+fetch_update_cluster_id(){
+    cluster_id=$(salt-call grains.get cluster_id --out=json | jq '.[]') || exit 1
+    sed -i "s/cluster_id:.*$/cluster_id: "$cluster_id"/g" /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml
+}
+
+# Fetch and update cluster id
+if [[ $update_cluster_id == true ]]
+then
+    echo "Fetching and updating cluster id in s3_cluster.yaml"
+    fetch_update_cluster_id
+fi
+
+# Create random password for auth jks keystore
+create_auth_jks_password(){
+    sh /opt/seagate/cortx/auth/scripts/create_auth_jks_password.sh
+}
+
+# Setup random jks password for authserver
+if [[ $create_auth_jks_passwrd == true ]]
+then
+    echo "Creating random jks password for Auth server"
+    create_auth_jks_password
+fi
+
 # Install and Configure Openldap over Non-SSL.
 ldappasswd=$(salt-call pillar.get openldap:iam_admin:secret --output=newline_values_only)
 ldappasswd=$(salt-call lyveutil.decrypt openldap ${ldappasswd} --output=newline_values_only)
@@ -380,11 +410,34 @@ add_s3backgrounddelete_rabbitmq_user()
     echo "Rabbitmq configuration for this node is completed..."
 }
 
-# Generate random credentials for accounts
-create_random_keys()
+# Generate s3backgroundelete keys using cipher
+create_s3backgroundelete_keys()
 {
-    access_key=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 23 | head -n 1)
-    secret_key=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9+' | fold -w 41 | head -n 1)
+    access_key=$(s3cipher --use_base64 --key_len  22  --const_key  "s3backgroundaccesskey")
+    if [[ $? -ne 0 ]]
+    then
+      access_key=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 22 | head -n 1)
+    fi
+    secret_key=$(s3cipher --key_len  40  --const_key  "s3backgroundsecretkey")
+    if [[ $? -ne 0 ]]
+    then
+      secret_key=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9+' | fold -w 40 | head -n 1)
+    fi
+}
+
+# Generate s3recovery keys using cipher
+create_s3recovery_keys()
+{
+    access_key=$(s3cipher --use_base64 --key_len  22  --const_key  "s3recoveryaccesskey")
+    if [[ $? -ne 0 ]]
+    then
+      access_key=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 22 | head -n 1)
+    fi
+    secret_key=$(s3cipher --key_len  40  --const_key  "s3recoverysecretkey")
+    if [[ $? -ne 0 ]]
+    then
+      secret_key=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9+' | fold -w 40 | head -n 1)
+    fi
 }
 
 # Create s3 account for s3 recoverytool
@@ -394,7 +447,7 @@ create_recovery_tool_account()
     if [[ $output == *"No such object"* ]]
     then
       # Create s3recovery tool account
-      create_random_keys
+      create_s3recovery_keys
       salt "*" cmd.run "sed -i \"s/recovery_account_access_key:.*$/recovery_account_access_key: \"$access_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
       salt "*" cmd.run "sed -i \"s/recovery_account_secret_key:.*$/recovery_account_secret_key: \"$secret_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
       salt "*" cmd.run "sed -i \"s/ak:.*/ak: $access_key/g\" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif"
@@ -428,8 +481,8 @@ create_background_delete_account()
     output=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
     if [[ $output == *"No such object"* ]]
     then
-      # Create s3background delete account
-      create_random_keys
+    # Create s3background delete account
+      create_s3backgroundelete_keys
       salt "*" cmd.run "sed -i \"s/background_account_access_key:.*$/background_account_access_key: \"$access_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
       salt "*" cmd.run "sed -i \"s/background_account_secret_key:.*$/background_account_secret_key: \"$secret_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
       salt "*" cmd.run "sed -i \"s/ak:.*/ak: $access_key/g\" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif"
@@ -456,11 +509,6 @@ delete_background_delete_account()
 	fi
 }
 
-# Create random password for auth jks keystore
-create_auth_jks_password(){
-    sh /opt/seagate/cortx/auth/scripts/create_auth_jks_password.sh
-}
-
 # Setup s3 background delete and its dependencies
 if [[ $setup_s3backgrounddelte == true ]]
 then
@@ -475,13 +523,6 @@ if [[ $setup_s3recoverytool == true ]]
 then
     echo "Creating the s3 recovery tool account"
 	create_recovery_tool_account
-fi
-
-# Setup random jks password for authserver
-if [[ $create_auth_jks_passwrd == true ]]
-then
-    echo "Creating random jks password for Auth server"
-    create_auth_jks_password
 fi
 
 # Clean up backgrounddelete account
