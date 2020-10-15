@@ -36,16 +36,18 @@ os_build_num=""
 
 
 unsupported_os() {
-  echo "S3 currently supports only CentOS 7.7.1908 or RHEL 7.7" 1>&2;
+  echo "S3 currently supports only CentOS 7.7.1908, CentOS 7.8.2003 or RHEL 7.7" 1>&2;
   exit 1;
 }
 
 check_supported_kernel() {
-  kernel_version=`uname -r`
-  if [[ "$kernel_version" != 3.10.0-1062.* ]]; then
-        echo "S3 supports kernel 3.10.0-1062.el7.x86_64" 1>&2;
-        exit 1
-  fi }
+  kernel_version=$(uname -r)
+  if [[ "$kernel_version" != 3.10.0-1062.* && "$kernel_version" != 3.10.0-1127.* ]]
+  then
+    echo "S3 supports kernel version: [3.10.0-1062.el7.x86_64] or [3.10.0-1127.el7.x86_64] only." 1>&2;
+    exit 1
+  fi
+}
 
 usage() {
   echo "Usage: $0
@@ -54,39 +56,37 @@ usage() {
        -h    show this help message and exit" 1>&2;
   exit 1; }
 
+# OS and Kernel version checks
 if [ ! -z "$centos_release" ]; then
   os_full_version=`cat /etc/redhat-release | awk  '{ print $4 }'`
   os_major_version=`echo $os_full_version | awk -F '.' '{ print $1 }'`
   os_minor_version=`echo $os_full_version | awk -F '.' '{ print $2 }'`
   os_build_num=`echo $os_full_version | awk -F '.' '{ print $3 }'`
-elif [ ! -z "$redhat_release" ]; then
-  os_full_version=`cat /etc/redhat-release | awk  '{ print $7 }'`
-  os_major_version=`echo $os_full_version | awk -F '.' '{ print $1 }'`
-  os_minor_version=`echo $os_full_version | awk -F '.' '{ print $2 }'`
-fi
 
-# OS version and Kernel Checks
-if [ "$os_major_version" = "7" ]; then
-  if [ "$os_minor_version" = "7" ]; then
-    # Centos 7.7
-    if [ ! -z "$centos_release" ]; then
-      if [ "$os_build_num" != "1908" ]; then
-        echo "CentOS build $os_build_num is currently not supported"
-        exit 1
-      fi
-      check_supported_kernel
-    # RHEL 7.7
-    elif [ ! -z "$redhat_release" ]; then
-      check_supported_kernel
-    # Other OS 7.7
-    else
+  if [ "$os_major_version" = "7" ]; then
+    if [[ "$os_minor_version" != "7" && "$os_minor_version" != "8" ]]; then
       unsupported_os
+    elif [[ "$os_build_num" != "1908" && "$os_build_num" != "2003" ]]; then
+      echo "CentOS build $os_build_num is currently not supported."
+      exit 1
+    else
+      check_supported_kernel
     fi
   else
     unsupported_os
   fi
+elif [ ! -z "$redhat_release" ]; then
+  os_full_version=`cat /etc/redhat-release | awk  '{ print $7 }'`
+  os_major_version=`echo $os_full_version | awk -F '.' '{ print $1 }'`
+  os_minor_version=`echo $os_full_version | awk -F '.' '{ print $2 }'`
+
+  if [[ "$os_major_version" = "7" && "$os_minor_version" = "7" ]]; then
+    check_supported_kernel
+  else
+    unsupported_os
+  fi
 else
- unsupported_os
+  unsupported_os
 fi
 
 if [[ $# -eq 0 ]] ; then
