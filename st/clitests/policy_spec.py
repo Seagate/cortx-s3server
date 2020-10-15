@@ -100,6 +100,25 @@ policy_authorization = "file://" + os.path.abspath(policy_authorization_relative
 
 
 
+
+user_name_testing_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'user_name_testing_policy.txt')
+user_name_testing = "file://" + os.path.abspath(user_name_testing_relative)
+
+
+AwsTest('Aws can create bucket').create_bucket("usernametestbucket").execute_test().command_is_successful()
+user_args = {}
+user_args['UserName'] = "lyve_-iam101303"
+test_msg = "Create User lyve_-iam101303"
+user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+result = AuthTest(test_msg).create_user(**user_args).execute_test()
+result.command_should_match_pattern(user1_response_pattern)
+AwsTest("Aws can put policy on bucket").put_bucket_policy("usernametestbucket",user_name_testing).execute_test().command_is_successful()
+AwsTest('Aws can delete bucket').delete_bucket("usernametestbucket").execute_test().command_is_successful()
+result = AuthTest(test_msg).delete_user(**user_args).execute_test()
+result.command_response_should_have("User deleted.")
+
+
+
 AwsTest('Aws can create bucket').create_bucket("seagate").execute_test().command_is_successful()
 
 AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucketPolicy")

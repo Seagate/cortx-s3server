@@ -29,6 +29,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.amazonaws.auth.policy.PolicyReaderOptions;
 import com.amazonaws.auth.policy.Action;
 import com.amazonaws.auth.policy.Policy;
 import com.amazonaws.auth.policy.Resource;
@@ -103,7 +104,9 @@ class BucketPolicyValidator extends PolicyValidator {
       policyString = policyString.replace(
           "CanonicalUser",
           "Service");  // TODO:temporary solution till we implement parser
-      policy = Policy.fromJson(policyString);
+      PolicyReaderOptions readerOptions = new PolicyReaderOptions();
+      readerOptions.setStripAwsPrincipalIdHyphensEnabled(false);
+      policy = Policy.fromJson(policyString, readerOptions);
     }
     catch (JSONException e) {
       response = responseGenerator.malformedPolicy(
