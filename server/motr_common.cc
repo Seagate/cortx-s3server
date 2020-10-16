@@ -168,13 +168,11 @@ void teardown_motr_op(struct m0_op *op) { teardown_motr_cancel_wait_op(op, 0); }
 void teardown_motr_cancel_wait_op(struct m0_op *op, int sec) {
   if (!op) return;
 
-  switch (op->op_sm.sm_state) {
-    case M0_OS_LAUNCHED:
-    case M0_OS_EXECUTED:
-      m0_op_cancel(&op, 1);
-      m0_op_wait(op, M0_BITS(M0_OS_FAILED, M0_OS_STABLE),
-                 sec < 0 ? M0_TIME_NEVER : !sec ? M0_TIME_IMMEDIATELY
-                                                : m0_time_from_now(sec, 0));
+  if (M0_OS_LAUNCHED == op->op_sm.sm_state) {
+    m0_op_cancel(&op, 1);
+    m0_op_wait(op, M0_BITS(M0_OS_FAILED, M0_OS_STABLE),
+               sec < 0 ? M0_TIME_NEVER : !sec ? M0_TIME_IMMEDIATELY
+                                              : m0_time_from_now(sec, 0));
   }
   switch (op->op_sm.sm_state) {
     case M0_OS_INITIALISED:
