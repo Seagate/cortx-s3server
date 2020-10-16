@@ -19,6 +19,7 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
 
 
 == README
+This is work in progress and its POC work
 
 This README would normally document whatever steps are necessary to get the
 application up and running.

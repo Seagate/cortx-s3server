@@ -172,6 +172,7 @@ rm -rf %{buildroot}
 %config(noreplace) /opt/seagate/cortx/auth/resources/defaultAclTemplate.xml
 %config(noreplace) /opt/seagate/cortx/auth/resources/AmazonS3.xsd
 %config(noreplace) /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+%config(noreplace) /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml
 
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/authserver.properties
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/authserver-log4j2.xml
@@ -313,6 +314,7 @@ rm -rf %{buildroot}
 %{_bindir}/s3backgroundconsumer
 %{_bindir}/s3backgroundproducer
 %{_bindir}/s3recovery
+%{_bindir}/s3cipher
 %{py36_sitelib}/s3backgrounddelete/config/*.yaml
 %{py36_sitelib}/s3backgrounddelete/*.pyc
 %{py36_sitelib}/s3backgrounddelete-%{version}-py?.?.egg-info
@@ -322,6 +324,7 @@ rm -rf %{buildroot}
 %exclude %{py36_sitelib}/s3recovery/__pycache__/*
 %exclude %{py36_sitelib}/s3backgrounddelete/*.py
 %exclude %{py36_sitelib}/s3recovery/*.py
+%exclude %{py36_sitelib}/s3backgrounddelete/s3cipher
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundconsumer
 %exclude %{py36_sitelib}/s3recovery/s3recovery
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundproducer
