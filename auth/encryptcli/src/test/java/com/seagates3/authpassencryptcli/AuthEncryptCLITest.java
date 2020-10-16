@@ -65,12 +65,6 @@ public  class AuthEncryptCLITest {
     }
 
     @Test
-    public void testProcessEncryptRequest() throws Exception {
-        String passwd = "test";
-        String encryptedPasswd = AuthEncryptCLI.processEncryptRequest(passwd);
-        assertFalse(passwd.equals(encryptedPasswd));
-    }
-    @Test
     public void testProcessEncryptRequestNegative() throws Exception {
         String passwd = "";
         String encryptedPasswd;

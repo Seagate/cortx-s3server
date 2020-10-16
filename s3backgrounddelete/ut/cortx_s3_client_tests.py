@@ -30,7 +30,7 @@ from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 
 def test_get_connection_success():
     """Test if HTTPConnection object is returned"""
-    config = CORTXS3Config()
+    config = CORTXS3Config(use_cipher = False)
     response = CORTXS3Client(config)._get_connection()
     assert isinstance(response, HTTPConnection)
 
@@ -67,7 +67,7 @@ def test_get_success():
     httpresponse.reason = 'OK'
     httpconnection.getresponse.return_value = httpresponse
 
-    config = CORTXS3Config()
+    config = CORTXS3Config(use_cipher = False)
     response = CORTXS3Client(config, connection=httpconnection).get(
         '/indexes/test_index1')
     assert response['status'] == 200
@@ -94,7 +94,7 @@ def test_put_success():
     httpresponse.reason = 'CREATED'
     httpconnection.getresponse.return_value = httpresponse
 
-    config = CORTXS3Config()
+    config = CORTXS3Config(use_cipher = False)
     request_uri = '/indexes/test_index1'
     response = CORTXS3Client(config, connection=httpconnection).put(request_uri)
     assert response['status'] == 201
@@ -121,7 +121,7 @@ def test_delete_success():
     httpresponse.reason = 'OK'
     httpconnection.getresponse.return_value = httpresponse
 
-    config = CORTXS3Config()
+    config = CORTXS3Config(use_cipher = False)
     response = CORTXS3Client(config, connection=httpconnection).delete(
         '/indexes/test_index1')
     assert response['status'] == 204
@@ -147,7 +147,7 @@ def test_head_success():
     httpresponse.reason = 'OK'
     httpconnection.getresponse.return_value = httpresponse
 
-    config = CORTXS3Config()
+    config = CORTXS3Config(use_cipher = False)
     response = CORTXS3Client(config, connection=httpconnection).head(
         '/indexes/test_index1')
     assert response['status'] == 200

@@ -1,0 +1,5 @@
+[releases_cortx_s3deps]
+baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/uploads/centos/centos-7.8.2003/s3server_uploads/
+gpgcheck = 0
+name = Yum repo for s3 dependencies rpms built for CORTX - Centos 7.8.2003
+priority = 1
