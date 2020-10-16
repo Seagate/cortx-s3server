@@ -26,6 +26,7 @@
 #include <openssl/md5.h>
 #include <event2/thread.h>
 #include <sys/resource.h>
+#include <unistd.h>
 
 #include "motr_helpers.h"
 #include "evhtp_wrapper.h"
@@ -531,88 +532,66 @@ void fini_auth_ssl() {
 int create_global_index(struct m0_uint128 &root_index_oid,
                         const uint64_t &u_lo_index_offset) {
   int rc;
-  struct m0_op *ops[1] = {NULL};
-  struct m0_op *sync_op = NULL;
-  struct m0_idx idx;
-  unsigned short motr_op_wait_period =
-      g_option_instance->get_motr_op_wait_period();
 
-  memset(&idx, 0, sizeof(idx));
-  ops[0] = NULL;
+  const auto motr_op_wait_period = g_option_instance->get_motr_op_wait_period();
+  unsigned n_retry = g_option_instance->get_max_retry_count() + 1;
+
   // reserving an oid for root index -- M0_ID_APP + offset
+  const auto m0_timeout = m0_time_from_now(motr_op_wait_period, 0);
   init_s3_index_oid(root_index_oid, u_lo_index_offset);
+
+  struct m0_idx idx;
+  memset(&idx, 0, sizeof idx);
+
   m0_idx_init(&idx, &motr_uber_realm, &root_index_oid);
-  m0_entity_create(NULL, &idx.in_entity, &ops[0]);
-  m0_op_launch(ops, 1);
 
-  rc = m0_op_wait(ops[0], M0_BITS(M0_OS_FAILED, M0_OS_STABLE),
-                  m0_time_from_now(motr_op_wait_period, 0));
-  rc = (rc < 0) ? rc : m0_rc(ops[0]);
-  if (rc < 0) {
-    if (rc != -EEXIST) {
-      goto FAIL;
+  for (; --n_retry > 0; ::sleep(1)) {  // suspend current thread for 1 second
+    struct m0_op *cr_op = nullptr;
+
+    m0_entity_create(NULL, &idx.in_entity, &cr_op);
+    m0_op_launch(&cr_op, 1);
+
+    rc = m0_op_wait(cr_op, M0_BITS(M0_OS_FAILED, M0_OS_STABLE), m0_timeout);
+    if (rc >= 0) {
+      rc = m0_rc(cr_op);
     }
-  }
-  if (rc != -EEXIST) {
+    teardown_motr_cancel_wait_op(cr_op, m0_timeout);
+
+    if (-EEXIST == rc) {
+      rc = 0;
+      break;
+    }
+    if (-ETIMEDOUT == rc) {
+      continue;
+    }
+    if (rc) {
+      break;
+    }
+    struct m0_op *sync_op = nullptr;
+
     rc = m0_sync_op_init(&sync_op);
-    if (rc != 0) {
-      goto FAIL;
+    if (rc) {
+      break;
     }
-
     rc = m0_sync_entity_add(sync_op, &idx.in_entity);
-    if (rc != 0) {
-      goto FAIL;
-    }
-    m0_op_launch(&sync_op, 1);
-    rc = m0_op_wait(sync_op, M0_BITS(M0_OS_FAILED, M0_OS_STABLE),
-                    m0_time_from_now(motr_op_wait_period, 0));
-    if (rc < 0) {
-      goto FAIL;
-    }
-  }
-  if (ops[0] != NULL) {
-    teardown_motr_op(ops[0]);
-  }
-  if (sync_op != NULL) {
-    teardown_motr_op(sync_op);
-  }
 
-  if (idx.in_entity.en_sm.sm_state != 0) {
+    if (!rc) {
+      m0_op_launch(&sync_op, 1);
+      rc = m0_op_wait(sync_op, M0_BITS(M0_OS_FAILED, M0_OS_STABLE), m0_timeout);
+    }
+    teardown_motr_cancel_wait_op(sync_op, m0_timeout);
+
+    if (rc != -ETIMEDOUT) {
+      break;
+    }
+  }
+  if (idx.in_entity.en_sm.sm_state) {
     m0_idx_fini(&idx);
   }
-
-  return 0;
-
-FAIL:
-  if (ops[0] != NULL) {
-    if (ops[0]->op_sm.sm_state == M0_OS_LAUNCHED) {
-      m0_op_cancel(&ops[0], 1);
-      // crash was observed when m0_op_wait is not called
-      m0_op_wait(ops[0], M0_BITS(M0_OS_FAILED, M0_OS_STABLE),
-                 m0_time_from_now(motr_op_wait_period, 0));
-    } else if (ops[0]->op_sm.sm_state == M0_OS_INITIALISED ||
-               ops[0]->op_sm.sm_state == M0_OS_STABLE ||
-               ops[0]->op_sm.sm_state == M0_OS_FAILED) {
-      m0_op_fini(ops[0]);
-    } else if (ops[0]->op_sm.sm_state == M0_OS_UNINITIALISED) {
-      m0_op_free(ops[0]);
-    }
+  if (rc) {
+    s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
+           S3_IEM_MOTR_CONN_FAIL_JSON);
   }
-  if (sync_op != NULL) {
-    if (sync_op->op_sm.sm_state == M0_OS_LAUNCHED) {
-      m0_op_cancel(&sync_op, 1);
-      m0_op_wait(sync_op, M0_BITS(M0_OS_FAILED, M0_OS_STABLE),
-                 m0_time_from_now(motr_op_wait_period, 0));
-    } else if (sync_op->op_sm.sm_state == M0_OS_INITIALISED ||
-               sync_op->op_sm.sm_state == M0_OS_STABLE ||
-               sync_op->op_sm.sm_state == M0_OS_FAILED) {
-      m0_op_fini(sync_op);
-    } else if (sync_op->op_sm.sm_state == M0_OS_UNINITIALISED) {
-      m0_op_free(sync_op);
-    }
-  }
-  s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
-         S3_IEM_MOTR_CONN_FAIL_JSON);
   return rc;
 }
 
