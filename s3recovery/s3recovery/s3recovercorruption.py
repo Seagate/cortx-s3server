@@ -116,17 +116,33 @@ class S3RecoverCorruption(S3RecoveryBase):
         self.s3recovery_log("info", "\nS3recovery passed successfully...!!!")
 
 
-    def check_consistency(self):
+    def check_consistency(self, list_index_id, list_index_id_replica, metadata_index_id, metadata_index_id_replica):
         """
         Performs consistency check of indexes to be restored
 
         """
-        if ((not self.list_result) or (not self.metadata_result)):
+        self.common_keys = []
+        if ((not self.list_result) and (not self.metadata_result)):
             self.list_result = {}
             self.metadata_result = {}
             return
 
-        self.common_keys = []
+        if (not self.list_result):
+            self.s3recovery_log("info", "GBLI empty - Cleaning up GBMI\n")
+            self.cleanup_bucket_metadata_entries(metadata_index_id)
+            self.cleanup_bucket_metadata_entries(metadata_index_id_replica)
+            self.list_result = {}
+            self.metadata_result = {}
+            return
+
+        if (not self.metadata_result):
+            self.s3recovery_log("info", "GBMI empty - Cleaning up GBLI\n")
+            self.cleanup_bucket_list_entries(list_index_id)
+            self.cleanup_bucket_list_entries(list_index_id_replica)
+            self.list_result = {}
+            self.metadata_result = {}
+            return
+
         global_key_list = list(self.list_result.keys())
         global_metadata_list = list(self.metadata_result.keys())
 
@@ -162,7 +178,7 @@ class S3RecoverCorruption(S3RecoveryBase):
         self.metadata_result = super(S3RecoverCorruption, self).dry_run(metadata_index_name, metadata_index_id,
                 metadata_index_id_replica, metadata_result)
 
-        self.check_consistency()
+        self.check_consistency(list_index_id, list_index_id_replica, metadata_index_id, metadata_index_id_replica)
         self.restore_data(list_index_id, list_index_id_replica, metadata_index_id,
                 metadata_index_id_replica)
 
