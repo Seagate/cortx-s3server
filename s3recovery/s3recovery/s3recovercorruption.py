@@ -127,11 +127,6 @@ class S3RecoverCorruption(S3RecoveryBase):
             self.metadata_result = {}
             return
 
-        if ((not self.list_result) and (not self.metadata_result)):
-            self.list_result = {}
-            self.metadata_result = {}
-            return
-
         if (not self.list_result):
             self.s3recovery_log("info", "GBLI empty - Cleaning up GBMI\n")
             self.cleanup_bucket_metadata_entries(metadata_index_id)
