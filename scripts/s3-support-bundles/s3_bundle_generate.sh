@@ -43,6 +43,7 @@ bundle_name="s3_$bundle_id.tar.xz"
 s3_bundle_location=$bundle_path/s3
 
 haproxy_config="/etc/haproxy/haproxy.cfg"
+# Collecting rotated logs for haproxy and ldap along with live log
 haproxy_log="/var/log/haproxy.log"
 ldap_log="/var/log/slapd.log"
 
@@ -283,10 +284,10 @@ then
     fi
 fi
 
-# Collect ldap logs if available
+# Collect ldap logs along with rotated logs if available
 if [ -f "$ldap_log" ];
 then
-    args=$args" "$ldap_log
+    args=$args" "$ldap_log*
 fi
 
 # Collect System Audit logs if available
@@ -349,10 +350,10 @@ then
     args=$args" "$haproxy_config
 fi
 
-# Collect haproxy log file if available
+# Collect haproxy log along with rotated logs if available
 if [ -f "$haproxy_log" ];
 then
-    args=$args" "$haproxy_log
+    args=$args" "$haproxy_log*
 fi
 
 # Create temporary directory for creating other files as below
