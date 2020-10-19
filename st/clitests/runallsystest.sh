@@ -76,6 +76,7 @@ sh ./prechecksystest.sh
 
 # Update s3iamcli_test_config.yaml with the correct ldap info
 sed -i "s/ldappasswd:.*/ldappasswd: \'$ldap_admin_pwd\'/g" ./s3iamcli_test_config.yaml
+sed -i "s/password :.*/password : $ldap_root_pwd/g" test_data/ldap_config.yaml
 
 #Using Python 3.6 version for Running System Tests
 PythonV="python3.6"
