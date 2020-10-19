@@ -104,8 +104,8 @@ ldap_admin_pwd=
 generate_support_bundle=
 job_id=0
 gid=0
+ansible=0
 
-source /root/.s3_ldap_cred_cache.conf
 
 if [ $# -eq 0 ]
 then
@@ -200,6 +200,8 @@ else
       --local_redis_restart ) echo "redis-server will be restarted";
                               local_redis_restart=1;
                               ;;
+      --automate_ansible ) ansible=1;
+                           ;;
       --help | -h )
           echo "$USAGE"
           exit 1
@@ -215,11 +217,20 @@ else
 fi
 set -xe
 
+S3_BUILD_DIR=`pwd`
+ANSIBLE_DIR=$S3_BUILD_DIR/scripts/env/dev
+
 USE_SUDO=
 if [[ $EUID -ne 0 ]]; then
   command -v sudo || (echo "Script should be run as root or sudo required." && exit 1)
   USE_SUDO=sudo
 fi
+
+if [[ $ansible -eq 1 ]]; then
+   sh $ANSIBLE_DIR/init.sh -s
+fi
+
+source /root/.s3_ldap_cred_cache.conf
 
 if [ "$callgraph_cmd" != "" ]
 then
@@ -231,7 +242,6 @@ echo $PATH
 
 #git clone --recursive https://github.com/Seagate/cortx-s3server.git
 
-S3_BUILD_DIR=`pwd`
 
 ulimit -c unlimited
 

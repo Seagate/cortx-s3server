@@ -26,9 +26,15 @@ if [ "$#" -ne 1 ]; then
 fi
 
 ldap_passwd=$1
+s3background_cofig="/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
 
+access_key=$(s3cipher --use_base64 --key_len  22  --const_key  "s3backgroundaccesskey")
+if [[ $? -ne 0 ]]
+then
+    access_key=$(awk '/background_account_access_key/ {print}' $s3background_cofig  | cut -d " " -f 5 | sed -e 's/^"//' -e 's/"$//')
+fi
 
-ldapdelete -x -w $ldap_passwd -r "ak=AKIAJPINPFRBTPAYXAHZ,ou=accesskeys,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///
+ldapdelete -x -w $ldap_passwd -r "ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///
 
 ldapdelete -x -w $ldap_passwd -r "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///
 

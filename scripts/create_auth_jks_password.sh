@@ -18,8 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -e
-
 SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
 AUTH_INSTALL_PATH="/opt/seagate/cortx/auth"
@@ -46,20 +44,25 @@ fi
 
 # Generate random password for jks keystore
 generate_keystore_password(){
-  echo "Generating random password for jks keystore used in authserver..."
-  # Generate random password
-  new_keystore_passwd=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9@#+' | fold -w 12 | head -n 1)
-
+  echo "Generating password for jks keystore used in authserver..."
+  # Get password from cortx-utils
+  new_keystore_passwd=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
+  if [[ $? != 0 || -z "$new_keystore_passwd" ]] # Generate random password if failed to get from cortx-utils
+  then
+    new_keystore_passwd=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9@#+' | fold -w 12 | head -n 1)
+    # Update keystore password
+    # Note JKS store need same password for store password and key password otherwise JKS will not work
+    # Update keystore.properties file with new password
+    sudo sed -i 's/s3KeyStorePassword=.*$/s3KeyStorePassword='$new_keystore_passwd'/g' $AUTH_KEYSTORE_PROPERTIES_FILE
+    sudo sed -i 's/s3KeyPassword=.*$/s3KeyPassword='$new_keystore_passwd'/g' $AUTH_KEYSTORE_PROPERTIES_FILE
+  fi
+  
   # Update keystore password
   # Note JKS store need same password for store password and key password otherwise JKS will not work
   keytool -storepasswd -storepass $DEFAULT_KEYSTORE_PASSWD -new $new_keystore_passwd -keystore $AUTH_JKS_FILE
   keytool -keypasswd --keypass $DEFAULT_KEY_PASSWD -new $new_keystore_passwd -alias $AUTH_KEY_ALIAS -storepass $new_keystore_passwd --keystore $AUTH_JKS_FILE
-
-  # Update keystore.properties file with new password
-  sudo sed -i 's/s3KeyStorePassword=.*$/s3KeyStorePassword='$new_keystore_passwd'/g' $AUTH_KEYSTORE_PROPERTIES_FILE
-  sudo sed -i 's/s3KeyPassword=.*$/s3KeyPassword='$new_keystore_passwd'/g' $AUTH_KEYSTORE_PROPERTIES_FILE
-
-  echo "jks keystore passwords are updated successfully...."
+  keytool -delete -alias $AUTH_KEY_ALIAS -keystore $AUTH_JKS_FILE -storepass $new_keystore_passwd -keypass $new_keystore_passwd
+  keytool -genkeypair -keyalg RSA -alias $AUTH_KEY_ALIAS -keystore $AUTH_JKS_FILE -storepass $new_keystore_passwd -keypass $new_keystore_passwd -validity 3600 -keysize 512 -dname "C=IN, ST=Maharashtra, L=Pune, O=Seagate, OU=S3, CN=iam.seagate.com"
+  echo "Updated the JKS Keystore."
 }
-
 generate_keystore_password

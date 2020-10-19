@@ -92,7 +92,7 @@ class S3RecoverCorruptionTestCase(unittest.TestCase):
             "617326/key2": "value2",
         }
 
-        mockS3RecoverCorruption.check_consistency()
+        mockS3RecoverCorruption.check_consistency("list_index_id", "list_index_id_replica", "metadata_index_id", "metadata_index_id_replica")
 
         # Assert inconsistent data should not be recovered
         self.assertEqual(len(mockS3RecoverCorruption.common_keys), 0)
@@ -110,7 +110,7 @@ class S3RecoverCorruptionTestCase(unittest.TestCase):
             "617326/key2": "value2"
         }
 
-        mockS3RecoverCorruption.check_consistency()
+        mockS3RecoverCorruption.check_consistency("list_index_id", "list_index_id_replica", "metadata_index_id", "metadata_index_id_replica")
 
         # Assert for data to be recovered
         self.assertEqual(len(mockS3RecoverCorruption.common_keys), 2)
@@ -130,7 +130,7 @@ class S3RecoverCorruptionTestCase(unittest.TestCase):
             "617326/key5": "value5"
         }
 
-        mockS3RecoverCorruption.check_consistency()
+        mockS3RecoverCorruption.check_consistency("list_index_id", "list_index_id_replica", "metadata_index_id", "metadata_index_id_replica")
 
         # Assert inconsistent data should not be recovered
         self.assertEqual(len(mockS3RecoverCorruption.common_keys), 1)
