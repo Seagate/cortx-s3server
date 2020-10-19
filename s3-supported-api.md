@@ -1,5 +1,41 @@
 # S3 API
 
+## Supported APIs
+
+:page_with_curl: **Note:** All operations listed in the tables below, are cephs3 compliant.
+
+**Table 1: Basic Operations**
+
+| Service Operations | Bucket Operations | Operation on Objects | 
+|:---|:---|:---|
+| Get | Get Bucket (List Objects) | Get Object | 
+| | Put Bucket | Put Object | 
+| | Delete Bucket | Delete Object |
+| | Head Bucket | Head Object |
+
+**Table 2: Moderately Complex Operations**
+
+:page_with_curl: **Note:** Operations have limited support for groups.
+
+| Bucket Operations | Operation on Objects | 
+|:---|:---|
+| Get Bucket ACL | Get Object ACL |
+| Put Bucket ACL | Put Object ACL |
+| List Multipart Uploads | Delete Multiple Objects |
+
+**Table 3: Advance Complex Operations** 
+
+| Bucket Operations | 
+|:---|
+| Get Bucket Location |
+| Get Bucket Tagging |
+| Put Bucket Tagging |
+| Delete Bucket Tagging |
+| Get Bucket Policy |
+| Put Bucket Policy |
+| Delete Bucket Policy |
+
+
 ## Supported Service API
 
 - List all your buckets  
