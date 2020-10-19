@@ -58,12 +58,6 @@ print yaml.load(open("'$s3_config_file'"))["S3_SERVER_CONFIG"]["S3_LOG_DIR"];
 `"/s3server-$1"
 mkdir -p $s3_log_dir
 
-addb_dump=$(python -c '
-import yaml;
-print yaml.load(open("'$s3_config_file'"))["S3_SERVER_CONFIG"]["S3_SERVER_ENABLE_MOTR_ADDB_DUMP"];
-' | tr -d '\r\n'
-)
-
 #set the maximum size of core file to unlimited
 ulimit -c unlimited
 
@@ -78,15 +72,22 @@ profile_fid="<$MOTR_PROFILE_FID>"
 process_fid="<$MOTR_PROCESS_FID>"
 s3port=$MOTR_S3SERVER_PORT
 
-addb_option=""
-if [ $addb_dump = True ]
-then
-  addb_option="--addb"
-fi
+
+# s3server cmd parameters allowing to fake some motr functionality
+# --fake_motr_writeobj - stub for motr write object with all zeros
+# --fake_motr_readobj - stub for motr read object with all zeros
+# --fake_motr_createidx - stub for motr create idx - does nothing
+# --fake_motr_deleteidx - stub for motr delete idx - does nothing
+# --fake_motr_getkv - stub for motr get key-value - read from memory hash map
+# --fake_motr_putkv - stub for motr put kye-value - stores in memory hash map
+# --fake_motr_deletekv - stub for motr delete key-value - deletes from memory hash map
+# for proper KV mocking one should use following combination
+#    --fake_motr_createidx true --fake_motr_deleteidx true --fake_motr_getkv true --fake_motr_putkv true --fake_motr_deletekv true
+
 
 pid_filename='/var/run/s3server.'$1'.pid'
 set -x
 s3server --s3pidfile $pid_filename \
          --motrlocal $local_ep --motrha $ha_ep \
          --motrprofilefid $profile_fid --motrprocessfid $process_fid \
-         --s3port $s3port --log_dir $s3_log_dir $addb_option
+         --s3port $s3port --log_dir $s3_log_dir

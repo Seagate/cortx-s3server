@@ -153,12 +153,6 @@ import yaml;
 print yaml.load(open("'$s3_config_file'"))["S3_SERVER_CONFIG"]["S3_SERVER_BIND_PORT"];
 ' | tr -d '\r\n'`
 
-addb_dump=$(python -c '
-import yaml;
-print yaml.load(open("'$s3_config_file'"))["S3_SERVER_CONFIG"]["S3_SERVER_ENABLE_MOTR_ADDB_DUMP"];
-' | tr -d '\r\n'
-)
-
 # Start the s3server
 export PATH=$PATH:/opt/seagate/cortx/s3/bin
 counter=0
@@ -196,12 +190,6 @@ then
     callgraph_cmd="valgrind -q --tool=callgrind --collect-jumps=yes --collect-systime=yes --callgrind-out-file=$callgraph_out"
 fi
 
-addb_option=""
-if [ $addb_dump = True ]
-then
-  addb_option="--addb"
-fi
-
 while [[ $counter -lt $num_instances ]]
 do
   motr_local_port=`expr 101 + $counter`
@@ -209,6 +197,6 @@ do
   pid_filename='/var/run/s3server.'$s3port'.pid'
   $callgraph_cmd s3server --s3pidfile $pid_filename \
            --motrlocal $local_ep:${motr_local_port} --motrha $ha_ep \
-           --s3port $s3port --fault_injection true $fake_params --loading_indicators $addb_option --getoid true
+           --s3port $s3port --fault_injection true $fake_params --loading_indicators --getoid true
   ((++counter))
 done

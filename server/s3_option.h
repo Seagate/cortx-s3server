@@ -369,6 +369,9 @@ class S3Option {
   bool is_s3server_ssl_enabled();
   bool is_s3server_objectleak_tracking_enabled();
   void set_s3server_objectleak_tracking_enabled(const bool& flag);
+  bool is_s3server_addb_dump_enabled();
+  void enable_s3server_addb_dump();
+  void disable_s3server_addb_dump();
   bool is_s3_reuseport_enabled();
   bool is_motr_http_reuseport_enabled();
   const char* get_iam_cert_file();

@@ -193,6 +193,8 @@ bool S3Option::load_section(std::string section_name,
                                "S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC");
       motr_etimedout_window_sec =
           s3_option_node["S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC"].as<uint>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_ENABLE_ADDB_DUMP");
+      FLAGS_addb = s3_option_node["S3_SERVER_ENABLE_ADDB_DUMP"].as<bool>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUTH_PORT");
       auth_port = s3_option_node["S3_AUTH_PORT"].as<unsigned short>();
@@ -496,6 +498,8 @@ bool S3Option::load_section(std::string section_name,
                                "S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC");
       motr_etimedout_window_sec =
           s3_option_node["S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC"].as<unsigned>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_ENABLE_ADDB_DUMP");
+      FLAGS_addb = s3_option_node["S3_SERVER_ENABLE_ADDB_DUMP"].as<bool>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       if (!(cmd_opt_flag & S3_OPTION_AUTH_PORT)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUTH_PORT");
@@ -900,6 +904,8 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC = %u\n",
          motr_etimedout_window_sec);
 
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_ENABLE_ADDB_DUMP = %s\n",
+         is_s3server_addb_dump_enabled() ? "true" : "false");
   s3_log(S3_LOG_INFO, "", "S3_MOTR_READ_MEMPOOL_ZERO_BUFFER=%s\n",
          motr_read_mempool_zeroed_buffer ? "true" : "false");
   s3_log(S3_LOG_INFO, "", "S3_LIBEVENT_MEMPOOL_ZERO_BUFFER=%s\n",
@@ -1137,6 +1143,8 @@ void S3Option::disable_auth() { FLAGS_disable_auth = true; }
 void S3Option::enable_auth() { FLAGS_disable_auth = false; }
 
 bool S3Option::is_auth_disabled() { return FLAGS_disable_auth; }
+
+bool S3Option::is_s3server_addb_dump_enabled() { return FLAGS_addb; }
 
 unsigned short S3Option::s3_performance_enabled() { return perf_enabled; }
 
