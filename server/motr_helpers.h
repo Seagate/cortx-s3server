@@ -58,5 +58,6 @@ void fini_motr(void);
 int create_new_instance_id(struct m0_uint128 *ufid);
 void teardown_motr_op(struct m0_op *op);
 void teardown_motr_wait_op(struct m0_op *op);
+void teardown_motr_cancel_wait_op(struct m0_op *op, int sec = -1);
 void global_motr_teardown();
 #endif
