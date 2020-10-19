@@ -54,7 +54,7 @@ std::string S3ObjectVersioingHelper::get_versionid_from_epoch_time(
 std::string S3ObjectVersioingHelper::generate_keyid_from_versionid(
     std::string versionid) {
   // add padding if requried;
-  versionid = versionid.append((3 - versionid.size() % 3) % 3, '=');
+  versionid = versionid.append((4 - (versionid.size() & 3)) & 3, '=');
   // base64 decoding of versionid
   // decoded versionid is the epoch time in milli seconds
   std::string milliseconds_since_epoch = base64_decode(versionid);
