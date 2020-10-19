@@ -81,12 +81,12 @@ public abstract class AWSRequestParser {
             requestHeaders.put(e.getKey(), e.getValue());
         }
 
-        clientRequestToken.setHttpMethod(httpRequest.getMethod().toString());
+        clientRequestToken.setHttpMethod(httpRequest.method().toString());
 
         String host = httpHeaders.get("host");
         parseHostHeader(clientRequestToken, host);
 
-        String[] tokens = httpRequest.getUri().split("\\?", -1);
+        String[] tokens = httpRequest.uri().split("\\?", -1);
         clientRequestToken.setUri(tokens[0]);
 
         if (tokens.length == 2) {

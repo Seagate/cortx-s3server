@@ -97,8 +97,8 @@ public class AWSRequestParserV4Test {
         Mockito.when(request.content()).thenReturn(Unpooled.buffer(0));
         Mockito.when(request.headers()).thenReturn(
                 AWSV4RequestHelper.getHttpHeaders());
-        Mockito.when(request.getMethod()).thenReturn(HttpMethod.GET);
-        Mockito.when(request.getUri()).thenReturn("/");
+        Mockito.when(request.method()).thenReturn(HttpMethod.GET);
+        Mockito.when(request.uri()).thenReturn("/");
 
         ClientRequestToken expectedRequestToken
                 = AWSV4RequestHelper.getFullHttpRequestClientTokenEmptyQuery();
@@ -114,8 +114,8 @@ public class AWSRequestParserV4Test {
         Mockito.when(request.content()).thenReturn(Unpooled.buffer(0));
         Mockito.when(request.headers()).thenReturn(
                 AWSV4RequestHelper.getHttpHeaders());
-        Mockito.when(request.getMethod()).thenReturn(HttpMethod.GET);
-        Mockito.when(request.getUri()).thenReturn("/?delimiter=");
+        Mockito.when(request.method()).thenReturn(HttpMethod.GET);
+        Mockito.when(request.uri()).thenReturn("/?delimiter=");
 
         ClientRequestToken expectedRequestToken
                 = AWSV4RequestHelper.getFullHttpRequestClientTokenWithQuery();

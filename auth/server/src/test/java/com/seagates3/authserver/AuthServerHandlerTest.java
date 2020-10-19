@@ -20,28 +20,26 @@
 
 package com.seagates3.authserver;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpMethod;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.whenNew;
+
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import org.powermock.api.mockito.PowerMockito;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
-
 import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
 import org.powermock.core.classloader.annotations.MockPolicy;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.internal.WhiteboxImpl;
+
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpMethod;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({AuthServerHandler.class, AuthServerConfig.class})
@@ -72,7 +70,7 @@ public class AuthServerHandlerTest {
     @Test
     public void channelReadTest() throws Exception {
         AuthServerPostHandler postHandler = mock(AuthServerPostHandler.class);
-        when(httpRequest.getMethod()).thenReturn(HttpMethod.POST);
+        when(httpRequest.method()).thenReturn(HttpMethod.POST);
         whenNew(AuthServerPostHandler.class).withArguments(
                 ctx, httpRequest).thenReturn(postHandler);
 
@@ -83,7 +81,7 @@ public class AuthServerHandlerTest {
     @Test
     public void channelReadTest_GetRequest() throws Exception {
         AuthServerGetHandler getHandler = mock(AuthServerGetHandler.class);
-        when(httpRequest.getMethod()).thenReturn(HttpMethod.GET);
+        when(httpRequest.method()).thenReturn(HttpMethod.GET);
         whenNew(AuthServerGetHandler.class)
                 .withArguments(ctx, httpRequest).thenReturn(getHandler);
 
@@ -108,16 +106,4 @@ public class AuthServerHandlerTest {
         verify(ctx).close();
     }
 
-    @Test
-    public void createPostHandlerTest() throws Exception {
-        AuthServerPostHandler postHandler = mock(AuthServerPostHandler.class);
-        when(httpRequest.getMethod()).thenReturn(HttpMethod.POST);
-        whenNew(AuthServerPostHandler.class).withArguments(
-                ctx, httpRequest).thenReturn(postHandler);
-
-        AuthServerPostHandler result = WhiteboxImpl.invokeMethod(
-                testHandler, "createPostHandler", ctx, httpRequest);
-
-        assertEquals(postHandler, result);
-    }
 }

@@ -29,6 +29,7 @@ import io.netty.util.concurrent.EventExecutorGroup;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -73,7 +74,7 @@ public class AuthServerHTTPSInitializerTest {
     public void initChannelTest_SslContextNotNull() {
         mockStatic(SslContext.class);
         mockStatic(SSLContextProvider.class);
-        SslContext sslContext = mock(SslContext.class);
+        SslContext sslContext = PowerMockito.mock(SslContext.class);
         SslHandler sslHandler = mock(SslHandler.class);
         when(SSLContextProvider.getServerContext()).thenReturn(sslContext);
         when(sslContext.newHandler(any(ByteBufAllocator.class))).thenReturn(sslHandler);
