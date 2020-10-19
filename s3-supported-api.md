@@ -23,6 +23,16 @@
 | Put Bucket ACL | Put Object ACL |
 | List Multipart Uploads | Delete Multiple Objects |
 
+**Table 2.1: Additional Features** 
+
+| Additional Features | 
+|:---|
+| Initiate Multipart Upload |
+| Upload Part |
+| Complete Multipart Upload |
+| Abort Multipart Upload |
+| List Part |
+
 **Table 3: Advance Complex Operations** 
 
 | Bucket Operations | 
@@ -31,7 +41,7 @@
 | Get Bucket Tagging |
 | Put Bucket Tagging |
 | Delete Bucket Tagging |
-| Get Bucket Policy |
+| Get Bucket Policy </br> (Limited Condition Support) |
 | Put Bucket Policy |
 | Delete Bucket Policy |
 
