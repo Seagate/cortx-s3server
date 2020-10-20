@@ -20,7 +20,6 @@
 
 
 set -e
-set -x
 
 
 #########################
@@ -58,11 +57,13 @@ then
     ldappasswd=$ldap_admin_pwd
 fi
 
-USAGE="USAGE: bash $(basename "$0") [--help]
+USAGE="USAGE: bash $(basename "$0")
 Run S3 sanity test.
 where:
-    --help      display this help and exit
-    --clean     clean s3 resources if present
+    -h     display this help and exit
+    -c     clean s3 resources if present
+    -e     specify the s3 server endpoint, pass 127.0.0.1 if running on s3 server node
+           else provide data interface ip which needs to be in /etc/hosts
 
 Operations performed:
   * Create Account
@@ -90,27 +91,39 @@ cleanup() {
     s3iamcli deleteuser -n SanityUserToDeleteAfterUse --access_key $access_key --secret_key $secret_key || echo "Failed"
     s3iamcli deleteaccount -n SanityAccountToDeleteAfterUse --access_key $access_key --secret_key $secret_key || echo "Failed"
     rm -f $test_file_input $test_output_file || echo "failed"
+    sed -i "s/VERIFY_SSL_CERT:.*/VERIFY_SSL_CERT: True/g" /root/.sgs3iamcli/config.yaml
     exit 0
 }
 
-case "$1" in
-    --help )
-        echo "$USAGE"
-        exit 0
-        ;;
-    --clean )
-        echo "start clean up"
-        externalcleanup=true
-        cleanup
-        ;;
-
-esac
+while getopts ":e:c" o; do
+    case "${o}" in
+        e)
+            end_point=${OPTARG}
+            ;;
+        c)
+            externalcleanup=true
+            cleanup
+            ;;
+        *)
+            echo "$USAGE"
+            exit 0
+            ;;
+    esac
+done
+shift $((OPTIND-1))
 
 trap "cleanup" ERR
 
 echo -e "\n\n*** S3 Sanity ***"
 echo -e "\n\n**** Create Account *******"
 
+if [ ! -z $end_point ];then
+  echo "using s3endpoint $end_point"
+  sed -i "s/IAM:.*/IAM: http:\/\/$end_point:9080/g" /root/.sgs3iamcli/config.yaml
+  sed -i "s/IAM_HTTPS:.*/IAM_HTTPS: https:\/\/$end_point:9443/g" /root/.sgs3iamcli/config.yaml
+  sed -i "s/VERIFY_SSL_CERT:.*/VERIFY_SSL_CERT: false/g" /root/.sgs3iamcli/config.yaml
+  sed -i "s/host_base =.*/host_base = $end_point/g" /root/.s3cfg
+fi
 
 output=$(s3iamcli createaccount -n SanityAccountToDeleteAfterUse  -e SanityAccountToDeleteAfterUse@sanitybucket.com --ldapuser sgiamadmin --ldappasswd "$ldappasswd")
 
@@ -118,7 +131,7 @@ echo $output
 access_key=$(echo -e "$output" | tr ',' '\n' | grep "AccessKeyId" | awk '{print $3}')
 secret_key=$(echo -e "$output" | tr ',' '\n' | grep "SecretKey" | awk '{print $3}')
 
-s3iamcli CreateUser -n SanityUserToDeleteAfterUse --access_key $access_key --secret_key $secret_key
+s3iamcli CreateUser -n SanityUserToDeleteAfterUse --access_key $access_key --secret_key $secret_key 2> /dev/null
 
 TEST_CMD="s3cmd --access_key=$access_key --secret_key=$secret_key"
 
@@ -152,7 +165,7 @@ echo -e "\nDelete bucket - 'sanitybucket': "
 $TEST_CMD rb "s3://sanitybucket"
 
 echo -e "\nDelete User - 'SanityUserToDeleteAfterUse': "
-s3iamcli deleteuser -n SanityUserToDeleteAfterUse --access_key $access_key --secret_key $secret_key
+s3iamcli deleteuser -n SanityUserToDeleteAfterUse --access_key $access_key --secret_key $secret_key 2> /dev/null
 
 echo -e "\nDelete Account - 'SanityAccountToDeleteAfterUse': "
 s3iamcli deleteaccount -n SanityAccountToDeleteAfterUse --access_key $access_key --secret_key $secret_key
@@ -161,5 +174,5 @@ set +e
 
 # delete test files file
 rm -f $test_file_input $test_output_file
-
+sed -i "s/VERIFY_SSL_CERT:.*/VERIFY_SSL_CERT: True/g" /root/.sgs3iamcli/config.yaml
 echo -e "\n\n***** S3: SANITY TEST SUCCESSFULLY COMPLETED *****\n"
