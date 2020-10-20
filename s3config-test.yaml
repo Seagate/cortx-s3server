@@ -69,6 +69,7 @@ S3_SERVER_CONFIG:                                     # Section for S3 Server
    S3_REDIS_SERVER_PORT: 6379                           # In case if redis is used for kvs contains redis server port
    S3_SERVER_MOTR_ETIMEDOUT_MAX_THRESHOLD: 100          # Number of ETIMEDOUT errors per monitoring window before s3server restart
    S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC: 2               # Monitoring window for motr ETIMEDOUT errors in seconds
+   S3_SERVER_ENABLE_ADDB_DUMP: true                     # If set to true, then addb dump will be collected
 S3_AUTH_CONFIG:                                         # Section for S3 Auth Service
    S3_AUTH_IP_ADDR: ipv4:10.10.1.2                      # Auth server IP address. Should be in below format:
                                                         # ipv4 address format: ipv4:127.0.0.1
