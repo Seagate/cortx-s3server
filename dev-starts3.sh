@@ -197,6 +197,6 @@ do
   pid_filename='/var/run/s3server.'$s3port'.pid'
   $callgraph_cmd s3server --s3pidfile $pid_filename \
            --motrlocal $local_ep:${motr_local_port} --motrha $ha_ep \
-           --s3port $s3port --fault_injection true $fake_params --loading_indicators --addb --getoid true
+           --s3port $s3port --fault_injection true $fake_params --loading_indicators --getoid true
   ((++counter))
 done
