@@ -212,7 +212,8 @@ public class AuthEncryptCLI {
     public static void main(String[] args) {
 
         try {
-            AuthEncryptConfig.readConfig(AUTH_INSTALL_DIR);
+          AuthEncryptConfig.readConfig(AUTH_INSTALL_DIR +
+                                       "/resources/keystore.properties");
         } catch (IOException e1) {
             logger.error("Failed to read Properties from install dir:"
                  + AUTH_INSTALL_DIR + " Error Stack :" + e1.getStackTrace());
