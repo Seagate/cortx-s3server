@@ -524,6 +524,8 @@ void S3PostMultipartObjectAction::save_upload_metadata() {
   object_multipart_metadata->set_content_type(request->get_content_type());
   object_multipart_metadata->set_part_index_oid(
       part_metadata->get_part_index_oid());
+  object_multipart_metadata->regenerate_version_id();
+
   object_multipart_metadata->save(
       std::bind(&S3PostMultipartObjectAction::next, this),
       std::bind(&S3PostMultipartObjectAction::save_upload_metadata_failed,
