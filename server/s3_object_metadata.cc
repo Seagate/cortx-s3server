@@ -670,10 +670,6 @@ int S3ObjectMetadata::from_json(std::string content) {
   account_name = system_defined_attribute["Owner-Account"];
   account_id = system_defined_attribute["Owner-Account-id"];
   object_version_id = system_defined_attribute["x-amz-version-id"];
-
-  if (object_version_id.empty()) {
-    regenerate_version_id();
-  }
   rev_epoch_version_id_key =
       S3ObjectVersioingHelper::generate_keyid_from_versionid(object_version_id);
 
