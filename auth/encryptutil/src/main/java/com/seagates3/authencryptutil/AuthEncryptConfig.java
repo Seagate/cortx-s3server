@@ -32,7 +32,6 @@ import java.util.Properties;
 
 public class AuthEncryptConfig {
     private static Properties authEncryptConfig;
-    private static String AUTH_INSTALL_DIR;
 
     /**
      * Initialize default endpoint and s3 endpoints etc.
@@ -52,9 +51,7 @@ public class AuthEncryptConfig {
      * @throws IOException
      */
     public static void readConfig(String installDir) throws FileNotFoundException, IOException {
-        AUTH_INSTALL_DIR = installDir;
-        Path authPropertiesFile = Paths.get(AUTH_INSTALL_DIR, "resources", "keystore.properties");
-
+       Path authPropertiesFile = Paths.get(installDir);
         Properties authEncryptConfig = new Properties();
         InputStream input = new FileInputStream(authPropertiesFile.toString());
         authEncryptConfig.load(input);
@@ -93,8 +90,9 @@ public class AuthEncryptConfig {
     }
 
     public static void setLogConfigFile() {
-        String logConfigFile = Paths.get(AUTH_INSTALL_DIR, "resources", "authencryptcli-log4j2.xml").toString();
-        authEncryptConfig.setProperty("logConfigFile", logConfigFile );
+       String logConfigFile = Paths.get("/opt/seagate/cortx/auth/resources/" +
+                                        "authencryptcli-log4j2.xml").toString();
+       authEncryptConfig.setProperty("logConfigFile", logConfigFile);
     }
 
     public static String getLogConfigFile() {

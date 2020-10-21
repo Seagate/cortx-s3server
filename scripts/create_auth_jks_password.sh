@@ -37,7 +37,7 @@ else
     # this script executed for dev vm
     mkdir -p $DEV_VM_JKS_DIR
     cp -f $BASEDIR/s3authserver.jks_template $DEV_VM_JKS_DIR/s3authserver.jks
-    cp -f $BASEDIR/../auth/resources/keystore.properties $DEV_VM_JKS_DIR/keystore.properties
+    cp -f $BASEDIR/../auth/resources/keystore.properties.sample $DEV_VM_JKS_DIR/keystore.properties
     AUTH_KEYSTORE_PROPERTIES_FILE=$DEV_VM_JKS_DIR/keystore.properties
     AUTH_JKS_FILE=$DEV_VM_JKS_DIR/s3authserver.jks
 fi
