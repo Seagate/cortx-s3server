@@ -68,12 +68,13 @@ public class AuthServerConfig {
      * Read the properties file.
      * @throws GeneralSecurityException
      */
-    public static void readConfig(String resourceDir)
-                       throws FileNotFoundException, IOException,
-                                  GeneralSecurityException, Exception {
+    public
+     static void readConfig(String resourceDir, String authServerFile,
+                            String keyStoreFile) throws FileNotFoundException,
+         IOException, GeneralSecurityException, Exception {
         authResourceDir = resourceDir;
-        Path authProperties = Paths.get(authResourceDir, "authserver.properties");
-        Path authSecureProperties = Paths.get(authResourceDir, "keystore.properties");
+        Path authProperties = Paths.get(authResourceDir, authServerFile);
+        Path authSecureProperties = Paths.get(authResourceDir, keyStoreFile);
         Properties authServerConfig = new Properties();
         InputStream input = new FileInputStream(authProperties.toString());
         authServerConfig.load(input);
@@ -372,3 +373,4 @@ public class AuthServerConfig {
       return Integer.parseInt(authServerConfig.getProperty("version"));
     }
 }
+

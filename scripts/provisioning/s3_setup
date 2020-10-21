@@ -533,5 +533,9 @@ if [[ $cleanup_dependencies == true ]]
 then
     echo "removing s3 dependencies"
     yum -y remove log4cxx_cortx || echo ""
+    mv -f /opt/seagate/cortx/auth/resources/authserver.properties /opt/seagate/cortx/auth/resources/authserver.properties.bak
+    mv -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.bak
+    mv -f /opt/seagate/cortx/auth/resources/keystore.properties /opt/seagate/cortx/auth/resources/keystore.properties.bak
+    mv -f /opt/seagate/cortx/s3/conf/s3config.yaml /opt/seagate/cortx/s3/conf/s3config.yaml.bak
 fi
 

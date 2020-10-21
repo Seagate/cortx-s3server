@@ -159,28 +159,30 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
-%config(noreplace) /opt/seagate/cortx/auth/resources/authserver.properties
+%config /opt/seagate/cortx/auth/resources/authserver.properties.sample
 %config(noreplace) /opt/seagate/cortx/auth/resources/authserver-log4j2.xml
 %config(noreplace) /opt/seagate/cortx/auth/resources/authencryptcli-log4j2.xml
-%config(noreplace) /opt/seagate/cortx/auth/resources/keystore.properties
+%config /opt/seagate/cortx/auth/resources/keystore.properties.sample
 %config(noreplace) /opt/seagate/cortx/auth/resources/static/saml-metadata.xml
 %config(noreplace) /opt/seagate/cortx/auth/resources/s3authserver.jks
-%config(noreplace) /opt/seagate/cortx/s3/conf/s3config.yaml
+%config /opt/seagate/cortx/s3/conf/s3config.yaml.sample
 %config(noreplace) /opt/seagate/cortx/s3/conf/s3server_audit_log.properties
 %config(noreplace) /opt/seagate/cortx/s3/conf/s3_obj_layout_mapping.yaml
 %config(noreplace) /opt/seagate/cortx/s3/conf/s3stats-allowlist.yaml
 %config(noreplace) /opt/seagate/cortx/auth/resources/defaultAclTemplate.xml
 %config(noreplace) /opt/seagate/cortx/auth/resources/AmazonS3.xsd
-%config(noreplace) /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+%config /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample
 %config(noreplace) /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml
 
-%attr(4600, root, root) /opt/seagate/cortx/auth/resources/authserver.properties
+%attr(4600, root, root) /opt/seagate/cortx/auth/resources/authserver.properties.sample
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/authserver-log4j2.xml
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/authencryptcli-log4j2.xml
-%attr(4600, root, root) /opt/seagate/cortx/auth/resources/keystore.properties
+%attr(4600, root, root) /opt/seagate/cortx/auth/resources/keystore.properties.sample
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/defaultAclTemplate.xml
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/AmazonS3.xsd
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/s3authserver.jks
+%attr(4600, root, root) /opt/seagate/cortx/s3/conf/s3config.yaml.sample 
+%attr(4600, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample
 
 %dir /opt/seagate/cortx/
 %dir /opt/seagate/cortx/auth
@@ -314,6 +316,7 @@ rm -rf %{buildroot}
 %{_bindir}/s3recovery
 %{_bindir}/s3cipher
 %{py36_sitelib}/s3backgrounddelete/config/*.yaml
+%{py36_sitelib}/s3backgrounddelete/config/s3_background_delete_config.yaml.sample
 %{py36_sitelib}/s3backgrounddelete/*.pyc
 %{py36_sitelib}/s3backgrounddelete-%{version}-py?.?.egg-info
 %{py36_sitelib}/s3recovery/*.pyc
@@ -330,6 +333,14 @@ rm -rf %{buildroot}
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyo
 
 %post
+[ -f /opt/seagate/cortx/s3/conf/s3config.yaml ] || 
+    cp /opt/seagate/cortx/s3/conf/s3config.yaml.sample /opt/seagate/cortx/s3/conf/s3config.yaml
+[ -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml ] ||
+    cp /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+[ -f /opt/seagate/cortx/auth/resources/authserver.properties ] ||
+    cp /opt/seagate/cortx/auth/resources/authserver.properties.sample /opt/seagate/cortx/auth/resources/authserver.properties
+[ -f /opt/seagate/cortx/auth/resources/keystore.properties ] ||
+    cp /opt/seagate/cortx/auth/resources/keystore.properties.sample /opt/seagate/cortx/auth/resources/keystore.properties
 systemctl daemon-reload
 systemctl enable s3authserver
 systemctl restart rsyslog
