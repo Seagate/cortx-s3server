@@ -120,7 +120,9 @@ class AuthServer {
             IOException, ServerInitialisationException,
             GeneralSecurityException, Exception {
 
-          AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
+          AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR,
+                                      "authserver.properties",
+                                      "keystore.properties");
           logInit();
           // LoggerFactory.getLogger works after this logInit() call.
           AuthServerConfig.logConfigProps();
