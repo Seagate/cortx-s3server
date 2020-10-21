@@ -47,8 +47,9 @@ public class AuthEncryptConfigTest {
 
     @Test
     public void testReadConfig() throws Exception {
-        String installDir = "..";
-        AuthEncryptConfig.readConfig(installDir);
+      String installDir = "..";
+      AuthEncryptConfig.readConfig(installDir +
+                                   "/resources/keystore.properties.sample");
 
         assertEquals("s3authserver.jks", AuthEncryptConfig.getKeyStoreName());
 
@@ -59,10 +60,12 @@ public class AuthEncryptConfigTest {
 
         installDir = "invaliddir";
         try {
-            AuthEncryptConfig.readConfig(installDir);
+          AuthEncryptConfig.readConfig(installDir +
+                                       "/resources/keystore.properties.sample");
         } catch (FileNotFoundException e) {
-            String errMsg = e.getMessage();
-            assertTrue(e.getMessage().equals("invaliddir/resources/keystore.properties (No such file or directory)"));
+          assertTrue(e.getMessage().equals(
+              "invaliddir/resources/keystore.properties.sample (No such file " +
+              "or directory)"));
         }
     }
 

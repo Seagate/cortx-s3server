@@ -87,8 +87,8 @@ if ! [ -z "${GIT_VER}" ]; then
     git clone --recursive https://github.com/Seagate/cortx-s3server.git cortx-s3server-${S3_VERSION}-git${GIT_VER}
     cd cortx-s3server-${S3_VERSION}-git${GIT_VER}
     if [ $ENABLE_DEBUG_LOG == 1 ]; then
-        sed -i 's/#logLevel=DEBUG.*$/logLevel=DEBUG/g' auth/resources/authserver.properties
-        sed -i 's/S3_LOG_MODE:.*$/S3_LOG_MODE: DEBUG/g' s3config.release.yaml
+        sed -i 's/#logLevel=DEBUG.*$/logLevel=DEBUG/g' auth/resources/authserver.properties.sample
+        sed -i 's/S3_LOG_MODE:.*$/S3_LOG_MODE: DEBUG/g' s3config.release.yaml.sample
     fi
     # For sake of test, attempt checkout of version
     git checkout ${GIT_VER}
@@ -97,8 +97,8 @@ elif ! [ -z "${PATH_SRC}" ]; then
     mkdir -p cortx-s3server-${S3_VERSION}-git${GIT_VER}
     cp -ar "${PATH_SRC}"/. ./cortx-s3server-${S3_VERSION}-git${GIT_VER}
     if [ $ENABLE_DEBUG_LOG == 1 ]; then
-        sed -i 's/#logLevel=DEBUG.*$/logLevel=DEBUG/g' cortx-s3server-${S3_VERSION}-git${GIT_VER}/auth/resources/authserver.properties
-        sed -i 's/S3_LOG_MODE:.*$/S3_LOG_MODE: DEBUG/g' cortx-s3server-${S3_VERSION}-git${GIT_VER}/s3config.release.yaml
+        sed -i 's/#logLevel=DEBUG.*$/logLevel=DEBUG/g' cortx-s3server-${S3_VERSION}-git${GIT_VER}/auth/resources/authserver.properties.sample
+        sed -i 's/S3_LOG_MODE:.*$/S3_LOG_MODE: DEBUG/g' cortx-s3server-${S3_VERSION}-git${GIT_VER}/s3config.release.yaml.sample
     fi
     find ./cortx-s3server-${S3_VERSION}-git${GIT_VER} -type f -name CMakeCache.txt -delete;
 fi

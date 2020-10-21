@@ -59,7 +59,8 @@ public  class AuthEncryptCLITest {
         //For Unit Tests resource folder is at s3server/auth/resources
         String installDir = "..";
         Logger logger = mock(Logger.class);
-        AuthEncryptConfig.readConfig(installDir);
+        AuthEncryptConfig.readConfig(installDir +
+                                     "/resources/keystore.properties.sample");
         AuthEncryptConfig.overrideProperty("s3KeyStorePath", "../resources");
         WhiteboxImpl.setInternalState(AuthEncryptCLI.class, "logger", logger);
     }
