@@ -69,5 +69,10 @@ public interface AccessKeyDAO {
       */
     public
      AccessKey[] findAllPermanent(User user) throws DataAccessException;
+     /*
+      * Deletes all expired and inactive keys
+      */
+    public
+     void deleteExpiredKeys(User user) throws DataAccessException;
 }
 
