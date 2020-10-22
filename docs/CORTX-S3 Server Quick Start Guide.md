@@ -57,7 +57,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
 
      `$ setenforce 0` - you'll get a `setenforce: SELinux is disabled` status.
 
-     `$ sed 's/SELINUX=enforcing/SELINUX=disabled/' /etc/sysconfig/selinux` - you'll get a `SELINUX=disabled` status.
+     `$ sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config` - you'll get a `SELINUX=disabled` status.
 
      Run `$ shutdown -r now` - to reboot your system.
      
