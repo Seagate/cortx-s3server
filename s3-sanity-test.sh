@@ -118,7 +118,10 @@ echo -e "\n\n*** S3 Sanity ***"
 echo -e "\n\n**** Create Account *******"
 
 if [ ! -z $end_point ];then
+  s3iamcli listaccounts --ldapuser sgiamadmin --ldappasswd "$ldappasswd" >/dev/null 2>&1 || echo "configured s3iamcli"
   echo "using s3endpoint $end_point"
+  ls /root/.sgs3iamcli/config.yaml 2> /dev/null || { echo "S3iamcli configuration file is missing" && exit 1; }
+  ls /root/.s3cfg 2> /dev/null || { echo "S3cmd configuration file is missing" && exit 1; }
   sed -i "s/IAM:.*/IAM: http:\/\/$end_point:9080/g" /root/.sgs3iamcli/config.yaml
   sed -i "s/IAM_HTTPS:.*/IAM_HTTPS: https:\/\/$end_point:9443/g" /root/.sgs3iamcli/config.yaml
   sed -i "s/VERIFY_SSL_CERT:.*/VERIFY_SSL_CERT: false/g" /root/.sgs3iamcli/config.yaml
