@@ -21,7 +21,13 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
 4. Before you clone your Git repository, you'll need to create the following:
     1. Follow the link to generate the [SSH Public Key](https://git-scm.com/book/en/v2/Git-on-the-Server-Generating-Your-SSH-Public-Key).
     2. Add the newly created SSH Public Key to [Github](https://github.com/settings/keys) and [Enable SSO](https://docs.github.com/en/github/authenticating-to-github/authorizing-an-ssh-key-for-use-with-saml-single-sign-on).
-    3. When you clone your Github repository, you'll be prompted to enter your GitHub Username and Password. Refer to the article to [Generate Personal Access Token or PAT](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). Once you generate your Personal Access Token, enable SSO.
+    3. When you clone your Github repository, you'll be prompted to enter your GitHub Username and Password. Refer to the article to [Generate Personal Access Token or PAT](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). Once you generate your Personal Access Token, enable SSO (refer below for access scopes).
+       - [x] repo
+         - [x] repo:status
+         - [x] repo_deployment
+         - [x] public_repo
+         - [x] repo:invite
+         - [x] security_events
     4. Copy your newly generated [PAT](https://github.com/settings/tokens) and enter it when prompted.
 
        :page_with_curl: **Note:** From this point onwards, you'll need to execute all steps logged in as a **Root User**.
