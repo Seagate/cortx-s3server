@@ -155,6 +155,8 @@ public class AccessKeyController extends AbstractController {
         LOGGER.info("Deleting access key");
         try {
             accessKeyDAO.delete(accessKey);
+            LOGGER.debug("Deleted accesskey for account - " +
+                         requestor.getAccount().getName());
         } catch (DataAccessException ex) {
             return accessKeyResponseGenerator.internalServerError();
         }
