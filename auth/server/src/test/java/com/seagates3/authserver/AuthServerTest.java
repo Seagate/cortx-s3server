@@ -142,7 +142,9 @@ public class AuthServerTest {
         verifyStatic();
         S3Perf.init();
         verifyStatic();
-        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
+        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR,
+                                    "authserver.properties",
+                                    "keystore.properties");
 
         verifyPrivate(AuthServer.class).invoke("logInit");
         AuthServerConfig.loadCredentials();
@@ -172,7 +174,9 @@ public class AuthServerTest {
         verifyStatic();
         S3Perf.init();
         verifyStatic();
-        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
+        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR,
+                                    "authserver.properties",
+                                    "keystore.properties");
 
         verifyPrivate(AuthServer.class).invoke("logInit");
         AuthServerConfig.loadCredentials();
@@ -202,7 +206,9 @@ public class AuthServerTest {
         verifyStatic();
         S3Perf.init();
         verifyStatic();
-        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
+        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR,
+                                    "authserver.properties",
+                                    "keystore.properties");
 
         verifyPrivate(AuthServer.class).invoke("logInit");
         AuthServerConfig.loadCredentials();
@@ -225,7 +231,9 @@ public class AuthServerTest {
         AuthServer.main(new String[]{});
 
         verifyStatic();
-        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
+        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR,
+                                    "authserver.properties",
+                                    "keystore.properties");
         verifyStatic();
         SSLContextProvider.init();
         verifyStatic();
@@ -267,7 +275,9 @@ public class AuthServerTest {
         AuthServer.main(new String[]{});
 
         verifyStatic();
-        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
+        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR,
+                                    "authserver.properties",
+                                    "keystore.properties");
         verifyStatic();
         FaultPoints.init();
         verifyStatic();
@@ -300,7 +310,9 @@ public class AuthServerTest {
         AuthServer.main(new String[]{});
 
         verifyStatic();
-        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
+        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR,
+                                    "authserver.properties",
+                                    "keystore.properties");
         verifyStatic();
         FaultPoints.init();
         verifyStatic();
@@ -343,7 +355,9 @@ public class AuthServerTest {
         verifyStatic();
         S3Perf.init();
         verifyStatic();
-        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
+        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR,
+                                    "authserver.properties",
+                                    "keystore.properties");
 
         verifyPrivate(AuthServer.class).invoke("logInit");
         AuthServerConfig.loadCredentials();

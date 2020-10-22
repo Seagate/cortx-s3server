@@ -41,7 +41,7 @@ import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.TempAuthCredentialsResponseGenerator;
 import com.seagates3.service.AccessKeyService;
-
+import com.seagates3.dao.AccessKeyDAO;
 public
 class TempAuthCredentialsController extends AbstractController {
 
@@ -84,8 +84,14 @@ class TempAuthCredentialsController extends AbstractController {
           if (response == null) {
             authenticateWithLdap(account, user);
             LOGGER.debug("LDAP Authentication successfull");
+            AccessKeyDAO accessKeyDAO =
+                (AccessKeyDAO)DAODispatcher.getResourceDAO(
+                    DAOResource.ACCESS_KEY);
+            // Perform cleanup before creating new temp accesskey
+            accessKeyDAO.deleteExpiredKeys(user);
             AccessKey accessKey =
                 AccessKeyService.createFedAccessKey(user, durationArr[0]);
+            LOGGER.debug("Created temp credentials for - " + account.getName());
             if (accessKey == null) {
               LOGGER.debug("AccessKey is null");
               response = authCredentialsResponseGenerator.internalServerError();
