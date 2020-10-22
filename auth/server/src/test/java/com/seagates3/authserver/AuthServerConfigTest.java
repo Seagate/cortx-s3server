@@ -118,7 +118,9 @@ public class AuthServerConfigTest {
 
     @Test
     public void readConfigTest() throws Exception {
-        AuthServerConfig.readConfig("../resources");
+      AuthServerConfig.readConfig("../resources",
+                                  "authserver.properties.sample",
+                                  "keystore.properties.sample");
 
         assertEquals("127.0.0.1", AuthServerConfig.getDefaultEndpoint());
 
@@ -151,7 +153,9 @@ public class AuthServerConfigTest {
     @Test(expected = IOException.class)
     public void readConfigTest_ShouldThrowIOException() throws Exception {
         //Pass Invalid Path
-        AuthServerConfig.readConfig("/invalid/path");
+      AuthServerConfig.readConfig("/invalid/path",
+                                  "authserver.properties.sample",
+                                  "keystore.properties.sample");
     }
 
     private Properties getAuthProperties() throws Exception {
@@ -196,3 +200,4 @@ public class AuthServerConfigTest {
         return authServerConfig;
     }
 }
+
