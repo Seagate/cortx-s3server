@@ -35,6 +35,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.novell.ldap.LDAPException;
+import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.AccountDAO;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
@@ -71,6 +72,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   final Account nonExistingAccount;
  private
   AccessKey accessKey;
+ private
+  AccessKeyDAO accessKeyDAO;
 
  private
   TempAuthCredentialsController controller;
@@ -96,13 +99,14 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     PowerMockito.mockStatic(DAODispatcher.class);
     userDAO = Mockito.mock(UserDAO.class);
     accountDAO = Mockito.mock(AccountDAO.class);
-
+    accessKeyDAO = Mockito.mock(AccessKeyDAO.class);
     PowerMockito.doReturn(userDAO)
         .when(DAODispatcher.class, "getResourceDAO", DAOResource.USER);
 
     PowerMockito.doReturn(accountDAO)
         .when(DAODispatcher.class, "getResourceDAO", DAOResource.ACCOUNT);
-
+    PowerMockito.doReturn(accessKeyDAO)
+        .when(DAODispatcher.class, "getResourceDAO", DAOResource.ACCESS_KEY);
     controller = new TempAuthCredentialsController(requestor, requestBody);
   }
   /**
