@@ -14,7 +14,7 @@ Refer to the [CORTX-S3 Server Quickstart Guide](docs/CORTX-S3%20Server%20Quick%2
 
 ## Contribute to CORTX-S3 Server
 
-We welcome all Source Code and Documentation contributions to the CORTX-S3 Server component repository. Refer to the [CORTX-S3 Server Contributing Guide](CONTRIBUTING.md) document to submit your contributions.
+We welcome all Source Code and Documentation contributions to the CORTX-S3 Server component repository. Refer to the [CORTX S3 Server Contributing Guide](CONTRIBUTING.md) document to submit your contributions.  Refer to the [CORTX S3 Architecture Guide](docs/CortxS3_Architecture.md) to learn more about how this software is organized.
 
 ## CORTX Community
 
