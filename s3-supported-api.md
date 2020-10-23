@@ -1,10 +1,57 @@
-# S3 api
+# S3 API
 
-## Supported service api
-1.  Lists all your buckets  
+## Supported APIs
+
+:page_with_curl: **Note:** All operations listed in the tables below, are S3 compliant.
+
+**Table 1: Basic Operations**
+
+| Service Operations | Bucket Operations | Operation on Objects | 
+|:---|:---|:---|
+| Get | Get Bucket (List Objects) | Get Object | 
+| | Put Bucket | Put Object | 
+| | Delete Bucket | Delete Object |
+| | Head Bucket | Head Object |
+
+**Table 2: Moderately Complex Operations**
+
+:page_with_curl: **Note:** Operations have limited support for groups.
+
+| Bucket Operations | Operation on Objects | 
+|:---|:---|
+| Get Bucket ACL | Get Object ACL |
+| Put Bucket ACL | Put Object ACL |
+| List Multipart Uploads | Delete Multiple Objects |
+
+**Table 2.1: Additional Features** 
+
+| Additional Features | 
+|:---|
+| Initiate Multipart Upload |
+| Upload Part |
+| Complete Multipart Upload |
+| Abort Multipart Upload |
+| List Part |
+
+**Table 3: Advance Complex Operations** 
+
+| Bucket Operations | 
+|:---|
+| Get Bucket Location |
+| Get Bucket Tagging |
+| Put Bucket Tagging |
+| Delete Bucket Tagging |
+| Get Bucket Policy </br> (Limited Condition Support) |
+| Put Bucket Policy |
+| Delete Bucket Policy |
+
+
+## Supported Service API
+
+- List all your buckets  
     `aws s3 ls`
 
-## Supported operations/api on Bucket
+## Supported Operations/APIs on Bucket
 
 1.  GetBucket (List objects in the specified bucket)  
     `aws s3 ls s3://<your_bucket>`  
@@ -15,7 +62,7 @@
     `aws s3 mb s3://<your_bucket>`  
     `aws s3api create-bucket --bucket <your_bucket>`  
 
-3.  HEAD bucket  
+3.  Head bucket  
     `aws s3api head-bucket --bucket <your_bucket>`  
 
 4.  Delete bucket  
@@ -28,7 +75,8 @@
 6.  Get Bucket ACL  
     `aws s3api get-bucket-acl --bucket <your_bucket>`  
 
-7.  Multipart upload  
+7.  Multipart uploads
+
     7.1    Create multipart upload in bucket  
            `aws s3api create-multipart-upload --bucket <your_bucket> --key <key>`  
 
@@ -66,7 +114,7 @@
 14. Get bucket location  
     `aws s3api get-bucket-location --bucket <your_bucket>`  
 
-## Supported operations/api on Object
+## Supported Operations/APIs on Object
 
 1.  Put Object  
     `aws s3api put-object --bucket <your_bucket> --key <key> --body <file>`  
@@ -100,7 +148,7 @@
 10. Delete Object tagging  
     `aws s3api delete-object-tagging --bucket <your_bucket> --key <key>`  
 
-## S3 IAM api (using client tool - s3iamcli)
+## S3 IAM APIs (using client tool - s3iamcli)
 
 1.  Create an account  
     `s3iamcli CreateAccount -n <Account Name> -e <Email Id>`  
