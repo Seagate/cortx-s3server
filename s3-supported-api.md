@@ -2,7 +2,7 @@
 
 ## Supported APIs
 
-:page_with_curl: **Note:** All operations listed in the tables below, are cephs3 compliant.
+:page_with_curl: **Note:** All operations listed in the tables below, are S3 compliant.
 
 **Table 1: Basic Operations**
 
