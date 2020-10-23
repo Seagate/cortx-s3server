@@ -285,26 +285,9 @@
 
 * **CORTX-S3 Bucket data include**
 
-
 * Name, timestamps, ACL
-
 * Object references within bucket (CORTX-S3 object url, motr oid)
-	
-	
-
-* **Bucket data stored in Cassandra (Will move to Motr KVS)**
-
-* **Cassandra used for its nosql big data capabilities**
-
-* **Cassandra designed for heavy write operations using append only logs**
-
-* **Cassandra support built in replication and failure management**
-
-* **Cassandra peer to peer architecture, with read/write anywhere**
-
-* **Cassandra scales out linearly with no operational overhead for adding new nodes**
-
-
+* Bucket data stored in Motr KVS
 ..
 
 
