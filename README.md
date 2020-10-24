@@ -10,11 +10,11 @@ You can easily manage data and access controls using CORTX-S3 Server data manage
 
 ## Get CORTX-S3 Server ready!
 
-Refer to the [CORTX-S3 Server Quickstart Guide](https://github.com/Seagate/cortx-s3server/blob/dev/docs/CORTX-S3%20Server%20Quick%20Start%20Guide.md) to build and test the CORTX-S3 Server.
+Refer to the [CORTX-S3 Server Quickstart Guide](docs/CORTX-S3%20Server%20Quick%20Start%20Guide.md) to build and test the CORTX-S3 Server.
 
 ## Contribute to CORTX-S3 Server
 
-We welcome all Source Code and Documentation contributions to the CORTX-S3 Server component repository. Refer to the [CORTX-S3 Server Contributing Guide](../dev/docs/ContributingToCortxS3.md) document to submit your contributions.
+We welcome all Source Code and Documentation contributions to the CORTX-S3 Server component repository. Refer to the [CORTX S3 Server Contributing Guide](CONTRIBUTING.md) document to submit your contributions.  Refer to the [CORTX S3 Architecture Guide](docs/CortxS3_Architecture.md) to learn more about how this software is organized.
 
 ## CORTX Community
 
