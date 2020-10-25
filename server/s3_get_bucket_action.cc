@@ -195,9 +195,8 @@ void S3GetBucketAction::get_next_objects_successful() {
   std::string last_common_prefix;
   auto& kvps = motr_kv_reader->get_key_values();
   size_t length = kvps.size();
-  // Save the last key for next iteration
+  // Statistics - Total keys visited/loaded
   if (!kvps.empty()) {
-    last_key = (--kvps.end())->first;
     total_keys_visited += length;
   }
 
@@ -211,6 +210,8 @@ void S3GetBucketAction::get_next_objects_successful() {
       if (!prefix_match) {
         // Prefix does not match, skip the key
         if (--length == 0) {
+          // Before breaking the loop, set the last key
+          last_key = kv.first;
           break;
         } else {
           continue;
@@ -226,6 +227,8 @@ void S3GetBucketAction::get_next_objects_successful() {
         // Check if we reached the max keys requested. If yes, break
         if ((object_list->size() + object_list->common_prefixes_size()) ==
             max_keys) {
+          // Before breaking the loop, set the last key
+          last_key = kv.first;
           break;
         }
       }
@@ -340,6 +343,7 @@ void S3GetBucketAction::get_next_objects_successful() {
       // starts with the same last common prefix.
       // So, we want to stop breaking from the 'if' condition here, and
       // enumerate further keys with same last common prefix.
+      last_key = kv.first;
       break;
     }
   }  // end of For loop
