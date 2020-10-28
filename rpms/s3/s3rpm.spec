@@ -202,6 +202,7 @@ rm -rf %{buildroot}
 %dir /var/log/seagate/s3
 /etc/cron.hourly/s3logfilerollover.sh
 /etc/cron.hourly/s3m0tracelogfilerollover.sh
+/etc/cron.hourly/s3addblogfilerollover.sh
 /lib/systemd/system/s3authserver.service
 /lib/systemd/system/s3server@.service
 /lib/systemd/system/s3backgroundproducer.service
