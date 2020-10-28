@@ -1,5 +1,5 @@
 # CORTX-S3 Server Quick Start Guide
-This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-ready.
+This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server ready.
 
 - [1.0 Prerequisites](#10-Prerequisites)
 - [1.1 Clone the CORTX-S3 Server Repository](#11-Clone-the-CORTX-S3-Server-Repository)
@@ -57,7 +57,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
 
      `$ setenforce 0` - you'll get a `setenforce: SELinux is disabled` status.
 
-     `$ sed 's/SELINUX=enforcing/SELINUX=disabled/' /etc/sysconfig/selinux` - you'll get a `SELINUX=disabled` status.
+     `$ sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config` - you'll get a `SELINUX=disabled` status.
 
      Run `$ shutdown -r now` - to reboot your system.
      
@@ -156,14 +156,14 @@ The image below illustrates the output log of a system test that is successful.
 
 Before your test your build, ensure that you have installed and configured the following:
 
-1. Make sure you have installed `easy_install`
-    * To check if you have `easy_install`, run the command: `$ easy_install --version`
-    * To install `easy_install`, run the command: `$ yum install python-setuptools python-setuptools-devel`
-2. Ensure you've installed `pip`
-    * To check if you have pip installed, run the command: `$ pip --version`
-    * To install pip, run the command: `$ python --version`
-3. If you don't have Python Version 2.6.5+, then install Python using: `$ python3 --version`
-    *  If you don't have Python Version 3.3, then install python3 using: `$ easy_install pip`
+1. Make sure you have installed easy_install.
+    - To check if you have easy_install, run the command: `$ easy_install --version`
+    - To install easy_install, run the command: `$ yum install python-setuptools python-setuptools-devel`
+2. Ensure you've installed pip.
+    - To check if you have pip installed, run the command: `$ pip --version`
+    - To install pip, run the command: `$ easy_install pip`
+3. If you don't have Python Version 2.6.5+, install Python using: `$ yum install python26`
+    - If you don't have Python Version 3.3, then install python3 using: `$ yum install python3`
 4. Ensure that CORTX-S3 Server and its dependent services are running.
     1. To start CORTX-S3 Server and its dependent services, run the command: `$ ./jenkins-build.sh --skip_build --skip_tests`
     2. To view the `PID` of the active S3 service, run the command: `$ pgrep s3`
