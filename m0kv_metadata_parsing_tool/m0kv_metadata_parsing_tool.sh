@@ -1,3 +1,22 @@
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+
 red=`tput setaf 1`
 green=`tput setaf 2`
 reset=`tput sgr0`
@@ -6,8 +25,12 @@ g++ base64_encoder_decoder.cc -o base64_encoder_decoder -std=c++11 > /dev/null 2
 
 m0kv_PATH="third_party/motr/utils/m0kv"
 
+
+##### this function is invoked when any one of the parameters provided are not correct ####
 usage() {
-    echo "${red}Usage:${green} $0 -l 10.230.247.176@tcp:12345:33:905 -h 10.230.247.176@tcp:12345:34:1 -p '<0x7000000000000001:0>' -f '<0x7200000000000000:0>' -b 0 -d 10${reset}" 
+    echo "${red}Usage:${green} $0 -l 'local_addr' -h 'ha_addr' -p 'profile' -f 'proc_fid' -b 0 -d 10${reset}"
+    echo  for eg.
+    echo "${green} $0 -l 10.230.247.176@tcp:12345:33:905 -h 10.230.247.176@tcp:12345:34:1 -p '<0x7000000000000001:0>' -f '<0x7200000000000000:0>' -b 0 -d 10${reset}" 
     echo "-----------------------------------------------------------------------------------"
     echo "${green}-b is flag and required arguement (can be set 0 or 1) ${reset}"
     echo "${green}-b 0 -> Get metadata of bucket and objects${reset}"
@@ -19,6 +42,9 @@ usage() {
     echo "${green}-n is Optional arguement to get metadata specific to bucket${reset}"
 }
 
+
+##### this function is invoked when there is no binary(m0kv) already present in the "cortx-s3server/third_party_motr/utils/" ####
+##### the user need to run third_party/build_motr.sh to generate binary(m0kv) first ####
 binary_error() {
     echo "${red}Binary Error : Please run build_motr.sh to generate m0kv file${reset}"
 }
@@ -102,6 +128,7 @@ get_probable_delete_index() {
     fi
 }
 
+##### this function is used to get the number of parts of a multipart upload (to be displayed in the final o/p with their upload id's) ####
 get_parts() {
     rm /tmp/m0kvcountpart.log > /dev/null 2>&1
     aws s3api list-parts --bucket $1 --key $2 --upload-id $3 >> /tmp/m0kvcountpart.log
@@ -116,12 +143,11 @@ get_parts() {
         cat /tmp/m0kvpart.log >> /var/log/m0kv_metadata.log
         echo "Number of parts : $NO_OF_PARTS"
     else
-        echo -e "\n${red}NO PARTS CREATED FOR THIS OBJECT !!${reset}"
-    fi
-    
+        echo -e "\n${red}NO PARTS UPLOADED FOR THIS OBJECT !!${reset}"
+    fi  
 }
 
-
+##### this function is used to get the multipart metadata by passing the multipart_oid to m0kv tool ####
 get_multipart_metadata() {
     declare -a MOTR_PART_OID
     MULTIPART_OBJECTS=()
@@ -188,7 +214,7 @@ get_multipart_metadata() {
     rm /tmp/countObjects.log > /dev/null 2>&1
 }
 
-
+##### this function is used to get the objects metadata by passing the multipart_oid to m0kv tool ####
 get_object_metadata() {
     OBJECTS=()
     declare -a MOTR_OIDS
@@ -249,6 +275,7 @@ get_object_metadata() {
     fi
 }
 
+##### this function is used to get only the bucket level metadata ####
 get_all_buckets_metadata() {
     cd ..
     m0kv_flag=$(find third_party/motr/utils/ -name m0kv)
@@ -325,6 +352,7 @@ get_all_buckets_metadata() {
     fi
 }
 
+##### this function is used to get the metadata of a particular bucket name passed through cli ####
 get_metadata_of_bucket() {
     cd ..
     m0kv_flag=$(find third_party/motr/utils/ -name m0kv)
@@ -391,11 +419,9 @@ then
     then
         get_all_buckets_metadata $L $H $P $F $BUCKET_LEVEL_FLAG
         get_probable_delete_index $L $H $P $F $NO_OF_DEL
-        rm base64_encoder_decoder -f /dev/null 2>&1
         echo -e "\n${red}Log file :${reset} ${green}/var/log/m0kv_metadata.log${reset}\n"
     else
         usage
-        rm base64_encoder_decoder -f /dev/null 2>&1
     fi
 elif [[ ! -z "$L" ]] && [[ ! -z "$H" ]] && [[ ! -z "$P" ]] && [[ ! -z "$H" ]] && [[ ! -z "$BUCKET_LEVEL_FLAG" ]] && [[ ! -z "$NO_OF_DEL" ]] && [[ ! -z "$BUCKET_NAME" ]]
 then 
@@ -404,14 +430,11 @@ then
     then
         get_metadata_of_bucket $BUCKET_NAME $L $H $P $F $BUCKET_LEVEL_FLAG
         get_probable_delete_index $L $H $P $F $NO_OF_DEL
-        rm base64_encoder_decoder -f /dev/null 2>&1
         echo -e "\n${red}Log file :${reset} ${green}/var/log/m0kv_metadata.log${reset}\n"
     else
         usage
-        rm base64_encoder_decoder -f /dev/null 2>&1
     fi
 else
     usage
-    rm base64_encoder_decoder -f /dev/null 2>&1
 fi
-
+rm base64_encoder_decoder -f /dev/null 2>&1
