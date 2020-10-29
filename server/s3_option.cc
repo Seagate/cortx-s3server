@@ -139,9 +139,9 @@ bool S3Option::load_section(std::string section_name,
           s3_option_node["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"].as<bool>();
 
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
-                               "S3_SERVER_OBJECT_OVERWRITE_DEL_OLD");
-      s3server_obj_overwrite_del_old_enabled =
-          s3_option_node["S3_SERVER_OBJECT_OVERWRITE_DEL_OLD"].as<bool>();
+                               "S3_SERVER_OBJECT_DELAYED_DELETE");
+      s3server_obj_delayed_del_enabled =
+          s3_option_node["S3_SERVER_OBJECT_DELAYED_DELETE"].as<bool>();
 
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_AHEAD_MULTIPLE");
       read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
@@ -443,9 +443,9 @@ bool S3Option::load_section(std::string section_name,
           s3_option_node["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"].as<bool>();
 
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
-                               "S3_SERVER_OBJECT_OVERWRITE_DEL_OLD");
-      s3server_obj_overwrite_del_old_enabled =
-          s3_option_node["S3_SERVER_OBJECT_OVERWRITE_DEL_OLD"].as<bool>();
+                               "S3_SERVER_OBJECT_DELAYED_DELETE");
+      s3server_obj_delayed_del_enabled =
+          s3_option_node["S3_SERVER_OBJECT_DELAYED_DELETE"].as<bool>();
 
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_AHEAD_MULTIPLE");
       read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
@@ -801,8 +801,8 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_SERVER_SSL_ENABLE = %d\n", s3server_ssl_enabled);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING = %d\n",
          s3server_objectleak_tracking_enabled);
-  s3_log(S3_LOG_INFO, "", "S3_SERVER_OBJECT_OVERWRITE_DEL_OLD = %d\n",
-         s3server_obj_overwrite_del_old_enabled);
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_OBJECT_DELAYED_DELETE = %d\n",
+         s3server_obj_delayed_del_enabled);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_CERT_FILE = %s\n",
          s3server_ssl_cert_file.c_str());
   s3_log(S3_LOG_INFO, "", "S3_SERVER_PEM_FILE = %s\n",
@@ -1172,12 +1172,12 @@ void S3Option::set_s3server_objectleak_tracking_enabled(const bool& flag) {
   s3server_objectleak_tracking_enabled = flag;
 }
 
-bool S3Option::is_s3server_obj_overwrite_del_old_enabled() {
-  return s3server_obj_overwrite_del_old_enabled;
+bool S3Option::is_s3server_obj_delayed_del_enabled() {
+  return s3server_obj_delayed_del_enabled;
 }
 
-void S3Option::set_s3server_obj_overwrite_del_old_enabled(const bool& flag) {
-  s3server_obj_overwrite_del_old_enabled = flag;
+void S3Option::set_s3server_obj_delayed_del_enabled(const bool& flag) {
+  s3server_obj_delayed_del_enabled = flag;
 }
 
 bool S3Option::is_fake_motr_createobj() { return FLAGS_fake_motr_createobj; }

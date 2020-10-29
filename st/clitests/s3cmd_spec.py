@@ -31,7 +31,7 @@ from auth import AuthTest
 import s3kvs
 
 # Helps debugging
-# Config.log_enabled = True
+Config.log_enabled = True
 # Config.dummy_run = True
 # Config.client_execution_timeout = 300 * 1000
 # Config.request_timeout = 300 * 1000

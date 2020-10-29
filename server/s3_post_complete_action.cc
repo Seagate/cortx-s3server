@@ -881,7 +881,7 @@ void S3PostCompleteAction::delete_old_object() {
 
   // If old object exists and deletion of old is disabled, then return
   if ((old_object_oid.u_hi || old_object_oid.u_lo) &&
-      !S3Option::get_instance()->is_s3server_obj_overwrite_del_old_enabled()) {
+      S3Option::get_instance()->is_s3server_obj_delayed_del_enabled()) {
     s3_log(S3_LOG_INFO, request_id,
            "Skipping deletion of old object. The old object will be deleted by "
            "BD.\n");

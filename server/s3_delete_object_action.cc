@@ -256,7 +256,7 @@ void S3DeleteObjectAction::delete_object() {
   // If old object exists and deletion of old is disabled, then return
   const m0_uint128& obj_oid = object_metadata->get_oid();
   if ((obj_oid.u_hi || obj_oid.u_lo) &&
-      !S3Option::get_instance()->is_s3server_obj_overwrite_del_old_enabled()) {
+      S3Option::get_instance()->is_s3server_obj_delayed_del_enabled()) {
     s3_log(S3_LOG_INFO, request_id,
            "Skipping deletion of object with oid %" SCNx64 " : %" SCNx64
            ". The object will be deleted by BD.\n",
