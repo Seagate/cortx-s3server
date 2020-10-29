@@ -1,22 +1,3 @@
-/*
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-# For any questions about this software or licensing,
-# please email opensource@seagate.com or cortx-questions@seagate.com.
-*/
-
 #include<stdio.h>
 #include<iostream>
 #include <cstdint>
@@ -41,11 +22,6 @@ static inline bool is_base64(unsigned char c) {
   return (isalnum(c) || (c == '+') || (c == '/'));
 }
 
-
-
-/****************************************
-this function decodes the encoded string 
-****************************************/
 std::string base64_decode(std::string const& encoded_string) {
   int in_len = encoded_string.size();
   int i = 0;
@@ -86,9 +62,6 @@ std::string base64_decode(std::string const& encoded_string) {
   return ret;
 }
 
-/****************************************
-this function is used to encode the string
-****************************************/
 std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_len) {
   std::string ret;
   int i = 0;
@@ -131,9 +104,6 @@ std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_
   return ret;
 }
 
-/***********************************************
- this function is also used to decode the string
-************************************************/
 struct m0_uint128 to_m0_uint128(const std::string &id_str) {
     m0_uint128 id = {0ULL, 0ULL};
     std::size_t delim_pos = id_str.find("-");
@@ -149,10 +119,6 @@ struct m0_uint128 to_m0_uint128(const std::string &id_str) {
     return id;
 }
 
-
-/*******************************************************************************
- this function is used to divide the hex address in two parts and then encode them again
-********************************************************************************/
 std::string to_string(std::string input_string) {
   std::size_t delim_pos = input_string.find(":");
   std::string u_hi_hex = input_string.substr(0, delim_pos);
@@ -167,9 +133,7 @@ std::string to_string(std::string input_string) {
          base64_encode((unsigned char const *)&u_lo, sizeof(u_lo));
 }
 
-/****************************************
-main function 
-****************************************/
+
 int main(int argc, char *argv[])
 {
   if (std::string(argv[1]) == "-d") {

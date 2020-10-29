@@ -21,34 +21,31 @@ red=`tput setaf 1`
 green=`tput setaf 2`
 reset=`tput sgr0`
 rm base64_encoder_decoder -f /dev/null 2>&1
-g++ base64_encoder_decoder.cc -o base64_encoder_decoder -std=c++11 > /dev/null 2>&1
-
+make > /dev/null 2>&1
 m0kv_PATH="third_party/motr/utils/m0kv"
 
-
-##### this function is invoked when any one of the parameters provided are not correct ####
+##### this function is invoked when any one of the parameters provided are not correct #####
 usage() {
-    echo "${red}Usage:${green} $0 -l 'local_addr' -h 'ha_addr' -p 'profile' -f 'proc_fid' -b 0 -d 10${reset}"
+    echo "${red}Usage:${green} $0 -l 'local_addr' -h 'ha_addr' -p 'profile' -f 'proc_fid' -d 'depth' -b 'bucket_name'${reset}"
     echo  for eg.
-    echo "${green} $0 -l 10.230.247.176@tcp:12345:33:905 -h 10.230.247.176@tcp:12345:34:1 -p '<0x7000000000000001:0>' -f '<0x7200000000000000:0>' -b 0 -d 10${reset}" 
+    echo "${green} $0 -l 10.230.247.176@tcp:12345:33:905 -h 10.230.247.176@tcp:12345:34:1 -p '<0x7000000000000001:0>' -f '<0x7200000000000000:0>' -d 1${reset}" 
     echo "-----------------------------------------------------------------------------------"
-    echo "${green}-b is flag and required arguement (can be set 0 or 1) ${reset}"
-    echo "${green}-b 0 -> Get metadata of bucket and objects${reset}"
-    echo "${green}-b 1 -> Get only bucket level metadata ${reset}"
+    echo "${green}-d represents depth of traversal${reset}"
+    echo "${green}-d 1  -> Get metadata of only buckets${reset}"
+    echo "${green}-d >1 -> Gets metadata of bucket and object${reset}"
     echo "-----------------------------------------------------------------------------------"
-    echo "${green}-d is number of entries for probable delete index (should be integer val)${reset}"
-    echo "${green}-d is required arguement${reset}"
-    echo "-----------------------------------------------------------------------------------"
-    echo "${green}-n is Optional arguement to get metadata specific to bucket${reset}"
+    echo "${green}-b <bucket_name> is an optional arguement to get metadata specific to bucket${reset}"
 }
 
 
-##### this function is invoked when there is no binary(m0kv) already present in the "cortx-s3server/third_party_motr/utils/" ####
+##### this function is invoked when there is no binary(m0kv) present in the "cortx-s3server/third_party_motr/utils/" #####
 ##### the user need to run third_party/build_motr.sh to generate binary(m0kv) first ####
 binary_error() {
     echo "${red}Binary Error : Please run build_motr.sh to generate m0kv file${reset}"
 }
 
+
+##### this function lists down the global probable delete indices upto 100 objects #####
 get_probable_delete_index() {
     cd ..
     m0kv_flag=$(find third_party/motr/utils/ -name m0kv)
@@ -62,10 +59,10 @@ get_probable_delete_index() {
         declare -a PART_LIST_INDEX_OID
         rm /tmp/m0kvprobable.log > /dev/null 2>&1
         cd ..
-        ./$m0kv_PATH -l $1 -h $2 -p $3 -f $4 index next '0x7800000000000000:0x100003' '0' $5 -s >> /tmp/m0kvprobable.log
+        ./$m0kv_PATH -l $1 -h $2 -p $3 -f $4 index next '0x7800000000000000:0x100003' '0' 100 -s >> /tmp/m0kvprobable.log
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
         cd m0kv_metadata_parsing_tool
-        echo -e "./$m0kv_PATH -l $1 -h $2 -p $3 -f $4 index next '0x7800000000000000:0x100003' '0' $5 -s\n" >> /var/log/m0kv_metadata.log
+        echo -e "./$m0kv_PATH -l $1 -h $2 -p $3 -f $4 index next '0x7800000000000000:0x100003' '0' 100 -s\n" >> /var/log/m0kv_metadata.log
         cat /tmp/m0kvprobable.log >> /var/log/m0kv_metadata.log
 
         
@@ -128,7 +125,7 @@ get_probable_delete_index() {
     fi
 }
 
-##### this function is used to get the number of parts of a multipart upload (to be displayed in the final o/p with their upload id's) ####
+##### this function is used to get the number of parts of a multipart upload (to be displayed in the final o/p with their upload id's) #####
 get_parts() {
     rm /tmp/m0kvcountpart.log > /dev/null 2>&1
     aws s3api list-parts --bucket $1 --key $2 --upload-id $3 >> /tmp/m0kvcountpart.log
@@ -147,7 +144,7 @@ get_parts() {
     fi  
 }
 
-##### this function is used to get the multipart metadata by passing the multipart_oid to m0kv tool ####
+##### this function is used to get the multipart metadata by passing the multipart_oid to m0kv tool #####
 get_multipart_metadata() {
     declare -a MOTR_PART_OID
     MULTIPART_OBJECTS=()
@@ -214,7 +211,7 @@ get_multipart_metadata() {
     rm /tmp/countObjects.log > /dev/null 2>&1
 }
 
-##### this function is used to get the objects metadata by passing the multipart_oid to m0kv tool ####
+##### this function is used to gets the object level metadata with object list index #####
 get_object_metadata() {
     OBJECTS=()
     declare -a MOTR_OIDS
@@ -275,7 +272,7 @@ get_object_metadata() {
     fi
 }
 
-##### this function is used to get only the bucket level metadata ####
+##### this function is used to get bucket level metadata #####
 get_all_buckets_metadata() {
     cd ..
     m0kv_flag=$(find third_party/motr/utils/ -name m0kv)
@@ -336,7 +333,7 @@ get_all_buckets_metadata() {
             echo motr_multipart_index_oid : ${MOTR_MULTIPART_INDEX_OID[j-1]}
             echo motr_object_list_index_oid : ${MOTR_OBJECT_LIST_INDEX_OID[j-1]}
             echo motr_objects_version_list_index_oid : ${MOTR_OBJECTS_VERSION_LIST_INDEX_OID[j-1]}
-            if [ $5 -eq 0 ]
+            if [ $5 != 1 ]
             then
                 get_multipart_metadata ${MOTR_MULTIPART_INDEX_OID[j-1]} ${BUCKETS[j-1]} $1 $2 $3 $4
                 get_object_metadata ${MOTR_OBJECT_LIST_INDEX_OID[j-1]} ${BUCKETS[j-1]} $1 ${MOTR_OBJECTS_VERSION_LIST_INDEX_OID[j-1]} $2 $3 $4
@@ -352,7 +349,7 @@ get_all_buckets_metadata() {
     fi
 }
 
-##### this function is used to get the metadata of a particular bucket name passed through cli ####
+##### this function is used to get the metadata of a particular bucket #####
 get_metadata_of_bucket() {
     cd ..
     m0kv_flag=$(find third_party/motr/utils/ -name m0kv)
@@ -384,7 +381,7 @@ get_metadata_of_bucket() {
         echo motr_multipart_index_oid : $MOTR_MULTIPART_INDEX_OID
         echo motr_object_list_index_oid : $MOTR_OBJECT_LIST_INDEX_OID
         echo motr_objects_version_list_index_oid : $MOTR_OBJECTS_VERSION_LIST_INDEX_OID
-        if [ $6 -eq 0 ]
+        if [ $6 != 1 ]
         then
             get_multipart_metadata $MOTR_MULTIPART_INDEX_OID $1 $2 $3 $4 $5
             get_object_metadata $MOTR_OBJECT_LIST_INDEX_OID $1 $2 $MOTR_OBJECTS_VERSION_LIST_INDEX_OID $3 $4 $5
@@ -398,43 +395,34 @@ get_metadata_of_bucket() {
     fi
 }
 
-while getopts "l:h:p:f:n:b:d:" opt
+while getopts "l:h:p:f:b:d:" opt
 do
    case "$opt" in
       l ) L="$OPTARG" ;;
       h ) H="$OPTARG" ;;
       p ) P="$OPTARG" ;;
       f ) F="$OPTARG" ;;
-      n ) BUCKET_NAME="$OPTARG" ;;
-      b ) BUCKET_LEVEL_FLAG="$OPTARG" ;;
-      d ) NO_OF_DEL="$OPTARG" ;;
+      b ) BUCKET_NAME="$OPTARG" ;;
+      d ) BUCKET_LEVEL_FLAG="$OPTARG" ;;
       ? ) usage ;;
    esac 
 done
 
-if [[ ! -z "$L" ]] && [[ ! -z "$H" ]] && [[ ! -z "$P" ]] && [[ ! -z "$H" ]] && [[ ! -z "$BUCKET_LEVEL_FLAG" ]] && [[ ! -z "$NO_OF_DEL" ]] && [ -z "$BUCKET_NAME" ]
+##### Checks input arguements are null or not #####
+if [[ ! -z "$L" ]] && [[ ! -z "$H" ]] && [[ ! -z "$P" ]] && [[ ! -z "$H" ]] && [ $BUCKET_LEVEL_FLAG -ge 1 ] 
 then
-    re='^[0-9]+$'
-    if [ $BUCKET_LEVEL_FLAG -le 1 ] && [[ $BUCKET_LEVEL_FLAG =~ $re ]] && [[ $NO_OF_DEL =~ $re ]]
+    if [ -z "$BUCKET_NAME" ]
     then
         get_all_buckets_metadata $L $H $P $F $BUCKET_LEVEL_FLAG
-        get_probable_delete_index $L $H $P $F $NO_OF_DEL
+        get_probable_delete_index $L $H $P $F
         echo -e "\n${red}Log file :${reset} ${green}/var/log/m0kv_metadata.log${reset}\n"
     else
-        usage
-    fi
-elif [[ ! -z "$L" ]] && [[ ! -z "$H" ]] && [[ ! -z "$P" ]] && [[ ! -z "$H" ]] && [[ ! -z "$BUCKET_LEVEL_FLAG" ]] && [[ ! -z "$NO_OF_DEL" ]] && [[ ! -z "$BUCKET_NAME" ]]
-then 
-    re='^[0-9]+$'
-    if [ $BUCKET_LEVEL_FLAG -le 1 ] && [[ $BUCKET_LEVEL_FLAG =~ $re ]] && [[ $NO_OF_DEL =~ $re ]]
-    then
         get_metadata_of_bucket $BUCKET_NAME $L $H $P $F $BUCKET_LEVEL_FLAG
-        get_probable_delete_index $L $H $P $F $NO_OF_DEL
+        get_probable_delete_index $L $H $P $F
         echo -e "\n${red}Log file :${reset} ${green}/var/log/m0kv_metadata.log${reset}\n"
-    else
-        usage
     fi
 else
     usage
 fi
-rm base64_encoder_decoder -f /dev/null 2>&1
+make clean > /dev/null 2>&1
+

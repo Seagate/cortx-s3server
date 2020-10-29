@@ -34,15 +34,15 @@ Clone the tool from cortx-s3server
 ## Usage
 
 ```
-./m0kv_metadata_parsing_tool.sh -l 10.230.247.176@tcp:12345:33:905 -h 10.230.247.176@tcp:12345:34:1 -p '<0x7000000000000001:0>' -f '<0x7200000000000000:0>' -b 0 -d 10
+Usage: ./m0kv_metadata_parsing_tool -l 'local_addr' -h 'ha_addr' -p 'profile' -f 'proc_fid' -d 'depth' -b 'bucket_name'
+for eg.
+./m0kv_metadata_parsing_tool -l 10.230.247.176@tcp:12345:33:905 -h 10.230.247.176@tcp:12345:34:1 -p '<0x7000000000000001:0>' -f '<0x7200000000000000:0>' -d 1
 -----------------------------------------------------------------------------------
--b is flag and required arguement (can be set 0 or 1)
--b 0 -> Get metadata of bucket and objects
--b 1 -> Get only bucket level metadata
+-d represents depth of traversal
+-d 1  -> Get metadata of only buckets
+-d >1 -> Gets metadata of bucket and object
 -----------------------------------------------------------------------------------
--d is number of entries for probable delete index (should be integer val)
--d is required arguement
------------------------------------------------------------------------------------
--n is Optional arguement to get metadata specific to bucket
+-b <bucket_name> is an optional arguement to get metadata specific to bucket
 ```
+
 
