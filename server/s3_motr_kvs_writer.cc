@@ -27,6 +27,7 @@
 #include "s3_option.h"
 #include "s3_uri_to_motr_oid.h"
 #include "s3_stats.h"
+#include "s3_addb.h"
 
 extern struct m0_realm motr_uber_realm;
 extern struct m0_container motr_container;
