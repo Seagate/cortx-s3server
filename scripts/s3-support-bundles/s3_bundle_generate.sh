@@ -49,6 +49,7 @@ ldap_log="/var/log/slapd.log"
 
 s3server_config="/opt/seagate/cortx/s3/conf/s3config.yaml"
 authserver_config="/opt/seagate/cortx/auth/resources/authserver.properties"
+encrypt_cli="/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar"
 backgrounddelete_config="/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
 s3startsystem_script="/opt/seagate/cortx/s3/s3startsystem.sh"
 s3server_binary="/opt/seagate/cortx/s3/bin/s3server"
@@ -405,47 +406,38 @@ fi
 
 ## Collect LDAP data
 mkdir -p $ldap_dir
-# Fetch ldap root DN password from provisioning else use default
-rootdnpasswd=""
-if rpm -q "salt"  > /dev/null;
+# Get password from cortx-utils
+# ldapadmin and rootdn passwords are same, so reading ldapadmin password
+rootdnpasswd=$(java -jar $encrypt_cli -d)
+if [[ $? != 0 || -z "$rootdnpasswd" ]]
 then
-    # Prod/Release environment
-    rootdnpasswd=$(salt-call pillar.get openldap:admin:secret --output=newline_values_only) 2>/dev/null
-    rootdnpasswd=$(salt-call lyveutil.decrypt openldap "${rootdnpasswd}" --output=newline_values_only) 2>/dev/null
+    echo "Failed to decrypt ldap admin password, skipping collection of ldap data."
 else
-    # Dev environment
-    source /root/.s3_ldap_cred_cache.conf 2>/dev/null
-fi
+    # Run ldap commands
+    ldapsearch -b "cn=config" -x -w "$rootdnpasswd" -D "cn=admin,cn=config" -H ldapi:/// > "$ldap_config"  2>&1
+    ldapsearch -s base -b "cn=subschema" objectclasses -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" -H ldapi:/// > "$ldap_subschema"  2>&1
+    ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" "objectClass=Account" -H ldapi:/// -LLL ldapentrycount > "$ldap_accounts" 2>&1
+    ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" "objectClass=iamUser" -H ldapi:/// -LLL ldapentrycount > "$ldap_users"  2>&1
 
-if [[ -z "$rootdnpasswd" ]]
-then
-    rootdnpasswd=$ldap_root_pwd 2>/dev/null
-fi
+    if [ -f "$ldap_config" ];
+    then
+        args=$args" "$ldap_config
+    fi
 
-# Run ldap commands
-ldapsearch -b "cn=config" -x -w "$rootdnpasswd" -D "cn=admin,cn=config" -H ldapi:/// > "$ldap_config"  2>&1
-ldapsearch -s base -b "cn=subschema" objectclasses -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" -H ldapi:/// > "$ldap_subschema"  2>&1
-ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" "objectClass=Account" -H ldapi:/// -LLL ldapentrycount > "$ldap_accounts" 2>&1
-ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" "objectClass=iamUser" -H ldapi:/// -LLL ldapentrycount > "$ldap_users"  2>&1
+    if [ -f "$ldap_subschema" ];
+    then
+        args=$args" "$ldap_subschema
+    fi
 
-if [ -f "$ldap_config" ];
-then
-    args=$args" "$ldap_config
-fi
+    if [ -f "$ldap_accounts" ];
+    then
+        args=$args" "$ldap_accounts
+    fi
 
-if [ -f "$ldap_subschema" ];
-then
-    args=$args" "$ldap_subschema
-fi
-
-if [ -f "$ldap_accounts" ];
-then
-    args=$args" "$ldap_accounts
-fi
-
-if [ -f "$ldap_users" ];
-then
-    args=$args" "$ldap_users
+    if [ -f "$ldap_users" ];
+    then
+        args=$args" "$ldap_users
+    fi
 fi
 
 # Clean up temp files

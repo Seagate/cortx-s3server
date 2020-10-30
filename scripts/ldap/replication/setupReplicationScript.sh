@@ -43,6 +43,8 @@ then
     exit 1
 fi
 
+INSTALLDIR="/opt/seagate/cortx/s3/install/ldap/replication"
+
 #Below function will check if all provided hosts are valid or not
 checkHostValidity()
 {
@@ -84,19 +86,21 @@ if hash salt 2>/dev/null; then
 else
     getServerIdFromHostFile
 fi
-sed -e "s/\${serverid}/$id/" serverIdTemplate.ldif > scriptServerId.ldif
-ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptServerId.ldif
-rm scriptServerId.ldif
+sed -e "s/\${serverid}/$id/" $INSTALLDIR/serverIdTemplate.ldif > $INSTALLDIR/scriptServerId.ldif
+ldapmodify -Y EXTERNAL  -H ldapi:/// -f $INSTALLDIR/scriptServerId.ldif
+rm $INSTALLDIR/scriptServerId.ldif
 
-ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov_mod.ldif
+ldapadd -Y EXTERNAL -H ldapi:/// -f $INSTALLDIR/syncprov_mod.ldif
 
-ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov.ldif
+ldapadd -Y EXTERNAL -H ldapi:/// -f $INSTALLDIR/syncprov.ldif
 
-#update replicaiton config
-
+#update replication config
+echo "dn: olcDatabase={0}config,cn=config" > scriptConfig.ldif
+echo "changetype: modify" >> scriptConfig.ldif
+echo "add: olcSyncRepl" >> scriptConfig.ldif
 rid=1
 while read host; do
-sed -e "s/\${rid}/$rid/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" configTemplate.ldif > scriptConfig.ldif
+sed -e "s/\${rid}/$rid/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" $INSTALLDIR/configTemplate.ldif > scriptConfig.ldif
 if [ ${rid} -eq 2 ] && [ ${id} -eq 1 ]
 then
     echo "-" >> scriptConfig.ldif
@@ -113,11 +117,17 @@ ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptConfig.ldif
 rm scriptConfig.ldif
 rid=`expr ${rid} + 1`
 done <$host_list
-
-iteration=1
+    echo "-" >> scriptConfig.ldif
+    echo "add: olcMirrorMode" >> scriptConfig.ldif
+     echo "olcMirrorMode: TRUE" >> scriptConfig.ldif
+ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptConfig.ldif
+rm scriptConfig.ldif
 # Update mdb file
+echo "dn: olcDatabase={2}mdb,cn=config" > scriptData.ldif
+echo "changetype: modify" >> scriptData.ldif
+echo "add: olcSyncRepl" >> scriptData.ldif
 while read host; do
-sed -e "s/\${rid}/$rid/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" dataTemplate.ldif > scriptData.ldif
+sed -e "s/\${rid}/$rid/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" $INSTALLDIR/dataTemplate.ldif > scriptData.ldif
 if [ ${iteration} -eq 2 ] && [ ${id} -eq 1 ]
 then
     echo "-" >> scriptData.ldif
@@ -133,5 +143,9 @@ fi
 ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptData.ldif
 rm scriptData.ldif
 rid=`expr ${rid} + 1`
-iteration=`expr ${iteration} + 1`
 done <$host_list
+    echo "-" >> scriptData.ldif
+    echo "add: olcMirrorMode" >> scriptData.ldif
+    echo "olcMirrorMode: TRUE" >> scriptData.ldif
+ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptData.ldif
+rm scriptData.ldif

@@ -52,13 +52,10 @@ SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
 
 if rpm -q "salt"  > /dev/null 2>&1;
+ldap_admin_pwd=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
+if [[ $? != 0 || -z "$ldap_admin_pwd" ]] # Generate random password using cortx-utils, failed
 then
-    # Release/Prod environment
-    ldap_admin_pwd=$(salt-call pillar.get openldap:iam_admin:secret --output=newline_values_only)
-    ldap_admin_pwd=$(salt-call lyveutil.decrypt openldap "${ldap_admin_pwd}" --output=newline_values_only)
-else
-    # Dev environment. Read ldap admin password from "/root/.s3_ldap_cred_cache.conf"
-    source /root/.s3_ldap_cred_cache.conf
+    ldap_admin_pwd=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9@#+' | fold -w 12 | head -n 1)
 fi
 
 USE_SUDO=
