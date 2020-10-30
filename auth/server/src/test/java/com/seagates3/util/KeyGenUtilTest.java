@@ -41,7 +41,7 @@ public class KeyGenUtilTest {
         String accessKeyId = KeyGenUtil.createUserAccessKeyId();
 
         assertNotNull(accessKeyId);
-        assertFalse(accessKeyId.startsWith("-") || accessKeyId.startsWith("_"));
+        assertFalse(accessKeyId.contains("-") || accessKeyId.contains("_"));
     }
 
     @Test
