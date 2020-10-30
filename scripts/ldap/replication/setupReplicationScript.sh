@@ -99,46 +99,30 @@ ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov_mod.ldif
 
 ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov.ldif
 
-#update replicaiton config
-
+#update replication config
+echo "dn: olcDatabase={0}config,cn=config" > scriptConfig.ldif
+echo "changetype: modify" >> scriptConfig.ldif
+echo "add: olcSyncRepl" >> scriptConfig.ldif
 rid=1
 while read host; do
-sed -e "s/\${rid}/$rid/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" configTemplate.ldif > scriptConfig.ldif
-if [ ${rid} -eq 2 ] && [ ${id} -eq 1 ]
-then
+sed -e "s/\${rid}/$rid/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" configTemplate.ldif >> scriptConfig.ldif
+rid=`expr ${rid} + 1`
+done <$host_list
     echo "-" >> scriptConfig.ldif
     echo "add: olcMirrorMode" >> scriptConfig.ldif
      echo "olcMirrorMode: TRUE" >> scriptConfig.ldif
-fi
-if [ ${rid} -eq 1 ] && [ ${id} -ne 1 ]
-then
-    echo "-" >> scriptConfig.ldif
-    echo "add: olcMirrorMode" >> scriptConfig.ldif
-    echo "olcMirrorMode: TRUE" >> scriptConfig.ldif
-fi
 ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptConfig.ldif
 rm scriptConfig.ldif
+# Update mdb file
+echo "dn: olcDatabase={2}mdb,cn=config" > scriptData.ldif
+echo "changetype: modify" >> scriptData.ldif
+echo "add: olcSyncRepl" >> scriptData.ldif
+while read host; do
+sed -e "s/\${rid}/$rid/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" dataTemplate.ldif >> scriptData.ldif
 rid=`expr ${rid} + 1`
 done <$host_list
-
-iteration=1
-# Update mdb file
-while read host; do
-sed -e "s/\${rid}/$rid/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" dataTemplate.ldif > scriptData.ldif
-if [ ${iteration} -eq 2 ] && [ ${id} -eq 1 ]
-then
     echo "-" >> scriptData.ldif
     echo "add: olcMirrorMode" >> scriptData.ldif
     echo "olcMirrorMode: TRUE" >> scriptData.ldif
-fi
-if [ ${iteration} -eq 1 ] && [ ${id} -ne 1 ]
-then
-    echo "-" >> scriptData.ldif
-    echo "add: olcMirrorMode" >> scriptData.ldif
-    echo "olcMirrorMode: TRUE" >> scriptData.ldif
-fi
 ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptData.ldif
 rm scriptData.ldif
-rid=`expr ${rid} + 1`
-iteration=`expr ${iteration} + 1`
-done <$host_list
