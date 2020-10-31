@@ -49,7 +49,7 @@ import com.seagates3.util.DateUtil;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 
-@RunWith(PowerMockRunner.class)
+@PowerMockIgnore({"javax.management.*"}) @RunWith(PowerMockRunner.class)
     @PrepareForTest({SignatureValidator.class, DateTime.class, DateUtil.class})
     @MockPolicy(Slf4jMockPolicy.class) public class SignatureValidatorTest {
 

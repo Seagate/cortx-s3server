@@ -20,9 +20,6 @@
 
 package com.seagates3.authserver;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
@@ -33,17 +30,17 @@ import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 
 import javax.activation.MimetypesFileTypeMap;
-import com.seagates3.util.BinaryUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.seagates3.controller.SAMLWebSSOController;
 import com.seagates3.response.ServerResponse;
+import com.seagates3.util.BinaryUtil;
 import com.seagates3.util.IEMUtil;
-import java.util.Map;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -55,9 +52,11 @@ import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpChunkedInput;
-import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.ssl.SslHandler;
@@ -78,7 +77,7 @@ class AuthServerGetHandler {
   AuthServerGetHandler(ChannelHandlerContext ctx, FullHttpRequest httpRequest) {
     this.ctx = ctx;
     this.httpRequest = httpRequest;
-    keepAlive = HttpHeaders.isKeepAlive(httpRequest);
+    keepAlive = HttpUtil.isKeepAlive(httpRequest);
   }
 
  public
@@ -93,9 +92,9 @@ class AuthServerGetHandler {
       AuthServerConfig.setReqId(BinaryUtil.getAlphaNumericUUID());
     }
 
-    if (httpRequest.getUri().startsWith("/static")) {
+    if (httpRequest.uri().startsWith("/static")) {
       Path staticFilePath =
-          Paths.get(AuthServerConstants.RESOURCE_DIR, httpRequest.getUri());
+          Paths.get(AuthServerConstants.RESOURCE_DIR, httpRequest.uri());
       File file = staticFilePath.toFile();
 
       LOGGER.debug("Static file path - " + staticFilePath);
@@ -120,7 +119,7 @@ class AuthServerGetHandler {
         return;
       }
 
-    } else if (httpRequest.getUri().startsWith("/saml/session")) {
+    } else if (httpRequest.uri().startsWith("/saml/session")) {
       LOGGER.debug("Calling SAML WEB SSO Controller");
 
       ServerResponse severReponse =
@@ -131,7 +130,8 @@ class AuthServerGetHandler {
       HttpResponse response =
           new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
       if (keepAlive) {
-        response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
+        response.headers().set(HttpHeaderNames.CONNECTION,
+                               HttpHeaderValues.KEEP_ALIVE);
       }
       ctx.write(response).addListener(ChannelFutureListener.CLOSE);
     }
@@ -150,7 +150,7 @@ class AuthServerGetHandler {
           HttpVersion.HTTP_1_1, requestResponse.getResponseStatus(),
           Unpooled.wrappedBuffer(responseBody.getBytes("UTF-8")));
 
-      LOGGER.info("Sending HTTP Response code [" + response.getStatus() + "]");
+      LOGGER.info("Sending HTTP Response code [" + response.status() + "]");
     }
     catch (UnsupportedEncodingException ex) {
       IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
@@ -158,8 +158,8 @@ class AuthServerGetHandler {
       response = null;
     }
     if (response != null) {
-      response.headers().set(CONTENT_TYPE, "text/xml");
-      response.headers().set(CONTENT_LENGTH,
+      response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/xml");
+      response.headers().set(HttpHeaderNames.CONTENT_LENGTH,
                              response.content().readableBytes());
 
       if (!keepAlive) {
@@ -167,7 +167,8 @@ class AuthServerGetHandler {
 
         LOGGER.debug("Connection closed.");
       } else {
-        response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
+        response.headers().set(HttpHeaderNames.CONNECTION,
+                               HttpHeaderValues.KEEP_ALIVE);
         ctx.writeAndFlush(response);
 
         LOGGER.debug("Connection kept alive.");
@@ -186,10 +187,11 @@ class AuthServerGetHandler {
  private
   void writeHeader(File file, long fileLength) {
     HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
-    HttpHeaders.setContentLength(response, fileLength);
+    HttpUtil.setContentLength(response, fileLength);
     setContentTypeHeader(response, file);
     if (keepAlive) {
-      response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
+      response.headers().set(HttpHeaderNames.CONNECTION,
+                             HttpHeaderValues.KEEP_ALIVE);
     }
 
     ctx.write(response);
@@ -246,8 +248,8 @@ class AuthServerGetHandler {
       httpResponse = null;
     }
     if (httpResponse != null) {
-      httpResponse.headers().set(CONTENT_TYPE, "text/xml");
-      httpResponse.headers().set(CONTENT_LENGTH,
+      httpResponse.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/xml");
+      httpResponse.headers().set(HttpHeaderNames.CONTENT_LENGTH,
                                  httpResponse.content().readableBytes());
 
       if (!keepAlive) {
@@ -255,7 +257,8 @@ class AuthServerGetHandler {
 
         LOGGER.debug("Connection closed.");
       } else {
-        httpResponse.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
+        httpResponse.headers().set(HttpHeaderNames.CONNECTION,
+                                   HttpHeaderValues.KEEP_ALIVE);
         ctx.writeAndFlush(httpResponse);
 
         LOGGER.debug("Connection kept alive.");
@@ -265,7 +268,7 @@ class AuthServerGetHandler {
  private
   void setContentTypeHeader(HttpResponse response, File file) {
     MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
-    response.headers().set(CONTENT_TYPE,
+    response.headers().set(HttpHeaderNames.CONTENT_TYPE,
                            mimeTypesMap.getContentType(file.getPath()));
   }
  private
