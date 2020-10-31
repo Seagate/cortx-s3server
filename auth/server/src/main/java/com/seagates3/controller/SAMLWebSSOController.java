@@ -20,6 +20,10 @@
 
 package com.seagates3.controller;
 
+import java.io.UnsupportedEncodingException;
+import java.util.List;
+import java.util.Map;
+
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.DAODispatcher;
@@ -48,20 +52,16 @@ import com.seagates3.service.AccessKeyService;
 import com.seagates3.service.UserService;
 import com.seagates3.util.BinaryUtil;
 import com.seagates3.util.IEMUtil;
+
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
-import static io.netty.handler.codec.http.HttpHeaders.Names.LOCATION;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http.QueryStringEncoder;
-import java.io.UnsupportedEncodingException;
-import java.util.List;
-import java.util.Map;
 
 /**
  * TODO - Refactor this class to inherit from Abstract controller.
@@ -168,8 +168,8 @@ public class SAMLWebSSOController {
      * @return Full Http Response
      */
     public ServerResponse createSession(FullHttpRequest httpRequest) {
-        QueryStringDecoder queryParams = new QueryStringDecoder(
-                httpRequest.getUri());
+       QueryStringDecoder queryParams =
+           new QueryStringDecoder(httpRequest.uri());
         Map<String, List<String>> cookieToken = queryParams.parameters();
 
         SAMLSessionResponseGenerator samlSessionResponseGenerator
@@ -214,8 +214,10 @@ public class SAMLWebSSOController {
         response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
                 HttpResponseStatus.FOUND);
 
-        response.headers().set(LOCATION, redirectURL.toString());
-        response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
+        response.headers().set(HttpHeaderNames.LOCATION,
+                               redirectURL.toString());
+        response.headers().set(HttpHeaderNames.CONTENT_LENGTH,
+                               response.content().readableBytes());
 
         return response;
     }
@@ -234,8 +236,9 @@ public class SAMLWebSSOController {
             response = null;
         }
         if (response != null) {
-        response.headers().set(CONTENT_TYPE, "text/xml");
-        response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
+          response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/xml");
+          response.headers().set(HttpHeaderNames.CONTENT_LENGTH,
+                                 response.content().readableBytes());
         }
         return response;
     }
