@@ -94,6 +94,49 @@ def delete_object_list_file(file_name):
 #******** Create Bucket ********
 AwsTest('Aws can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
 
+#******** Verify pagination and NextToken in List objects V1  **********
+# Step 1. Create total 110 objets in bucket
+obj_110_list = []
+for x in range(110):
+    key = "object%d" % (x)
+    AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
+        .execute_test().command_is_successful()
+    obj_110_list.append(key)
+
+# Step 2.
+# Create object list file
+object_list_file = create_object_list_file("obj_list_110_keys.json", obj_110_list, "true")
+
+# Step 3. List first 100 objects. This will result into NextToken != None
+# NextToken will point to object9 - the last object key in the response.
+result = AwsTest('Aws list the first 100 objects')\
+    .list_objects("seagatebucket", "100")\
+    .execute_test()\
+    .command_is_successful()
+
+# Step 4. Validate
+list_response = get_aws_cli_object(result.status.stdout)
+print("List response: %s\n", str(list_response))
+# Verify 'object9' is present and 'object99' is not present in the resultant list 'list_response'
+if list_response is not None:
+    assert 'object9' in list_response["keys"], "Failed to see object9 in the response"
+    assert 'object99' not in list_response["keys"], "Failed: Unexpected key object99 in the response"
+else:
+    assert False, "Failed to list objects from bucket"
+# Verify that NextToken is in 'list_response' and it is not empty
+assert (("next_token" in list_response.keys()) and (len(list_response["next_token"].strip()) > 0)), "NextToken is either not present or empty"
+
+# Step 5. Cleanup: Delete 110 objects, and remove object list file containing a list of 110 objects
+# Delete all 110 objects in bucket
+AwsTest('Aws delete objects: [object0...object109]')\
+    .delete_multiple_objects("seagatebucket", object_list_file)\
+    .execute_test()\
+    .command_is_successful()\
+    .command_response_should_be_empty()
+
+delete_object_list_file(object_list_file)
+
+
 # ******** Create hierarchical objects (>30) in bucket and list them *********
 obj_list = []
 for x in range(35):

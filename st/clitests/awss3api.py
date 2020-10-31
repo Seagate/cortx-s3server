@@ -136,7 +136,7 @@ class AwsTest(S3PyCliTest):
         cmd = "aws s3api " + "list-objects " + "--bucket " + bucket_name
         if(max_keys is not None):
            self.max_keys = max_keys
-           cmd = cmd + " --max-keys " + max_keys
+           cmd = cmd + " --max-items " + max_keys
         self.with_cli(cmd)
         return self
 
