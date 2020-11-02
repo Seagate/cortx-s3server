@@ -34,6 +34,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
 import org.powermock.core.classloader.annotations.MockPolicy;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.internal.WhiteboxImpl;
@@ -48,10 +49,9 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({AuthRequestDecoder.class})
-@MockPolicy(Slf4jMockPolicy.class)
-public class AuthRequestDecoderTest {
+@PowerMockIgnore({"javax.management.*"}) @RunWith(PowerMockRunner.class)
+    @PrepareForTest({AuthRequestDecoder.class})
+    @MockPolicy(Slf4jMockPolicy.class) public class AuthRequestDecoderTest {
 
     private FullHttpRequest fullHttpRequest;
     private AuthRequestDecoder authRequestDecoder;

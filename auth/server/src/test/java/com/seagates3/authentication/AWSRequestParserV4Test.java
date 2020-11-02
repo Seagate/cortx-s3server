@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
 import org.powermock.core.classloader.annotations.MockPolicy;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -49,10 +50,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(AuthServerConfig.class)
-@MockPolicy(Slf4jMockPolicy.class)
-public class AWSRequestParserV4Test {
+@PowerMockIgnore({"javax.management.*"}) @RunWith(PowerMockRunner.class)
+    @PrepareForTest(AuthServerConfig.class)
+    @MockPolicy(Slf4jMockPolicy.class) public class AWSRequestParserV4Test {
     private AWSRequestParserV4 awsRequestParserV4;
 
     @Before
@@ -81,8 +81,8 @@ public class AWSRequestParserV4Test {
                 "57125c02a6f29093f5bd21dcd6e717f1996852");
 
         when(fullHttpRequest.headers()).thenReturn(httpHeaders);
-        when(fullHttpRequest.getMethod()).thenReturn(HttpMethod.GET);
-        when(fullHttpRequest.getUri()).thenReturn("/");
+        when(fullHttpRequest.method()).thenReturn(HttpMethod.GET);
+        when(fullHttpRequest.uri()).thenReturn("/");
 
         StringBuilder params = new StringBuilder();
         params.append("Action=IAMAction")
