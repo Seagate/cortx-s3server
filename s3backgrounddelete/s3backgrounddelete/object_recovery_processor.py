@@ -30,7 +30,9 @@ import datetime
 from logging import handlers
 
 from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
+from s3backgrounddelete.object_recovery_kafka_consumer import ObjectRecoveryKafkaConsumer
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
+from cortx.utils.log import Log
 
 
 class ObjectRecoveryProcessor(object):
@@ -43,24 +45,29 @@ class ObjectRecoveryProcessor(object):
         self.create_logger_directory()
         self.create_logger()
         self.logger.info("Initialising the Object Recovery Processor")
+        Log.init(
+            'S3_background',
+            self.config.get_logger_directory())
 
     def consume(self):
         """Consume the objects from object recovery queue."""
         self.server = None
         try:
-             self.server = ObjectRecoveryRabbitMq(
-                 self.config,
-                 self.config.get_rabbitmq_username(),
-                 self.config.get_rabbitmq_password(),
-                 self.config.get_rabbitmq_host(),
-                 self.config.get_rabbitmq_exchange(),
-                 self.config.get_rabbitmq_queue_name(),
-                 self.config.get_rabbitmq_mode(),
-                 self.config.get_rabbitmq_durable(),
-                 self.logger)
-             self.logger.info("Consumer started at " +
-                             str(datetime.datetime.now()))
-             self.server.receive_data()
+            if self.config.get_s3_use_kafka():
+                self.server = ObjectRecoveryKafkaConsumer(self.config, self.logger)
+            else:
+                self.server = ObjectRecoveryRabbitMq(
+                    self.config,
+                    self.config.get_rabbitmq_username(),
+                    self.config.get_rabbitmq_password(),
+                    self.config.get_rabbitmq_host(),
+                    self.config.get_rabbitmq_exchange(),
+                    self.config.get_rabbitmq_queue_name(),
+                    self.config.get_rabbitmq_mode(),
+                    self.config.get_rabbitmq_durable(),
+                    self.logger)
+            self.logger.info("Consumer started at " + str(datetime.datetime.now()))
+            self.server.receive_data()
         except BaseException:
             if self.server:
                 self.server.close()
