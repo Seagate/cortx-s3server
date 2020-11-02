@@ -360,7 +360,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         resp.setResponseStatus(HttpResponseStatus.OK);
 
         PowerMockito.doReturn("AKIASIAS")
-            .when(KeyGenUtil.class, "createUserAccessKeyId");
+            .when(KeyGenUtil.class, "createUserAccessKeyId", true);
 
         PowerMockito.doReturn("htuspscae/123")
             .when(KeyGenUtil.class, "generateSecretKey");
@@ -485,7 +485,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         AccessKey[] accessKeys = new AccessKey[1];
 
         PowerMockito.doReturn("AKIASIAS")
-            .when(KeyGenUtil.class, "createUserAccessKeyId");
+            .when(KeyGenUtil.class, "createUserAccessKeyId", true);
 
         PowerMockito.doReturn("htuspscae/123")
             .when(KeyGenUtil.class, "generateSecretKey");
