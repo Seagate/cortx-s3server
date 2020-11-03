@@ -52,7 +52,5 @@ setup(
     package_data = { 's3backgrounddelete': files},
 
     # Dependent packages (distributions)
-    install_requires=[
-    'httplib2'
-  ]
+    install_requires=['httplib2', 'confluent-kafka']
 )
