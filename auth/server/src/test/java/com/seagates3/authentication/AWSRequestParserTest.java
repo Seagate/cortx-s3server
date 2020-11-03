@@ -32,6 +32,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -41,9 +42,8 @@ import static org.mockito.Matchers.anyMap;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(AuthServerConfig.class)
-public class AWSRequestParserTest {
+@PowerMockIgnore({"javax.management.*"}) @RunWith(PowerMockRunner.class)
+    @PrepareForTest(AuthServerConfig.class) public class AWSRequestParserTest {
 
     AWSRequestParser awsRequestParser;
     ClientRequestToken clientRequestToken;
@@ -109,8 +109,8 @@ public class AWSRequestParserTest {
         ClientRequestToken clientRequestToken = Mockito.mock(ClientRequestToken.class);
 
         when(httpRequest.headers()).thenReturn(new DefaultHttpHeaders().add("host", "s3.seagate.com"));
-        when(httpRequest.getMethod()).thenReturn(HttpMethod.GET);
-        when(httpRequest.getUri()).thenReturn("/");
+        when(httpRequest.method()).thenReturn(HttpMethod.GET);
+        when(httpRequest.uri()).thenReturn("/");
 
         // Act
         awsRequestParser.parseRequestHeaders(httpRequest, clientRequestToken);

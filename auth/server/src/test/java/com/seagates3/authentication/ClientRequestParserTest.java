@@ -20,10 +20,28 @@
 
 package com.seagates3.authentication;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.when;
+
+import java.util.Map;
+import java.util.TreeMap;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
+import org.powermock.core.classloader.annotations.MockPolicy;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.aws.AWSV2RequestHelper;
 import com.seagates3.aws.AWSV4RequestHelper;
-import com.seagates3.exception.InvalidTokenException;
 import com.seagates3.exception.InvalidAccessKeyException;
 import com.seagates3.exception.InvalidArgumentException;
 
@@ -31,26 +49,10 @@ import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
-import org.powermock.core.classloader.annotations.MockPolicy;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.Map;
-import java.util.TreeMap;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
-
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(AuthServerConfig.class)
-@MockPolicy(Slf4jMockPolicy.class)
-public class ClientRequestParserTest {
+@PowerMockIgnore({"javax.management.*"}) @RunWith(PowerMockRunner.class)
+    @PrepareForTest(AuthServerConfig.class)
+    @MockPolicy(Slf4jMockPolicy.class) public class ClientRequestParserTest {
 
     private FullHttpRequest httpRequest;
     private Map<String, String> requestBody;

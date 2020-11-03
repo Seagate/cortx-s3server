@@ -20,10 +20,38 @@
 
 package com.seagates3.authserver;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.verifyPrivate;
+import static org.powermock.api.mockito.PowerMockito.when;
+import static org.powermock.api.mockito.PowerMockito.whenNew;
+
+import java.util.Map;
+import java.util.TreeMap;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
+import org.powermock.core.classloader.annotations.MockPolicy;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.reflect.internal.WhiteboxImpl;
+
 import com.seagates3.controller.FaultPointsController;
 import com.seagates3.controller.IAMController;
 import com.seagates3.controller.SAMLWebSSOController;
 import com.seagates3.response.ServerResponse;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
@@ -37,34 +65,13 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
-import org.powermock.core.classloader.annotations.MockPolicy;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.internal.WhiteboxImpl;
 
-import java.util.Map;
-import java.util.TreeMap;
-
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.verifyPrivate;
-import static org.powermock.api.mockito.PowerMockito.when;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
-
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({AuthServerPostHandler.class, HttpHeaders.class, AuthServerConfig.class})
-@MockPolicy(Slf4jMockPolicy.class)
-public class AuthServerPostHandlerTest {
+@PowerMockIgnore({"javax.management.*"}) @RunWith(PowerMockRunner.class)
+    @PrepareForTest({AuthServerPostHandler.class, HttpUtil.class,
+                     AuthServerConfig.class})
+    @MockPolicy(Slf4jMockPolicy.class) public class AuthServerPostHandlerTest {
 
     private ChannelHandlerContext ctx;
     private FullHttpRequest fullHttpRequest;
@@ -128,12 +135,12 @@ public class AuthServerPostHandlerTest {
     @Test
     public void returnHTTPResponseTest_ServerResponse() throws Exception {
         String responseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>";
-        mockStatic(HttpHeaders.class);
+        mockStatic(HttpUtil.class);
         ServerResponse requestResponse = mock(ServerResponse.class);
         ChannelFuture channelFuture = mock(ChannelFuture.class);
         when(requestResponse.getResponseBody()).thenReturn(responseBody);
         when(requestResponse.getResponseStatus()).thenReturn(HttpResponseStatus.OK);
-        when(HttpHeaders.isKeepAlive(fullHttpRequest)).thenReturn(Boolean.FALSE);
+        when(HttpUtil.isKeepAlive(fullHttpRequest)).thenReturn(Boolean.FALSE);
         when(ctx.write(any(ServerResponse.class))).thenReturn(channelFuture);
 
         handler = new AuthServerPostHandler(ctx, fullHttpRequest);
@@ -158,9 +165,9 @@ public class AuthServerPostHandlerTest {
     public void returnHTTPResponseTest_FullHttpResponse() throws Exception {
         FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
                 HttpResponseStatus.OK);
-        mockStatic(HttpHeaders.class);
+        mockStatic(HttpUtil.class);
         ChannelFuture channelFuture = mock(ChannelFuture.class);
-        when(HttpHeaders.isKeepAlive(fullHttpRequest)).thenReturn(Boolean.FALSE);
+        when(HttpUtil.isKeepAlive(fullHttpRequest)).thenReturn(Boolean.FALSE);
         when(ctx.write(any(ServerResponse.class))).thenReturn(channelFuture);
 
         handler = new AuthServerPostHandler(ctx, fullHttpRequest);
