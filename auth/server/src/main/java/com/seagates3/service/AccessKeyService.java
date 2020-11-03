@@ -39,7 +39,7 @@ public class AccessKeyService {
                 DAOResource.ACCESS_KEY);
         AccessKey accessKey = new AccessKey();
         accessKey.setUserId(user.getId());
-        accessKey.setId(KeyGenUtil.createUserAccessKeyId());
+        accessKey.setId(KeyGenUtil.createUserAccessKeyId(false));
         accessKey.setSecretKey(KeyGenUtil.generateSecretKey());
         accessKey.setToken(KeyGenUtil.generateSecretKey());
         accessKey.setStatus(AccessKey.AccessKeyStatus.ACTIVE);

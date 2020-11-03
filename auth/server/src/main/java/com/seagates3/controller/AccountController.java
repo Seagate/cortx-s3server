@@ -274,7 +274,7 @@ public class AccountController extends AbstractController {
     private AccessKey createRootAccessKey(User root) throws DataAccessException {
         AccessKey accessKey = new AccessKey();
         accessKey.setUserId(root.getId());
-        accessKey.setId(KeyGenUtil.createUserAccessKeyId());
+        accessKey.setId(KeyGenUtil.createUserAccessKeyId(true));
         accessKey.setSecretKey(KeyGenUtil.generateSecretKey());
         accessKey.setStatus(AccessKeyStatus.ACTIVE);
 

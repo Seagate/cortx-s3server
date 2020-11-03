@@ -25,6 +25,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Random;
+import com.seagates3.authserver.AuthServerConstants;
 
 public class KeyGenUtil {
 
@@ -63,10 +64,15 @@ public class KeyGenUtil {
      *
      * @return AccessKeyId
      */
-    public static String createUserAccessKeyId() {
+   public
+    static String createUserAccessKeyId(boolean isPermanent) {
         String id = BinaryUtil.base64UUID().substring(0, 22);
         id = id.replace('-', getRandomChar());
-        id = id.replace('_', getRandomChar());
+        if (isPermanent) {
+          id = AuthServerConstants.PERMANENT_KEY_PREFIX.concat(id);
+        } else {
+          id = AuthServerConstants.TEMPORARY_KEY_PREFIX.concat(id);
+        }
         return id;
     }
 

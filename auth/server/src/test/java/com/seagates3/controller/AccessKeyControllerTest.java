@@ -207,7 +207,8 @@ public class AccessKeyControllerTest {
         PowerMockito.mockStatic(DAODispatcher.class);
         PowerMockito.mockStatic(KeyGenUtil.class);
 
-        PowerMockito.doReturn(ACCESS_KEY_ID).when(KeyGenUtil.class, "createUserAccessKeyId");
+        PowerMockito.doReturn(ACCESS_KEY_ID)
+            .when(KeyGenUtil.class, "createUserAccessKeyId", true);
         PowerMockito.doReturn(SECRET_KEY).when(KeyGenUtil.class, "generateSecretKey");
     }
 
