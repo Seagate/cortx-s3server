@@ -110,7 +110,7 @@ object_list_file = create_object_list_file("obj_list_110_keys.json", obj_110_lis
 # Step 3. List first 100 objects. This will result into NextToken != None
 # NextToken will point to object9 - the last object key in the response.
 result = AwsTest('Aws list the first 100 objects')\
-    .list_objects("seagatebucket", "100")\
+    .list_objects("seagatebucket", None, "100")\
     .execute_test()\
     .command_is_successful()
 
