@@ -25,6 +25,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import java.security.NoSuchAlgorithmException;
+import com.seagates3.authserver.AuthServerConstants;
 
 public class KeyGenUtilTest {
 
@@ -36,12 +37,20 @@ public class KeyGenUtilTest {
         assertFalse(userID.startsWith("-") || userID.startsWith("_"));
     }
 
-    @Test
-    public void createUserAccessKeyIdTest() {
-        String accessKeyId = KeyGenUtil.createUserAccessKeyId();
+    @Test public void createUserAccessKeyIdTest() {
+      String accessKeyId = KeyGenUtil.createUserAccessKeyId(true);
+      assertNotNull(accessKeyId);
+      assertFalse(accessKeyId.contains("-"));
+      assertTrue(
+          accessKeyId.startsWith(AuthServerConstants.PERMANENT_KEY_PREFIX));
+    }
 
+    @Test public void createUserAccessKeyIdTestForTemporaryKey() {
+      String accessKeyId = KeyGenUtil.createUserAccessKeyId(false);
         assertNotNull(accessKeyId);
-        assertFalse(accessKeyId.contains("-") || accessKeyId.contains("_"));
+        assertFalse(accessKeyId.contains("-"));
+        assertTrue(
+            accessKeyId.startsWith(AuthServerConstants.TEMPORARY_KEY_PREFIX));
     }
 
     @Test
