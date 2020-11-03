@@ -19,12 +19,10 @@
 """Implementation of Kafka for producer."""
 
 import json
-import confluent_kafka as kafka
 import socket
 from cortx.utils.message_bus.tcp.kafka.kafka import KafkaProducerChannel
 
 class ObjectRecoveryKafkaProd(object):
-
     """This class is implementation of Kafka for object recovery."""
 
     def __init__(self, config, logger):

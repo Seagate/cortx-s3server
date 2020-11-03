@@ -24,7 +24,6 @@ from cortx.utils.message_bus.tcp.kafka.kafka import KafkaConsumerChannel
 from s3backgrounddelete.object_recovery_validator import ObjectRecoveryValidator
 
 class ObjectRecoveryKafkaConsumer:
-
     """This class reads messages from Kafka and forwards them for handling"""
 
     def __init__(self, config, logger):
