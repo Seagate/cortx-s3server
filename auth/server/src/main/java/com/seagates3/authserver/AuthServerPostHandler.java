@@ -20,9 +20,11 @@
 
 package com.seagates3.authserver;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.seagates3.controller.FaultPointsController;
 import com.seagates3.controller.IAMController;
@@ -38,13 +40,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.seagates3.util.BinaryUtil;
 
 public class AuthServerPostHandler {
 
@@ -59,7 +58,7 @@ public class AuthServerPostHandler {
             FullHttpRequest httpRequest) {
         this.httpRequest = httpRequest;
         this.ctx = ctx;
-        keepAlive = HttpHeaders.isKeepAlive(httpRequest);
+        keepAlive = HttpUtil.isKeepAlive(httpRequest);
     }
 
     public void run() {
@@ -73,7 +72,7 @@ public class AuthServerPostHandler {
           AuthServerConfig.setReqId(BinaryUtil.getAlphaNumericUUID());
         }
 
-        if (httpRequest.getUri().startsWith("/saml")) {
+        if (httpRequest.uri().startsWith("/saml")) {
             LOGGER.debug("Calling SAML WebSSOControler.");
             FullHttpResponse response = new SAMLWebSSOController(requestBody)
                     .samlSignIn();
@@ -106,16 +105,16 @@ public class AuthServerPostHandler {
                 requestResponse.getResponseStatus(),
                 Unpooled.wrappedBuffer(responseBody.getBytes(StandardCharsets.UTF_8))
         );
-        response.headers().set(CONTENT_TYPE, "text/xml");
-        response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
+        response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/xml");
+        response.headers().set(HttpHeaderNames.CONTENT_LENGTH,
+                               response.content().readableBytes());
 
         returnHTTPResponse(response);
     }
 
     private void returnHTTPResponse(FullHttpResponse response) {
 
-        LOGGER.info("Sending HTTP Response code [" +
-                               response.getStatus() + "]");
+       LOGGER.info("Sending HTTP Response code [" + response.status() + "]");
 
         if (!keepAlive) {
             ctx.write(response).addListener(ChannelFutureListener.CLOSE);
@@ -123,7 +122,8 @@ public class AuthServerPostHandler {
             LOGGER.debug("Response sent successfully.");
             LOGGER.debug("Connection closed.");
         } else {
-            response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
+          response.headers().set(HttpHeaderNames.CONNECTION,
+                                 HttpHeaderValues.KEEP_ALIVE);
             ctx.writeAndFlush(response);
 
             LOGGER.debug("Response sent successfully.");
