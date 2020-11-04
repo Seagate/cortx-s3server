@@ -188,7 +188,7 @@ main function
 ****************************************/
 int main(int argc, char *argv[])
 {
-  if (argv.length() == 3 )
+  if (argc == 3)
   {
     if (std::string(argv[1]) == "-d") {
       struct m0_uint128 id;
@@ -206,9 +206,9 @@ int main(int argc, char *argv[])
     }
   } 
   else {
-    std::cout << "Please provide input arguements."
-    std::cout << "Usage(decode): ./base64_encoder_decoder -d <encoded_string>"
-    std::cout << "Usage(encode) : ./base64_encoder_decoder -e <decoded_string>"
+    std::cout << "Please provide input arguements.";
+    std::cout << "Usage(decode): ./base64_encoder_decoder -d <encoded_string>";
+    std::cout << "Usage(encode) : ./base64_encoder_decoder -e <decoded_string>";
   }
   return 0;
 }

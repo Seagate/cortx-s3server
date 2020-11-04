@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -33,11 +35,11 @@ make > /dev/null 2>&1
 cd ..
 for line in $(find -name m0kv) 
 do
-    temp=$(echo $line | cut -c3-)
-    val=$(cat $temp | grep -a ' temporary wrapper script for .libs/m0kv' ) 
+    temp=$(echo "$line" | cut -c3-)
+    val=$(more "$temp" | grep -a ' temporary wrapper script for .libs/m0kv' ) 
     if [[ ! -z "$val" ]]
     then
-        m0kv_PATH=$(echo $temp)
+        m0kv_PATH=$(echo "$temp")
     fi
 done
 cd m0kv_metadata_parsing_tool
@@ -75,19 +77,32 @@ get_probable_delete_index() {
         declare -a PART_LIST_INDEX_OID
         rm /tmp/m0kvprobable.log > /dev/null 2>&1
         cd ..
-        ./"$m0kv_PATH" -l "$1" -h "$2" -p "$3" -f "$4" index next "$probable_delete_index" '0' 100 -s >> /tmp/m0kvprobable.log
+        ./$m0kv_PATH -l $1 -h $2 -p $3 -f $4 index next $probable_delete_index '0' 1000 -s >> /tmp/m0kvprobable.log
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
         cd m0kv_metadata_parsing_tool
-        echo -e "./"$m0kv_PATH" -l "$1" -h "$2" -p "$3" -f "$4" index next "$probable_delete_index" '0' 100 -s\n" >> /var/log/m0kv_metadata.log
-        cat /tmp/m0kvprobable.log >> /var/log/m0kv_metadata.log
 
-        
         i=0
         for line in $(grep "KEY: [\"0-9a-zA-Z+=-]*" /tmp/m0kvprobable.log | cut -c7-)
         do
             KEYS[i]=$(./base64_encoder_decoder -d $(echo "$line"))
             i=$((i+1))
         done
+
+        GLOBAL_PROBABLE_DELETE_INDEX_COUNT=0
+        for j in $(seq 0 ${#KEYS})
+        do
+            if [[ ! -z ${KEYS[j]} ]]
+            then
+                GLOBAL_PROBABLE_DELETE_INDEX_COUNT=$((GLOBAL_PROBABLE_DELETE_INDEX_COUNT+1))
+            else
+                break
+            fi
+        done
+        cd ..
+            echo -e "./$m0kv_PATH -l $1 -h $2 -p $3 -f $4 index next $probable_delete_index '0' $GLOBAL_PROBABLE_DELETE_INDEX_COUNT -s\n" >> /var/log/m0kv_metadata.log
+            ./$m0kv_PATH -l $1 -h $2 -p $3 -f $4 index next $probable_delete_index '0' $GLOBAL_PROBABLE_DELETE_INDEX_COUNT -s >> /var/log/m0kv_metadata.log
+        cd m0kv_metadata_parsing_tool
+
 
         i=0
         for line in $(grep -Ei -o "\"object_key_in_index\":[\"0-9a-zA-Z\"]*(.[a-zA-Z0-9]*)?" /tmp/m0kvprobable.log | cut -c24-)
@@ -144,20 +159,23 @@ get_probable_delete_index() {
 ##### this function is used to get the number of parts of a multipart upload (to be displayed in the final o/p with their upload id's) #####
 get_parts() {
     rm /tmp/m0kvcountpart.log > /dev/null 2>&1
-    aws s3api list-parts --bucket "$1" --key "$2" --upload-id "$3" >> /tmp/m0kvcountpart.log
+    aws s3api list-parts --bucket "$1" --key "$2" --upload-id "$3" --output text >> /tmp/m0kvcountpart.log
     NO_OF_PARTS=$(grep -wc "PARTS" /tmp/m0kvcountpart.log)
     if [ "$NO_OF_PARTS" -ne 0 ]
     then
+        rm /tmp/m0kvpart.log > /dev/null 2>&1
         cd ..
-        ./"$m0kv_PATH" -l "$4" -h "$5" -p "$6" -f "$7" index next "$8" '0' "$NO_OF_PARTS" -s >> /tmp/m0kvpart.log
+        ./$m0kv_PATH -l $4 -h $5 -p $6 -f $7 index next $8 '0' $NO_OF_PARTS -s >> /tmp/m0kvpart.log
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
         cd m0kv_metadata_parsing_tool
-        echo -e "./"$m0kv_PATH" -l "$4" -h "$5" -p "$6" -f "$7" index next "$8" '0' "$NO_OF_PARTS" -s\n" >> /var/log/m0kv_metadata.log
+        echo -e "./$m0kv_PATH -l $4 -h $5 -p $6 -f $7 index next $8 '0' $NO_OF_PARTS -s\n" >> /var/log/m0kv_metadata.log
         cat /tmp/m0kvpart.log >> /var/log/m0kv_metadata.log
         echo "Number of parts : $NO_OF_PARTS"
+        rm /tmp/m0kvpart.log > /dev/null 2>&1
     else
         echo -e "\n${red}NO PARTS UPLOADED FOR THIS OBJECT !!${reset}"
     fi  
+    rm /tmp/m0kvcountpart.log > /dev/null 2>&1
 }
 
 ##### this function is used to get the multipart metadata by passing the multipart_oid to m0kv tool #####
@@ -165,7 +183,7 @@ get_multipart_metadata() {
     declare -a MOTR_PART_OID
     MULTIPART_OBJECTS=()
     
-    aws s3api list-multipart-uploads --bucket "$2" >> /tmp/countObjects.log
+    aws s3api list-multipart-uploads --bucket "$2" --output text >> /tmp/countObjects.log
     NO_OF_MULTIPART_OBJECTS=$(grep -wc "INITIATOR" /tmp/countObjects.log)
     rm /tmp/countObjects.log > /dev/null 2>&1
     if [ "$NO_OF_MULTIPART_OBJECTS" -ne 0 ]
@@ -175,10 +193,10 @@ get_multipart_metadata() {
         declare -a MOTR_OID
         declare -a UPLOAD_ID
         cd ..
-        ./"$m0kv_PATH" -l "$3" -h "$4" -p "$5" -f "$6" index next "$1" '0' "$NO_OF_MULTIPART_OBJECTS" -s >> /tmp/m0kvmultipart.log
+        ./$m0kv_PATH -l $3 -h $4 -p $5 -f $6 index next $1 '0' $NO_OF_MULTIPART_OBJECTS -s >> /tmp/m0kvmultipart.log
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
         cd m0kv_metadata_parsing_tool
-        echo -e "./"$m0kv_PATH" -l "$3" -h "$4" -p "$5" -f "$6" index next "$1" '0' "$NO_OF_MULTIPART_OBJECTS" -s\n" >> /var/log/m0kv_metadata.log
+        echo -e "./$m0kv_PATH -l $3 -h $4 -p $5 -f $6 index next $1 '0' $NO_OF_MULTIPART_OBJECTS -s\n" >> /var/log/m0kv_metadata.log
         cat /tmp/m0kvmultipart.log >> /var/log/m0kv_metadata.log
         i=0
         while read data
@@ -189,7 +207,7 @@ get_multipart_metadata() {
 
         for (( i=0; i<"$NO_OF_MULTIPART_OBJECTS"; i++ ))
         do
-            UPLOAD_ID[i]=$(aws s3api list-multipart-uploads --bucket "$2" | grep -o "${MULTIPART_OBJECTS[i]}\s.*" | tr -d " \t\n\r" | cut -c$((${#MULTIPART_OBJECTS[i]}+1))-)
+            UPLOAD_ID[i]=$(aws s3api list-multipart-uploads --bucket "$2" --output text | grep -o "${MULTIPART_OBJECTS[i]}\s.*" | tr -d " \t\n\r" | cut -c$((${#MULTIPART_OBJECTS[i]}+1))-)
         done
         
         i=0
@@ -233,27 +251,27 @@ get_object_metadata() {
     declare -a MOTR_OIDS
     declare -a OBJECT_VERSION
 
-    NO_OF_OBJECTS=$(aws s3 ls s3://"$2" --recursive --summarize | aws s3 ls s3://"$2" --recursive --summarize | grep "Total Objects: [0-9]*" | cut -c16-)
+    NO_OF_OBJECTS=$(aws s3 ls s3://"$2" --recursive --summarize --output text | aws s3 ls s3://"$2" --recursive --summarize --output text | grep "Total Objects: [0-9]*" | cut -c16-)
     if [ "$NO_OF_OBJECTS" -ne 0 ]
     then
         rm /tmp/m0kvbucket.log > /dev/null 2>&1
         rm /tmp/m0kvobjver.log > /dev/null 2>&1 
         cd ..
-        ./"$m0kv_PATH" -l "$3" -h "$5" -p "$6" -f "$7" index next "$1" '0' "$NO_OF_OBJECTS" -s >> /tmp/m0kvbucket.log
+        ./$m0kv_PATH -l $3 -h $5 -p $6 -f $7 index next $1 '0' $NO_OF_OBJECTS -s >> /tmp/m0kvbucket.log
         cd m0kv_metadata_parsing_tool
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
-        echo -e "./"$m0kv_PATH" -l "$3" -h "$5" -p "$6" -f "$7" index next "$1" '0' "$NO_OF_OBJECTS" -s\n" >> /var/log/m0kv_metadata.log
+        echo -e "./$m0kv_PATH -l $3 -h $5 -p $6 -f $7 index next $1 '0' $NO_OF_OBJECTS -s\n" >> /var/log/m0kv_metadata.log
         cat /tmp/m0kvbucket.log >> /var/log/m0kv_metadata.log
         cd ..
-        ./"$m0kv_PATH" -l "$3" -h "$5" -p "$6" -f "$7" index next "$4" '0' "$NO_OF_OBJECTS" -s >> /tmp/m0kvobjver.log
+        ./$m0kv_PATH -l $3 -h $5 -p $6 -f $7 index next $4 '0' $NO_OF_OBJECTS -s >> /tmp/m0kvobjver.log
         cd m0kv_metadata_parsing_tool
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
-        echo -e "./"$m0kv_PATH" -l "$3" -h "$5" -p "$6" -f "$7" index next "$4" '0' "$NO_OF_OBJECTS" -s\n" >> /var/log/m0kv_metadata.log
+        echo -e "./$m0kv_PATH -l $3 -h $5 -p $6 -f $7 index next $4 '0' $NO_OF_OBJECTS -s\n" >> /var/log/m0kv_metadata.log
         cat /tmp/m0kvobjver.log >> /var/log/m0kv_metadata.log
         i=0
         while read data
         do 
-            OBJECTS[i]=$(echo $data | cut -c6-)
+            OBJECTS[i]=$(echo "$data" | cut -c6-)
             i=$((i+1))
         done < <(grep -Ei -o 'KEY: .*([\.])?[a-z0-9]*$' /tmp/m0kvbucket.log)
 
@@ -294,7 +312,7 @@ get_all_buckets_metadata() {
     then
         rm /var/log/m0kv_metadata.log > /dev/null 2>&1
         rm /tmp/m0kvtest.log > /dev/null 2>&1
-        rm *.[0-9]* -f > /dev/null 2>&1 
+        rm ./*.[0-9]* -f > /dev/null 2>&1 
         declare -a MOTR_MULTIPART_INDEX_OID
         declare -a MOTR_OBJECT_LIST_INDEX_OID
         declare -a MOTR_OBJECTS_VERSION_LIST_INDEX_OID
@@ -307,7 +325,7 @@ get_all_buckets_metadata() {
         echo -e "./$m0kv_PATH -l $1 -h $2 -p $3 -f $4 index next $bucket_list_index '0' $NO_OF_BUCKETS -s\n" >> /var/log/m0kv_metadata.log
         cat /tmp/m0kvtest.log >> /var/log/m0kv_metadata.log
         i=0
-        for line in $(aws s3 ls | grep -Ei -o '[^a-z0-9][0-9a-z-]*[a-z0-9]$')
+        for line in $(aws s3 ls --output text | grep -Ei -o '[^a-z0-9][\.0-9a-z-]*[a-z0-9]$')
         do
             BUCKETS[i]=$line
             i=$((i+1))
@@ -316,47 +334,46 @@ get_all_buckets_metadata() {
         i=0
         for line in $(grep -Ei -o "\"motr_multipart_index_oid\":[\"0-9a-zA-Z+=-]*" /tmp/m0kvtest.log)
         do
-            MOTR_MULTIPART_INDEX_OID_VAL=$(echo $line | cut -c29-$((${#line}-1)))
-            MOTR_MULTIPART_INDEX_OID[i]=$(./base64_encoder_decoder -d $MOTR_MULTIPART_INDEX_OID_VAL)
+            MOTR_MULTIPART_INDEX_OID_VAL=$(echo "$line" | cut -c29-$((${#line}-1)))
+            MOTR_MULTIPART_INDEX_OID[i]=$(./base64_encoder_decoder -d "$MOTR_MULTIPART_INDEX_OID_VAL")
             i=$((i+1))
         done
 
         i=0
         for line in $(grep -Ei -o "\"motr_object_list_index_oid\":[\"0-9a-zA-Z+=-]*" /tmp/m0kvtest.log)
         do
-            MOTR_OBJECT_LIST_INDEX_OID_VAL=$(echo $line | cut -c31-$((${#line}-1)))
-            MOTR_OBJECT_LIST_INDEX_OID[i]=$(./base64_encoder_decoder -d $MOTR_OBJECT_LIST_INDEX_OID_VAL)
+            MOTR_OBJECT_LIST_INDEX_OID_VAL=$(echo "$line" | cut -c31-$((${#line}-1)))
+            MOTR_OBJECT_LIST_INDEX_OID[i]=$(./base64_encoder_decoder -d "$MOTR_OBJECT_LIST_INDEX_OID_VAL")
             i=$((i+1))
         done
 
         i=0
         for line in $(grep -Ei -o "\"motr_objects_version_list_index_oid\":[\"0-9a-zA-Z+=-]*" /tmp/m0kvtest.log)
         do
-            MOTR_OBJECTS_VERSION_LIST_INDEX_OID_VAL=$(echo $line | cut -c40-$((${#line}-1)))
-            MOTR_OBJECTS_VERSION_LIST_INDEX_OID[i]=$(./base64_encoder_decoder -d $MOTR_OBJECTS_VERSION_LIST_INDEX_OID_VAL)
+            MOTR_OBJECTS_VERSION_LIST_INDEX_OID_VAL=$(echo "$line" | cut -c40-$((${#line}-1)))
+            MOTR_OBJECTS_VERSION_LIST_INDEX_OID[i]=$(./base64_encoder_decoder -d "$MOTR_OBJECTS_VERSION_LIST_INDEX_OID_VAL")
             i=$((i+1))
         done
 
         echo -e "\nMetadata of all buckets\n"
-        green=`tput setaf 2`
         echo -e "${green}##########################################################################################${reset}\n"
         for j in $(seq 1 ${#BUCKETS[@]})
         do
-            echo bucketname : ${BUCKETS[j-1]}
-            echo motr_multipart_index_oid : ${MOTR_MULTIPART_INDEX_OID[j-1]}
-            echo motr_object_list_index_oid : ${MOTR_OBJECT_LIST_INDEX_OID[j-1]}
-            echo motr_objects_version_list_index_oid : ${MOTR_OBJECTS_VERSION_LIST_INDEX_OID[j-1]}
-            if [ $5 != 1 ]
+            echo "bucketname : ${BUCKETS[j-1]}"
+            echo "motr_multipart_index_oid : ${MOTR_MULTIPART_INDEX_OID[j-1]}"
+            echo "motr_object_list_index_oid : ${MOTR_OBJECT_LIST_INDEX_OID[j-1]}"
+            echo "motr_objects_version_list_index_oid : ${MOTR_OBJECTS_VERSION_LIST_INDEX_OID[j-1]}"
+            if [ "$5" != 1 ]
             then
-                get_multipart_metadata ${MOTR_MULTIPART_INDEX_OID[j-1]} ${BUCKETS[j-1]} $1 $2 $3 $4
-                get_object_metadata ${MOTR_OBJECT_LIST_INDEX_OID[j-1]} ${BUCKETS[j-1]} $1 ${MOTR_OBJECTS_VERSION_LIST_INDEX_OID[j-1]} $2 $3 $4
+                get_multipart_metadata "${MOTR_MULTIPART_INDEX_OID[j-1]}" "${BUCKETS[j-1]}" "$1" "$2" "$3" "$4"
+                get_object_metadata "${MOTR_OBJECT_LIST_INDEX_OID[j-1]}" "${BUCKETS[j-1]}" "$1" "${MOTR_OBJECTS_VERSION_LIST_INDEX_OID[j-1]}" "$2" "$3" "$4"
             else
                 echo ""
             fi
             echo -e "${green}##########################################################################################${reset}\n"
         done
         rm /tmp/m0kvtest.log > /dev/null 2>&1
-        rm *.[0-9]* -f > /dev/null 2>&1 
+        rm ./*.[0-9]* -f > /dev/null 2>&1 
     else
         binary_error
     fi
@@ -367,23 +384,24 @@ get_metadata_of_bucket() {
     if [[ ! -z "$m0kv_PATH" ]]
     then
         rm /tmp/m0kvtest1.log > /dev/null 2>&1
-        rm *.[0-9]* -f > /dev/null 2>&1 
+        rm ./*.[0-9]* -f > /dev/null 2>&1 
         rm /var/log/m0kv_metadata.log > /dev/null 2>&1
-        NO_OF_BUCKETS=$(aws s3 ls | wc -l)
+        NO_OF_BUCKETS=$(aws s3 ls --output text | wc -l)
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
         cd ..
         ./$m0kv_PATH -l $2 -h $3 -p $4 -f $5 index next $bucket_list_index '0' $NO_OF_BUCKETS -s >> /tmp/m0kvtest1.log
         cd m0kv_metadata_parsing_tool
         echo -e "./$m0kv_PATH -l $2 -h $3 -p $4 -f $5 index next $bucket_list_index '0' $NO_OF_BUCKETS -s\n" >> /var/log/m0kv_metadata.log
+        
         cat /tmp/m0kvtest1.log >> /var/log/m0kv_metadata.log
         BUCKET_GREP=$(grep -Ei -o "$1[\"].*" /tmp/m0kvtest1.log)
-        MOTR_MULTIPART_INDEX_OID_VAL=$(echo $BUCKET_GREP | grep -Ei -o "\"motr_multipart_index_oid\":[\"0-9a-zA-Z+=-]*")
-        MOTR_OBJECT_LIST_INDEX_OID_VAL=$(echo $BUCKET_GREP | grep -Ei -o "\"motr_object_list_index_oid\":[\"0-9a-zA-Z+=-]*")
-        MOTR_OBJECTS_VERSION_LIST_INDEX_OID_VAL=$(echo $BUCKET_GREP | grep -Ei -o "\"motr_objects_version_list_index_oid\":[\"0-9a-zA-Z+=-]*")
-
-        MOTR_MULTIPART_INDEX_OID=$(./base64_encoder_decoder -d $(echo $MOTR_MULTIPART_INDEX_OID_VAL | cut -c29-$((${#MOTR_MULTIPART_INDEX_OID_VAL}-1))))
-        MOTR_OBJECT_LIST_INDEX_OID=$(./base64_encoder_decoder -d $(echo $MOTR_OBJECT_LIST_INDEX_OID_VAL | cut -c31-$((${#MOTR_OBJECT_LIST_INDEX_OID_VAL}-1))))
-        MOTR_OBJECTS_VERSION_LIST_INDEX_OID=$(./base64_encoder_decoder -d $(echo $MOTR_OBJECTS_VERSION_LIST_INDEX_OID_VAL | cut -c40-$((${#MOTR_OBJECTS_VERSION_LIST_INDEX_OID_VAL}-1))))
+        MOTR_MULTIPART_INDEX_OID_VAL=$(echo "$BUCKET_GREP" | grep -Ei -o "\"motr_multipart_index_oid\":[\"0-9a-zA-Z+=-]*")
+        MOTR_OBJECT_LIST_INDEX_OID_VAL=$(echo "$BUCKET_GREP" | grep -Ei -o "\"motr_object_list_index_oid\":[\"0-9a-zA-Z+=-]*")
+        MOTR_OBJECTS_VERSION_LIST_INDEX_OID_VAL=$(echo "$BUCKET_GREP" | grep -Ei -o "\"motr_objects_version_list_index_oid\":[\"0-9a-zA-Z+=-]*")
+        MOTR_MULTIPART_INDEX_OID=$(./base64_encoder_decoder -d $(echo "$MOTR_MULTIPART_INDEX_OID_VAL" | cut -c29-$((${#MOTR_MULTIPART_INDEX_OID_VAL}-1))))
+        MOTR_OBJECT_LIST_INDEX_OID=$(./base64_encoder_decoder -d $(echo "$MOTR_OBJECT_LIST_INDEX_OID_VAL" | cut -c31-$((${#MOTR_OBJECT_LIST_INDEX_OID_VAL}-1))))
+        MOTR_OBJECTS_VERSION_LIST_INDEX_OID=$(./base64_encoder_decoder -d $(echo "$MOTR_OBJECTS_VERSION_LIST_INDEX_OID_VAL" | cut -c40-$((${#MOTR_OBJECTS_VERSION_LIST_INDEX_OID_VAL}-1))))
+        
         echo -e "Metadata of $1\n"
         echo -e "${green}##########################################################################################${reset}"
         echo ""
@@ -393,8 +411,8 @@ get_metadata_of_bucket() {
         echo "motr_objects_version_list_index_oid : $MOTR_OBJECTS_VERSION_LIST_INDEX_OID"
         if [ "$6" != 1 ]
         then
-            get_multipart_metadata $MOTR_MULTIPART_INDEX_OID $1 $2 $3 $4 $5
-            get_object_metadata $MOTR_OBJECT_LIST_INDEX_OID $1 $2 $MOTR_OBJECTS_VERSION_LIST_INDEX_OID $3 $4 $5
+            get_multipart_metadata "$MOTR_MULTIPART_INDEX_OID" "$1" "$2" "$3" "$4" "$5"
+            get_object_metadata "$MOTR_OBJECT_LIST_INDEX_OID" "$1" "$2" "$MOTR_OBJECTS_VERSION_LIST_INDEX_OID" "$3" "$4" "$5"
         fi
         echo -e "\n${green}##########################################################################################${reset}"
         rm /tmp/m0kvtest1.log > /dev/null 2>&1
@@ -419,16 +437,16 @@ do
 done
 
 ##### Checks input arguements are null or not #####
-if [[ ! -z "$L" ]] && [[ ! -z "$H" ]] && [[ ! -z "$P" ]] && [[ ! -z "$H" ]] && [ $BUCKET_LEVEL_FLAG -ge 1 ] 
+if [[ ! -z "$L" ]] && [[ ! -z "$H" ]] && [[ ! -z "$P" ]] && [[ ! -z "$H" ]] && [ "$BUCKET_LEVEL_FLAG" -ge 1 ] 
 then
     if [ -z "$BUCKET_NAME" ]
     then
-        get_all_buckets_metadata $L $H $P $F $BUCKET_LEVEL_FLAG
-        get_probable_delete_index $L $H $P $F
+        get_all_buckets_metadata "$L" "$H" "$P" "$F" "$BUCKET_LEVEL_FLAG"
+        get_probable_delete_index "$L" "$H" "$P" "$F"
         echo -e "\n${red}Log file :${reset} ${green}/var/log/m0kv_metadata.log${reset}\n"
     else
-        get_metadata_of_bucket $BUCKET_NAME $L $H $P $F $BUCKET_LEVEL_FLAG
-        get_probable_delete_index $L $H $P $F
+        get_metadata_of_bucket "$BUCKET_NAME" "$L" "$H" "$P" "$F" "$BUCKET_LEVEL_FLAG"
+        get_probable_delete_index "$L" "$H" "$P" "$F"
         echo -e "\n${red}Log file :${reset} ${green}/var/log/m0kv_metadata.log${reset}\n"
     fi
 else
