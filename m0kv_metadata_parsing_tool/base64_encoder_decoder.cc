@@ -1,3 +1,22 @@
+/*
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+*/
+
 #include<stdio.h>
 #include<iostream>
 #include <cstdint>
@@ -22,10 +41,23 @@ static inline bool is_base64(unsigned char c) {
   return (isalnum(c) || (c == '+') || (c == '/'));
 }
 
+
+
+/****************************************************
+this function decodes the base64 encoded string 
+Logic :
+  This function picks up 4 characters(24 bits) at a 
+  time to decode base64 string and the we perform left 
+  shift until '=' is found and then we perform right
+  shift and retreive the store bits in integer value.
+*****************************************************/
+
 std::string base64_decode(std::string const& encoded_string) {
   int in_len = encoded_string.size();
+  // These are the iterators to traverse through specific block from given string.
   int i = 0;
   int j = 0;
+
   int in_ = 0;
   unsigned char char_array_4[4], char_array_3[3];
   std::string ret;
@@ -62,10 +94,21 @@ std::string base64_decode(std::string const& encoded_string) {
   return ret;
 }
 
+/****************************************************
+this function is used to encode the string in base64
+Logic :
+  This function picks up 3 characters at a time from
+  stream of size 8 bits and divide in block of 6 bits
+  and then perform right shift and then left shift on 
+  this block and convert it base64 format.
+*****************************************************/
+
 std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_len) {
   std::string ret;
+  // These are the iterators to traverse through specific block from given string.
   int i = 0;
   int j = 0;
+  
   unsigned char char_array_3[3];
   unsigned char char_array_4[4];
 
@@ -104,6 +147,9 @@ std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_
   return ret;
 }
 
+/******************************************************************************
+ this function breaks the encoded string in hi and lo format and decodes string
+******************************************************************************/
 struct m0_uint128 to_m0_uint128(const std::string &id_str) {
     m0_uint128 id = {0ULL, 0ULL};
     std::size_t delim_pos = id_str.find("-");
@@ -119,6 +165,10 @@ struct m0_uint128 to_m0_uint128(const std::string &id_str) {
     return id;
 }
 
+
+/*********************************************************************************
+ this function is used to divide the hex address in two parts and then encode them
+*********************************************************************************/
 std::string to_string(std::string input_string) {
   std::size_t delim_pos = input_string.find(":");
   std::string u_hi_hex = input_string.substr(0, delim_pos);
@@ -133,24 +183,33 @@ std::string to_string(std::string input_string) {
          base64_encode((unsigned char const *)&u_lo, sizeof(u_lo));
 }
 
-
+/****************************************
+main function 
+****************************************/
 int main(int argc, char *argv[])
 {
-  if (std::string(argv[1]) == "-d") {
-    struct m0_uint128 id;
-    id = to_m0_uint128(std::string(argv[2]));
-    std::cout << "0x" << std::hex << id.u_hi << ":0x" << std::hex << id.u_lo <<"\n";
-  }
-  else if (std::string(argv[1]) == "-e") {
-    std::string encoded_string = to_string(std::string(argv[2]));
-    std::cout << encoded_string<<"\n";
-  }
+  if (argv.length() == 3 )
+  {
+    if (std::string(argv[1]) == "-d") {
+      struct m0_uint128 id;
+      id = to_m0_uint128(std::string(argv[2]));
+      std::cout << "0x" << std::hex << id.u_hi << ":0x" << std::hex << id.u_lo <<"\n";
+    }
+    else if (std::string(argv[1]) == "-e") {
+      std::string encoded_string = to_string(std::string(argv[2]));
+      std::cout << encoded_string<<"\n";
+    }
+    else {
+      std::cout << "-----------------------Usage------------------------\n";
+      std::cout << "(ENCODE): ./base64_encoder_decoder -e <input_string>\n";
+      std::cout << "(DECODE): ./base64_encoder_decoder -d <input_string>\n";
+    }
+  } 
   else {
-    std::cout << "-----------------------Usage------------------------\n";
-    std::cout << "(ENCODE): ./base64_encoder_decoder -e <input_string>\n";
-    std::cout << "(DECODE): ./base64_encoder_decoder -d <input_string>\n";
+    std::cout << "Please provide input arguements."
+    std::cout << "Usage(decode): ./base64_encoder_decoder -d <encoded_string>"
+    std::cout << "Usage(encode) : ./base64_encoder_decoder -e <decoded_string>"
   }
   return 0;
 }
-
 
