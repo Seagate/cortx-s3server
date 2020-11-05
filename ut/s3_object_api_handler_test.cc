@@ -36,6 +36,7 @@
 #include "s3_put_multiobject_action.h"
 #include "s3_put_object_acl_action.h"
 #include "s3_put_object_action.h"
+#include "s3_copy_object_action.h"
 
 #include "mock_s3_async_buffer_opt_container.h"
 #include "mock_s3_factory.h"
@@ -308,8 +309,12 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutChunkUploadObjectAction) {
   S3Option::get_instance()->disable_murmurhash_oid();
 }
 
-TEST_F(S3ObjectAPIHandlerTest, DoesNotSupportCopyObject) {
+TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3CopyObjectAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3ObjectAPIHandler(mock_request, S3OperationCode::none));
 
@@ -318,10 +323,14 @@ TEST_F(S3ObjectAPIHandlerTest, DoesNotSupportCopyObject) {
       .WillOnce(Return(""));
   EXPECT_CALL(*(mock_request), get_header_value(StrEq("x-amz-copy-source")))
       .WillOnce(Return("someobj"));
+  EXPECT_CALL(*(mock_request), get_data_length()).WillOnce(Return(0));
 
   handler_under_test->create_action();
 
-  EXPECT_TRUE(handler_under_test->_get_action() == nullptr);
+  EXPECT_FALSE((dynamic_cast<S3CopyObjectAction *>(
+                   handler_under_test->_get_action().get())) == nullptr);
+
+  handler_under_test->_get_action()->i_am_done();
 }
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutObjectAction) {
