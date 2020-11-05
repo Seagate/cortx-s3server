@@ -344,10 +344,10 @@ void S3GetBucketAction::get_next_objects_successful() {
       }  // else no prefix match, filter it out
     }
 
-    if (--length == 0 ||
-        ((!last_key_in_common_prefix &&
-          object_list->size() + object_list->common_prefixes_size()) ==
-         max_keys)) {
+    if ((--length == 0) ||
+        (!last_key_in_common_prefix &&
+         ((object_list->size() + object_list->common_prefixes_size()) ==
+          max_keys))) {
       // This is the last element returned or we reached limit requested, we
       // break.
       last_key = kv.first;

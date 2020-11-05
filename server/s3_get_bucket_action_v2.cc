@@ -61,9 +61,13 @@ void S3GetBucketActionV2::validate_request() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_INFO, request_id, "Validate ListObjects V2 request\n");
 
-  request_cont_token = request->get_query_string_value("continuation-token");
-  s3_log(S3_LOG_DEBUG, request_id, "continuation-token = %s\n",
-         request_cont_token.c_str());
+  bool is_cont_token_present = false;
+  is_cont_token_present = request->has_query_param_key("continuation-token");
+  if (is_cont_token_present) {
+    request_cont_token = request->get_query_string_value("continuation-token");
+    s3_log(S3_LOG_DEBUG, request_id, "continuation-token = %s\n",
+           request_cont_token.c_str());
+  }
   request_fetch_owner =
       (request->get_query_string_value("fetch-owner") == "true") ? true : false;
   s3_log(S3_LOG_DEBUG, request_id, "fetch-owner = %d\n", request_fetch_owner);
@@ -74,7 +78,9 @@ void S3GetBucketActionV2::validate_request() {
   std::shared_ptr<S3ObjectListResponseV2> obj_v2_list =
       std::dynamic_pointer_cast<S3ObjectListResponseV2>(object_list);
   if (obj_v2_list) {
-    obj_v2_list->set_continuation_token(request_cont_token);
+    if (is_cont_token_present) {
+      obj_v2_list->set_continuation_token(request_cont_token);
+    }
     obj_v2_list->set_fetch_owner(request_fetch_owner);
     obj_v2_list->set_start_after(request_start_after);
   }
