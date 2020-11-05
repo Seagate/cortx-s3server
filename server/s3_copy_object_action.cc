@@ -151,19 +151,19 @@ void S3CopyObjectAction::create_object() {
 void S3CopyObjectAction::read_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");  
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3CopyObjectAction::initiate_data_streaming() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");      
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3CopyObjectAction::save_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");    
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3CopyObjectAction::send_response_to_s3_client() {

@@ -25,8 +25,8 @@
 #include "s3_object_metadata.h"
 
 enum class S3CopyObjectActionState {
-  empty,                    // Initial state
-  validationFailed,         // Any validations failed for request, including metadata
+  empty,             // Initial state
+  validationFailed,  // Any validations failed for request, including metadata
   probableEntryRecordFailed,
   newObjOidCreated,         // New object created
   newObjOidCreationFailed,  // New object create failed
