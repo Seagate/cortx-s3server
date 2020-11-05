@@ -56,8 +56,6 @@ std::string base64_decode(std::string const& encoded_string) {
   int in_len = encoded_string.size();
   // These are the iterators to traverse through specific block from given string.
   int i = 0;
-  int j = 0;
-
   int in_ = 0;
   unsigned char char_array_4[4], char_array_3[3];
   std::string ret;
@@ -79,6 +77,7 @@ std::string base64_decode(std::string const& encoded_string) {
   }
 
   if (i) {
+    int j = 0;
     for (j = i; j <4; j++)
       char_array_4[j] = 0;
 

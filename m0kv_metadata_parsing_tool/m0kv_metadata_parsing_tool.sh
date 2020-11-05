@@ -77,7 +77,7 @@ get_probable_delete_index() {
         declare -a PART_LIST_INDEX_OID
         rm /tmp/m0kvprobable.log > /dev/null 2>&1
         cd ..
-        ./$m0kv_PATH -l $1 -h $2 -p $3 -f $4 index next $probable_delete_index '0' 1000 -s >> /tmp/m0kvprobable.log
+        ./"$m0kv_PATH" -l "$1" -h "$2" -p "$3" -f "$4" index next "$probable_delete_index" '0' 1000 -s >> /tmp/m0kvprobable.log
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
         cd m0kv_metadata_parsing_tool
 
@@ -100,7 +100,7 @@ get_probable_delete_index() {
         done
         cd ..
             echo -e "./$m0kv_PATH -l $1 -h $2 -p $3 -f $4 index next $probable_delete_index '0' $GLOBAL_PROBABLE_DELETE_INDEX_COUNT -s\n" >> /var/log/m0kv_metadata.log
-            ./$m0kv_PATH -l $1 -h $2 -p $3 -f $4 index next $probable_delete_index '0' $GLOBAL_PROBABLE_DELETE_INDEX_COUNT -s >> /var/log/m0kv_metadata.log
+            ./"$m0kv_PATH" -l "$1" -h "$2" -p "$3" -f "$4" index next "$probable_delete_index" '0' "$GLOBAL_PROBABLE_DELETE_INDEX_COUNT" -s >> /var/log/m0kv_metadata.log
         cd m0kv_metadata_parsing_tool
 
 
@@ -165,7 +165,7 @@ get_parts() {
     then
         rm /tmp/m0kvpart.log > /dev/null 2>&1
         cd ..
-        ./$m0kv_PATH -l $4 -h $5 -p $6 -f $7 index next $8 '0' $NO_OF_PARTS -s >> /tmp/m0kvpart.log
+        ./"$m0kv_PATH" -l "$4" -h "$5" -p "$6" -f "$7" index next "$8" '0' "$NO_OF_PARTS" -s >> /tmp/m0kvpart.log
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
         cd m0kv_metadata_parsing_tool
         echo -e "./$m0kv_PATH -l $4 -h $5 -p $6 -f $7 index next $8 '0' $NO_OF_PARTS -s\n" >> /var/log/m0kv_metadata.log
@@ -193,7 +193,7 @@ get_multipart_metadata() {
         declare -a MOTR_OID
         declare -a UPLOAD_ID
         cd ..
-        ./$m0kv_PATH -l $3 -h $4 -p $5 -f $6 index next $1 '0' $NO_OF_MULTIPART_OBJECTS -s >> /tmp/m0kvmultipart.log
+        ./"$m0kv_PATH" -l "$3" -h "$4" -p "$5" -f "$6" index next "$1" '0' "$NO_OF_MULTIPART_OBJECTS" -s >> /tmp/m0kvmultipart.log
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
         cd m0kv_metadata_parsing_tool
         echo -e "./$m0kv_PATH -l $3 -h $4 -p $5 -f $6 index next $1 '0' $NO_OF_MULTIPART_OBJECTS -s\n" >> /var/log/m0kv_metadata.log
@@ -235,7 +235,7 @@ get_multipart_metadata() {
             echo "motr_part_oid : ${MOTR_PART_OID[j]}"
             echo "motr_oid : ${MOTR_OID[j]}"
             echo "upload_id : ${UPLOAD_ID[j]}"
-            get_parts $2 ${MULTIPART_OBJECTS[j]} ${UPLOAD_ID[j]} $3 $4 $5 $6 ${MOTR_PART_OID[j]}
+            get_parts "$2" "${MULTIPART_OBJECTS[j]}" "${UPLOAD_ID[j]}" "$3" "$4" "$5" "$6" "${MOTR_PART_OID[j]}"
             echo ""
         done
         rm /tmp/m0kvmultipart.log > /dev/null 2>&1
@@ -257,13 +257,13 @@ get_object_metadata() {
         rm /tmp/m0kvbucket.log > /dev/null 2>&1
         rm /tmp/m0kvobjver.log > /dev/null 2>&1 
         cd ..
-        ./$m0kv_PATH -l $3 -h $5 -p $6 -f $7 index next $1 '0' $NO_OF_OBJECTS -s >> /tmp/m0kvbucket.log
+        ./"$m0kv_PATH" -l "$3" -h "$5" -p "$6" -f "$7" index next "$1" '0' "$NO_OF_OBJECTS" -s >> /tmp/m0kvbucket.log
         cd m0kv_metadata_parsing_tool
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
         echo -e "./$m0kv_PATH -l $3 -h $5 -p $6 -f $7 index next $1 '0' $NO_OF_OBJECTS -s\n" >> /var/log/m0kv_metadata.log
         cat /tmp/m0kvbucket.log >> /var/log/m0kv_metadata.log
         cd ..
-        ./$m0kv_PATH -l $3 -h $5 -p $6 -f $7 index next $4 '0' $NO_OF_OBJECTS -s >> /tmp/m0kvobjver.log
+        ./"$m0kv_PATH" -l "$3" -h "$5" -p "$6" -f "$7" index next "$4" '0' "$NO_OF_OBJECTS" -s >> /tmp/m0kvobjver.log
         cd m0kv_metadata_parsing_tool
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
         echo -e "./$m0kv_PATH -l $3 -h $5 -p $6 -f $7 index next $4 '0' $NO_OF_OBJECTS -s\n" >> /var/log/m0kv_metadata.log
@@ -319,7 +319,7 @@ get_all_buckets_metadata() {
         declare -a BUCKETS
         NO_OF_BUCKETS=$(aws s3 ls | wc -l)
         cd ..
-        ./$m0kv_PATH -l $1 -h $2 -p $3 -f $4 index next $bucket_list_index '0' $NO_OF_BUCKETS -s >> /tmp/m0kvtest.log
+        ./"$m0kv_PATH" -l "$1" -h "$2" -p "$3" -f "$4" index next "$bucket_list_index" '0' "$NO_OF_BUCKETS" -s >> /tmp/m0kvtest.log
         cd m0kv_metadata_parsing_tool
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
         echo -e "./$m0kv_PATH -l $1 -h $2 -p $3 -f $4 index next $bucket_list_index '0' $NO_OF_BUCKETS -s\n" >> /var/log/m0kv_metadata.log
@@ -389,7 +389,7 @@ get_metadata_of_bucket() {
         NO_OF_BUCKETS=$(aws s3 ls --output text | wc -l)
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
         cd ..
-        ./$m0kv_PATH -l $2 -h $3 -p $4 -f $5 index next $bucket_list_index '0' $NO_OF_BUCKETS -s >> /tmp/m0kvtest1.log
+        ./"$m0kv_PATH" -l "$2" -h "$3" -p "$4" -f "$5" index next "$bucket_list_index" '0' "$NO_OF_BUCKETS" -s >> /tmp/m0kvtest1.log
         cd m0kv_metadata_parsing_tool
         echo -e "./$m0kv_PATH -l $2 -h $3 -p $4 -f $5 index next $bucket_list_index '0' $NO_OF_BUCKETS -s\n" >> /var/log/m0kv_metadata.log
         
