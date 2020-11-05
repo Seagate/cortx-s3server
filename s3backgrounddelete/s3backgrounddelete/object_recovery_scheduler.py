@@ -38,7 +38,6 @@ from s3backgrounddelete.object_recovery_kafka_queue import ObjectRecoveryKafkaPr
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
 from s3backgrounddelete.IEMutil import IEMutil
-from cortx.utils.log import Log
 
 class ObjectRecoveryScheduler(object):
     """Scheduler which will add key value to rabbitmq message queue."""
@@ -50,9 +49,6 @@ class ObjectRecoveryScheduler(object):
         self.create_logger_directory()
         self.create_logger()
         self.logger.info("Initialising the Object Recovery Scheduler")
-
-        if self.config.get_s3_use_kafka():
-            Log.init('S3_background', self.config.get_logger_directory())
 
     @staticmethod
     def isObjectLeakEntryOlderThan(leakRecord, OlderInMins = 15):

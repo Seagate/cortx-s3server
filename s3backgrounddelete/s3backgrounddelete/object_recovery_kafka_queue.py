@@ -20,7 +20,12 @@
 
 import json
 import socket
-from cortx.utils.message_bus.tcp.kafka.kafka import KafkaProducerChannel
+
+try:
+    from cortx.utils.log import Log
+    from cortx.utils.message_bus.tcp.kafka.kafka import KafkaProducerChannel
+except ImportError:
+    pass
 
 class ObjectRecoveryKafkaProd(object):
     """This class is implementation of Kafka for object recovery."""
@@ -28,6 +33,9 @@ class ObjectRecoveryKafkaProd(object):
     def __init__(self, config, logger):
         """Initialize kafka."""
         self._logger = logger
+
+        Log.init('S3_background', config.get_logger_directory())
+
         self._channel = KafkaProducerChannel(
             hosts=config.get_kafka_hosts(),
             client_id = socket.gethostname())

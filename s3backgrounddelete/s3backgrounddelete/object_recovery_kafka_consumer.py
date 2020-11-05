@@ -20,8 +20,13 @@
 """ObjectRecoveryKafka reads messages about objects oid to be deleted from Kafka."""
 
 import json
-from cortx.utils.message_bus.tcp.kafka.kafka import KafkaConsumerChannel
 from s3backgrounddelete.object_recovery_validator import ObjectRecoveryValidator
+
+try:
+    from cortx.utils.log import Log
+    from cortx.utils.message_bus.tcp.kafka.kafka import KafkaConsumerChannel
+except ImportError:
+    pass
 
 class ObjectRecoveryKafkaConsumer:
     """This class reads messages from Kafka and forwards them for handling"""
@@ -30,6 +35,8 @@ class ObjectRecoveryKafkaConsumer:
         """Initialize Kafka Consumer."""
         self._config = config
         self._logger = logger
+
+        Log.init('S3_background', config.get_logger_directory())
 
         self._channel = KafkaConsumerChannel(
             hosts = config.get_kafka_hosts(),

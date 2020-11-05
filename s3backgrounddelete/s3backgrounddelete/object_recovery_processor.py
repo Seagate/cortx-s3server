@@ -32,8 +32,6 @@ from logging import handlers
 from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
 from s3backgrounddelete.object_recovery_kafka_consumer import ObjectRecoveryKafkaConsumer
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
-from cortx.utils.log import Log
-
 
 class ObjectRecoveryProcessor(object):
     """Provides consumer for object recovery"""
@@ -45,9 +43,6 @@ class ObjectRecoveryProcessor(object):
         self.create_logger_directory()
         self.create_logger()
         self.logger.info("Initialising the Object Recovery Processor")
-        Log.init(
-            'S3_background',
-            self.config.get_logger_directory())
 
     def consume(self):
         """Consume the objects from object recovery queue."""
