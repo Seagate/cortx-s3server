@@ -131,6 +131,12 @@ public class SignatureValidator {
           TimeUnit.MINUTES.convert(timeInterval, TimeUnit.MILLISECONDS);
       if (diffInMinutes <= 15) {
         isRequestInSkewTime = true;
+      } else {
+        LOGGER.error(
+            "Request date timestamp received does not match with server " +
+            "timestamp.");
+        return responseGenerator.requestTimeTooSkewed(
+            requestDateString, currentDateTime.toString());
       }
 
       // Handle Signature v4 credential scope date check
