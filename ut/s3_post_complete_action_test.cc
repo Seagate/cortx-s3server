@@ -295,6 +295,13 @@ TEST_F(S3PostCompleteActionTest, ValidateRequestBody) {
   EXPECT_STREQ("4", action_under_test_ptr->total_parts.c_str());
 }
 
+TEST_F(S3PostCompleteActionTest, ValidateRequestBodyNoParts) {
+  mock_xml.assign(
+      "<CompleteMultipartUpload></"
+      "CompleteMultipartUpload>");
+  EXPECT_FALSE(action_under_test_ptr->validate_request_body(mock_xml));
+}
+
 TEST_F(S3PostCompleteActionTest, ValidateRequestBodyOutOrderParts) {
   mock_xml.assign(
       "<CompleteMultipartUpload><Part><PartNumber>1</"
