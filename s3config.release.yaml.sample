@@ -18,8 +18,8 @@
 #
 
 S3Config_Sections: [S3_SERVER_CONFIG, S3_AUTH_CONFIG, S3_MOTR_CONFIG, S3_THIRDPARTY_CONFIG, S3_VERSION_CONFIG]
-S3_SERVER_CONFIG:                                     # Section for S3 Server
-   S3_DAEMON_WORKING_DIR: "/var/motr/"                # S3 Daemon will run in the specified directory
+S3_SERVER_CONFIG:                                       # Section for S3 Server
+   S3_DAEMON_WORKING_DIR: "/var/log/seagate/motr/"      # S3 Daemon will run in the specified directory
    S3_DAEMON_DO_REDIRECTION: 1                          # Do redirection of stderr, stdout and stdin to /dev/null
    S3_LOG_DIR: "/var/log/seagate/s3"                    # S3 Log directory, for output to stderr have value as "" and set S3_DAEMON_DO_REDIRECTION to 0
    S3_LOG_MODE: INFO                                    # logging levels, levels can be DEBUG, INFO, WARN, ERROR, FATAL, default is INFO

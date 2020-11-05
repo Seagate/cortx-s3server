@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-# script is used to delete the old m0trace logs in /var/motr/<s3server-instance> directory
+# script is used to delete the old m0trace logs in /var/log/seagate/motr/<s3server-instance> directory
 # script will retain first origional m0trace file along with recent modified files of given count and remove rest of m0trace files
 # argument1: <number of latest m0trace files to retain>
 # Default number of latest log files is 5
@@ -58,7 +58,7 @@ echo
 echo "Rotating m0trace files in each $s3_daemon_working_dir<s3server-instance> directory"
 if [[ -n "$s3_daemon_working_dir" && -d "$s3_daemon_working_dir" ]]
 then
-   # get s3server instance directories from /var/motr
+   # get s3server instance directories from /var/log/seagate/motr
    s3_dirs=`find $s3_daemon_working_dir -maxdepth 1 -type d -name "s3server-*"`
    for s3_instance_dir in $s3_dirs
    do
