@@ -22,10 +22,44 @@
 #define __S3_SERVER_S3_COPY_OBJECT_ACTION_H__
 
 #include "s3_object_action_base.h"
+#include "s3_object_metadata.h"
+
+enum class S3CopyObjectActionState {
+  empty,                    // Initial state
+  validationFailed,         // Any validations failed for request, including metadata
+  probableEntryRecordFailed,
+  newObjOidCreated,         // New object created
+  newObjOidCreationFailed,  // New object create failed
+  writeComplete,            // data write to object completed successfully
+  writeFailed,              // data write to object failed
+  md5ValidationFailed,      // md5 check failed
+  metadataSaved,            // metadata saved for new object
+  metadataSaveFailed,       // metadata saved for new object
+  completed,                // All stages done completely
+};
 
 class S3CopyObjectAction : public S3ObjectAction {
+  S3CopyObjectActionState s3_copy_action_state;
   bool write_in_progress;
   bool read_in_progress;
+  struct m0_uint128 old_object_oid;
+  struct m0_uint128 new_object_oid;
+  // Maximum retry count for collision resolution
+  unsigned short tried_count;
+  int layout_id;
+  int old_layout_id;
+  // string used for salting the uri
+  std::string salt;
+
+  std::shared_ptr<S3MotrReader> motr_reader;
+  std::shared_ptr<S3MotrWiter> motr_writer;
+  std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
+
+  std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
+  std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
+  std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
+  std::shared_ptr<MotrAPI> s3_motr_api;
+  std::shared_ptr<S3ObjectMetadata> new_object_metadata;
 
  public:
   S3CopyObjectAction(
@@ -44,6 +78,11 @@ class S3CopyObjectAction : public S3ObjectAction {
   void fetch_object_info_success();
 
   std::string get_response_xml();
+  void validate_copyobject_request();
+  void create_object();
+  void read_object();
+  void initiate_data_streaming();
+  void save_metadata();
   void send_response_to_s3_client();
 };
 #endif  // __S3_SERVER_S3_COPY_OBJECT_ACTION_H__
