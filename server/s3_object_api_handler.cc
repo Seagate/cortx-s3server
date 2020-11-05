@@ -24,6 +24,7 @@
 #include "s3_get_multipart_part_action.h"
 #include "s3_get_object_acl_action.h"
 #include "s3_get_object_action.h"
+#include "s3_copy_object_action.h"
 #include "s3_head_object_action.h"
 #include "s3_log.h"
 #include "s3_post_complete_action.h"
@@ -122,6 +123,10 @@ void S3ObjectAPIHandler::create_action() {
           } else if (!request->get_header_value("x-amz-copy-source").empty()) {
             // Copy Object not yet supported.
             // Do nothing = unsupported API
+            request->set_action_str("CopyObject");
+            request->set_object_size(request->get_data_length());
+            action = std::make_shared<S3CopyObjectAction>(request);
+            s3_stats_inc("copy_object_request_count");
           } else {
             // single chunk upload
             request->set_action_str("PutObject");
