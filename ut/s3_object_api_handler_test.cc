@@ -315,6 +315,9 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3CopyObjectAction) {
   input_headers["Authorization"] = "1";
   EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
       ReturnRef(input_headers));
+
+  S3Option::get_instance()->enable_murmurhash_oid();
+
   handler_under_test.reset(
       new S3ObjectAPIHandler(mock_request, S3OperationCode::none));
 
@@ -331,6 +334,7 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3CopyObjectAction) {
                    handler_under_test->_get_action().get())) == nullptr);
 
   handler_under_test->_get_action()->i_am_done();
+  S3Option::get_instance()->disable_murmurhash_oid();
 }
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutObjectAction) {
