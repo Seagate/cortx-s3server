@@ -103,7 +103,8 @@ class IAMController {
       }
 
       if (clientRequestToken == null) {
-        return responseGenerator.AccessDenied();
+        return responseGenerator.invalidArgument(
+            "AuthorizationHeaderMalformed");
       }
       AccessKey akey = new AccessKey();
       String ldapUser = AuthServerConfig.getLdapLoginCN();
@@ -147,7 +148,8 @@ class IAMController {
            * Client Request Token will be null if the request is incorrect.
          */
           if (clientRequestToken == null) {
-            return responseGenerator.AccessDenied();
+            return responseGenerator.invalidArgument(
+                "AuthorizationHeaderMalformed");
           }
         }
       }
