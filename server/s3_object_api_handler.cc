@@ -121,8 +121,6 @@ void S3ObjectAPIHandler::create_action() {
             action = std::make_shared<S3PutChunkUploadObjectAction>(request);
             s3_stats_inc("put_object_chunkupload_request_count");
           } else if (!request->get_header_value("x-amz-copy-source").empty()) {
-            // Copy Object not yet supported.
-            // Do nothing = unsupported API
             request->set_action_str("CopyObject");
             request->set_object_size(request->get_data_length());
             action = std::make_shared<S3CopyObjectAction>(request);
