@@ -163,6 +163,7 @@ class S3PostCompleteAction : public S3ObjectAction {
   FRIEND_TEST(S3PostCompleteActionTest, LoadValidateRequest);
   FRIEND_TEST(S3PostCompleteActionTest, ConsumeIncomingContentMoreContent);
   FRIEND_TEST(S3PostCompleteActionTest, ValidateRequestBody);
+  FRIEND_TEST(S3PostCompleteActionTest, ValidateRequestBodyNoParts);
   FRIEND_TEST(S3PostCompleteActionTest, ValidateRequestBodyEmpty);
   FRIEND_TEST(S3PostCompleteActionTest, ValidateRequestBodyOutOrderParts);
   FRIEND_TEST(S3PostCompleteActionTest, ValidateRequestBodyMissingTag);
