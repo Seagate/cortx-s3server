@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-# script is used to delete the old addb logs in /var/motr/<s3server-instance> directory
+# script is used to delete the old addb logs in /var/log/seagate/motr/<s3server-instance> directory
 # argument1: <number of latest addb directories to retain>
 # Default number of latest log files is 2
 # ./s3addblogfilerollover.sh -n 2
@@ -57,7 +57,7 @@ echo
 echo "Rotating addb files in each $s3_daemon_working_dir<s3server-instance> directory"
 if [[ -n "$s3_daemon_working_dir" && -d "$s3_daemon_working_dir" ]]
 then
-   # get s3server instance directories from /var/motr
+   # get s3server instance directories from /var/log/seagate/motr
    s3_dirs=`find $s3_daemon_working_dir -maxdepth 1 -type d -name "s3server-*"`
    for s3_instance_dir in $s3_dirs
    do
