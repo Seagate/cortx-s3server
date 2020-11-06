@@ -671,7 +671,7 @@ bool S3PostCompleteAction::validate_request_body(std::string& xml_str) {
   xmlNode* child_node;
   xmlChar* xml_part_number;
   xmlChar* xml_etag;
-  std::string partnumber;
+  std::string partnumber = "";
   std::string prev_partnumber = "";
   int previous_part;
   std::string input_etag;
@@ -738,6 +738,12 @@ bool S3PostCompleteAction::validate_request_body(std::string& xml_str) {
       }
     }
     child = child->next;
+  }
+  if (partnumber == "") {
+    s3_log(S3_LOG_ERROR, request_id,
+           "The xml string %s doesn't contain parts\n", xml_str.c_str());
+    xmlFreeDoc(document);
+    return false;
   }
   total_parts = partnumber;
   xmlFreeDoc(document);

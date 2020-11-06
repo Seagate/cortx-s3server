@@ -1,5 +1,5 @@
 # CORTX-S3 Server Quick Start Guide
-This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-ready.
+This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server ready.
 
 - [1.0 Prerequisites](#10-Prerequisites)
 - [1.1 Clone the CORTX-S3 Server Repository](#11-Clone-the-CORTX-S3-Server-Repository)
@@ -57,7 +57,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server-r
 
      `$ setenforce 0` - you'll get a `setenforce: SELinux is disabled` status.
 
-     `$ sed 's/SELINUX=enforcing/SELINUX=disabled/' /etc/sysconfig/selinux` - you'll get a `SELINUX=disabled` status.
+     `$ sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config` - you'll get a `SELINUX=disabled` status.
 
      Run `$ shutdown -r now` - to reboot your system.
      
@@ -156,14 +156,14 @@ The image below illustrates the output log of a system test that is successful.
 
 Before your test your build, ensure that you have installed and configured the following:
 
-1. Make sure you have installed `easy_install`
-    * To check if you have `easy_install`, run the command: `$ easy_install --version`
-    * To install `easy_install`, run the command: `$ yum install python-setuptools python-setuptools-devel`
-2. Ensure you've installed `pip`
-    * To check if you have pip installed, run the command: `$ pip --version`
-    * To install pip, run the command: `$ python --version`
-3. If you don't have Python Version 2.6.5+, then install Python using: `$ python3 --version`
-    *  If you don't have Python Version 3.3, then install python3 using: `$ easy_install pip`
+1. Make sure you have installed easy_install.
+    - To check if you have easy_install, run the command: `$ easy_install --version`
+    - To install easy_install, run the command: `$ yum install python-setuptools python-setuptools-devel`
+2. Ensure you've installed pip.
+    - To check if you have pip installed, run the command: `$ pip --version`
+    - To install pip, run the command: `$ easy_install pip`
+3. If you don't have Python Version 2.6.5+, install Python using: `$ yum install python26`
+    - If you don't have Python Version 3.3, then install python3 using: `$ yum install python3`
 4. Ensure that CORTX-S3 Server and its dependent services are running.
     1. To start CORTX-S3 Server and its dependent services, run the command: `$ ./jenkins-build.sh --skip_build --skip_tests`
     2. To view the `PID` of the active S3 service, run the command: `$ pgrep s3`
@@ -181,35 +181,53 @@ Before your test your build, ensure that you have installed and configured the f
               * Copy and save the Access and Secret Keys for the new user.
 
 6. To Configure AWS run the following commands:
+   
    Keep the Access and Secret Keys generated in Step 4.iv. of the [1.0 Prerequisites Section](#10-Prerequisites).
+   
    1.  Run `$ aws configure` and enter the following details:
         * `AWS Access Key ID [None]: <ACCESS KEY>`
         * `AWS Secret Access Key [None]: <SECRET KEY>`
         * `Default region name [None]: US`
         * `Default output format [None]: text`
-   2. Configure the AWS plugin Endpoint using:
-
-        ```shell
-
-        $ aws configure set plugins.endpoint awscli_plugin_endpoint
-        $ aws configure set s3.endpoint_url https://s3.seagate.com
-        $ aws configure set s3api.endpoint_url https://s3.seagate.com
-        ```
-   3. Run the following command to view the contents of your AWS config file: `$ cat ~/.aws/config`
-
-      The output is as shown below:
-
+   2. Configure the AWS Plugin Endpoint using:
+      `$ aws configure set plugins.endpoint awscli_plugin_endpoint`
+        - To configure AWS in SSL mode run:
+            `$ aws configure set s3.endpoint_url https://s3.seagate.com`
+            `$ aws configure set s3api.endpoint_url https://s3.seagate.com`
+        - To configure AWS in non-SSL mode, please run:
+            `$ aws configure set s3.endpoint_url http://s3.seagate.com`
+            `$ aws configure set s3api.endpoint_url http://s3.seagate.com`
+   3. Run the following command to view the contents of your AWS config file: 
+      `$ cat ~/.aws/config`
+      
+      1. For AWS in SSL mode, you'll need to configure the `[default]` section with the `ca_bundle=<path to ca.crt file>` parameter.
+      
+      **Sample Output for SSL mode**
+       
       ```shell
-
-      [default]
-      output = text
-      region = US
-      s3 =
-      endpoint_url = http://s3.seagate.com
-      s3api =
-      endpoint_url = http://s3.seagate.com
-      [plugins]
-      endpoint = awscli_plugin_endpoint
+      
+         [default]
+         output = text
+         region = US
+         s3 = endpoint_url = https://s3.seagate.com
+         s3api = endpoint_url = https://s3.seagate.com
+         ca_bundle = /etc/ssl/stx-s3-clients/s3/ca.crt
+         [plugins]
+         endpoint = awscli_plugin_endpoint
+      ```
+      2. For non-SSL mode you can leave the [default] section as is.
+      
+      **Sample Output for non-SSL mode**
+      
+      ```shell
+      
+        [default]
+        output = text
+        region = US
+        s3 = endpoint_url = http://s3.seagate.com
+        s3api = endpoint_url = http://s3.seagate.com
+        [plugins]
+        endpoint = awscli_plugin_endpoint
       ```
 
     4. Ensure that your AWS credential file contains your Access Key Id and Secret Key by using: `$ cat ~/.aws/credentials`
