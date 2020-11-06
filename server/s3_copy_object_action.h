@@ -83,6 +83,7 @@ class S3CopyObjectAction : public S3ObjectAction {
   void read_object();
   void initiate_data_streaming();
   void save_metadata();
+  void set_authorization_meta();
   void send_response_to_s3_client();
 };
 #endif  // __S3_SERVER_S3_COPY_OBJECT_ACTION_H__
