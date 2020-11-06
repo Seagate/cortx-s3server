@@ -70,7 +70,10 @@ public class SignatureValidator {
           }
         }
         catch (InvalidTokenException e) {
-            return responseGenerator.invalidToken();
+          LOGGER.debug(
+              "One of the signed headers is missing in request header list");
+          return responseGenerator.missingSignatureHeader(
+              "One of the signed headers is missing in request header list");
         }
         if (!isRequestorAuthenticated) {
             LOGGER.debug("Requestor is not authenticated.");
