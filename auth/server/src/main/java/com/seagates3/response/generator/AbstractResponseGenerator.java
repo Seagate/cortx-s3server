@@ -372,4 +372,9 @@ public abstract class AbstractResponseGenerator {
       return formatResponse(HttpResponseStatus.FORBIDDEN, "AccessDenied",
                             errorMessage);
     }
+   public
+    ServerResponse missingSignatureHeader(String errorMessage) {
+      return formatResponse(HttpResponseStatus.FORBIDDEN,
+                            "SignatureDoesNotMatch", errorMessage);
+    }
  }

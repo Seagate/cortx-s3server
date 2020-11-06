@@ -146,6 +146,10 @@ TEST_F(S3GetBucketActionV2Test, V2ValidateRequest) {
   CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
 
+  EXPECT_CALL(*request_mock, has_query_param_key("continuation-token"))
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(true));
+
   EXPECT_CALL(*request_mock, get_query_string_value("prefix"))
       .Times(AtLeast(1))
       .WillRepeatedly(Return(""));
