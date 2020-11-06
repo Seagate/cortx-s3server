@@ -243,7 +243,7 @@ class ACLValidation {
       return false;
     }
 
-    if (displayname != null) {
+    if (displayname != null && !(displayname.equalsIgnoreCase("None"))) {
       if (!(account.getName().equals(displayname))) {
 
         return false;
