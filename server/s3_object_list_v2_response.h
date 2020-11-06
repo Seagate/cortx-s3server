@@ -34,6 +34,8 @@ class S3ObjectListResponseV2 : public S3ObjectListResponse {
   std::string start_after;
   std::string response_v2_xml;
   std::string next_continuation_token;
+  // Continuation-token presen in original request
+  bool cont_token_specified;
 
  public:
   S3ObjectListResponseV2(const std::string &encoding_type = "");

@@ -192,7 +192,7 @@ void S3GetBucketAction::get_next_objects_successful() {
       bucket_metadata->get_object_list_index_oid();
   bool atleast_one_json_error = false;
   bool last_key_in_common_prefix = false;
-  std::string last_common_prefix;
+  std::string last_common_prefix = "";
   auto& kvps = motr_kv_reader->get_key_values();
   size_t length = kvps.size();
   // Statistics - Total keys visited/loaded
@@ -205,32 +205,44 @@ void S3GetBucketAction::get_next_objects_successful() {
     s3_log(S3_LOG_DEBUG, request_id, "Read Object Value = %s\n",
            kv.second.second.c_str());
 
+    // Check if the current key cannot be rolled into the last common prefix.
+    // If can't be rolled into last common prefix, reset
+    // 'last_key_in_common_prefix'
     if (last_key_in_common_prefix) {
-      bool prefix_match = (kv.first.find(request_prefix) == 0) ? true : false;
-      if (!prefix_match) {
-        // Prefix does not match, skip the key
-        if (--length == 0) {
-          // Before breaking the loop, set the last key
-          last_key = kv.first;
-          break;
-        } else {
-          continue;
+      // Filter by prefix, if prefix specified
+      if (!request_prefix.empty()) {
+        // Filter out by prefix
+        if (kv.first.find(request_prefix) == std::string::npos) {
+          // Key does not start with specified prefix; key filetered out.
+          // Check the next key.
+          if (--length == 0) {
+            break;
+          } else {
+            continue;
+          }
         }
       }
-      // Check if the current key cannot be rolled into the last common prefix.
-      // In such situation, reset 'last_key_in_common_prefix'
       size_t common_prefix_pos = kv.first.find(last_common_prefix);
       if (common_prefix_pos == std::string::npos) {
+        // As we didn't find key with same common prefix, it means we have one
+        // more key added to the list.
+        // Now check if we have reached the max keys requested. If yes, break
+        if ((object_list->size() + object_list->common_prefixes_size()) ==
+            max_keys) {
+          // Before breaking the loop, set the last key to last common prefix
+          last_key = last_common_prefix;
+          break;
+        }
         // We didn't find current key with same last common prefix.
         // Reset 'last_key_in_common_prefix'
         last_key_in_common_prefix = false;
-        // Check if we reached the max keys requested. If yes, break
-        if ((object_list->size() + object_list->common_prefixes_size()) ==
-            max_keys) {
-          // Before breaking the loop, set the last key
-          last_key = kv.first;
-          break;
-        }
+        last_common_prefix = "";
+      } else {
+        // Continue to next key as current key also rolls into the same
+        // last common prefix.
+        --length;
+        last_key = kv.first;
+        continue;
       }
     }
 
@@ -332,17 +344,12 @@ void S3GetBucketAction::get_next_objects_successful() {
       }  // else no prefix match, filter it out
     }
 
-    if (--length == 0 || (!last_key_in_common_prefix &&
-                          (object_list->size() +
-                           object_list->common_prefixes_size()) == max_keys)) {
+    if ((--length == 0) ||
+        (!last_key_in_common_prefix &&
+         ((object_list->size() + object_list->common_prefixes_size()) ==
+          max_keys))) {
       // This is the last element returned or we reached limit requested, we
       // break.
-      // When the state 'last_key_in_common_prefix' is true, we don't want to
-      // check whether we reached max_keys,
-      // because there may be still some more keys in the result KV set that
-      // starts with the same last common prefix.
-      // So, we want to stop breaking from the 'if' condition here, and
-      // enumerate further keys with same last common prefix.
       last_key = kv.first;
       break;
     }
@@ -359,6 +366,13 @@ void S3GetBucketAction::get_next_objects_successful() {
     // Go ahead and respond.
     if (key_Count == max_keys && length != 0) {
       object_list->set_response_is_truncated(true);
+      // Before sending response, check if the previous key was in common prefix
+      // If yes, we need to return the common prefix as next marker
+      // This is required to fix Ceph S3 test case.
+      if (last_key_in_common_prefix) {
+        last_key = last_common_prefix;
+      }
+      s3_log(S3_LOG_DEBUG, request_id, "Next marker = %s\n", last_key.c_str());
       object_list->set_next_marker_key(last_key);
     }
     fetch_successful = true;
