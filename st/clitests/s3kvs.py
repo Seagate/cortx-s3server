@@ -257,7 +257,7 @@ def delete_bucket_info(bucket_name):
 # Multiple response might be generated so store them in dictionary as 'x-stx-oid':'x-stx-layout-id'
 # Sample response needs to be fetched from debug log is,
 """
-DEBUG - Response headers: {'x-amzn-RequestId': '18d79101-45d1-47a3-ac5f-87e7\
+DEBUG - Response headers: {'x-amz-request-id': '18d79101-45d1-47a3-ac5f-87e7\
 4eca2f8f','Content-Length': '232', 'x-stx-oid': 'egZPBQAAAAA=-EwAAAAAAJKc=',\
 'Server': 'SeagateS3', 'Retry-After': '1', 'Connection': 'close',\
 'x-stx-layout-id': '1', 'Content-Type': 'application/xml'}
