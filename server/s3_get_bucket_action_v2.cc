@@ -21,9 +21,9 @@
 #include <string>
 #include <memory>
 
+#include "base64.h"
 #include "s3_error_codes.h"
 #include "s3_get_bucket_action_v2.h"
-#include "s3_object_list_v2_response.h"
 
 // TODO:
 // This is partial implementation of List Objects V2 API.
@@ -34,14 +34,23 @@ S3GetBucketActionV2::S3GetBucketActionV2(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
     std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
-    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
+    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
+    std::shared_ptr<S3CommonUtilities::S3Obfuscator> token_obfuscator)
     : S3GetBucketAction(req, motr_api, motr_kvs_reader_factory,
                         bucket_meta_factory, object_meta_factory),
-      request_fetch_owner(true),
+      request_fetch_owner(false),
       request_cont_token(""),
       request_start_after("") {
   set_object_list_response(std::make_shared<S3ObjectListResponseV2>(
       req->get_query_string_value("encoding-type")));
+
+  if (token_obfuscator) {
+    obfuscator = std::move(token_obfuscator);
+  } else {
+    // Default is XOR obfuscator
+    obfuscator = std::make_shared<S3CommonUtilities::S3XORObfuscator>();
+  }
+
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   s3_log(S3_LOG_INFO, request_id, "S3 API: Get Bucket(List Objects V2).\n");
 }
@@ -83,7 +92,12 @@ void S3GetBucketActionV2::after_validate_request() {
   if (request_cont_token.empty()) {
     last_key = request_start_after;
   } else {
-    last_key = request_cont_token;
+    std::string deobfuscated_token =
+        obfuscator->decode(base64_decode(request_cont_token));
+    s3_log(S3_LOG_DEBUG, request_id, "Decoded continuation-token = %s\n",
+           deobfuscated_token.c_str());
+
+    last_key = deobfuscated_token;
   }
   request_marker_key = last_key;
   next();
@@ -114,6 +128,13 @@ void S3GetBucketActionV2::send_response_to_s3_client() {
     std::shared_ptr<S3ObjectListResponseV2> obj_v2_list =
         std::dynamic_pointer_cast<S3ObjectListResponseV2>(object_list);
     if (obj_v2_list) {
+      // Obfuscate NextContinuationToken before generating the xml response
+      std::string obfuscated_nextmarker =
+          obfuscator->encode(obj_v2_list->get_next_marker_key());
+      std::string enc_token =
+          base64_encode((const unsigned char*)obfuscated_nextmarker.c_str(),
+                        obfuscated_nextmarker.size());
+      obj_v2_list->set_next_marker_key(enc_token);
       std::string& response_xml = obj_v2_list->get_xml(
           request->get_canonical_id(), bucket_metadata->get_owner_id(),
           request->get_user_id());

@@ -50,6 +50,11 @@ class S3ObjectListResponseV2 : public S3ObjectListResponse {
   std::string &get_xml(const std::string &requestor_canonical_id,
                        const std::string &bucket_owner_user_id,
                        const std::string &requestor_user_id);
+
+  // Google tests.
+  FRIEND_TEST(S3ObjectListResponseV2Test, ConstructorTest);
+  FRIEND_TEST(S3ObjectListResponseV2Test, VerifyObjectListV2Setters);
+  FRIEND_TEST(S3ObjectListResponseV2Test, getXML_V2);
 };
 
 #endif

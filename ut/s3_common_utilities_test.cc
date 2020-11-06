@@ -19,6 +19,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <memory>
 #include "s3_common_utilities.h"
 
 class S3CommonUtilitiesTest : public testing::Test {};
@@ -275,4 +276,13 @@ TEST_F(S3CommonUtilitiesTest, IsYamlValueNullTest5) {
 TEST_F(S3CommonUtilitiesTest, IsYamlValueNullTest6) {
   std::string input_string = "";
   EXPECT_FALSE(S3CommonUtilities::is_yaml_value_null(input_string));
+}
+
+TEST_F(S3CommonUtilitiesTest, VerifyXORObfuscation) {
+  std::shared_ptr<S3CommonUtilities::S3Obfuscator> pXORObfuscator =
+      std::make_shared<S3CommonUtilities::S3XORObfuscator>();
+  std::string input = "This is to be obfuscated. Check de-obfuscation";
+  std::string strObfuscated = pXORObfuscator->encode(input);
+  std::string output = pXORObfuscator->decode(strObfuscated);
+  EXPECT_TRUE(input == output);
 }
