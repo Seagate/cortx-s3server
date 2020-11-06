@@ -65,6 +65,7 @@ S3_SERVER_CONFIG:
    S3_STATS_ALLOWLIST_FILENAME: "/opt/seagate/cortx/s3/conf/s3stats-allowlist.yaml"  # Allow list of Stats metrics to be published to the backend.
    S3_PERF_STATS_INOUT_BYTES_INTERVAL_MSEC: 1000        # Specifies how often to send number of in/out-comping bytes to StatsD. Milliseconds.
    S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING: false         # Enables the object leak feature changes
+   S3_SERVER_OBJECT_DELAYED_DELETE: true                # When true, skips deleting old object during PUT object overwrite and DEL object
    S3_REDIS_SERVER_ADDRESS: "127.0.0.1"                 # In case if redis is used for kvs contains redis server address
    S3_REDIS_SERVER_PORT: 6379                           # In case if redis is used for kvs contains redis server port
    S3_SERVER_MOTR_ETIMEDOUT_MAX_THRESHOLD: 100          # Number of ETIMEDOUT errors per monitoring window before s3server restart

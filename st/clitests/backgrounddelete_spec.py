@@ -32,6 +32,7 @@ from auth import AuthTest
 from s3fi import S3fiTest
 from awss3api import AwsTest
 from s3cmd import S3cmdTest
+from s3kvstool import S3kvTest
 import s3kvs
 import time
 
@@ -620,6 +621,139 @@ if (not status):
 else:
     assert False, "Error: Unable to verify part index leak"
 
+"""
+Test Scenario : 8
+Scenario: Delayed delete object test (DELETE api test)
+   1. create object and the get OID, layout_id from response
+   2. delete object
+   3. run background delete schedular
+   4. run background delete processor
+   5. verify cleanup of OID using HEAD api
+   6. verify cleanup of Object using aws s3api head-object api
+"""
+# ********** Upload objects in bucket*************************
+result = AwsTest('Upload Object "object1" to bucket "seagatebucket"')\
+    .put_object("seagatebucket", "object1", 3000, debug_flag="True")\
+    .execute_test(ignore_err=True).command_is_successful()
+
+result = AwsTest('Delete Object "object1" from bucket "seagatebucket"')\
+    .delete_object("seagatebucket", "object1")\
+    .execute_test(ignore_err=True).command_is_successful()
+
+object1_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
+
+# wait till cleanup process completes and s3server sends response to client
+time.sleep(5)
+
+# ************ Start Schedular*****************************
+print("Running scheduler...")
+scheduler.add_kv_to_queue()
+print("Scheduler has stopped...")
+# ************* Start Processor****************************
+print("Running Processor...")
+processor.consume()
+print("Processor has stopped...")
+
+# ************* Verify OID is not present in list*******
+perform_head_object(object1_oid_dict)
+
+# ************* Verify cleanup of Object using aws s3api head-object api******
+AwsTest('Do head-object for "object1" on bucket "seagatebucket"')\
+   .head_object("seagatebucket", "object1").execute_test(negative_case=True)\
+   .command_should_fail().command_error_should_have("Not Found")
+
+"""
+Test Scenario : 9
+Scenario: Delayed overwrite object
+   1. create object and the get OID, layout_id from response
+   2. overwrite object and the get OID, layout_id from response
+   3. run background delete schedular
+   4. run background delete processor
+   5. verify cleanup of old object oid listing probable delete index
+   6. cleanup object
+"""
+# ********** Upload objects in bucket*************************
+result = AwsTest('Upload Object "object1" to bucket "seagatebucket"')\
+    .put_object("seagatebucket", "object1", 3000, debug_flag="True")\
+    .execute_test(ignore_err=True).command_is_successful()
+
+result = AwsTest('Upload Object "object1" to bucket "seagatebucket"')\
+    .put_object("seagatebucket", "object1", 3000, debug_flag="True")\
+    .execute_test(ignore_err=True).command_is_successful()
+
+# wait till cleanup process completes and s3server sends response to client
+time.sleep(5)
+
+# ************ Start Schedular*****************************
+print("Running scheduler...")
+scheduler.add_kv_to_queue()
+print("Scheduler has stopped...")
+# ************* Start Processor****************************
+print("Running Processor...")
+processor.consume()
+print("Processor has stopped...")
+
+# ************* Verify cleanup of probable delete index******
+result = S3kvTest('Kvtest list global probable delete list index').list_root_probable_dead_object_list_index().execute_test()
+assert result.status.stdout is ""
+
+# ****** Delete object "object1" using s3-background-delete-svc account*****
+AwsTest('Delete object "object1"').delete_object("seagatebucket", "object1") \
+   .execute_test().command_is_successful()
+
+
+"""
+Test Scenario : 10
+Scenario: multidelete objects leak test (DELETE api test)
+    1. upload first object and get oid1, layout_id1 from response
+    2. upload second object and get oid2, layout_id2 from response
+    3. perform multi_delete_test using bucketname
+    4. run background delete schedular
+    5. run background delete processor
+    6. verify cleanup of both oids using HEAD object api
+    7. verify cleanup of both Objects using aws s3api head-object api
+
+"""
+# ********** Upload objects in bucket*************************
+result = AwsTest('Upload Object "object2" to bucket "seagatebucket"')\
+    .put_object("seagatebucket", "object2", 3000, debug_flag="True")\
+    .execute_test(ignore_err=True).command_is_successful()
+object4_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
+
+result = AwsTest('Upload Object "object3" to bucket "seagatebucket"')\
+    .put_object("seagatebucket", "object3", 3000, debug_flag="True")\
+    .execute_test(ignore_err=True).command_is_successful()
+object5_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
+
+S3cmdTest('s3cmd can delete multiple objects "object2" and "object3"')\
+    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+    .multi_delete_test("seagatebucket").execute_test().command_is_successful()
+
+# wait till cleanup process completes and s3server sends response to client
+time.sleep(1)
+
+
+# ************ Start Schedular*****************************
+print("Running scheduler...")
+scheduler.add_kv_to_queue()
+print("Schdeuler has stopped...")
+# ************* Start Processor****************************
+print("Running Processor...")
+processor.consume()
+print("Processor has stopped...")
+
+# ************* Verify OID are not present in list*******
+perform_head_object(object4_oid_dict)
+perform_head_object(object5_oid_dict)
+
+# ************* Verify cleanup of Object using aws s3api head-object api******
+AwsTest('Do head-object for "object2" on bucket "seagatebucket"')\
+   .head_object("seagatebucket", "object2").execute_test(negative_case=True)\
+   .command_should_fail().command_error_should_have("Not Found")
+
+AwsTest('Do head-object for "object3" on bucket "seagatebucket"')\
+   .head_object("seagatebucket", "object3").execute_test(negative_case=True)\
+   .command_should_fail().command_error_should_have("Not Found")
 
 # ****** Delete bucket "seagatebucket" using s3-background-delete-svc account*****
 AwsTest('Delete Bucket "seagatebucket"').delete_bucket("seagatebucket")\
