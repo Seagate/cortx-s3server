@@ -50,9 +50,9 @@ cases when we only need to analyze ADDB logs of one single s3server instance.
 To enable ADDB logging in S3 server, it needs to be launched with --addb
 command line switch.
 
-ADDB logs are stored in binary format in server folder in /var/motr, e.g.
+ADDB logs are stored in binary format in server folder in /var/log/seagate/motr, e.g.
 
-  /var/motr/s3server-0x7200000000000000:0/./motr_addb/o/100000000000000:2
+  /var/log/seagate/motr/s3server-0x7200000000000000:0/./motr_addb/o/100000000000000:2
 
 Note that logs are not immediately flushed to disk, so ideally you should stop
 s3server and wait till it completes, before you start parsing ADDB logs.
@@ -64,7 +64,7 @@ development environment would be:
   s3_path="your/path/to/s3server.git"
   $s3_path/rs3/third_party/motr/utils/m0addb2dump -f \
      -p $s3_path/bazel-bin/libs3addbplugin.so -- \
-     /var/motr/s3server-0x7200000000000000:0/./motr_addb/o/100000000000000:2 \
+     /var/log/seagate/motr/s3server-0x7200000000000000:0/./motr_addb/o/100000000000000:2 \
      > dump_s.txt
 
 This dump_s.txt is the text representation of ADDB log entries.

@@ -48,7 +48,7 @@ multipath -ll
 
 Full path are located in /dev/disk/by-id/dm-name-mpath*.
 
-NOTE: make sure you do not specify the volume which is holding /var/motr! check
+NOTE: make sure you do not specify the volume which is holding /var/log/seagate/motr! check
 lsblk output, it shows which one is used.
 
 Example command line for quick test:

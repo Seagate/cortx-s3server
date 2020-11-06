@@ -172,7 +172,7 @@ up_cluster() {
     $USE_SUDO systemctl start haproxy
     $USE_SUDO systemctl start slapd
     $USE_SUDO systemctl start s3authserver
-    $USE_SUDO rm -fR /var/motr/*
+    $USE_SUDO rm -fR /var/log/seagate/motr/*
     $USE_SUDO m0setup -P 1 -N 1 -K 0 -vH
     $USE_SUDO sed -i 's/- name: m0t1fs/- name: s3server/' /etc/hare/hare_facts.yaml
     $USE_SUDO awk 'BEGIN {in_section=0} {if ($0 ~ /^- name:/) {in_section=0; if ($0 ~ /^- name: "s3server"/) {in_section=1;} } {if (in_section==1) {gsub("multiplicity: 4", "multiplicity: 2");} print;} }' /etc/hare/motr_role_mappings > /tmp/motr_role_mappings
