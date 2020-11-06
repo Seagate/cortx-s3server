@@ -24,6 +24,7 @@
 #include "s3_common_utilities.h"
 #include "s3_motr_layout.h"
 #include "s3_uri_to_motr_oid.h"
+#include "s3_m0_uint128_helper.h"
 
 S3CopyObjectAction::S3CopyObjectAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
@@ -39,7 +40,7 @@ S3CopyObjectAction::S3CopyObjectAction(
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   s3_log(S3_LOG_INFO, request_id,
          "S3 API: CopyObject. Destination: [%s], Source: [%s]\n",
-         request->get_bucket_name().c_str(),
+         request->get_object_uri().c_str(),
          request->get_copy_object_source().c_str());
   s3_copy_action_state = S3CopyObjectActionState::empty;
 
@@ -103,37 +104,14 @@ void S3CopyObjectAction::fetch_bucket_info_failed() {
 
 void S3CopyObjectAction::fetch_object_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
-    object_list_oid = bucket_metadata->get_object_list_index_oid();
-    if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
-      s3_log(S3_LOG_ERROR, request_id, "Object not found\n");
-      set_s3_error("NoSuchKey");
-    } else {
-      if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
-        s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
-        set_s3_error("NoSuchKey");
-      } else if (object_metadata->get_state() ==
-                 S3ObjectMetadataState::failed_to_launch) {
-        s3_log(S3_LOG_ERROR, request_id,
-               "Object metadata load operation failed due to pre launch "
-               "failure\n");
-        set_s3_error("ServiceUnavailable");
-      } else {
-        s3_log(S3_LOG_DEBUG, request_id, "Object metadata fetch failed\n");
-        set_s3_error("InternalError");
-      }
-    }
-  }
-  send_response_to_s3_client();
+  next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3CopyObjectAction::fetch_object_info_success() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   next();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3CopyObjectAction::validate_copyobject_request() {
@@ -166,15 +144,6 @@ void S3CopyObjectAction::save_metadata() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3CopyObjectAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
-  std::string response_xml = get_response_xml();
-  request->send_response(S3HttpSuccess200, response_xml);
-  done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
 std::string S3CopyObjectAction::get_response_xml() {
   std::string response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
   response_xml +=
@@ -183,4 +152,48 @@ std::string S3CopyObjectAction::get_response_xml() {
   response_xml += S3CommonUtilities::format_xml_string("ETag", "");
   response_xml += "</CopyObjectResult>";
   return response_xml;
+}
+
+void S3CopyObjectAction::send_response_to_s3_client() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  if (S3Option::get_instance()->is_getoid_enabled()) {
+
+    request->set_out_header_value("x-stx-oid",
+                                  S3M0Uint128Helper::to_string(new_object_oid));
+    request->set_out_header_value("x-stx-layout-id", std::to_string(layout_id));
+  }
+  if (reject_if_shutting_down() ||
+      (is_error_state() && !get_s3_error_code().empty())) {
+    // Metadata saved for object is always a success condition.
+    assert(s3_copy_action_state != S3CopyObjectActionState::metadataSaved);
+
+    S3Error error(get_s3_error_code(), request->get_request_id(),
+                  request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
+    if (get_s3_error_code() == "ServiceUnavailable" ||
+        get_s3_error_code() == "InternalError") {
+      request->set_out_header_value("Connection", "close");
+    }
+
+    if (get_s3_error_code() == "ServiceUnavailable") {
+      request->set_out_header_value("Retry-After", "1");
+    }
+    request->send_response(error.get_http_status_code(), response_xml);
+  } else {
+    std::string response_xml = get_response_xml();
+    request->send_response(S3HttpSuccess200, response_xml);
+  }
+  done();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3CopyObjectAction::set_authorization_meta() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
+                                  bucket_metadata->get_policy_as_json());
+  next();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
