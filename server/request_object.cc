@@ -753,7 +753,7 @@ void RequestObject::send_response(int code, std::string body) {
                                         // add/update again
     set_out_header_value("Content-Length", "0");
   }
-  set_out_header_value("x-amzn-RequestId", request_id);
+  set_out_header_value("x-amz-request-id", request_id);
   evhtp_obj->http_send_reply(ev_req, code);
   stop_processing_incoming_data();
   resume(false);  // attempt resume just in case some one forgot
@@ -776,7 +776,7 @@ void RequestObject::send_response(int code, std::string body) {
 void RequestObject::send_reply_start(int code) {
   http_status = code;
   turn_around_time.stop();
-  set_out_header_value("x-amzn-RequestId", request_id);
+  set_out_header_value("x-amz-request-id", request_id);
   if (client_connected()) {
     evhtp_obj->http_send_reply_start(ev_req, code);
     reply_buffer = evbuffer_new();
