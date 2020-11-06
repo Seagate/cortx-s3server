@@ -131,12 +131,49 @@ class AwsTest(S3PyCliTest):
         self.with_cli("aws s3api " + "get-object-tagging " + " --bucket " + bucket_name + " --key " + object_name)
         return self
 
-    def list_objects(self, bucket_name, max_keys=None):
+    def list_objects(self, bucket_name, max_keys=None, max_items=None):
         self.bucket_name = bucket_name
         cmd = "aws s3api " + "list-objects " + "--bucket " + bucket_name
         if(max_keys is not None):
-           self.max_keys = max_keys;
+           self.max_keys = max_keys
            cmd = cmd + " --max-keys " + max_keys
+
+        if(max_items is not None):
+           cmd = cmd + " --max-items " + max_items
+
+        self.with_cli(cmd)
+        return self
+
+    def list_objects_v2(self, bucket_name, **kwargs_options):
+        self.bucket_name = bucket_name
+        cmd = "aws s3api " + "list-objects-v2 " + "--bucket " + bucket_name
+        if("prefix" in kwargs_options.keys()):
+            cmd = cmd + " --prefix " + kwargs_options['prefix']
+        if("delimiter" in kwargs_options.keys()):
+            cmd = cmd + " --delimiter " + kwargs_options['delimiter']
+        if("page-size" in kwargs_options.keys()):
+           self.max_keys = kwargs_options['page-size']
+           cmd = cmd + " --page-size " + str(self.max_keys)
+        if("start-after" in kwargs_options.keys()):
+            cmd = cmd + " --start-after " + kwargs_options['start-after']
+        if("starting-token" in kwargs_options.keys()):
+            cmd = cmd + " --starting-token " + kwargs_options['starting-token']
+        if("max-items" in kwargs_options.keys()):
+            cmd = cmd + " --max-items " + str(kwargs_options['max-items'])
+
+        self.with_cli(cmd)
+        return self
+
+    def list_objects_prefix_delimiter(self, bucket_name, max_keys=None, prefix=None, delimiter=None):
+        self.bucket_name = bucket_name
+        cmd = "aws s3api " + "list-objects " + "--bucket " + bucket_name
+        if(max_keys is not None):
+           self.max_keys = max_keys
+           cmd = cmd + " --max-keys " + max_keys
+        if(delimiter is not None):
+           cmd = cmd + " --delimiter " + delimiter
+        if(prefix is not None):
+           cmd = cmd + " --prefix " + prefix
         self.with_cli(cmd)
         return self
 
