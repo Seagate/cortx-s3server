@@ -83,6 +83,7 @@ void S3CopyObjectAction::setup_steps() {
   ACTION_TASK_ADD(S3CopyObjectAction::send_response_to_s3_client, this);
 }
 
+// Destination bucket
 void S3CopyObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_copy_action_state = S3CopyObjectActionState::validationFailed;
@@ -102,42 +103,49 @@ void S3CopyObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+// Destination object
 void S3CopyObjectAction::fetch_object_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+// Destination object
 void S3CopyObjectAction::fetch_object_info_success() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+// Validate source bucket and object
 void S3CopyObjectAction::validate_copyobject_request() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+// Create destination object
 void S3CopyObjectAction::create_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+// Read source object
 void S3CopyObjectAction::read_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+// Write data to destination object
 void S3CopyObjectAction::initiate_data_streaming() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+// Save destination object metadata
 void S3CopyObjectAction::save_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   next();
@@ -149,6 +157,7 @@ std::string S3CopyObjectAction::get_response_xml() {
   response_xml +=
       "<CopyObjectResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">";
   response_xml += S3CommonUtilities::format_xml_string("LastModified", "");
+  // ETag for the destination object would be same as Etag for Source Object
   response_xml += S3CommonUtilities::format_xml_string("ETag", "");
   response_xml += "</CopyObjectResult>";
   return response_xml;
