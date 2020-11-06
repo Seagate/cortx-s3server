@@ -297,7 +297,7 @@ $USE_SUDO ./m0t1fs/../motr/st/utils/motr_services.sh stop || echo "Cannot stop m
 cd $S3_BUILD_DIR
 
 # Clean up motr and S3 log and data dirs
-$USE_SUDO rm -rf /mnt/store/motr/* /var/log/motr/* /var/motr/* \
+$USE_SUDO rm -rf /mnt/store/motr/* /var/log/motr/* /var/log/seagate/motr/* \
                  /var/log/seagate/s3/* /var/log/seagate/auth/server/* \
                  /var/log/seagate/auth/tools/* /var/crash/*
 
