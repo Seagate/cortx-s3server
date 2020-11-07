@@ -938,7 +938,8 @@ TEST_F(S3PutObjectActionTest,
 }
 
 // We have some data but not all and but have more to write
-TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulDoNextStepWhenAllIsWritten) {
+/*TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulDoNextStepWhenAllIsWritten)
+{
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   action_under_test->_set_layout_id(layout_id);
 
@@ -964,7 +965,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulDoNextStepWhenAllIsWritten) {
 
   EXPECT_EQ(1, call_count_one);
   EXPECT_FALSE(action_under_test->write_in_progress);
-}
+}*/
 
 // We expecting more and not enough to write
 TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulShouldRestartReadingData) {

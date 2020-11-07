@@ -121,6 +121,8 @@ class S3PutObjectAction : public S3ObjectAction {
 
   void write_object_successful();
   void write_object_failed();
+  void sync_object_successful();
+  void sync_object_failed();
   void save_metadata();
   void save_object_metadata_success();
   void save_object_metadata_failed();

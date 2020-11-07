@@ -513,8 +513,14 @@ void S3PutObjectAction::write_object_successful() {
   } else if (request->get_buffered_input()->is_freezed() &&
              request->get_buffered_input()->get_content_length() == 0) {
     // All data written to object
-    s3_put_action_state = S3PutObjectActionState::writeComplete;
-    next();
+    // Call motr fsync operation
+    s3_log(S3_LOG_DEBUG, request_id, "All data written, call fsync\n");
+    motr_writer->sync_content(
+        std::bind(&S3PutObjectAction::sync_object_successful, this),
+        std::bind(&S3PutObjectAction::sync_object_failed, this));
+
+    // s3_put_action_state = S3PutObjectActionState::writeComplete;
+    // next();
   } else if (!is_memory_enough) {
     set_s3_error("ServiceUnavailable");
     // Clean up will be done after response.
@@ -543,6 +549,22 @@ void S3PutObjectAction::write_object_failed() {
   }
   // Clean up will be done after response.
   send_response_to_s3_client();
+}
+
+void S3PutObjectAction::sync_object_successful() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_put_action_state = S3PutObjectActionState::writeComplete;
+  next();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutObjectAction::sync_object_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  write_in_progress = false;
+  s3_put_action_state = S3PutObjectActionState::writeFailed;
+  set_s3_error("InternalError");
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PutObjectAction::save_metadata() {
