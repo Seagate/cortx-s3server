@@ -372,6 +372,46 @@ void S3MotrWiter::create_object_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+void S3MotrWiter::sync_content(std::function<void(void)> on_success,
+                               std::function<void(void)> on_failed) {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  handler_on_success = std::move(on_success);
+  handler_on_failed = std::move(on_failed);
+
+  struct m0_op *sync_op = NULL;
+  int rc = m0_sync_op_init(&sync_op);
+  if (!rc) {
+    rc = m0_sync_entity_add(sync_op, &obj_ctx->objs[0].ob_entity);
+    if (!rc) {
+      m0_op_launch(&sync_op, 1);
+      rc = m0_op_wait(sync_op, M0_BITS(M0_OS_FAILED, M0_OS_STABLE),
+                      m0_time_from_now(5, 0));
+    }
+  }
+
+  m0_op_fini(sync_op);
+  m0_op_free(sync_op);
+  if (rc < 0) {
+    s3_log(S3_LOG_DEBUG, "", "S3 Put Fsync failed\n");
+    handler_on_failed();
+  } else {
+    s3_log(S3_LOG_DEBUG, "", "S3 Put Fsync passed\n");
+    handler_on_success();
+  }
+
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3MotrWiter::sync_content_successful() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3MotrWiter::sync_content_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
 void S3MotrWiter::write_content(
     std::function<void(void)> on_success, std::function<void(void)> on_failed,
     std::shared_ptr<S3AsyncBufferOptContainer> buffer) {
