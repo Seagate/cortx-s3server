@@ -387,10 +387,12 @@ void S3MotrWiter::sync_content(std::function<void(void)> on_success,
       rc = m0_op_wait(sync_op, M0_BITS(M0_OS_FAILED, M0_OS_STABLE),
                       m0_time_from_now(5, 0));
     }
+    rc = (rc < 0) ? rc : m0_rc(sync_op);
   }
 
   m0_op_fini(sync_op);
   m0_op_free(sync_op);
+  
   if (rc < 0) {
     s3_log(S3_LOG_DEBUG, "", "S3 Put Fsync failed\n");
     handler_on_failed();
