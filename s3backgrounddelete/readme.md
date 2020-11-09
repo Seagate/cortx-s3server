@@ -21,8 +21,7 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
 ## In case of LDR-R1 background service uses RabbitMQ and from LDR-R2 onwards Kafka is used
 ----
 1. Install & configure RabbbitMQ (In LDR-R1) as per {s3 src}/s3backgrounddelete/rabbitmq_setup.md
-                                             or
-1. Install and configure Kafka as per {s3 src}/s3backgrounddelete/kafka_setup.md
+   or install and configure Kafka as per {s3 src}/s3backgrounddelete/kafka_setup.md
 
 2. Create s3backgrounddelete log folder
     >mkdir -p /var/log/seagate/s3/s3backgrounddelete
