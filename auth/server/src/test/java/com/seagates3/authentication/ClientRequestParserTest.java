@@ -136,7 +136,7 @@ import io.netty.handler.codec.http.HttpVersion;
     public void parseTest_InvalidToken_AuthenticateUser() throws InvalidAccessKeyException,
             InvalidArgumentException{
         requestBody.put("Action", "AuthenticateUser");
-        requestBody.put("host", "iam.seagate.com:9086");
+        requestBody.put("host", "iam.seagate.com:28051");
         requestBody.put("authorization","AWS4-HMAC-SHA256 Credential=vcevceece/"
                 + "2018 1001/us-west2/iam/aws4_request, SignedHeaders=host;x-amz-date, "
                 + "Signature=676b4c41ad34f611ada591072cd2977cf948d4556ffca32164af1cf1b8d4f181");
