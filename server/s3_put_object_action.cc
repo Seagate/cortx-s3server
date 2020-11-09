@@ -446,6 +446,7 @@ void S3PutObjectAction::consume_incoming_content() {
     if (request->get_buffered_input()->is_freezed() ||
         request->get_buffered_input()->get_content_length() >=
             S3Option::get_instance()->get_motr_write_payload_size(layout_id)) {
+
       write_object(request->get_buffered_input());
     }
   }
@@ -464,11 +465,20 @@ void S3PutObjectAction::write_object(
     std::shared_ptr<S3AsyncBufferOptContainer> buffer) {
   s3_log(S3_LOG_DEBUG, request_id, "Entering with buffer length = %zu\n",
          buffer->get_content_length());
-
+  bool is_last_write = false;
+  if (request->has_all_body_content() ||
+      request->get_buffered_input()->is_freezed()) {
+    s3_log(S3_LOG_DEBUG, request_id, "this is last write for the object: %s\n",
+           request->get_object_name().c_str());
+    is_last_write = true;
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id, "this is NOT last write for object: %s\n",
+           request->get_object_name().c_str());
+  }
   motr_writer->write_content(
       std::bind(&S3PutObjectAction::write_object_successful, this),
       std::bind(&S3PutObjectAction::write_object_failed, this),
-      std::move(buffer));
+      std::move(buffer), is_last_write);
 
   write_in_progress = true;
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -513,6 +523,7 @@ void S3PutObjectAction::write_object_successful() {
   } else if (request->get_buffered_input()->is_freezed() &&
              request->get_buffered_input()->get_content_length() == 0) {
     // All data written to object
+    s3_log(S3_LOG_DEBUG, request_id, "Write complete.\n");
     s3_put_action_state = S3PutObjectActionState::writeComplete;
     next();
   } else if (!is_memory_enough) {

@@ -374,7 +374,7 @@ void S3MotrWiter::create_object_failed() {
 
 void S3MotrWiter::write_content(
     std::function<void(void)> on_success, std::function<void(void)> on_failed,
-    std::shared_ptr<S3AsyncBufferOptContainer> buffer) {
+    std::shared_ptr<S3AsyncBufferOptContainer> buffer, bool is_last_write) {
   s3_log(S3_LOG_INFO, request_id, "Entering with layout_id = %d\n",
          layout_ids[0]);
 
@@ -388,7 +388,7 @@ void S3MotrWiter::write_content(
   assert(oid_list.size() == 1);
 
   if (is_object_opened) {
-    write_content();
+    write_content(is_last_write);
   } else {
     open_objects();
   }
@@ -396,7 +396,7 @@ void S3MotrWiter::write_content(
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3MotrWiter::write_content() {
+void S3MotrWiter::write_content(bool is_last_write) {
   int rc;
   s3_log(S3_LOG_INFO, request_id, "Entering with layout_id = %d\n",
          layout_ids[0]);
@@ -476,8 +476,12 @@ void S3MotrWiter::write_content() {
   last_op_was_write = true;
 
   /* Create the write request */
+
+  uint32_t sync_flag = (is_last_write) ? M0_OOF_SYNC : 0;
+
   rc = s3_motr_api->motr_obj_op(&obj_ctx->objs[0], M0_OC_WRITE, rw_ctx->ext,
-                                rw_ctx->data, rw_ctx->attr, 0, 0, &ctx->ops[0]);
+                                rw_ctx->data, rw_ctx->attr, 0, sync_flag,
+                                &ctx->ops[0]);
   if (rc != 0) {
     s3_log(S3_LOG_WARN, request_id,
            "Motr API: motr_obj_op failed with error code %d\n", rc);

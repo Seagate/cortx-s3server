@@ -124,7 +124,7 @@ class S3MotrWiter {
   void open_objects_successful();
   void open_objects_failed();
 
-  void write_content();
+  void write_content(bool is_last_write = false);
   void write_content_successful();
   void write_content_failed();
 
@@ -191,7 +191,8 @@ class S3MotrWiter {
   // Async save operation.
   virtual void write_content(std::function<void(void)> on_success,
                              std::function<void(void)> on_failed,
-                             std::shared_ptr<S3AsyncBufferOptContainer> buffer);
+                             std::shared_ptr<S3AsyncBufferOptContainer> buffer,
+                             bool is_last_write = false);
 
   // Async delete operation.
   virtual void delete_object(std::function<void(void)> on_success,
