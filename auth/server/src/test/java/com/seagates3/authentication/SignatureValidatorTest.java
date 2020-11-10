@@ -214,6 +214,33 @@ import io.netty.handler.codec.http.HttpResponseStatus;
       assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
     }
 
+    @Test public void
+    validateSignatureDateTestBeforeEpochTime_ShouldReturnAccessDenied()
+        throws Exception {
+
+      Requestor requestor = mock(Requestor.class);
+
+      AWSSign awsSign = mock(AWSSign.class);
+      SignatureValidator signatureValidatorSpy =
+          PowerMockito.spy(signatureValidator);
+      doReturn(awsSign)
+          .when(signatureValidatorSpy, "getSigner", clientRequestToken);
+      when(awsSign.authenticate(clientRequestToken, requestor))
+          .thenReturn(Boolean.FALSE);
+
+      ServerResponse serverResponse = mock(ServerResponse.class);
+      when(serverResponse.getResponseStatus())
+          .thenReturn(HttpResponseStatus.OK);
+
+      Map<String, String> requestHeaders = new HashMap<>();
+      requestHeaders.put("x-amz-date", "19500707T215304Z");
+      when(clientRequestToken.getRequestHeaders()).thenReturn(requestHeaders);
+      ServerResponse response = WhiteboxImpl.invokeMethod(
+          signatureValidatorSpy, "validateSignatureDate", clientRequestToken,
+          awsSign);
+      assertEquals(HttpResponseStatus.FORBIDDEN, response.getResponseStatus());
+    }
+
     @Test
     public void getSignerTest_AWSSignV2() throws Exception {
         // Arrange
