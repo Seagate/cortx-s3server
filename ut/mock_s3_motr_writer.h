@@ -61,10 +61,11 @@ class MockS3MotrWiter : public S3MotrWiter {
                                     std::function<void(void)> on_success,
                                     std::function<void(void)> on_failed));
   MOCK_METHOD1(set_oid, void(struct m0_uint128 oid));
-  MOCK_METHOD3(write_content,
+  MOCK_METHOD4(write_content,
                void(std::function<void(void)> on_success,
                     std::function<void(void)> on_failed,
-                    std::shared_ptr<S3AsyncBufferOptContainer> buffer));
+                    std::shared_ptr<S3AsyncBufferOptContainer> buffer,
+                    bool is_last_write));
 };
 
 #endif

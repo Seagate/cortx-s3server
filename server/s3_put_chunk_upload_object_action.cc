@@ -541,10 +541,21 @@ void S3PutChunkUploadObjectAction::write_object(
   // Also send any ready chunk data for auth
   send_chunk_details_if_any();
 
+  bool is_last_write = false;
+  if (request->has_all_body_content() ||
+      request->get_buffered_input()->is_freezed()) {
+    s3_log(S3_LOG_DEBUG, request_id, "this is last write for the object: %s\n",
+           request->get_object_name().c_str());
+    is_last_write = true;
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id, "this is NOT last write for object: %s\n",
+           request->get_object_name().c_str());
+  }
+
   motr_writer->write_content(
       std::bind(&S3PutChunkUploadObjectAction::write_object_successful, this),
       std::bind(&S3PutChunkUploadObjectAction::write_object_failed, this),
-      buffer);
+      buffer, is_last_write);
   motr_write_in_progress = true;
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

@@ -477,11 +477,9 @@ void S3MotrWiter::write_content(bool is_last_write) {
 
   /* Create the write request */
 
-  uint32_t sync_flag = (is_last_write) ? M0_OOF_SYNC : 0;
-
-  rc = s3_motr_api->motr_obj_op(&obj_ctx->objs[0], M0_OC_WRITE, rw_ctx->ext,
-                                rw_ctx->data, rw_ctx->attr, 0, sync_flag,
-                                &ctx->ops[0]);
+  rc = s3_motr_api->motr_obj_op(
+      &obj_ctx->objs[0], M0_OC_WRITE, rw_ctx->ext, rw_ctx->data, rw_ctx->attr,
+      0, (is_last_write) ? M0_OOF_SYNC : 0, &ctx->ops[0]);
   if (rc != 0) {
     s3_log(S3_LOG_WARN, request_id,
            "Motr API: motr_obj_op failed with error code %d\n", rc);

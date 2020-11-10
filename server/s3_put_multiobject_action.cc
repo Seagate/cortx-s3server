@@ -470,9 +470,20 @@ void S3PutMultiObjectAction::write_object(
   }
   motr_write_in_progress = true;
 
+  bool is_last_write = false;
+  if (request->has_all_body_content() ||
+      request->get_buffered_input()->is_freezed()) {
+    s3_log(S3_LOG_DEBUG, request_id, "this is last write for part: [%d]\n",
+           get_part_number());
+    is_last_write = true;
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id, "this is NOT last write for part: [%d]\n",
+           get_part_number());
+  }
   motr_writer->write_content(
       std::bind(&S3PutMultiObjectAction::write_object_successful, this),
-      std::bind(&S3PutMultiObjectAction::write_object_failed, this), buffer);
+      std::bind(&S3PutMultiObjectAction::write_object_failed, this), buffer,
+      is_last_write);
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
