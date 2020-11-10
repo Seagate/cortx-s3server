@@ -45,26 +45,9 @@ for eg.
 ```
 
 ## Example 
-~~~
-./m0kv_metadata_parsing_tool.sh -l 10.230.247.176@tcp:12345:33:905 -h 10.230.247.176@tcp:12345:34:1 -p '<0x7000000000000001:0>' -f '<0x7200000000000000:0>' -d 1 -b test
-cat: third_party/motr/motr/m0kv: Is a directory
+```text
 Metadata of test
-##########################################################################################
-bucketname : test
-motr_multipart_index_oid : 0x7800000000ac0a74:0xe7240000000004ad
-motr_object_list_index_oid : 0x7800000000ac0a74:0xe7240000000004ac
-motr_objects_version_list_index_oid : 0x7800000000ac0a74:0xe7240000000004ae
-##########################################################################################
-./m0kv_metadata_parsing_tool.sh: line 78: ./third_party/motr/utils/m0kv -l 10.230.247.176@tcp:12345:33:905 -h 10.230.247.176@tcp:12345:34:1 -p <0x7000000000000001:0> -f <0x7200000000000000:0> index next 0x7800000000000000:0x100003 '0' 100 -s: No such file or directory
-##########################################################################################
-Probable Delete List Index
-##########################################################################################
-##########################################################################################
-Log file : /var/log/m0kv_metadata.log
-[root@ssc-vm-1177 m0kv_metadata_parsing_tool]# > m0kv_metadata_parsing_tool.sh
-[root@ssc-vm-1177 m0kv_metadata_parsing_tool]# nano m0kv_metadata_parsing_tool.sh
 [root@ssc-vm-1177 m0kv_metadata_parsing_tool]# ./m0kv_metadata_parsing_tool.sh -l 10.230.247.176@tcp:12345:33:905 -h 10.230.247.176@tcp:12345:34:1 -p '<0x7000000000000001:0>' -f '<0x7200000000000000:0>' -d 1 -b test
-cat: third_party/motr/motr/m0kv: Is a directory
 Metadata of test
 ##########################################################################################
 bucketname : test
@@ -133,4 +116,4 @@ part_list_idx_oid : 0x7800000000ac0a74:0xe7240000000004cb
 ##########################################################################################
 Log file : /var/log/m0kv_metadata.log
 
-~~~
+```
