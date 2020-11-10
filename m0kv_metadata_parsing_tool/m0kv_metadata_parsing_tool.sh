@@ -212,7 +212,6 @@ get_multipart_metadata() {
     then 
         declare -a MOTR_PART_OID
         declare -a MOTR_OID
-        declare -a UPLOAD_ID
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
         echo -e "$m0kv_PATH -l $3 -h $4 -p $5 -f $6 index next $1 '0' $NO_OF_MULTIPART_OBJECTS -s\n" >> /var/log/m0kv_metadata.log
         "$m0kv_PATH" -l "$3" -h "$4" -p "$5" -f "$6" index next "$1" '0' $NO_OF_MULTIPART_OBJECTS -s >> /var/log/m0kv_metadata.log
