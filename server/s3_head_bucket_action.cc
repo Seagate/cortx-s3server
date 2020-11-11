@@ -61,7 +61,7 @@ void S3HeadBucketAction::send_response_to_s3_client() {
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
     S3Error error(get_s3_error_code(), request->get_request_id(),
-                  request->get_object_uri());
+                  request->get_bucket_name());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
@@ -69,7 +69,7 @@ void S3HeadBucketAction::send_response_to_s3_client() {
     if (get_s3_error_code() == "ServiceUnavailable") {
       request->set_out_header_value("Retry-After", "1");
     }
-
+    request->set_out_header_value("Connection", "close");
     request->send_response(error.get_http_status_code(), response_xml);
   } else {
     request->send_response(S3HttpSuccess200);
