@@ -200,7 +200,7 @@ def list_records(ar, k, v, not_matching):
             ret = list(filter(lambda rec: k in rec and not tmpl.match(str(rec[k])), ar))
         else:
             ret = list(filter(lambda rec: k in rec and tmpl.match(str(rec[k])), ar))
-    except Exception as ex:
+    except Exception:
         ret = []
     return ret
 
@@ -209,8 +209,8 @@ def sort_records(rcs, num, sortby, dateformat):
         ret = 0
         try:
             ret = int(r[sortby])
-        except:
-            pass
+        except Exception:
+            ret = 0
         return ret
 
     def str_key(r):
@@ -220,8 +220,8 @@ def sort_records(rcs, num, sortby, dateformat):
         ret = datetime.now()
         try:
             ret = datetime.strptime(r[sortby], dateformat)
-        except:
-            pass
+        except Exception:
+            ret = datetime.now()
         return ret
 
     key_f = None
@@ -234,9 +234,9 @@ def sort_records(rcs, num, sortby, dateformat):
     else:
         key_f = str_key
 
-    reversed = num < 0
+    rev_flag = num < 0
     num = num if num >= 0 else -num
-    rcs.sort(reverse=reversed, key=lambda r:key_f(r))
+    rcs.sort(reverse=rev_flag, key=key_f)
     return rcs[:num] if num != 0 else rcs
 
 def main():
