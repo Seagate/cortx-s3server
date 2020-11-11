@@ -675,11 +675,13 @@ bool S3AuthClient::setup_auth_request_body() {
   const char *full_path = request->c_get_full_encoded_path();
   if (full_path != NULL) {
     std::string uri_full_path = full_path;
-    // in encoded uri path space is encoding as '+'
-    // but cannonical request should have '%20' for verification.
-    // decode plus into space, this special handling
-    // is not required for other charcters.
-    S3CommonUtilities::find_and_replaceall(uri_full_path, "+", "%20");
+    // Handle encoding of common special characters in uri path space,
+    // if not then cannonical request generation might break with
+    // SignatureDoesNotMatch error.
+    // List of special characters handled are,
+    // '!', '"', '$', '&', ''', '(', ')', '*', '+', ',', ':', ';', '', '<',
+    // '=', '>', '*'
+    uri_full_path = S3CommonUtilities::replace_special_chars(uri_full_path);
     add_key_val_to_body("ClientAbsoluteUri", uri_full_path);
   } else {
     add_key_val_to_body("ClientAbsoluteUri", "");

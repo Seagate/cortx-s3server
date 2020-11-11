@@ -28,6 +28,9 @@
 
 namespace S3CommonUtilities {
 
+extern const char canonical_special_char[128];
+extern const char *url_encoded_special_chars[128];
+
 class S3Obfuscator {
  public:
   std::string virtual encode(const std::string &input) = 0;
@@ -89,6 +92,9 @@ void find_and_replaceall(std::string &data, const std::string &to_search,
 bool is_yaml_value_null(const std::string &value);
 
 std::string evhtp_error_flags_description(uint8_t errtype);
+
+// encode special characters in uri
+std::string replace_special_chars(std::string &url);
 
 }  // namespace S3CommonUtilities
 

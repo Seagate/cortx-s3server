@@ -30,6 +30,34 @@
 
 namespace S3CommonUtilities {
 
+// hashtable to identify special character for replacement into encoded format
+// in canonical request
+// supported special characters are '!', '"', '$', '&', ''', '(', ')', '*',
+// '+', ',', ':', ';', '', '<', '=', '>', '@'
+// e.g '!' -> canonical_special_char[33] -> url_encoded_special_chars[33] ->
+// '%21'
+const char canonical_special_char[128] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+const char *url_encoded_special_chars[128] = {
+    "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",
+    "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",
+    "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "%20",
+    "%21", "%22", "%23", "%24", "%25", "%26", "%27", "%28", "%29", "%2A", "%2B",
+    "%2C", "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",
+    "0",   "0",   "0",   "%3A", "%3B", "%3C", "%3D", "%3E", "0",   "%40", "0",
+    "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",
+    "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",
+    "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",
+    "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",
+    "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",   "0",
+    "0",   "0",   "0",   "0",   "0",   "0",   "0"};
+
 S3XORObfuscator::S3XORObfuscator() : S3Obfuscator() {}
 
 // Implement simple XOR obfuscator by xoring each byte of the string with
@@ -181,6 +209,24 @@ std::string evhtp_error_flags_description(uint8_t errtype) {
   return errtype_str;
 }
 
+// Special characters will be replacement with their encoded value
+// e.g '!' -> '%21'
+std::string replace_special_chars(std::string &url) {
+  std::string url_replaced_chars;
+  size_t url_len = url.length();
+  if (url_len <= 0) {
+    return url_replaced_chars;
+  }
+  for (unsigned i = 0; i < url_len; i++) {
+    // check if special char
+    if (((int)url[i] < 128) && canonical_special_char[(int)url[i]]) {
+      url_replaced_chars += url_encoded_special_chars[(int)url[i]];
+    } else {
+      url_replaced_chars += url[i];
+    }
+  }
+  return url_replaced_chars;
+}
 }  // namespace S3CommonUtilities
 
 void s3_kickoff_graceful_shutdown(int ignore) {
