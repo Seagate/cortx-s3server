@@ -70,7 +70,10 @@ public class SignatureValidator {
           }
         }
         catch (InvalidTokenException e) {
-            return responseGenerator.invalidToken();
+          LOGGER.debug(
+              "One of the signed headers is missing in request header list");
+          return responseGenerator.missingSignatureHeader(
+              "One of the signed headers is missing in request header list");
         }
         if (!isRequestorAuthenticated) {
             LOGGER.debug("Requestor is not authenticated.");
@@ -131,6 +134,11 @@ public class SignatureValidator {
           TimeUnit.MINUTES.convert(timeInterval, TimeUnit.MILLISECONDS);
       if (diffInMinutes <= 15) {
         isRequestInSkewTime = true;
+      } else if (isRequestDateBeforeEpochDate(requestDate)) {
+        // If request time stamp is before epoch time then returns
+        // InvalidSignatureDate
+        LOGGER.error("Request date timestamp received is before epoch date.");
+        return responseGenerator.invalidSignatureDate();
       } else {
         LOGGER.error(
             "Request date timestamp received does not match with server " +
@@ -160,13 +168,6 @@ public class SignatureValidator {
         return responseGenerator.ok();
       }
 
-
-      // If request time stamp is before epoch time then returns
-      // InvalidSignatureDate
-      if (isRequestDateBeforeEpochDate(requestDate)) {
-        LOGGER.error("Request date timestamp received is before epoch date.");
-        return responseGenerator.invalidSignatureDate();
-      }
       LOGGER.error(
           "Request date timestamp received does not match with server " +
           "timestamp.");
