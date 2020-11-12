@@ -498,9 +498,11 @@ class ObjectRecoveryValidator:
                 # old object is still current/live as per metadata
                 # Check if there was any server crash
                 instance_id = self.object_leak_info["global_instance_id"]
-                if(self.check_instance_is_nonactive(instance_id)):
+                self._logger.info("Oid " + self.object_leak_id + " exists in metadata. Check if S3 instance is active")
+
+                if(self.check_instance_is_nonactive(instance_id) and self.config.get_cleanup_enabled()):
                     self._logger.info("Old object leak oid " + str(self.object_leak_id) +
-                                      " is not asscociated with active S3 instance. Deleting it...")
+                                      " is not associated with active S3 instance. Deleting it...")
                     status = self.process_probable_delete_record(True, True)
                     if (status):
                         self._logger.info("Leak oid " + self.object_leak_id + " processed successfully and deleted")
@@ -508,7 +510,15 @@ class ObjectRecoveryValidator:
                         self._logger.error("Failed to discard leak oid " + self.object_leak_id)
                 else:
                     # Ignore and process leak record in next cycle
-                    self._logger.info("Skip processing old object leak oid " + str(self.object_leak_id))
+                    self._logger.info("S3 instance is active or flag to cleanup_enabled is disabled")
+                    self._logger.info("Skip deletion for object leak oid " + str(self.object_leak_id))
+                    self._logger.info("Remove entry from probable delete index for :" + str(self.object_leak_id))
+                    status = self.process_probable_delete_record(True, False)
+                    if (status):
+                        self._logger.info("Leak oid " + self.object_leak_id + " processed successfully and skipped")
+                    else:
+                        self._logger.error("Failed to skip" + self.object_leak_id)
+
                 return
 
         # Object leak detection algo: Step #4 - For new object
