@@ -64,10 +64,18 @@ get_probable_delete_index() {
         declare -a OBJECT_VERSION_LIST_INDEX_OID
         declare -a PART_LIST_INDEX_OID
         rm /tmp/m0kvprobable.log > /dev/null 2>&1
-        cd ..
         "$m0kv_PATH" -l "$1" -h "$2" -p "$3" -f "$4" index next "$probable_delete_index" '0' 1000 -s >> /tmp/m0kvprobable.log
+        ##### m0kv command output #####
+        # operation rc: 0
+        # [0]:
+        #         KEY: vgpIBgAAAAA=-RwAAAAAA8Jk=
+        #         VAL: {"create_timestamp":"2020-11-10T04:51:30.000Z","force_delete":"true","global_instance_id":"vgpIBgAAAAA=-AAAAAAAA8Jk=","is_multipart":"true","motr_process_fid":"<0x7200000000000000:0>","object_key_in_index":"temp4.txt","object_layout_id":9,"object_list_index_oid":"vgpIBgAAAHg=-BQAAAAAA8Jk=","objects_version_list_index_oid":"vgpIBgAAAHg=-BgAAAAAA8Jk=","old_oid":"AAAAAAAAAAA=-AAAAAAAAAAA=","part_list_idx_oid":"vgpIBgAAAHg=-SQAAAAAA8Jk="}
+        # selected 1 records
+        # next done, rc: 0
+        # Done, rc:  0
+        ###############################
+
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
-        cd m0kv_metadata_parsing_tool
 
         i=0
         for line in $(grep "KEY: [\"\/0-9a-zA-Z+=-]*" /tmp/m0kvprobable.log | cut -c7-)
@@ -98,6 +106,15 @@ get_probable_delete_index() {
         then
             echo -e "$m0kv_PATH -l $1 -h $2 -p $3 -f $4 index next $probable_delete_index '0' $GLOBAL_PROBABLE_DELETE_INDEX_COUNT -s\n" >> /var/log/m0kv_metadata.log
             "$m0kv_PATH" -l "$1" -h "$2" -p "$3" -f "$4" index next "$probable_delete_index" '0' "$GLOBAL_PROBABLE_DELETE_INDEX_COUNT" -s >> /var/log/m0kv_metadata.log
+            ##### m0kv command output #####
+            # operation rc: 0
+            # [0]:
+            #         KEY: vgpIBgAAAAA=-RwAAAAAA8Jk=
+            #         VAL: {"create_timestamp":"2020-11-10T04:51:30.000Z","force_delete":"true","global_instance_id":"vgpIBgAAAAA=-AAAAAAAA8Jk=","is_multipart":"true","motr_process_fid":"<0x7200000000000000:0>","object_key_in_index":"temp4.txt","object_layout_id":9,"object_list_index_oid":"vgpIBgAAAHg=-BQAAAAAA8Jk=","objects_version_list_index_oid":"vgpIBgAAAHg=-BgAAAAAA8Jk=","old_oid":"AAAAAAAAAAA=-AAAAAAAAAAA=","part_list_idx_oid":"vgpIBgAAAHg=-SQAAAAAA8Jk="}
+            # selected 1 records
+            # next done, rc: 0
+            # Done, rc:  0
+            ###############################
 
             i=0
             for line in $(grep -Ei -o "\"object_key_in_index\":[\"0-9a-zA-Z\"]*(.[a-zA-Z0-9]*)?" /tmp/m0kvprobable.log | cut -c24-)
@@ -159,6 +176,13 @@ get_probable_delete_index() {
 get_parts() {
     rm /tmp/m0kvcountpart.log > /dev/null 2>&1
     "$m0kv_PATH" -l "$4" -h "$5" -p "$6" -f "$7" index next "$3" '0' 1245 -s >> /tmp/m0kvcountpart.log
+    ##### m0kv command output #####
+    # operation rc: 0
+    # [0]:
+    #         KEY: 1
+    #         VAL: {"Bucket-Name":"test1","Object-Name":"multipart_object.txt","Part-Num":"1","System-Defined":{"Content-Length":"20971520","Content-MD5":"8f4e33f3dc3e414ff94e5fb6905cba8c","Date":"2020-11-12T06:17:47.000Z","Last-Modified":"2020-11-12T06:17:47.000Z","Upload-ID":"e8a162a1-1fe9-42b2-9841-80a3827f9a57","x-amz-server-side-encryption":"None","x-amz-server-side-encryption-aws-kms-key-id":"","x-amz-server-side-encryption-customer-algorithm":"","x-amz-server-side-encryption-customer-key":"","x-amz-server-side-encryption-customer-key-MD5":"","x-amz-storage-class":"STANDARD","x-amz-version-id":"","x-amz-website-redirect-location":"None"},"Upload-ID":"e8a162a1-1fe9-42b2-9841-80a3827f9a57"}
+    ###############################
+
 
     i=0
     for line in $(grep 'KEY: [0-9]*[0-9]$' /tmp/m0kvcountpart.log | cut -c7-)
@@ -179,6 +203,12 @@ get_parts() {
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
         echo -e "$m0kv_PATH -l $4 -h $5 -p $6 -f $7 index next $3 '0' $NO_OF_PARTS -s\n" >> /var/log/m0kv_metadata.log
         "$m0kv_PATH" -l "$4" -h "$5" -p "$6" -f "$7" index next "$3" '0' "$NO_OF_PARTS" -s >> /tmp/m0kvpart.log
+        ##### m0kv command output #####
+        # operation rc: 0
+        # [0]:
+        #         KEY: 1
+        #         VAL: {"Bucket-Name":"test1","Object-Name":"multipart_object.txt","Part-Num":"1","System-Defined":{"Content-Length":"20971520","Content-MD5":"8f4e33f3dc3e414ff94e5fb6905cba8c","Date":"2020-11-12T06:17:47.000Z","Last-Modified":"2020-11-12T06:17:47.000Z","Upload-ID":"e8a162a1-1fe9-42b2-9841-80a3827f9a57","x-amz-server-side-encryption":"None","x-amz-server-side-encryption-aws-kms-key-id":"","x-amz-server-side-encryption-customer-algorithm":"","x-amz-server-side-encryption-customer-key":"","x-amz-server-side-encryption-customer-key-MD5":"","x-amz-storage-class":"STANDARD","x-amz-version-id":"","x-amz-website-redirect-location":"None"},"Upload-ID":"e8a162a1-1fe9-42b2-9841-80a3827f9a57"}
+        ###############################
         cat /tmp/m0kvpart.log >> /var/log/m0kv_metadata.log
         echo "Upload ID : $(grep -o '},[\"]Upload-ID[\"].*' /tmp/m0kvpart.log | cut -c16-51 | head -n1)"
         echo "Number of parts : $NO_OF_PARTS"
@@ -194,6 +224,12 @@ get_multipart_metadata() {
     declare -a MOTR_PART_OID
     MULTIPART_OBJECTS=()
     "$m0kv_PATH" -l "$3" -h "$4" -p "$5" -f "$6" index next "$1" '0' 1245 -s >> /tmp/countObjects.log
+    ##### m0kv command output #####
+    # operation rc: 0
+    # [0]:
+    #     KEY: multipart_check
+    #     VAL: {"ACL":"PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PEFjY2Vzc0NvbnRyb2xQb2xpY3kgeG1sbnM9Imh0dHA6Ly9zMy5hbWF6b25hd3MuY29tL2RvYy8yMDA2LTAzLTAxLyI+CiA8T3duZXI+CiAgPElEPjY4NjRjN2U2ZTY0YjQ4ZThiYjI0MzRlN2MzZDNhYzhkNDRhYWRiNjZmMWMzNGVmOGEzMmNmZmQ5ZWVlYTAxNTY8L0lEPgogIDxEaXNwbGF5TmFtZT5zM3FhPC9EaXNwbGF5TmFtZT4KIDwvT3duZXI+CiA8QWNjZXNzQ29udHJvbExpc3Q+CiAgPEdyYW50PgogICA8R3JhbnRlZSB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIiB4c2k6dHlwZT0iQ2Fub25pY2FsVXNlciI+CiAgICA8SUQ+Njg2NGM3ZTZlNjRiNDhlOGJiMjQzNGU3YzNkM2FjOGQ0NGFhZGI2NmYxYzM0ZWY4YTMyY2ZmZDllZWVhMDE1NjwvSUQ+CiAgICA8RGlzcGxheU5hbWU+czNxYTwvRGlzcGxheU5hbWU+CiAgIDwvR3JhbnRlZT4KICAgPFBlcm1pc3Npb24+RlVMTF9DT05UUk9MPC9QZXJtaXNzaW9uPgogIDwvR3JhbnQ+CiA8L0FjY2Vzc0NvbnRyb2xMaXN0Pgo8L0FjY2Vzc0NvbnRyb2xQb2xpY3k+","Bucket-Name":"test3","Object-Name":"multipart_check","Object-URI":"test3\\multipart_check","System-Defined":{"Content-Length":"","Content-MD5":"","Content-Type":"","Date":"2020-11-09T11:27:13.000Z","Last-Modified":"2020-11-09T11:27:13.000Z","Owner-Account":"s3qa","Owner-Account-id":"456451734479","Owner-Canonical-id":"6864c7e6e64b48e8bb2434e7c3d3ac8d44aadb66f1c34ef8a32cffd9eeea0156","Owner-User":"root","Owner-User-id":"9RO8JADzR56oupbZsBiROA","Part-One-Size":"","Upload-ID":"26e8168e-2202-421f-8c9c-2efe4a0de971","x-amz-server-side-encryption":"None","x-amz-server-side-encryption-aws-kms-key-id":"","x-amz-server-side-encryption-customer-algorithm":"","x-amz-server-side-encryption-customer-key":"","x-amz-server-side-encryption-customer-key-MD5":"","x-amz-storage-class":"STANDARD","x-amz-version-id":"","x-amz-website-redirect-location":"None"},"Upload-ID":"26e8168e-2202-421f-8c9c-2efe4a0de971","create_timestamp":"2020-11-09T11:27:13.000Z","layout_id":9,"motr_oid":"vgpIBgAAAAA=-KQAAAAAA8Jk=","motr_old_object_version_id":"","motr_old_oid":"","motr_part_oid":"vgpIBgAAAHg=-KwAAAAAA8Jk=","old_layout_id":0}
+    ###############################
 
     i=0
     for line in $(grep "KEY: .*[0-9a-zA-Z]$" /tmp/countObjects.log | cut -c7-)
@@ -215,6 +251,12 @@ get_multipart_metadata() {
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
         echo -e "$m0kv_PATH -l $3 -h $4 -p $5 -f $6 index next $1 '0' $NO_OF_MULTIPART_OBJECTS -s\n" >> /var/log/m0kv_metadata.log
         "$m0kv_PATH" -l "$3" -h "$4" -p "$5" -f "$6" index next "$1" '0' $NO_OF_MULTIPART_OBJECTS -s >> /var/log/m0kv_metadata.log
+        ##### m0kv command output #####
+        # operation rc: 0
+        # [0]:
+        #     KEY: multipart_check
+        #     VAL: {"ACL":"PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PEFjY2Vzc0NvbnRyb2xQb2xpY3kgeG1sbnM9Imh0dHA6Ly9zMy5hbWF6b25hd3MuY29tL2RvYy8yMDA2LTAzLTAxLyI+CiA8T3duZXI+CiAgPElEPjY4NjRjN2U2ZTY0YjQ4ZThiYjI0MzRlN2MzZDNhYzhkNDRhYWRiNjZmMWMzNGVmOGEzMmNmZmQ5ZWVlYTAxNTY8L0lEPgogIDxEaXNwbGF5TmFtZT5zM3FhPC9EaXNwbGF5TmFtZT4KIDwvT3duZXI+CiA8QWNjZXNzQ29udHJvbExpc3Q+CiAgPEdyYW50PgogICA8R3JhbnRlZSB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIiB4c2k6dHlwZT0iQ2Fub25pY2FsVXNlciI+CiAgICA8SUQ+Njg2NGM3ZTZlNjRiNDhlOGJiMjQzNGU3YzNkM2FjOGQ0NGFhZGI2NmYxYzM0ZWY4YTMyY2ZmZDllZWVhMDE1NjwvSUQ+CiAgICA8RGlzcGxheU5hbWU+czNxYTwvRGlzcGxheU5hbWU+CiAgIDwvR3JhbnRlZT4KICAgPFBlcm1pc3Npb24+RlVMTF9DT05UUk9MPC9QZXJtaXNzaW9uPgogIDwvR3JhbnQ+CiA8L0FjY2Vzc0NvbnRyb2xMaXN0Pgo8L0FjY2Vzc0NvbnRyb2xQb2xpY3k+","Bucket-Name":"test3","Object-Name":"multipart_check","Object-URI":"test3\\multipart_check","System-Defined":{"Content-Length":"","Content-MD5":"","Content-Type":"","Date":"2020-11-09T11:27:13.000Z","Last-Modified":"2020-11-09T11:27:13.000Z","Owner-Account":"s3qa","Owner-Account-id":"456451734479","Owner-Canonical-id":"6864c7e6e64b48e8bb2434e7c3d3ac8d44aadb66f1c34ef8a32cffd9eeea0156","Owner-User":"root","Owner-User-id":"9RO8JADzR56oupbZsBiROA","Part-One-Size":"","Upload-ID":"26e8168e-2202-421f-8c9c-2efe4a0de971","x-amz-server-side-encryption":"None","x-amz-server-side-encryption-aws-kms-key-id":"","x-amz-server-side-encryption-customer-algorithm":"","x-amz-server-side-encryption-customer-key":"","x-amz-server-side-encryption-customer-key-MD5":"","x-amz-storage-class":"STANDARD","x-amz-version-id":"","x-amz-website-redirect-location":"None"},"Upload-ID":"26e8168e-2202-421f-8c9c-2efe4a0de971","create_timestamp":"2020-11-09T11:27:13.000Z","layout_id":9,"motr_oid":"vgpIBgAAAAA=-KQAAAAAA8Jk=","motr_old_object_version_id":"","motr_old_oid":"","motr_part_oid":"vgpIBgAAAHg=-KwAAAAAA8Jk=","old_layout_id":0}
+        ###############################
         
         i=0
         for line in $(grep -Ei -o "\"motr_part_oid\":[\"0-9a-zA-Z+=-]*" /tmp/countObjects.log)
@@ -255,6 +297,12 @@ get_object_metadata() {
     rm /tmp/m0kvbucket.log > /dev/null 2>&1
     rm /tmp/m0kvobjver.log > /dev/null 2>&1 
     "$m0kv_PATH" -l "$3" -h "$5" -p "$6" -f "$7" index next "$1" '0' 65 -s >> /tmp/m0kvbucket.log
+    ##### m0kv command output #####
+    # operation rc: 0
+    # [0]:
+    #     KEY: temp2.txt
+    #     VAL: {"ACL":"PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PEFjY2Vzc0NvbnRyb2xQb2xpY3kgeG1sbnM9Imh0dHA6Ly9zMy5hbWF6b25hd3MuY29tL2RvYy8yMDA2LTAzLTAxLyI+CiA8T3duZXI+CiAgPElEPjY4NjRjN2U2ZTY0YjQ4ZThiYjI0MzRlN2MzZDNhYzhkNDRhYWRiNjZmMWMzNGVmOGEzMmNmZmQ5ZWVlYTAxNTY8L0lEPgogIDxEaXNwbGF5TmFtZT5zM3FhPC9EaXNwbGF5TmFtZT4KIDwvT3duZXI+CiA8QWNjZXNzQ29udHJvbExpc3Q+CiAgPEdyYW50PgogICA8R3JhbnRlZSB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIiB4c2k6dHlwZT0iQ2Fub25pY2FsVXNlciI+CiAgICA8SUQ+Njg2NGM3ZTZlNjRiNDhlOGJiMjQzNGU3YzNkM2FjOGQ0NGFhZGI2NmYxYzM0ZWY4YTMyY2ZmZDllZWVhMDE1NjwvSUQ+CiAgICA8RGlzcGxheU5hbWU+czNxYTwvRGlzcGxheU5hbWU+CiAgIDwvR3JhbnRlZT4KICAgPFBlcm1pc3Npb24+RlVMTF9DT05UUk9MPC9QZXJtaXNzaW9uPgogIDwvR3JhbnQ+CiA8L0FjY2Vzc0NvbnRyb2xMaXN0Pgo8L0FjY2Vzc0NvbnRyb2xQb2xpY3k+","Bucket-Name":"test1","Object-Name":"temp2.txt","Object-URI":"test1\\temp2.txt","System-Defined":{"Content-Length":"9","Content-MD5":"27f3f4a6a783c5440ce38ba6c1e52924","Content-Type":"text/plain","Date":"2020-11-09T04:38:04.000Z","Last-Modified":"2020-11-09T04:38:04.000Z","Owner-Account":"s3qa","Owner-Account-id":"456451734479","Owner-Canonical-id":"6864c7e6e64b48e8bb2434e7c3d3ac8d44aadb66f1c34ef8a32cffd9eeea0156","Owner-User":"root","Owner-User-id":"9RO8JADzR56oupbZsBiROA","x-amz-server-side-encryption":"None","x-amz-server-side-encryption-aws-kms-key-id":"","x-amz-server-side-encryption-customer-algorithm":"","x-amz-server-side-encryption-customer-key":"","x-amz-server-side-encryption-customer-key-MD5":"","x-amz-storage-class":"STANDARD","x-amz-version-id":"MTg0NDY3NDI0Njg4MTI4NjcyMzg","x-amz-website-redirect-location":"None"},"create_timestamp":"2020-11-09T04:38:04.000Z","layout_id":1,"motr_oid":"vgpIBgAAAAA=-DAAAAAAA8Jk="}
+    ###############################
 
     i=0
     for line in $(grep -o 'KEY: .*[0-9a-zA-Z]$' /tmp/m0kvbucket.log | cut -c6-)
@@ -273,8 +321,20 @@ get_object_metadata() {
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
         echo -e "$m0kv_PATH -l $3 -h $5 -p $6 -f $7 index next $1 '0' $NO_OF_OBJECTS -s\n" >> /var/log/m0kv_metadata.log
         "$m0kv_PATH" -l "$3" -h "$5" -p "$6" -f "$7" index next "$1" '0' "$NO_OF_OBJECTS" -s >> /var/log/m0kv_metadata.log
+        ##### m0kv command output #####
+        # operation rc: 0
+        # [0]:
+        #     KEY: temp2.txt
+        #     VAL: {"ACL":"PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PEFjY2Vzc0NvbnRyb2xQb2xpY3kgeG1sbnM9Imh0dHA6Ly9zMy5hbWF6b25hd3MuY29tL2RvYy8yMDA2LTAzLTAxLyI+CiA8T3duZXI+CiAgPElEPjY4NjRjN2U2ZTY0YjQ4ZThiYjI0MzRlN2MzZDNhYzhkNDRhYWRiNjZmMWMzNGVmOGEzMmNmZmQ5ZWVlYTAxNTY8L0lEPgogIDxEaXNwbGF5TmFtZT5zM3FhPC9EaXNwbGF5TmFtZT4KIDwvT3duZXI+CiA8QWNjZXNzQ29udHJvbExpc3Q+CiAgPEdyYW50PgogICA8R3JhbnRlZSB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIiB4c2k6dHlwZT0iQ2Fub25pY2FsVXNlciI+CiAgICA8SUQ+Njg2NGM3ZTZlNjRiNDhlOGJiMjQzNGU3YzNkM2FjOGQ0NGFhZGI2NmYxYzM0ZWY4YTMyY2ZmZDllZWVhMDE1NjwvSUQ+CiAgICA8RGlzcGxheU5hbWU+czNxYTwvRGlzcGxheU5hbWU+CiAgIDwvR3JhbnRlZT4KICAgPFBlcm1pc3Npb24+RlVMTF9DT05UUk9MPC9QZXJtaXNzaW9uPgogIDwvR3JhbnQ+CiA8L0FjY2Vzc0NvbnRyb2xMaXN0Pgo8L0FjY2Vzc0NvbnRyb2xQb2xpY3k+","Bucket-Name":"test1","Object-Name":"temp2.txt","Object-URI":"test1\\temp2.txt","System-Defined":{"Content-Length":"9","Content-MD5":"27f3f4a6a783c5440ce38ba6c1e52924","Content-Type":"text/plain","Date":"2020-11-09T04:38:04.000Z","Last-Modified":"2020-11-09T04:38:04.000Z","Owner-Account":"s3qa","Owner-Account-id":"456451734479","Owner-Canonical-id":"6864c7e6e64b48e8bb2434e7c3d3ac8d44aadb66f1c34ef8a32cffd9eeea0156","Owner-User":"root","Owner-User-id":"9RO8JADzR56oupbZsBiROA","x-amz-server-side-encryption":"None","x-amz-server-side-encryption-aws-kms-key-id":"","x-amz-server-side-encryption-customer-algorithm":"","x-amz-server-side-encryption-customer-key":"","x-amz-server-side-encryption-customer-key-MD5":"","x-amz-storage-class":"STANDARD","x-amz-version-id":"MTg0NDY3NDI0Njg4MTI4NjcyMzg","x-amz-website-redirect-location":"None"},"create_timestamp":"2020-11-09T04:38:04.000Z","layout_id":1,"motr_oid":"vgpIBgAAAAA=-DAAAAAAA8Jk="}
+        ###############################
         
         "$m0kv_PATH" -l "$3" -h "$5" -p "$6" -f "$7" index next "$4" '0' "$NO_OF_OBJECTS" -s >> /tmp/m0kvobjver.log
+        ##### m0kv command output #####
+        # operation rc: 0
+        # [0]:
+        #     KEY: temp2.txt/18446742468812867238
+        #     VAL: {"create_timestamp":"2020-11-09T04:38:04.000Z","layout_id":1,"motr_oid":"vgpIBgAAAAA=-DAAAAAAA8Jk="}
+        ###############################
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
         echo -e "$m0kv_PATH -l $3 -h $5 -p $6 -f $7 index next $4 '0' $NO_OF_OBJECTS -s\n" >> /var/log/m0kv_metadata.log
         cat /tmp/m0kvobjver.log >> /var/log/m0kv_metadata.log
@@ -323,6 +383,12 @@ get_all_buckets_metadata() {
         declare -a BUCKETS
         
         "$m0kv_PATH" -l "$1" -h "$2" -p "$3" -f "$4" index next "$bucket_list_index" '0' 1245 -s >> /tmp/m0kvtest.log
+        ##### m0kv command output #####
+        # operation rc: 0
+        # [0]:
+        #         KEY: 456451734479/test1
+        #         VAL: {"ACL":"PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PEFjY2Vzc0NvbnRyb2xQb2xpY3kgeG1sbnM9Imh0dHA6Ly9zMy5hbWF6b25hd3MuY29tL2RvYy8yMDA2LTAzLTAxLyI+CiA8T3duZXI+CiAgPElEPjY4NjRjN2U2ZTY0YjQ4ZThiYjI0MzRlN2MzZDNhYzhkNDRhYWRiNjZmMWMzNGVmOGEzMmNmZmQ5ZWVlYTAxNTY8L0lEPgogIDxEaXNwbGF5TmFtZT5zM3FhPC9EaXNwbGF5TmFtZT4KIDwvT3duZXI+CiA8QWNjZXNzQ29udHJvbExpc3Q+CiAgPEdyYW50PgogICA8R3JhbnRlZSB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIiB4c2k6dHlwZT0iQ2Fub25pY2FsVXNlciI+CiAgICA8SUQ+Njg2NGM3ZTZlNjRiNDhlOGJiMjQzNGU3YzNkM2FjOGQ0NGFhZGI2NmYxYzM0ZWY4YTMyY2ZmZDllZWVhMDE1NjwvSUQ+CiAgICA8RGlzcGxheU5hbWU+czNxYTwvRGlzcGxheU5hbWU+CiAgIDwvR3JhbnRlZT4KICAgPFBlcm1pc3Npb24+RlVMTF9DT05UUk9MPC9QZXJtaXNzaW9uPgogIDwvR3JhbnQ+CiA8L0FjY2Vzc0NvbnRyb2xMaXN0Pgo8L0FjY2Vzc0NvbnRyb2xQb2xpY3k+","Bucket-Name":"test1","Policy":"","System-Defined":{"Date":"2020-11-09T04:35:56.000Z","LocationConstraint":"US","Owner-Account":"s3qa","Owner-Account-id":"456451734479","Owner-Canonical-id":"6864c7e6e64b48e8bb2434e7c3d3ac8d44aadb66f1c34ef8a32cffd9eeea0156","Owner-User":"root","Owner-User-id":"9RO8JADzR56oupbZsBiROA"},"create_timestamp":"2020-11-09T04:35:56.000Z","motr_multipart_index_oid":"vgpIBgAAAHg=-AgAAAAAA8Jk=","motr_object_list_index_oid":"vgpIBgAAAHg=-AQAAAAAA8Jk=","motr_objects_version_list_index_oid":"vgpIBgAAAHg=-AwAAAAAA8Jk="}
+        ###############################
         i=0
         for line in $(grep "KEY: [0-9]*[\/].*" /tmp/m0kvtest.log | cut -c20-)
         do
@@ -334,7 +400,12 @@ get_all_buckets_metadata() {
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
         echo -e "$m0kv_PATH -l $1 -h $2 -p $3 -f $4 index next $bucket_list_index '0' $NO_OF_BUCKETS -s\n" >> /var/log/m0kv_metadata.log
         "$m0kv_PATH" -l "$1" -h "$2" -p "$3" -f "$4" index next "$bucket_list_index" '0' "$NO_OF_BUCKETS" -s >> /var/log/m0kv_metadata.log
-        
+        ##### m0kv command output #####
+        # operation rc: 0
+        # [0]:
+        #         KEY: 456451734479/test1
+        #         VAL: {"ACL":"PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PEFjY2Vzc0NvbnRyb2xQb2xpY3kgeG1sbnM9Imh0dHA6Ly9zMy5hbWF6b25hd3MuY29tL2RvYy8yMDA2LTAzLTAxLyI+CiA8T3duZXI+CiAgPElEPjY4NjRjN2U2ZTY0YjQ4ZThiYjI0MzRlN2MzZDNhYzhkNDRhYWRiNjZmMWMzNGVmOGEzMmNmZmQ5ZWVlYTAxNTY8L0lEPgogIDxEaXNwbGF5TmFtZT5zM3FhPC9EaXNwbGF5TmFtZT4KIDwvT3duZXI+CiA8QWNjZXNzQ29udHJvbExpc3Q+CiAgPEdyYW50PgogICA8R3JhbnRlZSB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIiB4c2k6dHlwZT0iQ2Fub25pY2FsVXNlciI+CiAgICA8SUQ+Njg2NGM3ZTZlNjRiNDhlOGJiMjQzNGU3YzNkM2FjOGQ0NGFhZGI2NmYxYzM0ZWY4YTMyY2ZmZDllZWVhMDE1NjwvSUQ+CiAgICA8RGlzcGxheU5hbWU+czNxYTwvRGlzcGxheU5hbWU+CiAgIDwvR3JhbnRlZT4KICAgPFBlcm1pc3Npb24+RlVMTF9DT05UUk9MPC9QZXJtaXNzaW9uPgogIDwvR3JhbnQ+CiA8L0FjY2Vzc0NvbnRyb2xMaXN0Pgo8L0FjY2Vzc0NvbnRyb2xQb2xpY3k+","Bucket-Name":"test1","Policy":"","System-Defined":{"Date":"2020-11-09T04:35:56.000Z","LocationConstraint":"US","Owner-Account":"s3qa","Owner-Account-id":"456451734479","Owner-Canonical-id":"6864c7e6e64b48e8bb2434e7c3d3ac8d44aadb66f1c34ef8a32cffd9eeea0156","Owner-User":"root","Owner-User-id":"9RO8JADzR56oupbZsBiROA"},"create_timestamp":"2020-11-09T04:35:56.000Z","motr_multipart_index_oid":"vgpIBgAAAHg=-AgAAAAAA8Jk=","motr_object_list_index_oid":"vgpIBgAAAHg=-AQAAAAAA8Jk=","motr_objects_version_list_index_oid":"vgpIBgAAAHg=-AwAAAAAA8Jk="}
+        ###############################
     
         i=0
         for line in $(grep -Ei -o "\"motr_multipart_index_oid\":[\"0-9a-zA-Z+=-]*" /tmp/m0kvtest.log)
@@ -370,8 +441,8 @@ get_all_buckets_metadata() {
             echo "motr_objects_version_list_index_oid : ${MOTR_OBJECTS_VERSION_LIST_INDEX_OID[j-1]}"
             if [ "$5" != 1 ]
             then
-                get_object_metadata "${MOTR_OBJECT_LIST_INDEX_OID[j-1]}" "${BUCKETS[j-1]}" "$1" "${MOTR_OBJECTS_VERSION_LIST_INDEX_OID[j-1]}" "$2" "$3" "$4"
                 get_multipart_metadata "${MOTR_MULTIPART_INDEX_OID[j-1]}" "${BUCKETS[j-1]}" "$1" "$2" "$3" "$4"
+                get_object_metadata "${MOTR_OBJECT_LIST_INDEX_OID[j-1]}" "${BUCKETS[j-1]}" "$1" "${MOTR_OBJECTS_VERSION_LIST_INDEX_OID[j-1]}" "$2" "$3" "$4"
             else
                 echo ""
             fi
@@ -391,8 +462,13 @@ get_metadata_of_bucket() {
         rm /tmp/m0kvtest1.log > /dev/null 2>&1
         rm ./*.[0-9]* -f > /dev/null 2>&1 
         rm /var/log/m0kv_metadata.log > /dev/null 2>&1
-
         "$m0kv_PATH" -l "$2" -h "$3" -p "$4" -f "$5" index next "$bucket_list_index" '0' 1245 -s >> /tmp/m0kvtest1.log
+        ##### m0kv command output #####
+        # operation rc: 0
+        # [0]:
+        #         KEY: 456451734479/test1
+        #         VAL: {"ACL":"PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PEFjY2Vzc0NvbnRyb2xQb2xpY3kgeG1sbnM9Imh0dHA6Ly9zMy5hbWF6b25hd3MuY29tL2RvYy8yMDA2LTAzLTAxLyI+CiA8T3duZXI+CiAgPElEPjY4NjRjN2U2ZTY0YjQ4ZThiYjI0MzRlN2MzZDNhYzhkNDRhYWRiNjZmMWMzNGVmOGEzMmNmZmQ5ZWVlYTAxNTY8L0lEPgogIDxEaXNwbGF5TmFtZT5zM3FhPC9EaXNwbGF5TmFtZT4KIDwvT3duZXI+CiA8QWNjZXNzQ29udHJvbExpc3Q+CiAgPEdyYW50PgogICA8R3JhbnRlZSB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIiB4c2k6dHlwZT0iQ2Fub25pY2FsVXNlciI+CiAgICA8SUQ+Njg2NGM3ZTZlNjRiNDhlOGJiMjQzNGU3YzNkM2FjOGQ0NGFhZGI2NmYxYzM0ZWY4YTMyY2ZmZDllZWVhMDE1NjwvSUQ+CiAgICA8RGlzcGxheU5hbWU+czNxYTwvRGlzcGxheU5hbWU+CiAgIDwvR3JhbnRlZT4KICAgPFBlcm1pc3Npb24+RlVMTF9DT05UUk9MPC9QZXJtaXNzaW9uPgogIDwvR3JhbnQ+CiA8L0FjY2Vzc0NvbnRyb2xMaXN0Pgo8L0FjY2Vzc0NvbnRyb2xQb2xpY3k+","Bucket-Name":"test1","Policy":"","System-Defined":{"Date":"2020-11-09T04:35:56.000Z","LocationConstraint":"US","Owner-Account":"s3qa","Owner-Account-id":"456451734479","Owner-Canonical-id":"6864c7e6e64b48e8bb2434e7c3d3ac8d44aadb66f1c34ef8a32cffd9eeea0156","Owner-User":"root","Owner-User-id":"9RO8JADzR56oupbZsBiROA"},"create_timestamp":"2020-11-09T04:35:56.000Z","motr_multipart_index_oid":"vgpIBgAAAHg=-AgAAAAAA8Jk=","motr_object_list_index_oid":"vgpIBgAAAHg=-AQAAAAAA8Jk=","motr_objects_version_list_index_oid":"vgpIBgAAAHg=-AwAAAAAA8Jk="}
+        ###############################
         i=0
         for line in $(grep "KEY: [0-9]*[\/].*" /tmp/m0kvtest1.log | cut -c20-)
         do
@@ -403,6 +479,13 @@ get_metadata_of_bucket() {
         echo "----------------------------------------------------------------------------------------------------------------" >> /var/log/m0kv_metadata.log
         echo -e "$m0kv_PATH -l $2 -h $3 -p $4 -f $5 index next $bucket_list_index '0' $NO_OF_BUCKETS -s\n" >> /var/log/m0kv_metadata.log
         "$m0kv_PATH" -l "$2" -h "$3" -p "$4" -f "$5" index next "$bucket_list_index" '0' "$NO_OF_BUCKETS" -s >> /var/log/m0kv_metadata.log
+        ##### m0kv command output #####
+        # operation rc: 0
+        # [0]:
+        #         KEY: 456451734479/test1
+        #         VAL: {"ACL":"PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PEFjY2Vzc0NvbnRyb2xQb2xpY3kgeG1sbnM9Imh0dHA6Ly9zMy5hbWF6b25hd3MuY29tL2RvYy8yMDA2LTAzLTAxLyI+CiA8T3duZXI+CiAgPElEPjY4NjRjN2U2ZTY0YjQ4ZThiYjI0MzRlN2MzZDNhYzhkNDRhYWRiNjZmMWMzNGVmOGEzMmNmZmQ5ZWVlYTAxNTY8L0lEPgogIDxEaXNwbGF5TmFtZT5zM3FhPC9EaXNwbGF5TmFtZT4KIDwvT3duZXI+CiA8QWNjZXNzQ29udHJvbExpc3Q+CiAgPEdyYW50PgogICA8R3JhbnRlZSB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIiB4c2k6dHlwZT0iQ2Fub25pY2FsVXNlciI+CiAgICA8SUQ+Njg2NGM3ZTZlNjRiNDhlOGJiMjQzNGU3YzNkM2FjOGQ0NGFhZGI2NmYxYzM0ZWY4YTMyY2ZmZDllZWVhMDE1NjwvSUQ+CiAgICA8RGlzcGxheU5hbWU+czNxYTwvRGlzcGxheU5hbWU+CiAgIDwvR3JhbnRlZT4KICAgPFBlcm1pc3Npb24+RlVMTF9DT05UUk9MPC9QZXJtaXNzaW9uPgogIDwvR3JhbnQ+CiA8L0FjY2Vzc0NvbnRyb2xMaXN0Pgo8L0FjY2Vzc0NvbnRyb2xQb2xpY3k+","Bucket-Name":"test1","Policy":"","System-Defined":{"Date":"2020-11-09T04:35:56.000Z","LocationConstraint":"US","Owner-Account":"s3qa","Owner-Account-id":"456451734479","Owner-Canonical-id":"6864c7e6e64b48e8bb2434e7c3d3ac8d44aadb66f1c34ef8a32cffd9eeea0156","Owner-User":"root","Owner-User-id":"9RO8JADzR56oupbZsBiROA"},"create_timestamp":"2020-11-09T04:35:56.000Z","motr_multipart_index_oid":"vgpIBgAAAHg=-AgAAAAAA8Jk=","motr_object_list_index_oid":"vgpIBgAAAHg=-AQAAAAAA8Jk=","motr_objects_version_list_index_oid":"vgpIBgAAAHg=-AwAAAAAA8Jk="}
+        ###############################
+
         BUCKET_GREP=$(grep -Ei -o "$1[\"].*" /tmp/m0kvtest1.log)
         MOTR_MULTIPART_INDEX_OID_VAL=$(echo "$BUCKET_GREP" | grep -Ei -o "\"motr_multipart_index_oid\":[\"0-9a-zA-Z+=-]*")
         MOTR_OBJECT_LIST_INDEX_OID_VAL=$(echo "$BUCKET_GREP" | grep -Ei -o "\"motr_object_list_index_oid\":[\"0-9a-zA-Z+=-]*")
