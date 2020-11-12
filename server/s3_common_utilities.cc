@@ -181,6 +181,23 @@ std::string evhtp_error_flags_description(uint8_t errtype) {
   return errtype_str;
 }
 
+std::string replace_special_chars(std::string url) {
+    std::string url_replaced_chars;
+    size_t url_len = url.length();
+    if( url_len <= 0) {
+        return url_replaced_chars;
+    }
+    for(unsigned i = 0; i<url_len; i++) {
+        //check if special char
+        if( ((int)url[i] < 128) && special_char[(int)url[i]] ) {
+            url_replaced_chars += url_encoded_special_chars[(int)url[i]];
+        } else {
+            url_replaced_chars += url[i];
+        }
+    }
+    return url_replaced_chars;
+}
+
 }  // namespace S3CommonUtilities
 
 void s3_kickoff_graceful_shutdown(int ignore) {
