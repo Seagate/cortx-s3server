@@ -506,7 +506,7 @@ void S3PutMultiObjectAction::write_object_successful() {
     write_object(request->get_buffered_input());
   } else if (request->get_buffered_input()->is_freezed() &&
              request->get_buffered_input()->get_content_length() == 0) {
-    motr_write_completed = true;
+    // motr_write_completed = true;
     if (request->is_chunked()) {
       if (auth_completed) {
         next();
@@ -515,7 +515,15 @@ void S3PutMultiObjectAction::write_object_successful() {
         send_chunk_details_if_any();
       }
     } else {
-      next();
+      s3_log(S3_LOG_DEBUG, request_id,
+             "All data written, call fsync to persist data\n");
+      int rc = motr_writer->sync_data(
+          std::bind(&S3PutMultiObjectAction::sync_object_successful, this),
+          std::bind(&S3PutMultiObjectAction::sync_object_failed, this));
+      if (!rc) {
+        set_s3_error("InternalError");
+        send_response_to_s3_client();
+      }
     }
   } else if (!request->get_buffered_input()->is_freezed()) {
     // else we wait for more incoming data
@@ -548,6 +556,20 @@ void S3PutMultiObjectAction::write_object_failed() {
   } else {
     send_response_to_s3_client();
   }
+}
+
+void S3PutMultiObjectAction::sync_object_successful() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  next();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutMultiObjectAction::sync_object_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  motr_write_in_progress = false;
+  set_s3_error("InternalError");
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PutMultiObjectAction::save_metadata() {

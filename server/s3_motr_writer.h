@@ -69,6 +69,8 @@ enum class S3MotrWiterOpState {
   created,
   saved,
   writing,
+  syncing,
+  synced,
   deleting,
   deleted,
   success,
@@ -127,6 +129,9 @@ class S3MotrWiter {
   void write_content();
   void write_content_successful();
   void write_content_failed();
+
+  void sync_data_successful();
+  void sync_data_failed();
 
   void delete_objects();
   void delete_objects_successful();
@@ -193,6 +198,9 @@ class S3MotrWiter {
                              std::function<void(void)> on_failed,
                              std::shared_ptr<S3AsyncBufferOptContainer> buffer);
 
+  // Async fsync operation.
+  virtual bool sync_data(std::function<void(void)> on_success,
+                         std::function<void(void)> on_failed);
   // Async delete operation.
   virtual void delete_object(std::function<void(void)> on_success,
                              std::function<void(void)> on_failed, int layoutid);
@@ -229,6 +237,8 @@ class S3MotrWiter {
   FRIEND_TEST(S3MotrWiterTest, OpenObjectsFailedMissingTest);
   FRIEND_TEST(S3MotrWiterTest, WriteContentSuccessfulTest);
   FRIEND_TEST(S3MotrWiterTest, WriteContentFailedTest);
+  FRIEND_TEST(S3MotrWiterTest, SyncData);
+  FRIEND_TEST(S3MotrWiterTest, SyncDataSuccessful);
 };
 
 #endif

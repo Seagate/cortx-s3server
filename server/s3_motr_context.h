@@ -47,6 +47,7 @@ struct s3_motr_obj_context {
 // To create a basic motr operation
 struct s3_motr_op_context {
   struct m0_op **ops;
+  struct m0_op *sync_op;
   struct m0_op_ops *cbs;
   size_t op_count;
 };

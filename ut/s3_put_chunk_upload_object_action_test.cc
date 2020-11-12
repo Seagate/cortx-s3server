@@ -847,7 +847,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 
 // We have some data but not all and but have more to write
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
-       WriteObjectSuccessfulDoNextStepWhenAllIsWritten) {
+       SyncObjectSuccessfulDoNextStepWhenAllIsWritten) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   action_under_test->_set_layout_id(layout_id);
 
@@ -867,7 +867,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
       action_under_test,
       S3PutChunkUploadObjectActionTestBase::func_callback_one, this);
 
-  action_under_test->write_object_successful();
+  action_under_test->sync_object_successful();
 
   EXPECT_EQ(1, call_count_one);
   EXPECT_FALSE(action_under_test->motr_write_in_progress);

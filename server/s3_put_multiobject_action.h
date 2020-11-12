@@ -101,6 +101,8 @@ class S3PutMultiObjectAction : public S3ObjectAction {
 
   void write_object_successful();
   void write_object_failed();
+  void sync_object_successful();
+  void sync_object_failed();
 
   void save_metadata();
   void save_metadata_failed();
@@ -186,7 +188,7 @@ class S3PutMultiObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
               WriteObjectSuccessfulShouldWriteWhenExactWritableSize);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
-              WriteObjectSuccessfulDoNextStepWhenAllIsWritten);
+              SyncObjectSuccessfulDoNextStepWhenAllIsWritten);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
               WriteObjectSuccessfulShouldRestartReadingData);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, SaveMetadata);

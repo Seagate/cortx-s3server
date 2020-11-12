@@ -372,6 +372,62 @@ void S3MotrWiter::create_object_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+bool S3MotrWiter::sync_data(std::function<void(void)> on_success,
+                            std::function<void(void)> on_failed) {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  int rc;
+  handler_on_success = std::move(on_success);
+  handler_on_failed = std::move(on_failed);
+  state = S3MotrWiterOpState::syncing;
+  writer_context.reset(new S3MotrWiterContext(
+      request, std::bind(&S3MotrWiter::sync_data_successful, this),
+      std::bind(&S3MotrWiter::sync_data_failed, this)));
+  struct s3_motr_op_context *ctx = writer_context->get_motr_op_ctx();
+
+  struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
+      1, sizeof(struct s3_motr_context_obj));
+  op_ctx->op_index_in_launch = 0;
+  op_ctx->application_context =
+      static_cast<S3AsyncOpContextBase *>(writer_context.get());
+
+  ctx->cbs[0].oop_executed = NULL;
+  ctx->cbs[0].oop_stable = s3_motr_op_stable;
+  ctx->cbs[0].oop_failed = s3_motr_op_failed;
+  last_op_was_write = true;
+  rc = s3_motr_api->motr_sync_op_init(&ctx->sync_op);
+  if (rc != 0) {
+    s3_log(S3_LOG_ERROR, request_id, "m0_motr_sync_entity_add failed\n");
+    return false;
+  }
+  rc = s3_motr_api->motr_sync_entity_add(ctx->sync_op,
+                                         &obj_ctx->objs[0].ob_entity);
+  if (rc != 0) {
+    return false;
+  }
+  ctx->sync_op->op_datum = (void *)op_ctx;
+  s3_motr_api->motr_op_setup(ctx->sync_op, ctx->cbs, 0);
+
+  s3_motr_api->motr_op_launch(request->addb_request_id, &ctx->sync_op, 1,
+                              MotrOpType::writeobj);
+
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  return true;
+}
+
+void S3MotrWiter::sync_data_successful() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  state = S3MotrWiterOpState::synced;
+  this->handler_on_success();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3MotrWiter::sync_data_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  state = S3MotrWiterOpState::failed;
+  this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
 void S3MotrWiter::write_content(
     std::function<void(void)> on_success, std::function<void(void)> on_failed,
     std::shared_ptr<S3AsyncBufferOptContainer> buffer) {

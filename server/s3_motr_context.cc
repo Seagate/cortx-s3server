@@ -151,6 +151,9 @@ int free_basic_op_ctx(struct s3_motr_op_context *ctx) {
         teardown_motr_op(ctx->ops[i]);
       }
     }
+    if (ctx->sync_op != NULL) {
+      teardown_motr_op(ctx->sync_op);
+    }
     free(ctx->ops);
     free(ctx->cbs);
     free(ctx);
