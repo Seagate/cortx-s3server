@@ -74,3 +74,4 @@ indexid:
 leakconfig:                                  # Section for object leak config
    leak_processing_delay_in_mins: 15                          # Time delay in mins after which probable delete entry is procesed for leak.
    version_processing_delay_in_mins: 5                        # Time delay in mins after which object version is processed
+   cleanup_enabled: False                                     # Flag for cleanup during S3 instance non-active.

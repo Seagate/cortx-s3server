@@ -41,7 +41,7 @@ void S3ServiceListResponse::add_bucket(
 std::string& S3ServiceListResponse::get_xml() {
   response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
   response_xml +=
-      "<ListAllMyBucketsResult>"
+      "<ListAllMyBucketsResult "
       "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01\">";
   response_xml += "<Owner>";
   response_xml += S3CommonUtilities::format_xml_string("ID", owner_id);
