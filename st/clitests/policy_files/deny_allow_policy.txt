@@ -1,0 +1,27 @@
+{
+  "Id": "Policy1571741920713",
+  "Version": "2012-10-17",
+  "Statement": [
+      {
+      "Sid": "Stmt1571741573370",
+      "Resource": "arn:aws:s3:::allowdenybucket",
+      "Action": "s3:GetBucketAcl",
+      "Effect": "Deny",
+       "Principal": {
+        "AWS": [
+          "*"
+        ]
+      }
+    },
+    {
+      "Sid": "Stmt1462526862402",
+      "Action": [
+        "s3:GetBucketAcl"
+      ],
+      "Effect": "Allow",
+      "Resource": "arn:aws:s3:::allowdenybucket",
+      "Principal":{"AWS" : "arn:aws:iam::12345:user/iamuser"}
+    }
+  ]
+}
+
