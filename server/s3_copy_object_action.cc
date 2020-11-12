@@ -77,10 +77,21 @@ void S3CopyObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   ACTION_TASK_ADD(S3CopyObjectAction::validate_copyobject_request, this);
   ACTION_TASK_ADD(S3CopyObjectAction::create_object, this);
-  ACTION_TASK_ADD(S3CopyObjectAction::read_object, this);
-  ACTION_TASK_ADD(S3CopyObjectAction::initiate_data_streaming, this);
+  ACTION_TASK_ADD(S3CopyObjectAction::copy_object, this);
   ACTION_TASK_ADD(S3CopyObjectAction::save_metadata, this);
   ACTION_TASK_ADD(S3CopyObjectAction::send_response_to_s3_client, this);
+}
+
+// read source object
+void S3CopyObjectAction::read_object() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+// write to destination object
+void S3CopyObjectAction::initiate_data_streaming() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 // Destination bucket
@@ -131,16 +142,11 @@ void S3CopyObjectAction::create_object() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-// Read source object
-void S3CopyObjectAction::read_object() {
+// Copy source object to destination object
+void S3CopyObjectAction::copy_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-// Write data to destination object
-void S3CopyObjectAction::initiate_data_streaming() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  read_object();              // read source object
+  initiate_data_streaming();  // write to destination object
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

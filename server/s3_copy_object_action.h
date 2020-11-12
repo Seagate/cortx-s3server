@@ -61,6 +61,11 @@ class S3CopyObjectAction : public S3ObjectAction {
   std::shared_ptr<MotrAPI> s3_motr_api;
   std::shared_ptr<S3ObjectMetadata> new_object_metadata;
 
+  // TODO Edit the read_object() and initiate_data_streaming()
+  // signatures accordingly in subsequent Check-ins, when the design evolves.
+  void read_object();
+  void initiate_data_streaming();
+
  public:
   S3CopyObjectAction(
       std::shared_ptr<S3RequestObject> req,
@@ -80,8 +85,7 @@ class S3CopyObjectAction : public S3ObjectAction {
   std::string get_response_xml();
   void validate_copyobject_request();
   void create_object();
-  void read_object();
-  void initiate_data_streaming();
+  void copy_object();
   void save_metadata();
   void set_authorization_meta();
   void send_response_to_s3_client();
