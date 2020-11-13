@@ -171,6 +171,10 @@ AwsTest('Aws can put object').put_object("seagatebucket", "1kfile", 1024)\
 AwsTest('Aws can copy object').copy_object("seagatebucket/1kfile", "seagatebucket", "1kfile-copy")\
     .execute_test().command_is_successful().command_response_should_have("COPYOBJECTRESULT")
 
+AwsTest('Aws cannot copy object to non-existing destination bucket')\
+    .copy_object("seagatebucket/1kfile", "my-bucket", "1kfile-copy")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
+
 AwsTest('Aws can delete 1kfile').delete_object("seagatebucket", "1kfile")\
     .execute_test().command_is_successful()
 
