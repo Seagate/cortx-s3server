@@ -680,6 +680,7 @@ bool S3AuthClient::setup_auth_request_body() {
     // decode plus into space, this special handling
     // is not required for other charcters.
     S3CommonUtilities::find_and_replaceall(uri_full_path, "+", "%20");
+    S3CommonUtilities::find_and_replaceall(uri_full_path, "!", "%21");
     add_key_val_to_body("ClientAbsoluteUri", uri_full_path);
   } else {
     add_key_val_to_body("ClientAbsoluteUri", "");
