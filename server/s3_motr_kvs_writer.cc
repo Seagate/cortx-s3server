@@ -658,9 +658,9 @@ void S3MotrKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
                              &oid_list[0]);
   idx_ctx->n_initialized_contexts = 1;
 
-  rc = s3_motr_api->motr_idx_op(&(idx_ctx->idx[0]), M0_IC_PUT, kvs_ctx->keys,
-                                kvs_ctx->values, kvs_ctx->rcs, M0_OIF_OVERWRITE,
-                                &(idx_op_ctx->ops[0]));
+  rc = s3_motr_api->motr_idx_op(
+      &(idx_ctx->idx[0]), M0_IC_PUT, kvs_ctx->keys, kvs_ctx->values,
+      kvs_ctx->rcs, M0_OIF_OVERWRITE | M0_OIF_SYNC_WAIT, &(idx_op_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_idx_op failed\n");
     state = S3MotrKVSWriterOpState::failed_to_launch;
