@@ -20,7 +20,7 @@
 
 #include <cassert>
 #include <cctype>
-#include <iostream>
+#include <string>
 #include "base64.h"
 
 const char base64_chars[] =
