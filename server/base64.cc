@@ -28,42 +28,31 @@ const char base64_chars[] =
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789+/";
 
-const signed char decode_table[] = {
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, 62, -1, -1, -1, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60,
-    61, -1, -1, -1, -1, -1, -1, -1, 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
-    11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1,
-    -1, -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
-    43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1};
-
-std::string base64_encode(unsigned char const* pb, unsigned in_len) {
+std::string base64_encode(unsigned char const* bytes_to_encode,
+                          unsigned in_len) {
 
   std::string ret;
-  ret.reserve((in_len + 2) / 3 << 2);
+  ret.reserve((in_len + 2) / 3 << 2);  // exact size
 
   unsigned modulo_3 = 0;
-  int prev_ch = 0;
+  int for_next = 0;  // -Wall
 
   for (unsigned i = 0; i < in_len; ++i) {
-    const int cur_ch = *(pb + i);
+    const int cur_ch = *(bytes_to_encode + i);
 
     switch (modulo_3) {
       case 0:
         ret += base64_chars[cur_ch >> 2 & 0x3F];
+        for_next = (cur_ch & 3) << 4;
         break;
       case 1:
-        ret += base64_chars[(prev_ch << 4 & 0x30) | (cur_ch >> 4 & 0xF)];
+        assert(!(for_next & ~0x30));
+        ret += base64_chars[for_next | (cur_ch >> 4 & 0xF)];
+        for_next = (cur_ch & 0x0F) << 2;
         break;
       case 2:
-        ret += base64_chars[(prev_ch << 2 & 0x3C) | (cur_ch >> 6 & 3)];
+        assert(!(for_next & ~0x3C));
+        ret += base64_chars[for_next | (cur_ch >> 6 & 3)];
         ret += base64_chars[cur_ch & 0x3F];
         break;
       default:
@@ -72,14 +61,17 @@ std::string base64_encode(unsigned char const* pb, unsigned in_len) {
     if (++modulo_3 > 2) {
       modulo_3 = 0;
     }
-    prev_ch = cur_ch;
   }
-  if (1 == modulo_3) {
-    ret += base64_chars[prev_ch << 4 & 0x30];
-    ret += "==";
-  } else if (2 == modulo_3) {
-    ret += base64_chars[prev_ch << 2 & 0x3C];
+  assert(modulo_3 < 3);
+
+  if (modulo_3) {
+    assert(!(for_next & ~0x3F));
+    ret += base64_chars[for_next];
     ret += '=';
+
+    if (1 == modulo_3) {
+      ret += '=';
+    }
   }
   return ret;
 }
@@ -101,22 +93,38 @@ std::string base64_decode(const std::string& encoded_string) {
         continue;  // base64 text can be formatted
       }
     }
-    const int decoded = decode_table[ch & 255];
-    if (decoded < 0) break;
+    int decoded = 0;
 
+    if (ch >= 'A' && ch <= 'Z')
+      decoded = ch - 'A';
+    else if (ch >= 'a' && ch <= 'z')
+      decoded = ch - ('a' - 26);
+    else if (ch >= '0' && ch <= '9')
+      decoded = ch + (52 - '0');
+    else if ('+' == ch)
+      decoded = 62;
+    else if ('/' == ch)
+      decoded = 63;
+    else {
+      // Illegal base64 character
+      break;
+    }
     switch (modulo_4) {
       case 0:
         current_byte = decoded << 2;
         break;
       case 1:
+        assert(!(current_byte & 3));
         ret += static_cast<char>(current_byte | (decoded >> 4 & 3));
         current_byte = decoded << 4;
         break;
       case 2:
+        assert(!(current_byte & 0x0F));
         ret += static_cast<char>(current_byte | (decoded >> 2 & 0x0F));
         current_byte = decoded << 6;
         break;
       case 3:
+        assert(!(current_byte & 0x3F));
         ret += static_cast<char>(current_byte | (decoded & 0x3F));
         break;
       default:
