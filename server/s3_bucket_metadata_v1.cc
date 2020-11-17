@@ -57,6 +57,33 @@ S3BucketMetadataV1::S3BucketMetadataV1(
   should_cleanup_global_idx = false;
 }
 
+S3BucketMetadataV1::S3BucketMetadataV1(
+    std::shared_ptr<S3RequestObject> req, const std::string& str_bucket_name,
+    std::shared_ptr<MotrAPI> motr_api,
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
+    std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory,
+    std::shared_ptr<S3GlobalBucketIndexMetadataFactory>
+        s3_global_bucket_index_metadata_factory)
+    : S3BucketMetadata(std::move(req), std::move(str_bucket_name),
+                       std::move(motr_api),
+                       std::move(motr_s3_kvs_reader_factory),
+                       std::move(motr_s3_kvs_writer_factory)) {
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor");
+
+  if (s3_global_bucket_index_metadata_factory) {
+    global_bucket_index_metadata_factory =
+        std::move(s3_global_bucket_index_metadata_factory);
+  } else {
+    global_bucket_index_metadata_factory =
+        std::make_shared<S3GlobalBucketIndexMetadataFactory>();
+  }
+  bucket_owner_account_id = "";
+  // name of the index which holds all objects key values within a bucket
+  salted_object_list_index_name = get_object_list_index_name();
+
+  should_cleanup_global_idx = false;
+}
+
 struct m0_uint128 S3BucketMetadataV1::get_bucket_metadata_list_index_oid() {
   return bucket_metadata_list_index_oid;
 }
@@ -91,7 +118,7 @@ void S3BucketMetadataV1::fetch_global_bucket_account_id_info() {
   if (!global_bucket_index_metadata) {
     global_bucket_index_metadata =
         global_bucket_index_metadata_factory
-            ->create_s3_global_bucket_index_metadata(request);
+            ->create_s3_global_bucket_index_metadata(request, bucket_name);
   }
   global_bucket_index_metadata->load(
       std::bind(

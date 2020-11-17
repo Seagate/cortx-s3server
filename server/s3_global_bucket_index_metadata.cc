@@ -28,6 +28,19 @@
 extern struct m0_uint128 global_bucket_list_index_oid;
 extern struct m0_uint128 replica_global_bucket_list_index_oid;
 
+void S3GlobalBucketIndexMetadata::initialize(
+    const std::string& str_bucket_name) {
+  account_name = request->get_account_name();
+  account_id = request->get_account_id();
+  if (str_bucket_name.empty()) {
+    bucket_name = request->get_bucket_name();
+  } else {
+    bucket_name = str_bucket_name;
+  }
+  state = S3GlobalBucketIndexMetadataState::empty;
+  location_constraint = "us-west-2";
+}
+
 S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
     std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
@@ -36,11 +49,36 @@ S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
   request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
 
-  account_name = request->get_account_name();
-  account_id = request->get_account_id();
-  bucket_name = request->get_bucket_name();
-  state = S3GlobalBucketIndexMetadataState::empty;
-  location_constraint = "us-west-2";
+  initialize();
+
+  if (motr_api) {
+    s3_motr_api = motr_api;
+  } else {
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
+  }
+  if (motr_s3_kvs_reader_factory) {
+    motr_kvs_reader_factory = motr_s3_kvs_reader_factory;
+  } else {
+    motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+  }
+  if (motr_s3_kvs_writer_factory) {
+    motr_kvs_writer_factory = motr_s3_kvs_writer_factory;
+  } else {
+    motr_kvs_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
+  }
+}
+
+S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
+    std::shared_ptr<S3RequestObject> req, const std::string& str_bucket_name,
+    std::shared_ptr<MotrAPI> motr_api,
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
+    std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory)
+    : request(req), json_parsing_error(false) {
+  request_id = request->get_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor");
+
+  initialize(str_bucket_name);
+
   if (motr_api) {
     s3_motr_api = motr_api;
   } else {

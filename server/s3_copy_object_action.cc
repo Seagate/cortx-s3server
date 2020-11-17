@@ -41,7 +41,7 @@ S3CopyObjectAction::S3CopyObjectAction(
   s3_log(S3_LOG_INFO, request_id,
          "S3 API: CopyObject. Destination: [%s], Source: [%s]\n",
          request->get_object_uri().c_str(),
-         request->get_copy_object_source().c_str());
+         request->get_headers_copysource().c_str());
   s3_copy_action_state = S3CopyObjectActionState::empty;
 
   old_object_oid = {0ULL, 0ULL};
@@ -82,6 +82,158 @@ void S3CopyObjectAction::setup_steps() {
   ACTION_TASK_ADD(S3CopyObjectAction::send_response_to_s3_client, this);
 }
 
+void S3CopyObjectAction::get_source_bucket_and_object() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  std::string source = request->get_headers_copysource();
+  size_t separator_pos = source.find("/");
+  if (separator_pos != std::string::npos) {
+    source_bucket_name = source.substr(0, separator_pos);
+    source_object_name = source.substr(separator_pos + 1);
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3CopyObjectAction::fetch_source_bucket_info() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Fetch metadata of bucket: %s\n",
+         source_bucket_name.c_str());
+
+  source_bucket_metadata = bucket_metadata_factory->create_bucket_metadata_obj(
+      request, source_bucket_name);
+
+  source_bucket_metadata->load(
+      std::bind(&S3CopyObjectAction::fetch_source_bucket_info_success, this),
+      std::bind(&S3CopyObjectAction::fetch_source_bucket_info_failed, this));
+
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3CopyObjectAction::fetch_source_bucket_info_success() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Found source bucket: [%s] metadata\n",
+         source_bucket_name.c_str());
+
+  // fetch source object metadata
+  fetch_source_object_info();
+
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3CopyObjectAction::fetch_source_bucket_info_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  s3_copy_action_state = S3CopyObjectActionState::validationFailed;
+
+  if (source_bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+    s3_log(S3_LOG_DEBUG, request_id, "Source bucket: [%s] not found\n",
+           source_bucket_name.c_str());
+    set_s3_error("NoSuchBucket");
+  } else if (source_bucket_metadata->get_state() ==
+             S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Source bucket metadata load operation failed due to pre launch "
+           "failure\n");
+    set_s3_error("ServiceUnavailable");
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id, "Source bucket metadata fetch failed\n");
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3CopyObjectAction::fetch_source_object_info() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Found source bucket metadata\n");
+  m0_uint128 source_object_list_oid =
+      source_bucket_metadata->get_object_list_index_oid();
+  m0_uint128 source_object_version_list_oid =
+      source_bucket_metadata->get_objects_version_list_index_oid();
+
+  if ((source_object_list_oid.u_hi == 0ULL &&
+       source_object_list_oid.u_lo == 0ULL) ||
+      (source_object_version_list_oid.u_hi == 0ULL &&
+       source_object_version_list_oid.u_lo == 0ULL)) {
+    // Object list index and version list index missing.
+    fetch_source_object_info_failed();
+  } else {
+    source_object_metadata =
+        object_metadata_factory->create_object_metadata_obj(
+            request, source_bucket_name, source_object_name,
+            source_object_list_oid);
+
+    source_object_metadata->set_objects_version_list_index_oid(
+        source_object_version_list_oid);
+
+    source_object_metadata->load(
+        std::bind(&S3CopyObjectAction::fetch_source_object_info_success, this),
+        std::bind(&S3CopyObjectAction::fetch_source_object_info_failed, this));
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3CopyObjectAction::fetch_source_object_info_success() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Successfully fetched source object metadata\n");
+
+  if (MaxCopyObjectSourceSize < source_object_metadata->get_content_length()) {
+    s3_copy_action_state = S3CopyObjectActionState::validationFailed;
+    set_s3_error("InvalidRequest");
+    send_response_to_s3_client();
+  } else {
+    next();
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3CopyObjectAction::fetch_source_object_info_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  s3_copy_action_state = S3CopyObjectActionState::validationFailed;
+
+  m0_uint128 source_object_list_oid =
+      source_bucket_metadata->get_object_list_index_oid();
+  if (source_object_list_oid.u_hi == 0ULL &&
+      source_object_list_oid.u_lo == 0ULL) {
+    s3_log(S3_LOG_ERROR, request_id, "Object not found\n");
+    set_s3_error("NoSuchKey");
+  } else {
+    if (S3ObjectMetadataState::missing == source_object_metadata->get_state()) {
+      set_s3_error("NoSuchKey");
+    } else if (S3ObjectMetadataState::failed_to_launch ==
+               source_object_metadata->get_state()) {
+      s3_log(S3_LOG_ERROR, request_id,
+             "Source object metadata load operation failed due to pre launch "
+             "failure\n");
+      set_s3_error("ServiceUnavailable");
+    } else {
+      s3_log(S3_LOG_DEBUG, request_id, "Source object metadata fetch failed\n");
+      set_s3_error("InternalError");
+    }
+  }
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+// Validate source bucket and object
+void S3CopyObjectAction::validate_copyobject_request() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  get_source_bucket_and_object();
+
+  if (source_bucket_name.empty() || source_object_name.empty()) {
+    set_s3_error("InvalidArgument");
+    send_response_to_s3_client();
+  } else if (if_source_and_destination_same()) {
+    s3_copy_action_state = S3CopyObjectActionState::validationFailed;
+    set_s3_error("InvalidRequest");
+    send_response_to_s3_client();
+  } else {
+    fetch_source_bucket_info();
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
 // read source object
 void S3CopyObjectAction::read_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
@@ -97,7 +249,9 @@ void S3CopyObjectAction::initiate_data_streaming() {
 // Destination bucket
 void S3CopyObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
   s3_copy_action_state = S3CopyObjectActionState::validationFailed;
+
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Bucket not found\n");
     set_s3_error("NoSuchBucket");
@@ -123,13 +277,6 @@ void S3CopyObjectAction::fetch_object_info_failed() {
 
 // Destination object
 void S3CopyObjectAction::fetch_object_info_success() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-// Validate source bucket and object
-void S3CopyObjectAction::validate_copyobject_request() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -181,9 +328,20 @@ void S3CopyObjectAction::send_response_to_s3_client() {
       (is_error_state() && !get_s3_error_code().empty())) {
     // Metadata saved for object is always a success condition.
     assert(s3_copy_action_state != S3CopyObjectActionState::metadataSaved);
+    S3Error error(get_s3_error_code(), request->get_request_id());
 
-    S3Error error(get_s3_error_code(), request->get_request_id(),
-                  request->get_object_uri());
+    if (S3CopyObjectActionState::validationFailed == s3_copy_action_state &&
+        "InvalidRequest" == get_s3_error_code()) {
+      if (if_source_and_destination_same()) {  // Source and Destination same
+        error.set_auth_error_message(InvalidRequestSourceAndDestinationSame);
+      } else if (source_object_metadata->get_content_length() >
+                 MaxCopyObjectSourceSize) {  // Source object size greater than
+                                             // 5GB
+        error.set_auth_error_message(
+            InvalidRequestSourceObjectSizeGreaterThan5GB);
+      }
+    }
+
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
@@ -203,6 +361,11 @@ void S3CopyObjectAction::send_response_to_s3_client() {
   }
   done();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+bool S3CopyObjectAction::if_source_and_destination_same() {
+  return ((source_bucket_name == request->get_bucket_name()) &&
+          (source_object_name == request->get_object_name()));
 }
 
 void S3CopyObjectAction::set_authorization_meta() {
