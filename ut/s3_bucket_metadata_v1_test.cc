@@ -86,7 +86,7 @@ class S3BucketMetadataV1Test : public testing::Test {
     ptr_mock_request->set_user_id("s3userid");
 
     action_under_test.reset(new S3BucketMetadataV1(
-        ptr_mock_request, ptr_mock_s3_motr_api, motr_kvs_reader_factory,
+        ptr_mock_request, "", ptr_mock_s3_motr_api, motr_kvs_reader_factory,
         motr_kvs_writer_factory, s3_global_bucket_index_metadata_factory));
   }
 

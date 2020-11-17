@@ -51,6 +51,9 @@ class S3CopyObjectAction : public S3ObjectAction {
   // string used for salting the uri
   std::string salt;
 
+  std::string source_bucket_name;
+  std::string source_object_name;
+
   std::shared_ptr<S3MotrReader> motr_reader;
   std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
@@ -60,11 +63,16 @@ class S3CopyObjectAction : public S3ObjectAction {
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
   std::shared_ptr<MotrAPI> s3_motr_api;
   std::shared_ptr<S3ObjectMetadata> new_object_metadata;
+  std::shared_ptr<S3BucketMetadata> source_bucket_metadata;
 
   // TODO Edit the read_object() and initiate_data_streaming()
   // signatures accordingly in subsequent Check-ins, when the design evolves.
   void read_object();
   void initiate_data_streaming();
+  void get_source_bucket_and_object();
+  void fetch_source_bucket_info();
+  void fetch_source_bucket_info_success();
+  void fetch_source_bucket_info_failed();
 
  public:
   S3CopyObjectAction(

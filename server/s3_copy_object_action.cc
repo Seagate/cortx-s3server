@@ -47,6 +47,8 @@ S3CopyObjectAction::S3CopyObjectAction(
   old_object_oid = {0ULL, 0ULL};
   old_layout_id = -1;
   new_object_oid = {0ULL, 0ULL};
+  source_bucket_name = "";
+  source_object_name = "";
 
   if (motr_api) {
     s3_motr_api = std::move(motr_api);
@@ -80,6 +82,76 @@ void S3CopyObjectAction::setup_steps() {
   ACTION_TASK_ADD(S3CopyObjectAction::copy_object, this);
   ACTION_TASK_ADD(S3CopyObjectAction::save_metadata, this);
   ACTION_TASK_ADD(S3CopyObjectAction::send_response_to_s3_client, this);
+}
+
+void S3CopyObjectAction::get_source_bucket_and_object() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  std::string source = request->get_copy_object_source();
+  size_t separator_pos = source.find("/");
+  if (separator_pos != std::string::npos) {
+    source_bucket_name = source.substr(0, separator_pos);
+    source_object_name = source.substr(separator_pos + 1);
+  }
+  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
+}
+
+void S3CopyObjectAction::fetch_source_bucket_info() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Fetch Bucket metadata of bucket: %s\n",
+         source_bucket_name.c_str());
+  source_bucket_metadata = bucket_metadata_factory->create_bucket_metadata_obj(
+      request, source_bucket_name);
+  source_bucket_metadata->load(
+      std::bind(&S3CopyObjectAction::fetch_source_bucket_info_success, this),
+      std::bind(&S3CopyObjectAction::fetch_source_bucket_info_failed, this));
+  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
+}
+
+void S3CopyObjectAction::fetch_source_bucket_info_success() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  // fetch source object info
+  s3_log(S3_LOG_DEBUG, request_id, "Found source bucket: [%s] metadata\n",
+         source_bucket_name.c_str());
+  // fetch_source_object_info();
+  next();
+  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
+}
+
+void S3CopyObjectAction::fetch_source_bucket_info_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  s3_copy_action_state = S3CopyObjectActionState::validationFailed;
+
+  if (source_bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+    s3_log(S3_LOG_DEBUG, request_id, "Source bucket: [%s] not found\n",
+           source_bucket_name.c_str());
+    set_s3_error("NoSuchBucket");
+  } else if (source_bucket_metadata->get_state() ==
+             S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Source bucket metadata load operation failed due to pre launch "
+           "failure\n");
+    set_s3_error("ServiceUnavailable");
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id, "Source bucket metadata fetch failed\n");
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, request_id, "Exeting\n");
+}
+
+// Validate source bucket and object
+void S3CopyObjectAction::validate_copyobject_request() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  get_source_bucket_and_object();
+
+  if (source_bucket_name.empty() || source_object_name.empty()) {
+    set_s3_error("BadRequest");
+    send_response_to_s3_client();
+  } else {
+    fetch_source_bucket_info();
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 // read source object
@@ -123,13 +195,6 @@ void S3CopyObjectAction::fetch_object_info_failed() {
 
 // Destination object
 void S3CopyObjectAction::fetch_object_info_success() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-// Validate source bucket and object
-void S3CopyObjectAction::validate_copyobject_request() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
