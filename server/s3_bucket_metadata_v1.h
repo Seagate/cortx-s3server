@@ -88,6 +88,29 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
   void save_global_bucket_account_id_info_successful();
   void save_global_bucket_account_id_info_failed();
 
+  // CreateBucket operation does following (in context of account A1):
+  // 1. Create entry in global bucket list index (e.g., with key=bucket_name,
+  // value=A1)
+  // 2. On success of above(1), create further:
+  // 2.1 Create object list index
+  // 2.2 Create multipart list index
+  // 2.3 Create object version list index
+  // 2.4 Create entry in bucket metadata list index (key=A1/<bucket_name>,
+  // value=<bucket metadata info>)
+  // If any of the sub operations from 2.1 through 2.4 fail, CreateBucket
+  // operation is marked as failed, sending response to
+  // client(ServiceUnavailable).
+  // However, on failure in point (2) above, the entry created in point (1)
+  // above is never reverted/removed. This will lead to inconsistency in backend
+  // S3 metadata. i.e. entry is there in global bucket list index, but not in
+  // bucket metadata list index.
+  // Following function should be called in case of errors in points 2.1 through
+  // 2.4 to revert entry from global bucket list index
+  void cleanup_on_create_err_global_bucket_account_id_info(
+      S3MotrKVSWriterOpState op_state);
+  void cleanup_on_create_err_global_bucket_account_id_info_fini_cb();
+  S3BucketMetadataState on_cleanup_state;
+
   std::string get_bucket_metadata_index_key_name() {
     return bucket_owner_account_id + "/" + bucket_name;
   }

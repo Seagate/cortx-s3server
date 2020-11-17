@@ -416,8 +416,21 @@ TEST_F(S3BucketMetadataV1Test, CreateObjectListIndexFailed) {
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
       .Times(2)
       .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
+  action_under_test->global_bucket_index_metadata =
+      s3_global_bucket_index_metadata_factory
+          ->mock_global_bucket_index_metadata;
+  EXPECT_CALL(*(s3_global_bucket_index_metadata_factory
+                    ->mock_global_bucket_index_metadata),
+              remove(_, _))
+      .Times(1)
+      .WillOnce(Invoke([&](std::function<void(void)>,
+                           std::function<void(void)>) {
+         action_under_test
+             ->cleanup_on_create_err_global_bucket_account_id_info_fini_cb();
+       }));
   action_under_test->create_object_list_index_failed();
   EXPECT_EQ(action_under_test->state, S3BucketMetadataState::failed);
+  EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
 }
 
 TEST_F(S3BucketMetadataV1Test, CreateObjectListIndexFailedToLaunch) {
@@ -428,8 +441,22 @@ TEST_F(S3BucketMetadataV1Test, CreateObjectListIndexFailedToLaunch) {
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
       .Times(2)
       .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed_to_launch));
+  action_under_test->global_bucket_index_metadata =
+      s3_global_bucket_index_metadata_factory
+          ->mock_global_bucket_index_metadata;
+
+  EXPECT_CALL(*(s3_global_bucket_index_metadata_factory
+                    ->mock_global_bucket_index_metadata),
+              remove(_, _))
+      .Times(1)
+      .WillOnce(Invoke([&](std::function<void(void)>,
+                           std::function<void(void)>) {
+         action_under_test
+             ->cleanup_on_create_err_global_bucket_account_id_info_fini_cb();
+       }));
   action_under_test->create_object_list_index_failed();
   EXPECT_EQ(action_under_test->state, S3BucketMetadataState::failed_to_launch);
+  EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
 }
 
 TEST_F(S3BucketMetadataV1Test, CreateMultipartListIndexFailed) {
@@ -440,6 +467,18 @@ TEST_F(S3BucketMetadataV1Test, CreateMultipartListIndexFailed) {
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
       .Times(2)
       .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
+  action_under_test->global_bucket_index_metadata =
+      s3_global_bucket_index_metadata_factory
+          ->mock_global_bucket_index_metadata;
+  EXPECT_CALL(*(s3_global_bucket_index_metadata_factory
+                    ->mock_global_bucket_index_metadata),
+              remove(_, _))
+      .Times(1)
+      .WillOnce(Invoke([&](std::function<void(void)>,
+                           std::function<void(void)>) {
+         action_under_test
+             ->cleanup_on_create_err_global_bucket_account_id_info_fini_cb();
+       }));
   action_under_test->create_multipart_list_index_failed();
   EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
   EXPECT_EQ(action_under_test->state, S3BucketMetadataState::failed);
@@ -453,6 +492,18 @@ TEST_F(S3BucketMetadataV1Test, CreateMultipartListIndexFailedToLaunch) {
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
       .Times(2)
       .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed_to_launch));
+  action_under_test->global_bucket_index_metadata =
+      s3_global_bucket_index_metadata_factory
+          ->mock_global_bucket_index_metadata;
+  EXPECT_CALL(*(s3_global_bucket_index_metadata_factory
+                    ->mock_global_bucket_index_metadata),
+              remove(_, _))
+      .Times(1)
+      .WillOnce(Invoke([&](std::function<void(void)>,
+                           std::function<void(void)>) {
+         action_under_test
+             ->cleanup_on_create_err_global_bucket_account_id_info_fini_cb();
+       }));
   action_under_test->create_multipart_list_index_failed();
   EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
   EXPECT_EQ(action_under_test->state, S3BucketMetadataState::failed_to_launch);
@@ -547,6 +598,18 @@ TEST_F(S3BucketMetadataV1Test, SaveBucketInfoFailed) {
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
       .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
+  action_under_test->global_bucket_index_metadata =
+      s3_global_bucket_index_metadata_factory
+          ->mock_global_bucket_index_metadata;
+  EXPECT_CALL(*(s3_global_bucket_index_metadata_factory
+                    ->mock_global_bucket_index_metadata),
+              remove(_, _))
+      .Times(1)
+      .WillOnce(Invoke([&](std::function<void(void)>,
+                           std::function<void(void)>) {
+         action_under_test
+             ->cleanup_on_create_err_global_bucket_account_id_info_fini_cb();
+       }));
   action_under_test->save_bucket_info_failed();
   EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
   EXPECT_EQ(S3BucketMetadataState::failed, action_under_test->state);
@@ -559,6 +622,18 @@ TEST_F(S3BucketMetadataV1Test, SaveBucketInfoFailedToLaunch) {
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
       .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed_to_launch));
+  action_under_test->global_bucket_index_metadata =
+      s3_global_bucket_index_metadata_factory
+          ->mock_global_bucket_index_metadata;
+  EXPECT_CALL(*(s3_global_bucket_index_metadata_factory
+                    ->mock_global_bucket_index_metadata),
+              remove(_, _))
+      .Times(1)
+      .WillOnce(Invoke([&](std::function<void(void)>,
+                           std::function<void(void)>) {
+         action_under_test
+             ->cleanup_on_create_err_global_bucket_account_id_info_fini_cb();
+       }));
   action_under_test->save_bucket_info_failed();
   EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
   EXPECT_EQ(S3BucketMetadataState::failed_to_launch, action_under_test->state);
@@ -730,4 +805,3 @@ TEST_F(S3BucketMetadataV1Test, GetEncodedBucketAcl) {
   action_under_test->from_json(json_str);
   EXPECT_STREQ("PD94bg==", action_under_test->get_encoded_bucket_acl().c_str());
 }
-
