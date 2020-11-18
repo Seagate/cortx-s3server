@@ -35,15 +35,24 @@
 
 extern struct m0_uint128 global_instance_id;
 
-void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
+void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid,
+                                  std::string bucket, std::string object) {
   json_parsing_error = false;
   account_name = request->get_account_name();
   account_id = request->get_account_id();
   user_name = request->get_user_name();
   canonical_id = request->get_canonical_id();
   user_id = request->get_user_id();
-  bucket_name = request->get_bucket_name();
-  object_name = request->get_object_name();
+  if (bucket.empty()) {
+    bucket_name = request->get_bucket_name();
+  } else {
+    bucket_name = bucket;
+  }
+  if (object.empty()) {
+    object_name = request->get_object_name();
+  } else {
+    object_name = object;
+  }
   state = S3ObjectMetadataState::empty;
   is_multipart = ismultipart;
   upload_id = uploadid;
@@ -94,7 +103,7 @@ void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
 
 S3ObjectMetadata::S3ObjectMetadata(
     std::shared_ptr<S3RequestObject> req, bool ismultipart,
-    std::string uploadid,
+    std::string uploadid, std::string bucket, std::string object,
     std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<MotrAPI> motr_api)
@@ -102,7 +111,7 @@ S3ObjectMetadata::S3ObjectMetadata(
   request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
-  initialize(ismultipart, uploadid);
+  initialize(ismultipart, uploadid, bucket, object);
 
   if (motr_api) {
     s3_motr_api = std::move(motr_api);

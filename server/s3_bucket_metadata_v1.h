@@ -51,7 +51,6 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
 
  private:
   void fetch_global_bucket_account_id_info();
-  void fetch_global_bucket_account_id_info(std::string bucket);
   void fetch_global_bucket_account_id_info_success();
   void fetch_global_bucket_account_id_info_failed();
 

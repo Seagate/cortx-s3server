@@ -36,7 +36,7 @@ class MockS3ObjectMetadata : public S3ObjectMetadata {
  public:
   MockS3ObjectMetadata(std::shared_ptr<S3RequestObject> req,
                        std::shared_ptr<MockS3Motr> motr_api = nullptr)
-      : S3ObjectMetadata(req, false, "", nullptr, nullptr, motr_api) {}
+      : S3ObjectMetadata(req, false, "", "", "", nullptr, nullptr, motr_api) {}
   MOCK_METHOD0(get_state, S3ObjectMetadataState());
   MOCK_METHOD0(get_version_key_in_index, std::string());
   MOCK_METHOD0(get_oid, struct m0_uint128());

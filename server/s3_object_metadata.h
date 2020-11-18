@@ -127,7 +127,8 @@ class S3ObjectMetadata {
   // `true` in case of json parsing failure.
   bool json_parsing_error;
 
-  void initialize(bool is_multipart, std::string uploadid);
+  void initialize(bool is_multipart, std::string uploadid,
+                  std::string bucket = "", std::string object = "");
 
   // Any validations we want to do on metadata.
   void validate();
@@ -150,6 +151,7 @@ class S3ObjectMetadata {
  public:
   S3ObjectMetadata(std::shared_ptr<S3RequestObject> req,
                    bool ismultipart = false, std::string uploadid = "",
+                   std::string bucket = "", std::string object = "",
                    std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory =
                        nullptr,
                    std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory =

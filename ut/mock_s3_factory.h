@@ -79,7 +79,8 @@ class MockS3ObjectMetadataFactory : public S3ObjectMetadataFactory {
 
   std::shared_ptr<S3ObjectMetadata> create_object_metadata_obj(
       std::shared_ptr<S3RequestObject> req,
-      struct m0_uint128 indx_oid = {0ULL, 0ULL}) override {
+      struct m0_uint128 indx_oid = {0ULL, 0ULL}, std::string bucket = "",
+      std::string object = "") override {
     mock_object_metadata->set_object_list_index_oid(indx_oid);
     return mock_object_metadata;
   }
