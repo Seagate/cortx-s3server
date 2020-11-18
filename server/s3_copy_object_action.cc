@@ -215,7 +215,7 @@ void S3CopyObjectAction::validate_copyobject_request() {
   get_source_bucket_and_object();
 
   if (source_bucket_name.empty() || source_object_name.empty()) {
-    set_s3_error("BadRequest");
+    set_s3_error("InvalidArgument");
     send_response_to_s3_client();
   } else {
     fetch_source_bucket_info();
