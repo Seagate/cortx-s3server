@@ -93,9 +93,9 @@ class S3CopyObjectAction : public S3ObjectAction {
 
   void setup_steps();
 
-  void fetch_bucket_info_failed(); // destination bucket
-  void fetch_object_info_failed(); // destination object
-  void fetch_object_info_success(); // destination object
+  void fetch_bucket_info_failed();   // destination bucket
+  void fetch_object_info_failed();   // destination object
+  void fetch_object_info_success();  // destination object
 
   std::string get_response_xml();
   void validate_copyobject_request();
