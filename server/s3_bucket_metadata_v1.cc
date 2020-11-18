@@ -53,6 +53,8 @@ S3BucketMetadataV1::S3BucketMetadataV1(
   bucket_owner_account_id = "";
   // name of the index which holds all objects key values within a bucket
   salted_object_list_index_name = get_object_list_index_name();
+
+  should_cleanup_global_idx = false;
 }
 
 struct m0_uint128 S3BucketMetadataV1::get_bucket_metadata_list_index_oid() {
@@ -221,7 +223,7 @@ void S3BucketMetadataV1::update(std::function<void(void)> on_success,
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
-  save_bucket_info();
+  save_bucket_info(false);
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -381,7 +383,7 @@ void S3BucketMetadataV1::create_objects_version_list_index() {
 void S3BucketMetadataV1::create_objects_version_list_index_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   collision_attempt_count = 0;
-  save_bucket_info();
+  save_bucket_info(true);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -403,7 +405,7 @@ void S3BucketMetadataV1::create_objects_version_list_index_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3BucketMetadataV1::save_bucket_info() {
+void S3BucketMetadataV1::save_bucket_info(bool clean_glob_on_err) {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   assert(!bucket_owner_account_id.empty());
@@ -421,6 +423,7 @@ void S3BucketMetadataV1::save_bucket_info() {
     motr_kv_writer =
         motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
+  should_cleanup_global_idx = clean_glob_on_err;
   motr_kv_writer->put_keyval(
       bucket_metadata_list_index_oid, get_bucket_metadata_index_key_name(),
       this->to_json(),
@@ -466,8 +469,17 @@ void S3BucketMetadataV1::save_replica() {
 void S3BucketMetadataV1::save_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Saving of Bucket metadata failed\n");
-  cleanup_on_create_err_global_bucket_account_id_info(
-      motr_kv_writer->get_state());
+  auto kv_state = motr_kv_writer->get_state();
+  if (!should_cleanup_global_idx) {
+    if (kv_state == S3MotrKVSWriterOpState::failed_to_launch) {
+      state = S3BucketMetadataState::failed_to_launch;
+    } else {
+      state = S3BucketMetadataState::failed;
+    }
+    this->handler_on_failed();
+  } else {
+    cleanup_on_create_err_global_bucket_account_id_info(kv_state);
+  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

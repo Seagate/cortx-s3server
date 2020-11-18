@@ -598,6 +598,31 @@ TEST_F(S3BucketMetadataV1Test, SaveBucketInfoFailed) {
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
       .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
+  action_under_test->save_bucket_info_failed();
+  EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
+  EXPECT_EQ(S3BucketMetadataState::failed, action_under_test->state);
+}
+
+TEST_F(S3BucketMetadataV1Test, SaveBucketInfoFailedToLaunch) {
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_motr_kvs_writer;
+  action_under_test->handler_on_failed =
+      std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed_to_launch));
+  action_under_test->save_bucket_info_failed();
+  EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
+  EXPECT_EQ(S3BucketMetadataState::failed_to_launch, action_under_test->state);
+}
+
+TEST_F(S3BucketMetadataV1Test, SaveBucketInfoFailedWithGlobCleanup) {
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_motr_kvs_writer;
+  action_under_test->handler_on_failed =
+      std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
+  action_under_test->should_cleanup_global_idx = true;
   action_under_test->global_bucket_index_metadata =
       s3_global_bucket_index_metadata_factory
           ->mock_global_bucket_index_metadata;
@@ -615,13 +640,14 @@ TEST_F(S3BucketMetadataV1Test, SaveBucketInfoFailed) {
   EXPECT_EQ(S3BucketMetadataState::failed, action_under_test->state);
 }
 
-TEST_F(S3BucketMetadataV1Test, SaveBucketInfoFailedToLaunch) {
+TEST_F(S3BucketMetadataV1Test, SaveBucketInfoFailedToLaunchWithGlobCleanup) {
   action_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_motr_kvs_writer;
   action_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
       .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed_to_launch));
+  action_under_test->should_cleanup_global_idx = true;
   action_under_test->global_bucket_index_metadata =
       s3_global_bucket_index_metadata_factory
           ->mock_global_bucket_index_metadata;

@@ -70,7 +70,7 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
   void create_objects_version_list_index_successful();
   void create_objects_version_list_index_failed();
 
-  void save_bucket_info();
+  void save_bucket_info(bool clean_glob_on_err = false);
   void save_bucket_info_successful();
   void save_bucket_info_failed();
   void save_replica();
@@ -110,6 +110,7 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
       S3MotrKVSWriterOpState op_state);
   void cleanup_on_create_err_global_bucket_account_id_info_fini_cb();
   S3BucketMetadataState on_cleanup_state;
+  bool should_cleanup_global_idx;
 
   std::string get_bucket_metadata_index_key_name() {
     return bucket_owner_account_id + "/" + bucket_name;
@@ -208,6 +209,9 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
   FRIEND_TEST(S3BucketMetadataV1Test, SaveReplica);
   FRIEND_TEST(S3BucketMetadataV1Test, SaveBucketInfoFailed);
   FRIEND_TEST(S3BucketMetadataV1Test, SaveBucketInfoFailedToLaunch);
+  FRIEND_TEST(S3BucketMetadataV1Test, SaveBucketInfoFailedWithGlobCleanup);
+  FRIEND_TEST(S3BucketMetadataV1Test,
+              SaveBucketInfoFailedToLaunchWithGlobCleanup);
   FRIEND_TEST(S3BucketMetadataV1Test, RemovePresentMetadata);
   FRIEND_TEST(S3BucketMetadataV1Test, RemoveAbsentMetadata);
   FRIEND_TEST(S3BucketMetadataV1Test, RemoveBucketInfo);
