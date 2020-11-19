@@ -31,6 +31,7 @@ import com.novell.ldap.LDAPConnection;
 import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPSearchResults;
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.AccountDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.fi.FaultPoints;
@@ -253,8 +254,9 @@ public class AccountImpl implements AccountDAO {
             LOGGER.error("Failed to fetch accounts.");
             throw new DataAccessException("Failed to fetch accounts.\n" + ex);
         }
-        int ldapResultCount = 0;
         if (ldapResults != null) {
+          int maxLdapResults = AuthServerConfig.getLdapSearchResultsSizeLimit();
+          int resultCount = 0;
         while (ldapResults.hasMore()) {
             LDAPEntry ldapEntry;
             account = new Account();
@@ -264,19 +266,13 @@ public class AccountImpl implements AccountDAO {
                       "LDAP_GET_ATTR_FAIL")) {
                     throw new LDAPException();
                 }
-                // Prevent client failure for fetching more than 500 entries
-                if (ldapResultCount < 500) {
-                  ldapEntry = ldapResults.next();
-                } else {
-                  LOGGER.info(
-                      "Considering only 500 accounds and ignoring remaining " +
-                      "records");
-                  break;
-                }
+                ldapEntry = ldapResults.next();
             } catch (LDAPException ldapException) {
-                LOGGER.error("Failed to read ldapEntry.");
-                throw new DataAccessException("Failed to read ldapEntry.\n" +
-                                              ldapException);
+              LOGGER.error("Failed to read ldapEntry. " + " Message: " +
+                           ldapException.getMessage() + " Cause: " +
+                           ldapException.getCause());
+              throw new DataAccessException("Failed to read ldapEntry.\n" +
+                                            ldapException);
             }
             account.setName(
                 ldapEntry.getAttribute(LDAPUtils.ORGANIZATIONAL_NAME)
@@ -289,7 +285,11 @@ public class AccountImpl implements AccountDAO {
                 ldapEntry.getAttribute(LDAPUtils.CANONICAL_ID)
                     .getStringValue());
             accounts.add(account);
-            ldapResultCount++;
+            ++resultCount;
+            if (resultCount >= maxLdapResults) {
+              LOGGER.info("Fetched max records of accounts " + maxLdapResults);
+              break;
+            }
         }
         }
         Account[] accountList = new Account[accounts.size()];
