@@ -343,4 +343,4 @@ Refer to our [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/ma
 
 Please refer to the [Support](../SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
 
-CORTX S3 Server submodule was last tested by @saumyasunder on 3/11/2020 on VMware Workstation 16 Pro.
+**CORTX S3 Server submodule was last tested by @saumyasunder on 3/11/2020 on VMware Workstation 16 Pro.**
