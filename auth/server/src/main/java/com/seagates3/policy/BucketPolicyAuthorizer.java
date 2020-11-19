@@ -149,6 +149,7 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
                 response = responseGenerator.ok();
               } else {
                 response = responseGenerator.AccessDenied();
+                break;
               }
             }
           }
