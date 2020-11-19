@@ -33,6 +33,7 @@ ldapSSLPort=636
 enableSSLToLdap=false
 ldapMaxCons=100
 ldapMaxSharedCons=100
+ldapSearchResultsSizeLimit=1000
 ldapLoginDN=cn=sgiamadmin,dc=seagate,dc=com
 # ldapLoginPW value needs to be encrypted and updated here
 # Use AuthPassEncryptCLI.jar CLI to encrypt the password
