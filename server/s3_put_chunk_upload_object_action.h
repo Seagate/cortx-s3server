@@ -54,6 +54,7 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   int layout_id;
+  unsigned motr_write_payload_size;
   struct m0_uint128 old_object_oid;
   int old_layout_id;
   struct m0_uint128 new_object_oid;

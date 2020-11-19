@@ -328,6 +328,8 @@ void S3PutChunkUploadObjectAction::create_object() {
 
   layout_id = S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
       request->get_data_length());
+  motr_write_payload_size =
+      S3Option::get_instance()->get_motr_write_payload_size(layout_id);
 
   motr_writer->create_object(
       std::bind(&S3PutChunkUploadObjectAction::create_object_successful, this),
@@ -473,7 +475,7 @@ void S3PutChunkUploadObjectAction::initiate_data_streaming() {
       request->listen_for_incoming_data(
           std::bind(&S3PutChunkUploadObjectAction::consume_incoming_content,
                     this),
-          S3Option::get_instance()->get_motr_write_payload_size(layout_id));
+          motr_write_payload_size);
     }
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -494,7 +496,7 @@ void S3PutChunkUploadObjectAction::consume_incoming_content() {
   if (!motr_write_in_progress) {
     if (request->get_buffered_input()->is_freezed() ||
         request->get_buffered_input()->get_content_length() >=
-            S3Option::get_instance()->get_motr_write_payload_size(layout_id)) {
+            motr_write_payload_size) {
       write_object(request->get_buffered_input());
       if (!motr_write_in_progress && write_failed) {
         s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -504,7 +506,7 @@ void S3PutChunkUploadObjectAction::consume_incoming_content() {
   }
   if (!request->get_buffered_input()->is_freezed() &&
       request->get_buffered_input()->get_content_length() >=
-          (S3Option::get_instance()->get_motr_write_payload_size(layout_id) *
+          (motr_write_payload_size *
            S3Option::get_instance()->get_read_ahead_multiple())) {
     s3_log(S3_LOG_DEBUG, request_id, "Pausing with Buffered length = %zu\n",
            request->get_buffered_input()->get_content_length());
@@ -541,10 +543,15 @@ void S3PutChunkUploadObjectAction::write_object(
   // Also send any ready chunk data for auth
   send_chunk_details_if_any();
 
+  size_t content_length = buffer->get_content_length();
+
+  if (content_length > motr_write_payload_size) {
+    content_length = motr_write_payload_size;
+  }
   motr_writer->write_content(
       std::bind(&S3PutChunkUploadObjectAction::write_object_successful, this),
       std::bind(&S3PutChunkUploadObjectAction::write_object_failed, this),
-      buffer);
+      buffer->get_buffers(content_length), buffer->size_of_each_evbuf);
   motr_write_in_progress = true;
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -554,6 +561,8 @@ void S3PutChunkUploadObjectAction::write_object_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_DEBUG, request_id, "Write to motr successful\n");
   motr_write_in_progress = false;
+
+  request->get_buffered_input()->flush_used_buffers();
 
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -577,9 +586,8 @@ void S3PutChunkUploadObjectAction::write_object_successful() {
   if (/* buffered data len is at least equal max we can write to motr in one
          write */
       request->get_buffered_input()->get_content_length() >=
-          S3Option::get_instance()->get_motr_write_payload_size(
-              layout_id) || /* we have all the data buffered and ready to
-                               write */
+          motr_write_payload_size ||
+      // we have all the data buffered and ready to write
       (request->get_buffered_input()->is_freezed() &&
        request->get_buffered_input()->get_content_length() > 0)) {
     write_object(request->get_buffered_input());
@@ -605,6 +613,8 @@ void S3PutChunkUploadObjectAction::write_object_failed() {
   motr_write_in_progress = false;
   write_failed = true;
   s3_put_chunk_action_state = S3PutChunkUploadObjectActionState::writeFailed;
+
+  request->get_buffered_input()->flush_used_buffers();
 
   request->pause();  // pause any further reading from client
   get_auth_client()->abort_chunk_auth_op();

@@ -346,8 +346,12 @@ void S3PutMultiObjectAction::compute_part_offset() {
   // Create writer to write from given offset as per the partnumber
   motr_writer = motr_writer_factory->create_motr_writer(
       request, object_multipart_metadata->get_oid(), offset);
+
   layout_id = object_multipart_metadata->get_layout_id();
   motr_writer->set_layout_id(layout_id);
+
+  motr_write_payload_size =
+      S3Option::get_instance()->get_motr_write_payload_size(layout_id);
 
   // FIXME multipart uploads are corrupted when partsize is not aligned with
   // motr unit size for given layout_id. We block such uploads temporarily
@@ -398,7 +402,7 @@ void S3PutMultiObjectAction::initiate_data_streaming() {
       // Start streaming, logically pausing action till we get data.
       request->listen_for_incoming_data(
           std::bind(&S3PutMultiObjectAction::consume_incoming_content, this),
-          S3Option::get_instance()->get_motr_write_payload_size(layout_id));
+          motr_write_payload_size);
     }
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -422,7 +426,7 @@ void S3PutMultiObjectAction::consume_incoming_content() {
   if (!motr_write_in_progress) {
     if (request->get_buffered_input()->is_freezed() ||
         request->get_buffered_input()->get_content_length() >=
-            S3Option::get_instance()->get_motr_write_payload_size(layout_id)) {
+            motr_write_payload_size) {
       write_object(request->get_buffered_input());
       if (!motr_write_in_progress && motr_write_completed) {
         s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -432,7 +436,7 @@ void S3PutMultiObjectAction::consume_incoming_content() {
   }
   if (!request->get_buffered_input()->is_freezed() &&
       request->get_buffered_input()->get_content_length() >=
-          (S3Option::get_instance()->get_motr_write_payload_size(layout_id) *
+          (motr_write_payload_size *
            S3Option::get_instance()->get_read_ahead_multiple())) {
     s3_log(S3_LOG_DEBUG, request_id, "Pausing with Buffered length = %zu\n",
            request->get_buffered_input()->get_content_length());
@@ -463,16 +467,24 @@ void S3PutMultiObjectAction::send_chunk_details_if_any() {
 
 void S3PutMultiObjectAction::write_object(
     std::shared_ptr<S3AsyncBufferOptContainer> buffer) {
+
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
   if (request->is_chunked()) {
     // Also send any ready chunk data for auth
     send_chunk_details_if_any();
   }
-  motr_write_in_progress = true;
+  size_t content_length = buffer->get_content_length();
 
+  if (content_length > motr_write_payload_size) {
+    content_length = motr_write_payload_size;
+  }
   motr_writer->write_content(
       std::bind(&S3PutMultiObjectAction::write_object_successful, this),
-      std::bind(&S3PutMultiObjectAction::write_object_failed, this), buffer);
+      std::bind(&S3PutMultiObjectAction::write_object_failed, this),
+      buffer->get_buffers(content_length), buffer->size_of_each_evbuf);
+
+  motr_write_in_progress = true;
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -480,6 +492,9 @@ void S3PutMultiObjectAction::write_object(
 void S3PutMultiObjectAction::write_object_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   motr_write_in_progress = false;
+
+  request->get_buffered_input()->flush_used_buffers();
+
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
@@ -499,7 +514,7 @@ void S3PutMultiObjectAction::write_object_successful() {
   if (/* buffered data len is at least equal max we can write to motr in one
          write */
       request->get_buffered_input()->get_content_length() >=
-          S3Option::get_instance()->get_motr_write_payload_size(layout_id) ||
+          motr_write_payload_size ||
       /* we have all the data buffered and ready to write */
       (request->get_buffered_input()->is_freezed() &&
        request->get_buffered_input()->get_content_length() > 0)) {
@@ -528,6 +543,8 @@ void S3PutMultiObjectAction::write_object_failed() {
 
   motr_write_in_progress = false;
   motr_write_completed = true;
+
+  request->get_buffered_input()->flush_used_buffers();
 
   if (request->is_s3_client_read_error()) {
     client_read_error();

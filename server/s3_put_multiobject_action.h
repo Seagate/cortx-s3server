@@ -44,6 +44,7 @@ class S3PutMultiObjectAction : public S3ObjectAction {
   int part_number;
   std::string upload_id;
   int layout_id;
+  unsigned motr_write_payload_size;
 
   int get_part_number() {
     return atoi((request->get_query_string_value("partNumber")).c_str());
