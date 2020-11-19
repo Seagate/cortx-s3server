@@ -531,7 +531,7 @@ void fini_auth_ssl() {
 // This index will be holding the ids for the bucket
 int create_global_index(struct m0_uint128 &root_index_oid,
                         const uint64_t &u_lo_index_offset) {
-  int rc;
+  int rc = 0;
 
   const auto motr_op_wait_period = g_option_instance->get_motr_op_wait_period();
   unsigned n_retry = g_option_instance->get_max_retry_count() + 1;
