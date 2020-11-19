@@ -322,6 +322,12 @@ public class AuthServerConfig {
                 authServerConfig.getProperty("nettyEventExecutorThreads"));
     }
 
+   public
+    static int getLdapSearchResultsSizeLimit() {
+      return Integer.parseInt(
+          authServerConfig.getProperty("ldapSearchResultsSizeLimit"));
+    }
+
     public static boolean isFaultInjectionEnabled() {
         return Boolean.valueOf(authServerConfig.getProperty("enableFaultInjection"));
     }
