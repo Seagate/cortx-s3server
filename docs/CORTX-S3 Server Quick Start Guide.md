@@ -11,10 +11,12 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 
 ### 1.0 Prerequisites
 
+:page_with_curl: **Note:** The S3 submodule has a dependency on [Provisioner](https://github.com/Seagate/cortx-prvsnr/tree/main), [HA](https://github.com/Seagate/cortx-ha/tree/main), and [Motr](https://github.com/Seagate/cortx-motr/tree/main) submodules.
+
 <details>
 <summary>Click to expand!</summary>
 <p>
-
+    
 1. You'll need to set up SSC, Cloud VM, or a local VM on VMWare Fusion or Oracle VirtualBox.
 2. As a CORTX contributor you will need to refer, clone, contribute, and commit changes via the GitHub server. You can access the latest code via [Github](https://github.com/Seagate/cortx).
 3. You'll need a valid GitHub Account.
