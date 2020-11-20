@@ -192,6 +192,8 @@ void S3GetBucketAction::get_next_objects_successful() {
       bucket_metadata->get_object_list_index_oid();
   bool atleast_one_json_error = false;
   bool last_key_in_common_prefix = false;
+  bool last_key_prefix_match = false;
+  bool skip_no_further_prefix_match = false;
   std::string last_common_prefix = "";
   auto& kvps = motr_kv_reader->get_key_values();
   size_t length = kvps.size();
@@ -214,10 +216,24 @@ void S3GetBucketAction::get_next_objects_successful() {
         // Filter out by prefix
         if (kv.first.find(request_prefix) == std::string::npos) {
           // Key does not start with specified prefix; key filetered out.
-          // Check the next key.
+          // If previous/last key was matching the prefix, stop and break
+          // further enumeration.
+          if (last_key_prefix_match) {
+            // No further prefix match will occur (as items in Motr storage are
+            // arranaged in lexical order)
+            last_key_prefix_match = false;
+            skip_no_further_prefix_match = true;
+            // Set length to zero to indicate truncation is false
+            length = 0;
+            s3_log(
+                S3_LOG_DEBUG, request_id,
+                "No further prefix match. Skipping further object listing\n");
+            break;
+          }
           if (--length == 0) {
             break;
           } else {
+            // Check the next key
             continue;
           }
         }
@@ -262,6 +278,7 @@ void S3GetBucketAction::get_next_objects_successful() {
     } else if (!request_prefix.empty() && request_delimiter.empty()) {
       // Filter out by prefix
       if (kv.first.find(request_prefix) == 0) {
+        last_key_prefix_match = true;
         if (object->from_json(kv.second.second) != 0) {
           atleast_one_json_error = true;
           s3_log(S3_LOG_ERROR, request_id,
@@ -271,6 +288,21 @@ void S3GetBucketAction::get_next_objects_successful() {
                  kv.first.c_str(), kv.second.second.c_str());
         } else {
           object_list->add_object(object);
+        }
+      } else {
+        // Prefix does not match
+        // If previous/last key was matching the prefix, stop and break further
+        // enumeration.
+        if (last_key_prefix_match) {
+          // No further prefix match will occur (as items in Motr storage are
+          // arranaged in lexical order)
+          last_key_prefix_match = false;
+          skip_no_further_prefix_match = true;
+          // Set length to zero to indicate truncation is false
+          length = 0;
+          s3_log(S3_LOG_DEBUG, request_id,
+                 "No further prefix match. Skipping further object listing\n");
+          break;
         }
       }
     } else if (request_prefix.empty() && !request_delimiter.empty()) {
@@ -309,6 +341,7 @@ void S3GetBucketAction::get_next_objects_successful() {
       // both prefix and delimiter are not empty
       bool prefix_match = (kv.first.find(request_prefix) == 0) ? true : false;
       if (prefix_match) {
+        last_key_prefix_match = true;
         delimiter_pos =
             kv.first.find(request_delimiter, request_prefix.length());
         if (delimiter_pos == std::string::npos) {
@@ -341,7 +374,22 @@ void S3GetBucketAction::get_next_objects_successful() {
             last_key_in_common_prefix = true;
           }
         }
-      }  // else no prefix match, filter it out
+      } else {
+        // Prefix does not match
+        // If previous/last key was matching the prefix, stop and break further
+        // enumeration.
+        if (last_key_prefix_match) {
+          // No further prefix match will occur (as items in Motr storage are
+          // arranaged in lexical order)
+          last_key_prefix_match = false;
+          skip_no_further_prefix_match = true;
+          // Set length to zero to indicate truncation is false
+          length = 0;
+          s3_log(S3_LOG_DEBUG, request_id,
+                 "No further prefix match. Skipping further object listing\n");
+          break;
+        }
+      }
     }
 
     if ((--length == 0) ||
@@ -362,7 +410,8 @@ void S3GetBucketAction::get_next_objects_successful() {
 
   // We ask for more if there is any.
   key_Count = object_list->size() + object_list->common_prefixes_size();
-  if ((key_Count == max_keys) || (kvps.size() < max_record_count)) {
+  if ((key_Count == max_keys) || (kvps.size() < max_record_count) ||
+      (skip_no_further_prefix_match)) {
     // Go ahead and respond.
     if (key_Count == max_keys && length != 0) {
       object_list->set_response_is_truncated(true);
