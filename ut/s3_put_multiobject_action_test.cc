@@ -35,23 +35,6 @@ using ::testing::AtLeast;
 using ::testing::DefaultValue;
 using ::testing::HasSubstr;
 
-#define OBJECT_KEY_LENGTH_MORE_THAN_1_KB                                       \
-  "vaxsfhwmbuegarlllxjyppqbzewahzdgnykqcbmjnezicblmveddlnvuejvxtjkogpqmnexvpi" \
-  "aqufqsxozqzsxxtmmlnukpfnpvtepdxvxqmnwnsceaujybilbqwwhhofxhlbvqeqbcbbagijtg" \
-  "emhhfudggqdwpowidypjvxwwjayhghicnwupyritzpoobtwsbhihvzxnqlycpdwomlswvsvvvv" \
-  "puhlfvhckzyazsvqvrubobhlrajnytsvhnboykzzdjtvzxsacdjawgztgqgesyxgyugmfwwoxi" \
-  "aksrdtbiudlppssyoylbtazbsfvaxcysnetayhkpbtegvdxyowxfofnrkigayqtateseujcngr" \
-  "rpfkqypqehvezuoxaqxonlxagmvbbaujjgvnhzvcgasuetslydhvxgttepjmxszczjcvsgrgjk" \
-  "hedysupjtrcvtwhhgudpjgtmtrsmusucjtmzqejpfvmzsvjshkzzhtmdowgowvzwiqdhthsdbs" \
-  "nxyhapevigrtvhbzpylibfxpfoxiwoyqfyzxskefjththojqgglhmhbzhluyoycxjuwbnkdhms" \
-  "stycomxqzvvpvvkzoxhwvmpbwldqcrpsbpwrozymppbnnewmmmrxdxjqthetmfvjpeldndmomd" \
-  "udinwjiixsidcxpbacrtlwmgaljzaglsjcbfnsfqyiawieycdvdhatwzcbypcyfsnpeuxmiugs" \
-  "desnxhwywgtopqfbkxbpewohuecyneojfeksgukhsxalqxwzitszilqchkdokgaakogpswctds" \
-  "uybydalwzznotdvmynxlkomxfeplorgzkvveuslhmmnyeufsjqkzoomzdfvaaaxzykmgcmqdqx" \
-  "itjtmpkriwtihthlewlebaiekhzjctlnlwqrgwwhjulqkjfdsxhkxjyrahmmnqvyslxcbcuzob" \
-  "mbwxopritmxzjtvnqbszdhfftmfedpxrkiktorpvibtcoatvkvpqvevyhsscoxshpbwjhzfwmv" \
-  "ccvbjrnjfkchbrvgctwxhfaqoqhm"
-
 //++
 // Many of the test cases here taken directly from
 // s3_put_chunk_upload_object_action_test.cc
@@ -324,9 +307,26 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        ValidateObjectKeyLengthNegativeCase) {
+  std::string too_long_object_name(
+      "vaxsfhwmbuegarlllxjyppqbzewahzdgnykqcbmjnezicblmveddlnvuejvxtjkogpqmnexv"
+      "piaqufqsxozqzsxxtmmlnukpfnpvtepdxvxqmnwnsceaujybilbqwwhhofxhlbvqeqbcbbag"
+      "ijtgemhhfudggqdwpowidypjvxwwjayhghicnwupyritzpoobtwsbhihvzxnqlycpdwomlsw"
+      "vsvvvvpuhlfvhckzyazsvqvrubobhlrajnytsvhnboykzzdjtvzxsacdjawgztgqgesyxgyu"
+      "gmfwwoxiaksrdtbiudlppssyoylbtazbsfvaxcysnetayhkpbtegvdxyowxfofnrkigayqta"
+      "teseujcngrrpfkqypqehvezuoxaqxonlxagmvbbaujjgvnhzvcgasuetslydhvxgttepjmxs"
+      "zczjcvsgrgjkhedysupjtrcvtwhhgudpjgtmtrsmusucjtmzqejpfvmzsvjshkzzhtmdowgo"
+      "wvzwiqdhthsdbsnxyhapevigrtvhbzpylibfxpfoxiwoyqfyzxskefjththojqgglhmhbzhl"
+      "uyoycxjuwbnkdhmsstycomxqzvvpvvkzoxhwvmpbwldqcrpsbpwrozymppbnnewmmmrxdxjq"
+      "thetmfvjpeldndmomdudinwjiixsidcxpbacrtlwmgaljzaglsjcbfnsfqyiawieycdvdhat"
+      "wzcbypcyfsnpeuxmiugsdesnxhwywgtopqfbkxbpewohuecyneojfeksgukhsxalqxwzitsz"
+      "ilqchkdokgaakogpswctdsuybydalwzznotdvmynxlkomxfeplorgzkvveuslhmmnyeufsjq"
+      "kzoomzdfvaaaxzykmgcmqdqxitjtmpkriwtihthlewlebaiekhzjctlnlwqrgwwhjulqkjfd"
+      "sxhkxjyrahmmnqvyslxcbcuzobmbwxopritmxzjtvnqbszdhfftmfedpxrkiktorpvibtcoa"
+      "tvkvpqvevyhsscoxshpbwjhzfwmvccvbjrnjfkchbrvgctwxhfaqoqhm");
+
   action_under_test->part_number = MINIMUM_PART_NUMBER;
   EXPECT_CALL(*ptr_mock_request, get_object_name())
-      .WillOnce(ReturnRef(OBJECT_KEY_LENGTH_MORE_THAN_1_KB));
+      .WillOnce(ReturnRef(too_long_object_name));
 
   action_under_test->check_part_details();
 
@@ -654,6 +654,8 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        InitiateDataStreamingWeHaveAllData) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
+
   EXPECT_CALL(*ptr_mock_request, get_data_length())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(1024));
@@ -672,6 +674,8 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        ConsumeIncomingShouldWriteIfWeAllData) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
+
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(true));
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
@@ -685,9 +689,11 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 }
 
 // Write not in progress, expecting more, we have exact what we can write
-/*TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
+TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        ConsumeIncomingShouldWriteIfWeExactData) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
+
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(false));
   // S3Option::get_instance()->get_motr_write_payload_size() = 1048576 * 1
@@ -704,12 +710,14 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   action_under_test->consume_incoming_content();
 
   EXPECT_TRUE(action_under_test->motr_write_in_progress);
-}*/
+}
 
 // Write not in progress, expecting more, we have more than we can write
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        ConsumeIncomingShouldWriteIfWeHaveMoreData) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
+
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(false));
   // S3Option::get_instance()->get_motr_write_payload_size() = 1048576 * 1
@@ -732,6 +740,8 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        ConsumeIncomingShouldPauseWhenWeHaveTooMuch) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
+
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(false));
   // S3Option::get_instance()->get_motr_write_payload_size() = 1048576 * 1
@@ -950,7 +960,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 }
 
 // We have some data but not all and but have more to write
-/*TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
+TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        WriteObjectSuccessfulDoNextStepWhenAllIsWritten) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   action_under_test->_set_layout_id(layout_id);
@@ -973,10 +983,10 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 
   EXPECT_EQ(1, call_count_one);
   EXPECT_FALSE(action_under_test->motr_write_in_progress);
-}*/
+}
 
 // We expecting more and not enough to write
-/*TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
+TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        WriteObjectSuccessfulShouldRestartReadingData) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   action_under_test->_set_layout_id(layout_id);
@@ -999,7 +1009,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   action_under_test->write_object_successful();
 
   EXPECT_FALSE(action_under_test->motr_write_in_progress);
-}*/
+}
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMetadata) {
   action_under_test->part_metadata = part_meta_factory->mock_part_metadata;

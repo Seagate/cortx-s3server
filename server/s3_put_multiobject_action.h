@@ -72,7 +72,8 @@ class S3PutMultiObjectAction : public S3ObjectAction {
   std::shared_ptr<S3AuthClientFactory> auth_factory;
 
   // Used only for UT
-  void _set_layout_id(int layoutid) { layout_id = layoutid; }
+ protected:
+  void _set_layout_id(int layoutid);
 
  public:
   S3PutMultiObjectAction(

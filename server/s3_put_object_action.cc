@@ -254,6 +254,14 @@ void S3PutObjectAction::fetch_object_info_success() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+void S3PutObjectAction::_set_layout_id(int layout_id) {
+  assert(layout_id > 0 && layout_id < 15);
+  this->layout_id = layout_id;
+
+  motr_write_payload_size =
+      S3Option::get_instance()->get_motr_write_payload_size(layout_id);
+}
+
 void S3PutObjectAction::create_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_timer.start();
@@ -263,11 +271,8 @@ void S3PutObjectAction::create_object() {
   } else {
     motr_writer->set_oid(new_object_oid);
   }
-
-  layout_id = S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
-      request->get_content_length());
-  motr_write_payload_size =
-      S3Option::get_instance()->get_motr_write_payload_size(layout_id);
+  _set_layout_id(S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
+      request->get_content_length()));
 
   motr_writer->create_object(
       std::bind(&S3PutObjectAction::create_object_successful, this),

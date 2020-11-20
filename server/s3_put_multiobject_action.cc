@@ -310,6 +310,14 @@ void S3PutMultiObjectAction::fetch_firstpart_info_failed() {
   send_response_to_s3_client();
 }
 
+void S3PutMultiObjectAction::_set_layout_id(int layout_id) {
+  assert(layout_id > 0 && layout_id < 15);
+  this->layout_id = layout_id;
+
+  motr_write_payload_size =
+      S3Option::get_instance()->get_motr_write_payload_size(layout_id);
+}
+
 void S3PutMultiObjectAction::compute_part_offset() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   size_t offset = 0;
@@ -347,11 +355,8 @@ void S3PutMultiObjectAction::compute_part_offset() {
   motr_writer = motr_writer_factory->create_motr_writer(
       request, object_multipart_metadata->get_oid(), offset);
 
-  layout_id = object_multipart_metadata->get_layout_id();
+  _set_layout_id(object_multipart_metadata->get_layout_id());
   motr_writer->set_layout_id(layout_id);
-
-  motr_write_payload_size =
-      S3Option::get_instance()->get_motr_write_payload_size(layout_id);
 
   // FIXME multipart uploads are corrupted when partsize is not aligned with
   // motr unit size for given layout_id. We block such uploads temporarily

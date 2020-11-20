@@ -38,23 +38,6 @@ using ::testing::ReturnRef;
 using ::testing::AtLeast;
 using ::testing::DefaultValue;
 
-#define OBJECT_KEY_LENGTH_MORE_THAN_1_KB                                       \
-  "vaxsfhwmbuegarlllxjyppqbzewahzdgnykqcbmjnezicblmveddlnvuejvxtjkogpqmnexvpi" \
-  "aqufqsxozqzsxxtmmlnukpfnpvtepdxvxqmnwnsceaujybilbqwwhhofxhlbvqeqbcbbagijtg" \
-  "emhhfudggqdwpowidypjvxwwjayhghicnwupyritzpoobtwsbhihvzxnqlycpdwomlswvsvvvv" \
-  "puhlfvhckzyazsvqvrubobhlrajnytsvhnboykzzdjtvzxsacdjawgztgqgesyxgyugmfwwoxi" \
-  "aksrdtbiudlppssyoylbtazbsfvaxcysnetayhkpbtegvdxyowxfofnrkigayqtateseujcngr" \
-  "rpfkqypqehvezuoxaqxonlxagmvbbaujjgvnhzvcgasuetslydhvxgttepjmxszczjcvsgrgjk" \
-  "hedysupjtrcvtwhhgudpjgtmtrsmusucjtmzqejpfvmzsvjshkzzhtmdowgowvzwiqdhthsdbs" \
-  "nxyhapevigrtvhbzpylibfxpfoxiwoyqfyzxskefjththojqgglhmhbzhluyoycxjuwbnkdhms" \
-  "stycomxqzvvpvvkzoxhwvmpbwldqcrpsbpwrozymppbnnewmmmrxdxjqthetmfvjpeldndmomd" \
-  "udinwjiixsidcxpbacrtlwmgaljzaglsjcbfnsfqyiawieycdvdhatwzcbypcyfsnpeuxmiugs" \
-  "desnxhwywgtopqfbkxbpewohuecyneojfeksgukhsxalqxwzitszilqchkdokgaakogpswctds" \
-  "uybydalwzznotdvmynxlkomxfeplorgzkvveuslhmmnyeufsjqkzoomzdfvaaaxzykmgcmqdqx" \
-  "itjtmpkriwtihthlewlebaiekhzjctlnlwqrgwwhjulqkjfdsxhkxjyrahmmnqvyslxcbcuzob" \
-  "mbwxopritmxzjtvnqbszdhfftmfedpxrkiktorpvibtcoatvkvpqvevyhsscoxshpbwjhzfwmv" \
-  "ccvbjrnjfkchbrvgctwxhfaqoqhm"
-
 #define CREATE_BUCKET_METADATA                                            \
   do {                                                                    \
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _)) \
@@ -196,8 +179,25 @@ TEST_F(S3PutObjectActionTest, ValidateObjectKeyLengthPositiveCase) {
 }
 
 TEST_F(S3PutObjectActionTest, ValidateObjectKeyLengthNegativeCase) {
+  std::string too_long_obj_name(
+      "vaxsfhwmbuegarlllxjyppqbzewahzdgnykqcbmjnezicblmveddlnvuejvxtjkogpqmnexv"
+      "piaqufqsxozqzsxxtmmlnukpfnpvtepdxvxqmnwnsceaujybilbqwwhhofxhlbvqeqbcbbag"
+      "ijtgemhhfudggqdwpowidypjvxwwjayhghicnwupyritzpoobtwsbhihvzxnqlycpdwomlsw"
+      "vsvvvvpuhlfvhckzyazsvqvrubobhlrajnytsvhnboykzzdjtvzxsacdjawgztgqgesyxgyu"
+      "gmfwwoxiaksrdtbiudlppssyoylbtazbsfvaxcysnetayhkpbtegvdxyowxfofnrkigayqta"
+      "teseujcngrrpfkqypqehvezuoxaqxonlxagmvbbaujjgvnhzvcgasuetslydhvxgttepjmxs"
+      "zczjcvsgrgjkhedysupjtrcvtwhhgudpjgtmtrsmusucjtmzqejpfvmzsvjshkzzhtmdowgo"
+      "wvzwiqdhthsdbsnxyhapevigrtvhbzpylibfxpfoxiwoyqfyzxskefjththojqgglhmhbzhl"
+      "uyoycxjuwbnkdhmsstycomxqzvvpvvkzoxhwvmpbwldqcrpsbpwrozymppbnnewmmmrxdxjq"
+      "thetmfvjpeldndmomdudinwjiixsidcxpbacrtlwmgaljzaglsjcbfnsfqyiawieycdvdhat"
+      "wzcbypcyfsnpeuxmiugsdesnxhwywgtopqfbkxbpewohuecyneojfeksgukhsxalqxwzitsz"
+      "ilqchkdokgaakogpswctdsuybydalwzznotdvmynxlkomxfeplorgzkvveuslhmmnyeufsjq"
+      "kzoomzdfvaaaxzykmgcmqdqxitjtmpkriwtihthlewlebaiekhzjctlnlwqrgwwhjulqkjfd"
+      "sxhkxjyrahmmnqvyslxcbcuzobmbwxopritmxzjtvnqbszdhfftmfedpxrkiktorpvibtcoa"
+      "tvkvpqvevyhsscoxshpbwjhzfwmvccvbjrnjfkchbrvgctwxhfaqoqhm");
+
   EXPECT_CALL(*ptr_mock_request, get_object_name())
-      .WillOnce(ReturnRef(OBJECT_KEY_LENGTH_MORE_THAN_1_KB));
+      .WillOnce(ReturnRef(too_long_obj_name));
 
   action_under_test->validate_put_request();
 
@@ -631,6 +631,8 @@ TEST_F(S3PutObjectActionTest, InitiateDataStreamingForZeroSizeObject) {
 }
 
 TEST_F(S3PutObjectActionTest, InitiateDataStreamingExpectingMoreData) {
+  action_under_test->_set_layout_id(layout_id);
+
   EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
       Return(1024));
   EXPECT_CALL(*ptr_mock_request, has_all_body_content()).Times(1).WillOnce(
@@ -644,6 +646,8 @@ TEST_F(S3PutObjectActionTest, InitiateDataStreamingExpectingMoreData) {
 
 TEST_F(S3PutObjectActionTest, InitiateDataStreamingWeHaveAllData) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
+
   EXPECT_CALL(*ptr_mock_request, get_content_length())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(1024));
@@ -663,6 +667,8 @@ TEST_F(S3PutObjectActionTest, InitiateDataStreamingWeHaveAllData) {
 // Write not in progress and we have all the data
 TEST_F(S3PutObjectActionTest, ConsumeIncomingShouldWriteIfWeAllData) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
+
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(true));
   // S3Option::get_instance()->get_motr_write_payload_size() = 1048576 * 1
@@ -680,6 +686,8 @@ TEST_F(S3PutObjectActionTest, ConsumeIncomingShouldWriteIfWeAllData) {
 // Write not in progress, expecting more, we have exact what we can write
 TEST_F(S3PutObjectActionTest, ConsumeIncomingShouldWriteIfWeExactData) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
+
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(false));
   // S3Option::get_instance()->get_motr_write_payload_size() = 1048576 * 1
@@ -701,6 +709,8 @@ TEST_F(S3PutObjectActionTest, ConsumeIncomingShouldWriteIfWeExactData) {
 // Write not in progress, expecting more, we have more than we can write
 TEST_F(S3PutObjectActionTest, ConsumeIncomingShouldWriteIfWeHaveMoreData) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
+
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(false));
   // S3Option::get_instance()->get_motr_write_payload_size() = 1048576 * 1
@@ -722,6 +732,8 @@ TEST_F(S3PutObjectActionTest, ConsumeIncomingShouldWriteIfWeHaveMoreData) {
 // we are expecting more data
 TEST_F(S3PutObjectActionTest, ConsumeIncomingShouldPauseWhenWeHaveTooMuch) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
+
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(false));
   // S3Option::get_instance()->get_motr_write_payload_size() = 1048576 * 1
@@ -744,6 +756,7 @@ TEST_F(S3PutObjectActionTest,
        ConsumeIncomingShouldNotWriteWhenWriteInprogress) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   action_under_test->write_in_progress = true;
+
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(true));
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
@@ -971,7 +984,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulDoNextStepWhenAllIsWritten) {
 }
 
 // We expecting more and not enough to write
-/*TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulShouldRestartReadingData) {
+TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulShouldRestartReadingData) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   action_under_test->_set_layout_id(layout_id);
 
@@ -993,7 +1006,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulDoNextStepWhenAllIsWritten) {
   action_under_test->write_object_successful();
 
   EXPECT_FALSE(action_under_test->write_in_progress);
-}*/
+}
 
 TEST_F(S3PutObjectActionTest, SaveMetadata) {
   CREATE_BUCKET_METADATA;
