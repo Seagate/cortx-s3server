@@ -154,7 +154,7 @@ void s3_motr_op_stable(struct m0_op *op) {
   int motr_rc = app_ctx->get_motr_api()->motr_op_rc(op);
   std::string request_id = app_ctx->get_request()->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  s3_log(S3_LOG_DEBUG, request_id, "Return code = %d op_code = %d\n", motr_rc,
+  s3_log(S3_LOG_DEBUG, request_id, "Return code = %d op_code = %u\n", motr_rc,
          op->op_code);
 
   s3_log(S3_LOG_DEBUG, request_id, "op_index_in_launch = %d\n",
@@ -166,6 +166,8 @@ void s3_motr_op_stable(struct m0_op *op) {
     app_ctx->set_op_status_for(ctx->op_index_in_launch,
                                S3AsyncOpStatus::success, "Success.");
   } else {
+    s3_log(S3_LOG_ERROR, request_id, "Error code = %d op_code = %u\n", motr_rc,
+           op->op_code);
     app_ctx->set_op_status_for(ctx->op_index_in_launch, S3AsyncOpStatus::failed,
                                "Operation Failed.");
   }
@@ -195,7 +197,8 @@ void s3_motr_op_failed(struct m0_op *op) {
   std::string request_id = app_ctx->get_request()->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   int motr_rc = app_ctx->get_motr_api()->motr_op_rc(op);
-  s3_log(S3_LOG_ERROR, request_id, "Error code = %d\n", motr_rc);
+  s3_log(S3_LOG_ERROR, request_id, "Error code = %d op_code = %u\n", motr_rc,
+         op->op_code);
 
   s3_log(S3_LOG_DEBUG, request_id, "op_index_in_launch = %d\n",
          ctx->op_index_in_launch);
