@@ -86,7 +86,8 @@ class S3PutObjectAction : public S3ObjectAction {
   void collision_detected();
 
   // Only for use with UT
-  void _set_layout_id(int layoutid) { layout_id = layoutid; }
+ protected:
+  void _set_layout_id(int layout_id);
 
  public:
   S3PutObjectAction(

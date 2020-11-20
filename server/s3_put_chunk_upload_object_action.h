@@ -94,7 +94,8 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   void send_chunk_details_if_any();
 
   // Used in UT Only
-  void _set_layout_id(int layoutid) { layout_id = layoutid; }
+ protected:
+  void _set_layout_id(int layout_id);
 
  public:
   S3PutChunkUploadObjectAction(

@@ -548,6 +548,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        InitiateDataStreamingWeHaveAllData) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
+
   EXPECT_CALL(*mock_request, get_data_length())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(1024));
@@ -567,6 +569,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        ConsumeIncomingShouldWriteIfWeAllData) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
+
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(true));
   // S3Option::get_instance()->get_motr_write_payload_size() = 1048576 * 1
@@ -586,6 +590,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        ConsumeIncomingShouldWriteIfWeExactData) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
 
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(false));
@@ -610,6 +615,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        ConsumeIncomingShouldWriteIfWeHaveMoreData) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
 
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(false));
@@ -846,7 +852,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 }
 
 // We have some data but not all and but have more to write
-/*TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
+TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        WriteObjectSuccessfulDoNextStepWhenAllIsWritten) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   action_under_test->_set_layout_id(layout_id);
@@ -871,10 +877,10 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 
   EXPECT_EQ(1, call_count_one);
   EXPECT_FALSE(action_under_test->motr_write_in_progress);
-}*/
+}
 
 // We expecting more and not enough to write
-/*TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
+TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        WriteObjectSuccessfulShouldRestartReadingData) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   action_under_test->_set_layout_id(layout_id);
@@ -896,7 +902,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   action_under_test->write_object_successful();
 
   EXPECT_FALSE(action_under_test->motr_write_in_progress);
-}*/
+}
 /*  TODO
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth, SaveMetadata) {
   CREATE_BUCKET_METADATA;
