@@ -95,19 +95,19 @@ def delete_object_list_file(file_name):
 AwsTest('Aws can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
 
 # Create following keys (both, regular and heirarchical) into a bucket:
-# asdf
-# boo
-# boo/0...boo/99
-# boo#
-# boo+
-# foo
-# foo/0...foo/99
-# foo#123
-# foo+123
-# quax
-# quax/0...quax/99
-# quax#
-# quax+
+#  asdf
+#  boo
+#  boo/0...boo/99
+#  boo#
+#  boo+
+#  foo
+#  foo/0...foo/99
+#  foo#123
+#  foo+123
+#  quax
+#  quax/0...quax/99
+#  quax#
+#  quax+
 
 # Step 1: Create above keys into bucket 'seagatebucket'
 #  Step 1.1:
@@ -205,7 +205,7 @@ if check is False:
     assert False, "Failed to match expected common prefix in the list"
 
 # Step 2.2: command:= aws s3api list-objects-v2 --bucket <bucket> --page-size 2 --delimiter "/"
-# Expected output: 
+# Expected output:
 #  asdf
 #  boo
 #  boo#
