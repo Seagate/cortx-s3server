@@ -221,7 +221,6 @@ void S3GetBucketAction::get_next_objects_successful() {
           if (last_key_prefix_match) {
             // No further prefix match will occur (as items in Motr storage are
             // arranaged in lexical order)
-            last_key_prefix_match = false;
             skip_no_further_prefix_match = true;
             // Set length to zero to indicate truncation is false
             length = 0;
@@ -296,7 +295,6 @@ void S3GetBucketAction::get_next_objects_successful() {
         if (last_key_prefix_match) {
           // No further prefix match will occur (as items in Motr storage are
           // arranaged in lexical order)
-          last_key_prefix_match = false;
           skip_no_further_prefix_match = true;
           // Set length to zero to indicate truncation is false
           length = 0;
@@ -381,7 +379,6 @@ void S3GetBucketAction::get_next_objects_successful() {
         if (last_key_prefix_match) {
           // No further prefix match will occur (as items in Motr storage are
           // arranaged in lexical order)
-          last_key_prefix_match = false;
           skip_no_further_prefix_match = true;
           // Set length to zero to indicate truncation is false
           length = 0;
