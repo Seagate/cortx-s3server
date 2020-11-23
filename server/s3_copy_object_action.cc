@@ -180,7 +180,7 @@ void S3CopyObjectAction::fetch_source_object_info_success() {
          "Successfully fetched source object metadata\n");
 
   if (MaxCopyObjectSourceSize < source_object_metadata->get_content_length()) {
-    set_s3_error("BadRequest");
+    set_s3_error("InvalidRequest");
     send_response_to_s3_client();
   } else {
     next();
