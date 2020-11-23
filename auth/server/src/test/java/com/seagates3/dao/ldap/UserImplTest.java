@@ -45,11 +45,12 @@ import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPModification;
 import com.novell.ldap.LDAPSearchResults;
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.User;
 
 @RunWith(PowerMockRunner.class)
-    @PrepareForTest({LDAPUtils.class, UserImpl.class})
+    @PrepareForTest({LDAPUtils.class, UserImpl.class, AuthServerConfig.class})
     @MockPolicy(Slf4jMockPolicy.class)
     @PowerMockIgnore({"javax.management.*"}) public class UserImplTest {
 
@@ -67,7 +68,8 @@ import com.seagates3.model.User;
     private
      final String[] FIND_BYUSERID_ATTRS = {
          "cn", "path", "arn", "rolename", "objectclass", "createtimestamp"};
-
+    private
+     final int maxResults = 1000;
     private final String LDAP_DATE;
     private final String EXPECTED_DATE;
 
@@ -132,7 +134,10 @@ import com.seagates3.model.User;
     @Before
     public void setUp() throws Exception {
         PowerMockito.mockStatic(LDAPUtils.class);
+        PowerMockito.mockStatic(AuthServerConfig.class);
         Mockito.when(ldapResults.next()).thenReturn(entry);
+        PowerMockito.doReturn(maxResults)
+            .when(AuthServerConfig.class, "getLdapSearchResultsSizeLimit");
     }
 
     @Test

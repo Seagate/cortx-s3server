@@ -40,11 +40,13 @@ import com.novell.ldap.LDAPConnection;
 import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPSearchResults;
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Account;
 
 @RunWith(PowerMockRunner.class)
-    @PrepareForTest({LDAPUtils.class, LdapConnectionManager.class})
+    @PrepareForTest({LDAPUtils.class, LdapConnectionManager.class,
+                     AuthServerConfig.class})
     @PowerMockIgnore({"javax.management.*"}) public class AccountImplTest {
 
     private final String BASE_DN = "dc=s3,dc=seagate,dc=com";
@@ -60,7 +62,8 @@ import com.seagates3.model.Account;
             = "ou=users,o=s3test,ou=accounts,dc=s3,dc=seagate,dc=com";
     private final String ROLES_DN
             = "ou=roles,o=s3test,ou=accounts,dc=s3,dc=seagate,dc=com";
-
+    private
+     final int maxResults = 1000;
     private final AccountImpl accountImpl;
     private final LDAPAttribute accountNameAttr;
     private final LDAPAttribute accountIdAttr;
@@ -89,6 +92,7 @@ import com.seagates3.model.Account;
         LDAPAttributeSet accountAttributeSet = new LDAPAttributeSet();
         accountAttributeSet.add(new LDAPAttribute("objectclass", "Account"));
         accountAttributeSet.add(new LDAPAttribute("o", "s3test"));
+        accountAttributeSet.add(new LDAPAttribute("o", "s3test"));
         accountAttributeSet.add(new LDAPAttribute("accountid", "98765test"));
         accountAttributeSet.add(new LDAPAttribute("canonicalId", "C12345"));
         accountAttributeSet.add(new LDAPAttribute("mail", "test@seagate.com"));
@@ -110,6 +114,7 @@ import com.seagates3.model.Account;
     @Before
     public void setUp() throws Exception {
         PowerMockito.mockStatic(LDAPUtils.class);
+        PowerMockito.mockStatic(AuthServerConfig.class);
         Mockito.when(ldapResults.next()).thenReturn(entry);
 
         Mockito.when(entry.getAttribute("o")).thenReturn(accountIdAttr);
@@ -122,6 +127,8 @@ import com.seagates3.model.Account;
         Mockito.when(canonicalIdAttr.getStringValue()).thenReturn("C12345");
         Mockito.when(emailAttr.getStringValue()).thenReturn("test@seagate.com");
         ldapConnection = Mockito.mock(LDAPConnection.class);
+        PowerMockito.doReturn(maxResults)
+            .when(AuthServerConfig.class, "getLdapSearchResultsSizeLimit");
     }
 
     /**
@@ -508,4 +515,3 @@ import com.seagates3.model.Account;
         accountImpl.deleteOu(account, LDAPUtils.USER_OU);
     }
 }
-
