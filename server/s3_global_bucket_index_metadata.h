@@ -81,7 +81,7 @@ class S3GlobalBucketIndexMetadata {
 
  public:
   S3GlobalBucketIndexMetadata(
-      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<S3RequestObject> req, std::string bucket = "",
       std::shared_ptr<MotrAPI> s3_motr_apii = nullptr,
       std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory =
           nullptr,

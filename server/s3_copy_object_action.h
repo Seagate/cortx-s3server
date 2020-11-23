@@ -38,6 +38,8 @@ enum class S3CopyObjectActionState {
   completed,                // All stages done completely
 };
 
+const u_long MaxCopyObjectSourceSize = 5368709120;  // 5GB
+
 class S3CopyObjectAction : public S3ObjectAction {
   S3CopyObjectActionState s3_copy_action_state;
   bool write_in_progress;
@@ -51,6 +53,9 @@ class S3CopyObjectAction : public S3ObjectAction {
   // string used for salting the uri
   std::string salt;
 
+  std::string source_bucket_name;
+  std::string source_object_name;
+
   std::shared_ptr<S3MotrReader> motr_reader;
   std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
@@ -60,11 +65,21 @@ class S3CopyObjectAction : public S3ObjectAction {
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
   std::shared_ptr<MotrAPI> s3_motr_api;
   std::shared_ptr<S3ObjectMetadata> new_object_metadata;
+  std::shared_ptr<S3ObjectMetadata> source_object_metadata;
+  std::shared_ptr<S3BucketMetadata> source_bucket_metadata;
 
   // TODO Edit the read_object() and initiate_data_streaming()
   // signatures accordingly in subsequent Check-ins, when the design evolves.
   void read_object();
   void initiate_data_streaming();
+  void get_source_bucket_and_object();
+  void fetch_source_bucket_info();
+  void fetch_source_bucket_info_success();
+  void fetch_source_bucket_info_failed();
+
+  void fetch_source_object_info();
+  void fetch_source_object_info_success();
+  void fetch_source_object_info_failed();
 
  public:
   S3CopyObjectAction(
@@ -78,9 +93,9 @@ class S3CopyObjectAction : public S3ObjectAction {
 
   void setup_steps();
 
-  void fetch_bucket_info_failed();
-  void fetch_object_info_failed();
-  void fetch_object_info_success();
+  void fetch_bucket_info_failed();   // destination bucket
+  void fetch_object_info_failed();   // destination object
+  void fetch_object_info_success();  // destination object
 
   std::string get_response_xml();
   void validate_copyobject_request();

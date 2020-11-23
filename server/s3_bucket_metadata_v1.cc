@@ -33,12 +33,13 @@ extern struct m0_uint128 bucket_metadata_list_index_oid;
 extern struct m0_uint128 replica_bucket_metadata_list_index_oid;
 
 S3BucketMetadataV1::S3BucketMetadataV1(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
+    std::shared_ptr<S3RequestObject> req, std::string bucket,
+    std::shared_ptr<MotrAPI> motr_api,
     std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory,
     std::shared_ptr<S3GlobalBucketIndexMetadataFactory>
         s3_global_bucket_index_metadata_factory)
-    : S3BucketMetadata(std::move(req), std::move(motr_api),
+    : S3BucketMetadata(std::move(req), bucket, std::move(motr_api),
                        std::move(motr_s3_kvs_reader_factory),
                        std::move(motr_s3_kvs_writer_factory)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
@@ -89,7 +90,7 @@ void S3BucketMetadataV1::fetch_global_bucket_account_id_info() {
   if (!global_bucket_index_metadata) {
     global_bucket_index_metadata =
         global_bucket_index_metadata_factory
-            ->create_s3_global_bucket_index_metadata(request);
+            ->create_s3_global_bucket_index_metadata(request, bucket_name);
   }
   global_bucket_index_metadata->load(
       std::bind(

@@ -41,10 +41,10 @@ class S3BucketMetadataFactory {
  public:
   virtual ~S3BucketMetadataFactory() {}
   virtual std::shared_ptr<S3BucketMetadata> create_bucket_metadata_obj(
-      std::shared_ptr<S3RequestObject> req) {
+      std::shared_ptr<S3RequestObject> req, std::string bucket = "") {
     s3_log(S3_LOG_DEBUG, "",
            "S3BucketMetadataFactory::create_bucket_metadata_obj\n");
-    return std::make_shared<S3BucketMetadataV1>(req);
+    return std::make_shared<S3BucketMetadataV1>(req, bucket);
   }
 };
 
@@ -52,12 +52,12 @@ class S3ObjectMetadataFactory {
  public:
   virtual ~S3ObjectMetadataFactory() {}
   virtual std::shared_ptr<S3ObjectMetadata> create_object_metadata_obj(
-      std::shared_ptr<S3RequestObject> req,
-      m0_uint128 indx_oid = {0ULL, 0ULL}) {
+      std::shared_ptr<S3RequestObject> req, m0_uint128 indx_oid = {0ULL, 0ULL},
+      std::string bucket = "", std::string object = "") {
     s3_log(S3_LOG_DEBUG, "",
            "S3ObjectMetadataFactory::create_object_metadata_obj\n");
-    std::shared_ptr<S3ObjectMetadata> meta =
-        std::make_shared<S3ObjectMetadata>(req);
+    std::shared_ptr<S3ObjectMetadata> meta = std::make_shared<S3ObjectMetadata>(
+        req, false /*isMultipart*/, "" /*uploadid*/, bucket, object);
     meta->set_object_list_index_oid(indx_oid);
     return meta;
   }
@@ -208,11 +208,12 @@ class S3GlobalBucketIndexMetadataFactory {
  public:
   virtual ~S3GlobalBucketIndexMetadataFactory() {}
   virtual std::shared_ptr<S3GlobalBucketIndexMetadata>
-  create_s3_global_bucket_index_metadata(std::shared_ptr<S3RequestObject> req) {
+  create_s3_global_bucket_index_metadata(std::shared_ptr<S3RequestObject> req,
+                                         std::string bucket = "") {
     s3_log(S3_LOG_DEBUG, "",
            "S3GlobalBucketIndexMetadataFactory::create_s3_root_bucket_index_"
            "metadata\n");
-    return std::make_shared<S3GlobalBucketIndexMetadata>(req);
+    return std::make_shared<S3GlobalBucketIndexMetadata>(req, bucket);
   }
 };
 

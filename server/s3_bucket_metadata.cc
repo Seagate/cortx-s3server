@@ -30,7 +30,8 @@
 #include "s3_m0_uint128_helper.h"
 
 S3BucketMetadata::S3BucketMetadata(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
+    std::shared_ptr<S3RequestObject> req, std::string bucket,
+    std::shared_ptr<MotrAPI> motr_api,
     std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory)
     : request(std::move(req)), json_parsing_error(false) {
@@ -42,7 +43,11 @@ S3BucketMetadata::S3BucketMetadata(
   user_name = request->get_user_name();
   owner_canonical_id = request->get_canonical_id();
   user_id = request->get_user_id();
-  bucket_name = request->get_bucket_name();
+  if (bucket.empty()) {
+    bucket_name = request->get_bucket_name();
+  } else {
+    bucket_name = bucket;
+  }
 
   state = S3BucketMetadataState::empty;
   current_op = S3BucketMetadataCurrentOp::none;

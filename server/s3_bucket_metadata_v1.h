@@ -99,7 +99,7 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
 
  public:
   S3BucketMetadataV1(
-      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<S3RequestObject> req, std::string bucket = "",
       std::shared_ptr<MotrAPI> motr_api = nullptr,
       std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory =
           nullptr,

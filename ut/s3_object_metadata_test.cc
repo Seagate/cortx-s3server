@@ -77,10 +77,10 @@ class S3ObjectMetadataTest : public testing::Test {
     objects_version_list_index_oid = {0xffff, 0xfff0};
 
     metadata_obj_under_test.reset(new S3ObjectMetadata(
-        ptr_mock_request, false, "", motr_kvs_reader_factory,
+        ptr_mock_request, false, "", "", "", motr_kvs_reader_factory,
         motr_kvs_writer_factory, ptr_mock_s3_motr_api));
     metadata_obj_under_test_with_oid.reset(new S3ObjectMetadata(
-        ptr_mock_request, false, "", motr_kvs_reader_factory,
+        ptr_mock_request, false, "", "", "", motr_kvs_reader_factory,
         motr_kvs_writer_factory, ptr_mock_s3_motr_api));
     metadata_obj_under_test_with_oid->set_object_list_index_oid(
         object_list_index_oid);
@@ -138,11 +138,11 @@ class S3MultipartObjectMetadataTest : public testing::Test {
 
     object_list_index_oid = {0xffff, 0xffff};
     metadata_obj_under_test.reset(new S3ObjectMetadata(
-        ptr_mock_request, true, "1234-1234", motr_kvs_reader_factory,
+        ptr_mock_request, true, "1234-1234", "", "", motr_kvs_reader_factory,
         motr_kvs_writer_factory, ptr_mock_s3_motr_api));
 
     metadata_obj_under_test_with_oid.reset(new S3ObjectMetadata(
-        ptr_mock_request, true, "1234-1234", motr_kvs_reader_factory,
+        ptr_mock_request, true, "1234-1234", "", "", motr_kvs_reader_factory,
         motr_kvs_writer_factory, ptr_mock_s3_motr_api));
     metadata_obj_under_test_with_oid->set_object_list_index_oid(
         object_list_index_oid);
