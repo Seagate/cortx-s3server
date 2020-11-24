@@ -357,22 +357,22 @@ rm -rf %{buildroot}
 
 %post
 if [ -f /opt/seagate/cortx/s3/conf/s3config.yaml ]; then
-sh /opt/seagate/cortx/auth/scripts/merge.sh /opt/seagate/cortx/s3/conf/s3config.yaml /tmp/s3config.yaml.sample.old /opt/seagate/cortx/s3/conf/s3config.yaml.sample /opt/seagate/cortx/s3/conf/s3config_safe_attributes.yaml yaml
+sh /opt/seagate/cortx/auth/scripts/swupdate/merge.sh /opt/seagate/cortx/s3/conf/s3config.yaml /tmp/s3config.yaml.sample.old /opt/seagate/cortx/s3/conf/s3config.yaml.sample /opt/seagate/cortx/s3/conf/s3config_safe_attributes.yaml yaml
 else
     cp /opt/seagate/cortx/s3/conf/s3config.yaml.sample /opt/seagate/cortx/s3/conf/s3config.yaml
 fi
 if [ -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml ]; then
-sh /opt/seagate/cortx/auth/scripts/merge.sh /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml /tmp/config.yaml.sample.old /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample /opt/seagate/cortx/s3/s3backgrounddelete/s3backgrounddelete_safe_attributes.yaml yaml
+sh /opt/seagate/cortx/auth/scripts/swupdate/merge.sh /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml /tmp/config.yaml.sample.old /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample /opt/seagate/cortx/s3/s3backgrounddelete/s3backgrounddelete_safe_attributes.yaml yaml
 else
     cp /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
 fi
 if [ -f /opt/seagate/cortx/auth/resources/authserver.properties ]; then
-sh /opt/seagate/cortx/auth/scripts/merge.sh /opt/seagate/cortx/auth/resources/authserver.properties /tmp/authserver.properties.sample.old /opt/seagate/cortx/auth/resources/authserver.properties.sample /opt/seagate/cortx/auth/resources/authserver_safe_attributes.yaml properties
+sh /opt/seagate/cortx/auth/scripts/swupdate/merge.sh /opt/seagate/cortx/auth/resources/authserver.properties /tmp/authserver.properties.sample.old /opt/seagate/cortx/auth/resources/authserver.properties.sample /opt/seagate/cortx/auth/resources/authserver_safe_attributes.yaml properties
 else
     cp /opt/seagate/cortx/auth/resources/authserver.properties.sample /opt/seagate/cortx/auth/resources/authserver.properties
 fi
 if [ -f /opt/seagate/cortx/auth/resources/keystore.properties ]; then
-sh /opt/seagate/cortx/auth/scripts/merge.sh /opt/seagate/cortx/auth/resources/keystore.properties /tmp/keystore.properties.sample.old /opt/seagate/cortx/auth/resources/keystore.properties.sample /opt/seagate/cortx/auth/resources/keystore_safe_attributes.yaml properties
+sh /opt/seagate/cortx/auth/scripts/swupdate/merge.sh /opt/seagate/cortx/auth/resources/keystore.properties /tmp/keystore.properties.sample.old /opt/seagate/cortx/auth/resources/keystore.properties.sample /opt/seagate/cortx/auth/resources/keystore_safe_attributes.yaml properties
 else
     cp /opt/seagate/cortx/auth/resources/keystore.properties.sample /opt/seagate/cortx/auth/resources/keystore.properties
 fi
