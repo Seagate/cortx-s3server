@@ -144,6 +144,9 @@ void S3GetBucketActionV2::send_response_to_s3_client() {
       request->set_bytes_sent(response_xml.length());
       s3_log(S3_LOG_DEBUG, request_id, "Object list V2 response_xml = %s\n",
              response_xml.c_str());
+      // Total visited/touched keys in the bucket
+      s3_log(S3_LOG_INFO, request_id, "Total keys visited = %zu\n",
+             total_keys_visited);
       request->send_response(S3HttpSuccess200, response_xml);
     }
   } else {

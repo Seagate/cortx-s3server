@@ -36,11 +36,11 @@ S3GetBucketAction::S3GetBucketAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
     : S3BucketAction(req, bucket_meta_factory),
-      total_keys_visited(0),
       object_list(std::make_shared<S3ObjectListResponse>(
           req->get_query_string_value("encoding-type"))),
       last_key(""),
       fetch_successful(false),
+      total_keys_visited(0),
       key_Count(0) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   s3_log(S3_LOG_INFO, request_id, "S3 API: Get Bucket(List Objects).\n");
@@ -192,7 +192,6 @@ void S3GetBucketAction::get_next_objects_successful() {
       bucket_metadata->get_object_list_index_oid();
   bool atleast_one_json_error = false;
   bool last_key_in_common_prefix = false;
-  bool last_key_prefix_match = false;
   bool skip_no_further_prefix_match = false;
   std::string last_common_prefix = "";
   auto& kvps = motr_kv_reader->get_key_values();
@@ -215,17 +214,17 @@ void S3GetBucketAction::get_next_objects_successful() {
       if (!request_prefix.empty()) {
         // Filter out by prefix
         if (kv.first.find(request_prefix) == std::string::npos) {
-          // Key does not start with specified prefix; key filetered out.
-          // If previous/last key was matching the prefix, stop and break
-          // further enumeration.
-          if (last_key_prefix_match) {
+          // Key does not start with specified prefix; key filtered out.
+          // Prefix does not match.
+          // Check if fetched key is lexicographically greater than prefix
+          if (kv.first > request_prefix) {
             // No further prefix match will occur (as items in Motr storage are
             // arranaged in lexical order)
             skip_no_further_prefix_match = true;
             // Set length to zero to indicate truncation is false
             length = 0;
             s3_log(
-                S3_LOG_DEBUG, request_id,
+                S3_LOG_INFO, request_id,
                 "No further prefix match. Skipping further object listing\n");
             break;
           }
@@ -277,7 +276,6 @@ void S3GetBucketAction::get_next_objects_successful() {
     } else if (!request_prefix.empty() && request_delimiter.empty()) {
       // Filter out by prefix
       if (kv.first.find(request_prefix) == 0) {
-        last_key_prefix_match = true;
         if (object->from_json(kv.second.second) != 0) {
           atleast_one_json_error = true;
           s3_log(S3_LOG_ERROR, request_id,
@@ -289,16 +287,15 @@ void S3GetBucketAction::get_next_objects_successful() {
           object_list->add_object(object);
         }
       } else {
-        // Prefix does not match
-        // If previous/last key was matching the prefix, stop and break further
-        // enumeration.
-        if (last_key_prefix_match) {
+        // Prefix does not match.
+        // Check if fetched key is lexicographically greater than prefix
+        if (kv.first > request_prefix) {
           // No further prefix match will occur (as items in Motr storage are
           // arranaged in lexical order)
           skip_no_further_prefix_match = true;
           // Set length to zero to indicate truncation is false
           length = 0;
-          s3_log(S3_LOG_DEBUG, request_id,
+          s3_log(S3_LOG_INFO, request_id,
                  "No further prefix match. Skipping further object listing\n");
           break;
         }
@@ -339,7 +336,6 @@ void S3GetBucketAction::get_next_objects_successful() {
       // both prefix and delimiter are not empty
       bool prefix_match = (kv.first.find(request_prefix) == 0) ? true : false;
       if (prefix_match) {
-        last_key_prefix_match = true;
         delimiter_pos =
             kv.first.find(request_delimiter, request_prefix.length());
         if (delimiter_pos == std::string::npos) {
@@ -373,16 +369,15 @@ void S3GetBucketAction::get_next_objects_successful() {
           }
         }
       } else {
-        // Prefix does not match
-        // If previous/last key was matching the prefix, stop and break further
-        // enumeration.
-        if (last_key_prefix_match) {
+        // Prefix does not match.
+        // Check if fetched key is lexicographically greater than prefix
+        if (kv.first > request_prefix) {
           // No further prefix match will occur (as items in Motr storage are
           // arranaged in lexical order)
           skip_no_further_prefix_match = true;
           // Set length to zero to indicate truncation is false
           length = 0;
-          s3_log(S3_LOG_DEBUG, request_id,
+          s3_log(S3_LOG_INFO, request_id,
                  "No further prefix match. Skipping further object listing\n");
           break;
         }
