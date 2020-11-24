@@ -86,17 +86,13 @@ $ git submodule update --init --recursive && git status
 
 ### 1.2 Installing Dependencies
 
-<details>
-<summary>Before you begin</summary>
-<p>
+:warning: **Before you begin**
 
 At some point during the execution of the `init.sh` script, it will prompt for the following passwords. Enter them as mentioned below:
    * SSH password: `<Enter root password of VM>`
    * Enter new password for openldap rootDN: `seagate`
    * Enter new password for openldap IAM admin: `ldapadmin`
 
-</p>
-</details>
 
 Whenever you clone your repository or make changes to dependent packages, you'll have to initialize the packages:
 
