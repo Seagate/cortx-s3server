@@ -300,7 +300,6 @@ AwsTest('Aws delete objects')\
 
 delete_object_list_file(object_list_file)
 
-
 #******** Verify pagination and NextToken in List objects V1  **********
 # Step 1. Create total 110 objets in bucket
 obj_110_list = []
