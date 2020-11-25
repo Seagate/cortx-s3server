@@ -612,7 +612,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefixMatchingStops) {
   std::vector<std::string> keys =
       action_under_test_ptr->object_list->get_keys();
   for (unsigned short i = 0; i < keys.size(); i++) {
-    if (keys[i].find("cquux") == 0) {
+    if (keys[i].find("cquux") != std::string::npos) {
       bFound_Further_keys = true;
       break;
     }

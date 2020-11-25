@@ -38,6 +38,7 @@ class S3GetBucketAction : public S3BucketAction {
   std::shared_ptr<MotrAPI> s3_motr_api;
   size_t max_record_count;
   short retry_count;
+  bool b_first_next_keyval_call;
 
  protected:
   std::shared_ptr<S3ObjectListResponse> object_list;

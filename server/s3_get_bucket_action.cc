@@ -66,6 +66,7 @@ S3GetBucketAction::S3GetBucketAction(
     object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
   }
   motr_kv_reader = nullptr;
+  b_first_next_keyval_call = true;
   setup_steps();
   // TODO request param validations
 }
@@ -168,10 +169,20 @@ void S3GetBucketAction::get_next_objects() {
     // We pass M0_OIF_EXCLUDE_START_KEY flag to Motr. This flag skips key that
     // is passed during listing of all keys. If this flag is not passed then
     // input key is returned in result.
-    motr_kv_reader->next_keyval(
-        object_list_index_oid, last_key, max_record_count,
-        std::bind(&S3GetBucketAction::get_next_objects_successful, this),
-        std::bind(&S3GetBucketAction::get_next_objects_failed, this));
+    if (!request_prefix.empty() && request_marker_key.empty() &&
+        b_first_next_keyval_call) {
+      b_first_next_keyval_call = false;
+      last_key = request_prefix;
+      motr_kv_reader->next_keyval(
+          object_list_index_oid, last_key, max_record_count,
+          std::bind(&S3GetBucketAction::get_next_objects_successful, this),
+          std::bind(&S3GetBucketAction::get_next_objects_failed, this), 0);
+    } else {
+      motr_kv_reader->next_keyval(
+          object_list_index_oid, last_key, max_record_count,
+          std::bind(&S3GetBucketAction::get_next_objects_successful, this),
+          std::bind(&S3GetBucketAction::get_next_objects_failed, this));
+    }
   }
 
   // for shutdown testcases, check FI and set shutdown signal
