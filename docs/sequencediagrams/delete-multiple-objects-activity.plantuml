@@ -1,10 +1,6 @@
 @startuml
 
-' Steps are listed here:
-' https://docs.google.com/document/d/15YIzQUnz8MaACBdqKuZMbKSIDjSzBxb7OMhHqVAIgiI/edit#heading=h.dabn95db9jmm
-
 header Delete Multiple Objects\n By Ivan Tishchenko\n 20120-11-25
-' footer Page %page% of %lastpage%
 
 title Delete Multiple Objects
 
