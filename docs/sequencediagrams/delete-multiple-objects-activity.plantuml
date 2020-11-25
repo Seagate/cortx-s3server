@@ -23,6 +23,7 @@ else
  --> Send "Success" response to client << Client >>
  --> [continue processing in background] S3->Motr: Delete all <Nobj> Motr objects\nOne single Clovis call.
  --> S3->Motr: Delete all <Nobj> "probable delete" entries.\nSingle Clovis call.\n(Entries no longer needed as objects are already fully deleted.)
+ --> (*)
 endif
 
 @enduml
