@@ -440,7 +440,7 @@ public class AWSV4Sign implements AWSSign {
 
                 throw new InvalidTokenException(errMsg);
               }
-            }
+            } else {
             headerValue = headerValue.trim();
             if (s.equalsIgnoreCase("content-type")) {
                 /*
@@ -454,6 +454,7 @@ public class AWSV4Sign implements AWSSign {
                 }
             } else {
                 canonicalHeader += String.format("%s:%s\n", s, headerValue);
+            }
             }
         }
 
