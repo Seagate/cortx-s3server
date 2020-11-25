@@ -442,3 +442,12 @@ class CORTXS3Config(object):
             raise KeyError(
                 "Could not find s3_recovery secret_key from config file " +
                 self._conf_file)
+
+    def get_cleanup_enabled(self):
+        """Return flag cleanup_enabled for S3 non active"""
+        try:
+            if 'leakconfig' in self._config and self._config['leakconfig']['cleanup_enabled']:
+                return self._config['leakconfig']['cleanup_enabled']
+        except KeyError:
+            # Default value used for S/W update
+            return False
