@@ -132,6 +132,9 @@ rpm -q gmock && rpm -e gmock
 rpm -q gtest-devel && rpm -e gtest-devel
 rpm -q gtest && rpm -e gtest
 
+# Erase old haproxy rpm and later install latest haproxy version 1.8.14
+rpm -q haproxy && rpm -e haproxy
+
 cd $BASEDIR
 
 # Attempt ldap clean up since ansible openldap setup is not idempotent
