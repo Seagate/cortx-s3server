@@ -1,0 +1,32 @@
+@startuml
+
+' Steps are listed here:
+' https://docs.google.com/document/d/15YIzQUnz8MaACBdqKuZMbKSIDjSzBxb7OMhHqVAIgiI/edit#heading=h.dabn95db9jmm
+
+header Delete Multiple Objects\n By Ivan Tishchenko\n 20120-11-25
+' footer Page %page% of %lastpage%
+
+title Delete Multiple Objects
+
+skinparam activity {
+  BackgroundColor<< Client >> Cyan
+  BackgroundColor<< Auth >> Orange
+}
+
+(*) --> "Client: Send Request to delete <Nobj> objects\n<Nobj> = 1..1000" << Client >>
+--> S3->Auth: Authorization\n(Is this a valid user credential?) << Auth >>
+--> "S3->Motr: Load Bucket Metadata\n(2 Motr KVS reads)"
+--> "S3->Auth: Authentication\n(Does user have access to bucket?)" << Auth >>
+--> S3->Motr: Fetch <N> s3 obj metadata entries from Motr KVS\n(N is currently 25)
+if "All objects loaded?" then
+ -->[no] iterate
+ -> S3->Motr: Fetch <N> s3 obj metadata entries from Motr KVS\n(N is currently 25)
+else
+ -->[yes] S3->Motr: Create <Nobj> "probable delete" entries in Motr KVS index\n(To help revert/recover/redo/finalize in case of failure)\nThis is one single Clovis call.
+ --> S3->Motr: Delete s3 metadata of objects from Motr KVS.\nSingle Clovis call to delete <Nobj> entries from KVS index.
+ --> Send "Success" response to client << Client >>
+ --> [continue processing in background] S3->Motr: Delete all <Nobj> Motr objects\nOne single Clovis call.
+ --> S3->Motr: Delete all <Nobj> "probable delete" entries.\nSingle Clovis call.\n(Entries no longer needed as objects are already fully deleted.)
+endif
+
+@enduml
