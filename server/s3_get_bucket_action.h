@@ -38,13 +38,14 @@ class S3GetBucketAction : public S3BucketAction {
   std::shared_ptr<MotrAPI> s3_motr_api;
   size_t max_record_count;
   short retry_count;
-  // Identify total keys visited/touched in the object listing
-  size_t total_keys_visited;
+  bool b_first_next_keyval_call;
 
  protected:
   std::shared_ptr<S3ObjectListResponse> object_list;
   std::string last_key;  // last key during each iteration
   bool fetch_successful;
+  // Identify total keys visited/touched in object listing
+  size_t total_keys_visited;
 
   // Helpers
   std::string get_bucket_index_name() {
@@ -103,6 +104,8 @@ class S3GetBucketAction : public S3BucketAction {
   FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefix);
   FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsSuccessfulDelimiter);
   FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefixDelimiter);
+  FRIEND_TEST(S3GetBucketActionTest,
+              GetNextObjectsSuccessfulPrefixMatchingStops);
   FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsFailed);
   FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsFailedNoEntries);
   FRIEND_TEST(S3GetBucketActionTest, SendResponseToClientServiceUnavailable);
