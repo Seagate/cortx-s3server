@@ -134,11 +134,6 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_SSL_ENABLE");
       s3server_ssl_enabled = s3_option_node["S3_SERVER_SSL_ENABLE"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
-                               "S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING");
-      s3server_objectleak_tracking_enabled =
-          s3_option_node["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"].as<bool>();
-
-      S3_OPTION_ASSERT_AND_RET(s3_option_node,
                                "S3_SERVER_OBJECT_DELAYED_DELETE");
       s3server_obj_delayed_del_enabled =
           s3_option_node["S3_SERVER_OBJECT_DELAYED_DELETE"].as<bool>();
@@ -437,11 +432,6 @@ bool S3Option::load_section(std::string section_name,
       perf_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_SSL_ENABLE");
       s3server_ssl_enabled = s3_option_node["S3_SERVER_SSL_ENABLE"].as<bool>();
-      S3_OPTION_ASSERT_AND_RET(s3_option_node,
-                               "S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING");
-      s3server_objectleak_tracking_enabled =
-          s3_option_node["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"].as<bool>();
-
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
                                "S3_SERVER_OBJECT_DELAYED_DELETE");
       s3server_obj_delayed_del_enabled =
@@ -799,8 +789,6 @@ void S3Option::dump_options() {
          s3_grace_period_sec);
   s3_log(S3_LOG_INFO, "", "S3_ENABLE_PERF = %d\n", perf_enabled);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_SSL_ENABLE = %d\n", s3server_ssl_enabled);
-  s3_log(S3_LOG_INFO, "", "S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING = %d\n",
-         s3server_objectleak_tracking_enabled);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_OBJECT_DELAYED_DELETE = %d\n",
          s3server_obj_delayed_del_enabled);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_CERT_FILE = %s\n",
@@ -1163,14 +1151,6 @@ bool S3Option::is_s3server_addb_dump_enabled() { return FLAGS_addb; }
 unsigned short S3Option::s3_performance_enabled() { return perf_enabled; }
 
 bool S3Option::is_s3server_ssl_enabled() { return s3server_ssl_enabled; }
-
-bool S3Option::is_s3server_objectleak_tracking_enabled() {
-  return s3server_objectleak_tracking_enabled;
-}
-
-void S3Option::set_s3server_objectleak_tracking_enabled(const bool& flag) {
-  s3server_objectleak_tracking_enabled = flag;
-}
 
 bool S3Option::is_s3server_obj_delayed_del_enabled() {
   return s3server_obj_delayed_del_enabled;
