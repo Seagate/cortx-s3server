@@ -16,7 +16,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-version=1
+version=11
 #Server Properties
 nettyBossGroupThreads=1
 nettyWorkerGroupThreads=8

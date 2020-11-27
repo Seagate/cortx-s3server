@@ -28,6 +28,7 @@ fi
 read -ra ID <<< "$line"
 key="${ID[0]// /}" #remove leading and trailing spaces
 value="${ID[1]// /}"
+echo $key
 if ! grep -Fx "${key}" $unsafeAttributesFile >/dev/null
 then
 if [[ $key != \#* ]]; then #Avoiding commented lines or keys
