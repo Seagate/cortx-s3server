@@ -61,6 +61,9 @@ void S3GetBucketActionV2::validate_request() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_INFO, request_id, "Validate ListObjects V2 request\n");
 
+  std::shared_ptr<S3ObjectListResponseV2> obj_v2_list =
+      std::dynamic_pointer_cast<S3ObjectListResponseV2>(object_list);
+
   bool is_cont_token_present = false;
   is_cont_token_present = request->has_query_param_key("continuation-token");
   if (is_cont_token_present) {
@@ -75,8 +78,6 @@ void S3GetBucketActionV2::validate_request() {
   s3_log(S3_LOG_DEBUG, request_id, "start-after = %s\n",
          request_start_after.c_str());
 
-  std::shared_ptr<S3ObjectListResponseV2> obj_v2_list =
-      std::dynamic_pointer_cast<S3ObjectListResponseV2>(object_list);
   if (obj_v2_list) {
     if (is_cont_token_present) {
       obj_v2_list->set_continuation_token(request_cont_token);
@@ -134,7 +135,8 @@ void S3GetBucketActionV2::send_response_to_s3_client() {
       std::string enc_token =
           base64_encode((const unsigned char*)obfuscated_nextmarker.c_str(),
                         obfuscated_nextmarker.size());
-      obj_v2_list->set_next_marker_key(enc_token);
+      // Do not URL encode NextContinuationToken
+      obj_v2_list->set_next_marker_key(enc_token, false);
       std::string& response_xml = obj_v2_list->get_xml(
           request->get_canonical_id(), bucket_metadata->get_owner_id(),
           request->get_user_id());
