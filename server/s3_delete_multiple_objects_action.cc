@@ -433,11 +433,17 @@ void S3DeleteMultipleObjectsAction::cleanup() {
   if (oids_to_delete.empty()) {
     cleanup_oid_from_probable_dead_oid_list();
   } else {
-    // Now trigger the delete.
-    motr_writer->delete_objects(
-        oids_to_delete, layout_id_for_objs_to_delete,
-        std::bind(&S3DeleteMultipleObjectsAction::cleanup_successful, this),
-        std::bind(&S3DeleteMultipleObjectsAction::cleanup_failed, this));
+    if (S3Option::get_instance()->is_s3server_obj_delayed_del_enabled()) {
+      // All the object oids entries in probable list index, it will
+      // be deleted later
+      done();
+    } else {
+      // Now trigger the delete.
+      motr_writer->delete_objects(
+          oids_to_delete, layout_id_for_objs_to_delete,
+          std::bind(&S3DeleteMultipleObjectsAction::cleanup_successful, this),
+          std::bind(&S3DeleteMultipleObjectsAction::cleanup_failed, this));
+    }
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

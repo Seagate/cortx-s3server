@@ -143,6 +143,11 @@ class S3kvTest(S3PyCliTest):
         self.with_cli(kvs_cmd)
         return self
 
+    def list_index(self, oid):
+        kvs_cmd = self.cmd + self.common_args + " --index_hi=" + oid.oid_hi + " --index_lo=" + oid.oid_lo + " --action=next"
+        self.with_cli(kvs_cmd)
+        return self
+
     def create_root_bucket_account_index(self):
         root_oid = self.root_bucket_account_index()
         return self.create_index(root_oid)
@@ -166,4 +171,8 @@ class S3kvTest(S3PyCliTest):
     def delete_root_probable_dead_object_list_index(self):
         root_oid = self.root_probable_dead_object_list_index()
         return self.delete_index(root_oid)
+
+    def list_root_probable_dead_object_list_index(self):
+        root_oid = self.root_probable_dead_object_list_index()
+        return self.list_index(root_oid)
 

@@ -101,10 +101,7 @@ S3cmdTest('s3cmd can upload 18MB file').upload_test("seagatebucket", "18MBfile",
 S3cmdTest('s3cmd should not have objects after rollback').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('18MBfile')
 S3fiTest('s3cmd can disable Fault injection').disable_fi("motr_idx_create_fail").execute_test().command_is_successful()
 
-is_object_leak_track_enabled=yaml.load(open("/opt/seagate/cortx/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"]
-fi_off="2"
-if is_object_leak_track_enabled:
-        fi_off="4"
+fi_off="4"
 S3fiTest('s3cmd enable FI PUT KV').enable_fi_offnonm("enable", "motr_kv_put_fail", fi_off, "99").execute_test().command_is_successful()
 S3cmdTest('s3cmd cannot upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
 S3fiTest('s3cmd disable Fault injection').disable_fi("motr_kv_put_fail").execute_test().command_is_successful()

@@ -19,33 +19,53 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
 
 ## Steps to configure & run S3backgrounddelete process
 ----
-1. Install & configure RabbbitMQ (In LDR-R1) as per {s3 src}/s3backgrounddelete/rabbitmq_setup.md
+1. Setup and configure CortxS3 Dev VM as per
 
-2. Create s3backgrounddelete log folder
-    >mkdir -p /var/log/seagate/s3/s3backgrounddelete
+   > {s3 src}/docs/CORTX-S3 Server Quick Start Guide.md
 
-3. Start S3 and motr services after setting S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING to true in
-    /opt/seagate/cortx/s3/conf/s3config.yaml.
+2. Ensure/Start following services are running
+    a. Haproxy
+      > systemctl start haproxy
 
-4. Create an account with account name s3-background-delete-svc and update
-    access_key and secret_key in /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+    b. Ldap
+      > systemctl start slapd
 
-5. Use following scripts to generate stale oids in s3server
-    >{s3 src}/s3backgrounddelete/scripts/delete_object_leak.sh
-    {s3 src}/s3backgrounddelete/scripts/update_object_leak.sh
+    c. Authserver
+      > systemctl start s3authserver
 
-6. Add proper schedule_interval_secs in
-    /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml for s3backgounddelete process. Default is 900 seconds.
+    d. Motr
+      > {s3 src}/third_party/motr/m0t1fs/../motr/st/utils/motr_services.sh start
 
-7. Start S3backgrounddelete scheduler service
+    e. S3server
+      > ./dev-starts3.sh
 
-    >systemctl start s3backgroundproducer
+    f. Rabbitmq
+      > systemctl start rabbitmq-server
 
-8. Start S3backgrounddelete processor service
+3. Create special account for s3backgroundelete
+    > /opt/seagate/cortx/s3/install/ldap/create_background_delete_account.sh ldapadmin
 
-    >systemctl start s3backgroundconsumer
+4. Add proper schedule_interval_secs in
 
-9.  Check scheduler and processor logs at
-    >/var/log/seagate/s3/s3backgrounddelete/object_recovery_scheduler.log &
-    >/var/log/seagate/s3/s3backgrounddelete/object_recovery_processor.log respectively.
+   > /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+
+  for s3backgounddelete process. Default is 900 seconds.
+
+5. Start S3backgrounddelete scheduler service
+   > systemctl start s3backgroundproducer
+
+6. Start S3backgrounddelete processor service
+   > systemctl start s3backgroundconsumer
+
+7. Use following scripts to generate stale oids in s3server
+   > {s3 src}/s3backgrounddelete/scripts/delete_object_leak.sh
+   > {s3 src}/s3backgrounddelete/scripts/update_object_leak.sh
+
+8.  Check scheduler and processor logs at
+   > /var/log/seagate/s3/s3backgrounddelete/object_recovery_scheduler.log &
+   > /var/log/seagate/s3/s3backgrounddelete/object_recovery_processor.log respectively.
+
+9.  For s3backgroudelete algorithm please refer
+   > {s3 src}/docs/design/probable-delete-processing.txt &
+   > {s3 src}/docs/design/probable_delete_record.txt
 ----
