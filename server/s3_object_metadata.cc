@@ -129,12 +129,12 @@ S3ObjectMetadata::S3ObjectMetadata(
     std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<MotrAPI> motr_api)
-    : request(std::move(req)) {
+    : bucket_name(str_bucket_name),
+      object_name(str_object_name),
+      request(std::move(req)) {
   request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
-  bucket_name = request->get_bucket_name();
-  object_name = request->get_object_name();
   initialize(ismultipart, uploadid);
 
   if (motr_api) {
