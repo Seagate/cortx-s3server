@@ -126,7 +126,7 @@ class S3Option {
   int log_file_max_size_mb;
   bool s3_enable_auth_ssl;
   bool s3server_ssl_enabled;
-  bool s3server_objectleak_tracking_enabled;
+  bool s3server_obj_delayed_del_enabled;
   bool s3_reuseport;
   bool motr_http_reuseport;
   bool log_buffering_enable;
@@ -205,7 +205,7 @@ class S3Option {
     s3_iam_cert_file = "/etc/ssl/stx-s3/s3auth/s3authserver.crt";
     s3server_ssl_session_timeout_in_sec = DAY_IN_SECONDS;
     s3server_ssl_enabled = false;
-    s3server_objectleak_tracking_enabled = false;
+    s3server_obj_delayed_del_enabled = true;
 
     s3_grace_period_sec = 10;  // 10 seconds
     is_s3_shutting_down = false;
@@ -367,9 +367,11 @@ class S3Option {
   int get_log_file_max_size_in_mb();
   bool is_s3_ssl_auth_enabled();
   bool is_s3server_ssl_enabled();
-  bool is_s3server_objectleak_tracking_enabled();
-  void set_s3server_objectleak_tracking_enabled(const bool& flag);
   bool is_s3server_addb_dump_enabled();
+
+  bool is_s3server_obj_delayed_del_enabled();
+  void set_s3server_obj_delayed_del_enabled(const bool& flag);
+
   bool is_s3_reuseport_enabled();
   bool is_motr_http_reuseport_enabled();
   const char* get_iam_cert_file();
