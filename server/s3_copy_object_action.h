@@ -50,6 +50,12 @@ class S3CopyObjectAction : public S3ObjectAction {
   unsigned short tried_count;
   int layout_id;
   int old_layout_id;
+  int motr_unit_size;
+  unsigned motr_write_payload_size;
+  bool copy_failed = false;
+
+  size_t content_length;
+  size_t rest_bytes;
   // string used for salting the uri
   std::string salt;
 
@@ -68,6 +74,8 @@ class S3CopyObjectAction : public S3ObjectAction {
   std::shared_ptr<S3ObjectMetadata> source_object_metadata;
   std::shared_ptr<S3BucketMetadata> source_bucket_metadata;
 
+  std::string new_oid_str;  // Key for new probable delete rec
+
   // TODO Edit the read_object() and initiate_data_streaming()
   // signatures accordingly in subsequent Check-ins, when the design evolves.
   void read_object();
@@ -81,6 +89,10 @@ class S3CopyObjectAction : public S3ObjectAction {
   void fetch_source_object_info_success();
   void fetch_source_object_info_failed();
 
+  // Only for use with UT
+ protected:
+  void _set_layout_id(int layout_id);
+
  public:
   S3CopyObjectAction(
       std::shared_ptr<S3RequestObject> req,
@@ -91,6 +103,7 @@ class S3CopyObjectAction : public S3ObjectAction {
       std::shared_ptr<S3MotrReaderFactory> motrreader_s3_factory = nullptr,
       std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr);
 
+ private:
   void setup_steps();
 
   void fetch_bucket_info_failed();   // destination bucket
@@ -100,9 +113,19 @@ class S3CopyObjectAction : public S3ObjectAction {
   std::string get_response_xml();
   void validate_copyobject_request();
   void create_object();
+  void create_object_successful();
+  void create_object_failed();
   void copy_object();
   void save_metadata();
+  void save_object_metadata_success();
+  void save_object_metadata_failed();
   void set_authorization_meta();
   void send_response_to_s3_client();
+  void read_data_block();
+  void read_data_block_success();
+  void read_data_block_failed();
+  void write_data_block();
+  void write_data_block_success();
+  void write_data_block_failed();
 };
 #endif  // __S3_SERVER_S3_COPY_OBJECT_ACTION_H__

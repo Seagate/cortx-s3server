@@ -18,10 +18,12 @@
  *
  */
 
-#include <json/json.h>
-#include <stdlib.h>
-#include "base64.h"
+#include <cstdlib>
+#include <cassert>
 
+#include <json/json.h>
+
+#include "base64.h"
 #include "s3_datetime.h"
 #include "s3_factory.h"
 #include "s3_iem.h"
@@ -35,9 +37,16 @@
 
 extern struct m0_uint128 global_instance_id;
 
-void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid,
-                                  std::string bucket, std::string object) {
-  json_parsing_error = false;
+S3ObjectMetadata::S3ObjectMetadata(const S3ObjectMetadata& src)
+    : S3ObjectMetadataCopyable(src), state(S3ObjectMetadataState::present) {
+
+  bucket_name = request->get_bucket_name();
+  object_name = request->get_object_name();
+  object_key_uri = bucket_name + "\\" + object_name;
+}
+
+void S3ObjectMetadata::initialize(std::string bucket, std::string object) {
+
   account_name = request->get_account_name();
   account_id = request->get_account_id();
   user_name = request->get_user_name();
@@ -53,14 +62,8 @@ void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid,
   } else {
     object_name = object;
   }
-  state = S3ObjectMetadataState::empty;
-  is_multipart = ismultipart;
-  upload_id = uploadid;
   oid = M0_ID_APP;
-  old_oid = {0ULL, 0ULL};
   layout_id = 0;
-  old_layout_id = 0;
-  tried_count = 0;
 
   object_key_uri = bucket_name + "\\" + object_name;
 
@@ -96,9 +99,6 @@ void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid,
   } else {
     index_name = get_object_list_index_name();
   }
-
-  object_list_index_oid = {0ULL, 0ULL};
-  objects_version_list_index_oid = {0ULL, 0ULL};
 }
 
 S3ObjectMetadata::S3ObjectMetadata(
@@ -107,11 +107,16 @@ S3ObjectMetadata::S3ObjectMetadata(
     std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<MotrAPI> motr_api)
-    : request(std::move(req)) {
+    : upload_id(uploadid),
+      is_multipart(ismultipart),
+      state(S3ObjectMetadataState::empty) {
+
+  request = std::move(req);
   request_id = request->get_request_id();
+
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
-  initialize(ismultipart, uploadid, bucket, object);
+  initialize(bucket, object);
 
   if (motr_api) {
     s3_motr_api = std::move(motr_api);
