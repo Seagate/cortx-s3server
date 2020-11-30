@@ -72,6 +72,9 @@ class ObjectRecoveryScheduler(object):
                 self.config.get_rabbitmq_mode(),
                 self.config.get_rabbitmq_durable(),
                 self.logger)
+            # Cleanup all entries and enqueue only 1000 entries
+            mq_client.purge_queue(self.config.get_rabbitmq_queue_name())
+
             result, index_response = CORTXS3IndexApi(
                 self.config, logger=self.logger).list(
                     self.config.get_probable_delete_index_id(), self.config.get_max_keys(), marker)
@@ -117,8 +120,6 @@ class ObjectRecoveryScheduler(object):
                             self.logger.info(
                                 "Object recovery queue send data successfully :" +
                                 str(record))
-                    if (is_truncated == "true"):
-                        self.add_kv_to_queue(probable_delete_json["NextMarker"])
                 else:
                     self.logger.info(
                         "Index listing result empty. Ignoring adding entry to object recovery queue")
