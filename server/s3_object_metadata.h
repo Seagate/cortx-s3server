@@ -51,7 +51,25 @@ class S3MotrKVSReaderFactory;
 class S3MotrKVSWriterFactory;
 class S3BucketMetadataFactory;
 
-class S3ObjectMetadata {
+class S3ObjectMetadataCopyable {
+
+ protected:
+  int layout_id = 0;
+
+  std::string request_id;
+  std::string encoded_acl;
+
+  std::map<std::string, std::string> system_defined_attribute;
+  std::map<std::string, std::string> user_defined_attribute;
+  std::map<std::string, std::string> object_tags;
+
+  std::shared_ptr<S3RequestObject> request;
+  std::shared_ptr<MotrAPI> s3_motr_api;
+  std::shared_ptr<S3MotrKVSReaderFactory> motr_kv_reader_factory;
+  std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
+};
+
+class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   // Holds system-defined metadata (creation date etc).
   // Holds user-defined metadata (names must begin with "x-amz-meta-").
   // Partially supported on need bases, some of these are placeholders.
@@ -64,8 +82,6 @@ class S3ObjectMetadata {
   std::string bucket_name;
   std::string object_name;
 
-  std::string request_id;
-
   // Reverse epoch time used as version id key in verion index
   std::string rev_epoch_version_id_key;
   // holds base64 encoding value of rev_epoch_version_id_key, this is used
@@ -74,7 +90,7 @@ class S3ObjectMetadata {
 
   std::string upload_id;
   // Maximum retry count for collision resolution.
-  unsigned short tried_count;
+  unsigned short tried_count = 0;
   std::string salt;
 
   // The name for a key is a sequence of Unicode characters whose UTF-8 encoding
@@ -82,15 +98,14 @@ class S3ObjectMetadata {
   // http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html#object-keys
   std::string object_key_uri;
 
-  int layout_id;
-  int old_layout_id;
+  int old_layout_id = 0;
 
-  struct m0_uint128 oid;
-  struct m0_uint128 old_oid;
+  struct m0_uint128 oid = M0_ID_APP;
+  struct m0_uint128 old_oid = {};
   // Will be object list index oid when simple object upload.
   // Will be multipart object list index oid when multipart object upload.
-  struct m0_uint128 object_list_index_oid;
-  struct m0_uint128 objects_version_list_index_oid;
+  struct m0_uint128 object_list_index_oid = {};
+  struct m0_uint128 objects_version_list_index_oid = {};
   struct m0_uint128 part_index_oid;
 
   std::string motr_oid_str;
@@ -98,24 +113,12 @@ class S3ObjectMetadata {
   std::string motr_old_object_version_id;
 
   std::string motr_part_oid_str;
-  std::string encoded_acl;
 
-  std::map<std::string, std::string> system_defined_attribute;
-  std::map<std::string, std::string> user_defined_attribute;
+  bool is_multipart = false;
 
-  std::map<std::string, std::string> object_tags;
-
-  bool is_multipart;
-
-  std::shared_ptr<S3RequestObject> request;
-  std::shared_ptr<MotrAPI> s3_motr_api;
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
-
-  std::shared_ptr<S3MotrKVSReaderFactory> motr_kv_reader_factory;
-  std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
 
   // Used to report to caller.
   std::function<void()> handler_on_success;
@@ -125,9 +128,9 @@ class S3ObjectMetadata {
   S3Timer s3_timer;
 
   // `true` in case of json parsing failure.
-  bool json_parsing_error;
+  bool json_parsing_error = false;
 
-  void initialize(bool is_multipart, std::string uploadid);
+  void initialize();
 
   // Any validations we want to do on metadata.
   void validate();
@@ -157,14 +160,15 @@ class S3ObjectMetadata {
                    std::shared_ptr<MotrAPI> motr_api = nullptr);
 
   S3ObjectMetadata(std::shared_ptr<S3RequestObject> req,
-                   const std::string& str_bucket_name,
-                   const std::string& str_object_name, bool ismultipart = false,
-                   std::string uploadid = "",
+                   std::string bucket_name, std::string object_name,
+                   bool ismultipart = false, std::string uploadid = "",
                    std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory =
                        nullptr,
                    std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory =
                        nullptr,
                    std::shared_ptr<MotrAPI> motr_api = nullptr);
+
+  S3ObjectMetadata(const S3ObjectMetadata&);
 
   // Call these when Object metadata save/remove needs to be called.
   // id can be object list index OID or

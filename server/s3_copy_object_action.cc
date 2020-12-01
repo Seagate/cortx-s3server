@@ -18,6 +18,9 @@
  *
  */
 
+#include <cassert>
+#include <algorithm>
+
 #include "s3_copy_object_action.h"
 #include "s3_log.h"
 #include "s3_error_codes.h"
@@ -25,6 +28,7 @@
 #include "s3_motr_layout.h"
 #include "s3_uri_to_motr_oid.h"
 #include "s3_m0_uint128_helper.h"
+#include "s3_buffer_sequence.h"
 
 S3CopyObjectAction::S3CopyObjectAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
@@ -234,18 +238,6 @@ void S3CopyObjectAction::validate_copyobject_request() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-// read source object
-void S3CopyObjectAction::read_object() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-// write to destination object
-void S3CopyObjectAction::initiate_data_streaming() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
 // Destination bucket
 void S3CopyObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
@@ -282,26 +274,311 @@ void S3CopyObjectAction::fetch_object_info_success() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+void S3CopyObjectAction::_set_layout_id(int layout_id) {
+  assert(layout_id > 0 && layout_id < 15);
+  this->layout_id = layout_id;
+
+  motr_write_payload_size =
+      S3Option::get_instance()->get_motr_write_payload_size(layout_id);
+}
+
 // Create destination object
 void S3CopyObjectAction::create_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  content_length = source_object_metadata->get_content_length();
+  _set_layout_id(S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
+      content_length));
+  motr_unit_size =
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+  assert(motr_unit_size > 0);
+  // TODO: handle tried_count
+
+  if (!motr_writer) {
+    motr_writer =
+        motr_writer_factory->create_motr_writer(request, new_object_oid);
+  } else {
+    motr_writer->set_oid(new_object_oid);
+  }
+  motr_writer->create_object(
+      std::bind(&S3CopyObjectAction::create_object_successful, this),
+      std::bind(&S3CopyObjectAction::create_object_failed, this), layout_id);
+
+  // for shutdown testcases, check FI and set shutdown signal
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "put_object_action_create_object_shutdown_fail");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3CopyObjectAction::create_object_successful() {
+  s3_log(S3_LOG_INFO, request_id, "Entering");
+  s3_copy_action_state = S3CopyObjectActionState::newObjOidCreated;
+
+  // New Object or overwrite, create new metadata and release old.
+  new_object_metadata.reset(new S3ObjectMetadata(*source_object_metadata));
+
+  new_object_metadata->set_object_list_index_oid(
+      bucket_metadata->get_object_list_index_oid());
+
+  new_object_metadata->set_objects_version_list_index_oid(
+      bucket_metadata->get_objects_version_list_index_oid());
+
+  new_oid_str = S3M0Uint128Helper::to_string(new_object_oid);
+
+  // Generate a version id for the new object.
+  new_object_metadata->regenerate_version_id();
+  new_object_metadata->set_oid(motr_writer->get_oid());
+  new_object_metadata->set_layout_id(layout_id);
+
   next();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3CopyObjectAction::create_object_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    return;
+  }
+  if (motr_writer->get_state() == S3MotrWiterOpState::exists) {
+    // collision_detected();
+  } else {
+    s3_copy_action_state = S3CopyObjectActionState::newObjOidCreationFailed;
+
+    if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
+      s3_log(S3_LOG_ERROR, request_id, "Create object failed.\n");
+      set_s3_error("ServiceUnavailable");
+    } else {
+      s3_log(S3_LOG_WARN, request_id, "Create object failed.\n");
+      // Any other error report failure.
+      set_s3_error("InternalError");
+    }
+    send_response_to_s3_client();
+  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 // Copy source object to destination object
 void S3CopyObjectAction::copy_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  read_object();              // read source object
-  initiate_data_streaming();  // write to destination object
-  next();
+
+  if (!content_length) {
+    s3_log(S3_LOG_DEBUG, request_id, "Source object is empty");
+    next();
+    return;
+  }
+  motr_reader = motr_reader_factory->create_motr_reader(
+      request, source_object_metadata->get_oid(),
+      source_object_metadata->get_layout_id());
+  motr_reader->set_last_index(0);
+
+  rest_bytes = content_length;
+  read_data_block();
+
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-// Save destination object metadata
+void S3CopyObjectAction::read_data_block() {
+  s3_log(S3_LOG_INFO, request_id, "Entering");
+
+  assert(!read_in_progress);
+  assert(rest_bytes > 0);
+
+  const size_t max_blocks_in_one_read_op =
+      S3Option::get_instance()->get_motr_units_per_request();
+  const size_t rest_blocks = (rest_bytes + motr_unit_size - 1) / motr_unit_size;
+
+  if (motr_reader->read_object_data(
+          std::min(rest_blocks, max_blocks_in_one_read_op),
+          std::bind(&S3CopyObjectAction::read_data_block_success, this),
+          std::bind(&S3CopyObjectAction::read_data_block_failed, this))) {
+
+    s3_log(S3_LOG_DEBUG, request_id, "Data read is launched");
+    read_in_progress = true;
+    return;
+  }
+  if (motr_reader->get_state() == S3MotrReaderOpState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+    s3_log(S3_LOG_ERROR, request_id,
+           "read_object_data() failed due to motr_entity_open failure\n");
+  } else {
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
+
+  s3_log(S3_LOG_DEBUG, NULL, "Exiting\n");
+}
+
+void S3CopyObjectAction::read_data_block_success() {
+  assert(read_in_progress);
+
+  s3_log(S3_LOG_INFO, request_id, "Read object data succeeded");
+  read_in_progress = false;
+
+  if (copy_failed) {
+    send_response_to_s3_client();
+    return;
+  }
+  if (!write_in_progress) {
+    write_data_block();
+  }
+  s3_log(S3_LOG_DEBUG, NULL, "Exiting\n");
+}
+
+void S3CopyObjectAction::read_data_block_failed() {
+  assert(read_in_progress);
+
+  s3_log(S3_LOG_DEBUG, request_id, "Failed to read object data from motr");
+  set_s3_error("InternalError");
+
+  if (write_in_progress) {
+    copy_failed = true;
+  } else {
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, NULL, "Exiting\n");
+}
+
+void S3CopyObjectAction::write_data_block() {
+  s3_log(S3_LOG_INFO, request_id, "Entering");
+
+  assert(!write_in_progress);
+  assert(rest_bytes > 0);
+
+  S3BufferSequence buffer_sequence;
+
+  char* p_data;
+  size_t block_size = motr_reader->get_first_block(&p_data);
+
+  unsigned block_in_chunk = 0;
+  size_t bytes_in_chunk = 0;
+
+  while (block_size) {
+    assert(p_data != NULL);
+    assert(block_size && block_size <= (size_t)motr_unit_size);
+
+    if (block_size >= rest_bytes) {
+      block_size = rest_bytes;
+      rest_bytes = 0;
+    } else {
+      rest_bytes -= block_size;
+    }
+    buffer_sequence.emplace_back(p_data, block_size);
+
+    bytes_in_chunk += block_size;
+    ++block_in_chunk;
+
+    block_size = motr_reader->get_next_block(&p_data);
+  }
+  assert(block_in_chunk);
+  assert(bytes_in_chunk);
+
+  s3_log(S3_LOG_DEBUG, request_id, "Got %zu bytes in %u blocks", bytes_in_chunk,
+         block_in_chunk);
+
+  motr_writer->write_content(
+      std::bind(&S3CopyObjectAction::write_data_block_success, this),
+      std::bind(&S3CopyObjectAction::write_data_block_failed, this),
+      std::move(buffer_sequence), motr_unit_size);
+
+  write_in_progress = true;
+
+  s3_log(S3_LOG_DEBUG, NULL, "Exiting\n");
+}
+
+void S3CopyObjectAction::write_data_block_success() {
+  s3_log(S3_LOG_INFO, request_id, "Entering");
+
+  assert(write_in_progress);
+  write_in_progress = false;
+
+  if (rest_bytes) {
+    read_data_block();
+  } else {
+    next();
+  }
+  s3_log(S3_LOG_DEBUG, NULL, "Exiting\n");
+}
+
+void S3CopyObjectAction::write_data_block_failed() {
+  assert(write_in_progress);
+
+  s3_log(S3_LOG_INFO, request_id, "Failed to write object data to motr");
+  set_s3_error("InternalError");
+
+  if (read_in_progress) {
+    copy_failed = true;
+  } else {
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, NULL, "Exiting\n");
+}
+
 void S3CopyObjectAction::save_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  std::string s_md5_got = source_object_metadata->get_md5();
+
+  if (!s_md5_got.empty()) {
+    std::string s_md5_calc = motr_writer->get_content_md5();
+    s3_log(S3_LOG_DEBUG, request_id, "MD5 calculated: %s, MD5 got %s",
+           s_md5_calc.c_str(), s_md5_got.c_str());
+
+    if (s_md5_calc != s_md5_got) {
+      s3_log(S3_LOG_ERROR, request_id, "Content MD5 mismatch\n");
+      s3_copy_action_state = S3CopyObjectActionState::md5ValidationFailed;
+
+      set_s3_error("BadDigest");
+      // Clean up will be done after response.
+      send_response_to_s3_client();
+      return;
+    }
+  }
+  // for shutdown testcases, check FI and set shutdown signal
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL("put_object_action_save_metadata_pass");
+
+  new_object_metadata->reset_date_time_to_current();
+  new_object_metadata->set_content_length(std::to_string(content_length));
+  new_object_metadata->set_content_type(
+      source_object_metadata->get_content_type());
+  new_object_metadata->set_md5(motr_writer->get_content_md5());
+  // new_object_metadata->set_tags(new_object_tags_map);
+
+  for (auto it : request->get_in_headers_copy()) {
+    if (it.first.find("x-amz-meta-") != std::string::npos) {
+      s3_log(S3_LOG_DEBUG, request_id,
+             "Writing user metadata on object: [%s] -> [%s]\n",
+             it.first.c_str(), it.second.c_str());
+      new_object_metadata->add_user_defined_attribute(it.first, it.second);
+    }
+  }
+
+  // bypass shutdown signal check for next task
+  check_shutdown_signal_for_next_task(false);
+  new_object_metadata->save(
+      std::bind(&S3CopyObjectAction::save_object_metadata_success, this),
+      std::bind(&S3CopyObjectAction::save_object_metadata_failed, this));
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3CopyObjectAction::save_object_metadata_success() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_copy_action_state = S3CopyObjectActionState::metadataSaved;
   next();
+}
+
+void S3CopyObjectAction::save_object_metadata_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_copy_action_state = S3CopyObjectActionState::metadataSaveFailed;
+  if (new_object_metadata->get_state() ==
+      S3ObjectMetadataState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+  } else {
+    s3_log(S3_LOG_ERROR, request_id, "failed to save object metadata.");
+    set_s3_error("InternalError");
+  }
+  // Clean up will be done after response.
+  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -328,6 +605,7 @@ void S3CopyObjectAction::send_response_to_s3_client() {
       (is_error_state() && !get_s3_error_code().empty())) {
     // Metadata saved for object is always a success condition.
     assert(s3_copy_action_state != S3CopyObjectActionState::metadataSaved);
+
     S3Error error(get_s3_error_code(), request->get_request_id());
 
     if (S3CopyObjectActionState::validationFailed == s3_copy_action_state &&
@@ -341,7 +619,6 @@ void S3CopyObjectAction::send_response_to_s3_client() {
             InvalidRequestSourceObjectSizeGreaterThan5GB);
       }
     }
-
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
