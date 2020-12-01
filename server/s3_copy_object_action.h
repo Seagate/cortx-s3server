@@ -38,6 +38,15 @@ enum class S3CopyObjectActionState {
   completed,                // All stages done completely
 };
 
+const u_long MaxCopyObjectSourceSize = 5368709120UL;  // 5GB
+const std::string InvalidRequestSourceObjectSizeGreaterThan5GB =
+    "The specified copy source is larger than the maximum allowable size for a "
+    "copy source: 5368709120";
+const std::string InvalidRequestSourceAndDestinationSame =
+    "This copy request is illegal because it is trying to copy an object to "
+    "itself without changing the object's metadata, storage class, website "
+    "redirect location or encryption";
+
 class S3CopyObjectAction : public S3ObjectAction {
   S3CopyObjectActionState s3_copy_action_state;
   bool write_in_progress;
@@ -51,6 +60,9 @@ class S3CopyObjectAction : public S3ObjectAction {
   // string used for salting the uri
   std::string salt;
 
+  std::string source_bucket_name;
+  std::string source_object_name;
+
   std::shared_ptr<S3MotrReader> motr_reader;
   std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
@@ -60,11 +72,23 @@ class S3CopyObjectAction : public S3ObjectAction {
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
   std::shared_ptr<MotrAPI> s3_motr_api;
   std::shared_ptr<S3ObjectMetadata> new_object_metadata;
+  std::shared_ptr<S3ObjectMetadata> source_object_metadata;
+  std::shared_ptr<S3BucketMetadata> source_bucket_metadata;
 
   // TODO Edit the read_object() and initiate_data_streaming()
   // signatures accordingly in subsequent Check-ins, when the design evolves.
   void read_object();
   void initiate_data_streaming();
+  void get_source_bucket_and_object();
+  void fetch_source_bucket_info();
+  void fetch_source_bucket_info_success();
+  void fetch_source_bucket_info_failed();
+
+  void fetch_source_object_info();
+  void fetch_source_object_info_success();
+  void fetch_source_object_info_failed();
+
+  bool if_source_and_destination_same();
 
  public:
   S3CopyObjectAction(
@@ -78,9 +102,9 @@ class S3CopyObjectAction : public S3ObjectAction {
 
   void setup_steps();
 
-  void fetch_bucket_info_failed();
-  void fetch_object_info_failed();
-  void fetch_object_info_success();
+  void fetch_bucket_info_failed();   // destination bucket
+  void fetch_object_info_failed();   // destination object
+  void fetch_object_info_success();  // destination object
 
   std::string get_response_xml();
   void validate_copyobject_request();
@@ -89,5 +113,31 @@ class S3CopyObjectAction : public S3ObjectAction {
   void save_metadata();
   void set_authorization_meta();
   void send_response_to_s3_client();
+
+  FRIEND_TEST(S3CopyObjectActionTest, GetSourceBucketAndObjectSuccess);
+  FRIEND_TEST(S3CopyObjectActionTest, GetSourceBucketAndObjectFailure);
+  FRIEND_TEST(S3CopyObjectActionTest, FetchSourceBucketInfo);
+  FRIEND_TEST(S3CopyObjectActionTest, FetchSourceBucketInfoFailedMissing);
+  FRIEND_TEST(S3CopyObjectActionTest,
+              FetchSourceBucketInfoFailedFailedToLaunch);
+  FRIEND_TEST(S3CopyObjectActionTest, FetchSourceBucketInfoFailedInternalError);
+  FRIEND_TEST(S3CopyObjectActionTest, FetchSourceObjectInfoListIndexNull);
+  FRIEND_TEST(S3CopyObjectActionTest, FetchSourceObjectInfoListIndexGood);
+  FRIEND_TEST(S3CopyObjectActionTest,
+              FetchSourceObjectInfoSuccessGreaterThan5GB);
+  FRIEND_TEST(S3CopyObjectActionTest, FetchSourceObjectInfoSuccessLessThan5GB);
+  FRIEND_TEST(S3CopyObjectActionTest,
+              ValidateCopyObjectRequestSourceBucketEmpty);
+  FRIEND_TEST(S3CopyObjectActionTest,
+              ValidateCopyObjectRequestSourceAndDestinationSame);
+  FRIEND_TEST(S3CopyObjectActionTest, ValidateCopyObjectRequestSuccess);
+  FRIEND_TEST(S3CopyObjectActionTest,
+              FetchDestinationBucketInfoFailedMetadataMissing);
+  FRIEND_TEST(S3CopyObjectActionTest,
+              FetchDestinationBucketInfoFailedFailedToLaunch);
+  FRIEND_TEST(S3CopyObjectActionTest,
+              FetchDestinationBucketInfoFailedInternalError);
+  FRIEND_TEST(S3CopyObjectActionTest, FetchDestinationObjectInfoFailed);
+  FRIEND_TEST(S3CopyObjectActionTest, FetchDestinationObjectInfoSuccess);
 };
 #endif  // __S3_SERVER_S3_COPY_OBJECT_ACTION_H__

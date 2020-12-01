@@ -156,6 +156,16 @@ class S3ObjectMetadata {
                        nullptr,
                    std::shared_ptr<MotrAPI> motr_api = nullptr);
 
+  S3ObjectMetadata(std::shared_ptr<S3RequestObject> req,
+                   const std::string& str_bucket_name,
+                   const std::string& str_object_name, bool ismultipart = false,
+                   std::string uploadid = "",
+                   std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory =
+                       nullptr,
+                   std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory =
+                       nullptr,
+                   std::shared_ptr<MotrAPI> motr_api = nullptr);
+
   // Call these when Object metadata save/remove needs to be called.
   // id can be object list index OID or
   // id can be multipart upload list index OID

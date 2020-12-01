@@ -29,41 +29,20 @@
 #include "s3_common_utilities.h"
 #include "s3_m0_uint128_helper.h"
 
-S3BucketMetadata::S3BucketMetadata(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
-    std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
-    std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory)
-    : request(std::move(req)), json_parsing_error(false) {
-  request_id = request->get_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor");
-
+void S3BucketMetadata::initialize(std::string str_bucket_name) {
   account_name = request->get_account_name();
   account_id = request->get_account_id();
   user_name = request->get_user_name();
   owner_canonical_id = request->get_canonical_id();
   user_id = request->get_user_id();
-  bucket_name = request->get_bucket_name();
-
+  if (str_bucket_name.empty()) {
+    bucket_name = request->get_bucket_name();
+  } else {
+    bucket_name = str_bucket_name;
+  }
   state = S3BucketMetadataState::empty;
   current_op = S3BucketMetadataCurrentOp::none;
 
-  if (motr_api) {
-    s3_motr_api = std::move(motr_api);
-  } else {
-    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
-  }
-
-  if (motr_s3_kvs_reader_factory) {
-    motr_kvs_reader_factory = std::move(motr_s3_kvs_reader_factory);
-  } else {
-    motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
-  }
-
-  if (motr_s3_kvs_writer_factory) {
-    motr_kvs_writer_factory = std::move(motr_s3_kvs_writer_factory);
-  } else {
-    motr_kvs_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
-  }
   collision_salt = "index_salt_";
   collision_attempt_count = 0;
 
@@ -87,6 +66,65 @@ S3BucketMetadata::S3BucketMetadata(
   system_defined_attribute["Owner-User-id"] = "";
   system_defined_attribute["Owner-Account"] = "";
   system_defined_attribute["Owner-Account-id"] = "";
+}
+
+S3BucketMetadata::S3BucketMetadata(
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
+    std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory)
+    : request(std::move(req)), json_parsing_error(false) {
+  request_id = request->get_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor");
+
+  initialize();
+
+  if (motr_api) {
+    s3_motr_api = std::move(motr_api);
+  } else {
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
+  }
+
+  if (motr_s3_kvs_reader_factory) {
+    motr_kvs_reader_factory = std::move(motr_s3_kvs_reader_factory);
+  } else {
+    motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+  }
+
+  if (motr_s3_kvs_writer_factory) {
+    motr_kvs_writer_factory = std::move(motr_s3_kvs_writer_factory);
+  } else {
+    motr_kvs_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
+  }
+}
+
+S3BucketMetadata::S3BucketMetadata(
+    std::shared_ptr<S3RequestObject> req, const std::string& str_bucket_name,
+    std::shared_ptr<MotrAPI> motr_api,
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
+    std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory)
+    : request(std::move(req)), json_parsing_error(false) {
+  request_id = request->get_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor");
+
+  initialize(str_bucket_name);
+
+  if (motr_api) {
+    s3_motr_api = std::move(motr_api);
+  } else {
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
+  }
+
+  if (motr_s3_kvs_reader_factory) {
+    motr_kvs_reader_factory = std::move(motr_s3_kvs_reader_factory);
+  } else {
+    motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+  }
+
+  if (motr_s3_kvs_writer_factory) {
+    motr_kvs_writer_factory = std::move(motr_s3_kvs_writer_factory);
+  } else {
+    motr_kvs_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
+  }
 }
 
 std::string S3BucketMetadata::get_bucket_name() { return bucket_name; }
