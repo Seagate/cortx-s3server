@@ -99,7 +99,7 @@ S3ObjectMetadata::S3ObjectMetadata(
     std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<MotrAPI> motr_api)
-    : upload_id(uploadid),
+    : upload_id(std::move(uploadid)),
       is_multipart(ismultipart),
       state(S3ObjectMetadataState::empty) {
 
@@ -142,8 +142,9 @@ S3ObjectMetadata::S3ObjectMetadata(
     std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<MotrAPI> motr_api)
-    : S3ObjectMetadata(req, "", "", ismultipart, uploadid, kv_reader_factory,
-                       kv_writer_factory, motr_api) {}
+    : S3ObjectMetadata(std::move(req), "", "", ismultipart, std::move(uploadid),
+                       std::move(kv_reader_factory),
+                       std::move(kv_writer_factory), std::move(motr_api)) {}
 
 std::string S3ObjectMetadata::get_owner_id() {
   return system_defined_attribute["Owner-User-id"];

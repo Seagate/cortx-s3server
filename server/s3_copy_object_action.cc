@@ -517,23 +517,6 @@ void S3CopyObjectAction::write_data_block_failed() {
 void S3CopyObjectAction::save_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  std::string s_md5_got = source_object_metadata->get_md5();
-
-  if (!s_md5_got.empty()) {
-    std::string s_md5_calc = motr_writer->get_content_md5();
-    s3_log(S3_LOG_DEBUG, request_id, "MD5 calculated: %s, MD5 got %s",
-           s_md5_calc.c_str(), s_md5_got.c_str());
-
-    if (s_md5_calc != s_md5_got) {
-      s3_log(S3_LOG_ERROR, request_id, "Content MD5 mismatch\n");
-      s3_copy_action_state = S3CopyObjectActionState::md5ValidationFailed;
-
-      set_s3_error("BadDigest");
-      // Clean up will be done after response.
-      send_response_to_s3_client();
-      return;
-    }
-  }
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL("put_object_action_save_metadata_pass");
 
