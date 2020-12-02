@@ -63,7 +63,7 @@ class S3CopyObjectAction : public S3ObjectAction {
   bool copy_failed = false;
 
   size_t content_length;
-  size_t rest_bytes;
+  size_t bytes_left_to_read;
   // string used for salting the uri
   std::string salt;
 

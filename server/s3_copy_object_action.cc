@@ -306,7 +306,7 @@ void S3CopyObjectAction::create_object() {
 
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
-      "put_object_action_create_object_shutdown_fail");
+      "copy_object_action_create_object_shutdown_fail");
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -341,18 +341,15 @@ void S3CopyObjectAction::create_object_failed() {
     return;
   }
   if (motr_writer->get_state() == S3MotrWiterOpState::exists) {
-    // collision_detected();
+    // TODO: collision_detected();
   } else {
     s3_copy_action_state = S3CopyObjectActionState::newObjOidCreationFailed;
+    s3_log(S3_LOG_ERROR, request_id, "Create destination object failed.\n");
 
-    if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
-      s3_log(S3_LOG_ERROR, request_id, "Create object failed.\n");
-      set_s3_error("ServiceUnavailable");
-    } else {
-      s3_log(S3_LOG_WARN, request_id, "Create object failed.\n");
-      // Any other error report failure.
-      set_s3_error("InternalError");
-    }
+    set_s3_error(motr_writer->get_state() ==
+                         S3MotrWiterOpState::failed_to_launch
+                     ? "ServiceUnavailable"
+                     : "InternalError");
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -372,7 +369,7 @@ void S3CopyObjectAction::copy_object() {
       source_object_metadata->get_layout_id());
   motr_reader->set_last_index(0);
 
-  rest_bytes = content_length;
+  bytes_left_to_read = content_length;
   read_data_block();
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -382,11 +379,12 @@ void S3CopyObjectAction::read_data_block() {
   s3_log(S3_LOG_INFO, request_id, "Entering");
 
   assert(!read_in_progress);
-  assert(rest_bytes > 0);
+  assert(bytes_left_to_read > 0);
 
   const size_t max_blocks_in_one_read_op =
       S3Option::get_instance()->get_motr_units_per_request();
-  const size_t rest_blocks = (rest_bytes + motr_unit_size - 1) / motr_unit_size;
+  const size_t rest_blocks =
+      (bytes_left_to_read + motr_unit_size - 1) / motr_unit_size;
 
   if (motr_reader->read_object_data(
           std::min(rest_blocks, max_blocks_in_one_read_op),
@@ -443,7 +441,7 @@ void S3CopyObjectAction::write_data_block() {
   s3_log(S3_LOG_INFO, request_id, "Entering");
 
   assert(!write_in_progress);
-  assert(rest_bytes > 0);
+  assert(bytes_left_to_read > 0);
 
   S3BufferSequence buffer_sequence;
 
@@ -457,11 +455,11 @@ void S3CopyObjectAction::write_data_block() {
     assert(p_data != NULL);
     assert(block_size && block_size <= (size_t)motr_unit_size);
 
-    if (block_size >= rest_bytes) {
-      block_size = rest_bytes;
-      rest_bytes = 0;
+    if (block_size >= bytes_left_to_read) {
+      block_size = bytes_left_to_read;
+      bytes_left_to_read = 0;
     } else {
-      rest_bytes -= block_size;
+      bytes_left_to_read -= block_size;
     }
     buffer_sequence.emplace_back(p_data, block_size);
 
@@ -492,7 +490,7 @@ void S3CopyObjectAction::write_data_block_success() {
   assert(write_in_progress);
   write_in_progress = false;
 
-  if (rest_bytes) {
+  if (bytes_left_to_read) {
     read_data_block();
   } else {
     next();

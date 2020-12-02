@@ -44,7 +44,15 @@ S3ObjectMetadata::S3ObjectMetadata(const S3ObjectMetadata& src)
 
   bucket_name = request->get_bucket_name();
   object_name = request->get_object_name();
-  object_key_uri = bucket_name + "\\" + object_name;
+
+  initialize();
+}
+
+static void str_set_default(std::string& sref, const char* sz) {
+  assert(sz != NULL);
+  if (sref.empty()) {
+    sref = sz;
+  }
 }
 
 void S3ObjectMetadata::initialize() {
@@ -62,6 +70,7 @@ void S3ObjectMetadata::initialize() {
   (void)system_defined_attribute["Content-Length"];
   (void)system_defined_attribute["Last-Modified"];
   (void)system_defined_attribute["Content-MD5"];
+
   // Initially set to requestor of API, but on load json can be overriden
   system_defined_attribute["Owner-User"] = user_name;
   system_defined_attribute["Owner-Canonical-id"] = canonical_id;
@@ -69,13 +78,14 @@ void S3ObjectMetadata::initialize() {
   system_defined_attribute["Owner-Account"] = account_name;
   system_defined_attribute["Owner-Account-id"] = account_id;
 
-  system_defined_attribute["x-amz-server-side-encryption"] =
-      "None";  // Valid values aws:kms, AES256
+  str_set_default(system_defined_attribute["x-amz-server-side-encryption"],
+                  "None");
   (void)system_defined_attribute["x-amz-version-id"];
+
   // Generate if versioning enabled
-  system_defined_attribute["x-amz-storage-class"] =
-      "STANDARD";  // Valid Values: STANDARD | STANDARD_IA | REDUCED_REDUNDANCY
-  system_defined_attribute["x-amz-website-redirect-location"] = "None";
+  str_set_default(system_defined_attribute["x-amz-storage-class"], "STANDARD");
+  str_set_default(system_defined_attribute["x-amz-website-redirect-location"],
+                  "None");
 
   (void)system_defined_attribute["x-amz-server-side-encryption-aws-kms-key-id"];
   (void)system_defined_attribute
