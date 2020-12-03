@@ -63,6 +63,24 @@ void S3GetBucketActionV2::validate_request() {
 
   std::shared_ptr<S3ObjectListResponseV2> obj_v2_list =
       std::dynamic_pointer_cast<S3ObjectListResponseV2>(object_list);
+  std::string expected_owner =
+      request->get_header_value("x-amz-expected-bucket-owner");
+  s3_log(S3_LOG_DEBUG, request_id,
+         "expected-bucket-owner = %s. Actual bucket owner = %s\n",
+         expected_owner.c_str(),
+         bucket_metadata->get_bucket_owner_account_id().c_str());
+
+  if (!expected_owner.empty() &&
+      (expected_owner != bucket_metadata->get_bucket_owner_account_id())) {
+    // Expected bucket owner is not the same as real/actual bucket owner.
+    // Return HTTP 403 (Access Denied) error.
+    set_s3_error("AccessDenied");
+    set_s3_error_message(
+        "An error occurred (AccessDenied) when calling the ListObjectsV2 "
+        "operation");
+    send_response_to_s3_client();
+    return;
+  }
 
   bool is_cont_token_present = false;
   is_cont_token_present = request->has_query_param_key("continuation-token");
