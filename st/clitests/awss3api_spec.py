@@ -91,8 +91,41 @@ def create_object_list_file(file_name, obj_list=[], quiet_mode="false"):
 def delete_object_list_file(file_name):
     os.remove(file_name)
 
+
 #******** Create Bucket ********
 AwsTest('Aws can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+
+# Ensure no "Error during pagination: The same next token was received twice:" is seen.
+# If command is successful, it ensures no error, inlcuding pagination error.
+# Create 2 objects with name containing:
+#  loadgen_test_3XQEX2S6WFEDA4B32AJ3T6FAR4XVNKRAE6JET2LSJFFVACUV4MOMLCSH42RXFX22IXYWZS3YFFWYUJE4STNJPGFDOLIDLTQDZ6J2QLA_
+# The above key string is specifically chosen, as issue 'Error during pagination' was seen when the key was similar to such string.
+obj_list = []
+for x in range(2):
+    key = "loadgen_test_3XQEX2S6WFEDA4B32AJ3T6FAR4XVNKRAE6JET2LSJFFVACUV4MOMLCSH42RXFX22IXYWZS3YFFWYUJE4STNJPGFDOLIDLTQDZ6J2QLA_%d" % (x)
+    AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
+        .execute_test().command_is_successful()
+    obj_list.append(key)
+
+#  Create object list file
+object_list_file = create_object_list_file("obj_list_v2_keys.json", obj_list, "true")
+
+# List objects using list-objects-v2, page size 7 (first page will have 7 keys, and next page 3 keys)
+list_v2_options = {'page-size':1}
+result = AwsTest(('Aws list objects using page size \'%d\'') % (list_v2_options['page-size']))\
+    .list_objects_v2("seagatebucket", **list_v2_options)\
+    .execute_test()\
+    .command_is_successful()
+
+# Delete all created objects in bucket 'seagatebucket'
+AwsTest('Aws delete objects')\
+    .delete_multiple_objects("seagatebucket", object_list_file)\
+    .execute_test()\
+    .command_is_successful()\
+    .command_response_should_be_empty()
+
+delete_object_list_file(object_list_file)
+
 '''
 Create following keys (both, regular and heirarchical) into a bucket:
 asdf
