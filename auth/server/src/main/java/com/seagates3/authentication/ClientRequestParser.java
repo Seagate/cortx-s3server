@@ -42,8 +42,8 @@ public class ClientRequestParser {
             = "AWS [A-Za-z0-9-_]+:[a-zA-Z0-9+/=]+";
     private static final String AWS_V4_AUTHRORIAZATION_PATTERN
             = "AWS4-HMAC-SHA256[\\w\\W]+";
-    private ResponseGenerator responseGenerator
-            = new ResponseGenerator();
+    private
+     ResponseGenerator responseGenerator = new ResponseGenerator();
     private final static Logger LOGGER =
             LoggerFactory.getLogger(ClientRequestParser.class.getName());
     private static final Pattern ACCESS_KEY_PATTERN  = Pattern.compile("[\\w-]+");
@@ -94,7 +94,10 @@ public class ClientRequestParser {
 
         if (authorizationHeader == null ||
             authorizationHeader.replaceAll("\\s+", "").isEmpty()) {
-            return null;
+
+          ServerResponse serverResponse =
+              new ResponseGenerator().AccessDenied();
+          throw new InvalidArgumentException(serverResponse);
         }
         ClientRequestParser clientRequestParser = new ClientRequestParser();
 
