@@ -65,6 +65,7 @@ mkdir -p $AUTH_INSTALL_LOCATION
 mkdir -p $DATA_RECOVERY_INSTALL_LOCATION
 mkdir -p $AUTH_INSTALL_LOCATION/resources
 mkdir -p $AUTH_INSTALL_LOCATION/scripts
+mkdir -p $AUTH_INSTALL_LOCATION/scripts/swupdate
 mkdir -p $S3_INSTALL_LOCATION/addb-plugin
 mkdir -p $S3_INSTALL_LOCATION/bin
 mkdir -p $S3_INSTALL_LOCATION/s3datarecovery
@@ -124,7 +125,7 @@ if [ -z "${IS_RELEASE}" ] ; then
 else
   cp s3config.release.yaml.sample ${S3_CONFIG_FILE_LOCATION}/s3config.yaml.sample
 fi
-
+cp s3config_unsafe_attributes.yaml $S3_CONFIG_FILE_LOCATION
 # Copy the S3 Audit Log Config file
 cp s3server_audit_log.properties $S3_CONFIG_FILE_LOCATION
 
@@ -172,7 +173,7 @@ cp s3backgrounddelete/s3backgrounddelete/config/s3_cluster.yaml $S3_INSTALL_LOCA
 
 # Copy s3 data recovery script.
 cp -f s3_data_recovery.sh $S3_INSTALL_LOCATION/s3datarecovery/
-
+cp s3backgrounddelete/s3backgrounddelete/config/s3backgrounddelete_unsafe_attributes.yaml $S3_INSTALL_LOCATION/s3backgrounddelete/
 # Copy orchastrator script
 cp -f orchastrator.sh $DATA_RECOVERY_INSTALL_LOCATION/
 
@@ -199,13 +200,14 @@ cp -f auth/resources/AmazonS3.xsd $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/s3authserver.jks $AUTH_INSTALL_LOCATION/resources/
 cp -f scripts/s3authserver.jks_template $AUTH_INSTALL_LOCATION/scripts/
 cp -f scripts/create_auth_jks_password.sh $AUTH_INSTALL_LOCATION/scripts/
-
+cp -f auth/resources/authserver_unsafe_attributes.yaml $AUTH_INSTALL_LOCATION/resources/
+cp -f auth/resources/keystore_unsafe_attributes.yaml $AUTH_INSTALL_LOCATION/resources/
 # Copy LDAP replication to install location
 # remove this once changes are done in provisioning
 cp -f scripts/ldap/syncprov_mod.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/syncprov.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/replicate.ldif $S3_INSTALL_LOCATION/install/ldap/
-
+cp -f scripts/swupdate/merge.sh $AUTH_INSTALL_LOCATION/scripts/swupdate
 # Copy LDAP replication to install location
 cp -f scripts/ldap/replication/syncprov_mod.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
 cp -f scripts/ldap/replication/syncprov.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
