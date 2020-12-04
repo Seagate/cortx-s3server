@@ -126,8 +126,9 @@ bool stoi(const std::string &str, int &value) {
   return isvalid;
 }
 
-void size_based_bucketing_of_objects(std::string &oid_str, const size_t obj_size){
-  s3_log(S3_LOG_INFO, ""  , "Entering\n");
+void size_based_bucketing_of_objects(std::string &oid_str,
+                                     const size_t obj_size) {
+  s3_log(S3_LOG_INFO, "", "Entering\n");
   size_t object_size_for_bucketing = obj_size;
   std::string marker = "";
 
@@ -144,38 +145,40 @@ void size_based_bucketing_of_objects(std::string &oid_str, const size_t obj_size
   // Listing of keys in motr happens in lexicographic order, hence bigger object
   // will get listed first.
 
-  switch(object_size_for_bucketing){
-       case 0 ... 1024:                   // less than or equal to 1KB
-            marker = 'I';
-            oid_str.insert(0, marker);
-            break;
+  switch (object_size_for_bucketing) {
+    case 0 ... 1024:  // less than or equal to 1KB
+      marker = 'I';
+      oid_str.insert(0, marker);
+      break;
 
-       case 1025 ... 10240:               // greater than 1KB and less than or equal to 10KB
-            marker = 'H';      
-            oid_str.insert(0, marker);
-            break;
-       
-       case 10241 ... 52428800:           // greater than 10KB and less than equal to 50MB
-            marker = 'G';
-            oid_str.insert(0, marker);
-            break;
-       
-       case 52428801 ... 1073741824:      // greater than 50MB and less than equal to 1GB
-            marker = 'F';
-            oid_str.insert(0, marker);
-            break;
-       
-       case 1073741825 ... 107374182400: // greater than 1GB and less than equal to 100GB
-            marker = 'E';
-            oid_str.insert(0, marker);
-            break;
+    case 1025 ... 10240:  // greater than 1KB and less than or equal to 10KB
+      marker = 'H';
+      oid_str.insert(0, marker);
+      break;
 
-       default:
-            marker = 'D';      //  greater than 100GB
-            oid_str.insert(0, marker);
-            break;
-   }
-  
+    case 10241 ... 52428800:  // greater than 10KB and less than equal to 50MB
+      marker = 'G';
+      oid_str.insert(0, marker);
+      break;
+
+    case 52428801 ... 1073741824
+        :  // greater than 50MB and less than equal to 1GB
+      marker = 'F';
+      oid_str.insert(0, marker);
+      break;
+
+    case 1073741825 ... 107374182400
+        :  // greater than 1GB and less than equal to 100GB
+      marker = 'E';
+      oid_str.insert(0, marker);
+      break;
+
+    default:
+      marker = 'D';  //  greater than 100GB
+      oid_str.insert(0, marker);
+      break;
+  }
+
   s3_log(S3_LOG_INFO, "", "Exiting\n");
 }
 
