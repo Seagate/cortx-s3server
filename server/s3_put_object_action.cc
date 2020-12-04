@@ -31,6 +31,7 @@
 #include <evhttp.h>
 #include "s3_m0_uint128_helper.h"
 #include "s3_perf_metrics.h"
+#include "s3_common_utilities.h"
 
 extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
@@ -405,7 +406,6 @@ void S3PutObjectAction::initiate_data_streaming() {
   s3_stats_timing("create_object_success", mss);
 
   total_data_to_stream = request->get_content_length();
-
   if (total_data_to_stream == 0) {
     next();  // Zero size object.
   } else {
@@ -621,8 +621,12 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
   if (old_object_oid.u_hi || old_object_oid.u_lo) {
     assert(!old_oid_str.empty());
 
+    //prepending a char depending on the size of the object (size based bucketing of object)
+    S3CommonUtilities::size_based_bucketing_of_objects(old_oid_str, object_metadata->get_content_length());
+
     // key = oldoid + "-" + newoid
     std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
+
     s3_log(S3_LOG_DEBUG, request_id,
            "Adding old_probable_del_rec with key [%s]\n",
            old_oid_rec_key.c_str());
@@ -635,7 +639,10 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
 
     probable_oid_list[old_oid_rec_key] = old_probable_del_rec->to_json();
   }
-
+  
+  //prepending a char depending on the size of the object (size based bucketing of object)
+  S3CommonUtilities::size_based_bucketing_of_objects(new_oid_str, request->get_content_length());
+  
   s3_log(S3_LOG_DEBUG, request_id,
          "Adding new_probable_del_rec with key [%s]\n", new_oid_str.c_str());
   new_probable_del_rec.reset(new S3ProbableDeleteRecord(
@@ -812,9 +819,9 @@ void S3PutObjectAction::mark_old_oid_for_deletion() {
   assert(!old_oid_str.empty());
   assert(!new_oid_str.empty());
 
+  std::string prepended_new_oid_str = new_oid_str;
   // key = oldoid + "-" + newoid
-  std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
-
+  std::string old_oid_rec_key = old_oid_str + '-' + prepended_new_oid_str.erase(0,1);
   // update old oid, force_del = true
   old_probable_del_rec->set_force_delete(true);
 
@@ -834,8 +841,9 @@ void S3PutObjectAction::remove_old_oid_probable_record() {
   assert(!old_oid_str.empty());
   assert(!new_oid_str.empty());
 
+  std::string prepended_new_oid_str = new_oid_str;
   // key = oldoid + "-" + newoid
-  std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
+  std::string old_oid_rec_key = old_oid_str + '-' + prepended_new_oid_str.erase(0,1);
 
   if (!motr_kv_writer) {
     motr_kv_writer =
