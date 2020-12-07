@@ -700,7 +700,6 @@ void S3PutChunkUploadObjectAction::add_object_oid_to_probable_dead_oid_list() {
 
     // key = oldoid + "-" + newoid
     std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
-
     s3_log(S3_LOG_DEBUG, request_id,
            "Adding old_probable_del_rec with key [%s]\n",
            old_oid_rec_key.c_str());
@@ -714,10 +713,10 @@ void S3PutChunkUploadObjectAction::add_object_oid_to_probable_dead_oid_list() {
     probable_oid_list[old_oid_rec_key] = old_probable_del_rec->to_json();
   }
 
-  // prepending a char depending on the size of the object (size based bucketing
-  // of object)
+  // prepending a char depending on the size of the object (size based
+  // bucketing of object)
   S3CommonUtilities::size_based_bucketing_of_objects(
-      new_oid_str, request->get_data_length());
+        new_oid_str, request->get_data_length());
 
   s3_log(S3_LOG_DEBUG, request_id,
          "Adding new_probable_del_rec with key [%s]\n", new_oid_str.c_str());
@@ -909,7 +908,7 @@ void S3PutChunkUploadObjectAction::mark_old_oid_for_deletion() {
   std::string prepended_new_oid_str = new_oid_str;
   // key = oldoid + "-" + newoid
   std::string old_oid_rec_key =
-      old_oid_str + '-' + prepended_new_oid_str.erase(0, 1);
+       old_oid_str + '-' + prepended_new_oid_str.erase(0,1);
 
   // update old oid, force_del = true
   old_probable_del_rec->set_force_delete(true);
@@ -934,7 +933,7 @@ void S3PutChunkUploadObjectAction::remove_old_oid_probable_record() {
   std::string prepended_new_oid_str = new_oid_str;
   // key = oldoid + "-" + newoid
   std::string old_oid_rec_key =
-      old_oid_str + '-' + prepended_new_oid_str.erase(0, 1);
+       old_oid_str + '-' + prepended_new_oid_str.erase(0,1);
 
   if (!motr_kv_writer) {
     motr_kv_writer =
