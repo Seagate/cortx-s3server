@@ -29,4 +29,4 @@ class S3ClientConfig:
     s3_uri_https = "https://s3.seagate.com"
     iam_uri_https = "https://iam.seagate.com:9443"
     s3_uri_http = "http://s3.seagate.com"
-    iam_uri_http = "http://iam.seagate.com:9085"
+    iam_uri_http = "http://iam.seagate.com:28050"
