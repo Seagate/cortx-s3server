@@ -99,6 +99,7 @@ class S3GlobalBucketIndexMetadata {
   // Load Account user info(bucket list oid)
   virtual void load(std::function<void(void)> on_success,
                     std::function<void(void)> on_failed);
+  virtual bool load_successful_with(std::string value);
   virtual void load_successful();
   virtual void load_failed();
   virtual ~S3GlobalBucketIndexMetadata() {}

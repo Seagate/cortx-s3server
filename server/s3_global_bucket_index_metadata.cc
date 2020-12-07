@@ -24,9 +24,12 @@
 #include "s3_factory.h"
 #include "s3_iem.h"
 #include "s3_datetime.h"
+#include "lru.h"
 
 extern struct m0_uint128 global_bucket_list_index_oid;
 extern struct m0_uint128 replica_global_bucket_list_index_oid;
+
+static lru<std::string, std::string> cache(64*1024);
 
 S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
@@ -69,6 +72,11 @@ void S3GlobalBucketIndexMetadata::load(std::function<void(void)> on_success,
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
+  std::string cached = cache.get(bucket_name);
+
+  if (cached.size() > 0 && load_successful_with(cached)) {
+    return;
+  }
 
   // Mark missing as we initiate fetch, in case it fails to load due to missing.
   state = S3GlobalBucketIndexMetadataState::missing;
@@ -82,10 +90,8 @@ void S3GlobalBucketIndexMetadata::load(std::function<void(void)> on_success,
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3GlobalBucketIndexMetadata::load_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
-  if (this->from_json(motr_kv_reader->get_value()) != 0) {
+bool S3GlobalBucketIndexMetadata::load_successful_with(std::string value) {
+  if (this->from_json(value) != 0) {
     s3_log(S3_LOG_ERROR, request_id,
            "Json Parsing failed. Index oid = "
            "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
@@ -96,9 +102,19 @@ void S3GlobalBucketIndexMetadata::load_successful() {
 
     json_parsing_error = true;
     load_failed();
+    return false;
   } else {
     state = S3GlobalBucketIndexMetadataState::present;
     this->handler_on_success();
+    return true;
+  }
+}
+
+void S3GlobalBucketIndexMetadata::load_successful() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  std::string value = motr_kv_reader->get_value();
+  if (load_successful_with(value)) {
+    cache.put(bucket_name, value);
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
