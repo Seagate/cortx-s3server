@@ -151,25 +151,23 @@ void size_based_bucketing_of_objects(std::string &oid_str,
       oid_str.insert(0, marker);
       break;
 
-    case 1025 ... 10240:  // greater than 1KB and less than or equal to 10KB
-      marker = 'H';
+    case 1025 ... 10240:
+      marker = 'H';  // greater than 1KB and less than or equal to 10KB
       oid_str.insert(0, marker);
       break;
 
-    case 10241 ... 52428800:  // greater than 10KB and less than equal to 50MB
-      marker = 'G';
+    case 10241 ... 52428800:
+      marker = 'G';  // greater than 10KB and less than equal to 50MB
       oid_str.insert(0, marker);
       break;
 
-    case 52428801 ... 1073741824
-        :  // greater than 50MB and less than equal to 1GB
-      marker = 'F';
+    case 52428801 ... 1073741824:
+      marker = 'F';  // greater than 50MB and less than equal to 1GB
       oid_str.insert(0, marker);
       break;
 
-    case 1073741825 ... 107374182400
-        :  // greater than 1GB and less than equal to 100GB
-      marker = 'E';
+    case 1073741825 ... 107374182400:
+      marker = 'E';  // greater than 1GB and less than equal to 100GB
       oid_str.insert(0, marker);
       break;
 
