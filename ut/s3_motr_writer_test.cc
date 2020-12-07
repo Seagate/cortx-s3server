@@ -511,7 +511,9 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest) {
   buffer->freeze();
   motr_writer_ptr->write_content(
       std::bind(&S3CallBack::on_success, &S3MotrWiter_callbackobj),
-      std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj), buffer);
+      std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj),
+      buffer->get_buffers(buffer->get_content_length()),
+      buffer->size_of_each_evbuf);
 
   EXPECT_TRUE(motr_writer_ptr->get_state() == S3MotrWiterOpState::saved);
   EXPECT_EQ(motr_writer_ptr->size_in_current_write,
@@ -543,7 +545,9 @@ TEST_F(S3MotrWiterTest, WriteContentFailedTest) {
 
   motr_writer_ptr->write_content(
       std::bind(&S3CallBack::on_success, &S3MotrWiter_callbackobj),
-      std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj), buffer);
+      std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj),
+      buffer->get_buffers(buffer->get_content_length()),
+      buffer->size_of_each_evbuf);
 
   EXPECT_TRUE(motr_writer_ptr->get_state() == S3MotrWiterOpState::failed);
   EXPECT_FALSE(S3MotrWiter_callbackobj.success_called);
@@ -570,7 +574,9 @@ TEST_F(S3MotrWiterTest, WriteEntityFailedTest) {
 
   motr_writer_ptr->write_content(
       std::bind(&S3CallBack::on_success, &S3MotrWiter_callbackobj),
-      std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj), buffer);
+      std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj),
+      buffer->get_buffers(buffer->get_content_length()),
+      buffer->size_of_each_evbuf);
 
   EXPECT_TRUE(motr_writer_ptr->get_state() ==
               S3MotrWiterOpState::failed_to_launch);

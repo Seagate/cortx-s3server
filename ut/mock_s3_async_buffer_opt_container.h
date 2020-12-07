@@ -34,8 +34,9 @@ class MockS3AsyncBufferOptContainer : public S3AsyncBufferOptContainer {
  public:
   MockS3AsyncBufferOptContainer(size_t size_of_each_buf)
       : S3AsyncBufferOptContainer(size_of_each_buf) {}
-  MOCK_METHOD0(is_freezed, bool());
-  MOCK_METHOD0(get_content_length, size_t());
+  MOCK_CONST_METHOD0(is_freezed, bool());
+  MOCK_CONST_METHOD0(get_content_length, size_t());
+  MOCK_METHOD1(get_buffers, S3BufferSequence(size_t));
 };
 
 #endif

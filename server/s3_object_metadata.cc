@@ -42,8 +42,6 @@ void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
   user_name = request->get_user_name();
   canonical_id = request->get_canonical_id();
   user_id = request->get_user_id();
-  bucket_name = request->get_bucket_name();
-  object_name = request->get_object_name();
   state = S3ObjectMetadataState::empty;
   is_multipart = ismultipart;
   upload_id = uploadid;
@@ -99,6 +97,41 @@ S3ObjectMetadata::S3ObjectMetadata(
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<MotrAPI> motr_api)
     : request(std::move(req)) {
+  request_id = request->get_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+
+  bucket_name = request->get_bucket_name();
+  object_name = request->get_object_name();
+  initialize(ismultipart, uploadid);
+
+  if (motr_api) {
+    s3_motr_api = std::move(motr_api);
+  } else {
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
+  }
+
+  if (kv_reader_factory) {
+    motr_kv_reader_factory = std::move(kv_reader_factory);
+  } else {
+    motr_kv_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+  }
+
+  if (kv_writer_factory) {
+    mote_kv_writer_factory = std::move(kv_writer_factory);
+  } else {
+    mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
+  }
+}
+
+S3ObjectMetadata::S3ObjectMetadata(
+    std::shared_ptr<S3RequestObject> req, const std::string& str_bucket_name,
+    const std::string& str_object_name, bool ismultipart, std::string uploadid,
+    std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
+    std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
+    std::shared_ptr<MotrAPI> motr_api)
+    : bucket_name(str_bucket_name),
+      object_name(str_object_name),
+      request(std::move(req)) {
   request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 

@@ -143,7 +143,7 @@ class S3ObjectAPIHandler : public S3APIHandler {
   FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3AbortMultipartAction);
   FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3HeadObjectAction);
   FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3PutChunkUploadObjectAction);
-  FRIEND_TEST(S3ObjectAPIHandlerTest, DoesNotSupportCopyObject);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3CopyObjectAction);
   FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3PutObjectAction);
   FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3GetObjectAction);
   FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3DeleteObjectAction);
