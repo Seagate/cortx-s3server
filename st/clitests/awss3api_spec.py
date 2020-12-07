@@ -369,7 +369,74 @@ AwsTest('Aws delete multiple objects with hierarchical names in bucket')\
 delete_object_list_file(hierarchical_object_list_file)
 
 
-# ************ Put object with specified content-type ************
+# ************ CopyObject API supported *****************************************************************
+
+AwsTest('Aws can put object').put_object("seagatebucket", "1kfile", 1024)\
+    .execute_test().command_is_successful()
+
+# Positive: copy-object from a bucket to the same bucket as destination.
+AwsTest('Aws can copy object to same bucket').copy_object("seagatebucket/1kfile", "seagatebucket", "1kfile-copy")\
+    .execute_test().command_is_successful().command_response_should_have("COPYOBJECTRESULT")
+
+# Positive: copy-object to different destination bucket.
+AwsTest('Aws can create destination bucket for CopyObject API')\
+    .create_bucket("destination-seagatebucket")\
+    .execute_test().command_is_successful()
+
+AwsTest('Aws can copy object to different bucket')\
+    .copy_object("seagatebucket/1kfile", "destination-seagatebucket", "1kfile-copy")\
+    .execute_test().command_is_successful().command_response_should_have("COPYOBJECTRESULT")
+
+# Negative: copy-object to non-existing destination bucket
+AwsTest('Aws cannot copy object to non-existing destination bucket')\
+    .copy_object("seagatebucket/1kfile", "my-bucket", "1kfile-copy")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
+
+# Negative: copy-object from non-existing source bucket
+AwsTest('Aws cannot copy object from non-existing source bucket')\
+    .copy_object("my-seagate-bucket/1kfile", "seagatebucket", "1kfile-copy")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
+
+# Negative: copy-object from non-existing source object
+AwsTest('Aws cannot copy object from non-existing source object')\
+    .copy_object("seagatebucket/2kfile", "destination-seagatebucket", "2kfile-copy")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchKey")
+
+# Negative: copy-object when source and destination are same
+AwsTest('Aws cannot copy when source and destintion are same')\
+    .copy_object("seagatebucket/1kfile", "seagatebucket", "1kfile")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidRequest")
+
+# Commenting out below test as this fails with memory error :-
+# fout.write(os.urandom(self.filesize))
+# MemoryError
+
+# Negative: copy-object when source object size is greater than 5GB
+# AwsTest('Aws can put 6GB object').put_object("seagatebucket", "6gbfile", 6442450944)\
+#    .execute_test().command_is_successful()
+
+# AwsTest('Aws cannot copy 6gb source object').copy_object("seagatebucket/6gbfile", "seagatebucket", "6gbfile-copy")\
+#    .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidRequest")
+
+# Cleanup for CopyObject API
+AwsTest('Aws can delete 1kfile').delete_object("seagatebucket", "1kfile")\
+    .execute_test().command_is_successful()
+
+# AwsTest('Aws can delete 6gbfile').delete_object("seagatebucket", "6gbfile")\
+#    .execute_test().command_is_successful()
+
+AwsTest('Aws can delete 1kfile-copy from source bucket').delete_object("seagatebucket", "1kfile-copy")\
+    .execute_test().command_is_successful()
+
+AwsTest('Aws can delete 1kfile-copy from destination bucket').delete_object("destination-seagatebucket", "1kfile")\
+    .execute_test().command_is_successful()
+
+AwsTest('Aws can delete destination bucket').delete_bucket("destination-seagatebucket")\
+    .execute_test().command_is_successful()
+
+# **********************************************************************************************
+
+# ************ Put object with specified content-type ******************************************
 in_headers = {
     "content-type" : "application/blabla"
     }
