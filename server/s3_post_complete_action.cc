@@ -493,13 +493,14 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
     // metadata is deleted.
     assert(!new_oid_str.empty());
 
-    // prepending a char depending on the size of the object (size based bucketing
+    // prepending a char depending on the size of the object (size based
+    // bucketing
     // of object)
-    S3CommonUtilities::size_based_bucketing_of_objects(
-        new_oid_str, object_size);
+    S3CommonUtilities::size_based_bucketing_of_objects(new_oid_str,
+                                                       object_size);
 
     s3_log(S3_LOG_DEBUG, request_id,
-          "Adding new_probable_del_rec with key [%s]\n", new_oid_str.c_str());
+           "Adding new_probable_del_rec with key [%s]\n", new_oid_str.c_str());
 
     new_probable_del_rec.reset(new S3ProbableDeleteRecord(
         new_oid_str, old_object_oid, multipart_metadata->get_object_name(),
@@ -528,14 +529,16 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
       assert(!old_oid_str.empty());
       assert(!new_oid_str.empty());
 
-      // prepending a char depending on the size of the object (size based bucketing
+      // prepending a char depending on the size of the object (size based
+      // bucketing
       // of object)
 
-      S3CommonUtilities::size_based_bucketing_of_objects(
-          old_oid_str, object_size);
+      S3CommonUtilities::size_based_bucketing_of_objects(old_oid_str,
+                                                         object_size);
 
       s3_log(S3_LOG_DEBUG, request_id,
-            "Adding old_probable_del_rec with key [%s]\n", old_oid_str.c_str());
+             "Adding old_probable_del_rec with key [%s]\n",
+             old_oid_str.c_str());
 
       // key = oldoid + "-" + newoid
       std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
