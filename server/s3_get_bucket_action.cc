@@ -36,11 +36,11 @@ S3GetBucketAction::S3GetBucketAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
     : S3BucketAction(req, bucket_meta_factory),
-      total_keys_visited(0),
       object_list(std::make_shared<S3ObjectListResponse>(
           req->get_query_string_value("encoding-type"))),
       last_key(""),
       fetch_successful(false),
+      total_keys_visited(0),
       key_Count(0) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   s3_log(S3_LOG_INFO, request_id, "S3 API: Get Bucket(List Objects).\n");
@@ -66,6 +66,7 @@ S3GetBucketAction::S3GetBucketAction(
     object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
   }
   motr_kv_reader = nullptr;
+  b_first_next_keyval_call = true;
   setup_steps();
   // TODO request param validations
 }
@@ -136,6 +137,16 @@ void S3GetBucketAction::after_validate_request() { next(); }
 
 void S3GetBucketAction::get_next_objects() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  // If client is disconnected (say, due to read timeout,
+  // when the object listing takes substantial time), destroy action class
+  if (!request->client_connected()) {
+    s3_log(S3_LOG_INFO, request_id,
+           "s3 client is disconnected. Terminating object listing request\n");
+    S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
+    done();
+    return;
+  }
+
   m0_uint128 object_list_index_oid =
       bucket_metadata->get_object_list_index_oid();
   if (motr_kv_reader == nullptr) {
@@ -168,10 +179,20 @@ void S3GetBucketAction::get_next_objects() {
     // We pass M0_OIF_EXCLUDE_START_KEY flag to Motr. This flag skips key that
     // is passed during listing of all keys. If this flag is not passed then
     // input key is returned in result.
-    motr_kv_reader->next_keyval(
-        object_list_index_oid, last_key, max_record_count,
-        std::bind(&S3GetBucketAction::get_next_objects_successful, this),
-        std::bind(&S3GetBucketAction::get_next_objects_failed, this));
+    if (!request_prefix.empty() && request_marker_key.empty() &&
+        b_first_next_keyval_call) {
+      b_first_next_keyval_call = false;
+      last_key = request_prefix;
+      motr_kv_reader->next_keyval(
+          object_list_index_oid, last_key, max_record_count,
+          std::bind(&S3GetBucketAction::get_next_objects_successful, this),
+          std::bind(&S3GetBucketAction::get_next_objects_failed, this), 0);
+    } else {
+      motr_kv_reader->next_keyval(
+          object_list_index_oid, last_key, max_record_count,
+          std::bind(&S3GetBucketAction::get_next_objects_successful, this),
+          std::bind(&S3GetBucketAction::get_next_objects_failed, this));
+    }
   }
 
   // for shutdown testcases, check FI and set shutdown signal
@@ -192,6 +213,7 @@ void S3GetBucketAction::get_next_objects_successful() {
       bucket_metadata->get_object_list_index_oid();
   bool atleast_one_json_error = false;
   bool last_key_in_common_prefix = false;
+  bool skip_no_further_prefix_match = false;
   std::string last_common_prefix = "";
   auto& kvps = motr_kv_reader->get_key_values();
   size_t length = kvps.size();
@@ -204,7 +226,6 @@ void S3GetBucketAction::get_next_objects_successful() {
     s3_log(S3_LOG_DEBUG, request_id, "Read Object = %s\n", kv.first.c_str());
     s3_log(S3_LOG_DEBUG, request_id, "Read Object Value = %s\n",
            kv.second.second.c_str());
-
     // Check if the current key cannot be rolled into the last common prefix.
     // If can't be rolled into last common prefix, reset
     // 'last_key_in_common_prefix'
@@ -213,11 +234,24 @@ void S3GetBucketAction::get_next_objects_successful() {
       if (!request_prefix.empty()) {
         // Filter out by prefix
         if (kv.first.find(request_prefix) == std::string::npos) {
-          // Key does not start with specified prefix; key filetered out.
-          // Check the next key.
+          // Key does not start with specified prefix; key filtered out.
+          // Prefix does not match.
+          // Check if fetched key is lexicographically greater than prefix
+          if (kv.first > request_prefix) {
+            // No further prefix match will occur (as items in Motr storage are
+            // arranaged in lexical order)
+            skip_no_further_prefix_match = true;
+            // Set length to zero to indicate truncation is false
+            length = 0;
+            s3_log(
+                S3_LOG_INFO, request_id,
+                "No further prefix match. Skipping further object listing\n");
+            break;
+          }
           if (--length == 0) {
             break;
           } else {
+            // Check the next key
             continue;
           }
         }
@@ -271,6 +305,19 @@ void S3GetBucketAction::get_next_objects_successful() {
                  kv.first.c_str(), kv.second.second.c_str());
         } else {
           object_list->add_object(object);
+        }
+      } else {
+        // Prefix does not match.
+        // Check if fetched key is lexicographically greater than prefix
+        if (kv.first > request_prefix) {
+          // No further prefix match will occur (as items in Motr storage are
+          // arranaged in lexical order)
+          skip_no_further_prefix_match = true;
+          // Set length to zero to indicate truncation is false
+          length = 0;
+          s3_log(S3_LOG_INFO, request_id,
+                 "No further prefix match. Skipping further object listing\n");
+          break;
         }
       }
     } else if (request_prefix.empty() && !request_delimiter.empty()) {
@@ -341,7 +388,20 @@ void S3GetBucketAction::get_next_objects_successful() {
             last_key_in_common_prefix = true;
           }
         }
-      }  // else no prefix match, filter it out
+      } else {
+        // Prefix does not match.
+        // Check if fetched key is lexicographically greater than prefix
+        if (kv.first > request_prefix) {
+          // No further prefix match will occur (as items in Motr storage are
+          // arranaged in lexical order)
+          skip_no_further_prefix_match = true;
+          // Set length to zero to indicate truncation is false
+          length = 0;
+          s3_log(S3_LOG_INFO, request_id,
+                 "No further prefix match. Skipping further object listing\n");
+          break;
+        }
+      }
     }
 
     if ((--length == 0) ||
@@ -362,7 +422,8 @@ void S3GetBucketAction::get_next_objects_successful() {
 
   // We ask for more if there is any.
   key_Count = object_list->size() + object_list->common_prefixes_size();
-  if ((key_Count == max_keys) || (kvps.size() < max_record_count)) {
+  if ((key_Count == max_keys) || (kvps.size() < max_record_count) ||
+      (skip_no_further_prefix_match)) {
     // Go ahead and respond.
     if (key_Count == max_keys && length != 0) {
       object_list->set_response_is_truncated(true);
@@ -427,7 +488,7 @@ void S3GetBucketAction::send_response_to_s3_client() {
     s3_log(S3_LOG_DEBUG, request_id, "Sending %s response...\n",
            get_s3_error_code().c_str());
     S3Error error(get_s3_error_code(), request->get_request_id(),
-                  request->get_object_uri());
+                  request->get_bucket_name());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",

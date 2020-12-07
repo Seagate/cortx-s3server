@@ -46,9 +46,9 @@
 #     src: ./files/nginx/nginx.conf.seagate
 #     dest: /etc/nginx/nginx.conf
 
-- name: Install haproxy
+- name: Install haproxy 1.8.14
   yum:
-    name: haproxy
+    name: haproxy-1.8.14-1.el7
     state: present
 
 - name: Setup haproxy config
