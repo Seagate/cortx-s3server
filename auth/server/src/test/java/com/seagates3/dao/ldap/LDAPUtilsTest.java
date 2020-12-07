@@ -24,6 +24,7 @@ import com.novell.ldap.LDAPConnection;
 import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPModification;
+import com.novell.ldap.LDAPSearchConstraints;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.fi.FaultPoints;
 import org.junit.Before;
@@ -59,20 +60,27 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
     private LDAPConnection ldapConnection;
     private
+     LDAPSearchConstraints cons;
+    private
      final String LDAP_HOST = "127.0.0.1";
     private
      final int LDAP_PORT = 389;
     private
      final int socket_timeout = 1000;
+    private
+     final int maxResults = 1000;
 
     @Before
     public void setUp() throws Exception {
         mockStatic(AuthServerConfig.class);
         ldapConnection = mock(LDAPConnection.class);
+        cons = mock(LDAPSearchConstraints.class);
         PowerMockito.doReturn(LDAP_HOST)
             .when(AuthServerConfig.class, "getLdapHost");
         PowerMockito.doReturn(LDAP_PORT)
             .when(AuthServerConfig.class, "getLdapPort");
+        doReturn(maxResults)
+            .when(AuthServerConfig.class, "getLdapSearchResultsSizeLimit");
 
         when(ldapConnection.isConnected()).thenReturn(Boolean.TRUE);
         PowerMockito.mockStatic(LdapConnectionManager.class);
@@ -80,6 +88,9 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
         PowerMockito.whenNew(LDAPConnection.class)
             .withArguments(socket_timeout)
             .thenReturn(ldapConnection);
+        PowerMockito.whenNew(LDAPSearchConstraints.class)
+            .withNoArguments()
+            .thenReturn(cons);
     }
 
     @Test
@@ -88,12 +99,12 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
         String baseDn = "dc=s3,dc=seagate,dc=com";
         String filter = "(cn=s3testuser)";
         String[] attrs = {"s3userid", "path", "rolename", "objectclass", "createtimestamp"};
-
+        PowerMockito.doNothing().when(cons).setMaxResults(anyInt());
         // Act
         LDAPUtils.search(baseDn, 2, filter, attrs);
 
         // Verify
-        verify(ldapConnection).search(baseDn, 2, filter, attrs, false);
+        verify(ldapConnection).search(baseDn, 2, filter, attrs, false, cons);
 
         verifyStatic();
         LdapConnectionManager.releaseConnection(ldapConnection);
@@ -105,12 +116,12 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
         String baseDn = "ou=users,o=beta,ou=accounts,dc=s3,dc=seagate,dc=com";
         String filter = "(&(path=/*)(objectclass=iamuser))";
         String[] attrs = {"s3userid", "cn", "path", "createtimestamp"};
-
+        PowerMockito.doNothing().when(cons).setMaxResults(anyInt());
         // Act
         LDAPUtils.search(baseDn, LDAPConnection.SCOPE_SUB, filter, attrs);
 
         // Verify
-        verify(ldapConnection).search(baseDn, 2, filter, attrs, false);
+        verify(ldapConnection).search(baseDn, 2, filter, attrs, false, cons);
 
         verifyStatic();
         LdapConnectionManager.releaseConnection(ldapConnection);
@@ -122,7 +133,9 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
         String baseDn = "dc=s3,dc=seagate,dc=com";
         String filter = "(cn=s3testuser)";
         String[] attrs = {"s3userid", "path", "rolename", "objectclass", "createtimestamp"};
-        doThrow(new LDAPException()).when(ldapConnection).search(baseDn, 2, filter, attrs, false);
+        PowerMockito.doNothing().when(cons).setMaxResults(anyInt());
+        doThrow(new LDAPException()).when(ldapConnection).search(
+            baseDn, 2, filter, attrs, false, cons);
 
         // Act
         LDAPUtils.search(baseDn, 2, filter, attrs);
@@ -133,7 +146,9 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
         String baseDn = "dc=s3,dc=seagate,dc=com";
         String filter = "(cn=s3testuser)";
         String[] attrs = {"s3userid", "path", "rolename", "objectclass", "createtimestamp"};
-        doThrow(new LDAPException(null, 82, null)).when(ldapConnection).search(baseDn, 2, filter, attrs, false);
+        PowerMockito.doNothing().when(cons).setMaxResults(anyInt());
+        doThrow(new LDAPException(null, 82, null)).when(ldapConnection).search(
+            baseDn, 2, filter, attrs, false, cons);
 
         try {
             LDAPUtils.search(baseDn, 2, filter, attrs);
@@ -152,8 +167,9 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
         String baseDn = "dc=s3,dc=seagate,dc=com";
         String filter = "(cn=s3testuser)";
         String[] attrs = {"s3userid", "path", "rolename", "objectclass", "createtimestamp"};
+        PowerMockito.doNothing().when(cons).setMaxResults(anyInt());
         enableFaultInjection();
-
+        PowerMockito.doNothing().when(cons).setMaxResults(anyInt());
         // Act
         LDAPUtils.search(baseDn, 2, filter, attrs);
     }

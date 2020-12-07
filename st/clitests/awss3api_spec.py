@@ -93,6 +93,212 @@ def delete_object_list_file(file_name):
 
 #******** Create Bucket ********
 AwsTest('Aws can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+'''
+Create following keys (both, regular and heirarchical) into a bucket:
+asdf
+boo
+boo/0...boo/99
+boo#
+boo+
+foo
+foo/0...foo/99
+foo#123
+foo+123
+quax
+quax/0...quax/99
+quax#
+quax+
+'''
+# Step 1: Create above keys into bucket 'seagatebucket'
+#  Step 1.1:
+#   Create keys: boo/0...boo/99
+obj_list = []
+for x in range(100):
+    key = "boo/%d" % (x)
+    AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
+        .execute_test().command_is_successful()
+    obj_list.append(key)
+#   Create keys: foo/0...foo/99
+for x in range(100):
+    key = "foo/%d" % (x)
+    AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
+        .execute_test().command_is_successful()
+    obj_list.append(key)
+#   Create keys: quax/0...quax/99
+for x in range(100):
+    key = "quax/%d" % (x)
+    AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
+        .execute_test().command_is_successful()
+    obj_list.append(key)
+#   Create regular keys: asdf, boo, boo#, boo+, foo, foo#123, foo+123, quax, quax#, quax+
+key = "asdf"
+AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
+    .execute_test().command_is_successful()
+obj_list.append(key)  
+key = "boo"
+AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
+    .execute_test().command_is_successful()
+obj_list.append(key)
+key = "boo+"
+AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
+    .execute_test().command_is_successful()
+obj_list.append(key)
+key = "boo#"
+AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
+    .execute_test().command_is_successful()
+obj_list.append(key)
+key = "foo"
+AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
+    .execute_test().command_is_successful()
+obj_list.append(key)
+key = "foo+123"
+AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
+    .execute_test().command_is_successful()
+obj_list.append(key)
+key = "foo#123"
+AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
+    .execute_test().command_is_successful()
+obj_list.append(key)
+key = "quax"
+AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
+    .execute_test().command_is_successful()
+obj_list.append(key)
+key = "quax#"
+AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
+    .execute_test().command_is_successful()
+obj_list.append(key)
+key = "quax+"
+AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
+    .execute_test().command_is_successful()
+obj_list.append(key)
+
+#  Step 1.2: Create object list file
+object_list_file = create_object_list_file("obj_list_mix_keys.json", obj_list, "true")
+
+# Step 2: Validate the uploaded objects using s3api
+# Step 2.1: command:= aws s3api list-objects-v2 --bucket <bucket> --page-size 1 --prefix "foo" --delimiter "/"
+# Expected output: 
+#   foo
+#   foo#123
+#   foo+123
+#   foo/ (under COMMONPREFIXES)
+prefix = "foo"
+delimiter = "/"
+expected_key_list = ['foo', 'foo#123', 'foo+123']
+list_v2_options = {"prefix":prefix, "delimiter":delimiter,"page-size":1}
+result = AwsTest(('Aws list objects using prefix \'%s\' and delimiter %s') % (prefix, delimiter))\
+    .list_objects_v2("seagatebucket", **list_v2_options)\
+    .execute_test()\
+    .command_is_successful()
+# Process result set
+lv2_response = get_aws_cli_object(result.status.stdout)
+if lv2_response is None:
+    assert False, "Failed to list objects"
+# Get keys from lv2_response
+obj_keys = lv2_response["keys"]
+common_prefix = lv2_response["prefix"]
+check = all(item in obj_keys for item in expected_key_list)
+if check is False:
+    assert False, "Failed to match expected regular keys in the list"
+check = ("foo/" in common_prefix)
+if check is False:
+    assert False, "Failed to match expected common prefix in the list"
+
+# Step 2.2: command:= aws s3api list-objects-v2 --bucket <bucket> --page-size 2 --delimiter "/"
+# Expected output: 
+#  asdf
+#  boo
+#  boo#
+#  boo+
+#  foo
+#  foo#123
+#  foo+123
+#  quax
+#  quax#
+#  quax+
+#  <items under common prefixes are as follows>
+#  boo/
+#  foo/
+#  quax/
+prefix = ""
+expected_key_list = ['asdf', 'boo', 'boo#', 'boo+', 'foo', 'foo#123', 'foo+123', 'quax', 'quax#', 'quax+']
+expected_common_prefix = ['boo/', 'foo/', 'quax/']
+list_v2_options = {"delimiter":delimiter, "page-size":2}
+result = AwsTest(('Aws list objects using prefix \'%s\' and delimiter %s') % (prefix, delimiter))\
+    .list_objects_v2("seagatebucket", **list_v2_options)\
+    .execute_test()\
+    .command_is_successful()
+# Process result set
+lv2_response = get_aws_cli_object(result.status.stdout)
+if lv2_response is None:
+    assert False, "Failed to list objects"
+# Get keys from lv2_response
+obj_keys = lv2_response["keys"]
+common_prefix = lv2_response["prefix"]
+check = all(item in obj_keys for item in expected_key_list)
+if check is False:
+    assert False, "Failed to match expected regular keys in the list"
+check = all(item in common_prefix for item in expected_common_prefix)
+if check is False:
+    assert False, "Failed to match expected common prefix in the list"
+
+# Step 2.3.1: command:= aws s3api list-objects-v2 --bucket <bucket> --max-items 2 --prefix "boo" --delimiter "/"
+# Expected part1 output:
+#  boo
+#  boo#
+#  boo/ (under common prefix)
+prefix = "boo"
+expected_key_list_part1 = ['boo', 'boo#']
+expected_key_list_part2 = ['boo+']
+expected_common_prefix = ['boo/']
+list_v2_options = {"prefix":prefix, "delimiter":delimiter, "max-items":2}
+result = AwsTest(('Aws list objects using prefix \'%s\' and delimiter %s') % (prefix, delimiter))\
+    .list_objects_v2("seagatebucket", **list_v2_options)\
+    .execute_test()\
+    .command_is_successful()
+# Process result set
+lv2_response = get_aws_cli_object(result.status.stdout)
+if lv2_response is None:
+    assert False, "Failed to list objects"
+# Get keys from lv2_response
+obj_keys = lv2_response["keys"]
+common_prefix = lv2_response["prefix"]
+check = all(item in obj_keys for item in expected_key_list_part1)
+if check is False:
+    assert False, "Failed to match expected regular keys in the list"
+check = all(item in common_prefix for item in expected_common_prefix)
+if check is False:
+    assert False, "Failed to match expected common prefix in the list"
+# Verify that NextToken is in 'lv2_response' and it is not empty
+assert (("next_token" in lv2_response.keys()) and (len(lv2_response["next_token"].strip()) > 0)), "NextToken is either not present or empty"
+next_token = lv2_response["next_token"]
+
+# Step 2.3.2: command:= aws s3api list-objects-v2 --bucket <bucket> --max-items 2 --prefix "boo" --delimiter "/" --starting-token <next_token>
+# Expected part2 output:
+#  boo+
+list_v2_options = {"prefix":prefix, "delimiter":delimiter, "max-items":2, "starting-token":next_token}
+result = AwsTest(('Aws list objects using prefix \'%s\' and delimiter %s') % (prefix, delimiter))\
+    .list_objects_v2("seagatebucket", **list_v2_options)\
+    .execute_test()\
+    .command_is_successful()
+# Process result set
+lv2_response = get_aws_cli_object(result.status.stdout)
+if lv2_response is None:
+    assert False, "Failed to list objects"
+# Get keys from lv2_response
+obj_keys = lv2_response["keys"]
+check = all(item in obj_keys for item in expected_key_list_part2)
+if check is False:
+    assert False, "Failed to match expected regular keys in the list"
+
+# Step 3: Delete all created objects in bucket 'seagatebucket'
+AwsTest('Aws delete objects')\
+    .delete_multiple_objects("seagatebucket", object_list_file)\
+    .execute_test()\
+    .command_is_successful()\
+    .command_response_should_be_empty()
+
+delete_object_list_file(object_list_file)
 
 #******** Verify pagination and NextToken in List objects V1  **********
 # Step 1. Create total 110 objets in bucket
@@ -116,7 +322,6 @@ result = AwsTest('Aws list the first 100 objects')\
 
 # Step 4. Validate
 list_response = get_aws_cli_object(result.status.stdout)
-print("List response: %s\n", str(list_response))
 # Verify 'object9' is present and 'object99' is not present in the resultant list 'list_response'
 if list_response is not None:
     assert 'object9' in list_response["keys"], "Failed to see object9 in the response"

@@ -99,6 +99,8 @@ policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_
 policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
 
 
+allow_deny_policy_testing_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'deny_allow_policy.txt')
+allow_deny_policy_testing = "file://" + os.path.abspath(allow_deny_policy_testing_relative)
 
 
 user_name_testing_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'user_name_testing_policy.txt')
@@ -117,6 +119,36 @@ AwsTest('Aws can delete bucket').delete_bucket("usernametestbucket").execute_tes
 result = AuthTest(test_msg).delete_user(**user_args).execute_test()
 result.command_response_should_have("User deleted.")
 
+AwsTest('Aws can create bucket').create_bucket("allowdenybucket").execute_test().command_is_successful()
+user_args = {}
+user_args['UserName'] = "iamuser"
+test_msg = "Create User iamuser"
+user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+result = AuthTest(test_msg).create_user(**user_args).execute_test()
+result.command_should_match_pattern(user1_response_pattern)
+AwsTest("Aws can put policy on bucket").put_bucket_policy("allowdenybucket",allow_deny_policy_testing).execute_test().command_is_successful()
+AwsTest('Aws get bucket acl').get_bucket_acl("allowdenybucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+test_msg = "Create User accesskeys"
+iamuser_args = {}
+iamuser_args['UserName'] = "iamuser"
+user_access_key_args = {}
+accesskey_response_pattern = "AccessKeyId = [\w-]*, SecretAccessKey = [\w/+]*, Status = [\w]*$"
+result = AuthTest(test_msg).create_access_key(**iamuser_args).execute_test()
+result.command_should_match_pattern(accesskey_response_pattern)
+accesskey_response_elements = AuthTest.get_response_elements(result.status.stdout)
+user_access_key_args['AccessKeyId'] = accesskey_response_elements['AccessKeyId']
+user_access_key_args['SecretAccessKey'] = accesskey_response_elements['SecretAccessKey']
+user_access_key_args['UserName'] = "iamuser"
+os.environ["AWS_ACCESS_KEY_ID"] = accesskey_response_elements['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = accesskey_response_elements['SecretAccessKey']
+AwsTest('Aws get bucket acl').get_bucket_acl("allowdenybucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+AwsTest('Aws can delete bucket').delete_bucket("allowdenybucket").execute_test().command_is_successful()
+result = AuthTest("delete access keys for user").delete_access_key(**user_access_key_args).execute_test()
+result.command_response_should_have("Access key deleted.")
+result = AuthTest("delete user").delete_user(**user_args).execute_test()
+result.command_response_should_have("User deleted.")
 
 
 AwsTest('Aws can create bucket').create_bucket("seagate").execute_test().command_is_successful()

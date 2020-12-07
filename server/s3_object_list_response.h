@@ -83,9 +83,18 @@ class S3ObjectListResponse {
   void set_max_uploads(std::string count);
   void set_max_parts(std::string count);
   void set_response_is_truncated(bool flag);
-  void set_next_marker_key(std::string next);
+  void set_next_marker_key(std::string next, bool url_encode = true);
   void set_next_marker_uploadid(std::string next);
   std::string& get_object_name();
+  bool is_response_truncated() { return response_is_truncated; }
+  std::vector<std::string> get_keys() {
+    std::vector<std::string> keys;
+    for (unsigned int i = 0; i < object_list.size(); i++) {
+      keys.push_back(object_list[i]->get_object_name());
+    }
+    return keys;
+  }
+  std::string get_encoding_type() { return encoding_type; }
 
   void add_object(std::shared_ptr<S3ObjectMetadata> object);
   void add_part(std::shared_ptr<S3PartMetadata> part);

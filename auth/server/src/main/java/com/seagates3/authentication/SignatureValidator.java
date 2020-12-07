@@ -134,6 +134,11 @@ public class SignatureValidator {
           TimeUnit.MINUTES.convert(timeInterval, TimeUnit.MILLISECONDS);
       if (diffInMinutes <= 15) {
         isRequestInSkewTime = true;
+      } else if (isRequestDateBeforeEpochDate(requestDate)) {
+        // If request time stamp is before epoch time then returns
+        // InvalidSignatureDate
+        LOGGER.error("Request date timestamp received is before epoch date.");
+        return responseGenerator.invalidSignatureDate();
       } else {
         LOGGER.error(
             "Request date timestamp received does not match with server " +
@@ -163,13 +168,6 @@ public class SignatureValidator {
         return responseGenerator.ok();
       }
 
-
-      // If request time stamp is before epoch time then returns
-      // InvalidSignatureDate
-      if (isRequestDateBeforeEpochDate(requestDate)) {
-        LOGGER.error("Request date timestamp received is before epoch date.");
-        return responseGenerator.invalidSignatureDate();
-      }
       LOGGER.error(
           "Request date timestamp received does not match with server " +
           "timestamp.");
