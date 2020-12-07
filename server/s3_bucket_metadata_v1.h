@@ -132,6 +132,16 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
       std::shared_ptr<S3GlobalBucketIndexMetadataFactory>
           s3_global_bucket_index_metadata_factory = nullptr);
 
+  S3BucketMetadataV1(
+      std::shared_ptr<S3RequestObject> req, const std::string& str_bucket_name,
+      std::shared_ptr<MotrAPI> motr_api = nullptr,
+      std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory =
+          nullptr,
+      std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory =
+          nullptr,
+      std::shared_ptr<S3GlobalBucketIndexMetadataFactory>
+          s3_global_bucket_index_metadata_factory = nullptr);
+
   virtual void load(std::function<void(void)> on_success,
                     std::function<void(void)> on_failed);
 

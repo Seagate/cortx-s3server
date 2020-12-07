@@ -252,6 +252,14 @@ class AwsTest(S3PyCliTest):
         self.with_cli(cmd)
         return self
 
+    def copy_object(self, copy_source, destination_bucket_name, destination_key_name, debug_flag=None):
+        cmd = "aws s3api copy-object --bucket {bucket} --copy-source {source} --key {key}"\
+            .format(bucket=destination_bucket_name, source=copy_source, key=destination_key_name)
+        if(debug_flag is not None):
+            cmd = cmd + " --debug"
+        self.with_cli(cmd)
+        return self
+
     def get_object_acl(self, bucket_name, object_name):
         self.bucket_name = bucket_name
         self.object_name = object_name

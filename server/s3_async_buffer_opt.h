@@ -27,10 +27,12 @@
 #include <string>
 #include <utility>
 
-#include <evhtp.h>
-#include "s3_log.h"
-
 #include <gtest/gtest_prod.h>
+
+#include <evhtp.h>
+
+#include "s3_log.h"
+#include "s3_buffer_sequence.h"
 
 // Zero-copy Optimized version of S3AsyncBufferContainer
 // Constraints: Each block of data within async buffer
@@ -44,8 +46,6 @@ class S3AsyncBufferOptContainer {
   // buf given out for consumption
   std::deque<evbuf_t *> processing_q;
 
-  size_t size_of_each_evbuf;  // ideally 4k/8k/16k
-
   // Actual content within buffer
   size_t content_length;
 
@@ -55,15 +55,17 @@ class S3AsyncBufferOptContainer {
   size_t count_bufs_shared_for_read;
 
  public:
-  S3AsyncBufferOptContainer(size_t size_of_each_buf);
+  const size_t size_of_each_evbuf;  // ideally 4k/8k/16k
+
+  explicit S3AsyncBufferOptContainer(size_t size_of_each_buf);
   virtual ~S3AsyncBufferOptContainer();
 
   // Call this to indicate that no more data will be added to buffer.
   void freeze();
 
-  virtual bool is_freezed();
+  virtual bool is_freezed() const;
 
-  virtual size_t get_content_length();
+  virtual size_t get_content_length() const;
 
   bool add_content(evbuf_t *buf, bool is_first_buf, bool is_last_buf = false,
                    bool is_put_request = false);
@@ -73,8 +75,7 @@ class S3AsyncBufferOptContainer {
   // Call flush_used_buffers() to drain the data that was consumed
   // after get_buffers call.
   // expected_content_size should be multiple of libevent read mempool item size
-  std::pair<std::deque<evbuf_t *>, size_t> get_buffers(
-      size_t expected_content_size);
+  virtual S3BufferSequence get_buffers(size_t expected_content_size);
 
   // Pull up all the data in contiguous memory and releases internal buffers
   // only if all data is in and its freezed. Use check is_freezed()

@@ -55,10 +55,15 @@ class MockS3BucketMetadataFactory : public S3BucketMetadataFactory {
   }
 
   std::shared_ptr<S3BucketMetadata> create_bucket_metadata_obj(
-      std::shared_ptr<S3RequestObject> req) override {
+      std::shared_ptr<S3RequestObject> req,
+      const std::string& str_bucket_name) override {
     return mock_bucket_metadata;
   }
 
+  std::shared_ptr<S3BucketMetadata> create_bucket_metadata_obj(
+      std::shared_ptr<S3RequestObject> req) override {
+    return mock_bucket_metadata;
+  }
   // Use this to setup your expectations.
   std::shared_ptr<MockS3BucketMetadata> mock_bucket_metadata;
 };
@@ -79,6 +84,14 @@ class MockS3ObjectMetadataFactory : public S3ObjectMetadataFactory {
 
   std::shared_ptr<S3ObjectMetadata> create_object_metadata_obj(
       std::shared_ptr<S3RequestObject> req,
+      struct m0_uint128 indx_oid = {0ULL, 0ULL}) override {
+    mock_object_metadata->set_object_list_index_oid(indx_oid);
+    return mock_object_metadata;
+  }
+
+  std::shared_ptr<S3ObjectMetadata> create_object_metadata_obj(
+      std::shared_ptr<S3RequestObject> req, const std::string& str_bucket_name,
+      const std::string& str_object_name,
       struct m0_uint128 indx_oid = {0ULL, 0ULL}) override {
     mock_object_metadata->set_object_list_index_oid(indx_oid);
     return mock_object_metadata;
@@ -312,6 +325,13 @@ class MockS3GlobalBucketIndexMetadataFactory
 
   std::shared_ptr<S3GlobalBucketIndexMetadata>
   create_s3_global_bucket_index_metadata(std::shared_ptr<S3RequestObject> req)
+      override {
+    return mock_global_bucket_index_metadata;
+  }
+
+  std::shared_ptr<S3GlobalBucketIndexMetadata>
+  create_s3_global_bucket_index_metadata(std::shared_ptr<S3RequestObject> req,
+                                         const std::string& str_bucket_name)
       override {
     return mock_global_bucket_index_metadata;
   }
