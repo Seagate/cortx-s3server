@@ -18,7 +18,7 @@
 #
 
 cortx_s3:                                   # Section for S3 background delete config
-   endpoint: "http://127.0.0.1:7081"                       # Service specified for CORTX s3 client
+   endpoint: "http://127.0.0.1:28049"                       # Service specified for CORTX s3 client
    service: "cortxs3"                                      # Default region specified for CORTX s3 client
    default_region: "us-west2"                              # CORTX s3 client will use the specified host
    access_key: "AKIAJPINPFRBTPAYXAHZ"                      # Access Key corresponding to account-name "s3-background-delete-svc"
