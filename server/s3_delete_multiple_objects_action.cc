@@ -297,7 +297,7 @@ void S3DeleteMultipleObjectsAction::add_object_oid_to_probable_dead_oid_list() {
           oid_str, obj->get_content_length());
 
       s3_log(S3_LOG_DEBUG, request_id,
-             "Adding old_probable_del_rec with key [%s]\n", oid_str.c_str());
+             "Adding probable_del_rec with key [%s]\n", oid_str.c_str());
 
       probable_oid_list[oid_str] =
           std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
