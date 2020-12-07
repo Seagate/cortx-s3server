@@ -32,7 +32,7 @@ DEFINE_string(s3hostv4, "", "S3 server ipv4 bind address");
 DEFINE_string(s3hostv6, "", "S3 server ipv6 bind address");
 DEFINE_string(motrhttpapihost, "", "S3 server motr http bind address");
 DEFINE_int32(s3port, 8081, "S3 server bind port");
-DEFINE_int32(motrhttpapiport, 7081, "motr http server bind port");
+DEFINE_int32(motrhttpapiport, 28049, "motr http server bind port");
 DEFINE_string(s3pidfile, "/var/run/s3server.pid", "S3 server pid file");
 
 DEFINE_string(audit_config,
