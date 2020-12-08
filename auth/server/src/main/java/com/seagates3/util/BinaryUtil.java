@@ -29,6 +29,8 @@ import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.binary.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BinaryUtil {
     /*
@@ -39,6 +41,10 @@ public class BinaryUtil {
     private static final int MASK_4BITS = (1 << 4) - 1;
 
     private static final byte[] hexChars = "0123456789abcdef".getBytes();
+
+    private
+     final static Logger LOGGER =
+         LoggerFactory.getLogger(BinaryUtil.class.getName());
 
     /*
      * <IEM_INLINE_DOCUMENTATION>
@@ -177,7 +183,7 @@ public class BinaryUtil {
 
             return mac.doFinal(data);
         } catch (NoSuchAlgorithmException ex) {
-            LOGGER.error"Algorithm HmacSHA1 not available.");
+          LOGGER.error("Algorithm HmacSHA1 not available.");
         } catch (InvalidKeyException ex) {
         }
 
@@ -218,7 +224,7 @@ public class BinaryUtil {
 
             return md.digest();
         } catch (NoSuchAlgorithmException ex) {
-            LOGGER.error"Algorithm SHA-256 not available.");
+          LOGGER.error("Algorithm SHA-256 not available.");
         }
 
         return null;
