@@ -40,7 +40,7 @@ extern struct m0_uint128 global_instance_id;
 S3ObjectMetadata::S3ObjectMetadata(const S3ObjectMetadata& src)
     : S3ObjectMetadataCopyable(src), state(S3ObjectMetadataState::present) {
 
-  s3_log(S3_LOG_DEBUG, request_id, "Copy constructor");
+  s3_log(S3_LOG_DEBUG, request_id, "Partial copy constructor");
 
   bucket_name = request->get_bucket_name();
   object_name = request->get_object_name();
@@ -49,8 +49,7 @@ S3ObjectMetadata::S3ObjectMetadata(const S3ObjectMetadata& src)
 }
 
 static void str_set_default(std::string& sref, const char* sz) {
-  assert(sz != NULL);
-  if (sref.empty()) {
+  if (sref.empty() && sz) {
     sref = sz;
   }
 }

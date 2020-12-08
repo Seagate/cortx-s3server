@@ -259,7 +259,7 @@ void S3CopyObjectAction::read_data_block() {
           std::bind(&S3CopyObjectAction::read_data_block_success, this),
           std::bind(&S3CopyObjectAction::read_data_block_failed, this))) {
 
-    s3_log(S3_LOG_DEBUG, request_id, "Data read is launched");
+    s3_log(S3_LOG_DEBUG, request_id, "Data read is started");
     read_in_progress = true;
     return;
   }
@@ -295,7 +295,7 @@ void S3CopyObjectAction::read_data_block_failed() {
   assert(read_in_progress);
   s3_put_action_state = S3PutObjectActionState::writeFailed;
 
-  s3_log(S3_LOG_DEBUG, request_id, "Failed to read object data from motr");
+  s3_log(S3_LOG_ERROR, request_id, "Failed to read object data from motr");
   set_s3_error("InternalError");
 
   if (write_in_progress) {
@@ -372,7 +372,7 @@ void S3CopyObjectAction::write_data_block_failed() {
   assert(write_in_progress);
   s3_put_action_state = S3PutObjectActionState::writeFailed;
 
-  s3_log(S3_LOG_INFO, request_id, "Failed to write object data to motr");
+  s3_log(S3_LOG_ERROR, request_id, "Failed to write object data to motr");
   set_s3_error("InternalError");
 
   if (read_in_progress) {
@@ -396,14 +396,14 @@ void S3CopyObjectAction::save_metadata() {
   new_object_metadata->set_md5(motr_writer->get_content_md5());
   // new_object_metadata->set_tags(new_object_tags_map);
 
-  for (auto it : request->get_in_headers_copy()) {
+  /*for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {
       s3_log(S3_LOG_DEBUG, request_id,
              "Writing user metadata on object: [%s] -> [%s]\n",
              it.first.c_str(), it.second.c_str());
       new_object_metadata->add_user_defined_attribute(it.first, it.second);
     }
-  }
+  }*/
 
   // bypass shutdown signal check for next task
   check_shutdown_signal_for_next_task(false);
