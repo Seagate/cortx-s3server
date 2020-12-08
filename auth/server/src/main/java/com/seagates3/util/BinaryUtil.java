@@ -235,7 +235,7 @@ public class BinaryUtil {
 
             return md.digest();
         } catch (NoSuchAlgorithmException ex) {
-            LOGGER.error"Algorithm SHA-256 not available.");
+            LOGGER.error("Algorithm SHA-256 not available.");
         }
 
         return null;
