@@ -247,9 +247,11 @@ ulimit -c unlimited
 
 # Few assertions - prerun checks
 rpm -q haproxy
+rpm -q rabbitmq-server
 #rpm -q stx-s3-certs
 #rpm -q stx-s3-client-certs
 systemctl status haproxy
+systemctl status rabbitmq-server
 
 cd $S3_BUILD_DIR
 
@@ -257,6 +259,18 @@ if [ $cleanup_only -eq 1 ]; then
     set +e
     $USE_SUDO kill -9 `pgrep redis`
     set -e
+fi
+
+is_producer_running=1
+$USE_SUDO systemctl is-active s3backgroundproducer 2>&1 > /dev/null || is_producer_running=0
+if [[ $is_producer_running -eq 1 ]]; then
+  $USE_SUDO systemctl stop s3backgroundproducer || echo "Cannot stop s3backgroundproducer services"
+fi
+
+is_consumer_running=1
+$USE_SUDO systemctl is-active s3backgroundconsumer 2>&1 > /dev/null || is_consumer_running=0
+if [[ $is_consumer_running -eq 1 ]]; then
+  $USE_SUDO systemctl stop s3backgroundconsumer || echo "Cannot stop s3backgroundconsumer services"
 fi
 
 is_authsrv_running=1
@@ -422,6 +436,9 @@ if [ "$statuss3" != "0" ]; then
   exit 1
 fi
 
+# Start the bgconsumer and producer service
+$USE_SUDO systemctl start s3backgroundconsumer
+$USE_SUDO systemctl start s3backgroundproducer
 
 # Add certificate to keystore
 if [ $use_http_client -eq 0 ]
@@ -462,6 +479,9 @@ fi
 
 # Disable fault injection in AuthServer
 $USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
+
+$USE_SUDO systemctl stop s3backgroundconsumer || echo "Cannot stop s3background consumer services"
+$USE_SUDO systemctl stop s3backgroundproducer || echo "Cannot stop s3background producer services"
 
 $USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
 $USE_SUDO ./dev-stops3.sh $callgraph_cmd || echo "Cannot stop s3 services"
