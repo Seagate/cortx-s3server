@@ -78,7 +78,7 @@ extern S3Option* g_option_instance;
 
 #define S3_IEM_MOTR_CONN_FAIL "0030030001"
 #define S3_IEM_MOTR_CONN_FAIL_STR                                          \
-  "Clovis connection failed. For more information, refer troubleshooting " \
+  "Motr connection failed. For more information, refer troubleshooting " \
   "guide."
 #define S3_IEM_MOTR_CONN_FAIL_JSON ""
 
