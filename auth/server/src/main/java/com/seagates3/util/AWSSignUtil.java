@@ -40,8 +40,7 @@ public class AWSSignUtil {
                     stringToSign.getBytes("UTF-8"));
             return BinaryUtil.encodeToBase64String(kStringToSign);
         } catch (UnsupportedEncodingException ex) {
-            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
-                    "UTF-8 encoding is not supported", null);
+          LOGGER.error("UTF-8 encoding is not supported.");
         }
         return null;
     }

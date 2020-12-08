@@ -73,8 +73,7 @@ public class BinaryUtil {
             return (hashedText != null) ? toString(encodeToHex(hashedText))
                                         : null;
         } catch (UnsupportedEncodingException ex) {
-            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
-                    "UTF-8 encoding is not supported", null);
+          LOGGER.error("UTF-8 encoding is not supported.");
         }
 
         return null;
@@ -137,8 +136,7 @@ public class BinaryUtil {
 
             return mac.doFinal(data);
         } catch (NoSuchAlgorithmException ex) {
-            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.HMACSHA256_UNAVAILABLE,
-                    "Algorithm HmacSHA256 not available", null);
+          LOGGER.error("Algorithm HmacSHA256 not available.");
         } catch (InvalidKeyException ex) {
         }
 
@@ -179,8 +177,7 @@ public class BinaryUtil {
 
             return mac.doFinal(data);
         } catch (NoSuchAlgorithmException ex) {
-            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.HMACSHA1_UNAVAILABLE,
-                    "Algorithm HmacSHA1 not available", null);
+            LOGGER.error"Algorithm HmacSHA1 not available.");
         } catch (InvalidKeyException ex) {
         }
 
@@ -221,8 +218,7 @@ public class BinaryUtil {
 
             return md.digest();
         } catch (NoSuchAlgorithmException ex) {
-            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.SHA256_UNAVAILABLE,
-                    "Algorithm SHA-256 not available", null);
+            LOGGER.error"Algorithm SHA-256 not available.");
         }
 
         return null;
@@ -239,8 +235,7 @@ public class BinaryUtil {
 
             return md.digest();
         } catch (NoSuchAlgorithmException ex) {
-            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.SHA256_UNAVAILABLE,
-                    "Algorithm SHA-256 not available", null);
+            LOGGER.error"Algorithm SHA-256 not available.");
         }
 
         return null;

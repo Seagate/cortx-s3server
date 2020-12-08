@@ -34,8 +34,8 @@ class IEMutil(object):
     RABBIT_MQ_CONN_FAILURE = "0050020001"
 
     # List of eventstrings
-    S3_CONN_FAILURE_STR = "failed to connect to s3"
-    RABBIT_MQ_CONN_FAILURE_STR = "failed to connect to RabbitMq"
+    S3_CONN_FAILURE_STR = "Failed to connect to S3 server. For more information refer the Troubleshooting guide."
+    RABBIT_MQ_CONN_FAILURE_STR = "Failed to connect to RabbitMQ. For more information refer the Troubleshooting guide."
 
     def __init__(self, loglevel, eventcode, eventstring):
         self.eventCode = eventcode
