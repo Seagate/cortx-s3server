@@ -18,11 +18,13 @@
 #
 
 import os
+import yaml
 from framework import Config
 from framework import S3PyCliTest
 from awss3api import AwsTest
 from s3client_config import S3ClientConfig
 from aclvalidation import AclTest
+from auth import AuthTest
 
 # Helps debugging
 # Config.log_enabled = True
@@ -73,6 +75,23 @@ def get_upload_id(response):
     key_pairs = response.split('\t')
     return key_pairs[2]
 
+def load_test_config():
+    conf_file = os.path.join(os.path.dirname(__file__),'s3iamcli_test_config.yaml')
+    with open(conf_file, 'r') as f:
+            config = yaml.safe_load(f)
+            S3ClientConfig.ldapuser = config['ldapuser']
+            S3ClientConfig.ldappasswd = config['ldappasswd']
+
+def get_response_elements(response):
+    response_elements = {}
+    key_pairs = response.split(',')
+
+    for key_pair in key_pairs:
+        tokens = key_pair.split('=')
+        response_elements[tokens[0].strip()] = tokens[1].strip()
+
+    return response_elements
+
 # Run before all to setup the test environment.
 print("Configuring LDAP")
 S3PyCliTest('Before_all').before_all()
@@ -90,7 +109,6 @@ def create_object_list_file(file_name, obj_list=[], quiet_mode="false"):
 
 def delete_object_list_file(file_name):
     os.remove(file_name)
-
 
 #******** Create Bucket ********
 AwsTest('Aws can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
@@ -1011,3 +1029,159 @@ result=AwsTest('Aws cannot complete multipart upload with wrong ETag').complete_
 
 #******* Delete bucket **********
 AwsTest('Aws can delete bucket').delete_bucket("seagatebuckettag").execute_test().command_is_successful()
+
+#************ Autorize copy-object ********************
+
+load_test_config()
+
+#Create account sourceAccount
+
+test_msg = "Create account sourceAccount"
+source_account_args = {'AccountName': 'sourceAccount', 'Email': 'sourceAccount@seagate.com', \
+                   'ldapuser': S3ClientConfig.ldapuser, \
+                   'ldappasswd': S3ClientConfig.ldappasswd}
+account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+result1 = AuthTest(test_msg).create_account(**source_account_args).execute_test()
+result1.command_should_match_pattern(account_response_pattern)
+account_response_elements = get_response_elements(result1.status.stdout)
+source_access_key_args = {}
+source_access_key_args['AccountName'] = "sourceAccount"
+source_access_key_args['AccessKeyId'] = account_response_elements['AccessKeyId']
+source_access_key_args['SecretAccessKey'] = account_response_elements['SecretKey']
+#Create account destinationAccount
+
+test_msg = "Create account destinationAccount"
+target_account_args = {'AccountName': 'destinationAccount', 'Email': 'destinationAccount@seagate.com', \
+                'ldapuser': S3ClientConfig.ldapuser, \
+                'ldappasswd': S3ClientConfig.ldappasswd}
+account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+result1 = AuthTest(test_msg).create_account(**target_account_args).execute_test()
+result1.command_should_match_pattern(account_response_pattern)
+account_response_elements = get_response_elements(result1.status.stdout)
+destination_access_key_args = {}
+destination_access_key_args['AccountName'] = "destinationAccount"
+destination_access_key_args['AccessKeyId'] = account_response_elements['AccessKeyId']
+destination_access_key_args['SecretAccessKey'] = account_response_elements['SecretKey']
+#Create account crossAccount
+
+test_msg = "Create account crossAccount"
+cross_account_args = {'AccountName': 'crossAccount', 'Email': 'crossAccount@seagate.com', \
+                'ldapuser': S3ClientConfig.ldapuser, \
+                'ldappasswd': S3ClientConfig.ldappasswd}
+account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+result1 = AuthTest(test_msg).create_account(**cross_account_args).execute_test()
+result1.command_should_match_pattern(account_response_pattern)
+account_response_elements = get_response_elements(result1.status.stdout)
+cross_access_key_args = {}
+cross_access_key_args['AccountName'] = "crossAccount"
+cross_access_key_args['AccessKeyId'] = account_response_elements['AccessKeyId']
+cross_access_key_args['SecretAccessKey'] = account_response_elements['SecretKey']
+cross_access_key_args['CanonicalId'] = account_response_elements['CanonicalId']
+
+#------------------------create source bucket---------------------------
+os.environ["AWS_ACCESS_KEY_ID"] = source_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = source_access_key_args['SecretAccessKey']
+
+AwsTest('Aws can create bucket').create_bucket("source-bucket").execute_test().command_is_successful()
+AwsTest('Aws can create object').put_object("source-bucket", "source-object").execute_test().command_is_successful()
+#--------------------------create target bucket----------------------
+os.environ["AWS_ACCESS_KEY_ID"] = destination_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = destination_access_key_args['SecretAccessKey']
+
+AwsTest('Aws can create bucket').create_bucket("target-bucket").execute_test().command_is_successful()
+
+#---------------------------copy-object------------------------------
+os.environ["AWS_ACCESS_KEY_ID"] = cross_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = cross_access_key_args['SecretAccessKey']
+AwsTest('Aws can copy object').copy_object("source-bucket/source-object", "target-bucket", "source-object")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+os.environ["AWS_ACCESS_KEY_ID"] = source_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = source_access_key_args['SecretAccessKey']
+policy_source_bucket_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'source_bucket.json')
+policy_source_bucket = "file://" + os.path.abspath(policy_source_bucket_relative)
+AwsTest("Aws can put policy on bucket").put_bucket_policy("source-bucket", policy_source_bucket).execute_test().command_is_successful()
+os.environ["AWS_ACCESS_KEY_ID"] = cross_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = cross_access_key_args['SecretAccessKey']
+AwsTest('Aws can not copy object').copy_object("source-bucket/source-object", "target-bucket", "source-object")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+os.environ["AWS_ACCESS_KEY_ID"] = destination_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = destination_access_key_args['SecretAccessKey']
+policy_target_bucket_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'target_bucket.json')
+policy_target_bucket = "file://" + os.path.abspath(policy_target_bucket_relative)
+AwsTest("Aws can put policy on bucket").put_bucket_policy("target-bucket", policy_target_bucket).execute_test().command_is_successful()
+os.environ["AWS_ACCESS_KEY_ID"] = cross_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = cross_access_key_args['SecretAccessKey']
+AwsTest('Aws can copy object').copy_object("source-bucket/source-object", "target-bucket", "source-object")\
+    .execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = source_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = source_access_key_args['SecretAccessKey']
+AwsTest("Aws can delete policy on bucket").delete_bucket_policy("source-bucket").execute_test().command_is_successful()
+os.environ["AWS_ACCESS_KEY_ID"] = destination_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = destination_access_key_args['SecretAccessKey']
+AwsTest("Aws can delete policy on bucket").delete_bucket_policy("target-bucket").execute_test().command_is_successful()
+AwsTest('Aws can delete object').delete_object("target-bucket", "source-object")\
+    .execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = source_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = source_access_key_args['SecretAccessKey']
+
+AwsTest('Owner account can do put object acl').put_object_acl("source-bucket", "source-object", "grant-full-control" ,"id=" + cross_access_key_args['CanonicalId'] )\
+.execute_test().command_is_successful()
+os.environ["AWS_ACCESS_KEY_ID"] = cross_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = cross_access_key_args['SecretAccessKey']
+AwsTest('Aws can not copy object').copy_object("source-bucket/source-object", "target-bucket", "source-object")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+os.environ["AWS_ACCESS_KEY_ID"] = destination_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = destination_access_key_args['SecretAccessKey']
+
+AwsTest('Aws can put bucket acl').put_bucket_acl("target-bucket", "grant-write", "id=" + cross_access_key_args['CanonicalId'] ).execute_test().command_is_successful()
+os.environ["AWS_ACCESS_KEY_ID"] = cross_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = cross_access_key_args['SecretAccessKey']
+AwsTest('Aws can copy object').copy_object("source-bucket/source-object", "target-bucket", "source-object")\
+    .execute_test().command_is_successful()
+
+
+os.environ["AWS_ACCESS_KEY_ID"] = source_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = source_access_key_args['SecretAccessKey']
+
+AwsTest('Aws can delete object').delete_object("source-bucket", "source-object")\
+    .execute_test().command_is_successful()
+AwsTest('Aws can delete bucket').delete_bucket("source-bucket")\
+    .execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = cross_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = cross_access_key_args['SecretAccessKey']
+
+AwsTest('Aws can delete object').delete_object("target-bucket", "source-object")\
+    .execute_test().command_is_successful()
+
+AwsTest('Aws can delete bucket').delete_bucket("target-bucket")\
+    .execute_test().command_is_successful()
+
+#-------------------Delete Accounts------------------
+test_msg = "Delete account sourceAccount"
+s3test_access_key = S3ClientConfig.access_key_id
+s3test_secret_key = S3ClientConfig.secret_key
+S3ClientConfig.access_key_id = source_access_key_args['AccessKeyId']
+S3ClientConfig.secret_key = source_access_key_args['SecretAccessKey']
+
+account_args = {'AccountName': 'sourceAccount', 'Email': 'sourceAccount@seagate.com',  'force': True}
+AuthTest(test_msg).delete_account(**source_account_args).execute_test()\
+            .command_response_should_have("Account deleted successfully")
+
+test_msg = "Delete account destinationAccount"
+S3ClientConfig.access_key_id = destination_access_key_args['AccessKeyId']
+S3ClientConfig.secret_key = destination_access_key_args['SecretAccessKey']
+account_args = {'AccountName': 'destinationAccount', 'Email': 'destinationAccount@seagate.com',  'force': True}
+AuthTest(test_msg).delete_account(**target_account_args).execute_test()\
+            .command_response_should_have("Account deleted successfully")
+
+test_msg = "Delete account crossAccount"
+account_args = {'AccountName': 'crossAccount', 'Email': 'crossAccount@seagate.com',  'force': True}
+S3ClientConfig.access_key_id = cross_access_key_args['AccessKeyId']
+S3ClientConfig.secret_key = cross_access_key_args['SecretAccessKey']
+AuthTest(test_msg).delete_account(**cross_account_args).execute_test()\
+            .command_response_should_have("Account deleted successfully")
+S3ClientConfig.access_key_id = s3test_access_key
+S3ClientConfig.secret_key = s3test_secret_key
