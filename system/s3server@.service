@@ -27,6 +27,7 @@ After=s3authserver.service
 [Service]
 Type=forking
 ExecStart=/opt/seagate/cortx/s3/s3startsystem.sh %i
+ExecReload=/bin/kill -HUP $MAINPID
 ExecStop=/opt/seagate/cortx/s3/s3stopsystem.sh %i
 TimeoutStopSec=7
 

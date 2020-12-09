@@ -229,4 +229,15 @@ int parse_and_load_config_options(int argc, char **argv) {
   return 0;
 }
 
+bool parse_and_reload_config_options() {
+  // Create the initial options object with default values.
+  S3Option *option_instance = S3Option::get_instance();
+
+  // reload the configurations from config file.
+  if (!option_instance->reload_modifiable_options()) {
+    return false;
+  }
+  return true;
+}
+
 void finalize_cli_options() { gflags::ShutDownCommandLineFlags(); }
