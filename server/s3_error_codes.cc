@@ -31,6 +31,10 @@ S3Error::S3Error(std::string error_code, std::string req_id,
 
 int S3Error::get_http_status_code() { return details.get_http_status_code(); }
 
+void S3Error::set_auth_error_message(const std::string& errmsg) {
+  auth_error_message = errmsg;
+}
+
 std::string& S3Error::to_xml() {
   if (get_http_status_code() == -1) {
     // Object state is invalid, Wrong error code.

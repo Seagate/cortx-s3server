@@ -96,7 +96,7 @@ void S3ObjectAction::fetch_object_info() {
     object_metadata = object_metadata_factory->create_object_metadata_obj(
         request, object_list_oid);
     object_metadata->set_objects_version_list_index_oid(
-        bucket_metadata->get_objects_version_list_index_oid());
+        objects_version_list_oid);
 
     object_metadata->load(
         std::bind(&S3ObjectAction::fetch_object_info_success, this),

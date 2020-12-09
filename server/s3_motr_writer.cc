@@ -372,15 +372,28 @@ void S3MotrWiter::create_object_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3MotrWiter::write_content(
-    std::function<void(void)> on_success, std::function<void(void)> on_failed,
-    std::shared_ptr<S3AsyncBufferOptContainer> buffer) {
+void S3MotrWiter::write_content(std::function<void(void)> on_success,
+                                std::function<void(void)> on_failed,
+                                S3BufferSequence buffer_sequence,
+                                size_t size_of_each_buf) {
   s3_log(S3_LOG_INFO, request_id, "Entering with layout_id = %d\n",
          layout_ids[0]);
 
+  assert(!buffer_sequence.empty());
+  assert(!(size_of_each_buf & 0xFFF));  // size_of_each_buf % 4096 == 0
+
+#ifndef NDEBUG
+  if (buffer_sequence.size() > 1) {
+    for (size_t i = 0, n = buffer_sequence.size() - 1; i < n; ++i) {
+      assert(buffer_sequence[i].second == size_of_each_buf);
+    }
+  }
+#endif  // NDEBUG
+
   handler_on_success = std::move(on_success);
   handler_on_failed = std::move(on_failed);
-  write_async_buffer = std::move(buffer);
+  this->buffer_sequence = std::move(buffer_sequence);
+  this->size_of_each_buf = size_of_each_buf;
 
   state = S3MotrWiterOpState::writing;
 
@@ -403,55 +416,26 @@ void S3MotrWiter::write_content() {
 
   assert(is_object_opened);
 
-  size_t motr_write_payload_size =
-      g_option_instance->get_motr_write_payload_size(layout_ids[0]);
-  size_t motr_unit_size =
+  const size_t motr_unit_size =
       S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_ids[0]);
-  size_t size_of_each_buf = g_option_instance->get_libevent_pool_buffer_size();
-
-  size_t estimated_write_length = 0;
-  if (write_async_buffer->is_freezed() &&
-      write_async_buffer->get_content_length() < motr_write_payload_size) {
-    estimated_write_length = write_async_buffer->get_content_length();
-  } else {
-    estimated_write_length =
-        (write_async_buffer->get_content_length() / motr_write_payload_size) *
-        motr_write_payload_size;
-  }
-
-  if (estimated_write_length > motr_write_payload_size) {
-    // TODO : we should just write whatever is buffered, but motr has error
-    // where if we have high block count, it fails, failure seen around 800k+
-    // data.
-    estimated_write_length = motr_write_payload_size;
-  }
-
-  auto ret = write_async_buffer->get_buffers(estimated_write_length);
-  std::deque<evbuffer *> data_items = ret.first;
-
-  size_t motr_buf_count = ret.second / size_of_each_buf;
-  if (write_async_buffer->is_freezed() &&
-      (ret.second % size_of_each_buf != 0)) {
-    motr_buf_count++;
-  }
-  assert(data_items.size() == motr_buf_count);
+  size_t motr_buf_count = buffer_sequence.size();
 
   // bump the count so we write at least multiple of motr_unit_size
   s3_log(S3_LOG_DEBUG, request_id, "motr_buf_count without padding: %zu\n",
          motr_buf_count);
-  int buffers_per_unit = motr_unit_size / size_of_each_buf;
-  if (buffers_per_unit == 0) {
-    buffers_per_unit = 1;
-  }
-  int buffers_in_last_unit =
-      motr_buf_count % buffers_per_unit;  // marked to send till now
-  if (buffers_in_last_unit > 0) {
-    int pad_buf_count = buffers_per_unit - buffers_in_last_unit;
-    motr_buf_count += pad_buf_count;
-  }
-  s3_log(S3_LOG_DEBUG, request_id, "motr_buf_count after padding: %zu\n",
-         motr_buf_count);
 
+  const size_t buffers_per_unit = motr_unit_size / size_of_each_buf;
+
+  if (buffers_per_unit > 1) {
+    size_t buffers_in_last_unit =
+        motr_buf_count % buffers_per_unit;  // marked to send till now
+    if (buffers_in_last_unit > 0) {
+      size_t pad_buf_count = buffers_per_unit - buffers_in_last_unit;
+      s3_log(S3_LOG_DEBUG, request_id, "padding with %zu buffers",
+             pad_buf_count);
+      motr_buf_count += pad_buf_count;
+    }
+  }
   writer_context.reset(new S3MotrWiterContext(
       request, std::bind(&S3MotrWiter::write_content_successful, this),
       std::bind(&S3MotrWiter::write_content_failed, this)));
@@ -472,7 +456,9 @@ void S3MotrWiter::write_content() {
   ctx->cbs[0].oop_executed = NULL;
   ctx->cbs[0].oop_stable = s3_motr_op_stable;
   ctx->cbs[0].oop_failed = s3_motr_op_failed;
-  set_up_motr_data_buffers(rw_ctx, data_items, motr_buf_count);
+
+  set_up_motr_data_buffers(rw_ctx, std::move(buffer_sequence), motr_buf_count);
+
   last_op_was_write = true;
 
   /* Create the write request */
@@ -508,10 +494,6 @@ void S3MotrWiter::write_content_successful() {
          "Motr API sucessful: write(total_written = %zu)\n", total_written);
   s3_stats_inc("write_to_motr_op_success_count");
 
-  // We have copied data to motr buffers.
-  write_async_buffer->flush_used_buffers();
-  write_async_buffer.reset();
-
   state = S3MotrWiterOpState::saved;
   this->handler_on_success();
 
@@ -521,9 +503,6 @@ void S3MotrWiter::write_content_successful() {
 void S3MotrWiter::write_content_failed() {
   s3_log(S3_LOG_ERROR, request_id, "Write to object failed after writing %zu\n",
          total_written);
-  // We have failed coping data to motr buffers.
-  write_async_buffer->flush_used_buffers();
-  write_async_buffer.reset();
 
   state = S3MotrWiterOpState::failed;
   this->handler_on_failed();
@@ -676,60 +655,44 @@ int S3MotrWiter::get_op_ret_code_for_delete_op(int index) {
 }
 
 void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
-                                           std::deque<evbuffer *> &data_items,
+                                           S3BufferSequence buffer_sequence,
                                            size_t motr_buf_count) {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   size_in_current_write = 0;
-  size_t size_of_each_buf = g_option_instance->get_libevent_pool_buffer_size();
-  size_t buf_count = 0;
-  while (!data_items.empty()) {
-    evbuffer *buf = data_items.front();
-    data_items.pop_front();
-    size_t len_in_buf = evbuffer_get_length(buf);
-    s3_log(S3_LOG_DEBUG, request_id, "evbuffer_get_length(buf) = %zu\n",
-           len_in_buf);
+  size_t buf_idx = 0;
 
-    size_t num_of_extents = evbuffer_peek(buf, len_in_buf, NULL, NULL, 0);
-    s3_log(S3_LOG_DEBUG, request_id, "num_of_extents = %zu\n", num_of_extents);
+  while (!buffer_sequence.empty()) {
 
-    /* do the actual peek */
-    struct evbuffer_iovec *vec_in = (struct evbuffer_iovec *)calloc(
-        num_of_extents, sizeof(struct evbuffer_iovec));
-
-    /* do the actual peek at data */
-    evbuffer_peek(buf, len_in_buf, NULL /*start of buffer*/, vec_in,
-                  num_of_extents);
+    const auto &ptr_n_len = buffer_sequence.front();
+    const size_t len_in_buf = ptr_n_len.second;
 
     // Give the buffer references to Motr
-    for (size_t i = 0; i < num_of_extents; ++i) {
-      s3_log(S3_LOG_DEBUG, request_id, "To Motr: address(%p), iter(%zu)\n",
-             vec_in[i].iov_base, buf_count);
-      s3_log(S3_LOG_DEBUG, request_id, "To Motr: len(%zu) at last_index(%zu)\n",
-             vec_in[i].iov_len, last_index);
+    s3_log(S3_LOG_DEBUG, request_id, "To Motr: address(%p), iter(%zu)\n",
+           ptr_n_len.first, buf_idx);
+    s3_log(S3_LOG_DEBUG, request_id, "To Motr: len(%zu) at last_index(%zu)\n",
+           len_in_buf, last_index);
 
-      rw_ctx->data->ov_buf[buf_count] = vec_in[i].iov_base;
-      rw_ctx->data->ov_vec.v_count[buf_count] = size_of_each_buf;
+    rw_ctx->data->ov_buf[buf_idx] = ptr_n_len.first;
+    rw_ctx->data->ov_vec.v_count[buf_idx] = size_of_each_buf;
 
-      // Here we use actual length to get md5
-      md5crypt.Update((const char *)vec_in[i].iov_base, vec_in[i].iov_len);
+    // Here we use actual length to get md5
+    md5crypt.Update((const char *)ptr_n_len.first, len_in_buf);
 
-      // Init motr buffer attrs.
-      rw_ctx->ext->iv_index[buf_count] = last_index;
-      rw_ctx->ext->iv_vec.v_count[buf_count] = /*data_len*/ size_of_each_buf;
-      last_index += /*data_len*/ size_of_each_buf;
+    // Init motr buffer attrs.
+    rw_ctx->ext->iv_index[buf_idx] = last_index;
+    rw_ctx->ext->iv_vec.v_count[buf_idx] = /*data_len*/ size_of_each_buf;
+    last_index += /*data_len*/ size_of_each_buf;
 
-      /* we don't want any attributes */
-      rw_ctx->attr->ov_vec.v_count[buf_count] = 0;
+    /* we don't want any attributes */
+    rw_ctx->attr->ov_vec.v_count[buf_idx] = 0;
 
-      ++buf_count;
-    }
-
+    ++buf_idx;
     size_in_current_write += len_in_buf;
-    free(vec_in);
+    buffer_sequence.pop_front();
   }
 
-  if (buf_count < motr_buf_count) {
+  if (buf_idx < motr_buf_count) {
     // Allocate place_holder_for_last_unit only if its required.
     // Its required when writing last block of object.
     reset_buffers_if_any(unit_size_for_place_holder);
@@ -741,25 +704,27 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
             unit_size_for_place_holder);
   }
 
-  while (buf_count < motr_buf_count) {
+  while (buf_idx < motr_buf_count) {
     s3_log(S3_LOG_DEBUG, request_id, "To Motr: address(%p), iter(%zu)\n",
-           place_holder_for_last_unit, buf_count);
+           place_holder_for_last_unit, buf_idx);
     s3_log(S3_LOG_DEBUG, request_id, "To Motr: len(%zu) at last_index(%zu)\n",
            size_of_each_buf, last_index);
 
-    rw_ctx->data->ov_buf[buf_count] = place_holder_for_last_unit;
-    rw_ctx->data->ov_vec.v_count[buf_count] = size_of_each_buf;
+    rw_ctx->data->ov_buf[buf_idx] = place_holder_for_last_unit;
+    rw_ctx->data->ov_vec.v_count[buf_idx] = size_of_each_buf;
 
     // Init motr buffer attrs.
-    rw_ctx->ext->iv_index[buf_count] = last_index;
-    rw_ctx->ext->iv_vec.v_count[buf_count] = /*data_len*/ size_of_each_buf;
+    rw_ctx->ext->iv_index[buf_idx] = last_index;
+    rw_ctx->ext->iv_vec.v_count[buf_idx] = /*data_len*/ size_of_each_buf;
     last_index += /*data_len*/ size_of_each_buf;
 
     /* we don't want any attributes */
-    rw_ctx->attr->ov_vec.v_count[buf_count] = 0;
+    rw_ctx->attr->ov_vec.v_count[buf_idx] = 0;
 
-    ++buf_count;
+    ++buf_idx;
   }
+  assert(buf_idx == motr_buf_count);
+
   s3_log(S3_LOG_DEBUG, request_id, "size_in_current_write = %zu\n",
          size_in_current_write);
 

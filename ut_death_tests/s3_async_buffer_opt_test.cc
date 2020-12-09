@@ -57,6 +57,12 @@ class S3AsyncBufferOptContainerTest : public testing::Test {
 
 // Non std buf size = non multiple of size_of_each_buf
 // (libevent_pool_buffer_size)
+
+/* Behavior of the class has been changed.
+ * Now it waits requests with proper size only.
+ * Proper means that the size of requested data is multiple of size_of_each_buf,
+ * except for the last block.
+
 TEST_F(S3AsyncBufferOptContainerTest, GetBufferWithoutAddDeathTest) {
   buffer->add_content(get_evbuf_t_with_data(nfourk_buffer), false, false, true);
   buffer->add_content(get_evbuf_t_with_data(nfourk_buffer), false, false, true);
@@ -66,4 +72,4 @@ TEST_F(S3AsyncBufferOptContainerTest, GetBufferWithoutAddDeathTest) {
 
   EXPECT_DEATH(buffer->get_buffers(nfourk_buffer.length()),
                "Assertion `processing_q.empty\\(\\)' failed");
-}
+}*/

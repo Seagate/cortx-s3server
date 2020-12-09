@@ -113,9 +113,7 @@ TEST_F(S3AsyncBufferOptContainerTest,
 
   auto ret = buffer->get_buffers(2 * nfourk_buffer.length());
   // Returns empty Q
-  EXPECT_TRUE(ret.first.empty());
-  // Returns zero size
-  EXPECT_TRUE(ret.second == 0);
+  EXPECT_TRUE(ret.empty());
 }
 
 TEST_F(S3AsyncBufferOptContainerTest,
@@ -130,11 +128,9 @@ TEST_F(S3AsyncBufferOptContainerTest,
   // Ask for first part
   auto ret = buffer->get_buffers(nfourk_buffer.length());
 
-  EXPECT_EQ(1, ret.first.size());
-  evbuf_t *buf = ret.first.front();
-  EXPECT_EQ(nfourk_buffer.length(), evbuffer_get_length(buf));
-  EXPECT_EQ(nfourk_buffer.length(), ret.second);
-  EXPECT_EQ(0, strncmp(nfourk_buffer.c_str(), get_datap_4_evbuf_t(buf),
+  EXPECT_EQ(1, ret.size());
+  EXPECT_EQ(nfourk_buffer.length(), ret.front().second);
+  EXPECT_EQ(0, strncmp(nfourk_buffer.c_str(), (const char *)ret.front().first,
                        nfourk_buffer.length()));
 
   // Pending length in async buffer
@@ -154,13 +150,11 @@ TEST_F(S3AsyncBufferOptContainerTest,
   EXPECT_TRUE(buffer->is_freezed());
 
   auto ret = buffer->get_buffers(2 * nfourk_buffer.length());
-  EXPECT_EQ(nfourk_buffer.length() + 7, ret.second);
-  EXPECT_EQ(2, ret.first.size());
+  EXPECT_EQ(nfourk_buffer.length() + 7, ret.back().second + ret.front().second);
+  EXPECT_EQ(2, ret.size());
 
-  evbuf_t *first_buf = ret.first.front();
-  EXPECT_EQ(0, strncmp(nfourk_buffer.c_str(), get_datap_4_evbuf_t(first_buf),
+  EXPECT_EQ(0, strncmp(nfourk_buffer.c_str(), (const char *)ret[0].first,
                        nfourk_buffer.length()));
 
-  evbuf_t *last_buf = ret.first.back();
-  EXPECT_EQ(0, strncmp("Seagate", get_datap_4_evbuf_t(last_buf), 7));
+  EXPECT_EQ(0, strncmp("Seagate", (const char *)ret[1].first, 7));
 }

@@ -58,6 +58,7 @@ class S3PutObjectAction : public S3ObjectAction {
   // Maximum retry count for collision resolution
   unsigned short tried_count;
   int layout_id;
+  unsigned motr_write_payload_size;
   // string used for salting the uri
   std::string salt;
   std::shared_ptr<S3MotrWiter> motr_writer;
@@ -85,7 +86,8 @@ class S3PutObjectAction : public S3ObjectAction {
   void collision_detected();
 
   // Only for use with UT
-  void _set_layout_id(int layoutid) { layout_id = layoutid; }
+ protected:
+  void _set_layout_id(int layout_id);
 
  public:
   S3PutObjectAction(

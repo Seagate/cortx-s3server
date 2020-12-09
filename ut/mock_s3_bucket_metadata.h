@@ -58,6 +58,10 @@ class MockS3BucketMetadata : public S3BucketMetadataV1 {
   MOCK_METHOD1(set_location_constraint, void(std::string location));
   MOCK_METHOD1(from_json, int(std::string content));
   MOCK_METHOD0(get_owner_canonical_id, std::string());
+  MOCK_METHOD(struct m0_uint128 const, get_object_list_index_oid, (),
+              (override));
+  MOCK_METHOD(struct m0_uint128 const, get_objects_version_list_index_oid, (),
+              (override));
 };
 
 #endif

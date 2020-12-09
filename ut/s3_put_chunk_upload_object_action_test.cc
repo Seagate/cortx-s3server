@@ -43,18 +43,22 @@ using ::testing::DefaultValue;
     action_under_test->fetch_bucket_info();                               \
   } while (0)
 
-#define CREATE_OBJECT_METADATA                                                \
-  do {                                                                        \
-    CREATE_BUCKET_METADATA;                                                   \
-    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(     \
-        object_list_indx_oid);                                                \
-    bucket_meta_factory->mock_bucket_metadata                                 \
-        ->set_objects_version_list_index_oid(objects_version_list_index_oid); \
-    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))     \
-        .Times(AtLeast(1));                                                   \
-    EXPECT_CALL(*(mock_request), http_verb())                                 \
-        .WillOnce(Return(S3HttpVerb::PUT));                                   \
-    action_under_test->fetch_object_info();                                   \
+#define CREATE_OBJECT_METADATA                                            \
+  do {                                                                    \
+    CREATE_BUCKET_METADATA;                                               \
+    EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
+                get_object_list_index_oid())                              \
+        .Times(AtLeast(1))                                                \
+        .WillRepeatedly(Return(object_list_indx_oid));                    \
+    EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
+                get_objects_version_list_index_oid())                     \
+        .Times(AtLeast(1))                                                \
+        .WillRepeatedly(Return(objects_version_list_index_oid));          \
+    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _)) \
+        .Times(AtLeast(1));                                               \
+    EXPECT_CALL(*(mock_request), http_verb())                             \
+        .WillOnce(Return(S3HttpVerb::PUT));                               \
+    action_under_test->fetch_object_info();                               \
   } while (0)
 
 class S3PutChunkUploadObjectActionTestBase : public testing::Test {
@@ -548,14 +552,16 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        InitiateDataStreamingWeHaveAllData) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
+
   EXPECT_CALL(*mock_request, get_data_length())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(1024));
   EXPECT_CALL(*mock_request, has_all_body_content()).Times(1).WillOnce(
       Return(true));
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), write_content(_, _, _))
-      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              write_content(_, _, _, _)).Times(1);
   EXPECT_CALL(*mock_request, is_chunk_detail_ready()).WillOnce(Return(false));
 
   action_under_test->initiate_data_streaming();
@@ -567,14 +573,16 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        ConsumeIncomingShouldWriteIfWeAllData) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
+
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(true));
   // S3Option::get_instance()->get_motr_write_payload_size() = 1048576 * 1
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .WillRepeatedly(Return(1024));
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), write_content(_, _, _))
-      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              write_content(_, _, _, _)).Times(1);
   EXPECT_CALL(*mock_request, is_chunk_detail_ready()).WillOnce(Return(false));
 
   action_under_test->consume_incoming_content();
@@ -586,6 +594,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        ConsumeIncomingShouldWriteIfWeExactData) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
 
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(false));
@@ -595,8 +604,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
       .WillRepeatedly(Return(
            S3Option::get_instance()->get_motr_write_payload_size(layout_id)));
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), write_content(_, _, _))
-      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              write_content(_, _, _, _)).Times(1);
   EXPECT_CALL(*mock_request, is_chunk_detail_ready()).WillOnce(Return(false));
 
   EXPECT_CALL(*mock_request, pause()).Times(1);
@@ -610,6 +619,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        ConsumeIncomingShouldWriteIfWeHaveMoreData) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
 
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(false));
@@ -619,8 +629,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
            S3Option::get_instance()->get_motr_write_payload_size(layout_id) +
            1024));
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), write_content(_, _, _))
-      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              write_content(_, _, _, _)).Times(1);
   EXPECT_CALL(*mock_request, is_chunk_detail_ready()).WillOnce(Return(false));
 
   EXPECT_CALL(*mock_request, pause()).Times(1);
@@ -645,8 +655,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
            S3Option::get_instance()->get_motr_write_payload_size(layout_id) *
            S3Option::get_instance()->get_read_ahead_multiple() * 2));
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), write_content(_, _, _))
-      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              write_content(_, _, _, _)).Times(1);
   EXPECT_CALL(*mock_request, is_chunk_detail_ready()).WillOnce(Return(false));
 
   EXPECT_CALL(*mock_request, pause()).Times(1);
@@ -662,8 +672,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(true));
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), write_content(_, _, _))
-      .Times(0);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              write_content(_, _, _, _)).Times(0);
 
   action_under_test->consume_incoming_content();
 }
@@ -672,8 +682,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        WriteObjectShouldWriteContentAndMarkProgress) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), write_content(_, _, _))
-      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              write_content(_, _, _, _)).Times(1);
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .WillRepeatedly(Return(1024));
   EXPECT_CALL(*mock_request, is_chunk_detail_ready()).WillOnce(Return(false));
@@ -787,8 +797,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   // S3_READ_AHEAD_MULTIPLE: 1
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .WillRepeatedly(Return(1024));
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), write_content(_, _, _))
-      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              write_content(_, _, _, _)).Times(1);
   EXPECT_CALL(*mock_request, is_chunk_detail_ready()).WillOnce(Return(false));
 
   action_under_test->write_object_successful();
@@ -810,8 +820,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
       .WillRepeatedly(Return(
            S3Option::get_instance()->get_motr_write_payload_size(layout_id)));
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), write_content(_, _, _))
-      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              write_content(_, _, _, _)).Times(1);
   EXPECT_CALL(*mock_request, resume(_)).Times(1);
   EXPECT_CALL(*mock_request, is_chunk_detail_ready()).WillOnce(Return(false));
 
@@ -835,8 +845,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
            S3Option::get_instance()->get_motr_write_payload_size(layout_id) +
            1024));
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), write_content(_, _, _))
-      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              write_content(_, _, _, _)).Times(1);
   EXPECT_CALL(*mock_request, resume(_)).Times(1);
   EXPECT_CALL(*mock_request, is_chunk_detail_ready()).WillOnce(Return(false));
 
@@ -858,8 +868,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .WillRepeatedly(Return(0));
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), write_content(_, _, _))
-      .Times(0);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              write_content(_, _, _, _)).Times(0);
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
@@ -888,8 +898,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
            S3Option::get_instance()->get_motr_write_payload_size(layout_id) -
            1024));
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), write_content(_, _, _))
-      .Times(0);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              write_content(_, _, _, _)).Times(0);
 
   EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
@@ -1139,7 +1149,7 @@ TEST_F(S3PutChunkUploadObjectActionTestWithAuth,
       .WillOnce(Return(detail));
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
-              write_content(_, _, _))
+              write_content(_, _, _, _))
       .Times(1);
 
   EXPECT_CALL(*(mock_auth_factory->mock_auth_client),

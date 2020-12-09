@@ -137,6 +137,16 @@ void S3GetBucketAction::after_validate_request() { next(); }
 
 void S3GetBucketAction::get_next_objects() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  // If client is disconnected (say, due to read timeout,
+  // when the object listing takes substantial time), destroy action class
+  if (!request->client_connected()) {
+    s3_log(S3_LOG_INFO, request_id,
+           "s3 client is disconnected. Terminating object listing request\n");
+    S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
+    done();
+    return;
+  }
+
   m0_uint128 object_list_index_oid =
       bucket_metadata->get_object_list_index_oid();
   if (motr_kv_reader == nullptr) {
@@ -216,7 +226,6 @@ void S3GetBucketAction::get_next_objects_successful() {
     s3_log(S3_LOG_DEBUG, request_id, "Read Object = %s\n", kv.first.c_str());
     s3_log(S3_LOG_DEBUG, request_id, "Read Object Value = %s\n",
            kv.second.second.c_str());
-
     // Check if the current key cannot be rolled into the last common prefix.
     // If can't be rolled into last common prefix, reset
     // 'last_key_in_common_prefix'
