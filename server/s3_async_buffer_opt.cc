@@ -27,7 +27,7 @@ S3AsyncBufferOptContainer::S3AsyncBufferOptContainer(size_t size_of_each_buf)
       is_expecting_more(true),
       count_bufs_shared_for_read(0),
       size_of_each_evbuf(size_of_each_buf) {
-  s3_log(S3_LOG_DEBUG, "", "Constructor with size_of_each_buf = %zu\n",
+  s3_log(S3_LOG_DEBUG, "", "%s Ctor with size_of_each_buf = %zu\n", __func__,
          size_of_each_buf);
 
   // Should be multiple of 4k (Motr requirement)
@@ -35,7 +35,7 @@ S3AsyncBufferOptContainer::S3AsyncBufferOptContainer(size_t size_of_each_buf)
 }
 
 S3AsyncBufferOptContainer::~S3AsyncBufferOptContainer() {
-  s3_log(S3_LOG_DEBUG, "", "Destructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s\n", __func__);
   // release all memory
   evbuf_t* buf = NULL;
   while (!ready_q.empty()) {
@@ -67,7 +67,7 @@ size_t S3AsyncBufferOptContainer::get_content_length() const {
 bool S3AsyncBufferOptContainer::add_content(evbuf_t* buf, bool is_first_buf,
                                             bool is_last_buf,
                                             bool is_put_request) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   if (!buf) {
     s3_log(S3_LOG_ERROR, "", "buf == NULL");
     return false;
@@ -100,7 +100,7 @@ bool S3AsyncBufferOptContainer::add_content(evbuf_t* buf, bool is_first_buf,
   }
   ready_q.push_back(buf);
   content_length += len;
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 
   return true;
 }
@@ -114,7 +114,7 @@ bool S3AsyncBufferOptContainer::add_content(evbuf_t* buf, bool is_first_buf,
 S3BufferSequence S3AsyncBufferOptContainer::get_buffers(
     size_t expected_content_size) {
 
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, "", "get_buffers with expected_content_size = %zu\n",
          expected_content_size);
 
@@ -178,7 +178,7 @@ S3BufferSequence S3AsyncBufferOptContainer::get_buffers(
 }
 
 void S3AsyncBufferOptContainer::flush_used_buffers() {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
 
   // assert(!processing_q.empty());
 
@@ -195,12 +195,12 @@ void S3AsyncBufferOptContainer::flush_used_buffers() {
   }
   s3_log(S3_LOG_DEBUG, "", "Freed evbuffer of len = %zu\n", size_consumed);
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return;
 }
 
 std::string S3AsyncBufferOptContainer::get_content_as_string() {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   std::string content = "";
 
   // We should not have returned any bufs out for processing.
@@ -249,6 +249,6 @@ std::string S3AsyncBufferOptContainer::get_content_as_string() {
   }
   content_length = 0;  // Everything is returned.
   s3_log(S3_LOG_DEBUG, "", "Content size = %zu\n", content.length());
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return content;
 }

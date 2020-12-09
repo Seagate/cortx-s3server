@@ -49,7 +49,7 @@ class S3SyncMotrKVSWriterContext {
   S3SyncMotrKVSWriterContext(std::string req_id, int ops_cnt)
       : request_id(std::move(req_id)), ops_count(ops_cnt) {
 
-    s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+    s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
     // Create or write, we need op context
     motr_idx_op_context = create_basic_idx_op_ctx(ops_count);
     has_motr_idx_op_context = true;
@@ -58,7 +58,7 @@ class S3SyncMotrKVSWriterContext {
   }
 
   ~S3SyncMotrKVSWriterContext() {
-    s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
+    s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__);
     if (has_motr_idx_op_context) {
       free_basic_idx_op_ctx(motr_idx_op_context);
     }
@@ -88,6 +88,7 @@ class S3AsyncMotrKVSWriterContext : public S3SyncMotrKVSWriterContext,
                                     public S3AsyncOpContextBase {
 
   std::string request_id = "";
+  std::string stripped_request_id = "";
 
  public:
   S3AsyncMotrKVSWriterContext(std::shared_ptr<RequestObject> req,
@@ -99,11 +100,12 @@ class S3AsyncMotrKVSWriterContext : public S3SyncMotrKVSWriterContext,
         S3AsyncOpContextBase(req, success_callback, failed_callback, ops_count,
                              motr_api) {
     request_id = req ? req->get_request_id() : "";
-    s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+    stripped_request_id = req ? req->get_stripped_request_id() : "";
+    s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   }
 
   ~S3AsyncMotrKVSWriterContext() {
-    s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
+    s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__);
   }
 };
 
@@ -132,6 +134,8 @@ class S3MotrKVSWriter {
   std::string kvs_value;
 
   std::string request_id;
+  std::string stripped_request_id;
+
   // Used to report to caller
   std::function<void()> handler_on_success;
   std::function<void()> handler_on_failed;

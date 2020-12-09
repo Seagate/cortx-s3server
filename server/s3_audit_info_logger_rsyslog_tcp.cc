@@ -26,10 +26,11 @@
 
 void S3AuditInfoLoggerRsyslogTcp::eventcb(struct bufferevent *bev, short events,
                                           void *ptr) {
-  s3_log(S3_LOG_DEBUG, "", "Entering event %d ptr %p\n", (int)events, ptr);
+  s3_log(S3_LOG_DEBUG, "", "%s Entry event %d ptr %p\n", __func__, (int)events,
+         ptr);
 
   if (ptr == nullptr) {
-    s3_log(S3_LOG_ERROR, "", "Exiting. Unexpected event param\n");
+    s3_log(S3_LOG_ERROR, "", "%s Exit. Unexpected event param\n", __func__);
     return;
   }
 
@@ -42,7 +43,8 @@ void S3AuditInfoLoggerRsyslogTcp::eventcb(struct bufferevent *bev, short events,
       evutil_socket_t fd = bufferevent_getfd(bev);
       int one = 1;
       if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one)) != 0) {
-        s3_log(S3_LOG_ERROR, "", "Exiting. setsockopt errno %d\n", errno);
+        s3_log(S3_LOG_ERROR, "", "%s Exit. setsockopt errno %d\n", __func__,
+               errno);
         self->curr_retry = self->max_retry + 1;
       }
     }
@@ -55,11 +57,11 @@ void S3AuditInfoLoggerRsyslogTcp::eventcb(struct bufferevent *bev, short events,
     }
   }
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3AuditInfoLoggerRsyslogTcp::connect() {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
 
   ++curr_retry;
   if (curr_retry > max_retry) {
@@ -75,7 +77,7 @@ void S3AuditInfoLoggerRsyslogTcp::connect() {
     curr_retry = max_retry + 1;
   }
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 S3AuditInfoLoggerRsyslogTcp::S3AuditInfoLoggerRsyslogTcp(
@@ -93,10 +95,10 @@ S3AuditInfoLoggerRsyslogTcp::S3AuditInfoLoggerRsyslogTcp(
       base_event(base),
       base_dns(nullptr),
       connecting(false) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
 
   if (base == nullptr) {
-    s3_log(S3_LOG_ERROR, "", "Exiting. Base event is NULL\n");
+    s3_log(S3_LOG_ERROR, "", "%s Exit. Base event is NULL\n", __func__);
     throw std::invalid_argument("Base event is NULL");
   }
 
@@ -108,20 +110,20 @@ S3AuditInfoLoggerRsyslogTcp::S3AuditInfoLoggerRsyslogTcp(
   }
 
   if (socket_api == nullptr) {
-    s3_log(S3_LOG_ERROR, "", "Exiting. Socket API is NULL\n");
+    s3_log(S3_LOG_ERROR, "", "%s Exit. Socket API is NULL\n", __func__);
     throw std::runtime_error("Socket API is NULL");
   }
 
   bev =
       socket_api->bufferevent_socket_new(base_event, -1, BEV_OPT_CLOSE_ON_FREE);
   if (bev == nullptr) {
-    s3_log(S3_LOG_ERROR, "", "Exiting. Cannot create socket\n");
+    s3_log(S3_LOG_ERROR, "", "%s Exit. Cannot create socket\n", __func__);
     throw std::runtime_error("Cannot create socket");
   }
 
   base_dns = socket_api->evdns_base_new(base_event, 1);
   if (base_dns == nullptr) {
-    s3_log(S3_LOG_ERROR, "", "Exiting. Cannot create DNS rslv\n");
+    s3_log(S3_LOG_ERROR, "", "%s Exit. Cannot create DNS rslv\n", __func__);
     throw std::runtime_error("Cannot create DNS rslv");
   }
 
@@ -137,11 +139,11 @@ S3AuditInfoLoggerRsyslogTcp::S3AuditInfoLoggerRsyslogTcp(
                      message_id + " " + "-";
 
   connect();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 S3AuditInfoLoggerRsyslogTcp::~S3AuditInfoLoggerRsyslogTcp() {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   if (base_dns != nullptr) {
     socket_api->evdns_base_free(base_dns, 0);
     base_dns = nullptr;
@@ -155,16 +157,16 @@ S3AuditInfoLoggerRsyslogTcp::~S3AuditInfoLoggerRsyslogTcp() {
   }
   socket_api = nullptr;
   connecting = false;
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 int S3AuditInfoLoggerRsyslogTcp::save_msg(
     std::string const &cur_request_id, std::string const &audit_logging_msg) {
-  s3_log(S3_LOG_DEBUG, cur_request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, cur_request_id, "%s Entry\n", __func__);
 
   if (curr_retry > max_retry) {
-    s3_log(S3_LOG_ERROR, cur_request_id, "Exiting. Retries %d exceeds %d\n",
-           curr_retry, max_retry);
+    s3_log(S3_LOG_ERROR, cur_request_id, "%s Exit. Retries %d exceeds %d\n",
+           __func__, curr_retry, max_retry);
     return -1;
   }
 
@@ -173,11 +175,12 @@ int S3AuditInfoLoggerRsyslogTcp::save_msg(
   int ret =
       socket_api->evbuffer_add(output, msg_to_snd.c_str(), msg_to_snd.length());
   if (ret != 0) {
-    s3_log(S3_LOG_ERROR, cur_request_id, "Exiting. Cannot write to buffer\n");
+    s3_log(S3_LOG_ERROR, cur_request_id, "%s Exit. Cannot write to buffer\n",
+           __func__);
     curr_retry = max_retry + 1;
     return -1;
   }
 
-  s3_log(S3_LOG_DEBUG, cur_request_id, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, cur_request_id, "%s Exit", __func__);
   return 0;
 }

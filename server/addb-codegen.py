@@ -307,7 +307,7 @@ def generate_s3_cc_file(out_file_name, classes, enums, headers):
 static std::unordered_map<std::type_index, enum S3AddbActionTypeId> gs_addb_map;
 
 int s3_addb_init() {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   // Sorry for the format, this had to be done this way to pass
   // git-clang-format check.
 """)

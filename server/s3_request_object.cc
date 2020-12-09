@@ -38,7 +38,7 @@ S3RequestObject::S3RequestObject(
     EventInterface* event_obj_ptr)
     : RequestObject(req, evhtp_obj_ptr, async_buf_factory, event_obj_ptr),
       s3_api_type(S3ApiType::unsupported) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   bucket_name = object_name = "";
   object_size = 0;
@@ -53,7 +53,7 @@ S3RequestObject::S3RequestObject(
 }
 
 S3RequestObject::~S3RequestObject() {
-  s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__);
   populate_and_log_audit_info();
 }
 
@@ -72,7 +72,8 @@ void S3RequestObject::set_bucket_name(const std::string& name) {
 
 void S3RequestObject::set_action_str(const std::string& action) {
   if (action != "HeadService") {
-    s3_log(S3_LOG_INFO, request_id, "S3Action =  %s\n", action.c_str());
+    s3_log(S3_LOG_INFO, stripped_request_id, "S3Action =  %s\n",
+           action.c_str());
   }
   s3_action = action;
 }
@@ -109,7 +110,7 @@ void S3RequestObject::set_default_acl(const std::string& acl) {
 const std::string& S3RequestObject::get_default_acl() { return default_acl; }
 
 void S3RequestObject::populate_and_log_audit_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry", __func__);
   if (S3Option::get_instance()->get_audit_logger_policy() == "disabled") {
     s3_log(S3_LOG_DEBUG, request_id,
            "Audit logger disabled by policy settings\n");
@@ -175,5 +176,5 @@ void S3RequestObject::populate_and_log_audit_info() {
     s3_log(S3_LOG_FATAL, request_id, "Audit Logger Error. STOP Server");
   }
   }
-  s3_log(S3_LOG_DEBUG, request_id, "Exiting");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
 }

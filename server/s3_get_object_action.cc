@@ -43,9 +43,10 @@ S3GetObjectAction::S3GetObjectAction(
       last_byte_offset_to_read(0),
       total_blocks_to_read(0),
       read_object_reply_started(false) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
-  s3_log(S3_LOG_INFO, request_id, "S3 API: Get Object. Bucket[%s] Object[%s]\n",
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "S3 API: Get Object. Bucket[%s] Object[%s]\n",
          request->get_bucket_name().c_str(),
          request->get_object_name().c_str());
 
@@ -68,7 +69,7 @@ void S3GetObjectAction::setup_steps() {
 }
 
 void S3GetObjectAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
   } else if (bucket_metadata->get_state() ==
@@ -80,7 +81,7 @@ void S3GetObjectAction::fetch_bucket_info_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GetObjectAction::fetch_object_info_failed() {
@@ -110,7 +111,7 @@ void S3GetObjectAction::fetch_object_info_failed() {
 }
 
 void S3GetObjectAction::validate_object_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   content_length = object_metadata->get_content_length();
   request->set_object_size(content_length);
   // as per RFC last_byte_offset_to_read is taken to be equal to one less than
@@ -157,7 +158,7 @@ void S3GetObjectAction::validate_object_info() {
            total_blocks_in_object);
     next();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GetObjectAction::set_total_blocks_to_read_from_object() {
@@ -184,7 +185,7 @@ void S3GetObjectAction::set_total_blocks_to_read_from_object() {
 
 bool S3GetObjectAction::validate_range_header_and_set_read_options(
     const std::string& range_value) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // The header can consist of 'blank' character(s) only
   if (std::find_if_not(range_value.begin(), range_value.end(), &::isspace) ==
       range_value.end()) {
@@ -198,7 +199,8 @@ bool S3GetObjectAction::validate_range_header_and_set_read_options(
   std::size_t pos = range_value.find('=');
   // return false when '=' not found
   if (pos == std::string::npos) {
-    s3_log(S3_LOG_INFO, request_id, "Invalid range(%s)\n", range_value.c_str());
+    s3_log(S3_LOG_INFO, stripped_request_id, "Invalid range(%s)\n",
+           range_value.c_str());
     return false;
   }
 
@@ -207,13 +209,15 @@ bool S3GetObjectAction::validate_range_header_and_set_read_options(
 
   // check bytes_unit has bytes string or not
   if (bytes_unit != "bytes") {
-    s3_log(S3_LOG_INFO, request_id, "Invalid range(%s)\n", range_value.c_str());
+    s3_log(S3_LOG_INFO, stripped_request_id, "Invalid range(%s)\n",
+           range_value.c_str());
     return false;
   }
 
   if (byte_range_set.empty()) {
     // found range as bytes=
-    s3_log(S3_LOG_INFO, request_id, "Invalid range(%s)\n", range_value.c_str());
+    s3_log(S3_LOG_INFO, stripped_request_id, "Invalid range(%s)\n",
+           range_value.c_str());
     return false;
   }
   // byte_range_set has multi range
@@ -221,7 +225,7 @@ bool S3GetObjectAction::validate_range_header_and_set_read_options(
   if (pos != std::string::npos) {
     // found ,
     // in this case, AWS returns full object and hence we do too
-    s3_log(S3_LOG_INFO, request_id, "unsupported multirange(%s)\n",
+    s3_log(S3_LOG_INFO, stripped_request_id, "unsupported multirange(%s)\n",
            byte_range_set.c_str());
     // initialize the first and last offset values with actual object offsets
     // to read complte object
@@ -232,7 +236,8 @@ bool S3GetObjectAction::validate_range_header_and_set_read_options(
   pos = byte_range_set.find('-');
   if (pos == std::string::npos) {
     // not found -
-    s3_log(S3_LOG_INFO, request_id, "Invalid range(%s)\n", range_value.c_str());
+    s3_log(S3_LOG_INFO, stripped_request_id, "Invalid range(%s)\n",
+           range_value.c_str());
     return false;
   }
 
@@ -251,7 +256,8 @@ bool S3GetObjectAction::validate_range_header_and_set_read_options(
        !S3CommonUtilities::string_has_only_digits(first_byte)) ||
       (!last_byte.empty() &&
        !S3CommonUtilities::string_has_only_digits(last_byte))) {
-    s3_log(S3_LOG_INFO, request_id, "Invalid range(%s)\n", range_value.c_str());
+    s3_log(S3_LOG_INFO, stripped_request_id, "Invalid range(%s)\n",
+           range_value.c_str());
     return false;
   }
   // -nnn
@@ -282,18 +288,19 @@ bool S3GetObjectAction::validate_range_header_and_set_read_options(
   // suffix-length, then the byte-range-set is satisfiable.
   if ((first_byte_offset_to_read >= content_length) ||
       (first_byte_offset_to_read > last_byte_offset_to_read)) {
-    s3_log(S3_LOG_INFO, request_id, "Invalid range(%s)\n", range_value.c_str());
+    s3_log(S3_LOG_INFO, stripped_request_id, "Invalid range(%s)\n",
+           range_value.c_str());
     return false;
   }
   // valid range
   s3_log(S3_LOG_DEBUG, request_id, "valid range(%zu-%zu) found\n",
          first_byte_offset_to_read, last_byte_offset_to_read);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return true;
 }
 
 void S3GetObjectAction::check_full_or_range_object_read() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   std::string range_header_value = request->get_header_value("Range");
   if (range_header_value.empty()) {
     // Range is not specified, read complte object
@@ -311,11 +318,11 @@ void S3GetObjectAction::check_full_or_range_object_read() {
       send_response_to_s3_client();
     }
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GetObjectAction::read_object() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // get total number of blocks to read from an object
   set_total_blocks_to_read_from_object();
   motr_reader = motr_reader_factory->create_motr_reader(
@@ -329,13 +336,13 @@ void S3GetObjectAction::read_object() {
            object_metadata->get_layout_id()));
   motr_reader->set_last_index(block_start_offset);
   read_object_data();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GetObjectAction::read_object_data() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
 
@@ -380,16 +387,16 @@ void S3GetObjectAction::read_object_data() {
     // We are done Reading
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GetObjectAction::send_data_to_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_stats_inc("read_object_data_success_count");
   log_timed_counter(get_timed_counter, "outgoing_object_data_blocks");
 
   if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
   if (!read_object_reply_started) {
@@ -404,7 +411,7 @@ void S3GetObjectAction::send_data_to_client() {
     request->set_out_header_value("Content-Type",
                                   object_metadata->get_content_type());
     request->set_out_header_value("ETag", e_tag);
-    s3_log(S3_LOG_INFO, request_id, "e_tag= %s", e_tag.c_str());
+    s3_log(S3_LOG_INFO, stripped_request_id, "e_tag= %s", e_tag.c_str());
     request->set_out_header_value("Accept-Ranges", "bytes");
     request->set_out_header_value(
         "Content-Length", std::to_string(get_requested_content_length()));
@@ -477,7 +484,7 @@ void S3GetObjectAction::send_data_to_client() {
 
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GetObjectAction::read_object_data_failed() {
@@ -490,7 +497,7 @@ void S3GetObjectAction::read_object_data_failed() {
 }
 
 void S3GetObjectAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (reject_if_shutting_down()) {
     if (read_object_reply_started) {
@@ -543,5 +550,5 @@ void S3GetObjectAction::send_response_to_s3_client() {
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

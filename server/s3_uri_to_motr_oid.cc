@@ -32,7 +32,7 @@
 int S3UriToMotrOID(std::shared_ptr<MotrAPI> s3_motr_api, const char *name,
                    const std::string &request_id, m0_uint128 *ufid,
                    S3MotrEntityType type) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   int rc;
   S3Timer timer;
   struct m0_uint128 tmp_uint128;
@@ -125,6 +125,6 @@ int S3UriToMotrOID(std::shared_ptr<MotrAPI> s3_motr_api, const char *name,
            timer.elapsed_time_in_nanosec());
   s3_stats_timing("uri_to_motr_oid", timer.elapsed_time_in_millisec());
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return 0;
 }

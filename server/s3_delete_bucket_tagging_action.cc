@@ -26,9 +26,10 @@ S3DeleteBucketTaggingAction::S3DeleteBucketTaggingAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
     : S3BucketAction(std::move(req), std::move(bucket_meta_factory)) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
-  s3_log(S3_LOG_INFO, request_id, "S3 API: Delete Bucket Tagging. Bucket[%s]\n",
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "S3 API: Delete Bucket Tagging. Bucket[%s]\n",
          request->get_bucket_name().c_str());
 
   setup_steps();
@@ -43,7 +44,7 @@ void S3DeleteBucketTaggingAction::setup_steps() {
 }
 
 void S3DeleteBucketTaggingAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
@@ -51,33 +52,33 @@ void S3DeleteBucketTaggingAction::fetch_bucket_info_failed() {
   } else {
     set_s3_error("InternalError");
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   send_response_to_s3_client();
 }
 
 void S3DeleteBucketTaggingAction::delete_bucket_tags() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   bucket_metadata->delete_bucket_tags();
   bucket_metadata->update(
       std::bind(&S3DeleteBucketTaggingAction::next, this),
       std::bind(&S3DeleteBucketTaggingAction::delete_bucket_tags_failed, this));
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteBucketTaggingAction::delete_bucket_tags_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
   } else {
     set_s3_error("InternalError");
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   next();
 }
 
 void S3DeleteBucketTaggingAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -104,5 +105,5 @@ void S3DeleteBucketTaggingAction::send_response_to_s3_client() {
   }
 
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

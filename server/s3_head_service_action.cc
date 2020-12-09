@@ -26,7 +26,7 @@
 
 S3HeadServiceAction::S3HeadServiceAction(std::shared_ptr<S3RequestObject> req)
     : S3Action(req, true, nullptr, true, true) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   setup_steps();
 }
@@ -38,7 +38,7 @@ void S3HeadServiceAction::setup_steps() {
 }
 
 void S3HeadServiceAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
 
   // Disable Audit logs for Haproxy healthchecks
   const char* full_path_uri = request->c_get_full_path();
@@ -60,5 +60,5 @@ void S3HeadServiceAction::send_response_to_s3_client() {
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

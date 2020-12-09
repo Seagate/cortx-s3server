@@ -39,8 +39,8 @@
 #include "s3_delete_bucket_tagging_action.h"
 
 void S3BucketAPIHandler::create_action() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  s3_log(S3_LOG_INFO, request_id, "Action operation code = %d\n",
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_INFO, stripped_request_id, "Action operation code = %d\n",
          operation_code);
 
   switch (operation_code) {
@@ -334,5 +334,5 @@ void S3BucketAPIHandler::create_action() {
       // should never be here.
       return;
   };  // switch operation_code
-  s3_log(S3_LOG_DEBUG, request_id, "Exiting");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
 }

@@ -57,6 +57,7 @@ class S3ObjectMetadataCopyable {
   int layout_id = 0;
 
   std::string request_id;
+  std::string stripped_request_id;
   std::string encoded_acl;
 
   std::map<std::string, std::string> system_defined_attribute;
