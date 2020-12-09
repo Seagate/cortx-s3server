@@ -264,7 +264,9 @@ DEBUG - Response headers: {'x-amz-request-id': '18d79101-45d1-47a3-ac5f-87e7\
 """
 def extract_headers_from_response(api_response):
     print("Extracting object oid and layout-id as \"x-stx-oid\" : \"x-stx-layout-id\" from response..")
-    expected_line = "DEBUG - Response headers:.*'x-stx-layout-id'.*.'x-stx-oid'.*"
+    # expected_line = "DEBUG - Response headers:.*'x-stx-layout-id'.*.'x-stx-oid'.*"
+    # order of "x-stx-layout-id" and "x-stx-oid" was reversed.
+    expected_line = "DEBUG - Response headers:.*'x-stx-oid'.*.'x-stx-layout-id'.*"
     response = re.findall(expected_line, api_response, re.MULTILINE)
     oid_dict = {}
     for response_line in response:
