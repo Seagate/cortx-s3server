@@ -142,7 +142,7 @@ public class BinaryUtil {
 
             return mac.doFinal(data);
         } catch (NoSuchAlgorithmException ex) {
-          LOGGER.error("Algorithm HmacSHA256 not available.");
+          LOGGER.error("Algorithm HmacSHA256 is not available.");
         } catch (InvalidKeyException ex) {
         }
 
@@ -183,7 +183,7 @@ public class BinaryUtil {
 
             return mac.doFinal(data);
         } catch (NoSuchAlgorithmException ex) {
-          LOGGER.error("Algorithm HmacSHA1 not available.");
+          LOGGER.error("Algorithm HmacSHA1 is not available.");
         } catch (InvalidKeyException ex) {
         }
 
@@ -224,7 +224,7 @@ public class BinaryUtil {
 
             return md.digest();
         } catch (NoSuchAlgorithmException ex) {
-          LOGGER.error("Algorithm SHA-256 not available.");
+          LOGGER.error("Algorithm SHA-256 is not available.");
         }
 
         return null;
@@ -241,7 +241,7 @@ public class BinaryUtil {
 
             return md.digest();
         } catch (NoSuchAlgorithmException ex) {
-            LOGGER.error("Algorithm SHA-256 not available.");
+          LOGGER.error("Algorithm SHA-256 is not available.");
         }
 
         return null;

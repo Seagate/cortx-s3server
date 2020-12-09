@@ -158,7 +158,7 @@ class LDAPUtils {
                     IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
                     "An error occurred while establishing ldap " +
                         "connection. For more information, please refer " +
-                        "troubleshooting guide.",
+                        "Troubleshooting Guide.",
                     String.format("\"cause\": \"%s\"",
                                   ldapException.getCause()));
                 throw ldapException;
@@ -197,7 +197,7 @@ class LDAPUtils {
                     IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
                     "An error occurred while establishing ldap " +
                         "connection. For more information, please refer " +
-                        "troubleshooting guide.",
+                        "Troubleshooting Guide.",
                     String.format("\"cause\": \"%s\"",
                                   ldapException.getCause()));
                 throw ldapException;
@@ -234,7 +234,7 @@ class LDAPUtils {
                     IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
                     "An error occurred while establishing ldap " +
                         "connection. For more information, please refer " +
-                        "troubleshooting guide.",
+                        "Troubleshooting Guide.",
                     String.format("\"cause\": \"%s\"",
                                   ldapException.getCause()));
                 throw ldapException;
@@ -273,7 +273,7 @@ class LDAPUtils {
                     IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
                     "An error occurred while establishing ldap " +
                         "connection. For more information, please refer " +
-                        "troubleshooting guide.",
+                        "Troubleshooting Guide.",
                     String.format("\"cause\": \"%s\"",
                                   ldapException.getCause()));
                 throw ldapException;
@@ -314,7 +314,7 @@ class LDAPUtils {
                     IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
                     "An error occurred while establishing ldap " +
                         "connection. For more information, please refer " +
-                        "troubleshooting guide.",
+                        "Troubleshooting Guide.",
                     String.format("\"cause\": \"%s\"",
                                   ldapException.getCause()));
                 throw ldapException;
@@ -352,7 +352,7 @@ class LDAPUtils {
           IEMUtil.log(
               IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
               "An error occurred while establishing ldap connection. For " +
-                  "more " + "information, please refer troubleshooting guide.",
+                  "more " + "information, please refer Troubleshooting Guide.",
               String.format("\"cause\": \"%s\"", ldapException.getCause()));
           throw ldapException;
         }

@@ -73,7 +73,7 @@ public class LdapConnectionManager {
                   IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
                   "An error occurred while establishing ldap " +
                       "connection. For more information, please refer " +
-                      "troubleshooting guide.",
+                      "Troubleshooting Guide.",
                   String.format("\"cause\": \"%s\"", ex.getCause()));
             }
             throw new ServerInitialisationException(msg);
@@ -101,8 +101,8 @@ public class LdapConnectionManager {
             IEMUtil.log(
                 IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
                 "An error occurred while establishing ldap connection. " +
-                    "For more information, please refer troubleshooting " +
-                    "guide.",
+                    "For more information, please refer Troubleshooting " +
+                    "Guide.",
                 String.format("\"cause\": \"%s\"", ex.getCause()));
           }
         } catch (InterruptedException ex) {
@@ -146,8 +146,8 @@ public class LdapConnectionManager {
           IEMUtil.log(
               IEMUtil.Level.FATAL, IEMUtil.LDAP_EX,
               "An error occurred while establishing ldap connection. " +
-                  "For more information, please refer troubleshooting " +
-                  "guide.",
+                  "For more information, please refer Troubleshooting " +
+                  "Guide.",
               String.format("\"cause\": \"%s\"", e.getCause()));
         }
         catch (InterruptedException e) {
@@ -196,8 +196,8 @@ public class LdapConnectionManager {
           IEMUtil.log(
               IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
               "An error occurred while establishing ldap connection. " +
-                  "For more information, please refer troubleshooting " +
-                  "guide.",
+                  "For more information, please refer Troubleshooting " +
+                  "Guide.",
               String.format("\"cause\": \"%s\"", ex.getCause()));
         }
       }
