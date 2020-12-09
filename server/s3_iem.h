@@ -68,18 +68,18 @@ extern S3Option* g_option_instance;
 #define S3_IEM_AUTH_CONN_FAIL "0030010001"
 #define S3_IEM_AUTH_CONN_FAIL_STR                                         \
   "S3 server cannot connect to auth server. For more information, refer " \
-  "troubleshooting guide."
+  "Troubleshooting Guide."
 #define S3_IEM_AUTH_CONN_FAIL_JSON ""
 
 #define S3_IEM_CHUNK_PARSING_FAIL "0030020001"
 #define S3_IEM_CHUNK_PARSING_FAIL_STR \
-  "Invalid chunk payload. For more information, refer troubleshooting guide."
+  "Invalid chunk payload. For more information, refer Troubleshooting Guide."
 #define S3_IEM_CHUNK_PARSING_FAIL_JSON ""
 
 #define S3_IEM_MOTR_CONN_FAIL "0030030001"
 #define S3_IEM_MOTR_CONN_FAIL_STR                                        \
-  "Motr connection failed. For more information, refer troubleshooting " \
-  "guide."
+  "Motr connection failed. For more information, refer Troubleshooting " \
+  "Guide."
 #define S3_IEM_MOTR_CONN_FAIL_JSON ""
 
 #define S3_IEM_COLLISION_RES_FAIL "0030040001"
@@ -89,26 +89,26 @@ extern S3Option* g_option_instance;
 
 #define S3_IEM_FATAL_HANDLER "0030050001"
 #define S3_IEM_FATAL_HANDLER_STR                                              \
-  "Fatal signal error received. For more information, refer troubleshooting " \
-  "guide."
+  "Fatal signal error received. For more information, refer Troubleshooting " \
+  "Guide."
 #define S3_IEM_FATAL_HANDLER_JSON ", \"signal_number\": %d"
 
 #define S3_IEM_DELETE_OBJ_FAIL "0030060001"
 #define S3_IEM_DELETE_OBJ_FAIL_STR                                      \
   "Delete operation failed for Object. For more information refer the " \
-  "Troubleshooting guide."
+  "Troubleshooting Guide."
 #define S3_IEM_DELETE_OBJ_FAIL_JSON ""
 
 #define S3_IEM_DELETE_IDX_FAIL "0030060002"
 #define S3_IEM_DELETE_IDX_FAIL_STR                                     \
   "Delete operation failed for Index. For more information refer the " \
-  "Troubleshooting guide."
+  "Troubleshooting Guide."
 #define S3_IEM_DELETE_IDX_FAIL_JSON ""
 
 #define S3_IEM_METADATA_CORRUPTED "0030060003"
 #define S3_IEM_METADATA_CORRUPTED_STR                                          \
   "Metadata may be corrupted. For more information refer the Troubleshooting " \
-  "guide."
+  "Guide."
 #define S3_IEM_METADATA_CORRUPTED_JSON ""
 
 #endif  // __S3_SERVER_IEM_H__
