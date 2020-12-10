@@ -75,9 +75,8 @@ public class ACLPermissionUtil {
                                    String queryParam) {
 
         if (uri == null || uri.isEmpty()) {
-            IEMUtil.log(IEMUtil.Level.ERROR,
-                    IEMUtil.INVALID_REST_URI_ERROR,
-                            "URI is empty or null", null);
+          IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.INVALID_REST_URI_ERROR,
+                      "Value for URI is required.", null);
             return null;
         }
         if (isACLReadWrite(uri, queryParam)) {
