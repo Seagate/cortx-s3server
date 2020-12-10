@@ -57,8 +57,8 @@ public class XMLValidatorUtil {
     public boolean validateXMLSchema(String xml) {
 
         if(xml == null || xml.isEmpty()) {
-            IEMUtil.log(IEMUtil.Level.ERROR,
-                    IEMUtil.XML_SCHEMA_VALIDATION_ERROR, "Invalid xml", null);
+          IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.XML_SCHEMA_VALIDATION_ERROR,
+                      "Invalid xml format.", null);
             return false;
         }
         try {
