@@ -708,10 +708,10 @@ void S3PutChunkUploadObjectAction::add_object_oid_to_probable_dead_oid_list() {
   if (old_object_oid.u_hi || old_object_oid.u_lo) {
     assert(!old_oid_str.empty());
 
-  // prepending a char depending on the size of the object (size based
-  // bucketing of object)
-  S3CommonUtilities::size_based_bucketing_of_objects(
-       old_oid_str, object_metadata->get_content_length());
+    // prepending a char depending on the size of the object (size based
+    // bucketing of object)
+    S3CommonUtilities::size_based_bucketing_of_objects(
+        old_oid_str, object_metadata->get_content_length());
 
     // key = oldoid + "-" + newoid
     std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
