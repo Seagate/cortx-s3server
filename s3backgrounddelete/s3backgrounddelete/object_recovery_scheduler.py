@@ -32,6 +32,7 @@ from logging import handlers
 import datetime
 import math
 import json
+import signal
 
 from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
@@ -47,6 +48,7 @@ class ObjectRecoveryScheduler(object):
         self.config = CORTXS3Config()
         self.create_logger_directory()
         self.create_logger()
+        signal.signal(signal.SIGUSR1,self.sigusr_handler_callback) 
         self.logger.info("Initialising the Object Recovery Scheduler")
 
     @staticmethod
@@ -57,6 +59,20 @@ class ObjectRecoveryScheduler(object):
         timeDelta = now - date_time_obj
         timeDeltaInMns = math.floor(timeDelta.total_seconds()/60)
         return (timeDeltaInMns >= OlderInMins)
+
+    def sigusr_handler_callback(self, signum, frame):
+        """This signal handler is used to signal that 
+        configuration parameters have been changed
+        For now, the support is only for dynamically
+        changing the logging level"""
+
+        """Reload the configuration"""
+        self.config = CORTXS3Config()
+        self.logger.setLevel(self.config.get_file_log_level())
+	
+        self.logger.info("ERROR level is info")
+        self.logger.error("Error level is ERROR")
+        return
 
     def add_kv_to_queue(self, marker = None):
         """Add object key value to object recovery queue."""

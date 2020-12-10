@@ -24,6 +24,7 @@ Description=S3 Background Producer for stale oid cleanup
 Type=simple
 ExecStart=/opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer
 ExecStop=/bin/kill -TERM $MAINPID
+ExecReload=/bin/kill -USR1 $MAINPID
 TimeoutSec=300
 # Other restart options: always, on-abort, etc
 
