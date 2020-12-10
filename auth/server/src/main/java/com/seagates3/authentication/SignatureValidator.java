@@ -261,9 +261,8 @@ public class SignatureValidator {
 
             return (AWSSign) obj;
         } catch (ClassNotFoundException | SecurityException ex) {
-            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.CLASS_NOT_FOUND_EX,
-                    "Failed to get required class",
-                    String.format("\"cause\": \"%s\"", ex.getCause()));
+          LOGGER.error("Failed to get required class.",
+                       String.format("\"cause\": \"%s\"", ex.getCause()));
         } catch (IllegalAccessException | IllegalArgumentException | InstantiationException ex) {
             LOGGER.error("Exception: ", ex);
         }
