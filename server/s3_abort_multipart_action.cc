@@ -26,6 +26,7 @@
 #include "s3_error_codes.h"
 #include "s3_iem.h"
 #include "s3_m0_uint128_helper.h"
+#include "s3_common_utilities.h"
 
 extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
