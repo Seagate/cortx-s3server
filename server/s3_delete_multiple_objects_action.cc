@@ -24,6 +24,7 @@
 #include "s3_option.h"
 #include "s3_perf_logger.h"
 #include "s3_m0_uint128_helper.h"
+#include "s3_common_utilities.h"
 
 extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
@@ -289,6 +290,15 @@ void S3DeleteMultipleObjectsAction::add_object_oid_to_probable_dead_oid_list() {
         s3_log(S3_LOG_ERROR, request_id,
                "Invalid object metadata with empty object OID\n");
       }
+
+      // prepending a char depending on the size of the object (size based
+      // bucketing of object)
+      S3CommonUtilities::size_based_bucketing_of_objects(
+          oid_str, obj->get_content_length());
+
+      s3_log(S3_LOG_DEBUG, request_id,
+             "Adding probable_del_rec with key [%s]\n", oid_str.c_str());
+
       probable_oid_list[oid_str] =
           std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
               oid_str, {0ULL, 0ULL}, obj->get_object_name(), obj->get_oid(),
