@@ -116,7 +116,7 @@ class S3PutObjectActionBase : public S3ObjectAction {
 
   int layout_id = -1;
   int old_layout_id = -1;
-  unsigned motr_write_payload_size;
+  unsigned motr_write_payload_size = 0;
   unsigned short tried_count = 0;
 
   S3PutObjectActionState s3_put_action_state = S3PutObjectActionState::empty;
