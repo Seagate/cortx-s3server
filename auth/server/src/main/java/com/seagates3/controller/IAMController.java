@@ -308,14 +308,12 @@ class IAMController {
       isValidrequest = (Boolean)method.invoke(obj, requestBody);
     }
     catch (ClassNotFoundException ex) {
-      IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.CLASS_NOT_FOUND_EX,
-                  "Failed to get required class",
-                  String.format("\"cause\": \"%s\"", ex.getCause()));
+      LOGGER.error("Failed to get required class.",
+                   String.format("\"cause\": \"%s\"", ex.getCause()));
     }
     catch (NoSuchMethodException ex) {
-      IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.NO_SUCH_METHOD_EX,
-                  "Failed to invoke method",
-                  String.format("\"cause\": \"%s\"", ex.getCause()));
+      LOGGER.error("Failed to invoke method.",
+                   String.format("\"cause\": \"%s\"", ex.getCause()));
     }
     catch (SecurityException | IllegalAccessException |
            IllegalArgumentException | InvocationTargetException |
@@ -352,14 +350,12 @@ class IAMController {
       return (ServerResponse)method.invoke(obj);
     }
     catch (ClassNotFoundException ex) {
-      IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.CLASS_NOT_FOUND_EX,
-                  "Failed to get required class",
-                  String.format("\"cause\": \"%s\"", ex.getCause()));
+      LOGGER.error("Failed to get required class.",
+                   String.format("\"cause\": \"%s\"", ex.getCause()));
     }
     catch (NoSuchMethodException ex) {
-      IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.NO_SUCH_METHOD_EX,
-                  "Failed to invoke method",
-                  String.format("\"cause\": \"%s\"", ex.getCause()));
+      LOGGER.error("Failed to invoke method.",
+                   String.format("\"cause\": \"%s\"", ex.getCause()));
     }
     catch (SecurityException | IllegalAccessException |
            IllegalArgumentException | InvocationTargetException |
