@@ -492,3 +492,23 @@ TEST_F(S3OptionsTest, MissingOptions) {
   // delete the file
   unlink(config_file.c_str());
 }
+
+TEST_F(S3OptionsTest, TestReloadOptionsfromFile) {
+  // create a temporary yaml file
+  std::ofstream cfg_file;
+  std::string config_file("s3config-temp-test.yaml");
+  cfg_file.open(config_file);
+  cfg_file << "S3Config_Sections: [S3_SERVER_CONFIG, S3_AUTH_CONFIG, "
+              "S3_MOTR_CONFIG]\n";
+  cfg_file << "S3_SERVER_CONFIG:\n";
+  cfg_file << "   S3_LOG_MODE: ERROR\n";
+  cfg_file << "S3_AUTH_CONFIG:\n";
+  cfg_file << "   S3_AUTH_PORT: 8095\n";
+  cfg_file << "S3_MOTR_CONFIG:\n";
+  cfg_file << "   S3_MOTR_MAX_BLOCKS_PER_REQUEST: 1\n";
+  cfg_file.close();
+  instance->set_option_file(config_file);
+  EXPECT_TRUE(instance->reload_modifiable_options());
+  EXPECT_EQ(std::string("ERROR"), instance->get_log_level());
+  unlink(config_file.c_str());
+}

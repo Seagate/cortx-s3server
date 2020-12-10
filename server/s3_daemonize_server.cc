@@ -90,17 +90,12 @@ void S3Daemonize::daemonize() {
   int rc;
   std::string daemon_wd;
 
-  struct sigaction s3hup_act;
-  memset(&s3hup_act, 0, sizeof s3hup_act);
-  s3hup_act.sa_handler = SIG_IGN;
-
   rc = daemon(1, noclose);
   if (rc) {
     s3_log(S3_LOG_FATAL, "", "Failed to daemonize s3 server, errno = %d\n",
            errno);
     exit(1);
   }
-  sigaction(SIGHUP, &s3hup_act, NULL);
 
   // Set the working directory for current instance as s3server-process_fid
   std::string process_fid = option_instance->get_motr_process_fid();

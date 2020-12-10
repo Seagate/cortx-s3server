@@ -80,6 +80,39 @@ int init_log(char *process_name) {
   return 0;
 }
 
+void redefine_log_level() {
+  S3Option *option_instance = S3Option::get_instance();
+  if (option_instance->get_log_level() != "") {
+    if (option_instance->get_log_level() == "INFO") {
+      s3log_level = S3_LOG_INFO;
+    } else if (option_instance->get_log_level() == "DEBUG") {
+      s3log_level = S3_LOG_DEBUG;
+    } else if (option_instance->get_log_level() == "ERROR") {
+      s3log_level = S3_LOG_ERROR;
+    } else if (option_instance->get_log_level() == "FATAL") {
+      s3log_level = S3_LOG_FATAL;
+    } else if (option_instance->get_log_level() == "WARN") {
+      s3log_level = S3_LOG_WARN;
+    }
+  } else {
+    s3log_level = S3_LOG_INFO;
+  }
+
+  switch (s3log_level) {
+    case S3_LOG_WARN:
+      FLAGS_minloglevel = google::GLOG_WARNING;
+      break;
+    case S3_LOG_ERROR:
+      FLAGS_minloglevel = google::GLOG_ERROR;
+      break;
+    case S3_LOG_FATAL:
+      FLAGS_minloglevel = google::GLOG_FATAL;
+      break;
+    default:
+      FLAGS_minloglevel = google::GLOG_INFO;
+  }
+}
+
 void fini_log() {
   google::FlushLogFiles(google::GLOG_INFO);
   google::ShutdownGoogleLogging();

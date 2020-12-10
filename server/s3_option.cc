@@ -673,6 +673,55 @@ bool S3Option::load_all_sections(bool force_override_from_config = false) {
   return true;
 }
 
+bool S3Option::reload_modifiable_options() {
+  try {
+    YAML::Node root_node = YAML::LoadFile(option_file);
+    if (root_node.IsNull()) {
+      s3_log(S3_LOG_FATAL, "", "Option file %s not found\n",
+             option_file.c_str());
+      return false;  // File Not Found?
+    }
+    for (unsigned short i = 0; i < root_node["S3Config_Sections"].size(); ++i) {
+      std::string section_name =
+          root_node["S3Config_Sections"][i].as<std::string>();
+      YAML::Node s3_option_node = root_node[section_name];
+      if (section_name == "S3_SERVER_CONFIG") {
+        S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_MODE");
+        log_level = s3_option_node["S3_LOG_MODE"].as<std::string>();
+
+        redefine_log_level();
+        s3_log(S3_LOG_INFO, "", "Reloaded S3_LOG_MODE = %s\n",
+               log_level.c_str());
+      }
+    }
+  }
+  catch (const YAML::RepresentationException& e) {
+    fprintf(stderr, "%s:%d:YAML::RepresentationException caught: %s\n",
+            __FILE__, __LINE__, e.what());
+    fprintf(stderr, "%s:%d:Yaml file %s is incorrect\n", __FILE__, __LINE__,
+            option_file.c_str());
+    return false;
+  }
+  catch (const YAML::ParserException& e) {
+    fprintf(stderr, "%s:%d:YAML::ParserException caught: %s\n", __FILE__,
+            __LINE__, e.what());
+    fprintf(stderr, "%s:%d:Parsing Error in yaml file %s\n", __FILE__, __LINE__,
+            option_file.c_str());
+    return false;
+  }
+  catch (const YAML::EmitterException& e) {
+    fprintf(stderr, "%s:%d:YAML::EmitterException caught: %s\n", __FILE__,
+            __LINE__, e.what());
+    return false;
+  }
+  catch (YAML::Exception& e) {
+    fprintf(stderr, "%s:%d:YAML::Exception caught: %s\n", __FILE__, __LINE__,
+            e.what());
+    return false;
+  }
+  return true;
+}
+
 void S3Option::set_cmdline_option(int option_flag, const char* optarg) {
   if (option_flag & S3_OPTION_IPV4_BIND_ADDR) {
     s3_ipv4_bind_addr = optarg;
