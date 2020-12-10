@@ -153,8 +153,7 @@ class AuthServerGetHandler {
       LOGGER.info("Sending HTTP Response code [" + response.getStatus() + "]");
     }
     catch (UnsupportedEncodingException ex) {
-      IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
-                  "UTF-8 encoding is not supported", null);
+      LOGGER.error("UTF-8 encoding is not supported.");
       response = null;
     }
     if (response != null) {
@@ -241,8 +240,7 @@ class AuthServerGetHandler {
       LOGGER.debug("Error response sent.");
     }
     catch (UnsupportedEncodingException ex) {
-      IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
-                  "UTF-8 encoding is not supported", null);
+      LOGGER.error("UTF-8 encoding is not supported.");
       httpResponse = null;
     }
     if (httpResponse != null) {
