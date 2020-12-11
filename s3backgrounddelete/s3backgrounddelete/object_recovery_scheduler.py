@@ -48,7 +48,7 @@ class ObjectRecoveryScheduler(object):
         self.config = CORTXS3Config()
         self.create_logger_directory()
         self.create_logger()
-        signal.signal(signal.SIGUSR1,self.sigusr_handler_callback) 
+        signal.signal(signal.SIGHUP,self.sighup_handler_callback) 
         self.logger.info("Initialising the Object Recovery Scheduler")
 
     @staticmethod
@@ -60,7 +60,7 @@ class ObjectRecoveryScheduler(object):
         timeDeltaInMns = math.floor(timeDelta.total_seconds()/60)
         return (timeDeltaInMns >= OlderInMins)
 
-    def sigusr_handler_callback(self, signum, frame):
+    def sighup_handler_callback(self, signum, frame):
         """This signal handler is used to signal that 
         configuration parameters have been changed
         For now, the support is only for dynamically
