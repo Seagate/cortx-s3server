@@ -118,7 +118,7 @@ class ObjectRecoveryProcessor(object):
         self.config = CORTXS3Config()
         self.logger.setLevel(self.config.get_file_log_level())
 
-        self.logger.error("Logging level has been changed to " + self.config.get_file_log_level())
+        self.logger.error("Logging level has been changed")
         return
 
 if __name__ == "__main__":
