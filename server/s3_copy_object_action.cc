@@ -276,11 +276,14 @@ void S3CopyObjectAction::read_data_block() {
 }
 
 void S3CopyObjectAction::read_data_block_success() {
-  assert(read_in_progress);
-
   s3_log(S3_LOG_INFO, request_id, "Read object data succeeded");
+  assert(read_in_progress);
   read_in_progress = false;
 
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, nullptr, "Shutdown or rollback");
+    return;
+  }
   if (copy_failed) {
     send_response_to_s3_client();
     return;
@@ -293,6 +296,7 @@ void S3CopyObjectAction::read_data_block_success() {
 
 void S3CopyObjectAction::read_data_block_failed() {
   assert(read_in_progress);
+  read_in_progress = false;
   s3_put_action_state = S3PutObjectActionState::writeFailed;
 
   s3_log(S3_LOG_ERROR, request_id, "Failed to read object data from motr");
@@ -359,6 +363,10 @@ void S3CopyObjectAction::write_data_block_success() {
   assert(write_in_progress);
   write_in_progress = false;
 
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, nullptr, "Shutdown or rollback");
+    return;
+  }
   if (bytes_left_to_read) {
     read_data_block();
   } else {
@@ -370,11 +378,14 @@ void S3CopyObjectAction::write_data_block_success() {
 
 void S3CopyObjectAction::write_data_block_failed() {
   assert(write_in_progress);
+  write_in_progress = false;
   s3_put_action_state = S3PutObjectActionState::writeFailed;
 
   s3_log(S3_LOG_ERROR, request_id, "Failed to write object data to motr");
-  set_s3_error("InternalError");
 
+  set_s3_error(motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch
+                   ? "ServiceUnavailable"
+                   : "InternalError");
   if (read_in_progress) {
     copy_failed = true;
   } else {

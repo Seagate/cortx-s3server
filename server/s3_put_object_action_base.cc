@@ -69,6 +69,11 @@ void S3PutObjectActionBase::_set_layout_id(int layout_id) {
 
   motr_write_payload_size =
       S3Option::get_instance()->get_motr_write_payload_size(layout_id);
+  assert(motr_write_payload_size > 0);
+
+  motr_unit_size =
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+  assert(motr_unit_size > 0);
 }
 
 void S3PutObjectActionBase::fetch_bucket_info_failed() {
@@ -161,10 +166,6 @@ void S3PutObjectActionBase::create_object() {
   assert(total_data_to_stream > 0);
   _set_layout_id(S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
       total_data_to_stream));
-
-  motr_unit_size =
-      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
-  assert(motr_unit_size > 0);
 
   motr_writer->create_object(
       std::bind(&S3PutObjectActionBase::create_object_successful, this),

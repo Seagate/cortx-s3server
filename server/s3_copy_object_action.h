@@ -21,10 +21,15 @@
 #ifndef __S3_SERVER_S3_COPY_OBJECT_ACTION_H__
 #define __S3_SERVER_S3_COPY_OBJECT_ACTION_H__
 
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <string>
+
 #include "s3_put_object_action_base.h"
 #include "s3_object_metadata.h"
 
-const u_long MaxCopyObjectSourceSize = 5368709120UL;  // 5GB
+const uint64_t MaxCopyObjectSourceSize = 5368709120UL;  // 5GB
 
 const char InvalidRequestSourceObjectSizeGreaterThan5GB[] =
     "The specified copy source is larger than the maximum allowable size for a "
@@ -35,12 +40,6 @@ const char InvalidRequestSourceAndDestinationSame[] =
     "redirect location or encryption";
 
 class S3CopyObjectAction : public S3PutObjectActionBase {
-  // Maximum retry count for collision resolution
-  bool copy_failed = false;
-  bool read_in_progress = false;
-
-  size_t bytes_left_to_read;
-
   std::string source_bucket_name;
   std::string source_object_name;
 
@@ -49,6 +48,10 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
   std::shared_ptr<S3ObjectMetadata> source_object_metadata;
   std::shared_ptr<S3BucketMetadata> source_bucket_metadata;
+
+  size_t bytes_left_to_read = 0;
+  bool copy_failed = false;
+  bool read_in_progress = false;
 
   void get_source_bucket_and_object();
   void fetch_source_bucket_info();
@@ -89,6 +92,8 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   void write_data_block_success();
   void write_data_block_failed();
 
+  friend class S3CopyObjectActionTest;
+
   FRIEND_TEST(S3CopyObjectActionTest, GetSourceBucketAndObjectSuccess);
   FRIEND_TEST(S3CopyObjectActionTest, GetSourceBucketAndObjectFailure);
   FRIEND_TEST(S3CopyObjectActionTest, FetchSourceBucketInfo);
@@ -114,5 +119,21 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
               FetchDestinationBucketInfoFailedInternalError);
   FRIEND_TEST(S3CopyObjectActionTest, FetchDestinationObjectInfoFailed);
   FRIEND_TEST(S3CopyObjectActionTest, FetchDestinationObjectInfoSuccess);
+  FRIEND_TEST(S3CopyObjectActionTest, CreateObjectFirstAttempt);
+  FRIEND_TEST(S3CopyObjectActionTest, CreateObjectSecondAttempt);
+  FRIEND_TEST(S3CopyObjectActionTest, CreateObjectFailedTestWhileShutdown);
+  FRIEND_TEST(S3CopyObjectActionTest,
+              CreateObjectFailedWithCollisionExceededRetry);
+  FRIEND_TEST(S3CopyObjectActionTest, CreateObjectFailedWithCollisionRetry);
+  FRIEND_TEST(S3CopyObjectActionTest, CreateObjectFailedTest);
+  FRIEND_TEST(S3CopyObjectActionTest, CreateObjectFailedToLaunchTest);
+  FRIEND_TEST(S3CopyObjectActionTest, CreateNewOidTest);
+  FRIEND_TEST(S3CopyObjectActionTest, WriteObjectFailedShouldUndoMarkProgress);
+  FRIEND_TEST(S3CopyObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure);
+  FRIEND_TEST(S3CopyObjectActionTest, WriteObjectSuccessfulWhileShuttingDown);
+  FRIEND_TEST(S3CopyObjectActionTest,
+              WriteObjectSuccessfulShouldRestartReadingData);
+  FRIEND_TEST(S3CopyObjectActionTest,
+              WriteObjectSuccessfulDoNextStepWhenAllIsWritten);
 };
 #endif  // __S3_SERVER_S3_COPY_OBJECT_ACTION_H__
