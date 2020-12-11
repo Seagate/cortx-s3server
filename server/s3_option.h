@@ -315,6 +315,7 @@ class S3Option {
  public:
   bool load_section(std::string section_name, bool force_override_from_config);
   bool load_all_sections(bool force_override_from_config);
+  bool reload_modifiable_options();
 
   std::string get_s3_nodename();
   std::string get_ipv4_bind_addr();

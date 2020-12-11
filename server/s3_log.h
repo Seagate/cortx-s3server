@@ -109,6 +109,7 @@ static inline std::string s3_get_timestamp() {
 }
 
 int init_log(char *process_name);
+void redefine_log_level();
 void fini_log();
 void flushall_log();
 
