@@ -27,6 +27,7 @@ import os
 import traceback
 import logging
 import datetime
+import signal
 from logging import handlers
 
 from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
@@ -42,6 +43,7 @@ class ObjectRecoveryProcessor(object):
         self.config = CORTXS3Config()
         self.create_logger_directory()
         self.create_logger()
+        signal.signal(signal.SIGUSR1,self.sigusr_handler_callback)
         self.logger.info("Initialising the Object Recovery Processor")
 
     def consume(self):
@@ -105,6 +107,19 @@ class ObjectRecoveryProcessor(object):
             except BaseException:
                 self.logger.error(
                     "Unable to create log directory at " + self._logger_directory)
+
+    def sigusr_handler_callback(self, signum, frame):
+        """This signal handler is used to signal that 
+        configuration parameters have been changed
+        For now, the support is only for dynamically
+        changing the logging level"""
+
+        """Reload the configuration"""
+        self.config = CORTXS3Config()
+        self.logger.setLevel(self.config.get_file_log_level())
+
+        self.logger.error("Logging level has been changed to " + self.config.get_file_log_level())
+        return
 
 if __name__ == "__main__":
     PROCESSOR = ObjectRecoveryProcessor()

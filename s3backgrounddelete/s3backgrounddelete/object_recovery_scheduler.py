@@ -70,8 +70,7 @@ class ObjectRecoveryScheduler(object):
         self.config = CORTXS3Config()
         self.logger.setLevel(self.config.get_file_log_level())
 	
-        self.logger.info("ERROR level is info")
-        self.logger.error("Error level is ERROR")
+        self.logger.error("Logging level has been changed to" + self.config.get_file_log_level())
         return
 
     def add_kv_to_queue(self, marker = None):
