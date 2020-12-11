@@ -44,6 +44,9 @@ class S3XORObfuscator : public S3Obfuscator {
   std::string virtual decode(const std::string &input);
 };
 
+// delayed delete
+void size_based_bucketing_of_objects(std::string &oid_str,
+                                     const size_t obj_size);
 // return true, if passed string has only digits
 bool string_has_only_digits(const std::string &str);
 // trims below leading charactors of given string

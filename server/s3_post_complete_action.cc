@@ -29,6 +29,7 @@
 #include "s3_post_complete_action.h"
 #include "s3_uri_to_motr_oid.h"
 #include "s3_m0_uint128_helper.h"
+#include "s3_common_utilities.h"
 
 extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
@@ -492,6 +493,15 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
     // metadata is deleted.
     assert(!new_oid_str.empty());
 
+    // prepending a char depending on the size of the object (size based
+    // bucketing
+    // of object)
+    S3CommonUtilities::size_based_bucketing_of_objects(new_oid_str,
+                                                       object_size);
+
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Adding new_probable_del_rec with key [%s]\n", new_oid_str.c_str());
+
     new_probable_del_rec.reset(new S3ProbableDeleteRecord(
         new_oid_str, old_object_oid, multipart_metadata->get_object_name(),
         new_object_oid, layout_id, bucket_metadata->get_multipart_index_oid(),
@@ -519,8 +529,20 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
       assert(!old_oid_str.empty());
       assert(!new_oid_str.empty());
 
+      // prepending a char depending on the size of the object (size based
+      // bucketing
+      // of object)
+
+      S3CommonUtilities::size_based_bucketing_of_objects(old_oid_str,
+                                                         object_size);
+
+      s3_log(S3_LOG_DEBUG, request_id,
+             "Adding old_probable_del_rec with key [%s]\n",
+             old_oid_str.c_str());
+
       // key = oldoid + "-" + newoid
       std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
+
       old_probable_del_rec.reset(new S3ProbableDeleteRecord(
           old_oid_rec_key, {0ULL, 0ULL}, multipart_metadata->get_object_name(),
           old_object_oid, old_layout_id,

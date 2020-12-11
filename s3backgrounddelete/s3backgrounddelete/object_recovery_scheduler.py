@@ -58,17 +58,6 @@ class ObjectRecoveryScheduler(object):
         timeDeltaInMns = math.floor(timeDelta.total_seconds()/60)
         return (timeDeltaInMns >= OlderInMins)
 
-    @staticmethod
-    def stripMarker(record):
-        bisected_record = {}
-        for (key, value) in record.items():
-            if key == "Key":
-                bisected_record[key] = value[1:]
-            else:
-                bisected_record[key] = value
-
-        return bisected_record
-
     def add_kv_to_queue(self, marker = None):
         """Add object key value to object recovery queue."""
         self.logger.info("Adding kv list to queue")
@@ -116,8 +105,6 @@ class ObjectRecoveryScheduler(object):
                                               " is NOT older than " + str(leak_processing_delay) +
                                               "mins. Skipping entry")
                             continue
-
-                        record = ObjectRecoveryScheduler.stripMarker(record)
 
                         self.logger.info(
                             "Object recovery queue sending data :" +

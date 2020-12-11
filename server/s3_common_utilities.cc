@@ -126,6 +126,60 @@ bool stoi(const std::string &str, int &value) {
   return isvalid;
 }
 
+void size_based_bucketing_of_objects(std::string &oid_str,
+                                     const size_t obj_size) {
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  size_t object_size_for_bucketing = obj_size;
+  std::string marker = "";
+
+  // object size range                           prefix
+
+  // size > 100GB                                 'D'
+  // 1GB < size <= 100GB                          'E'
+  // 50MB < size <= 1GB                           'F'
+  // 10KB < size <= 50MB                          'G'
+  // 1KB < size <= 10KB                           'H'
+  // size <= 1KB                                  'I'
+
+  // NOTE : chars A/B/C have been left out for objects bigger than 100GB
+  // Listing of keys in motr happens in lexicographic order, hence bigger object
+  // will get listed first.
+
+  switch (object_size_for_bucketing) {
+    case 0 ... 1024:  // less than or equal to 1KB
+      marker = 'I';
+      oid_str.insert(0, marker);
+      break;
+
+    case 1025 ... 10240:
+      marker = 'H';  // greater than 1KB and less than or equal to 10KB
+      oid_str.insert(0, marker);
+      break;
+
+    case 10241 ... 52428800:
+      marker = 'G';  // greater than 10KB and less than equal to 50MB
+      oid_str.insert(0, marker);
+      break;
+
+    case 52428801 ... 1073741824:
+      marker = 'F';  // greater than 50MB and less than equal to 1GB
+      oid_str.insert(0, marker);
+      break;
+
+    case 1073741825 ... 107374182400:
+      marker = 'E';  // greater than 1GB and less than equal to 100GB
+      oid_str.insert(0, marker);
+      break;
+
+    default:
+      marker = 'D';  //  greater than 100GB
+      oid_str.insert(0, marker);
+      break;
+  }
+
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
 void find_and_replaceall(std::string &data, const std::string &to_search,
                          const std::string &replace_str) {
   // return, if search string is empty
