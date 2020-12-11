@@ -26,7 +26,7 @@
 #include <gtest/gtest_prod.h>
 #include <memory>
 #include <string>
-#include "s3_object_action_base.h"
+#include "s3_put_object_action_base.h"
 #include "s3_async_buffer.h"
 #include "s3_bucket_metadata.h"
 #include "s3_motr_writer.h"
@@ -35,20 +35,6 @@
 #include "s3_probable_delete_record.h"
 #include "s3_timer.h"
 #include "evhtp_wrapper.h"
-
-enum class S3PutObjectActionState {
-  empty,             // Initial state
-  validationFailed,  // Any validations failed for request, including metadata
-  probableEntryRecordFailed,
-  newObjOidCreated,         // New object created
-  newObjOidCreationFailed,  // New object create failed
-  writeComplete,            // data write to object completed successfully
-  writeFailed,              // data write to object failed
-  md5ValidationFailed,      // md5 check failed
-  metadataSaved,            // metadata saved for new object
-  metadataSaveFailed,       // metadata saved for new object
-  completed,                // All stages done completely
-};
 
 class S3PutObjectAction : public S3ObjectAction {
   S3PutObjectActionState s3_put_action_state;
