@@ -32,6 +32,7 @@
 #include "s3_test_utils.h"
 
 using ::testing::AtLeast;
+using ::testing::Eq;
 using ::testing::Invoke;
 using ::testing::ReturnRef;
 
@@ -683,9 +684,13 @@ TEST_F(S3CopyObjectActionTest,
   EXPECT_EQ(action_under_test->s3_put_action_state,
             S3PutObjectActionState::writeComplete);
 }
-/*
+
 TEST_F(S3CopyObjectActionTest, SaveMetadata) {
-  CREATE_BUCKET_METADATA;
+  action_under_test->total_data_to_stream = 1024;
+
+  create_dst_bucket_metadata();
+  create_src_object_metadata();
+
   ptr_mock_bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
       object_list_indx_oid);
 
@@ -694,29 +699,25 @@ TEST_F(S3CopyObjectActionTest, SaveMetadata) {
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
 
   action_under_test->motr_writer =
-ptr_mock_motr_writer_factory->mock_motr_writer;
+      ptr_mock_motr_writer_factory->mock_motr_writer;
 
-  EXPECT_CALL(*ptr_mock_request, get_data_length_str()).Times(1).WillOnce(
-      Return("1024"));
-  EXPECT_CALL(*ptr_mock_request, get_header_value("content-md5"))
-      .Times(1)
-      .WillOnce(Return(""));
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
               reset_date_time_to_current()).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
               set_content_length(Eq("1024"))).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
-get_content_md5())
+              get_content_md5())
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
               set_md5(Eq("abcd1234abcd"))).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata, set_tags(_))
-      .Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, get_header_value("Content-Type"))
-      .Times(1)
-      .WillOnce(Return(""));
-  std::map<std::string, std::string> input_headers;
+
+  /* TODO: uncomment once tags feature is implemented
+  EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
+              set_tags(_)).Times(AtLeast(1));
+  */
+  /* TODO: uncomment once handling x-amz-metadata-directive input header feature
+     is implemented
   input_headers["x-amz-meta-item-1"] = "1024";
   input_headers["x-amz-meta-item-2"] = "s3.seagate.com";
 
@@ -730,7 +731,7 @@ get_content_md5())
       *ptr_mock_object_meta_factory->mock_object_metadata,
       add_user_defined_attribute(Eq("x-amz-meta-item-2"), Eq("s3.seagate.com")))
       .Times(AtLeast(1));
-
+  */
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata, save(_, _))
       .Times(AtLeast(1));
 
@@ -738,7 +739,7 @@ get_content_md5())
 }
 
 TEST_F(S3CopyObjectActionTest, SaveObjectMetadataFailed) {
-  CREATE_OBJECT_METADATA;
+  create_dst_object_metadata();
   ptr_mock_bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
       object_list_indx_oid);
   action_under_test->new_object_metadata =
@@ -747,7 +748,7 @@ TEST_F(S3CopyObjectActionTest, SaveObjectMetadataFailed) {
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
 
   action_under_test->motr_writer =
-ptr_mock_motr_writer_factory->mock_motr_writer;
+      ptr_mock_motr_writer_factory->mock_motr_writer;
 
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata, get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::failed));
@@ -758,7 +759,7 @@ ptr_mock_motr_writer_factory->mock_motr_writer;
   MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
       action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
       object_list_indx_oid, objects_version_list_idx_oid,
-      "",  // Version does not exists yet
+      "",     // Version does not exists yet
       false,  // force_delete
       false,  // is_multipart
       {0ULL, 0ULL});
@@ -800,7 +801,7 @@ TEST_F(S3CopyObjectActionTest, SendErrorResponse) {
 
 TEST_F(S3CopyObjectActionTest, SendSuccessResponse) {
   action_under_test->motr_writer =
-ptr_mock_motr_writer_factory->mock_motr_writer;
+      ptr_mock_motr_writer_factory->mock_motr_writer;
 
   // Simulate success
   action_under_test->s3_put_action_state =
@@ -811,15 +812,15 @@ ptr_mock_motr_writer_factory->mock_motr_writer;
   EXPECT_CALL(*ptr_mock_motr_kvs_writer_factory->mock_motr_kvs_writer,
               delete_keyval(_, _, _, _)).Times(1);
 
-  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
-get_content_md5())
-      .Times(AtLeast(1))
-      .WillOnce(Return("abcd1234abcd"));
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  // Uncomment the line below when ETag response header is implemented
+  // EXPECT_CALL(*ptr_mock_request, set_out_header_value(_,
+  // _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(AtLeast(1));
 
   action_under_test->send_response_to_s3_client();
+
+  EXPECT_EQ(action_under_test->s3_put_action_state,
+            S3PutObjectActionState::completed);
 }
 
 TEST_F(S3CopyObjectActionTest, SendFailedResponse) {
@@ -832,15 +833,3 @@ TEST_F(S3CopyObjectActionTest, SendFailedResponse) {
 
   action_under_test->send_response_to_s3_client();
 }
-
-TEST_F(S3CopyObjectActionTest, ValidateMissingContentLength) {
-  EXPECT_CALL(*ptr_mock_request, get_object_name())
-      .WillOnce(ReturnRef(object_name));
-  EXPECT_CALL(*ptr_mock_request, is_header_present("Content-Length"))
-      .WillOnce(Return(false));
-
-  action_under_test->validate_put_request();
-
-  EXPECT_STREQ("MissingContentLength",
-               action_under_test->get_s3_error_code().c_str());
-}*/

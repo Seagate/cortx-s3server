@@ -135,5 +135,11 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
               WriteObjectSuccessfulShouldRestartReadingData);
   FRIEND_TEST(S3CopyObjectActionTest,
               WriteObjectSuccessfulDoNextStepWhenAllIsWritten);
+  FRIEND_TEST(S3CopyObjectActionTest, SaveMetadata);
+  FRIEND_TEST(S3CopyObjectActionTest, SaveObjectMetadataFailed);
+  FRIEND_TEST(S3CopyObjectActionTest, SendResponseWhenShuttingDown);
+  FRIEND_TEST(S3CopyObjectActionTest, SendErrorResponse);
+  FRIEND_TEST(S3CopyObjectActionTest, SendSuccessResponse);
+  FRIEND_TEST(S3CopyObjectActionTest, SendFailedResponse);
 };
 #endif  // __S3_SERVER_S3_COPY_OBJECT_ACTION_H__
