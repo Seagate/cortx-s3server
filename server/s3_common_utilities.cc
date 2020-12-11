@@ -128,7 +128,7 @@ bool stoi(const std::string &str, int &value) {
 
 void size_based_bucketing_of_objects(std::string &oid_str,
                                      const size_t obj_size) {
-  s3_log(S3_LOG_INFO, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
   size_t object_size_for_bucketing = obj_size;
   std::string marker = "";
 
@@ -177,7 +177,7 @@ void size_based_bucketing_of_objects(std::string &oid_str,
       break;
   }
 
-  s3_log(S3_LOG_INFO, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void find_and_replaceall(std::string &data, const std::string &to_search,
