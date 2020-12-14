@@ -165,6 +165,8 @@ class S3DeleteMultipleObjectsAction : public S3BucketAction {
   FRIEND_TEST(S3DeleteMultipleObjectsActionTest,
               CleanupOnMetadataFailedToSaveTest2);
   FRIEND_TEST(S3DeleteMultipleObjectsActionTest, CleanupOnMetadataSavedTest1);
+  FRIEND_TEST(S3DeleteMultipleObjectsActionTest,
+              CleanupOnMetadataSavedDelayedDel);
   FRIEND_TEST(S3DeleteMultipleObjectsActionTest, CleanupOnMetadataSavedTest2);
 };
 
