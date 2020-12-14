@@ -38,6 +38,7 @@ from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
 from s3backgrounddelete.IEMutil import IEMutil
+from s3backgrounddelete.cortx_s3_signal import DynamicConfigHandler
 
 class ObjectRecoveryScheduler(object):
     """Scheduler which will add key value to rabbitmq message queue."""
@@ -48,7 +49,7 @@ class ObjectRecoveryScheduler(object):
         self.config = CORTXS3Config()
         self.create_logger_directory()
         self.create_logger()
-        signal.signal(signal.SIGHUP,self.sighup_handler_callback) 
+        self.signal = DynamicConfigHandler(self)
         self.logger.info("Initialising the Object Recovery Scheduler")
 
     @staticmethod
@@ -59,19 +60,6 @@ class ObjectRecoveryScheduler(object):
         timeDelta = now - date_time_obj
         timeDeltaInMns = math.floor(timeDelta.total_seconds()/60)
         return (timeDeltaInMns >= OlderInMins)
-
-    def sighup_handler_callback(self, signum, frame):
-        """This signal handler is used to signal that 
-        configuration parameters have been changed
-        For now, the support is only for dynamically
-        changing the logging level"""
-
-        """Reload the configuration"""
-        self.config = CORTXS3Config()
-        self.logger.setLevel(self.config.get_file_log_level())
-	
-        self.logger.error("Logging level has been changed")
-        return
 
     def add_kv_to_queue(self, marker = None):
         """Add object key value to object recovery queue."""

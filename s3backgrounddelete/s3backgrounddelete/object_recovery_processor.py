@@ -32,7 +32,7 @@ from logging import handlers
 
 from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
-
+from s3backgrounddelete.cortx_s3_signal import DynamicConfigHandler
 
 class ObjectRecoveryProcessor(object):
     """Provides consumer for object recovery"""
@@ -43,7 +43,7 @@ class ObjectRecoveryProcessor(object):
         self.config = CORTXS3Config()
         self.create_logger_directory()
         self.create_logger()
-        signal.signal(signal.SIGHUP,self.sighup_handler_callback)
+        self.signal = DynamicConfigHandler(self)
         self.logger.info("Initialising the Object Recovery Processor")
 
     def consume(self):
@@ -107,19 +107,6 @@ class ObjectRecoveryProcessor(object):
             except BaseException:
                 self.logger.error(
                     "Unable to create log directory at " + self._logger_directory)
-
-    def sighup_handler_callback(self, signum, frame):
-        """This signal handler is used to signal that 
-        configuration parameters have been changed
-        For now, the support is only for dynamically
-        changing the logging level"""
-
-        """Reload the configuration"""
-        self.config = CORTXS3Config()
-        self.logger.setLevel(self.config.get_file_log_level())
-
-        self.logger.error("Logging level has been changed")
-        return
 
 if __name__ == "__main__":
     PROCESSOR = ObjectRecoveryProcessor()
