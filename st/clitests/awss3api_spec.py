@@ -448,7 +448,7 @@ AwsTest('Aws can delete 1kfile').delete_object("seagatebucket", "1kfile")\
 AwsTest('Aws can delete 1kfile-copy from source bucket').delete_object("seagatebucket", "1kfile-copy")\
     .execute_test().command_is_successful()
 
-AwsTest('Aws can delete 1kfile-copy from destination bucket').delete_object("destination-seagatebucket", "1kfile")\
+AwsTest('Aws can delete 1kfile-copy from destination bucket').delete_object("destination-seagatebucket", "1kfile-copy")\
     .execute_test().command_is_successful()
 
 AwsTest('Aws can delete destination bucket').delete_bucket("destination-seagatebucket")\
