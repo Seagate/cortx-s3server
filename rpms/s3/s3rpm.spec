@@ -17,15 +17,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-%if 0%{?disable_cortxmotr_dependencies:1}
-%bcond_with cortx_motr
-%else
-%bcond_without cortx_motr
-%endif
-
-# cortx-motr version
-%define h_cortxmotr_version %(rpm -q --queryformat '%{VERSION}-%{RELEASE}' cortx-motr)
-
 # build number
 %define build_num  %( test -n "$build_number" && echo "$build_number" || echo 1 )
 
@@ -60,9 +51,6 @@ BuildRequires: automake
 BuildRequires: bazel
 BuildRequires: cmake >= 2.8.12
 BuildRequires: libtool
-%if %{with cortx_motr}
-BuildRequires: cortx-motr cortx-motr-devel
-%endif
 BuildRequires: openssl openssl-devel
 BuildRequires: java-1.8.0-openjdk
 BuildRequires: java-1.8.0-openjdk-devel
@@ -91,9 +79,6 @@ BuildRequires: python-keyring python-futures
 %endif
 # TODO for rhel 8
 
-%if %{with cortx_motr}
-Requires: cortx-motr = %{h_cortxmotr_version}
-%endif
 Requires: libxml2
 Requires: libyaml
 #Supported openssl versions -- CentOS 7 its 1.0.2k, RHEL8 its 1.1.1
@@ -123,11 +108,7 @@ S3 server provides S3 REST API interface support for Motr object storage.
 %setup -n %{name}-%{version}-%{_s3_git_ver}
 
 %build
-%if %{with cortx_motr}
-./rebuildall.sh --no-check-code --no-install
-%else
 ./rebuildall.sh --no-check-code --no-install --no-motr-rpm --use-build-cache
-%endif
 
 mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3backgrounddelete/build/lib/s3backgrounddelete
 # Build the background delete python module.
