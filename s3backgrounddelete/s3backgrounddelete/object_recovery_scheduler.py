@@ -58,17 +58,6 @@ class ObjectRecoveryScheduler(object):
         timeDeltaInMns = math.floor(timeDelta.total_seconds()/60)
         return (timeDeltaInMns >= OlderInMins)
 
-    @staticmethod
-    def stripMarker(record):
-        bisected_record = {}
-        for (key, value) in record.items():
-            if key == "Key":
-                bisected_record[key] = value[1:]
-            else:
-                bisected_record[key] = value
-
-        return bisected_record
-
     def add_kv_to_queue(self, marker = None):
         """Add object key value to object recovery queue."""
         self.logger.info("Adding kv list to queue")
@@ -83,9 +72,6 @@ class ObjectRecoveryScheduler(object):
                 self.config.get_rabbitmq_mode(),
                 self.config.get_rabbitmq_durable(),
                 self.logger)
-            # Cleanup all entries and enqueue only 1000 entries
-            mq_client.purge_queue(self.config.get_rabbitmq_queue_name())
-
             result, index_response = CORTXS3IndexApi(
                 self.config, logger=self.logger).list(
                     self.config.get_probable_delete_index_id(), self.config.get_max_keys(), marker)
@@ -117,8 +103,6 @@ class ObjectRecoveryScheduler(object):
                                               "mins. Skipping entry")
                             continue
 
-                        record = ObjectRecoveryScheduler.stripMarker(record)
-
                         self.logger.info(
                             "Object recovery queue sending data :" +
                             str(record))
@@ -133,6 +117,8 @@ class ObjectRecoveryScheduler(object):
                             self.logger.info(
                                 "Object recovery queue send data successfully :" +
                                 str(record))
+                    if (is_truncated == "true"):
+                        self.add_kv_to_queue(probable_delete_json["NextMarker"])
                 else:
                     self.logger.info(
                         "Index listing result empty. Ignoring adding entry to object recovery queue")

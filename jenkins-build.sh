@@ -424,6 +424,7 @@ if [ "$statuss3" != "0" ]; then
   exit 1
 fi
 
+
 # Add certificate to keystore
 if [ $use_http_client -eq 0 ]
 then
