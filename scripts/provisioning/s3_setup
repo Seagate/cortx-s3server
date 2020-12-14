@@ -145,7 +145,10 @@ do
         ;;
     --help | -h )
         echo "$USAGE"
-        exit 1
+        exit 0
+        ;;
+    None )
+        exit 0
         ;;
   esac
   shift

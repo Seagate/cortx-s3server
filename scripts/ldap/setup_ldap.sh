@@ -84,9 +84,10 @@ fi
 yum install -y openldap-servers openldap-clients
 cp -f $INSTALLDIR/olcDatabase\=\{2\}mdb.ldif /etc/openldap/slapd.d/cn\=config/
 
+chgrp ldap /etc/openldap/certs/password # onlyif: grep -q ldap /etc/group && test -f /etc/openldap/certs/password
+
 if [[ $defaultpasswd == true ]]
-then # Fetch Root DN & IAM admin passwords from Salt and decrypt it
-    # Get password from cortx-utils
+then # Get password from cortx-utils
     LDAPADMINPASS=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
     if [[ $? != 0 || -z "$LDAPADMINPASS" ]] # Generate random password using cortx-utils, failed
     then
