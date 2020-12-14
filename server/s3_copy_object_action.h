@@ -26,6 +26,8 @@
 #include <memory>
 #include <string>
 
+#include <gtest/gtest_prod.h>
+
 #include "s3_put_object_action_base.h"
 #include "s3_object_metadata.h"
 
@@ -128,6 +130,14 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   FRIEND_TEST(S3CopyObjectActionTest, CreateObjectFailedTest);
   FRIEND_TEST(S3CopyObjectActionTest, CreateObjectFailedToLaunchTest);
   FRIEND_TEST(S3CopyObjectActionTest, CreateNewOidTest);
+  FRIEND_TEST(S3CopyObjectActionTest, ZeroSizeObject);
+  FRIEND_TEST(S3CopyObjectActionTest, NonZeroSizeObject);
+  FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockStarted);
+  FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockFailedToStart);
+  FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockSuccessWhileShuttingDown);
+  FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockSuccessCopyFailed);
+  FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockSuccessShouldStartWrite);
+  FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockFailed);
   FRIEND_TEST(S3CopyObjectActionTest, WriteObjectFailedShouldUndoMarkProgress);
   FRIEND_TEST(S3CopyObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure);
   FRIEND_TEST(S3CopyObjectActionTest, WriteObjectSuccessfulWhileShuttingDown);
