@@ -41,6 +41,19 @@ import yaml;
 print yaml.load(open("'$s3_config_file'"))["S3_SERVER_CONFIG"]["S3_SERVER_BIND_PORT"];
 ' | tr -d '\r\n'`
 
+# Stop any s3backgroundserver instances 
+is_producer_running=1
+$USE_SUDO systemctl is-active s3backgroundproducer 2>&1 > /dev/null || is_producer_running=0
+if [[ $is_producer_running -eq 1 ]]; then
+  $USE_SUDO systemctl stop s3backgroundproducer || echo "Cannot stop s3backgroundproducer services"
+fi
+
+is_consumer_running=1
+$USE_SUDO systemctl is-active s3backgroundconsumer 2>&1 > /dev/null || is_consumer_running=0
+if [[ $is_consumer_running -eq 1 ]]; then
+  $USE_SUDO systemctl stop s3backgroundconsumer || echo "Cannot stop s3backgroundconsumer services"
+fi
+
 instance=0
 while [[ $instance -lt $MAX_S3_INSTANCES_NUM ]]
 do
