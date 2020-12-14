@@ -126,6 +126,8 @@ rm scriptConfig.ldif
 echo "dn: olcDatabase={2}mdb,cn=config" > scriptData.ldif
 echo "changetype: modify" >> scriptData.ldif
 echo "add: olcSyncRepl" >> scriptData.ldif
+
+iteration=1
 while read host; do
 sed -e "s/\${rid}/$rid/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" $INSTALLDIR/dataTemplate.ldif > scriptData.ldif
 if [ ${iteration} -eq 2 ] && [ ${id} -eq 1 ]
