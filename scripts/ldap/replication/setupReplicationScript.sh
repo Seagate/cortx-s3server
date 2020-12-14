@@ -145,9 +145,11 @@ fi
 ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptData.ldif
 rm scriptData.ldif
 rid=`expr ${rid} + 1`
+iteration=`expr ${iteration} + 1`
 done <$host_list
     echo "-" >> scriptData.ldif
     echo "add: olcMirrorMode" >> scriptData.ldif
     echo "olcMirrorMode: TRUE" >> scriptData.ldif
 ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptData.ldif
 rm scriptData.ldif
+
