@@ -694,10 +694,9 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   EXPECT_TRUE(action_under_test->motr_write_in_progress);
 }
 
-TEST_F(S3PutChunkUploadObjectActionTestNoAuth, 
-        DelayedDeleteOldObject) {
+TEST_F(S3PutChunkUploadObjectActionTestNoAuth, DelayedDeleteOldObject) {
   CREATE_OBJECT_METADATA;
-  
+
   S3Option::get_instance()->set_s3server_obj_delayed_del_enabled(true);
 
   m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
@@ -705,8 +704,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   action_under_test->old_object_oid = old_object_oid;
   action_under_test->old_layout_id = old_layout_id;
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_))
-      .Times(0);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_)).Times(0);
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
               delete_object(_, _, old_layout_id)).Times(0);
 
@@ -719,8 +717,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   EXPECT_EQ(1, call_count_one);
 }
 
-TEST_F(S3PutChunkUploadObjectActionTestNoAuth, 
-        SizeBucketingOfObjects) {
+TEST_F(S3PutChunkUploadObjectActionTestNoAuth, SizeBucketingOfObjects) {
 
   std::string original_string = "XYZ";
   S3CommonUtilities::size_based_bucketing_of_objects(original_string, 0);
@@ -739,13 +736,14 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   EXPECT_EQ("FXYZ", original_string);
 
   original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 107374182400);
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string,
+                                                     107374182400);
   EXPECT_EQ("EXYZ", original_string);
 
   original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 107374182401);
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string,
+                                                     107374182401);
   EXPECT_EQ("DXYZ", original_string);
-
 }
 
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,

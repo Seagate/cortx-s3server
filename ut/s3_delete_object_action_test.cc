@@ -302,8 +302,8 @@ TEST_F(S3DeleteObjectActionTest, DeleteObject) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .Times(AtLeast(1));
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
-              delete_object(_, _, _)).Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), delete_object(_, _, _))
+      .Times(1);
 
   action_under_test->delete_object();
 }
@@ -344,13 +344,14 @@ TEST_F(S3DeleteObjectActionTest, SizeBucketingOfObjects) {
   EXPECT_EQ("FXYZ", original_string);
 
   original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 107374182400);
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string,
+                                                     107374182400);
   EXPECT_EQ("EXYZ", original_string);
 
   original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 107374182401);
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string,
+                                                     107374182401);
   EXPECT_EQ("DXYZ", original_string);
-
 }
 
 TEST_F(S3DeleteObjectActionTest, SendSuccessResponse) {

@@ -198,7 +198,6 @@ class S3PostCompleteAction : public S3ObjectAction {
   FRIEND_TEST(S3PostCompleteActionTest, StartCleanupProbableEntryRecordFailed);
   FRIEND_TEST(S3PostCompleteActionTest,
               StartCleanupAbortedSinceValidationFailed);
-              
 };
 
 #endif

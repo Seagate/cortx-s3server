@@ -782,8 +782,7 @@ TEST_F(S3PutObjectActionTest, DelayedDeleteOldObject) {
   action_under_test->old_object_oid = old_object_oid;
   action_under_test->old_layout_id = old_layout_id;
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_))
-      .Times(0);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_)).Times(0);
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
               delete_object(_, _, old_layout_id)).Times(0);
 
@@ -814,13 +813,14 @@ TEST_F(S3PutObjectActionTest, SizeBucketingOfObjects) {
   EXPECT_EQ("FXYZ", original_string);
 
   original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 107374182400);
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string,
+                                                     107374182400);
   EXPECT_EQ("EXYZ", original_string);
 
   original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 107374182401);
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string,
+                                                     107374182401);
   EXPECT_EQ("DXYZ", original_string);
-
 }
 
 TEST_F(S3PutObjectActionTest, ConsumeIncomingContentRequestTimeout) {

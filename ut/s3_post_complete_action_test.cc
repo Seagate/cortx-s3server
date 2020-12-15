@@ -685,7 +685,7 @@ TEST_F(S3PostCompleteActionTest, DeleteOldObject) {
       .Times(AtLeast(1));
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
               delete_object(_, _, old_layout_id)).Times(AtLeast(1));
-  
+
   action_under_test_ptr->delete_old_object();
 }
 
@@ -701,11 +701,10 @@ TEST_F(S3PostCompleteActionTest, DelayedDeleteOldObject) {
   action_under_test_ptr->old_layout_id = old_layout_id;
   action_under_test_ptr->set_abort_multipart(true);
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_))
-      .Times(0);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_)).Times(0);
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
               delete_object(_, _, old_layout_id)).Times(0);
-  
+
   action_under_test_ptr->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
                          S3PostCompleteActionTest::func_callback_one, this);
@@ -732,13 +731,14 @@ TEST_F(S3PostCompleteActionTest, SizeBucketingOfObjects) {
   EXPECT_EQ("FXYZ", original_string);
 
   original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 107374182400);
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string,
+                                                     107374182400);
   EXPECT_EQ("EXYZ", original_string);
 
   original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 107374182401);
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string,
+                                                     107374182401);
   EXPECT_EQ("DXYZ", original_string);
-
 }
 
 TEST_F(S3PostCompleteActionTest, StartCleanupEmptyState) {

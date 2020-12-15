@@ -847,8 +847,7 @@ TEST_F(S3DeleteMultipleObjectsResponseBodyTest, AllSucessQuietModeOff) {
   EXPECT_STREQ(expect_xml.c_str(), response_xml.c_str());
 }
 
-TEST_F(S3DeleteMultipleObjectsActionTest, 
-        DelayedDeleteMultipleObjects) {
+TEST_F(S3DeleteMultipleObjectsActionTest, DelayedDeleteMultipleObjects) {
 
   S3Option::get_instance()->set_s3server_obj_delayed_del_enabled(true);
 
@@ -858,7 +857,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
               delete_objects(_, _, _, _)).Times(0);
-  
+
   action_under_test->cleanup();
 }
 
@@ -881,11 +880,12 @@ TEST_F(S3DeleteMultipleObjectsActionTest, SizeBucketingOfObjects) {
   EXPECT_EQ("FXYZ", original_string);
 
   original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 107374182400);
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string,
+                                                     107374182400);
   EXPECT_EQ("EXYZ", original_string);
 
   original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 107374182401);
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string,
+                                                     107374182401);
   EXPECT_EQ("DXYZ", original_string);
-
 }
