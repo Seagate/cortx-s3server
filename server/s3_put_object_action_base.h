@@ -76,7 +76,7 @@ class S3PutObjectActionBase : public S3ObjectAction {
   void collision_detected();
   void create_new_oid(struct m0_uint128);
 
-  void set_authorization_meta() final;
+  void set_authorization_meta();
 
   // Rollback tasks
   void add_object_oid_to_probable_dead_oid_list();
