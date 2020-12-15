@@ -45,7 +45,7 @@ fi
 
 INSTALLDIR="/opt/seagate/cortx/s3/install/ldap/replication"
 
-#Below function will check if all provided hosts are valid or not
+#checkHostValidity will check if all provided hosts are valid or not
 checkHostValidity()
 {
     while read host; do
@@ -57,8 +57,9 @@ checkHostValidity()
         fi
     done <$host_list
 }
+
+# getServerIdFromHostFile will generate serverid from host list provided
 id=1
-#Below will generate serverid from host list provided
 getServerIdFromHostFile()
 {
     while read host; do
@@ -69,7 +70,8 @@ getServerIdFromHostFile()
     id=`expr ${id} + 1`
     done <$host_list
 }
-#Below will get serverid from salt command
+
+# getServerIdWithSalt will get serverid from salt command
 getServerIdWithSalt()
 {
     nodeId=$(salt-call grains.get id --output=newline_values_only)
@@ -78,20 +80,29 @@ getServerIdWithSalt()
     id=${ID[1]}
 }
 
+# saveHostList will save host list at /opt/seagate/cortx/s3/install/ldap/replication/ for future use in reverting replication
+saveHostList()
+{
+    while read host; do
+    echo $host >> /opt/seagate/cortx/s3/install/ldap/replication/host_list
+    done <$host_list
+}
 
-#olcServerId script
 checkHostValidity
+saveHostList
+
+#update serverID
 if hash salt 2>/dev/null; then
     getServerIdWithSalt
 else
     getServerIdFromHostFile
 fi
-sed -e "s/\${serverid}/$id/" $INSTALLDIR/serverIdTemplate.ldif > $INSTALLDIR/scriptServerId.ldif
-ldapmodify -Y EXTERNAL  -H ldapi:/// -f $INSTALLDIR/scriptServerId.ldif
-rm $INSTALLDIR/scriptServerId.ldif
+
+sed -e "s/\${serverid}/$id/" $INSTALLDIR/serverIdTemplate.ldif > scriptServerId.ldif
+ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptServerId.ldif
+rm scriptServerId.ldif
 
 ldapadd -Y EXTERNAL -H ldapi:/// -f $INSTALLDIR/syncprov_mod.ldif
-
 ldapadd -Y EXTERNAL -H ldapi:/// -f $INSTALLDIR/syncprov.ldif
 
 #update replication config
@@ -100,56 +111,30 @@ echo "changetype: modify" >> scriptConfig.ldif
 echo "add: olcSyncRepl" >> scriptConfig.ldif
 rid=1
 while read host; do
-sed -e "s/\${rid}/$rid/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" $INSTALLDIR/configTemplate.ldif > scriptConfig.ldif
-if [ ${rid} -eq 2 ] && [ ${id} -eq 1 ]
-then
-    echo "-" >> scriptConfig.ldif
-    echo "add: olcMirrorMode" >> scriptConfig.ldif
-     echo "olcMirrorMode: TRUE" >> scriptConfig.ldif
-fi
-if [ ${rid} -eq 1 ] && [ ${id} -ne 1 ]
-then
-    echo "-" >> scriptConfig.ldif
-    echo "add: olcMirrorMode" >> scriptConfig.ldif
-    echo "olcMirrorMode: TRUE" >> scriptConfig.ldif
-fi
-ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptConfig.ldif
-rm scriptConfig.ldif
+sed -e "s/\${rid}/$rid/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" $INSTALLDIR/configTemplate.ldif >> scriptConfig.ldif
 rid=`expr ${rid} + 1`
 done <$host_list
-    echo "-" >> scriptConfig.ldif
-    echo "add: olcMirrorMode" >> scriptConfig.ldif
-     echo "olcMirrorMode: TRUE" >> scriptConfig.ldif
+
+echo "-" >> scriptConfig.ldif
+echo "add: olcMirrorMode" >> scriptConfig.ldif
+echo "olcMirrorMode: TRUE" >> scriptConfig.ldif
+
 ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptConfig.ldif
 rm scriptConfig.ldif
+
 # Update mdb file
 echo "dn: olcDatabase={2}mdb,cn=config" > scriptData.ldif
 echo "changetype: modify" >> scriptData.ldif
 echo "add: olcSyncRepl" >> scriptData.ldif
 
-iteration=1
 while read host; do
-sed -e "s/\${rid}/$rid/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" $INSTALLDIR/dataTemplate.ldif > scriptData.ldif
-if [ ${iteration} -eq 2 ] && [ ${id} -eq 1 ]
-then
-    echo "-" >> scriptData.ldif
-    echo "add: olcMirrorMode" >> scriptData.ldif
-    echo "olcMirrorMode: TRUE" >> scriptData.ldif
-fi
-if [ ${iteration} -eq 1 ] && [ ${id} -ne 1 ]
-then
-    echo "-" >> scriptData.ldif
-    echo "add: olcMirrorMode" >> scriptData.ldif
-    echo "olcMirrorMode: TRUE" >> scriptData.ldif
-fi
-ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptData.ldif
-rm scriptData.ldif
+sed -e "s/\${rid}/$rid/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" $INSTALLDIR/dataTemplate.ldif >> scriptData.ldif
 rid=`expr ${rid} + 1`
-iteration=`expr ${iteration} + 1`
 done <$host_list
-    echo "-" >> scriptData.ldif
-    echo "add: olcMirrorMode" >> scriptData.ldif
-    echo "olcMirrorMode: TRUE" >> scriptData.ldif
+
+echo "-" >> scriptData.ldif
+echo "add: olcMirrorMode" >> scriptData.ldif
+echo "olcMirrorMode: TRUE" >> scriptData.ldif
+
 ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptData.ldif
 rm scriptData.ldif
-
