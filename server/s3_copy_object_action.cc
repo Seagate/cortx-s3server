@@ -452,9 +452,11 @@ std::string S3CopyObjectAction::get_response_xml() {
   std::string response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
   response_xml +=
       "<CopyObjectResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">";
-  response_xml += S3CommonUtilities::format_xml_string("LastModified", "");
+  response_xml += S3CommonUtilities::format_xml_string(
+      "LastModified", new_object_metadata->get_last_modified_iso());
   // ETag for the destination object would be same as Etag for Source Object
-  response_xml += S3CommonUtilities::format_xml_string("ETag", "");
+  response_xml += S3CommonUtilities::format_xml_string(
+      "ETag", new_object_metadata->get_md5());
   response_xml += "</CopyObjectResult>";
   return response_xml;
 }
