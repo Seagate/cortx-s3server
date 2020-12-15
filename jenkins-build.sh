@@ -443,6 +443,10 @@ then
     exit 1
 fi
 
+# Stop S3 background services before tests are run
+systemctl stop s3backgroundproducer
+systemctl stop s3backgroundconsumer
+
 basic_test_cmd_par=""
 if [ $basic_test_only -eq 1 ]
 then
