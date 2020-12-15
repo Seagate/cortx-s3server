@@ -481,6 +481,10 @@ std::string RequestObject::get_content_length_str() {
   return len;
 }
 
+std::string RequestObject::get_headers_copysource() {
+  return get_header_value("x-amz-copy-source");
+}
+
 std::string RequestObject::get_content_type() {
   std::string type = get_header_value("Content-Type");
   type = S3CommonUtilities::trim(type);

@@ -31,6 +31,7 @@
 #include <evhttp.h>
 #include "s3_m0_uint128_helper.h"
 #include "s3_perf_metrics.h"
+#include "s3_common_utilities.h"
 
 extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
@@ -254,6 +255,14 @@ void S3PutObjectAction::fetch_object_info_success() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+void S3PutObjectAction::_set_layout_id(int layout_id) {
+  assert(layout_id > 0 && layout_id < 15);
+  this->layout_id = layout_id;
+
+  motr_write_payload_size =
+      S3Option::get_instance()->get_motr_write_payload_size(layout_id);
+}
+
 void S3PutObjectAction::create_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_timer.start();
@@ -263,9 +272,8 @@ void S3PutObjectAction::create_object() {
   } else {
     motr_writer->set_oid(new_object_oid);
   }
-
-  layout_id = S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
-      request->get_content_length());
+  _set_layout_id(S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
+      request->get_content_length()));
 
   motr_writer->create_object(
       std::bind(&S3PutObjectAction::create_object_successful, this),
@@ -419,7 +427,7 @@ void S3PutObjectAction::initiate_data_streaming() {
       // Start streaming, logically pausing action till we get data.
       request->listen_for_incoming_data(
           std::bind(&S3PutObjectAction::consume_incoming_content, this),
-          S3Option::get_instance()->get_motr_write_payload_size(layout_id));
+          motr_write_payload_size);
     }
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -445,13 +453,13 @@ void S3PutObjectAction::consume_incoming_content() {
   if (!write_in_progress) {
     if (request->get_buffered_input()->is_freezed() ||
         request->get_buffered_input()->get_content_length() >=
-            S3Option::get_instance()->get_motr_write_payload_size(layout_id)) {
+            motr_write_payload_size) {
       write_object(request->get_buffered_input());
     }
   }
   if (!request->get_buffered_input()->is_freezed() &&
       request->get_buffered_input()->get_content_length() >=
-          (S3Option::get_instance()->get_motr_write_payload_size(layout_id) *
+          (motr_write_payload_size *
            S3Option::get_instance()->get_read_ahead_multiple())) {
     s3_log(S3_LOG_DEBUG, request_id, "Pausing with Buffered length = %zu\n",
            request->get_buffered_input()->get_content_length());
@@ -462,13 +470,18 @@ void S3PutObjectAction::consume_incoming_content() {
 
 void S3PutObjectAction::write_object(
     std::shared_ptr<S3AsyncBufferOptContainer> buffer) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering with buffer length = %zu\n",
-         buffer->get_content_length());
 
+  size_t content_length = buffer->get_content_length();
+  s3_log(S3_LOG_DEBUG, request_id, "Entering with buffer length = %zu\n",
+         content_length);
+
+  if (content_length > motr_write_payload_size) {
+    content_length = motr_write_payload_size;
+  }
   motr_writer->write_content(
       std::bind(&S3PutObjectAction::write_object_successful, this),
       std::bind(&S3PutObjectAction::write_object_failed, this),
-      std::move(buffer));
+      buffer->get_buffers(content_length), buffer->size_of_each_evbuf);
 
   write_in_progress = true;
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -477,6 +490,9 @@ void S3PutObjectAction::write_object(
 void S3PutObjectAction::write_object_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_DEBUG, request_id, "Write to motr successful\n");
+
+  request->get_buffered_input()->flush_used_buffers();
+
   write_in_progress = false;
 
   if (check_shutdown_and_rollback()) {
@@ -496,9 +512,8 @@ void S3PutObjectAction::write_object_successful() {
   if (/* buffered data len is at least equal to max we can write to motr in
          one write */
       request->get_buffered_input()->get_content_length() >=
-          S3Option::get_instance()->get_motr_write_payload_size(
-              layout_id) || /* we have all the data buffered and ready to
-                               write */
+          motr_write_payload_size ||
+      // we have all the data buffered and ready to write
       (request->get_buffered_input()->is_freezed() &&
        request->get_buffered_input()->get_content_length() > 0)) {
 
@@ -530,6 +545,8 @@ void S3PutObjectAction::write_object_failed() {
 
   write_in_progress = false;
   s3_put_action_state = S3PutObjectActionState::writeFailed;
+
+  request->get_buffered_input()->flush_used_buffers();
 
   if (request->is_s3_client_read_error()) {
     client_read_error();
@@ -621,6 +638,11 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
   if (old_object_oid.u_hi || old_object_oid.u_lo) {
     assert(!old_oid_str.empty());
 
+    // prepending a char depending on the size of the object (size based
+    // bucketing of object)
+    S3CommonUtilities::size_based_bucketing_of_objects(
+        old_oid_str, object_metadata->get_content_length());
+
     // key = oldoid + "-" + newoid
     std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
     s3_log(S3_LOG_DEBUG, request_id,
@@ -635,6 +657,11 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
 
     probable_oid_list[old_oid_rec_key] = old_probable_del_rec->to_json();
   }
+
+  // prepending a char depending on the size of the object (size based bucketing
+  // of object)
+  S3CommonUtilities::size_based_bucketing_of_objects(
+      new_oid_str, request->get_content_length());
 
   s3_log(S3_LOG_DEBUG, request_id,
          "Adding new_probable_del_rec with key [%s]\n", new_oid_str.c_str());
@@ -812,8 +839,11 @@ void S3PutObjectAction::mark_old_oid_for_deletion() {
   assert(!old_oid_str.empty());
   assert(!new_oid_str.empty());
 
+  std::string prepended_new_oid_str = new_oid_str;
   // key = oldoid + "-" + newoid
-  std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
+
+  std::string old_oid_rec_key =
+      old_oid_str + '-' + prepended_new_oid_str.erase(0, 1);
 
   // update old oid, force_del = true
   old_probable_del_rec->set_force_delete(true);
@@ -868,6 +898,16 @@ void S3PutObjectAction::delete_old_object() {
   // If PUT is success, we delete old object if present
   assert(old_object_oid.u_hi != 0ULL || old_object_oid.u_lo != 0ULL);
 
+  // If old object exists and deletion of old is disabled, then return
+  if ((old_object_oid.u_hi || old_object_oid.u_lo) &&
+      S3Option::get_instance()->is_s3server_obj_delayed_del_enabled()) {
+    s3_log(S3_LOG_INFO, request_id,
+           "Skipping deletion of old object. The old object will be deleted by "
+           "BD.\n");
+    // Call next task in the pipeline
+    next();
+    return;
+  }
   motr_writer->set_oid(old_object_oid);
   motr_writer->delete_object(
       std::bind(&S3PutObjectAction::remove_old_object_version_metadata, this),

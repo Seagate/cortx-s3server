@@ -163,9 +163,9 @@ def test_get_log_format_failure():
 def test_get_cortx_s3_endpoint_success():
     """Test endpoint configuration in cortxs3."""
     config = CORTXS3Config(use_cipher = False)
-    config._config['cortx_s3']['endpoint'] = "http://127.0.0.1:7081"
+    config._config['cortx_s3']['endpoint'] = "http://127.0.0.1:28049"
     s3_endpoint = config.get_cortx_s3_endpoint()
-    assert s3_endpoint == "http://127.0.0.1:7081"
+    assert s3_endpoint == "http://127.0.0.1:28049"
 
 def test_get_cortx_s3_endpoint_failure():
     """

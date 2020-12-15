@@ -247,9 +247,11 @@ ulimit -c unlimited
 
 # Few assertions - prerun checks
 rpm -q haproxy
+rpm -q rabbitmq-server
 #rpm -q stx-s3-certs
 #rpm -q stx-s3-client-certs
 systemctl status haproxy
+systemctl status rabbitmq-server
 
 cd $S3_BUILD_DIR
 
@@ -309,7 +311,7 @@ fi
 if [ $use_http_client -eq 1 ]
 then
   $USE_SUDO sed -i 's/S3_ENABLE_AUTH_SSL:.*$/S3_ENABLE_AUTH_SSL: false/g' /opt/seagate/cortx/s3/conf/s3config.yaml
-  $USE_SUDO sed -i 's/S3_AUTH_PORT:.*$/S3_AUTH_PORT: 9085/g' /opt/seagate/cortx/s3/conf/s3config.yaml
+  $USE_SUDO sed -i 's/S3_AUTH_PORT:.*$/S3_AUTH_PORT: 28051/g' /opt/seagate/cortx/s3/conf/s3config.yaml
   $USE_SUDO sed -i 's/enableSSLToLdap=.*$/enableSSLToLdap=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
   $USE_SUDO sed -i 's/enable_https=.*$/enable_https=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
   $USE_SUDO sed -i 's/enableHttpsToS3=.*$/enableHttpsToS3=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
@@ -440,6 +442,10 @@ then
     echo "Skip tests. S3server will not be stopped"
     exit 1
 fi
+
+# Stop S3 background services before tests are run
+systemctl stop s3backgroundproducer
+systemctl stop s3backgroundconsumer
 
 basic_test_cmd_par=""
 if [ $basic_test_only -eq 1 ]

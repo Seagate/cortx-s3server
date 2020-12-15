@@ -18,10 +18,12 @@
  *
  */
 
-#include <json/json.h>
-#include <stdlib.h>
-#include "base64.h"
+#include <cstdlib>
+#include <cassert>
 
+#include <json/json.h>
+
+#include "base64.h"
 #include "s3_datetime.h"
 #include "s3_factory.h"
 #include "s3_iem.h"
@@ -35,31 +37,39 @@
 
 extern struct m0_uint128 global_instance_id;
 
-void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
-  json_parsing_error = false;
+S3ObjectMetadata::S3ObjectMetadata(const S3ObjectMetadata& src)
+    : S3ObjectMetadataCopyable(src), state(S3ObjectMetadataState::present) {
+
+  s3_log(S3_LOG_DEBUG, request_id, "Partial copy constructor");
+
+  bucket_name = request->get_bucket_name();
+  object_name = request->get_object_name();
+
+  initialize();
+}
+
+static void str_set_default(std::string& sref, const char* sz) {
+  if (sref.empty() && sz) {
+    sref = sz;
+  }
+}
+
+void S3ObjectMetadata::initialize() {
+
   account_name = request->get_account_name();
   account_id = request->get_account_id();
   user_name = request->get_user_name();
   canonical_id = request->get_canonical_id();
   user_id = request->get_user_id();
-  bucket_name = request->get_bucket_name();
-  object_name = request->get_object_name();
-  state = S3ObjectMetadataState::empty;
-  is_multipart = ismultipart;
-  upload_id = uploadid;
-  oid = M0_ID_APP;
-  old_oid = {0ULL, 0ULL};
-  layout_id = 0;
-  old_layout_id = 0;
-  tried_count = 0;
 
   object_key_uri = bucket_name + "\\" + object_name;
 
   // Set the defaults
-  system_defined_attribute["Date"] = "";
-  system_defined_attribute["Content-Length"] = "";
-  system_defined_attribute["Last-Modified"] = "";
-  system_defined_attribute["Content-MD5"] = "";
+  (void)system_defined_attribute["Date"];
+  (void)system_defined_attribute["Content-Length"];
+  (void)system_defined_attribute["Last-Modified"];
+  (void)system_defined_attribute["Content-MD5"];
+
   // Initially set to requestor of API, but on load json can be overriden
   system_defined_attribute["Owner-User"] = user_name;
   system_defined_attribute["Owner-Canonical-id"] = canonical_id;
@@ -67,29 +77,72 @@ void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
   system_defined_attribute["Owner-Account"] = account_name;
   system_defined_attribute["Owner-Account-id"] = account_id;
 
-  system_defined_attribute["x-amz-server-side-encryption"] =
-      "None";  // Valid values aws:kms, AES256
-  system_defined_attribute["x-amz-version-id"] =
-      "";  // Generate if versioning enabled
-  system_defined_attribute["x-amz-storage-class"] =
-      "STANDARD";  // Valid Values: STANDARD | STANDARD_IA | REDUCED_REDUNDANCY
-  system_defined_attribute["x-amz-website-redirect-location"] = "None";
-  system_defined_attribute["x-amz-server-side-encryption-aws-kms-key-id"] = "";
-  system_defined_attribute["x-amz-server-side-encryption-customer-algorithm"] =
-      "";
-  system_defined_attribute["x-amz-server-side-encryption-customer-key"] = "";
-  system_defined_attribute["x-amz-server-side-encryption-customer-key-MD5"] =
-      "";
+  str_set_default(system_defined_attribute["x-amz-server-side-encryption"],
+                  "None");
+  (void)system_defined_attribute["x-amz-version-id"];
+
+  // Generate if versioning enabled
+  str_set_default(system_defined_attribute["x-amz-storage-class"], "STANDARD");
+  str_set_default(system_defined_attribute["x-amz-website-redirect-location"],
+                  "None");
+
+  (void)system_defined_attribute["x-amz-server-side-encryption-aws-kms-key-id"];
+  (void)system_defined_attribute
+      ["x-amz-server-side-encryption-customer-algorithm"];
+  (void)system_defined_attribute["x-amz-server-side-encryption-customer-key"];
+  (void)
+      system_defined_attribute["x-amz-server-side-encryption-customer-key-MD5"];
+
   if (is_multipart) {
     index_name = get_multipart_index_name();
     system_defined_attribute["Upload-ID"] = upload_id;
-    system_defined_attribute["Part-One-Size"] = "";
+    (void)system_defined_attribute["Part-One-Size"];
   } else {
     index_name = get_object_list_index_name();
   }
+}
 
-  object_list_index_oid = {0ULL, 0ULL};
-  objects_version_list_index_oid = {0ULL, 0ULL};
+S3ObjectMetadata::S3ObjectMetadata(
+    std::shared_ptr<S3RequestObject> req, std::string bucketname,
+    std::string objectname, bool ismultipart, std::string uploadid,
+    std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
+    std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
+    std::shared_ptr<MotrAPI> motr_api)
+    : upload_id(std::move(uploadid)),
+      is_multipart(ismultipart),
+      state(S3ObjectMetadataState::empty) {
+
+  request = std::move(req);
+  request_id = request->get_request_id();
+
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+
+  if (bucketname.empty()) {
+    bucket_name = request->get_bucket_name();
+  } else {
+    bucket_name = std::move(bucketname);
+  }
+  if (objectname.empty()) {
+    object_name = request->get_object_name();
+  } else {
+    object_name = std::move(objectname);
+  }
+  if (motr_api) {
+    s3_motr_api = std::move(motr_api);
+  } else {
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
+  }
+  if (kv_reader_factory) {
+    motr_kv_reader_factory = std::move(kv_reader_factory);
+  } else {
+    motr_kv_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+  }
+  if (kv_writer_factory) {
+    mote_kv_writer_factory = std::move(kv_writer_factory);
+  } else {
+    mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
+  }
+  initialize();
 }
 
 S3ObjectMetadata::S3ObjectMetadata(
@@ -98,30 +151,9 @@ S3ObjectMetadata::S3ObjectMetadata(
     std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<MotrAPI> motr_api)
-    : request(std::move(req)) {
-  request_id = request->get_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-
-  initialize(ismultipart, uploadid);
-
-  if (motr_api) {
-    s3_motr_api = std::move(motr_api);
-  } else {
-    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
-  }
-
-  if (kv_reader_factory) {
-    motr_kv_reader_factory = std::move(kv_reader_factory);
-  } else {
-    motr_kv_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
-  }
-
-  if (kv_writer_factory) {
-    mote_kv_writer_factory = std::move(kv_writer_factory);
-  } else {
-    mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
-  }
-}
+    : S3ObjectMetadata(std::move(req), "", "", ismultipart, std::move(uploadid),
+                       std::move(kv_reader_factory),
+                       std::move(kv_writer_factory), std::move(motr_api)) {}
 
 std::string S3ObjectMetadata::get_owner_id() {
   return system_defined_attribute["Owner-User-id"];

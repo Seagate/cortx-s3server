@@ -173,6 +173,7 @@ class RequestObject {
   virtual std::string get_host_header();
   virtual std::string get_host_name();
 
+  virtual std::string get_headers_copysource();
   // returns x-amz-decoded-content-length OR Content-Length
   // Always prefer get_data_length*() version since it takes
   // care of both above headers (chunked and non-chunked cases)

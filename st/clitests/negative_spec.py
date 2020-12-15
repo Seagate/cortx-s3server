@@ -340,10 +340,7 @@ for i, type in enumerate(config_types):
         disable_fi("motr_idx_op_fail").\
         execute_test().command_is_successful()
 
-    is_object_leak_track_enabled=yaml.load(open("/opt/seagate/cortx/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"]
     fi_off="5"
-    if is_object_leak_track_enabled:
-        fi_off="6"
     S3fiTest('s3cmd can enable FI motr_idx_op_fail').\
         enable_fi_offnonm("enable", "motr_idx_op_fail", fi_off, "99").\
         execute_test().command_is_successful()
@@ -363,8 +360,6 @@ for i, type in enumerate(config_types):
         execute_test().command_is_successful()
 
     fi_off="6"
-    if is_object_leak_track_enabled:
-        fi_off="7"
     S3fiTest('s3cmd can enable FI motr_idx_op_fail').\
         enable_fi_offnonm("enable", "motr_idx_op_fail", fi_off, "99").\
         execute_test().command_is_successful()
@@ -385,8 +380,6 @@ for i, type in enumerate(config_types):
         execute_test().command_is_successful()
 
     fi_off="7"
-    if is_object_leak_track_enabled:
-        fi_off="9"
     S3fiTest('s3cmd can enable FI motr_idx_op_fail').\
         enable_fi_offnonm("enable", "motr_idx_op_fail", fi_off, "99").\
         execute_test().command_is_successful()
@@ -582,10 +575,7 @@ for i, type in enumerate(config_types):
         disable_fi("motr_idx_op_fail").\
         execute_test().command_is_successful()
 
-    is_object_leak_track_enabled=yaml.load(open("/opt/seagate/cortx/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"]
     fi_off="20"
-    if is_object_leak_track_enabled:
-        fi_off="22"
     S3fiTest('s3cmd enable FI motr idx op fail').\
         enable_fi_offnonm("enable", "motr_idx_op_fail", fi_off, "99").\
         execute_test().command_is_successful()
