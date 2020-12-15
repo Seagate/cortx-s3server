@@ -44,8 +44,8 @@ S3CopyObjectAction::S3CopyObjectAction(
                             std::move(motrwriter_s3_factory),
                             std::move(kv_writer_factory)) {
 
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-  s3_log(S3_LOG_INFO, request_id,
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
+  s3_log(S3_LOG_INFO, stripped_request_id,
          "S3 API: CopyObject. Destination: [%s], Source: [%s]\n",
          request->get_object_uri().c_str(),
          request->get_headers_copysource().c_str());
@@ -64,9 +64,6 @@ S3CopyObjectAction::S3CopyObjectAction(
 void S3CopyObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   ACTION_TASK_ADD(S3CopyObjectAction::validate_copyobject_request, this);
-  ACTION_TASK_ADD(S3CopyObjectAction::set_source_bucket_authorization_metadata,
-                  this);
-  ACTION_TASK_ADD(S3CopyObjectAction::check_source_bucket_authorization, this);
   ACTION_TASK_ADD(S3CopyObjectAction::create_object, this);
   ACTION_TASK_ADD(S3CopyObjectAction::copy_object, this);
   ACTION_TASK_ADD(S3CopyObjectAction::save_metadata, this);
@@ -74,18 +71,18 @@ void S3CopyObjectAction::setup_steps() {
 }
 
 void S3CopyObjectAction::get_source_bucket_and_object() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   std::string source = request->get_headers_copysource();
   size_t separator_pos = source.find("/");
   if (separator_pos != std::string::npos) {
     source_bucket_name = source.substr(0, separator_pos);
     source_object_name = source.substr(separator_pos + 1);
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3CopyObjectAction::fetch_source_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, request_id, "Fetch metadata of bucket: %s\n",
          source_bucket_name.c_str());
 
@@ -96,22 +93,22 @@ void S3CopyObjectAction::fetch_source_bucket_info() {
       std::bind(&S3CopyObjectAction::fetch_source_bucket_info_success, this),
       std::bind(&S3CopyObjectAction::fetch_source_bucket_info_failed, this));
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3CopyObjectAction::fetch_source_bucket_info_success() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, request_id, "Found source bucket: [%s] metadata\n",
          source_bucket_name.c_str());
 
   // fetch source object metadata
   fetch_source_object_info();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3CopyObjectAction::fetch_source_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   s3_put_action_state = S3PutObjectActionState::validationFailed;
 
@@ -130,11 +127,11 @@ void S3CopyObjectAction::fetch_source_bucket_info_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3CopyObjectAction::fetch_source_object_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, request_id, "Found source bucket metadata\n");
   m0_uint128 source_object_list_oid =
       source_bucket_metadata->get_object_list_index_oid();
@@ -160,11 +157,11 @@ void S3CopyObjectAction::fetch_source_object_info() {
         std::bind(&S3CopyObjectAction::fetch_source_object_info_success, this),
         std::bind(&S3CopyObjectAction::fetch_source_object_info_failed, this));
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3CopyObjectAction::fetch_source_object_info_success() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, request_id,
          "Successfully fetched source object metadata\n");
 
@@ -176,11 +173,11 @@ void S3CopyObjectAction::fetch_source_object_info_success() {
     total_data_to_stream = source_object_metadata->get_content_length();
     next();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3CopyObjectAction::fetch_source_object_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   s3_put_action_state = S3PutObjectActionState::validationFailed;
 
@@ -205,12 +202,12 @@ void S3CopyObjectAction::fetch_source_object_info_failed() {
     }
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 // Validate source bucket and object
 void S3CopyObjectAction::validate_copyobject_request() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   get_source_bucket_and_object();
 
   if (source_bucket_name.empty() || source_object_name.empty()) {
@@ -223,15 +220,15 @@ void S3CopyObjectAction::validate_copyobject_request() {
   } else {
     fetch_source_bucket_info();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 // Copy source object to destination object
 void S3CopyObjectAction::copy_object() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (!total_data_to_stream) {
-    s3_log(S3_LOG_DEBUG, request_id, "Source object is empty");
+    s3_log(S3_LOG_DEBUG, stripped_request_id, "Source object is empty");
     next();
     return;
   }
@@ -243,11 +240,11 @@ void S3CopyObjectAction::copy_object() {
   bytes_left_to_read = total_data_to_stream;
   read_data_block();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3CopyObjectAction::read_data_block() {
-  s3_log(S3_LOG_INFO, request_id, "Entering");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   assert(!read_in_progress);
   assert(bytes_left_to_read > 0);
@@ -276,11 +273,13 @@ void S3CopyObjectAction::read_data_block() {
       send_response_to_s3_client();
     }
   }
-  s3_log(S3_LOG_DEBUG, NULL, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3CopyObjectAction::read_data_block_success() {
-  s3_log(S3_LOG_INFO, request_id, "Reading a part of data succeeded");
+
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_INFO, stripped_request_id, "Reading a part of data succeeded");
 
   assert(read_in_progress);
   read_in_progress = false;
@@ -296,10 +295,12 @@ void S3CopyObjectAction::read_data_block_success() {
   if (!write_in_progress) {
     write_data_block();
   }
-  s3_log(S3_LOG_DEBUG, NULL, "Exiting\n");
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3CopyObjectAction::read_data_block_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_ERROR, request_id, "Failed to read object data from motr");
 
   assert(read_in_progress);
@@ -314,11 +315,12 @@ void S3CopyObjectAction::read_data_block_failed() {
   if (!write_in_progress) {
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, NULL, "Exiting\n");
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3CopyObjectAction::write_data_block() {
-  s3_log(S3_LOG_INFO, request_id, "Entering");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   assert(!write_in_progress);
   assert(bytes_left_to_read > 0);
@@ -369,11 +371,11 @@ void S3CopyObjectAction::write_data_block() {
   } else {
     write_in_progress = true;
   }
-  s3_log(S3_LOG_DEBUG, NULL, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3CopyObjectAction::write_data_block_success() {
-  s3_log(S3_LOG_INFO, request_id, "Entering");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   assert(write_in_progress);
   write_in_progress = false;
@@ -388,10 +390,12 @@ void S3CopyObjectAction::write_data_block_success() {
     s3_put_action_state = S3PutObjectActionState::writeComplete;
     next();
   }
-  s3_log(S3_LOG_DEBUG, NULL, "Exiting\n");
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3CopyObjectAction::write_data_block_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_ERROR, request_id, "Failed to write object data to motr");
 
   assert(write_in_progress);
@@ -406,11 +410,12 @@ void S3CopyObjectAction::write_data_block_failed() {
   if (!read_in_progress) {
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, NULL, "Exiting\n");
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3CopyObjectAction::save_metadata() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL("put_object_action_save_metadata_pass");
@@ -436,17 +441,19 @@ void S3CopyObjectAction::save_metadata() {
   new_object_metadata->save(
       std::bind(&S3CopyObjectAction::save_object_metadata_success, this),
       std::bind(&S3CopyObjectAction::save_object_metadata_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3CopyObjectAction::save_object_metadata_success() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_put_action_state = S3PutObjectActionState::metadataSaved;
   next();
 }
 
 void S3CopyObjectAction::save_object_metadata_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
   s3_put_action_state = S3PutObjectActionState::metadataSaveFailed;
   if (new_object_metadata->get_state() ==
       S3ObjectMetadataState::failed_to_launch) {
@@ -472,7 +479,7 @@ std::string S3CopyObjectAction::get_response_xml() {
 }
 
 void S3CopyObjectAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (S3Option::get_instance()->is_getoid_enabled()) {
 
     request->set_out_header_value("x-stx-oid",
@@ -520,39 +527,10 @@ void S3CopyObjectAction::send_response_to_s3_client() {
 #ifndef S3_GOOGLE_TEST
   startcleanup();
 #endif  // S3_GOOGLE_TEST
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 bool S3CopyObjectAction::if_source_and_destination_same() {
   return ((source_bucket_name == request->get_bucket_name()) &&
           (source_object_name == request->get_object_name()));
-}
-
-void S3CopyObjectAction::set_authorization_meta() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
-                                  bucket_metadata->get_policy_as_json());
-  request->set_action_str("PutObject");
-  next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3CopyObjectAction::set_source_bucket_authorization_metadata() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  auth_client->set_get_method = true;
-  std::string uri = "/" + source_bucket_name + "/" + source_object_name;
-  auth_client->clientabsoulte_uri = uri;
-  auth_client->set_acl_and_policy(
-      source_object_metadata->get_encoded_object_acl(),
-      source_bucket_metadata->get_policy_as_json());
-  request->set_action_str("GetObject");
-  next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3CopyObjectAction::check_source_bucket_authorization() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  auth_client->check_authorization(
-      std::bind(&S3Action::check_authorization_successful, this),
-      std::bind(&S3Action::check_authorization_failed, this));
 }

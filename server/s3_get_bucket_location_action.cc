@@ -26,8 +26,9 @@ S3GetBucketlocationAction::S3GetBucketlocationAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
     : S3BucketAction(std::move(req), std::move(bucket_meta_factory)) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-  s3_log(S3_LOG_INFO, request_id, "S3 API: Get Bucket Location. Bucket[%s]\n",
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "S3 API: Get Bucket Location. Bucket[%s]\n",
          request->get_bucket_name().c_str());
 
   setup_steps();
@@ -40,7 +41,7 @@ void S3GetBucketlocationAction::setup_steps() {
 }
 
 void S3GetBucketlocationAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     s3_log(S3_LOG_WARN, request_id, "Bucket not found\n");
     set_s3_error("NoSuchBucket");
@@ -54,11 +55,11 @@ void S3GetBucketlocationAction::fetch_bucket_info_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GetBucketlocationAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -97,5 +98,5 @@ void S3GetBucketlocationAction::send_response_to_s3_client() {
   }
 
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

@@ -47,7 +47,7 @@ extern pthread_t global_tid_objop;
 extern pthread_t global_tid_indexop;
 
 int init_motr(void) {
-  s3_log(S3_LOG_INFO, "", "Entering!\n");
+  s3_log(S3_LOG_INFO, "", "%s Entry\n", __func__);
   int rc;
   S3Option *option_instance = S3Option::get_instance();
   /* MOTR_DEFAULT_EP, MOTR_DEFAULT_HA_ADDR*/
@@ -130,10 +130,10 @@ int init_motr(void) {
 }
 
 void fini_motr(void) {
-  s3_log(S3_LOG_INFO, "", "Entering!\n");
+  s3_log(S3_LOG_INFO, "", "%s Entry\n", __func__);
   m0_ufid_fini(&s3_ufid_generator);
   m0_client_fini(motr_instance, true);
-  s3_log(S3_LOG_INFO, "", "Exiting\n");
+  s3_log(S3_LOG_INFO, "", "%s Exit", __func__);
 }
 
 int create_new_instance_id(struct m0_uint128 *ufid) {

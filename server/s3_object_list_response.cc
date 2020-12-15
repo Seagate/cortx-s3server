@@ -37,7 +37,7 @@ S3ObjectListResponse::S3ObjectListResponse(std::string encoding_type)
       next_marker_uploadid(""),
       key_count(""),
       response_xml("") {
-  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);
   object_list.clear();
   part_list.clear();
 }

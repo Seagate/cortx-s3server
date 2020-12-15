@@ -27,9 +27,10 @@ S3PutBucketACLAction::S3PutBucketACLAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
     : S3BucketAction(std::move(req), std::move(bucket_meta_factory)) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
-  s3_log(S3_LOG_INFO, request_id, "S3 API: Put Bucket Acl. Bucket[%s]\n",
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "S3 API: Put Bucket Acl. Bucket[%s]\n",
          request->get_bucket_name().c_str());
   setup_steps();
 }
@@ -43,7 +44,7 @@ void S3PutBucketACLAction::setup_steps() {
 }
 
 void S3PutBucketACLAction::validate_request() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (request->has_all_body_content()) {
     user_input_acl = request->get_full_body_content_as_string();
@@ -56,7 +57,7 @@ void S3PutBucketACLAction::validate_request() {
         );
   }
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketACLAction::consume_incoming_content() {
@@ -73,7 +74,7 @@ void S3PutBucketACLAction::consume_incoming_content() {
 }
 
 void S3PutBucketACLAction::validate_acl_with_auth() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (user_input_acl.empty()) {
     next();
   } else {
@@ -86,13 +87,13 @@ void S3PutBucketACLAction::validate_acl_with_auth() {
 }
 
 void S3PutBucketACLAction::on_aclvalidation_success() {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketACLAction::on_aclvalidation_failure() {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   std::string error_code = auth_client->get_error_code();
   if (error_code == "InvalidID") {
     set_s3_error("InvalidArgument");
@@ -100,11 +101,11 @@ void S3PutBucketACLAction::on_aclvalidation_failure() {
     set_s3_error(error_code);
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketACLAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
@@ -118,11 +119,11 @@ void S3PutBucketACLAction::fetch_bucket_info_failed() {
   }
   send_response_to_s3_client();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketACLAction::setacl() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   check_shutdown_signal_for_next_task(false);
 
   if (!user_input_acl.empty()) {
@@ -139,11 +140,11 @@ void S3PutBucketACLAction::setacl() {
       std::bind(&S3PutBucketACLAction::next, this),
       std::bind(&S3PutBucketACLAction::setacl_failed, this));
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketACLAction::setacl_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_ERROR, request_id, "setting acl failed\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
@@ -153,11 +154,11 @@ void S3PutBucketACLAction::setacl_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketACLAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -177,5 +178,5 @@ void S3PutBucketACLAction::send_response_to_s3_client() {
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
