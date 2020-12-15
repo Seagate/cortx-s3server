@@ -26,6 +26,7 @@
 #include "s3_error_codes.h"
 #include "s3_iem.h"
 #include "s3_m0_uint128_helper.h"
+#include "s3_common_utilities.h"
 
 extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
@@ -187,6 +188,12 @@ void S3AbortMultipartAction::add_object_oid_to_probable_dead_oid_list() {
   assert(object_oid.u_hi || object_oid.u_lo);
 
   oid_str = S3M0Uint128Helper::to_string(object_oid);
+
+  // prepending a char depending on the size of the object (size based
+  // bucketing
+  // of object)
+  S3CommonUtilities::size_based_bucketing_of_objects(
+      oid_str, request->get_content_length());
 
   s3_log(S3_LOG_DEBUG, request_id, "Adding probable_delete_rec with key [%s]\n",
          oid_str.c_str());

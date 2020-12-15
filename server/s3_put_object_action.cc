@@ -31,6 +31,7 @@
 #include <evhttp.h>
 #include "s3_m0_uint128_helper.h"
 #include "s3_perf_metrics.h"
+#include "s3_common_utilities.h"
 
 extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
@@ -637,6 +638,11 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
   if (old_object_oid.u_hi || old_object_oid.u_lo) {
     assert(!old_oid_str.empty());
 
+    // prepending a char depending on the size of the object (size based
+    // bucketing of object)
+    S3CommonUtilities::size_based_bucketing_of_objects(
+        old_oid_str, object_metadata->get_content_length());
+
     // key = oldoid + "-" + newoid
     std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
     s3_log(S3_LOG_DEBUG, request_id,
@@ -651,6 +657,11 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
 
     probable_oid_list[old_oid_rec_key] = old_probable_del_rec->to_json();
   }
+
+  // prepending a char depending on the size of the object (size based bucketing
+  // of object)
+  S3CommonUtilities::size_based_bucketing_of_objects(
+      new_oid_str, request->get_content_length());
 
   s3_log(S3_LOG_DEBUG, request_id,
          "Adding new_probable_del_rec with key [%s]\n", new_oid_str.c_str());
@@ -828,8 +839,11 @@ void S3PutObjectAction::mark_old_oid_for_deletion() {
   assert(!old_oid_str.empty());
   assert(!new_oid_str.empty());
 
+  std::string prepended_new_oid_str = new_oid_str;
   // key = oldoid + "-" + newoid
-  std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
+
+  std::string old_oid_rec_key =
+      old_oid_str + '-' + prepended_new_oid_str.erase(0, 1);
 
   // update old oid, force_del = true
   old_probable_del_rec->set_force_delete(true);
@@ -884,6 +898,16 @@ void S3PutObjectAction::delete_old_object() {
   // If PUT is success, we delete old object if present
   assert(old_object_oid.u_hi != 0ULL || old_object_oid.u_lo != 0ULL);
 
+  // If old object exists and deletion of old is disabled, then return
+  if ((old_object_oid.u_hi || old_object_oid.u_lo) &&
+      S3Option::get_instance()->is_s3server_obj_delayed_del_enabled()) {
+    s3_log(S3_LOG_INFO, request_id,
+           "Skipping deletion of old object. The old object will be deleted by "
+           "BD.\n");
+    // Call next task in the pipeline
+    next();
+    return;
+  }
   motr_writer->set_oid(old_object_oid);
   motr_writer->delete_object(
       std::bind(&S3PutObjectAction::remove_old_object_version_metadata, this),
