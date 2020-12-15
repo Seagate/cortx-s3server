@@ -27,7 +27,7 @@ MotrDeleteObjectAction::MotrDeleteObjectAction(
     std::shared_ptr<MotrRequestObject> req,
     std::shared_ptr<S3MotrWriterFactory> writer_factory)
     : MotrAction(std::move(req)) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   if (writer_factory) {
     motr_writer_factory = std::move(writer_factory);
@@ -47,7 +47,7 @@ void MotrDeleteObjectAction::setup_steps() {
 }
 
 void MotrDeleteObjectAction::validate_request() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   oid = S3M0Uint128Helper::to_m0_uint128(request->get_object_oid_lo(),
                                          request->get_object_oid_hi());
@@ -67,11 +67,11 @@ void MotrDeleteObjectAction::validate_request() {
       next();
     }
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrDeleteObjectAction::delete_object() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   motr_writer = motr_writer_factory->create_motr_writer(request, oid);
   motr_writer->delete_object(
@@ -79,17 +79,17 @@ void MotrDeleteObjectAction::delete_object() {
       std::bind(&MotrDeleteObjectAction::delete_object_failed, this),
       layout_id);
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrDeleteObjectAction::delete_object_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrDeleteObjectAction::delete_object_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // Object missing is treated as object deleted similar to S3 object delete.
   if (motr_writer->get_state() == S3MotrWiterOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id,
@@ -99,11 +99,11 @@ void MotrDeleteObjectAction::delete_object_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrDeleteObjectAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (is_error_state() && !get_s3_error_code().empty()) {
     S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->c_get_full_path());
@@ -123,5 +123,5 @@ void MotrDeleteObjectAction::send_response_to_s3_client() {
     request->send_response(S3HttpSuccess204);
   }
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

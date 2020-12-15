@@ -38,6 +38,7 @@ S3AsyncOpContextBase::S3AsyncOpContextBase(std::shared_ptr<RequestObject> req,
       s3_motr_api(motr_api ? std::move(motr_api)
                            : std::make_shared<ConcreteMotrAPI>()) {
   request_id = request->get_request_id();
+  stripped_request_id = request->get_stripped_request_id();
   ops_response.resize(ops_count);
 }
 

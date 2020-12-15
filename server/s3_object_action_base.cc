@@ -33,7 +33,7 @@ S3ObjectAction::S3ObjectAction(
     : S3Action(std::move(req), check_shutdown, std::move(auth_factory),
                skip_auth) {
 
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   object_list_oid = {0ULL, 0ULL};
   objects_version_list_oid = {0ULL, 0ULL};
   if (bucket_meta_factory) {
@@ -51,11 +51,11 @@ S3ObjectAction::S3ObjectAction(
 }
 
 S3ObjectAction::~S3ObjectAction() {
-  s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__);
 }
 
 void S3ObjectAction::fetch_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
@@ -63,7 +63,7 @@ void S3ObjectAction::fetch_bucket_info() {
       std::bind(&S3ObjectAction::fetch_bucket_info_success, this),
       std::bind(&S3ObjectAction::fetch_bucket_info_failed, this));
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3ObjectAction::fetch_bucket_info_success() {
@@ -73,7 +73,7 @@ void S3ObjectAction::fetch_bucket_info_success() {
 }
 
 void S3ObjectAction::fetch_object_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   // Object create case no object metadata exist
   s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
   object_list_oid = bucket_metadata->get_object_list_index_oid();
@@ -102,7 +102,7 @@ void S3ObjectAction::fetch_object_info() {
         std::bind(&S3ObjectAction::fetch_object_info_success, this),
         std::bind(&S3ObjectAction::fetch_object_info_failed, this));
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3ObjectAction::fetch_object_info_success() {
@@ -113,11 +113,11 @@ void S3ObjectAction::fetch_object_info_success() {
 void S3ObjectAction::load_metadata() { fetch_bucket_info(); }
 
 void S3ObjectAction::set_authorization_meta() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   auth_client->set_acl_and_policy(object_metadata->get_encoded_object_acl(),
                                   bucket_metadata->get_policy_as_json());
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3ObjectAction::setup_fi_for_shutdown_tests() {

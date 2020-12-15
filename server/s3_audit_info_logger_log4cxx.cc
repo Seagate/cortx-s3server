@@ -55,8 +55,8 @@ S3AuditInfoLoggerLog4cxx::~S3AuditInfoLoggerLog4cxx() { l4c_logger_ptr = 0; }
 
 int S3AuditInfoLoggerLog4cxx::save_msg(std::string const &cur_request_id,
                                        std::string const &audit_logging_msg) {
-  s3_log(S3_LOG_DEBUG, cur_request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, cur_request_id, "%s Entry\n", __func__);
   LOG4CXX_INFO(l4c_logger_ptr, audit_logging_msg);
-  s3_log(S3_LOG_DEBUG, cur_request_id, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, cur_request_id, "%s Exit", __func__);
   return 0;
 }

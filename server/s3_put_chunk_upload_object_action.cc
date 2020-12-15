@@ -52,9 +52,9 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
       motr_write_completed(false),
       auth_in_progress(false),
       auth_completed(false) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
-  s3_log(S3_LOG_INFO, request_id,
+  s3_log(S3_LOG_INFO, stripped_request_id,
          "S3 API: Put Object (Chunk mode). Bucket[%s]\
          Object[%s]\n",
          request->get_bucket_name().c_str(),
@@ -122,11 +122,11 @@ void S3PutChunkUploadObjectAction::setup_steps() {
 }
 
 void S3PutChunkUploadObjectAction::chunk_auth_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   auth_in_progress = false;
   auth_completed = true;
   if (check_shutdown_and_rollback(true)) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
   if (motr_write_completed) {
@@ -144,7 +144,7 @@ void S3PutChunkUploadObjectAction::chunk_auth_successful() {
 }
 
 void S3PutChunkUploadObjectAction::chunk_auth_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_put_chunk_action_state =
       S3PutChunkUploadObjectActionState::dataSignatureCheckFailed;
   auth_in_progress = false;
@@ -152,7 +152,7 @@ void S3PutChunkUploadObjectAction::chunk_auth_failed() {
   auth_completed = true;
   set_s3_error("SignatureDoesNotMatch");
   if (check_shutdown_and_rollback(true)) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
   if (motr_write_in_progress) {
@@ -162,11 +162,11 @@ void S3PutChunkUploadObjectAction::chunk_auth_failed() {
     // Clean up will be done after response.
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_put_chunk_action_state =
       S3PutChunkUploadObjectActionState::validationFailed;
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
@@ -180,11 +180,11 @@ void S3PutChunkUploadObjectAction::fetch_bucket_info_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::validate_x_amz_tagging_if_present() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   std::string new_object_tags = request->get_header_value("x-amz-tagging");
   s3_log(S3_LOG_DEBUG, request_id, "Received tags= %s\n",
          new_object_tags.c_str());
@@ -200,7 +200,7 @@ void S3PutChunkUploadObjectAction::validate_x_amz_tagging_if_present() {
 
 void S3PutChunkUploadObjectAction::parse_x_amz_tagging_header(
     std::string content) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   struct evkeyvalq key_value;
   memset(&key_value, 0, sizeof(key_value));
   if (0 == evhttp_parse_query_str(content.c_str(), &key_value)) {
@@ -221,11 +221,11 @@ void S3PutChunkUploadObjectAction::parse_x_amz_tagging_header(
     set_s3_error("InvalidTagError");
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::validate_tags() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   std::string xml;
   std::shared_ptr<S3PutTagBody> put_object_tag_body =
       put_object_tag_body_factory->create_put_resource_tags_body(xml,
@@ -239,11 +239,11 @@ void S3PutChunkUploadObjectAction::validate_tags() {
     set_s3_error("InvalidTagError");
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::fetch_object_info_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   struct m0_uint128 object_list_oid =
       bucket_metadata->get_object_list_index_oid();
   if ((object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) ||
@@ -264,11 +264,11 @@ void S3PutChunkUploadObjectAction::fetch_object_info_failed() {
   } else {
     next();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::fetch_object_info_success() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (object_metadata->get_state() == S3ObjectMetadataState::present) {
     s3_log(S3_LOG_DEBUG, request_id, "S3ObjectMetadataState::present\n");
     old_object_oid = object_metadata->get_oid();
@@ -294,11 +294,11 @@ void S3PutChunkUploadObjectAction::fetch_object_info_success() {
     set_s3_error("InternalError");
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::validate_put_chunk_request() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if ((request->get_object_name()).length() > MAX_OBJECT_KEY_LENGTH) {
     s3_put_chunk_action_state =
@@ -314,7 +314,7 @@ void S3PutChunkUploadObjectAction::validate_put_chunk_request() {
   } else {
     next();
   }
-  s3_log(S3_LOG_DEBUG, nullptr, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, nullptr, "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::_set_layout_id(int layout_id) {
@@ -326,7 +326,7 @@ void S3PutChunkUploadObjectAction::_set_layout_id(int layout_id) {
 }
 
 void S3PutChunkUploadObjectAction::create_object() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   create_object_timer.start();
   if (tried_count == 0) {
     motr_writer =
@@ -341,11 +341,11 @@ void S3PutChunkUploadObjectAction::create_object() {
       std::bind(&S3PutChunkUploadObjectAction::create_object_successful, this),
       std::bind(&S3PutChunkUploadObjectAction::create_object_failed, this),
       layout_id);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::create_object_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_put_chunk_action_state =
       S3PutChunkUploadObjectActionState::newObjOidCreated;
 
@@ -363,13 +363,13 @@ void S3PutChunkUploadObjectAction::create_object_successful() {
   new_object_metadata->set_layout_id(layout_id);
 
   add_object_oid_to_probable_dead_oid_list();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::create_object_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
   if (motr_writer->get_state() == S3MotrWiterOpState::exists) {
@@ -399,23 +399,24 @@ void S3PutChunkUploadObjectAction::create_object_failed() {
     set_s3_error("InternalError");
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::collision_detected() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
   if (tried_count < MAX_COLLISION_RETRY_COUNT) {
-    s3_log(S3_LOG_INFO, request_id, "Object ID collision happened for uri %s\n",
+    s3_log(S3_LOG_INFO, stripped_request_id,
+           "Object ID collision happened for uri %s\n",
            request->get_object_uri().c_str());
     // Handle Collision
     create_new_oid(new_object_oid);
     tried_count++;
     if (tried_count > 5) {
-      s3_log(S3_LOG_INFO, request_id,
+      s3_log(S3_LOG_INFO, stripped_request_id,
              "Object ID collision happened %d times for uri %s\n", tried_count,
              request->get_object_uri().c_str());
     }
@@ -453,7 +454,7 @@ void S3PutChunkUploadObjectAction::create_new_oid(
 }
 
 void S3PutChunkUploadObjectAction::initiate_data_streaming() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   create_object_timer.stop();
   LOG_PERF("create_object_successful_ms", request_id.c_str(),
@@ -484,11 +485,11 @@ void S3PutChunkUploadObjectAction::initiate_data_streaming() {
           motr_write_payload_size);
     }
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::consume_incoming_content() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_chunk_upload_object_action_consume_incoming_content_shutdown_fail");
@@ -505,7 +506,7 @@ void S3PutChunkUploadObjectAction::consume_incoming_content() {
             motr_write_payload_size) {
       write_object(request->get_buffered_input());
       if (!motr_write_in_progress && write_failed) {
-        s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+        s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
         return;
       }
     }
@@ -518,11 +519,11 @@ void S3PutChunkUploadObjectAction::consume_incoming_content() {
            request->get_buffered_input()->get_content_length());
     request->pause();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::send_chunk_details_if_any() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // Also send any ready chunk data for auth
   while (request->is_chunk_detail_ready()) {
     S3ChunkDetail detail = request->pop_chunk_detail();
@@ -544,7 +545,7 @@ void S3PutChunkUploadObjectAction::send_chunk_details_if_any() {
 
 void S3PutChunkUploadObjectAction::write_object(
     std::shared_ptr<S3AsyncBufferOptContainer> buffer) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   // Also send any ready chunk data for auth
   send_chunk_details_if_any();
@@ -560,18 +561,18 @@ void S3PutChunkUploadObjectAction::write_object(
       buffer->get_buffers(content_length), buffer->size_of_each_evbuf);
   motr_write_in_progress = true;
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::write_object_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, request_id, "Write to motr successful\n");
   motr_write_in_progress = false;
 
   request->get_buffered_input()->flush_used_buffers();
 
   if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
   if (request->is_s3_client_read_error()) {
@@ -585,7 +586,7 @@ void S3PutChunkUploadObjectAction::write_object_successful() {
            S3PutChunkUploadObjectActionState::dataSignatureCheckFailed);
     // Clean up will be done after response.
     send_response_to_s3_client();
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
 
@@ -614,7 +615,7 @@ void S3PutChunkUploadObjectAction::write_object_successful() {
 }
 
 void S3PutChunkUploadObjectAction::write_object_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   motr_write_in_progress = false;
   write_failed = true;
@@ -638,7 +639,7 @@ void S3PutChunkUploadObjectAction::write_object_failed() {
   }
 
   if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
   motr_write_completed = true;
@@ -647,11 +648,11 @@ void S3PutChunkUploadObjectAction::write_object_failed() {
     send_response_to_s3_client();
   }
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::save_metadata() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   // to rest Date and Last-Modfied time object metadata
   new_object_metadata->reset_date_time_to_current();
@@ -676,17 +677,17 @@ void S3PutChunkUploadObjectAction::save_metadata() {
                 this),
       std::bind(&S3PutChunkUploadObjectAction::save_object_metadata_failed,
                 this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::save_object_metadata_success() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_put_chunk_action_state = S3PutChunkUploadObjectActionState::metadataSaved;
   next();
 }
 
 void S3PutChunkUploadObjectAction::save_object_metadata_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_put_chunk_action_state =
       S3PutChunkUploadObjectActionState::metadataSaveFailed;
   if (new_object_metadata->get_state() ==
@@ -696,11 +697,11 @@ void S3PutChunkUploadObjectAction::save_object_metadata_failed() {
   }
   // Clean up will be done after response.
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::add_object_oid_to_probable_dead_oid_list() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   std::map<std::string, std::string> probable_oid_list;
   assert(!new_oid_str.empty());
 
@@ -755,12 +756,12 @@ void S3PutChunkUploadObjectAction::add_object_oid_to_probable_dead_oid_list() {
       std::bind(&S3PutChunkUploadObjectAction::
                      add_object_oid_to_probable_dead_oid_list_failed,
                 this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::
     add_object_oid_to_probable_dead_oid_list_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_put_chunk_action_state =
       S3PutChunkUploadObjectActionState::probableEntryRecordFailed;
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
@@ -770,15 +771,15 @@ void S3PutChunkUploadObjectAction::
   }
   // Clean up will be done after response.
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if ((auth_in_progress) &&
       (get_auth_client()->get_state() == S3AuthClientOpState::started)) {
     get_auth_client()->abort_chunk_auth_op();
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
 
@@ -825,11 +826,11 @@ void S3PutChunkUploadObjectAction::send_response_to_s3_client() {
   request->resume(false);
 
   startcleanup();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::startcleanup() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // TODO: Perf - all below tasks can be done in parallel
   // Any of the following steps fail, backgrounddelete will be able to perform
   // cleanups.
@@ -897,7 +898,7 @@ void S3PutChunkUploadObjectAction::startcleanup() {
 }
 
 void S3PutChunkUploadObjectAction::mark_new_oid_for_deletion() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   assert(!new_oid_str.empty());
 
   // update new oid, key = newoid, force_del = true
@@ -912,11 +913,11 @@ void S3PutChunkUploadObjectAction::mark_new_oid_for_deletion() {
       new_probable_del_rec->to_json(),
       std::bind(&S3PutChunkUploadObjectAction::next, this),
       std::bind(&S3PutChunkUploadObjectAction::next, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::mark_old_oid_for_deletion() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   assert(!old_oid_str.empty());
   assert(!new_oid_str.empty());
 
@@ -937,11 +938,11 @@ void S3PutChunkUploadObjectAction::mark_old_oid_for_deletion() {
       old_probable_del_rec->to_json(),
       std::bind(&S3PutChunkUploadObjectAction::next, this),
       std::bind(&S3PutChunkUploadObjectAction::next, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::remove_old_oid_probable_record() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   assert(!old_oid_str.empty());
   assert(!new_oid_str.empty());
 
@@ -956,11 +957,11 @@ void S3PutChunkUploadObjectAction::remove_old_oid_probable_record() {
       global_probable_dead_object_list_index_oid, old_oid_rec_key,
       std::bind(&S3PutChunkUploadObjectAction::next, this),
       std::bind(&S3PutChunkUploadObjectAction::next, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::remove_new_oid_probable_record() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   assert(!new_oid_str.empty());
 
   if (!motr_kv_writer) {
@@ -971,11 +972,11 @@ void S3PutChunkUploadObjectAction::remove_new_oid_probable_record() {
       global_probable_dead_object_list_index_oid, new_oid_str,
       std::bind(&S3PutChunkUploadObjectAction::next, this),
       std::bind(&S3PutChunkUploadObjectAction::next, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::delete_old_object() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // If PUT is success, we delete old object if present
   assert(old_object_oid.u_hi != 0ULL || old_object_oid.u_lo != 0ULL);
 
@@ -996,21 +997,21 @@ void S3PutChunkUploadObjectAction::delete_old_object() {
           &S3PutChunkUploadObjectAction::remove_old_object_version_metadata,
           this),
       std::bind(&S3PutChunkUploadObjectAction::next, this), old_layout_id);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::remove_old_object_version_metadata() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   object_metadata->remove_version_metadata(
       std::bind(&S3PutChunkUploadObjectAction::remove_old_oid_probable_record,
                 this),
       std::bind(&S3PutChunkUploadObjectAction::next, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::delete_new_object() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // If PUT failed, then clean new object.
   assert(s3_put_chunk_action_state !=
          S3PutChunkUploadObjectActionState::completed);
@@ -1021,13 +1022,13 @@ void S3PutChunkUploadObjectAction::delete_new_object() {
       std::bind(&S3PutChunkUploadObjectAction::remove_new_oid_probable_record,
                 this),
       std::bind(&S3PutChunkUploadObjectAction::next, this), layout_id);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutChunkUploadObjectAction::set_authorization_meta() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
                                   bucket_metadata->get_policy_as_json());
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
