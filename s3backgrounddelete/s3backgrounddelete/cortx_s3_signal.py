@@ -46,4 +46,4 @@ class DynamicConfigHandler(object):
         sighupArg.config = CORTXS3Config()
         sighupArg.logger.setLevel(sighupArg.config.get_file_log_level())
 
-        sighupArg.logger.error("Logging level has been changed")
+        sighupArg.logger.info("Logging level has been changed")
