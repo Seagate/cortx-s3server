@@ -1,0 +1,12 @@
+ldapLoginDN
+ldapLoginPW
+consoleURL
+s3Endpoints
+defaultEndpoint
+httpPort
+httpsPort
+defaultHost
+dataSource
+ldapHost
+ldapPort
+ldapSSLPort
