@@ -440,6 +440,10 @@ then
     exit 1
 fi
 
+# Stop s3backgrounddelete daemon
+systemctl stop s3backgroundproducer
+ststemctl stop s3backgroundconsumer
+
 basic_test_cmd_par=""
 if [ $basic_test_only -eq 1 ]
 then
