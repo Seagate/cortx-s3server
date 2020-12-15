@@ -668,23 +668,23 @@ TEST_F(S3PostCompleteActionTest, DeleteNewObject) {
   action_under_test_ptr->delete_new_object();
 }
 
-TEST_F(S3PostCompleteActionTest, DeleteOldObject) {
-  CREATE_WRITER_OBJ;
-  CREATE_MP_METADATA_OBJ;
+// TEST_F(S3PostCompleteActionTest, DeleteOldObject) {
+//   CREATE_WRITER_OBJ;
+//   CREATE_MP_METADATA_OBJ;
 
-  m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
-  int old_layout_id = 2;
-  action_under_test_ptr->old_object_oid = old_object_oid;
-  action_under_test_ptr->old_layout_id = old_layout_id;
-  action_under_test_ptr->set_abort_multipart(true);
+//   m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
+//   int old_layout_id = 2;
+//   action_under_test_ptr->old_object_oid = old_object_oid;
+//   action_under_test_ptr->old_layout_id = old_layout_id;
+//   action_under_test_ptr->set_abort_multipart(true);
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_))
-      .Times(AtLeast(1));
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
-              delete_object(_, _, old_layout_id)).Times(1);
+//   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_))
+//       .Times(AtLeast(1));
+//   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+//               delete_object(_, _, old_layout_id)).Times(1);
 
-  action_under_test_ptr->delete_old_object();
-}
+//   action_under_test_ptr->delete_old_object();
+// }
 
 TEST_F(S3PostCompleteActionTest, StartCleanupEmptyState) {
   action_under_test_ptr->startcleanup();

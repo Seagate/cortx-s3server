@@ -104,8 +104,8 @@ public class DateUtil {
         try {
             return dateFormatGmt.parse(dateFormatGmt.format(new Date())).getTime();
         } catch (ParseException ex) {
-            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UNPARSABLE_DATE,
-                    "Unparseable date", null);
+          IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UNPARSABLE_DATE,
+                      "Invalid date format.", null);
         }
 
         return 0;
@@ -136,8 +136,8 @@ public class DateUtil {
         try {
             return sdf.parse(date);
         } catch (ParseException e) {
-            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UNPARSABLE_DATE,
-                    "Unparseable date", null);
+          IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UNPARSABLE_DATE,
+                      "Invalid date format.", null);
         }
 
         return null;

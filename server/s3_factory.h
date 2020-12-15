@@ -46,6 +46,14 @@ class S3BucketMetadataFactory {
            "S3BucketMetadataFactory::create_bucket_metadata_obj\n");
     return std::make_shared<S3BucketMetadataV1>(req);
   }
+
+  virtual std::shared_ptr<S3BucketMetadata> create_bucket_metadata_obj(
+      std::shared_ptr<S3RequestObject> req,
+      const std::string& str_bucket_name) {
+    s3_log(S3_LOG_DEBUG, "",
+           "S3BucketMetadataFactory::create_bucket_metadata_obj\n");
+    return std::make_shared<S3BucketMetadataV1>(req, str_bucket_name);
+  }
 };
 
 class S3ObjectMetadataFactory {
@@ -58,6 +66,16 @@ class S3ObjectMetadataFactory {
            "S3ObjectMetadataFactory::create_object_metadata_obj\n");
     std::shared_ptr<S3ObjectMetadata> meta =
         std::make_shared<S3ObjectMetadata>(req);
+    meta->set_object_list_index_oid(indx_oid);
+    return meta;
+  }
+  virtual std::shared_ptr<S3ObjectMetadata> create_object_metadata_obj(
+      std::shared_ptr<S3RequestObject> req, const std::string& str_bucket_name,
+      const std::string& str_object_name, m0_uint128 indx_oid = {0ULL, 0ULL}) {
+    s3_log(S3_LOG_DEBUG, "",
+           "S3ObjectMetadataFactory::create_object_metadata_obj\n");
+    std::shared_ptr<S3ObjectMetadata> meta = std::make_shared<S3ObjectMetadata>(
+        req, str_bucket_name, str_object_name);
     meta->set_object_list_index_oid(indx_oid);
     return meta;
   }
@@ -213,6 +231,14 @@ class S3GlobalBucketIndexMetadataFactory {
            "S3GlobalBucketIndexMetadataFactory::create_s3_root_bucket_index_"
            "metadata\n");
     return std::make_shared<S3GlobalBucketIndexMetadata>(req);
+  }
+  virtual std::shared_ptr<S3GlobalBucketIndexMetadata>
+  create_s3_global_bucket_index_metadata(std::shared_ptr<S3RequestObject> req,
+                                         const std::string& str_bucket_name) {
+    s3_log(S3_LOG_DEBUG, "",
+           "S3GlobalBucketIndexMetadataFactory::create_s3_root_bucket_index_"
+           "metadata\n");
+    return std::make_shared<S3GlobalBucketIndexMetadata>(req, str_bucket_name);
   }
 };
 

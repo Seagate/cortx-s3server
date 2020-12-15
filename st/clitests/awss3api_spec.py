@@ -91,86 +91,99 @@ def create_object_list_file(file_name, obj_list=[], quiet_mode="false"):
 def delete_object_list_file(file_name):
     os.remove(file_name)
 
+
 #******** Create Bucket ********
 AwsTest('Aws can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+
+# Ensure no "Error during pagination: The same next token was received twice:" is seen in ListObjectsV2.
+# If command is successful, it ensures no error, inlcuding pagination error.
+# Create 2 objects with name containing:
+#  loadgen_test_3XQEX2S6WFEDA4B32AJ3T6FAR4XVNKRAE6JET2LSJFFVACUV4MOMLCSH42RXFX22IXYWZS3YFFWYUJE4STNJPGFDOLIDLTQDZ6J2QLA_
+# The above key string is specifically chosen, as issue 'Error during pagination' was seen when the key was similar to such string.
+obj_list = []
+for x in range(2):
+    key = "loadgen_test_3XQEX2S6WFEDA4B32AJ3T6FAR4XVNKRAE6JET2LSJFFVACUV4MOMLCSH42RXFX22IXYWZS3YFFWYUJE4STNJPGFDOLIDLTQDZ6J2QLA_%d" % (x)
+    AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
+        .execute_test().command_is_successful()
+    obj_list.append(key)
+
+#  Create object list file
+object_list_file = create_object_list_file("obj_list_v2_keys.json", obj_list, "true")
+
+# List objects using list-objects-v2, page size 7 (first page will have 7 keys, and next page 3 keys)
+list_v2_options = {'page-size':1}
+result = AwsTest(('Aws list objects using page size \'%d\'') % (list_v2_options['page-size']))\
+    .list_objects_v2("seagatebucket", **list_v2_options)\
+    .execute_test()\
+    .command_is_successful()
+
+# Delete all created objects in bucket 'seagatebucket'
+AwsTest('Aws delete objects')\
+    .delete_multiple_objects("seagatebucket", object_list_file)\
+    .execute_test()\
+    .command_is_successful()\
+    .command_response_should_be_empty()
+
+delete_object_list_file(object_list_file)
+
 '''
 Create following keys (both, regular and heirarchical) into a bucket:
+----
 asdf
-boo
-boo/0...boo/99
+bo0
+boo/0...boo/5
 boo#
 boo+
-foo
-foo/0...foo/99
+fo0
+foo/0...foo/32
 foo#123
 foo+123
-quax
-quax/0...quax/99
+qua0
+quax/0...quax/10
 quax#
 quax+
+-----
 '''
-# Step 1: Create above keys into bucket 'seagatebucket'
-#  Step 1.1:
-#   Create keys: boo/0...boo/99
+# Step 0: Create directory with above structure.
+# Create temporary 's3testupload' directory
 obj_list = []
-for x in range(100):
-    key = "boo/%d" % (x)
-    AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-        .execute_test().command_is_successful()
+temp_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "s3testupload")
+os.makedirs(temp_dir, exist_ok=True)
+# Clear contents of 's3testupload' directory
+upload_content = temp_dir + "/*"
+os.system("rm -rf " + upload_content)
+# List of directories to create
+dirs = ['boo', 'foo', 'quax']
+filesize = 1024
+object_range = [5, 32, 10]
+index = 0 
+for child_dir in dirs:
+    out_dir = os.path.join(temp_dir, child_dir)
+    os.makedirs(out_dir, exist_ok=True)
+    # Create files within directory
+    for i in range(object_range[index]):
+        filename = str(i)
+        key = "%s/%s" % (child_dir, filename)
+        file_to_create = os.path.join(out_dir, filename)
+        with open(file_to_create, 'wb+') as fout:
+            fout.write(os.urandom(filesize))
+        obj_list.append(key)
+    index = index + 1
+
+# Create remaining root level files
+file_list = ['asdf', 'bo0', 'boo#', 'boo+', 'fo0', 'foo#123', 'foo+123', 'qua0', 'quax#', 'quax+']
+for root_file in file_list:
+    file_to_create = os.path.join(temp_dir, root_file)
+    key = root_file
+    with open(file_to_create, 'wb+') as fout:
+        fout.write(os.urandom(filesize))
     obj_list.append(key)
-#   Create keys: foo/0...foo/99
-for x in range(100):
-    key = "foo/%d" % (x)
-    AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
+
+# Step 1: Upload folder recrusively.
+#  Step 1.1:
+#   Create above keys into bucket 'seagatebucket'
+AwsTest('Aws Upload folder recursively').upload_objects("seagatebucket", temp_dir)\
         .execute_test().command_is_successful()
-    obj_list.append(key)
-#   Create keys: quax/0...quax/99
-for x in range(100):
-    key = "quax/%d" % (x)
-    AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-        .execute_test().command_is_successful()
-    obj_list.append(key)
-#   Create regular keys: asdf, boo, boo#, boo+, foo, foo#123, foo+123, quax, quax#, quax+
-key = "asdf"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)  
-key = "boo"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)
-key = "boo+"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)
-key = "boo#"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)
-key = "foo"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)
-key = "foo+123"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)
-key = "foo#123"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)
-key = "quax"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)
-key = "quax#"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)
-key = "quax+"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)
 
 #  Step 1.2: Create object list file
 object_list_file = create_object_list_file("obj_list_mix_keys.json", obj_list, "true")
@@ -178,13 +191,12 @@ object_list_file = create_object_list_file("obj_list_mix_keys.json", obj_list, "
 # Step 2: Validate the uploaded objects using s3api
 # Step 2.1: command:= aws s3api list-objects-v2 --bucket <bucket> --page-size 1 --prefix "foo" --delimiter "/"
 # Expected output: 
-#   foo
 #   foo#123
 #   foo+123
 #   foo/ (under COMMONPREFIXES)
 prefix = "foo"
 delimiter = "/"
-expected_key_list = ['foo', 'foo#123', 'foo+123']
+expected_key_list = ['foo#123', 'foo+123']
 list_v2_options = {"prefix":prefix, "delimiter":delimiter,"page-size":1}
 result = AwsTest(('Aws list objects using prefix \'%s\' and delimiter %s') % (prefix, delimiter))\
     .list_objects_v2("seagatebucket", **list_v2_options)\
@@ -207,13 +219,13 @@ if check is False:
 # Step 2.2: command:= aws s3api list-objects-v2 --bucket <bucket> --page-size 2 --delimiter "/"
 # Expected output: 
 #  asdf
-#  boo
+#  bo0
 #  boo#
 #  boo+
-#  foo
+#  fo0
 #  foo#123
 #  foo+123
-#  quax
+#  qua0
 #  quax#
 #  quax+
 #  <items under common prefixes are as follows>
@@ -221,7 +233,7 @@ if check is False:
 #  foo/
 #  quax/
 prefix = ""
-expected_key_list = ['asdf', 'boo', 'boo#', 'boo+', 'foo', 'foo#123', 'foo+123', 'quax', 'quax#', 'quax+']
+expected_key_list = ['asdf', 'bo0', 'boo#', 'boo+', 'fo0', 'foo#123', 'foo+123', 'qua0', 'quax#', 'quax+']
 expected_common_prefix = ['boo/', 'foo/', 'quax/']
 list_v2_options = {"delimiter":delimiter, "page-size":2}
 result = AwsTest(('Aws list objects using prefix \'%s\' and delimiter %s') % (prefix, delimiter))\
@@ -242,16 +254,15 @@ check = all(item in common_prefix for item in expected_common_prefix)
 if check is False:
     assert False, "Failed to match expected common prefix in the list"
 
-# Step 2.3.1: command:= aws s3api list-objects-v2 --bucket <bucket> --max-items 2 --prefix "boo" --delimiter "/"
+# Step 2.3.1: command:= aws s3api list-objects-v2 --bucket <bucket> --max-items 1 --prefix "boo" --delimiter "/"
 # Expected part1 output:
-#  boo
 #  boo#
 #  boo/ (under common prefix)
 prefix = "boo"
-expected_key_list_part1 = ['boo', 'boo#']
+expected_key_list_part1 = ['boo#']
 expected_key_list_part2 = ['boo+']
 expected_common_prefix = ['boo/']
-list_v2_options = {"prefix":prefix, "delimiter":delimiter, "max-items":2}
+list_v2_options = {"prefix":prefix, "delimiter":delimiter, "max-items":1}
 result = AwsTest(('Aws list objects using prefix \'%s\' and delimiter %s') % (prefix, delimiter))\
     .list_objects_v2("seagatebucket", **list_v2_options)\
     .execute_test()\
@@ -299,77 +310,153 @@ AwsTest('Aws delete objects')\
     .command_response_should_be_empty()
 
 delete_object_list_file(object_list_file)
+os.system("rm -rf " + upload_content)
+
 
 #******** Verify pagination and NextToken in List objects V1  **********
-# Step 1. Create total 110 objets in bucket
-obj_110_list = []
-for x in range(110):
-    key = "object%d" % (x)
-    AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-        .execute_test().command_is_successful()
-    obj_110_list.append(key)
+# Step 1. Create total 35 objets in bucket
+   # Create files within directory
+obj_35_list = []
+filesize = 1024
+for i in range(35):
+    key = "object%s" % (str(i))
+    file_to_create = os.path.join(temp_dir, key)
+    with open(file_to_create, 'wb+') as fout:
+        fout.write(os.urandom(filesize))
+    obj_35_list.append(key)
 
+# Step 1: Upload folder recrusively.
+#  Create above keys into bucket 'seagatebucket'
+AwsTest('Aws Upload folder recursively').upload_objects("seagatebucket", temp_dir)\
+        .execute_test().command_is_successful()
 # Step 2.
 # Create object list file
-object_list_file = create_object_list_file("obj_list_110_keys.json", obj_110_list, "true")
+object_list_file = create_object_list_file("obj_list_35_keys.json", obj_35_list, "true")
 
-# Step 3. List first 100 objects. This will result into NextToken != None
-# NextToken will point to object9 - the last object key in the response.
-result = AwsTest('Aws list the first 100 objects')\
-    .list_objects("seagatebucket", None, "100")\
+# Step 3. List first 20 objects. This will result into NextToken != None
+# command: aws s3api list-objects --bucket <bucket> --max-items 20
+# NextToken will point to object26 - the last object key in the response.
+result = AwsTest('Aws list the first 20 objects')\
+    .list_objects("seagatebucket", None, "20")\
     .execute_test()\
     .command_is_successful()
 
-# Step 4. Validate
+#Step 4 Validation
+# Step 4.1 Validate presence of NextToken in response
 list_response = get_aws_cli_object(result.status.stdout)
-# Verify 'object9' is present and 'object99' is not present in the resultant list 'list_response'
+# Verify 'object26' is present and 'object27' is not present in the resultant list 'list_response'
 if list_response is not None:
-    assert 'object9' in list_response["keys"], "Failed to see object9 in the response"
-    assert 'object99' not in list_response["keys"], "Failed: Unexpected key object99 in the response"
+    assert 'object26' in list_response["keys"], "Failed to see object26 in the response"
+    assert 'object27' not in list_response["keys"], "Failed: Unexpected key object27 in the response"
 else:
     assert False, "Failed to list objects from bucket"
 # Verify that NextToken is in 'list_response' and it is not empty
 assert (("next_token" in list_response.keys()) and (len(list_response["next_token"].strip()) > 0)), "NextToken is either not present or empty"
 
-# Step 5. Cleanup: Delete 110 objects, and remove object list file containing a list of 110 objects
-# Delete all 110 objects in bucket
-AwsTest('Aws delete objects: [object0...object109]')\
+# Step 4.2 Validate response using starting token
+next_token = list_response["next_token"]
+# command:= aws s3api list-objects --bucket <bucket> --starting-token <next_token>
+# Expected output:
+#   keys = ['object27', 'object28', 'object29', 'object3', 'object30', 'object31', 'object32', 'object33', \
+#   'object34', 'object4', 'object5', 'object6', 'object7', 'object8', 'object9']
+expected_key_list_part2 = ['object27', 'object28', 'object29', 'object3', 'object30', 'object31', 'object32', 'object33', \
+    'object34', 'object4', 'object5', 'object6', 'object7', 'object8', 'object9']
+list_options = {"starting-token":next_token}
+result = AwsTest(('Aws list objects using starting token:%s') % (next_token))\
+    .list_objects("seagatebucket", starting_token=next_token)\
+    .execute_test()\
+    .command_is_successful()
+# Process result set
+lv1_response = get_aws_cli_object(result.status.stdout)
+if lv1_response is None:
+    assert False, "Failed to list objects"
+# Get keys from response
+obj_keys = lv1_response["keys"]
+check = all(item in obj_keys for item in expected_key_list_part2)
+if check is False:
+    assert False, "Failed to match expected keys in the list\n:%s" % str(obj_keys)
+
+# Step 5. Cleanup: Delete all 35 objects, and remove object list file containing a list of 35 objects
+# Delete all 35 objects in bucket
+AwsTest('Aws delete objects: [object0...object35]')\
     .delete_multiple_objects("seagatebucket", object_list_file)\
     .execute_test()\
     .command_is_successful()\
     .command_response_should_be_empty()
 
 delete_object_list_file(object_list_file)
+os.system("rm -rf " + upload_content)
+os.rmdir(temp_dir)
 
 
-# ******** Create hierarchical objects (>30) in bucket and list them *********
-obj_list = []
-for x in range(35):
-    key = "test/test1/key%d" % (x)
-    AwsTest('Aws Upload object with hierarchical key path').put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-        .execute_test().command_is_successful()
-    obj_list.append(key)
+# ************ CopyObject API supported *****************************************************************
 
-# Create object list file
-hierarchical_object_list_file = create_object_list_file("obj_list_hierarchical_keys.json", obj_list, "true")
-# Lists hierarchical objects in bucket with delimiter "/"
-# The output of list objects should only have common prefix: test/
-AwsTest('Aws List objects with hierarchical key paths, using delimiter "/"')\
-    .list_objects_prefix_delimiter("seagatebucket", None, None, "/")\
-    .execute_test().command_is_successful().command_response_should_have("test/")
+AwsTest('Aws can put object').put_object("seagatebucket", "1kfile", 1024)\
+    .execute_test().command_is_successful()
 
-# Delete all hierarchical objects in bucket
-AwsTest('Aws delete multiple objects with hierarchical names in bucket')\
-    .delete_multiple_objects("seagatebucket", hierarchical_object_list_file)\
-    .execute_test()\
-    .command_is_successful()\
-    .command_response_should_be_empty()
+# Positive: copy-object from a bucket to the same bucket as destination.
+AwsTest('Aws can copy object to same bucket').copy_object("seagatebucket/1kfile", "seagatebucket", "1kfile-copy")\
+    .execute_test().command_is_successful().command_response_should_have("COPYOBJECTRESULT")
 
-# Delete object list file
-delete_object_list_file(hierarchical_object_list_file)
+# Positive: copy-object to different destination bucket.
+AwsTest('Aws can create destination bucket for CopyObject API')\
+    .create_bucket("destination-seagatebucket")\
+    .execute_test().command_is_successful()
 
+AwsTest('Aws can copy object to different bucket')\
+    .copy_object("seagatebucket/1kfile", "destination-seagatebucket", "1kfile-copy")\
+    .execute_test().command_is_successful().command_response_should_have("COPYOBJECTRESULT")
 
-# ************ Put object with specified content-type ************
+# Negative: copy-object to non-existing destination bucket
+AwsTest('Aws cannot copy object to non-existing destination bucket')\
+    .copy_object("seagatebucket/1kfile", "my-bucket", "1kfile-copy")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
+
+# Negative: copy-object from non-existing source bucket
+AwsTest('Aws cannot copy object from non-existing source bucket')\
+    .copy_object("my-seagate-bucket/1kfile", "seagatebucket", "1kfile-copy")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
+
+# Negative: copy-object from non-existing source object
+AwsTest('Aws cannot copy object from non-existing source object')\
+    .copy_object("seagatebucket/2kfile", "destination-seagatebucket", "2kfile-copy")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchKey")
+
+# Negative: copy-object when source and destination are same
+AwsTest('Aws cannot copy when source and destintion are same')\
+    .copy_object("seagatebucket/1kfile", "seagatebucket", "1kfile")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidRequest")
+
+# Commenting out below test as this fails with memory error :-
+# fout.write(os.urandom(self.filesize))
+# MemoryError
+
+# Negative: copy-object when source object size is greater than 5GB
+# AwsTest('Aws can put 6GB object').put_object("seagatebucket", "6gbfile", 6442450944)\
+#    .execute_test().command_is_successful()
+
+# AwsTest('Aws cannot copy 6gb source object').copy_object("seagatebucket/6gbfile", "seagatebucket", "6gbfile-copy")\
+#    .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidRequest")
+
+# Cleanup for CopyObject API
+AwsTest('Aws can delete 1kfile').delete_object("seagatebucket", "1kfile")\
+    .execute_test().command_is_successful()
+
+# AwsTest('Aws can delete 6gbfile').delete_object("seagatebucket", "6gbfile")\
+#    .execute_test().command_is_successful()
+
+AwsTest('Aws can delete 1kfile-copy from source bucket').delete_object("seagatebucket", "1kfile-copy")\
+    .execute_test().command_is_successful()
+
+AwsTest('Aws can delete 1kfile-copy from destination bucket').delete_object("destination-seagatebucket", "1kfile-copy")\
+    .execute_test().command_is_successful()
+
+AwsTest('Aws can delete destination bucket').delete_bucket("destination-seagatebucket")\
+    .execute_test().command_is_successful()
+
+# **********************************************************************************************
+
+# ************ Put object with specified content-type ******************************************
 in_headers = {
     "content-type" : "application/blabla"
     }
@@ -381,6 +468,8 @@ AwsTest('Aws can get object with the same content-type').get_object("seagatebuck
 
 AwsTest('Aws can delete object').delete_object("seagatebucket", "3kfile")\
     .execute_test().command_is_successful()
+
+
 
 #*********** Verify aws s3api list-objects-v2 ***********
 # Setup objects in bucket
@@ -450,7 +539,7 @@ for x in obj_list:
         .execute_test().command_is_successful()
 
 
-# ********* Specific ListObject V2 hierarchical object key tests  **********
+# ********* Verify ListObject V2 hierarchical object key tests  **********
 # Create below hierarchical objects in bucket and list them in different ways
 # test/.uds/volumeGroupA/vol0...vol30
 # test/.uds/volumeGroupB/lun0...lun4

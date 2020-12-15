@@ -42,8 +42,8 @@ public class ClientRequestParser {
             = "AWS [A-Za-z0-9-_]+:[a-zA-Z0-9+/=]+";
     private static final String AWS_V4_AUTHRORIAZATION_PATTERN
             = "AWS4-HMAC-SHA256[\\w\\W]+";
-    private ResponseGenerator responseGenerator
-            = new ResponseGenerator();
+    private
+     ResponseGenerator responseGenerator = new ResponseGenerator();
     private final static Logger LOGGER =
             LoggerFactory.getLogger(ClientRequestParser.class.getName());
     private static final Pattern ACCESS_KEY_PATTERN  = Pattern.compile("[\\w-]+");
@@ -94,7 +94,10 @@ public class ClientRequestParser {
 
         if (authorizationHeader == null ||
             authorizationHeader.replaceAll("\\s+", "").isEmpty()) {
-            return null;
+
+          ServerResponse serverResponse =
+              new ResponseGenerator().AccessDenied();
+          throw new InvalidArgumentException(serverResponse);
         }
         ClientRequestParser clientRequestParser = new ClientRequestParser();
 
@@ -152,9 +155,8 @@ public class ClientRequestParser {
 
             return (AWSRequestParser) obj;
         } catch (ClassNotFoundException | SecurityException ex) {
-            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.CLASS_NOT_FOUND_EX,
-                    "Failed to get required class",
-                    String.format("\"cause\": \"%s\"", ex.getCause()));
+          LOGGER.error("Failed to get required class.",
+                       String.format("\"cause\": \"%s\"", ex.getCause()));
         } catch (IllegalAccessException | IllegalArgumentException | InstantiationException ex) {
             LOGGER.error("Error occured while creating aws request parser");
             LOGGER.error(ex.toString());

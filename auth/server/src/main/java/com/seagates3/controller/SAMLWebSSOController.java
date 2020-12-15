@@ -62,6 +62,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http.QueryStringEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * TODO - Refactor this class to inherit from Abstract controller.
@@ -74,6 +76,9 @@ public class SAMLWebSSOController {
     private final String USER_NAME = "user_name";
     private final String ACCOUNT_NAME = "account_name";
 
+    private
+     final static Logger LOGGER =
+         LoggerFactory.getLogger(SAMLWebSSOController.class.getName());
     /**
      * Constructor
      *
@@ -231,8 +236,7 @@ public class SAMLWebSSOController {
                     Unpooled.wrappedBuffer(responseMessage.getBytes("UTF-8"))
             );
         } catch (UnsupportedEncodingException ex) {
-            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
-                    "UTF-8 encoding is not supported", null);
+          LOGGER.error("UTF-8 encoding is not supported.");
             response = null;
         }
         if (response != null) {

@@ -52,10 +52,10 @@ s3iamcli reads config.yaml from home dir ~/.sgs3iamcli/config.xml
 Sample content of config.yaml file
 '''
 ENDPOINTS:
-    IAM: http://iam.seagate.com:9085
-    IAM_HTTPS: https://iam.seagate.com:9086
-    STS: http://sts.seagate.com:9085
-    STS_HTTPS: https://sts.seagate.com:9086
+    IAM: http://iam.seagate.com:28050
+    IAM_HTTPS: https://iam.seagate.com:28051
+    STS: http://sts.seagate.com:28050
+    STS_HTTPS: https://sts.seagate.com:28051
     S3: http://s3.seagate.com
     S3_HTTPS: https://s3.seagate.com
 
