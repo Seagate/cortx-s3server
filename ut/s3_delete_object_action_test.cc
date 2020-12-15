@@ -26,6 +26,7 @@
 #include "s3_error_codes.h"
 #include "s3_test_utils.h"
 #include "s3_ut_common.h"
+#include "s3_common_utilities.h"
 
 using ::testing::Eq;
 using ::testing::Return;
@@ -287,6 +288,69 @@ TEST_F(S3DeleteObjectActionTest, SendAnyFailedResponse) {
       .Times(AtLeast(1));
 
   action_under_test->send_response_to_s3_client();
+}
+
+TEST_F(S3DeleteObjectActionTest, DeleteObject) {
+  CREATE_OBJECT_METADATA;
+
+  S3Option::get_instance()->set_s3server_obj_delayed_del_enabled(false);
+
+  struct m0_uint128 obj_oid = {0x1ffff, 0x1ffff};
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(obj_oid));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .Times(AtLeast(1));
+
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              delete_object(_, _, _)).Times(1);
+
+  action_under_test->delete_object();
+}
+
+TEST_F(S3DeleteObjectActionTest, DelayedDeleteObject) {
+  CREATE_OBJECT_METADATA;
+
+  S3Option::get_instance()->set_s3server_obj_delayed_del_enabled(true);
+
+  int layout_id = 2;
+  struct m0_uint128 obj_oid = {0x1ffff, 0x1ffff};
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(obj_oid));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .Times(0);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              delete_object(_, _, layout_id)).Times(0);
+  action_under_test->delete_object();
+}
+
+TEST_F(S3DeleteObjectActionTest, SizeBucketingOfObjects) {
+
+  std::string original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 0);
+  EXPECT_EQ("IXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 1025);
+  EXPECT_EQ("HXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 52428800);
+  EXPECT_EQ("GXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 52428801);
+  EXPECT_EQ("FXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 107374182400);
+  EXPECT_EQ("EXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 107374182401);
+  EXPECT_EQ("DXYZ", original_string);
+
 }
 
 TEST_F(S3DeleteObjectActionTest, SendSuccessResponse) {

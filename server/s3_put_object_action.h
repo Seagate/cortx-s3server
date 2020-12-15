@@ -191,6 +191,7 @@ class S3PutObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutObjectActionTest, SendSuccessResponse);
   FRIEND_TEST(S3PutObjectActionTest, SendFailedResponse);
   FRIEND_TEST(S3PutObjectActionTest, ConsumeIncomingContentRequestTimeout);
+  FRIEND_TEST(S3PutObjectActionTest, DelayedDeleteOldObject);
 };
 
 #endif

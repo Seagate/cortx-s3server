@@ -29,6 +29,7 @@
 #include "s3_ut_common.h"
 #include "s3_m0_uint128_helper.h"
 #include "s3_common.h"
+#include "s3_common_utilities.h"
 
 extern int s3log_level;
 
@@ -668,23 +669,77 @@ TEST_F(S3PostCompleteActionTest, DeleteNewObject) {
   action_under_test_ptr->delete_new_object();
 }
 
-// TEST_F(S3PostCompleteActionTest, DeleteOldObject) {
-//   CREATE_WRITER_OBJ;
-//   CREATE_MP_METADATA_OBJ;
+TEST_F(S3PostCompleteActionTest, DeleteOldObject) {
+  CREATE_WRITER_OBJ;
+  CREATE_MP_METADATA_OBJ;
 
-//   m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
-//   int old_layout_id = 2;
-//   action_under_test_ptr->old_object_oid = old_object_oid;
-//   action_under_test_ptr->old_layout_id = old_layout_id;
-//   action_under_test_ptr->set_abort_multipart(true);
+  S3Option::get_instance()->set_s3server_obj_delayed_del_enabled(false);
 
-//   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_))
-//       .Times(AtLeast(1));
-//   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
-//               delete_object(_, _, old_layout_id)).Times(1);
+  m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
+  int old_layout_id = 2;
+  action_under_test_ptr->old_object_oid = old_object_oid;
+  action_under_test_ptr->old_layout_id = old_layout_id;
+  action_under_test_ptr->set_abort_multipart(true);
 
-//   action_under_test_ptr->delete_old_object();
-// }
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_))
+      .Times(AtLeast(1));
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              delete_object(_, _, old_layout_id)).Times(AtLeast(1));
+  
+  action_under_test_ptr->delete_old_object();
+}
+
+TEST_F(S3PostCompleteActionTest, DelayedDeleteOldObject) {
+  CREATE_WRITER_OBJ;
+  CREATE_MP_METADATA_OBJ;
+
+  S3Option::get_instance()->set_s3server_obj_delayed_del_enabled(true);
+
+  m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
+  int old_layout_id = 2;
+  action_under_test_ptr->old_object_oid = old_object_oid;
+  action_under_test_ptr->old_layout_id = old_layout_id;
+  action_under_test_ptr->set_abort_multipart(true);
+
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_))
+      .Times(0);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              delete_object(_, _, old_layout_id)).Times(0);
+  
+  action_under_test_ptr->clear_tasks();
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PostCompleteActionTest::func_callback_one, this);
+  action_under_test_ptr->delete_old_object();
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3PostCompleteActionTest, SizeBucketingOfObjects) {
+
+  std::string original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 0);
+  EXPECT_EQ("IXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 1025);
+  EXPECT_EQ("HXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 52428800);
+  EXPECT_EQ("GXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 52428801);
+  EXPECT_EQ("FXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 107374182400);
+  EXPECT_EQ("EXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 107374182401);
+  EXPECT_EQ("DXYZ", original_string);
+
+}
 
 TEST_F(S3PostCompleteActionTest, StartCleanupEmptyState) {
   action_under_test_ptr->startcleanup();

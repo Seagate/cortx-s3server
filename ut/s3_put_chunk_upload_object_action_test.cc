@@ -26,6 +26,7 @@
 #include "s3_test_utils.h"
 #include "s3_ut_common.h"
 #include "s3_m0_uint128_helper.h"
+#include "s3_common_utilities.h"
 
 using ::testing::Eq;
 using ::testing::Return;
@@ -691,6 +692,60 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   action_under_test->write_object(async_buffer_factory->get_mock_buffer());
 
   EXPECT_TRUE(action_under_test->motr_write_in_progress);
+}
+
+TEST_F(S3PutChunkUploadObjectActionTestNoAuth, 
+        DelayedDeleteOldObject) {
+  CREATE_OBJECT_METADATA;
+  
+  S3Option::get_instance()->set_s3server_obj_delayed_del_enabled(true);
+
+  m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
+  int old_layout_id = 2;
+  action_under_test->old_object_oid = old_object_oid;
+  action_under_test->old_layout_id = old_layout_id;
+
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_))
+      .Times(0);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              delete_object(_, _, old_layout_id)).Times(0);
+
+  action_under_test->clear_tasks();
+  ACTION_TASK_ADD_OBJPTR(
+      action_under_test,
+      S3PutChunkUploadObjectActionTestBase::func_callback_one, this);
+
+  action_under_test->delete_old_object();
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3PutChunkUploadObjectActionTestNoAuth, 
+        SizeBucketingOfObjects) {
+
+  std::string original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 0);
+  EXPECT_EQ("IXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 1025);
+  EXPECT_EQ("HXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 52428800);
+  EXPECT_EQ("GXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 52428801);
+  EXPECT_EQ("FXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 107374182400);
+  EXPECT_EQ("EXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 107374182401);
+  EXPECT_EQ("DXYZ", original_string);
+
 }
 
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,

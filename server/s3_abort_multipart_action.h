@@ -121,6 +121,7 @@ class S3AbortMultipartAction : public S3BucketAction {
               DeletePartIndexWithPartsFailedToLaunch);
   FRIEND_TEST(S3AbortMultipartActionTest, Send200SuccessToS3Client);
   FRIEND_TEST(S3AbortMultipartActionTest, Send503InternalErrorToS3Client);
+  FRIEND_TEST(S3AbortMultipartActionTest, SizeBucketingOfObjects);
 };
 
 #endif

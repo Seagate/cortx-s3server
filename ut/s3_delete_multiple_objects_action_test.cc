@@ -29,6 +29,7 @@
 #include "s3_ut_common.h"
 #include "s3_m0_uint128_helper.h"
 #include "s3_option.h"
+#include "s3_common_utilities.h"
 
 using ::testing::Eq;
 using ::testing::Return;
@@ -844,4 +845,47 @@ TEST_F(S3DeleteMultipleObjectsResponseBodyTest, AllSucessQuietModeOff) {
   std::string &response_xml = action_under_test->to_xml(false);
   // Verify 'response_xml' matches 'expect_xml'
   EXPECT_STREQ(expect_xml.c_str(), response_xml.c_str());
+}
+
+TEST_F(S3DeleteMultipleObjectsActionTest, 
+        DelayedDeleteMultipleObjects) {
+
+  S3Option::get_instance()->set_s3server_obj_delayed_del_enabled(true);
+
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_motr_kvs_writer;
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              delete_objects(_, _, _, _)).Times(0);
+  
+  action_under_test->cleanup();
+}
+
+TEST_F(S3DeleteMultipleObjectsActionTest, SizeBucketingOfObjects) {
+
+  std::string original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 0);
+  EXPECT_EQ("IXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 1025);
+  EXPECT_EQ("HXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 52428800);
+  EXPECT_EQ("GXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 52428801);
+  EXPECT_EQ("FXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 107374182400);
+  EXPECT_EQ("EXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 107374182401);
+  EXPECT_EQ("DXYZ", original_string);
+
 }

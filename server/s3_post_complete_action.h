@@ -191,11 +191,14 @@ class S3PostCompleteAction : public S3ObjectAction {
   FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientSuccess);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteNewObject);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObject);
+  FRIEND_TEST(S3PostCompleteActionTest, DelayedDeleteOldObject);
+  FRIEND_TEST(S3PostCompleteActionTest, SizeBucketingOfObjects);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteMultipartMetadataSucessWithAbort);
   FRIEND_TEST(S3PostCompleteActionTest, StartCleanupValidationFailed);
   FRIEND_TEST(S3PostCompleteActionTest, StartCleanupProbableEntryRecordFailed);
   FRIEND_TEST(S3PostCompleteActionTest,
               StartCleanupAbortedSinceValidationFailed);
+              
 };
 
 #endif
