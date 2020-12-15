@@ -314,7 +314,7 @@ then
     /opt/seagate/cortx/s3/install/ldap/setup_ldap.sh --defaultpasswd --forceclean --skipssl
 
     ldap_passwd=$(java -jar $encrypt_cli -d)
-    # /opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh -h /root/host_file -p $ldap_passwd
+    /opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh -h /root/host_file -p $ldap_passwd
 
     if [[ -f /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf ]]
     then
