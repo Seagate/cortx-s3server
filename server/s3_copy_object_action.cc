@@ -249,29 +249,30 @@ void S3CopyObjectAction::read_data_block() {
   assert(!read_in_progress);
   assert(bytes_left_to_read > 0);
 
-  const size_t max_blocks_in_one_read_op =
-      S3Option::get_instance()->get_motr_units_per_request();
-  const size_t rest_blocks =
-      (bytes_left_to_read + motr_unit_size - 1) / motr_unit_size;
+  const auto n_blocks = std::min<size_t>(
+      S3Option::get_instance()->get_motr_units_per_request(),
+      (bytes_left_to_read + motr_unit_size - 1) / motr_unit_size);
 
   if (motr_reader->read_object_data(
-          std::min(rest_blocks, max_blocks_in_one_read_op),
+          n_blocks,
           std::bind(&S3CopyObjectAction::read_data_block_success, this),
           std::bind(&S3CopyObjectAction::read_data_block_failed, this))) {
 
-    s3_log(S3_LOG_DEBUG, request_id, "Data read is started");
+    s3_log(S3_LOG_DEBUG, request_id, "Read of %zu data block is started",
+           n_blocks);
     read_in_progress = true;
-    return;
-  }
-  if (motr_reader->get_state() == S3MotrReaderOpState::failed_to_launch) {
-    set_s3_error("ServiceUnavailable");
-    s3_log(S3_LOG_ERROR, request_id,
-           "read_object_data() failed due to motr_entity_open failure\n");
   } else {
-    set_s3_error("InternalError");
+    copy_failed = true;
+    s3_log(S3_LOG_ERROR, request_id, "Read of %zu data block failed to start",
+           n_blocks);
+    set_s3_error(motr_reader->get_state() ==
+                         S3MotrReaderOpState::failed_to_launch
+                     ? "ServiceUnavailable"
+                     : "InternalError");
+    if (!write_in_progress) {
+      send_response_to_s3_client();
+    }
   }
-  send_response_to_s3_client();
-
   s3_log(S3_LOG_DEBUG, NULL, "Exiting\n");
 }
 
@@ -321,15 +322,14 @@ void S3CopyObjectAction::write_data_block() {
 
   S3BufferSequence buffer_sequence;
 
-  char* p_data;
+  char* p_data = nullptr;
   size_t block_size = motr_reader->get_first_block(&p_data);
 
-  unsigned block_in_chunk = 0;
+  unsigned blocks_in_chunk = 0;
   size_t bytes_in_chunk = 0;
 
   while (block_size) {
-    assert(p_data != NULL);
-    assert(block_size && block_size <= (size_t)motr_unit_size);
+    assert(p_data != nullptr);
 
     if (block_size >= bytes_left_to_read) {
       block_size = bytes_left_to_read;
@@ -340,23 +340,32 @@ void S3CopyObjectAction::write_data_block() {
     buffer_sequence.emplace_back(p_data, block_size);
 
     bytes_in_chunk += block_size;
-    ++block_in_chunk;
+    ++blocks_in_chunk;
 
     block_size = motr_reader->get_next_block(&p_data);
   }
-  assert(block_in_chunk);
-  assert(bytes_in_chunk);
+#ifndef S3_GOOGLE_TEST
+  assert(blocks_in_chunk);
+  assert(bytes_in_chunk > 0);
+#endif  // S3_GOOGLE_TEST
 
   s3_log(S3_LOG_DEBUG, request_id, "Got %zu bytes in %u blocks", bytes_in_chunk,
-         block_in_chunk);
+         blocks_in_chunk);
 
   motr_writer->write_content(
       std::bind(&S3CopyObjectAction::write_data_block_success, this),
       std::bind(&S3CopyObjectAction::write_data_block_failed, this),
       std::move(buffer_sequence), motr_unit_size);
 
-  write_in_progress = true;
+  if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
+    copy_failed = true;
+    s3_log(S3_LOG_ERROR, request_id, "Write of data block failed to start");
 
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
+  } else {
+    write_in_progress = true;
+  }
   s3_log(S3_LOG_DEBUG, NULL, "Exiting\n");
 }
 
@@ -505,7 +514,9 @@ void S3CopyObjectAction::send_response_to_s3_client() {
     std::string response_xml = get_response_xml();
     request->send_response(S3HttpSuccess200, response_xml);
   }
+#ifndef S3_GOOGLE_TEST
   startcleanup();
+#endif  // S3_GOOGLE_TEST
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

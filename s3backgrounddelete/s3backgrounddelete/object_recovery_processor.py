@@ -27,11 +27,12 @@ import os
 import traceback
 import logging
 import datetime
+import signal
 from logging import handlers
 
 from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
-
+from s3backgrounddelete.cortx_s3_signal import DynamicConfigHandler
 
 class ObjectRecoveryProcessor(object):
     """Provides consumer for object recovery"""
@@ -42,6 +43,7 @@ class ObjectRecoveryProcessor(object):
         self.config = CORTXS3Config()
         self.create_logger_directory()
         self.create_logger()
+        self.signal = DynamicConfigHandler(self)
         self.logger.info("Initialising the Object Recovery Processor")
 
     def consume(self):
