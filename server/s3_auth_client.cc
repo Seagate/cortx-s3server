@@ -664,9 +664,6 @@ bool S3AuthClient::setup_auth_request_body() {
   } else if (request->http_verb() == S3HttpVerb::POST) {
     method = "POST";
   }
-  if (set_get_method) {
-    method = "GET";
-  }
   add_key_val_to_body("Method", method);
   add_key_val_to_body("RequestorAccountId", request->get_account_id());
   add_key_val_to_body("RequestorAccountName", request->get_account_name());
@@ -687,9 +684,6 @@ bool S3AuthClient::setup_auth_request_body() {
         request->get_header_value("Authorization");
     if (authorization_header.rfind("AWS4-HMAC-SHA256", 0) == 0) {
       S3CommonUtilities::find_and_replaceall(uri_full_path, "!", "%21");
-    }
-    if (!clientabsoulte_uri.empty()) {
-      uri_full_path = clientabsoulte_uri;
     }
     add_key_val_to_body("ClientAbsoluteUri", uri_full_path);
   } else {
