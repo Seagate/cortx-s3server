@@ -771,6 +771,28 @@ TEST_F(S3PutObjectActionTest,
   action_under_test->consume_incoming_content();
 }
 
+TEST_F(S3PutObjectActionTest, DelayedDeleteOldObject) {
+  CREATE_OBJECT_METADATA;
+
+  S3Option::get_instance()->set_s3server_obj_delayed_del_enabled(true);
+
+  m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
+  int old_layout_id = 2;
+  action_under_test->old_object_oid = old_object_oid;
+  action_under_test->old_layout_id = old_layout_id;
+
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_)).Times(0);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              delete_object(_, _, old_layout_id)).Times(0);
+
+  action_under_test->clear_tasks();
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3PutObjectActionTest::func_callback_one, this);
+
+  action_under_test->delete_old_object();
+  EXPECT_EQ(1, call_count_one);
+}
+
 TEST_F(S3PutObjectActionTest, ConsumeIncomingContentRequestTimeout) {
   ptr_mock_request->s3_client_read_error = "RequestTimeout";
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
