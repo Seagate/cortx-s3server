@@ -11,7 +11,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 
 :warning: **Notes:** 
 - The S3 submodule commands will not work if you have previously installed the COTX software using an OVA or RPMs.
-    - To install and test the S3 component, you'll have to create a new VM. 
+    - To install and test the S3 submodule, you'll have to create a new VM. 
 
 ### 1.0 Prerequisites
 
