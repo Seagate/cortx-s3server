@@ -9,6 +9,10 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 - [1.5 Test a specific MOTR Version using CORX-S3 Server](#15-Test-a-Specific-MOTR-Version-using-CORX-S3-Server)
 - [1.6 Build S3 RPMs](#16-Build-S3-RPMs)
 
+:warning: **Notes:** 
+- The S3 submodule commands will not work if you have previously installed the COTX software using an OVA or used RPMs.
+    - To install and test the S3 component, you'll have to create a new VM. 
+
 ### 1.0 Prerequisites
 
 <details>
