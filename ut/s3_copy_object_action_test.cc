@@ -935,6 +935,12 @@ TEST_F(S3CopyObjectActionTest, SendErrorResponse) {
 }
 
 TEST_F(S3CopyObjectActionTest, SendSuccessResponse) {
+  create_dst_object_metadata();
+  ptr_mock_bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
+      object_list_indx_oid);
+  action_under_test->new_object_metadata =
+      ptr_mock_object_meta_factory->mock_object_metadata;
+
   action_under_test->motr_writer =
       ptr_mock_motr_writer_factory->mock_motr_writer;
 
@@ -945,9 +951,10 @@ TEST_F(S3CopyObjectActionTest, SendSuccessResponse) {
   // expectations for remove_new_oid_probable_record()
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
 
-  // Uncomment the line below when ETag response header is implemented
-  // EXPECT_CALL(*ptr_mock_request, set_out_header_value(_,
-  // _)).Times(AtLeast(1));
+  EXPECT_CALL(*(ptr_mock_object_meta_factory->mock_object_metadata), get_md5())
+      .Times(1);
+  EXPECT_CALL(*(ptr_mock_object_meta_factory->mock_object_metadata),
+              get_last_modified_iso()).Times(1);
   EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(AtLeast(1));
 
   action_under_test->send_response_to_s3_client();
