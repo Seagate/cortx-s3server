@@ -29,7 +29,6 @@
 #include "s3_ut_common.h"
 #include "s3_m0_uint128_helper.h"
 #include "s3_common.h"
-#include "s3_common_utilities.h"
 
 extern int s3log_level;
 
@@ -710,35 +709,6 @@ TEST_F(S3PostCompleteActionTest, DelayedDeleteOldObject) {
                          S3PostCompleteActionTest::func_callback_one, this);
   action_under_test_ptr->delete_old_object();
   EXPECT_EQ(1, call_count_one);
-}
-
-TEST_F(S3PostCompleteActionTest, SizeBucketingOfObjects) {
-
-  std::string original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 0);
-  EXPECT_EQ("IXYZ", original_string);
-
-  original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 1025);
-  EXPECT_EQ("HXYZ", original_string);
-
-  original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 52428800);
-  EXPECT_EQ("GXYZ", original_string);
-
-  original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 52428801);
-  EXPECT_EQ("FXYZ", original_string);
-
-  original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string,
-                                                     107374182400);
-  EXPECT_EQ("EXYZ", original_string);
-
-  original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string,
-                                                     107374182401);
-  EXPECT_EQ("DXYZ", original_string);
 }
 
 TEST_F(S3PostCompleteActionTest, StartCleanupEmptyState) {
