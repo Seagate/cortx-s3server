@@ -261,7 +261,7 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info_successful() {
            S3_IEM_METADATA_CORRUPTED_JSON);
   }
   if (all_had_json_error) {
-    // Fetch more of present, else just respond
+    // Fetch more if present, else just respond
     if (delete_index_in_req < delete_request.get_count()) {
       // Try to delete the remaining
       fetch_objects_info();
