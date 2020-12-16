@@ -32,7 +32,7 @@ cluster.
 
 ### High availability
 
-*keepalived* uses VRRP protocol to manage which host controlls IP address at
+*keepalived* uses VRRP protocol to manage which host controls IP address at
 the moment, it is called master. As long as master node goes down backup node
 becomes active and starts serving the IP address. After the master node restored
 it gains the IP address back. There could be more than 1 backup node.
@@ -52,11 +52,12 @@ across several nodes.
 Even load distribution in case of failover requires N * (N - 1) IP addresses
 for the cluster of N nodes.
 
-There could be different configurations as well. For example
-4 IP addresses per node for cluster of N nodes - in case of failover
-this configurations leads to 25% load increase for some nodes.
-5 IP addresses per node for cluster of N nodes - in case of failover
-this configurations leads to 20% load increase for some nodes.
+There could be different configurations as well. For example:
+
+* 4 IP addresses per node for cluster of N nodes - in case of failover
+  this configuration leads to 25% load increase for some nodes.
+* 5 IP addresses per node for cluster of N nodes - in case of failover
+  this configuration leads to 20% load increase for some nodes.
 
 #### Example configuration 1 - 3 nodes, 2 IPs per node
 
@@ -142,15 +143,15 @@ There are two types of nodes in terms of *keepalived* - *master node* and *backu
 Each type of node has it own config. As a result config files for different machines
 are different.
 
-Configuration is done in terms of *vrrp_instance*. It describes the set of virtual ips
+Configuration is done in terms of *vrrp_instance*. It describes the set of virtual IPs
 configured for the node. Only one node could be a *master* across a cluster for the
-same *vrrp_instance*. The order *backup* nodes failover ip addresses is determined by
+same *vrrp_instance*. The order *backup* nodes failover IP addresses is determined by
 the *priority* field - next active node is the node with the highest *priority*. Each
 *vrrp_instance* must have unique *virtual_router_id* in scope of a single sub-network.
 
 ### Limitations
 
-*virtual_router_id* is a single byte value from the range 1 to 255, so only 255
+*virtual_router_id* is a single byte value in the range 1 to 255, so only 255
 different *vrrp_instance* could co-exist in a sub-network.
 
 ### Configuration for [Example 1](#Example-configuration-1-3-nodes,-2-IPs-per-node)
@@ -650,7 +651,7 @@ In this case new `virtual_router_id` value should be selected for `vrrp_instance
     Node 3 should have IP3_12 and IP3_21  
 
 2. Stop keepalived on one of the nodes, e.g. node 2 (or node 2 can be completely
-switched off, etc)
+switched off, etc.)
 
     `#> systemctl stop keepalived`
 
@@ -666,7 +667,7 @@ switched off, etc)
     Node 3 should have IP3_12, IP3_21 and IP2_31,  
     Node 2 should not have any IP from the config list
 
-3. Stop keepalived on one more node, e.g. node 1 (or switch it off, etc)
+3. Stop keepalived on one more node, e.g. node 1 (or switch it off, etc.)
 
     `#> systemctl stop keepalived`
 
