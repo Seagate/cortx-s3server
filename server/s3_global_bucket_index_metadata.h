@@ -62,6 +62,7 @@ class S3GlobalBucketIndexMetadata {
   // region
   std::string location_constraint;
   std::string request_id;
+  std::string stripped_request_id;
 
   std::shared_ptr<S3RequestObject> request;
   std::shared_ptr<MotrAPI> s3_motr_api;

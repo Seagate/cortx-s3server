@@ -38,11 +38,11 @@ MotrRequestObject::MotrRequestObject(
     EventInterface* event_obj_ptr)
     : RequestObject(req, evhtp_obj_ptr, async_buf_factory, event_obj_ptr),
       motr_api_type(MotrApiType::unsupported) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 }
 
 MotrRequestObject::~MotrRequestObject() {
-  s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__);
 }
 
 void MotrRequestObject::set_key_name(const std::string& key) { key_name = key; }

@@ -26,8 +26,9 @@ std::shared_ptr<S3APIHandler> S3APIHandlerFactory::create_api_handler(
     S3OperationCode op_code) {
   std::shared_ptr<S3APIHandler> handler;
   std::string request_id = request->get_request_id();
+  std::string stripped_request_id = request->get_stripped_request_id();
   request->set_operation_code(op_code);
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   switch (api_type) {
     case S3ApiType::service:
       s3_log(S3_LOG_DEBUG, request_id, "api_type = S3ApiType::service\n");
@@ -58,6 +59,6 @@ std::shared_ptr<S3APIHandler> S3APIHandlerFactory::create_api_handler(
            request->get_http_verb_str(request->http_verb()));
     handler->create_action();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return handler;
 }

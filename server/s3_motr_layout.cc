@@ -48,7 +48,8 @@ S3MotrLayoutMap::S3MotrLayoutMap() {
 }
 
 bool S3MotrLayoutMap::load_layout_recommendations(std::string filename) {
-  s3_log(S3_LOG_DEBUG, "", "Entering with filename = %s\n", filename.c_str());
+  s3_log(S3_LOG_DEBUG, "", "%s Entry with filename = %s\n", __func__,
+         filename.c_str());
   try {
     YAML::Node root_node = YAML::LoadFile(filename);
     if (root_node.IsNull()) {
@@ -138,7 +139,8 @@ int S3MotrLayoutMap::get_best_layout_for_object_size() {
 
 // Returns the <layout id and unit size> recommended for give object size.
 int S3MotrLayoutMap::get_layout_for_object_size(size_t obj_size) {
-  s3_log(S3_LOG_DEBUG, "", "Entering with obj_size = %zu\n", obj_size);
+  s3_log(S3_LOG_DEBUG, "", "%s Entry with obj_size = %zu\n", __func__,
+         obj_size);
 
   if (obj_size == 0 || obj_size <= obj_layout_map.begin()->first) {
     // obj_size is zero OR less than the smallest UP_TO_OBJ_SIZE

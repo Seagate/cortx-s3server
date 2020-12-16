@@ -80,7 +80,7 @@ class IAMController {
   ServerResponse serve(FullHttpRequest httpRequest,
                        Map<String, String> requestBody) {
     String requestAction = requestBody.get("Action");
-    LOGGER.info("Requested action is  - " + requestAction);
+    LOGGER.info("Action  - " + requestAction);
     ClientRequestToken clientRequestToken = null;
     Requestor requestor = null;
     ServerResponse serverResponse;

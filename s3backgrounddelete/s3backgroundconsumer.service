@@ -25,6 +25,7 @@ Environment="PYTHONPATH=/usr/lib/python3.6/site-packages/"
 Type=simple
 ExecStart=/opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer
 ExecStop=/bin/kill -TERM $MAINPID
+ExecReload=/bin/kill -HUP $MAINPID
 TimeoutSec=300
 # Other restart options: always, on-abort, etc
 

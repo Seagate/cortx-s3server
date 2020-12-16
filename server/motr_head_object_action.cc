@@ -27,7 +27,7 @@ MotrHeadObjectAction::MotrHeadObjectAction(
     std::shared_ptr<MotrRequestObject> req,
     std::shared_ptr<S3MotrReaderFactory> reader_factory)
     : MotrAction(std::move(req)), layout_id(0) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   oid = {0ULL, 0ULL};
   if (reader_factory) {
     motr_reader_factory = std::move(reader_factory);
@@ -47,7 +47,7 @@ void MotrHeadObjectAction::setup_steps() {
 }
 
 void MotrHeadObjectAction::validate_request() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   oid = S3M0Uint128Helper::to_m0_uint128(request->get_object_oid_lo(),
                                          request->get_object_oid_hi());
   // invalid oid
@@ -67,11 +67,11 @@ void MotrHeadObjectAction::validate_request() {
       next();
     }
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrHeadObjectAction::check_object_exist() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   motr_reader =
       motr_reader_factory->create_motr_reader(request, oid, layout_id);
@@ -80,17 +80,17 @@ void MotrHeadObjectAction::check_object_exist() {
       std::bind(&MotrHeadObjectAction::check_object_exist_success, this),
       std::bind(&MotrHeadObjectAction::check_object_exist_failure, this));
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrHeadObjectAction::check_object_exist_success() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrHeadObjectAction::check_object_exist_failure() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (motr_reader->get_state() == S3MotrReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
     set_s3_error("NoSuchKey");
@@ -103,11 +103,11 @@ void MotrHeadObjectAction::check_object_exist_failure() {
     set_s3_error("InternalError");
   }
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrHeadObjectAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (is_error_state() && !get_s3_error_code().empty()) {
     S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->c_get_full_path());
@@ -128,5 +128,5 @@ void MotrHeadObjectAction::send_response_to_s3_client() {
     request->send_response(S3HttpSuccess200);
   }
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

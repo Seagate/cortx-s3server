@@ -23,7 +23,7 @@
 
 void RecurringEventBase::libevent_callback(evutil_socket_t fd, short event,
                                            void *arg) {
-  s3_log(S3_LOG_DEBUG, "", "Entering");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry", __func__);
   RecurringEventBase *evt_base = static_cast<RecurringEventBase *>(arg);
   if (evt_base) {
     evt_base->action_callback();
@@ -31,8 +31,8 @@ void RecurringEventBase::libevent_callback(evutil_socket_t fd, short event,
 }
 
 int RecurringEventBase::add_evtimer(struct timeval &tv) {
-  s3_log(S3_LOG_DEBUG, "", "Entering with sec=%" PRIu32 " usec=%" PRIu32,
-         (uint32_t)tv.tv_sec, (uint32_t)tv.tv_usec);
+  s3_log(S3_LOG_DEBUG, "", "%s Entry with sec=%" PRIu32 " usec=%" PRIu32,
+         __func__, (uint32_t)tv.tv_sec, (uint32_t)tv.tv_usec);
   if (!event_obj) {
     return -EINVAL;
   }
@@ -52,7 +52,7 @@ int RecurringEventBase::add_evtimer(struct timeval &tv) {
 }
 
 void RecurringEventBase::del_evtimer() {
-  s3_log(S3_LOG_DEBUG, "", "Entering");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry", __func__);
   if (evt && event_obj) {
     event_obj->del_event(evt);
     event_obj->free_event(evt);

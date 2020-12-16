@@ -122,6 +122,20 @@ S3 server provides S3 REST API interface support for Motr object storage.
 %prep
 %setup -n %{name}-%{version}-%{_s3_git_ver}
 
+%pre
+if [ -f /opt/seagate/cortx/s3/conf/s3config.yaml.sample ]; then
+cp -f /opt/seagate/cortx/s3/conf/s3config.yaml.sample /tmp/s3config.yaml.sample.old
+fi
+if [ -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample ]; then
+    cp -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample /tmp/config.yaml.sample.old
+fi
+if [ -f /opt/seagate/cortx/auth/resources/keystore.properties.sample ]; then
+    cp -f /opt/seagate/cortx/auth/resources/keystore.properties.sample /tmp/keystore.properties.sample.old
+fi
+if [ -f /opt/seagate/cortx/auth/resources/authserver.properties.sample ]; then
+    cp -f /opt/seagate/cortx/auth/resources/authserver.properties.sample /tmp/authserver.properties.sample.old
+fi
+
 %build
 %if %{with cortx_motr}
 ./rebuildall.sh --no-check-code --no-install
@@ -159,6 +173,7 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
+# config file doesnt get replaced during rpm update if changed
 %config /opt/seagate/cortx/auth/resources/authserver.properties.sample
 %config(noreplace) /opt/seagate/cortx/auth/resources/authserver-log4j2.xml
 %config(noreplace) /opt/seagate/cortx/auth/resources/authencryptcli-log4j2.xml
@@ -210,6 +225,7 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/auth/AuthServer-1.0-0.jar
 /opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar
 /opt/seagate/cortx/auth/startauth.sh
+/opt/seagate/cortx/auth/scripts/swupdate/merge.sh
 /opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh
 /opt/seagate/cortx/auth/scripts/change_ldap_passwd.ldif
 /opt/seagate/cortx/auth/scripts/s3authserver.jks_template
@@ -310,6 +326,10 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/conf/setup.yaml
 /opt/seagate/cortx/s3/s3datarecovery/s3_data_recovery.sh
 /opt/seagate/cortx/datarecovery/orchastrator.sh
+/opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.yaml
+/opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.yaml
+/opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml
+/opt/seagate/cortx/s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_setup
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer
@@ -341,14 +361,7 @@ rm -rf %{buildroot}
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyo
 
 %post
-[ -f /opt/seagate/cortx/s3/conf/s3config.yaml ] || 
-    cp /opt/seagate/cortx/s3/conf/s3config.yaml.sample /opt/seagate/cortx/s3/conf/s3config.yaml
-[ -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml ] ||
-    cp /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
-[ -f /opt/seagate/cortx/auth/resources/authserver.properties ] ||
-    cp /opt/seagate/cortx/auth/resources/authserver.properties.sample /opt/seagate/cortx/auth/resources/authserver.properties
-[ -f /opt/seagate/cortx/auth/resources/keystore.properties ] ||
-    cp /opt/seagate/cortx/auth/resources/keystore.properties.sample /opt/seagate/cortx/auth/resources/keystore.properties
+sh /opt/seagate/cortx/auth/scripts/swupdate/merge.sh
 systemctl daemon-reload
 systemctl enable s3authserver
 systemctl restart rsyslog

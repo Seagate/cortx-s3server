@@ -76,12 +76,12 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
         is_aclvalidation_successful(false),
         is_policyvalidation_successful(false),
         auth_response_xml("") {
-    s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+    s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
     ADDB_AUTH(ACTS_AUTH_OP_CTX_CONSTRUCT);
   }
 
   ~S3AuthClientOpContext() {
-    s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
+    s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__);
     ADDB_AUTH(ACTS_AUTH_OP_CTX_DESTRUCT);
     clear_op_context();
   }
@@ -91,7 +91,7 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
                                std::string request_id);
 
   void set_auth_response_xml(const char* xml, bool success = true) {
-    s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+    s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
     auth_response_xml = xml;
     is_auth_successful = success;
     if (is_auth_successful) {
@@ -109,31 +109,31 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
     } else {
       error_obj.reset(new S3AuthResponseError(auth_response_xml));
     }
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   }
 
   void set_aclvalidation_response_xml(const char* xml, bool success = true) {
-    s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+    s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
     is_aclvalidation_successful = success;
     auth_response_xml = xml;
     if (!success) {
       error_obj.reset(new S3AuthResponseError(auth_response_xml));
     }
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   }
 
   void set_policyvalidation_response_xml(const char* xml, bool success = true) {
-    s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+    s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
     is_policyvalidation_successful = success;
     auth_response_xml = xml;
     if (!success) {
       error_obj.reset(new S3AuthResponseError(auth_response_xml));
     }
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   }
 
   void set_authorization_response(const char* xml, bool success = true) {
-    s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+    s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
     authorization_response_xml = xml;
     is_authorization_successful = success;
     if (is_authorization_successful) {
@@ -157,7 +157,7 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
     } else {
       error_obj.reset(new S3AuthResponseError(authorization_response_xml));
     }
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   }
 
   bool auth_successful() { return is_auth_successful; }
@@ -320,6 +320,7 @@ class S3AuthClient {
   std::shared_ptr<RequestObject> request;
   std::unique_ptr<S3AuthClientOpContext> auth_context;
   std::string request_id;
+  std::string stripped_request_id;
   std::string bucket_acl;
 
   // Used to report to caller
@@ -360,7 +361,7 @@ class S3AuthClient {
                bool skip_authorization = false);
 
   virtual ~S3AuthClient() {
-    s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
+    s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__);
     ADDB_AUTH(ACTS_AUTH_CLNT_DESTRUCT);
     if (state == S3AuthClientOpState::started && auth_context) {
       auth_context->unset_hooks();
@@ -369,6 +370,7 @@ class S3AuthClient {
 
   std::shared_ptr<RequestObject> get_request() { return request; }
   std::string get_request_id() { return request_id; }
+  std::string get_stripped_request_id() { return stripped_request_id; }
 
   S3AuthClientOpState get_state() { return state; }
 

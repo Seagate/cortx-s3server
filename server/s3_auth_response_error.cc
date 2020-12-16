@@ -27,7 +27,7 @@
 
 S3AuthResponseError::S3AuthResponseError(std::string xml)
     : xml_content(std::move(xml)) {
-  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);
   is_valid = parse_and_validate();
 }
 
@@ -38,7 +38,7 @@ S3AuthResponseError::S3AuthResponseError(std::string error_code_,
       error_code(std::move(error_code_)),
       error_message(std::move(error_message_)),
       request_id(std::move(request_id_)) {
-  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);
 }
 
 bool S3AuthResponseError::isOK() const { return is_valid; }

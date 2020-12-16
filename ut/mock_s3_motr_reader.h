@@ -45,6 +45,7 @@ class MockS3MotrReader : public S3MotrReader {
                     std::function<void(void)> on_failed));
   MOCK_METHOD1(get_first_block, size_t(char** data));
   MOCK_METHOD1(get_next_block, size_t(char** data));
+  MOCK_METHOD1(set_last_index, void(size_t));
 };
 
 #endif
