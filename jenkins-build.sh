@@ -247,9 +247,11 @@ ulimit -c unlimited
 
 # Few assertions - prerun checks
 rpm -q haproxy
+rpm -q rabbitmq-server
 #rpm -q stx-s3-certs
 #rpm -q stx-s3-client-certs
 systemctl status haproxy
+systemctl status rabbitmq-server
 
 cd $S3_BUILD_DIR
 
@@ -440,6 +442,10 @@ then
     echo "Skip tests. S3server will not be stopped"
     exit 1
 fi
+
+# Stop S3 background services before tests are run
+systemctl stop s3backgroundproducer
+systemctl stop s3backgroundconsumer
 
 basic_test_cmd_par=""
 if [ $basic_test_only -eq 1 ]

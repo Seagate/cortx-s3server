@@ -32,7 +32,7 @@
 std::unique_ptr<S3FakeMotrRedisKvs> S3FakeMotrRedisKvs::inst;
 
 void finalize_op(struct m0_op *op, op_stable_cb stable, op_failed_cb failed) {
-  s3_log(S3_LOG_DEBUG, "", "Entering");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry", __func__);
   if (!op) return;
 
   s3_redis_context_obj *redis_ctx = (s3_redis_context_obj *)op->op_datum;
@@ -50,7 +50,7 @@ void finalize_op(struct m0_op *op, op_stable_cb stable, op_failed_cb failed) {
 
   free(redis_ctx);
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 // key and val are delimited with zero byte
@@ -147,7 +147,7 @@ int redis_reply_check(redisAsyncContext *glob_redis_ctx,
 // privdata - user context
 void kv_read_cb(redisAsyncContext *glob_redis_ctx, void *async_redis_reply,
                 void *privdata) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   // during the destruction redisAsyncContext will be null
   // in this case do nothing and simply return
   if (!glob_redis_ctx) {
@@ -185,11 +185,11 @@ void kv_read_cb(redisAsyncContext *glob_redis_ctx, void *async_redis_reply,
 
   finalize_op(actx->op);
   free(actx);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3FakeMotrRedisKvs::kv_read(struct m0_op *op) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   struct s3_motr_context_obj *ctx = (struct s3_motr_context_obj *)op->op_datum;
   S3MotrKVSReaderContext *read_ctx =
       (S3MotrKVSReaderContext *)ctx->application_context;
@@ -223,7 +223,7 @@ void S3FakeMotrRedisKvs::kv_read(struct m0_op *op) {
     free(min_b.buf);
     free(max_b.buf);
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 // libhiredis callback for range command
@@ -232,7 +232,7 @@ void S3FakeMotrRedisKvs::kv_read(struct m0_op *op) {
 // privdata - user context
 void kv_next_cb(redisAsyncContext *glob_redis_ctx, void *async_redis_reply,
                 void *privdata) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   // during the destruction redisAsyncContext will be null
   // in this case do nothing and simply return
   if (!glob_redis_ctx) {
@@ -308,11 +308,11 @@ void kv_next_cb(redisAsyncContext *glob_redis_ctx, void *async_redis_reply,
 
   finalize_op(actx->op);
   free(actx);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3FakeMotrRedisKvs::kv_next(struct m0_op *op) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   struct s3_motr_context_obj *ctx = (struct s3_motr_context_obj *)op->op_datum;
   S3MotrKVSReaderContext *read_ctx =
       (S3MotrKVSReaderContext *)ctx->application_context;
@@ -361,7 +361,7 @@ void S3FakeMotrRedisKvs::kv_next(struct m0_op *op) {
       s3_log(S3_LOG_FATAL, "", "Redis command cannot be scheduled");
     }
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 // libhiredis callback for write/delete command
@@ -370,7 +370,7 @@ void S3FakeMotrRedisKvs::kv_next(struct m0_op *op) {
 // privdata - user context
 void kv_status_cb(redisAsyncContext *glob_redis_ctx, void *async_redis_reply,
                   void *privdata) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   // during the destruction redisAsyncContext will be null
   // in this case do nothing and simply return
   if (!glob_redis_ctx) {
@@ -400,7 +400,7 @@ void kv_status_cb(redisAsyncContext *glob_redis_ctx, void *async_redis_reply,
 
   finalize_op(actx->op);
   free(actx);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 static void schedule_delete_key_op(redisAsyncContext *ac,
@@ -421,7 +421,7 @@ static void schedule_delete_key_op(redisAsyncContext *ac,
 }
 
 void S3FakeMotrRedisKvs::kv_write(struct m0_op *op) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   struct s3_motr_context_obj *ctx = (struct s3_motr_context_obj *)op->op_datum;
   S3AsyncMotrKVSWriterContext *write_ctx =
       (S3AsyncMotrKVSWriterContext *)ctx->application_context;
@@ -460,11 +460,11 @@ void S3FakeMotrRedisKvs::kv_write(struct m0_op *op) {
     }
     free(rkey.buf);
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3FakeMotrRedisKvs::kv_del(struct m0_op *op) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   struct s3_motr_context_obj *ctx = (struct s3_motr_context_obj *)op->op_datum;
   S3AsyncMotrKVSWriterContext *write_ctx =
       (S3AsyncMotrKVSWriterContext *)ctx->application_context;
@@ -487,5 +487,5 @@ void S3FakeMotrRedisKvs::kv_del(struct m0_op *op) {
         this->redis_ctx, op->op_entity->en_id, (char *)kv->keys->ov_buf[i],
         kv->keys->ov_vec.v_count[i], kv_status_cb, (void *)actx);
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

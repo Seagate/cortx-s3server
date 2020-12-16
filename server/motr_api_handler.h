@@ -42,6 +42,7 @@ class MotrAPIHandler {
   std::shared_ptr<MotrAPIHandler> _get_self_ref() { return self_ref; }
   std::shared_ptr<Action> _get_action() { return action; }
   std::string request_id;
+  std::string stripped_request_id;
 
  private:
   std::shared_ptr<MotrAPIHandler> self_ref;
@@ -51,13 +52,14 @@ class MotrAPIHandler {
                  MotrOperationCode op_code)
       : request(req), operation_code(op_code) {
     request_id = request->get_request_id();
+    stripped_request_id = request->get_stripped_request_id();
   }
   virtual ~MotrAPIHandler() {}
 
   virtual void create_action() = 0;
 
   virtual void dispatch() {
-    s3_log(S3_LOG_DEBUG, request_id, "Entering");
+    s3_log(S3_LOG_DEBUG, request_id, "%s Entry", __func__);
 
     if (action) {
       action->manage_self(action);
@@ -67,7 +69,7 @@ class MotrAPIHandler {
     }
     i_am_done();
 
-    s3_log(S3_LOG_DEBUG, "", "Exiting");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   }
 
   // Self destructing object.

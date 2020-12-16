@@ -31,6 +31,7 @@ S3URI::S3URI(std::shared_ptr<S3RequestObject> req)
       bucket_name(""),
       object_name("") {
   request_id = request->get_request_id();
+  stripped_request_id = request->get_stripped_request_id();
   setup_operation_code();
 }
 
@@ -66,7 +67,7 @@ void S3URI::setup_operation_code() {
 
 S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req)
     : S3URI(req) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   std::string full_uri(request->c_get_full_path());
   // Regex is better, but lets live with raw parsing. regex = >gcc 4.9.0
   if (full_uri.compare("/") == 0) {
@@ -107,7 +108,7 @@ S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req)
 S3VirtualHostStyleURI::S3VirtualHostStyleURI(
     std::shared_ptr<S3RequestObject> req)
     : S3URI(req) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   host_header = request->get_host_name();
 
   setup_bucket_name();
@@ -124,7 +125,7 @@ S3VirtualHostStyleURI::S3VirtualHostStyleURI(
 }
 
 void S3VirtualHostStyleURI::setup_bucket_name() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   if (host_header.find(S3Option::get_instance()->get_default_endpoint()) !=
       std::string::npos) {
     bucket_name = host_header.substr(
@@ -139,5 +140,5 @@ void S3VirtualHostStyleURI::setup_bucket_name() {
           host_header.substr(0, (host_header.length() - (*it).length() - 1));
     }
   }
-  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
 }

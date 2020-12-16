@@ -74,7 +74,8 @@ S3BucketMetadata::S3BucketMetadata(
     std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory)
     : request(std::move(req)), json_parsing_error(false) {
   request_id = request->get_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor");
+  stripped_request_id = request->get_stripped_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   initialize();
 
@@ -104,7 +105,8 @@ S3BucketMetadata::S3BucketMetadata(
     std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory)
     : request(std::move(req)), json_parsing_error(false) {
   request_id = request->get_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor");
+  stripped_request_id = request->get_stripped_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   initialize(str_bucket_name);
 
@@ -214,14 +216,14 @@ void S3BucketMetadata::handle_collision(std::string base_index_name,
                                         std::string& salted_index_name,
                                         std::function<void()> callback) {
   if (collision_attempt_count < MAX_COLLISION_RETRY_COUNT) {
-    s3_log(S3_LOG_INFO, request_id,
+    s3_log(S3_LOG_INFO, stripped_request_id,
            "Index ID collision happened for index %s\n",
            salted_index_name.c_str());
     // Handle Collision
     regenerate_new_index_name(base_index_name, salted_index_name);
     collision_attempt_count++;
     if (collision_attempt_count > 5) {
-      s3_log(S3_LOG_INFO, request_id,
+      s3_log(S3_LOG_INFO, stripped_request_id,
              "Index ID collision happened %d times for index %s\n",
              collision_attempt_count, salted_index_name.c_str());
     }
@@ -351,7 +353,7 @@ std::string& S3BucketMetadata::get_policy_as_json() { return bucket_policy; }
 
 std::string S3BucketMetadata::get_tags_as_xml() {
 
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   std::string user_defined_tags;
   std::string tags_as_xml_str;
 
@@ -373,7 +375,7 @@ std::string S3BucketMetadata::get_tags_as_xml() {
         "</Tagging>";
   }
   s3_log(S3_LOG_DEBUG, request_id, "Tags xml: %s\n", tags_as_xml_str.c_str());
-  s3_log(S3_LOG_INFO, request_id, "Exiting\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit", __func__);
   return tags_as_xml_str;
 }
 

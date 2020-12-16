@@ -30,7 +30,7 @@
 
 S3PutFiAction::S3PutFiAction(std::shared_ptr<S3RequestObject> req)
     : S3Action(req, false) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   clear_tasks();
   setup_steps();
@@ -133,7 +133,7 @@ void S3PutFiAction::set_fault_injection() {
 }
 
 void S3PutFiAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (!is_error_state() && get_s3_error_code().empty()) {
     request->send_response(S3HttpSuccess200);
@@ -151,5 +151,5 @@ void S3PutFiAction::send_response_to_s3_client() {
   request->resume();
 
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

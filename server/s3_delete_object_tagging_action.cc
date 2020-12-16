@@ -28,9 +28,9 @@ S3DeleteObjectTaggingAction::S3DeleteObjectTaggingAction(
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
                      std::move(object_meta_factory)) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
-  s3_log(S3_LOG_INFO, request_id,
+  s3_log(S3_LOG_INFO, stripped_request_id,
          "S3 API: DeleteObjectTaggingAction. Bucket[%s] Object[%s]\n",
          request->get_bucket_name().c_str(),
          request->get_object_name().c_str());
@@ -46,7 +46,7 @@ void S3DeleteObjectTaggingAction::setup_steps() {
 }
 
 void S3DeleteObjectTaggingAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
   } else if (bucket_metadata->get_state() ==
@@ -59,11 +59,11 @@ void S3DeleteObjectTaggingAction::fetch_bucket_info_failed() {
   }
 
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteObjectTaggingAction::fetch_object_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if ((object_list_oid.u_lo == 0ULL && object_list_oid.u_hi == 0ULL) ||
       (object_metadata->get_state() == S3ObjectMetadataState::missing)) {
     set_s3_error("NoSuchKey");
@@ -76,11 +76,11 @@ void S3DeleteObjectTaggingAction::fetch_object_info_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteObjectTaggingAction::delete_object_tags() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // bypass shutdown signal check for next task
   check_shutdown_signal_for_next_task(false);
   object_metadata->delete_object_tags();
@@ -90,7 +90,7 @@ void S3DeleteObjectTaggingAction::delete_object_tags() {
 }
 
 void S3DeleteObjectTaggingAction::delete_object_tags_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (object_metadata->get_state() == S3ObjectMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Object metadata load operation failed due to pre launch failure\n");
@@ -99,11 +99,11 @@ void S3DeleteObjectTaggingAction::delete_object_tags_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteObjectTaggingAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -122,6 +122,6 @@ void S3DeleteObjectTaggingAction::send_response_to_s3_client() {
   }
 
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   done();
 }

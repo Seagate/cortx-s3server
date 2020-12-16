@@ -32,6 +32,7 @@
 #include "s3_test_utils.h"
 
 using ::testing::AtLeast;
+using ::testing::Eq;
 using ::testing::Invoke;
 using ::testing::ReturnRef;
 
@@ -559,6 +560,152 @@ TEST_F(S3CopyObjectActionTest, CreateNewOidTest) {
   EXPECT_OID_NE(old_oid, action_under_test->new_object_oid);
 }
 
+TEST_F(S3CopyObjectActionTest, ZeroSizeObject) {
+  action_under_test->total_data_to_stream = 0;
+  action_under_test->clear_tasks();
+
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3CopyObjectActionTest::func_callback_one, this);
+  action_under_test->copy_object();
+
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3CopyObjectActionTest, NonZeroSizeObject) {
+  action_under_test->total_data_to_stream = 1024;
+  action_under_test->_set_layout_id(1);
+
+  create_src_object_metadata();
+
+  EXPECT_CALL(*ptr_mock_motr_reader_factory->mock_motr_reader,
+              set_last_index(0)).Times(1);
+  action_under_test->copy_object();
+
+  EXPECT_TRUE(action_under_test->motr_reader);
+  EXPECT_EQ(action_under_test->bytes_left_to_read,
+            action_under_test->total_data_to_stream);
+}
+
+TEST_F(S3CopyObjectActionTest, ReadDataBlockStarted) {
+  action_under_test->total_data_to_stream = 1024;
+  action_under_test->bytes_left_to_read = 1024;
+  action_under_test->_set_layout_id(1);
+
+  action_under_test->motr_reader =
+      ptr_mock_motr_reader_factory->mock_motr_reader;
+
+  EXPECT_CALL(*ptr_mock_motr_reader_factory->mock_motr_reader,
+              read_object_data(_, _, _))
+      .Times(1)
+      .WillOnce(Return(true));
+
+  action_under_test->read_data_block();
+
+  EXPECT_TRUE(action_under_test->read_in_progress);
+}
+
+TEST_F(S3CopyObjectActionTest, ReadDataBlockFailedToStart) {
+  action_under_test->total_data_to_stream = 1024;
+  action_under_test->bytes_left_to_read = 1024;
+  action_under_test->_set_layout_id(1);
+
+  action_under_test->motr_reader =
+      ptr_mock_motr_reader_factory->mock_motr_reader;
+  action_under_test->motr_writer =
+      ptr_mock_motr_writer_factory->mock_motr_writer;
+
+  EXPECT_CALL(*ptr_mock_motr_reader_factory->mock_motr_reader,
+              read_object_data(_, _, _))
+      .Times(1)
+      .WillOnce(Return(false));
+  EXPECT_CALL(*ptr_mock_motr_reader_factory->mock_motr_reader, get_state())
+      .Times(1)
+      .WillOnce(Return(S3MotrReaderOpState::failed_to_launch));
+
+  action_under_test->read_data_block();
+
+  EXPECT_FALSE(action_under_test->read_in_progress);
+  EXPECT_TRUE(action_under_test->copy_failed);
+  EXPECT_FALSE(action_under_test->get_s3_error_code().empty());
+}
+
+TEST_F(S3CopyObjectActionTest, ReadDataBlockSuccessWhileShuttingDown) {
+  action_under_test->_set_layout_id(layout_id);
+  action_under_test->read_in_progress = true;
+  S3Option::get_instance()->set_is_s3_shutting_down(true);
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+
+  action_under_test->read_data_block_success();
+
+  EXPECT_FALSE(action_under_test->read_in_progress);
+  S3Option::get_instance()->set_is_s3_shutting_down(false);
+}
+
+TEST_F(S3CopyObjectActionTest, ReadDataBlockSuccessCopyFailed) {
+  action_under_test->total_data_to_stream = 1024;
+  action_under_test->bytes_left_to_read = 1024;
+  action_under_test->_set_layout_id(1);
+  action_under_test->read_in_progress = true;
+
+  action_under_test->copy_failed = true;
+  action_under_test->set_s3_error("InternalError");
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
+
+  action_under_test->read_data_block_success();
+
+  EXPECT_FALSE(action_under_test->read_in_progress);
+}
+
+TEST_F(S3CopyObjectActionTest, ReadDataBlockSuccessShouldStartWrite) {
+  action_under_test->total_data_to_stream = 5120;
+  action_under_test->bytes_left_to_read = 1024;
+  action_under_test->read_in_progress = true;
+  action_under_test->_set_layout_id(1);
+
+  action_under_test->motr_reader =
+      ptr_mock_motr_reader_factory->mock_motr_reader;
+  action_under_test->motr_writer =
+      ptr_mock_motr_writer_factory->mock_motr_writer;
+
+  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
+              write_content(_, _, _, _)).Times(1);
+  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer, get_state())
+      .Times(1);
+
+  action_under_test->read_data_block_success();
+
+  EXPECT_TRUE(action_under_test->write_in_progress);
+}
+
+TEST_F(S3CopyObjectActionTest, ReadDataBlockFailed) {
+  action_under_test->total_data_to_stream = 5120;
+  action_under_test->bytes_left_to_read = 1024;
+  action_under_test->read_in_progress = true;
+  action_under_test->_set_layout_id(1);
+
+  action_under_test->motr_reader =
+      ptr_mock_motr_reader_factory->mock_motr_reader;
+  action_under_test->motr_writer =
+      ptr_mock_motr_writer_factory->mock_motr_writer;
+
+  EXPECT_CALL(*ptr_mock_motr_reader_factory->mock_motr_reader, get_state())
+      .Times(1);
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
+
+  action_under_test->read_data_block_failed();
+
+  EXPECT_FALSE(action_under_test->read_in_progress);
+  EXPECT_TRUE(action_under_test->copy_failed);
+  EXPECT_EQ(action_under_test->s3_put_action_state,
+            S3PutObjectActionState::writeFailed);
+  EXPECT_FALSE(action_under_test->get_s3_error_code().empty());
+}
+
 TEST_F(S3CopyObjectActionTest, WriteObjectFailedShouldUndoMarkProgress) {
   action_under_test->motr_writer =
       ptr_mock_motr_writer_factory->mock_motr_writer;
@@ -568,16 +715,13 @@ TEST_F(S3CopyObjectActionTest, WriteObjectFailedShouldUndoMarkProgress) {
   action_under_test->write_in_progress = true;
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
   MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
-      action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
+      action_under_test->new_oid_str, {}, "abc_obj", oid, layout_id,
       object_list_indx_oid, objects_version_list_idx_oid,
-      "" /* Version does not exists yet */, false /* force_delete */,
-      false /* is_multipart */, {0ULL, 0ULL});
+      "",     // Version does not exists yet
+      false,  // force_delete
+      false,  // is_multipart
+      {});
   action_under_test->new_probable_del_rec.reset(prob_rec);
-  // expectations for mark_new_oid_for_deletion()
-  EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
-  EXPECT_CALL(*prob_rec, to_json()).Times(1);
-  EXPECT_CALL(*ptr_mock_motr_kvs_writer_factory->mock_motr_kvs_writer,
-              put_keyval(_, _, _, _, _)).Times(1);
 
   EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer, get_state())
       .Times(1)
@@ -600,16 +744,13 @@ TEST_F(S3CopyObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure) {
   action_under_test->write_in_progress = true;
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
   MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
-      action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
+      action_under_test->new_oid_str, {}, "abc_obj", oid, layout_id,
       object_list_indx_oid, objects_version_list_idx_oid,
-      "" /* Version does not exists yet */, false /* force_delete */,
-      false /* is_multipart */, {0ULL, 0ULL});
+      "",     // Version does not exists yet
+      false,  // force_delete
+      false,  // is_multipart
+      {});
   action_under_test->new_probable_del_rec.reset(prob_rec);
-  // expectations for mark_new_oid_for_deletion()
-  EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
-  EXPECT_CALL(*prob_rec, to_json()).Times(1);
-  EXPECT_CALL(*ptr_mock_motr_kvs_writer_factory->mock_motr_kvs_writer,
-              put_keyval(_, _, _, _, _)).Times(1);
 
   EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer, get_state())
       .Times(1)
@@ -683,9 +824,13 @@ TEST_F(S3CopyObjectActionTest,
   EXPECT_EQ(action_under_test->s3_put_action_state,
             S3PutObjectActionState::writeComplete);
 }
-/*
+
 TEST_F(S3CopyObjectActionTest, SaveMetadata) {
-  CREATE_BUCKET_METADATA;
+  action_under_test->total_data_to_stream = 1024;
+
+  create_dst_bucket_metadata();
+  create_src_object_metadata();
+
   ptr_mock_bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
       object_list_indx_oid);
 
@@ -694,29 +839,25 @@ TEST_F(S3CopyObjectActionTest, SaveMetadata) {
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
 
   action_under_test->motr_writer =
-ptr_mock_motr_writer_factory->mock_motr_writer;
+      ptr_mock_motr_writer_factory->mock_motr_writer;
 
-  EXPECT_CALL(*ptr_mock_request, get_data_length_str()).Times(1).WillOnce(
-      Return("1024"));
-  EXPECT_CALL(*ptr_mock_request, get_header_value("content-md5"))
-      .Times(1)
-      .WillOnce(Return(""));
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
               reset_date_time_to_current()).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
               set_content_length(Eq("1024"))).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
-get_content_md5())
+              get_content_md5())
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
               set_md5(Eq("abcd1234abcd"))).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata, set_tags(_))
-      .Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, get_header_value("Content-Type"))
-      .Times(1)
-      .WillOnce(Return(""));
-  std::map<std::string, std::string> input_headers;
+
+  /* TODO: uncomment once tags feature is implemented
+  EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
+              set_tags(_)).Times(AtLeast(1));
+  */
+  /* TODO: uncomment once handling x-amz-metadata-directive input header feature
+     is implemented
   input_headers["x-amz-meta-item-1"] = "1024";
   input_headers["x-amz-meta-item-2"] = "s3.seagate.com";
 
@@ -730,7 +871,7 @@ get_content_md5())
       *ptr_mock_object_meta_factory->mock_object_metadata,
       add_user_defined_attribute(Eq("x-amz-meta-item-2"), Eq("s3.seagate.com")))
       .Times(AtLeast(1));
-
+  */
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata, save(_, _))
       .Times(AtLeast(1));
 
@@ -738,7 +879,7 @@ get_content_md5())
 }
 
 TEST_F(S3CopyObjectActionTest, SaveObjectMetadataFailed) {
-  CREATE_OBJECT_METADATA;
+  create_dst_object_metadata();
   ptr_mock_bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
       object_list_indx_oid);
   action_under_test->new_object_metadata =
@@ -747,7 +888,7 @@ TEST_F(S3CopyObjectActionTest, SaveObjectMetadataFailed) {
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
 
   action_under_test->motr_writer =
-ptr_mock_motr_writer_factory->mock_motr_writer;
+      ptr_mock_motr_writer_factory->mock_motr_writer;
 
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata, get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::failed));
@@ -758,16 +899,11 @@ ptr_mock_motr_writer_factory->mock_motr_writer;
   MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
       action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
       object_list_indx_oid, objects_version_list_idx_oid,
-      "",  // Version does not exists yet
+      "",     // Version does not exists yet
       false,  // force_delete
       false,  // is_multipart
       {0ULL, 0ULL});
   action_under_test->new_probable_del_rec.reset(prob_rec);
-  // expectations for mark_new_oid_for_deletion()
-  EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
-  EXPECT_CALL(*prob_rec, to_json()).Times(1);
-  EXPECT_CALL(*ptr_mock_motr_kvs_writer_factory->mock_motr_kvs_writer,
-              put_keyval(_, _, _, _, _)).Times(1);
 
   action_under_test->clear_tasks();
   action_under_test->save_object_metadata_failed();
@@ -800,7 +936,7 @@ TEST_F(S3CopyObjectActionTest, SendErrorResponse) {
 
 TEST_F(S3CopyObjectActionTest, SendSuccessResponse) {
   action_under_test->motr_writer =
-ptr_mock_motr_writer_factory->mock_motr_writer;
+      ptr_mock_motr_writer_factory->mock_motr_writer;
 
   // Simulate success
   action_under_test->s3_put_action_state =
@@ -808,18 +944,16 @@ ptr_mock_motr_writer_factory->mock_motr_writer;
 
   // expectations for remove_new_oid_probable_record()
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
-  EXPECT_CALL(*ptr_mock_motr_kvs_writer_factory->mock_motr_kvs_writer,
-              delete_keyval(_, _, _, _)).Times(1);
 
-  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
-get_content_md5())
-      .Times(AtLeast(1))
-      .WillOnce(Return("abcd1234abcd"));
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  // Uncomment the line below when ETag response header is implemented
+  // EXPECT_CALL(*ptr_mock_request, set_out_header_value(_,
+  // _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(AtLeast(1));
 
   action_under_test->send_response_to_s3_client();
+
+  EXPECT_EQ(action_under_test->s3_put_action_state,
+            S3PutObjectActionState::completed);
 }
 
 TEST_F(S3CopyObjectActionTest, SendFailedResponse) {
@@ -832,15 +966,3 @@ TEST_F(S3CopyObjectActionTest, SendFailedResponse) {
 
   action_under_test->send_response_to_s3_client();
 }
-
-TEST_F(S3CopyObjectActionTest, ValidateMissingContentLength) {
-  EXPECT_CALL(*ptr_mock_request, get_object_name())
-      .WillOnce(ReturnRef(object_name));
-  EXPECT_CALL(*ptr_mock_request, is_header_present("Content-Length"))
-      .WillOnce(Return(false));
-
-  action_under_test->validate_put_request();
-
-  EXPECT_STREQ("MissingContentLength",
-               action_under_test->get_s3_error_code().c_str());
-}*/

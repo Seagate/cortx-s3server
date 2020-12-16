@@ -27,7 +27,7 @@ MotrPutKeyValueAction::MotrPutKeyValueAction(
     std::shared_ptr<MotrRequestObject> req, std::shared_ptr<MotrAPI> motr_api,
     std::shared_ptr<S3MotrKVSWriterFactory> motr_kvs_writer_factory)
     : MotrAction(req) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   if (motr_api) {
     s3_motr_api = motr_api;
   } else {
@@ -51,7 +51,7 @@ void MotrPutKeyValueAction::setup_steps() {
 }
 
 void MotrPutKeyValueAction::read_and_validate_key_value() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   index_id = S3M0Uint128Helper::to_m0_uint128(request->get_index_id_lo(),
                                               request->get_index_id_hi());
@@ -79,28 +79,28 @@ void MotrPutKeyValueAction::read_and_validate_key_value() {
           );
     }
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrPutKeyValueAction::put_key_value() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   motr_kv_writer->put_keyval(
       index_id, request->get_key_name(), json_value,
       std::bind(&MotrPutKeyValueAction::put_key_value_successful, this),
       std::bind(&MotrPutKeyValueAction::put_key_value_failed, this));
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrPutKeyValueAction::put_key_value_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrPutKeyValueAction::put_key_value_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Failed to retrive the key, due to pre launch failure\n");
@@ -109,11 +109,11 @@ void MotrPutKeyValueAction::put_key_value_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrPutKeyValueAction::consume_incoming_content() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (request->is_s3_client_read_error()) {
     client_read_error();
   } else if (request->has_all_body_content()) {
@@ -129,11 +129,11 @@ void MotrPutKeyValueAction::consume_incoming_content() {
     // else just wait till entire body arrives. rare.
     request->resume();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 bool MotrPutKeyValueAction::is_valid_json(std::string json_str) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   Json::Value root;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(json_str.c_str(), root);
@@ -142,12 +142,12 @@ bool MotrPutKeyValueAction::is_valid_json(std::string json_str) {
     s3_log(S3_LOG_ERROR, request_id, "JSON string not valid.\n");
     return false;
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return true;
 }
 
 void MotrPutKeyValueAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (is_error_state() && !get_s3_error_code().empty()) {
     S3Error error(get_s3_error_code(), request->get_request_id(),
@@ -168,5 +168,5 @@ void MotrPutKeyValueAction::send_response_to_s3_client() {
     request->send_response(S3HttpSuccess200);
   }
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

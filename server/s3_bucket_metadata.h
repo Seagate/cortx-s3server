@@ -103,6 +103,7 @@ class S3BucketMetadata {
   bool json_parsing_error;
 
   std::string request_id;
+  std::string stripped_request_id;
 
   void handle_collision(std::string base_index_name,
                         std::string& salted_index_name,

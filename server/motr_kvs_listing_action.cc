@@ -34,10 +34,10 @@ MotrKVSListingAction::MotrKVSListingAction(
     std::shared_ptr<MotrRequestObject> req,
     std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory)
     : MotrAction(req), last_key(""), fetch_successful(false) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   motr_api = std::make_shared<ConcreteMotrAPI>();
 
-  s3_log(S3_LOG_INFO, request_id, "Motr API: kvs list Service.\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "Motr API: kvs list Service.\n");
 
   if (motr_kvs_reader_factory) {
     motr_kvs_reader_factory_ptr = motr_kvs_reader_factory;
@@ -57,7 +57,7 @@ void MotrKVSListingAction::setup_steps() {
 }
 
 void MotrKVSListingAction::validate_request() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   index_id = S3M0Uint128Helper::to_m0_uint128(request->get_index_id_lo(),
                                               request->get_index_id_hi());
@@ -106,7 +106,7 @@ void MotrKVSListingAction::validate_request() {
 }
 
 void MotrKVSListingAction::get_next_key_value() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (motr_kv_reader == nullptr) {
     motr_kv_reader =
@@ -144,13 +144,13 @@ void MotrKVSListingAction::get_next_key_value() {
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "get_kvs_listing_action_get_next_key_value_shutdown_fail");
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrKVSListingAction::get_next_key_value_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
   retry_count = 0;
@@ -223,7 +223,7 @@ void MotrKVSListingAction::get_next_key_value_successful() {
 }
 
 void MotrKVSListingAction::get_next_key_value_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "No keys found in kv listing\n");
     fetch_successful = true;  // With no entries.
@@ -253,11 +253,11 @@ void MotrKVSListingAction::get_next_key_value_failed() {
     fetch_successful = false;
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrKVSListingAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -299,5 +299,5 @@ void MotrKVSListingAction::send_response_to_s3_client() {
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

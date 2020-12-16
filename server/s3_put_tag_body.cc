@@ -30,7 +30,7 @@
 S3PutTagBody::S3PutTagBody(std::string &xml, std::string &request)
     : xml_content(xml), request_id(request), is_valid(false) {
 
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   if (!xml.empty()) {
     parse_and_validate();
   }

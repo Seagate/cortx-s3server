@@ -27,9 +27,10 @@ S3PutBucketTaggingAction::S3PutBucketTaggingAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3PutTagsBodyFactory> bucket_body_factory)
     : S3BucketAction(std::move(req), std::move(bucket_meta_factory)) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
-  s3_log(S3_LOG_INFO, request_id, "S3 API: Put Bucket Tagging. Bucket[%s]\n",
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "S3 API: Put Bucket Tagging. Bucket[%s]\n",
          request->get_bucket_name().c_str());
 
   if (bucket_body_factory) {
@@ -50,7 +51,7 @@ void S3PutBucketTaggingAction::setup_steps() {
 }
 
 void S3PutBucketTaggingAction::validate_request() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (request->has_all_body_content()) {
     new_bucket_tags = request->get_full_body_content_as_string();
@@ -62,11 +63,11 @@ void S3PutBucketTaggingAction::validate_request() {
         request->get_data_length() /* we ask for all */
         );
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketTaggingAction::consume_incoming_content() {
-  s3_log(S3_LOG_INFO, request_id, "Consume data\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "Consume data\n");
   if (request->is_s3_client_read_error()) {
     client_read_error();
   } else if (request->has_all_body_content()) {
@@ -79,7 +80,7 @@ void S3PutBucketTaggingAction::consume_incoming_content() {
 }
 
 void S3PutBucketTaggingAction::validate_request_body(std::string content) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   put_bucket_tag_body =
       put_bucket_tag_body_factory->create_put_resource_tags_body(content,
                                                                  request_id);
@@ -90,11 +91,11 @@ void S3PutBucketTaggingAction::validate_request_body(std::string content) {
     set_s3_error("MalformedXML");
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketTaggingAction::validate_request_xml_tags() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
 
   if (put_bucket_tag_body->validate_bucket_xml_tags(bucket_tags_map)) {
     next();
@@ -102,11 +103,11 @@ void S3PutBucketTaggingAction::validate_request_xml_tags() {
     set_s3_error("InvalidTagError");
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketTaggingAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
   } else if (bucket_metadata->get_state() ==
@@ -118,11 +119,11 @@ void S3PutBucketTaggingAction::fetch_bucket_info_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketTaggingAction::save_tags_to_bucket_metadata() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     s3_log(S3_LOG_DEBUG, request_id, "Setting bucket tags =%s\n",
            new_bucket_tags.c_str());
@@ -135,11 +136,11 @@ void S3PutBucketTaggingAction::save_tags_to_bucket_metadata() {
             &S3PutBucketTaggingAction::save_tags_to_bucket_metadata_failed,
             this));
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketTaggingAction::save_tags_to_bucket_metadata_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Save Bucket metadata operation failed due to prelaunch failure\n");
@@ -149,11 +150,11 @@ void S3PutBucketTaggingAction::save_tags_to_bucket_metadata_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketTaggingAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -174,5 +175,5 @@ void S3PutBucketTaggingAction::send_response_to_s3_client() {
 
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

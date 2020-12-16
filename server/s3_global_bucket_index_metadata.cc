@@ -47,7 +47,8 @@ S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
     std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory)
     : request(req), json_parsing_error(false) {
   request_id = request->get_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor");
+  stripped_request_id = request->get_stripped_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   initialize();
 
@@ -75,7 +76,8 @@ S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
     std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory)
     : request(req), json_parsing_error(false) {
   request_id = request->get_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor");
+  stripped_request_id = request->get_stripped_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   initialize(str_bucket_name);
 
@@ -104,7 +106,7 @@ std::string S3GlobalBucketIndexMetadata::get_account_id() { return account_id; }
 
 void S3GlobalBucketIndexMetadata::load(std::function<void(void)> on_success,
                                        std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
@@ -117,11 +119,11 @@ void S3GlobalBucketIndexMetadata::load(std::function<void(void)> on_success,
       global_bucket_list_index_oid, bucket_name,
       std::bind(&S3GlobalBucketIndexMetadata::load_successful, this),
       std::bind(&S3GlobalBucketIndexMetadata::load_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GlobalBucketIndexMetadata::load_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (this->from_json(motr_kv_reader->get_value()) != 0) {
     s3_log(S3_LOG_ERROR, request_id,
@@ -138,11 +140,11 @@ void S3GlobalBucketIndexMetadata::load_successful() {
     state = S3GlobalBucketIndexMetadataState::present;
     this->handler_on_success();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GlobalBucketIndexMetadata::load_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (json_parsing_error) {
     state = S3GlobalBucketIndexMetadataState::failed;
@@ -159,12 +161,12 @@ void S3GlobalBucketIndexMetadata::load_failed() {
   }
 
   this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GlobalBucketIndexMetadata::save(std::function<void(void)> on_success,
                                        std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -178,11 +180,11 @@ void S3GlobalBucketIndexMetadata::save(std::function<void(void)> on_success,
       std::bind(&S3GlobalBucketIndexMetadata::save_successful, this),
       std::bind(&S3GlobalBucketIndexMetadata::save_failed, this));
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GlobalBucketIndexMetadata::save_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   state = S3GlobalBucketIndexMetadataState::saved;
 
@@ -196,11 +198,11 @@ void S3GlobalBucketIndexMetadata::save_successful() {
       std::bind(&S3GlobalBucketIndexMetadata::save_replica, this),
       std::bind(&S3GlobalBucketIndexMetadata::save_replica, this));
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GlobalBucketIndexMetadata::save_replica() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   // PUT Operation pass even if we failed to put KV in replica index.
   if (motr_kv_writer->get_state() != S3MotrKVSWriterOpState::created) {
@@ -212,11 +214,11 @@ void S3GlobalBucketIndexMetadata::save_replica() {
   }
   this->handler_on_success();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GlobalBucketIndexMetadata::save_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_ERROR, request_id, "Saving of root bucket list index failed\n");
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
     state = S3GlobalBucketIndexMetadataState::failed_to_launch;
@@ -225,12 +227,12 @@ void S3GlobalBucketIndexMetadata::save_failed() {
   }
   this->handler_on_failed();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GlobalBucketIndexMetadata::remove(std::function<void(void)> on_success,
                                          std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -242,11 +244,11 @@ void S3GlobalBucketIndexMetadata::remove(std::function<void(void)> on_success,
       std::bind(&S3GlobalBucketIndexMetadata::remove_successful, this),
       std::bind(&S3GlobalBucketIndexMetadata::remove_failed, this));
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GlobalBucketIndexMetadata::remove_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   state = S3GlobalBucketIndexMetadataState::deleted;
 
@@ -260,11 +262,11 @@ void S3GlobalBucketIndexMetadata::remove_successful() {
       std::bind(&S3GlobalBucketIndexMetadata::remove_replica, this),
       std::bind(&S3GlobalBucketIndexMetadata::remove_replica, this));
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GlobalBucketIndexMetadata::remove_replica() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   // DELETE bucket operation pass even if we failed to remove KV
   // from replica index
@@ -278,11 +280,11 @@ void S3GlobalBucketIndexMetadata::remove_replica() {
   }
   this->handler_on_success();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GlobalBucketIndexMetadata::remove_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_ERROR, request_id, "Removal of bucket information failed\n");
 
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
@@ -292,12 +294,12 @@ void S3GlobalBucketIndexMetadata::remove_failed() {
   }
   this->handler_on_failed();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 // Streaming to json
 std::string S3GlobalBucketIndexMetadata::to_json() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   Json::Value root;
 
   root["account_name"] = account_name;
@@ -313,7 +315,7 @@ std::string S3GlobalBucketIndexMetadata::to_json() {
 }
 
 int S3GlobalBucketIndexMetadata::from_json(std::string content) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   Json::Value root;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), root);

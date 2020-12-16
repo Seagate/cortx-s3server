@@ -26,9 +26,10 @@ S3GetBucketTaggingAction::S3GetBucketTaggingAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
     : S3BucketAction(std::move(req), std::move(bucket_meta_factory), false) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
-  s3_log(S3_LOG_INFO, request_id, "S3 API: Get Bucket Tagging. Bucket[%s]\n",
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "S3 API: Get Bucket Tagging. Bucket[%s]\n",
          request->get_bucket_name().c_str());
 
   setup_steps();
@@ -43,16 +44,17 @@ void S3GetBucketTaggingAction::setup_steps() {
 }
 
 void S3GetBucketTaggingAction::check_metadata_missing_status() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (!(bucket_metadata->check_bucket_tags_exists())) {
     set_s3_error("NoSuchTagSetError");
   }
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GetBucketTaggingAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering get_metadata_failed\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry get_metadata_failed\n",
+         __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Bucket metadata load operation failed due to pre launch failure\n");
@@ -66,11 +68,11 @@ void S3GetBucketTaggingAction::fetch_bucket_info_failed() {
            "Bucket metadata load operation failed due to internal error\n");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_INFO, "", "Exiting\n");
+  s3_log(S3_LOG_INFO, "", "%s Exit", __func__);
 }
 
 void S3GetBucketTaggingAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -92,6 +94,6 @@ void S3GetBucketTaggingAction::send_response_to_s3_client() {
     request->send_response(S3HttpSuccess200, response_xml);
   }
 
-  s3_log(S3_LOG_INFO, "", "Exiting\n");
+  s3_log(S3_LOG_INFO, "", "%s Exit", __func__);
   done();
 }
