@@ -26,7 +26,6 @@
 #include "s3_ut_common.h"
 #include "s3_m0_uint128_helper.h"
 #include <cstdlib>
-#include "s3_common_utilities.h"
 
 using ::testing::Return;
 using ::testing::Invoke;
@@ -311,33 +310,4 @@ TEST_F(S3AbortMultipartActionTest, Send503InternalErrorToS3Client) {
               send_response(500, HasSubstr("<Code>InternalError</Code>")))
       .Times(1);
   action_under_test->send_response_to_s3_client();
-}
-
-TEST_F(S3AbortMultipartActionTest, SizeBucketingOfObjects) {
-
-  std::string original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 0);
-  EXPECT_EQ("IXYZ", original_string);
-
-  original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 1025);
-  EXPECT_EQ("HXYZ", original_string);
-
-  original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 52428800);
-  EXPECT_EQ("GXYZ", original_string);
-
-  original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 52428801);
-  EXPECT_EQ("FXYZ", original_string);
-
-  original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string,
-                                                     107374182400);
-  EXPECT_EQ("EXYZ", original_string);
-
-  original_string = "XYZ";
-  S3CommonUtilities::size_based_bucketing_of_objects(original_string,
-                                                     107374182401);
-  EXPECT_EQ("DXYZ", original_string);
 }
