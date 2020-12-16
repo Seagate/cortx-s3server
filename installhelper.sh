@@ -211,6 +211,7 @@ cp -f scripts/create_auth_jks_password.sh $AUTH_INSTALL_LOCATION/scripts/
 cp -f scripts/ldap/syncprov_mod.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/syncprov.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/replicate.ldif $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/resultssizelimit.ldif $S3_INSTALL_LOCATION/install/ldap/
 
 # Copy LDAP replication to install location
 cp -f scripts/ldap/replication/syncprov_mod.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
@@ -220,6 +221,11 @@ cp -f scripts/ldap/replication/data.ldif $S3_INSTALL_LOCATION/install/ldap/repli
 cp -f scripts/ldap/replication/olcserverid.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
 cp -f scripts/ldap/replication/syncprov_config.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
 cp -f scripts/ldap/replication/deltaReplication.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
+cp -f scripts/ldap/replication/setupReplicationScript.sh $S3_INSTALL_LOCATION/install/ldap/replication/
+cp -f scripts/ldap/replication/serverIdTemplate.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
+cp -f scripts/ldap/replication/configTemplate.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
+cp -f scripts/ldap/replication/dataTemplate.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
+
 
 # Copy check replication script to install location
 cp -f scripts/ldap/check_ldap_replication.sh $S3_INSTALL_LOCATION/install/ldap/
