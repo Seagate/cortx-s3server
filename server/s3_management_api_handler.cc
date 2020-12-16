@@ -23,7 +23,7 @@
 #include "s3_account_delete_metadata_action.h"
 
 void S3ManagementAPIHandler::create_action() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry", __func__);
   s3_log(S3_LOG_DEBUG, request_id, "Action operation code = %d\n",
          operation_code);
   switch (operation_code) {
@@ -43,5 +43,5 @@ void S3ManagementAPIHandler::create_action() {
       // should never be here.
       return;
   };  // switch operation_code
-  s3_log(S3_LOG_DEBUG, request_id, "Exiting");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
 }

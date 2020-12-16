@@ -51,7 +51,8 @@ class S3MotrKVSReaderContext : public S3AsyncOpContextBase {
       : S3AsyncOpContextBase(req, success_callback, failed_callback, 1,
                              motr_api) {
     request_id = request->get_request_id();
-    s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+    stripped_request_id = request->get_stripped_request_id();
+    s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
     // Create or write, we need op context
     motr_idx_op_context = create_basic_idx_op_ctx(1);
@@ -62,7 +63,7 @@ class S3MotrKVSReaderContext : public S3AsyncOpContextBase {
   }
 
   ~S3MotrKVSReaderContext() {
-    s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
+    s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__);
 
     if (has_motr_idx_op_context) {
       free_basic_idx_op_ctx(motr_idx_op_context);
@@ -106,6 +107,7 @@ class S3MotrKVSReader {
   std::shared_ptr<MotrAPI> s3_motr_api;
 
   std::string request_id;
+  std::string stripped_request_id;
 
   // Used to report to caller
   std::function<void()> handler_on_success;

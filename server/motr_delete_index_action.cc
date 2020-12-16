@@ -31,10 +31,10 @@ MotrDeleteIndexAction::MotrDeleteIndexAction(
     std::shared_ptr<MotrRequestObject> req,
     std::shared_ptr<S3MotrKVSWriterFactory> motr_kvs_writer_factory)
     : MotrAction(req) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   motr_api = std::make_shared<ConcreteMotrAPI>();
 
-  s3_log(S3_LOG_INFO, request_id, "Motr API: Index delete.\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "Motr API: Index delete.\n");
 
   if (motr_kvs_writer_factory) {
     motr_kvs_writer_factory_ptr = motr_kvs_writer_factory;
@@ -54,7 +54,7 @@ void MotrDeleteIndexAction::setup_steps() {
 }
 
 void MotrDeleteIndexAction::validate_request() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   index_id = S3M0Uint128Helper::to_m0_uint128(request->get_index_id_lo(),
                                               request->get_index_id_hi());
@@ -69,7 +69,7 @@ void MotrDeleteIndexAction::validate_request() {
 }
 
 void MotrDeleteIndexAction::delete_index() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   motr_kv_writer =
       motr_kvs_writer_factory_ptr->create_motr_kvs_writer(request, motr_api);
@@ -81,17 +81,17 @@ void MotrDeleteIndexAction::delete_index() {
 
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL("delete_index_action_shutdown_fail");
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrDeleteIndexAction::delete_index_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrDeleteIndexAction::delete_index_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Index is missing.\n");
   } else if (motr_kv_writer->get_state() ==
@@ -103,11 +103,11 @@ void MotrDeleteIndexAction::delete_index_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrDeleteIndexAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -133,5 +133,5 @@ void MotrDeleteIndexAction::send_response_to_s3_client() {
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

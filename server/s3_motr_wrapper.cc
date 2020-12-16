@@ -38,7 +38,7 @@ void ConcreteMotrAPI::motr_fake_op_launch(struct m0_op **op, uint32_t nr) {
 
 void ConcreteMotrAPI::motr_fake_redis_op_launch(struct m0_op **op,
                                                 uint32_t nr) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   auto redis_ctx = S3FakeMotrRedisKvs::instance();
 
   for (uint32_t i = 0; i < nr; ++i) {
@@ -60,7 +60,7 @@ void ConcreteMotrAPI::motr_fake_redis_op_launch(struct m0_op **op,
       s3_motr_op_stable(cop);
     }
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void ConcreteMotrAPI::motr_fi_op_launch(struct m0_op **op, uint32_t nr) {

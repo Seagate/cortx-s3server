@@ -36,9 +36,10 @@ S3DeleteBucketAction::S3DeleteBucketAction(
       last_key(""),
       is_bucket_empty(false),
       delete_successful(false) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
-  s3_log(S3_LOG_INFO, request_id, "S3 API: Delete Bucket API. Bucket[%s]\n",
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "S3 API: Delete Bucket API. Bucket[%s]\n",
          request->get_bucket_name().c_str());
 
   if (object_meta_factory) {
@@ -98,7 +99,7 @@ void S3DeleteBucketAction::setup_steps() {
 }
 
 void S3DeleteBucketAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   S3BucketMetadataState bucket_metadata_state = bucket_metadata->get_state();
   if (bucket_metadata_state == S3BucketMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
@@ -110,11 +111,11 @@ void S3DeleteBucketAction::fetch_bucket_info_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteBucketAction::fetch_first_object_metadata() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   S3BucketMetadataState bucket_metadata_state = bucket_metadata->get_state();
   if (bucket_metadata_state == S3BucketMetadataState::present) {
     motr_kv_reader =
@@ -138,19 +139,19 @@ void S3DeleteBucketAction::fetch_first_object_metadata() {
                     this));
     }
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteBucketAction::fetch_first_object_metadata_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   is_bucket_empty = false;
   set_s3_error("BucketNotEmpty");
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteBucketAction::fetch_first_object_metadata_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "There is no object in bucket\n");
     is_bucket_empty = true;
@@ -168,11 +169,11 @@ void S3DeleteBucketAction::fetch_first_object_metadata_failed() {
     set_s3_error("ServiceUnavailable");
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteBucketAction::fetch_multipart_objects() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   struct m0_uint128 empty_indx_oid = {0ULL, 0ULL};
   struct m0_uint128 indx_oid = bucket_metadata->get_multipart_index_oid();
   // If the index oid is 0 then it implies there is no multipart metadata
@@ -192,7 +193,7 @@ void S3DeleteBucketAction::fetch_multipart_objects() {
 }
 
 void S3DeleteBucketAction::fetch_multipart_objects_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   std::string part_oids_str = "";
   struct m0_uint128 multipart_obj_oid;
   s3_log(S3_LOG_DEBUG, request_id, "Found multipart uploads listing\n");
@@ -253,7 +254,7 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
 }
 
 void S3DeleteBucketAction::delete_multipart_objects() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (multipart_object_oids.size() != 0) {
     motr_writer = motr_writer_factory->create_motr_writer(request);
     motr_writer->delete_objects(
@@ -265,11 +266,11 @@ void S3DeleteBucketAction::delete_multipart_objects() {
   } else {
     next();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteBucketAction::delete_multipart_objects_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   int count = 0;
   int op_ret_code;
   bool atleast_one_error = false;
@@ -295,11 +296,11 @@ void S3DeleteBucketAction::delete_multipart_objects_successful() {
            S3_IEM_DELETE_OBJ_FAIL_JSON);
   }
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteBucketAction::delete_multipart_objects_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   uint count = 0;
   int op_ret_code;
   bool atleast_one_error = false;
@@ -326,11 +327,11 @@ void S3DeleteBucketAction::delete_multipart_objects_failed() {
            S3_IEM_DELETE_OBJ_FAIL_JSON);
   }
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteBucketAction::remove_part_indexes() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (part_oids.size() != 0) {
     motr_kv_writer =
         motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
@@ -341,11 +342,11 @@ void S3DeleteBucketAction::remove_part_indexes() {
   } else {
     next();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteBucketAction::remove_part_indexes_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   int i;
   int op_ret_code;
   bool partial_failure = false;
@@ -361,7 +362,7 @@ void S3DeleteBucketAction::remove_part_indexes_successful() {
            "Failed to delete some of the multipart part metadata\n");
   }
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   next();
 }
 
@@ -377,7 +378,7 @@ void S3DeleteBucketAction::remove_part_indexes_failed() {
 }
 
 void S3DeleteBucketAction::remove_multipart_index() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (multipart_present) {
     if (motr_kv_writer == nullptr) {
       motr_kv_writer =
@@ -390,7 +391,7 @@ void S3DeleteBucketAction::remove_multipart_index() {
   } else {
     next();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteBucketAction::remove_multipart_index_failed() {
@@ -412,7 +413,7 @@ void S3DeleteBucketAction::remove_multipart_index_failed() {
 }
 
 void S3DeleteBucketAction::remove_object_list_index() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (object_list_index_oid.u_hi == 0ULL &&
       object_list_index_oid.u_lo == 0ULL) {
     next();
@@ -427,7 +428,7 @@ void S3DeleteBucketAction::remove_object_list_index() {
         std::bind(&S3DeleteBucketAction::remove_object_list_index_failed,
                   this));
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 /*
@@ -454,7 +455,7 @@ void S3DeleteBucketAction::remove_object_list_index() {
  */
 
 void S3DeleteBucketAction::remove_object_list_index_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_ERROR, request_id,
          "Failed to delete index, this will be stale in Motr: %" SCNx64
          " : %" SCNx64 "\n",
@@ -470,11 +471,11 @@ void S3DeleteBucketAction::remove_object_list_index_failed() {
   } else {
     next();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteBucketAction::remove_objects_version_list_index() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (objects_version_list_index_oid.u_hi == 0ULL &&
       objects_version_list_index_oid.u_lo == 0ULL) {
     next();
@@ -491,11 +492,11 @@ void S3DeleteBucketAction::remove_objects_version_list_index() {
             &S3DeleteBucketAction::remove_objects_version_list_index_failed,
             this));
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteBucketAction::remove_objects_version_list_index_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_ERROR, request_id,
          "Failed to delete index, this will be stale in Motr: %" SCNx64
          " : %" SCNx64 "\n",
@@ -512,26 +513,26 @@ void S3DeleteBucketAction::remove_objects_version_list_index_failed() {
   } else {
     next();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteBucketAction::delete_bucket() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   bucket_metadata->remove(
       std::bind(&S3DeleteBucketAction::delete_bucket_successful, this),
       std::bind(&S3DeleteBucketAction::delete_bucket_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteBucketAction::delete_bucket_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   delete_successful = true;
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteBucketAction::delete_bucket_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_ERROR, request_id, "Bucket deletion failed\n");
   delete_successful = false;
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
@@ -543,11 +544,11 @@ void S3DeleteBucketAction::delete_bucket_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteBucketAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // Trigger metadata read async operation with callback
   if (is_error_state() && !get_s3_error_code().empty()) {
     S3Error error(get_s3_error_code(), request->get_request_id(),
@@ -571,5 +572,5 @@ void S3DeleteBucketAction::send_response_to_s3_client() {
     request->send_response(error.get_http_status_code(), response_xml);
   }
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

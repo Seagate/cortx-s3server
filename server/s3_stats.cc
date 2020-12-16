@@ -89,7 +89,7 @@ int S3Stats::count_unique(const std::string& key, const std::string& value,
 }
 
 int S3Stats::load_allowlist() {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   std::string allowlist_filename =
       g_option_instance->get_stats_allowlist_filename();
   s3_log(S3_LOG_DEBUG, "", "Loading allowlist file: %s\n",
@@ -128,12 +128,12 @@ int S3Stats::load_allowlist() {
     s3_log(S3_LOG_ERROR, "", "YAML::Exception caught: %s\n", e.what());
     return -1;
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return 0;
 }
 
 int S3Stats::init() {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   if (load_allowlist() == -1) {
     s3_log(S3_LOG_ERROR, "", "load_allowlist failed parsing the file: %s\n",
            g_option_instance->get_stats_allowlist_filename().c_str());
@@ -164,17 +164,17 @@ int S3Stats::init() {
     errno = EINVAL;
     return -1;
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return 0;
 }
 
 void S3Stats::finish() {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   if (sock != -1) {
     socket_obj->close(sock);
     sock = -1;
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 int S3Stats::send(const std::string& msg, int retry) {

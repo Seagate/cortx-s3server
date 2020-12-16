@@ -65,6 +65,7 @@ mkdir -p $AUTH_INSTALL_LOCATION
 mkdir -p $DATA_RECOVERY_INSTALL_LOCATION
 mkdir -p $AUTH_INSTALL_LOCATION/resources
 mkdir -p $AUTH_INSTALL_LOCATION/scripts
+mkdir -p $AUTH_INSTALL_LOCATION/scripts/swupdate
 mkdir -p $S3_INSTALL_LOCATION/addb-plugin
 mkdir -p $S3_INSTALL_LOCATION/bin
 mkdir -p $S3_INSTALL_LOCATION/s3datarecovery
@@ -124,7 +125,7 @@ if [ -z "${IS_RELEASE}" ] ; then
 else
   cp s3config.release.yaml.sample ${S3_CONFIG_FILE_LOCATION}/s3config.yaml.sample
 fi
-
+cp s3config_unsafe_attributes.yaml $S3_CONFIG_FILE_LOCATION
 # Copy the S3 Audit Log Config file
 cp s3server_audit_log.properties $S3_CONFIG_FILE_LOCATION
 
@@ -172,7 +173,7 @@ cp s3recovery/s3recovery/s3recovery $S3_INSTALL_LOCATION/s3datarecovery/
 
 # Copy the s3 background configuration file.
 cp s3backgrounddelete/s3backgrounddelete/config/s3_background_delete_config.yaml.sample $S3_INSTALL_LOCATION/s3backgrounddelete/config.yaml.sample
-
+cp s3backgrounddelete/s3backgrounddelete/config/s3backgrounddelete_unsafe_attributes.yaml $S3_INSTALL_LOCATION/s3backgrounddelete/
 # Copy the s3 cluster configuration file.
 cp s3backgrounddelete/s3backgrounddelete/config/s3_cluster.yaml $S3_INSTALL_LOCATION/s3backgrounddelete/s3_cluster.yaml
 
@@ -199,12 +200,15 @@ cp -ru auth/resources/static $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/authserver-log4j2.xml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/authencryptcli-log4j2.xml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/authserver.properties.sample $AUTH_INSTALL_LOCATION/resources/
+cp -f auth/resources/authserver_unsafe_attributes.yaml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/keystore.properties.sample $AUTH_INSTALL_LOCATION/resources/
+cp -f auth/resources/keystore_unsafe_attributes.yaml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/defaultAclTemplate.xml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/AmazonS3.xsd $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/s3authserver.jks $AUTH_INSTALL_LOCATION/resources/
 cp -f scripts/s3authserver.jks_template $AUTH_INSTALL_LOCATION/scripts/
 cp -f scripts/create_auth_jks_password.sh $AUTH_INSTALL_LOCATION/scripts/
+cp -f scripts/swupdate/merge.sh $AUTH_INSTALL_LOCATION/scripts/swupdate
 
 # Copy LDAP replication to install location
 # remove this once changes are done in provisioning

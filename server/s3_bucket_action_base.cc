@@ -31,7 +31,7 @@ S3BucketAction::S3BucketAction(
     bool skip_auth)
     : S3Action(std::move(req), check_shutdown, std::move(auth_factory),
                skip_auth) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   if (bucket_meta_factory) {
     bucket_metadata_factory = std::move(bucket_meta_factory);
@@ -41,11 +41,11 @@ S3BucketAction::S3BucketAction(
 }
 
 S3BucketAction::~S3BucketAction() {
-  s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__);
 }
 
 void S3BucketAction::fetch_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (s3_fi_is_enabled("fail_fetch_bucket_info")) {
     s3_fi_enable_once("motr_kv_get_fail");
   }
@@ -72,9 +72,9 @@ void S3BucketAction::fetch_bucket_info_success() {
 void S3BucketAction::load_metadata() { fetch_bucket_info(); }
 
 void S3BucketAction::set_authorization_meta() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
                                   bucket_metadata->get_policy_as_json());
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

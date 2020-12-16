@@ -33,7 +33,7 @@
 
         <RollingFile name="ROLLINGFILE" fileName="${baseDir}/encryptcli.log"
                      filePattern="${baseDir}/$${date:yyyy-MM-dd}/app-%d{yyyy-MM-dd-HH}.log.gz">
-            <PatternLayout pattern="%d %p %C{1.} [%t] %m%n"/>
+            <PatternLayout pattern="%d %p %C{1.} %m%n"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="20 MB"/>
             </Policies>

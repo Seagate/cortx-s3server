@@ -41,6 +41,7 @@ class S3URI {
   std::string bucket_name;
   std::string object_name;
   std::string request_id;
+  std::string stripped_request_id;
 
  private:
   void setup_operation_code();
