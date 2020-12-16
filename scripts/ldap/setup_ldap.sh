@@ -84,16 +84,16 @@ fi
 yum install -y openldap-servers openldap-clients
 cp -f $INSTALLDIR/olcDatabase\=\{2\}mdb.ldif /etc/openldap/slapd.d/cn\=config/
 
-if [[ $defaultpasswd == true ]]
-then # Fetch Root DN & IAM admin passwords from Salt and decrypt it
-    if rpm -q "salt"  > /dev/null;
-    then
-        LDAPADMINPASS=$(salt-call pillar.get openldap:iam_admin:secret  --output=newline_values_only)
-        LDAPADMINPASS=$(salt-call lyveutil.decrypt openldap ${LDAPADMINPASS} --output=newline_values_only)
+chgrp ldap /etc/openldap/certs/password # onlyif: grep -q ldap /etc/group && test -f /etc/openldap/certs/password
 
-        ROOTDNPASSWORD=$(salt-call pillar.get openldap:admin:secret  --output=newline_values_only)
-        ROOTDNPASSWORD=$(salt-call lyveutil.decrypt openldap ${ROOTDNPASSWORD} --output=newline_values_only)
+if [[ $defaultpasswd == true ]]
+then # Get password from cortx-utils
+    LDAPADMINPASS=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
+    if [[ $? != 0 || -z "$LDAPADMINPASS" ]] # Generate random password using cortx-utils, failed
+    then
+        LDAPADMINPASS=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9@#+' | fold -w 12 | head -n 1)
     fi
+    ROOTDNPASSWORD="$LDAPADMINPASS"
 else # Fetch Root DN & IAM admin passwords from User
     echo -en "\nEnter Password for LDAP rootDN: "
     read -s ROOTDNPASSWORD && [[ -z $ROOTDNPASSWORD ]] && echo 'Password can not be null.' && exit 1

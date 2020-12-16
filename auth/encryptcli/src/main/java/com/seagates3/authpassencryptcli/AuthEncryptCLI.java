@@ -25,12 +25,16 @@ import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Arrays;
+import java.util.Properties;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
@@ -51,8 +55,14 @@ import com.seagates3.exception.CLIInitializationException;
 public class AuthEncryptCLI {
 
   public
-   static String AUTH_INSTALL_DIR = "/opt/seagate/cortx/auth";
+   static final String AUTH_INSTALL_DIR = "/opt/seagate/cortx/auth";
+  public
+   static final String AUTH_RESOURCE_DIR = "/opt/seagate/cortx/auth/resources";
     private static Logger logger;
+    private
+     static boolean isEncryptOptionPassed = false;
+    private
+     static boolean isDecryptOptionPassed = false;
 
     /**
      * @param args
@@ -60,7 +70,9 @@ public class AuthEncryptCLI {
     public static void usage() {
         System.out.println("Usage: java -jar AuthPassEncryptCLI-1.0-0.jar"
                                                           + " [options]");
-        System.out.println("-s  <password>       Specify password");
+        System.out.println(
+            "-s  <password>       Specify password to be encrypted");
+        System.out.println("-d   decrypt ldap login password");
         System.out.println("-help");
     }
 
@@ -94,11 +106,14 @@ public class AuthEncryptCLI {
 
         String passwd = null;
         if(args.length > 0) {
-            if(args[0] == "-help") {
+          if (args[0].equals("-help")) {
                 usage();
                 System.exit(0);
             } else if((args[0].equals("-s")) && (args.length == 2)) {
                 passwd = args[1];
+                isEncryptOptionPassed = true;
+            } else if (args[0].equals("-d")) {
+              isDecryptOptionPassed = true;
             } else {
                 logger.error("Incorrect arguments passed.");
                 usage();
@@ -109,23 +124,10 @@ public class AuthEncryptCLI {
     }
 
     /**
-     * This method encrypts password using public key from key store
-     * @param passwd
-     * @throws GeneralSecurityException
-     * @throws Exception
+     * This method reads keystore password from s3cipher utility.
      */
-    public static String processEncryptRequest(String passwd)
-                       throws GeneralSecurityException, Exception {
-
-        String encryptedPasswd = null;
-        if(passwd == null || passwd.isEmpty()
-                          || passwd.matches(".*([ \t]).*")) {
-            logger.error("Password is null or empty or contains spaces");
-            System.err.println("Invalid Password Value.");
-            throw new Exception("Invalid Password Value.");
-        }
-
-        Path s3KeystoreFile = AuthEncryptConfig.getKeyStorePath();
+   public
+    static String getKeystorePasswd() throws Exception {
         String keystorePasswd = null;
         try {
           String cmd = AuthEncryptConfig.getCipherUtil();
@@ -146,22 +148,68 @@ public class AuthEncryptCLI {
         }
         catch (Exception e) {
           logger.debug(
-              e.getMessage() +
-              " IO error in S3 cipher. Loading default keystore credentilas.");
+              "{} IO error in S3 cipher. Loading default keystore credentilas.",
+              e.getMessage());
           keystorePasswd = AuthEncryptConfig.getKeyStorePassword();
         }
+        return keystorePasswd;
+    }
 
-        logger.debug("Using Java Key Store File: " + s3KeystoreFile.toString());
+    /**
+     * This method decrypts password using public key from key store
+     * @param passwd to be decrypted
+     * @throws GenralSequrityExceptoion
+     */
+   public
+    static String processDecryptRequest(String passwd)
+        throws GeneralSecurityException,
+        Exception {
+      if (passwd == null || passwd.isEmpty() || passwd.matches(".*([ \t]).*")) {
+        logger.error("Password is null or empty or contains spaces");
+        System.err.println("Invalid password value.");
+        throw new Exception("Invalid password value.");
+      }
+      Path s3KeystoreFile = AuthEncryptConfig.getKeyStorePath();
         String certAlias = AuthEncryptConfig.getCertAlias();
-        PublicKey pKey = JKSUtil.getPublicKeyFromJKS(s3KeystoreFile.toString(),
-                                                     certAlias, keystorePasswd);
+        String keystorePasswd = getKeystorePasswd();
 
-        if(pKey == null ) {
-            logger.error("Failed get public key." );
-            throw new Exception("Failed get public key.");
+        PrivateKey privateKey = JKSUtil.getPrivateKeyFromJKS(
+            s3KeystoreFile.toString(), certAlias, keystorePasswd);
+
+        String decryptedPasswd =
+            RSAEncryptDecryptUtil.decrypt(passwd, privateKey);
+        if (null == decryptedPasswd || decryptedPasswd.isEmpty()) {
+          logger.error("Encrypted Password is null or empty");
+          throw new Exception("Failed to decrypt password.");
         }
+        return decryptedPasswd;
+    }
 
-        logger.debug("Public Key :" + pKey.toString());
+    /**
+     * This method encrypts password using public key from key store
+     * @param passwd
+     * @throws GeneralSecurityException
+     * @throws Exception
+     */
+   public
+    static String processEncryptRequest(String passwd)
+        throws GeneralSecurityException,
+        Exception {
+
+      String encryptedPasswd = null;
+      if (passwd == null || passwd.isEmpty() || passwd.matches(".*([ \t]).*")) {
+        logger.error("Password is null or empty or contains spaces");
+        System.err.println("Invalid Password Value.");
+        throw new Exception("Invalid Password Value.");
+      }
+      Path s3KeystoreFile = AuthEncryptConfig.getKeyStorePath();
+      logger.debug("Using Java Key Store File: {}", s3KeystoreFile);
+      String certAlias = AuthEncryptConfig.getCertAlias();
+      String keystorePasswd = getKeystorePasswd();
+
+      PublicKey pKey = JKSUtil.getPublicKeyFromJKS(s3KeystoreFile.toString(),
+                                                   certAlias, keystorePasswd);
+      logger.debug("Public Key: {}", pKey);
         encryptedPasswd = RSAEncryptDecryptUtil.encrypt(passwd, pKey);
 
         if(encryptedPasswd == null || encryptedPasswd.isEmpty()) {
@@ -215,8 +263,9 @@ public class AuthEncryptCLI {
           AuthEncryptConfig.readConfig(AUTH_INSTALL_DIR +
                                        "/resources/keystore.properties");
         } catch (IOException e1) {
-            logger.error("Failed to read Properties from install dir:"
-                 + AUTH_INSTALL_DIR + " Error Stack :" + e1.getStackTrace());
+          logger.error(
+              "Failed to read Properties from install dir: {}. Error Stack: {}",
+              AUTH_INSTALL_DIR, e1.getStackTrace());
             System.err.println("Failed to read Properties from install dir:"
                                                         + AUTH_INSTALL_DIR);
             System.exit(1);
@@ -240,17 +289,32 @@ public class AuthEncryptCLI {
             passwd = parseArgs(args);
         }
         try {
-          String encryptedPasswd =  processEncryptRequest(passwd);
-          //Output to console
-          System.out.println(encryptedPasswd);
+          if (isEncryptOptionPassed) {
+            // Output to console
+            System.out.println(processEncryptRequest(passwd));
+          } else if (isDecryptOptionPassed) {
+            Properties authServerConfig = new Properties();
+            Path authProperties =
+                Paths.get(AUTH_RESOURCE_DIR, "authserver.properties");
+            InputStream inStream =
+                new FileInputStream(authProperties.toString());
+            authServerConfig.load(inStream);
+
+            String encryptedPasswd =
+                authServerConfig.getProperty("ldapLoginPW");
+
+            // Output to console
+            System.out.println(processDecryptRequest(encryptedPasswd));
+            inStream.close();
+          }
         } catch (GeneralSecurityException e) {
-            logger.error("Failed to encrypt password. " + e.getCause()
-                                                    + e.getMessage());
-            System.err.println("Failed to encrypt password.");
+          logger.error("Failed to encrypt/decrypt password. Cause: {}, msg: {}",
+                       e.getCause(), e.getMessage());
+          System.err.println("Failed to encrypt/decrypt password.");
             System.exit(1);
         } catch (Exception e) {
-            logger.error("Failed to encrypt password. " + e.getCause()
-                                                    + e.getMessage());
+          logger.error("Failed to encrypt/decrypt password. Cause: {}, msg: {}",
+                       e.getCause(), e.getMessage());
             System.err.println("Failed to encrypt password.");
             System.exit(1);
         }
