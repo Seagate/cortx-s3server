@@ -67,8 +67,7 @@ int S3MempoolManager::initialize(std::vector<int> unit_sizes,
 
   for (auto unit_size : unit_sizes) {
     MemoryPoolHandle handle;
-    s3_log(S3_LOG_INFO, "", "Creating memory pool for unit_size = %d.\n",
-           unit_size);
+    s3_log(S3_LOG_INFO, "", "mem pool for size = %d\n", unit_size);
 
     int rc = mempool_create_with_shared_mem(
         unit_size, initial_buffer_count_per_pool * unit_size,
@@ -122,7 +121,8 @@ void S3MempoolManager::free_pools() {
 
 //  Return the buffer of give unit_size
 void *S3MempoolManager::get_buffer_for_unit_size(size_t unit_size) {
-  s3_log(S3_LOG_DEBUG, "", "Entering with unit_size[%zu]\n", unit_size);
+  s3_log(S3_LOG_DEBUG, "", "%s Entry with unit_size[%zu]\n", __func__,
+         unit_size);
   auto item = pool_of_mem_pool.find(unit_size);
   if (item != pool_of_mem_pool.end()) {
     // We have required memory pool.
@@ -153,7 +153,8 @@ void *S3MempoolManager::get_buffer_for_unit_size(size_t unit_size) {
 // Releases the give buffer back to pool
 int S3MempoolManager::release_buffer_for_unit_size(void *buf,
                                                    size_t unit_size) {
-  s3_log(S3_LOG_DEBUG, "", "Entering with unit_size[%zu]\n", unit_size);
+  s3_log(S3_LOG_DEBUG, "", "%s Entry with unit_size[%zu]\n", __func__,
+         unit_size);
   auto item = pool_of_mem_pool.find(unit_size);
   if (item != pool_of_mem_pool.end()) {
     s3_log(S3_LOG_DEBUG, "",
@@ -162,7 +163,8 @@ int S3MempoolManager::release_buffer_for_unit_size(void *buf,
     MemoryPoolHandle handle = item->second;
     return mempool_releasebuffer(handle, buf, unit_size);
   }
-  s3_log(S3_LOG_ERROR, "", "Exiting: Not found unit_size[%zu]\n", unit_size);
+  s3_log(S3_LOG_ERROR, "", "%s Exit: Not found unit_size[%zu]\n", __func__,
+         unit_size);
   // Should never be here
   return S3_MEMPOOL_ERROR;
 }

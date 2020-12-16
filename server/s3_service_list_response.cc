@@ -22,7 +22,7 @@
 #include "s3_common_utilities.h"
 
 S3ServiceListResponse::S3ServiceListResponse() {
-  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);
   bucket_list.clear();
 }
 

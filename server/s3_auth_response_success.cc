@@ -23,7 +23,7 @@
 
 S3AuthResponseSuccess::S3AuthResponseSuccess(std::string &xml)
     : xml_content(xml), is_valid(false) {
-  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);
   alluserrequest = false;
   is_valid = parse_and_validate();
 }

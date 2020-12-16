@@ -79,7 +79,7 @@ S3ChunkPayloadParser::S3ChunkPayloadParser()
       content_length(0),
       chunk_sig_key_q_const(S3_AWS_CHUNK_KEY),
       chunk_sig_key_char_state(S3_AWS_CHUNK_KEY) {
-  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);
 
   evbuf_t *spare_buffer = evbuffer_new();
   // Lets just preallocate space in evbuf to max we intend
@@ -91,7 +91,7 @@ S3ChunkPayloadParser::S3ChunkPayloadParser()
 }
 
 S3ChunkPayloadParser::~S3ChunkPayloadParser() {
-  s3_log(S3_LOG_DEBUG, "", "Destructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s\n", __func__);
   evbuf_t *buf = NULL;
   while (!spare_buffers.empty()) {
     buf = spare_buffers.front();

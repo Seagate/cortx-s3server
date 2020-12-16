@@ -114,8 +114,8 @@ S3ObjectMetadata::S3ObjectMetadata(
 
   request = std::move(req);
   request_id = request->get_request_id();
-
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  stripped_request_id = request->get_stripped_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   if (bucketname.empty()) {
     bucket_name = request->get_bucket_name();
@@ -321,7 +321,7 @@ void S3ObjectMetadata::validate() {
 
 void S3ObjectMetadata::load(std::function<void(void)> on_success,
                             std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   // object_list_index_oid should be set before using this method
   assert(object_list_index_oid.u_hi || object_list_index_oid.u_lo);
 
@@ -336,7 +336,7 @@ void S3ObjectMetadata::load(std::function<void(void)> on_success,
       object_list_index_oid, object_name,
       std::bind(&S3ObjectMetadata::load_successful, this),
       std::bind(&S3ObjectMetadata::load_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3ObjectMetadata::load_successful() {
@@ -399,7 +399,7 @@ void S3ObjectMetadata::save(std::function<void(void)> on_success,
 
 // Save to objects version list index
 void S3ObjectMetadata::save_version_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   // objects_version_list_index_oid should be set before using this method
   assert(objects_version_list_index_oid.u_hi ||
          objects_version_list_index_oid.u_lo);
@@ -411,7 +411,7 @@ void S3ObjectMetadata::save_version_metadata() {
       this->version_entry_to_json(),
       std::bind(&S3ObjectMetadata::save_version_metadata_successful, this),
       std::bind(&S3ObjectMetadata::save_version_metadata_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3ObjectMetadata::save_version_metadata_successful() {
@@ -433,7 +433,7 @@ void S3ObjectMetadata::save_version_metadata_failed() {
 }
 
 void S3ObjectMetadata::save_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   // object_list_index_oid should be set before using this method
   assert(object_list_index_oid.u_hi || object_list_index_oid.u_lo);
 
@@ -443,17 +443,17 @@ void S3ObjectMetadata::save_metadata() {
       object_list_index_oid, object_name, this->to_json(),
       std::bind(&S3ObjectMetadata::save_metadata_successful, this),
       std::bind(&S3ObjectMetadata::save_metadata_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 // Save to objects list index
 void S3ObjectMetadata::save_metadata(std::function<void(void)> on_success,
                                      std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
   save_metadata();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3ObjectMetadata::save_metadata_successful() {
@@ -486,7 +486,7 @@ void S3ObjectMetadata::remove(std::function<void(void)> on_success,
 }
 
 void S3ObjectMetadata::remove_object_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   // object_list_index_oid should be set before using this method
   assert(object_list_index_oid.u_hi || object_list_index_oid.u_lo);
 
@@ -533,7 +533,7 @@ void S3ObjectMetadata::remove_version_metadata(
 }
 
 void S3ObjectMetadata::remove_version_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   // objects_version_list_index_oid should be set before using this method
   assert(objects_version_list_index_oid.u_hi ||
          objects_version_list_index_oid.u_lo);
@@ -750,7 +750,7 @@ void S3ObjectMetadata::delete_object_tags() { object_tags.clear(); }
 
 std::string S3ObjectMetadata::get_tags_as_xml() {
 
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   std::string user_defined_tags;
   std::string tags_as_xml_str;
 
@@ -768,7 +768,7 @@ std::string S3ObjectMetadata::get_tags_as_xml() {
       "</TagSet>"
       "</Tagging>";
   s3_log(S3_LOG_DEBUG, request_id, "Tags xml: %s\n", tags_as_xml_str.c_str());
-  s3_log(S3_LOG_INFO, request_id, "Exiting\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit", __func__);
   return tags_as_xml_str;
 }
 

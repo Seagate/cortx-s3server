@@ -84,7 +84,7 @@ int s3_perf_metrics_init(evbase_t *evbase) {
   if (!g_option_instance->is_stats_enabled()) {
     return 0;
   }
-  s3_log(S3_LOG_DEBUG, "", "Entering");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry", __func__);
 
   AtExit call_fini([]() { s3_perf_metrics_fini(); });
 
@@ -121,7 +121,7 @@ void s3_perf_metrics_fini() {
   if (!g_option_instance->is_stats_enabled()) {
     return;
   }
-  s3_log(S3_LOG_DEBUG, "", "Entering");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry", __func__);
   if (gs_throughput_event) {
     gs_throughput_event->del_evtimer();
     gs_throughput_event.reset();
@@ -135,7 +135,8 @@ void s3_perf_count_incoming_bytes(int byte_count) {
   if (!g_option_instance->is_stats_enabled()) {
     return;
   }
-  s3_log(S3_LOG_DEBUG, "", "Entering with byte_count = %d", byte_count);
+  s3_log(S3_LOG_DEBUG, "", "%s Entry with byte_count = %d", __func__,
+         byte_count);
   if (gs_throughput_event) {
     gs_throughput_event->more_bytes_in(byte_count);
   }
@@ -145,7 +146,8 @@ void s3_perf_count_outcoming_bytes(int byte_count) {
   if (!g_option_instance->is_stats_enabled()) {
     return;
   }
-  s3_log(S3_LOG_DEBUG, "", "Entering with byte_count = %d", byte_count);
+  s3_log(S3_LOG_DEBUG, "", "%s Entry with byte_count = %d", __func__,
+         byte_count);
   if (gs_throughput_event) {
     gs_throughput_event->more_bytes_out(byte_count);
   }

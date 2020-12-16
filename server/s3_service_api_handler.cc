@@ -24,7 +24,7 @@
 #include "s3_stats.h"
 
 void S3ServiceAPIHandler::create_action() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, request_id, "Action operation code = %d\n",
          operation_code);
 
@@ -53,5 +53,5 @@ void S3ServiceAPIHandler::create_action() {
       return;
   };  // switch operation_code
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

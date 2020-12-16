@@ -44,7 +44,8 @@ S3MotrKVSReader::S3MotrKVSReader(std::shared_ptr<RequestObject> req,
       idx_ctx(nullptr),
       key_ref_copy(nullptr) {
   request_id = request->get_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  stripped_request_id = request->get_stripped_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   last_result_keys_values.clear();
   if (motr_api) {
     s3_motr_api = motr_api;
@@ -83,9 +84,9 @@ void S3MotrKVSReader::get_keyval(struct m0_uint128 oid,
                                  std::function<void(void)> on_success,
                                  std::function<void(void)> on_failed) {
   int rc = 0;
-  s3_log(S3_LOG_INFO, request_id,
-         "Entering with oid %" SCNx64 " : %" SCNx64 " and %zu keys\n", oid.u_hi,
-         oid.u_lo, keys.size());
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "%s Entry with oid %" SCNx64 " : %" SCNx64 " and %zu keys\n", __func__,
+         oid.u_hi, oid.u_lo, keys.size());
   for (auto key : keys) {
     s3_log(S3_LOG_DEBUG, request_id, "key = %s\n", key.c_str());
   }
@@ -159,7 +160,7 @@ void S3MotrKVSReader::get_keyval(struct m0_uint128 oid,
   s3_motr_api->motr_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
                               MotrOpType::getkv);
   global_motr_idx_ops_list.insert(idx_op_ctx);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return;
 }
 
@@ -167,8 +168,9 @@ void S3MotrKVSReader::lookup_index(struct m0_uint128 oid,
                                    std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed) {
   int rc = 0;
-  s3_log(S3_LOG_INFO, request_id,
-         "Entering with oid %" SCNx64 " : %" SCNx64 "\n", oid.u_hi, oid.u_lo);
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "%s Entry with oid %" SCNx64 " : %" SCNx64 "\n", __func__, oid.u_hi,
+         oid.u_lo);
 
   id = oid;
 
@@ -221,18 +223,18 @@ void S3MotrKVSReader::lookup_index(struct m0_uint128 oid,
 
   s3_motr_api->motr_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
                               MotrOpType::headidx);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return;
 }
 
 void S3MotrKVSReader::lookup_index_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   state = S3MotrKVSReaderOpState::present;
   this->handler_on_success();
 }
 
 void S3MotrKVSReader::lookup_index_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (state != S3MotrKVSReaderOpState::failed_to_launch) {
     if (reader_context->get_errno_for(0) == -ENOENT) {
       s3_log(S3_LOG_DEBUG, request_id, "The index id doesn't exist\n");
@@ -243,11 +245,11 @@ void S3MotrKVSReader::lookup_index_failed() {
     }
   }
   this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrKVSReader::get_keyval_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_stats_inc("get_keyval_success_count");
   state = S3MotrKVSReaderOpState::present;
   // remember the response
@@ -289,11 +291,11 @@ void S3MotrKVSReader::get_keyval_successful() {
                                       "Operation Failed.");
     get_keyval_failed();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrKVSReader::get_keyval_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (state != S3MotrKVSReaderOpState::failed_to_launch) {
     if (reader_context->get_errno_for(0) == -ENOENT) {
       s3_log(S3_LOG_DEBUG, request_id, "The key doesn't exist\n");
@@ -308,7 +310,7 @@ void S3MotrKVSReader::get_keyval_failed() {
     }
   }
   this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
@@ -316,9 +318,10 @@ void S3MotrKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
                                   std::function<void(void)> on_success,
                                   std::function<void(void)> on_failed,
                                   unsigned int flag) {
-  s3_log(S3_LOG_INFO, request_id, "Entering with idx_oid = %" SCNx64
-                                  " : %" SCNx64 " key = %s and count = %zu\n",
-         idx_oid.u_hi, idx_oid.u_lo, key.c_str(), nr_kvp);
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "%s Entry with idx_oid = %" SCNx64 " : %" SCNx64
+         " key = %s and count = %zu\n",
+         __func__, idx_oid.u_hi, idx_oid.u_lo, key.c_str(), nr_kvp);
   id = idx_oid;
   int rc = 0;
   last_result_keys_values.clear();
@@ -389,12 +392,12 @@ void S3MotrKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
   s3_motr_api->motr_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
                               MotrOpType::getkv);
   global_motr_idx_ops_list.insert(idx_op_ctx);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return;
 }
 
 void S3MotrKVSReader::next_keyval_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   state = S3MotrKVSReaderOpState::present;
 
@@ -434,11 +437,11 @@ void S3MotrKVSReader::next_keyval_successful() {
     }
     this->handler_on_success();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrKVSReader::next_keyval_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (state != S3MotrKVSReaderOpState::failed_to_launch) {
     if (reader_context->get_errno_for(0) == -ENOENT) {
       s3_log(S3_LOG_DEBUG, request_id, "The key doesn't exist in metadata\n");
@@ -453,6 +456,6 @@ void S3MotrKVSReader::next_keyval_failed() {
       state = S3MotrKVSReaderOpState::failed;
     }
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   this->handler_on_failed();
 }

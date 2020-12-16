@@ -26,9 +26,10 @@ S3GetBucketPolicyAction::S3GetBucketPolicyAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
     : S3BucketAction(std::move(req), std::move(bucket_meta_factory), false) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
-  s3_log(S3_LOG_INFO, request_id, "S3 API: Get Bucket Policy. Bucket[%s]\n",
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "S3 API: Get Bucket Policy. Bucket[%s]\n",
          request->get_bucket_name().c_str());
 
   setup_steps();
@@ -42,17 +43,18 @@ void S3GetBucketPolicyAction::setup_steps() {
 }
 
 void S3GetBucketPolicyAction::check_metadata_missing_status() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   std::string response_json = bucket_metadata->get_policy_as_json();
   if (response_json.empty()) {
     set_s3_error("NoSuchBucketPolicy");
   }
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GetBucketPolicyAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering fetch_bucket_info_failed\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry fetch_bucket_info_failed\n",
+         __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Bucket metadata load operation failed due to pre launch failure\n");
@@ -66,11 +68,11 @@ void S3GetBucketPolicyAction::fetch_bucket_info_failed() {
            "Bucket metadata load operation failed due to internal error\n");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GetBucketPolicyAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -99,5 +101,5 @@ void S3GetBucketPolicyAction::send_response_to_s3_client() {
   }
 
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

@@ -24,11 +24,11 @@ S3AsyncBufferContainer::S3AsyncBufferContainer()
     : buffered_input_length(0),
       is_expecting_more(true),
       count_bufs_shared_for_read(0) {
-  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);
 }
 
 S3AsyncBufferContainer::~S3AsyncBufferContainer() {
-  s3_log(S3_LOG_DEBUG, "", "Destructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s\n", __func__);
   // clear buffered_input
   evbuf_t* buf = NULL;
   while (!buffered_input.empty()) {
@@ -46,12 +46,12 @@ bool S3AsyncBufferContainer::is_freezed() { return !is_expecting_more; }
 size_t S3AsyncBufferContainer::length() { return buffered_input_length; }
 
 void S3AsyncBufferContainer::add_content(evbuf_t* buf) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, "", "add_content with len %zu at address %p\n",
          evbuffer_get_length(buf), buf);
   buffered_input.push_back(buf);
   buffered_input_length += evbuffer_get_length(buf);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 // Call this to get at least expected_content_size of data buffers.
@@ -61,7 +61,7 @@ void S3AsyncBufferContainer::add_content(evbuf_t* buf) {
 // expected_content_size = -1 and all data is available, returns all buffers
 std::deque<std::tuple<void*, size_t> > S3AsyncBufferContainer::get_buffers_ref(
     size_t expected_content_size) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, "", "get_buffers_ref with expected_content_size = %zu\n",
          expected_content_size);
 
@@ -130,12 +130,12 @@ std::deque<std::tuple<void*, size_t> > S3AsyncBufferContainer::get_buffers_ref(
       free(vec_in);
     }
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return data_items;
 }
 
 void S3AsyncBufferContainer::mark_size_of_data_consumed(size_t size_consumed) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, "", "mark_size_of_data_consumed size_consumed = %zu\n",
          size_consumed);
 
@@ -159,12 +159,12 @@ void S3AsyncBufferContainer::mark_size_of_data_consumed(size_t size_consumed) {
       }
     }
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return;
 }
 
 std::string S3AsyncBufferContainer::get_content_as_string() {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   std::string content = "";
 
   if (is_freezed()) {
@@ -211,6 +211,6 @@ std::string S3AsyncBufferContainer::get_content_as_string() {
   }
   buffered_input_length = 0;  // Everything is returned.
   s3_log(S3_LOG_DEBUG, "", "Content size = %zu\n", content.length());
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return content;
 }

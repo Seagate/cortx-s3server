@@ -351,6 +351,13 @@ public class AuthServerConfig {
      */
    public
     static void setReqId(String reqId) { MDC.put("ReqId", reqId); }
+
+    /**
+ * Set Request ID
+ */
+   public
+    static void setStripedReqId(String reqId) { MDC.put("SReqId", reqId); }
+
     /**
      * Get Request ID
      */
@@ -363,6 +370,20 @@ public class AuthServerConfig {
       }
       return reqId;
     }
+
+    /**
+     * Get Request ID
+     */
+   public
+    static String getStripedReqId() {
+      String sreqId = MDC.get("SReqId");
+      if (sreqId == null) {
+        // Set to some dummy value for Unit tests where Req Id is not set
+        sreqId = "0000";
+      }
+      return sreqId;
+    }
+
    public
     static List<String> getS3InternalAccounts() {
       List<String> internalAccountsList = new ArrayList<>();

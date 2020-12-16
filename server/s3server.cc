@@ -101,7 +101,7 @@ std::set<struct s3_motr_idx_context *> global_motr_idx;
 std::set<struct s3_motr_obj_context *> global_motr_obj;
 
 void s3_motr_init_timeout_cb(evutil_socket_t fd, short event, void *arg) {
-  s3_log(S3_LOG_ERROR, "", "Entering\n");
+  s3_log(S3_LOG_ERROR, "", "%s Entry\n", __func__);
   s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
          S3_IEM_MOTR_CONN_FAIL_JSON);
   event_base_loopbreak(global_evbase_handle);
@@ -138,10 +138,10 @@ static void on_client_request_error(evhtp_request_t *p_evhtp_req,
 // libevent run in the event loop after the signal occurs
 //
 static void s3_signal_cb(evutil_socket_t sig, short events, void *user_data) {
-  s3_log(S3_LOG_INFO, "", "Entering\n");
+  s3_log(S3_LOG_INFO, "", "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, "", "About to trigger shutdown\n");
   s3_kickoff_graceful_shutdown(1);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return;
 }
 
@@ -184,8 +184,7 @@ static evhtp_res on_client_request_fini(evhtp_request_t *p_evhtp_req,
 
 extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
                                              evhtp_headers_t *hdrs, void *arg) {
-  s3_log(S3_LOG_INFO, "", "Received Request with uri [%s].\n",
-         req->uri->path->full);
+  s3_log(S3_LOG_INFO, "", "Req uri [%s]\n", req->uri->path->full);
 
   if (req->uri->query_raw) {
     s3_log(S3_LOG_DEBUG, "", "Received Request with query params [%s].\n",
@@ -314,8 +313,7 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
 extern "C" evhtp_res dispatch_motr_api_request(evhtp_request_t *req,
                                                evhtp_headers_t *hdrs,
                                                void *arg) {
-  s3_log(S3_LOG_INFO, "", "Received Request with uri [%s].\n",
-         req->uri->path->full);
+  s3_log(S3_LOG_INFO, "", "Request uri [%s]\n", req->uri->path->full);
 
   if (req->uri->query_raw) {
     s3_log(S3_LOG_DEBUG, "", "Received Request with query params [%s].\n",
