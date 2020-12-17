@@ -170,6 +170,10 @@ Before your test your build, ensure that you have installed and configured the f
     - If you don't have Python Version 3.3, then install python3 using: `$ yum install python3`
 4. Ensure that CORTX-S3 Server and its dependent services are running.
     1. To start CORTX-S3 Server and its dependent services, run the command: `$ ./jenkins-build.sh --skip_build --skip_tests`
+       
+       In case you recieve errors, follow the steps below:
+        - To check if HAProxy is working run `systemctl status haproxy`
+        - If you see the status as inactive, use the command `systemctl start haproxy`
     2. To view the `PID` of the active S3 service, run the command: `$ pgrep s3`
     3. To view the `PID` of the active Motr service, run the command: `$ pgrep m0`
 5. Follow these steps to install the AWS client and plugin:
