@@ -24,12 +24,13 @@ import java.util.ArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.seagates3.authserver.AuthServerConfig;
 import com.novell.ldap.LDAPConnection;
 import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPModification;
 import com.novell.ldap.LDAPSearchResults;
+import com.novell.ldap.LDAPSearchConstraints;
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.fi.FaultPoints;
 import com.seagates3.util.IEMUtil;
 
@@ -137,7 +138,8 @@ class LDAPUtils {
         LDAPConnection lc;
         lc = LdapConnectionManager.getConnection();
         LDAPSearchResults ldapSearchResult = null;
-
+        LDAPSearchConstraints cons = new LDAPSearchConstraints();
+        cons.setMaxResults(AuthServerConfig.getLdapSearchResultsSizeLimit());
         if (lc != null && lc.isConnected()) {
             try {
                 if (FaultPoints.fiEnabled() &&
@@ -145,16 +147,20 @@ class LDAPUtils {
                     throw new LDAPException();
                 }
 
-                ldapSearchResult = lc.search(base, scope,
-                        filter, attrs, false);
+                ldapSearchResult =
+                    lc.search(base, scope, filter, attrs, false, cons);
             } catch (LDAPException ldapException) {
                 LOGGER.error("Error occurred while searching for entry. Cause: "
                         + ldapException.getCause() + ". Message: "
                         + ldapException.getMessage());
                 LOGGER.debug("Stacktrace: " + ldapException);
-                IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
-                        "LDAP exception occurred",
-                        String.format("\"cause\": \"%s\"", ldapException.getCause()));
+                IEMUtil.log(
+                    IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
+                    "An error occurred while establishing ldap " +
+                        "connection. For more information, please refer " +
+                        "Troubleshooting Guide.",
+                    String.format("\"cause\": \"%s\"",
+                                  ldapException.getCause()));
                 throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
@@ -187,8 +193,13 @@ class LDAPUtils {
                         + ldapException.getCause() + ". Message: "
                         + ldapException.getMessage());
                 LOGGER.debug("Stacktrace: " + ldapException);
-                IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.LDAP_EX, "LDAP exception occurred",
-                        String.format("\"cause\": \"%s\"", ldapException.getCause()));
+                IEMUtil.log(
+                    IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
+                    "An error occurred while establishing ldap " +
+                        "connection. For more information, please refer " +
+                        "Troubleshooting Guide.",
+                    String.format("\"cause\": \"%s\"",
+                                  ldapException.getCause()));
                 throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
@@ -219,8 +230,13 @@ class LDAPUtils {
                         + ldapException.getCause() + ". Message: "
                         + ldapException.getMessage());
                 LOGGER.debug("Stacktrace: " + ldapException);
-                IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.LDAP_EX, "LDAP exception occurred",
-                        String.format("\"cause\": \"%s\"", ldapException.getCause()));
+                IEMUtil.log(
+                    IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
+                    "An error occurred while establishing ldap " +
+                        "connection. For more information, please refer " +
+                        "Troubleshooting Guide.",
+                    String.format("\"cause\": \"%s\"",
+                                  ldapException.getCause()));
                 throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
@@ -253,8 +269,13 @@ class LDAPUtils {
                         + ldapException.getCause() + ". Message: "
                         + ldapException.getMessage());
                 LOGGER.debug("Stacktrace: " + ldapException);
-                IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.LDAP_EX, "LDAP exception occurred",
-                        String.format("\"cause\": \"%s\"", ldapException.getCause()));
+                IEMUtil.log(
+                    IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
+                    "An error occurred while establishing ldap " +
+                        "connection. For more information, please refer " +
+                        "Troubleshooting Guide.",
+                    String.format("\"cause\": \"%s\"",
+                                  ldapException.getCause()));
                 throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
@@ -289,8 +310,13 @@ class LDAPUtils {
                         + ldapException.getCause() + ". Message: "
                         + ldapException.getMessage());
                 LOGGER.debug("Stacktrace: " + ldapException);
-                IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.LDAP_EX, "LDAP exception occurred",
-                        String.format("\"cause\": \"%s\"", ldapException.getCause()));
+                IEMUtil.log(
+                    IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
+                    "An error occurred while establishing ldap " +
+                        "connection. For more information, please refer " +
+                        "Troubleshooting Guide.",
+                    String.format("\"cause\": \"%s\"",
+                                  ldapException.getCause()));
                 throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
@@ -324,7 +350,9 @@ class LDAPUtils {
                        ldapException.getMessage());
           LOGGER.debug("Stacktrace: " + ldapException);
           IEMUtil.log(
-              IEMUtil.Level.ERROR, IEMUtil.LDAP_EX, "LDAP exception occurred",
+              IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
+              "An error occurred while establishing ldap connection. For " +
+                  "more " + "information, please refer Troubleshooting Guide.",
               String.format("\"cause\": \"%s\"", ldapException.getCause()));
           throw ldapException;
         }

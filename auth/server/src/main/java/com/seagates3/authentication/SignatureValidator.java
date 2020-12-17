@@ -70,7 +70,10 @@ public class SignatureValidator {
           }
         }
         catch (InvalidTokenException e) {
-            return responseGenerator.invalidToken();
+          LOGGER.debug(
+              "One of the signed headers is missing in request header list");
+          return responseGenerator.missingSignatureHeader(
+              "One of the signed headers is missing in request header list");
         }
         if (!isRequestorAuthenticated) {
             LOGGER.debug("Requestor is not authenticated.");
@@ -131,6 +134,17 @@ public class SignatureValidator {
           TimeUnit.MINUTES.convert(timeInterval, TimeUnit.MILLISECONDS);
       if (diffInMinutes <= 15) {
         isRequestInSkewTime = true;
+      } else if (isRequestDateBeforeEpochDate(requestDate)) {
+        // If request time stamp is before epoch time then returns
+        // InvalidSignatureDate
+        LOGGER.error("Request date timestamp received is before epoch date.");
+        return responseGenerator.invalidSignatureDate();
+      } else {
+        LOGGER.error(
+            "Request date timestamp received does not match with server " +
+            "timestamp.");
+        return responseGenerator.requestTimeTooSkewed(
+            requestDateString, currentDateTime.toString());
       }
 
       // Handle Signature v4 credential scope date check
@@ -154,13 +168,6 @@ public class SignatureValidator {
         return responseGenerator.ok();
       }
 
-
-      // If request time stamp is before epoch time then returns
-      // InvalidSignatureDate
-      if (isRequestDateBeforeEpochDate(requestDate)) {
-        LOGGER.error("Request date timestamp received is before epoch date.");
-        return responseGenerator.invalidSignatureDate();
-      }
       LOGGER.error(
           "Request date timestamp received does not match with server " +
           "timestamp.");
@@ -254,9 +261,8 @@ public class SignatureValidator {
 
             return (AWSSign) obj;
         } catch (ClassNotFoundException | SecurityException ex) {
-            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.CLASS_NOT_FOUND_EX,
-                    "Failed to get required class",
-                    String.format("\"cause\": \"%s\"", ex.getCause()));
+          LOGGER.error("Failed to get required class.",
+                       String.format("\"cause\": \"%s\"", ex.getCause()));
         } catch (IllegalAccessException | IllegalArgumentException | InstantiationException ex) {
             LOGGER.error("Exception: ", ex);
         }

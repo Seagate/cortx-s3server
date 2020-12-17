@@ -54,6 +54,7 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   int layout_id;
+  unsigned motr_write_payload_size;
   struct m0_uint128 old_object_oid;
   int old_layout_id;
   struct m0_uint128 new_object_oid;
@@ -93,7 +94,8 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   void send_chunk_details_if_any();
 
   // Used in UT Only
-  void _set_layout_id(int layoutid) { layout_id = layoutid; }
+ protected:
+  void _set_layout_id(int layout_id);
 
  public:
   S3PutChunkUploadObjectAction(
@@ -255,6 +257,8 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase1);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase2);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase3);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, DelayedDeleteOldObject);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, DeleteOldObject);
 };
 
 #endif

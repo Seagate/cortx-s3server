@@ -21,7 +21,7 @@ version_config:                             # Section for version of S3 backgrou
    version: 1                                              # Default version for S3 background delete config
 
 cortx_s3:                                   # Section for S3 background delete config
-   endpoint: "http://127.0.0.1:7081"                       # Service specified for CORTX s3 client
+   endpoint: "http://127.0.0.1:28049"                       # Service specified for CORTX s3 client
    service: "cortxs3"                                      # Default region specified for CORTX s3 client
    default_region: "us-west2"                              # CORTX s3 client will use the specified host
    background_account_access_key: "AKIAJPINPFRBTPAYXAHZ"                      # Access Key corresponding to account-name "s3-background-delete-svc"
@@ -61,7 +61,7 @@ rabbitmq:                                    # Section for RabbitMQ configs
     exchange_type: "direct"                                 # Exchanges type includes direct, fanout, topic exchange, header exchange
     mode: 2                                                 # Valid values are Non-persistent (1) or persistent (2). persistent ensures that the task_queue queue won't be lost even if RabbitMQ restarts.
     durable: "True"                                         # Ensure that RabbitMQ will never lose our queue.
-    schedule_interval_secs: 7200                            # Schedule Interval is time period at which object recovery scheduler will be executed (in seconds). Increasing this value leads to reduced RabbitMQ memory consumption.
+    schedule_interval_secs: 1200                            # Schedule Interval is time period at which object recovery scheduler will be executed (in seconds). Increasing this value leads to reduced RabbitMQ memory consumption.
 
 indexid:
 
@@ -74,3 +74,4 @@ indexid:
 leakconfig:                                  # Section for object leak config
    leak_processing_delay_in_mins: 15                          # Time delay in mins after which probable delete entry is procesed for leak.
    version_processing_delay_in_mins: 5                        # Time delay in mins after which object version is processed
+   cleanup_enabled: False                                     # Flag for cleanup during S3 instance non-active.

@@ -32,7 +32,7 @@ S3AuditInfoLoggerBase* S3AuditInfoLogger::audit_info_logger = nullptr;
 bool S3AuditInfoLogger::audit_info_logger_enabled = false;
 
 int S3AuditInfoLogger::init() {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   int ret = 0;
   audit_info_logger = nullptr;
   audit_info_logger_enabled = false;
@@ -101,7 +101,7 @@ int S3AuditInfoLogger::init() {
     ret = -1;
   }
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting ret %d\n", ret);
+  s3_log(S3_LOG_DEBUG, "", "%s Exit ret %d\n", __func__, ret);
   return ret;
 }
 
@@ -116,9 +116,9 @@ int S3AuditInfoLogger::save_msg(std::string const& cur_request_id,
 bool S3AuditInfoLogger::is_enabled() { return audit_info_logger_enabled; }
 
 void S3AuditInfoLogger::finalize() {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   delete audit_info_logger;
   audit_info_logger = nullptr;
   audit_info_logger_enabled = false;
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

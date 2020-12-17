@@ -60,7 +60,7 @@ class S3Stats {
   S3Stats(const std::string& host_addr, const unsigned short port_num,
           SocketInterface* socket_obj_ptr = NULL)
       : host(host_addr), port(port_num), sock(-1) {
-    s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);
     metrics_allowlist.clear();
     if (socket_obj_ptr) {
       socket_obj.reset(socket_obj_ptr);

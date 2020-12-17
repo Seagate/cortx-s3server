@@ -21,8 +21,8 @@ version=1
 nettyBossGroupThreads=1
 nettyWorkerGroupThreads=8
 nettyEventExecutorThreads=32
-httpPort=9085
-httpsPort=9086
+httpPort=28050
+httpsPort=28051
 defaultHost=0.0.0.0
 logFilePath=/var/log/seagate/auth/server
 samlMetadataFileName=saml-metadata.xml
@@ -33,6 +33,7 @@ ldapSSLPort=636
 enableSSLToLdap=false
 ldapMaxCons=100
 ldapMaxSharedCons=100
+ldapSearchResultsSizeLimit=1000
 ldapLoginDN=cn=sgiamadmin,dc=seagate,dc=com
 # ldapLoginPW value needs to be encrypted and updated here
 # Use AuthPassEncryptCLI.jar CLI to encrypt the password

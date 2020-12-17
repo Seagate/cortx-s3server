@@ -44,7 +44,7 @@ CuvqMmxVwZQHVXXmQD1atCudi1A=
     </KeyDescriptor>
     <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>
     <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</NameIDFormat>
-    <AssertionConsumerService index="1" isDefault="true" Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://signin.seagate.com:9086/saml"/>
+    <AssertionConsumerService index="1" isDefault="true" Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://signin.seagate.com:28051/saml"/>
     <AttributeConsumingService index="1">
       <ServiceName xml:lang="en">Seagate Management Console Single Sign-On</ServiceName>
       <RequestedAttribute isRequired="true" Name="https://s3.seagate.com/SAML/Attributes/Role" FriendlyName="RoleEntitlement"/>

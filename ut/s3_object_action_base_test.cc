@@ -192,10 +192,15 @@ TEST_F(S3ObjectActionTest, FetchObjectInfoFailed) {
 TEST_F(S3ObjectActionTest, FetchObjectInfoSuccess) {
   CREATE_BUCKET_METADATA;
   CREATE_OBJECT_METADATA;
-  action_under_test_ptr->bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
-  action_under_test_ptr->bucket_metadata->set_objects_version_list_index_oid(
-      objects_version_list_index_oid);
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_oid())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(object_list_indx_oid));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_objects_version_list_index_oid())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(objects_version_list_index_oid));
+
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
       .Times(AtLeast(1));
   EXPECT_CALL(*(request_mock), http_verb()).WillOnce(Return(S3HttpVerb::GET));

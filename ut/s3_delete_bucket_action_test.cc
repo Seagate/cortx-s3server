@@ -125,12 +125,23 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataPresent) {
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillOnce(Return(S3BucketMetadataState::present));
 
-  // set the OID
-  action_under_test->bucket_metadata->set_object_list_index_oid(oid);
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_oid())
+      .Times(1)
+      .WillOnce(Return(oid));
+
+  struct m0_uint128 version_list_oid = {0x1ffff, 0x1ffff};
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_objects_version_list_index_oid())
+      .Times(1)
+      .WillOnce(Return(version_list_oid));
 
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
               next_keyval(_, _, _, _, _, _)).Times(1);
+
   action_under_test->fetch_first_object_metadata();
+
   EXPECT_TRUE(action_under_test->motr_kv_reader != nullptr);
 }
 

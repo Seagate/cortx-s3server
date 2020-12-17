@@ -33,6 +33,7 @@
 #include "s3_log.h"
 #include "s3_md5_hash.h"
 #include "s3_request_object.h"
+#include "s3_buffer_sequence.h"
 
 class S3MotrWiterContext : public S3AsyncOpContextBase {
   // Basic Operation context.
@@ -97,6 +98,7 @@ class S3MotrWiter {
   std::string content_md5;
   uint64_t last_index;
   std::string request_id;
+  std::string stripped_request_id;
   // md5 for the content written to motr.
   MD5hash md5crypt;
 
@@ -117,7 +119,8 @@ class S3MotrWiter {
   int unit_size_for_place_holder;
 
   // buffer currently used to write, will be freed on completion
-  std::shared_ptr<S3AsyncBufferOptContainer> write_async_buffer;
+  S3BufferSequence buffer_sequence;
+  size_t size_of_each_buf;
 
   // Write - single object, delete - multiple objects supported
   int open_objects();
@@ -191,7 +194,8 @@ class S3MotrWiter {
   // Async save operation.
   virtual void write_content(std::function<void(void)> on_success,
                              std::function<void(void)> on_failed,
-                             std::shared_ptr<S3AsyncBufferOptContainer> buffer);
+                             S3BufferSequence buffer_sequence,
+                             size_t size_of_each_buf);
 
   // Async delete operation.
   virtual void delete_object(std::function<void(void)> on_success,
@@ -206,7 +210,7 @@ class S3MotrWiter {
   virtual int get_op_ret_code_for_delete_op(int index);
 
   void set_up_motr_data_buffers(struct s3_motr_rw_op_context* rw_ctx,
-                                std::deque<evbuffer*>& data_items,
+                                S3BufferSequence buffer_sequence,
                                 size_t motr_buf_count);
 
   // For Testing purpose

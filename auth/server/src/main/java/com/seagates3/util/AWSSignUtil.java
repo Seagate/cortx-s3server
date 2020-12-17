@@ -21,8 +21,14 @@
 package com.seagates3.util;
 
 import java.io.UnsupportedEncodingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AWSSignUtil {
+
+  private
+   final static Logger LOGGER =
+       LoggerFactory.getLogger(AWSSignUtil.class.getName());
 
     /**
      * Calculates signature using AWS V2 Sign method
@@ -40,8 +46,7 @@ public class AWSSignUtil {
                     stringToSign.getBytes("UTF-8"));
             return BinaryUtil.encodeToBase64String(kStringToSign);
         } catch (UnsupportedEncodingException ex) {
-            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
-                    "UTF-8 encoding is not supported", null);
+          LOGGER.error("UTF-8 encoding is not supported.");
         }
         return null;
     }

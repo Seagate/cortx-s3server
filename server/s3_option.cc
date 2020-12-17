@@ -134,9 +134,10 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_SSL_ENABLE");
       s3server_ssl_enabled = s3_option_node["S3_SERVER_SSL_ENABLE"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
-                               "S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING");
-      s3server_objectleak_tracking_enabled =
-          s3_option_node["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"].as<bool>();
+                               "S3_SERVER_OBJECT_DELAYED_DELETE");
+      s3server_obj_delayed_del_enabled =
+          s3_option_node["S3_SERVER_OBJECT_DELAYED_DELETE"].as<bool>();
+
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_AHEAD_MULTIPLE");
       read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_DEFAULT_ENDPOINT");
@@ -432,9 +433,10 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_SSL_ENABLE");
       s3server_ssl_enabled = s3_option_node["S3_SERVER_SSL_ENABLE"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
-                               "S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING");
-      s3server_objectleak_tracking_enabled =
-          s3_option_node["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"].as<bool>();
+                               "S3_SERVER_OBJECT_DELAYED_DELETE");
+      s3server_obj_delayed_del_enabled =
+          s3_option_node["S3_SERVER_OBJECT_DELAYED_DELETE"].as<bool>();
+
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_AHEAD_MULTIPLE");
       read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MAX_RETRY_COUNT");
@@ -673,6 +675,55 @@ bool S3Option::load_all_sections(bool force_override_from_config = false) {
   return true;
 }
 
+bool S3Option::reload_modifiable_options() {
+  try {
+    YAML::Node root_node = YAML::LoadFile(option_file);
+    if (root_node.IsNull()) {
+      s3_log(S3_LOG_FATAL, "", "Option file %s not found\n",
+             option_file.c_str());
+      return false;  // File Not Found?
+    }
+    for (unsigned short i = 0; i < root_node["S3Config_Sections"].size(); ++i) {
+      std::string section_name =
+          root_node["S3Config_Sections"][i].as<std::string>();
+      YAML::Node s3_option_node = root_node[section_name];
+      if (section_name == "S3_SERVER_CONFIG") {
+        S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_MODE");
+        log_level = s3_option_node["S3_LOG_MODE"].as<std::string>();
+
+        redefine_log_level();
+        s3_log(S3_LOG_INFO, "", "Reloaded S3_LOG_MODE = %s\n",
+               log_level.c_str());
+      }
+    }
+  }
+  catch (const YAML::RepresentationException& e) {
+    fprintf(stderr, "%s:%d:YAML::RepresentationException caught: %s\n",
+            __FILE__, __LINE__, e.what());
+    fprintf(stderr, "%s:%d:Yaml file %s is incorrect\n", __FILE__, __LINE__,
+            option_file.c_str());
+    return false;
+  }
+  catch (const YAML::ParserException& e) {
+    fprintf(stderr, "%s:%d:YAML::ParserException caught: %s\n", __FILE__,
+            __LINE__, e.what());
+    fprintf(stderr, "%s:%d:Parsing Error in yaml file %s\n", __FILE__, __LINE__,
+            option_file.c_str());
+    return false;
+  }
+  catch (const YAML::EmitterException& e) {
+    fprintf(stderr, "%s:%d:YAML::EmitterException caught: %s\n", __FILE__,
+            __LINE__, e.what());
+    return false;
+  }
+  catch (YAML::Exception& e) {
+    fprintf(stderr, "%s:%d:YAML::Exception caught: %s\n", __FILE__, __LINE__,
+            e.what());
+    return false;
+  }
+  return true;
+}
+
 void S3Option::set_cmdline_option(int option_flag, const char* optarg) {
   if (option_flag & S3_OPTION_IPV4_BIND_ADDR) {
     s3_ipv4_bind_addr = optarg;
@@ -787,8 +838,8 @@ void S3Option::dump_options() {
          s3_grace_period_sec);
   s3_log(S3_LOG_INFO, "", "S3_ENABLE_PERF = %d\n", perf_enabled);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_SSL_ENABLE = %d\n", s3server_ssl_enabled);
-  s3_log(S3_LOG_INFO, "", "S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING = %d\n",
-         s3server_objectleak_tracking_enabled);
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_OBJECT_DELAYED_DELETE = %d\n",
+         s3server_obj_delayed_del_enabled);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_CERT_FILE = %s\n",
          s3server_ssl_cert_file.c_str());
   s3_log(S3_LOG_INFO, "", "S3_SERVER_PEM_FILE = %s\n",
@@ -1150,12 +1201,12 @@ unsigned short S3Option::s3_performance_enabled() { return perf_enabled; }
 
 bool S3Option::is_s3server_ssl_enabled() { return s3server_ssl_enabled; }
 
-bool S3Option::is_s3server_objectleak_tracking_enabled() {
-  return s3server_objectleak_tracking_enabled;
+bool S3Option::is_s3server_obj_delayed_del_enabled() {
+  return s3server_obj_delayed_del_enabled;
 }
 
-void S3Option::set_s3server_objectleak_tracking_enabled(const bool& flag) {
-  s3server_objectleak_tracking_enabled = flag;
+void S3Option::set_s3server_obj_delayed_del_enabled(const bool& flag) {
+  s3server_obj_delayed_del_enabled = flag;
 }
 
 bool S3Option::is_fake_motr_createobj() { return FLAGS_fake_motr_createobj; }

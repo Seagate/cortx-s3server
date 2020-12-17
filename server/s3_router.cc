@@ -60,18 +60,19 @@ bool Router::is_subdomain_match(std::string& endpoint) {
 
 S3Router::S3Router(S3APIHandlerFactory* api_creator, S3UriFactory* uri_creator)
     : api_handler_factory(api_creator), uri_factory(uri_creator) {
-  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);
 }
 
 S3Router::~S3Router() {
-  s3_log(S3_LOG_DEBUG, "", "Destructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s\n", __func__);
   delete api_handler_factory;
   delete uri_factory;
 }
 
 void S3Router::dispatch(std::shared_ptr<RequestObject> request) {
   std::string request_id = request->get_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  std::string stripped_request_id = request->get_stripped_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   std::shared_ptr<S3RequestObject> s3request =
       std::dynamic_pointer_cast<S3RequestObject>(request);
   std::shared_ptr<S3APIHandler> handler;
@@ -124,18 +125,19 @@ void S3Router::dispatch(std::shared_ptr<RequestObject> request) {
 MotrRouter::MotrRouter(MotrAPIHandlerFactory* api_creator,
                        MotrUriFactory* uri_creator)
     : api_handler_factory(api_creator), uri_factory(uri_creator) {
-  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);
 }
 
 MotrRouter::~MotrRouter() {
-  s3_log(S3_LOG_DEBUG, "", "Destructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s\n", __func__);
   delete api_handler_factory;
   delete uri_factory;
 }
 
 void MotrRouter::dispatch(std::shared_ptr<RequestObject> request) {
   std::string request_id = request->get_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  std::string stripped_request_id = request->get_stripped_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   std::shared_ptr<MotrRequestObject> motr_request =
       std::dynamic_pointer_cast<MotrRequestObject>(request);
   std::shared_ptr<MotrAPIHandler> handler;
@@ -143,7 +145,7 @@ void MotrRouter::dispatch(std::shared_ptr<RequestObject> request) {
   std::string host_name = motr_request->get_host_name();
 
   s3_log(S3_LOG_DEBUG, request_id, "host_name = %s\n", host_name.c_str());
-  s3_log(S3_LOG_INFO, request_id, "uri = %s\n",
+  s3_log(S3_LOG_INFO, stripped_request_id, "uri = %s\n",
          motr_request->c_get_full_path());
 
   std::unique_ptr<MotrURI> uri;

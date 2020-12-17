@@ -20,6 +20,10 @@
 
 package com.seagates3.controller;
 
+import java.io.UnsupportedEncodingException;
+import java.util.List;
+import java.util.Map;
+
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.DAODispatcher;
@@ -48,20 +52,18 @@ import com.seagates3.service.AccessKeyService;
 import com.seagates3.service.UserService;
 import com.seagates3.util.BinaryUtil;
 import com.seagates3.util.IEMUtil;
+
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
-import static io.netty.handler.codec.http.HttpHeaders.Names.LOCATION;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http.QueryStringEncoder;
-import java.io.UnsupportedEncodingException;
-import java.util.List;
-import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * TODO - Refactor this class to inherit from Abstract controller.
@@ -74,6 +76,9 @@ public class SAMLWebSSOController {
     private final String USER_NAME = "user_name";
     private final String ACCOUNT_NAME = "account_name";
 
+    private
+     final static Logger LOGGER =
+         LoggerFactory.getLogger(SAMLWebSSOController.class.getName());
     /**
      * Constructor
      *
@@ -168,8 +173,8 @@ public class SAMLWebSSOController {
      * @return Full Http Response
      */
     public ServerResponse createSession(FullHttpRequest httpRequest) {
-        QueryStringDecoder queryParams = new QueryStringDecoder(
-                httpRequest.getUri());
+       QueryStringDecoder queryParams =
+           new QueryStringDecoder(httpRequest.uri());
         Map<String, List<String>> cookieToken = queryParams.parameters();
 
         SAMLSessionResponseGenerator samlSessionResponseGenerator
@@ -214,8 +219,10 @@ public class SAMLWebSSOController {
         response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
                 HttpResponseStatus.FOUND);
 
-        response.headers().set(LOCATION, redirectURL.toString());
-        response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
+        response.headers().set(HttpHeaderNames.LOCATION,
+                               redirectURL.toString());
+        response.headers().set(HttpHeaderNames.CONTENT_LENGTH,
+                               response.content().readableBytes());
 
         return response;
     }
@@ -229,13 +236,13 @@ public class SAMLWebSSOController {
                     Unpooled.wrappedBuffer(responseMessage.getBytes("UTF-8"))
             );
         } catch (UnsupportedEncodingException ex) {
-            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
-                    "UTF-8 encoding is not supported", null);
+          LOGGER.error("UTF-8 encoding is not supported.");
             response = null;
         }
         if (response != null) {
-        response.headers().set(CONTENT_TYPE, "text/xml");
-        response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
+          response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/xml");
+          response.headers().set(HttpHeaderNames.CONTENT_LENGTH,
+                                 response.content().readableBytes());
         }
         return response;
     }

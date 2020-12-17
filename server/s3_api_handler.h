@@ -42,6 +42,7 @@ class S3APIHandler {
   std::shared_ptr<S3APIHandler> _get_self_ref() { return self_ref; }
   std::shared_ptr<S3Action> _get_action() { return action; }
   std::string request_id;
+  std::string stripped_request_id;
 
  private:
   std::shared_ptr<S3APIHandler> self_ref;
@@ -50,13 +51,14 @@ class S3APIHandler {
   S3APIHandler(std::shared_ptr<S3RequestObject> req, S3OperationCode op_code)
       : request(req), operation_code(op_code) {
     request_id = request->get_request_id();
+    stripped_request_id = request->get_stripped_request_id();
   }
   virtual ~S3APIHandler() {}
 
   virtual void create_action() = 0;
 
   virtual void dispatch() {
-    s3_log(S3_LOG_DEBUG, request_id, "Entering");
+    s3_log(S3_LOG_DEBUG, request_id, "%s Entry", __func__);
 
     if (action) {
       action->manage_self(action);
@@ -66,7 +68,7 @@ class S3APIHandler {
     }
     i_am_done();
 
-    s3_log(S3_LOG_DEBUG, "", "Exiting");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   }
 
   // Self destructing object.
@@ -143,7 +145,7 @@ class S3ObjectAPIHandler : public S3APIHandler {
   FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3AbortMultipartAction);
   FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3HeadObjectAction);
   FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3PutChunkUploadObjectAction);
-  FRIEND_TEST(S3ObjectAPIHandlerTest, DoesNotSupportCopyObject);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3CopyObjectAction);
   FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3PutObjectAction);
   FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3GetObjectAction);
   FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3DeleteObjectAction);

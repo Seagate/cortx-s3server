@@ -28,12 +28,14 @@ S3ObjectListResponseV2::S3ObjectListResponseV2(const std::string& encoding_type)
       continuation_token(""),
       fetch_owner(false),
       start_after(""),
-      response_v2_xml("") {
-  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+      response_v2_xml(""),
+      cont_token_specified(false) {
+  s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);
   s3_log(S3_LOG_DEBUG, "", "Encoding type = %s", encoding_type.c_str());
 }
 
 void S3ObjectListResponseV2::set_continuation_token(const std::string& token) {
+  cont_token_specified = true;
   continuation_token = token;
 }
 
@@ -66,8 +68,9 @@ std::string& S3ObjectListResponseV2::get_xml(
     response_xml += S3CommonUtilities::format_xml_string("EncodingType", "url");
   }
   response_xml += S3CommonUtilities::format_xml_string("KeyCount", key_count);
-  // If 'continuation-token' specified in request, include it in the response
-  if (!continuation_token.empty()) {
+  // If 'continuation-token' specified in original request, include it in the
+  // response
+  if (cont_token_specified) {
     response_xml += S3CommonUtilities::format_xml_string("ContinuationToken",
                                                          continuation_token);
   }

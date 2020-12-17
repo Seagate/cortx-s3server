@@ -27,7 +27,7 @@ MotrHeadIndexAction::MotrHeadIndexAction(
     std::shared_ptr<MotrRequestObject> req,
     std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory)
     : MotrAction(std::move(req)) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   motr_api = std::make_shared<ConcreteMotrAPI>();
 
   if (motr_kvs_reader_factory) {
@@ -46,7 +46,7 @@ void MotrHeadIndexAction::setup_steps() {
 }
 
 void MotrHeadIndexAction::validate_request() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   index_id = S3M0Uint128Helper::to_m0_uint128(request->get_index_id_lo(),
                                               request->get_index_id_hi());
@@ -69,13 +69,13 @@ void MotrHeadIndexAction::check_index_exist() {
 }
 
 void MotrHeadIndexAction::check_index_exist_success() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrHeadIndexAction::check_index_exist_failure() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Index not found\n");
     set_s3_error("NoSuchIndex");
@@ -91,7 +91,7 @@ void MotrHeadIndexAction::check_index_exist_failure() {
 }
 
 void MotrHeadIndexAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (is_error_state() && !get_s3_error_code().empty()) {
     S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->c_get_full_path());

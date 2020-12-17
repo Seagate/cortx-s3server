@@ -26,7 +26,7 @@
 
 S3DeleteMultipleObjectsBody::S3DeleteMultipleObjectsBody()
     : is_valid(false), quiet(false) {
-  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);
 }
 
 void S3DeleteMultipleObjectsBody::initialize(std::string &xml) {
@@ -37,7 +37,7 @@ void S3DeleteMultipleObjectsBody::initialize(std::string &xml) {
 bool S3DeleteMultipleObjectsBody::isOK() { return is_valid; }
 
 bool S3DeleteMultipleObjectsBody::parse_and_validate() {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   /* Sample body:
   <?xml version="1.0" encoding="UTF-8"?>
   <Delete>
@@ -150,6 +150,6 @@ bool S3DeleteMultipleObjectsBody::parse_and_validate() {
 
   is_valid = true;
   xmlFreeDoc(document);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return is_valid;
 }

@@ -131,12 +131,19 @@ class AwsTest(S3PyCliTest):
         self.with_cli("aws s3api " + "get-object-tagging " + " --bucket " + bucket_name + " --key " + object_name)
         return self
 
-    def list_objects(self, bucket_name, max_keys=None):
+    def list_objects(self, bucket_name, max_keys=None, max_items=None, starting_token=None):
         self.bucket_name = bucket_name
         cmd = "aws s3api " + "list-objects " + "--bucket " + bucket_name
         if(max_keys is not None):
            self.max_keys = max_keys
            cmd = cmd + " --max-keys " + max_keys
+
+        if(max_items is not None):
+           cmd = cmd + " --max-items " + max_items
+
+        if(starting_token is not None):
+            cmd = cmd + " --starting-token " + starting_token
+
         self.with_cli(cmd)
         return self
 
@@ -245,6 +252,23 @@ class AwsTest(S3PyCliTest):
            cmd = cmd + " --acl " + canned_acl
         if(debug_flag is not None):
            cmd = cmd + " --debug"
+        self.with_cli(cmd)
+        return self
+
+    def upload_objects(self, bucket_name, root_dir_path="./tests-out", debug_flag=None):
+        self.bucket_name = bucket_name
+        self.filename = None
+        cmd = "aws s3 cp {dir_path} s3://{bucket} --recursive".format(bucket=bucket_name, dir_path=root_dir_path)
+        if(debug_flag is not None):
+           cmd = cmd + " --debug"
+        self.with_cli(cmd)
+        return self
+
+    def copy_object(self, copy_source, destination_bucket_name, destination_key_name, debug_flag=None):
+        cmd = "aws s3api copy-object --bucket {bucket} --copy-source {source} --key {key}"\
+            .format(bucket=destination_bucket_name, source=copy_source, key=destination_key_name)
+        if(debug_flag is not None):
+            cmd = cmd + " --debug"
         self.with_cli(cmd)
         return self
 

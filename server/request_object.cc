@@ -72,7 +72,7 @@ extern "C" int consume_query_parameters(evhtp_kv_t* kvobj, void* arg) {
 }
 
 void s3_client_read_timeout_cb(evutil_socket_t fd, short event, void* arg) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
 
   RequestObject* request = static_cast<RequestObject*>(arg);
 
@@ -126,7 +126,11 @@ RequestObject::RequestObject(
 
   S3Uuid uuid;
   request_id = uuid.get_string_uuid();
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  // last 12 characters
+  stripped_request_id = std::string(request_id.end() - 12, request_id.end());
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
+  s3_log(S3_LOG_INFO, request_id, "stripped_request_id:%s\n",
+         stripped_request_id.c_str());
   request_timer.start();
 
   ADDB(S3_ADDB_REQUEST_ID, addb_request_id, *(const uint64_t*)(uuid.ptr()),
@@ -197,7 +201,7 @@ RequestObject::RequestObject(
       }
     }
   } else {
-    s3_log(S3_LOG_INFO, request_id, "s3 client is disconnected.\n");
+    s3_log(S3_LOG_INFO, stripped_request_id, "s3 client is disconnected.\n");
   }
 }
 
@@ -216,7 +220,7 @@ void RequestObject::initialise() {
 }
 
 RequestObject::~RequestObject() {
-  s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__);
 
   if (ev_req) {
     ev_req->cbarg = NULL;
@@ -239,7 +243,7 @@ RequestObject::get_query_parameters() {
         in_query_params_copied = true;
       }
     } else {
-      s3_log(S3_LOG_INFO, request_id,
+      s3_log(S3_LOG_INFO, stripped_request_id,
              "s3 client is either disconnected or ev_req(NULL).\n");
     }
   }
@@ -259,7 +263,7 @@ void RequestObject::set_full_path(const char* full_path) {
 void RequestObject::set_start_client_request_read_timeout() {
   // Set the timer event, so that if data doesn't arrive from client within a
   // configured timeframe, then send error to client.
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   if (is_s3_client_read_error()) {
     return;
   }
@@ -280,7 +284,7 @@ void RequestObject::set_start_client_request_read_timeout() {
 }
 
 void RequestObject::stop_client_read_timer() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   if (client_read_timer_event != NULL) {
     if (event_obj->pending_event(client_read_timer_event, EV_TIMEOUT)) {
       s3_log(S3_LOG_DEBUG, request_id, "Deleting client read timer\n");
@@ -333,7 +337,7 @@ const char* RequestObject::c_get_full_encoded_path() {
       return ev_req->uri->path->full;
     }
   } else {
-    s3_log(S3_LOG_INFO, request_id, "s3 client is disconnected.\n");
+    s3_log(S3_LOG_INFO, stripped_request_id, "s3 client is disconnected.\n");
   }
   return NULL;
 }
@@ -360,7 +364,7 @@ std::map<std::string, std::string>& RequestObject::get_in_headers_copy() {
       evhtp_obj->http_kvs_for_each(ev_req->headers_in, consume_header, this);
       in_headers_copied = true;
     } else {
-      s3_log(S3_LOG_INFO, request_id,
+      s3_log(S3_LOG_INFO, stripped_request_id,
              "s3 client is either disconnected or ev_req(NULL).\n");
     }
   }
@@ -481,6 +485,10 @@ std::string RequestObject::get_content_length_str() {
   return len;
 }
 
+std::string RequestObject::get_headers_copysource() {
+  return get_header_value("x-amz-copy-source");
+}
+
 std::string RequestObject::get_content_type() {
   std::string type = get_header_value("Content-Type");
   type = S3CommonUtilities::trim(type);
@@ -594,12 +602,12 @@ void RequestObject::set_email(const std::string& email_id) { email = email_id; }
 const std::string& RequestObject::get_email() { return email; }
 
 void RequestObject::notify_incoming_data(evbuf_t* buf) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering with buf(%p)\n", buf);
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry with buf(%p)\n", __func__, buf);
   s3_log(S3_LOG_DEBUG, request_id, "pending_in_flight (before): %zu\n",
          pending_in_flight);
   if (buf == NULL) {
     // Very unlikely
-    s3_log(S3_LOG_WARN, request_id, "Exiting due to buf(NULL)\n");
+    s3_log(S3_LOG_WARN, request_id, "%s Exit due to buf(NULL)\n", __func__);
     return;
   }
   if (!S3MemoryProfile().free_memory_in_pool_above_threshold_limits()) {
@@ -618,11 +626,12 @@ void RequestObject::notify_incoming_data(evbuf_t* buf) {
       s3_log(S3_LOG_WARN, request_id,
              "Memory in pool is above threshold limits\n");
     }
-    s3_log(S3_LOG_DEBUG, nullptr, "Exiting\n");
+    s3_log(S3_LOG_DEBUG, nullptr, "%s Exit", __func__);
     return;
   }
   if (is_s3_client_read_error()) {
-    s3_log(S3_LOG_INFO, request_id, "Exiting due to some read error\n");
+    s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit due to some read error\n",
+           __func__);
     evbuffer_free(buf);
     return;
   }
@@ -706,7 +715,7 @@ void RequestObject::notify_incoming_data(evbuf_t* buf) {
       // The class instance can be destroyed at this point!
     }
     if (f_s3_client_read_error) {
-      s3_log(S3_LOG_DEBUG, nullptr, "Exiting\n");
+      s3_log(S3_LOG_DEBUG, nullptr, "%s Exit", __func__);
       return;
     }
   } else if (!buffered_input->is_freezed() &&
@@ -722,13 +731,13 @@ void RequestObject::notify_incoming_data(evbuf_t* buf) {
     s3_log(S3_LOG_DEBUG, request_id, "Setting Read timeout for s3 client\n");
     set_start_client_request_read_timeout();
   }
-  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
 }
 
 void RequestObject::send_response(int code, std::string body) {
   if (!is_service_req_head) {
-    s3_log(S3_LOG_INFO, request_id, "Sending response as: [code:%d] [%s]\n",
-           code, body.c_str());
+    s3_log(S3_LOG_INFO, stripped_request_id,
+           "Sending response as: [code:%d] [%s]\n", code, body.c_str());
   }
 
   http_status = code;
@@ -738,7 +747,7 @@ void RequestObject::send_response(int code, std::string body) {
     s3_stats_inc("internal_error_count");
   }
   if (!client_connected()) {
-    s3_log(S3_LOG_INFO, request_id, "s3 client is disconnected.\n");
+    s3_log(S3_LOG_INFO, stripped_request_id, "s3 client is disconnected.\n");
     request_timer.stop();
     return;
   }
@@ -753,7 +762,7 @@ void RequestObject::send_response(int code, std::string body) {
                                         // add/update again
     set_out_header_value("Content-Length", "0");
   }
-  set_out_header_value("x-amzn-RequestId", request_id);
+  set_out_header_value("x-amz-request-id", request_id);
   evhtp_obj->http_send_reply(ev_req, code);
   stop_processing_incoming_data();
   resume(false);  // attempt resume just in case some one forgot
@@ -776,7 +785,7 @@ void RequestObject::send_response(int code, std::string body) {
 void RequestObject::send_reply_start(int code) {
   http_status = code;
   turn_around_time.stop();
-  set_out_header_value("x-amzn-RequestId", request_id);
+  set_out_header_value("x-amz-request-id", request_id);
   if (client_connected()) {
     evhtp_obj->http_send_reply_start(ev_req, code);
     reply_buffer = evbuffer_new();
@@ -856,12 +865,12 @@ void RequestObject::respond_error(
     send_response(error.get_http_status_code(), response_xml);
   } else {
     request_timer.stop();
-    s3_log(S3_LOG_INFO, request_id, "s3 client is disconnected.\n");
+    s3_log(S3_LOG_INFO, stripped_request_id, "s3 client is disconnected.\n");
   }
 }
 
 void RequestObject::respond_unsupported_api() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   // For S3 request, if method is PUT and no bucket specified
   // then return NotImplemented, with http code 405
   S3RequestObject* s3_request = dynamic_cast<S3RequestObject*>(this);
@@ -872,18 +881,18 @@ void RequestObject::respond_unsupported_api() {
     respond_error("NotImplemented");
   }
   s3_stats_inc("unsupported_api_count");
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void RequestObject::respond_retry_after(int retry_after_in_secs) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
 
   std::map<std::string, std::string> headers;
   headers["Retry-After"] = std::to_string(retry_after_in_secs);
 
   respond_error("ServiceUnavailable", headers);
 
-  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
 }
 
 bool RequestObject::is_header_present(const std::string& key) {

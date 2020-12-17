@@ -41,7 +41,7 @@ S3BucketMetadataV1::S3BucketMetadataV1(
     : S3BucketMetadata(std::move(req), std::move(motr_api),
                        std::move(motr_s3_kvs_reader_factory),
                        std::move(motr_s3_kvs_writer_factory)) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   if (s3_global_bucket_index_metadata_factory) {
     global_bucket_index_metadata_factory =
@@ -53,6 +53,35 @@ S3BucketMetadataV1::S3BucketMetadataV1(
   bucket_owner_account_id = "";
   // name of the index which holds all objects key values within a bucket
   salted_object_list_index_name = get_object_list_index_name();
+
+  should_cleanup_global_idx = false;
+}
+
+S3BucketMetadataV1::S3BucketMetadataV1(
+    std::shared_ptr<S3RequestObject> req, const std::string& str_bucket_name,
+    std::shared_ptr<MotrAPI> motr_api,
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
+    std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory,
+    std::shared_ptr<S3GlobalBucketIndexMetadataFactory>
+        s3_global_bucket_index_metadata_factory)
+    : S3BucketMetadata(std::move(req), std::move(str_bucket_name),
+                       std::move(motr_api),
+                       std::move(motr_s3_kvs_reader_factory),
+                       std::move(motr_s3_kvs_writer_factory)) {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
+
+  if (s3_global_bucket_index_metadata_factory) {
+    global_bucket_index_metadata_factory =
+        std::move(s3_global_bucket_index_metadata_factory);
+  } else {
+    global_bucket_index_metadata_factory =
+        std::make_shared<S3GlobalBucketIndexMetadataFactory>();
+  }
+  bucket_owner_account_id = "";
+  // name of the index which holds all objects key values within a bucket
+  salted_object_list_index_name = get_object_list_index_name();
+
+  should_cleanup_global_idx = false;
 }
 
 struct m0_uint128 S3BucketMetadataV1::get_bucket_metadata_list_index_oid() {
@@ -72,7 +101,7 @@ void S3BucketMetadataV1::set_state(S3BucketMetadataState state) {
 // bucket_metadata_list_index_oid
 void S3BucketMetadataV1::load(std::function<void(void)> on_success,
                               std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_timer.start();
 
   this->handler_on_success = on_success;
@@ -80,16 +109,16 @@ void S3BucketMetadataV1::load(std::function<void(void)> on_success,
 
   fetch_global_bucket_account_id_info();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::fetch_global_bucket_account_id_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (!global_bucket_index_metadata) {
     global_bucket_index_metadata =
         global_bucket_index_metadata_factory
-            ->create_s3_global_bucket_index_metadata(request);
+            ->create_s3_global_bucket_index_metadata(request, bucket_name);
   }
   global_bucket_index_metadata->load(
       std::bind(
@@ -98,21 +127,21 @@ void S3BucketMetadataV1::fetch_global_bucket_account_id_info() {
       std::bind(&S3BucketMetadataV1::fetch_global_bucket_account_id_info_failed,
                 this));
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::fetch_global_bucket_account_id_info_success() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   bucket_owner_account_id = global_bucket_index_metadata->get_account_id();
   // Now fetch real bucket metadata
   load_bucket_info();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::fetch_global_bucket_account_id_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (global_bucket_index_metadata->get_state() ==
       S3GlobalBucketIndexMetadataState::missing) {
@@ -131,11 +160,11 @@ void S3BucketMetadataV1::fetch_global_bucket_account_id_info_failed() {
   }
   this->handler_on_failed();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::load_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   motr_kv_reader =
       motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
@@ -145,11 +174,11 @@ void S3BucketMetadataV1::load_bucket_info() {
       std::bind(&S3BucketMetadataV1::load_bucket_info_successful, this),
       std::bind(&S3BucketMetadataV1::load_bucket_info_failed, this));
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::load_bucket_info_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (this->from_json(motr_kv_reader->get_value()) != 0) {
     s3_log(S3_LOG_ERROR, request_id,
            "Json Parsing failed. Index oid ="
@@ -171,11 +200,11 @@ void S3BucketMetadataV1::load_bucket_info_successful() {
     state = S3BucketMetadataState::present;
     this->handler_on_success();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::load_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (json_parsing_error) {
     state = S3BucketMetadataState::failed;
@@ -192,14 +221,14 @@ void S3BucketMetadataV1::load_bucket_info_failed() {
   }
   this->handler_on_failed();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 // Create {B1, A1} in global_bucket_list_index_oid, followed by {A1/B1, md} in
 // bucket_metadata_list_index_oid
 void S3BucketMetadataV1::save(std::function<void(void)> on_success,
                               std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   assert(state == S3BucketMetadataState::missing);
 
@@ -209,25 +238,25 @@ void S3BucketMetadataV1::save(std::function<void(void)> on_success,
   global_bucket_index_metadata.reset();
   save_global_bucket_account_id_info();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::update(std::function<void(void)> on_success,
                                 std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   assert(state == S3BucketMetadataState::present);
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
-  save_bucket_info();
+  save_bucket_info(false);
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::save_global_bucket_account_id_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (!global_bucket_index_metadata) {
     global_bucket_index_metadata =
         global_bucket_index_metadata_factory
@@ -248,22 +277,22 @@ void S3BucketMetadataV1::save_global_bucket_account_id_info() {
       std::bind(&S3BucketMetadataV1::save_global_bucket_account_id_info_failed,
                 this));
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::save_global_bucket_account_id_info_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   // update bucket_owner_account_id
   bucket_owner_account_id = global_bucket_index_metadata->get_account_id();
   collision_attempt_count = 0;
   create_object_list_index();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::save_global_bucket_account_id_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   s3_log(S3_LOG_ERROR, request_id,
          "Saving of Bucket list index oid metadata failed\n");
@@ -275,11 +304,11 @@ void S3BucketMetadataV1::save_global_bucket_account_id_info_failed() {
   }
   this->handler_on_failed();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::create_object_list_index() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (!motr_kv_writer) {
     motr_kv_writer =
         motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
@@ -291,39 +320,34 @@ void S3BucketMetadataV1::create_object_list_index() {
       object_list_index_oid,
       std::bind(&S3BucketMetadataV1::create_object_list_index_successful, this),
       std::bind(&S3BucketMetadataV1::create_object_list_index_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::create_object_list_index_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   collision_attempt_count = 0;
   create_multipart_list_index();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::create_object_list_index_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::exists) {
     // create_object_list_index is called when there is no bucket,
     // Hence if motr returned its present, then its due to collision.
     handle_collision(
         get_object_list_index_name(), salted_object_list_index_name,
         std::bind(&S3BucketMetadataV1::create_object_list_index, this));
-  } else if (motr_kv_writer->get_state() ==
-             S3MotrKVSWriterOpState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id, "Object list Index creation failed.\n");
-    state = S3BucketMetadataState::failed_to_launch;
-    this->handler_on_failed();
   } else {
     s3_log(S3_LOG_ERROR, request_id, "Object list Index creation failed.\n");
-    state = S3BucketMetadataState::failed;
-    this->handler_on_failed();
+    cleanup_on_create_err_global_bucket_account_id_info(
+        motr_kv_writer->get_state());
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::create_multipart_list_index() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (!motr_kv_writer) {
     motr_kv_writer =
         motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
@@ -337,38 +361,33 @@ void S3BucketMetadataV1::create_multipart_list_index() {
       std::bind(&S3BucketMetadataV1::create_multipart_list_index_successful,
                 this),
       std::bind(&S3BucketMetadataV1::create_multipart_list_index_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::create_multipart_list_index_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   create_objects_version_list_index();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::create_multipart_list_index_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::exists) {
     // create_multipart_list_index is called when there is no bucket,
     // Hence if motr returned its present, then its due to collision.
     handle_collision(
         get_multipart_index_name(), salted_multipart_list_index_name,
         std::bind(&S3BucketMetadataV1::create_multipart_list_index, this));
-  } else if (motr_kv_writer->get_state() ==
-             S3MotrKVSWriterOpState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id, "Multipart list Index creation failed.\n");
-    state = S3BucketMetadataState::failed_to_launch;
-    this->handler_on_failed();
   } else {
     s3_log(S3_LOG_ERROR, request_id, "Multipart list Index creation failed.\n");
-    state = S3BucketMetadataState::failed;
-    this->handler_on_failed();
+    cleanup_on_create_err_global_bucket_account_id_info(
+        motr_kv_writer->get_state());
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::create_objects_version_list_index() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (!motr_kv_writer) {
     motr_kv_writer =
         motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
@@ -385,18 +404,18 @@ void S3BucketMetadataV1::create_objects_version_list_index() {
           this),
       std::bind(&S3BucketMetadataV1::create_objects_version_list_index_failed,
                 this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::create_objects_version_list_index_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   collision_attempt_count = 0;
-  save_bucket_info();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  save_bucket_info(true);
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::create_objects_version_list_index_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::exists) {
     // create_objects_version_list_index is called when there is no bucket,
     // Hence if motr returned its present then its due to collision.
@@ -404,23 +423,17 @@ void S3BucketMetadataV1::create_objects_version_list_index_failed() {
         get_version_list_index_name(), salted_objects_version_list_index_name,
         std::bind(&S3BucketMetadataV1::create_objects_version_list_index,
                   this));
-  } else if (motr_kv_writer->get_state() ==
-             S3MotrKVSWriterOpState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Object version list Index creation failed.\n");
-    state = S3BucketMetadataState::failed_to_launch;
-    this->handler_on_failed();
   } else {
     s3_log(S3_LOG_ERROR, request_id,
            "Object version list Index creation failed.\n");
-    state = S3BucketMetadataState::failed;
-    this->handler_on_failed();
+    cleanup_on_create_err_global_bucket_account_id_info(
+        motr_kv_writer->get_state());
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3BucketMetadataV1::save_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+void S3BucketMetadataV1::save_bucket_info(bool clean_glob_on_err) {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   assert(!bucket_owner_account_id.empty());
   assert(!user_name.empty());
@@ -437,17 +450,18 @@ void S3BucketMetadataV1::save_bucket_info() {
     motr_kv_writer =
         motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
+  should_cleanup_global_idx = clean_glob_on_err;
   motr_kv_writer->put_keyval(
       bucket_metadata_list_index_oid, get_bucket_metadata_index_key_name(),
       this->to_json(),
       std::bind(&S3BucketMetadataV1::save_bucket_info_successful, this),
       std::bind(&S3BucketMetadataV1::save_bucket_info_failed, this));
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::save_bucket_info_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   // attempt to save the KV in replica bucket metadata index
   if (!motr_kv_writer) {
@@ -460,11 +474,11 @@ void S3BucketMetadataV1::save_bucket_info_successful() {
       std::bind(&S3BucketMetadataV1::save_replica, this),
       std::bind(&S3BucketMetadataV1::save_replica, this));
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::save_replica() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   // PUT Operation passes even if we failed to put KV in replica index.
   if (motr_kv_writer->get_state() != S3MotrKVSWriterOpState::created) {
@@ -476,37 +490,42 @@ void S3BucketMetadataV1::save_replica() {
   }
   this->handler_on_success();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::save_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_ERROR, request_id, "Saving of Bucket metadata failed\n");
-  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
-    state = S3BucketMetadataState::failed_to_launch;
+  auto kv_state = motr_kv_writer->get_state();
+  if (!should_cleanup_global_idx) {
+    if (kv_state == S3MotrKVSWriterOpState::failed_to_launch) {
+      state = S3BucketMetadataState::failed_to_launch;
+    } else {
+      state = S3BucketMetadataState::failed;
+    }
+    this->handler_on_failed();
   } else {
-    state = S3BucketMetadataState::failed;
+    cleanup_on_create_err_global_bucket_account_id_info(kv_state);
   }
-  this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 // Delete {A1/B1} from bucket_metadata_list_index_oid followed by {B1, A1} from
 // global_bucket_list_index_oid
 void S3BucketMetadataV1::remove(std::function<void(void)> on_success,
                                 std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
   assert(state == S3BucketMetadataState::present);
   remove_bucket_info();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::remove_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (!motr_kv_writer) {
     motr_kv_writer =
@@ -518,11 +537,11 @@ void S3BucketMetadataV1::remove_bucket_info() {
       std::bind(&S3BucketMetadataV1::remove_bucket_info_successful, this),
       std::bind(&S3BucketMetadataV1::remove_bucket_info_failed, this));
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::remove_bucket_info_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   // Attempt to remove KV from replica bucket metadata index
   if (!motr_kv_writer) {
@@ -535,11 +554,11 @@ void S3BucketMetadataV1::remove_bucket_info_successful() {
       std::bind(&S3BucketMetadataV1::remove_replica, this),
       std::bind(&S3BucketMetadataV1::remove_replica, this));
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::remove_replica() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   // delete KV from replia index is not fatal error
   if (motr_kv_writer->get_state() != S3MotrKVSWriterOpState::deleted) {
@@ -558,11 +577,11 @@ void S3BucketMetadataV1::remove_replica() {
     remove_global_bucket_account_id_info();
   }
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::remove_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_ERROR, request_id, "Removal of Bucket metadata failed\n");
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
     state = S3BucketMetadataState::failed_to_launch;
@@ -570,11 +589,11 @@ void S3BucketMetadataV1::remove_bucket_info_failed() {
     state = S3BucketMetadataState::failed;
   }
   this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::remove_global_bucket_account_id_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   global_bucket_index_metadata->remove(
       std::bind(
           &S3BucketMetadataV1::remove_global_bucket_account_id_info_successful,
@@ -582,17 +601,17 @@ void S3BucketMetadataV1::remove_global_bucket_account_id_info() {
       std::bind(
           &S3BucketMetadataV1::remove_global_bucket_account_id_info_failed,
           this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::remove_global_bucket_account_id_info_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   this->handler_on_success();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3BucketMetadataV1::remove_global_bucket_account_id_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (global_bucket_index_metadata->get_state() ==
       S3GlobalBucketIndexMetadataState::failed_to_launch) {
     state = S3BucketMetadataState::failed_to_launch;
@@ -601,5 +620,40 @@ void S3BucketMetadataV1::remove_global_bucket_account_id_info_failed() {
   }
 
   this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3BucketMetadataV1::cleanup_on_create_err_global_bucket_account_id_info(
+    S3MotrKVSWriterOpState op_state) {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  if (op_state == S3MotrKVSWriterOpState::failed_to_launch) {
+    on_cleanup_state = S3BucketMetadataState::failed_to_launch;
+  } else {
+    on_cleanup_state = S3BucketMetadataState::failed;
+  }
+
+  global_bucket_index_metadata->remove(
+      std::bind(
+          &S3BucketMetadataV1::
+               cleanup_on_create_err_global_bucket_account_id_info_fini_cb,
+          this),
+      std::bind(
+          &S3BucketMetadataV1::
+               cleanup_on_create_err_global_bucket_account_id_info_fini_cb,
+          this));
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3BucketMetadataV1::
+    cleanup_on_create_err_global_bucket_account_id_info_fini_cb() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_ERROR, request_id,
+         "cleanup_on_create_err_global_bucket_account_id_info status %d\n",
+         static_cast<int>(global_bucket_index_metadata->get_state()));
+
+  // Restore state before cleanup called
+  state = on_cleanup_state;
+
+  this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

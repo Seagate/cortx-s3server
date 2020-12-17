@@ -181,35 +181,53 @@ Before your test your build, ensure that you have installed and configured the f
               * Copy and save the Access and Secret Keys for the new user.
 
 6. To Configure AWS run the following commands:
+   
    Keep the Access and Secret Keys generated in Step 4.iv. of the [1.0 Prerequisites Section](#10-Prerequisites).
+   
    1.  Run `$ aws configure` and enter the following details:
         * `AWS Access Key ID [None]: <ACCESS KEY>`
         * `AWS Secret Access Key [None]: <SECRET KEY>`
         * `Default region name [None]: US`
         * `Default output format [None]: text`
-   2. Configure the AWS plugin Endpoint using:
-
-        ```shell
-
-        $ aws configure set plugins.endpoint awscli_plugin_endpoint
-        $ aws configure set s3.endpoint_url https://s3.seagate.com
-        $ aws configure set s3api.endpoint_url https://s3.seagate.com
-        ```
-   3. Run the following command to view the contents of your AWS config file: `$ cat ~/.aws/config`
-
-      The output is as shown below:
-
+   2. Configure the AWS Plugin Endpoint using:
+      `$ aws configure set plugins.endpoint awscli_plugin_endpoint`
+        - To configure AWS in SSL mode run:
+            `$ aws configure set s3.endpoint_url https://s3.seagate.com`
+            `$ aws configure set s3api.endpoint_url https://s3.seagate.com`
+        - To configure AWS in non-SSL mode, please run:
+            `$ aws configure set s3.endpoint_url http://s3.seagate.com`
+            `$ aws configure set s3api.endpoint_url http://s3.seagate.com`
+   3. Run the following command to view the contents of your AWS config file: 
+      `$ cat ~/.aws/config`
+      
+      1. For AWS in SSL mode, you'll need to configure the `[default]` section with the `ca_bundle=<path to ca.crt file>` parameter.
+      
+      **Sample Output for SSL mode**
+       
       ```shell
-
-      [default]
-      output = text
-      region = US
-      s3 =
-      endpoint_url = http://s3.seagate.com
-      s3api =
-      endpoint_url = http://s3.seagate.com
-      [plugins]
-      endpoint = awscli_plugin_endpoint
+      
+         [default]
+         output = text
+         region = US
+         s3 = endpoint_url = https://s3.seagate.com
+         s3api = endpoint_url = https://s3.seagate.com
+         ca_bundle = /etc/ssl/stx-s3-clients/s3/ca.crt
+         [plugins]
+         endpoint = awscli_plugin_endpoint
+      ```
+      2. For non-SSL mode you can leave the [default] section as is.
+      
+      **Sample Output for non-SSL mode**
+      
+      ```shell
+      
+        [default]
+        output = text
+        region = US
+        s3 = endpoint_url = http://s3.seagate.com
+        s3api = endpoint_url = http://s3.seagate.com
+        [plugins]
+        endpoint = awscli_plugin_endpoint
       ```
 
     4. Ensure that your AWS credential file contains your Access Key Id and Secret Key by using: `$ cat ~/.aws/credentials`
@@ -324,3 +342,5 @@ Refer to our [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/ma
 ### Reach Out to Us
 
 Please refer to the [Support](../SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
+
+**CORTX S3 Server submodule was last tested by @saumyasunder on 3/11/2020 on VMware Workstation 16 Pro.**

@@ -32,11 +32,13 @@ from logging import handlers
 import datetime
 import math
 import json
+import signal
 
 from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
 from s3backgrounddelete.IEMutil import IEMutil
+from s3backgrounddelete.cortx_s3_signal import DynamicConfigHandler
 
 class ObjectRecoveryScheduler(object):
     """Scheduler which will add key value to rabbitmq message queue."""
@@ -47,6 +49,7 @@ class ObjectRecoveryScheduler(object):
         self.config = CORTXS3Config()
         self.create_logger_directory()
         self.create_logger()
+        self.signal = DynamicConfigHandler(self)
         self.logger.info("Initialising the Object Recovery Scheduler")
 
     @staticmethod
@@ -72,6 +75,9 @@ class ObjectRecoveryScheduler(object):
                 self.config.get_rabbitmq_mode(),
                 self.config.get_rabbitmq_durable(),
                 self.logger)
+            # Cleanup all entries and enqueue only 1000 entries
+            mq_client.purge_queue(self.config.get_rabbitmq_queue_name())
+
             result, index_response = CORTXS3IndexApi(
                 self.config, logger=self.logger).list(
                     self.config.get_probable_delete_index_id(), self.config.get_max_keys(), marker)
@@ -117,8 +123,6 @@ class ObjectRecoveryScheduler(object):
                             self.logger.info(
                                 "Object recovery queue send data successfully :" +
                                 str(record))
-                    if (is_truncated == "true"):
-                        self.add_kv_to_queue(probable_delete_json["NextMarker"])
                 else:
                     self.logger.info(
                         "Index listing result empty. Ignoring adding entry to object recovery queue")

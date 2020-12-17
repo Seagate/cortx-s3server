@@ -77,8 +77,8 @@ public class AWSRequestParserV2Test {
         httpHeaders.add("authorization", "AWS AKIAJTYX36YCKQSAJT7Q:uDWiVvxwCUR9YJ8EGJgbtW9tjFM=");
 
         when(fullHttpRequest.headers()).thenReturn(httpHeaders);
-        when(fullHttpRequest.getMethod()).thenReturn(HttpMethod.GET);
-        when(fullHttpRequest.getUri()).thenReturn("/");
+        when(fullHttpRequest.method()).thenReturn(HttpMethod.GET);
+        when(fullHttpRequest.uri()).thenReturn("/");
 
         String[] endpoints = {"s3-us.seagate.com", "s3-europe.seagate.com",
                 "s3-asia.seagate.com"};

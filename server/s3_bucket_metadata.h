@@ -103,6 +103,7 @@ class S3BucketMetadata {
   bool json_parsing_error;
 
   std::string request_id;
+  std::string stripped_request_id;
 
   void handle_collision(std::string base_index_name,
                         std::string& salted_index_name,
@@ -110,9 +111,19 @@ class S3BucketMetadata {
   void regenerate_new_index_name(std::string base_index_name,
                                  std::string& salted_index_name);
 
+  void initialize(std::string bucket = "");
+
  public:
   S3BucketMetadata(
       std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<MotrAPI> motr_api = nullptr,
+      std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory =
+          nullptr,
+      std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory =
+          nullptr);
+
+  S3BucketMetadata(
+      std::shared_ptr<S3RequestObject> req, const std::string& bucket,
       std::shared_ptr<MotrAPI> motr_api = nullptr,
       std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory =
           nullptr,

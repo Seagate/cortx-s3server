@@ -200,3 +200,20 @@ do
            --s3port $s3port --fault_injection true $fake_params --loading_indicators --getoid true
   ((++counter))
 done
+
+#restart s3background services
+is_producer_running=1
+$USE_SUDO systemctl is-active s3backgroundproducer 2>&1 > /dev/null || is_producer_running=0
+if [[ $is_producer_running -eq 1 ]]; then
+  $USE_SUDO systemctl stop s3backgroundproducer || echo "Cannot stop s3backgroundproducer services"
+fi
+
+is_consumer_running=1
+$USE_SUDO systemctl is-active s3backgroundconsumer 2>&1 > /dev/null || is_consumer_running=0
+if [[ $is_consumer_running -eq 1 ]]; then
+  $USE_SUDO systemctl stop s3backgroundconsumer || echo "Cannot stop s3backgroundconsumer services"
+fi
+
+$USE_SUDO systemctl start s3backgroundproducer
+$USE_SUDO systemctl start s3backgroundconsumer
+

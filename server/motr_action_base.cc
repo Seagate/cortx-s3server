@@ -28,12 +28,14 @@ MotrAction::MotrAction(std::shared_ptr<MotrRequestObject> req,
                        std::shared_ptr<S3AuthClientFactory> auth_factory,
                        bool skip_auth)
     : Action(req, check_shutdown, auth_factory, skip_auth), request(req) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   auth_client->do_skip_authorization();
   setup_steps();
 }
 
-MotrAction::~MotrAction() { s3_log(S3_LOG_DEBUG, request_id, "Destructor\n"); }
+MotrAction::~MotrAction() {
+  s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__);
+}
 
 void MotrAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setup the action\n");
@@ -47,7 +49,7 @@ void MotrAction::setup_steps() {
 }
 
 void MotrAction::check_authorization() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   if ((request->get_account_name() == BACKGROUND_STALE_OBJECT_DELETE_ACCOUNT) ||
       (request->get_account_name() == S3RECOVERY_ACCOUNT)) {
     next();
@@ -60,6 +62,6 @@ void MotrAction::check_authorization() {
       request->respond_error(error_code);
     }
     done();
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   }
 }

@@ -27,6 +27,7 @@
 #include "s3_option.h"
 #include "s3_uri_to_motr_oid.h"
 #include "s3_stats.h"
+#include "s3_addb.h"
 
 extern struct m0_realm motr_uber_realm;
 extern struct m0_container motr_container;
@@ -38,7 +39,8 @@ S3MotrKVSWriter::S3MotrKVSWriter(std::shared_ptr<RequestObject> req,
                                  std::shared_ptr<MotrAPI> motr_api)
     : request(req), state(S3MotrKVSWriterOpState::start), idx_ctx(nullptr) {
   request_id = request->get_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  stripped_request_id = request->get_stripped_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   if (motr_api) {
     s3_motr_api = motr_api;
   } else {
@@ -50,7 +52,8 @@ S3MotrKVSWriter::S3MotrKVSWriter(std::string req_id,
                                  std::shared_ptr<MotrAPI> motr_api)
     : state(S3MotrKVSWriterOpState::start), idx_ctx(nullptr) {
   request_id = std::move(req_id);
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  stripped_request_id = std::string(request_id.end() - 12, request_id.end());
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   if (motr_api) {
     s3_motr_api = std::move(motr_api);
   } else {
@@ -59,7 +62,7 @@ S3MotrKVSWriter::S3MotrKVSWriter(std::string req_id,
 }
 
 S3MotrKVSWriter::~S3MotrKVSWriter() {
-  s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__);
   clean_up_contexts();
 }
 
@@ -84,8 +87,8 @@ void S3MotrKVSWriter::clean_up_contexts() {
 void S3MotrKVSWriter::create_index(std::string index_name,
                                    std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id, "Entering with index_name = %s\n",
-         index_name.c_str());
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry with index_name = %s\n",
+         __func__, index_name.c_str());
 
   struct m0_uint128 id = {0ULL, 0ULL};
   S3UriToMotrOID(s3_motr_api, index_name.c_str(), request_id, &id,
@@ -93,15 +96,15 @@ void S3MotrKVSWriter::create_index(std::string index_name,
 
   create_index_with_oid(id, on_success, on_failed);
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrKVSWriter::create_index_with_oid(
     struct m0_uint128 idx_oid, std::function<void(void)> on_success,
     std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id,
-         "Entering with idx_oid = %" SCNx64 " : %" SCNx64 "\n", idx_oid.u_hi,
-         idx_oid.u_lo);
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "%s Entry with idx_oid = %" SCNx64 " : %" SCNx64 "\n", __func__,
+         idx_oid.u_hi, idx_oid.u_lo);
   int rc = 0;
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -153,19 +156,19 @@ void S3MotrKVSWriter::create_index_with_oid(
   s3_motr_api->motr_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
                               MotrOpType::createidx);
   global_motr_idx_ops_list.insert(idx_op_ctx);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrKVSWriter::create_index_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_stats_inc("create_index_op_success_count");
   state = S3MotrKVSWriterOpState::created;
   this->handler_on_success();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrKVSWriter::create_index_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (state != S3MotrKVSWriterOpState::failed_to_launch) {
     if (writer_context->get_errno_for(0) == -EEXIST) {
       state = S3MotrKVSWriterOpState::exists;
@@ -176,7 +179,7 @@ void S3MotrKVSWriter::create_index_failed() {
     }
   }
   this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 // Sync motr is currently done using motr_idx_op
@@ -184,8 +187,9 @@ void S3MotrKVSWriter::create_index_failed() {
 // void S3MotrKVSWriter::sync_index(std::function<void(void)> on_success,
 //                                    std::function<void(void)> on_failed,
 //                                    int index_count) {
-//   s3_log(S3_LOG_INFO, request_id, "Entering with index_count = %d\n",
-//          index_count);
+//   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry with index_count =
+// %d\n",
+//     __func__, index_count);
 //   int rc = 0;
 //   this->handler_on_success = on_success;
 //   this->handler_on_failed = on_failed;
@@ -229,11 +233,11 @@ void S3MotrKVSWriter::create_index_failed() {
 //   s3_motr_api->motr_op_launch(request->addb_request_id,
 //                                   &idx_op_ctx->sync_op, 1,
 //                                   MotrOpType::createidx);
-//   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+//   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 // }
 
 // void S3MotrKVSWriter::sync_index_successful() {
-//   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+//   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 //   s3_stats_inc("sync_index_op_success_count");
 //   if (state == S3MotrKVSWriterOpState::deleting) {
 //     state = S3MotrKVSWriterOpState::deleted;
@@ -241,11 +245,11 @@ void S3MotrKVSWriter::create_index_failed() {
 //     state = S3MotrKVSWriterOpState::saved;
 //   }
 //   this->handler_on_success();
-//   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+//   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 // }
 
 // void S3MotrKVSWriter::sync_index_failed() {
-//   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+//   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 //   if (state != S3MotrKVSWriterOpState::failed_to_launch) {
 //     if (sync_context->get_errno_for(0) == -ENOENT) {
 //       state = S3MotrKVSWriterOpState::missing;
@@ -257,15 +261,15 @@ void S3MotrKVSWriter::create_index_failed() {
 //     }
 //   }
 //   this->handler_on_failed();
-//   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+//   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 // }
 
 void S3MotrKVSWriter::delete_index(struct m0_uint128 idx_oid,
                                    std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id,
-         "Entering with idx_oid = %" SCNx64 " : %" SCNx64 "\n", idx_oid.u_hi,
-         idx_oid.u_lo);
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "%s Entry with idx_oid = %" SCNx64 " : %" SCNx64 "\n", __func__,
+         idx_oid.u_hi, idx_oid.u_lo);
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
@@ -326,18 +330,18 @@ void S3MotrKVSWriter::delete_index(struct m0_uint128 idx_oid,
   s3_motr_api->motr_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
                               MotrOpType::deleteidx);
   global_motr_idx_ops_list.insert(idx_op_ctx);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrKVSWriter::delete_index_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   state = S3MotrKVSWriterOpState::deleted;
   this->handler_on_success();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrKVSWriter::delete_index_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (state != S3MotrKVSWriterOpState::failed_to_launch) {
     if (writer_context->get_errno_for(0) == -ENOENT) {
       s3_log(S3_LOG_DEBUG, request_id, "Index doesn't exists\n");
@@ -348,13 +352,14 @@ void S3MotrKVSWriter::delete_index_failed() {
     }
   }
   this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrKVSWriter::delete_indexes(std::vector<struct m0_uint128> oids,
                                      std::function<void(void)> on_success,
                                      std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id, "Entering with %zu indexes\n", oids.size());
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry with %zu indexes\n",
+         __func__, oids.size());
 
   {
     for (auto &oid : oids) {
@@ -428,32 +433,33 @@ void S3MotrKVSWriter::delete_indexes(std::vector<struct m0_uint128> oids,
   s3_motr_api->motr_op_launch(request->addb_request_id, idx_op_ctx->ops,
                               oids.size(), MotrOpType::deleteidx);
   global_motr_idx_ops_list.insert(idx_op_ctx);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrKVSWriter::delete_indexes_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   state = S3MotrKVSWriterOpState::deleted;
   this->handler_on_success();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrKVSWriter::delete_indexes_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_ERROR, request_id, "Deletion of Index failed\n");
   if (state != S3MotrKVSWriterOpState::failed_to_launch) {
     state = S3MotrKVSWriterOpState::failed;
   }
   this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrKVSWriter::put_keyval(
     struct m0_uint128 oid, const std::map<std::string, std::string> &kv_list,
     std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id, "Entering with oid = %" SCNx64 " : %" SCNx64
-                                  " and %zu key/value pairs\n",
-         oid.u_hi, oid.u_lo, kv_list.size());
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "%s Entry with oid = %" SCNx64 " : %" SCNx64
+         " and %zu key/value pairs\n",
+         __func__, oid.u_hi, oid.u_lo, kv_list.size());
   {
     for (auto &kv : kv_list) {
       s3_log(S3_LOG_DEBUG, request_id, "key = %s, value = %s\n",
@@ -569,15 +575,16 @@ int S3MotrKVSWriter::put_keyval_impl(
     }
   }
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return 0;
 }
 
 int S3MotrKVSWriter::put_keyval_sync(
     struct m0_uint128 oid, const std::map<std::string, std::string> &kv_list) {
-  s3_log(S3_LOG_INFO, request_id, "Entering with oid = %" SCNx64 " : %" SCNx64
-                                  " and %zu key/value pairs\n",
-         oid.u_hi, oid.u_lo, kv_list.size());
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "%s Entry with oid = %" SCNx64 " : %" SCNx64
+         " and %zu key/value pairs\n",
+         __func__, oid.u_hi, oid.u_lo, kv_list.size());
 
   /* For the moment sync kvs operation for fake kvs is not supported */
   assert(S3Option::get_instance()->is_sync_kvs_allowed());
@@ -609,9 +616,11 @@ void S3MotrKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
                                  std::string val,
                                  std::function<void(void)> on_success,
                                  std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id, "Entering with oid = %" SCNx64 " : %" SCNx64
-                                  " key = %s and value = %s\n",
-         oid.u_hi, oid.u_lo, key.c_str(), val.c_str());
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "%s Entry with oid = %" SCNx64 " : %" SCNx64
+         " key = %s and value = %s\n",
+         __func__, oid.u_hi, oid.u_lo, key.c_str(), val.c_str());
+
   assert(!key.empty());
   // Add error when any key is empty
   if (key.empty()) {
@@ -658,9 +667,9 @@ void S3MotrKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
                              &oid_list[0]);
   idx_ctx->n_initialized_contexts = 1;
 
-  rc = s3_motr_api->motr_idx_op(&(idx_ctx->idx[0]), M0_IC_PUT, kvs_ctx->keys,
-                                kvs_ctx->values, kvs_ctx->rcs, M0_OIF_OVERWRITE,
-                                &(idx_op_ctx->ops[0]));
+  rc = s3_motr_api->motr_idx_op(
+      &(idx_ctx->idx[0]), M0_IC_PUT, kvs_ctx->keys, kvs_ctx->values,
+      kvs_ctx->rcs, M0_OIF_OVERWRITE | M0_OIF_SYNC_WAIT, &(idx_op_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_idx_op failed\n");
     state = S3MotrKVSWriterOpState::failed_to_launch;
@@ -678,35 +687,35 @@ void S3MotrKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
   s3_motr_api->motr_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
                               MotrOpType::putkv);
   global_motr_idx_ops_list.insert(idx_op_ctx);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrKVSWriter::put_keyval_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_stats_inc("put_keyval_success_count");
   // todo: Add check, verify if (kvs_ctx->rcs == 0)
   // do this when cassandra + motr-kvs rcs implementation completed
   // in motr
   state = S3MotrKVSWriterOpState::created;
   this->handler_on_success();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrKVSWriter::put_keyval_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_ERROR, request_id, "Writing of key value failed\n");
   if (state != S3MotrKVSWriterOpState::failed_to_launch) {
     state = S3MotrKVSWriterOpState::failed;
   }
   this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 // Sync motr is currently done using motr_idx_op
 
 // void S3MotrKVSWriter::sync_keyval(std::function<void(void)> on_success,
 //                                     std::function<void(void)> on_failed) {
-//   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+//   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 //   int rc = 0;
 //   this->handler_on_success = on_success;
 //   this->handler_on_failed = on_failed;
@@ -760,49 +769,49 @@ void S3MotrKVSWriter::put_keyval_failed() {
 // MotrOpType::putkv);
 //   }
 
-//   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+//   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 // }
 
 // void S3MotrKVSWriter::sync_keyval_successful() {
-//   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+//   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 //   s3_stats_inc("sync_keyval_op_success_count");
 //   if (state == S3MotrKVSWriterOpState::deleting) {
 //     state = S3MotrKVSWriterOpState::deleted;
 //   } else {
 //     state = S3MotrKVSWriterOpState::saved;
 //   }
-//   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+//   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 // }
 
 // void S3MotrKVSWriter::sync_keyval_failed() {
-//   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+//   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 //   if (state != S3MotrKVSWriterOpState::failed_to_launch) {
 //     state = S3MotrKVSWriterOpState::failed;
 //   }
 //   this->handler_on_failed();
-//   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+//   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 // }
 
 void S3MotrKVSWriter::delete_keyval(struct m0_uint128 oid, std::string key,
                                     std::function<void(void)> on_success,
                                     std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id,
-         "Entering with oid %" SCNx64 " : %" SCNx64 " and key %s\n", oid.u_hi,
-         oid.u_lo, key.c_str());
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "%s Entry with oid %" SCNx64 " : %" SCNx64 " and key %s\n", __func__,
+         oid.u_hi, oid.u_lo, key.c_str());
   std::vector<std::string> keys;
   keys.push_back(key);
 
   delete_keyval(oid, keys, on_success, on_failed);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrKVSWriter::delete_keyval(struct m0_uint128 oid,
                                     std::vector<std::string> keys,
                                     std::function<void(void)> on_success,
                                     std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id,
-         "Entering with oid %" SCNx64 " : %" SCNx64 " and %zu keys\n", oid.u_hi,
-         oid.u_lo, keys.size());
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "%s Entry with oid %" SCNx64 " : %" SCNx64 " and %zu keys\n", __func__,
+         oid.u_hi, oid.u_lo, keys.size());
   int rc;
   for (auto key : keys) {
     s3_log(S3_LOG_DEBUG, request_id, "key = %s\n", key.c_str());
@@ -881,21 +890,21 @@ void S3MotrKVSWriter::delete_keyval(struct m0_uint128 oid,
   s3_motr_api->motr_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
                               MotrOpType::deletekv);
   global_motr_idx_ops_list.insert(idx_op_ctx);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrKVSWriter::delete_keyval_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // todo: Add check, verify if (kvs_ctx->rcs == 0)
   // do this when cassandra + motr-kvs rcs implementation completed
   // in motr
   state = S3MotrKVSWriterOpState::deleted;
   this->handler_on_success();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrKVSWriter::delete_keyval_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (state != S3MotrKVSWriterOpState::failed_to_launch) {
     if (writer_context->get_errno_for(0) == -ENOENT) {
       s3_log(S3_LOG_DEBUG, request_id, "The key doesn't exist\n");
@@ -906,14 +915,14 @@ void S3MotrKVSWriter::delete_keyval_failed() {
     }
   }
   this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrKVSWriter::set_up_key_value_store(
     struct s3_motr_kvs_op_context *kvs_ctx, const std::string &key,
     const std::string &val, size_t pos) {
   // TODO - clean up these buffers
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   kvs_ctx->keys->ov_vec.v_count[pos] = key.length();
   kvs_ctx->keys->ov_buf[pos] = (char *)malloc(key.length());
   memcpy(kvs_ctx->keys->ov_buf[pos], (void *)key.c_str(), key.length());
@@ -929,5 +938,5 @@ void S3MotrKVSWriter::set_up_key_value_store(
   s3_log(S3_LOG_DEBUG, request_id, "kvs_ctx->vals->ov_buf[%lu] = %s\n", pos,
          std::string((char *)kvs_ctx->values->ov_buf[pos],
                      kvs_ctx->values->ov_vec.v_count[pos]).c_str());
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

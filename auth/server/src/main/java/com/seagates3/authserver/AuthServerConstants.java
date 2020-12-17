@@ -39,4 +39,10 @@ class AuthServerConstants {
 
  public
   final static int MIN_ROOT_IAM_USER_DURATION = 900;
+
+ public
+  final static String PERMANENT_KEY_PREFIX = "AKIA";
+
+ public
+  final static String TEMPORARY_KEY_PREFIX = "ASIA";
 }

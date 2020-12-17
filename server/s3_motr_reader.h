@@ -47,6 +47,7 @@ class S3MotrReaderContext : public S3AsyncOpContextBase {
 
   int layout_id;
   std::string request_id;
+  std::string stripped_request_id;
 
  public:
   S3MotrReaderContext(std::shared_ptr<RequestObject> req,
@@ -57,7 +58,9 @@ class S3MotrReaderContext : public S3AsyncOpContextBase {
       : S3AsyncOpContextBase(req, success_callback, failed_callback, 1,
                              motr_api) {
     request_id = request->get_request_id();
-    s3_log(S3_LOG_DEBUG, request_id, "Constructor: layout_id = %d\n", layoutid);
+    stripped_request_id = request->get_stripped_request_id();
+    s3_log(S3_LOG_DEBUG, request_id, "%s Ctor: layout_id = %d\n", __func__,
+           layoutid);
     assert(layoutid > 0);
 
     layout_id = layoutid;
@@ -71,7 +74,7 @@ class S3MotrReaderContext : public S3AsyncOpContextBase {
   }
 
   ~S3MotrReaderContext() {
-    s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
+    s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__);
 
     if (has_motr_op_context) {
       free_basic_op_ctx(motr_op_context);
@@ -140,6 +143,7 @@ class S3MotrReader {
   std::shared_ptr<MotrAPI> s3_motr_api;
 
   std::string request_id;
+  std::string stripped_request_id;
 
   // Used to report to caller
   std::function<void()> handler_on_success;

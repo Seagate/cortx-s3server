@@ -180,6 +180,9 @@ ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/slapdlog.l
 # Apply indexing on keys for performance improvement
 ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/s3slapdindex.ldif
 
+# Set ldap search Result size
+ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/resultssizelimit.ldif
+
 # Restart slapd
 systemctl enable slapd
 systemctl restart slapd

@@ -28,9 +28,10 @@ S3PutBucketPolicyAction::S3PutBucketPolicyAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
     : S3BucketAction(std::move(req), std::move(bucket_meta_factory)) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
-  s3_log(S3_LOG_INFO, request_id, "S3 API: Put Bucket Policy. Bucket[%s]\n",
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "S3 API: Put Bucket Policy. Bucket[%s]\n",
          request->get_bucket_name().c_str());
 
   setup_steps();
@@ -46,7 +47,7 @@ void S3PutBucketPolicyAction::setup_steps() {
 }
 
 void S3PutBucketPolicyAction::validate_request() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (request->has_all_body_content()) {
     new_bucket_policy = request->get_full_body_content_as_string();
@@ -60,11 +61,11 @@ void S3PutBucketPolicyAction::validate_request() {
         );
   }
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketPolicyAction::validate_policy() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // Check bucket policy length before sending to auth server.
   // for more info please refer
   // https://docs.aws.amazon.com/AmazonS3/latest/dev/example-bucket-policies.html
@@ -86,20 +87,20 @@ void S3PutBucketPolicyAction::validate_policy() {
         std::bind(&S3PutBucketPolicyAction::on_policy_validation_failure,
                   this));
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketPolicyAction::on_policy_validation_success() {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketPolicyAction::on_policy_validation_failure() {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   std::string error_code = auth_client->get_error_code();
   std::string error_messag = auth_client->get_error_message();
-  s3_log(S3_LOG_INFO, request_id, "Auth server response = [%s]\n",
+  s3_log(S3_LOG_INFO, stripped_request_id, "Auth server response = [%s]\n",
          error_code.c_str());
 
   set_s3_error(error_code);
@@ -107,11 +108,11 @@ void S3PutBucketPolicyAction::on_policy_validation_failure() {
   set_s3_error_message(error_messag);
   send_response_to_s3_client();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketPolicyAction::set_policy() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     bucket_metadata->setpolicy(new_bucket_policy);
     // bypass shutdown signal check for next task
@@ -120,11 +121,11 @@ void S3PutBucketPolicyAction::set_policy() {
         std::bind(&S3PutBucketPolicyAction::next, this),
         std::bind(&S3PutBucketPolicyAction::set_policy_failed, this));
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketPolicyAction::set_policy_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Save Bucket metadata operation failed due to prelaunch failure\n");
@@ -134,7 +135,7 @@ void S3PutBucketPolicyAction::set_policy_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketPolicyAction::consume_incoming_content() {
@@ -152,7 +153,7 @@ void S3PutBucketPolicyAction::consume_incoming_content() {
 }
 
 void S3PutBucketPolicyAction::validate_request_body(std::string& content) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
 
   bool isValid = false;
   if (!new_bucket_policy.empty()) {
@@ -175,11 +176,11 @@ void S3PutBucketPolicyAction::validate_request_body(std::string& content) {
     set_s3_error("MalformedXML");  // TODO: Check the behaviour in AWS S3
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketPolicyAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
@@ -193,11 +194,11 @@ void S3PutBucketPolicyAction::fetch_bucket_info_failed() {
   }
   send_response_to_s3_client();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketPolicyAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (reject_if_shutting_down()) {
     // Send response with 'Service Unavailable' code.
@@ -239,6 +240,6 @@ void S3PutBucketPolicyAction::send_response_to_s3_client() {
 
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 

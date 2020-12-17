@@ -90,17 +90,12 @@ void S3Daemonize::daemonize() {
   int rc;
   std::string daemon_wd;
 
-  struct sigaction s3hup_act;
-  memset(&s3hup_act, 0, sizeof s3hup_act);
-  s3hup_act.sa_handler = SIG_IGN;
-
   rc = daemon(1, noclose);
   if (rc) {
     s3_log(S3_LOG_FATAL, "", "Failed to daemonize s3 server, errno = %d\n",
            errno);
     exit(1);
   }
-  sigaction(SIGHUP, &s3hup_act, NULL);
 
   // Set the working directory for current instance as s3server-process_fid
   std::string process_fid = option_instance->get_motr_process_fid();
@@ -148,30 +143,30 @@ int S3Daemonize::delete_pidfile() {
   char pidstr_read[100];
   int rc;
   std::ifstream pidfile_read;
-  s3_log(S3_LOG_DEBUG, "", "Entering");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry", __func__);
   if (pidfilename == "") {
     s3_log(S3_LOG_ERROR, "", "pid filename %s doesn't exist\n",
            pidfilename.c_str());
-    s3_log(S3_LOG_DEBUG, "", "Exiting");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return 0;
   }
   pidfile_read.open(S3Daemonize::pidfilename);
   if (pidfile_read.fail()) {
     if (errno == 2) {
-      s3_log(S3_LOG_DEBUG, "", "Exiting");
+      s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
       return 0;
     } else {
       s3_log(S3_LOG_ERROR, "", "Failed to open pid file %s errno = %d\n",
              pidfilename.c_str(), errno);
     }
-    s3_log(S3_LOG_DEBUG, "", "Exiting");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return -1;
   }
   pidfile_read.getline(pidstr_read, 100);
   if (strlen(pidstr_read) == 0) {
     s3_log(S3_LOG_ERROR, "", "Pid doesn't exist within %s\n",
            pidfilename.c_str());
-    s3_log(S3_LOG_DEBUG, "", "Exiting");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return -1;
   }
   pidfile_read.close();
@@ -180,16 +175,16 @@ int S3Daemonize::delete_pidfile() {
         S3_LOG_WARN, "-",
         "The pid(%d) of process does match to the pid(%s) in the pid file %s\n",
         getpid(), pidstr_read, pidfilename.c_str());
-    s3_log(S3_LOG_DEBUG, "", "Exiting");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return -1;
   }
   rc = ::unlink(pidfilename.c_str());
   if (rc) {
     s3_log(S3_LOG_WARN, "", "File %s deletion failed\n", pidfilename.c_str());
-    s3_log(S3_LOG_DEBUG, "", "Exiting");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return rc;
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return 0;
 }
 
