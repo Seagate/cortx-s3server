@@ -42,8 +42,9 @@ S3GetBucketAction::S3GetBucketAction(
       fetch_successful(false),
       total_keys_visited(0),
       key_Count(0) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-  s3_log(S3_LOG_INFO, request_id, "S3 API: Get Bucket(List Objects).\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "S3 API: Get Bucket(List Objects).\n");
 
   if (motr_api) {
     s3_motr_api = motr_api;
@@ -81,7 +82,7 @@ void S3GetBucketAction::setup_steps() {
   // ...
 }
 void S3GetBucketAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
   } else if (bucket_metadata->get_state() ==
@@ -95,7 +96,7 @@ void S3GetBucketAction::fetch_bucket_info_failed() {
   send_response_to_s3_client();
 }
 void S3GetBucketAction::validate_request() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   object_list->set_bucket_name(request->get_bucket_name());
   request_prefix = request->get_query_string_value("prefix");
@@ -136,11 +137,11 @@ void S3GetBucketAction::validate_request() {
 void S3GetBucketAction::after_validate_request() { next(); }
 
 void S3GetBucketAction::get_next_objects() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // If client is disconnected (say, due to read timeout,
   // when the object listing takes substantial time), destroy action class
   if (!request->client_connected()) {
-    s3_log(S3_LOG_INFO, request_id,
+    s3_log(S3_LOG_INFO, stripped_request_id,
            "s3 client is disconnected. Terminating object listing request\n");
     S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
     done();
@@ -198,13 +199,13 @@ void S3GetBucketAction::get_next_objects() {
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "get_bucket_action_get_next_objects_shutdown_fail");
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GetBucketAction::get_next_objects_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
   retry_count = 0;
@@ -244,7 +245,7 @@ void S3GetBucketAction::get_next_objects_successful() {
             // Set length to zero to indicate truncation is false
             length = 0;
             s3_log(
-                S3_LOG_INFO, request_id,
+                S3_LOG_INFO, stripped_request_id,
                 "No further prefix match. Skipping further object listing\n");
             break;
           }
@@ -315,7 +316,7 @@ void S3GetBucketAction::get_next_objects_successful() {
           skip_no_further_prefix_match = true;
           // Set length to zero to indicate truncation is false
           length = 0;
-          s3_log(S3_LOG_INFO, request_id,
+          s3_log(S3_LOG_INFO, stripped_request_id,
                  "No further prefix match. Skipping further object listing\n");
           break;
         }
@@ -397,7 +398,7 @@ void S3GetBucketAction::get_next_objects_successful() {
           skip_no_further_prefix_match = true;
           // Set length to zero to indicate truncation is false
           length = 0;
-          s3_log(S3_LOG_INFO, request_id,
+          s3_log(S3_LOG_INFO, stripped_request_id,
                  "No further prefix match. Skipping further object listing\n");
           break;
         }
@@ -445,7 +446,7 @@ void S3GetBucketAction::get_next_objects_successful() {
 }
 
 void S3GetBucketAction::get_next_objects_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "No Objects found in Object listing\n");
     fetch_successful = true;  // With no entries.
@@ -477,11 +478,11 @@ void S3GetBucketAction::get_next_objects_failed() {
     fetch_successful = false;
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GetBucketAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -512,7 +513,7 @@ void S3GetBucketAction::send_response_to_s3_client() {
     s3_log(S3_LOG_DEBUG, request_id, "Object list response_xml = %s\n",
            response_xml.c_str());
     // Total visited/touched keys in the bucket
-    s3_log(S3_LOG_INFO, request_id, "Total keys visited = %zu\n",
+    s3_log(S3_LOG_INFO, stripped_request_id, "Total keys visited = %zu\n",
            total_keys_visited);
     request->send_response(S3HttpSuccess200, response_xml);
   } else {
@@ -527,5 +528,5 @@ void S3GetBucketAction::send_response_to_s3_client() {
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

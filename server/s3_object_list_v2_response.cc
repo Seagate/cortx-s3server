@@ -30,7 +30,7 @@ S3ObjectListResponseV2::S3ObjectListResponseV2(const std::string& encoding_type)
       start_after(""),
       response_v2_xml(""),
       cont_token_specified(false) {
-  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);
   s3_log(S3_LOG_DEBUG, "", "Encoding type = %s", encoding_type.c_str());
 }
 

@@ -101,7 +101,7 @@ std::set<struct s3_motr_idx_context *> global_motr_idx;
 std::set<struct s3_motr_obj_context *> global_motr_obj;
 
 void s3_motr_init_timeout_cb(evutil_socket_t fd, short event, void *arg) {
-  s3_log(S3_LOG_ERROR, "", "Entering\n");
+  s3_log(S3_LOG_ERROR, "", "%s Entry\n", __func__);
   s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
          S3_IEM_MOTR_CONN_FAIL_JSON);
   event_base_loopbreak(global_evbase_handle);
@@ -138,10 +138,21 @@ static void on_client_request_error(evhtp_request_t *p_evhtp_req,
 // libevent run in the event loop after the signal occurs
 //
 static void s3_signal_cb(evutil_socket_t sig, short events, void *user_data) {
-  s3_log(S3_LOG_INFO, "", "Entering\n");
+  s3_log(S3_LOG_INFO, "", "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, "", "About to trigger shutdown\n");
   s3_kickoff_graceful_shutdown(1);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+  return;
+}
+
+static void s3_hup_signal_cb(evutil_socket_t sig, short events,
+                             void *user_data) {
+  bool ret;
+  s3_log(S3_LOG_INFO, "", "Entering\n");
+  ret = parse_and_reload_config_options();
+  if (!ret) {
+    s3_log(S3_LOG_ERROR, "", "Failed to parse and reload config file\n");
+  }
   return;
 }
 
@@ -173,8 +184,7 @@ static evhtp_res on_client_request_fini(evhtp_request_t *p_evhtp_req,
 
 extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
                                              evhtp_headers_t *hdrs, void *arg) {
-  s3_log(S3_LOG_INFO, "", "Received Request with uri [%s].\n",
-         req->uri->path->full);
+  s3_log(S3_LOG_INFO, "", "Req uri [%s]\n", req->uri->path->full);
 
   if (req->uri->query_raw) {
     s3_log(S3_LOG_DEBUG, "", "Received Request with query params [%s].\n",
@@ -303,8 +313,7 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
 extern "C" evhtp_res dispatch_motr_api_request(evhtp_request_t *req,
                                                evhtp_headers_t *hdrs,
                                                void *arg) {
-  s3_log(S3_LOG_INFO, "", "Received Request with uri [%s].\n",
-         req->uri->path->full);
+  s3_log(S3_LOG_INFO, "", "Request uri [%s]\n", req->uri->path->full);
 
   if (req->uri->query_raw) {
     s3_log(S3_LOG_DEBUG, "", "Received Request with query params [%s].\n",
@@ -691,6 +700,7 @@ int main(int argc, char **argv) {
   pthread_t tid;
   struct event *signal_sigint_event;
   struct event *signal_sigterm_event;
+  struct event *signal_sighup_event;
   // map will have s3server { fid, instance_id } information
   std::map<std::string, std::string> s3server_instance_id;
 
@@ -1148,6 +1158,13 @@ int main(int argc, char **argv) {
                    (void *)global_evbase_handle);
   if (!signal_sigterm_event || event_add(signal_sigterm_event, NULL) < 0) {
     s3_log(S3_LOG_FATAL, "", "Could not create/add a signal SIGTERM event!\n");
+  }
+
+  signal_sighup_event =
+      evsignal_new(global_evbase_handle, SIGHUP, s3_hup_signal_cb,
+                   (void *)global_evbase_handle);
+  if (!signal_sighup_event || event_add(signal_sighup_event, NULL) < 0) {
+    s3_log(S3_LOG_FATAL, "", "Could not create/add a signal SIGHUP event!\n");
   }
 
   /* Set the fatal handler to graceful shutdown*/

@@ -1,4 +1,4 @@
-﻿### License
+### License
 
 Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 
@@ -29,6 +29,7 @@ Steps:
    yum install python-virtualenv
    
 ## Prepare Environment to run tests:
+
 
 1. Clone the repo of splunk.
    

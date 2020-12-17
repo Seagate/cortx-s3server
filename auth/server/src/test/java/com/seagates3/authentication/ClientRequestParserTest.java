@@ -33,6 +33,8 @@ import java.util.TreeMap;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
 import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
 import org.powermock.core.classloader.annotations.MockPolicy;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -44,14 +46,17 @@ import com.seagates3.aws.AWSV2RequestHelper;
 import com.seagates3.aws.AWSV4RequestHelper;
 import com.seagates3.exception.InvalidAccessKeyException;
 import com.seagates3.exception.InvalidArgumentException;
+import com.seagates3.response.ServerResponse;
+import com.seagates3.response.generator.ResponseGenerator;
 
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 
 @PowerMockIgnore({"javax.management.*"}) @RunWith(PowerMockRunner.class)
-    @PrepareForTest(AuthServerConfig.class)
+    @PrepareForTest({AuthServerConfig.class, ClientRequestParser.class})
     @MockPolicy(Slf4jMockPolicy.class) public class ClientRequestParserTest {
 
     private FullHttpRequest httpRequest;
@@ -102,34 +107,67 @@ import io.netty.handler.codec.http.HttpVersion;
         ClientRequestParser.parse(httpRequest, null);
     }
 
-    @Test
-    public void parseTest_AuthenticateUser_AuthorizationHeaderNull() throws InvalidAccessKeyException,
-            InvalidArgumentException {
+    @Test(
+        expected =
+            InvalidArgumentException
+                .class) public void parseTest_AuthenticateUser_AuthorizationHeaderNull()
+        throws Exception {
 
         requestBody.put("Action", "AuthenticateUser");
+        ServerResponse serverResponse = mock(ServerResponse.class);
+        serverResponse.setResponseStatus(HttpResponseStatus.FORBIDDEN);
+        serverResponse.setResponseBody("Access Denied.");
+        ResponseGenerator mockResponseGenerator = mock(ResponseGenerator.class);
+        PowerMockito.whenNew(ResponseGenerator.class)
+            .withNoArguments()
+            .thenReturn(mockResponseGenerator);
+        Mockito.when(mockResponseGenerator.AccessDenied())
+            .thenReturn(serverResponse);
 
-        assertNull(ClientRequestParser.parse(httpRequest, requestBody));
+        ClientRequestParser.parse(httpRequest, requestBody);
     }
 
-    @Test
-    public void parseTest_AuthorizeUser_AuthorizationHeaderNull() throws InvalidAccessKeyException,
-            InvalidArgumentException{
+    @Test(
+        expected =
+            InvalidArgumentException
+                .class) public void parseTest_AuthorizeUser_AuthorizationHeaderNull()
+        throws Exception {
 
         requestBody.put("Action", "AuthorizeUser");
+        ServerResponse serverResponse = mock(ServerResponse.class);
+        serverResponse.setResponseStatus(HttpResponseStatus.FORBIDDEN);
+        serverResponse.setResponseBody("Access Denied.");
+        ResponseGenerator mockResponseGenerator = mock(ResponseGenerator.class);
+        PowerMockito.whenNew(ResponseGenerator.class)
+            .withNoArguments()
+            .thenReturn(mockResponseGenerator);
+        Mockito.when(mockResponseGenerator.AccessDenied())
+            .thenReturn(serverResponse);
 
-        assertNull(ClientRequestParser.parse(httpRequest, requestBody));
+        ClientRequestParser.parse(httpRequest, requestBody);
     }
 
-    @Test
-    public void parseTest_OtherAction_AuthorizationHeaderNull() throws InvalidAccessKeyException,
-            InvalidArgumentException {
+    @Test(
+        expected =
+            InvalidArgumentException
+                .class) public void parseTest_OtherAction_AuthorizationHeaderNull()
+        throws Exception {
         requestBody.put("Action", "OtherAction");
         FullHttpRequest fullHttpRequest
                 = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/");
         fullHttpRequest.headers().add("XYZ", "");
         when(httpRequest.headers()).thenReturn(fullHttpRequest.headers());
+        ServerResponse serverResponse = mock(ServerResponse.class);
+        serverResponse.setResponseStatus(HttpResponseStatus.FORBIDDEN);
+        serverResponse.setResponseBody("Access Denied.");
+        ResponseGenerator mockResponseGenerator = mock(ResponseGenerator.class);
+        PowerMockito.whenNew(ResponseGenerator.class)
+            .withNoArguments()
+            .thenReturn(mockResponseGenerator);
+        Mockito.when(mockResponseGenerator.AccessDenied())
+            .thenReturn(serverResponse);
 
-        assertNull(ClientRequestParser.parse(httpRequest, requestBody));
+        ClientRequestParser.parse(httpRequest, requestBody);
     }
 
     @Test

@@ -18,11 +18,13 @@
 #
 
 import os
+import yaml
 from framework import Config
 from framework import S3PyCliTest
 from awss3api import AwsTest
 from s3client_config import S3ClientConfig
 from aclvalidation import AclTest
+from auth import AuthTest
 
 # Helps debugging
 # Config.log_enabled = True
@@ -73,6 +75,23 @@ def get_upload_id(response):
     key_pairs = response.split('\t')
     return key_pairs[2]
 
+def load_test_config():
+    conf_file = os.path.join(os.path.dirname(__file__),'s3iamcli_test_config.yaml')
+    with open(conf_file, 'r') as f:
+            config = yaml.safe_load(f)
+            S3ClientConfig.ldapuser = config['ldapuser']
+            S3ClientConfig.ldappasswd = config['ldappasswd']
+
+def get_response_elements(response):
+    response_elements = {}
+    key_pairs = response.split(',')
+
+    for key_pair in key_pairs:
+        tokens = key_pair.split('=')
+        response_elements[tokens[0].strip()] = tokens[1].strip()
+
+    return response_elements
+
 # Run before all to setup the test environment.
 print("Configuring LDAP")
 S3PyCliTest('Before_all').before_all()
@@ -91,11 +110,10 @@ def create_object_list_file(file_name, obj_list=[], quiet_mode="false"):
 def delete_object_list_file(file_name):
     os.remove(file_name)
 
-
 #******** Create Bucket ********
 AwsTest('Aws can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
 
-# Ensure no "Error during pagination: The same next token was received twice:" is seen.
+# Ensure no "Error during pagination: The same next token was received twice:" is seen in ListObjectsV2.
 # If command is successful, it ensures no error, inlcuding pagination error.
 # Create 2 objects with name containing:
 #  loadgen_test_3XQEX2S6WFEDA4B32AJ3T6FAR4XVNKRAE6JET2LSJFFVACUV4MOMLCSH42RXFX22IXYWZS3YFFWYUJE4STNJPGFDOLIDLTQDZ6J2QLA_
@@ -128,82 +146,62 @@ delete_object_list_file(object_list_file)
 
 '''
 Create following keys (both, regular and heirarchical) into a bucket:
+----
 asdf
-boo
-boo/0...boo/99
+bo0
+boo/0...boo/5
 boo#
 boo+
-foo
-foo/0...foo/99
+fo0
+foo/0...foo/32
 foo#123
 foo+123
-quax
-quax/0...quax/99
+qua0
+quax/0...quax/10
 quax#
 quax+
+-----
 '''
-# Step 1: Create above keys into bucket 'seagatebucket'
-#  Step 1.1:
-#   Create keys: boo/0...boo/99
+# Step 0: Create directory with above structure.
+# Create temporary 's3testupload' directory
 obj_list = []
-for x in range(100):
-    key = "boo/%d" % (x)
-    AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-        .execute_test().command_is_successful()
+temp_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "s3testupload")
+os.makedirs(temp_dir, exist_ok=True)
+# Clear contents of 's3testupload' directory
+upload_content = temp_dir + "/*"
+os.system("rm -rf " + upload_content)
+# List of directories to create
+dirs = ['boo', 'foo', 'quax']
+filesize = 1024
+object_range = [5, 32, 10]
+index = 0 
+for child_dir in dirs:
+    out_dir = os.path.join(temp_dir, child_dir)
+    os.makedirs(out_dir, exist_ok=True)
+    # Create files within directory
+    for i in range(object_range[index]):
+        filename = str(i)
+        key = "%s/%s" % (child_dir, filename)
+        file_to_create = os.path.join(out_dir, filename)
+        with open(file_to_create, 'wb+') as fout:
+            fout.write(os.urandom(filesize))
+        obj_list.append(key)
+    index = index + 1
+
+# Create remaining root level files
+file_list = ['asdf', 'bo0', 'boo#', 'boo+', 'fo0', 'foo#123', 'foo+123', 'qua0', 'quax#', 'quax+']
+for root_file in file_list:
+    file_to_create = os.path.join(temp_dir, root_file)
+    key = root_file
+    with open(file_to_create, 'wb+') as fout:
+        fout.write(os.urandom(filesize))
     obj_list.append(key)
-#   Create keys: foo/0...foo/99
-for x in range(100):
-    key = "foo/%d" % (x)
-    AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
+
+# Step 1: Upload folder recrusively.
+#  Step 1.1:
+#   Create above keys into bucket 'seagatebucket'
+AwsTest('Aws Upload folder recursively').upload_objects("seagatebucket", temp_dir)\
         .execute_test().command_is_successful()
-    obj_list.append(key)
-#   Create keys: quax/0...quax/99
-for x in range(100):
-    key = "quax/%d" % (x)
-    AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-        .execute_test().command_is_successful()
-    obj_list.append(key)
-#   Create regular keys: asdf, boo, boo#, boo+, foo, foo#123, foo+123, quax, quax#, quax+
-key = "asdf"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)  
-key = "boo"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)
-key = "boo+"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)
-key = "boo#"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)
-key = "foo"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)
-key = "foo+123"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)
-key = "foo#123"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)
-key = "quax"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)
-key = "quax#"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)
-key = "quax+"
-AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-    .execute_test().command_is_successful()
-obj_list.append(key)
 
 #  Step 1.2: Create object list file
 object_list_file = create_object_list_file("obj_list_mix_keys.json", obj_list, "true")
@@ -211,13 +209,12 @@ object_list_file = create_object_list_file("obj_list_mix_keys.json", obj_list, "
 # Step 2: Validate the uploaded objects using s3api
 # Step 2.1: command:= aws s3api list-objects-v2 --bucket <bucket> --page-size 1 --prefix "foo" --delimiter "/"
 # Expected output: 
-#   foo
 #   foo#123
 #   foo+123
 #   foo/ (under COMMONPREFIXES)
 prefix = "foo"
 delimiter = "/"
-expected_key_list = ['foo', 'foo#123', 'foo+123']
+expected_key_list = ['foo#123', 'foo+123']
 list_v2_options = {"prefix":prefix, "delimiter":delimiter,"page-size":1}
 result = AwsTest(('Aws list objects using prefix \'%s\' and delimiter %s') % (prefix, delimiter))\
     .list_objects_v2("seagatebucket", **list_v2_options)\
@@ -240,13 +237,13 @@ if check is False:
 # Step 2.2: command:= aws s3api list-objects-v2 --bucket <bucket> --page-size 2 --delimiter "/"
 # Expected output: 
 #  asdf
-#  boo
+#  bo0
 #  boo#
 #  boo+
-#  foo
+#  fo0
 #  foo#123
 #  foo+123
-#  quax
+#  qua0
 #  quax#
 #  quax+
 #  <items under common prefixes are as follows>
@@ -254,7 +251,7 @@ if check is False:
 #  foo/
 #  quax/
 prefix = ""
-expected_key_list = ['asdf', 'boo', 'boo#', 'boo+', 'foo', 'foo#123', 'foo+123', 'quax', 'quax#', 'quax+']
+expected_key_list = ['asdf', 'bo0', 'boo#', 'boo+', 'fo0', 'foo#123', 'foo+123', 'qua0', 'quax#', 'quax+']
 expected_common_prefix = ['boo/', 'foo/', 'quax/']
 list_v2_options = {"delimiter":delimiter, "page-size":2}
 result = AwsTest(('Aws list objects using prefix \'%s\' and delimiter %s') % (prefix, delimiter))\
@@ -275,16 +272,15 @@ check = all(item in common_prefix for item in expected_common_prefix)
 if check is False:
     assert False, "Failed to match expected common prefix in the list"
 
-# Step 2.3.1: command:= aws s3api list-objects-v2 --bucket <bucket> --max-items 2 --prefix "boo" --delimiter "/"
+# Step 2.3.1: command:= aws s3api list-objects-v2 --bucket <bucket> --max-items 1 --prefix "boo" --delimiter "/"
 # Expected part1 output:
-#  boo
 #  boo#
 #  boo/ (under common prefix)
 prefix = "boo"
-expected_key_list_part1 = ['boo', 'boo#']
+expected_key_list_part1 = ['boo#']
 expected_key_list_part2 = ['boo+']
 expected_common_prefix = ['boo/']
-list_v2_options = {"prefix":prefix, "delimiter":delimiter, "max-items":2}
+list_v2_options = {"prefix":prefix, "delimiter":delimiter, "max-items":1}
 result = AwsTest(('Aws list objects using prefix \'%s\' and delimiter %s') % (prefix, delimiter))\
     .list_objects_v2("seagatebucket", **list_v2_options)\
     .execute_test()\
@@ -332,74 +328,83 @@ AwsTest('Aws delete objects')\
     .command_response_should_be_empty()
 
 delete_object_list_file(object_list_file)
+os.system("rm -rf " + upload_content)
+
 
 #******** Verify pagination and NextToken in List objects V1  **********
-# Step 1. Create total 110 objets in bucket
-obj_110_list = []
-for x in range(110):
-    key = "object%d" % (x)
-    AwsTest(('Aws Upload object: %s' % key)).put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-        .execute_test().command_is_successful()
-    obj_110_list.append(key)
+# Step 1. Create total 35 objets in bucket
+   # Create files within directory
+obj_35_list = []
+filesize = 1024
+for i in range(35):
+    key = "object%s" % (str(i))
+    file_to_create = os.path.join(temp_dir, key)
+    with open(file_to_create, 'wb+') as fout:
+        fout.write(os.urandom(filesize))
+    obj_35_list.append(key)
 
+# Step 1: Upload folder recrusively.
+#  Create above keys into bucket 'seagatebucket'
+AwsTest('Aws Upload folder recursively').upload_objects("seagatebucket", temp_dir)\
+        .execute_test().command_is_successful()
 # Step 2.
 # Create object list file
-object_list_file = create_object_list_file("obj_list_110_keys.json", obj_110_list, "true")
+object_list_file = create_object_list_file("obj_list_35_keys.json", obj_35_list, "true")
 
-# Step 3. List first 100 objects. This will result into NextToken != None
-# NextToken will point to object9 - the last object key in the response.
-result = AwsTest('Aws list the first 100 objects')\
-    .list_objects("seagatebucket", None, "100")\
+# Step 3. List first 20 objects. This will result into NextToken != None
+# command: aws s3api list-objects --bucket <bucket> --max-items 20
+# NextToken will point to object26 - the last object key in the response.
+result = AwsTest('Aws list the first 20 objects')\
+    .list_objects("seagatebucket", None, "20")\
     .execute_test()\
     .command_is_successful()
 
-# Step 4. Validate
+#Step 4 Validation
+# Step 4.1 Validate presence of NextToken in response
 list_response = get_aws_cli_object(result.status.stdout)
-# Verify 'object9' is present and 'object99' is not present in the resultant list 'list_response'
+# Verify 'object26' is present and 'object27' is not present in the resultant list 'list_response'
 if list_response is not None:
-    assert 'object9' in list_response["keys"], "Failed to see object9 in the response"
-    assert 'object99' not in list_response["keys"], "Failed: Unexpected key object99 in the response"
+    assert 'object26' in list_response["keys"], "Failed to see object26 in the response"
+    assert 'object27' not in list_response["keys"], "Failed: Unexpected key object27 in the response"
 else:
     assert False, "Failed to list objects from bucket"
 # Verify that NextToken is in 'list_response' and it is not empty
 assert (("next_token" in list_response.keys()) and (len(list_response["next_token"].strip()) > 0)), "NextToken is either not present or empty"
 
-# Step 5. Cleanup: Delete 110 objects, and remove object list file containing a list of 110 objects
-# Delete all 110 objects in bucket
-AwsTest('Aws delete objects: [object0...object109]')\
+# Step 4.2 Validate response using starting token
+next_token = list_response["next_token"]
+# command:= aws s3api list-objects --bucket <bucket> --starting-token <next_token>
+# Expected output:
+#   keys = ['object27', 'object28', 'object29', 'object3', 'object30', 'object31', 'object32', 'object33', \
+#   'object34', 'object4', 'object5', 'object6', 'object7', 'object8', 'object9']
+expected_key_list_part2 = ['object27', 'object28', 'object29', 'object3', 'object30', 'object31', 'object32', 'object33', \
+    'object34', 'object4', 'object5', 'object6', 'object7', 'object8', 'object9']
+list_options = {"starting-token":next_token}
+result = AwsTest(('Aws list objects using starting token:%s') % (next_token))\
+    .list_objects("seagatebucket", starting_token=next_token)\
+    .execute_test()\
+    .command_is_successful()
+# Process result set
+lv1_response = get_aws_cli_object(result.status.stdout)
+if lv1_response is None:
+    assert False, "Failed to list objects"
+# Get keys from response
+obj_keys = lv1_response["keys"]
+check = all(item in obj_keys for item in expected_key_list_part2)
+if check is False:
+    assert False, "Failed to match expected keys in the list\n:%s" % str(obj_keys)
+
+# Step 5. Cleanup: Delete all 35 objects, and remove object list file containing a list of 35 objects
+# Delete all 35 objects in bucket
+AwsTest('Aws delete objects: [object0...object35]')\
     .delete_multiple_objects("seagatebucket", object_list_file)\
     .execute_test()\
     .command_is_successful()\
     .command_response_should_be_empty()
 
 delete_object_list_file(object_list_file)
-
-
-# ******** Create hierarchical objects (>30) in bucket and list them *********
-obj_list = []
-for x in range(35):
-    key = "test/test1/key%d" % (x)
-    AwsTest('Aws Upload object with hierarchical key path').put_object("seagatebucket", "3Kfile", 3000, key_name=key)\
-        .execute_test().command_is_successful()
-    obj_list.append(key)
-
-# Create object list file
-hierarchical_object_list_file = create_object_list_file("obj_list_hierarchical_keys.json", obj_list, "true")
-# Lists hierarchical objects in bucket with delimiter "/"
-# The output of list objects should only have common prefix: test/
-AwsTest('Aws List objects with hierarchical key paths, using delimiter "/"')\
-    .list_objects_prefix_delimiter("seagatebucket", None, None, "/")\
-    .execute_test().command_is_successful().command_response_should_have("test/")
-
-# Delete all hierarchical objects in bucket
-AwsTest('Aws delete multiple objects with hierarchical names in bucket')\
-    .delete_multiple_objects("seagatebucket", hierarchical_object_list_file)\
-    .execute_test()\
-    .command_is_successful()\
-    .command_response_should_be_empty()
-
-# Delete object list file
-delete_object_list_file(hierarchical_object_list_file)
+os.system("rm -rf " + upload_content)
+os.rmdir(temp_dir)
 
 
 # ************ CopyObject API supported *****************************************************************
@@ -461,7 +466,7 @@ AwsTest('Aws can delete 1kfile').delete_object("seagatebucket", "1kfile")\
 AwsTest('Aws can delete 1kfile-copy from source bucket').delete_object("seagatebucket", "1kfile-copy")\
     .execute_test().command_is_successful()
 
-AwsTest('Aws can delete 1kfile-copy from destination bucket').delete_object("destination-seagatebucket", "1kfile")\
+AwsTest('Aws can delete 1kfile-copy from destination bucket').delete_object("destination-seagatebucket", "1kfile-copy")\
     .execute_test().command_is_successful()
 
 AwsTest('Aws can delete destination bucket').delete_bucket("destination-seagatebucket")\
@@ -481,6 +486,8 @@ AwsTest('Aws can get object with the same content-type').get_object("seagatebuck
 
 AwsTest('Aws can delete object').delete_object("seagatebucket", "3kfile")\
     .execute_test().command_is_successful()
+
+
 
 #*********** Verify aws s3api list-objects-v2 ***********
 # Setup objects in bucket
@@ -550,7 +557,7 @@ for x in obj_list:
         .execute_test().command_is_successful()
 
 
-# ********* Specific ListObject V2 hierarchical object key tests  **********
+# ********* Verify ListObject V2 hierarchical object key tests  **********
 # Create below hierarchical objects in bucket and list them in different ways
 # test/.uds/volumeGroupA/vol0...vol30
 # test/.uds/volumeGroupB/lun0...lun4
@@ -1022,3 +1029,159 @@ result=AwsTest('Aws cannot complete multipart upload with wrong ETag').complete_
 
 #******* Delete bucket **********
 AwsTest('Aws can delete bucket').delete_bucket("seagatebuckettag").execute_test().command_is_successful()
+
+#************ Autorize copy-object ********************
+
+load_test_config()
+
+#Create account sourceAccount
+
+test_msg = "Create account sourceAccount"
+source_account_args = {'AccountName': 'sourceAccount', 'Email': 'sourceAccount@seagate.com', \
+                   'ldapuser': S3ClientConfig.ldapuser, \
+                   'ldappasswd': S3ClientConfig.ldappasswd}
+account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+result1 = AuthTest(test_msg).create_account(**source_account_args).execute_test()
+result1.command_should_match_pattern(account_response_pattern)
+account_response_elements = get_response_elements(result1.status.stdout)
+source_access_key_args = {}
+source_access_key_args['AccountName'] = "sourceAccount"
+source_access_key_args['AccessKeyId'] = account_response_elements['AccessKeyId']
+source_access_key_args['SecretAccessKey'] = account_response_elements['SecretKey']
+#Create account destinationAccount
+
+test_msg = "Create account destinationAccount"
+target_account_args = {'AccountName': 'destinationAccount', 'Email': 'destinationAccount@seagate.com', \
+                'ldapuser': S3ClientConfig.ldapuser, \
+                'ldappasswd': S3ClientConfig.ldappasswd}
+account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+result1 = AuthTest(test_msg).create_account(**target_account_args).execute_test()
+result1.command_should_match_pattern(account_response_pattern)
+account_response_elements = get_response_elements(result1.status.stdout)
+destination_access_key_args = {}
+destination_access_key_args['AccountName'] = "destinationAccount"
+destination_access_key_args['AccessKeyId'] = account_response_elements['AccessKeyId']
+destination_access_key_args['SecretAccessKey'] = account_response_elements['SecretKey']
+#Create account crossAccount
+
+test_msg = "Create account crossAccount"
+cross_account_args = {'AccountName': 'crossAccount', 'Email': 'crossAccount@seagate.com', \
+                'ldapuser': S3ClientConfig.ldapuser, \
+                'ldappasswd': S3ClientConfig.ldappasswd}
+account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+result1 = AuthTest(test_msg).create_account(**cross_account_args).execute_test()
+result1.command_should_match_pattern(account_response_pattern)
+account_response_elements = get_response_elements(result1.status.stdout)
+cross_access_key_args = {}
+cross_access_key_args['AccountName'] = "crossAccount"
+cross_access_key_args['AccessKeyId'] = account_response_elements['AccessKeyId']
+cross_access_key_args['SecretAccessKey'] = account_response_elements['SecretKey']
+cross_access_key_args['CanonicalId'] = account_response_elements['CanonicalId']
+
+#------------------------create source bucket---------------------------
+os.environ["AWS_ACCESS_KEY_ID"] = source_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = source_access_key_args['SecretAccessKey']
+
+AwsTest('Aws can create bucket').create_bucket("source-bucket").execute_test().command_is_successful()
+AwsTest('Aws can create object').put_object("source-bucket", "source-object").execute_test().command_is_successful()
+#--------------------------create target bucket----------------------
+os.environ["AWS_ACCESS_KEY_ID"] = destination_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = destination_access_key_args['SecretAccessKey']
+
+AwsTest('Aws can create bucket').create_bucket("target-bucket").execute_test().command_is_successful()
+
+#---------------------------copy-object------------------------------
+os.environ["AWS_ACCESS_KEY_ID"] = cross_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = cross_access_key_args['SecretAccessKey']
+AwsTest('Aws can copy object').copy_object("source-bucket/source-object", "target-bucket", "source-object")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+os.environ["AWS_ACCESS_KEY_ID"] = source_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = source_access_key_args['SecretAccessKey']
+policy_source_bucket_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'source_bucket.json')
+policy_source_bucket = "file://" + os.path.abspath(policy_source_bucket_relative)
+AwsTest("Aws can put policy on bucket").put_bucket_policy("source-bucket", policy_source_bucket).execute_test().command_is_successful()
+os.environ["AWS_ACCESS_KEY_ID"] = cross_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = cross_access_key_args['SecretAccessKey']
+AwsTest('Aws can not copy object').copy_object("source-bucket/source-object", "target-bucket", "source-object")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+os.environ["AWS_ACCESS_KEY_ID"] = destination_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = destination_access_key_args['SecretAccessKey']
+policy_target_bucket_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'target_bucket.json')
+policy_target_bucket = "file://" + os.path.abspath(policy_target_bucket_relative)
+AwsTest("Aws can put policy on bucket").put_bucket_policy("target-bucket", policy_target_bucket).execute_test().command_is_successful()
+os.environ["AWS_ACCESS_KEY_ID"] = cross_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = cross_access_key_args['SecretAccessKey']
+AwsTest('Aws can copy object').copy_object("source-bucket/source-object", "target-bucket", "source-object")\
+    .execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = source_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = source_access_key_args['SecretAccessKey']
+AwsTest("Aws can delete policy on bucket").delete_bucket_policy("source-bucket").execute_test().command_is_successful()
+os.environ["AWS_ACCESS_KEY_ID"] = destination_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = destination_access_key_args['SecretAccessKey']
+AwsTest("Aws can delete policy on bucket").delete_bucket_policy("target-bucket").execute_test().command_is_successful()
+AwsTest('Aws can delete object').delete_object("target-bucket", "source-object")\
+    .execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = source_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = source_access_key_args['SecretAccessKey']
+
+AwsTest('Owner account can do put object acl').put_object_acl("source-bucket", "source-object", "grant-full-control" ,"id=" + cross_access_key_args['CanonicalId'] )\
+.execute_test().command_is_successful()
+os.environ["AWS_ACCESS_KEY_ID"] = cross_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = cross_access_key_args['SecretAccessKey']
+AwsTest('Aws can not copy object').copy_object("source-bucket/source-object", "target-bucket", "source-object")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+os.environ["AWS_ACCESS_KEY_ID"] = destination_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = destination_access_key_args['SecretAccessKey']
+
+AwsTest('Aws can put bucket acl').put_bucket_acl("target-bucket", "grant-write", "id=" + cross_access_key_args['CanonicalId'] ).execute_test().command_is_successful()
+os.environ["AWS_ACCESS_KEY_ID"] = cross_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = cross_access_key_args['SecretAccessKey']
+AwsTest('Aws can copy object').copy_object("source-bucket/source-object", "target-bucket", "source-object")\
+    .execute_test().command_is_successful()
+
+
+os.environ["AWS_ACCESS_KEY_ID"] = source_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = source_access_key_args['SecretAccessKey']
+
+AwsTest('Aws can delete object').delete_object("source-bucket", "source-object")\
+    .execute_test().command_is_successful()
+AwsTest('Aws can delete bucket').delete_bucket("source-bucket")\
+    .execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = cross_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = cross_access_key_args['SecretAccessKey']
+
+AwsTest('Aws can delete object').delete_object("target-bucket", "source-object")\
+    .execute_test().command_is_successful()
+
+AwsTest('Aws can delete bucket').delete_bucket("target-bucket")\
+    .execute_test().command_is_successful()
+
+#-------------------Delete Accounts------------------
+test_msg = "Delete account sourceAccount"
+s3test_access_key = S3ClientConfig.access_key_id
+s3test_secret_key = S3ClientConfig.secret_key
+S3ClientConfig.access_key_id = source_access_key_args['AccessKeyId']
+S3ClientConfig.secret_key = source_access_key_args['SecretAccessKey']
+
+account_args = {'AccountName': 'sourceAccount', 'Email': 'sourceAccount@seagate.com',  'force': True}
+AuthTest(test_msg).delete_account(**source_account_args).execute_test()\
+            .command_response_should_have("Account deleted successfully")
+
+test_msg = "Delete account destinationAccount"
+S3ClientConfig.access_key_id = destination_access_key_args['AccessKeyId']
+S3ClientConfig.secret_key = destination_access_key_args['SecretAccessKey']
+account_args = {'AccountName': 'destinationAccount', 'Email': 'destinationAccount@seagate.com',  'force': True}
+AuthTest(test_msg).delete_account(**target_account_args).execute_test()\
+            .command_response_should_have("Account deleted successfully")
+
+test_msg = "Delete account crossAccount"
+account_args = {'AccountName': 'crossAccount', 'Email': 'crossAccount@seagate.com',  'force': True}
+S3ClientConfig.access_key_id = cross_access_key_args['AccessKeyId']
+S3ClientConfig.secret_key = cross_access_key_args['SecretAccessKey']
+AuthTest(test_msg).delete_account(**cross_account_args).execute_test()\
+            .command_response_should_have("Account deleted successfully")
+S3ClientConfig.access_key_id = s3test_access_key
+S3ClientConfig.secret_key = s3test_secret_key

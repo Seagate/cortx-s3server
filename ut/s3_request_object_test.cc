@@ -503,3 +503,14 @@ TEST_F(S3RequestObjectTest, FreeReadTimerNull) {
   EXPECT_CALL(*mock_event_obj_ptr, free_event(_)).Times(0);
   request_with_mock_http_event->free_client_read_timer();
 }
+
+TEST_F(S3RequestObjectTest, ValidateStrippedRequestId) {
+  std::string request_id = request->get_request_id();
+  std::string stripped_request_id = request->get_stripped_request_id();
+
+  std::string strip_request_id =
+      std::string(request_id.end() - 12, request_id.end());
+
+  EXPECT_TRUE(strip_request_id.compare(stripped_request_id) == 0);
+  EXPECT_TRUE(stripped_request_id.length() == 12);
+}

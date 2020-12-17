@@ -80,6 +80,7 @@ class RequestObject {
   struct event* client_read_timer_event;
 
   std::string request_id;
+  std::string stripped_request_id;
   bool is_service_req_head;
 
   std::string error_code_str;
@@ -212,6 +213,7 @@ class RequestObject {
   void set_account_id(const std::string& id);
   const std::string& get_account_id();
   std::string get_request_id() const { return request_id; }
+  std::string get_stripped_request_id() const { return stripped_request_id; }
 
   S3RequestError get_request_error() const { return request_error; }
 
@@ -241,7 +243,7 @@ class RequestObject {
   // we dont flood with data coming from socket in user buffers.
   virtual void pause() {
     if (!client_connected()) {
-      s3_log(S3_LOG_INFO, request_id, "s3 client is disconnected.\n");
+      s3_log(S3_LOG_INFO, stripped_request_id, "s3 client is disconnected.\n");
       return;
     }
     if (is_s3_client_read_error()) {
@@ -262,7 +264,7 @@ class RequestObject {
 
   virtual void resume(bool set_read_timer = true) {
     if (!client_connected()) {
-      s3_log(S3_LOG_INFO, request_id, "s3 client is disconnected.\n");
+      s3_log(S3_LOG_INFO, stripped_request_id, "s3 client is disconnected.\n");
       return;
     }
     if (is_paused) {
@@ -281,7 +283,7 @@ class RequestObject {
   }
 
   void client_has_disconnected() {
-    s3_log(S3_LOG_INFO, request_id, "S3 Client disconnected.\n");
+    s3_log(S3_LOG_INFO, stripped_request_id, "S3 Client disconnected.\n");
     stop_client_read_timer();
     is_client_connected = false;
     if (ev_req) {

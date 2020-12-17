@@ -63,23 +63,23 @@ inline const char* s3_log_get_req_id(const std::string& requestid) {
 //    only if S3 log level is set to DEBUG.
 // 2. Logging a FATAL message terminates the program (after the message is
 //    logged).so demote it to ERROR
-#define s3_log(loglevel, requestid, fmt, ...)                             \
-  do {                                                                    \
-    if (loglevel >= s3log_level) {                                        \
-      char* s3_log_msg__ = nullptr;                                       \
-      int s3_log_len__ =                                                  \
-          asprintf(&s3_log_msg__, "[%s] [ReqID: %s] " fmt "\n", __func__, \
-                   s3_log_get_req_id(requestid), ##__VA_ARGS__);          \
-      if (s3_log_len__ > 0) {                                             \
-        if (s3_log_msg__[s3_log_len__ - 2] == '\n')                       \
-          s3_log_msg__[s3_log_len__ - 1] = '\0';                          \
-        s3_log_msg_##loglevel(s3_log_msg__);                              \
-        free(s3_log_msg__);                                               \
-      }                                                                   \
-    }                                                                     \
-    if (loglevel >= S3_LOG_FATAL) {                                       \
-      s3_fatal_handler(1);                                                \
-    }                                                                     \
+#define s3_log(loglevel, requestid, fmt, ...)                    \
+  do {                                                           \
+    if (loglevel >= s3log_level) {                               \
+      char* s3_log_msg__ = nullptr;                              \
+      int s3_log_len__ =                                         \
+          asprintf(&s3_log_msg__, "[Req:%s] " fmt "\n",          \
+                   s3_log_get_req_id(requestid), ##__VA_ARGS__); \
+      if (s3_log_len__ > 0) {                                    \
+        if (s3_log_msg__[s3_log_len__ - 2] == '\n')              \
+          s3_log_msg__[s3_log_len__ - 1] = '\0';                 \
+        s3_log_msg_##loglevel(s3_log_msg__);                     \
+        free(s3_log_msg__);                                      \
+      }                                                          \
+    }                                                            \
+    if (loglevel >= S3_LOG_FATAL) {                              \
+      s3_fatal_handler(1);                                       \
+    }                                                            \
   } while (0)
 
 // Note:
@@ -109,6 +109,7 @@ static inline std::string s3_get_timestamp() {
 }
 
 int init_log(char *process_name);
+void redefine_log_level();
 void fini_log();
 void flushall_log();
 

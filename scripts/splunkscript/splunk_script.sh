@@ -25,6 +25,7 @@ SPLUNK_INIPATH="$SPLUNK_DIR/splunk.conf"
 SPLUNK_TEST_DATA_V2="/root/cortx-s3server/scripts/splunkscript/splunktestfilev2.txt"
 SPLUNK_TEST_DATA_V4="/root/cortx-s3server/scripts/splunkscript/splunktestfilev4.txt"
 
+
 # Set up Virtualenv
 echo "starting virtualenv"
 source $SPLUNK_DIR/virtualenv/bin/activate
@@ -33,7 +34,6 @@ source $SPLUNK_DIR/virtualenv/bin/activate
 export S3TEST_CONF=$SPLUNK_INIPATH
 
 # Running splunk with aws v2signature
-
 export S3_USE_SIGV4=0
 
 # Log Directory

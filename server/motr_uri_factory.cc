@@ -23,7 +23,7 @@
 
 MotrURI* MotrUriFactory::create_uri_object(
     MotrUriType uri_type, std::shared_ptr<MotrRequestObject> request) {
-  s3_log(S3_LOG_DEBUG, request->get_request_id(), "Entering\n");
+  s3_log(S3_LOG_DEBUG, request->get_request_id(), "%s Entry\n", __func__);
 
   switch (uri_type) {
     case MotrUriType::path_style:
@@ -33,6 +33,6 @@ MotrURI* MotrUriFactory::create_uri_object(
     default:
       break;
   };
-  s3_log(S3_LOG_DEBUG, request->get_request_id(), "Exiting\n");
+  s3_log(S3_LOG_DEBUG, request->get_request_id(), "%s Exit", __func__);
   return NULL;
 }

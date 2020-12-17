@@ -40,11 +40,11 @@ S3PutMultiObjectAction::S3PutMultiObjectAction(
       motr_write_completed(false),
       auth_in_progress(false),
       auth_completed(false) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   part_number = get_part_number();
   upload_id = request->get_query_string_value("uploadId");
 
-  s3_log(S3_LOG_INFO, request_id,
+  s3_log(S3_LOG_INFO, stripped_request_id,
          "S3 API: Upload Part. Bucket[%s] Object[%s]\
          Part[%d] for UploadId[%s]\n",
          request->get_bucket_name().c_str(), request->get_object_name().c_str(),
@@ -109,16 +109,16 @@ void S3PutMultiObjectAction::setup_steps() {
 }
 
 void S3PutMultiObjectAction::validate_multipart_request() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (!request->is_chunked() && !request->is_header_present("Content-Length")) {
     // For non-chunked upload, the Header 'Content-Length' is missing
-    s3_log(S3_LOG_INFO, request_id, "Missing Content-Length header");
+    s3_log(S3_LOG_INFO, stripped_request_id, "Missing Content-Length header");
     set_s3_error("MissingContentLength");
     send_response_to_s3_client();
   } else {
     next();
   }
-  s3_log(S3_LOG_INFO, request_id, "Exiting\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit", __func__);
 }
 
 void S3PutMultiObjectAction::check_part_details() {
@@ -140,11 +140,11 @@ void S3PutMultiObjectAction::check_part_details() {
 }
 
 void S3PutMultiObjectAction::chunk_auth_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   auth_in_progress = false;
   auth_completed = true;
   if (check_shutdown_and_rollback(true)) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
   if (motr_write_completed) {
@@ -160,12 +160,12 @@ void S3PutMultiObjectAction::chunk_auth_successful() {
 }
 
 void S3PutMultiObjectAction::chunk_auth_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   auth_failed = true;
   auth_completed = true;
   set_s3_error("SignatureDoesNotMatch");
   if (check_shutdown_and_rollback(true)) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
   if (motr_write_in_progress) {
@@ -176,19 +176,19 @@ void S3PutMultiObjectAction::chunk_auth_failed() {
 }
 
 void S3PutMultiObjectAction::fetch_bucket_info_success() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     next();
   } else {
     set_s3_error("NoSuchBucket");
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 void S3PutMultiObjectAction::fetch_object_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 void S3PutMultiObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_ERROR, request_id, "Bucket does not exists\n");
@@ -206,7 +206,7 @@ void S3PutMultiObjectAction::fetch_bucket_info_failed() {
 }
 
 void S3PutMultiObjectAction::fetch_multipart_metadata() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   object_multipart_metadata =
       object_mp_metadata_factory->create_object_mp_metadata_obj(
           request, bucket_metadata->get_multipart_index_oid(), upload_id);
@@ -214,7 +214,7 @@ void S3PutMultiObjectAction::fetch_multipart_metadata() {
   object_multipart_metadata->load(
       std::bind(&S3PutMultiObjectAction::next, this),
       std::bind(&S3PutMultiObjectAction::fetch_multipart_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutMultiObjectAction::fetch_multipart_failed() {
@@ -231,7 +231,7 @@ void S3PutMultiObjectAction::fetch_multipart_failed() {
 }
 
 void S3PutMultiObjectAction::save_multipart_metadata() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // This function to be called for part 1 upload
   // so that other parts can see the size of part 1
   // to proceed.Also this is only in case of
@@ -255,7 +255,7 @@ void S3PutMultiObjectAction::save_multipart_metadata() {
              part_one_size_in_multipart_metadata, current_part_one_size);
       set_s3_error("InvalidObjectState");
       send_response_to_s3_client();
-      s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+      s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
       return;
     }
   }
@@ -265,11 +265,11 @@ void S3PutMultiObjectAction::save_multipart_metadata() {
   object_multipart_metadata->save(
       std::bind(&S3PutMultiObjectAction::next, this),
       std::bind(&S3PutMultiObjectAction::save_multipart_metadata_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutMultiObjectAction::save_multipart_metadata_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_ERROR, request_id,
          "Failed to update multipart metadata with part one size\n");
   if (object_multipart_metadata->get_state() ==
@@ -281,17 +281,17 @@ void S3PutMultiObjectAction::save_multipart_metadata_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutMultiObjectAction::fetch_firstpart_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   part_metadata = part_metadata_factory->create_part_metadata_obj(
       request, object_multipart_metadata->get_part_index_oid(), upload_id, 1);
   part_metadata->load(
       std::bind(&S3PutMultiObjectAction::next, this),
       std::bind(&S3PutMultiObjectAction::fetch_firstpart_info_failed, this), 1);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutMultiObjectAction::fetch_firstpart_info_failed() {
@@ -319,7 +319,7 @@ void S3PutMultiObjectAction::_set_layout_id(int layout_id) {
 }
 
 void S3PutMultiObjectAction::compute_part_offset() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   size_t offset = 0;
   if (part_number != 1) {
     size_t part_one_size = 0;
@@ -374,18 +374,18 @@ void S3PutMultiObjectAction::compute_part_offset() {
              "Rejecting request as part size is not aligned w.r.t unit_size\n");
       // part size is not multiple of unit size, block request
       set_s3_error("InvalidPartSize");
-      s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+      s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
       send_response_to_s3_client();
       return;
     }
   }
   next();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutMultiObjectAction::initiate_data_streaming() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   total_data_to_stream = request->get_data_length();
   // request->resume();
@@ -410,11 +410,11 @@ void S3PutMultiObjectAction::initiate_data_streaming() {
           motr_write_payload_size);
     }
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutMultiObjectAction::consume_incoming_content() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_multiobject_action_consume_incoming_content_shutdown_fail");
@@ -434,7 +434,7 @@ void S3PutMultiObjectAction::consume_incoming_content() {
             motr_write_payload_size) {
       write_object(request->get_buffered_input());
       if (!motr_write_in_progress && motr_write_completed) {
-        s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+        s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
         return;
       }
     }
@@ -447,11 +447,11 @@ void S3PutMultiObjectAction::consume_incoming_content() {
            request->get_buffered_input()->get_content_length());
     request->pause();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutMultiObjectAction::send_chunk_details_if_any() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   while (request->is_chunk_detail_ready()) {
     S3ChunkDetail detail = request->pop_chunk_detail();
     s3_log(S3_LOG_DEBUG, request_id, "Using chunk details for auth:\n");
@@ -473,7 +473,7 @@ void S3PutMultiObjectAction::send_chunk_details_if_any() {
 void S3PutMultiObjectAction::write_object(
     std::shared_ptr<S3AsyncBufferOptContainer> buffer) {
 
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (request->is_chunked()) {
     // Also send any ready chunk data for auth
@@ -491,17 +491,17 @@ void S3PutMultiObjectAction::write_object(
 
   motr_write_in_progress = true;
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutMultiObjectAction::write_object_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   motr_write_in_progress = false;
 
   request->get_buffered_input()->flush_used_buffers();
 
   if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
   if (request->is_s3_client_read_error()) {
@@ -573,7 +573,7 @@ void S3PutMultiObjectAction::write_object_failed() {
 }
 
 void S3PutMultiObjectAction::save_metadata() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   part_metadata = part_metadata_factory->create_part_metadata_obj(
       request, object_multipart_metadata->get_part_index_oid(), upload_id,
       part_number);
@@ -597,11 +597,11 @@ void S3PutMultiObjectAction::save_metadata() {
   part_metadata->save(
       std::bind(&S3PutMultiObjectAction::next, this),
       std::bind(&S3PutMultiObjectAction::save_metadata_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutMultiObjectAction::save_metadata_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (part_metadata->get_state() == S3PartMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Save of Part metadata failed due to pre launch failure\n");
@@ -611,16 +611,16 @@ void S3PutMultiObjectAction::save_metadata_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutMultiObjectAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if ((auth_in_progress) &&
       (get_auth_client()->get_state() == S3AuthClientOpState::started)) {
     get_auth_client()->abort_chunk_auth_op();
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
 
@@ -668,13 +668,13 @@ void S3PutMultiObjectAction::send_response_to_s3_client() {
   request->resume(false);
 
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 void S3PutMultiObjectAction::set_authorization_meta() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
                                   bucket_metadata->get_policy_as_json());
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 

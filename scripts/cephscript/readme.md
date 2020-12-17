@@ -1,4 +1,4 @@
-﻿### License
+### License
 
 Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 
@@ -18,6 +18,7 @@ For any questions about this software or licensing,
 please email opensource@seagate.com or cortx-questions@seagate.com.
 
 ## Steps to Configure & run Cephs3-tests Automation script.
+
 
 Pre-requiste:
 

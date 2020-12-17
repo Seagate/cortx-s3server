@@ -311,4 +311,3 @@ TEST_F(S3AbortMultipartActionTest, Send503InternalErrorToS3Client) {
       .Times(1);
   action_under_test->send_response_to_s3_client();
 }
-

@@ -64,6 +64,18 @@ class ObjectRecoveryRabbitMq(object):
             time.sleep(5)
             self.connect()
 
+    def purge_queue(self, queue_name):
+        """Purge all entries from queue."""
+        try:
+            self.logger.info(("Purging queue: %s") % queue_name)
+            self._channel.queue_purge(queue=queue_name)
+        except Exception as exception:
+            msg = ("Purge queue exception: %s, %s") % (
+                exception, traceback.format_exc())
+            return False
+
+        return True
+
     def send_data(self, data, mq_routing):
         """Send message data."""
         try:

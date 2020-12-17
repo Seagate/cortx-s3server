@@ -47,11 +47,11 @@ S3MotrWiterContext::S3MotrWiterContext(std::shared_ptr<RequestObject> req,
     : S3AsyncOpContextBase(std::move(req), std::move(success_callback),
                            std::move(failed_callback), ops_count,
                            std::move(motr_api)) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 }
 
 S3MotrWiterContext::~S3MotrWiterContext() {
-  s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__);
 
   if (motr_op_context) {
     free_basic_op_ctx(motr_op_context);
@@ -80,7 +80,8 @@ S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req, uint64_t offset,
       obj_ctx(nullptr) {
 
   request_id = request->get_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  stripped_request_id = request->get_stripped_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   struct m0_uint128 oid = {0ULL, 0ULL};
 
@@ -114,7 +115,7 @@ S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req,
                          std::shared_ptr<MotrAPI> motr_api)
     : S3MotrWiter(std::move(req), offset, std::move(motr_api)) {
 
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   oid_list.clear();
   oid_list.push_back(object_id);
@@ -162,7 +163,7 @@ void S3MotrWiter::clean_up_contexts() {
 }
 
 int S3MotrWiter::open_objects() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   is_object_opened = false;
   if (obj_ctx) {
@@ -216,25 +217,25 @@ int S3MotrWiter::open_objects() {
     ctx->ops[i]->op_datum = (void *)op_ctx;
     s3_motr_api->motr_op_setup(ctx->ops[i], &ctx->cbs[i], 0);
   }
-  s3_log(S3_LOG_INFO, request_id, "Motr API: openobj(oid: %s)\n",
+  s3_log(S3_LOG_INFO, stripped_request_id, "Motr API: openobj(oid: %s)\n",
          oid_list_stream.str().c_str());
   s3_motr_api->motr_op_launch(request->addb_request_id, ctx->ops, ops_count,
                               MotrOpType::openobj);
   global_motr_object_ops_list.insert(ctx);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return 0;
 }
 
 void S3MotrWiter::open_objects_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   is_object_opened = true;
   if (state == S3MotrWiterOpState::writing) {
-    s3_log(S3_LOG_INFO, request_id,
+    s3_log(S3_LOG_INFO, stripped_request_id,
            "Motr API Successful: openobj(S3MotrWiterOpState: (writing))\n");
     write_content();
   } else if (state == S3MotrWiterOpState::deleting) {
-    s3_log(S3_LOG_INFO, request_id,
+    s3_log(S3_LOG_INFO, stripped_request_id,
            "Motr API Successful: openobj(S3MotrWiterOpState: (deleting))\n");
     delete_objects();
   } else {
@@ -242,11 +243,11 @@ void S3MotrWiter::open_objects_successful() {
            "FATAL: open_objects_successful called from unknown op");
   }
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrWiter::open_objects_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   is_object_opened = false;
   if (state != S3MotrWiterOpState::failed_to_launch) {
@@ -265,13 +266,14 @@ void S3MotrWiter::open_objects_failed() {
   }
   this->handler_on_failed();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrWiter::create_object(std::function<void(void)> on_success,
                                 std::function<void(void)> on_failed,
                                 int layoutid) {
-  s3_log(S3_LOG_INFO, request_id, "Entering with layoutid = %d\n", layoutid);
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry with layoutid = %d\n",
+         __func__, layoutid);
 
   handler_on_success = std::move(on_success);
   handler_on_failed = std::move(on_failed);
@@ -327,7 +329,7 @@ void S3MotrWiter::create_object(std::function<void(void)> on_success,
 
   s3_motr_api->motr_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
 
-  s3_log(S3_LOG_INFO, request_id,
+  s3_log(S3_LOG_INFO, stripped_request_id,
          "Motr API: createobj(oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid_list[0].u_hi, oid_list[0].u_lo);
@@ -335,27 +337,28 @@ void S3MotrWiter::create_object(std::function<void(void)> on_success,
   s3_motr_api->motr_op_launch(request->addb_request_id, ctx->ops, 1,
                               MotrOpType::createobj);
   global_motr_object_ops_list.insert(ctx);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrWiter::create_object_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   is_object_opened = true;  // created object is also open
   state = S3MotrWiterOpState::created;
 
-  s3_log(S3_LOG_INFO, request_id,
+  s3_log(S3_LOG_INFO, stripped_request_id,
          "Motr API Successful: createobj(oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid_list[0].u_hi, oid_list[0].u_lo);
 
   handler_on_success();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrWiter::create_object_failed() {
   auto errno_for_op = create_context->get_errno_for(0);
-  s3_log(S3_LOG_INFO, request_id, "Entering with errno = %d\n", errno_for_op);
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry with errno = %d\n",
+         __func__, errno_for_op);
 
   is_object_opened = false;
   if (state != S3MotrWiterOpState::failed_to_launch) {
@@ -369,15 +372,15 @@ void S3MotrWiter::create_object_failed() {
   }
   handler_on_failed();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrWiter::write_content(std::function<void(void)> on_success,
                                 std::function<void(void)> on_failed,
                                 S3BufferSequence buffer_sequence,
                                 size_t size_of_each_buf) {
-  s3_log(S3_LOG_INFO, request_id, "Entering with layout_id = %d\n",
-         layout_ids[0]);
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry with layout_id = %d\n",
+         __func__, layout_ids[0]);
 
   assert(!buffer_sequence.empty());
   assert(!(size_of_each_buf & 0xFFF));  // size_of_each_buf % 4096 == 0
@@ -406,13 +409,13 @@ void S3MotrWiter::write_content(std::function<void(void)> on_success,
     open_objects();
   }
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrWiter::write_content() {
   int rc;
-  s3_log(S3_LOG_INFO, request_id, "Entering with layout_id = %d\n",
-         layout_ids[0]);
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry with layout_id = %d\n",
+         __func__, layout_ids[0]);
 
   assert(is_object_opened);
 
@@ -476,7 +479,7 @@ void S3MotrWiter::write_content() {
   s3_motr_api->motr_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
   writer_context->start_timer_for("write_to_motr_op");
 
-  s3_log(S3_LOG_INFO, request_id,
+  s3_log(S3_LOG_INFO, stripped_request_id,
          "Motr API: Write (operation: M0_OC_WRITE, oid: ("
          "%" SCNx64 " : %" SCNx64
          " start_offset_in_object(%zu), total_bytes_written_at_offset(%zu))\n",
@@ -485,19 +488,19 @@ void S3MotrWiter::write_content() {
   s3_motr_api->motr_op_launch(request->addb_request_id, ctx->ops, 1,
                               MotrOpType::writeobj);
   global_motr_object_ops_list.insert(ctx);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrWiter::write_content_successful() {
   total_written += size_in_current_write;
-  s3_log(S3_LOG_INFO, request_id,
+  s3_log(S3_LOG_INFO, stripped_request_id,
          "Motr API sucessful: write(total_written = %zu)\n", total_written);
   s3_stats_inc("write_to_motr_op_success_count");
 
   state = S3MotrWiterOpState::saved;
   this->handler_on_success();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrWiter::write_content_failed() {
@@ -507,13 +510,14 @@ void S3MotrWiter::write_content_failed() {
   state = S3MotrWiterOpState::failed;
   this->handler_on_failed();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrWiter::delete_object(std::function<void(void)> on_success,
                                 std::function<void(void)> on_failed,
                                 int layoutid) {
-  s3_log(S3_LOG_INFO, request_id, "Entering with layoutid = %d\n", layoutid);
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry with layoutid = %d\n",
+         __func__, layoutid);
   handler_on_success = std::move(on_success);
   handler_on_failed = std::move(on_failed);
 
@@ -535,11 +539,11 @@ void S3MotrWiter::delete_object(std::function<void(void)> on_success,
   } else {
     open_objects();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrWiter::delete_objects() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   assert(is_object_opened);
 
@@ -582,24 +586,24 @@ void S3MotrWiter::delete_objects() {
 
   delete_context->start_timer_for("delete_objects_from_motr");
 
-  s3_log(S3_LOG_INFO, request_id, "Motr API: deleteobj(oid: %s)\n",
+  s3_log(S3_LOG_INFO, stripped_request_id, "Motr API: deleteobj(oid: %s)\n",
          oid_list_stream.str().c_str());
   s3_motr_api->motr_op_launch(request->addb_request_id, ctx->ops, ops_count,
                               MotrOpType::deleteobj);
   global_motr_object_ops_list.insert(ctx);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrWiter::delete_objects_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   state = S3MotrWiterOpState::deleted;
-  s3_log(S3_LOG_INFO, request_id, "Motr API Successful: deleteobj\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "Motr API Successful: deleteobj\n");
   this->handler_on_success();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrWiter::delete_objects_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (state != S3MotrWiterOpState::failed_to_launch) {
     size_t missing_count = 0;
     for (missing_count = 0; missing_count < oid_list.size(); missing_count++) {
@@ -616,14 +620,14 @@ void S3MotrWiter::delete_objects_failed() {
   }
   this->handler_on_failed();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrWiter::delete_objects(std::vector<struct m0_uint128> oids,
                                  std::vector<int> layoutids,
                                  std::function<void(void)> on_success,
                                  std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   handler_on_success = std::move(on_success);
   handler_on_failed = std::move(on_failed);
@@ -635,7 +639,7 @@ void S3MotrWiter::delete_objects(std::vector<struct m0_uint128> oids,
 
   // Force open all objects
   open_objects();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 int S3MotrWiter::get_op_ret_code_for(int index) {
@@ -657,7 +661,7 @@ int S3MotrWiter::get_op_ret_code_for_delete_op(int index) {
 void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
                                            S3BufferSequence buffer_sequence,
                                            size_t motr_buf_count) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
 
   size_in_current_write = 0;
   size_t buf_idx = 0;
@@ -728,5 +732,5 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
   s3_log(S3_LOG_DEBUG, request_id, "size_in_current_write = %zu\n",
          size_in_current_write);
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

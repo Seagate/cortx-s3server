@@ -48,6 +48,7 @@ class MotrURI {
   MotrApiType motr_api_type;
 
   std::string request_id;
+  std::string stripped_request_id;
 
  private:
   void setup_operation_code();
