@@ -131,6 +131,7 @@ class Action {
 
  protected:
   std::string request_id;
+  std::string stripped_request_id;
   // ADDB action type id.  See s3_addb.h for details on ADDB.  Should not be
   // used directly, use get_addb_action_type_id() instead.
   enum S3AddbActionTypeId addb_action_type_id;

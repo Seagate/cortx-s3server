@@ -29,9 +29,9 @@ S3PutBucketAction::S3PutBucketAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3PutBucketBodyFactory> bucket_body_factory)
     : S3Action(std::move(req)) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
-  s3_log(S3_LOG_INFO, request_id, "S3 API: Put Bucket. Bucket[%s]\n",
+  s3_log(S3_LOG_INFO, stripped_request_id, "S3 API: Put Bucket. Bucket[%s]\n",
          request->get_bucket_name().c_str());
 
   if (bucket_meta_factory) {
@@ -58,7 +58,7 @@ void S3PutBucketAction::setup_steps() {
 }
 
 void S3PutBucketAction::validate_request() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (!is_authorizationheader_present) {
     set_s3_error("AccessDenied");
@@ -78,7 +78,7 @@ void S3PutBucketAction::validate_request() {
     // for shutdown testcases, check FI and set shutdown signal
     S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
         "put_bucket_action_validate_request_shutdown_fail");
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   }
 }
 
@@ -95,7 +95,7 @@ void S3PutBucketAction::consume_incoming_content() {
 }
 
 void S3PutBucketAction::validate_request_body(std::string content) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // S3PutBucketBody bucket(content);
   put_bucket_body = put_bucketbody_factory->create_put_bucket_body(content);
   if (put_bucket_body->isOK()) {
@@ -106,11 +106,11 @@ void S3PutBucketAction::validate_request_body(std::string content) {
     set_s3_error("MalformedXML");
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketAction::validate_bucket_name() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   // get bucket name
   std::string bucket_name = request->get_bucket_name();
@@ -213,21 +213,21 @@ void S3PutBucketAction::validate_bucket_name() {
   } else {
     next();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketAction::read_metadata() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // Trigger metadata read async operation with callback
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(std::bind(&S3PutBucketAction::next, this),
                         std::bind(&S3PutBucketAction::next, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketAction::create_bucket() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   // Trigger metadata write async operation with callback
   // XXX Check if last step was successful.
@@ -262,11 +262,11 @@ void S3PutBucketAction::create_bucket() {
     set_s3_error("InternalError");
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketAction::create_bucket_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Save bucket metadata operation failed due to prelaunch failure\n");
@@ -276,11 +276,11 @@ void S3PutBucketAction::create_bucket_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3PutBucketAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -302,5 +302,5 @@ void S3PutBucketAction::send_response_to_s3_client() {
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

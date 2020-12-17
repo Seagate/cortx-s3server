@@ -35,10 +35,10 @@ S3GetServiceAction::S3GetServiceAction(
     std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
     : S3Action(req), last_key(""), key_prefix(""), fetch_successful(false) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   s3_motr_api = std::make_shared<ConcreteMotrAPI>();
 
-  s3_log(S3_LOG_INFO, request_id, "S3 API: Get Service.\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "S3 API: Get Service.\n");
 
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;
@@ -64,7 +64,7 @@ void S3GetServiceAction::setup_steps() {
 }
 
 void S3GetServiceAction::initialization() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (!is_authorizationheader_present) {
     set_s3_error("AccessDenied");
     s3_log(S3_LOG_ERROR, request_id, "missing authorization header\n");
@@ -77,15 +77,15 @@ void S3GetServiceAction::initialization() {
     // fetch the keys having account id as a prefix
     last_key = key_prefix;
     next();
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   }
 }
 
 void S3GetServiceAction::get_next_buckets() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
 
@@ -105,9 +105,9 @@ void S3GetServiceAction::get_next_buckets() {
 }
 
 void S3GetServiceAction::get_next_buckets_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
   s3_log(S3_LOG_DEBUG, request_id, "Found buckets listing\n");
@@ -153,7 +153,7 @@ void S3GetServiceAction::get_next_buckets_successful() {
 }
 
 void S3GetServiceAction::get_next_buckets_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Buckets list is empty\n");
     fetch_successful = true;  // With no entries.
@@ -169,11 +169,11 @@ void S3GetServiceAction::get_next_buckets_failed() {
     fetch_successful = false;
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GetServiceAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -212,5 +212,5 @@ void S3GetServiceAction::send_response_to_s3_client() {
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

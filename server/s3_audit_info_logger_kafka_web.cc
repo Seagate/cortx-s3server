@@ -29,7 +29,7 @@ S3AuditInfoLoggerKafkaWeb::S3AuditInfoLoggerKafkaWeb(evbase_t* p_base,
                                                      std::string host_ip,
                                                      uint16_t port,
                                                      std::string path) {
-  s3_log(S3_LOG_INFO, nullptr, "Constructor");
+  s3_log(S3_LOG_INFO, nullptr, "%s Ctor\n", __func__);
 
   std::map<std::string, std::string> headers;
   headers["Content-Type"] = "application/vnd.kafka.json.v2+json";
@@ -42,13 +42,13 @@ S3AuditInfoLoggerKafkaWeb::~S3AuditInfoLoggerKafkaWeb() = default;
 
 int S3AuditInfoLoggerKafkaWeb::save_msg(std::string const& request_id,
                                         std::string const& msg) {
-  s3_log(S3_LOG_INFO, request_id, "Entering");
+  s3_log(S3_LOG_INFO, request_id, "%s Entry", __func__);
   s3_log(S3_LOG_DEBUG, request_id, "%s", msg.c_str());
 
   std::string fmt_msg =
       "{\"records\":[{\"key\":\"s3server\",\"value\":" + msg + "}]}";
   const bool fSucc = p_s3_post_queue->post(std::move(fmt_msg));
 
-  s3_log(S3_LOG_DEBUG, request_id, "Exiting");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
   return !fSucc;
 }

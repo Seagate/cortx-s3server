@@ -56,9 +56,6 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   bool read_in_progress = false;
 
   void get_source_bucket_and_object();
-  void set_authorization_meta();
-  void check_source_bucket_authorization();
-  void set_source_bucket_authorization_metadata();
   void fetch_source_bucket_info();
   void fetch_source_bucket_info_success();
   void fetch_source_bucket_info_failed();
@@ -68,6 +65,10 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   void fetch_source_object_info_failed();
 
   bool if_source_and_destination_same();
+
+  void set_authorization_meta();
+  void check_source_bucket_authorization();
+  void set_source_bucket_authorization_metadata();
 
  public:
   S3CopyObjectAction(

@@ -29,7 +29,7 @@
 #include "s3_post_to_main_loop.h"
 
 void s3_auth_dummy_op_failed(evutil_socket_t, short events, void *user_data) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   evbuf_t *req_body_buffer = NULL;
   evhtp_request_t *req = NULL;
   std::string xml_error(
@@ -55,12 +55,12 @@ void s3_auth_dummy_op_failed(evutil_socket_t, short events, void *user_data) {
   // Free user event
   event_free((struct event *)user_context->user_event);
   free(user_data);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 int s3_auth_fake_evhtp_request(S3AuthClientOpType auth_request_type,
                                S3AuthClientOpContext *context) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
 
   if (auth_request_type == S3AuthClientOpType::authentication) {
     struct user_event_context *user_ctx = (struct user_event_context *)calloc(
@@ -71,6 +71,6 @@ int s3_auth_fake_evhtp_request(S3AuthClientOpType auth_request_type,
     // TODO: fake cb for authorization when server support is added
     s3_log(S3_LOG_FATAL, "", "Unrecognized S3AuthClientOpType \n");
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return 0;
 }

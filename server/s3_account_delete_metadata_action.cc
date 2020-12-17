@@ -31,7 +31,7 @@ S3AccountDeleteMetadataAction::S3AccountDeleteMetadataAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
     std::shared_ptr<S3MotrKVSReaderFactory> kvs_reader_factory)
     : S3Action(req, true, nullptr, false, true) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   // get the account_id from uri
   account_id_from_uri = request->c_get_file_name();
 
@@ -60,7 +60,7 @@ void S3AccountDeleteMetadataAction::setup_steps() {
 }
 
 void S3AccountDeleteMetadataAction::validate_request() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // check for the account_id got from authentication response and account_id is
   // in uri same or not
   if (account_id_from_uri == request->get_account_id()) {
@@ -77,11 +77,11 @@ void S3AccountDeleteMetadataAction::validate_request() {
     set_s3_error("InvalidAccountForMgmtApi");
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   motr_kv_reader =
       motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
   bucket_account_id_key_prefix = account_id_from_uri + "/";
@@ -93,11 +93,11 @@ void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata() {
       std::bind(
           &S3AccountDeleteMetadataAction::fetch_first_bucket_metadata_failed,
           this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   auto& kvps = motr_kv_reader->get_key_values();
   for (auto& kv : kvps) {
     // account_id_from_uri has buckets
@@ -113,11 +113,11 @@ void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata_successful() {
     }
     break;
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id,
            "There is no bucket for the acocunt id: %s\n",
@@ -135,11 +135,11 @@ void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata_failed() {
     set_s3_error("InternalError");
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3AccountDeleteMetadataAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -160,5 +160,5 @@ void S3AccountDeleteMetadataAction::send_response_to_s3_client() {
 
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

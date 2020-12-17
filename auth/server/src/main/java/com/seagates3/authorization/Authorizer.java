@@ -147,7 +147,7 @@ class Authorizer {
       LOGGER.error("ACL authorization request validation failed");
       return serverResponse;
     }
-    LOGGER.info("ACL authorization request is validated successfully");
+    LOGGER.info("ACL authorization Success");
 
     if (isAclAuthorizationRequired) {
       serverResponse = isAclAuthorized(requestor, requestBody);

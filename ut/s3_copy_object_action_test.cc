@@ -935,6 +935,12 @@ TEST_F(S3CopyObjectActionTest, SendErrorResponse) {
 }
 
 TEST_F(S3CopyObjectActionTest, SendSuccessResponse) {
+  create_dst_object_metadata();
+  ptr_mock_bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
+      object_list_indx_oid);
+  action_under_test->new_object_metadata =
+      ptr_mock_object_meta_factory->mock_object_metadata;
+
   action_under_test->motr_writer =
       ptr_mock_motr_writer_factory->mock_motr_writer;
 
@@ -945,9 +951,10 @@ TEST_F(S3CopyObjectActionTest, SendSuccessResponse) {
   // expectations for remove_new_oid_probable_record()
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
 
-  // Uncomment the line below when ETag response header is implemented
-  // EXPECT_CALL(*ptr_mock_request, set_out_header_value(_,
-  // _)).Times(AtLeast(1));
+  EXPECT_CALL(*(ptr_mock_object_meta_factory->mock_object_metadata), get_md5())
+      .Times(1);
+  EXPECT_CALL(*(ptr_mock_object_meta_factory->mock_object_metadata),
+              get_last_modified_iso()).Times(1);
   EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(AtLeast(1));
 
   action_under_test->send_response_to_s3_client();
@@ -967,19 +974,8 @@ TEST_F(S3CopyObjectActionTest, SendFailedResponse) {
   action_under_test->send_response_to_s3_client();
 }
 
-TEST_F(S3CopyObjectActionTest, ValidateMissingContentLength) {
-  EXPECT_CALL(*ptr_mock_request, get_object_name())
-      .WillOnce(ReturnRef(object_name));
-  EXPECT_CALL(*ptr_mock_request, is_header_present("Content-Length"))
-      .WillOnce(Return(false));
-
-  action_under_test->validate_put_request();
-
-  EXPECT_STREQ("MissingContentLength",
-               action_under_test->get_s3_error_code().c_str());
-}
-
 TEST_F(S3CopyObjectActionTest, DestinationAuthorization) {
+
   create_dst_bucket_metadata();
   action_under_test->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test,
