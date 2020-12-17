@@ -973,3 +973,23 @@ TEST_F(S3CopyObjectActionTest, SendFailedResponse) {
 
   action_under_test->send_response_to_s3_client();
 }
+
+TEST_F(S3CopyObjectActionTest, DestinationAuthorization) {
+
+  create_dst_bucket_metadata();
+  action_under_test->clear_tasks();
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3CopyObjectActionTest::func_callback_one, this);
+  action_under_test->bucket_metadata =
+      action_under_test->bucket_metadata_factory->create_bucket_metadata_obj(
+          ptr_mock_request);
+
+  std::string MockJsonResponse("Mockresponse");
+  EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
+              get_state())
+      .WillRepeatedly(Return(S3BucketMetadataState::present));
+  EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
+              get_policy_as_json()).WillRepeatedly(ReturnRef(MockJsonResponse));
+  action_under_test->set_authorization_meta();
+  EXPECT_EQ(1, call_count_one);
+}
