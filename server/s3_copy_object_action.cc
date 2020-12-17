@@ -64,6 +64,9 @@ S3CopyObjectAction::S3CopyObjectAction(
 void S3CopyObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   ACTION_TASK_ADD(S3CopyObjectAction::validate_copyobject_request, this);
+  ACTION_TASK_ADD(S3CopyObjectAction::set_source_bucket_authorization_metadata,
+                  this);
+  ACTION_TASK_ADD(S3CopyObjectAction::check_source_bucket_authorization, this);
   ACTION_TASK_ADD(S3CopyObjectAction::create_object, this);
   ACTION_TASK_ADD(S3CopyObjectAction::copy_object, this);
   ACTION_TASK_ADD(S3CopyObjectAction::save_metadata, this);
@@ -535,4 +538,33 @@ void S3CopyObjectAction::send_response_to_s3_client() {
 bool S3CopyObjectAction::if_source_and_destination_same() {
   return ((source_bucket_name == request->get_bucket_name()) &&
           (source_object_name == request->get_object_name()));
+}
+
+void S3CopyObjectAction::set_authorization_meta() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
+                                  bucket_metadata->get_policy_as_json());
+  request->set_action_str("PutObject");
+  next();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3CopyObjectAction::set_source_bucket_authorization_metadata() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  auth_client->set_get_method = true;
+  std::string uri = "/" + source_bucket_name + "/" + source_object_name;
+  auth_client->clientabsoulte_uri = uri;
+  auth_client->set_acl_and_policy(
+      source_object_metadata->get_encoded_object_acl(),
+      source_bucket_metadata->get_policy_as_json());
+  request->set_action_str("GetObject");
+  next();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3CopyObjectAction::check_source_bucket_authorization() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  auth_client->check_authorization(
+      std::bind(&S3Action::check_authorization_successful, this),
+      std::bind(&S3Action::check_authorization_failed, this));
 }
