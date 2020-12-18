@@ -361,9 +361,7 @@ void S3CopyObjectAction::read_data_block_success() {
   s3_log(S3_LOG_DEBUG, request_id, "Got %zu bytes in %zu blocks",
          bytes_in_chunk_count, data_blocks_read.size());
 
-  // The order below is crusial!
   write_data_block();
-  read_data_block();
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -420,6 +418,7 @@ void S3CopyObjectAction::write_data_block() {
     send_response_to_s3_client();
   } else {
     write_in_progress = true;
+    read_data_block();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -451,15 +450,12 @@ void S3CopyObjectAction::write_data_block_success() {
     send_response_to_s3_client();
     return;
   }
-  // The order below is crusial!
   write_data_block();
-  read_data_block();
 
-  if (!read_in_progress && !write_in_progress) {
+  if (!bytes_left_to_read && !write_in_progress && !copy_failed) {
     s3_put_action_state = S3PutObjectActionState::writeComplete;
     next();
   }
-
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
