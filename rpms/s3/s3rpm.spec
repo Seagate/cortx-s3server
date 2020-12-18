@@ -92,7 +92,7 @@ BuildRequires: python-keyring python-futures
 # TODO for rhel 8
 
 %if %{with cortx_motr}
-# Uncomment below line to enable motr version  check during s3server rpm installation
+# Uncomment below line to enable motr version check during s3server rpm installation
 #Requires: cortx-motr = %{h_cortxmotr_version}
 Requires: cortx-motr
 %endif
