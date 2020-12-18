@@ -53,10 +53,6 @@ BASEDIR=$(dirname "$SCRIPT_PATH")
 
 if rpm -q "salt"  > /dev/null 2>&1;
 ldap_admin_pwd=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
-if [[ $? != 0 || -z "$ldap_admin_pwd" ]] # Generate random password using cortx-utils, failed
-then
-    ldap_admin_pwd=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9@#+' | fold -w 12 | head -n 1)
-fi
 
 USE_SUDO=
 if [[ $EUID -ne 0 ]]; then

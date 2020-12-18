@@ -49,7 +49,6 @@ ldap_log="/var/log/slapd.log"
 
 s3server_config="/opt/seagate/cortx/s3/conf/s3config.yaml"
 authserver_config="/opt/seagate/cortx/auth/resources/authserver.properties"
-encrypt_cli="/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar"
 backgrounddelete_config="/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
 s3startsystem_script="/opt/seagate/cortx/s3/s3startsystem.sh"
 s3server_binary="/opt/seagate/cortx/s3/bin/s3server"
@@ -408,7 +407,7 @@ fi
 mkdir -p $ldap_dir
 # Get password from cortx-utils
 # ldapadmin and rootdn passwords are same, so reading ldapadmin password
-rootdnpasswd=$(java -jar $encrypt_cli -d)
+rootdnpasswd=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
 if [[ $? != 0 || -z "$rootdnpasswd" ]]
 then
     echo "Failed to decrypt ldap admin password, skipping collection of ldap data."

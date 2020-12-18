@@ -89,10 +89,6 @@ chgrp ldap /etc/openldap/certs/password # onlyif: grep -q ldap /etc/group && tes
 if [[ $defaultpasswd == true ]]
 then # Get password from cortx-utils
     LDAPADMINPASS=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
-    if [[ $? != 0 || -z "$LDAPADMINPASS" ]] # Generate random password using cortx-utils, failed
-    then
-        LDAPADMINPASS=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9@#+' | fold -w 12 | head -n 1)
-    fi
     ROOTDNPASSWORD="$LDAPADMINPASS"
 else # Fetch Root DN & IAM admin passwords from User
     echo -en "\nEnter Password for LDAP rootDN: "
@@ -186,9 +182,6 @@ ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/resultssiz
 # Restart slapd
 systemctl enable slapd
 systemctl restart slapd
-
-echo "Encrypting Authserver LDAP password"
-/opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh -l $LDAPADMINPASS -p /opt/seagate/cortx/auth/resources/authserver.properties
 
 echo "Restart S3authserver"
 systemctl restart s3authserver

@@ -270,9 +270,6 @@ cp -f scripts/ldap/setup_ldap.sh $S3_INSTALL_LOCATION/install/ldap/
 cp startauth.sh $AUTH_INSTALL_LOCATION/
 
 # Copy auth server Helper scripts
-cp -f scripts/enc_ldap_passwd_in_cfg.sh $AUTH_INSTALL_LOCATION/scripts/
-
-# Copy auth server Helper scripts
 cp -f scripts/change_ldap_passwd.ldif $AUTH_INSTALL_LOCATION/scripts/
 
 # Copy s3-sanity

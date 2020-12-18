@@ -308,13 +308,14 @@ then
     create_auth_jks_password
 fi
 
+ldappasswd=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
+
 # Install and Configure Openldap over Non-SSL.
 if [[ $config_ldap == true ]]
 then
     /opt/seagate/cortx/s3/install/ldap/setup_ldap.sh --defaultpasswd --forceclean --skipssl
 
-    ldap_passwd=$(java -jar $encrypt_cli -d)
-    /opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh -h /root/host_file -p $ldap_passwd
+    /opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh -h /root/host_file -p $ldappasswd
 
     if [[ -f /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf ]]
     then
@@ -329,8 +330,6 @@ elif [[ $purge_config_ldap == true ]]
 then
     $S3_DIR/scripts/ldap/setup_ldap.sh --defaultpasswd --forceclean --skipssl
 fi
-
-ldappasswd=$(java -jar $encrypt_cli -d)
 
 # Setup Openldap replication for EES setup.
 if [[ $ldap_replication == true ]]
