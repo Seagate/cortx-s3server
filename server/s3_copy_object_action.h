@@ -28,6 +28,7 @@
 
 #include <gtest/gtest_prod.h>
 
+#include "s3_buffer_sequence.h"
 #include "s3_put_object_action_base.h"
 #include "s3_object_metadata.h"
 
@@ -45,6 +46,9 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   std::string source_bucket_name;
   std::string source_object_name;
 
+  S3BufferSequence data_blocks_read;
+  S3BufferSequence data_blocks_writing;
+
   std::shared_ptr<S3MotrReader> motr_reader;
 
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
@@ -55,6 +59,7 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   bool copy_failed = false;
   bool read_in_progress = false;
 
+  void cleanup_blocks_written();
   void get_source_bucket_and_object();
   void fetch_source_bucket_info();
   void fetch_source_bucket_info_success();
@@ -75,6 +80,8 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
       std::shared_ptr<S3MotrWriterFactory> motrwriter_s3_factory = nullptr,
       std::shared_ptr<S3MotrReaderFactory> motrreader_s3_factory = nullptr,
       std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr);
+
+  ~S3CopyObjectAction();
 
  private:
   void setup_steps();

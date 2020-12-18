@@ -22,11 +22,11 @@
 #include <algorithm>
 #include <utility>
 
-#include "s3_buffer_sequence.h"
 #include "s3_common_utilities.h"
 #include "s3_copy_object_action.h"
 #include "s3_error_codes.h"
 #include "s3_log.h"
+#include "s3_mem_pool_manager.h"
 #include "s3_motr_layout.h"
 #include "s3_m0_uint128_helper.h"
 #include "s3_probable_delete_record.h"
@@ -60,6 +60,16 @@ S3CopyObjectAction::S3CopyObjectAction(
   }
   setup_steps();
 };
+
+S3CopyObjectAction::~S3CopyObjectAction() {
+  if (!data_blocks_writing.empty()) {
+    cleanup_blocks_written();
+  }
+  if (!data_blocks_read.empty()) {
+    data_blocks_writing = std::move(data_blocks_read);
+    cleanup_blocks_written();
+  }
+}
 
 void S3CopyObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
@@ -246,9 +256,23 @@ void S3CopyObjectAction::copy_object() {
 void S3CopyObjectAction::read_data_block() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  assert(!read_in_progress);
-  assert(bytes_left_to_read > 0);
-
+  if (read_in_progress) {
+    s3_log(S3_LOG_DEBUG, stripped_request_id,
+           "%s Previous reading is in progress. Exit\n", __func__);
+    return;
+  }
+  if (!data_blocks_read.empty()) {
+    s3_log(
+        S3_LOG_DEBUG, stripped_request_id,
+        "%s Data from previous read has not been taken for writing yet. Exit\n",
+        __func__);
+    return;
+  }
+  if (bytes_left_to_read == 0) {
+    s3_log(S3_LOG_DEBUG, stripped_request_id,
+           "%s All data has been already read. Exit\n", __func__);
+    return;
+  }
   const auto n_blocks = std::min<size_t>(
       S3Option::get_instance()->get_motr_units_per_request(),
       (bytes_left_to_read + motr_unit_size - 1) / motr_unit_size);
@@ -292,9 +316,51 @@ void S3CopyObjectAction::read_data_block_success() {
     send_response_to_s3_client();
     return;
   }
-  if (!write_in_progress) {
-    write_data_block();
+  assert(data_blocks_read.empty());
+  data_blocks_read = motr_reader->extract_blocks_read();
+
+  size_t bytes_in_chunk_count = 0;
+
+  if (data_blocks_read.empty()) {
+    s3_log(S3_LOG_WARN, stripped_request_id, "Motr reader returned no data");
+  } else {
+    for (size_t i = 0, n = data_blocks_read.size() - 1; i < n; ++i) {
+      const auto motr_block_size = data_blocks_read[i].second;
+      assert(motr_block_size == motr_unit_size);
+
+      // We can use multiplication, but something may change in the future
+      bytes_in_chunk_count += motr_block_size;
+    }
+    if (bytes_in_chunk_count >= bytes_left_to_read) {
+      s3_log(S3_LOG_ERROR, stripped_request_id, "Too many data has been read");
+
+      copy_failed = true;
+      set_s3_error("InternalError");
+
+      if (!write_in_progress) {
+        send_response_to_s3_client();
+      }
+      return;
+    }
+    bytes_left_to_read -= bytes_in_chunk_count;
+
+    auto& r_last_block_size =
+        data_blocks_read[data_blocks_read.size() - 1].second;
+
+    if (r_last_block_size >= bytes_left_to_read) {
+      r_last_block_size = bytes_left_to_read;
+      bytes_left_to_read = 0;
+    } else {
+      bytes_left_to_read -= r_last_block_size;
+    }
+    bytes_in_chunk_count += r_last_block_size;
   }
+  s3_log(S3_LOG_DEBUG, request_id, "Got %zu bytes in %zu blocks",
+         bytes_in_chunk_count, data_blocks_read.size());
+
+  // The order below is crusial!
+  write_data_block();
+  read_data_block();
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -322,45 +388,26 @@ void S3CopyObjectAction::read_data_block_failed() {
 void S3CopyObjectAction::write_data_block() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  assert(!write_in_progress);
-  assert(bytes_left_to_read > 0);
-
-  S3BufferSequence buffer_sequence;
-
-  char* p_data = nullptr;
-  size_t block_size = motr_reader->get_first_block(&p_data);
-
-  unsigned blocks_in_chunk = 0;
-  size_t bytes_in_chunk = 0;
-
-  while (block_size) {
-    assert(p_data != nullptr);
-
-    if (block_size >= bytes_left_to_read) {
-      block_size = bytes_left_to_read;
-      bytes_left_to_read = 0;
-    } else {
-      bytes_left_to_read -= block_size;
-    }
-    buffer_sequence.emplace_back(p_data, block_size);
-
-    bytes_in_chunk += block_size;
-    ++blocks_in_chunk;
-
-    block_size = motr_reader->get_next_block(&p_data);
+  if (write_in_progress) {
+    s3_log(S3_LOG_DEBUG, stripped_request_id,
+           "%s Previous writing is in progress. Exit\n", __func__);
+    return;
   }
-#ifndef S3_GOOGLE_TEST
-  assert(blocks_in_chunk);
-  assert(bytes_in_chunk > 0);
-#endif  // S3_GOOGLE_TEST
+  assert(!write_in_progress);  // Let it be
+  assert(data_blocks_writing.empty());
 
-  s3_log(S3_LOG_DEBUG, request_id, "Got %zu bytes in %u blocks", bytes_in_chunk,
-         blocks_in_chunk);
+  if (data_blocks_read.empty()) {
+    s3_log(S3_LOG_DEBUG, stripped_request_id, "%s No data for writing. Exit\n",
+           __func__);
+    return;
+  }
+  data_blocks_writing = std::move(data_blocks_read);
 
   motr_writer->write_content(
       std::bind(&S3CopyObjectAction::write_data_block_success, this),
       std::bind(&S3CopyObjectAction::write_data_block_failed, this),
-      std::move(buffer_sequence), motr_unit_size);
+      data_blocks_writing,  // NO std::move()! Must pass a copy
+      motr_unit_size);
 
   if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
     copy_failed = true;
@@ -374,19 +421,38 @@ void S3CopyObjectAction::write_data_block() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+void S3CopyObjectAction::cleanup_blocks_written() {
+  auto* p_mem_pool_man = S3MempoolManager::get_instance();
+  assert(p_mem_pool_man != nullptr);
+
+  while (!data_blocks_writing.empty()) {
+    p_mem_pool_man->release_buffer_for_unit_size(
+        data_blocks_writing.back().first, motr_unit_size);
+    data_blocks_writing.pop_back();
+  }
+}
+
 void S3CopyObjectAction::write_data_block_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   assert(write_in_progress);
   write_in_progress = false;
 
+  cleanup_blocks_written();
+
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, nullptr, "Shutdown or rollback");
     return;
   }
-  if (bytes_left_to_read) {
-    read_data_block();
-  } else {
+  if (copy_failed) {
+    send_response_to_s3_client();
+    return;
+  }
+  // The order below is crusial!
+  write_data_block();
+  read_data_block();
+
+  if (!read_in_progress && !write_in_progress) {
     s3_put_action_state = S3PutObjectActionState::writeComplete;
     next();
   }
@@ -403,6 +469,8 @@ void S3CopyObjectAction::write_data_block_failed() {
 
   copy_failed = true;
   s3_put_action_state = S3PutObjectActionState::writeFailed;
+
+  cleanup_blocks_written();
 
   set_s3_error(motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch
                    ? "ServiceUnavailable"
