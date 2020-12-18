@@ -19,7 +19,10 @@
 #
 
 # Script to start S3 server in dev environment.
-#   Usage: sudo ./dev-starts3.sh [<Number of S3 sever instances>] [--fake_obj] [--fake_kvs | --redis_kvs] [--callgraph /path/to/graph][--valgrind_memcheck /path/to/memcheck/log]
+#   Usage: sudo ./dev-starts3.sh [<Number of S3 sever instances>]
+#                                [--fake_obj] [--fake_kvs | --redis_kvs]
+#                                [--callgraph /path/to/graph]
+#                                [--valgrind_memcheck [/path/to/memcheck/log]]
 #               Optional argument is:
 #                   Number of S3 server instances to start.
 #                   Max number of instances allowed = 20
