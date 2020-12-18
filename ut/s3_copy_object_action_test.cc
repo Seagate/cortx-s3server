@@ -671,6 +671,14 @@ TEST_F(S3CopyObjectActionTest, ReadDataBlockSuccessShouldStartWrite) {
   action_under_test->motr_writer =
       ptr_mock_motr_writer_factory->mock_motr_writer;
 
+  S3BufferSequence data_blocks_read;
+  data_blocks_read.emplace_back(nullptr, 0);
+
+  EXPECT_CALL(*ptr_mock_motr_reader_factory->mock_motr_reader,
+              extract_blocks_read())
+      .Times(1)
+      .WillOnce(Return(data_blocks_read));
+
   EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
               write_content(_, _, _, _)).Times(1);
   EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer, get_state())
