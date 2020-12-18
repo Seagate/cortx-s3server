@@ -52,7 +52,12 @@ SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
 
 if rpm -q "salt"  > /dev/null 2>&1;
-ldap_admin_pwd=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
+then
+  ldap_admin_pwd=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
+else
+  # Dev environment. Read ldap admin password from "/root/.s3_ldap_cred_cache.conf"
+  source /root/.s3_ldap_cred_cache.conf
+fi
 
 USE_SUDO=
 if [[ $EUID -ne 0 ]]; then

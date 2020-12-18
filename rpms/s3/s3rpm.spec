@@ -240,6 +240,7 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar
 /opt/seagate/cortx/auth/startauth.sh
 /opt/seagate/cortx/auth/scripts/swupdate/merge.sh
+/opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh
 /opt/seagate/cortx/auth/scripts/change_ldap_passwd.ldif
 /opt/seagate/cortx/auth/scripts/s3authserver.jks_template
 /opt/seagate/cortx/auth/scripts/create_auth_jks_password.sh

@@ -328,7 +328,7 @@ then
 
 elif [[ $purge_config_ldap == true ]]
 then
-    $S3_DIR/scripts/ldap/setup_ldap.sh --defaultpasswd --forceclean --skipssl
+    /opt/seagate/cortx/s3/install/ldap/setup_ldap.sh --defaultpasswd --forceclean --skipssl
 fi
 
 # Setup Openldap replication for EES setup.
