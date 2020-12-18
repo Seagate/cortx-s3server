@@ -359,6 +359,9 @@ echo "Starting new built motr services"
 $USE_SUDO ./m0t1fs/../motr/st/utils/motr_services.sh start
 cd $S3_BUILD_DIR
 
+./scripts/enc_ldap_passwd_in_cfg.sh -l "$ldap_admin_pwd" \
+          -p /opt/seagate/cortx/auth/resources/authserver.properties
+
 # Enable fault injection in AuthServer
 $USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=true/g' /opt/seagate/cortx/auth/resources/authserver.properties
 
