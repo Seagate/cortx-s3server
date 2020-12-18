@@ -359,6 +359,8 @@ class S3AuthClient {
  public:
   S3AuthClient(std::shared_ptr<RequestObject> req,
                bool skip_authorization = false);
+  bool set_get_method = false;
+  std::string clientabsoulte_uri;
 
   virtual ~S3AuthClient() {
     s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__);

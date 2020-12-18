@@ -22,7 +22,7 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
 ## Introduction
 
 This document describes how to setup and configure *keepalived*, daemon that
-could be used to manage virtual IPs and move these IPs accross servers in
+could be used to manage virtual IPs and move these IPs across servers in
 cluster.
 
 *keepalived* can be used to reach two main goals
@@ -32,7 +32,7 @@ cluster.
 
 ### High availability
 
-*keepalived* uses VRRP protocol to manage which host controlls IP address at
+*keepalived* uses VRRP protocol to manage which host controls IP address at
 the moment, it is called master. As long as master node goes down backup node
 becomes active and starts serving the IP address. After the master node restored
 it gains the IP address back. There could be more than 1 backup node.
@@ -47,20 +47,21 @@ times more requests than the third node.
 One possible solution is to assign several IP addresses to each node and for
 each IP address assign different backup nodes.
 In this case after failover all requests from a failed node will be spread
-accross several nodes.
+across several nodes.
 
 Even load distribution in case of failover requires N * (N - 1) IP addresses
 for the cluster of N nodes.
 
-There could be different configurations as well. For example
-4 IP addresses per node for cluster of N nodes - in case of failover
-this configuratons leads to 25% load increase for some nodes.
-5 IP addresses per node for cluster of N nodes - in case of failover
-this configuratons leads to 20% load increase for some nodes.
+There could be different configurations as well. For example:
+
+* 4 IP addresses per node for cluster of N nodes - in case of failover
+  this configuration leads to 25% load increase for some nodes.
+* 5 IP addresses per node for cluster of N nodes - in case of failover
+  this configuration leads to 20% load increase for some nodes.
 
 #### Example configuration 1 - 3 nodes, 2 IPs per node
 
-Total 6 IP addreses
+Total 6 IP addresses
 
 | IP     | Master Node | Backup 1 | Backup 2 |
 | ------ | ----------- | -------- | -------- |
@@ -142,11 +143,16 @@ There are two types of nodes in terms of *keepalived* - *master node* and *backu
 Each type of node has it own config. As a result config files for different machines
 are different.
 
-Configuration is done in terms of *vrrp_instance*. It describes the set of virtual ips
+Configuration is done in terms of *vrrp_instance*. It describes the set of virtual IPs
 configured for the node. Only one node could be a *master* across a cluster for the
-same *vrrp_instance*. The order *backup* nodes failover ip addresses is determined by
+same *vrrp_instance*. The order *backup* nodes failover IP addresses is determined by
 the *priority* field - next active node is the node with the highest *priority*. Each
 *vrrp_instance* must have unique *virtual_router_id* in scope of a single sub-network.
+
+### Limitations
+
+*virtual_router_id* is a single byte value in the range 1 to 255, so only 255
+different *vrrp_instance* could co-exist in a sub-network.
 
 ### Configuration for [Example 1](#Example-configuration-1-3-nodes,-2-IPs-per-node)
 
@@ -601,6 +607,35 @@ vrrp_instance VI_3_2_1 {
 `#> systemctl enable keepalived`  
 `#> systemctl start keepalived`
 
+## Check Keepalived status
+
+Following command could be used to check status of the keepalived process
+
+`#> systemctl status keepalived`
+
+Output log entries should not contain any errors or warnings. If chosen
+*virtual_router_id* is already in use in sub-network logs entries will contain
+messages about bogus packets received
+
+```ini
+#> systemctl status keepalived
+● keepalived.service - LVS and VRRP High Availability Monitor
+   Loaded: loaded (/usr/lib/systemd/system/keepalived.service; enabled; vendor preset: disabled)
+   Active: active (running) since Tue 2020-09-15 11:52:57 MDT; 13h ago
+  Process: 23245 ExecStart=/usr/sbin/keepalived $KEEPALIVED_OPTIONS (code=exited, status=0/SUCCESS)
+ Main PID: 23246 (keepalived)
+   CGroup: /system.slice/keepalived.service
+           ├─23246 /usr/sbin/keepalived -D
+           ├─23247 /usr/sbin/keepalived -D
+           └─23248 /usr/sbin/keepalived -D
+
+Sep 16 00:56:39 seagate.com Keepalived_vrrp[23248]: bogus VRRP packet received on eth1 !!!
+Sep 16 00:56:39 seagate.com Keepalived_vrrp[23248]: VRRP_Instance(VI_3_1_2) ignoring received advertisment...
+Sep 16 00:56:39 seagate.com Keepalived_vrrp[23248]: (VI_2_1_3): ip address associated with VRID 79 not present in MASTER advert : 192.168.1.2
+```
+
+In this case new `virtual_router_id` value should be selected for `vrrp_instance VI_2_1_3`.  Repeat this test/fix cycle until you get no warnings.  Check this on all nodes in cluster.
+
 ## Testing Failover Scenarios
 
 1. Run keepalived on all nodes. Ensure it started fine
@@ -616,7 +651,7 @@ vrrp_instance VI_3_2_1 {
     Node 3 should have IP3_12 and IP3_21  
 
 2. Stop keepalived on one of the nodes, e.g. node 2 (or node 2 can be completely
-switched off, etc)
+switched off, etc.)
 
     `#> systemctl stop keepalived`
 
@@ -632,7 +667,7 @@ switched off, etc)
     Node 3 should have IP3_12, IP3_21 and IP2_31,  
     Node 2 should not have any IP from the config list
 
-3. Stop keepalived on one more node, e.g. node 1 (or switch it off, etc)
+3. Stop keepalived on one more node, e.g. node 1 (or switch it off, etc.)
 
     `#> systemctl stop keepalived`
 
