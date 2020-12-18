@@ -171,7 +171,7 @@ Before your test your build, ensure that you have installed and configured the f
 4. Ensure that CORTX-S3 Server and its dependent services are running.
     1. To start CORTX-S3 Server and its dependent services, run the command: `$ ./jenkins-build.sh --skip_build --skip_tests`
        
-       In case you recieve errors, follow the steps below:
+       In case you get errors on haproxy service being inactive or not running, follow the steps below:
         - To check if HAProxy is working run `systemctl status haproxy`
         - If you see the status as inactive, use the command `systemctl start haproxy`
     2. To view the `PID` of the active S3 service, run the command: `$ pgrep s3`
