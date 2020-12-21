@@ -149,11 +149,12 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockSuccessCopyFailed);
   FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockSuccessShouldStartWrite);
   FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockFailed);
+  FRIEND_TEST(S3CopyObjectActionTest, WriteObjectStartedShouldKickRead);
   FRIEND_TEST(S3CopyObjectActionTest, WriteObjectFailedShouldUndoMarkProgress);
   FRIEND_TEST(S3CopyObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure);
   FRIEND_TEST(S3CopyObjectActionTest, WriteObjectSuccessfulWhileShuttingDown);
   FRIEND_TEST(S3CopyObjectActionTest,
-              WriteObjectSuccessfulShouldRestartReadingData);
+              WriteObjectSuccessfulShouldRestartWritingData);
   FRIEND_TEST(S3CopyObjectActionTest,
               WriteObjectSuccessfulDoNextStepWhenAllIsWritten);
   FRIEND_TEST(S3CopyObjectActionTest, SaveMetadata);
