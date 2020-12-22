@@ -714,7 +714,7 @@ TEST_F(S3CopyObjectActionTest, ReadDataBlockFailed) {
   EXPECT_FALSE(action_under_test->get_s3_error_code().empty());
 }
 
-TEST_F(S3CopyObjectActionTest, WriteObjectStartedShouldKickRead) {
+TEST_F(S3CopyObjectActionTest, WriteObjectStarted) {
   action_under_test->motr_writer =
       ptr_mock_motr_writer_factory->mock_motr_writer;
   action_under_test->motr_reader =
@@ -731,15 +731,11 @@ TEST_F(S3CopyObjectActionTest, WriteObjectStartedShouldKickRead) {
       .Times(1)
       .WillOnce(Return(S3MotrWiterOpState::start));
 
-  EXPECT_CALL(*ptr_mock_motr_reader_factory->mock_motr_reader,
-              read_object_data(_, _, _))
-      .Times(1)
-      .WillOnce(Return(true));
-
   action_under_test->write_data_block();
 
   EXPECT_TRUE(action_under_test->write_in_progress);
-  EXPECT_TRUE(action_under_test->read_in_progress);
+  EXPECT_TRUE(action_under_test->data_blocks_read.empty());
+  EXPECT_FALSE(action_under_test->data_blocks_writing.empty());
 }
 
 TEST_F(S3CopyObjectActionTest, WriteObjectFailedShouldUndoMarkProgress) {

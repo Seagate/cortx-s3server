@@ -46,8 +46,10 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   std::string source_bucket_name;
   std::string source_object_name;
 
-  S3BufferSequence data_blocks_read;
-  S3BufferSequence data_blocks_writing;
+  S3BufferSequence data_blocks_read;     // Source's data has been read but not
+                                         // taken for writing.
+  S3BufferSequence data_blocks_writing;  // Source's data currently beeing
+                                         // written
 
   std::shared_ptr<S3MotrReader> motr_reader;
 
@@ -149,7 +151,7 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockSuccessCopyFailed);
   FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockSuccessShouldStartWrite);
   FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockFailed);
-  FRIEND_TEST(S3CopyObjectActionTest, WriteObjectStartedShouldKickRead);
+  FRIEND_TEST(S3CopyObjectActionTest, WriteObjectStarted);
   FRIEND_TEST(S3CopyObjectActionTest, WriteObjectFailedShouldUndoMarkProgress);
   FRIEND_TEST(S3CopyObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure);
   FRIEND_TEST(S3CopyObjectActionTest, WriteObjectSuccessfulWhileShuttingDown);
