@@ -68,6 +68,11 @@ S3GetBucketAction::S3GetBucketAction(
   }
   motr_kv_reader = nullptr;
   b_first_next_keyval_call = true;
+  // When we skip keys with same common prefix, we need a way to indicate
+  // a state in which we'll make use of existing key fetch logic just to see if
+  // any more keys are available in bucket, after the keys with common prefix.
+  // This is required to return correct truncation flag in object list response
+  b_state_start_check_any_more_keys = false;
   setup_steps();
   // TODO request param validations
 }
@@ -215,9 +220,45 @@ void S3GetBucketAction::get_next_objects_successful() {
   bool atleast_one_json_error = false;
   bool last_key_in_common_prefix = false;
   bool skip_no_further_prefix_match = false;
+  bool b_skip_remaining_common_prefixes = false;
   std::string last_common_prefix = "";
   auto& kvps = motr_kv_reader->get_key_values();
   size_t length = kvps.size();
+  if (b_state_start_check_any_more_keys) {
+    // Check if this is the call to identify any more keys left
+    // in bucket, after skipping keys belonging to same common prefix.
+    // In this state, we don't check/process each key.
+    // We simply return response to client.
+    if (length != 0) {
+      // There exist keys after last common prefix.
+      if (!request_prefix.empty()) {
+        // If prefix is specified, we need to make sure that there exists
+        // atleast one key with same prefix. If no, it indicates no keys.
+        const std::string& firt_key = kvps.begin()->first;
+        if (firt_key.find(request_prefix) == std::string::npos) {
+          // There exists no key matching the prefix. Set 'length' 0
+          length = 0;
+        }
+      }
+      s3_log(S3_LOG_DEBUG, request_id,
+             "Found [%zu] keys after the last common prefix [%s]\n", length,
+             saved_last_key.c_str());
+
+      if (length != 0) {
+        object_list->set_response_is_truncated(true);
+        s3_log(S3_LOG_DEBUG, request_id, "Next marker = %s\n",
+               saved_last_key.c_str());
+        object_list->set_next_marker_key(saved_last_key);
+      }
+    }
+    // reset state
+    b_state_start_check_any_more_keys = false;
+    fetch_successful = true;
+    object_list->set_key_count(key_Count);
+    send_response_to_s3_client();
+    return;
+  }
+
   // Statistics - Total keys visited/loaded
   if (!kvps.empty()) {
     total_keys_visited += length;
@@ -344,14 +385,34 @@ void S3GetBucketAction::get_next_objects_successful() {
                "Delimiter %s found at pos %zu in string %s\n",
                request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
         std::string common_prefix = kv.first.substr(0, delimiter_pos + 1);
-        if (common_prefix != request_marker_key) {
+        //@DPG if (common_prefix != request_marker_key) {
           // If marker is specified, and if this key gets rolled up
           // in common prefix, we add to common prefix only if it is not the
           // same as specified marker
+        b_skip_remaining_common_prefixes = false;
+        // Before adding common prefix, check if this is the first time we add
+        // this key
+        // to common_prefixes. If so, skip remaining keys that belong to it.
+        if (!object_list->is_prefix_in_common_prefix(common_prefix)) {
+          b_skip_remaining_common_prefixes = true;
+        }
+        if (common_prefix != request_marker_key) {
           object_list->add_common_prefix(common_prefix);
+          s3_log(S3_LOG_DEBUG, request_id, "Adding common prefix [%s]\n",
+                 common_prefix.c_str());
           last_common_prefix = common_prefix;
           last_key_in_common_prefix = true;
         }
+        if (b_skip_remaining_common_prefixes) {
+          // Skip remaining common prefixes
+          // For this, set last key for the next key enumeration and break
+          last_key = common_prefix + "\xff";
+          s3_log(S3_LOG_DEBUG, request_id,
+                 "Skipping further common prefixes, set next key = [%s]\n",
+                 last_key.c_str());
+          break;
+        }
+        //}
       }
     } else {
       // both prefix and delimiter are not empty
@@ -380,14 +441,34 @@ void S3GetBucketAction::get_next_objects_successful() {
                  "Delimiter %s found at pos %zu in string %s\n",
                  request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
           std::string common_prefix = kv.first.substr(0, delimiter_pos + 1);
-          if (common_prefix != request_marker_key) {
+          //@DPG if (common_prefix != request_marker_key) {
             // If marker is specified, and if this key gets rolled up
             // in common prefix, we add to common prefix only if it is not the
             // same as specified marker
+          b_skip_remaining_common_prefixes = false;
+          // Before adding common prefix, check if this is the first time we
+          // add this key
+          // to common_prefixes. If so, skip remaining keys that belong to it.
+          if (!object_list->is_prefix_in_common_prefix(common_prefix)) {
+            b_skip_remaining_common_prefixes = true;
+          }
+          if (common_prefix != request_marker_key) {
             object_list->add_common_prefix(common_prefix);
+            s3_log(S3_LOG_DEBUG, request_id, "Adding common prefix [%s]\n",
+                   common_prefix.c_str());
             last_common_prefix = common_prefix;
             last_key_in_common_prefix = true;
           }
+          if (b_skip_remaining_common_prefixes) {
+            // Skip remaining common prefixes
+            // For this, set last key for the next key enumeration and break
+            last_key = common_prefix + "\xff";
+            s3_log(S3_LOG_DEBUG, request_id,
+                   "Skipping further common prefixes, set next key = [%s]\n",
+                   last_key.c_str());
+            break;
+          }
+          //}
         }
       } else {
         // Prefix does not match.
@@ -423,19 +504,43 @@ void S3GetBucketAction::get_next_objects_successful() {
 
   // We ask for more if there is any.
   key_Count = object_list->size() + object_list->common_prefixes_size();
-  if ((key_Count == max_keys) || (kvps.size() < max_record_count) ||
+  if ((key_Count == max_keys) ||
+      (!b_skip_remaining_common_prefixes && (kvps.size() < max_record_count)) ||
       (skip_no_further_prefix_match)) {
     // Go ahead and respond.
     if (key_Count == max_keys && length != 0) {
-      object_list->set_response_is_truncated(true);
-      // Before sending response, check if the previous key was in common prefix
-      // If yes, we need to return the common prefix as next marker
-      // This is required to fix Ceph S3 test case.
-      if (last_key_in_common_prefix) {
-        last_key = last_common_prefix;
+      // When we hit the max keys condition and previously we skipped common
+      // prefix keys
+      // (i.e. b_skip_remaining_common_prefixes = true), we can't rely on
+      // 'length' variable for truncation flag.
+      // In such case, we don't know if there are any more keys left after
+      // skipping the common prefix. In such situation, we have to explictly
+      // identify if there are any further keys left in a bucket to mark
+      // the truncation flag in the object list response.
+      if (b_skip_remaining_common_prefixes) {
+        // Check with Motr if there are any keys to be seen.
+        // If there are still some keys, we would set truncation flag, else no.
+        b_state_start_check_any_more_keys = true;
+        if (last_key_in_common_prefix) {
+          saved_last_key = last_common_prefix;
+        }
+        // Call get_next_objects to see remaining keys, if any, after skipping
+        // keys belonging to common prefix.
+        get_next_objects();
+        return;
+      } else {
+        object_list->set_response_is_truncated(true);
+        // Before sending response, check if the previous key was in common
+        // prefix
+        // If yes, we need to return the common prefix as next marker
+        // This is required to fix Ceph S3 test case.
+        if (last_key_in_common_prefix) {
+          last_key = last_common_prefix;
+        }
+        s3_log(S3_LOG_DEBUG, request_id, "Next marker = %s\n",
+               last_key.c_str());
+        object_list->set_next_marker_key(last_key);
       }
-      s3_log(S3_LOG_DEBUG, request_id, "Next marker = %s\n", last_key.c_str());
-      object_list->set_next_marker_key(last_key);
     }
     fetch_successful = true;
     object_list->set_key_count(key_Count);

@@ -99,6 +99,7 @@ class S3ObjectListResponse {
   void add_object(std::shared_ptr<S3ObjectMetadata> object);
   void add_part(std::shared_ptr<S3PartMetadata> part);
   void add_common_prefix(std::string);
+  bool is_prefix_in_common_prefix(std::string& check_prefix);
   unsigned int size();
   unsigned int common_prefixes_size();
 
