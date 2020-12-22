@@ -335,7 +335,9 @@ void S3CopyObjectAction::read_data_block_success() {
     bytes_in_chunk_count += motr_block_size;
   }
   if (bytes_in_chunk_count >= bytes_left_to_read) {
-    s3_log(S3_LOG_ERROR, stripped_request_id, "Too many data has been read");
+    s3_log(S3_LOG_ERROR, stripped_request_id,
+           "Too many data has been read. Data left - %zu, got - %zu",
+           bytes_left_to_read, bytes_in_chunk_count);
 
     copy_failed = true;
     set_s3_error("InternalError");
