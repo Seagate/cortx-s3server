@@ -795,6 +795,9 @@ bool S3AuthClient::setup_auth_request_body() {
                s3_request->get_operation_code() == S3OperationCode::acl) {
         add_key_val_to_body("Request-ACL", "true");
       }
+      if (set_get_method) {
+        add_key_val_to_body("Request-ACL", "false");
+      }
     }
     if (policy_str != "") {
       add_key_val_to_body("Policy", policy_str);

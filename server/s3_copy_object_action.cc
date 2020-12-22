@@ -525,6 +525,7 @@ void S3CopyObjectAction::save_metadata() {
   new_object_metadata->set_content_type(
       source_object_metadata->get_content_type());
   new_object_metadata->set_md5(motr_writer->get_content_md5());
+  new_object_metadata->setacl(auth_acl);
   // new_object_metadata->set_tags(new_object_tags_map);
 
   /*for (auto it : request->get_in_headers_copy()) {
@@ -648,6 +649,7 @@ void S3CopyObjectAction::set_authorization_meta() {
 
 void S3CopyObjectAction::set_source_bucket_authorization_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  auth_acl = request->get_default_acl();
   auth_client->set_get_method = true;
   std::string uri = "/" + source_bucket_name + "/" + source_object_name;
   auth_client->clientabsoulte_uri = uri;

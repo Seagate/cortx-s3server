@@ -45,6 +45,7 @@ const char InvalidRequestSourceAndDestinationSame[] =
 class S3CopyObjectAction : public S3PutObjectActionBase {
   std::string source_bucket_name;
   std::string source_object_name;
+  std::string auth_acl;
 
   S3BufferSequence data_blocks_read;     // Source's data has been read but not
                                          // taken for writing.
