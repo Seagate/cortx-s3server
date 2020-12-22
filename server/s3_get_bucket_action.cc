@@ -348,9 +348,26 @@ void S3GetBucketAction::get_next_objects_successful() {
           // If marker is specified, and if this key gets rolled up
           // in common prefix, we add to common prefix only if it is not the
           // same as specified marker
+          bool b_skip_remaining_common_prefixes = false;
+          // Before adding check if this is the first time we add this key
+          // to common_prefixes. If so, skip remaining keys that belong to it.
+          if (!object_list->is_prefix_in_common_prefix(common_prefix)) {
+            b_skip_remaining_common_prefixes = true;
+          }
           object_list->add_common_prefix(common_prefix);
+          s3_log(S3_LOG_DEBUG, request_id, "Adding common prefix [%s]\n",
+                 common_prefix.c_str());
           last_common_prefix = common_prefix;
           last_key_in_common_prefix = true;
+          if (b_skip_remaining_common_prefixes) {
+            // Skip remaining common prefixes
+            // For this, set last key and break
+            last_key = common_prefix + "\xff";
+            s3_log(S3_LOG_DEBUG, request_id,
+                   "Skipping further common prefixes using last_key = [%s]\n",
+                   last_key.c_str());
+            break;
+          }
         }
       }
     } else {
@@ -384,9 +401,26 @@ void S3GetBucketAction::get_next_objects_successful() {
             // If marker is specified, and if this key gets rolled up
             // in common prefix, we add to common prefix only if it is not the
             // same as specified marker
+            bool b_skip_remaining_common_prefixes = false;
+            // Before adding check if this is the first time we add this key
+            // to common_prefixes. If so, skip remaining keys that belong to it.
+            if (!object_list->is_prefix_in_common_prefix(common_prefix)) {
+              b_skip_remaining_common_prefixes = true;
+            }
             object_list->add_common_prefix(common_prefix);
+            s3_log(S3_LOG_DEBUG, request_id, "Adding common prefix [%s]\n",
+                   common_prefix.c_str());
             last_common_prefix = common_prefix;
             last_key_in_common_prefix = true;
+            if (b_skip_remaining_common_prefixes) {
+              // Skip remaining common prefixes
+              // For this, set last key and break
+              last_key = common_prefix + "\xff";
+              s3_log(S3_LOG_DEBUG, request_id,
+                     "Skipping further common prefixes using last_key = [%s]\n",
+                     last_key.c_str());
+              break;
+            }
           }
         }
       } else {
