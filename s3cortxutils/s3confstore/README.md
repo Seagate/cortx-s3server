@@ -17,4 +17,12 @@ limitations under the License.
 For any questions about this software or licensing,
 please email opensource@seagate.com or cortx-questions@seagate.com.
 
+## How to build and install s3confstore:
+Go to s3cortxutils/s3confstore
+run:
+python36 setup.py clean
+python36 setup.py build
+python36 setup.py install
+This will create a python package and binary: /usr/local/bin/s3confstore
+
 ## Content To be added

@@ -22,42 +22,71 @@ from cortx.utils.conf_store import ConfStore
 from urllib.parse import urlparse
 import os.path
 import json
-
-conf_store = ConfStore()
-
-def load_config(index, backend_url):
-  """Instantiate and Load Config into constore"""
-  conf_store.load(index, backend_url)
-  return conf_store
-
+import sys
 
 class S3CortxConfStore:
+  default_index = "default_cortx_s3_confstore_index"
 
   def __init__(self):
-    print("constructor()")
+    """Instantiate constore"""
+    self.conf_store = ConfStore()
 
-  def load(self, index, path):
-    print("in subroutine load()")
-    result_data = load_config(index, path)
+  def load_config(self, index: str, backend_url: str):
+    """Load Config into constore"""
+    self.conf_store.load(index, backend_url)
 
-  def test_load(self, index, path):
+  def get_config(self, index: str, key: str):
+    """Get the key's config from constore"""
+    result_get = self.conf_store.get(index, key, default_val=None)
+    return result_get
+
+  def get_data_config(self, index: str):
+    """Obtains entire config for the given index from constore"""
+    result_get_data = self.conf_store.get_data(index)
+    return result_get_data
+
+  def uttest(self, index: str):
     """This will be removed to ut directory later"""
-    print("in subroutine test_load()")
-    with open(urlparse(path).path) as f:
-      jdata = json.load(f)
-    load_config(index, path)
-    result_data = conf_store.get(index, next(iter(jdata)), default_val=None)
-    if result_data != None:
-      print("test_load passed!")
-    else:
-      print("test_load failed!")
+    test_config = {
+      'cluster': {
+        "cluster_id": 'abcd-efgh-ijkl-mnop',
+        "cluster_hosts": 'myhost-1,myhost2,myhost-3',
+      }
+    }
+    with open(r'/tmp/cortx_s3_confstoreuttest.json', 'w+') as file:
+      json.dump(test_config, file, indent=2)
+    self.load_config(index, 'json:///tmp/cortx_s3_confstoreuttest.json')
+
+    result_data = self.get_config(index, 'cluster')
+    if 'cluster_id' not in result_data:
+      print("get_config() failed!")
+      os.remove("/tmp/cortx_s3_confstoreuttest.json")
+      exit(-1)
+
+    result_data = self.get_data_config(index)
+    if 'cluster' not in result_data:
+      print("get_data_config() failed!")
+      os.remove("/tmp/cortx_s3_confstoreuttest.json")
+      exit(-1)
+
+    os.remove("/tmp/cortx_s3_confstoreuttest.json")
+    print("cortx_s3_confstore unit test passed!")
 
   def run(self):
     parser = argparse.ArgumentParser(description='Cortx-Utils ConfStore')
-    parser.add_argument("--load", help='load the backing storage in an index')
-    parser.add_argument("--test_load", help='test load the backing storage in an index')
+    parser.add_argument("--load", help='Load the backing storage in this index')
+    parser.add_argument("--get", help='Obtain config for this given index using a key, pass --key')
+    parser.add_argument("--get_data", help='Obtains entire config for this given index')
+    parser.add_argument("--key", help='Provide a key to be used in --get')
+    parser.add_argument("--getkey", help='Fetch value of the given key from default index, pass --path to config')
     parser.add_argument("--path", help='example: JSON:///etc/cortx/myconf.json')
+    parser.add_argument("--uttest", help='An unit test for the load, get and get_data APIs')
+
     args = parser.parse_args()
+
+    if len(sys.argv) < 2:
+      print("Incorrect args, use -h to review usage")
+      exit(-1)
 
     if args.path:
       if os.path.isfile(urlparse(args.path).path) != True:
@@ -71,15 +100,35 @@ class S3CortxConfStore:
           print("config file: {} must use valid JSON format: {}".format(urlparse(args.path).path, e))
           exit(-1)
 
-    if args.load or args.test_load:
-      path = args.path
+    if args.get:
+      if args.key == None:
+        print("Please provide the key to be get from confstore using --key")
+        exit(-1)
+      result_get = self.get_config(args.get, args.key)
+      if result_get:
+        print("{}".format(result_get))
+
+    if args.get_data:
+      result_get_data = self.get_data_config(args.get_data)
+      if result_get_data:
+        print("{}".format(result_get_data))
+
+    if args.load or args.getkey:
+      if args.path == None:
+        print("Please provide the path to be load into confstore")
+        exit(-1)
+      urlpath = args.path
       if args.load:
-        index = args.load
-        self.load(index, path)
-        print("load conf: {} into index: {}".format(path, index))
-      else:
-        index = args.test_load
-        self.test_load(index, path)
-        print("test load conf: {} into index: {}".format(path, index))
-    else: 
-      pass
+        self.load_config(args.load, urlpath)
+        print("load conf: {} into index: {}".format(urlpath, args.load))
+      elif args.getkey:
+        self.load_config(self.default_index, urlpath)
+        result_get = self.get_config(self.default_index, args.getkey)
+        if result_get:
+          print("{}".format(result_get))
+        else:
+          exit(-2)
+    elif args.uttest:
+      self.uttest(args.uttest)
+    pass
+
