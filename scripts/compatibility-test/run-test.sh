@@ -126,7 +126,7 @@ if [ "${S3_TEST_VERSION}" = "all" -o "${S3_TEST_VERSION}" = "v4" ]; then
       
       echo "[ ${S3_INTEGRATION_TYPE} ] : 2. Running V4 tests"
       
-      # Running test with aws v2signature
+      # Running test with aws v4signature
       export S3_USE_SIGV4=1
 
       _execute_compatability_tets "${S3_TEST_DATA_V4}"
@@ -138,3 +138,4 @@ fi
 deactivate
 
 echo "[ ${S3_INTEGRATION_TYPE} ] : compatibility test completed!!!"
+

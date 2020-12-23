@@ -11,7 +11,7 @@ Steps:
       cd cortx-s3server/scripts/compatibility-test
    ```
 
-2. create s3test.conf for the corresponding integration. Refer sample template for ceph and plunk integrations in the respective folders. Two s3 account credentials need to be updated in the configurations
+2. create s3test.conf for the corresponding integration. Refer sample template for ceph and splunk integrations in the respective folders. Two s3 account credentials need to be updated in the configurations
 
 
 3. Execute run-test.sh with arguments 
@@ -28,7 +28,7 @@ Steps:
       
       - Run V2 or V4 test only 
       ```
-         sh run-test.sh -c conf_location -i integration type (splunk | ceph) -t v4 
+         sh run-test.sh -c conf_location -i integration_type (i.e splunk | ceph) -t v4
          sh run-test.sh -c ceph/ceph.conf -i ceph -t v4
       ```
 
