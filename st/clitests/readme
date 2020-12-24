@@ -135,3 +135,13 @@ set
     $ ./runallsystest.sh
  - To run auth_spec.py over HTTP connection only, pass --no_https param to script
     $ ./runallsystest.sh  --no_https
+
+Valgrind:
+ - Ensure system tests are run without errors
+ - Choose path where to store valgrind log
+ - Run jenkins_build with the folowing params
+       `jenkins_build.sh --skip_build --valgrind_memcheck /pass/to/valgrind/log/file`
+ - Some tests will fail due to different timeouts in s3server, e.g. jcloud tests.
+   In this case failed tests should be commented from the `runallsystest.sh` file.
+ - After tests passed it is better to correctly stop all the services. It could be
+   done with the following command `jenkins_build.sh --cleanup_only`
