@@ -20,7 +20,7 @@
 
 
 ##################################
-# Install and configure OpenLDAP #
+# configure OpenLDAP #
 ##################################
 
 USAGE="USAGE: bash $(basename "$0") [--defaultpasswd] [--skipssl]
@@ -28,7 +28,7 @@ USAGE="USAGE: bash $(basename "$0") [--defaultpasswd] [--skipssl]
 Install and configure OpenLDAP.
 
 where:
---defaultpasswd     use default password i.e. 'seagate' for LDAP
+--defaultpasswd     set default password using cortx-utils
 --skipssl           skips all ssl configuration for LDAP
 --forceclean        Clean old openldap setup (** careful: deletes data **)
 --help              display this help and exit"
@@ -79,9 +79,10 @@ then
   rm -f /etc/sysconfig/slapd* || /bin/true
   rm -f /etc/openldap/slapd* || /bin/true
   rm -rf /etc/openldap/slapd.d/*
+
+  yum install -y openldap-servers openldap-clients
 fi
 
-yum install -y openldap-servers openldap-clients
 cp -f $INSTALLDIR/olcDatabase\=\{2\}mdb.ldif /etc/openldap/slapd.d/cn\=config/
 
 chgrp ldap /etc/openldap/certs/password # onlyif: grep -q ldap /etc/group && test -f /etc/openldap/certs/password
@@ -96,18 +97,6 @@ else # Fetch Root DN & IAM admin passwords from User
 
     echo -en "\nEnter Password for LDAP IAM admin: "
     read -s LDAPADMINPASS && [[ -z $LDAPADMINPASS ]] && echo 'Password can not be null.' && exit 1
-fi
-
-if [[ -z "$LDAPADMINPASS" ]]
-then
-    echo "\n IAM Admin password not set. Setting default password"
-    LDAPADMINPASS=ldapadmin
-fi
-
-if [[ -z "$ROOTDNPASSWORD" ]]
-then
-    echo "\n Root DN password not set. Setting default password"
-    ROOTDNPASSWORD=seagate
 fi
 
 # generate encrypted password for rootDN
@@ -129,7 +118,7 @@ sed -i "$EXPR" $ADMIN_USERS_FILE
 
 chkconfig slapd on
 
-# restart slapd
+# start slapd
 systemctl enable slapd
 systemctl start slapd
 echo "started slapd"
@@ -139,7 +128,7 @@ ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $CFG_FILE
 rm -f $CFG_FILE
 
 # restart slapd
-systemctl start slapd
+systemctl restart slapd
 
 # delete the schema from LDAP.
 rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
