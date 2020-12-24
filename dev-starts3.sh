@@ -21,8 +21,7 @@
 # Script to start S3 server in dev environment.
 #   Usage: sudo ./dev-starts3.sh [<Number of S3 sever instances>]
 #                                [--fake_obj] [--fake_kvs | --redis_kvs]
-#                                [--callgraph /path/to/graph]
-#                                [--valgrind_memcheck [/path/to/memcheck/log]]
+#                                [--callgraph /path/to/graph | --valgrind_memcheck [/path/to/memcheck/log]]
 #               Optional argument is:
 #                   Number of S3 server instances to start.
 #                   Max number of instances allowed = 20
@@ -108,6 +107,11 @@ done
 
 if [ $fake_kvs == 1 ] && [ $redis_kvs == 1 ]; then
     echo "Only fake kvs or redis kvs can be specified";
+    exit 1;
+fi
+
+if [ $callgraph_mode == 1 ] && [ $valgrind_memcheck == 1 ]; then
+    echo "Only callgraph or valgrind can be specified";
     exit 1;
 fi
 
@@ -206,7 +210,7 @@ then
 fi
 if [ $valgrind_memcheck -eq 1 ]
 then
-    valgrind_cmd+="valgrind -q --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --verbose --read-var-info=yes --read-inline-info=yes --log-file=$valgrind_memcheck_out --error-limit=no"
+    valgrind_cmd="valgrind -q --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --verbose --read-var-info=yes --read-inline-info=yes --log-file=$valgrind_memcheck_out --error-limit=no"
 fi
 
 while [[ $counter -lt $num_instances ]]

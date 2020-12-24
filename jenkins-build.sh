@@ -24,8 +24,7 @@ USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ]
                                     [--cleanup_only]
                                     [--fake_obj] [--fake_kvs | --redis_kvs] [--basic_test_only]
                                     [--local_redis_restart]
-                                    [--callgraph /path/to/output/file]
-                                    [--valgrind_memcheck [/path/to/output/file]]
+                                    [--callgraph /path/to/output/file | --valgrind_memcheck [/path/to/output/file]]
                                     [--ldap_admin_pwd]
                                     [--generate_support_bundle]
                                     [--job_id]
@@ -246,6 +245,12 @@ if [[ $ansible -eq 1 ]]; then
 fi
 
 source /root/.s3_ldap_cred_cache.conf
+
+if [ "$callgraph_cmd" != "" ] && [ "$valgrind_memcheck_cmd" != "" ]
+then
+    echo "Only callgraph or valgrind can be specified";
+    exit 1;
+fi
 
 if [ "$callgraph_cmd" != "" ] || [ "$valgrind_memcheck_cmd" != "" ]
 then
