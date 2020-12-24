@@ -28,6 +28,7 @@
 
 #include <gtest/gtest_prod.h>
 
+#include "s3_buffer_sequence.h"
 #include "s3_put_object_action_base.h"
 #include "s3_object_metadata.h"
 
@@ -46,6 +47,11 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   std::string source_object_name;
   std::string auth_acl;
 
+  S3BufferSequence data_blocks_read;     // Source's data has been read but not
+                                         // taken for writing.
+  S3BufferSequence data_blocks_writing;  // Source's data currently beeing
+                                         // written
+
   std::shared_ptr<S3MotrReader> motr_reader;
 
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
@@ -56,6 +62,7 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   bool copy_failed = false;
   bool read_in_progress = false;
 
+  void cleanup_blocks_written();
   void get_source_bucket_and_object();
   void fetch_source_bucket_info();
   void fetch_source_bucket_info_success();
@@ -80,6 +87,8 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
       std::shared_ptr<S3MotrWriterFactory> motrwriter_s3_factory = nullptr,
       std::shared_ptr<S3MotrReaderFactory> motrreader_s3_factory = nullptr,
       std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr);
+
+  ~S3CopyObjectAction();
 
  private:
   void setup_steps();
@@ -143,11 +152,12 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockSuccessCopyFailed);
   FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockSuccessShouldStartWrite);
   FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockFailed);
+  FRIEND_TEST(S3CopyObjectActionTest, WriteObjectStarted);
   FRIEND_TEST(S3CopyObjectActionTest, WriteObjectFailedShouldUndoMarkProgress);
   FRIEND_TEST(S3CopyObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure);
   FRIEND_TEST(S3CopyObjectActionTest, WriteObjectSuccessfulWhileShuttingDown);
   FRIEND_TEST(S3CopyObjectActionTest,
-              WriteObjectSuccessfulShouldRestartReadingData);
+              WriteObjectSuccessfulShouldRestartWritingData);
   FRIEND_TEST(S3CopyObjectActionTest,
               WriteObjectSuccessfulDoNextStepWhenAllIsWritten);
   FRIEND_TEST(S3CopyObjectActionTest, SaveMetadata);

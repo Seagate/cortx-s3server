@@ -671,6 +671,14 @@ TEST_F(S3CopyObjectActionTest, ReadDataBlockSuccessShouldStartWrite) {
   action_under_test->motr_writer =
       ptr_mock_motr_writer_factory->mock_motr_writer;
 
+  S3BufferSequence data_blocks_read;
+  data_blocks_read.emplace_back(nullptr, 0);
+
+  EXPECT_CALL(*ptr_mock_motr_reader_factory->mock_motr_reader,
+              extract_blocks_read())
+      .Times(1)
+      .WillOnce(Return(data_blocks_read));
+
   EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
               write_content(_, _, _, _)).Times(1);
   EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer, get_state())
@@ -704,6 +712,30 @@ TEST_F(S3CopyObjectActionTest, ReadDataBlockFailed) {
   EXPECT_EQ(action_under_test->s3_put_action_state,
             S3PutObjectActionState::writeFailed);
   EXPECT_FALSE(action_under_test->get_s3_error_code().empty());
+}
+
+TEST_F(S3CopyObjectActionTest, WriteObjectStarted) {
+  action_under_test->motr_writer =
+      ptr_mock_motr_writer_factory->mock_motr_writer;
+  action_under_test->motr_reader =
+      ptr_mock_motr_reader_factory->mock_motr_reader;
+
+  action_under_test->_set_layout_id(1);
+  action_under_test->total_data_to_stream = 5120;
+  action_under_test->bytes_left_to_read = 1024;
+  action_under_test->data_blocks_read.emplace_back(nullptr, 0);
+
+  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
+              write_content(_, _, _, _)).Times(1);
+  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer, get_state())
+      .Times(1)
+      .WillOnce(Return(S3MotrWiterOpState::start));
+
+  action_under_test->write_data_block();
+
+  EXPECT_TRUE(action_under_test->write_in_progress);
+  EXPECT_TRUE(action_under_test->data_blocks_read.empty());
+  EXPECT_FALSE(action_under_test->data_blocks_writing.empty());
 }
 
 TEST_F(S3CopyObjectActionTest, WriteObjectFailedShouldUndoMarkProgress) {
@@ -782,7 +814,7 @@ TEST_F(S3CopyObjectActionTest, WriteObjectSuccessfulWhileShuttingDown) {
   EXPECT_FALSE(action_under_test->write_in_progress);
 }
 
-TEST_F(S3CopyObjectActionTest, WriteObjectSuccessfulShouldRestartReadingData) {
+TEST_F(S3CopyObjectActionTest, WriteObjectSuccessfulShouldRestartWritingData) {
   action_under_test->motr_writer =
       ptr_mock_motr_writer_factory->mock_motr_writer;
   action_under_test->motr_reader =
@@ -792,15 +824,17 @@ TEST_F(S3CopyObjectActionTest, WriteObjectSuccessfulShouldRestartReadingData) {
   action_under_test->total_data_to_stream = 5120;
   action_under_test->bytes_left_to_read = 1024;
   action_under_test->write_in_progress = true;
+  action_under_test->data_blocks_read.emplace_back(nullptr, 0);
 
-  EXPECT_CALL(*ptr_mock_motr_reader_factory->mock_motr_reader,
-              read_object_data(_, _, _))
+  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
+              write_content(_, _, _, _)).Times(1);
+  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer, get_state())
       .Times(1)
-      .WillOnce(Return(true));
+      .WillOnce(Return(S3MotrWiterOpState::start));
 
   action_under_test->write_data_block_success();
 
-  EXPECT_TRUE(action_under_test->read_in_progress);
+  EXPECT_TRUE(action_under_test->write_in_progress);
 }
 
 TEST_F(S3CopyObjectActionTest,
