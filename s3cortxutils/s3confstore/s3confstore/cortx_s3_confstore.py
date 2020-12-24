@@ -17,7 +17,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 import argparse
-# from cortx.utils.conf_store import Conf
 from cortx.utils.conf_store import ConfStore
 from urllib.parse import urlparse
 import os.path
@@ -42,7 +41,7 @@ class S3CortxConfStore:
     result_get = self.conf_store.get(index, key, default_val=None)
     return result_get
 
-  def set_config(self, index: str, key: str, setval: str, save: bool):
+  def set_config(self, index: str, key: str, setval: str, save: bool = False):
     """Set the key's value in constore"""
     self.conf_store.set(index, key, setval)
     if save == True:
@@ -110,7 +109,7 @@ class S3CortxConfStore:
 
     if args.path:
       if args.load == None and args.getkey == None and args.setkey == None:
-        print("--path is needed by only --load, --getkey and --setkey")
+        print("--path option is required only for --load, --getkey and --setkey options")
         exit(-1)
       if os.path.isfile(urlparse(args.path).path) != True:
         print("config file: {} does not exist".format(args.path))
