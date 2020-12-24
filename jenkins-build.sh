@@ -20,7 +20,7 @@
 
 
 USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ]
-                                    [--use_ipv6] [--skip_build] [--skip_tests]
+                                    [--use_ipv6] [--skip_build] [--skip_ut_build] [--skip_tests]
                                     [--cleanup_only]
                                     [--fake_obj] [--fake_kvs | --redis_kvs] [--basic_test_only]
                                     [--local_redis_restart]
@@ -39,6 +39,8 @@ where:
 --use_ipv6               Use ipv6 for ST's
 
 --skip_build             Do not run build step
+
+--skip_ut_build          Do not run build step for UTs
 
 --skip_tests             Do not run tests, exit before test run
 
@@ -96,6 +98,7 @@ s3server_enable_ssl=0
 use_ipv6=0
 restart_haproxy=0
 skip_build=0
+skip_ut_build=0
 cleanup_only=0
 skip_tests=0
 fake_obj=0
@@ -145,6 +148,9 @@ else
           ;;
       --skip_build ) skip_build=1;
           echo "Skip build step";
+          ;;
+      --skip_ut_build ) skip_ut_build=1;
+          echo "Skip UTs build step";
           ;;
       --skip_tests ) skip_tests=1;
           echo "Skip test step";
@@ -309,7 +315,12 @@ fi
 
 if [ $skip_build -eq 0 ]
 then
-    ./rebuildall.sh --no-motr-rpm --use-build-cache $valgrind_flag
+    extra_opts=""
+    if [ $skip_ut_build -ne 0 ]
+    then
+        extra_opts="--no-s3ut-build --no-s3mempoolut-build --no-s3mempoolmgrut-build"
+    fi
+    ./rebuildall.sh --no-motr-rpm --use-build-cache $valgrind_flag $extra_opts
 fi
 
 # Stop any old running S3 instances
