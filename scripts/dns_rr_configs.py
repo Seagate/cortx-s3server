@@ -206,7 +206,7 @@ dns1            IN      A       127.0.0.1
 
 ;
 ; A Records:
-; Configuring IP addresses should added here
+; Configuring IP addresses should be added here
 '''
     a_rec_tmpl = "{srv}             IN      A       {ip}\n"
 
