@@ -23,11 +23,11 @@
 
 SRC_ROOT="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ) " )"
 CWD=$(pwd)
-USAGE="USAGE: bash $(basename "$0") [clean|package] [--help | -h]
+USAGE="USAGE: bash $(basename "$0") [clean|package [--skip-tets]] [--help | -h]
 
 where:
 clean              clean previous build
-package            build and package
+package            build and package. --skip-tests will disable test run.
 --help             display this help and exit"
 
 if [ $# -ne 1 ]
@@ -46,10 +46,14 @@ case "$1" in
        cd $CWD
         ;;
     package )
+       opts=""
+       if [ "$2" = "--skip-tests" ]; then
+         opts+=" -Dmaven.test.skip=true"
+       fi
        cd $SRC_ROOT/auth-utils/jclient
-       mvn package
+       mvn package $opts
        cd $SRC_ROOT/auth-utils/jcloudclient
-       mvn package
+       mvn package $opts
        cd $CWD
         ;;
     --help | -h )

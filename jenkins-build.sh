@@ -20,16 +20,17 @@
 
 
 USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ]
-                                    [--use_ipv6] [--skip_build] [--skip_ut_build] [--skip_tests]
-                                    [--cleanup_only]
-                                    [--fake_obj] [--fake_kvs | --redis_kvs] [--basic_test_only]
-                                    [--local_redis_restart]
-                                    [--callgraph /path/to/output/file | --valgrind_memcheck [/path/to/output/file]]
-                                    [--ldap_admin_pwd]
-                                    [--generate_support_bundle]
-                                    [--job_id]
-                                    [--gid]
-                                    [--help | -h]
+                        [--use_ipv6] [--skip_build] [--skip_ut_build] [--skip_tests]
+                        [--cleanup_only]
+                        [--fake_obj] [--fake_kvs | --redis_kvs] [--basic_test_only]
+                        [--local_redis_restart]
+                        [--callgraph /path/to/output/file | --valgrind_memcheck [/path/to/output/file]]
+                        [--num_instances N]
+                        [--ldap_admin_pwd]
+                        [--generate_support_bundle]
+                        [--job_id]
+                        [--gid]
+                        [--help | -h]
 
 where:
 --use_http_client        Use HTTP client for ST's. Default is use HTTPS client.
@@ -68,6 +69,10 @@ where:
 --valgrind_memcheck      Generate valgrind memcheck log
 
                          Value: /path/to/output/file
+
+--num_instances N        Number of s3server instances to launch.
+
+                         Value: Int
 
 --ldap_admin_pwd         LDAP admin password. If not specified, script will use password set in
                          file '/root/.s3_ldap_cred_cache.conf'
@@ -108,6 +113,7 @@ basic_test_only=0
 callgraph_cmd=""
 valgrind_memcheck_cmd=""
 local_redis_restart=0
+num_instances=
 ldap_admin_pwd=
 generate_support_bundle=
 job_id=0
@@ -197,6 +203,16 @@ else
                     fi
                     echo "Generate valgrind memcheck log with params $valgrind_memcheck_cmd";
                     ;;
+       --num_instances ) shift;
+           if [ ! -z "$1" ]; then
+               num_instances="$1"
+               if ! [[ $num_instances =~ ^[0-9]+$ ]]; then
+                   echo "--num_instances must be an integer"
+                   echo "$USAGE"
+                   exit 1
+               fi
+           fi
+           ;;
        --ldap_admin_pwd ) shift;
                           if [ ! -z "$1" ]; then
                               ldap_admin_pwd=$1;
@@ -318,7 +334,11 @@ then
     extra_opts=""
     if [ $skip_ut_build -ne 0 ]
     then
-        extra_opts="--no-s3ut-build --no-s3mempoolut-build --no-s3mempoolmgrut-build"
+        extra_opts+=" --no-s3ut-build --no-s3mempoolut-build --no-s3mempoolmgrut-build"
+    fi
+    if [ $skip_tests -ne 0 ]
+    then
+        extra_opts+=" --no-java-tests"
     fi
     ./rebuildall.sh --no-motr-rpm --use-build-cache $valgrind_flag $extra_opts
 fi
@@ -437,7 +457,7 @@ fi
 while [[ $retry -le $max_retries ]]
 do
   statuss3=0
-  $USE_SUDO ./dev-starts3.sh $fake_params $callgraph_cmd $valgrind_memcheck_cmd
+  $USE_SUDO ./dev-starts3.sh $num_instances $fake_params $callgraph_cmd $valgrind_memcheck_cmd
 
   # Wait s3server to start
   timeout 2m bash -c "while ! ./iss3up.sh; do sleep 1; done"
@@ -449,7 +469,7 @@ do
   else
     # Sometimes if motr is not ready, S3 may fail to connect
     # cleanup and restart
-    $USE_SUDO ./dev-stops3.sh
+    $USE_SUDO ./dev-stops3.sh $num_instances
     sleep 1
   fi
   retry=$((retry+1))
