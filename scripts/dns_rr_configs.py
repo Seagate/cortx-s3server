@@ -19,9 +19,9 @@
 #
 
 
-#################################################
-# Script to generate dns round robin config files
-#################################################
+#####################################
+# Script to configure dns round robin
+#####################################
 
 import argparse
 import sys
@@ -49,18 +49,12 @@ def parse_args():
     parser = argparse.ArgumentParser(
         prog=sys.argv[0],
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="""Creates configuration files for BIND to round robin IPs.""",
-        epilog=f"""Generated configs should be copied to
-name.conf -> /etc/
-forward.<zone> -> /var/named/
-reverse.<zone> -> /var/named/
-
-
-Examples
-To generate configs with default params: zone seagate.com and services s3, iam
+        description="""Configure BIND dns server to round robin IPs.""",
+        epilog=f"""Examples:
+To configure with default params: zone seagate.com and services s3, iam
         #> {sys.argv[0]} --ip 192.168.1.0 192.168.1.1
 
-To generate configs for different zones and services
+To configure for different zones and services
         #> {sys.argv[0]} --ip 192.168.1.0 192.168.1.1 --zone test.zone --services srv1 srv2
         """)
 
@@ -71,9 +65,6 @@ To generate configs for different zones and services
                                   help="Services that should be created inside zone and mapped to IPs")
     argip = parser.add_argument("-i", "--ip", nargs="+", type=str, default=[],
                                 help="IP addresses")
-    argout = parser.add_argument("-o", "--outdir", type=str, required=False, default=".",
-                                 help="Directory to store config files")
-
     args = parser.parse_args()
 
     if not args.ip:
@@ -82,9 +73,6 @@ To generate configs for different zones and services
     for ip in args.ip:
         if not chk_ip(ip):
             raise argparse.ArgumentError(argip, "Invalid IP adress format")
-
-    if not chk_dir(args.outdir):
-        raise argparse.ArgumentError(argout, "outdir is not a directory with write access")
 
     if not args.services:
         raise argparse.ArgumentError(argsrvs, "At least one services should be provided")
@@ -239,9 +227,46 @@ dns1            IN      A       127.0.0.1
             revip = reverse_ip(ip)
             rvs.write(ptr_rec_tmpl.format(revip=revip, srv=srvs[0], zone=zone))
 
+def upd_resolv_conf():
+    cont = []
+    with open("/etc/resolv.conf", "r") as rc:
+        cont = rc.readlines()
+
+    with open("/etc/resolv.conf", "w") as rc:
+        i = 0
+        while i < len(cont):
+            if cont[i].startswith("nameserver"):
+                break
+            rc.write(cont[i])
+            i += 1
+        rc.write("nameserver 127.0.0.1\n")
+        rc.writelines(cont[i:])
+
 if __name__ == "__main__":
     args=parse_args()
 
-    gen_named_conf(args.zone, args.ip, args.outdir)
-    gen_forward_conf(args.zone, args.ip, args.services, args.outdir)
-    gen_reverse_conf(args.zone, args.ip, args.services, args.outdir)
+    print("Install BIND...\n")
+    ret = os.system("yum install -y bind bind-utils")
+    print(f"Done with ret code {ret}\n")
+    if ret != 0:
+        exit(ret)
+
+    print("Generate configs...\n")
+    gen_named_conf(args.zone, args.ip, "/etc")
+    gen_forward_conf(args.zone, args.ip, args.services, "/var/named")
+    gen_reverse_conf(args.zone, args.ip, args.services, "/var/named")
+    print(f"Created\n/etc/named.conf\n/var/named/forward.{args.zone}\n/var/named/reverse.{args.zone}\n")
+
+    print("Restart BIND...\n")
+    os.system("systemctl enable named.service")
+    os.system("systemctl restart named.service")
+    ret = os.system("systemctl status named.service")
+    print(f"Done with ret code {ret}\n")
+    if ret != 0:
+        exit(ret)
+
+    print("Update resolve.conf...\n")
+    upd_resolv_conf()
+    print(f"Done\n")
+
+    print("DNS Round Robin configuraion finished\n")
