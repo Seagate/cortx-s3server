@@ -20,6 +20,7 @@
 
 #include "s3_factory.h"
 #include "s3_log.h"
+#include "s3_m0_uint128_helper.h"
 #include "s3_mem_pool_manager.h"
 #include "s3_motr_layout.h"
 #include "s3_motr_reader.h"
@@ -310,7 +311,7 @@ void S3ObjectDataCopier::copy(
     std::function<void(void)> on_failure) {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
 
-  assert((src_obj_id.u_lo | src_obj_id.u_hi) != 0);
+  assert(non_zero(src_obj_id));
   assert(object_size > 0);
   assert(layout_id > 0);
   assert(check_shutdown_and_rollback);

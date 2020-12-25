@@ -24,8 +24,9 @@
 #include <memory>
 #include <string>
 
-#include "lib/types.h"  // struct m0_uint128
+#include <gtest/gtest_prod.h>
 
+#include "lib/types.h"  // struct m0_uint128
 #include "s3_buffer_sequence.h"
 
 class RequestObject;
@@ -83,4 +84,21 @@ class S3ObjectDataCopier {
             std::function<void(void)> on_failure);
 
   const std::string& get_s3_error() { return s3_error; }
+
+  friend class S3ObjectDataCopierTest;
+
+  FRIEND_TEST(S3ObjectDataCopierTest, ReadDataBlockStarted);
+  FRIEND_TEST(S3ObjectDataCopierTest, ReadDataBlockFailedToStart);
+  FRIEND_TEST(S3ObjectDataCopierTest, ReadDataBlockSuccessWhileShuttingDown);
+  FRIEND_TEST(S3ObjectDataCopierTest, ReadDataBlockSuccessCopyFailed);
+  FRIEND_TEST(S3ObjectDataCopierTest, ReadDataBlockSuccessShouldStartWrite);
+  FRIEND_TEST(S3ObjectDataCopierTest, ReadDataBlockFailed);
+  FRIEND_TEST(S3ObjectDataCopierTest, WriteObjectStarted);
+  FRIEND_TEST(S3ObjectDataCopierTest, WriteObjectFailedShouldUndoMarkProgress);
+  FRIEND_TEST(S3ObjectDataCopierTest, WriteObjectFailedDuetoEntityOpenFailure);
+  FRIEND_TEST(S3ObjectDataCopierTest, WriteObjectSuccessfulWhileShuttingDown);
+  FRIEND_TEST(S3ObjectDataCopierTest,
+              WriteObjectSuccessfulShouldRestartWritingData);
+  FRIEND_TEST(S3ObjectDataCopierTest,
+              WriteObjectSuccessfulDoNextStepWhenAllIsWritten);
 };
