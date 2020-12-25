@@ -62,16 +62,6 @@ To generate configs with default params: zone seagate.com and services s3, iam
 
 To generate configs for different zones and services
         #> {sys.argv[0]} --ip 192.168.1.0 192.168.1.1 --zone test.zone --services srv1 srv2
-
-To install BIND use following command
-        #> yum install bind bind-utils
-
-To run BIND use following commands
-        #> systemctl enable named.service
-        #> systemctl start named.service
-
-To restart BIND after config update use following command
-        #> systemctl restart named.service
         """)
 
     argz = parser.add_argument("-z", "--zone", type=str, required=False, default="seagate.com",
