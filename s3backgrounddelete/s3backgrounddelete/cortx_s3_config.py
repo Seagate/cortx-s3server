@@ -451,3 +451,49 @@ class CORTXS3Config(object):
         except KeyError:
             # Default value used for S/W update
             return False
+
+    def get_messaging_platform(self):
+        """Return use_msgbus from config file or False"""
+        if 'cortx_s3' in self._config and 'messaging_platform' in self._config['cortx_s3']:
+            return self._config['cortx_s3']['messaging_platform']
+        else:
+            raise KeyError(
+                "Could not parse messaging_platform from config file " +
+                self._conf_file)
+
+    def get_msgbus_topic(self):
+        """Return topic of msgbus from config file or KeyError."""
+        if 'message_bus' in self._config and 'topic' in self._config['message_bus']:
+            return self._config['message_bus']['topic']
+        else:
+            raise KeyError(
+                "Could not parse topic from config file " +
+                self._conf_file)
+
+    def get_msgbus_consumer_group(self):
+        """Return consumer group id from config file or KeyError."""
+        if 'message_bus' in self._config and 'consumer_group' in self._config['message_bus']:
+            return self._config['message_bus']['consumer_group']
+        else:
+            raise KeyError(
+                "Could not parse consumer_group from config file " +
+                self._conf_file)
+
+    def get_msgbus_consumer_id_prefix(self):
+        """Return consumer id prefix from config file or KeyError."""
+        if 'message_bus' in self._config and 'consumer_id_prefix' in self._config['message_bus']:
+            return self._config['message_bus']['consumer_id_prefix']
+        else:
+            raise KeyError(
+                "Could not parse consumer_id_prefix from config file " +
+                self._conf_file)
+
+    def get_msgbus_consumer_sleep_time(self):
+        """Return consumer sleep time from config file or KeyError."""
+        if 'message_bus' in self._config and 'consumer_sleep' in self._config['message_bus']:
+            return self._config['message_bus']['consumer_sleep']
+        else:
+            raise KeyError(
+                "Could not parse consumer_sleep from config file " +
+                self._conf_file)
+
