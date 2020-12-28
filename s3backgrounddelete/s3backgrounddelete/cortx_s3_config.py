@@ -451,3 +451,11 @@ class CORTXS3Config(object):
         except KeyError:
             # Default value used for S/W update
             return False
+
+	def get_s3_use_msgbus(self):
+        """Return use_msgbus from config file or KeyError."""
+        if 'cortx_s3' in self._config and 'use_msgbus' in self._config['cortx_s3']:
+            return self._config['cortx_s3']['use_kafka']
+        else:
+            return False
+

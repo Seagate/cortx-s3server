@@ -50,16 +50,18 @@ class ObjectRecoveryProcessor(object):
         """Consume the objects from object recovery queue."""
         self.server = None
         try:
-             self.server = ObjectRecoveryRabbitMq(
-                 self.config,
-                 self.config.get_rabbitmq_username(),
-                 self.config.get_rabbitmq_password(),
-                 self.config.get_rabbitmq_host(),
-                 self.config.get_rabbitmq_exchange(),
-                 self.config.get_rabbitmq_queue_name(),
-                 self.config.get_rabbitmq_mode(),
-                 self.config.get_rabbitmq_durable(),
-                 self.logger)
+			if self.config.get_s3_use_msgbus():
+            	self.server = ObjectRecoveryRabbitMq(
+                	self.config,
+                 	self.config.get_rabbitmq_username(),
+                	self.config.get_rabbitmq_password(),
+                	self.config.get_rabbitmq_host(),
+                	self.config.get_rabbitmq_exchange(),
+                	self.config.get_rabbitmq_queue_name(),
+                	self.config.get_rabbitmq_mode(),
+                	self.config.get_rabbitmq_durable(),
+                	self.logger)
+
              self.logger.info("Consumer started at " +
                              str(datetime.datetime.now()))
              self.server.receive_data()
