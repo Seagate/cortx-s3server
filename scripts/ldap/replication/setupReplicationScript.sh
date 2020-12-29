@@ -45,7 +45,7 @@ fi
 
 INSTALLDIR="/opt/seagate/cortx/s3/install/ldap/replication"
 
-#checkHostValidity will check if all provided hosts are valid or not
+# checkHostValidity will check if all provided hosts are valid or not
 checkHostValidity()
 {
     while read host; do
@@ -71,15 +71,6 @@ getServerIdFromHostFile()
     done <$host_list
 }
 
-# getServerIdWithSalt will get serverid from salt command
-getServerIdWithSalt()
-{
-    nodeId=$(salt-call grains.get id --output=newline_values_only)
-    IFS='-'
-    read -ra ID <<< "$nodeId"
-    id=${ID[1]}
-}
-
 # saveHostList will save host list at /opt/seagate/cortx/s3/install/ldap/replication/ for future use in reverting replication
 saveHostList()
 {
@@ -91,12 +82,8 @@ saveHostList()
 checkHostValidity
 saveHostList
 
-#update serverID
-if hash salt 2>/dev/null; then
-    getServerIdWithSalt
-else
-    getServerIdFromHostFile
-fi
+# update serverID
+getServerIdFromHostFile
 
 sed -e "s/\${serverid}/$id/" $INSTALLDIR/serverIdTemplate.ldif > scriptServerId.ldif
 ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptServerId.ldif
@@ -105,7 +92,7 @@ rm scriptServerId.ldif
 ldapadd -Y EXTERNAL -H ldapi:/// -f $INSTALLDIR/syncprov_mod.ldif
 ldapadd -Y EXTERNAL -H ldapi:/// -f $INSTALLDIR/syncprov.ldif
 
-#update replication config
+# update replication config
 echo "dn: olcDatabase={0}config,cn=config" > scriptConfig.ldif
 echo "changetype: modify" >> scriptConfig.ldif
 echo "add: olcSyncRepl" >> scriptConfig.ldif
