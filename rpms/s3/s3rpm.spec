@@ -157,13 +157,27 @@ python%{py_ver} -m compileall -b *.py
 cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3recovery/build/lib/s3recovery 
 echo "build complete"
 
+# Build the s3cortxutils/s3MsgBus wrapper python module
+mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/build/lib/s3msgbus
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/s3msgbus
+python%{py_ver} -m compileall -b *.py
+cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/build/lib/s3msgbus 
+echo "build complete"
+
+
 %install
 rm -rf %{buildroot}
 ./installhelper.sh %{buildroot} --release
 # Install the background delete python module.
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3backgrounddelete
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT
+
+# Install the s3recovery python module
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3recovery
+python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT
+
+# Install the s3msg bus wrapper module
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3msgbus
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT
 
 %clean
@@ -340,12 +354,16 @@ rm -rf %{buildroot}
 %{_bindir}/s3backgroundproducer
 %{_bindir}/s3recovery
 %{_bindir}/s3cipher
+%{_bindir}/s3msgbus
+
 %{py36_sitelib}/s3backgrounddelete/config/*.yaml
 %{py36_sitelib}/s3backgrounddelete/config/s3_background_delete_config.yaml.sample
 %{py36_sitelib}/s3backgrounddelete/*.pyc
 %{py36_sitelib}/s3backgrounddelete-%{version}-py?.?.egg-info
 %{py36_sitelib}/s3recovery/*.pyc
 %{py36_sitelib}/s3recovery-%{version}-py?.?.egg-info
+%{py36_sitelib}/s3msgbus/*.pyc
+%{py36_sitelib}/s3msgbus-%{version}-py?.?.egg-info
 %exclude %{py36_sitelib}/s3backgrounddelete/__pycache__/*
 %exclude %{py36_sitelib}/s3recovery/__pycache__/*
 %exclude %{py36_sitelib}/s3backgrounddelete/*.py
@@ -353,6 +371,7 @@ rm -rf %{buildroot}
 %exclude %{py36_sitelib}/s3backgrounddelete/s3cipher
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundconsumer
 %exclude %{py36_sitelib}/s3recovery/s3recovery
+%exclude %{py36_sitelib}/s3msgbus/s3msgbus
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundproducer
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyc
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyo
