@@ -20,7 +20,8 @@
 
 
 USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ]
-                        [--use_ipv6] [--skip_build] [--skip_ut_build] [--skip_tests]
+                        [--use_ipv6] [--skip_build] [--skip_ut_build]
+                        [--skip_tests] [--skip_ut_run] [--skip_st_run]
                         [--cleanup_only]
                         [--fake_obj] [--fake_kvs | --redis_kvs] [--basic_test_only]
                         [--local_redis_restart]
@@ -44,6 +45,10 @@ where:
 --skip_ut_build          Do not run build step for UTs
 
 --skip_tests             Do not run tests, exit before test run
+
+--skip_ut_run            Do not run UT (unit tests, ut/ folder)
+
+--skip_st_run            Do not run ST (system tests, st/ folder)
 
 --cleanup_only           Do cleanup and stop everything; don't run anything.
 
@@ -106,6 +111,8 @@ skip_build=0
 skip_ut_build=0
 cleanup_only=0
 skip_tests=0
+skip_ut_run=0
+skip_st_run=0
 fake_obj=0
 fake_kvs=0
 redis_kvs=0
@@ -160,6 +167,12 @@ else
           ;;
       --skip_tests ) skip_tests=1;
           echo "Skip test step";
+          ;;
+      --skip_ut_run ) skip_ut_run=1;
+          echo "Skip UT run step";
+          ;;
+      --skip_st_run ) skip_st_run=1;
+          echo "Skip ST run step";
           ;;
       --fake_obj ) fake_obj=1;
           echo "Stubs for motr object read/write ops";
@@ -516,12 +529,18 @@ fi
 
 # Run Unit tests and System tests
 S3_TEST_RET_CODE=0
+runalltest_options="--no-motr-rpm $use_ipv6_arg $basic_test_cmd_par"
 if [ $use_http_client -eq 1 ]
 then
-  ./runalltest.sh --no-motr-rpm --no-https $use_ipv6_arg $basic_test_cmd_par || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
-else
-  ./runalltest.sh --no-motr-rpm $use_ipv6_arg $basic_test_cmd_par || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
+  runalltest_options+=" --no-https"
 fi
+if [ $skip_ut_run -eq 1 ]; then
+  runalltest_options+=" --no-ut-run"
+fi
+if [ $skip_st_run -eq 1 ]; then
+  runalltest_options+=" --no-st-run"
+fi
+./runalltest.sh $runalltest_options || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
 
 # Disable fault injection in AuthServer
 $USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
