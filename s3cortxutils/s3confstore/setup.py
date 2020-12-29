@@ -21,7 +21,6 @@ from setuptools import setup
 files = ["VERSION"]
 
 # Load the version
-s3confstore_version = "1.0.0"
 current_script_path = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(current_script_path, 'VERSION')) as version_file:
     s3confstore_version = version_file.read().strip()
