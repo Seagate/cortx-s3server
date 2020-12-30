@@ -40,7 +40,10 @@ const char InvalidRequestSourceObjectSizeGreaterThan5GB[] =
 const char InvalidRequestSourceAndDestinationSame[] =
     "This copy request is illegal because it is trying to copy an object to "
     "itself without changing the object's metadata, storage class, website "
-    "redirect location or encryption";
+    "redirect location or encryption attributes.";
+
+const char DirectiveValueReplace[] = "REPLACE";
+const char DirectiveValueCOPY[] = "COPY";
 
 class S3ObjectDataCopier;
 
@@ -109,6 +112,14 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   FRIEND_TEST(S3CopyObjectActionTest, FetchSourceObjectInfoSuccessLessThan5GB);
   FRIEND_TEST(S3CopyObjectActionTest,
               ValidateCopyObjectRequestSourceBucketEmpty);
+  FRIEND_TEST(S3CopyObjectActionTest,
+              ValidateCopyObjectRequestMetadataDirectiveReplace);
+  FRIEND_TEST(S3CopyObjectActionTest,
+              ValidateCopyObjectRequestMetadataDirectiveInvalid);
+  FRIEND_TEST(S3CopyObjectActionTest,
+              ValidateCopyObjectRequestTaggingDirectiveReplace);
+  FRIEND_TEST(S3CopyObjectActionTest,
+              ValidateCopyObjectRequestTaggingDirectiveInvalid);
   FRIEND_TEST(S3CopyObjectActionTest,
               ValidateCopyObjectRequestSourceAndDestinationSame);
   FRIEND_TEST(S3CopyObjectActionTest, ValidateCopyObjectRequestSuccess);

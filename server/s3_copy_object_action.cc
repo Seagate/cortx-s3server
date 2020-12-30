@@ -210,6 +210,43 @@ void S3CopyObjectAction::fetch_source_object_info_failed() {
 // Validate source bucket and object
 void S3CopyObjectAction::validate_copyobject_request() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  auto meta_directive_hdr =
+      request->get_header_value("x-amz-metadata-directive");
+  auto tagging_directive_hdr =
+      request->get_header_value("x-amz-tagging-directive");
+
+  if (!meta_directive_hdr.empty()) {
+    s3_log(S3_LOG_DEBUG, stripped_request_id,
+           "Received x-amz-metadata-directive header, value: %s",
+           meta_directive_hdr.c_str());
+    if (meta_directive_hdr == DirectiveValueReplace) {
+      s3_put_action_state = S3PutObjectActionState::validationFailed;
+      set_s3_error("NotImplemented");
+      send_response_to_s3_client();
+      return;
+    } else if (meta_directive_hdr != DirectiveValueCOPY) {
+      s3_put_action_state = S3PutObjectActionState::validationFailed;
+      set_s3_error("InvalidArgument");
+      send_response_to_s3_client();
+      return;
+    }
+  }
+  if (!tagging_directive_hdr.empty()) {
+    s3_log(S3_LOG_DEBUG, stripped_request_id,
+           "Received x-amz-tagging-directive header, value: %s",
+           tagging_directive_hdr.c_str());
+    if (tagging_directive_hdr == DirectiveValueReplace) {
+      s3_put_action_state = S3PutObjectActionState::validationFailed;
+      set_s3_error("NotImplemented");
+      send_response_to_s3_client();
+      return;
+    } else if (tagging_directive_hdr != DirectiveValueCOPY) {
+      s3_put_action_state = S3PutObjectActionState::validationFailed;
+      set_s3_error("InvalidArgument");
+      send_response_to_s3_client();
+      return;
+    }
+  }
   get_source_bucket_and_object();
 
   if (source_bucket_name.empty() || source_object_name.empty()) {
@@ -295,16 +332,18 @@ void S3CopyObjectAction::save_metadata() {
       source_object_metadata->get_content_type());
   new_object_metadata->set_md5(motr_writer->get_content_md5());
   new_object_metadata->setacl(auth_acl);
-  // new_object_metadata->set_tags(new_object_tags_map);
 
-  /*for (auto it : request->get_in_headers_copy()) {
-    if (it.first.find("x-amz-meta-") != std::string::npos) {
-      s3_log(S3_LOG_DEBUG, request_id,
-             "Writing user metadata on object: [%s] -> [%s]\n",
-             it.first.c_str(), it.second.c_str());
-      new_object_metadata->add_user_defined_attribute(it.first, it.second);
-    }
-  }*/
+  // put source object tags on new object
+  s3_log(S3_LOG_DEBUG, stripped_request_id,
+         "copying source object tags on new object..");
+  new_object_metadata->set_tags(source_object_metadata->get_tags());
+
+  // copy source object user-defined metadata, to new object
+  s3_log(S3_LOG_DEBUG, stripped_request_id,
+         "copying source object metadata on new object..");
+  for (auto it : source_object_metadata->get_user_attributes()) {
+    new_object_metadata->add_user_defined_attribute(it.first, it.second);
+  }
 
   // bypass shutdown signal check for next task
   check_shutdown_signal_for_next_task(false);

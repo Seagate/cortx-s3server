@@ -310,6 +310,80 @@ TEST_F(S3CopyObjectActionTest, FetchSourceObjectInfoSuccessLessThan5GB) {
 TEST_F(S3CopyObjectActionTest, ValidateCopyObjectRequestSourceBucketEmpty) {
   EXPECT_CALL(*ptr_mock_request, get_headers_copysource()).Times(1).WillOnce(
       Return("sourcebucketsourceobject"));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-metadata-directive"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-tagging-directive"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(400, _)).Times(1);
+
+  action_under_test->validate_copyobject_request();
+
+  EXPECT_STREQ("InvalidArgument",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3CopyObjectActionTest,
+       ValidateCopyObjectRequestMetadataDirectiveReplace) {
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-metadata-directive"))
+      .Times(1)
+      .WillOnce(Return("REPLACE"));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-tagging-directive"))
+      .Times(1)
+      .WillOnce(Return("COPY"));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(501, _)).Times(1);
+
+  action_under_test->validate_copyobject_request();
+
+  EXPECT_STREQ("NotImplemented",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3CopyObjectActionTest,
+       ValidateCopyObjectRequestMetadataDirectiveInvalid) {
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-metadata-directive"))
+      .Times(1)
+      .WillOnce(Return("INVALID"));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-tagging-directive"))
+      .Times(1)
+      .WillOnce(Return("COPY"));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(400, _)).Times(1);
+
+  action_under_test->validate_copyobject_request();
+
+  EXPECT_STREQ("InvalidArgument",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3CopyObjectActionTest,
+       ValidateCopyObjectRequestTaggingDirectiveReplace) {
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-metadata-directive"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-tagging-directive"))
+      .Times(1)
+      .WillOnce(Return("REPLACE"));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(501, _)).Times(1);
+
+  action_under_test->validate_copyobject_request();
+
+  EXPECT_STREQ("NotImplemented",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3CopyObjectActionTest,
+       ValidateCopyObjectRequestTaggingDirectiveInvalid) {
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-metadata-directive"))
+      .Times(1)
+      .WillOnce(Return("COPY"));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-tagging-directive"))
+      .Times(1)
+      .WillOnce(Return("INVALID"));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(400, _)).Times(1);
 
@@ -324,6 +398,12 @@ TEST_F(S3CopyObjectActionTest,
   std::string destination_bucket = "my-bucket";
   std::string destination_object = "my-object";
 
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-metadata-directive"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-tagging-directive"))
+      .Times(1)
+      .WillOnce(Return(""));
   EXPECT_CALL(*ptr_mock_request, get_headers_copysource()).Times(1).WillOnce(
       Return("my-bucket/my-object"));
 
@@ -350,7 +430,12 @@ TEST_F(S3CopyObjectActionTest,
 
 TEST_F(S3CopyObjectActionTest, ValidateCopyObjectRequestSuccess) {
   std::string destination_bucket = "my-destination-bucket";
-
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-metadata-directive"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-tagging-directive"))
+      .Times(1)
+      .WillOnce(Return(""));
   EXPECT_CALL(*ptr_mock_request, get_headers_copysource()).Times(1).WillOnce(
       Return("my-source-bucket/my-source-object"));
 
@@ -598,10 +683,23 @@ TEST_F(S3CopyObjectActionTest, SaveMetadata) {
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
               set_md5(Eq("abcd1234abcd"))).Times(AtLeast(1));
 
-  /* TODO: uncomment once tags feature is implemented
+  EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata, setacl(_))
+      .Times(1);
+
+  std::map<std::string, std::string> tagsmap;
+  EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata, get_tags())
+      .Times(1)
+      .WillOnce(ReturnRef(tagsmap));
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
-              set_tags(_)).Times(AtLeast(1));
-  */
+              set_tags(tagsmap)).Times(1);
+
+  std::map<std::string, std::string> meta_map{{"key", "value"}};
+  EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
+              get_user_attributes())
+      .Times(1)
+      .WillOnce(ReturnRef(meta_map));
+  EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
+              add_user_defined_attribute("key", "value")).Times(1);
   /* TODO: uncomment once handling x-amz-metadata-directive input header feature
      is implemented
   input_headers["x-amz-meta-item-1"] = "1024";
