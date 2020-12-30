@@ -115,7 +115,7 @@ def restore_configuration():
 def perform_head_object(oid_dict):
     print("Validating non-existence of oids using HEAD object api")
     print("Probable dead list should not contain :" + str(list(oid_dict.keys())))
-    config = CORTXS3Config()
+    config = CORTXS3Config(use_cipher= False)
     for oid,layout_id in oid_dict.items():
         response = CORTXS3ObjectApi(config).head(oid, layout_id)
         assert response is not None
