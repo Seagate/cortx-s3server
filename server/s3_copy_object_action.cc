@@ -26,7 +26,6 @@
 #include "s3_copy_object_action.h"
 #include "s3_error_codes.h"
 #include "s3_log.h"
-#include "s3_mem_pool_manager.h"
 #include "s3_motr_layout.h"
 #include "s3_m0_uint128_helper.h"
 #include "s3_probable_delete_record.h"
@@ -60,16 +59,6 @@ S3CopyObjectAction::S3CopyObjectAction(
   }
   setup_steps();
 };
-
-S3CopyObjectAction::~S3CopyObjectAction() {
-  if (!data_blocks_writing.empty()) {
-    cleanup_blocks_written();
-  }
-  if (!data_blocks_read.empty()) {
-    data_blocks_writing = std::move(data_blocks_read);
-    cleanup_blocks_written();
-  }
-}
 
 void S3CopyObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
@@ -282,272 +271,52 @@ void S3CopyObjectAction::copy_object() {
     next();
     return;
   }
-  motr_reader = motr_reader_factory->create_motr_reader(
-      request, source_object_metadata->get_oid(),
-      source_object_metadata->get_layout_id());
-  motr_reader->set_last_index(0);
+  try {
+    object_data_copier.reset(new S3ObjectDataCopier(
+        request, motr_writer, motr_reader_factory, s3_motr_api));
 
-  bytes_left_to_read = total_data_to_stream;
-  read_data_block();
+    object_data_copier->copy(
+        source_object_metadata->get_oid(), total_data_to_stream,
+        source_object_metadata->get_layout_id(),
+        std::bind(&S3CopyObjectAction::check_shutdown_and_rollback, this,
+                  false),
+        std::bind(&S3CopyObjectAction::copy_object_success, this),
+        std::bind(&S3CopyObjectAction::copy_object_failed, this));
+
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+    return;
+  }
+  catch (const std::exception& ex) {
+    s3_log(S3_LOG_ERROR, stripped_request_id, "%s", ex.what());
+  }
+  catch (...) {
+    s3_log(S3_LOG_ERROR, stripped_request_id, "Non-standard C++ exception");
+  }
+  set_s3_error("InternalError");
+  send_response_to_s3_client();
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3CopyObjectAction::read_data_block() {
+void S3CopyObjectAction::copy_object_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  assert(!read_in_progress);
-  assert(data_blocks_read.empty());
-  assert(bytes_left_to_read > 0);
+  s3_put_action_state = S3PutObjectActionState::writeComplete;
+  object_data_copier.reset();
+  next();
 
-  const auto n_blocks = std::min<size_t>(
-      S3Option::get_instance()->get_motr_units_per_request(),
-      (bytes_left_to_read + motr_unit_size - 1) / motr_unit_size);
-
-  if (motr_reader->read_object_data(
-          n_blocks,
-          std::bind(&S3CopyObjectAction::read_data_block_success, this),
-          std::bind(&S3CopyObjectAction::read_data_block_failed, this))) {
-
-    s3_log(S3_LOG_DEBUG, request_id, "Read of %zu data block is started",
-           n_blocks);
-    read_in_progress = true;
-  } else {
-    copy_failed = true;
-    s3_log(S3_LOG_ERROR, request_id, "Read of %zu data block failed to start",
-           n_blocks);
-    set_s3_error(motr_reader->get_state() ==
-                         S3MotrReaderOpState::failed_to_launch
-                     ? "ServiceUnavailable"
-                     : "InternalError");
-    if (!write_in_progress) {
-      send_response_to_s3_client();
-    }
-  }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3CopyObjectAction::read_data_block_success() {
-
+void S3CopyObjectAction::copy_object_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_INFO, stripped_request_id, "Reading a part of data succeeded");
-
-  assert(read_in_progress);
-  read_in_progress = false;
-
-  if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, nullptr, "Shutdown or rollback");
-    return;
-  }
-  if (copy_failed) {
-    assert(!write_in_progress);
-
-    send_response_to_s3_client();
-    return;
-  }
-  assert(data_blocks_read.empty());
-  data_blocks_read = motr_reader->extract_blocks_read();
-
-  size_t bytes_in_chunk_count = 0;
-
-  if (data_blocks_read.empty()) {
-    s3_log(S3_LOG_ERROR, stripped_request_id, "Motr reader returned no data");
-
-    s3_put_action_state = S3PutObjectActionState::writeFailed;
-    copy_failed = true;
-    set_s3_error("InternalError");
-
-    if (!write_in_progress) {
-      send_response_to_s3_client();
-    }
-    return;
-  }
-  // Calculating actial size of data that has just been read
-
-  for (size_t i = 0, n = data_blocks_read.size() - 1; i < n; ++i) {
-    const auto motr_block_size = data_blocks_read[i].second;
-    assert(motr_block_size == motr_unit_size);
-
-    // We can use multiplication, but something may change in the future
-    bytes_in_chunk_count += motr_block_size;
-  }
-  if (bytes_in_chunk_count >= bytes_left_to_read) {
-    s3_log(S3_LOG_ERROR, stripped_request_id,
-           "Too many data has been read. Data left - %zu, got - %zu",
-           bytes_left_to_read, bytes_in_chunk_count);
-
-    copy_failed = true;
-    set_s3_error("InternalError");
-
-    if (!write_in_progress) {
-      send_response_to_s3_client();
-    }
-    return;
-  }
-  bytes_left_to_read -= bytes_in_chunk_count;
-
-  auto& r_last_block_size =
-      data_blocks_read[data_blocks_read.size() - 1].second;
-
-  if (r_last_block_size >= bytes_left_to_read) {
-    r_last_block_size = bytes_left_to_read;
-    bytes_left_to_read = 0;
-  } else {
-    bytes_left_to_read -= r_last_block_size;
-  }
-  bytes_in_chunk_count += r_last_block_size;
-
-  s3_log(S3_LOG_DEBUG, request_id, "Got %zu bytes in %zu blocks",
-         bytes_in_chunk_count, data_blocks_read.size());
-
-  if (!write_in_progress) {
-    // Anyway we have data for writing here and can kick data writing
-    write_data_block();
-
-    if (write_in_progress && bytes_left_to_read) {
-      // Writing has started successfully.
-      // So we have 'space' for reading.
-      assert(data_blocks_read.empty());
-
-      read_data_block();
-    }
-  }
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3CopyObjectAction::read_data_block_failed() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_ERROR, request_id, "Failed to read object data from motr");
-
-  assert(read_in_progress);
-  read_in_progress = false;
 
   s3_put_action_state = S3PutObjectActionState::writeFailed;
-  copy_failed = true;
+  set_s3_error(object_data_copier->get_s3_error());
 
-  set_s3_error(motr_reader->get_state() == S3MotrReaderOpState::failed_to_launch
-                   ? "ServiceUnavailable"
-                   : "InternalError");
-  if (!write_in_progress) {
-    send_response_to_s3_client();
-  }
+  object_data_copier.reset();
+  send_response_to_s3_client();
 
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3CopyObjectAction::write_data_block() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
-  assert(!write_in_progress);
-  assert(data_blocks_writing.empty());
-  assert(!data_blocks_read.empty());
-
-  data_blocks_writing = std::move(data_blocks_read);
-  // We have just separated part of data for writing and
-  // also freed a 'slot' for futher reading
-
-  motr_writer->write_content(
-      std::bind(&S3CopyObjectAction::write_data_block_success, this),
-      std::bind(&S3CopyObjectAction::write_data_block_failed, this),
-      data_blocks_writing,  // NO std::move()!
-                            // We must pass a copy of the stucture.
-                            // Data buffers will be freed just after writing.
-      motr_unit_size);
-
-  if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id, "Write of data block failed to start");
-
-    copy_failed = true;
-    set_s3_error("ServiceUnavailable");
-
-    if (!read_in_progress) {
-      send_response_to_s3_client();
-    }
-  } else {
-    write_in_progress = true;
-  }
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3CopyObjectAction::cleanup_blocks_written() {
-  auto* p_mem_pool_man = S3MempoolManager::get_instance();
-  assert(p_mem_pool_man != nullptr);
-
-  while (!data_blocks_writing.empty()) {
-    auto* p_data_block = data_blocks_writing.back().first;
-
-    if (p_data_block) {
-      p_mem_pool_man->release_buffer_for_unit_size(p_data_block,
-                                                   motr_unit_size);
-    }
-    data_blocks_writing.pop_back();
-  }
-}
-
-void S3CopyObjectAction::write_data_block_success() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
-  assert(write_in_progress);
-  write_in_progress = false;
-
-  cleanup_blocks_written();
-
-  if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, nullptr, "Shutdown or rollback");
-    return;
-  }
-  if (copy_failed) {
-    assert(!read_in_progress);
-
-    send_response_to_s3_client();
-    return;
-  }
-  if (!data_blocks_read.empty()) {
-    // We have new chunk of data for writing
-    write_data_block();
-
-    if (copy_failed) {
-      // New writing failed to start
-      return;
-    }
-  }
-  assert(!copy_failed);
-  assert(data_blocks_read.empty());
-
-  if (bytes_left_to_read) {
-
-    if (!read_in_progress) {
-      read_data_block();
-    }
-  } else if (!write_in_progress) {
-    // We have read all source's data but the call of write_data_block()
-    // did not start writing.
-    // It means that the function did not find data ready for writing.
-    // So all data has been written.
-    s3_put_action_state = S3PutObjectActionState::writeComplete;
-    next();
-  }
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3CopyObjectAction::write_data_block_failed() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_ERROR, request_id, "Failed to write object data to motr");
-
-  assert(write_in_progress);
-  write_in_progress = false;
-
-  copy_failed = true;
-  s3_put_action_state = S3PutObjectActionState::writeFailed;
-
-  cleanup_blocks_written();
-
-  set_s3_error(motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch
-                   ? "ServiceUnavailable"
-                   : "InternalError");
-  if (!read_in_progress) {
-    send_response_to_s3_client();
-  }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 

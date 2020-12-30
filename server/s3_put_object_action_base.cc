@@ -163,7 +163,6 @@ void S3PutObjectActionBase::create_object() {
   } else {
     motr_writer->set_oid(new_object_oid);
   }
-  assert(total_data_to_stream > 0);
   _set_layout_id(S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
       total_data_to_stream));
 
