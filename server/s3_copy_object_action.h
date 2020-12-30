@@ -29,6 +29,7 @@
 #include <gtest/gtest_prod.h>
 
 #include "s3_put_object_action_base.h"
+#include "s3_object_data_copier.h"
 #include "s3_object_metadata.h"
 
 const uint64_t MaxCopyObjectSourceSize = 5368709120UL;  // 5GB
@@ -39,22 +40,22 @@ const char InvalidRequestSourceObjectSizeGreaterThan5GB[] =
 const char InvalidRequestSourceAndDestinationSame[] =
     "This copy request is illegal because it is trying to copy an object to "
     "itself without changing the object's metadata, storage class, website "
-    "redirect location or encryption";
+    "redirect location or encryption attributes.";
+
+const char DirectiveValueReplace[] = "REPLACE";
+const char DirectiveValueCOPY[] = "COPY";
+
+class S3ObjectDataCopier;
 
 class S3CopyObjectAction : public S3PutObjectActionBase {
   std::string source_bucket_name;
   std::string source_object_name;
   std::string auth_acl;
 
-  std::shared_ptr<S3MotrReader> motr_reader;
-
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
   std::shared_ptr<S3ObjectMetadata> source_object_metadata;
   std::shared_ptr<S3BucketMetadata> source_bucket_metadata;
-
-  size_t bytes_left_to_read = 0;
-  bool copy_failed = false;
-  bool read_in_progress = false;
+  std::unique_ptr<S3ObjectDataCopier> object_data_copier;
 
   void get_source_bucket_and_object();
   void fetch_source_bucket_info();
@@ -88,16 +89,12 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
 
   void validate_copyobject_request();
   void copy_object();
+  void copy_object_success();
+  void copy_object_failed();
   void save_metadata();
   void save_object_metadata_success();
   void save_object_metadata_failed();
   void send_response_to_s3_client() final;
-  void read_data_block();
-  void read_data_block_success();
-  void read_data_block_failed();
-  void write_data_block();
-  void write_data_block_success();
-  void write_data_block_failed();
 
   friend class S3CopyObjectActionTest;
 
@@ -115,6 +112,14 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   FRIEND_TEST(S3CopyObjectActionTest, FetchSourceObjectInfoSuccessLessThan5GB);
   FRIEND_TEST(S3CopyObjectActionTest,
               ValidateCopyObjectRequestSourceBucketEmpty);
+  FRIEND_TEST(S3CopyObjectActionTest,
+              ValidateCopyObjectRequestMetadataDirectiveReplace);
+  FRIEND_TEST(S3CopyObjectActionTest,
+              ValidateCopyObjectRequestMetadataDirectiveInvalid);
+  FRIEND_TEST(S3CopyObjectActionTest,
+              ValidateCopyObjectRequestTaggingDirectiveReplace);
+  FRIEND_TEST(S3CopyObjectActionTest,
+              ValidateCopyObjectRequestTaggingDirectiveInvalid);
   FRIEND_TEST(S3CopyObjectActionTest,
               ValidateCopyObjectRequestSourceAndDestinationSame);
   FRIEND_TEST(S3CopyObjectActionTest, ValidateCopyObjectRequestSuccess);
@@ -136,20 +141,6 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   FRIEND_TEST(S3CopyObjectActionTest, CreateObjectFailedToLaunchTest);
   FRIEND_TEST(S3CopyObjectActionTest, CreateNewOidTest);
   FRIEND_TEST(S3CopyObjectActionTest, ZeroSizeObject);
-  FRIEND_TEST(S3CopyObjectActionTest, NonZeroSizeObject);
-  FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockStarted);
-  FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockFailedToStart);
-  FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockSuccessWhileShuttingDown);
-  FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockSuccessCopyFailed);
-  FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockSuccessShouldStartWrite);
-  FRIEND_TEST(S3CopyObjectActionTest, ReadDataBlockFailed);
-  FRIEND_TEST(S3CopyObjectActionTest, WriteObjectFailedShouldUndoMarkProgress);
-  FRIEND_TEST(S3CopyObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure);
-  FRIEND_TEST(S3CopyObjectActionTest, WriteObjectSuccessfulWhileShuttingDown);
-  FRIEND_TEST(S3CopyObjectActionTest,
-              WriteObjectSuccessfulShouldRestartReadingData);
-  FRIEND_TEST(S3CopyObjectActionTest,
-              WriteObjectSuccessfulDoNextStepWhenAllIsWritten);
   FRIEND_TEST(S3CopyObjectActionTest, SaveMetadata);
   FRIEND_TEST(S3CopyObjectActionTest, SaveObjectMetadataFailed);
   FRIEND_TEST(S3CopyObjectActionTest, SendResponseWhenShuttingDown);

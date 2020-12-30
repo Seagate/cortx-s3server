@@ -245,6 +245,12 @@ TEST_F(S3HeadObjectActionTest, SendSuccessResponse) {
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
 
+  std::map<std::string, std::string> meta_map{{"key", "value"}};
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_user_attributes())
+      .Times(1)
+      .WillOnce(ReturnRef(meta_map));
+
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _))
       .Times(AtLeast(1));
