@@ -23,7 +23,7 @@
 
 SRC_ROOT="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ) " )"
 CWD=$(pwd)
-USAGE="USAGE: bash $(basename "$0") [clean|package [--skip-tets]] [--help | -h]
+USAGE="USAGE: bash $(basename "$0") [clean|package [--skip-tests]] [--help | -h]
 
 where:
 clean              clean previous build
