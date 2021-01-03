@@ -43,10 +43,10 @@ from s3backgrounddelete.cortx_s3_signal import DynamicConfigHandler
 class ObjectRecoveryScheduler(object):
     """Scheduler which will add key value to rabbitmq message queue."""
 
-    def __init__(self):
+    def __init__(self, use_cipher=True):
         """Initialise logger and configuration."""
         self.data = None
-        self.config = CORTXS3Config()
+        self.config = CORTXS3Config(use_cipher)
         self.create_logger_directory()
         self.create_logger()
         self.signal = DynamicConfigHandler(self)
