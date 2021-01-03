@@ -25,6 +25,8 @@ from s3recovery.s3recoverydryrun import S3RecoveryDryRun
 from s3recovery.s3recovercorruption import S3RecoverCorruption
 
 class S3Recovery:
+    def __init__(self, use_cipher= True):
+        self.use_cipher = use_cipher
 
     def run(self):
         parser = argparse.ArgumentParser(description='S3-Metadata recovery tool',add_help=False)
@@ -37,7 +39,7 @@ class S3Recovery:
         args = parser.parse_args()
 
         if args.dry_run:
-            action = S3RecoveryDryRun()
+            action = S3RecoveryDryRun(self.use_cipher)
             action.start()
         else:
             pass
