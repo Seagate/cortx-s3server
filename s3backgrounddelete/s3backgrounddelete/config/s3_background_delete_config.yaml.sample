@@ -34,6 +34,8 @@ message_bus:
    topic: "bgdelete"
    consumer_group: "S3MsgBusConsumer"
    consumer_id_prefix: "S3Consumer_"
+   producer_id_prefix: "S3Producer_"
+   producer_delivery_mechanism: "sync"                      # sync, async
    consumer_sleep: 5
 
 s3_recovery:                               # Section for S3 recovery config config

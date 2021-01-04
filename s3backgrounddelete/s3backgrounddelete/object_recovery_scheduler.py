@@ -19,7 +19,7 @@
 
 """
 This class act as object recovery scheduler which add key value to
-the rabbitmq mesaage queue.
+the underlying messaging platform.
 """
 #!/usr/bin/python3.6
 
@@ -34,11 +34,11 @@ import math
 import json
 import signal
 
-from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
 from s3backgrounddelete.IEMutil import IEMutil
 from s3backgrounddelete.cortx_s3_signal import DynamicConfigHandler
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 
 class ObjectRecoveryScheduler(object):
     """Scheduler which will add key value to rabbitmq message queue."""
@@ -60,6 +60,77 @@ class ObjectRecoveryScheduler(object):
         timeDelta = now - date_time_obj
         timeDeltaInMns = math.floor(timeDelta.total_seconds()/60)
         return (timeDeltaInMns >= OlderInMins)
+
+    def add_kv_to_msgbus(self, marker = None):
+        """Add object key value to msgbus topic."""
+        self.logger.info("Inside add_kv_to_msgbus.")
+        producer = None
+        try:
+            producer = ObjectRecoveryMsgbusProducer(
+                self.config,
+                self.logger)
+            # Cleanup all entries and enqueue only 1000 entries
+            #PurgeAPI Here
+            result, index_response = CORTXS3IndexApi(
+                self.config, logger=self.logger).list(
+                    self.config.get_probable_delete_index_id(), self.config.get_max_keys(), marker)
+            if result:
+                self.logger.info("Index listing result :" +
+                                 str(index_response.get_index_content()))
+                probable_delete_json = index_response.get_index_content()
+                probable_delete_oid_list = probable_delete_json["Keys"]
+                is_truncated = probable_delete_json["IsTruncated"]
+                if (probable_delete_oid_list is not None):
+                    for record in probable_delete_oid_list:
+                        # Check if record is older than the pre-configured 'time to process' delay
+                        leak_processing_delay = self.config.get_leak_processing_delay_in_mins()
+                        try:
+                            objLeakVal = json.loads(record["Value"])
+                        except ValueError as error:
+                            self.logger.error(
+                            "Failed to parse JSON data for: " + str(record) + " due to: " + error)
+                            continue
+
+                        if (objLeakVal is None):
+                            self.logger.error("No value associated with " + str(record) + ". Skipping entry")
+                            continue
+
+                        # Check if object leak entry is older than 15mins or a preconfigured duration
+                        if (not ObjectRecoveryScheduler.isObjectLeakEntryOlderThan(objLeakVal, leak_processing_delay)):
+                            self.logger.info("Object leak entry " + record["Key"] +
+                                            " is NOT older than " + str(leak_processing_delay) +
+                                            "mins. Skipping entry")
+                            continue
+
+                        self.logger.info(
+                            "Object recovery queue sending data :" +
+                            str(record))
+                        ret = producer.send_data(record)
+                        if not ret:
+                            # TODO - Do Audit logging
+                            self.logger.error(
+                                "Object recovery queue send data "+ str(record) +
+                                " failed :")
+                        else:
+                            self.logger.info(
+                                "Object recovery queue send data successfully :" +
+                                str(record))
+
+                    if (is_truncated == "true"):
+                        self.add_kv_to_msgbus(probable_delete_json["NextMarker"])
+                else:
+                    self.logger.info(
+                        "Index listing result empty. Ignoring adding entry to object recovery queue")
+            else:
+                self.logger.error("Failed to retrive Index listing:")   
+        except Exception as exception:
+            self.logger.error(
+                "add_kv_to_msgbus send data exception:" + exception 
+                + traceback.format_exc())
+        finally:
+            if producer:
+                self.logger.info("Closing the msgbus")
+                producer.close() 
 
     def add_kv_to_queue(self, marker = None):
         """Add object key value to object recovery queue."""
@@ -145,7 +216,13 @@ class ObjectRecoveryScheduler(object):
 
         def periodic_run(scheduler):
             """Add key value to queue using scheduler."""
-            self.add_kv_to_queue()
+            #Conditionally importing ObjectRecoveryRabbitMq/ObjectRecoveryMsgbusConsumer when config setting says so.
+            if self.config.get_messaging_platform() == MESSAGE_BUS:
+                from s3backgrounddelete.object_recovery_msgbus_producer import ObjectRecoveryMsgbusProducer
+                self.add_kv_to_msgbus()
+            else:
+                from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
+                self.add_kv_to_queue()
             scheduled_run.enter(
                 self.config.get_schedule_interval(), 1, periodic_run, (scheduler,))
 
