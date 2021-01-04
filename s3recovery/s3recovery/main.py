@@ -45,7 +45,7 @@ class S3Recovery:
             pass
 
         if args.recover:
-            action = S3RecoverCorruption()
+            action = S3RecoverCorruption(self.use_cipher)
             action.start()
         else:
             pass
