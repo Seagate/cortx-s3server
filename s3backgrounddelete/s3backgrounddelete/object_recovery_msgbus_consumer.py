@@ -29,6 +29,7 @@ from s3backgrounddelete.object_recovery_validator import ObjectRecoveryValidator
 
 class ObjectRecoveryMsgbusConsumer:
     """This class reads messages from MessageBus and forwards them for handling"""
+    isMsgBusLoaded = False
 
     def __init__(self, config, logger):
         """Initialize MessageBus Consumer."""
@@ -39,6 +40,7 @@ class ObjectRecoveryMsgbusConsumer:
         self._sleep_time = config.get_msgbus_consumer_sleep_time()
 
     def close(self):
+        """Closure and cleanup for consumer."""
         pass
 
     def _process_msg(self, msg):
@@ -65,14 +67,27 @@ class ObjectRecoveryMsgbusConsumer:
             return False
         return True
 
+    def __internalconnect(self):
+        self._logger.debug("Instantiating S3MessageBus")
+        self._consumer = S3CortxMsgBus()
+        self._logger.debug("Connecting to S3MessageBus")
+        ret,msg = self._consumer.connect()
+        if ret:
+            ObjectRecoveryMsgbusConsumer.isMsgBusLoaded = True
+        else:
+            self._logger.error("connect failed {}".format(msg))
+            self._consumer = None
+        return ret
+
     def receive_data(self):
         """Initializes consumer, connects and receives messages from message bus"""
         try:
-            self._logger.debug("Instantiating S3MessageBus")
-            self._consumer = S3CortxMsgBus()
-            self._logger.debug("Connecting to S3MessageBus")
-            ret,msg = self._consumer.connect()
-            if ret:
+            if not ObjectRecoveryMsgbusConsumer.isMsgBusLoaded:
+                ret = self.__internalconnect()
+                if not ret:
+                    time.sleep(self._sleep_time)
+                    self.receive_data()
+            if self._consumer:
                 id = self._config.get_msgbus_consumer_id_prefix() + str(socket.gethostname())
                 group = self._config.get_msgbus_consumer_group()
                 type = self._config.get_msgbus_topic()
@@ -95,8 +110,9 @@ class ObjectRecoveryMsgbusConsumer:
                             # probable delete index. Even if we acknowledge a message that
                             # has failed being processed it would eventually come back as
                             # the entry has not been deleted from probable delete index. 
-                            self._process_msg(msg.decode('utf-8'))
-                            self._consumer.commit()
+                            self._logger.debug("Msg {}".format(str(message)))
+                            self._process_msg(message.decode('utf-8'))
+                            #self._consumer.commit()
                         else:
                             self._logger.debug("Failed to receive msg from message bus : " + str(message))
                             if not self._daemon_mode:
@@ -107,9 +123,11 @@ class ObjectRecoveryMsgbusConsumer:
                     time.sleep(self._sleep_time)
                     self.receive_data()
             else:
-                self._logger.error("Failed to connect to message bus : " + str(msg))
+                self._logger.error("Failed to connect to message bus : ")
                 time.sleep(self._sleep_time)
                 self.receive_data()
         except Exception as exception:
             self._logger.error("Receive Data Exception : {} {}".format(exception, traceback.format_exc()))
+            time.sleep(self._sleep_time)
+            self.receive_data()
 
