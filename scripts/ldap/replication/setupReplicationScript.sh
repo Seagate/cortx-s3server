@@ -75,7 +75,7 @@ getServerIdFromHostFile()
 saveHostList()
 {
     while read host; do
-    echo $host >> /opt/seagate/cortx/s3/install/ldap/replication/host_list
+    echo "$host" >> /opt/seagate/cortx/s3/install/ldap/replication/host_list
     done <$host_list
 }
 
