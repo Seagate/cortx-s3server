@@ -46,7 +46,7 @@ class ObjectRecoveryScheduler(object):
     def __init__(self, use_cipher=True):
         """Initialise logger and configuration."""
         self.data = None
-        self.config = CORTXS3Config(use_cipher)
+        self.config = CORTXS3Config(use_cipher=use_cipher)
         self.create_logger_directory()
         self.create_logger()
         self.signal = DynamicConfigHandler(self)
