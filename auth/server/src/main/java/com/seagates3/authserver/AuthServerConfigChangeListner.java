@@ -58,7 +58,7 @@ class AuthServerConfigChangeListner implements Runnable {
       register(this.fullFilePath);
     }
     catch (Exception e) {
-      LOGGER.debug("Exception in run method - ", e);
+      LOGGER.error("Exception in run method - ", e);
     }
     finally {
       try {
@@ -67,7 +67,7 @@ class AuthServerConfigChangeListner implements Runnable {
         }
       }
       catch (IOException e) {
-        LOGGER.debug("Exception in finally method - ", e);
+        LOGGER.error("Exception in finally method - ", e);
       }
     }
   }
@@ -107,19 +107,19 @@ class AuthServerConfigChangeListner implements Runnable {
       }
     }
     catch (InterruptedException ie) {
-      LOGGER.info("InterruptedException in watcherservice - " +
-                  ie.getMessage());
+      LOGGER.error("InterruptedException in watcherservice - " +
+                   ie.getMessage());
       Thread.currentThread().interrupt();
     }
     catch (Exception e) {
-      LOGGER.info("Exception in watcherservice - " + e.getMessage());
+      LOGGER.error("Exception in watcherservice - " + e.getMessage());
     }
   }
 
  public
   void configurationChanged(final String file) throws FileNotFoundException,
       IOException, GeneralSecurityException, Exception {
-    LOGGER.info("Refreshing the configuration.");
+    LOGGER.debug("Reloading the configuration as its changed.");
     AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR,
                                 "authserver.properties", "keystore.properties");
   }
