@@ -93,6 +93,19 @@ then
   exit 1
 fi
 
+# check if s3cipher and s3confstore are installed on the system
+if ! command -v s3cipher &>/dev/null
+then
+    echo "ERROR: s3cipher not installed on the system, exiting."
+    exit 1
+fi
+
+if ! command -v s3confstore &>/dev/null
+then
+    echo "ERROR: s3confstore not installed on the system, exiting."
+    exit 1
+fi
+
 while test $# -gt 0
 do
   case "$1" in
@@ -327,6 +340,8 @@ then
     then
         echo "setting ldap-replication on all cluster nodes.."
         /opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh -h /root/host_file -p $ldappasswd
+    else
+        echo "INFO: Not setting ldap-replication as 'cluster.cluster_hosts' in confstore has no or only 1 entry."
     fi
 
     if [[ -f /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf ]]

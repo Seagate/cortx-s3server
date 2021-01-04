@@ -27,7 +27,6 @@ s3:
   init:
     script: /opt/seagate/cortx/s3/bin/s3_setup
     args:
-      - --updateclusterid
       - --s3backgrounddelete
       - --s3recoverytool
       - --setlogrotate
