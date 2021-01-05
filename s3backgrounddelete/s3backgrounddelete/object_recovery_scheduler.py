@@ -66,6 +66,8 @@ class ObjectRecoveryScheduler(object):
         self.logger.info("Inside add_kv_to_msgbus.")
         producer = None
         try:
+            from s3backgrounddelete.object_recovery_msgbus_producer import ObjectRecoveryMsgbusProducer
+
             producer = ObjectRecoveryMsgbusProducer(
                 self.config,
                 self.logger)
@@ -136,6 +138,8 @@ class ObjectRecoveryScheduler(object):
         """Add object key value to object recovery queue."""
         self.logger.info("Adding kv list to queue")
         try:
+            from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
+
             mq_client = ObjectRecoveryRabbitMq(
                 self.config,
                 self.config.get_rabbitmq_username(),
@@ -217,11 +221,9 @@ class ObjectRecoveryScheduler(object):
         def periodic_run(scheduler):
             """Add key value to queue using scheduler."""
             #Conditionally importing ObjectRecoveryRabbitMq/ObjectRecoveryMsgbusConsumer when config setting says so.
-            if self.config.get_messaging_platform() == MESSAGE_BUS:
-                from s3backgrounddelete.object_recovery_msgbus_producer import ObjectRecoveryMsgbusProducer
+            if self.config.get_messaging_platform() == MESSAGE_BUS: 
                 self.add_kv_to_msgbus()
             else:
-                from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
                 self.add_kv_to_queue()
             scheduled_run.enter(
                 self.config.get_schedule_interval(), 1, periodic_run, (scheduler,))
