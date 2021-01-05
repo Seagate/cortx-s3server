@@ -29,9 +29,11 @@ from cortx.utils.message_bus import MessageBus, MessageProducer, MessageConsumer
 class S3CortxMsgBus:
 
     def __init__(self):
+        """ Initialize the message bus """
         self._message_bus = None
 
     def connect(self):
+        """ Try to connect to the message bus """
         try:
             self._message_bus = MessageBus()
         except Exception as exception:
@@ -86,4 +88,8 @@ class S3CortxMsgBus:
         self.consumer.ack()
         print(message)
         return True, message
+
+    def commit(self):
+        """Acknowledges the messages to message bus"""
+        self.consumer.ack()
 
