@@ -125,7 +125,7 @@ class ObjectRecoveryScheduler(object):
                 self.logger.error("Failed to retrive Index listing:")   
         except Exception as exception:
             self.logger.error(
-                "add_kv_to_msgbus send data exception: {} {}".format(exception.str(), 
+                "add_kv_to_msgbus send data exception: {} {}".format(exception, 
                 traceback.format_exc()))
         finally:
             if producer:
