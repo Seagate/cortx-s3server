@@ -38,7 +38,7 @@ if not ret:
 
 # Receive
 id, group, type = 'MsgBusLib_Consumer', 'MsgBusLib', 'delete'
-ret, msg = s3MessageBus.setup_receive(id, group, type,'False','Latest')
+ret, msg = s3MessageBus.setup_receive(id, group, type, False, 'earliest')
 if not ret:
     print("Msg Bus receive setup failed")
 ret,message = s3MessageBus.receive()
