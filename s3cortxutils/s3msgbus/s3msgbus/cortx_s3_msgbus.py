@@ -29,11 +29,13 @@ from cortx.utils.message_bus import MessageBus, MessageProducer, MessageConsumer
 class S3CortxMsgBus:
 
     def __init__(self):
-        """ Initialize the message bus """
+        """Init"""
         self._message_bus = None
+        self._producer = None
+        self._consumer = None
 
     def connect(self):
-        """ Try to connect to the message bus """
+        """Connect to Message Bus"""
         try:
             self._message_bus = MessageBus()
         except Exception as exception:
@@ -41,13 +43,13 @@ class S3CortxMsgBus:
             return False, msg
         return True, None
 
-    def setup_send(self, id, msg_type, method):
-        """ Setup for Message Send """
+    def setup_producer(self, prod_id, msg_type, method):
+        """Setup producer"""
         if not self._message_bus:
             raise Exception("Non Existent Message Bus")
         try:
-            self.producer = MessageProducer(self._message_bus, \
-            producer_id=id , message_type = msg_type, method = method)
+            self._producer = MessageProducer(self._message_bus, \
+            producer_id=prod_id, message_type=msg_type, method=method)
         except Exception as exception:
              msg = ("msg_bus setup except:%s %s") % (
                 exception, traceback.format_exc())
@@ -55,22 +57,28 @@ class S3CortxMsgBus:
         return True, None
 
     def send(self, messages):
-        """ Send the constructed message """
+        """Send the constructed message"""
         try:
-            self.producer.send(messages)
+            self._producer.send(messages)
         except Exception as exception:
             msg = ("msg_bus send except:%s %s") % (
                 exception, traceback.format_exc())
             return False, msg
         return True, None
 
-    def setup_receive(self, id, group, msg_type, auto_ack, offset):
-        """ Setup for message receive """
+    def purge(self):
+        """Purge/Delete all the messages"""
+        if not self._message_bus:
+            raise Exception("Non Existent Message Bus, Cannot Purge")
+        self._producer.delete()
+
+    def setup_consumer(self, cons_id, group, msg_type, auto_ack, offset):
+        """Setup consumer"""
         if not self._message_bus:
             raise Exception("Non Existent Message Bus")
         try:
-            self.consumer = MessageConsumer(self._message_bus, consumer_id=id, \
-            consumer_group=group, message_type= [msg_type], auto_ack=auto_ack, offset=offset)
+            self._consumer = MessageConsumer(self._message_bus, consumer_id=cons_id, \
+            consumer_group=group, message_type=[msg_type], auto_ack=auto_ack, offset=offset)
         except Exception as exception:
             msg = ("msg_bus setup_receive except:%s %s") % (
                 exception, traceback.format_exc())
@@ -78,18 +86,13 @@ class S3CortxMsgBus:
         return True, None
 
     def receive(self):
-        """ Receive the incoming message """
+        """Receive the incoming message"""
         try:
-            message = self.consumer.receive()
+            message = self._consumer.receive()
         except Exception as exception:
             msg = ("msg_bus receive except:%s %s") % (
                 exception, traceback.format_exc())
             return False, msg
-        self.consumer.ack()
+        self._consumer.ack()
         print(message)
         return True, message
-
-    def commit(self):
-        """Acknowledges the messages to message bus"""
-        self.consumer.ack()
-
