@@ -411,6 +411,9 @@ then
   $USE_SUDO systemctl restart haproxy
 fi
 
+# Generate random password for jks key and keystore passwords
+sh ${S3_BUILD_DIR}/scripts/create_auth_jks_password.sh
+
 # Copy jks and keystore.properties file from /root/.cortx_s3_auth_jks directory to Auth install directory
 echo "Updating Authserver keystore with random password.."
 JKS_DIR="/root/.cortx_s3_auth_jks"
