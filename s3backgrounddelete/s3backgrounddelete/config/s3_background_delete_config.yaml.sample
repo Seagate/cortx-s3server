@@ -28,6 +28,13 @@ cortx_s3:                                   # Section for S3 background delete c
    background_account_secret_key: "ht8ntpB9DoChDrneKZHvPVTm+1mHbs7UdCyYXWK5"  # Secret Key corresponding to account-name "s3-background-delete-svc"
    daemon_mode: True                                       # S3background process run in daemon mode and ST's run in non-daemon mode.
    s3_instance_count: 22                                   # Number of active s3 instances in release setup
+   messaging_platform: "message_bus"                       # Whether to use message_bus or rabbit_mq as the messaging platform
+   
+message_bus:
+   topic: "bgdelete"
+   consumer_group: "S3MsgBusConsumer"
+   consumer_id_prefix: "S3Consumer_"
+   consumer_sleep: 5
 
 s3_recovery:                               # Section for S3 recovery config config
    recovery_account_access_key: "A9IAJPINPFRBTPASATAZ"                     # Access Key corresponding to account-name "s3-recovery-svc"
