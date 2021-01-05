@@ -43,7 +43,7 @@ setup(
   include_package_data=True,
 
   # Details
-  scripts =['s3msgbus/s3msgbus'],
+  scripts =['s3msgbus/s3_msgbus_example'],
 
   # license="LICENSE.txt",
 
