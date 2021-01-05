@@ -298,7 +298,7 @@ setup_ldap_replication()
 # Fetch and update cluster_id
 fetch_update_cluster_id()
 {
-    cluster_id=$(s3confstore --getkey "cluster.cluster_id" --path "json:///opt/seagate/cortx/s3/conf/s3_confstore.json")
+    cluster_id=$(s3confstore --getkey "cluster>cluster_id" --path "json:///opt/seagate/cortx/s3/conf/s3_confstore.json")
 
     # TODO: remove below sed cmd, as soon as s3backgrounddelete gets updated to read configurations from confstore
     sed -i "s/cluster_id:.*$/cluster_id: "$cluster_id"/g" /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml
@@ -332,7 +332,7 @@ then
 
     # read host_names from confstore
     # it will be a comma-separated list of FQDN
-    cluster_hosts=$(s3confstore --getkey "cluster.cluster_hosts" --path "json:///opt/seagate/cortx/s3/conf/s3_confstore.json")
+    cluster_hosts=$(s3confstore --getkey "cluster>cluster_hosts" --path "json:///opt/seagate/cortx/s3/conf/s3_confstore.json")
 
     IFS=','
     read -ra hosts_arr <<< "$cluster_hosts"
