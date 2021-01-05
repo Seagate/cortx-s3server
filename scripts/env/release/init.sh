@@ -83,9 +83,6 @@ mkdir -p /etc/ssl
 
 cp -R  ${BASEDIR}/../../../ansible/files/certs/* /etc/ssl/
 
-# Generate random password for jks key and keystore passwords
-sh ${S3_SRC_DIR}/scripts/create_auth_jks_password.sh
-
 # Setup using ansible
 yum install -y ansible facter
 

@@ -32,8 +32,8 @@ from s3recovery.config import Config
 from json import JSONDecodeError
 
 class S3RecoveryBase:
-    def __init__(self):
-        self.config = CORTXS3Config(s3recovery_flag = True)
+    def __init__(self, use_cipher=True):
+        self.config = CORTXS3Config(s3recovery_flag = True, use_cipher = use_cipher)
         self.index_api = CORTXS3IndexApi(self.config)
         self.kv_api = CORTXS3KVApi(self.config)
         self.log_result = False
