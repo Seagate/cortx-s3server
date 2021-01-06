@@ -45,7 +45,9 @@ cc_binary(
       "-iquote", ".", "-include", "config.h", "-I/usr/include/libxml2",
       MOTR_DYNAMIC_INCLUDES,
       "-fno-common", "-Wall", "-Wno-attributes", "-fno-strict-aliasing",
-      "-fno-omit-frame-pointer", "-Werror", "-ggdb3", "-O3", "-DNDEBUG",
+      "-fno-omit-frame-pointer", "-Werror", "-ggdb3",
+      RELEASE_DEBUG_VALGRIND_FLAGS,
+      "-DNDEBUG",
     ],
 
     includes = [

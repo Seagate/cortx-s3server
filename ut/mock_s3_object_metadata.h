@@ -70,6 +70,10 @@ class MockS3ObjectMetadata : public S3ObjectMetadata {
   MOCK_METHOD1(setacl, void(const std::string&));
   MOCK_METHOD1(set_tags,
                void(const std::map<std::string, std::string>& tags_as_map));
+  MOCK_METHOD((const std::map<std::string, std::string>&), get_tags, (),
+              (override));
+  MOCK_METHOD((std::map<std::string, std::string>&), get_user_attributes, (),
+              (override));
   MOCK_METHOD2(save_metadata, void(std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed));
   MOCK_METHOD1(from_json, int(std::string content));

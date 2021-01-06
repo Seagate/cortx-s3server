@@ -310,6 +310,80 @@ TEST_F(S3CopyObjectActionTest, FetchSourceObjectInfoSuccessLessThan5GB) {
 TEST_F(S3CopyObjectActionTest, ValidateCopyObjectRequestSourceBucketEmpty) {
   EXPECT_CALL(*ptr_mock_request, get_headers_copysource()).Times(1).WillOnce(
       Return("sourcebucketsourceobject"));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-metadata-directive"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-tagging-directive"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(400, _)).Times(1);
+
+  action_under_test->validate_copyobject_request();
+
+  EXPECT_STREQ("InvalidArgument",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3CopyObjectActionTest,
+       ValidateCopyObjectRequestMetadataDirectiveReplace) {
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-metadata-directive"))
+      .Times(1)
+      .WillOnce(Return("REPLACE"));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-tagging-directive"))
+      .Times(1)
+      .WillOnce(Return("COPY"));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(501, _)).Times(1);
+
+  action_under_test->validate_copyobject_request();
+
+  EXPECT_STREQ("NotImplemented",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3CopyObjectActionTest,
+       ValidateCopyObjectRequestMetadataDirectiveInvalid) {
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-metadata-directive"))
+      .Times(1)
+      .WillOnce(Return("INVALID"));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-tagging-directive"))
+      .Times(1)
+      .WillOnce(Return("COPY"));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(400, _)).Times(1);
+
+  action_under_test->validate_copyobject_request();
+
+  EXPECT_STREQ("InvalidArgument",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3CopyObjectActionTest,
+       ValidateCopyObjectRequestTaggingDirectiveReplace) {
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-metadata-directive"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-tagging-directive"))
+      .Times(1)
+      .WillOnce(Return("REPLACE"));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(501, _)).Times(1);
+
+  action_under_test->validate_copyobject_request();
+
+  EXPECT_STREQ("NotImplemented",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3CopyObjectActionTest,
+       ValidateCopyObjectRequestTaggingDirectiveInvalid) {
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-metadata-directive"))
+      .Times(1)
+      .WillOnce(Return("COPY"));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-tagging-directive"))
+      .Times(1)
+      .WillOnce(Return("INVALID"));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(400, _)).Times(1);
 
@@ -324,6 +398,12 @@ TEST_F(S3CopyObjectActionTest,
   std::string destination_bucket = "my-bucket";
   std::string destination_object = "my-object";
 
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-metadata-directive"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-tagging-directive"))
+      .Times(1)
+      .WillOnce(Return(""));
   EXPECT_CALL(*ptr_mock_request, get_headers_copysource()).Times(1).WillOnce(
       Return("my-bucket/my-object"));
 
@@ -350,7 +430,12 @@ TEST_F(S3CopyObjectActionTest,
 
 TEST_F(S3CopyObjectActionTest, ValidateCopyObjectRequestSuccess) {
   std::string destination_bucket = "my-destination-bucket";
-
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-metadata-directive"))
+      .Times(1)
+      .WillOnce(Return(""));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-tagging-directive"))
+      .Times(1)
+      .WillOnce(Return(""));
   EXPECT_CALL(*ptr_mock_request, get_headers_copysource()).Times(1).WillOnce(
       Return("my-source-bucket/my-source-object"));
 
@@ -571,294 +656,6 @@ TEST_F(S3CopyObjectActionTest, ZeroSizeObject) {
   EXPECT_EQ(1, call_count_one);
 }
 
-TEST_F(S3CopyObjectActionTest, NonZeroSizeObject) {
-  action_under_test->total_data_to_stream = 1024;
-  action_under_test->_set_layout_id(1);
-
-  create_src_object_metadata();
-
-  EXPECT_CALL(*ptr_mock_motr_reader_factory->mock_motr_reader,
-              set_last_index(0)).Times(1);
-  action_under_test->copy_object();
-
-  EXPECT_TRUE(action_under_test->motr_reader);
-  EXPECT_EQ(action_under_test->bytes_left_to_read,
-            action_under_test->total_data_to_stream);
-}
-
-TEST_F(S3CopyObjectActionTest, ReadDataBlockStarted) {
-  action_under_test->total_data_to_stream = 1024;
-  action_under_test->bytes_left_to_read = 1024;
-  action_under_test->_set_layout_id(1);
-
-  action_under_test->motr_reader =
-      ptr_mock_motr_reader_factory->mock_motr_reader;
-
-  EXPECT_CALL(*ptr_mock_motr_reader_factory->mock_motr_reader,
-              read_object_data(_, _, _))
-      .Times(1)
-      .WillOnce(Return(true));
-
-  action_under_test->read_data_block();
-
-  EXPECT_TRUE(action_under_test->read_in_progress);
-}
-
-TEST_F(S3CopyObjectActionTest, ReadDataBlockFailedToStart) {
-  action_under_test->total_data_to_stream = 1024;
-  action_under_test->bytes_left_to_read = 1024;
-  action_under_test->_set_layout_id(1);
-
-  action_under_test->motr_reader =
-      ptr_mock_motr_reader_factory->mock_motr_reader;
-  action_under_test->motr_writer =
-      ptr_mock_motr_writer_factory->mock_motr_writer;
-
-  EXPECT_CALL(*ptr_mock_motr_reader_factory->mock_motr_reader,
-              read_object_data(_, _, _))
-      .Times(1)
-      .WillOnce(Return(false));
-  EXPECT_CALL(*ptr_mock_motr_reader_factory->mock_motr_reader, get_state())
-      .Times(1)
-      .WillOnce(Return(S3MotrReaderOpState::failed_to_launch));
-
-  action_under_test->read_data_block();
-
-  EXPECT_FALSE(action_under_test->read_in_progress);
-  EXPECT_TRUE(action_under_test->copy_failed);
-  EXPECT_FALSE(action_under_test->get_s3_error_code().empty());
-}
-
-TEST_F(S3CopyObjectActionTest, ReadDataBlockSuccessWhileShuttingDown) {
-  action_under_test->_set_layout_id(layout_id);
-  action_under_test->read_in_progress = true;
-  S3Option::get_instance()->set_is_s3_shutting_down(true);
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
-
-  action_under_test->read_data_block_success();
-
-  EXPECT_FALSE(action_under_test->read_in_progress);
-  S3Option::get_instance()->set_is_s3_shutting_down(false);
-}
-
-TEST_F(S3CopyObjectActionTest, ReadDataBlockSuccessCopyFailed) {
-  action_under_test->total_data_to_stream = 1024;
-  action_under_test->bytes_left_to_read = 1024;
-  action_under_test->_set_layout_id(1);
-  action_under_test->read_in_progress = true;
-
-  action_under_test->copy_failed = true;
-  action_under_test->set_s3_error("InternalError");
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-
-  action_under_test->read_data_block_success();
-
-  EXPECT_FALSE(action_under_test->read_in_progress);
-}
-
-TEST_F(S3CopyObjectActionTest, ReadDataBlockSuccessShouldStartWrite) {
-  action_under_test->total_data_to_stream = 5120;
-  action_under_test->bytes_left_to_read = 1024;
-  action_under_test->read_in_progress = true;
-  action_under_test->_set_layout_id(1);
-
-  action_under_test->motr_reader =
-      ptr_mock_motr_reader_factory->mock_motr_reader;
-  action_under_test->motr_writer =
-      ptr_mock_motr_writer_factory->mock_motr_writer;
-
-  S3BufferSequence data_blocks_read;
-  data_blocks_read.emplace_back(nullptr, 0);
-
-  EXPECT_CALL(*ptr_mock_motr_reader_factory->mock_motr_reader,
-              extract_blocks_read())
-      .Times(1)
-      .WillOnce(Return(data_blocks_read));
-
-  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
-              write_content(_, _, _, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer, get_state())
-      .Times(1);
-
-  action_under_test->read_data_block_success();
-
-  EXPECT_TRUE(action_under_test->write_in_progress);
-}
-
-TEST_F(S3CopyObjectActionTest, ReadDataBlockFailed) {
-  action_under_test->total_data_to_stream = 5120;
-  action_under_test->bytes_left_to_read = 1024;
-  action_under_test->read_in_progress = true;
-  action_under_test->_set_layout_id(1);
-
-  action_under_test->motr_reader =
-      ptr_mock_motr_reader_factory->mock_motr_reader;
-  action_under_test->motr_writer =
-      ptr_mock_motr_writer_factory->mock_motr_writer;
-
-  EXPECT_CALL(*ptr_mock_motr_reader_factory->mock_motr_reader, get_state())
-      .Times(1);
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-
-  action_under_test->read_data_block_failed();
-
-  EXPECT_FALSE(action_under_test->read_in_progress);
-  EXPECT_TRUE(action_under_test->copy_failed);
-  EXPECT_EQ(action_under_test->s3_put_action_state,
-            S3PutObjectActionState::writeFailed);
-  EXPECT_FALSE(action_under_test->get_s3_error_code().empty());
-}
-
-TEST_F(S3CopyObjectActionTest, WriteObjectStarted) {
-  action_under_test->motr_writer =
-      ptr_mock_motr_writer_factory->mock_motr_writer;
-  action_under_test->motr_reader =
-      ptr_mock_motr_reader_factory->mock_motr_reader;
-
-  action_under_test->_set_layout_id(1);
-  action_under_test->total_data_to_stream = 5120;
-  action_under_test->bytes_left_to_read = 1024;
-  action_under_test->data_blocks_read.emplace_back(nullptr, 0);
-
-  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
-              write_content(_, _, _, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer, get_state())
-      .Times(1)
-      .WillOnce(Return(S3MotrWiterOpState::start));
-
-  action_under_test->write_data_block();
-
-  EXPECT_TRUE(action_under_test->write_in_progress);
-  EXPECT_TRUE(action_under_test->data_blocks_read.empty());
-  EXPECT_FALSE(action_under_test->data_blocks_writing.empty());
-}
-
-TEST_F(S3CopyObjectActionTest, WriteObjectFailedShouldUndoMarkProgress) {
-  action_under_test->motr_writer =
-      ptr_mock_motr_writer_factory->mock_motr_writer;
-  action_under_test->_set_layout_id(layout_id);
-
-  // mock mark progress
-  action_under_test->write_in_progress = true;
-  action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
-  MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
-      action_under_test->new_oid_str, {}, "abc_obj", oid, layout_id,
-      object_list_indx_oid, objects_version_list_idx_oid,
-      "",     // Version does not exists yet
-      false,  // force_delete
-      false,  // is_multipart
-      {});
-  action_under_test->new_probable_del_rec.reset(prob_rec);
-
-  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer, get_state())
-      .Times(1)
-      .WillOnce(Return(S3MotrWiterOpState::failed));
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
-
-  action_under_test->write_data_block_failed();
-
-  EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
-  EXPECT_FALSE(action_under_test->write_in_progress);
-}
-
-TEST_F(S3CopyObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure) {
-  action_under_test->motr_writer =
-      ptr_mock_motr_writer_factory->mock_motr_writer;
-  action_under_test->_set_layout_id(layout_id);
-
-  // mock mark progress
-  action_under_test->write_in_progress = true;
-  action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
-  MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
-      action_under_test->new_oid_str, {}, "abc_obj", oid, layout_id,
-      object_list_indx_oid, objects_version_list_idx_oid,
-      "",     // Version does not exists yet
-      false,  // force_delete
-      false,  // is_multipart
-      {});
-  action_under_test->new_probable_del_rec.reset(prob_rec);
-
-  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer, get_state())
-      .Times(1)
-      .WillOnce(Return(S3MotrWiterOpState::failed_to_launch));
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
-
-  action_under_test->write_data_block_failed();
-
-  EXPECT_FALSE(action_under_test->write_in_progress);
-  EXPECT_STREQ("ServiceUnavailable",
-               action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3CopyObjectActionTest, WriteObjectSuccessfulWhileShuttingDown) {
-  S3Option::get_instance()->set_is_s3_shutting_down(true);
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
-
-  action_under_test->_set_layout_id(layout_id);
-
-  // mock mark progress
-  action_under_test->write_in_progress = true;
-
-  action_under_test->write_data_block_success();
-
-  S3Option::get_instance()->set_is_s3_shutting_down(false);
-
-  EXPECT_FALSE(action_under_test->write_in_progress);
-}
-
-TEST_F(S3CopyObjectActionTest, WriteObjectSuccessfulShouldRestartWritingData) {
-  action_under_test->motr_writer =
-      ptr_mock_motr_writer_factory->mock_motr_writer;
-  action_under_test->motr_reader =
-      ptr_mock_motr_reader_factory->mock_motr_reader;
-
-  action_under_test->_set_layout_id(layout_id);
-  action_under_test->total_data_to_stream = 5120;
-  action_under_test->bytes_left_to_read = 1024;
-  action_under_test->write_in_progress = true;
-  action_under_test->data_blocks_read.emplace_back(nullptr, 0);
-
-  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
-              write_content(_, _, _, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer, get_state())
-      .Times(1)
-      .WillOnce(Return(S3MotrWiterOpState::start));
-
-  action_under_test->write_data_block_success();
-
-  EXPECT_TRUE(action_under_test->write_in_progress);
-}
-
-TEST_F(S3CopyObjectActionTest,
-       WriteObjectSuccessfulDoNextStepWhenAllIsWritten) {
-  action_under_test->bytes_left_to_read = 0;
-  action_under_test->write_in_progress = true;
-
-  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
-              write_content(_, _, _, _)).Times(0);
-  EXPECT_CALL(*ptr_mock_motr_reader_factory->mock_motr_reader,
-              read_object_data(_, _, _)).Times(0);
-
-  action_under_test->clear_tasks();
-  ACTION_TASK_ADD_OBJPTR(action_under_test,
-                         S3CopyObjectActionTest::func_callback_one, this);
-
-  action_under_test->write_data_block_success();
-
-  EXPECT_EQ(1, call_count_one);
-  EXPECT_FALSE(action_under_test->write_in_progress);
-  EXPECT_EQ(action_under_test->s3_put_action_state,
-            S3PutObjectActionState::writeComplete);
-}
-
 TEST_F(S3CopyObjectActionTest, SaveMetadata) {
   action_under_test->total_data_to_stream = 1024;
 
@@ -886,10 +683,23 @@ TEST_F(S3CopyObjectActionTest, SaveMetadata) {
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
               set_md5(Eq("abcd1234abcd"))).Times(AtLeast(1));
 
-  /* TODO: uncomment once tags feature is implemented
+  EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata, setacl(_))
+      .Times(1);
+
+  std::map<std::string, std::string> tagsmap;
+  EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata, get_tags())
+      .Times(1)
+      .WillOnce(ReturnRef(tagsmap));
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
-              set_tags(_)).Times(AtLeast(1));
-  */
+              set_tags(tagsmap)).Times(1);
+
+  std::map<std::string, std::string> meta_map{{"key", "value"}};
+  EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
+              get_user_attributes())
+      .Times(1)
+      .WillOnce(ReturnRef(meta_map));
+  EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
+              add_user_defined_attribute("key", "value")).Times(1);
   /* TODO: uncomment once handling x-amz-metadata-directive input header feature
      is implemented
   input_headers["x-amz-meta-item-1"] = "1024";
