@@ -23,14 +23,13 @@
 s3:
   post_install:
     script: /opt/seagate/cortx/s3/bin/s3_setup
+    args: null
+  init:
+    script: /opt/seagate/cortx/s3/bin/s3_setup
     args:
-      - --updateclusterid
       - --s3backgrounddelete
       - --s3recoverytool
       - --setlogrotate
-  init:
-    script: /opt/seagate/cortx/s3/bin/s3_setup
-    args: null
   config:
     script: /opt/seagate/cortx/s3/bin/s3_setup
     args:

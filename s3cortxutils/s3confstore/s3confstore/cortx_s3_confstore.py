@@ -17,7 +17,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 import argparse
-from cortx.utils.conf_store import ConfStore
+from cortx.utils.conf_store import Conf
 from urllib.parse import urlparse
 import os.path
 import json
@@ -30,28 +30,21 @@ class S3CortxConfStore:
 
   def __init__(self):
     """Instantiate constore"""
-    self.conf_store = ConfStore()
 
   def load_config(self, index: str, backend_url: str):
     """Load Config into constore"""
-    self.conf_store.load(index, backend_url)
+    Conf.load(index, backend_url)
 
   def get_config(self, index: str, key: str):
     """Get the key's config from constore"""
-    result_get = self.conf_store.get(index, key, default_val=None)
-    return result_get
+    return Conf.get(index, key)
 
   def set_config(self, index: str, key: str, setval: str, save: bool = False):
     """Set the key's value in constore"""
-    self.conf_store.set(index, key, setval)
+    Conf.set(index, key, setval)
     if save == True:
       """Update the index backend"""
-      self.conf_store.save(index)
-
-  def get_data_config(self, index: str):
-    """Obtains entire config for the given index from constore"""
-    result_get_data = self.conf_store.get_data(index)
-    return result_get_data
+      Conf.save(index)
 
   def uttest(self, index: str):
     """This will be removed to ut directory later"""
@@ -71,14 +64,8 @@ class S3CortxConfStore:
       os.remove("/tmp/cortx_s3_confstoreuttest.json")
       exit(-1)
 
-    result_data = self.get_data_config(index)
-    if 'cluster' not in result_data:
-      print("get_data_config() failed!")
-      os.remove("/tmp/cortx_s3_confstoreuttest.json")
-      exit(-1)
-
-    self.set_config(index, 'cluster.cluster_id', '1234', False)
-    result_data = self.get_config(index, 'cluster.cluster_id')
+    self.set_config(index, 'cluster>cluster_id', '1234', False)
+    result_data = self.get_config(index, 'cluster>cluster_id')
     if result_data != '1234':
       print("set_config() failed!")
       os.remove("/tmp/cortx_s3_confstoreuttest.json")
@@ -91,7 +78,6 @@ class S3CortxConfStore:
     parser = argparse.ArgumentParser(description='Cortx-Utils ConfStore')
     parser.add_argument("--load", help='Load the backing storage in this index, pass --path to config')
     parser.add_argument("--get", help='Obtain config for this given index using a key, pass --key')
-    parser.add_argument("--get_data", help='Obtains entire config for this given index')
     parser.add_argument("--set", help='Sets config value for this given index using a key, pass --key and --setval')
     parser.add_argument("--persistent", help='Optional, pass <Yes> if needed, to be used with --set, this updates the backend along with --set')
     parser.add_argument("--key", help='Provide a key to be used in --get and --set')
@@ -158,11 +144,6 @@ class S3CortxConfStore:
       result_get = self.get_config(args.get, args.key)
       if result_get:
         print("{}".format(result_get))
-
-    if args.get_data:
-      result_get_data = self.get_data_config(args.get_data)
-      if result_get_data:
-        print("{}".format(result_get_data))
 
     if args.set:
       if args.key == None:
