@@ -385,10 +385,6 @@ void S3GetBucketAction::get_next_objects_successful() {
                "Delimiter %s found at pos %zu in string %s\n",
                request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
         std::string common_prefix = kv.first.substr(0, delimiter_pos + 1);
-        //@DPG if (common_prefix != request_marker_key) {
-          // If marker is specified, and if this key gets rolled up
-          // in common prefix, we add to common prefix only if it is not the
-          // same as specified marker
         b_skip_remaining_common_prefixes = false;
         // Before adding common prefix, check if this is the first time we add
         // this key
@@ -397,6 +393,9 @@ void S3GetBucketAction::get_next_objects_successful() {
           b_skip_remaining_common_prefixes = true;
         }
         if (common_prefix != request_marker_key) {
+          // If marker is specified, and if this key gets rolled up
+          // in common prefix, we add to common prefix only if it is not the
+          // same as specified marker
           object_list->add_common_prefix(common_prefix);
           s3_log(S3_LOG_DEBUG, request_id, "Adding common prefix [%s]\n",
                  common_prefix.c_str());
@@ -412,7 +411,6 @@ void S3GetBucketAction::get_next_objects_successful() {
                  last_key.c_str());
           break;
         }
-        //}
       }
     } else {
       // both prefix and delimiter are not empty
@@ -441,18 +439,17 @@ void S3GetBucketAction::get_next_objects_successful() {
                  "Delimiter %s found at pos %zu in string %s\n",
                  request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
           std::string common_prefix = kv.first.substr(0, delimiter_pos + 1);
-          //@DPG if (common_prefix != request_marker_key) {
-            // If marker is specified, and if this key gets rolled up
-            // in common prefix, we add to common prefix only if it is not the
-            // same as specified marker
           b_skip_remaining_common_prefixes = false;
           // Before adding common prefix, check if this is the first time we
-          // add this key
-          // to common_prefixes. If so, skip remaining keys that belong to it.
+          // add this key to common_prefixes.
+          // If so, skip remaining keys that belong to it.
           if (!object_list->is_prefix_in_common_prefix(common_prefix)) {
             b_skip_remaining_common_prefixes = true;
           }
           if (common_prefix != request_marker_key) {
+            // If marker is specified, and if this key gets rolled up
+            // in common prefix, we add to common prefix only if it is not the
+            // same as specified marker
             object_list->add_common_prefix(common_prefix);
             s3_log(S3_LOG_DEBUG, request_id, "Adding common prefix [%s]\n",
                    common_prefix.c_str());
@@ -468,7 +465,6 @@ void S3GetBucketAction::get_next_objects_successful() {
                    last_key.c_str());
             break;
           }
-          //}
         }
       } else {
         // Prefix does not match.
