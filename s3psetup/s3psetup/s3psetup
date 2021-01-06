@@ -1,0 +1,7 @@
+#!/usr/bin/python3.6
+
+from s3psetup.cortx_s3_py_setup import S3CortxSetup
+
+s3psetup = S3CortxSetup()
+s3psetup.run()
+
