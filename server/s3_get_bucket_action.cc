@@ -550,6 +550,8 @@ void S3GetBucketAction::get_next_objects_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "No Objects found in Object listing\n");
+    // reset state
+    b_state_start_check_any_more_keys = false;
     fetch_successful = true;  // With no entries.
     object_list->set_key_count(key_Count);
   } else if (motr_kv_reader->get_state() ==
