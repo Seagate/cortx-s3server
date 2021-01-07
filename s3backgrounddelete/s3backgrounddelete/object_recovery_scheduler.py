@@ -38,7 +38,7 @@ from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
 from s3backgrounddelete.IEMutil import IEMutil
 from s3backgrounddelete.cortx_s3_signal import DynamicConfigHandler
-from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS, RABBIT_MQ
 
 class ObjectRecoveryScheduler(object):
     """Scheduler which will add key value to rabbitmq message queue."""
@@ -218,8 +218,13 @@ class ObjectRecoveryScheduler(object):
             #Conditionally importing ObjectRecoveryRabbitMq/ObjectRecoveryMsgbusConsumer when config setting says so.
             if self.config.get_messaging_platform() == MESSAGE_BUS:
                 self.add_kv_to_msgbus()
-            else:
+            else if self.config.get_messaging_platform() == RABBIT_MQ:
                 self.add_kv_to_queue()
+            else:
+                self.logger.error(
+                "Invalid argument specified in messaging_platform use message_bus or rabbit_mq")
+                return
+                
             scheduled_run.enter(
                 self.config.get_schedule_interval(), 1, periodic_run, (scheduler,))
 
