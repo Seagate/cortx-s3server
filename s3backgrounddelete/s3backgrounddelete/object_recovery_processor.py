@@ -52,9 +52,9 @@ class ObjectRecoveryProcessor(object):
         try:
             #Conditionally importing ObjectRecoveryRabbitMq/ObjectRecoveryMsgbusConsumer when config setting says so.
             if self.config.get_messaging_platform() == MESSAGE_BUS:
-                from s3backgrounddelete.object_recovery_msgbus_consumer import ObjectRecoveryMsgbusConsumer
+                from s3backgrounddelete.object_recovery_msgbus import ObjectRecoveryMsgbus
 
-                self.server = ObjectRecoveryMsgbusConsumer(
+                self.server = ObjectRecoveryMsgbus(
                     self.config,
                     self.logger)
             else:
