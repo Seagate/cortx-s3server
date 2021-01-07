@@ -17,17 +17,17 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-"""Implementation of MessageBus for object recovery"""
+"""Implementation of MessageBus for object recovery."""
 
 import json
 import socket
 import time
 import traceback
-from logging import FATAL
 from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
 from s3backgrounddelete.object_recovery_validator import ObjectRecoveryValidator
 
 class ObjectRecoveryMsgbus(object):
+    
     """This class is implementation of msgbus for object recovery."""
         
     def __init__(self, config, logger):
@@ -44,7 +44,7 @@ class ObjectRecoveryMsgbus(object):
         pass
 
     def __process_msg(self, msg):
-        """loads the json message and sends it to validation and processing."""
+        """Loads the json message and sends it to validation and processing."""
         self._logger.info(
             "Processing following records in consumer: " + msg)
         try:
@@ -79,10 +79,10 @@ class ObjectRecoveryMsgbus(object):
             self.__msgbuslib = None
         return ret
 
-    def receive_data(self, 
-        consumer_id = None, 
-        consumer_group = None, 
-        msg_topic = None, 
+    def receive_data(self,
+        consumer_id = None,
+        consumer_group = None,
+        msg_topic = None,
         autoack = None,
         offset = None):
         """Initializes consumer, connects and receives messages from message bus."""
@@ -101,7 +101,7 @@ class ObjectRecoveryMsgbus(object):
                 consumer_group = self._config.get_msgbus_consumer_group()
             
             if not msg_topic:
-                type = self._config.get_msgbus_topic()
+                msg_topic = self._config.get_msgbus_topic()
 
             if not autoack:
                 autoack = False
@@ -149,7 +149,7 @@ class ObjectRecoveryMsgbus(object):
             if not self.__msgbuslib:
                 ret = self.__loadmsgbuslibrary()
                 if not ret:
-                    self.logger.error("connect failed")
+                    self._logger.error("connect failed")
                     self.__msgbuslib = None
 
             if not producer_id:
@@ -163,13 +163,13 @@ class ObjectRecoveryMsgbus(object):
             
             ret,msg = self.__msgbuslib.setup_send(producer_id, msg_type, delivery_mechanism)
             if not ret:
-                self.logger.error("setup_send failed")
+                self._logger.error("setup_send failed {}".format(str(msg)))
                 self.__isproducersetupcomplete = False
             else:
                 self.__isproducersetupcomplete = True
 
         except Exception as exception:
-            self.logger.error("Exception:{}".format(exception))
+            self._logger.error("Exception:{}".format(exception))
             self.__isproducersetupcomplete = False
 
     def send_data(self, data):
@@ -178,15 +178,15 @@ class ObjectRecoveryMsgbus(object):
             if not self.__isproducersetupcomplete:
                 self.__setup_producer()
                 if not self.__isproducersetupcomplete:
-                    self.logger.debug("producer connection issues")
+                    self._logger.debug("producer connection issues")
                     return False
             
             msgbody = json.dumps(data)
-            self.logger.debug("MsgBody : {}".format(msgbody))
+            self._logger.debug("MsgBody : {}".format(msgbody))
             return self.__producer.send([msgbody])
 
         except Exception as exception:
-            self.logger.error("Exception:{}".format(exception))
+            self._logger.error("Exception:{}".format(exception))
             self.__isproducersetupcomplete = False
             return False
 

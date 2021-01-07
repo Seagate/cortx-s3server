@@ -122,7 +122,7 @@ class ObjectRecoveryScheduler(object):
                     self.logger.info(
                         "Index listing result empty. Ignoring adding entry to object recovery queue")
             else:
-                self.logger.error("Failed to retrive Index listing:")   
+                self.logger.error("Failed to retrive Index listing:")
         except Exception as exception:
             self.logger.error(
                 "add_kv_to_msgbus send data exception: {}".format(exception))
@@ -216,7 +216,7 @@ class ObjectRecoveryScheduler(object):
         def periodic_run(scheduler):
             """Add key value to queue using scheduler."""
             #Conditionally importing ObjectRecoveryRabbitMq/ObjectRecoveryMsgbusConsumer when config setting says so.
-            if self.config.get_messaging_platform() == MESSAGE_BUS: 
+            if self.config.get_messaging_platform() == MESSAGE_BUS:
                 self.add_kv_to_msgbus()
             else:
                 self.add_kv_to_queue()
