@@ -66,10 +66,10 @@ class ObjectRecoveryScheduler(object):
         """Add object key value to msgbus topic."""
         self.logger.info("Inside add_kv_to_msgbus.")
         try:
-            from s3backgrounddelete.object_recovery_msgbus_producer import ObjectRecoveryMsgbusProducer
+            from s3backgrounddelete.object_recovery_msgbus import ObjectRecoveryMsgbus
 
             if not self.producer:
-                self.producer = ObjectRecoveryMsgbusProducer(
+                self.producer = ObjectRecoveryMsgbus(
                     self.config,
                     self.logger)
             # Cleanup all entries and enqueue only 1000 entries
