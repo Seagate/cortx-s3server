@@ -224,7 +224,7 @@ class ObjectRecoveryScheduler(object):
                 self.logger.error(
                 "Invalid argument specified in messaging_platform use message_bus or rabbit_mq")
                 return
-                
+  
             scheduled_run.enter(
                 self.config.get_schedule_interval(), 1, periodic_run, (scheduler,))
 

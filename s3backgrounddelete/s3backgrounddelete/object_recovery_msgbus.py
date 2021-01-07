@@ -28,9 +28,7 @@ from s3backgrounddelete.object_recovery_validator import ObjectRecoveryValidator
 
 class ObjectRecoveryMsgbus(object):
 
-    """
-    This class is implementation of msgbus for object recovery.
-    """
+    """This class is implementation of msgbus for object recovery."""
 
     def __init__(self, config, logger):
         """Initialize MessageBus."""
@@ -94,7 +92,7 @@ class ObjectRecoveryMsgbus(object):
                 if not ret:
                     time.sleep(self._sleep_time)
                     self.receive_data()
-            
+
             #Over here we will have msgbuslib loaded
             if not consumer_id:
                 consumer_id = self._config.get_msgbus_consumer_id_prefix() + str(socket.gethostname())
