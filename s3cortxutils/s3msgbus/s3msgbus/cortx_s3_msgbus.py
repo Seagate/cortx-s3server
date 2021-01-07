@@ -29,13 +29,13 @@ from cortx.utils.message_bus import MessageBus, MessageProducer, MessageConsumer
 class S3CortxMsgBus:
 
     def __init__(self):
-        """Init"""
+        """Init."""
         self._message_bus = None
         self._producer = None
         self._consumer = None
 
     def connect(self):
-        """Connect to Message Bus"""
+        """Connect to Message Bus."""
         try:
             self._message_bus = MessageBus()
         except Exception as exception:
@@ -44,20 +44,20 @@ class S3CortxMsgBus:
         return True, None
 
     def setup_producer(self, prod_id, msg_type, method):
-        """Setup producer"""
+        """Setup producer."""
         if not self._message_bus:
             raise Exception("Non Existent Message Bus")
         try:
             self._producer = MessageProducer(self._message_bus, \
             producer_id=prod_id, message_type=msg_type, method=method)
         except Exception as exception:
-             msg = ("msg_bus setup except:%s %s") % (
+             msg = ("msg_bus setup producer except:%s %s") % (
                 exception, traceback.format_exc())
              return False, msg
         return True, None
 
     def send(self, messages):
-        """Send the constructed message"""
+        """Send the constructed message."""
         try:
             self._producer.send(messages)
         except Exception as exception:
@@ -67,32 +67,41 @@ class S3CortxMsgBus:
         return True, None
 
     def purge(self):
-        """Purge/Delete all the messages"""
+        """Purge/Delete all the messages."""
         if not self._message_bus:
             raise Exception("Non Existent Message Bus, Cannot Purge")
         self._producer.delete()
 
     def setup_consumer(self, cons_id, group, msg_type, auto_ack, offset):
-        """Setup consumer"""
+        """Setup the consumer."""
         if not self._message_bus:
             raise Exception("Non Existent Message Bus")
         try:
             self._consumer = MessageConsumer(self._message_bus, consumer_id=cons_id, \
             consumer_group=group, message_type=[msg_type], auto_ack=auto_ack, offset=offset)
         except Exception as exception:
-            msg = ("msg_bus setup_receive except:%s %s") % (
+            msg = ("msg_bus setup_consumer except:%s %s") % (
                 exception, traceback.format_exc())
             return False, msg
         return True, None
 
     def receive(self):
-        """Receive the incoming message"""
+        """Receive the incoming message."""
         try:
             message = self._consumer.receive()
         except Exception as exception:
             msg = ("msg_bus receive except:%s %s") % (
                 exception, traceback.format_exc())
             return False, msg
-        self._consumer.ack()
-        print(message)
         return True, message
+
+    def ack(self):
+        """Ack the received message."""
+        try:
+            self._consumer.ack()
+        except Exception as exception:
+            msg = ("msg_bus ack except:%s %s") % (
+                exception, traceback.format_exc())
+            return False, msg
+        return True, None
+
