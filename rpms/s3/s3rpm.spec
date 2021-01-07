@@ -177,7 +177,7 @@ cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3recovery
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT
 
 # Install the s3msg bus wrapper module
-cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3msgbus
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT
 
 %clean
@@ -372,6 +372,8 @@ rm -rf %{buildroot}
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundconsumer
 %exclude %{py36_sitelib}/s3recovery/s3recovery
 %exclude %{py36_sitelib}/s3msgbus/s3msgbus
+%exclude %{py36_sitelib}/s3msgbus/__pycache__/*
+%exclude %{py36_sitelib}/s3msgbus/*.py
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundproducer
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyc
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyo
