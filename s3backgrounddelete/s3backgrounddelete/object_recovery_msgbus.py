@@ -27,9 +27,9 @@ from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
 from s3backgrounddelete.object_recovery_validator import ObjectRecoveryValidator
 
 class ObjectRecoveryMsgbus(object):
-    
+
     """This class is implementation of msgbus for object recovery."""
-        
+    
     def __init__(self, config, logger):
         """Initialize MessageBus."""
         self._config = config
@@ -126,7 +126,7 @@ class ObjectRecoveryMsgbus(object):
                         # The last step in process message is to delete the entry from
                         # probable delete index. Even if we acknowledge a message that
                         # has failed being processed it would eventually come back as
-                        # the entry has not been deleted from probable delete index. 
+                        # the entry has not been deleted from probable delete index.
                         self._logger.debug("Msg {}".format(str(message)))
                         self.__process_msg(message.decode('utf-8'))
                     else:
