@@ -160,12 +160,12 @@ class ObjectRecoveryMsgbus(object):
                             break
                         time.sleep(self._sleep_time)
 
+                if not self._daemon_mode:
+                    break
             except Exception as exception:
                 self._logger.error("Receive Data Exception : {} {}".format(exception, traceback.format_exc()))
                 self.__isconsumersetupcomplete = False                
             finally:
-                if not self._daemon_mode:
-                    break
                 time.sleep(self._sleep_time)
 
     def __setup_producer(self,
