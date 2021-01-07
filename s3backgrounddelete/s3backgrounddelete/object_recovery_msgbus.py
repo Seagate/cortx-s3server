@@ -28,8 +28,10 @@ from s3backgrounddelete.object_recovery_validator import ObjectRecoveryValidator
 
 class ObjectRecoveryMsgbus(object):
 
-    """This class is implementation of msgbus for object recovery."""
-    
+    """
+    This class is implementation of msgbus for object recovery.
+    """
+
     def __init__(self, config, logger):
         """Initialize MessageBus."""
         self._config = config

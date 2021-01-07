@@ -218,7 +218,7 @@ class ObjectRecoveryScheduler(object):
             #Conditionally importing ObjectRecoveryRabbitMq/ObjectRecoveryMsgbusConsumer when config setting says so.
             if self.config.get_messaging_platform() == MESSAGE_BUS:
                 self.add_kv_to_msgbus()
-            else if self.config.get_messaging_platform() == RABBIT_MQ:
+            elif self.config.get_messaging_platform() == RABBIT_MQ:
                 self.add_kv_to_queue()
             else:
                 self.logger.error(
