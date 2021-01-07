@@ -183,7 +183,7 @@ class ObjectRecoveryMsgbus(object):
             
             msgbody = json.dumps(data)
             self._logger.debug("MsgBody : {}".format(msgbody))
-            return self.__producer.send([msgbody])
+            return self.__msgbuslib.send([msgbody])
 
         except Exception as exception:
             self._logger.error("Exception:{}".format(exception))
