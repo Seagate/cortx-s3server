@@ -25,7 +25,7 @@
   yum:
     name: cortx-py-utils
     enablerepo: releases_cortx_py_utils
-    state: latest
+    state: present
 
 - name: Install yum-utils if not present
   yum:

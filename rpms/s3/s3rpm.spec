@@ -372,6 +372,8 @@ rm -rf %{buildroot}
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundconsumer
 %exclude %{py36_sitelib}/s3recovery/s3recovery
 %exclude %{py36_sitelib}/s3msgbus/s3msgbus
+%exclude %{py36_sitelib}/s3msgbus/__pycache__/*
+%exclude %{py36_sitelib}/s3msgbus/*.py
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundproducer
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyc
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyo
