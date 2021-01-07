@@ -124,14 +124,13 @@ class ObjectRecoveryMsgbus(object):
         consumer_id = None,
         consumer_group = None,
         msg_topic = None,
-        autoack = None,
         offset = None):
         """Initializes consumer, connects and receives messages from message bus."""
         while True:
             try:
                 if not self.__isconsumersetupcomplete:
                     self.__setup_consumer(consumer_id,
-                        consumer_group, msg_topic, autoack, offset)
+                        consumer_group, msg_topic, offset)
                     if not self.__isconsumersetupcomplete:
                         if not self._daemon_mode:
                             self._logger.debug("Not launched in daemon mode, so exitting.")
