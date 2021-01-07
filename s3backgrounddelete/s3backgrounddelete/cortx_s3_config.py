@@ -48,8 +48,8 @@ class CORTXS3Config(object):
         self.recovery_secret_key = None
         self._load_and_fetch_config()
         self.logger.debug("CORTXS3Config: use cipher flag = " + str(use_cipher))
-        if use_cipher:
-            self.cache_credentials()
+        #if use_cipher:
+        #    self.cache_credentials()
 
     @staticmethod
     def get_conf_dir():
@@ -496,5 +496,23 @@ class CORTXS3Config(object):
         else:
             raise KeyError(
                 "Could not parse consumer_sleep from config file " +
+                self._conf_file)
+
+    def get_msgbus_producer_id(self):
+        """Return producer_id prefix from config file or KeyError."""
+        if 'message_bus' in self._config and 'producer_id' in self._config['message_bus']:
+            return self._config['message_bus']['producer_id']
+        else:
+            raise KeyError(
+                "Could not parse producer_id from config file " +
+                self._conf_file)
+
+    def get_msgbus_producer_delivery_mechanism(self):
+        """Return producer delivery mechanism from config file or KeyError."""
+        if 'message_bus' in self._config and 'producer_delivery_mechanism' in self._config['message_bus']:
+            return self._config['message_bus']['producer_delivery_mechanism']
+        else:
+            raise KeyError(
+                "Could not parse producer_delivery_mechanism from config file " +
                 self._conf_file)
 
