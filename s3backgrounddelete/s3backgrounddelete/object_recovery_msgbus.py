@@ -36,6 +36,7 @@ class ObjectRecoveryMsgbus(object):
         self._logger = logger
         self.__msgbuslib = None
         self.__isproducersetupcomplete = False
+        self.__isconsumersetupcomplete = False
         self._daemon_mode = config.get_daemon_mode()
         self._sleep_time = config.get_msgbus_consumer_sleep_time()
 
@@ -79,19 +80,19 @@ class ObjectRecoveryMsgbus(object):
             self.__msgbuslib = None
         return ret
 
-    def receive_data(self,
+    def __setup_consumer(self,
         consumer_id = None,
         consumer_group = None,
         msg_topic = None,
-        autoack = None,
         offset = None):
-        """Initializes consumer, connects and receives messages from message bus."""
+        """Setup steps required for consumer to start receiving."""
         try:
             if not self.__msgbuslib:
                 ret = self.__loadmsgbuslibrary()
                 if not ret:
-                    time.sleep(self._sleep_time)
-                    self.receive_data()
+                    self._logger.error("__loadmsgbuslibrary failed")
+                    self.__isconsumersetupcomplete = False
+                    return
 
             #Over here we will have msgbuslib loaded
             if not consumer_id:
@@ -103,16 +104,41 @@ class ObjectRecoveryMsgbus(object):
             if not msg_topic:
                 msg_topic = self._config.get_msgbus_topic()
 
-            if not autoack:
-                autoack = False
-
             if not offset:
                 offset = 'earliest'
 
             self._logger.debug("Setting up S3MessageBus for consumer")
             ret, msg = self.__msgbuslib.setup_receive(consumer_id,
-                consumer_group, msg_topic, autoack, offset)
-            if ret:
+                consumer_group, msg_topic, False, offset)
+            if not ret:
+                self._logger.error("Failed to setup message bus for consumer: " + str(msg))
+                self.__isconsumersetupcomplete = False
+            else:
+                self._logger.debug("setup message bus for consumer success")
+                self.__isconsumersetupcomplete = True
+        except Exception as exception:
+            self._logger.error("Exception:{}".format(exception))
+            self.__isconsumersetupcomplete = False
+
+    def receive_data(self,
+        consumer_id = None,
+        consumer_group = None,
+        msg_topic = None,
+        autoack = None,
+        offset = None):
+        """Initializes consumer, connects and receives messages from message bus."""
+        while True:
+            try:
+                if not self.__isconsumersetupcomplete:
+                    self.__setup_consumer(consumer_id,
+                        consumer_group, msg_topic, autoack, offset)
+                    if not self.__isconsumersetupcomplete:
+                        if not self._daemon_mode:
+                            self._logger.debug("Not launched in daemon mode, so exitting.")
+                            break
+                        time.sleep(self._sleep_time)
+                        continue
+                #Over here we can assume consumer is set up.
                 while True:
                     # We will keep on receiving until there are messages to receive.
                     # Failure is treated as no message in queue, in that case we sleep
@@ -134,23 +160,28 @@ class ObjectRecoveryMsgbus(object):
                         if not self._daemon_mode:
                             break
                         time.sleep(self._sleep_time)
-            else:
-                self._logger.error("Failed to setup message bus : " + str(msg))
-                time.sleep(self._sleep_time)
-                self.receive_data()
-        except Exception as exception:
-            self._logger.error("Receive Data Exception : {} {}".format(exception, traceback.format_exc()))
-            time.sleep(self._sleep_time)
-            self.receive_data()
 
-    def __setup_producer(self, producer_id = None, msg_type = None, delivery_mechanism = None):
-        """Establish connection to message bus."""
+            except Exception as exception:
+                self._logger.error("Receive Data Exception : {} {}".format(exception, traceback.format_exc()))
+                self.__isconsumersetupcomplete = False                
+            finally:
+                if not self._daemon_mode:
+                    break
+                time.sleep(self._sleep_time)
+
+    def __setup_producer(self,
+        producer_id = None,
+        msg_type = None,
+        delivery_mechanism = None):
+        """Setup steps required for producer to start sending."""
         try:
             if not self.__msgbuslib:
                 ret = self.__loadmsgbuslibrary()
                 if not ret:
-                    self._logger.error("connect failed")
+                    self._logger.error("__loadmsgbuslibrary failed")
                     self.__msgbuslib = None
+                    self.__isproducersetupcomplete = False
+                    return
 
             if not producer_id:
                 producer_id = self._config.get_msgbus_producer_id()
