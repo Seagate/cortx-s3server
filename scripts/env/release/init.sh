@@ -32,7 +32,6 @@ install_cortx_py_utils() {
   else
     yum install cortx-py-utils -y
   fi
-  exit 1;
 }
 
 usage() {
