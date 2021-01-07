@@ -79,7 +79,12 @@ class ObjectRecoveryMsgbus(object):
             self.__msgbuslib = None
         return ret
 
-    def receive_data(self):
+    def receive_data(self, 
+        consumer_id = None, 
+        consumer_group = None, 
+        msg_topic = None, 
+        autoack = None,
+        offset = None):
         """Initializes consumer, connects and receives messages from message bus."""
         try:
             if not self.__msgbuslib:
@@ -89,13 +94,24 @@ class ObjectRecoveryMsgbus(object):
                     self.receive_data()
             
             #Over here we will have msgbuslib loaded
-            id = self._config.get_msgbus_consumer_id_prefix() + str(socket.gethostname())
-            group = self._config.get_msgbus_consumer_group()
-            type = self._config.get_msgbus_topic()
-            autoack = False
-            offset = 'earliest'
+            if not consumer_id:
+                consumer_id = self._config.get_msgbus_consumer_id_prefix() + str(socket.gethostname())
+            
+            if not consumer_group:
+                consumer_group = self._config.get_msgbus_consumer_group()
+            
+            if not msg_topic:
+                type = self._config.get_msgbus_topic()
+
+            if not autoack:
+                autoack = False
+
+            if not offset:
+                offset = 'earliest'
+
             self._logger.debug("Setting up S3MessageBus for consumer")
-            ret, msg = self.__msgbuslib.setup_receive(id, group, type, autoack, offset)
+            ret, msg = self.__msgbuslib.setup_receive(consumer_id,
+                consumer_group, msg_topic, autoack, offset)
             if ret:
                 while True:
                     # We will keep on receiving until there are messages to receive.
