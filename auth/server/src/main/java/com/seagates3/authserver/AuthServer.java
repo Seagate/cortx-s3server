@@ -187,7 +187,18 @@ class AuthServer {
             serverChannels.add(serverChannel);
             logger.info("Auth server is listening on HTTPS port " + httpsPort);
           }
-
+          // listner code starts here
+          AuthServerConfigChangeListner listner =
+              new AuthServerConfigChangeListner(
+                  AuthServerConstants.RESOURCE_DIR + "/authserver.properties");
+          try {
+            // TODO Commented below watcherservice till performance/memory hit
+            // analysis
+            // new Thread(listner).start();
+          }
+          catch (Exception e) {
+            logger.info("Exception during reload of config", e);
+          }
           for (Channel ch : serverChannels) {
             ch.closeFuture().sync();
           }

@@ -36,7 +36,7 @@ function performMerge {
         newSampleValue=$(getProperty "$key" "$newSampleFile" "$fileType")
         #if config and old sample value same or new parameter added then replace config value with new sample value
         #else keep config value as it is
-        if [ -z "$configValue" ]
+        if ! grep -F "${key}" $configFile >/dev/null
         then
           IFS=$'\n'
           echo $line >> $configFile

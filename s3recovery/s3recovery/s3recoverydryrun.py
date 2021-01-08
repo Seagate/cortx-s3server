@@ -26,8 +26,8 @@ from s3recovery.s3recoverybase import S3RecoveryBase
 from s3recovery.config import Config
 
 class S3RecoveryDryRun(S3RecoveryBase):
-    def __init__(self):
-        super(S3RecoveryDryRun, self).__init__()
+    def __init__(self, use_cipher= True):
+        super(S3RecoveryDryRun, self).__init__(use_cipher)
         super(S3RecoveryDryRun, self).create_logger_directory()
         super(S3RecoveryDryRun, self).create_logger("S3RecoveryDryRun")
 

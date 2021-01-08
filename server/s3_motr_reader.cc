@@ -348,3 +348,21 @@ size_t S3MotrReader::get_next_block(char **data) {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return data_read;
 }
+
+S3BufferSequence S3MotrReader::extract_blocks_read() {
+
+  S3BufferSequence buffer_sequence;
+  auto *const bufvec = motr_rw_op_context->data;
+
+  assert(bufvec != nullptr);
+  assert(!iteration_index);
+  assert(num_of_blocks_to_read == bufvec->ov_vec.v_nr);
+
+  for (; iteration_index < num_of_blocks_to_read; ++iteration_index) {
+    buffer_sequence.emplace_back(bufvec->ov_buf[iteration_index],
+                                 bufvec->ov_vec.v_count[iteration_index]);
+  }
+  motr_rw_op_context->allocated_bufs = false;
+
+  return buffer_sequence;
+}
