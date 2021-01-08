@@ -23,18 +23,42 @@
 #ifndef __S3_M0_UINT128_HELPER_h__
 #define __S3_M0_UINT128_HELPER_h__
 
+#include <cstdint>
+#include <utility>
 #include <string>
+
 #include "motr_helpers.h"
 
-class S3M0Uint128Helper {
- public:
-  S3M0Uint128Helper() = delete;
+namespace S3M0Uint128Helper {
 
-  static std::pair<std::string, std::string> to_string_pair(
-      const m0_uint128 &id);
-  static std::string to_string(const m0_uint128 &id);
-  static m0_uint128 to_m0_uint128(const std::string &id_u_lo,
-                                  const std::string &id_u_hi);
-  static m0_uint128 to_m0_uint128(const std::string &id_str);
-};
-#endif
+std::pair<std::string, std::string> to_string_pair(const m0_uint128 &id);
+std::string to_string(const m0_uint128 &id);
+m0_uint128 to_m0_uint128(const std::string &id_u_lo,
+                         const std::string &id_u_hi);
+m0_uint128 to_m0_uint128(const std::string &id_str);
+
+template <size_t IntSize>
+int non_zero_tmpl_hlpr(const m0_uint128 &id);
+
+template <>
+inline int non_zero_tmpl_hlpr<size_t(4u)>(const m0_uint128 &id) {
+  const union {
+    uint64_t whole;
+    struct {
+      uint32_t lo;
+      uint32_t hi;
+    } parts;
+  } tmp = {id.u_hi | id.u_lo};
+
+  return tmp.parts.lo | tmp.parts.hi;
+}
+
+}  // namespace S3M0Uint128Helper
+
+inline int non_zero(const m0_uint128 &id) {
+  return S3M0Uint128Helper::non_zero_tmpl_hlpr<sizeof(int)>(id);
+}
+
+inline int zero(const m0_uint128 &id) { return !non_zero(id); }
+
+#endif  // __S3_M0_UINT128_HELPER_h__

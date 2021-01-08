@@ -275,6 +275,12 @@ TEST_F(S3GetObjectActionTest, ValidateObjectOfSizeZero) {
       .Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_reply_end()).Times(1);
 
+  std::map<std::string, std::string> meta_map{{"key", "value"}};
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_user_attributes())
+      .Times(1)
+      .WillOnce(ReturnRef(meta_map));
+
   action_under_test->validate_object_info();
 }
 
@@ -873,6 +879,12 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeLessThanUnitSize) {
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
 
+  std::map<std::string, std::string> meta_map{{"key", "value"}};
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_user_attributes())
+      .Times(1)
+      .WillOnce(ReturnRef(meta_map));
+
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
 
   EXPECT_CALL(*ptr_mock_request, send_reply_start(Eq(S3HttpSuccess200)))
@@ -925,6 +937,12 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSize) {
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
 
+  std::map<std::string, std::string> meta_map{{"key", "value"}};
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_user_attributes())
+      .Times(1)
+      .WillOnce(ReturnRef(meta_map));
+
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
 
   EXPECT_CALL(*ptr_mock_request, send_reply_start(Eq(S3HttpSuccess200)))
@@ -963,6 +981,12 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeMoreThanUnitSize) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
+
+  std::map<std::string, std::string> meta_map{{"key", "value"}};
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_user_attributes())
+      .Times(1)
+      .WillOnce(ReturnRef(meta_map));
 
   // Object size less than unit size
   int layout_id = 1;
@@ -1020,6 +1044,12 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfGivenRange) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
+
+  std::map<std::string, std::string> meta_map{{"key", "value"}};
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_user_attributes())
+      .Times(1)
+      .WillOnce(ReturnRef(meta_map));
 
   // Object size less than unit size
   int layout_id = 1;

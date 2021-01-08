@@ -27,6 +27,7 @@
 #include <memory>
 
 #include "s3_asyncop_context_base.h"
+#include "s3_buffer_sequence.h"
 #include "s3_motr_context.h"
 #include "s3_motr_layout.h"
 #include "s3_motr_wrapper.h"
@@ -205,6 +206,7 @@ class S3MotrReader {
   // and content in data.
   virtual size_t get_first_block(char** data);
   virtual size_t get_next_block(char** data);
+  virtual S3BufferSequence extract_blocks_read();
 
   virtual size_t get_last_index() { return last_index; }
 

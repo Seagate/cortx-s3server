@@ -21,20 +21,21 @@
 #include "s3_m0_uint128_helper.h"
 #include "base64.h"
 
-std::pair<std::string, std::string> S3M0Uint128Helper::to_string_pair(
-    const m0_uint128 &id) {
+namespace S3M0Uint128Helper {
+
+std::pair<std::string, std::string> to_string_pair(const m0_uint128 &id) {
   return std::make_pair(
       base64_encode((unsigned char const *)&id.u_hi, sizeof(id.u_hi)),
       base64_encode((unsigned char const *)&id.u_lo, sizeof(id.u_lo)));
 }
 
-std::string S3M0Uint128Helper::to_string(const m0_uint128 &id) {
+std::string to_string(const m0_uint128 &id) {
   return base64_encode((unsigned char const *)&id.u_hi, sizeof(id.u_hi)) + "-" +
          base64_encode((unsigned char const *)&id.u_lo, sizeof(id.u_lo));
 }
 
-m0_uint128 S3M0Uint128Helper::to_m0_uint128(const std::string &id_u_lo,
-                                            const std::string &id_u_hi) {
+m0_uint128 to_m0_uint128(const std::string &id_u_lo,
+                         const std::string &id_u_hi) {
   m0_uint128 id = {0ULL, 0ULL};
   std::string dec_id_u_hi = base64_decode(id_u_hi);
   std::string dec_id_u_lo = base64_decode(id_u_lo);
@@ -46,7 +47,7 @@ m0_uint128 S3M0Uint128Helper::to_m0_uint128(const std::string &id_u_lo,
   return id;
 }
 
-m0_uint128 S3M0Uint128Helper::to_m0_uint128(const std::string &id_str) {
+m0_uint128 to_m0_uint128(const std::string &id_str) {
   m0_uint128 id = {0ULL, 0ULL};
   std::size_t delim_pos = id_str.find("-");
   if (delim_pos != std::string::npos) {
@@ -60,3 +61,5 @@ m0_uint128 S3M0Uint128Helper::to_m0_uint128(const std::string &id_str) {
   }
   return id;
 }
+
+}  // namespace S3M0Uint128Helper

@@ -22,7 +22,6 @@
 #include <algorithm>
 #include <utility>
 
-#include "s3_buffer_sequence.h"
 #include "s3_common_utilities.h"
 #include "s3_copy_object_action.h"
 #include "s3_error_codes.h"
@@ -211,6 +210,43 @@ void S3CopyObjectAction::fetch_source_object_info_failed() {
 // Validate source bucket and object
 void S3CopyObjectAction::validate_copyobject_request() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  auto meta_directive_hdr =
+      request->get_header_value("x-amz-metadata-directive");
+  auto tagging_directive_hdr =
+      request->get_header_value("x-amz-tagging-directive");
+
+  if (!meta_directive_hdr.empty()) {
+    s3_log(S3_LOG_DEBUG, stripped_request_id,
+           "Received x-amz-metadata-directive header, value: %s",
+           meta_directive_hdr.c_str());
+    if (meta_directive_hdr == DirectiveValueReplace) {
+      s3_put_action_state = S3PutObjectActionState::validationFailed;
+      set_s3_error("NotImplemented");
+      send_response_to_s3_client();
+      return;
+    } else if (meta_directive_hdr != DirectiveValueCOPY) {
+      s3_put_action_state = S3PutObjectActionState::validationFailed;
+      set_s3_error("InvalidArgument");
+      send_response_to_s3_client();
+      return;
+    }
+  }
+  if (!tagging_directive_hdr.empty()) {
+    s3_log(S3_LOG_DEBUG, stripped_request_id,
+           "Received x-amz-tagging-directive header, value: %s",
+           tagging_directive_hdr.c_str());
+    if (tagging_directive_hdr == DirectiveValueReplace) {
+      s3_put_action_state = S3PutObjectActionState::validationFailed;
+      set_s3_error("NotImplemented");
+      send_response_to_s3_client();
+      return;
+    } else if (tagging_directive_hdr != DirectiveValueCOPY) {
+      s3_put_action_state = S3PutObjectActionState::validationFailed;
+      set_s3_error("InvalidArgument");
+      send_response_to_s3_client();
+      return;
+    }
+  }
   get_source_bucket_and_object();
 
   if (source_bucket_name.empty() || source_object_name.empty()) {
@@ -235,184 +271,51 @@ void S3CopyObjectAction::copy_object() {
     next();
     return;
   }
-  motr_reader = motr_reader_factory->create_motr_reader(
-      request, source_object_metadata->get_oid(),
-      source_object_metadata->get_layout_id());
-  motr_reader->set_last_index(0);
+  try {
+    object_data_copier.reset(new S3ObjectDataCopier(
+        request, motr_writer, motr_reader_factory, s3_motr_api));
 
-  bytes_left_to_read = total_data_to_stream;
-  read_data_block();
+    object_data_copier->copy(
+        source_object_metadata->get_oid(), total_data_to_stream,
+        source_object_metadata->get_layout_id(),
+        std::bind(&S3CopyObjectAction::check_shutdown_and_rollback, this,
+                  false),
+        std::bind(&S3CopyObjectAction::copy_object_success, this),
+        std::bind(&S3CopyObjectAction::copy_object_failed, this));
 
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3CopyObjectAction::read_data_block() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
-  assert(!read_in_progress);
-  assert(bytes_left_to_read > 0);
-
-  const auto n_blocks = std::min<size_t>(
-      S3Option::get_instance()->get_motr_units_per_request(),
-      (bytes_left_to_read + motr_unit_size - 1) / motr_unit_size);
-
-  if (motr_reader->read_object_data(
-          n_blocks,
-          std::bind(&S3CopyObjectAction::read_data_block_success, this),
-          std::bind(&S3CopyObjectAction::read_data_block_failed, this))) {
-
-    s3_log(S3_LOG_DEBUG, request_id, "Read of %zu data block is started",
-           n_blocks);
-    read_in_progress = true;
-  } else {
-    copy_failed = true;
-    s3_log(S3_LOG_ERROR, request_id, "Read of %zu data block failed to start",
-           n_blocks);
-    set_s3_error(motr_reader->get_state() ==
-                         S3MotrReaderOpState::failed_to_launch
-                     ? "ServiceUnavailable"
-                     : "InternalError");
-    if (!write_in_progress) {
-      send_response_to_s3_client();
-    }
-  }
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3CopyObjectAction::read_data_block_success() {
-
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_INFO, stripped_request_id, "Reading a part of data succeeded");
-
-  assert(read_in_progress);
-  read_in_progress = false;
-
-  if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, nullptr, "Shutdown or rollback");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
-  if (copy_failed) {
-    send_response_to_s3_client();
-    return;
+  catch (const std::exception& ex) {
+    s3_log(S3_LOG_ERROR, stripped_request_id, "%s", ex.what());
   }
-  if (!write_in_progress) {
-    write_data_block();
+  catch (...) {
+    s3_log(S3_LOG_ERROR, stripped_request_id, "Non-standard C++ exception");
   }
+  set_s3_error("InternalError");
+  send_response_to_s3_client();
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3CopyObjectAction::read_data_block_failed() {
+void S3CopyObjectAction::copy_object_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_ERROR, request_id, "Failed to read object data from motr");
 
-  assert(read_in_progress);
-  read_in_progress = false;
+  s3_put_action_state = S3PutObjectActionState::writeComplete;
+  object_data_copier.reset();
+  next();
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3CopyObjectAction::copy_object_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   s3_put_action_state = S3PutObjectActionState::writeFailed;
-  copy_failed = true;
+  set_s3_error(object_data_copier->get_s3_error());
 
-  set_s3_error(motr_reader->get_state() == S3MotrReaderOpState::failed_to_launch
-                   ? "ServiceUnavailable"
-                   : "InternalError");
-  if (!write_in_progress) {
-    send_response_to_s3_client();
-  }
-
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3CopyObjectAction::write_data_block() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
-  assert(!write_in_progress);
-  assert(bytes_left_to_read > 0);
-
-  S3BufferSequence buffer_sequence;
-
-  char* p_data = nullptr;
-  size_t block_size = motr_reader->get_first_block(&p_data);
-
-  unsigned blocks_in_chunk = 0;
-  size_t bytes_in_chunk = 0;
-
-  while (block_size) {
-    assert(p_data != nullptr);
-
-    if (block_size >= bytes_left_to_read) {
-      block_size = bytes_left_to_read;
-      bytes_left_to_read = 0;
-    } else {
-      bytes_left_to_read -= block_size;
-    }
-    buffer_sequence.emplace_back(p_data, block_size);
-
-    bytes_in_chunk += block_size;
-    ++blocks_in_chunk;
-
-    block_size = motr_reader->get_next_block(&p_data);
-  }
-#ifndef S3_GOOGLE_TEST
-  assert(blocks_in_chunk);
-  assert(bytes_in_chunk > 0);
-#endif  // S3_GOOGLE_TEST
-
-  s3_log(S3_LOG_DEBUG, request_id, "Got %zu bytes in %u blocks", bytes_in_chunk,
-         blocks_in_chunk);
-
-  motr_writer->write_content(
-      std::bind(&S3CopyObjectAction::write_data_block_success, this),
-      std::bind(&S3CopyObjectAction::write_data_block_failed, this),
-      std::move(buffer_sequence), motr_unit_size);
-
-  if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
-    copy_failed = true;
-    s3_log(S3_LOG_ERROR, request_id, "Write of data block failed to start");
-
-    set_s3_error("ServiceUnavailable");
-    send_response_to_s3_client();
-  } else {
-    write_in_progress = true;
-  }
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3CopyObjectAction::write_data_block_success() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
-  assert(write_in_progress);
-  write_in_progress = false;
-
-  if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, nullptr, "Shutdown or rollback");
-    return;
-  }
-  if (bytes_left_to_read) {
-    read_data_block();
-  } else {
-    s3_put_action_state = S3PutObjectActionState::writeComplete;
-    next();
-  }
-
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3CopyObjectAction::write_data_block_failed() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_ERROR, request_id, "Failed to write object data to motr");
-
-  assert(write_in_progress);
-  write_in_progress = false;
-
-  copy_failed = true;
-  s3_put_action_state = S3PutObjectActionState::writeFailed;
-
-  set_s3_error(motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch
-                   ? "ServiceUnavailable"
-                   : "InternalError");
-  if (!read_in_progress) {
-    send_response_to_s3_client();
-  }
+  object_data_copier.reset();
+  send_response_to_s3_client();
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -429,16 +332,18 @@ void S3CopyObjectAction::save_metadata() {
       source_object_metadata->get_content_type());
   new_object_metadata->set_md5(motr_writer->get_content_md5());
   new_object_metadata->setacl(auth_acl);
-  // new_object_metadata->set_tags(new_object_tags_map);
 
-  /*for (auto it : request->get_in_headers_copy()) {
-    if (it.first.find("x-amz-meta-") != std::string::npos) {
-      s3_log(S3_LOG_DEBUG, request_id,
-             "Writing user metadata on object: [%s] -> [%s]\n",
-             it.first.c_str(), it.second.c_str());
-      new_object_metadata->add_user_defined_attribute(it.first, it.second);
-    }
-  }*/
+  // put source object tags on new object
+  s3_log(S3_LOG_DEBUG, stripped_request_id,
+         "copying source object tags on new object..");
+  new_object_metadata->set_tags(source_object_metadata->get_tags());
+
+  // copy source object user-defined metadata, to new object
+  s3_log(S3_LOG_DEBUG, stripped_request_id,
+         "copying source object metadata on new object..");
+  for (auto it : source_object_metadata->get_user_attributes()) {
+    new_object_metadata->add_user_defined_attribute(it.first, it.second);
+  }
 
   // bypass shutdown signal check for next task
   check_shutdown_signal_for_next_task(false);

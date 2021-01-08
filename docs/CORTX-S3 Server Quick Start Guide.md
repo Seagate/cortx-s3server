@@ -51,7 +51,9 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
         * `$ yum install -y epel-release`
     * Verify if kernel version is 3.10.0-1062 (for centos-7.7) or 3.10.0-1127 (for centos-7.8), using: `$ uname -r`
 
-7. You'll need to disable selinux and firewall. Run the following commands:
+7. You'll need to install CORTX Python Utilities. Follow the steps to install [CORTX Python Utilities](https://github.com/Seagate/cortx-utils/blob/main/py-utils/README.md).
+
+8. You'll need to disable selinux and firewall. Run the following commands:
 
      `$ systemctl stop firewalld` 
 
