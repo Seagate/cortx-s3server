@@ -235,7 +235,7 @@ fi
 # Fetch and update cluster_id
 fetch_update_cluster_id()
 {
-    if [ ! -z '$confstore_config_url' ]
+    if [ -z "$confstore_config_url" ]
     then
         echo "ERROR: confstore config file URL is not set, cannot use confstore, exiting."
         exit 1
