@@ -72,6 +72,8 @@ update_cluster_id=false
 is_rabbitmq_clustered=false
 cleanup_accounts=false
 cleanup_dependencies=false
+cleanup_both=false
+setlogrotate=false
 create_auth_jks_passwrd=false
 encrypt_cli="/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar"
 
@@ -81,7 +83,7 @@ then
   exit 1
 fi
 
-# check if s3cipher and s3confstore are installed on the system
+# check if s3cipher, s3confstore and s3psetup are installed on the system
 if ! command -v s3cipher &>/dev/null
 then
     echo "ERROR: s3cipher not installed on the system, exiting."
@@ -93,6 +95,13 @@ then
     echo "ERROR: s3confstore not installed on the system, exiting."
     exit 1
 fi
+
+if ! command -v s3psetup &>/dev/null
+then
+    echo "ERROR: s3psetup not installed on the system, exiting."
+    exit 1
+fi
+
 
 while test $# -gt 0
 do
@@ -125,8 +134,9 @@ do
         update_cluster_id=true
         ;;
     --cleanup )
-        cleanup_accounts=true
-        cleanup_dependencies=true
+        # cleanup_accounts=true
+        # cleanup_dependencies=true
+        cleanup_both=true
         ;;
     --createauthjkspassword )
         create_auth_jks_passwrd=true
@@ -494,6 +504,15 @@ then
         echo "ERROR: haproxy configuration failed, exiting"
         exit 1
     fi
+fi
+
+# Clean up backgrounddelete account
+if [[ $cleanup_both == true ]]
+then
+    s3psetup --cleanup accounts
+    # Using both causes the config files to be removed and
+    # this will impact idempotency
+    # s3psetup --cleanup both
 fi
 
 # Clean up backgrounddelete account
