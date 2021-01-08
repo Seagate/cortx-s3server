@@ -33,7 +33,11 @@ class S3CortxConfStore:
 
   def load_config(self, index: str, backend_url: str):
     """Load Config into constore"""
-    Conf.load(index, backend_url)
+    if not backend_url.strip():
+      print("backend_url is empty")
+      exit(-1)
+    else:
+      Conf.load(index, backend_url)
 
   def get_config(self, index: str, key: str):
     """Get the key's config from constore"""
@@ -94,6 +98,9 @@ class S3CortxConfStore:
     args = parser.parse_args()
 
     if args.path:
+      if not args.path.strip():
+        print("--path option value cannot be empty string.")
+        exit(-1)
       if args.load == None and args.getkey == None and args.setkey == None:
         print("--path option is required only for --load, --getkey and --setkey options")
         exit(-1)
