@@ -39,6 +39,8 @@ class S3GetBucketAction : public S3BucketAction {
   size_t max_record_count;
   short retry_count;
   bool b_first_next_keyval_call;
+  bool b_state_start_check_any_more_keys;
+  std::string saved_last_key;
 
  protected:
   std::shared_ptr<S3ObjectListResponse> object_list;

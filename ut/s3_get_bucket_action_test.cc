@@ -27,11 +27,12 @@
 #include "mock_s3_request_object.h"
 #include "s3_get_bucket_action.h"
 
-using ::testing::Invoke;
+using ::testing::InvokeWithoutArgs;
 using ::testing::AtLeast;
 using ::testing::ReturnRef;
 using ::testing::Return;
 using ::testing::_;
+using ::testing::InSequence;
 
 #define CREATE_BUCKET_METADATA_OBJ                      \
   do {                                                  \
@@ -127,6 +128,11 @@ class S3GetBucketActionTest : public testing::Test {
   struct m0_uint128 object_list_indx_oid;
   std::map<std::string, std::pair<int, std::string>> result_keys_values;
   std::string bucket_name, object_name;
+
+ public:
+  void call_next_keyval_successful() {
+    action_under_test_ptr->get_next_objects_successful();
+  }
 };
 
 TEST_F(S3GetBucketActionTest, Constructor) {
@@ -409,7 +415,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulDelimiterLastKey) {
   action_under_test_ptr->get_next_objects_successful();
   EXPECT_EQ(0, action_under_test_ptr->object_list->size());
   EXPECT_EQ(1, action_under_test_ptr->object_list->common_prefixes_size());
-  EXPECT_EQ("test/test1/key3", action_under_test_ptr->last_key);
+  EXPECT_EQ("test/\xff", action_under_test_ptr->last_key);
 }
 
 // Prefix in multi-component object names
@@ -417,7 +423,17 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulMultiComponentKey) {
   CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
-
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_state())
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::present));
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
+              next_keyval(_, _, _, _, _, _))
+      .Times(AtLeast(1))
+      .WillRepeatedly(InvokeWithoutArgs(
+           this, &S3GetBucketActionTest::call_next_keyval_successful));
+  bucket_meta_factory->mock_bucket_metadata->set_objects_version_list_index_oid(
+      object_list_indx_oid);
+  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
+      object_list_indx_oid);
   action_under_test_ptr->request_prefix.assign("");
   action_under_test_ptr->request_delimiter.assign("/");
   action_under_test_ptr->request_marker_key.assign("boo/");
@@ -431,9 +447,30 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulMultiComponentKey) {
       std::make_pair("cquux/thud", std::make_pair(0, "keyval")));
   result_keys_values.insert(
       std::make_pair("cquux/bla", std::make_pair(0, "keyval")));
+  // last_key:= boo/\xff
+  std::map<std::string, std::pair<int, std::string>> result_next_keys_values;
+  result_next_keys_values.insert(
+      std::make_pair("cquux/thud", std::make_pair(0, "keyval")));
+  result_next_keys_values.insert(
+      std::make_pair("cquux/bla", std::make_pair(0, "keyval")));
+  // last_key:= cquux/\xff
+  std::map<std::string, std::pair<int, std::string>>
+      result_next_keys_values_empty;
 
   OBJ_METADATA_EXPECTATIONS;
   SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
+  // Override get_key_values(), as below:
+  {
+    InSequence s;
+    EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
+                get_key_values()).WillOnce(ReturnRef(result_keys_values));
+    EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
+                get_key_values()).WillOnce(ReturnRef(result_next_keys_values));
+    EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
+                get_key_values())
+        .WillOnce(ReturnRef(result_next_keys_values_empty));
+  }
+
   action_under_test_ptr->max_record_count =
       S3Option::get_instance()->get_motr_idx_fetch_count();
   action_under_test_ptr->get_next_objects_successful();
