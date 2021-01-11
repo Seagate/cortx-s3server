@@ -270,7 +270,10 @@ then
     create_auth_jks_password
 fi
 
-ldappasswd=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
+cipherkey=$(s3cipher --generate_key --const_key  openldap 2>/dev/null)
+sgiamadminpassd=$(s3confstore --getkey "cluster>openldap>sgiampassword" --path "json:///opt/seagate/cortx/s3/conf/s3_confstore.json")
+# decrypt the password read from the confstore
+ldappasswd=$(s3cipher --decrypt --data $sgiamadminpassd --key $cipherkey 2>/dev/null)
 
 # Install and Configure Openldap over Non-SSL.
 if [[ $config_ldap == true ]]
