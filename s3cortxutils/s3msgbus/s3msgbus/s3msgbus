@@ -21,7 +21,7 @@
 
 from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
 
-id, msg_type='MsgBusLib_Producer','delete' 
+id, msg_type='MsgBusLib_Producer','bgdelete' 
 s3MessageBus = S3CortxMsgBus()
 ret,msg = s3MessageBus.connect()
 if not ret:
@@ -45,3 +45,4 @@ ret,message = s3MessageBus.receive()
 if not ret:
     print("Message receive failed")
 
+s3MessageBus.purge()
