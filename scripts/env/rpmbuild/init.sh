@@ -26,6 +26,15 @@ BASEDIR=$(dirname "$SCRIPT_PATH")
 S3_SRC_DIR="$BASEDIR/../../../"
 CURRENT_DIR=`pwd`
 
+install_cortx_py_utils() {
+  #rpm -q cortx-py-utils && yum remove cortx-py-utils -y && yum install cortx-py-utils -y
+  if rpm -q cortx-py-utils ; then
+    yum upgrade cortx-py-utils -y
+  else
+    yum install cortx-py-utils -y
+  fi
+}
+
 usage() {
   echo "Usage: $0
   optional arguments:
@@ -35,6 +44,8 @@ usage() {
 
 if [[ $# -eq 0 ]] ; then
   source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
+  # install or upgrade cortx-py-utils
+  install_cortx_py_utils
 else
   while getopts "ah" x; do
       case "${x}" in

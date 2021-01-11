@@ -47,6 +47,7 @@ class CORTXS3Config(object):
         self.recovery_access_key = None
         self.recovery_secret_key = None
         self._load_and_fetch_config()
+        self.logger.debug("CORTXS3Config: use cipher flag = " + str(use_cipher))
         if use_cipher:
             self.cache_credentials()
 

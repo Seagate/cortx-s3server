@@ -138,6 +138,11 @@ void S3ObjectListResponse::add_common_prefix(std::string common_prefix) {
   common_prefixes.insert(common_prefix);
 }
 
+bool S3ObjectListResponse::is_prefix_in_common_prefix(
+    std::string& check_prefix) {
+  return (common_prefixes.find(check_prefix) != common_prefixes.end());
+}
+
 void S3ObjectListResponse::set_user_id(std::string userid) { user_id = userid; }
 
 void S3ObjectListResponse::set_user_name(std::string username) {
