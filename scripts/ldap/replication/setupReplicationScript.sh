@@ -18,9 +18,9 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 ##################################
-# Configure replication 
+# Configure ldap-replication
 ##################################
-usage() { echo "Usage: [-h <provide file containing hostnames of nodes in cluster>],[-p <ldap admin password>]" 1>&2; exit 1; }
+usage() { echo "Usage: [-h <file containing hostnames of nodes in cluster>] [-p <ldap admin password>]" 1>&2; exit 1; }
 
 while getopts ":h:p:" o; do
     case "${o}" in
@@ -35,7 +35,7 @@ while getopts ":h:p:" o; do
             ;;
     esac
 done
-shift $((OPTIND-1))
+shift "$((OPTIND-1))"
 
 if [ -z ${host_list} ] || [ -z ${password} ]
 then
@@ -45,18 +45,23 @@ fi
 
 INSTALLDIR="/opt/seagate/cortx/s3/install/ldap/replication"
 
-# checkHostValidity will check if all provided hosts are valid or not
+# checkHostValidity will check if all provided hosts are valid and reachable
 checkHostValidity()
 {
     while read host; do
-        isValid=`ping -c 1 ${host} | grep bytes | wc -l`
+        isValid=$(ping -c 1 ${host} | grep bytes | wc -l)
         if [ "$isValid" -le 1 ]
         then
-            echo ${host}" is either invalid or not reachable. Please check or correct your entry in host file"
+            echo "ERROR: $host is either invalid or not reachable."
             exit
+        else
+            echo "INFO: $host is valid and reachable."
         fi
-    done <$host_list
+    done < "$host_list"
 }
+
+# Check if hosts are valid
+checkHostValidity
 
 # getServerIdFromHostFile will generate serverid from host list provided
 id=1
@@ -67,20 +72,9 @@ getServerIdFromHostFile()
         then
             break
         fi
-    id=`expr ${id} + 1`
-    done <$host_list
+    id=$(expr ${id} + 1)
+    done < "$host_list"
 }
-
-# saveHostList will save host list at /opt/seagate/cortx/s3/install/ldap/replication/ for future use in reverting replication
-saveHostList()
-{
-    while read host; do
-    echo "$host" >> /opt/seagate/cortx/s3/install/ldap/replication/host_list
-    done <$host_list
-}
-
-checkHostValidity
-saveHostList
 
 # update serverID
 getServerIdFromHostFile
