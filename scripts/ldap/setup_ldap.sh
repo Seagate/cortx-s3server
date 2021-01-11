@@ -88,9 +88,15 @@ cp -f $INSTALLDIR/olcDatabase\=\{2\}mdb.ldif /etc/openldap/slapd.d/cn\=config/
 chgrp ldap /etc/openldap/certs/password # onlyif: grep -q ldap /etc/group && test -f /etc/openldap/certs/password
 
 if [[ $defaultpasswd == true ]]
-then # Get password from cortx-utils
-    LDAPADMINPASS=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
-    ROOTDNPASSWORD="$LDAPADMINPASS"
+then # Get password from py-utils:confstore
+    cipherkey=$(s3cipher --generate_key --const_key  openldap 2>/dev/null)
+
+    sgiamadminpassd=$(s3confstore --getkey "cluster>openldap>sgiampassword" --path "json:///opt/seagate/cortx/s3/conf/s3_confstore.json")
+    rootdnpasswd=$(s3confstore --getkey "cluster>openldap>rootdnpassword" --path "json:///opt/seagate/cortx/s3/conf/s3_confstore.json")
+
+    # decrypt the passwords read from the confstore
+    LDAPADMINPASS=$(s3cipher --decrypt --data $sgiamadminpassd --key $cipherkey 2>/dev/null)
+    ROOTDNPASSWORD=$(s3cipher --decrypt --data $rootdnpasswd --key $cipherkey 2>/dev/null)
 else # Fetch Root DN & IAM admin passwords from User
     echo -en "\nEnter Password for LDAP rootDN: "
     read -s ROOTDNPASSWORD && [[ -z $ROOTDNPASSWORD ]] && echo 'Password can not be null.' && exit 1

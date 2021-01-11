@@ -51,8 +51,9 @@ set -e
 SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
 
-# TODO: to be removed, as we will remove all encryption and decryption of ldap passwords from s3authserver.
-ldap_admin_pwd=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
+cipherkey=$(s3cipher --generate_key --const_key  openldap 2>/dev/null)
+sgiamadminpassd=$(s3confstore --getkey "cluster>openldap>sgiampassword" --path "json:///opt/seagate/cortx/s3/conf/s3_confstore.json")
+ldap_admin_pwd=$(s3cipher --decrypt --data $sgiamadminpassd --key $cipherkey 2>/dev/null)
 
 USE_SUDO=
 if [[ $EUID -ne 0 ]]; then
