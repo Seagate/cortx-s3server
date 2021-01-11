@@ -17,7 +17,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-#Script to run UT's of s3recovery tool
+#Script to run UT's of s3confstore
 set -e
 
 abort()
@@ -33,7 +33,7 @@ abort()
 }
 trap 'abort' 0
 
-printf "\nRunning s3confstore tool UT's...\n"
+printf "\nRunning s3confstore UT's...\n"
 
 SCRIPT_PATH=$(readlink -f "$0")
 SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
@@ -41,7 +41,7 @@ SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
 #Update python path to source modules and run unit tests.
 PYTHONPATH=${PYTHONPATH}:${SCRIPT_DIR}/.. python36 -m pytest $SCRIPT_DIR/../ut/*.py -v
 
-echo "s3confstore tool UT's runs successfully"
+echo "s3confstore UT's runs successfully"
 
 trap : 0
 
