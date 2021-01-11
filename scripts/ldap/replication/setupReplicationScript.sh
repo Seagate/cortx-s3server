@@ -52,8 +52,10 @@ checkHostValidity()
         isValid=$(ping -c 1 ${host} | grep bytes | wc -l)
         if [ "$isValid" -le 1 ]
         then
-            echo "$host is either invalid or not reachable."
+            echo "ERROR: $host is either invalid or not reachable."
             exit
+        else
+            echo "INFO: $host is valid and reachable."
         fi
     done < "$host_list"
 }

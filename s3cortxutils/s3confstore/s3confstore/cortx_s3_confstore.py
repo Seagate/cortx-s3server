@@ -34,7 +34,7 @@ class S3CortxConfStore:
   def load_config(self, index: str, backend_url: str):
     """Load Config into constore"""
     if not backend_url.strip():
-      print("backend_url is empty")
+      print("Cannot load py-utils:confstore as backend_url[{}] is empty.".format(backend_url))
       exit(-1)
     else:
       Conf.load(index, backend_url)
