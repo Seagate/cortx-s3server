@@ -22,14 +22,10 @@
 # Install and configure release S3Server installation #
 #######################################################
 USAGE="USAGE: bash $(basename "$0") [--setupjenkinsyumrepo]
-                                    [--installdependency]
                                     [--postdependency]
                                     [--purgeconfigldap]
                                     [--configldap]
-                                    [--ldapreplication]
-                                    [--olcserverid <Value>]
-                                    [--eesnode1 <Value>]
-                                    [--eesnode2 <Value>]
+                                    [--confurl <URL_PATH>]
                                     [--s3backgrounddelete]
                                     [--s3recoverytool]
                                     [--updateclusterid]
@@ -41,14 +37,11 @@ Install and configure release S3server setup.
 
 where:
 --setupjenkinsyumrepo    Setup required S3 yum repos.
---installdependency      Install all S3server release rpm dependencies.
 --postdependency         Configure S3server post installation of dependencies.
 --purgeconfigldap        Clear and Setup all LDAP configs
 --configldap             Setup all LDAP configs
+--confurl                configuration file url, for using with py-utils:ConfStore
 --ldapreplication        Setup LDAP replication
---eesnode1               EES node 1 for LDAP replication
---eesnode2               EES node 2 for LDAP replication
---olcserverid            Host olcServerID (Unique for different nodes)
 --s3backgrounddelete     Configure s3backgrounddelete and its dependencies
 --s3recoverytool         Configure s3recoverytool and its dependencies
 --updateclusterid        Fetch and update cluster id in S3 config
@@ -68,11 +61,8 @@ VERSION=`cat /etc/os-release | sed -n 's/VERSION_ID=\"\([0-9].*\)\"/\1/p'`
 major_version=`echo ${VERSION} | awk -F '.' '{ print $1 }'`
 selinux_status=$(sestatus| grep -w "SELinux status" | cut -d ':' -f 2  | xargs)
 
-olc_server_id=1
-ees_node1=127.0.0.1
-ees_node2=127.0.0.1
-ldap_replication=false
-install_dependency=false
+confstore_config_url=
+confstore_config_url_set=false
 post_dependency=false
 purge_config_ldap=false
 config_ldap=false
@@ -109,9 +99,6 @@ fi
 while test $# -gt 0
 do
   case "$1" in
-    --installdependency )
-        install_dependency=true
-        ;;
     --postdependency )
         post_dependency=true
         ;;
@@ -121,17 +108,9 @@ do
     --purgeconfigldap )
         purge_config_ldap=true
         ;;
-    --ldapreplication )
-        ldap_replication=true
-        ;;
-    --olcserverid ) shift;
-        olc_server_id=$1
-        ;;
-    --eesnode1 ) shift;
-        ees_node1=$1
-        ;;
-    --eesnode2 ) shift;
-        ees_node2=$1
+    --confurl ) shift;
+        confstore_config_url=$1
+        confstore_config_url_set=true
         ;;
     --setupjenkinsyumrepo )
         setup_jenkins_yum_repo=true
@@ -165,6 +144,12 @@ do
   esac
   shift
 done
+
+if [ $confstore_config_url_set == true ] && [ -z "$confstore_config_url" ]
+then
+    echo "ERROR: confstore_config_url is empty, exiting."
+    exit 1
+fi
 
 setup_release_repo()
 {
@@ -247,61 +232,23 @@ then
 setup_release_repo
 fi
 
-# Install required S3 release rpm dependencies.
-if [[ $install_dependency == true ]]
-then
-    # Install all required S3 dependencies for release setup
-    yum list installed selinux-policy && yum update -y selinux-policy
-    yum install -y openssl java-1.8.0-openjdk-headless redis haproxy keepalived
-
-    # Generate the stx certificates rpms
-    rm -f ~/rpmbuild/RPMS/x86_64/stx-s3-certs*
-    rm -f ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
-
-    cd $S3_DIR/rpms/s3certs
-    ./buildrpm.sh -T s3dev
-
-    yum remove stx-s3-certs stx-s3-client-certs || /bin/true
-    #yum install openldap-servers haproxy -y # so we have "ldap" and "haproxy" users.
-    yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-certs*
-    yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
-
-    # Install rabbitmq requried for s3background delete on all s3 nodes
-    curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | sudo bash || exit 1
-
-    # Install python3 pika on all nodes requried for s3backgrounddelete  / recoverytool (BSD 3-Clause license)
-    if [ "$major_version" = "7" ];
-    then
-        yum -y install  python36-pika
-    elif [ "$major_version" = "8" ];
-    then
-        yum -y localinstall https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/Packages/p/python3-pika
-    fi
-fi
-
-setup_ldap_replication()
-{
-    ldapadd -Y EXTERNAL -H ldapi:/// -f /opt/seagate/cortx/s3/install/ldap/syncprov_mod.ldif
-    ldapadd -Y EXTERNAL -H ldapi:/// -f /opt/seagate/cortx/s3/install/ldap/syncprov.ldif
-    firewall-cmd --zone=public --add-port=389/tcp --permanent
-    firewall-cmd --reload
-
-    # Openldap replication for 2 node setup for EES.
-    sed -i 's/#//g' /opt/seagate/cortx/s3/install/ldap/replicate.ldif
-    sed -i '0,/<sample_provider_URI>/ s/<sample_provider_URI>/$ees_node1/g' scripts/ldap/replicate.ldif
-    sed -i '0,/<sample_provider_URI>/ s/<sample_provider_URI>/$ees_node2/g' scripts/ldap/replicate.ldif
-    sed -i 's/olcServerID: /olcServerID: $olc_server_id/g' scripts/ldap/replicate.ldif
-
-    ldapmodify -Y EXTERNAL  -H ldapi:/// -f /opt/seagate/cortx/s3/install/ldap/replicate.ldif
-}
-
 # Fetch and update cluster_id
 fetch_update_cluster_id()
 {
-    cluster_id=$(s3confstore --getkey "cluster>cluster_id" --path "json:///opt/seagate/cortx/s3/conf/s3_confstore.json")
-
-    # TODO: remove below sed cmd, as soon as s3backgrounddelete gets updated to read configurations from confstore
-    sed -i "s/cluster_id:.*$/cluster_id: "$cluster_id"/g" /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml
+    if [ -z "$confstore_config_url" ]
+    then
+        echo "ERROR: confstore config file URL is not set, cannot use confstore, exiting."
+        exit 1
+    fi
+    cluster_id=$(s3confstore --getkey "cluster>cluster_id" --path "$confstore_config_url")
+    if [ $? -eq 0 ]
+    then
+        # TODO: remove below sed cmd, as soon as s3backgrounddelete gets updated to read configurations from confstore
+        sed -i "s/cluster_id:.*$/cluster_id: "$cluster_id"/g" /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml
+    else
+        echo "ERROR: failed to read cluster>cluster_id from py-utils:confstore, exiting."
+        exit 1
+    fi
 }
 
 # Fetch and update cluster id
@@ -330,18 +277,26 @@ if [[ $config_ldap == true ]]
 then
     /opt/seagate/cortx/s3/install/ldap/setup_ldap.sh --defaultpasswd --skipssl
 
-    # read host_names from confstore
-    # it will be a comma-separated list of FQDN
-    cluster_hosts=$(s3confstore --getkey "cluster>cluster_hosts" --path "json:///opt/seagate/cortx/s3/conf/s3_confstore.json")
-
-    IFS=','
-    read -ra hosts_arr <<< "$cluster_hosts"
-    if [ ${#hosts_arr[@]} -gt 1 ]
+    # check number of nodes in the cluster
+    server_nodes_count=$(s3confstore --getkey "cluster>node_count" --path "$confstore_config_url")
+    if [ "$server_nodes_count" -gt 1 ]
     then
+        for ((index=0; index<"$server_nodes_count"; index++))
+        do
+            host=$(s3confstore --getkey "cluster>server["$index"]>hostname" --path "$confstore_config_url")
+            if [ $? -eq 0 ]
+            then
+                echo "$host" >> hosts_list_file.txt
+            else
+                echo "ERROR: failed to read cluster>server[$index]>hostname from py-utils:confstore, exiting."
+                exit 1
+            fi
+        done
         echo "setting ldap-replication on all cluster nodes.."
-        /opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh -h /root/host_file -p $ldappasswd
+        /opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh -h hosts_list_file.txt -p "$ldappasswd"
+        rm -f hosts_list_file.txt
     else
-        echo "INFO: Not setting ldap-replication as 'cluster.cluster_hosts' in confstore has no or only 1 entry."
+        echo "INFO: Not setting ldap-replication as 'cluster>node_count' is less than 2."
     fi
 
     if [[ -f /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf ]]
@@ -356,12 +311,6 @@ then
 elif [[ $purge_config_ldap == true ]]
 then
     /opt/seagate/cortx/s3/install/ldap/setup_ldap.sh --defaultpasswd --forceclean --skipssl
-fi
-
-# Setup Openldap replication for EES setup.
-if [[ $ldap_replication == true ]]
-then
-    setup_ldap_replication
 fi
 
 # Post S3 dependency installation steps for configuring S3.
