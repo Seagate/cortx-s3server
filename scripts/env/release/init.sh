@@ -25,6 +25,15 @@ BASEDIR=$(dirname "$SCRIPT_PATH")
 S3_SRC_DIR="$BASEDIR/../../../"
 CURRENT_DIR=`pwd`
 
+install_cortx_py_utils() {
+  #rpm -q cortx-py-utils && yum remove cortx-py-utils -y && yum install cortx-py-utils -y
+  if rpm -q cortx-py-utils ; then
+    yum upgrade cortx-py-utils -y
+  else
+    yum install cortx-py-utils -y
+  fi
+}
+
 usage() {
   echo "Usage: $0
   optional arguments:
@@ -34,6 +43,8 @@ usage() {
 
 if [[ $# -eq 0 ]] ; then
   source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
+  # install or upgrade cortx-py-utils
+  install_cortx_py_utils
 else
   while getopts "ah" x; do
       case "${x}" in
@@ -82,9 +93,6 @@ yum install -y openssl java-1.8.0-openjdk-headless
 mkdir -p /etc/ssl
 
 cp -R  ${BASEDIR}/../../../ansible/files/certs/* /etc/ssl/
-
-# Generate random password for jks key and keystore passwords
-sh ${S3_SRC_DIR}/scripts/create_auth_jks_password.sh
 
 # Setup using ansible
 yum install -y ansible facter
