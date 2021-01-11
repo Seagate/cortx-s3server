@@ -108,7 +108,7 @@ class ObjectRecoveryMsgbus(object):
                 offset = 'earliest'
 
             self._logger.debug("Setting up S3MessageBus for consumer")
-            ret, msg = self.__msgbuslib.setup_receive(consumer_id,
+            ret, msg = self.__msgbuslib.setup_consumer(consumer_id,
                 consumer_group, msg_topic, False, offset)
             if not ret:
                 self._logger.error("Failed to setup message bus for consumer: " + str(msg))
@@ -154,6 +154,7 @@ class ObjectRecoveryMsgbus(object):
                         # the entry has not been deleted from probable delete index.
                         self._logger.debug("Msg {}".format(str(message)))
                         self.__process_msg(message.decode('utf-8'))
+                        self.__msgbuslib.ack()
                     else:
                         self._logger.debug("Failed to receive msg from message bus : " + str(message))
                         if not self._daemon_mode:
@@ -190,8 +191,9 @@ class ObjectRecoveryMsgbus(object):
             
             if not delivery_mechanism:
                 delivery_mechanism = self._config.get_msgbus_producer_delivery_mechanism()
-            
-            ret,msg = self.__msgbuslib.setup_send(producer_id, msg_type, delivery_mechanism)
+
+
+            ret,msg = self.__msgbuslib.setup_producer(producer_id, msg_type, delivery_mechanism)
             if not ret:
                 self._logger.error("setup_send failed {}".format(str(msg)))
                 self.__isproducersetupcomplete = False
@@ -210,7 +212,7 @@ class ObjectRecoveryMsgbus(object):
                 if not self.__isproducersetupcomplete:
                     self._logger.debug("producer connection issues")
                     return False
-            
+
             msgbody = json.dumps(data)
             self._logger.debug("MsgBody : {}".format(msgbody))
             return self.__msgbuslib.send([msgbody])
@@ -220,3 +222,19 @@ class ObjectRecoveryMsgbus(object):
             self.__isproducersetupcomplete = False
             return False
 
+    def purge(self):
+        """Purge the messages."""
+        try:
+            if not self.__isproducersetupcomplete:
+                self.__setup_producer()
+                if not self.__isproducersetupcomplete:
+                    self._logger.debug("producer connection issues")
+                    return False
+            self.__msgbuslib.purge()
+            #Insert a delay of 1 min after purge, so that the messages are deleted
+            time.sleep(60)
+            self._logger.debug("Purged Messages")
+        except Exception as exception:
+            self._logger.error("Exception:{}".format(exception))
+            self.__isproducersetupcomplete = False
+            return False
