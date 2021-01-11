@@ -47,14 +47,10 @@ generate_keystore_password(){
   echo "Generating password for jks keystore used in authserver..."
   # Get password from cortx-utils
   new_keystore_passwd=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
-  if [[ $? != 0 || -z "$new_keystore_passwd" ]] # Generate random password if failed to get from cortx-utils
+  if [[ $? != 0 || -z "$new_keystore_passwd" ]] # Generate random password failed
   then
-    new_keystore_passwd=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9@#+' | fold -w 12 | head -n 1)
-    # Update keystore password
-    # Note JKS store need same password for store password and key password otherwise JKS will not work
-    # Update keystore.properties file with new password
-    sudo sed -i 's/s3KeyStorePassword=.*$/s3KeyStorePassword='$new_keystore_passwd'/g' $AUTH_KEYSTORE_PROPERTIES_FILE
-    sudo sed -i 's/s3KeyPassword=.*$/s3KeyPassword='$new_keystore_passwd'/g' $AUTH_KEYSTORE_PROPERTIES_FILE
+    echo "ERROR: failed to generate key using py-utils:Cipher utility, exiting."
+    exit 1
   fi
   
   # Update keystore password
