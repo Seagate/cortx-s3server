@@ -74,6 +74,7 @@ class ObjectRecoveryScheduler(object):
                     self.logger)
             # Cleanup all entries and enqueue only 1000 entries
             #PurgeAPI Here
+            self.producer.purge()
             result, index_response = CORTXS3IndexApi(
                 self.config, logger=self.logger).list(
                     self.config.get_probable_delete_index_id(), self.config.get_max_keys(), marker)
