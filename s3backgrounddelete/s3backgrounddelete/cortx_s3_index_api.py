@@ -68,7 +68,7 @@ class CORTXS3IndexApi(CORTXS3Client):
         request_uri = '/indexes/' + urllib.parse.quote(index_id, safe='')
         query_params = ""
         inputQueryParams = {}
-        inputQueryParams["keys"] = max_keys
+        inputQueryParams["max-keys"] = max_keys
         if (next_marker is not None):
             inputQueryParams["marker"] = next_marker
 
