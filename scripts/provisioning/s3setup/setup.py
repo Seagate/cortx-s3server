@@ -23,30 +23,30 @@ files = ["VERSION"]
 # Load the version
 current_script_path = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(current_script_path, 'VERSION')) as version_file:
-    s3psetup_version = version_file.read().strip()
+    s3setup_version = version_file.read().strip()
 
 setup(
   # Application name
-  name="s3psetup",
+  name="s3setup",
 
   # version number
-  version=s3psetup_version,
+  version=s3setup_version,
 
   # Author details
   author="Seagate",
 
   # Packages
-  packages=["s3psetup"],
+  packages=["s3setup"],
 
   # Include additional files into the package
   include_package_data=True,
 
   # Details
-  scripts =['s3psetup/s3psetup'],
+  scripts =['s3setup/s3setup'],
 
   # license="LICENSE.txt",
 
   description="s3setup python implementation",
 
-  package_data = { 's3psetup': files}
+  package_data = { 's3setup': files}
 )

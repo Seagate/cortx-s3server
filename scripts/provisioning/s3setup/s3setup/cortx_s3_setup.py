@@ -126,7 +126,7 @@ class S3CortxSetup:
 
   def run(self):
     parser = argparse.ArgumentParser(description='Cortx S3 Setup')
-    parser.add_argument("--cleanup", help='Cleanup S3 accounts and dependencies. Valid arg: both/accounts/dependencies')
+    parser.add_argument("--cleanup", help='Cleanup S3 accounts and dependencies. Valid values: all/accounts/dependencies')
     """Future functionalities to be added here."""
     parser.add_argument("--ldappasswd", help='Optional ldap password, needed for --cleanup')
 
@@ -142,7 +142,7 @@ class S3CortxSetup:
       elif args.cleanup == "dependencies":
         rc = self.dependencies_cleanup()
         exit (not rc)
-      elif args.cleanup == "both":
+      elif args.cleanup == "all":
         if args.ldappasswd: 
           rc1 = self.accounts_cleanup(args.ldappasswd)
         else:
@@ -150,5 +150,5 @@ class S3CortxSetup:
         rc2 = self.dependencies_cleanup()
         exit (not (rc1 & rc2))
       else:
-        print("Invalid input for cleanup {}. Valid arg: both/accounts/dependencies".format(args.cleanup))
+        print("Invalid input for cleanup {}. Valid values: all/accounts/dependencies".format(args.cleanup))
         exit (-2)

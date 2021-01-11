@@ -17,12 +17,15 @@ limitations under the License.
 For any questions about this software or licensing,
 please email opensource@seagate.com or cortx-questions@seagate.com.
 
-## How to build and install s3psetup:
-Go to s3psetup
+## About
+s3setup is used to setup and install s3server.
+
+## How to build and install s3setup
+Go to scripts/provisioning/s3setup/
 run:
 python36 setup.py clean
 python36 setup.py build
 python36 setup.py install
-This will create a python package and binary: /usr/local/bin/s3psetup
+This will create a python package and binary: /usr/local/bin/s3setup
 
 ## Content To be added
