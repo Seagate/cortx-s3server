@@ -20,7 +20,7 @@ if "All objects loaded?" then
 else
  -->[yes] S3->Motr: Create <Nobj> "probable delete" entries in Motr KVS index\n(To help revert/recover/redo/finalize in case of failure)\nThis is one single Clovis call.
  --> S3->Motr: Delete s3 metadata of objects from Motr KVS.\nSingle Clovis call to delete <Nobj> entries from KVS index.
- --> Send "Success" response to client << Client >>
+ --> S3: Send "Success" response to client << Client >>
  --> [continue processing in background] S3->Motr: Delete all <Nobj> Motr objects\nOne single Clovis call.
  --> S3->Motr: Delete all <Nobj> "probable delete" entries.\nSingle Clovis call.\n(Entries no longer needed as objects are already fully deleted.)
  --> (*)
