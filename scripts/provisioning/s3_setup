@@ -31,7 +31,6 @@ USAGE="USAGE: bash $(basename "$0") [--setupjenkinsyumrepo]
                                     [--updateclusterid]
                                     [--createauthjkspassword]
                                     [--cleanup]
-                                    [--setlogrotate]
                                     [--help | -h]
 Install and configure release S3server setup.
 
@@ -46,7 +45,6 @@ where:
 --s3recoverytool         Configure s3recoverytool and its dependencies
 --updateclusterid        Fetch and update cluster id in S3 config
 --cleanup                Cleanup S3 accounts created for backgroundelete.
---setlogrotate           Set logrotate policy
 --createauthjkspassword  Setup random jks password for Auth server
 --help                   Display this help and exit"
 
@@ -62,7 +60,6 @@ major_version=`echo ${VERSION} | awk -F '.' '{ print $1 }'`
 selinux_status=$(sestatus| grep -w "SELinux status" | cut -d ':' -f 2  | xargs)
 
 confstore_config_url=
-confstore_config_url_set=false
 post_dependency=false
 purge_config_ldap=false
 config_ldap=false
@@ -73,7 +70,6 @@ update_cluster_id=false
 is_rabbitmq_clustered=false
 cleanup_accounts=false
 cleanup_dependencies=false
-setlogrotate=false
 create_auth_jks_passwrd=false
 encrypt_cli="/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar"
 
@@ -110,7 +106,6 @@ do
         ;;
     --confurl ) shift;
         confstore_config_url=$1
-        confstore_config_url_set=true
         ;;
     --setupjenkinsyumrepo )
         setup_jenkins_yum_repo=true
@@ -128,9 +123,6 @@ do
         cleanup_accounts=true
         cleanup_dependencies=true
         ;;
-    --setlogrotate )
-        setlogrotate=true
-        ;;
     --createauthjkspassword )
         create_auth_jks_passwrd=true
         ;;
@@ -145,11 +137,7 @@ do
   shift
 done
 
-if [ $confstore_config_url_set == true ] && [ -z "$confstore_config_url" ]
-then
-    echo "ERROR: confstore_config_url is empty, exiting."
-    exit 1
-fi
+echo "INFO: confstore URL path: $confstore_config_url"
 
 setup_release_repo()
 {
@@ -270,12 +258,15 @@ then
     create_auth_jks_password
 fi
 
-ldappasswd=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
+cipherkey=$(s3cipher --generate_key --const_key  openldap 2>/dev/null)
+sgiamadminpassd=$(s3confstore --getkey "cluster>openldap>sgiampassword" --path "$confstore_config_url")
+# decrypt the password read from the confstore
+ldappasswd=$(s3cipher --decrypt --data $sgiamadminpassd --key $cipherkey 2>/dev/null)
 
 # Install and Configure Openldap over Non-SSL.
 if [[ $config_ldap == true ]]
 then
-    /opt/seagate/cortx/s3/install/ldap/setup_ldap.sh --defaultpasswd --skipssl
+    /opt/seagate/cortx/s3/install/ldap/setup_ldap.sh --confurl "$confstore_config_url" --defaultpasswd --skipssl
 
     # check number of nodes in the cluster
     server_nodes_count=$(s3confstore --getkey "cluster>node_count" --path "$confstore_config_url")
@@ -523,47 +514,3 @@ set_s3conf_log_sz() {
 
     sed -i "s/S3_LOG_FILE_MAX_SIZE:\s*[0-9]*\(.*\)/S3_LOG_FILE_MAX_SIZE: $conf_sz\1/" $conf_path
 }
-
-set_logrotate_policy_ova() {
-    lgrtd="/etc/logrotate.d/haproxy
-           /etc/logrotate.d/openldap
-           /etc/logrotate.d/s3auditlog"
-
-    for f in $lgrtd
-    do
-        set_logrotate $f 1M 5
-    done
-
-    set_s3conf_log_sz 5
-}
-
-get_platform() {
-    set +e
-    platform=`provisioner get_setup_info --out json 2>&1`
-
-    res=`echo $platform | jq -r .ret.server_type 2>&1`
-    exc=$?
-    if [[ $exc != 0 ]]
-    then
-        echo "WARNING: 'provisioner get_setup_info' invalid JSON output"
-    fi
-    echo $(echo $res | tr '[A-Z]' '[a-z]')
-    set -e
-}
-
-if [[ $setlogrotate == true ]]
-then
-    set_logrotate_policy_ova
-fi
-
-# TODO - uncomment below section once we know how to figure out the host type (virtual or physical)
-# without using 'provisioner' cli.
-#if [[ $setlogrotate == true ]]
-#then
-#    plt=$(get_platform)
-#    echo "Server type is $plt"
-#    if [[ "$plt" == "virtual" ]]
-#    then
-#        set_logrotate_policy_ova
-#    fi
-#fi
