@@ -23,11 +23,12 @@
 # configure OpenLDAP #
 ##################################
 
-USAGE="USAGE: bash $(basename "$0") [--defaultpasswd] [--skipssl]
+USAGE="USAGE: bash $(basename "$0") [--confurl <URL path>] [--defaultpasswd] [--skipssl]
       [--forceclean] [--help | -h]
 Install and configure OpenLDAP.
 
 where:
+--confurl           configuration file url, for using with py-utils:ConfStore
 --defaultpasswd     set default password using cortx-utils
 --skipssl           skips all ssl configuration for LDAP
 --forceclean        Clean old openldap setup (** careful: deletes data **)
@@ -37,6 +38,7 @@ set -e
 defaultpasswd=false
 usessl=true
 forceclean=false
+confstore_config_url=
 
 echo "Running setup_ldap.sh script"
 if [ $# -lt 1 ]
@@ -48,6 +50,9 @@ fi
 while test $# -gt 0
 do
   case "$1" in
+    --confurl ) shift;
+        confstore_config_url=$1
+        ;;
     --defaultpasswd )
         defaultpasswd=true
         ;;
@@ -64,6 +69,12 @@ do
   esac
   shift
 done
+
+if [ -z "$confstore_config_url" ]
+then
+    echo "ERROR: confstore_config_url is empty, exiting."
+    exit 1
+fi
 
 INSTALLDIR="/opt/seagate/cortx/s3/install/ldap"
 # install openldap server and client
@@ -89,8 +100,14 @@ chgrp ldap /etc/openldap/certs/password # onlyif: grep -q ldap /etc/group && tes
 
 if [[ $defaultpasswd == true ]]
 then # Get password from cortx-utils
-    LDAPADMINPASS=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
-    ROOTDNPASSWORD="$LDAPADMINPASS"
+    cipherkey=$(s3cipher --generate_key --const_key  openldap 2>/dev/null)
+
+    sgiamadminpassd=$(s3confstore --getkey "cluster>openldap>sgiampassword" --path "$confstore_config_url")
+    rootdnpasswd=$(s3confstore --getkey "cluster>openldap>rootdnpassword" --path "$confstore_config_url")
+
+    # decrypt the passwords read from the confstore
+    LDAPADMINPASS=$(s3cipher --decrypt --data "$sgiamadminpassd" --key "$cipherkey" 2>/dev/null)
+    ROOTDNPASSWORD=$(s3cipher --decrypt --data "$rootdnpasswd" --key "$cipherkey" 2>/dev/null)
 else # Fetch Root DN & IAM admin passwords from User
     echo -en "\nEnter Password for LDAP rootDN: "
     read -s ROOTDNPASSWORD && [[ -z $ROOTDNPASSWORD ]] && echo 'Password can not be null.' && exit 1
