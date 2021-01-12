@@ -71,7 +71,6 @@ setup_s3recoverytool=false
 update_cluster_id=false
 is_rabbitmq_clustered=false
 cleanup_s3_accounts_schema=false
-setlogrotate=false
 create_auth_jks_passwrd=false
 encrypt_cli="/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar"
 
