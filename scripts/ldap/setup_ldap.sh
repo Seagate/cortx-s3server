@@ -106,8 +106,8 @@ then # Get password from cortx-utils
     rootdnpasswd=$(s3confstore --getkey "cluster>openldap>rootdnpassword" --path "$confstore_config_url")
 
     # decrypt the passwords read from the confstore
-    LDAPADMINPASS=$(s3cipher --decrypt --data $sgiamadminpassd --key $cipherkey 2>/dev/null)
-    ROOTDNPASSWORD=$(s3cipher --decrypt --data $rootdnpasswd --key $cipherkey 2>/dev/null)
+    LDAPADMINPASS=$(s3cipher --decrypt --data "$sgiamadminpassd" --key "$cipherkey" 2>/dev/null)
+    ROOTDNPASSWORD=$(s3cipher --decrypt --data "$rootdnpasswd" --key "$cipherkey" 2>/dev/null)
 else # Fetch Root DN & IAM admin passwords from User
     echo -en "\nEnter Password for LDAP rootDN: "
     read -s ROOTDNPASSWORD && [[ -z $ROOTDNPASSWORD ]] && echo 'Password can not be null.' && exit 1
