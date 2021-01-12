@@ -405,13 +405,9 @@ fi
 
 ## Collect LDAP data
 mkdir -p $ldap_dir
-
-# Get password from py-utils:confstore
-cipherkey=$(s3cipher --generate_key --const_key  openldap 2>/dev/null)
-encryptedpassd=$(s3confstore --getkey "cluster>openldap>rootdnpassword" --path "json:///opt/seagate/cortx/s3/conf/s3_confstore.json")
-# decrypt the password read from the confstore
-rootdnpasswd=$(s3cipher --decrypt --data $encryptedpassd --key $cipherkey 2>/dev/null)
-
+# Get password from cortx-utils
+# ldapadmin and rootdn passwords are same, so reading ldapadmin password
+rootdnpasswd=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
 if [[ $? != 0 || -z "$rootdnpasswd" ]]
 then
     echo "Failed to decrypt ldap admin password, skipping collection of ldap data."

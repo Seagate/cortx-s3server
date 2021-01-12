@@ -43,14 +43,17 @@ class CortxS3Cipher:
             print("Fail to parse cluster_id from config file")
             sys.exit(1)
 
-    def encrypt(self, key: bytes, data: str) -> bytes:
-        return Cipher.encrypt(key, bytes(data, 'utf-8'))
+    def encrypt(self, key: str, data: str):
+        edata = Cipher.encrypt(bytes(key, 'utf-8'), bytes(data, 'utf-8'))
+        return edata.decode("utf-8")
 
-    def decrypt(self, key: bytes, data: str) -> bytes:
-        return Cipher.decrypt(key, bytes(data, 'utf-8'))
+    def decrypt(self, key: str, data: str):
+        ddata = Cipher.decrypt(bytes(key, 'utf-8'), bytes(data, 'utf-8'))
+        return ddata.decode("utf-8")
 
     def generate_key(self) -> bytes:
-        return Cipher.generate_key(self.cluster_id, self.const_key)
+        key = Cipher.generate_key(self.cluster_id, self.const_key)
+        return key.decode("utf-8")
 
     def get_key(self):
         try:

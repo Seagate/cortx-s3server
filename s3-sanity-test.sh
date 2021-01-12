@@ -45,10 +45,7 @@ fi
 test_file_input=/tmp/SanityObjectToDeleteAfterUse.input
 test_output_file=/tmp/SanityObjectToDeleteAfterUse.out
 
-cipherkey=$(s3cipher --generate_key --const_key  openldap 2>/dev/null)
-sgiamadminpassd=$(s3confstore --getkey "cluster>openldap>sgiampassword" --path "json:///opt/seagate/cortx/s3/conf/s3_confstore.json")
-# decrypt the password read from the confstore
-ldappasswd=$(s3cipher --decrypt --data $sgiamadminpassd --key $cipherkey 2>/dev/null)
+ldappasswd=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
 
 USAGE="USAGE: bash $(basename "$0")
 Run S3 sanity test.
