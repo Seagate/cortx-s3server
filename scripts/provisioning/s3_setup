@@ -137,13 +137,7 @@ do
   shift
 done
 
-if [ -z "$confstore_config_url" ]
-then
-    echo "ERROR: confstore_config_url is empty, exiting."
-    exit 1
-else
-    echo "INFO: confstore URL path: $confstore_config_url"
-fi
+echo "INFO: confstore URL path: $confstore_config_url"
 
 setup_release_repo()
 {
