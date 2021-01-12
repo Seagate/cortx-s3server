@@ -27,10 +27,11 @@ die_with_error () {
 
 ./clean_open_ldap_by_s3.sh
 
-if [ ! -e "/opt/seagate/cortx/s3/conf/s3_confstore.json" ]; then
-	tee -a /opt/seagate/cortx/s3/conf/s3_confstore.json << END
+if [ ! -e "/tmp/s3_confstore.json" ]; then
+	tee -a /tmp/s3_confstore.json << END
 {
   "cluster": {
+    "node_count" : 1,
     "cluster_id": "dummy-id",
     "cluster_hosts": "localhost"
   }
@@ -44,7 +45,7 @@ yum install -y --nogpgcheck cortx-motr cortx-s3server openldap-servers openldap-
 # bash -x /opt/seagate/cortx/s3/bin/s3_setup None || die_with_error "s3:post_install failed!"
 echo "s3:post_install passed!"
 
-/opt/seagate/cortx/s3/bin/s3_setup --updateclusterid --createauthjkspassword --configldap &> /dev/null || die_with_error "s3:config failed!"
+/opt/seagate/cortx/s3/bin/s3_setup --updateclusterid --createauthjkspassword --configldap --confurl "json:///tmp/s3_confstore.json" &> /dev/null || die_with_error "s3:config failed!"
 # bash -x /opt/seagate/cortx/s3/bin/s3_setup --updateclusterid --createauthjkspassword --configldap || die_with_error "s3:config failed!"
 echo "s3:config passed!"
 
