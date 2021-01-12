@@ -25,7 +25,7 @@ die_with_error () {
 	exit -1
 }
 
-/root/clean_open_ldap_by_s3.sh
+./clean_open_ldap_by_s3.sh
 
 if [ ! -e "/opt/seagate/cortx/s3/conf/s3_confstore.json" ]; then
 	tee -a /opt/seagate/cortx/s3/conf/s3_confstore.json << END
