@@ -21,18 +21,12 @@
 set -e
 set +o posix
 
-#Check if codacy token as an argument is passed
-if [[ $# -eq 0 ]] ; then
-    echo 'Error: No arguments supplied,please pass codacy token as an argument to the script'
-    exit 1
-fi
-
 # variables
 SCRIPT_PATH=$(readlink -f "$0")
 SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
 SRC_DIR="$(dirname "$(dirname "$SCRIPT_DIR" )")"
 # Default codacy project token for cortx-s3server
-CODACY_PROJECT_TOKEN=$1
+CODACY_PROJECT_TOKEN=""
 # Default branch for uploading coverage report
 BRANCH="main"
 
@@ -111,6 +105,12 @@ while getopts "l:t:b:h" x; do
     esac
 done
 shift $((OPTIND-1))
+
+if [ -z "$CODACY_PROJECT_TOKEN" ]
+then
+        echo 'Error: No arguments supplied,please pass codacy token as an argument to the script'
+        exit 1
+fi
 
 # Destination directory where the generated coverage reports are dumped.
 export DES_DIR
