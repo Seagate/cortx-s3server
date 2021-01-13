@@ -192,7 +192,7 @@ time.sleep(5)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+scheduler.add_kv_to_msgbus()
 print("Scheduler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -246,7 +246,7 @@ time.sleep(5)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+scheduler.add_kv_to_msgbus()
 print("Schdeuler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -309,7 +309,7 @@ object3_new_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+scheduler.add_kv_to_msgbus()
 print("Scheduler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -367,7 +367,7 @@ S3fiTest('Disable FI motr entity delete fail')\
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+scheduler.add_kv_to_msgbus()
 print("Schdeuler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -458,7 +458,7 @@ S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fa
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+scheduler.add_kv_to_msgbus()
 print("Schdeuler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -517,7 +517,7 @@ S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fa
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+scheduler.add_kv_to_msgbus()
 print("Schdeuler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -592,7 +592,7 @@ time.sleep(5)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+scheduler.add_kv_to_msgbus()
 print("Schdeuler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -647,7 +647,7 @@ time.sleep(5)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+scheduler.add_kv_to_msgbus()
 print("Scheduler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -686,7 +686,7 @@ time.sleep(5)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+scheduler.add_kv_to_msgbus()
 print("Scheduler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -735,7 +735,7 @@ time.sleep(1)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+scheduler.add_kv_to_msgbus()
 print("Schdeuler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
