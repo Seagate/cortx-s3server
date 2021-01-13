@@ -28,7 +28,7 @@ USAGE="USAGE: bash $(basename "$0") [--setupjenkinsyumrepo]
                                     [--confurl <URL_PATH>]
                                     [--s3backgrounddelete]
                                     [--s3recoverytool]
-                                    [--s3haproxyconfig]
+                                    [--confighaproxy]
                                     [--updateclusterid]
                                     [--createauthjkspassword]
                                     [--cleanup]
@@ -44,7 +44,7 @@ where:
 --ldapreplication        Setup LDAP replication
 --s3backgrounddelete     Configure s3backgrounddelete and its dependencies
 --s3recoverytool         Configure s3recoverytool and its dependencies
---s3haproxyconfig        Configure haproxy
+--confighaproxy          Configure haproxy
 --updateclusterid        Fetch and update cluster id in S3 config
 --cleanup                Cleanup S3 accounts created for backgroundelete.
 --createauthjkspassword  Setup random jks password for Auth server
@@ -118,7 +118,7 @@ do
     --s3recoverytool )
         setup_s3recoverytool=true
         ;;
-    --s3haproxyconfig )
+    --confighaproxy )
         setup_s3haproxyconfig=true
         ;;
     --updateclusterid )
@@ -421,7 +421,7 @@ create_recovery_tool_account()
 # Configure haproxy
 configure_haproxy()
 {
-    s3_haproxy_config
+    s3haproxyconfig
 }
 
 # Delete s3 account which was used by s3recoverytool
@@ -495,6 +495,7 @@ if [[ $setup_s3haproxyconfig == true ]]
 then
     echo "Configuring haproxy"
 	configure_haproxy
+fi
 
 # Clean up backgrounddelete account
 if [[ $cleanup_accounts == true ]]

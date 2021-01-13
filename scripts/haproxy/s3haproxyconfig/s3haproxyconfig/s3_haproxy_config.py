@@ -8,7 +8,7 @@ from cortx.utils.conf_store import Conf
 
 class S3HaproxyConfig:
 
-  def run(self):
+  def run(self, backend_url: str):
     #Check cluster status
     #hctl_status=os.popen("hctl status").read()
     #hctl_not_running='Cluster is not running'
@@ -22,13 +22,17 @@ class S3HaproxyConfig:
 
     #Get private IP from confstore
     index = 'default_index'
-    Conf.load(index, 'json:///tmp/cortx_s3_confstore.json')
-    pvt_ip = Conf.get(index, 'cluster>server>network>data>private_ip')
+    if not backend_url.strip():
+        print("Cannot load py-utils:confstore as backend_url[{}] is empty.".format(backend_url))
+        exit(-1)
+    Conf.load(index, backend_url)
+    pvt_ip = Conf.get(index, 'cluster>server[0]>network>data>private_ip')
 
     #Remove content not valid for use
-    header_text = "#HAProxy Monitoring Config"
-    footer_text = "#HAProxy Monitoring Config end"
-    is_skipped = False
+    header_text = "#-------S3 Haproxy configuration start--------------------------------"
+    footer_text = "#-------S3 Haproxy configuration end----------------------------------"
+    is_found = False
+    header_found = False
     original_file = "/etc/haproxy/haproxy.cfg"
     dummy_file = original_file + '.bak'
     # Open original file in read only mode and dummy file in write mode
@@ -40,14 +44,18 @@ class S3HaproxyConfig:
                 line_to_match = line[:-1]
             # if current line matches with the given line then skip that line
             if line_to_match != header_text:
-                write_obj.write(line)
+                if header_found == False:
+                    write_obj.write(line)
+                elif line_to_match == footer_text:
+                     header_found = False
             else:
-                is_skipped = True
+                is_found = True
+                header_found = True
                 break
     read_obj.close()
     write_obj.close()
     # If any line is skipped then rename dummy file as original file
-    if is_skipped:
+    if is_found:
         os.remove(original_file)
         os.rename(dummy_file, original_file)
     else:
@@ -56,7 +64,33 @@ class S3HaproxyConfig:
     #Add backend information to haproxy.cfg file
     cfg_file = '/etc/haproxy/haproxy.cfg'
     target = open(cfg_file, "a+")
-    target.write('''# BackEnd roundrobin as balance algorithm
+    target.write('''#-------S3 Haproxy configuration start--------------------------------
+#---------------------------------------------------------------------
+# FrontEnd S3 Configuration
+#---------------------------------------------------------------------
+frontend main
+    # s3 server port
+    bind 0.0.0.0:80
+    #bind 0.0.0.0:443 ssl crt /etc/ssl/stx/stx.pem
+
+    option forwardfor
+    default_backend app-main
+
+
+
+    # s3 auth server port
+    bind 0.0.0.0:9080
+    #bind 0.0.0.0:9443 ssl crt /etc/ssl/stx/stx.pem
+
+
+
+    acl s3authbackendacl dst_port 9443
+    acl s3authbackendacl dst_port 9080
+    use_backend s3-auth if s3authbackendacl
+
+
+
+# BackEnd roundrobin as balance algorithm
 #---------------------------------------------------------------------
 backend app-main
     balance static-rr                                     #Balance algorithm
@@ -88,7 +122,7 @@ backend s3-auth
 
     server s3authserver-instance1 ''')
     target.write(pvt_ip)
-    target.write(''':9085 #check ssl verify required ca-file /etc/ssl/stx-s3/s3auth/s3authserver.crt   # s3 auth server instance 1
+    target.write(''':28050 #check ssl verify required ca-file /etc/ssl/stx-s3/s3auth/s3authserver.crt   # s3 auth server instance 1
 #----------------------------------------------------------------------
 ''')
 
@@ -143,5 +177,4 @@ backend s3-auth
     os.system("cp /opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate /etc/cron.hourly/logrotate")
     os.system("systemctl restart rsyslog")
     os.system("systemctl restart haproxy")
-    os.system("systemctl status haproxy")
 
