@@ -395,6 +395,7 @@ rm -rf %{buildroot}
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundproducer
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyc
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyo
+%exclude /opt/seagate/cortx/s3/install/haproxy/s3haproxyconfig
 
 %post
 sh /opt/seagate/cortx/auth/scripts/swupdate/merge.sh
