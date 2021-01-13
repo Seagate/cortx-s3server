@@ -162,13 +162,13 @@ mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore/s3confstore
 python%{py_ver} -m compileall -b *.py
 cp *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore/build/lib/s3confstore
-echo "build complete"
 
 # Build scripts/s3haproxyconfig python module
 mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/haproxy/s3haproxyconfig/build/lib/s3haproxyconfig
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/haproxy/s3haproxyconfig/s3haproxyconfig
 python%{py_ver} -m compileall -b *.py
 cp *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/haproxy/s3haproxyconfig/build/lib/s3haproxyconfig
+echo "build complete"
 
 %install
 rm -rf %{buildroot}
@@ -368,6 +368,7 @@ rm -rf %{buildroot}
 %{_bindir}/s3recovery
 %{_bindir}/s3cipher
 %{_bindir}/s3confstore
+%{_bindir}/s3haproxyconfig
 %{py36_sitelib}/s3backgrounddelete/config/*.yaml
 %{py36_sitelib}/s3backgrounddelete/config/s3_background_delete_config.yaml.sample
 %{py36_sitelib}/s3backgrounddelete/*.pyc
@@ -376,16 +377,21 @@ rm -rf %{buildroot}
 %{py36_sitelib}/s3recovery-%{version}-py?.?.egg-info
 %{py36_sitelib}/s3confstore/*.pyc
 %{py36_sitelib}/s3confstore-%{version}-py?.?.egg-info
+%{py36_sitelib}/s3haproxyconfig/*.pyc
+%{py36_sitelib}/s3haproxyconfig-%{version}-py?.?.egg-info
 %exclude %{py36_sitelib}/s3backgrounddelete/__pycache__/*
 %exclude %{py36_sitelib}/s3recovery/__pycache__/*
 %exclude %{py36_sitelib}/s3backgrounddelete/*.py
 %exclude %{py36_sitelib}/s3recovery/*.py
 %exclude %{py36_sitelib}/s3confstore/*.py
 %exclude %{py36_sitelib}/s3confstore/__pycache__/*
+%exclude %{py36_sitelib}/s3haproxyconfig/*.py
+%exclude %{py36_sitelib}/s3haproxyconfig/__pycache__/*
 %exclude %{py36_sitelib}/s3backgrounddelete/s3cipher
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundconsumer
 %exclude %{py36_sitelib}/s3recovery/s3recovery
 %exclude %{py36_sitelib}/s3confstore/s3confstore
+%exclude %{py36_sitelib}/s3haproxyconfig/s3haproxyconfig
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundproducer
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyc
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyo
