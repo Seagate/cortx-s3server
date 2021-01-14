@@ -418,12 +418,6 @@ create_recovery_tool_account()
     fi
 }
 
-# Configure haproxy
-configure_haproxy()
-{
-    s3haproxyconfig
-}
-
 # Delete s3 account which was used by s3recoverytool
 delete_recovery_tool_account()
 {
@@ -493,8 +487,13 @@ fi
 # Configure haproxy
 if [[ $setup_s3haproxyconfig == true ]]
 then
-    echo "Configuring haproxy"
-	configure_haproxy
+    echo "Configuring haproxy.."
+	s3haproxyconfig --path "$confstore_config_url"
+    if [ $? -ne 0 ]
+    then
+        echo "ERROR: haproxy configuration failed, exiting"
+        exit 1
+    fi
 fi
 
 # Clean up backgrounddelete account

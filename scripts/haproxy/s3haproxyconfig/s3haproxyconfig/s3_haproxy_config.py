@@ -3,30 +3,23 @@
 import os
 import sys
 import fileinput
-import socket
+import argparse
 from cortx.utils.conf_store import Conf
 
 class S3HaproxyConfig:
 
-  def run(self, backend_url: str):
-    #Check cluster status
-    #hctl_status=os.popen("hctl status").read()
-    #hctl_not_running='Cluster is not running'
-    #hctl_not_installed='command not found'
-    #if (
-    #    str(hctl_status.rstrip("\n")) == str(hctl_not_running) or 
-    #    str(hctl_status.rstrip("\n")) == str(hctl_not_installed)
-    #   ):
-    #    print("Cluster error")
-    #    exit(-1)
+  @staticmethod
+  def run():
+    parser = argparse.ArgumentParser(description='S3 haproxy configuration')
+    parser.add_argument("--path", required=True, help='cortx-py-utils:confstore back-end file URL.', type=str)
 
-    #Get private IP from confstore
-    index = 'default_index'
-    if not backend_url.strip():
-        print("Cannot load py-utils:confstore as backend_url[{}] is empty.".format(backend_url))
-        exit(-1)
-    Conf.load(index, backend_url)
-    pvt_ip = Conf.get(index, 'cluster>server[0]>network>data>private_ip')
+    args = parser.parse_args()
+
+    if args.path and args.path.strip():
+      Conf.load('configindex', args.path)
+      pvt_ip = Conf.get('configindex', 'cluster>server[0]>network>data>private_ip')
+    else:
+      sys.exit("--path option value:[{}] is not valid.".format(args.path))
 
     #Remove content not valid for use
     header_text = "#-------S3 Haproxy configuration start--------------------------------"
