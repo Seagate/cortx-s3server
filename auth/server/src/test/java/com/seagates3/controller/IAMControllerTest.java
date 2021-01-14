@@ -937,5 +937,37 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
     assertNull(result);
   }
+
+  /**
+   * Below will test UpdateAccountLoginProfile using LDAP credentials
+   */
+  @Test public void serveTestUpdateAccountLoginProfile() throws Exception {
+    requestBody.put("Action", "UpdateAccountLoginProfile");
+    IAMController controllerSpy = spy(controller);
+    when(IAMResourceMapper.getResourceMap("UpdateAccountLoginProfile"))
+        .thenReturn(resourceMap);
+    when(AuthServerConfig.getLdapLoginCN()).thenReturn("admin");
+    whenNew(SignatureValidator.class).withNoArguments().thenReturn(
+        signatureValidator);
+    when(signatureValidator.validate(clientRequestToken, requestor))
+        .thenReturn(serverResponse);
+    when(ClientRequestParser.parse(httpRequest, requestBody))
+        .thenReturn(clientRequestToken);
+    when(clientRequestToken.getAccessKeyId()).thenReturn("admin");
+    when(serverResponse.getResponseStatus()).thenReturn(HttpResponseStatus.OK);
+    whenNew(Requestor.class).withNoArguments().thenReturn(requestor);
+    doReturn(Boolean.TRUE)
+        .when(controllerSpy, "validateRequest", resourceMap, requestBody);
+    doReturn(serverResponse).when(controllerSpy, "performAction", resourceMap,
+                                  requestBody, requestor);
+
+    ServerResponse response = controllerSpy.serve(httpRequest, requestBody);
+
+    assertEquals(serverResponse, response);
+    verifyPrivate(controllerSpy)
+        .invoke("validateRequest", resourceMap, requestBody);
+    verifyPrivate(controllerSpy)
+        .invoke("performAction", resourceMap, requestBody, requestor);
+  }
 }
 
