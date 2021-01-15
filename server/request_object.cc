@@ -840,7 +840,8 @@ void RequestObject::send_reply_end() {
 
 void RequestObject::close_connection() {
   if (!is_client_connected) {
-    s3_log(S3_LOG_INFO, request_id, "The client is already disconnected");
+    s3_log(S3_LOG_INFO, stripped_request_id,
+           "The client is already disconnected");
     return;
   }
   assert(ev_req != NULL);

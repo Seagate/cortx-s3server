@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "s3_common.h"
 #include "s3_common_utilities.h"
 #include "s3_copy_object_action.h"
 #include "s3_error_codes.h"
@@ -269,7 +270,9 @@ bool S3CopyObjectAction::copy_object_cb() {
   if (check_shutdown_and_rollback() || !request->client_connected()) {
     return true;
   }
-  request->send_reply_body(xml_spaces, sizeof(xml_spaces) - 1);
+  if (response_started) {
+    request->send_reply_body(xml_spaces, sizeof(xml_spaces) - 1);
+  }
   return false;
 }
 
@@ -301,11 +304,15 @@ void S3CopyObjectAction::copy_object() {
   catch (...) {
     s3_log(S3_LOG_ERROR, stripped_request_id, "Non-standard C++ exception");
   }
-  if (f_success) {
-    start_response();
-  } else {
+  if (!f_success) {
+    object_data_copier.reset();
+
     set_s3_error("InternalError");
     send_response_to_s3_client();
+
+  } else if (total_data_to_stream > MINIMUM_ALLOWED_PART_SIZE) {
+
+    start_response();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -458,9 +465,10 @@ void S3CopyObjectAction::send_response_to_s3_client() {
       request->set_out_header_value("Content-Type", "application/xml");
       request->set_out_header_value("Content-Length",
                                     std::to_string(response_xml.length()));
-    } else if (get_s3_error_code() == "ServiceUnavailable" ||
-               get_s3_error_code() == "InternalError") {
-      request->set_out_header_value("Connection", "close");
+      if (get_s3_error_code() == "ServiceUnavailable" ||
+          get_s3_error_code() == "InternalError") {
+        request->set_out_header_value("Connection", "close");
+      }
     }
     if (get_s3_error_code() == "ServiceUnavailable") {
       request->set_out_header_value("Retry-After", "1");

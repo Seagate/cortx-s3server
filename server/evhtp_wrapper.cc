@@ -96,8 +96,9 @@ static evhtp_res hook_write_cb(evhtp_connection_t *p_conn, void *) noexcept {
 
     if (p_conn->ssl) {
       SSL_shutdown(p_conn->ssl);
+    } else {
+      shutdown(p_conn->sock, SHUT_WR);
     }
-    shutdown(p_conn->sock, SHUT_WR);
   }
   return EVHTP_RES_OK;
 }
