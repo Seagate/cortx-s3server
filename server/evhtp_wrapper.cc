@@ -18,6 +18,11 @@
  *
  */
 
+#include <unistd.h>
+#include <sys/socket.h>
+
+#include <openssl/ssl.h>
+
 #include "evhtp_wrapper.h"
 
 void EvhtpWrapper::http_request_pause(evhtp_request_t *request) {
@@ -76,6 +81,31 @@ void EvhtpWrapper::http_send_reply_body(evhtp_request_t *request,
 
 void EvhtpWrapper::http_send_reply_end(evhtp_request_t *request) {
   evhtp_send_reply_end(request);
+}
+
+static evhtp_res hook_write_cb(evhtp_connection_t *p_conn, void *) noexcept {
+
+  struct evbuffer *p_evbuf = bufferevent_get_output(p_conn->bev);
+  const auto non_sent_bytes = evbuffer_get_length(p_evbuf);
+
+  if (!non_sent_bytes) {
+    if (p_conn->request) {
+      evhtp_unset_all_hooks(&p_conn->request->hooks);
+    }
+    evhtp_unset_all_hooks(&p_conn->hooks);
+
+    if (p_conn->ssl) {
+      SSL_shutdown(p_conn->ssl);
+    }
+    shutdown(p_conn->sock, SHUT_WR);
+  }
+  return EVHTP_RES_OK;
+}
+
+void EvhtpWrapper::close_connection_after_writing(evhtp_connection_t *p_conn) {
+
+  evhtp_set_hook(&p_conn->hooks, evhtp_hook_on_write, (evhtp_hook)hook_write_cb,
+                 NULL);
 }
 
 // Libevent wrappers

@@ -18,6 +18,7 @@
  *
  */
 
+#include <cassert>
 #include <string>
 #include <algorithm>
 
@@ -798,7 +799,7 @@ void RequestObject::send_reply_start(int code) {
   }
 }
 
-void RequestObject::send_reply_body(char* data, int length) {
+void RequestObject::send_reply_body(const char* data, int length) {
   if (client_connected()) {
     evbuffer_add(reply_buffer, data, length);
     evhtp_obj->http_send_reply_body(ev_req, reply_buffer);
@@ -835,6 +836,21 @@ void RequestObject::send_reply_end() {
   mss = request_timer.elapsed_time_in_millisec();
   LOG_PERF("total_request_time_ms", creq_id, mss);
   s3_stats_timing("total_request_time", mss);
+}
+
+void RequestObject::close_connection() {
+  if (!is_client_connected) {
+    s3_log(S3_LOG_INFO, request_id, "The client is already disconnected");
+    return;
+  }
+  assert(ev_req != NULL);
+  assert(ev_req->conn != NULL);
+  assert(evhtp_obj != NULL);
+
+  evhtp_obj->close_connection_after_writing(ev_req->conn);
+
+  ev_req = nullptr;
+  is_client_connected = false;
 }
 
 void RequestObject::respond_error(

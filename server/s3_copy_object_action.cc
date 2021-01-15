@@ -262,6 +262,17 @@ void S3CopyObjectAction::validate_copyobject_request() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+const char xml_spaces[] = "        ";
+// Shall be 8 bytes (size of cipher block)
+
+bool S3CopyObjectAction::copy_object_cb() {
+  if (check_shutdown_and_rollback() || !request->client_connected()) {
+    return true;
+  }
+  request->send_reply_body(xml_spaces, sizeof(xml_spaces) - 1);
+  return false;
+}
+
 // Copy source object to destination object
 void S3CopyObjectAction::copy_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
@@ -271,6 +282,7 @@ void S3CopyObjectAction::copy_object() {
     next();
     return;
   }
+  bool f_success = false;
   try {
     object_data_copier.reset(new S3ObjectDataCopier(
         request, motr_writer, motr_reader_factory, s3_motr_api));
@@ -278,13 +290,10 @@ void S3CopyObjectAction::copy_object() {
     object_data_copier->copy(
         source_object_metadata->get_oid(), total_data_to_stream,
         source_object_metadata->get_layout_id(),
-        std::bind(&S3CopyObjectAction::check_shutdown_and_rollback, this,
-                  false),
+        std::bind(&S3CopyObjectAction::copy_object_cb, this),
         std::bind(&S3CopyObjectAction::copy_object_success, this),
         std::bind(&S3CopyObjectAction::copy_object_failed, this));
-
-    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-    return;
+    f_success = true;
   }
   catch (const std::exception& ex) {
     s3_log(S3_LOG_ERROR, stripped_request_id, "%s", ex.what());
@@ -292,9 +301,12 @@ void S3CopyObjectAction::copy_object() {
   catch (...) {
     s3_log(S3_LOG_ERROR, stripped_request_id, "Non-standard C++ exception");
   }
-  set_s3_error("InternalError");
-  send_response_to_s3_client();
-
+  if (f_success) {
+    start_response();
+  } else {
+    set_s3_error("InternalError");
+    send_response_to_s3_client();
+  }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -376,17 +388,38 @@ void S3CopyObjectAction::save_object_metadata_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+const char xml_decl[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+const char xml_comment_begin[] = "<!--   \n";
+const char xml_comment_end[] = "\n   -->\n";
+
 std::string S3CopyObjectAction::get_response_xml() {
-  std::string response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+  std::string response_xml;
+
+  if (!response_started) {
+    response_xml += xml_decl;
+  }
   response_xml +=
-      "<CopyObjectResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">";
+      "<CopyObjectResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n";
   response_xml += S3CommonUtilities::format_xml_string(
       "LastModified", new_object_metadata->get_last_modified_iso());
   // ETag for the destination object would be same as Etag for Source Object
   response_xml += S3CommonUtilities::format_xml_string(
       "ETag", new_object_metadata->get_md5());
-  response_xml += "</CopyObjectResult>";
+  response_xml += "\n</CopyObjectResult>";
   return response_xml;
+}
+
+void S3CopyObjectAction::start_response() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  request->set_out_header_value("Content-Type", "application/xml");
+  request->set_out_header_value("Connection", "close");
+
+  request->send_reply_start(S3HttpSuccess200);
+  request->send_reply_body(xml_decl, sizeof(xml_decl) - 1);
+  request->send_reply_body(xml_comment_begin, sizeof(xml_comment_begin) - 1);
+
+  response_started = true;
 }
 
 void S3CopyObjectAction::send_response_to_s3_client() {
@@ -397,6 +430,9 @@ void S3CopyObjectAction::send_response_to_s3_client() {
                                   S3M0Uint128Helper::to_string(new_object_oid));
     request->set_out_header_value("x-stx-layout-id", std::to_string(layout_id));
   }
+  std::string response_xml;
+  int http_status_code = S3HttpFailed500;
+
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
     // Metadata saved for object is always a success condition.
@@ -415,25 +451,34 @@ void S3CopyObjectAction::send_response_to_s3_client() {
             InvalidRequestSourceObjectSizeGreaterThan5GB);
       }
     }
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    if (get_s3_error_code() == "ServiceUnavailable" ||
-        get_s3_error_code() == "InternalError") {
+    response_xml = std::move(error.to_xml(response_started));
+    http_status_code = error.get_http_status_code();
+
+    if (!response_started) {
+      request->set_out_header_value("Content-Type", "application/xml");
+      request->set_out_header_value("Content-Length",
+                                    std::to_string(response_xml.length()));
+    } else if (get_s3_error_code() == "ServiceUnavailable" ||
+               get_s3_error_code() == "InternalError") {
       request->set_out_header_value("Connection", "close");
     }
-
     if (get_s3_error_code() == "ServiceUnavailable") {
       request->set_out_header_value("Retry-After", "1");
     }
-    request->send_response(error.get_http_status_code(), response_xml);
   } else {
     assert(s3_put_action_state == S3PutObjectActionState::metadataSaved);
     s3_put_action_state = S3PutObjectActionState::completed;
 
-    std::string response_xml = get_response_xml();
-    request->send_response(S3HttpSuccess200, response_xml);
+    response_xml = get_response_xml();
+    http_status_code = S3HttpSuccess200;
+  }
+  if (response_started) {
+    request->send_reply_body(xml_comment_end, sizeof(xml_comment_end) - 1);
+    request->send_reply_body(response_xml.c_str(), response_xml.length());
+    request->send_reply_end();
+    request->close_connection();
+  } else {
+    request->send_response(http_status_code, std::move(response_xml));
   }
 #ifndef S3_GOOGLE_TEST
   startcleanup();
