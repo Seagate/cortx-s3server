@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -39,7 +40,7 @@ SCRIPT_PATH=$(readlink -f "$0")
 SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
 
 #Update python path to source modules and run unit tests.
-PYTHONPATH=${PYTHONPATH}:${SCRIPT_DIR}/.. python36 -m pytest $SCRIPT_DIR/../ut/*.py -v
+PYTHONPATH="${PYTHONPATH}:${SCRIPT_DIR}"/.. python36 -m pytest "$SCRIPT_DIR"/../ut/*.py -v
 
 echo "s3confstore UT's runs successfully"
 
