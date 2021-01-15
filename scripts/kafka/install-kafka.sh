@@ -20,11 +20,13 @@
 
 set -e
 
+#Variables
 KAFKA_INSTALL_PATH=/opt
 KAFKA_DOWNLOAD_URL="http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/centos/centos-7.8.2003-1.0.0-3/commons/kafka/kafka_2.13-2.7.0.tgz"
 KAFKA_FOLDER_NAME="kafka"
-BGDELETE_TOPIC_NAME="bgdelete1"
+BGDELETE_TOPIC_NAME="bgdelete"
 
+# Function to install all pre-requisites
 install_prerequisite() {
   echo "Installing Pre-requisites"
   yum install java -y
@@ -32,14 +34,20 @@ install_prerequisite() {
   echo "Pre-requisites installed successfully."
 }
 
+# function to download and setup kafka
 setup_kafka() {
   echo "Installing and Setting up kafka."
   cd $KAFKA_INSTALL_PATH
   curl $KAFKA_DOWNLOAD_URL -o $KAFKA_FOLDER_NAME.tgz
-  mkdir $KAFKA_FOLDER_NAME
+  if [ -d "$KAFKA_INSTALL_PATH/$KAFKA_FOLDER_NAME" ]; then
+    echo "kafka folder is already exist"
+  else
+    mkdir $KAFKA_FOLDER_NAME    
+  fi
   tar -xzf $KAFKA_FOLDER_NAME.tgz -C $KAFKA_FOLDER_NAME --strip-components 1
 }
 
+#function to start services of kafka
 start_services() {
   echo "Starting services..."
   
@@ -58,6 +66,7 @@ start_services() {
   echo "kafka server started successfully."
 }
 
+#function to stop kafka services.
 stop_services() {
   echo "Stopping services..."
   
@@ -72,39 +81,63 @@ stop_services() {
   echo "zookeeper server started successfully."
 }
 
+# function to Add/Edit zookeeper properties 
 configure_zookeeper() {
    echo "configure zookeeper properties"
+   
+   cd $KAFKA_INSTALL_PATH/$KAFKA_FOLDER_NAME
+   
+   # change data direcotory path to /opt/kafka/zookeeper
+   sed -i "s+dataDir=.*$+dataDir=${KAFKA_INSTALL_PATH}/${KAFKA_FOLDER_NAME}/zookeeper+g" config/zookeeper.properties
 }
 
+# function to Add/Edit server properties 
 configure_server() {
   echo "configure server properties" 
   
   cd $KAFKA_INSTALL_PATH/$KAFKA_FOLDER_NAME
   
+  # update log.dirs location to /opt/kafka/kafka-logs
+  sed -i "s+log.dirs=.*$+log.dirs=${KAFKA_INSTALL_PATH}/${KAFKA_FOLDER_NAME}/kafka-logs+g" config/server.properties
+  
   #update following properties for purge
-  sed -i 's/log.retention.check.interval.ms=.*$/log.retention.check.interval.ms=1/g' config/server.properties
-  sed -i '/log.retention.check.interval.ms/ a log.delete.delay.ms=1' config/server.properties
-  sed -i '/log.retention.check.interval.ms/ a log.flush.offset.checkpoint.interval.ms=1' config/server.properties
+  sed -i 's/log.retention.check.interval.ms=.*$/log.retention.check.interval.ms=100/g' config/server.properties
+  sed -i '/log.retention.check.interval.ms/ a log.delete.delay.ms=100' config/server.properties
+  sed -i '/log.retention.check.interval.ms/ a log.flush.offset.checkpoint.interval.ms=100' config/server.properties
 }
 
-check_kafka_installed() {
+# function to validate kafka is installed or not
+is_kafka_installed() {
   if [ -d "$KAFKA_INSTALL_PATH/$KAFKA_FOLDER_NAME" ]; then
     echo "Kafka is already installed"
-	start_services
-    exit 0
+    return 0
+  else
+    echo "Kafka is not installed"
+    return 1
   fi
 }
 
+#function to create topic for background delete if dors not exist
 create_topic() {
   echo "Creating topic..."
-  
+
   cd $KAFKA_INSTALL_PATH/$KAFKA_FOLDER_NAME
-  
-  bin/kafka-topics.sh --create --topic $BGDELETE_TOPIC_NAME --bootstrap-server $HOSTNAME:9092 --replication-factor 1 --partitions 1
+
+  bin/kafka-topics.sh --list --bootstrap-server $HOSTNAME:9092 | grep "${BGDELETE_TOPIC_NAME}" &> /dev/null
+  if [ $? -eq 1 ]; then
+    echo "Topic 'bgdelete' does not exist."
+	bin/kafka-topics.sh --create --topic $BGDELETE_TOPIC_NAME --bootstrap-server $HOSTNAME:9092 --replication-factor 1 --partitions 1
+  else
+    echo "Topic 'bgdelete' already exist"
+  fi
 }
 
+###############################
+### Main script starts here ###
+###############################
+
 # Check kafka already installed or not 
-check_kafka_installed
+#is_kafka_installed
 
 # Install Pre-requisites 
 install_prerequisite
