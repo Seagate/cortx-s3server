@@ -81,6 +81,13 @@ configure_zookeeper() {
 
 configure_server() {
   echo "configure server properties" 
+  
+  cd $KAFKA_INSTALL_PATH/$KAFKA_FOLDER_NAME
+  
+  #update following properties for purge
+  sed -i 's/log.retention.check.interval.ms=.*$/log.retention.check.interval.ms=1/g' config/server.properties
+  sed -i '/log.retention.check.interval.ms/ a log.delete.delay.ms=1' config/server.properties
+  sed -i '/log.retention.check.interval.ms/ a log.flush.offset.checkpoint.interval.ms=1' config/server.properties  
 }
 
 check_kafka_installed() {
