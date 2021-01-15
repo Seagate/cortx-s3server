@@ -25,6 +25,8 @@ KAFKA_INSTALL_PATH=/opt
 KAFKA_DOWNLOAD_URL="http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/centos/centos-7.8.2003-1.0.0-3/commons/kafka/kafka_2.13-2.7.0.tgz"
 KAFKA_FOLDER_NAME="kafka"
 BGDELETE_TOPIC_NAME="bgdelete"
+consumer_count=0
+hosts=""
 
 # Function to install all pre-requisites
 install_prerequisite() {
@@ -126,15 +128,43 @@ create_topic() {
   bin/kafka-topics.sh --list --bootstrap-server $HOSTNAME:9092 | grep "${BGDELETE_TOPIC_NAME}" &> /dev/null
   if [ $? -eq 1 ]; then
     echo "Topic 'bgdelete' does not exist."
-	bin/kafka-topics.sh --create --topic $BGDELETE_TOPIC_NAME --bootstrap-server $HOSTNAME:9092 --replication-factor 1 --partitions 1
+	bin/kafka-topics.sh --create --topic $BGDELETE_TOPIC_NAME --bootstrap-server $hosts:9092 --replication-factor $consumer_count --partitions $consumer_count
   else
     echo "Topic 'bgdelete' already exist"
   fi
 }
 
+usage()
+{
+   echo ""
+   echo "Usage: $0 -c consumer_count -i hosts"
+   echo -e "\t-c Total number of consumers"
+   echo -e "\t-i List of hosts with comma seperated e.g. host1,host2,host3"
+   exit 1 # Exit script after printing help
+}
+
 ###############################
 ### Main script starts here ###
 ###############################
+
+# parse the command line arguments
+while getopts c:i: flag
+do
+    case "${flag}" in
+        c) consumer_count=${OPTARG};;
+        i) hosts=${OPTARG};;
+    esac
+done
+
+# Print usage in case parameters are empty
+if [ $consumer_count == 0 ] || [ $hosts == "" ]
+then
+   echo "Some or all of the parameters are empty";
+   usage
+fi
+
+echo "Total number of consumers are: ${consumer_count}"
+echo "Host(s) on which kafka will be installed and setup are: ${hosts}"
 
 # Check kafka already installed or not 
 #is_kafka_installed
