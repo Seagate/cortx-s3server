@@ -504,7 +504,7 @@ fi
 # Clean up backgrounddelete account
 if [[ $cleanup_s3_accounts_schema == true ]]
 then
-    s3setup --cleanup accounts
+    s3setup --cleanup accounts --ldappasswd $ldappasswd
 fi
 
 set_logrotate() {
