@@ -18,6 +18,8 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+# Link for installation and configuration steps of kafka (single node and cluster) are available at https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup
+
 set -e
 
 #Variables
@@ -27,6 +29,8 @@ KAFKA_FOLDER_NAME="kafka"
 BGDELETE_TOPIC_NAME="bgdelete"
 consumer_count=0
 hosts=""
+bootstrapservers=""
+hostnumber=0
 
 # Function to install all pre-requisites
 install_prerequisite() {
@@ -91,6 +95,26 @@ configure_zookeeper() {
    
    # change data direcotory path to /opt/kafka/zookeeper
    sed -i "s+dataDir=.*$+dataDir=${KAFKA_INSTALL_PATH}/${KAFKA_FOLDER_NAME}/zookeeper+g" config/zookeeper.properties
+   
+   # Following properties needs to add for cluster setup only
+   if [ $consumer_count > 1 ]; then
+     sed -i '$ a tickTime=2000' config/zookeeper.properties
+     sed -i '$ a initLimit=10' config/zookeeper.properties
+     sed -i '$ a syncLimit=5' config/zookeeper.properties
+     sed -i '$ a autopurge.snapRetainCount=3' config/zookeeper.properties
+     sed -i '$ a autopurge.purgeInterval=24' config/zookeeper.properties
+     
+     node=1
+     for i in $(echo $hosts | sed "s/,/ /g")
+     do
+       sed -i "$ a server.${node}=${i}:2888:3888" config/zookeeper.properties
+	   node=$node+1
+     done
+	 
+	 # In the dataDir folder, add a file myid and add the node id ( e.g. 1 for node 1, 2 for node2, etc )
+	 create_myid_file
+   fi
+   
 }
 
 # function to Add/Edit server properties 
@@ -106,6 +130,19 @@ configure_server() {
   sed -i 's/log.retention.check.interval.ms=.*$/log.retention.check.interval.ms=100/g' config/server.properties
   sed -i '/log.retention.check.interval.ms/ a log.delete.delay.ms=100' config/server.properties
   sed -i '/log.retention.check.interval.ms/ a log.flush.offset.checkpoint.interval.ms=100' config/server.properties
+  
+  # Following properties needs to add for cluster setup only
+  if [ $consumer_count > 1 ]; then
+	sed -i "s/broker.id=.*$/broker.id=${hostnumber}/g" config/server.properties
+	connect=""
+    for host in $(echo $hosts | sed "s/,/ /g")
+    do
+	  connect="${connect}${host}:2181,"
+    done
+	echo "zookeeper.connect : ${connect}"
+    sed -i "s/zookeeper.connect=.*$/zookeeper.connect=${connect}/g" config/server.properties
+  fi
+
 }
 
 # function to validate kafka is installed or not
@@ -132,6 +169,38 @@ create_topic() {
   else
     echo "Topic 'bgdelete' already exist"
   fi
+}
+#function to create my id file on each host for cluster setup
+create_myid_file() {
+  echo "Creating myid file"
+  echo $hostnumber > ${KAFKA_INSTALL_PATH}/${KAFKA_FOLDER_NAME}/zookeeper/myid
+  echo "Created myid file"
+}
+
+# function to set the hostnumber in case of cluster
+set_host_number() {
+
+IFS=',' #setting comma as delimiter  
+read -a hostarr <<<"$hosts"
+
+for (( n=0; n < ${#hostarr[*]}; n++ ))  
+do 
+   if [${hostarr[n]} -eq $HOSTNAME ]; then
+    hostnumber=$n+1
+    echo "host number is set to : ${hostnumber}"
+   fi
+done 
+}
+
+#function to create a bootstrap server parameter for creating topic
+create_bootstrap_servers_parameter() {
+
+for i in $(echo $hosts | sed "s/,/ /g")
+do
+    bootstrapservers="${bootstrapservers}${i}:9092,"
+done
+
+echo "Bootstrap servers string: ${bootstrapservers}"
 }
 
 usage()
@@ -174,6 +243,9 @@ install_prerequisite
 
 #Setup kafka
 setup_kafka
+
+# create my id file on each host
+create_myid_file
 
 # Add/Edit configuration parameters for zookeper.properties
 configure_zookeeper
