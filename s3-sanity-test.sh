@@ -62,6 +62,9 @@ fi
 
 USAGE="USAGE: bash $(basename "$0")
 Run S3 sanity test.
+
+PRE-REQUISITES: s3cmd and s3iamcli need to be present
+
 where:
     -h     display this help and exit
     -c     clean s3 resources if present
