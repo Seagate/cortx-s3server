@@ -97,7 +97,7 @@ configure_zookeeper() {
    sed -i "s+dataDir=.*$+dataDir=${KAFKA_INSTALL_PATH}/${KAFKA_FOLDER_NAME}/zookeeper+g" config/zookeeper.properties
    
    # Following properties needs to add for cluster setup only
-   if [ $consumer_count > 1 ]; then
+   if [ $consumer_count -gt 1 ]; then
      sed -i '$ a tickTime=2000' config/zookeeper.properties
      sed -i '$ a initLimit=10' config/zookeeper.properties
      sed -i '$ a syncLimit=5' config/zookeeper.properties
@@ -132,7 +132,7 @@ configure_server() {
   sed -i '/log.retention.check.interval.ms/ a log.flush.offset.checkpoint.interval.ms=100' config/server.properties
   
   # Following properties needs to add for cluster setup only
-  if [ $consumer_count > 1 ]; then
+  if [ $consumer_count -gt 1 ]; then
 	sed -i "s/broker.id=.*$/broker.id=${hostnumber}/g" config/server.properties
 	connect=""
     for host in $(echo $hosts | sed "s/,/ /g")
@@ -217,11 +217,12 @@ usage()
 ###############################
 
 # parse the command line arguments
-while getopts c:i: flag
+while getopts c:i:h: flag
 do
     case "${flag}" in
         c) consumer_count=${OPTARG};;
         i) hosts=${OPTARG};;
+		h) usage ;;
     esac
 done
 
@@ -243,9 +244,6 @@ install_prerequisite
 
 #Setup kafka
 setup_kafka
-
-# create my id file on each host
-create_myid_file
 
 # Add/Edit configuration parameters for zookeper.properties
 configure_zookeeper
