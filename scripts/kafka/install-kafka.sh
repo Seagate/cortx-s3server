@@ -31,6 +31,7 @@ consumer_count=0
 hosts=""
 bootstrapservers=""
 hostnumber=0
+ZOOKEEPER_FOLDER_NAME="zookeeper"
 
 # Function to install all pre-requisites
 install_prerequisite() {
@@ -79,12 +80,12 @@ stop_services() {
   cd $KAFKA_INSTALL_PATH/$KAFKA_FOLDER_NAME
   
   # stop kafka server
-  bin/kafka-server-stop.sh
+  bin/kafka-server-stop.sh || true
   echo "kafka server stopped successfully."
   
   #stop zookeeper
-  bin/zookeeper-server-stop.sh
-  echo "zookeeper server started successfully."
+  bin/zookeeper-server-stop.sh || true
+  echo "zookeeper server stopped successfully."
 }
 
 # function to Add/Edit zookeeper properties 
@@ -94,7 +95,7 @@ configure_zookeeper() {
    cd $KAFKA_INSTALL_PATH/$KAFKA_FOLDER_NAME
    
    # change data direcotory path to /opt/kafka/zookeeper
-   sed -i "s+dataDir=.*$+dataDir=${KAFKA_INSTALL_PATH}/${KAFKA_FOLDER_NAME}/zookeeper+g" config/zookeeper.properties
+   sed -i "s+dataDir=.*$+dataDir=${KAFKA_INSTALL_PATH}/${KAFKA_FOLDER_NAME}/${ZOOKEEPER_FOLDER_NAME}+g" config/zookeeper.properties
    
    # Following properties needs to add for cluster setup only
    if [ $consumer_count -gt 1 ]; then
@@ -111,7 +112,10 @@ configure_zookeeper() {
 	   node=$node+1
      done
 	 
-	 # In the dataDir folder, add a file myid and add the node id ( e.g. 1 for node 1, 2 for node2, etc )
+	 # Set host number 
+	 set_host_number
+
+ 	 # In the dataDir folder, add a file myid and add the node id ( e.g. 1 for node 1, 2 for node2, etc )
 	 create_myid_file
    fi
    
@@ -149,10 +153,8 @@ configure_server() {
 is_kafka_installed() {
   if [ -d "$KAFKA_INSTALL_PATH/$KAFKA_FOLDER_NAME" ]; then
     echo "Kafka is already installed"
-    return 0
-  else
-    echo "Kafka is not installed"
-    return 1
+	#stop services before overwriting kafka files
+	stop_services
   fi
 }
 
@@ -165,19 +167,30 @@ create_topic() {
   bin/kafka-topics.sh --list --bootstrap-server $HOSTNAME:9092 | grep "${BGDELETE_TOPIC_NAME}" &> /dev/null
   if [ $? -eq 1 ]; then
     echo "Topic 'bgdelete' does not exist."
-	bin/kafka-topics.sh --create --topic $BGDELETE_TOPIC_NAME --bootstrap-server $hosts:9092 --replication-factor $consumer_count --partitions $consumer_count
+	
+	#create a string for bootstrap server
+	create_bootstrap_servers_parameter
+	
+	#create topic 
+	bin/kafka-topics.sh --create --topic $BGDELETE_TOPIC_NAME --bootstrap-server $bootstrapservers --replication-factor $consumer_count --partitions $consumer_count
   else
     echo "Topic 'bgdelete' already exist"
   fi
 }
+
 #function to create my id file on each host for cluster setup
 create_myid_file() {
   echo "Creating myid file"
-  echo $hostnumber > ${KAFKA_INSTALL_PATH}/${KAFKA_FOLDER_NAME}/zookeeper/myid
+  if [ -d "${KAFKA_INSTALL_PATH}/${KAFKA_FOLDER_NAME}/${ZOOKEEPER_FOLDER_NAME}" ]; then
+   echo "zookeeper folder is already exist"
+  else
+   mkdir $KAFKA_INSTALL_PATH/$KAFKA_FOLDER_NAME/$ZOOKEEPER_FOLDER_NAME    
+  fi
+  echo $hostnumber > ${KAFKA_INSTALL_PATH}/${KAFKA_FOLDER_NAME}/${ZOOKEEPER_FOLDER_NAME}/myid
   echo "Created myid file"
 }
 
-# function to set the hostnumber in case of cluster
+# function to set the hostnumber for cluster
 set_host_number() {
 
 IFS=',' #setting comma as delimiter  
@@ -185,8 +198,8 @@ read -a hostarr <<<"$hosts"
 
 for (( n=0; n < ${#hostarr[*]}; n++ ))  
 do 
-   if [${hostarr[n]} -eq $HOSTNAME ]; then
-    hostnumber=$n+1
+   if [ ${hostarr[n]} == $HOSTNAME ]; then
+    hostnumber=$(($n + 1))
     echo "host number is set to : ${hostnumber}"
    fi
 done 
@@ -237,7 +250,7 @@ echo "Total number of consumers are: ${consumer_count}"
 echo "Host(s) on which kafka will be installed and setup are: ${hosts}"
 
 # Check kafka already installed or not 
-#is_kafka_installed
+is_kafka_installed
 
 # Install Pre-requisites 
 install_prerequisite
