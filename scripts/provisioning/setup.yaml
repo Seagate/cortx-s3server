@@ -35,6 +35,7 @@ s3:
       - --updateclusterid
       - --createauthjkspassword
       - --configldap
+      - --confighaproxy
   reset:
     script: /opt/seagate/cortx/s3/bin/s3_setup
     args:
