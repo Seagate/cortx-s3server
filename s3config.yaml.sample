@@ -84,7 +84,7 @@ S3_MOTR_CONFIG:                                     # Section for S3 Motr
                                                         # 1->4K, 2->8K, 3->16K, 4->32K, 5->64K, 6->128K, 7->256K, 8->512K, 9->1024K,
                                                         # 10->2048K, 11->4096K, 12->8192K, 13->16384K, 14->32768K, default is layout id 9 (1 MB)
    S3_MOTR_UNIT_SIZE: 1048576                         # Motr unit size w.r.t layout id for an IO operation
-   S3_MOTR_MAX_UNITS_PER_REQUEST: 1                   # Maximum units per read/write request to motr
+   S3_MOTR_MAX_UNITS_PER_REQUEST: 32                  # Maximum units per read/write request to motr
    S3_MOTR_MAX_IDX_FETCH_COUNT: 30                    # Motr will read from index at a time maximim of this many key values, used in objects listing
    S3_MOTR_IS_OOSTORE: true                           # Motr oostore mode is set when this flag is true, default is false (oostore mode is not set)
    S3_MOTR_IS_READ_VERIFY: false                      # Motr Flag for verify-on-read. Parity is checked during READ's if this flag is true, default is false
@@ -98,16 +98,16 @@ S3_MOTR_CONFIG:                                     # Section for S3 Motr
    S3_UNIT_SIZES_FOR_MEMORY_POOL: [4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576] # Memory pool will be created for each of these unit_size with following properties
    S3_MOTR_READ_POOL_INITIAL_BUFFER_COUNT: 10        # 10 blocks, the initial pool size = multiple of S3_MOTR_UNIT_SIZE
    S3_MOTR_READ_POOL_EXPANDABLE_COUNT: 50            # 50 blocks, pool's expandable size, multiple of S3_MOTR_UNIT_SIZE
-   S3_MOTR_READ_POOL_MAX_THRESHOLD: 524288000        # 500 MB, The maximum memory threshold for the pool, multiple of S3_MOTR_UNIT_SIZE
+   S3_MOTR_READ_POOL_MAX_THRESHOLD: 1048576000        # 500 MB, The maximum memory threshold for the pool, multiple of S3_MOTR_UNIT_SIZE
    S3_MOTR_READ_MEMPOOL_ZERO_BUFFER: false           # Enable Motr Mempool 'zeroing' after use (like secure erase) - disabled by default
    S3_MOTR_OPERATION_WAIT_PERIOD: 90                 # 90 s, Maximum wait duration for sync motr operations.
 S3_THIRDPARTY_CONFIG:
    S3_LIBEVENT_POOL_BUFFER_SIZE: 16384                  # Pool buffer size, in case of S3_MOTR_UNIT_SIZE of size 1MB, it is recommended to have S3_LIBEVENT_POOL_BUFFER_SIZE of size 16384
    S3_LIBEVENT_MAX_READ_SIZE: 16384                     # Maximum read in a single read operation, as per libevent documentation in code, user should not try to read more than this value
-   S3_LIBEVENT_POOL_INITIAL_SIZE: 209715200             # Two Hundred 1mb blocks, the initial pool size, multiple of S3_MOTR_UNIT_SIZE
-   S3_LIBEVENT_POOL_EXPANDABLE_SIZE: 104857600          # 100mb, pool's expandable size, multiple of S3_MOTR_UNIT_SIZE
-   S3_LIBEVENT_POOL_MAX_THRESHOLD: 524288000            # 500 MB, The maximum memory threshold for the pool, multiple of S3_MOTR_UNIT_SIZE
-   S3_LIBEVENT_POOL_RESERVE_SIZE: 1048576               # Deny PUT request if mempool free space is less than the mentioned size in bytes
+   S3_LIBEVENT_POOL_INITIAL_SIZE: 3221225472             # Two Hundred 1mb blocks, the initial pool size, multiple of S3_MOTR_UNIT_SIZE
+   S3_LIBEVENT_POOL_EXPANDABLE_SIZE: 134217728          # 100mb, pool's expandable size, multiple of S3_MOTR_UNIT_SIZE
+   S3_LIBEVENT_POOL_MAX_THRESHOLD: 3221225472            # 500 MB, The maximum memory threshold for the pool, multiple of S3_MOTR_UNIT_SIZE
+   S3_LIBEVENT_POOL_RESERVE_SIZE: 134217728               # Deny PUT request if mempool free space is less than the mentioned size in bytes
    S3_LIBEVENT_MEMPOOL_ZERO_BUFFER: false               # Enable Libevent Mempool 'zeroing' after use (like secure erase) - disabled by default
    S3_LIBEVENT_POOL_RESERVE_PERCENT: 5                  # Deny PUT request if mempool free space in percent is less than the mentioned percent
 S3_VERSION_CONFIG:

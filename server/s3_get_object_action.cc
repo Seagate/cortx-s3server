@@ -184,7 +184,7 @@ void S3GetObjectAction::set_total_blocks_to_read_from_object() {
 }
 
 bool S3GetObjectAction::validate_range_header_and_set_read_options(
-    const std::string& range_value) {
+    const std::string &range_value) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // The header can consist of 'blank' character(s) only
   if (std::find_if_not(range_value.begin(), range_value.end(), &::isspace) ==
@@ -348,6 +348,9 @@ void S3GetObjectAction::read_object_data() {
 
   size_t max_blocks_in_one_read_op =
       S3Option::get_instance()->get_motr_units_per_request();
+  size_t motr_unit_size =
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
+          object_metadata->get_layout_id());
   size_t blocks_to_read = 0;
 
   s3_log(S3_LOG_DEBUG, request_id, "max_blocks_in_one_read_op: (%zu)\n",
@@ -356,9 +359,16 @@ void S3GetObjectAction::read_object_data() {
          blocks_already_read);
   s3_log(S3_LOG_DEBUG, request_id, "total_blocks_to_read: (%zu)\n",
          total_blocks_to_read);
+
   if (blocks_already_read != total_blocks_to_read) {
-    if ((total_blocks_to_read - blocks_already_read) >
-        max_blocks_in_one_read_op) {
+    if (blocks_already_read == 0 && content_length > motr_unit_size) {
+      blocks_to_read = 1;
+      s3_log(S3_LOG_DEBUG, request_id, "blocks_to_read: (%zu)\n",
+             blocks_to_read);
+      s3_log(S3_LOG_DEBUG, request_id, "content_length is (%zu)\n",
+             content_length);
+    } else if ((total_blocks_to_read - blocks_already_read) >
+               max_blocks_in_one_read_op) {
       blocks_to_read = max_blocks_in_one_read_op;
     } else {
       blocks_to_read = total_blocks_to_read - blocks_already_read;
@@ -436,7 +446,7 @@ void S3GetObjectAction::send_data_to_client() {
   s3_log(S3_LOG_DEBUG, request_id, "Earlier data_sent_to_client = %zu bytes.\n",
          data_sent_to_client);
 
-  char* data = NULL;
+  char *data = NULL;
   size_t length = 0;
   size_t requested_content_length = get_requested_content_length();
   s3_log(S3_LOG_DEBUG, request_id,
@@ -508,7 +518,7 @@ void S3GetObjectAction::send_response_to_s3_client() {
              "sending 'Service Unavailable' response...\n");
       S3Error error("ServiceUnavailable", request->get_request_id(),
                     request->get_object_uri());
-      std::string& response_xml = error.to_xml();
+      std::string &response_xml = error.to_xml();
       request->set_out_header_value("Content-Type", "application/xml");
       request->set_out_header_value("Content-Length",
                                     std::to_string(response_xml.length()));
@@ -520,7 +530,7 @@ void S3GetObjectAction::send_response_to_s3_client() {
     // Invalid Bucket Name
     S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());
-    std::string& response_xml = error.to_xml();
+    std::string &response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
@@ -539,7 +549,7 @@ void S3GetObjectAction::send_response_to_s3_client() {
     } else {
       S3Error error("InternalError", request->get_request_id(),
                     request->get_object_uri());
-      std::string& response_xml = error.to_xml();
+      std::string &response_xml = error.to_xml();
       request->set_out_header_value("Content-Type", "application/xml");
       request->set_out_header_value("Content-Length",
                                     std::to_string(response_xml.length()));
