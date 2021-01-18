@@ -25,7 +25,7 @@
 # scripts/provisioning/s3setup/test_s3_setup.sh
 
 die_with_error () {
-        echo $1
+        echo "$1"
         exit -1
 }
 

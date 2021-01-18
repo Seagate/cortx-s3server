@@ -17,24 +17,23 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 import argparse
-import sys
-import os
 import subprocess
 from s3backgrounddelete.cortx_s3_cipher import CortxS3Cipher
 import logging
 import re
+from s3backgrounddelete.cortx_cluster_config import CORTXClusterConfig, CipherInvalidToken
 
 logging.basicConfig(level=logging.INFO)
-"""logging.basicConfig(level=logging.DEBUG)"""
-log=logging.getLogger('=>')    
+# logging.basicConfig(level=logging.DEBUG)
+log=logging.getLogger('=>')
 
 class S3CortxSetup:
 
   def __init__(self):
-    """Instantiate S3CortxSetup"""
+    """Instantiate S3CortxSetup."""
 
   def delete_background_delete_account(self, ldappasswd: str, keylen: int, key: str, s3background_cofig:str):
-    """Delete s3 account which was used by s3background delete"""
+    """Delete s3 account which was used by s3background delete."""
     cmd = 'ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w ' + ldappasswd + ' -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://'
     output,error = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
     log.debug("\ncmd:{0},\noutput:{1},\nerror:{2}".format(cmd, output, error))
@@ -42,7 +41,7 @@ class S3CortxSetup:
     if "result:32Nosuchobjectmatched" in output:
       print("No s3-background-delete-svc account found")
       return False
-    """Delete s3background delete account"""
+    # Delete s3background delete account.
     s3_cipher = CortxS3Cipher(None, True, keylen, key)
     access_key = ""
     try:
@@ -60,12 +59,12 @@ class S3CortxSetup:
     log.debug("\ncmd:{0},\noutput:{1},\nerror:{2}".format(cmd, output, error))
     if not error:
       print ("Deleted s3backgrounddelete account successfully...")
-      return True 
+      return True
     print ("Delete s3backgrounddelete account failed with: {}".format(error))
     return False
 
   def delete_recovery_tool_account(self, ldappasswd: str, keylen: int, key: str, s3background_cofig:str):
-    """Delete s3 account which was used by s3recoverytool"""
+    """Delete s3 account which was used by s3recoverytool."""
     cmd = 'ldapsearch -b "o=s3-recovery-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w ' + ldappasswd + ' -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://'
     output,error = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
     log.debug("\ncmd:{0},\noutput:{1},\nerror:{2}".format(cmd, output, error))
@@ -73,7 +72,7 @@ class S3CortxSetup:
     if "result:32Nosuchobjectmatched" in output:
       print("No s3-recovery-svc account found")
       return False
-    """Delete s3recovery tool account"""
+    # Delete s3recovery tool account
     s3_cipher = CortxS3Cipher(None, True, keylen, key)
     access_key = ""
     try:
@@ -96,7 +95,7 @@ class S3CortxSetup:
     return False
 
   def accounts_cleanup(self, ldappasswd: str = None, s3background_cofig:str = "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"):
-    """Clean up s3 accounts"""
+    """Clean up s3 accounts."""
     if ldappasswd == None:
       S3Cipher = CortxS3Cipher(None, True, 12, "openldap")
       ldappasswd = S3Cipher.get_key()
@@ -105,7 +104,7 @@ class S3CortxSetup:
     return rc1 & rc2
 
   def dependencies_cleanup(self):
-    """Clean up configs"""
+    """Clean up configs."""
     log.debug("removing s3 dependencies")
     cmd = "mv -f /opt/seagate/cortx/auth/resources/authserver.properties /opt/seagate/cortx/auth/resources/authserver.properties.bak"
     output,error = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
@@ -127,7 +126,7 @@ class S3CortxSetup:
   def run(self):
     parser = argparse.ArgumentParser(description='Cortx S3 Setup')
     parser.add_argument("--cleanup", help='Cleanup S3 accounts and dependencies. Valid values: all/accounts/dependencies')
-    """Future functionalities to be added here."""
+    # Future functionalities to be added here.
     parser.add_argument("--ldappasswd", help='ldap password, needed for --cleanup')
 
     args = parser.parse_args()
@@ -137,7 +136,7 @@ class S3CortxSetup:
         print("Invalid input, provide --ldappasswd for cleanup")
         exit (-2)
       if args.cleanup == "accounts":
-        if args.ldappasswd: 
+        if args.ldappasswd:
           rc = self.accounts_cleanup(args.ldappasswd)
         else:
           rc = self.accounts_cleanup()
