@@ -26,6 +26,11 @@ BASEDIR=$(dirname "$SCRIPT_PATH")
 S3_SRC_DIR="$BASEDIR/../../../"
 CURRENT_DIR=`pwd`
 
+install_toml() {
+  echo "Installing toml"
+  pip3 install toml
+}
+
 usage() {
   echo "Usage: $0
   optional arguments:
@@ -35,6 +40,8 @@ usage() {
 
 if [[ $# -eq 0 ]] ; then
   source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
+  # install pip3 package toml if not present, needed by cortx-py-utils for s3confstore UT
+  install_toml
 else
   while getopts "ah" x; do
       case "${x}" in

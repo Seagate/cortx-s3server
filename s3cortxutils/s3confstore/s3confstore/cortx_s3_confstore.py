@@ -50,34 +50,6 @@ class S3CortxConfStore:
       """Update the index backend"""
       Conf.save(index)
 
-  def uttest(self, index: str):
-    """This will be removed to ut directory later"""
-    test_config = {
-      'cluster': {
-        "cluster_id": 'abcd-efgh-ijkl-mnop',
-        "cluster_hosts": 'myhost-1,myhost2,myhost-3',
-      }
-    }
-    with open(r'/tmp/cortx_s3_confstoreuttest.json', 'w+') as file:
-      json.dump(test_config, file, indent=2)
-    self.load_config(index, 'json:///tmp/cortx_s3_confstoreuttest.json')
-
-    result_data = self.get_config(index, 'cluster')
-    if 'cluster_id' not in result_data:
-      print("get_config() failed!")
-      os.remove("/tmp/cortx_s3_confstoreuttest.json")
-      exit(-1)
-
-    self.set_config(index, 'cluster>cluster_id', '1234', False)
-    result_data = self.get_config(index, 'cluster>cluster_id')
-    if result_data != '1234':
-      print("set_config() failed!")
-      os.remove("/tmp/cortx_s3_confstoreuttest.json")
-      exit(-1)
-
-    os.remove("/tmp/cortx_s3_confstoreuttest.json")
-    print("cortx_s3_confstore unit test passed!")
-
   def run(self):
     parser = argparse.ArgumentParser(description='Cortx-Utils ConfStore')
     parser.add_argument("--load", help='Load the backing storage in this index, pass --path to config')
@@ -89,7 +61,6 @@ class S3CortxConfStore:
     parser.add_argument("--setkey", help='Sets config value for the given key from default index, pass --path to config and --setval')
     parser.add_argument("--setval", help='String value to be set using --set or --setkey')
     parser.add_argument("--path", help='Path to config file, supported formats are: json, toml, yaml, ini, pillar (salt). Usage: <format>://<file_path>, e.g. JSON:///etc/cortx/myconf.json')
-    parser.add_argument("--uttest", help='An unit test for the load, get, get_data and set APIs')
 
     if len(sys.argv) < 2:
       print("Incorrect args, use -h to review usage")
@@ -188,8 +159,5 @@ class S3CortxConfStore:
           exit(-1)
         self.load_config(self.default_index, urlpath)
         self.set_config(self.default_index, args.setkey, args.setval, True)
-
-    elif args.uttest:
-      self.uttest(args.uttest)
     pass
 
