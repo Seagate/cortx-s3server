@@ -461,14 +461,9 @@ void S3CopyObjectAction::send_response_to_s3_client() {
     response_xml = std::move(error.to_xml(response_started));
     http_status_code = error.get_http_status_code();
 
-    if (!response_started) {
-      request->set_out_header_value("Content-Type", "application/xml");
-      request->set_out_header_value("Content-Length",
-                                    std::to_string(response_xml.length()));
-      if (get_s3_error_code() == "ServiceUnavailable" ||
-          get_s3_error_code() == "InternalError") {
+    if (!response_started && (get_s3_error_code() == "ServiceUnavailable" ||
+                              get_s3_error_code() == "InternalError")) {
         request->set_out_header_value("Connection", "close");
-      }
     }
     if (get_s3_error_code() == "ServiceUnavailable") {
       request->set_out_header_value("Retry-After", "1");
@@ -486,6 +481,10 @@ void S3CopyObjectAction::send_response_to_s3_client() {
     request->send_reply_end();
     request->close_connection();
   } else {
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
+
     request->send_response(http_status_code, std::move(response_xml));
   }
 #ifndef S3_GOOGLE_TEST

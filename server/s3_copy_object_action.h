@@ -150,7 +150,11 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   FRIEND_TEST(S3CopyObjectActionTest, SendResponseWhenShuttingDown);
   FRIEND_TEST(S3CopyObjectActionTest, SendErrorResponse);
   FRIEND_TEST(S3CopyObjectActionTest, SendSuccessResponse);
+  FRIEND_TEST(S3CopyObjectActionTest, SendSuccessResponseAtEnd);
+  FRIEND_TEST(S3CopyObjectActionTest, SendSuccessResponseSpread);
   FRIEND_TEST(S3CopyObjectActionTest, SendFailedResponse);
+  FRIEND_TEST(S3CopyObjectActionTest, SendFailedResponseAtEnd);
+  FRIEND_TEST(S3CopyObjectActionTest, SendFailedResponseSpread);
   FRIEND_TEST(S3CopyObjectActionTest, DestinationAuthorization);
 };
 #endif  // __S3_SERVER_S3_COPY_OBJECT_ACTION_H__
