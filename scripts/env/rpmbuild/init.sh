@@ -26,7 +26,6 @@ BASEDIR=$(dirname "$SCRIPT_PATH")
 S3_SRC_DIR="$BASEDIR/../../../"
 CURRENT_DIR=`pwd`
 
-<<<<<<< HEAD
 #function to install/upgrade cortx-py-utils rpm
 install_cortx_py_utils() {
   #rpm -q cortx-py-utils && yum remove cortx-py-utils -y && yum install cortx-py-utils -y
