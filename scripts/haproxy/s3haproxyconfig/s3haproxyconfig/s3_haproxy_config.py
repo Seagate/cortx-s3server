@@ -162,7 +162,8 @@ backend s3-auth
     ########################################
 
     #Run config commands
-    os.system("mkdir /etc/haproxy/errors/")
+    if not os.path.exists('/etc/haproxy/errors/'):
+        os.makedirs('/etc/haproxy/errors/')
     os.system("cp /opt/seagate/cortx/s3/install/haproxy/503.http /etc/haproxy/errors/")
     os.system("cp /opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy /etc/logrotate.d/haproxy")
     os.system("cp /opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf /etc/rsyslog.d/haproxy.conf")
