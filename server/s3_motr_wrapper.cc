@@ -176,6 +176,17 @@ int ConcreteMotrAPI::motr_obj_op(struct m0_obj *obj, enum m0_obj_opcode opcode,
                                  struct m0_bufvec *data, struct m0_bufvec *attr,
                                  uint64_t mask, uint32_t flags,
                                  struct m0_op **op) {
+  S3Option *config = S3Option::get_instance();
+  if (config->is_fake_motr_openobj() && config->is_fake_motr_createobj() &&
+      config->is_fake_motr_readobj() && opcode == M0_OC_READ) {
+    (*op) = (struct m0_op *)calloc(1, sizeof(struct m0_op));
+    if ((*op) == nullptr) {
+      return -ENOMEM;
+    }
+    (*op)->op_code = opcode;
+    (*op)->op_sm.sm_state = M0_OS_INITIALISED;
+    return 0;
+  }
   return m0_obj_op(obj, opcode, ext, data, attr, mask, flags, op);
 }
 
@@ -193,7 +204,8 @@ void ConcreteMotrAPI::motr_op_launch(uint64_t addb_request_id,
                                      MotrOpType type) {
   S3Option *config = S3Option::get_instance();
   motr_op_launch_addb_add(addb_request_id, op, nr);
-  if ((config->is_fake_motr_createobj() && type == MotrOpType::createobj) ||
+  if ((config->is_fake_motr_openobj() && type == MotrOpType::openobj) ||
+      (config->is_fake_motr_createobj() && type == MotrOpType::createobj) ||
       (config->is_fake_motr_writeobj() && type == MotrOpType::writeobj) ||
       (config->is_fake_motr_readobj() && type == MotrOpType::readobj) ||
       (config->is_fake_motr_deleteobj() && type == MotrOpType::deleteobj) ||

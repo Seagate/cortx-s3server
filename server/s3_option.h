@@ -422,6 +422,7 @@ class S3Option {
   int get_cmd_opt_flag();
 
   // Check if any fake out options are provided.
+  bool is_fake_motr_openobj();
   bool is_fake_motr_createobj();
   bool is_fake_motr_writeobj();
   bool is_fake_motr_readobj();

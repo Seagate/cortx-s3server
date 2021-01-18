@@ -56,6 +56,7 @@ DECLARE_bool(disable_auth);
 DECLARE_bool(fake_authenticate);
 DECLARE_bool(fake_authorization);
 
+DECLARE_bool(fake_motr_openobj);
 DECLARE_bool(fake_motr_createobj);
 DECLARE_bool(fake_motr_writeobj);
 DECLARE_bool(fake_motr_readobj);

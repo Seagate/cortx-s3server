@@ -168,6 +168,13 @@ void teardown_motr_op(struct m0_op *op) { teardown_motr_cancel_wait_op(op, 0); }
 void teardown_motr_cancel_wait_op(struct m0_op *op, int sec) {
   if (!op) return;
 
+  S3Option *config = S3Option::get_instance();
+  if (config->is_fake_motr_openobj() && config->is_fake_motr_createobj() &&
+      config->is_fake_motr_readobj() && op->op_code == M0_OC_READ) {
+    free(op);
+    return;
+  }
+
   if (M0_OS_LAUNCHED == op->op_sm.sm_state) {
     m0_op_cancel(&op, 1);
     m0_op_wait(op, M0_BITS(M0_OS_FAILED, M0_OS_STABLE),
