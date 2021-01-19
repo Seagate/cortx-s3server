@@ -140,9 +140,9 @@ fi
 
 %build
 %if %{with cortx_motr}
-./rebuildall.sh --no-check-code --no-install
+./rebuildall.sh --no-check-code --no-install --no-s3ut-build --no-s3mempoolut-build --no-s3mempoolmgrut-build --no-java-tests
 %else
-./rebuildall.sh --no-check-code --no-install --no-motr-rpm --use-build-cache
+./rebuildall.sh --no-check-code --no-install --no-s3ut-build --no-s3mempoolut-build --no-s3mempoolmgrut-build --no-java-tests --no-motr-rpm --use-build-cache
 %endif
 
 # Build the background delete python module.

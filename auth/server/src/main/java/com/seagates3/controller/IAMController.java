@@ -20,6 +20,14 @@
 
 package com.seagates3.controller;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.seagates3.authentication.ClientRequestParser;
 import com.seagates3.authentication.ClientRequestToken;
 import com.seagates3.authentication.SignatureValidator;
@@ -33,7 +41,6 @@ import com.seagates3.exception.AuthResourceNotFoundException;
 import com.seagates3.exception.InternalServerException;
 import com.seagates3.exception.InvalidAccessKeyException;
 import com.seagates3.exception.InvalidArgumentException;
-
 import com.seagates3.exception.InvalidRequestorException;
 import com.seagates3.exception.InvalidUserException;
 import com.seagates3.model.AccessKey;
@@ -43,15 +50,9 @@ import com.seagates3.perf.S3Perf;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthenticationResponseGenerator;
 import com.seagates3.service.RequestorService;
-import com.seagates3.util.IEMUtil;
+
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public
 class IAMController {
@@ -131,6 +132,98 @@ class IAMController {
         LOGGER.error("Incorrect signature. Request not authenticated");
         return serverResponse;
       }
+    } else if (requestAction.equals("UpdateAccountLoginProfile")) {
+      LOGGER.debug("Parsing UpdateAccountLoginProfile request" +
+                   requestBody.get("AccountName"));
+      try {
+        clientRequestToken =
+            ClientRequestParser.parse(httpRequest, requestBody);
+      }
+      catch (InvalidAccessKeyException ex) {
+        LOGGER.debug(ex.getServerResponse().getResponseBody());
+        return ex.getServerResponse();
+      }
+      catch (InvalidArgumentException ex) {
+        LOGGER.debug(ex.getServerResponse().getResponseBody());
+        return ex.getServerResponse();
+      }
+
+      if (clientRequestToken == null) {
+        return responseGenerator.invalidArgument(
+            "AuthorizationHeaderMalformed");
+      }
+
+      try {
+        requestor = RequestorService.getRequestor(clientRequestToken);
+      }
+      catch (InvalidAccessKeyException ex) {
+        LOGGER.debug(ex.getServerResponse().getResponseBody());
+      }
+      catch (InternalServerException ex) {
+        LOGGER.debug(ex.getServerResponse().getResponseBody());
+      }
+      catch (InvalidRequestorException ex) {
+        LOGGER.debug(ex.getServerResponse().getResponseBody());
+      }
+      if (requestor == null) {
+        LOGGER.debug(
+            "Validating user on the basis of ldap credentials entered");
+        AccessKey akey = new AccessKey();
+        String ldapUser = AuthServerConfig.getLdapLoginCN();
+        if (!ldapUser.equals(clientRequestToken.getAccessKeyId())) {
+          LOGGER.error("Invalid ldap user, authentication failed");
+          AuthenticationResponseGenerator responseGenerator =
+              new AuthenticationResponseGenerator();
+          serverResponse = responseGenerator.invalidLdapUserId();
+          return serverResponse;
+        }
+        akey.setId(ldapUser);
+        akey.setSecretKey(AuthServerConfig.getLdapLoginPassword());
+        requestor = new Requestor();
+        requestor.setAccessKey(akey);
+        LOGGER.debug("Calling signature validator.");
+
+        perf.startClock();
+        serverResponse =
+            new SignatureValidator().validate(clientRequestToken, requestor);
+        perf.endClock();
+        perf.printTime("Request validation");
+
+        if (!serverResponse.getResponseStatus().equals(HttpResponseStatus.OK)) {
+          LOGGER.error("Incorrect signature. Request not authenticated");
+          return serverResponse;
+        }
+      } else {
+        LOGGER.debug("Validating user with accesskey and secretkey entered");
+        LOGGER.debug("Calling signature validator.");
+
+        perf.startClock();
+        serverResponse =
+            new SignatureValidator().validate(clientRequestToken, requestor);
+        perf.endClock();
+        perf.printTime("Request validation");
+
+        if (!serverResponse.getResponseStatus().equals(HttpResponseStatus.OK)) {
+          LOGGER.error("Incorrect signature. Request not authenticated");
+          return serverResponse;
+        }
+        // Authorize
+        try {
+          if (RootPermissionAuthorizer.getInstance().containsAction(
+                  requestAction)) {
+            new IAMApiAuthorizer().authorizeRootUser(requestor, requestBody);
+          } else {
+            new IAMApiAuthorizer().authorize(requestor, requestBody);
+          }
+          LOGGER.info("Request is authorized for user: " + requestor.getName() +
+                      " account: " + requestor.getAccount());
+        }
+        catch (InvalidUserException e) {
+          LOGGER.error(e.getServerResponse().getResponseBody());
+          return e.getServerResponse();
+        }
+      }
+
     } else if ((requestBody.get("Authorization") == null) &&
                requestAction.equals("AuthorizeUser")) {
 
@@ -146,7 +239,7 @@ class IAMController {
               ClientRequestParser.parse(httpRequest, requestBody);
           /*
            * Client Request Token will be null if the request is incorrect.
-         */
+           */
           if (clientRequestToken == null) {
             return responseGenerator.invalidArgument(
                 "AuthorizationHeaderMalformed");
@@ -167,7 +260,7 @@ class IAMController {
             !requestAction.equals("ValidatePolicy") &&
             !"AuthorizeUser".equals(requestAction)) {
           requestor = RequestorService.getRequestor(clientRequestToken);
-      }
+        }
       }
       catch (InvalidAccessKeyException ex) {
         LOGGER.debug(ex.getServerResponse().getResponseBody());
@@ -252,17 +345,21 @@ class IAMController {
     }
 
     /*
-     * Check if User is authorized to perform invoked action.
-     * Only ldap credentials are allowed for createaccount and listaccounts.
-     * Hence, createaccount and listaccounts don't require this check.
-     * Skipping GetTempAuthCredentials here because Authorization is performed-
-     * with username and password entered by user
+     * Check if User is authorized to perform invoked action. Only ldap
+     * credentials
+     * are allowed for createaccount and listaccounts. Hence, createaccount and
+     * listaccounts don't require this check. Skipping GetTempAuthCredentials
+     * here
+     * because Authorization is performed- with username and password entered by
+     * user Skipping UpdateAccountLoginProfile here as it is handled separately
+     * above
      */
     if (!(requestAction.equals("CreateAccount") ||
           requestAction.equals("ListAccounts") ||
           requestAction.equals("ResetAccountAccessKey") ||
           requestAction.equals("ChangePassword") ||
-          requestAction.equals("GetTempAuthCredentials"))) {
+          requestAction.equals("GetTempAuthCredentials") ||
+          requestAction.equals("UpdateAccountLoginProfile"))) {
       try {
         if (RootPermissionAuthorizer.getInstance().containsAction(
                 requestAction)) {
@@ -366,5 +463,4 @@ class IAMController {
     return null;
   }
 }
-
 
