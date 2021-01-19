@@ -25,6 +25,7 @@ BASEDIR=$(dirname "$SCRIPT_PATH")
 S3_SRC_DIR="$BASEDIR/../../../"
 CURRENT_DIR=`pwd`
 
+#function to install/upgrade cortx-py-utils rpm
 install_cortx_py_utils() {
   #rpm -q cortx-py-utils && yum remove cortx-py-utils -y && yum install cortx-py-utils -y
   if rpm -q cortx-py-utils ; then
@@ -32,6 +33,16 @@ install_cortx_py_utils() {
   else
     yum install cortx-py-utils -y
   fi
+}
+
+# function to install all pre-requisited for dev vm 
+install_pre_requisites() {
+
+  # install kafka server
+  source ${S3_SRC_DIR}/scripts/kafka/install-kafka.sh -c 1 -i $HOSTNAME
+  
+  # install or upgrade cortx-py-utils
+  install_cortx_py_utils
 }
 
 usage() {
@@ -43,8 +54,8 @@ usage() {
 
 if [[ $# -eq 0 ]] ; then
   source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
-  # install or upgrade cortx-py-utils
-  install_cortx_py_utils
+  #install pre-requisites on dev vm
+  install_pre_requisites
 else
   while getopts "ah" x; do
       case "${x}" in
