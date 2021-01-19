@@ -138,7 +138,7 @@ primary_bucket_metadata_index = S3kvTest('KvTest fetch root bucket metadata inde
 replica_bucket_metadata_index = S3kvTest('KvTest fetch replica bucket metadata index')\
     .replica_bucket_metadata_index()
 
-config = CORTXS3Config(s3recovery_flag = True, use_cipher= False)
+config = CORTXS3Config(s3recovery_flag = True)
 
 # ======================================================================================================
 

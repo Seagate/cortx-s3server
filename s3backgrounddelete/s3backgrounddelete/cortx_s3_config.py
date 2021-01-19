@@ -38,7 +38,7 @@ class CORTXS3Config(object):
     _config = None
     _conf_file = None
 
-    def __init__(self, s3recovery_flag = False, use_cipher = True):
+    def __init__(self, s3recovery_flag = False):
         """Initialise logger and configuration."""
         self.logger = logging.getLogger(__name__ + "CORTXS3Config")
         self.s3recovery_flag = s3recovery_flag
@@ -47,9 +47,7 @@ class CORTXS3Config(object):
         self.recovery_access_key = None
         self.recovery_secret_key = None
         self._load_and_fetch_config()
-        self.logger.debug("CORTXS3Config: use cipher flag = " + str(use_cipher))
-        if use_cipher:
-            self.cache_credentials()
+        self.cache_credentials()
 
     @staticmethod
     def get_conf_dir():
@@ -225,24 +223,16 @@ class CORTXS3Config(object):
         if self.s3bdg_access_key:
             return self.s3bdg_access_key
 
-        if 'cortx_s3' in self._config and self._config['cortx_s3']['background_account_access_key']:
-            return self._config['cortx_s3']['background_account_access_key']
-        else:
-            raise KeyError(
-                "Could not find cortx_s3 access_key from config file " +
-                self._conf_file)
+        raise KeyError(
+            "Could not find s3bdg_access_key")
 
     def get_cortx_s3_secret_key(self):
         """Return secret_key from cipher or config file or KeyError."""
         if self.s3bgd_secret_key:
             return self.s3bgd_secret_key
 
-        if 'cortx_s3' in self._config and self._config['cortx_s3']['background_account_secret_key']:
-            return self._config['cortx_s3']['background_account_secret_key']
-        else:
-            raise KeyError(
-                "Could not find cortx_s3 secret_key from config file " +
-                self._conf_file)
+        raise KeyError(
+            "Could not find s3bgd_secret_key")
 
     def get_daemon_mode(self):
         """Return daemon_mode flag value for scheduler from config file\

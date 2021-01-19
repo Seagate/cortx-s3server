@@ -483,8 +483,6 @@ create_background_delete_account()
     then
     # Create s3background delete account
       create_s3backgroundelete_keys
-      salt "*" cmd.run "sed -i \"s/background_account_access_key:.*$/background_account_access_key: \"$access_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
-      salt "*" cmd.run "sed -i \"s/background_account_secret_key:.*$/background_account_secret_key: \"$secret_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
       salt "*" cmd.run "sed -i \"s/ak:.*/ak: $access_key/g\" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif"
       salt "*" cmd.run "sed -i \"s/sk:.*/sk: $secret_key/g\" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif"
       salt "*" cmd.run "sed -i \"s/ak=.*/ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com/g\" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif"

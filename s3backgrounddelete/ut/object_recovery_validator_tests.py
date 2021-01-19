@@ -42,7 +42,7 @@ def test_list_instance_index_fail():
 
     index_api_mock.list.return_value = False, {}
 
-    config = CORTXS3Config(use_cipher = False)
+    config = CORTXS3Config()
     probable_delete_records = {'Key': 'TAcGAQAAAAA=-AwAAAAAAhEs=', \
         'Value':'{"motr_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
         "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \
@@ -81,7 +81,7 @@ def test_object_metadata_not_exists():
     object_api_mock.delete.return_value = True, {}
 
 
-    config = CORTXS3Config(use_cipher = False)
+    config = CORTXS3Config()
     probable_delete_records = {'Key': 'TAcGAQAAAAA=-AwAAAAAAhEs=', \
         'Value':'{"motr_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
         "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \
@@ -126,7 +126,7 @@ def test_object_metadata_exists_and_matches():
     object_api_mock.delete.return_value = True, {}
 
 
-    config = CORTXS3Config(use_cipher = False)
+    config = CORTXS3Config()
     probable_delete_records = {'Key': 'Tgj8AgAAAAA=-dQAAAAAABCY=', \
         'Value':'{"motr_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
         "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \
@@ -173,7 +173,7 @@ def test_object_metadata_exists_mismatches():
     object_api_mock.delete.return_value = True, {}
 
 
-    config = CORTXS3Config(use_cipher = False)
+    config = CORTXS3Config()
     probable_delete_records = {'Key': 'Tgj8AgAAAAA=-dQAAAAAABCY=', \
         'Value':'{"motr_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
         "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \

@@ -28,8 +28,8 @@ from s3recovery.config import Config
 METADATA_INDEX_DELIMITER = '/'
 
 class S3RecoverCorruption(S3RecoveryBase):
-    def __init__(self, use_cipher= True):
-        super(S3RecoverCorruption, self).__init__(use_cipher)
+    def __init__(self):
+        super(S3RecoverCorruption, self).__init__()
         super(S3RecoverCorruption, self).create_logger_directory()
         super(S3RecoverCorruption, self).create_logger("S3RecoverCorruption")
 
