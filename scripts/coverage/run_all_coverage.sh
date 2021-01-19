@@ -54,9 +54,6 @@ run_coverage() {
 upload_report() {
     export CODACY_PROJECT_TOKEN
     export CODACY_API_BASE_URL=https://api.codacy.com
-
-    commit_id=$(git rev-parse $BRANCH)
-
     codacy_coverage_url="https://coverage.codacy.com/get.sh"
 
     # Here, the coverage report "s3server_coverage.info" holds coverage for
@@ -65,24 +62,24 @@ upload_report() {
     # Hence, same report is being upload first for CPP, then for C code.
     # Upload cpp coverage report
     bash <(curl -Ls $codacy_coverage_url) report \
-    -l CPP -r $DES_DIR/s3server_cpp_coverage.info --commit-uuid $commit_id
+    -l CPP -r $DES_DIR/s3server_cpp_coverage.info
 
     # Upload C coverage report
     bash <(curl -Ls $codacy_coverage_url) report \
-    -l C -r $DES_DIR/s3server_cpp_coverage.info --commit-uuid $commit_id
+    -l C -r $DES_DIR/s3server_cpp_coverage.info
 
     # Upload Java coverage report
     bash <(curl -Ls $codacy_coverage_url) report \
-    -l Java -r $DES_DIR/auth/encryptcli_report.xml --partial --commit-uuid $commit_id
+    -l Java -r $DES_DIR/auth/encryptcli_report.xml --partial
     bash <(curl -Ls $codacy_coverage_url) report \
-    -l Java -r $DES_DIR/auth/encryptutil_report.xml --partial --commit-uuid $commit_id
+    -l Java -r $DES_DIR/auth/encryptutil_report.xml --partial
     bash <(curl -Ls $codacy_coverage_url) report \
-    -l Java -r $DES_DIR/auth/authserver_report.xml --partial --commit-uuid $commit_id
-    bash <(curl -Ls $codacy_coverage_url) final --commit-uuid $commit_id
+    -l Java -r $DES_DIR/auth/authserver_report.xml --partial
+    bash <(curl -Ls $codacy_coverage_url) final
 
     # Upload Python coverage report
     bash <(curl -Ls $codacy_coverage_url) report \
-    -l Python -r $DES_DIR/s3server_python_coverage.xml --commit-uuid $commit_id
+    -l Python -r $DES_DIR/s3server_python_coverage.xml
 }
 
 ############################# Main ################################

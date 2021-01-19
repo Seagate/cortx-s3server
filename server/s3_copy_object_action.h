@@ -57,6 +57,8 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   std::shared_ptr<S3BucketMetadata> source_bucket_metadata;
   std::unique_ptr<S3ObjectDataCopier> object_data_copier;
 
+  bool response_started = false;
+
   void get_source_bucket_and_object();
   void fetch_source_bucket_info();
   void fetch_source_bucket_info_success();
@@ -89,11 +91,13 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
 
   void validate_copyobject_request();
   void copy_object();
+  bool copy_object_cb();
   void copy_object_success();
   void copy_object_failed();
   void save_metadata();
   void save_object_metadata_success();
   void save_object_metadata_failed();
+  void start_response();
   void send_response_to_s3_client() final;
 
   friend class S3CopyObjectActionTest;
@@ -146,7 +150,11 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   FRIEND_TEST(S3CopyObjectActionTest, SendResponseWhenShuttingDown);
   FRIEND_TEST(S3CopyObjectActionTest, SendErrorResponse);
   FRIEND_TEST(S3CopyObjectActionTest, SendSuccessResponse);
+  FRIEND_TEST(S3CopyObjectActionTest, SendSuccessResponseAtEnd);
+  FRIEND_TEST(S3CopyObjectActionTest, SendSuccessResponseSpread);
   FRIEND_TEST(S3CopyObjectActionTest, SendFailedResponse);
+  FRIEND_TEST(S3CopyObjectActionTest, SendFailedResponseAtEnd);
+  FRIEND_TEST(S3CopyObjectActionTest, SendFailedResponseSpread);
   FRIEND_TEST(S3CopyObjectActionTest, DestinationAuthorization);
 };
 #endif  // __S3_SERVER_S3_COPY_OBJECT_ACTION_H__
