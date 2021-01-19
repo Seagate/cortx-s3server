@@ -89,7 +89,7 @@ stop_services() {
 
 # function to Add/Edit zookeeper properties 
 configure_zookeeper() {
-   echo "configure zookeeper properties"
+   echo "configuring zookeeper properties"
    
    cd $KAFKA_INSTALL_PATH/$KAFKA_DIR_NAME
    
@@ -118,11 +118,12 @@ configure_zookeeper() {
 	 create_myid_file
    fi
    
+   echo "zookeeper properties configured successfully"
 }
 
 # function to Add/Edit server properties 
 configure_server() {
-  echo "configure server properties" 
+  echo "configuring server properties" 
   
   cd $KAFKA_INSTALL_PATH/$KAFKA_DIR_NAME
   
@@ -145,7 +146,7 @@ configure_server() {
 	echo "zookeeper.connect : ${connect}"
     sed -i "s/zookeeper.connect=.*$/zookeeper.connect=${connect}/g" config/server.properties
   fi
-
+  echo "server properties configured successfully"
 }
 
 # function to validate kafka is installed or not

@@ -20,7 +20,7 @@
 
 # Link for installation and configuration steps of kafka (single node and cluster) are available at https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup
 
-set -e
+#set -e
 
 #Variables
 KAFKA_INSTALL_PATH=/opt
@@ -92,8 +92,8 @@ then
    usage
 fi
 
-echo "Total number of consumers are: ${consumer_count}"
-echo "Host(s): ${hosts}"
+echo "Total number of consumers to create topic: ${consumer_count}"
+echo "Total number of host(s) on which topic will be created: ${hosts}"
 
 # Create topic for background delete 'bgdelete'
 create_topic
