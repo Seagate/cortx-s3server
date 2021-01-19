@@ -49,6 +49,9 @@ ldappasswd=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/n
 
 USAGE="USAGE: bash $(basename "$0")
 Run S3 sanity test.
+
+PRE-REQUISITES: s3cmd and s3iamcli need to be present
+
 where:
     -h     display this help and exit
     -c     clean s3 resources if present

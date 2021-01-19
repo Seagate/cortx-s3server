@@ -21,12 +21,6 @@
 
 # Prerequisites: Necessary yum repos setup, possibly jenkins_yum_repos.yml
 
-- name: install CORTX Python Utilities
-  yum:
-    name: cortx-py-utils
-    enablerepo: releases_cortx_py_utils
-    state: present
-
 - name: Install yum-utils if not present
   yum:
     name: yum-utils

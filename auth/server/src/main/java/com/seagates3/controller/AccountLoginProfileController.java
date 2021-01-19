@@ -34,7 +34,6 @@ import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
 import com.seagates3.parameter.validator.S3ParameterValidatorUtil;
-import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AccountLoginProfileResponseGenerator;
 import com.seagates3.response.generator.AccountResponseGenerator;
@@ -153,8 +152,7 @@ class AccountLoginProfileController extends AbstractController {
     Account account = null;
     ServerResponse response = null;
     try {
-      account = accountDAO.find(requestor.getAccount().getName());
-
+      account = accountDAO.find(requestBody.get("AccountName"));
       if (!account.exists()) {
         LOGGER.error("Account [" + requestor.getAccount().getName() +
                      "] does not exists");

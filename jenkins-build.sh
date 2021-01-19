@@ -31,7 +31,7 @@ USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ]
                         [--generate_support_bundle]
                         [--job_id]
                         [--gid]
-                        [--help | -h]
+                        [--help | -h] [--help-short | -H]
 
 where:
 --use_http_client        Use HTTP client for ST's. Default is use HTTPS client.
@@ -101,7 +101,9 @@ where:
 
                           Value: Int
 
---help (-h)        Display help"
+--help (-h)        Display help
+
+--help-short (-H)  Display short, abbreviated help with just a list of options."
 
 use_http_client=0
 s3server_enable_ssl=0
@@ -253,6 +255,10 @@ else
                            ;;
       --help | -h )
           echo "$USAGE"
+          exit 1
+          ;;
+      --help-short | -H )
+          echo "$USAGE" | grep '^--'
           exit 1
           ;;
       * )
