@@ -28,7 +28,6 @@ KAFKA_DOWNLOAD_URL="http://cortx-storage.colo.seagate.com/releases/cortx/third-p
 KAFKA_DIR_NAME="kafka"
 consumer_count=0
 hosts=""
-bootstrapservers=""
 hostnumber=0
 ZOOKEEPER_DIR_NAME="zookeeper"
 
@@ -105,9 +104,9 @@ configure_zookeeper() {
      sed -i '$ a autopurge.purgeInterval=24' config/zookeeper.properties
      
      node=1
-     for i in $(echo $hosts | sed "s/,/ /g")
+     for host in "$(echo $hosts | sed "s/,/ /g")"
      do
-       sed -i "$ a server.${node}=${i}:2888:3888" config/zookeeper.properties
+       sed -i "$ a server.${node}=${host}:2888:3888" config/zookeeper.properties
 	   node=$node+1
      done
 	 
@@ -139,7 +138,7 @@ configure_server() {
   if [ $consumer_count -gt 1 ]; then
 	sed -i "s/broker.id=.*$/broker.id=${hostnumber}/g" config/server.properties
 	connect=""
-    for host in $(echo $hosts | sed "s/,/ /g")
+    for host in "$(echo $hosts | sed "s/,/ /g")"
     do
 	  connect="${connect}${host}:2181,"
     done

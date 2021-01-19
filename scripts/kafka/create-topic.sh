@@ -20,6 +20,7 @@
 
 # Link for installation and configuration steps of kafka (single node and cluster) are available at https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup
 
+# Disabling setting of error in script as kafka list topic command is using error condition to check topic existence. 
 #set -e
 
 #Variables
@@ -53,7 +54,7 @@ create_topic() {
 #function to create a bootstrap server parameter for creating topic
 create_bootstrap_servers_parameter() {
 
-for i in $(echo $hosts | sed "s/,/ /g")
+for i in "$(echo $hosts | sed "s/,/ /g")"
 do
     bootstrapservers="${bootstrapservers}${i}:9092,"
 done

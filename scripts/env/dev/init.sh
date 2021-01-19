@@ -60,7 +60,7 @@ install_cortx_py_utils() {
   fi
 }
 
-# function to install all pre-requisited for dev vm 
+# function to install all prerequisite for dev vm 
 install_pre_requisites() {
 
   # install kafka server
