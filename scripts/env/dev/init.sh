@@ -64,9 +64,10 @@ install_cortx_py_utils() {
 install_pre_requisites() {
 
   # install kafka server
-  source ${S3_SRC_DIR}/scripts/kafka/install-kafka.sh -c 1 -i $HOSTNAME
+  sh ${S3_SRC_DIR}/scripts/kafka/install-kafka.sh -c 1 -i $HOSTNAME
+  
   #create topic
-  source ${S3_SRC_DIR}/scripts/kafka/create-topic.sh -c 1 -i $HOSTNAME
+  sh ${S3_SRC_DIR}/scripts/kafka/create-topic.sh -c 1 -i $HOSTNAME
   
   # install or upgrade cortx-py-utils
   install_cortx_py_utils

@@ -63,13 +63,11 @@ start_services() {
   bin/zookeeper-server-start.sh -daemon config/zookeeper.properties
   sleep 10s
   echo "zookeeper server started successfully."
-  netstat -tulnp | grep 2181
   
   # start kafka server
   bin/kafka-server-start.sh -daemon config/server.properties
   sleep 10s
   echo "kafka server started successfully."
-  netstat -tulnp | grep 9092
 }
 
 #function to stop kafka services.
