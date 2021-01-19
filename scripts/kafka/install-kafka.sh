@@ -64,14 +64,16 @@ start_services() {
   stop_services
     
   #start zookeeper
-  nohup bin/zookeeper-server-start.sh config/zookeeper.properties &
+  bin/zookeeper-server-start.sh -daemon config/zookeeper.properties
   sleep 10s
   echo "zookeeper server started successfully."
+  netstat -tulnp | grep 2181
   
   # start kafka server
-  nohup bin/kafka-server-start.sh config/server.properties &
+  bin/kafka-server-start.sh -daemon config/server.properties
   sleep 10s
   echo "kafka server started successfully."
+  netstat -tulnp | grep 9092
 }
 
 #function to stop kafka services.
@@ -81,12 +83,14 @@ stop_services() {
   cd $KAFKA_INSTALL_PATH/$KAFKA_DIR_NAME
   
   # stop kafka server
-  bin/kafka-server-stop.sh || true
+  bin/kafka-server-stop.sh -daemon config/server.properties || true
   echo "kafka server stopped successfully."
+  netstat -tulnp | grep 9092
   
   #stop zookeeper
-  bin/zookeeper-server-stop.sh || true
+  bin/zookeeper-server-stop.sh -daemon config/zookeeper.properties || true
   echo "zookeeper server stopped successfully."
+  netstat -tulnp | grep 2181
 }
 
 # function to Add/Edit zookeeper properties 
@@ -159,7 +163,7 @@ is_kafka_installed() {
   fi
 }
 
-#function to create topic for background delete if dors not exist
+#function to create topic for background delete if does not exist
 create_topic() {
   echo "Creating topic..."
 
@@ -223,7 +227,7 @@ usage()
    echo "Usage: $0 -c consumer_count -i hosts"
    echo -e "\t-c Total number of consumers"
    echo -e "\t-i List of hosts with comma seperated e.g. host1,host2,host3"
-   echo -e "\t-h Show this help message and exit" 1>&2;
+   echo -e "\t-h Help" 1>&2;
    exit 1 # Exit script after printing help
 }
 
