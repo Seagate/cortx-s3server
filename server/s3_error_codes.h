@@ -65,7 +65,7 @@ class S3Error {
 
   void set_auth_error_message(const std::string&);
 
-  std::string& to_xml();
+  std::string& to_xml(bool no_decl = false);
 };
 
 #endif
