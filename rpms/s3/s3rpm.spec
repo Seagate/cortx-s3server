@@ -168,6 +168,13 @@ mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/haproxy/s3haprox
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/haproxy/s3haproxyconfig/s3haproxyconfig
 python%{py_ver} -m compileall -b *.py
 cp *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/haproxy/s3haproxyconfig/build/lib/s3haproxyconfig
+
+# Build s3setup python module
+mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup/build/lib/s3setup
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup/s3setup
+python%{py_ver} -m compileall -b *.py
+cp *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup/build/lib/s3setup
+
 echo "build complete"
 
 %install
@@ -186,6 +193,10 @@ python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=
 
 # Install s3haproxyconfig python module
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/haproxy/s3haproxyconfig
+python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT
+
+# Install s3setup python module
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT
 
 %clean
@@ -369,6 +380,7 @@ rm -rf %{buildroot}
 %{_bindir}/s3cipher
 %{_bindir}/s3confstore
 %{_bindir}/s3haproxyconfig
+%{_bindir}/s3setup
 %{py36_sitelib}/s3backgrounddelete/config/*.yaml
 %{py36_sitelib}/s3backgrounddelete/config/s3_background_delete_config.yaml.sample
 %{py36_sitelib}/s3backgrounddelete/*.pyc
@@ -379,6 +391,8 @@ rm -rf %{buildroot}
 %{py36_sitelib}/s3confstore-%{version}-py?.?.egg-info
 %{py36_sitelib}/s3haproxyconfig/*.pyc
 %{py36_sitelib}/s3haproxyconfig-%{version}-py?.?.egg-info
+%{py36_sitelib}/s3setup/*.pyc
+%{py36_sitelib}/s3setup-%{version}-py?.?.egg-info
 %exclude %{py36_sitelib}/s3backgrounddelete/__pycache__/*
 %exclude %{py36_sitelib}/s3recovery/__pycache__/*
 %exclude %{py36_sitelib}/s3backgrounddelete/*.py
@@ -387,11 +401,14 @@ rm -rf %{buildroot}
 %exclude %{py36_sitelib}/s3confstore/__pycache__/*
 %exclude %{py36_sitelib}/s3haproxyconfig/*.py
 %exclude %{py36_sitelib}/s3haproxyconfig/__pycache__/*
+%exclude %{py36_sitelib}/s3setup/*.py
+%exclude %{py36_sitelib}/s3setup/__pycache__/*
 %exclude %{py36_sitelib}/s3backgrounddelete/s3cipher
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundconsumer
 %exclude %{py36_sitelib}/s3recovery/s3recovery
 %exclude %{py36_sitelib}/s3confstore/s3confstore
 %exclude %{py36_sitelib}/s3haproxyconfig/s3haproxyconfig
+%exclude %{py36_sitelib}/s3setup/s3setup
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundproducer
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyc
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyo

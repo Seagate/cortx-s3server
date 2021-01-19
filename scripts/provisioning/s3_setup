@@ -70,8 +70,7 @@ setup_s3backgrounddelete=false
 setup_s3recoverytool=false
 update_cluster_id=false
 is_rabbitmq_clustered=false
-cleanup_accounts=false
-cleanup_dependencies=false
+cleanup_s3_accounts_schema=false
 create_auth_jks_passwrd=false
 encrypt_cli="/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar"
 
@@ -81,7 +80,7 @@ then
   exit 1
 fi
 
-# check if s3cipher and s3confstore are installed on the system
+# check if s3cipher, s3confstore and s3setup are installed on the system
 if ! command -v s3cipher &>/dev/null
 then
     echo "ERROR: s3cipher not installed on the system, exiting."
@@ -93,6 +92,13 @@ then
     echo "ERROR: s3confstore not installed on the system, exiting."
     exit 1
 fi
+
+if ! command -v s3setup &>/dev/null
+then
+    echo "ERROR: s3setup not installed on the system, exiting."
+    exit 1
+fi
+
 
 while test $# -gt 0
 do
@@ -125,8 +131,7 @@ do
         update_cluster_id=true
         ;;
     --cleanup )
-        cleanup_accounts=true
-        cleanup_dependencies=true
+        cleanup_s3_accounts_schema=true
         ;;
     --createauthjkspassword )
         create_auth_jks_passwrd=true
@@ -497,23 +502,9 @@ then
 fi
 
 # Clean up backgrounddelete account
-if [[ $cleanup_accounts == true ]]
+if [[ $cleanup_s3_accounts_schema == true ]]
 then
-    echo "Deleting the s3background delete account"
-    delete_background_delete_account
-    echo "Deleting the s3recovery tool account"
-	delete_recovery_tool_account
-fi
-
-# Clean up s3 dependencies
-if [[ $cleanup_dependencies == true ]]
-then
-    echo "removing s3 dependencies"
-    yum -y remove log4cxx_cortx || echo ""
-    mv -f /opt/seagate/cortx/auth/resources/authserver.properties /opt/seagate/cortx/auth/resources/authserver.properties.bak
-    mv -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.bak
-    mv -f /opt/seagate/cortx/auth/resources/keystore.properties /opt/seagate/cortx/auth/resources/keystore.properties.bak
-    mv -f /opt/seagate/cortx/s3/conf/s3config.yaml /opt/seagate/cortx/s3/conf/s3config.yaml.bak
+    s3setup --cleanup accounts --ldappasswd $ldappasswd
 fi
 
 set_logrotate() {
