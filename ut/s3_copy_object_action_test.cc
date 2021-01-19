@@ -807,13 +807,67 @@ TEST_F(S3CopyObjectActionTest, SendSuccessResponse) {
             S3PutObjectActionState::completed);
 }
 
-TEST_F(S3CopyObjectActionTest, SendFailedResponse) {
-  action_under_test->set_s3_error("InternalError");
+TEST_F(S3CopyObjectActionTest, SendSuccessResponseAtEnd) {
+  // Simulate success
   action_under_test->s3_put_action_state =
-      S3PutObjectActionState::validationFailed;
+      S3PutObjectActionState::metadataSaved;
+  action_under_test->new_object_metadata =
+      ptr_mock_object_meta_factory->mock_object_metadata;
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(1);
+
+  EXPECT_CALL(*ptr_mock_request, send_reply_body(_, _)).Times(0);
+  EXPECT_CALL(*ptr_mock_request, send_reply_end()).Times(0);
+  EXPECT_CALL(*ptr_mock_request, close_connection()).Times(0);
+
+  action_under_test->send_response_to_s3_client();
+}
+
+TEST_F(S3CopyObjectActionTest, SendSuccessResponseSpread) {
+  // Simulate success
+  action_under_test->s3_put_action_state =
+      S3PutObjectActionState::metadataSaved;
+  action_under_test->new_object_metadata =
+      ptr_mock_object_meta_factory->mock_object_metadata;
+  action_under_test->response_started = true;
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(0);
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(0);
+
+  EXPECT_CALL(*ptr_mock_request, send_reply_body(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_reply_end()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, close_connection()).Times(1);
+
+  action_under_test->send_response_to_s3_client();
+}
+
+TEST_F(S3CopyObjectActionTest, SendFailedResponseAtEnd) {
+  // Simulate success
+  action_under_test->s3_put_action_state =
+      S3PutObjectActionState::validationFailed;
+  action_under_test->set_s3_error("InternalError");
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
+
+  EXPECT_CALL(*ptr_mock_request, send_reply_body(_, _)).Times(0);
+  EXPECT_CALL(*ptr_mock_request, send_reply_end()).Times(0);
+  EXPECT_CALL(*ptr_mock_request, close_connection()).Times(0);
+
+  action_under_test->send_response_to_s3_client();
+}
+
+TEST_F(S3CopyObjectActionTest, SendFailedResponseSpread) {
+  action_under_test->s3_put_action_state = S3PutObjectActionState::writeFailed;
+  action_under_test->set_s3_error("InternalError");
+  action_under_test->response_started = true;
+
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(0);
+
+  EXPECT_CALL(*ptr_mock_request, send_reply_body(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_reply_end()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, close_connection()).Times(1);
 
   action_under_test->send_response_to_s3_client();
 }
