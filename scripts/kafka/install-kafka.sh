@@ -26,7 +26,6 @@ set -e
 KAFKA_INSTALL_PATH=/opt
 KAFKA_DOWNLOAD_URL="http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/centos/centos-7.8.2003-1.0.0-3/commons/kafka/kafka_2.13-2.7.0.tgz"
 KAFKA_DIR_NAME="kafka"
-BGDELETE_TOPIC_NAME="bgdelete"
 consumer_count=0
 hosts=""
 bootstrapservers=""
@@ -60,9 +59,6 @@ start_services() {
   
   cd $KAFKA_INSTALL_PATH/$KAFKA_DIR_NAME
   
-  # stop kafka and zookeper service if they are runnig
-  stop_services
-    
   #start zookeeper
   bin/zookeeper-server-start.sh -daemon config/zookeeper.properties
   sleep 10s
@@ -83,14 +79,14 @@ stop_services() {
   cd $KAFKA_INSTALL_PATH/$KAFKA_DIR_NAME
   
   # stop kafka server
-  bin/kafka-server-stop.sh -daemon config/server.properties || true
+  bin/kafka-server-stop.sh config/server.properties || true
+  sleep 10s
   echo "kafka server stopped successfully."
-  netstat -tulnp | grep 9092
   
   #stop zookeeper
-  bin/zookeeper-server-stop.sh -daemon config/zookeeper.properties || true
+  bin/zookeeper-server-stop.sh config/zookeeper.properties || true
+  sleep 10s
   echo "zookeeper server stopped successfully."
-  netstat -tulnp | grep 2181
 }
 
 # function to Add/Edit zookeeper properties 
@@ -163,26 +159,6 @@ is_kafka_installed() {
   fi
 }
 
-#function to create topic for background delete if does not exist
-create_topic() {
-  echo "Creating topic..."
-
-  cd $KAFKA_INSTALL_PATH/$KAFKA_DIR_NAME
-
-  bin/kafka-topics.sh --list --bootstrap-server $HOSTNAME:9092 | grep "${BGDELETE_TOPIC_NAME}" &> /dev/null
-  if [ $? -eq 1 ]; then
-    echo "Topic 'bgdelete' does not exist."
-	
-	#create a string for bootstrap server
-	create_bootstrap_servers_parameter
-	
-	#create topic 
-	bin/kafka-topics.sh --create --topic $BGDELETE_TOPIC_NAME --bootstrap-server $bootstrapservers --replication-factor $consumer_count --partitions $consumer_count
-  else
-    echo "Topic 'bgdelete' already exist"
-  fi
-}
-
 #function to create my id file on each host for cluster setup
 create_myid_file() {
   echo "Creating myid file"
@@ -210,17 +186,7 @@ do
 done 
 }
 
-#function to create a bootstrap server parameter for creating topic
-create_bootstrap_servers_parameter() {
-
-for i in $(echo $hosts | sed "s/,/ /g")
-do
-    bootstrapservers="${bootstrapservers}${i}:9092,"
-done
-
-echo "Bootstrap servers string: ${bootstrapservers}"
-}
-
+#function to print usage/help
 usage()
 {
    echo ""
@@ -273,8 +239,7 @@ configure_server
 #Start zookeper and kafka server 
 start_services
 
-# Create topic for background delete 'bgdelete'
-create_topic
+echo "Kafka setup completed successfully."
 
 #stop kafka and zookeeper services 
 #stop_services
