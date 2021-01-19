@@ -146,8 +146,10 @@ rm -rf %{buildroot}
 ./installhelper.sh %{buildroot} --release
 # Install the background delete python module.
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3backgrounddelete
+echo %{version} > VERSION
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3recovery
+echo %{version} > VERSION
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT
 
 %clean
