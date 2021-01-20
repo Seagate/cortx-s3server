@@ -30,8 +30,8 @@ from cortx.utils.kv_store import kv_store_collection
 
 class S3CortxConfStore:
 
-  def __init__(self, config: str = None, index: str = "default_cortx_s3_confstore_index"):
-    """Instantiate confstore"""
+  def __init__(self, config: str = None, index: str = "default_s3confstore_index"):
+    """Instantiate confstore."""
     self.config_file = config
     self.default_index = index
 
@@ -40,23 +40,24 @@ class S3CortxConfStore:
       self.load_config(self.default_index, self.config_file)
 
   @staticmethod
-  def load_config(index: str, config: str):
-    """Load Config into confstore"""
+  def load_config(index: str = "default_s3confstore_index", config: str = ""):
+    """Load Config into confstore."""
     Conf.load(index, config)
 
   def get_config(self, key: str):
-    """Get the key's config from confstore"""
+    """Get the key's config from confstore."""
     return Conf.get(self.default_index, key)
 
   def set_config(self, key: str, value: str, save: bool = False):
-    """Set the key's value in confstore"""
+    """Set the key's value in confstore."""
     Conf.set(self.default_index, key, value)
     if save == True:
-      """Update the index backend"""
+      """Update the index backend."""
       Conf.save(self.default_index)
 
   @staticmethod
   def validate_configfile(configfile: str):
+    """validate the 'configfile' url, if its a valid file and of supported format."""
     if os.path.isfile(urlparse(configfile).path) != True:
       print("config file: {} does not exist".format(configfile))
       sys.exit(1)
@@ -86,6 +87,7 @@ class S3CortxConfStore:
       """TODO: Implement rest of the type's content validators here"""
 
   def get_nodecount(self):
+    """Get total nodes count in the cluster, from py-utils::confstore."""
     nodes_count = None
     key_to_read_from_conf = 'cluster>server_nodes'
 
@@ -98,6 +100,7 @@ class S3CortxConfStore:
     return nodes_count
 
   def get_privateip(self, machine_id: str):
+    """Get private_ip of the host, whose machineid has been passed, from py-utils::confstore."""
     privateip = ""
     key_to_read_from_conf = 'cluster>server_nodes'
 
@@ -114,6 +117,7 @@ class S3CortxConfStore:
     return privateip
 
   def get_nodenames_list(self):
+    """Get the FQDN of nodes in the cluster, from py-utils::confstore, and return a list of those."""
     nodes_list = []
     key_to_read_from_conf = 'cluster>server_nodes'
 

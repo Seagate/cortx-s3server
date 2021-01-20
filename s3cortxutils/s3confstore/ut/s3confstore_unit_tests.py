@@ -48,7 +48,7 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
     conf_url='json://' + path
 
     s3confstore = S3CortxConfStore(conf_url, index)
-    
+
     result_data = s3confstore.get_config('cluster')
     if 'cluster_id' not in result_data:
       os.remove(path)
@@ -155,7 +155,7 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
     confurl = "json:///s3confstoreut-config-file-does-not-exist.json"
     index = "dummy_index_7"
     with self.assertRaises(SystemExit) as cm:
-      s3confstore = S3CortxConfStore(confurl, index)
+      S3CortxConfStore(confurl, index)
 
     self.assertEqual(cm.exception.code, 1)
 
@@ -164,7 +164,7 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
     mock_path.isfile.return_value = True
     confurl = "/s3confstoreut-unsupportedfileformat.txt"
     with self.assertRaises(SystemExit) as cm:
-      s3confstore = S3CortxConfStore(confurl, "dummy_index_8")
+      S3CortxConfStore(confurl, "dummy_index_8")
 
     self.assertEqual(cm.exception.code, 1)
 
