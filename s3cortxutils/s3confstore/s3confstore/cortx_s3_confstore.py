@@ -160,7 +160,6 @@ class S3CortxConfStore:
     s3conf_store = S3CortxConfStore(args.config)
 
     if args.command == 'getkey':
-      self.load_config(self.default_index)
       keyvalue = s3conf_store.get_config(args.key)
       if keyvalue:
         print("{}".format(keyvalue))
