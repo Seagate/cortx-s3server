@@ -83,9 +83,9 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
     with open(path, 'w+') as file:
       file.write(test_config)
     conf_url='yaml://' + path
-    
+
     s3confstore = S3CortxConfStore(conf_url, index)
-    
+
     result_data = s3confstore.get_config('bridge')
     if 'port' not in result_data:
       os.remove(path)

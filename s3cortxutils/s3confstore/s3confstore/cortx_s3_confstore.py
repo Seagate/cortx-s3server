@@ -52,12 +52,12 @@ class S3CortxConfStore:
     """Set the key's value in confstore."""
     Conf.set(self.default_index, key, value)
     if save == True:
-      """Update the index backend."""
+      # Update the index backend.
       Conf.save(self.default_index)
 
   @staticmethod
   def validate_configfile(configfile: str):
-    """validate the 'configfile' url, if its a valid file and of supported format."""
+    """Validate the 'configfile' url, if its a valid file and of supported format."""
     if os.path.isfile(urlparse(configfile).path) != True:
       print("config file: {} does not exist".format(configfile))
       sys.exit(1)
@@ -143,16 +143,16 @@ class S3CortxConfStore:
     subparsers = parser.add_subparsers(dest='command', title='comamnds')
 
     getkey = subparsers.add_parser('getkey', help='get value of given key from confstore')
-    setkey = subparsers.add_parser('setkey', help='set given value to given key in confstore')
-    getnodecount = subparsers.add_parser('getnodecount', help='get count of nodes in the cluster')
-    getnodenames = subparsers.add_parser('getnodenames', help='get FQDN of nodes in the cluster')
-    getprivateip = subparsers.add_parser('getprivateip', help='get privateip of the host of given machine-id')
-
     getkey.add_argument('--key', help='Fetch value of the given key', type=str, required=True)
 
+    setkey = subparsers.add_parser('setkey', help='set given value to given key in confstore')
     setkey.add_argument('--key', help='set new value to given key', type=str)
     setkey.add_argument('--value', help='new value to be set to given key', type=str)
 
+    subparsers.add_parser('getnodecount', help='get count of nodes in the cluster')
+    subparsers.add_parser('getnodenames', help='get FQDN of nodes in the cluster')
+
+    getprivateip = subparsers.add_parser('getprivateip', help='get privateip of the host of given machine-id')
     getprivateip.add_argument('--machineid', help='machine-id of the host, whose private ip to be read', type=str, required=True)
 
     args = parser.parse_args()
