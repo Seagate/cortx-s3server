@@ -44,3 +44,21 @@ sh create-topic.sh -c 1 -i ssc-vm-1271.colo.seagate.com
 2. to install kafka on three node cluster then run 
 sh install-kafka.sh -c 3 -i ssc-vm-1271.colo.seagate.com,ssc-vm-1272.colo.seagate.com,ssc-vm-1273.colo.seagate.com
 sh create-topic.sh -c 3 -i ssc-vm-1271.colo.seagate.com,ssc-vm-1272.colo.seagate.com,ssc-vm-1273.colo.seagate.com
+
+
+Troubleshooting:
+
+1. To stop kafka services run the following commands
+bin/kafka-server-stop.sh config/server.properties
+bin/zookeeper-server-stop.sh config/zookeeper.properties
+
+2. To kill all kafka processes run the following commands
+ps -ef | grep kafka
+kill -9 <process id>
+
+3. To Kill processes listening on port 2181(zookeeper) 9092(Kafka)
+ netstat -tulnp | grep 2181
+ kill -9 <process id>
+ 
+ netstat -tulnp | grep 9092
+ kill -9 <process id>
