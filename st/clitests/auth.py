@@ -46,11 +46,14 @@ class AuthTest(PyCliTest):
 
         super(AuthTest, self).with_cli(cmd)
 
+    def with_cipher_cli(self, cmd):
+        super(AuthTest, self).with_cli(cmd)
+
     def create_cipher_account(self, **account_args):
-        account_cipher_script = os.path.join(os.path.dirname(__file__), '/../../scripts/ldap/create_account_using_cipher.py')
-        cmd = "./{} {} --ldapuser {} --ldappasswd {}".format(account_cipher_script,
+        account_cipher_script = os.path.join(os.path.dirname(__file__), '../../scripts/ldap/create_account_using_cipher.py')
+        cmd = "python36 {} {} --ldapuser {} --ldappasswd {}".format(account_cipher_script,
             account_args['action'], account_args['ldapuser'], account_args['ldappasswd'])
-        self.with_cli(cmd)
+        self.with_cipher_cli(cmd)
         return self
 
     def create_account(self, **account_args):

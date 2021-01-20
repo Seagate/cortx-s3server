@@ -126,7 +126,7 @@ def generate_key(config, use_base64, key_len, const_key):
     s3cipher = CortxS3Cipher(config, use_base64, key_len, const_key)
     return s3cipher.get_key()
 
-def generate_access_secret_keys(const_access_string, const_secret_string):
+def generate_access_secret_keys(const_secret_string, const_access_string):
     cortx_access_key = generate_key(None, True, 22, const_access_string)
     cortx_secret_key = generate_key(None, False, 40, const_secret_string)
     return cortx_access_key, cortx_secret_key
@@ -140,12 +140,12 @@ def connect_to_ldap_server(ldapuser, ldappasswd):
 
 def is_account_present(account_name, ldap_connection):
     try:
-        results = ldap_connection.search_s("o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com", ldap.SCOPE_SUBTREE)
+        results = ldap_connection.search_s("o={},ou=accounts,dc=s3,dc=seagate,dc=com".format(account_name), ldap.SCOPE_SUBTREE)
     except Exception as e:
         return False
 
     if len(results) < 6:
-        raise Exception("s3-background-delete-svc account creation was corrupted, use s3iamcli to DeleteAccount")
+        raise Exception("{} account creation was corrupted, use s3iamcli to DeleteAccount".format(account_name))
     else:
         return True
 
@@ -185,8 +185,8 @@ g_recovery_create_account_input_params = {
     '--canonical_id' : "C67892",
     '--mail' : "s3-recovery-svc@seagate.com",
     '--s3_user_id' : "451",
-    '--const_cipher_secret_str' : "s3recoveryaccesskey",
-    '--const_cipher_access_str' : "s3recoverysecretkey"
+    '--const_cipher_secret_str' : "s3recoverysecretkey",
+    '--const_cipher_access_str' : "s3recoveryaccesskey"
 }
 
 g_create_input_params_list = ['--ldapuser', '--ldappasswd']

@@ -130,7 +130,7 @@ test_msg = "Create account s3-background-delete-svc"
 account_args = {'action' : "CreateBGDeleteAccount",
                 'ldapuser': S3ClientConfig.ldapuser,\
                 'ldappasswd': S3ClientConfig.ldappasswd}
-account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/\+-]*$"
 result = AuthTest(test_msg).create_cipher_account(**account_args).execute_test()
 result.command_should_match_pattern(account_response_pattern)
 account_response_elements = AuthTest.get_response_elements(result.status.stdout)
