@@ -48,7 +48,6 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
     conf_url='json://' + path
 
     s3confstore = S3CortxConfStore(conf_url, index)
-
     result_data = s3confstore.get_config('cluster')
     if 'cluster_id' not in result_data:
       os.remove(path)
