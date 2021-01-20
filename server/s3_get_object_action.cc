@@ -362,7 +362,7 @@ void S3GetObjectAction::read_object_data() {
 
   if (blocks_already_read != total_blocks_to_read) {
     if (blocks_already_read == 0 && content_length > motr_unit_size) {
-      blocks_to_read = 1;
+      blocks_to_read = 2;
       s3_log(S3_LOG_DEBUG, request_id, "blocks_to_read: (%zu)\n",
              blocks_to_read);
       s3_log(S3_LOG_DEBUG, request_id, "content_length is (%zu)\n",
