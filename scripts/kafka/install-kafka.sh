@@ -30,6 +30,8 @@ consumer_count=0
 hosts=""
 hostnumber=0
 ZOOKEEPER_DIR_NAME="zookeeper"
+MESSAGEBUS_CONFIG_PATH="/etc/cortx"
+MESSAGEBUS_CONFIG_NAME="message_bus.conf"
 
 # Function to install all pre-requisites
 install_prerequisite() {
@@ -184,6 +186,21 @@ do
 done 
 }
 
+#function to setup message bus config file
+setup_message_bus_config() {
+  echo "Setup messagebus config file"
+  if [ -d "$MESSAGEBUS_CONFIG_PATH" ]; then
+   echo "/etc/cortx directory is already exist"
+  else
+   mkdir -p $MESSAGEBUS_CONFIG_PATH   
+   echo "/etc/cortx directory created successfully"   
+  fi
+  
+  # copy message bus config file to /etc/cortx
+  \cp $MESSAGEBUS_CONFIG_NAME ${MESSAGEBUS_CONFIG_PATH}/
+  echo "message_bus.config copied successfully"
+}
+
 #function to print usage/help
 usage()
 {
@@ -238,6 +255,9 @@ configure_server
 start_services
 
 echo "Kafka setup completed successfully."
+
+#setup message bus config file 
+setup_message_bus_config
 
 #stop kafka and zookeeper services 
 #stop_services
