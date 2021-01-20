@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,8 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-#!/usr/bin/env python3
-
 from shutil import register_unpack_format
 import ldap
 import sys
@@ -28,18 +27,8 @@ import traceback
 from s3backgrounddelete.cortx_cluster_config import CipherInvalidToken
 from s3backgrounddelete.cortx_s3_cipher import CortxS3Cipher
 
-LDAP_USER = "cn=sgiamadmin,dc=seagate,dc=com"
-LDAP_PASSWORD = "ldapadmin"
+LDAP_USER = "cn={},dc=seagate,dc=com"
 LDAP_URL = "ldapi:///"
-
-g_default_input_params = {
-    '--account_name' : "s3-background-delete-svc",
-    '--account_id' : "67891",
-    '--mail' : "s3-background-delete-svc@seagate.com",
-    '--s3_user_id' : "450",
-    '--cstr_secret' : "s3backgroundsecretkey",
-    '--cstr_access' : "s3backgroundaccesskey"
-}
 
 g_dn_names = {
     'account' : "o={},ou=accounts,dc=s3,dc=seagate,dc=com",
@@ -61,6 +50,14 @@ g_attr = {
     'policies' : { 'ou' : [b'policies'], 'objectclass' : [b'organizationalunit'] }
 }
 
+def add_keys_to_dictionary(input_params:dict):
+    access_key, secret_key = generate_access_secret_keys(
+        input_params['--const_cipher_secret_str'],
+        input_params['--const_cipher_access_str'])
+    
+    input_params['--secret_key'] = secret_key
+    input_params['--access_key'] = access_key
+
 def get_attr(index_key):
     if index_key in g_attr :
         return g_attr[index_key]
@@ -77,12 +74,10 @@ def create_account_prepare_params(index_key:str, input_params:dict):
     dn = get_dn(index_key)
     attrs = get_attr(index_key)
 
-    canonical_id = "C" + input_params['--account_id']
-
     attrs['o'] = [input_params['--account_name'].encode('utf-8')]
     attrs['accountid'] = [input_params['--account_id'].encode('utf-8')]
     attrs['mail'] = [input_params['--mail'].encode('utf-8')]
-    attrs['canonicalId'] = [canonical_id.encode('utf-8')]
+    attrs['canonicalId'] = [input_params['--canonical_id'].encode('utf-8')]
 
     dn = dn.format(input_params['--account_name'])
 
@@ -136,11 +131,11 @@ def generate_access_secret_keys(const_access_string, const_secret_string):
     cortx_secret_key = generate_key(None, False, 40, const_secret_string)
     return cortx_access_key, cortx_secret_key
 
-def connect_to_ldap_server():
+def connect_to_ldap_server(ldapuser, ldappasswd):
     ldap_connection = ldap.initialize(LDAP_URL)
     ldap_connection.protocol_version = ldap.VERSION3
     ldap_connection.set_option(ldap.OPT_REFERRALS, 0)
-    ldap_connection.simple_bind_s(LDAP_USER, LDAP_PASSWORD)
+    ldap_connection.simple_bind_s(LDAP_USER.format(ldapuser), ldappasswd)
     return ldap_connection
 
 def is_account_present(account_name, ldap_connection):
@@ -157,45 +152,92 @@ def is_account_present(account_name, ldap_connection):
 def disconnect_from_ldap(ldap_connection):
     ldap_connection.unbind_s()
 
-def generate_input_params():
-    input_params = g_default_input_params
+def create_account(input_params:dict):
+    ldap_connection = connect_to_ldap_server(input_params['--ldapuser'],
+        input_params['--ldappasswd'])
+    add_keys_to_dictionary(input_params)
 
-    bg_access_key, bg_secret_key = generate_access_secret_keys(
-        input_params['--cstr_access'],
-        input_params['--cstr_secret'])
-    
-    input_params['--secret_key'] = bg_secret_key
-    input_params['--access_key'] = bg_access_key
+    if not is_account_present(input_params['--account_name'], ldap_connection):
+        for item in g_create_func_table:
+            dn, attrs = item['func'](item['key'],input_params)
+            ldif = modlist.addModlist(attrs)
+            ldap_connection.add_s(dn,ldif)
 
-    return input_params
+    ldap_connection.unbind()
 
-def create_account(input_params):
-    ldap_connection = None
+"""
+Master Script Stuff
+"""
+
+g_bgdelete_create_account_input_params = {
+    '--account_name' : "s3-background-delete-svc",
+    '--account_id' : "67891",
+    '--canonical_id' : "C67891",
+    '--mail' : "s3-background-delete-svc@seagate.com",
+    '--s3_user_id' : "450",
+    '--const_cipher_secret_str' : "s3backgroundsecretkey",
+    '--const_cipher_access_str' : "s3backgroundaccesskey"
+}
+
+g_recovery_create_account_input_params = {
+    '--account_name' : "s3-recovery-svc",
+    '--account_id' : "67892",
+    '--canonical_id' : "C67892",
+    '--mail' : "s3-recovery-svc@seagate.com",
+    '--s3_user_id' : "451",
+    '--const_cipher_secret_str' : "s3recoveryaccesskey",
+    '--const_cipher_access_str' : "s3recoverysecretkey"
+}
+
+g_create_input_params_list = ['--ldapuser', '--ldappasswd']
+
+def print_script_usage(args:list = None):
+    print("[Usage:]\ncreate_s3background_account_cipher.py CreateBGDeleteAccount/DeleteBGDeleteAccount/CreateRecoveryAccount/DeleteRecoveryAccount --ldapuser {username} --ldappasswd {passwd}")
+
+def print_create_account_results(result:dict):
+    print("AccountId = {}, CanonicalId = {}, RootUserName = root, AccessKeyId = {}, SecretKey = {}".
+        format(result['--account_id'], result['--canonical_id'], result['--access_key'], result['--secret_key']))
+
+def print_placeholder(result:dict):
+    pass
+
+g_cmdline_param_table = {
+    'CreateBGDeleteAccount' : [g_bgdelete_create_account_input_params, g_create_input_params_list, create_account, print_create_account_results],
+    'DeleteBGDeleteAccount' : [g_bgdelete_create_account_input_params, g_create_input_params_list, print_placeholder, print_placeholder],
+    'CreateRecoveryAccount' : [g_recovery_create_account_input_params, g_create_input_params_list, create_account, print_create_account_results],
+    'DeleteRecoveryAccount' : [g_recovery_create_account_input_params, g_create_input_params_list, print_placeholder, print_placeholder]
+}
+
+def process_cmdline_args(args:list):
+    """
+    Take action as per cmd args
+    """
+    if len(args) < 1:
+        print_script_usage()
+        return
+
     try:
-        ldap_connection = connect_to_ldap_server()
-
-        if not is_account_present(input_params['--account_name'], ldap_connection):
-
-            for item in g_create_func_table:
-                dn, attrs = item['func'](item['key'],input_params)
-                ldif = modlist.addModlist(attrs)
-                ldap_connection.add_s(dn,ldif)
-
-            print("Account Created Successfully..")
-            print("Access Key : {}, Secret Key : {}".format(input_params['--access_key'],
-                input_params['--secret_key']))
-
+        if args[0] in g_cmdline_param_table:
+            input_params = g_cmdline_param_table[args[0]][0]
+            key = None
+            for argument in args[1:]:
+                if argument in g_cmdline_param_table[args[0]][1]:
+                    key=argument
+                elif key:
+                    input_params[key] = argument
+                    key = None
+                else:
+                    raise Exception("Invalid Parameter Passed. Check usage")
+            #Actual Processing function.
+            g_cmdline_param_table[args[0]][2](input_params)
+            #Print Output.
+            g_cmdline_param_table[args[0]][3](input_params)
         else:
-            print("Account already present.")
-
+            raise Exception("Invalid Parameter Passed. Check usage")
     except Exception as e:
         print("Exception : {}".format(e))
         print("Traceback : {}".format(traceback.format_exc()))
-    finally:
-        if not ldap_connection:
-            ldap_connection.unbind()
-
+        print_script_usage()
 
 if __name__ == "__main__":
-    input_params = generate_input_params()
-    create_account(input_params)
+    process_cmdline_args(sys.argv[1:])

@@ -46,9 +46,16 @@ class AuthTest(PyCliTest):
 
         super(AuthTest, self).with_cli(cmd)
 
+    def create_cipher_account(self, **account_args):
+        account_cipher_script = os.path.join(os.path.dirname(__file__), '/../../scripts/ldap/create_account_using_cipher.py')
+        cmd = "./{} {} --ldapuser {} --ldappasswd {}".format(account_cipher_script,
+            account_args['action'], account_args['ldapuser'], account_args['ldappasswd'])
+        self.with_cli(cmd)
+        return self
+
     def create_account(self, **account_args):
         cmd = "s3iamcli createaccount -n %s -e %s --ldapuser %s --ldappasswd %s" % (
-                 account_args['AccountName'], account_args['Email'], account_args['ldapuser'], account_args['ldappasswd'])
+            account_args['AccountName'], account_args['Email'], account_args['ldapuser'], account_args['ldappasswd'])
         self.with_cli(cmd)
         return self
 
