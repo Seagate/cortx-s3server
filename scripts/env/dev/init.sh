@@ -71,6 +71,9 @@ install_pre_requisites() {
   
   # install or upgrade cortx-py-utils
   install_cortx_py_utils
+  
+  # install cryptography
+  pip3 install cryptography
 }
 
 usage() {
