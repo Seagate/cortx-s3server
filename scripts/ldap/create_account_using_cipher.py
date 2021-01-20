@@ -18,18 +18,23 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-from shutil import register_unpack_format
 import ldap
 import sys
-from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 import ldap.modlist as modlist
 import traceback
-from s3backgrounddelete.cortx_cluster_config import CipherInvalidToken
 from s3backgrounddelete.cortx_s3_cipher import CortxS3Cipher
 
+"""
+Constants
+"""
 LDAP_USER = "cn={},dc=seagate,dc=com"
 LDAP_URL = "ldapi:///"
 
+"""
+Global variables
+"""
+
+#map of dn names required for account creation.
 g_dn_names = {
     'account' : "o={},ou=accounts,dc=s3,dc=seagate,dc=com",
     'users' : "ou=users,o={},ou=accounts,dc=s3,dc=seagate,dc=com",
@@ -40,6 +45,7 @@ g_dn_names = {
     'policies' : "ou=policies,o={},ou=accounts,dc=s3,dc=seagate,dc=com"
 }
 
+#map of default attr required for account creation.
 g_attr = {
     'account' : {'objectclass' : [b'Account']},
     'users' : { 'ou' : [b'users'], 'objectclass' : [b'organizationalunit'] },
@@ -51,6 +57,9 @@ g_attr = {
 }
 
 def add_keys_to_dictionary(input_params:dict):
+    """
+    Adds access and secret keys to dictionary.
+    """
     access_key, secret_key = generate_access_secret_keys(
         input_params['--const_cipher_secret_str'],
         input_params['--const_cipher_access_str'])
@@ -59,18 +68,27 @@ def add_keys_to_dictionary(input_params:dict):
     input_params['--access_key'] = access_key
 
 def get_attr(index_key):
+    """
+    Fetches attr from map based on index.
+    """
     if index_key in g_attr :
         return g_attr[index_key]
     
     raise Exception("Key Not Present")
 
 def get_dn(index_key):
+    """
+    Fetches dn string from map based on index.
+    """
     if index_key in g_dn_names:
         return g_dn_names[index_key]
 
     raise Exception("Key Not Present")
 
 def create_account_prepare_params(index_key:str, input_params:dict):
+    """
+    Builds params for creating 'account'.
+    """
     dn = get_dn(index_key)
     attrs = get_attr(index_key)
 
@@ -84,12 +102,18 @@ def create_account_prepare_params(index_key:str, input_params:dict):
     return dn, attrs
 
 def create_default_prepare_params(index_key:str, input_params:dict):
+    """
+    Builds params for generic case.
+    """
     dn = get_dn(index_key)
     attrs = get_attr(index_key)
     dn = dn.format(input_params['--account_name'])
     return dn, attrs
 
 def create_s3userid_prepare_params(index_key:str, input_params:dict):
+    """
+    Builds params for creating 's3userid'.
+    """    
     dn = get_dn(index_key)
     attrs = get_attr(index_key)
 
@@ -102,6 +126,9 @@ def create_s3userid_prepare_params(index_key:str, input_params:dict):
     return dn, attrs
 
 def create_accesskey_prepare_params(index_key:str, input_params:dict):
+    """
+    Builds params for creating 'accesskey'.
+    """    
     dn = get_dn(index_key)
     attrs = get_attr(index_key)
 
@@ -112,6 +139,7 @@ def create_accesskey_prepare_params(index_key:str, input_params:dict):
     dn = dn.format(input_params['--access_key'])
     return dn, attrs
 
+#map of functions to generalize account creation.
 g_create_func_table = [
     {'key' : 'account', 'func' : create_account_prepare_params},
     {'key' : 'users', 'func' : create_default_prepare_params},
@@ -123,15 +151,24 @@ g_create_func_table = [
 ]
 
 def generate_key(config, use_base64, key_len, const_key):
+    """
+    Generates a key based on input parameters.
+    """
     s3cipher = CortxS3Cipher(config, use_base64, key_len, const_key)
     return s3cipher.get_key()
 
 def generate_access_secret_keys(const_secret_string, const_access_string):
+    """
+    Generates access and secret keys.
+    """
     cortx_access_key = generate_key(None, True, 22, const_access_string)
     cortx_secret_key = generate_key(None, False, 40, const_secret_string)
     return cortx_access_key, cortx_secret_key
 
 def connect_to_ldap_server(ldapuser, ldappasswd):
+    """
+    Establish connection to ldap server.
+    """
     ldap_connection = ldap.initialize(LDAP_URL)
     ldap_connection.protocol_version = ldap.VERSION3
     ldap_connection.set_option(ldap.OPT_REFERRALS, 0)
@@ -139,9 +176,12 @@ def connect_to_ldap_server(ldapuser, ldappasswd):
     return ldap_connection
 
 def is_account_present(account_name, ldap_connection):
+    """
+    Checks if account is present in ldap db.
+    """
     try:
         results = ldap_connection.search_s("o={},ou=accounts,dc=s3,dc=seagate,dc=com".format(account_name), ldap.SCOPE_SUBTREE)
-    except Exception as e:
+    except Exception:
         return False
 
     if len(results) < 6:
@@ -150,25 +190,38 @@ def is_account_present(account_name, ldap_connection):
         return True
 
 def disconnect_from_ldap(ldap_connection):
+    """
+    Disconnects from ldap
+    """
     ldap_connection.unbind_s()
 
 def create_account(input_params:dict):
-    ldap_connection = connect_to_ldap_server(input_params['--ldapuser'],
-        input_params['--ldappasswd'])
-    add_keys_to_dictionary(input_params)
+    """
+    Creates account in ldap db.
+    """
+    ldap_connection = None
+    try:
+        ldap_connection = connect_to_ldap_server(input_params['--ldapuser'],
+            input_params['--ldappasswd'])
+        add_keys_to_dictionary(input_params)
 
-    if not is_account_present(input_params['--account_name'], ldap_connection):
-        for item in g_create_func_table:
-            dn, attrs = item['func'](item['key'],input_params)
-            ldif = modlist.addModlist(attrs)
-            ldap_connection.add_s(dn,ldif)
+        if not is_account_present(input_params['--account_name'], ldap_connection):
+            for item in g_create_func_table:
+                dn, attrs = item['func'](item['key'],input_params)
+                ldif = modlist.addModlist(attrs)
+                ldap_connection.add_s(dn,ldif)
 
-    ldap_connection.unbind()
+        disconnect_from_ldap(ldap_connection)
+    except Exception as e:
+        if ldap_connection:
+            disconnect_from_ldap(ldap_connection)
+        raise e
 
 """
 Master Script Stuff
 """
 
+#parameter map for bgdelete
 g_bgdelete_create_account_input_params = {
     '--account_name' : "s3-background-delete-svc",
     '--account_id' : "67891",
@@ -179,6 +232,7 @@ g_bgdelete_create_account_input_params = {
     '--const_cipher_access_str' : "s3backgroundaccesskey"
 }
 
+#parameter map for recovery
 g_recovery_create_account_input_params = {
     '--account_name' : "s3-recovery-svc",
     '--account_id' : "67892",
@@ -189,23 +243,32 @@ g_recovery_create_account_input_params = {
     '--const_cipher_access_str' : "s3recoveryaccesskey"
 }
 
+#input parameter checklist for script.(creating account only)
 g_create_input_params_list = ['--ldapuser', '--ldappasswd']
 
 def print_script_usage(args:list = None):
-    print("[Usage:]\ncreate_s3background_account_cipher.py CreateBGDeleteAccount/DeleteBGDeleteAccount/CreateRecoveryAccount/DeleteRecoveryAccount --ldapuser {username} --ldappasswd {passwd}")
+    """
+    Prints help for the script.
+    """
+    print("[Usage:]\ncreate_s3background_account_cipher.py CreateBGDeleteAccount/CreateRecoveryAccount --ldapuser {username} --ldappasswd {passwd}")
 
 def print_create_account_results(result:dict):
+    """
+    Prints results of create account action.
+    """
     print("AccountId = {}, CanonicalId = {}, RootUserName = root, AccessKeyId = {}, SecretKey = {}".
         format(result['--account_id'], result['--canonical_id'], result['--access_key'], result['--secret_key']))
 
 def print_placeholder(result:dict):
+    """
+    Dummy Function.
+    """
     pass
 
+#Commandline input routing table.
 g_cmdline_param_table = {
     'CreateBGDeleteAccount' : [g_bgdelete_create_account_input_params, g_create_input_params_list, create_account, print_create_account_results],
-    'DeleteBGDeleteAccount' : [g_bgdelete_create_account_input_params, g_create_input_params_list, print_placeholder, print_placeholder],
-    'CreateRecoveryAccount' : [g_recovery_create_account_input_params, g_create_input_params_list, create_account, print_create_account_results],
-    'DeleteRecoveryAccount' : [g_recovery_create_account_input_params, g_create_input_params_list, print_placeholder, print_placeholder]
+    'CreateRecoveryAccount' : [g_recovery_create_account_input_params, g_create_input_params_list, create_account, print_create_account_results]
 }
 
 def process_cmdline_args(args:list):
