@@ -33,7 +33,6 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
 
   def test_json_conf(self):
     index = "dummy_idx_1"
-    s3confstore = S3CortxConfStore()
     test_config = {
       'cluster': {
         "cluster_id": 'abcd-efgh-ijkl-mnop',
@@ -47,15 +46,17 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
     with open(path, 'w+') as file:
       json.dump(test_config, file, indent=2)
     conf_url='json://' + path
-    s3confstore.load_config(index, conf_url)
-    result_data = s3confstore.get_config(index, 'cluster')
+
+    s3confstore = S3CortxConfStore(conf_url, index)
+    
+    result_data = s3confstore.get_config('cluster')
     if 'cluster_id' not in result_data:
       os.remove(path)
       os.umask(saved_umask)
       os.rmdir(tmpdir)
       self.assertFalse(True)
-    s3confstore.set_config(index, 'cluster>cluster_id', '1234', False)
-    result_data = s3confstore.get_config(index, 'cluster>cluster_id')
+    s3confstore.set_config('cluster>cluster_id', '1234', False)
+    result_data = s3confstore.get_config('cluster>cluster_id')
     if result_data != '1234':
       os.remove(path)
       os.umask(saved_umask)
@@ -67,8 +68,14 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
 
   def test_yaml_conf(self):
     index = "dummy_idx_2"
-    s3confstore = S3CortxConfStore()
-    test_config = "bridge: {manufacturer: homebridge.io, model: homebridge, name: Homebridge, pin: 031-45-154, port: '51840', username: 'CC:22:3D:E3:CE:30'}"
+    test_config = "bridge: {\
+                    manufacturer: homebridge.io,\
+                    model: homebridge,\
+                    name: Homebridge,\
+                    pin: 031-45-154,\
+                    port: '51840',\
+                    username: 'CC:22:3D:E3:CE:30'\
+                  }"
     tmpdir = tempfile.mkdtemp()
     filename = 'cortx_s3_confstoreuttest.yaml'
     saved_umask = os.umask(0o077)
@@ -76,15 +83,17 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
     with open(path, 'w+') as file:
       file.write(test_config)
     conf_url='yaml://' + path
-    s3confstore.load_config(index, conf_url)
-    result_data = s3confstore.get_config(index, 'bridge')
+    
+    s3confstore = S3CortxConfStore(conf_url, index)
+    
+    result_data = s3confstore.get_config('bridge')
     if 'port' not in result_data:
       os.remove(path)
       os.umask(saved_umask)
       os.rmdir(tmpdir)
       self.assertFalse(True)
-    s3confstore.set_config(index, 'bridge>port', '1234', False)
-    result_data = s3confstore.get_config(index, 'bridge>port')
+    s3confstore.set_config('bridge>port', '1234', False)
+    result_data = s3confstore.get_config('bridge>port')
     if result_data != '1234':
       os.remove(path)
       os.umask(saved_umask)
@@ -101,16 +110,15 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
     s3confstore = S3CortxConfStore()
     mock_load_return.return_value=None
     mock_get_return.return_value = None
-    s3confstore.load_config(None, "dummy")
-    result_data = s3confstore.get_config(index, 'bridge')
+    s3confstore.load_config(index, "dummy")
+    result_data = s3confstore.get_config('bridge')
     self.assertTrue(result_data == mock_get_return.return_value)
 
   @mock.patch.object(Conf, 'get')
   def test_mock_get(self, mock_get_return):
-    index = "dummy_idx_4"
     s3confstore = S3CortxConfStore()
     mock_get_return.return_value = "dummy_return: dummy_123"
-    result_data = s3confstore.get_config(index, 'bridge')
+    result_data = s3confstore.get_config('bridge')
     self.assertTrue('dummy_123' in result_data)
 
   @mock.patch.object(Conf, 'load')
@@ -119,12 +127,12 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
   def test_mock_set(self, mock_load_return, mock_get_return, mock_set_return):
     index = "dummy_idx_5"
     s3confstore = S3CortxConfStore()
-    mock_load_return.return_value=None
+    mock_load_return.return_value = None
     mock_get_return.return_value = None
     mock_set_return.return_value = None
-    s3confstore.load_config(None, "dummy")
-    s3confstore.set_config(index, "dummykey", "bridge:NA", False)
-    result_data = s3confstore.get_config(index, 'bridge')
+    s3confstore.load_config(index, "dummy")
+    s3confstore.set_config("dummykey", "bridge:NA", False)
+    result_data = s3confstore.get_config('bridge')
     self.assertTrue(result_data == mock_get_return.return_value)
 
   @mock.patch.object(Conf, 'load')
@@ -134,11 +142,78 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
   def test_mock_save(self, mock_load_return, mock_get_return, mock_set_return, mock_save_return):
     index = "dummy_idx_6"
     s3confstore = S3CortxConfStore()
-    mock_load_return.return_value=None
+    mock_load_return.return_value = None
     mock_get_return.return_value = None
     mock_set_return.return_value = None
     mock_save_return.return_value = None
-    s3confstore.load_config(None, "dummy")
-    s3confstore.set_config(index, "dummykey", "bridge:NA", True)
-    result_data = s3confstore.get_config(index, 'bridge')
+    s3confstore.load_config(index, "dummy")
+    s3confstore.set_config("dummykey", "bridge:NA", True)
+    result_data = s3confstore.get_config('bridge')
     self.assertTrue(result_data == mock_get_return.return_value)
+
+  def test_validate_configfile_doesnotexist(self):
+    confurl = "json:///s3confstoreut-config-file-does-not-exist.json"
+    index = "dummy_index_7"
+    with self.assertRaises(SystemExit) as cm:
+      s3confstore = S3CortxConfStore(confurl, index)
+
+    self.assertEqual(cm.exception.code, 1)
+
+  @mock.patch('os.path')
+  def test_validate_configfile_unsupportedformat(self, mock_path):
+    mock_path.isfile.return_value = True
+    confurl = "/s3confstoreut-unsupportedfileformat.txt"
+    with self.assertRaises(SystemExit) as cm:
+      s3confstore = S3CortxConfStore(confurl, "dummy_index_8")
+
+    self.assertEqual(cm.exception.code, 1)
+
+  @mock.patch.object(Conf, 'get')
+  def test_get_nodecount_none(self, mock_get_return):
+    mock_get_return.return_value = None
+    s3confstore = S3CortxConfStore()
+    self.assertEqual(s3confstore.get_nodecount(), None)
+
+  @mock.patch.object(Conf, 'get')
+  def test_get_nodecount_success(self, mock_get_return):
+    mock_get_return.return_value = {"mockdictkey": "mockdicktvalue"}
+    s3confstore = S3CortxConfStore()
+    self.assertEqual(s3confstore.get_nodecount(), 1)
+
+  @mock.patch.object(Conf, 'get')
+  def test_get_privateip_emptystring(self, mock_get_return):
+    mock_get_return.return_value = {"mockmachineid-A": "mockserver_1"}
+    s3confstore = S3CortxConfStore()
+    self.assertEqual(s3confstore.get_privateip("machineid-B"), "")
+    self.assertEqual(mock_get_return.call_count, 1)
+
+  @mock.patch.object(Conf, 'get')
+  def test_get_privateip_success(self, mock_get_return):
+    mock_get_return.side_effect = [{"mockmachineid-A": "mockserver_1"}, "1.2.3.4"]
+    s3confstore = S3CortxConfStore()
+    self.assertEqual(s3confstore.get_privateip("mockmachineid-A"), "1.2.3.4")
+    self.assertEqual(mock_get_return.call_count, 2)
+
+  @mock.patch.object(Conf, 'get')
+  def test_get_nodenames_list_empty(self, mock_get_return):
+    mock_get_return.return_value = None
+    s3confstore = S3CortxConfStore()
+    self.assertEqual(s3confstore.get_nodenames_list(), [])
+    self.assertEqual(mock_get_return.call_count, 1)
+
+  @mock.patch.object(Conf, 'get')
+  def test_get_nodenames_list_exception(self, mock_get_return):
+    mock_get_return.side_effect = [{"mockmachineid-A": "mockserver_1"}, None]
+    s3confstore = S3CortxConfStore()
+    with self.assertRaises(SystemExit) as cm:
+      s3confstore.get_nodenames_list()
+
+    self.assertEqual(cm.exception.code, 1)
+    self.assertEqual(mock_get_return.call_count, 2)
+
+  @mock.patch.object(Conf, 'get')
+  def test_get_nodenames_list_success(self, mock_get_return):
+    mock_get_return.side_effect = [{"mockmachineid-A": "mockserver_1"}, "mock-host1"]
+    s3confstore = S3CortxConfStore()
+    self.assertEqual(s3confstore.get_nodenames_list(), ["mock-host1"])
+    self.assertEqual(mock_get_return.call_count, 2)

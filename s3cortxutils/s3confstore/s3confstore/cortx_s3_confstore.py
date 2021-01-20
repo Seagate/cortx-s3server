@@ -16,6 +16,9 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+
+#!/usr/bin/python3.6
+
 import argparse
 from cortx.utils.conf_store import Conf
 from urllib.parse import urlparse
@@ -26,138 +29,163 @@ import inspect
 from cortx.utils.kv_store import kv_store_collection
 
 class S3CortxConfStore:
-  default_index = "default_cortx_s3_confstore_index"
 
-  def __init__(self):
-    """Instantiate constore"""
+  def __init__(self, config: str = None, index: str = "default_cortx_s3_confstore_index"):
+    """Instantiate confstore"""
+    self.config_file = config
+    self.default_index = index
 
-  def load_config(self, index: str, backend_url: str):
-    """Load Config into constore"""
-    if not backend_url.strip():
-      print("Cannot load py-utils:confstore as backend_url[{}] is empty.".format(backend_url))
-      exit(-1)
-    else:
-      Conf.load(index, backend_url)
+    if config is not None:
+      self.validate_configfile(config)
+      self.load_config(self.default_index, self.config_file)
 
-  def get_config(self, index: str, key: str):
-    """Get the key's config from constore"""
-    return Conf.get(index, key)
+  @staticmethod
+  def load_config(index: str, config: str):
+    """Load Config into confstore"""
+    Conf.load(index, config)
 
-  def set_config(self, index: str, key: str, setval: str, save: bool = False):
-    """Set the key's value in constore"""
-    Conf.set(index, key, setval)
+  def get_config(self, key: str):
+    """Get the key's config from confstore"""
+    return Conf.get(self.default_index, key)
+
+  def set_config(self, key: str, value: str, save: bool = False):
+    """Set the key's value in confstore"""
+    Conf.set(self.default_index, key, value)
     if save == True:
       """Update the index backend"""
-      Conf.save(index)
+      Conf.save(self.default_index)
+
+  @staticmethod
+  def validate_configfile(configfile: str):
+    if os.path.isfile(urlparse(configfile).path) != True:
+      print("config file: {} does not exist".format(configfile))
+      sys.exit(1)
+    else:
+      store_type = urlparse(configfile).scheme
+      is_valid_type = False
+      valid_types = ''
+      storage = inspect.getmembers(kv_store_collection, inspect.isclass)
+      for name, cls in storage:
+        if hasattr(cls, 'name') and name != "KvStore":
+          valid_types += cls.name + ' '
+          if store_type == cls.name:
+            is_valid_type = True
+            break
+
+      if is_valid_type == False:
+        print("Invalid storage type {} in config file: {}, accepted types are {}".format(store_type, configfile, valid_types))
+        sys.exit(1)
+
+      if store_type == 'json':
+        try:
+          with open(urlparse(configfile).path) as f:
+            json.load(f)
+        except ValueError as e:
+          print("config file: {} must use valid JSON format: {}".format(urlparse(configfile).path, e))
+          sys.exit(1)
+      """TODO: Implement rest of the type's content validators here"""
+
+  def get_nodecount(self):
+    nodes_count = None
+    key_to_read_from_conf = 'cluster>server_nodes'
+
+    dict_servernodes = self.get_config(key_to_read_from_conf)
+    if dict_servernodes:
+      nodes_count = len (dict_servernodes)
+    else:
+      print("Failed to read key: {} from confstore".format(key_to_read_from_conf))
+
+    return nodes_count
+
+  def get_privateip(self, machine_id: str):
+    privateip = ""
+    key_to_read_from_conf = 'cluster>server_nodes'
+
+    dict_servernodes = self.get_config(key_to_read_from_conf)
+
+    # find the 'machine_id' in the keys of dict_servernodes
+    server_node = ""
+    if machine_id in dict_servernodes.keys():
+      server_node = dict_servernodes[machine_id]
+      privateip = self.get_config("cluster>{}>network>data>private_ip".format(server_node))
+    else:
+      print("Failed to read private ip of node: {}".format(server_node))
+
+    return privateip
+
+  def get_nodenames_list(self):
+    nodes_list = []
+    key_to_read_from_conf = 'cluster>server_nodes'
+
+    machineid_server_dict = self.get_config(key_to_read_from_conf)
+    if machineid_server_dict:
+      srvrnodes_list = machineid_server_dict.values()
+      for server in srvrnodes_list:
+        host = self.get_config("cluster>{}>hostname".format(server))
+        if host is not None:
+          nodes_list.append(host)
+        else:
+          print("Failed to get hostname for key cluster>{}>hostname".format(server))
+          sys.exit(1)
+    return nodes_list
 
   def run(self):
-    parser = argparse.ArgumentParser(description='Cortx-Utils ConfStore')
-    parser.add_argument("--load", help='Load the backing storage in this index, pass --path to config')
-    parser.add_argument("--get", help='Obtain config for this given index using a key, pass --key')
-    parser.add_argument("--set", help='Sets config value for this given index using a key, pass --key and --setval')
-    parser.add_argument("--persistent", help='Optional, pass <Yes> if needed, to be used with --set, this updates the backend along with --set')
-    parser.add_argument("--key", help='Provide a key to be used in --get and --set')
-    parser.add_argument("--getkey", help='Fetch value of the given key from default index, pass --path to config')
-    parser.add_argument("--setkey", help='Sets config value for the given key from default index, pass --path to config and --setval')
-    parser.add_argument("--setval", help='String value to be set using --set or --setkey')
-    parser.add_argument("--path", help='Path to config file, supported formats are: json, toml, yaml, ini, pillar (salt). Usage: <format>://<file_path>, e.g. JSON:///etc/cortx/myconf.json')
+    parser = argparse.ArgumentParser(description='cortx-py-utils::ConfStore wrapper')
 
-    if len(sys.argv) < 2:
-      print("Incorrect args, use -h to review usage")
-      exit(-1)
+    parser.add_argument("config",
+                        help='config file url, check cortx-py-utils::confstore for supported formats.',
+                        type=str)
+
+    subparsers = parser.add_subparsers(dest='command', title='comamnds')
+
+    getkey = subparsers.add_parser('getkey', help='get value of given key from confstore')
+    setkey = subparsers.add_parser('setkey', help='set given value to given key in confstore')
+    getnodecount = subparsers.add_parser('getnodecount', help='get count of nodes in the cluster')
+    getnodenames = subparsers.add_parser('getnodenames', help='get FQDN of nodes in the cluster')
+    getprivateip = subparsers.add_parser('getprivateip', help='get privateip of the host of given machine-id')
+
+    getkey.add_argument('--key', help='Fetch value of the given key', type=str, required=True)
+
+    setkey.add_argument('--key', help='set new value to given key', type=str)
+    setkey.add_argument('--value', help='new value to be set to given key', type=str)
+
+    getprivateip.add_argument('--machineid', help='machine-id of the host, whose private ip to be read', type=str, required=True)
 
     args = parser.parse_args()
 
-    if args.path:
-      if not args.path.strip():
-        print("--path option value cannot be empty string.")
-        exit(-1)
-      if args.load == None and args.getkey == None and args.setkey == None:
-        print("--path option is required only for --load, --getkey and --setkey options")
-        exit(-1)
-      if os.path.isfile(urlparse(args.path).path) != True:
-        print("config file: {} does not exist".format(args.path))
-        exit(-1)
+    s3conf_store = S3CortxConfStore(args.config)
+
+    if args.command == 'getkey':
+      self.load_config(self.default_index)
+      keyvalue = s3conf_store.get_config(args.key)
+      if keyvalue:
+        print("{}".format(keyvalue))
       else:
-        store_type = urlparse(args.path).scheme
-        is_valid_type = False
-        valid_types = ''
-        storage = inspect.getmembers(kv_store_collection, inspect.isclass)
-        for name, cls in storage:
-          if hasattr(cls, 'name') and name != "KvStore":
-            valid_types += cls.name + ' '
-            if store_type == cls.name:
-              is_valid_type = True
-              break
+        sys.exit("Failed to get key:{}'s value".format(args.key))
 
-        if is_valid_type == False:
-          print("Invalid storage type {} in config file: {}, accepted types are {}".format(store_type, args.path, valid_types))
-          exit(-1)
+    elif args.command == 'setkey':
+      s3conf_store.set_config(args.key, args.value, True)
 
-        if store_type == 'json':
-          try:
-            with open(urlparse(args.path).path) as f:
-              json.load(f)
-          except ValueError as e:
-            print("config file: {} must use valid JSON format: {}".format(urlparse(args.path).path, e))
-            exit(-1)
-        """TODO: Implement rest of the type's content validators here"""
+    elif args.command == 'getnodecount':
+      nodes_count = s3conf_store.get_nodecount()
+      if nodes_count:
+        print("{}".format(nodes_count))
+      else:
+        sys.exit("Failed to get nodes count from confstore")
 
-    if args.key and args.get == None and args.set == None:
-      print("--key is needed by only --get and --set")
-      exit(-1)
+    elif args.command == 'getnodenames':
+      nodes_list = s3conf_store.get_nodenames_list()
+      if nodes_list:
+        print("{}".format(nodes_list))
+      else:
+        sys.exit("Failed to get nodes list from confstore")
 
-    if args.setval and args.set == None and args.setkey == None:
-      print("--setval is needed by only --set and --setkey")
-      exit(-1)
+    elif args.command == 'getprivateip':
+      private_ip = s3conf_store.get_privateip(args.machineid)
+      if private_ip:
+        print("{}".format(private_ip))
+      else:
+        sys.exit("Failed to read private ip from confstore of machineid: {}".format(args.machineid))
 
-    if args.persistent == "Yes" and args.set == None:
-      print("--persistent option to be used only with --set")
-      exit(-1)
-
-    if args.get:
-      if args.key == None:
-        print("Please provide the key to be get from confstore using --key")
-        exit(-1)
-      result_get = self.get_config(args.get, args.key)
-      if result_get:
-        print("{}".format(result_get))
-
-    if args.set:
-      if args.key == None:
-        print("Please provide the key to be set in confstore using --key")
-        exit(-1)
-      if args.setval == None:
-        print("Please provide the value to be set in string format using --setval")
-        exit(-1)
-      if args.persistent and args.persistent != "Yes":
-        print("Please provide Yes as the valid value for --persistent")
-        exit(-1)
-      self.set_config(args.set, args.key, args.setval, args.persistent == "Yes")
-
-    if args.load or args.getkey or args.setkey:
-      if args.path == None:
-        print("Please provide the path to be load into confstore")
-        exit(-1)
-      urlpath = args.path
-
-      if args.load:
-        self.load_config(args.load, urlpath)
-        print("load conf: {} into index: {}".format(urlpath, args.load))
-
-      elif args.getkey:
-        self.load_config(self.default_index, urlpath)
-        result_get = self.get_config(self.default_index, args.getkey)
-        if result_get:
-          print("{}".format(result_get))
-        else:
-          exit(-2)
-
-      elif args.setkey:
-        if args.setval == None:
-          print("Please provide the value to be set in string format using --setval")
-          exit(-1)
-        self.load_config(self.default_index, urlpath)
-        self.set_config(self.default_index, args.setkey, args.setval, True)
-    pass
-
+    else:
+      sys.exit("Invalid command option passed, see help.")
