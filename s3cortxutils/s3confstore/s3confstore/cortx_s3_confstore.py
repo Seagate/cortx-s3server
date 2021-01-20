@@ -58,6 +58,11 @@ class S3CortxConfStore:
   @staticmethod
   def validate_configfile(configfile: str):
     """Validate the 'configfile' url, if its a valid file and of supported format."""
+
+    if not configfile.strip():
+      print("Invalid configfile path: {}".format(configfile))
+      sys.exit(1)
+
     if os.path.isfile(urlparse(configfile).path) != True:
       print("config file: {} does not exist".format(configfile))
       sys.exit(1)
@@ -88,7 +93,8 @@ class S3CortxConfStore:
 
   def get_nodecount(self):
     """Get total nodes count in the cluster, from py-utils::confstore."""
-    nodes_count = None
+    nodes_count = 0
+    dict_servernodes = None
     key_to_read_from_conf = 'cluster>server_nodes'
 
     dict_servernodes = self.get_config(key_to_read_from_conf)
@@ -102,17 +108,20 @@ class S3CortxConfStore:
   def get_privateip(self, machine_id: str):
     """Get private_ip of the host, whose machineid has been passed, from py-utils::confstore."""
     privateip = ""
+    dict_servernodes = None
+    server_node = ""
     key_to_read_from_conf = 'cluster>server_nodes'
 
     dict_servernodes = self.get_config(key_to_read_from_conf)
-
-    # find the 'machine_id' in the keys of dict_servernodes
-    server_node = ""
-    if machine_id in dict_servernodes.keys():
-      server_node = dict_servernodes[machine_id]
-      privateip = self.get_config("cluster>{}>network>data>private_ip".format(server_node))
+    if dict_servernodes:
+      # find the 'machine_id' in the keys of dict_servernodes
+      if machine_id in dict_servernodes.keys():
+        server_node = dict_servernodes[machine_id]
+        privateip = self.get_config("cluster>{}>network>data>private_ip".format(server_node))
+      else:
+        print("Failed to find machine-id: {} in server_nodes attribute".format(machine_id))
     else:
-      print("Failed to read private ip of node: {}".format(server_node))
+      print("Failed to read key: {} from confstore".format(key_to_read_from_conf))
 
     return privateip
 
@@ -146,8 +155,8 @@ class S3CortxConfStore:
     getkey.add_argument('--key', help='Fetch value of the given key', type=str, required=True)
 
     setkey = subparsers.add_parser('setkey', help='set given value to given key in confstore')
-    setkey.add_argument('--key', help='set new value to given key', type=str)
-    setkey.add_argument('--value', help='new value to be set to given key', type=str)
+    setkey.add_argument('--key', help='set a new value for the key', type=str, required=True)
+    setkey.add_argument('--value', help='set this value for the given key', type=str, required=True)
 
     subparsers.add_parser('getnodecount', help='get count of nodes in the cluster')
     subparsers.add_parser('getnodenames', help='get FQDN of nodes in the cluster')
@@ -179,7 +188,9 @@ class S3CortxConfStore:
     elif args.command == 'getnodenames':
       nodes_list = s3conf_store.get_nodenames_list()
       if nodes_list:
-        print("{}".format(nodes_list))
+        # read the list, and create a space separated string to be return
+        nodes_str = " ".join(nodes_list)
+        print("{}".format(nodes_str))
       else:
         sys.exit("Failed to get nodes list from confstore")
 
