@@ -980,6 +980,18 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     result = AuthTest(test_msg).update_account_login_profile(account_name_flag, password_flag, **account_args).execute_test()
     result.command_should_match_pattern(account_profile_response_pattern)
 
+    test_msg = 'UpdateAccountLoginProfile Successfull with ldap credentials'
+    account_args = {}
+    account_name_flag = "-n"
+    password_flag = "--password"
+    account_args['AccountName'] ="s3test"
+    account_args['Password'] ="s3test4567"
+    account_args['AccessKeyId'] = S3ClientConfig.ldapuser
+    account_args['SecretAccessKey'] = S3ClientConfig.ldappasswd
+    account_profile_response_pattern = "Account login profile updated."
+    result = AuthTest(test_msg).update_account_login_profile(account_name_flag, password_flag, **account_args).execute_test()
+    result.command_should_match_pattern(account_profile_response_pattern)
+
     test_msg = "Create account s3test_loginprofile_update"
     account_args = {'AccountName': 's3test_loginprofile_update', 'Email': 's3test_loginprofile_update@seagate.com', \
                    'ldapuser': S3ClientConfig.ldapuser, \
