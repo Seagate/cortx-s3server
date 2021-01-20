@@ -415,24 +415,16 @@ class CORTXS3Config(object):
         if self.recovery_access_key:
             return self.recovery_access_key
 
-        if 's3_recovery' in self._config and self._config['s3_recovery']['recovery_account_access_key']:
-            return self._config['s3_recovery']['recovery_account_access_key']
-        else:
-            raise KeyError(
-                "Could not find s3_recovery access_key from config file " +
-                self._conf_file)
+        raise KeyError(
+            "Could not find s3_recovery access_key")
 
     def get_s3_recovery_secret_key(self):
         """Return secret_key from cipher or config file or KeyError."""
         if self.recovery_secret_key:
             return self.recovery_secret_key
 
-        if 's3_recovery' in self._config and self._config['s3_recovery']['recovery_account_secret_key']:
-            return self._config['s3_recovery']['recovery_account_secret_key']
-        else:
-            raise KeyError(
-                "Could not find s3_recovery secret_key from config file " +
-                self._conf_file)
+        raise KeyError(
+                "Could not find s3_recovery secret_key")
 
     def get_cleanup_enabled(self):
         """Return flag cleanup_enabled for S3 non active"""

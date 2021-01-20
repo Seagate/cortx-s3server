@@ -448,8 +448,6 @@ create_recovery_tool_account()
     then
       # Create s3recovery tool account
       create_s3recovery_keys
-      salt "*" cmd.run "sed -i \"s/recovery_account_access_key:.*$/recovery_account_access_key: \"$access_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
-      salt "*" cmd.run "sed -i \"s/recovery_account_secret_key:.*$/recovery_account_secret_key: \"$secret_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
       salt "*" cmd.run "sed -i \"s/ak:.*/ak: $access_key/g\" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif"
       salt "*" cmd.run "sed -i \"s/sk:.*/sk: $secret_key/g\" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif"
       salt "*" cmd.run "sed -i \"s/ak=.*/ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com/g\" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif"
