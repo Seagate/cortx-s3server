@@ -172,7 +172,7 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
   def test_get_nodecount_none(self, mock_get_return):
     mock_get_return.return_value = None
     s3confstore = S3CortxConfStore()
-    self.assertEqual(s3confstore.get_nodecount(), None)
+    self.assertEqual(s3confstore.get_nodecount(), 0)
 
   @mock.patch.object(Conf, 'get')
   def test_get_nodecount_success(self, mock_get_return):
