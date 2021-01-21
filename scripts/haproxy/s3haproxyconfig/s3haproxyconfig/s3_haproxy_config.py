@@ -5,6 +5,7 @@ import sys
 import fileinput
 import argparse
 from cortx.utils.conf_store import Conf
+from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 class S3HaproxyConfig:
 
@@ -16,14 +17,17 @@ class S3HaproxyConfig:
     args = parser.parse_args()
 
     if args.path and args.path.strip():
-      Conf.load('configindex', args.path)
-      pvt_ip = Conf.get('configindex', 'cluster>server[0]>network>data>private_ip')
+      s3conf_store = S3CortxConfStore(args.path)
+      mcid_file = open('/etc/machine-id', 'r')
+      machine_id = mcid_file.read().strip()
+      mcid_file.close()
+      pvt_ip = s3conf_store.get_privateip(machine_id)
     else:
       sys.exit("--path option value:[{}] is not valid.".format(args.path))
 
     #Remove content not valid for use
-    header_text = "#-------S3 Haproxy configuration start--------------------------------"
-    footer_text = "#-------S3 Haproxy configuration end----------------------------------"
+    header_text = "#-------S3 Haproxy configuration start---------------------------------"
+    footer_text = "#-------S3 Haproxy configuration end-----------------------------------"
     is_found = False
     header_found = False
     original_file = "/etc/haproxy/haproxy.cfg"
@@ -57,11 +61,23 @@ class S3HaproxyConfig:
     #Add backend information to haproxy.cfg file
     cfg_file = '/etc/haproxy/haproxy.cfg'
     target = open(cfg_file, "a+")
-    target.write('''#-------S3 Haproxy configuration start--------------------------------
-#---------------------------------------------------------------------
+
+    n = 1
+    env = s3conf_store.get_config("cluster>env_type")
+
+    if env == 'VM':
+        n = 4
+    elif env == 'HW':
+        n = 11
+
+    s3inport = 28081
+    s3auport = 28050
+
+    str1 = '''
+#----------------------------------------------------------------------
 # FrontEnd S3 Configuration
-#---------------------------------------------------------------------
-frontend main
+#----------------------------------------------------------------------
+frontend s3-main
     # s3 server port
     bind 0.0.0.0:80
     #bind 0.0.0.0:443 ssl crt /etc/ssl/stx/stx.pem
@@ -69,23 +85,18 @@ frontend main
     option forwardfor
     default_backend app-main
 
-
-
     # s3 auth server port
     bind 0.0.0.0:9080
     #bind 0.0.0.0:9443 ssl crt /etc/ssl/stx/stx.pem
-
-
 
     acl s3authbackendacl dst_port 9443
     acl s3authbackendacl dst_port 9080
     use_backend s3-auth if s3authbackendacl
 
-
-
+#----------------------------------------------------------------------
 # BackEnd roundrobin as balance algorithm
-#---------------------------------------------------------------------
-backend app-main
+#----------------------------------------------------------------------
+backend s3-main
     balance static-rr                                     #Balance algorithm
     http-response set-header Server SeagateS3
     # Check the S3 server application is up and healthy - 200 status code
@@ -96,11 +107,9 @@ backend app-main
 
     # For ssl communication between haproxy and s3server
     # Replace below line
-    server s3-instance-1 ''')
-    target.write(pvt_ip)
-    target.write(''':28081 check maxconn 110        # s3 instance 1
+'''
 
-
+    str2 = '''
 #----------------------------------------------------------------------
 # BackEnd roundrobin as balance algorith for s3 auth server
 #----------------------------------------------------------------------
@@ -113,11 +122,25 @@ backend s3-auth
     # option log-health-checks
     default-server inter 2s fastinter 100 rise 1 fall 5 on-error fastinter
 
-    server s3authserver-instance1 ''')
-    target.write(pvt_ip)
-    target.write(''':28050 #check ssl verify required ca-file /etc/ssl/stx-s3/s3auth/s3authserver.crt   # s3 auth server instance 1
-#----------------------------------------------------------------------
-''')
+'''
+
+    str3 = '''
+'''
+
+    target.write(header_text)
+    target.write(str1)
+    for i in range(0, n):
+        target.write(
+        "    server s3-instance-%s %s:%s check maxconn 110        # s3 instance %s\n"
+        % (i+1, pvt_ip, s3inport+i, i+1))
+    target.write(str2)
+    for i in range(0, n):
+        target.write(
+        "    server s3authserver-instance%s %s:%s #check ssl verify required ca-file /etc/ssl/stx-s3/s3auth/s3authserver.crt   # s3 auth server instance %s\n"
+        % (i+1, pvt_ip, s3auport+i, i+1))
+    target.write(str3)
+    target.write(footer_text)
+    target.close()
 
     #########################################
     # begin s3_instance_ip_update
