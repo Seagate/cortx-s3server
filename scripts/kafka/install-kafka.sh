@@ -32,7 +32,8 @@ hostnumber=0
 ZOOKEEPER_DIR_NAME="zookeeper"
 MESSAGEBUS_CONFIG_PATH="/etc/cortx"
 MESSAGEBUS_CONFIG_NAME="message_bus.conf"
-S3_SRC_DIR=`pwd`
+SCRIPT_PATH=$(readlink -f "$0")
+SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
 
 # Function to install all pre-requisites
 install_prerequisite() {
@@ -198,7 +199,7 @@ setup_message_bus_config() {
   fi
   
   # copy message bus config file to /etc/cortx
-  \cp ${S3_SRC_DIR}/scripts/kafka/${MESSAGEBUS_CONFIG_NAME} ${MESSAGEBUS_CONFIG_PATH}/
+  \cp ${SCRIPT_DIR}/${MESSAGEBUS_CONFIG_NAME} ${MESSAGEBUS_CONFIG_PATH}/
   echo "message_bus.config copied successfully"
 }
 
