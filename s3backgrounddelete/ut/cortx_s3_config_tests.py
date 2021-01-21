@@ -210,47 +210,6 @@ def test_get_cortx_s3_region_failure():
         del config._config['cortx_s3']['default_region']
         assert config.get_cortx_s3_region()
 
-def test_get_cortx_s3_access_key_success():
-    """Test access_key configuration in cortxs3."""
-    pass
-    #Test becomes invalid as keys will now be taken from s3cipher
-    #config = CORTXS3Config()
-    #config._config['cortx_s3']['background_account_access_key'] = "S_YU-hMoQH2BWtza2tLtVg"
-    #s3_access_key = config.get_cortx_s3_access_key()
-    #assert s3_access_key == "S_YU-hMoQH2BWtza2tLtVg"
-
-
-def test_get_cortx_s3_access_key_failure():
-    """
-    Test if access_key is not configured in cortxs3 configuration
-    then it should throw KeyError.
-    """
-    #Test becomes invalid as keys will now be taken from s3cipher
-    #with pytest.raises(KeyError):
-    #    config = CORTXS3Config()
-    #    del config._config['cortx_s3']['background_account_access_key']
-    #    assert config.get_cortx_s3_access_key()
-    pass
-
-def test_get_cortx_s3_access_key_success():
-    """Test secret_key configuration in cortxs3."""
-    #config = CORTXS3Config()
-    #config._config['cortx_s3']['background_account_secret_key'] = "uw13JTMmOFzqz86eaMSbJAFd1CCB7oujkAXX4r+A"
-    #s3_secret_key = config.get_cortx_s3_secret_key()
-    #assert s3_secret_key == "uw13JTMmOFzqz86eaMSbJAFd1CCB7oujkAXX4r+A"
-    pass
-
-def test_get_cortx_s3_secret_key_failure():
-    """
-    Test if secret_key is not configured in cortxs3 configuration
-    then it should throw KeyError.
-    """
-    #with pytest.raises(KeyError):
-    #    config = CORTXS3Config()
-    #    del config._config['cortx_s3']['background_account_secret_key']
-    #    assert config.get_cortx_s3_secret_key()
-    pass
-
 def test_get_rabbitmq_username_success():
     """Test rabbitmq username."""
     config = CORTXS3Config()

@@ -259,12 +259,6 @@ def print_create_account_results(result:dict):
     print("AccountId = {}, CanonicalId = {}, RootUserName = root, AccessKeyId = {}, SecretKey = {}".
         format(result['--account_id'], result['--canonical_id'], result['--access_key'], result['--secret_key']))
 
-def print_placeholder(result:dict):
-    """
-    Dummy Function.
-    """
-    pass
-
 #Commandline input routing table.
 g_cmdline_param_table = {
     'CreateBGDeleteAccount' : [g_bgdelete_create_account_input_params, g_create_input_params_list, create_account, print_create_account_results],
