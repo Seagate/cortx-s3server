@@ -204,3 +204,28 @@ class S3CortxConfStore:
     else:
       sys.exit("Invalid command option passed, see help.")
 
+    elif args.command == 'getnodecount':
+      nodes_count = s3conf_store.get_nodecount()
+      if nodes_count:
+        print("{}".format(nodes_count))
+      else:
+        sys.exit("Failed to get nodes count from confstore")
+
+    elif args.command == 'getnodenames':
+      nodes_list = s3conf_store.get_nodenames_list()
+      if nodes_list:
+        # read the list, and create a space separated string to be return
+        nodes_str = " ".join(nodes_list)
+        print("{}".format(nodes_str))
+      else:
+        sys.exit("Failed to get nodes list from confstore")
+
+    elif args.command == 'getprivateip':
+      private_ip = s3conf_store.get_privateip(args.machineid)
+      if private_ip:
+        print("{}".format(private_ip))
+      else:
+        sys.exit("Failed to read private ip from confstore of machineid: {}".format(args.machineid))
+
+    else:
+      sys.exit("Invalid command option passed, see help.")
