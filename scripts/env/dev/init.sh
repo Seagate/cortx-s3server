@@ -50,6 +50,11 @@ check_supported_kernel() {
   fi
 }
 
+install_toml() {
+  echo "Installing toml"
+  pip3 install toml
+}
+
 install_cortx_py_utils() {
   #rpm -q cortx-py-utils && yum remove cortx-py-utils -y && yum install cortx-py-utils -y
   if rpm -q cortx-py-utils ; then
@@ -101,6 +106,8 @@ fi
 
 if [[ $# -eq 0 ]] ; then
   source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
+  # install pip3 package toml if not present, needed by cortx-py-utils for s3confstore UT
+  install_toml
   # install or upgrade cortx-py-utils
   install_cortx_py_utils
 else
@@ -114,6 +121,8 @@ else
               ;;
           s)
              source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
+             # install pip3 package toml if not present, needed by cortx-py-utils for s3confstore UT
+             install_toml
              # install or upgrade cortx-py-utils
              install_cortx_py_utils
              ansible_automation=1;
