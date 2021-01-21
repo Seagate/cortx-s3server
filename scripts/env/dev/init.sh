@@ -109,7 +109,7 @@ if [[ $# -eq 0 ]] ; then
   # install pip3 package toml if not present, needed by cortx-py-utils for s3confstore UT
   install_toml
   # install or upgrade cortx-py-utils
-  install_cortx_py_utils
+  # install_cortx_py_utils
 else
   while getopts "ahs" x; do
       case "${x}" in
@@ -124,7 +124,7 @@ else
              # install pip3 package toml if not present, needed by cortx-py-utils for s3confstore UT
              install_toml
              # install or upgrade cortx-py-utils
-             install_cortx_py_utils
+             # install_cortx_py_utils
              ansible_automation=1;
              ;;
           *)
