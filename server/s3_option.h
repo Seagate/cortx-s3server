@@ -132,6 +132,7 @@ class S3Option {
   bool log_buffering_enable;
   bool s3_enable_murmurhash_oid;
   int log_flush_frequency_sec;
+  unsigned int test_object_size;
 
   unsigned short motr_layout_id;
   unsigned short motr_units_per_request;
@@ -399,6 +400,7 @@ class S3Option {
   size_t get_motr_read_pool_initial_buffer_count();
   size_t get_motr_read_pool_expandable_count();
   size_t get_motr_read_pool_max_threshold();
+  unsigned int get_test_object_size();
 
   size_t get_libevent_pool_initial_size();
   size_t get_libevent_pool_expandable_size();
