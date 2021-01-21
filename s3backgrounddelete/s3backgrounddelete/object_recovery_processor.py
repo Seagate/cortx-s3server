@@ -24,7 +24,7 @@ the rabbitmq message queue.
 #!/usr/bin/python3.6
 
 import os
-from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS, RABBIT_MQ
 import traceback
 import logging
 import datetime
@@ -57,7 +57,7 @@ class ObjectRecoveryProcessor(object):
                 self.server = ObjectRecoveryMsgbus(
                     self.config,
                     self.logger)
-            else:
+            elif self.config.get_messaging_platform() == RABBIT_MQ:
                 from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
 
                 self.server = ObjectRecoveryRabbitMq(
@@ -70,6 +70,10 @@ class ObjectRecoveryProcessor(object):
                     self.config.get_rabbitmq_mode(),
                     self.config.get_rabbitmq_durable(),
                     self.logger)
+            else:
+                self.logger.error(
+                "Invalid argument specified in messaging_platform use message_bus or rabbit_mq")
+                return
 
             self.logger.info("Consumer started at " +
                             str(datetime.datetime.now()))
