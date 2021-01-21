@@ -24,15 +24,8 @@ cortx_s3:                                   # Section for S3 background delete c
    endpoint: "http://127.0.0.1:28049"                       # Service specified for CORTX s3 client
    service: "cortxs3"                                      # Default region specified for CORTX s3 client
    default_region: "us-west2"                              # CORTX s3 client will use the specified host
-   background_account_access_key: "AKIAJPINPFRBTPAYXAHZ"                      # Access Key corresponding to account-name "s3-background-delete-svc"
-   background_account_secret_key: "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"  # Secret Key corresponding to account-name "s3-background-delete-svc"
    daemon_mode: True                                       # S3background process run in daemon mode and ST's run in non-daemon mode.
    s3_instance_count: 22                                   # Number of active s3 instances in release setup
-
-s3_recovery:                               # Section for S3 recovery config config
-   recovery_account_access_key: "A9IAJPINPFRBTPASATAZ"                     # Access Key corresponding to account-name "s3-recovery-svc"
-   recovery_account_secret_key: "h98ntpB9DoChDrneKZHvPVTm+1mHbs7UdCyNVME5" # Secret Key corresponding to account-name "s3-recovery-svc"
-
 
 logconfig:                                  # Section for scheduler & processor loggers.
 
