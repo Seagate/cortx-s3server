@@ -55,6 +55,7 @@ NODEJS_DIR_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/s3/nodejs
 RSYSLOG_CFG_DIR_LOCATION=$INSTALL_PREFIX/etc/rsyslog.d
 LOGROTATE_CFG_DIR_LOCATION=$INSTALL_PREFIX/etc/logrotate.d/
 KEEPALIVED_CFG_DIR_LOCATION=$INSTALL_PREFIX/etc/keepalived
+S3_MINI_PROV_CFG_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/s3/mini-prov
 
 rm -rf $AUTH_INSTALL_LOCATION
 rm -rf $S3_INSTALL_LOCATION
@@ -91,6 +92,7 @@ mkdir -p $LOG_DIR_LOCATION/auth/tools
 mkdir -p $NODEJS_DIR_LOCATION
 mkdir -p $RSYSLOG_CFG_DIR_LOCATION
 mkdir -p $LOGROTATE_CFG_DIR_LOCATION
+mkdir -p $S3_MINI_PROV_CFG_LOCATION
 
 # Copy the haproxy dependencies
 cp -R scripts/haproxy/* $S3_INSTALL_LOCATION/install/haproxy
@@ -100,6 +102,9 @@ cp scripts/provisioning/setup.yaml $S3_INSTALL_LOCATION/conf
 
 # Copy the provisioning script
 cp scripts/provisioning/s3_setup $S3_INSTALL_LOCATION/bin
+
+# Copy the mini-provisioner pre-reqs validation check config files
+cp scripts/provisioning/s3setup_prereqs.json ${S3_MINI_PROV_CFG_LOCATION}/
 
 # Copy the S3 reset scripts
 cp scripts/reset/* $S3_INSTALL_LOCATION/reset

@@ -365,6 +365,7 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.yaml
 /opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml
 /opt/seagate/cortx/s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml
+/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_setup
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer
