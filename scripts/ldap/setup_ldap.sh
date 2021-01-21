@@ -100,10 +100,10 @@ chgrp ldap /etc/openldap/certs/password # onlyif: grep -q ldap /etc/group && tes
 
 if [[ $defaultpasswd == true ]]
 then # Get password from cortx-utils
-    cipherkey=$(s3cipher --generate_key --const_key  openldap 2>/dev/null)
+    cipherkey=$(s3cipher --generate_key --const_key openldap 2>/dev/null)
 
-    sgiamadminpassd=$(s3confstore --getkey "cluster>openldap>sgiampassword" --path "$confstore_config_url")
-    rootdnpasswd=$(s3confstore --getkey "cluster>openldap>rootdnpassword" --path "$confstore_config_url")
+    sgiamadminpassd=$(s3confstore --getkey "openldap>sgiam>secret" --path "$confstore_config_url")
+    rootdnpasswd=$(s3confstore --getkey "openldap>root>secret" --path "$confstore_config_url")
 
     # decrypt the passwords read from the confstore
     LDAPADMINPASS=$(s3cipher --decrypt --data "$sgiamadminpassd" --key "$cipherkey" 2>/dev/null)
