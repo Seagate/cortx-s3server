@@ -23,15 +23,16 @@
 # Generate Support bundle for S3Server #
 #######################################################
 
-USAGE="USAGE: bash $(basename "$0") <bundleid> <path>
+USAGE="USAGE: bash $(basename "$0") <bundleid> <path> <sgiamadmin_pass>
 Generate support bundle for s3server.
 
 where:
-bundleid     Unique bundle-id used to identify support bundles.
-path         Location at which support bundle needs to be copied."
+bundleid         Unique bundle-id used to identify support bundles.
+path             Location at which support bundle needs to be copied.
+sgiamadmin_pass  LDAP user: sgiamadmin password to run ldap search commands" 
 
 
-if [ $# -lt 2 ]
+if [ $# -lt 3 ]
 then
   echo "$USAGE"
   exit 1
@@ -39,6 +40,8 @@ fi
 
 bundle_id=$1
 bundle_path=$2
+rootdnpasswd=$3
+
 bundle_name="s3_$bundle_id.tar.xz"
 s3_bundle_location=$bundle_path/s3
 
@@ -405,12 +408,9 @@ fi
 
 ## Collect LDAP data
 mkdir -p $ldap_dir
-# Get password from cortx-utils
-# ldapadmin and rootdn passwords are same, so reading ldapadmin password
-rootdnpasswd=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
 if [[ $? != 0 || -z "$rootdnpasswd" ]]
 then
-    echo "Failed to decrypt ldap admin password, skipping collection of ldap data."
+    echo "ldap admin password: '$rootdnpasswd' is not correct, skipping collection of ldap data."
 else
     # Run ldap commands
     ldapsearch -b "cn=config" -x -w "$rootdnpasswd" -D "cn=admin,cn=config" -H ldapi:/// > "$ldap_config"  2>&1

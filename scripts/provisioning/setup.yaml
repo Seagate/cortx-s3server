@@ -23,30 +23,31 @@
 s3:
   post_install:
     cmd: s3_setup post_install
-    --config $URL
+    args: --config $URL
   init:
-    script: /opt/seagate/cortx/s3/bin/s3_setup
-    args:
-      - --s3backgrounddelete
-      - --s3recoverytool
+    cmd: s3_setup init
+    args: --config $URL
   config:
-    script: /opt/seagate/cortx/s3/bin/s3_setup
-    args:
-      - --updateclusterid
-      - --createauthjkspassword
-      - --configldap
-      - --confighaproxy
+    cmd: s3_setup config
+    args: --config $URL
+  test:
+    cmd: s3_setup test
+    args: --config $URL [--plan $TYPE]
   reset:
-    script: /opt/seagate/cortx/s3/bin/s3_setup
-    args:
-      - --cleanup
-  backup: 
-    files:
-      - /opt/seagate/cortx/auth/resources/authserver.properties
-      - /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
-      - /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml
-      - /opt/seagate/cortx/auth/resources/s3authserver.jks
-      - /opt/seagate/cortx/auth/resources/keystore.properties
+    cmd: s3_setup reset
+    args: --config $URL
+  cleanup:
+    cmd: s3_setup cleanup
+    args: --config $URL
+  backup:
+    cmd: s3_setup backup
+    args: --location $END-POINT
+  restore:
+    cmd: s3_setup restore
+    args: --location $END-POINT
+  upgrade:
+    cmd: s3_setup upgrade
+    args: --config $URL
 # Script path used by CSM to generate s3 support bundle
 support_bundle:
   - sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh
