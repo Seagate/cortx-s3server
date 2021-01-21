@@ -463,7 +463,7 @@ void S3CopyObjectAction::send_response_to_s3_client() {
 
     if (!response_started && (get_s3_error_code() == "ServiceUnavailable" ||
                               get_s3_error_code() == "InternalError")) {
-        request->set_out_header_value("Connection", "close");
+      request->set_out_header_value("Connection", "close");
     }
     if (get_s3_error_code() == "ServiceUnavailable") {
       request->set_out_header_value("Retry-After", "1");
