@@ -49,6 +49,15 @@ install_pre_requisites() {
   
   # install cryptography
   pip3 install cryptography
+  
+  #install toml
+  pip3 install toml
+  
+  #install confluent_kafka
+  pip3 install confluent_kafka
+  
+  #install python-ldap
+  pip3 install python-ldap  
 }
 
 usage() {
