@@ -23,7 +23,8 @@
 s3:
   post_install:
     script: /opt/seagate/cortx/s3/bin/s3_setup
-    args: null
+    args:
+      - --validateprerequisites
   init:
     script: /opt/seagate/cortx/s3/bin/s3_setup
     args:

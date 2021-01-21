@@ -48,6 +48,7 @@ where:
 --updateclusterid        Fetch and update cluster id in S3 config
 --cleanup                Cleanup S3 accounts created for backgroundelete.
 --createauthjkspassword  Setup random jks password for Auth server
+--validateprerequisites  Perform validation of the mini provisioning pre-requisites for S3 during post_install
 --help                   Display this help and exit"
 
 set -e
@@ -72,6 +73,7 @@ update_cluster_id=false
 is_rabbitmq_clustered=false
 cleanup_s3_accounts_schema=false
 create_auth_jks_passwrd=false
+validate_prerequisites=false
 encrypt_cli="/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar"
 
 if [ $# -lt 1 ]
@@ -135,6 +137,9 @@ do
         ;;
     --createauthjkspassword )
         create_auth_jks_passwrd=true
+        ;;
+    --validateprerequisites)
+        validate_prerequisites=true
         ;;
     --help | -h )
         echo "$USAGE"
@@ -266,6 +271,13 @@ if [[ $create_auth_jks_passwrd == true ]]
 then
     echo "Creating random jks password for Auth server"
     create_auth_jks_password
+fi
+
+# Perform validation of the mini provisioning pre-requisites for S3 during post_install
+if [[ $validate_prerequisites == true ]]
+then
+    echo "Performing validation of the mini provisioning pre-requisites"
+    s3setup --validateprerequisites --preqs_conf_file /opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json
 fi
 
 cipherkey=$(s3cipher --generate_key --const_key  openldap 2>/dev/null)
