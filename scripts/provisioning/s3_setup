@@ -153,61 +153,6 @@ create_auth_jks_password()
     sh /opt/seagate/cortx/auth/scripts/create_auth_jks_password.sh
 }
 
-if [ $s3postinstall == true ]
-then
-    echo "INFO: running post_install..."
-    # exit 0
-fi
-
-if [ $s3config == true ]
-then
-    # Fetch and update cluster id
-    echo "INFO: Fetching and updating cluster id in s3_cluster.yaml .."
-    fetch_update_cluster_id
-
-    # Create random password for auth jks keystore
-    echo "INFO: Creating random jks password for Auth server.."
-    create_auth_jks_password
-
-    # configure openldap and ldap-replication
-    echo "INFO: Configure openldap.."
-    configure_openldap()
-
-    echo "INFO: Configure haproxy.."
-	s3haproxyconfig --path "$confstore_config_url"
-    if [ $? -ne 0 ]
-    then
-        echo "ERROR: haproxy configuration failed, exiting"
-        exit 1
-    fi
-
-fi
-
-if [ $s3init == true ]
-then
-    # Setup s3 background delete and its dependencies
-    echo "INFO: Creating the s3backgrounddelete account.."
-    create_background_delete_account
-
-    # Setup recovery tool dependancies
-    echo "INFO: Creating the s3 recovery tool account"
-	create_recovery_tool_account
-
-    # set logrotate policy
-    plat=$(s3confstore "$confstore_config_url" getkey --key "cluster>env_type")
-    echo "INFO: cluster environment type: $plat"
-    if [ "$plat" == "VM" ]
-    then
-        echo "INFO: setting logrotate policy.."
-        set_logrotate_policy_ova
-    fi
-fi
-
-if [ $s3cleanup == true ]
-then
-    s3setup --cleanup accounts --ldappasswd $ldappasswd
-fi
-
 # Install and Configure Openldap over Non-SSL.
 configure_openldap()
 {
@@ -324,6 +269,13 @@ create_background_delete_account()
     fi
 }
 
+set_s3conf_log_sz() {
+    conf_sz=$1
+    conf_path="/opt/seagate/cortx/s3/conf/s3config.yaml"
+
+    sed -i "s/S3_LOG_FILE_MAX_SIZE:\s*[0-9]*\(.*\)/S3_LOG_FILE_MAX_SIZE: $conf_sz\1/" $conf_path
+}
+
 set_logrotate() {
     fname=$1
     set_sz=$2
@@ -346,9 +298,57 @@ set_logrotate_policy_ova() {
     set_s3conf_log_sz 5
 }
 
-set_s3conf_log_sz() {
-    conf_sz=$1
-    conf_path="/opt/seagate/cortx/s3/conf/s3config.yaml"
+if [ $s3postinstall == true ]
+then
+    echo "INFO: running post_install..."
+    # exit 0
+fi
 
-    sed -i "s/S3_LOG_FILE_MAX_SIZE:\s*[0-9]*\(.*\)/S3_LOG_FILE_MAX_SIZE: $conf_sz\1/" $conf_path
-}
+if [ $s3config == true ]
+then
+    # Fetch and update cluster id
+    echo "INFO: Fetching and updating cluster id in s3_cluster.yaml .."
+    fetch_update_cluster_id
+
+    # Create random password for auth jks keystore
+    echo "INFO: Creating random jks password for Auth server.."
+    create_auth_jks_password
+
+    # configure openldap and ldap-replication
+    echo "INFO: Configure openldap.."
+    configure_openldap
+
+    echo "INFO: Configure haproxy.."
+	s3haproxyconfig --path "$confstore_config_url"
+    if [ $? -ne 0 ]
+    then
+        echo "ERROR: haproxy configuration failed, exiting"
+        exit 1
+    fi
+
+fi
+
+if [ $s3init == true ]
+then
+    # Setup s3 background delete and its dependencies
+    echo "INFO: Creating the s3backgrounddelete account.."
+    create_background_delete_account
+
+    # Setup recovery tool dependancies
+    echo "INFO: Creating the s3 recovery tool account"
+	create_recovery_tool_account
+
+    # set logrotate policy
+    plat=$(s3confstore "$confstore_config_url" getkey --key "cluster>env_type")
+    echo "INFO: cluster environment type: $plat"
+    if [ "$plat" == "VM" ]
+    then
+        echo "INFO: setting logrotate policy.."
+        set_logrotate_policy_ova
+    fi
+fi
+
+if [ $s3cleanup == true ]
+then
+    s3setup --cleanup accounts --ldappasswd $ldappasswd
+fi

@@ -102,8 +102,8 @@ if [[ $defaultpasswd == true ]]
 then # Get password from cortx-utils
     cipherkey=$(s3cipher --generate_key --const_key openldap 2>/dev/null)
 
-    sgiamadminpassd=$(s3confstore --getkey "openldap>sgiam>secret" --path "$confstore_config_url")
-    rootdnpasswd=$(s3confstore --getkey "openldap>root>secret" --path "$confstore_config_url")
+    sgiamadminpassd=$(s3confstore "$confstore_config_url" getkey --key "openldap>sgiam>secret")
+    rootdnpasswd=$(s3confstore "$confstore_config_url" getkey --key "openldap>root>secret")
 
     # decrypt the passwords read from the confstore
     LDAPADMINPASS=$(s3cipher --decrypt --data "$sgiamadminpassd" --key "$cipherkey" 2>/dev/null)
