@@ -68,21 +68,16 @@ install_pre_requisites() {
   
   #create topic
   sh ${S3_SRC_DIR}/scripts/kafka/create-topic.sh -c 1 -i $HOSTNAME
-  
-  # install or upgrade cortx-py-utils
-  install_cortx_py_utils
-  
-  # install cryptography
-  pip3 install cryptography
-  
-  #install toml
-  pip3 install toml
-  
+
   #install confluent_kafka
   pip3 install confluent_kafka
-  
-  #install python-ldap
-  pip3 install python-ldap
+
+  #install toml
+  pip3 install toml
+
+  # install or upgrade cortx-py-utils
+  install_cortx_py_utils
+
 }
 
 usage() {
@@ -221,6 +216,12 @@ if [ "$os_major_version" = "7" ];
 then
   ./s3motr-build-depencies.sh
 fi
+
+# install cryptography
+pip3 install cryptography
+  
+#install python-ldap
+pip3 install python-ldap
 
 # configure backgrounddelete ST dependencies
 ./setup_backgrounddelete_config.sh
