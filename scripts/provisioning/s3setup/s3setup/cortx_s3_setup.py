@@ -140,11 +140,17 @@ class S3CortxSetup:
 
   def run(self):
     parser = argparse.ArgumentParser(description='Cortx S3 Setup')
+    # parser.add_argument("post_install", help='Perform S3setup mini-provisioner post_install actions', action="store_true", default=False)
+    parser.add_argument("action", type=str, help='Perform S3setup mini-provisioner actions',nargs='*', choices=['post_install', 'cleanup' ])
     parser.add_argument("--cleanup", help='Cleanup S3 accounts and dependencies. Valid values: all/accounts/dependencies')
     # Future functionalities to be added here.
     parser.add_argument("--ldappasswd", help='ldap password, needed for --cleanup')
     parser.add_argument("--validateprerequisites", help='validate prerequisites for mini-provisioner setup', action="store_true")
     parser.add_argument("--preqs_conf_file", help='optional conf file location used with --validateprerequisites')
+    parser.add_argument("--config",
+                        help='config file url, check cortx-py-utils::confstore for supported formats.',
+                        type=str)
+
 
     args = parser.parse_args()
 
@@ -168,7 +174,7 @@ class S3CortxSetup:
         print("Invalid input for cleanup {}. Valid values: all/accounts/dependencies".format(args.cleanup))
         exit (-2)
 
-    if args.validateprerequisites:
+    if args.validateprerequisites or args.action == "post_install":
 
       if args.preqs_conf_file:
         self.__preqs_conf_file = args.preqs_conf_file

@@ -22,9 +22,8 @@
 # called on all nodes before server is run
 s3:
   post_install:
-    script: /opt/seagate/cortx/s3/bin/s3_setup
-    args:
-      - --validateprerequisites
+    cmd: s3_setup post_install
+    --config $URL
   init:
     script: /opt/seagate/cortx/s3/bin/s3_setup
     args:
