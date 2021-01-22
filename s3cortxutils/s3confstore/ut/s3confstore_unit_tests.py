@@ -1,3 +1,4 @@
+#!/usr/bin/python3.6
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -16,8 +17,6 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-
-#!/usr/bin/python3.6
 
 import mock
 import unittest
