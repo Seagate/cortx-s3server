@@ -18,13 +18,18 @@
 #
 import os
 from setuptools import setup
+import sys
 files = ["config/*","VERSION"]
 
 # Load the version
-s3msgbus_version = "1.0.0"
-current_script_path = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(current_script_path, 'VERSION')) as version_file:
-    s3msgbus_version = version_file.read().strip()
+s3msgbus_version = None
+for argument in sys.argv:
+    if argument.startswith("--version"):
+        s3msgbus_version = argument.split("=")[1]
+        sys.argv.remove(argument)
+
+if not s3msgbus_version:
+    raise Exception("Pass --version={version} as a parameter to setup.py.")
 
 setup(
   # Application name
