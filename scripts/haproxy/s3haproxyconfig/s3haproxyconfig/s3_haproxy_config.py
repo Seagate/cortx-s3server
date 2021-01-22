@@ -62,13 +62,13 @@ class S3HaproxyConfig:
     cfg_file = '/etc/haproxy/haproxy.cfg'
     target = open(cfg_file, "a+")
 
-    n = 1
+    numS3Instances = 1
     env = s3conf_store.get_config("cluster>env_type")
 
     if env == 'VM':
-        n = 4
+        numS3Instances = 4
     elif env == 'HW':
-        n = 11
+        numS3Instances = 11
 
     s3inport = 28081
     s3auport = 28050
@@ -83,7 +83,7 @@ frontend s3-main
     #bind 0.0.0.0:443 ssl crt /etc/ssl/stx/stx.pem
 
     option forwardfor
-    default_backend app-main
+    default_backend s3-main
 
     # s3 auth server port
     bind 0.0.0.0:9080
@@ -129,12 +129,12 @@ backend s3-auth
 
     target.write(header_text)
     target.write(str1)
-    for i in range(0, n):
+    for i in range(0, numS3Instances):
         target.write(
         "    server s3-instance-%s %s:%s check maxconn 110        # s3 instance %s\n"
         % (i+1, pvt_ip, s3inport+i, i+1))
     target.write(str2)
-    for i in range(0, n):
+    for i in range(0, 1):
         target.write(
         "    server s3authserver-instance%s %s:%s #check ssl verify required ca-file /etc/ssl/stx-s3/s3auth/s3authserver.crt   # s3 auth server instance %s\n"
         % (i+1, pvt_ip, s3auport+i, i+1))
