@@ -47,9 +47,11 @@ class S3ObjectAction : public S3Action {
 
  protected:
   std::shared_ptr<S3ObjectMetadata> object_metadata;
+  std::shared_ptr<S3ObjectExtededMetadata> extended_obj_metadata;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
+  std::shared_ptr<S3ObjectExtMetadataFactory> ext_object_metadata_factory;
 
   m0_uint128 object_list_oid;
   m0_uint128 objects_version_list_oid;
@@ -59,6 +61,8 @@ class S3ObjectAction : public S3Action {
   virtual void fetch_object_info_failed() = 0;
   virtual void fetch_object_info_success();
   virtual void fetch_bucket_info_success();
+  void fetch_ext_object_info_success();
+  void fetch_ext_object_info_failed();
 
   // Sets appropriate Fault points for any shutdown tests.
   void setup_fi_for_shutdown_tests();
