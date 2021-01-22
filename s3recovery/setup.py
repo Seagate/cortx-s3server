@@ -20,18 +20,15 @@
 import os
 from setuptools import setup
 import sys
-files = ["VERSION"]
+files = []
 
 # Load the version
-s3recovery_version = None
+s3recovery_version = "2.0.0"
 
 for argument in sys.argv:
     if argument.startswith("--version"):
         s3recovery_version = argument.split("=")[1]
         sys.argv.remove(argument)
-
-if not s3recovery_version:
-    raise Exception("Pass --version={version} as a parameter to setup.py.")
 
 setup(
     # Application name:
