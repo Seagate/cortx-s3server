@@ -1,4 +1,3 @@
-#!/bin/sh
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -18,19 +17,32 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-USAGE="USAGE: delete_s3_recovery_account.sh <ldap passwd> "
+#!/usr/bin/python3.6
 
-if [ "$#" -ne 1 ]; then
-    echo "$USAGE"
-    exit 1
-fi
+from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
 
-ldap_passwd=$1
-s3background_cofig="/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
+id, msg_type='MsgBusLib_Producer','bgdelete' 
+s3MessageBus = S3CortxMsgBus()
+ret,msg = s3MessageBus.connect()
+if not ret:
+    print("connect failed")
 
-access_key=$(s3cipher --use_base64 --key_len  22  --const_key  "s3recoveryaccesskey")
+# Send
+ret,msg = s3MessageBus.setup_send(id,msg_type,'sync')
+if not ret:
+    print("Msg Bus setup send failed")
+messages = ["Message Bus Test"]
+s3MessageBus.send(messages)
+if not ret:
+    print("Message Send failed")
 
-ldapdelete -x -w $ldap_passwd -r "ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///
+# Receive
+id, group, type = 'MsgBusLib_Consumer', 'MsgBusLib', 'delete'
+ret, msg = s3MessageBus.setup_receive(id, group, type, False, 'earliest')
+if not ret:
+    print("Msg Bus receive setup failed")
+ret,message = s3MessageBus.receive()
+if not ret:
+    print("Message receive failed")
 
-ldapdelete -x -w $ldap_passwd -r "o=s3-recovery-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///
-
+s3MessageBus.purge()

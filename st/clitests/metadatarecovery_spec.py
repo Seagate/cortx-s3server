@@ -78,8 +78,6 @@ def load_and_update_config(access_key_value, secret_key_value):
 
     with open(bgdelete_config_file, 'r') as f:
             config = yaml.safe_load(f)
-            config['s3_recovery']['recovery_account_access_key'] = access_key_value
-            config['s3_recovery']['recovery_account_secret_key'] = secret_key_value
             config['cortx_s3']['daemon_mode'] = "False"
             config['leakconfig']['leak_processing_delay_in_mins'] = 0
             config['leakconfig']['version_processing_delay_in_mins'] = 0
@@ -110,12 +108,11 @@ def restore_configuration():
 
 # *********************Create account s3-recovery-svc************************
 test_msg = "Create account s3-recovery-svc"
-account_args = {'AccountName': 's3-recovery-svc',\
-                'Email': 's3-recovery-svc@seagate.com',\
+account_args = {'action' : "CreateRecoveryAccount",
                 'ldapuser': S3ClientConfig.ldapuser,\
                 'ldappasswd': S3ClientConfig.ldappasswd}
-account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
-result = AuthTest(test_msg).create_account(**account_args).execute_test()
+account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/\+-]*$"
+result = AuthTest(test_msg).create_cipher_account(**account_args).execute_test()
 result.command_should_match_pattern(account_response_pattern)
 account_response_elements = AuthTest.get_response_elements(result.status.stdout)
 print(account_response_elements)
@@ -138,7 +135,7 @@ primary_bucket_metadata_index = S3kvTest('KvTest fetch root bucket metadata inde
 replica_bucket_metadata_index = S3kvTest('KvTest fetch replica bucket metadata index')\
     .replica_bucket_metadata_index()
 
-config = CORTXS3Config(s3recovery_flag = True, use_cipher= False)
+config = CORTXS3Config(s3recovery_flag = True)
 
 # ======================================================================================================
 

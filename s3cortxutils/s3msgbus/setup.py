@@ -1,4 +1,3 @@
-#!/bin/sh
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,20 +16,38 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+import os
+from setuptools import setup
+files = ["config/*","VERSION"]
 
-USAGE="USAGE: delete_s3_recovery_account.sh <ldap passwd> "
+# Load the version
+s3msgbus_version = "1.0.0"
+current_script_path = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(current_script_path, 'VERSION')) as version_file:
+    s3msgbus_version = version_file.read().strip()
 
-if [ "$#" -ne 1 ]; then
-    echo "$USAGE"
-    exit 1
-fi
+setup(
+  # Application name
+  name="s3msgbus",
 
-ldap_passwd=$1
-s3background_cofig="/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
+  # version number
+  version=s3msgbus_version,
 
-access_key=$(s3cipher --use_base64 --key_len  22  --const_key  "s3recoveryaccesskey")
+  # Author details
+  author="Seagate",
 
-ldapdelete -x -w $ldap_passwd -r "ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///
+  # Packages
+  packages=["s3msgbus"],
 
-ldapdelete -x -w $ldap_passwd -r "o=s3-recovery-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///
+  # Include additional files into the package
+  include_package_data=True,
 
+  # Details
+  scripts =['s3msgbus/s3msgbus'],
+
+  # license="LICENSE.txt",
+
+  description="Wrapper for Message Bus Interface cortx-utils::MsgBus",
+
+  package_data = { 's3msgbus': files}
+)

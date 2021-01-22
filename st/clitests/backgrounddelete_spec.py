@@ -35,6 +35,7 @@ from s3cmd import S3cmdTest
 from s3kvstool import S3kvTest
 import s3kvs
 import time
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS, RABBIT_MQ
 
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__),  '../../s3backgrounddelete/s3backgrounddelete')))
@@ -80,8 +81,6 @@ def load_and_update_config(access_key_value, secret_key_value):
 
     with open(bgdelete_config_file, 'r') as f:
             config = yaml.safe_load(f)
-            config['cortx_s3']['background_account_access_key'] = access_key_value
-            config['cortx_s3']['background_account_secret_key'] = secret_key_value
             config['cortx_s3']['daemon_mode'] = False
             config['leakconfig']['leak_processing_delay_in_mins'] = 0
             config['leakconfig']['version_processing_delay_in_mins'] = 0
@@ -115,7 +114,7 @@ def restore_configuration():
 def perform_head_object(oid_dict):
     print("Validating non-existence of oids using HEAD object api")
     print("Probable dead list should not contain :" + str(list(oid_dict.keys())))
-    config = CORTXS3Config(use_cipher= False)
+    config = CORTXS3Config()
     for oid,layout_id in oid_dict.items():
         response = CORTXS3ObjectApi(config).head(oid, layout_id)
         assert response is not None
@@ -129,12 +128,11 @@ def perform_head_object(oid_dict):
 
 # *********************Create account s3-background-delete-svc************************
 test_msg = "Create account s3-background-delete-svc"
-account_args = {'AccountName': 's3-background-delete-svc',\
-                'Email': 's3-background-delete-svc@seagate.com',\
+account_args = {'action' : "CreateBGDeleteAccount",
                 'ldapuser': S3ClientConfig.ldapuser,\
                 'ldappasswd': S3ClientConfig.ldappasswd}
-account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
-result = AuthTest(test_msg).create_account(**account_args).execute_test()
+account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/\+-]*$"
+result = AuthTest(test_msg).create_cipher_account(**account_args).execute_test()
 result.command_should_match_pattern(account_response_pattern)
 account_response_elements = AuthTest.get_response_elements(result.status.stdout)
 print(account_response_elements)
@@ -152,8 +150,8 @@ AwsTest('Create Bucket "seagatebucket" using s3-background-delete-svc account')\
     .create_bucket("seagatebucket").execute_test().command_is_successful()
 
 # Initialising the scheduler and processor
-scheduler = ObjectRecoveryScheduler(use_cipher= False)
-processor = ObjectRecoveryProcessor(use_cipher= False)
+scheduler = ObjectRecoveryScheduler()
+processor = ObjectRecoveryProcessor()
 
 
 """
@@ -192,7 +190,15 @@ time.sleep(5)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
+
 print("Scheduler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -246,7 +252,14 @@ time.sleep(5)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
 print("Schdeuler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -309,7 +322,15 @@ object3_new_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
+
 print("Scheduler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -367,7 +388,15 @@ S3fiTest('Disable FI motr entity delete fail')\
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
+
 print("Schdeuler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -458,7 +487,15 @@ S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fa
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
+
 print("Schdeuler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -517,7 +554,15 @@ S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fa
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
+
 print("Schdeuler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -592,7 +637,15 @@ time.sleep(5)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
+
 print("Schdeuler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -647,7 +700,15 @@ time.sleep(5)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
+
 print("Scheduler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -686,7 +747,15 @@ time.sleep(5)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
+
 print("Scheduler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -735,7 +804,15 @@ time.sleep(1)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
+
 print("Schdeuler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
