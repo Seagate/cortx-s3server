@@ -125,7 +125,7 @@ class S3CortxSetup:
     log.debug("\ncmd:{0},\noutput:{1},\nerror:{2}".format(cmd, output, error))
     return True
 
-  def validate_pre_requisites(self, rpms: list = [], pip3s: list = [], services: list = []):
+  def validate_pre_requisites(self, rpms: list = None, pip3s: list = None, services: list = None):
     try:
       if pip3s:
         PkgV().validate('pip3s', pip3s)
@@ -134,7 +134,7 @@ class S3CortxSetup:
       if rpms:
         PkgV().validate('rpms', rpms)
     except Exception as e:
-      print(f"{e}")
+      print(f"{e}, config:{self.__preqs_conf_file}")
       return False
     return True
 
@@ -174,7 +174,7 @@ class S3CortxSetup:
         print("Invalid input for cleanup {}. Valid values: all/accounts/dependencies".format(args.cleanup))
         exit (-2)
 
-    if args.validateprerequisites or args.action == "post_install":
+    if args.validateprerequisites or "post_install" in args.action:
 
       if args.preqs_conf_file:
         self.__preqs_conf_file = args.preqs_conf_file
