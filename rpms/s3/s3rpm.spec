@@ -203,7 +203,7 @@ python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=
 
 # Install s3confstore python module
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore
-python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT
+python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
 
 # Install s3haproxyconfig python module
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/haproxy/s3haproxyconfig
