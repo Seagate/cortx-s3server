@@ -24,6 +24,7 @@
 USAGE="USAGE: bash $(basename "$0") [post_install]
                     [config]
                     [init]
+                    [test]
                     [cleanup]
                     --config <confstore-config-file-url-path>
 
@@ -35,6 +36,8 @@ config                   do configuration of openldap (with replicstion), haprox
                          create authjks keys.
 
 init                     create s3backgrounddelete, s3recoverytool s3 accounts
+
+test                     run s3 sanity tests
 
 cleanup                  cleanup S3 accounts created for backgrounddelete service and recovery tool
 
@@ -52,6 +55,7 @@ s3postinstall=false
 s3config=false
 s3init=false
 s3cleanup=false
+s3test=false
 
 cipherkey=""
 sgiamadminpassd=""
@@ -96,6 +100,9 @@ do
         ;;
     init )
         s3init=true
+        ;;
+    test )
+        s3test=true
         ;;
     cleanup )
         s3cleanup=true
@@ -348,7 +355,18 @@ then
     fi
 fi
 
+if [ $s3test == true ]
+then
+    cmd_out=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
+    if [[ $cmd_out == *"No such object"* ]];then
+        echo "ERROR: failed to find s3background delete account, exit."
+        exit 1
+    else
+        echo "PASS: S3-Sanity test passed."
+    fi
+fi
+
 if [ $s3cleanup == true ]
 then
-    s3setup --cleanup accounts --ldappasswd $ldappasswd
+    s3setup --cleanup accounts --ldappasswd "$ldappasswd"
 fi

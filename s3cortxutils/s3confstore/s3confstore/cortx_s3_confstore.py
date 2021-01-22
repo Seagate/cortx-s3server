@@ -124,6 +124,25 @@ class S3CortxConfStore:
 
     return privateip
 
+  def get_s3instance_count(self, machine_id: str):
+    """Get number of s3server instances from py-utils::confstore."""
+    s3instance_count = 0
+    dict_servernodes = None
+    server_node = ""
+    key_to_read_from_conf = 'cluster>server_nodes'
+
+    dict_servernodes = self.get_config(key_to_read_from_conf)
+    if dict_servernodes:
+      if machine_id in dict_servernodes.keys():
+        server_node = dict_servernodes[machine_id]
+        s3instance_count = self.get_config("cluster>{}>s3instance_count".format(server_node))
+      else:
+        print("Failed to find machine-id: {} in server_nodes attribute".format(machine_id))
+    else:
+      print("Failed to read key: {} from confstore".format(key_to_read_from_conf))
+
+    return s3instance_count
+
   def get_nodenames_list(self):
     """Get the FQDN of nodes in the cluster, from py-utils::confstore, and return a list of those."""
     nodes_list = []
@@ -163,6 +182,12 @@ class S3CortxConfStore:
     getprivateip = subparsers.add_parser('getprivateip', help='get privateip of the host of given machine-id')
     getprivateip.add_argument('--machineid', help='machine-id of the host, whose private ip to be read', type=str, required=True)
 
+    gets3instancecount = subparsers.add_parser('gets3instancecount', help='get s3instance count for node of given machine-id')
+    gets3instancecount.add_argument('--machineid',
+                                  help='machine-id of the node, whose s3instance count to be read',
+                                  type=str,
+                                  required=True)
+
     args = parser.parse_args()
 
     s3conf_store = S3CortxConfStore(args.config)
@@ -199,6 +224,13 @@ class S3CortxConfStore:
         print("{}".format(private_ip))
       else:
         sys.exit("Failed to read private ip from confstore of machineid: {}".format(args.machineid))
+
+    elif args.command == 'gets3instancecount':
+      s3instance_count = s3conf_store.get_s3instance_count(args.machineid)
+      if s3instance_count:
+        print("{}".format(s3instance_count))
+      else:
+        sys.exit("Failed to read s3instance count from confstore of machineid: {}".format(args.machineid))
 
     else:
       sys.exit("Invalid command option passed, see help.")

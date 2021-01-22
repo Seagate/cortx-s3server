@@ -26,35 +26,6 @@ set -e
 # S3 sanity test script #
 #########################
 
-USAGE="USAGE: bash $(basename "$0") -p <sgiamadmin user password>"
-
-if [ $# -lt 2 ]
-then
-  echo "$USAGE"
-  exit 1
-fi
-
-ldappasswd=''
-
-while getopts "p:" arg; do
-    case $arg in
-        p)
-            ldappasswd=$OPTARG
-            ;;
-        *)
-            echo "$USAGE"
-            exit 1
-            ;;
-    esac
-done
-shift "$((OPTIND-1))"
-
-if [ -z "$ldappasswd" ]; then
-    echo "ERROR: '$ldappasswd' is not valid password string."
-    echo "$USAGE"
-    exit 1
-fi
-
 if command -v s3cmd >/dev/null 2>&1;then
     printf "\nCheck S3CMD...OK"
 else
@@ -74,6 +45,9 @@ fi
 test_file_input=/tmp/SanityObjectToDeleteAfterUse.input
 test_output_file=/tmp/SanityObjectToDeleteAfterUse.out
 
+ldappasswd=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
+
+USAGE="USAGE: bash $(basename "$0")
 Run S3 sanity test.
 
 PRE-REQUISITES: s3cmd and s3iamcli need to be present

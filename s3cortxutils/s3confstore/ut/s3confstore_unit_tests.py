@@ -193,6 +193,13 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
     self.assertEqual(mock_get_return.call_count, 2)
 
   @mock.patch.object(Conf, 'get')
+  def test_get_s3instancecount_success(self, mock_get_return):
+    mock_get_return.side_effect = [{"mockmachineid-A": "mockserver_1"}, "5"]
+    s3confstore = S3CortxConfStore()
+    self.assertEqual(s3confstore.get_privateip("mockmachineid-A"), "5")
+    self.assertEqual(mock_get_return.call_count, 2)
+
+  @mock.patch.object(Conf, 'get')
   def test_get_nodenames_list_empty(self, mock_get_return):
     mock_get_return.return_value = None
     s3confstore = S3CortxConfStore()
