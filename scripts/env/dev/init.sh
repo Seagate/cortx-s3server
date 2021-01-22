@@ -217,12 +217,6 @@ then
   ./s3motr-build-depencies.sh
 fi
 
-# install cryptography
-pip3 install cryptography
-  
-#install python-ldap
-pip3 install python-ldap
-
 # configure backgrounddelete ST dependencies
 ./setup_backgrounddelete_config.sh
 
