@@ -372,6 +372,7 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/stop-s3-iopath-services.sh
 /opt/seagate/cortx/s3/reset/precheck.py
 /opt/seagate/cortx/s3/reset/reset_s3.sh
+/opt/seagate/cortx/s3/reset/clean_open_ldap_by_s3.sh
 /opt/seagate/cortx/s3/conf/setup.yaml
 /opt/seagate/cortx/s3/s3datarecovery/s3_data_recovery.sh
 /opt/seagate/cortx/datarecovery/orchastrator.sh
@@ -379,6 +380,7 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.yaml
 /opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml
 /opt/seagate/cortx/s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml
+/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_setup
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer
