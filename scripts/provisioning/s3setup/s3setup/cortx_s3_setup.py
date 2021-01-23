@@ -18,16 +18,21 @@
 
 import argparse
 import subprocess
-from s3backgrounddelete.cortx_s3_cipher import CortxS3Cipher
 import logging
 import re
-from s3backgrounddelete.cortx_cluster_config import CORTXClusterConfig, CipherInvalidToken
+import os
+import json
+from s3backgrounddelete.cortx_s3_cipher import CortxS3Cipher
+from s3backgrounddelete.cortx_cluster_config import CipherInvalidToken
+from cortx.utils.validator.v_pkg import PkgV
+from cortx.utils.validator.v_service import ServiceV
 
 logging.basicConfig(level=logging.INFO)
 # logging.basicConfig(level=logging.DEBUG)
 log=logging.getLogger('=>')
 
 class S3CortxSetup:
+  __preqs_conf_file="/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
 
   def __init__(self):
     """Instantiate S3CortxSetup."""
@@ -94,11 +99,8 @@ class S3CortxSetup:
     print ("Delete s3recovery tool account failed with: {}".format(error))
     return False
 
-  def accounts_cleanup(self, ldappasswd: str = None, s3background_cofig:str = "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"):
+  def accounts_cleanup(self, ldappasswd, s3background_cofig:str = "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"):
     """Clean up s3 accounts."""
-    if ldappasswd == None:
-      S3Cipher = CortxS3Cipher(None, True, 12, "openldap")
-      ldappasswd = S3Cipher.get_key()
     rc1 = self.delete_background_delete_account(ldappasswd, 22, "s3backgroundaccesskey", s3background_cofig)
     rc2 = self.delete_recovery_tool_account(ldappasswd, 22, "s3recoveryaccesskey", s3background_cofig)
     return rc1 & rc2
@@ -123,11 +125,32 @@ class S3CortxSetup:
     log.debug("\ncmd:{0},\noutput:{1},\nerror:{2}".format(cmd, output, error))
     return True
 
+  def validate_pre_requisites(self, rpms: list = None, pip3s: list = None, services: list = None):
+    try:
+      if pip3s:
+        PkgV().validate('pip3s', pip3s)
+      if services:
+        ServiceV().validate('isrunning', services)
+      if rpms:
+        PkgV().validate('rpms', rpms)
+    except Exception as e:
+      print(f"{e}, config:{self.__preqs_conf_file}")
+      return False
+    return True
+
   def run(self):
     parser = argparse.ArgumentParser(description='Cortx S3 Setup')
+    # parser.add_argument("post_install", help='Perform S3setup mini-provisioner post_install actions', action="store_true", default=False)
+    parser.add_argument("action", type=str, help='Perform S3setup mini-provisioner actions',nargs='*', choices=['post_install', 'cleanup' ])
     parser.add_argument("--cleanup", help='Cleanup S3 accounts and dependencies. Valid values: all/accounts/dependencies')
     # Future functionalities to be added here.
     parser.add_argument("--ldappasswd", help='ldap password, needed for --cleanup')
+    parser.add_argument("--validateprerequisites", help='validate prerequisites for mini-provisioner setup', action="store_true")
+    parser.add_argument("--preqs_conf_file", help='optional conf file location used with --validateprerequisites')
+    parser.add_argument("--config",
+                        help='config file url, check cortx-py-utils::confstore for supported formats.',
+                        type=str)
+
 
     args = parser.parse_args()
 
@@ -138,8 +161,6 @@ class S3CortxSetup:
       if args.cleanup == "accounts":
         if args.ldappasswd:
           rc = self.accounts_cleanup(args.ldappasswd)
-        else:
-          rc = self.accounts_cleanup()
         exit (not rc)
       elif args.cleanup == "dependencies":
         rc = self.dependencies_cleanup()
@@ -147,10 +168,27 @@ class S3CortxSetup:
       elif args.cleanup == "all":
         if args.ldappasswd: 
           rc1 = self.accounts_cleanup(args.ldappasswd)
-        else:
-          rc1 = self.accounts_cleanup()
         rc2 = self.dependencies_cleanup()
         exit (not (rc1 & rc2))
       else:
         print("Invalid input for cleanup {}. Valid values: all/accounts/dependencies".format(args.cleanup))
         exit (-2)
+
+    if args.validateprerequisites or "post_install" in args.action:
+
+      if args.preqs_conf_file:
+        self.__preqs_conf_file = args.preqs_conf_file
+
+      if not os.path.isfile(self.__preqs_conf_file):
+        print(f"preqs config file {self.__preqs_conf_file} not found")
+        exit (-2)
+
+      try:
+        with open(self.__preqs_conf_file) as preqs_conf:
+          preqs_conf_json = json.load(preqs_conf)
+      except Exception as e:
+        print(f"open() or json.load() failed: {e}")
+        exit (-2)
+
+      rc = self.validate_pre_requisites(rpms=preqs_conf_json['rpms'], services=preqs_conf_json['services'], pip3s=preqs_conf_json['pip3s'])
+      exit(not rc)
