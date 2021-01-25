@@ -135,7 +135,7 @@ class S3CortxConfStore:
     if dict_servernodes:
       if machine_id in dict_servernodes.keys():
         server_node = dict_servernodes[machine_id]
-        s3instance_count = self.get_config("cluster>{}>s3instance_count".format(server_node))
+        s3instance_count = self.get_config("cluster>{}>s3_instances".format(server_node))
       else:
         print("Failed to find machine-id: {} in server_nodes attribute".format(machine_id))
     else:

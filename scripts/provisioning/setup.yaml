@@ -32,7 +32,7 @@ s3:
     args: --config $URL
   test:
     cmd: s3_setup test
-    args: --config $URL [--plan $TYPE]
+    args: --config $URL
   reset:
     cmd: s3_setup reset
     args: --config $URL
