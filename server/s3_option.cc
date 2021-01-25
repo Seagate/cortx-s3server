@@ -1211,6 +1211,11 @@ void S3Option::set_s3server_obj_delayed_del_enabled(const bool& flag) {
   s3server_obj_delayed_del_enabled = flag;
 }
 
+bool S3Option::is_fake_motr_obj_op_read(m0_obj_opcode opcode) {
+  return is_fake_motr_openobj() && is_fake_motr_createobj() &&
+         is_fake_motr_readobj() && opcode == M0_OC_READ;
+}
+
 bool S3Option::is_fake_motr_openobj() { return FLAGS_fake_motr_openobj; }
 
 bool S3Option::is_fake_motr_createobj() { return FLAGS_fake_motr_createobj; }
