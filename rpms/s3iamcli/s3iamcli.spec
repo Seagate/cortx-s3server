@@ -102,7 +102,7 @@ echo "build complete"
 
 %install
 cd %{_builddir}/%{name}-%{version}-%{_s3iamcli_git_ver}
-python%{py_ver} setup.py install --no-compile --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT
+python%{py_ver} setup.py install --no-compile --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
 
 %clean
 rm -rf $RPM_BUILD_ROOT

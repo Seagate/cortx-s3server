@@ -17,13 +17,16 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 import os
+import sys
 from setuptools import setup
-files = ["VERSION"]
+files = []
 
 # Load the version
-current_script_path = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(current_script_path, 'VERSION')) as version_file:
-    s3setup_version = version_file.read().strip()
+s3setup_version = "2.0.0"
+for argument in sys.argv:
+    if argument.startswith("--version"):
+        s3setup_version = argument.split("=")[1]
+        sys.argv.remove(argument)
 
 setup(
   # Application name

@@ -30,7 +30,7 @@ BASEDIR=$(dirname "$SCRIPT_PATH")
 DEPLOY_TAG=
 # We use s3 server version for cert package versioning so to know certs package
 # was created for which version of S3.
-S3_VERSION=1.0.0
+S3_VERSION=2.0.0
 S3_DOMAIN=s3.seagate.com
 
 usage() { echo "Usage: $0 -T <short deployment tag> [-S <S3 version>]
