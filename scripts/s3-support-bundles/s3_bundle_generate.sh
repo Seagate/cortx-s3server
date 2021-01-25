@@ -23,16 +23,14 @@
 # Generate Support bundle for S3Server #
 #######################################################
 
-USAGE="USAGE: bash $(basename "$0") <bundleid> <path> <sgiamadmin_pass>
+USAGE="USAGE: bash $(basename "$0") <bundleid> <path>
 Generate support bundle for s3server.
 
 where:
 bundleid         Unique bundle-id used to identify support bundles.
-path             Location at which support bundle needs to be copied.
-sgiamadmin_pass  LDAP user: sgiamadmin password to run ldap search commands" 
+path             Location at which support bundle needs to be copied."
 
-
-if [ $# -lt 3 ]
+if [ $# -lt 2 ]
 then
   echo "$USAGE"
   exit 1
@@ -40,7 +38,8 @@ fi
 
 bundle_id=$1
 bundle_path=$2
-rootdnpasswd=$3
+# TODO: till we find out how to get rootdn password, keep 'rootdnpasswd' variable empty.
+rootdnpasswd=''
 
 bundle_name="s3_$bundle_id.tar.xz"
 s3_bundle_location=$bundle_path/s3
@@ -410,7 +409,7 @@ fi
 mkdir -p $ldap_dir
 if [[ $? != 0 || -z "$rootdnpasswd" ]]
 then
-    echo "ldap admin password: '$rootdnpasswd' is not correct, skipping collection of ldap data."
+    echo "ERROR: ldap admin password: '$rootdnpasswd' is not correct, skipping collection of ldap data."
 else
     # Run ldap commands
     ldapsearch -b "cn=config" -x -w "$rootdnpasswd" -D "cn=admin,cn=config" -H ldapi:/// > "$ldap_config"  2>&1

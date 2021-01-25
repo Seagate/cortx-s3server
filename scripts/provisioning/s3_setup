@@ -32,10 +32,12 @@ where:
 post_install             will do postinstall steps, which will include validation of
                          pre-requisite packages and services, like motr
 
-config                   do configuration of openldap (with replicstion), haproxy and
+config                   do configuration of openldap (with replication), haproxy and
                          create authjks keys.
 
-init                     create s3backgrounddelete, s3recoverytool s3 accounts
+init                     create s3backgrounddelete, s3recoverytool s3 accounts. Also sets
+                         log-rotation policies for haproxy, auditlogs and openldap, incase of
+                         'VM' environment.
 
 test                     run s3 sanity tests
 
@@ -85,7 +87,7 @@ fi
 if ! command -v s3setup &>/dev/null
 then
     echo "ERROR: s3setup not installed on the system, exiting."
-    exit 1
+    #exit 1
 fi
 
 
@@ -123,17 +125,34 @@ done
 
 if [ -z "$confstore_config_url" ]
 then
-    echo "ERROR: --config option is mandatory and value should be a valid URL path, exiting"
+    echo "ERROR: --config option is mandatory and value should be a valid URL path, exiting."
     exit 1
 fi
 
 
 get_ldap_password()
 {
-    cipherkey=$(s3cipher --generate_key --const_key  openldap 2>/dev/null)
-    sgiamadminpassd=$(s3confstore "$confstore_config_url" getkey --key "openldap>sgiam>secret")
-    # decrypt the password read from the confstore
-    ldappasswd=$(s3cipher --decrypt --data $sgiamadminpassd --key $cipherkey 2>/dev/null)
+    cipherkey=$(s3cipher --generate_key --const_key openldap)
+    if [ ! -z "$cipherkey" ]
+    then
+        sgiamadminpassd=$(s3confstore "$confstore_config_url" getkey --key "openldap>sgiam>secret")
+        if [ ! -z "$sgiamadminpassd" ]
+        then
+            # decrypt the password read from the confstore
+            ldappasswd=$(s3cipher --decrypt --data "$sgiamadminpassd" --key "$cipherkey")
+            if [ -z "$ldappasswd" ]
+            then
+                echo "ERROR: failed to decrypt sgiamadmin user's ldap password, exiting."
+                exit 1
+            fi
+        else
+            echo "ERROR: failed to read sgiamadmin user's ldap password from confstore, exiting."
+            exit 1
+        fi
+    else
+        echo "ERROR: failed to generate cipher key, exiting."
+        exit 1
+    fi
 }
 
 # get openldap password from confstore
@@ -164,12 +183,17 @@ create_auth_jks_password()
 configure_openldap()
 {
     /opt/seagate/cortx/s3/install/ldap/setup_ldap.sh --confurl "$confstore_config_url" --defaultpasswd --skipssl
-
+    if [ $? -ne 0 ]
+    then
+        echo "ERROR: failed to configure openldap, exiting."
+        exit 1
+    fi
     # check number of nodes in the cluster
     server_nodes_count=$(s3confstore "$confstore_config_url" getnodecount)
     if [ "$server_nodes_count" -gt 1 ]
     then
         hosts_str=$(s3confstore "$confstore_config_url" getnodenames)
+        echo "INFO: hostnames str: [$hosts_arr]"
         read -ra hosts_arr <<< "$hosts_str"
         for host in "${hosts_arr[@]}"
         do
@@ -177,6 +201,11 @@ configure_openldap()
         done
         echo "setting ldap-replication on all cluster nodes.."
         /opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh -h hosts_list_file.txt -p "$ldappasswd"
+        if [ $? -ne 0 ]
+        then
+            echo "ERROR: failed to configure ldap replication, exiting."
+            exit 1
+        fi
         rm -f hosts_list_file.txt
     else
         echo "INFO: Not setting ldap-replication as 'cluster>node_count' is less than 2."
