@@ -18,12 +18,16 @@
 #
 import os
 from setuptools import setup
-files = ["VERSION"]
+import sys
+
+files = []
 
 # Load the version
-current_script_path = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(current_script_path, 'VERSION')) as version_file:
-    s3confstore_version = version_file.read().strip()
+s3confstore_version = "2.0.0"
+for argument in sys.argv:
+    if argument.startswith("--version"):
+        s3confstore_version = argument.split("=")[1]
+        sys.argv.remove(argument)
 
 setup(
   # Application name
