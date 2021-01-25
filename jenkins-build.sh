@@ -570,7 +570,7 @@ tail -50 /var/log/seagate/s3/s3server.ERROR || echo "No Errors"
 # jenkins pipeline to give this argument.
 if [ ! -z "$generate_support_bundle" ]
 then
-  /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh "$gid-$job_id" "$generate_support_bundle"
+  /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh "$gid-$job_id" "$generate_support_bundle" "$ldap_admin_pwd"
 fi
 
 cd $MOTR_SRC
