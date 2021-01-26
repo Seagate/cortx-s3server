@@ -1,3 +1,4 @@
+#!/usr/bin/python3.6
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -16,8 +17,6 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-
-#!/usr/bin/python3.6
 
 import mock
 import unittest
@@ -48,7 +47,6 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
     conf_url='json://' + path
 
     s3confstore = S3CortxConfStore(conf_url, index)
-
     result_data = s3confstore.get_config('cluster')
     if 'cluster_id' not in result_data:
       os.remove(path)
@@ -192,6 +190,13 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
     mock_get_return.side_effect = [{"mockmachineid-A": "mockserver_1"}, "1.2.3.4"]
     s3confstore = S3CortxConfStore()
     self.assertEqual(s3confstore.get_privateip("mockmachineid-A"), "1.2.3.4")
+    self.assertEqual(mock_get_return.call_count, 2)
+
+  @mock.patch.object(Conf, 'get')
+  def test_get_s3instancecount_success(self, mock_get_return):
+    mock_get_return.side_effect = [{"mockmachineid-A": "mockserver_1"}, "5"]
+    s3confstore = S3CortxConfStore()
+    self.assertEqual(s3confstore.get_privateip("mockmachineid-A"), "5")
     self.assertEqual(mock_get_return.call_count, 2)
 
   @mock.patch.object(Conf, 'get')
