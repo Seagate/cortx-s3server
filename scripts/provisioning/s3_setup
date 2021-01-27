@@ -337,7 +337,7 @@ set_logrotate_policy_ova() {
 if [ $s3postinstall == true ]
 then
     echo "INFO: running post_install..."
-    # exit 0
+    s3setup post_install
 fi
 
 if [ $s3config == true ]
@@ -362,6 +362,14 @@ then
         exit 1
     fi
 
+    echo "INFO: copying ssl certificate.."
+    cp -f /opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem /etc/ssl/stx-s3/s3/
+
+    if [ ! -f "/etc/ssl/stx-s3/s3/s3.seagate.com.pem" ]
+    then
+        echo "ERROR: failed to copy 's3.seagate.com.pem' file to '/etc/ssl/stx-s3/s3', exiting."
+        exit 1
+    fi
 fi
 
 if [ $s3init == true ]
