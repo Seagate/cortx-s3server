@@ -28,7 +28,7 @@ import yaml
 from s3backgrounddelete.cortx_cluster_config import CipherInvalidToken
 
 try:
-    from s3backgrounddelete.cortx_s3_cipher import CortxS3Cipher
+    from s3cipher.cortx_s3_cipher import CortxS3Cipher
 except (ModuleNotFoundError, ImportError):
     # Cort-utils will not be installed in dev VM's
     pass
