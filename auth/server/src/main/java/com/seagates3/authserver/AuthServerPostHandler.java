@@ -72,6 +72,15 @@ public class AuthServerPostHandler {
           AuthServerConfig.setReqId(BinaryUtil.getAlphaNumericUUID());
         }
 
+        String stripped_request_id = AuthServerConfig.getReqId();
+        AuthServerConfig.setStripedReqId(stripped_request_id);
+        LOGGER.info("Generating Stripped ReqId");
+
+        if (stripped_request_id.length() > 10) {
+          AuthServerConfig.setStripedReqId(
+              stripped_request_id.substring(stripped_request_id.length() - 12));
+        }
+
         if (httpRequest.uri().startsWith("/saml")) {
             LOGGER.debug("Calling SAML WebSSOControler.");
             FullHttpResponse response = new SAMLWebSSOController(requestBody)
@@ -114,7 +123,7 @@ public class AuthServerPostHandler {
 
     private void returnHTTPResponse(FullHttpResponse response) {
 
-       LOGGER.info("Sending HTTP Response code [" + response.status() + "]");
+       LOGGER.info("HTTP Response [" + response.status() + "]");
 
         if (!keepAlive) {
             ctx.write(response).addListener(ChannelFutureListener.CLOSE);

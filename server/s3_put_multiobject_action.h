@@ -44,6 +44,7 @@ class S3PutMultiObjectAction : public S3ObjectAction {
   int part_number;
   std::string upload_id;
   int layout_id;
+  unsigned motr_write_payload_size;
 
   int get_part_number() {
     return atoi((request->get_query_string_value("partNumber")).c_str());
@@ -71,7 +72,8 @@ class S3PutMultiObjectAction : public S3ObjectAction {
   std::shared_ptr<S3AuthClientFactory> auth_factory;
 
   // Used only for UT
-  void _set_layout_id(int layoutid) { layout_id = layoutid; }
+ protected:
+  void _set_layout_id(int layoutid);
 
  public:
   S3PutMultiObjectAction(

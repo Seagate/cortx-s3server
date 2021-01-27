@@ -28,11 +28,12 @@ S3HeadObjectAction::S3HeadObjectAction(
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
                      std::move(object_meta_factory)) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
-  s3_log(
-      S3_LOG_INFO, request_id, "S3 API: Head Object. Bucket[%s] Object[%s]\n",
-      request->get_bucket_name().c_str(), request->get_object_name().c_str());
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "S3 API: Head Object. Bucket[%s] Object[%s]\n",
+         request->get_bucket_name().c_str(),
+         request->get_object_name().c_str());
 
   setup_steps();
 }
@@ -44,7 +45,7 @@ void S3HeadObjectAction::setup_steps() {
 }
 
 void S3HeadObjectAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
   } else if (bucket_metadata->get_state() ==
@@ -56,11 +57,11 @@ void S3HeadObjectAction::fetch_bucket_info_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3HeadObjectAction::fetch_object_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (object_metadata->get_state() == S3ObjectMetadataState::present) {
     struct m0_uint128 object_list_index_oid =
         bucket_metadata->get_object_list_index_oid();
@@ -86,11 +87,11 @@ void S3HeadObjectAction::fetch_object_info_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3HeadObjectAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -136,5 +137,5 @@ void S3HeadObjectAction::send_response_to_s3_client() {
     request->send_response(error.get_http_status_code(), response_xml);
   }
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

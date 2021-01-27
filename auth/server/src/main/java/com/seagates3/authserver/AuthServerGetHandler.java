@@ -92,6 +92,15 @@ class AuthServerGetHandler {
       AuthServerConfig.setReqId(BinaryUtil.getAlphaNumericUUID());
     }
 
+    String stripped_request_id = AuthServerConfig.getReqId();
+    AuthServerConfig.setStripedReqId(stripped_request_id);
+    LOGGER.info("Generating Stripped ReqId");
+
+    if (stripped_request_id.length() > 12) {
+      AuthServerConfig.setStripedReqId(
+          stripped_request_id.substring(stripped_request_id.length() - 12));
+    }
+
     if (httpRequest.uri().startsWith("/static")) {
       Path staticFilePath =
           Paths.get(AuthServerConstants.RESOURCE_DIR, httpRequest.uri());
@@ -150,11 +159,10 @@ class AuthServerGetHandler {
           HttpVersion.HTTP_1_1, requestResponse.getResponseStatus(),
           Unpooled.wrappedBuffer(responseBody.getBytes("UTF-8")));
 
-      LOGGER.info("Sending HTTP Response code [" + response.status() + "]");
+      LOGGER.info("HTTP Response [" + response.status() + "]");
     }
     catch (UnsupportedEncodingException ex) {
-      IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
-                  "UTF-8 encoding is not supported", null);
+      LOGGER.error("UTF-8 encoding is not supported.");
       response = null;
     }
     if (response != null) {
@@ -243,8 +251,7 @@ class AuthServerGetHandler {
       LOGGER.debug("Error response sent.");
     }
     catch (UnsupportedEncodingException ex) {
-      IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
-                  "UTF-8 encoding is not supported", null);
+      LOGGER.error("UTF-8 encoding is not supported.");
       httpResponse = null;
     }
     if (httpResponse != null) {

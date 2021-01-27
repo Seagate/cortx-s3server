@@ -27,7 +27,7 @@ OS=$(cat /etc/os-release | grep -w ID | cut -d '=' -f 2)
 VERSION=$(cat /etc/os-release | grep -w VERSION_ID | cut -d '=' -f 2)
 
 GIT_VER=
-S3IAMCLI_VERSION=1.0.0
+S3IAMCLI_VERSION=2.0.0
 VER_PATH_EXCL=0
 PATH_SRC=""
 

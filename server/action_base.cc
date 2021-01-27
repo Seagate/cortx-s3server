@@ -55,9 +55,10 @@ Action::Action(std::shared_ptr<RequestObject> req, bool check_shutdown,
 
   addb_action_type_id = S3_ADDB_ACTION_BASE_ID;
   request_id = base_request->get_request_id();
+  stripped_request_id = base_request->get_stripped_request_id();
   addb_request_id = base_request->addb_request_id;
 
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   task_iteration_index = 0;
   rollback_index = 0;
 
@@ -76,7 +77,7 @@ Action::Action(std::shared_ptr<RequestObject> req, bool check_shutdown,
   setup_steps();
 }
 
-Action::~Action() { s3_log(S3_LOG_DEBUG, request_id, "Destructor\n"); }
+Action::~Action() { s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__); }
 
 void Action::set_s3_error(std::string code) {
   state = ACTS_ERROR;
@@ -141,7 +142,7 @@ void Action::check_authorization_header() {
 void Action::start() {
 
   if (check_shutdown_signal && check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
 
@@ -157,7 +158,7 @@ void Action::start() {
 // Step to next async step.
 void Action::next() {
   if (check_shutdown_signal && check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }
   if (base_request->is_s3_client_read_error() && !cleanup_started) {
@@ -214,7 +215,7 @@ void Action::abort() {
 
 // rollback async steps
 void Action::rollback_start() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   base_request->stop_processing_incoming_data();
   if (rollback_state > ACTS_START) {
     s3_log(S3_LOG_WARN, request_id,
@@ -229,32 +230,32 @@ void Action::rollback_start() {
     s3_log(S3_LOG_DEBUG, request_id, "Rollback triggered on empty list\n");
     rollback_done();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void Action::rollback_next() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   if (rollback_index < rollback_list.size()) {
     // Call step and move index to next
     rollback_list[rollback_index++]();
   } else {
     rollback_done();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void Action::rollback_done() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   rollback_index = 0;
   rollback_state = ACTS_COMPLETE;
   rollback_exit();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void Action::rollback_exit() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void Action::check_authentication() {
@@ -265,7 +266,7 @@ void Action::check_authentication() {
 }
 
 void Action::check_authentication_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
 
   auth_timer.stop();
   const auto mss = auth_timer.elapsed_time_in_millisec();
@@ -273,11 +274,11 @@ void Action::check_authentication_successful() {
   s3_stats_timing("check_authentication", mss);
 
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void Action::check_authentication_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   if (base_request->client_connected()) {
     std::string error_code = auth_client->get_error_code();
     std::string error_message = auth_client->get_error_message();
@@ -293,11 +294,11 @@ void Action::check_authentication_failed() {
     base_request->respond_error(error_code, {}, error_message);
   }
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 bool Action::check_shutdown_and_rollback(bool check_auth_op_aborted) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   bool is_s3_shutting_down =
       S3Option::get_instance()->get_is_s3_shutting_down();
   if (is_s3_shutting_down) {
@@ -307,7 +308,7 @@ bool Action::check_shutdown_and_rollback(bool check_auth_op_aborted) {
       get_auth_client()->is_chunk_auth_op_aborted()) {
     // Cleanup/rollback will be done after response.
     send_response_to_s3_client();
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return is_s3_shutting_down;
   }
   if (!is_response_scheduled && is_s3_shutting_down) {
@@ -319,14 +320,14 @@ bool Action::check_shutdown_and_rollback(bool check_auth_op_aborted) {
     }
     // Cleanup/rollback will be done after response.
     send_response_to_s3_client();
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return is_s3_shutting_down;
 }
 
 void Action::send_retry_error_to_s3_client(int retry_after_in_secs) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   base_request->respond_retry_after(1);
   done();
 }

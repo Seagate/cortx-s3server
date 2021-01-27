@@ -62,6 +62,7 @@ class S3GlobalBucketIndexMetadata {
   // region
   std::string location_constraint;
   std::string request_id;
+  std::string stripped_request_id;
 
   std::shared_ptr<S3RequestObject> request;
   std::shared_ptr<MotrAPI> s3_motr_api;
@@ -79,9 +80,18 @@ class S3GlobalBucketIndexMetadata {
   // `true` in case of json parsing failure
   bool json_parsing_error;
 
+  void initialize(const std::string& str_bucket_name = "");
+
  public:
   S3GlobalBucketIndexMetadata(
       std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<MotrAPI> s3_motr_apii = nullptr,
+      std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory =
+          nullptr,
+      std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory =
+          nullptr);
+  S3GlobalBucketIndexMetadata(
+      std::shared_ptr<S3RequestObject> req, const std::string& str_bucket_name,
       std::shared_ptr<MotrAPI> s3_motr_apii = nullptr,
       std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory =
           nullptr,

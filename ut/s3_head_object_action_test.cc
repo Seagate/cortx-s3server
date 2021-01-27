@@ -38,18 +38,22 @@ using ::testing::AtLeast;
     action_under_test->fetch_bucket_info();                               \
   } while (0)
 
-#define CREATE_OBJECT_METADATA                                                \
-  do {                                                                        \
-    CREATE_BUCKET_METADATA;                                                   \
-    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(     \
-        object_list_indx_oid);                                                \
-    bucket_meta_factory->mock_bucket_metadata                                 \
-        ->set_objects_version_list_index_oid(objects_version_list_index_oid); \
-    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))     \
-        .Times(AtLeast(1));                                                   \
-    EXPECT_CALL(*(mock_request), http_verb())                                 \
-        .WillOnce(Return(S3HttpVerb::HEAD));                                  \
-    action_under_test->fetch_object_info();                                   \
+#define CREATE_OBJECT_METADATA                                            \
+  do {                                                                    \
+    CREATE_BUCKET_METADATA;                                               \
+    EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
+                get_object_list_index_oid())                              \
+        .Times(AtLeast(1))                                                \
+        .WillRepeatedly(Return(object_list_indx_oid));                    \
+    EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
+                get_objects_version_list_index_oid())                     \
+        .Times(AtLeast(1))                                                \
+        .WillRepeatedly(Return(objects_version_list_index_oid));          \
+    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _)) \
+        .Times(AtLeast(1));                                               \
+    EXPECT_CALL(*(mock_request), http_verb())                             \
+        .WillOnce(Return(S3HttpVerb::HEAD));                              \
+    action_under_test->fetch_object_info();                               \
   } while (0)
 
 class S3HeadObjectActionTest : public testing::Test {
@@ -240,6 +244,12 @@ TEST_F(S3HeadObjectActionTest, SendSuccessResponse) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
+
+  std::map<std::string, std::string> meta_map{{"key", "value"}};
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_user_attributes())
+      .Times(1)
+      .WillOnce(ReturnRef(meta_map));
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _))

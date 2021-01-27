@@ -286,3 +286,32 @@ TEST_F(S3CommonUtilitiesTest, VerifyXORObfuscation) {
   std::string output = pXORObfuscator->decode(strObfuscated);
   EXPECT_TRUE(input == output);
 }
+
+TEST_F(S3CommonUtilitiesTest, SizeBucketingOfObjects) {
+
+  std::string original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 0);
+  EXPECT_EQ("IXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 1025);
+  EXPECT_EQ("HXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 52428800);
+  EXPECT_EQ("GXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string, 52428801);
+  EXPECT_EQ("FXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string,
+                                                     107374182400);
+  EXPECT_EQ("EXYZ", original_string);
+
+  original_string = "XYZ";
+  S3CommonUtilities::size_based_bucketing_of_objects(original_string,
+                                                     107374182401);
+  EXPECT_EQ("DXYZ", original_string);
+}

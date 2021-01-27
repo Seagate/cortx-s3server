@@ -41,7 +41,7 @@ class S3FakeMotrRedisKvs {
   static std::unique_ptr<S3FakeMotrRedisKvs> inst;
 
   static void connect_cb(const redisAsyncContext *c, int status) {
-    s3_log(S3_LOG_DEBUG, "", "Entering");
+    s3_log(S3_LOG_DEBUG, "", "%s Entry", __func__);
     if (status != REDIS_OK) {
       auto opts = S3Option::get_instance();
       s3_log(S3_LOG_FATAL, "", "Redis@%s:%d connect error: %s",
@@ -49,12 +49,12 @@ class S3FakeMotrRedisKvs {
              c->errstr);
     }
 
-    s3_log(S3_LOG_DEBUG, "", "Exiting status %d", status);
+    s3_log(S3_LOG_DEBUG, "", "%s Exit status %d", __func__, status);
   }
 
  private:
   S3FakeMotrRedisKvs() {
-    s3_log(S3_LOG_DEBUG, "", "Entering");
+    s3_log(S3_LOG_DEBUG, "", "%s Entry", __func__);
     auto opts = S3Option::get_instance();
     redis_ctx = redisAsyncConnect(opts->get_redis_srv_addr().c_str(),
                                   opts->get_redis_srv_port());
@@ -64,7 +64,7 @@ class S3FakeMotrRedisKvs {
 
     redisLibeventAttach(redis_ctx, opts->get_eventbase());
     redisAsyncSetConnectCallback(redis_ctx, connect_cb);
-    s3_log(S3_LOG_DEBUG, "", "Exiting");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   }
 
   void close() {

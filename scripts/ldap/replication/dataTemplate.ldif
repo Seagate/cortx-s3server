@@ -1,6 +1,3 @@
-dn: olcDatabase={2}mdb,cn=config
-changetype: modify
-add: olcSyncRepl
 olcSyncRepl: rid=00${rid}
   provider=ldap://${provider}:389/
   bindmethod=simple

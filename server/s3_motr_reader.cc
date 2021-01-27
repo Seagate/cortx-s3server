@@ -45,7 +45,8 @@ S3MotrReader::S3MotrReader(std::shared_ptr<RequestObject> req,
       is_object_opened(false),
       obj_ctx(nullptr) {
   request_id = request->get_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  stripped_request_id = request->get_stripped_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   if (motr_api) {
     s3_motr_api = motr_api;
@@ -78,8 +79,8 @@ void S3MotrReader::clean_up_contexts() {
 bool S3MotrReader::read_object_data(size_t num_of_blocks,
                                     std::function<void(void)> on_success,
                                     std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id,
-         "Entering with num_of_blocks = %zu from last_index = %zu\n",
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "%s Entry with num_of_blocks = %zu from last_index = %zu\n", __func__,
          num_of_blocks, last_index);
 
   bool rc = true;
@@ -103,7 +104,7 @@ bool S3MotrReader::read_object_data(size_t num_of_blocks,
       rc = false;
     }
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return rc;
 }
 
@@ -127,13 +128,13 @@ bool S3MotrReader::check_object_exist(std::function<void(void)> on_success,
     }
   }
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return rc;
 }
 
 int S3MotrReader::open_object(std::function<void(void)> on_success,
                               std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   int rc = 0;
 
   is_object_opened = false;
@@ -176,7 +177,7 @@ int S3MotrReader::open_object(std::function<void(void)> on_success,
   ctx->ops[0]->op_datum = (void *)op_ctx;
   s3_motr_api->motr_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
 
-  s3_log(S3_LOG_INFO, request_id,
+  s3_log(S3_LOG_INFO, stripped_request_id,
          "Motr API: openobj(oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid.u_hi, oid.u_lo);
@@ -184,13 +185,13 @@ int S3MotrReader::open_object(std::function<void(void)> on_success,
   s3_motr_api->motr_op_launch(request->addb_request_id, ctx->ops, 1,
                               MotrOpType::openobj);
   global_motr_object_ops_list.insert(ctx);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return rc;
 }
 
 void S3MotrReader::open_object_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  s3_log(S3_LOG_INFO, request_id,
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_INFO, stripped_request_id,
          "Motr API Successful: openobj(oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid.u_hi, oid.u_lo);
@@ -203,14 +204,14 @@ void S3MotrReader::open_object_successful() {
         this->handler_on_failed();
       }
     }
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   } else {
     this->handler_on_success();
   }
 }
 
 void S3MotrReader::open_object_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (state != S3MotrReaderOpState::failed_to_launch) {
     s3_log(S3_LOG_DEBUG, request_id, "errno = %d\n",
            open_context->get_errno_for(0));
@@ -225,14 +226,14 @@ void S3MotrReader::open_object_failed() {
   }
   this->handler_on_failed();
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 bool S3MotrReader::read_object() {
   int rc;
-  s3_log(S3_LOG_INFO, request_id,
-         "Entering with num_of_blocks_to_read = %zu from last_index = %zu\n",
-         num_of_blocks_to_read, last_index);
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "%s Entry with num_of_blocks_to_read = %zu from last_index = %zu\n",
+         __func__, num_of_blocks_to_read, last_index);
 
   assert(is_object_opened);
 
@@ -285,7 +286,7 @@ bool S3MotrReader::read_object() {
 
   reader_context->start_timer_for("read_object_data");
 
-  s3_log(S3_LOG_INFO, request_id,
+  s3_log(S3_LOG_INFO, stripped_request_id,
          "Motr API: readobj(operation: M0_OC_READ, oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid.u_hi, oid.u_lo);
@@ -293,23 +294,23 @@ bool S3MotrReader::read_object() {
   s3_motr_api->motr_op_launch(request->addb_request_id, ctx->ops, 1,
                               MotrOpType::readobj);
   global_motr_object_ops_list.insert(ctx);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return true;
 }
 
 void S3MotrReader::read_object_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  s3_log(S3_LOG_INFO, request_id,
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_INFO, stripped_request_id,
          "Motr API Successful: readobj(oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid.u_hi, oid.u_lo);
   state = S3MotrReaderOpState::success;
   this->handler_on_success();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3MotrReader::read_object_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, request_id, "errno = %d\n",
          reader_context->get_errno_for(0));
   if (reader_context->get_errno_for(0) == -ENOENT) {
@@ -331,19 +332,37 @@ size_t S3MotrReader::get_first_block(char **data) {
 
 // Returns size of data in next block and -1 if there is no content or done
 size_t S3MotrReader::get_next_block(char **data) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, request_id,
          "num_of_blocks_to_read = %zu from iteration_index = %zu\n",
          num_of_blocks_to_read, iteration_index);
   size_t data_read = 0;
   if (iteration_index == num_of_blocks_to_read) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return 0;
   }
 
   *data = (char *)motr_rw_op_context->data->ov_buf[iteration_index];
   data_read = motr_rw_op_context->data->ov_vec.v_count[iteration_index];
   iteration_index++;
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return data_read;
+}
+
+S3BufferSequence S3MotrReader::extract_blocks_read() {
+
+  S3BufferSequence buffer_sequence;
+  auto *const bufvec = motr_rw_op_context->data;
+
+  assert(bufvec != nullptr);
+  assert(!iteration_index);
+  assert(num_of_blocks_to_read == bufvec->ov_vec.v_nr);
+
+  for (; iteration_index < num_of_blocks_to_read; ++iteration_index) {
+    buffer_sequence.emplace_back(bufvec->ov_buf[iteration_index],
+                                 bufvec->ov_vec.v_count[iteration_index]);
+  }
+  motr_rw_op_context->allocated_bufs = false;
+
+  return buffer_sequence;
 }

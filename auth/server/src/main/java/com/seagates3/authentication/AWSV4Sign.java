@@ -287,9 +287,8 @@ public class AWSV4Sign implements AWSSign {
                         clientRequestToken.getRequestPayload().getBytes());
                 hashedPayload = new String(BinaryUtil.encodeToHex(hashedText)).toLowerCase();
             } catch (NoSuchMethodException | IllegalAccessException ex) {
-                IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.NO_SUCH_METHOD_EX,
-                        "Failed to invoke method",
-                        String.format("\"cause\": \"%s\"", ex.getCause()));
+              LOGGER.error("Failed to invoke method.",
+                           String.format("\"cause\": \"%s\"", ex.getCause()));
                 LOGGER.error("Exception description: ", ex);
             } catch (SecurityException | IllegalArgumentException |
                     InvocationTargetException ex) {
@@ -381,8 +380,7 @@ public class AWSV4Sign implements AWSSign {
                     "aws4_request".getBytes("UTF-8"));
             return kSigning;
         } catch (UnsupportedEncodingException ex) {
-            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
-                    "UTF-8 encoding is not supported", null);
+          LOGGER.error("UTF-8 encoding is not supported.");
         }
 
         return null;
@@ -399,8 +397,7 @@ public class AWSV4Sign implements AWSSign {
                     stringToSign.getBytes("UTF-8"));
             return BinaryUtil.toHex(signature);
         } catch (UnsupportedEncodingException ex) {
-            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
-                    "UTF-8 encoding is not supported", null);
+          LOGGER.error("UTF-8 encoding is not supported.");
         }
 
         return null;
@@ -440,7 +437,7 @@ public class AWSV4Sign implements AWSSign {
 
                 throw new InvalidTokenException(errMsg);
               }
-            }
+            } else {
             headerValue = headerValue.trim();
             if (s.equalsIgnoreCase("content-type")) {
                 /*
@@ -454,6 +451,7 @@ public class AWSV4Sign implements AWSSign {
                 }
             } else {
                 canonicalHeader += String.format("%s:%s\n", s, headerValue);
+            }
             }
         }
 

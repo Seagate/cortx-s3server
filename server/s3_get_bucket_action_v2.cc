@@ -51,15 +51,19 @@ S3GetBucketActionV2::S3GetBucketActionV2(
     obfuscator = std::make_shared<S3CommonUtilities::S3XORObfuscator>();
   }
 
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-  s3_log(S3_LOG_INFO, request_id, "S3 API: Get Bucket(List Objects V2).\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "S3 API: Get Bucket(List Objects V2).\n");
 }
 
 S3GetBucketActionV2::~S3GetBucketActionV2() {}
 
 void S3GetBucketActionV2::validate_request() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  s3_log(S3_LOG_INFO, request_id, "Validate ListObjects V2 request\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_INFO, stripped_request_id, "Validate ListObjects V2 request\n");
+
+  std::shared_ptr<S3ObjectListResponseV2> obj_v2_list =
+      std::dynamic_pointer_cast<S3ObjectListResponseV2>(object_list);
 
   bool is_cont_token_present = false;
   is_cont_token_present = request->has_query_param_key("continuation-token");
@@ -75,8 +79,6 @@ void S3GetBucketActionV2::validate_request() {
   s3_log(S3_LOG_DEBUG, request_id, "start-after = %s\n",
          request_start_after.c_str());
 
-  std::shared_ptr<S3ObjectListResponseV2> obj_v2_list =
-      std::dynamic_pointer_cast<S3ObjectListResponseV2>(object_list);
   if (obj_v2_list) {
     if (is_cont_token_present) {
       obj_v2_list->set_continuation_token(request_cont_token);
@@ -104,7 +106,7 @@ void S3GetBucketActionV2::after_validate_request() {
 }
 
 void S3GetBucketActionV2::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -134,7 +136,8 @@ void S3GetBucketActionV2::send_response_to_s3_client() {
       std::string enc_token =
           base64_encode((const unsigned char*)obfuscated_nextmarker.c_str(),
                         obfuscated_nextmarker.size());
-      obj_v2_list->set_next_marker_key(enc_token);
+      // Do not URL encode NextContinuationToken
+      obj_v2_list->set_next_marker_key(enc_token, false);
       std::string& response_xml = obj_v2_list->get_xml(
           request->get_canonical_id(), bucket_metadata->get_owner_id(),
           request->get_user_id());
@@ -144,6 +147,9 @@ void S3GetBucketActionV2::send_response_to_s3_client() {
       request->set_bytes_sent(response_xml.length());
       s3_log(S3_LOG_DEBUG, request_id, "Object list V2 response_xml = %s\n",
              response_xml.c_str());
+      // Total visited/touched keys in the bucket
+      s3_log(S3_LOG_INFO, stripped_request_id, "Total keys visited = %zu\n",
+             total_keys_visited);
       request->send_response(S3HttpSuccess200, response_xml);
     }
   } else {
@@ -158,5 +164,5 @@ void S3GetBucketActionV2::send_response_to_s3_client() {
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

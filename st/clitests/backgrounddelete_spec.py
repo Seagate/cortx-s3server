@@ -32,8 +32,10 @@ from auth import AuthTest
 from s3fi import S3fiTest
 from awss3api import AwsTest
 from s3cmd import S3cmdTest
+from s3kvstool import S3kvTest
 import s3kvs
 import time
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS, RABBIT_MQ
 
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__),  '../../s3backgrounddelete/s3backgrounddelete')))
@@ -79,8 +81,6 @@ def load_and_update_config(access_key_value, secret_key_value):
 
     with open(bgdelete_config_file, 'r') as f:
             config = yaml.safe_load(f)
-            config['cortx_s3']['background_account_access_key'] = access_key_value
-            config['cortx_s3']['background_account_secret_key'] = secret_key_value
             config['cortx_s3']['daemon_mode'] = False
             config['leakconfig']['leak_processing_delay_in_mins'] = 0
             config['leakconfig']['version_processing_delay_in_mins'] = 0
@@ -128,12 +128,11 @@ def perform_head_object(oid_dict):
 
 # *********************Create account s3-background-delete-svc************************
 test_msg = "Create account s3-background-delete-svc"
-account_args = {'AccountName': 's3-background-delete-svc',\
-                'Email': 's3-background-delete-svc@seagate.com',\
+account_args = {'action' : "CreateBGDeleteAccount",
                 'ldapuser': S3ClientConfig.ldapuser,\
                 'ldappasswd': S3ClientConfig.ldappasswd}
-account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
-result = AuthTest(test_msg).create_account(**account_args).execute_test()
+account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/\+-]*$"
+result = AuthTest(test_msg).create_cipher_account(**account_args).execute_test()
 result.command_should_match_pattern(account_response_pattern)
 account_response_elements = AuthTest.get_response_elements(result.status.stdout)
 print(account_response_elements)
@@ -191,7 +190,15 @@ time.sleep(5)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
+
 print("Scheduler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -245,7 +252,14 @@ time.sleep(5)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
 print("Schdeuler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -308,7 +322,15 @@ object3_new_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
+
 print("Scheduler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -366,7 +388,15 @@ S3fiTest('Disable FI motr entity delete fail')\
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
+
 print("Schdeuler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -457,7 +487,15 @@ S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fa
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
+
 print("Schdeuler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -516,7 +554,15 @@ S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fa
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
+
 print("Schdeuler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -591,7 +637,15 @@ time.sleep(5)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
-scheduler.add_kv_to_queue()
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
+
 print("Schdeuler has stopped...")
 # ************* Start Processor****************************
 print("Running Processor...")
@@ -620,6 +674,163 @@ if (not status):
 else:
     assert False, "Error: Unable to verify part index leak"
 
+"""
+Test Scenario : 8
+Scenario: Delayed delete object test (DELETE api test)
+   1. create object and the get OID, layout_id from response
+   2. delete object
+   3. run background delete schedular
+   4. run background delete processor
+   5. verify cleanup of OID using HEAD api
+   6. verify cleanup of Object using aws s3api head-object api
+"""
+# ********** Upload objects in bucket*************************
+result = AwsTest('Upload Object "object1" to bucket "seagatebucket"')\
+    .put_object("seagatebucket", "object1", 3000, debug_flag="True")\
+    .execute_test(ignore_err=True).command_is_successful()
+
+result = AwsTest('Delete Object "object1" from bucket "seagatebucket"')\
+    .delete_object("seagatebucket", "object1")\
+    .execute_test(ignore_err=True).command_is_successful()
+
+object1_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
+
+# wait till cleanup process completes and s3server sends response to client
+time.sleep(5)
+
+# ************ Start Schedular*****************************
+print("Running scheduler...")
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
+
+print("Scheduler has stopped...")
+# ************* Start Processor****************************
+print("Running Processor...")
+processor.consume()
+print("Processor has stopped...")
+
+# ************* Verify OID is not present in list*******
+perform_head_object(object1_oid_dict)
+
+# ************* Verify cleanup of Object using aws s3api head-object api******
+AwsTest('Do head-object for "object1" on bucket "seagatebucket"')\
+   .head_object("seagatebucket", "object1").execute_test(negative_case=True)\
+   .command_should_fail().command_error_should_have("Not Found")
+
+"""
+Test Scenario : 9
+Scenario: Delayed overwrite object
+   1. create object and the get OID, layout_id from response
+   2. overwrite object and the get OID, layout_id from response
+   3. run background delete schedular
+   4. run background delete processor
+   5. verify cleanup of old object oid listing probable delete index
+   6. cleanup object
+"""
+# ********** Upload objects in bucket*************************
+result = AwsTest('Upload Object "object1" to bucket "seagatebucket"')\
+    .put_object("seagatebucket", "object1", 3000, debug_flag="True")\
+    .execute_test(ignore_err=True).command_is_successful()
+
+result = AwsTest('Upload Object "object1" to bucket "seagatebucket"')\
+    .put_object("seagatebucket", "object1", 3000, debug_flag="True")\
+    .execute_test(ignore_err=True).command_is_successful()
+
+# wait till cleanup process completes and s3server sends response to client
+time.sleep(5)
+
+# ************ Start Schedular*****************************
+print("Running scheduler...")
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
+
+print("Scheduler has stopped...")
+# ************* Start Processor****************************
+print("Running Processor...")
+processor.consume()
+print("Processor has stopped...")
+
+# ************* Verify cleanup of probable delete index******
+result = S3kvTest('Kvtest list global probable delete list index').list_root_probable_dead_object_list_index().execute_test()
+assert result.status.stdout is ""
+
+# ****** Delete object "object1" using s3-background-delete-svc account*****
+AwsTest('Delete object "object1"').delete_object("seagatebucket", "object1") \
+   .execute_test().command_is_successful()
+
+
+"""
+Test Scenario : 10
+Scenario: multidelete objects leak test (DELETE api test)
+    1. upload first object and get oid1, layout_id1 from response
+    2. upload second object and get oid2, layout_id2 from response
+    3. perform multi_delete_test using bucketname
+    4. run background delete schedular
+    5. run background delete processor
+    6. verify cleanup of both oids using HEAD object api
+    7. verify cleanup of both Objects using aws s3api head-object api
+
+"""
+# ********** Upload objects in bucket*************************
+result = AwsTest('Upload Object "object2" to bucket "seagatebucket"')\
+    .put_object("seagatebucket", "object2", 3000, debug_flag="True")\
+    .execute_test(ignore_err=True).command_is_successful()
+object4_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
+
+result = AwsTest('Upload Object "object3" to bucket "seagatebucket"')\
+    .put_object("seagatebucket", "object3", 3000, debug_flag="True")\
+    .execute_test(ignore_err=True).command_is_successful()
+object5_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
+
+S3cmdTest('s3cmd can delete multiple objects "object2" and "object3"')\
+    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+    .multi_delete_test("seagatebucket").execute_test().command_is_successful()
+
+# wait till cleanup process completes and s3server sends response to client
+time.sleep(1)
+
+
+# ************ Start Schedular*****************************
+print("Running scheduler...")
+if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
+    print("Msgbus Scheduler")
+    scheduler.add_kv_to_msgbus()
+elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
+    print("Rabbitmq Scheduler")
+    scheduler.add_kv_to_queue()
+else:
+    raise Exception("Unknown messaging platform.")
+
+print("Schdeuler has stopped...")
+# ************* Start Processor****************************
+print("Running Processor...")
+processor.consume()
+print("Processor has stopped...")
+
+# ************* Verify OID are not present in list*******
+perform_head_object(object4_oid_dict)
+perform_head_object(object5_oid_dict)
+
+# ************* Verify cleanup of Object using aws s3api head-object api******
+AwsTest('Do head-object for "object2" on bucket "seagatebucket"')\
+   .head_object("seagatebucket", "object2").execute_test(negative_case=True)\
+   .command_should_fail().command_error_should_have("Not Found")
+
+AwsTest('Do head-object for "object3" on bucket "seagatebucket"')\
+   .head_object("seagatebucket", "object3").execute_test(negative_case=True)\
+   .command_should_fail().command_error_should_have("Not Found")
 
 # ****** Delete bucket "seagatebucket" using s3-background-delete-svc account*****
 AwsTest('Delete Bucket "seagatebucket"').delete_bucket("seagatebucket")\

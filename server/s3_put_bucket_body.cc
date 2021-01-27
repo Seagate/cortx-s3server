@@ -26,7 +26,7 @@
 
 S3PutBucketBody::S3PutBucketBody(std::string &xml)
     : xml_content(xml), is_valid(false) {
-  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);
   parse_and_validate();
 }
 

@@ -25,8 +25,9 @@ usage() {
   echo 'Usage: ./rebuildall.sh [--no-motr-rpm][--use-build-cache][--no-check-code]'
   echo '                       [--no-clean-build][--no-s3ut-build][--no-s3mempoolut-build][--no-s3mempoolmgrut-build]'
   echo '                       [--no-s3server-build][--no-motrkvscli-build][--no-auth-build]'
-  echo '                       [--no-jclient-build][--no-jcloudclient-build][--no-install]'
-  echo '                       [--just-gen-build-file][--help]'
+  echo '                       [--no-jclient-build][--no-jcloudclient-build][--no-java-tests]'
+  echo '                       [--no-install][--just-gen-build-file][--valgrind_memcheck]'
+  echo '                       [--help]'
   echo 'Optional params as below:'
   echo '          --no-motr-rpm              : Use motr libs from source code (third_party/motr) location'
   echo '                                       Default is (false) i.e. use motr libs from pre-installed'
@@ -44,14 +45,18 @@ usage() {
   echo '          --no-s3server-build        : Do not build S3 Server, Default (false)'
   echo '          --no-motrkvscli-build    : Do not build motrkvscli tool, Default (false)'
   echo '          --no-s3background-build    : Do not build s3background process, Default (false)'
+  echo '          --no-s3msgbus-build    : Do not build s3msgbus, Default (false)'
   echo '          --no-s3recoverytool-build    : Do not build s3recoverytool process, Default (false)'
+  echo '          --no-s3confstoretool-build    : Do not build s3confstoretool process, Default (false)'
   echo '          --no-s3addbplugin-build    : Do not build s3 addb plugin library, Default (false)'
   echo '          --no-auth-build            : Do not build Auth Server, Default (false)'
   echo '          --no-jclient-build         : Do not build jclient, Default (false)'
   echo '          --no-jcloudclient-build    : Do not build jcloudclient, Default (false)'
   echo '          --no-s3iamcli-build        : Do not build s3iamcli, Default (false)'
+  echo '          --no-java-tests            : Do not run java tests, Default (false)'
   echo '          --no-install               : Do not install binaries after build, Default (false)'
   echo '          --just-gen-build-file      : Do not do anything, only produce BUILD file'
+  echo '          --valgrind_memcheck        : Compile with debug flags and zero optimization to support valgrind memcheck'
   echo '          --help (-h)                : Display help'
 }
 
@@ -135,9 +140,10 @@ get_motr_pkg_config_rpm() {
 # read the options
 OPTS=`getopt -o h --long no-motr-rpm,use-build-cache,no-check-code,no-clean-build,\
 no-s3ut-build,no-s3mempoolut-build,no-s3mempoolmgrut-build,no-s3server-build,\
-no-motrkvscli-build,no-s3background-build,no-s3recoverytool-build,\
+no-motrkvscli-build,no-s3background-build,no-s3msgbus-build,no-s3recoverytool-build,no-s3confstoretool-build,\
 no-s3addbplugin-build,no-auth-build,no-jclient-build,no-jcloudclient-build,\
-no-s3iamcli-build,no-install,just-gen-build-file,help -n 'rebuildall.sh' -- "$@"`
+no-s3iamcli-build,no-java-tests,no-install,just-gen-build-file,valgrind_memcheck,\
+help -n 'rebuildall.sh' -- "$@"`
 
 eval set -- "$OPTS"
 
@@ -151,14 +157,18 @@ no_s3mempoolmgrut_build=0
 no_s3server_build=0
 no_motrkvscli_build=0
 no_s3background_build=0
+no_s3msgbus_build=0
 no_s3recoverytool_build=0
+no_s3confstoretool_build=0
 no_s3addbplugin_build=0
 no_auth_build=0
 no_jclient_build=0
 no_jcloudclient_build=0
 no_s3iamcli_build=0
+no_java_tests=0
 no_install=0
 just_gen_build_file=0
+valgrind_memcheck=0
 
 # extract options and their arguments into variables.
 while true; do
@@ -173,14 +183,18 @@ while true; do
     --no-s3server-build) no_s3server_build=1; shift ;;
     --no-motrkvscli-build) no_motrkvscli_build=1; shift ;;
     --no-s3background-build) no_s3background_build=1; shift ;;
+	--no-s3msgbus-build) no_s3msgbus_build=1; shift ;;
     --no-s3recoverytool-build) no_s3recoverytool_build=1; shift ;;
+    --no-s3confstoretool-build) no_s3confstoretool_build=1; shift ;;
     --no-s3addbplugin-build) no_s3addbplugin_build=1; shift ;;
     --no-auth-build) no_auth_build=1; shift ;;
     --no-jclient-build) no_jclient_build=1; shift ;;
     --no-jcloudclient-build) no_jcloudclient_build=1; shift ;;
     --no-s3iamcli-build) no_s3iamcli_build=1; shift ;;
     --no-install) no_install=1; shift ;;
+    --no-java-tests) no_java_tests=1; shift ;;
     --just-gen-build-file) just_gen_build_file=1; shift ;;
+    --valgrind_memcheck) valgrind_memcheck=1; shift ;;
     -h|--help) usage; exit 0;;
     --) shift; break ;;
     *) echo "Internal error!" ; exit 1 ;;
@@ -276,6 +290,11 @@ prepare_BUILD_file() {
     MOTR_LINK_LIB_=${MOTR_LINK_LIB_%" "}
   fi
 
+  release_debug_valgrind_flags='"-O3"'
+  if [ $valgrind_memcheck -eq 1 ]; then
+      release_debug_valgrind_flags='"-O0", "-fno-inline", "-g", "-g3"'
+  fi
+
   cat BUILD.template > BUILD
 
   # set motr library search path in 'BUILD' file
@@ -283,6 +302,9 @@ prepare_BUILD_file() {
 
   # set motr link library in 'BUILD' file
   sed -i 's/MOTR_LINK_LIB/'"$MOTR_LINK_LIB_"'/g' BUILD
+
+  # set build flags in 'BUILD' file
+  sed -i 's|RELEASE_DEBUG_VALGRIND_FLAGS|'"$release_debug_valgrind_flags"'|g' BUILD
 }
 
 if [ $just_gen_build_file -eq 1 ]; then
@@ -425,6 +447,13 @@ fi
 # Just to free up resources
 bazel shutdown
 
+extra_mvnbuild_pkg_opts=""
+extra_mvn_pkg_opts=""
+if [ $no_java_tests -eq 1 ]; then
+  extra_mvnbuild_pkg_opts+=" --skip-tests"
+  extra_mvn_pkg_opts+=" -Dmaven.test.skip=true"
+fi
+
 if [ $no_auth_build -eq 0 ]
 then
   cd auth
@@ -432,7 +461,7 @@ then
   then
     ./mvnbuild.sh clean
   fi
-  ./mvnbuild.sh package
+  ./mvnbuild.sh package $extra_mvnbuild_pkg_opts
   cd -
 fi
 
@@ -443,7 +472,7 @@ then
   then
     mvn clean
   fi
-  mvn package
+  mvn package $extra_mvn_pkg_opts
   cp target/jclient.jar ../../st/clitests/
   cp target/classes/jclient.properties ../../st/clitests/
   cd -
@@ -456,7 +485,7 @@ then
   then
     mvn clean
   fi
-  mvn package
+  mvn package $extra_mvn_pkg_opts
   cp target/jcloudclient.jar ../../st/clitests/
   cp target/classes/jcloud.properties ../../st/clitests/
   cd -
@@ -491,9 +520,31 @@ then
     fi
     cd -
   fi
+  if [ $no_s3msgbus_build -eq 0 ]
+  then
+    cd s3cortxutils/s3msgbus
+    if [ $no_clean_build -eq 0 ]
+    then
+      python36 setup.py install --force
+    else
+      python36 setup.py install
+    fi
+    cd -
+  fi
   if [ $no_s3recoverytool_build -eq 0 ]
   then
     cd s3recovery
+    if [ $no_clean_build -eq 0 ]
+    then
+      python36 setup.py install --force
+    else
+      python36 setup.py install
+    fi
+    cd -      
+  fi
+  if [ $no_s3confstoretool_build -eq 0 ]
+  then
+    cd s3cortxutils/s3confstore
     if [ $no_clean_build -eq 0 ]
     then
       python36 setup.py install --force

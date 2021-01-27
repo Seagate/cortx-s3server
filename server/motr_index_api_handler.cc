@@ -26,7 +26,7 @@
 #include "s3_stats.h"
 
 void MotrIndexAPIHandler::create_action() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, request_id, "Operation code = %d\n", operation_code);
 
   switch (operation_code) {
@@ -62,5 +62,5 @@ void MotrIndexAPIHandler::create_action() {
       // should never be here.
       return;
   };  // switch operation_code
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

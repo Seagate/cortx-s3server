@@ -45,23 +45,13 @@ fi
 test_file_input=/tmp/SanityObjectToDeleteAfterUse.input
 test_output_file=/tmp/SanityObjectToDeleteAfterUse.out
 
-ldappasswd=""
-if rpm -q "salt"  > /dev/null;
-then
-    ldappasswd=$(salt-call pillar.get openldap:iam_admin:secret --output=newline_values_only)
-    ldappasswd=$(salt-call lyveutil.decrypt openldap ${ldappasswd} --output=newline_values_only)
-else
-    # Dev environment. Read ldap admin password from "/root/.s3_ldap_cred_cache.conf"
-    source /root/.s3_ldap_cred_cache.conf
-fi
-
-if [[ -z "$ldappasswd" ]]
-then
-    ldappasswd=$ldap_admin_pwd
-fi
+ldappasswd=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
 
 USAGE="USAGE: bash $(basename "$0")
 Run S3 sanity test.
+
+PRE-REQUISITES: s3cmd and s3iamcli need to be present
+
 where:
     -h     display this help and exit
     -c     clean s3 resources if present

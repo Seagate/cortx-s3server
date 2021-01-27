@@ -31,6 +31,7 @@ MotrURI::MotrURI(std::shared_ptr<MotrRequestObject> req)
       operation_code(MotrOperationCode::none),
       motr_api_type(MotrApiType::unsupported) {
   request_id = request->get_request_id();
+  stripped_request_id = request->get_stripped_request_id();
   setup_operation_code();
 }
 
@@ -52,7 +53,7 @@ void MotrURI::setup_operation_code() {
 
 MotrPathStyleURI::MotrPathStyleURI(std::shared_ptr<MotrRequestObject> req)
     : MotrURI(req) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   std::string full_uri;
   const char* full_path = request->c_get_full_encoded_path();
   if (full_path) {

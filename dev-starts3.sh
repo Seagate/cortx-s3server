@@ -19,7 +19,9 @@
 #
 
 # Script to start S3 server in dev environment.
-#   Usage: sudo ./dev-starts3.sh [<Number of S3 sever instances>] [--fake_obj] [--fake_kvs | --redis_kvs] [--callgraph /path/to/graph]
+#   Usage: sudo ./dev-starts3.sh [<Number of S3 sever instances>]
+#                                [--fake_obj] [--fake_kvs | --redis_kvs]
+#                                [--callgraph /path/to/graph | --valgrind_memcheck [/path/to/memcheck/log]]
 #               Optional argument is:
 #                   Number of S3 server instances to start.
 #                   Max number of instances allowed = 20
@@ -57,6 +59,9 @@ redis_kvs=0
 callgraph_mode=0
 callgraph_out="/tmp/callgraph.out"
 
+valgrind_memcheck=0
+valgrind_memcheck_out="/tmp/valgrind_memcheck.out"
+
 if [[ $1 =~ ^[0-9]+$ ]] && [ $1 -le $MAX_S3_INSTANCES_NUM ]
 then
     num_instances=$1
@@ -83,6 +88,15 @@ while [ "$1" != "" ]; do
                           callgraph_out="$1";
                       fi
                       ;;
+        --valgrind_memcheck ) valgrind_memcheck=1;
+                              num_instances=1;
+                              echo "Generate memcheck log with valgrind";
+                              shift;
+                              if ! [[ $1 =~ ^[[:space:]]*$ ]]
+                              then
+                                  valgrind_memcheck_out="$1";
+                              fi
+                              ;;
         * )
             echo "Invalid argument passed";
             exit 1
@@ -93,6 +107,11 @@ done
 
 if [ $fake_kvs == 1 ] && [ $redis_kvs == 1 ]; then
     echo "Only fake kvs or redis kvs can be specified";
+    exit 1;
+fi
+
+if [ $callgraph_mode == 1 ] && [ $valgrind_memcheck == 1 ]; then
+    echo "Only callgraph or valgrind can be specified";
     exit 1;
 fi
 
@@ -184,10 +203,14 @@ then
     fake_params+=" --fake_motr_writeobj true --fake_motr_readobj true"
 fi
 
-callgraph_cmd=""
+valgrind_cmd=""
 if [ $callgraph_mode -eq 1 ]
 then
-    callgraph_cmd="valgrind -q --tool=callgrind --collect-jumps=yes --collect-systime=yes --callgrind-out-file=$callgraph_out"
+    valgrind_cmd="valgrind -q --tool=callgrind --collect-jumps=yes --collect-systime=yes --callgrind-out-file=$callgraph_out"
+fi
+if [ $valgrind_memcheck -eq 1 ]
+then
+    valgrind_cmd="valgrind -q --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --verbose --read-var-info=yes --read-inline-info=yes --log-file=$valgrind_memcheck_out --error-limit=no"
 fi
 
 while [[ $counter -lt $num_instances ]]
@@ -195,8 +218,25 @@ do
   motr_local_port=`expr 101 + $counter`
   s3port=`expr $s3_port_from_config + $counter`
   pid_filename='/var/run/s3server.'$s3port'.pid'
-  $callgraph_cmd s3server --s3pidfile $pid_filename \
+  $valgrind_cmd s3server --s3pidfile $pid_filename \
            --motrlocal $local_ep:${motr_local_port} --motrha $ha_ep \
            --s3port $s3port --fault_injection true $fake_params --loading_indicators --getoid true
   ((++counter))
 done
+
+#restart s3background services
+is_producer_running=1
+$USE_SUDO systemctl is-active s3backgroundproducer 2>&1 > /dev/null || is_producer_running=0
+if [[ $is_producer_running -eq 1 ]]; then
+  $USE_SUDO systemctl stop s3backgroundproducer || echo "Cannot stop s3backgroundproducer services"
+fi
+
+is_consumer_running=1
+$USE_SUDO systemctl is-active s3backgroundconsumer 2>&1 > /dev/null || is_consumer_running=0
+if [[ $is_consumer_running -eq 1 ]]; then
+  $USE_SUDO systemctl stop s3backgroundconsumer || echo "Cannot stop s3backgroundconsumer services"
+fi
+
+$USE_SUDO systemctl start s3backgroundproducer
+$USE_SUDO systemctl start s3backgroundconsumer
+

@@ -24,6 +24,7 @@
 #include "s3_get_multipart_part_action.h"
 #include "s3_get_object_acl_action.h"
 #include "s3_get_object_action.h"
+#include "s3_copy_object_action.h"
 #include "s3_head_object_action.h"
 #include "s3_log.h"
 #include "s3_post_complete_action.h"
@@ -38,7 +39,7 @@
 #include "s3_stats.h"
 
 void S3ObjectAPIHandler::create_action() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, request_id, "Operation code = %d\n", operation_code);
 
   switch (operation_code) {
@@ -120,8 +121,10 @@ void S3ObjectAPIHandler::create_action() {
             action = std::make_shared<S3PutChunkUploadObjectAction>(request);
             s3_stats_inc("put_object_chunkupload_request_count");
           } else if (!request->get_header_value("x-amz-copy-source").empty()) {
-            // Copy Object not yet supported.
-            // Do nothing = unsupported API
+            request->set_action_str("CopyObject");
+            request->set_object_size(request->get_data_length());
+            action = std::make_shared<S3CopyObjectAction>(request);
+            s3_stats_inc("copy_object_request_count");
           } else {
             // single chunk upload
             request->set_action_str("PutObject");
@@ -200,5 +203,5 @@ void S3ObjectAPIHandler::create_action() {
       // should never be here.
       return;
   };  // switch operation_code
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

@@ -66,8 +66,9 @@ class MockS3RequestObject : public S3RequestObject {
   MOCK_METHOD0(get_in_headers_copy, std::map<std::string, std::string> &());
   MOCK_METHOD2(send_response, void(int, std::string));
   MOCK_METHOD1(send_reply_start, void(int code));
-  MOCK_METHOD2(send_reply_body, void(char *data, int length));
+  MOCK_METHOD2(send_reply_body, void(const char *data, int length));
   MOCK_METHOD0(send_reply_end, void());
+  MOCK_METHOD0(close_connection, void());
   MOCK_METHOD0(is_chunk_detail_ready, bool());
   MOCK_METHOD0(pop_chunk_detail, S3ChunkDetail());
 
@@ -76,6 +77,7 @@ class MockS3RequestObject : public S3RequestObject {
   MOCK_METHOD1(get_header_value, std::string(std::string key));
   MOCK_METHOD1(is_header_present, bool(const std::string &key));
   MOCK_METHOD0(get_audit_info, S3AuditInfo &());
+  MOCK_METHOD(std::string, get_headers_copysource, (), (override));
 };
 
 #endif

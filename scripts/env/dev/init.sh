@@ -50,6 +50,36 @@ check_supported_kernel() {
   fi
 }
 
+#function to install/upgrade cortx-py-utils rpm
+install_cortx_py_utils() {
+  #rpm -q cortx-py-utils && yum remove cortx-py-utils -y && yum install cortx-py-utils -y
+  if rpm -q cortx-py-utils ; then
+    yum upgrade cortx-py-utils -y
+  else
+    yum install cortx-py-utils -y
+  fi
+}
+
+# function to install all prerequisite for dev vm 
+install_pre_requisites() {
+
+  # install kafka server
+  sh ${S3_SRC_DIR}/scripts/kafka/install-kafka.sh -c 1 -i $HOSTNAME
+  
+  #create topic
+  sh ${S3_SRC_DIR}/scripts/kafka/create-topic.sh -c 1 -i $HOSTNAME
+
+  #install confluent_kafka
+  pip3 install confluent_kafka
+
+  #install toml
+  pip3 install toml
+
+  # install or upgrade cortx-py-utils
+  install_cortx_py_utils
+
+}
+
 usage() {
   echo "Usage: $0
   optional arguments:
@@ -92,6 +122,8 @@ fi
 
 if [[ $# -eq 0 ]] ; then
   source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
+  #install pre-requisites on dev vm
+  install_pre_requisites
 else
   while getopts "ahs" x; do
       case "${x}" in
@@ -103,6 +135,8 @@ else
               ;;
           s)
              source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
+             #install pre-requisites on dev vm
+             install_pre_requisites
              ansible_automation=1;
              ;;
           *)
@@ -131,6 +165,9 @@ rpm -q gmock && rpm -e gmock
 
 rpm -q gtest-devel && rpm -e gtest-devel
 rpm -q gtest && rpm -e gtest
+
+# Erase old haproxy rpm and later install latest haproxy version 1.8.14
+rpm -q haproxy && rpm -e haproxy
 
 cd $BASEDIR
 
@@ -165,9 +202,6 @@ yum install -y openssl java-1.8.0-openjdk-headless
 mkdir -p /etc/ssl
 
 cp -R  ${BASEDIR}/../../../ansible/files/certs/* /etc/ssl/
-
-# Generate random password for jks key and keystore passwords
-sh ${S3_SRC_DIR}/scripts/create_auth_jks_password.sh
 
 # Configure dev env
 yum install -y ansible facter

@@ -23,11 +23,11 @@
 
 SRC_ROOT="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ) " )"
 
-USAGE="USAGE: bash $(basename "$0") [clean|package|jacoco-report] [--help | -h]
+USAGE="USAGE: bash $(basename "$0") [clean | package [--skip-tests] | jacoco-report] [--help | -h]
 
 where:
 clean              clean previous build
-package            build and package
+package            build and package. --skip-tests will disable test run.
 jacoco-report      generate system test coverage report
 --help             display this help and exit"
 
@@ -47,13 +47,17 @@ case "$1" in
        mvn clean
         ;;
     package )
+       opts=""
+       if [ "$2" = "--skip-tests" ]; then
+         opts+=" -Dmaven.test.skip=true"
+       fi
        cd $SRC_ROOT/auth/encryptutil
-       mvn package
-       mvn install:install-file -Dfile=target/AuthEncryptUtil-1.0-0.jar -DgroupId=com.seagates3 -DartifactId=AuthEncryptUtil -Dversion=1.0-0 -Dpackaging=jar
+       mvn package $opts
+       mvn install:install-file -Dfile=target/AuthEncryptUtil-1.0-0.jar -DgroupId=com.seagates3 -DartifactId=AuthEncryptUtil -Dversion=1.0-0 -Dpackaging=jar $opts
        cd $SRC_ROOT/auth/encryptcli
-       mvn package
+       mvn package $opts
        cd $SRC_ROOT/auth/server
-       mvn package
+       mvn package $opts
         ;;
     jacoco-report )
        cd $SRC_ROOT/auth/encryptutil

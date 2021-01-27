@@ -41,20 +41,24 @@ using ::testing::AtLeast;
     action_under_test->fetch_bucket_info();                               \
   } while (0)
 
-#define CREATE_OBJECT_METADATA                                                \
-  do {                                                                        \
-    CREATE_BUCKET_METADATA;                                                   \
-    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(     \
-        object_list_indx_oid);                                                \
-    bucket_meta_factory->mock_bucket_metadata                                 \
-        ->set_objects_version_list_index_oid(objects_version_list_index_oid); \
-    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))     \
-        .Times(AtLeast(1));                                                   \
-    EXPECT_CALL(*(ptr_mock_request), http_verb())                             \
-        .WillOnce(Return(S3HttpVerb::GET));                                   \
-    EXPECT_CALL(*(ptr_mock_request), get_operation_code())                    \
-        .WillOnce(Return(S3OperationCode::tagging));                          \
-    action_under_test->fetch_object_info();                                   \
+#define CREATE_OBJECT_METADATA                                            \
+  do {                                                                    \
+    CREATE_BUCKET_METADATA;                                               \
+    EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
+                get_object_list_index_oid())                              \
+        .Times(AtLeast(1))                                                \
+        .WillRepeatedly(Return(object_list_indx_oid));                    \
+    EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
+                get_objects_version_list_index_oid())                     \
+        .Times(AtLeast(1))                                                \
+        .WillRepeatedly(Return(objects_version_list_index_oid));          \
+    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _)) \
+        .Times(AtLeast(1));                                               \
+    EXPECT_CALL(*(ptr_mock_request), http_verb())                         \
+        .WillOnce(Return(S3HttpVerb::GET));                               \
+    EXPECT_CALL(*(ptr_mock_request), get_operation_code())                \
+        .WillOnce(Return(S3OperationCode::tagging));                      \
+    action_under_test->fetch_object_info();                               \
   } while (0)
 
 static bool test_read_object_data_success(size_t num_of_blocks,
@@ -225,10 +229,15 @@ TEST_F(S3GetObjectActionTest, FetchObjectInfoWhenBucketAndObjIndexPresent) {
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::present));
-  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
-  bucket_meta_factory->mock_bucket_metadata->set_objects_version_list_index_oid(
-      objects_version_list_index_oid);
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_oid())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(object_list_indx_oid));
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_objects_version_list_index_oid())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(objects_version_list_index_oid));
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
       .Times(AtLeast(1));
@@ -265,6 +274,12 @@ TEST_F(S3GetObjectActionTest, ValidateObjectOfSizeZero) {
   EXPECT_CALL(*ptr_mock_request, send_reply_start(Eq(S3HttpSuccess200)))
       .Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_reply_end()).Times(1);
+
+  std::map<std::string, std::string> meta_map{{"key", "value"}};
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_user_attributes())
+      .Times(1)
+      .WillOnce(ReturnRef(meta_map));
 
   action_under_test->validate_object_info();
 }
@@ -864,6 +879,12 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeLessThanUnitSize) {
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
 
+  std::map<std::string, std::string> meta_map{{"key", "value"}};
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_user_attributes())
+      .Times(1)
+      .WillOnce(ReturnRef(meta_map));
+
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
 
   EXPECT_CALL(*ptr_mock_request, send_reply_start(Eq(S3HttpSuccess200)))
@@ -916,6 +937,12 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSize) {
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
 
+  std::map<std::string, std::string> meta_map{{"key", "value"}};
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_user_attributes())
+      .Times(1)
+      .WillOnce(ReturnRef(meta_map));
+
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
 
   EXPECT_CALL(*ptr_mock_request, send_reply_start(Eq(S3HttpSuccess200)))
@@ -954,6 +981,12 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeMoreThanUnitSize) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
+
+  std::map<std::string, std::string> meta_map{{"key", "value"}};
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_user_attributes())
+      .Times(1)
+      .WillOnce(ReturnRef(meta_map));
 
   // Object size less than unit size
   int layout_id = 1;
@@ -1011,6 +1044,12 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfGivenRange) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
+
+  std::map<std::string, std::string> meta_map{{"key", "value"}};
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_user_attributes())
+      .Times(1)
+      .WillOnce(ReturnRef(meta_map));
 
   // Object size less than unit size
   int layout_id = 1;

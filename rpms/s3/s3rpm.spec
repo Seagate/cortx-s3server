@@ -92,7 +92,9 @@ BuildRequires: python-keyring python-futures
 # TODO for rhel 8
 
 %if %{with cortx_motr}
-Requires: cortx-motr = %{h_cortxmotr_version}
+# Uncomment below line to enable motr version check during s3server rpm installation
+#Requires: cortx-motr = %{h_cortxmotr_version}
+Requires: cortx-motr
 %endif
 Requires: libxml2
 Requires: libyaml
@@ -122,33 +124,94 @@ S3 server provides S3 REST API interface support for Motr object storage.
 %prep
 %setup -n %{name}-%{version}-%{_s3_git_ver}
 
+%pre
+if [ -f /opt/seagate/cortx/s3/conf/s3config.yaml.sample ]; then
+cp -f /opt/seagate/cortx/s3/conf/s3config.yaml.sample /tmp/s3config.yaml.sample.old
+fi
+if [ -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample ]; then
+    cp -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample /tmp/config.yaml.sample.old
+fi
+if [ -f /opt/seagate/cortx/auth/resources/keystore.properties.sample ]; then
+    cp -f /opt/seagate/cortx/auth/resources/keystore.properties.sample /tmp/keystore.properties.sample.old
+fi
+if [ -f /opt/seagate/cortx/auth/resources/authserver.properties.sample ]; then
+    cp -f /opt/seagate/cortx/auth/resources/authserver.properties.sample /tmp/authserver.properties.sample.old
+fi
+
 %build
 %if %{with cortx_motr}
-./rebuildall.sh --no-check-code --no-install
+./rebuildall.sh --no-check-code --no-install --no-s3ut-build --no-s3mempoolut-build --no-s3mempoolmgrut-build --no-java-tests
 %else
-./rebuildall.sh --no-check-code --no-install --no-motr-rpm --use-build-cache
+./rebuildall.sh --no-check-code --no-install --no-s3ut-build --no-s3mempoolut-build --no-s3mempoolmgrut-build --no-java-tests --no-motr-rpm --use-build-cache
 %endif
 
-mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3backgrounddelete/build/lib/s3backgrounddelete
 # Build the background delete python module.
+mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3backgrounddelete/build/lib/s3backgrounddelete
 cd s3backgrounddelete/s3backgrounddelete
 python%{py_ver} -m compileall -b *.py
 cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3backgrounddelete/build/lib/s3backgrounddelete
+
 # Build the s3datarecovery tool.
 mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3recovery/build/lib/s3recovery
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3recovery/s3recovery
 python%{py_ver} -m compileall -b *.py
 cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3recovery/build/lib/s3recovery 
+
+# Build s3cortxutils/s3confstore python module
+mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore/build/lib/s3confstore
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore/s3confstore
+python%{py_ver} -m compileall -b *.py
+cp *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore/build/lib/s3confstore
+
+# Build scripts/s3haproxyconfig python module
+mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/haproxy/s3haproxyconfig/build/lib/s3haproxyconfig
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/haproxy/s3haproxyconfig/s3haproxyconfig
+python%{py_ver} -m compileall -b *.py
+cp *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/haproxy/s3haproxyconfig/build/lib/s3haproxyconfig
+
+# Build s3setup python module
+mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup/build/lib/s3setup
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup/s3setup
+python%{py_ver} -m compileall -b *.py
+cp *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup/build/lib/s3setup
+
 echo "build complete"
+
+# Build the s3cortxutils/s3MsgBus wrapper python module
+mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/build/lib/s3msgbus
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/s3msgbus
+python%{py_ver} -m compileall -b *.py
+cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/build/lib/s3msgbus 
+echo "build complete"
+
 
 %install
 rm -rf %{buildroot}
 ./installhelper.sh %{buildroot} --release
+
 # Install the background delete python module.
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3backgrounddelete
-python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT
+python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
+
+# Install the s3recovery python module
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3recovery
-python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT
+python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
+
+# Install the s3msg bus wrapper module
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus
+python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
+
+# Install s3confstore python module
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore
+python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
+
+# Install s3haproxyconfig python module
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/haproxy/s3haproxyconfig
+python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
+
+# Install s3setup python module
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup
+python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
 
 %clean
 bazel clean
@@ -159,6 +222,7 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
+# config file doesnt get replaced during rpm update if changed
 %config /opt/seagate/cortx/auth/resources/authserver.properties.sample
 %config(noreplace) /opt/seagate/cortx/auth/resources/authserver-log4j2.xml
 %config(noreplace) /opt/seagate/cortx/auth/resources/authencryptcli-log4j2.xml
@@ -210,6 +274,7 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/auth/AuthServer-1.0-0.jar
 /opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar
 /opt/seagate/cortx/auth/startauth.sh
+/opt/seagate/cortx/auth/scripts/swupdate/merge.sh
 /opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh
 /opt/seagate/cortx/auth/scripts/change_ldap_passwd.ldif
 /opt/seagate/cortx/auth/scripts/s3authserver.jks_template
@@ -264,6 +329,7 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/install/ldap/syncprov_mod.ldif
 /opt/seagate/cortx/s3/install/ldap/syncprov.ldif
 /opt/seagate/cortx/s3/install/ldap/replicate.ldif
+/opt/seagate/cortx/s3/install/ldap/resultssizelimit.ldif
 /opt/seagate/cortx/s3/install/ldap/check_ldap_replication.sh
 /opt/seagate/cortx/s3/install/ldap/test_data.ldif
 /opt/seagate/cortx/s3/install/ldap/run_check_ldap_replication_in_loop.sh
@@ -275,6 +341,10 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/install/ldap/replication/config.ldif
 /opt/seagate/cortx/s3/install/ldap/replication/syncprov_config.ldif
 /opt/seagate/cortx/s3/install/ldap/replication/deltaReplication.ldif
+/opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh
+/opt/seagate/cortx/s3/install/ldap/replication/serverIdTemplate.ldif
+/opt/seagate/cortx/s3/install/ldap/replication/configTemplate.ldif
+/opt/seagate/cortx/s3/install/ldap/replication/dataTemplate.ldif
 /opt/seagate/cortx/s3/install/ldap/slapdlog.ldif
 /opt/seagate/cortx/s3/install/ldap/s3slapdindex.ldif
 /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf
@@ -302,9 +372,15 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/stop-s3-iopath-services.sh
 /opt/seagate/cortx/s3/reset/precheck.py
 /opt/seagate/cortx/s3/reset/reset_s3.sh
+/opt/seagate/cortx/s3/reset/clean_open_ldap_by_s3.sh
 /opt/seagate/cortx/s3/conf/setup.yaml
 /opt/seagate/cortx/s3/s3datarecovery/s3_data_recovery.sh
 /opt/seagate/cortx/datarecovery/orchastrator.sh
+/opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.yaml
+/opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.yaml
+/opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml
+/opt/seagate/cortx/s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml
+/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_setup
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer
@@ -318,32 +394,50 @@ rm -rf %{buildroot}
 %{_bindir}/s3backgroundproducer
 %{_bindir}/s3recovery
 %{_bindir}/s3cipher
+%{_bindir}/s3msgbus
+%{_bindir}/s3confstore
+%{_bindir}/s3haproxyconfig
+%{_bindir}/s3setup
 %{py36_sitelib}/s3backgrounddelete/config/*.yaml
 %{py36_sitelib}/s3backgrounddelete/config/s3_background_delete_config.yaml.sample
 %{py36_sitelib}/s3backgrounddelete/*.pyc
 %{py36_sitelib}/s3backgrounddelete-%{version}-py?.?.egg-info
 %{py36_sitelib}/s3recovery/*.pyc
 %{py36_sitelib}/s3recovery-%{version}-py?.?.egg-info
+%{py36_sitelib}/s3msgbus/*.pyc
+%{py36_sitelib}/s3msgbus-%{version}-py?.?.egg-info
+%{py36_sitelib}/s3confstore/*.pyc
+%{py36_sitelib}/s3confstore-%{version}-py?.?.egg-info
+%{py36_sitelib}/s3haproxyconfig/*.pyc
+%{py36_sitelib}/s3haproxyconfig-%{version}-py?.?.egg-info
+%{py36_sitelib}/s3setup/*.pyc
+%{py36_sitelib}/s3setup-%{version}-py?.?.egg-info
 %exclude %{py36_sitelib}/s3backgrounddelete/__pycache__/*
 %exclude %{py36_sitelib}/s3recovery/__pycache__/*
 %exclude %{py36_sitelib}/s3backgrounddelete/*.py
 %exclude %{py36_sitelib}/s3recovery/*.py
+%exclude %{py36_sitelib}/s3confstore/*.py
+%exclude %{py36_sitelib}/s3confstore/__pycache__/*
+%exclude %{py36_sitelib}/s3haproxyconfig/*.py
+%exclude %{py36_sitelib}/s3haproxyconfig/__pycache__/*
+%exclude %{py36_sitelib}/s3setup/*.py
+%exclude %{py36_sitelib}/s3setup/__pycache__/*
 %exclude %{py36_sitelib}/s3backgrounddelete/s3cipher
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundconsumer
 %exclude %{py36_sitelib}/s3recovery/s3recovery
+%exclude %{py36_sitelib}/s3msgbus/s3msgbus
+%exclude %{py36_sitelib}/s3msgbus/__pycache__/*
+%exclude %{py36_sitelib}/s3msgbus/*.py
+%exclude %{py36_sitelib}/s3confstore/s3confstore
+%exclude %{py36_sitelib}/s3haproxyconfig/s3haproxyconfig
+%exclude %{py36_sitelib}/s3setup/s3setup
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundproducer
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyc
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyo
+%exclude /opt/seagate/cortx/s3/install/haproxy/s3haproxyconfig
 
 %post
-[ -f /opt/seagate/cortx/s3/conf/s3config.yaml ] || 
-    cp /opt/seagate/cortx/s3/conf/s3config.yaml.sample /opt/seagate/cortx/s3/conf/s3config.yaml
-[ -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml ] ||
-    cp /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
-[ -f /opt/seagate/cortx/auth/resources/authserver.properties ] ||
-    cp /opt/seagate/cortx/auth/resources/authserver.properties.sample /opt/seagate/cortx/auth/resources/authserver.properties
-[ -f /opt/seagate/cortx/auth/resources/keystore.properties ] ||
-    cp /opt/seagate/cortx/auth/resources/keystore.properties.sample /opt/seagate/cortx/auth/resources/keystore.properties
+sh /opt/seagate/cortx/auth/scripts/swupdate/merge.sh
 systemctl daemon-reload
 systemctl enable s3authserver
 systemctl restart rsyslog

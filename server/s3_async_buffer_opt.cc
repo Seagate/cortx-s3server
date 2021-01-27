@@ -18,23 +18,24 @@
  *
  */
 
-#include <assert.h>
+#include <cassert>
 
 #include "s3_async_buffer_opt.h"
 
 S3AsyncBufferOptContainer::S3AsyncBufferOptContainer(size_t size_of_each_buf)
-    : size_of_each_evbuf(size_of_each_buf),
-      content_length(0),
+    : content_length(0),
       is_expecting_more(true),
-      count_bufs_shared_for_read(0) {
-  s3_log(S3_LOG_DEBUG, "", "Constructor with size_of_each_buf = %zu\n",
+      count_bufs_shared_for_read(0),
+      size_of_each_evbuf(size_of_each_buf) {
+  s3_log(S3_LOG_DEBUG, "", "%s Ctor with size_of_each_buf = %zu\n", __func__,
          size_of_each_buf);
+
   // Should be multiple of 4k (Motr requirement)
-  assert(size_of_each_evbuf % 4096 == 0);
+  assert(!(size_of_each_evbuf & 0xFFF));  // size_of_each_evbuf % 4096 == 0
 }
 
 S3AsyncBufferOptContainer::~S3AsyncBufferOptContainer() {
-  s3_log(S3_LOG_DEBUG, "", "Destructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s\n", __func__);
   // release all memory
   evbuf_t* buf = NULL;
   while (!ready_q.empty()) {
@@ -55,16 +56,18 @@ void S3AsyncBufferOptContainer::freeze() {
   is_expecting_more = false;
 }
 
-bool S3AsyncBufferOptContainer::is_freezed() { return !is_expecting_more; }
+bool S3AsyncBufferOptContainer::is_freezed() const {
+  return !is_expecting_more;
+}
 
-size_t S3AsyncBufferOptContainer::get_content_length() {
+size_t S3AsyncBufferOptContainer::get_content_length() const {
   return content_length;
 }
 
 bool S3AsyncBufferOptContainer::add_content(evbuf_t* buf, bool is_first_buf,
                                             bool is_last_buf,
                                             bool is_put_request) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   if (!buf) {
     s3_log(S3_LOG_ERROR, "", "buf == NULL");
     return false;
@@ -97,7 +100,7 @@ bool S3AsyncBufferOptContainer::add_content(evbuf_t* buf, bool is_first_buf,
   }
   ready_q.push_back(buf);
   content_length += len;
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 
   return true;
 }
@@ -108,18 +111,19 @@ bool S3AsyncBufferOptContainer::add_content(evbuf_t* buf, bool is_first_buf,
 // after get_buffers call.
 // expected_content_size should be multiple of libevent read mempool item size
 // except for the last payload
-std::pair<std::deque<evbuf_t*>, size_t> S3AsyncBufferOptContainer::get_buffers(
+S3BufferSequence S3AsyncBufferOptContainer::get_buffers(
     size_t expected_content_size) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, "", "get_buffers with expected_content_size = %zu\n",
          expected_content_size);
 
-  size_t size_of_bufs_returned = 0;
-  // previously returned bufs should be marked consumed
-  assert(processing_q.empty());
+  S3BufferSequence buffer_sequence;
 
-  // reset
-  processing_q.clear();
+  // previously returned bufs should be marked consumed
+  if (!processing_q.empty()) {
+    flush_used_buffers();
+  }
   count_bufs_shared_for_read = 0;
 
   size_t size_we_can_share = get_content_length();
@@ -134,28 +138,49 @@ std::pair<std::deque<evbuf_t*>, size_t> S3AsyncBufferOptContainer::get_buffers(
       // size_of_each_evbuf, share all
       count_bufs_shared_for_read++;
     }
-
-    evbuf_t* buf = NULL;
-    size_t len = 0;
     assert(ready_q.size() >= count_bufs_shared_for_read);
+
     for (size_t i = 0; i < count_bufs_shared_for_read; ++i) {
-      buf = ready_q.front();
-      processing_q.push_back(buf);
+      evbuf_t* p_ev_buf = ready_q.front();
+      assert(p_ev_buf != nullptr);
+
+      processing_q.push_back(p_ev_buf);
       ready_q.pop_front();
-      len = evbuffer_get_length(buf);
-      size_of_bufs_returned += len;
-      content_length -= len;
+
+      const size_t len_in_buf = evbuffer_get_length(p_ev_buf);
+      content_length -= len_in_buf;
+
+      size_t num_of_extents =
+          evbuffer_peek(p_ev_buf, len_in_buf, NULL, NULL, 0);
+
+      std::unique_ptr<struct evbuffer_iovec[]> vec_in(
+          new struct evbuffer_iovec[num_of_extents]);
+
+      evbuffer_peek(p_ev_buf, len_in_buf, NULL /*start of buffer*/,
+                    vec_in.get(), num_of_extents);
+
+      size_t len_check = 0;
+
+      for (size_t j = 0; j < num_of_extents; ++j) {
+        const auto iov_len = vec_in[j].iov_len;
+        len_check += iov_len;
+
+        assert(iov_len > 0);
+        assert(vec_in[j].iov_base != nullptr);
+
+        buffer_sequence.emplace_back(vec_in[j].iov_base, iov_len);
+      }
+      assert(len_in_buf == len_check);
+      (void)len_check;
     }
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting with size_of_bufs_returned = %zu\n",
-         size_of_bufs_returned);
-  return std::make_pair(processing_q, size_of_bufs_returned);
+  return buffer_sequence;
 }
 
 void S3AsyncBufferOptContainer::flush_used_buffers() {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
 
-  assert(!processing_q.empty());
+  // assert(!processing_q.empty());
 
   evbuf_t* buf = NULL;
   size_t len = 0;
@@ -170,12 +195,12 @@ void S3AsyncBufferOptContainer::flush_used_buffers() {
   }
   s3_log(S3_LOG_DEBUG, "", "Freed evbuffer of len = %zu\n", size_consumed);
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return;
 }
 
 std::string S3AsyncBufferOptContainer::get_content_as_string() {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
   std::string content = "";
 
   // We should not have returned any bufs out for processing.
@@ -224,6 +249,6 @@ std::string S3AsyncBufferOptContainer::get_content_as_string() {
   }
   content_length = 0;  // Everything is returned.
   s3_log(S3_LOG_DEBUG, "", "Content size = %zu\n", content.length());
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return content;
 }

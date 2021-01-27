@@ -18,9 +18,9 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 ##################################
-# Configure replication 
+# Configure ldap-replication
 ##################################
-usage() { echo "Usage: [-h <provide file containing hostnames of nodes in cluster>],[-p <ldap admin password>]" 1>&2; exit 1; }
+usage() { echo "Usage: [-h <file containing hostnames of nodes in cluster>] [-p <ldap admin password>]" 1>&2; exit 1; }
 
 while getopts ":h:p:" o; do
     case "${o}" in
@@ -35,7 +35,7 @@ while getopts ":h:p:" o; do
             ;;
     esac
 done
-shift $((OPTIND-1))
+shift "$((OPTIND-1))"
 
 if [ -z ${host_list} ] || [ -z ${password} ]
 then
@@ -43,20 +43,28 @@ then
     exit 1
 fi
 
-#Below function will check if all provided hosts are valid or not
+INSTALLDIR="/opt/seagate/cortx/s3/install/ldap/replication"
+
+# checkHostValidity will check if all provided hosts are valid and reachable
 checkHostValidity()
 {
     while read host; do
-        isValid=`ping -c 1 ${host} | grep bytes | wc -l`
+        isValid=$(ping -c 1 ${host} | grep bytes | wc -l)
         if [ "$isValid" -le 1 ]
         then
-            echo ${host}" is either invalid or not reachable. Please check or correct your entry in host file"
+            echo "ERROR: $host is either invalid or not reachable."
             exit
+        else
+            echo "INFO: $host is valid and reachable."
         fi
-    done <$host_list
+    done < "$host_list"
 }
+
+# Check if hosts are valid
+checkHostValidity
+
+# getServerIdFromHostFile will generate serverid from host list provided
 id=1
-#Below will generate serverid from host list provided
 getServerIdFromHostFile()
 {
     while read host; do
@@ -64,74 +72,50 @@ getServerIdFromHostFile()
         then
             break
         fi
-    id=`expr ${id} + 1`
-    done <$host_list
-}
-#Below will get serverid from salt command
-getServerIdWithSalt()
-{
-    nodeId=$(salt-call grains.get id --output=newline_values_only)
-    IFS='-'
-    read -ra ID <<< "$nodeId"
-    id=${ID[1]}
+    id=$(expr ${id} + 1)
+    done < "$host_list"
 }
 
+# update serverID
+getServerIdFromHostFile
 
-#olcServerId script
-checkHostValidity
-if hash salt 2>/dev/null; then
-    getServerIdWithSalt
-else
-    getServerIdFromHostFile
-fi
-sed -e "s/\${serverid}/$id/" serverIdTemplate.ldif > scriptServerId.ldif
+sed -e "s/\${serverid}/$id/" $INSTALLDIR/serverIdTemplate.ldif > scriptServerId.ldif
 ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptServerId.ldif
 rm scriptServerId.ldif
 
-ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov_mod.ldif
+ldapadd -Y EXTERNAL -H ldapi:/// -f $INSTALLDIR/syncprov_mod.ldif
+ldapadd -Y EXTERNAL -H ldapi:/// -f $INSTALLDIR/syncprov.ldif
 
-ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov.ldif
-
-#update replicaiton config
-
+# update replication config
+echo "dn: olcDatabase={0}config,cn=config" > scriptConfig.ldif
+echo "changetype: modify" >> scriptConfig.ldif
+echo "add: olcSyncRepl" >> scriptConfig.ldif
 rid=1
 while read host; do
-sed -e "s/\${rid}/$rid/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" configTemplate.ldif > scriptConfig.ldif
-if [ ${rid} -eq 2 ] && [ ${id} -eq 1 ]
-then
-    echo "-" >> scriptConfig.ldif
-    echo "add: olcMirrorMode" >> scriptConfig.ldif
-     echo "olcMirrorMode: TRUE" >> scriptConfig.ldif
-fi
-if [ ${rid} -eq 1 ] && [ ${id} -ne 1 ]
-then
-    echo "-" >> scriptConfig.ldif
-    echo "add: olcMirrorMode" >> scriptConfig.ldif
-    echo "olcMirrorMode: TRUE" >> scriptConfig.ldif
-fi
-ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptConfig.ldif
-rm scriptConfig.ldif
+sed -e "s/\${rid}/$rid/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" $INSTALLDIR/configTemplate.ldif >> scriptConfig.ldif
 rid=`expr ${rid} + 1`
 done <$host_list
 
-iteration=1
+echo "-" >> scriptConfig.ldif
+echo "add: olcMirrorMode" >> scriptConfig.ldif
+echo "olcMirrorMode: TRUE" >> scriptConfig.ldif
+
+ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptConfig.ldif
+rm scriptConfig.ldif
+
 # Update mdb file
+echo "dn: olcDatabase={2}mdb,cn=config" > scriptData.ldif
+echo "changetype: modify" >> scriptData.ldif
+echo "add: olcSyncRepl" >> scriptData.ldif
+
 while read host; do
-sed -e "s/\${rid}/$rid/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" dataTemplate.ldif > scriptData.ldif
-if [ ${iteration} -eq 2 ] && [ ${id} -eq 1 ]
-then
-    echo "-" >> scriptData.ldif
-    echo "add: olcMirrorMode" >> scriptData.ldif
-    echo "olcMirrorMode: TRUE" >> scriptData.ldif
-fi
-if [ ${iteration} -eq 1 ] && [ ${id} -ne 1 ]
-then
-    echo "-" >> scriptData.ldif
-    echo "add: olcMirrorMode" >> scriptData.ldif
-    echo "olcMirrorMode: TRUE" >> scriptData.ldif
-fi
+sed -e "s/\${rid}/$rid/" -e "s/\${provider}/$host/" -e "s/\${credentials}/$password/" $INSTALLDIR/dataTemplate.ldif >> scriptData.ldif
+rid=`expr ${rid} + 1`
+done <$host_list
+
+echo "-" >> scriptData.ldif
+echo "add: olcMirrorMode" >> scriptData.ldif
+echo "olcMirrorMode: TRUE" >> scriptData.ldif
+
 ldapmodify -Y EXTERNAL  -H ldapi:/// -f scriptData.ldif
 rm scriptData.ldif
-rid=`expr ${rid} + 1`
-iteration=`expr ${iteration} + 1`
-done <$host_list

@@ -24,14 +24,15 @@ the rabbitmq message queue.
 #!/usr/bin/python3.6
 
 import os
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS, RABBIT_MQ
 import traceback
 import logging
 import datetime
+import signal
 from logging import handlers
 
-from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
-
+from s3backgrounddelete.cortx_s3_signal import DynamicConfigHandler
 
 class ObjectRecoveryProcessor(object):
     """Provides consumer for object recovery"""
@@ -42,25 +43,41 @@ class ObjectRecoveryProcessor(object):
         self.config = CORTXS3Config()
         self.create_logger_directory()
         self.create_logger()
+        self.signal = DynamicConfigHandler(self)
         self.logger.info("Initialising the Object Recovery Processor")
 
     def consume(self):
         """Consume the objects from object recovery queue."""
         self.server = None
         try:
-             self.server = ObjectRecoveryRabbitMq(
-                 self.config,
-                 self.config.get_rabbitmq_username(),
-                 self.config.get_rabbitmq_password(),
-                 self.config.get_rabbitmq_host(),
-                 self.config.get_rabbitmq_exchange(),
-                 self.config.get_rabbitmq_queue_name(),
-                 self.config.get_rabbitmq_mode(),
-                 self.config.get_rabbitmq_durable(),
-                 self.logger)
-             self.logger.info("Consumer started at " +
-                             str(datetime.datetime.now()))
-             self.server.receive_data()
+            #Conditionally importing ObjectRecoveryRabbitMq/ObjectRecoveryMsgbusConsumer when config setting says so.
+            if self.config.get_messaging_platform() == MESSAGE_BUS:
+                from s3backgrounddelete.object_recovery_msgbus import ObjectRecoveryMsgbus
+
+                self.server = ObjectRecoveryMsgbus(
+                    self.config,
+                    self.logger)
+            elif self.config.get_messaging_platform() == RABBIT_MQ:
+                from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
+
+                self.server = ObjectRecoveryRabbitMq(
+                    self.config,
+                    self.config.get_rabbitmq_username(),
+                    self.config.get_rabbitmq_password(),
+                    self.config.get_rabbitmq_host(),
+                    self.config.get_rabbitmq_exchange(),
+                    self.config.get_rabbitmq_queue_name(),
+                    self.config.get_rabbitmq_mode(),
+                    self.config.get_rabbitmq_durable(),
+                    self.logger)
+            else:
+                self.logger.error(
+                "Invalid argument specified in messaging_platform use message_bus or rabbit_mq")
+                return
+
+            self.logger.info("Consumer started at " +
+                            str(datetime.datetime.now()))
+            self.server.receive_data()
         except BaseException:
             if self.server:
                 self.server.close()

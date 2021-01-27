@@ -27,9 +27,8 @@ USAGE="USAGE: bash $(basename "$0") <bundleid> <path>
 Generate support bundle for s3server.
 
 where:
-bundleid     Unique bundle-id used to identify support bundles.
-path         Location at which support bundle needs to be copied."
-
+bundleid         Unique bundle-id used to identify support bundles.
+path             Location at which support bundle needs to be copied."
 
 if [ $# -lt 2 ]
 then
@@ -39,6 +38,9 @@ fi
 
 bundle_id=$1
 bundle_path=$2
+# TODO: till we find out how to get rootdn password, keep 'rootdnpasswd' variable empty.
+rootdnpasswd=''
+
 bundle_name="s3_$bundle_id.tar.xz"
 s3_bundle_location=$bundle_path/s3
 
@@ -405,47 +407,35 @@ fi
 
 ## Collect LDAP data
 mkdir -p $ldap_dir
-# Fetch ldap root DN password from provisioning else use default
-rootdnpasswd=""
-if rpm -q "salt"  > /dev/null;
+if [[ $? != 0 || -z "$rootdnpasswd" ]]
 then
-    # Prod/Release environment
-    rootdnpasswd=$(salt-call pillar.get openldap:admin:secret --output=newline_values_only) 2>/dev/null
-    rootdnpasswd=$(salt-call lyveutil.decrypt openldap "${rootdnpasswd}" --output=newline_values_only) 2>/dev/null
+    echo "ERROR: ldap admin password: '$rootdnpasswd' is not correct, skipping collection of ldap data."
 else
-    # Dev environment
-    source /root/.s3_ldap_cred_cache.conf 2>/dev/null
-fi
+    # Run ldap commands
+    ldapsearch -b "cn=config" -x -w "$rootdnpasswd" -D "cn=admin,cn=config" -H ldapi:/// > "$ldap_config"  2>&1
+    ldapsearch -s base -b "cn=subschema" objectclasses -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" -H ldapi:/// > "$ldap_subschema"  2>&1
+    ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" "objectClass=Account" -H ldapi:/// -LLL ldapentrycount > "$ldap_accounts" 2>&1
+    ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" "objectClass=iamUser" -H ldapi:/// -LLL ldapentrycount > "$ldap_users"  2>&1
 
-if [[ -z "$rootdnpasswd" ]]
-then
-    rootdnpasswd=$ldap_root_pwd 2>/dev/null
-fi
+    if [ -f "$ldap_config" ];
+    then
+        args=$args" "$ldap_config
+    fi
 
-# Run ldap commands
-ldapsearch -b "cn=config" -x -w "$rootdnpasswd" -D "cn=admin,cn=config" -H ldapi:/// > "$ldap_config"  2>&1
-ldapsearch -s base -b "cn=subschema" objectclasses -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" -H ldapi:/// > "$ldap_subschema"  2>&1
-ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" "objectClass=Account" -H ldapi:/// -LLL ldapentrycount > "$ldap_accounts" 2>&1
-ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" "objectClass=iamUser" -H ldapi:/// -LLL ldapentrycount > "$ldap_users"  2>&1
+    if [ -f "$ldap_subschema" ];
+    then
+        args=$args" "$ldap_subschema
+    fi
 
-if [ -f "$ldap_config" ];
-then
-    args=$args" "$ldap_config
-fi
+    if [ -f "$ldap_accounts" ];
+    then
+        args=$args" "$ldap_accounts
+    fi
 
-if [ -f "$ldap_subschema" ];
-then
-    args=$args" "$ldap_subschema
-fi
-
-if [ -f "$ldap_accounts" ];
-then
-    args=$args" "$ldap_accounts
-fi
-
-if [ -f "$ldap_users" ];
-then
-    args=$args" "$ldap_users
+    if [ -f "$ldap_users" ];
+    then
+        args=$args" "$ldap_users
+    fi
 fi
 
 # Clean up temp files

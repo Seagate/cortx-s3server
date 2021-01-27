@@ -106,6 +106,8 @@ class S3DeleteObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3DeleteObjectActionTest, SendErrorResponse);
   FRIEND_TEST(S3DeleteObjectActionTest, SendAnyFailedResponse);
   FRIEND_TEST(S3DeleteObjectActionTest, SendSuccessResponse);
+  FRIEND_TEST(S3DeleteObjectActionTest, DeleteObject);
+  FRIEND_TEST(S3DeleteObjectActionTest, DelayedDeleteObject);
 };
 
 #endif

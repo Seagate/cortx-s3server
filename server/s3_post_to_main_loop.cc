@@ -23,7 +23,7 @@
 
 void S3PostToMainLoop::operator()(user_event_on_main_loop callback,
                                   const std::string &request_id) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   struct event *ev_user = NULL;
   struct user_event_context *user_context =
       (struct user_event_context *)context;
@@ -40,5 +40,5 @@ void S3PostToMainLoop::operator()(user_event_on_main_loop callback,
   user_context->user_event =
       (void *)ev_user;  // remember so we can free this event.
   event_active(ev_user, EV_READ | EV_WRITE | EV_TIMEOUT, 1);
-  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
 }

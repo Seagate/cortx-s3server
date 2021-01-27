@@ -19,304 +19,198 @@
 #
 
 #######################################################
-# Install and configure release S3Server installation #
+# Configure and initialize s3server and dependencies
 #######################################################
-USAGE="USAGE: bash $(basename "$0") [--setupjenkinsyumrepo]
-                                    [--installdependency]
-                                    [--postdependency]
-                                    [--purgeconfigldap]
-                                    [--configldap]
-                                    [--ldapreplication]
-                                    [--olcserverid <Value>]
-                                    [--eesnode1 <Value>]
-                                    [--eesnode2 <Value>]
-                                    [--s3backgrounddelete]
-                                    [--s3recoverytool]
-                                    [--node1 <Value>]
-                                    [--node2 <Value>]
-                                    [--createauthjkspassword]
-                                    [--cleanup]
-                                    [--setlogrotate]
-                                    [--help | -h]
-Install and configure release S3server setup.
+USAGE="USAGE: bash $(basename "$0") [post_install]
+                    [config]
+                    [init]
+                    [test]
+                    [cleanup]
+                    --config <confstore-config-file-url-path>
 
 where:
---setupjenkinsyumrepo    Setup required S3 yum repos.
---installdependency      Install all S3server release rpm dependencies.
---postdependency         Configure S3server post installation of dependencies.
---purgeconfigldap        Clear and Setup all LDAP configs
---configldap             Setup all LDAP configs
---ldapreplication        Setup LDAP replication
---eesnode1               EES node 1 for LDAP replication
---eesnode2               EES node 2 for LDAP replication
---olcserverid            Host olcServerID (Unique for different nodes)
---s3backgrounddelete     Configure s3backgrounddelete and its dependencies
---s3recoverytool         Configure s3recoverytool and its dependencies
---updateclusterid        Fetch and update cluster id in S3 config
---cleanup                Cleanup S3 accounts created for backgroundelete.
---setlogrotate           Set logrotate policy
---createauthjkspassword  Setup random jks password for Auth server
+post_install             will do postinstall steps, which will include validation of
+                         pre-requisite packages and services, like motr
+
+config                   do configuration of openldap (with replication), haproxy and
+                         create authjks keys.
+
+init                     create s3backgrounddelete, s3recoverytool s3 accounts. Also sets
+                         log-rotation policies for haproxy, auditlogs and openldap, incase of
+                         'VM' environment.
+
+test                     run s3 sanity tests
+
+cleanup                  cleanup S3 accounts created for backgrounddelete service and recovery tool
+
+--config                 URL path for the confstore configuration file. This option is Mandatory
+
 --help                   Display this help and exit"
 
 set -e
 
-S3_DIR="/root/s3server"
 access_key=""
 secret_key=""
 
-OS=$(cat /etc/os-release | grep -w ID | cut -d '=' -f 2)
-VERSION=`cat /etc/os-release | sed -n 's/VERSION_ID=\"\([0-9].*\)\"/\1/p'`
-major_version=`echo ${VERSION} | awk -F '.' '{ print $1 }'`
-selinux_status=$(sestatus| grep -w "SELinux status" | cut -d ':' -f 2  | xargs)
+confstore_config_url=""
+s3postinstall=false
+s3config=false
+s3init=false
+s3cleanup=false
+s3test=false
 
-olc_server_id=1
-ees_node1=127.0.0.1
-ees_node2=127.0.0.1
-ldap_replication=false
-install_dependency=false
-post_dependency=false
-purge_config_ldap=false
-config_ldap=false
-setup_jenkins_yum_repo=false
-setup_s3backgrounddelete=false
-setup_s3recoverytool=false
-update_cluster_id=false
-is_rabbitmq_clustered=false
-cleanup_accounts=false
-cleanup_dependencies=false
-setlogrotate=false
-create_auth_jks_passwrd=false
+cipherkey=""
+sgiamadminpassd=""
+ldappasswd=""
 
-if [ $# -lt 1 ]
+encrypt_cli="/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar"
+
+if [ $# -lt 3 ]
 then
   echo "$USAGE"
   exit 1
 fi
 
+# check if s3cipher, s3confstore and s3setup are installed on the system
+if ! command -v s3cipher &>/dev/null
+then
+    echo "ERROR: s3cipher not installed on the system, exiting."
+    exit 1
+fi
+
+if ! command -v s3confstore &>/dev/null
+then
+    echo "ERROR: s3confstore not installed on the system, exiting."
+    exit 1
+fi
+
+if ! command -v s3setup &>/dev/null
+then
+    echo "ERROR: s3setup not installed on the system, exiting."
+    #exit 1
+fi
+
+
 while test $# -gt 0
 do
   case "$1" in
-    --installdependency )
-        install_dependency=true
+    post_install )
+        s3postinstall=true
         ;;
-    --postdependency )
-        post_dependency=true
+    config )
+        s3config=true
         ;;
-    --configldap )
-        config_ldap=true
+    init )
+        s3init=true
         ;;
-    --purgeconfigldap )
-        purge_config_ldap=true
+    test )
+        s3test=true
         ;;
-    --ldapreplication )
-        ldap_replication=true
+    cleanup )
+        s3cleanup=true
         ;;
-    --olcserverid ) shift;
-        olc_server_id=$1
-        ;;
-    --eesnode1 ) shift;
-        ees_node1=$1
-        ;;
-    --eesnode2 ) shift;
-        ees_node2=$1
-        ;;
-    --setupjenkinsyumrepo )
-        setup_jenkins_yum_repo=true
-        ;;
-    --s3backgrounddelete )
-        setup_s3backgrounddelte=true
-        ;;
-    --s3recoverytool )
-        setup_s3recoverytool=true
-        ;;
-    --updateclusterid )
-        update_cluster_id=true
-        ;;
-    --cleanup )
-        cleanup_accounts=true
-        cleanup_dependencies=true
-        ;;
-    --setlogrotate )
-        setlogrotate=true
-        ;;
-    --createauthjkspassword )
-        create_auth_jks_passwrd=true
+    --config ) shift;
+        confstore_config_url=$1
         ;;
     --help | -h )
         echo "$USAGE"
-        exit 1
+        exit 0
+        ;;
+    None )
+        exit 0
         ;;
   esac
   shift
 done
 
-setup_release_repo()
+if [ -z "$confstore_config_url" ]
+then
+    echo "ERROR: --config option is mandatory and value should be a valid URL path, exiting."
+    exit 1
+fi
+
+
+get_ldap_password()
 {
-cat >/etc/yum.repos.d/releases_cortx_lustre.repo <<EOL
-[releases_cortx_lustre]
-baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/github/release/rhel-7.7.1908/last_successful/
-gpgcheck = 0
-name = Yum repo for lustre
-priority = 1
-EOL
-
-cat >/etc/yum.repos.d/releases_cortx_hare.repo <<EOL
-[releases_cortx_hare]
-baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/github/release/rhel-7.7.1908/last_successful/
-gpgcheck = 0
-name = Yum repo for hare
-priority = 1
-EOL
-
-cat >/etc/yum.repos.d/releases_cortx_motr.repo <<EOL
-[releases_cortx_motr]
-baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/components/github/dev/rhel-7.7.1908/dev/motr/last_successful/
-gpgcheck = 0
-name = Yum repo for motr
-priority = 1
-EOL
-
-cat >/etc/yum.repos.d/releases_cortx_s3server.repo <<EOL
-[releases_cortx_s3server]
-baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/components/dev/centos-7.7.1908/s3server/last_successful/
-gpgcheck = 0
-name = Yum repo for s3server
-priority = 1
-EOL
-
-if [ "$major_version" = "7" ];
-then
-
-cat >/etc/yum.repos.d/releases_s3server_uploads <<EOL
-[releases_s3server_uploads]
-baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/uploads/centos/centos-7.7.1908/s3server_uploads/
-gpgcheck = 0
-name = Yum repo for S3 server dependencies
-priority = 1
-EOL
-
-cat >/etc/yum.repos.d/prvsnr_local_repository <<EOL
-[prvsnr_local_repository]
-baseurl = http://cortx-storage.colo.seagate.com/prvsnr/vendor/centos/epel/
-gpgcheck = 0
-name = Yum local repo for S3 server dependencies
-priority = 1
-EOL
-
-elif [ "$major_version" = "8" ];
-then
-cat >/etc/yum.repos.d/releases_s3server_uploads <<EOL
-[releases_s3server_uploads]
-baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/uploads/centos/centos-8.0.1905/s3server_uploads/
-gpgcheck = 0
-name = Yum repo for S3 server dependencies
-priority = 1
-EOL
-
-# TODO Change it from public to mirror repo, once available
-cat >/etc/yum.repos.d/prvsnr_local_repository <<EOL
-[prvsnr_local_repository]
-baseurl = http://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/
-gpgcheck = 0
-name = Yum local repo for S3 server dependencies
-priority = 1
-EOL
-
-fi
-}
-
-# Setup required S3 repos for S3 dependencies.
-if [[ $setup_jenkins_yum_repo == true ]]
-then
-setup_release_repo
-fi
-
-# Install required S3 release rpm dependencies.
-if [[ $install_dependency == true ]]
-then
-    # Install all required S3 dependencies for release setup
-    yum list installed selinux-policy && yum update -y selinux-policy
-    yum install -y openssl java-1.8.0-openjdk-headless redis haproxy keepalived
-
-    # Generate the stx certificates rpms
-    rm -f ~/rpmbuild/RPMS/x86_64/stx-s3-certs*
-    rm -f ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
-
-    cd $S3_DIR/rpms/s3certs
-    ./buildrpm.sh -T s3dev
-
-    yum remove stx-s3-certs stx-s3-client-certs || /bin/true
-    #yum install openldap-servers haproxy -y # so we have "ldap" and "haproxy" users.
-    yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-certs*
-    yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
-
-    # Install rabbitmq requried for s3background delete on all s3 nodes
-    curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | sudo bash || exit 1
-
-    # Install python3 pika on all nodes requried for s3backgrounddelete  / recoverytool (BSD 3-Clause license)
-    if [ "$major_version" = "7" ];
+    cipherkey=$(s3cipher --generate_key --const_key openldap)
+    if [ ! -z "$cipherkey" ]
     then
-        yum -y install  python36-pika
-    elif [ "$major_version" = "8" ];
-    then
-        yum -y localinstall https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/Packages/p/python3-pika
+        sgiamadminpassd=$(s3confstore "$confstore_config_url" getkey --key "openldap>sgiam>secret")
+        if [ ! -z "$sgiamadminpassd" ]
+        then
+            # decrypt the password read from the confstore
+            ldappasswd=$(s3cipher --decrypt --data "$sgiamadminpassd" --key "$cipherkey")
+            if [ -z "$ldappasswd" ]
+            then
+                echo "ERROR: failed to decrypt sgiamadmin user's ldap password, exiting."
+                exit 1
+            fi
+        else
+            echo "ERROR: failed to read sgiamadmin user's ldap password from confstore, exiting."
+            exit 1
+        fi
+    else
+        echo "ERROR: failed to generate cipher key, exiting."
+        exit 1
     fi
-fi
-
-setup_ldap_replication()
-{
-    ldapadd -Y EXTERNAL -H ldapi:/// -f /opt/seagate/cortx/s3/install/ldap/syncprov_mod.ldif
-    ldapadd -Y EXTERNAL -H ldapi:/// -f /opt/seagate/cortx/s3/install/ldap/syncprov.ldif
-    firewall-cmd --zone=public --add-port=389/tcp --permanent
-    firewall-cmd --reload
-
-    # Openldap replication for 2 node setup for EES.
-    sed -i 's/#//g' /opt/seagate/cortx/s3/install/ldap/replicate.ldif
-    sed -i '0,/<sample_provider_URI>/ s/<sample_provider_URI>/$ees_node1/g' scripts/ldap/replicate.ldif
-    sed -i '0,/<sample_provider_URI>/ s/<sample_provider_URI>/$ees_node2/g' scripts/ldap/replicate.ldif
-    sed -i 's/olcServerID: /olcServerID: $olc_server_id/g' scripts/ldap/replicate.ldif
-
-    ldapmodify -Y EXTERNAL  -H ldapi:/// -f /opt/seagate/cortx/s3/install/ldap/replicate.ldif
 }
+
+# get openldap password from confstore
+echo "Get openldap passwords from confstore.."
+get_ldap_password
+
 
 # Fetch and update cluster_id
-fetch_update_cluster_id(){
-    cluster_id=$(salt-call grains.get cluster_id --out=json | jq '.[]') || exit 1
-    sed -i "s/cluster_id:.*$/cluster_id: "$cluster_id"/g" /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml
+fetch_update_cluster_id()
+{
+    cluster_id=$(s3confstore "$confstore_config_url" getkey --key "cluster>cluster_id")
+    if [ $? -eq 0 ]
+    then
+        # TODO: remove below sed cmd, as soon as s3backgrounddelete gets updated to read configurations from confstore
+        sed -i "s/cluster_id:.*$/cluster_id: "$cluster_id"/g" /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml
+    else
+        echo "ERROR: failed to read cluster>cluster_id from py-utils:confstore, exiting."
+        exit 1
+    fi
 }
 
-# Fetch and update cluster id
-if [[ $update_cluster_id == true ]]
-then
-    echo "Fetching and updating cluster id in s3_cluster.yaml"
-    fetch_update_cluster_id
-fi
-
-# Create random password for auth jks keystore
-create_auth_jks_password(){
+create_auth_jks_password()
+{
     sh /opt/seagate/cortx/auth/scripts/create_auth_jks_password.sh
 }
 
-# Setup random jks password for authserver
-if [[ $create_auth_jks_passwrd == true ]]
-then
-    echo "Creating random jks password for Auth server"
-    create_auth_jks_password
-fi
-
 # Install and Configure Openldap over Non-SSL.
-ldappasswd=$(salt-call pillar.get openldap:iam_admin:secret --output=newline_values_only)
-ldappasswd=$(salt-call lyveutil.decrypt openldap ${ldappasswd} --output=newline_values_only)
+configure_openldap()
+{
+    /opt/seagate/cortx/s3/install/ldap/setup_ldap.sh --confurl "$confstore_config_url" --defaultpasswd --skipssl
+    if [ $? -ne 0 ]
+    then
+        echo "ERROR: failed to configure openldap, exiting."
+        exit 1
+    fi
+    # check number of nodes in the cluster
+    server_nodes_count=$(s3confstore "$confstore_config_url" getnodecount)
+    if [ "$server_nodes_count" -gt 1 ]
+    then
+        hosts_str=$(s3confstore "$confstore_config_url" getnodenames)
+        echo "INFO: hostnames str: [$hosts_arr]"
+        read -ra hosts_arr <<< "$hosts_str"
+        for host in "${hosts_arr[@]}"
+        do
+            host >> hosts_list_file.txt
+        done
+        echo "setting ldap-replication on all cluster nodes.."
+        /opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh -h hosts_list_file.txt -p "$ldappasswd"
+        if [ $? -ne 0 ]
+        then
+            echo "ERROR: failed to configure ldap replication, exiting."
+            exit 1
+        fi
+        rm -f hosts_list_file.txt
+    else
+        echo "INFO: Not setting ldap-replication as 'cluster>node_count' is less than 2."
+    fi
 
-if [[ -z "$ldappasswd" ]]
-then
-    ldappasswd=ldapadmin
-fi
-
-if [[ $config_ldap == true ]]
-then
-    /opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh -l $ldappasswd \
-          -p /opt/seagate/cortx/auth/resources/authserver.properties
     if [[ -f /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf ]]
     then
         # Enable slapd logging in rsyslog config
@@ -325,78 +219,14 @@ then
     fi
     systemctl restart s3authserver
     systemctl restart rsyslog
-
-elif [[ $purge_config_ldap == true ]]
-then
-    $S3_DIR/scripts/ldap/setup_ldap.sh --defaultpasswd --forceclean --skipssl
-    $S3_DIR/scripts/enc_ldap_passwd_in_cfg.sh -l $ldappasswd \
-          -p /opt/seagate/cortx/auth/resources/authserver.properties
-fi
-
-# Setup Openldap replication for EES setup.
-if [[ $ldap_replication == true ]]
-then
-    setup_ldap_replication
-fi
-
-# Post S3 dependency installation steps for configuring S3.
-if [[ $post_dependency == true ]]
-then
-    rpm -q openssl java-1.8.0-openjdk-headless redis haproxy keepalived rsyslog stx-s3-certs stx-s3-client-certs|| exit 1
-    # Copy haproxy config and rsyslog dependencies
-    if [ "$major_version" = "7" ];
-    then
-        cp /opt/seagate/cortx/s3/install/haproxy/haproxy_osver7.cfg /etc/haproxy/haproxy.cfg
-    elif [ "$major_version" = "8" ];
-    then
-        cp /opt/seagate/cortx/s3/install/haproxy/haproxy_osver8.cfg /etc/haproxy/haproxy.cfg
-    fi
-
-    cp /opt/seagate/cortx/s3/install/haproxy/503.http /etc/haproxy/errors/
-    cp /opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy /etc/logrotate.d/haproxy
-    cp /opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf /etc/rsyslog.d/haproxy.conf
-
-    if [ -f /etc/cron.daily/logrotate ];
-    then
-        rm -rf /etc/cron.daily/logrotate
-    fi
-
-    cp /opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate /etc/cron.hourly/logrotate
-
-    # Enable slapd logging in rsyslog config
-    cp /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf /etc/rsyslog.d/slapdlog.conf
-
-    if [ "$selinux_status" = "enabled" ];
-    then
-        setsebool httpd_can_network_connect on -P
-        setsebool haproxy_connect_any 1 -P
-    fi
-
-    mkdir -p /var/seagate/s3
-
-    # Update python36 symlinks
-    if ! command -v python36 &>/dev/null;
-    then
-      if command -v python3.6 &>/dev/null;
-      then
-        ln -s "`command -v python3.6`" /usr/bin/python36
-      else
-        echo "Python v3.6 is not installed (neither python36 nor python3.6 are found in PATH)."
-        exit 1
-      fi
-    fi
-
-    systemctl restart slapd
-    systemctl restart rsyslog
-
-fi
+}
 
 add_s3backgrounddelete_rabbitmq_user()
 {
     users=`rabbitmqctl list_users`
     if [[ $users =~ "cortx-s3" ]]
     then
-    echo "Rabbitmq s3user already exists. Cleaning existing s3user."
+    echo "WARN: Rabbitmq s3user already exists. Cleaning existing s3user."
     rabbitmqctl delete_user cortx-s3
     fi
     # Create a user (In this case user is 'cortx-s3' with password as 'password')
@@ -407,37 +237,21 @@ add_s3backgrounddelete_rabbitmq_user()
     # Setup queue mirroring
     rabbitmqctl set_policy ha-all ".*" '{"ha-mode":"all"}'
 
-    echo "Rabbitmq configuration for this node is completed..."
+    echo "INFO: Rabbitmq configuration for this node is completed..."
 }
 
 # Generate s3backgroundelete keys using cipher
 create_s3backgroundelete_keys()
 {
     access_key=$(s3cipher --use_base64 --key_len  22  --const_key  "s3backgroundaccesskey")
-    if [[ $? -ne 0 ]]
-    then
-      access_key=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 22 | head -n 1)
-    fi
     secret_key=$(s3cipher --key_len  40  --const_key  "s3backgroundsecretkey")
-    if [[ $? -ne 0 ]]
-    then
-      secret_key=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9+' | fold -w 40 | head -n 1)
-    fi
 }
 
 # Generate s3recovery keys using cipher
 create_s3recovery_keys()
 {
     access_key=$(s3cipher --use_base64 --key_len  22  --const_key  "s3recoveryaccesskey")
-    if [[ $? -ne 0 ]]
-    then
-      access_key=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 22 | head -n 1)
-    fi
     secret_key=$(s3cipher --key_len  40  --const_key  "s3recoverysecretkey")
-    if [[ $? -ne 0 ]]
-    then
-      secret_key=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9+' | fold -w 40 | head -n 1)
-    fi
 }
 
 # Create s3 account for s3 recoverytool
@@ -448,11 +262,13 @@ create_recovery_tool_account()
     then
       # Create s3recovery tool account
       create_s3recovery_keys
-      salt "*" cmd.run "sed -i \"s/recovery_account_access_key:.*$/recovery_account_access_key: \"$access_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
-      salt "*" cmd.run "sed -i \"s/recovery_account_secret_key:.*$/recovery_account_secret_key: \"$secret_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
-      salt "*" cmd.run "sed -i \"s/ak:.*/ak: $access_key/g\" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif"
-      salt "*" cmd.run "sed -i \"s/sk:.*/sk: $secret_key/g\" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif"
-      salt "*" cmd.run "sed -i \"s/ak=.*/ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com/g\" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif"
+      # TODO - use s3confstore to set the access_key and secret_key in confstore.
+      # once the s3recovery is updated to read the keys from confstore, instead of config.yaml file
+      sed -i "s/recovery_account_access_key:.*$/recovery_account_access_key: \"$access_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+      sed -i "s/recovery_account_secret_key:.*$/recovery_account_secret_key: \"$secret_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+      sed -i "s/ak:.*/ak: $access_key/g" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif
+      sed -i "s/sk:.*/sk: $secret_key/g" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif
+      sed -i "s/ak=.*/ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com/g" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif
       access_key=""
       secret_key=""
       sh /opt/seagate/cortx/s3/install/ldap/create_s3_recovery_account.sh $ldappasswd
@@ -462,32 +278,24 @@ create_recovery_tool_account()
     fi
 }
 
-# Delete s3 account which was used by s3recoverytool
-delete_recovery_tool_account()
-{
-    output=$(ldapsearch -b "o=s3-recovery-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
-    if [[ $output != *"No such object"* ]]
-    then
-    # Delete s3recovery tool account
-      sh /opt/seagate/cortx/s3/install/ldap/delete_s3_recovery_account.sh $ldappasswd
-      echo "Deleted s3recovery tool account successfully..."
-	fi
-}
-
-
 # Create s3 account for s3 backgrounddelete
 create_background_delete_account()
 {
     output=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
     if [[ $output == *"No such object"* ]]
     then
-    # Create s3background delete account
+      echo "Setting up rabbitmq server for S3backgroundelete"
+      add_s3backgrounddelete_rabbitmq_user
+
+      # Create s3background delete account
       create_s3backgroundelete_keys
-      salt "*" cmd.run "sed -i \"s/background_account_access_key:.*$/background_account_access_key: \"$access_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
-      salt "*" cmd.run "sed -i \"s/background_account_secret_key:.*$/background_account_secret_key: \"$secret_key\"/g\" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
-      salt "*" cmd.run "sed -i \"s/ak:.*/ak: $access_key/g\" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif"
-      salt "*" cmd.run "sed -i \"s/sk:.*/sk: $secret_key/g\" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif"
-      salt "*" cmd.run "sed -i \"s/ak=.*/ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com/g\" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif"
+      # TODO - use s3confstore to set the access_key and secret_key in confstore.
+      # once the s3backgrounddelete is updated to read the keys from confstore, instead of config.yaml file
+      sed -i "s/background_account_access_key:.*$/background_account_access_key: \"$access_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+      sed -i "s/background_account_secret_key:.*$/background_account_secret_key: \"$secret_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+      sed -i "s/ak:.*/ak: $access_key/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
+      sed -i "s/sk:.*/sk: $secret_key/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
+      sed -i "s/ak=.*/ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
       access_key=""
       secret_key=""
       sh /opt/seagate/cortx/s3/install/ldap/create_background_delete_account.sh $ldappasswd
@@ -497,53 +305,12 @@ create_background_delete_account()
     fi
 }
 
-# Delete s3 account which was used by s3background delete
-delete_background_delete_account()
-{
-    output=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
-    if [[ $output != *"No such object"* ]]
-    then
-	   # Delete s3background delete account
-	   sh /opt/seagate/cortx/s3/install/ldap/delete_background_delete_account.sh $ldappasswd
-	   echo "Deleted s3backgrounddelete account successfully..."
-	fi
+set_s3conf_log_sz() {
+    conf_sz=$1
+    conf_path="/opt/seagate/cortx/s3/conf/s3config.yaml"
+
+    sed -i "s/S3_LOG_FILE_MAX_SIZE:\s*[0-9]*\(.*\)/S3_LOG_FILE_MAX_SIZE: $conf_sz\1/" $conf_path
 }
-
-# Setup s3 background delete and its dependencies
-if [[ $setup_s3backgrounddelte == true ]]
-then
-    echo "Setting up rabbitmq server for S3backgroundelete"
-    add_s3backgrounddelete_rabbitmq_user
-    echo "Creating the s3backgrounddelete account"
-    create_background_delete_account
-fi
-
-# Setup recovery tool dependancies
-if [[ $setup_s3recoverytool == true ]]
-then
-    echo "Creating the s3 recovery tool account"
-	create_recovery_tool_account
-fi
-
-# Clean up backgrounddelete account
-if [[ $cleanup_accounts == true ]]
-then
-    echo "Deleting the s3background delete account"
-    delete_background_delete_account
-    echo "Deleting the s3recovery tool account"
-	delete_recovery_tool_account
-fi
-
-# Clean up s3 dependencies
-if [[ $cleanup_dependencies == true ]]
-then
-    echo "removing s3 dependencies"
-    yum -y remove log4cxx_cortx || echo ""
-    mv -f /opt/seagate/cortx/auth/resources/authserver.properties /opt/seagate/cortx/auth/resources/authserver.properties.bak
-    mv -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.bak
-    mv -f /opt/seagate/cortx/auth/resources/keystore.properties /opt/seagate/cortx/auth/resources/keystore.properties.bak
-    mv -f /opt/seagate/cortx/s3/conf/s3config.yaml /opt/seagate/cortx/s3/conf/s3config.yaml.bak
-fi
 
 set_logrotate() {
     fname=$1
@@ -552,13 +319,6 @@ set_logrotate() {
 
     sed -i "s/rotate [0-9]*/rotate $set_fcount/" $fname
     sed -i "s/size [0-9bBkKmMgGpPtT]*/size $set_sz/" $fname
-}
-
-set_s3conf_log_sz() {
-    conf_sz=$1
-    conf_path="/opt/seagate/cortx/s3/conf/s3config.yaml"
-
-    sed -i "s/S3_LOG_FILE_MAX_SIZE:\s*[0-9]*\(.*\)/S3_LOG_FILE_MAX_SIZE: $conf_sz\1/" $conf_path
 }
 
 set_logrotate_policy_ova() {
@@ -574,26 +334,68 @@ set_logrotate_policy_ova() {
     set_s3conf_log_sz 5
 }
 
-get_platform() {
-    set +e
-    platform=`provisioner get_setup_info --out json 2>&1`
-
-    res=`echo $platform | jq -r .ret.server_type 2>&1`
-    exc=$?
-    if [[ $exc != 0 ]]
-    then
-        echo "WARNING: 'provisioner get_setup_info' invalid JSON output"
-    fi
-    echo $(echo $res | tr '[A-Z]' '[a-z]')
-    set -e
-}
-
-if [[ $setlogrotate == true ]]
+if [ $s3postinstall == true ]
 then
-    plt=$(get_platform)
-    echo "Server type is $plt"
-    if [[ "$plt" == "virtual" ]]
+    echo "INFO: running post_install..."
+    # exit 0
+fi
+
+if [ $s3config == true ]
+then
+    # Fetch and update cluster id
+    echo "INFO: Fetching and updating cluster id in s3_cluster.yaml .."
+    fetch_update_cluster_id
+
+    # Create random password for auth jks keystore
+    echo "INFO: Creating random jks password for Auth server.."
+    create_auth_jks_password
+
+    # configure openldap and ldap-replication
+    echo "INFO: Configure openldap.."
+    configure_openldap
+
+    echo "INFO: Configure haproxy.."
+	s3haproxyconfig --path "$confstore_config_url"
+    if [ $? -ne 0 ]
     then
+        echo "ERROR: haproxy configuration failed, exiting"
+        exit 1
+    fi
+
+fi
+
+if [ $s3init == true ]
+then
+    # Setup s3 background delete and its dependencies
+    echo "INFO: Creating the s3backgrounddelete account.."
+    create_background_delete_account
+
+    # Setup recovery tool dependancies
+    echo "INFO: Creating the s3 recovery tool account"
+	create_recovery_tool_account
+
+    # set logrotate policy
+    plat=$(s3confstore "$confstore_config_url" getkey --key "cluster>env_type")
+    echo "INFO: cluster environment type: $plat"
+    if [ "$plat" == "VM" ]
+    then
+        echo "INFO: setting logrotate policy.."
         set_logrotate_policy_ova
     fi
+fi
+
+if [ $s3test == true ]
+then
+    cmd_out=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
+    if [[ $cmd_out == *"No such object"* ]];then
+        echo "ERROR: failed to find s3background delete account, exit."
+        exit 1
+    else
+        echo "PASS: S3-Sanity test passed."
+    fi
+fi
+
+if [ $s3cleanup == true ]
+then
+    s3setup --cleanup accounts --ldappasswd "$ldappasswd"
 fi

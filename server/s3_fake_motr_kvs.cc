@@ -31,10 +31,10 @@ S3FakeMotrKvs::S3FakeMotrKvs() : in_mem_kv() {}
 
 int S3FakeMotrKvs::kv_read(struct m0_uint128 const &oid,
                            struct s3_motr_kvs_op_context const &kv) {
-  s3_log(S3_LOG_DEBUG, "", "Entering with oid %" SCNx64 " : %" SCNx64 "\n",
-         oid.u_hi, oid.u_lo);
+  s3_log(S3_LOG_DEBUG, "", "%s Entry with oid %" SCNx64 " : %" SCNx64 "\n",
+         __func__, oid.u_hi, oid.u_lo);
   if (in_mem_kv.count(oid) == 0) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting NOENT\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit NOENT\n", __func__);
     return -ENOENT;
   }
 
@@ -57,16 +57,16 @@ int S3FakeMotrKvs::kv_read(struct m0_uint128 const &oid,
            found_val.c_str());
   }
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting 0\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit 0\n", __func__);
   return 0;
 }
 
 int S3FakeMotrKvs::kv_next(struct m0_uint128 const &oid,
                            struct s3_motr_kvs_op_context const &kv) {
-  s3_log(S3_LOG_DEBUG, "", "Entering with oid %" SCNx64 " : %" SCNx64 "\n",
-         oid.u_hi, oid.u_lo);
+  s3_log(S3_LOG_DEBUG, "", "%s Entry with oid %" SCNx64 " : %" SCNx64 "\n",
+         __func__, oid.u_hi, oid.u_lo);
   if (in_mem_kv.count(oid) == 0) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting ENOENT\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit ENOENT\n", __func__);
     return -ENOENT;
   }
 
@@ -92,7 +92,8 @@ int S3FakeMotrKvs::kv_next(struct m0_uint128 const &oid,
       ++val_it;
     }
     if (val_it == std::end(obj_kv)) {
-      s3_log(S3_LOG_DEBUG, "", "Exiting k:>%s ENOENT\n", search_key.c_str());
+      s3_log(S3_LOG_DEBUG, "", "%s Exit k:>%s ENOENT\n", __func__,
+             search_key.c_str());
       return -ENOENT;
     }
     s3_log(S3_LOG_DEBUG, "", "Initial k:>%s found\n", search_key.c_str());
@@ -120,14 +121,14 @@ int S3FakeMotrKvs::kv_next(struct m0_uint128 const &oid,
     ++val_it;
   }
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting 0\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit 0\n", __func__);
   return 0;
 }
 
 int S3FakeMotrKvs::kv_write(struct m0_uint128 const &oid,
                             struct s3_motr_kvs_op_context const &kv) {
-  s3_log(S3_LOG_DEBUG, "", "Entering with oid %" SCNx64 " : %" SCNx64 "\n",
-         oid.u_hi, oid.u_lo);
+  s3_log(S3_LOG_DEBUG, "", "%s Entry with oid %" SCNx64 " : %" SCNx64 "\n",
+         __func__, oid.u_hi, oid.u_lo);
   KeyVal &obj_kv = in_mem_kv[oid];
 
   int cnt = kv.values->ov_vec.v_nr;
@@ -142,16 +143,16 @@ int S3FakeMotrKvs::kv_write(struct m0_uint128 const &oid,
            nval.c_str());
   }
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting 0\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit 0\n", __func__);
   return 0;
 }
 
 int S3FakeMotrKvs::kv_del(struct m0_uint128 const &oid,
                           struct s3_motr_kvs_op_context const &kv) {
-  s3_log(S3_LOG_DEBUG, "", "Entering with oid %" SCNx64 " : %" SCNx64 "\n",
-         oid.u_hi, oid.u_lo);
+  s3_log(S3_LOG_DEBUG, "", "%s Entry with oid %" SCNx64 " : %" SCNx64 "\n",
+         __func__, oid.u_hi, oid.u_lo);
   if (in_mem_kv.count(oid) == 0) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting NOENT\n");
+    s3_log(S3_LOG_DEBUG, "", "%s Exit NOENT\n", __func__);
     return -ENOENT;
   }
 
@@ -168,6 +169,6 @@ int S3FakeMotrKvs::kv_del(struct m0_uint128 const &oid,
     s3_log(S3_LOG_DEBUG, "", "Del k:>%s -> %d\n", nkey.c_str(), kv.rcs[i]);
   }
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting 0\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit 0\n", __func__);
   return 0;
 }

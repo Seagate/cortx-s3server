@@ -21,18 +21,20 @@ version_config:                             # Section for version of S3 backgrou
    version: 1                                              # Default version for S3 background delete config
 
 cortx_s3:                                   # Section for S3 background delete config
-   endpoint: "http://127.0.0.1:7081"                       # Service specified for CORTX s3 client
+   endpoint: "http://127.0.0.1:28049"                       # Service specified for CORTX s3 client
    service: "cortxs3"                                      # Default region specified for CORTX s3 client
    default_region: "us-west2"                              # CORTX s3 client will use the specified host
-   background_account_access_key: "AKIAJPINPFRBTPAYXAHZ"                      # Access Key corresponding to account-name "s3-background-delete-svc"
-   background_account_secret_key: "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"  # Secret Key corresponding to account-name "s3-background-delete-svc"
    daemon_mode: True                                       # S3background process run in daemon mode and ST's run in non-daemon mode.
    s3_instance_count: 22                                   # Number of active s3 instances in release setup
-
-s3_recovery:                               # Section for S3 recovery config config
-   recovery_account_access_key: "A9IAJPINPFRBTPASATAZ"                     # Access Key corresponding to account-name "s3-recovery-svc"
-   recovery_account_secret_key: "h98ntpB9DoChDrneKZHvPVTm+1mHbs7UdCyNVME5" # Secret Key corresponding to account-name "s3-recovery-svc"
-
+   messaging_platform: "rabbit_mq"                       # Whether to use message_bus or rabbit_mq as the messaging platform
+   
+message_bus:
+   topic: "bgdelete"
+   consumer_group: "S3MsgBusConsumerGroup"
+   consumer_id_prefix: "S3Consumer_"
+   producer_id: "S3MsgProducer"
+   producer_delivery_mechanism: "sync"                      # sync, async
+   consumer_sleep: 5
 
 logconfig:                                  # Section for scheduler & processor loggers.
 
@@ -43,7 +45,7 @@ logconfig:                                  # Section for scheduler & processor 
    logger_directory: "/var/log/seagate/s3/s3backgrounddelete"                                 # Log directory location for background delete
    scheduler_log_file: "/var/log/seagate/s3/s3backgrounddelete/object_recovery_scheduler.log" # Log file path for background delete scheduler
    processor_log_file: "/var/log/seagate/s3/s3backgrounddelete/object_recovery_processor.log" # Log file path for background delete processor
-   file_log_level: 10                                                                         # Sets the threshold for above file loggers to level specified. https://docs.python.org/3/library/logging.html#levels
+   file_log_level: 20                                                                         # Sets the threshold for above file loggers to level specified. https://docs.python.org/3/library/logging.html#levels
    console_log_level: 40                                                                      # Sets the threshold for console loggers to level specified. https://docs.python.org/3/library/logging.html#levels
    log_format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"                         # Sets the specifed log format https://docs.python.org/3/library/logging.html#logging.Formatter
    max_bytes: 5242880                                                                         # Max size of a log files is set to 5mb
@@ -61,7 +63,7 @@ rabbitmq:                                    # Section for RabbitMQ configs
     exchange_type: "direct"                                 # Exchanges type includes direct, fanout, topic exchange, header exchange
     mode: 2                                                 # Valid values are Non-persistent (1) or persistent (2). persistent ensures that the task_queue queue won't be lost even if RabbitMQ restarts.
     durable: "True"                                         # Ensure that RabbitMQ will never lose our queue.
-    schedule_interval_secs: 7200                            # Schedule Interval is time period at which object recovery scheduler will be executed (in seconds). Increasing this value leads to reduced RabbitMQ memory consumption.
+    schedule_interval_secs: 1200                            # Schedule Interval is time period at which object recovery scheduler will be executed (in seconds). Increasing this value leads to reduced RabbitMQ memory consumption.
 
 indexid:
 

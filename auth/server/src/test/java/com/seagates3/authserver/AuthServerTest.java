@@ -93,8 +93,10 @@ public class AuthServerTest {
     private int bossGroupThreads = 1;
     private int workerGroupThreads = 2;
     private int eventExecutorThreads = 4;
-    private int httpPort = 9085;
-    private int httpsPort = 9086;
+    private
+     int httpPort = 28050;
+    private
+     int httpsPort = 28051;
     private boolean https = false;
     private boolean http = true;
     private boolean enableFaultInjection = false;
@@ -141,7 +143,6 @@ public class AuthServerTest {
         DAODispatcher.init();
         verifyStatic();
         S3Perf.init();
-        verifyStatic();
         AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR,
                                     "authserver.properties",
                                     "keystore.properties");
@@ -173,7 +174,6 @@ public class AuthServerTest {
         DAODispatcher.init();
         verifyStatic();
         S3Perf.init();
-        verifyStatic();
         AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR,
                                     "authserver.properties",
                                     "keystore.properties");
@@ -205,7 +205,6 @@ public class AuthServerTest {
         DAODispatcher.init();
         verifyStatic();
         S3Perf.init();
-        verifyStatic();
         AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR,
                                     "authserver.properties",
                                     "keystore.properties");
@@ -230,7 +229,6 @@ public class AuthServerTest {
 
         AuthServer.main(new String[]{});
 
-        verifyStatic();
         AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR,
                                     "authserver.properties",
                                     "keystore.properties");
@@ -274,7 +272,6 @@ public class AuthServerTest {
 
         AuthServer.main(new String[]{});
 
-        verifyStatic();
         AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR,
                                     "authserver.properties",
                                     "keystore.properties");
@@ -309,7 +306,6 @@ public class AuthServerTest {
 
         AuthServer.main(new String[]{});
 
-        verifyStatic();
         AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR,
                                     "authserver.properties",
                                     "keystore.properties");
@@ -354,7 +350,6 @@ public class AuthServerTest {
         DAODispatcher.init();
         verifyStatic();
         S3Perf.init();
-        verifyStatic();
         AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR,
                                     "authserver.properties",
                                     "keystore.properties");

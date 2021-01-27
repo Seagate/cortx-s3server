@@ -27,7 +27,7 @@ MotrDeleteKeyValueAction::MotrDeleteKeyValueAction(
     std::shared_ptr<S3MotrKVSWriterFactory> motr_kvs_writer_factory,
     std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory)
     : MotrAction(req) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   if (motr_api) {
     s3_motr_api = motr_api;
   } else {
@@ -57,7 +57,7 @@ void MotrDeleteKeyValueAction::setup_steps() {
 }
 
 void MotrDeleteKeyValueAction::delete_key_value() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   index_id = S3M0Uint128Helper::to_m0_uint128(request->get_index_id_lo(),
                                               request->get_index_id_hi());
   // invalid oid
@@ -75,28 +75,28 @@ void MotrDeleteKeyValueAction::delete_key_value() {
         std::bind(&MotrDeleteKeyValueAction::delete_key_value_failed, this));
   }
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrDeleteKeyValueAction::delete_key_value_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrDeleteKeyValueAction::delete_key_value_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::missing) {
     next();
   } else {
     set_s3_error("InternalError");
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrDeleteKeyValueAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (is_error_state() && !get_s3_error_code().empty()) {
     S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->c_get_full_path());
@@ -117,5 +117,5 @@ void MotrDeleteKeyValueAction::send_response_to_s3_client() {
     request->send_response(S3HttpSuccess204);
   }
   done();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

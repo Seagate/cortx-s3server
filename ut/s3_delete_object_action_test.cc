@@ -41,20 +41,24 @@ using ::testing::AtLeast;
     action_under_test->fetch_bucket_info();                               \
   } while (0)
 
-#define CREATE_OBJECT_METADATA                                                \
-  do {                                                                        \
-    CREATE_BUCKET_METADATA;                                                   \
-    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(     \
-        object_list_indx_oid);                                                \
-    bucket_meta_factory->mock_bucket_metadata                                 \
-        ->set_objects_version_list_index_oid(objects_version_list_index_oid); \
-    EXPECT_CALL(*(mock_request), http_verb())                                 \
-        .WillOnce(Return(S3HttpVerb::GET));                                   \
-    EXPECT_CALL(*(mock_request), get_operation_code())                        \
-        .WillOnce(Return(S3OperationCode::tagging));                          \
-    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))     \
-        .Times(AtLeast(1));                                                   \
-    action_under_test->fetch_object_info();                                   \
+#define CREATE_OBJECT_METADATA                                            \
+  do {                                                                    \
+    CREATE_BUCKET_METADATA;                                               \
+    EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
+                get_object_list_index_oid())                              \
+        .Times(AtLeast(1))                                                \
+        .WillRepeatedly(Return(object_list_indx_oid));                    \
+    EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
+                get_objects_version_list_index_oid())                     \
+        .Times(AtLeast(1))                                                \
+        .WillRepeatedly(Return(objects_version_list_index_oid));          \
+    EXPECT_CALL(*(mock_request), http_verb())                             \
+        .WillOnce(Return(S3HttpVerb::GET));                               \
+    EXPECT_CALL(*(mock_request), get_operation_code())                    \
+        .WillOnce(Return(S3OperationCode::tagging));                      \
+    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _)) \
+        .Times(AtLeast(1));                                               \
+    action_under_test->fetch_object_info();                               \
   } while (0)
 
 class S3DeleteObjectActionTest : public testing::Test {
@@ -283,6 +287,40 @@ TEST_F(S3DeleteObjectActionTest, SendAnyFailedResponse) {
       .Times(AtLeast(1));
 
   action_under_test->send_response_to_s3_client();
+}
+
+TEST_F(S3DeleteObjectActionTest, DeleteObject) {
+  CREATE_OBJECT_METADATA;
+
+  S3Option::get_instance()->set_s3server_obj_delayed_del_enabled(false);
+
+  struct m0_uint128 obj_oid = {0x1ffff, 0x1ffff};
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(obj_oid));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .Times(AtLeast(1));
+
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), delete_object(_, _, _))
+      .Times(1);
+
+  action_under_test->delete_object();
+}
+
+TEST_F(S3DeleteObjectActionTest, DelayedDeleteObject) {
+  CREATE_OBJECT_METADATA;
+
+  S3Option::get_instance()->set_s3server_obj_delayed_del_enabled(true);
+
+  struct m0_uint128 obj_oid = {0x1ffff, 0x1ffff};
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(obj_oid));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .Times(0);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), delete_object(_, _, _))
+      .Times(0);
+  action_under_test->delete_object();
 }
 
 TEST_F(S3DeleteObjectActionTest, SendSuccessResponse) {

@@ -38,7 +38,7 @@ class CORTXS3Config(object):
     _config = None
     _conf_file = None
 
-    def __init__(self, s3recovery_flag = False, use_cipher = True):
+    def __init__(self, s3recovery_flag = False):
         """Initialise logger and configuration."""
         self.logger = logging.getLogger(__name__ + "CORTXS3Config")
         self.s3recovery_flag = s3recovery_flag
@@ -47,8 +47,7 @@ class CORTXS3Config(object):
         self.recovery_access_key = None
         self.recovery_secret_key = None
         self._load_and_fetch_config()
-        if use_cipher:
-            self.cache_credentials()
+        self.cache_credentials()
 
     @staticmethod
     def get_conf_dir():
@@ -224,24 +223,16 @@ class CORTXS3Config(object):
         if self.s3bdg_access_key:
             return self.s3bdg_access_key
 
-        if 'cortx_s3' in self._config and self._config['cortx_s3']['background_account_access_key']:
-            return self._config['cortx_s3']['background_account_access_key']
-        else:
-            raise KeyError(
-                "Could not find cortx_s3 access_key from config file " +
-                self._conf_file)
+        raise KeyError(
+            "Could not find s3bdg_access_key")
 
     def get_cortx_s3_secret_key(self):
         """Return secret_key from cipher or config file or KeyError."""
         if self.s3bgd_secret_key:
             return self.s3bgd_secret_key
 
-        if 'cortx_s3' in self._config and self._config['cortx_s3']['background_account_secret_key']:
-            return self._config['cortx_s3']['background_account_secret_key']
-        else:
-            raise KeyError(
-                "Could not find cortx_s3 secret_key from config file " +
-                self._conf_file)
+        raise KeyError(
+            "Could not find s3bgd_secret_key")
 
     def get_daemon_mode(self):
         """Return daemon_mode flag value for scheduler from config file\
@@ -424,24 +415,16 @@ class CORTXS3Config(object):
         if self.recovery_access_key:
             return self.recovery_access_key
 
-        if 's3_recovery' in self._config and self._config['s3_recovery']['recovery_account_access_key']:
-            return self._config['s3_recovery']['recovery_account_access_key']
-        else:
-            raise KeyError(
-                "Could not find s3_recovery access_key from config file " +
-                self._conf_file)
+        raise KeyError(
+            "Could not find s3_recovery access_key")
 
     def get_s3_recovery_secret_key(self):
         """Return secret_key from cipher or config file or KeyError."""
         if self.recovery_secret_key:
             return self.recovery_secret_key
 
-        if 's3_recovery' in self._config and self._config['s3_recovery']['recovery_account_secret_key']:
-            return self._config['s3_recovery']['recovery_account_secret_key']
-        else:
-            raise KeyError(
-                "Could not find s3_recovery secret_key from config file " +
-                self._conf_file)
+        raise KeyError(
+                "Could not find s3_recovery secret_key")
 
     def get_cleanup_enabled(self):
         """Return flag cleanup_enabled for S3 non active"""
@@ -451,3 +434,67 @@ class CORTXS3Config(object):
         except KeyError:
             # Default value used for S/W update
             return False
+
+    def get_messaging_platform(self):
+        """Return use_msgbus from config file or False"""
+        if 'cortx_s3' in self._config and 'messaging_platform' in self._config['cortx_s3']:
+            return self._config['cortx_s3']['messaging_platform']
+        else:
+            raise KeyError(
+                "Could not parse messaging_platform from config file " +
+                self._conf_file)
+
+    def get_msgbus_topic(self):
+        """Return topic of msgbus from config file or KeyError."""
+        if 'message_bus' in self._config and 'topic' in self._config['message_bus']:
+            return self._config['message_bus']['topic']
+        else:
+            raise KeyError(
+                "Could not parse topic from config file " +
+                self._conf_file)
+
+    def get_msgbus_consumer_group(self):
+        """Return consumer group id from config file or KeyError."""
+        if 'message_bus' in self._config and 'consumer_group' in self._config['message_bus']:
+            return self._config['message_bus']['consumer_group']
+        else:
+            raise KeyError(
+                "Could not parse consumer_group from config file " +
+                self._conf_file)
+
+    def get_msgbus_consumer_id_prefix(self):
+        """Return consumer id prefix from config file or KeyError."""
+        if 'message_bus' in self._config and 'consumer_id_prefix' in self._config['message_bus']:
+            return self._config['message_bus']['consumer_id_prefix']
+        else:
+            raise KeyError(
+                "Could not parse consumer_id_prefix from config file " +
+                self._conf_file)
+
+    def get_msgbus_consumer_sleep_time(self):
+        """Return consumer sleep time from config file or KeyError."""
+        if 'message_bus' in self._config and 'consumer_sleep' in self._config['message_bus']:
+            return self._config['message_bus']['consumer_sleep']
+        else:
+            raise KeyError(
+                "Could not parse consumer_sleep from config file " +
+                self._conf_file)
+
+    def get_msgbus_producer_id(self):
+        """Return producer_id prefix from config file or KeyError."""
+        if 'message_bus' in self._config and 'producer_id' in self._config['message_bus']:
+            return self._config['message_bus']['producer_id']
+        else:
+            raise KeyError(
+                "Could not parse producer_id from config file " +
+                self._conf_file)
+
+    def get_msgbus_producer_delivery_mechanism(self):
+        """Return producer delivery mechanism from config file or KeyError."""
+        if 'message_bus' in self._config and 'producer_delivery_mechanism' in self._config['message_bus']:
+            return self._config['message_bus']['producer_delivery_mechanism']
+        else:
+            raise KeyError(
+                "Could not parse producer_delivery_mechanism from config file " +
+                self._conf_file)
+

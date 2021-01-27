@@ -27,11 +27,12 @@
 #include "mock_s3_request_object.h"
 #include "s3_get_bucket_action.h"
 
-using ::testing::Invoke;
+using ::testing::InvokeWithoutArgs;
 using ::testing::AtLeast;
 using ::testing::ReturnRef;
 using ::testing::Return;
 using ::testing::_;
+using ::testing::InSequence;
 
 #define CREATE_BUCKET_METADATA_OBJ                      \
   do {                                                  \
@@ -127,6 +128,11 @@ class S3GetBucketActionTest : public testing::Test {
   struct m0_uint128 object_list_indx_oid;
   std::map<std::string, std::pair<int, std::string>> result_keys_values;
   std::string bucket_name, object_name;
+
+ public:
+  void call_next_keyval_successful() {
+    action_under_test_ptr->get_next_objects_successful();
+  }
 };
 
 TEST_F(S3GetBucketActionTest, Constructor) {
@@ -409,7 +415,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulDelimiterLastKey) {
   action_under_test_ptr->get_next_objects_successful();
   EXPECT_EQ(0, action_under_test_ptr->object_list->size());
   EXPECT_EQ(1, action_under_test_ptr->object_list->common_prefixes_size());
-  EXPECT_EQ("test/test1/key3", action_under_test_ptr->last_key);
+  EXPECT_EQ("test/\xff", action_under_test_ptr->last_key);
 }
 
 // Prefix in multi-component object names
@@ -417,7 +423,16 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulMultiComponentKey) {
   CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
-
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_state())
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::present));
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
+              next_keyval(_, _, _, _, _, _))
+      .Times(AtLeast(1))
+      .WillRepeatedly(InvokeWithoutArgs(
+           this, &S3GetBucketActionTest::call_next_keyval_successful));
+  EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
+              get_object_list_index_oid())
+      .WillRepeatedly(Return(object_list_indx_oid));
   action_under_test_ptr->request_prefix.assign("");
   action_under_test_ptr->request_delimiter.assign("/");
   action_under_test_ptr->request_marker_key.assign("boo/");
@@ -431,9 +446,30 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulMultiComponentKey) {
       std::make_pair("cquux/thud", std::make_pair(0, "keyval")));
   result_keys_values.insert(
       std::make_pair("cquux/bla", std::make_pair(0, "keyval")));
+  // last_key:= boo/\xff
+  std::map<std::string, std::pair<int, std::string>> result_next_keys_values;
+  result_next_keys_values.insert(
+      std::make_pair("cquux/thud", std::make_pair(0, "keyval")));
+  result_next_keys_values.insert(
+      std::make_pair("cquux/bla", std::make_pair(0, "keyval")));
+  // last_key:= cquux/\xff
+  std::map<std::string, std::pair<int, std::string>>
+      result_next_keys_values_empty;
 
   OBJ_METADATA_EXPECTATIONS;
   SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
+  // Override get_key_values(), as below:
+  {
+    InSequence s;
+    EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
+                get_key_values()).WillOnce(ReturnRef(result_keys_values));
+    EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
+                get_key_values()).WillOnce(ReturnRef(result_next_keys_values));
+    EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
+                get_key_values())
+        .WillOnce(ReturnRef(result_next_keys_values_empty));
+  }
+
   action_under_test_ptr->max_record_count =
       S3Option::get_instance()->get_motr_idx_fetch_count();
   action_under_test_ptr->get_next_objects_successful();
@@ -477,6 +513,149 @@ TEST_F(S3GetBucketActionTest,
       action_under_test_ptr->object_list->get_common_prefixes();
   auto it = common_prexes.begin();
   EXPECT_STREQ((*it).c_str(), "boo/baz/");
+}
+
+// Prefix specified and matches some objects.
+// Stops object enumeration, when prefix does not match further.
+TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefixMatchingStops) {
+  CREATE_ACTION_UNDER_TEST_OBJ;
+  CREATE_BUCKET_METADATA_OBJ;
+  CREATE_KVS_READER_OBJ;
+  // Prefix specified
+  action_under_test_ptr->request_prefix.assign("boo");
+  action_under_test_ptr->request_delimiter.assign("");
+  action_under_test_ptr->max_keys = 10;
+  std::ostringstream key_val_stream;
+  std::string key_value_fixed_part_start =
+      "{\"ACL\":\"acl_test\",\"Bucket-Name\":\"cgate\"";
+
+  std::string key_value_fixed_part_end =
+      ",\"System-Defined\":{\"Content-Length\":\"100\",\"Content-MD5\":\"c99a\""
+      ",\"Content-Type\":\"\""
+      ",\"Date\":\"\",\"Last-Modified\":\"\",\"Owner-Account\":\"abc\""
+      ",\"Owner-Account-id\":\"12345\",\"Owner-Canonical-id\":\"1356\""
+      ",\"Owner-User\":\"root\",\"Owner-User-id\":\"XV\""
+      ",\"x-amz-server-side-encryption\":\"None\""
+      ",\"x-amz-server-side-encryption-aws-kms-key-id\":\"\""
+      ",\"x-amz-server-side-encryption-customer-algorithm\":\"\""
+      ",\"x-amz-server-side-encryption-customer-key\":\"\""
+      ",\"x-amz-server-side-encryption-customer-key-MD5\":\"\""
+      ",\"x-amz-storage-class\":\"STANDARD\",\"x-amz-version-id\":\"MT\""
+      ",\"x-amz-website-redirect-location\":\"None\"}"
+      ",\"create_timestamp\":\"2020-11-24T08:39:08.000Z\",\"layout_id\":1"
+      ",\"motr_oid\":\"5gouAgAAAAA=-BAAAAAAAEJg=\"}";
+
+  // keys:=['asdf, 'bar/bar', 'boo', 'boo/5', 'boo/9', 'boo/baz/xyzzy',
+  // 'cquux/+', 'cquux/0', 'cquux/bla', 'cquux/thud']
+  std::string key_name = "asdf";
+  key_val_stream << key_value_fixed_part_start << ",\"Object-Name\":\""
+                 << key_name << "\""
+                 << ",\"Object-URI\":\"cgate\\\\" << key_name << "\""
+                 << key_value_fixed_part_end;
+  std::string keyval = key_val_stream.str();
+  printf("\n\njson Key Value:%s\n\n", keyval.c_str());
+  result_keys_values.insert(
+      std::make_pair(key_name.c_str(), std::make_pair(0, keyval.c_str())));
+
+  key_name = "boo/bar";
+  key_val_stream << key_value_fixed_part_start << ",\"Object-Name\":\""
+                 << key_name << "\""
+                 << ",\"Object-URI\":\"cgate\\\\" << key_name << "\""
+                 << key_value_fixed_part_end;
+  keyval = key_val_stream.str();
+  result_keys_values.insert(
+      std::make_pair(key_name.c_str(), std::make_pair(0, keyval.c_str())));
+
+  key_name = "boo";
+  key_val_stream << key_value_fixed_part_start << ",\"Object-Name\":\""
+                 << key_name << "\""
+                 << ",\"Object-URI\":\"cgate\\\\" << key_name << "\""
+                 << key_value_fixed_part_end;
+  keyval = key_val_stream.str();
+  result_keys_values.insert(
+      std::make_pair(key_name.c_str(), std::make_pair(0, keyval.c_str())));
+
+  key_name = "boo/5";
+  key_val_stream << key_value_fixed_part_start << ",\"Object-Name\":\""
+                 << key_name << "\""
+                 << ",\"Object-URI\":\"cgate\\\\" << key_name << "\""
+                 << key_value_fixed_part_end;
+  keyval = key_val_stream.str();
+  result_keys_values.insert(
+      std::make_pair(key_name.c_str(), std::make_pair(0, keyval.c_str())));
+
+  key_name = "boo/9";
+  key_val_stream << key_value_fixed_part_start << ",\"Object-Name\":\""
+                 << key_name << "\""
+                 << ",\"Object-URI\":\"cgate\\\\" << key_name << "\""
+                 << key_value_fixed_part_end;
+  keyval = key_val_stream.str();
+  result_keys_values.insert(
+      std::make_pair(key_name.c_str(), std::make_pair(0, keyval.c_str())));
+
+  key_name = "boo/baz/xyzzy";
+  key_val_stream << key_value_fixed_part_start << ",\"Object-Name\":\""
+                 << key_name << "\""
+                 << ",\"Object-URI\":\"cgate\\\\" << key_name << "\""
+                 << key_value_fixed_part_end;
+  keyval = key_val_stream.str();
+  result_keys_values.insert(
+      std::make_pair(key_name.c_str(), std::make_pair(0, keyval.c_str())));
+
+  key_name = "cquux/+";
+  key_val_stream << key_value_fixed_part_start << ",\"Object-Name\":\""
+                 << key_name << "\""
+                 << ",\"Object-URI\":\"cgate\\\\" << key_name << "\""
+                 << key_value_fixed_part_end;
+  keyval = key_val_stream.str();
+  result_keys_values.insert(
+      std::make_pair(key_name.c_str(), std::make_pair(0, keyval.c_str())));
+
+  key_name = "cquux/0";
+  key_val_stream << key_value_fixed_part_start << ",\"Object-Name\":\""
+                 << key_name << "\""
+                 << ",\"Object-URI\":\"cgate\\\\" << key_name << "\""
+                 << key_value_fixed_part_end;
+  keyval = key_val_stream.str();
+  result_keys_values.insert(
+      std::make_pair(key_name.c_str(), std::make_pair(0, keyval.c_str())));
+
+  key_name = "cquux/bla";
+  key_val_stream << key_value_fixed_part_start << ",\"Object-Name\":\""
+                 << key_name << "\""
+                 << ",\"Object-URI\":\"cgate\\\\" << key_name << "\""
+                 << key_value_fixed_part_end;
+  keyval = key_val_stream.str();
+  result_keys_values.insert(
+      std::make_pair(key_name.c_str(), std::make_pair(0, keyval.c_str())));
+
+  key_name = "cquux/thud";
+  key_val_stream << key_value_fixed_part_start << ",\"Object-Name\":\""
+                 << key_name << "\""
+                 << ",\"Object-URI\":\"cgate\\\\" << key_name << "\""
+                 << key_value_fixed_part_end;
+  keyval = key_val_stream.str();
+  result_keys_values.insert(
+      std::make_pair(key_name.c_str(), std::make_pair(0, keyval.c_str())));
+
+  OBJ_METADATA_EXPECTATIONS;
+  SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
+  action_under_test_ptr->max_record_count = result_keys_values.size();
+  action_under_test_ptr->get_next_objects_successful();
+  // Ensure that loop in get_next_objects_successful() breaks after prefix match
+  // stops. Ensure keys starting with 'cquux' are not part of 'object_list'
+  bool bFound_Further_keys = false;
+  std::vector<std::string> keys =
+      action_under_test_ptr->object_list->get_keys();
+  for (unsigned short i = 0; i < keys.size(); i++) {
+    if (keys[i].find("cquux") != std::string::npos) {
+      bFound_Further_keys = true;
+      break;
+    }
+    printf("Key: [%s]\n", keys[i].c_str());
+  }
+  EXPECT_FALSE(bFound_Further_keys);
+  EXPECT_FALSE(action_under_test_ptr->object_list->is_response_truncated());
 }
 
 TEST_F(S3GetBucketActionTest, SendResponseToClientServiceUnavailable) {

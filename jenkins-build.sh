@@ -20,16 +20,18 @@
 
 
 USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ]
-                                    [--use_ipv6] [--skip_build] [--skip_tests]
-                                    [--cleanup_only]
-                                    [--fake_obj] [--fake_kvs | --redis_kvs] [--basic_test_only]
-                                    [--local_redis_restart]
-                                    [--callgraph /path/to/output/file]
-                                    [--ldap_admin_pwd]
-                                    [--generate_support_bundle]
-                                    [--job_id]
-                                    [--gid]
-                                    [--help | -h]
+                        [--use_ipv6] [--skip_build] [--skip_ut_build]
+                        [--skip_tests] [--skip_ut_run] [--skip_st_run]
+                        [--cleanup_only]
+                        [--fake_obj] [--fake_kvs | --redis_kvs] [--basic_test_only]
+                        [--local_redis_restart]
+                        [--callgraph /path/to/output/file | --valgrind_memcheck [/path/to/output/file]]
+                        [--num_instances N]
+                        [--ldap_admin_pwd]
+                        [--generate_support_bundle]
+                        [--job_id]
+                        [--gid]
+                        [--help | -h] [--help-short | -H]
 
 where:
 --use_http_client        Use HTTP client for ST's. Default is use HTTPS client.
@@ -40,7 +42,13 @@ where:
 
 --skip_build             Do not run build step
 
+--skip_ut_build          Do not run build step for UTs
+
 --skip_tests             Do not run tests, exit before test run
+
+--skip_ut_run            Do not run UT (unit tests, ut/ folder)
+
+--skip_st_run            Do not run ST (system tests, st/ folder)
 
 --cleanup_only           Do cleanup and stop everything; don't run anything.
 
@@ -62,6 +70,14 @@ where:
                          together with --basic_test_only option
 
                          Value: /path/to/output/file
+
+--valgrind_memcheck      Generate valgrind memcheck log
+
+                         Value: /path/to/output/file
+
+--num_instances N        Number of s3server instances to launch.
+
+                         Value: Int
 
 --ldap_admin_pwd         LDAP admin password. If not specified, script will use password set in
                          file '/root/.s3_ldap_cred_cache.conf'
@@ -85,21 +101,28 @@ where:
 
                           Value: Int
 
---help (-h)        Display help"
+--help (-h)        Display help
+
+--help-short (-H)  Display short, abbreviated help with just a list of options."
 
 use_http_client=0
 s3server_enable_ssl=0
 use_ipv6=0
 restart_haproxy=0
 skip_build=0
+skip_ut_build=0
 cleanup_only=0
 skip_tests=0
+skip_ut_run=0
+skip_st_run=0
 fake_obj=0
 fake_kvs=0
 redis_kvs=0
 basic_test_only=0
 callgraph_cmd=""
+valgrind_memcheck_cmd=""
 local_redis_restart=0
+num_instances=
 ldap_admin_pwd=
 generate_support_bundle=
 job_id=0
@@ -141,8 +164,17 @@ else
       --skip_build ) skip_build=1;
           echo "Skip build step";
           ;;
+      --skip_ut_build ) skip_ut_build=1;
+          echo "Skip UTs build step";
+          ;;
       --skip_tests ) skip_tests=1;
           echo "Skip test step";
+          ;;
+      --skip_ut_run ) skip_ut_run=1;
+          echo "Skip UT run step";
+          ;;
+      --skip_st_run ) skip_st_run=1;
+          echo "Skip ST run step";
           ;;
       --fake_obj ) fake_obj=1;
           echo "Stubs for motr object read/write ops";
@@ -177,6 +209,25 @@ else
                     fi
                     echo "Generate valgrind call graph with params $callgraph_cmd";
                     ;;
+      --valgrind_memcheck ) shift;
+                    if [[ $1 =~ ^[[:space:]]*$ ]]
+                    then
+                        valgrind_memcheck_cmd="--valgrind_memcheck /tmp/valgrind_memcheck.out";
+                    else
+                        valgrind_memcheck_cmd="--valgrind_memcheck $1";
+                    fi
+                    echo "Generate valgrind memcheck log with params $valgrind_memcheck_cmd";
+                    ;;
+       --num_instances ) shift;
+           if [ ! -z "$1" ]; then
+               num_instances="$1"
+               if ! [[ $num_instances =~ ^[0-9]+$ ]]; then
+                   echo "--num_instances must be an integer"
+                   echo "$USAGE"
+                   exit 1
+               fi
+           fi
+           ;;
        --ldap_admin_pwd ) shift;
                           if [ ! -z "$1" ]; then
                               ldap_admin_pwd=$1;
@@ -206,6 +257,10 @@ else
           echo "$USAGE"
           exit 1
           ;;
+      --help-short | -H )
+          echo "$USAGE" | grep '^--'
+          exit 1
+          ;;
       * )
           echo "Invalid argument passed";
           echo "$USAGE"
@@ -232,7 +287,13 @@ fi
 
 source /root/.s3_ldap_cred_cache.conf
 
-if [ "$callgraph_cmd" != "" ]
+if [ "$callgraph_cmd" != "" ] && [ "$valgrind_memcheck_cmd" != "" ]
+then
+    echo "Only callgraph or valgrind can be specified";
+    exit 1;
+fi
+
+if [ "$callgraph_cmd" != "" ] || [ "$valgrind_memcheck_cmd" != "" ]
 then
     $USE_SUDO yum -q list installed valgrind || $USE_SUDO yum -y install valgrind || (echo "Valgrind package cannot be installed" && exit 1)
 fi
@@ -247,9 +308,11 @@ ulimit -c unlimited
 
 # Few assertions - prerun checks
 rpm -q haproxy
+rpm -q rabbitmq-server
 #rpm -q stx-s3-certs
 #rpm -q stx-s3-client-certs
 systemctl status haproxy
+systemctl status rabbitmq-server
 
 cd $S3_BUILD_DIR
 
@@ -279,9 +342,24 @@ then
   rm -rf $BUILD_CACHE_DIR
 fi
 
+valgrind_flag=""
+if [ "$valgrind_memcheck_cmd" != "" ]
+then
+    valgrind_flag="--valgrind_memcheck"
+fi
+
 if [ $skip_build -eq 0 ]
 then
-    ./rebuildall.sh --no-motr-rpm --use-build-cache
+    extra_opts=""
+    if [ $skip_ut_build -ne 0 ]
+    then
+        extra_opts+=" --no-s3ut-build --no-s3mempoolut-build --no-s3mempoolmgrut-build"
+    fi
+    if [ $skip_tests -ne 0 ]
+    then
+        extra_opts+=" --no-java-tests"
+    fi
+    ./rebuildall.sh --no-motr-rpm --use-build-cache $valgrind_flag $extra_opts
 fi
 
 # Stop any old running S3 instances
@@ -309,7 +387,7 @@ fi
 if [ $use_http_client -eq 1 ]
 then
   $USE_SUDO sed -i 's/S3_ENABLE_AUTH_SSL:.*$/S3_ENABLE_AUTH_SSL: false/g' /opt/seagate/cortx/s3/conf/s3config.yaml
-  $USE_SUDO sed -i 's/S3_AUTH_PORT:.*$/S3_AUTH_PORT: 9085/g' /opt/seagate/cortx/s3/conf/s3config.yaml
+  $USE_SUDO sed -i 's/S3_AUTH_PORT:.*$/S3_AUTH_PORT: 28051/g' /opt/seagate/cortx/s3/conf/s3config.yaml
   $USE_SUDO sed -i 's/enableSSLToLdap=.*$/enableSSLToLdap=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
   $USE_SUDO sed -i 's/enable_https=.*$/enable_https=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
   $USE_SUDO sed -i 's/enableHttpsToS3=.*$/enableHttpsToS3=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
@@ -338,6 +416,9 @@ if [ $restart_haproxy -eq 1 ]
 then
   $USE_SUDO systemctl restart haproxy
 fi
+
+# Generate random password for jks key and keystore passwords
+sh ${S3_BUILD_DIR}/scripts/create_auth_jks_password.sh
 
 # Copy jks and keystore.properties file from /root/.cortx_s3_auth_jks directory to Auth install directory
 echo "Updating Authserver keystore with random password.."
@@ -398,7 +479,7 @@ fi
 while [[ $retry -le $max_retries ]]
 do
   statuss3=0
-  $USE_SUDO ./dev-starts3.sh $fake_params $callgraph_cmd
+  $USE_SUDO ./dev-starts3.sh $num_instances $fake_params $callgraph_cmd $valgrind_memcheck_cmd
 
   # Wait s3server to start
   timeout 2m bash -c "while ! ./iss3up.sh; do sleep 1; done"
@@ -410,7 +491,7 @@ do
   else
     # Sometimes if motr is not ready, S3 may fail to connect
     # cleanup and restart
-    $USE_SUDO ./dev-stops3.sh
+    $USE_SUDO ./dev-stops3.sh $num_instances
     sleep 1
   fi
   retry=$((retry+1))
@@ -441,6 +522,10 @@ then
     exit 1
 fi
 
+# Stop S3 background services before tests are run
+systemctl stop s3backgroundproducer
+systemctl stop s3backgroundconsumer
+
 basic_test_cmd_par=""
 if [ $basic_test_only -eq 1 ]
 then
@@ -453,12 +538,18 @@ fi
 
 # Run Unit tests and System tests
 S3_TEST_RET_CODE=0
+runalltest_options="--no-motr-rpm $use_ipv6_arg $basic_test_cmd_par"
 if [ $use_http_client -eq 1 ]
 then
-  ./runalltest.sh --no-motr-rpm --no-https $use_ipv6_arg $basic_test_cmd_par || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
-else
-  ./runalltest.sh --no-motr-rpm $use_ipv6_arg $basic_test_cmd_par || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
+  runalltest_options+=" --no-https"
 fi
+if [ $skip_ut_run -eq 1 ]; then
+  runalltest_options+=" --no-ut-run"
+fi
+if [ $skip_st_run -eq 1 ]; then
+  runalltest_options+=" --no-st-run"
+fi
+./runalltest.sh $runalltest_options || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
 
 # Disable fault injection in AuthServer
 $USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=false/g' /opt/seagate/cortx/auth/resources/authserver.properties

@@ -32,7 +32,7 @@ MotrKVListResponse::MotrKVListResponse(std::string encoding_type)
       max_keys(""),
       response_is_truncated(false),
       next_marker_key("") {
-  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);
 }
 
 void MotrKVListResponse::set_index_id(std::string name) { index_id = name; }

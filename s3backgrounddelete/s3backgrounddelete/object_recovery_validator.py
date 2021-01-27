@@ -211,7 +211,6 @@ class ObjectRecoveryValidator:
         return status
 
     def check_instance_is_nonactive(self, instance_id, marker=None):
-
         """Checks for existence of instance_id inside global instance index"""
 
         result, instance_response = self._indexapi.list(
@@ -246,13 +245,13 @@ class ObjectRecoveryValidator:
         # Execute object leak algorithm by processing each of the entries from RabbitMQ
         probable_delete_oid = self.probable_delete_records["Key"]
         probable_delete_value = self.probable_delete_records["Value"]
-
+        
         self._logger.info(
             "Probable object id to be deleted : " +
             probable_delete_oid)
         try:
             self.object_leak_info = json.loads(probable_delete_value)
-            self.object_leak_id = probable_delete_oid
+            self.object_leak_id = probable_delete_oid[1:]
             self.object_leak_layout_id = self.object_leak_info["object_layout_id"]
 
         except ValueError as error:

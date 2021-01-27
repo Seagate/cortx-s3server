@@ -37,7 +37,7 @@ S3ObjectListResponse::S3ObjectListResponse(std::string encoding_type)
       next_marker_uploadid(""),
       key_count(""),
       response_xml("") {
-  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);
   object_list.clear();
   part_list.clear();
 }
@@ -63,6 +63,7 @@ std::string S3ObjectListResponse::get_response_format_key_value(
   }
   return format_key_value;
 }
+
 void S3ObjectListResponse::set_object_name(std::string name) {
   object_name = get_response_format_key_value(name);
 }
@@ -103,8 +104,13 @@ void S3ObjectListResponse::set_response_is_truncated(bool flag) {
   response_is_truncated = flag;
 }
 
-void S3ObjectListResponse::set_next_marker_key(std::string next) {
-  next_marker_key = get_response_format_key_value(next);
+void S3ObjectListResponse::set_next_marker_key(std::string next,
+                                               bool url_encode) {
+  if (url_encode) {
+    next_marker_key = get_response_format_key_value(next);
+  } else {
+    next_marker_key = next;
+  }
 }
 
 void S3ObjectListResponse::set_next_marker_uploadid(std::string next) {
@@ -130,6 +136,11 @@ void S3ObjectListResponse::add_part(std::shared_ptr<S3PartMetadata> part) {
 
 void S3ObjectListResponse::add_common_prefix(std::string common_prefix) {
   common_prefixes.insert(common_prefix);
+}
+
+bool S3ObjectListResponse::is_prefix_in_common_prefix(
+    std::string& check_prefix) {
+  return (common_prefixes.find(check_prefix) != common_prefixes.end());
 }
 
 void S3ObjectListResponse::set_user_id(std::string userid) { user_id = userid; }
@@ -175,7 +186,7 @@ std::string& S3ObjectListResponse::get_upload_id() { return upload_id; }
 std::string S3ObjectListResponse::get_next_marker_key() {
   std::string raw_value;
   if (encoding_type == "url") {
-    char* decoded_str = evhttp_uridecode(next_marker_key.c_str(), 1, NULL);
+    char* decoded_str = evhttp_uridecode(next_marker_key.c_str(), 0, NULL);
     raw_value = decoded_str;
     free(decoded_str);
   } else {

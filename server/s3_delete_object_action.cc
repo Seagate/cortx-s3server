@@ -22,6 +22,7 @@
 #include "s3_error_codes.h"
 #include "s3_iem.h"
 #include "s3_m0_uint128_helper.h"
+#include "s3_common_utilities.h"
 
 extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
@@ -34,9 +35,9 @@ S3DeleteObjectAction::S3DeleteObjectAction(
     std::shared_ptr<MotrAPI> motr_api)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
                      std::move(object_meta_factory), false) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
-  s3_log(S3_LOG_INFO, request_id,
+  s3_log(S3_LOG_INFO, stripped_request_id,
          "S3 API: Delete Object API. Bucket[%s] Object[%s]\n",
          request->get_bucket_name().c_str(),
          request->get_object_name().c_str());
@@ -83,7 +84,7 @@ void S3DeleteObjectAction::setup_steps() {
 }
 
 void S3DeleteObjectAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_del_obj_action_state = S3DeleteObjectActionState::validationFailed;
   S3BucketMetadataState bucket_metadata_state = bucket_metadata->get_state();
   if (bucket_metadata_state == S3BucketMetadataState::failed_to_launch) {
@@ -96,11 +97,11 @@ void S3DeleteObjectAction::fetch_bucket_info_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteObjectAction::fetch_object_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_del_obj_action_state = S3DeleteObjectActionState::validationFailed;
   if ((object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) ||
       (object_metadata->get_state() == S3ObjectMetadataState::missing)) {
@@ -115,11 +116,11 @@ void S3DeleteObjectAction::fetch_object_info_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteObjectAction::add_object_oid_to_probable_dead_oid_list() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   oid_str = S3M0Uint128Helper::to_string(object_metadata->get_oid());
   if (!motr_kv_writer) {
@@ -127,6 +128,13 @@ void S3DeleteObjectAction::add_object_oid_to_probable_dead_oid_list() {
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
 
+  // prepending a char depending on the size of the object (size based bucketing
+  // of object)
+  S3CommonUtilities::size_based_bucketing_of_objects(
+      oid_str, object_metadata->get_content_length());
+
+  s3_log(S3_LOG_DEBUG, request_id, "Adding probable_del_rec with key [%s]\n",
+         oid_str.c_str());
   probable_delete_rec.reset(new S3ProbableDeleteRecord(
       oid_str, {0ULL, 0ULL}, object_metadata->get_object_name(),
       object_metadata->get_oid(), object_metadata->get_layout_id(),
@@ -141,31 +149,31 @@ void S3DeleteObjectAction::add_object_oid_to_probable_dead_oid_list() {
       std::bind(&S3DeleteObjectAction::
                      add_object_oid_to_probable_dead_oid_list_failed,
                 this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteObjectAction::add_object_oid_to_probable_dead_oid_list_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_del_obj_action_state =
       S3DeleteObjectActionState::probableEntryRecordFailed;
   set_s3_error("InternalError");
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteObjectAction::delete_metadata() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   object_metadata->remove(
       std::bind(&S3DeleteObjectAction::delete_metadata_successful, this),
       std::bind(&S3DeleteObjectAction::delete_metadata_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteObjectAction::delete_metadata_successful() {
   s3_log(S3_LOG_WARN, request_id, "Deleted Object metadata\n");
   s3_del_obj_action_state = S3DeleteObjectActionState::metadataDeleted;
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteObjectAction::delete_metadata_failed() {
@@ -176,7 +184,7 @@ void S3DeleteObjectAction::delete_metadata_failed() {
 }
 
 void S3DeleteObjectAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (is_error_state() && !get_s3_error_code().empty()) {
     S3Error error(get_s3_error_code(), request->get_request_id(),
@@ -197,11 +205,11 @@ void S3DeleteObjectAction::send_response_to_s3_client() {
     request->send_response(S3HttpSuccess204);
   }
   startcleanup();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteObjectAction::startcleanup() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // Clear task list and setup cleanup task list
   clear_tasks();
   cleanup_started = true;
@@ -226,16 +234,16 @@ void S3DeleteObjectAction::startcleanup() {
       // Start running the cleanup task list
       start();
     } else {
-      s3_log(S3_LOG_INFO, request_id, "Possible bug\n");
+      s3_log(S3_LOG_INFO, stripped_request_id, "Possible bug\n");
       assert(false);
       done();
     }
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteObjectAction::mark_oid_for_deletion() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   assert(!oid_str.empty());
 
   probable_delete_rec->set_force_delete(true);
@@ -248,11 +256,23 @@ void S3DeleteObjectAction::mark_oid_for_deletion() {
                              oid_str, probable_delete_rec->to_json(),
                              std::bind(&S3DeleteObjectAction::next, this),
                              std::bind(&S3DeleteObjectAction::next, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteObjectAction::delete_object() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  // If old object exists and deletion of old is disabled, then return
+  const m0_uint128& obj_oid = object_metadata->get_oid();
+  if ((obj_oid.u_hi || obj_oid.u_lo) &&
+      S3Option::get_instance()->is_s3server_obj_delayed_del_enabled()) {
+    s3_log(S3_LOG_INFO, request_id,
+           "Skipping deletion of object with oid %" SCNx64 " : %" SCNx64
+           ". The object will be deleted by BD.\n",
+           obj_oid.u_hi, obj_oid.u_lo);
+    // Call next task in the pipeline
+    next();
+    return;
+  }
   // process to delete object
   if (!motr_writer) {
     motr_writer = motr_writer_factory->create_motr_writer(
@@ -262,11 +282,11 @@ void S3DeleteObjectAction::delete_object() {
       std::bind(&S3DeleteObjectAction::remove_probable_record, this),
       std::bind(&S3DeleteObjectAction::next, this),
       object_metadata->get_layout_id());
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3DeleteObjectAction::remove_probable_record() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   assert(!oid_str.empty());
 
   if (!motr_kv_writer) {
@@ -277,14 +297,14 @@ void S3DeleteObjectAction::remove_probable_record() {
                                 oid_str,
                                 std::bind(&S3DeleteObjectAction::next, this),
                                 std::bind(&S3DeleteObjectAction::next, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 // To delete a object, we need to check ACL of bucket
 void S3DeleteObjectAction::set_authorization_meta() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
                                   bucket_metadata->get_policy_as_json());
   next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

@@ -43,7 +43,7 @@ S3_SERVER_CONFIG:
    S3_SERVER_IPV6_BIND_ADDR: ~                          # S3 Server ipv6 bind address, ::/128 is default. ~ means option is ignored/not to listen on IPv6 address.
    S3_SERVER_BIND_PORT: 28081                            # S3 Server port number
    S3_SERVER_MOTR_HTTP_BIND_ADDR: 127.0.0.1             # S3 Server bind addresss to perform motr operations over HTTP, 127.0.0.1 is default.
-   S3_SERVER_MOTR_HTTP_BIND_PORT: 7081                  # Port number to perform motr operations over HTTP.
+   S3_SERVER_MOTR_HTTP_BIND_PORT: 28049                 # Port number to perform motr operations over HTTP.
    S3_SERVER_REGION_ENDPOINTS: [s3-us-west-2.seagate.com, s3-us.seagate.com, s3-europe.seagate.com, s3-asia.seagate.com]
    S3_SERVER_DEFAULT_ENDPOINT: s3.seagate.com
    S3_SERVER_SHUTDOWN_GRACE_PERIOD: 7                  # S3 server shutdown grace period in seconds, default is 10 seconds.
@@ -64,7 +64,7 @@ S3_SERVER_CONFIG:
    S3_STATSD_MAX_SEND_RETRY: 3                          # Limit the user requested retry count. A retry is attempted in case message delivery to StatsD server fails.
    S3_STATS_ALLOWLIST_FILENAME: "/opt/seagate/cortx/s3/conf/s3stats-allowlist.yaml"  # Allow list of Stats metrics to be published to the backend.
    S3_PERF_STATS_INOUT_BYTES_INTERVAL_MSEC: 1000        # Specifies how often to send number of in/out-comping bytes to StatsD. Milliseconds.
-   S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING: false         # Enables the object leak feature changes
+   S3_SERVER_OBJECT_DELAYED_DELETE: true                # When true, skips deleting old object during PUT object overwrite and DEL object
    S3_REDIS_SERVER_ADDRESS: "127.0.0.1"                 # In case if redis is used for kvs contains redis server address
    S3_REDIS_SERVER_PORT: 6379                           # In case if redis is used for kvs contains redis server port
    S3_SERVER_MOTR_ETIMEDOUT_MAX_THRESHOLD: 100          # Number of ETIMEDOUT errors per monitoring window before s3server restart
@@ -74,7 +74,7 @@ S3_AUTH_CONFIG:
    S3_AUTH_IP_ADDR: ipv4:127.0.0.1                      # Auth server IP address Should be in below format:
                                                         # ipv4 address format: ipv4:127.0.0.1
                                                         # ipv6 address format: ipv6:::1
-   S3_AUTH_PORT: 9085                                   # Auth server port for http request
+   S3_AUTH_PORT: 28050                                  # Auth server port for http request
 S3_MOTR_CONFIG:                                     # Section for S3 Motr
    S3_MOTR_LOCAL_ADDR: <ipaddress>@tcp:12345:33:100   # Motr end points, replace <ipaddress> with host's ip address
    S3_MOTR_HA_ADDR: <ipaddress>@tcp:12345:34:1        # Motr end point, replace <ipaddress> with host's ip address

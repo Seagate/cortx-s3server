@@ -58,12 +58,14 @@ class S3Error {
   std::string xml_message;
 
  public:
-  S3Error(std::string error_code, std::string req_id, std::string res_key,
+  S3Error(std::string error_code, std::string req_id, std::string res_key = "",
           std::string error_message = "");
 
   int get_http_status_code();
 
-  std::string& to_xml();
+  void set_auth_error_message(const std::string&);
+
+  std::string& to_xml(bool no_decl = false);
 };
 
 #endif

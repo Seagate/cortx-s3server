@@ -55,6 +55,7 @@ NODEJS_DIR_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/s3/nodejs
 RSYSLOG_CFG_DIR_LOCATION=$INSTALL_PREFIX/etc/rsyslog.d
 LOGROTATE_CFG_DIR_LOCATION=$INSTALL_PREFIX/etc/logrotate.d/
 KEEPALIVED_CFG_DIR_LOCATION=$INSTALL_PREFIX/etc/keepalived
+S3_MINI_PROV_CFG_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/s3/mini-prov
 
 rm -rf $AUTH_INSTALL_LOCATION
 rm -rf $S3_INSTALL_LOCATION
@@ -65,6 +66,7 @@ mkdir -p $AUTH_INSTALL_LOCATION
 mkdir -p $DATA_RECOVERY_INSTALL_LOCATION
 mkdir -p $AUTH_INSTALL_LOCATION/resources
 mkdir -p $AUTH_INSTALL_LOCATION/scripts
+mkdir -p $AUTH_INSTALL_LOCATION/scripts/swupdate
 mkdir -p $S3_INSTALL_LOCATION/addb-plugin
 mkdir -p $S3_INSTALL_LOCATION/bin
 mkdir -p $S3_INSTALL_LOCATION/s3datarecovery
@@ -90,6 +92,7 @@ mkdir -p $LOG_DIR_LOCATION/auth/tools
 mkdir -p $NODEJS_DIR_LOCATION
 mkdir -p $RSYSLOG_CFG_DIR_LOCATION
 mkdir -p $LOGROTATE_CFG_DIR_LOCATION
+mkdir -p $S3_MINI_PROV_CFG_LOCATION
 
 # Copy the haproxy dependencies
 cp -R scripts/haproxy/* $S3_INSTALL_LOCATION/install/haproxy
@@ -100,8 +103,12 @@ cp scripts/provisioning/setup.yaml $S3_INSTALL_LOCATION/conf
 # Copy the provisioning script
 cp scripts/provisioning/s3_setup $S3_INSTALL_LOCATION/bin
 
+# Copy the mini-provisioner pre-reqs validation check config files
+cp scripts/provisioning/s3setup_prereqs.json ${S3_MINI_PROV_CFG_LOCATION}/
+
 # Copy the S3 reset scripts
 cp scripts/reset/* $S3_INSTALL_LOCATION/reset
+cp scripts/provisioning/s3setup/clean_open_ldap_by_s3.sh $S3_INSTALL_LOCATION/reset
 
 # Copy the s3 dependencies
 cp -R third_party/libevent/s3_dist/lib/* $S3_INSTALL_LOCATION/libevent/
@@ -124,7 +131,7 @@ if [ -z "${IS_RELEASE}" ] ; then
 else
   cp s3config.release.yaml.sample ${S3_CONFIG_FILE_LOCATION}/s3config.yaml.sample
 fi
-
+cp s3config_unsafe_attributes.yaml $S3_CONFIG_FILE_LOCATION
 # Copy the S3 Audit Log Config file
 cp s3server_audit_log.properties $S3_CONFIG_FILE_LOCATION
 
@@ -172,7 +179,7 @@ cp s3recovery/s3recovery/s3recovery $S3_INSTALL_LOCATION/s3datarecovery/
 
 # Copy the s3 background configuration file.
 cp s3backgrounddelete/s3backgrounddelete/config/s3_background_delete_config.yaml.sample $S3_INSTALL_LOCATION/s3backgrounddelete/config.yaml.sample
-
+cp s3backgrounddelete/s3backgrounddelete/config/s3backgrounddelete_unsafe_attributes.yaml $S3_INSTALL_LOCATION/s3backgrounddelete/
 # Copy the s3 cluster configuration file.
 cp s3backgrounddelete/s3backgrounddelete/config/s3_cluster.yaml $S3_INSTALL_LOCATION/s3backgrounddelete/s3_cluster.yaml
 
@@ -199,18 +206,22 @@ cp -ru auth/resources/static $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/authserver-log4j2.xml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/authencryptcli-log4j2.xml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/authserver.properties.sample $AUTH_INSTALL_LOCATION/resources/
+cp -f auth/resources/authserver_unsafe_attributes.yaml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/keystore.properties.sample $AUTH_INSTALL_LOCATION/resources/
+cp -f auth/resources/keystore_unsafe_attributes.yaml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/defaultAclTemplate.xml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/AmazonS3.xsd $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/s3authserver.jks $AUTH_INSTALL_LOCATION/resources/
 cp -f scripts/s3authserver.jks_template $AUTH_INSTALL_LOCATION/scripts/
 cp -f scripts/create_auth_jks_password.sh $AUTH_INSTALL_LOCATION/scripts/
+cp -f scripts/swupdate/merge.sh $AUTH_INSTALL_LOCATION/scripts/swupdate
 
 # Copy LDAP replication to install location
 # remove this once changes are done in provisioning
 cp -f scripts/ldap/syncprov_mod.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/syncprov.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/replicate.ldif $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/resultssizelimit.ldif $S3_INSTALL_LOCATION/install/ldap/
 
 # Copy LDAP replication to install location
 cp -f scripts/ldap/replication/syncprov_mod.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
@@ -220,6 +231,11 @@ cp -f scripts/ldap/replication/data.ldif $S3_INSTALL_LOCATION/install/ldap/repli
 cp -f scripts/ldap/replication/olcserverid.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
 cp -f scripts/ldap/replication/syncprov_config.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
 cp -f scripts/ldap/replication/deltaReplication.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
+cp -f scripts/ldap/replication/setupReplicationScript.sh $S3_INSTALL_LOCATION/install/ldap/replication/
+cp -f scripts/ldap/replication/serverIdTemplate.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
+cp -f scripts/ldap/replication/configTemplate.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
+cp -f scripts/ldap/replication/dataTemplate.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
+
 
 # Copy check replication script to install location
 cp -f scripts/ldap/check_ldap_replication.sh $S3_INSTALL_LOCATION/install/ldap/
@@ -261,8 +277,6 @@ cp startauth.sh $AUTH_INSTALL_LOCATION/
 
 # Copy auth server Helper scripts
 cp -f scripts/enc_ldap_passwd_in_cfg.sh $AUTH_INSTALL_LOCATION/scripts/
-
-# Copy auth server Helper scripts
 cp -f scripts/change_ldap_passwd.ldif $AUTH_INSTALL_LOCATION/scripts/
 
 # Copy s3-sanity

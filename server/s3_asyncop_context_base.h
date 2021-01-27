@@ -69,6 +69,7 @@ class S3AsyncOpContextBase {
   std::shared_ptr<MotrAPI> s3_motr_api;
 
   std::string request_id;
+  std::string stripped_request_id;
 
  public:
   S3AsyncOpContextBase(std::shared_ptr<RequestObject> req,

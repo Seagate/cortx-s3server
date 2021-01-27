@@ -9,6 +9,10 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 - [1.5 Test a specific MOTR Version using CORX-S3 Server](#15-Test-a-Specific-MOTR-Version-using-CORX-S3-Server)
 - [1.6 Build S3 RPMs](#16-Build-S3-RPMs)
 
+:warning: **Notes:** 
+- The following steps will not work if you have previously installed the COTX software using an OVA or RPMs.
+    - To install and test the S3 submodule, you'll have to create a new VM. 
+
 ### 1.0 Prerequisites
 
 <details>
@@ -47,7 +51,11 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
         * `$ yum install -y epel-release`
     * Verify if kernel version is 3.10.0-1062 (for centos-7.7) or 3.10.0-1127 (for centos-7.8), using: `$ uname -r`
 
-7. You'll need to disable selinux and firewall. Run the following commands:
+7. You'll need to install CORTX Python Utilities. Follow the steps to install [CORTX Python Utilities](https://github.com/Seagate/cortx-utils/blob/main/py-utils/README.md).
+
+8. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup).
+
+9. You'll need to disable selinux and firewall. Run the following commands:
 
      `$ systemctl stop firewalld` 
 
@@ -166,6 +174,10 @@ Before your test your build, ensure that you have installed and configured the f
     - If you don't have Python Version 3.3, then install python3 using: `$ yum install python3`
 4. Ensure that CORTX-S3 Server and its dependent services are running.
     1. To start CORTX-S3 Server and its dependent services, run the command: `$ ./jenkins-build.sh --skip_build --skip_tests`
+       
+       In case you get errors on haproxy service being inactive or not running, follow the steps below:
+        - To check if HAProxy is working run `systemctl status haproxy`
+        - If you see the status as inactive, use the command `systemctl start haproxy`
     2. To view the `PID` of the active S3 service, run the command: `$ pgrep s3`
     3. To view the `PID` of the active Motr service, run the command: `$ pgrep m0`
 5. Follow these steps to install the AWS client and plugin:

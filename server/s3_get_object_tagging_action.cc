@@ -28,9 +28,9 @@ S3GetObjectTaggingAction::S3GetObjectTaggingAction(
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
                      std::move(object_meta_factory)) {
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
-  s3_log(S3_LOG_INFO, request_id,
+  s3_log(S3_LOG_INFO, stripped_request_id,
          "S3 API: GetObjectTaggingAction. Bucket[%s] Object[%s]\n",
          request->get_bucket_name().c_str(),
          request->get_object_name().c_str());
@@ -45,7 +45,7 @@ void S3GetObjectTaggingAction::setup_steps() {
 }
 
 void S3GetObjectTaggingAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
   } else if (bucket_metadata->get_state() ==
@@ -57,11 +57,11 @@ void S3GetObjectTaggingAction::fetch_bucket_info_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GetObjectTaggingAction::fetch_object_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if ((object_list_oid.u_lo == 0ULL && object_list_oid.u_hi == 0ULL) ||
       (object_metadata->get_state() == S3ObjectMetadataState::missing)) {
     s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
@@ -75,11 +75,11 @@ void S3GetObjectTaggingAction::fetch_object_info_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3GetObjectTaggingAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
     S3Error error(get_s3_error_code(), request->get_request_id(),
@@ -99,6 +99,6 @@ void S3GetObjectTaggingAction::send_response_to_s3_client() {
     request->send_response(S3HttpSuccess200, response_xml);
   }
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   done();
 }
