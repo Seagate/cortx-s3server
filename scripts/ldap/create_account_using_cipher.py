@@ -22,7 +22,7 @@ import ldap
 import sys
 import ldap.modlist as modlist
 import traceback
-from s3backgrounddelete.cortx_s3_cipher import CortxS3Cipher
+from s3cipher.cortx_s3_cipher import CortxS3Cipher
 
 """
 Constants

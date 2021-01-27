@@ -16,46 +16,40 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-
 import os
 from setuptools import setup
 import sys
-files = ["config/*"]
+files = []
 
 # Load the version
-s3backgrounddelete_version = "2.0.0"
-
+s3cipher_version = "2.0.0"
 for argument in sys.argv:
     if argument.startswith("--version"):
-        s3backgrounddelete_version = argument.split("=")[1]
+        s3cipher_version = argument.split("=")[1]
         sys.argv.remove(argument)
 
 setup(
-    # Application name:
-    name="s3backgrounddelete",
+  # Application name
+  name="s3cipher",
 
-    # Version number (initial):
-    version=s3backgrounddelete_version,
+  # version number
+  version=s3cipher_version,
 
-    # Application author details:
-    author="Seagate",
+  # Author details
+  author="Seagate",
 
-    # Packages
-    packages=["s3backgrounddelete"],
+  # Packages
+  packages=["s3cipher"],
 
-    # Include additional files into the package
-    include_package_data=True,
+  # Include additional files into the package
+  include_package_data=True,
 
-    # Details
-    scripts =['s3backgrounddelete/s3backgroundproducer', 's3backgrounddelete/s3backgroundconsumer'],
+  # Details
+  scripts =['s3cipher/s3cipher'],
 
-    # license="LICENSE.txt",
-    description="Background delete process to clean stale oids in s3",
+  # license="LICENSE.txt",
 
-    package_data = { 's3backgrounddelete': files},
+  description="Wrapper for cipher interface cortx-utils::cipher",
 
-    # Dependent packages (distributions)
-    install_requires=[
-    'httplib2'
-  ]
+  package_data = { 's3cipher': files}
 )

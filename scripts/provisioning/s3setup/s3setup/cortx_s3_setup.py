@@ -22,7 +22,7 @@ import logging
 import re
 import os
 import json
-from s3backgrounddelete.cortx_s3_cipher import CortxS3Cipher
+from s3cipher.cortx_s3_cipher import CortxS3Cipher
 from s3backgrounddelete.cortx_cluster_config import CipherInvalidToken
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.validator.v_service import ServiceV

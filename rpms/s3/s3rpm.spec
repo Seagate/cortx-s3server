@@ -175,13 +175,18 @@ cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup/s
 python%{py_ver} -m compileall -b *.py
 cp *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup/build/lib/s3setup
 
-echo "build complete"
-
 # Build the s3cortxutils/s3MsgBus wrapper python module
 mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/build/lib/s3msgbus
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/s3msgbus
 python%{py_ver} -m compileall -b *.py
 cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/build/lib/s3msgbus 
+
+# Build the s3cortxutils/s3cipher wrapper python module
+mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3cipher/build/lib/s3cipher
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3cipher/s3cipher
+python%{py_ver} -m compileall -b *.py
+cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3cipher/build/lib/s3cipher 
+
 echo "build complete"
 
 
@@ -199,6 +204,10 @@ python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=
 
 # Install the s3msg bus wrapper module
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus
+python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
+
+# Install the s3msg bus wrapper module
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3cipher
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
 
 # Install s3confstore python module
@@ -406,6 +415,8 @@ rm -rf %{buildroot}
 %{py36_sitelib}/s3recovery-%{version}-py?.?.egg-info
 %{py36_sitelib}/s3msgbus/*.pyc
 %{py36_sitelib}/s3msgbus-%{version}-py?.?.egg-info
+%{py36_sitelib}/s3cipher/*.pyc
+%{py36_sitelib}/s3cipher-%{version}-py?.?.egg-info
 %{py36_sitelib}/s3confstore/*.pyc
 %{py36_sitelib}/s3confstore-%{version}-py?.?.egg-info
 %{py36_sitelib}/s3haproxyconfig/*.pyc
@@ -422,12 +433,14 @@ rm -rf %{buildroot}
 %exclude %{py36_sitelib}/s3haproxyconfig/__pycache__/*
 %exclude %{py36_sitelib}/s3setup/*.py
 %exclude %{py36_sitelib}/s3setup/__pycache__/*
-%exclude %{py36_sitelib}/s3backgrounddelete/s3cipher
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundconsumer
 %exclude %{py36_sitelib}/s3recovery/s3recovery
 %exclude %{py36_sitelib}/s3msgbus/s3msgbus
 %exclude %{py36_sitelib}/s3msgbus/__pycache__/*
 %exclude %{py36_sitelib}/s3msgbus/*.py
+%exclude %{py36_sitelib}/s3cipher/s3cipher
+%exclude %{py36_sitelib}/s3cipher/__pycache__/*
+%exclude %{py36_sitelib}/s3cipher/*.py
 %exclude %{py36_sitelib}/s3confstore/s3confstore
 %exclude %{py36_sitelib}/s3haproxyconfig/s3haproxyconfig
 %exclude %{py36_sitelib}/s3setup/s3setup
