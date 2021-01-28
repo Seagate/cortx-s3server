@@ -230,6 +230,12 @@ class IAMController {
                     requestor.getAccount().getName());
 
         return serverResponse;
+      } else if (requestAction.equals("AuthenticateAndAuthorize")) {
+        LOGGER.info("User is Authenticated hence Authorizing user: " +
+                    requestor.getName() + " account: " +
+                    requestor.getAccount().getName());
+        serverResponse = new Authorizer().authorize(requestor, requestBody);
+        return serverResponse;
       }
     } else {
       requestor = new Requestor();
