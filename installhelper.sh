@@ -175,7 +175,7 @@ cp s3backgrounddelete/s3backgrounddelete/s3backgroundproducer $S3_INSTALL_LOCATI
 cp s3backgrounddelete/s3backgrounddelete/s3backgroundconsumer $S3_INSTALL_LOCATION/s3backgrounddelete/
 
 # Copy s3recovery binary into rpm location
-cp s3recovery/s3recovery/s3recovery $S3_INSTALL_LOCATION/s3datarecovery/
+#cp s3recovery/s3recovery/s3recovery $S3_INSTALL_LOCATION/s3datarecovery/
 
 # Copy the s3 background configuration file.
 cp s3backgrounddelete/s3backgrounddelete/config/s3_background_delete_config.yaml.sample $S3_INSTALL_LOCATION/s3backgrounddelete/config.yaml.sample
@@ -184,10 +184,10 @@ cp s3backgrounddelete/s3backgrounddelete/config/s3backgrounddelete_unsafe_attrib
 cp s3backgrounddelete/s3backgrounddelete/config/s3_cluster.yaml $S3_INSTALL_LOCATION/s3backgrounddelete/s3_cluster.yaml
 
 # Copy s3 data recovery script.
-cp -f s3_data_recovery.sh $S3_INSTALL_LOCATION/s3datarecovery/
+#cp -f s3_data_recovery.sh $S3_INSTALL_LOCATION/s3datarecovery/
 
 # Copy orchastrator script
-cp -f orchastrator.sh $DATA_RECOVERY_INSTALL_LOCATION/
+#cp -f orchastrator.sh $DATA_RECOVERY_INSTALL_LOCATION/
 
 # Copy the s3 background producer file for systemctl support.
 cp s3backgrounddelete/s3backgroundproducer.service $SERVICE_FILE_LOCATION
