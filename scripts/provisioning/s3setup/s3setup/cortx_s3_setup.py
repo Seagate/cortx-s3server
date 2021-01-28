@@ -26,6 +26,7 @@ from s3cipher.cortx_s3_cipher import CortxS3Cipher
 from s3backgrounddelete.cortx_cluster_config import CipherInvalidToken
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.validator.v_service import ServiceV
+from cortx.utils.validator.v_path import PathV
 
 logging.basicConfig(level=logging.INFO)
 # logging.basicConfig(level=logging.DEBUG)
@@ -93,7 +94,7 @@ class S3CortxSetup:
     log.debug("\ncmd:{0},\noutput:{1},\nerror:{2}".format(cmd, output, error))
     return True
 
-  def validate_pre_requisites(self, rpms: list = None, pip3s: list = None, services: list = None):
+  def validate_pre_requisites(self, rpms: list = None, pip3s: list = None, services: list = None, files: list = None):
     try:
       if pip3s:
         PkgV().validate('pip3s', pip3s)
@@ -101,6 +102,8 @@ class S3CortxSetup:
         ServiceV().validate('isrunning', services)
       if rpms:
         PkgV().validate('rpms', rpms)
+      if files:
+        PathV().validate('exists', files)
     except Exception as e:
       print(f"{e}, config:{self.__preqs_conf_file}")
       return False
@@ -158,5 +161,5 @@ class S3CortxSetup:
         print(f"open() or json.load() failed: {e}")
         exit (-2)
 
-      rc = self.validate_pre_requisites(rpms=preqs_conf_json['rpms'], services=preqs_conf_json['services'], pip3s=preqs_conf_json['pip3s'])
+      rc = self.validate_pre_requisites(rpms=preqs_conf_json['rpms'], services=preqs_conf_json['services'], pip3s=preqs_conf_json['pip3s'], files=preqs_conf_json['exists'])
       exit(not rc)
