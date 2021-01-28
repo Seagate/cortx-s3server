@@ -39,7 +39,7 @@ class CORTXS3Config(object):
     _conf_file = None
 
 #    def __init__(self, s3recovery_flag = False):
-     def __init__(self):
+    def __init__(self):
         """Initialise logger and configuration."""
         self.logger = logging.getLogger(__name__ + "CORTXS3Config")
 #        self.s3recovery_flag = s3recovery_flag
