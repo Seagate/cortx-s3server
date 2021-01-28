@@ -61,7 +61,10 @@ s3test=false
 
 cipherkey=""
 sgiamadminpassd=""
+rootadminpasswd=""
+
 ldappasswd=""
+rootpasswd=""
 
 encrypt_cli="/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar"
 
@@ -136,17 +139,19 @@ get_ldap_password()
     if [ ! -z "$cipherkey" ]
     then
         sgiamadminpassd=$(s3confstore "$confstore_config_url" getkey --key "openldap>sgiam>secret")
-        if [ ! -z "$sgiamadminpassd" ]
+        rootadminpasswd=$(s3confstore "$confstore_config_url" getkey --key "openldap>root>secret")
+        if [ ! -z "$sgiamadminpassd" ] && [ ! -z "$rootadminpasswd" ]
         then
             # decrypt the password read from the confstore
             ldappasswd=$(s3cipher --decrypt --data "$sgiamadminpassd" --key "$cipherkey")
-            if [ -z "$ldappasswd" ]
+            rootdnpasswd=$(s3cipher --decrypt --data "$rootadminpasswd" --key "$cipherkey")
+            if [ -z "$ldappasswd" ] || [ -z "$rootdnpasswd" ]
             then
-                echo "ERROR: failed to decrypt sgiamadmin user's ldap password, exiting."
+                echo "ERROR: failed to decrypt sgiamadmin or root user's ldap password, exiting."
                 exit 1
             fi
         else
-            echo "ERROR: failed to read sgiamadmin user's ldap password from confstore, exiting."
+            echo "ERROR: failed to read sgiamadmin or root user's ldap password from confstore, exiting."
             exit 1
         fi
     else
@@ -200,7 +205,7 @@ configure_openldap()
             echo "$host" >> hosts_list_file.txt
         done
         echo "setting ldap-replication on all cluster nodes.."
-        /opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh -h hosts_list_file.txt -p "$ldappasswd"
+        /opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh -h hosts_list_file.txt -p "$rootdnpasswd"
         if [ $? -ne 0 ]
         then
             echo "ERROR: failed to configure ldap replication, exiting."
