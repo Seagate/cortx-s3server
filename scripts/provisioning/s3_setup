@@ -193,11 +193,11 @@ configure_openldap()
     if [ "$server_nodes_count" -gt 1 ]
     then
         hosts_str=$(s3confstore "$confstore_config_url" getnodenames)
-        echo "INFO: hostnames str: [$hosts_arr]"
+        echo "INFO: hostnames str: [$hosts_str]"
         read -ra hosts_arr <<< "$hosts_str"
         for host in "${hosts_arr[@]}"
         do
-            host >> hosts_list_file.txt
+            echo "$host" >> hosts_list_file.txt
         done
         echo "setting ldap-replication on all cluster nodes.."
         /opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh -h hosts_list_file.txt -p "$ldappasswd"
@@ -338,6 +338,11 @@ if [ $s3postinstall == true ]
 then
     echo "INFO: running post_install..."
     s3setup post_install
+    if [ $? -ne 0 ]
+    then
+        echo "ERROR: 1 or more post install validations failed, exiting."
+        exit 1
+    fi
 fi
 
 if [ $s3config == true ]
@@ -359,15 +364,6 @@ then
     if [ $? -ne 0 ]
     then
         echo "ERROR: haproxy configuration failed, exiting"
-        exit 1
-    fi
-
-    echo "INFO: copying ssl certificate.."
-    cp -f /opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem /etc/ssl/stx-s3/s3/
-
-    if [ ! -f "/etc/ssl/stx-s3/s3/s3.seagate.com.pem" ]
-    then
-        echo "ERROR: failed to copy 's3.seagate.com.pem' file to '/etc/ssl/stx-s3/s3', exiting."
         exit 1
     fi
 fi
