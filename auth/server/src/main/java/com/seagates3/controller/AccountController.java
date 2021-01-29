@@ -42,6 +42,7 @@ import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AccountResponseGenerator;
 import com.seagates3.s3service.S3AccountNotifier;
 import com.seagates3.util.KeyGenUtil;
+import com.seagates3.service.GlobalDataStore;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 
@@ -368,6 +369,8 @@ public class AccountController extends AbstractController {
         AccessKey[] accessKeys = accessKeyDAO.findAll(user);
         for (AccessKey accessKey : accessKeys) {
             accessKeyDAO.delete(accessKey);
+            GlobalDataStore.getInstance().getAuthenticationMap().remove(
+                accessKey.getId());
         }
     }
 

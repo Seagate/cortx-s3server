@@ -32,6 +32,7 @@ import com.seagates3.exception.InvalidRequestorException;
 import com.seagates3.model.AccessKey;
 import com.seagates3.model.Requestor;
 import com.seagates3.perf.S3Perf;
+import com.seagates3.model.GlobalData;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,9 +43,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.internal.WhiteboxImpl;
 import org.slf4j.LoggerFactory;
-
 import java.util.Map;
-
+import java.util.HashMap;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
@@ -56,7 +56,8 @@ import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
     @PrepareForTest({RequestorService.class, DAODispatcher.class,
-                     LoggerFactory.class,    S3Perf.class})
+                     LoggerFactory.class,    S3Perf.class,
+                     GlobalDataStore.class})
     @PowerMockIgnore("javax.management.*")
     @MockPolicy(Slf4jMockPolicy.class) public class RequestorServiceTest {
 
@@ -66,6 +67,8 @@ import static org.powermock.api.mockito.PowerMockito.*;
     private RequestorDAO requestorDAO;
     private S3Perf s3Perf;
     private AccessKey accessKey;
+    private
+     GlobalDataStore mockGlobalInstance;
 
     private final String accessKeyID = "AKIAJTYX36YCKQSAJT7Q";
 
@@ -84,6 +87,11 @@ import static org.powermock.api.mockito.PowerMockito.*;
         accessKey = mock(AccessKey.class);
         requestorDAO = mock(RequestorDAO.class);
         requestor = mock(Requestor.class);
+        mockStatic(GlobalDataStore.class);
+        mockGlobalInstance = mock(GlobalDataStore.class);
+        when(GlobalDataStore.getInstance()).thenReturn(mockGlobalInstance);
+        when(mockGlobalInstance.getAuthenticationMap())
+            .thenReturn(new HashMap<String, GlobalData>());
     }
 
     @Test
@@ -117,7 +125,6 @@ import static org.powermock.api.mockito.PowerMockito.*;
         when(DAODispatcher.getResourceDAO(DAOResource.REQUESTOR))
             .thenReturn(requestorDAO);
         when(requestorDAO.find(accessKey)).thenThrow(DataAccessException.class);
-
         RequestorService.getRequestor(clientRequestToken);
     }
 

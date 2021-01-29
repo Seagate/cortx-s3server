@@ -20,6 +20,11 @@
 
 package com.seagates3.service;
 
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.seagates3.authserver.AuthServerConfig;
+import com.seagates3.authentication.ClientRequestToken;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
@@ -29,15 +34,12 @@ import com.seagates3.exception.InternalServerException;
 import com.seagates3.exception.InvalidAccessKeyException;
 import com.seagates3.exception.InvalidRequestorException;
 import com.seagates3.model.AccessKey;
-import com.seagates3.authentication.ClientRequestToken;
+import com.seagates3.model.GlobalData;
 import com.seagates3.model.Requestor;
 import com.seagates3.perf.S3Perf;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.ResponseGenerator;
 import com.seagates3.util.DateUtil;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class RequestorService {
 
@@ -63,6 +65,23 @@ public class RequestorService {
         try {
             perf.startClock();
 
+            GlobalData dataObj =
+                GlobalDataStore.getInstance().getAuthenticationMap().get(
+                    clientRequestToken.getAccessKeyId());
+            if (dataObj != null) {
+              long difference =
+                  (System.currentTimeMillis() - dataObj.getCreationTime()) /
+                  1000;
+              LOGGER.debug("Cache time difference in seconds is - " +
+                           difference);
+              if (difference <
+                  AuthServerConfig.getCacheTimeout()) {  // if entry in cache is
+                                                         // older than cache
+                                                         // timeout interval
+                                                         // then refresh it
+                return dataObj.getRequestor();
+              }
+            }
             accessKey = accessKeyDAO.find(clientRequestToken.getAccessKeyId());
 
             perf.endClock();
@@ -94,6 +113,11 @@ public class RequestorService {
         }
 
         validateRequestor(requestor, clientRequestToken);
+        GlobalData globalDataObj =
+            new GlobalData(accessKey, requestor, System.currentTimeMillis());
+
+        GlobalDataStore.getInstance().addToAuthenticationMap(
+            clientRequestToken.getAccessKeyId(), globalDataObj);
         return requestor;
     }
 
@@ -177,5 +201,4 @@ public class RequestorService {
         return true;
     }
 }
-
 
