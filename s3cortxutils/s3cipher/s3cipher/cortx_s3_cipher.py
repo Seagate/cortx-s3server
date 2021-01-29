@@ -76,7 +76,7 @@ class CortxS3Cipher:
 
         subparsers = parser.add_subparsers(dest='command', title='commands')
 
-        generatekey = subparsers.add_parser('generate_key', "generate key to encrypt or decrypt data with it, use '--const_key' option with this.")
+        generatekey = subparsers.add_parser('generate_key', help="generate key to encrypt or decrypt data with it, use '--const_key' option with this.")
         generatekey.add_argument("--const_key", help="Constant key name to be used during encryption", type=str, required=True)
         generatekey.add_argument("--key_len", help="Key length to be obtained", type=int)
         generatekey.add_argument("--use_base64", help="Used to obtain alphanumeric base64 keys", action="store_true")
