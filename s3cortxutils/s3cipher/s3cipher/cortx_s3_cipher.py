@@ -73,9 +73,6 @@ class CortxS3Cipher:
 
     def run(self):
         parser = argparse.ArgumentParser(description='cortx-py-utils::Cipher wrapper')
-        parser.add_argument('-h', '--help',
-                            action='help',
-                            help='Show this help message and exit')
 
         subparsers = parser.add_subparsers(dest='command', title='commands')
 
@@ -95,25 +92,45 @@ class CortxS3Cipher:
 
         args = parser.parse_args()
 
-        if args.use_base64:
-            use_base64_flag = True
-        else:
+        try:
+            if args.use_base64:
+                use_base64_flag = True
+            else:
+                use_base64_flag = False
+        except AttributeError:
             use_base64_flag = False
 
-        if args.key_len:
-            key_len_flag = args.key_len
-        else:
+        try:
+            if args.key_len:
+                key_len_flag = args.key_len
+            else:
+                key_len_flag = 0
+        except AttributeError:
             key_len_flag = 0
 
-        if args.const_key:
-            const_key_flag = args.const_key
-        else:
+        try:
+            if args.const_key:
+                const_key_flag = args.const_key
+            else:
+                const_key_flag = "default_key"
+        except AttributeError:
             const_key_flag = "default_key"
 
-        if args.key:
-            key = args.key
-        if args.data:
-            data = args.data
+        try:
+            if args.key:
+                key = args.key
+            else:
+                key = ""
+        except AttributeError:
+            key = ""
+
+        try:
+            if args.data:
+                data = args.data
+            else:
+                data = ""
+        except AttributeError:
+            data = ""
 
         s3_cipher = CortxS3Cipher(None, use_base64_flag, key_len_flag, const_key_flag)
 
