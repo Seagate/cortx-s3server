@@ -690,12 +690,12 @@ bool S3AuthClient::setup_auth_request_body() {
     method = "GET";
   }
   add_key_val_to_body("Method", method);
-  add_key_val_to_body("RequestorAccountId", request->get_account_id());
-  add_key_val_to_body("RequestorAccountName", request->get_account_name());
-  add_key_val_to_body("RequestorUserId", request->get_user_id());
-  add_key_val_to_body("RequestorUserName", request->get_user_name());
-  add_key_val_to_body("RequestorEmail", request->get_email());
-  add_key_val_to_body("RequestorCanonicalId", request->get_canonical_id());
+  // add_key_val_to_body("RequestorAccountId", request->get_account_id());
+  // add_key_val_to_body("RequestorAccountName", request->get_account_name());
+  // add_key_val_to_body("RequestorUserId", request->get_user_id());
+  // add_key_val_to_body("RequestorUserName", request->get_user_name());
+  // add_key_val_to_body("RequestorEmail", request->get_email());
+  // add_key_val_to_body("RequestorCanonicalId", request->get_canonical_id());
 
   const char *full_path = request->c_get_full_encoded_path();
   if (full_path != NULL) {
@@ -813,7 +813,7 @@ bool S3AuthClient::setup_auth_request_body() {
       add_key_val_to_body("S3Action", s3_request->get_action_str());
     }
 
-    auth_request_body = "Action=AuthorizeUser";
+    auth_request_body = "Action=AuthenticateAndAuthorize";
   } else if (auth_request_type ==
              S3AuthClientOpType::authentication) {  // Auth request
 
@@ -1209,15 +1209,16 @@ void S3AuthClient::check_authorization() {
 void S3AuthClient::check_authorization(std::function<void(void)> on_success,
                                        std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+
   ADDB_AUTH(ACTS_AUTH_CLNT_CHK_AUTHZ);
   set_op_type(S3AuthClientOpType::authorization);
 
-  if (!is_authheader_present) {
+  if (!auth_context) {
     auth_context.reset(new S3AuthClientOpContext(
         request, std::bind(&S3AuthClient::check_authorization_successful, this),
         std::bind(&S3AuthClient::check_authorization_failed, this)));
 
-    for (auto it : request->get_in_headers_copy()) {
+    for (const auto &it : request->get_in_headers_copy()) {
       s3_log(S3_LOG_DEBUG, request_id, "Header = %s, Value = %s\n",
              it.first.c_str(), it.second.c_str());
       add_key_val_to_body(it.first.c_str(), it.second.c_str());
@@ -1227,11 +1228,11 @@ void S3AuthClient::check_authorization(std::function<void(void)> on_success,
         std::bind(&S3AuthClient::check_authorization_successful, this),
         std::bind(&S3AuthClient::check_authorization_failed, this));
   }
-
   state = S3AuthClientOpState::started;
 
-  this->handler_on_success = on_success;
-  this->handler_on_failed = on_failed;
+  this->handler_on_success = std::move(on_success);
+  this->handler_on_failed = std::move(on_failed);
+
   S3AuthClientOpType auth_request_type = get_op_type();
 
   auth_context->init_auth_op_ctx(auth_request_type);
@@ -1244,22 +1245,21 @@ void S3AuthClient::check_authorization(std::function<void(void)> on_success,
   // Setup the Authorization body to be sent to auth service
   setup_auth_request_body();
   setup_auth_request_headers();
-  S3Option *option_instance = S3Option::get_instance();
-  if (option_instance->get_log_level() == "DEBUG") {
-    size_t buffer_len = evbuffer_get_length(req_body_buffer);
+
+  if (S3Option::get_instance()->get_log_level() == "DEBUG") {
+
+    const size_t buffer_len = evbuffer_get_length(req_body_buffer);
     char *auth_body = (char *)malloc(buffer_len + 1);
-    if (auth_body == NULL) {
-      s3_log(S3_LOG_FATAL, request_id, "malloc failed to allocate memory\n");
+
+    if (auth_body) {
+      const auto nread =
+          evbuffer_copyout(req_body_buffer, auth_body, buffer_len);
+      auth_body[nread > 0 ? nread : 0] = '\0';
+
+      s3_log(S3_LOG_DEBUG, request_id,
+             "Authorization Data being send to Auth server: %s\n", auth_body);
+      free(auth_body);
     }
-    const auto nread = evbuffer_copyout(req_body_buffer, auth_body, buffer_len);
-    if (nread > 0) {
-      auth_body[nread] = '\0';
-    } else {
-      auth_body[0] = '\0';
-    }
-    s3_log(S3_LOG_DEBUG, request_id,
-           "Authorization Data being send to Auth server: %s\n", auth_body);
-    free(auth_body);
   }
   execute_authconnect_request(auth_ctx);
 
