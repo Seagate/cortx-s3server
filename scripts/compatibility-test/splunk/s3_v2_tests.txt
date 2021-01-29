@@ -99,3 +99,4 @@ s3tests.functional.test_s3:test_ranged_request_return_trailing_bytes_response_co
 s3tests.functional.test_s3:test_ranged_request_invalid_range
 s3tests.functional.test_s3:test_object_copy_bucket_not_found
 s3tests.functional.test_s3:test_object_copy_key_not_found
+s3tests.functional.test_utils:test_generate
