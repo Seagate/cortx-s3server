@@ -30,7 +30,8 @@ CURRENT_DIR=`pwd`
 install_cortx_py_utils() {
   #rpm -q cortx-py-utils && yum remove cortx-py-utils -y && yum install cortx-py-utils -y
   if rpm -q cortx-py-utils ; then
-    yum upgrade cortx-py-utils -y
+    yum remove cortx-py-utils -y
+    yum install cortx-py-utils -y
   else
     yum install cortx-py-utils -y
   fi

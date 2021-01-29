@@ -20,7 +20,7 @@
 ##################################
 # Configure ldap-replication
 ##################################
-usage() { echo "Usage: [-h <file containing hostnames of nodes in cluster>] [-p <ldap admin password>]" 1>&2; exit 1; }
+usage() { echo "Usage: [-h <file containing hostnames of nodes in cluster>] [-p <rootDN password>]" 1>&2; exit 1; }
 
 while getopts ":h:p:" o; do
     case "${o}" in
