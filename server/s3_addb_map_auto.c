@@ -25,10 +25,9 @@
 
 #include "s3_addb_map.h"
 
-const uint64_t g_s3_to_addb_idx_func_name_map_size = 209;
+const uint64_t g_s3_to_addb_idx_func_name_map_size = 208;
 
 const char* g_s3_to_addb_idx_func_name_map[] = {
-    "Action::check_authentication",
     "ActionTest::func_callback_one",
     "ActionTest::func_callback_two",
     "MotrAPIHandlerTest::func_callback_one",
