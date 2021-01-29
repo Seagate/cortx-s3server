@@ -135,7 +135,7 @@ fi
 
 get_ldap_password()
 {
-    cipherkey=$(s3cipher --generate_key --const_key openldap)
+    cipherkey=$(s3cipher generate_key --const_key openldap)
     if [ ! -z "$cipherkey" ]
     then
         sgiamadminpassd=$(s3confstore "$confstore_config_url" getkey --key "openldap>sgiam>secret")
@@ -143,9 +143,8 @@ get_ldap_password()
         if [ ! -z "$sgiamadminpassd" ] && [ ! -z "$rootadminpasswd" ]
         then
             # decrypt the password read from the confstore
-            ldappasswd=$(s3cipher --decrypt --data "$sgiamadminpassd" --key "$cipherkey")
-            rootdnpasswd=$(s3cipher --decrypt --data "$rootadminpasswd" --key "$cipherkey")
-            if [ -z "$ldappasswd" ] || [ -z "$rootdnpasswd" ]
+            ldappasswd=$(s3cipher decrypt --data "$sgiamadminpassd" --key "$cipherkey")
+            if [ -z "$ldappasswd" ]
             then
                 echo "ERROR: failed to decrypt sgiamadmin or root user's ldap password, exiting."
                 exit 1
@@ -248,8 +247,8 @@ add_s3backgrounddelete_rabbitmq_user()
 # Generate s3backgroundelete keys using cipher
 create_s3backgroundelete_keys()
 {
-    access_key=$(s3cipher --use_base64 --key_len  22  --const_key  "s3backgroundaccesskey")
-    secret_key=$(s3cipher --key_len  40  --const_key  "s3backgroundsecretkey")
+    access_key=$(s3cipher generate_key --use_base64 --key_len  22  --const_key  "s3backgroundaccesskey")
+    secret_key=$(s3cipher generate_key --key_len  40  --const_key  "s3backgroundsecretkey")
 }
 
 # Create s3 account for s3 backgrounddelete
