@@ -54,10 +54,6 @@ class CortxS3Cipher:
         return ddata.decode("utf-8")
 
     def generate_key(self):
-        key = Cipher.generate_key(self.cluster_id, self.const_key)
-        return key.decode("utf-8")
-
-    def get_key(self):
         try:
             key = Cipher.generate_key(self.cluster_id, self.const_key)
         except Exception as err:
@@ -76,17 +72,26 @@ class CortxS3Cipher:
         return key.decode("utf-8")
 
     def run(self):
-        parser = argparse.ArgumentParser(description='S3Cipher tool used for obtaining encrypted keys',add_help=False)
-        parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
-                    help='Show this help message and exit')
-        parser.add_argument("--use_base64", help="Used to obtain alphanumeric base64 keys", action="store_true")
-        parser.add_argument("--key_len", help="Key length to be obtained", type=int)
-        parser.add_argument("--const_key", help="Constant key name to be used during encryption", type=str)
-        parser.add_argument("--encrypt", help="encrypt provided bytes of data, with provided key", action="store_true")
-        parser.add_argument("--decrypt", help="decrypt provided bytes of data, with provided key", action="store_true")
-        parser.add_argument("--generate_key", help="generate key to encrypt or decrypt data with it, use '--const_key' option with this.", action="store_true")
-        parser.add_argument("--key", help="key (in bytes) to be used in encrypting or decrypting bytes of data")
-        parser.add_argument("--data", help="bytes which needs to be encrypted or decrypted using provided key", type=str)
+        parser = argparse.ArgumentParser(description='cortx-py-utils::Cipher wrapper')
+        parser.add_argument('-h', '--help',
+                            action='help',
+                            help='Show this help message and exit')
+
+        subparsers = parser.add_subparsers(dest='command', title='commands')
+
+        generatekey = subparsers.add_parser('generate_key', "generate key to encrypt or decrypt data with it, use '--const_key' option with this.")
+        generatekey.add_argument("--const_key", help="Constant key name to be used during encryption", type=str, required=True)
+        generatekey.add_argument("--key_len", help="Key length to be obtained", type=int)
+        generatekey.add_argument("--use_base64", help="Used to obtain alphanumeric base64 keys", action="store_true")
+
+        encryptkey = subparsers.add_parser("encrypt", help="encrypt provided bytes of data, with provided key")
+        encryptkey.add_argument("--data", help="bytes which needs to be encrypted or decrypted using provided key", type=str, required=True)
+        encryptkey.add_argument("--key", help="key (in bytes) to be used in encrypting or decrypting bytes of data", type=str, required=True)
+
+        decryptkey = subparsers.add_parser("decrypt", help="decrypt provided bytes of data, with provided key")
+        decryptkey.add_argument("--data", help="bytes which needs to be encrypted or decrypted using provided key", type=str, required=True)
+        decryptkey.add_argument("--key", help="key (in bytes) to be used in encrypting or decrypting bytes of data", type=str, required=True)
+
 
         args = parser.parse_args()
 
@@ -113,14 +118,14 @@ class CortxS3Cipher:
         s3_cipher = CortxS3Cipher(None, use_base64_flag, key_len_flag, const_key_flag)
 
         try:
-            if args.encrypt:
+            if args.command == 'encrypt':
                 print(s3_cipher.encrypt(key, data))
-            elif args.decrypt:
+            elif args.command == 'decrypt':
                 print(s3_cipher.decrypt(key, data))
-            elif args.generate_key:
+            elif args.command == 'generate_key':
                 print(s3_cipher.generate_key())
             else:
-                print(s3_cipher.get_key())
+                sys.exit("Invalid command option passed, see help.")
         except CipherInvalidToken as err:
             print("Cipher generate key failed with error : {0}".format(err))
             sys.exit(1)
