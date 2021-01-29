@@ -259,7 +259,7 @@ class Action {
   // This can register the function as
   // task_list.push_back(std::bind( &S3SomeDerivedAction::step1, this ));
   // Ensure you call this in Derived class constructor.
-  virtual void setup_steps();
+  // void setup_steps();
 
   // Common Actions.
   void start();
@@ -278,11 +278,6 @@ class Action {
   // rollback_list. It expects last task in task_list to be
   // send_response_to_s3_client;
   virtual void rollback_exit();
-
-  // Common steps for all Actions like Authenticate.
-  void check_authentication();
-  void check_authentication_successful();
-  void check_authentication_failed();
 
   virtual void send_response_to_s3_client() = 0;
   virtual void send_retry_error_to_s3_client(int retry_after_in_secs = 1);
