@@ -53,21 +53,18 @@ check_prerequisite() {
 	fi
 }
 
-# Run UTs of s3backgrounddelete and s3recovery
+# Run UTs of s3backgrounddelete
 run_ut() {
 	echo "Executing UTs"
 	$SRC_DIR/s3backgrounddelete/scripts/run_all_ut.sh
-#	$SRC_DIR/s3recovery/scripts/run_all_ut.sh
 }
 
 # Run the coverage.py over UTs and generate coverage report
 run_coverage() {
 	pushd "$SRC_DIR/s3recovery"
 	# Running coverage.py tool over UTs
-	#coverage run -m pytest $SRC_DIR/s3backgrounddelete/ut/cortx_s3_* $SRC_DIR/s3recovery/ut/s3recovery_* $SRC_DIR/s3backgrounddelete/s3backgrounddelete/*.py $SRC_DIR/s3recovery/s3recovery/*.py
   coverage run -m pytest $SRC_DIR/s3backgrounddelete/ut/cortx_s3_* $SRC_DIR/s3backgrounddelete/s3backgrounddelete/*.py
 
-	#coverage report -m $SRC_DIR/s3backgrounddelete/ut/cortx_s3_* $SRC_DIR/s3recovery/ut/s3recovery_* $SRC_DIR/s3backgrounddelete/s3backgrounddelete/*.py $SRC_DIR/s3recovery/s3recovery/*.py
   coverage report -m $SRC_DIR/s3backgrounddelete/ut/cortx_s3_*  $SRC_DIR/s3backgrounddelete/s3backgrounddelete/*.py
 	# Generate xml report
 	coverage xml -o "$DES_DIR/s3server_python_coverage.xml"

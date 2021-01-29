@@ -46,7 +46,7 @@ usage() {
   echo '          --no-motrkvscli-build    : Do not build motrkvscli tool, Default (false)'
   echo '          --no-s3background-build    : Do not build s3background process, Default (false)'
   echo '          --no-s3msgbus-build    : Do not build s3msgbus, Default (false)'
-#  echo '          --no-s3confstoretool-build    : Do not build s3confstoretool process, Default (false)'
+  echo '          --no-s3confstoretool-build    : Do not build s3confstoretool process, Default (false)'
   echo '          --no-s3addbplugin-build    : Do not build s3 addb plugin library, Default (false)'
   echo '          --no-auth-build            : Do not build Auth Server, Default (false)'
   echo '          --no-jclient-build         : Do not build jclient, Default (false)'
@@ -157,7 +157,6 @@ no_s3server_build=0
 no_motrkvscli_build=0
 no_s3background_build=0
 no_s3msgbus_build=0
-#no_s3recoverytool_build=0
 no_s3confstoretool_build=0
 no_s3addbplugin_build=0
 no_auth_build=0
@@ -183,8 +182,7 @@ while true; do
     --no-motrkvscli-build) no_motrkvscli_build=1; shift ;;
     --no-s3background-build) no_s3background_build=1; shift ;;
 	--no-s3msgbus-build) no_s3msgbus_build=1; shift ;;
-    --no-s3recoverytool-build) no_s3recoverytool_build=1; shift ;;
-#    --no-s3confstoretool-build) no_s3confstoretool_build=1; shift ;;
+    --no-s3confstoretool-build) no_s3confstoretool_build=1; shift ;;
     --no-s3addbplugin-build) no_s3addbplugin_build=1; shift ;;
     --no-auth-build) no_auth_build=1; shift ;;
     --no-jclient-build) no_jclient_build=1; shift ;;
@@ -201,12 +199,6 @@ while true; do
 done
 
 set -x
-
-#if [[ $no_s3recoverytool_build -eq 0  && $no_s3background_build -eq 1 ]]
-#then
-#  echo "s3backgrounddelete needs to be builded for building s3recovery tool"
-#  exit 1
-#fi
 
 # Used to store third_party build artifacts
 S3_SRC_DIR=`pwd`
@@ -530,17 +522,6 @@ then
     fi
     cd -
   fi
-  #if [ $no_s3recoverytool_build -eq 0 ]
-  #then
-  #  cd s3recovery
-  #  if [ $no_clean_build -eq 0 ]
-  #  then
-  #    python36 setup.py install --force
-  #  else
-  #    python36 setup.py install
-  #  fi
-  #  cd -      
-  #fi
   if [ $no_s3confstoretool_build -eq 0 ]
   then
     cd s3cortxutils/s3confstore
