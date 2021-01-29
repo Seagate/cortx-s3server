@@ -341,9 +341,6 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
 /opt/seagate/cortx/s3/install/ldap/create_background_delete_account.sh
 /opt/seagate/cortx/s3/install/ldap/delete_background_delete_account.sh
-/opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif
-/opt/seagate/cortx/s3/install/ldap/create_s3_recovery_account.sh
-/opt/seagate/cortx/s3/install/ldap/delete_s3_recovery_account.sh
 /opt/seagate/cortx/s3/install/ldap/cfg_ldap.ldif
 /opt/seagate/cortx/s3/install/ldap/cn={1}s3user.ldif
 /opt/seagate/cortx/s3/install/ldap/iam-admin-access.ldif
@@ -364,8 +361,6 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/reset/reset_s3.sh
 /opt/seagate/cortx/s3/reset/clean_open_ldap_by_s3.sh
 /opt/seagate/cortx/s3/conf/setup.yaml
-/opt/seagate/cortx/s3/s3datarecovery/s3_data_recovery.sh
-/opt/seagate/cortx/datarecovery/orchastrator.sh
 /opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.yaml
 /opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.yaml
 /opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml
