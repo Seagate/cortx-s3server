@@ -155,7 +155,7 @@ def generate_key(config, use_base64, key_len, const_key):
     Generates a key based on input parameters.
     """
     s3cipher = CortxS3Cipher(config, use_base64, key_len, const_key)
-    return s3cipher.get_key()
+    return s3cipher.generate_key()
 
 def generate_access_secret_keys(const_secret_string, const_access_string):
     """

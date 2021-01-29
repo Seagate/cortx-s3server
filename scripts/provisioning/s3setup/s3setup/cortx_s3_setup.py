@@ -50,7 +50,7 @@ class S3CortxSetup:
     s3_cipher = CortxS3Cipher(None, True, keylen, key)
     access_key = ""
     try:
-      access_key = s3_cipher.get_key()
+      access_key = s3_cipher.generate_key()
     except CipherInvalidToken as err:
       log.debug("Cipher generate key failed with error : {0}, trying from flat file : {1}".format(err, s3background_cofig))
       cmd = "awk '/background_account_access_key/ {print}' "+ s3background_cofig + " | cut -d " " -f 5 | sed -e 's/^\"//' -e 's/\"$//"

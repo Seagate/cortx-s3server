@@ -78,7 +78,7 @@ class CORTXS3Config(object):
 
     def generate_key(self, config, use_base64, key_len, const_key):
         s3cipher = CortxS3Cipher(config, use_base64, key_len, const_key)
-        return s3cipher.get_key()
+        return s3cipher.generate_key()
 
     def cache_credentials(self):
         try:
