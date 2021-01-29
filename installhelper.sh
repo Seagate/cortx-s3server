@@ -246,11 +246,6 @@ cp -f scripts/ldap/background_delete_account.ldif $S3_INSTALL_LOCATION/install/l
 cp -f scripts/ldap/create_background_delete_account.sh $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/delete_background_delete_account.sh $S3_INSTALL_LOCATION/install/ldap/
 
-# Copy s3recovery account scripts to install location
-cp -f scripts/ldap/s3_recovery_account.ldif $S3_INSTALL_LOCATION/install/ldap/
-cp -f scripts/ldap/create_s3_recovery_account.sh $S3_INSTALL_LOCATION/install/ldap/
-cp -f scripts/ldap/delete_s3_recovery_account.sh $S3_INSTALL_LOCATION/install/ldap/
-
 cp -f scripts/ldap/cfg_ldap.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/cn={1}s3user.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/iam-admin-access.ldif $S3_INSTALL_LOCATION/install/ldap/
