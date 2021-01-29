@@ -61,7 +61,10 @@ s3test=false
 
 cipherkey=""
 sgiamadminpassd=""
+rootadminpasswd=""
+
 ldappasswd=""
+rootpasswd=""
 
 encrypt_cli="/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar"
 
@@ -136,17 +139,19 @@ get_ldap_password()
     if [ ! -z "$cipherkey" ]
     then
         sgiamadminpassd=$(s3confstore "$confstore_config_url" getkey --key "openldap>sgiam>secret")
-        if [ ! -z "$sgiamadminpassd" ]
+        rootadminpasswd=$(s3confstore "$confstore_config_url" getkey --key "openldap>root>secret")
+        if [ ! -z "$sgiamadminpassd" ] && [ ! -z "$rootadminpasswd" ]
         then
             # decrypt the password read from the confstore
             ldappasswd=$(s3cipher --decrypt --data "$sgiamadminpassd" --key "$cipherkey")
-            if [ -z "$ldappasswd" ]
+            rootdnpasswd=$(s3cipher --decrypt --data "$rootadminpasswd" --key "$cipherkey")
+            if [ -z "$ldappasswd" ] || [ -z "$rootdnpasswd" ]
             then
-                echo "ERROR: failed to decrypt sgiamadmin user's ldap password, exiting."
+                echo "ERROR: failed to decrypt sgiamadmin or root user's ldap password, exiting."
                 exit 1
             fi
         else
-            echo "ERROR: failed to read sgiamadmin user's ldap password from confstore, exiting."
+            echo "ERROR: failed to read sgiamadmin or root user's ldap password from confstore, exiting."
             exit 1
         fi
     else
@@ -193,14 +198,14 @@ configure_openldap()
     if [ "$server_nodes_count" -gt 1 ]
     then
         hosts_str=$(s3confstore "$confstore_config_url" getnodenames)
-        echo "INFO: hostnames str: [$hosts_arr]"
+        echo "INFO: hostnames str: [$hosts_str]"
         read -ra hosts_arr <<< "$hosts_str"
         for host in "${hosts_arr[@]}"
         do
-            host >> hosts_list_file.txt
+            echo "$host" >> hosts_list_file.txt
         done
         echo "setting ldap-replication on all cluster nodes.."
-        /opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh -h hosts_list_file.txt -p "$ldappasswd"
+        /opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh -h hosts_list_file.txt -p "$rootdnpasswd"
         if [ $? -ne 0 ]
         then
             echo "ERROR: failed to configure ldap replication, exiting."
@@ -337,7 +342,12 @@ set_logrotate_policy_ova() {
 if [ $s3postinstall == true ]
 then
     echo "INFO: running post_install..."
-    # exit 0
+    s3setup post_install
+    if [ $? -ne 0 ]
+    then
+        echo "ERROR: 1 or more post install validations failed, exiting."
+        exit 1
+    fi
 fi
 
 if [ $s3config == true ]
@@ -361,7 +371,6 @@ then
         echo "ERROR: haproxy configuration failed, exiting"
         exit 1
     fi
-
 fi
 
 if [ $s3init == true ]
