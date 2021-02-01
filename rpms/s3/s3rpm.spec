@@ -213,7 +213,6 @@ python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=
 
 # Create soft link for 's3_setup' in '/usr/local/bin'
 ln -sf /opt/seagate/cortx/s3/bin/s3_setup /usr/local/bin/s3_setup
-chmod 755 /usr/local/bin/s3_setup
 
 %clean
 bazel clean
