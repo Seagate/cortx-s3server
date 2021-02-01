@@ -46,7 +46,6 @@ fi
 INSTALL_PREFIX=$1
 AUTH_INSTALL_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/auth
 S3_INSTALL_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/s3
-DATA_RECOVERY_INSTALL_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/datarecovery
 S3_CONFIG_FILE_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/s3/conf
 S3_LOG_ROTATE_FILE_LOCATION=$INSTALL_PREFIX/etc/cron.hourly
 SERVICE_FILE_LOCATION=$INSTALL_PREFIX/lib/systemd/system
@@ -59,17 +58,14 @@ S3_MINI_PROV_CFG_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/s3/mini-prov
 
 rm -rf $AUTH_INSTALL_LOCATION
 rm -rf $S3_INSTALL_LOCATION
-rm -rf $DATA_RECOVERY_INSTALL_LOCATION
 
 
 mkdir -p $AUTH_INSTALL_LOCATION
-mkdir -p $DATA_RECOVERY_INSTALL_LOCATION
 mkdir -p $AUTH_INSTALL_LOCATION/resources
 mkdir -p $AUTH_INSTALL_LOCATION/scripts
 mkdir -p $AUTH_INSTALL_LOCATION/scripts/swupdate
 mkdir -p $S3_INSTALL_LOCATION/addb-plugin
 mkdir -p $S3_INSTALL_LOCATION/bin
-mkdir -p $S3_INSTALL_LOCATION/s3datarecovery
 mkdir -p $S3_INSTALL_LOCATION/libevent
 mkdir -p $S3_INSTALL_LOCATION/resources
 mkdir -p $S3_INSTALL_LOCATION/scripts

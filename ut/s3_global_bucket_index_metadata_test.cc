@@ -209,32 +209,7 @@ TEST_F(S3GlobalBucketIndexMetadataTest, LoadFailedMissing) {
             global_bucket_idx_metadata_under_test_ptr->state);
   EXPECT_EQ(1, call_count_one);
 }
-/*
-TEST_F(S3GlobalBucketIndexMetadataTest, SaveReplica) {
-  CREATE_KVS_WRITER_OBJ;
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
-      .Times(AtLeast(1))
-      .WillOnce(Return(S3MotrKVSWriterOpState::created));
 
-  global_bucket_idx_metadata_under_test_ptr->handler_on_success =
-      std::bind(&S3GlobalBucketIndexMetadataTest::func_callback_one, this);
-
-  global_bucket_idx_metadata_under_test_ptr->save_replica();
-
-  EXPECT_EQ(1, call_count_one);
-}
-
-TEST_F(S3GlobalBucketIndexMetadataTest, SaveSuccessful) {
-  CREATE_KVS_WRITER_OBJ;
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _)).Times(1);
-
-  global_bucket_idx_metadata_under_test_ptr->save_successful();
-
-  EXPECT_EQ(S3GlobalBucketIndexMetadataState::saved,
-            global_bucket_idx_metadata_under_test_ptr->state);
-}
-*/
 TEST_F(S3GlobalBucketIndexMetadataTest, SaveFailed) {
   CREATE_KVS_WRITER_OBJ;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
@@ -260,31 +235,7 @@ TEST_F(S3GlobalBucketIndexMetadataTest, SaveFailedToLaunch) {
             global_bucket_idx_metadata_under_test_ptr->state);
   EXPECT_EQ(1, call_count_one);
 }
-/*
-TEST_F(S3GlobalBucketIndexMetadataTest, RemoveReplica) {
-  CREATE_KVS_WRITER_OBJ;
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
-      .Times(AtLeast(1))
-      .WillOnce(Return(S3MotrKVSWriterOpState::deleted));
-  global_bucket_idx_metadata_under_test_ptr->handler_on_success =
-      std::bind(&S3GlobalBucketIndexMetadataTest::func_callback_one, this);
 
-  global_bucket_idx_metadata_under_test_ptr->remove_replica();
-
-  EXPECT_EQ(1, call_count_one);
-}
-
-TEST_F(S3GlobalBucketIndexMetadataTest, RemoveSuccessful) {
-  CREATE_KVS_WRITER_OBJ;
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              delete_keyval(_, _, _, _)).Times(1);
-
-  global_bucket_idx_metadata_under_test_ptr->remove_successful();
-
-  EXPECT_EQ(S3GlobalBucketIndexMetadataState::deleted,
-            global_bucket_idx_metadata_under_test_ptr->state);
-}
-*/
 TEST_F(S3GlobalBucketIndexMetadataTest, RemoveFailed) {
   CREATE_KVS_WRITER_OBJ;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
