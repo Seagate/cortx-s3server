@@ -195,14 +195,17 @@ python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=
 # Install the s3msg bus wrapper module
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
+chmod 777 /usr/local/bin/s3msgbus
 
 # Install the s3msg bus wrapper module
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3cipher
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
+chmod 777 /usr/local/bin/s3cipher
 
 # Install s3confstore python module
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
+chmod 777 /usr/local/bin/s3confstore
 
 # Install s3haproxyconfig python module
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/haproxy/s3haproxyconfig

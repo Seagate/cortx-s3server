@@ -16,3 +16,12 @@ You may obtain a copy of the License at
  For any questions about this software or licensing,
  please email opensource@seagate.com or cortx-questions@seagate.com.
 
+## How to build and install s3cipher:
+Go to s3cortxutils/s3cipher
+run:
+python36 setup.py clean
+python36 setup.py build
+python36 setup.py install
+This will create a python package and binary: /usr/local/bin/s3cipher
+
+## Content To be added
