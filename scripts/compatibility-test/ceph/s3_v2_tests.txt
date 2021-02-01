@@ -265,3 +265,12 @@ s3tests_boto3.functional.test_s3:test_sse_kms_transfer_1MB
 s3tests_boto3.functional.test_s3:test_sse_kms_transfer_13b 
 s3tests_boto3.functional.test_s3:test_bucket_policy 
 s3tests_boto3.functional.test_s3:test_bucket_policy_acl
+s3tests_boto3.functional:test_s3.test_object_copy_zero_size 
+s3tests_boto3.functional:test_s3.test_object_copy_same_bucket 
+s3tests_boto3.functional:test_s3.test_object_copy_verify_contenttype 
+s3tests_boto3.functional:test_s3.test_object_copy_to_itself 
+s3tests_boto3.functional:test_s3.test_object_copy_diff_bucket 
+s3tests_boto3.functional:test_s3.test_object_copy_not_owned_bucket 
+s3tests_boto3.functional:test_s3.test_object_copy_retaining_metadata 
+s3tests_boto3.functional:test_s3.test_object_copy_bucket_not_found 
+s3tests_boto3.functional:test_s3.test_object_copy_key_not_found
