@@ -175,15 +175,13 @@ cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup/s
 python%{py_ver} -m compileall -b *.py
 cp *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup/build/lib/s3setup
 
-echo "build complete"
-
 # Build the s3cortxutils/s3MsgBus wrapper python module
 mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/build/lib/s3msgbus
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/s3msgbus
 python%{py_ver} -m compileall -b *.py
 cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/build/lib/s3msgbus 
-echo "build complete"
 
+echo "build complete"
 
 %install
 rm -rf %{buildroot}
@@ -213,12 +211,18 @@ python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
 
+# Create soft link for 's3_setup' in '/usr/local/bin'
+ln -sf /opt/seagate/cortx/s3/bin/s3_setup /usr/local/bin/s3_setup
+
 %clean
 bazel clean
 cd auth
 ./mvnbuild.sh clean
 cd ..
 rm -rf %{buildroot}
+
+# remove s3_setup soft link
+unlink /usr/local/bin/s3_setup
 
 %files
 %defattr(-,root,root,-)
@@ -382,6 +386,10 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml
 /opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_setup
+%attr(755, root, root) /usr/local/bin/s3_setup
+%attr(755, root, root) /usr/local/bin/s3confstore
+%attr(755, root, root) /usr/local/bin/s3cipher
+%attr(755, root, root) /usr/local/bin/s3msgbus
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer
 %attr(755, root, root) /opt/seagate/cortx/s3/s3datarecovery/s3recovery
