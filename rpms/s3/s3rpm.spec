@@ -445,6 +445,7 @@ sh /opt/seagate/cortx/auth/scripts/swupdate/merge.sh
 systemctl daemon-reload
 systemctl enable s3authserver
 systemctl restart rsyslog
+chmod 755 /usr/local/bin/s3_setup
 openssl_version=`rpm -q --queryformat '%{VERSION}' openssl`
 if [ "$openssl_version" != "1.0.2k" ] && [ "$openssl_version" != "1.1.1" ]; then
   echo "Warning: Unsupported (untested) openssl version [$openssl_version] is installed which may work."
