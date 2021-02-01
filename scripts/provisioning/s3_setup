@@ -39,7 +39,7 @@ init                     create 's3backgrounddelete' s3 account.
 
 test                     run s3 sanity tests
 
-cleanup                  cleanup S3 accounts created for backgrounddelete service and recovery tool
+cleanup                  cleanup S3 account created for backgrounddelete service
 
 --config                 URL path for the confstore configuration file. This option is Mandatory
 
@@ -118,6 +118,7 @@ do
   shift
 done
 
+# TODO: test for existence of the confstore config file, to be taken in python equivalent of s3_setup
 if [ -z "$confstore_config_url" ]
 then
     echo "ERROR: --config option is mandatory and value should be a valid URL path, exiting."
@@ -169,6 +170,13 @@ fetch_update_cluster_id()
 create_auth_jks_password()
 {
     sh /opt/seagate/cortx/auth/scripts/create_auth_jks_password.sh
+    if [ $? -ne 0 ]
+    then
+        echo "ERROR: Failed to set JKS password."
+        echo "ERROR: Please re-run 's3_setup config' again."
+        echo "ERROR: Run 's3_setup cleanup', followed by 's3_setup config', if issue persists."
+        exit 1
+    fi
 }
 
 # Install and Configure Openldap over Non-SSL.
@@ -177,9 +185,22 @@ configure_openldap()
     /opt/seagate/cortx/s3/install/ldap/setup_ldap.sh --confurl "$confstore_config_url" --defaultpasswd --skipssl
     if [ $? -ne 0 ]
     then
-        echo "ERROR: failed to configure openldap, exiting."
+        echo "ERROR: Failed to configure openldap."
+        echo "ERROR: Please re-run 's3_setup config' again."
+        echo "ERROR: Run 's3_setup cleanup', followed by 's3_setup config', if issue persists."
         exit 1
     fi
+
+    # Enable slapd logging in rsyslog config
+    if [[ -f /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf ]]
+    then
+        mkdir -p /etc/rsyslog.d
+        cp /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf /etc/rsyslog.d/slapdlog.conf
+    fi
+
+    systemctl restart rsyslog
+
+    # Set openldap-replication
     # check number of nodes in the cluster
     server_nodes_count=$(s3confstore "$confstore_config_url" getnodecount)
     if [ "$server_nodes_count" -gt 1 ]
@@ -195,27 +216,21 @@ configure_openldap()
         /opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh -h hosts_list_file.txt -p "$rootdnpasswd"
         if [ $? -ne 0 ]
         then
-            echo "ERROR: failed to configure ldap replication, exiting."
+            echo "ERROR: Failed to configure ldap replication, exiting."
+            echo "ERROR: You may want to enable openldap logs, and check what exactly failed."
+            echo "ERROR: Run 's3_setup cleanup', followed by 's3_setup config' again, after resolving the issue."
             exit 1
         fi
         rm -f hosts_list_file.txt
     else
-        echo "INFO: Not setting ldap-replication as 'cluster>node_count' is less than 2."
+        echo "INFO: Not setting ldap-replication as the cluster node_count is less than 2."
     fi
-
-    if [[ -f /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf ]]
-    then
-        # Enable slapd logging in rsyslog config
-        mkdir -p /etc/rsyslog.d
-        cp /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf /etc/rsyslog.d/slapdlog.conf
-    fi
-    systemctl restart s3authserver
-    systemctl restart rsyslog
+    echo "INFO: Successfully configured openldap on the node."
 }
 
 add_s3backgrounddelete_rabbitmq_user()
 {
-    users=`rabbitmqctl list_users`
+    users=$(rabbitmqctl list_users)
     if [[ $users =~ "cortx-s3" ]]
     then
     echo "WARN: Rabbitmq s3user already exists. Cleaning existing s3user."
@@ -229,7 +244,7 @@ add_s3backgrounddelete_rabbitmq_user()
     # Setup queue mirroring
     rabbitmqctl set_policy ha-all ".*" '{"ha-mode":"all"}'
 
-    echo "INFO: Rabbitmq configuration for this node is completed..."
+    echo "INFO: Rabbitmq configuration for this node is completed."
 }
 
 # Generate s3backgroundelete keys using cipher
@@ -245,7 +260,7 @@ create_background_delete_account()
     output=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
     if [[ $output == *"No such object"* ]]
     then
-      echo "Setting up rabbitmq server for S3backgroundelete"
+      echo "INFO: Setting up rabbitmq server for S3backgroundelete.."
       add_s3backgrounddelete_rabbitmq_user
 
       # Create s3background delete account
@@ -260,9 +275,15 @@ create_background_delete_account()
       access_key=""
       secret_key=""
       sh /opt/seagate/cortx/s3/install/ldap/create_background_delete_account.sh $ldappasswd
-      echo "Created s3backgrounddelete account successfully..."
+      if [ $? -eq 0 ]
+      then
+        echo "Created s3backgrounddelete account successfully."
+      else
+        echo "Failed to add s3backgrounddelete account, please check openldap logs to take corrective action."
+        exit 1
+      fi
     else
-      echo "s3backgrounddelete account already exists"
+      echo "INFO: s3backgrounddelete account already exists"
     fi
 }
 
@@ -270,18 +291,23 @@ if [ $s3postinstall == true ]
 then
     echo "INFO: attempting to start haproxy, slapd, rabbitmq-server, rsyslog"
     systemctl restart haproxy slapd rabbitmq-server rsyslog
+
     echo "INFO: running post_install..."
+    # we already have 'exit' statement in 's3setup' binary at failure scenario,
+    # no need to add 'exit' here.   
     s3setup post_install
+    echo "INFO: All pre-requisites are in place."
     systemctl stop slapd
-    if [ $? -ne 0 ]
-    then
-        echo "ERROR: 1 or more post install validations failed, exiting."
-        exit 1
-    fi
 fi
 
 if [ $s3config == true ]
 then
+    # validate pre-requisites before proceeding
+    # we already have 'exit' statement in 's3setup' binary at failure scenario,
+    # no need to add 'exit' here.
+    echo "INFO: validating pre-requisites for provisioning s3server.."
+    s3setup post_install
+
     # Fetch and update cluster id
     # To decrypt openldap passwords, we need 'cluster_id' updated in s3_cluster.yaml
     echo "INFO: Fetching and updating cluster id in s3_cluster.yaml .."
@@ -310,6 +336,12 @@ fi
 
 if [ $s3init == true ]
 then
+    # validate pre-requisites before proceeding
+    # we already have 'exit' statement in 's3setup' binary at failure scenario,
+    # no need to add 'exit' here.
+    echo "INFO: validating pre-requisites for provisioning s3server.."
+    s3setup post_install
+
     # get openldap password from confstore
     echo "INFO: Get openldap passwords from confstore.."
     get_ldap_password
@@ -327,7 +359,7 @@ then
 
     cmd_out=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
     if [[ $cmd_out == *"No such object"* ]];then
-        echo "ERROR: failed to find s3background delete account, exit."
+        echo "ERROR: failed to find s3background delete account, sanity test failed, exiting."
         exit 1
     else
         echo "PASS: S3-Sanity test passed."

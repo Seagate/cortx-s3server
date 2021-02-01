@@ -189,11 +189,8 @@ ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/resultssiz
 systemctl enable slapd
 systemctl restart slapd
 
-echo "Encrypting Authserver LDAP password"
+echo "Encrypting Authserver LDAP password.."
 /opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh -l $LDAPADMINPASS -p /opt/seagate/cortx/auth/resources/authserver.properties
-
-echo "Restart S3authserver"
-systemctl restart s3authserver
 
 if [[ $usessl == true ]]
 then
