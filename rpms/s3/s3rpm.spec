@@ -218,8 +218,6 @@ cd auth
 cd ..
 rm -rf %{buildroot}
 
-# remove s3_setup soft link
-unlink /usr/local/bin/s3_setup
 
 %files
 %defattr(-,root,root,-)
