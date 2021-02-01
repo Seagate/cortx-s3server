@@ -188,19 +188,20 @@ void S3GlobalBucketIndexMetadata::save_successful() {
 
   state = S3GlobalBucketIndexMetadataState::saved;
 
-  // attempt to save the KV in replica global bucket list index
-  if (!motr_kv_writer) {
-    motr_kv_writer =
-        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
-  }
-  motr_kv_writer->put_keyval(
-      replica_global_bucket_list_index_oid, bucket_name, this->to_json(),
-      std::bind(&S3GlobalBucketIndexMetadata::save_replica, this),
-      std::bind(&S3GlobalBucketIndexMetadata::save_replica, this));
-
+  /*  // attempt to save the KV in replica global bucket list index
+    if (!motr_kv_writer) {
+      motr_kv_writer =
+          motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+    }
+    motr_kv_writer->put_keyval(
+        replica_global_bucket_list_index_oid, bucket_name, this->to_json(),
+        std::bind(&S3GlobalBucketIndexMetadata::save_replica, this),
+        std::bind(&S3GlobalBucketIndexMetadata::save_replica, this));
+  */
+  this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
-
+/*
 void S3GlobalBucketIndexMetadata::save_replica() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
@@ -215,7 +216,7 @@ void S3GlobalBucketIndexMetadata::save_replica() {
   this->handler_on_success();
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
+}*/
 
 void S3GlobalBucketIndexMetadata::save_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
@@ -252,19 +253,20 @@ void S3GlobalBucketIndexMetadata::remove_successful() {
 
   state = S3GlobalBucketIndexMetadataState::deleted;
 
-  // attempt to remove KV from the replica index as well
-  if (!motr_kv_writer) {
-    motr_kv_writer =
-        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
-  }
-  motr_kv_writer->delete_keyval(
-      replica_global_bucket_list_index_oid, bucket_name,
-      std::bind(&S3GlobalBucketIndexMetadata::remove_replica, this),
-      std::bind(&S3GlobalBucketIndexMetadata::remove_replica, this));
-
+  /*  // attempt to remove KV from the replica index as well
+    if (!motr_kv_writer) {
+      motr_kv_writer =
+          motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+    }
+    motr_kv_writer->delete_keyval(
+        replica_global_bucket_list_index_oid, bucket_name,
+        std::bind(&S3GlobalBucketIndexMetadata::remove_replica, this),
+        std::bind(&S3GlobalBucketIndexMetadata::remove_replica, this));
+  */
+  this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
-
+/*
 void S3GlobalBucketIndexMetadata::remove_replica() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
@@ -282,7 +284,7 @@ void S3GlobalBucketIndexMetadata::remove_replica() {
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
-
+*/
 void S3GlobalBucketIndexMetadata::remove_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_ERROR, request_id, "Removal of bucket information failed\n");

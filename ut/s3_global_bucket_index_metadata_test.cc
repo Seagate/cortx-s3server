@@ -209,7 +209,7 @@ TEST_F(S3GlobalBucketIndexMetadataTest, LoadFailedMissing) {
             global_bucket_idx_metadata_under_test_ptr->state);
   EXPECT_EQ(1, call_count_one);
 }
-
+/*
 TEST_F(S3GlobalBucketIndexMetadataTest, SaveReplica) {
   CREATE_KVS_WRITER_OBJ;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
@@ -234,7 +234,7 @@ TEST_F(S3GlobalBucketIndexMetadataTest, SaveSuccessful) {
   EXPECT_EQ(S3GlobalBucketIndexMetadataState::saved,
             global_bucket_idx_metadata_under_test_ptr->state);
 }
-
+*/
 TEST_F(S3GlobalBucketIndexMetadataTest, SaveFailed) {
   CREATE_KVS_WRITER_OBJ;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
@@ -260,7 +260,7 @@ TEST_F(S3GlobalBucketIndexMetadataTest, SaveFailedToLaunch) {
             global_bucket_idx_metadata_under_test_ptr->state);
   EXPECT_EQ(1, call_count_one);
 }
-
+/*
 TEST_F(S3GlobalBucketIndexMetadataTest, RemoveReplica) {
   CREATE_KVS_WRITER_OBJ;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
@@ -284,7 +284,7 @@ TEST_F(S3GlobalBucketIndexMetadataTest, RemoveSuccessful) {
   EXPECT_EQ(S3GlobalBucketIndexMetadataState::deleted,
             global_bucket_idx_metadata_under_test_ptr->state);
 }
-
+*/
 TEST_F(S3GlobalBucketIndexMetadataTest, RemoveFailed) {
   CREATE_KVS_WRITER_OBJ;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())

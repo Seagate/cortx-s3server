@@ -118,14 +118,14 @@ class S3GlobalBucketIndexMetadata {
                     std::function<void(void)> on_failed);
   void save_successful();
   void save_failed();
-  void save_replica();
+  // void save_replica();
 
   // Remove Account user info(bucket list oid)
   virtual void remove(std::function<void(void)> on_success,
                       std::function<void(void)> on_failed);
   void remove_successful();
   void remove_failed();
-  void remove_replica();
+  // void remove_replica();
 
   virtual S3GlobalBucketIndexMetadataState get_state() { return state; }
 

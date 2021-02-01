@@ -73,12 +73,12 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
   void save_bucket_info(bool clean_glob_on_err = false);
   void save_bucket_info_successful();
   void save_bucket_info_failed();
-  void save_replica();
+  // void save_replica();
 
   void remove_bucket_info();
   void remove_bucket_info_successful();
   void remove_bucket_info_failed();
-  void remove_replica();
+  // void remove_replica();
 
   void remove_global_bucket_account_id_info();
   void remove_global_bucket_account_id_info_successful();

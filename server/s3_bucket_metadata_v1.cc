@@ -463,20 +463,21 @@ void S3BucketMetadataV1::save_bucket_info(bool clean_glob_on_err) {
 void S3BucketMetadataV1::save_bucket_info_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  // attempt to save the KV in replica bucket metadata index
-  if (!motr_kv_writer) {
-    motr_kv_writer =
-        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
-  }
-  motr_kv_writer->put_keyval(
-      replica_bucket_metadata_list_index_oid,
-      get_bucket_metadata_index_key_name(), this->to_json(),
-      std::bind(&S3BucketMetadataV1::save_replica, this),
-      std::bind(&S3BucketMetadataV1::save_replica, this));
-
+  /*  // attempt to save the KV in replica bucket metadata index
+    if (!motr_kv_writer) {
+      motr_kv_writer =
+          motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+    }
+    motr_kv_writer->put_keyval(
+        replica_bucket_metadata_list_index_oid,
+        get_bucket_metadata_index_key_name(), this->to_json(),
+        std::bind(&S3BucketMetadataV1::save_replica, this),
+        std::bind(&S3BucketMetadataV1::save_replica, this));
+  */
+  this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
-
+/*
 void S3BucketMetadataV1::save_replica() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
@@ -492,6 +493,7 @@ void S3BucketMetadataV1::save_replica() {
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
+*/
 
 void S3BucketMetadataV1::save_bucket_info_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
@@ -543,20 +545,23 @@ void S3BucketMetadataV1::remove_bucket_info() {
 void S3BucketMetadataV1::remove_bucket_info_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  // Attempt to remove KV from replica bucket metadata index
-  if (!motr_kv_writer) {
-    motr_kv_writer =
-        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+  /*  // Attempt to remove KV from replica bucket metadata index
+    if (!motr_kv_writer) {
+      motr_kv_writer =
+          motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+    }
+    motr_kv_writer->delete_keyval(
+        replica_bucket_metadata_list_index_oid,
+        get_bucket_metadata_index_key_name(),
+        std::bind(&S3BucketMetadataV1::remove_replica, this),
+        std::bind(&S3BucketMetadataV1::remove_replica, this));
+  */
+  if (!s3_fi_is_enabled("kv_delete_failed_from_global_index")) {
+    remove_global_bucket_account_id_info();
   }
-  motr_kv_writer->delete_keyval(
-      replica_bucket_metadata_list_index_oid,
-      get_bucket_metadata_index_key_name(),
-      std::bind(&S3BucketMetadataV1::remove_replica, this),
-      std::bind(&S3BucketMetadataV1::remove_replica, this));
-
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
-
+/*
 void S3BucketMetadataV1::remove_replica() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
@@ -578,7 +583,7 @@ void S3BucketMetadataV1::remove_replica() {
   }
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
+}*/
 
 void S3BucketMetadataV1::remove_bucket_info_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
