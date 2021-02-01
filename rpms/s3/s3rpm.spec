@@ -211,9 +211,6 @@ python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
 
-# Create soft link for 's3_setup' in '/usr/local/bin'
-ln -sf /opt/seagate/cortx/s3/bin/s3_setup /usr/local/bin/s3_setup
-
 %clean
 bazel clean
 cd auth
@@ -445,7 +442,11 @@ sh /opt/seagate/cortx/auth/scripts/swupdate/merge.sh
 systemctl daemon-reload
 systemctl enable s3authserver
 systemctl restart rsyslog
+
+# Create soft link for 's3_setup' in '/usr/local/bin'
+ln -sf /opt/seagate/cortx/s3/bin/s3_setup /usr/local/bin/s3_setup
 chmod 755 /usr/local/bin/s3_setup
+
 openssl_version=`rpm -q --queryformat '%{VERSION}' openssl`
 if [ "$openssl_version" != "1.0.2k" ] && [ "$openssl_version" != "1.1.1" ]; then
   echo "Warning: Unsupported (untested) openssl version [$openssl_version] is installed which may work."
