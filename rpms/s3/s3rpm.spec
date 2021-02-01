@@ -213,6 +213,7 @@ python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=
 
 # Create soft link for 's3_setup' in '/usr/local/bin'
 ln -sf /opt/seagate/cortx/s3/bin/s3_setup /usr/local/bin/s3_setup
+chmod 755 /usr/local/bin/s3_setup
 
 %clean
 bazel clean
@@ -386,10 +387,6 @@ unlink /usr/local/bin/s3_setup
 /opt/seagate/cortx/s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml
 /opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_setup
-%attr(755, root, root) /usr/local/bin/s3_setup
-%attr(755, root, root) /usr/local/bin/s3confstore
-%attr(755, root, root) /usr/local/bin/s3cipher
-%attr(755, root, root) /usr/local/bin/s3msgbus
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer
 %attr(755, root, root) /opt/seagate/cortx/s3/s3datarecovery/s3recovery
