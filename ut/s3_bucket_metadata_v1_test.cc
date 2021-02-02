@@ -580,17 +580,19 @@ TEST_F(S3BucketMetadataV1Test, SaveBucketInfoSuccess) {
 
   EXPECT_TRUE(s3motrkvscallbackobj.success_called);
 }
-/*
-TEST_F(S3BucketMetadataV1Test, RemoveBucketInfoSuccessful) {
-  action_under_test->motr_kv_writer =
-        motr_kvs_writer_factory->mock_motr_kvs_writer;
 
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              remove_global_bucket_account_id_info()).Times(AtLeast(1));
+TEST_F(S3BucketMetadataV1Test, RemoveBucketInfoSuccessful) {
+  action_under_test->global_bucket_index_metadata =
+      s3_global_bucket_index_metadata_factory
+          ->mock_global_bucket_index_metadata;
+
+  EXPECT_CALL(*(s3_global_bucket_index_metadata_factory
+                    ->mock_global_bucket_index_metadata),
+              remove(_, _)).Times(AtLeast(1));
 
   action_under_test->remove_bucket_info_successful();
 }
-*/
+
 TEST_F(S3BucketMetadataV1Test, SaveBucketInfoFailed) {
   action_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_motr_kvs_writer;

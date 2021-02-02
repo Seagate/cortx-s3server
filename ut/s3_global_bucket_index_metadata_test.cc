@@ -211,19 +211,31 @@ TEST_F(S3GlobalBucketIndexMetadataTest, LoadFailedMissing) {
 }
 
 TEST_F(S3GlobalBucketIndexMetadataTest, SaveSuccessful) {
-  CREATE_KVS_WRITER_OBJ;
+  S3CallBack s3motrkvscallbackobj;
+
+  global_bucket_idx_metadata_under_test_ptr->handler_on_success =
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj);
+  global_bucket_idx_metadata_under_test_ptr->handler_on_failed =
+      std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj);
 
   global_bucket_idx_metadata_under_test_ptr->save_successful();
 
+  EXPECT_TRUE(s3motrkvscallbackobj.success_called);
   EXPECT_EQ(S3GlobalBucketIndexMetadataState::saved,
             global_bucket_idx_metadata_under_test_ptr->state);
 }
 
 TEST_F(S3GlobalBucketIndexMetadataTest, RemoveSuccessful) {
-  CREATE_KVS_WRITER_OBJ;
+  S3CallBack s3motrkvscallbackobj;
+
+  global_bucket_idx_metadata_under_test_ptr->handler_on_success =
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj);
+  global_bucket_idx_metadata_under_test_ptr->handler_on_failed =
+      std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj);
 
   global_bucket_idx_metadata_under_test_ptr->remove_successful();
 
+  EXPECT_TRUE(s3motrkvscallbackobj.success_called);
   EXPECT_EQ(S3GlobalBucketIndexMetadataState::deleted,
             global_bucket_idx_metadata_under_test_ptr->state);
 }
