@@ -450,3 +450,6 @@ if [ "$openssl_version" != "1.0.2k" ] && [ "$openssl_version" != "1.1.1" ]; then
   echo "Warning: Unsupported (untested) openssl version [$openssl_version] is installed which may work."
   echo "Supported openssl versions are [1.0.2k, 1.1.1]"
 fi
+
+%postun
+rm -f /usr/local/bin/s3_setup
