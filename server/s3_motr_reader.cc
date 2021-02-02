@@ -254,7 +254,6 @@ bool S3MotrReader::read_object() {
 
   struct s3_motr_op_context *ctx = reader_context->get_motr_op_ctx();
   struct s3_motr_rw_op_context *rw_ctx = reader_context->get_motr_rw_op_ctx();
-
   // Remember, so buffers can be iterated.
   motr_rw_op_context = rw_ctx;
   iteration_index = 0;

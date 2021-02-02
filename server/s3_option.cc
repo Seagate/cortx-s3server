@@ -912,6 +912,8 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_LIBEVENT_POOL_RESERVE_PERCENT = %u\n",
          libevent_pool_reserve_percent);
 
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_motr_openobj = %d\n",
+         FLAGS_fake_motr_openobj);
   s3_log(S3_LOG_INFO, "", "FLAGS_fake_motr_createobj = %d\n",
          FLAGS_fake_motr_createobj);
   s3_log(S3_LOG_INFO, "", "FLAGS_fake_motr_writeobj = %d\n",
@@ -1208,6 +1210,13 @@ bool S3Option::is_s3server_obj_delayed_del_enabled() {
 void S3Option::set_s3server_obj_delayed_del_enabled(const bool& flag) {
   s3server_obj_delayed_del_enabled = flag;
 }
+
+bool S3Option::is_fake_motr_obj_op_read(m0_obj_opcode opcode) {
+  return is_fake_motr_openobj() && is_fake_motr_createobj() &&
+         is_fake_motr_readobj() && opcode == M0_OC_READ;
+}
+
+bool S3Option::is_fake_motr_openobj() { return FLAGS_fake_motr_openobj; }
 
 bool S3Option::is_fake_motr_createobj() { return FLAGS_fake_motr_createobj; }
 

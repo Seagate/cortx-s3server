@@ -168,6 +168,15 @@ void teardown_motr_op(struct m0_op *op) { teardown_motr_cancel_wait_op(op, 0); }
 void teardown_motr_cancel_wait_op(struct m0_op *op, int sec) {
   if (!op) return;
 
+  // Free fake m0_op for read in case of faked create and open
+  // NOTE: during operation init m0_op should be allocated accordingly
+  // see s3_motr_wrapper.cc::ConcreteMotrAPI::motr_obj_op
+  if (S3Option::get_instance()->is_fake_motr_obj_op_read(
+          (m0_obj_opcode)op->op_code)) {
+    free(op);
+    return;
+  }
+
   if (M0_OS_LAUNCHED == op->op_sm.sm_state) {
     m0_op_cancel(&op, 1);
     m0_op_wait(op, M0_BITS(M0_OS_FAILED, M0_OS_STABLE),
