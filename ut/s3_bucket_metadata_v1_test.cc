@@ -568,6 +568,29 @@ TEST_F(S3BucketMetadataV1Test, SaveBucketInfo) {
       action_under_test->system_defined_attribute["Owner-Account-id"].c_str());
 }
 
+TEST_F(S3BucketMetadataV1Test, SaveBucketInfoSuccess) {
+  S3CallBack s3motrkvscallbackobj;
+
+  action_under_test->handler_on_success =
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj);
+  action_under_test->handler_on_failed =
+      std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj);
+
+  action_under_test->save_bucket_info_successful();
+
+  EXPECT_TRUE(s3motrkvscallbackobj.success_called);
+}
+/*
+TEST_F(S3BucketMetadataV1Test, RemoveBucketInfoSuccessful) {
+  action_under_test->motr_kv_writer =
+        motr_kvs_writer_factory->mock_motr_kvs_writer;
+
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+              remove_global_bucket_account_id_info()).Times(AtLeast(1));
+
+  action_under_test->remove_bucket_info_successful();
+}
+*/
 TEST_F(S3BucketMetadataV1Test, SaveBucketInfoFailed) {
   action_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_motr_kvs_writer;

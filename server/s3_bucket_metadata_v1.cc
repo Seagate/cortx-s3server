@@ -516,6 +516,11 @@ void S3BucketMetadataV1::remove_bucket_info() {
 void S3BucketMetadataV1::remove_bucket_info_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
+  // If FI: 'kv_delete_failed_from_global_index' is set, then do not remove KV
+  // from global_bucket_list_index_oid. This is to simulate possible "partial"
+  // delete bucket action, where the KV got deleted from
+  // bucket_metadata_list_index_oid, but not from global_bucket_list_index_oid.
+  // If FI not set, then remove KV from global_bucket_list_index_oid as well.
   if (!s3_fi_is_enabled("kv_delete_failed_from_global_index")) {
     remove_global_bucket_account_id_info();
   }

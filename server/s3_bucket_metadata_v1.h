@@ -214,6 +214,7 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
   FRIEND_TEST(S3BucketMetadataV1Test, SaveBucketListIndexOIDFailedToLaunch);
   FRIEND_TEST(S3BucketMetadataV1Test, SaveBucketInfo);
   FRIEND_TEST(S3BucketMetadataV1Test, SaveBucketInfoFailed);
+  FRIEND_TEST(S3BucketMetadataV1Test, SaveBucketInfoSuccess);
   FRIEND_TEST(S3BucketMetadataV1Test, SaveBucketInfoFailedToLaunch);
   FRIEND_TEST(S3BucketMetadataV1Test, SaveBucketInfoFailedWithGlobCleanup);
   FRIEND_TEST(S3BucketMetadataV1Test,
@@ -221,6 +222,7 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
   FRIEND_TEST(S3BucketMetadataV1Test, RemovePresentMetadata);
   FRIEND_TEST(S3BucketMetadataV1Test, RemoveAbsentMetadata);
   FRIEND_TEST(S3BucketMetadataV1Test, RemoveBucketInfo);
+  FRIEND_TEST(S3BucketMetadataV1Test, RemoveBucketInfoSuccessful);
   FRIEND_TEST(S3BucketMetadataV1Test, RemoveBucketAccountidInfoSuccessful);
   FRIEND_TEST(S3BucketMetadataV1Test, RemoveBucketAccountidInfoFailedToLaunch);
   FRIEND_TEST(S3BucketMetadataV1Test, RemoveBucketAccountidInfoFailed);

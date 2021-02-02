@@ -142,8 +142,10 @@ class S3GlobalBucketIndexMetadata {
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, Save);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, SaveFailed);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, SaveFailedToLaunch);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, SaveSuccessful);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, Remove);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, RemoveFailed);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, RemoveSuccessful);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, RemoveFailedToLaunch);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, ToJson);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, FromJson);
