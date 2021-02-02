@@ -64,8 +64,10 @@ class CORTXClusterConfig(object):
                 self._conf_file +
                 " it doesn't have read access")
             sys.exit()
-        with open(self._conf_file, 'r') as file_config:
-            self.s3confstore = S3CortxConfStore(config="yaml:///opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml")
+
+        # Load s3_cluster.yaml file through confstore.
+        conf_url='yaml://' + self._conf_file
+        self.s3confstore = S3CortxConfStore(config=conf_url)
 
     def get_cluster_id(self):
         """Return cluster_id from config file or KeyError."""
