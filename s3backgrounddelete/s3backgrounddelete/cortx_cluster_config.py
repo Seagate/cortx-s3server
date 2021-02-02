@@ -23,7 +23,6 @@ import sys
 import os
 import shutil
 import yaml
-from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 class CipherInvalidToken(Exception):
     pass
@@ -34,7 +33,6 @@ class CORTXClusterConfig(object):
 
     def __init__(self):
         """Load and initialise configuration."""
-        self.s3confstore = None
         self._load_and_fetch_config()
 
     @staticmethod
@@ -65,8 +63,11 @@ class CORTXClusterConfig(object):
                 " it doesn't have read access")
             sys.exit()
         with open(self._conf_file, 'r') as file_config:
-            self.s3confstore = S3CortxConfStore(config="yaml:///opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml")
+            self._config = yaml.safe_load(file_config)
 
     def get_cluster_id(self):
         """Return cluster_id from config file or KeyError."""
-        return self.s3confstore.get_config('cluster_config>cluster_id')
+        if 'cluster_config' in self._config and self._config['cluster_config']['cluster_id']:
+            return self._config['cluster_config']['cluster_id']
+        else:
+            raise KeyError("Could not parse cluster_id config file " + self._conf_file)
