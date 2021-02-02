@@ -63,9 +63,9 @@ run_ut() {
 run_coverage() {
 	pushd "$SRC_DIR/s3recovery"
 	# Running coverage.py tool over UTs
-  coverage run -m pytest $SRC_DIR/s3backgrounddelete/ut/cortx_s3_* $SRC_DIR/s3backgrounddelete/s3backgrounddelete/*.py
+  "coverage run -m pytest $SRC_DIR/s3backgrounddelete/ut/cortx_s3_* $SRC_DIR/s3backgrounddelete/s3backgrounddelete/*.py"
 
-  coverage report -m $SRC_DIR/s3backgrounddelete/ut/cortx_s3_*  $SRC_DIR/s3backgrounddelete/s3backgrounddelete/*.py
+  "coverage report -m $SRC_DIR/s3backgrounddelete/ut/cortx_s3_*  $SRC_DIR/s3backgrounddelete/s3backgrounddelete/*.py"
 	# Generate xml report
 	coverage xml -o "$DES_DIR/s3server_python_coverage.xml"
 	popd
