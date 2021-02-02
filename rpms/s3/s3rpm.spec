@@ -175,15 +175,13 @@ cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup/s
 python%{py_ver} -m compileall -b *.py
 cp *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup/build/lib/s3setup
 
-echo "build complete"
-
 # Build the s3cortxutils/s3MsgBus wrapper python module
 mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/build/lib/s3msgbus
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/s3msgbus
 python%{py_ver} -m compileall -b *.py
 cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/build/lib/s3msgbus 
-echo "build complete"
 
+echo "build complete"
 
 %install
 rm -rf %{buildroot}
@@ -219,6 +217,7 @@ cd auth
 ./mvnbuild.sh clean
 cd ..
 rm -rf %{buildroot}
+
 
 %files
 %defattr(-,root,root,-)
@@ -441,8 +440,16 @@ sh /opt/seagate/cortx/auth/scripts/swupdate/merge.sh
 systemctl daemon-reload
 systemctl enable s3authserver
 systemctl restart rsyslog
+
+# Create soft link for 's3_setup' in '/usr/local/bin'
+ln -sf /opt/seagate/cortx/s3/bin/s3_setup /usr/local/bin/s3_setup
+chmod 755 /usr/local/bin/s3_setup
+
 openssl_version=`rpm -q --queryformat '%{VERSION}' openssl`
 if [ "$openssl_version" != "1.0.2k" ] && [ "$openssl_version" != "1.1.1" ]; then
   echo "Warning: Unsupported (untested) openssl version [$openssl_version] is installed which may work."
   echo "Supported openssl versions are [1.0.2k, 1.1.1]"
 fi
+
+%postun
+rm -f /usr/local/bin/s3_setup
