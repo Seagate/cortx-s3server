@@ -46,7 +46,7 @@ usage() {
   echo '          --no-motrkvscli-build    : Do not build motrkvscli tool, Default (false)'
   echo '          --no-s3background-build    : Do not build s3background process, Default (false)'
   echo '          --no-s3msgbus-build    : Do not build s3msgbus, Default (false)'
-  echo '          --no-s3recoverytool-build    : Do not build s3recoverytool process, Default (false)'
+  echo '          --no-s3cipher-build    : Do not build s3cipher, Default (false)'
   echo '          --no-s3confstoretool-build    : Do not build s3confstoretool process, Default (false)'
   echo '          --no-s3addbplugin-build    : Do not build s3 addb plugin library, Default (false)'
   echo '          --no-auth-build            : Do not build Auth Server, Default (false)'
@@ -140,7 +140,7 @@ get_motr_pkg_config_rpm() {
 # read the options
 OPTS=`getopt -o h --long no-motr-rpm,use-build-cache,no-check-code,no-clean-build,\
 no-s3ut-build,no-s3mempoolut-build,no-s3mempoolmgrut-build,no-s3server-build,\
-no-motrkvscli-build,no-s3background-build,no-s3msgbus-build,no-s3recoverytool-build,no-s3confstoretool-build,\
+no-motrkvscli-build,no-s3background-build,no-s3msgbus-build,no-s3cipher-build,no-s3confstoretool-build,\
 no-s3addbplugin-build,no-auth-build,no-jclient-build,no-jcloudclient-build,\
 no-s3iamcli-build,no-java-tests,no-install,just-gen-build-file,valgrind_memcheck,\
 help -n 'rebuildall.sh' -- "$@"`
@@ -158,7 +158,7 @@ no_s3server_build=0
 no_motrkvscli_build=0
 no_s3background_build=0
 no_s3msgbus_build=0
-no_s3recoverytool_build=0
+no_s3cipher_build=0
 no_s3confstoretool_build=0
 no_s3addbplugin_build=0
 no_auth_build=0
@@ -184,7 +184,7 @@ while true; do
     --no-motrkvscli-build) no_motrkvscli_build=1; shift ;;
     --no-s3background-build) no_s3background_build=1; shift ;;
 	--no-s3msgbus-build) no_s3msgbus_build=1; shift ;;
-    --no-s3recoverytool-build) no_s3recoverytool_build=1; shift ;;
+    --no-s3cipher-build) no_s3cipher_build=1; shift ;;
     --no-s3confstoretool-build) no_s3confstoretool_build=1; shift ;;
     --no-s3addbplugin-build) no_s3addbplugin_build=1; shift ;;
     --no-auth-build) no_auth_build=1; shift ;;
@@ -202,12 +202,6 @@ while true; do
 done
 
 set -x
-
-if [[ $no_s3recoverytool_build -eq 0  && $no_s3background_build -eq 1 ]]
-then
-  echo "s3backgrounddelete needs to be builded for building s3recovery tool"
-  exit 1
-fi
 
 # Used to store third_party build artifacts
 S3_SRC_DIR=`pwd`
@@ -531,9 +525,9 @@ then
     fi
     cd -
   fi
-  if [ $no_s3recoverytool_build -eq 0 ]
+  if [ $no_s3cipher_build -eq 0 ]
   then
-    cd s3recovery
+    cd s3cortxutils/s3cipher
     if [ $no_clean_build -eq 0 ]
     then
       python36 setup.py install --force

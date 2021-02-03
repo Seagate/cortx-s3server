@@ -41,9 +41,7 @@ extern "C" {
 
 // Just to silent compiler
 struct m0_uint128 global_bucket_list_index_oid;
-struct m0_uint128 replica_global_bucket_list_index_oid;
 struct m0_uint128 bucket_metadata_list_index_oid;
-struct m0_uint128 replica_bucket_metadata_list_index_oid;
 struct m0_uint128 global_probable_dead_object_list_index_oid;
 struct m0_uint128 global_instance_id;
 pthread_t global_tid_indexop;

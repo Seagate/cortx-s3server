@@ -46,7 +46,6 @@ fi
 INSTALL_PREFIX=$1
 AUTH_INSTALL_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/auth
 S3_INSTALL_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/s3
-DATA_RECOVERY_INSTALL_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/datarecovery
 S3_CONFIG_FILE_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/s3/conf
 S3_LOG_ROTATE_FILE_LOCATION=$INSTALL_PREFIX/etc/cron.hourly
 SERVICE_FILE_LOCATION=$INSTALL_PREFIX/lib/systemd/system
@@ -59,17 +58,14 @@ S3_MINI_PROV_CFG_LOCATION=$INSTALL_PREFIX/opt/seagate/cortx/s3/mini-prov
 
 rm -rf $AUTH_INSTALL_LOCATION
 rm -rf $S3_INSTALL_LOCATION
-rm -rf $DATA_RECOVERY_INSTALL_LOCATION
 
 
 mkdir -p $AUTH_INSTALL_LOCATION
-mkdir -p $DATA_RECOVERY_INSTALL_LOCATION
 mkdir -p $AUTH_INSTALL_LOCATION/resources
 mkdir -p $AUTH_INSTALL_LOCATION/scripts
 mkdir -p $AUTH_INSTALL_LOCATION/scripts/swupdate
 mkdir -p $S3_INSTALL_LOCATION/addb-plugin
 mkdir -p $S3_INSTALL_LOCATION/bin
-mkdir -p $S3_INSTALL_LOCATION/s3datarecovery
 mkdir -p $S3_INSTALL_LOCATION/libevent
 mkdir -p $S3_INSTALL_LOCATION/resources
 mkdir -p $S3_INSTALL_LOCATION/scripts
@@ -174,20 +170,11 @@ cp s3backgrounddelete/s3backgrounddelete/s3backgroundproducer $S3_INSTALL_LOCATI
 # Copy the s3 background consumer binary file into rpm location.
 cp s3backgrounddelete/s3backgrounddelete/s3backgroundconsumer $S3_INSTALL_LOCATION/s3backgrounddelete/
 
-# Copy s3recovery binary into rpm location
-cp s3recovery/s3recovery/s3recovery $S3_INSTALL_LOCATION/s3datarecovery/
-
 # Copy the s3 background configuration file.
 cp s3backgrounddelete/s3backgrounddelete/config/s3_background_delete_config.yaml.sample $S3_INSTALL_LOCATION/s3backgrounddelete/config.yaml.sample
 cp s3backgrounddelete/s3backgrounddelete/config/s3backgrounddelete_unsafe_attributes.yaml $S3_INSTALL_LOCATION/s3backgrounddelete/
 # Copy the s3 cluster configuration file.
 cp s3backgrounddelete/s3backgrounddelete/config/s3_cluster.yaml $S3_INSTALL_LOCATION/s3backgrounddelete/s3_cluster.yaml
-
-# Copy s3 data recovery script.
-cp -f s3_data_recovery.sh $S3_INSTALL_LOCATION/s3datarecovery/
-
-# Copy orchastrator script
-cp -f orchastrator.sh $DATA_RECOVERY_INSTALL_LOCATION/
 
 # Copy the s3 background producer file for systemctl support.
 cp s3backgrounddelete/s3backgroundproducer.service $SERVICE_FILE_LOCATION
@@ -254,11 +241,6 @@ cp -f scripts/ldap/s3slapdindex.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/background_delete_account.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/create_background_delete_account.sh $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/delete_background_delete_account.sh $S3_INSTALL_LOCATION/install/ldap/
-
-# Copy s3recovery account scripts to install location
-cp -f scripts/ldap/s3_recovery_account.ldif $S3_INSTALL_LOCATION/install/ldap/
-cp -f scripts/ldap/create_s3_recovery_account.sh $S3_INSTALL_LOCATION/install/ldap/
-cp -f scripts/ldap/delete_s3_recovery_account.sh $S3_INSTALL_LOCATION/install/ldap/
 
 cp -f scripts/ldap/cfg_ldap.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/cn={1}s3user.ldif $S3_INSTALL_LOCATION/install/ldap/
