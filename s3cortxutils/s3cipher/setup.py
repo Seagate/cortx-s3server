@@ -16,22 +16,40 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-version=1
-#S3 Auth Server EncryptUtil Properties
-s3KeyStoreName=s3authserver.jks
-s3KeyStorePath=/opt/seagate/cortx/auth/resources
-s3KeyStorePassword=seagate
-s3KeyPassword=seagate
-s3AuthCertAlias=s3auth_pass
-s3CipherUtil=s3cipher generate_key --use_base64 --key_len 12 --const_key openldap
+import os
+from setuptools import setup
+import sys
+files = []
 
-# Uncomment this to override logging config file.
-#
-# logConfigFile=<PATH TO CONFIG FILE>
+# Load the version
+s3cipher_version = "2.0.0"
+for argument in sys.argv:
+    if argument.startswith("--version"):
+        s3cipher_version = argument.split("=")[1]
+        sys.argv.remove(argument)
 
-# Uncomment this to override log level.
-# Note - setting this will override the logging level of root logger.
-# If this option is set along with logConfigFile, the log level set in the
-# config file will be overridden.
-#
-#logLevel=DEBUG
+setup(
+  # Application name
+  name="s3cipher",
+
+  # version number
+  version=s3cipher_version,
+
+  # Author details
+  author="Seagate",
+
+  # Packages
+  packages=["s3cipher"],
+
+  # Include additional files into the package
+  include_package_data=True,
+
+  # Details
+  scripts =['s3cipher/s3cipher'],
+
+  # license="LICENSE.txt",
+
+  description="Wrapper for cipher interface cortx-utils::cipher",
+
+  package_data = { 's3cipher': files}
+)
