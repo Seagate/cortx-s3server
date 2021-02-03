@@ -151,12 +151,6 @@ cd s3backgrounddelete/s3backgrounddelete
 python%{py_ver} -m compileall -b *.py
 cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3backgrounddelete/build/lib/s3backgrounddelete
 
-# Build the s3datarecovery tool.
-mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3recovery/build/lib/s3recovery
-cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3recovery/s3recovery
-python%{py_ver} -m compileall -b *.py
-cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3recovery/build/lib/s3recovery 
-
 # Build s3cortxutils/s3confstore python module
 mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore/build/lib/s3confstore
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore/s3confstore
@@ -191,10 +185,6 @@ rm -rf %{buildroot}
 
 # Install the background delete python module.
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3backgrounddelete
-python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
-
-# Install the s3recovery python module
-cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3recovery
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
 
 # Install the s3msg bus wrapper module
@@ -351,9 +341,6 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
 /opt/seagate/cortx/s3/install/ldap/create_background_delete_account.sh
 /opt/seagate/cortx/s3/install/ldap/delete_background_delete_account.sh
-/opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif
-/opt/seagate/cortx/s3/install/ldap/create_s3_recovery_account.sh
-/opt/seagate/cortx/s3/install/ldap/delete_s3_recovery_account.sh
 /opt/seagate/cortx/s3/install/ldap/cfg_ldap.ldif
 /opt/seagate/cortx/s3/install/ldap/cn={1}s3user.ldif
 /opt/seagate/cortx/s3/install/ldap/iam-admin-access.ldif
@@ -374,8 +361,6 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/reset/reset_s3.sh
 /opt/seagate/cortx/s3/reset/clean_open_ldap_by_s3.sh
 /opt/seagate/cortx/s3/conf/setup.yaml
-/opt/seagate/cortx/s3/s3datarecovery/s3_data_recovery.sh
-/opt/seagate/cortx/datarecovery/orchastrator.sh
 /opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.yaml
 /opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.yaml
 /opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml
@@ -384,7 +369,6 @@ rm -rf %{buildroot}
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_setup
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer
-%attr(755, root, root) /opt/seagate/cortx/s3/s3datarecovery/s3recovery
 /etc/rsyslog.d/rsyslog-tcp-audit.conf
 /etc/rsyslog.d/elasticsearch.conf
 /etc/keepalived/keepalived.conf.main
@@ -392,7 +376,6 @@ rm -rf %{buildroot}
 /etc/logrotate.d/openldap
 %{_bindir}/s3backgroundconsumer
 %{_bindir}/s3backgroundproducer
-%{_bindir}/s3recovery
 %{_bindir}/s3cipher
 %{_bindir}/s3msgbus
 %{_bindir}/s3confstore
@@ -402,8 +385,6 @@ rm -rf %{buildroot}
 %{py36_sitelib}/s3backgrounddelete/config/s3_background_delete_config.yaml.sample
 %{py36_sitelib}/s3backgrounddelete/*.pyc
 %{py36_sitelib}/s3backgrounddelete-%{version}-py?.?.egg-info
-%{py36_sitelib}/s3recovery/*.pyc
-%{py36_sitelib}/s3recovery-%{version}-py?.?.egg-info
 %{py36_sitelib}/s3msgbus/*.pyc
 %{py36_sitelib}/s3msgbus-%{version}-py?.?.egg-info
 %{py36_sitelib}/s3confstore/*.pyc
@@ -413,9 +394,7 @@ rm -rf %{buildroot}
 %{py36_sitelib}/s3setup/*.pyc
 %{py36_sitelib}/s3setup-%{version}-py?.?.egg-info
 %exclude %{py36_sitelib}/s3backgrounddelete/__pycache__/*
-%exclude %{py36_sitelib}/s3recovery/__pycache__/*
 %exclude %{py36_sitelib}/s3backgrounddelete/*.py
-%exclude %{py36_sitelib}/s3recovery/*.py
 %exclude %{py36_sitelib}/s3confstore/*.py
 %exclude %{py36_sitelib}/s3confstore/__pycache__/*
 %exclude %{py36_sitelib}/s3haproxyconfig/*.py
@@ -424,7 +403,6 @@ rm -rf %{buildroot}
 %exclude %{py36_sitelib}/s3setup/__pycache__/*
 %exclude %{py36_sitelib}/s3backgrounddelete/s3cipher
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundconsumer
-%exclude %{py36_sitelib}/s3recovery/s3recovery
 %exclude %{py36_sitelib}/s3msgbus/s3msgbus
 %exclude %{py36_sitelib}/s3msgbus/__pycache__/*
 %exclude %{py36_sitelib}/s3msgbus/*.py

@@ -89,23 +89,11 @@ class S3kvTest(S3PyCliTest):
         root_oid = S3OID("0x7800000000000000", "0x100001")
         return root_oid
 
-# Replica index table OID used by S3server is a constant derived by
-# adding 5 to  M0_MOTR_ID_APP define and packing it using M0_FID_TINIT
-    def replica_bucket_account_index(self):
-        replica_oid = S3OID("0x7800000000000000", "0x100005")
-        return replica_oid
-
 # Root bucket metadata index table OID used by S3server is a constant derived by
 # adding 2 to  M0_MOTR_ID_APP define and packing it using M0_FID_TINIT
     def root_bucket_metadata_index(self):
         root_oid = S3OID("0x7800000000000000", "0x100002")
         return root_oid
-
-# Replica bucket metadata index table OID used by S3server is a constant derived by
-# adding 6 to  M0_MOTR_ID_APP define and packing it using M0_FID_TINIT
-    def replica_bucket_metadata_index(self):
-        replica_oid = S3OID("0x7800000000000000", "0x100006")
-        return replica_oid
 
 # Root probable dead object list index table OID used by S3server is a constant derived by
 # adding 3 to  M0_MOTR_ID_APP define and packing it using M0_FID_TINIT
