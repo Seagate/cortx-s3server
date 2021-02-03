@@ -47,7 +47,7 @@ setup(
     include_package_data=True,
 
     # Details
-    scripts =['s3backgrounddelete/s3backgroundproducer', 's3backgrounddelete/s3backgroundconsumer', 's3backgrounddelete/s3cipher'],
+    scripts =['s3backgrounddelete/s3backgroundproducer', 's3backgrounddelete/s3backgroundconsumer'],
 
     # license="LICENSE.txt",
     description="Background delete process to clean stale oids in s3",

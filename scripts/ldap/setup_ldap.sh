@@ -100,14 +100,14 @@ chgrp ldap /etc/openldap/certs/password # onlyif: grep -q ldap /etc/group && tes
 
 if [[ $defaultpasswd == true ]]
 then # Get password from cortx-utils
-    cipherkey=$(s3cipher --generate_key --const_key openldap 2>/dev/null)
+    cipherkey=$(s3cipher generate_key --const_key openldap 2>/dev/null)
 
     sgiamadminpassd=$(s3confstore "$confstore_config_url" getkey --key "openldap>sgiam>secret")
     rootdnpasswd=$(s3confstore "$confstore_config_url" getkey --key "openldap>root>secret")
 
     # decrypt the passwords read from the confstore
-    LDAPADMINPASS=$(s3cipher --decrypt --data "$sgiamadminpassd" --key "$cipherkey" 2>/dev/null)
-    ROOTDNPASSWORD=$(s3cipher --decrypt --data "$rootdnpasswd" --key "$cipherkey" 2>/dev/null)
+    LDAPADMINPASS=$(s3cipher decrypt --data "$sgiamadminpassd" --key "$cipherkey" 2>/dev/null)
+    ROOTDNPASSWORD=$(s3cipher decrypt --data "$rootdnpasswd" --key "$cipherkey" 2>/dev/null)
 else # Fetch Root DN & IAM admin passwords from User
     echo -en "\nEnter Password for LDAP rootDN: "
     read -s ROOTDNPASSWORD && [[ -z $ROOTDNPASSWORD ]] && echo 'Password can not be null.' && exit 1

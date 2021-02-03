@@ -34,7 +34,6 @@
 #include "motr_request_object.h"
 
 #define BACKGROUND_STALE_OBJECT_DELETE_ACCOUNT "s3-background-delete-svc"
-#define S3RECOVERY_ACCOUNT "s3-recovery-svc"
 
 // Derived Action Objects will have steps (member functions)
 // required to complete the action.

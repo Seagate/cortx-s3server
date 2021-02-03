@@ -135,7 +135,7 @@ fi
 
 get_ldap_password()
 {
-    cipherkey=$(s3cipher --generate_key --const_key openldap)
+    cipherkey=$(s3cipher generate_key --const_key openldap)
     if [ ! -z "$cipherkey" ]
     then
         sgiamadminpassd=$(s3confstore "$confstore_config_url" getkey --key "openldap>sgiam>secret")
@@ -143,8 +143,8 @@ get_ldap_password()
         if [ ! -z "$sgiamadminpassd" ] && [ ! -z "$rootadminpasswd" ]
         then
             # decrypt the password read from the confstore
-            ldappasswd=$(s3cipher --decrypt --data "$sgiamadminpassd" --key "$cipherkey")
-            rootdnpasswd=$(s3cipher --decrypt --data "$rootadminpasswd" --key "$cipherkey")
+            ldappasswd=$(s3cipher decrypt --data "$sgiamadminpassd" --key "$cipherkey")
+            rootdnpasswd=$(s3cipher decrypt --data "$rootadminpasswd" --key "$cipherkey")
             if [ -z "$ldappasswd" ] || [ -z "$rootdnpasswd" ]
             then
                 echo "ERROR: failed to decrypt sgiamadmin or root user's ldap password, exiting."
@@ -248,39 +248,8 @@ add_s3backgrounddelete_rabbitmq_user()
 # Generate s3backgroundelete keys using cipher
 create_s3backgroundelete_keys()
 {
-    access_key=$(s3cipher --use_base64 --key_len  22  --const_key  "s3backgroundaccesskey")
-    secret_key=$(s3cipher --key_len  40  --const_key  "s3backgroundsecretkey")
-}
-
-# Generate s3recovery keys using cipher
-create_s3recovery_keys()
-{
-    access_key=$(s3cipher --use_base64 --key_len  22  --const_key  "s3recoveryaccesskey")
-    secret_key=$(s3cipher --key_len  40  --const_key  "s3recoverysecretkey")
-}
-
-# Create s3 account for s3 recoverytool
-create_recovery_tool_account()
-{
-    output=$(ldapsearch -b "o=s3-recovery-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
-    if [[ $output == *"No such object"* ]]
-    then
-      # Create s3recovery tool account
-      create_s3recovery_keys
-      # TODO - use s3confstore to set the access_key and secret_key in confstore.
-      # once the s3recovery is updated to read the keys from confstore, instead of config.yaml file
-      sed -i "s/recovery_account_access_key:.*$/recovery_account_access_key: \"$access_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
-      sed -i "s/recovery_account_secret_key:.*$/recovery_account_secret_key: \"$secret_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
-      sed -i "s/ak:.*/ak: $access_key/g" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif
-      sed -i "s/sk:.*/sk: $secret_key/g" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif
-      sed -i "s/ak=.*/ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com/g" /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif
-      access_key=""
-      secret_key=""
-      sh /opt/seagate/cortx/s3/install/ldap/create_s3_recovery_account.sh $ldappasswd
-      echo "Created s3recovery tool account successfully..."
-    else
-      echo "s3recovery tool account already exists"
-    fi
+    access_key=$(s3cipher generate_key --use_base64 --key_len  22  --const_key  "s3backgroundaccesskey")
+    secret_key=$(s3cipher generate_key --key_len  40  --const_key  "s3backgroundsecretkey")
 }
 
 # Create s3 account for s3 backgrounddelete
@@ -378,10 +347,6 @@ then
     # Setup s3 background delete and its dependencies
     echo "INFO: Creating the s3backgrounddelete account.."
     create_background_delete_account
-
-    # Setup recovery tool dependancies
-    echo "INFO: Creating the s3 recovery tool account"
-	create_recovery_tool_account
 
     # set logrotate policy
     plat=$(s3confstore "$confstore_config_url" getkey --key "cluster>env_type")

@@ -22,31 +22,31 @@
 # called on all nodes before server is run
 s3:
   post_install:
-    cmd: s3_setup post_install
+    cmd: /opt/seagate/cortx/s3/bin/s3_setup post_install
     args: --config $URL
   init:
-    cmd: s3_setup init
+    cmd: /opt/seagate/cortx/s3/bin/s3_setup init
     args: --config $URL
   config:
-    cmd: s3_setup config
+    cmd: /opt/seagate/cortx/s3/bin/s3_setup config
     args: --config $URL
   test:
-    cmd: s3_setup test
+    cmd: /opt/seagate/cortx/s3/bin/s3_setup test
     args: --config $URL
   reset:
-    cmd: s3_setup reset
+    cmd: /opt/seagate/cortx/s3/bin/s3_setup reset
     args: --config $URL
   cleanup:
-    cmd: s3_setup cleanup
+    cmd: /opt/seagate/cortx/s3/bin/s3_setup cleanup
     args: --config $URL
   backup:
-    cmd: s3_setup backup
+    cmd: /opt/seagate/cortx/s3/bin/s3_setup backup
     args: --location $END-POINT
   restore:
-    cmd: s3_setup restore
+    cmd: /opt/seagate/cortx/s3/bin/s3_setup restore
     args: --location $END-POINT
   upgrade:
-    cmd: s3_setup upgrade
+    cmd: /opt/seagate/cortx/s3/bin/s3_setup upgrade
     args: --config $URL
 # Script path used by CSM to generate s3 support bundle
 support_bundle:

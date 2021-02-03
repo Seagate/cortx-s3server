@@ -75,6 +75,7 @@
 #include "evhtp_wrapper.h"
 #include "s3_cli_options.h"
 #include "s3_audit_info.h"
+#include "motr_helpers.h"
 
 #define DAY_IN_SECONDS 60 * 60 * 24
 
@@ -422,6 +423,8 @@ class S3Option {
   int get_cmd_opt_flag();
 
   // Check if any fake out options are provided.
+  bool is_fake_motr_obj_op_read(m0_obj_opcode opcode);
+  bool is_fake_motr_openobj();
   bool is_fake_motr_createobj();
   bool is_fake_motr_writeobj();
   bool is_fake_motr_readobj();
