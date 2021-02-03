@@ -144,7 +144,7 @@ get_ldap_password()
         then
             # decrypt the password read from the confstore
             ldappasswd=$(s3cipher decrypt --data "$sgiamadminpassd" --key "$cipherkey")
-            rootdnpasswd=$(s3cipher --decrypt --data "$rootadminpasswd" --key "$cipherkey")
+            rootdnpasswd=$(s3cipher decrypt --data "$rootadminpasswd" --key "$cipherkey")
             if [ -z "$ldappasswd" ] || [ -z "$rootdnpasswd" ]
             then
                 echo "ERROR: failed to decrypt sgiamadmin or root user's ldap password, exiting."
