@@ -62,12 +62,13 @@ class CortxS3Cipher:
         if(self.use_base64):
             key = base64.b64encode(key, str.encode("AZ"))
 
-        if(len(key) < self.key_len):
-            while(len(key) < self.key_len):
-                key = key * 2
-            key = key[:self.key_len]
-        elif(len(key) > self.key_len):
-            key = key[:self.key_len]
+        if(self.key_len):
+            if(len(key) < self.key_len):
+                while(len(key) < self.key_len):
+                    key = key * 2
+                key = key[:self.key_len]
+            elif(len(key) > self.key_len):
+                key = key[:self.key_len]
 
         return key.decode("utf-8")
 
