@@ -38,14 +38,11 @@ class CORTXS3Config(object):
     _config = None
     _conf_file = None
 
-    def __init__(self, s3recovery_flag = False):
+    def __init__(self):
         """Initialise logger and configuration."""
         self.logger = logging.getLogger(__name__ + "CORTXS3Config")
-        self.s3recovery_flag = s3recovery_flag
         self.s3bdg_access_key = None
         self.s3bgd_secret_key = None
-        self.recovery_access_key = None
-        self.recovery_secret_key = None
         self._load_and_fetch_config()
         self.cache_credentials()
 
@@ -95,22 +92,6 @@ class CORTXS3Config(object):
         except CipherInvalidToken as err:
             self.s3bgd_secret_key = None
             self.logger.info("S3cipher failed due to "+ str(err) +". Using credentails from config file")
-
-        try:
-            self.recovery_access_key = self.generate_key(None, True, 22, "s3recoveryaccesskey")
-        except CipherInvalidToken as err:
-            self.recovery_access_key = None
-            self.logger.info("S3cipher failed due to "+ str(err) +". Using credentails from config file")
-
-        try:
-            self.recovery_secret_key = self.generate_key(None, False, 40, "s3recoverysecretkey")
-        except CipherInvalidToken as err:
-            self.recovery_secret_key = None
-            self.logger.info("S3cipher failed due to "+ str(err) +". Using credentails from config file")
-
-
-    def get_s3recovery_flag(self):
-        return self.s3recovery_flag
 
     def get_config_version(self):
         """Return version of S3 background delete config file or KeyError."""
