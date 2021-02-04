@@ -31,7 +31,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "ActionTest::func_callback_one",
     "ActionTest::func_callback_two",
     "MotrAPIHandlerTest::func_callback_one",
-    "MotrAction::check_authorization",
+    "MotrAction::check_authentication",
     "MotrDeleteIndexAction::delete_index",
     "MotrDeleteIndexAction::send_response_to_s3_client",
     "MotrDeleteIndexAction::validate_request",

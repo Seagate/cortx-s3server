@@ -394,6 +394,7 @@ class S3AuthClient {
   bool setup_auth_request_body();
   virtual void execute_authconnect_request(struct s3_auth_op_context* auth_ctx);
   void add_key_val_to_body(std::string key, std::string val);
+  void add_non_empty_key_val_to_body(std::string key, std::string val);
   void set_is_authheader_present(bool is_authorizationheader_present);
 
   // Non-aws-chunk auth

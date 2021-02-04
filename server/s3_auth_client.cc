@@ -580,7 +580,14 @@ S3AuthClient::S3AuthClient(std::shared_ptr<RequestObject> req,
 }
 
 void S3AuthClient::add_key_val_to_body(std::string key, std::string val) {
-  data_key_val[key] = val;
+  data_key_val[std::move(key)] = std::move(val);
+}
+
+void S3AuthClient::add_non_empty_key_val_to_body(std::string key,
+                                                 std::string val) {
+  if (!val.empty()) {
+    add_key_val_to_body(std::move(key), std::move(val));
+  }
 }
 
 void S3AuthClient::set_event_with_retry_interval() {
@@ -690,12 +697,15 @@ bool S3AuthClient::setup_auth_request_body() {
     method = "GET";
   }
   add_key_val_to_body("Method", method);
-  // add_key_val_to_body("RequestorAccountId", request->get_account_id());
-  // add_key_val_to_body("RequestorAccountName", request->get_account_name());
-  // add_key_val_to_body("RequestorUserId", request->get_user_id());
-  // add_key_val_to_body("RequestorUserName", request->get_user_name());
-  // add_key_val_to_body("RequestorEmail", request->get_email());
-  // add_key_val_to_body("RequestorCanonicalId", request->get_canonical_id());
+  add_non_empty_key_val_to_body("RequestorAccountId",
+                                request->get_account_id());
+  add_non_empty_key_val_to_body("RequestorAccountName",
+                                request->get_account_name());
+  add_non_empty_key_val_to_body("RequestorUserId", request->get_user_id());
+  add_non_empty_key_val_to_body("RequestorUserName", request->get_user_name());
+  add_non_empty_key_val_to_body("RequestorEmail", request->get_email());
+  add_non_empty_key_val_to_body("RequestorCanonicalId",
+                                request->get_canonical_id());
 
   const char *full_path = request->c_get_full_encoded_path();
   if (full_path != NULL) {
