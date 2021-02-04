@@ -176,15 +176,11 @@ for i, type in enumerate(config_types):
         delete_test("seagatebucket", "3Kfile").\
         execute_test().command_is_successful()
 
-    # motr_open_entity fails
     S3fiTest('s3cmd can enable FI motr_enity_open').\
         enable_fi("enable", "always", "motr_entity_open_fail").\
         execute_test().command_is_successful()
-    S3cmdTest('s3cmd can not upload 18MBfile object').\
-        upload_test("seagatebucket", "18MBfile", 18000000).\
-        execute_test(negative_case=True).command_should_fail()
 
-    # test for delete bucket with multipart object
+    # test for delete bucket
     S3cmdTest('s3cmd cannot delete bucket').delete_bucket("seagatebucket").\
         execute_test(negative_case=True).command_should_fail().\
         command_error_should_have("ServiceUnavailable")
@@ -192,18 +188,6 @@ for i, type in enumerate(config_types):
     S3fiTest('s3cmd can disable FI motr_enity_open_fail').\
         disable_fi("motr_entity_open_fail").\
         execute_test().command_is_successful()
-    result = S3cmdTest('s3cmd can list multipart uploads in progress').\
-             list_multipart_uploads("seagatebucket").execute_test()
-    result.command_response_should_have('18MBfile')
-    upload_id = result.status.stdout.split('\n')[2].split('\t')[2]
-
-    result = S3cmdTest('S3cmd can list parts of multipart upload.').\
-             list_parts("seagatebucket", "18MBfile", upload_id).\
-             execute_test().command_is_successful()
-
-    S3cmdTest('S3cmd can abort multipart upload').\
-    abort_multipart("seagatebucket", "18MBfile", upload_id).\
-    execute_test().command_is_successful()
 
     #motr_enity_open failure and chunk upload
     S3fiTest('s3cmd can enable FI motr_enity_open').\
@@ -338,7 +322,7 @@ for i, type in enumerate(config_types):
         execute_test().command_is_successful()
 
     S3fiTest('s3cmd can enable FI motr_idx_op_fail').\
-        enable_fi_offnonm("enable", "motr_idx_op_fail", "4", "99").\
+        enable_fi_offnonm("enable", "motr_idx_op_fail", "1", "99").\
         execute_test().command_is_successful()
     S3cmdTest('s3cmd can not upload 18MBfile file').\
         upload_test("seagatebucket", "18MBfile", 18000000).\
@@ -366,7 +350,7 @@ for i, type in enumerate(config_types):
         abort_multipart("seagatebucket", "18MBfile", upload_id).\
         execute_test().command_is_successful()
 
-    fi_off="6"
+    fi_off="2"
     S3fiTest('s3cmd can enable FI motr_idx_op_fail').\
         enable_fi_offnonm("enable", "motr_idx_op_fail", fi_off, "99").\
         execute_test().command_is_successful()
@@ -378,35 +362,20 @@ for i, type in enumerate(config_types):
     S3fiTest('s3cmd can disable FI motr_idx_op_fail').\
         disable_fi("motr_idx_op_fail").\
         execute_test().command_is_successful()
-    result = JClientTest('Jclient can list all multipart uploads.').\
-                list_multipart("seagatebucket").execute_test()
-    result.command_response_should_have('18MBfile')
-    upload_id = result.status.stdout.split("id - ")[1]
-    JClientTest('Jclient can abort multipart upload').\
-        abort_multipart("seagatebucket", "18MBfile", upload_id).\
-        execute_test().command_is_successful()
 
-    fi_off="7"
+    fi_off="3"
     S3fiTest('s3cmd can enable FI motr_idx_op_fail').\
         enable_fi_offnonm("enable", "motr_idx_op_fail", fi_off, "99").\
         execute_test().command_is_successful()
     S3cmdTest('s3cmd can not upload 18MBfile file').\
         upload_test("seagatebucket", "18MBfile", 18000000).\
-        execute_test(negative_case=True).command_should_fail().\
-        command_error_should_have("InternalError")
+        execute_test(negative_case=True).command_should_fail()
     S3fiTest('s3cmd can disable FI motr_idx_op_fail').\
         disable_fi("motr_idx_op_fail").\
         execute_test().command_is_successful()
-    result = JClientTest('Jclient can list all multipart uploads.').\
-                list_multipart("seagatebucket").execute_test()
-    result.command_response_should_have('18MBfile')
-    upload_id = result.status.stdout.split("id - ")[1]
-    JClientTest('Jclient can abort multipart upload').\
-        abort_multipart("seagatebucket", "18MBfile", upload_id).\
-        execute_test().command_is_successful()
 
     S3fiTest('s3cmd can enable FI motr_idx_op_fail').\
-        enable_fi_offnonm("enable", "motr_idx_op_fail", "25", "99").\
+        enable_fi_offnonm("enable", "motr_idx_op_fail", "21", "99").\
         execute_test().command_is_successful()
     #Post complete operation -- fetch_multipart_info
     S3cmdTest('s3cmd can not upload 18MBfile file').\
@@ -582,14 +551,13 @@ for i, type in enumerate(config_types):
         disable_fi("motr_idx_op_fail").\
         execute_test().command_is_successful()
 
-    fi_off="20"
+    fi_off="25"
     S3fiTest('s3cmd enable FI motr idx op fail').\
         enable_fi_offnonm("enable", "motr_idx_op_fail", fi_off, "99").\
         execute_test().command_is_successful()
     S3cmdTest('s3cmd can not upload 18MBfile file').\
         upload_test("seagatebucket", "18MBfile", 18000000).\
-        execute_test(negative_case=True).command_should_fail().\
-        command_error_should_have("InternalError")
+        execute_test(negative_case=True).command_should_fail()
     S3fiTest('s3cmd disable Fault injection').\
         disable_fi("motr_idx_op_fail").\
         execute_test().command_is_successful()
@@ -629,12 +597,11 @@ for i, type in enumerate(config_types):
 
     # multipart object metadata negative test
     S3fiTest('s3cmd enable FI motr idx op fail').\
-        enable_fi_offnonm("enable", "motr_idx_op_fail", "4", "99").\
+        enable_fi_offnonm("enable", "motr_idx_op_fail", "2", "99").\
         execute_test().command_is_successful()
     S3cmdTest('s3cmd can not upload 18MBfile file').\
         upload_test("seagatebucket", "18MBfile", 18000000).\
-        execute_test(negative_case=True).command_should_fail().\
-        command_error_should_have("ServiceUnavailable")
+        execute_test(negative_case=True).command_should_fail()
     S3fiTest('s3cmd disable Fault injection').\
         disable_fi("motr_idx_op_fail").\
         execute_test().command_is_successful()
