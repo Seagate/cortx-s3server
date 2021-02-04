@@ -45,6 +45,7 @@ class AuthHTTPClient:
                                            context= ssl._create_unverified_context())
         conn.request("POST", "/", urllib.parse.urlencode(body), headers)
         response_data = conn.getresponse().read()
+        print(response_data)
         conn.close()
         return response_data
 

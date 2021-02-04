@@ -52,6 +52,7 @@ def get_response_elements(response):
 def before_all():
     config['cacheTimeout'] = "0"
     config.write()
+    os.system('systemctl restart s3authserver')
     print("Configuring LDAP")
     S3PyCliTest('Before_all').before_all()
 
