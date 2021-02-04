@@ -44,8 +44,10 @@ setup(
   # Include additional files into the package
   include_package_data=True,
 
-  # Details
-  scripts =['s3cipher/s3cipher/s3cipher', 's3confstore/s3confstore/s3confstore', 's3msgbus/s3msgbus/s3msgbus'],
+  # path of executable 
+  scripts =['s3cortxutils/s3cipher/s3cipher/s3cipher',
+            's3cortxutils/s3confstore/s3confstore/s3confstore',
+            's3cortxutils/s3msgbus/s3msgbus/s3msgbus'],
 
   # description of package
   description="s3cortxutils is a wrapper of cortx-py-utils which includes s3cipher, s3confstore, s3msgbus",
