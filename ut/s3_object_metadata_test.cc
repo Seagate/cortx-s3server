@@ -20,6 +20,7 @@
 
 #include <json/json.h>
 #include <memory>
+#include <iostream>
 
 #include "mock_s3_factory.h"
 #include "mock_s3_request_object.h"
@@ -280,6 +281,13 @@ TEST_F(S3ObjectMetadataTest, GetSet) {
 
   EXPECT_STREQ("BUCKET/seagatebucket/Multipart",
                metadata_obj_under_test->get_multipart_index_name().c_str());
+}
+
+TEST_F(S3ObjectMetadataTest, RenameObjectName) {
+  std::string new_object_name = "object1";
+
+  metadata_obj_under_test->rename_object_name(new_object_name);
+  EXPECT_STREQ("object1", metadata_obj_under_test->get_object_name().c_str());
 }
 
 TEST_F(S3MultipartObjectMetadataTest, GetUserIdUplodIdName) {
@@ -654,4 +662,276 @@ TEST_F(S3ObjectMetadataTest, GetEncodedBucketAcl) {
   metadata_obj_under_test->from_json(json_str);
   EXPECT_STREQ("PD94bg==",
                metadata_obj_under_test->get_encoded_object_acl().c_str());
+}
+
+class S3ObjectExtendedMetadataTest : public testing::Test {
+ protected:
+  S3ObjectExtendedMetadataTest() {
+    evhtp_request_t *req = NULL;
+    EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+    call_count_one = 0;
+    bucket_name = "seagatebucket";
+    object_name = "objectname";
+    versionid = "1234";
+    no_of_parts = 0;
+    no_of_fragments = 0;
+
+    ptr_mock_request =
+        std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
+    ptr_mock_request->set_account_name("s3account");
+    ptr_mock_request->set_account_id("s3acc-id");
+    ptr_mock_request->set_user_name("s3user");
+    ptr_mock_request->set_user_id("s3user-id");
+    EXPECT_CALL(*ptr_mock_request, get_object_name())
+        .WillRepeatedly(ReturnRef(object_name));
+    EXPECT_CALL(*ptr_mock_request, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
+
+    ptr_mock_s3_motr_api = std::make_shared<MockS3Motr>();
+
+    motr_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
+        ptr_mock_request, ptr_mock_s3_motr_api);
+
+    motr_kvs_writer_factory = std::make_shared<MockS3MotrKVSWriterFactory>(
+        ptr_mock_request, ptr_mock_s3_motr_api);
+
+    extended_metadata_obj_under_test.reset(new S3ObjectExtendedMetadata(
+        ptr_mock_request, bucket_name, object_name, versionid, no_of_parts,
+        no_of_fragments, motr_kvs_reader_factory, motr_kvs_writer_factory,
+        ptr_mock_s3_motr_api));
+
+    object_list_index_layout = {{0xffff, 0xffff}};
+    extended_metadata_obj_under_test_with_oid.reset(
+        new S3ObjectExtendedMetadata(
+            ptr_mock_request, bucket_name, object_name, versionid, no_of_parts,
+            no_of_fragments, motr_kvs_reader_factory, motr_kvs_writer_factory,
+            ptr_mock_s3_motr_api));
+    extended_metadata_obj_under_test_with_oid->set_object_list_index_layout(
+        object_list_index_layout);
+  }
+
+  std::shared_ptr<MockS3RequestObject> ptr_mock_request;
+  std::shared_ptr<MockS3Motr> ptr_mock_s3_motr_api;
+  std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
+  std::shared_ptr<MockS3MotrKVSWriterFactory> motr_kvs_writer_factory;
+  std::shared_ptr<S3ObjectExtendedMetadata> extended_metadata_obj_under_test;
+  std::shared_ptr<S3ObjectExtendedMetadata>
+      extended_metadata_obj_under_test_with_oid;
+  struct s3_motr_idx_layout object_list_index_layout;
+  int call_count_one;
+  std::string bucket_name, object_name, versionid;
+  unsigned int no_of_parts, no_of_fragments;
+
+ public:
+  void func_callback_one() { call_count_one += 1; }
+};
+
+TEST_F(S3ObjectExtendedMetadataTest, ConstructorTest) {}
+
+TEST_F(S3ObjectExtendedMetadataTest,
+       AddExtendedEntrySingleFragmentWithoutPartTest) {
+  struct s3_part_frag_context part_frag_ctx;
+  part_frag_ctx.motr_OID = {1ULL, 1ULL};
+  part_frag_ctx.PVID = {1ULL, 1ULL};
+  part_frag_ctx.versionID = {1ULL, 1ULL};
+  part_frag_ctx.item_size = 1;
+  part_frag_ctx.layout_id = 1;
+  part_frag_ctx.is_multipart = false;
+
+  unsigned int fragment_no = 1;
+  unsigned int part_no = 0;
+  extended_metadata_obj_under_test->add_extended_entry(part_frag_ctx,
+                                                       fragment_no, part_no);
+
+  // Verify how many extended entries we add
+  std::map<std::string, std::string> kvlist_extended_entries;
+  kvlist_extended_entries =
+      extended_metadata_obj_under_test->get_kv_list_of_extended_entries();
+  EXPECT_EQ(1, kvlist_extended_entries.size());
+
+  // We can verify the values also along with size
+  std::cout << "\nThe map kvlist_extended_entries is : \n";
+  std::cout << "\tKEY\t\t\tVALUE\n";
+  for (std::map<std::string, std::string>::iterator itr =
+           kvlist_extended_entries.begin();
+       itr != kvlist_extended_entries.end(); ++itr) {
+    std::cout << '\t' << itr->first << '\t' << itr->second << '\n';
+    EXPECT_EQ(itr->second,
+              extended_metadata_obj_under_test->get_json_str(part_frag_ctx));
+  }
+}
+
+TEST_F(S3ObjectExtendedMetadataTest,
+       AddExtendedEntryMultiFragmentWithoutPartTest) {
+  struct s3_part_frag_context part_frag_ctx;
+  part_frag_ctx.motr_OID = {2ULL, 2ULL};
+  part_frag_ctx.PVID = {2ULL, 2ULL};
+  part_frag_ctx.versionID = {1ULL, 1ULL};
+  part_frag_ctx.item_size = 1;
+  part_frag_ctx.layout_id = 1;
+  part_frag_ctx.is_multipart = false;
+
+  unsigned int fragment_no = 1;
+  unsigned int part_no = 0;
+  extended_metadata_obj_under_test->add_extended_entry(part_frag_ctx,
+                                                       fragment_no, part_no);
+  extended_metadata_obj_under_test->add_extended_entry(part_frag_ctx,
+                                                       ++fragment_no, part_no);
+
+  // Verify how many extended entries we add
+  std::map<std::string, std::string> kvlist_extended_entries;
+  kvlist_extended_entries =
+      extended_metadata_obj_under_test->get_kv_list_of_extended_entries();
+  EXPECT_EQ(2, kvlist_extended_entries.size());
+
+  // We can verify the values also along with size
+  std::cout << "\nThe map kvlist_extended_entries is : \n";
+  std::cout << "\tKEY\t\t\tVALUE\n";
+  for (std::map<std::string, std::string>::iterator itr =
+           kvlist_extended_entries.begin();
+       itr != kvlist_extended_entries.end(); ++itr) {
+    std::cout << '\t' << itr->first << '\t' << itr->second << '\n';
+    EXPECT_EQ(itr->second,
+              extended_metadata_obj_under_test->get_json_str(part_frag_ctx));
+  }
+}
+
+TEST_F(S3ObjectExtendedMetadataTest,
+       AddExtendedEntrySingleFragmentSinglePartTest) {
+  struct s3_part_frag_context part_frag_ctx;
+  part_frag_ctx.motr_OID = {3ULL, 3ULL};
+  part_frag_ctx.PVID = {3ULL, 3ULL};
+  part_frag_ctx.versionID = {1ULL, 1ULL};
+  part_frag_ctx.item_size = 1;
+  part_frag_ctx.layout_id = 1;
+  part_frag_ctx.is_multipart = true;
+
+  unsigned int fragment_no = 1;
+  unsigned int part_no = 1;
+  extended_metadata_obj_under_test->add_extended_entry(part_frag_ctx,
+                                                       fragment_no, part_no);
+
+  // Verify how many extended entries we add
+  std::map<std::string, std::string> kvlist_extended_entries;
+  kvlist_extended_entries =
+      extended_metadata_obj_under_test->get_kv_list_of_extended_entries();
+  EXPECT_EQ(1, kvlist_extended_entries.size());
+
+  // We can verify the values also along with size
+  std::cout << "\nThe map kvlist_extended_entries is : \n";
+  std::cout << "\tKEY\t\t\tVALUE\n";
+  for (std::map<std::string, std::string>::iterator itr =
+           kvlist_extended_entries.begin();
+       itr != kvlist_extended_entries.end(); ++itr) {
+    std::cout << '\t' << itr->first << '\t' << itr->second << '\n';
+    EXPECT_EQ(itr->second,
+              extended_metadata_obj_under_test->get_json_str(part_frag_ctx));
+  }
+}
+
+TEST_F(S3ObjectExtendedMetadataTest,
+       AddExtendedEntryMultiFragmentSinglePartTest) {
+  struct s3_part_frag_context part_frag_ctx;
+  part_frag_ctx.motr_OID = {4ULL, 4ULL};
+  part_frag_ctx.PVID = {4ULL, 4ULL};
+  part_frag_ctx.versionID = {1ULL, 1ULL};
+  part_frag_ctx.item_size = 1;
+  part_frag_ctx.layout_id = 1;
+  part_frag_ctx.is_multipart = true;
+
+  unsigned int fragment_no = 1;
+  unsigned int part_no = 1;
+  extended_metadata_obj_under_test->add_extended_entry(part_frag_ctx,
+                                                       fragment_no, part_no);
+  extended_metadata_obj_under_test->add_extended_entry(part_frag_ctx,
+                                                       ++fragment_no, part_no);
+
+  // Verify how many extended entries we add
+  std::map<std::string, std::string> kvlist_extended_entries;
+  kvlist_extended_entries =
+      extended_metadata_obj_under_test->get_kv_list_of_extended_entries();
+  EXPECT_EQ(2, kvlist_extended_entries.size());
+
+  // We can verify the values also along with size
+  std::cout << "\nThe map kvlist_extended_entries is : \n";
+  std::cout << "\tKEY\t\t\tVALUE\n";
+  for (std::map<std::string, std::string>::iterator itr =
+           kvlist_extended_entries.begin();
+       itr != kvlist_extended_entries.end(); ++itr) {
+    std::cout << '\t' << itr->first << '\t' << itr->second << '\n';
+    EXPECT_EQ(itr->second,
+              extended_metadata_obj_under_test->get_json_str(part_frag_ctx));
+  }
+}
+
+TEST_F(S3ObjectExtendedMetadataTest,
+       AddExtendedEntrySingleFragmentMultiPartTest) {
+  struct s3_part_frag_context part_frag_ctx;
+  part_frag_ctx.motr_OID = {5ULL, 5ULL};
+  part_frag_ctx.PVID = {5ULL, 5ULL};
+  part_frag_ctx.versionID = {1ULL, 1ULL};
+  part_frag_ctx.item_size = 1;
+  part_frag_ctx.layout_id = 1;
+  part_frag_ctx.is_multipart = true;
+
+  unsigned int fragment_no = 1;
+  unsigned int part_no = 1;
+  extended_metadata_obj_under_test->add_extended_entry(part_frag_ctx,
+                                                       fragment_no, part_no);
+  extended_metadata_obj_under_test->add_extended_entry(part_frag_ctx,
+                                                       fragment_no, ++part_no);
+
+  // Verify how many extended entries we add
+  std::map<std::string, std::string> kvlist_extended_entries;
+  kvlist_extended_entries =
+      extended_metadata_obj_under_test->get_kv_list_of_extended_entries();
+  EXPECT_EQ(2, kvlist_extended_entries.size());
+
+  // We can verify the values also along with size
+  std::cout << "\nThe map kvlist_extended_entries is : \n";
+  std::cout << "\tKEY\t\t\tVALUE\n";
+  for (std::map<std::string, std::string>::iterator itr =
+           kvlist_extended_entries.begin();
+       itr != kvlist_extended_entries.end(); ++itr) {
+    std::cout << '\t' << itr->first << '\t' << itr->second << '\n';
+    EXPECT_EQ(itr->second,
+              extended_metadata_obj_under_test->get_json_str(part_frag_ctx));
+  }
+}
+
+TEST_F(S3ObjectExtendedMetadataTest,
+       AddExtendedEntryMultiFragmentMultiPartTest) {
+  struct s3_part_frag_context part_frag_ctx;
+  part_frag_ctx.motr_OID = {6ULL, 6ULL};
+  part_frag_ctx.PVID = {6ULL, 6ULL};
+  part_frag_ctx.versionID = {6ULL, 6ULL};
+  part_frag_ctx.item_size = 1;
+  part_frag_ctx.layout_id = 1;
+  part_frag_ctx.is_multipart = true;
+
+  unsigned int fragment_no = 1;
+  unsigned int part_no = 1;
+  extended_metadata_obj_under_test->add_extended_entry(part_frag_ctx,
+                                                       fragment_no, part_no);
+  extended_metadata_obj_under_test->add_extended_entry(part_frag_ctx,
+                                                       fragment_no, ++part_no);
+  extended_metadata_obj_under_test->add_extended_entry(part_frag_ctx,
+                                                       ++fragment_no, part_no);
+
+  // Verify how many extended entries we add
+  std::map<std::string, std::string> kvlist_extended_entries;
+  kvlist_extended_entries =
+      extended_metadata_obj_under_test->get_kv_list_of_extended_entries();
+  EXPECT_EQ(3, kvlist_extended_entries.size());
+
+  // We can verify the values also along with size
+  std::cout << "\nThe map kvlist_extended_entries is : \n";
+  std::cout << "\tKEY\t\t\tVALUE\n";
+  for (std::map<std::string, std::string>::iterator itr =
+           kvlist_extended_entries.begin();
+       itr != kvlist_extended_entries.end(); ++itr) {
+    std::cout << '\t' << itr->first << '\t' << itr->second << '\n';
+    EXPECT_EQ(itr->second,
+              extended_metadata_obj_under_test->get_json_str(part_frag_ctx));
+  }
 }
