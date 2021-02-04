@@ -52,6 +52,7 @@ class S3ObjectListResponse {
   std::string request_marker_uploadid;
   std::string max_keys;
   bool response_is_truncated;
+  bool chop_uploadid;
   std::string next_marker_key;
 
   std::string max_uploads;
@@ -85,6 +86,7 @@ class S3ObjectListResponse {
   void set_response_is_truncated(bool flag);
   void set_next_marker_key(std::string next, bool url_encode = true);
   void set_next_marker_uploadid(std::string next);
+  inline void chop_uploadid_from_key() { chop_uploadid = true; }
   std::string& get_object_name();
   bool is_response_truncated() { return response_is_truncated; }
   std::vector<std::string> get_keys() {
@@ -148,6 +150,10 @@ class S3ObjectListResponse {
               ObjectListMultipartResponseWithValidObjectNotTruncated);
   FRIEND_TEST(S3ObjectListResponseTest,
               ObjectListMultipartResponseWithValidObjectTruncated);
+  FRIEND_TEST(S3ObjectListResponseTest,
+              ObjectListMultipartResponseWithUploadidChopped);
+  FRIEND_TEST(S3ObjectListResponseTest,
+              ObjectListMultipartResponseWithUploadid);
 };
 
 #endif
