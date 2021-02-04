@@ -52,13 +52,16 @@ class MotrAction : public Action {
              bool skip_auth = false);
   virtual ~MotrAction();
 
+ private:
   // Register all the member functions required to complete the action.
   // This can register the function as
   // task_list.push_back(std::bind( &S3SomeDerivedAction::step1, this ));
   // Ensure you call this in Derived class constructor.
-  virtual void setup_steps();
+  void setup_steps();
 
   // Common steps for all Actions like Authorization.
+  void check_authentication();
+  void check_authentication_failed();
   void check_authorization();
 
   FRIEND_TEST(MotrActionTest, Constructor);

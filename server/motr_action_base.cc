@@ -44,8 +44,34 @@ void MotrAction::setup_steps() {
          S3Option::get_instance()->is_auth_disabled(), skip_auth);
 
   if (!S3Option::get_instance()->is_auth_disabled() && !skip_auth) {
-    ACTION_TASK_ADD(MotrAction::check_authorization, this);
+    ACTION_TASK_ADD(MotrAction::check_authentication, this);
   }
+}
+
+void MotrAction::check_authentication() {
+  auth_client->check_authentication(
+      std::bind(&MotrAction::check_authorization, this),
+      std::bind(&MotrAction::check_authentication_failed, this));
+}
+
+void MotrAction::check_authentication_failed() {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  if (request->client_connected()) {
+    std::string error_code = auth_client->get_error_code();
+    std::string error_message = auth_client->get_error_message();
+    if (error_code == "InvalidAccessKeyId") {
+      s3_stats_inc("authentication_failed_invalid_accesskey_count");
+    } else if (error_code == "SignatureDoesNotMatch") {
+      s3_stats_inc("authentication_failed_signature_mismatch_count");
+    } else if (error_code == "ServiceUnavailable") {
+      request->set_out_header_value("Retry-After", "2");
+    }
+    s3_log(S3_LOG_ERROR, request_id, "Authentication failure: %s\n",
+           error_code.c_str());
+    request->respond_error(error_code, {}, error_message);
+  }
+  done();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void MotrAction::check_authorization() {
