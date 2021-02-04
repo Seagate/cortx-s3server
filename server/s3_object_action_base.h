@@ -51,7 +51,6 @@ class S3ObjectAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
-  std::shared_ptr<S3ObjectExtMetadataFactory> ext_object_metadata_factory;
 
   m0_uint128 object_list_oid;
   m0_uint128 objects_version_list_oid;

@@ -83,19 +83,20 @@ class S3ObjectMetadataFactory {
   virtual std::shared_ptr<S3ObjectExtededMetadata>
   create_object_ext_metadata_obj(std::shared_ptr<S3RequestObject> req,
                                  const std::string& bucket_name,
-                                 const std::string& object_name, int parts,
-                                 int fragments,
+                                 const std::string& object_name,
+                                 const std::string& versionid,
+                                 unsigned int parts, unsigned int fragments,
                                  m0_uint128 indx_oid = {0ULL, 0ULL}) {
     s3_log(S3_LOG_DEBUG, "",
            "S3ObjectMetadataFactory::create_object_ext_metadata_obj\n");
     std::shared_ptr<S3ObjectExtededMetadata> meta =
         std::make_shared<S3ObjectExtededMetadata>(req, bucket_name, object_name,
-                                                  parts, fragments);
+                                                  versionid, parts, fragments);
     meta->set_object_list_index_oid(indx_oid);
     return meta;
   }
 };
-
+/*
 class S3ObjectExtMetadataFactory {
  public:
   virtual ~S3ObjectExtMetadataFactory() {}
@@ -113,7 +114,7 @@ class S3ObjectExtMetadataFactory {
   create_object_ext_metadata_obj(std::shared_ptr<S3RequestObject> req,
                                  const std::string& bucket_name,
                                  const std::string& object_name,
-                                 std::string& primary_obj_meta_val,
+                                 size_t parts, size_t fragments,
                                  m0_uint128 indx_oid = {0ULL, 0ULL}) {
     s3_log(S3_LOG_DEBUG, "",
            "S3ObjectExtMetadataFactory::create_object_ext_metadata_obj\n");
@@ -124,6 +125,7 @@ class S3ObjectExtMetadataFactory {
     return meta;
   }
 };
+*/
 
 class S3ObjectMultipartMetadataFactory {
  public:

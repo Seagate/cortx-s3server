@@ -25,7 +25,7 @@
 
 #include "s3_addb_map.h"
 
-const uint64_t g_s3_to_addb_idx_func_name_map_size = 209;
+const uint64_t g_s3_to_addb_idx_func_name_map_size = 210;
 
 const char* g_s3_to_addb_idx_func_name_map[] = {
     "Action::check_authentication",
@@ -130,6 +130,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3GetMultipartPartActionTest::func_callback_one",
     "S3GetObjectACLAction::send_response_to_s3_client",
     "S3GetObjectAction::check_full_or_range_object_read",
+    "S3GetObjectAction::read_fragmented_object",
     "S3GetObjectAction::read_object",
     "S3GetObjectAction::send_response_to_s3_client",
     "S3GetObjectAction::validate_object_info",

@@ -116,20 +116,19 @@ void S3ObjectAction::fetch_object_info_success() {
     extended_obj_metadata =
         object_metadata_factory->create_object_ext_metadata_obj(
             request, request->get_bucket_name(), request->get_object_name(),
+            object_metadata->get_obj_version_key(),
             object_metadata->get_no_of_parts(),
             object_metadata->get_no_of_fragments(), object_list_oid);
-    extended_obj_metadata->set_fragment_count(
-        object_metadata->get_no_of_fragments());
+
     extended_obj_metadata->load(
-        std::bind(S3ObjectAction::fetch_ext_object_info_success, this),
-        std::bind(S3ObjectAction::fetch_ext_object_info_failed, this));
+        std::bind(&S3ObjectAction::fetch_ext_object_info_success, this),
+        std::bind(&S3ObjectAction::fetch_ext_object_info_failed, this));
   }
-  next();
 }
 
-void S3ObjectAction::fetch_ext_object_info_success() {}
+void S3ObjectAction::fetch_ext_object_info_success() { next(); }
 
-void S3ObjectAction::fetch_ext_object_info_failed() {}
+void S3ObjectAction::fetch_ext_object_info_failed() { next(); }
 
 void S3ObjectAction::load_metadata() { fetch_bucket_info(); }
 
