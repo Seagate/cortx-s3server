@@ -25,7 +25,6 @@ from framework import S3PyCliTest
 from authpassencryptcli import EncryptCLITest
 from s3client_config import S3ClientConfig
 
-
 # Run AuthPassEncryptCLI tests.
 
 #Encrypt password tests

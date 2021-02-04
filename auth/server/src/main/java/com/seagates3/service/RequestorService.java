@@ -64,22 +64,24 @@ public class RequestorService {
 
         try {
             perf.startClock();
-
-            GlobalData dataObj =
-                GlobalDataStore.getInstance().getAuthenticationMap().get(
-                    clientRequestToken.getAccessKeyId());
-            if (dataObj != null) {
-              long difference =
-                  (System.currentTimeMillis() - dataObj.getCreationTime()) /
-                  1000;
-              LOGGER.debug("Cache time difference in seconds is - " +
-                           difference);
-              if (difference <
-                  AuthServerConfig.getCacheTimeout()) {  // if entry in cache is
-                                                         // older than cache
-                                                         // timeout interval
-                                                         // then refresh it
-                return dataObj.getRequestor();
+            if (AuthServerConfig.getCacheTimeout() != 0) {
+              GlobalData dataObj =
+                  GlobalDataStore.getInstance().getAuthenticationMap().get(
+                      clientRequestToken.getAccessKeyId());
+              if (dataObj != null) {
+                long difference =
+                    (System.currentTimeMillis() - dataObj.getCreationTime()) /
+                    1000;
+                LOGGER.debug("Cache time difference in seconds is - " +
+                             difference);
+                if (difference <
+                    AuthServerConfig.getCacheTimeout()) {  // if entry in cache
+                                                           // is
+                  // older than cache
+                  // timeout interval
+                  // then refresh it
+                  return dataObj.getRequestor();
+                }
               }
             }
             accessKey = accessKeyDAO.find(clientRequestToken.getAccessKeyId());
@@ -113,11 +115,12 @@ public class RequestorService {
         }
 
         validateRequestor(requestor, clientRequestToken);
+        if (AuthServerConfig.getCacheTimeout() != 0) {
         GlobalData globalDataObj =
             new GlobalData(accessKey, requestor, System.currentTimeMillis());
-
         GlobalDataStore.getInstance().addToAuthenticationMap(
             clientRequestToken.getAccessKeyId(), globalDataObj);
+        }
         return requestor;
     }
 

@@ -50,6 +50,7 @@ def get_response_elements(response):
 
 # Run before all to setup the test environment.
 def before_all():
+    config = ConfigObj("/opt/seagate/cortx/auth/resources/authserver.properties")
     config['cacheTimeout'] = "0"
     config.write()
     os.system('systemctl restart s3authserver')
@@ -758,7 +759,6 @@ def get_federation_token_test():
 
     LdapOps().delete_account("s3test")
 
-config = ConfigObj("/opt/seagate/cortx/auth/resources/authserver.properties")
 before_all()
 account_tests()
 user_tests()
@@ -766,5 +766,8 @@ accesskey_tests()
 role_tests()
 saml_provider_tests()
 get_federation_token_test()
+
+config = ConfigObj("/opt/seagate/cortx/auth/resources/authserver.properties")
 config['cacheTimeout'] = "30"
 config.write()
+os.system('systemctl restart s3authserver')
