@@ -110,7 +110,8 @@ class S3BucketMetadata {
   virtual const struct s3_motr_idx_layout&
       get_objects_version_list_index_layout() const;
   const struct s3_motr_idx_layout& get_multipart_index_layout() const;
-  const struct s3_motr_idx_layout& get_extended_metadata_index_layout() const;
+  virtual const struct s3_motr_idx_layout& get_extended_metadata_index_layout()
+      const;
 
   void set_multipart_index_layout(const struct s3_motr_idx_layout& idx_lo);
   void set_object_list_index_layout(const struct s3_motr_idx_layout& idx_lo);
