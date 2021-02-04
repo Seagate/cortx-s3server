@@ -19,38 +19,36 @@
 import os
 from setuptools import setup
 import sys
-
 files = []
 
 # Load the version
-s3confstore_version = "2.0.0"
+s3cortxutils_version = "2.0.0"
 for argument in sys.argv:
     if argument.startswith("--version"):
-        s3confstore_version = argument.split("=")[1]
+        s3cortxutils_version = argument.split("=")[1]
         sys.argv.remove(argument)
 
 setup(
   # Application name
-  name="s3confstore",
+  name="s3cortxutils",
 
   # version number
-  version=s3confstore_version,
+  version=s3cortxutils_version,
 
   # Author details
   author="Seagate",
 
   # Packages
-  packages=["s3confstore"],
+  packages=["s3cortxutils"],
 
   # Include additional files into the package
   include_package_data=True,
 
   # Details
-  scripts =['s3confstore/s3confstore'],
+  scripts =['s3cipher/s3cipher/s3cipher', 's3confstore/s3confstore/s3confstore', 's3msgbus/s3msgbus/s3msgbus'],
 
-  # license="LICENSE.txt",
+  # description of package
+  description="s3cortxutils is a wrapper of cortx-py-utils which includes s3cipher, s3confstore, s3msgbus",
 
-  description="Load or store configurations using cortx-utils::ConfStore",
-
-  package_data = { 's3confstore': files}
+  package_data = { 's3cortxutils': files}
 )

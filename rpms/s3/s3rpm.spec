@@ -151,12 +151,6 @@ cd s3backgrounddelete/s3backgrounddelete
 python%{py_ver} -m compileall -b *.py
 cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3backgrounddelete/build/lib/s3backgrounddelete
 
-# Build s3cortxutils/s3confstore python module
-mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore/build/lib/s3confstore
-cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore/s3confstore
-python%{py_ver} -m compileall -b *.py
-cp *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore/build/lib/s3confstore
-
 # Build scripts/s3haproxyconfig python module
 mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/haproxy/s3haproxyconfig/build/lib/s3haproxyconfig
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/haproxy/s3haproxyconfig/s3haproxyconfig
@@ -169,17 +163,11 @@ cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup/s
 python%{py_ver} -m compileall -b *.py
 cp *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup/build/lib/s3setup
 
-# Build the s3cortxutils/s3MsgBus wrapper python module
-mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/build/lib/s3msgbus
-cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/s3msgbus
+# Build the s3cortxutils wrapper of s3cipher, s3confstore, s3msgbus python module
+mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/build/lib/s3cortxutils
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils
 python%{py_ver} -m compileall -b *.py
-cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/build/lib/s3msgbus 
-
-# Build the s3cortxutils/s3cipher wrapper python module
-mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3cipher/build/lib/s3cipher
-cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3cipher/s3cipher
-python%{py_ver} -m compileall -b *.py
-cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3cipher/build/lib/s3cipher 
+cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/build/lib/s3cortxutils 
 
 echo "build complete"
 
@@ -192,16 +180,8 @@ rm -rf %{buildroot}
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3backgrounddelete
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
 
-# Install the s3msg bus wrapper module
-cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus
-python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
-
-# Install the s3msg bus wrapper module
-cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3cipher
-python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
-
-# Install s3confstore python module
-cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore
+# Install s3cortxutils python module
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
 
 # Install s3haproxyconfig python module
@@ -385,40 +365,30 @@ rm -rf %{buildroot}
 /etc/logrotate.d/openldap
 %{_bindir}/s3backgroundconsumer
 %{_bindir}/s3backgroundproducer
-%{_bindir}/s3cipher
-%{_bindir}/s3msgbus
-%{_bindir}/s3confstore
+%{_bindir}/s3cortxutils
 %{_bindir}/s3haproxyconfig
 %{_bindir}/s3setup
 %{py36_sitelib}/s3backgrounddelete/config/*.yaml
 %{py36_sitelib}/s3backgrounddelete/config/s3_background_delete_config.yaml.sample
 %{py36_sitelib}/s3backgrounddelete/*.pyc
 %{py36_sitelib}/s3backgrounddelete-%{version}-py?.?.egg-info
-%{py36_sitelib}/s3msgbus/*.pyc
-%{py36_sitelib}/s3msgbus-%{version}-py?.?.egg-info
-%{py36_sitelib}/s3cipher/*.pyc
-%{py36_sitelib}/s3cipher-%{version}-py?.?.egg-info
-%{py36_sitelib}/s3confstore/*.pyc
-%{py36_sitelib}/s3confstore-%{version}-py?.?.egg-info
+%{py36_sitelib}/s3cortxutils/*.pyc
+%{py36_sitelib}/s3cortxutils-%{version}-py?.?.egg-info
 %{py36_sitelib}/s3haproxyconfig/*.pyc
 %{py36_sitelib}/s3haproxyconfig-%{version}-py?.?.egg-info
 %{py36_sitelib}/s3setup/*.pyc
 %{py36_sitelib}/s3setup-%{version}-py?.?.egg-info
 %exclude %{py36_sitelib}/s3backgrounddelete/__pycache__/*
 %exclude %{py36_sitelib}/s3backgrounddelete/*.py
-%exclude %{py36_sitelib}/s3confstore/*.py
-%exclude %{py36_sitelib}/s3confstore/__pycache__/*
+%exclude %{py36_sitelib}/s3cortxutils/*.py
+%exclude %{py36_sitelib}/s3cortxutils/__pycache__/*
 %exclude %{py36_sitelib}/s3haproxyconfig/*.py
 %exclude %{py36_sitelib}/s3haproxyconfig/__pycache__/*
 %exclude %{py36_sitelib}/s3setup/*.py
 %exclude %{py36_sitelib}/s3setup/__pycache__/*
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundconsumer
 %exclude %{py36_sitelib}/s3msgbus/s3msgbus
-%exclude %{py36_sitelib}/s3msgbus/__pycache__/*
-%exclude %{py36_sitelib}/s3msgbus/*.py
 %exclude %{py36_sitelib}/s3cipher/s3cipher
-%exclude %{py36_sitelib}/s3cipher/__pycache__/*
-%exclude %{py36_sitelib}/s3cipher/*.py
 %exclude %{py36_sitelib}/s3confstore/s3confstore
 %exclude %{py36_sitelib}/s3haproxyconfig/s3haproxyconfig
 %exclude %{py36_sitelib}/s3setup/s3setup

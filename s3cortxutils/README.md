@@ -1,5 +1,3 @@
-### License
-
 Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,12 +15,12 @@ limitations under the License.
 For any questions about this software or licensing,
 please email opensource@seagate.com or cortx-questions@seagate.com.
 
-## How to build and install s3confstore:
-Go to s3cortxutils/s3confstore
+## How to build and install s3cortxutils:
+Go to s3cortxutils/
 run:
 python36 setup.py clean
 python36 setup.py build
 python36 setup.py install
-This will create a python package and binary: /usr/local/bin/s3confstore
+This will create a python package and binary: /usr/local/bin/s3cortxutils
 
 ## Content To be added
