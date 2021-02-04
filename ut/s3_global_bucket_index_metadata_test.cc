@@ -28,7 +28,6 @@
 #include "s3_global_bucket_index_metadata.h"
 #include "s3_callback_test_helpers.h"
 #include "s3_test_utils.h"
-#include <json/json.h>
 
 using ::testing::Invoke;
 using ::testing::AtLeast;
@@ -303,12 +302,10 @@ TEST_F(S3GlobalBucketIndexMetadataTest, ToJson) {
   std::string actual_acc_name = root["account_name"].asString();
   std::string actual_acc_id = root["account_id"].asString();
   std::string actual_loc = root["location_constraint"].asString();
-  std::string actual_timestamp = root["create_timestamp"].asString();
 
   EXPECT_STREQ("s3_test", actual_acc_name.c_str());
   EXPECT_STREQ("12345", actual_acc_id.c_str());
   EXPECT_STREQ("us-west-2", actual_loc.c_str());
-  EXPECT_STRNE("", actual_timestamp.c_str());
 }
 
 TEST_F(S3GlobalBucketIndexMetadataTest, Save) {

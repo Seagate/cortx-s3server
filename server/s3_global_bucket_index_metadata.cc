@@ -23,7 +23,6 @@
 #include <string>
 #include "s3_factory.h"
 #include "s3_iem.h"
-#include "s3_datetime.h"
 
 extern struct m0_uint128 global_bucket_list_index_oid;
 
@@ -252,10 +251,6 @@ std::string S3GlobalBucketIndexMetadata::to_json() {
   root["account_name"] = account_name;
   root["account_id"] = account_id;
   root["location_constraint"] = location_constraint;
-
-  S3DateTime current_time;
-  current_time.init_current_time();
-  root["create_timestamp"] = current_time.get_isoformat_string();
 
   Json::FastWriter fastWriter;
   return fastWriter.write(root);
