@@ -64,8 +64,6 @@ void S3GetObjectAction::setup_steps() {
   ACTION_TASK_ADD(S3GetObjectAction::validate_object_info, this);
   ACTION_TASK_ADD(S3GetObjectAction::check_full_or_range_object_read, this);
   ACTION_TASK_ADD(S3GetObjectAction::read_object, this);
-  // Task to read fragments of object
-  ACTION_TASK_ADD(S3GetObjectAction::read_fragmented_object, this);
   ACTION_TASK_ADD(S3GetObjectAction::send_response_to_s3_client, this);
   // ...
 }
@@ -325,13 +323,13 @@ void S3GetObjectAction::check_full_or_range_object_read() {
 
 void S3GetObjectAction::read_fragmented_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
+  // TODO
   s3_log(S3_LOG_INFO, "", "%s Exit", __func__);
 }
 
 void S3GetObjectAction::read_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  if (this->object_metadata->get_no_of_fragments() == 0) {
+  if (this->object_metadata->get_number_of_fragments() == 0) {
     // Object is not fragmented
     // get total number of blocks to read from an object
     set_total_blocks_to_read_from_object();
