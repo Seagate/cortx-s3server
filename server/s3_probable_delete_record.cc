@@ -30,13 +30,12 @@
 extern struct m0_uint128 global_instance_id;
 
 S3ProbableDeleteRecord::S3ProbableDeleteRecord(
-    const std::string& rec_key, struct m0_uint128 old_oid,
-    const std::string& obj_key_in_index, struct m0_uint128 new_oid,
-    int layout_id, const std::string& pvid_str,
-    struct m0_uint128 obj_list_idx_oid,
-    struct m0_uint128 objs_version_list_idx_oid,
-    const std::string& ver_key_in_index, bool force_del, bool is_multipart,
-    struct m0_uint128 part_list_oid)
+    std::string rec_key, struct m0_uint128 old_oid,
+    std::string obj_key_in_index, struct m0_uint128 new_oid, int layout_id,
+    std::string pvid_str, struct m0_uint128 obj_list_idx_oid,
+    struct m0_uint128 objs_version_list_idx_oid, std::string ver_key_in_index,
+    bool force_del, bool is_multipart, struct m0_uint128 part_list_oid,
+    unsigned int frg, unsigned int prt, struct m0_uint128 extended_idx)
     : record_key(rec_key),
       old_object_oid(old_oid),
       object_key_in_index(obj_key_in_index),
@@ -48,7 +47,10 @@ S3ProbableDeleteRecord::S3ProbableDeleteRecord(
       version_key_in_index(ver_key_in_index),
       force_delete(force_del),
       is_multipart(is_multipart),
-      part_list_idx_oid(part_list_oid) {
+      part_list_idx_oid(part_list_oid),
+      fragment(frg),
+      part(prt),
+      extended_md_idx_oid(extended_idx) {
   // Assertions
   s3_log(S3_LOG_DEBUG, "", "object_key_in_index = %s\n",
          object_key_in_index.c_str());
@@ -102,7 +104,19 @@ std::string S3ProbableDeleteRecord::to_json() {
     root["is_multipart"] = "false";
     root["version_key_in_index"] = version_key_in_index;
   }
-
+  // If fragmented object, include fragment number
+  if (fragment) {
+    root["fno"] = fragment;
+  }
+  // If multipart object, include part number
+  if (part) {
+    root["part"] = part;
+  }
+  if (fragment || part) {
+    // Add extended metadata(a.k.a fragment) index index oid
+    root["extended_md_idx_oid"] =
+        S3M0Uint128Helper::to_string(extended_md_idx_oid);
+  }
   S3DateTime current_time;
   current_time.init_current_time();
   root["create_timestamp"] = current_time.get_isoformat_string();
