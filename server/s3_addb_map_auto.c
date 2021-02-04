@@ -25,7 +25,7 @@
 
 #include "s3_addb_map.h"
 
-const uint64_t g_s3_to_addb_idx_func_name_map_size = 210;
+const uint64_t g_s3_to_addb_idx_func_name_map_size = 215;
 
 const char* g_s3_to_addb_idx_func_name_map[] = {
     "Action::check_authentication",
@@ -59,13 +59,14 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "MotrPutKeyValueAction::send_response_to_s3_client",
     "MotrPutKeyValueActionTest::func_callback",
     "S3APIHandlerTest::func_callback_one",
-    "S3AbortMultipartAction::add_object_oid_to_probable_dead_oid_list",
+    "S3AbortMultipartAction::add_parts_oids_to_probable_dead_oid_list",
     "S3AbortMultipartAction::delete_multipart_metadata",
-    "S3AbortMultipartAction::delete_object",
+    "S3AbortMultipartAction::delete_part",
     "S3AbortMultipartAction::delete_part_index_with_parts",
     "S3AbortMultipartAction::get_multipart_metadata",
-    "S3AbortMultipartAction::mark_oid_for_deletion",
-    "S3AbortMultipartAction::remove_probable_record",
+    "S3AbortMultipartAction::get_next_parts",
+    "S3AbortMultipartAction::mark_oids_for_deletion",
+    "S3AbortMultipartAction::remove_probable_records",
     "S3AbortMultipartAction::send_response_to_s3_client",
     "S3AbortMultipartActionTest::func_callback_one",
     "S3AccountDeleteMetadataAction::fetch_first_bucket_metadata",
@@ -158,8 +159,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3PostCompleteAction::save_metadata",
     "S3PostCompleteAction::send_response_to_s3_client",
     "S3PostCompleteActionTest::func_callback_one",
-    "S3PostMultipartObjectAction::check_upload_is_inprogress",
-    "S3PostMultipartObjectAction::create_object",
+    "S3PostMultipartObjectAction::check_bucket_object_state",
     "S3PostMultipartObjectAction::create_part_meta_index",
     "S3PostMultipartObjectAction::save_upload_metadata",
     "S3PostMultipartObjectAction::send_response_to_s3_client",
@@ -201,12 +201,17 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3PutFiAction::send_response_to_s3_client",
     "S3PutFiAction::set_fault_injection",
     "S3PutMultiObjectAction::check_part_details",
-    "S3PutMultiObjectAction::compute_part_offset",
-    "S3PutMultiObjectAction::fetch_firstpart_info",
+    "S3PutMultiObjectAction::create_part_object",
+    "S3PutMultiObjectAction::delete_new_object",
+    "S3PutMultiObjectAction::delete_old_object",
     "S3PutMultiObjectAction::fetch_multipart_metadata",
+    "S3PutMultiObjectAction::fetch_part_info",
     "S3PutMultiObjectAction::initiate_data_streaming",
+    "S3PutMultiObjectAction::mark_new_oid_for_deletion",
+    "S3PutMultiObjectAction::mark_old_oid_for_deletion",
+    "S3PutMultiObjectAction::remove_new_oid_probable_record",
+    "S3PutMultiObjectAction::remove_old_oid_probable_record",
     "S3PutMultiObjectAction::save_metadata",
-    "S3PutMultiObjectAction::save_multipart_metadata",
     "S3PutMultiObjectAction::send_response_to_s3_client",
     "S3PutMultiObjectAction::validate_multipart_request",
     "S3PutMultipartObjectActionTest::func_callback_one",
