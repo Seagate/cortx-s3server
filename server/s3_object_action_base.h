@@ -76,6 +76,8 @@ class S3ObjectAction : public S3Action {
   virtual void fetch_bucket_info_success();
   virtual void fetch_additional_bucket_info_success();
   virtual void fetch_additional_object_info_success();
+  virtual void fetch_ext_object_info_success();
+  virtual void fetch_ext_object_info_failed();
 
   // Sets appropriate Fault points for any shutdown tests.
   void setup_fi_for_shutdown_tests();
@@ -106,3 +108,4 @@ class S3ObjectAction : public S3Action {
 };
 
 #endif
+

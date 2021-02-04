@@ -86,10 +86,19 @@ class S3PostCompleteAction : public S3ObjectAction {
 
   // Probable delete record for old object OID in case of overwrite
   std::string old_oid_str;  // Key for old probable delete rec
-  std::unique_ptr<S3ProbableDeleteRecord> old_probable_del_rec;
   // Probable delete record for new object OID in case of current req failure
   std::string new_oid_str;  // Key for new probable delete rec
-  std::unique_ptr<S3ProbableDeleteRecord> new_probable_del_rec;
+
+  // List of part object oids belong to new object
+  std::vector<struct m0_uint128> new_obj_oids;
+  // List of part object oids belong to old object
+  std::vector<struct m0_uint128> old_obj_oids;
+
+  // Probable delete record for object parts
+  std::vector<std::unique_ptr<S3ProbableDeleteRecord>>
+      new_parts_probable_del_rec_list;
+  std::vector<std::unique_ptr<S3ProbableDeleteRecord>>
+      old_parts_probable_del_rec_list;
 
  public:
   S3PostCompleteAction(
@@ -109,12 +118,12 @@ class S3PostCompleteAction : public S3ObjectAction {
   void load_and_validate_request();
   void consume_incoming_content();
   bool validate_request_body(std::string &xml_str);
-  void fetch_bucket_info_success();
   void fetch_bucket_info_failed();
   void fetch_object_info_failed();
   void fetch_multipart_info();
   void fetch_multipart_info_success();
   void fetch_multipart_info_failed();
+  void fetch_ext_object_info_failed();
 
   void get_next_parts_info();
   void get_next_parts_info_successful();
@@ -139,13 +148,33 @@ class S3PostCompleteAction : public S3ObjectAction {
   void add_object_oid_to_probable_dead_oid_list_success();
   void add_object_oid_to_probable_dead_oid_list_failed();
 
+  // Add object part to the new object's extended metadata portion
+  void add_part_object_to_object_extended(
+      const std::shared_ptr<S3PartMetadata> &part_metadata,
+      std::shared_ptr<S3ObjectMetadata> &object_metadata);
+  void add_part_object_to_probable_dead_oid_list(
+      const std::shared_ptr<S3ObjectMetadata> &,
+      std::vector<std::unique_ptr<S3ProbableDeleteRecord>> &,
+      bool is_old_object = false);
+
   void startcleanup() override;
   void mark_old_oid_for_deletion();
   void delete_old_object();
+  void delete_old_object_success();
   void remove_old_object_version_metadata();
   void remove_old_oid_probable_record();
+  // Delete old entries corresponding to old object parts
+  // from the extended md index
+  void remove_old_fragments();
+  void remove_old_ext_metadata_successful();
+
   void mark_new_oid_for_deletion();
   void delete_new_object();
+  void delete_new_object_success();
+  // During failure due to md failure, delete fragments,
+  // if existed any, from the extended index
+  void remove_new_fragments();
+  void remove_new_ext_metadata_successful();
   void remove_new_oid_probable_record();
 
   std::string get_part_index_name() {
