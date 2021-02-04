@@ -120,7 +120,7 @@ then
   UT_MEMPOOL_BIN=./bazel-bin/s3mempoolut
   UT_MEMPOOLMGR_BIN=./bazel-bin/s3mempoolmgrut
   UT_S3BACKGROUNDDELETE=./s3backgrounddelete/scripts/run_all_ut.sh
-  UT_S3CONFSTORE=./s3cortxutils/s3confstore/scripts/run_all_ut.sh
+  UT_S3CONFSTORE=./s3cortxutils/s3cortxutils/s3confstore/scripts/run_all_ut.sh
 
   printf "\nCheck s3ut..."
   type  $UT_BIN >/dev/null
