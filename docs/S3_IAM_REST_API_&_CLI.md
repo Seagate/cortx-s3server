@@ -1,4 +1,4 @@
-# Supported S3 IAM REST APIs and CLI Operations
+# S3 IAM REST APIs and CLI Operations Supported by CORTX
 
 The S3 IAM REST APIs are a collection of resources and methods which are integrated with AWS Identity and Access Management (IAM) service. The IAM service lets an administrator to securely control access to the S3 resources. As an IAM administrator, you can control the authentication and authorizations for an ID to use API Gateway resources. We've listed the S3 IAM REST APIs and CLI operations that are supported by the CORTX-S3 Server Submodule. 
 
