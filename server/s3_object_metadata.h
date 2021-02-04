@@ -35,6 +35,14 @@
 #include "s3_request_object.h"
 #include "s3_timer.h"
 
+// Object list index table is divided into objects and their extended parts, if
+// any.
+// All extended object entries start/prefix with special character "~",
+// to make them at the bottom of object list list index table.
+// This special character is chosen, as it is not allowed in S3 object name and
+// also higher in the lexographical order.
+#define EXTENDED_METADATA_OBJECT_PREFIX "~"
+
 enum class S3ObjectMetadataState {
   empty,    // Initial state, no lookup done.
   present,  // Metadata exists and was read successfully.
