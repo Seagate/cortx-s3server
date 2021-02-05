@@ -387,6 +387,8 @@ rm -rf %{buildroot}
 %exclude %{py36_sitelib}/s3setup/*.py
 %exclude %{py36_sitelib}/s3setup/__pycache__/*
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundconsumer
+%exclude %{py36_sitelib}/s3cortxutils/*.py
+%exclude %{py36_sitelib}/s3cortxutils/__pycache__/*
 %exclude %{py36_sitelib}/s3cortxutils/s3msgbus/s3msgbus
 %exclude %{py36_sitelib}/s3cortxutils/s3cipher/s3cipher
 %exclude %{py36_sitelib}/s3cortxutils/s3confstore/s3confstore
