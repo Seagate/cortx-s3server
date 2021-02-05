@@ -1,7 +1,6 @@
 #!/usr/bin/python3.6
 
 import sys
-import os
 from s3backgrounddelete.cortx_s3_count_kv import CORTXS3Countkv
 
 if __name__ == "__main__":
