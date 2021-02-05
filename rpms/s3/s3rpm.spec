@@ -380,16 +380,14 @@ rm -rf %{buildroot}
 %{py36_sitelib}/s3setup-%{version}-py?.?.egg-info
 %exclude %{py36_sitelib}/s3backgrounddelete/__pycache__/*
 %exclude %{py36_sitelib}/s3backgrounddelete/*.py
-%exclude %{py36_sitelib}/s3cortxutils/*.py
-%exclude %{py36_sitelib}/s3cortxutils/__pycache__/*
 %exclude %{py36_sitelib}/s3haproxyconfig/*.py
 %exclude %{py36_sitelib}/s3haproxyconfig/__pycache__/*
 %exclude %{py36_sitelib}/s3setup/*.py
 %exclude %{py36_sitelib}/s3setup/__pycache__/*
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundconsumer
-%exclude %{py36_sitelib}/s3msgbus/s3msgbus
-%exclude %{py36_sitelib}/s3cipher/s3cipher
-%exclude %{py36_sitelib}/s3confstore/s3confstore
+%exclude %{py36_sitelib}/s3cortxutils/s3msgbus/s3msgbus
+%exclude %{py36_sitelib}/s3cortxutils/s3cipher/s3cipher
+%exclude %{py36_sitelib}/s3cortxutils/s3confstore/s3confstore
 %exclude %{py36_sitelib}/s3haproxyconfig/s3haproxyconfig
 %exclude %{py36_sitelib}/s3setup/s3setup
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundproducer
