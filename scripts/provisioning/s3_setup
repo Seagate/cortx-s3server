@@ -35,9 +35,7 @@ post_install             will do postinstall steps, which will include validatio
 config                   do configuration of openldap (with replication), haproxy and
                          create authjks keys.
 
-init                     create s3backgrounddelete, s3recoverytool s3 accounts. Also sets
-                         log-rotation policies for haproxy, auditlogs and openldap, incase of
-                         'VM' environment.
+init                     create 's3backgrounddelete' s3 account.
 
 test                     run s3 sanity tests
 
@@ -68,12 +66,6 @@ rootpasswd=""
 
 encrypt_cli="/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar"
 
-if [ $# -lt 3 ]
-then
-  echo "$USAGE"
-  exit 1
-fi
-
 # check if s3cipher, s3confstore and s3setup are installed on the system
 if ! command -v s3cipher &>/dev/null
 then
@@ -90,7 +82,7 @@ fi
 if ! command -v s3setup &>/dev/null
 then
     echo "ERROR: s3setup not installed on the system, exiting."
-    #exit 1
+    exit 1
 fi
 
 
@@ -159,11 +151,6 @@ get_ldap_password()
         exit 1
     fi
 }
-
-# get openldap password from confstore
-echo "Get openldap passwords from confstore.."
-get_ldap_password
-
 
 # Fetch and update cluster_id
 fetch_update_cluster_id()
@@ -279,35 +266,6 @@ create_background_delete_account()
     fi
 }
 
-set_s3conf_log_sz() {
-    conf_sz=$1
-    conf_path="/opt/seagate/cortx/s3/conf/s3config.yaml"
-
-    sed -i "s/S3_LOG_FILE_MAX_SIZE:\s*[0-9]*\(.*\)/S3_LOG_FILE_MAX_SIZE: $conf_sz\1/" $conf_path
-}
-
-set_logrotate() {
-    fname=$1
-    set_sz=$2
-    set_fcount=$3
-
-    sed -i "s/rotate [0-9]*/rotate $set_fcount/" $fname
-    sed -i "s/size [0-9bBkKmMgGpPtT]*/size $set_sz/" $fname
-}
-
-set_logrotate_policy_ova() {
-    lgrtd="/etc/logrotate.d/haproxy
-           /etc/logrotate.d/openldap
-           /etc/logrotate.d/s3auditlog"
-
-    for f in $lgrtd
-    do
-        set_logrotate $f 1M 5
-    done
-
-    set_s3conf_log_sz 5
-}
-
 if [ $s3postinstall == true ]
 then
     echo "INFO: running post_install..."
@@ -322,8 +280,13 @@ fi
 if [ $s3config == true ]
 then
     # Fetch and update cluster id
+    # To decrypt openldap passwords, we need 'cluster_id' updated in s3_cluster.yaml
     echo "INFO: Fetching and updating cluster id in s3_cluster.yaml .."
     fetch_update_cluster_id
+
+    # get openldap password from confstore
+    echo "INFO: Get openldap passwords from confstore.."
+    get_ldap_password
 
     # Create random password for auth jks keystore
     echo "INFO: Creating random jks password for Auth server.."
@@ -344,22 +307,21 @@ fi
 
 if [ $s3init == true ]
 then
+    # get openldap password from confstore
+    echo "INFO: Get openldap passwords from confstore.."
+    get_ldap_password
+
     # Setup s3 background delete and its dependencies
     echo "INFO: Creating the s3backgrounddelete account.."
     create_background_delete_account
-
-    # set logrotate policy
-    plat=$(s3confstore "$confstore_config_url" getkey --key "cluster>env_type")
-    echo "INFO: cluster environment type: $plat"
-    if [ "$plat" == "VM" ]
-    then
-        echo "INFO: setting logrotate policy.."
-        set_logrotate_policy_ova
-    fi
 fi
 
 if [ $s3test == true ]
 then
+    # get openldap password from confstore
+    echo "INFO: Get openldap passwords from confstore.."
+    get_ldap_password
+
     cmd_out=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
     if [[ $cmd_out == *"No such object"* ]];then
         echo "ERROR: failed to find s3background delete account, exit."
@@ -371,5 +333,9 @@ fi
 
 if [ $s3cleanup == true ]
 then
-    s3setup --cleanup accounts --ldappasswd "$ldappasswd"
+    # get openldap password from confstore
+    echo "INFO: Get openldap passwords from confstore.."
+    get_ldap_password
+
+    s3setup cleanup --ldappasswd "$ldappasswd"
 fi
