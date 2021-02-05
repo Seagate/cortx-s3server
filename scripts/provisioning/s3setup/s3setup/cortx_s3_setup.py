@@ -27,6 +27,7 @@ from s3backgrounddelete.cortx_cluster_config import CipherInvalidToken
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.validator.v_service import ServiceV
 from cortx.utils.validator.v_path import PathV
+from cortx.utils.process import SimpleProcess
 
 logging.basicConfig(level=logging.INFO)
 # logging.basicConfig(level=logging.DEBUG)
@@ -109,15 +110,36 @@ class S3CortxSetup:
       return False
     return True
 
+  def sanity_test(self, ldappasswd: str, dataflag: bool = False, s3cmdcfg: str = None):
+    try:
+      cmd = ['/opt/seagate/cortx/s3/scripts/s3-sanity-test.sh', f'-p {ldappasswd}']
+      if dataflag:
+        if not s3cmdcfg:
+          print("Please provide s3cmdcfg")
+          return False
+        cmd.append('-d')
+        cmd.append(f'-f {s3cmdcfg}')
+      handler = SimpleProcess(cmd)
+      stdout, stderr, retcode = handler.run()
+      # print(f"{cmd} {stdout} {stderr}, ret: {retcode}")
+      if retcode != 0:
+        print(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
+        return False
+      return True
+    except Exception as e:
+      print(f"{self}: {cmd} exception: {e}")
+      return False
+    return True
+
   def run(self):
     parser = argparse.ArgumentParser(description='Cortx S3 Setup')
-    # parser.add_argument("post_install", help='Perform S3setup mini-provisioner post_install actions', action="store_true", default=False)
-    parser.add_argument("action", type=str, help='Perform S3setup mini-provisioner actions',nargs='*', choices=['post_install', 'cleanup' ])
-    parser.add_argument("--cleanup", help='Cleanup S3 accounts and dependencies. Valid values: all/accounts/dependencies')
-    # Future functionalities to be added here.
-    parser.add_argument("--ldappasswd", help='ldap password, needed for --cleanup')
+    parser.add_argument("action", type=str, help='Perform S3setup mini-provisioner actions',nargs='*', choices=['post_install', 'cleanup', 'test' ])
+    parser.add_argument("--cleanup_choice", help='Optional cleanup choices for S3 accounts and dependencies separately. Valid values: all/accounts/dependencies')
+    parser.add_argument("--ldappasswd", help='ldap password, needed for cleanup, test, --cleanup')
     parser.add_argument("--validateprerequisites", help='validate prerequisites for mini-provisioner setup', action="store_true")
     parser.add_argument("--preqs_conf_file", help='optional conf file location used with --validateprerequisites')
+    parser.add_argument("--data_sanity", help='Use with option test to run optional s3cmd data sanity tests', action="store_true")
+    parser.add_argument("--s3cmdcfg", help='Use with option --data_sanity to pass the s3cmd config file location')
     parser.add_argument("--config",
                         help='config file url, check cortx-py-utils::confstore for supported formats.',
                         type=str)
@@ -125,24 +147,24 @@ class S3CortxSetup:
 
     args = parser.parse_args()
 
-    if args.cleanup != None:
+    if args.cleanup_choice or "cleanup" in args.action:
       if args.ldappasswd == None:
         print("Invalid input, provide --ldappasswd for cleanup")
         exit (-2)
-      if args.cleanup == "accounts":
+      if args.cleanup_choice == "accounts" or "cleanup" in args.action:
         if args.ldappasswd:
           rc = self.accounts_cleanup(args.ldappasswd)
         exit (not rc)
-      elif args.cleanup == "dependencies":
+      elif args.cleanup_choice == "dependencies":
         rc = self.dependencies_cleanup()
         exit (not rc)
-      elif args.cleanup == "all":
+      elif args.cleanup_choice == "all":
         if args.ldappasswd: 
           rc1 = self.accounts_cleanup(args.ldappasswd)
         rc2 = self.dependencies_cleanup()
         exit (not (rc1 & rc2))
       else:
-        print("Invalid input for cleanup {}. Valid values: all/accounts/dependencies".format(args.cleanup))
+        print("Invalid input for cleanup {}. Valid values: all/accounts/dependencies".format(args.cleanup_choice))
         exit (-2)
 
     if args.validateprerequisites or "post_install" in args.action:
@@ -163,3 +185,17 @@ class S3CortxSetup:
 
       rc = self.validate_pre_requisites(rpms=preqs_conf_json['rpms'], services=preqs_conf_json['services'], pip3s=preqs_conf_json['pip3s'], files=preqs_conf_json['exists'])
       exit(not rc)
+
+    if "test" in args.action:
+      if args.ldappasswd == None:
+        print("Invalid input, provide --ldappasswd for sanity test")
+        exit (-2)
+      if args.data_sanity:
+        if args.s3cmdcfg == None:
+          print("Invalid input, provide --s3cmdcfg for data sanity test")
+          exit (-2)
+        rc = self.sanity_test(ldappasswd=args.ldappasswd, dataflag=True, s3cmdcfg=args.s3cmdcfg)
+        exit (not rc)
+      else:
+        rc = self.sanity_test(args.ldappasswd)
+      exit (not (rc))
