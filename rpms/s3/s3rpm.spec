@@ -365,6 +365,9 @@ rm -rf %{buildroot}
 /etc/logrotate.d/openldap
 %{_bindir}/s3backgroundconsumer
 %{_bindir}/s3backgroundproducer
+%{_bindir}/s3cipher
+%{_bindir}/s3msgbus
+%{_bindir}/s3confstore
 %{_bindir}/s3haproxyconfig
 %{_bindir}/s3setup
 %{py36_sitelib}/s3backgrounddelete/config/*.yaml
