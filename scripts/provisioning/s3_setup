@@ -186,8 +186,7 @@ configure_openldap()
     if [ $? -ne 0 ]
     then
         echo "ERROR: Failed to configure openldap."
-        echo "ERROR: Please re-run 's3_setup config' again."
-        echo "ERROR: Run 's3_setup cleanup', followed by 's3_setup config', if issue persists."
+        echo "ERROR: Run 's3_setup cleanup', followed by 's3_setup config', to configure again."
         exit 1
     fi
 
@@ -217,7 +216,6 @@ configure_openldap()
         if [ $? -ne 0 ]
         then
             echo "ERROR: Failed to configure ldap replication, exiting."
-            echo "ERROR: You may want to enable openldap logs, and check what exactly failed."
             echo "ERROR: Run 's3_setup cleanup', followed by 's3_setup config' again, after resolving the issue."
             exit 1
         fi
