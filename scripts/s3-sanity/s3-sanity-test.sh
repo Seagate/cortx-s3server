@@ -169,6 +169,8 @@ then
   die_with_error "Please provide -p <ldappasswd>"
 fi
 
+systemctl restart s3authserver
+
 if [ "$externalcleanup" = true ]
 then
   cleanup
