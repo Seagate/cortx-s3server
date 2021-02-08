@@ -322,12 +322,15 @@ then
     echo "INFO: Get openldap passwords from confstore.."
     get_ldap_password
 
-    cmd_out=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
-    if [[ $cmd_out == *"No such object"* ]];then
-        echo "ERROR: failed to find s3background delete account, exit."
+    cmd_ret=0
+    cmd_out=$(s3setup test --ldappasswd $ldappasswd) || cmd_ret=$?
+
+    if [ $cmd_ret -ne 0 ];then
+        echo "ERROR:\n $cmd_out \n"
+        echo "ERROR: s3setup test failed, exit."
         exit 1
     else
-        echo "PASS: S3-Sanity test passed."
+        echo "PASS: s3setup test passed."
     fi
 fi
 
