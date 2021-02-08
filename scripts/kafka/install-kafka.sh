@@ -40,6 +40,8 @@ install_prerequisite() {
   echo "Installing Pre-requisites"
   yum install java -y
   yum install java-devel -y
+  #install confluent_kafka 1.5.0 version as this is compatible with kafka_2.13-2.7.0
+  pip3 install confluent_kafka==1.5.0
   echo "Pre-requisites installed successfully."
 }
 
