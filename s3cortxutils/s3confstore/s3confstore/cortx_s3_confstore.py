@@ -215,7 +215,7 @@ class S3CortxConfStore:
                                   type=str,
                                   required=True)
 
-    getallkeys = subparsers.add_parser('getallkeys', help='Get the list of all the Key Values in the file')
+    subparsers.add_parser('getallkeys', help='Get the list of all the Key Values in the file')
 
     args = parser.parse_args()
 
