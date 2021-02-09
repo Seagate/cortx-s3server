@@ -119,6 +119,13 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
     result_data = s3confstore.get_config('bridge')
     self.assertTrue('dummy_123' in result_data)
 
+  @mock.patch.object(Conf, 'get_keys')
+  def test_mock_getallkeys(self, mock_getallkeys_return):
+    s3confstore = S3CortxConfStore()
+    mock_getallkeys_return.return_value = "dummy_allkeys_return"
+    result_data = s3confstore.get_all_keys()
+    self.assertTrue('dummy_allkeys_return' in result_data)
+
   @mock.patch.object(Conf, 'load')
   @mock.patch.object(Conf, 'get')
   @mock.patch.object(Conf, 'set')
