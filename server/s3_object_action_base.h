@@ -47,6 +47,7 @@ class S3ObjectAction : public S3Action {
 
  protected:
   std::shared_ptr<S3ObjectMetadata> object_metadata;
+  std::shared_ptr<S3ObjectExtendedMetadata> extended_obj_metadata;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
 
   // Certain APIs like CopyObject, would need more than single
@@ -76,6 +77,8 @@ class S3ObjectAction : public S3Action {
   virtual void fetch_bucket_info_success();
   virtual void fetch_additional_bucket_info_success();
   virtual void fetch_additional_object_info_success();
+  virtual void fetch_ext_object_info_success();
+  void fetch_ext_object_info_failed();
 
   // Sets appropriate Fault points for any shutdown tests.
   void setup_fi_for_shutdown_tests();
