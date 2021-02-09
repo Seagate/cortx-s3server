@@ -321,21 +321,32 @@ void S3GetObjectAction::check_full_or_range_object_read() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+void S3GetObjectAction::read_fragmented_object() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  // TODO
+  s3_log(S3_LOG_INFO, "", "%s Exit", __func__);
+}
+
 void S3GetObjectAction::read_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  // get total number of blocks to read from an object
-  set_total_blocks_to_read_from_object();
-  motr_reader = motr_reader_factory->create_motr_reader(
-      request, object_metadata->get_oid(), object_metadata->get_layout_id());
-  // get the block,in which first_byte_offset_to_read is present
-  // and initilaize the last index with starting offset the block
-  size_t block_start_offset =
-      first_byte_offset_to_read -
-      (first_byte_offset_to_read %
-       S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
-           object_metadata->get_layout_id()));
-  motr_reader->set_last_index(block_start_offset);
-  read_object_data();
+  if (this->object_metadata->get_number_of_fragments() == 0) {
+    // Object is not fragmented
+    // get total number of blocks to read from an object
+    set_total_blocks_to_read_from_object();
+    motr_reader = motr_reader_factory->create_motr_reader(
+        request, object_metadata->get_oid(), object_metadata->get_layout_id());
+    // get the block,in which first_byte_offset_to_read is present
+    // and initilaize the last index with starting offset the block
+    size_t block_start_offset =
+        first_byte_offset_to_read -
+        (first_byte_offset_to_read %
+         S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
+             object_metadata->get_layout_id()));
+    motr_reader->set_last_index(block_start_offset);
+    read_object_data();
+  } else {
+    next();
+  }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
