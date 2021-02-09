@@ -43,7 +43,7 @@ from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS, RABBIT_MQ
 class ObjectRecoveryScheduler(object):
     """Scheduler which will add key value to rabbitmq message queue."""
 
-    def __init__(self):
+    def __init__(self, producer_name):
         """Initialise logger and configuration."""
         self.data = None
         self.config = CORTXS3Config()
@@ -52,6 +52,8 @@ class ObjectRecoveryScheduler(object):
         self.signal = DynamicConfigHandler(self)
         self.logger.info("Initialising the Object Recovery Scheduler")
         self.producer = None
+        self.producer_name = producer_name
+        self.logger.info("producer_name : " + self.producer_name)
 
     @staticmethod
     def isObjectLeakEntryOlderThan(leakRecord, OlderInMins = 15):
@@ -109,7 +111,8 @@ class ObjectRecoveryScheduler(object):
                         self.logger.info(
                             "Object recovery queue sending data :" +
                             str(record))
-                        ret = self.producer.send_data(record)
+                        #ret = self.producer.send_data(record, producer_id = self.producer_name)
+                        ret = self.producer.send_data(record, producer_id = "prod1")
                         if not ret:
                             # TODO - Do Audit logging
                             self.logger.error(
@@ -211,7 +214,7 @@ class ObjectRecoveryScheduler(object):
     def schedule_periodically(self):
         """Schedule RabbitMQ producer to add key value to queue on hourly basis."""
         # Run RabbitMQ producer periodically on hourly basis
-        self.logger.info("Producer started at " + str(datetime.datetime.now()))
+        self.logger.info("Producer " + str(self.producer_name) + " started at : " + str(datetime.datetime.now()))
         scheduled_run = sched.scheduler(time.time, time.sleep)
 
         def periodic_run(scheduler):
