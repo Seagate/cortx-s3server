@@ -71,6 +71,7 @@ class S3GetObjectAction : public S3ObjectAction {
   void set_total_blocks_to_read_from_object();
   bool validate_range_header_and_set_read_options(
       const std::string& range_value);
+  void read_fragmented_object();
   void read_object();
 
   void read_object_data();

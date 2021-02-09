@@ -61,6 +61,10 @@ void S3ObjectMetadata::initialize(bool ismultipart,
                                   const std::string& uploadid) {
   is_multipart = ismultipart;
   upload_id = uploadid;
+  obj_parts = 0;
+  obj_fragments = 0;
+  pvid_str = "";
+
   account_name = request->get_account_name();
   account_id = request->get_account_id();
   user_name = request->get_user_name();
@@ -149,6 +153,7 @@ S3ObjectMetadata::S3ObjectMetadata(
   } else {
     mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
+  obj_type = S3ObjectMetadataType::simple;
   initialize(is_multipart, upload_id);
 }
 
@@ -655,6 +660,8 @@ std::string S3ObjectMetadata::to_json() {
 
   root["motr_oid"] = motr_oid_str;
   root["PVID"] = this->pvid_str;
+  root["FNo"] = this->obj_fragments;
+  root["PRTS"] = this->obj_parts;
 
   for (auto sit : system_defined_attribute) {
     root["System-Defined"][sit.first] = sit.second;
@@ -757,6 +764,17 @@ int S3ObjectMetadata::from_json(std::string content) {
   motr_oid_str = newroot["motr_oid"].asString();
   layout_id = newroot["layout_id"].asInt();
   pvid_str = newroot["PVID"].asString();
+  obj_fragments = newroot["FNo"].asUInt();
+  obj_parts = newroot["PRTS"].asUInt();
+
+  if (obj_fragments == 0 && obj_parts != 0) {
+    obj_type = S3ObjectMetadataType::only_parts;
+  } else if (obj_fragments != 0 && obj_parts == 0) {
+    obj_type = S3ObjectMetadataType::only_frgments;
+  } else if (obj_fragments != 0 && obj_parts != 0) {
+    obj_type = S3ObjectMetadataType::parts_fragments;
+  }
+
   oid = S3M0Uint128Helper::to_m0_uint128(motr_oid_str);
 
   //
@@ -875,4 +893,388 @@ void S3ObjectMetadata::set_pvid(const struct m0_fid* p_pvid) {
     s3_log(S3_LOG_DEBUG, request_id, "%s - NULL pointer", __func__);
     pvid_str.clear();
   }
+}
+// Class S3ObjectExtendedMetadata implementation
+S3ObjectExtendedMetadata::S3ObjectExtendedMetadata(
+    std::shared_ptr<S3RequestObject> req, const std::string& bucketname,
+    const std::string& objectname, const std::string& versionid,
+    unsigned int no_of_parts, unsigned int no_of_fragments,
+    std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
+    std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
+    std::shared_ptr<MotrAPI> motr_api) {
+  state = S3ObjectMetadataState::empty;
+  parts = no_of_parts;
+  fragments = no_of_fragments;
+  if (fragments == 0) {
+    // This object could be just a non-fragmented object
+    fragments = S3Option::get_instance()->get_motr_idx_fetch_count();
+    s3_log(S3_LOG_DEBUG, "", "Reset fragment fetch count to %u", fragments);
+  }
+  if (version_id.empty()) {
+    // TBD - Do we need default value. If yes, set it NULL
+    version_id = "NULL";
+  } else {
+    // Reverse of epoch time (used by primary object as version id)
+    version_id = versionid;
+  }
+  request = std::move(req);
+  request_id = request->get_request_id();
+  stripped_request_id = request->get_stripped_request_id();
+
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
+
+  if (bucketname.empty()) {
+    bucket_name = request->get_bucket_name();
+  } else {
+    bucket_name = std::move(bucketname);
+  }
+  if (objectname.empty()) {
+    object_name = request->get_object_name();
+  } else {
+    object_name = std::move(objectname);
+  }
+  if (motr_api) {
+    s3_motr_api = std::move(motr_api);
+  } else {
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
+  }
+  if (kv_reader_factory) {
+    motr_kv_reader_factory = std::move(kv_reader_factory);
+  } else {
+    motr_kv_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
+  }
+  if (kv_writer_factory) {
+    mote_kv_writer_factory = std::move(kv_writer_factory);
+  } else {
+    mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
+  }
+  last_object = EXTENDED_METADATA_OBJECT_PREFIX + objectname;
+}
+
+void S3ObjectExtendedMetadata::load(std::function<void(void)> on_success,
+                                    std::function<void(void)> on_failed) {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  // object_list_index_oid should be set before using this method
+  assert(object_list_index_oid.u_hi || object_list_index_oid.u_lo);
+
+  this->handler_on_success = on_success;
+  this->handler_on_failed = on_failed;
+
+  motr_kv_reader =
+      motr_kv_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
+  get_obj_ext_entries(last_object);
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+// Fetch extended entries from object list index for the given object
+void S3ObjectExtendedMetadata::get_obj_ext_entries(std::string last_object) {
+  s3_log(S3_LOG_DEBUG, request_id, "Searching index from start key = [%s]\n",
+         last_object.c_str());
+  // We expect only 'fragments' extended entries for the object.
+  motr_kv_reader->next_keyval(
+      object_list_index_oid, last_object, fragments,
+      std::bind(&S3ObjectExtendedMetadata::get_obj_ext_entries_successful,
+                this),
+      std::bind(&S3ObjectExtendedMetadata::get_obj_ext_entries_failed, this));
+}
+
+void S3ObjectExtendedMetadata::get_obj_ext_entries_successful() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  auto& kvps = motr_kv_reader->get_key_values();
+  bool end_of_enumeration = false;
+
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Found [%zu] object extended metadata entries\n", kvps.size());
+  // Process object's extended entries
+  for (auto& kv : kvps) {
+    s3_log(S3_LOG_DEBUG, request_id, "Read extended object key = %s\n",
+           kv.first.c_str());
+    s3_log(S3_LOG_DEBUG, request_id, "Read extended object Value = %s\n",
+           kv.second.second.c_str());
+    last_object = kv.first;
+    // Check if fetched key starts with object prefix
+    std::string object_prefix = EXTENDED_METADATA_OBJECT_PREFIX + object_name;
+    bool prefix_match = (kv.first.find(object_prefix) == 0) ? true : false;
+    if (!prefix_match) {
+      end_of_enumeration = true;
+      // No further keys belong to extended entries of object
+      s3_log(
+          S3_LOG_INFO, stripped_request_id,
+          "No further extended keys match. Skipping further key enumeration\n");
+      break;
+    }
+    if (this->from_json(kv.first, kv.second.second) != 0) {
+      s3_log(S3_LOG_ERROR, request_id,
+             "Json Parsing failed. Index oid = "
+             "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
+             object_list_index_oid.u_hi, object_list_index_oid.u_lo,
+             object_name.c_str(), motr_kv_reader->get_value().c_str());
+    } else {
+      // Added extended entry.
+      s3_log(S3_LOG_DEBUG, request_id, "Added extended object key [%s]\n",
+             kv.first.c_str());
+    }
+  }  // End of for loop
+
+  if (end_of_enumeration || (kvps.size() < fragments)) {
+    state = S3ObjectMetadataState::present;
+    this->handler_on_success();
+  } else {
+    get_obj_ext_entries(last_object);
+  }
+}
+
+void S3ObjectExtendedMetadata::get_obj_ext_entries_failed() {
+  this->handler_on_failed();
+}
+
+void S3ObjectExtendedMetadata::save(std::function<void(void)> on_success,
+                                    std::function<void(void)> on_failed) {
+  s3_log(S3_LOG_DEBUG, request_id, "Saving extended object metadata\n");
+
+  this->handler_on_success = on_success;
+  this->handler_on_failed = on_failed;
+  save_extended_metadata();
+}
+
+// Save to objects version list index
+void S3ObjectExtendedMetadata::save_extended_metadata() {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  // objects_version_list_index_oid should be set before using this method
+  assert(object_list_index_oid.u_hi || object_list_index_oid.u_lo);
+
+  std::map<std::string, std::string> key_values =
+      get_kv_list_of_extended_entries();
+  if (key_values.size() > 0) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+    // TODO: Saves all entries in one call. May hit RPC limit.
+    // It may require to save entries in chunk, instead of all in one RPC call.
+    motr_kv_writer->put_keyval(
+        object_list_index_oid, key_values,
+        std::bind(&S3ObjectExtendedMetadata::save_extended_metadata_successful,
+                  this),
+        std::bind(&S3ObjectExtendedMetadata::save_extended_metadata_failed,
+                  this));
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3ObjectExtendedMetadata::save_extended_metadata_successful() {
+  // TBD
+  this->handler_on_success();
+}
+
+void S3ObjectExtendedMetadata::save_extended_metadata_failed() {
+  // TBD
+  this->handler_on_failed();
+}
+
+int S3ObjectExtendedMetadata::from_json(std::string key, std::string content) {
+  // key of simple object with fragment := ~ObjectOne|versionID|F1
+  // or
+  // Key of multpart object with fragment := ~ObjectTwo|versionId|P1|F1 
+  s3_log(S3_LOG_DEBUG, request_id, "Extended object metadata value [%s]\n",
+         content.c_str());
+  Json::Value newroot;
+  Json::Reader reader;
+  bool parsingSuccessful = reader.parse(content.c_str(), newroot);
+  if (!parsingSuccessful || s3_fi_is_enabled("object_metadata_corrupted")) {
+    s3_log(S3_LOG_ERROR, request_id, "Json Parsing failed\n");
+    return -1;
+  }
+  struct s3_part_frag_context item_ctx = {};
+  item_ctx.is_multipart = false;
+
+  std::vector<std::string> tokens;
+  // Check type of item: whether part or fragment
+  // e.g., key:= ~ObjectOne|versionID|F1
+  std::istringstream in(key);
+  std::string token;
+  std::string sep = EXTENDED_METADATA_OBJECT_SEP;
+  while (getline(in, token, sep[0])) {
+    tokens.push_back(token);
+  }
+  if ((tokens.size() == 4) ||
+      ((tokens.size() == 3) && (tokens[2].find("P", 0) != std::string::npos))) {
+    // multipart (could be fragmented)
+    item_ctx.is_multipart = true;
+  } else {
+    // not multipart
+  }
+  item_ctx.versionID = S3M0Uint128Helper::to_m0_uint128(tokens[1]);
+
+  item_ctx.motr_OID =
+      S3M0Uint128Helper::to_m0_uint128(newroot["OID"].asString());
+  item_ctx.PVID = S3M0Uint128Helper::to_m0_uint128(newroot["PVID"].asString());
+  item_ctx.item_size = newroot["size"].asInt();
+  item_ctx.layout_id = newroot["layout-id"].asInt();
+
+  if (item_ctx.is_multipart) {
+    // tokens[2] will contain the part number, when is_multipart = true
+    size_t pos = tokens[2].find("P", 0);
+    int ext_objects_key = 0;
+    if ((pos != std::string::npos) &&
+        S3CommonUtilities::stoi(tokens[2].substr(pos + 1), ext_objects_key)) {
+      // key is the part number
+      ext_objects[ext_objects_key].push_back(item_ctx);
+    } else {
+      s3_log(S3_LOG_ERROR, request_id, "Failed to retrive part number\n");
+      return -1;
+    }
+  } else {
+    // Fragmented simple object
+    // key is 0
+    ext_objects[0].push_back(item_ctx);
+  }
+
+  return 0;
+}
+/*TODO : Do we need this?
+std::string S3ObjectExtendedMetadata::to_json() {
+  s3_log(S3_LOG_DEBUG, request_id, "Called\n");
+  Json::Value root;
+  root["OID"] = bucket_name;
+  root["PVID"] = object_name;
+  root["size"] = 0;
+  root["layout-id"] = layout_id;
+
+  if (ext_objects.size() == 1) {
+    // This is simple object
+    int frag_counter = 1;
+    for (const auto& ext_obj : ext_objects) {
+      std::vector<s3_part_frag_context> fragments;
+      fragments = ext_objects[0];
+      std::ostringstream buffer;
+      buffer << EXTENDED_METADATA_OBJECT_PREFIX << object_name
+             << EXTENDED_METADATA_OBJECT_SEP << << frag_counter;
+
+      root[buffer.str()] = ext_objects;
+      frag_counter++;
+    }
+  } else {
+    // This is multipart object
+    for (const auto& ext_obj : ext_objects) {
+      std::string key = EXTENDED_METADATA_OBJECT_PREFIX + object_name +
+                        EXTENDED_METADATA_OBJECT_SEP root[key] = ;
+    }
+  }
+
+  Json::FastWriter fastWriter;
+  return fastWriter.write(root);
+}
+*/
+
+std::map<std::string, std::string>
+S3ObjectExtendedMetadata::get_kv_list_of_extended_entries() {
+  std::stringstream sskey;
+  std::map<std::string, std::string> kv_map;
+
+  int part_index = 1;
+  // TODO
+  for (auto& ext_entry_kv : ext_objects) {
+    int frag_index = 1;
+    for (auto& ext_entry_frag : ext_entry_kv.second) {
+      std::string part_field = "";
+      if (ext_entry_frag.is_multipart) {
+        part_field = "P" + std::to_string(part_index);
+      } else {
+        part_field = "";
+      }
+      std::string frag_field = "F" + std::to_string(frag_index);
+      sskey.str("");
+      sskey.clear();
+      sskey << EXTENDED_METADATA_OBJECT_PREFIX << object_name
+            << EXTENDED_METADATA_OBJECT_SEP << version_id;
+
+      if (part_field.empty()) {
+        sskey << EXTENDED_METADATA_OBJECT_SEP << frag_field;
+      } else {
+        sskey << EXTENDED_METADATA_OBJECT_SEP << part_field;
+        sskey << EXTENDED_METADATA_OBJECT_SEP << frag_field;
+      }
+      kv_map[sskey.str()] = get_json_str(ext_entry_frag);
+      frag_index++;
+    }  // End of fragment items
+    part_index++;
+  }  // End of part items
+  return kv_map;
+}
+
+std::string S3ObjectExtendedMetadata::get_json_str(
+    struct s3_part_frag_context& frag_entry) {
+  Json::Value root;
+  root["OID"] = S3M0Uint128Helper::to_string(frag_entry.motr_OID);
+  root["PVID"] = S3M0Uint128Helper::to_string(frag_entry.PVID);
+  root["size"] = Json::Value((Json::Value::UInt64)(frag_entry.item_size));
+  root["layout-id"] = Json::Value((Json::Value::UInt)frag_entry.layout_id);
+  Json::FastWriter fastWriter;
+  return fastWriter.write(root);
+}
+
+// Action class can use this interface to add extended entry, when the
+// object write IO fails due to degradation
+// For first part of multipart, part_no=1.
+// For first fragment, fragment_no=1
+void S3ObjectExtendedMetadata::add_extended_entry(
+    struct s3_part_frag_context& part_frag_ctx, unsigned int fragment_no,
+    unsigned int part_no) {
+  // TBD - Validation required for checking values of 'fragment_no' and
+  // 'part_no'
+  auto itPos = (this->ext_objects[(part_no - 1)]).begin() + (fragment_no - 1);
+  (this->ext_objects[(part_no - 1)]).insert(itPos, part_frag_ctx);
+}
+
+void S3ObjectExtendedMetadata::remove(std::function<void(void)> on_success,
+                                      std::function<void(void)> on_failed) {
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Deleting Object metadata for Object [%s].\n", object_name.c_str());
+  this->handler_on_success = on_success;
+  this->handler_on_failed = on_failed;
+  remove_ext_object_metadata();
+}
+
+void S3ObjectExtendedMetadata::remove_ext_object_metadata() {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  // object_list_index_oid should be set before using this method
+  assert(object_list_index_oid.u_hi || object_list_index_oid.u_lo);
+
+  std::map<std::string, std::string> key_values =
+      get_kv_list_of_extended_entries();
+  std::vector<std::string> keys;
+  for (auto& key : key_values) {
+    keys.push_back(key.first);
+  }
+
+  if (key_values.size() > 0) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+    motr_kv_writer->delete_keyval(
+        object_list_index_oid, keys,
+        std::bind(
+            &S3ObjectExtendedMetadata::remove_ext_object_metadata_successful,
+            this),
+        std::bind(&S3ObjectExtendedMetadata::remove_ext_object_metadata_failed,
+                  this));
+  }
+}
+
+void S3ObjectExtendedMetadata::remove_ext_object_metadata_successful() {
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Deleted extended metadata for Object [%s].\n", object_name.c_str());
+  this->handler_on_success();
+}
+
+void S3ObjectExtendedMetadata::remove_ext_object_metadata_failed() {
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Delete Object metadata failed for Object [%s].\n",
+         object_name.c_str());
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
+    // TODO
+    // state = S3ObjectMetadataState::failed_to_launch;
+  } else {
+    // TODO
+    // state = S3ObjectMetadataState::failed;
+  }
+  this->handler_on_failed();
 }
