@@ -22,7 +22,7 @@ import logging
 import re
 import os
 import json
-from s3backgrounddelete.cortx_s3_cipher import CortxS3Cipher
+from s3cipher.cortx_s3_cipher import CortxS3Cipher
 from s3backgrounddelete.cortx_cluster_config import CipherInvalidToken
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.validator.v_service import ServiceV
@@ -50,7 +50,7 @@ class S3CortxSetup:
     s3_cipher = CortxS3Cipher(None, True, keylen, key)
     access_key = ""
     try:
-      access_key = s3_cipher.get_key()
+      access_key = s3_cipher.generate_key()
     except CipherInvalidToken as err:
       log.debug("Cipher generate key failed with error : {0}, trying from flat file : {1}".format(err, s3background_cofig))
       cmd = "awk '/background_account_access_key/ {print}' "+ s3background_cofig + " | cut -d " " -f 5 | sed -e 's/^\"//' -e 's/\"$//"
@@ -68,42 +68,10 @@ class S3CortxSetup:
     print ("Delete s3backgrounddelete account failed with: {}".format(error))
     return False
 
-  def delete_recovery_tool_account(self, ldappasswd: str, keylen: int, key: str, s3background_cofig:str):
-    """Delete s3 account which was used by s3recoverytool."""
-    cmd = 'ldapsearch -b "o=s3-recovery-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w ' + ldappasswd + ' -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://'
-    output,error = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-    log.debug("\ncmd:{0},\noutput:{1},\nerror:{2}".format(cmd, output, error))
-    output = re.sub(r"[\n\t\s]*","",output)
-    if "result:32Nosuchobjectmatched" in output:
-      print("No s3-recovery-svc account found")
-      return False
-    # Delete s3recovery tool account
-    s3_cipher = CortxS3Cipher(None, True, keylen, key)
-    access_key = ""
-    try:
-      access_key = s3_cipher.get_key()
-    except CipherInvalidToken as err:
-      log.debug("Cipher generate key failed with error : {0}, trying from flat file : {1}".format(err, s3background_cofig))
-      cmd = "awk '/background_account_access_key/ {print}' "+ s3background_cofig + " | cut -d " " -f 5 | sed -e 's/^\"//' -e 's/\"$//"
-      access_key,error = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-      log.debug("\ncmd:{0},\noutput:{1},\nerror:{2}".format(cmd, access_key, error))
-    cmd = 'ldapdelete -x -w ' + ldappasswd + ' -r "ak=' + access_key + ',ou=accesskeys,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///'
-    output,error = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-    log.debug("\ncmd:{0},\noutput:{1},\nerror:{2}".format(cmd, output, error))
-    cmd = 'ldapdelete -x -w ' + ldappasswd + ' -r "o=s3-recovery-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///'
-    output,error = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-    log.debug("\ncmd:{0},\noutput:{1},\nerror:{2}".format(cmd, output, error))
-    if not error:
-      print ("Deleted s3recovery tool account successfully...")
-      return True 
-    print ("Delete s3recovery tool account failed with: {}".format(error))
-    return False
-
   def accounts_cleanup(self, ldappasswd, s3background_cofig:str = "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"):
     """Clean up s3 accounts."""
     rc1 = self.delete_background_delete_account(ldappasswd, 22, "s3backgroundaccesskey", s3background_cofig)
-    rc2 = self.delete_recovery_tool_account(ldappasswd, 22, "s3recoveryaccesskey", s3background_cofig)
-    return rc1 & rc2
+    return rc1
 
   def dependencies_cleanup(self):
     """Clean up configs."""

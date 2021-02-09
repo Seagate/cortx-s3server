@@ -36,9 +36,9 @@ echo "s3:post_install passed!"
 clustreid="353f5ad1-afa8-4a3f-b55f-cbae4a687107"
 myhostname=$(hostname -f)
 myip=$(/sbin/ip -o -4 addr list eth0 | awk '{print $4}' | cut -d/ -f1)
-key=$(s3cipher --generate_key --const_key openldap)
-iampasswd=$(s3cipher --encrypt --data 'ldapadmin' --key $key)
-rootdnpasswd=$(s3cipher --encrypt --data 'seagate' --key $key)
+key=$(s3cipher generate_key --const_key openldap)
+iampasswd=$(s3cipher encrypt --data 'ldapadmin' --key $key)
+rootdnpasswd=$(s3cipher encrypt --data 'seagate' --key $key)
 s3_conf_file="/tmp/s3_confstore.json"
 
 if [ -e $s3_conf_file ]; then

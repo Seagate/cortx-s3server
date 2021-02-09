@@ -1,4 +1,3 @@
-#!/bin/sh
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,16 +16,40 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+import os
+from setuptools import setup
+import sys
+files = []
 
+# Load the version
+s3cipher_version = "2.0.0"
+for argument in sys.argv:
+    if argument.startswith("--version"):
+        s3cipher_version = argument.split("=")[1]
+        sys.argv.remove(argument)
 
-USAGE="USAGE:create_s3_recovery_account.sh <ldap passwd> "
+setup(
+  # Application name
+  name="s3cipher",
 
-if [ "$#" -ne 1 ]; then
-    echo "$USAGE"
-    exit 1
-fi
+  # version number
+  version=s3cipher_version,
 
-ldap_passwd=$1
+  # Author details
+  author="Seagate",
 
-ldapadd -w $ldap_passwd -x -D "cn=sgiamadmin,dc=seagate,dc=com" -f /opt/seagate/cortx/s3/install/ldap/s3_recovery_account.ldif -H ldapi:///
+  # Packages
+  packages=["s3cipher"],
 
+  # Include additional files into the package
+  include_package_data=True,
+
+  # Details
+  scripts =['s3cipher/s3cipher'],
+
+  # license="LICENSE.txt",
+
+  description="Wrapper for cipher interface cortx-utils::cipher",
+
+  package_data = { 's3cipher': files}
+)

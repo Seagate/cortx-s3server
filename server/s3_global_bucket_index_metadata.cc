@@ -23,10 +23,8 @@
 #include <string>
 #include "s3_factory.h"
 #include "s3_iem.h"
-#include "s3_datetime.h"
 
 extern struct m0_uint128 global_bucket_list_index_oid;
-extern struct m0_uint128 replica_global_bucket_list_index_oid;
 
 void S3GlobalBucketIndexMetadata::initialize(
     const std::string& str_bucket_name) {
@@ -188,32 +186,7 @@ void S3GlobalBucketIndexMetadata::save_successful() {
 
   state = S3GlobalBucketIndexMetadataState::saved;
 
-  // attempt to save the KV in replica global bucket list index
-  if (!motr_kv_writer) {
-    motr_kv_writer =
-        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
-  }
-  motr_kv_writer->put_keyval(
-      replica_global_bucket_list_index_oid, bucket_name, this->to_json(),
-      std::bind(&S3GlobalBucketIndexMetadata::save_replica, this),
-      std::bind(&S3GlobalBucketIndexMetadata::save_replica, this));
-
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3GlobalBucketIndexMetadata::save_replica() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
-  // PUT Operation pass even if we failed to put KV in replica index.
-  if (motr_kv_writer->get_state() != S3MotrKVSWriterOpState::created) {
-    s3_log(S3_LOG_ERROR, request_id, "Failed to save KV in replica index.\n");
-
-    s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
-                  "Failed to save KV in replica index for bucket: %s",
-                  bucket_name.c_str());
-  }
   this->handler_on_success();
-
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -252,34 +225,7 @@ void S3GlobalBucketIndexMetadata::remove_successful() {
 
   state = S3GlobalBucketIndexMetadataState::deleted;
 
-  // attempt to remove KV from the replica index as well
-  if (!motr_kv_writer) {
-    motr_kv_writer =
-        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
-  }
-  motr_kv_writer->delete_keyval(
-      replica_global_bucket_list_index_oid, bucket_name,
-      std::bind(&S3GlobalBucketIndexMetadata::remove_replica, this),
-      std::bind(&S3GlobalBucketIndexMetadata::remove_replica, this));
-
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3GlobalBucketIndexMetadata::remove_replica() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
-  // DELETE bucket operation pass even if we failed to remove KV
-  // from replica index
-  if (motr_kv_writer->get_state() != S3MotrKVSWriterOpState::deleted) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Failed to remove KV from replica index.\n");
-
-    s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
-                  "Failed to remove KV from replica index of bucket: %s",
-                  bucket_name.c_str());
-  }
   this->handler_on_success();
-
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -305,10 +251,6 @@ std::string S3GlobalBucketIndexMetadata::to_json() {
   root["account_name"] = account_name;
   root["account_id"] = account_id;
   root["location_constraint"] = location_constraint;
-
-  S3DateTime current_time;
-  current_time.init_current_time();
-  root["create_timestamp"] = current_time.get_isoformat_string();
 
   Json::FastWriter fastWriter;
   return fastWriter.write(root);
