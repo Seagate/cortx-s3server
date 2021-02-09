@@ -117,5 +117,7 @@ for test in test_data:
     updated_params = update_signature_headers(params)
     expected_response = test_data[test]['output']
     test_response = AuthHTTPClient().authenticate_user(headers, updated_params)
+
     check_response(expected_response, test_response)
     print("Test was successful\n")
+
