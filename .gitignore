@@ -53,6 +53,7 @@ s3cortxutils/s3cipher/s3cipher.egg-info/
 s3cortxutils/s3confstore/build/
 s3cortxutils/s3confstore/dist/
 s3cortxutils/s3confstore/s3confstore.egg-info/
+s3cortxutils/s3confstore/.cache/
 s3cortxutils/s3msgbus/build/
 s3cortxutils/s3msgbus/dist/
 s3cortxutils/s3msgbus/s3msgbus.egg-info/
