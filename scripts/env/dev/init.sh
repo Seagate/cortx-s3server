@@ -74,6 +74,9 @@ install_pre_requisites() {
   # install or upgrade cortx-py-utils
   install_cortx_py_utils
 
+  # install configobj
+  pip3 install configobj
+
 }
 
 usage() {

@@ -268,8 +268,11 @@ create_background_delete_account()
 
 if [ $s3postinstall == true ]
 then
+    echo "INFO: attempting to start haproxy, slapd, rabbitmq-server, rsyslog"
+    systemctl restart haproxy slapd rabbitmq-server rsyslog
     echo "INFO: running post_install..."
     s3setup post_install
+    systemctl stop slapd
     if [ $? -ne 0 ]
     then
         echo "ERROR: 1 or more post install validations failed, exiting."
