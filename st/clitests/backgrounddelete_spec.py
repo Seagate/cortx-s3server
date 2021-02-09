@@ -150,7 +150,7 @@ AwsTest('Create Bucket "seagatebucket" using s3-background-delete-svc account')\
     .create_bucket("seagatebucket").execute_test().command_is_successful()
 
 # Initialising the scheduler and processor
-scheduler = ObjectRecoveryScheduler()
+scheduler = ObjectRecoveryScheduler("bgtest")
 processor = ObjectRecoveryProcessor()
 
 

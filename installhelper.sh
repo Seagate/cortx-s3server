@@ -182,6 +182,9 @@ cp s3backgrounddelete/s3backgroundproducer.service $SERVICE_FILE_LOCATION
 # Copy the s3 background consumer file for systemctl support.
 cp s3backgrounddelete/s3backgroundconsumer.service $SERVICE_FILE_LOCATION
 
+# Copy the s3backgroundproducer service file for dynamic producer_name support.
+cp s3backgrounddelete/s3backgroundproducer@.service $SERVICE_FILE_LOCATION
+
 # Copy Auth server jar to install location
 cp -f auth/server/target/AuthServer-1.0-0.jar $AUTH_INSTALL_LOCATION/
 
