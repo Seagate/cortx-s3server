@@ -152,6 +152,9 @@ cp ./system/s3stopsystem.sh $S3_INSTALL_LOCATION/
 # Copy the s3 service file for systemctl multiple instance support.
 cp ./system/s3server@.service $SERVICE_FILE_LOCATION
 
+# Copy the s3backgroundproducer service file for dynamic producer_name support.
+cp ./system/s3backgroundproducer@.service $SERVICE_FILE_LOCATION
+
 # Copy the s3 log rotate script for retaining recent modified log files
 cp -f scripts/s3-logrotate/s3logfilerollover.sh $S3_LOG_ROTATE_FILE_LOCATION
 

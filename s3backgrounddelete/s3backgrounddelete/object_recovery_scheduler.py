@@ -110,8 +110,7 @@ class ObjectRecoveryScheduler(object):
                         self.logger.info(
                             "Object recovery queue sending data :" +
                             str(record))
-                        #ret = self.producer.send_data(record, producer_id = self.producer_name)
-                        ret = self.producer.send_data(record, producer_id = "prod1")
+                        ret = self.producer.send_data(record, producer_id = self.producer_name)
                         if not ret:
                             # TODO - Do Audit logging
                             self.logger.error(
@@ -269,5 +268,5 @@ class ObjectRecoveryScheduler(object):
                     "Unable to create log directory at " + self._logger_directory)
 
 if __name__ == "__main__":
-    SCHEDULER = ObjectRecoveryScheduler()
+    SCHEDULER = ObjectRecoveryScheduler(sys.argv[1])
     SCHEDULER.schedule_periodically()

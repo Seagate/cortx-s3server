@@ -269,6 +269,7 @@ rm -rf %{buildroot}
 /lib/systemd/system/s3authserver.service
 /lib/systemd/system/s3server@.service
 /lib/systemd/system/s3backgroundproducer.service
+/lib/systemd/system/s3backgroundproducer@.service
 /lib/systemd/system/s3backgroundconsumer.service
 /opt/seagate/cortx/auth/AuthServer-1.0-0.jar
 /opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar
