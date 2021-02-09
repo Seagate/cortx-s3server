@@ -152,9 +152,6 @@ cp ./system/s3stopsystem.sh $S3_INSTALL_LOCATION/
 # Copy the s3 service file for systemctl multiple instance support.
 cp ./system/s3server@.service $SERVICE_FILE_LOCATION
 
-# Copy the s3backgroundproducer service file for dynamic producer_name support.
-cp ./system/s3backgroundproducer@.service $SERVICE_FILE_LOCATION
-
 # Copy the s3 log rotate script for retaining recent modified log files
 cp -f scripts/s3-logrotate/s3logfilerollover.sh $S3_LOG_ROTATE_FILE_LOCATION
 
@@ -184,6 +181,10 @@ cp s3backgrounddelete/s3backgroundproducer.service $SERVICE_FILE_LOCATION
 
 # Copy the s3 background consumer file for systemctl support.
 cp s3backgrounddelete/s3backgroundconsumer.service $SERVICE_FILE_LOCATION
+
+
+# Copy the s3backgroundproducer service file for dynamic producer_name support.
+cp s3backgrounddelete/s3backgroundproducer@.service $SERVICE_FILE_LOCATION
 
 # Copy Auth server jar to install location
 cp -f auth/server/target/AuthServer-1.0-0.jar $AUTH_INSTALL_LOCATION/
