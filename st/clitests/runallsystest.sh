@@ -90,9 +90,6 @@ $PythonV auth_spec.py
 echo "`date -u`: Running awsiam_spec.py..."
 $PythonV awsiam_spec.py
 
-echo "`date -u`: Running auth_spec_negative_and_fi.py..."
-$PythonV auth_spec_negative_and_fi.py
-
 echo "`date -u`: Running auth_spec_param_validation.py..."
 $PythonV auth_spec_param_validation.py
 
@@ -129,6 +126,8 @@ $PythonV policy_spec.py
 echo "`date -u`: Running authpassencryptcli_spec.py..."
 $PythonV authpassencryptcli_spec.py
 
+echo "`date -u`: Running auth_spec_negative_and_fi.py..."
+$PythonV auth_spec_negative_and_fi.py
 
 git checkout -- $BASEDIR/framework.py
 git checkout -- $BASEDIR/s3iamcli_test_config.yaml

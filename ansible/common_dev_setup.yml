@@ -27,11 +27,6 @@
     name: python-ldap
     executable: pip3
 
-- name: install pip module cryptography for cipher account
-  pip:
-    name: cryptography
-    executable: pip3
-
 - name: Install patched s3cmd deps on CentOS/RHEL 7
   when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
   yum:

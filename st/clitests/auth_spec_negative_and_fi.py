@@ -24,7 +24,7 @@ from framework import S3PyCliTest
 from auth import AuthTest
 from s3client_config import S3ClientConfig
 from ldap import LdapOps
-
+from configobj import ConfigObj
 # Helps debugging
 # Config.log_enabled = True
 # Config.dummy_run = True
@@ -50,6 +50,10 @@ def get_response_elements(response):
 
 # Run before all to setup the test environment.
 def before_all():
+    config = ConfigObj("/opt/seagate/cortx/auth/resources/authserver.properties")
+    config['cacheTimeout'] = "0"
+    config.write()
+    os.system('systemctl restart s3authserver')
     print("Configuring LDAP")
     S3PyCliTest('Before_all').before_all()
 
@@ -762,3 +766,8 @@ accesskey_tests()
 role_tests()
 saml_provider_tests()
 get_federation_token_test()
+
+config = ConfigObj("/opt/seagate/cortx/auth/resources/authserver.properties")
+config['cacheTimeout'] = "30"
+config.write()
+os.system('systemctl restart s3authserver')
