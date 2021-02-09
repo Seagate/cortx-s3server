@@ -70,9 +70,6 @@ install_pre_requisites() {
   #create topic
   sh ${S3_SRC_DIR}/scripts/kafka/create-topic.sh -c 1 -i $HOSTNAME
 
-  #install confluent_kafka
-  pip3 install confluent_kafka
-
   #install toml
   pip3 install toml
 

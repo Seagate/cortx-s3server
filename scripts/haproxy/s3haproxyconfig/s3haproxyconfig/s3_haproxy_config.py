@@ -1,4 +1,22 @@
-#!/usr/bin/python3
+#!/usr/bin/python3.6
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
 
 import os
 import sys
@@ -18,16 +36,27 @@ class S3HaproxyConfig:
 
     if args.path and args.path.strip():
       s3conf_store = S3CortxConfStore(args.path)
-      mcid_file = open('/etc/machine-id', 'r')
-      machine_id = mcid_file.read().strip()
-      mcid_file.close()
-      pvt_ip = s3conf_store.get_privateip(machine_id)
     else:
       sys.exit("--path option value:[{}] is not valid.".format(args.path))
 
-    #Remove content not valid for use
+    #Read machine-id of current node
+    mcid_file = open('/etc/machine-id', 'r')
+    machine_id = mcid_file.read().strip()
+    mcid_file.close()
+
+    #Get necessary info from s3conf_store
+    localhost = '127.0.0.1'
+    pvt_ip = s3conf_store.get_privateip(machine_id)
+    pub_ip = s3conf_store.get_publicip(machine_id)
+    numS3Instances = int(s3conf_store.get_s3instance_count(machine_id))
+    if numS3Instances <= 0:
+        numS3Instances = 1
+
+    #Initialize header and footer text
     header_text = "#-------S3 Haproxy configuration start---------------------------------"
     footer_text = "#-------S3 Haproxy configuration end-----------------------------------"
+
+    #Remove all existing content from header to footer
     is_found = False
     header_found = False
     original_file = "/etc/haproxy/haproxy.cfg"
@@ -58,26 +87,15 @@ class S3HaproxyConfig:
     else:
         os.remove(dummy_file)
 
-    #Add backend information to haproxy.cfg file
-    cfg_file = '/etc/haproxy/haproxy.cfg'
-    target = open(cfg_file, "a+")
-
-    numS3Instances = int(s3conf_store.get_s3instance_count(machine_id))
-
-    if numS3Instances <= 0:
-        numS3Instances = 1
-
-    s3inport = 28081
-    s3auport = 28050
-
-    str1 = '''
+    #Set the string literals to be added to config file
+    frontend_s3main_text = '''
 #----------------------------------------------------------------------
 # FrontEnd S3 Configuration
 #----------------------------------------------------------------------
 frontend s3-main
     # s3 server port
-    bind 0.0.0.0:80
-    #bind 0.0.0.0:443 ssl crt /etc/ssl/stx/stx.pem
+'''
+    backend_s3main_text = '''
 
     option forwardfor
     default_backend s3-main
@@ -106,7 +124,7 @@ backend s3-main
     # Replace below line
 '''
 
-    str2 = '''
+    backend_s3auth_text = '''
 #----------------------------------------------------------------------
 # BackEnd roundrobin as balance algorith for s3 auth server
 #----------------------------------------------------------------------
@@ -121,69 +139,55 @@ backend s3-auth
 
 '''
 
-    str3 = '''
+    new_line_text = '''
 '''
 
+    #Initialize port numbers
+    s3inport = 28081
+    s3auport = 28050
+
+    #Add complete information to haproxy.cfg file
+    cfg_file = '/etc/haproxy/haproxy.cfg'
+    target = open(cfg_file, "a+")
+
     target.write(header_text)
-    target.write(str1)
+    target.write(frontend_s3main_text)
+    target.write(
+        "    bind %s:80 ##### localhost 80 required for Auth - S3 connection\n"
+        "    bind %s:443 ssl crt /etc/ssl/stx/stx.pem ### localhost required for CSM/UDX\n"
+        "    bind %s:80\n"
+        "    bind %s:443 ssl crt /etc/ssl/stx/stx.pem\n"
+        "    bind %s:80\n"
+        "    bind %s:443 ssl crt /etc/ssl/stx/stx.pem\n"
+        % (localhost, localhost, pvt_ip, pvt_ip, pub_ip, pub_ip))
+    target.write(backend_s3main_text)
     for i in range(0, numS3Instances):
         target.write(
         "    server s3-instance-%s %s:%s check maxconn 110        # s3 instance %s\n"
         % (i+1, pvt_ip, s3inport+i, i+1))
-    target.write(str2)
+    target.write(backend_s3auth_text)
     for i in range(0, 1):
         target.write(
         "    server s3authserver-instance%s %s:%s #check ssl verify required ca-file /etc/ssl/stx-s3/s3auth/s3authserver.crt   # s3 auth server instance %s\n"
         % (i+1, pvt_ip, s3auport+i, i+1))
-    target.write(str3)
+    target.write(new_line_text)
     target.write(footer_text)
+
     target.close()
 
-    #########################################
-    # begin s3_instance_ip_update
-    # Below snippet will convert the server
-    # instance IP from 0.0.0.0 to the
-    # IP addresses (eth0) of the current node
-
-    #lineToSearch = 'server s3-instance-1'
-    #textToSearch = '0.0.0.0'
-    #hostname = socket.gethostname()
-    #textToReplace = socket.gethostbyname(hostname)
-
-    # Actual file
-    #fileToSearch  = '/etc/haproxy/haproxy.cfg'
-
-    #tempFile = open( fileToSearch, 'r+' )
-
-    #for line in fileinput.input( fileToSearch ):
-    #    if lineToSearch in line :
-    #        if textToSearch in line :
-    #            tempFile.write( line.replace( textToSearch, textToReplace ) )
-    #tempFile.close()
-    #  end s3_instance_ip_update
-    ########################################
-
-    ########################################
-    # begin comment_monitoring_config
-    # Below snippet will comment out the
-    # HAProxy Monitoring Config section
-    # of /etc/haproxy/haproxy.cfg
-
-    #lineToSearch = 'HAProxy Monitoring Config'
-    #textToReplace = '#'
-
-    #fileToSearch  = 'sample'
-
-    #for line in fileinput.input( fileToSearch ):
-    #    if lineToSearch in line :
-    #        tempFile.write( line.replace( textToSearch, textToReplace ) )
-    #tempFile.close()
-    # begin comment_monitoring_config
-    ########################################
-
-    #Run config commands
+    #Check for destination dirs and create if needed
     if not os.path.exists('/etc/haproxy/errors/'):
         os.makedirs('/etc/haproxy/errors/')
+    if not os.path.exists('/etc/logrotate.d/haproxy'):
+        os.makedirs('/etc/logrotate.d/haproxy')
+    if not os.path.exists('/etc/rsyslog.d/haproxy.conf'):
+        os.makedirs('/etc/rsyslog.d/haproxy.conf')
+    if not os.path.exists('/etc/cron.hourly/logrotate'):
+        os.makedirs('/etc/cron.hourly/logrotate')
+    if not os.path.exists('/etc/cron.daily/logrotate'):
+        os.makedirs('/etc/cron.daily/logrotate')
+
+    #Run config commands
     os.system("cp /opt/seagate/cortx/s3/install/haproxy/503.http /etc/haproxy/errors/")
     os.system("cp /opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy /etc/logrotate.d/haproxy")
     os.system("cp /opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf /etc/rsyslog.d/haproxy.conf")

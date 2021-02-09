@@ -24,7 +24,7 @@ set -e
 
 #Variables
 KAFKA_INSTALL_PATH=/opt
-KAFKA_DOWNLOAD_URL="http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/centos/centos-7.8.2003-1.0.0-3/commons/kafka/kafka_2.13-2.7.0.tgz"
+KAFKA_DOWNLOAD_URL="http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/centos/centos-7.8.2003-2.0.0-latest/commons/kafka/kafka_2.13-2.7.0.tgz"
 KAFKA_DIR_NAME="kafka"
 consumer_count=0
 hosts=""
@@ -40,6 +40,8 @@ install_prerequisite() {
   echo "Installing Pre-requisites"
   yum install java -y
   yum install java-devel -y
+  #install confluent_kafka 1.5.0 version as this is compatible with kafka_2.13-2.7.0
+  pip3 install confluent_kafka==1.5.0
   echo "Pre-requisites installed successfully."
 }
 
