@@ -44,7 +44,6 @@
 #define EXTENDED_METADATA_OBJECT_PREFIX "~"
 #define EXTENDED_METADATA_OBJECT_SEP "|"
 
-
 enum class S3ObjectMetadataState {
   empty,    // Initial state, no lookup done.
   present,  // Metadata exists and was read successfully.
