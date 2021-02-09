@@ -102,7 +102,7 @@ frontend s3-main
 
     # s3 auth server port
     bind 0.0.0.0:9080
-    #bind 0.0.0.0:9443 ssl crt /etc/ssl/stx/stx.pem
+    bind 0.0.0.0:9443 ssl crt /etc/ssl/stx/stx.pem
 
     acl s3authbackendacl dst_port 9443
     acl s3authbackendacl dst_port 9080
