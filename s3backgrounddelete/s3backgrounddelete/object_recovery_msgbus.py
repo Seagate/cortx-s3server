@@ -204,7 +204,7 @@ class ObjectRecoveryMsgbus(object):
             self._logger.error("Exception:{}".format(exception))
             self.__isproducersetupcomplete = False
 
-    def send_data(self, data, 
+    def send_data(self, data,
         producer_id = None,
         msg_type = None,
         delivery_mechanism = None):
