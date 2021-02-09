@@ -113,7 +113,7 @@ class S3CortxSetup:
   def sanity_test(self, ldappasswd: str, dataflag: bool = False, s3cmdcfg: str = None):
     """dataflag if set passes -d flag for s3cmd tests. For s3cmd, config file path should be passed via s3cmdcfg."""
     try:
-      cmd = ['/opt/seagate/cortx/s3/scripts/s3-sanity-test.sh', f'-p {ldappasswd}']
+      cmd = ['/opt/seagate/cortx/s3/scripts/s3-sanity-test.sh', '-p',  f'{ldappasswd}']
       if dataflag:
         if not s3cmdcfg:
           print("Please provide s3cmdcfg")
