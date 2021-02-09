@@ -74,12 +74,10 @@ public class RequestorService {
                     1000;
                 LOGGER.debug("Cache time difference in seconds is - " +
                              difference);
-                if (difference <
-                    AuthServerConfig.getCacheTimeout()) {  // if entry in cache
-                                                           // is
-                  // older than cache
-                  // timeout interval
-                  // then refresh it
+                // if entry in cache is older than cache timeout interval then
+                // refresh it
+                if ((difference >= 0) &&
+                    (difference < AuthServerConfig.getCacheTimeout())) {
                   return dataObj.getRequestor();
                 }
               }
