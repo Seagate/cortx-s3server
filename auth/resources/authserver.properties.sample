@@ -61,3 +61,5 @@ logConfigFile=/opt/seagate/cortx/auth/resources/authserver-log4j2.xml
 
 #comma separated list of s3 internal accounts
 s3InternalAccounts=s3-background-delete-svc,s3-recovery-svc
+#Authentication Cache Timeout Interval in seconds
+cacheTimeout=30

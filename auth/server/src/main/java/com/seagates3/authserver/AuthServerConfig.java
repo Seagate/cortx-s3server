@@ -399,5 +399,9 @@ public class AuthServerConfig {
     int getVersion() {
       return Integer.parseInt(authServerConfig.getProperty("version"));
     }
+   public
+    static int getCacheTimeout() {
+      return Integer.parseInt(authServerConfig.getProperty("cacheTimeout"));
+    }
 }
 
