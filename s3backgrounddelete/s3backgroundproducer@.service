@@ -21,7 +21,7 @@
 Description=S3 Background Producer for stale oid cleanup
 
 [Service]
-Type=forking
+Type=simple
 ExecStart=/opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer %i
 ExecStop=/bin/kill -TERM $MAINPID
 ExecReload=/bin/kill -HUP $MAINPID
