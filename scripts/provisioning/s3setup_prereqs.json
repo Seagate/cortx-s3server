@@ -1,5 +1,13 @@
 {
-    "rpms": ["openldap-servers", "openldap-clients", "haproxy"],
-    "pip3s": ["toml", "s3confstore", "crypto"],
-    "services": ["sshd", "rabbitmq-server"]
+    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "motr"],
+    "pip3s": ["toml", "s3confstore", "crypto", "s3setup", "s3haproxyconfig"],
+    "services": ["sshd", "rabbitmq-server", "haproxy", "slapd", "rsyslog"],
+    "exists": [
+		"file:/etc/machine-id",
+		"file:/etc/haproxy/haproxy.cfg",
+		"file:/etc/ssl/stx/stx.pem",
+		"file:/opt/seagate/cortx/s3/install/haproxy/503.http",
+		"file:/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy",
+		"file:/opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf",
+		"file:/opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate"]
 }

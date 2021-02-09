@@ -54,6 +54,10 @@ class S3CortxConfStore:
       # Update the index backend.
       Conf.save(self.default_index)
 
+  def get_all_keys(self):
+    """Get all the key value pairs from confstore."""
+    return Conf.get_keys(self.default_index)
+
   @staticmethod
   def validate_configfile(configfile: str):
     """Validate the 'configfile' url, if its a valid file and of supported format."""
@@ -211,6 +215,8 @@ class S3CortxConfStore:
                                   type=str,
                                   required=True)
 
+    subparsers.add_parser('getallkeys', help='Get the list of all the Key Values in the file')
+
     args = parser.parse_args()
 
     s3conf_store = S3CortxConfStore(args.config)
@@ -261,6 +267,13 @@ class S3CortxConfStore:
         print("{}".format(s3instance_count))
       else:
         sys.exit("Failed to read s3instance count from confstore of machineid: {}".format(args.machineid))
+
+    elif args.command == 'getallkeys':
+      keyvalue = s3conf_store.get_all_keys()
+      if keyvalue:
+        print("{}".format(keyvalue))
+      else:
+        sys.exit("Failed to get key:{}'s value".format(args.key))
 
     else:
       sys.exit("Invalid command option passed, see help.")
