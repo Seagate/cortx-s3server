@@ -287,7 +287,7 @@ create_background_delete_account()
 
 if [ $s3postinstall == true ]
 then
-    echo "INFO: attempting to start haproxy, slapd, rabbitmq-server, rsyslog"
+    echo "INFO: Start haproxy, slapd, rabbitmq-server and rsyslog services.."
     systemctl restart haproxy slapd rabbitmq-server rsyslog
 
     echo "INFO: running post_install..."
@@ -295,7 +295,6 @@ then
     # no need to add 'exit' here.   
     s3setup post_install
     echo "INFO: All pre-requisites are in place."
-    systemctl stop slapd
 fi
 
 if [ $s3config == true ]
