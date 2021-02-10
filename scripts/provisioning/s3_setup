@@ -325,14 +325,15 @@ then
     echo "INFO: Get openldap passwords from confstore.."
     get_ldap_password
 
-    s3setup test --ldappasswd $ldappasswd
-    cmd_ret=$?
+    cmd_ret=0
+    cmd_out=$(s3setup test --ldappasswd $ldappasswd) || cmd_ret=$?
 
     if [ $cmd_ret -ne 0 ];then
+        echo "ERROR:\n $cmd_out \n"
         echo "ERROR: s3setup test failed, exit."
         exit 1
     else
-        echo "PASS: s3setup test passed."
+        echo "PASS: S3-Sanity test passed."
     fi
 fi
 
