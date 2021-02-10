@@ -43,7 +43,7 @@ class CORTXS3Countkv:
     def checkthreshold(self, thld, kvcount):
         if(thld):
             if kvcount > int(thld):
-                IEMutil("ERROR", IEMutil.THRESHOLD_CROSS, IEMutil.THRESHOLD_CROSS_STR)
+                IEMutil("WARN", IEMutil.THRESHOLD_CROSS, IEMutil.THRESHOLD_CROSS_STR)
                 print("The kv entries are more than threshold value")
                 sys.exit()
 
