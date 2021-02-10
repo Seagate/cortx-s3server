@@ -100,7 +100,7 @@ class CORTXS3IndexApi(CORTXS3Client):
                 absolute_request_uri,
                 headers=headers)
         except ConnectionRefusedError as ex:
-            IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
+            IEMutil("WARN", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
             return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
@@ -143,7 +143,7 @@ class CORTXS3IndexApi(CORTXS3Client):
                 request_uri,
                 headers=headers)
         except ConnectionRefusedError as ex:
-            IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
+            IEMutil("WARN", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
             return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
@@ -186,7 +186,7 @@ class CORTXS3IndexApi(CORTXS3Client):
                 request_uri,
                 headers=headers)
         except ConnectionRefusedError as ex:
-            IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
+            IEMutil("WARN", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
             return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
@@ -232,7 +232,7 @@ class CORTXS3IndexApi(CORTXS3Client):
                     body,
                     headers=headers)
             except ConnectionRefusedError as ex:
-                IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
+                IEMutil("WARN", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
                 self._logger.error(repr(ex))
                 return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
             except Exception as ex:

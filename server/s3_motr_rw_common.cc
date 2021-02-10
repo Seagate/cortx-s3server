@@ -95,11 +95,14 @@ void motr_op_done_on_main_thread(evutil_socket_t, short events,
     context->on_success_handler()();  // Invoke the handler.
   } else {
     int error_code = context->get_errno_for(0);
-    if ((error_code == -ETIMEDOUT) || (error_code == -ESHUTDOWN) ||
-        (error_code == -ECONNREFUSED) || (error_code == -EHOSTUNREACH) ||
-        (error_code == -ENOTCONN) || (error_code == -ECANCELED)) {
+    if ((error_code == -ESHUTDOWN) || (error_code == -ECONNREFUSED) ||
+        (error_code == -EHOSTUNREACH) || (error_code == -ENOTCONN) ||
+        (error_code == -ECANCELED)) {
       // fatal iem are genrated in motr as a result of appropriate action
       s3_iem(LOG_ERR, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
+             S3_IEM_MOTR_CONN_FAIL_JSON);
+    } else if (error_code == -ETIMEDOUT) {
+      s3_iem(LOG_WARNING, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
              S3_IEM_MOTR_CONN_FAIL_JSON);
     }
     context->on_failed_handler()();  // Invoke the handler.
@@ -124,6 +127,8 @@ void motr_op_done_on_main_thread(evutil_socket_t, short events,
       gs_timeout_cnt++;
       gs_timeout_window_start = curtime;
       if (gs_timeout_cnt >= err_thr) {
+        s3_iem(LOG_ERR, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
+               S3_IEM_MOTR_CONN_FAIL_JSON);
         s3_log(
             S3_LOG_ERROR, request_id,
             "Shutdown. Motr ETIMEDOUT error cnt %u reached threshold value %u "

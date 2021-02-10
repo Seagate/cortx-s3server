@@ -30,8 +30,8 @@ class IEMutil(object):
     eventstring = ""
 
     # List of eventcodes
-    S3_CONN_FAILURE = "0050010001"
-    RABBIT_MQ_CONN_FAILURE = "0050020001"
+    S3_CONN_FAILURE = "0030010001"
+    RABBIT_MQ_CONN_FAILURE = "0030020001"
 
     # List of eventstrings
     S3_CONN_FAILURE_STR = "Failed to connect to S3 server. For more information refer the Troubleshooting Guide."

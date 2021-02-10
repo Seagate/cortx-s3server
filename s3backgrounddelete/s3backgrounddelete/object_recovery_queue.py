@@ -154,7 +154,7 @@ class ObjectRecoveryRabbitMq(object):
 
         except Exception as exception:
             err_msg = "error:%s, %s" % (exception, traceback.format_exc())
-            IEMutil("ERROR", IEMutil.RABBIT_MQ_CONN_FAILURE, IEMutil.RABBIT_MQ_CONN_FAILURE_STR)
+            IEMutil("WARN", IEMutil.RABBIT_MQ_CONN_FAILURE, IEMutil.RABBIT_MQ_CONN_FAILURE_STR)
             self.logger.error("msg_queue receive data failed." + str(err_msg))
             self.connect()
             self.receive_data()

@@ -109,7 +109,7 @@ class ObjectRecoveryScheduler(object):
                         ret, msg = mq_client.send_data(
                             record, self.config.get_rabbitmq_queue_name())
                         if not ret:
-                            IEMutil("ERROR", IEMutil.RABBIT_MQ_CONN_FAILURE, IEMutil.RABBIT_MQ_CONN_FAILURE_STR)
+                            IEMutil("WARN", IEMutil.RABBIT_MQ_CONN_FAILURE, IEMutil.RABBIT_MQ_CONN_FAILURE_STR)
                             self.logger.error(
                                 "Object recovery queue send data "+ str(record) +
                                 " failed :" + msg)

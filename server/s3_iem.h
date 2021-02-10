@@ -45,6 +45,8 @@ extern S3Option* g_option_instance;
            getpid(), __FILE__, __LINE__, ##__VA_ARGS__);                    \
     if (loglevel == LOG_ALERT) {                                            \
       s3_syslog(loglevel, "IEC:AS" event_code ":" event_description);       \
+    } else if (loglevel == LOG_WARNING) {                                   \
+      s3_syslog(loglevel, "IEC:WS" event_code ":" event_description);       \
     } else {                                                                \
       s3_syslog(LOG_ERR, "IEC:ES" event_code ":" event_description);        \
     }                                                                       \
