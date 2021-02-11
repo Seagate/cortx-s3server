@@ -984,10 +984,13 @@ void S3AuthClient::trigger_authentication() {
 
   // Setup the headers to forward to auth service
   s3_log(S3_LOG_DEBUG, request_id, "Headers from S3 client:\n");
-  for (auto it : request->get_in_headers_copy()) {
-    s3_log(S3_LOG_DEBUG, request_id, "Header = %s, Value = %s\n",
-           it.first.c_str(), it.second.c_str());
-    add_key_val_to_body(it.first.c_str(), it.second.c_str());
+
+  for (const auto &hdr_val : request->get_in_headers_copy()) {
+    const auto &s_hdr = hdr_val.first;
+    const auto &s_val = hdr_val.second;
+
+    s3_log(S3_LOG_DEBUG, request_id, "%s: %s\n", s_hdr.c_str(), s_val.c_str());
+    add_key_val_to_body(s_hdr, s_val);
   }
 
   // Setup the body to be sent to auth service
@@ -1228,10 +1231,30 @@ void S3AuthClient::check_authorization(std::function<void(void)> on_success,
         request, std::bind(&S3AuthClient::check_authorization_successful, this),
         std::bind(&S3AuthClient::check_authorization_failed, this)));
 
-    for (const auto &it : request->get_in_headers_copy()) {
-      s3_log(S3_LOG_DEBUG, request_id, "Header = %s, Value = %s\n",
-             it.first.c_str(), it.second.c_str());
-      add_key_val_to_body(it.first.c_str(), it.second.c_str());
+    for (const auto &hdr_val : request->get_in_headers_copy()) {
+      const auto &s_hdr = hdr_val.first;
+      const auto &s_val = hdr_val.second;
+
+      s3_log(S3_LOG_DEBUG, request_id, "%s: %s\n", s_hdr.c_str(),
+             s_val.c_str());
+      add_key_val_to_body(s_hdr, s_val);
+
+      if (!strcasecmp(s_hdr.c_str(), "Authorization")) {
+        std::string to_find("Signature");
+        const auto pos = s_val.find(to_find);
+
+        if (std::string::npos == pos) {
+          s3_log(
+              S3_LOG_WARN, request_id,
+              "\"Authorization\" header doesn't contain \"Signature\" value");
+        } else {
+          prev_chunk_signature_from_auth =
+              s_val.substr(pos + to_find.length() + 1, 64);
+          // 64 is the length of SHA256's string in hexadecimal
+          s3_log(S3_LOG_DEBUG, request_id, "Signature=%s",
+                 prev_chunk_signature_from_auth.c_str());
+        }
+      }
     }
   } else {
     auth_context->reset_callbacks(
@@ -1279,8 +1302,12 @@ void S3AuthClient::check_authorization(std::function<void(void)> on_success,
 void S3AuthClient::check_authorization_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   ADDB_AUTH(ACTS_AUTH_CLNT_CHK_AUTHZ_SUCC);
+
   state = S3AuthClientOpState::authorized;
   retry_count = 0;
+
+  remember_auth_details_in_request();
+
   this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

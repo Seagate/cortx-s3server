@@ -157,16 +157,20 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
     } else {
       error_obj.reset(new S3AuthResponseError(authorization_response_xml));
     }
+    is_auth_successful = is_authorization_successful;
+
     s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   }
 
-  bool auth_successful() { return is_auth_successful; }
+  bool auth_successful() const { return is_auth_successful; }
 
-  bool authorization_successful() { return is_authorization_successful; }
+  bool authorization_successful() const { return is_authorization_successful; }
 
-  bool aclvalidation_successful() { return is_aclvalidation_successful; }
+  bool aclvalidation_successful() const { return is_aclvalidation_successful; }
 
-  bool policyvalidation_successful() { return is_policyvalidation_successful; }
+  bool policyvalidation_successful() const {
+    return is_policyvalidation_successful;
+  }
 
   std::string get_user_id() {
     if (is_auth_successful) {
