@@ -74,7 +74,8 @@ class CORTXS3Config(object):
                 " it doesn't have read access")
             sys.exit()
         with open(self._conf_file, 'r') as file_config:
-            self._config = yaml.safe_load(file_config)
+            #self._config = yaml.safe_load(file_config)
+            self._config = yaml.safe_load('yaml://' + file_config)
 
     def generate_key(self, config, use_base64, key_len, const_key):
         s3cipher = CortxS3Cipher(config, use_base64, key_len, const_key)
@@ -95,106 +96,188 @@ class CORTXS3Config(object):
 
     def get_config_version(self):
         """Return version of S3 background delete config file or KeyError."""
-        if 'version_config' in self._config and self._config['version_config']['version']:
-            return self._config['version_config']['version']
-        else:
+        #if 'version_config' in self._config and self._config['version_config']['version']:
+        #    return self._config['version_config']['version']
+        #else:
+        #    raise KeyError("Could not parse version from config file " + self._conf_file)
+        try:
+          if self.get_config('version_config>version'):
+            return self.get_config('version_config>version')
+        except Exception as e:
             raise KeyError("Could not parse version from config file " + self._conf_file)
 
     def get_logger_directory(self):
         """Return logger directory path for background delete from config file or KeyError."""
-        if 'logconfig' in self._config and self._config['logconfig']['logger_directory']:
-            return self._config['logconfig']['logger_directory']
-        else:
+        #if 'logconfig' in self._config and self._config['logconfig']['logger_directory']:
+        #    return self._config['logconfig']['logger_directory']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse logger directory path from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('logconfig>logger_directory'):
+              return self.get_config('logconfig>logger_directory')
+        except Exception as e:
             raise KeyError(
                 "Could not parse logger directory path from config file " +
                 self._conf_file)
 
     def get_scheduler_logger_name(self):
         """Return logger name for scheduler from config file or KeyError."""
-        if 'logconfig' in self._config and self._config['logconfig']['scheduler_logger_name']:
-            return self._config['logconfig']['scheduler_logger_name']
-        else:
+        #if 'logconfig' in self._config and self._config['logconfig']['scheduler_logger_name']:
+        #    return self._config['logconfig']['scheduler_logger_name']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse scheduler loggername from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('logconfig>scheduler_logger_name'):
+              return self._config('logconfig>scheduler_logger_name')
+        except Exception as e:
             raise KeyError(
                 "Could not parse scheduler loggername from config file " +
                 self._conf_file)
 
     def get_processor_logger_name(self):
         """Return logger name for processor from config file or KeyError."""
-        if 'logconfig' in self._config and self._config['logconfig']['processor_logger_name']:
-            return self._config['logconfig']['processor_logger_name']
-        else:
+        #if 'logconfig' in self._config and self._config['logconfig']['processor_logger_name']:
+        #    return self._config['logconfig']['processor_logger_name']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse processor loggername from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('logconfig>processor_logger_name'):
+              return self._config('logconfig>processor_logger_name')
+        except Exception as e:
             raise KeyError(
                 "Could not parse processor loggername from config file " +
                 self._conf_file)
 
     def get_scheduler_logger_file(self):
         """Return logger file for scheduler from config file or KeyError."""
-        if 'logconfig' in self._config and self._config['logconfig']['scheduler_log_file']:
-            return self._config['logconfig']['scheduler_log_file']
-        else:
+        #if 'logconfig' in self._config and self._config['logconfig']['scheduler_log_file']:
+        #    return self._config['logconfig']['scheduler_log_file']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse scheduler logfile from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('logconfig>scheduler_log_file'):
+              return self._config('logconfig>scheduler_log_file')
+        except Exception as e:
             raise KeyError(
                 "Could not parse scheduler logfile from config file " +
                 self._conf_file)
 
     def get_processor_logger_file(self):
         """Return logger file for processor from config file or KeyError."""
-        if 'logconfig' in self._config and self._config['logconfig']['processor_log_file']:
-            return self._config['logconfig']['processor_log_file']
-        else:
+        #if 'logconfig' in self._config and self._config['logconfig']['processor_log_file']:
+        #    return self._config['logconfig']['processor_log_file']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse processor loggerfile from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('logconfig>processor_log_file'):
+              return self._config['logconfig']['processor_log_file']
+        except Exception as e:
             raise KeyError(
                 "Could not parse processor loggerfile from config file " +
                 self._conf_file)
 
     def get_file_log_level(self):
         """Return file log level from config file or KeyError."""
-        if 'logconfig' in self._config and self._config['logconfig']['file_log_level']:
-            return self._config['logconfig']['file_log_level']
-        else:
+        #if 'logconfig' in self._config and self._config['logconfig']['file_log_level']:
+        #    return self._config['logconfig']['file_log_level']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse file loglevel from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('logconfig>file_log_level'):
+              return self._config('logconfig>file_log_level')
+        except Exception as e:
             raise KeyError(
                 "Could not parse file loglevel from config file " +
                 self._conf_file)
 
     def get_console_log_level(self):
         """Return console log level from config file or KeyError."""
-        if 'logconfig' in self._config and self._config['logconfig']['console_log_level']:
-            return self._config['logconfig']['console_log_level']
-        else:
+        #if 'logconfig' in self._config and self._config['logconfig']['console_log_level']:
+        #    return self._config['logconfig']['console_log_level']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse console loglevel from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('logconfig>console_log_level'):
+              return self._config('logconfig>console_log_level')
+        except Exception as e:
             raise KeyError(
                 "Could not parse console loglevel from config file " +
                 self._conf_file)
 
     def get_log_format(self):
         """Return log format from config file or KeyError."""
-        if 'logconfig' in self._config and self._config['logconfig']['log_format']:
-            return self._config['logconfig']['log_format']
-        else:
+        #if 'logconfig' in self._config and self._config['logconfig']['log_format']:
+        #    return self._config['logconfig']['log_format']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse log format from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('logconfig>log_format'):
+              return self._config('logconfig>log_format')
+        except Exception as e:
             raise KeyError(
                 "Could not parse log format from config file " +
                 self._conf_file)
 
     def get_cortx_s3_endpoint(self):
         """Return endpoint from config file or KeyError."""
-        if 'cortx_s3' in self._config and self._config['cortx_s3']['endpoint']:
-            return self._config['cortx_s3']['endpoint']
-        else:
+        #if 'cortx_s3' in self._config and self._config['cortx_s3']['endpoint']:
+        #    return self._config['cortx_s3']['endpoint']
+        #else:
+        #    raise KeyError(
+        #        "Could not find cortx_s3 endpoint from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('cortx_s3>endpoint'):
+              return self.get_config('cortx_s3>endpoint')
+        except Exception as e:
             raise KeyError(
                 "Could not find cortx_s3 endpoint from config file " +
                 self._conf_file)
 
     def get_cortx_s3_service(self):
         """Return service from config file or KeyError."""
-        if 'cortx_s3' in self._config and self._config['cortx_s3']['service']:
-            return self._config['cortx_s3']['service']
-        else:
+        #if 'cortx_s3' in self._config and self._config['cortx_s3']['service']:
+        #    return self._config['cortx_s3']['service']
+        #else:
+        #    raise KeyError(
+        #        "Could not find cortx_s3 service from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('cortx_s3>service'):
+              return self.get_config('cortx_s3>service')
+        except Exception as e:
             raise KeyError(
                 "Could not find cortx_s3 service from config file " +
                 self._conf_file)
 
     def get_cortx_s3_region(self):
         """Return region from config file or KeyError."""
-        if 'cortx_s3' in self._config and self._config['cortx_s3']['default_region']:
-            return self._config['cortx_s3']['default_region']
-        else:
+        #if 'cortx_s3' in self._config and self._config['cortx_s3']['default_region']:
+        #    return self._config['cortx_s3']['default_region']
+        #else:
+        #    raise KeyError(
+        #        "Could not find cortx_s3 default_region from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('cortx_s3>default_region'):
+              return self.get_config('cortx_s3>default_region')
+        except Exception as e:
             raise KeyError(
                 "Could not find cortx_s3 default_region from config file " +
                 self._conf_file)
@@ -218,44 +301,77 @@ class CORTXS3Config(object):
     def get_daemon_mode(self):
         """Return daemon_mode flag value for scheduler from config file\
            else it should return default as "True"."""
-        if 'cortx_s3' in self._config and 'daemon_mode' in self._config['cortx_s3']:
-            return self._config['cortx_s3']['daemon_mode']
+        #if 'cortx_s3' in self._config and 'daemon_mode' in self._config['cortx_s3']:
+        #    return self._config['cortx_s3']['daemon_mode']
+        #else:
+        #    #Return default mode as daemon mode i.e. "True"
+        #    return True
+        if self.get_config('cortx_s3>daemon_mode'):
+            return self.get_config('cortx_s3>daemon_mode')
         else:
             #Return default mode as daemon mode i.e. "True"
             return True
 
     def get_rabbitmq_username(self):
         """Return username of rabbitmq from config file or KeyError."""
-        if 'rabbitmq' in self._config and self._config['rabbitmq']['username']:
-            return self._config['rabbitmq']['username']
-        else:
+        #if 'rabbitmq' in self._config and self._config['rabbitmq']['username']:
+        #    return self._config['rabbitmq']['username']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse rabbitmq username from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('rabbitmq>username'):
+              return self.get_config('rabbitmq>username')
+        except Exception as e:
             raise KeyError(
                 "Could not parse rabbitmq username from config file " +
                 self._conf_file)
 
     def get_rabbitmq_password(self):
         """Return password of rabbitmq from config file or KeyError."""
-        if 'rabbitmq' in self._config and self._config['rabbitmq']['password']:
-            return self._config['rabbitmq']['password']
-        else:
+        #if 'rabbitmq' in self._config and self._config['rabbitmq']['password']:
+        #    return self._config['rabbitmq']['password']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse rabbitmq password from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('rabbitmq>password'):
+              return self.get_config('rabbitmq>password')
+        except Exception as e:
             raise KeyError(
                 "Could not parse rabbitmq password from config file " +
                 self._conf_file)
 
     def get_rabbitmq_host(self):
         """Return host of rabbitmq from config file or KeyError."""
-        if 'rabbitmq' in self._config and self._config['rabbitmq']['host']:
-            return self._config['rabbitmq']['host']
-        else:
+        #if 'rabbitmq' in self._config and self._config['rabbitmq']['host']:
+        #    return self._config['rabbitmq']['host']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse rabbitmq host from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('rabbitmq>host'):
+              return self.get_config('rabbitmq>host')
+        except Exception as e:
             raise KeyError(
                 "Could not parse rabbitmq host from config file " +
                 self._conf_file)
 
     def get_rabbitmq_queue_name(self):
         """Return queue name of rabbitmq from config file or KeyError."""
-        if 'rabbitmq' in self._config and self._config['rabbitmq']['queue']:
-            return self._config['rabbitmq']['queue']
-        else:
+        #if 'rabbitmq' in self._config and self._config['rabbitmq']['queue']:
+        #    return self._config['rabbitmq']['queue']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse rabbitmq queue from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('rabbitmq>queue'):
+              return self.get_config('rabbitmq>queue')
+        except Exception as e:
             raise KeyError(
                 "Could not parse rabbitmq queue from config file " +
                 self._conf_file)
@@ -267,49 +383,85 @@ class CORTXS3Config(object):
         The empty string denotes the default or nameless exchange messages are
         routed to the queue with the name specified by routing_key,if it exists
         """
-        return self._config['rabbitmq']['exchange']
+        #return self._config['rabbitmq']['exchange']
+        return self.get_config('rabbitmq>exchange')
 
     def get_rabbitmq_exchange_type(self):
         """Return exchange type of rabbitmq from config file or KeyError."""
-        if 'rabbitmq' in self._config and self._config['rabbitmq']['exchange_type']:
-            return self._config['rabbitmq']['exchange_type']
-        else:
+        #if 'rabbitmq' in self._config and self._config['rabbitmq']['exchange_type']:
+        #    return self._config['rabbitmq']['exchange_type']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse rabbitmq exchange_type from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('rabbitmq>exchange_type'):
+              return self.get_config('rabbitmq>exchange_type')
+        except Exception as e:
             raise KeyError(
                 "Could not parse rabbitmq exchange_type from config file " +
                 self._conf_file)
 
     def get_rabbitmq_mode(self):
         """Return mode of rabbitmq from config file or KeyError."""
-        if 'rabbitmq' in self._config and self._config['rabbitmq']['mode']:
-            return self._config['rabbitmq']['mode']
-        else:
+        #if 'rabbitmq' in self._config and self._config['rabbitmq']['mode']:
+        #    return self._config['rabbitmq']['mode']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse rabbitmq mode from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('rabbitmq>mode'):
+              return self.get_config('rabbitmq>mode')
+        except Exception as e:
             raise KeyError(
                 "Could not parse rabbitmq mode from config file " +
                 self._conf_file)
 
     def get_rabbitmq_durable(self):
         """Return durable of rabbitmq from config file or KeyError."""
-        if 'rabbitmq' in self._config and self._config['rabbitmq']['durable']:
-            return self._config['rabbitmq']['durable']
-        else:
+        #if 'rabbitmq' in self._config and self._config['rabbitmq']['durable']:
+        #    return self._config['rabbitmq']['durable']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse rabbitmq durable from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('rabbitmq>durable'):
+              return self.get_config('rabbitmq>durable')
+        except Exception as e:
             raise KeyError(
                 "Could not parse rabbitmq durable from config file " +
                 self._conf_file)
 
     def get_schedule_interval(self):
         """Return schedule interval of rabbitmq from config file or KeyError."""
-        if 'rabbitmq' in self._config and self._config['rabbitmq']['schedule_interval_secs']:
-            return self._config['rabbitmq']['schedule_interval_secs']
-        else:
+        #if 'rabbitmq' in self._config and self._config['rabbitmq']['schedule_interval_secs']:
+        #    return self._config['rabbitmq']['schedule_interval_secs']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse rabbitmq schedule interval from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('rabbitmq>schedule_interval_secs'):
+              return self.get_config('rabbitmq>schedule_interval_secs')
+        except Exception as e:
             raise KeyError(
                 "Could not parse rabbitmq schedule interval from config file " +
                 self._conf_file)
 
     def get_probable_delete_index_id(self):
         """Return probable delete index-id from config file or KeyError."""
-        if 'indexid' in self._config and self._config['indexid']['probable_delete_index_id']:
-            return self._config['indexid']['probable_delete_index_id']
-        else:
+        #if 'indexid' in self._config and self._config['indexid']['probable_delete_index_id']:
+        #    return self._config['indexid']['probable_delete_index_id']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse probable delete index-id from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('indexid>probable_delete_index_id'):
+              return self.get_config('indexid>probable_delete_index_id')
+        except Exception as e:
             raise KeyError(
                 "Could not parse probable delete index-id from config file " +
                 self._conf_file)
@@ -323,70 +475,122 @@ class CORTXS3Config(object):
 
     def get_global_instance_index_id(self):
         """Return probable delete index-id from config file or KeyError."""
-        if 'indexid' in self._config and self._config['indexid']['global_instance_index_id']:
-            return self._config['indexid']['global_instance_index_id']
-        else:
+        #if 'indexid' in self._config and self._config['indexid']['global_instance_index_id']:
+        #    return self._config['indexid']['global_instance_index_id']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse global instance index-id from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('indexid>global_instance_index_id'):
+              return self.get_config('indexid>global_instance_index_id')
+        except Exception as e:
             raise KeyError(
                 "Could not parse global instance index-id from config file " +
                 self._conf_file)
 
     def get_max_bytes(self):
         """Return maximum bytes for a log file"""
-        if 'logconfig' in self._config and self._config['logconfig']['max_bytes']:
-            return self._config['logconfig']['max_bytes']
-        else:
+        #if 'logconfig' in self._config and self._config['logconfig']['max_bytes']:
+        #    return self._config['logconfig']['max_bytes']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse maxBytes from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('logconfig>max_bytes'):
+              return self.get_config('logconfig>max_bytes')
+        except Exception as e:
             raise KeyError(
                 "Could not parse maxBytes from config file " +
                 self._conf_file)
 
     def get_backup_count(self):
         """Return count of log files"""
-        if 'logconfig' in self._config and self._config['logconfig']['backup_count']:
-            return self._config['logconfig']['backup_count']
-        else:
+        #if 'logconfig' in self._config and self._config['logconfig']['backup_count']:
+        #    return self._config['logconfig']['backup_count']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse backupcount from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('logconfig>backup_count'):
+              return self.get_config('logconfig>backup_count')
+        except Exception as e:
             raise KeyError(
                 "Could not parse backupcount from config file " +
                 self._conf_file)
 
     def get_leak_processing_delay_in_mins(self):
         """Return 'leak_processing_delay_in_mins' from 'leakconfig' section """
-        if 'leakconfig' in self._config and 'leak_processing_delay_in_mins' in self._config['leakconfig']:
-            return self._config['leakconfig']['leak_processing_delay_in_mins']
+        #if 'leakconfig' in self._config and 'leak_processing_delay_in_mins' in self._config['leakconfig']:
+        #    return self._config['leakconfig']['leak_processing_delay_in_mins']
+        #else:
+        #    # default delay is 15mins
+        #    return 15
+        if self.get_config('leakconfig>leak_processing_delay_in_mins'):
+            return self.get_config('leakconfig>leak_processing_delay_in_mins')
         else:
             # default delay is 15mins
             return 15
 
     def get_version_processing_delay_in_mins(self):
         """Return 'version_processing_delay_in_mins' from 'leakconfig' section """
-        if 'leakconfig' in self._config and 'version_processing_delay_in_mins' in self._config['leakconfig']:
-            return self._config['leakconfig']['version_processing_delay_in_mins']
+        #if 'leakconfig' in self._config and 'version_processing_delay_in_mins' in self._config['leakconfig']:
+        #    return self._config['leakconfig']['version_processing_delay_in_mins']
+        #else:
+        #    # default delay is 15mins
+        #    return 15
+        if self.get_config('leakconfig>version_processing_delay_in_mins'):
+            return self.get_config('leakconfig>version_processing_delay_in_mins'):
         else:
             # default delay is 15mins
             return 15
 
     def get_global_bucket_index_id(self):
         """Return probable delete index-id from config file or KeyError."""
-        if 'indexid' in self._config and self._config['indexid']['global_bucket_index_id']:
-            return self._config['indexid']['global_bucket_index_id']
-        else:
+        #if 'indexid' in self._config and self._config['indexid']['global_bucket_index_id']:
+        #    return self._config['indexid']['global_bucket_index_id']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse global_bucket index-id from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('indexid>global_bucket_index_id'):
+              return self.get_config('indexid>global_bucket_index_id')
+        except Exception as e:
             raise KeyError(
                 "Could not parse global_bucket index-id from config file " +
                 self._conf_file)
 
     def get_bucket_metadata_index_id(self):
         """Return probable delete index-id from config file or KeyError."""
-        if 'indexid' in self._config and self._config['indexid']['bucket_metadata_index_id']:
-            return self._config['indexid']['bucket_metadata_index_id']
-        else:
+        #if 'indexid' in self._config and self._config['indexid']['bucket_metadata_index_id']:
+        #    return self._config['indexid']['bucket_metadata_index_id']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse bucket_metadata index_id from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('indexid>bucket_metadata_index_id'):
+              return self.get_config('indexid>bucket_metadata_index_id')
+        except Exception as e:
             raise KeyError(
                 "Could not parse bucket_metadata index_id from config file " +
                 self._conf_file)
 
     def get_s3_instance_count(self):
         """Return secret_key from config file or KeyError."""
-        if 'cortx_s3' in self._config and self._config['cortx_s3']['s3_instance_count']:
-            return self._config['cortx_s3']['s3_instance_count']
-        else:
+        #if 'cortx_s3' in self._config and self._config['cortx_s3']['s3_instance_count']:
+        #    return self._config['cortx_s3']['s3_instance_count']
+        #else:
+        #    raise KeyError(
+        #        "Could not find s3_instance_count from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('cortx_s3>s3_instance_count'):
+              return self.get_config('cortx_s3>s3_instance_count')
+        except Exception as e:
             raise KeyError(
                 "Could not find s3_instance_count from config file " +
                 self._conf_file)
@@ -406,6 +610,7 @@ class CORTXS3Config(object):
 
         raise KeyError(
                 "Could not find s3_recovery secret_key")
+        
 
     def get_cleanup_enabled(self):
         """Return flag cleanup_enabled for S3 non active"""
@@ -418,63 +623,112 @@ class CORTXS3Config(object):
 
     def get_messaging_platform(self):
         """Return use_msgbus from config file or False"""
-        if 'cortx_s3' in self._config and 'messaging_platform' in self._config['cortx_s3']:
-            return self._config['cortx_s3']['messaging_platform']
-        else:
+        #if 'cortx_s3' in self._config and 'messaging_platform' in self._config['cortx_s3']:
+        #    return self._config['cortx_s3']['messaging_platform']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse messaging_platform from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('cortx_s3>messaging_platform'):
+              return self._config['cortx_s3']['messaging_platform']
+        except Exception as e:
             raise KeyError(
                 "Could not parse messaging_platform from config file " +
                 self._conf_file)
 
     def get_msgbus_topic(self):
         """Return topic of msgbus from config file or KeyError."""
-        if 'message_bus' in self._config and 'topic' in self._config['message_bus']:
-            return self._config['message_bus']['topic']
-        else:
+        #if 'message_bus' in self._config and 'topic' in self._config['message_bus']:
+        #    return self._config['message_bus']['topic']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse topic from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('message_bus>topic'):
+              return self.get_config('message_bus>topic')
+        except Exception as e:
             raise KeyError(
                 "Could not parse topic from config file " +
                 self._conf_file)
 
     def get_msgbus_consumer_group(self):
         """Return consumer group id from config file or KeyError."""
-        if 'message_bus' in self._config and 'consumer_group' in self._config['message_bus']:
-            return self._config['message_bus']['consumer_group']
-        else:
+        #if 'message_bus' in self._config and 'consumer_group' in self._config['message_bus']:
+        #    return self._config['message_bus']['consumer_group']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse consumer_group from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('message_bus>consumer_group'):
+              return self.get_config('message_bus>consumer_group')
+        except Exception as e:
             raise KeyError(
                 "Could not parse consumer_group from config file " +
                 self._conf_file)
 
     def get_msgbus_consumer_id_prefix(self):
         """Return consumer id prefix from config file or KeyError."""
-        if 'message_bus' in self._config and 'consumer_id_prefix' in self._config['message_bus']:
-            return self._config['message_bus']['consumer_id_prefix']
-        else:
+        #if 'message_bus' in self._config and 'consumer_id_prefix' in self._config['message_bus']:
+        #    return self._config['message_bus']['consumer_id_prefix']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse consumer_id_prefix from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('message_bus>consumer_id_prefix'):
+              return self.get_config('message_bus>consumer_id_prefix')
+        except Exception as e:
             raise KeyError(
                 "Could not parse consumer_id_prefix from config file " +
                 self._conf_file)
 
     def get_msgbus_consumer_sleep_time(self):
         """Return consumer sleep time from config file or KeyError."""
-        if 'message_bus' in self._config and 'consumer_sleep' in self._config['message_bus']:
-            return self._config['message_bus']['consumer_sleep']
-        else:
+        #if 'message_bus' in self._config and 'consumer_sleep' in self._config['message_bus']:
+        #    return self._config['message_bus']['consumer_sleep']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse consumer_sleep from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('message_bus>consumer_sleep'):
+              return self.get_config('message_bus>consumer_sleep')
+        except Exception as e:
             raise KeyError(
                 "Could not parse consumer_sleep from config file " +
                 self._conf_file)
 
     def get_msgbus_producer_id(self):
         """Return producer_id prefix from config file or KeyError."""
-        if 'message_bus' in self._config and 'producer_id' in self._config['message_bus']:
-            return self._config['message_bus']['producer_id']
-        else:
+        #if 'message_bus' in self._config and 'producer_id' in self._config['message_bus']:
+        #    return self._config['message_bus']['producer_id']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse producer_id from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('message_bus>producer_id'):
+              return self.get_config('message_bus>producer_id')
+        except Exception as e:
             raise KeyError(
                 "Could not parse producer_id from config file " +
                 self._conf_file)
 
     def get_msgbus_producer_delivery_mechanism(self):
         """Return producer delivery mechanism from config file or KeyError."""
-        if 'message_bus' in self._config and 'producer_delivery_mechanism' in self._config['message_bus']:
-            return self._config['message_bus']['producer_delivery_mechanism']
-        else:
+        #if 'message_bus' in self._config and 'producer_delivery_mechanism' in self._config['message_bus']:
+        #    return self._config['message_bus']['producer_delivery_mechanism']
+        #else:
+        #    raise KeyError(
+        #        "Could not parse producer_delivery_mechanism from config file " +
+        #        self._conf_file)
+        try:
+          if self.get_config('message_bus>producer_delivery_mechanism'):
+              return self.get_config('message_bus>producer_delivery_mechanism')
+        except Exception as e:
             raise KeyError(
                 "Could not parse producer_delivery_mechanism from config file " +
                 self._conf_file)
