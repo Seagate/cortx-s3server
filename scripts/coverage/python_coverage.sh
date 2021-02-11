@@ -61,11 +61,13 @@ run_ut() {
 # Run the coverage.py over UTs and generate coverage report
 run_coverage() {
   # Running coverage.py tool over UTs
-  "coverage run -m pytest $SRC_DIR/s3backgrounddelete/ut/cortx_s3_* $SRC_DIR/s3backgrounddelete/s3backgrounddelete/*.py"
+  #pushd "$SRC_DIR/s3backgrounddelete"
+  coverage run -m pytest $SRC_DIR/s3backgrounddelete/ut/cortx_s3_* $SRC_DIR/s3backgrounddelete/s3backgrounddelete/*.py
 
-  "coverage report -m $SRC_DIR/s3backgrounddelete/ut/cortx_s3_*  $SRC_DIR/s3backgrounddelete/s3backgrounddelete/*.py"
+  coverage report -m $SRC_DIR/s3backgrounddelete/ut/cortx_s3_*  $SRC_DIR/s3backgrounddelete/s3backgrounddelete/*.py
   # Generate xml report
   coverage xml -o "$DES_DIR/s3server_python_coverage.xml"
+  #popd
 }
 
 # Validate the report generated
