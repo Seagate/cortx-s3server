@@ -1123,8 +1123,8 @@ void S3AuthClient::policy_validation_failed() {
       s3_log(S3_LOG_ERROR, request_id,
              "Cannot connect to Auth server (Retry count = %d).\n",
              retry_count);
-      s3_iem(LOG_ERR, S3_IEM_AUTH_CONN_FAIL, S3_IEM_AUTH_CONN_FAIL_STR,
-             S3_IEM_AUTH_CONN_FAIL_JSON);
+      // s3_iem(LOG_ERR, S3_IEM_AUTH_CONN_FAIL, S3_IEM_AUTH_CONN_FAIL_STR,
+      //     S3_IEM_AUTH_CONN_FAIL_JSON);
       this->handler_on_failed();
     }
   } else {
@@ -1284,8 +1284,8 @@ void S3AuthClient::check_authorization_failed() {
       s3_log(S3_LOG_ERROR, request_id,
              "Cannot connect to Auth server (Retry count = %d).\n",
              retry_count);
-      s3_iem(LOG_ERR, S3_IEM_AUTH_CONN_FAIL, S3_IEM_AUTH_CONN_FAIL_STR,
-             S3_IEM_AUTH_CONN_FAIL_JSON);
+      // s3_iem(LOG_ERR, S3_IEM_AUTH_CONN_FAIL, S3_IEM_AUTH_CONN_FAIL_STR,
+      //     S3_IEM_AUTH_CONN_FAIL_JSON);
       this->handler_on_failed();
     }
   } else {
@@ -1360,8 +1360,8 @@ void S3AuthClient::check_authentication_failed() {
       s3_log(S3_LOG_ERROR, request_id,
              "Cannot connect to Auth server (Retry count = %d).\n",
              retry_count);
-      s3_iem(LOG_ERR, S3_IEM_AUTH_CONN_FAIL, S3_IEM_AUTH_CONN_FAIL_STR,
-             S3_IEM_AUTH_CONN_FAIL_JSON);
+      // s3_iem(LOG_ERR, S3_IEM_AUTH_CONN_FAIL, S3_IEM_AUTH_CONN_FAIL_STR,
+      //     S3_IEM_AUTH_CONN_FAIL_JSON);
       this->handler_on_failed();
     }
   } else {
@@ -1387,8 +1387,8 @@ void S3AuthClient::check_aclvalidation_failed() {
       s3_log(S3_LOG_ERROR, request_id,
              "Cannot connect to Auth server (Retry count = %d).\n",
              retry_count);
-      s3_iem(LOG_ERR, S3_IEM_AUTH_CONN_FAIL, S3_IEM_AUTH_CONN_FAIL_STR,
-             S3_IEM_AUTH_CONN_FAIL_JSON);
+      // s3_iem(LOG_ERR, S3_IEM_AUTH_CONN_FAIL, S3_IEM_AUTH_CONN_FAIL_STR,
+      //     S3_IEM_AUTH_CONN_FAIL_JSON);
       this->handler_on_failed();
     }
   } else {

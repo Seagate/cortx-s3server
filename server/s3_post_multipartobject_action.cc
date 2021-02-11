@@ -401,8 +401,9 @@ void S3PostMultipartObjectAction::collision_occured() {
       s3_log(S3_LOG_ERROR, request_id,
              "Failed to resolve object id collision %d times for uri %s\n",
              tried_count, request->get_object_uri().c_str());
-      s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,
-             S3_IEM_COLLISION_RES_FAIL_JSON);
+      // s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL,
+      // S3_IEM_COLLISION_RES_FAIL_STR,
+      //     S3_IEM_COLLISION_RES_FAIL_JSON);
     }
     set_s3_error("InternalError");
     send_response_to_s3_client();
@@ -475,8 +476,8 @@ void S3PostMultipartObjectAction::rollback_create_failed() {
            "Deletion of object failed, this oid will be stale in Motr: "
            "%" SCNx64 " : %" SCNx64 "\n",
            oid.u_hi, oid.u_lo);
-    s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
-           S3_IEM_DELETE_OBJ_FAIL_JSON);
+    // s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
+    //     S3_IEM_DELETE_OBJ_FAIL_JSON);
   }
   rollback_next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -499,8 +500,8 @@ void S3PostMultipartObjectAction::rollback_create_part_meta_index_failed() {
          "Deletion of index failed, this oid will be stale in Motr"
          "%" SCNx64 " : %" SCNx64 "\n",
          part_index_oid.u_hi, part_index_oid.u_lo);
-  s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
-         S3_IEM_DELETE_IDX_FAIL_JSON);
+  // s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
+  //     S3_IEM_DELETE_IDX_FAIL_JSON);
   rollback_next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

@@ -417,8 +417,8 @@ void S3PutChunkUploadObjectAction::collision_detected() {
            "Exceeded maximum collision retry attempts."
            "Collision occurred %d times for uri %s\n",
            tried_count, request->get_object_uri().c_str());
-    s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,
-           S3_IEM_COLLISION_RES_FAIL_JSON);
+    // s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,
+    //     S3_IEM_COLLISION_RES_FAIL_JSON);
     s3_put_chunk_action_state =
         S3PutChunkUploadObjectActionState::newObjOidCreationFailed;
     set_s3_error("InternalError");

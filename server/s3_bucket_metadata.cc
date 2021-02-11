@@ -193,8 +193,9 @@ void S3BucketMetadata::handle_collision(std::string base_index_name,
       s3_log(S3_LOG_ERROR, request_id,
              "Failed to resolve index id collision %d times for index %s\n",
              collision_attempt_count, salted_index_name.c_str());
-      s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,
-             S3_IEM_COLLISION_RES_FAIL_JSON);
+      // s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL,
+      // S3_IEM_COLLISION_RES_FAIL_STR,
+      //     S3_IEM_COLLISION_RES_FAIL_JSON);
     }
     state = S3BucketMetadataState::failed;
     this->handler_on_failed();

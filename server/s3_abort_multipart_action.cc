@@ -302,8 +302,8 @@ void S3AbortMultipartAction::delete_part_index_with_parts_failed() {
          "Failed to delete part index, this oid will be stale in Motr: "
          "%" SCNx64 " : %" SCNx64,
          part_index_oid.u_hi, part_index_oid.u_lo);
-  s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
-         S3_IEM_DELETE_IDX_FAIL_JSON);
+  // s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
+  //     S3_IEM_DELETE_IDX_FAIL_JSON);
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

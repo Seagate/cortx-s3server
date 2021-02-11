@@ -470,9 +470,9 @@ void S3BucketMetadataV1::save_replica() {
   if (motr_kv_writer->get_state() != S3MotrKVSWriterOpState::created) {
     s3_log(S3_LOG_ERROR, request_id, "Failed to save KV in replica index.\n");
 
-    s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
-                  "Failed to save metadata in replica index for bucket: %s",
-                  get_bucket_metadata_index_key_name().c_str());
+    // s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
+    //         "Failed to save metadata in replica index for bucket: %s",
+    //     get_bucket_metadata_index_key_name().c_str());
   }
   this->handler_on_success();
 
@@ -545,9 +545,9 @@ void S3BucketMetadataV1::remove_replica() {
   if (motr_kv_writer->get_state() != S3MotrKVSWriterOpState::deleted) {
     s3_log(S3_LOG_ERROR, request_id,
            "Removal of Bucket metadata from replica index failed\n");
-    s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
-                  "Failed to remove KV from replica index of bucket: %s",
-                  get_bucket_metadata_index_key_name().c_str());
+    // s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
+    //         "Failed to remove KV from replica index of bucket: %s",
+    //     get_bucket_metadata_index_key_name().c_str());
   }
   // If FI: 'kv_delete_failed_from_global_index' is set, then do not remove KV
   // from global_bucket_list_index_oid. This is to simulate possible "partial"

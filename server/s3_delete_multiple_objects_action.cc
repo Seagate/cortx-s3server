@@ -256,8 +256,9 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info_successful() {
     }
   }
   if (atleast_one_json_error) {
-    s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
-           S3_IEM_METADATA_CORRUPTED_JSON);
+    // s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
+    //     S3_IEM_METADATA_CORRUPTED_JSON);
+    s3_log(S3_LOG_DEBUG, request_id, "metadata may be corrupted\n");
   }
   if (all_had_json_error) {
     // Fetch more of present, else just respond

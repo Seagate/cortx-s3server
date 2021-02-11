@@ -91,8 +91,8 @@ void S3GlobalBucketIndexMetadata::load_successful() {
            "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
            global_bucket_list_index_oid.u_hi, global_bucket_list_index_oid.u_lo,
            bucket_name.c_str(), motr_kv_reader->get_value().c_str());
-    s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
-           S3_IEM_METADATA_CORRUPTED_JSON);
+    // s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
+    //     S3_IEM_METADATA_CORRUPTED_JSON);
 
     json_parsing_error = true;
     load_failed();
@@ -168,9 +168,9 @@ void S3GlobalBucketIndexMetadata::save_replica() {
   if (motr_kv_writer->get_state() != S3MotrKVSWriterOpState::created) {
     s3_log(S3_LOG_ERROR, request_id, "Failed to save KV in replica index.\n");
 
-    s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
-                  "Failed to save KV in replica index for bucket: %s",
-                  bucket_name.c_str());
+    // s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
+    //            "Failed to save KV in replica index for bucket: %s",
+    //          bucket_name.c_str());
   }
   this->handler_on_success();
 
@@ -234,9 +234,9 @@ void S3GlobalBucketIndexMetadata::remove_replica() {
     s3_log(S3_LOG_ERROR, request_id,
            "Failed to remove KV from replica index.\n");
 
-    s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
-                  "Failed to remove KV from replica index of bucket: %s",
-                  bucket_name.c_str());
+    // s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
+    //            "Failed to remove KV from replica index of bucket: %s",
+    //          bucket_name.c_str());
   }
   this->handler_on_success();
 
