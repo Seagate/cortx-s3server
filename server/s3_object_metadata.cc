@@ -188,6 +188,16 @@ void S3ObjectMetadata::set_objects_version_list_index_oid(
   objects_version_list_index_oid.u_lo = id.u_lo;
 }
 
+void S3ObjectMetadata::set_extended_object_metadata(
+    std::shared_ptr<S3ObjectExtendedMetadata> ext_object_metadata) {
+  extended_object_metadata = std::move(ext_object_metadata);
+}
+
+const std::shared_ptr<S3ObjectExtendedMetadata>&
+S3ObjectMetadata::get_extended_object_metadata() {
+  return extended_object_metadata;
+}
+
 struct m0_uint128 S3ObjectMetadata::get_object_list_index_oid() const {
   return object_list_index_oid;
 }
@@ -430,7 +440,48 @@ void S3ObjectMetadata::save_version_metadata() {
 void S3ObjectMetadata::save_version_metadata_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Version metadata saved for Object [%s].\n",
          object_name.c_str());
+  if (extended_object_metadata && extended_object_metadata->has_entries()) {
+    extended_object_metadata->save(
+        std::bind(&S3ObjectMetadata::save_extended_metadata_successful, this),
+        std::bind(&S3ObjectMetadata::save_extended_metadata_failed, this));
+  } else {
+    save_metadata();
+  }
+}
+
+#if 0
+void S3ObjectMetadata::save_extended_metadata() {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_DEBUG, request_id, "Saving extended metadata for Object [%s]...\n",
+         object_name.c_str());
+  motr_kv_writer =
+      mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+  motr_kv_writer->put_keyval(
+      object_list_index_oid, object_name, extended_object_metadata->get_kv_list_of_extended_entries(),
+      std::bind(&S3ObjectMetadata::save_extended_metadata_successful, this),
+      std::bind(&S3ObjectMetadata::save_extended_metadata_failed, this));
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+#endif
+
+void S3ObjectMetadata::save_extended_metadata_successful() {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_DEBUG, request_id, "Extended metadata saved for Object [%s].\n",
+         object_name.c_str());
   save_metadata();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3ObjectMetadata::save_extended_metadata_failed() {
+  s3_log(S3_LOG_ERROR, request_id,
+         "Extended metadata save failed for Object [%s].\n",
+         object_name.c_str());
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
+    state = S3ObjectMetadataState::failed_to_launch;
+  } else {
+    state = S3ObjectMetadataState::failed;
+  }
+  this->handler_on_failed();
 }
 
 void S3ObjectMetadata::save_version_metadata_failed() {
@@ -817,12 +868,7 @@ S3ObjectExtendedMetadata::S3ObjectExtendedMetadata(
   state = S3ObjectMetadataState::empty;
   parts = no_of_parts;
   fragments = no_of_fragments;
-  if (fragments == 0) {
-    // This object could be just a non-fragmented object
-    fragments = S3Option::get_instance()->get_motr_idx_fetch_count();
-    s3_log(S3_LOG_DEBUG, "", "Reset fragment fetch count to %u", fragments);
-  }
-  if (version_id.empty()) {
+  if (versionid.empty()) {
     // TBD - Do we need default value. If yes, set it NULL
     version_id = "NULL";
   } else {
@@ -882,9 +928,14 @@ void S3ObjectExtendedMetadata::load(std::function<void(void)> on_success,
 void S3ObjectExtendedMetadata::get_obj_ext_entries(std::string last_object) {
   s3_log(S3_LOG_DEBUG, request_id, "Searching index from start key = [%s]\n",
          last_object.c_str());
+  unsigned int fetch_coumt = fragments;
   // We expect only 'fragments' extended entries for the object.
+  if (fetch_coumt == 0) {
+    fetch_coumt = S3Option::get_instance()->get_motr_idx_fetch_count();
+    s3_log(S3_LOG_DEBUG, "", "Reset fragment fetch count to %u", fetch_coumt);
+  }
   motr_kv_reader->next_keyval(
-      object_list_index_oid, last_object, fragments,
+      object_list_index_oid, last_object, fetch_coumt,
       std::bind(&S3ObjectExtendedMetadata::get_obj_ext_entries_successful,
                 this),
       std::bind(&S3ObjectExtendedMetadata::get_obj_ext_entries_failed, this));
@@ -974,7 +1025,11 @@ void S3ObjectExtendedMetadata::save_extended_metadata() {
 
 void S3ObjectExtendedMetadata::save_extended_metadata_successful() {
   // TBD
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_DEBUG, request_id, "Extended metadata saved for Object [%s].\n",
+         object_name.c_str());
   this->handler_on_success();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3ObjectExtendedMetadata::save_extended_metadata_failed() {
@@ -1014,7 +1069,7 @@ int S3ObjectExtendedMetadata::from_json(std::string key, std::string content) {
   } else {
     // not multipart
   }
-  item_ctx.versionID = S3M0Uint128Helper::to_m0_uint128(tokens[1]);
+  item_ctx.versionID = tokens[1];
 
   item_ctx.motr_OID =
       S3M0Uint128Helper::to_m0_uint128(newroot["OID"].asString());
@@ -1042,6 +1097,7 @@ int S3ObjectExtendedMetadata::from_json(std::string key, std::string content) {
 
   return 0;
 }
+
 /*TODO : Do we need this?
 std::string S3ObjectExtendedMetadata::to_json() {
   s3_log(S3_LOG_DEBUG, request_id, "Called\n");
@@ -1128,13 +1184,29 @@ std::string S3ObjectExtendedMetadata::get_json_str(
 // object write IO fails due to degradation
 // For first part of multipart, part_no=1.
 // For first fragment, fragment_no=1
+// For simple (non-multipart) PUT, part_no=0
 void S3ObjectExtendedMetadata::add_extended_entry(
     struct s3_part_frag_context& part_frag_ctx, unsigned int fragment_no,
     unsigned int part_no) {
   // TBD - Validation required for checking values of 'fragment_no' and
   // 'part_no'
-  auto itPos = (this->ext_objects[(part_no - 1)]).begin() + (fragment_no - 1);
-  (this->ext_objects[(part_no - 1)]).insert(itPos, part_frag_ctx);
+  auto itPos = (this->ext_objects[part_no]).begin() + (fragment_no - 1);
+  (this->ext_objects[part_no]).insert(itPos, part_frag_ctx);
+  // TODO: Update 'fragments' and 'parts' states.
+  fragments++;
+  if (part_no && (parts <= part_no)) {
+    parts = part_no;
+  }
+}
+
+void S3ObjectExtendedMetadata::set_size_of_extended_entry(
+    size_t fragment_size, unsigned int fragment_no, unsigned int part_no) {
+  // TBD - Validation required for checking values of 'fragment_no' and
+  // 'part_no'
+  // auto itPos = (this->ext_objects[part_no]).begin() + (fragment_no - 1);
+  struct s3_part_frag_context& part_frag_ctx =
+      (this->ext_objects[part_no])[fragment_no - 1];
+  part_frag_ctx.item_size = fragment_size;
 }
 
 void S3ObjectExtendedMetadata::remove(std::function<void(void)> on_success,
