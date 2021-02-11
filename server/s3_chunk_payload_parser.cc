@@ -382,8 +382,8 @@ std::deque<evbuf_t *> S3ChunkPayloadParser::run(evbuf_t *buf) {
         default: {
           s3_log(S3_LOG_ERROR, "", "Invalid ChunkParserState. i(%zu), j(%zu)\n",
                  i, j);
-          s3_iem(LOG_ERR, S3_IEM_CHUNK_PARSING_FAIL,
-                 S3_IEM_CHUNK_PARSING_FAIL_STR, S3_IEM_CHUNK_PARSING_FAIL_JSON);
+          // s3_iem(LOG_ERR, S3_IEM_CHUNK_PARSING_FAIL,
+          //     S3_IEM_CHUNK_PARSING_FAIL_STR, S3_IEM_CHUNK_PARSING_FAIL_JSON);
           parser_state = ChunkParserState::c_error;
           free(vec_in);
           return ready_buffers;
