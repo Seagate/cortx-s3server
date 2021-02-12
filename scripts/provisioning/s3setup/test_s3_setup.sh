@@ -76,8 +76,8 @@ END
 # bash -x /opt/seagate/cortx/s3/bin/s3_setup --updateclusterid --createauthjkspassword --configldap --confurl "json://$s3_conf_file"  || die_with_error "s3:config failed!"
 echo "s3:config passed!"
 
-/opt/seagate/cortx/s3/bin/s3_setup --s3backgrounddelete --s3recoverytool --confurl "json://$s3_conf_file" &> /dev/null || die_with_error "s3:init failed!"
-# bash -x /opt/seagate/cortx/s3/bin/s3_setup --s3backgrounddelete --s3recoverytool --confurl "json://$s3_conf_file" || die_with_error "s3:init failed!"
+/opt/seagate/cortx/s3/bin/s3_setup --s3backgrounddelete --confurl "json://$s3_conf_file" &> /dev/null || die_with_error "s3:init failed!"
+# bash -x /opt/seagate/cortx/s3/bin/s3_setup --s3backgrounddelete --confurl "json://$s3_conf_file" || die_with_error "s3:init failed!"
 echo "s3:init passed w/o --setlogrotate!"
 
 /opt/seagate/cortx/s3/bin/s3_setup --cleanup --confurl "json://$s3_conf_file" &> /dev/null || die_with_error "s3:cleanup failed!"
