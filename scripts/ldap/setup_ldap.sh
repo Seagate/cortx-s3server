@@ -101,8 +101,9 @@ chgrp ldap /etc/openldap/certs/password # onlyif: grep -q ldap /etc/group && tes
 
 if [ -z "$LDAPADMINPASS" ]
 then
+    # If --defaultpasswd is set, use it. Else ask from user as input
     if [[ $defaultpasswd == true ]]
-    then # Use same default password for both for empty ones
+    then
         LDAPADMINPASS=$defaultpasswds
     else
         # Fetch password from User
@@ -113,8 +114,9 @@ fi
 
 if [ -z "$ROOTDNPASSWORD" ]
 then
+    # If --defaultpasswd is set, use it. Else ask from user as input
     if [[ $defaultpasswd == true ]]
-    then # Use same default password for both for empty ones
+    then
         ROOTDNPASSWORD=$defaultpasswds
     else
         # Fetch password from User
