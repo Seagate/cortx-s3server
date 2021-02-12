@@ -36,7 +36,7 @@ import json
 from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
-from s3backgrounddelete.IEMutil import IEMutil
+#from s3backgrounddelete.IEMutil import IEMutil
 
 class ObjectRecoveryScheduler(object):
     """Scheduler which will add key value to rabbitmq message queue."""
@@ -109,7 +109,7 @@ class ObjectRecoveryScheduler(object):
                         ret, msg = mq_client.send_data(
                             record, self.config.get_rabbitmq_queue_name())
                         if not ret:
-                            IEMutil("ERROR", IEMutil.RABBIT_MQ_CONN_FAILURE, IEMutil.RABBIT_MQ_CONN_FAILURE_STR)
+                            #IEMutil("ERROR", IEMutil.RABBIT_MQ_CONN_FAILURE, IEMutil.RABBIT_MQ_CONN_FAILURE_STR)
                             self.logger.error(
                                 "Object recovery queue send data "+ str(record) +
                                 " failed :" + msg)
