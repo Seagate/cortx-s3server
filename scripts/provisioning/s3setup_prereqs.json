@@ -1,6 +1,6 @@
 {
     "rpms": ["openldap-servers", "openldap-clients", "haproxy", "motr"],
-    "pip3s": ["toml", "s3confstore", "crypto", "s3setup", "s3haproxyconfig"],
+    "pip3s": ["toml", "s3confstore", "crypto", "s3haproxyconfig", "s3cipher"],
     "services": ["sshd", "rabbitmq-server", "haproxy", "slapd", "rsyslog"],
     "exists": [
 		"file:/etc/machine-id",

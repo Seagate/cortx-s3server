@@ -20,9 +20,7 @@
 
 import os
 import sys
-import fileinput
 import argparse
-from cortx.utils.conf_store import Conf
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 class S3HaproxyConfig:

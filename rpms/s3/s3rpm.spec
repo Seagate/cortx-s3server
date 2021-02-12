@@ -376,7 +376,16 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml
 /opt/seagate/cortx/s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml
 /opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json
+/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml
+/opt/seagate/cortx/s3/bin/setupcmd.py
+/opt/seagate/cortx/s3/bin/postinstallcmd.py
+/opt/seagate/cortx/s3/bin/configcmd.py
+/opt/seagate/cortx/s3/bin/initcmd.py
+/opt/seagate/cortx/s3/bin/testcmd.py
+/opt/seagate/cortx/s3/bin/resetcmd.py
+/opt/seagate/cortx/s3/bin/cleanupcmd.py
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_setup
+%attr(755, root, root) /opt/seagate/cortx/s3/bin/_s3_setup
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer
 /etc/rsyslog.d/rsyslog-tcp-audit.conf
