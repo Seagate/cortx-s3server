@@ -23,22 +23,26 @@
 # configure OpenLDAP #
 ##################################
 
-USAGE="USAGE: bash $(basename "$0") [--confurl <URL path>] [--defaultpasswd] [--skipssl]
+USAGE="USAGE: bash $(basename "$0") [--ldapadminpasswd <passwd>] [--rootdnpasswd <passwd>] [--defaultpasswd] [--skipssl]
       [--forceclean] [--help | -h]
 Install and configure OpenLDAP.
 
 where:
---confurl           configuration file url, for using with py-utils:ConfStore
---defaultpasswd     set default password using cortx-utils
+--ldapadminpasswd   optional ldapadmin password
+--rootdnpasswd      optional rootdn password
+--defaultpasswd     optional set default password
 --skipssl           skips all ssl configuration for LDAP
 --forceclean        Clean old openldap setup (** careful: deletes data **)
---help              display this help and exit"
+--help              display this help and exit
+NOTE: If either one or both --ldapadminpasswd and --rootdnpasswd are not provided and --defaultpasswd is not provided, runtime input will be required from the user."
 
 set -e
 defaultpasswd=false
 usessl=true
 forceclean=false
-confstore_config_url=
+LDAPADMINPASS=
+ROOTDNPASSWORD=
+defaultpasswds="ldapadmin"
 
 echo "Running setup_ldap.sh script"
 if [ $# -lt 1 ]
@@ -50,8 +54,11 @@ fi
 while test $# -gt 0
 do
   case "$1" in
-    --confurl ) shift;
-        confstore_config_url=$1
+    --ldapadminpasswd ) shift;
+        LDAPADMINPASS=$1
+        ;;
+    --rootdnpasswd ) shift;
+        ROOTDNPASSWORD=$1
         ;;
     --defaultpasswd )
         defaultpasswd=true
@@ -69,12 +76,6 @@ do
   esac
   shift
 done
-
-if [ -z "$confstore_config_url" ]
-then
-    echo "ERROR: confstore_config_url is empty, exiting."
-    exit 1
-fi
 
 INSTALLDIR="/opt/seagate/cortx/s3/install/ldap"
 # install openldap server and client
@@ -98,22 +99,28 @@ cp -f $INSTALLDIR/olcDatabase\=\{2\}mdb.ldif /etc/openldap/slapd.d/cn\=config/
 
 chgrp ldap /etc/openldap/certs/password # onlyif: grep -q ldap /etc/group && test -f /etc/openldap/certs/password
 
-if [[ $defaultpasswd == true ]]
-then # Get password from cortx-utils
-    cipherkey=$(s3cipher generate_key --const_key openldap)
+if [ -z "$LDAPADMINPASS" ]
+then
+    if [[ $defaultpasswd == true ]]
+    then # Use same default password for both for empty ones
+        LDAPADMINPASS=$defaultpasswds
+    else
+        # Fetch password from User
+        echo -en "\nEnter Password for LDAP IAM admin: "
+        read -s LDAPADMINPASS && [[ -z $LDAPADMINPASS ]] && echo 'Password can not be null.' && exit 1
+    fi
+fi
 
-    sgiamadminpassd=$(s3confstore "$confstore_config_url" getkey --key "openldap>sgiam>secret")
-    rootdnpasswd=$(s3confstore "$confstore_config_url" getkey --key "openldap>root>secret")
-
-    # decrypt the passwords read from the confstore
-    LDAPADMINPASS=$(s3cipher decrypt --data "$sgiamadminpassd" --key "$cipherkey")
-    ROOTDNPASSWORD=$(s3cipher decrypt --data "$rootdnpasswd" --key "$cipherkey")
-else # Fetch Root DN & IAM admin passwords from User
-    echo -en "\nEnter Password for LDAP rootDN: "
-    read -s ROOTDNPASSWORD && [[ -z $ROOTDNPASSWORD ]] && echo 'Password can not be null.' && exit 1
-
-    echo -en "\nEnter Password for LDAP IAM admin: "
-    read -s LDAPADMINPASS && [[ -z $LDAPADMINPASS ]] && echo 'Password can not be null.' && exit 1
+if [ -z "$ROOTDNPASSWORD" ]
+then
+    if [[ $defaultpasswd == true ]]
+    then # Use same default password for both for empty ones
+        ROOTDNPASSWORD=$defaultpasswds
+    else
+        # Fetch password from User
+        echo -en "\nEnter Password for LDAP rootDN: "
+        read -s ROOTDNPASSWORD && [[ -z $ROOTDNPASSWORD ]] && echo 'Password can not be null.' && exit 1
+    fi
 fi
 
 # generate encrypted password for rootDN

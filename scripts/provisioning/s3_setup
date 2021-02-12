@@ -182,7 +182,7 @@ create_auth_jks_password()
 # Install and Configure Openldap over Non-SSL.
 configure_openldap()
 {
-    /opt/seagate/cortx/s3/install/ldap/setup_ldap.sh --confurl "$confstore_config_url" --defaultpasswd --skipssl
+    /opt/seagate/cortx/s3/install/ldap/setup_ldap.sh --ldapadminpasswd ldapadmin --rootdnpasswd seagate --skipssl
     if [ $? -ne 0 ]
     then
         echo "ERROR: Failed to configure openldap."
