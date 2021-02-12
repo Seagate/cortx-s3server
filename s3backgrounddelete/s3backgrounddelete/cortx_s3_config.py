@@ -26,6 +26,7 @@ import logging
 import yaml
 
 from s3backgrounddelete.cortx_cluster_config import CipherInvalidToken
+from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 try:
     from s3cipher.cortx_s3_cipher import CortxS3Cipher
@@ -37,6 +38,7 @@ class CORTXS3Config(object):
     """Configuration for s3 background delete."""
     _config = None
     _conf_file = None
+    s3confstore = None
 
     def __init__(self):
         """Initialise logger and configuration."""
@@ -73,9 +75,12 @@ class CORTXS3Config(object):
                 self._conf_file +
                 " it doesn't have read access")
             sys.exit()
-        with open(self._conf_file, 'r') as file_config:
+        #with open(self._conf_file, 'r') as file_config:
             #self._config = yaml.safe_load(file_config)
-            self._config = yaml.safe_load('yaml://' + file_config)
+        # Load config.yaml file through confstore.
+        self._conf_file ='yaml://' + self._conf_file
+        self.s3confstore = S3CortxConfStore(self._conf_file, "bgdelete_dummy")
+        
 
     def generate_key(self, config, use_base64, key_len, const_key):
         s3cipher = CortxS3Cipher(config, use_base64, key_len, const_key)
@@ -101,8 +106,8 @@ class CORTXS3Config(object):
         #else:
         #    raise KeyError("Could not parse version from config file " + self._conf_file)
         try:
-          if self.get_config('version_config>version'):
-            return self.get_config('version_config>version')
+          config_version = self.s3confstore.get_config('version_config>version')
+          return config_version
         except Exception as e:
             raise KeyError("Could not parse version from config file " + self._conf_file)
 
@@ -115,8 +120,8 @@ class CORTXS3Config(object):
         #        "Could not parse logger directory path from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('logconfig>logger_directory'):
-              return self.get_config('logconfig>logger_directory')
+          log_directory = self.s3confstore.get_config('logconfig>logger_directory')
+          return log_directory
         except Exception as e:
             raise KeyError(
                 "Could not parse logger directory path from config file " +
@@ -131,8 +136,8 @@ class CORTXS3Config(object):
         #        "Could not parse scheduler loggername from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('logconfig>scheduler_logger_name'):
-              return self._config('logconfig>scheduler_logger_name')
+          scheduler_log_name = self.s3confstore.get_config('logconfig>scheduler_logger_name')
+          return scheduler_log_name
         except Exception as e:
             raise KeyError(
                 "Could not parse scheduler loggername from config file " +
@@ -147,8 +152,8 @@ class CORTXS3Config(object):
         #        "Could not parse processor loggername from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('logconfig>processor_logger_name'):
-              return self._config('logconfig>processor_logger_name')
+          processor_log_name = self.s3confstore.get_config('logconfig>processor_logger_name')
+          return processor_log_name
         except Exception as e:
             raise KeyError(
                 "Could not parse processor loggername from config file " +
@@ -163,8 +168,8 @@ class CORTXS3Config(object):
         #        "Could not parse scheduler logfile from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('logconfig>scheduler_log_file'):
-              return self._config('logconfig>scheduler_log_file')
+          scheduler_log_file = self.s3confstore.get_config('logconfig>scheduler_log_file')
+          return scheduler_log_file
         except Exception as e:
             raise KeyError(
                 "Could not parse scheduler logfile from config file " +
@@ -179,8 +184,8 @@ class CORTXS3Config(object):
         #        "Could not parse processor loggerfile from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('logconfig>processor_log_file'):
-              return self._config['logconfig']['processor_log_file']
+          processor_log_file = self.s3confstore.get_config('logconfig>processor_log_file')
+          return processor_log_file
         except Exception as e:
             raise KeyError(
                 "Could not parse processor loggerfile from config file " +
@@ -195,8 +200,8 @@ class CORTXS3Config(object):
         #        "Could not parse file loglevel from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('logconfig>file_log_level'):
-              return self._config('logconfig>file_log_level')
+          log_level = self.s3confstore.get_config('logconfig>file_log_level')
+          return log_level
         except Exception as e:
             raise KeyError(
                 "Could not parse file loglevel from config file " +
@@ -211,8 +216,8 @@ class CORTXS3Config(object):
         #        "Could not parse console loglevel from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('logconfig>console_log_level'):
-              return self._config('logconfig>console_log_level')
+          console_log_level = self.s3confstore.get_config('logconfig>console_log_level')
+          return console_log_level
         except Exception as e:
             raise KeyError(
                 "Could not parse console loglevel from config file " +
@@ -227,8 +232,8 @@ class CORTXS3Config(object):
         #        "Could not parse log format from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('logconfig>log_format'):
-              return self._config('logconfig>log_format')
+          log_format = self.s3confstore.get_config('logconfig>log_format')
+          return log_format
         except Exception as e:
             raise KeyError(
                 "Could not parse log format from config file " +
@@ -243,8 +248,8 @@ class CORTXS3Config(object):
         #        "Could not find cortx_s3 endpoint from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('cortx_s3>endpoint'):
-              return self.get_config('cortx_s3>endpoint')
+          cortx_s3_endpoint = self.s3confstore.get_config('cortx_s3>endpoint')
+          return cortx_s3_endpoint
         except Exception as e:
             raise KeyError(
                 "Could not find cortx_s3 endpoint from config file " +
@@ -259,8 +264,8 @@ class CORTXS3Config(object):
         #        "Could not find cortx_s3 service from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('cortx_s3>service'):
-              return self.get_config('cortx_s3>service')
+          cortx_s3_service = self.s3confstore.get_config('cortx_s3>service')
+          return cortx_s3_service
         except Exception as e:
             raise KeyError(
                 "Could not find cortx_s3 service from config file " +
@@ -275,8 +280,8 @@ class CORTXS3Config(object):
         #        "Could not find cortx_s3 default_region from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('cortx_s3>default_region'):
-              return self.get_config('cortx_s3>default_region')
+          cortx_s3_region = self.s3confstore.get_config('cortx_s3>default_region')
+          return cortx_s3_region
         except Exception as e:
             raise KeyError(
                 "Could not find cortx_s3 default_region from config file " +
@@ -306,8 +311,9 @@ class CORTXS3Config(object):
         #else:
         #    #Return default mode as daemon mode i.e. "True"
         #    return True
-        if self.get_config('cortx_s3>daemon_mode'):
-            return self.get_config('cortx_s3>daemon_mode')
+        daemon_mode = self.s3confstore.get_config('cortx_s3>daemon_mode')
+        if daemon_mode:
+            return daemon_mode
         else:
             #Return default mode as daemon mode i.e. "True"
             return True
@@ -321,8 +327,9 @@ class CORTXS3Config(object):
         #        "Could not parse rabbitmq username from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('rabbitmq>username'):
-              return self.get_config('rabbitmq>username')
+          rabbitmq_username = self.s3confstore.get_config('rabbitmq>username')
+          self.logger.info("rabbitmq_username : " + rabbitmq_username)
+          return rabbitmq_username
         except Exception as e:
             raise KeyError(
                 "Could not parse rabbitmq username from config file " +
@@ -337,8 +344,8 @@ class CORTXS3Config(object):
         #        "Could not parse rabbitmq password from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('rabbitmq>password'):
-              return self.get_config('rabbitmq>password')
+          rabbitmq_password = self.s3confstore.get_config('rabbitmq>password')
+          return rabbitmq_password
         except Exception as e:
             raise KeyError(
                 "Could not parse rabbitmq password from config file " +
@@ -353,8 +360,8 @@ class CORTXS3Config(object):
         #        "Could not parse rabbitmq host from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('rabbitmq>host'):
-              return self.get_config('rabbitmq>host')
+          rabbitmq_host = self.s3confstore.get_config('rabbitmq>host')
+          return rabbitmq_host
         except Exception as e:
             raise KeyError(
                 "Could not parse rabbitmq host from config file " +
@@ -369,8 +376,8 @@ class CORTXS3Config(object):
         #        "Could not parse rabbitmq queue from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('rabbitmq>queue'):
-              return self.get_config('rabbitmq>queue')
+          rabbitmq_queue_name = self.s3confstore.get_config('rabbitmq>queue')
+          return rabbitmq_queue_name
         except Exception as e:
             raise KeyError(
                 "Could not parse rabbitmq queue from config file " +
@@ -384,7 +391,8 @@ class CORTXS3Config(object):
         routed to the queue with the name specified by routing_key,if it exists
         """
         #return self._config['rabbitmq']['exchange']
-        return self.get_config('rabbitmq>exchange')
+        rabbitmq_exchange = self.s3confstore.get_config('rabbitmq>exchange')
+        return rabbitmq_exchange
 
     def get_rabbitmq_exchange_type(self):
         """Return exchange type of rabbitmq from config file or KeyError."""
@@ -395,8 +403,8 @@ class CORTXS3Config(object):
         #        "Could not parse rabbitmq exchange_type from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('rabbitmq>exchange_type'):
-              return self.get_config('rabbitmq>exchange_type')
+          rabbitmq_exchange_type = self.s3confstore.get_config('rabbitmq>exchange_type')
+          return rabbitmq_exchange_type
         except Exception as e:
             raise KeyError(
                 "Could not parse rabbitmq exchange_type from config file " +
@@ -411,8 +419,8 @@ class CORTXS3Config(object):
         #        "Could not parse rabbitmq mode from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('rabbitmq>mode'):
-              return self.get_config('rabbitmq>mode')
+          rabbitmq_mode = self.s3confstore.get_config('rabbitmq>mode')
+          return rabbitmq_mode
         except Exception as e:
             raise KeyError(
                 "Could not parse rabbitmq mode from config file " +
@@ -427,8 +435,8 @@ class CORTXS3Config(object):
         #        "Could not parse rabbitmq durable from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('rabbitmq>durable'):
-              return self.get_config('rabbitmq>durable')
+          rabbitmq_durable = self.s3confstore.get_config('rabbitmq>durable')
+          return rabbitmq_durable
         except Exception as e:
             raise KeyError(
                 "Could not parse rabbitmq durable from config file " +
@@ -443,8 +451,8 @@ class CORTXS3Config(object):
         #        "Could not parse rabbitmq schedule interval from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('rabbitmq>schedule_interval_secs'):
-              return self.get_config('rabbitmq>schedule_interval_secs')
+          schedule_interval = self.s3confstore.get_config('rabbitmq>schedule_interval_secs')
+          return schedule_interval
         except Exception as e:
             raise KeyError(
                 "Could not parse rabbitmq schedule interval from config file " +
@@ -459,8 +467,8 @@ class CORTXS3Config(object):
         #        "Could not parse probable delete index-id from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('indexid>probable_delete_index_id'):
-              return self.get_config('indexid>probable_delete_index_id')
+          probable_delete_index_id = self.s3confstore.get_config('indexid>probable_delete_index_id')
+          return probable_delete_index_id
         except Exception as e:
             raise KeyError(
                 "Could not parse probable delete index-id from config file " +
@@ -468,8 +476,13 @@ class CORTXS3Config(object):
 
     def get_max_keys(self):
         """Return maximum number of keys from config file or KeyError."""
-        if 'indexid' in self._config and self._config['indexid']['max_keys']:
-            return self._config['indexid']['max_keys']
+        #if 'indexid' in self._config and self._config['indexid']['max_keys']:
+        #    return self._config['indexid']['max_keys']
+        #else:
+        #    return 1000
+        max_keys = self.s3confstore.get_config('indexid>max_keys')
+        if max_keys:
+            return max_keys
         else:
             return 1000
 
@@ -482,8 +495,8 @@ class CORTXS3Config(object):
         #        "Could not parse global instance index-id from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('indexid>global_instance_index_id'):
-              return self.get_config('indexid>global_instance_index_id')
+          global_instance_index_id = self.s3confstore.get_config('indexid>global_instance_index_id')
+          return global_instance_index_id
         except Exception as e:
             raise KeyError(
                 "Could not parse global instance index-id from config file " +
@@ -498,8 +511,8 @@ class CORTXS3Config(object):
         #        "Could not parse maxBytes from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('logconfig>max_bytes'):
-              return self.get_config('logconfig>max_bytes')
+          max_bytes = self.s3confstore.get_config('logconfig>max_bytes')
+          return max_bytes
         except Exception as e:
             raise KeyError(
                 "Could not parse maxBytes from config file " +
@@ -514,8 +527,8 @@ class CORTXS3Config(object):
         #        "Could not parse backupcount from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('logconfig>backup_count'):
-              return self.get_config('logconfig>backup_count')
+          backup_count = self.s3confstore.get_config('logconfig>backup_count')
+          return backup_count
         except Exception as e:
             raise KeyError(
                 "Could not parse backupcount from config file " +
@@ -528,8 +541,9 @@ class CORTXS3Config(object):
         #else:
         #    # default delay is 15mins
         #    return 15
-        if self.get_config('leakconfig>leak_processing_delay_in_mins'):
-            return self.get_config('leakconfig>leak_processing_delay_in_mins')
+        leak_processing_delay_in_mins = self.s3confstore.get_config('leakconfig>leak_processing_delay_in_mins')
+        if leak_processing_delay_in_mins:
+            return leak_processing_delay_in_mins
         else:
             # default delay is 15mins
             return 15
@@ -541,8 +555,9 @@ class CORTXS3Config(object):
         #else:
         #    # default delay is 15mins
         #    return 15
-        if self.get_config('leakconfig>version_processing_delay_in_mins'):
-            return self.get_config('leakconfig>version_processing_delay_in_mins'):
+        version_processing_delay_in_mins = self.s3confstore.get_config('leakconfig>version_processing_delay_in_mins')
+        if version_processing_delay_in_mins:
+            return version_processing_delay_in_mins
         else:
             # default delay is 15mins
             return 15
@@ -556,8 +571,8 @@ class CORTXS3Config(object):
         #        "Could not parse global_bucket index-id from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('indexid>global_bucket_index_id'):
-              return self.get_config('indexid>global_bucket_index_id')
+          global_bucket_index_id = self.s3confstore.get_config('indexid>global_bucket_index_id')
+          return global_bucket_index_id
         except Exception as e:
             raise KeyError(
                 "Could not parse global_bucket index-id from config file " +
@@ -572,8 +587,8 @@ class CORTXS3Config(object):
         #        "Could not parse bucket_metadata index_id from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('indexid>bucket_metadata_index_id'):
-              return self.get_config('indexid>bucket_metadata_index_id')
+          bucket_metadata_index_id = self.s3confstore.get_config('indexid>bucket_metadata_index_id')
+          return bucket_metadata_index_id
         except Exception as e:
             raise KeyError(
                 "Could not parse bucket_metadata index_id from config file " +
@@ -588,8 +603,8 @@ class CORTXS3Config(object):
         #        "Could not find s3_instance_count from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('cortx_s3>s3_instance_count'):
-              return self.get_config('cortx_s3>s3_instance_count')
+          s3_instance_count = self.s3confstore.get_config('cortx_s3>s3_instance_count')
+          return s3_instance_count
         except Exception as e:
             raise KeyError(
                 "Could not find s3_instance_count from config file " +
@@ -614,9 +629,15 @@ class CORTXS3Config(object):
 
     def get_cleanup_enabled(self):
         """Return flag cleanup_enabled for S3 non active"""
+        #try:
+        #    if 'leakconfig' in self._config and self._config['leakconfig']['cleanup_enabled']:
+        #        return self._config['leakconfig']['cleanup_enabled']
+        #except KeyError:
+        #    # Default value used for S/W update
+        #    return False
         try:
-            if 'leakconfig' in self._config and self._config['leakconfig']['cleanup_enabled']:
-                return self._config['leakconfig']['cleanup_enabled']
+            cleanup_enabled = self.s3confstore.get_config('leakconfig>cleanup_enabled')
+            return cleanup_enabled
         except KeyError:
             # Default value used for S/W update
             return False
@@ -630,8 +651,8 @@ class CORTXS3Config(object):
         #        "Could not parse messaging_platform from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('cortx_s3>messaging_platform'):
-              return self._config['cortx_s3']['messaging_platform']
+          messaging_platform = self.s3confstore.get_config('cortx_s3>messaging_platform')
+          return messaging_platform
         except Exception as e:
             raise KeyError(
                 "Could not parse messaging_platform from config file " +
@@ -646,8 +667,8 @@ class CORTXS3Config(object):
         #        "Could not parse topic from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('message_bus>topic'):
-              return self.get_config('message_bus>topic')
+          msgbus_topic = self.s3confstore.get_config('message_bus>topic')
+          return msgbus_topic
         except Exception as e:
             raise KeyError(
                 "Could not parse topic from config file " +
@@ -662,8 +683,8 @@ class CORTXS3Config(object):
         #        "Could not parse consumer_group from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('message_bus>consumer_group'):
-              return self.get_config('message_bus>consumer_group')
+          msgbus_consumer_group = self.s3confstore.get_config('message_bus>consumer_group')
+          return msgbus_consumer_group
         except Exception as e:
             raise KeyError(
                 "Could not parse consumer_group from config file " +
@@ -678,8 +699,8 @@ class CORTXS3Config(object):
         #        "Could not parse consumer_id_prefix from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('message_bus>consumer_id_prefix'):
-              return self.get_config('message_bus>consumer_id_prefix')
+          msgbus_consumer_id_prefix = self.s3confstore.get_config('message_bus>consumer_id_prefix')
+          return msgbus_consumer_id_prefix
         except Exception as e:
             raise KeyError(
                 "Could not parse consumer_id_prefix from config file " +
@@ -694,8 +715,8 @@ class CORTXS3Config(object):
         #        "Could not parse consumer_sleep from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('message_bus>consumer_sleep'):
-              return self.get_config('message_bus>consumer_sleep')
+          msgbus_consumer_sleep_time = self.s3confstore.get_config('message_bus>consumer_sleep')
+          return msgbus_consumer_sleep_time
         except Exception as e:
             raise KeyError(
                 "Could not parse consumer_sleep from config file " +
@@ -710,8 +731,8 @@ class CORTXS3Config(object):
         #        "Could not parse producer_id from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('message_bus>producer_id'):
-              return self.get_config('message_bus>producer_id')
+          msgbus_producer_id = self.s3confstore.get_config('message_bus>producer_id')
+          return msgbus_producer_id
         except Exception as e:
             raise KeyError(
                 "Could not parse producer_id from config file " +
@@ -726,8 +747,8 @@ class CORTXS3Config(object):
         #        "Could not parse producer_delivery_mechanism from config file " +
         #        self._conf_file)
         try:
-          if self.get_config('message_bus>producer_delivery_mechanism'):
-              return self.get_config('message_bus>producer_delivery_mechanism')
+          msgbus_producer_delivery_mechanism = self.s3confstore.get_config('message_bus>producer_delivery_mechanism')
+          return msgbus_producer_delivery_mechanism
         except Exception as e:
             raise KeyError(
                 "Could not parse producer_delivery_mechanism from config file " +
