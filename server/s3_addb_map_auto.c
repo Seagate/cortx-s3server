@@ -71,7 +71,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3AccountDeleteMetadataAction::send_response_to_s3_client",
     "S3AccountDeleteMetadataAction::validate_request",
     "S3AccountDeleteMetadataActionTest::func_callback_one",
-    "S3Action::check_authorization",
+    "S3Action::check_combo_auth",
     "S3Action::load_metadata",
     "S3Action::set_authorization_meta",
     "S3BucketActionTest::func_callback_one",

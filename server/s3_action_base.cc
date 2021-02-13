@@ -49,27 +49,27 @@ void S3Action::setup_steps() {
     // Commented till we implement Authorization feature completely.
     // Current authorisation implementation in AuthServer is partial
     ACTION_TASK_ADD(S3Action::set_authorization_meta, this);
-    ACTION_TASK_ADD(S3Action::check_authorization, this);
+    ACTION_TASK_ADD(S3Action::check_combo_auth, this);
   }
 }
 
 void S3Action::load_metadata() { next(); }
 void S3Action::set_authorization_meta() { next(); }
 
-void S3Action::check_authorization() {
+void S3Action::check_combo_auth() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  auth_client->check_authorization(
-      std::bind(&S3Action::check_authorization_successful, this),
-      std::bind(&S3Action::check_authorization_failed, this));
+  auth_client->check_combo_auth(
+      std::bind(&S3Action::check_combo_auth_successful, this),
+      std::bind(&S3Action::check_combo_auth_failed, this));
 }
 
-void S3Action::check_authorization_successful() {
+void S3Action::check_combo_auth_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3Action::check_authorization_failed() {
+void S3Action::check_combo_auth_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   if (request->client_connected()) {
     std::string error_code = auth_client->get_error_code();

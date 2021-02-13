@@ -60,7 +60,7 @@ class S3Action : public Action {
   // This can register the function as
   // task_list.push_back(std::bind( &S3SomeDerivedAction::step1, this ));
   // Ensure you call this in Derived class constructor.
-  virtual void setup_steps();
+  void setup_steps();
 
   // TODO This can be made pure virtual once its implemented for all action
   // class
@@ -68,9 +68,9 @@ class S3Action : public Action {
   virtual void set_authorization_meta();
 
   // Common steps for all Actions like Authorization.
-  void check_authorization();
-  void check_authorization_successful();
-  void check_authorization_failed();
+  void check_combo_auth();
+  void check_combo_auth_successful();
+  void check_combo_auth_failed();
 
   void fetch_acl_policies();
   void fetch_acl_bucket_policies_failed();
