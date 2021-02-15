@@ -107,7 +107,7 @@ extern S3Option* g_option_instance;
 
 #define S3_IEM_METADATA_CORRUPTED "0030060003"
 #define S3_IEM_METADATA_CORRUPTED_STR \
-  "Metadata may be corrupted. Contact Seagate Support."
+  "Metadata has accessibility issues. Contact Seagate Support."
 #define S3_IEM_METADATA_CORRUPTED_JSON ""
 
 #endif  // __S3_SERVER_IEM_H__
