@@ -60,4 +60,7 @@ s3cortxutils/s3msgbus/s3msgbus.egg-info/
 st/clitests/jclient.properties
 st/clitests/jcloud.properties
 .vscode/*
-
+.code_coverage/
+.lcovlog/
+scripts/coverage/.coverage
+st/clitests/aws_iam_credential_file

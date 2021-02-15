@@ -232,17 +232,6 @@ g_bgdelete_create_account_input_params = {
     '--const_cipher_access_str' : "s3backgroundaccesskey"
 }
 
-#parameter map for recovery
-g_recovery_create_account_input_params = {
-    '--account_name' : "s3-recovery-svc",
-    '--account_id' : "67892",
-    '--canonical_id' : "C67892",
-    '--mail' : "s3-recovery-svc@seagate.com",
-    '--s3_user_id' : "451",
-    '--const_cipher_secret_str' : "s3recoverysecretkey",
-    '--const_cipher_access_str' : "s3recoveryaccesskey"
-}
-
 #input parameter checklist for script.(creating account only)
 g_create_input_params_list = ['--ldapuser', '--ldappasswd']
 
@@ -250,7 +239,7 @@ def print_script_usage(args:list = None):
     """
     Prints help for the script.
     """
-    print("[Usage:]\ncreate_s3background_account_cipher.py CreateBGDeleteAccount/CreateRecoveryAccount --ldapuser {username} --ldappasswd {passwd}")
+    print("[Usage:]\ncreate_s3background_account_cipher.py CreateBGDeleteAccount --ldapuser {username} --ldappasswd {passwd}")
 
 def print_create_account_results(result:dict):
     """
@@ -262,7 +251,6 @@ def print_create_account_results(result:dict):
 #Commandline input routing table.
 g_cmdline_param_table = {
     'CreateBGDeleteAccount' : [g_bgdelete_create_account_input_params, g_create_input_params_list, create_account, print_create_account_results],
-    'CreateRecoveryAccount' : [g_recovery_create_account_input_params, g_create_input_params_list, create_account, print_create_account_results]
 }
 
 def process_cmdline_args(args:list):
