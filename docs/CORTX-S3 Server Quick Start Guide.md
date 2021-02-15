@@ -122,7 +122,7 @@ Refer to the image below to view the output of a successful `$ init.sh -a` run, 
 
 ![Successful run](../images/init_script_output.png)
 
-If you still see errors or a failed status, please [reach out to us for support](#Reach-Out-to-Us)
+If you still see errors or a failed status, please [reach out to us for support](https://github.com/Seagate/cortx/blob/main/SUPPORT.md)
 
 Please read our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Build-Installation-FAQ.md) for troubleshooting errors.
 
@@ -353,7 +353,7 @@ Refer to our [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/ma
 
 ### Reach Out to Us
 
-Please refer to the [Support](../SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
+Please refer to the [Support](https://github.com/Seagate/cortx/blob/main/SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
 
 Tested by:
 
