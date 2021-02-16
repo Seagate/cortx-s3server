@@ -27,12 +27,6 @@ from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 CONFIG_LOG_DIR = "/var/log/seagate/s3/s3backgrounddelete"
-conf_home_dir = os.path.join(
-            '/', 'opt', 'seagate', 'cortx', 's3', 's3backgrounddelete')
-_conf_file = os.path.join(conf_home_dir, 'config.yaml')
-conf_url = 'yaml://' + _conf_file
-
-s3confstore = S3CortxConfStore(conf_url, "dummy")
 
 def test_get_config_dir():
     """Test get_config_dir() method """
@@ -55,7 +49,7 @@ def test_get_scheduler_logger_name_failure():
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
         del config._config['logconfig']['scheduler_logger_name']
-        assert s3confstore.get_config('logconfig>scheduler_logger_name') == ''
+        assert config.s3confstore.get_config('logconfig>scheduler_logger_name') == ''
 
 
 def test_get_processor_logger_name_success():
@@ -71,7 +65,7 @@ def test_get_processor_logger_name_failure():
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
         del config._config['logconfig']['processor_logger_name']
-        assert s3confstore.get_config('logconfig>processor_logger_name') == ''
+        assert config.s3confstore.get_config('logconfig>processor_logger_name') == ''
 
 
 def test_get_scheduler_logger_file_success():
@@ -89,7 +83,7 @@ def test_get_scheduler_logger_file_failure():
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
         del config._config['logconfig']['scheduler_log_file']
-        assert s3confstore.get_config('logconfig>scheduler_log_file') == ''
+        assert config.s3confstore.get_config('logconfig>scheduler_log_file') == ''
 
 
 def test_get_processor_logger_file_success():
@@ -107,7 +101,7 @@ def test_get_processor_logger_file_failure():
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
         del config._config['logconfig']['processor_log_file']
-        assert s3confstore.get_config('logconfig>processor_log_file') == ''
+        assert config.s3confstore.get_config('logconfig>processor_log_file') == ''
 
 
 def test_get_log_level_success():
@@ -117,8 +111,9 @@ def test_get_log_level_success():
     #file_log_level = config.get_file_log_level()
     #assert file_log_level == 5
     
-    s3confstore.set_config('logconfig>file_log_level', '5', True)
-    file_log_level = s3confstore.get_config('logconfig>file_log_level')
+    config = CORTXS3Config()
+    config.s3confstore.set_config('logconfig>file_log_level', '5', True)
+    file_log_level = config.s3confstore.get_config('logconfig>file_log_level')
     assert file_log_level == '5'
 
 
@@ -129,7 +124,7 @@ def test_get_log_level_failure():
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
         del config._config['logconfig']['file_log_level']
-        assert s3confstore.get_config('logconfig>file_log_level') == ''
+        assert config.s3confstore.get_config('logconfig>file_log_level') == ''
 
 
 def test_get_console_log_level_success():
@@ -139,8 +134,9 @@ def test_get_console_log_level_success():
     #console_log_level = config.get_console_log_level()
     #assert console_log_level == 30
     
-    s3confstore.set_config('logconfig>console_log_level', '30', False)
-    console_log_level = s3confstore.get_config('logconfig>console_log_level')
+    config = CORTXS3Config()
+    config.s3confstore.set_config('logconfig>console_log_level', '30', False)
+    console_log_level = config.s3confstore.get_config('logconfig>console_log_level')
     assert console_log_level == '30'
 
 
@@ -152,7 +148,7 @@ def test_get_console_log_level_failure():
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
         del config._config['logconfig']['console_log_level']
-        assert s3confstore.get_config('logconfig>console_log_level') == ''
+        assert config.s3confstore.get_config('logconfig>console_log_level') == ''
 
 
 def test_get_log_format_success():
@@ -163,8 +159,9 @@ def test_get_log_format_success():
     #log_format = config.get_log_format()
     #assert log_format == "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     
-    s3confstore.set_config('logconfig>log_format', '%(asctime)s - %(name)s - %(levelname)s - %(message)s', False)
-    log_format = s3confstore.get_config('logconfig>log_format')
+    config = CORTXS3Config()
+    config.s3confstore.set_config('logconfig>log_format', '%(asctime)s - %(name)s - %(levelname)s - %(message)s', False)
+    log_format = config.s3confstore.get_config('logconfig>log_format')
     assert log_format == "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 
@@ -175,7 +172,7 @@ def test_get_log_format_failure():
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
         del config._config['logconfig']['log_format']
-        assert s3confstore.get_config('logconfig>log_format') == ''
+        assert config.s3confstore.get_config('logconfig>log_format') == ''
 
 
 def test_get_cortx_s3_endpoint_success():
@@ -185,8 +182,9 @@ def test_get_cortx_s3_endpoint_success():
     #s3_endpoint = config.get_cortx_s3_endpoint()
     #assert s3_endpoint == "http://127.0.0.1:28049"
     
-    s3confstore.set_config('cortx_s3>endpoint', 'http://127.0.0.1:28049', False)
-    s3_endpoint = s3confstore.get_config('cortx_s3>endpoint')
+    config = CORTXS3Config()
+    config.s3confstore.set_config('cortx_s3>endpoint', 'http://127.0.0.1:28049', False)
+    s3_endpoint = config.s3confstore.get_config('cortx_s3>endpoint')
     assert s3_endpoint == "http://127.0.0.1:28049"
 
 def test_get_cortx_s3_endpoint_failure():
@@ -196,7 +194,7 @@ def test_get_cortx_s3_endpoint_failure():
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
         del config._config['cortx_s3']['endpoint']
-        assert s3confstore.get_config('cortx_s3>endpoint') == ''
+        assert config.s3confstore.get_config('cortx_s3>endpoint') == ''
 
 def test_get_cortx_s3_service_success():
     """Test service configuration in cortxs3."""
@@ -205,8 +203,9 @@ def test_get_cortx_s3_service_success():
     #s3_service = config.get_cortx_s3_service()
     #assert s3_service == "cortxs3"
     
-    s3confstore.set_config('cortx_s3>service', 'cortxs3', False)
-    s3_service = s3confstore.get_config('cortx_s3>service')
+    config = CORTXS3Config()
+    config.s3confstore.set_config('cortx_s3>service', 'cortxs3', False)
+    s3_service = config.s3confstore.get_config('cortx_s3>service')
     assert s3_service == "cortxs3"
 
 def test_get_cortx_s3_service_failure():
@@ -217,7 +216,7 @@ def test_get_cortx_s3_service_failure():
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
         del config._config['cortx_s3']['service']
-        assert s3confstore.get_config('cortx_s3>service') == ''
+        assert config.s3confstore.get_config('cortx_s3>service') == ''
 
 def test_get_cortx_s3_region_success():
     """Test default_region configuration in cortxs3."""
@@ -226,8 +225,9 @@ def test_get_cortx_s3_region_success():
     #s3_region = config.get_cortx_s3_region()
     #assert s3_region == "us-west2"
     
-    s3confstore.set_config('cortx_s3>default_region', 'us-west2', False)
-    s3_region = s3confstore.get_config('cortx_s3>default_region')
+    config = CORTXS3Config()
+    config.s3confstore.set_config('cortx_s3>default_region', 'us-west2', False)
+    s3_region = config.s3confstore.get_config('cortx_s3>default_region')
     assert s3_region == "us-west2"
 
 def test_get_cortx_s3_region_failure():
@@ -238,7 +238,7 @@ def test_get_cortx_s3_region_failure():
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
         del config._config['cortx_s3']['default_region']
-        assert s3confstore.get_config('cortx_s3>default_region') == ''
+        assert config.s3confstore.get_config('cortx_s3>default_region') == ''
 
 def test_get_rabbitmq_username_success():
     """Test rabbitmq username."""
@@ -247,8 +247,9 @@ def test_get_rabbitmq_username_success():
     #rabbitmq_username = config.get_rabbitmq_username()
     #assert rabbitmq_username == "admin"
     
-    s3confstore.set_config('rabbitmq>username', 'admin', False)
-    rabbitmq_username = s3confstore.get_config('rabbitmq>username')
+    config = CORTXS3Config()
+    config.s3confstore.set_config('rabbitmq>username', 'admin', False)
+    rabbitmq_username = config.s3confstore.get_config('rabbitmq>username')
     assert rabbitmq_username == "admin"
 
 
@@ -259,7 +260,7 @@ def test_get_rabbitmq_username_failure():
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
         del config._config['rabbitmq']['username']
-        assert s3confstore.get_config('rabbitmq>username') == ''
+        assert config.s3confstore.get_config('rabbitmq>username') == ''
 
 
 def test_get_rabbitmq_password_success():
@@ -269,8 +270,9 @@ def test_get_rabbitmq_password_success():
     #rabbitmq_password = config.get_rabbitmq_password()
     #assert rabbitmq_password == "password_admin"
     
-    s3confstore.set_config('rabbitmq>password', 'password_admin', False)
-    rabbitmq_password = s3confstore.get_config('rabbitmq>password')
+    config = CORTXS3Config()
+    config.s3confstore.set_config('rabbitmq>password', 'password_admin', False)
+    rabbitmq_password = config.s3confstore.get_config('rabbitmq>password')
     assert rabbitmq_password == "password_admin"
 
 
@@ -281,7 +283,7 @@ def test_get_rabbitmq_password_failure():
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
         del config._config['rabbitmq']['password']
-        assert s3confstore.get_config('rabbitmq>password') == ''
+        assert config.s3confstore.get_config('rabbitmq>password') == ''
 
 
 def test_get_rabbitmq_host_success():
@@ -291,8 +293,9 @@ def test_get_rabbitmq_host_success():
     #rabbitmq_host = config.get_rabbitmq_host()
     #assert rabbitmq_host == "107.1.0.1"
     
-    s3confstore.set_config('rabbitmq>host', '107.1.0.1', False)
-    rabbitmq_host = s3confstore.get_config('rabbitmq>host')
+    config = CORTXS3Config()
+    config.s3confstore.set_config('rabbitmq>host', '107.1.0.1', False)
+    rabbitmq_host = config.s3confstore.get_config('rabbitmq>host')
     assert rabbitmq_host == "107.1.0.1"
 
 
@@ -303,7 +306,7 @@ def test_get_rabbitmq_host_failure():
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
         del config._config['rabbitmq']['host']
-        assert s3confstore.get_config('rabbitmq>host') == ''
+        assert config.s3confstore.get_config('rabbitmq>host') == ''
 
 
 def test_get_rabbitmq_queue_name_success():
@@ -313,8 +316,9 @@ def test_get_rabbitmq_queue_name_success():
     #rabbitmq_queue_name = config.get_rabbitmq_queue_name()
     #assert rabbitmq_queue_name == "s3_delete_obj_job_queue"
     
-    s3confstore.set_config('rabbitmq>queue', 's3_delete_obj_job_queue', False)
-    rabbitmq_queue_name = s3confstore.get_config('rabbitmq>queue')
+    config = CORTXS3Config()
+    config.s3confstore.set_config('rabbitmq>queue', 's3_delete_obj_job_queue', False)
+    rabbitmq_queue_name = config.s3confstore.get_config('rabbitmq>queue')
     assert rabbitmq_queue_name == "s3_delete_obj_job_queue"
 
 
@@ -325,7 +329,7 @@ def test_get_rabbitmq_queue_name_failure():
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
         del config._config['rabbitmq']['queue']
-        assert s3confstore.get_config('rabbitmq>queue') == ''
+        assert config.s3confstore.get_config('rabbitmq>queue') == ''
 
 
 def test_get_rabbitmq_exchange_success():
@@ -335,8 +339,9 @@ def test_get_rabbitmq_exchange_success():
     #rabbitmq_exchange = config.get_rabbitmq_exchange()
     #assert rabbitmq_exchange == "test_exchange"
     
-    s3confstore.set_config('rabbitmq>exchange', 'test_exchange', False)
-    rabbitmq_exchange = s3confstore.get_config('rabbitmq>exchange')
+    config = CORTXS3Config()
+    config.s3confstore.set_config('rabbitmq>exchange', 'test_exchange', False)
+    rabbitmq_exchange = config.s3confstore.get_config('rabbitmq>exchange')
     assert rabbitmq_exchange == "test_exchange"
 
 
@@ -347,8 +352,9 @@ def test_get_rabbitmq_exchange_type_success():
     #rabbitmq_exchange_type = config.get_rabbitmq_exchange_type()
     #assert rabbitmq_exchange_type == "direct"
     
-    s3confstore.set_config('rabbitmq>exchange_type', 'direct', False)
-    rabbitmq_exchange_type = s3confstore.get_config('rabbitmq>exchange_type')
+    config = CORTXS3Config()
+    config.s3confstore.set_config('rabbitmq>exchange_type', 'direct', True)
+    rabbitmq_exchange_type = config.s3confstore.get_config('rabbitmq>exchange_type')
     assert rabbitmq_exchange_type == "direct"
 
 def test_get_rabbitmq_exchange_type_failure():
@@ -359,7 +365,7 @@ def test_get_rabbitmq_exchange_type_failure():
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
         del config._config['rabbitmq']['exchange_type']
-        assert s3confstore.get_config('rabbitmq>exchange') == ''
+        assert config.s3confstore.get_config('rabbitmq>exchange_type') == ''
 
 
 def test_get_rabbitmq_mode_success():
@@ -369,8 +375,11 @@ def test_get_rabbitmq_mode_success():
     #rabbitmq_mode = config.get_rabbitmq_mode()
     #assert rabbitmq_mode == 1
     
-    s3confstore.set_config('rabbitmq>mode', '1', False)
-    rabbitmq_mode = s3confstore.get_config('rabbitmq>mode')
+    
+    
+    config = CORTXS3Config()
+    config.s3confstore.set_config('rabbitmq>mode', '1', False)
+    rabbitmq_mode = config.s3confstore.get_config('rabbitmq>mode')
     assert rabbitmq_mode == '1'
 
 
@@ -381,7 +390,7 @@ def test_get_rabbitmq_mode_failure():
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
         del config._config['rabbitmq']['mode']
-        assert s3confstore.get_config('rabbitmq>mode') == ''
+        assert config.s3confstore.get_config('rabbitmq>mode') == ''
 
 
 def test_get_rabbitmq_durable_success():
@@ -391,8 +400,9 @@ def test_get_rabbitmq_durable_success():
     #rabbitmq_durable = config.get_rabbitmq_durable()
     #assert rabbitmq_durable == "True"
     
-    s3confstore.set_config('rabbitmq>durable', 'True', False)
-    rabbitmq_durable = s3confstore.get_config('rabbitmq>durable')
+    config = CORTXS3Config()
+    config.s3confstore.set_config('rabbitmq>durable', 'True', False)
+    rabbitmq_durable = config.s3confstore.get_config('rabbitmq>durable')
     assert rabbitmq_durable == "True"
 
 
@@ -403,7 +413,7 @@ def test_get_rabbitmq_durable_failure():
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
         del config._config['rabbitmq']['durable']
-        assert s3confstore.get_config('rabbitmq>durable') == ''
+        assert config.s3confstore.get_config('rabbitmq>durable') == ''
 
 
 def test_get_schedule_interval_success():
@@ -413,8 +423,9 @@ def test_get_schedule_interval_success():
     #schedule_interval = config.get_schedule_interval()
     #assert schedule_interval == 900
     
-    s3confstore.set_config('rabbitmq>schedule_interval_secs', '900', False)
-    schedule_interval = s3confstore.get_config('rabbitmq>schedule_interval_secs')
+    config = CORTXS3Config()
+    config.s3confstore.set_config('rabbitmq>schedule_interval_secs', '900', False)
+    schedule_interval = config.s3confstore.get_config('rabbitmq>schedule_interval_secs')
     assert schedule_interval == '900'
 
 
@@ -426,7 +437,7 @@ def test_get_schedule_interval_failure():
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
         del config._config['rabbitmq']['schedule_interval_secs']
-        assert s3confstore.get_config('rabbitmq>schedule_interval_secs') == ''
+        assert config.s3confstore.get_config('rabbitmq>schedule_interval_secs') == ''
 
 
 def test_get_probable_delete_index_id_success():
@@ -436,8 +447,9 @@ def test_get_probable_delete_index_id_success():
     #index_id = config.get_probable_delete_index_id()
     #assert index_id == "test_index"
     
-    s3confstore.set_config('indexid>probable_delete_index_id', 'test_index', False)
-    index_id = s3confstore.get_config('indexid>probable_delete_index_id')
+    config = CORTXS3Config()
+    config.s3confstore.set_config('indexid>probable_delete_index_id', 'test_index', False)
+    index_id = config.s3confstore.get_config('indexid>probable_delete_index_id')
     assert index_id == "test_index"
 
 
@@ -449,4 +461,4 @@ def test_get_probable_delete_index_id_failure():
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
         del config._config['indexid']['probable_delete_index_id']
-        assert s3confstore.get_config('indexid>probable_delete_index_id') == ''
+        assert config.s3confstore.get_config('indexid>probable_delete_index_id') == ''

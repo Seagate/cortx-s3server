@@ -82,7 +82,6 @@ class CORTXS3Config(object):
         self._conf_file ='yaml://' + self._conf_file
         self.s3confstore = S3CortxConfStore(config=self._conf_file, index= str(uuid.uuid1()))
         
-
     def generate_key(self, config, use_base64, key_len, const_key):
         s3cipher = CortxS3Cipher(config, use_base64, key_len, const_key)
         return s3cipher.generate_key()
