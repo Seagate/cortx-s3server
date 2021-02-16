@@ -885,7 +885,7 @@ bool S3AuthClient::setup_auth_request_body() {
     if (op_type == S3AuthClientOpType::combo_auth) {
       auth_request_body = "Action=AuthenticateAndAuthorize";
     } else {
-      auth_request_body = "Action=Authorize";
+      auth_request_body = "Action=AuthorizeUser";
     }
   } else if (op_type == S3AuthClientOpType::authentication) {  // Auth request
 
