@@ -24,7 +24,6 @@ import os
 import pytest
 
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
-from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 CONFIG_LOG_DIR = "/var/log/seagate/s3/s3backgrounddelete"
 
@@ -106,16 +105,10 @@ def test_get_processor_logger_file_failure():
 
 def test_get_log_level_success():
     """Test file log level in logconfig."""
-    #config = CORTXS3Config()
-    #config._config['logconfig']['file_log_level'] = 5
-    #file_log_level = config.get_file_log_level()
-    #assert file_log_level == 5
-    
     config = CORTXS3Config()
     config.s3confstore.set_config('logconfig>file_log_level', '5', True)
     file_log_level = config.s3confstore.get_config('logconfig>file_log_level')
-    assert file_log_level == '5'
-
+    assert int(file_log_level) == 5
 
 def test_get_log_level_failure():
     """
@@ -129,15 +122,10 @@ def test_get_log_level_failure():
 
 def test_get_console_log_level_success():
     """Test console log level in logconfig."""
-    #config = CORTXS3Config()
-    #config._config['logconfig']['console_log_level'] = 30
-    #console_log_level = config.get_console_log_level()
-    #assert console_log_level == 30
-    
     config = CORTXS3Config()
     config.s3confstore.set_config('logconfig>console_log_level', '30', False)
     console_log_level = config.s3confstore.get_config('logconfig>console_log_level')
-    assert console_log_level == '30'
+    assert int(console_log_level) == 30
 
 
 def test_get_console_log_level_failure():
@@ -153,12 +141,6 @@ def test_get_console_log_level_failure():
 
 def test_get_log_format_success():
     """Test log format in logconfig."""
-    #config = CORTXS3Config()
-    #config._config['logconfig']['log_format'] =\
-    #    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    #log_format = config.get_log_format()
-    #assert log_format == "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    
     config = CORTXS3Config()
     config.s3confstore.set_config('logconfig>log_format', '%(asctime)s - %(name)s - %(levelname)s - %(message)s', False)
     log_format = config.s3confstore.get_config('logconfig>log_format')
@@ -177,11 +159,6 @@ def test_get_log_format_failure():
 
 def test_get_cortx_s3_endpoint_success():
     """Test endpoint configuration in cortxs3."""
-    #config = CORTXS3Config()
-    #config._config['cortx_s3']['endpoint'] = "http://127.0.0.1:28049"
-    #s3_endpoint = config.get_cortx_s3_endpoint()
-    #assert s3_endpoint == "http://127.0.0.1:28049"
-    
     config = CORTXS3Config()
     config.s3confstore.set_config('cortx_s3>endpoint', 'http://127.0.0.1:28049', False)
     s3_endpoint = config.s3confstore.get_config('cortx_s3>endpoint')
@@ -198,11 +175,6 @@ def test_get_cortx_s3_endpoint_failure():
 
 def test_get_cortx_s3_service_success():
     """Test service configuration in cortxs3."""
-    #config = CORTXS3Config()
-    #config._config['cortx_s3']['service'] = "cortxs3"
-    #s3_service = config.get_cortx_s3_service()
-    #assert s3_service == "cortxs3"
-    
     config = CORTXS3Config()
     config.s3confstore.set_config('cortx_s3>service', 'cortxs3', False)
     s3_service = config.s3confstore.get_config('cortx_s3>service')
@@ -220,11 +192,6 @@ def test_get_cortx_s3_service_failure():
 
 def test_get_cortx_s3_region_success():
     """Test default_region configuration in cortxs3."""
-    #config = CORTXS3Config()
-    #config._config['cortx_s3']['default_region'] = "us-west2"
-    #s3_region = config.get_cortx_s3_region()
-    #assert s3_region == "us-west2"
-    
     config = CORTXS3Config()
     config.s3confstore.set_config('cortx_s3>default_region', 'us-west2', False)
     s3_region = config.s3confstore.get_config('cortx_s3>default_region')
@@ -242,11 +209,6 @@ def test_get_cortx_s3_region_failure():
 
 def test_get_rabbitmq_username_success():
     """Test rabbitmq username."""
-    #config = CORTXS3Config()
-    #config._config['rabbitmq']['username'] = "admin"
-    #rabbitmq_username = config.get_rabbitmq_username()
-    #assert rabbitmq_username == "admin"
-    
     config = CORTXS3Config()
     config.s3confstore.set_config('rabbitmq>username', 'admin', False)
     rabbitmq_username = config.s3confstore.get_config('rabbitmq>username')
@@ -265,11 +227,6 @@ def test_get_rabbitmq_username_failure():
 
 def test_get_rabbitmq_password_success():
     """Test rabbitmq password."""
-    #config = CORTXS3Config()
-    #config._config['rabbitmq']['password'] = "password_admin"
-    #rabbitmq_password = config.get_rabbitmq_password()
-    #assert rabbitmq_password == "password_admin"
-    
     config = CORTXS3Config()
     config.s3confstore.set_config('rabbitmq>password', 'password_admin', False)
     rabbitmq_password = config.s3confstore.get_config('rabbitmq>password')
@@ -288,11 +245,6 @@ def test_get_rabbitmq_password_failure():
 
 def test_get_rabbitmq_host_success():
     """Test rabbitmq hostname."""
-    #config = CORTXS3Config()
-    #config._config['rabbitmq']['host'] = "107.1.0.1"
-    #rabbitmq_host = config.get_rabbitmq_host()
-    #assert rabbitmq_host == "107.1.0.1"
-    
     config = CORTXS3Config()
     config.s3confstore.set_config('rabbitmq>host', '107.1.0.1', False)
     rabbitmq_host = config.s3confstore.get_config('rabbitmq>host')
@@ -311,11 +263,6 @@ def test_get_rabbitmq_host_failure():
 
 def test_get_rabbitmq_queue_name_success():
     """Test rabbitmq message queue name."""
-    #config = CORTXS3Config()
-    #config._config['rabbitmq']['queue'] = "s3_delete_obj_job_queue"
-    #rabbitmq_queue_name = config.get_rabbitmq_queue_name()
-    #assert rabbitmq_queue_name == "s3_delete_obj_job_queue"
-    
     config = CORTXS3Config()
     config.s3confstore.set_config('rabbitmq>queue', 's3_delete_obj_job_queue', False)
     rabbitmq_queue_name = config.s3confstore.get_config('rabbitmq>queue')
@@ -334,11 +281,6 @@ def test_get_rabbitmq_queue_name_failure():
 
 def test_get_rabbitmq_exchange_success():
     """Test rabbitmq exchange."""
-    #config = CORTXS3Config()
-    #config._config['rabbitmq']['exchange'] = "test_exchange"
-    #rabbitmq_exchange = config.get_rabbitmq_exchange()
-    #assert rabbitmq_exchange == "test_exchange"
-    
     config = CORTXS3Config()
     config.s3confstore.set_config('rabbitmq>exchange', 'test_exchange', False)
     rabbitmq_exchange = config.s3confstore.get_config('rabbitmq>exchange')
@@ -347,11 +289,6 @@ def test_get_rabbitmq_exchange_success():
 
 def test_get_rabbitmq_exchange_type_success():
     """Test rabbitmq exchange type."""
-    #config = CORTXS3Config()
-    #config._config['rabbitmq']['exchange_type'] = "direct"
-    #rabbitmq_exchange_type = config.get_rabbitmq_exchange_type()
-    #assert rabbitmq_exchange_type == "direct"
-    
     config = CORTXS3Config()
     config.s3confstore.set_config('rabbitmq>exchange_type', 'direct', True)
     rabbitmq_exchange_type = config.s3confstore.get_config('rabbitmq>exchange_type')
@@ -370,17 +307,10 @@ def test_get_rabbitmq_exchange_type_failure():
 
 def test_get_rabbitmq_mode_success():
     """Test rabbitmq mode."""
-    #config = CORTXS3Config()
-    #config._config['rabbitmq']['mode'] = 1
-    #rabbitmq_mode = config.get_rabbitmq_mode()
-    #assert rabbitmq_mode == 1
-    
-    
-    
     config = CORTXS3Config()
     config.s3confstore.set_config('rabbitmq>mode', '1', False)
     rabbitmq_mode = config.s3confstore.get_config('rabbitmq>mode')
-    assert rabbitmq_mode == '1'
+    assert int(rabbitmq_mode) == 1
 
 
 def test_get_rabbitmq_mode_failure():
@@ -395,11 +325,6 @@ def test_get_rabbitmq_mode_failure():
 
 def test_get_rabbitmq_durable_success():
     """Test rabbitmq durable."""
-    #config = CORTXS3Config()
-    #config._config['rabbitmq']['durable'] = "True"
-    #rabbitmq_durable = config.get_rabbitmq_durable()
-    #assert rabbitmq_durable == "True"
-    
     config = CORTXS3Config()
     config.s3confstore.set_config('rabbitmq>durable', 'True', False)
     rabbitmq_durable = config.s3confstore.get_config('rabbitmq>durable')
@@ -418,15 +343,10 @@ def test_get_rabbitmq_durable_failure():
 
 def test_get_schedule_interval_success():
     """Test if scheduler time interval is returned."""
-    #config = CORTXS3Config()
-    #config._config['rabbitmq']['schedule_interval_secs'] = 900
-    #schedule_interval = config.get_schedule_interval()
-    #assert schedule_interval == 900
-    
     config = CORTXS3Config()
     config.s3confstore.set_config('rabbitmq>schedule_interval_secs', '900', False)
     schedule_interval = config.s3confstore.get_config('rabbitmq>schedule_interval_secs')
-    assert schedule_interval == '900'
+    assert int(schedule_interval) == 900
 
 
 def test_get_schedule_interval_failure():
@@ -442,11 +362,6 @@ def test_get_schedule_interval_failure():
 
 def test_get_probable_delete_index_id_success():
     """Test if probable delete index id is returned."""
-    #config = CORTXS3Config()
-    #config._config['indexid']['probable_delete_index_id'] = "test_index"
-    #index_id = config.get_probable_delete_index_id()
-    #assert index_id == "test_index"
-    
     config = CORTXS3Config()
     config.s3confstore.set_config('indexid>probable_delete_index_id', 'test_index', False)
     index_id = config.s3confstore.get_config('indexid>probable_delete_index_id')
