@@ -24,6 +24,7 @@ import os
 import shutil
 import logging
 import yaml
+import uuid
 
 from s3backgrounddelete.cortx_cluster_config import CipherInvalidToken
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
@@ -75,11 +76,11 @@ class CORTXS3Config(object):
                 self._conf_file +
                 " it doesn't have read access")
             sys.exit()
-        #with open(self._conf_file, 'r') as file_config:
-            #self._config = yaml.safe_load(file_config)
+        with open(self._conf_file, 'r') as file_config:
+            self._config = yaml.safe_load(file_config)
         # Load config.yaml file through confstore.
         self._conf_file ='yaml://' + self._conf_file
-        self.s3confstore = S3CortxConfStore(self._conf_file, "bgdelete_dummy")
+        self.s3confstore = S3CortxConfStore(config=self._conf_file, index= str(uuid.uuid1()))
         
 
     def generate_key(self, config, use_base64, key_len, const_key):
