@@ -161,7 +161,7 @@ class CORTXS3Config(object):
         """Return file log level from config file or KeyError."""
         try:
           log_level = self.s3confstore.get_config('logconfig>file_log_level')
-          return log_level
+          return int(log_level)
         except:
             raise KeyError(
                 "Could not parse file loglevel from config file " +
@@ -171,7 +171,7 @@ class CORTXS3Config(object):
         """Return console log level from config file or KeyError."""
         try:
           console_log_level = self.s3confstore.get_config('logconfig>console_log_level')
-          return console_log_level
+          return int(console_log_level)
         except:
             raise KeyError(
                 "Could not parse console loglevel from config file " +
@@ -308,7 +308,7 @@ class CORTXS3Config(object):
         """Return mode of rabbitmq from config file or KeyError."""
         try:
           rabbitmq_mode = self.s3confstore.get_config('rabbitmq>mode')
-          return rabbitmq_mode
+          return int(rabbitmq_mode)
         except:
             raise KeyError(
                 "Could not parse rabbitmq mode from config file " +
@@ -328,7 +328,7 @@ class CORTXS3Config(object):
         """Return schedule interval of rabbitmq from config file or KeyError."""
         try:
           schedule_interval = self.s3confstore.get_config('rabbitmq>schedule_interval_secs')
-          return schedule_interval
+          return int(schedule_interval)
         except:
             raise KeyError(
                 "Could not parse rabbitmq schedule interval from config file " +
