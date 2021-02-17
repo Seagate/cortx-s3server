@@ -208,6 +208,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   virtual void set_content_length(std::string length);
   virtual size_t get_content_length();
   virtual size_t get_part_one_size();
+  virtual void rename_object_name(std::string new_object_name);
   virtual std::string get_content_length_str();
   virtual void set_content_type(std::string content_type);
   virtual std::string get_content_type();
@@ -257,7 +258,6 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   virtual std::string get_upload_id();
   std::string& get_encoded_object_acl();
   std::string get_acl_as_xml();
-<<<<<<< HEAD
 
   struct m0_fid get_pvid() const;
   void set_pvid(const struct m0_fid* p_pvid);
@@ -265,11 +265,9 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   const std::string& get_pvid_str() const { return pvid_str; }
   void set_pvid_str(const std::string& val) { pvid_str = val; }
 
-=======
   unsigned int get_number_of_parts() const { return this->obj_parts; }
   unsigned int get_number_of_fragments() const { return this->obj_fragments; }
   bool is_object_extended() { return obj_type != S3ObjectMetadataType::simple; }
->>>>>>> Br/dg/s3fault/eos 17129 (#678)
   // Load attributes.
   std::string get_system_attribute(std::string key);
   void add_system_attribute(std::string key, std::string val);
