@@ -246,6 +246,8 @@ class S3AuthClient {
   void set_bucket_acl(const std::string& bucket_acl);
   void set_event_with_retry_interval();
 
+  friend class S3AuthClientTest;
+
   FRIEND_TEST(S3AuthClientTest, Constructor);
   FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBodyGet);
   FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBodyHead);

@@ -32,74 +32,8 @@
 #include "s3_option.h"
 #include "s3_common_utilities.h"
 #include "atexit.h"
-/*
-void s3_auth_op_done_on_main_thread(evutil_socket_t, short events,
-                                    void *user_data) {
-  if (user_data == NULL) {
-    s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
-    s3_log(S3_LOG_ERROR, "", "Input argument user_data is NULL\n");
-    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-    return;
-  }
-  struct user_event_context *user_context =
-      (struct user_event_context *)user_data;
-  S3AsyncOpContextBase *context = (S3AsyncOpContextBase *)user_context->app_ctx;
-  if (context == NULL) {
-    s3_log(S3_LOG_ERROR, "", "context pointer is NULL\n");
-  }
-  const auto request_id = context->get_request()->get_request_id();
-  const auto stripped_request_id =
-      context->get_request()->get_stripped_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  struct event *s3user_event = (struct event *)user_context->user_event;
-  if (s3user_event == NULL) {
-    s3_log(S3_LOG_ERROR, request_id, "User event is NULL\n");
-  }
 
-  if (context->is_at_least_one_op_successful()) {
-    ADDB(S3_ADDB_AUTH_ID, context->get_request()->addb_request_id,
-         ACTS_AUTH_OP_MT_SUCC);
-    context->on_success_handler()();  // Invoke the handler.
-  } else {
-    ADDB(S3_ADDB_AUTH_ID, context->get_request()->addb_request_id,
-         ACTS_AUTH_OP_MT_FAILED);
-    context->on_failed_handler()();  // Invoke the handler.
-  }
-  free(user_data);
-  // Free user event
-  if (s3user_event) event_free(s3user_event);
-  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
-}
-
-// Post success handler on main thread so that current auth callback stack can
-// unwind and let the current request-response of evhtp to complete.
-// This is primarily required as evhtp request object should not be deleted
-// during the response callbacks like auth_response.
-void s3_auth_op_success(void *application_context, int rc) {
-  S3AsyncOpContextBase *app_ctx = (S3AsyncOpContextBase *)application_context;
-  const auto request_id = app_ctx->get_request()->get_request_id();
-  const auto stripped_request_id =
-      app_ctx->get_request()->get_stripped_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_DEBUG, request_id, "Error code = %d\n", rc);
-  app_ctx->set_op_errno_for(0, rc);
-  struct user_event_context *user_ctx =
-      (struct user_event_context *)calloc(1, sizeof(struct user_event_context));
-  user_ctx->app_ctx = app_ctx;
-  ADDB(S3_ADDB_AUTH_ID, app_ctx->get_request()->addb_request_id,
-       ACTS_AUTH_OP_SCHED_MT);
-#ifdef S3_GOOGLE_TEST
-  evutil_socket_t test_sock = 0;
-  short events = 0;
-  s3_auth_op_done_on_main_thread(test_sock, events, (void *)user_ctx);
-#else
-  S3PostToMainLoop((void *)user_ctx)(s3_auth_op_done_on_main_thread,
-                                     request_id);
-#endif  // S3_GOOGLE_TEST
-  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
-}
-*/
-/* S3 Auth client callbacks */
+// S3 Auth client callbacks
 
 static int log_http_header(evhtp_header_t *header, void *arg) {
   s3_log(S3_LOG_DEBUG, (char *)arg, "%s: %s", header->key, header->val);
@@ -245,7 +179,6 @@ evhtp_res on_read_response(evhtp_request_t *p_req, evbuf_t *p_buf,
   ::free(auth_response_body);
 
   if (S3HttpSuccess200 == resp_status) {
-    // s3_auth_op_success(p_auth_ctx, 0);  // Invoke the handler.
     p_auth_ctx->on_success_handler()();
   } else {
     p_auth_ctx->on_failed_handler()();  // Invoke the handler.
@@ -680,10 +613,7 @@ void S3AuthClient::set_event_with_retry_interval() {
 }
 
 std::string S3AuthClient::get_signature_from_response() {
-  if (auth_context->is_success()) {
-    return auth_context->get_signature_sha256();
-  }
-  return "";
+  return auth_context->is_success() ? auth_context->get_signature_sha256() : "";
 }
 
 std::string S3AuthClient::get_error_message() const {
@@ -1077,8 +1007,8 @@ void S3AuthClient::trigger_request(std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
 
-  assert(!!on_success);
-  assert(!!on_failed);
+  assert(on_success);
+  assert(on_failed);
 
   handler_on_success = std::move(on_success);
   handler_on_failed = std::move(on_failed);
