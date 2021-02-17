@@ -106,9 +106,9 @@ def test_get_processor_logger_file_failure():
 def test_get_log_level_success():
     """Test file log level in logconfig."""
     config = CORTXS3Config()
-    config.s3confstore.set_config('logconfig>file_log_level', '5', True)
+    config.s3confstore.set_config('logconfig>file_log_level', 20, False)
     file_log_level = config.s3confstore.get_config('logconfig>file_log_level')
-    assert int(file_log_level) == 5
+    assert file_log_level == 20
 
 def test_get_log_level_failure():
     """
@@ -123,9 +123,9 @@ def test_get_log_level_failure():
 def test_get_console_log_level_success():
     """Test console log level in logconfig."""
     config = CORTXS3Config()
-    config.s3confstore.set_config('logconfig>console_log_level', '30', False)
+    config.s3confstore.set_config('logconfig>console_log_level', 30, False)
     console_log_level = config.s3confstore.get_config('logconfig>console_log_level')
-    assert int(console_log_level) == 30
+    assert console_log_level == 30
 
 
 def test_get_console_log_level_failure():
@@ -308,9 +308,9 @@ def test_get_rabbitmq_exchange_type_failure():
 def test_get_rabbitmq_mode_success():
     """Test rabbitmq mode."""
     config = CORTXS3Config()
-    config.s3confstore.set_config('rabbitmq>mode', '1', False)
+    config.s3confstore.set_config('rabbitmq>mode', 1, False)
     rabbitmq_mode = config.s3confstore.get_config('rabbitmq>mode')
-    assert int(rabbitmq_mode) == 1
+    assert rabbitmq_mode == 1
 
 
 def test_get_rabbitmq_mode_failure():
@@ -344,9 +344,9 @@ def test_get_rabbitmq_durable_failure():
 def test_get_schedule_interval_success():
     """Test if scheduler time interval is returned."""
     config = CORTXS3Config()
-    config.s3confstore.set_config('rabbitmq>schedule_interval_secs', '900', False)
+    config.s3confstore.set_config('rabbitmq>schedule_interval_secs', 900, False)
     schedule_interval = config.s3confstore.get_config('rabbitmq>schedule_interval_secs')
-    assert int(schedule_interval) == 900
+    assert schedule_interval == 900
 
 
 def test_get_schedule_interval_failure():

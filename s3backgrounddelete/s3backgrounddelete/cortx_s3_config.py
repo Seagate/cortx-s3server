@@ -103,7 +103,7 @@ class CORTXS3Config(object):
         """Return version of S3 background delete config file or KeyError."""
         try:
           config_version = self.s3confstore.get_config('version_config>version')
-          return config_version
+          return int(config_version)
         except:
             raise KeyError("Could not parse version from config file " + self._conf_file)
 
@@ -156,6 +156,7 @@ class CORTXS3Config(object):
             raise KeyError(
                 "Could not parse processor loggerfile from config file " +
                 self._conf_file)
+
 
     def get_file_log_level(self):
         """Return file log level from config file or KeyError."""
@@ -237,7 +238,7 @@ class CORTXS3Config(object):
         """Return daemon_mode flag value for scheduler from config file\
            else it should return default as "True"."""
         daemon_mode = self.s3confstore.get_config('cortx_s3>daemon_mode')
-        if daemon_mode:
+        if not daemon_mode:
             return daemon_mode
         else:
             #Return default mode as daemon mode i.e. "True"
@@ -348,7 +349,7 @@ class CORTXS3Config(object):
         """Return maximum number of keys from config file or KeyError."""
         max_keys = self.s3confstore.get_config('indexid>max_keys')
         if max_keys:
-            return max_keys
+            return int(max_keys)
         else:
             return 1000
 
@@ -366,7 +367,7 @@ class CORTXS3Config(object):
         """Return maximum bytes for a log file"""
         try:
           max_bytes = self.s3confstore.get_config('logconfig>max_bytes')
-          return max_bytes
+          return int(max_bytes)
         except:
             raise KeyError(
                 "Could not parse maxBytes from config file " +
@@ -376,7 +377,7 @@ class CORTXS3Config(object):
         """Return count of log files"""
         try:
           backup_count = self.s3confstore.get_config('logconfig>backup_count')
-          return backup_count
+          return int(backup_count)
         except:
             raise KeyError(
                 "Could not parse backupcount from config file " +
@@ -385,8 +386,8 @@ class CORTXS3Config(object):
     def get_leak_processing_delay_in_mins(self):
         """Return 'leak_processing_delay_in_mins' from 'leakconfig' section """
         leak_processing_delay_in_mins = self.s3confstore.get_config('leakconfig>leak_processing_delay_in_mins')
-        if leak_processing_delay_in_mins:
-            return leak_processing_delay_in_mins
+        if not leak_processing_delay_in_mins:
+            return int(leak_processing_delay_in_mins)
         else:
             # default delay is 15mins
             return 15
@@ -394,11 +395,12 @@ class CORTXS3Config(object):
     def get_version_processing_delay_in_mins(self):
         """Return 'version_processing_delay_in_mins' from 'leakconfig' section """
         version_processing_delay_in_mins = self.s3confstore.get_config('leakconfig>version_processing_delay_in_mins')
-        if version_processing_delay_in_mins:
-            return version_processing_delay_in_mins
+        if not version_processing_delay_in_mins:
+            return int(version_processing_delay_in_mins)
         else:
             # default delay is 15mins
             return 15
+
 
     def get_global_bucket_index_id(self):
         """Return probable delete index-id from config file or KeyError."""
@@ -424,7 +426,7 @@ class CORTXS3Config(object):
         """Return secret_key from config file or KeyError."""
         try:
           s3_instance_count = self.s3confstore.get_config('cortx_s3>s3_instance_count')
-          return s3_instance_count
+          return int(s3_instance_count)
         except:
             raise KeyError(
                 "Could not find s3_instance_count from config file " +
@@ -500,7 +502,7 @@ class CORTXS3Config(object):
         """Return consumer sleep time from config file or KeyError."""
         try:
           msgbus_consumer_sleep_time = self.s3confstore.get_config('message_bus>consumer_sleep')
-          return msgbus_consumer_sleep_time
+          return int(msgbus_consumer_sleep_time)
         except:
             raise KeyError(
                 "Could not parse consumer_sleep from config file " +
@@ -525,4 +527,3 @@ class CORTXS3Config(object):
             raise KeyError(
                 "Could not parse producer_delivery_mechanism from config file " +
                 self._conf_file)
-
