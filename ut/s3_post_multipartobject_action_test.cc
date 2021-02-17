@@ -74,8 +74,6 @@ class S3PostMultipartObjectTest : public testing::Test {
 
     part_meta_factory = std::make_shared<MockS3PartMetadataFactory>(
         ptr_mock_request, oid, upload_id, 0);
-    motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
-        ptr_mock_request, oid, ptr_mock_s3_motr_api);
     bucket_tag_body_factory_mock = std::make_shared<MockS3PutTagBodyFactory>(
         MockObjectTagsStr, MockRequestId);
     motr_kvs_writer_factory = std::make_shared<MockS3MotrKVSWriterFactory>(
@@ -89,9 +87,8 @@ class S3PostMultipartObjectTest : public testing::Test {
 
     action_under_test.reset(new S3PostMultipartObjectAction(
         ptr_mock_request, bucket_meta_factory, object_mp_meta_factory,
-        object_meta_factory, part_meta_factory, motr_writer_factory,
-        bucket_tag_body_factory_mock, ptr_mock_s3_motr_api,
-        motr_kvs_writer_factory));
+        object_meta_factory, part_meta_factory, bucket_tag_body_factory_mock,
+        ptr_mock_s3_motr_api, motr_kvs_writer_factory));
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
@@ -100,7 +97,6 @@ class S3PostMultipartObjectTest : public testing::Test {
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3PartMetadataFactory> part_meta_factory;
   std::shared_ptr<MockS3ObjectMultipartMetadataFactory> object_mp_meta_factory;
-  std::shared_ptr<MockS3MotrWriterFactory> motr_writer_factory;
   std::shared_ptr<MockS3MotrKVSWriterFactory> motr_kvs_writer_factory;
   std::shared_ptr<MockS3PutTagBodyFactory> bucket_tag_body_factory_mock;
   std::shared_ptr<S3PostMultipartObjectAction> action_under_test;
@@ -121,7 +117,6 @@ class S3PostMultipartObjectTest : public testing::Test {
 
 TEST_F(S3PostMultipartObjectTest, ConstructorTest) {
   EXPECT_EQ(0, action_under_test->tried_count);
-  EXPECT_EQ("uri_salt_", action_under_test->salt);
   EXPECT_NE(0, action_under_test->number_of_tasks());
 }
 
@@ -151,223 +146,6 @@ TEST_F(S3PostMultipartObjectTest, VaidateEmptyTags) {
   action_under_test->validate_x_amz_tagging_if_present();
   EXPECT_STREQ("InvalidTagError",
                action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3PostMultipartObjectTest, UploadInProgress) {
-  struct m0_uint128 oid = {0xffff, 0xffff};
-
-  action_under_test->bucket_metadata =
-      bucket_meta_factory->mock_bucket_metadata;
-
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillRepeatedly(Return(S3BucketMetadataState::present));
-  action_under_test->bucket_metadata->set_multipart_index_oid(oid);
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), load(_, _))
-      .Times(1);
-  action_under_test->check_upload_is_inprogress();
-}
-
-TEST_F(S3PostMultipartObjectTest, UploadInProgressMetadataCorrupt) {
-  struct m0_uint128 empty_oid = {0ULL, 0ULL};
-
-  action_under_test->bucket_metadata =
-      bucket_meta_factory->mock_bucket_metadata;
-
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillRepeatedly(Return(S3BucketMetadataState::present));
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .WillOnce(Return(S3ObjectMetadataState::empty));
-  action_under_test->clear_tasks();
-  ACTION_TASK_ADD_OBJPTR(action_under_test,
-                         S3PostMultipartObjectTest::func_callback_one, this);
-  action_under_test->bucket_metadata->set_multipart_index_oid(empty_oid);
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), load(_, _))
-      .Times(0);
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
-
-  action_under_test->check_upload_is_inprogress();
-
-  EXPECT_STREQ("MetaDataCorruption",
-               action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3PostMultipartObjectTest, FetchObjectInfoStatusObjectPresent) {
-  action_under_test->object_metadata =
-      object_meta_factory->mock_object_metadata;
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::present));
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(403, _)).Times(1);
-
-  action_under_test->check_multipart_object_info_status();
-}
-
-TEST_F(S3PostMultipartObjectTest, FetchObjectInfoStatusObjectNotPresent) {
-  struct m0_uint128 zero_oid = {0ULL, 0ULL};
-  action_under_test->object_metadata =
-      object_meta_factory->mock_object_metadata;
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .Times(2)
-      .WillRepeatedly(Return(S3ObjectMetadataState::missing));
-  action_under_test->object_list_oid = {0xfff, 0xf1ff};
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
-      .Times(1)
-      .WillRepeatedly(Return(S3ObjectMetadataState::missing));
-
-  action_under_test->clear_tasks();
-  ACTION_TASK_ADD_OBJPTR(action_under_test,
-                         S3PostMultipartObjectTest::func_callback_one, this);
-  action_under_test->check_multipart_object_info_status();
-  EXPECT_EQ(1, call_count_one);
-  EXPECT_OID_EQ(zero_oid, action_under_test->old_oid);
-}
-
-TEST_F(S3PostMultipartObjectTest, CreateObject) {
-  action_under_test->bucket_metadata =
-      bucket_meta_factory->mock_bucket_metadata;
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-
-  action_under_test->tried_count = 0;
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
-      .Times(1);
-  action_under_test->create_object();
-
-  action_under_test->tried_count = 1;
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
-      .Times(1);
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_)).Times(1);
-  action_under_test->create_object();
-}
-
-TEST_F(S3PostMultipartObjectTest, CreateObjectFailed) {
-  S3Option::get_instance()->set_is_s3_shutting_down(true);
-  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
-
-  action_under_test->create_object_failed();
-  EXPECT_TRUE(action_under_test->motr_writer == NULL);
-  S3Option::get_instance()->set_is_s3_shutting_down(false);
-
-  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3MotrWiterOpState::failed));
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
-  action_under_test->create_object_failed();
-  EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3PostMultipartObjectTest, CreateObjectFailedToLaunch) {
-  S3Option::get_instance()->set_is_s3_shutting_down(true);
-  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
-
-  action_under_test->create_object_failed();
-  EXPECT_TRUE(action_under_test->motr_writer == NULL);
-  S3Option::get_instance()->set_is_s3_shutting_down(false);
-
-  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3MotrWiterOpState::failed_to_launch));
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
-  action_under_test->create_object_failed();
-  EXPECT_STREQ("ServiceUnavailable",
-               action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3PostMultipartObjectTest, CreateObjectFailedDueToCollision) {
-  S3Option::get_instance()->set_is_s3_shutting_down(false);
-  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
-
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3MotrWiterOpState::exists));
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_)).Times(1);
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
-      .Times(1);
-  action_under_test->tried_count = 1;
-  action_under_test->create_object_failed();
-  EXPECT_EQ(2, action_under_test->tried_count);
-}
-
-TEST_F(S3PostMultipartObjectTest, CollisionOccured) {
-  S3Option::get_instance()->set_is_s3_shutting_down(false);
-  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
-  action_under_test->tried_count = 1;
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
-      .Times(AtLeast(1));
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_)).Times(1);
-  action_under_test->collision_occured();
-  EXPECT_EQ(2, action_under_test->tried_count);
-
-  action_under_test->tried_count = MAX_COLLISION_RETRY_COUNT + 1;
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
-  action_under_test->collision_occured();
-  EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3PostMultipartObjectTest, CreateNewOid) {
-  struct m0_uint128 new_oid, old_oid;
-  S3Option::get_instance()->enable_murmurhash_oid();
-  old_oid = {0xffff, 0xffff};
-  action_under_test->set_oid(old_oid);
-  action_under_test->create_new_oid(old_oid);
-  new_oid = action_under_test->get_oid();
-  EXPECT_OID_NE(old_oid, new_oid);
-  S3Option::get_instance()->disable_murmurhash_oid();
-}
-
-TEST_F(S3PostMultipartObjectTest, RollbackCreate) {
-  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), delete_object(_, _, _))
-      .Times(1);
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_)).Times(1);
-  action_under_test->rollback_create();
-}
-
-TEST_F(S3PostMultipartObjectTest, RollbackCreateFailedMetadataMissing) {
-  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
-      .WillRepeatedly(Return(S3MotrWiterOpState::missing));
-  action_under_test->add_task_rollback(
-      std::bind(&S3PostMultipartObjectTest::func_callback_one, this));
-  action_under_test->rollback_create_failed();
-  EXPECT_EQ(1, call_count_one);
-}
-
-TEST_F(S3PostMultipartObjectTest, RollbackCreateFailedMetadataFailed) {
-  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
-  action_under_test->add_task_rollback(
-      std::bind(&S3PostMultipartObjectTest::func_callback_one, this));
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
-      .WillRepeatedly(Return(S3MotrWiterOpState::failed));
-
-  action_under_test->rollback_create_failed();
-  EXPECT_EQ(1, call_count_one);
-}
-
-TEST_F(S3PostMultipartObjectTest, RollbackCreateFailedMetadataFailed1) {
-  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
-  action_under_test->add_task_rollback(
-      std::bind(&S3PostMultipartObjectTest::func_callback_one, this));
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
-      .WillRepeatedly(Return(S3MotrWiterOpState::failed_to_launch));
-
-  action_under_test->rollback_create_failed();
-  EXPECT_EQ(1, call_count_one);
 }
 
 TEST_F(S3PostMultipartObjectTest, RollbackPartMetadataIndex) {
@@ -444,7 +222,6 @@ TEST_F(S3PostMultipartObjectTest, Send200ResponseToClient) {
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
   action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
-  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::saved));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_state())

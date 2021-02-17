@@ -206,6 +206,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   virtual void set_content_length(std::string length);
   virtual size_t get_content_length();
   virtual size_t get_part_one_size();
+  virtual void rename_object_name(std::string new_object_name);
   virtual std::string get_content_length_str();
   virtual void set_content_type(std::string content_type);
   virtual std::string get_content_type();
