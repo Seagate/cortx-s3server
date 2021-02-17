@@ -39,7 +39,6 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
-    std::shared_ptr<S3MotrWriterFactory> motr_s3_factory,
     std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
     std::shared_ptr<MotrAPI> motr_api,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory)
@@ -74,19 +73,12 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
   layout_id =
       S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
 
-  salt = "uri_salt_";
 
   if (object_mp_meta_factory) {
     object_mp_metadata_factory = std::move(object_mp_meta_factory);
   } else {
     object_mp_metadata_factory =
         std::make_shared<S3ObjectMultipartMetadataFactory>();
-  }
-
-  if (motr_s3_factory) {
-    motr_writer_factory = std::move(motr_s3_factory);
-  } else {
-    motr_writer_factory = std::make_shared<S3MotrWriterFactory>();
   }
 
   if (part_meta_factory) {
@@ -117,9 +109,7 @@ void S3PostMultipartObjectAction::setup_steps() {
     ACTION_TASK_ADD(
         S3PostMultipartObjectAction::validate_x_amz_tagging_if_present, this);
   }
-  ACTION_TASK_ADD(S3PostMultipartObjectAction::check_upload_is_inprogress,
-                  this);
-  ACTION_TASK_ADD(S3PostMultipartObjectAction::create_object, this);
+  ACTION_TASK_ADD(S3PostMultipartObjectAction::check_bucket_object_state, this);
   ACTION_TASK_ADD(S3PostMultipartObjectAction::create_part_meta_index, this);
   ACTION_TASK_ADD(S3PostMultipartObjectAction::save_upload_metadata, this);
   ACTION_TASK_ADD(S3PostMultipartObjectAction::send_response_to_s3_client,
@@ -127,23 +117,7 @@ void S3PostMultipartObjectAction::setup_steps() {
   // ...
 }
 
-void S3PostMultipartObjectAction::fetch_object_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  auto omds = object_metadata->get_state();
-  if (omds == S3ObjectMetadataState::missing) {
-    s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
-    next();
-  } else {
-    s3_log(S3_LOG_ERROR, request_id, "Metadata load state %d\n", (int)omds);
-    if (omds == S3ObjectMetadataState::failed_to_launch) {
-      set_s3_error("ServiceUnavailable");
-    } else {
-      set_s3_error("InternalError");
-    }
-    send_response_to_s3_client();
-  }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
+void S3PostMultipartObjectAction::fetch_object_info_failed() { next(); }
 
 void S3PostMultipartObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
@@ -221,9 +195,10 @@ void S3PostMultipartObjectAction::validate_tags() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3PostMultipartObjectAction::check_upload_is_inprogress() {
+void S3PostMultipartObjectAction::check_bucket_object_state() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+  S3BucketMetadataState bucket_state = bucket_metadata->get_state();
+  if (bucket_state == S3BucketMetadataState::present) {
     S3Uuid uuid;
     upload_id = uuid.get_string_uuid();
     multipart_index_layout = bucket_metadata->get_multipart_index_layout();
@@ -239,217 +214,43 @@ void S3PostMultipartObjectAction::check_upload_is_inprogress() {
              S3_IEM_METADATA_CORRUPTED_JSON);
       set_s3_error("MetaDataCorruption");
       send_response_to_s3_client();
-    } else {
-      // Check if multipart upload is in progress for this upload.
-      object_multipart_metadata->load(
-          std::bind(
-              &S3PostMultipartObjectAction::check_multipart_object_info_status,
-              this),
-          std::bind(
-              &S3PostMultipartObjectAction::check_multipart_object_info_status,
-              this));
-    }
-  } else {
-    // Should never be here.
-    assert(false);
-    s3_log(S3_LOG_ERROR, request_id, "Bug: Report issue to Support team.\n");
-  }
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3PostMultipartObjectAction::check_multipart_object_info_status() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  if (object_multipart_metadata->get_state() !=
-      S3ObjectMetadataState::present) {
-    auto omds = object_multipart_metadata->get_state();
-    if (omds == S3ObjectMetadataState::failed_to_launch) {
-      s3_log(
-          S3_LOG_ERROR, request_id,
-          "Object metadata load operation failed due to pre launch failure\n");
-      set_s3_error("ServiceUnavailable");
-      send_response_to_s3_client();
-      s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
       return;
-    } else if (omds == S3ObjectMetadataState::failed ||
-               omds == S3ObjectMetadataState::invalid) {
-      s3_log(S3_LOG_ERROR, request_id, "Object metadata failed state %d\n",
-             (int)omds);
+    }
+    object_multipart_metadata->set_oid(oid);
+    S3ObjectMetadataState object_state = object_metadata->get_state();
+    if (object_state == S3ObjectMetadataState::present) {
+      s3_log(S3_LOG_DEBUG, request_id, "S3ObjectMetadataState::present\n");
+      old_oid = object_metadata->get_oid();
+      old_layout_id = object_metadata->get_layout_id();
+      s3_log(S3_LOG_DEBUG, request_id,
+             "Object with oid "
+             "%" SCNx64 " : %" SCNx64 " already exists, creating new oid\n",
+             old_oid.u_hi, old_oid.u_lo);
+
+      object_multipart_metadata->set_old_oid(old_oid);
+      object_multipart_metadata->set_old_layout_id(old_layout_id);
+      object_multipart_metadata->set_old_version_id(
+          object_metadata->get_obj_version_id());
+
+      next();
+    } else if (object_state == S3ObjectMetadataState::missing) {
+      s3_log(S3_LOG_DEBUG, request_id, "S3ObjectMetadataState::missing\n");
+      next();
+    } else {
+      s3_log(S3_LOG_DEBUG, request_id, "Failed to look up metadata.\n");
       set_s3_error("InternalError");
       send_response_to_s3_client();
-      s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-      return;
     }
-    // Multipart upload not in progress for this object_name
-    s3_log(S3_LOG_DEBUG, request_id,
-           "Multipart upload not in progress for this object_name [%s]\n",
-           request->get_object_name().c_str());
-    if (zero(obj_list_idx_lo.oid)) {
-      // object_list_oid is null only when bucket metadata is corrupted.
-      // user has to delete and recreate the bucket again to make it work.
-      s3_log(S3_LOG_ERROR, request_id, "Bucket(%s) metadata is corrupted.\n",
-             request->get_bucket_name().c_str());
-      s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
-             S3_IEM_METADATA_CORRUPTED_JSON);
-      set_s3_error("MetaDataCorruption");
-      send_response_to_s3_client();
+  } else {
+    if (bucket_state == S3BucketMetadataState::missing) {
+      s3_log(S3_LOG_DEBUG, request_id, "Bucket not found\n");
+      set_s3_error("NoSuchBucket");
     } else {
-      check_object_state();
+      set_s3_error("InternalError");
+      send_response_to_s3_client();
     }
-  } else {
-    //++
-    // Bailing out in case if the multipart upload is already in progress,
-    // this will ensure that object doesn't go to inconsistent state
-
-    // Once multipart is taken care in motr, it may not be needed
-    // Note - Currently as per aws doc.
-    // (http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListMPUpload.html)
-    // multipart upload details
-    // of the same key initiated at different times is allowed.
-    //--
-    set_s3_error("InvalidObjectState");
-    send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3PostMultipartObjectAction::check_object_state() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  S3ObjectMetadataState object_state = object_metadata->get_state();
-  if (object_state == S3ObjectMetadataState::present) {
-    s3_log(S3_LOG_DEBUG, request_id, "S3ObjectMetadataState::present\n");
-    old_oid = object_metadata->get_oid();
-    old_layout_id = object_metadata->get_layout_id();
-    s3_log(S3_LOG_DEBUG, request_id,
-           "Object with oid "
-           "%" SCNx64 " : %" SCNx64 " already exists, creating new oid\n",
-           old_oid.u_hi, old_oid.u_lo);
-    create_new_oid(old_oid);
-
-    object_multipart_metadata->set_old_oid(old_oid);
-    object_multipart_metadata->set_old_layout_id(old_layout_id);
-    object_multipart_metadata->set_old_version_id(
-        object_metadata->get_obj_version_id());
-
-    next();
-  } else if (object_state == S3ObjectMetadataState::missing) {
-    s3_log(S3_LOG_DEBUG, request_id, "S3ObjectMetadataState::missing\n");
-    next();
-  } else {
-    s3_log(S3_LOG_DEBUG, request_id, "Failed to look up metadata.\n");
-    set_s3_error("InternalError");
-    send_response_to_s3_client();
-  }
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3PostMultipartObjectAction::create_object() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  create_object_timer.start();
-
-  if (tried_count == 0) {
-    motr_writer = motr_writer_factory->create_motr_writer(request);
-  }
-  motr_writer->create_object(
-      std::bind(&S3PostMultipartObjectAction::create_object_successful, this),
-      std::bind(&S3PostMultipartObjectAction::create_object_failed, this), oid,
-      layout_id);
-
-  // for shutdown testcases, check FI and set shutdown signal
-  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
-      "post_multipartobject_action_create_object_shutdown_fail");
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3PostMultipartObjectAction::create_object_successful() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  create_object_timer.stop();
-  const size_t time_in_millisecond =
-      create_object_timer.elapsed_time_in_millisec();
-  LOG_PERF("create_object_successful_ms", request_id.c_str(),
-           time_in_millisecond);
-  s3_stats_timing("multipart_create_object_success", time_in_millisecond);
-  object_multipart_metadata->set_oid(oid);
-  add_task_rollback(
-      std::bind(&S3PostMultipartObjectAction::rollback_create, this));
-  next();
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3PostMultipartObjectAction::create_object_failed() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
-  create_object_timer.stop();
-  LOG_PERF("create_object_failed_ms", request_id.c_str(),
-           create_object_timer.elapsed_time_in_millisec());
-  s3_stats_timing("multipart_create_object_failed",
-                  create_object_timer.elapsed_time_in_millisec());
-
-  if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-    return;
-  }
-
-  if (motr_writer->get_state() == S3MotrWiterOpState::exists) {
-    collision_occured();
-  } else if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
-    s3_log(S3_LOG_WARN, request_id, "Create object failed.\n");
-    set_s3_error("ServiceUnavailable");
-    send_response_to_s3_client();
-  } else {
-    s3_log(S3_LOG_WARN, request_id, "Create object failed.\n");
-    // Any other error report failure.
-    set_s3_error("InternalError");
-    send_response_to_s3_client();
-  }
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3PostMultipartObjectAction::collision_occured() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-    return;
-  }
-  if (tried_count < MAX_COLLISION_RETRY_COUNT) {
-    s3_log(S3_LOG_INFO, stripped_request_id,
-           "Object ID collision happened for uri %s\n",
-           request->get_object_uri().c_str());
-    // Handle Collision
-    create_new_oid(oid);
-    tried_count++;
-    if (tried_count > 5) {
-      s3_log(S3_LOG_INFO, stripped_request_id,
-             "Object ID collision happened %d times for uri %s\n", tried_count,
-             request->get_object_uri().c_str());
-    }
-    create_object();
-  } else {
-    if (tried_count > MAX_COLLISION_RETRY_COUNT) {
-      s3_log(S3_LOG_ERROR, request_id,
-             "Failed to resolve object id collision %d times for uri %s\n",
-             tried_count, request->get_object_uri().c_str());
-      // s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL,
-      // S3_IEM_COLLISION_RES_FAIL_STR,
-      //     S3_IEM_COLLISION_RES_FAIL_JSON);
-    }
-    set_s3_error("InternalError");
-    send_response_to_s3_client();
-  }
-}
-
-void S3PostMultipartObjectAction::create_new_oid(
-    struct m0_uint128 current_oid) {
-  int salt_counter = 0;
-  std::string salted_uri;
-  do {
-    salted_uri = request->get_object_uri() + salt +
-                 std::to_string(salt_counter) + std::to_string(tried_count);
-
-    S3UriToMotrOID(s3_motr_api, salted_uri.c_str(), request_id, &oid);
-    ++salt_counter;
-  } while ((oid.u_hi == current_oid.u_hi) && (oid.u_lo == current_oid.u_lo));
-
-  return;
 }
 
 void S3PostMultipartObjectAction::create_part_meta_index() {
@@ -536,7 +337,9 @@ void S3PostMultipartObjectAction::rollback_create_part_meta_index_failed() {
 
 void S3PostMultipartObjectAction::save_upload_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
+  std::string multipart_object_name =
+      request->get_object_name() + "|" + upload_id;
+  object_multipart_metadata->rename_object_name(multipart_object_name);
   object_multipart_metadata->set_layout_id(layout_id);
   object_multipart_metadata->set_pvid(motr_writer->get_ppvid());
 
