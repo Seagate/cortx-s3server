@@ -73,3 +73,39 @@ std::string url_encode(const char* src) {
   }
   return encoded_string;
 }
+
+void remove_escape_char(const char* str, std::string& destination) {
+  char buf[3] = "\0";
+  unsigned int code = 0;
+  snprintf(buf, sizeof(buf), "%s", str + 1);
+  sscanf(buf, "%x", &code);
+  destination.append(1, (char)code);
+}
+
+bool is_url_encoded_char(char c) {
+  if (c == '%') {
+    return true;
+  }
+  return false;
+}
+
+std::string url_decode(const char* src) {
+  if (src == NULL) {
+    return "";
+  }
+  std::string decoded_string = "";
+  size_t len = strlen(src);
+  size_t decoded_len = 0;
+  for (size_t i = 0; i < len; i++, src++) {
+    if (is_url_encoded_char(*src)) {
+      remove_escape_char(src, decoded_string);
+      src += 2;
+      i += 2;
+    } else {
+      decoded_string.append(src, 1);
+    }
+    decoded_len++;
+  }
+  decoded_string[decoded_len] = '\0';
+  return decoded_string;
+}

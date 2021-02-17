@@ -31,4 +31,10 @@ bool char_needs_url_encoding(char c);
 
 std::string url_encode(const char* src);
 
+void remove_escape_char(const char* str, std::string& destination);
+
+bool is_url_encoded_char(char c);
+
+std::string url_decode(const char* src);
+
 #endif
