@@ -58,7 +58,7 @@ sys_auditlog_dir="/var/log/audit"
 
 # Create tmp folder with pid value to allow parallel execution
 pid_value=$$
-tmp_dir="/tmp/s3_support_bundle_$pid_value"
+tmp_dir="$s3_bundle_location/s3_support_bundle_$pid_value"
 disk_usage="$tmp_dir/disk_usage.txt"
 cpu_info="$tmp_dir/cpuinfo.txt"
 ram_usage="$tmp_dir/ram_usage.txt"
@@ -172,7 +172,7 @@ collect_core_files(){
 }
 
 # Collect <m0trace_files_count> m0trace files from each s3 instance present in /var/log/seagate/motr/s3server-* directory if available
-# Files will be available at /tmp/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
+# Files will be available at $tmp_path/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
 collect_m0trace_files(){
   echo "Collecting m0trace files dump..."
   m0trace_filename_pattern="m0trace.*"
@@ -199,7 +199,7 @@ collect_m0trace_files(){
         return;
     fi
     s3instance_name=$s3_dir   # e.g s3server-0x7200000000000000:0
-    # m0trace file path will be /tmp/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
+    # m0trace file path will be $tmp_path/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
     m0trace_file_path=$s3_m0trace_files/$s3instance_name
     mkdir -p $m0trace_file_path
     cd $tmpr_dir
@@ -450,7 +450,7 @@ fi
 
 # Clean up temp files
 cleanup_tmp_files(){
-rm -rf /tmp/s3_support_bundle_$pid_value
+rm -rf "$tmp_dir"
 }
 
 ## 2. Build tar.gz file with bundleid at bundle_path location
