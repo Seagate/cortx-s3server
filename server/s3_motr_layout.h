@@ -51,6 +51,17 @@ class S3MotrLayoutMap {
 
   int get_unit_size_for_layout(int id) { return layout_map[id]; }
 
+  int get_layout_for_unit_size(unsigned int unit_size) {
+    if (unit_size <= 4096) {
+      // layout id 1
+      return 1;
+    }
+    if (unit_size >= obj_size_cap) {
+      return layout_id_cap;
+    }
+    return obj_layout_map[unit_size];
+  }
+
   int get_best_layout_for_object_size();
 
   static S3MotrLayoutMap* get_instance() {

@@ -144,26 +144,44 @@ int S3MotrLayoutMap::get_layout_for_object_size(size_t obj_size) {
 
   if (obj_size == 0 || obj_size <= obj_layout_map.begin()->first) {
     // obj_size is zero OR less than the smallest UP_TO_OBJ_SIZE
-    s3_log(S3_LOG_DEBUG, "", "USE_LAYOUT_ID = %d\n",
+    s3_log(S3_LOG_INFO, "", "USE_LAYOUT_ID = [%d]\n",
            obj_layout_map.begin()->second);
     return obj_layout_map.begin()->second;  // layout
   }
 
   if (obj_size >= obj_size_cap) {
-    s3_log(S3_LOG_DEBUG, "", "USE_LAYOUT_ID = %d\n", layout_id_cap);
-    return layout_id_cap;
+    // In 4:2 erasure coding Motr config, the effective layout id
+    // should be layout id corresponding to size = (unit size for
+    // 'layout_id_cap')/4
+    int effective_layout_id = layout_id_cap;
+    int new_unit_size = get_unit_size_for_layout(layout_id_cap) / 4;
+    if (new_unit_size <= 4096) {
+      new_unit_size = 4096;
+    }
+    effective_layout_id = get_layout_for_unit_size(new_unit_size);
+    s3_log(S3_LOG_INFO, "", "USE_LAYOUT_ID = [%d]\n", effective_layout_id);
+    return effective_layout_id;
   }
 
   for (auto item = obj_layout_map.rbegin(); item != obj_layout_map.rend();
        ++item) {
     if (obj_size >= item->first) {
-      s3_log(S3_LOG_DEBUG, "", "USE_LAYOUT_ID = %d\n", item->second);
-      return item->second;  // layout
+      // In 4:2 erasure coding Motr config, the effective layout id
+      // should be layout id corresponding to size = (unit size for
+      // 'item->second')/4
+      int effective_layout_id = item->second;
+      int new_unit_size = get_unit_size_for_layout(item->second) / 4;
+      if (new_unit_size <= 4096) {
+        new_unit_size = 4096;
+      }
+      effective_layout_id = get_layout_for_unit_size(new_unit_size);
+      s3_log(S3_LOG_INFO, "", "USE_LAYOUT_ID = [%d]\n", effective_layout_id);
+      return effective_layout_id;  // layout
     }
   }
 
   // Redundant w.r.t first check in this method, but for sake of it
-  s3_log(S3_LOG_DEBUG, "", "USE_LAYOUT_ID = %d\n",
+  s3_log(S3_LOG_INFO, "", "USE_LAYOUT_ID = %d\n",
          obj_layout_map.begin()->second);
   return obj_layout_map.begin()->second;
 }

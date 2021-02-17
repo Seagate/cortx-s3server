@@ -1154,8 +1154,10 @@ unsigned short S3Option::get_client_req_read_timeout_secs() {
 }
 
 unsigned int S3Option::get_motr_write_payload_size(int layoutid) {
+  // In 4:2 erasure coding Motr config, we can write max 4 units at a time to
+  // Motr.
   return S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layoutid) *
-         motr_units_per_request;
+         4 * motr_units_per_request;
 }
 
 unsigned int S3Option::get_motr_read_payload_size(int layoutid) {
