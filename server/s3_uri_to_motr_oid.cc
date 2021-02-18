@@ -103,8 +103,8 @@ int S3UriToMotrOID(std::shared_ptr<MotrAPI> s3_motr_api, const char *name,
     if (rc != 0) {
       s3_log(S3_LOG_ERROR, request_id, "Failed to generate UFID\n");
       // May need to change error code to something better in future -- TODO
-      s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
-             S3_IEM_MOTR_CONN_FAIL_JSON);
+      // s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
+      //     S3_IEM_MOTR_CONN_FAIL_JSON);
       return rc;
     }
   }
