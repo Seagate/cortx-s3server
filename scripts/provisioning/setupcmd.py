@@ -27,6 +27,10 @@ class SetupCmd(object):
   """Base class for setup commands."""
   ldap_user = None
   ldap_passwd = None
+  rootdn_passwd = None
+  cluster_id = None
+  server_nodes_count = 0
+  hosts_list = None
   s3_prov_config = "/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml"
 
   def __init__(self, config: str):
@@ -58,6 +62,38 @@ class SetupCmd(object):
       self.ldap_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_ldapadmin_pass)
 
       self.ldap_user = self.s3confstore.get_config(localconfstore.get_config('CONFSTORE_LDAPADMIN_USER_KEY'))
+
+      encrypted_rootdn_pass = self.s3confstore.get_config(prov_config_yaml['CONFSTORE_ROOTDN_PASSWD_KEY'])
+      self.rootdn_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_rootdn_pass)
+
     except Exception as e:
       sys.stderr.write(f'read ldap credentials failed, error: {e}\n')
+      raise e
+
+  def read_cluster_id(self):
+    """Get 'cluster>cluster_id' from confstore."""
+    prov_config_yaml = None
+
+    try:
+      with open(self.s3_prov_config) as provconf:
+        prov_config_yaml = yaml.safe_load(provconf)
+
+      self.cluster_id = self.s3confstore.get_config(prov_config_yaml['CONFSTORE_CLUSTER_ID_KEY'])
+    except IOError as ioe:
+      sys.stderr.write(f'failed to open config file: {self.s3_prov_config}, err: {ioe}\n')
+      raise ioe
+    except YAMLError as ye:
+      sys.stderr.write(f'yaml load failed for config file: {self.s3_prov_config}, err: {ye}\n')
+      raise ye
+    except Exception as e:
+      sys.stderr.write(f'unknown exception: {e}\n')
+      raise e
+
+  def read_node_info(self):
+    """Call API get_nodecount from confstore."""
+    try:
+      self.server_nodes_count = self.s3confstore.get_nodecount()
+      self.hosts_list = self.s3confstore.get_nodenames_list()
+    except Exception as e:
+      sys.stderr.write(f'unknown exception: {e}\n')
       raise e

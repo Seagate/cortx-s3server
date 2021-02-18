@@ -158,53 +158,6 @@ create_auth_jks_password()
     fi
 }
 
-# Install and Configure Openldap over Non-SSL.
-configure_openldap()
-{
-    /opt/seagate/cortx/s3/install/ldap/setup_ldap.sh --ldapadminpasswd $ldappasswd --rootdnpasswd $rootdnpasswd --skipssl
-    if [ $? -ne 0 ]
-    then
-        echo "ERROR: Failed to configure openldap."
-        echo "ERROR: Run 's3_setup cleanup', followed by 's3_setup config', to configure again."
-        exit 1
-    fi
-
-    # Enable slapd logging in rsyslog config
-    if [[ -f /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf ]]
-    then
-        mkdir -p /etc/rsyslog.d
-        cp /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf /etc/rsyslog.d/slapdlog.conf
-    fi
-
-    systemctl restart rsyslog
-
-    # Set openldap-replication
-    # check number of nodes in the cluster
-    server_nodes_count=$(s3confstore "$confstore_config_url" getnodecount)
-    if [ "$server_nodes_count" -gt 1 ]
-    then
-        hosts_str=$(s3confstore "$confstore_config_url" getnodenames)
-        echo "INFO: hostnames str: [$hosts_str]"
-        read -ra hosts_arr <<< "$hosts_str"
-        for host in "${hosts_arr[@]}"
-        do
-            echo "$host" >> hosts_list_file.txt
-        done
-        echo "setting ldap-replication on all cluster nodes.."
-        /opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh -h hosts_list_file.txt -p "$rootdnpasswd"
-        if [ $? -ne 0 ]
-        then
-            echo "ERROR: Failed to configure ldap replication, exiting."
-            echo "ERROR: Run 's3_setup cleanup', followed by 's3_setup config' again, after resolving the issue."
-            exit 1
-        fi
-        rm -f hosts_list_file.txt
-    else
-        echo "INFO: Not setting ldap-replication as the cluster node_count is less than 2."
-    fi
-    echo "INFO: Successfully configured openldap on the node."
-}
-
 add_s3backgrounddelete_rabbitmq_user()
 {
     users=$(rabbitmqctl list_users)
@@ -241,31 +194,12 @@ then
     # validate pre-requisites before proceeding
     # we already have 'exit' statement in '_s3_setup' binary at failure scenario,
     # no need to add 'exit' here.
-    echo "INFO: validating pre-requisites for provisioning s3server.."
-    $install_dir/_s3_setup post_install
+    echo "INFO: running config..."
+    $install_dir/_s3_setup config --config "$confstore_config_url"
 
-    # Fetch and update cluster id
-    # To decrypt openldap passwords, we need 'cluster_id' updated in s3_cluster.yaml
-    echo "INFO: Fetching and updating cluster id in s3_cluster.yaml .."
-    fetch_update_cluster_id
-
-    # get openldap password from confstore
-    echo "INFO: Get openldap passwords from confstore.."
-    get_ldap_password
-
-    # Create random password for auth jks keystore
-    echo "INFO: Creating random jks password for Auth server.."
-    create_auth_jks_password
-
-    # configure openldap and ldap-replication
-    echo "INFO: Configure openldap.."
-    configure_openldap
-
-    echo "INFO: Configure haproxy.."
-	s3haproxyconfig --path "$confstore_config_url"
     if [ $? -ne 0 ]
     then
-        echo "ERROR: haproxy configuration failed, exiting"
+        echo "ERROR: config failed, exiting"
         exit 1
     fi
 fi
