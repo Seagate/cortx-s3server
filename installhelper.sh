@@ -96,11 +96,22 @@ cp -R scripts/haproxy/* $S3_INSTALL_LOCATION/install/haproxy
 # Copy the provisioning config
 cp scripts/provisioning/setup.yaml $S3_INSTALL_LOCATION/conf
 
-# Copy the provisioning script
+# Copy the provisioning shell script
 cp scripts/provisioning/s3_setup $S3_INSTALL_LOCATION/bin
 
-# Copy the mini-provisioner pre-reqs validation check config files
-cp scripts/provisioning/s3setup_prereqs.json ${S3_MINI_PROV_CFG_LOCATION}/
+# Copy the provisioning python scripts
+cp scripts/provisioning/_s3_setup $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/postinstallcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/configcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/initcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/cleanupcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/testcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/resetcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/setupcmd.py $S3_INSTALL_LOCATION/bin
+
+# Copy the mini-provisioner config files
+cp scripts/provisioning/s3setup_prereqs.json $S3_MINI_PROV_CFG_LOCATION/
+cp scripts/provisioning/s3_prov_config.yaml $S3_MINI_PROV_CFG_LOCATION/
 
 # Copy the S3 reset scripts
 cp scripts/reset/* $S3_INSTALL_LOCATION/reset

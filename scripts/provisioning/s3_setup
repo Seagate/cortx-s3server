@@ -47,6 +47,7 @@ cleanup                  cleanup S3 account created for backgrounddelete service
 
 set -e
 
+install_dir='/opt/seagate/cortx/s3/bin'
 access_key=""
 secret_key=""
 
@@ -63,28 +64,6 @@ rootadminpasswd=""
 
 ldappasswd=""
 rootpasswd=""
-
-encrypt_cli="/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar"
-
-# check if s3cipher, s3confstore and s3setup are installed on the system
-if ! command -v s3cipher &>/dev/null
-then
-    echo "ERROR: s3cipher not installed on the system, exiting."
-    exit 1
-fi
-
-if ! command -v s3confstore &>/dev/null
-then
-    echo "ERROR: s3confstore not installed on the system, exiting."
-    exit 1
-fi
-
-if ! command -v s3setup &>/dev/null
-then
-    echo "ERROR: s3setup not installed on the system, exiting."
-    exit 1
-fi
-
 
 while test $# -gt 0
 do
@@ -291,19 +270,19 @@ then
     systemctl restart haproxy slapd rabbitmq-server rsyslog
 
     echo "INFO: running post_install..."
-    # we already have 'exit' statement in 's3setup' binary at failure scenario,
+    # we already have 'exit' statement in '_s3_setup' binary at failure scenario,
     # no need to add 'exit' here.   
-    s3setup post_install
+    $install_dir/_s3_setup post_install
     echo "INFO: All pre-requisites are in place."
 fi
 
 if [ $s3config == true ]
 then
     # validate pre-requisites before proceeding
-    # we already have 'exit' statement in 's3setup' binary at failure scenario,
+    # we already have 'exit' statement in '_s3_setup' binary at failure scenario,
     # no need to add 'exit' here.
     echo "INFO: validating pre-requisites for provisioning s3server.."
-    s3setup post_install
+    $install_dir/_s3_setup post_install
 
     # Fetch and update cluster id
     # To decrypt openldap passwords, we need 'cluster_id' updated in s3_cluster.yaml
@@ -334,10 +313,10 @@ fi
 if [ $s3init == true ]
 then
     # validate pre-requisites before proceeding
-    # we already have 'exit' statement in 's3setup' binary at failure scenario,
+    # we already have 'exit' statement in '_s3_setup' binary at failure scenario,
     # no need to add 'exit' here.
     echo "INFO: validating pre-requisites for provisioning s3server.."
-    s3setup post_install
+    $install_dir/_s3_setup post_install
 
     # get openldap password from confstore
     echo "INFO: Get openldap passwords from confstore.."
@@ -369,5 +348,5 @@ then
     echo "INFO: Get openldap passwords from confstore.."
     get_ldap_password
 
-    s3setup cleanup --ldappasswd "$ldappasswd"
+    $install_dir/_s3_setup cleanup --config "$confstore_config_url"
 fi
