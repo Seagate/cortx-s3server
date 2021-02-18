@@ -42,6 +42,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
       * To install Python version 3.0, use: `$ yum install -y python3`
     * pip:
       * To check if pip is installed, use: `$ pip --version`
+      * Enable the EPEL repo, use:`$ yum --enablerepo=extras install epel-release`
       * To install pip use: `$ yum install python-pip`
     * Ansible: `$ yum install -y ansible`
     * Extra Packages for Enterprise Linux:
