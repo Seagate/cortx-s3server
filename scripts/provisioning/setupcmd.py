@@ -23,6 +23,10 @@ import sys
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
 
+class S3PROVError(Exception):
+  """Parent class for the s3 provisioner error classes."""
+  pass
+
 class SetupCmd(object):
   """Base class for setup commands."""
   ldap_user = None
@@ -80,14 +84,11 @@ class SetupCmd(object):
 
       self.cluster_id = self.s3confstore.get_config(prov_config_yaml['CONFSTORE_CLUSTER_ID_KEY'])
     except IOError as ioe:
-      sys.stderr.write(f'failed to open config file: {self.s3_prov_config}, err: {ioe}\n')
-      raise ioe
+      raise S3PROVError(f'failed to open config file: {self.s3_prov_config}, err: {ioe}\n')
     except YAMLError as ye:
-      sys.stderr.write(f'yaml load failed for config file: {self.s3_prov_config}, err: {ye}\n')
-      raise ye
+      raise S3PROVError(f'failed to open config file: {self.s3_prov_config}, err: {ioe}\n')
     except Exception as e:
-      sys.stderr.write(f'unknown exception: {e}\n')
-      raise e
+      raise S3PROVError(f'unknown exception: {e}\n')
 
   def read_node_info(self):
     """Call API get_nodecount from confstore."""
@@ -95,5 +96,4 @@ class SetupCmd(object):
       self.server_nodes_count = self.s3confstore.get_nodecount()
       self.hosts_list = self.s3confstore.get_nodenames_list()
     except Exception as e:
-      sys.stderr.write(f'unknown exception: {e}\n')
-      raise e
+      raise S3PROVError(f'unknown exception: {e}\n')

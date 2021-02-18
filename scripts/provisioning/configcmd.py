@@ -22,8 +22,9 @@ import sys
 import os
 import errno
 import shutil
-from setupcmd import SetupCmd
+from setupcmd import SetupCmd, S3PROVError
 from cortx.utils.process import SimpleProcess
+from yaml.error import YAMLError
 
 class ConfigCmd(SetupCmd):
   """Config Setup Cmd."""
@@ -39,45 +40,25 @@ class ConfigCmd(SetupCmd):
       self.read_node_info()
 
     except IOError as ioe:
-      sys.stderr.write(f'failed to open config file: {self.s3_prov_config}, err: {ioe}\n')
-      raise ioe
+      raise S3PROVError(f'failed to open config file: {self.s3_prov_config}, err: {ioe}\n')
     except YAMLError as ye:
-      sys.stderr.write(f'yaml load failed for file: {self.s3_prov_config}, err: {ye}\n')
-      raise ye
+      raise S3PROVError(f'yaml load failed for file: {self.s3_prov_config}, err: {ye}\n')
     except Exception as e:
-      sys.stderr.write(f'unknown exception: {e}\n')
-      raise e
+      raise S3PROVError(f'unknown exception: {e}\n')
 
   def process(self):
     """Main processing function."""
-    retval = 0
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
 
-    # Configure openldap and ldap-replication
     try:
-      retval = self.configure_openldap()
-    except Exception as e:
-      sys.stderr.write(f'In self.configure_openldap(), exception: {e}\n')
-      return 1
-
-    if retval == 0:
+      # Configure openldap and ldap-replication
+      self.configure_openldap()
       sys.stdout.write("INFO: Successfully configured openldap on the node.\n")
       # Configure haproxy
-      try:
-        retval = self.configure_haproxy()
-      except Exception as e:
-        sys.stderr.write(f'In self.configure_haproxy(), exception: {e}\n')
-        return 1
-      if retval == 0:
-        sys.stdout.write("INFO: Successfully configured haproxy on the node.\n")
-      else:
-        sys.stderr.write("INFO: Failed to configure haproxy on the node.\n")
-        return retval
-
-    else:
-      sys.stderr.write("INFO: Failed to configure openldap on the node.\n")
-
-    return retval
+      self.configure_haproxy()
+      sys.stdout.write("INFO: Successfully configured haproxy on the node.\n")
+    except Exception as e:
+      raise S3PROVError(f'process() failed with exception: {e}\n')
 
   def configure_openldap(self):
     """Install and Configure Openldap over Non-SSL."""
@@ -88,22 +69,20 @@ class ConfigCmd(SetupCmd):
     cmd = ['/opt/seagate/cortx/s3/install/ldap/setup_ldap.sh',
            '--ldapadminpasswd',
            f'{self.ldap_passwd}',
-           '--rootdnpasswd', 
+           '--rootdnpasswd',
            f'{self.rootdn_passwd}',
            '--skipssl']
     handler = SimpleProcess(cmd)
     stdout, stderr, retcode = handler.run()
     if retcode != 0:
-      sys.stderr.write(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
-      return 1
+      raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
 
     if os.path.isfile("/opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf"):
       try:
         os.makedirs("/etc/rsyslog.d")
       except OSError as e:
         if e.errno != errno.EEXIST:
-          sys.stderr.write(f"mkdir /etc/rsyslog.d failed with errno: {e.errno}, exception: {e}\n")
-          return 1
+          raise S3PROVError(f"mkdir /etc/rsyslog.d failed with errno: {e.errno}, exception: {e}\n")
       shutil.copy('/opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf',
                   '/etc/rsyslog.d/slapdlog.conf')
 
@@ -111,31 +90,24 @@ class ConfigCmd(SetupCmd):
     handler = SimpleProcess(cmd)
     stdout, stderr, retcode = handler.run()
     if retcode != 0:
-      sys.stderr.write(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
-      return 1
+      raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
 
-    if self.server_nodes_count < 2:
-      sys.stdout.write(f"INFO: Not setting ldap-replication as the cluster node_count {self.server_nodes_count} is less than 2.\n")
-      return 0
-
-    sys.stdout.write(f"INFO: Setting ldap-replication as the cluster node_count {self.server_nodes_count} is greater than 2.\n")
-    with open("hosts_list_file.txt", "w") as f:
-      for host in self.hosts_list:
-        f.write(f"{host}\n")
-    sys.stdout.write("setting ldap-replication on all cluster nodes..\n")
-    cmd = ['/opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh',
-           '-h',
-           'hosts_list_file.txt',
-           '-p', 
-           f'{self.rootdn_passwd}']
-    handler = SimpleProcess(cmd)
-    stdout, stderr, retcode = handler.run()
-    if retcode != 0:
-      sys.stderr.write(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
-      return 1
-    os.remove("hosts_list_file.txt")
-
-    return 0
+    if self.server_nodes_count > 1:
+      sys.stdout.write(f"INFO: Setting ldap-replication as the cluster node_count {self.server_nodes_count} is greater than 2.\n")
+      with open("hosts_list_file.txt", "w") as f:
+        for host in self.hosts_list:
+          f.write(f"{host}\n")
+      sys.stdout.write("setting ldap-replication on all cluster nodes..\n")
+      cmd = ['/opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh',
+             '-h',
+             'hosts_list_file.txt',
+             '-p',
+             f'{self.rootdn_passwd}']
+      handler = SimpleProcess(cmd)
+      stdout, stderr, retcode = handler.run()
+      if retcode != 0:
+        raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
+      os.remove("hosts_list_file.txt")
 
   def configure_haproxy(self):
     """Configure haproxy service."""
@@ -145,7 +117,4 @@ class ConfigCmd(SetupCmd):
     handler = SimpleProcess(cmd)
     stdout, stderr, retcode = handler.run()
     if retcode != 0:
-      sys.stderr.write(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
-      return 1
-
-    return 0
+      raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
