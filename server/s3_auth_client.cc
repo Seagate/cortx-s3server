@@ -654,33 +654,38 @@ bool S3AuthClient::setup_auth_request_body() {
 
   data_key_val.clear();
 
-  switch (op_type) {
-    case S3AuthClientOpType::aclvalidation:
-    case S3AuthClientOpType::policyvalidation:
-      break;
-    default:
-      for (const auto &hdr_val : request->get_in_headers_copy()) {
-        const auto &s_hdr = hdr_val.first;
-        const auto &s_val = hdr_val.second;
+  if (op_type != S3AuthClientOpType::policyvalidation) {
 
-        s3_log(S3_LOG_DEBUG, request_id, "%s: %s\n", s_hdr.c_str(),
-               s_val.c_str());
-        add_key_val_to_body(s_hdr, s_val);
-      }
+    for (const auto &hdr_val : request->get_in_headers_copy()) {
+      const auto &s_hdr = hdr_val.first;
+      const auto &s_val = hdr_val.second;
+
+      s3_log(S3_LOG_DEBUG, request_id, "%s: %s\n", s_hdr.c_str(),
+             s_val.c_str());
+      add_key_val_to_body(s_hdr, s_val);
+    }
   }
   std::string auth_request_body;
   std::string method;
 
-  if (request->http_verb() == S3HttpVerb::GET) {
-    method = "GET";
-  } else if (request->http_verb() == S3HttpVerb::HEAD) {
-    method = "HEAD";
-  } else if (request->http_verb() == S3HttpVerb::PUT) {
-    method = "PUT";
-  } else if (request->http_verb() == S3HttpVerb::DELETE) {
-    method = "DELETE";
-  } else if (request->http_verb() == S3HttpVerb::POST) {
-    method = "POST";
+  switch (request->http_verb()) {
+    case S3HttpVerb::GET:
+      method = "GET";
+      break;
+    case S3HttpVerb::HEAD:
+      method = "HEAD";
+      break;
+    case S3HttpVerb::PUT:
+      method = "PUT";
+      break;
+    case S3HttpVerb::DELETE:
+      method = "DELETE";
+      break;
+    case S3HttpVerb::POST:
+      method = "POST";
+      break;
+    default:
+      ;  // -Wall
   }
   if (set_get_method) {
     method = "GET";
@@ -759,6 +764,7 @@ bool S3AuthClient::setup_auth_request_body() {
   // May need to take it from config
   add_key_val_to_body("Version", "2010-05-08");
   add_key_val_to_body("Request_id", request_id);
+
   if (op_type == S3AuthClientOpType::authorization ||
       op_type == S3AuthClientOpType::combo_auth) {
 
@@ -799,19 +805,11 @@ bool S3AuthClient::setup_auth_request_body() {
         add_key_val_to_body("Request-ACL", "false");
       }
     }
-    if (policy_str != "") {
-      add_key_val_to_body("Policy", policy_str);
-    }
-    if (acl_str != "") {
+    add_non_empty_key_val_to_body("Policy", policy_str);
+    add_non_empty_key_val_to_body("Auth-ACL", acl_str);
+    add_non_empty_key_val_to_body("Bucket-ACL", bucket_acl);
+    add_non_empty_key_val_to_body("S3Action", s3_request->get_action_str());
 
-      add_key_val_to_body("Auth-ACL", acl_str);
-    }
-    if (bucket_acl != "") {
-      add_key_val_to_body("Bucket-ACL", bucket_acl);
-    }
-    if (s3_request->get_action_str() != "") {
-      add_key_val_to_body("S3Action", s3_request->get_action_str());
-    }
     if (op_type == S3AuthClientOpType::combo_auth) {
       auth_request_body = "Action=AuthenticateAndAuthorize";
     } else {
@@ -1010,6 +1008,18 @@ void S3AuthClient::trigger_request(std::function<void(void)> on_success,
   assert(on_success);
   assert(on_failed);
 
+  if (op_type == S3AuthClientOpType::authentication ||
+      op_type == S3AuthClientOpType::combo_auth) {
+
+    if (s3_fi_is_enabled("fake_authentication_fail")) {
+      auth_context->set_auth_response_error(
+          "InvalidAccessKeyId", "Test of authentication failure", request_id);
+      on_failed();
+
+      s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+      return;
+    }
+  }
   handler_on_success = std::move(on_success);
   handler_on_failed = std::move(on_failed);
 
