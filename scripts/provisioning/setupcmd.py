@@ -86,7 +86,7 @@ class SetupCmd(object):
     except IOError as ioe:
       raise S3PROVError(f'failed to open config file: {self.s3_prov_config}, err: {ioe}\n')
     except YAMLError as ye:
-      raise S3PROVError(f'failed to open config file: {self.s3_prov_config}, err: {ioe}\n')
+      raise S3PROVError(f'failed to open config file: {self.s3_prov_config}, err: {ye}\n')
     except Exception as e:
       raise S3PROVError(f'unknown exception: {e}\n')
 

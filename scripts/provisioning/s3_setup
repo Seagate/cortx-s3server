@@ -180,7 +180,14 @@ add_s3backgrounddelete_rabbitmq_user()
 if [ $s3postinstall == true ]
 then
     echo "INFO: Start haproxy, slapd, rabbitmq-server and rsyslog services.."
-    systemctl restart haproxy slapd rabbitmq-server rsyslog
+    sh /opt/seagate/cortx/s3/bin/s3prov_start_services.sh haproxy slapd rabbitmq-server rsyslog
+    if [ $? -eq 0 ]
+    then
+      echo "Services are running successfully."
+    else
+      echo "Failed to start services."
+      exit 1
+    fi
 
     echo "INFO: running post_install..."
     # we already have 'exit' statement in '_s3_setup' binary at failure scenario,
