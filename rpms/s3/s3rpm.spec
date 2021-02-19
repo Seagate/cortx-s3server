@@ -81,6 +81,7 @@ BuildRequires: hiredis hiredis-devel
 # Required by S3 background delete based on python
 BuildRequires: python3-rpm-macros
 BuildRequires: python36
+BuildRequires: python36-ldap
 BuildRequires: python%{py_short_ver}-devel
 BuildRequires: python%{py_short_ver}-setuptools
 BuildRequires: python%{py_short_ver}-dateutil
@@ -369,7 +370,7 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/stop-s3-iopath-services.sh
 /opt/seagate/cortx/s3/reset/precheck.py
 /opt/seagate/cortx/s3/reset/reset_s3.sh
-/opt/seagate/cortx/s3/reset/clean_open_ldap_by_s3.sh
+/opt/seagate/cortx/s3/reset/clean_openldap.sh
 /opt/seagate/cortx/s3/conf/setup.yaml
 /opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.yaml
 /opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.yaml
