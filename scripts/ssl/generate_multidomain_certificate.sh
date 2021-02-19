@@ -136,8 +136,8 @@ function generate_s3_certs()
   echo $issuer_name > $dns_list_file
   echo $multi_domain_endpoint >> $dns_list_file
   #echo $s3_default_endpoint >> $dns_list_file
-  echo "*.$s3_default_endpoint" >> $dns_list_file
-  echo "*.$s3_region_endpoint" >> $dns_list_file
+  #echo "*.$s3_default_endpoint" >> $dns_list_file
+  #echo "*.$s3_region_endpoint" >> $dns_list_file
   #echo $s3_region_endpoint | tr , '\n' >> $dns_list_file
 
   if [ ! -z "$s3_ip_address" ]
