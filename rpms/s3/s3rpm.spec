@@ -81,7 +81,6 @@ BuildRequires: hiredis hiredis-devel
 # Required by S3 background delete based on python
 BuildRequires: python3-rpm-macros
 BuildRequires: python36
-BuildRequires: python36-ldap
 BuildRequires: python%{py_short_ver}-devel
 BuildRequires: python%{py_short_ver}-setuptools
 BuildRequires: python%{py_short_ver}-dateutil
@@ -108,6 +107,7 @@ Requires: pkgconfig
 Requires: log4cxx_cortx log4cxx_cortx-devel
 # Required by S3 background delete based on python
 Requires: python36
+Requires: python36-ldap
 Requires: python%{py_short_ver}-yaml
 Requires: python%{py_short_ver}-pika
 %if 0%{?el7}
