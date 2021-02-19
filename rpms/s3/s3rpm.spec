@@ -107,6 +107,7 @@ Requires: pkgconfig
 Requires: log4cxx_cortx log4cxx_cortx-devel
 # Required by S3 background delete based on python
 Requires: python36
+Requires: python36-ldap
 Requires: python%{py_short_ver}-yaml
 Requires: python%{py_short_ver}-pika
 %if 0%{?el7}
