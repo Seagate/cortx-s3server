@@ -41,13 +41,14 @@ void Action::s3_task_name_to_addb_task_id_map_init() {
 
 Action::Action(std::shared_ptr<RequestObject> req, bool check_shutdown,
                std::shared_ptr<S3AuthClientFactory> auth_factory,
-               bool skip_auth)
+               bool skip_auth, bool skip_authorization)
     : base_request(req),
       check_shutdown_signal(check_shutdown),
       is_response_scheduled(false),
       is_fi_hit(false),
       invalid_request(false),
       skip_auth(skip_auth),
+      skip_authorization(skip_authorization),
       action_uses_cleanup(false),
       cleanup_started(false) {
 
@@ -74,8 +75,7 @@ Action::Action(std::shared_ptr<RequestObject> req, bool check_shutdown,
     auth_client_factory = std::make_shared<S3AuthClientFactory>();
   }
   auth_client = auth_client_factory->create_auth_client(std::move(req));
-
-  check_authorization_header();
+  setup_steps();
 }
 
 Action::~Action() { s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__); }
@@ -112,6 +112,22 @@ const std::string& Action::get_s3_error_message() const {
 }
 
 bool Action::is_error_state() const { return state == ACTS_ERROR; }
+
+void Action::setup_steps() {
+  s3_log(S3_LOG_DEBUG, request_id, "Setup the action\n");
+
+  check_authorization_header();
+
+  s3_log(S3_LOG_DEBUG, request_id,
+         "S3Option::is_auth_disabled: (%d), skip_auth: (%d)\n",
+         S3Option::get_instance()->is_auth_disabled(), skip_auth);
+
+  if (!S3Option::get_instance()->is_auth_disabled() && !skip_auth &&
+      is_authorizationheader_present && skip_authorization) {
+
+    ACTION_TASK_ADD(Action::check_authentication, this);
+  }
+}
 
 void Action::check_authorization_header() {
   is_authorizationheader_present = false;
@@ -239,6 +255,45 @@ void Action::rollback_done() {
 
 void Action::rollback_exit() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  done();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void Action::check_authentication() {
+  auth_timer.start();
+  auth_client->check_authentication(
+      std::bind(&Action::check_authentication_successful, this),
+      std::bind(&Action::check_authentication_failed, this));
+}
+
+void Action::check_authentication_successful() {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+
+  auth_timer.stop();
+  const auto mss = auth_timer.elapsed_time_in_millisec();
+  LOG_PERF("check_authentication_ms", request_id.c_str(), mss);
+  s3_stats_timing("check_authentication", mss);
+
+  next();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void Action::check_authentication_failed() {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  if (base_request->client_connected()) {
+    std::string error_code = auth_client->get_error_code();
+    std::string error_message = auth_client->get_error_message();
+    if (error_code == "InvalidAccessKeyId") {
+      s3_stats_inc("authentication_failed_invalid_accesskey_count");
+    } else if (error_code == "SignatureDoesNotMatch") {
+      s3_stats_inc("authentication_failed_signature_mismatch_count");
+    } else if (error_code == "ServiceUnavailable") {
+      base_request->set_out_header_value("Retry-After", "2");
+    }
+    s3_log(S3_LOG_ERROR, request_id, "Authentication failure: %s\n",
+           error_code.c_str());
+    base_request->respond_error(error_code, {}, error_message);
+  }
   done();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

@@ -25,13 +25,14 @@
 
 #include "s3_addb_map.h"
 
-const uint64_t g_s3_to_addb_idx_func_name_map_size = 208;
+const uint64_t g_s3_to_addb_idx_func_name_map_size = 209;
 
 const char* g_s3_to_addb_idx_func_name_map[] = {
+    "Action::check_authentication",
     "ActionTest::func_callback_one",
     "ActionTest::func_callback_two",
     "MotrAPIHandlerTest::func_callback_one",
-    "MotrAction::check_authentication",
+    "MotrAction::check_authorization",
     "MotrDeleteIndexAction::delete_index",
     "MotrDeleteIndexAction::send_response_to_s3_client",
     "MotrDeleteIndexAction::validate_request",
@@ -71,7 +72,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3AccountDeleteMetadataAction::send_response_to_s3_client",
     "S3AccountDeleteMetadataAction::validate_request",
     "S3AccountDeleteMetadataActionTest::func_callback_one",
-    "S3Action::check_combo_auth",
+    "S3Action::check_authorization",
     "S3Action::load_metadata",
     "S3Action::set_authorization_meta",
     "S3BucketActionTest::func_callback_one",

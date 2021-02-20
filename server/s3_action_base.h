@@ -47,8 +47,6 @@
 class S3Action : public Action {
  protected:
   std::shared_ptr<S3RequestObject> request;
- private:
-  bool skip_authorization;
 
  public:
   S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown = true,
@@ -68,9 +66,9 @@ class S3Action : public Action {
   virtual void set_authorization_meta();
 
   // Common steps for all Actions like Authorization.
-  void check_combo_auth();
-  void check_combo_auth_successful();
-  void check_combo_auth_failed();
+  void check_authorization();
+  void check_authorization_successful();
+  void check_authorization_failed();
 
   void fetch_acl_policies();
   void fetch_acl_bucket_policies_failed();

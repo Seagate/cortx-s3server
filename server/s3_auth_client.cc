@@ -469,7 +469,9 @@ void S3AuthClientOpContext::handle_response(const char *sz_resp,
     f_success = false;
     return;
   }
-  if (request->get_user_id().empty()) {
+  if (S3AuthClientOpType::combo_auth == op_type ||
+      S3AuthClientOpType::authentication == op_type) {
+
     request->set_user_name(success_obj->get_user_name());
     request->set_canonical_id(success_obj->get_canonical_id());
     request->set_user_id(success_obj->get_user_id());
@@ -507,7 +509,7 @@ void S3AuthClientOpContext::set_auth_response_error(std::string error_code,
                                                     std::string request_id) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   error_obj.reset(new S3AuthResponseError(
-      std::move(error_code), std::move(error_message), std::move(request_id)));
+      std::move(error_code), std::move(error_message), request_id));
   s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
 }
 
@@ -691,15 +693,12 @@ bool S3AuthClient::setup_auth_request_body() {
     method = "GET";
   }
   add_key_val_to_body("Method", method);
-  add_non_empty_key_val_to_body("RequestorAccountId",
-                                request->get_account_id());
-  add_non_empty_key_val_to_body("RequestorAccountName",
-                                request->get_account_name());
-  add_non_empty_key_val_to_body("RequestorUserId", request->get_user_id());
-  add_non_empty_key_val_to_body("RequestorUserName", request->get_user_name());
-  add_non_empty_key_val_to_body("RequestorEmail", request->get_email());
-  add_non_empty_key_val_to_body("RequestorCanonicalId",
-                                request->get_canonical_id());
+  add_key_val_to_body("RequestorAccountId", request->get_account_id());
+  add_key_val_to_body("RequestorAccountName", request->get_account_name());
+  add_key_val_to_body("RequestorUserId", request->get_user_id());
+  add_key_val_to_body("RequestorUserName", request->get_user_name());
+  add_key_val_to_body("RequestorEmail", request->get_email());
+  add_key_val_to_body("RequestorCanonicalId", request->get_canonical_id());
 
   const char *full_path = request->c_get_full_encoded_path();
   if (full_path != NULL) {
