@@ -23,17 +23,10 @@ import sys
 import ldap.modlist as modlist
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
 
-"""
-Constants
-"""
 LDAP_USER = "cn={},dc=seagate,dc=com"
 LDAP_URL = "ldapi:///"
 
-"""
-Global variables
-"""
-
-# supported ldap action and input params dict 
+# supported ldap action and input params dict
 g_supported_ldap_action_table = {
   'CreateBGDeleteAccount': {
   '--account_name': "s3-background-delete-svc",
@@ -42,7 +35,7 @@ g_supported_ldap_action_table = {
   '--mail': "s3-background-delete-svc@seagate.com",
   '--s3_user_id': "450",
   '--const_cipher_secret_str': "s3backgroundsecretkey",
-  '--const_cipher_access_str': "s3backgroundaccesskey" 
+  '--const_cipher_access_str': "s3backgroundaccesskey"
   }
 }
 
@@ -75,6 +68,7 @@ class LdapAccountAction:
   ldap_account_action = None
 
   def __init__(self, ldapuser: str, ldappasswd: str, account_action: str):
+    """Constructor."""
     try:
       self.ldapuser = ldapuser.strip()
       self.ldappasswd = ldappasswd.strip()
@@ -100,28 +94,22 @@ class LdapAccountAction:
 
   @staticmethod
   def __get_attr(index_key):
-    """
-    Fetches attr from map based on index.
-    """
+    """Fetches attr from map based on index."""
     if index_key in g_attr :
       return g_attr[index_key]
-        
+
     raise Exception("Key Not Present")
 
   @staticmethod
   def __get_dn(index_key):
-    """
-    Fetches dn string from map based on index.
-    """
+    """Fetches dn string from map based on index."""
     if index_key in g_dn_names:
       return g_dn_names[index_key]
 
     raise Exception("Key Not Present")
 
   def __create_account_prepare_params(self, index_key:str, input_params:dict):
-    """
-    Builds params for creating 'account'.
-    """
+    """Builds params for creating 'account'. """
     dn = self.__get_dn(index_key)
     attrs = self.__get_attr(index_key)
 
@@ -135,18 +123,14 @@ class LdapAccountAction:
     return dn, attrs
 
   def __create_default_prepare_params(self, index_key:str, input_params:dict):
-    """
-    Builds params for generic case.
-    """
+    """Builds params for generic case."""
     dn = self.__get_dn(index_key)
     attrs = self.__get_attr(index_key)
     dn = dn.format(input_params['--account_name'])
     return dn, attrs
 
   def __create_s3userid_prepare_params(self, index_key:str, input_params:dict):
-    """
-    Builds params for creating 's3userid'.
-    """    
+    """ Builds params for creating 's3userid'."""
     dn = self.__get_dn(index_key)
     attrs = self.__get_attr(index_key)
 
@@ -159,33 +143,27 @@ class LdapAccountAction:
     return dn, attrs
 
   def __create_accesskey_prepare_params(self, index_key:str, input_params:dict):
-    """
-    Builds params for creating 'accesskey'.
-    """    
+    """Builds params for creating 'accesskey'."""
     dn = self.__get_dn(index_key)
     attrs = self.__get_attr(index_key)
 
     attrs['ak'] = [input_params['--access_key'].encode('utf-8')]
     attrs['s3userid'] = [input_params['--s3_user_id'].encode('utf-8')]
-    attrs['sk'] = [input_params['--secret_key'].encode('utf-8')]    
+    attrs['sk'] = [input_params['--secret_key'].encode('utf-8')]
 
     dn = dn.format(input_params['--access_key'])
     return dn, attrs
 
   @staticmethod
   def __generate_access_secret_keys(const_secret_string, const_access_string):
-    """
-    Generates access and secret keys.
-    """
+    """Generates access and secret keys."""
     cortx_access_key = CortxS3Cipher(None, True, 22, const_access_string).generate_key()
     cortx_secret_key = CortxS3Cipher(None, False, 40, const_secret_string).generate_key()
     return cortx_access_key, cortx_secret_key
 
   @staticmethod
   def __connect_to_ldap_server(ldapuser, ldappasswd):
-    """
-    Establish connection to ldap server.
-    """
+    """Establish connection to ldap server."""
     ldap_connection = ldap.initialize(LDAP_URL)
     ldap_connection.protocol_version = ldap.VERSION3
     ldap_connection.set_option(ldap.OPT_REFERRALS, 0)
@@ -194,9 +172,7 @@ class LdapAccountAction:
 
   @staticmethod
   def __is_account_present(account_name, ldap_connection):
-    """
-    Checks if account is present in ldap db.
-    """
+    """Checks if account is present in ldap db."""
     try:
       ldap_connection.search_s(f"o={account_name},ou=accounts,dc=s3,dc=seagate,dc=com", ldap.SCOPE_SUBTREE)
     except ldap.NO_SUCH_OBJECT:
@@ -208,15 +184,11 @@ class LdapAccountAction:
 
   @staticmethod
   def __disconnect_from_ldap(ldap_connection):
-    """
-    Disconnects from ldap
-    """
+    """Disconnects from ldap"""
     ldap_connection.unbind_s()
 
   def create_account(self):
-    """
-    Creates account in ldap db.
-    """
+    """Creates account in ldap db."""
     ldap_connection = None
     input_params = g_supported_ldap_action_table[self.ldap_account_action]
     try:
@@ -263,12 +235,11 @@ class LdapAccountAction:
 
   @staticmethod
   def supported_ldap_actions():
+    """Get supported actions."""
     print(f'supported ldap actions: {list(g_supported_ldap_action_table.keys())}')
 
   @staticmethod
   def print_create_account_results(result:dict):
-    """
-    Prints results of create account action.
-    """
+    """Prints results of create account action."""
     print("AccountId = {}, CanonicalId = {}, RootUserName = root, AccessKeyId = {}, SecretKey = {}".
         format(result['--account_id'], result['--canonical_id'], result['--access_key'], result['--secret_key']))

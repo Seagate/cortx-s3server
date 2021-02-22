@@ -40,7 +40,7 @@ class PostInstallCmd:
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name}\n")
     try:
-      localconfstore = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'confindex')
+      localconfstore = S3CortxConfStore(f'json://{self._preqs_conf_file}', 'confindex')
       self.validate_pre_requisites(rpms=localconfstore.get_config('rpms'),
                               services=localconfstore.get_config('services'),
                               pip3s=localconfstore.get_config('pip3s'),
