@@ -477,6 +477,22 @@ class S3ObjectExtendedMetadata : private S3ObjectMetadataCopyable {
   void remove_ext_object_metadata();
   void remove_ext_object_metadata_successful();
   void remove_ext_object_metadata_failed();
+
+ public:
+  // Google tests.
+  FRIEND_TEST(S3ObjectExtendedMetadataTest, ConstructorTest);
+  FRIEND_TEST(S3ObjectExtendedMetadataTest,
+              AddExtendedEntrySingleFragmentWithoutPartTest);
+  FRIEND_TEST(S3ObjectExtendedMetadataTest,
+              AddExtendedEntryMultiFragmentWithoutPartTest);
+  FRIEND_TEST(S3ObjectExtendedMetadataTest,
+              AddExtendedEntrySingleFragmentSinglePartTest);
+  FRIEND_TEST(S3ObjectExtendedMetadataTest,
+              AddExtendedEntryMultiFragmentSinglePartTest);
+  FRIEND_TEST(S3ObjectExtendedMetadataTest,
+              AddExtendedEntrySingleFragmentMultiPartTest);
+  FRIEND_TEST(S3ObjectExtendedMetadataTest,
+              AddExtendedEntryMultiFragmentMultiPartTest);
 };
 
 #endif
