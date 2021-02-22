@@ -20,7 +20,8 @@
 
 import sys
 
-from setupcmd import SetupCmd
+from scripts.provisioning.setupcmd import SetupCmd
+from scripts.ldap.ldapaccountaction import LdapAccountAction
 
 class InitCmd(SetupCmd):
   """Init Setup Cmd."""
@@ -35,6 +36,10 @@ class InitCmd(SetupCmd):
 
   def process(self):
     """Main processing function."""
-    retval = 0
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
-    return retval
+    try:
+      # Create background delete account
+      LdapAccountAction(self.ldap_user, self.ldap_passwd, 'CreateBGDeleteAccount').create_account()
+    except Exception as e:
+      sys.stderr.write(f'Failed to create backgrounddelete service account, error: {e}\n')
+      raise e

@@ -20,7 +20,7 @@
 
 import sys
 
-from setupcmd import SetupCmd
+from scripts.provisioning.setupcmd import SetupCmd
 
 class ConfigCmd(SetupCmd):
   """Config Setup Cmd."""

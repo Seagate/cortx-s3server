@@ -231,37 +231,20 @@ create_s3backgroundelete_keys()
     secret_key=$(s3cipher generate_key --key_len  40  --const_key  "s3backgroundsecretkey")
 }
 
-# Create s3 account for s3 backgrounddelete
-create_background_delete_account()
+# Create and set access $ secret keys for s3 backgrounddelete account
+set_s3backgrounddelete_keys()
 {
-    output=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
-    if [[ $output == *"No such object"* ]]
-    then
-      echo "INFO: Setting up rabbitmq server for S3backgroundelete.."
-      add_s3backgrounddelete_rabbitmq_user
+    create_s3backgroundelete_keys
 
-      # Create s3background delete account
-      create_s3backgroundelete_keys
-      # TODO - use s3confstore to set the access_key and secret_key in confstore.
-      # once the s3backgrounddelete is updated to read the keys from confstore, instead of config.yaml file
-      sed -i "s/background_account_access_key:.*$/background_account_access_key: \"$access_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
-      sed -i "s/background_account_secret_key:.*$/background_account_secret_key: \"$secret_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
-      sed -i "s/ak:.*/ak: $access_key/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
-      sed -i "s/sk:.*/sk: $secret_key/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
-      sed -i "s/ak=.*/ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
-      access_key=""
-      secret_key=""
-      sh /opt/seagate/cortx/s3/install/ldap/create_background_delete_account.sh $ldappasswd
-      if [ $? -eq 0 ]
-      then
-        echo "Created s3backgrounddelete account successfully."
-      else
-        echo "Failed to add s3backgrounddelete account, please check openldap logs to take corrective action."
-        exit 1
-      fi
-    else
-      echo "INFO: s3backgrounddelete account already exists"
-    fi
+    # TODO - use s3confstore to set the access_key and secret_key in confstore.
+    # once the s3backgrounddelete is updated to read the keys from confstore, instead of config.yaml file
+    sed -i "s/background_account_access_key:.*$/background_account_access_key: \"$access_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+    sed -i "s/background_account_secret_key:.*$/background_account_secret_key: \"$secret_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+    sed -i "s/ak:.*/ak: $access_key/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
+    sed -i "s/sk:.*/sk: $secret_key/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
+    sed -i "s/ak=.*/ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
+    access_key=""
+    secret_key=""
 }
 
 if [ $s3postinstall == true ]
@@ -318,13 +301,14 @@ then
     echo "INFO: validating pre-requisites for provisioning s3server.."
     $install_dir/_s3_setup post_install
 
-    # get openldap password from confstore
-    echo "INFO: Get openldap passwords from confstore.."
-    get_ldap_password
+    echo "INFO: Setting up rabbitmq server for S3backgroundelete.."
+    add_s3backgrounddelete_rabbitmq_user
 
-    # Setup s3 background delete and its dependencies
-    echo "INFO: Creating the s3backgrounddelete account.."
-    create_background_delete_account
+    echo "INFO: set s3backgrounddelete access and secret keys.."
+    set_s3backgrounddelete_keys
+
+    echo "INFO: create s3background delete account.."
+    $install_dir/_s3_setup init --config "$confstore_config_url"
 fi
 
 if [ $s3test == true ]

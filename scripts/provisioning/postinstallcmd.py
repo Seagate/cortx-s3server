@@ -18,14 +18,13 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-from json.decoder import JSONDecodeError
 import sys
-import json
 import os
 
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.validator.v_service import ServiceV
 from cortx.utils.validator.v_path import PathV
+from s3cortxutils.s3confstore.s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 class PostInstallCmd:
   """PostInstall Setup Cmd."""
@@ -41,21 +40,13 @@ class PostInstallCmd:
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name}\n")
     try:
-      with open(self._preqs_conf_file) as preqs_conf:
-        preqs_conf_json = json.load(preqs_conf)
-      self.validate_pre_requisites(rpms=preqs_conf_json['rpms'],
-                              services=preqs_conf_json['services'],
-                              pip3s=preqs_conf_json['pip3s'],
-                              files=preqs_conf_json['exists']
+      localconfstore = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'confindex')
+      self.validate_pre_requisites(rpms=localconfstore.get_config('rpms'),
+                              services=localconfstore.get_config('services'),
+                              pip3s=localconfstore.get_config('pip3s'),
+                              files=localconfstore.get_config('exists')
                             )
-    except IOError as e:
-      print(f'{self._preqs_conf_file} open failed, error: {e}')
-      raise e
-    except JSONDecodeError as e:
-      print(f'fail to decode json file:{self._preqs_conf_file}, error: {e}')
-      raise e
     except Exception as e:
-      # exception in validation
       raise e
 
   def validate_pre_requisites(self,

@@ -25,12 +25,7 @@ import argparse
 import traceback
 import errno
 
-from postinstallcmd import PostInstallCmd
-from cleanupcmd import CleanupCmd
-from configcmd import ConfigCmd
-from testcmd import TestCmd
-from resetcmd import ResetCmd
-from initcmd import InitCmd
+from scripts.provisioning.postinstallcmd import PostInstallCmd
 
 def main():
   parser = argparse.ArgumentParser("S3server setup command")
@@ -61,22 +56,27 @@ def main():
     sys.stdout.write('INFO: post_install validations successful.\n')
     
     if args.command == 'cleanup':
+      from scripts.provisioning.cleanupcmd import CleanupCmd
       CleanupCmd(args.config).process()
       sys.stdout.write('INFO: cleanup successful.\n')
       
     elif args.command == 'config':
+      from scripts.provisioning.configcmd import ConfigCmd
       ConfigCmd(args.config).process()
       sys.stdout.write('INFO: config successful.\n')
       
     elif args.command == 'init':
+      from scripts.provisioning.initcmd import InitCmd
       InitCmd(args.config).process()
       sys.stdout.write('INFO: init successful.\n')
       
     elif args.command == 'test':
+      from scripts.provisioning.testcmd import TestCmd
       TestCmd(args.config).process()
       sys.stdout.write('PASS: S3-Sanity test passed.\n')
       
     elif args.command == 'reset':
+      from scripts.provisioning.resetcmd import ResetCmd
       ResetCmd(args.config).process()
       sys.stdout.write('INFO: reset successful.\n')
 
