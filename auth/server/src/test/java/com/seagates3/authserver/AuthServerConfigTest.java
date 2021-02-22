@@ -106,6 +106,16 @@ public class AuthServerConfigTest {
         assertTrue(AuthServerConfig.isEnableHttpsToS3());
     }
 
+   public
+    void loadCredentialsTest() throws GeneralSecurityException, Exception {
+      Properties authServerConfig = getAuthProperties();
+      AuthServerConfig.authResourceDir = "../resources";
+      AuthServerConfig.init(authServerConfig);
+
+      AuthServerConfig.loadCredentials();
+      assertNotNull(AuthServerConfig.getLdapLoginPassword());
+    }
+
     /*@Test
     public void loadCredentialsTest() throws GeneralSecurityException, Exception
     {
