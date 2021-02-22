@@ -20,7 +20,7 @@
 
 import sys
 
-from scripts.provisioning.setupcmd import SetupCmd
+from setupcmd import SetupCmd
 
 class ResetCmd(SetupCmd):
   """Reset Setup Cmd."""

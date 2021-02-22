@@ -24,7 +24,7 @@ import os
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.validator.v_service import ServiceV
 from cortx.utils.validator.v_path import PathV
-from s3cortxutils.s3confstore.s3confstore.cortx_s3_confstore import S3CortxConfStore
+from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 class PostInstallCmd:
   """PostInstall Setup Cmd."""

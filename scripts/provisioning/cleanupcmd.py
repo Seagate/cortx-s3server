@@ -20,9 +20,9 @@
 
 import sys
 
-from s3cortxutils.s3confstore.s3confstore.cortx_s3_confstore import S3CortxConfStore
-from s3cortxutils.s3cipher.s3cipher.cortx_s3_cipher import CortxS3Cipher
-from scripts.provisioning.setupcmd import SetupCmd
+from s3confstore.cortx_s3_confstore import S3CortxConfStore
+from s3cipher.cortx_s3_cipher import CortxS3Cipher
+from setupcmd import SetupCmd
 
 class CleanupCmd(SetupCmd):
   """Cleanup Setup Cmd."""

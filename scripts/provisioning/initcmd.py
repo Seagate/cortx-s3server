@@ -20,8 +20,8 @@
 
 import sys
 
-from scripts.provisioning.setupcmd import SetupCmd
-from scripts.ldap.ldapaccountaction import LdapAccountAction
+from setupcmd import SetupCmd
+from ldapaccountaction import LdapAccountAction
 
 class InitCmd(SetupCmd):
   """Init Setup Cmd."""
