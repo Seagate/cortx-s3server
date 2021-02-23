@@ -142,7 +142,8 @@ public class AuthServerConfig {
        String ldap_const_key = authServerConfig.getProperty("ldap_const_key");
        String ldapCipherCmd =
            "s3cipher generate_key --const_key " + ldap_const_key;
-       BufferedReader reader1 = null, reader2 = null;
+       BufferedReader reader1 = null;
+       BufferedReader reader2 = null;
        try {
          // 1. Generate openldap cipher key
          Process s3Cipher = Runtime.getRuntime().exec(ldapCipherCmd);
