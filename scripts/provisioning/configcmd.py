@@ -35,6 +35,7 @@ class ConfigCmd(SetupCmd):
       super(ConfigCmd, self).__init__(config)
 
       self.read_cluster_id()
+      self.write_cluster_id()
       self.read_ldap_credentials()
       self.read_node_info()
 

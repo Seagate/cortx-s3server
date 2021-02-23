@@ -132,20 +132,6 @@ get_ldap_password()
     fi
 }
 
-# Fetch and update cluster_id
-fetch_update_cluster_id()
-{
-    cluster_id=$(s3confstore "$confstore_config_url" getkey --key "cluster>cluster_id")
-    if [ $? -eq 0 ]
-    then
-        # TODO: remove below sed cmd, as soon as s3backgrounddelete gets updated to read configurations from confstore
-        sed -i "s/cluster_id:.*$/cluster_id: "$cluster_id"/g" /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml
-    else
-        echo "ERROR: failed to read cluster>cluster_id from py-utils:confstore, exiting."
-        exit 1
-    fi
-}
-
 create_auth_jks_password()
 {
     sh /opt/seagate/cortx/auth/scripts/create_auth_jks_password.sh

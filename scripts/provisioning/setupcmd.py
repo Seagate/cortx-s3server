@@ -83,6 +83,16 @@ class SetupCmd(object):
     except Exception as e:
       raise S3PROVError(f'exception: {e}\n')
 
+  def write_cluster_id(self, op_file: str = "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"):
+    """Set 'cluster>cluster_id' to op_file."""
+
+    try:
+      with open(f'{op_file}', 'w+') as fhndle:
+        fhndle.write("cluster_config:\n")
+        fhndle.write(f"  cluster_id: {self.cluster_id}")
+    except Exception as e:
+      raise S3PROVError(f'exception: {e}\n')
+
   def read_node_info(self):
     """Call API get_nodecount from confstore."""
     try:
