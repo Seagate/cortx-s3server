@@ -242,4 +242,4 @@ class LdapAccountAction:
   def print_create_account_results(result:dict):
     """Prints results of create account action."""
     print(f"AccountId = {result['--account_id']}, CanonicalId = {result['--canonical_id']},"
-        f"RootUserName = root, AccessKeyId = {result['--access_key']}, SecretKey = {result['--secret_key']}")
+        f" RootUserName = root, AccessKeyId = {result['--access_key']}, SecretKey = {result['--secret_key']}")
