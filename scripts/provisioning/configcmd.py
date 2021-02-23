@@ -24,7 +24,6 @@ import errno
 import shutil
 from setupcmd import SetupCmd, S3PROVError
 from cortx.utils.process import SimpleProcess
-from yaml.error import YAMLError
 
 class ConfigCmd(SetupCmd):
   """Config Setup Cmd."""
@@ -39,12 +38,8 @@ class ConfigCmd(SetupCmd):
       self.read_ldap_credentials()
       self.read_node_info()
 
-    except IOError as ioe:
-      raise S3PROVError(f'failed to open config file: {self.s3_prov_config}, err: {ioe}\n')
-    except YAMLError as ye:
-      raise S3PROVError(f'yaml load failed for file: {self.s3_prov_config}, err: {ye}\n')
     except Exception as e:
-      raise S3PROVError(f'unknown exception: {e}\n')
+      raise S3PROVError(f'exception: {e}\n')
 
   def process(self):
     """Main processing function."""

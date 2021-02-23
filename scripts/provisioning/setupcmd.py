@@ -57,7 +57,7 @@ class SetupCmd(object):
   def read_ldap_credentials(self):
     """Get 'ldapadmin' user name and password from confstore."""
     try:
-      localconfstore = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 's3provindex')
+      localconfstore = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'read_ldap_credentialsidx')
 
       s3cipher_obj = CortxS3Cipher(None, False, 0, localconfstore.get_config('CONFSTORE_OPENLDAP_CONST_KEY'))
       cipher_key = s3cipher_obj.generate_key()
@@ -67,7 +67,7 @@ class SetupCmd(object):
 
       self.ldap_user = self.s3confstore.get_config(localconfstore.get_config('CONFSTORE_LDAPADMIN_USER_KEY'))
 
-      encrypted_rootdn_pass = self.s3confstore.get_config(prov_config_yaml['CONFSTORE_ROOTDN_PASSWD_KEY'])
+      encrypted_rootdn_pass = self.s3confstore.get_config(localconfstore.get_config('CONFSTORE_ROOTDN_PASSWD_KEY'))
       self.rootdn_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_rootdn_pass)
 
     except Exception as e:
@@ -76,19 +76,12 @@ class SetupCmd(object):
 
   def read_cluster_id(self):
     """Get 'cluster>cluster_id' from confstore."""
-    prov_config_yaml = None
 
     try:
-      with open(self.s3_prov_config) as provconf:
-        prov_config_yaml = yaml.safe_load(provconf)
-
-      self.cluster_id = self.s3confstore.get_config(prov_config_yaml['CONFSTORE_CLUSTER_ID_KEY'])
-    except IOError as ioe:
-      raise S3PROVError(f'failed to open config file: {self.s3_prov_config}, err: {ioe}\n')
-    except YAMLError as ye:
-      raise S3PROVError(f'failed to open config file: {self.s3_prov_config}, err: {ye}\n')
+      localconfstore = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'read_cluster_ididx')
+      self.cluster_id = self.s3confstore.get_config(localconfstore.get_config('CONFSTORE_CLUSTER_ID_KEY'))
     except Exception as e:
-      raise S3PROVError(f'unknown exception: {e}\n')
+      raise S3PROVError(f'exception: {e}\n')
 
   def read_node_info(self):
     """Call API get_nodecount from confstore."""
