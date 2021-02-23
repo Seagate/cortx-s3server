@@ -187,6 +187,7 @@ public class AuthServerConfig {
          logger.error(
              e.getMessage() +
              " Error occured in S3 cipher while decrypting openldap password.");
+         System.exit(1);
        }
        finally {
          if (reader1 != null) reader1.close();
