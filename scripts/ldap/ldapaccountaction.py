@@ -80,11 +80,9 @@ class LdapAccountAction:
     except Exception as e:
       sys.stderr.write(f'initialization failed, err: {e}')
       raise e
-    
+
   def __add_keys_to_dictionary(self, input_params:dict):
-    """
-    Adds access and secret keys to dictionary.
-    """
+    """Adds access and secret keys to dictionary."""
     access_key, secret_key = self.__generate_access_secret_keys(
                                       input_params['--const_cipher_secret_str'],
                                       input_params['--const_cipher_access_str'])
@@ -109,7 +107,7 @@ class LdapAccountAction:
     raise Exception("Key Not Present")
 
   def __create_account_prepare_params(self, index_key:str, input_params:dict):
-    """Builds params for creating 'account'. """
+    """Builds params for creating 'account'."""
     dn = self.__get_dn(index_key)
     attrs = self.__get_attr(index_key)
 
@@ -130,7 +128,7 @@ class LdapAccountAction:
     return dn, attrs
 
   def __create_s3userid_prepare_params(self, index_key:str, input_params:dict):
-    """ Builds params for creating 's3userid'."""
+    """Builds params for creating 's3userid'."""
     dn = self.__get_dn(index_key)
     attrs = self.__get_attr(index_key)
 
