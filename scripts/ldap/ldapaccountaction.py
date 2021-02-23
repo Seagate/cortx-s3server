@@ -226,6 +226,8 @@ class LdapAccountAction:
         dn, attrs = self.__create_accesskey_prepare_params('access_key', input_params)
         ldif = modlist.addModlist(attrs)
         ldap_connection.add_s(dn, ldif)
+      else:
+        sys.stdout.write(f"ldap account: {input_params['--account_name']} already exists.\n")
 
       self.__disconnect_from_ldap(ldap_connection)
     except Exception as e:
@@ -241,5 +243,5 @@ class LdapAccountAction:
   @staticmethod
   def print_create_account_results(result:dict):
     """Prints results of create account action."""
-    print("AccountId = {}, CanonicalId = {}, RootUserName = root, AccessKeyId = {}, SecretKey = {}".
-        format(result['--account_id'], result['--canonical_id'], result['--access_key'], result['--secret_key']))
+    print(f"AccountId = {result['--account_id']}, CanonicalId = {result['--canonical_id']},"
+        f"RootUserName = root, AccessKeyId = {result['--access_key']}, SecretKey = {result['--secret_key']}")

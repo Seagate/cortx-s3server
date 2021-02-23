@@ -375,6 +375,7 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/bin/testcmd.py
 /opt/seagate/cortx/s3/bin/resetcmd.py
 /opt/seagate/cortx/s3/bin/cleanupcmd.py
+/opt/seagate/cortx/s3/bin/ldapaccountaction.py
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_setup
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/_s3_setup
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer

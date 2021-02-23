@@ -108,6 +108,7 @@ cp scripts/provisioning/cleanupcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/testcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/resetcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/setupcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/ldap/ldapaccountaction.py $S3_INSTALL_LOCATION/bin
 
 # Copy the mini-provisioner config files
 cp scripts/provisioning/s3setup_prereqs.json $S3_MINI_PROV_CFG_LOCATION/

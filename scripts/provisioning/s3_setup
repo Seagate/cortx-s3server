@@ -295,12 +295,6 @@ fi
 
 if [ $s3init == true ]
 then
-    # validate pre-requisites before proceeding
-    # we already have 'exit' statement in '_s3_setup' binary at failure scenario,
-    # no need to add 'exit' here.
-    echo "INFO: validating pre-requisites for provisioning s3server.."
-    $install_dir/_s3_setup post_install
-
     echo "INFO: Setting up rabbitmq server for S3backgroundelete.."
     add_s3backgrounddelete_rabbitmq_user
 

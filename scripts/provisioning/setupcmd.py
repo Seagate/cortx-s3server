@@ -21,7 +21,7 @@
 import sys
 
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
-from s3cipher import CortxS3Cipher
+from s3cipher.cortx_s3_cipher import CortxS3Cipher
 
 class SetupCmd(object):
   """Base class for setup commands."""

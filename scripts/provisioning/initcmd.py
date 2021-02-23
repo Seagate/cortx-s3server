@@ -31,6 +31,7 @@ class InitCmd(SetupCmd):
     """Constructor."""
     try:
       super(InitCmd, self).__init__(config)
+      self.read_ldap_credentials()
     except Exception as e:
       raise e
 
