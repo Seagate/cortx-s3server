@@ -86,7 +86,7 @@ class LdapAccountAction:
     access_key, secret_key = self.__generate_access_secret_keys(
                                       input_params['--const_cipher_secret_str'],
                                       input_params['--const_cipher_access_str'])
-        
+
     input_params['--access_key'] = access_key
     input_params['--secret_key'] = secret_key
 
@@ -182,7 +182,7 @@ class LdapAccountAction:
 
   @staticmethod
   def __disconnect_from_ldap(ldap_connection):
-    """Disconnects from ldap"""
+    """Disconnects from ldap."""
     ldap_connection.unbind_s()
 
   def create_account(self):

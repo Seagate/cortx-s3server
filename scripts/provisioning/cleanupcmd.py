@@ -21,7 +21,6 @@
 import sys
 
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
-from s3cipher.cortx_s3_cipher import CortxS3Cipher
 from setupcmd import SetupCmd
 
 class CleanupCmd(SetupCmd):
@@ -30,7 +29,6 @@ class CleanupCmd(SetupCmd):
   # map with key as 'account-name', and value as the account related constants
   account_cleanup_dict = {
                           "s3-background-delete-svc": {
-                            "cipherConstKey": "s3backgroundaccesskey",
                             "s3userId": "450"
                           }
                         }
@@ -105,15 +103,31 @@ class CleanupCmd(SetupCmd):
       raise e
     return True
 
+  def get_accesskey(self, ldap_acc: str):
+    """Get accesskey of the given userid."""
+    access_key = None
+    s3userid = self.account_cleanup_dict[ldap_acc]['s3userId']
+
+    from ldap import SCOPE_SUBTREE
+    result_list = self.ldap_conn.search_s('ou=accesskeys,dc=s3,dc=seagate,dc=com',
+                                    SCOPE_SUBTREE,
+                                    filterstr='(ObjectClass=accessKey)')
+    for (_, attr_dict) in result_list:
+      if s3userid == attr_dict['s3UserId'][0].decode():
+        access_key = attr_dict['ak'][0].decode()
+        break
+    return access_key
+
   def delete_ldap_account(self, ldap_acc: str):
     """Delete the given s3 account."""
     try:
       acc_attributes_dict = self.account_cleanup_dict[ldap_acc]
-      s3cipher_obj = CortxS3Cipher(None, True, 22, acc_attributes_dict["cipherConstKey"])
-      access_key = s3cipher_obj.generate_key()
-      # delete the access key
+
       from ldap import NO_SUCH_OBJECT
+
+      # delete the access key
       try:
+        access_key = self.get_accesskey(ldap_acc)
         self.ldap_conn.delete_s(f'ak={access_key},ou=accesskeys,dc=s3,dc=seagate,dc=com')
       except NO_SUCH_OBJECT:
         pass

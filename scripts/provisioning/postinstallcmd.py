@@ -38,7 +38,7 @@ class PostInstallCmd:
 
   def process(self):
     """Main processing function."""
-    sys.stdout.write(f"Processing {self.name}\n")
+    sys.stdout.write("Running validations..\n")
     try:
       localconfstore = S3CortxConfStore(f'json://{self._preqs_conf_file}', 'confindex')
       self.validate_pre_requisites(rpms=localconfstore.get_config('rpms'),
