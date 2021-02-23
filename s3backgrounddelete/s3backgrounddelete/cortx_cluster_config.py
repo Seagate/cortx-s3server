@@ -23,6 +23,8 @@ import sys
 import os
 import shutil
 import yaml
+import uuid
+from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 class CipherInvalidToken(Exception):
     pass
@@ -30,6 +32,7 @@ class CipherInvalidToken(Exception):
 class CORTXClusterConfig(object):
 
     """Configuration for s3 cluster info."""
+    s3confstore = None
 
     def __init__(self):
         """Load and initialise configuration."""
@@ -62,12 +65,12 @@ class CORTXClusterConfig(object):
                 self._conf_file +
                 " it doesn't have read access")
             sys.exit()
-        with open(self._conf_file, 'r') as file_config:
-            self._config = yaml.safe_load(file_config)
+
+        # Load s3_cluster.yaml file through confstore.
+        conf_url='yaml://' + self._conf_file
+        if CORTXClusterConfig.s3confstore is None:
+            CORTXClusterConfig.s3confstore = S3CortxConfStore(config=conf_url, index= str(uuid.uuid1()))
 
     def get_cluster_id(self):
         """Return cluster_id from config file or KeyError."""
-        if 'cluster_config' in self._config and self._config['cluster_config']['cluster_id']:
-            return self._config['cluster_config']['cluster_id']
-        else:
-            raise KeyError("Could not parse cluster_id config file " + self._conf_file)
+        return CORTXClusterConfig.s3confstore.get_config('cluster_config>cluster_id')
