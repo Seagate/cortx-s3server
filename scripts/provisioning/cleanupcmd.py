@@ -17,22 +17,18 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-import sys
-import ldap
-import yaml
-from yaml.error import YAMLError
 
-from s3cipher.cortx_s3_cipher import CortxS3Cipher
+import sys
+
+from s3confstore.cortx_s3_confstore import S3CortxConfStore
 from setupcmd import SetupCmd
 
 class CleanupCmd(SetupCmd):
   """Cleanup Setup Cmd."""
   name = "cleanup"
-
   # map with key as 'account-name', and value as the account related constants
   account_cleanup_dict = {
                           "s3-background-delete-svc": {
-                            "cipherConstKey": "s3backgroundaccesskey",
                             "s3userId": "450"
                           }
                         }
@@ -47,19 +43,12 @@ class CleanupCmd(SetupCmd):
 
       self.read_ldap_credentials()
 
-      with open(self.s3_prov_config) as provconfig:
-        s3_prov_config_yaml = yaml.safe_load(provconfig)
-        self.ldap_url = s3_prov_config_yaml['LDAP_URL']
-        self.ldap_cn = s3_prov_config_yaml['LDAP_USER']
+      localconfstore = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'localindex')
+      self.ldap_url = localconfstore.get_config('LDAP_URL')
+      self.ldap_cn = localconfstore.get_config('LDAP_USER')
 
-    except IOError as ioe:
-      sys.stderr.write(f'failed to open config file: {self.s3_prov_config}, err: {ioe}\n')
-      raise ioe
-    except YAMLError as ye:
-      sys.stderr.write(f'yaml load failed for file: {self.s3_prov_config}, err: {ye}\n')
-      raise ye
     except Exception as e:
-      sys.stderr.write(f'unknown exception: {e}\n')
+      sys.stderr.write(f'Failed to read ldap credentials, error: {e}\n')
       raise e
 
   def process(self):
@@ -86,10 +75,14 @@ class CleanupCmd(SetupCmd):
 
   def create_ldap_connection(self):
     """Open ldap connection."""
-    self.ldap_conn = ldap.initialize(self.ldap_url)
+    from ldap import initialize
+    from ldap import VERSION3
+    from ldap import OPT_REFERRALS
 
-    self.ldap_conn.protocol_version = ldap.VERSION3
-    self.ldap_conn.set_option(ldap.OPT_REFERRALS, 0)
+    self.ldap_conn = initialize(self.ldap_url)
+
+    self.ldap_conn.protocol_version = VERSION3
+    self.ldap_conn.set_option(OPT_REFERRALS, 0)
     self.ldap_conn.simple_bind_s(self.ldap_cn.format(self.ldap_user), self.ldap_passwd)
 
   def delete_ldap_connection(self):
@@ -98,48 +91,67 @@ class CleanupCmd(SetupCmd):
 
   def if_ldap_account_exists(self, ldap_acc: str):
     """Check if given s3 account exists."""
+    from ldap import SCOPE_SUBTREE
+    from ldap import NO_SUCH_OBJECT
     try:
       self.ldap_conn.search_s(f'o={ldap_acc},ou=accounts,dc=s3,dc=seagate,dc=com',
-                            ldap.SCOPE_SUBTREE)
-    except ldap.NO_SUCH_OBJECT:
+                            SCOPE_SUBTREE)
+    except NO_SUCH_OBJECT:
       return False
     except Exception as e:
       sys.stderr.write(f'INFO: Failed to find ldap account: {ldap_acc}, error: {str(e)}\n')
       raise e
     return True
 
+  def get_accesskey(self, ldap_acc: str):
+    """Get accesskey of the given userid."""
+    access_key = None
+    s3userid = self.account_cleanup_dict[ldap_acc]['s3userId']
+
+    from ldap import SCOPE_SUBTREE
+    result_list = self.ldap_conn.search_s('ou=accesskeys,dc=s3,dc=seagate,dc=com',
+                                    SCOPE_SUBTREE,
+                                    filterstr='(ObjectClass=accessKey)')
+    for (_, attr_dict) in result_list:
+      if s3userid == attr_dict['s3UserId'][0].decode():
+        access_key = attr_dict['ak'][0].decode()
+        break
+    return access_key
+
   def delete_ldap_account(self, ldap_acc: str):
     """Delete the given s3 account."""
     try:
       acc_attributes_dict = self.account_cleanup_dict[ldap_acc]
-      s3cipher_obj = CortxS3Cipher(None, True, 22, acc_attributes_dict["cipherConstKey"])
-      access_key = s3cipher_obj.generate_key()
+
+      from ldap import NO_SUCH_OBJECT
+
       # delete the access key
       try:
+        access_key = self.get_accesskey(ldap_acc)
         self.ldap_conn.delete_s(f'ak={access_key},ou=accesskeys,dc=s3,dc=seagate,dc=com')
-      except ldap.NO_SUCH_OBJECT:
+      except NO_SUCH_OBJECT:
         pass
 
       # delete the 'ldap_acc' account's subordinate objects
       try:
         self.ldap_conn.delete_s(f'ou=roles,o={ldap_acc},ou=accounts,dc=s3,dc=seagate,dc=com')
-      except ldap.NO_SUCH_OBJECT:
+      except NO_SUCH_OBJECT:
         pass
       try:
         self.ldap_conn.delete_s(f's3UserId={acc_attributes_dict["s3userId"]},ou=users,o={ldap_acc},ou=accounts,dc=s3,dc=seagate,dc=com')
-      except ldap.NO_SUCH_OBJECT:
+      except NO_SUCH_OBJECT:
         pass
       try:
         self.ldap_conn.delete_s(f'ou=users,o={ldap_acc},ou=accounts,dc=s3,dc=seagate,dc=com')
-      except ldap.NO_SUCH_OBJECT:
+      except NO_SUCH_OBJECT:
         pass
       try:
         self.ldap_conn.delete_s(f'ou=groups,o={ldap_acc},ou=accounts,dc=s3,dc=seagate,dc=com')
-      except ldap.NO_SUCH_OBJECT:
+      except NO_SUCH_OBJECT:
         pass
       try:
         self.ldap_conn.delete_s(f'ou=policies,o={ldap_acc},ou=accounts,dc=s3,dc=seagate,dc=com')
-      except ldap.NO_SUCH_OBJECT:
+      except NO_SUCH_OBJECT:
         pass
 
       # delete the 'ldap_acc' account
