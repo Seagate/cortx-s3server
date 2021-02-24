@@ -176,7 +176,7 @@ TEST_F(ActionTest, RollbacklistRun) {
   EXPECT_TRUE(call_count_one == 1);
   ptr_Actionobject->rollback_next();
 }
-/*
+
 TEST_F(ActionTest, SkipAuthTest) {
   std::map<std::string, std::string> input_headers;
   input_headers["Authorization"] = "1";
@@ -222,4 +222,3 @@ TEST_F(ActionTest, DisableSkipAuthFlagAndSetS3OptionDisableAuthFlag) {
   // no tasks
   EXPECT_EQ(0, ptr_Actionobject->number_of_tasks());
 }
-*/
