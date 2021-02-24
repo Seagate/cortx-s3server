@@ -19,7 +19,7 @@
 #
 
 import sys
-
+from os import path
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
 
@@ -87,9 +87,15 @@ class SetupCmd(object):
     """Set 'cluster>cluster_id' to op_file."""
 
     try:
-      with open(f'{op_file}', 'w+') as fhndle:
-        fhndle.write("cluster_config:\n")
-        fhndle.write(f"  cluster_id: {self.cluster_id}")
+      if path.isfile(f'{op_file}') == False:
+        raise S3PROVError(f'{op_file} must be present\n')
+      else:
+        key = 'cluster_config>cluster_id'
+        opfileconfstore = S3CortxConfStore(f'yaml://{op_file}', 'write_cluster_id_idx')
+        opfileconfstore.set_config(f'{key}', f'{self.cluster_id}', True)
+        new_cluster_id = opfileconfstore.get_config(f'{key}')
+        if new_cluster_id != self.cluster_id:
+          raise S3PROVError(f'set_config failed to set {key}: {self.cluster_id} in {op_file} \n')
     except Exception as e:
       raise S3PROVError(f'exception: {e}\n')
 
