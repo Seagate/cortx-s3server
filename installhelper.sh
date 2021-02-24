@@ -96,15 +96,27 @@ cp -R scripts/haproxy/* $S3_INSTALL_LOCATION/install/haproxy
 # Copy the provisioning config
 cp scripts/provisioning/setup.yaml $S3_INSTALL_LOCATION/conf
 
-# Copy the provisioning script
+# Copy the provisioning shell script
 cp scripts/provisioning/s3_setup $S3_INSTALL_LOCATION/bin
 
-# Copy the mini-provisioner pre-reqs validation check config files
-cp scripts/provisioning/s3setup_prereqs.json ${S3_MINI_PROV_CFG_LOCATION}/
+# Copy the provisioning python scripts
+cp scripts/provisioning/_s3_setup $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/postinstallcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/configcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/initcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/cleanupcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/testcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/resetcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/setupcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/ldap/ldapaccountaction.py $S3_INSTALL_LOCATION/bin
+
+# Copy the mini-provisioner config files
+cp scripts/provisioning/s3setup_prereqs.json $S3_MINI_PROV_CFG_LOCATION/
+cp scripts/provisioning/s3_prov_config.yaml $S3_MINI_PROV_CFG_LOCATION/
 
 # Copy the S3 reset scripts
 cp scripts/reset/* $S3_INSTALL_LOCATION/reset
-cp scripts/provisioning/s3setup/clean_open_ldap_by_s3.sh $S3_INSTALL_LOCATION/reset
+cp scripts/provisioning/clean_openldap.sh $S3_INSTALL_LOCATION/reset
 
 # Copy the s3 dependencies
 cp -R third_party/libevent/s3_dist/lib/* $S3_INSTALL_LOCATION/libevent/
@@ -239,11 +251,6 @@ cp -f scripts/ldap/rsyslog.d/slapdlog.conf $S3_INSTALL_LOCATION/install/ldap/rsy
 
 # Copy s3 slapd index file to install location
 cp -f scripts/ldap/s3slapdindex.ldif $S3_INSTALL_LOCATION/install/ldap/
-
-# Copy backgrounddelete account scripts to install location
-cp -f scripts/ldap/background_delete_account.ldif $S3_INSTALL_LOCATION/install/ldap/
-cp -f scripts/ldap/create_background_delete_account.sh $S3_INSTALL_LOCATION/install/ldap/
-cp -f scripts/ldap/delete_background_delete_account.sh $S3_INSTALL_LOCATION/install/ldap/
 
 cp -f scripts/ldap/cfg_ldap.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/cn={1}s3user.ldif $S3_INSTALL_LOCATION/install/ldap/

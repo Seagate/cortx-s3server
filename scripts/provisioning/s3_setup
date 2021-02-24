@@ -47,6 +47,7 @@ cleanup                  cleanup S3 account created for backgrounddelete service
 
 set -e
 
+install_dir='/opt/seagate/cortx/s3/bin'
 access_key=""
 secret_key=""
 
@@ -63,28 +64,6 @@ rootadminpasswd=""
 
 ldappasswd=""
 rootpasswd=""
-
-encrypt_cli="/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar"
-
-# check if s3cipher, s3confstore and s3setup are installed on the system
-if ! command -v s3cipher &>/dev/null
-then
-    echo "ERROR: s3cipher not installed on the system, exiting."
-    exit 1
-fi
-
-if ! command -v s3confstore &>/dev/null
-then
-    echo "ERROR: s3confstore not installed on the system, exiting."
-    exit 1
-fi
-
-if ! command -v s3setup &>/dev/null
-then
-    echo "ERROR: s3setup not installed on the system, exiting."
-    exit 1
-fi
-
 
 while test $# -gt 0
 do
@@ -245,65 +224,25 @@ add_s3backgrounddelete_rabbitmq_user()
     echo "INFO: Rabbitmq configuration for this node is completed."
 }
 
-# Generate s3backgroundelete keys using cipher
-create_s3backgroundelete_keys()
-{
-    access_key=$(s3cipher generate_key --use_base64 --key_len  22  --const_key  "s3backgroundaccesskey")
-    secret_key=$(s3cipher generate_key --key_len  40  --const_key  "s3backgroundsecretkey")
-}
-
-# Create s3 account for s3 backgrounddelete
-create_background_delete_account()
-{
-    output=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
-    if [[ $output == *"No such object"* ]]
-    then
-      echo "INFO: Setting up rabbitmq server for S3backgroundelete.."
-      add_s3backgrounddelete_rabbitmq_user
-
-      # Create s3background delete account
-      create_s3backgroundelete_keys
-      # TODO - use s3confstore to set the access_key and secret_key in confstore.
-      # once the s3backgrounddelete is updated to read the keys from confstore, instead of config.yaml file
-      sed -i "s/background_account_access_key:.*$/background_account_access_key: \"$access_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
-      sed -i "s/background_account_secret_key:.*$/background_account_secret_key: \"$secret_key\"/g" /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
-      sed -i "s/ak:.*/ak: $access_key/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
-      sed -i "s/sk:.*/sk: $secret_key/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
-      sed -i "s/ak=.*/ak=$access_key,ou=accesskeys,dc=s3,dc=seagate,dc=com/g" /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
-      access_key=""
-      secret_key=""
-      sh /opt/seagate/cortx/s3/install/ldap/create_background_delete_account.sh $ldappasswd
-      if [ $? -eq 0 ]
-      then
-        echo "Created s3backgrounddelete account successfully."
-      else
-        echo "Failed to add s3backgrounddelete account, please check openldap logs to take corrective action."
-        exit 1
-      fi
-    else
-      echo "INFO: s3backgrounddelete account already exists"
-    fi
-}
-
 if [ $s3postinstall == true ]
 then
     echo "INFO: Start haproxy, slapd, rabbitmq-server and rsyslog services.."
     systemctl restart haproxy slapd rabbitmq-server rsyslog
 
     echo "INFO: running post_install..."
-    # we already have 'exit' statement in 's3setup' binary at failure scenario,
+    # we already have 'exit' statement in '_s3_setup' binary at failure scenario,
     # no need to add 'exit' here.   
-    s3setup post_install
+    $install_dir/_s3_setup post_install
     echo "INFO: All pre-requisites are in place."
 fi
 
 if [ $s3config == true ]
 then
     # validate pre-requisites before proceeding
-    # we already have 'exit' statement in 's3setup' binary at failure scenario,
+    # we already have 'exit' statement in '_s3_setup' binary at failure scenario,
     # no need to add 'exit' here.
     echo "INFO: validating pre-requisites for provisioning s3server.."
-    s3setup post_install
+    $install_dir/_s3_setup post_install
 
     # Fetch and update cluster id
     # To decrypt openldap passwords, we need 'cluster_id' updated in s3_cluster.yaml
@@ -333,19 +272,11 @@ fi
 
 if [ $s3init == true ]
 then
-    # validate pre-requisites before proceeding
-    # we already have 'exit' statement in 's3setup' binary at failure scenario,
-    # no need to add 'exit' here.
-    echo "INFO: validating pre-requisites for provisioning s3server.."
-    s3setup post_install
+    echo "INFO: Setting up rabbitmq server for S3backgroundelete.."
+    add_s3backgrounddelete_rabbitmq_user
 
-    # get openldap password from confstore
-    echo "INFO: Get openldap passwords from confstore.."
-    get_ldap_password
-
-    # Setup s3 background delete and its dependencies
-    echo "INFO: Creating the s3backgrounddelete account.."
-    create_background_delete_account
+    echo "INFO: create s3background delete account.."
+    $install_dir/_s3_setup init --config "$confstore_config_url"
 fi
 
 if [ $s3test == true ]
@@ -369,5 +300,5 @@ then
     echo "INFO: Get openldap passwords from confstore.."
     get_ldap_password
 
-    s3setup cleanup --ldappasswd "$ldappasswd"
+    $install_dir/_s3_setup cleanup --config "$confstore_config_url"
 fi

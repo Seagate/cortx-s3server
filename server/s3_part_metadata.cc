@@ -386,8 +386,8 @@ void S3PartMetadata::remove_index_successful() {
 
 void S3PartMetadata::remove_index_failed() {
   s3_log(S3_LOG_WARN, request_id, "Failed to remove index for part info\n");
-  s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
-         S3_IEM_DELETE_IDX_FAIL_JSON);
+  // s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
+  //     S3_IEM_DELETE_IDX_FAIL_JSON);
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed) {
     state = S3PartMetadataState::failed;
   } else if (motr_kv_writer->get_state() ==
@@ -467,8 +467,9 @@ void S3PartMetadata::handle_collision() {
       s3_log(S3_LOG_ERROR, request_id,
              "Failed to resolve object id collision %zu times for index %s\n",
              collision_attempt_count, index_name.c_str());
-      s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,
-             S3_IEM_COLLISION_RES_FAIL_JSON);
+      // s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL,
+      // S3_IEM_COLLISION_RES_FAIL_STR,
+      //     S3_IEM_COLLISION_RES_FAIL_JSON);
     }
     state = S3PartMetadataState::failed;
     this->handler_on_failed();

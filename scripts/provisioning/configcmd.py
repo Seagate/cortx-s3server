@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -16,40 +17,24 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-import os
+
 import sys
-from setuptools import setup
-files = []
 
-# Load the version
-s3setup_version = "2.0.0"
-for argument in sys.argv:
-    if argument.startswith("--version"):
-        s3setup_version = argument.split("=")[1]
-        sys.argv.remove(argument)
+from setupcmd import SetupCmd
 
-setup(
-  # Application name
-  name="s3setup",
+class ConfigCmd(SetupCmd):
+  """Config Setup Cmd."""
+  name = "config"
 
-  # version number
-  version=s3setup_version,
+  def __init__(self, config: str):
+    """Constructor."""
+    try:
+      super(ConfigCmd, self).__init__(config)
+    except Exception as e:
+      raise e
 
-  # Author details
-  author="Seagate",
-
-  # Packages
-  packages=["s3setup"],
-
-  # Include additional files into the package
-  include_package_data=True,
-
-  # Details
-  scripts =['s3setup/s3setup'],
-
-  # license="LICENSE.txt",
-
-  description="s3setup python implementation",
-
-  package_data = { 's3setup': files}
-)
+  def process(self):
+    """Main processing function."""
+    retval = 0
+    sys.stdout.write(f"Processing {self.name} {self.url}\n")
+    return retval

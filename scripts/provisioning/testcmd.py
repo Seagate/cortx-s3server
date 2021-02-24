@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env python3
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -18,14 +18,23 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+import sys
 
-USAGE="USAGE: create_background_delete_account.sh <ldap passwd> "
+from setupcmd import SetupCmd
 
-if [ "$#" -ne 1 ]; then
-    echo "$USAGE"
-    exit 1
-fi
+class TestCmd(SetupCmd):
+  """Test Setup Cmd."""
+  name = "test"
 
-ldap_passwd=$1
+  def __init__(self, config: str):
+    """Constructor."""
+    try:
+      super(TestCmd, self).__init__(config)
+    except Exception as e:
+      raise e
 
-ldapadd -w $ldap_passwd -x -D "cn=sgiamadmin,dc=seagate,dc=com" -f /opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif -H ldapi:///
+  def process(self):
+    """Main processing function."""
+    retval = 0
+    sys.stdout.write(f"Processing {self.name} {self.url}\n")
+    return retval
