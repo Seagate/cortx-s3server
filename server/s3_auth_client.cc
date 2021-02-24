@@ -1136,7 +1136,6 @@ void S3AuthClient::on_common_failed() {
              retry_count);
       // s3_iem(LOG_ERR, S3_IEM_AUTH_CONN_FAIL, S3_IEM_AUTH_CONN_FAIL_STR,
       //     S3_IEM_AUTH_CONN_FAIL_JSON);
-      this->handler_on_failed();
     }
   } else {
     s3_log(S3_LOG_ERROR, request_id, "Auth/validation failure\n");
