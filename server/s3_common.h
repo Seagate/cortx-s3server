@@ -57,6 +57,10 @@
 #define MINIMUM_PART_NUMBER 1
 // Maxmimum part number for multipart operations
 #define MAXIMUM_PART_NUMBER 10000
+// Maximum number of allowed recovery by S3 when fault happens and Motr error
+// out with specific error code.
+// When 0, feature is disabled.
+#define MAX_ALLOWED_RECOVERY_IN_FAULT_MODE 10
 
 enum class S3ApiType {
   service,

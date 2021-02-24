@@ -50,20 +50,20 @@ class S3PutObjectAction : public S3ObjectAction {
   std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
 
-  // Used in S3 fault mode: size of the last object
+  size_t total_data_to_stream;
+  S3Timer s3_timer;
+  bool write_in_progress;
+
+  // S3 fault mode
   size_t last_object_size;
   size_t primary_object_size;
   size_t total_object_size_consumed;
   unsigned short max_objects_in_s3_fault_mode;
   unsigned short current_fault_iteration;
-  size_t total_data_to_stream;
-  S3Timer s3_timer;
-  bool write_in_progress;
-  // S3 fault mode: When the fist object write fails, this flag is set
+  // S3 fault mode: When the fist object write fails, below flag is set
   bool fault_mode_active;
   bool create_fragment_when_write_success;
-
-  // TODO: Remove below state when done with testing
+  // TODO: Remove below state when done with dev testing
   unsigned int no_of_blocks_written;
   S3BufferSequence last_buffer_seq;
   MD5hash last_MD5Hash_state;

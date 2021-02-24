@@ -188,16 +188,6 @@ void S3ObjectMetadata::set_objects_version_list_index_oid(
   objects_version_list_index_oid.u_lo = id.u_lo;
 }
 
-void S3ObjectMetadata::set_extended_object_metadata(
-    std::shared_ptr<S3ObjectExtendedMetadata> ext_object_metadata) {
-  extended_object_metadata = std::move(ext_object_metadata);
-}
-
-const std::shared_ptr<S3ObjectExtendedMetadata>&
-S3ObjectMetadata::get_extended_object_metadata() {
-  return extended_object_metadata;
-}
-
 struct m0_uint128 S3ObjectMetadata::get_object_list_index_oid() const {
   return object_list_index_oid;
 }
@@ -928,14 +918,14 @@ void S3ObjectExtendedMetadata::load(std::function<void(void)> on_success,
 void S3ObjectExtendedMetadata::get_obj_ext_entries(std::string last_object) {
   s3_log(S3_LOG_DEBUG, request_id, "Searching index from start key = [%s]\n",
          last_object.c_str());
-  unsigned int fetch_coumt = fragments;
+  unsigned int fetch_count = fragments;
   // We expect only 'fragments' extended entries for the object.
-  if (fetch_coumt == 0) {
-    fetch_coumt = S3Option::get_instance()->get_motr_idx_fetch_count();
-    s3_log(S3_LOG_DEBUG, "", "Reset fragment fetch count to %u", fetch_coumt);
+  if (fetch_count == 0) {
+    fetch_count = S3Option::get_instance()->get_motr_idx_fetch_count();
+    s3_log(S3_LOG_DEBUG, "", "Reset fragment fetch count to %u", fetch_count);
   }
   motr_kv_reader->next_keyval(
-      object_list_index_oid, last_object, fetch_coumt,
+      object_list_index_oid, last_object, fetch_count,
       std::bind(&S3ObjectExtendedMetadata::get_obj_ext_entries_successful,
                 this),
       std::bind(&S3ObjectExtendedMetadata::get_obj_ext_entries_failed, this));

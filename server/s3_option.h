@@ -192,7 +192,7 @@ class S3Option {
 
   S3Option() {
     cmd_opt_flag = 0;
-    max_objects_in_fault_mode = 30;
+    max_objects_in_fault_mode = 0;
     s3_ipv4_bind_addr = FLAGS_s3hostv4;
     s3_ipv6_bind_addr = FLAGS_s3hostv6;
     motr_http_bind_addr = FLAGS_motrhttpapihost;

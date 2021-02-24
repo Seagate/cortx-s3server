@@ -203,10 +203,15 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   void set_object_list_index_oid(struct m0_uint128 id);
   void set_objects_version_list_index_oid(struct m0_uint128 id);
 
-  const std::shared_ptr<S3ObjectExtendedMetadata>&
-      get_extended_object_metadata();
-  void set_extended_object_metadata(
-      std::shared_ptr<S3ObjectExtendedMetadata> ext_object_metadata);
+  inline const std::shared_ptr<S3ObjectExtendedMetadata>&
+  get_extended_object_metadata() {
+    return extended_object_metadata;
+  }
+
+  inline void set_extended_object_metadata(
+      std::shared_ptr<S3ObjectExtendedMetadata> ext_object_metadata) {
+    extended_object_metadata = std::move(ext_object_metadata);
+  }
 
   virtual std::string get_version_key_in_index();
   virtual struct m0_uint128 get_object_list_index_oid() const;
@@ -264,14 +269,20 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   virtual std::string get_upload_id();
   std::string& get_encoded_object_acl();
   std::string get_acl_as_xml();
-  unsigned int get_number_of_parts() const { return this->obj_parts; }
-  unsigned int get_number_of_fragments() const { return this->obj_fragments; }
-  void set_number_of_parts(unsigned int parts) { this->obj_parts = parts; }
-  void set_number_of_fragments(unsigned int fragments) {
+  inline unsigned int get_number_of_parts() const { return this->obj_parts; }
+  inline unsigned int get_number_of_fragments() const {
+    return this->obj_fragments;
+  }
+  inline void set_number_of_parts(unsigned int parts) {
+    this->obj_parts = parts;
+  }
+  inline void set_number_of_fragments(unsigned int fragments) {
     this->obj_fragments = fragments;
   }
-  bool is_object_extended() { return obj_type != S3ObjectMetadataType::simple; }
-  void set_object_type(S3ObjectMetadataType obj_type) {
+  inline bool is_object_extended() {
+    return obj_type != S3ObjectMetadataType::simple;
+  }
+  inline void set_object_type(S3ObjectMetadataType obj_type) {
     this->obj_type = obj_type;
   }
   // Load attributes.
