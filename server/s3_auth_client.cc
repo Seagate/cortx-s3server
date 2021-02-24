@@ -222,9 +222,9 @@ static void timeout_cb_auth_retry(evutil_socket_t fd, short event, void *arg) {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-static void on_event_hook(evhtp_connection_t *conn, short events, void *arg) {
+static void on_event_hook(evhtp_connection_t *conn, short events, void *p_arg) {
 
-  S3AuthClientOpContext *p_auth_ctx = (S3AuthClientOpContext *)arg;
+  auto *p_auth_ctx = static_cast<S3AuthClientOpContext *>(p_arg);
   auto addb_request_id = p_auth_ctx->get_request()->addb_request_id;
 
   s3_log(S3_LOG_DEBUG, p_auth_ctx->get_request_id(),
@@ -250,8 +250,8 @@ static void on_event_hook(evhtp_connection_t *conn, short events, void *arg) {
   }
 }
 
-static void on_write_hook(evhtp_connection_t *conn, void *arg) {
-  S3AuthClientOpContext *p_auth_ctx = (S3AuthClientOpContext *)arg;
+static void on_write_hook(evhtp_connection_t *conn, void *p_arg) {
+  auto *p_auth_ctx = static_cast<S3AuthClientOpContext *>(p_arg);
 
   s3_log(S3_LOG_DEBUG, p_auth_ctx->get_request_id(), "on socket write\n");
 
@@ -262,7 +262,7 @@ static void on_write_hook(evhtp_connection_t *conn, void *arg) {
 static evhtp_res on_response_headers_start(evhtp_request_t *r, void *p_arg) {
 
   assert(p_arg != NULL);
-  S3AuthClientOpContext *p_auth_ctx = (S3AuthClientOpContext *)p_arg;
+  auto *p_auth_ctx = static_cast<S3AuthClientOpContext *>(p_arg);
 
   s3_log(S3_LOG_DEBUG, p_auth_ctx->get_request_id(),
          "Response from Auth server: headers start");
@@ -769,7 +769,7 @@ bool S3AuthClient::setup_auth_request_body() {
 
     std::shared_ptr<S3RequestObject> s3_request =
         std::dynamic_pointer_cast<S3RequestObject>(request);
-    if (s3_request != nullptr) {
+    if (s3_request) {
 
       // Set flag to request default bucket acl from authserver.
       if ((s3_request->http_verb() == S3HttpVerb::PUT &&
@@ -803,11 +803,11 @@ bool S3AuthClient::setup_auth_request_body() {
       if (set_get_method) {
         add_key_val_to_body("Request-ACL", "false");
       }
+      add_non_empty_key_val_to_body("S3Action", s3_request->get_action_str());
     }
     add_non_empty_key_val_to_body("Policy", policy_str);
     add_non_empty_key_val_to_body("Auth-ACL", acl_str);
     add_non_empty_key_val_to_body("Bucket-ACL", bucket_acl);
-    add_non_empty_key_val_to_body("S3Action", s3_request->get_action_str());
 
     if (op_type == S3AuthClientOpType::combo_auth) {
       auth_request_body = "Action=AuthenticateAndAuthorize";
