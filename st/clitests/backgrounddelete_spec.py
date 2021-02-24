@@ -22,8 +22,6 @@ import sys
 import os
 import yaml
 import shutil
-import re
-import json
 from framework import Config
 from ldap_setup import LdapInfo
 from framework import S3PyCliTest
@@ -150,7 +148,7 @@ AwsTest('Create Bucket "seagatebucket" using s3-background-delete-svc account')\
     .create_bucket("seagatebucket").execute_test().command_is_successful()
 
 # Initialising the scheduler and processor
-scheduler = ObjectRecoveryScheduler()
+scheduler = ObjectRecoveryScheduler("bgtest")
 processor = ObjectRecoveryProcessor()
 
 

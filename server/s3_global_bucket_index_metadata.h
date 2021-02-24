@@ -118,14 +118,12 @@ class S3GlobalBucketIndexMetadata {
                     std::function<void(void)> on_failed);
   void save_successful();
   void save_failed();
-  void save_replica();
 
   // Remove Account user info(bucket list oid)
   virtual void remove(std::function<void(void)> on_success,
                       std::function<void(void)> on_failed);
   void remove_successful();
   void remove_failed();
-  void remove_replica();
 
   virtual S3GlobalBucketIndexMetadataState get_state() { return state; }
 
@@ -142,14 +140,12 @@ class S3GlobalBucketIndexMetadata {
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, LoadFailed);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, LoadFailedMissing);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, Save);
-  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, SaveSuccessful);
-  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, SaveReplica);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, SaveFailed);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, SaveFailedToLaunch);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, SaveSuccessful);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, Remove);
-  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, RemoveSuccessful);
-  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, RemoveReplica);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, RemoveFailed);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, RemoveSuccessful);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, RemoveFailedToLaunch);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, ToJson);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, FromJson);

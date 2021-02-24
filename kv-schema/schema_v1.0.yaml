@@ -1,0 +1,155 @@
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+
+Schema_Sections: [SCHEMA_VERSIONS, GLOBAL_BUCKET_LIST_INDEX_SCHEMA, BUCKET_METADATA_LIST_INDEX_SCHEMA, OBJECT_PROBABLE_DEAD_OID_LIST_INDEX_SCHEMA, OBJECT_LIST_INDEX_BASE_SCHEMA,MULTIPART_INDEX_SCHEMA, PART_TABLE_INDEX_BASE_SCHEMA]
+
+
+SCHEMA_VERSIONS:
+  SCHEMA_VERSION: "v1.0"
+  GLOBAL_BUCKET_LIST_INDEX_VERSION: "v1.0"
+  BUCKET_METADATA_LIST_INDEX_VERSION: "v1.0"
+  OBJECT_PROBABLE_DEAD_OID_LIST_INDEX_VERSION: "v1.0"
+  OBJECT_LIST_INDEX_VERSION: "v1.0"
+  MULTIPART_INDEX_VERSION: "v1.0"
+  PART_TABLE_INDEX_VERSION: "v1.0"
+
+GLOBAL_BUCKET_LIST_INDEX_SCHEMA:
+  Key: AccountID
+  Value_type: json_string
+  account_id: string
+  account_name: string
+  create_timestamp: string
+  location_constraint: string
+
+BUCKET_METADATA_LIST_INDEX_SCHEMA:
+  Key: AccountID/bucket_name
+  Value_type: json_string
+  account_id: string
+  account_name: string
+  create_timestamp: string
+  location_constraint: string
+
+OBJECT_PROBABLE_DEAD_OID_LIST_INDEX_SCHEMA:
+  Key: OIDS_Str
+  Value_type: json_string
+  create_timestamp: string
+  force_delete: string
+  global_instance_id: string
+  is_multipart: string
+  motr_process_fid: string
+  object_key_in_index: string
+  object_layout_id: int
+  object_list_index_oid: string
+  objects_version_list_index_oid: string
+  old_oid: string
+  version_key_in_index: string
+
+
+MULTIPART_INDEX_SCHEMA:
+  Key: ObjectName
+  Value_type: json_string
+  ACL: string
+  Bucket-Name: string
+  Object-Name: string
+  Object-URI: string
+  System-Defined:
+   Value_type: json_string
+   Content-Length: string
+   Content-Type: string
+   Date: string
+   Last-Modified: string
+   Owner-Account: string
+   Owner-Account-id: string
+   Owner-Canonical-id: string
+   Owner-User: string
+   Owner-User-id: string
+   Part-One-Size: string
+   Upload-ID: string
+   x-amz-server-side-encryption: string
+   x-amz-server-side-encryption-aws-kms-key-id: string
+   x-amz-server-side-encryption-customer-algorithm: string
+   x-amz-server-side-encryption-customer-key: string
+   x-amz-server-side-encryption-customer-key-MD5: string
+   x-amz-storage-class: string
+   x-amz-version-id: string
+   x-amz-website-redirect-location: string
+   Upload-ID: string
+   User-Defined: json_string
+   create_timestamp: string
+   layout_id: int
+   motr_oid: string
+   motr_old_object_version_id: string
+   motr_old_oid: string
+   motr_part_oid: string
+   old_layout_id: int
+
+PART_TABLE_INDEX_BASE_SCHEMA:
+  Key: part_number
+  Value_type: json_string
+  Bucket-Name: string
+  Object-Name: string
+  Part-Num: string
+  System-Defined:
+   Value_type: json_string
+   Content-Length: string
+   Content-MD5: string
+   Date: string
+   Last-Modified: string
+   Upload-ID: string
+   x-amz-server-side-encryption: string
+   x-amz-server-side-encryption-aws-kms-key-id: string
+   x-amz-server-side-encryption-customer-algorithm: string
+   x-amz-server-side-encryption-customer-key: string
+   x-amz-server-side-encryption-customer-key-MD5: string
+   x-amz-storage-class: string
+   x-amz-version-id: string
+   x-amz-website-redirect-location: string
+  Upload-ID: string
+
+OBJECT_LIST_INDEX_BASE_SCHEMA:
+  Key: ObjectName
+  Value_type: json_string
+  ACL: string
+  Bucket-Name: string
+  Object-Name: string
+  Object-URI: string
+  System-Defined:
+   Value_type: json_string
+   Content-Length: string
+   Content-MD5: string
+   Content-Type: string
+   Date: string
+   Last-Modified: string
+   Owner-Account: string
+   Owner-Account-id: string
+   Owner-Canonical-id: string
+   Owner-User: string
+   Owner-User-id: string
+   x-amz-server-side-encryption: string
+   x-amz-server-side-encryption-aws-kms-key-id: string
+   x-amz-server-side-encryption-customer-algorithm: string
+   x-amz-server-side-encryption-customer-key: string
+   x-amz-server-side-encryption-customer-key-MD5: string
+   x-amz-storage-class: string
+   x-amz-version-id: string
+   x-amz-website-redirect-location: string
+   User-Defined: json_string
+   create_timestamp: string
+   layout_id: int
+   motr_oid: string

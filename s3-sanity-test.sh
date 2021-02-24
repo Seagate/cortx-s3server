@@ -45,7 +45,7 @@ fi
 test_file_input=/tmp/SanityObjectToDeleteAfterUse.input
 test_output_file=/tmp/SanityObjectToDeleteAfterUse.out
 
-ldappasswd=$(s3cipher --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
+ldappasswd=$(s3cipher generate_key --use_base64 --key_len  12  --const_key  openldap 2>/dev/null)
 
 USAGE="USAGE: bash $(basename "$0")
 Run S3 sanity test.

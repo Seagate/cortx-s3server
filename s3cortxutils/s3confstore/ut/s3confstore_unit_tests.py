@@ -119,6 +119,13 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
     result_data = s3confstore.get_config('bridge')
     self.assertTrue('dummy_123' in result_data)
 
+  @mock.patch.object(Conf, 'get_keys')
+  def test_mock_getallkeys(self, mock_getallkeys_return):
+    s3confstore = S3CortxConfStore()
+    mock_getallkeys_return.return_value = "dummy_allkeys_return"
+    result_data = s3confstore.get_all_keys()
+    self.assertTrue('dummy_allkeys_return' in result_data)
+
   @mock.patch.object(Conf, 'load')
   @mock.patch.object(Conf, 'get')
   @mock.patch.object(Conf, 'set')
@@ -193,10 +200,24 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
     self.assertEqual(mock_get_return.call_count, 2)
 
   @mock.patch.object(Conf, 'get')
-  def test_get_s3instancecount_success(self, mock_get_return):
+  def test_get_s3instance_count_success(self, mock_get_return):
     mock_get_return.side_effect = [{"mockmachineid-A": "mockserver_1"}, "5"]
     s3confstore = S3CortxConfStore()
-    self.assertEqual(s3confstore.get_privateip("mockmachineid-A"), "5")
+    self.assertEqual(s3confstore.get_s3instance_count("mockmachineid-A"), "5")
+    self.assertEqual(mock_get_return.call_count, 2)
+
+  @mock.patch.object(Conf, 'get')
+  def test_get_publicip_emptystring(self, mock_get_return):
+    mock_get_return.return_value = {"mockmachineid-A": "mockserver_1"}
+    s3confstore = S3CortxConfStore()
+    self.assertEqual(s3confstore.get_publicip("machineid-B"), "")
+    self.assertEqual(mock_get_return.call_count, 1)
+
+  @mock.patch.object(Conf, 'get')
+  def test_get_publicip_success(self, mock_get_return):
+    mock_get_return.side_effect = [{"mockmachineid-A": "mockserver_1"}, "1.2.3.4"]
+    s3confstore = S3CortxConfStore()
+    self.assertEqual(s3confstore.get_publicip("mockmachineid-A"), "1.2.3.4")
     self.assertEqual(mock_get_return.call_count, 2)
 
   @mock.patch.object(Conf, 'get')

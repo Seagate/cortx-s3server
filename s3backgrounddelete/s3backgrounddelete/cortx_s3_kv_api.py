@@ -26,7 +26,7 @@ from s3backgrounddelete.cortx_get_kv_response import CORTXS3GetKVResponse
 from s3backgrounddelete.cortx_s3_error_respose import CORTXS3ErrorResponse
 from s3backgrounddelete.cortx_s3_success_response import CORTXS3SuccessResponse
 from s3backgrounddelete.cortx_s3_util import CORTXS3Util
-from s3backgrounddelete.IEMutil import IEMutil
+#from s3backgrounddelete.IEMutil import IEMutil
 
 # CORTXS3KVApi supports key-value REST-API's Put, Get & Delete
 class CORTXS3KVApi(CORTXS3Client):
@@ -85,7 +85,7 @@ class CORTXS3KVApi(CORTXS3Client):
                 request_body,
                 headers=headers)
         except ConnectionRefusedError as ex:
-            IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
+            #IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
             return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
@@ -137,7 +137,7 @@ class CORTXS3KVApi(CORTXS3Client):
                 request_uri,
                 headers=headers)
         except ConnectionRefusedError as ex:
-            IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
+            #IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
             return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
@@ -188,7 +188,7 @@ class CORTXS3KVApi(CORTXS3Client):
                 request_uri,
                 headers=headers)
         except ConnectionRefusedError as ex:
-            IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
+            #IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
             return False, CORTXS3ErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:

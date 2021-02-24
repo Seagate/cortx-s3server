@@ -10,7 +10,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 - [1.6 Build S3 RPMs](#16-Build-S3-RPMs)
 
 :warning: **Notes:** 
-- The following steps will not work if you have previously installed the COTX software using an OVA or RPMs.
+- The following steps will not work if you have previously installed the CORTX software using an OVA or RPMs.
     - To install and test the S3 submodule, you'll have to create a new VM. 
 
 ### 1.0 Prerequisites
@@ -42,6 +42,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
       * To install Python version 3.0, use: `$ yum install -y python3`
     * pip:
       * To check if pip is installed, use: `$ pip --version`
+      * Enable the EPEL repo, use:`$ yum --enablerepo=extras install epel-release`
       * To install pip use: `$ yum install python-pip`
     * Ansible: `$ yum install -y ansible`
     * Extra Packages for Enterprise Linux:
@@ -122,7 +123,7 @@ Refer to the image below to view the output of a successful `$ init.sh -a` run, 
 
 ![Successful run](../images/init_script_output.png)
 
-If you still see errors or a failed status, please [reach out to us for support](#Reach-Out-to-Us)
+If you still see errors or a failed status, please [reach out to us for support](https://github.com/Seagate/cortx/blob/main/SUPPORT.md)
 
 Please read our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Build-Installation-FAQ.md) for troubleshooting errors.
 
@@ -353,6 +354,8 @@ Refer to our [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/ma
 
 ### Reach Out to Us
 
-Please refer to the [Support](../SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
+Please refer to the [Support](https://github.com/Seagate/cortx/blob/main/SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
 
-**CORTX S3 Server submodule was last tested by @saumyasunder on 3/11/2020 on VMware Workstation 16 Pro.**
+Tested by:
+
+- Nov 03, 2020: Saumya Sunder (saumya.sunder@seagate.com) on a Windows laptop running VMWare Workstation 16 Pro.

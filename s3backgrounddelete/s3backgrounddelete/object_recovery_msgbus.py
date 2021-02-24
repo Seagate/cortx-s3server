@@ -192,7 +192,7 @@ class ObjectRecoveryMsgbus(object):
             if not delivery_mechanism:
                 delivery_mechanism = self._config.get_msgbus_producer_delivery_mechanism()
 
-
+            self.logger.debug("producer id : " + producer_id +  "msg_type : " + str(msg_type) +  "delivery_mechanism : "+ str(delivery_mechanism) )
             ret,msg = self.__msgbuslib.setup_producer(producer_id, msg_type, delivery_mechanism)
             if not ret:
                 self._logger.error("setup_send failed {}".format(str(msg)))
@@ -204,11 +204,16 @@ class ObjectRecoveryMsgbus(object):
             self._logger.error("Exception:{}".format(exception))
             self.__isproducersetupcomplete = False
 
-    def send_data(self, data):
+    def send_data(self, data,
+        producer_id = None,
+        msg_type = None,
+        delivery_mechanism = None):
         """Send message data."""
         try:
             if not self.__isproducersetupcomplete:
-                self.__setup_producer()
+                self.__setup_producer(producer_id,
+                                      msg_type,
+                                      delivery_mechanism)
                 if not self.__isproducersetupcomplete:
                     self._logger.debug("producer connection issues")
                     return False

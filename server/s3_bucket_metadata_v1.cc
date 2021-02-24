@@ -30,7 +30,6 @@
 #include "s3_stats.h"
 
 extern struct m0_uint128 bucket_metadata_list_index_oid;
-extern struct m0_uint128 replica_bucket_metadata_list_index_oid;
 
 S3BucketMetadataV1::S3BucketMetadataV1(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
@@ -463,33 +462,7 @@ void S3BucketMetadataV1::save_bucket_info(bool clean_glob_on_err) {
 void S3BucketMetadataV1::save_bucket_info_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  // attempt to save the KV in replica bucket metadata index
-  if (!motr_kv_writer) {
-    motr_kv_writer =
-        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
-  }
-  motr_kv_writer->put_keyval(
-      replica_bucket_metadata_list_index_oid,
-      get_bucket_metadata_index_key_name(), this->to_json(),
-      std::bind(&S3BucketMetadataV1::save_replica, this),
-      std::bind(&S3BucketMetadataV1::save_replica, this));
-
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3BucketMetadataV1::save_replica() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
-  // PUT Operation passes even if we failed to put KV in replica index.
-  if (motr_kv_writer->get_state() != S3MotrKVSWriterOpState::created) {
-    s3_log(S3_LOG_ERROR, request_id, "Failed to save KV in replica index.\n");
-
-    s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
-                  "Failed to save metadata in replica index for bucket: %s",
-                  get_bucket_metadata_index_key_name().c_str());
-  }
   this->handler_on_success();
-
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -543,31 +516,6 @@ void S3BucketMetadataV1::remove_bucket_info() {
 void S3BucketMetadataV1::remove_bucket_info_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  // Attempt to remove KV from replica bucket metadata index
-  if (!motr_kv_writer) {
-    motr_kv_writer =
-        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
-  }
-  motr_kv_writer->delete_keyval(
-      replica_bucket_metadata_list_index_oid,
-      get_bucket_metadata_index_key_name(),
-      std::bind(&S3BucketMetadataV1::remove_replica, this),
-      std::bind(&S3BucketMetadataV1::remove_replica, this));
-
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3BucketMetadataV1::remove_replica() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
-  // delete KV from replia index is not fatal error
-  if (motr_kv_writer->get_state() != S3MotrKVSWriterOpState::deleted) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Removal of Bucket metadata from replica index failed\n");
-    s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
-                  "Failed to remove KV from replica index of bucket: %s",
-                  get_bucket_metadata_index_key_name().c_str());
-  }
   // If FI: 'kv_delete_failed_from_global_index' is set, then do not remove KV
   // from global_bucket_list_index_oid. This is to simulate possible "partial"
   // delete bucket action, where the KV got deleted from
@@ -576,7 +524,6 @@ void S3BucketMetadataV1::remove_replica() {
   if (!s3_fi_is_enabled("kv_delete_failed_from_global_index")) {
     remove_global_bucket_account_id_info();
   }
-
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 

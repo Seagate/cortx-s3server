@@ -33,17 +33,18 @@ import datetime
 import math
 import json
 import signal
+import sys
 
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
-from s3backgrounddelete.IEMutil import IEMutil
 from s3backgrounddelete.cortx_s3_signal import DynamicConfigHandler
 from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS, RABBIT_MQ
+#from s3backgrounddelete.IEMutil import IEMutil
 
 class ObjectRecoveryScheduler(object):
     """Scheduler which will add key value to rabbitmq message queue."""
 
-    def __init__(self):
+    def __init__(self, producer_name):
         """Initialise logger and configuration."""
         self.data = None
         self.config = CORTXS3Config()
@@ -52,6 +53,7 @@ class ObjectRecoveryScheduler(object):
         self.signal = DynamicConfigHandler(self)
         self.logger.info("Initialising the Object Recovery Scheduler")
         self.producer = None
+        self.producer_name = producer_name
 
     @staticmethod
     def isObjectLeakEntryOlderThan(leakRecord, OlderInMins = 15):
@@ -109,7 +111,7 @@ class ObjectRecoveryScheduler(object):
                         self.logger.info(
                             "Object recovery queue sending data :" +
                             str(record))
-                        ret = self.producer.send_data(record)
+                        ret = self.producer.send_data(record, producer_id = self.producer_name)
                         if not ret:
                             # TODO - Do Audit logging
                             self.logger.error(
@@ -186,7 +188,7 @@ class ObjectRecoveryScheduler(object):
                         ret, msg = mq_client.send_data(
                             record, self.config.get_rabbitmq_queue_name())
                         if not ret:
-                            IEMutil("ERROR", IEMutil.RABBIT_MQ_CONN_FAILURE, IEMutil.RABBIT_MQ_CONN_FAILURE_STR)
+                            #IEMutil("ERROR", IEMutil.RABBIT_MQ_CONN_FAILURE, IEMutil.RABBIT_MQ_CONN_FAILURE_STR)
                             self.logger.error(
                                 "Object recovery queue send data "+ str(record) +
                                 " failed :" + msg)
@@ -211,7 +213,7 @@ class ObjectRecoveryScheduler(object):
     def schedule_periodically(self):
         """Schedule RabbitMQ producer to add key value to queue on hourly basis."""
         # Run RabbitMQ producer periodically on hourly basis
-        self.logger.info("Producer started at " + str(datetime.datetime.now()))
+        self.logger.info("Producer " + str(self.producer_name) + " started at : " + str(datetime.datetime.now()))
         scheduled_run = sched.scheduler(time.time, time.sleep)
 
         def periodic_run(scheduler):
@@ -225,7 +227,7 @@ class ObjectRecoveryScheduler(object):
                 self.logger.error(
                 "Invalid argument specified in messaging_platform use message_bus or rabbit_mq")
                 return
-  
+
             scheduled_run.enter(
                 self.config.get_schedule_interval(), 1, periodic_run, (scheduler,))
 
@@ -267,5 +269,5 @@ class ObjectRecoveryScheduler(object):
                     "Unable to create log directory at " + self._logger_directory)
 
 if __name__ == "__main__":
-    SCHEDULER = ObjectRecoveryScheduler()
+    SCHEDULER = ObjectRecoveryScheduler(sys.argv[1])
     SCHEDULER.schedule_periodically()

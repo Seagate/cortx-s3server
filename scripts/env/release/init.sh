@@ -34,10 +34,12 @@ install_toml() {
 install_cortx_py_utils() {
   #rpm -q cortx-py-utils && yum remove cortx-py-utils -y && yum install cortx-py-utils -y
   if rpm -q cortx-py-utils ; then
-    yum upgrade cortx-py-utils -y
-  else
-    yum install cortx-py-utils -y
+    yum remove cortx-py-utils -y
   fi
+  yum install cortx-py-utils -y
+
+  # install cortx-py-utils prerequisite
+  pip3 install -r /opt/seagate/cortx/utils/conf/requirements.txt --ignore-installed
 }
 
 # function to install all prerequisite for dev vm 
@@ -48,9 +50,6 @@ install_pre_requisites() {
   
   #create topic
   sh ${S3_SRC_DIR}/scripts/kafka/create-topic.sh -c 1 -i $HOSTNAME
-
-  #install confluent_kafka
-  pip3 install confluent_kafka
 
   #install toml
   pip3 install toml
