@@ -22,8 +22,6 @@ import sys
 import os
 import yaml
 import shutil
-import re
-import json
 from framework import Config
 from ldap_setup import LdapInfo
 from framework import S3PyCliTest
