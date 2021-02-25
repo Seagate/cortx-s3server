@@ -22,7 +22,23 @@ import argparse
 import traceback
 
 from ldapaccountaction import LdapAccountAction
-from ldapaccountaction import g_supported_ldap_action_table
+
+# supported ldap action and input params dict
+g_supported_ldap_action_table = {
+  'CreateBGDeleteAccount': {
+  'account_name': "s3-background-delete-svc",
+  'account_id': "67891",
+  'canonical_id': "C67891",
+  'mail': "s3-background-delete-svc@seagate.com",
+  's3_user_id': "450",
+  'const_cipher_secret_str': "s3backgroundsecretkey",
+  'const_cipher_access_str': "s3backgroundaccesskey"
+  }
+}
+
+def supported_ldap_actions():
+  """Get supported actions."""
+  print(f'supported ldap actions: {list(g_supported_ldap_action_table.keys())}')
 
 def process_cmdline_args():
   """
@@ -39,10 +55,12 @@ def process_cmdline_args():
 
   try:
     if args.action in g_supported_ldap_action_table.keys():
-      action_obj = LdapAccountAction(args.ldapuser, args.ldappasswd, args.action)
-      action_obj.create_account()
-      result_dict = g_supported_ldap_action_table[args.action]
-      action_obj.print_create_account_results(result_dict)
+      action_obj = LdapAccountAction(args.ldapuser, args.ldappasswd)
+      if args.action == 'CreateBGDeleteAccount':
+        action_obj.create_account(g_supported_ldap_action_table[args.action])
+
+        result_dict = g_supported_ldap_action_table[args.action]
+        action_obj.print_create_account_results(result_dict)
   except Exception as e:
     print("Exception : {}".format(e))
     print("Traceback : {}".format(traceback.format_exc()))
