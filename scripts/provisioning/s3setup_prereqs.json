@@ -1,5 +1,5 @@
 {
-    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "motr"],
+    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "motr", "python36-ldap"],
     "pip3s": ["toml", "s3confstore", "crypto", "s3haproxyconfig", "s3cipher"],
     "services": ["sshd", "rabbitmq-server", "haproxy", "slapd", "rsyslog"],
     "exists": [

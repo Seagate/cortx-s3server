@@ -43,7 +43,7 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
       > systemctl start rabbitmq-server
 
 3. Create special account for s3backgroundelete
-    > /opt/seagate/cortx/s3/install/ldap/create_background_delete_account.sh ldapadmin
+    > python36 scripts/ldap/create_account_using_cipher.py CreateBGDeleteAccount --ldapuser 'sgiamadmin' --ldappasswd 'ldapadmin'
 
 4. Add proper schedule_interval_secs in
 
