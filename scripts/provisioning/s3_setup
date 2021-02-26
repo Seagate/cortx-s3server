@@ -229,9 +229,5 @@ fi
 
 if [ $s3cleanup == true ]
 then
-    # get openldap password from confstore
-    echo "INFO: Get openldap passwords from confstore.."
-    get_ldap_password
-
     $install_dir/_s3_setup cleanup --config "$confstore_config_url"
 fi
