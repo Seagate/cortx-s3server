@@ -21,6 +21,7 @@
 import sys
 
 from setupcmd import SetupCmd
+from ldapaccountaction import LdapAccountAction
 
 class InitCmd(SetupCmd):
   """Init Setup Cmd."""
@@ -30,11 +31,24 @@ class InitCmd(SetupCmd):
     """Constructor."""
     try:
       super(InitCmd, self).__init__(config)
+      self.read_ldap_credentials()
     except Exception as e:
       raise e
 
   def process(self):
     """Main processing function."""
-    retval = 0
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
-    return retval
+    try:
+      # Create background delete account
+      bgdelete_acc_input_params_dict = {'account_name': "s3-background-delete-svc",
+                                  'account_id': "67891",
+                                  'canonical_id': "C67891",
+                                  'mail': "s3-background-delete-svc@seagate.com",
+                                  's3_user_id': "450",
+                                  'const_cipher_secret_str': "s3backgroundsecretkey",
+                                  'const_cipher_access_str': "s3backgroundaccesskey"
+                                }
+      LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
+    except Exception as e:
+      sys.stderr.write(f'Failed to create backgrounddelete service account, error: {e}\n')
+      raise e

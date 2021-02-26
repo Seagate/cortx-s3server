@@ -78,21 +78,22 @@ do
 done
 
 INSTALLDIR="/opt/seagate/cortx/s3/install/ldap"
-# install openldap server and client
 yum list installed selinux-policy && yum update -y selinux-policy
 
-# Clean up old setup if any
+# Clean up old configuration if any
+# Removing schemas
+rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
+rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/*ppolicy.ldif
+# Removing configuration files
+rm -rf /etc/openldap/slapd.d/cn\=config/cn\=module\{0\}.ldif
+rm -rf /etc/openldap/slapd.d/cn\=config/cn\=module\{1\}.ldif
+rm -rf /etc/openldap/slapd.d/cn\=config/olcDatabase\=\{2\}mdb
+rm -rf /etc/openldap/slapd.d/cn\=config/olcDatabase\=\{2\}mdb.ldif
+
+# Data Cleanup
 if [[ $forceclean == true ]]
 then
-  systemctl stop slapd 2>/dev/null || /bin/true
-  yum remove -y openldap-servers openldap-clients || /bin/true
-  rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
   rm -rf /var/lib/ldap/*
-  rm -f /etc/sysconfig/slapd* || /bin/true
-  rm -f /etc/openldap/slapd* || /bin/true
-  rm -rf /etc/openldap/slapd.d/*
-
-  yum install -y openldap-servers openldap-clients
 fi
 
 cp -f $INSTALLDIR/olcDatabase\=\{2\}mdb.ldif /etc/openldap/slapd.d/cn\=config/
@@ -157,17 +158,14 @@ rm -f $CFG_FILE
 # restart slapd
 systemctl restart slapd
 
-# delete the schema from LDAP.
-rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
-
 # add S3 schema
 ldapadd -x -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -f $INSTALLDIR/cn\=\{1\}s3user.ldif -H ldapi:///
 
 # initialize ldap
-ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $ROOTDNPASSWORD -f $INSTALLDIR/ldap-init.ldif -H ldapi:///
+ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/ldap-init.ldif -H ldapi:/// || /bin/true
 
 # Setup iam admin and necessary permissions
-ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $ROOTDNPASSWORD -f $ADMIN_USERS_FILE -H ldapi:///
+ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ROOTDNPASSWORD" -f "$ADMIN_USERS_FILE" -H ldapi:/// || /bin/true
 rm -f $ADMIN_USERS_FILE
 
 ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/iam-admin-access.ldif
@@ -183,7 +181,7 @@ ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f $INSTALLDIR/ppolicym
 
 ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f $INSTALLDIR/ppolicyoverlay.ldif -H ldapi:///
 
-ldapmodify -x -a -H ldapi:/// -D cn=admin,dc=seagate,dc=com -w $ROOTDNPASSWORD -f $INSTALLDIR/ppolicy-default.ldif
+ldapmodify -x -a -H ldapi:/// -D cn=admin,dc=seagate,dc=com -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/ppolicy-default.ldif || /bin/true
 
 # Enable slapd log with logLevel as "none"
 # for more info : http://www.openldap.org/doc/admin24/slapdconfig.html
