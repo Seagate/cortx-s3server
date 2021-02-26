@@ -8,9 +8,4 @@ pyasn1-modules==0.2.7
 pycparser==2.20
 python-ldap==3.1.0
 PyYAML==3.13
-s3backgrounddelete==2.0.0
-s3cipher==2.0.0
-s3confstore==2.0.0
-s3haproxyconfig==2.0.0
-s3msgbus==2.0.0
 six==1.15.0
