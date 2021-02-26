@@ -1,6 +1,6 @@
 cffi==1.14.5
 cortx-py-utils==1.0.0
-cryptography==2.8
+cryptography==3.3.2
 pika==0.10.0
 ply==3.9
 pyasn1==0.4.7
