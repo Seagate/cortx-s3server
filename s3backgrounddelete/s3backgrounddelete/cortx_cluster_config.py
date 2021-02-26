@@ -23,6 +23,7 @@ import sys
 import os
 import shutil
 import yaml
+import uuid
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 class CipherInvalidToken(Exception):
@@ -68,7 +69,7 @@ class CORTXClusterConfig(object):
         # Load s3_cluster.yaml file through confstore.
         conf_url='yaml://' + self._conf_file
         if CORTXClusterConfig.s3confstore is None:
-            CORTXClusterConfig.s3confstore = S3CortxConfStore(config=conf_url)
+            CORTXClusterConfig.s3confstore = S3CortxConfStore(config=conf_url, index= str(uuid.uuid1()))
 
     def get_cluster_id(self):
         """Return cluster_id from config file or KeyError."""
