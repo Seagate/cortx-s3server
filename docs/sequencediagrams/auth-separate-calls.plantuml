@@ -13,8 +13,9 @@ autoactivate on
 
 client -> server: GET /bucket_name/object_name
 
-server -> auth: AuthenticateUser(key, secret)
+server -> auth #red: AuthenticateUser(key, secret)
 note left: Are user credentials valid?
+note right #FFAAAA: NOTE - First Auth call
 auth --> server: OK
 
 server -> kvs: get_keyval(global_bucket_index,\n     key = "bucket_name")
@@ -29,8 +30,9 @@ server -> kvs: get_keyval(BUCKET_nnn_obj_index,\n     key = "object_name");
 note left: Load object MD.
 kvs --> server: value = object metadata JSON
 
-server -> auth: AuthorizeUser(user id,\n     bucket MD, object MD)
+server -> auth #red: AuthorizeUser(user id,\n     bucket MD, object MD)
 note left: Does user have access rights?
+note right #FFAAAA: NOTE - Second Auth call
 auth --> server: OK
 
 server -> object: read data
