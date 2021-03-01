@@ -1,0 +1,7 @@
+@startuml
+header Planning
+title Planning
+(*) --> "S3->Motr: Load bucket (and object) Metadata"
+--> "S3->Auth: Authentication and authorization\n(Does client have access to entity?)"
+ --> (*)
+@enduml

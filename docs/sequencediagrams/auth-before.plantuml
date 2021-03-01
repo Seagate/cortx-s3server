@@ -1,0 +1,8 @@
+@startuml
+header Now
+title Now
+(*) --> S3->Auth: Authentication\n(Is this a valid user credential?)
+--> "S3->Motr: Load bucket (and object) Metadata"
+--> "S3->Auth: Authorization\n(Does user have access to entity?)"
+ --> (*)
+@enduml

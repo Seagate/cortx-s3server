@@ -23,11 +23,16 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
 
 This document briefly describes combined request for both authentication and authorization.
 
-Previously, s3server made 2 requests to Auth server: one for user authentication and one for authorization (check, whether the user has appropriate rights for a requested operation).
+s3server makes two requests to Auth server: one for user authentication and one for authorization (check, whether the user has appropriate rights for a requested operation).
 
-Now, in most cases, s3server makes only one request to Auth server. Request is made just after retrieving of bucket (and object) metadata. It decreases latency and improves performance, especially for small files.
+![Authenticaion and authorization before](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/Seagate/cortx-s3server/br/as/EOS-16558/docs/sequencediagrams/auth-before.plantuml)
 
-Pure authentication is made only for requests, made by S3 background services.
+It's suggested to change the flow, so that s3server will only make one request to Auth server. The request shall be made just after retrieving of bucket (and object) metadata. It shall decrease latency and improve performance, especially for small files.
 
-Pure authorization is made for anonymous requests. One special case is copy-object operations. s3server makes 2 requests to Auth server. The first is combined request for authentication and verifying permissions for destination object. The second request is pure authorization request for source object.
+![Authenticaion and authorization after](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/Seagate/cortx-s3server/br/as/EOS-16558/docs/sequencediagrams/auth-after.plantuml)
 
+Pure authentication requests will be made only S3 background services. For such casees authorization is made by s3server itself.
+
+Pure authorization is made for anonymous requests.
+
+One special case is copy-object operations when s3server should make at least two requests to Auth server anyway. The first request is for destination object. The second request is for source object. It's suggested to convert the first authorization request into combined.
