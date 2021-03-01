@@ -34,6 +34,7 @@
 #include "s3_log.h"
 #include "s3_option.h"
 #include "s3_request_object.h"
+#include "s3_evbuffer_wrapper.h"
 
 extern S3Option* g_option_instance;
 
@@ -45,6 +46,7 @@ class S3MotrReaderContext : public S3AsyncOpContextBase {
   // Read/Write Operation context.
   struct s3_motr_rw_op_context* motr_rw_op_context;
   bool has_motr_rw_op_context;
+  std::unique_ptr<S3Evbuffer> p_s3_evbuffer;
 
   int layout_id;
   std::string request_id;
@@ -86,31 +88,35 @@ class S3MotrReaderContext : public S3AsyncOpContextBase {
   }
 
   // Call this when you want to do read op.
+  // param(in): motr_block_count - motr blocks to read
+  // param(in): sz_per_block - motr unit size of each block to read
   // param(in/out): last_index - where next read should start
-  bool init_read_op_ctx(size_t motr_buf_count, uint64_t* last_index) {
-    if (last_index == nullptr) {
-      return false;
-    }
-    size_t unit_size =
-        S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
-    motr_rw_op_context = create_basic_rw_op_ctx(motr_buf_count, unit_size);
+  bool init_read_op_ctx(std::string request_id, size_t motr_block_count,
+                        size_t sz_per_block, uint64_t* last_index) {
+    // Since we use const size buffer pool in libevent, we use its size of buf
+    size_t total_read_sz = motr_block_count * sz_per_block;
+    size_t evbuf_unit_buf_sz =
+        S3Option::get_instance()->get_libevent_pool_buffer_size();
+    size_t buf_count_in_evbuf =
+        (total_read_sz + (evbuf_unit_buf_sz - 1)) / evbuf_unit_buf_sz;
+    motr_rw_op_context =
+        create_basic_rw_op_ctx(buf_count_in_evbuf, evbuf_unit_buf_sz);
     if (motr_rw_op_context == NULL) {
       // out of memory
       return false;
     }
+    // Create real buffer space using evbuffer
+    p_s3_evbuffer = std::unique_ptr<S3Evbuffer>(
+        new S3Evbuffer(request_id, total_read_sz, evbuf_unit_buf_sz));
+    int rc = p_s3_evbuffer->init();
+    if (rc != 0) {
+      return false;
+    }
+    // Setup the motr structs to point to evbuf buffers
+    p_s3_evbuffer->to_motr_read_buffers(motr_rw_op_context, last_index);
+
     has_motr_rw_op_context = true;
 
-    for (size_t i = 0; i < motr_buf_count; i++) {
-      // Overwrite previous v_count to adapt to current layout_id's unit_size
-      motr_rw_op_context->data->ov_vec.v_count[i] = unit_size;
-
-      motr_rw_op_context->ext->iv_index[i] = *last_index;
-      motr_rw_op_context->ext->iv_vec.v_count[i] = unit_size;
-      *last_index += unit_size;
-
-      /* we don't want any attributes */
-      motr_rw_op_context->attr->ov_vec.v_count[i] = 0;
-    }
     return true;
   }
 
@@ -124,6 +130,15 @@ class S3MotrReaderContext : public S3AsyncOpContextBase {
     has_motr_rw_op_context = false;  // release ownership, caller should free.
     return motr_rw_op_context;
   }
+
+  virtual struct evbuffer* get_evbuffer_ownership() {
+    if (p_s3_evbuffer) {
+      return p_s3_evbuffer->release_ownership();
+    }
+    return NULL;
+  }
+
+  S3Evbuffer* get_evbuffer() { return p_s3_evbuffer.get(); }
 };
 
 enum class S3MotrReaderOpState {
@@ -152,6 +167,7 @@ class S3MotrReader {
 
   struct m0_uint128 oid;
   int layout_id;
+  size_t motr_unit_size;
 
   S3MotrReaderOpState state;
 
@@ -207,8 +223,15 @@ class S3MotrReader {
   virtual size_t get_first_block(char** data);
   virtual size_t get_next_block(char** data);
   virtual S3BufferSequence extract_blocks_read();
+  virtual S3Evbuffer* get_evbuffer() { return reader_context->get_evbuffer(); }
 
   virtual size_t get_last_index() { return last_index; }
+  virtual struct evbuffer* get_evbuffer_ownership() {
+    if (reader_context) {
+      return reader_context->get_evbuffer_ownership();
+    }
+    return NULL;
+  }
 
   virtual void set_last_index(size_t index) { last_index = index; }
 

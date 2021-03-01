@@ -54,7 +54,7 @@ class S3MotrWiterContext : public S3AsyncOpContextBase {
 
   // Call this when you want to do write op.
   void init_write_op_ctx(size_t motr_buf_count) {
-    motr_rw_op_context = create_basic_rw_op_ctx(motr_buf_count, 0, false);
+    motr_rw_op_context = create_basic_rw_op_ctx(motr_buf_count, 0);
   }
 
   struct s3_motr_rw_op_context* get_motr_rw_op_ctx() {
