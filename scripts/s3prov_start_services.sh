@@ -1,3 +1,4 @@
+#!/bin/bash -e
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,11 +18,15 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-LDAP_USER: "cn={},dc=seagate,dc=com"
-LDAP_URL: "ldapi:///"
-CONFSTORE_OPENLDAP_CONST_KEY: 'openldap'
-CONFSTORE_LDAPADMIN_USER_KEY: 'openldap>sgiam>user'
-CONFSTORE_LDAPADMIN_PASSWD_KEY: 'openldap>sgiam>secret'
-CONFSTORE_ROOTDN_USER_KEY: 'openldap>root>user'
-CONFSTORE_ROOTDN_PASSWD_KEY: 'openldap>root>secret'
-CONFSTORE_CLUSTER_ID_KEY: 'cluster>cluster_id'
+die_with_error () {
+	echo "$1 Exitting.." >&2
+	exit -1
+}
+
+command -v systemctl &> /dev/null || die_with_error "systemctl could not be found!"
+
+services=("$@")
+for service in "${services[@]}" ; do
+	echo "Trying to restart service: $service"
+	systemctl restart "$service" || die_with_error "$service failed to start!"
+done

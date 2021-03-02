@@ -19,14 +19,22 @@
 #
 
 import sys
-
+from os import path
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
+
+class S3PROVError(Exception):
+  """Parent class for the s3 provisioner error classes."""
+  pass
 
 class SetupCmd(object):
   """Base class for setup commands."""
   ldap_user = None
   ldap_passwd = None
+  rootdn_passwd = None
+  cluster_id = None
+  server_nodes_count = 0
+  hosts_list = None
   s3_prov_config = "/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml"
 
   def __init__(self, config: str):
@@ -49,7 +57,7 @@ class SetupCmd(object):
   def read_ldap_credentials(self):
     """Get 'ldapadmin' user name and password from confstore."""
     try:
-      localconfstore = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 's3provindex')
+      localconfstore = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'read_ldap_credentialsidx')
 
       s3cipher_obj = CortxS3Cipher(None, False, 0, localconfstore.get_config('CONFSTORE_OPENLDAP_CONST_KEY'))
       cipher_key = s3cipher_obj.generate_key()
@@ -58,6 +66,43 @@ class SetupCmd(object):
       self.ldap_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_ldapadmin_pass)
 
       self.ldap_user = self.s3confstore.get_config(localconfstore.get_config('CONFSTORE_LDAPADMIN_USER_KEY'))
+
+      encrypted_rootdn_pass = self.s3confstore.get_config(localconfstore.get_config('CONFSTORE_ROOTDN_PASSWD_KEY'))
+      self.rootdn_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_rootdn_pass)
+
     except Exception as e:
       sys.stderr.write(f'read ldap credentials failed, error: {e}\n')
       raise e
+
+  def read_cluster_id(self):
+    """Get 'cluster>cluster_id' from confstore."""
+
+    try:
+      localconfstore = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'read_cluster_ididx')
+      self.cluster_id = self.s3confstore.get_config(localconfstore.get_config('CONFSTORE_CLUSTER_ID_KEY'))
+    except Exception as e:
+      raise S3PROVError(f'exception: {e}\n')
+
+  def write_cluster_id(self, op_file: str = "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"):
+    """Set 'cluster>cluster_id' to op_file."""
+
+    try:
+      if path.isfile(f'{op_file}') == False:
+        raise S3PROVError(f'{op_file} must be present\n')
+      else:
+        key = 'cluster_config>cluster_id'
+        opfileconfstore = S3CortxConfStore(f'yaml://{op_file}', 'write_cluster_id_idx')
+        opfileconfstore.set_config(f'{key}', f'{self.cluster_id}', True)
+        new_cluster_id = opfileconfstore.get_config(f'{key}')
+        if new_cluster_id != self.cluster_id:
+          raise S3PROVError(f'set_config failed to set {key}: {self.cluster_id} in {op_file} \n')
+    except Exception as e:
+      raise S3PROVError(f'exception: {e}\n')
+
+  def read_node_info(self):
+    """Call API get_nodecount from confstore."""
+    try:
+      self.server_nodes_count = self.s3confstore.get_nodecount()
+      self.hosts_list = self.s3confstore.get_nodenames_list()
+    except Exception as e:
+      raise S3PROVError(f'unknown exception: {e}\n')
