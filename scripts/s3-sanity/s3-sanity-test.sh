@@ -60,12 +60,16 @@ Operations performed:
   * Delete Account
   * ldapsearch s3-background-delete-svc account"
 
+# Print on stderr and exit with error code -1
 die_with_error ()
 {
   echo "$@" 1>&2
   exit -1
 }
 
+# Create s3iamcli config file if s3iamcli is enabled
+# Create s3cmd config file if s3cmd is enabled
+# Consider if end_point option is provided
 update_config() {
   if [ "$s3iamclitestson" == false ];then
     echo "Both s3iamcli and s3cmd tests are disabled, nothing to config."
@@ -97,6 +101,9 @@ update_config() {
   fi
 }
 
+# Remove s3iamcli config file if s3iamcli is enabled
+# Remove s3cmd config file if s3cmd is enabled
+# Consider if end_point option is provided and undo the changes
 restore_config() {
   if [ "$s3iamclitestson" == false ];then
     echo "Both s3iamcli and s3cmd tests are disabled, nothing to restore."
@@ -115,6 +122,10 @@ restore_config() {
   fi
 }
 
+# Call update_config()
+# Remove s3iamcli user and accounts from ldap if s3iamcli is enabled
+# Remove s3cmd data and bucket if s3cmd is enabled
+# Call restore_config()
 cleanup() {
   update_config
   if [ "$s3iamclitestson" == false ];then
@@ -146,6 +157,8 @@ cleanup() {
   restore_config
 }
 
+# Start of the script main
+# Process command line args
 while getopts ":p:e:c" o; do
     case "${o}" in
         e)
@@ -174,145 +187,146 @@ fi
 
 # Check if s3iamcli is installed
 if command -v s3iamcli >/dev/null 2>&1;then
-  echo -e "\nCheck s3iamcli...OK, S3IAMCLI tests are enabled."
+  echo "Check s3iamcli...OK, S3IAMCLI tests are enabled."
   s3iamclitestson=true
 
   # Check if s3cmd is installed
   if command -v s3cmd >/dev/null 2>&1;then
-    echo -e "\nCheck S3CMD...OK, S3CMD data path tests are enabled."
+    echo "Check S3CMD...OK, S3CMD data path tests are enabled."
     s3cmdtestson=true
   else
-    echo -e "\nS3CMD is not found, S3CMD (data path) tests are disabled."
+    echo "S3CMD is not found, S3CMD (data path) tests are disabled."
   fi
 else
-  echo -e "\nS3IAMCLI is not found, both S3IAMCLI and S3CMD tests are disabled."
+  echo "S3IAMCLI is not found, both S3IAMCLI and S3CMD tests are disabled."
 fi
-
-systemctl restart s3authserver
 
 cleanup
 
 if [ "$externalcleanup" = true ];then
+  # If "$externalcleanup" option provided, nothing to process further
   exit 0
 fi
 
-echo -e "\n\n*** S3 Sanity ***"
+echo "*** S3 Sanity tests start ***"
 
-if [ "$s3iamclitestson" == true ];then
-  echo -e "\n\n**** Create Account *******"
-  output=$(s3iamcli createaccount -n SanityAccountToDeleteAfterUse  -e SanityAccountToDeleteAfterUse@sanitybucket.com --ldapuser sgiamadmin --ldappasswd "$ldappasswd" --no-ssl)
-  access_key=$(echo -e "$output" | tr ',' '\n' | grep "AccessKeyId" | awk '{print $3}')
-  secret_key=$(echo -e "$output" | tr ',' '\n' | grep "SecretKey" | awk '{print $3}')
-  s3iamcli CreateUser -n SanityUserToDeleteAfterUse --access_key "$access_key" --secret_key "$secret_key" --no-ssl 2> /dev/null
-  if [ $? -ne 0 ];then
-    anys3iamclitestsfailed=true
-    restore_config
-    die_with_error "s3iamcli CreateUser failed"
-  fi
-
-  if [ "$s3cmdtestson" == true ];then
-    TEST_CMD="s3cmd --access_key=$access_key --secret_key=$secret_key -v -c $s3cmdconfigfile"
-    echo -e "\nCreate bucket - 'sanitybucket': "
-    $TEST_CMD mb "s3://sanitybucket"
-    if [ $? -ne 0 ];then
-      echo "Create bucket - 'sanitybucket':  failed"
-      anys3cmdtestsfailed=true
-    fi
-
-    # create a test file
-    dd if=/dev/urandom of=$test_file_input bs=5MB count=1
-    if [ $? -ne 0 ];then
-      echo "dd failed"
-     anys3cmdtestsfailed=true
-    fi
-    content_md5_before=$(md5sum $test_file_input | cut -d ' ' -f 1)
-    if [ $? -ne 0 ];then
-      echo "md5sum failed"
-      anys3cmdtestsfailed=true
-    fi
-
-    echo -e "\nUpload '$test_file_input' to 'sanitybucket': "
-    $TEST_CMD put $test_file_input "s3://sanitybucket/SanityObjectToDeleteAfterUse"
-    if [ $? -ne 0 ];then
-      echo "Upload '$test_file_input' to 'sanitybucket': failed"
-      anys3cmdtestsfailed=true
-    fi
-
-    echo -e "\nList uploaded SanityObjectToDeleteAfterUse in 'sanitybucket': "
-    $TEST_CMD ls "s3://sanitybucket/SanityObjectToDeleteAfterUse"
-    if [ $? -ne 0 ];then
-      echo "List uploaded SanityObjectToDeleteAfterUse in 'sanitybucket': failed"
-      anys3cmdtestsfailed=true
-    fi
-
-    echo -e "\nDownload 'SanityObjectToDeleteAfterUse' from 'sanitybucket': "
-    $TEST_CMD get "s3://sanitybucket/SanityObjectToDeleteAfterUse" $test_output_file
-    if [ $? -ne 0 ];then
-      echo "Download 'SanityObjectToDeleteAfterUse' from 'sanitybucket': failed"
-      anys3cmdtestsfailed=true
-    fi
-
-    content_md5_after=$(md5sum $test_output_file | cut -d ' ' -f 1)
-    echo -en "\nData integrity check: "
-    [[ $content_md5_before == $content_md5_after ]] && echo 'Passed.'
-    echo -e "\nDelete 'SanityObjectToDeleteAfterUse' from 'sanitybucket': "
-    $TEST_CMD del "s3://sanitybucket/SanityObjectToDeleteAfterUse"
-    if [ $? -ne 0 ];then
-      echo "s3://sanitybucket/SanityObjectToDeleteAfterUse failed"
-      anys3cmdtestsfailed=true
-    fi
-
-    echo -e "\nDelete bucket - 'sanitybucket': "
-    $TEST_CMD rb "s3://sanitybucket"
-    if [ $? -ne 0 ];then
-      echo "Delete bucket - 'sanitybucket': failed"
-      anys3cmdtestsfailed=true
-    fi
-
-    if [ "$anys3cmdtestsfailed" == false ];then
-      echo -e "\n\n***** S3: SANITY DATA TESTS SUCCESSFULLY COMPLETED *****\n"
-    else
-      echo -e "\n\n***** S3: SANITY DATA TESTS COMPLETED WITH FAILURE*****\n"
-      anytestsfailed=true
-    fi
-  fi
-
-  echo -e "\nDelete User - 'SanityUserToDeleteAfterUse': "
-  s3iamcli deleteuser -n SanityUserToDeleteAfterUse --access_key "$access_key" --secret_key "$secret_key" --no-ssl 2> /dev/null
-  if [ $? -ne 0 ];then
-    anys3iamclitestsfailed=true
-    echo "s3iamcli deleteuser failed"
-  fi
-
-  echo -e "\nDelete Account - 'SanityAccountToDeleteAfterUse': "
-  s3iamcli deleteaccount -n SanityAccountToDeleteAfterUse --access_key "$access_key" --secret_key "$secret_key" --no-ssl
-  if [ $? -ne 0 ];then
-    anys3iamclitestsfailed=true
-    echo "s3iamcli deleteaccount failed"
-  fi
-
-  if [ "$anys3iamclitestsfailed" == false ];then
-    echo -e "\n\n***** S3: SANITY IAMCLI TESTS SUCCESSFULLY COMPLETED *****\n"
-  else
-    echo -e "\n\n***** S3: SANITY IAMCLI TESTS COMPLETED WITH FAILURE*****\n"
-    anytestsfailed=true
-  fi
-
-  set +e
-fi
-
+echo "ldapsearch test starts ***"
 cmd_out=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
 if [[ $cmd_out == *"No such object"* ]];then
-  echo -e "\n\n***** S3: SANITY ldapsearch TESTS COMPLETED WITH FAILURE, failed to find s3background delete account!*****\n"
-  anytestsfailed=true
-else
-  echo -e "\n\n***** S3: SANITY ldapsearch TESTS SUCCESSFULLY COMPLETED *****\n"
+  die_with_error "***** S3: SANITY ldapsearch TESTS COMPLETED WITH FAILURE, failed to find s3background delete account!*****"
 fi
+echo "ldapsearch TESTS SUCCESSFULLY COMPLETED"
+
+if [ "$s3iamclitestson" == false ];then
+  echo "S3IAMCLI tests are disabled"
+  exit 0
+fi
+echo "S3IAMCLI tests start"
+echo "Create Account"
+output=$(s3iamcli createaccount -n SanityAccountToDeleteAfterUse  -e SanityAccountToDeleteAfterUse@sanitybucket.com --ldapuser sgiamadmin --ldappasswd "$ldappasswd" --no-ssl)
+access_key=$(echo -e "$output" | tr ',' '\n' | grep "AccessKeyId" | awk '{print $3}')
+secret_key=$(echo -e "$output" | tr ',' '\n' | grep "SecretKey" | awk '{print $3}')
+s3iamcli CreateUser -n SanityUserToDeleteAfterUse --access_key "$access_key" --secret_key "$secret_key" --no-ssl 2> /dev/null
+if [ $? -ne 0 ];then
+  restore_config
+  die_with_error "s3iamcli CreateUser failed"
+fi
+
+if [ "$s3cmdtestson" == true ];then
+  echo "S3CMD tests start"
+  TEST_CMD="s3cmd --access_key=$access_key --secret_key=$secret_key -v -c $s3cmdconfigfile"
+  echo "Create bucket - 'sanitybucket': "
+  $TEST_CMD mb "s3://sanitybucket"
+  if [ $? -ne 0 ];then
+    echo "Create bucket - 'sanitybucket':  failed"
+    anys3cmdtestsfailed=true
+  fi
+
+  # create a test file
+  dd if=/dev/urandom of=$test_file_input bs=5MB count=1
+  if [ $? -ne 0 ];then
+    echo "dd failed"
+    anys3cmdtestsfailed=true
+  fi
+  content_md5_before=$(md5sum $test_file_input | cut -d ' ' -f 1)
+  if [ $? -ne 0 ];then
+    echo "md5sum failed"
+    anys3cmdtestsfailed=true
+  fi
+
+  echo "Upload '$test_file_input' to 'sanitybucket': "
+  $TEST_CMD put $test_file_input "s3://sanitybucket/SanityObjectToDeleteAfterUse"
+  if [ $? -ne 0 ];then
+    echo "Upload '$test_file_input' to 'sanitybucket': failed"
+    anys3cmdtestsfailed=true
+  fi
+
+  echo "List uploaded SanityObjectToDeleteAfterUse in 'sanitybucket': "
+  $TEST_CMD ls "s3://sanitybucket/SanityObjectToDeleteAfterUse"
+  if [ $? -ne 0 ];then
+    echo "List uploaded SanityObjectToDeleteAfterUse in 'sanitybucket': failed"
+    anys3cmdtestsfailed=true
+  fi
+
+  echo "Download 'SanityObjectToDeleteAfterUse' from 'sanitybucket': "
+  $TEST_CMD get "s3://sanitybucket/SanityObjectToDeleteAfterUse" $test_output_file
+  if [ $? -ne 0 ];then
+    echo "Download 'SanityObjectToDeleteAfterUse' from 'sanitybucket': failed"
+    anys3cmdtestsfailed=true
+  fi
+
+  content_md5_after=$(md5sum $test_output_file | cut -d ' ' -f 1)
+  echo "Data integrity check: "
+  [[ $content_md5_before == $content_md5_after ]] && echo 'Passed.'
+  echo "Delete 'SanityObjectToDeleteAfterUse' from 'sanitybucket': "
+  $TEST_CMD del "s3://sanitybucket/SanityObjectToDeleteAfterUse"
+  if [ $? -ne 0 ];then
+    echo "s3://sanitybucket/SanityObjectToDeleteAfterUse failed"
+    anys3cmdtestsfailed=true
+  fi
+
+  echo "Delete bucket - 'sanitybucket': "
+  $TEST_CMD rb "s3://sanitybucket"
+  if [ $? -ne 0 ];then
+    echo "Delete bucket - 'sanitybucket': failed"
+    anys3cmdtestsfailed=true
+  fi
+
+  if [ "$anys3cmdtestsfailed" == false ];then
+    echo "S3: S3CMD SANITY DATA TESTS SUCCESSFULLY COMPLETED"
+  else
+    echo "S3: SANITY DATA TESTS COMPLETED WITH FAILURE"
+    anytestsfailed=true
+  fi
+fi
+
+echo "Delete User - 'SanityUserToDeleteAfterUse': "
+s3iamcli deleteuser -n SanityUserToDeleteAfterUse --access_key "$access_key" --secret_key "$secret_key" --no-ssl 2> /dev/null
+if [ $? -ne 0 ];then
+  anys3iamclitestsfailed=true
+  echo "s3iamcli deleteuser failed"
+fi
+
+echo "Delete Account - 'SanityAccountToDeleteAfterUse': "
+s3iamcli deleteaccount -n SanityAccountToDeleteAfterUse --access_key "$access_key" --secret_key "$secret_key" --no-ssl
+if [ $? -ne 0 ];then
+  anys3iamclitestsfailed=true
+  echo "s3iamcli deleteaccount failed"
+fi
+
+if [ "$anys3iamclitestsfailed" == false ];then
+  echo "S3: SANITY IAMCLI TESTS SUCCESSFULLY COMPLETED"
+else
+  echo "S3: SANITY IAMCLI TESTS COMPLETED WITH FAILURE"
+  anytestsfailed=true
+fi
+
+set +e
 
 restore_config
 
 if [ "$anytestsfailed" == false ];then
-  echo -e "\n\n***** S3: SANITY ALL TESTS SUCCESSFULLY COMPLETED *****\n"
+  echo "*** S3: SANITY ALL TESTS SUCCESSFULLY COMPLETED ***"
 else
-  die_with_error "\n\n***** S3: SANITY ALL TESTS COMPLETED WITH FAILURE*****\n"
+  die_with_error "*** S3: SANITY ALL TESTS COMPLETED WITH FAILURE ***"
 fi
