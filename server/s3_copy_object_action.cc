@@ -511,8 +511,10 @@ void S3CopyObjectAction::set_source_bucket_authorization_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   auth_acl = request->get_default_acl();
   auth_client->set_get_method = true;
-  std::string uri = "/" + source_bucket_name + "/" + source_object_name;
-  auth_client->clientabsoulte_uri = uri;
+
+  auth_client->set_entity_path("/" + source_bucket_name + "/" +
+                               source_object_name);
+
   auth_client->set_acl_and_policy(
       source_object_metadata->get_encoded_object_acl(),
       source_bucket_metadata->get_policy_as_json());

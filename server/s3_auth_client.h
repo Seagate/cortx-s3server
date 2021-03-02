@@ -163,6 +163,7 @@ class S3AuthClient {
   std::string policy_str;
   std::string acl_str;
   std::string user_acl;
+  std::string entity_path;
 
   bool last_chunk_added = false;
   bool is_chunked_auth = false;
@@ -182,7 +183,6 @@ class S3AuthClient {
   S3AuthClient(std::shared_ptr<RequestObject> req,
                bool skip_authorization = false);
   bool set_get_method = false;
-  std::string clientabsoulte_uri;
 
   virtual ~S3AuthClient();
 
@@ -245,6 +245,10 @@ class S3AuthClient {
   void set_acl_and_policy(const std::string& acl, const std::string& policy);
   void set_bucket_acl(const std::string& bucket_acl);
   void set_event_with_retry_interval();
+
+  void set_entity_path(std::string entity_path) {
+    this->entity_path = std::move(entity_path);
+  }
 
   friend class S3AuthClientTest;
 

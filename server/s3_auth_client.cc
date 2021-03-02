@@ -66,19 +66,10 @@ static evhtp_res on_conn_err_callback(evhtp_connection_t *p_evhtp_conn,
     s3_log(S3_LOG_INFO, stripped_request_id, "Connection status = %d\n",
            p_evhtp_conn->request->status);
 
-    if (200 == p_evhtp_conn->request->status) {
-      p_auth_ctx->on_success_handler()();
-      return EVHTP_RES_OK;
-    }
     if (p_evhtp_conn->request->headers_in) {
       s3_log(S3_LOG_DEBUG, request_id, "Headers IN:");
       evhtp_headers_for_each(p_evhtp_conn->request->headers_in, log_http_header,
                              (void *)request_id.c_str());
-    }
-    if (p_evhtp_conn->request->headers_out) {
-      s3_log(S3_LOG_DEBUG, request_id, "Headers OUT:");
-      evhtp_headers_for_each(p_evhtp_conn->request->headers_out,
-                             log_http_header, (void *)request_id.c_str());
     }
   }
   s3_log(
@@ -700,26 +691,34 @@ bool S3AuthClient::setup_auth_request_body() {
   add_key_val_to_body("RequestorEmail", request->get_email());
   add_key_val_to_body("RequestorCanonicalId", request->get_canonical_id());
 
-  const char *full_path = request->c_get_full_encoded_path();
-  if (full_path != NULL) {
-    std::string uri_full_path = full_path;
-    // in encoded uri path space is encoding as '+'
-    // but cannonical request should have '%20' for verification.
-    // decode plus into space, this special handling
-    // is not required for other charcters.
-    S3CommonUtilities::find_and_replaceall(uri_full_path, "+", "%20");
-    std::string authorization_header =
-        request->get_header_value("Authorization");
-    if (authorization_header.rfind("AWS4-HMAC-SHA256", 0) == 0) {
-      S3CommonUtilities::find_and_replaceall(uri_full_path, "!", "%21");
+  std::shared_ptr<S3RequestObject> s3_request =
+      std::dynamic_pointer_cast<S3RequestObject>(request);
+
+  if (entity_path.empty()) {
+
+    const char *sz_full_path = request->c_get_full_encoded_path();
+
+    if (sz_full_path) {
+      entity_path.assign(sz_full_path);
+
+      // in encoded uri path space is encoding as '+'
+      // but cannonical request should have '%20' for verification.
+      // decode plus into space, this special handling
+      // is not required for other charcters.
+      S3CommonUtilities::find_and_replaceall(entity_path, "+", "%20");
+
+      std::string authorization_header =
+          request->get_header_value("Authorization");
+
+      if (authorization_header.rfind("AWS4-HMAC-SHA256", 0) == 0) {
+        S3CommonUtilities::find_and_replaceall(entity_path, "!", "%21");
+      }
     }
-    if (!clientabsoulte_uri.empty()) {
-      uri_full_path = clientabsoulte_uri;
-    }
-    add_key_val_to_body("ClientAbsoluteUri", uri_full_path);
-  } else {
-    add_key_val_to_body("ClientAbsoluteUri", "");
   }
+  if (entity_path == "/" && S3AuthClientOpType::policyvalidation == op_type) {
+    entity_path.append(s3_request->get_bucket_name());
+  }
+  add_key_val_to_body("ClientAbsoluteUri", entity_path);
 
   // get the query paramters in a map
   // eg: query_map = { {prefix, abc&def}, {delimiter, /}};
@@ -767,8 +766,6 @@ bool S3AuthClient::setup_auth_request_body() {
   if (op_type == S3AuthClientOpType::authorization ||
       op_type == S3AuthClientOpType::combo_auth) {
 
-    std::shared_ptr<S3RequestObject> s3_request =
-        std::dynamic_pointer_cast<S3RequestObject>(request);
     if (s3_request) {
 
       // Set flag to request default bucket acl from authserver.
