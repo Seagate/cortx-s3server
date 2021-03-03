@@ -33,7 +33,6 @@ class S3CortxMsgBus:
         self._message_bus = None
         self._producer = None
         self._consumer = None
-#        self._blocking = False
 
     def connect(self):
         """Connect to Message Bus."""
