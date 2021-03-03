@@ -33,6 +33,7 @@ class S3CortxMsgBus:
         self._message_bus = None
         self._producer = None
         self._consumer = None
+#        self._blocking = False
 
     def connect(self):
         """Connect to Message Bus."""
@@ -85,28 +86,18 @@ class S3CortxMsgBus:
             return False, msg
         return True, None
 
-#    def receive(self):
-#        """Receive the incoming message."""
-#        try:
-#            message = self._consumer.receive()
-#        except Exception as exception:
-#            msg = ("msg_bus receive except:%s %s") % (
-#                exception, traceback.format_exc())
-#            return False, msg
-#        return True, message
-
     def receive(self, mode):
         """Receive the incoming message."""
         try:
-            message = self._consumer.receive()
             if mode:
-                return True, message
+                message = self._consumer.receive()
             else:
-                return False, message
+                message = self._consumer.receive(timeout=0)
         except Exception as exception:
             msg = ("msg_bus receive except:%s %s") % (
                 exception, traceback.format_exc())
             return False, msg
+        return True, message
 
     def ack(self):
         """Ack the received message."""
@@ -117,4 +108,3 @@ class S3CortxMsgBus:
                 exception, traceback.format_exc())
             return False, msg
         return True, None
-
