@@ -205,18 +205,18 @@ class ObjectRecoveryMsgbus(object):
                         self.__process_msg(message.decode('utf-8'))
                         self.__msgbuslib.ack()
                     else:
-                        #self._logger.debug("Failed to receive msg from message bus : " + str(message))
-                        #if not self._daemon_mode:
-                        #    break
+                        # In non-daemon mode, we just receive the messages, process the 
+                        # messages and return without sleeping.
                         if message:
                             self._logger.debug("Received msg from S3MessageBus")
                             self._logger.debug("Msg {}".format(str(message)))
                             self.__process_msg(message.decode('utf-8'))
                             self.__msgbuslib.ack()
                         else:
+                            # No message in the queue
                             self._logger.debug("Failed to receive msg from message bus : " + str(message))
                         break
-                     time.sleep(self._sleep_time)
+                    time.sleep(self._sleep_time)
 
                 if not self._daemon_mode:
                     break
