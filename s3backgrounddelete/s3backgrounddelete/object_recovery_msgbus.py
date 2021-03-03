@@ -120,6 +120,55 @@ class ObjectRecoveryMsgbus(object):
             self._logger.error("Exception:{}".format(exception))
             self.__isconsumersetupcomplete = False
 
+#    def receive_data(self,
+#        consumer_id = None,
+#        consumer_group = None,
+#        msg_topic = None,
+#        offset = None):
+#        """Initializes consumer, connects and receives messages from message bus."""
+#        while True:
+#            try:
+#                if not self.__isconsumersetupcomplete:
+#                    self.__setup_consumer(consumer_id,
+#                        consumer_group, msg_topic, offset)
+#                    if not self.__isconsumersetupcomplete:
+#                        if not self._daemon_mode:
+#                            self._logger.debug("Not launched in daemon mode, so exitting.")
+#                            break
+#                        time.sleep(self._sleep_time)
+#                        continue
+#                #Over here we can assume consumer is set up.
+#                while True:
+#                    # We will keep on receiving until there are messages to receive.
+#                    # Failure is treated as no message in queue, in that case we sleep
+#                    # for a specified duration and then try to receive again.
+#                    # In case of non-daemon mode we will exit once we encounter failure
+#                    # in receiving messages.
+#                    self._logger.debug("Receiving msg from S3MessageBus")
+#                    ret,message = self.__msgbuslib.receive()
+#                    if ret:
+#                        # Process message can fail, but we still acknowledge the message
+#                        # The last step in process message is to delete the entry from
+#                        # probable delete index. Even if we acknowledge a message that
+#                        # has failed being processed it would eventually come back as
+#                        # the entry has not been deleted from probable delete index.
+#                        self._logger.debug("Msg {}".format(str(message)))
+#                        self.__process_msg(message.decode('utf-8'))
+#                        self.__msgbuslib.ack()
+#                    else:
+#                        self._logger.debug("Failed to receive msg from message bus : " + str(message))
+#                        if not self._daemon_mode:
+#                            break
+#                        time.sleep(self._sleep_time)
+#
+#                if not self._daemon_mode:
+#                    break
+#            except Exception as exception:
+#                self._logger.error("Receive Data Exception : {} {}".format(exception, traceback.format_exc()))
+#                self.__isconsumersetupcomplete = False                
+#            finally:
+#                time.sleep(self._sleep_time)
+
     def receive_data(self,
         consumer_id = None,
         consumer_group = None,
@@ -145,7 +194,7 @@ class ObjectRecoveryMsgbus(object):
                     # In case of non-daemon mode we will exit once we encounter failure
                     # in receiving messages.
                     self._logger.debug("Receiving msg from S3MessageBus")
-                    ret,message = self.__msgbuslib.receive()
+                    ret,message = self.__msgbuslib.receive(self._daemon_mode)
                     if ret:
                         # Process message can fail, but we still acknowledge the message
                         # The last step in process message is to delete the entry from
@@ -156,10 +205,18 @@ class ObjectRecoveryMsgbus(object):
                         self.__process_msg(message.decode('utf-8'))
                         self.__msgbuslib.ack()
                     else:
-                        self._logger.debug("Failed to receive msg from message bus : " + str(message))
-                        if not self._daemon_mode:
-                            break
-                        time.sleep(self._sleep_time)
+                        #self._logger.debug("Failed to receive msg from message bus : " + str(message))
+                        #if not self._daemon_mode:
+                        #    break
+                        if message:
+                            self._logger.debug("Received msg from S3MessageBus")
+                            self._logger.debug("Msg {}".format(str(message)))
+                            self.__process_msg(message.decode('utf-8'))
+                            self.__msgbuslib.ack()
+                        else:
+                            self._logger.debug("Failed to receive msg from message bus : " + str(message))
+                        break
+                     time.sleep(self._sleep_time)
 
                 if not self._daemon_mode:
                     break
