@@ -463,7 +463,7 @@ void S3PutChunkUploadObjectAction::initiate_data_streaming() {
                   create_object_timer.elapsed_time_in_millisec());
 
   if (!S3Option::get_instance()->is_auth_disabled()) {
-    get_auth_client()->init_chunk_auth_cycle(
+    auth_client->init_chunk_auth_cycle(
         std::bind(&S3PutChunkUploadObjectAction::chunk_auth_successful, this),
         std::bind(&S3PutChunkUploadObjectAction::chunk_auth_failed, this));
   }
@@ -532,11 +532,11 @@ void S3PutChunkUploadObjectAction::send_chunk_details_if_any() {
     if (!S3Option::get_instance()->is_auth_disabled()) {
       if (detail.get_size() == 0) {
         // Last chunk is size 0
-        get_auth_client()->add_last_checksum_for_chunk(
-            detail.get_signature(), detail.get_payload_hash());
+        auth_client->add_last_checksum_for_chunk(detail.get_signature(),
+                                                 detail.get_payload_hash());
       } else {
-        get_auth_client()->add_checksum_for_chunk(detail.get_signature(),
-                                                  detail.get_payload_hash());
+        auth_client->add_checksum_for_chunk(detail.get_signature(),
+                                            detail.get_payload_hash());
       }
       auth_in_progress = true;  // this triggers auth
     }
@@ -624,7 +624,7 @@ void S3PutChunkUploadObjectAction::write_object_failed() {
   request->get_buffered_input()->flush_used_buffers();
 
   request->pause();  // pause any further reading from client
-  get_auth_client()->abort_chunk_auth_op();
+  auth_client->abort_chunk_auth_op();
 
   if (request->is_s3_client_read_error()) {
     client_read_error();
@@ -777,8 +777,8 @@ void S3PutChunkUploadObjectAction::
 void S3PutChunkUploadObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if ((auth_in_progress) &&
-      (get_auth_client()->get_state() == S3AuthClientOpState::started)) {
-    get_auth_client()->abort_chunk_auth_op();
+      (auth_client->get_state() == S3AuthClientOpState::started)) {
+    auth_client->abort_chunk_auth_op();
     s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
   }

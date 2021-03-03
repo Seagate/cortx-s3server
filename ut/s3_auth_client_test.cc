@@ -18,16 +18,17 @@
  *
  */
 
-#include "s3_auth_client.h"
-#include <functional>
-#include <iostream>
 #include <memory>
-#include "gtest/gtest.h"
+
+#include <gtest/gtest.h>
+
+#include "s3_auth_client.h"
+#include "s3_option.h"
+
 #include "mock_evhtp_wrapper.h"
 #include "mock_s3_asyncop_context_base.h"
 #include "mock_s3_auth_client.h"
 #include "mock_s3_request_object.h"
-#include "s3_option.h"
 
 using ::testing::_;
 using ::testing::Eq;
@@ -48,12 +49,14 @@ class S3AuthBaseResponse {
                                      void *arg) = 0;
 };
 
+// S3AuthResponse class
+
 class S3AuthResponse : public S3AuthBaseResponse {
  public:
   S3AuthResponse() { success_called = fail_called = false; }
   virtual void auth_response_wrapper(evhtp_request_t *req, evbuf_t *buf,
                                      void *arg) {
-    on_auth_response(req, buf, arg);
+    on_read_response(req, buf, arg);
   }
 
   void success_callback() { success_called = true; }
@@ -64,38 +67,67 @@ class S3AuthResponse : public S3AuthBaseResponse {
   bool fail_called;
 };
 
+static void fn_stub() {}
+
 class S3AuthClientOpContextTest : public testing::Test {
+
+ public:
+  ~S3AuthClientOpContextTest();
+
  protected:
-  S3AuthClientOpContextTest() {
-
-    evbase_t *evbase = event_base_new();
-    evhtp_request_t *req = evhtp_request_new(NULL, evbase);
-    ptr_mock_request =
-        std::make_shared<MockS3RequestObject>(req, new EvhtpWrapper());
-    S3Option::get_instance()->set_eventbase(evbase);
-    success_callback = NULL;
-    failed_callback = NULL;
-    p_authopctx = new S3AuthClientOpContext(ptr_mock_request, success_callback,
-                                            failed_callback);
-  }
-
-  ~S3AuthClientOpContextTest() { delete p_authopctx; }
+  S3AuthClientOpContextTest();
+  void SetUp() override;
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::function<void()> success_callback;
-  std::function<void()> failed_callback;
-  S3AuthClientOpContext *p_authopctx;
+  std::unique_ptr<S3AuthClientOpContext> p_authopctx;
+
+ private:
+  evbase_t *p_evbase, *p_evbase_old;
 };
+
+S3AuthClientOpContextTest::S3AuthClientOpContextTest() {
+
+  p_evbase = event_base_new();
+
+  ptr_mock_request = std::make_shared<MockS3RequestObject>(
+      evhtp_request_new(NULL, p_evbase), new EvhtpWrapper());
+
+  p_evbase_old = S3Option::get_instance()->get_eventbase();
+  S3Option::get_instance()->set_eventbase(p_evbase);
+}
+
+S3AuthClientOpContextTest::~S3AuthClientOpContextTest() {
+  S3Option::get_instance()->set_eventbase(p_evbase_old);
+  event_base_free(p_evbase);
+}
+
+void S3AuthClientOpContextTest::SetUp() {
+  p_authopctx.reset(new S3AuthClientOpContext(
+      ptr_mock_request, fn_stub, fn_stub, S3AuthClientOpType::authentication));
+}
+
+// S3AuthClientTest class
 
 class S3AuthClientTest : public testing::Test {
  protected:
   S3AuthClientTest() {
-    evbase_t *evbase = event_base_new();
-    ev_req = evhtp_request_new(NULL, evbase);
+    evbase_t *p_evbase = event_base_new();
+    ev_req = evhtp_request_new(NULL, p_evbase);
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(ev_req, new EvhtpWrapper());
 
+    EXPECT_CALL(*ptr_mock_request, get_in_headers_copy())
+        .WillRepeatedly(ReturnRef(input_headers));
+
+    ptr_mock_request->set_user_name("tester");
+    ptr_mock_request->set_user_id("123");
+    ptr_mock_request->set_email("abc@dummy.com");
+    ptr_mock_request->set_canonical_id("123456789dummyCANONICALID");
+    ptr_mock_request->set_account_name("s3_test");
+    ptr_mock_request->set_account_id("12345");
+
     p_authclienttest = new S3AuthClient(ptr_mock_request);
+    p_authclienttest->op_type = S3AuthClientOpType::authentication;
 
     auth_client_op_context = (struct s3_auth_op_context *)calloc(
         1, sizeof(struct s3_auth_op_context));
@@ -119,30 +151,22 @@ class S3AuthClientTest : public testing::Test {
   S3AuthClient *p_authclienttest;
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
   struct s3_auth_op_context *auth_client_op_context;
+
+  std::map<std::string, std::string> input_headers;
 };
 
 TEST_F(S3AuthClientOpContextTest, Constructor) {
   EXPECT_EQ(NULL, p_authopctx->auth_op_context);
 }
 
-TEST_F(S3AuthClientOpContextTest, InitAuthCtxNull) {
-  evbase_t *evbase = NULL;
-  S3Option::get_instance()->set_eventbase(evbase);
-  S3AuthClientOpType auth_request_type = S3AuthClientOpType::authentication;
-  bool ret = p_authopctx->init_auth_op_ctx(auth_request_type);
-  EXPECT_FALSE(ret);
-}
-
 TEST_F(S3AuthClientOpContextTest, InitAuthCtxValid) {
-  S3AuthClientOpType auth_request_type = S3AuthClientOpType::authentication;
-  bool ret = p_authopctx->init_auth_op_ctx(auth_request_type);
+  bool ret = p_authopctx->init_auth_op_ctx();
   EXPECT_TRUE(ret == true);
 }
 
 TEST_F(S3AuthClientOpContextTest, GetAuthCtx) {
 
-  S3AuthClientOpType auth_request_type = S3AuthClientOpType::authentication;
-  p_authopctx->init_auth_op_ctx(auth_request_type);
+  p_authopctx->init_auth_op_ctx();
   struct s3_auth_op_context *p_ctx = p_authopctx->get_auth_op_ctx();
   EXPECT_TRUE(p_ctx != NULL);
 }
@@ -159,9 +183,11 @@ TEST_F(S3AuthClientOpContextTest, CanParseAuthSuccessResponse) {
       "AuthenticateUserResult><ResponseMetadata><RequestId>0000</RequestId></"
       "ResponseMetadata></AuthenticateUserResponse>";
 
-  p_authopctx->set_auth_response_xml(sample_response.c_str(), true);
+  ptr_mock_request->set_user_id("");
 
-  EXPECT_TRUE(p_authopctx->is_auth_successful);
+  p_authopctx->handle_response(sample_response.c_str(), 200);
+
+  EXPECT_TRUE(p_authopctx->is_success());
   EXPECT_STREQ("tester", p_authopctx->get_request()->get_user_name().c_str());
   EXPECT_STREQ("123", p_authopctx->get_request()->get_user_id().c_str());
   EXPECT_STREQ("s3_test",
@@ -180,9 +206,11 @@ TEST_F(S3AuthClientOpContextTest, CanParseAuthorizationSuccessResponse) {
       "/CanonicalId></AuthorizeUserResult><ResponseMetadata><RequestId>0000</"
       "RequestId></ResponseMetadata></AuthorizeUserResponse>";
 
-  p_authopctx->set_auth_response_xml(sample_response.c_str(), true);
+  ptr_mock_request->set_user_id("");
 
-  EXPECT_TRUE(p_authopctx->is_auth_successful);
+  p_authopctx->handle_response(sample_response.c_str(), 200);
+
+  EXPECT_TRUE(p_authopctx->is_success());
   EXPECT_STREQ("tester", p_authopctx->get_request()->get_user_name().c_str());
   EXPECT_STREQ("507e9f946afa4a18b0ac54e869c5fc6b6eb518c22e3a90",
                p_authopctx->get_request()->get_canonical_id().c_str());
@@ -205,9 +233,9 @@ TEST_F(S3AuthClientOpContextTest,
       "AuthenticateUserResult><ResponseMetadata><RequestId>0000</RequestId></"
       "ResponseMetadata></AuthorizeUserResponse>";
 
-  p_authopctx->set_auth_response_xml(sample_response.c_str(), true);
+  p_authopctx->handle_response(sample_response.c_str(), 200);
 
-  EXPECT_FALSE(p_authopctx->is_auth_successful);
+  EXPECT_FALSE(p_authopctx->is_success());
 }
 
 TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthSuccessResponse) {
@@ -222,9 +250,9 @@ TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthSuccessResponse) {
       "AuthenticateUserResult><ResponseMetadata><RequestId>0000</RequestId></"
       "ResponseMetadata></AuthenticateUserResponse>";
 
-  p_authopctx->set_auth_response_xml(sample_response.c_str(), true);
+  p_authopctx->handle_response(sample_response.c_str(), 200);
 
-  EXPECT_FALSE(p_authopctx->is_auth_successful);
+  EXPECT_FALSE(p_authopctx->is_success());
 }
 
 TEST_F(S3AuthClientOpContextTest, CanParseAuthErrorResponse) {
@@ -239,9 +267,9 @@ TEST_F(S3AuthClientOpContextTest, CanParseAuthErrorResponse) {
       "Authentication andSOAP Authentication for "
       "details.</Message></Error><RequestId>0000</RequestId></ErrorResponse>";
 
-  p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
+  p_authopctx->handle_response(sample_response.c_str(), 403);
 
-  EXPECT_FALSE(p_authopctx->is_auth_successful);
+  EXPECT_FALSE(p_authopctx->is_success());
   EXPECT_STREQ("SignatureDoesNotMatch", p_authopctx->get_error_code().c_str());
   EXPECT_STREQ(
       "The request signature we calculated does not match the signature you "
@@ -260,9 +288,9 @@ TEST_F(S3AuthClientOpContextTest, CanParseAuthInvalidTokenErrorResponse) {
       "token is malformed or otherwise "
       "invalid.</Message></Error><RequestId>0000</RequestId></ErrorResponse>";
 
-  p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
+  p_authopctx->handle_response(sample_response.c_str(), 403);
 
-  EXPECT_FALSE(p_authopctx->is_auth_successful);
+  EXPECT_FALSE(p_authopctx->is_success());
   EXPECT_STREQ("InvalidToken", p_authopctx->get_error_code().c_str());
   EXPECT_STREQ("The provided token is malformed or otherwise invalid.",
                p_authopctx->get_error_message().c_str());
@@ -279,9 +307,9 @@ TEST_F(S3AuthClientOpContextTest, CanParseAuthorizationErrorResponse) {
       "are using the correct access "
       "keys.</Message></Error><RequestId>0000</RequestId></ErrorResponse>";
 
-  p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
+  p_authopctx->handle_response(sample_response.c_str(), 403);
 
-  EXPECT_FALSE(p_authopctx->is_auth_successful);
+  EXPECT_FALSE(p_authopctx->is_success());
   EXPECT_STREQ("UnauthorizedOperation", p_authopctx->get_error_code().c_str());
   EXPECT_STREQ(
       "You are not authorized to perform this operation. Check your IAM "
@@ -299,7 +327,7 @@ TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthErrorResponse) {
       "information, see REST Authentication andSOAP Authentication for "
       "details.</Message><RequestId>0000</RequestId></Error>";
 
-  p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
+  p_authopctx->handle_response(sample_response.c_str(), 403);
 
   EXPECT_FALSE(p_authopctx->error_resp_is_OK());
 }
@@ -313,7 +341,7 @@ TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthorizeErrorResponse) {
       "ensure that you are using the correct access "
       "keys.</Message><RequestId>0000</RequestId></Error>";
 
-  p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
+  p_authopctx->handle_response(sample_response.c_str(), 403);
 
   EXPECT_FALSE(p_authopctx->error_resp_is_OK());
 }
@@ -341,7 +369,6 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyGet) {
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
   p_authclienttest->request_id = "123";
-  p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
@@ -368,7 +395,6 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPut) {
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
   p_authclienttest->request_id = "123";
-  p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
@@ -395,7 +421,6 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyHead) {
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
   p_authclienttest->request_id = "123";
-  p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
@@ -422,7 +447,6 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyDelete) {
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
   p_authclienttest->request_id = "123";
-  p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
@@ -449,7 +473,6 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPost) {
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
   p_authclienttest->request_id = "123";
-  p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
@@ -479,7 +502,6 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyWithQueryParams) {
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
   p_authclienttest->request_id = "123";
-  p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
@@ -513,7 +535,6 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth) {
   p_authclienttest->request_id = "123";
   p_authclienttest->prev_chunk_signature_from_auth = "";
   p_authclienttest->current_chunk_signature_from_auth = "ABCD";
-  p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
@@ -547,7 +568,6 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth1) {
   p_authclienttest->request_id = "123";
   p_authclienttest->prev_chunk_signature_from_auth = "ABCD";
   p_authclienttest->current_chunk_signature_from_auth = "";
-  p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
@@ -583,8 +603,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth2) {
   p_authclienttest->prev_chunk_signature_from_auth = "prev-ABCD";
   p_authclienttest->current_chunk_signature_from_auth = "cur-XYZ";
   p_authclienttest->hash_sha256_current_chunk = "sha256-abcd";
-  p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
+
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
   evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
