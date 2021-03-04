@@ -54,11 +54,26 @@ class S3PutObjectAction : public S3ObjectAction {
   S3Timer s3_timer;
   bool write_in_progress;
 
+  // S3 fault mode
+  size_t last_object_size;
+  size_t primary_object_size;
+  size_t total_object_size_consumed;
+  unsigned short max_objects_in_s3_fault_mode;
+  unsigned short current_fault_iteration;
+  // S3 fault mode: When the fist object write fails, below flag is set
+  bool fault_mode_active;
+  bool create_fragment_when_write_success;
+  // TODO: Remove below state when done with dev testing
+  unsigned int no_of_blocks_written;
+  S3BufferSequence last_buffer_seq;
+  MD5hash last_MD5Hash_state;
+
   std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
   std::shared_ptr<S3PutTagsBodyFactory> put_object_tag_body_factory;
   std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
   std::shared_ptr<MotrAPI> s3_motr_api;
   std::shared_ptr<S3ObjectMetadata> new_object_metadata;
+  std::vector<struct m0_uint128> extended_obj_oids;
   std::map<std::string, std::string> new_object_tags_map;
 
   // Probable delete record for old object OID in case of overwrite
@@ -68,6 +83,11 @@ class S3PutObjectAction : public S3ObjectAction {
   std::string new_oid_str;  // Key for new probable delete rec
   std::unique_ptr<S3ProbableDeleteRecord> new_probable_del_rec;
 
+  /*
+  std::map<std::string extended_obj_oid_key,
+           std::unique_ptr<S3ProbableDeleteRecord>>
+      extended_probable_delete_list;
+  */
   void create_new_oid(struct m0_uint128 current_oid);
   void collision_detected();
 
@@ -99,6 +119,11 @@ class S3PutObjectAction : public S3ObjectAction {
   void create_object();
   void create_object_successful();
   void create_object_failed();
+
+  void add_extended_object_oid_to_probable_dead_oid_list(
+      struct m0_uint128 extended_oid, unsigned int layout_id);
+  void continue_object_write();
+  void add_extended_object_oid_to_probable_dead_oid_list_failed();
 
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();

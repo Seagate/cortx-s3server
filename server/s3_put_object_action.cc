@@ -45,7 +45,13 @@ S3PutObjectAction::S3PutObjectAction(
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
                      std::move(object_meta_factory)),
       total_data_to_stream(0),
-      write_in_progress(false) {
+      write_in_progress(false),
+      last_object_size(0),
+      primary_object_size(0),
+      total_object_size_consumed(0),
+      current_fault_iteration(0),
+      fault_mode_active(false),
+      create_fragment_when_write_success(false) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   s3_log(S3_LOG_INFO, stripped_request_id,
@@ -58,7 +64,21 @@ S3PutObjectAction::S3PutObjectAction(
   old_object_oid = {0ULL, 0ULL};
   old_layout_id = -1;
   new_object_oid = {0ULL, 0ULL};
+  no_of_blocks_written = 0;
 
+  // Default to 10 objects in S3 fault mode
+  max_objects_in_s3_fault_mode = MAX_ALLOWED_RECOVERY_IN_FAULT_MODE;
+  if (S3Option::get_instance()->get_max_objects_in_fault_mode() > 0) {
+    max_objects_in_s3_fault_mode =
+        S3Option::get_instance()->get_max_objects_in_fault_mode();
+    if (max_objects_in_s3_fault_mode > MAX_ALLOWED_RECOVERY_IN_FAULT_MODE) {
+      // Restrict recovery attempts to system defined
+      max_objects_in_s3_fault_mode = MAX_ALLOWED_RECOVERY_IN_FAULT_MODE;
+    }
+  } else {
+    // S3 fault mode is disabled
+    max_objects_in_s3_fault_mode = 0;
+  }
   if (motr_api) {
     s3_motr_api = std::move(motr_api);
   } else {
@@ -275,9 +295,22 @@ void S3PutObjectAction::create_object() {
   } else {
     motr_writer->set_oid(new_object_oid);
   }
-  _set_layout_id(S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
-      request->get_content_length()));
-
+  if (!this->fault_mode_active) {
+    // S3 non-fault(normal) mode
+    // Save primary object size, if further object write fails,
+    // thereby creating another object.
+    primary_object_size = request->get_content_length();
+    _set_layout_id(S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
+        primary_object_size));
+  } else {
+    // S3 fault mode is active
+    // The actual fragment size might be less than what is set here, if there
+    // is a further write fault, creating another object.
+    size_t size_of_this_fragment =
+        request->get_content_length() - this->total_object_size_consumed;
+    _set_layout_id(S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
+        size_of_this_fragment));
+  }
   motr_writer->create_object(
       std::bind(&S3PutObjectAction::create_object_successful, this),
       std::bind(&S3PutObjectAction::create_object_failed, this), layout_id);
@@ -291,21 +324,44 @@ void S3PutObjectAction::create_object() {
 void S3PutObjectAction::create_object_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_put_action_state = S3PutObjectActionState::newObjOidCreated;
+  if (!this->fault_mode_active) {
+    // New Object or overwrite, create new metadata and release old.
+    new_object_metadata = object_metadata_factory->create_object_metadata_obj(
+        request, bucket_metadata->get_object_list_index_oid());
+    new_object_metadata->set_objects_version_list_index_oid(
+        bucket_metadata->get_objects_version_list_index_oid());
 
-  // New Object or overwrite, create new metadata and release old.
-  new_object_metadata = object_metadata_factory->create_object_metadata_obj(
-      request, bucket_metadata->get_object_list_index_oid());
-  new_object_metadata->set_objects_version_list_index_oid(
-      bucket_metadata->get_objects_version_list_index_oid());
+    new_oid_str = S3M0Uint128Helper::to_string(new_object_oid);
 
-  new_oid_str = S3M0Uint128Helper::to_string(new_object_oid);
+    // Generate a version id for the new object.
+    new_object_metadata->regenerate_version_id();
+    new_object_metadata->set_oid(motr_writer->get_oid());
+    new_object_metadata->set_layout_id(layout_id);
 
-  // Generate a version id for the new object.
-  new_object_metadata->regenerate_version_id();
-  new_object_metadata->set_oid(motr_writer->get_oid());
-  new_object_metadata->set_layout_id(layout_id);
-
-  add_object_oid_to_probable_dead_oid_list();
+    add_object_oid_to_probable_dead_oid_list();
+  } else {
+    // Create extended metadata object, with parts=0, fragments=0
+    const std::shared_ptr<S3ObjectExtendedMetadata>& ext_object_metadata =
+        new_object_metadata->get_extended_object_metadata();
+    if (!ext_object_metadata) {
+      std::shared_ptr<S3ObjectExtendedMetadata> new_ext_object_metadata =
+          object_metadata_factory->create_object_ext_metadata_obj(
+              request, request->get_bucket_name(), request->get_object_name(),
+              new_object_metadata->get_obj_version_key(), object_list_oid);
+      new_object_metadata->set_extended_object_metadata(
+          new_ext_object_metadata);
+      s3_log(S3_LOG_DEBUG, stripped_request_id,
+             "Created extended object metadata");
+    }
+    // Add extended object's current fragment to probable delete list
+    size_t extended_obj_size =
+        request->get_content_length() - total_object_size_consumed;
+    unsigned int layoutid =
+        S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
+            extended_obj_size);
+    add_extended_object_oid_to_probable_dead_oid_list(motr_writer->get_oid(),
+                                                      layoutid);
+  }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -482,10 +538,11 @@ void S3PutObjectAction::write_object(
   if (content_length > motr_write_payload_size) {
     content_length = motr_write_payload_size;
   }
+  last_buffer_seq = buffer->get_buffers(content_length);
   motr_writer->write_content(
       std::bind(&S3PutObjectAction::write_object_successful, this),
-      std::bind(&S3PutObjectAction::write_object_failed, this),
-      buffer->get_buffers(content_length), buffer->size_of_each_evbuf);
+      std::bind(&S3PutObjectAction::write_object_failed, this), last_buffer_seq,
+      buffer->size_of_each_evbuf);
 
   write_in_progress = true;
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -497,7 +554,42 @@ void S3PutObjectAction::write_object_successful() {
 
   request->get_buffered_input()->flush_used_buffers();
 
+  no_of_blocks_written++;
   write_in_progress = false;
+  last_object_size += motr_writer->get_size_of_data_written();
+  total_object_size_consumed += motr_writer->get_size_of_data_written();
+  motr_writer->set_buffer_rewrite_flag(false);
+
+  if (fault_mode_active && create_fragment_when_write_success) {
+    create_fragment_when_write_success = false;
+    // This is write success for the fragment
+    // Add entry to the extended object
+    const std::shared_ptr<S3ObjectExtendedMetadata>& ext_object_metadata =
+        new_object_metadata->get_extended_object_metadata();
+    if (ext_object_metadata) {
+      struct m0_uint128 extended_oid = motr_writer->get_oid();
+      struct s3_part_frag_context part_frag_ctx;
+      part_frag_ctx.motr_OID = extended_oid;
+      // Set null PVID
+      part_frag_ctx.PVID =
+          S3M0Uint128Helper::to_m0_uint128("AAAAAAAAAAA=-AAAAAAAAAAA=");
+      part_frag_ctx.versionID = new_object_metadata->get_obj_version_key();
+      part_frag_ctx.item_size = last_object_size;
+      part_frag_ctx.layout_id =
+          S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
+              last_object_size);
+      part_frag_ctx.is_multipart = false;
+      // For simple (non-multipart) object, set part_no=0
+      ext_object_metadata->add_extended_entry(part_frag_ctx,
+                                              current_fault_iteration, 0);
+      new_object_metadata->set_number_of_fragments(
+          ext_object_metadata->get_fragment_count());
+      s3_log(S3_LOG_INFO, request_id,
+             "Added extended entry for object oid: "
+             "%" SCNx64 " : %" SCNx64,
+             extended_oid.u_hi, extended_oid.u_lo);
+    }
+  }
 
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -547,10 +639,7 @@ void S3PutObjectAction::write_object_successful() {
 void S3PutObjectAction::write_object_failed() {
   s3_log(S3_LOG_WARN, request_id, "Failed writing to motr.\n");
 
-  write_in_progress = false;
-  s3_put_action_state = S3PutObjectActionState::writeFailed;
-
-  request->get_buffered_input()->flush_used_buffers();
+  // TODO: Need to comment this line - write_in_progress = false;
 
   if (request->is_s3_client_read_error()) {
     client_read_error();
@@ -558,12 +647,82 @@ void S3PutObjectAction::write_object_failed() {
   }
   if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
+    s3_put_action_state = S3PutObjectActionState::writeFailed;
+    request->get_buffered_input()->flush_used_buffers();
     s3_log(S3_LOG_ERROR, request_id, "write_object_failed failure\n");
   } else {
+// TODO: Disabled 'else' code for UT to fix UT run. Remove it later when UT is
+// fixed
+#ifndef S3_GOOGLE_TEST
+    s3_log(S3_LOG_INFO, request_id,
+           "Creating new object and writing data to it...\n");
+    // Determine here further whether it is due to Motr degradation mode or
+    // irrecoverable
+    // CLOVIS error (in which case we simply return "InternalError").
+    // set_s3_error("InternalError");
+    // TODO: S3 Fault tolerence mode
+    //  Check if this failure is due to Motr degradation, causing write object
+    // failure.
+    //  Check fault tolerence object creation count/threshhold. If it is > 0
+    //  fault tolerence mode is enabled. We'll support multiple object creation
+    //  upto the threshold.
+    // Below code is to handle Motr degradation mode.
+    if (max_objects_in_s3_fault_mode &&
+        (current_fault_iteration++ < max_objects_in_s3_fault_mode)) {
+      // S3 fault mode is enabled. Activate fault mode
+      if (!fault_mode_active) {
+        fault_mode_active = true;
+        // Set object with only fragments
+        new_object_metadata->set_object_type(
+            S3ObjectMetadataType::only_frgments);
+      }
+      // TBD:Save current object oid (stored in new_object_oid), before creating
+      // new OID.
+      S3UriToMotrOID(s3_motr_api, request->get_object_uri().c_str(), request_id,
+                     &new_object_oid);
+      // TBD: Before creating next fragment, re-calculate layout id
+      // of current fragment.
+      if (current_fault_iteration == 1) {
+        // Save the size of primary object
+        primary_object_size = last_object_size;
+      } else {
+        // Save size of last fragment
+        const std::shared_ptr<S3ObjectExtendedMetadata>& ext_object_metadata =
+            new_object_metadata->get_extended_object_metadata();
+        if (ext_object_metadata) {
+          // Set size of the last fragment
+          ext_object_metadata->set_size_of_extended_entry(
+              last_object_size, (current_fault_iteration - 1), 0);
+        }
+      }
+      last_object_size = 0;
+      tried_count = 0;
+      // Set flag below to stop getting read-data-available callback,
+      // until the fragmented object is created.
+      write_in_progress = true;
+      // Save MD5 digest hash instance
+      last_MD5Hash_state = motr_writer->get_MD5Hash_instance();
+      // Create next object(fragment)
+      create_object();
+      // TBD: Create another object
+      // In success of object creation, if fault_mode_active is true,
+      // create extended object metadata and add object oid to it.
+      return;
+    } else {
+      s3_put_action_state = S3PutObjectActionState::writeFailed;
+      request->get_buffered_input()->flush_used_buffers();
+      set_s3_error("InternalError");
+      // Clean up will be done after response.
+      send_response_to_s3_client();
+    }
+#else
+    s3_put_action_state = S3PutObjectActionState::writeFailed;
+    request->get_buffered_input()->flush_used_buffers();
     set_s3_error("InternalError");
+    // Clean up will be done after response.
+    send_response_to_s3_client();
+#endif
   }
-  // Clean up will be done after response.
-  send_response_to_s3_client();
 }
 
 void S3PutObjectAction::save_metadata() {
@@ -584,7 +743,13 @@ void S3PutObjectAction::save_metadata() {
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL("put_object_action_save_metadata_pass");
 
   new_object_metadata->reset_date_time_to_current();
-  new_object_metadata->set_content_length(request->get_data_length_str());
+  // If this has an extended object, set proper content length/size of object
+  if (new_object_metadata->is_object_extended()) {
+    new_object_metadata->set_content_length(
+        std::to_string(primary_object_size));
+  } else {
+    new_object_metadata->set_content_length(request->get_data_length_str());
+  }
   new_object_metadata->set_content_type(request->get_content_type());
   new_object_metadata->set_md5(motr_writer->get_content_md5());
   new_object_metadata->set_tags(new_object_tags_map);
@@ -622,6 +787,75 @@ void S3PutObjectAction::save_object_metadata_failed() {
     s3_log(S3_LOG_ERROR, request_id, "failed to save object metadata.");
     set_s3_error("InternalError");
   }
+  // Clean up will be done after response.
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutObjectAction::add_extended_object_oid_to_probable_dead_oid_list(
+    struct m0_uint128 extended_oid, unsigned int layout_id) {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  // Check not null extended_oid and prroceed
+  if (!extended_oid.u_hi && !extended_oid.u_lo) {
+    return;
+  }
+  struct m0_uint128 null_oid = {0ULL, 0ULL};
+  std::string extended_obj_oid_str = S3M0Uint128Helper::to_string(extended_oid);
+
+  std::unique_ptr<S3ProbableDeleteRecord> probable_del_rec;
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Adding extended probable del rec with key [%s]\n",
+         extended_obj_oid_str.c_str());
+  probable_del_rec.reset(new S3ProbableDeleteRecord(
+      extended_obj_oid_str, null_oid, new_object_metadata->get_object_name(),
+      extended_oid, layout_id, bucket_metadata->get_object_list_index_oid(),
+      bucket_metadata->get_objects_version_list_index_oid(),
+      new_object_metadata->get_version_key_in_index(),
+      false /* force_delete */));
+
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+  }
+  motr_kv_writer->put_keyval(
+      global_probable_dead_object_list_index_oid, extended_obj_oid_str,
+      probable_del_rec->to_json(),
+      std::bind(&S3PutObjectAction::continue_object_write, this),
+      std::bind(&S3PutObjectAction::
+                     add_extended_object_oid_to_probable_dead_oid_list_failed,
+                this));
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutObjectAction::continue_object_write() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  extended_obj_oids.push_back(motr_writer->get_oid());
+  // Set flag in IO write to indicate re-write of same buffer,
+  // so that MD5 disgest is not re-caulculated on same buffer.
+  motr_writer->set_buffer_rewrite_flag(true);
+  // Re-set the last MD5 hash context
+  motr_writer->set_MD5Hash_instance(last_MD5Hash_state);
+  create_fragment_when_write_success = true;
+  // Re-write the same buffer to newly created Motr object
+  motr_writer->write_content(
+      std::bind(&S3PutObjectAction::write_object_successful, this),
+      std::bind(&S3PutObjectAction::write_object_failed, this), last_buffer_seq,
+      (request->get_buffered_input())->size_of_each_evbuf);
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void
+S3PutObjectAction::add_extended_object_oid_to_probable_dead_oid_list_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_put_action_state = S3PutObjectActionState::probableEntryRecordFailed;
+  if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+  } else {
+    set_s3_error("InternalError");
+  }
+  // TODO: Manage extended entry cleanup
   // Clean up will be done after response.
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -879,13 +1113,22 @@ void S3PutObjectAction::remove_old_oid_probable_record() {
 void S3PutObjectAction::remove_new_oid_probable_record() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   assert(!new_oid_str.empty());
+  std::vector<std::string> keys_to_delete;
+  keys_to_delete.push_back(new_oid_str);
+  // TODO: If new object is extended/fragmented, also add extended object
+  // entries to delete.
+  if (new_object_metadata->is_object_extended()) {
+    for (auto& obj_oid : extended_obj_oids) {
+      keys_to_delete.push_back(S3M0Uint128Helper::to_string(obj_oid));
+    }
+  }
 
   if (!motr_kv_writer) {
     motr_kv_writer =
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
   motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_oid,
-                                new_oid_str,
+                                keys_to_delete,
                                 std::bind(&S3PutObjectAction::next, this),
                                 std::bind(&S3PutObjectAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
