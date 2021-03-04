@@ -142,8 +142,8 @@ class ObjectRecoveryMsgbus(object):
                     # We will keep on receiving until there are messages to receive.
                     # Failure is treated as no message in queue, in that case we sleep
                     # for a specified duration and then try to receive again.
-                    # In case of non-daemon mode we will exit once we encounter failure
-                    # in receiving messages.
+                    # In case of non-daemon mode we won't exit once we encounter failure
+                    # since we have made it a blocking call
                     self._logger.debug("Receiving msg from S3MessageBus")
                     ret,message = self.__msgbuslib.receive(self._daemon_mode)
                     if ret:
