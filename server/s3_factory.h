@@ -90,8 +90,9 @@ class S3ObjectMetadataFactory {
                                  const std::string& bucket_name,
                                  const std::string& object_name,
                                  const std::string& versionid,
-                                 unsigned int parts, unsigned int fragments,
-                                 m0_uint128 indx_oid = {0ULL, 0ULL}) {
+                                 m0_uint128 indx_oid = {0ULL, 0ULL},
+                                 unsigned int parts = 0,
+                                 unsigned int fragments = 0) {
     s3_log(S3_LOG_DEBUG, "",
            "S3ObjectMetadataFactory::create_object_ext_metadata_obj\n");
     std::shared_ptr<S3ObjectExtendedMetadata> meta =

@@ -249,10 +249,12 @@ void S3PostMultipartObjectAction::check_bucket_object_state() {
     } else {
     set_s3_error("InternalError");
     send_response_to_s3_client();
+    }
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+#if 0
 void S3PostMultipartObjectAction::collision_occured() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (check_shutdown_and_rollback()) {
@@ -285,6 +287,7 @@ void S3PostMultipartObjectAction::collision_occured() {
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
+#endif
 
 void S3PostMultipartObjectAction::create_part_meta_index() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
