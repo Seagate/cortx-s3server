@@ -78,7 +78,7 @@ S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req, uint64_t offset,
       total_written(0),
       is_object_opened(false),
       obj_ctx(nullptr) {
-
+  re_write_buffer = false;
   request_id = request->get_request_id();
   stripped_request_id = request->get_stripped_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
@@ -680,8 +680,11 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
     rw_ctx->data->ov_buf[buf_idx] = ptr_n_len.first;
     rw_ctx->data->ov_vec.v_count[buf_idx] = size_of_each_buf;
 
-    // Here we use actual length to get md5
-    md5crypt.Update((const char *)ptr_n_len.first, len_in_buf);
+    if (!re_write_buffer) {
+      // If this is not re-write of same buffer, calculate MD5 on buffer
+      // Here we use actual length to get md5
+      md5crypt.Update((const char *)ptr_n_len.first, len_in_buf);
+    }
 
     // Init motr buffer attrs.
     rw_ctx->ext->iv_index[buf_idx] = last_index;
