@@ -159,6 +159,8 @@ class ObjectRecoveryMsgbus(object):
                         self._logger.debug("Failed to receive msg from message bus : " + str(message))
                         if not self._daemon_mode:
                             break
+                        #It works with/without sleep time but
+                        #In case of multiple exceptions, cpu utilization will be very high
                         time.sleep(self._sleep_time)
 
                 if not self._daemon_mode:
