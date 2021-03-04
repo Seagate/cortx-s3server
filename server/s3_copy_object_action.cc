@@ -511,8 +511,10 @@ void S3CopyObjectAction::set_source_bucket_authorization_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   auth_acl = request->get_default_acl();
   auth_client->set_get_method = true;
-  std::string uri = "/" + source_bucket_name + "/" + source_object_name;
-  auth_client->clientabsoulte_uri = uri;
+
+  auth_client->set_entity_path("/" + source_bucket_name + "/" +
+                               source_object_name);
+
   auth_client->set_acl_and_policy(
       source_object_metadata->get_encoded_object_acl(),
       source_bucket_metadata->get_policy_as_json());
@@ -524,6 +526,30 @@ void S3CopyObjectAction::set_source_bucket_authorization_metadata() {
 void S3CopyObjectAction::check_source_bucket_authorization() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   auth_client->check_authorization(
-      std::bind(&S3Action::check_authorization_successful, this),
-      std::bind(&S3Action::check_authorization_failed, this));
+      std::bind(&S3CopyObjectAction::check_source_bucket_authorization_success,
+                this),
+      std::bind(&S3CopyObjectAction::check_source_bucket_authorization_failed,
+                this));
+}
+
+void S3CopyObjectAction::check_source_bucket_authorization_success() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  next();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3CopyObjectAction::check_source_bucket_authorization_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  s3_put_action_state = S3PutObjectActionState::validationFailed;
+  std::string error_code = auth_client->get_error_code();
+
+  set_s3_error(error_code);
+  s3_log(S3_LOG_ERROR, request_id, "Authorization failure: %s\n",
+         error_code.c_str());
+
+  if (request->client_connected()) {
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

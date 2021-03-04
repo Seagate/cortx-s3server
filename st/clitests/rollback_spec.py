@@ -108,7 +108,7 @@ S3fiTest('s3cmd disable Fault injection').disable_fi("motr_kv_put_fail").execute
 clean_18mb_multipart()
 
 S3fiTest('s3cmd enable FI GET KV').enable_fi_offnonm("enable", "motr_kv_get_fail", "3", "99").execute_test().command_is_successful()
-S3cmdTest('s3cmd cannot upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
+S3cmdTest('s3cmd cannot upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test(negative_case=True).command_should_fail()
 S3fiTest('s3cmd disable Fault injection').disable_fi("motr_kv_get_fail").execute_test().command_is_successful()
 clean_18mb_multipart()
 
