@@ -56,22 +56,22 @@ update_haproxy_cfg () {
 command -v jq &> /dev/null || die_with_error "jq could not be found!"
 
 rpms_list=$(jq '.rpms' $json_prereqs_file)
-rpms_list=$(echo $rpms_list | tr -d '[]"\r\n')
+rpms_list=$(echo "$rpms_list" | tr -d '[]"\r\n')
 IFS=', ' read -r -a rpms <<< "$rpms_list"
 if [ ${#rpms[@]} -eq 0 ];then
 	die_with_error "jq '.rpms' $json_prereqs_file failed"
 fi
-if [ ${rpms[0]} == "null" ];then
+if [ "${rpms[0]}" == "null" ];then
 	die_with_error "jq '.rpms' $json_prereqs_file failed"
 fi
 
 services_list=$(jq '.services' $json_prereqs_file)
-services_list=$(echo $services_list | tr -d '[]"\r\n')
+services_list=$(echo "$services_list" | tr -d '[]"\r\n')
 IFS=', ' read -r -a services <<< "$services_list"
 if [ ${#services[@]} -eq 0 ];then
 	die_with_error "jq '.services' $json_prereqs_file failed"
 fi
-if [ ${services[0]} == "null" ];then
+if [ "${services[0]}" == "null" ];then
 	die_with_error "jq '.services' $json_prereqs_file failed"
 fi
 
