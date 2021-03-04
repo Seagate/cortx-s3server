@@ -265,6 +265,7 @@ cp -f scripts/ldap/ppolicyoverlay.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/setup_ldap.sh $S3_INSTALL_LOCATION/install/ldap/
 
 cp -f scripts/s3prov_start_services.sh $S3_INSTALL_LOCATION/bin
+cp -f scripts/install_prereqs.sh $S3_INSTALL_LOCATION/bin
 
 # Copy the auth server startup script.
 cp startauth.sh $AUTH_INSTALL_LOCATION/
