@@ -50,12 +50,23 @@ def parse_args():
         prog=sys.argv[0],
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""Configure BIND dns server to round robin IPs.""",
-        epilog=f"""Examples:
+        epilog=f"""WARNING:
+If zone is configured as 'seagate.com' it will hide global definition of 'seagate.com' services.
+If it is required to have an access to global 'seagate.com' local dns server could be temporary
+disabled and enabled later.
+
+Examples:
 To configure with default params: zone seagate.com and services s3, iam
-        #> {sys.argv[0]} --ip 192.168.1.0 192.168.1.1
+        #> {sys.argv[0]} install --ip 192.168.1.0 192.168.1.1
 
 To configure for different zones and services
-        #> {sys.argv[0]} --ip 192.168.1.0 192.168.1.1 --zone test.zone --services srv1 srv2
+        #> {sys.argv[0]} install --ip 192.168.1.0 192.168.1.1 --zone test.zone --services srv1 srv2
+
+To temporary disable local dns server
+        #> {sys.argv[0]} disable
+
+To enable it again
+        #> {sys.argv[0]} enable
         """)
 
     argz = parser.add_argument("-z", "--zone", type=str, required=False, default="seagate.com",
@@ -66,7 +77,7 @@ To configure for different zones and services
     argip = parser.add_argument("-i", "--ip", nargs="+", type=str, default=[], required=False,
                                 help="IP addresses")
     parser.add_argument("operation", choices=['install', 'disable', 'enable'], default="install",
-                        help="Oeration to perform")
+                        help="Operation to perform")
     args = parser.parse_args()
 
     if args.operation != "install":
