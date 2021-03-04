@@ -63,9 +63,14 @@ To configure for different zones and services
     argsrvs = parser.add_argument("-s", "--services", nargs="+", type=str, default=["s3", "iam"],
                                   required=False,
                                   help="Services that should be created inside zone and mapped to IPs")
-    argip = parser.add_argument("-i", "--ip", nargs="+", type=str, default=[],
+    argip = parser.add_argument("-i", "--ip", nargs="+", type=str, default=[], required=False,
                                 help="IP addresses")
+    parser.add_argument("operation", choices=['install', 'disable', 'enable'], default="install",
+                        help="Oeration to perform")
     args = parser.parse_args()
+
+    if args.operation != "install":
+        return args
 
     if not args.ip:
         raise argparse.ArgumentError(argip, "At least one IP should be provided")
@@ -242,31 +247,74 @@ def upd_resolv_conf():
         rc.write("nameserver 127.0.0.1\n")
         rc.writelines(cont[i:])
 
+def ns_toggle_resolv_conf(ensure_commented: bool):
+    cont = []
+    with open("/etc/resolv.conf", "r") as rc:
+        cont = rc.readlines()
+
+    for i in range(len(cont)):
+        if "127.0.0.1" in cont[i]:
+            if ensure_commented:
+                cont[i] = "#nameserver 127.0.0.1\n"
+            else:
+                cont[i] = "nameserver 127.0.0.1\n"
+
+    with open("/etc/resolv.conf", "w") as rc:
+        rc.writelines(cont)
+
 if __name__ == "__main__":
     args=parse_args()
 
-    print("Install BIND...\n")
-    ret = os.system("yum install -y bind bind-utils")
-    print(f"Done with ret code {ret}\n")
-    if ret != 0:
-        exit(ret)
+    if args.operation == "install":
+        print("Install BIND...\n")
 
-    print("Generate configs...\n")
-    gen_named_conf(args.zone, args.ip, "/etc")
-    gen_forward_conf(args.zone, args.ip, args.services, "/var/named")
-    gen_reverse_conf(args.zone, args.ip, args.services, "/var/named")
-    print(f"Created\n/etc/named.conf\n/var/named/forward.{args.zone}\n/var/named/reverse.{args.zone}\n")
+        ret = os.system("yum install -y bind bind-utils")
+        print(f"Done with ret code {ret}\n")
+        if ret != 0:
+            exit(ret)
 
-    print("Restart BIND...\n")
-    os.system("systemctl enable named.service")
-    os.system("systemctl restart named.service")
-    ret = os.system("systemctl status named.service")
-    print(f"Done with ret code {ret}\n")
-    if ret != 0:
-        exit(ret)
+        print("Generate configs...\n")
+        gen_named_conf(args.zone, args.ip, "/etc")
+        gen_forward_conf(args.zone, args.ip, args.services, "/var/named")
+        gen_reverse_conf(args.zone, args.ip, args.services, "/var/named")
+        print(f"Created\n/etc/named.conf\n/var/named/forward.{args.zone}\n/var/named/reverse.{args.zone}\n")
 
-    print("Update resolve.conf...\n")
-    upd_resolv_conf()
-    print(f"Done\n")
+        print("Restart BIND...\n")
+        os.system("systemctl enable named.service")
+        os.system("systemctl restart named.service")
+        ret = os.system("systemctl status named.service")
+        print(f"Done with ret code {ret}\n")
+        if ret != 0:
+            exit(ret)
 
-    print("DNS Round Robin configuraion finished\n")
+        print("Update resolve.conf...\n")
+        upd_resolv_conf()
+        print(f"Done\n")
+
+        print("DNS Round Robin configuraion finished\n")
+    elif args.operation == "disable":
+        print("Disabling DNS Round Roubin")
+
+        print("Stoping BIND...\n")
+        os.system("systemctl disable named.service")
+        ret = os.system("systemctl stop named.service")
+        print(f"Done with ret code {ret}\n")
+
+        print("Commenting out local nameserver in resolve.conf...\n")
+        ns_toggle_resolv_conf(True)
+        print("Done\n")
+
+        print("DNS Roun Roubin disabled\n")
+    elif args.operation == "enable":
+        print("Enabling DNS Roun Roubin configuration")
+
+        print("Starting BIND...\n")
+        os.system("systemctl enable named.service")
+        ret = os.system("systemctl start named.service")
+        print(f"Done with ret code {ret}\n")
+
+        print("Enabling local nameserver in resolve.conf...\n")
+        ns_toggle_resolv_conf(False)
+        print("Done\n")
+
+        print("DNS Roun Roubin enabled\n")
