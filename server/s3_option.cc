@@ -202,6 +202,9 @@ bool S3Option::load_section(std::string section_name,
           s3_option_node["S3_BUCKET_METADATA_CACHE_EXPIRE_SEC"].as<unsigned>();
       bucket_metadata_cache_refresh_sec =
           s3_option_node["S3_BUCKET_METADATA_CACHE_REFRESH_SEC"].as<unsigned>();
+      max_objects_in_fault_mode =
+          s3_option_node["S3_MAX_EXTENDED_OBJECTS_IN_FAULT_MODE"]
+              .as<unsigned short>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUTH_PORT");
       auth_port = s3_option_node["S3_AUTH_PORT"].as<unsigned short>();
@@ -512,12 +515,18 @@ bool S3Option::load_section(std::string section_name,
           s3_option_node["S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC"].as<unsigned>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_ENABLE_ADDB_DUMP");
       FLAGS_addb = s3_option_node["S3_SERVER_ENABLE_ADDB_DUMP"].as<bool>();
+<<<<<<< HEAD
       bucket_metadata_cache_max_size =
           s3_option_node["S3_BUCKET_METADATA_CACHE_MAX_SIZE"].as<unsigned>();
       bucket_metadata_cache_expire_sec =
           s3_option_node["S3_BUCKET_METADATA_CACHE_EXPIRE_SEC"].as<unsigned>();
       bucket_metadata_cache_refresh_sec =
           s3_option_node["S3_BUCKET_METADATA_CACHE_REFRESH_SEC"].as<unsigned>();
+=======
+      max_objects_in_fault_mode =
+          s3_option_node["S3_MAX_EXTENDED_OBJECTS_IN_FAULT_MODE"]
+              .as<unsigned short>();
+>>>>>>> S3faulttolerence - Put Object (Simple) API support - Part1 (#733)
     } else if (section_name == "S3_AUTH_CONFIG") {
       if (!(cmd_opt_flag & S3_OPTION_AUTH_PORT)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUTH_PORT");
@@ -979,6 +988,8 @@ void S3Option::dump_options() {
          motr_read_mempool_zeroed_buffer ? "true" : "false");
   s3_log(S3_LOG_INFO, "", "S3_LIBEVENT_MEMPOOL_ZERO_BUFFER=%s\n",
          libevent_mempool_zeroed_buffer ? "true" : "false");
+  s3_log(S3_LOG_INFO, "", "S3_MAX_EXTENDED_OBJECTS_IN_FAULT_MODE=%u\n",
+         max_objects_in_fault_mode);
 
   return;
 }
