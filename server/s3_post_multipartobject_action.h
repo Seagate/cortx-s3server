@@ -52,6 +52,7 @@ class S3PostMultipartObjectAction : public S3ObjectAction {
   std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
   std::shared_ptr<S3PutTagsBodyFactory> put_object_tag_body_factory;
   std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
+  std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<MotrAPI> s3_motr_api;
   std::map<std::string, std::string> new_object_tags_map;
 

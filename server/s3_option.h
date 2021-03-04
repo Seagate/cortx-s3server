@@ -92,6 +92,9 @@ class S3Option {
   unsigned short max_retry_count;
   unsigned short retry_interval_millisec;
   unsigned short s3_client_req_read_timeout_secs;
+  // Maximum  number of objects that can be
+  // created in S3 fault mode before we bail out.
+  unsigned short max_objects_in_fault_mode;
 
   std::string auth_ip_addr;
   std::string s3_version;
@@ -194,7 +197,7 @@ class S3Option {
 
   S3Option() {
     cmd_opt_flag = 0;
-
+    max_objects_in_fault_mode = 0;
     s3_ipv4_bind_addr = FLAGS_s3hostv4;
     s3_ipv6_bind_addr = FLAGS_s3hostv6;
     motr_http_bind_addr = FLAGS_motrhttpapihost;
@@ -460,6 +463,10 @@ class S3Option {
 
   bool get_motr_read_mempool_zeroed_buffer();
   bool get_libevent_mempool_zeroed_buffer();
+
+  unsigned short get_max_objects_in_fault_mode() {
+    return max_objects_in_fault_mode;
+  }
 
   bool is_stats_enabled();
   void set_stats_enable(bool enable);
