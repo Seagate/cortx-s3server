@@ -102,6 +102,9 @@ class S3MotrWiter {
   // md5 for the content written to motr.
   MD5hash md5crypt;
 
+  // Flag to indicate re-write of same buffer, possibly to another object
+  bool re_write_buffer;
+
   // maintain state for debugging.
   size_t size_in_current_write;
   size_t total_written;
@@ -169,6 +172,19 @@ class S3MotrWiter {
     layout_ids.push_back(id);
   }
 
+  inline void set_buffer_rewrite_flag(bool is_buffer_re_write) {
+    re_write_buffer = is_buffer_re_write;
+  }
+
+  inline MD5hash get_MD5Hash_instance() { return md5crypt; }
+
+  inline void set_MD5Hash_instance(MD5hash& old_md5crypt) {
+    md5crypt = old_md5crypt;
+  }
+
+  // When object write fails, this method will help caller to determine
+  // the total size of data wtitten in object.
+  size_t get_size_of_data_written() { return total_written; }
   // This concludes the md5 calculation
   virtual std::string get_content_md5() {
     // Complete MD5 computation and remember
