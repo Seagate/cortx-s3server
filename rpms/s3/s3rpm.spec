@@ -265,10 +265,6 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/auth/AuthServer-1.0-0.jar
 /opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar
 /opt/seagate/cortx/auth/startauth.sh
-/opt/seagate/cortx/auth/scripts/swupdate/merge.sh
-/opt/seagate/cortx/auth/scripts/swupdate/merge.py
-/opt/seagate/cortx/auth/scripts/swupdate/merge.pyc
-/opt/seagate/cortx/auth/scripts/swupdate/merge.pyo
 /opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh
 /opt/seagate/cortx/auth/scripts/change_ldap_passwd.ldif
 /opt/seagate/cortx/auth/scripts/s3authserver.jks_template
@@ -377,6 +373,7 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/bin/resetcmd.py
 /opt/seagate/cortx/s3/bin/cleanupcmd.py
 /opt/seagate/cortx/s3/bin/ldapaccountaction.py
+/opt/seagate/cortx/s3/bin/merge.py
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_setup
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/_s3_setup
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer
@@ -425,7 +422,7 @@ rm -rf %{buildroot}
 %exclude /opt/seagate/cortx/s3/install/haproxy/s3haproxyconfig
 
 %post
-sh /opt/seagate/cortx/auth/scripts/swupdate/merge.sh
+python3.6 /opt/seagate/cortx/s3/bin/merge.py
 systemctl daemon-reload
 systemctl enable s3authserver
 systemctl restart rsyslog

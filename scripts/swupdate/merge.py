@@ -53,7 +53,7 @@ g_upgrade_items = {
     }
 }
 
-def upgrade_config(configFile, oldSampleFile, newSampleFile, unsafeAttributesFile, filetype):
+def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeAttributesFile:str, filetype:str):
     """
     Core logic for updating config files during upgrade using conf store.
     """
