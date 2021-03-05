@@ -145,7 +145,7 @@ class ObjectRecoveryMsgbus(object):
                     # In case of non-daemon mode we will exit once we encounter failure
                     # in receiving messages.
                     self._logger.debug("Receiving msg from S3MessageBus")
-                    ret,message = self.__msgbuslib.receive()
+                    ret,message = self.__msgbuslib.receive(self._daemon_mode)
                     if ret:
                         # Process message can fail, but we still acknowledge the message
                         # The last step in process message is to delete the entry from
@@ -159,6 +159,8 @@ class ObjectRecoveryMsgbus(object):
                         self._logger.debug("Failed to receive msg from message bus : " + str(message))
                         if not self._daemon_mode:
                             break
+                        #It works with/without sleep time but
+                        #In case of multiple exceptions, cpu utilization will be very high
                         time.sleep(self._sleep_time)
 
                 if not self._daemon_mode:

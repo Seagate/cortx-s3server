@@ -85,10 +85,15 @@ class S3CortxMsgBus:
             return False, msg
         return True, None
 
-    def receive(self):
+    def receive(self, daemon_mode):
         """Receive the incoming message."""
         try:
-            message = self._consumer.receive()
+            if daemon_mode:
+                #timeout=0 makes it as blocking indefinitely
+                message = self._consumer.receive(timeout=0)
+            else:
+                #timeout = 0.5 sec, by default, which is non-blocking
+                message = self._consumer.receive()
         except Exception as exception:
             msg = ("msg_bus receive except:%s %s") % (
                 exception, traceback.format_exc())
@@ -104,4 +109,3 @@ class S3CortxMsgBus:
                 exception, traceback.format_exc())
             return False, msg
         return True, None
-
