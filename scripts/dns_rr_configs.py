@@ -263,8 +263,8 @@ def ns_toggle_resolv_conf(ensure_commented: bool):
     with open("/etc/resolv.conf", "r") as rc:
         cont = rc.readlines()
 
-    for i in range(len(cont)):
-        if "127.0.0.1" in cont[i]:
+    for i, v in enumerate(cont):
+        if "127.0.0.1" in v:
             if ensure_commented:
                 cont[i] = "#nameserver 127.0.0.1\n"
             else:
