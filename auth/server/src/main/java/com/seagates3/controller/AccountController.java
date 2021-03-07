@@ -20,6 +20,7 @@
 
 package com.seagates3.controller;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.AccountDAO;
 import com.seagates3.dao.DAODispatcher;
@@ -99,8 +100,23 @@ public class AccountController extends AbstractController {
         String name = requestBody.get("AccountName");
         String email = requestBody.get("Email");
         Account account;
-
+        int accountCount = 0;
         LOGGER.info("Creating account: " + name);
+
+        try {
+          accountCount = accountDao.getTotalCountOfAccounts();
+          int maxAccountLimit = AuthServerConfig.getMaxAccountLimit();
+
+          if (accountCount >= maxAccountLimit) {
+            LOGGER.error("Maximum allowed Account limit has exceeded (i.e." +
+                         maxAccountLimit + ")");
+            return accountResponseGenerator.maxAccountLimitExceeded(
+                maxAccountLimit);
+          }
+        }
+        catch (DataAccessException ex) {
+          return accountResponseGenerator.internalServerError();
+        }
 
         try {
             account = accountDao.find(name);

@@ -67,4 +67,11 @@ public interface AccountDAO {
 
     public
      Account findByEmailAddress(String emailAddress) throws DataAccessException;
+
+     /* Get total count of accounts present in ldap
+      *  @return int - Total count of accounts
+      *  @throws DataAccessException
+      */
+    public
+     int getTotalCountOfAccounts() throws DataAccessException;
 }

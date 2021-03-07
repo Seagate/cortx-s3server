@@ -33,6 +33,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
@@ -47,7 +48,7 @@ import com.seagates3.util.KeyGenUtil;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 @PowerMockIgnore({"javax.management.*"}) @RunWith(PowerMockRunner.class)
-    @PrepareForTest({DAODispatcher.class,
+    @PrepareForTest({AuthServerConfig.class, DAODispatcher.class,
                      KeyGenUtil.class}) public class UserControllerTest {
 
     private UserController userController;
@@ -92,6 +93,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
         PowerMockito.doReturn(userDAO)
             .when(DAODispatcher.class, "getResourceDAO", DAOResource.USER);
+        PowerMockito.doReturn(1000)
+            .when(AuthServerConfig.class, "getMaxIAMUserLimit");
 
         userController = new UserController(requestor, requestBody);
     }
@@ -194,6 +197,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     public void setUp() throws Exception {
         PowerMockito.mockStatic(DAODispatcher.class);
         PowerMockito.mockStatic(KeyGenUtil.class);
+        PowerMockito.mockStatic(AuthServerConfig.class);
 
         PowerMockito.doReturn("5KZQJXPTROAIAKCKO")
             .when(KeyGenUtil.class, "createIamUserId");
@@ -281,7 +285,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     @Test
     public void CreateUser_NewUserCreated_ReturnCreateResponse()
             throws Exception {
-        createUserController_CreateAPI();
+      Mockito.when(userDAO.getTotalCountOfUsers("s3test", "/")).thenReturn(0);
+      createUserController_CreateAPI();
 
         User user = new User();
         user.setAccountName("s3test");
@@ -290,6 +295,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
         Mockito.doNothing().when(userDAO).save(user);
+
+        // Mockito.when((AuthServerConfig.class))
 
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +

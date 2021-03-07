@@ -20,6 +20,7 @@
 
 package com.seagates3.controller;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
@@ -56,45 +57,69 @@ public class UserController extends AbstractController {
      *
      * @return ServerResponse
      */
-    @Override
-    public ServerResponse create() {
-        User user;
-        try {
-            user = userDAO.find(requestor.getAccount().getName(),
-                    requestBody.get("UserName"));
-        } catch (DataAccessException ex) {
-            return userResponseGenerator.internalServerError();
+    @Override public ServerResponse create() {
+      User user;
+      String pathPrefix;
+      int usersCount = 0;
+      if (requestBody.containsKey("PathPrefix")) {
+        pathPrefix = requestBody.get("PathPrefix");
+      } else {
+        pathPrefix = "/";
+      }
+
+      try {
+        usersCount = userDAO.getTotalCountOfUsers(
+            requestor.getAccount().getName(), pathPrefix);
+        int maxIAMUserlimit = AuthServerConfig.getMaxIAMUserLimit();
+
+        if (usersCount >= maxIAMUserlimit) {
+          LOGGER.error("Maximum allowed Users limit has exceeded (i.e." +
+                       maxIAMUserlimit + ")");
+          return userResponseGenerator.maxUserLimitExceeded(maxIAMUserlimit);
         }
+      }
+      catch (DataAccessException ex) {
+        return userResponseGenerator.internalServerError();
+      }
 
-        if (user.exists()) {
-            LOGGER.error("User [" + user.getName() + "] already exists");
-            return userResponseGenerator.entityAlreadyExists();
-        }
+      try {
+        user = userDAO.find(requestor.getAccount().getName(),
+                            requestBody.get("UserName"));
+      }
+      catch (DataAccessException ex) {
+        return userResponseGenerator.internalServerError();
+      }
 
-        LOGGER.info("Creating user : " + user.getName());
+      if (user.exists()) {
+        LOGGER.error("User [" + user.getName() + "] already exists");
+        return userResponseGenerator.entityAlreadyExists();
+      }
 
-        if (requestBody.containsKey("path")) {
-            user.setPath(requestBody.get("path"));
-        } else {
-            user.setPath("/");
-        }
+      LOGGER.info("Creating user : " + user.getName());
 
-        user.setUserType(User.UserType.IAM_USER);
-        // UserId should starts with "AIDA".
-        user.setId(USER_ID_PREFIX + KeyGenUtil.createIamUserId());
+      if (requestBody.containsKey("path")) {
+        user.setPath(requestBody.get("path"));
+      } else {
+        user.setPath("/");
+      }
 
-        // create and set arn here
-        String arn = "arn:aws:iam::" + requestor.getAccount().getId() +
-                     ":user/" + user.getName();
-        LOGGER.debug("Creating and setting ARN - " + arn);
-        user.setArn(arn);
-        try {
-            userDAO.save(user);
-        } catch (DataAccessException ex) {
-            return userResponseGenerator.internalServerError();
-        }
+      user.setUserType(User.UserType.IAM_USER);
+      // UserId should starts with "AIDA".
+      user.setId(USER_ID_PREFIX + KeyGenUtil.createIamUserId());
 
-        return userResponseGenerator.generateCreateResponse(user);
+      // create and set arn here
+      String arn = "arn:aws:iam::" + requestor.getAccount().getId() + ":user/" +
+                   user.getName();
+      LOGGER.debug("Creating and setting ARN - " + arn);
+      user.setArn(arn);
+      try {
+        userDAO.save(user);
+      }
+      catch (DataAccessException ex) {
+        return userResponseGenerator.internalServerError();
+      }
+
+      return userResponseGenerator.generateCreateResponse(user);
     }
 
     /**

@@ -58,4 +58,12 @@ public interface UserDAO {
      User findByUserId(String userId) throws DataAccessException;
     public
      User findByArn(String arn) throws DataAccessException;
+
+     /* Get total count of users present in ldap
+     *  @return int - Total count of users
+     *  @throws DataAccessException
+     */
+    public
+     int getTotalCountOfUsers(String accountName,
+                              String pathPrefix) throws DataAccessException;
 }
