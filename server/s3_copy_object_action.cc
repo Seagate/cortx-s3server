@@ -21,6 +21,7 @@
 #include <cassert>
 #include <algorithm>
 #include <utility>
+#include <evhttp.h>
 
 #include "s3_common.h"
 #include "s3_common_utilities.h"
@@ -76,11 +77,21 @@ void S3CopyObjectAction::setup_steps() {
 void S3CopyObjectAction::get_source_bucket_and_object() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   std::string source = request->get_headers_copysource();
-  size_t separator_pos = source.find("/");
-  if (separator_pos != std::string::npos) {
-    source_bucket_name = source.substr(0, separator_pos);
-    source_object_name = source.substr(separator_pos + 1);
+  size_t separator_pos;
+  if (source[0] != '/') {
+    separator_pos = source.find("/");
+    if (separator_pos != std::string::npos) {
+      source_bucket_name = source.substr(0, separator_pos);
+      source_object_name = source.substr(separator_pos + 1);
+    }
+  } else {
+    separator_pos = source.find("/", 1);
+    if (separator_pos != std::string::npos) {
+      source_bucket_name = source.substr(1, separator_pos - 1);
+      source_object_name = source.substr(separator_pos + 1);
+    }
   }
+  source_object_name = evhttp_decode_uri(source_object_name.c_str());
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 

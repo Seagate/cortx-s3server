@@ -191,7 +191,7 @@ quote(s3target))
         self.destfile = destfile
         self.src_bucket = src_bucket
         self.dest_bucket = dest_bucket
-        self.with_cli("s3cmd --no-mime-magic -c " + self.s3cfg + self._send_retries + " cp " + quote("s3://" + self.src_bucket + "/" + self.srcfile) + " " + quote("s3://" + self.dest_bucket + "/" + self.destfile))
+        self.with_cli("s3cmd --no-mime-magic -c " + self.s3cfg + self._send_retries + " mv " + quote("s3://" + self.src_bucket + "/" + self.srcfile) + " " + quote("s3://" + self.dest_bucket + "/" + self.destfile))
         return self
 
     def list_multipart_uploads(self, bucket_name):
