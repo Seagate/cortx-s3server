@@ -183,6 +183,18 @@ TEST_F(S3CopyObjectActionTest, GetSourceBucketAndObjectSuccess) {
                action_under_test->source_object_name.c_str());
 }
 
+TEST_F(S3CopyObjectActionTest, GetSourceBucketAndSpecialObjectSuccess) {
+  EXPECT_CALL(*ptr_mock_request, get_headers_copysource()).Times(1).WillOnce(
+      Return("my-source-bucket/my-source-object(1)"));
+
+  action_under_test->get_source_bucket_and_object();
+
+  ASSERT_STREQ("my-source-bucket",
+               action_under_test->source_bucket_name.c_str());
+  ASSERT_STREQ("my-source-object(1)",
+               action_under_test->source_object_name.c_str());
+}
+
 TEST_F(S3CopyObjectActionTest, GetSourceBucketAndObjectFailure) {
   EXPECT_CALL(*ptr_mock_request, get_headers_copysource()).Times(1).WillOnce(
       Return("my-source-bucket-my-source-object"));
