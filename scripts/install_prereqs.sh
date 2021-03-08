@@ -45,7 +45,7 @@ step_3 () {
 	if [ ! -z "$1" ];then
 		echo "Using $1 as ipv4 address for \"$HOSTNAME\" "
 		s3_host_ip=$1
-		echo $s3_host_ip
+		echo "$s3_host_ip"
 		defaulthost=true
 	fi
 
@@ -56,7 +56,7 @@ step_3 () {
 	fi
 
 	#Check whether given host is reachable.
-	if ! ping -c1 $s3_host_ip &> /dev/null
+	if ! ping -c1 "$s3_host_ip" &> /dev/null
 	then
 	  echo "Host $s3_host_ip is unreachable"
 	  exit 1
@@ -67,28 +67,28 @@ step_3 () {
 
 	#Check whether multiple localhost entries are present or hostname is already configured.
 	loopback_ip_count=$(grep "^$loopback_ip" /etc/hosts|wc -l)
-	if [ $loopback_ip_count -ne 1 ]
+	if [ "$loopback_ip_count" -ne 1 ]
 	then
 	  echo "\"$loopback_ip\" is used $loopback_ip_count times"
 	  exit 1
 	fi
 
 	s3_host=$(grep "$HOSTNAME" /etc/hosts|wc -l)
-	if [ $s3_host -ne 0 ]
+	if [ "$s3_host" -ne 0 ]
 	then
 	  echo "\"$HOSTNAME\" is already configured, cannot be added again to /etc/hosts"
 	fi
 
 	#Backup original /etc/hosts file
-	cp -f /etc/hosts /etc/hosts.backup.`date +"%Y%m%d_%H%M%S"`
+	cp -f /etc/hosts /etc/hosts.backup.$(date +"%Y%m%d_%H%M%S")
 
 	#Checking for duplication & adding s3 host entry
 	for host_entry in $s3_host_entries
 	do
 	  # search_entry is for escaping '.'
-	  search_entry="$(echo $host_entry | sed 's/\./\\./g')"
+	  search_entry="$(echo "$host_entry" | sed 's/\./\\./g')"
 	  found=$(egrep "(^|\s+)$search_entry(\s+|$)" $file |wc -l)
-	  if [ $found -eq 0 ]
+	  if [ "$found" -eq 0 ]
 	  then
 	    sed -i "/^$loopback_ip/s/$/ $search_entry/" $file
 	  else
@@ -97,7 +97,7 @@ step_3 () {
 	done
 
 	#To add s3 hostname entry to /etc/hosts
-	if [ $s3_host_ip = $loopback_ip ]
+	if [ "$s3_host_ip" = "$loopback_ip" ]
 	then
 	  # Append s3 hostname to end of loopback_ip
 	  sed -i "/^$loopback_ip/s/$/ $HOSTNAME/" $file
@@ -175,8 +175,8 @@ step_9 () {
 	myhostname=$(hostname -f)
 	myip=$(/sbin/ip -o -4 addr list eth2 | awk '{print $4}' | cut -d/ -f1)
 	key=$(s3cipher generate_key --const_key openldap)
-	iampasswd=$(s3cipher encrypt --data 'ldapadmin' --key $key)
-	rootdnpasswd=$(s3cipher encrypt --data 'seagate' --key $key)
+	iampasswd=$(s3cipher encrypt --data 'ldapadmin' --key "$key")
+	rootdnpasswd=$(s3cipher encrypt --data 'seagate' --key "$key")
 	s3_conf_file="/tmp/s3_confstore.json"
 
 	if [ -e $s3_conf_file ]; then
@@ -187,14 +187,13 @@ step_9 () {
 	  die_with_error "/etc/machine-id not found"
 	fi
 
-	machineid=$(cat /etc/machine-id | xargs)
+	machineid=$(</etc/machine-id)
 
 	if [ ! -e "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml" ]; then
 	  die_with_error "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml not found"
 	fi
 
 	clustreid=$(grep cluster_id /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml | tr ":" "\n" | tail -1 | tr "#" "\n" | head -1 | xargs)
-	echo $clustreid
 
 	tee -a $s3_conf_file << END
 {
