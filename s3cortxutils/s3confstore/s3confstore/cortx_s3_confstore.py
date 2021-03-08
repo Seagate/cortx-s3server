@@ -67,8 +67,8 @@ class S3CortxConfStore:
 
   def merge_config(self, source_index:str, keys_to_include:list = None):
     """
-    Merges keys specified in keys_to_include from source to destination.
-    In case keys_to_include is empty all keys are merged.
+    In-place replaces of keys specified in keys_to_include from source to destination.
+    In case keys_to_include is empty all keys are replace in-place.
     """
     Conf.copy(source_index, self.default_index, keys_to_include)
 

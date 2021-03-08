@@ -56,7 +56,16 @@ g_upgrade_items = {
 def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeAttributesFile:str, filetype:str):
     """
     Core logic for updating config files during upgrade using conf store.
+    Following is algorithm from merge:
+    Iterate over all parameters sample.new file
+    for every parameter, check
+    - if it is marked as 'unsafe' in attributes file, skip
+    - if it marked as 'safe' in the attributes file  
+        - diff the value in config and sample.old - if it is changed, skip
+        - if it is not changed,  we will overwrite the value in cfg file from sample.new
+        - if it does not exist in cfg file add the value from sample.new file to cfg file
     """
+
     #If config file is not present then simply copy sample file.
     if not os.path.isfile(configFile):
         shutil.copy(newSampleFile, configFile)
@@ -75,6 +84,13 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
     conf_file_keys = cs_conf_file.get_all_keys()
     conf_unsafe_file_keys = cs_conf_unsafe_file.get_all_keys()
     conf_new_sample_keys = cs_conf_new_sample.get_all_keys()
+
+    # Handle the special scenario where we have array of dictionaries in the config file 
+    # 1)search for keys with [] in config
+    # 2)delete these keys/values in config
+    for key in conf_file_keys:
+        if ((key.find('[') != -1) and (key.find(']') != -1)):
+            cs_conf_file.delete_key(key, True)
 
     #logic to determine which keys to merge.
     keys_to_overwrite = []
