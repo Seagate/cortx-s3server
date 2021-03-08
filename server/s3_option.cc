@@ -258,6 +258,10 @@ bool S3Option::load_section(std::string section_name,
       motr_op_wait_period =
           s3_option_node["S3_MOTR_OPERATION_WAIT_PERIOD"].as<unsigned int>();
 
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_FIRST_READ_SIZE");
+      motr_first_obj_read_size =
+          s3_option_node["S3_MOTR_FIRST_READ_SIZE"].as<unsigned int>();
+
       std::string motr_read_pool_initial_buffer_count_str;
       std::string motr_read_pool_expandable_count_str;
       std::string motr_read_pool_max_threshold_str;
@@ -1317,4 +1321,8 @@ bool S3Option::get_motr_read_mempool_zeroed_buffer() {
 
 bool S3Option::get_libevent_mempool_zeroed_buffer() {
   return libevent_mempool_zeroed_buffer;
+}
+
+unsigned int S3Option::get_motr_first_read_size() {
+  return motr_first_obj_read_size;
 }

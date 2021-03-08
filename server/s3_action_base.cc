@@ -27,9 +27,8 @@
 S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown,
                    std::shared_ptr<S3AuthClientFactory> auth_factory,
                    bool skip_auth, bool skip_authorize)
-    : Action(req, check_shutdown, auth_factory, skip_auth),
-      request(req),
-      skip_authorization(skip_authorize) {
+    : Action(req, check_shutdown, auth_factory, skip_auth, skip_authorize),
+      request(req) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
   setup_steps();
 }
@@ -57,9 +56,16 @@ void S3Action::set_authorization_meta() { next(); }
 
 void S3Action::check_authorization() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  auth_client->check_authorization(
-      std::bind(&S3Action::check_authorization_successful, this),
-      std::bind(&S3Action::check_authorization_failed, this));
+
+  if (is_authorizationheader_present) {
+    auth_client->check_combo_auth(
+        std::bind(&S3Action::check_authorization_successful, this),
+        std::bind(&S3Action::check_authorization_failed, this));
+  } else {
+    auth_client->check_authorization(
+        std::bind(&S3Action::check_authorization_successful, this),
+        std::bind(&S3Action::check_authorization_failed, this));
+  }
 }
 
 void S3Action::check_authorization_successful() {

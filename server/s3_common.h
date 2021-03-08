@@ -121,6 +121,7 @@ enum class S3OperationCode {
 enum class S3AuthClientOpType {
   authentication,
   authorization,
+  combo_auth,
   aclvalidation,
   policyvalidation
 };

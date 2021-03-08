@@ -50,7 +50,7 @@ void s3_auth_dummy_op_failed(evutil_socket_t, short events, void *user_data) {
 
   req_body_buffer = evbuffer_new();
   evbuffer_add(req_body_buffer, xml_error.c_str(), xml_error.length());
-  on_auth_response(req, req_body_buffer, context);
+  on_read_response(req, req_body_buffer, context);
   evbuffer_free(req_body_buffer);
   // Free user event
   event_free((struct event *)user_context->user_event);
