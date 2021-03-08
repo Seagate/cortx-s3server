@@ -274,7 +274,7 @@ cp -f scripts/enc_ldap_passwd_in_cfg.sh $AUTH_INSTALL_LOCATION/scripts/
 cp -f scripts/change_ldap_passwd.ldif $AUTH_INSTALL_LOCATION/scripts/
 
 # Copy s3-sanity
-cp -f s3-sanity-test.sh $S3_INSTALL_LOCATION/scripts/
+cp -f scripts/s3-sanity/s3-sanity-test.sh $S3_INSTALL_LOCATION/scripts/
 
 # Copy openldap_backup readme
 cp -f scripts/ldap/openldap_backup_readme $S3_INSTALL_LOCATION/docs/
