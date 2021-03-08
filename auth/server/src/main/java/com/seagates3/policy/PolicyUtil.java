@@ -65,7 +65,8 @@ class PolicyUtil {
       return null;
     }
     String[] arr = uri.split("/");
-    if (arr[1] != null && !arr[1].isEmpty()) return arr[1];
+    if (arr != null && arr.length > 1 && arr[1] != null && !arr[1].isEmpty())
+      return arr[1];
     return null;
   }
 
