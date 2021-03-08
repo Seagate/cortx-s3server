@@ -184,6 +184,9 @@ Before your test your build, ensure that you have installed and configured the f
 5. Follow these steps to install the AWS client and plugin:
     1. To install the AWS client, use: `$ pip3 install awscli`
     2. To install the AWS plugin, use: `$ pip3 install awscli-plugin-endpoint`
+    
+    Note: If we install awscli on s3 development environment using pip3 then Jenkins system tests will break due to version dependancy conflict in s3iamcli. Fix for this is in progress.
+    
     3. Generate the AWS Access Key ID and Secret Key:
          1. To check for help messages, use: `$ s3iamcli -h`
          2. To create a new User, run: `$ s3iamcli CreateAccount -n <Account Name> -e <Email Id>`
