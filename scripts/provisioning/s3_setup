@@ -48,8 +48,6 @@ cleanup                  cleanup S3 account created for backgrounddelete service
 set -e
 
 install_dir='/opt/seagate/cortx/s3/bin'
-access_key=""
-secret_key=""
 
 confstore_config_url=""
 s3postinstall=false
@@ -57,13 +55,6 @@ s3config=false
 s3init=false
 s3cleanup=false
 s3test=false
-
-cipherkey=""
-sgiamadminpassd=""
-rootadminpasswd=""
-
-ldappasswd=""
-rootpasswd=""
 
 while test $# -gt 0
 do
@@ -103,34 +94,6 @@ then
     echo "ERROR: --config option is mandatory and value should be a valid URL path, exiting."
     exit 1
 fi
-
-
-get_ldap_password()
-{
-    cipherkey=$(s3cipher generate_key --const_key openldap)
-    if [ ! -z "$cipherkey" ]
-    then
-        sgiamadminpassd=$(s3confstore "$confstore_config_url" getkey --key "openldap>sgiam>secret")
-        rootadminpasswd=$(s3confstore "$confstore_config_url" getkey --key "openldap>root>secret")
-        if [ ! -z "$sgiamadminpassd" ] && [ ! -z "$rootadminpasswd" ]
-        then
-            # decrypt the password read from the confstore
-            ldappasswd=$(s3cipher decrypt --data "$sgiamadminpassd" --key "$cipherkey")
-            rootdnpasswd=$(s3cipher decrypt --data "$rootadminpasswd" --key "$cipherkey")
-            if [ -z "$ldappasswd" ] || [ -z "$rootdnpasswd" ]
-            then
-                echo "ERROR: failed to decrypt sgiamadmin or root user's ldap password, exiting."
-                exit 1
-            fi
-        else
-            echo "ERROR: failed to read sgiamadmin or root user's ldap password from confstore, exiting."
-            exit 1
-        fi
-    else
-        echo "ERROR: failed to generate cipher key, exiting."
-        exit 1
-    fi
-}
 
 create_auth_jks_password()
 {
