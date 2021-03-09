@@ -214,17 +214,12 @@ fi
 
 if [ $s3test == true ]
 then
-    # get openldap password from confstore
-    echo "INFO: Get openldap passwords from confstore.."
-    get_ldap_password
+    # we already have 'exit' statement in '_s3_setup' binary at failure scenario,
+    # no need to add 'exit' here.
+    # Test success is determined by provisioner using _s3_setup's return stdout "PASS: S3-Sanity test passed."
 
-    cmd_out=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
-    if [[ $cmd_out == *"No such object"* ]];then
-        echo "ERROR: failed to find s3background delete account, sanity test failed, exiting."
-        exit 1
-    else
-        echo "PASS: S3-Sanity test passed."
-    fi
+    echo "INFO: Starting S3-Sanity.."
+    $install_dir/_s3_setup test --config "$confstore_config_url"
 fi
 
 if [ $s3cleanup == true ]

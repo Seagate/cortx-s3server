@@ -21,6 +21,7 @@
 import sys
 
 from setupcmd import SetupCmd
+from cortx.utils.process import SimpleProcess
 
 class TestCmd(SetupCmd):
   """Test Setup Cmd."""
@@ -30,11 +31,21 @@ class TestCmd(SetupCmd):
     """Constructor."""
     try:
       super(TestCmd, self).__init__(config)
+      self.read_ldap_credentials()
+
     except Exception as e:
       raise e
 
   def process(self):
     """Main processing function."""
-    retval = 0
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
-    return retval
+
+    try:
+      cmd = ['/opt/seagate/cortx/s3/scripts/s3-sanity-test.sh', '-p',  f'{self.ldap_passwd}']
+      handler = SimpleProcess(cmd)
+      stdout, stderr, retcode = handler.run()
+      if retcode != 0:
+        raise Exception(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
+      sys.stdout.write(f"{cmd}:{stdout}:{stderr}:{retcode}\n")
+    except Exception as e:
+      raise Exception(f"{self}: {cmd} exception: {e}")
