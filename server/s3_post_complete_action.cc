@@ -587,6 +587,8 @@ void S3PostCompleteAction::save_metadata() {
     new_object_metadata->set_content_type(
         multipart_metadata->get_content_type());
     new_object_metadata->set_md5(etag);
+    new_object_metadata->set_part_one_size(
+        multipart_metadata->get_part_one_size());
 
     new_object_metadata->save(
         std::bind(&S3PostCompleteAction::save_object_metadata_succesful, this),

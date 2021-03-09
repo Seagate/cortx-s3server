@@ -31,14 +31,21 @@
 #include "s3_motr_reader.h"
 #include "s3_factory.h"
 #include "s3_timer.h"
+#include "s3_md5_hash.h"
+#include "s3_aws_etag.h"
 
 class S3GetObjectAction : public S3ObjectAction {
 
   std::shared_ptr<S3MotrReader> motr_reader;
+  S3AwsEtag awsetag;
+  MD5hash* md5crypt_ptr;
+
   // Read state
   size_t total_blocks_in_object;
   size_t blocks_already_read;
   size_t data_sent_to_client;
+  size_t data_read_from_motr;
+  size_t parts_left_for_md5_calculation;
   size_t content_length;
 
   size_t first_byte_offset_to_read;

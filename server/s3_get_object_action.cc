@@ -35,9 +35,11 @@ S3GetObjectAction::S3GetObjectAction(
     std::shared_ptr<S3MotrReaderFactory> motr_s3_factory)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
                      std::move(object_meta_factory)),
+      md5crypt_ptr(nullptr),
       total_blocks_in_object(0),
       blocks_already_read(0),
       data_sent_to_client(0),
+      data_read_from_motr(0),
       content_length(0),
       first_byte_offset_to_read(0),
       last_byte_offset_to_read(0),
@@ -328,6 +330,13 @@ void S3GetObjectAction::read_object() {
        S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
            object_metadata->get_layout_id()));
   motr_reader->set_last_index(block_start_offset);
+
+  size_t partsize = object_metadata->get_part_one_size();
+  parts_left_for_md5_calculation =
+      (content_length + partsize) / partsize;
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Amit partsize: %zu, parts left for md5 cal: %zu", partsize,
+         parts_left_for_md5_calculation);
   read_object_data();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -338,7 +347,6 @@ void S3GetObjectAction::read_object_data() {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
-
   size_t max_blocks_in_one_read_op =
       S3Option::get_instance()->get_motr_units_per_request();
   size_t blocks_to_read = 0;
@@ -436,7 +444,8 @@ void S3GetObjectAction::send_data_to_client() {
          "object requested content length size(%zu).\n",
          requested_content_length);
   length = motr_reader->get_first_block(&data);
-
+  s3_log(S3_LOG_DEBUG, request_id, "parts left for md5 calculation: (%zu)",
+         parts_left_for_md5_calculation);
   while (length > 0) {
     size_t read_data_start_offset = 0;
     blocks_already_read++;
@@ -460,6 +469,36 @@ void S3GetObjectAction::send_data_to_client() {
       length = requested_content_length - data_sent_to_client;
     }
     data_sent_to_client += length;
+    data_read_from_motr += length;
+    if (!md5crypt_ptr) {
+      md5crypt_ptr = new MD5hash();
+    }
+    md5crypt_ptr->Update(data, length);
+
+    if (1 == parts_left_for_md5_calculation &&
+        (data_read_from_motr ==
+         (content_length %
+          object_metadata->get_part_one_size()))) {  // last part
+      s3_log(S3_LOG_DEBUG, request_id, "Amit last part for md5 calculation");
+      md5crypt_ptr->Finalize();
+      awsetag.add_part_etag(md5crypt_ptr->get_md5_string());
+
+      delete md5crypt_ptr;
+      md5crypt_ptr = nullptr;
+      data_read_from_motr = 0;
+      --parts_left_for_md5_calculation;
+    } else if (data_read_from_motr == object_metadata->get_part_one_size()) {
+      s3_log(S3_LOG_DEBUG, request_id,
+             "Amit data read from motr(%zu) is now equal to part size",
+             data_read_from_motr);
+      md5crypt_ptr->Finalize();
+      awsetag.add_part_etag(md5crypt_ptr->get_md5_string());
+
+      delete md5crypt_ptr;
+      md5crypt_ptr = nullptr;
+      data_read_from_motr = 0;
+      --parts_left_for_md5_calculation;
+    }
     request->set_bytes_sent(data_sent_to_client);
     s3_log(S3_LOG_DEBUG, request_id, "Sending %zu bytes to client.\n", length);
     request->send_reply_body(data + read_data_start_offset, length);
@@ -474,7 +513,8 @@ void S3GetObjectAction::send_data_to_client() {
     const auto mss = s3_timer.elapsed_time_in_millisec();
     LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);
     s3_stats_timing("get_object_send_data", mss);
-
+    std::string finalmd5 = awsetag.finalize();
+    s3_log(S3_LOG_DEBUG, request_id, "Amit final md5: %s", finalmd5.c_str());
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
