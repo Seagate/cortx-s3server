@@ -58,6 +58,24 @@ class S3CortxConfStore:
     """Get all the key value pairs from confstore."""
     return Conf.get_keys(self.default_index)
 
+  def delete_key(self, key: str, save: bool = False):
+    """Deletes the specified key."""
+    Conf.delete(self.default_index, key)
+    if save == True:
+      # Update the index backend.
+      Conf.save(self.default_index)
+
+  def merge_config(self, source_index:str, keys_to_include:list = None):
+    """
+    In-place replaces of keys specified in keys_to_include from source to destination.
+    In case keys_to_include is empty all keys are replace in-place.
+    """
+    Conf.copy(source_index, self.default_index, keys_to_include)
+
+  def save_config(self):
+    """Saves to config file."""
+    Conf.save(self.default_index)
+
   @staticmethod
   def validate_configfile(configfile: str):
     """Validate the 'configfile' url, if its a valid file and of supported format."""
