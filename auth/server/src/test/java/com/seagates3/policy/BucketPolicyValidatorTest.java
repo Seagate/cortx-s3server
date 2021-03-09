@@ -543,4 +543,27 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                             .getResponseBody(),
                         response.getResponseBody());
   }
+
+  /**
+     * Test to validate ClientAbsoluteUri empty case
+     */
+  @Test public void validateBucketPolicy_ClientAbsoluteUri_Empty() {
+    String positiveJsonInput =
+        "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
+        "  \"Version\": \"2012-10-17\",\r\n" + "  \"Statement\": [\r\n" +
+        "    {\r\n" + "      \"Sid\": \"Stmt1571741573370\",\r\n" +
+        "      \"Resource\": \"arn:aws:s3:::MyBucket/a.txt\",\r\n" +
+        "      \"Action\": [\r\n" + "              \"s3:GetObject\"\r\n" +
+        "      ],\r\n" + "      \"Effect\": \"Allow\",\r\n" +
+        "            \"Principal\": {\r\n" + "        \"AWS\": [\r\n" +
+        "          \"*\"\r\n" + "        ]\r\n" + "      }\r\n" + "    }\r\n" +
+        "  ]\r\n" + "}";
+    requestBody.put("ClientAbsoluteUri", "/");
+    requestBody.put("Policy",
+                    BinaryUtil.encodeToBase64String(positiveJsonInput));
+    Authorizer authorizer = new Authorizer();
+    ServerResponse response = authorizer.validatePolicy(requestBody);
+    Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
+                        response.getResponseStatus());
+  }
 }

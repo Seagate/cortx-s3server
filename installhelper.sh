@@ -109,6 +109,7 @@ cp scripts/provisioning/testcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/resetcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/setupcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/ldap/ldapaccountaction.py $S3_INSTALL_LOCATION/bin
+cp -f scripts/swupdate/merge.py $S3_INSTALL_LOCATION/bin
 
 # Copy the mini-provisioner config files
 cp scripts/provisioning/s3setup_prereqs.json $S3_MINI_PROV_CFG_LOCATION/
@@ -116,7 +117,6 @@ cp scripts/provisioning/s3_prov_config.yaml $S3_MINI_PROV_CFG_LOCATION/
 
 # Copy the S3 reset scripts
 cp scripts/reset/* $S3_INSTALL_LOCATION/reset
-cp scripts/provisioning/clean_openldap.sh $S3_INSTALL_LOCATION/reset
 
 # Copy the s3 dependencies
 cp -R third_party/libevent/s3_dist/lib/* $S3_INSTALL_LOCATION/libevent/
@@ -208,15 +208,15 @@ cp -ru auth/resources/static $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/authserver-log4j2.xml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/authencryptcli-log4j2.xml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/authserver.properties.sample $AUTH_INSTALL_LOCATION/resources/
-cp -f auth/resources/authserver_unsafe_attributes.yaml $AUTH_INSTALL_LOCATION/resources/
+cp -f auth/resources/authserver_unsafe_attributes.properties $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/keystore.properties.sample $AUTH_INSTALL_LOCATION/resources/
-cp -f auth/resources/keystore_unsafe_attributes.yaml $AUTH_INSTALL_LOCATION/resources/
+cp -f auth/resources/keystore_unsafe_attributes.properties $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/defaultAclTemplate.xml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/AmazonS3.xsd $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/s3authserver.jks $AUTH_INSTALL_LOCATION/resources/
 cp -f scripts/s3authserver.jks_template $AUTH_INSTALL_LOCATION/scripts/
 cp -f scripts/create_auth_jks_password.sh $AUTH_INSTALL_LOCATION/scripts/
-cp -f scripts/swupdate/merge.sh $AUTH_INSTALL_LOCATION/scripts/swupdate
+
 
 # Copy LDAP replication to install location
 # remove this once changes are done in provisioning
@@ -274,7 +274,7 @@ cp -f scripts/enc_ldap_passwd_in_cfg.sh $AUTH_INSTALL_LOCATION/scripts/
 cp -f scripts/change_ldap_passwd.ldif $AUTH_INSTALL_LOCATION/scripts/
 
 # Copy s3-sanity
-cp -f s3-sanity-test.sh $S3_INSTALL_LOCATION/scripts/
+cp -f scripts/s3-sanity/s3-sanity-test.sh $S3_INSTALL_LOCATION/scripts/
 
 # Copy openldap_backup readme
 cp -f scripts/ldap/openldap_backup_readme $S3_INSTALL_LOCATION/docs/
