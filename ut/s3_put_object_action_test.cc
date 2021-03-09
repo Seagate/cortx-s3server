@@ -28,6 +28,7 @@
 #include "s3_test_utils.h"
 #include "s3_ut_common.h"
 #include "s3_m0_uint128_helper.h"
+#include "s3_md5_hash.h"
 
 using ::testing::Eq;
 using ::testing::Return;
@@ -99,7 +100,7 @@ class S3PutObjectActionTest : public testing::Test {
         .WillRepeatedly(ReturnRef(bucket_name));
     EXPECT_CALL(*ptr_mock_request, get_object_name())
         .Times(AtLeast(1))
-        .WillOnce(ReturnRef(object_name));
+        .WillRepeatedly(ReturnRef(object_name));
     EXPECT_CALL(*(ptr_mock_request), get_header_value(StrEq("x-amz-tagging")))
         .WillOnce(Return(""));
 
@@ -816,8 +817,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectShouldWriteContentAndMarkProgress) {
 
   EXPECT_TRUE(action_under_test->write_in_progress);
 }
-// TODO: Tests disabled
-#if 0
+
 TEST_F(S3PutObjectActionTest, WriteObjectFailedShouldUndoMarkProgress) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   action_under_test->_set_layout_id(layout_id);
@@ -832,10 +832,10 @@ TEST_F(S3PutObjectActionTest, WriteObjectFailedShouldUndoMarkProgress) {
       false /* is_multipart */, {0ULL, 0ULL});
   action_under_test->new_probable_del_rec.reset(prob_rec);
   // expectations for mark_new_oid_for_deletion()
-  EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
-  EXPECT_CALL(*prob_rec, to_json()).Times(1);
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _)).Times(1);
+  // EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
+  // EXPECT_CALL(*prob_rec, to_json()).Times(1);
+  // EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+  //            put_keyval(_, _, _, _, _)).Times(1);
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
       .Times(1)
@@ -863,12 +863,6 @@ TEST_F(S3PutObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure) {
       "" /* Version does not exists yet */, false /* force_delete */,
       false /* is_multipart */, {0ULL, 0ULL});
   action_under_test->new_probable_del_rec.reset(prob_rec);
-  // expectations for mark_new_oid_for_deletion()
-  EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
-  EXPECT_CALL(*prob_rec, to_json()).Times(1);
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _)).Times(1);
-
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
       .Times(1)
       .WillOnce(Return(S3MotrWiterOpState::failed_to_launch));
@@ -881,6 +875,60 @@ TEST_F(S3PutObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure) {
   EXPECT_FALSE(action_under_test->write_in_progress);
   EXPECT_STREQ("ServiceUnavailable",
                action_under_test->get_s3_error_code().c_str());
+}
+
+// Test S3PutObjectAction::write_object_failed() S3 fault mode code
+TEST_F(S3PutObjectActionTest, WriteObjectFailedVerifyS3FaultMode) {
+  MD5hash in_md5crypt, out_md5;
+  std::string data("S3 fault mode");
+  std::string bucket("seagate_bucket"), object("object1");
+  in_md5crypt.Update((const char *)data.c_str(), data.size());
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->motr_writer->set_MD5Hash_instance(in_md5crypt);
+
+  action_under_test->_set_layout_id(9);
+  size_t object_size = 1048 * 10;
+  // Enable S3 fault mode
+  action_under_test->max_objects_in_s3_fault_mode = 1;
+  action_under_test->tried_count = 1;
+  action_under_test->total_object_size_consumed = object_size / 2;
+  CREATE_BUCKET_METADATA;
+  action_under_test->new_object_metadata =
+      object_meta_factory->mock_object_metadata;
+  action_under_test->new_object_metadata->set_object_list_index_oid(
+      object_list_indx_oid);
+  action_under_test->new_object_metadata->set_objects_version_list_index_oid(
+      objects_version_list_idx_oid);
+
+  action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
+      .Times(AtLeast(1))
+      .WillOnce(Return(S3MotrWiterOpState::failed));
+  ptr_mock_request->set_bucket_name(bucket);
+  ptr_mock_request->set_object_name(object);
+  EXPECT_CALL(*ptr_mock_request, get_content_length())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(object_size));
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
+      .Times(1);
+
+  action_under_test->last_object_size = object_size / 2;
+
+  action_under_test->write_object_failed();
+
+  in_md5crypt.Finalize();
+
+  // Verify MD5 hash instance is saved correctly
+  out_md5 = action_under_test->last_MD5Hash_state;
+  out_md5.Finalize();
+  EXPECT_STREQ(in_md5crypt.get_md5_string().c_str(),
+               out_md5.get_md5_string().c_str());
+
+  EXPECT_TRUE(action_under_test->fault_mode_active);
+  EXPECT_EQ((object_size / 2), action_under_test->primary_object_size);
+  EXPECT_EQ(action_under_test->new_object_metadata->get_object_type(),
+            S3ObjectMetadataType::only_frgments);
+  EXPECT_TRUE(action_under_test->new_object_metadata->is_object_extended());
 }
 
 TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulWhileShuttingDown) {
@@ -901,7 +949,6 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulWhileShuttingDown) {
 
   EXPECT_FALSE(action_under_test->write_in_progress);
 }
-#endif
 
 // We have all the data: Freezed
 TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulShouldWriteStateAllData) {
@@ -1032,6 +1079,48 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulShouldRestartReadingData) {
   EXPECT_FALSE(action_under_test->write_in_progress);
 }
 
+// Test S3PutObjectAction::write_object_successful() in s3 fault mode
+TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulVerifyS3FaultMode) {
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
+  std::string bucket("seagate_bucket"), object("object1");
+
+  CREATE_BUCKET_METADATA;
+  action_under_test->new_object_metadata =
+      object_meta_factory->mock_object_metadata;
+  action_under_test->new_object_metadata->set_object_list_index_oid(
+      object_list_indx_oid);
+  action_under_test->new_object_metadata->set_objects_version_list_index_oid(
+      objects_version_list_idx_oid);
+  action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
+  action_under_test->current_fault_iteration = 1;
+  action_under_test->new_object_metadata->regenerate_version_id();
+
+  ptr_mock_request->set_bucket_name(bucket);
+  ptr_mock_request->set_object_name(object);
+  ptr_mock_request->get_buffered_input()->freeze();
+
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_oid())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(oid));
+
+  // mock mark progress
+  action_under_test->write_in_progress = true;
+  action_under_test->fault_mode_active = true;
+  action_under_test->create_fragment_when_write_success = true;
+  std::shared_ptr<S3ObjectExtendedMetadata> new_ext_object_metadata =
+      object_meta_factory->create_object_ext_metadata_obj(
+          ptr_mock_request, ptr_mock_request->get_bucket_name(),
+          ptr_mock_request->get_object_name(),
+          action_under_test->new_object_metadata->get_obj_version_key(),
+          object_list_indx_oid);
+  action_under_test->new_object_metadata->set_extended_object_metadata(
+      new_ext_object_metadata);
+  action_under_test->write_object_successful();
+
+  EXPECT_FALSE(action_under_test->motr_writer->get_buffer_rewrite_flag());
+}
+
 TEST_F(S3PutObjectActionTest, SaveMetadata) {
   CREATE_BUCKET_METADATA;
   bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
@@ -1144,8 +1233,7 @@ TEST_F(S3PutObjectActionTest, SendErrorResponse) {
 
   action_under_test->send_response_to_s3_client();
 }
-// TODO : Tests disabled
-#if 0
+
 TEST_F(S3PutObjectActionTest, SendSuccessResponse) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
 
@@ -1192,4 +1280,83 @@ TEST_F(S3PutObjectActionTest, ValidateMissingContentLength) {
   EXPECT_STREQ("MissingContentLength",
                action_under_test->get_s3_error_code().c_str());
 }
-#endif
+
+TEST_F(S3PutObjectActionTest, AddExtendedObjectToProbableList) {
+  struct m0_uint128 extended_oid = oid;
+  unsigned int layout_id = 9;
+
+  CREATE_BUCKET_METADATA;
+
+  action_under_test->new_object_metadata =
+      object_meta_factory->mock_object_metadata;
+  action_under_test->new_object_metadata->set_object_list_index_oid(
+      object_list_indx_oid);
+  action_under_test->new_object_metadata->set_objects_version_list_index_oid(
+      objects_version_list_idx_oid);
+
+  action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
+
+  EXPECT_CALL(*ptr_mock_request, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_oid())
+      .WillRepeatedly(Return(object_list_indx_oid));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_objects_version_list_index_oid())
+      .WillRepeatedly(Return(objects_version_list_idx_oid));
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(object_name));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_version_key_in_index())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(object_name));
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+              put_keyval(_, _, _, _, _)).Times(1);
+
+  action_under_test->add_extended_object_oid_to_probable_dead_oid_list(
+      extended_oid, layout_id);
+}
+
+TEST_F(S3PutObjectActionTest, AddExtendedObjectToProbableListFailed) {
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_motr_kvs_writer;
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
+      .Times(1)
+      .WillOnce(Return(S3MotrKVSWriterOpState::failed));
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
+
+  action_under_test->add_extended_object_oid_to_probable_dead_oid_list_failed();
+}
+
+TEST_F(S3PutObjectActionTest, ContinueObjectWrite) {
+  MD5hash in_md5crypt, out_md5;
+  std::string data("Sample object data");
+  in_md5crypt.Update((const char *)data.c_str(), data.size());
+  action_under_test->last_MD5Hash_state = in_md5crypt;
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_oid())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(oid));
+
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              write_content(_, _, _, _)).Times(1);
+
+  action_under_test->continue_object_write();
+
+  in_md5crypt.Finalize();
+
+  // Verify MD5 hash instance is saved correctly
+  out_md5 = motr_writer_factory->mock_motr_writer->get_MD5Hash_instance();
+  out_md5.Finalize();
+  EXPECT_STREQ(in_md5crypt.get_md5_string().c_str(),
+               out_md5.get_md5_string().c_str());
+
+  // Verify 'create_fragment_when_write_success' is set true
+  EXPECT_TRUE(action_under_test->create_fragment_when_write_success);
+}
