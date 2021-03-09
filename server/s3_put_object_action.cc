@@ -552,10 +552,19 @@ void S3PutObjectAction::write_object_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, request_id, "Write to motr successful\n");
 
+  write_in_progress = false;
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+    return;
+  }
+  if (request->is_s3_client_read_error()) {
+    client_read_error();
+    return;
+  }
+
   request->get_buffered_input()->flush_used_buffers();
 
   no_of_blocks_written++;
-  write_in_progress = false;
   last_object_size += motr_writer->get_size_of_data_written();
   total_object_size_consumed += motr_writer->get_size_of_data_written();
   motr_writer->set_buffer_rewrite_flag(false);
@@ -591,14 +600,6 @@ void S3PutObjectAction::write_object_successful() {
     }
   }
 
-  if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-    return;
-  }
-  if (request->is_s3_client_read_error()) {
-    client_read_error();
-    return;
-  }
   const bool is_memory_enough =
       mem_profile->we_have_enough_memory_for_put_obj(layout_id);
 
@@ -639,8 +640,6 @@ void S3PutObjectAction::write_object_successful() {
 void S3PutObjectAction::write_object_failed() {
   s3_log(S3_LOG_WARN, request_id, "Failed writing to motr.\n");
 
-  // TODO: Need to comment this line - write_in_progress = false;
-
   if (request->is_s3_client_read_error()) {
     client_read_error();
     return;
@@ -648,27 +647,28 @@ void S3PutObjectAction::write_object_failed() {
   if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
     s3_put_action_state = S3PutObjectActionState::writeFailed;
+    write_in_progress = false;
     request->get_buffered_input()->flush_used_buffers();
     s3_log(S3_LOG_ERROR, request_id, "write_object_failed failure\n");
+    send_response_to_s3_client();
   } else {
-// TODO: Disabled 'else' code for UT to fix UT run. Remove it later when UT is
-// fixed
-#ifndef S3_GOOGLE_TEST
-    s3_log(S3_LOG_INFO, request_id,
-           "Creating new object and writing data to it...\n");
     // Determine here further whether it is due to Motr degradation mode or
-    // irrecoverable
-    // CLOVIS error (in which case we simply return "InternalError").
-    // set_s3_error("InternalError");
-    // TODO: S3 Fault tolerence mode
-    //  Check if this failure is due to Motr degradation, causing write object
-    // failure.
+    // irrecoverable CLOVIS error (in which case we simply return
+    // "InternalError").
+    // TODO: Check if this failure is due to Motr degradation, causing write
+    // object
+    // failure. Need to check specific error code/state from Motr.
+    // Work-around until we get Motr changes for new error code:
     //  Check fault tolerence object creation count/threshhold. If it is > 0
     //  fault tolerence mode is enabled. We'll support multiple object creation
     //  upto the threshold.
-    // Below code is to handle Motr degradation mode.
+    //  Presently, the below code to handle Motr degradation mode is executed
+    //  using S3 FI in write object operation and the enablement of feature in
+    //  S3 config file using "S3_MAX_EXTENDED_OBJECTS_IN_FAULT_MODE" > 0.
     if (max_objects_in_s3_fault_mode &&
         (current_fault_iteration++ < max_objects_in_s3_fault_mode)) {
+      s3_log(S3_LOG_INFO, request_id,
+             "Creating new object and writing data to it...\n");
       // S3 fault mode is enabled. Activate fault mode
       if (!fault_mode_active) {
         fault_mode_active = true;
@@ -709,19 +709,14 @@ void S3PutObjectAction::write_object_failed() {
       // create extended object metadata and add object oid to it.
       return;
     } else {
+      // This is a general write object failure
       s3_put_action_state = S3PutObjectActionState::writeFailed;
+      write_in_progress = false;
       request->get_buffered_input()->flush_used_buffers();
       set_s3_error("InternalError");
       // Clean up will be done after response.
       send_response_to_s3_client();
     }
-#else
-    s3_put_action_state = S3PutObjectActionState::writeFailed;
-    request->get_buffered_input()->flush_used_buffers();
-    set_s3_error("InternalError");
-    // Clean up will be done after response.
-    send_response_to_s3_client();
-#endif
   }
 }
 
@@ -1117,7 +1112,7 @@ void S3PutObjectAction::remove_new_oid_probable_record() {
   keys_to_delete.push_back(new_oid_str);
   // TODO: If new object is extended/fragmented, also add extended object
   // entries to delete.
-  if (new_object_metadata->is_object_extended()) {
+  if (new_object_metadata && new_object_metadata->is_object_extended()) {
     for (auto& obj_oid : extended_obj_oids) {
       keys_to_delete.push_back(S3M0Uint128Helper::to_string(obj_oid));
     }

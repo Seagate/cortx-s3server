@@ -175,6 +175,7 @@ class S3MotrWiter {
   inline void set_buffer_rewrite_flag(bool is_buffer_re_write) {
     re_write_buffer = is_buffer_re_write;
   }
+  inline bool get_buffer_rewrite_flag() { return re_write_buffer; }
 
   inline MD5hash get_MD5Hash_instance() { return md5crypt; }
 
