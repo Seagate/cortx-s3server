@@ -78,7 +78,7 @@ class S3CortxMsgBus:
             raise Exception("Non Existent Message Bus")
         try:
             self._consumer = MessageConsumer(self._message_bus, consumer_id=cons_id, \
-            consumer_group=group, message_type=[msg_type], auto_ack=auto_ack, offset=offset)
+            consumer_group=group, message_types=[msg_type], auto_ack=auto_ack, offset=offset)
         except Exception as exception:
             msg = ("msg_bus setup_consumer except:%s %s") % (
                 exception, traceback.format_exc())
