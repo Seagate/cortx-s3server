@@ -265,7 +265,6 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/auth/AuthServer-1.0-0.jar
 /opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar
 /opt/seagate/cortx/auth/startauth.sh
-/opt/seagate/cortx/auth/scripts/swupdate/merge.sh
 /opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh
 /opt/seagate/cortx/auth/scripts/change_ldap_passwd.ldif
 /opt/seagate/cortx/auth/scripts/s3authserver.jks_template
@@ -358,8 +357,8 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/reset/precheck.py
 /opt/seagate/cortx/s3/reset/reset_s3.sh
 /opt/seagate/cortx/s3/conf/setup.yaml
-/opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.yaml
-/opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.yaml
+/opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.properties
+/opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.properties
 /opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml
 /opt/seagate/cortx/s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml
 /opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json
@@ -373,6 +372,7 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/bin/resetcmd.py
 /opt/seagate/cortx/s3/bin/cleanupcmd.py
 /opt/seagate/cortx/s3/bin/ldapaccountaction.py
+/opt/seagate/cortx/s3/bin/merge.py
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_setup
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/_s3_setup
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer
@@ -421,7 +421,7 @@ rm -rf %{buildroot}
 %exclude /opt/seagate/cortx/s3/install/haproxy/s3haproxyconfig
 
 %post
-sh /opt/seagate/cortx/auth/scripts/swupdate/merge.sh
+python3.6 /opt/seagate/cortx/s3/bin/merge.py
 systemctl daemon-reload
 systemctl enable s3authserver
 systemctl restart rsyslog
