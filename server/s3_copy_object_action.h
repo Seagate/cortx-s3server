@@ -106,6 +106,7 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
 
   FRIEND_TEST(S3CopyObjectActionTest, GetSourceBucketAndObjectSuccess);
   FRIEND_TEST(S3CopyObjectActionTest, GetSourceBucketAndSpecialObjectSuccess);
+  FRIEND_TEST(S3CopyObjectActionTest, UIGetSourceBucketAndObjectSuccess);
   FRIEND_TEST(S3CopyObjectActionTest, GetSourceBucketAndObjectFailure);
   FRIEND_TEST(S3CopyObjectActionTest, FetchSourceBucketInfo);
   FRIEND_TEST(S3CopyObjectActionTest, FetchSourceBucketInfoFailedMissing);
