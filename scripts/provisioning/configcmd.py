@@ -67,6 +67,7 @@ class ConfigCmd(SetupCmd):
            f'{self.ldap_passwd}',
            '--rootdnpasswd',
            f'{self.rootdn_passwd}',
+           '--forceclean',
            '--skipssl']
     handler = SimpleProcess(cmd)
     stdout, stderr, retcode = handler.run()
@@ -104,12 +105,22 @@ class ConfigCmd(SetupCmd):
       if retcode != 0:
         raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
       os.remove("hosts_list_file.txt")
+    cmd = ['systemctl', 'restart', 'slapd']
+    handler = SimpleProcess(cmd)
+    stdout, stderr, retcode = handler.run()
+    if retcode != 0:
+      raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
 
   def configure_haproxy(self):
     """Configure haproxy service."""
     cmd = ['s3haproxyconfig',
            '--path',
            f'{self._url}']
+    handler = SimpleProcess(cmd)
+    stdout, stderr, retcode = handler.run()
+    if retcode != 0:
+      raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
+    cmd = ['systemctl', 'restart', 'haproxy']
     handler = SimpleProcess(cmd)
     stdout, stderr, retcode = handler.run()
     if retcode != 0:
