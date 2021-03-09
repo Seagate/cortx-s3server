@@ -217,6 +217,11 @@ class S3PutObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutObjectActionTest, SendFailedResponse);
   FRIEND_TEST(S3PutObjectActionTest, ConsumeIncomingContentRequestTimeout);
   FRIEND_TEST(S3PutObjectActionTest, DelayedDeleteOldObject);
+  FRIEND_TEST(S3PutObjectActionTest, AddExtendedObjectToProbableList);
+  FRIEND_TEST(S3PutObjectActionTest, AddExtendedObjectToProbableListFailed);
+  FRIEND_TEST(S3PutObjectActionTest, ContinueObjectWrite);
+  FRIEND_TEST(S3PutObjectActionTest, WriteObjectFailedVerifyS3FaultMode);
+  FRIEND_TEST(S3PutObjectActionTest, WriteObjectSuccessfulVerifyS3FaultMode);
 };
 
 #endif
