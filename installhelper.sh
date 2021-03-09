@@ -116,7 +116,6 @@ cp scripts/provisioning/s3_prov_config.yaml $S3_MINI_PROV_CFG_LOCATION/
 
 # Copy the S3 reset scripts
 cp scripts/reset/* $S3_INSTALL_LOCATION/reset
-cp scripts/provisioning/clean_openldap.sh $S3_INSTALL_LOCATION/reset
 
 # Copy the s3 dependencies
 cp -R third_party/libevent/s3_dist/lib/* $S3_INSTALL_LOCATION/libevent/
@@ -265,7 +264,6 @@ cp -f scripts/ldap/ppolicyoverlay.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/setup_ldap.sh $S3_INSTALL_LOCATION/install/ldap/
 
 cp -f scripts/s3prov_start_services.sh $S3_INSTALL_LOCATION/bin
-cp -f scripts/install_prereqs.sh $S3_INSTALL_LOCATION/bin
 
 # Copy the auth server startup script.
 cp startauth.sh $AUTH_INSTALL_LOCATION/

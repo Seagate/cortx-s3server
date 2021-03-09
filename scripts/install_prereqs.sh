@@ -26,7 +26,7 @@ die_with_error () {
 
 step_2 () {
 	# Try to install cortx-py-utils and pip3 cryptography pkgs
-	yum install cortx-py-utils --nogpgcheck -y || die_with_error "cortx-py-utils install failed"
+	yum install cortx-s3server cortx-py-utils --nogpgcheck -y || die_with_error "cortx-py-utils install failed"
 	pip3 install cryptography==2.8 || die_with_error "pip3 cryptography install failed"
 }
 
@@ -179,6 +179,18 @@ step_9 () {
 	rootdnpasswd=$(s3cipher encrypt --data 'seagate' --key "$key")
 	s3_conf_file="/tmp/s3_confstore.json"
 
+	s3instances=11
+	read -p "Enter number of s3 instances (default is $s3instances): " s3instances
+	[ "$s3instances" == "" ] && s3instances=11
+
+	public_ip="127.0.0.1"
+	read -p "Enter public IP (default is $public_ip): " public_ip
+	[ "$public_ip" == "" ] && public_ip="127.0.0.1"
+
+	private_ip="myip"
+	read -p "Enter private IP (default is $myip): " private_ip
+	[ "$private_ip" == "" ] && private_ip="$myip"
+
 	if [ -e $s3_conf_file ]; then
 	  mv $s3_conf_file $s3_conf_file.bak
 	fi
@@ -227,7 +239,7 @@ step_9 () {
 		},
 		"srvnode_1":
 		{
-			"s3_instances": "11",
+			"s3_instances": "$s3instances",
 			"machine_id": "$machineid",
 			"hostname": "$myhostname",
 			"network":
@@ -237,8 +249,8 @@ step_9 () {
 					"gateway": "255.255.255.0",
 					"interfaces": [ "eth1", "eth2"  ],
 					"netmask": "255.255.255.0",
-					"public_ip": "127.0.0.1",
-					"private_ip": "$myip",
+					"public_ip": "$public_ip",
+					"private_ip": "$private_ip",
 					"roaming_ip": "127.0.0.1"
 				}
 			}
@@ -320,7 +332,15 @@ step_10 () {
 	if [ "$1" = "true" ];then
 		bash -x /opt/seagate/cortx/s3/bin/s3_setup cleanup --config "json://$s3_conf_file" &> /dev/null || die_with_error "s3:cleanup failed!"
 		echo "s3:cleanup passed!"
-		bash -x /opt/seagate/cortx/s3/reset/clean_open_ldap_by_s3.sh || die_with_error "clean_open_ldap_by_s3.sh failed"
+		# Attempt ldap clean up since ansible openldap setup is not idempotent
+		systemctl stop slapd 2>/dev/null
+		yum remove -y openldap-servers openldap-clients || "openldap-servers openldap-clients removal failed"
+		rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
+		rm -rf /var/lib/ldap/*
+		rm -f /etc/sysconfig/slapd* 2>/dev/null || /bin/true
+		rm -f /etc/openldap/slapd* 2>/dev/null || /bin/true
+		rm -rf /etc/openldap/slapd.d/*
+		yum install -y openldap-servers openldap-clients || "openldap-servers openldap-clients install failed"
 	fi
 }
 
@@ -373,6 +393,7 @@ END
 	bash -x /opt/seagate/cortx/s3/bin/s3_setup test --config "json:///tmp/s3_confstore.json" || die_with_error "S3 sanity on IO failed"
 }
 
+prerequisite=false
 s3setup=false
 iosetup=false
 cleanup=false
@@ -389,28 +410,35 @@ USAGE="USAGE: bash $(basename "$0")
 where:
 	-h  Display help
 	-a  Use the provided ipv4 address for host \"$HOSTNAME\" and update /etc/hosts
-	-s  Perform S3 mini-provisioner setup without IO
-	-i  Perform S3 mini-provisioner setup with IO
-	-c  Perform S3 mini-provisioner setup with cleanup
+	-p  Perform only prerequisite steps needed before S3 mini-provisioner single node setup
+	-s  Perform S3 mini-provisioner single node setup with prerequisite steps but without IO
+	-i  Perform S3 mini-provisioner single node setup with prerequisite steps and IO
+	-c  Perform S3 mini-provisioner single node setup with prerequisite steps but without IO and cleanup
 Note: options -i and -c can not be used together."
 
 # Start of the script main
 # Process command line args
 OPTIND=1
-while getopts "h?sica:" o; do
+while getopts "h?psica:" o; do
 	case "${o}" in
 		h|\?)
 			echo "$USAGE"
 			exit 0
 			;;
+		p)
+			prerequisite=true
+			;;
 		s)
+			prerequisite=true
 			s3setup=true
 			;;
 		i)
+			prerequisite=true
 			s3setup=true
 			iosetup=true
 			;;
 		c)
+			prerequisite=true
 			s3setup=true
 			cleanup=true
 			;;
@@ -424,6 +452,7 @@ while getopts "h?sica:" o; do
 done
 shift $((OPTIND-1))
 
+echo "s3 mini provisioner prerequisite steps (-p): $prerequisite"
 echo "s3 mini provisioner setup (-s): $s3setup"
 echo "s3 mini provisioner IO setup (-i): $iosetup"
 echo "s3 mini provisioner setup cleanup (-c): $cleanup"
@@ -443,7 +472,7 @@ command -v jq &> /dev/null || die_with_error "jq could not be found!"
 command -v yum &> /dev/null || die_with_error "yum could not be found!"
 command -v systemctl &> /dev/null || die_with_error "systemctl could not be found!"
 
-if [ "$s3setup" = "true" ];then
+if [ "$prerequisite" = "true" ];then
 	step_2
 	step_3 "$addr"
 	step_4
@@ -452,9 +481,14 @@ if [ "$s3setup" = "true" ];then
 	step_7
 	step_8
 	step_9
-	step_10 "$cleanup"
-	if [ "$iosetup" = true ];then
-		step_11
-	fi	
 fi
+
+if [ "$s3setup" = "true" ];then
+	step_10 "$cleanup"
+fi
+
+if [ "$iosetup" = true ];then
+		step_11
+fi	
+
 echo "All steps passed!"

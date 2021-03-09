@@ -357,7 +357,6 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/stop-s3-iopath-services.sh
 /opt/seagate/cortx/s3/reset/precheck.py
 /opt/seagate/cortx/s3/reset/reset_s3.sh
-/opt/seagate/cortx/s3/reset/clean_openldap.sh
 /opt/seagate/cortx/s3/conf/setup.yaml
 /opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.yaml
 /opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.yaml
@@ -366,7 +365,6 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json
 /opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml
 /opt/seagate/cortx/s3/bin/s3prov_start_services.sh
-/opt/seagate/cortx/s3/bin/install_prereqs.sh
 /opt/seagate/cortx/s3/bin/setupcmd.py
 /opt/seagate/cortx/s3/bin/postinstallcmd.py
 /opt/seagate/cortx/s3/bin/configcmd.py
