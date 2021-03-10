@@ -162,14 +162,14 @@ class ObjectRecoveryMsgbus(object):
                         #It works with/without sleep time but
                         #In case of multiple exceptions, cpu utilization will be very high
                         time.sleep(self._sleep_time)
-
-                if not self._daemon_mode:
-                    break
             except Exception as exception:
                 self._logger.error("Receive Data Exception : {} {}".format(exception, traceback.format_exc()))
                 self.__isconsumersetupcomplete = False                
             finally:
                 time.sleep(self._sleep_time)
+            
+            if not self._daemon_mode:
+                break
 
     def __setup_producer(self,
         producer_id = None,
