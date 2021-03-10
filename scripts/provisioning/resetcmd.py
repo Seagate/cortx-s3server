@@ -19,6 +19,9 @@
 #
 
 import sys
+import os
+import shutil
+import glob
 
 from setupcmd import SetupCmd
 
@@ -35,6 +38,62 @@ class ResetCmd(SetupCmd):
 
   def process(self):
     """Main processing function."""
-    retval = 0
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
-    return retval
+    try:
+      self.CleanupLogs()
+    except Exception as e:
+      sys.stderr.write(f'Failed to cleanup log directories or files, error: {e}\n')
+      raise e
+
+
+  def CleanupLogs(self):
+    """Cleanup all the log directories and files"""
+    # Backgrounddelete -> /var/log/seagate/s3/s3backgrounddelete/
+    if os.path.exists("/var/log/seagate/s3/s3backgrounddelete"):
+      self.DeleteDir("/var/log/seagate/s3/s3backgrounddelete/")
+
+    #Audit -> /var/log/seagate/s3/audit
+    if os.path.exists("/var/log/seagate/s3/audit"):
+      self.DeleteDir("/var/log/seagate/s3/audit/")
+
+    # s3 -> /var/log/seagate/s3/
+    if os.path.exists("/var/log/seagate/s3"):
+      self.DeleteDir("/var/log/seagate/s3/")
+
+    #Auth -> /var/log/seagate/auth/
+    if os.path.exists("/var/log/seagate/auth"):
+      self.DeleteDir("/var/log/seagate/auth/")
+
+    #S3 Motr -> /var/log/seagate/motr/
+    if os.path.exists("/var/log/seagate/motr"):
+      self.DeleteDir("/var/log/seagate/motr/")
+
+    #HAproxy -> /var/log/haproxy.log
+    #        -> /var/log/haproxy-status.log
+    if os.path.exists("/var/log/haproxy.log"):
+      os.remove("/var/log/haproxy.log")
+    if os.path.exists("/var/log/haproxy-status.log"):
+      os.remove("/var/log/haproxy-status.log")
+
+    #Slapd -> /var/log/slapd.log
+    if os.path.exists("/var/log/slapd.log"):
+      os.remove("/var/log/slapd.log")
+
+    #S3 Crash dumps -> /var/log/crash/core-s3server.*.gz
+    if os.path.exists("/var/log/crash"):
+      files = glob.glob('/var/log/crash/core-s3server.*.gz')
+      for file in files:
+        os.remove(file)
+
+  def DeleteDir(self, dirname: str):
+    """Delete files and directories inside given directory"""
+    for filename in os.listdir(dirname):
+      filepath = os.path.join(dirname, filename)
+      try:
+        if os.path.isfile(filepath):
+          os.remove(filepath)
+        elif os.path.isdir(filepath):
+          shutil.rmtree(filepath)
+      except Exception as e:
+        sys.stderr.write(f'Failed to delete %s, error: %s' % (filepath, e))
+        raise e
