@@ -41,6 +41,10 @@ test                     run s3 sanity tests
 
 cleanup                  cleanup S3 account created for backgrounddelete service
 
+reset                    delete all logs related to S3
+
+prepare                  prepare
+
 --config                 URL path for the confstore configuration file. This option is Mandatory
 
 --help                   Display this help and exit"
@@ -54,6 +58,8 @@ s3postinstall=false
 s3config=false
 s3init=false
 s3cleanup=false
+s3reset=false
+s3prepare=false
 s3test=false
 
 while test $# -gt 0
@@ -73,6 +79,12 @@ do
         ;;
     cleanup )
         s3cleanup=true
+        ;;
+    reset )
+        s3reset=true
+        ;;
+    prepare )
+        s3prepare=true
         ;;
     --config ) shift;
         confstore_config_url=$1
@@ -188,4 +200,14 @@ fi
 if [ $s3cleanup == true ]
 then
     $install_dir/_s3_setup cleanup --config "$confstore_config_url"
+fi
+
+if [ $s3reset == true ]
+then
+    $install_dir/_s3_setup reset --config "$confstore_config_url"
+fi
+
+if [ $s3prepare == true ]
+then
+    $install_dir/_s3_setup prepare --config "$confstore_config_url"
 fi
