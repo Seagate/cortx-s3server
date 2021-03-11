@@ -36,6 +36,9 @@ s3:
   reset:
     cmd: /opt/seagate/cortx/s3/bin/s3_setup reset
     args: --config $URL
+  prepare:
+    cmd: /opt/seagate/cortx/s3/bin/s3_setup prepare
+    args: --config $URL
   cleanup:
     cmd: /opt/seagate/cortx/s3/bin/s3_setup cleanup
     args: --config $URL
