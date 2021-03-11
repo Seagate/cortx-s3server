@@ -332,8 +332,7 @@ void S3GetObjectAction::read_object() {
   motr_reader->set_last_index(block_start_offset);
 
   size_t partsize = object_metadata->get_part_one_size();
-  parts_left_for_md5_calculation =
-      (content_length + partsize) / partsize;
+  parts_left_for_md5_calculation = (content_length + partsize) / partsize;
   s3_log(S3_LOG_DEBUG, request_id,
          "Amit partsize: %zu, parts left for md5 cal: %zu", partsize,
          parts_left_for_md5_calculation);
@@ -444,8 +443,10 @@ void S3GetObjectAction::send_data_to_client() {
          "object requested content length size(%zu).\n",
          requested_content_length);
   length = motr_reader->get_first_block(&data);
+
   s3_log(S3_LOG_DEBUG, request_id, "parts left for md5 calculation: (%zu)",
          parts_left_for_md5_calculation);
+
   while (length > 0) {
     size_t read_data_start_offset = 0;
     blocks_already_read++;
@@ -469,36 +470,56 @@ void S3GetObjectAction::send_data_to_client() {
       length = requested_content_length - data_sent_to_client;
     }
     data_sent_to_client += length;
-    data_read_from_motr += length;
+
     if (!md5crypt_ptr) {
       md5crypt_ptr = new MD5hash();
     }
-    md5crypt_ptr->Update(data, length);
 
     if (1 == parts_left_for_md5_calculation &&
-        (data_read_from_motr ==
-         (content_length %
-          object_metadata->get_part_one_size()))) {  // last part
-      s3_log(S3_LOG_DEBUG, request_id, "Amit last part for md5 calculation");
+        (data_sent_to_client >= requested_content_length)) {
+      // last part
+      md5crypt_ptr->Update(data, length);
       md5crypt_ptr->Finalize();
       awsetag.add_part_etag(md5crypt_ptr->get_md5_string());
 
       delete md5crypt_ptr;
       md5crypt_ptr = nullptr;
-      data_read_from_motr = 0;
       --parts_left_for_md5_calculation;
-    } else if (data_read_from_motr == object_metadata->get_part_one_size()) {
-      s3_log(S3_LOG_DEBUG, request_id,
-             "Amit data read from motr(%zu) is now equal to part size",
+    } else if (data_read_from_motr + length >=
+               object_metadata->get_part_one_size()) {
+      // data of size 'part_size' or more, read from motr
+      // finalize the md5-sum
+      // Update md5-sum for 'part_size - data_read_from_motr' for this part
+      md5crypt_ptr->Update(
+          data, object_metadata->get_part_one_size() - data_read_from_motr);
+      md5crypt_ptr->Finalize();
+      awsetag.add_part_etag(md5crypt_ptr->get_md5_string());
+
+      data_read_from_motr =
+          length - (object_metadata->get_part_one_size() - data_read_from_motr);
+      s3_log(S3_LOG_DEBUG, request_id, "Amit else-if, data_read_from_motr: %zu",
              data_read_from_motr);
-      md5crypt_ptr->Finalize();
-      awsetag.add_part_etag(md5crypt_ptr->get_md5_string());
 
       delete md5crypt_ptr;
       md5crypt_ptr = nullptr;
-      data_read_from_motr = 0;
       --parts_left_for_md5_calculation;
+
+      if (data_read_from_motr != 0) {
+        // data_read_from_motr + length > part_size
+        // Update md5-sum with remaining bytes in the 'length' of data read from
+        // motr
+        md5crypt_ptr = new MD5hash();
+        md5crypt_ptr->Update(data,
+                             length - (object_metadata->get_part_one_size() -
+                                       data_read_from_motr));
+      }
+    } else {
+      md5crypt_ptr->Update(data, length);
+      data_read_from_motr += length;
+      s3_log(S3_LOG_DEBUG, request_id, "Amit else, data_read_from_motr: %zu",
+             data_read_from_motr);
     }
+
     request->set_bytes_sent(data_sent_to_client);
     s3_log(S3_LOG_DEBUG, request_id, "Sending %zu bytes to client.\n", length);
     request->send_reply_body(data + read_data_start_offset, length);
