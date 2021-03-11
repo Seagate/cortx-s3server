@@ -28,16 +28,17 @@ from cortx.utils.message_bus import MessageBus, MessageProducer, MessageConsumer
 
 class S3CortxMsgBus:
 
+    _message_bus = None
     def __init__(self):
         """Init."""
-        self._message_bus = None
         self._producer = None
         self._consumer = None
 
     def connect(self):
         """Connect to Message Bus."""
         try:
-            self._message_bus = MessageBus()
+            if S3CortxMsgBus._message_bus is None:
+                S3CortxMsgBus._message_bus = MessageBus()
         except Exception as exception:
             msg = ("msg_bus init except:%s %s") % (exception, traceback.format_exc())
             return False, msg
@@ -45,10 +46,10 @@ class S3CortxMsgBus:
 
     def setup_producer(self, prod_id, msg_type, method):
         """Setup producer."""
-        if not self._message_bus:
+        if not S3CortxMsgBus._message_bus:
             raise Exception("Non Existent Message Bus")
         try:
-            self._producer = MessageProducer(self._message_bus, \
+            self._producer = MessageProducer(S3CortxMsgBus._message_bus, \
             producer_id=prod_id, message_type=msg_type, method=method)
         except Exception as exception:
              msg = ("msg_bus setup producer except:%s %s") % (
@@ -68,16 +69,16 @@ class S3CortxMsgBus:
 
     def purge(self):
         """Purge/Delete all the messages."""
-        if not self._message_bus:
+        if not S3CortxMsgBus._message_bus:
             raise Exception("Non Existent Message Bus, Cannot Purge")
         self._producer.delete()
 
     def setup_consumer(self, cons_id, group, msg_type, auto_ack, offset):
         """Setup the consumer."""
-        if not self._message_bus:
+        if not S3CortxMsgBus._message_bus:
             raise Exception("Non Existent Message Bus")
         try:
-            self._consumer = MessageConsumer(self._message_bus, consumer_id=cons_id, \
+            self._consumer = MessageConsumer(S3CortxMsgBus._message_bus, consumer_id=cons_id, \
             consumer_group=group, message_types=[msg_type], auto_ack=auto_ack, offset=offset)
         except Exception as exception:
             msg = ("msg_bus setup_consumer except:%s %s") % (
