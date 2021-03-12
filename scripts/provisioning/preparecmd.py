@@ -35,6 +35,5 @@ class PrepareCmd(SetupCmd):
 
   def process(self):
     """Main processing function."""
-    retval = 0
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
-    return retval
+    pass

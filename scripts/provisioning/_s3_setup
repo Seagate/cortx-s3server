@@ -46,11 +46,11 @@ def main():
   testCmd = subparsers.add_parser('test', help='setup test')
   testCmd.add_argument("--config", help='config URL', type=str, required=True)
 
-  testCmd = subparsers.add_parser('reset', help='setup reset')
-  testCmd.add_argument("--config", help='config URL', type=str, required=True)
+  resetCmd = subparsers.add_parser('reset', help='setup reset')
+  resetCmd.add_argument("--config", help='config URL', type=str, required=True)
 
-  testCmd = subparsers.add_parser('prepare', help='setup prepare')
-  testCmd.add_argument("--config", help='config URL', type=str, required=True)
+  prepareCmd = subparsers.add_parser('prepare', help='setup prepare')
+  prepareCmd.add_argument("--config", help='config URL', type=str, required=True)
 
   args = parser.parse_args()
   try:
