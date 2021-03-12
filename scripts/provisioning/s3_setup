@@ -211,3 +211,4 @@ if [ $s3prepare == true ]
 then
     $install_dir/_s3_setup prepare --config "$confstore_config_url"
 fi
+
