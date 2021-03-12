@@ -54,9 +54,12 @@ create_topic() {
 #function to create a bootstrap server parameter for creating topic
 create_bootstrap_servers_parameter() {
 
-for i in "$(echo $hosts | sed "s/,/ /g")"
+IFS=',' #setting comma as delimiter  
+read -a hostarr <<<"$hosts"
+
+for (( n=0; n < ${#hostarr[*]}; n++ ))
 do
-    bootstrapservers="${bootstrapservers}${i}:9092,"
+    bootstrapservers="${bootstrapservers}${hostarr[n]}:9092,"
 done
 
 echo "Bootstrap servers string: ${bootstrapservers}"

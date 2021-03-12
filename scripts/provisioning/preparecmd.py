@@ -36,4 +36,3 @@ class PrepareCmd(SetupCmd):
   def process(self):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
-    pass
