@@ -50,10 +50,6 @@ class S3HaproxyConfig:
     if numS3Instances <= 0:
         numS3Instances = 1
 
-    #Initialize header and footer text
-    header_text = "#-------S3 Haproxy configuration start---------------------------------"
-    footer_text = "#-------S3 Haproxy configuration end-----------------------------------"
-
     #Remove all existing content from header to footer
     is_found = False
     header_found = False
@@ -143,35 +139,6 @@ backend s3-auth
     #Initialize port numbers
     s3inport = 28081
     s3auport = 28050
-
-    #Add complete information to haproxy.cfg file
-    cfg_file = '/etc/haproxy/haproxy.cfg'
-    target = open(cfg_file, "a+")
-
-    target.write(header_text)
-    target.write(frontend_s3main_text)
-    target.write(
-        "    bind %s:80 ##### localhost 80 required for Auth - S3 connection\n"
-        "    bind %s:443 ssl crt /etc/ssl/stx/stx.pem ### localhost required for CSM/UDX\n"
-        "    bind %s:80\n"
-        "    bind %s:443 ssl crt /etc/ssl/stx/stx.pem\n"
-        "    bind %s:80\n"
-        "    bind %s:443 ssl crt /etc/ssl/stx/stx.pem\n"
-        % (localhost, localhost, pvt_ip, pvt_ip, pub_ip, pub_ip))
-    target.write(backend_s3main_text)
-    for i in range(0, numS3Instances):
-        target.write(
-        "    server s3-instance-%s %s:%s check maxconn 110        # s3 instance %s\n"
-        % (i+1, pvt_ip, s3inport+i, i+1))
-    target.write(backend_s3auth_text)
-    for i in range(0, 1):
-        target.write(
-        "    server s3authserver-instance%s %s:%s #check ssl verify required ca-file /etc/ssl/stx-s3/s3auth/s3authserver.crt   # s3 auth server instance %s\n"
-        % (i+1, pvt_ip, s3auport+i, i+1))
-    target.write(new_line_text)
-    target.write(footer_text)
-
-    target.close()
 
     #Check for destination dirs and create if needed
     if not os.path.exists('/etc/haproxy/errors/'):
