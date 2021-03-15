@@ -97,5 +97,5 @@ class ResetCmd(SetupCmd):
         elif os.path.isdir(filepath):
           shutil.rmtree(filepath)
       except Exception as e:
-        sys.stderr.write(f'Failed to delete %s, error: %s' % (filepath, e))
+        sys.stderr.write(f'ERROR: Failed to delete: {filepath}, error: {str(e)}\n')
         raise e
