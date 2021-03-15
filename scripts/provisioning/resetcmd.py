@@ -40,7 +40,9 @@ class ResetCmd(SetupCmd):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
     try:
+      sys.stdout.write(f"Cleaning up log files\n")
       self.CleanupLogs()
+      sys.stdout.write(f"Log files cleanup successful\n")
     except Exception as e:
       sys.stderr.write(f'Failed to cleanup log directories or files, error: {e}\n')
       raise e
