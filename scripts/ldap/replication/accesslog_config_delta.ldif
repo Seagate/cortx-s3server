@@ -1,0 +1,56 @@
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+dn: olcOverlay={1}syncprov,olcDatabase={2}mdb,cn=config
+objectClass: olcSyncProvConfig
+objectClass: olcOverlayConfig
+olcOverlay: {1}syncprov
+olcSpCheckpoint: 100 10
+olcSpSessionlog: 10000
+
+dn: olcDatabase={1}mdb,cn=config
+objectClass: olcMdbConfig
+objectClass: olcDatabaseConfig
+olcDatabase: {1}mdb
+olcDbDirectory: /var/lib/ldap/accesslog
+olcDbIndex: default eq
+olcDbIndex: objectClass eq
+olcDbIndex: entryCSN eq
+olcDbIndex: reqDN eq
+olcDbIndex: reqStart eq
+olcDbIndex: reqEnd eq
+olcDbIndex: reqResult eq
+olcDbMaxReaders: 0
+olcDbMaxSize: 5120000
+olcRootDN: cn=config
+olcSuffix: cn=accesslog
+
+dn: olcOverlay={0}syncprov,olcDatabase={1}mdb,cn=config
+objectClass: olcSyncProvConfig
+objectClass: olcOverlayConfig
+olcOverlay: {0}syncprov
+olcSpNoPresent: TRUE
+olcSpReloadHint: TRUE
+
+dn: olcOverlay={0}accesslog,olcDatabase={4}mdb,cn=config
+objectClass: olcAccessLogConfig
+objectClass: olcOverlayConfig
+olcAccessLogDB: cn=accesslog
+olcOverlay: {0}accesslog
+olcAccessLogOps: writes
+olcAccessLogPurge: 24:00 1+00:00
+olcAccessLogSuccess: TRUE

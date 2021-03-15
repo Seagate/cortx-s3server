@@ -237,6 +237,10 @@ cp -f scripts/ldap/replication/setupReplicationScript.sh $S3_INSTALL_LOCATION/in
 cp -f scripts/ldap/replication/serverIdTemplate.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
 cp -f scripts/ldap/replication/configTemplate.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
 cp -f scripts/ldap/replication/dataTemplate.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
+cp -f scripts/ldap/replication/syncprov_delta.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
+cp -f scripts/ldap/replication/index_delta.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
+cp -f scripts/ldap/replication/accesslog_config_delta.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
+cp -f scripts/ldap/replication/deltaConfigTemplate.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
 
 
 # Copy check replication script to install location
