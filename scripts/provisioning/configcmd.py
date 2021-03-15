@@ -22,6 +22,8 @@ import sys
 import os
 import errno
 import shutil
+
+from cortx.utils.conf_store.conf_store import Conf
 from setupcmd import SetupCmd, S3PROVError
 from cortx.utils.process import SimpleProcess
 
@@ -34,10 +36,8 @@ class ConfigCmd(SetupCmd):
     try:
       super(ConfigCmd, self).__init__(config)
 
-      self.read_cluster_id()
-      self.write_cluster_id()
+      self.update_cluster_id()
       self.read_ldap_credentials()
-      self.read_node_info()
 
     except Exception as e:
       raise S3PROVError(f'exception: {e}\n')
@@ -90,27 +90,47 @@ class ConfigCmd(SetupCmd):
     if retcode != 0:
       raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
 
-    if self.server_nodes_count > 1:
-      sys.stdout.write(f"INFO: Setting ldap-replication as the cluster node_count {self.server_nodes_count} is greater than 2.\n")
-      with open("hosts_list_file.txt", "w") as f:
-        for host in self.hosts_list:
-          f.write(f"{host}\n")
-      sys.stdout.write("setting ldap-replication on all cluster nodes..\n")
-      cmd = ['/opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh',
-             '-h',
-             'hosts_list_file.txt',
-             '-p',
-             f'{self.rootdn_passwd}']
-      handler = SimpleProcess(cmd)
-      stdout, stderr, retcode = handler.run()
-      if retcode != 0:
-        raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
-      os.remove("hosts_list_file.txt")
+    # set openldap-replication
+    self.configure_openldap_replication()  
+
     cmd = ['systemctl', 'restart', 'slapd']
     handler = SimpleProcess(cmd)
     stdout, stderr, retcode = handler.run()
     if retcode != 0:
       raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
+
+  def configure_openldap_replication(self):
+    """Configure openldap replication within a storage set."""
+    storage_set_count = Conf.get('provstore',
+                              Conf.get('localstore',
+                              'CONFSTORE_STORAGE_SET_COUNT_KEY').format(self.cluster_id))
+    index = 0
+    while index < storage_set_count:
+      server_nodes_list = Conf.get('provstore',
+                              Conf.get('localstore',
+                              'CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').format(self.cluster_id, index))
+      if len(server_nodes_list) > 1:
+        sys.stdout.write(f'Setting ldap-replication for storage_set:{index}\n')
+
+        with open("hosts_list_file.txt", "w") as f:
+          for node_machine_id in server_nodes_list:
+            hostname = Conf.get('provstore', f'server_node>{node_machine_id}>hostname')
+            f.write(f'{hostname}\n')
+
+        cmd = ['/opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh',
+             '-h',
+             'hosts_list_file.txt',
+             '-p',
+             f'{self.rootdn_passwd}']
+        handler = SimpleProcess(cmd)
+        stdout, stderr, retcode = handler.run()
+
+        os.remove("hosts_list_file.txt")
+
+        if retcode != 0:
+          raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")        
+      index += 1
+    # TODO: set replication across storage-sets
 
   def configure_haproxy(self):
     """Configure haproxy service."""
