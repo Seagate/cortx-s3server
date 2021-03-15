@@ -48,12 +48,16 @@ class SetupCmd(object):
     Conf.load('provstore', self._url)
 
     # machine_id will be used to read confstore keys
-    with open('/etc/machine_id') as f:
+    with open('/etc/machine-id') as f:
       self.machine_id = f.read().strip()
 
     self.cluster_id = Conf.get('provstore',
                               Conf.get('localstore',
                               'CONFSTORE_CLUSTER_ID_KEY').format(self.machine_id))
+
+  @property
+  def url(self) -> str:
+    return self._url
 
   def read_ldap_credentials(self):
     """Get 'ldapadmin' user name and password from confstore."""
