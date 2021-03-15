@@ -21,10 +21,9 @@
 import os
 import sys
 import argparse
-from s3confstore.cortx_s3_confstore import S3CortxConfStore
+from cortx.utils.conf_store.conf_store import Conf
 
 class S3HaproxyConfig:
-
   @staticmethod
   def run():
     parser = argparse.ArgumentParser(description='S3 haproxy configuration')
@@ -32,8 +31,10 @@ class S3HaproxyConfig:
 
     args = parser.parse_args()
 
+    Conf.load('localstore', "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml")
+
     if args.path and args.path.strip():
-      s3conf_store = S3CortxConfStore(args.path)
+      Conf.load('provstore', args.path)
     else:
       sys.exit("--path option value:[{}] is not valid.".format(args.path))
 
@@ -42,11 +43,19 @@ class S3HaproxyConfig:
     machine_id = mcid_file.read().strip()
     mcid_file.close()
 
-    #Get necessary info from s3conf_store
+    #Get necessary info from confstore
     localhost = '127.0.0.1'
-    pvt_ip = s3conf_store.get_privateip(machine_id)
-    pub_ip = s3conf_store.get_publicip(machine_id)
-    numS3Instances = int(s3conf_store.get_s3instance_count(machine_id))
+    pvt_ip = Conf.get('provstore',
+                  Conf.get('localstore',
+                  'CONFSTORE_PRIVATE_FQDN_KEY').format(machine_id))
+
+    pub_ip = Conf.get('provstore',
+                  Conf.get('localstore',
+                  'CONFSTORE_PRIVATE_FQDN_KEY').format(machine_id))
+
+    numS3Instances = int(Conf.get('provstore',
+                              Conf.get('localstore',
+                              'CONFSTORE_S3INSTANCES_KEY').format(machine_id)))
     if numS3Instances <= 0:
         numS3Instances = 1
 
