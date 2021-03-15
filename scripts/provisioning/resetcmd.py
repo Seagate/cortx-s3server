@@ -40,16 +40,16 @@ class ResetCmd(SetupCmd):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
     try:
-      sys.stdout.write(f"Cleaning up log files\n")
+      sys.stdout.write('INFO: Cleaning up log files.\n')
       self.CleanupLogs()
-      sys.stdout.write(f"Log files cleanup successful\n")
+      sys.stdout.write('INFO:Log files cleanup successfull.\n')
     except Exception as e:
       sys.stderr.write(f'Failed to cleanup log directories or files, error: {e}\n')
       raise e
 
 
   def CleanupLogs(self):
-    """Cleanup all the log directories and files"""
+    """Cleanup all the log directories and files."""
     # Backgrounddelete -> /var/log/seagate/s3/s3backgrounddelete/
     if os.path.exists("/var/log/seagate/s3/s3backgrounddelete"):
       self.DeleteDir("/var/log/seagate/s3/s3backgrounddelete/")
@@ -88,7 +88,7 @@ class ResetCmd(SetupCmd):
         os.remove(file)
 
   def DeleteDir(self, dirname: str):
-    """Delete files and directories inside given directory"""
+    """Delete files and directories inside given directory."""
     for filename in os.listdir(dirname):
       filepath = os.path.join(dirname, filename)
       try:
