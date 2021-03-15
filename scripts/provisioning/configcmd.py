@@ -91,7 +91,7 @@ class ConfigCmd(SetupCmd):
       raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
 
     # set openldap-replication
-    self.configure_openldap_replication()  
+    self.configure_openldap_replication()
 
     cmd = ['systemctl', 'restart', 'slapd']
     handler = SimpleProcess(cmd)
@@ -105,12 +105,12 @@ class ConfigCmd(SetupCmd):
                               Conf.get('localstore',
                               'CONFSTORE_STORAGE_SET_COUNT_KEY').format(self.cluster_id))
     index = 0
-    while index < storage_set_count:
+    while index < int(storage_set_count):
       server_nodes_list = Conf.get('provstore',
                               Conf.get('localstore',
                               'CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').format(self.cluster_id, index))
       if len(server_nodes_list) > 1:
-        sys.stdout.write(f'Setting ldap-replication for storage_set:{index}\n')
+        sys.stdout.write(f'\nSetting ldap-replication for storage_set:{index}\n\n')
 
         with open("hosts_list_file.txt", "w") as f:
           for node_machine_id in server_nodes_list:
@@ -128,7 +128,7 @@ class ConfigCmd(SetupCmd):
         os.remove("hosts_list_file.txt")
 
         if retcode != 0:
-          raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")        
+          raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
       index += 1
     # TODO: set replication across storage-sets
 
