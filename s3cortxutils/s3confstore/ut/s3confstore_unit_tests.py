@@ -66,7 +66,6 @@ class S3ConfStoreAPIsUT(unittest.TestCase):
 
   def make_dummy_conf(self, filename):
     test_config = ""
-    saved_umask = os.umask(0o077)
     with open(filename, 'w+') as file:
       file.write(test_config)
 

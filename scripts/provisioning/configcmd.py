@@ -23,7 +23,6 @@ import os
 import errno
 import shutil
 
-from cortx.utils.conf_store.conf_store import Conf
 from setupcmd import SetupCmd, S3PROVError
 from cortx.utils.process import SimpleProcess
 
@@ -101,20 +100,23 @@ class ConfigCmd(SetupCmd):
 
   def configure_openldap_replication(self):
     """Configure openldap replication within a storage set."""
-    storage_set_count = Conf.get('provstore',
-                              Conf.get('localstore',
-                              'CONFSTORE_STORAGE_SET_COUNT_KEY').format(self.cluster_id))
+    storage_set_count = self.provisioner_confstore.get_config(
+      self.s3_confkeys_store.get_config(
+        'CONFSTORE_STORAGE_SET_COUNT_KEY').format(self.cluster_id))
+
     index = 0
     while index < int(storage_set_count):
-      server_nodes_list = Conf.get('provstore',
-                              Conf.get('localstore',
-                              'CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').format(self.cluster_id, index))
+      server_nodes_list = self.provisioner_confstore.get_config(
+        self.s3_confkeys_store.get_config(
+          'CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').format(self.cluster_id, index))
+
       if len(server_nodes_list) > 1:
         sys.stdout.write(f'\nSetting ldap-replication for storage_set:{index}\n\n')
 
         with open("hosts_list_file.txt", "w") as f:
           for node_machine_id in server_nodes_list:
-            hostname = Conf.get('provstore', f'server_node>{node_machine_id}>hostname')
+            hostname = self.provisioner_confstore.get_config(
+              f'server_node>{node_machine_id}>hostname')
             f.write(f'{hostname}\n')
 
         cmd = ['/opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh',

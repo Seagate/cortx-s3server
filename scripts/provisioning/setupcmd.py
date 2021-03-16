@@ -21,7 +21,7 @@
 import sys
 import os
 from os import path
-from cortx.utils.conf_store import Conf
+from s3confstore.cortx_s3_confstore import S3CortxConfStore
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.validator.v_service import ServiceV
@@ -51,32 +51,48 @@ class SetupCmd(object):
       raise Exception('empty config URL path')
 
     self._url = config
-
-    Conf.load('localstore', f'yaml://{self.s3_prov_config}')
-    Conf.load('provstore', self._url)
+    self._provisioner_confstore = S3CortxConfStore(self._url, 'setup_prov_index')
+    self._s3_confkeys_store = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'setup_s3keys_index')
 
     # machine_id will be used to read confstore keys
     with open('/etc/machine-id') as f:
       self.machine_id = f.read().strip()
 
-    self.cluster_id = Conf.get('provstore',
-                              Conf.get('localstore',
-                              'CONFSTORE_CLUSTER_ID_KEY').format(self.machine_id))
+    self.cluster_id = self.provisioner_confstore.get_config(
+      self.s3_confkeys_store.get_config('CONFSTORE_CLUSTER_ID_KEY').format(self.machine_id))
 
   @property
   def url(self) -> str:
     return self._url
 
+  @property
+  def provisioner_confstore(self) -> str:
+    return self._provisioner_confstore
+
+  @property
+  def s3_confkeys_store(self) -> str:
+    return self._s3_confkeys_store
+
   def read_ldap_credentials(self):
     """Get 'ldapadmin' user name and password from confstore."""
     try:
-      s3cipher_obj = CortxS3Cipher(None, False, 0, Conf.get('localstore', 'CONFSTORE_OPENLDAP_CONST_KEY'))
+      s3cipher_obj = CortxS3Cipher(None,
+                                False,
+                                0,
+                                self.s3_confkeys_store.get_config(
+                                  'CONFSTORE_OPENLDAP_CONST_KEY'))
+
       cipher_key = s3cipher_obj.generate_key()
 
-      self.ldap_user = Conf.get('provstore', Conf.get('localstore', 'CONFSTORE_LDAPADMIN_USER_KEY'))
+      self.ldap_user = self.provisioner_confstore.get_config(
+        self.s3_confkeys_store.get_config(
+          'CONFSTORE_LDAPADMIN_USER_KEY'))
 
-      encrypted_ldapadmin_pass = Conf.get('provstore', Conf.get('localstore', 'CONFSTORE_LDAPADMIN_PASSWD_KEY'))
-      encrypted_rootdn_pass = Conf.get('provstore', Conf.get('localstore', 'CONFSTORE_ROOTDN_PASSWD_KEY'))
+      encrypted_ldapadmin_pass = self.provisioner_confstore.get_config(
+        self.s3_confkeys_store.get_config('CONFSTORE_LDAPADMIN_PASSWD_KEY'))
+
+      encrypted_rootdn_pass = self.provisioner_confstore.get_config(
+        self.s3_confkeys_store.get_config('CONFSTORE_ROOTDN_PASSWD_KEY'))
 
       self.ldap_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_ldapadmin_pass)
       self.rootdn_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_rootdn_pass)
@@ -92,12 +108,9 @@ class SetupCmd(object):
         raise S3PROVError(f'{op_file} must be present\n')
       else:
         key = 'cluster_config>cluster_id'
-
-        Conf.load('write_cluster_id_idx', f'yaml://{op_file}')
-        Conf.set('write_cluster_id_idx', f'{key}', f'{self.cluster_id}')
-        Conf.save('write_cluster_id_idx')
-
-        updated_cluster_id = Conf.get('write_cluster_id_idx', f'{key}')
+        opfileconfstore = S3CortxConfStore(f'yaml://{op_file}', 'write_cluster_id_idx')
+        opfileconfstore.set_config(f'{key}', f'{self.cluster_id}', True)
+        updated_cluster_id = opfileconfstore.get_config(f'{key}')
 
         if updated_cluster_id != self.cluster_id:
           raise S3PROVError(f'set_config failed to set {key}: {self.cluster_id} in {op_file} \n')
