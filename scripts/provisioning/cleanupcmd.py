@@ -85,7 +85,6 @@ class CleanupCmd(SetupCmd):
 
       # cleanup ldap config and schemas
       self.delete_ldap_config()
-
     except Exception as e:
       raise e
 
