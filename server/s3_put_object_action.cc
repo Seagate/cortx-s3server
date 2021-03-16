@@ -178,6 +178,8 @@ void S3PutObjectAction::parse_x_amz_tagging_header(std::string content) {
              "Successfully parsed the Key Values=%s %s", decoded_key,
              header->value);
       new_object_tags_map[decoded_key] = header->value;
+      free(decoded_key);
+      decoded_key = NULL;
     }
     validate_tags();
   } else {
