@@ -42,7 +42,7 @@ class ResetCmd(SetupCmd):
     try:
       sys.stdout.write('INFO: Cleaning up log files.\n')
       self.CleanupLogs()
-      sys.stdout.write('INFO:Log files cleanup successfull.\n')
+      sys.stdout.write('INFO:Log files cleanup successful.\n')
     except Exception as e:
       sys.stderr.write(f'Failed to cleanup log directories or files, error: {e}\n')
       raise e
@@ -72,7 +72,7 @@ class ResetCmd(SetupCmd):
                 "/var/log/haproxy-status.log",
                 "/var/log/slapd.log"]
     for logFile in logFiles:
-      self.DeleteFile(logFile)  
+      self.DeleteFile(logFile)
 
     # logRegexPath represents key->path and value->regex
     logRegexPath =  { '/var/log/seagate/motr':'s3server-*',
