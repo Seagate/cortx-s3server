@@ -51,51 +51,71 @@ class ResetCmd(SetupCmd):
   def CleanupLogs(self):
     """Cleanup all the log directories and files."""
     # Backgrounddelete -> /var/log/seagate/s3/s3backgrounddelete/
-    if os.path.exists("/var/log/seagate/s3/s3backgrounddelete"):
-      self.DeleteDir("/var/log/seagate/s3/s3backgrounddelete/")
-
     #Audit -> /var/log/seagate/s3/audit
-    if os.path.exists("/var/log/seagate/s3/audit"):
-      self.DeleteDir("/var/log/seagate/s3/audit/")
-
     # s3 -> /var/log/seagate/s3/
-    if os.path.exists("/var/log/seagate/s3"):
-      self.DeleteDir("/var/log/seagate/s3/")
-
     #Auth -> /var/log/seagate/auth/
-    if os.path.exists("/var/log/seagate/auth"):
-      self.DeleteDir("/var/log/seagate/auth/")
-
-    #S3 Motr -> /var/log/seagate/motr/
-    if os.path.exists("/var/log/seagate/motr"):
-      self.DeleteDir("/var/log/seagate/motr/")
-
+    #S3 Motr -> /var/log/seagate/motr/s3server-*
     #HAproxy -> /var/log/haproxy.log
-    #        -> /var/log/haproxy-status.log
-    if os.path.exists("/var/log/haproxy.log"):
-      os.remove("/var/log/haproxy.log")
-    if os.path.exists("/var/log/haproxy-status.log"):
-      os.remove("/var/log/haproxy-status.log")
-
+    #HAproxy -> /var/log/haproxy-status.log
     #Slapd -> /var/log/slapd.log
-    if os.path.exists("/var/log/slapd.log"):
-      os.remove("/var/log/slapd.log")
-
     #S3 Crash dumps -> /var/log/crash/core-s3server.*.gz
-    if os.path.exists("/var/log/crash"):
-      files = glob.glob('/var/log/crash/core-s3server.*.gz')
-      for file in files:
-        os.remove(file)
 
-  def DeleteDir(self, dirname: str):
+    logFolders = ["/var/log/seagate/s3/s3backgrounddelete",
+                  "/var/log/seagate/s3/audit",
+                  "/var/log/seagate/s3",
+                  "/var/log/seagate/auth"]
+
+    for logFolder in logFolders:
+      self.DeleteDirContents(logFolder)
+
+    logFiles = ["/var/log/haproxy.log",
+                "/var/log/haproxy-status.log",
+                "/var/log/slapd.log"]
+    for logFile in logFiles:
+      self.DeleteFile(logFile)  
+
+    # logRegexPath represents key->path and value->regex
+    logRegexPath =  { '/var/log/seagate/motr':'s3server-*',
+                      '/var/log/crash':'core-s3server.*.gz'}
+    for path in logRegexPath:
+      self.DeleteFileOrDirWithRegex(path, logRegexPath[path])
+
+  def DeleteDirContents(self, dirname: str):
     """Delete files and directories inside given directory."""
-    for filename in os.listdir(dirname):
-      filepath = os.path.join(dirname, filename)
+    if os.path.exists(dirname):
+      for filename in os.listdir(dirname):
+        filepath = os.path.join(dirname, filename)
+        try:
+          if os.path.isfile(filepath):
+            os.remove(filepath)
+          elif os.path.isdir(filepath):
+            shutil.rmtree(filepath)
+        except Exception as e:
+          sys.stderr.write(f'ERROR: DeleteDirContents(): Failed to delete: {filepath}, error: {str(e)}\n')
+          raise e
+
+  def DeleteFile(self, filepath: str):
+    """Delete file."""
+    if os.path.exists(filepath):
       try:
-        if os.path.isfile(filepath):
-          os.remove(filepath)
-        elif os.path.isdir(filepath):
-          shutil.rmtree(filepath)
+        os.remove(filepath)
       except Exception as e:
-        sys.stderr.write(f'ERROR: Failed to delete: {filepath}, error: {str(e)}\n')
+        sys.stderr.write(f'ERROR: DeleteFile(): Failed to delete file: {filepath}, error: {str(e)}\n')
         raise e
+
+  def DeleteFileOrDirWithRegex(self, path: str, regex: str):
+    """Delete files and directories inside given directory for which regex matches."""
+    if os.path.exists(path):
+      filepath = os.path.join(path, regex)
+      files = glob.glob(filepath)
+      for file in files:
+        try:
+          if os.path.isfile(file):
+            os.remove(file)
+          elif os.path.isdir(file):
+            shutil.rmtree(file)
+        except Exception as e:
+          sys.stderr.write(f'ERROR: DeleteFileOrDirWithRegex(): Failed to delete: {file}, error: {str(e)}\n')
+          raise e
+
+
