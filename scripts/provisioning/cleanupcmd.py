@@ -51,8 +51,10 @@ class CleanupCmd(SetupCmd):
     try:
       ldap_action_obj = LdapAccountAction(self.ldap_user, self.ldap_passwd)
       ldap_action_obj.delete_account(self.account_cleanup_dict)
+      self.cleanup_haproxy_configurations()
     except Exception as e:
       raise e
+
     try:
       self.revert_config_files()
     except Exception as e:
@@ -81,3 +83,43 @@ class CleanupCmd(SetupCmd):
     except Exception as e:
       sys.stderr.write(f'Failed to revert config files in Cleanup phase, error: {e}\n')
       raise e
+
+
+  def cleanup_haproxy_configurations(self):
+    """Resetting haproxy config."""
+    
+    #Initialize header and footer text
+    header_text = "#-------S3 Haproxy configuration start---------------------------------"
+    footer_text = "#-------S3 Haproxy configuration end-----------------------------------"
+
+    #Remove all existing content from header to footer
+    is_found = False
+    header_found = False
+    original_file = "/etc/haproxy/haproxy.cfg"
+    dummy_file = original_file + '.bak'
+    # Open original file in read only mode and dummy file in write mode
+    with open(original_file, 'r') as read_obj, open(dummy_file, 'w') as write_obj:
+        # Line by line copy data from original file to dummy file
+        for line in read_obj:
+            line_to_match = line
+            if line[-1] == '\n':
+                line_to_match = line[:-1]
+            # if current line matches with the given line then skip that line
+            if line_to_match != header_text:
+                if header_found == False:
+                    write_obj.write(line)
+                elif line_to_match == footer_text:
+                     header_found = False
+            else:
+                is_found = True
+                header_found = True
+                break
+    read_obj.close()
+    write_obj.close()
+    # If any line is skipped then rename dummy file as original file
+    if is_found:
+        os.remove(original_file)
+        os.rename(dummy_file, original_file)
+    else:
+        os.remove(dummy_file)
+
