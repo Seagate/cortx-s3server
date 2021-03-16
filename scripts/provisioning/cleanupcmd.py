@@ -82,6 +82,7 @@ class CleanupCmd(SetupCmd):
       self.delete_ldap_config()
 
       # TODO: Erase haproxy configurations (ref: PR #769)
+
     except Exception as e:
       raise e
 
