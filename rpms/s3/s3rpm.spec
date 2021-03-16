@@ -370,6 +370,7 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/bin/initcmd.py
 /opt/seagate/cortx/s3/bin/testcmd.py
 /opt/seagate/cortx/s3/bin/resetcmd.py
+/opt/seagate/cortx/s3/bin/preparecmd.py
 /opt/seagate/cortx/s3/bin/cleanupcmd.py
 /opt/seagate/cortx/s3/bin/ldapaccountaction.py
 /opt/seagate/cortx/s3/bin/merge.py

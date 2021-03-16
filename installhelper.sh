@@ -107,6 +107,7 @@ cp scripts/provisioning/initcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/cleanupcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/testcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/resetcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/preparecmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/setupcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/ldap/ldapaccountaction.py $S3_INSTALL_LOCATION/bin
 cp -f scripts/swupdate/merge.py $S3_INSTALL_LOCATION/bin
