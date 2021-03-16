@@ -112,20 +112,6 @@ class S3CortxConfStore:
           sys.exit(1)
       """TODO: Implement rest of the type's content validators here"""
 
-  def get_nodecount(self):
-    """Get total nodes count in the cluster, from py-utils::confstore."""
-    nodes_count = 0
-    dict_servernodes = None
-    key_to_read_from_conf = 'cluster>server_nodes'
-
-    dict_servernodes = self.get_config(key_to_read_from_conf)
-    if dict_servernodes:
-      nodes_count = len (dict_servernodes)
-    else:
-      print("Failed to read key: {} from confstore".format(key_to_read_from_conf))
-
-    return nodes_count
-
   def run(self):
     parser = argparse.ArgumentParser(description='cortx-py-utils::ConfStore wrapper')
 
