@@ -62,28 +62,20 @@ class CleanupCmd(SetupCmd):
 
   def revert_config_files(self):
     """Revert config files to their origional config state."""
-    auth_config="/opt/seagate/cortx/auth/resources/authserver.properties"
-    auth_keystore_config="/opt/seagate/cortx/auth/resources/keystore.properties"
-    auth_jksstore="/opt/seagate/cortx/auth/resources/s3authserver.jks"
-    auth_jksstore_template="/opt/seagate/cortx/auth/scripts/s3authserver.jks_template"
-    s3_config="/opt/seagate/cortx/s3/conf/s3config.yaml"
-    s3_bgdelete_config="/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
 
-    try:
-      if os.path.isfile(auth_config):
-        shutil.copy(auth_config+".sample", auth_config)
-      if os.path.isfile(auth_keystore_config):
-        shutil.copy(auth_keystore_config+".sample", auth_keystore_config)
-      if os.path.isfile(auth_jksstore):
-        shutil.copy(auth_jksstore_template, auth_jksstore)
-      if os.path.isfile(s3_config):
-        shutil.copy(s3_config+".sample", s3_config)
-      if os.path.isfile(s3_bgdelete_config):
-        shutil.copy(s3_bgdelete_config+".sample", s3_bgdelete_config)
-    except Exception as e:
-      sys.stderr.write(f'Failed to revert config files in Cleanup phase, error: {e}\n')
-      raise e
-
+    configFiles = ["/opt/seagate/cortx/auth/resources/authserver.properties",
+                  "/opt/seagate/cortx/auth/resources/keystore.properties",
+                  "/opt/seagate/cortx/auth/resources/s3authserver.jks",
+                  "/opt/seagate/cortx/auth/scripts/s3authserver.jks_template",
+                  "/opt/seagate/cortx/s3/conf/s3config.yaml",
+                  "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"]
+    for configFile in configFiles:
+      if os.path.isfile(configFile):
+        try:
+          shutil.copy(configFile+".sample", configFile)
+        except Exception as e:
+          sys.stderr.write(f'Failed to revert config files in Cleanup phase, error: {e}\n')
+          raise e
 
   def cleanup_haproxy_configurations(self):
     """Resetting haproxy config."""

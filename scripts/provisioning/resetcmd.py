@@ -60,9 +60,7 @@ class ResetCmd(SetupCmd):
     #Slapd -> /var/log/slapd.log
     #S3 Crash dumps -> /var/log/crash/core-s3server.*.gz
 
-    logFolders = ["/var/log/seagate/s3/s3backgrounddelete",
-                  "/var/log/seagate/s3/audit",
-                  "/var/log/seagate/s3",
+    logFolders = ["/var/log/seagate/s3",
                   "/var/log/seagate/auth"]
 
     for logFolder in logFolders:
