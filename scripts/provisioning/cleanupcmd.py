@@ -20,6 +20,7 @@
 
 import sys
 import os
+from pathlib import Path
 import shutil
 
 from setupcmd import SetupCmd
@@ -34,6 +35,24 @@ class CleanupCmd(SetupCmd):
                             "s3userId": "450"
                           }
                         }
+  # ldap config and schema related constants
+  ldap_configs = {
+                  "files": [
+                             "/etc/openldap/slapd.d/cn=config/cn=schema/cn={1}s3user.ldif",
+                             "/etc/openldap/slapd.d/cn=config/cn=module{0}.ldif",
+                             "/etc/openldap/slapd.d/cn=config/cn=module{1}.ldif",
+                             "/etc/openldap/slapd.d/cn=config/olcDatabase={2}mdb.ldif"
+                          ],
+                  "files_wild": [
+                             {
+                              "path": "/etc/openldap/slapd.d/cn=config/cn=schema/",
+                              "glob": "*ppolicy.ldif"
+                             }
+                          ],
+                  "dirs": [
+                             "/etc/openldap/slapd.d/cn=config/olcDatabase={2}mdb"
+                          ]
+                 }
 
   def __init__(self, config: str):
     """Constructor."""
@@ -49,16 +68,23 @@ class CleanupCmd(SetupCmd):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
     try:
+      # Check if reset phase was performed before this
+      self.detect_if_reset_done()
+
+      # cleanup ldap accounts related to S3
       ldap_action_obj = LdapAccountAction(self.ldap_user, self.ldap_passwd)
       ldap_action_obj.delete_account(self.account_cleanup_dict)
-      self.cleanup_haproxy_configurations()
-    except Exception as e:
-      raise e
 
-    try:
+      # Erase haproxy configurations
+      self.cleanup_haproxy_configurations()
+
+      # revert config files to their origional config state
       sys.stdout.write('INFO: Reverting config files.\n')
       self.revert_config_files()
       sys.stdout.write('INFO: Reverting config files successful.\n')
+
+      # cleanup ldap config and schemas
+      self.delete_ldap_config()
     except Exception as e:
       raise e
 
@@ -122,3 +148,35 @@ class CleanupCmd(SetupCmd):
     else:
         os.remove(dummy_file)
 
+  def detect_if_reset_done(self):
+    """TODO: Implement this handler, if reset not done, throw exception."""
+    sys.stdout.write(f"Processing {self.name} detect_if_reset_done, TODO: implement it\n")
+    # if reset_not_done
+        # raise S3PROVError("reset needs to be performed before cleanup can be processed\n")
+
+  def delete_ldap_config(self):
+    """Delete the ldap configs created by setup_ldap.sh during config phase."""
+    # Clean up old configuration if any
+    # Removing schemas
+    files = self.ldap_configs["files"]
+    files_wild = self.ldap_configs["files_wild"]
+    dirs = self.ldap_configs["dirs"]
+
+    for curr_file in files:
+      if os.path.isfile(curr_file):
+        os.remove(curr_file)
+        sys.stdout.write(f"{curr_file} removed\n")
+
+    for file_wild in files_wild:
+      for path in Path(f"{file_wild['path']}").glob(f"{file_wild['glob']}"):
+        if os.path.isfile(path):
+          os.remove(path)
+          sys.stdout.write(f"{path} removed\n")
+        elif os.path.isdir(path):
+          shutil.rmtree(path)
+          sys.stdout.write(f"{path} removed\n")
+
+    for curr_dir in dirs:
+      if os.path.isdir(curr_dir):
+        shutil.rmtree(curr_dir)
+        sys.stdout.write(f"{curr_dir} removed\n")

@@ -332,15 +332,6 @@ step_10 () {
 	if [ "$1" = "true" ];then
 		bash -x /opt/seagate/cortx/s3/bin/s3_setup cleanup --config "json://$s3_conf_file" &> /dev/null || die_with_error "s3:cleanup failed!"
 		echo "s3:cleanup passed!"
-		# Attempt ldap clean up since ansible openldap setup is not idempotent
-		systemctl stop slapd 2>/dev/null
-		yum remove -y openldap-servers openldap-clients || "openldap-servers openldap-clients removal failed"
-		rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
-		rm -rf /var/lib/ldap/*
-		rm -f /etc/sysconfig/slapd* 2>/dev/null || /bin/true
-		rm -f /etc/openldap/slapd* 2>/dev/null || /bin/true
-		rm -rf /etc/openldap/slapd.d/*
-		yum install -y openldap-servers openldap-clients || "openldap-servers openldap-clients install failed"
 	fi
 }
 
