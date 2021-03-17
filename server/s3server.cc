@@ -32,6 +32,7 @@
 #include "evhtp_wrapper.h"
 #include "fid/fid.h"
 #include "murmur3_hash.h"
+#include "s3_bucket_metadata_cache.h"
 #include "s3_motr_layout.h"
 #include "s3_common_utilities.h"
 #include "s3_daemonize_server.h"
@@ -1134,6 +1135,13 @@ int main(int argc, char **argv) {
 
   /* Set the fatal handler to graceful shutdown*/
   set_graceful_handler();
+
+  std::unique_ptr<S3BucketMetadataCache> sptr_bucket_metadata_cache(
+      new S3BucketMetadataCache(
+          g_option_instance->get_bucket_metadata_cache_max_size(),
+          g_option_instance->get_bucket_metadata_cache_expire_sec(),
+          g_option_instance->get_bucket_metadata_cache_refresh_sec()));
+  p_bucket_metadata_cache = sptr_bucket_metadata_cache.get();
 
   // new flag in Libevent 2.1
   // EVLOOP_NO_EXIT_ON_EMPTY tells event_base_loop()

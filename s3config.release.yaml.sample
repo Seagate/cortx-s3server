@@ -75,6 +75,9 @@ S3_AUTH_CONFIG:                                         # Section for S3 Auth Se
                                                         # ipv4 address format: ipv4:127.0.0.1
                                                         # ipv6 address format: ipv6:::1
    S3_AUTH_PORT: 28050                                  # Auth server port for https request
+   S3_BUCKET_METADATA_CACHE_MAX_SIZE: 10000             # Max count of entries in bucket MD cache
+   S3_BUCKET_METADATA_CACHE_EXPIRE_SEC: 5               # Expiration time for bucket metadata in cache
+   S3_BUCKET_METADATA_CACHE_REFRESH_SEC: 4              # Refresh timeout. After this timeout proactive MD re-load will happen.
 S3_MOTR_CONFIG:                                     # Section for S3 Motr
    S3_MOTR_LOCAL_ADDR: <ipaddress>@tcp:12345:33:100   # Motr end points, replace <ipaddress> with host's ip address
    S3_MOTR_HA_ADDR: <ipaddress>@tcp:12345:34:1        # Motr end point, replace <ipaddress> with host's ip address

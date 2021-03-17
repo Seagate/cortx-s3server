@@ -134,11 +134,11 @@ void S3CopyObjectActionTest::create_src_object_metadata() {
   EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
               get_object_list_index_oid())
       .Times(1)
-      .WillOnce(Return(object_list_indx_oid));
+      .WillOnce(ReturnRef(object_list_indx_oid));
   EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
               get_objects_version_list_index_oid())
       .Times(1)
-      .WillOnce(Return(objects_version_list_idx_oid));
+      .WillOnce(ReturnRef(objects_version_list_idx_oid));
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata, load(_, _))
       .Times(AtLeast(1));
 
@@ -158,11 +158,11 @@ void S3CopyObjectActionTest::create_dst_object_metadata() {
   EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
               get_object_list_index_oid())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(object_list_indx_oid));
+      .WillRepeatedly(ReturnRef(object_list_indx_oid));
   EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
               get_objects_version_list_index_oid())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(objects_version_list_idx_oid));
+      .WillRepeatedly(ReturnRef(objects_version_list_idx_oid));
   EXPECT_CALL(*(ptr_mock_object_meta_factory->mock_object_metadata), load(_, _))
       .Times(AtLeast(1));
   EXPECT_CALL(*(ptr_mock_request), http_verb())
@@ -283,12 +283,12 @@ TEST_F(S3CopyObjectActionTest, FetchSourceObjectInfoListIndexNull) {
   EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
               get_object_list_index_oid())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(zero_oid_idx));
+      .WillRepeatedly(ReturnRef(zero_oid_idx));
 
   EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
               get_objects_version_list_index_oid())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(zero_oid_idx));
+      .WillRepeatedly(ReturnRef(zero_oid_idx));
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(404, _)).Times(1);
