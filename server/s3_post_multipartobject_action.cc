@@ -171,11 +171,13 @@ void S3PostMultipartObjectAction::parse_x_amz_tagging_header(
     for (struct evkeyval* header = key_value.tqh_first; header;
          header = header->next.tqe_next) {
 
-      decoded_key = evhttp_decode_uri(header->key);
+      decoded_key = evhttp_uridecode(header->key, 0, NULL);
       s3_log(S3_LOG_DEBUG, request_id,
              "Successfully parsed the Key Values=%s %s", decoded_key,
              header->value);
       new_object_tags_map[decoded_key] = header->value;
+      free(decoded_key);
+      decoded_key = NULL;
     }
     validate_tags();
   } else {
