@@ -87,7 +87,6 @@ class CleanupCmd(SetupCmd):
 
   def cleanup_haproxy_configurations(self):
     """Resetting haproxy config."""
-    
     #Initialize header and footer text
     header_text = "#-------S3 Haproxy configuration start---------------------------------"
     footer_text = "#-------S3 Haproxy configuration end-----------------------------------"
