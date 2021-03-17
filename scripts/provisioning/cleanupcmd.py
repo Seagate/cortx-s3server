@@ -56,34 +56,34 @@ class CleanupCmd(SetupCmd):
       raise e
 
     try:
+      sys.stdout.write('INFO: Reverting config files.\n')
       self.revert_config_files()
+      sys.stdout.write('INFO: Reverting config files successful.\n')
     except Exception as e:
       raise e
 
   def revert_config_files(self):
-    """Revert config files to their origional config state."""
-    auth_config="/opt/seagate/cortx/auth/resources/authserver.properties"
-    auth_keystore_config="/opt/seagate/cortx/auth/resources/keystore.properties"
-    auth_jksstore="/opt/seagate/cortx/auth/resources/s3authserver.jks"
-    auth_jksstore_template="/opt/seagate/cortx/auth/scripts/s3authserver.jks_template"
-    s3_config="/opt/seagate/cortx/s3/conf/s3config.yaml"
-    s3_bgdelete_config="/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
+    """Revert config files to their original config state."""
+
+    configFiles = ["/opt/seagate/cortx/auth/resources/authserver.properties",
+                  "/opt/seagate/cortx/auth/resources/keystore.properties",
+                  "/opt/seagate/cortx/s3/conf/s3config.yaml",
+                  "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"]
 
     try:
-      if os.path.isfile(auth_config):
-        shutil.copy(auth_config+".sample", auth_config)
-      if os.path.isfile(auth_keystore_config):
-        shutil.copy(auth_keystore_config+".sample", auth_keystore_config)
+      for configFile in configFiles:
+        if os.path.isfile(configFile):
+            shutil.copy(configFile+".sample", configFile)
+
+      #Handling jks template separately as it does not have .sample extention
+      auth_jksstore = "/opt/seagate/cortx/auth/resources/s3authserver.jks"
+      auth_jksstore_template ="/opt/seagate/cortx/auth/scripts/s3authserver.jks_template"
       if os.path.isfile(auth_jksstore):
         shutil.copy(auth_jksstore_template, auth_jksstore)
-      if os.path.isfile(s3_config):
-        shutil.copy(s3_config+".sample", s3_config)
-      if os.path.isfile(s3_bgdelete_config):
-        shutil.copy(s3_bgdelete_config+".sample", s3_bgdelete_config)
+
     except Exception as e:
       sys.stderr.write(f'Failed to revert config files in Cleanup phase, error: {e}\n')
       raise e
-
 
   def cleanup_haproxy_configurations(self):
     """Resetting haproxy config."""
