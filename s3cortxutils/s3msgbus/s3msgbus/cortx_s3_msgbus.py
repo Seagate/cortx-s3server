@@ -24,7 +24,7 @@
 import os.path
 import errno
 import traceback
-from cortx.utils.message_bus import MessageBus, MessageProducer, MessageConsumer
+from cortx.utils.message_bus import MessageBus, MessageProducer, MessageConsumer, MessageBusAdmin
 
 class S3CortxMsgBus:
 
@@ -119,3 +119,52 @@ class S3CortxMsgBus:
         except:
             return 0
         return unread_count
+
+    @staticmethod
+    def create_topic(admin_id: str, message_types: list, partitions: int):
+        """create topic."""
+        try:
+            if S3CortxMsgBus._message_bus:
+                mbadmin = MessageBusAdmin(S3CortxMsgBus._message_bus, admin_id)
+                mbadmin.register_message_type(message_types = message_types,
+                                            partitions = partitions)
+        except Exception as e:
+            raise Exception("Failed to create topic")
+
+    @staticmethod
+    def increase_partitions(admin_id: str, message_types: list, partitions: int):
+        """Increase partition count for given topic."""
+        try:
+            if S3CortxMsgBus._message_bus:
+                mbadmin = MessageBusAdmin(S3CortxMsgBus._message_bus, admin_id)
+                mbadmin.increase_parallelism(message_types = message_types, partitions = partitions)
+        except Exception as e:
+            raise Exception("Failed to increase partition")
+
+    @staticmethod
+    def delete_topic(admin_id: str, message_types: list):
+        """Delete given topic"""
+        try:
+            if S3CortxMsgBus._message_bus:
+                mbadmin = MessageBusAdmin(S3CortxMsgBus._message_bus,
+                                        admin_id)
+                mbadmin.deregister_message_type(message_types = message_types)
+        except Exception as e:
+            raise Exception("Failed to delete topic")
+
+    @staticmethod
+    def list_topics(admin_id: str):
+        """list all available topics"""
+        if S3CortxMsgBus._message_bus:
+            mbadmin = MessageBusAdmin(S3CortxMsgBus._message_bus, admin_id)
+            return mbadmin.list_message_types()
+
+    @staticmethod
+    def is_topic_exist(admin_id: str, topic_name: str):
+        """retuns true if topic exist else false"""
+        if S3CortxMsgBus._message_bus:
+            mbadmin = MessageBusAdmin(S3CortxMsgBus._message_bus, admin_id)
+            if topic_name in mbadmin.list_message_types():
+                return True
+            return False
+
