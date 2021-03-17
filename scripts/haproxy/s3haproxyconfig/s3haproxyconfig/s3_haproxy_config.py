@@ -53,7 +53,7 @@ class S3HaproxyConfig:
 
     pub_ip = provisioner_confstore.get_config(
       local_confstore.get_config(
-        'CONFSTORE_PRIVATE_FQDN_KEY').format(machine_id))
+        'CONFSTORE_PUBLIC_FQDN_KEY').format(machine_id))
 
     numS3Instances = int(provisioner_confstore.get_config(
       local_confstore.get_config(
