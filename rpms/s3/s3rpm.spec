@@ -357,6 +357,13 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/reset/precheck.py
 /opt/seagate/cortx/s3/reset/reset_s3.sh
 /opt/seagate/cortx/s3/conf/setup.yaml
+/opt/seagate/cortx/s3/conf/s3.post_install.conf.tmpl
+/opt/seagate/cortx/s3/conf/s3.prepare.conf.tmpl
+/opt/seagate/cortx/s3/conf/s3.config.conf.tmpl
+/opt/seagate/cortx/s3/conf/s3.init.conf.tmpl
+/opt/seagate/cortx/s3/conf/s3.test.conf.tmpl
+/opt/seagate/cortx/s3/conf/s3.reset.conf.tmpl
+/opt/seagate/cortx/s3/conf/s3.cleanup.conf.tmpl
 /opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.properties
 /opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.properties
 /opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml
