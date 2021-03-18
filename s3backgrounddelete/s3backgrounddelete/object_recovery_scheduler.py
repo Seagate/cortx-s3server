@@ -219,10 +219,33 @@ class ObjectRecoveryScheduler(object):
         def periodic_run(scheduler):
             """Add key value to queue using scheduler."""
             #Conditionally importing ObjectRecoveryRabbitMq/ObjectRecoveryMsgbusConsumer when config setting says so.
+            from s3backgrounddelete.object_recovery_msgbus import ObjectRecoveryMsgbus
+
+            if not self.producer:
+                self.producer = ObjectRecoveryMsgbus(
+                    self.config,
+                    self.logger)
+            
+            maxKeys = self.config.get_max_keys()
+            count = self.producer.get_count()
+            threshold = 0.2*maxKeys
+            self.logger.info("threshold is : " + str(threshold))
+            self.logger.info("count of unread msgs is : " + str(count))
+                        
             if self.config.get_messaging_platform() == MESSAGE_BUS:
-                self.add_kv_to_msgbus()
+                if int(count) < threshold:
+                    self.logger.debug("count is less than 60 percent of threshold.")
+                    self.add_kv_to_msgbus()
+                else:
+                    #do nothing
+                    self.logger.debug("count is more than threshold")
             elif self.config.get_messaging_platform() == RABBIT_MQ:
-                self.add_kv_to_queue()
+                if int(count) < threshold:
+                    self.logger.debug("count is less than 60 percent of threshold")
+                    self.add_kv_to_queue()
+                else:
+                    #do nothing
+                    self.logger.debug("count is more than threshold")
             else:
                 self.logger.error(
                 "Invalid argument specified in messaging_platform use message_bus or rabbit_mq")

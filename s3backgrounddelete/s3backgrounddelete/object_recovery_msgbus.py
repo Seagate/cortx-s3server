@@ -245,3 +245,23 @@ class ObjectRecoveryMsgbus(object):
             self._logger.error("Exception:{}".format(exception))
             self.__isproducersetupcomplete = False
             return False
+            
+    def get_count(self):
+        """Get count of unread messages"""
+        try:
+            consumer_group = self._config.get_msgbus_consumer_group()
+            if not self.__isproducersetupcomplete:
+                self.__setup_producer()
+                if not self.__isproducersetupcomplete:
+                    self._logger.info("producer connection issues")
+                    return False
+            if not self.__msgbuslib:
+                ret = self.__loadmsgbuslibrary()
+                if not ret:
+                    self.logger.debug("failed to load msgbus library")
+                    return False
+            
+            unread_count = self.__msgbuslib.count(consumer_group)
+            return unread_count
+        except Exception as exception:
+            self._logger.error("Exception:{}".format(exception))

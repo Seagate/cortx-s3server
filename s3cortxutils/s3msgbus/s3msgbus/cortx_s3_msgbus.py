@@ -110,3 +110,11 @@ class S3CortxMsgBus:
                 exception, traceback.format_exc())
             return False, msg
         return True, None
+        
+    def count(self, consumer_group):
+        """ Get the count of unread messages """
+        try:
+            count = self._producer.get_unread_count(consumer_group)
+        except Exception as exception:
+            self._logger.error("Exception:{}".format(exception))
+        return count
