@@ -22,7 +22,10 @@ import sys
 import os
 import shutil
 import glob
-
+import time
+from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
+from s3backgrounddelete.cortx_s3_config import CORTXS3Config
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 from setupcmd import SetupCmd
 
 class ResetCmd(SetupCmd):
@@ -44,6 +47,14 @@ class ResetCmd(SetupCmd):
       sys.stdout.write('INFO: Cleaning up log files.\n')
       self.CleanupLogs()
       sys.stdout.write('INFO:Log files cleanup successful.\n')
+
+      # purge messages from message bus
+      bgdeleteconfig = CORTXS3Config()
+      if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
+        sys.stdout.write('INFO: Purging messages from message bus.\n')
+        self.purge_messages()
+        sys.stdout.write('INFO:Purge message successful.\n')
+
     except Exception as e:
       sys.stderr.write(f'Failed to cleanup log directories or files, error: {e}\n')
       raise e
@@ -117,4 +128,14 @@ class ResetCmd(SetupCmd):
           sys.stderr.write(f'ERROR: DeleteFileOrDirWithRegex(): Failed to delete: {file}, error: {str(e)}\n')
           raise e
 
+  def purge_messages(self):
+    """purge messages on message bus."""
+    try:
+      s3MessageBus = S3CortxMsgBus()
+      s3MessageBus.connect()
+      s3MessageBus.purge()
+      #Insert a delay of 1 min after purge, so that the messages are deleted
+      time.sleep(60)
+    except:
+      sys.stdout.write('Exception during purge. May be there are no messages to purge\n')
 

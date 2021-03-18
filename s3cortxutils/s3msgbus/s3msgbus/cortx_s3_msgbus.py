@@ -128,7 +128,7 @@ class S3CortxMsgBus:
                 mbadmin = MessageBusAdmin(S3CortxMsgBus._message_bus, admin_id)
                 mbadmin.register_message_type(message_types = message_types,
                                             partitions = partitions)
-        except Exception as e:
+        except:
             raise Exception("Failed to create topic")
 
     @staticmethod
@@ -138,7 +138,7 @@ class S3CortxMsgBus:
             if S3CortxMsgBus._message_bus:
                 mbadmin = MessageBusAdmin(S3CortxMsgBus._message_bus, admin_id)
                 mbadmin.increase_parallelism(message_types = message_types, partitions = partitions)
-        except Exception as e:
+        except:
             raise Exception("Failed to increase partition")
 
     @staticmethod
@@ -149,7 +149,7 @@ class S3CortxMsgBus:
                 mbadmin = MessageBusAdmin(S3CortxMsgBus._message_bus,
                                         admin_id)
                 mbadmin.deregister_message_type(message_types = message_types)
-        except Exception as e:
+        except:
             raise Exception("Failed to delete topic")
 
     @staticmethod

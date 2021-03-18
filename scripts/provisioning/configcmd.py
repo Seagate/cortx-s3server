@@ -26,6 +26,9 @@ from  ast import literal_eval
 
 from setupcmd import SetupCmd, S3PROVError
 from cortx.utils.process import SimpleProcess
+from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
+from s3backgrounddelete.cortx_s3_config import CORTXS3Config
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS, ADMIN_ID
 
 class ConfigCmd(SetupCmd):
   """Config Setup Cmd."""
@@ -54,6 +57,14 @@ class ConfigCmd(SetupCmd):
       # Configure haproxy
       self.configure_haproxy()
       sys.stdout.write("INFO: Successfully configured haproxy on the node.\n")
+
+      # create topic for background delete
+      bgdeleteconfig = CORTXS3Config()
+      if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
+        sys.stdout.write('INFO: Creating topic.\n')
+        # TODO Partition count should be ( number of hosts * 2 )
+        self.create_topic(ADMIN_ID, bgdeleteconfig.get_msgbus_topic(), 2)
+        sys.stdout.write('INFO:Topic creation successful.\n')
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}\n')
 
@@ -149,3 +160,16 @@ class ConfigCmd(SetupCmd):
     stdout, stderr, retcode = handler.run()
     if retcode != 0:
       raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
+
+  def create_topic(self, admin_id: str, topic_name:str, partitions: int):
+    """create topic for background delete services."""
+    try:
+      s3MessageBus = S3CortxMsgBus()
+      s3MessageBus.connect()
+      if not S3CortxMsgBus.is_topic_exist(admin_id, topic_name):
+        S3CortxMsgBus.create_topic(admin_id, [topic_name], partitions)
+    except Exception as e:
+      raise e
+
+
+
