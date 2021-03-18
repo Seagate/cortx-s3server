@@ -22,6 +22,7 @@ import sys
 import os
 import errno
 import shutil
+from  ast import literal_eval
 
 from setupcmd import SetupCmd, S3PROVError
 from cortx.utils.process import SimpleProcess
@@ -108,6 +109,9 @@ class ConfigCmd(SetupCmd):
       server_nodes_list = self.provisioner_confstore.get_config(
         self.s3_confkeys_store.get_config(
           'CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').format(self.cluster_id, index))
+      if type(server_nodes_list) is str:
+        # list is stored as string in the confstore file
+        server_nodes_list = literal_eval(server_nodes_list)
 
       if len(server_nodes_list) > 1:
         sys.stdout.write(f'\nSetting ldap-replication for storage_set:{index}\n\n')

@@ -1,7 +1,6 @@
 {
-    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "motr", "python36-ldap"],
+    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
     "pip3s": ["s3confstore", "cryptography", "s3haproxyconfig", "s3cipher"],
-    "services": ["sshd", "rabbitmq-server", "haproxy", "slapd", "rsyslog"],
     "exists": [
 		"file:/etc/machine-id",
 		"file:/etc/haproxy/haproxy.cfg",
