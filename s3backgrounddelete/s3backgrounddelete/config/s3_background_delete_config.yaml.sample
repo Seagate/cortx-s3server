@@ -26,7 +26,7 @@ cortx_s3:                                   # Section for S3 background delete c
    default_region: "us-west2"                              # CORTX s3 client will use the specified host
    daemon_mode: True                                       # S3background process run in daemon mode and ST's run in non-daemon mode.
    s3_instance_count: 22                                   # Number of active s3 instances in release setup
-   messaging_platform: "rabbit_mq"                       # Whether to use message_bus or rabbit_mq as the messaging platform
+   messaging_platform: "message_bus"                       # Whether to use message_bus or rabbit_mq as the messaging platform
    
 message_bus:
    topic: "bgdelete"
