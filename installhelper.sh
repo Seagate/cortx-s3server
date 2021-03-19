@@ -95,13 +95,25 @@ cp -R scripts/haproxy/* $S3_INSTALL_LOCATION/install/haproxy
 
 # Copy the provisioning config
 cp scripts/provisioning/setup.yaml $S3_INSTALL_LOCATION/conf
-cp scripts/provisioning/s3.post_install.conf.tmpl $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/s3.singlenode.post_install.conf.tmpl $S3_INSTALL_LOCATION/conf
 cp scripts/provisioning/s3.prepare.conf.tmpl $S3_INSTALL_LOCATION/conf
-cp scripts/provisioning/s3.config.conf.tmpl $S3_INSTALL_LOCATION/conf
-cp scripts/provisioning/s3.init.conf.tmpl $S3_INSTALL_LOCATION/conf
-cp scripts/provisioning/s3.test.conf.tmpl $S3_INSTALL_LOCATION/conf
-cp scripts/provisioning/s3.reset.conf.tmpl $S3_INSTALL_LOCATION/conf
-cp scripts/provisioning/s3.cleanup.conf.tmpl $S3_INSTALL_LOCATION/conf
+
+cp scripts/provisioning/s3.singlenode.init.conf.tmpl $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/s3.singlenode.init.conf.tmpl.sample $S3_INSTALL_LOCATION/conf
+
+cp scripts/provisioning/s3.singlenode.test.conf.tmpl.sample $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/s3.singlenode.test.conf.tmpl $S3_INSTALL_LOCATION/conf
+
+cp scripts/provisioning/s3.singlenode.config.conf.tmpl.sample $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/s3.singlenode.config.conf.tmpl $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/s3.triplenode.config.conf.tmpl.sample $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/s3.triplenode.config.conf.tmpl $S3_INSTALL_LOCATION/conf
+
+cp scripts/provisioning/s3.singlenode.reset.conf.tmpl $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/s3.singlenode.reset.conf.tmpl.sample $S3_INSTALL_LOCATION/conf
+
+cp scripts/provisioning/s3.singlenode.cleanup.conf.tmpl $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/s3.singlenode.cleanup.conf.tmpl.sample $S3_INSTALL_LOCATION/conf
 
 # Copy the provisioning shell script
 cp scripts/provisioning/s3_setup $S3_INSTALL_LOCATION/bin

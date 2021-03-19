@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,3 +17,27 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+server_node:
+  TMPL_MACHINE_ID:
+    cluster_id: "TMPL_CLUSTER_ID"
+    hostname: "TMPL_HOSTNAME"
+    network:
+      data:
+        public_fqdn: "TMPL_DATA_PUBLIC"
+        private_fqdn: "TMPL_DATA_PRIVATE"
+    s3_instances: "TMPL_INSTANCES"
+cortx:
+  software:
+    openldap:
+      root:
+        user: "admin"
+        secret: "TMPL_ROOT_SECRET_KEY"
+      sgiam:
+        user: "sgiamadmin"
+        secret: "TMPL_SGIAM_SECRET_KEY"
+cluster:
+  TMPL_CLUSTER_ID:
+    site:
+      storage_set_count: "TMPL_STORAGE_COUNT"
+    storage_set:
+      server_nodes: "['TMPL_MACHINE_ID']"

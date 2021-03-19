@@ -61,10 +61,6 @@ class SetupCmd(object):
     self.cluster_id = self.provisioner_confstore.get_config(
       self.s3_confkeys_store.get_config('CONFSTORE_CLUSTER_ID_KEY').format(self.machine_id))
 
-    if self.cluster_id is None:
-      raise S3PROVError(f'cluster_id is None, confstore config file does not seems to have'
-                    f' server_node>{self.machine_id}>cluster_id attribute\n')
-
   @property
   def url(self) -> str:
     return self._url

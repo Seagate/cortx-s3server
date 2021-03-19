@@ -95,6 +95,7 @@ BuildRequires: python-keyring python-futures
 # Uncomment below line to enable motr version check during s3server rpm installation
 #Requires: cortx-motr = %{h_cortxmotr_version}
 Requires: cortx-motr
+Requires: cortx-py-utils
 %endif
 Requires: libxml2
 Requires: libyaml
@@ -357,13 +358,20 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/reset/precheck.py
 /opt/seagate/cortx/s3/reset/reset_s3.sh
 /opt/seagate/cortx/s3/conf/setup.yaml
-/opt/seagate/cortx/s3/conf/s3.post_install.conf.tmpl
-/opt/seagate/cortx/s3/conf/s3.prepare.conf.tmpl
-/opt/seagate/cortx/s3/conf/s3.config.conf.tmpl
-/opt/seagate/cortx/s3/conf/s3.init.conf.tmpl
-/opt/seagate/cortx/s3/conf/s3.test.conf.tmpl
-/opt/seagate/cortx/s3/conf/s3.reset.conf.tmpl
-/opt/seagate/cortx/s3/conf/s3.cleanup.conf.tmpl
+/opt/seagate/cortx/s3/conf/s3.singlenode.post_install.conf.tmpl
+/opt/seagate/cortx/s3/conf/s3.singlenode.prepare.conf.tmpl
+/opt/seagate/cortx/s3/conf/s3.singlenode.config.conf.tmpl
+/opt/seagate/cortx/s3/conf/s3.singlenode.config.conf.tmpl.sample
+/opt/seagate/cortx/s3/conf/s3.triplenode.config.conf.tmpl
+/opt/seagate/cortx/s3/conf/s3.triplenode.config.conf.tmpl.sample
+/opt/seagate/cortx/s3/conf/s3.singlenode.init.conf.tmpl
+/opt/seagate/cortx/s3/conf/s3.singlenode.init.conf.tmpl.sample
+/opt/seagate/cortx/s3/conf/s3.singlenode.test.conf.tmpl
+/opt/seagate/cortx/s3/conf/s3.singlenode.test.conf.tmpl.sample
+/opt/seagate/cortx/s3/conf/s3.singlenode.reset.conf.tmpl
+/opt/seagate/cortx/s3/conf/s3.singlenode.reset.conf.tmpl.sample
+/opt/seagate/cortx/s3/conf/s3.singlenode.cleanup.conf.tmpl
+/opt/seagate/cortx/s3/conf/s3.singlenode.cleanup.conf.tmpl.sample
 /opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.properties
 /opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.properties
 /opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml
