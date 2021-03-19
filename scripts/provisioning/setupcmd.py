@@ -58,8 +58,8 @@ class SetupCmd(object):
     with open('/etc/machine-id') as f:
       self.machine_id = f.read().strip()
 
-    self.cluster_id = self.provisioner_confstore.get_config(
-      self.s3_confkeys_store.get_config('CONFSTORE_CLUSTER_ID_KEY').format(self.machine_id))
+    self.cluster_id = self.get_confvalue(self.get_confkey(
+      'CONFSTORE_CLUSTER_ID_KEY').format(self.machine_id))
 
   @property
   def url(self) -> str:
@@ -73,12 +73,10 @@ class SetupCmd(object):
   def s3_confkeys_store(self) -> str:
     return self._s3_confkeys_store
 
-  @property
   def get_confkey(self, key: str) -> str:
     assert self.s3_confkeys_store != None
-    self.s3_confkeys_store.get_config(key)
+    return self.s3_confkeys_store.get_config(key)
 
-  @property
   def get_confvalue(self, key: str) -> str:
     assert self.provisioner_confstore != None
     return self.provisioner_confstore.get_config(key)

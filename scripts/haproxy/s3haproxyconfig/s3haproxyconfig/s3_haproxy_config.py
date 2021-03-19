@@ -29,7 +29,6 @@ class S3HaproxyConfig:
   provisioner_confstore = None
   machine_id = None
 
-  @property
   def get_publicip(self) -> str:
     assert self.provisioner_confstore != None
     assert self.local_confstore != None
@@ -38,7 +37,6 @@ class S3HaproxyConfig:
       self.local_confstore.get_config(
         'CONFSTORE_PRIVATE_FQDN_KEY').format(self.machine_id))
 
-  @property
   def get_privateip(self) -> str:
     assert self.provisioner_confstore != None
     assert self.local_confstore != None
@@ -47,7 +45,6 @@ class S3HaproxyConfig:
       self.local_confstore.get_config(
         'CONFSTORE_PRIVATE_FQDN_KEY').format(self.machine_id))
 
-  @property
   def get_s3instances(self) -> str:
     assert self.provisioner_confstore != None
     assert self.local_confstore != None
