@@ -91,7 +91,10 @@ void S3CopyObjectAction::get_source_bucket_and_object() {
       source_object_name = source.substr(separator_pos + 1);
     }
   }
-  source_object_name = evhttp_decode_uri(source_object_name.c_str());
+  char* decode_uri = evhttp_uridecode(source_object_name.c_str(), 0, NULL);
+  source_object_name = decode_uri;
+  free(decode_uri);
+  decode_uri = NULL;
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
