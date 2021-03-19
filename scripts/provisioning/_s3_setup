@@ -46,8 +46,11 @@ def main():
   testCmd = subparsers.add_parser('test', help='setup test')
   testCmd.add_argument("--config", help='config URL', type=str, required=True)
 
-  testCmd = subparsers.add_parser('reset', help='setup reset')
-  testCmd.add_argument("--config", help='config URL', type=str, required=True)
+  resetCmd = subparsers.add_parser('reset', help='setup reset')
+  resetCmd.add_argument("--config", help='config URL', type=str, required=True)
+
+  prepareCmd = subparsers.add_parser('prepare', help='setup prepare')
+  prepareCmd.add_argument("--config", help='config URL', type=str, required=True)
 
   args = parser.parse_args()
   try:
@@ -79,6 +82,11 @@ def main():
       from resetcmd import ResetCmd
       ResetCmd(args.config).process()
       sys.stdout.write('INFO: reset successful.\n')
+
+    elif args.command == 'prepare':
+      from preparecmd import PrepareCmd
+      PrepareCmd(args.config).process()
+      sys.stdout.write('INFO: prepare successful.\n')
 
   except Exception as e:
     sys.stderr.write(f"\n{str(e)}\n\n")
