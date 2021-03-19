@@ -359,7 +359,9 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/reset/reset_s3.sh
 /opt/seagate/cortx/s3/conf/setup.yaml
 /opt/seagate/cortx/s3/conf/s3.post_install.tmpl.1-node
+/opt/seagate/cortx/s3/conf/s3.post_install.tmpl.1-node.sample
 /opt/seagate/cortx/s3/conf/s3.prepare.tmpl.1-node
+/opt/seagate/cortx/s3/conf/s3.prepare.tmpl.1-node.sample
 /opt/seagate/cortx/s3/conf/s3.config.tmpl.1-node
 /opt/seagate/cortx/s3/conf/s3.config.tmpl.1-node.sample
 /opt/seagate/cortx/s3/conf/s3.config.tmpl.3-node

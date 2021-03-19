@@ -100,15 +100,13 @@ class ConfigCmd(SetupCmd):
 
   def configure_openldap_replication(self):
     """Configure openldap replication within a storage set."""
-    storage_set_count = self.provisioner_confstore.get_config(
-      self.s3_confkeys_store.get_config(
+    storage_set_count = self.get_confvalue(self.get_confkey(
         'CONFSTORE_STORAGE_SET_COUNT_KEY').format(self.cluster_id))
 
     index = 0
     while index < int(storage_set_count):
-      server_nodes_list = self.provisioner_confstore.get_config(
-        self.s3_confkeys_store.get_config(
-          'CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').format(self.cluster_id, index))
+      server_nodes_list = self.get_confvalue(self.get_confkey(
+        'CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').format(self.cluster_id, index))
       if type(server_nodes_list) is str:
         # list is stored as string in the confstore file
         server_nodes_list = literal_eval(server_nodes_list)
@@ -118,8 +116,7 @@ class ConfigCmd(SetupCmd):
 
         with open("hosts_list_file.txt", "w") as f:
           for node_machine_id in server_nodes_list:
-            hostname = self.provisioner_confstore.get_config(
-              f'server_node>{node_machine_id}>hostname')
+            hostname = self.get_confvalue(f'server_node>{node_machine_id}>hostname')
             f.write(f'{hostname}\n')
 
         cmd = ['/opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh',
