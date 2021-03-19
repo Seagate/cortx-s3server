@@ -73,26 +73,31 @@ class SetupCmd(object):
   def s3_confkeys_store(self) -> str:
     return self._s3_confkeys_store
 
+  @property
+  def get_confkey(self, key: str) -> str:
+    assert self.s3_confkeys_store != None
+    self.s3_confkeys_store.get_config(key)
+
+  @property
+  def get_confvalue(self, key: str) -> str:
+    assert self.provisioner_confstore != None
+    return self.provisioner_confstore.get_config(key)
+
   def read_ldap_credentials(self):
     """Get 'ldapadmin' user name and password from confstore."""
     try:
       s3cipher_obj = CortxS3Cipher(None,
                                 False,
                                 0,
-                                self.s3_confkeys_store.get_config(
-                                  'CONFSTORE_OPENLDAP_CONST_KEY'))
+                                self.get_confkey('CONFSTORE_OPENLDAP_CONST_KEY'))
 
       cipher_key = s3cipher_obj.generate_key()
 
-      self.ldap_user = self.provisioner_confstore.get_config(
-        self.s3_confkeys_store.get_config(
-          'CONFSTORE_LDAPADMIN_USER_KEY'))
+      self.ldap_user = self.get_confvalue(self.get_confkey('CONFSTORE_LDAPADMIN_USER_KEY'))
 
-      encrypted_ldapadmin_pass = self.provisioner_confstore.get_config(
-        self.s3_confkeys_store.get_config('CONFSTORE_LDAPADMIN_PASSWD_KEY'))
+      encrypted_ldapadmin_pass = self.get_confvalue(self.get_confkey('CONFSTORE_LDAPADMIN_PASSWD_KEY'))
 
-      encrypted_rootdn_pass = self.provisioner_confstore.get_config(
-        self.s3_confkeys_store.get_config('CONFSTORE_ROOTDN_PASSWD_KEY'))
+      encrypted_rootdn_pass = self.get_confvalue(self.get_confkey('CONFSTORE_ROOTDN_PASSWD_KEY'))
 
       self.ldap_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_ldapadmin_pass)
       self.rootdn_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_rootdn_pass)
