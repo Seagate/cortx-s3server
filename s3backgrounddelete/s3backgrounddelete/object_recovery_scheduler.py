@@ -225,7 +225,7 @@ class ObjectRecoveryScheduler(object):
                 self.producer = ObjectRecoveryMsgbus(
                     self.config,
                     self.logger)
-            
+
             maxKeys = self.config.get_max_keys()
             count = self.producer.get_count()
             threshold = 0.2*maxKeys

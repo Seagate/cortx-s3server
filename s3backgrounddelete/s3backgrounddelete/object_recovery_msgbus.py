@@ -247,7 +247,7 @@ class ObjectRecoveryMsgbus(object):
             return False
             
     def get_count(self):
-        """Get count of unread messages"""
+        """Get count of unread messages."""
         try:
             consumer_group = self._config.get_msgbus_consumer_group()
             if not self.__isproducersetupcomplete:
