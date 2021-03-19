@@ -231,7 +231,7 @@ class ObjectRecoveryScheduler(object):
             threshold = 0.2*maxKeys
             self.logger.info("threshold is : " + str(threshold))
             self.logger.info("count of unread msgs is : " + str(count))
-                        
+
             if self.config.get_messaging_platform() == MESSAGE_BUS:
                 if int(count) < threshold:
                     self.logger.debug("count is less than 60 percent of threshold.")
