@@ -621,6 +621,7 @@ std::string S3ObjectMetadata::version_entry_to_json() {
   // root["Object-Name"] = object_name;
   root["motr_oid"] = motr_oid_str;
   root["layout_id"] = layout_id;
+  root["System-Defined"]["Content-MD5"] = get_md5();
 
   S3DateTime current_time;
   current_time.init_current_time();

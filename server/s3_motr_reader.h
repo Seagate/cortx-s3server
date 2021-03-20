@@ -32,6 +32,7 @@
 #include "s3_motr_layout.h"
 #include "s3_motr_wrapper.h"
 #include "s3_log.h"
+#include "s3_md5_hash.h"
 #include "s3_option.h"
 #include "s3_request_object.h"
 #include "s3_evbuffer_wrapper.h"
@@ -172,6 +173,9 @@ class S3MotrReader {
 
   S3MotrReaderOpState state = S3MotrReaderOpState::start;
 
+  // md5 for the content read from motr.
+  MD5hash md5crypt;
+
   // Holds references to buffers after the read so it can be consumed.
   struct s3_motr_rw_op_context* motr_rw_op_context = nullptr;
   size_t iteration_index = 0;
@@ -236,6 +240,20 @@ class S3MotrReader {
   }
 
   virtual void set_last_index(size_t index) { last_index = index; }
+
+  // copy-paste from server/s3_motr_writer.h
+  std::string content_md5;
+
+  virtual std::string get_content_md5_base64() {
+    // Complete MD5 computation and remember
+    if (content_md5.empty()) {
+      md5crypt.Finalize();
+      content_md5 = md5crypt.get_md5_string();
+    }
+    s3_log(S3_LOG_DEBUG, request_id, "content_md5 of data read = %s\n",
+           content_md5.c_str());
+    return md5crypt.get_md5_base64enc_string();
+  }
 
   // For Testing purpose
   FRIEND_TEST(S3MotrReaderTest, Constructor);
