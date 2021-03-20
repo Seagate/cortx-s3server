@@ -492,6 +492,17 @@ void S3GetObjectAction::send_data_to_client() {
     LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);
     s3_stats_timing("get_object_send_data", mss);
 
+    std::string s_md5_calc = motr_reader->get_content_md5_base64();
+    std::string s_md5_read = object_metadata->get_md5();
+    s3_log(S3_LOG_ERROR, request_id, "MD5 calculated: %s, MD5 read %s", /* XXX */
+           s_md5_calc.c_str(), s_md5_read.c_str());     /* XXX */
+    s3_log(S3_LOG_DEBUG, request_id, "MD5 calculated: %s, MD5 read %s",
+           s_md5_calc.c_str(), s_md5_read.c_str());
+
+    if (s_md5_calc != s_md5_read) {
+      s3_log(S3_LOG_ERROR, request_id, "Content MD5 mismatch\n");
+      set_s3_error("BadDigest");
+    }
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);

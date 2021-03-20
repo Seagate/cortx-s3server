@@ -347,6 +347,9 @@ size_t S3MotrReader::get_next_block(char **data) {
   *data = (char *)motr_rw_op_context->data->ov_buf[iteration_index];
   data_read = motr_rw_op_context->data->ov_vec.v_count[iteration_index];
   iteration_index++;
+
+  md5crypt.Update(*data, data_read);
+
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return data_read;
 }
