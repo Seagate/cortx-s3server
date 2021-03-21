@@ -413,11 +413,16 @@ std::string S3PartMetadata::to_json() {
     root["User-Defined"][uit.first] = uit.second;
   }
   Json::FastWriter fastWriter;
-  return fastWriter.write(root);
+  std::string s = fastWriter.write(root);
+  s3_log(S3_LOG_INFO, request_id,
+	 "S3PartMetadata::to_json() = %s\n", s.c_str());
+  return s;
 }
 
 int S3PartMetadata::from_json(std::string content) {
   s3_log(S3_LOG_DEBUG, request_id, "\n");
+  s3_log(S3_LOG_INFO, request_id, "S3PartMetadata::from_json(): s=%s\n",
+         content.c_str());
   Json::Value newroot;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), newroot);
