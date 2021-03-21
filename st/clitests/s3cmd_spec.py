@@ -268,23 +268,23 @@ S3cmdTest('s3cmd can delete 3k file').delete_test("seagate-bucket", "3kfile", ho
 S3cmdTest('s3cmd can delete bucket').delete_bucket("seagate-bucket").execute_test().command_is_successful()
 
 # ************ Some Basic tests with hostname:port, client connecting to s3server directly ************
-if Config.no_ssl:
-    S3cmdTest('s3cmd can create bucket').create_bucket("seagate-bucket", host=host_ip + ":8081").execute_test().command_is_successful()
-    S3cmdTest('s3cmd can list buckets').list_buckets(host=host_ip + ":8081").execute_test().command_is_successful().command_response_should_have('s3://seagate-bucket')
-    S3cmdTest('s3cmd can upload 3k file').upload_test("seagate-bucket", "3kfile", 3000, host=host_ip + ":8081").execute_test().command_is_successful()
-    S3cmdTest('s3cmd can list objects').list_objects('seagate-bucket', host=host_ip + ":8081").execute_test().command_is_successful().command_response_should_have('s3://seagate-bucket/3kfile')
-    S3cmdTest('s3cmd can download 3k file').download_test("seagate-bucket", "3kfile", host=host_ip + ":8081").execute_test().command_is_successful().command_created_file("3kfile")
-    S3cmdTest('s3cmd can delete 3k file').delete_test("seagate-bucket", "3kfile", host=host_ip + ":8081").execute_test().command_is_successful()
-    S3cmdTest('s3cmd can delete bucket').delete_bucket("seagate-bucket").execute_test().command_is_successful()
+# if Config.no_ssl:
+#     S3cmdTest('s3cmd can create bucket').create_bucket("seagate-bucket", host=host_ip + ":8081").execute_test().command_is_successful()
+#     S3cmdTest('s3cmd can list buckets').list_buckets(host=host_ip + ":8081").execute_test().command_is_successful().command_response_should_have('s3://seagate-bucket')
+#     S3cmdTest('s3cmd can upload 3k file').upload_test("seagate-bucket", "3kfile", 3000, host=host_ip + ":8081").execute_test().command_is_successful()
+#     S3cmdTest('s3cmd can list objects').list_objects('seagate-bucket', host=host_ip + ":8081").execute_test().command_is_successful().command_response_should_have('s3://seagate-bucket/3kfile')
+#     S3cmdTest('s3cmd can download 3k file').download_test("seagate-bucket", "3kfile", host=host_ip + ":8081").execute_test().command_is_successful().command_created_file("3kfile")
+#     S3cmdTest('s3cmd can delete 3k file').delete_test("seagate-bucket", "3kfile", host=host_ip + ":8081").execute_test().command_is_successful()
+#     S3cmdTest('s3cmd can delete bucket').delete_bucket("seagate-bucket").execute_test().command_is_successful()
 
-    # ************ Some Basic tests with idns style hostname:port, client connecting to s3server directly ************
-    S3cmdTest('s3cmd can create bucket').create_bucket("seagate-bucket", host="s3.seagate.com:8081").execute_test().command_is_successful()
-    S3cmdTest('s3cmd can list buckets').list_buckets(host="s3.seagate.com:8081").execute_test().command_is_successful().command_response_should_have('s3://seagate-bucket')
-    S3cmdTest('s3cmd can upload 3k file').upload_test("seagate-bucket", "3kfile", 3000, host="s3.seagate.com:8081").execute_test().command_is_successful()
-    S3cmdTest('s3cmd can list objects').list_objects('seagate-bucket', host="s3.seagate.com:8081").execute_test().command_is_successful().command_response_should_have('s3://seagate-bucket/3kfile')
-    S3cmdTest('s3cmd can download 3k file').download_test("seagate-bucket", "3kfile", host="s3.seagate.com:8081").execute_test().command_is_successful().command_created_file("3kfile")
-    S3cmdTest('s3cmd can delete 3k file').delete_test("seagate-bucket", "3kfile", host="s3.seagate.com:8081").execute_test().command_is_successful()
-    S3cmdTest('s3cmd can delete bucket').delete_bucket("seagate-bucket").execute_test().command_is_successful()
+#     # ************ Some Basic tests with idns style hostname:port, client connecting to s3server directly ************
+#     S3cmdTest('s3cmd can create bucket').create_bucket("seagate-bucket", host="s3.seagate.com:8081").execute_test().command_is_successful()
+#     S3cmdTest('s3cmd can list buckets').list_buckets(host="s3.seagate.com:8081").execute_test().command_is_successful().command_response_should_have('s3://seagate-bucket')
+#     S3cmdTest('s3cmd can upload 3k file').upload_test("seagate-bucket", "3kfile", 3000, host="s3.seagate.com:8081").execute_test().command_is_successful()
+#     S3cmdTest('s3cmd can list objects').list_objects('seagate-bucket', host="s3.seagate.com:8081").execute_test().command_is_successful().command_response_should_have('s3://seagate-bucket/3kfile')
+#     S3cmdTest('s3cmd can download 3k file').download_test("seagate-bucket", "3kfile", host="s3.seagate.com:8081").execute_test().command_is_successful().command_created_file("3kfile")
+#     S3cmdTest('s3cmd can delete 3k file').delete_test("seagate-bucket", "3kfile", host="s3.seagate.com:8081").execute_test().command_is_successful()
+#    S3cmdTest('s3cmd can delete bucket').delete_bucket("seagate-bucket").execute_test().command_is_successful()
 
 # ************ Some Basic tests with dns style hostname:port, client connecting to nginx ************
 S3cmdTest('s3cmd can create bucket').create_bucket("seagate-bucket", host="s3.seagate.com").execute_test().command_is_successful()
