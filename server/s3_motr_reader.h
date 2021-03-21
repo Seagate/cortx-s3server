@@ -33,6 +33,7 @@
 #include "s3_motr_wrapper.h"
 #include "s3_log.h"
 #include "s3_md5_hash.h"
+#include "s3_aws_etag.h"
 #include "s3_option.h"
 #include "s3_request_object.h"
 #include "s3_evbuffer_wrapper.h"
@@ -173,7 +174,11 @@ class S3MotrReader {
   S3MotrReaderOpState state;
 
   // md5 for the content read from motr.
+  // In case of it's a GET for multipart upload it's calculated for each part
+  // independently.
   MD5hash md5crypt;
+  size_t multipart_part_size;
+  size_t total_size_read = 0;
 
   // Holds references to buffers after the read so it can be consumed.
   struct s3_motr_rw_op_context* motr_rw_op_context;
@@ -202,6 +207,7 @@ class S3MotrReader {
   void clean_up_contexts();
 
  public:
+  S3AwsEtag awsetag;
   // object id is generated at upper level and passed to this constructor
   S3MotrReader(std::shared_ptr<RequestObject> req, struct m0_uint128 id,
                int layout_id, std::shared_ptr<MotrAPI> motr_api = nullptr);
@@ -211,6 +217,7 @@ class S3MotrReader {
   virtual struct m0_uint128 get_oid() { return oid; }
 
   virtual void set_oid(struct m0_uint128 id) { oid = id; }
+  void set_multipart_part_size(size_t size) { multipart_part_size = size; }
 
   // async read
   // Returns: true = launched, false = failed to launch (out-of-memory)
@@ -240,15 +247,12 @@ class S3MotrReader {
   virtual void set_last_index(size_t index) { last_index = index; }
 
   // copy-paste from server/s3_motr_writer.h
-  std::string content_md5;
-
   virtual std::string get_content_md5() {
     // Complete MD5 computation and remember
-    if (content_md5.empty()) {
-      md5crypt.Finalize();
-      content_md5 = md5crypt.get_md5_string();
-    }
-    s3_log(S3_LOG_DEBUG, request_id, "content_md5 of data read = %s\n",
+    md5crypt.Finalize();
+    std::string content_md5 = md5crypt.get_md5_string();
+    s3_log(S3_LOG_DEBUG, request_id,
+           "content_md5 of current piece of data read = %s\n",
            content_md5.c_str());
     return content_md5;
   }
