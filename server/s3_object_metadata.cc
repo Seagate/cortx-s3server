@@ -606,8 +606,10 @@ std::string S3ObjectMetadata::to_json() {
   root["create_timestamp"] = current_time.get_isoformat_string();
 
   Json::FastWriter fastWriter;
-  return fastWriter.write(root);
-  ;
+  std::string s = fastWriter.write(root);
+  s3_log(S3_LOG_INFO, request_id,
+	 "S3ObjectMetadata::to_json() = %s\n", s.c_str());
+  return s;
 }
 
 // Streaming to json
@@ -627,8 +629,10 @@ std::string S3ObjectMetadata::version_entry_to_json() {
   root["create_timestamp"] = current_time.get_isoformat_string();
 
   Json::FastWriter fastWriter;
-  return fastWriter.write(root);
-  ;
+  std::string s = fastWriter.write(root);
+  s3_log(S3_LOG_INFO, request_id,
+	 "S3ObjectMetadata::version_entry_to_json() = %s\n", s.c_str());
+  return s;
 }
 
 /*
@@ -656,6 +660,8 @@ std::string S3ObjectMetadata::version_entry_to_json() {
 
 int S3ObjectMetadata::from_json(std::string content) {
   s3_log(S3_LOG_DEBUG, request_id, "Called with content [%s]\n",
+         content.c_str());
+  s3_log(S3_LOG_INFO, request_id, "S3ObjectMetadata::from_json(): s=%s\n",
          content.c_str());
   Json::Value newroot;
   Json::Reader reader;
