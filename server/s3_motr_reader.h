@@ -242,7 +242,7 @@ class S3MotrReader {
   // copy-paste from server/s3_motr_writer.h
   std::string content_md5;
 
-  virtual std::string get_content_md5_base64() {
+  virtual std::string get_content_md5() {
     // Complete MD5 computation and remember
     if (content_md5.empty()) {
       md5crypt.Finalize();
@@ -250,7 +250,7 @@ class S3MotrReader {
     }
     s3_log(S3_LOG_DEBUG, request_id, "content_md5 of data read = %s\n",
            content_md5.c_str());
-    return md5crypt.get_md5_base64enc_string();
+    return content_md5;
   }
 
   // For Testing purpose
