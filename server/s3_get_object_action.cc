@@ -134,7 +134,7 @@ void S3GetObjectAction::validate_object_info() {
     request->set_out_header_value("Last-Modified",
                                   object_metadata->get_last_modified_gmt());
     request->set_out_header_value("ETag", e_tag);
-    request->set_out_header_value("Accept-Ranges", "bytes");
+    request->set_out_header_value("Accept-Ranges", "none");
     request->set_out_header_value("Content-Type",
                                   object_metadata->get_content_type());
     request->set_out_header_value("Content-Length",
@@ -311,12 +311,12 @@ void S3GetObjectAction::check_full_or_range_object_read() {
     // eg: bytes=0-1024 value
     s3_log(S3_LOG_DEBUG, request_id, "Range found(%s)\n",
            range_header_value.c_str());
-    if (validate_range_header_and_set_read_options(range_header_value)) {
-      next();
-    } else {
+    // if (validate_range_header_and_set_read_options(range_header_value)) {
+    //   next();
+    // } else {
       set_s3_error("InvalidRange");
       send_response_to_s3_client();
-    }
+    //}
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -425,7 +425,7 @@ void S3GetObjectAction::send_data_to_client() {
                                   object_metadata->get_content_type());
     request->set_out_header_value("ETag", e_tag);
     s3_log(S3_LOG_INFO, stripped_request_id, "e_tag= %s", e_tag.c_str());
-    request->set_out_header_value("Accept-Ranges", "bytes");
+    request->set_out_header_value("Accept-Ranges", "none");
     request->set_out_header_value(
         "Content-Length", std::to_string(get_requested_content_length()));
     for (auto it : object_metadata->get_user_attributes()) {
