@@ -37,6 +37,7 @@ class MD5hash {
   MD5hash();
   int Update(const char *input, size_t length);
   int Finalize();
+  void Reset();
 
   std::string get_md5_string();
   std::string get_md5_base64enc_string();
