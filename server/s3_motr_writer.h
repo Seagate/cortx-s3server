@@ -119,6 +119,14 @@ class S3MotrWiter {
   // buffer currently used to write, will be freed on completion
   std::shared_ptr<S3AsyncBufferOptContainer> write_async_buffer;
 
+  // used for checksum calculation testing
+  // fill entire object with zeroes after checksum calculation, but before
+  // writing to Motr
+  bool corrupt_fill_zero = false;
+  // invert last byte of the object after checksum calculation, but before
+  // writing to Motr
+  bool corrupt_last_byte = false;
+
   // Write - single object, delete - multiple objects supported
   int open_objects();
   void open_objects_successful();
