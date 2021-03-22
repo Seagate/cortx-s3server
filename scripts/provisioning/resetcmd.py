@@ -52,7 +52,10 @@ class ResetCmd(SetupCmd):
       bgdeleteconfig = CORTXS3Config()
       if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
         sys.stdout.write('INFO: Purging messages from message bus.\n')
-        self.purge_messages()
+        producer_id = bgdeleteconfig.get_msgbus_producer_id()
+        msg_type = bgdeleteconfig.get_msgbus_topic()
+        delivery_mechanism = bgdeleteconfig.get_msgbus_producer_delivery_mechanism()
+        self.purge_messages(producer_id, msg_type, delivery_mechanism)
         sys.stdout.write('INFO:Purge message successful.\n')
 
     except Exception as e:
@@ -128,14 +131,18 @@ class ResetCmd(SetupCmd):
           sys.stderr.write(f'ERROR: DeleteFileOrDirWithRegex(): Failed to delete: {file}, error: {str(e)}\n')
           raise e
 
-  def purge_messages(self):
+  def purge_messages(self, producer_id: str, msg_type: str, delivery_mechanism: str):
     """purge messages on message bus."""
     try:
       s3MessageBus = S3CortxMsgBus()
       s3MessageBus.connect()
-      s3MessageBus.purge()
-      #Insert a delay of 1 min after purge, so that the messages are deleted
-      time.sleep(60)
-    except:
-      sys.stdout.write('Exception during purge. May be there are no messages to purge\n')
+      s3MessageBus.setup_producer(producer_id, msg_type, delivery_mechanism)
+      try:
+        s3MessageBus.purge()
+        #Insert a delay of 1 min after purge, so that the messages are deleted
+        time.sleep(60)
+      except:
+        sys.stdout.write('Exception during purge. May be there are no messages to purge\n')
+    except Exception as e:
+      raise e
 
