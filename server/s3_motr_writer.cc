@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include "s3_common.h"
 
+#include <string.h>
 #include "s3_motr_layout.h"
 #include "s3_motr_rw_common.h"
 #include "s3_motr_writer.h"
@@ -469,6 +470,27 @@ void S3MotrWiter::write_content() {
   ctx->cbs[0].oop_failed = s3_motr_op_failed;
 
   set_up_motr_data_buffers(rw_ctx, std::move(buffer_sequence), motr_buf_count);
+
+  if (1) {
+    struct m0_bufvec *bv = rw_ctx->data;
+    if (rw_ctx->ext->iv_index[0] == 0) {
+      char first_byte = *(char *)bv->ov_buf[0];
+      s3_log(S3_LOG_DEBUG, "", "%s first_byte=%d", __func__, first_byte);
+      switch (first_byte) {
+        case 0:
+	  corrupt_fill_zero = true;
+          break;
+        case 1:
+          // corrupt the first byte
+          *(char *)bv->ov_buf[0] = ~first_byte;
+          break;
+      }
+    }
+    if (corrupt_fill_zero) {
+      for (uint32_t i = 0; i < bv->ov_vec.v_nr; ++i)
+        memset(bv->ov_buf[i], 0, bv->ov_vec.v_count[i]);
+    }
+  }
 
   last_op_was_write = true;
 
