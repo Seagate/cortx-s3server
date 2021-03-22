@@ -307,10 +307,10 @@ if [ $just_gen_build_file -eq 1 ]; then
 fi
 
 
-# if [ $no_check_code -eq 0 ]
-# then
-#   ./checkcodeformat.sh
-# fi
+if [ $no_check_code -eq 0 ]
+then
+  ./checkcodeformat.sh
+fi
 
 # Build steps for third_party and motr
 if [ $no_motr_rpm -eq 0 ]
