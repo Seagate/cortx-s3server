@@ -351,41 +351,25 @@ size_t S3MotrReader::get_next_block(char **data) {
   } else {
     // the object was created with multipart upload.
     // Calculate md5 checksums for each part independently.
-    size_t begin = total_size_read;
-    size_t end = total_size_read + length;
-    size_t part_first = begin / multipart_part_size;
-    size_t part_last = end / multipart_part_size;
-    s3_log(S3_LOG_DEBUG, "", "%s this=%p begin=%zu end=%zu part_first=%zu part_last=%zu", __func__, this, begin, end, part_first, part_last);
-    if (end <= (part_first + 1) * multipart_part_size) {
-      md5crypt.Update(*data, length);
-      s3_log(S3_LOG_DEBUG, "", "%s Update(0, %zu)", __func__, length);
-    }
-    for (size_t i = part_first + 1; i <= part_last; ++i) {
-      std::string s = get_content_md5();
-      awsetag.add_part_etag(s);
-      md5crypt.Reset();
-      s3_log(S3_LOG_DEBUG, "", "%s Reset md5=%s", __func__, s.c_str());
-      if (i < part_last) {
-        md5crypt.Update(&(*data)[i * multipart_part_size], multipart_part_size);
-        s3_log(S3_LOG_DEBUG, "", "%s Update(%zu, %zu)", __func__,
-               i * multipart_part_size, multipart_part_size);
+    size_t remaining = length;
+    // Each iteration jumps to the next part or the end of the buffer,
+    // whichever comes first.
+    while (remaining > 0) {
+      // current absolute position in object for the purpose of checksumming
+      size_t pos = total_size_read + length - remaining;
+      size_t next_part_pos;
+      if (pos / multipart_part_size >= multipart_num_of_parts - 1)
+        next_part_pos = total_size_to_read;
+      else
+        next_part_pos = (pos / multipart_part_size + 1) * multipart_part_size;
+      size_t to_update = std::min(next_part_pos - pos, remaining);
+      md5crypt.Update(&(*data)[length - remaining], to_update);
+      if (to_update == next_part_pos - pos) {
+        std::string s = get_content_md5();
+        awsetag.add_part_etag(s);
+        md5crypt.Reset();
       }
-    }
-    if (end > (part_first + 1) * multipart_part_size &&
-        end > part_last * multipart_part_size) {
-      size_t start = part_last * multipart_part_size;
-      if (start < begin)
-        start = begin;
-      md5crypt.Update(&(*data)[start - begin], end - start);
-      s3_log(S3_LOG_DEBUG, "", "%s Update(%zu, %zu)", __func__,
-             start - begin, end - start);
-    }
-    if (total_size_read + length == total_size_to_read &&
-        total_size_to_read % multipart_part_size != 0) {
-      std::string s = get_content_md5();
-      awsetag.add_part_etag(s);
-      md5crypt.Reset();
-      s3_log(S3_LOG_DEBUG, "", "%s Reset md5=%s", __func__, s.c_str());
+      remaining -= to_update;
     }
   }
   total_size_read += length;

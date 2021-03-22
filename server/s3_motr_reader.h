@@ -179,6 +179,7 @@ class S3MotrReader {
   // independently.
   MD5hash md5crypt;
   size_t multipart_part_size;
+  size_t multipart_num_of_parts;
   size_t total_size_read = 0;
   size_t total_size_to_read;
 
@@ -221,6 +222,7 @@ class S3MotrReader {
 
   virtual void set_oid(struct m0_uint128 id) { oid = id; }
   void set_multipart_part_size(size_t size) { multipart_part_size = size; }
+  void set_multipart_num_of_parts(size_t num) { multipart_num_of_parts = num; }
   void set_total_size_to_read(size_t size) { total_size_to_read = size; }
 
   // async read
