@@ -179,6 +179,7 @@ class S3MotrReader {
   MD5hash md5crypt;
   size_t multipart_part_size;
   size_t total_size_read = 0;
+  size_t total_size_to_read;
 
   // Holds references to buffers after the read so it can be consumed.
   struct s3_motr_rw_op_context* motr_rw_op_context;
@@ -218,6 +219,7 @@ class S3MotrReader {
 
   virtual void set_oid(struct m0_uint128 id) { oid = id; }
   void set_multipart_part_size(size_t size) { multipart_part_size = size; }
+  void set_total_size_to_read(size_t size) { total_size_to_read = size; }
 
   // async read
   // Returns: true = launched, false = failed to launch (out-of-memory)
