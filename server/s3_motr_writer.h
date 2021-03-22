@@ -126,9 +126,6 @@ class S3MotrWiter {
   // fill entire object with zeroes after checksum calculation, but before
   // writing to Motr
   bool corrupt_fill_zero = false;
-  // invert last byte of the object after checksum calculation, but before
-  // writing to Motr
-  bool corrupt_last_byte = false;
 
   // Write - single object, delete - multiple objects supported
   int open_objects();
