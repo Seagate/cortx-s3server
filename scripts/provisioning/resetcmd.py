@@ -23,6 +23,7 @@ import os
 import shutil
 import glob
 
+from ldapaccountaction import LdapAccountAction
 from setupcmd import SetupCmd
 
 class ResetCmd(SetupCmd):
@@ -40,13 +41,20 @@ class ResetCmd(SetupCmd):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
     try:
+      sys.stdout.write('INFO: Removing LDAP Accounts and Users.\n')
+      self.DeleteLdapAccountsUsers()
+      sys.stdout.write('INFO:LDAP Accounts and Users Cleanup successful.\n')
+    except Exception as e:
+      sys.stderr.write(f'Failed to cleanup LDAP Accounts and Users, error: {e}\n')
+      raise e
+    try:
       sys.stdout.write('INFO: Cleaning up log files.\n')
       self.CleanupLogs()
       sys.stdout.write('INFO:Log files cleanup successful.\n')
     except Exception as e:
       sys.stderr.write(f'Failed to cleanup log directories or files, error: {e}\n')
       raise e
-
+    
 
   def CleanupLogs(self):
     """Cleanup all the log directories and files."""
@@ -116,4 +124,36 @@ class ResetCmd(SetupCmd):
           sys.stderr.write(f'ERROR: DeleteFileOrDirWithRegex(): Failed to delete: {file}, error: {str(e)}\n')
           raise e
 
-
+  def DeleteLdapAccountsUsers(self):
+    """Deletes all LDAP accounts and users"""
+    os.system('slapcat -n 3 -l /tmp/conf_backup.ldif')
+    os.system('sed -i \'118,$ d\' /tmp/conf_backup.ldif')
+    ldap_mdb_folder = "/var/lib/ldap"
+    for files in os.listdir(ldap_mdb_folder):
+      path = os.path.join(ldap_mdb_folder,files)
+      if os.path.isfile(path) or os.path.islink(path):
+        os.unlink(path)
+      elif os.path.isdir(path):
+        shutil.rmtree(path)
+    os.system('systemctl restart slapd')
+    os.system('slapadd -n 3 -F /etc/openldap/slapd.d -l /tmp/conf_backup.ldif')
+    try:
+      os.remove('/tmp/conf_backup.ldif')
+    except Exception as e:
+      sys.stderr.write(f'ERROR: No such file! , error: {str(e)}\n')
+      raise e
+    try:
+      # Recreate background delete account after LDAP reset
+      self.read_ldap_credentials()
+      bgdelete_acc_input_params_dict = {'account_name': "s3-background-delete-svc",
+                                  'account_id': "67891",
+                                  'canonical_id': "C67891",
+                                  'mail': "s3-background-delete-svc@seagate.com",
+                                  's3_user_id': "450",
+                                  'const_cipher_secret_str': "s3backgroundsecretkey",
+                                  'const_cipher_access_str': "s3backgroundaccesskey"
+                                }
+      LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
+    except Exception as e:
+      sys.stderr.write(f'Failed to create backgrounddelete service account, error: {e}\n')
+      raise e

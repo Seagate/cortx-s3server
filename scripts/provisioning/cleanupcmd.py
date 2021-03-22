@@ -51,7 +51,10 @@ class CleanupCmd(SetupCmd):
                           ],
                   "dirs": [
                              "/etc/openldap/slapd.d/cn=config/olcDatabase={2}mdb"
-                          ]
+                          ],
+                  "mdb_files": [
+                                  "/var/lib/ldap"           
+                               ]
                  }
 
   def __init__(self, config: str):
@@ -161,6 +164,7 @@ class CleanupCmd(SetupCmd):
     files = self.ldap_configs["files"]
     files_wild = self.ldap_configs["files_wild"]
     dirs = self.ldap_configs["dirs"]
+    mdb_files = self.ldap_configs["mdb_files"]
 
     for curr_file in files:
       if os.path.isfile(curr_file):
@@ -180,3 +184,11 @@ class CleanupCmd(SetupCmd):
       if os.path.isdir(curr_dir):
         shutil.rmtree(curr_dir)
         sys.stdout.write(f"{curr_dir} removed\n")
+    for curr_mdb_files in mdb_files:
+      for files in os.listdir(curr_mdb_files):
+        path = os.path.join(curr_mdb_files, files)
+        if os.path.isfile(path) or os.path.islink(path):
+          os.unlink(path)
+        elif os.path.isdir(path):
+          shutil.rmtree(path)
+      sys.stdout.write(f"{curr_mdb_files} removed\n")
