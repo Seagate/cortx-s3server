@@ -142,6 +142,6 @@ class SetupCmd(object):
         self.validate_pre_requisites(rpms=_prereqs_confstore.get_config(f'{phase_name}>rpms'),
                                 services=_prereqs_confstore.get_config(f'{phase_name}>services'),
                                 pip3s=_prereqs_confstore.get_config(f'{phase_name}>pip3s'),
-                                files=_prereqs_confstore.get_config(f'{phase_name}>exists'))
+                                files=_prereqs_confstore.get_config(f'{phase_name}>files'))
     except Exception as e:
       raise S3PROVError(f'ERROR: {phase_name} prereqs validations failed, exception: {e} \n')
