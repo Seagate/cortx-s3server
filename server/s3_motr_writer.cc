@@ -473,9 +473,7 @@ void S3MotrWiter::write_content() {
   ctx->cbs[0].oop_executed = NULL;
   ctx->cbs[0].oop_stable = s3_motr_op_stable;
   ctx->cbs[0].oop_failed = s3_motr_op_failed;
-
   set_up_motr_data_buffers(rw_ctx, data_items, motr_buf_count);
-  set_up_motr_data_buffers(rw_ctx, std::move(buffer_sequence), motr_buf_count);
 
   if (S3Option::get_instance()->get_s3_st_md5_error_inject_enabled()) {
     struct m0_bufvec *bv = rw_ctx->data;
