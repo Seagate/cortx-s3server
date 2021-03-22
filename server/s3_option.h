@@ -323,6 +323,10 @@ class S3Option {
   bool load_all_sections(bool force_override_from_config);
   bool reload_modifiable_options();
 
+  bool     get_s3_ranged_read_enabled()         { return s3_ranged_read_enabled; }
+  bool     get_s3_read_md5_check_enabled()      { return s3_read_md5_check_enabled; }
+  bool     get_s3_st_md5_error_inject_enabled() { return s3_st_md5_error_inject_enabled; }
+
   std::string get_s3_nodename();
   std::string get_ipv4_bind_addr();
   std::string get_ipv6_bind_addr();

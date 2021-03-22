@@ -115,7 +115,11 @@ void S3HeadObjectAction::send_response_to_s3_client() {
     request->set_out_header_value("Last-Modified",
                                   object_metadata->get_last_modified_gmt());
     request->set_out_header_value("ETag", e_tag);
-    request->set_out_header_value("Accept-Ranges", "none");
+
+    request->set_out_header_value("Accept-Ranges",
+				  S3Option::get_instance()->get_s3_ranged_read_enabled()
+				  ? "bytes" : "none");
+
     request->set_out_header_value("Content-Length",
                                   object_metadata->get_content_length_str());
     request->set_out_header_value("Content-Type",
