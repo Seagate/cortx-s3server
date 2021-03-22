@@ -517,16 +517,17 @@ void S3GetObjectAction::send_data_to_client() {
     s3_stats_timing("get_object_send_data", mss);
 
     if (S3Option::get_instance()->get_s3_read_md5_check_enabled()) {
-      std::string s_md5_calc;
+      std::string checksum_calculated;
       if (object_metadata->get_part_one_size() == 0) {
-	s_md5_calc = motr_reader->get_content_md5();
+        checksum_calculated = motr_reader->get_content_md5();
       } else {
-	s_md5_calc = motr_reader->awsetag.finalize();
+        checksum_calculated = motr_reader->awsetag.finalize();
       }
-      std::string s_md5_read = object_metadata->get_md5();
-      s3_log(S3_LOG_DEBUG, request_id, "MD5 calculated: %s, MD5 read %s",
-	     s_md5_calc.c_str(), s_md5_read.c_str());
-      if (s_md5_calc != s_md5_read) {
+      std::string checksum_read = object_metadata->get_md5();
+      s3_log(S3_LOG_DEBUG, request_id,
+             "checksum calculated: %s, checksum read %s",
+             checksum_calculated.c_str(), checksum_read.c_str());
+      if (checksum_calculated != checksum_read) {
 	s3_iem(LOG_ERR, S3_IEM_CHECKSUM_MISMATCH,
 	       S3_IEM_CHECKSUM_MISMATCH_STR,
 	       S3_IEM_CHECKSUM_MISMATCH_JSON);
