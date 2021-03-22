@@ -133,6 +133,12 @@ class S3Option {
   bool s3_enable_murmurhash_oid;
   int log_flush_frequency_sec;
 
+
+  bool s3_ranged_read_enabled;
+  bool s3_read_md5_check_enabled;
+  bool s3_st_md5_error_inject_enabled;
+
+
   unsigned short motr_layout_id;
   unsigned short motr_units_per_request;
   std::vector<int> motr_unit_sizes_for_mem_pool;
@@ -209,6 +215,12 @@ class S3Option {
 
     s3_grace_period_sec = 10;  // 10 seconds
     is_s3_shutting_down = false;
+
+
+    s3_ranged_read_enabled = false;
+    s3_read_md5_check_enabled = false;
+    s3_st_md5_error_inject_enabled = false;
+
 
     log_dir = "/var/log/seagate/s3";
     audit_log_dir = "/var/log/seagate/s3";
