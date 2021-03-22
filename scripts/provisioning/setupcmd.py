@@ -73,11 +73,11 @@ class SetupCmd(object):
   def s3_confkeys_store(self) -> str:
     return self._s3_confkeys_store
 
-  def get_confkey(self, key: str) -> str:
+  def get_confkey(self, key: str):
     assert self.s3_confkeys_store != None
     return self.s3_confkeys_store.get_config(key)
 
-  def get_confvalue(self, key: str) -> str:
+  def get_confvalue(self, key: str):
     assert self.provisioner_confstore != None
     return self.provisioner_confstore.get_config(key)
 
