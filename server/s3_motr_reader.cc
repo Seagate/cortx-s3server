@@ -339,12 +339,8 @@ size_t S3MotrReader::get_next_block(char **data) {
   iteration_index++;
 
   size_t length = data_read;
-  s3_log(S3_LOG_DEBUG, "", "%s total_size_to_read=%zu total_size_read=%zu length=%zu", __func__, total_size_to_read, total_size_read, length);
-  if (total_size_to_read < total_size_read + length) {
-    s3_log(S3_LOG_DEBUG, "", "%s length changed before %zu: ", __func__, length);
+  if (total_size_to_read < total_size_read + length)
     length = total_size_to_read - total_size_read;
-    s3_log(S3_LOG_DEBUG, "", "%s length changed after %zu: ", __func__, length);
-  }
   if (multipart_part_size == 0) {
     // non-multipart-upload case. Just calculate md5 of the entire object.
     md5crypt.Update(*data, length);
