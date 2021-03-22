@@ -19,6 +19,9 @@
 #
 
 import sys
+import os
+from pathlib import Path
+import shutil
 
 from setupcmd import SetupCmd
 from ldapaccountaction import LdapAccountAction
@@ -32,6 +35,24 @@ class CleanupCmd(SetupCmd):
                             "s3userId": "450"
                           }
                         }
+  # ldap config and schema related constants
+  ldap_configs = {
+                  "files": [
+                             "/etc/openldap/slapd.d/cn=config/cn=schema/cn={1}s3user.ldif",
+                             "/etc/openldap/slapd.d/cn=config/cn=module{0}.ldif",
+                             "/etc/openldap/slapd.d/cn=config/cn=module{1}.ldif",
+                             "/etc/openldap/slapd.d/cn=config/olcDatabase={2}mdb.ldif"
+                          ],
+                  "files_wild": [
+                             {
+                              "path": "/etc/openldap/slapd.d/cn=config/cn=schema/",
+                              "glob": "*ppolicy.ldif"
+                             }
+                          ],
+                  "dirs": [
+                             "/etc/openldap/slapd.d/cn=config/olcDatabase={2}mdb"
+                          ]
+                 }
 
   def __init__(self, config: str):
     """Constructor."""
@@ -47,7 +68,115 @@ class CleanupCmd(SetupCmd):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
     try:
+      # Check if reset phase was performed before this
+      self.detect_if_reset_done()
+
+      # cleanup ldap accounts related to S3
       ldap_action_obj = LdapAccountAction(self.ldap_user, self.ldap_passwd)
       ldap_action_obj.delete_account(self.account_cleanup_dict)
+
+      # Erase haproxy configurations
+      self.cleanup_haproxy_configurations()
+
+      # revert config files to their origional config state
+      sys.stdout.write('INFO: Reverting config files.\n')
+      self.revert_config_files()
+      sys.stdout.write('INFO: Reverting config files successful.\n')
+
+      # cleanup ldap config and schemas
+      self.delete_ldap_config()
     except Exception as e:
       raise e
+
+  def revert_config_files(self):
+    """Revert config files to their original config state."""
+
+    configFiles = ["/opt/seagate/cortx/auth/resources/authserver.properties",
+                  "/opt/seagate/cortx/auth/resources/keystore.properties",
+                  "/opt/seagate/cortx/s3/conf/s3config.yaml",
+                  "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"]
+
+    try:
+      for configFile in configFiles:
+        if os.path.isfile(configFile):
+            shutil.copy(configFile+".sample", configFile)
+
+      #Handling jks template separately as it does not have .sample extention
+      auth_jksstore = "/opt/seagate/cortx/auth/resources/s3authserver.jks"
+      auth_jksstore_template ="/opt/seagate/cortx/auth/scripts/s3authserver.jks_template"
+      if os.path.isfile(auth_jksstore):
+        shutil.copy(auth_jksstore_template, auth_jksstore)
+
+    except Exception as e:
+      sys.stderr.write(f'Failed to revert config files in Cleanup phase, error: {e}\n')
+      raise e
+
+  def cleanup_haproxy_configurations(self):
+    """Resetting haproxy config."""
+    #Initialize header and footer text
+    header_text = "#-------S3 Haproxy configuration start---------------------------------"
+    footer_text = "#-------S3 Haproxy configuration end-----------------------------------"
+
+    #Remove all existing content from header to footer
+    is_found = False
+    header_found = False
+    original_file = "/etc/haproxy/haproxy.cfg"
+    dummy_file = original_file + '.bak'
+    # Open original file in read only mode and dummy file in write mode
+    with open(original_file, 'r') as read_obj, open(dummy_file, 'w') as write_obj:
+        # Line by line copy data from original file to dummy file
+        for line in read_obj:
+            line_to_match = line
+            if line[-1] == '\n':
+                line_to_match = line[:-1]
+            # if current line matches with the given line then skip that line
+            if line_to_match != header_text:
+                if header_found == False:
+                    write_obj.write(line)
+                elif line_to_match == footer_text:
+                     header_found = False
+            else:
+                is_found = True
+                header_found = True
+                break
+    read_obj.close()
+    write_obj.close()
+    # If any line is skipped then rename dummy file as original file
+    if is_found:
+        os.remove(original_file)
+        os.rename(dummy_file, original_file)
+    else:
+        os.remove(dummy_file)
+
+  def detect_if_reset_done(self):
+    """TODO: Implement this handler, if reset not done, throw exception."""
+    sys.stdout.write(f"Processing {self.name} detect_if_reset_done, TODO: implement it\n")
+    # if reset_not_done
+        # raise S3PROVError("reset needs to be performed before cleanup can be processed\n")
+
+  def delete_ldap_config(self):
+    """Delete the ldap configs created by setup_ldap.sh during config phase."""
+    # Clean up old configuration if any
+    # Removing schemas
+    files = self.ldap_configs["files"]
+    files_wild = self.ldap_configs["files_wild"]
+    dirs = self.ldap_configs["dirs"]
+
+    for curr_file in files:
+      if os.path.isfile(curr_file):
+        os.remove(curr_file)
+        sys.stdout.write(f"{curr_file} removed\n")
+
+    for file_wild in files_wild:
+      for path in Path(f"{file_wild['path']}").glob(f"{file_wild['glob']}"):
+        if os.path.isfile(path):
+          os.remove(path)
+          sys.stdout.write(f"{path} removed\n")
+        elif os.path.isdir(path):
+          shutil.rmtree(path)
+          sys.stdout.write(f"{path} removed\n")
+
+    for curr_dir in dirs:
+      if os.path.isdir(curr_dir):
+        shutil.rmtree(curr_dir)
+        sys.stdout.write(f"{curr_dir} removed\n")
