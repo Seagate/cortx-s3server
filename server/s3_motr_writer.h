@@ -122,6 +122,14 @@ class S3MotrWiter {
   S3BufferSequence buffer_sequence;
   size_t size_of_each_buf;
 
+  // used for checksum calculation testing
+  // fill entire object with zeroes after checksum calculation, but before
+  // writing to Motr
+  bool corrupt_fill_zero = false;
+  // invert last byte of the object after checksum calculation, but before
+  // writing to Motr
+  bool corrupt_last_byte = false;
+
   // Write - single object, delete - multiple objects supported
   int open_objects();
   void open_objects_successful();
