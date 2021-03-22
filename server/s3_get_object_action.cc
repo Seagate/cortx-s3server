@@ -137,9 +137,8 @@ void S3GetObjectAction::validate_object_info() {
     request->set_out_header_value("ETag", e_tag);
 
     request->set_out_header_value("Accept-Ranges",
-				  S3Option::get_instance()->get_s3_ranged_read_enabled()
-				  ? "bytes" : "none");
-
+        S3Option::get_instance()->get_s3_ranged_read_enabled() ?
+        "bytes" : "none");
 
     request->set_out_header_value("Content-Type",
                                   object_metadata->get_content_type());
@@ -445,7 +444,9 @@ void S3GetObjectAction::send_data_to_client() {
                                   object_metadata->get_content_type());
     request->set_out_header_value("ETag", e_tag);
     s3_log(S3_LOG_INFO, stripped_request_id, "e_tag= %s", e_tag.c_str());
-    request->set_out_header_value("Accept-Ranges", "none");
+    request->set_out_header_value("Accept-Ranges",
+        S3Option::get_instance()->get_s3_ranged_read_enabled() ?
+        "bytes" : "none");
     request->set_out_header_value(
         "Content-Length", std::to_string(get_requested_content_length()));
     for (auto it : object_metadata->get_user_attributes()) {
