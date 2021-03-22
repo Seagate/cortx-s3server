@@ -17,9 +17,9 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 server_node:
-  TMPL_MACHINE_ID:
+  1114a50a6bf6f9c93ebd3c49d07d3fd4:
     cluster_id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
-    hostname: "TMPL_HOSTNAME"
+    hostname: "ssc-vm-1823.colo.seagate.com"
     network:
       data:
         public_fqdn: "srvnode-1.data.public"
@@ -39,4 +39,4 @@ cluster:
     site:
       storage_set_count: "1"
     storage_set:
-    - server_nodes: "['TMPL_MACHINE_ID']"
+    - server_nodes: "['1114a50a6bf6f9c93ebd3c49d07d3fd4']"

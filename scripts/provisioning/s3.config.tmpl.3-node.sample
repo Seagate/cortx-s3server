@@ -17,25 +17,25 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 server_node:
-  TMPL_MACHINE_ID_1:
+  1114a50a6bf6f9c93ebd3c49d07d3fd4:
     cluster_id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
-    hostname: "TMPL_HOSTNAME_1"
+    hostname: "ssc-vm-1823.colo.seagate.com"
     network:
       data:
         public_fqdn: "srvnode-1.data.public"
         private_fqdn: "srvnode-1.data.private"
     s3_instances: "1"
-  TMPL_MACHINE_ID_2:
+  1114a50a6bf6f9c93ebd3c49d07d3fe5:
     cluster_id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
-    hostname: "TMPL_HOSTNAME_2"
+    hostname: "ssc-vm-1824.colo.seagate.com"
     network:
       data:
         public_fqdn: "srvnode-2.data.public"
         private_fqdn: "srvnode-2.data.private"
     s3_instances: "1"
-  TMPL_MACHINE_ID_3:
+  1114a50a6bf6f9c93ebd3c49d07d3fg6:
     cluster_id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
-    hostname: "TMPL_HOSTNAME_3"
+    hostname: "ssc-vm-1825.colo.seagate.com"
     network:
       data:
         public_fqdn: "srvnode-3.data.public"
@@ -55,4 +55,4 @@ cluster:
     site:
       storage_set_count: "1"
     storage_set:
-    - server_nodes: "['TMPL_MACHINE_ID_1', 'TMPL_MACHINE_ID_2', 'TMPL_MACHINE_ID_3']"
+    - server_nodes: "['1114a50a6bf6f9c93ebd3c49d07d3fd4', '1114a50a6bf6f9c93ebd3c49d07d3fe5', '1114a50a6bf6f9c93ebd3c49d07d3fg6']"
