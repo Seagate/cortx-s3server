@@ -16,9 +16,6 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-server_node:
-  TMPL_MACHINE_ID:
-    cluster_id: "TMPL_CLUSTER_ID"
 cortx:
   software:
     openldap:

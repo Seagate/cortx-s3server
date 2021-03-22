@@ -19,7 +19,7 @@
 
 LDAP_USER: "cn={},dc=seagate,dc=com"
 LDAP_URL: "ldapi:///"
-CONFSTORE_OPENLDAP_CONST_KEY: "openldap"
+CONFSTORE_OPENLDAP_CONST_KEY: "cortx"
 CONFSTORE_LDAPADMIN_USER_KEY: "cortx>software>openldap>sgiam>user"
 CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>software>openldap>sgiam>secret"
 CONFSTORE_ROOTDN_USER_KEY: "cortx>software>openldap>root>user"
