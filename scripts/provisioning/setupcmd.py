@@ -97,8 +97,11 @@ class SetupCmd(object):
 
       encrypted_rootdn_pass = self.get_confvalue(self.get_confkey('CONFSTORE_ROOTDN_PASSWD_KEY'))
 
-      self.ldap_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_ldapadmin_pass)
-      self.rootdn_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_rootdn_pass)
+      if encrypted_ldapadmin_pass != None:
+        self.ldap_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_ldapadmin_pass)
+
+      if encrypted_rootdn_pass != None:
+        self.rootdn_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_rootdn_pass)
 
     except Exception as e:
       sys.stderr.write(f'read ldap credentials failed, error: {e}\n')
