@@ -522,7 +522,7 @@ void S3GetObjectAction::send_data_to_client() {
 	       S3_IEM_CHECKSUM_MISMATCH_STR,
 	       S3_IEM_CHECKSUM_MISMATCH_JSON);
 	s3_log(S3_LOG_ERROR, request_id, "Content checksum mismatch\n");
-	set_s3_error("BadDigest");
+	set_s3_error("InternalError");
       }
     }
     send_response_to_s3_client();
