@@ -326,7 +326,7 @@ void S3GetObjectAction::check_full_or_range_object_read() {
 	send_response_to_s3_client();
       }
     } else {
-      set_s3_error("InvalidRange");
+      set_s3_error("OperationNotSupported");
       send_response_to_s3_client();
     }
   }
