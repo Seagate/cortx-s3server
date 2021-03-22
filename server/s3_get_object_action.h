@@ -153,6 +153,8 @@ class S3GetObjectAction : public S3ObjectAction {
   FRIEND_TEST(
       S3GetObjectActionTest,
       CheckFullOrRangeObjectReadWithUnsupportMultiRangeForContentLength8000);
+
+  FRIEND_TEST(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSizeMD5Fail);
 };
 
 #endif
