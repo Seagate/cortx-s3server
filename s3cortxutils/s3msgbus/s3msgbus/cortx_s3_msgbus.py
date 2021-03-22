@@ -113,6 +113,7 @@ class S3CortxMsgBus:
 
     def count(self, consumer_group):
         """Get the count of unread messages."""
+        count = 0
         try:
             count = self._producer.get_unread_count(consumer_group)
         except Exception as exception:
