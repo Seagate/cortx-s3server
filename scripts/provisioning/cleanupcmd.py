@@ -67,6 +67,7 @@ class CleanupCmd(SetupCmd):
   def process(self):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
+    self.phase_prereqs_validate(self.name)
     try:
       # Check if reset phase was performed before this
       self.detect_if_reset_done()
