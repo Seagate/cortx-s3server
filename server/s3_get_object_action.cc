@@ -339,7 +339,13 @@ void S3GetObjectAction::read_object() {
   set_total_blocks_to_read_from_object();
   motr_reader = motr_reader_factory->create_motr_reader(
       request, object_metadata->get_oid(), object_metadata->get_layout_id());
-  motr_reader->set_multipart_part_size(object_metadata->get_part_one_size());
+  size_t part_one_size = object_metadata->get_part_one_size();
+  if (part_one_size > 0) {
+    motr_reader->set_multipart_part_size(part_one_size);
+    std::string etag = object_metadata->get_md5();
+    std::string num_of_parts = etag.substr(etag.rfind('-') + 1);
+    motr_reader->set_multipart_num_of_parts(std::stoull(num_of_parts));
+  }
   // get the block,in which first_byte_offset_to_read is present
   // and initilaize the last index with starting offset the block
   size_t block_start_offset =
