@@ -261,7 +261,7 @@ class ObjectRecoveryMsgbus(object):
                     self.logger.debug("failed to load msgbus library")
                     return False
             
-            unread_count = self.__msgbuslib.count(consumer_group)
+            unread_count = self.__msgbuslib.get_unread_count(consumer_group)
             return unread_count
         except Exception as exception:
             self._logger.error("Exception:{}".format(exception))

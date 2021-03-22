@@ -111,7 +111,7 @@ class S3CortxMsgBus:
             return False, msg
         return True, None
 
-    def count(self, consumer_group):
+    def get_unread_count(self, consumer_group):
         """Get the count of unread messages."""
         count = 0
         try:

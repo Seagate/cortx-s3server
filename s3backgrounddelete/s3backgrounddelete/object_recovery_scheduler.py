@@ -74,6 +74,17 @@ class ObjectRecoveryScheduler(object):
                 self.producer = ObjectRecoveryMsgbus(
                     self.config,
                     self.logger)
+            threshold = self.config.get_threshold()
+            self.logger.debug("Threshold is : " + str(threshold))
+            count = self.producer.get_count()
+            self.logger.debug("Count of unread msgs is : " + str(count))
+            
+            if int(count) < threshold:
+                self.logger.debug("Count of unread messages is less than threshold value.Hence continuing...")
+            else:
+                #do nothing
+                self.logger.info("Queue has more messages than threshold value. Hence skipping addition of further entries.")
+                return
             # Cleanup all entries and enqueue only 1000 entries
             #PurgeAPI Here
             self.producer.purge()
@@ -218,26 +229,8 @@ class ObjectRecoveryScheduler(object):
 
         def periodic_run(scheduler):
             """Add key value to queue using scheduler."""
-            #Conditionally importing ObjectRecoveryRabbitMq/ObjectRecoveryMsgbusConsumer when config setting says so.
-            from s3backgrounddelete.object_recovery_msgbus import ObjectRecoveryMsgbus
-
-            if not self.producer:
-                self.producer = ObjectRecoveryMsgbus(
-                    self.config,
-                    self.logger)
-
-            threshold = self.config.get_threshold()
-            self.logger.debug("Threshold is : " + str(threshold))
-            count = self.producer.get_count()
-            self.logger.debug("Count of unread msgs is : " + str(count))
-
             if self.config.get_messaging_platform() == MESSAGE_BUS:
-                if int(count) < threshold:
-                    self.logger.debug("Count of unread messages is less than threshold value.")
-                    self.add_kv_to_msgbus()
-                else:
-                    #do nothing
-                    self.logger.info("Queue has more messages than threshold value. Hence skipping the add_kv_to_msgbus()")
+                self.add_kv_to_msgbus()
             elif self.config.get_messaging_platform() == RABBIT_MQ:
                 self.add_kv_to_queue()
             else:
