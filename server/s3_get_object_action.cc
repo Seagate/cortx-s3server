@@ -320,10 +320,10 @@ void S3GetObjectAction::check_full_or_range_object_read() {
 
     if (S3Option::get_instance()->get_s3_ranged_read_enabled()) {
       if (validate_range_header_and_set_read_options(range_header_value)) {
-	next();
+        next();
       } else {
-	set_s3_error("InvalidRange");
-	send_response_to_s3_client();
+        set_s3_error("InvalidRange");
+        send_response_to_s3_client();
       }
     } else {
       set_s3_error("OperationNotSupported");
