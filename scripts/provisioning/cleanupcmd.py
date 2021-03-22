@@ -53,7 +53,7 @@ class CleanupCmd(SetupCmd):
                              "/etc/openldap/slapd.d/cn=config/olcDatabase={2}mdb"
                           ],
                   "mdb_files": [
-                                  "/var/lib/ldap"           
+                                  "/var/lib/ldap"
                                ]
                  }
 

@@ -54,7 +54,6 @@ class ResetCmd(SetupCmd):
     except Exception as e:
       sys.stderr.write(f'Failed to cleanup log directories or files, error: {e}\n')
       raise e
-    
 
   def CleanupLogs(self):
     """Cleanup all the log directories and files."""
@@ -125,9 +124,9 @@ class ResetCmd(SetupCmd):
           raise e
 
   def DeleteLdapAccountsUsers(self):
-    """Deletes all LDAP accounts and users"""
-    os.system('slapcat -n 3 -l /tmp/conf_backup.ldif')
-    os.system('sed -i \'118,$ d\' /tmp/conf_backup.ldif')
+    """Deletes all LDAP accounts and users."""
+    os.system('slapcat -n 3 -l conf_backup.ldif')
+    os.system('sed -i \'118,$ d\' conf_backup.ldif')
     ldap_mdb_folder = "/var/lib/ldap"
     for files in os.listdir(ldap_mdb_folder):
       path = os.path.join(ldap_mdb_folder,files)
@@ -136,9 +135,9 @@ class ResetCmd(SetupCmd):
       elif os.path.isdir(path):
         shutil.rmtree(path)
     os.system('systemctl restart slapd')
-    os.system('slapadd -n 3 -F /etc/openldap/slapd.d -l /tmp/conf_backup.ldif')
+    os.system('slapadd -n 3 -F /etc/openldap/slapd.d -l conf_backup.ldif')
     try:
-      os.remove('/tmp/conf_backup.ldif')
+      os.remove('conf_backup.ldif')
     except Exception as e:
       sys.stderr.write(f'ERROR: No such file! , error: {str(e)}\n')
       raise e
