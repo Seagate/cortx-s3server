@@ -27,3 +27,4 @@ with open('/tmp/parts.json', 'w') as f:
 print(s3api["complete-multipart-upload", "--multipart-upload",
             "file:///tmp/parts.json","--bucket", bucket, "--key", key,
             "--upload-id", upload_id]())
+s3api["get-object",  "--bucket", bucket, "--key", key, output]()
