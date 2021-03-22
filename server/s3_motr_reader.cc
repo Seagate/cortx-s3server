@@ -370,7 +370,7 @@ size_t S3MotrReader::get_next_block(char **data) {
         next_part_pos = (pos / multipart_part_size + 1) * multipart_part_size;
       size_t to_update = std::min(next_part_pos - pos, remaining);
       md5crypt.Update(&(*data)[length - remaining], to_update);
-      if (to_update == next_part_pos - pos) {
+      if (pos + to_update == next_part_pos) {
         std::string s = get_content_md5();
         awsetag.add_part_etag(s);
         md5crypt.Reset();
