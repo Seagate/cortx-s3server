@@ -82,11 +82,6 @@ class CleanupCmd(SetupCmd):
       # Erase haproxy configurations
       self.cleanup_haproxy_configurations()
 
-      # revert config files to their origional config state
-      sys.stdout.write('INFO: Reverting config files.\n')
-      self.revert_config_files()
-      sys.stdout.write('INFO: Reverting config files successful.\n')
-
       # cleanup ldap config and schemas
       self.delete_ldap_config()
 
@@ -96,6 +91,11 @@ class CleanupCmd(SetupCmd):
         sys.stdout.write('INFO: Deleting topic.\n')
         self.delete_topic(ADMIN_ID, bgdeleteconfig.get_msgbus_topic())
         sys.stdout.write('INFO:Topic deletion successful.\n')
+
+      # revert config files to their origional config state
+      sys.stdout.write('INFO: Reverting config files.\n')
+      self.revert_config_files()
+      sys.stdout.write('INFO: Reverting config files successful.\n')
 
     except Exception as e:
       raise e
