@@ -432,6 +432,8 @@ void S3GetObjectAction::send_data_to_client() {
     for (auto it : object_metadata->get_user_attributes()) {
       request->set_out_header_value(it.first, it.second);
     }
+    motr_reader->set_total_size_to_read(
+        object_metadata->get_content_length());
     if (!request->get_header_value("Range").empty()) {
       std::ostringstream content_range_stream;
       content_range_stream << "bytes " << first_byte_offset_to_read << "-"
