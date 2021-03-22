@@ -1279,12 +1279,6 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSizeMD5Fail) {
     .Times(AtLeast(1))
     .WillOnce(Return("d41d8cd98f00b204e9800998ecf8427e"));
 
-  std::map<std::string, std::string> meta_map{{"key", "value"}};
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
-              get_user_attributes())
-      .Times(1)
-      .WillOnce(ReturnRef(meta_map));
-
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
 
   EXPECT_CALL(*ptr_mock_request, send_reply_start(Eq(S3HttpSuccess200)))
