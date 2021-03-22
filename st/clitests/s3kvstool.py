@@ -59,9 +59,9 @@ class S3kvTest(S3PyCliTest):
     def __init__(self, description):
         motr_conf = MotrConfig()
         if "LD_LIBRARY_PATH" in os.environ:
-            self.cmd = "env LD_LIBRARY_PATH=%s ../motrkvscli.sh" % os.environ["LD_LIBRARY_PATH"]
+            self.cmd = "sudo env LD_LIBRARY_PATH=%s ../motrkvscli.sh" % os.environ["LD_LIBRARY_PATH"]
         else:
-            self.cmd = "../motrkvscli.sh"
+            self.cmd = "sudo ../motrkvscli.sh"
         self.common_args = " --motr_local_addr=" + motr_conf.LOCAL_EP  + " --motr_ha_addr=" + motr_conf.HA_EP + " --motr_profile=" + motr_conf.PROFILE_FID + " --motr_proc=" + motr_conf.PROCESS_FID + " --kvstore=" + motr_conf.KVS_IDX + " "
         super(S3kvTest, self).__init__(description)
 
