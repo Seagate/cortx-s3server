@@ -20,4 +20,4 @@
 host : iam.seagate.com
 port : 389
 login_dn : cn=admin,dc=seagate,dc=com
-password : Seagate
+password : seagate
