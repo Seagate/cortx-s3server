@@ -131,6 +131,8 @@ else
               easy_install pip
               read -p "Git Access Token:" git_access_token
               source ${S3_SRC_DIR}/scripts/env/common/create-cortx-repo.sh -G $git_access_token
+              # install configobj
+              pip3 install configobj
               ;;
           s)
              source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
