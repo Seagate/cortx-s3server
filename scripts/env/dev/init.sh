@@ -111,37 +111,37 @@ usage() {
   exit 1; }
 
 # OS and Kernel version checks
-# if [ ! -z "$centos_release" ]; then
-#   os_full_version=`cat /etc/redhat-release | awk  '{ print $4 }'`
-#   os_major_version=`echo $os_full_version | awk -F '.' '{ print $1 }'`
-#   os_minor_version=`echo $os_full_version | awk -F '.' '{ print $2 }'`
-#   os_build_num=`echo $os_full_version | awk -F '.' '{ print $3 }'`
+if [ ! -z "$centos_release" ]; then
+  os_full_version=`cat /etc/redhat-release | awk  '{ print $4 }'`
+  os_major_version=`echo $os_full_version | awk -F '.' '{ print $1 }'`
+  os_minor_version=`echo $os_full_version | awk -F '.' '{ print $2 }'`
+  os_build_num=`echo $os_full_version | awk -F '.' '{ print $3 }'`
 
-#   if [ "$os_major_version" = "7" ]; then
-#     if [[ "$os_minor_version" != "7" && "$os_minor_version" != "9" ]]; then
-#       unsupported_os
-#     elif [[ "$os_build_num" != "1908" && "$os_build_num" != "2009" ]]; then
-#       echo "CentOS build $os_build_num is currently not supported."
-#       exit 1
-#     else
-#       check_supported_kernel
-#     fi
-#   else
-#     unsupported_os
-#   fi
-# elif [ ! -z "$redhat_release" ]; then
-#   os_full_version=`cat /etc/redhat-release | awk  '{ print $7 }'`
-#   os_major_version=`echo $os_full_version | awk -F '.' '{ print $1 }'`
-#   os_minor_version=`echo $os_full_version | awk -F '.' '{ print $2 }'`
+  if [ "$os_major_version" = "7" ]; then
+    if [[ "$os_minor_version" != "7" && "$os_minor_version" != "8" ]]; then
+      unsupported_os
+    elif [[ "$os_build_num" != "1908" && "$os_build_num" != "2003" ]]; then
+      echo "CentOS build $os_build_num is currently not supported."
+      exit 1
+    else
+      check_supported_kernel
+    fi
+  else
+    unsupported_os
+  fi
+elif [ ! -z "$redhat_release" ]; then
+  os_full_version=`cat /etc/redhat-release | awk  '{ print $7 }'`
+  os_major_version=`echo $os_full_version | awk -F '.' '{ print $1 }'`
+  os_minor_version=`echo $os_full_version | awk -F '.' '{ print $2 }'`
 
-#   if [[ "$os_major_version" = "7" && "$os_minor_version" = "7" ]]; then
-#     check_supported_kernel
-#   else
-#     unsupported_os
-#   fi
-# else
-#   unsupported_os
-# fi
+  if [[ "$os_major_version" = "7" && "$os_minor_version" = "7" ]]; then
+    check_supported_kernel
+  else
+    unsupported_os
+  fi
+else
+  unsupported_os
+fi
 
 if [[ $# -eq 0 ]] ; then
   source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
