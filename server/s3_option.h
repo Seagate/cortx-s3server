@@ -339,6 +339,10 @@ class S3Option {
   bool     get_s3_read_md5_check_enabled()      { return s3_read_md5_check_enabled; }
   bool     get_s3_st_md5_error_inject_enabled() { return s3_st_md5_error_inject_enabled; }
 
+  void     set_s3_read_md5_check_enabled(bool value) {
+    s3_read_md5_check_enabled = value;
+  }
+
   std::string get_s3_nodename();
   std::string get_ipv4_bind_addr();
   std::string get_ipv6_bind_addr();
