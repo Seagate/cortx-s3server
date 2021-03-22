@@ -223,6 +223,25 @@ class LdapAccountAction:
       sys.stderr.write(f'Failed to delete account: {acc}\n')
       raise e
 
+  def get_account_count(self) -> None:
+    """Get total count of account in ldap db."""
+    try:
+      self.__connect_to_ldap_server()
+      result_list = self.ldap_conn.search_s("ou=accounts,dc=s3,dc=seagate,dc=com", ldap.SCOPE_SUBTREE,
+       filterstr='(ObjectClass=Account)')
+      self.__disconnect_from_ldap()
+      return len(result_list)
+
+    except ldap.NO_SUCH_OBJECT:
+      if self.ldap_conn:
+        self.__disconnect_from_ldap()
+      return 0
+    except Exception as e:
+      if self.ldap_conn:
+        self.__disconnect_from_ldap()
+      sys.stderr.write(f'ERROR: Failed to get count of ldap account, error: {str(e)}\n')
+      raise e
+
   @staticmethod
   def __is_account_present(ldap_conn: SimpleLDAPObject, account_name: str):
     """Checks if account is present in ldap db."""
