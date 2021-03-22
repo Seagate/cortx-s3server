@@ -658,6 +658,7 @@ bool S3Option::load_section(std::string section_name,
       s3_version = s3_option_node["VERSION"].as<std::string>();
     }
   }
+
   return true;
 }
 
