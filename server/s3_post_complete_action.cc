@@ -602,6 +602,7 @@ void S3PostCompleteAction::save_metadata() {
     for (auto it : multipart_metadata->get_user_attributes()) {
       new_object_metadata->add_user_defined_attribute(it.first, it.second);
     }
+    // save part size for checksum calculation in GET for multipart upload case
     new_object_metadata->set_part_one_size(
         multipart_metadata->get_part_one_size());
 
