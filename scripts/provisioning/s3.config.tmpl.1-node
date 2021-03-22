@@ -22,9 +22,9 @@ server_node:
     hostname: "TMPL_HOSTNAME"
     network:
       data:
-        public_fqdn: "TMPL_DATA_PUBLIC"
-        private_fqdn: "TMPL_DATA_PRIVATE"
-    s3_instances: "TMPL_INSTANCES"
+        public_fqdn: "srvnode-1.data.public"
+        private_fqdn: "srvnode-1.data.private"
+    s3_instances: "1"
 cortx:
   software:
     openldap:
@@ -37,6 +37,6 @@ cortx:
 cluster:
   TMPL_CLUSTER_ID:
     site:
-      storage_set_count: "TMPL_STORAGE_COUNT"
+      storage_set_count: "1"
     storage_set:
     - server_nodes: "['TMPL_MACHINE_ID']"

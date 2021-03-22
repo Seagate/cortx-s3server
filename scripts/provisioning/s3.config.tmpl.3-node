@@ -22,25 +22,25 @@ server_node:
     hostname: "TMPL_HOSTNAME_1"
     network:
       data:
-        public_fqdn: "TMPL_DATA_PUBLIC_1"
-        private_fqdn: "TMPL_DATA_PRIVATE_1"
-    s3_instances: "TMPL_INSTANCES"
+        public_fqdn: "srvnode-1.data.public"
+        private_fqdn: "srvnode-1.data.private"
+    s3_instances: "1"
   TMPL_MACHINE_ID_2:
     cluster_id: "TMPL_CLUSTER_ID"
     hostname: "TMPL_HOSTNAME_2"
     network:
       data:
-        public_fqdn: "TMPL_DATA_PUBLIC_2"
-        private_fqdn: "TMPL_DATA_PRIVATE_2"
-    s3_instances: "TMPL_INSTANCES"
+        public_fqdn: "srvnode-2.data.public"
+        private_fqdn: "srvnode-2.data.private"
+    s3_instances: "1"
   TMPL_MACHINE_ID_3:
     cluster_id: "TMPL_CLUSTER_ID"
     hostname: "TMPL_HOSTNAME_3"
     network:
       data:
-        public_fqdn: "TMPL_DATA_PUBLIC_3"
-        private_fqdn: "TMPL_DATA_PRIVATE_3"
-    s3_instances: "TMPL_INSTANCES"
+        public_fqdn: "srvnode-3.data.public"
+        private_fqdn: "srvnode-3.data.private"
+    s3_instances: "1"
 cortx:
   software:
     openldap:
@@ -53,6 +53,6 @@ cortx:
 cluster:
   TMPL_CLUSTER_ID:
     site:
-      storage_set_count: "TMPL_STORAGE_COUNT"
+      storage_set_count: "1"
     storage_set:
     - server_nodes: "['TMPL_MACHINE_ID_1', 'TMPL_MACHINE_ID_2', 'TMPL_MACHINE_ID_3']"
