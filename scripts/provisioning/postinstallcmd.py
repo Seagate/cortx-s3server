@@ -46,6 +46,8 @@ class PostInstallCmd:
                               pip3s=localconfstore.get_config('pip3s'),
                               files=localconfstore.get_config('exists')
                             )
+      key_list = self.extract_keys_from_template()
+      self.validate_keys(key_list)
     except Exception as e:
       raise e
 
@@ -68,3 +70,21 @@ class PostInstallCmd:
       sys.stderr.write('ERROR: post_install validations failed.\n')
       sys.stderr.write(f"{e}, config:{self._preqs_conf_file}\n")
       raise e
+
+  def  extract_keys_from_template(self):
+    """Extract all keys in template."""
+    index = "postinstall_s3keys_index"
+    filename = "/opt/seagate/cortx/s3/conf/s3.post_install.tmpl.1-node.sample"
+    try:
+      postinstallconfstorekeys = S3CortxConfStore(filename, index)
+      return postinstallconfstorekeys.get_all_keys()
+    except Exception as e:
+      sys.stderr.write('ERROR: extracting keys failed.\n')
+      raise e
+
+  def validate_keys(self, keylist: list):
+    """Check if each key of keylist is found in confstore."""
+    postinstallconfstorekeys = S3CortxConfStore()
+    for key in keylist:
+      if postinstallconfstorekeys.get_config(key) is None:
+        raise Exception("Key {} not found\n".format(key))
