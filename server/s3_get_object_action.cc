@@ -27,6 +27,7 @@
 #include "s3_common_utilities.h"
 #include "s3_stats.h"
 #include "s3_perf_metrics.h"
+#include "s3_iem.h"
 
 S3GetObjectAction::S3GetObjectAction(
     std::shared_ptr<S3RequestObject> req,
@@ -134,7 +135,12 @@ void S3GetObjectAction::validate_object_info() {
     request->set_out_header_value("Last-Modified",
                                   object_metadata->get_last_modified_gmt());
     request->set_out_header_value("ETag", e_tag);
-    request->set_out_header_value("Accept-Ranges", "none");
+
+    request->set_out_header_value("Accept-Ranges",
+				  S3Option::get_instance()->get_s3_ranged_read_enabled()
+				  ? "bytes" : "none");
+
+
     request->set_out_header_value("Content-Type",
                                   object_metadata->get_content_type());
     request->set_out_header_value("Content-Length",
@@ -311,12 +317,18 @@ void S3GetObjectAction::check_full_or_range_object_read() {
     // eg: bytes=0-1024 value
     s3_log(S3_LOG_DEBUG, request_id, "Range found(%s)\n",
            range_header_value.c_str());
-    // if (validate_range_header_and_set_read_options(range_header_value)) {
-    //   next();
-    // } else {
+
+    if (S3Option::get_instance()->get_s3_ranged_read_enabled()) {
+      if (validate_range_header_and_set_read_options(range_header_value)) {
+	next();
+      } else {
+	set_s3_error("InvalidRange");
+	send_response_to_s3_client();
+      }
+    } else {
       set_s3_error("InvalidRange");
       send_response_to_s3_client();
-    //}
+    }
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -496,18 +508,23 @@ void S3GetObjectAction::send_data_to_client() {
     LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);
     s3_stats_timing("get_object_send_data", mss);
 
-    std::string s_md5_calc;
-    if (object_metadata->get_part_one_size() == 0) {
-      s_md5_calc = motr_reader->get_content_md5();
-    } else {
-      s_md5_calc = motr_reader->awsetag.finalize();
-    }
-    std::string s_md5_read = object_metadata->get_md5();
-    s3_log(S3_LOG_DEBUG, request_id, "MD5 calculated: %s, MD5 read %s",
-           s_md5_calc.c_str(), s_md5_read.c_str());
-    if (s_md5_calc != s_md5_read) {
-      s3_log(S3_LOG_ERROR, request_id, "Content checksum mismatch\n");
-      set_s3_error("BadDigest");
+    if (S3Option::get_instance()->get_s3_read_md5_check_enabled()) {
+      std::string s_md5_calc;
+      if (object_metadata->get_part_one_size() == 0) {
+	s_md5_calc = motr_reader->get_content_md5();
+      } else {
+	s_md5_calc = motr_reader->awsetag.finalize();
+      }
+      std::string s_md5_read = object_metadata->get_md5();
+      s3_log(S3_LOG_DEBUG, request_id, "MD5 calculated: %s, MD5 read %s",
+	     s_md5_calc.c_str(), s_md5_read.c_str());
+      if (s_md5_calc != s_md5_read) {
+	s3_iem(LOG_ERR, S3_IEM_CHECKSUM_MISMATCH,
+	       S3_IEM_CHECKSUM_MISMATCH_STR,
+	       S3_IEM_CHECKSUM_MISMATCH_JSON);
+	s3_log(S3_LOG_ERROR, request_id, "Content checksum mismatch\n");
+	set_s3_error("BadDigest");
+      }
     }
     send_response_to_s3_client();
   }
