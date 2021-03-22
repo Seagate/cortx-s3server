@@ -223,7 +223,7 @@ class S3Option {
     is_s3_shutting_down = false;
 
 
-    s3_ranged_read_enabled = false;
+    s3_ranged_read_enabled = true;
     s3_read_md5_check_enabled = false;
     s3_st_md5_error_inject_enabled = false;
 
