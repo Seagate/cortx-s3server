@@ -239,7 +239,7 @@ class ObjectRecoveryScheduler(object):
                     #do nothing
                     self.logger.info("Queue has more messages than threshold value. Hence skipping the add_kv_to_msgbus()")
             elif self.config.get_messaging_platform() == RABBIT_MQ:
-                    self.add_kv_to_queue()
+                self.add_kv_to_queue()
             else:
                 self.logger.error(
                 "Invalid argument specified in messaging_platform use message_bus or rabbit_mq")
