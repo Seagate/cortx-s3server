@@ -121,6 +121,7 @@ class SetupCmd(object):
                         services: list = None,
                         files: list = None):
     """Validate pre requisites using cortx-py-utils validator."""
+    sys.stdout.write(f'Validations running from {self._preqs_conf_file}\n')
     if pip3s:
       PkgV().validate('pip3s', pip3s)
     if services:
@@ -134,7 +135,7 @@ class SetupCmd(object):
     """Validate pre requisites using cortx-py-utils validator for the 'phase_name'."""
     if not os.path.isfile(self._preqs_conf_file):
       raise FileNotFoundError(f'pre-requisite json file: {self._preqs_conf_file} not found')
-    _prereqs_confstore = S3CortxConfStore(f'json://{self._preqs_conf_file}', f'phase_name')
+    _prereqs_confstore = S3CortxConfStore(f'json://{self._preqs_conf_file}', f'{phase_name}')
     try:
       prereqs_block = _prereqs_confstore.get_config(f'{phase_name}')
       if prereqs_block is not None:
