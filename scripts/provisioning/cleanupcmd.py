@@ -23,7 +23,7 @@ import os
 from pathlib import Path
 import shutil
 
-from setupcmd import SetupCmd
+from setupcmd import SetupCmd, S3PROVError
 from ldapaccountaction import LdapAccountAction
 
 class CleanupCmd(SetupCmd):
@@ -51,10 +51,7 @@ class CleanupCmd(SetupCmd):
                           ],
                   "dirs": [
                              "/etc/openldap/slapd.d/cn=config/olcDatabase={2}mdb"
-                          ],
-                  "mdb_files": [
-                                  "/var/lib/ldap"
-                               ]
+                          ]
                  }
 
   def __init__(self, config: str):
@@ -70,6 +67,7 @@ class CleanupCmd(SetupCmd):
   def process(self):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
+    self.phase_prereqs_validate(self.name)
     try:
       # Check if reset phase was performed before this
       self.detect_if_reset_done()
@@ -152,10 +150,30 @@ class CleanupCmd(SetupCmd):
         os.remove(dummy_file)
 
   def detect_if_reset_done(self):
-    """TODO: Implement this handler, if reset not done, throw exception."""
-    sys.stdout.write(f"Processing {self.name} detect_if_reset_done, TODO: implement it\n")
-    # if reset_not_done
-        # raise S3PROVError("reset needs to be performed before cleanup can be processed\n")
+    """Validate if reset phase has done or not, throw exception."""
+    sys.stdout.write(f"Processing {self.name} detect_if_reset_done\n")
+    # Validate log file cleanup.
+    log_files = ['/var/log/seagate/auth/server/app.log', '/var/log/seagate/s3/s3server-*/s3server.INFO']
+    for fpath in log_files:
+      if os.path.exists(fpath):
+        raise S3PROVError("Stale log files found in system!!!! hence reset needs to be performed before cleanup can be processed\n")
+    # Validate ldap entry cleanup.
+    self.validate_ldap_account_cleanup()
+    sys.stdout.write(f"Processing {self.name} detect_if_reset_done completed successfully..\n")
+
+  def validate_ldap_account_cleanup(self):
+    """Validate ldap data is cleaned."""
+    account_count=0
+    try :
+      sys.stdout.write("INFO:Validating ldap account entries\n")
+      ldap_action_obj = LdapAccountAction(self.ldap_user, self.ldap_passwd)
+      account_count = ldap_action_obj.get_account_count()
+    except Exception as e:
+      sys.stderr.write(f"ERROR: Failed to find total count of ldap account, error: {str(e)}\n")
+      raise e
+    if account_count > 1:
+      raise S3PROVError("Stale account entries found in ldap !!!! hence reset needs to be performed before cleanup can be processed\n")
+    sys.stdout.write("INFO:Validation of ldap account entries successful.\n")
 
   def delete_ldap_config(self):
     """Delete the ldap configs created by setup_ldap.sh during config phase."""
@@ -164,7 +182,6 @@ class CleanupCmd(SetupCmd):
     files = self.ldap_configs["files"]
     files_wild = self.ldap_configs["files_wild"]
     dirs = self.ldap_configs["dirs"]
-    mdb_files = self.ldap_configs["mdb_files"]
 
     for curr_file in files:
       if os.path.isfile(curr_file):
@@ -184,11 +201,3 @@ class CleanupCmd(SetupCmd):
       if os.path.isdir(curr_dir):
         shutil.rmtree(curr_dir)
         sys.stdout.write(f"{curr_dir} removed\n")
-    for curr_mdb_files in mdb_files:
-      for files in os.listdir(curr_mdb_files):
-        path = os.path.join(curr_mdb_files, files)
-        if os.path.isfile(path) or os.path.islink(path):
-          os.unlink(path)
-        elif os.path.isdir(path):
-          shutil.rmtree(path)
-      sys.stdout.write(f"{curr_mdb_files} removed\n")
