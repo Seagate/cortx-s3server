@@ -47,7 +47,6 @@ class S3ObjectAction : public S3Action {
 
  protected:
   std::shared_ptr<S3ObjectMetadata> object_metadata;
-  std::shared_ptr<S3ObjectExtendedMetadata> extended_obj_metadata;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
