@@ -23,7 +23,7 @@ import os
 from pathlib import Path
 import shutil
 
-from setupcmd import SetupCmd
+from setupcmd import SetupCmd, S3PROVError
 from ldapaccountaction import LdapAccountAction
 
 class CleanupCmd(SetupCmd):
@@ -149,10 +149,30 @@ class CleanupCmd(SetupCmd):
         os.remove(dummy_file)
 
   def detect_if_reset_done(self):
-    """TODO: Implement this handler, if reset not done, throw exception."""
-    sys.stdout.write(f"Processing {self.name} detect_if_reset_done, TODO: implement it\n")
-    # if reset_not_done
-        # raise S3PROVError("reset needs to be performed before cleanup can be processed\n")
+    """Validate if reset phase has done or not, throw exception."""
+    sys.stdout.write(f"Processing {self.name} detect_if_reset_done\n")
+    # Validate log file cleanup.
+    log_files = ['/var/log/seagate/auth/server/app.log', '/var/log/seagate/s3/s3server-*/s3server.INFO']
+    for fpath in log_files:
+      if os.path.exists(fpath):
+        raise S3PROVError("Stale log files found in system!!!! hence reset needs to be performed before cleanup can be processed\n")
+    # Validate ldap entry cleanup.
+    self.validate_ldap_account_cleanup()
+    sys.stdout.write(f"Processing {self.name} detect_if_reset_done completed successfully..\n")
+
+  def validate_ldap_account_cleanup(self):
+    """Validate ldap data is cleaned."""
+    account_count=0
+    try :
+      sys.stdout.write("INFO:Validating ldap account entries\n")
+      ldap_action_obj = LdapAccountAction(self.ldap_user, self.ldap_passwd)
+      account_count = ldap_action_obj.get_account_count()
+    except Exception as e:
+      sys.stderr.write(f"ERROR: Failed to find total count of ldap account, error: {str(e)}\n")
+      raise e
+    if account_count > 1:
+      raise S3PROVError("Stale account entries found in ldap !!!! hence reset needs to be performed before cleanup can be processed\n")
+    sys.stdout.write("INFO:Validation of ldap account entries successful.\n")
 
   def delete_ldap_config(self):
     """Delete the ldap configs created by setup_ldap.sh during config phase."""
