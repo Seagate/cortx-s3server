@@ -52,11 +52,10 @@ class ResetCmd(SetupCmd):
       bgdeleteconfig = CORTXS3Config()
       if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
         sys.stdout.write('INFO: Purging messages from message bus.\n')
-        producer_id = bgdeleteconfig.get_msgbus_producer_id()
-        msg_type = bgdeleteconfig.get_msgbus_topic()
-        delivery_mechanism = bgdeleteconfig.get_msgbus_producer_delivery_mechanism()
-        purge_sleep_time = bgdeleteconfig.get_purge_sleep_time()
-        self.purge_messages(producer_id, msg_type, delivery_mechanism, purge_sleep_time)
+        self.purge_messages(bgdeleteconfig.get_msgbus_producer_id(),
+                            bgdeleteconfig.get_msgbus_topic(),
+                            bgdeleteconfig.get_msgbus_producer_delivery_mechanism(),
+                            bgdeleteconfig.get_purge_sleep_time())
         sys.stdout.write('INFO:Purge message successful.\n')
 
     except Exception as e:
