@@ -131,6 +131,11 @@ cd ${BASEDIR}/../../../ansible
 # Erase old haproxy rpm and later install latest haproxy version 1.8.14
 rpm -q haproxy && rpm -e haproxy
 
+# add /usr/local/bin to PATH
+export PATH=$PATH:/usr/local/bin
+echo $PATH
+
+
 # Update ansible/hosts file with local ip
 cp -f ./hosts ./hosts_local
 sed -i "s/^xx.xx.xx.xx/127.0.0.1/" ./hosts_local
