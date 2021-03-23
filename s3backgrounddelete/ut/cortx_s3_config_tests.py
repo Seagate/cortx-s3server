@@ -377,3 +377,22 @@ def test_get_probable_delete_index_id_failure():
         config = CORTXS3Config()
         del config._config['indexid']['probable_delete_index_id']
         assert config.s3confstore.get_config('indexid>probable_delete_index_id') == ''
+
+
+def test_get_threshold_success():
+    """Test if threshold is returned."""
+    config = CORTXS3Config()
+    config.s3confstore.set_config('indexid>threshold', 600, False)
+    threshold = config.s3confstore.get_config('indexid>threshold')
+    assert threshold == 600
+
+
+def test_get_threshold_failure():
+    """
+    Test if threshold is not specified
+    then it should throw AssertionError.
+    """
+    with pytest.raises(AssertionError):
+        config = CORTXS3Config()
+        del config._config['indexid']['threshold']
+        assert config.s3confstore.get_config('indexid>threshold') == ''
