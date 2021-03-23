@@ -57,7 +57,7 @@ static void str_set_default(std::string& sref, const char* sz) {
 void S3ObjectMetadata::initialize() {
   obj_parts = 0;
   obj_fragments = 0;
-  pvid_str = "ABCDefAAAAA=-GHIJklAAAAA=";
+  pvid_str = "";
 
   account_name = request->get_account_name();
   account_id = request->get_account_id();
@@ -150,6 +150,7 @@ S3ObjectMetadata::S3ObjectMetadata(
     mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
   obj_type = S3ObjectMetadataType::simple;
+  primary_obj_size = 0;
   initialize();
 }
 
@@ -640,6 +641,7 @@ std::string S3ObjectMetadata::to_json() {
   root["PVID"] = this->pvid_str;
   root["FNo"] = this->obj_fragments;
   root["PRTS"] = this->obj_parts;
+  root["Size"] = (Json::Value::UInt64) this->primary_obj_size;
 
   for (auto sit : system_defined_attribute) {
     root["System-Defined"][sit.first] = sit.second;
@@ -730,9 +732,13 @@ int S3ObjectMetadata::from_json(std::string content) {
 
   motr_oid_str = newroot["motr_oid"].asString();
   layout_id = newroot["layout_id"].asInt();
-  pvid_str = newroot["PVID"].asString();
-  obj_fragments = newroot["FNo"].asUInt();
-  obj_parts = newroot["PRTS"].asUInt();
+  if (newroot.isMember("FNo")) {
+    // If FNo is present then this is a fragmented object
+    pvid_str = newroot["PVID"].asString();
+    obj_fragments = newroot["FNo"].asUInt();
+    obj_parts = newroot["PRTS"].asUInt();
+    primary_obj_size = newroot["Size"].asUInt64();
+  }
 
   if (obj_fragments == 0 && obj_parts != 0) {
     obj_type = S3ObjectMetadataType::only_parts;
@@ -865,6 +871,7 @@ S3ObjectExtendedMetadata::S3ObjectExtendedMetadata(
     // Reverse of epoch time (used by primary object as version id)
     version_id = versionid;
   }
+  total_size = 0;
   request = std::move(req);
   request_id = request->get_request_id();
   stripped_request_id = request->get_stripped_request_id();
@@ -969,7 +976,7 @@ void S3ObjectExtendedMetadata::get_obj_ext_entries_successful() {
     }
   }  // End of for loop
 
-  if (end_of_enumeration || (kvps.size() < fragments)) {
+  if (end_of_enumeration || (kvps.size() <= fragments)) {
     state = S3ObjectMetadataState::present;
     this->handler_on_success();
   } else {
@@ -1064,8 +1071,9 @@ int S3ObjectExtendedMetadata::from_json(std::string key, std::string content) {
   item_ctx.motr_OID =
       S3M0Uint128Helper::to_m0_uint128(newroot["OID"].asString());
   item_ctx.PVID = S3M0Uint128Helper::to_m0_uint128(newroot["PVID"].asString());
-  item_ctx.item_size = newroot["size"].asInt();
+  item_ctx.item_size = newroot["size"].asUInt64();
   item_ctx.layout_id = newroot["layout-id"].asInt();
+  total_size += item_ctx.item_size;
 
   if (item_ctx.is_multipart) {
     // tokens[2] will contain the part number, when is_multipart = true
@@ -1197,6 +1205,7 @@ void S3ObjectExtendedMetadata::set_size_of_extended_entry(
   struct s3_part_frag_context& part_frag_ctx =
       (this->ext_objects[part_no])[fragment_no - 1];
   part_frag_ctx.item_size = fragment_size;
+  total_size += part_frag_ctx.item_size;
 }
 
 void S3ObjectExtendedMetadata::remove(std::function<void(void)> on_success,
