@@ -27,7 +27,7 @@ from setupcmd import SetupCmd, S3PROVError
 from ldapaccountaction import LdapAccountAction
 from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
-from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS, ADMIN_ID
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 
 class CleanupCmd(SetupCmd):
   """Cleanup Setup Cmd."""
@@ -89,7 +89,7 @@ class CleanupCmd(SetupCmd):
       bgdeleteconfig = CORTXS3Config()
       if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
         sys.stdout.write('INFO: Deleting topic.\n')
-        self.delete_topic(ADMIN_ID, bgdeleteconfig.get_msgbus_topic())
+        self.delete_topic(bgdeleteconfig.get_msgbus_admin_id, bgdeleteconfig.get_msgbus_topic())
         sys.stdout.write('INFO:Topic deletion successful.\n')
 
       # revert config files to their origional config state
