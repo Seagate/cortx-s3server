@@ -78,7 +78,7 @@ class ObjectRecoveryScheduler(object):
             self.logger.debug("Threshold is : " + str(threshold))
             count = self.producer.get_count()
             self.logger.debug("Count of unread msgs is : " + str(count))
-            
+
             if int(count) < threshold:
                 self.logger.debug("Count of unread messages is less than threshold value.Hence continuing...")
             else:
