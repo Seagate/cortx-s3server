@@ -353,6 +353,14 @@ class CORTXS3Config(object):
         else:
             return 1000
 
+    def get_threshold(self):
+        """Return the threshold for max."""
+        threshold = self.s3confstore.get_config('indexid>threshold')
+        if threshold:
+            return int(threshold)
+        else:
+            return 500
+
     def get_global_instance_index_id(self):
         """Return probable delete index-id from config file or KeyError."""
         try:
