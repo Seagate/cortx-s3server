@@ -256,13 +256,11 @@ class ObjectRecoveryMsgbus(object):
                     self._logger.info("producer connection issues")
                     return 0
             
-            value = self.__msgbuslib.count(consumer_group)
-            if value is None:
+            unread_count = self.__msgbuslib.count(consumer_group)
+            if unread_count is None:
                 return 0
-            elif value > 0:
-                return value
             else:
-                self._logger.debug("Failed to receive count of unread msgs from message bus : " + str(value))
+                return unread_count
         except Exception as exception:
             self._logger.error("Exception:{}".format(exception))
             return 0
