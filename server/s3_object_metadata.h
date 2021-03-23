@@ -155,6 +155,8 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   unsigned int obj_parts;
   unsigned int obj_fragments;
   std::string pvid_str;
+  // Size of primary object, when object is fragmented
+  size_t primary_obj_size;
   std::shared_ptr<S3ObjectExtendedMetadata> extended_object_metadata;
 
   void initialize();
@@ -211,6 +213,12 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   inline void set_extended_object_metadata(
       std::shared_ptr<S3ObjectExtendedMetadata> ext_object_metadata) {
     extended_object_metadata = std::move(ext_object_metadata);
+  }
+
+  inline size_t get_primary_obj_size() { return primary_obj_size; }
+
+  inline void set_primary_obj_size(size_t obj_size) {
+    primary_obj_size = obj_size;
   }
 
   virtual std::string get_version_key_in_index();
@@ -433,7 +441,8 @@ class S3ObjectExtendedMetadata : private S3ObjectMetadataCopyable {
   unsigned int fragments;
   unsigned int parts;
   S3ObjectMetadataState state;
-
+  // Total size of all fragments/parts
+  size_t total_size;
   // Key is: Multipart number (in case of fragments of multipart, e.g, 1, 2,
   // etc), OR,
   // 0 if fragments of simple object.
@@ -467,6 +476,11 @@ class S3ObjectExtendedMetadata : private S3ObjectMetadataCopyable {
   // Virtual Destructor
   virtual ~S3ObjectExtendedMetadata() {};
   bool has_entries() { return (ext_objects.size() > 0) ? true : false; }
+  inline const std::map<int, std::vector<struct s3_part_frag_context>>&
+  get_raw_extended_entries() {
+    return ext_objects;
+  }
+
   unsigned int get_fragment_count() { return fragments; }
   void load(std::function<void(void)> on_success,
             std::function<void(void)> on_failed);
@@ -478,7 +492,7 @@ class S3ObjectExtendedMetadata : private S3ObjectMetadataCopyable {
   };
   void get_obj_ext_entries_failed();
   void get_obj_ext_entries_successful();
-
+  inline size_t get_size() { return total_size; }
   // Returns extended key/value pair of entries of object with fragments/parts
   std::map<std::string, std::string> get_kv_list_of_extended_entries();
   // Adds an extended entry, when object write fails due to degradation
