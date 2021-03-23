@@ -19,52 +19,22 @@
 #
 
 import sys
-import os
 
-from cortx.utils.validator.v_pkg import PkgV
-from cortx.utils.validator.v_service import ServiceV
-from cortx.utils.validator.v_path import PathV
-from s3confstore.cortx_s3_confstore import S3CortxConfStore
+from setupcmd import SetupCmd, S3PROVError
 
-class PostInstallCmd:
+class PostInstallCmd(SetupCmd):
   """PostInstall Setup Cmd."""
   name = "post_install"
-  _preqs_conf_file = "/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
 
-  def __init__(self):
+  def __init__(self, config: str = None):
     """Constructor."""
-    if not os.path.isfile(self._preqs_conf_file):
-      raise FileNotFoundError(f'pre-requisite json file: {self._preqs_conf_file} not found')
+    try:
+      super(PostInstallCmd, self).__init__(config)
+    except Exception as e:
+      raise S3PROVError(f'exception: {e}\n')
 
   def process(self):
     """Main processing function."""
     sys.stdout.write("Running validations..\n")
-    try:
-      localconfstore = S3CortxConfStore(f'json://{self._preqs_conf_file}', 'confindex')
-      self.validate_pre_requisites(rpms=localconfstore.get_config('rpms'),
-                              services=localconfstore.get_config('services'),
-                              pip3s=localconfstore.get_config('pip3s'),
-                              files=localconfstore.get_config('exists')
-                            )
-    except Exception as e:
-      raise e
-
-  def validate_pre_requisites(self,
-                        rpms: list = None,
-                        pip3s: list = None,
-                        services: list = None,
-                        files: list = None):
-    """Validate pre requisites using cortx-py-utils validator."""
-    try:
-      if pip3s:
-        PkgV().validate('pip3s', pip3s)
-      if services:
-        ServiceV().validate('isrunning', services)
-      if rpms:
-        PkgV().validate('rpms', rpms)
-      if files:
-        PathV().validate('exists', files)
-    except Exception as e:
-      sys.stderr.write('ERROR: post_install validations failed.\n')
-      sys.stderr.write(f"{e}, config:{self._preqs_conf_file}\n")
-      raise e
+    self.phase_prereqs_validate(self.name)
+    sys.stdout.write("Validations passed..\n")

@@ -45,6 +45,7 @@ class ConfigCmd(SetupCmd):
   def process(self):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
+    self.phase_prereqs_validate(self.name)
 
     try:
       # Configure openldap and ldap-replication
