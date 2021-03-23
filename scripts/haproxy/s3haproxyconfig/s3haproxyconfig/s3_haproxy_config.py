@@ -25,28 +25,59 @@ from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 class S3HaproxyConfig:
 
-  @staticmethod
-  def run():
+  local_confstore = None
+  provisioner_confstore = None
+  machine_id = None
+
+  def get_publicip(self):
+    assert self.provisioner_confstore != None
+    assert self.local_confstore != None
+
+    return self.provisioner_confstore.get_config(
+      self.local_confstore.get_config(
+        'CONFSTORE_PRIVATE_FQDN_KEY').format(self.machine_id))
+
+  def get_privateip(self):
+    assert self.provisioner_confstore != None
+    assert self.local_confstore != None
+
+    return self.provisioner_confstore.get_config(
+      self.local_confstore.get_config(
+        'CONFSTORE_PRIVATE_FQDN_KEY').format(self.machine_id))
+
+  def get_s3instances(self):
+    assert self.provisioner_confstore != None
+    assert self.local_confstore != None
+
+    return int(self.provisioner_confstore.get_config(
+      self.local_confstore.get_config(
+        'CONFSTORE_S3INSTANCES_KEY').format(self.machine_id)))
+
+  def run(self):
     parser = argparse.ArgumentParser(description='S3 haproxy configuration')
     parser.add_argument("--path", required=True, help='cortx-py-utils:confstore back-end file URL.', type=str)
 
     args = parser.parse_args()
 
+    self.local_confstore = S3CortxConfStore("yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml",
+                                    'localstore')
+
     if args.path and args.path.strip():
-      s3conf_store = S3CortxConfStore(args.path)
+      self.provisioner_confstore = S3CortxConfStore(args.path, 'haproxy_config_index')
     else:
       sys.exit("--path option value:[{}] is not valid.".format(args.path))
 
     #Read machine-id of current node
     mcid_file = open('/etc/machine-id', 'r')
-    machine_id = mcid_file.read().strip()
+    self.machine_id = mcid_file.read().strip()
     mcid_file.close()
 
-    #Get necessary info from s3conf_store
+    #Get necessary info from confstore
     localhost = '127.0.0.1'
-    pvt_ip = s3conf_store.get_privateip(machine_id)
-    pub_ip = s3conf_store.get_publicip(machine_id)
-    numS3Instances = int(s3conf_store.get_s3instance_count(machine_id))
+    pvt_ip = self.get_privateip()
+    pub_ip = self.get_publicip()
+    numS3Instances = self.get_s3instances()
+
     if numS3Instances <= 0:
         numS3Instances = 1
 
