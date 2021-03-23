@@ -120,14 +120,14 @@ step_4 () {
 step_5 () {
 	# Try to install rpm pkgs from s3 preqs file
 	json_prereqs_file="/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
-	rpms_list=$(jq '.rpms' $json_prereqs_file)
+	rpms_list=$(jq '.post_install.rpms' $json_prereqs_file)
 	rpms_list=$(echo "$rpms_list" | tr -d '[]"\r\n')
 	IFS=', ' read -r -a rpms <<< "$rpms_list"
 	if [ ${#rpms[@]} -eq 0 ];then
-		die_with_error "jq '.rpms' $json_prereqs_file failed"
+		die_with_error "jq '.post_install.rpms' $json_prereqs_file failed"
 	fi
 	if [ "${rpms[0]}" == "null" ];then
-		die_with_error "jq '.rpms' $json_prereqs_file failed"
+		die_with_error "jq '.post_install.rpms' $json_prereqs_file failed"
 	fi
 
 	for rpm in "${rpms[@]}" ; do
@@ -154,14 +154,14 @@ step_7 () {
 }
 
 step_8 () {
-	services_list=$(jq '.services' $json_prereqs_file)
+	services_list=$(jq '.post_install.services' $json_prereqs_file)
 	services_list=$(echo "$services_list" | tr -d '[]"\r\n')
 	IFS=', ' read -r -a services <<< "$services_list"
 	if [ ${#services[@]} -eq 0 ];then
-		die_with_error "jq '.services' $json_prereqs_file failed"
+		die_with_error "jq '.post_install.services' $json_prereqs_file failed"
 	fi
 	if [ "${services[0]}" == "null" ];then
-		die_with_error "jq '.services' $json_prereqs_file failed"
+		die_with_error "jq '.post_install.services' $json_prereqs_file failed"
 	fi
 	# services=("$@")
 	for service in "${services[@]}" ; do

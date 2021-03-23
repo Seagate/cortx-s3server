@@ -39,6 +39,7 @@ class TestCmd(SetupCmd):
   def process(self):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
+    self.phase_prereqs_validate(self.name)
 
     try:
       cmd = ['/opt/seagate/cortx/s3/scripts/s3-sanity-test.sh', '-p',  f'{self.ldap_passwd}']
