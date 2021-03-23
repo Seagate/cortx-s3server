@@ -328,9 +328,9 @@ class S3Option {
   bool load_section(std::string section_name, bool force_override_from_config);
   bool load_all_sections(bool force_override_from_config);
 
-  bool     get_s3_ranged_read_enabled()         { return s3_ranged_read_enabled; }
-  bool     get_s3_read_md5_check_enabled()      { return s3_read_md5_check_enabled; }
-  bool     get_s3_st_md5_error_inject_enabled() { return s3_st_md5_error_inject_enabled; }
+  bool get_s3_ranged_read_enabled();
+  bool get_s3_read_md5_check_enabled();
+  bool get_s3_st_md5_error_inject_enabled();
 
   void     set_s3_read_md5_check_enabled(bool value) {
     s3_read_md5_check_enabled = value;
