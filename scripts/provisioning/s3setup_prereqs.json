@@ -53,13 +53,11 @@
 "cleanup" :
   {
     "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
-    "pip3s": ["s3confstore", "cryptography", "s3haproxyconfig", "s3cipher"],
-    "services": ["haproxy", "slapd"]
+    "pip3s": ["s3confstore", "cryptography", "s3haproxyconfig", "s3cipher"]
   },
 "test" :
   {
     "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
-    "pip3s": ["s3confstore", "cryptography", "s3haproxyconfig", "s3cipher"],
-    "services": ["slapd"]
+    "pip3s": ["s3confstore", "cryptography", "s3haproxyconfig", "s3cipher"]
   }
 }
