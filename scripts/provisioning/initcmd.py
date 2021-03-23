@@ -38,6 +38,7 @@ class InitCmd(SetupCmd):
   def process(self):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
+    self.phase_prereqs_validate(self.name)
     try:
       # Create background delete account
       bgdelete_acc_input_params_dict = {'account_name': "s3-background-delete-svc",

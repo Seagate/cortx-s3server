@@ -19,9 +19,13 @@
 #
 
 import sys
+import os
 from os import path
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
+from cortx.utils.validator.v_pkg import PkgV
+from cortx.utils.validator.v_service import ServiceV
+from cortx.utils.validator.v_path import PathV
 
 class S3PROVError(Exception):
   """Parent class for the s3 provisioner error classes."""
@@ -36,9 +40,13 @@ class SetupCmd(object):
   server_nodes_count = 0
   hosts_list = None
   s3_prov_config = "/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml"
+  _preqs_conf_file = "/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
 
   def __init__(self, config: str):
     """Constructor."""
+    if config is None:
+      return
+
     if not config.strip():
       sys.stderr.write(f'config url:[{config}] must be a valid url path\n')
       raise Exception('empty config URL path')
@@ -106,3 +114,34 @@ class SetupCmd(object):
       self.hosts_list = self.s3confstore.get_nodenames_list()
     except Exception as e:
       raise S3PROVError(f'unknown exception: {e}\n')
+
+  def validate_pre_requisites(self,
+                        rpms: list = None,
+                        pip3s: list = None,
+                        services: list = None,
+                        files: list = None):
+    """Validate pre requisites using cortx-py-utils validator."""
+    sys.stdout.write(f'Validations running from {self._preqs_conf_file}\n')
+    if pip3s:
+      PkgV().validate('pip3s', pip3s)
+    if services:
+      ServiceV().validate('isrunning', services)
+    if rpms:
+      PkgV().validate('rpms', rpms)
+    if files:
+      PathV().validate('exists', files)
+
+  def phase_prereqs_validate(self, phase_name: str):
+    """Validate pre requisites using cortx-py-utils validator for the 'phase_name'."""
+    if not os.path.isfile(self._preqs_conf_file):
+      raise FileNotFoundError(f'pre-requisite json file: {self._preqs_conf_file} not found')
+    _prereqs_confstore = S3CortxConfStore(f'json://{self._preqs_conf_file}', f'{phase_name}')
+    try:
+      prereqs_block = _prereqs_confstore.get_config(f'{phase_name}')
+      if prereqs_block is not None:
+        self.validate_pre_requisites(rpms=_prereqs_confstore.get_config(f'{phase_name}>rpms'),
+                                services=_prereqs_confstore.get_config(f'{phase_name}>services'),
+                                pip3s=_prereqs_confstore.get_config(f'{phase_name}>pip3s'),
+                                files=_prereqs_confstore.get_config(f'{phase_name}>files'))
+    except Exception as e:
+      raise S3PROVError(f'ERROR: {phase_name} prereqs validations failed, exception: {e} \n')
