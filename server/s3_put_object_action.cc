@@ -685,12 +685,13 @@ void S3PutObjectAction::write_object_failed() {
       if (current_fault_iteration == 1) {
         // Save the size of primary object
         primary_object_size = last_object_size;
+        new_object_metadata->set_primary_obj_size(primary_object_size);
       } else {
-        // Save size of last fragment
+        // Save size of next fragment
         const std::shared_ptr<S3ObjectExtendedMetadata>& ext_object_metadata =
             new_object_metadata->get_extended_object_metadata();
         if (ext_object_metadata) {
-          // Set size of the last fragment
+          // Set size of the next fragment
           ext_object_metadata->set_size_of_extended_entry(
               last_object_size, (current_fault_iteration - 1), 0);
         }
@@ -738,13 +739,7 @@ void S3PutObjectAction::save_metadata() {
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL("put_object_action_save_metadata_pass");
 
   new_object_metadata->reset_date_time_to_current();
-  // If this has an extended object, set proper content length/size of object
-  if (new_object_metadata->is_object_extended()) {
-    new_object_metadata->set_content_length(
-        std::to_string(primary_object_size));
-  } else {
-    new_object_metadata->set_content_length(request->get_data_length_str());
-  }
+  new_object_metadata->set_content_length(request->get_data_length_str());
   new_object_metadata->set_content_type(request->get_content_type());
   new_object_metadata->set_md5(motr_writer->get_content_md5());
   new_object_metadata->set_tags(new_object_tags_map);
