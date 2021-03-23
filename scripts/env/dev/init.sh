@@ -34,7 +34,7 @@ os_major_version=""
 os_minor_version=""
 os_build_num=""
 ansible_automation=0
-
+is_open_source=false
 
 unsupported_os() {
   echo "S3 currently supports only CentOS 7.7.1908, CentOS 7.8.2003 or RHEL 7.7" 1>&2;
@@ -70,9 +70,6 @@ install_pre_requisites() {
   
   #create topic
   sh ${S3_SRC_DIR}/scripts/kafka/create-topic.sh -c 1 -i $HOSTNAME
-
-  # install or upgrade cortx-py-utils
-  install_cortx_py_utils
 
   # install configobj
   pip3 install configobj
@@ -127,6 +124,7 @@ else
   while getopts "ahs" x; do
       case "${x}" in
           a)
+              is_open_source=true
               yum install createrepo -y
               easy_install pip
               read -p "Git Access Token:" git_access_token
@@ -217,6 +215,17 @@ if [ "$os_major_version" = "7" ];
 then
   ./s3motr-build-depencies.sh
 fi
+
+# install all rpms which requires gcc as dependency
+if [ "$is_open_source" = false ];
+then
+  echo "Installing cortx-py-utils"
+  install_cortx_py_utils
+fi
+
+# add /usr/local/bin to PATH
+export PATH=$PATH:/usr/local/bin
+echo $PATH
 
 # configure backgrounddelete ST dependencies
 ./setup_backgrounddelete_config.sh
