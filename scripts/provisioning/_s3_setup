@@ -25,7 +25,6 @@ import argparse
 import traceback
 import errno
 
-from postinstallcmd import PostInstallCmd
 
 def main():
   parser = argparse.ArgumentParser("S3server setup command")
@@ -45,6 +44,7 @@ def main():
 
   testCmd = subparsers.add_parser('test', help='setup test')
   testCmd.add_argument("--config", help='config URL', type=str, required=True)
+  testCmd.add_argument("--plan", help='test plan', type=str, required=False)
 
   resetCmd = subparsers.add_parser('reset', help='setup reset')
   resetCmd.add_argument("--config", help='config URL', type=str, required=True)
@@ -54,11 +54,12 @@ def main():
 
   args = parser.parse_args()
   try:
-    # run post_install always, the failure will raise exception in PostInstallCmd class
-    PostInstallCmd().process()
-    sys.stdout.write('INFO: post_install validations successful.\n')
-    
-    if args.command == 'cleanup':
+    if args.command == 'post_install':
+      from postinstallcmd import PostInstallCmd
+      PostInstallCmd().process()
+      sys.stdout.write('INFO: post_install successful.\n')
+
+    elif args.command == 'cleanup':
       from cleanupcmd import CleanupCmd
       CleanupCmd(args.config).process()
       sys.stdout.write('INFO: cleanup successful.\n')
