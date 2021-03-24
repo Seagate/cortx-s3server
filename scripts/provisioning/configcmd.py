@@ -26,6 +26,9 @@ from  ast import literal_eval
 
 from setupcmd import SetupCmd, S3PROVError
 from cortx.utils.process import SimpleProcess
+from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
+from s3backgrounddelete.cortx_s3_config import CORTXS3Config
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 
 class ConfigCmd(SetupCmd):
   """Config Setup Cmd."""
@@ -54,6 +57,15 @@ class ConfigCmd(SetupCmd):
       # Configure haproxy
       self.configure_haproxy()
       sys.stdout.write("INFO: Successfully configured haproxy on the node.\n")
+
+      # create topic for background delete
+      bgdeleteconfig = CORTXS3Config()
+      if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
+        sys.stdout.write('INFO: Creating topic.\n')
+        self.create_topic(bgdeleteconfig.get_msgbus_admin_id,
+                          bgdeleteconfig.get_msgbus_topic(),
+                          self.get_msgbus_partition_count())
+        sys.stdout.write('INFO:Topic creation successful.\n')
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}\n')
 
@@ -149,3 +161,34 @@ class ConfigCmd(SetupCmd):
     stdout, stderr, retcode = handler.run()
     if retcode != 0:
       raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
+
+  def create_topic(self, admin_id: str, topic_name:str, partitions: int):
+    """create topic for background delete services."""
+    try:
+      s3MessageBus = S3CortxMsgBus()
+      s3MessageBus.connect()
+      if not S3CortxMsgBus.is_topic_exist(admin_id, topic_name):
+        S3CortxMsgBus.create_topic(admin_id, [topic_name], partitions)
+    except Exception as e:
+      raise e
+
+  def get_msgbus_partition_count(self):
+    """get total server nodes which will act as partition count."""
+    storage_set_count = self.get_confvalue(self.get_confkey(
+      'CONFSTORE_STORAGE_SET_COUNT_KEY').format(self.cluster_id))
+    srv_count=0
+    index = 0
+    while index < int(storage_set_count):
+      server_nodes_list = self.get_confvalue(self.get_confkey(
+        'CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').format(self.cluster_id, index))
+      if type(server_nodes_list) is str:
+        # list is stored as string in the confstore file
+        server_nodes_list = literal_eval(server_nodes_list)
+        srv_count += len(server_nodes_list)
+      index += 1
+    sys.stdout.write(f"Server node count : {srv_count}\n")
+    # Partition count should be ( number of hosts * 2 )
+    srv_count = srv_count * 2
+    sys.stdout.write(f"Partition count : {srv_count}\n")
+    return srv_count
+

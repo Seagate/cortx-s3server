@@ -36,6 +36,8 @@ message_bus:
    producer_id: "S3MsgProducer"
    producer_delivery_mechanism: "sync"                      # sync, async
    consumer_sleep: 5
+   purge_sleep: 60
+   admin_id: "admin_s3_background_delete"
 
 s3_recovery:                               # Section for S3 recovery config config
    recovery_account_access_key: "A9IAJPINPFRBTPASATAZ"                     # Access Key corresponding to account-name "s3-recovery-svc"

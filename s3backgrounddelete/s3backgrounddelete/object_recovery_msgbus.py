@@ -238,8 +238,8 @@ class ObjectRecoveryMsgbus(object):
                     self._logger.debug("producer connection issues")
                     return False
             self.__msgbuslib.purge()
-            #Insert a delay of 1 min after purge, so that the messages are deleted
-            time.sleep(60)
+            #Insert a delay of 1 min (default) after purge, so that the messages are deleted
+            time.sleep(self._config.get_purge_sleep_time())
             self._logger.debug("Purged Messages")
         except Exception as exception:
             self._logger.error("Exception:{}".format(exception))
