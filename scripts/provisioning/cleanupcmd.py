@@ -207,10 +207,5 @@ class CleanupCmd(SetupCmd):
         sys.stdout.write(f"{curr_dir} removed\n")
 
     for curr_mdb_files in mdb_files:
-      for files in os.listdir(curr_mdb_files):
-        path = os.path.join(curr_mdb_files, files)
-        if os.path.isfile(path) or os.path.islink(path):
-          os.unlink(path)
-        elif os.path.isdir(path):
-          shutil.rmtree(path)
+      self.delete_mdb_files(curr_mdb_files)
       sys.stdout.write(f"{curr_mdb_files} removed\n")

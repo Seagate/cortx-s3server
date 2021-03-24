@@ -145,3 +145,11 @@ class SetupCmd(object):
                                 files=_prereqs_confstore.get_config(f'{phase_name}>files'))
     except Exception as e:
       raise S3PROVError(f'ERROR: {phase_name} prereqs validations failed, exception: {e} \n')
+
+  def delete_mdb_files(self,ldap_mdb_folder: str):
+    for files in os.listdir(ldap_mdb_folder):
+      path = os.path.join(ldap_mdb_folder,files)
+      if os.path.isfile(path) or os.path.islink(path):
+        os.unlink(path)
+      elif os.path.isdir(path):
+        shutil.rmtree(path)

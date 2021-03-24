@@ -22,6 +22,7 @@ import sys
 import os
 import shutil
 import glob
+import re
 
 from setupcmd import SetupCmd
 from ldapaccountaction import LdapAccountAction
@@ -124,18 +125,25 @@ class ResetCmd(SetupCmd):
         except Exception as e:
           sys.stderr.write(f'ERROR: DeleteFileOrDirWithRegex(): Failed to delete: {file}, error: {str(e)}\n')
           raise e
+  
+  def GetLineNumberOfMatchedPattern(self):
+    """Returns line number of first occurrence of matched pattern."""
+    line_number = 0
+    for line in open("conf_backup.ldif"):
+      for match in re.finditer("dn: o=.*",line):
+        return line_number
+      line_number += 1
+    return 0
 
   def DeleteLdapAccountsUsers(self):
     """Deletes all LDAP accounts and users."""
     os.system('slapcat -n 3 -l conf_backup.ldif')
-    os.system('sed -i \'118,$ d\' conf_backup.ldif')
+    line_number  = self.GetLineNumberOfMatchedPattern()
+    if line_number != 0:
+    	os.system('sed -i \'' + str(line_number) + ',$ d\' conf_backup.ldif')
     ldap_mdb_folder = "/var/lib/ldap"
-    for files in os.listdir(ldap_mdb_folder):
-      path = os.path.join(ldap_mdb_folder,files)
-      if os.path.isfile(path) or os.path.islink(path):
-        os.unlink(path)
-      elif os.path.isdir(path):
-        shutil.rmtree(path)
+    self.delete_mdb_files(ldap_mdb_folder)
+    # os restart util not merged!
     os.system('systemctl restart slapd')
     os.system('slapadd -n 3 -F /etc/openldap/slapd.d -l conf_backup.ldif')
     try:
