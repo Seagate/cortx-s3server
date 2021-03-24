@@ -571,7 +571,7 @@ void S3GetObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (checksum_mismatch) {
-    request->send_reply_end();
+    request->cancel();
   } else if (reject_if_shutting_down()) {
     if (read_object_reply_started) {
       request->send_reply_end();

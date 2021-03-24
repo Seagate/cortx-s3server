@@ -20,8 +20,8 @@
 
 #include <unistd.h>
 #include <sys/socket.h>
-
 #include <openssl/ssl.h>
+#include <event2/event.h>
 
 #include "evhtp_wrapper.h"
 
@@ -34,7 +34,9 @@ void EvhtpWrapper::http_request_resume(evhtp_request_t *request) {
 }
 
 void EvhtpWrapper::http_cancel_request(evhtp_request_t *request) {
-  // evhttp_cancel_request(request);
+  evbev_t *bev = evhtp_connection_take_ownership(
+      evhtp_request_get_connection(request));
+  bufferevent_free(bev);
 }
 
 evhtp_proto EvhtpWrapper::http_request_get_proto(evhtp_request_t *request) {
