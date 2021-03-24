@@ -2,6 +2,7 @@
 
 import sys
 import json
+import uuid
 import argparse
 
 from plumbum import local
@@ -11,11 +12,12 @@ from typing import List, Optional
 s3api = local["aws"]["s3api"]
 OBJECT_SIZE = [0, 1, 2, 4095, 4096, 4097,
                2**20 - 1, 2**20, 2**20 + 100, 2 ** 24]
-PART_SIZE = [5 * 2 ** 20, 6 * 20 ** 20]
-PART_NR = range(4)
+PART_SIZE = [5 * 2 ** 20, 6 * 2 ** 20]
+PART_NR = [i+1 for i in range(2)]
 
 
 def create_random_file(path: str, size: int, first_byte: Optional[str] = None):
+    print(f'create_random_file path={path} size={size}')
     with open('/dev/urandom', 'rb') as r:
         with open(path, 'wb') as f:
             data = r.read(size)
@@ -37,6 +39,7 @@ def test_multipart_upload(bucket: str, key: str, output: str,
         print(s3api["upload-part", "--bucket", bucket, "--key", key,
                     "--part-number", str(i), "--upload-id", upload_id,
                     "--body", part]())
+        i += 1
     parts_list = json.loads(s3api["list-parts",
                                   "--bucket", bucket, "--key", key,
                                   "--upload-id", upload_id]())
@@ -77,14 +80,18 @@ def auto_test_multipart(args) -> None:
         for last_part_size in OBJECT_SIZE:
             for part_nr in PART_NR:
                 parts = [f'{args.body}.part{i+1}' for i in range(part_nr)]
+                for part in parts:
+                    if args.create_objects:
+                        create_random_file(part, part_size)
                 if last_part_size > 0:
                     parts += [f'{args.body}.last_part']
-                for part in parts:
-                    create_random_file(part, part_size)
+                    if args.create_objects:
+                        create_random_file(parts[-1], last_part_size)
                 test_multipart_upload(args.bucket,
                                       f'part_size={part_size}_'
                                       f'last_part_size={last_part_size}_'
-                                      f'part_nr={part_nr}',
+                                      f'part_nr={part_nr}_'
+                                      f'uuid={uuid.uuid4()}',
                                       args.output, parts)
 
 
