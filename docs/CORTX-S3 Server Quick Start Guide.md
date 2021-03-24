@@ -44,6 +44,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
       * To check if pip is installed, use: `$ pip --version`
       * To check if epel is installed, use: `$ yum repolist`. If epel was installed, you'll see it in the output list. If not enable it using :`$ yum --enablerepo=extras install epel-release`.
       * To install pip use: `$ yum install python-pip`
+      * A specific version is needed: `$ pip install pip==20.3.3`
     * Ansible: `$ yum install -y ansible`
     * Extra Packages for Enterprise Linux:
         * To check if epel is installed, use: `$ yum repolist`
