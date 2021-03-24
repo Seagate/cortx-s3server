@@ -32,8 +32,6 @@ from ldapaccountaction import LdapAccountAction
 
 services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver", "slapd"]
 
-services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver", "slapd"]
-
 class ResetCmd(SetupCmd):
   """Reset Setup Cmd."""
   name = "reset"
