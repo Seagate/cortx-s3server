@@ -357,6 +357,15 @@ size_t S3MotrReader::get_next_block(char **data) {
   } else {
     // the object was created with multipart upload.
     // Calculate md5 checksums for each part independently.
+    //
+    // Multipart upload is done in the following way: parts are uploaded one by
+    // one, then there is CompleteMultipartUpload call that is only about
+    // changing the metadata. To calculate the entire object md5 checksum we
+    // would have to read the entire object during CompleteMultipartUpload.
+    // There may be a hash that allows to calculate full hash using partial
+    // hashes, but md5 checksums were already implemented in the code for PUT
+    // and UploadPart, so sticking with md5 checksums was the easiest way to
+    // go.
     size_t remaining = length;
     // Each iteration jumps to the next part or the end of the buffer,
     // whichever comes first.
@@ -364,12 +373,23 @@ size_t S3MotrReader::get_next_block(char **data) {
       // current absolute position in object for the purpose of checksumming
       size_t pos = total_size_read + length - remaining;
       size_t next_part_pos;
+      // Current implementation supports only equal sized parts, except the
+      // last part. This allows to store only a part size (for all parts except
+      // the last) and total number of parts. Part boundaries could be derived
+      // from these 2 values.
+      // The following 'if' gets absolute position in object of the next part
+      // boundary.
       if (pos / multipart_part_size >= multipart_num_of_parts - 1)
         next_part_pos = total_size_to_read;
       else
         next_part_pos = (pos / multipart_part_size + 1) * multipart_part_size;
+      // let's update hash as much data as we can, but don't cross part
+      // boundary.
       size_t to_update = std::min(next_part_pos - pos, remaining);
       md5crypt.Update(&(*data)[length - remaining], to_update);
+      // if the part boundary is reached add hash to awsetag. It would
+      // calculate the hash in exactly the same way as it's done in
+      // S3PostCompleteAction::validate_parts() during CompleteMultipartUpload.
       if (pos + to_update == next_part_pos) {
         std::string s = get_content_md5();
         awsetag.add_part_etag(s);
