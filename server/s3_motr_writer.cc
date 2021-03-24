@@ -474,7 +474,7 @@ void S3MotrWiter::write_content() {
           break;
         case 'f':  // first
           // corrupt the first byte
-          *(char *)bv->ov_buf[0] = ~first_byte;
+          *(char *)bv->ov_buf[0] = !first_byte;
           break;
         case 'k':  // OK
           break;
