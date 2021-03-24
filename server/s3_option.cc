@@ -994,15 +994,15 @@ void S3Option::dump_options() {
   return;
 }
 
-bool get_s3_ranged_read_enabled() {
+bool S3Option::get_s3_ranged_read_enabled() {
   return s3_ranged_read_enabled;
 }
 
-bool get_s3_read_md5_check_enabled() {
+bool S3Option::get_s3_read_md5_check_enabled() {
   return s3_read_md5_check_enabled;
 }
 
-bool get_s3_st_md5_error_inject_enabled() {
+bool S3Option::get_s3_st_md5_error_inject_enabled() {
   return s3_st_md5_error_inject_enabled;
 }
 
