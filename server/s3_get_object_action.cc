@@ -28,6 +28,7 @@
 #include "s3_stats.h"
 #include "s3_perf_metrics.h"
 #include "s3_iem.h"
+#include "s3_aws_etag.h"
 
 S3GetObjectAction::S3GetObjectAction(
     std::shared_ptr<S3RequestObject> req,
@@ -342,8 +343,7 @@ void S3GetObjectAction::read_object() {
   if (part_one_size > 0) {
     motr_reader->set_multipart_part_size(part_one_size);
     std::string etag = object_metadata->get_md5();
-    std::string num_of_parts = etag.substr(etag.rfind('-') + 1);
-    motr_reader->set_multipart_num_of_parts(std::stoull(num_of_parts));
+    motr_reader->set_multipart_num_of_parts(S3AwsEtag::get_num_of_parts(etag));
   }
   // get the block,in which first_byte_offset_to_read is present
   // and initilaize the last index with starting offset the block
