@@ -5,6 +5,7 @@ import json
 import uuid
 import argparse
 
+import plumbum
 from plumbum import local
 from typing import List, Optional
 
@@ -29,7 +30,7 @@ def create_random_file(path: str, size: int, first_byte: Optional[str] = None):
 
                        
 def test_multipart_upload(bucket: str, key: str, output: str,
-                          parts: List[str]) -> None:
+                          parts: List[str], get_must_fail: bool) -> None:
     create_multipart = json.loads(s3api["create-multipart-upload",
                                         "--bucket", bucket, "--key", key]())
     upload_id = create_multipart["UploadId"]
@@ -60,33 +61,45 @@ def test_multipart_upload(bucket: str, key: str, output: str,
     s3api["delete-object",  "--bucket", bucket, "--key", key]()
     
 
-def test_put_get(bucket: str, key: str, body: str, output: str) -> None:
+def test_put_get(bucket: str, key: str, body: str, output: str,
+                 get_must_fail: bool) -> None:
     s3api["put-object",  "--bucket", bucket, "--key", key, '--body', body]()
-    s3api["get-object",  "--bucket", bucket, "--key", key, output]()
+    try:
+        s3api["get-object",  "--bucket", bucket, "--key", key, output]()
+        assert not get_must_fail
+    except plumbum.commands.processes.ProcessExecutionError as e:
+        print(123)
+        print(e)
+        assert get_must_fail
     (local['diff']['--report-identical-files', body, output])()
     s3api["delete-object",  "--bucket", bucket, "--key", key]()
     
 
 def auto_test_put_get(args) -> None:
+    first_byte = {'none': 'k', 'zero': 'z', 'first_byte': 'f'}[args.corruption]
     if args.create_objects:
-        create_random_file(args.body, args.object_size)
+        create_random_file(args.body, args.object_size, first_byte)
     for size in OBJECT_SIZE:
         for i in range(args.iterations):
-            test_put_get(args.bucket, str(i), args.body, args.output)
+            test_put_get(args.bucket, str(i), args.body, args.output,
+                         args.corruption != 'none')
 
 
 def auto_test_multipart(args) -> None:
+    first_byte = {'none': 'k', 'zero': 'z', 'first_byte': 'f'}[args.corruption]
     for part_size in PART_SIZE:
         for last_part_size in OBJECT_SIZE:
             for part_nr in PART_NR:
                 parts = [f'{args.body}.part{i+1}' for i in range(part_nr)]
-                for part in parts:
+                for i, part in enumerate(parts):
                     if args.create_objects:
-                        create_random_file(part, part_size)
+                        create_random_file(part, part_size,
+                                           first_byte if i == 0 else None)
                 if last_part_size > 0:
                     parts += [f'{args.body}.last_part']
                     if args.create_objects:
-                        create_random_file(parts[-1], last_part_size)
+                        create_random_file(parts[-1], last_part_size,
+                                           first_byte)
                 test_multipart_upload(args.bucket,
                                       f'part_size={part_size}_'
                                       f'last_part_size={last_part_size}_'
@@ -105,6 +118,8 @@ def main() -> None:
     parser.add_argument('--output', type=str, default='./s3-object-output.bin')
     parser.add_argument('--iterations', type=int, default=1)
     parser.add_argument('--create-objects', action='store_true')
+    parser.add_argument('--corruption', choices=['none', 'zero', 'first_byte'],
+                        default='none')
     args = parser.parse_args()
     print(args)
     if args.auto_test_put_get:
