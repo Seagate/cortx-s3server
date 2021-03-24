@@ -33,6 +33,10 @@ void EvhtpWrapper::http_request_resume(evhtp_request_t *request) {
   evhtp_request_resume(request);
 }
 
+void EvhtpWrapper::http_cancel_request(evhtp_request_t *request) {
+  // evhttp_cancel_request(request);
+}
+
 evhtp_proto EvhtpWrapper::http_request_get_proto(evhtp_request_t *request) {
   return evhtp_request_get_proto(request);
 }
