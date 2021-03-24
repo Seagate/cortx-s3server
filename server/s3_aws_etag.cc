@@ -128,3 +128,8 @@ std::string S3AwsEtag::finalize() {
 }
 
 std::string S3AwsEtag::get_final_etag() { return final_etag; }
+
+int S3AwsEtag::get_num_of_parts(std::string etag)
+{
+    return std::stoull(etag.substr(etag.rfind('-') + 1));
+}

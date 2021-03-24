@@ -43,6 +43,7 @@ class S3AwsEtag {
   void add_part_etag(std::string etag);
   std::string finalize();
   std::string get_final_etag();
+  static int get_num_of_parts(std::string etag);
   FRIEND_TEST(S3AwsEtagTest, Constructor);
   FRIEND_TEST(S3AwsEtagTest, HexToDec);
   FRIEND_TEST(S3AwsEtagTest, HexToDecInvalid);
