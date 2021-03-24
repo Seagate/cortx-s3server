@@ -41,7 +41,7 @@ test                     run s3 sanity tests
 
 cleanup                  cleanup S3 account created for backgrounddelete service
 
-reset                    delete all logs, metadata etc. (which was populated as a result of the test phase)
+reset                    stop various s3 services and delete all logs related to S3
 
 prepare                  prepare
 
