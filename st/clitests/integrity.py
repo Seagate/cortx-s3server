@@ -77,9 +77,9 @@ def test_put_get(bucket: str, key: str, body: str, output: str,
 
 def auto_test_put_get(args) -> None:
     first_byte = {'none': 'k', 'zero': 'z', 'first_byte': 'f'}[args.corruption]
-    if args.create_objects:
-        create_random_file(args.body, args.object_size, first_byte)
     for size in OBJECT_SIZE:
+        if args.create_objects:
+            create_random_file(args.body, args.object_size, first_byte)
         for i in range(args.iterations):
             test_put_get(args.bucket, str(i), args.body, args.output,
                          args.corruption != 'none')
