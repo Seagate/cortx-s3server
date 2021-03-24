@@ -477,12 +477,14 @@ void S3MotrWiter::write_content() {
       char first_byte = *(char *)bv->ov_buf[0];
       s3_log(S3_LOG_DEBUG, "", "%s first_byte=%d", __func__, first_byte);
       switch (first_byte) {
-        case 0:
+        case 'z':  // zero
 	  corrupt_fill_zero = true;
           break;
-        case 1:
+        case 'f':  // first
           // corrupt the first byte
           *(char *)bv->ov_buf[0] = ~first_byte;
+          break;
+        case 'k':  // OK
           break;
       }
     }
