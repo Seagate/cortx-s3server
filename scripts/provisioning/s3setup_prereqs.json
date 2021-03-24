@@ -1,63 +1,59 @@
 {
-"post_install" :
-  {
+  "post_install": {
     "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
-    "pip3s": ["s3confstore", "cryptography", "s3haproxyconfig", "s3cipher"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"],
     "files": [
-		"file:/etc/machine-id",
-		"file:/etc/haproxy/haproxy.cfg",
-		"file:/etc/ssl/stx/stx.pem",
-		"file:/opt/seagate/cortx/s3/install/haproxy/503.http",
-		"file:/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy",
-		"file:/opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf",
-		"file:/opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate"]
+		  "file:/etc/machine-id",
+		  "file:/etc/haproxy/haproxy.cfg",
+		  "file:/etc/ssl/stx/stx.pem",
+		  "file:/opt/seagate/cortx/s3/install/haproxy/503.http",
+		  "file:/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy",
+		  "file:/opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf",
+		  "file:/opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate"
+    ]
   },
-"config" :
-  {
+  "config": {
     "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
-    "pip3s": ["s3confstore", "cryptography", "s3haproxyconfig", "s3cipher"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"],
     "services": ["sshd", "rabbitmq-server", "haproxy", "slapd", "rsyslog"],
     "files": [
-		"file:/etc/machine-id",
-		"file:/etc/haproxy/haproxy.cfg",
-		"file:/etc/ssl/stx/stx.pem",
-		"file:/opt/seagate/cortx/s3/install/haproxy/503.http",
-		"file:/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy",
-		"file:/opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf",
-		"file:/opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate"]
+		  "file:/etc/machine-id",
+		  "file:/etc/haproxy/haproxy.cfg",
+		  "file:/etc/ssl/stx/stx.pem",
+		  "file:/opt/seagate/cortx/s3/install/haproxy/503.http",
+		  "file:/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy",
+		  "file:/opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf",
+		  "file:/opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate"
+    ]
   },
-"init" :
-  {
+  "init": {
     "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
-    "pip3s": ["s3confstore", "cryptography", "s3haproxyconfig", "s3cipher"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"],
     "services": ["sshd", "rabbitmq-server", "haproxy", "slapd", "rsyslog"],
     "files": [
-		"file:/etc/machine-id",
-		"file:/etc/haproxy/haproxy.cfg",
-		"file:/etc/ssl/stx/stx.pem",
-		"file:/opt/seagate/cortx/s3/install/haproxy/503.http",
-		"file:/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy",
-		"file:/opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf",
-		"file:/opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate"]
+		  "file:/etc/machine-id",
+		  "file:/etc/haproxy/haproxy.cfg",
+		  "file:/etc/ssl/stx/stx.pem",
+		  "file:/opt/seagate/cortx/s3/install/haproxy/503.http",
+		  "file:/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy",
+		  "file:/opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf",
+		  "file:/opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate"
+    ]
   },
-"reset" :
-  {
+  "reset": {
     "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
-    "pip3s": ["s3confstore", "cryptography", "s3haproxyconfig", "s3cipher"]
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"]
   },
-"prepare" :
-  {
+  "prepare": {
     "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
-    "pip3s": ["s3confstore", "cryptography", "s3haproxyconfig", "s3cipher"]
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"]
   },
-"cleanup" :
-  {
+  "cleanup": {
     "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
-    "pip3s": ["s3confstore", "cryptography", "s3haproxyconfig", "s3cipher"]
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"]
   },
-"test" :
-  {
+  "test": {
     "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
-    "pip3s": ["s3confstore", "cryptography", "s3haproxyconfig", "s3cipher"]
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"]
   }
 }

@@ -35,6 +35,8 @@ def main():
 
   configCmd = subparsers.add_parser('config', help='setup config')
   configCmd.add_argument("--config", help='config URL', type=str, required=True)
+  configCmd.add_argument("--only_ldap", help='Configure only openldap', action='store_true')
+  configCmd.add_argument("--only-haproxy", help='Configure only haproxy', action='store_true')
 
   initCmd = subparsers.add_parser('init', help='setup init')
   initCmd.add_argument("--config", help='config URL', type=str, required=True)
@@ -66,7 +68,12 @@ def main():
       
     elif args.command == 'config':
       from configcmd import ConfigCmd
-      ConfigCmd(args.config).process()
+      if args.only_ldap == True:
+        ConfigCmd(args.config).configure_openldap()
+      elif args.only_haproxy == True:
+        ConfigCmd(args.config).configure_haproxy()
+      else:
+        ConfigCmd(args.config).process()
       sys.stdout.write('INFO: config successful.\n')
       
     elif args.command == 'init':
