@@ -169,7 +169,7 @@ class ResetCmd(SetupCmd):
   def DeleteLdapAccountsUsers(self):
     """Deletes all LDAP accounts and users."""
     os.system('slapcat -n 3 -l conf_backup.ldif')
-    line_number = 0 
+    line_number = 0
     for line in open("conf_backup.ldif"):
       if re.match("dn: o=.*",line) != None:
         break

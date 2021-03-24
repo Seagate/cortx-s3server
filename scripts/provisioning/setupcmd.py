@@ -20,6 +20,7 @@
 
 import sys
 import os
+import shutil
 from os import path
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
@@ -187,7 +188,7 @@ class SetupCmd(object):
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
 
   def delete_mdb_files(self):
-    """Deletes ldap mdb files"""
+    """Deletes ldap mdb files."""
     for files in os.listdir(self.ldap_mdb_folder):
       path = os.path.join(self.ldap_mdb_folder,files)
       if os.path.isfile(path) or os.path.islink(path):
