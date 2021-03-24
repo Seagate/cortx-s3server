@@ -22,13 +22,23 @@ def create_random_file(path: str, size: int, first_byte: Optional[str] = None):
     with open('/dev/urandom', 'rb') as r:
         with open(path, 'wb') as f:
             data = r.read(size)
-            if first_byte:
+            if size > 0 and first_byte:
                 ba = bytearray(data)
                 ba[0] = ord(first_byte[0])
                 data = bytes(ba)
             f.write(data)
 
-                       
+
+def test_get(bucket: str, key: str, output: str, get_must_fail: bool):
+    try:
+        local['rm']['-vf', output]
+        s3api["get-object", "--bucket", bucket, "--key", key, output]()
+        assert not get_must_fail
+    except plumbum.commands.processes.ProcessExecutionError as e:
+        print(e)
+        assert get_must_fail
+
+
 def test_multipart_upload(bucket: str, key: str, output: str,
                           parts: List[str], get_must_fail: bool) -> None:
     create_multipart = json.loads(s3api["create-multipart-upload",
@@ -64,14 +74,9 @@ def test_multipart_upload(bucket: str, key: str, output: str,
 def test_put_get(bucket: str, key: str, body: str, output: str,
                  get_must_fail: bool) -> None:
     s3api["put-object",  "--bucket", bucket, "--key", key, '--body', body]()
-    try:
-        s3api["get-object",  "--bucket", bucket, "--key", key, output]()
-        assert not get_must_fail
-    except plumbum.commands.processes.ProcessExecutionError as e:
-        print(123)
-        print(e)
-        assert get_must_fail
-    (local['diff']['--report-identical-files', body, output])()
+    test_get(bucket, key, output, get_must_fail)
+    if not get_must_fail:
+        (local['diff']['--report-identical-files', body, output])()
     s3api["delete-object",  "--bucket", bucket, "--key", key]()
     
 
@@ -79,10 +84,12 @@ def auto_test_put_get(args) -> None:
     first_byte = {'none': 'k', 'zero': 'z', 'first_byte': 'f'}[args.corruption]
     for size in OBJECT_SIZE:
         if args.create_objects:
-            create_random_file(args.body, args.object_size, first_byte)
+            create_random_file(args.body, size, first_byte)
         for i in range(args.iterations):
-            test_put_get(args.bucket, str(i), args.body, args.output,
-                         args.corruption != 'none')
+            test_put_get(args.bucket, f'size={size}_i={i}',
+                         args.body, args.output,
+                         size > 0 and args.corruption != 'none')
+    print('auto-test-put-get: Successful.')
 
 
 def auto_test_multipart(args) -> None:
@@ -106,6 +113,7 @@ def auto_test_multipart(args) -> None:
                                       f'part_nr={part_nr}_'
                                       f'uuid={uuid.uuid4()}',
                                       args.output, parts)
+    print('auto-test-multipart: Successful.')
 
 
 def main() -> None:
