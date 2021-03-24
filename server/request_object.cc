@@ -877,6 +877,13 @@ void RequestObject::close_connection() {
   is_client_connected = false;
 }
 
+void RequestObject::cancel();
+{
+  evhtp_obj->http_cancel_request(ev_req);
+  client_has_disconnected();
+  send_reply_end();
+}
+
 void RequestObject::respond_error(
     std::string error_code, const std::map<std::string, std::string>& headers,
     std::string error_message) {

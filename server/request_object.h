@@ -356,6 +356,7 @@ class RequestObject {
   virtual void send_reply_body(struct evbuffer*);
   virtual void send_reply_end();
   virtual void close_connection();
+  virtual void cancel();
 
   void respond_error(std::string error_code,
                      const std::map<std::string, std::string>& headers =
