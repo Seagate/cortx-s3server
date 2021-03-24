@@ -22,14 +22,15 @@ import sys
 import os
 import shutil
 import glob
-import re
 import time
-
+import re
 from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 from setupcmd import SetupCmd
 from ldapaccountaction import LdapAccountAction
+
+services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver", "slapd"]
 
 class ResetCmd(SetupCmd):
   """Reset Setup Cmd."""
@@ -46,6 +47,7 @@ class ResetCmd(SetupCmd):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
+
     try:
       sys.stdout.write('INFO: Removing LDAP Accounts and Users.\n')
       self.DeleteLdapAccountsUsers()
@@ -53,6 +55,14 @@ class ResetCmd(SetupCmd):
     except Exception as e:
       sys.stderr.write(f'Failed to cleanup LDAP Accounts and Users, error: {e}\n')
       raise e
+
+    try:
+      sys.stdout.write("Shutting down s3 services...\n")
+      self.shutdown_services(services_list)
+    except Exception as e:
+      sys.stderr.write(f'Failed to stop s3services, error: {e}\n')
+      raise e
+
     try:
       sys.stdout.write('INFO: Cleaning up log files.\n')
       self.CleanupLogs()
@@ -67,6 +77,7 @@ class ResetCmd(SetupCmd):
                             bgdeleteconfig.get_msgbus_producer_delivery_mechanism(),
                             bgdeleteconfig.get_purge_sleep_time())
         sys.stdout.write('INFO:Purge message successful.\n')
+
     except Exception as e:
       sys.stderr.write(f'Failed to cleanup log directories or files, error: {e}\n')
       raise e
@@ -139,26 +150,33 @@ class ResetCmd(SetupCmd):
         except Exception as e:
           sys.stderr.write(f'ERROR: DeleteFileOrDirWithRegex(): Failed to delete: {file}, error: {str(e)}\n')
           raise e
-          
-  def GetLineNumberOfMatchedPattern(self):
-    """Returns line number of first occurrence of matched pattern."""
-    line_number = 0
-    for line in open("conf_backup.ldif"):
-      for match in re.finditer("dn: o=.*",line):
-        return line_number
-      line_number += 1
-    return 0
+
+  def purge_messages(self, producer_id: str, msg_type: str, delivery_mechanism: str, sleep_time: int):
+    """purge messages on message bus."""
+    try:
+      s3MessageBus = S3CortxMsgBus()
+      s3MessageBus.connect()
+      s3MessageBus.setup_producer(producer_id, msg_type, delivery_mechanism)
+      try:
+        s3MessageBus.purge()
+        #Insert a delay of 1 min after purge, so that the messages are deleted
+        time.sleep(sleep_time)
+      except:
+        sys.stdout.write('Exception during purge. May be there are no messages to purge\n')
+    except Exception as e:
+      raise e
 
   def DeleteLdapAccountsUsers(self):
     """Deletes all LDAP accounts and users."""
     os.system('slapcat -n 3 -l conf_backup.ldif')
-    line_number  = self.GetLineNumberOfMatchedPattern()
-    if line_number != 0:
-    	os.system('sed -i \'' + str(line_number) + ',$ d\' conf_backup.ldif')
-    ldap_mdb_folder = "/var/lib/ldap"
-    self.delete_mdb_files(ldap_mdb_folder)
-    # os restart util not merged!
-    os.system('systemctl restart slapd')
+    line_number = 0 
+    for line in open("conf_backup.ldif"):
+      if re.match("dn: o=.*",line) != None:
+        break
+      line_number += 1
+    os.system('sed -i \'' + str(line_number) + ',$ d\' conf_backup.ldif')
+    self.delete_mdb_files()
+    self.restart_services(['slapd'])
     os.system('slapadd -n 3 -F /etc/openldap/slapd.d -l conf_backup.ldif')
     try:
       os.remove('conf_backup.ldif')
@@ -179,19 +197,4 @@ class ResetCmd(SetupCmd):
       LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
     except Exception as e:
       sys.stderr.write(f'Failed to create backgrounddelete service account, error: {e}\n')
-      raise e
-      
-  def purge_messages(self, producer_id: str, msg_type: str, delivery_mechanism: str, sleep_time: int):
-    """purge messages on message bus."""
-    try:
-      s3MessageBus = S3CortxMsgBus()
-      s3MessageBus.connect()
-      s3MessageBus.setup_producer(producer_id, msg_type, delivery_mechanism)
-      try:
-        s3MessageBus.purge()
-        #Insert a delay of 1 min after purge, so that the messages are deleted
-        time.sleep(sleep_time)
-      except:
-        sys.stdout.write('Exception during purge. May be there are no messages to purge\n')
-    except Exception as e:
       raise e

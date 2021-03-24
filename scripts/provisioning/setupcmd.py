@@ -26,6 +26,7 @@ from s3cipher.cortx_s3_cipher import CortxS3Cipher
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.validator.v_service import ServiceV
 from cortx.utils.validator.v_path import PathV
+from cortx.utils.process import SimpleProcess
 
 class S3PROVError(Exception):
   """Parent class for the s3 provisioner error classes."""
@@ -38,6 +39,7 @@ class SetupCmd(object):
   rootdn_passwd = None
   cluster_id = None
   machine_id = None
+  ldap_mdb_folder = "/var/lib/ldap"
   s3_prov_config = "/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml"
   _preqs_conf_file = "/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
 
@@ -154,9 +156,40 @@ class SetupCmd(object):
     except Exception as e:
       raise S3PROVError(f'ERROR: {phase_name} prereqs validations failed, exception: {e} \n')
 
-  def delete_mdb_files(self,ldap_mdb_folder: str):
-    for files in os.listdir(ldap_mdb_folder):
-      path = os.path.join(ldap_mdb_folder,files)
+  def shutdown_services(self, s3services_list):
+    """Stop services."""
+    for service_name in s3services_list:
+      cmd = ['/bin/systemctl', 'stop',  f'{service_name}']
+      handler = SimpleProcess(cmd)
+      sys.stdout.write(f"shutting down {service_name}\n")
+      res_op, res_err, res_rc = handler.run()
+      if res_rc != 0:
+        raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
+
+  def start_services(self, s3services_list):
+    """Start services specified as parameter."""
+    for service_name in s3services_list:
+      cmd = ['/bin/systemctl', 'start',  f'{service_name}']
+      handler = SimpleProcess(cmd)
+      sys.stdout.write(f"starting {service_name}\n")
+      res_op, res_err, res_rc = handler.run()
+      if res_rc != 0:
+        raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
+
+  def restart_services(self, s3services_list):
+    """Restart services specified as parameter."""
+    for service_name in s3services_list:
+      cmd = ['/bin/systemctl', 'restart',  f'{service_name}']
+      handler = SimpleProcess(cmd)
+      sys.stdout.write(f"restarting {service_name}\n")
+      res_op, res_err, res_rc = handler.run()
+      if res_rc != 0:
+        raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
+
+  def delete_mdb_files(self):
+    """Deletes ldap mdb files"""
+    for files in os.listdir(self.ldap_mdb_folder):
+      path = os.path.join(self.ldap_mdb_folder,files)
       if os.path.isfile(path) or os.path.islink(path):
         os.unlink(path)
       elif os.path.isdir(path):
