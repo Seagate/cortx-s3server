@@ -468,9 +468,10 @@ void S3MotrWiter::write_content() {
     if (rw_ctx->ext->iv_index[0] == 0) {
       char first_byte = *(char *)bv->ov_buf[0];
       s3_log(S3_LOG_DEBUG, "", "%s first_byte=%d", __func__, first_byte);
+      s3_log(S3_LOG_INFO, "", "%s first_byte=%d", __func__, first_byte);
       switch (first_byte) {
         case 'z':  // zero
-	  corrupt_fill_zero = true;
+          corrupt_fill_zero = true;
           break;
         case 'f':  // first
           // corrupt the first byte
@@ -481,6 +482,7 @@ void S3MotrWiter::write_content() {
       }
     }
     if (corrupt_fill_zero) {
+      s3_log(S3_LOG_INFO, "", "%s zeroing buffers", __func__);
       for (uint32_t i = 0; i < bv->ov_vec.v_nr; ++i)
         memset(bv->ov_buf[i], 0, bv->ov_vec.v_count[i]);
     }
