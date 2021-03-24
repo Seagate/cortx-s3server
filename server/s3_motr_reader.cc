@@ -339,8 +339,9 @@ size_t S3MotrReader::get_next_block(char **data) {
   iteration_index++;
 
   size_t length = data_read;
-  if (total_size_to_read < total_size_read + length)
+  if (total_size_to_read < total_size_read + length) {
     length = total_size_to_read - total_size_read;
+  }
   if (multipart_part_size == 0) {
     // non-multipart-upload case. Just calculate md5 of the entire object.
     md5crypt.Update(*data, length);
@@ -369,10 +370,11 @@ size_t S3MotrReader::get_next_block(char **data) {
       // from these 2 values.
       // The following 'if' gets absolute position in object of the next part
       // boundary.
-      if (pos / multipart_part_size >= multipart_num_of_parts - 1)
+      if (pos / multipart_part_size >= multipart_num_of_parts - 1) {
         next_part_pos = total_size_to_read;
-      else
+      } else {
         next_part_pos = (pos / multipart_part_size + 1) * multipart_part_size;
+      }
       // let's update hash as much data as we can, but don't cross part
       // boundary.
       size_t to_update = std::min(next_part_pos - pos, remaining);
