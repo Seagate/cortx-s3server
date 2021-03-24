@@ -25,6 +25,9 @@ import shutil
 
 from setupcmd import SetupCmd, S3PROVError
 from ldapaccountaction import LdapAccountAction
+from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
+from s3backgrounddelete.cortx_s3_config import CORTXS3Config
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 
 class CleanupCmd(SetupCmd):
   """Cleanup Setup Cmd."""
@@ -82,13 +85,21 @@ class CleanupCmd(SetupCmd):
       # Erase haproxy configurations
       self.cleanup_haproxy_configurations()
 
+      # cleanup ldap config and schemas
+      self.delete_ldap_config()
+
+      # Delete topic created for background delete
+      bgdeleteconfig = CORTXS3Config()
+      if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
+        sys.stdout.write('INFO: Deleting topic.\n')
+        self.delete_topic(bgdeleteconfig.get_msgbus_admin_id, bgdeleteconfig.get_msgbus_topic())
+        sys.stdout.write('INFO:Topic deletion successful.\n')
+
       # revert config files to their origional config state
       sys.stdout.write('INFO: Reverting config files.\n')
       self.revert_config_files()
       sys.stdout.write('INFO: Reverting config files successful.\n')
 
-      # cleanup ldap config and schemas
-      self.delete_ldap_config()
     except Exception as e:
       raise e
 
@@ -206,6 +217,17 @@ class CleanupCmd(SetupCmd):
         shutil.rmtree(curr_dir)
         sys.stdout.write(f"{curr_dir} removed\n")
 
+
     for curr_mdb_files in mdb_files:
       self.delete_mdb_files(curr_mdb_files)
       sys.stdout.write(f"{curr_mdb_files} removed\n")
+
+  def delete_topic(self, admin_id, topic_name):
+    """delete topic for background delete services."""
+    try:
+      s3MessageBus = S3CortxMsgBus()
+      s3MessageBus.connect()
+      if S3CortxMsgBus.is_topic_exist(admin_id, topic_name):
+        S3CortxMsgBus.delete_topic(admin_id, [topic_name])
+    except Exception as e:
+      raise e

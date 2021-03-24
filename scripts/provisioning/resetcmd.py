@@ -23,7 +23,11 @@ import os
 import shutil
 import glob
 import re
+import time
 
+from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
+from s3backgrounddelete.cortx_s3_config import CORTXS3Config
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 from setupcmd import SetupCmd
 from ldapaccountaction import LdapAccountAction
 
@@ -52,7 +56,17 @@ class ResetCmd(SetupCmd):
     try:
       sys.stdout.write('INFO: Cleaning up log files.\n')
       self.CleanupLogs()
-      sys.stdout.write('INFO: Log files cleanup successful.\n')
+      sys.stdout.write('INFO:Log files cleanup successful.\n')
+
+      # purge messages from message bus
+      bgdeleteconfig = CORTXS3Config()
+      if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
+        sys.stdout.write('INFO: Purging messages from message bus.\n')
+        self.purge_messages(bgdeleteconfig.get_msgbus_producer_id(),
+                            bgdeleteconfig.get_msgbus_topic(),
+                            bgdeleteconfig.get_msgbus_producer_delivery_mechanism(),
+                            bgdeleteconfig.get_purge_sleep_time())
+        sys.stdout.write('INFO:Purge message successful.\n')
     except Exception as e:
       sys.stderr.write(f'Failed to cleanup log directories or files, error: {e}\n')
       raise e
@@ -125,7 +139,7 @@ class ResetCmd(SetupCmd):
         except Exception as e:
           sys.stderr.write(f'ERROR: DeleteFileOrDirWithRegex(): Failed to delete: {file}, error: {str(e)}\n')
           raise e
-  
+          
   def GetLineNumberOfMatchedPattern(self):
     """Returns line number of first occurrence of matched pattern."""
     line_number = 0
@@ -165,4 +179,19 @@ class ResetCmd(SetupCmd):
       LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
     except Exception as e:
       sys.stderr.write(f'Failed to create backgrounddelete service account, error: {e}\n')
+      raise e
+      
+  def purge_messages(self, producer_id: str, msg_type: str, delivery_mechanism: str, sleep_time: int):
+    """purge messages on message bus."""
+    try:
+      s3MessageBus = S3CortxMsgBus()
+      s3MessageBus.connect()
+      s3MessageBus.setup_producer(producer_id, msg_type, delivery_mechanism)
+      try:
+        s3MessageBus.purge()
+        #Insert a delay of 1 min after purge, so that the messages are deleted
+        time.sleep(sleep_time)
+      except:
+        sys.stdout.write('Exception during purge. May be there are no messages to purge\n')
+    except Exception as e:
       raise e

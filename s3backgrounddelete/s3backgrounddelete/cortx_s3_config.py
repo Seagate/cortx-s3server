@@ -535,3 +535,23 @@ class CORTXS3Config(object):
             raise KeyError(
                 "Could not parse producer_delivery_mechanism from config file " +
                 self._conf_file)
+
+    def get_msgbus_admin_id(self):
+        """Return admin id from config file or KeyError."""
+        try:
+          msgbus_admin_id = self.s3confstore.get_config('message_bus>admin_id')
+          return msgbus_admin_id
+        except:
+            raise KeyError(
+                "Could not parse admin id from config file " +
+                self._conf_file)
+
+    def get_purge_sleep_time(self):
+        """Return purge sleep time from config file or KeyError."""
+        try:
+          msgbus_purge_sleep = self.s3confstore.get_config('message_bus>purge_sleep')
+          return int(msgbus_purge_sleep)
+        except:
+            raise KeyError(
+                "Could not parse purge sleep from config file " +
+                self._conf_file)
