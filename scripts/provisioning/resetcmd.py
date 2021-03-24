@@ -28,6 +28,8 @@ from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 from setupcmd import SetupCmd
 
+services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver", "slapd"]
+
 class ResetCmd(SetupCmd):
   """Reset Setup Cmd."""
   name = "reset"
@@ -43,6 +45,14 @@ class ResetCmd(SetupCmd):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
+
+    try:
+      sys.stdout.write("Shutting down s3 services...\n")
+      self.shutdown_services(services_list)
+    except Exception as e:
+      sys.stderr.write(f'Failed to stop s3services, error: {e}\n')
+      raise e
+
     try:
       sys.stdout.write('INFO: Cleaning up log files.\n')
       self.CleanupLogs()
@@ -145,4 +155,5 @@ class ResetCmd(SetupCmd):
         sys.stdout.write('Exception during purge. May be there are no messages to purge\n')
     except Exception as e:
       raise e
+
 

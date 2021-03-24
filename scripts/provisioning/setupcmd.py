@@ -26,6 +26,7 @@ from s3cipher.cortx_s3_cipher import CortxS3Cipher
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.validator.v_service import ServiceV
 from cortx.utils.validator.v_path import PathV
+from cortx.utils.process import SimpleProcess
 
 class S3PROVError(Exception):
   """Parent class for the s3 provisioner error classes."""
@@ -153,3 +154,35 @@ class SetupCmd(object):
                                 files=_prereqs_confstore.get_config(f'{phase_name}>files'))
     except Exception as e:
       raise S3PROVError(f'ERROR: {phase_name} prereqs validations failed, exception: {e} \n')
+
+  def shutdown_services(self, s3services_list):
+    """Stop services."""
+    for service_name in s3services_list:
+      cmd = ['/bin/systemctl', 'stop',  f'{service_name}']
+      handler = SimpleProcess(cmd)
+      sys.stdout.write(f"shutting down {service_name}\n")
+      res_op, res_err, res_rc = handler.run()
+      if res_rc != 0:
+        raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
+
+  def start_services(self, s3services_list):
+    """Start services specified as parameter."""
+    for service_name in s3services_list:
+      cmd = ['/bin/systemctl', 'start',  f'{service_name}']
+      handler = SimpleProcess(cmd)
+      sys.stdout.write(f"starting {service_name}\n")
+      res_op, res_err, res_rc = handler.run()
+      if res_rc != 0:
+        raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
+
+
+  def restart_services(self, s3services_list):
+    """Restart services specified as parameter."""
+    for service_name in s3services_list:
+      cmd = ['/bin/systemctl', 'restart',  f'{service_name}']
+      handler = SimpleProcess(cmd)
+      sys.stdout.write(f"restarting {service_name}\n")
+      res_op, res_err, res_rc = handler.run()
+      if res_rc != 0:
+        raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
+
