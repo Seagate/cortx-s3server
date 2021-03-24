@@ -494,6 +494,41 @@ void S3GetObjectAction::send_data_to_client() {
       p_evbuffer->drain_data(read_data_start_offset);
       length_in_evbuf = p_evbuffer->get_evbuff_length();
     }
+    // to read number of bytes from final read block of read object
+    // that is requested content length is lesser than the sum of data has been
+    // sent to client and current read block size
+    if ((data_sent_to_client + length) >= requested_content_length) {
+      // length will have the size of remaining byte to sent
+      length = requested_content_length - data_sent_to_client;
+      // this is the iteration for the final block
+      if (length > 0 &&
+	  S3Option::get_instance()->get_s3_read_md5_check_enabled()) {
+        std::string checksum_calculated;
+        if (object_metadata->get_part_one_size() == 0) {
+          checksum_calculated = motr_reader->get_content_md5();
+        } else {
+          checksum_calculated = motr_reader->awsetag.finalize();
+        }
+        std::string checksum_read = object_metadata->get_md5();
+        s3_log(S3_LOG_DEBUG, request_id,
+               "checksum calculated: %s, checksum read %s",
+               checksum_calculated.c_str(), checksum_read.c_str());
+        if (checksum_calculated != checksum_read) {
+          s3_iem(LOG_ERR, S3_IEM_CHECKSUM_MISMATCH,
+                 S3_IEM_CHECKSUM_MISMATCH_STR,
+                 S3_IEM_CHECKSUM_MISMATCH_JSON);
+          s3_log(S3_LOG_ERROR, request_id, "Content checksum mismatch\n");
+          checksum_mismatch = true;
+          break;
+        }
+      }
+    }
+    data_sent_to_client += length;
+    request->set_bytes_sent(data_sent_to_client);
+    s3_log(S3_LOG_DEBUG, request_id, "Sending %zu bytes to client.\n", length);
+    request->send_reply_body(data + read_data_start_offset, length);
+    s3_perf_count_outcoming_bytes(length);
+    length = motr_reader->get_next_block(&data);
   }
   // to read number of bytes from final read block of read object
   // that is requested content length is lesser than the sum of data has been
@@ -509,33 +544,16 @@ void S3GetObjectAction::send_data_to_client() {
   request->send_reply_body(p_evbuffer->release_ownership());
   s3_timer.stop();
 
-  if (data_sent_to_client != requested_content_length) {
-    read_object_data();
-  } else {
-    const auto mss = s3_timer.elapsed_time_in_millisec();
-    LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);
-    s3_stats_timing("get_object_send_data", mss);
-
-    if (S3Option::get_instance()->get_s3_read_md5_check_enabled()) {
-      std::string checksum_calculated;
-      if (object_metadata->get_part_one_size() == 0) {
-        checksum_calculated = motr_reader->get_content_md5();
-      } else {
-        checksum_calculated = motr_reader->awsetag.finalize();
-      }
-      std::string checksum_read = object_metadata->get_md5();
-      s3_log(S3_LOG_DEBUG, request_id,
-             "checksum calculated: %s, checksum read %s",
-             checksum_calculated.c_str(), checksum_read.c_str());
-      if (checksum_calculated != checksum_read) {
-	s3_iem(LOG_ERR, S3_IEM_CHECKSUM_MISMATCH,
-	       S3_IEM_CHECKSUM_MISMATCH_STR,
-	       S3_IEM_CHECKSUM_MISMATCH_JSON);
-	s3_log(S3_LOG_ERROR, request_id, "Content checksum mismatch\n");
-	set_s3_error("InternalError");
-      }
-    }
+  if (checksum_mismatch) {
     send_response_to_s3_client();
+  } else {
+    if (data_sent_to_client != requested_content_length) {
+      read_object_data();
+    } else {
+      const auto mss = s3_timer.elapsed_time_in_millisec();
+      LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);
+      s3_stats_timing("get_object_send_data", mss);
+    }
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -552,7 +570,9 @@ void S3GetObjectAction::read_object_data_failed() {
 void S3GetObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  if (reject_if_shutting_down()) {
+  if (checksum_mismatch) {
+    request->send_reply_end();
+  } else if (reject_if_shutting_down()) {
     if (read_object_reply_started) {
       request->send_reply_end();
     } else {
