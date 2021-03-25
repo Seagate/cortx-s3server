@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
 import json
 import uuid
 import random
@@ -8,7 +7,7 @@ import argparse
 
 import plumbum
 from plumbum import local
-from typing import List, Optional
+from typing import List
 
 
 s3api = local["aws"]["s3api"]
@@ -34,7 +33,7 @@ def create_random_file(path: str, size: int, first_byte: str):
 
 def test_get(bucket: str, key: str, output: str, get_must_fail: bool):
     try:
-        local['rm']['-vf', output]
+        local['rm']['-vf', output]()
         s3api["get-object", "--bucket", bucket, "--key", key, output]()
         assert not get_must_fail
     except plumbum.commands.processes.ProcessExecutionError as e:
@@ -63,17 +62,17 @@ def test_multipart_upload(bucket: str, key: str, output: str,
                             if k in ["ETag", "PartNumber"]}
                            for d in parts_list["Parts"]]
     print(parts_file)
-    with open('/tmp/parts.json', 'w') as f:
+    with open('./parts.json', 'w') as f:
         f.write(json.dumps(parts_file))
     print(s3api["complete-multipart-upload", "--multipart-upload",
-                "file:///tmp/parts.json", "--bucket", bucket, "--key", key,
+                "file://./parts.json", "--bucket", bucket, "--key", key,
                 "--upload-id", upload_id]())
     test_get(bucket, key, output, get_must_fail)
     if not get_must_fail:
         (local['cat'][parts] |
          local['diff']['--report-identical-files', '-', output])()
     s3api["delete-object",  "--bucket", bucket, "--key", key]()
-    
+
 
 def test_put_get(bucket: str, key: str, body: str, output: str,
                  get_must_fail: bool) -> None:
