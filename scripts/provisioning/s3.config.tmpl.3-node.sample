@@ -1,0 +1,58 @@
+#
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+server_node:
+  1114a50a6bf6f9c93ebd3c49d07d3fd4:
+    cluster_id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
+    hostname: "ssc-vm-1823.colo.seagate.com"
+    network:
+      data:
+        public_fqdn: "srvnode-1.data.public"
+        private_fqdn: "srvnode-1.data.private"
+    s3_instances: "1"
+  1114a50a6bf6f9c93ebd3c49d07d3fe5:
+    cluster_id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
+    hostname: "ssc-vm-1824.colo.seagate.com"
+    network:
+      data:
+        public_fqdn: "srvnode-2.data.public"
+        private_fqdn: "srvnode-2.data.private"
+    s3_instances: "1"
+  1114a50a6bf6f9c93ebd3c49d07d3fg6:
+    cluster_id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
+    hostname: "ssc-vm-1825.colo.seagate.com"
+    network:
+      data:
+        public_fqdn: "srvnode-3.data.public"
+        private_fqdn: "srvnode-3.data.private"
+    s3_instances: "1"
+cortx:
+  software:
+    openldap:
+      root:
+        user: "admin"
+        secret: "gAAAAABgWFRxlYPfMDe3j03DlE1gDxsr8d7MJ5upQ2k8UC2fCU-kSWlf0tb5M3aBXOxNDnT8Rb_M2b0w9UOgw9CQH-fSKzn6sA=="
+      sgiam:
+        user: "sgiamadmin"
+        secret: "gAAAAABgWFPz2w_t6IBVictZmgTCgBXn5V-oy2JUVtvZkJvHM5KaaZKXRwtz4YKYieIy8mVKF8PUaZ6WYJEttcsi2KDpLOk9Vg=="
+cluster:
+  TMPL_CLUSTER_ID:
+    site:
+      storage_set_count: "1"
+    storage_set:
+    - server_nodes: "['1114a50a6bf6f9c93ebd3c49d07d3fd4', '1114a50a6bf6f9c93ebd3c49d07d3fe5', '1114a50a6bf6f9c93ebd3c49d07d3fg6']"

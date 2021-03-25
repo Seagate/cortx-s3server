@@ -95,6 +95,7 @@ BuildRequires: python-keyring python-futures
 # Uncomment below line to enable motr version check during s3server rpm installation
 #Requires: cortx-motr = %{h_cortxmotr_version}
 Requires: cortx-motr
+Requires: cortx-py-utils
 %endif
 Requires: libxml2
 Requires: libyaml
@@ -357,6 +358,22 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/reset/precheck.py
 /opt/seagate/cortx/s3/reset/reset_s3.sh
 /opt/seagate/cortx/s3/conf/setup.yaml
+/opt/seagate/cortx/s3/conf/s3.post_install.tmpl.1-node
+/opt/seagate/cortx/s3/conf/s3.post_install.tmpl.1-node.sample
+/opt/seagate/cortx/s3/conf/s3.prepare.tmpl.1-node
+/opt/seagate/cortx/s3/conf/s3.prepare.tmpl.1-node.sample
+/opt/seagate/cortx/s3/conf/s3.config.tmpl.1-node
+/opt/seagate/cortx/s3/conf/s3.config.tmpl.1-node.sample
+/opt/seagate/cortx/s3/conf/s3.config.tmpl.3-node
+/opt/seagate/cortx/s3/conf/s3.config.tmpl.3-node.sample
+/opt/seagate/cortx/s3/conf/s3.init.tmpl.1-node
+/opt/seagate/cortx/s3/conf/s3.init.tmpl.1-node.sample
+/opt/seagate/cortx/s3/conf/s3.test.tmpl.1-node
+/opt/seagate/cortx/s3/conf/s3.test.tmpl.1-node.sample
+/opt/seagate/cortx/s3/conf/s3.reset.tmpl.1-node
+/opt/seagate/cortx/s3/conf/s3.reset.tmpl.1-node.sample
+/opt/seagate/cortx/s3/conf/s3.cleanup.tmpl.1-node
+/opt/seagate/cortx/s3/conf/s3.cleanup.tmpl.1-node.sample
 /opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.properties
 /opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.properties
 /opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml

@@ -25,6 +25,10 @@ import shutil
 
 from setupcmd import SetupCmd, S3PROVError
 from ldapaccountaction import LdapAccountAction
+from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
+from s3backgrounddelete.cortx_s3_config import CORTXS3Config
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
+from cortx.utils.validator.error import VError
 
 class CleanupCmd(SetupCmd):
   """Cleanup Setup Cmd."""
@@ -68,6 +72,19 @@ class CleanupCmd(SetupCmd):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
+
+    try:
+      sys.stdout.write("checking if ldap service is running or not...\n")
+      self.validate_pre_requisites(rpms=None, pip3s=None, services="slapd", files=None)
+    except VError as e:
+      sys.stdout.write("slapd service is not running hence starting it...\n")
+      service_list = ["slapd"]
+      self.start_services(service_list)
+    except Exception as e:
+      sys.stderr.write(f'Failed to validate/restart slapd, error: {e}\n')
+      raise e
+    sys.stdout.write("slapd service is running...\n")
+
     try:
       # Check if reset phase was performed before this
       self.detect_if_reset_done()
@@ -79,13 +96,39 @@ class CleanupCmd(SetupCmd):
       # Erase haproxy configurations
       self.cleanup_haproxy_configurations()
 
+      # cleanup ldap config and schemas
+      self.delete_ldap_config()
+
+      # Delete topic created for background delete
+      bgdeleteconfig = CORTXS3Config()
+      if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
+        sys.stdout.write('INFO: Deleting topic.\n')
+        self.delete_topic(bgdeleteconfig.get_msgbus_admin_id, bgdeleteconfig.get_msgbus_topic())
+        sys.stdout.write('INFO:Topic deletion successful.\n')
+
       # revert config files to their origional config state
       sys.stdout.write('INFO: Reverting config files.\n')
       self.revert_config_files()
       sys.stdout.write('INFO: Reverting config files successful.\n')
 
+      try:
+        sys.stdout.write("Stopping slapd service...\n")
+        service_list = ["slapd"]
+        self.shutdown_services(service_list)
+      except Exception as e:
+        sys.stderr.write(f'Failed to stop slapd service, error: {e}\n')
+        raise e
+      sys.stdout.write("Stopped slapd service...\n")
+
       # cleanup ldap config and schemas
       self.delete_ldap_config()
+
+      # delete slapd logs
+      slapd_log="/var/log/slapd.log"
+      if os.path.isfile(slapd_log):
+        os.remove(slapd_log)
+        sys.stdout.write(f"{slapd_log} removed\n")
+
     except Exception as e:
       raise e
 
@@ -201,3 +244,15 @@ class CleanupCmd(SetupCmd):
       if os.path.isdir(curr_dir):
         shutil.rmtree(curr_dir)
         sys.stdout.write(f"{curr_dir} removed\n")
+    self.delete_mdb_files()
+    sys.stdout.write("/var/lib/ldap removed\n")
+
+  def delete_topic(self, admin_id, topic_name):
+    """delete topic for background delete services."""
+    try:
+      s3MessageBus = S3CortxMsgBus()
+      s3MessageBus.connect()
+      if S3CortxMsgBus.is_topic_exist(admin_id, topic_name):
+        S3CortxMsgBus.delete_topic(admin_id, [topic_name])
+    except Exception as e:
+      raise e

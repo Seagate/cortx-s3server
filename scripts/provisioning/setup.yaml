@@ -32,7 +32,7 @@ s3:
     args: --config $URL
   test:
     cmd: /opt/seagate/cortx/s3/bin/s3_setup test
-    args: --config $URL
+    args: --config $URL --plan $plan
   reset:
     cmd: /opt/seagate/cortx/s3/bin/s3_setup reset
     args: --config $URL
