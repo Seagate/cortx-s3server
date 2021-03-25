@@ -84,10 +84,11 @@ def test_put_get(bucket: str, key: str, body: str, output: str,
 
 def auto_test_put_get(args) -> None:
     first_byte = CORRUPTIONS[args.corruption]
-    for size in OBJECT_SIZE:
-        if args.create_objects:
-            create_random_file(args.body, size, first_byte)
-        for i in range(args.iterations):
+    for i in range(args.iterations):
+        print(f'iteration {i}...')
+        for size in OBJECT_SIZE:
+            if args.create_objects:
+                create_random_file(args.body, size, first_byte)
             test_put_get(args.bucket, f'size={size}_i={i}',
                          args.body, args.output,
                          size > 0 and args.corruption != 'none')
