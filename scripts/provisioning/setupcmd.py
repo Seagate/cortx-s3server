@@ -20,6 +20,7 @@
 
 import sys
 import os
+import shutil
 from os import path
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
@@ -39,6 +40,7 @@ class SetupCmd(object):
   rootdn_passwd = None
   cluster_id = None
   machine_id = None
+  ldap_mdb_folder = "/var/lib/ldap"
   s3_prov_config = "/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml"
   _preqs_conf_file = "/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
 
@@ -175,7 +177,6 @@ class SetupCmd(object):
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
 
-
   def restart_services(self, s3services_list):
     """Restart services specified as parameter."""
     for service_name in s3services_list:
@@ -186,3 +187,11 @@ class SetupCmd(object):
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
 
+  def delete_mdb_files(self):
+    """Deletes ldap mdb files."""
+    for files in os.listdir(self.ldap_mdb_folder):
+      path = os.path.join(self.ldap_mdb_folder,files)
+      if os.path.isfile(path) or os.path.islink(path):
+        os.unlink(path)
+      elif os.path.isdir(path):
+        shutil.rmtree(path)
