@@ -96,6 +96,7 @@ class S3MotrWiter {
 
   std::string content_md5;
   uint64_t last_index;
+  uint64_t first_offset;
   std::string request_id;
   // md5 for the content written to motr.
   MD5hash md5crypt;
