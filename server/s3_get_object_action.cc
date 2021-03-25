@@ -340,10 +340,13 @@ void S3GetObjectAction::read_object() {
   motr_reader = motr_reader_factory->create_motr_reader(
       request, object_metadata->get_oid(), object_metadata->get_layout_id());
   size_t part_one_size = object_metadata->get_part_one_size();
+  motr_reader->set_multipart_part_size(part_one_size);
   if (part_one_size > 0) {
-    motr_reader->set_multipart_part_size(part_one_size);
     std::string etag = object_metadata->get_md5();
-    motr_reader->set_multipart_num_of_parts(S3AwsEtag::get_num_of_parts(etag));
+    int num_of_parts = S3AwsEtag::get_num_of_parts(etag);
+    motr_reader->set_multipart_num_of_parts(num_of_parts);
+    s3_log(S3_LOG_DEBUG, "", "part_one_size=%zu etag=%s num_of_parts=%d",
+           part_one_size, etag.c_str(), num_of_parts);
   }
   // get the block,in which first_byte_offset_to_read is present
   // and initilaize the last index with starting offset the block
