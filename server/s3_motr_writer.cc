@@ -72,7 +72,14 @@ struct s3_motr_op_context *S3MotrWiterContext::get_motr_op_ctx() {
 
 S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req,
                          std::shared_ptr<MotrAPI> motr_api)
-    : request(std::move(req)) {
+    : request(std::move(req)),
+      state(S3MotrWiterOpState::start),
+      last_index(offset),
+      first_offset(offset),
+      size_in_current_write(0),
+      total_written(0),
+      is_object_opened(false),
+      obj_ctx(nullptr) {
 
   request_id = request->get_request_id();
   stripped_request_id = request->get_stripped_request_id();
@@ -473,7 +480,7 @@ void S3MotrWiter::write_content() {
 
   if (S3Option::get_instance()->get_s3_st_md5_error_inject_enabled()) {
     struct m0_bufvec *bv = rw_ctx->data;
-    if (rw_ctx->ext->iv_index[0] == 0) {
+    if (rw_ctx->ext->iv_index[0] == first_offset) {
       char first_byte = *(char *)bv->ov_buf[0];
       s3_log(S3_LOG_DEBUG, "", "%s first_byte=%d", __func__, first_byte);
       switch (first_byte) {
