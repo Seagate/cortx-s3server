@@ -23,10 +23,12 @@ import os
 import shutil
 import glob
 import time
+import re
 from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 from setupcmd import SetupCmd
+from ldapaccountaction import LdapAccountAction
 
 services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver", "slapd"]
 
@@ -45,6 +47,14 @@ class ResetCmd(SetupCmd):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
+
+    try:
+      sys.stdout.write('INFO: Removing LDAP Accounts and Users.\n')
+      self.DeleteLdapAccountsUsers()
+      sys.stdout.write('INFO: LDAP Accounts and Users Cleanup successful.\n')
+    except Exception as e:
+      sys.stderr.write(f'Failed to cleanup LDAP Accounts and Users, error: {e}\n')
+      raise e
 
     try:
       sys.stdout.write("Shutting down s3 services...\n")
@@ -156,4 +166,35 @@ class ResetCmd(SetupCmd):
     except Exception as e:
       raise e
 
-
+  def DeleteLdapAccountsUsers(self):
+    """Deletes all LDAP accounts and users."""
+    os.system('slapcat -n 3 -l conf_backup.ldif')
+    line_number = 0
+    for line in open("conf_backup.ldif"):
+      if re.match("dn: o=.*",line) != None:
+        break
+      line_number += 1
+    os.system('sed -i \'' + str(line_number) + ',$ d\' conf_backup.ldif')
+    self.delete_mdb_files()
+    self.restart_services(['slapd'])
+    os.system('slapadd -n 3 -F /etc/openldap/slapd.d -l conf_backup.ldif')
+    try:
+      os.remove('conf_backup.ldif')
+    except Exception as e:
+      sys.stderr.write(f'ERROR: No such file! , error: {str(e)}\n')
+      raise e
+    try:
+      # Recreate background delete account after LDAP reset
+      self.read_ldap_credentials()
+      bgdelete_acc_input_params_dict = {'account_name': "s3-background-delete-svc",
+                                  'account_id': "67891",
+                                  'canonical_id': "C67891",
+                                  'mail': "s3-background-delete-svc@seagate.com",
+                                  's3_user_id': "450",
+                                  'const_cipher_secret_str': "s3backgroundsecretkey",
+                                  'const_cipher_access_str': "s3backgroundaccesskey"
+                                }
+      LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
+    except Exception as e:
+      sys.stderr.write(f'Failed to create backgrounddelete service account, error: {e}\n')
+      raise e

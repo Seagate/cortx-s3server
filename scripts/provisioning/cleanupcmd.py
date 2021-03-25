@@ -244,6 +244,8 @@ class CleanupCmd(SetupCmd):
       if os.path.isdir(curr_dir):
         shutil.rmtree(curr_dir)
         sys.stdout.write(f"{curr_dir} removed\n")
+    self.delete_mdb_files()
+    sys.stdout.write("/var/lib/ldap removed\n")
 
   def delete_topic(self, admin_id, topic_name):
     """delete topic for background delete services."""
