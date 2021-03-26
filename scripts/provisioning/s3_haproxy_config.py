@@ -46,7 +46,7 @@ class S3HaproxyConfig:
 
     return self.provisioner_confstore.get_config(
       self.local_confstore.get_config(
-        'CONFSTORE_PRIVATE_FQDN_KEY').format(self.machine_id))
+        'CONFSTORE_PUBLIC_FQDN_KEY').format(self.machine_id))
 
   def get_privateip(self):
     assert self.provisioner_confstore != None
