@@ -135,10 +135,18 @@ function generate_s3_certs()
   # with *.seagate.com as SAN list
   echo $issuer_name > $dns_list_file
   echo $multi_domain_endpoint >> $dns_list_file
-  #echo $s3_default_endpoint >> $dns_list_file
-  #echo "*.$s3_default_endpoint" >> $dns_list_file
-  #echo "*.$s3_region_endpoint" >> $dns_list_file
-  #echo $s3_region_endpoint | tr , '\n' >> $dns_list_file
+  echo $s3_default_endpoint >> $dns_list_file
+  echo "*.$s3_default_endpoint" >> $dns_list_file
+  echo "*.$s3_region_endpoint" >> $dns_list_file
+  echo "seagatebucket.s3.seagate.com" >> $dns_list_file
+  echo "seagate-bucket.s3.seagate.com" >> $dns_list_file
+  echo "seagatebucket123.s3.seagate.com" >> $dns_list_file
+  echo "seagate.bucket.s3.seagate.com" >> $dns_list_file
+  echo "s3-us-west-2.seagate.com" >> $dns_list_file
+  echo "seagatebucket.s3-us-west-2.seagate.com" >> $dns_list_file
+  echo "iam.seagate.com" >> $dns_list_file
+  echo "sts.seagate.com" >> $dns_list_file
+  echo $s3_region_endpoint | tr , '\n' >> $dns_list_file
 
   if [ ! -z "$s3_ip_address" ]
   then
