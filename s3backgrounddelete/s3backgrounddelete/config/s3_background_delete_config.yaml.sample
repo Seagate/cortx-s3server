@@ -26,7 +26,7 @@ cortx_s3:                                   # Section for S3 background delete c
    default_region: "us-west2"                              # CORTX s3 client will use the specified host
    daemon_mode: True                                       # S3background process run in daemon mode and ST's run in non-daemon mode.
    s3_instance_count: 22                                   # Number of active s3 instances in release setup
-   messaging_platform: "message_bus"                       # Whether to use message_bus or rabbit_mq as the messaging platform
+   messaging_platform: "message_bus"                       # messaging platform
    
 message_bus:
    topic: "bgdelete"
@@ -37,6 +37,7 @@ message_bus:
    consumer_sleep: 5
    purge_sleep: 60
    admin_id: "admin_s3_background_delete"
+   scheduler_schedule_interval: 1200                        # Schedule Interval is time period at which object recovery scheduler will be executed (in seconds). Increasing this value leads to reduced memory consumption.
 
 logconfig:                                  # Section for scheduler & processor loggers.
 
@@ -52,20 +53,6 @@ logconfig:                                  # Section for scheduler & processor 
    log_format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"                         # Sets the specifed log format https://docs.python.org/3/library/logging.html#logging.Formatter
    max_bytes: 5242880                                                                         # Max size of a log files is set to 5mb
    backup_count: 5                                                                            # Max number of log files that can exist
-
-rabbitmq:                                    # Section for RabbitMQ configs
-
-   # RabbitMQ overview:  https://www.rabbitmq.com/getstarted.html
-
-    username: "cortx-s3"                                      # Username used to communicate with RabbitMQ
-    password: "password"                                    # Password corresponding to username
-    host: "127.0.0.1"                                       # Host on which RabbitMQ is runnning
-    queue: "s3_delete_obj_job_queue"                        # Queue name used in RabbitMQ
-    exchange: ""                                            # Exchanges control the routing of messages to queues.
-    exchange_type: "direct"                                 # Exchanges type includes direct, fanout, topic exchange, header exchange
-    mode: 2                                                 # Valid values are Non-persistent (1) or persistent (2). persistent ensures that the task_queue queue won't be lost even if RabbitMQ restarts.
-    durable: "True"                                         # Ensure that RabbitMQ will never lose our queue.
-    schedule_interval_secs: 1200                            # Schedule Interval is time period at which object recovery scheduler will be executed (in seconds). Increasing this value leads to reduced RabbitMQ memory consumption.
 
 indexid:
 
