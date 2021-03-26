@@ -46,17 +46,22 @@ class ConfigCmd(SetupCmd):
     except Exception as e:
       raise S3PROVError(f'exception: {e}\n')
 
-  def process(self):
+  def process(self, configure_only_openldap = False, configure_only_haproxy = False):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
 
     try:
-      # Configure openldap and ldap-replication
-      self.configure_openldap()
-
-      # Configure haproxy
-      self.configure_haproxy()
+      if configure_only_openldap == True:
+        # Configure openldap only
+        self.configure_openldap()
+      elif configure_only_haproxy == True:
+        # Configure haproxy only
+        self.configure_haproxy()
+      else:
+        # Configure both openldap and haproxy
+        self.configure_openldap()
+        self.configure_haproxy()
 
       # create topic for background delete
       bgdeleteconfig = CORTXS3Config()

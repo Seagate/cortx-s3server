@@ -23,7 +23,7 @@ import sys
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 class S3HaproxyConfig:
-  """HAProxy congiration for S3."""
+  """HAProxy configration for S3."""
   local_confstore = None
   provisioner_confstore = None
   machine_id = None

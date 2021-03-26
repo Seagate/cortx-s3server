@@ -68,12 +68,16 @@ def main():
       
     elif args.command == 'config':
       from configcmd import ConfigCmd
+
+      configure_only_haproxy = False
+      configure_only_openldap = False
+
       if args.only_ldap == True:
-        ConfigCmd(args.config).configure_openldap()
+        configure_only_openldap = True
       elif args.only_haproxy == True:
-        ConfigCmd(args.config).configure_haproxy()
-      else:
-        ConfigCmd(args.config).process()
+        configure_only_haproxy = True
+      ConfigCmd(args.config).process(configure_only_openldap,
+                                configure_only_haproxy)
       sys.stdout.write('INFO: config successful.\n')
       
     elif args.command == 'init':
