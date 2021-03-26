@@ -339,7 +339,7 @@ class S3Option {
   bool get_s3_read_md5_check_enabled();
   bool get_s3_st_md5_error_inject_enabled();
 
-  void     set_s3_read_md5_check_enabled(bool value) {
+  void set_s3_read_md5_check_enabled(bool value) {
     s3_read_md5_check_enabled = value;
   }
 
