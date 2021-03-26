@@ -828,13 +828,11 @@ void RequestObject::send_reply_end() {
   s3_stats_timing("total_request_time", mss);
 }
 
-void RequestObject::cancel();
-{
+void RequestObject::cancel() {
   evhtp_obj->http_cancel_request(ev_req);
   client_has_disconnected();
   send_reply_end();
 }
-
 
 void RequestObject::respond_error(
     std::string error_code, const std::map<std::string, std::string>& headers,
