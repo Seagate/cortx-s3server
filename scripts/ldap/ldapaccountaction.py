@@ -242,6 +242,23 @@ class LdapAccountAction:
       sys.stderr.write(f'ERROR: Failed to get count of ldap account, error: {str(e)}\n')
       raise e
 
+  def delete_s3_ldap_data(self):
+    """Delete all s3 data entries from ldap."""
+    cleanup_records = ["ou=accesskeys,dc=s3,dc=seagate,dc=com",
+                        "ou=accounts,dc=s3,dc=seagate,dc=com",
+                        "ou=idp,dc=s3,dc=seagate,dc=com"]
+    try:
+      self.__connect_to_ldap_server()
+      for entry in cleanup_records:
+        self.ldap_conn.delete_s(entry)
+      self.__disconnect_from_ldap()
+
+    except Exception as e:
+      if self.ldap_conn:
+        self.__disconnect_from_ldap()
+      sys.stderr.write(f'ERROR: Failed to delete ldap data, error: {str(e)}\n')
+      raise e
+
   @staticmethod
   def __is_account_present(ldap_conn: SimpleLDAPObject, account_name: str):
     """Checks if account is present in ldap db."""

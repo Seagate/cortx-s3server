@@ -168,24 +168,17 @@ class ResetCmd(SetupCmd):
 
   def DeleteLdapAccountsUsers(self):
     """Deletes all LDAP accounts and users."""
-    os.system('slapcat -n 3 -l conf_backup.ldif')
-    line_number = 0
-    for line in open("conf_backup.ldif"):
-      if re.match("dn: o=.*",line) != None:
-        break
-      line_number += 1
-    os.system('sed -i \'' + str(line_number) + ',$ d\' conf_backup.ldif')
-    self.delete_mdb_files()
-    self.restart_services(['slapd'])
-    os.system('slapadd -n 3 -F /etc/openldap/slapd.d -l conf_backup.ldif')
+    self.read_ldap_credentials()
+
     try:
-      os.remove('conf_backup.ldif')
+      # Delete data directories e.g. ou=accesskeys, ou=accounts,ou=idp from dc=seagate,dc=com tree"
+      LdapAccountAction(self.ldap_user, self.ldap_passwd).delete_s3_ldap_data()
     except Exception as e:
-      sys.stderr.write(f'ERROR: No such file! , error: {str(e)}\n')
+      sys.stderr.write(f'Failed to delete s3 data exists in ldap, error: {e}\n')
       raise e
+
     try:
       # Recreate background delete account after LDAP reset
-      self.read_ldap_credentials()
       bgdelete_acc_input_params_dict = {'account_name': "s3-background-delete-svc",
                                   'account_id': "67891",
                                   'canonical_id': "C67891",
