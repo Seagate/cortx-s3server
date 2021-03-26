@@ -308,11 +308,9 @@ ulimit -c unlimited
 
 # Few assertions - prerun checks
 rpm -q haproxy
-rpm -q rabbitmq-server
 #rpm -q stx-s3-certs
 #rpm -q stx-s3-client-certs
 systemctl status haproxy
-systemctl status rabbitmq-server
 
 cd $S3_BUILD_DIR
 
