@@ -394,21 +394,20 @@ class CORTXS3Config(object):
     def get_leak_processing_delay_in_mins(self):
         """Return 'leak_processing_delay_in_mins' from 'leakconfig' section """
         leak_processing_delay_in_mins = self.s3confstore.get_config('leakconfig>leak_processing_delay_in_mins')
-        if not leak_processing_delay_in_mins:
+        if leak_processing_delay_in_mins:
             return int(leak_processing_delay_in_mins)
         else:
-            # default delay is 15mins
-            return 15
+            raise Exception(f'Failed to read leakconfig>leak_processing_delay_in_mins: '
+                        f'{leak_processing_delay_in_mins}\n')
 
     def get_version_processing_delay_in_mins(self):
         """Return 'version_processing_delay_in_mins' from 'leakconfig' section """
         version_processing_delay_in_mins = self.s3confstore.get_config('leakconfig>version_processing_delay_in_mins')
-        if not version_processing_delay_in_mins:
+        if version_processing_delay_in_mins:
             return int(version_processing_delay_in_mins)
         else:
-            # default delay is 15mins
-            return 15
-
+            raise Exception(f'Failed to read leakconfig>version_processing_delay_in_mins: '
+                        f'{version_processing_delay_in_mins}\n')
 
     def get_global_bucket_index_id(self):
         """Return probable delete index-id from config file or KeyError."""
