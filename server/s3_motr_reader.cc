@@ -381,8 +381,8 @@ size_t S3MotrReader::get_next_block(char **data) {
       // The following 'if' gets absolute position in object of the next part
       // boundary.
       if (pos >= multipart_part_size * (multipart_num_of_parts - 1)) {
-	// pos is over the bounrady between last and last but one part. The
-	// part boundary is the end of object in this case.
+	// pos is over the boundary between last and last but one part.
+	// The part boundary is the end of object in this case.
         next_part_pos = total_size_to_read;
       } else {
 	// get the next part boundary by getting the next part index and
