@@ -57,7 +57,7 @@ class ConfigCmd(SetupCmd):
 
       # Configure haproxy
       self.configure_haproxy()
- 
+
       # create topic for background delete
       bgdeleteconfig = CORTXS3Config()
       if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
