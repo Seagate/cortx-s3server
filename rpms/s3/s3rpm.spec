@@ -391,6 +391,10 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/bin/cleanupcmd.py
 /opt/seagate/cortx/s3/bin/ldapaccountaction.py
 /opt/seagate/cortx/s3/bin/merge.py
+/opt/seagate/cortx/s3/install/ldap/replication/accesslog_config_delta.ldif
+/opt/seagate/cortx/s3/install/ldap/replication/deltaConfigTemplate.ldif
+/opt/seagate/cortx/s3/install/ldap/replication/index_delta.ldif
+/opt/seagate/cortx/s3/install/ldap/replication/syncprov_delta.ldif
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_setup
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/_s3_setup
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer
