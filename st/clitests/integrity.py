@@ -81,7 +81,7 @@ def test_put_get(bucket: str, key: str, body: str, output: str,
     if not get_must_fail:
         (local['diff']['--report-identical-files', body, output])()
     s3api["delete-object",  "--bucket", bucket, "--key", key]()
-    
+
 
 def auto_test_put_get(args) -> None:
     first_byte = CORRUPTIONS[args.corruption]
