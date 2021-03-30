@@ -83,11 +83,11 @@ def test_put_get(bucket: str, key: str, body: str, output: str,
     s3api["delete-object",  "--bucket", bucket, "--key", key]()
 
 
-def auto_test_put_get(args) -> None:
+def auto_test_put_get(args, object_size: List[int]) -> None:
     first_byte = CORRUPTIONS[args.corruption]
     for i in range(args.iterations):
         print(f'iteration {i}...')
-        for size in OBJECT_SIZE:
+        for size in object_size:
             if args.create_objects:
                 create_random_file(args.body, size, first_byte)
             test_put_get(args.bucket, f'size={size}_i={i}',
@@ -129,6 +129,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--auto-test-put-get', action='store_true')
     parser.add_argument('--auto-test-multipart', action='store_true')
+    parser.add_argument('--test-put-get', action='store_true')
     parser.add_argument('--auto-test-all', action='store_true')
     parser.add_argument('--bucket', type=str, default='test')
     parser.add_argument('--object-size', type=int, default=2 ** 20)
@@ -140,14 +141,16 @@ def main() -> None:
                         default='none')
     args = parser.parse_args()
     print(args)
+    if args.test_put_get:
+        auto_test_put_get(args, [args.object_size])
     if args.auto_test_put_get:
-        auto_test_put_get(args)
-    if args.auto_test_multipart:
+        auto_test_put_get(args, OBJECT_SIZE)
+    elif args.auto_test_multipart:
         auto_test_multipart(args)
-    if args.auto_test_all:
+    elif args.auto_test_all:
         args.create_objects = True
         for args.corruption in CORRUPTIONS.keys():
-            auto_test_put_get(args)
+            auto_test_put_get(args, OBJECT_SIZE)
             auto_test_multipart(args)
         print('auto-test-all: Successful.')
 
