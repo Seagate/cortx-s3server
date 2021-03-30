@@ -49,8 +49,9 @@ class S3CortxMsgBus:
         if not S3CortxMsgBus._message_bus:
             raise Exception("Non Existent Message Bus")
         try:
-            self._producer = MessageProducer(S3CortxMsgBus._message_bus, \
-            producer_id=prod_id, message_type=msg_type, method=method)
+            self._producer = MessageProducer(producer_id=prod_id,
+                                            message_type=msg_type,
+                                            method=method)
         except Exception as exception:
              msg = ("msg_bus setup producer except:%s %s") % (
                 exception, traceback.format_exc())
@@ -78,7 +79,7 @@ class S3CortxMsgBus:
         if not S3CortxMsgBus._message_bus:
             raise Exception("Non Existent Message Bus")
         try:
-            self._consumer = MessageConsumer(S3CortxMsgBus._message_bus, consumer_id=cons_id, \
+            self._consumer = MessageConsumer(consumer_id=cons_id, \
             consumer_group=group, message_types=[msg_type], auto_ack=auto_ack, offset=offset)
         except Exception as exception:
             msg = ("msg_bus setup_consumer except:%s %s") % (
@@ -125,19 +126,20 @@ class S3CortxMsgBus:
         """create topic."""
         try:
             if S3CortxMsgBus._message_bus:
-                mbadmin = MessageBusAdmin(S3CortxMsgBus._message_bus, admin_id)
+                mbadmin = MessageBusAdmin(admin_id)
                 mbadmin.register_message_type(message_types = message_types,
                                             partitions = partitions)
         except:
             raise Exception("Failed to create topic")
 
     @staticmethod
-    def increase_partitions(admin_id: str, message_types: list, partitions: int):
+    def add_concurrency(admin_id: str, message_type: str, concurrency_count: int):
         """Increase partition count for given topic."""
         try:
             if S3CortxMsgBus._message_bus:
-                mbadmin = MessageBusAdmin(S3CortxMsgBus._message_bus, admin_id)
-                mbadmin.increase_parallelism(message_types = message_types, partitions = partitions)
+                mbadmin = MessageBusAdmin(admin_id)
+                mbadmin.add_concurrency(message_type = message_type,
+                                        concurrency_count = concurrency_count)
         except:
             raise Exception("Failed to increase partition")
 
@@ -146,8 +148,7 @@ class S3CortxMsgBus:
         """Delete given topic"""
         try:
             if S3CortxMsgBus._message_bus:
-                mbadmin = MessageBusAdmin(S3CortxMsgBus._message_bus,
-                                        admin_id)
+                mbadmin = MessageBusAdmin(admin_id)
                 mbadmin.deregister_message_type(message_types = message_types)
         except:
             raise Exception("Failed to delete topic")
@@ -156,14 +157,14 @@ class S3CortxMsgBus:
     def list_topics(admin_id: str):
         """list all available topics"""
         if S3CortxMsgBus._message_bus:
-            mbadmin = MessageBusAdmin(S3CortxMsgBus._message_bus, admin_id)
+            mbadmin = MessageBusAdmin(admin_id)
             return mbadmin.list_message_types()
 
     @staticmethod
     def is_topic_exist(admin_id: str, topic_name: str):
         """retuns true if topic exist else false"""
         if S3CortxMsgBus._message_bus:
-            mbadmin = MessageBusAdmin(S3CortxMsgBus._message_bus, admin_id)
+            mbadmin = MessageBusAdmin(admin_id)
             if topic_name in mbadmin.list_message_types():
                 return True
             return False
