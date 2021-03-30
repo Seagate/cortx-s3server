@@ -19,6 +19,7 @@
 
 """This class stores the configuration required for s3 background delete."""
 
+from _typeshed import NoneType
 import sys
 import os
 import shutil
@@ -394,7 +395,7 @@ class CORTXS3Config(object):
     def get_leak_processing_delay_in_mins(self):
         """Return 'leak_processing_delay_in_mins' from 'leakconfig' section """
         leak_processing_delay_in_mins = self.s3confstore.get_config('leakconfig>leak_processing_delay_in_mins')
-        if leak_processing_delay_in_mins:
+        if leak_processing_delay_in_mins is not None:
             return int(leak_processing_delay_in_mins)
         else:
             raise Exception(f'Failed to read leakconfig>leak_processing_delay_in_mins: '
@@ -403,7 +404,7 @@ class CORTXS3Config(object):
     def get_version_processing_delay_in_mins(self):
         """Return 'version_processing_delay_in_mins' from 'leakconfig' section """
         version_processing_delay_in_mins = self.s3confstore.get_config('leakconfig>version_processing_delay_in_mins')
-        if version_processing_delay_in_mins:
+        if version_processing_delay_in_mins is not None:
             return int(version_processing_delay_in_mins)
         else:
             raise Exception(f'Failed to read leakconfig>version_processing_delay_in_mins: '
