@@ -306,8 +306,6 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy
 /opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate
 /opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf
-/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.crt
-/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem
 /opt/seagate/cortx/s3/install/haproxy/503.http
 /opt/seagate/cortx/s3/install/ldap/syncprov_mod.ldif
 /opt/seagate/cortx/s3/install/ldap/syncprov.ldif
