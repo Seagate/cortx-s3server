@@ -18,8 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-# TODO: change name of this python script to 's3_setup' when shell script of the same name is EOL'ed
-
 import sys
 import argparse
 import traceback
