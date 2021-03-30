@@ -20,15 +20,19 @@
 LDAP_USER: "cn={},dc=seagate,dc=com"
 LDAP_URL: "ldapi:///"
 CONFSTORE_OPENLDAP_CONST_KEY: "cortx"
-CONFSTORE_LDAPADMIN_USER_KEY: "cortx>software>openldap>sgiam>user"
-CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>software>openldap>sgiam>secret"
-CONFSTORE_ROOTDN_USER_KEY: "cortx>software>openldap>root>user"
-CONFSTORE_ROOTDN_PASSWD_KEY: "cortx>software>openldap>root>secret"
-CONFSTORE_CLUSTER_ID_KEY: "server_node>{}>cluster_id"                               # server_node>{machine-id}>cluster_id
-CONFSTORE_S3INSTANCES_KEY: "server_node>{}>s3_instances"                            # server_node>{machine-id}>s3_instances
-CONFSTORE_HOSTNAME_KEY: "server_node>{}>hostname"                                   # server_node>{machine-id}>hostname
-CONFSTORE_SITE_COUNT_KEY: "cluster>{}>site_count"                                   # cluster>{cluster-id}>site_count
-CONFSTORE_STORAGE_SET_COUNT_KEY: "cluster>{}>site>storage_set_count"                # cluster>{cluster-id}>site>storage_set_count
-CONFSTORE_STORAGE_SET_SERVER_NODES_KEY: "cluster>{}>storage_set[{}]>server_nodes"   # cluster>{cluster-id}>storage_set[N]>server_nodes
-CONFSTORE_PUBLIC_FQDN_KEY: server_node>{}>network>data>public_fqdn                  # server_node>{machine-id}>network>data>public_fqdn
-CONFSTORE_PRIVATE_FQDN_KEY: server_node>{}>network>data>private_fqdn                # server_node>{machine-id}>network>data>private_fqdn
+CONFSTORE_SITE_COUNT_KEY: "cluster>{}>site_count"                                     # cluster>{cluster-id}>site_count
+POST_INSTALL:
+PREPARE:
+CONFIG:
+  CONFSTORE_LDAPADMIN_USER_KEY: "cortx>software>openldap>sgiam>user"
+  CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>software>openldap>sgiam>secret"
+  CONFSTORE_ROOTDN_USER_KEY: "cortx>software>openldap>root>user"
+  CONFSTORE_ROOTDN_PASSWD_KEY: "cortx>software>openldap>root>secret"
+  CONFSTORE_CLUSTER_ID_KEY: "server_node>{}>cluster_id"                               # server_node>{machine-id}>cluster_id
+  CONFSTORE_S3INSTANCES_KEY: "server_node>{}>s3_instances"                            # server_node>{machine-id}>s3_instances
+  CONFSTORE_HOSTNAME_KEY: "server_node>{}>hostname"                                   # server_node>{machine-id}>hostname
+  CONFSTORE_STORAGE_SET_COUNT_KEY: "cluster>{}>site>storage_set_count"                # cluster>{cluster-id}>site>storage_set_count
+  CONFSTORE_STORAGE_SET_SERVER_NODES_KEY: "cluster>{}>storage_set[{}]>server_nodes"   # cluster>{cluster-id}>storage_set[N]>server_nodes
+  CONFSTORE_PUBLIC_FQDN_KEY: server_node>{}>network>data>public_fqdn                  # server_node>{machine-id}>network>data>public_fqdn
+  CONFSTORE_PRIVATE_FQDN_KEY: server_node>{}>network>data>private_fqdn                # server_node>{machine-id}>network>data>private_fqdn
+INIT:

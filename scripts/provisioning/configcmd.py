@@ -130,12 +130,12 @@ class ConfigCmd(SetupCmd):
   def configure_openldap_replication(self):
     """Configure openldap replication within a storage set."""
     storage_set_count = self.get_confvalue(self.get_confkey(
-        'CONFSTORE_STORAGE_SET_COUNT_KEY').format(self.cluster_id))
+        'CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY').format(self.cluster_id))
 
     index = 0
     while index < int(storage_set_count):
       server_nodes_list = self.get_confvalue(self.get_confkey(
-        'CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').format(self.cluster_id, index))
+        'CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').format(self.cluster_id, index))
       if type(server_nodes_list) is str:
         # list is stored as string in the confstore file
         server_nodes_list = literal_eval(server_nodes_list)
@@ -176,12 +176,12 @@ class ConfigCmd(SetupCmd):
   def get_msgbus_partition_count(self):
     """get total server nodes which will act as partition count."""
     storage_set_count = self.get_confvalue(self.get_confkey(
-      'CONFSTORE_STORAGE_SET_COUNT_KEY').format(self.cluster_id))
+      'CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY').format(self.cluster_id))
     srv_count=0
     index = 0
     while index < int(storage_set_count):
       server_nodes_list = self.get_confvalue(self.get_confkey(
-        'CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').format(self.cluster_id, index))
+        'CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').format(self.cluster_id, index))
       if type(server_nodes_list) is str:
         # list is stored as string in the confstore file
         server_nodes_list = literal_eval(server_nodes_list)
