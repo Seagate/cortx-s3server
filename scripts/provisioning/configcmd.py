@@ -52,6 +52,8 @@ class ConfigCmd(SetupCmd):
     self.phase_prereqs_validate(self.name)
 
     try:
+      self.create_auth_jks_password()
+
       if configure_only_openldap == True:
         # Configure openldap only
         self.configure_openldap()
@@ -198,3 +200,15 @@ class ConfigCmd(SetupCmd):
     except Exception as e:
       sys.stderr.write(f'Failed to configure haproxy for s3server, error: {e}')
       raise e
+
+  @staticmethod
+  def create_auth_jks_password():
+    """Create random password for auth jks keystore."""
+    cmd = ['sh',
+      '/opt/seagate/cortx/auth/scripts/create_auth_jks_password.sh']
+    handler = SimpleProcess(cmd)
+    stdout, stderr, retcode = handler.run()
+    if retcode != 0:
+      raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
+    else:
+      sys.stdout.write('INFO: Successfully set auth JKS keystore password')
