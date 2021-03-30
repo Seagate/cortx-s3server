@@ -175,6 +175,143 @@ class SetupCmd(object):
     except Exception as e:
       raise S3PROVError(f'ERROR: {phase_name} prereqs validations failed, exception: {e} \n')
 
+  def phase_keys_validate(self, arg_file: str, phase_name: str):
+    """Validate keys of each phase derived from s3_prov_config and compare with argument file."""
+    token_list = ["machine-id", "cluster-id", "N"]
+    phase_name = phase_name.upper()
+    argument_file_confstore = S3CortxConfStore(arg_file, 'argument_file_index')
+    try:
+      # Get all keys from URL file
+      arg_keys_list = argument_file_confstore.get_all_keys()
+
+      # Since get_all_keys misses out listing entries inside
+      # an array, the below code is required to fetch such
+      # array entries. The result will be stored in yardstick
+      # list which will be complete and will be used to verify
+      # keys required for each phase.
+      full_arg_keys_list = []
+      for key in arg_keys_list:
+        if ((key.find('[') != -1) and (key.find(']') != -1)):
+          storage_set = self.get_confvalue(key)
+          for set_key in storage_set:
+            key = key + ">" + set_key
+          storage_set = self.get_confvalue(key)
+        full_arg_keys_list.append(key)
+
+      # The s3 prov config file has below pairs :
+      # "Key Constant" : "Actual Key"
+
+      # Example of "Key Constant" :
+      #   CONFSTORE_SITE_COUNT_KEY
+      #   PREPARE
+      #   CONFIG>CONFSTORE_LDAPADMIN_USER_KEY
+      #   INIT
+
+      # Example of "Actual Key" :
+      #   cluster>{}>site_count
+      #   cortx>software>openldap>sgiam>user
+
+      # When we try to run get_all_keys on this file,
+      # it returns all the "Key Constant" from the
+      # config file, which may have PHASE as the
+      # root attribute. To get "Actual Key", we need
+      # to run get_confkey on each "Key Constant" and
+      # format it based on PHASE.
+
+      # Note that for each of these "Key Constant",
+      # there may not exist an "Actual Key" because
+      # some phases do not have any "Actual Key".
+      # Example of such cases -
+      #   PREPARE
+      #   INIT
+      # For such examples, we skip that "Key Constant"
+      #  and continue.
+
+      prov_keys_list = self._s3_confkeys_store.get_all_keys()
+
+      # Below hard-coded key is used to set the value
+      # of 'storage_set_count'. This will be used to
+      # set the array size of 'storage_set' if it is
+      # found in the key string.
+      site_count_key = "cluster>cluster-id>site>storage_set_count"
+      if not self.cluster_id is None:
+        site_count_key = site_count_key.replace("cluster-id", self.cluster_id)
+      site_count_str = self.get_confvalue(site_count_key)
+      if not site_count_str is None:
+        site_count_n = int(site_count_str)
+      else:
+        site_count_n = 0
+      # We have all "Key Constant" in prov_keys_list,
+      # now extract "Actual Key" and format it to fill
+      # regular expressions which will be used for below
+      # for pattern matching. Also, in order to implement
+      # hierarchy set the flags as below.
+      phase_keys_list = []
+      prev_phase = True
+      curr_phase = False
+      next_phase = False
+      for key in prov_keys_list:
+        # If PHASE is not relevant, skip the key.
+        # Or set flag as appropriate. For test,
+        # reset and cleanup, do not inherit keys
+        # from previous phases.
+        if next_phase:
+          break
+        if key.find(phase_name) == 0:
+          prev_phase = False
+          curr_phase = True
+        else:
+          if (
+               phase_name == "TEST" or
+               phase_name == "RESET" or
+               phase_name == "CLEANUP"
+             ):
+              continue
+          if not prev_phase:
+            next_phase = True
+            break
+        value = self.get_confkey(key)
+        # If value does not exist which can be the
+        # case for certain phases as mentioned above,
+        # skip the value.
+        if value is None:
+          continue
+        # If a value is found which needs to be filled
+        # up with actual details, like machine-id or
+        # cluster-id, replace it and create new value.
+        # Also, fill values starting from zero upto
+        # one less than array size extracted above
+        # and make an array of format values if needed.
+        # Then insert the formatted value in newly created
+        # phase_keys_list which will be used to match against
+        # full_arg_keys_list for validating each key.
+        # A list of tokens is maintained above for reference.
+        formatvalue = value
+        formatvalue = formatvalue.replace("machine-id", self.machine_id)
+        if not self.cluster_id is None:
+          formatvalue = formatvalue.replace("cluster-id", self.cluster_id)
+        if not formatvalue.find("N") == -1:
+          formatvalue_n = formatvalue
+          for i in range(site_count_n):
+            formatvalue_n = formatvalue.replace("N", str(i))
+            phase_keys_list.append(formatvalue_n)
+        else:
+          phase_keys_list.append(formatvalue)
+
+      # Check whether each key in phase_keys_list
+      # has matching pattern in full_arg_keys_list, if
+      # no match found, raise exception.
+      for phase_key in phase_keys_list:
+        match_found = False
+        for arg_key in full_arg_keys_list:
+          if phase_key == arg_key and match_found is False:
+            match_found = True
+        if match_found is False:
+          raise Exception(f'No match found for {phase_key}')
+
+    except Exception as e:
+      raise Exception(f'ERROR : Validating keys failed, exception {e}\n')
+
   def shutdown_services(self, s3services_list):
     """Stop services."""
     for service_name in s3services_list:
