@@ -211,4 +211,4 @@ class ConfigCmd(SetupCmd):
     if retcode != 0:
       raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
     else:
-      sys.stdout.write('INFO: Successfully set auth JKS keystore password')
+      sys.stdout.write('INFO: Successfully set auth JKS keystore password.\n')
