@@ -44,7 +44,7 @@ def main():
 
   testCmd = subparsers.add_parser('test', help='setup test')
   testCmd.add_argument("--config", help='config URL', type=str, required=True)
-  testCmd.add_argument("--plan", help='test plan', type=str, required=False)
+  testCmd.add_argument("--plan", help='test plan', type=str, required=True)
 
   resetCmd = subparsers.add_parser('reset', help='setup reset')
   resetCmd.add_argument("--config", help='config URL', type=str, required=True)
@@ -85,7 +85,7 @@ def main():
       
     elif args.command == 'test':
       from testcmd import TestCmd
-      TestCmd(args.config).process()
+      TestCmd(args.config, args.plan).process()
       sys.stdout.write('PASS: S3-Sanity test passed.\n')
       
     elif args.command == 'reset':

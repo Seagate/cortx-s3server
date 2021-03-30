@@ -348,18 +348,21 @@ class CORTXS3Config(object):
     def get_max_keys(self):
         """Return maximum number of keys from config file or KeyError."""
         max_keys = self.s3confstore.get_config('indexid>max_keys')
-        if max_keys:
+        if max_keys is not None:
             return int(max_keys)
         else:
-            return 1000
+            raise Exception(f'Failed to read indexid>max_keys: '
+                        f'{max_keys}\n')
 
     def get_threshold(self):
         """Return the threshold for max."""
         threshold = self.s3confstore.get_config('indexid>threshold')
-        if threshold:
+        if threshold is not None:
             return int(threshold)
         else:
-            return 500
+            raise Exception(f'Failed to read indexid>threshold: '
+                        f'{threshold}\n')
+                        
 
     def get_global_instance_index_id(self):
         """Return probable delete index-id from config file or KeyError."""
