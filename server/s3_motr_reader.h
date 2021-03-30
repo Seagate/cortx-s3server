@@ -182,6 +182,7 @@ class S3MotrReader {
   size_t multipart_num_of_parts;
   size_t total_size_read = 0;
   size_t total_size_to_read;
+  S3AwsEtag awsetag;
 
   // Holds references to buffers after the read so it can be consumed.
   struct s3_motr_rw_op_context* motr_rw_op_context = nullptr;
@@ -210,7 +211,6 @@ class S3MotrReader {
   void clean_up_contexts();
 
  public:
-  S3AwsEtag awsetag;
   // object id is generated at upper level and passed to this constructor
   S3MotrReader(std::shared_ptr<RequestObject> req, struct m0_uint128 id,
                int layout_id, struct m0_fid pvid = {},
@@ -262,6 +262,9 @@ class S3MotrReader {
            content_md5.c_str());
     return content_md5;
   }
+
+  // copy-paste from server/s3_motr_writer.h
+  virtual std::string get_content_awsetag() { return awsetag.finalize(); }
 
   // For Testing purpose
   FRIEND_TEST(S3MotrReaderTest, Constructor);

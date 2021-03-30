@@ -510,7 +510,7 @@ void S3GetObjectAction::send_data_to_client() {
         if (object_metadata->get_part_one_size() == 0) {
           checksum_calculated = motr_reader->get_content_md5();
         } else {
-          checksum_calculated = motr_reader->awsetag.finalize();
+          checksum_calculated = motr_reader->get_content_awsetag();
         }
         std::string checksum_read = object_metadata->get_md5();
         s3_log(S3_LOG_DEBUG, request_id,
