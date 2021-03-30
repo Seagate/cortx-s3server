@@ -19,7 +19,6 @@
 
 """This class stores the configuration required for s3 background delete."""
 
-from _typeshed import NoneType
 import sys
 import os
 import shutil
