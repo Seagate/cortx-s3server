@@ -38,4 +38,6 @@ This feature is about calculating checksums for entire S3 objects.
     calculated in the same way as it was calculated in CompleteMultipartUpload.
   - If there is a mismatch between calculated Etag and Etag from the object
     metadata, then S3 server cancels HTTP request before returning the last
-    portion of data to the client.
+    portion of data to the client.  An IEM alert is also raised, to be
+    consumed by other components (e.g. HA) as an indicator of an integrity
+    issue.
