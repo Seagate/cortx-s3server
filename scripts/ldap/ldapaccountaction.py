@@ -248,16 +248,30 @@ class LdapAccountAction:
                         "ou=accounts,dc=s3,dc=seagate,dc=com",
                         "ou=idp,dc=s3,dc=seagate,dc=com"]
     try:
+      sys.stdout.write('INFO:Deletion of ldap data started.')
       self.__connect_to_ldap_server()
       for entry in cleanup_records:
-        self.ldap_conn.delete_s(entry)
+        sys.stdout.write(f'INFO: deleting all entries from {str(entry) & its sub-ordinate tree}\n')
+        try:
+          self.ldap_delete_recursive(self.ldap_conn, entry)
+        except ldap.NO_SUCH_OBJECT:
+          # If no entries found in ldap for given dn
+          pass
       self.__disconnect_from_ldap()
-
+      sys.stdout.write('INFO:Deletion of ldap data completed successfully.')
     except Exception as e:
       if self.ldap_conn:
         self.__disconnect_from_ldap()
       sys.stderr.write(f'ERROR: Failed to delete ldap data, error: {str(e)}\n')
       raise e
+
+  def ldap_delete_recursive(self, ldap_conn: SimpleLDAPObject, base_dn: str):
+    """Delete all objects and its subordinate entries of given base_dn from ldap."""
+    l_search = ldap_conn.search_s(base_dn, ldap.SCOPE_ONELEVEL)
+    for dn, _ in l_search:
+        if not dn == base_dn:
+          self.ldap_delete_recursive(self.ldap_conn, dn)
+          ldap_conn.delete_s(dn)
 
   @staticmethod
   def __is_account_present(ldap_conn: SimpleLDAPObject, account_name: str):

@@ -53,14 +53,14 @@ class ResetCmd(SetupCmd):
       self.DeleteLdapAccountsUsers()
       sys.stdout.write('INFO: LDAP Accounts and Users Cleanup successful.\n')
     except Exception as e:
-      sys.stderr.write(f'Failed to cleanup LDAP Accounts and Users, error: {e}\n')
+      sys.stderr.write(f'ERROR:Failed to cleanup LDAP Accounts and Users, error: {e}\n')
       raise e
 
     try:
-      sys.stdout.write("Shutting down s3 services...\n")
+      sys.stdout.write("INFO:Shutting down s3 services...\n")
       self.shutdown_services(services_list)
     except Exception as e:
-      sys.stderr.write(f'Failed to stop s3services, error: {e}\n')
+      sys.stderr.write(f'ERROR:Failed to stop s3services, error: {e}\n')
       raise e
 
     try:
@@ -79,7 +79,7 @@ class ResetCmd(SetupCmd):
         sys.stdout.write('INFO:Purge message successful.\n')
 
     except Exception as e:
-      sys.stderr.write(f'Failed to cleanup log directories or files, error: {e}\n')
+      sys.stderr.write(f'ERROR: Failed to cleanup log directories or files, error: {e}\n')
       raise e
 
 
@@ -167,14 +167,14 @@ class ResetCmd(SetupCmd):
       raise e
 
   def DeleteLdapAccountsUsers(self):
-    """Deletes all LDAP accounts and users."""
+    """Deletes all LDAP data entries e.g. accounts, users, access keys using admin credentials."""
     self.read_ldap_credentials()
 
     try:
-      # Delete data directories e.g. ou=accesskeys, ou=accounts,ou=idp from dc=seagate,dc=com tree"
-      LdapAccountAction(self.ldap_user, self.ldap_passwd).delete_s3_ldap_data()
+      # Delete data directories e.g. ou=accesskeys, ou=accounts,ou=idp from dc=s3,dc=seagate,dc=com tree"
+      LdapAccountAction(self.ldap_root_user, self.rootdn_passwd).delete_s3_ldap_data()
     except Exception as e:
-      sys.stderr.write(f'Failed to delete s3 data exists in ldap, error: {e}\n')
+      sys.stderr.write(f'ERROR: Failed to delete s3 recoards exists in ldap, error: {e}\n')
       raise e
 
     try:
@@ -189,5 +189,5 @@ class ResetCmd(SetupCmd):
                                 }
       LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
     except Exception as e:
-      sys.stderr.write(f'Failed to create backgrounddelete service account, error: {e}\n')
+      sys.stderr.write(f'ERROR: Failed to create backgrounddelete service account, error: {e}\n')
       raise e

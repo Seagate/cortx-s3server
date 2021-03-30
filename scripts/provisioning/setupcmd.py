@@ -37,6 +37,7 @@ class SetupCmd(object):
   """Base class for setup commands."""
   ldap_user = None
   ldap_passwd = None
+  ldap_root_user = None
   rootdn_passwd = None
   cluster_id = None
   machine_id = None
@@ -112,6 +113,8 @@ class SetupCmd(object):
       self.ldap_user = self.get_confvalue(self.get_confkey('CONFSTORE_LDAPADMIN_USER_KEY'))
 
       encrypted_ldapadmin_pass = self.get_confvalue(self.get_confkey('CONFSTORE_LDAPADMIN_PASSWD_KEY'))
+
+      self.ldap_root_user = self.get_confvalue(self.get_confkey('CONFSTORE_ROOTDN_USER_KEY'))
 
       encrypted_rootdn_pass = self.get_confvalue(self.get_confkey('CONFSTORE_ROOTDN_PASSWD_KEY'))
 
