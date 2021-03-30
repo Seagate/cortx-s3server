@@ -126,7 +126,7 @@ class S3CortxMsgBus:
         """create topic."""
         try:
             if S3CortxMsgBus._message_bus:
-                mbadmin = MessageBusAdmin(admin_id)
+                mbadmin = MessageBusAdmin(admin_id = admin_id)
                 mbadmin.register_message_type(message_types = message_types,
                                             partitions = partitions)
         except:
@@ -137,7 +137,7 @@ class S3CortxMsgBus:
         """Increase partition count for given topic."""
         try:
             if S3CortxMsgBus._message_bus:
-                mbadmin = MessageBusAdmin(admin_id)
+                mbadmin = MessageBusAdmin(admin_id = admin_id)
                 mbadmin.add_concurrency(message_type = message_type,
                                         concurrency_count = concurrency_count)
         except:
@@ -148,7 +148,7 @@ class S3CortxMsgBus:
         """Delete given topic"""
         try:
             if S3CortxMsgBus._message_bus:
-                mbadmin = MessageBusAdmin(admin_id)
+                mbadmin = MessageBusAdmin(admin_id = admin_id)
                 mbadmin.deregister_message_type(message_types = message_types)
         except:
             raise Exception("Failed to delete topic")
@@ -157,14 +157,14 @@ class S3CortxMsgBus:
     def list_topics(admin_id: str):
         """list all available topics"""
         if S3CortxMsgBus._message_bus:
-            mbadmin = MessageBusAdmin(admin_id)
+            mbadmin = MessageBusAdmin(admin_id = admin_id)
             return mbadmin.list_message_types()
 
     @staticmethod
     def is_topic_exist(admin_id: str, topic_name: str):
         """retuns true if topic exist else false"""
         if S3CortxMsgBus._message_bus:
-            mbadmin = MessageBusAdmin(admin_id)
+            mbadmin = MessageBusAdmin(admin_id = admin_id)
             if topic_name in mbadmin.list_message_types():
                 return True
             return False
