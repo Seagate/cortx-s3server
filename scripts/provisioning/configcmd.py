@@ -29,6 +29,7 @@ from cortx.utils.process import SimpleProcess
 from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
+from s3_haproxy_config import S3HaproxyConfig
 
 class ConfigCmd(SetupCmd):
   """Config Setup Cmd."""
@@ -45,18 +46,24 @@ class ConfigCmd(SetupCmd):
     except Exception as e:
       raise S3PROVError(f'exception: {e}\n')
 
-  def process(self):
+  def process(self, configure_only_openldap = False, configure_only_haproxy = False):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
 
     try:
-      # Configure openldap and ldap-replication
-      self.configure_openldap()
-      sys.stdout.write("INFO: Successfully configured openldap on the node.\n")
-      # Configure haproxy
-      self.configure_haproxy()
-      sys.stdout.write("INFO: Successfully configured haproxy on the node.\n")
+      self.create_auth_jks_password()
+
+      if configure_only_openldap == True:
+        # Configure openldap only
+        self.configure_openldap()
+      elif configure_only_haproxy == True:
+        # Configure haproxy only
+        self.configure_haproxy()
+      else:
+        # Configure both openldap and haproxy
+        self.configure_openldap()
+        self.configure_haproxy()
 
       # create topic for background delete
       bgdeleteconfig = CORTXS3Config()
@@ -110,6 +117,8 @@ class ConfigCmd(SetupCmd):
     stdout, stderr, retcode = handler.run()
     if retcode != 0:
       raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
+    else:
+      sys.stdout.write("INFO: Successfully configured openldap on the node.\n")
 
   def configure_openldap_replication(self):
     """Configure openldap replication within a storage set."""
@@ -147,21 +156,6 @@ class ConfigCmd(SetupCmd):
       index += 1
     # TODO: set replication across storage-sets
 
-  def configure_haproxy(self):
-    """Configure haproxy service."""
-    cmd = ['s3haproxyconfig',
-           '--path',
-           f'{self._url}']
-    handler = SimpleProcess(cmd)
-    stdout, stderr, retcode = handler.run()
-    if retcode != 0:
-      raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
-    cmd = ['systemctl', 'restart', 'haproxy']
-    handler = SimpleProcess(cmd)
-    stdout, stderr, retcode = handler.run()
-    if retcode != 0:
-      raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
-
   def create_topic(self, admin_id: str, topic_name:str, partitions: int):
     """create topic for background delete services."""
     try:
@@ -192,3 +186,29 @@ class ConfigCmd(SetupCmd):
     sys.stdout.write(f"Partition count : {srv_count}\n")
     return srv_count
 
+  def configure_haproxy(self):
+    """Configure haproxy service."""
+    try:
+      S3HaproxyConfig(self.url).process()
+      cmd = ['systemctl', 'restart', 'haproxy']
+      handler = SimpleProcess(cmd)
+      stdout, stderr, retcode = handler.run()
+      if retcode != 0:
+        raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
+      else:
+        sys.stdout.write("INFO: Successfully configured haproxy on the node.\n")
+    except Exception as e:
+      sys.stderr.write(f'Failed to configure haproxy for s3server, error: {e}')
+      raise e
+
+  @staticmethod
+  def create_auth_jks_password():
+    """Create random password for auth jks keystore."""
+    cmd = ['sh',
+      '/opt/seagate/cortx/auth/scripts/create_auth_jks_password.sh']
+    handler = SimpleProcess(cmd)
+    stdout, stderr, retcode = handler.run()
+    if retcode != 0:
+      raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
+    else:
+      sys.stdout.write('INFO: Successfully set auth JKS keystore password.\n')

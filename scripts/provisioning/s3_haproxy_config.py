@@ -1,4 +1,4 @@
-#!/usr/bin/python3.6
+#!/usr/bin/env python3
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -20,14 +20,25 @@
 
 import os
 import sys
-import argparse
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 class S3HaproxyConfig:
-
+  """HAProxy configration for S3."""
   local_confstore = None
   provisioner_confstore = None
   machine_id = None
+
+  def __init__(self, confstore: str):
+    """Constructor."""
+    # Read machine-id of current node
+    with open('/etc/machine-id', 'r') as mcid_file:
+      self.machine_id = mcid_file.read().strip()
+
+    if not confstore.strip():
+      sys.stderr.write(f'config url:[{confstore}] must be a valid url path\n')
+      raise Exception('empty config URL path')
+
+    self.provisioner_confstore = S3CortxConfStore(confstore, 'haproxy_config_index')
 
   def get_publicip(self):
     assert self.provisioner_confstore != None
@@ -35,7 +46,7 @@ class S3HaproxyConfig:
 
     return self.provisioner_confstore.get_config(
       self.local_confstore.get_config(
-        'CONFSTORE_PRIVATE_FQDN_KEY').format(self.machine_id))
+        'CONFSTORE_PUBLIC_FQDN_KEY').format(self.machine_id))
 
   def get_privateip(self):
     assert self.provisioner_confstore != None
@@ -53,24 +64,11 @@ class S3HaproxyConfig:
       self.local_confstore.get_config(
         'CONFSTORE_S3INSTANCES_KEY').format(self.machine_id)))
 
-  def run(self):
-    parser = argparse.ArgumentParser(description='S3 haproxy configuration')
-    parser.add_argument("--path", required=True, help='cortx-py-utils:confstore back-end file URL.', type=str)
-
-    args = parser.parse_args()
-
-    self.local_confstore = S3CortxConfStore("yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml",
-                                    'localstore')
-
-    if args.path and args.path.strip():
-      self.provisioner_confstore = S3CortxConfStore(args.path, 'haproxy_config_index')
-    else:
-      sys.exit("--path option value:[{}] is not valid.".format(args.path))
-
-    #Read machine-id of current node
-    mcid_file = open('/etc/machine-id', 'r')
-    self.machine_id = mcid_file.read().strip()
-    mcid_file.close()
+  def process(self):
+    """Main Processing function."""
+    self.local_confstore = S3CortxConfStore(
+      "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml",
+      'localstore')
 
     #Get necessary info from confstore
     localhost = '127.0.0.1'
@@ -224,4 +222,3 @@ backend s3-auth
     os.system("cp /opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate /etc/cron.hourly/logrotate")
     os.system("systemctl restart rsyslog")
     os.system("systemctl restart haproxy")
-
