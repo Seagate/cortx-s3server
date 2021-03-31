@@ -385,7 +385,6 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/bin/merge.py
 /opt/seagate/cortx/s3/bin/s3_haproxy_config.py
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_setup
-%attr(755, root, root) /opt/seagate/cortx/s3/bin/_s3_setup
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer
 /etc/rsyslog.d/rsyslog-tcp-audit.conf
