@@ -30,7 +30,7 @@ from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 from setupcmd import SetupCmd
 from ldapaccountaction import LdapAccountAction
 
-services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver"]
+services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver", "slapd"]
 
 class ResetCmd(SetupCmd):
   """Reset Setup Cmd."""
@@ -59,7 +59,6 @@ class ResetCmd(SetupCmd):
     try:
       sys.stdout.write("Shutting down s3 services...\n")
       self.shutdown_services(services_list)
-      self.shutdown_services(["slapd"])
     except Exception as e:
       sys.stderr.write(f'Failed to stop s3services, error: {e}\n')
       raise e
