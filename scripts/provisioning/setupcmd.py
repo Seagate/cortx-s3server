@@ -43,6 +43,11 @@ class SetupCmd(object):
   ldap_mdb_folder = "/var/lib/ldap"
   s3_prov_config = "/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml"
   _preqs_conf_file = "/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
+  ha_service_map = {'haproxy': 'haproxy',
+                    's3backgroundproducer': 's3backprod',
+                    's3backgroundconsumer': 's3backcons',
+                    's3server@*': 's3server-*',
+                    's3authserver': 's3auth'}
 
   def __init__(self, config: str):
     """Constructor."""
@@ -157,30 +162,42 @@ class SetupCmd(object):
     except Exception as e:
       raise S3PROVError(f'ERROR: {phase_name} prereqs validations failed, exception: {e} \n')
 
-  def shutdown_services(self, s3services_list):
+  def shutdown_services(self, s3services_list, is_ha_service = False):
     """Stop services."""
     for service_name in s3services_list:
-      cmd = ['/bin/systemctl', 'stop',  f'{service_name}']
+      if is_ha_service:
+        service_name = ha_service_map[service_name]
+        cmd = ['cortx', 'stop',  f'{service_name}']
+      else:
+        cmd = ['/bin/systemctl', 'stop',  f'{service_name}']
       handler = SimpleProcess(cmd)
       sys.stdout.write(f"shutting down {service_name}\n")
       res_op, res_err, res_rc = handler.run()
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
 
-  def start_services(self, s3services_list):
+  def start_services(self, s3services_list, is_ha_service = False):
     """Start services specified as parameter."""
     for service_name in s3services_list:
-      cmd = ['/bin/systemctl', 'start',  f'{service_name}']
+      if is_ha_service:
+        service_name = ha_service_map[service_name]
+        cmd = ['cortx', 'start',  f'{service_name}']
+      else:
+        cmd = ['/bin/systemctl', 'start',  f'{service_name}']
       handler = SimpleProcess(cmd)
       sys.stdout.write(f"starting {service_name}\n")
       res_op, res_err, res_rc = handler.run()
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
 
-  def restart_services(self, s3services_list):
+  def restart_services(self, s3services_list, is_ha_service = False):
     """Restart services specified as parameter."""
     for service_name in s3services_list:
-      cmd = ['/bin/systemctl', 'restart',  f'{service_name}']
+      if is_ha_service:
+        service_name = ha_service_map[service_name]
+        cmd = ['cortx', 'restart',  f'{service_name}']
+      else:
+        cmd = ['/bin/systemctl', 'restart',  f'{service_name}']
       handler = SimpleProcess(cmd)
       sys.stdout.write(f"restarting {service_name}\n")
       res_op, res_err, res_rc = handler.run()
