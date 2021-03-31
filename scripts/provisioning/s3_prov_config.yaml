@@ -36,3 +36,6 @@ CONFIG:
   CONFSTORE_PUBLIC_FQDN_KEY: server_node>{}>network>data>public_fqdn                  # server_node>{machine-id}>network>data>public_fqdn
   CONFSTORE_PRIVATE_FQDN_KEY: server_node>{}>network>data>private_fqdn                # server_node>{machine-id}>network>data>private_fqdn
 INIT:
+TEST:
+RESET:
+CLEANUP:
