@@ -120,14 +120,14 @@ step_4 () {
 step_5 () {
 	# Try to install rpm pkgs from s3 preqs file
 	json_prereqs_file="/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
-	rpms_list=$(jq '.rpms' $json_prereqs_file)
+	rpms_list=$(jq '.post_install.rpms' $json_prereqs_file)
 	rpms_list=$(echo "$rpms_list" | tr -d '[]"\r\n')
 	IFS=', ' read -r -a rpms <<< "$rpms_list"
 	if [ ${#rpms[@]} -eq 0 ];then
-		die_with_error "jq '.rpms' $json_prereqs_file failed"
+		die_with_error "jq '.post_install.rpms' $json_prereqs_file failed"
 	fi
 	if [ "${rpms[0]}" == "null" ];then
-		die_with_error "jq '.rpms' $json_prereqs_file failed"
+		die_with_error "jq '.post_install.rpms' $json_prereqs_file failed"
 	fi
 
 	for rpm in "${rpms[@]}" ; do
@@ -154,14 +154,14 @@ step_7 () {
 }
 
 step_8 () {
-	services_list=$(jq '.services' $json_prereqs_file)
+	services_list=$(jq '.post_install.services' $json_prereqs_file)
 	services_list=$(echo "$services_list" | tr -d '[]"\r\n')
 	IFS=', ' read -r -a services <<< "$services_list"
 	if [ ${#services[@]} -eq 0 ];then
-		die_with_error "jq '.services' $json_prereqs_file failed"
+		die_with_error "jq '.post_install.services' $json_prereqs_file failed"
 	fi
 	if [ "${services[0]}" == "null" ];then
-		die_with_error "jq '.services' $json_prereqs_file failed"
+		die_with_error "jq '.post_install.services' $json_prereqs_file failed"
 	fi
 	# services=("$@")
 	for service in "${services[@]}" ; do
@@ -332,15 +332,6 @@ step_10 () {
 	if [ "$1" = "true" ];then
 		bash -x /opt/seagate/cortx/s3/bin/s3_setup cleanup --config "json://$s3_conf_file" &> /dev/null || die_with_error "s3:cleanup failed!"
 		echo "s3:cleanup passed!"
-		# Attempt ldap clean up since ansible openldap setup is not idempotent
-		systemctl stop slapd 2>/dev/null
-		yum remove -y openldap-servers openldap-clients || "openldap-servers openldap-clients removal failed"
-		rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
-		rm -rf /var/lib/ldap/*
-		rm -f /etc/sysconfig/slapd* 2>/dev/null || /bin/true
-		rm -f /etc/openldap/slapd* 2>/dev/null || /bin/true
-		rm -rf /etc/openldap/slapd.d/*
-		yum install -y openldap-servers openldap-clients || "openldap-servers openldap-clients install failed"
 	fi
 }
 

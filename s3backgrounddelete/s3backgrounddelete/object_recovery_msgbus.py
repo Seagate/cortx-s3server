@@ -162,14 +162,14 @@ class ObjectRecoveryMsgbus(object):
                         #It works with/without sleep time but
                         #In case of multiple exceptions, cpu utilization will be very high
                         time.sleep(self._sleep_time)
-
-                if not self._daemon_mode:
-                    break
             except Exception as exception:
                 self._logger.error("Receive Data Exception : {} {}".format(exception, traceback.format_exc()))
                 self.__isconsumersetupcomplete = False                
             finally:
                 time.sleep(self._sleep_time)
+            
+            if not self._daemon_mode:
+                break
 
     def __setup_producer(self,
         producer_id = None,
@@ -238,10 +238,29 @@ class ObjectRecoveryMsgbus(object):
                     self._logger.debug("producer connection issues")
                     return False
             self.__msgbuslib.purge()
-            #Insert a delay of 1 min after purge, so that the messages are deleted
-            time.sleep(60)
+            #Insert a delay of 1 min (default) after purge, so that the messages are deleted
+            time.sleep(self._config.get_purge_sleep_time())
             self._logger.debug("Purged Messages")
         except Exception as exception:
             self._logger.error("Exception:{}".format(exception))
             self.__isproducersetupcomplete = False
             return False
+            
+    def get_count(self):
+        """Get count of unread messages."""
+        try:
+            consumer_group = self._config.get_msgbus_consumer_group()
+            if not self.__isproducersetupcomplete:
+                self.__setup_producer()
+                if not self.__isproducersetupcomplete:
+                    self._logger.info("producer connection issues")
+                    return 0
+            
+            unread_count = self.__msgbuslib.count(consumer_group)
+            if unread_count is None:
+                return 0
+            else:
+                return unread_count
+        except Exception as exception:
+            self._logger.error("Exception:{}".format(exception))
+            return 0

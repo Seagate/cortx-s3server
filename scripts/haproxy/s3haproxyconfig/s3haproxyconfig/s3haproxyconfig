@@ -1,6 +1,0 @@
-#!/usr/bin/python3.6
-
-from s3haproxyconfig.s3_haproxy_config import S3HaproxyConfig
-
-s3haproxyconfig = S3HaproxyConfig()
-s3haproxyconfig.run()

@@ -49,6 +49,9 @@ install_pre_requisites() {
 
   # install or upgrade cortx-py-utils
   install_cortx_py_utils
+
+  # install configobj
+  pip3 install configobj
 }
 
 usage() {
@@ -70,6 +73,8 @@ else
               easy_install pip
               read -p "Git Access Token:" git_access_token
               source ${S3_SRC_DIR}/scripts/env/common/create-cortx-repo.sh -G $git_access_token
+              # install configobj
+              pip3 install configobj
               ;;
           *)
               usage
@@ -78,6 +83,10 @@ else
   done
   shift $((OPTIND-1))
 fi
+
+# add /usr/local/bin to PATH
+export PATH=$PATH:/usr/local/bin
+echo $PATH
 
 yum install -y ansible facter rpm-build
 

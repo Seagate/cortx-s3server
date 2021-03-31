@@ -56,6 +56,9 @@ install_pre_requisites() {
 
   # install or upgrade cortx-py-utils
   install_cortx_py_utils
+
+  # install configobj
+  pip3 install configobj
 }
 
 usage() {
@@ -77,6 +80,8 @@ else
               easy_install pip
               read -p "Git Access Token:" git_access_token
               source ${S3_SRC_DIR}/scripts/env/common/create-cortx-repo.sh -G $git_access_token
+              # install configobj
+              pip3 install configobj
               ;;
           *)
               usage
@@ -125,6 +130,11 @@ cd ${BASEDIR}/../../../ansible
 
 # Erase old haproxy rpm and later install latest haproxy version 1.8.14
 rpm -q haproxy && rpm -e haproxy
+
+# add /usr/local/bin to PATH
+export PATH=$PATH:/usr/local/bin
+echo $PATH
+
 
 # Update ansible/hosts file with local ip
 cp -f ./hosts ./hosts_local

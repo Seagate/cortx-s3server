@@ -353,6 +353,14 @@ class CORTXS3Config(object):
         else:
             return 1000
 
+    def get_threshold(self):
+        """Return the threshold for max."""
+        threshold = self.s3confstore.get_config('indexid>threshold')
+        if threshold:
+            return int(threshold)
+        else:
+            return 500
+
     def get_global_instance_index_id(self):
         """Return probable delete index-id from config file or KeyError."""
         try:
@@ -386,21 +394,20 @@ class CORTXS3Config(object):
     def get_leak_processing_delay_in_mins(self):
         """Return 'leak_processing_delay_in_mins' from 'leakconfig' section """
         leak_processing_delay_in_mins = self.s3confstore.get_config('leakconfig>leak_processing_delay_in_mins')
-        if not leak_processing_delay_in_mins:
+        if leak_processing_delay_in_mins is not None:
             return int(leak_processing_delay_in_mins)
         else:
-            # default delay is 15mins
-            return 15
+            raise Exception(f'Failed to read leakconfig>leak_processing_delay_in_mins: '
+                        f'{leak_processing_delay_in_mins}\n')
 
     def get_version_processing_delay_in_mins(self):
         """Return 'version_processing_delay_in_mins' from 'leakconfig' section """
         version_processing_delay_in_mins = self.s3confstore.get_config('leakconfig>version_processing_delay_in_mins')
-        if not version_processing_delay_in_mins:
+        if version_processing_delay_in_mins is not None:
             return int(version_processing_delay_in_mins)
         else:
-            # default delay is 15mins
-            return 15
-
+            raise Exception(f'Failed to read leakconfig>version_processing_delay_in_mins: '
+                        f'{version_processing_delay_in_mins}\n')
 
     def get_global_bucket_index_id(self):
         """Return probable delete index-id from config file or KeyError."""
@@ -526,4 +533,24 @@ class CORTXS3Config(object):
         except:
             raise KeyError(
                 "Could not parse producer_delivery_mechanism from config file " +
+                self._conf_file)
+
+    def get_msgbus_admin_id(self):
+        """Return admin id from config file or KeyError."""
+        try:
+          msgbus_admin_id = self.s3confstore.get_config('message_bus>admin_id')
+          return msgbus_admin_id
+        except:
+            raise KeyError(
+                "Could not parse admin id from config file " +
+                self._conf_file)
+
+    def get_purge_sleep_time(self):
+        """Return purge sleep time from config file or KeyError."""
+        try:
+          msgbus_purge_sleep = self.s3confstore.get_config('message_bus>purge_sleep')
+          return int(msgbus_purge_sleep)
+        except:
+            raise KeyError(
+                "Could not parse purge sleep from config file " +
                 self._conf_file)
