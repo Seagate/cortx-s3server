@@ -464,7 +464,7 @@ void S3MotrWiter::write_content() {
 
   set_up_motr_data_buffers(rw_ctx, std::move(buffer_sequence), motr_buf_count);
 
-  if (S3Option::get_instance()->get_s3_st_md5_error_inject_enabled()) {
+  if (s3_fi_is_enabled("di_data_corrupted")) {
     struct m0_bufvec *bv = rw_ctx->data;
     if (rw_ctx->ext->iv_index[0] == first_offset) {
       char first_byte = *(char *)bv->ov_buf[0];
