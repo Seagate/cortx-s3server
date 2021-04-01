@@ -172,7 +172,7 @@ class SetupCmd(object):
     for service_name in s3services_list:
       try:
         # if service name not found in the ha_service_map then use systemctl
-        service_name = ha_service_map[service_name]
+        service_name = self.ha_service_map[service_name]
         cmd = ['cortx', 'stop',  f'{service_name}']
       except KeyError:
         cmd = ['/bin/systemctl', 'stop',  f'{service_name}']
@@ -187,7 +187,7 @@ class SetupCmd(object):
     for service_name in s3services_list:
       try:
         # if service name not found in the ha_service_map then use systemctl
-        service_name = ha_service_map[service_name]
+        service_name = self.ha_service_map[service_name]
         cmd = ['cortx', 'start',  f'{service_name}']
       except KeyError:
         cmd = ['/bin/systemctl', 'start',  f'{service_name}']
@@ -202,7 +202,7 @@ class SetupCmd(object):
     for service_name in s3services_list:
       try:
         # if service name not found in the ha_service_map then use systemctl
-        service_name = ha_service_map[service_name]
+        service_name = self.ha_service_map[service_name]
         cmd = ['cortx', 'restart',  f'{service_name}']
       except KeyError:
         cmd = ['/bin/systemctl', 'restart',  f'{service_name}']
