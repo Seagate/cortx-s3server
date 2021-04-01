@@ -47,9 +47,6 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_MD5_CHECK_ENABLED");
       s3_read_md5_check_enabled =
           s3_option_node["S3_READ_MD5_CHECK_ENABLED"].as<bool>();
-      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_ST_MD5_ERROR_INJECT_ENABLED");
-      s3_st_md5_error_inject_enabled =
-          s3_option_node["S3_ST_MD5_ERROR_INJECT_ENABLED"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_DAEMON_WORKING_DIR");
       s3_daemon_dir = s3_option_node["S3_DAEMON_WORKING_DIR"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_DAEMON_DO_REDIRECTION");
@@ -1000,10 +997,6 @@ bool S3Option::get_s3_ranged_read_enabled() {
 
 bool S3Option::get_s3_read_md5_check_enabled() {
   return s3_read_md5_check_enabled;
-}
-
-bool S3Option::get_s3_st_md5_error_inject_enabled() {
-  return s3_st_md5_error_inject_enabled;
 }
 
 std::string S3Option::get_s3_nodename() { return s3_nodename; }

@@ -139,11 +139,8 @@ class S3Option {
   unsigned bucket_metadata_cache_expire_sec;
   unsigned bucket_metadata_cache_refresh_sec;
 
-
   bool s3_ranged_read_enabled;
   bool s3_read_md5_check_enabled;
-  bool s3_st_md5_error_inject_enabled;
-
 
   unsigned short motr_layout_id;
   unsigned short motr_units_per_request;
@@ -222,11 +219,8 @@ class S3Option {
     s3_grace_period_sec = 10;  // 10 seconds
     is_s3_shutting_down = false;
 
-
     s3_ranged_read_enabled = true;
     s3_read_md5_check_enabled = false;
-    s3_st_md5_error_inject_enabled = false;
-
 
     log_dir = "/var/log/seagate/s3";
     audit_log_dir = "/var/log/seagate/s3";
@@ -337,7 +331,6 @@ class S3Option {
 
   bool get_s3_ranged_read_enabled();
   bool get_s3_read_md5_check_enabled();
-  bool get_s3_st_md5_error_inject_enabled();
 
   void set_s3_read_md5_check_enabled(bool value) {
     s3_read_md5_check_enabled = value;

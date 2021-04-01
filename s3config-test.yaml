@@ -21,7 +21,6 @@ S3Config_Sections: [S3_SERVER_CONFIG, S3_AUTH_CONFIG, S3_MOTR_CONFIG, S3_THIRDPA
 S3_SERVER_CONFIG:                                     # Section for S3 Server
    S3_RANGED_READ_ENABLED: true                         # enable ranged reads
    S3_READ_MD5_CHECK_ENABLED: false                     # enable data integrity checksum check on S3 GET
-   S3_ST_MD5_ERROR_INJECT_ENABLED: false                # enable data integrity failure injection in S3 STs. Use this option for system tests only.
    S3_DAEMON_WORKING_DIR: "/"                           # S3 Daemon will run in the specified directory, / is recommended
    S3_DAEMON_DO_REDIRECTION: 1                          # Do redirection of stderr, stdout and stdin to /dev/null
    S3_LOG_DIR: "/var/log/seagate/s3"                    # S3 Log directory, for output to stderr have value as "" and set S3_DAEMON_DO_REDIRECTION to 0
