@@ -14,7 +14,7 @@ Set `S3_ST_MD5_ERROR_INJECT_ENABLED: true` and then
 In `S3_ST_MD5_ERROR_INJECT_ENABLED: true` mode: if the first byte of the file
 is:
 
-- 'k' then the file is not currupted;
+- 'k' then the file is not corrupted;
 - 'z' then it's zeroed during upload after calculating checksum, but before
   sending data to Motr;
 - 'f' then the first byte of the object is set to t like for 'z' case.
