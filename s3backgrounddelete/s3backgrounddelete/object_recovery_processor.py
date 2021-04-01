@@ -19,7 +19,7 @@
 
 """
 This class acts as object recovery processor which consumes
-the message_bus message queue.
+the cortx message_bus message queue.
 """
 #!/usr/bin/python3.6
 
@@ -59,7 +59,7 @@ class ObjectRecoveryProcessor(object):
                     self.logger)
             else:
                 self.logger.error(
-                "Invalid argument specified in messaging_platform use 'message_bus'")
+                "Invalid argument : " + self.config.get_messaging_platform() + "specified in messaging_platform.")
                 return
 
             self.logger.info("Consumer started at " +
@@ -94,7 +94,7 @@ class ObjectRecoveryProcessor(object):
         self.logger.addHandler(chandler)
 
     def close(self):
-        """Stop processor"""
+        """Stop processor."""
         self.logger.info("Stopping the processor")
         self.server.close()
         # perform an orderly shutdown by flushing and closing all handlers

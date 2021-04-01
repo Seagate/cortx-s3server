@@ -27,6 +27,7 @@ cortx_s3:                                   # Section for S3 background delete c
    daemon_mode: True                                       # S3background process run in daemon mode and ST's run in non-daemon mode.
    s3_instance_count: 22                                   # Number of active s3 instances in release setup
    messaging_platform: "message_bus"                       # messaging platform
+   scheduler_schedule_interval: 1200                       # Schedule Interval is time period at which object recovery scheduler will be executed (in seconds). Increasing this value leads to reduced memory consumption.
    
 message_bus:
    topic: "bgdelete"
@@ -37,7 +38,6 @@ message_bus:
    consumer_sleep: 5
    purge_sleep: 60
    admin_id: "admin_s3_background_delete"
-   scheduler_schedule_interval: 1200                        # Schedule Interval is time period at which object recovery scheduler will be executed (in seconds). Increasing this value leads to reduced memory consumption.
 
 logconfig:                                  # Section for scheduler & processor loggers.
 

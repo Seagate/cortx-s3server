@@ -210,8 +210,8 @@ def test_get_cortx_s3_region_failure():
 def test_get_schedule_interval_success():
     """Test if scheduler time interval is returned."""
     config = CORTXS3Config()
-    config.s3confstore.set_config('message_bus>scheduler_schedule_interval', 900, False)
-    schedule_interval = config.s3confstore.get_config('message_bus>scheduler_schedule_interval')
+    config.s3confstore.set_config('cortx_s3>scheduler_schedule_interval', 900, False)
+    schedule_interval = config.s3confstore.get_config('cortx_s3>scheduler_schedule_interval')
     assert schedule_interval == 900
 
 
@@ -222,8 +222,8 @@ def test_get_schedule_interval_failure():
     """
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
-        del config._config['message_bus']['scheduler_schedule_interval']
-        assert config.s3confstore.get_config('message_bus>scheduler_schedule_interval') == ''
+        del config._config['cortx_s3']['scheduler_schedule_interval']
+        assert config.s3confstore.get_config('cortx_s3>scheduler_schedule_interval') == ''
 
 
 def test_get_probable_delete_index_id_success():

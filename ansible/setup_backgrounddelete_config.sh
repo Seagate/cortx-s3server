@@ -22,7 +22,7 @@ set -e
 
 # Reference <cortx-s3server>/s3backgrounddelete/readme.md file
 #
-# s3backgrounddelete uses message bus to communicate
+# s3backgrounddelete uses cortx message bus to communicate
 # messages between producer and consumer.
 
 centos_release=`cat /etc/centos-release | awk '/CentOS/ {print}'`

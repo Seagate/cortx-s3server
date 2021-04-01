@@ -247,7 +247,7 @@ class CORTXS3Config(object):
     def get_schedule_interval(self):
         """Return schedule interval of object recovery scheduler from config file or KeyError."""
         try:
-          schedule_interval = self.s3confstore.get_config('message_bus>scheduler_schedule_interval')
+          schedule_interval = self.s3confstore.get_config('cortx_s3>scheduler_schedule_interval')
           return int(schedule_interval)
         except:
             raise KeyError(

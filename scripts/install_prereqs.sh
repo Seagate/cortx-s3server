@@ -140,8 +140,8 @@ step_5 () {
 step_6 () {
 	# TODO: Kafka (Future, needed when rabbit-mq dependency is removed)
 	echo "TODO: implement when kafka replaces rabbit-mq dependency"
-	sh scripts/kafka/install-kafka.sh -c 1 -i $hostname
-	sh scripts/kafka/create-topic.sh -c 1 -i $hostname
+	"sh scripts/kafka/install-kafka.sh -c 1 -i $hostname"
+	"sh scripts/kafka/create-topic.sh -c 1 -i $hostname"
 }
 
 step_7 () {
