@@ -339,6 +339,9 @@ size_t S3MotrReader::get_next_block(char **data) {
   iteration_index++;
 
   size_t length = data_read;
+  // Data is being read from Motr with at least 4KiB granularity.
+  // Actual data checksum has to be calculated for might be smaller.
+  // Example: object size = 1 byte, total_size_read would be 4096.
   if (total_size_to_read < total_size_read + length) {
     length = total_size_to_read - total_size_read;
   }
