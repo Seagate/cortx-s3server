@@ -102,6 +102,10 @@ def auto_test_multipart(args) -> None:
         for last_part_size in OBJECT_SIZE:
             for part_nr in PART_NR:
                 parts = [f'{args.body}.part{i+1}' for i in range(part_nr)]
+                # random is used here intentionally. We don't need
+                # cryptographic-level randomness here.
+                # random allows us to make tests reproducible by providing the
+                # same test sequence.
                 corrupted = random.randrange(len(parts) + (last_part_size > 0))
                 for i, part in enumerate(parts):
                     if args.create_objects:
