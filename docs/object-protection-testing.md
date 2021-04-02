@@ -43,9 +43,9 @@ Specific fault injection could be enabled or disabled by the following command
 where
 
 - `<fi_tag>` - name of particular fault injection, could be one of
-    - `di_data_corrupted` - currupts file before storing
+    - `di_data_corrupted` - corrupts file before storing
     - `di_obj_md5_corrupted` - instead of md5 hash of the object stores
-      dm5 hash of emtpy string
+      dm5 hash of empty string
 
 - `<s3_instance>` - particular s3server instance to enable fault injection on
 
@@ -64,10 +64,107 @@ where
 ```
 
 - Test if FI file corruption is enabled for a single instance of s3server.
-  Following command prints FI status to s3server instace's log file
+  Following command prints FI status to s3server instance's log file
 
 ```
 # curl -X PUT -H "x-seagate-faultinjection: test,always,di_data_corrupted,0,0" localhost:28081
+```
+
+### Helper script for edit startup command line flags
+
+```
+#!/usr/bin/env bash
+
+[ -z "$NODES" ] && { echo "Provide NODES"; exit 1; }
+s3cmdup=${S3STARTUP:-"/opt/seagate/cortx/s3/s3startsystem.sh"}
+if [ "$1" = "enable" ]; then
+    echo "Enabling"
+    pdsh -S -w $NODES "sed -i \"s/s3server[[:space:]]*--/s3server --fault_injection true --/g\" $s3cmdup"
+    echo "Done"
+fi
+if [ "$1" = "disable" ]; then
+    echo "Disabling"
+    pdsh -S -w $NODES "sed -i \"s/[[:space:]]*--fault_injection true//g\" $s3cmdup"
+    echo "Done"
+fi
+```
+
+Params:
+
+- `NODES` - comma separated list of node's names
+- `S3STARTUP` - path to s3server starting script
+- command as a positional agr
+
+Save script as `cmd_s3_startup.sh`.
+
+- Add `--fault_injection true` to all startup commands on all cluster's nodes
+
+```
+# NODES="node1,node2" ./cmd_s3_startup.sh enable
+```
+
+- Remove `--fault_injection true` from all startup commands on all cluster's nodes
+
+```
+# NODES="node1,node2" ./cmd_s3_startup.sh disable
+```
+
+By default script will look for a s3server's startup script in
+`/opt/seagate/cortx/s3/s3startsystem.sh`. It could be changed with
+`S3STARTUP` script's parameter.
+
+### Helper script for enabling and disabling Fault Injections
+
+```
+#!/usr/bin/env bash
+
+[ -z "$NODES" ] && { echo "Provide NODES"; exit 1; }
+[ -z "$FIS" ] && { echo "Provide FIS"; exit 1; }
+[ -z "$1" ] && { echo "Operation missed"; exit 1; }
+inst_num=${NINST:-"45"}
+start_port=28081
+end_port=$(( $start_port + $inst_num - 1 ))
+for f in $(echo $FIS | tr "," " ")
+do
+    sgtfi="x-seagate-faultinjection: $1,always,$f,0,0"
+    for port in $(seq $start_port $end_port | tr "\n" " ")
+    do
+        pdsh -S -w  $NODES "curl -X PUT -H \"$sgtfi\" localhost:$port"
+    done
+done
+```
+
+Params:
+
+- `NODES` - comma separated list of node's names
+- `FIS` - comma separated list fault injection names
+- `NINST` - number of s3server instances run on a node
+- command as a positional agr
+
+Save script as `cmd_fi_s3.sh`.
+
+- Enable `di_data_corrupted` on s3server instances on cluster's nodes
+
+```
+# NINST=32 NODES="node1,node2" FIS="di_data_corrupted" ./cmd_fi_s3.sh enable
+```
+
+- Enable several fault injections on s3server instances on cluster's nodes
+
+```
+# NINST=32 NODES="node1,node2" FIS="di_data_corrupted,di_obj_md5_corrupted" ./cmd_fi_s3.sh enable
+```
+
+- Disable fault injections on s3server instances on cluster's nodes
+
+```
+# NINST=32 NODES="node1,node2" FIS="di_data_corrupted,di_obj_md5_corrupted" ./cmd_fi_s3.sh disable
+```
+
+- Test fault injections on s3server instances on cluster's nodes
+
+```
+# NINST=32 NODES="node1,node2" FIS="di_data_corrupted,di_obj_md5_corrupted" ./cmd_fi_s3.sh test
 ```
 
 ## Automatically
