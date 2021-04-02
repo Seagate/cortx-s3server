@@ -117,9 +117,9 @@ extern S3Option* g_option_instance;
 #define S3_IEM_METADATA_CORRUPTED_JSON ""
 
 #define S3_IEM_CHECKSUM_MISMATCH "0030060004"
-#define S3_IEM_CHECKSUM_MISMATCH_STR  "Content checksum mismatch."
-#define S3_IEM_CHECKSUM_MISMATCH_JSON ""
-
-
+#define S3_IEM_CHECKSUM_MISMATCH_STR "Content checksum mismatch."
+#define S3_IEM_CHECKSUM_MISMATCH_JSON                                 \
+  ", \"bucket_name\": \"%s\", \"object_name\": \"%s\", \"motr_oid\":" \
+  " \"%" SCNx64 ":%" SCNx64 "\", \"md5_calc\": \"%s\", \"md5_read\": \"%s\" "
 
 #endif  // __S3_SERVER_IEM_H__
