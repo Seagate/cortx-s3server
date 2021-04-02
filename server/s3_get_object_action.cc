@@ -137,9 +137,10 @@ void S3GetObjectAction::validate_object_info() {
                                   object_metadata->get_last_modified_gmt());
     request->set_out_header_value("ETag", e_tag);
 
-    request->set_out_header_value("Accept-Ranges",
-        S3Option::get_instance()->get_s3_ranged_read_enabled() ?
-        "bytes" : "none");
+    request->set_out_header_value(
+        "Accept-Ranges", S3Option::get_instance()->get_s3_ranged_read_enabled()
+                             ? "bytes"
+                             : "none");
 
     request->set_out_header_value("Content-Type",
                                   object_metadata->get_content_type());
@@ -449,16 +450,16 @@ void S3GetObjectAction::send_data_to_client() {
                                   object_metadata->get_content_type());
     request->set_out_header_value("ETag", e_tag);
     s3_log(S3_LOG_INFO, stripped_request_id, "e_tag= %s", e_tag.c_str());
-    request->set_out_header_value("Accept-Ranges",
-        S3Option::get_instance()->get_s3_ranged_read_enabled() ?
-        "bytes" : "none");
+    request->set_out_header_value(
+        "Accept-Ranges", S3Option::get_instance()->get_s3_ranged_read_enabled()
+                             ? "bytes"
+                             : "none");
     request->set_out_header_value(
         "Content-Length", std::to_string(get_requested_content_length()));
     for (auto it : object_metadata->get_user_attributes()) {
       request->set_out_header_value(it.first, it.second);
     }
-    motr_reader->set_total_size_to_read(
-        object_metadata->get_content_length());
+    motr_reader->set_total_size_to_read(object_metadata->get_content_length());
     if (!request->get_header_value("Range").empty()) {
       std::ostringstream content_range_stream;
       content_range_stream << "bytes " << first_byte_offset_to_read << "-"
@@ -519,9 +520,12 @@ void S3GetObjectAction::send_data_to_client() {
                "checksum calculated: %s, checksum read %s",
                checksum_calculated.c_str(), checksum_read.c_str());
         if (checksum_calculated != checksum_read) {
+          auto moid = object_metadata->get_oid();
           s3_iem(LOG_ERR, S3_IEM_CHECKSUM_MISMATCH,
-                 S3_IEM_CHECKSUM_MISMATCH_STR,
-                 S3_IEM_CHECKSUM_MISMATCH_JSON);
+                 S3_IEM_CHECKSUM_MISMATCH_STR, S3_IEM_CHECKSUM_MISMATCH_JSON,
+                 request->get_bucket_name().c_str(),
+                 request->get_object_name().c_str(), moid.u_hi, moid.u_lo,
+                 checksum_calculated.c_str(), checksum_read.c_str());
           s3_log(S3_LOG_ERROR, request_id, "Content checksum mismatch\n");
           checksum_mismatch = true;
           break;
