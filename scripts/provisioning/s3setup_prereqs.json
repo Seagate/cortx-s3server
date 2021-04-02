@@ -15,7 +15,7 @@
   "config": {
     "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
     "pip3s": ["s3confstore", "cryptography", "s3cipher"],
-    "services": ["sshd", "rabbitmq-server", "haproxy", "slapd", "rsyslog"],
+    "services": ["sshd", "haproxy", "slapd", "rsyslog"],
     "files": [
 		  "file:/etc/machine-id",
 		  "file:/etc/haproxy/haproxy.cfg",
@@ -29,7 +29,7 @@
   "init": {
     "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
     "pip3s": ["s3confstore", "cryptography", "s3cipher"],
-    "services": ["sshd", "rabbitmq-server", "haproxy", "slapd", "rsyslog"],
+    "services": ["sshd", "haproxy", "slapd", "rsyslog"],
     "files": [
 		  "file:/etc/machine-id",
 		  "file:/etc/haproxy/haproxy.cfg",

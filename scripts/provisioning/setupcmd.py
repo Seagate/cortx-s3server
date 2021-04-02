@@ -43,6 +43,16 @@ class SetupCmd(object):
   ldap_mdb_folder = "/var/lib/ldap"
   s3_prov_config = "/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml"
   _preqs_conf_file = "/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
+  #TODO
+  # add the service name and HA service name in the following dictionary
+  # as key value pair after confirming from the HA team
+  # for e.g.
+  # ha_service_map = {'haproxy': 'haproxy',
+  #                's3backgroundproducer': 's3backprod',
+  #                's3backgroundconsumer': 's3backcons',
+  #                's3server@*': 's3server-*',
+  #                's3authserver': 's3auth'}
+  ha_service_map = {}
 
   def __init__(self, config: str):
     """Constructor."""
@@ -165,7 +175,12 @@ class SetupCmd(object):
   def shutdown_services(self, s3services_list):
     """Stop services."""
     for service_name in s3services_list:
-      cmd = ['/bin/systemctl', 'stop',  f'{service_name}']
+      try:
+        # if service name not found in the ha_service_map then use systemctl
+        service_name = self.ha_service_map[service_name]
+        cmd = ['cortx', 'stop',  f'{service_name}']
+      except KeyError:
+        cmd = ['/bin/systemctl', 'stop',  f'{service_name}']
       handler = SimpleProcess(cmd)
       sys.stdout.write(f"shutting down {service_name}\n")
       res_op, res_err, res_rc = handler.run()
@@ -175,7 +190,12 @@ class SetupCmd(object):
   def start_services(self, s3services_list):
     """Start services specified as parameter."""
     for service_name in s3services_list:
-      cmd = ['/bin/systemctl', 'start',  f'{service_name}']
+      try:
+        # if service name not found in the ha_service_map then use systemctl
+        service_name = self.ha_service_map[service_name]
+        cmd = ['cortx', 'start',  f'{service_name}']
+      except KeyError:
+        cmd = ['/bin/systemctl', 'start',  f'{service_name}']
       handler = SimpleProcess(cmd)
       sys.stdout.write(f"starting {service_name}\n")
       res_op, res_err, res_rc = handler.run()
@@ -185,7 +205,12 @@ class SetupCmd(object):
   def restart_services(self, s3services_list):
     """Restart services specified as parameter."""
     for service_name in s3services_list:
-      cmd = ['/bin/systemctl', 'restart',  f'{service_name}']
+      try:
+        # if service name not found in the ha_service_map then use systemctl
+        service_name = self.ha_service_map[service_name]
+        cmd = ['cortx', 'restart',  f'{service_name}']
+      except KeyError:
+        cmd = ['/bin/systemctl', 'restart',  f'{service_name}']
       handler = SimpleProcess(cmd)
       sys.stdout.write(f"restarting {service_name}\n")
       res_op, res_err, res_rc = handler.run()

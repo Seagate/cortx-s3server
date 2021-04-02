@@ -103,22 +103,29 @@ class ConfigCmd(SetupCmd):
       shutil.copy('/opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf',
                   '/etc/rsyslog.d/slapdlog.conf')
 
-    cmd = ['systemctl', 'restart', 'rsyslog']
-    handler = SimpleProcess(cmd)
-    stdout, stderr, retcode = handler.run()
-    if retcode != 0:
-      raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
+    # restart rsyslog service
+    try:
+      sys.stdout.write("Restarting rsyslog service...\n")
+      service_list = ["rsyslog"]
+      self.restart_services(service_list)
+    except Exception as e:
+      sys.stderr.write(f'Failed to restart rsyslog service, error: {e}\n')
+      raise e
+    sys.stdout.write("Restarted rsyslog service...\n")
 
     # set openldap-replication
     self.configure_openldap_replication()
 
-    cmd = ['systemctl', 'restart', 'slapd']
-    handler = SimpleProcess(cmd)
-    stdout, stderr, retcode = handler.run()
-    if retcode != 0:
-      raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
-    else:
-      sys.stdout.write("INFO: Successfully configured openldap on the node.\n")
+    # restart slapd service
+    try:
+      sys.stdout.write("Restarting slapd service...\n")
+      service_list = ["slapd"]
+      self.restart_services(service_list)
+    except Exception as e:
+      sys.stderr.write(f'Failed to restart slapd service, error: {e}\n')
+      raise e
+    sys.stdout.write("Restarted slapd service...\n")
+    sys.stdout.write("INFO: Successfully configured openldap on the node.\n")
 
   def configure_openldap_replication(self):
     """Configure openldap replication within a storage set."""
@@ -190,13 +197,16 @@ class ConfigCmd(SetupCmd):
     """Configure haproxy service."""
     try:
       S3HaproxyConfig(self.url).process()
-      cmd = ['systemctl', 'restart', 'haproxy']
-      handler = SimpleProcess(cmd)
-      stdout, stderr, retcode = handler.run()
-      if retcode != 0:
-        raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
-      else:
-        sys.stdout.write("INFO: Successfully configured haproxy on the node.\n")
+      # restart haproxy service
+      try:
+        sys.stdout.write("Restarting haproxy service...\n")
+        service_list = ["haproxy"]
+        self.restart_services(service_list)
+      except Exception as e:
+        sys.stderr.write(f'Failed to restart haproxy service, error: {e}\n')
+        raise e
+      sys.stdout.write("Restarted haproxy service...\n")
+      sys.stdout.write("INFO: Successfully configured haproxy on the node.\n")
     except Exception as e:
       sys.stderr.write(f'Failed to configure haproxy for s3server, error: {e}')
       raise e
