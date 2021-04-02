@@ -552,6 +552,13 @@ void S3PutMultiObjectAction::write_object_failed() {
 
 void S3PutMultiObjectAction::save_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  std::string s_md5_got = request->get_header_value("content-md5");
+  if (!s_md5_got.empty() && !motr_writer->content_md5_matches(s_md5_got)) {
+    s3_log(S3_LOG_ERROR, request_id, "Content MD5 mismatch\n");
+    set_s3_error("BadDigest");
+    send_response_to_s3_client();
+    return;
+  }
   part_metadata = part_metadata_factory->create_part_metadata_obj(
       request, object_multipart_metadata->get_part_index_oid(), upload_id,
       part_number);
