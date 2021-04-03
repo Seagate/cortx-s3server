@@ -22,7 +22,6 @@ import sys
 
 from setupcmd import SetupCmd
 from cortx.utils.process import SimpleProcess
-from os import path
 
 SANITY_SCRIPT_PATH = '/opt/seagate/cortx/s3/scripts/s3-sanity-test.sh'
 LDAP_SWITCH = '-p'
@@ -32,12 +31,12 @@ class TestCmd(SetupCmd):
   """Test Setup Cmd."""
   name = "test"
 
-  def __init__(self, config: str, plan: str):
+  def __init__(self, config: str, test_plan: str):
     """Constructor."""
     try:
       super(TestCmd, self).__init__(config)
       self.read_ldap_credentials()
-      self.plan = plan
+      self.test_plan = test_plan
 
     except Exception as e:
       raise e

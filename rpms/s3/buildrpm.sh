@@ -107,7 +107,6 @@ elif ! [ -z "${PATH_SRC}" ]; then
 fi
 
 cd ~/rpmbuild/SOURCES/
-rm -f ./cortx-s3server-${S3_VERSION}-git${GIT_VER}/scripts/s3-sanity-test.sh
 tar -zcvf cortx-s3server-${S3_VERSION}-git${GIT_VER}.tar.gz cortx-s3server-${S3_VERSION}-git${GIT_VER}
 rm -rf cortx-s3server-${S3_VERSION}-git${GIT_VER}
 

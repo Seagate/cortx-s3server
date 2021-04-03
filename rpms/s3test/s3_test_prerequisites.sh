@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
@@ -16,10 +17,5 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-endpoint_fqdn: "srvnode-1.data.public"
-cortx:
-  software:
-    openldap:
-      sgiam:
-        user: "sgiamadmin"
-        secret: "TMPL_SGIAM_SECRET_KEY"
+
+yum-config-manager --add-repo http://cortx-storage.colo.seagate.com/releases/cortx/uploads/centos/centos-7.8.2003/

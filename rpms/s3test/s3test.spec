@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,45 +20,22 @@
 # build number
 %define build_num  %( test -n "$build_number" && echo "$build_number" || echo 1 )
 
-%global py_ver 3.6
-
-%if 0%{?el7}
-# pybasever without the dot:
-%global py_short_ver 36
-%endif
-
-%if 0%{?el8}
-# pybasever without the dot:
-%global py_short_ver 3
-%endif
-
-# XXX For strange reason setup.py uses /usr/lib
-# but %{_libdir} resolves to /usr/lib64 with python3.6
-#%global py36_sitelib %{_libdir}/python%{py_ver}
-%global py36_sitelib /usr/lib/python%{py_ver}/site-packages
-
 Name:       cortx-s3-test
 Version:    %{_s3_test_version}
 Release:    %{build_num}_%{_s3_test_git_ver}
-Summary:    Seagate S3 Test Suite.
+Summary:    Seagate S3 Test Suite. It requires s3iamcli, s3cmd and s3server to be present/installed
 
 Group:      Development/Tools
 License:    Seagate
 URL:        https://github.com/Seagate/cortx-s3server
-Source0:    %{name}-%{version}-%{_s3_test_git_ver}.tar.gz
+Source:    %{name}-%{version}-%{_s3_test_git_ver}.tar.gz
 
 BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 Prefix:     %{_prefix}
 BuildArch:  noarch
 Vendor:     Seagate
 
-BuildRequires:  python3-rpm-macros
-BuildRequires:  python36
-BuildRequires:  python3-devel
-BuildRequires:  python%{py_short_ver}-setuptools
-BuildRequires:  python%{py_short_ver}-wheel
-
-Requires:  python36
+Requires:  cortx-s3server
 Requires:  cortx-s3iamcli
 Requires:  s3cmd
 

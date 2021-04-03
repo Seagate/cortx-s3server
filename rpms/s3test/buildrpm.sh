@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,16 +22,17 @@ set -xe
 
 SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
-OS=$(cat /etc/os-release | grep -w ID | cut -d '=' -f 2)
 VERSION=$(cat /etc/os-release | grep -w VERSION_ID | cut -d '=' -f 2)
 
 GIT_VER=
-S3TEST_SUITE_VERSION=1.0.0
+S3TEST_SUITE_VERSION=2.0.0
 VER_PATH_EXCL=0
 PATH_SRC=""
 
+#Usage
 usage() { echo "Usage: $0 (-G <git short revision> | -P <path to sources>) [-S <S3 Test suite version>]" 1>&2; exit 1; }
 
+#Loop to parse cmd line arguments
 while getopts ":G:S:P:" o; do
     case "${o}" in
         G)
@@ -41,7 +42,7 @@ while getopts ":G:S:P:" o; do
             VER_PATH_EXCL=1
             ;;
         S)
-            S3TEST_SUITE_VERSION=${OPTARG}
+            S3TEST_SUITE_VERSION="${OPTARG}"
             ;;
         P)
             PATH_SRC=$(realpath ${OPTARG})
@@ -63,34 +64,31 @@ echo "Using [S3TEST_SUITE_VERSION=${S3TEST_SUITE_VERSION}] ..."
 ! [ -z "${GIT_VER}" ] && echo "Using [GIT_VER=${GIT_VER}] ..."
 ! [ -z "${PATH_SRC}" ] && echo "Using [PATH_SRC=${PATH_SRC}] ..."
 
+#Make rpm source dir, copy source code to that dir, tar it then delete the copied sources
 mkdir -p ~/rpmbuild/SOURCES/
 cd ~/rpmbuild/SOURCES/
 rm -rf cortx-s3-test*
 if ! [ -z "${GIT_VER}" ]; then
-  mkdir -p cortx-s3-test-${S3TEST_SUITE_VERSION}-git${GIT_VER}
-  cd cortx-s3-test-${S3TEST_SUITE_VERSION}-git${GIT_VER}
+  mkdir -p cortx-s3-test-"${S3TEST_SUITE_VERSION}"-git"${GIT_VER}"
+  cd cortx-s3-test-"${S3TEST_SUITE_VERSION}"-git"${GIT_VER}"
   # For sake of test, attempt checkout of version
-  git checkout ${GIT_VER}
+  git checkout "${GIT_VER}"
 elif ! [ -z "${PATH_SRC}" ]; then
     GIT_VER=$(git --git-dir "${PATH_SRC}"/.git rev-parse --short HEAD)
-    mkdir -p cortx-s3-test-${S3TEST_SUITE_VERSION}-git${GIT_VER}
-    cd cortx-s3-test-${S3TEST_SUITE_VERSION}-git${GIT_VER}
+    mkdir -p cortx-s3-test-"${S3TEST_SUITE_VERSION}"-git"${GIT_VER}"
+    cd cortx-s3-test-"${S3TEST_SUITE_VERSION}"-git"${GIT_VER}"
 fi
 
 mkdir -p scripts
 mkdir -p certs/stx-s3-clients/s3/
 
 cp "${PATH_SRC}/scripts/s3-sanity/s3-sanity-test.sh" "scripts/s3-sanity-test.sh"
-cp "${PATH_SRC}/.s3cfg" .
+cp "${PATH_SRC}/.s3cfg" ".s3cfg"
 cp "${PATH_SRC}/ansible/files/certs/stx-s3-clients/s3/ca.crt" "certs/stx-s3-clients/s3/ca.crt"
 cd ~/rpmbuild/SOURCES/
-tar -zcvf cortx-s3-test-${S3TEST_SUITE_VERSION}-git${GIT_VER}.tar.gz cortx-s3-test-${S3TEST_SUITE_VERSION}-git${GIT_VER}
+tar -zcvf cortx-s3-test-"${S3TEST_SUITE_VERSION}"-git"${GIT_VER}".tar.gz cortx-s3-test-"${S3TEST_SUITE_VERSION}"-git"${GIT_VER}"
 
-rm -rf cortx-s3-test-${S3TEST_SUITE_VERSION}-git${GIT_VER}
+rm -rf cortx-s3-test-"${S3TEST_SUITE_VERSION}"-git"${GIT_VER}"
 
-extra_defines=()
-if [ $VERSION = "\"8.0\"" ]; then
-  extra_defines=(--define "s3_with_python36_ver8 1")
-fi
-yum-builddep -y ${BASEDIR}/s3testsuite.spec "${extra_defines[@]}"
-rpmbuild -ba --define "_s3_test_version ${S3TEST_SUITE_VERSION}"  --define "_s3_test_git_ver git${GIT_VER}" "${extra_defines[@]}" ${BASEDIR}/s3testsuite.spec --with python3
+#tell rpmbuild to generate rpm using spec file
+rpmbuild -ba --define "_s3_test_version ${S3TEST_SUITE_VERSION}"  --define "_s3_test_git_ver git${GIT_VER}" "${extra_defines[@]}" "${BASEDIR}/s3test.spec"
