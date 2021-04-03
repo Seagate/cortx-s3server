@@ -15,7 +15,9 @@ OBJECT_SIZE = [0, 1, 2, 4095, 4096, 4097,
                2**20 - 1, 2**20, 2**20 + 100, 2 ** 24]
 PART_SIZE = [5 * 2 ** 20, 6 * 2 ** 20]
 PART_NR = [i+1 for i in range(2)]
-CORRUPTIONS = {'none': 'k', 'zero': 'z', 'first_byte': 'f'}
+CORRUPTIONS = {'none-on-write': 'k', 'zero-on-write': 'z',
+               'first_byte-on-write': 'f', 'none-on-read': 'K',
+               'zero-on-read': 'Z', 'first_byte-on-read': 'F'}
 
 
 def create_random_file(path: str, size: int, first_byte: str):
@@ -92,7 +94,8 @@ def auto_test_put_get(args, object_size: List[int]) -> None:
                 create_random_file(args.body, size, first_byte)
             test_put_get(args.bucket, f'size={size}_i={i}',
                          args.body, args.output,
-                         size > 0 and args.corruption != 'none')
+                         size > 0 and
+                         not args.corruption. startswith('none-on-'))
     print('auto-test-put-get: Successful.')
 
 
@@ -106,7 +109,8 @@ def auto_test_multipart(args) -> None:
                 # cryptographic-level randomness here.
                 # random allows us to make tests reproducible by providing the
                 # same test sequence.
-                corrupted = random.randrange(len(parts) + (last_part_size > 0))
+                corrupted = 0 if first_byte in ['Z', 'F'] else \
+                    random.randrange(len(parts) + (last_part_size > 0))
                 for i, part in enumerate(parts):
                     if args.create_objects:
                         create_random_file(part, part_size, first_byte
@@ -124,7 +128,8 @@ def auto_test_multipart(args) -> None:
                                       f'part_nr={part_nr}_'
                                       f'uuid={uuid.uuid4()}',
                                       args.output, parts,
-                                      args.corruption != 'none')
+                                      not args.corruption.
+                                      startswith('none-on-'))
     print('auto-test-multipart: Successful.')
 
 
@@ -142,7 +147,7 @@ def main() -> None:
     parser.add_argument('--iterations', type=int, default=1)
     parser.add_argument('--create-objects', action='store_true')
     parser.add_argument('--corruption', choices=CORRUPTIONS.keys(),
-                        default='none')
+                        default='none-on-write')
     args = parser.parse_args()
     print(args)
     local["aws"]["s3 mb s3://test".split()].run(retcode=None)
