@@ -42,10 +42,12 @@ Specific fault injection could be enabled or disabled by the following command
 
 where
 
-- `<fi_tag>` - name of particular fault injection, could be one of
-    - `di_data_corrupted` - corrupts file before storing
-    - `di_obj_md5_corrupted` - instead of md5 hash of the object stores
-      dm5 hash of empty string
+- `<fi_tag>` - name of particular fault injection, could be one of:
+
+  - `di_data_corrupted_on_write` - corrupts file before storing;
+  - `di_data_corrupted_on_read` - corrupts file during retrieval;
+  - `di_obj_md5_corrupted` - instead of md5 hash of the object stores
+    dm5 hash of empty string.
 
 - `<s3_instance>` - particular s3server instance to enable fault injection on
 
@@ -54,20 +56,20 @@ where
 - Enable file corruption for a single instance of s3server
 
 ```
-# curl -X PUT -H "x-seagate-faultinjection: enable,always,di_data_corrupted,0,0" localhost:28081
+# curl -X PUT -H "x-seagate-faultinjection: enable,always,di_data_corrupted_on_write,0,0" localhost:28081
 ```
 
 - Disable file corruption for a single instance of s3server
 
 ```
-# curl -X PUT -H "x-seagate-faultinjection: disable,always,di_data_corrupted,0,0" localhost:28081
+# curl -X PUT -H "x-seagate-faultinjection: disable,always,di_data_corrupted_on_write,0,0" localhost:28081
 ```
 
 - Test if FI file corruption is enabled for a single instance of s3server.
   Following command prints FI status to s3server instance's log file
 
 ```
-# curl -X PUT -H "x-seagate-faultinjection: test,always,di_data_corrupted,0,0" localhost:28081
+# curl -X PUT -H "x-seagate-faultinjection: test,always,di_data_corrupted_on_write,0,0" localhost:28081
 ```
 
 ### Helper script for edit startup command line flags
@@ -143,33 +145,33 @@ Params:
 
 Save script as `cmd_fi_s3.sh`.
 
-- Enable `di_data_corrupted` on s3server instances on cluster's nodes
+- Enable `di_data_corrupted_on_write` on s3server instances on cluster's nodes
 
 ```
-# NINST=32 NODES="node1,node2" FIS="di_data_corrupted" ./cmd_fi_s3.sh enable
+# NINST=32 NODES="node1,node2" FIS="di_data_corrupted_on_write" ./cmd_fi_s3.sh enable
 ```
 
 - Enable several fault injections on s3server instances on cluster's nodes
 
 ```
-# NINST=32 NODES="node1,node2" FIS="di_data_corrupted,di_obj_md5_corrupted" ./cmd_fi_s3.sh enable
+# NINST=32 NODES="node1,node2" FIS="di_data_corrupted_on_write,di_obj_md5_corrupted" ./cmd_fi_s3.sh enable
 ```
 
 - Disable fault injections on s3server instances on cluster's nodes
 
 ```
-# NINST=32 NODES="node1,node2" FIS="di_data_corrupted,di_obj_md5_corrupted" ./cmd_fi_s3.sh disable
+# NINST=32 NODES="node1,node2" FIS="di_data_corrupted_on_write,di_obj_md5_corrupted" ./cmd_fi_s3.sh disable
 ```
 
 - Test fault injections on s3server instances on cluster's nodes
 
 ```
-# NINST=32 NODES="node1,node2" FIS="di_data_corrupted,di_obj_md5_corrupted" ./cmd_fi_s3.sh test
+# NINST=32 NODES="node1,node2" FIS="di_data_corrupted_on_write,di_obj_md5_corrupted" ./cmd_fi_s3.sh test
 ```
 
 ## Automatically
 
-Enable fault injection for data, i.e. `di_data_corrupted`, and then
+Enable fault injection for data, i.e. `di_data_corrupted_on_write`, and then
 
     time st/clitests/integrity.py --auto-test-all
 
@@ -179,13 +181,21 @@ Enable fault injection for data, i.e. `di_data_corrupted`, and then
 
 ### Data path
 
-Enable fault injection for data, i.e. `di_data_corrupted`. If the first byte of the file
-is:
+If the first byte of the object is one of the following values and relevant
+fault injection is enabled then the object may be corrupted.
 
-- 'k' then the file is not corrupted;
-- 'z' then it's zeroed during upload after calculating checksum, but before
-  sending data to Motr;
-- 'f' then the first byte of the object is set to t like for 'z' case.
+- `di_data_corrupted_on_write`:
+  - 'k' then the file is not corrupted during `put-object` and `upload-part`;
+  - 'z' then it's zeroed during upload after calculating checksum, but before
+    sending data to Motr;
+  - 'f' then the first byte of the object is set to 0 like it's done for 'z'
+    case;
+- `di_data_corrupted_on_read`:
+  - 'K' then the file is not corrupted during `get-object`;
+  - 'Z' then it's zeroed during `get-object` just after reading data from Motr,
+    but before calculating checksum;
+  - 'F' then the first byte is set to 0 during `get-object` like it's done for
+    'Z' case.
 
 #### PUT/GET
 

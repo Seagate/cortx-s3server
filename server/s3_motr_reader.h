@@ -195,6 +195,11 @@ class S3MotrReader {
   bool is_object_opened = false;
   struct s3_motr_obj_context* obj_ctx = nullptr;
 
+  // used for checksum calculation testing
+  // fill entire object with zeroes when reading it from the storage
+  // See S3MotrWiter::corrupt_fill_zero.
+  bool corrupt_fill_zero = false;
+
   // Internal open operation so motr can fetch required object metadata
   // for example object pool version
   int open_object(std::function<void(void)> on_success,
