@@ -145,6 +145,7 @@ def main() -> None:
                         default='none')
     args = parser.parse_args()
     print(args)
+    local["aws"]["s3 mb s3://test".split()].run(retcode=None)
     if args.test_put_get:
         auto_test_put_get(args, [args.object_size])
     if args.auto_test_put_get:
