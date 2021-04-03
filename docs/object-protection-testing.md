@@ -171,7 +171,6 @@ Save script as `cmd_fi_s3.sh`.
 
 Enable fault injection for data, i.e. `di_data_corrupted`, and then
 
-    aws s3 mb s3://test
     time st/clitests/integrity.py --auto-test-all
 
 `aws s3` and `aws s3api` must be configured and must work.
