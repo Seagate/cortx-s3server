@@ -54,6 +54,7 @@ class MockS3RequestObject : public S3RequestObject {
   MOCK_CONST_METHOD0(has_all_body_content, bool());
   MOCK_METHOD0(is_chunked, bool());
   MOCK_METHOD0(pause, void());
+  MOCK_METHOD0(cancel, void());
   MOCK_METHOD1(resume, void(bool set_read_timeout_timer));
   MOCK_METHOD1(has_query_param_key, bool(std::string key));
   MOCK_METHOD1(set_bucket_name, void(const std::string &name));
