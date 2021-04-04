@@ -1260,7 +1260,6 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSizeMD5Fail) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
       .WillRepeatedly(Return(oid));
 
-  // Object size less than unit size
   int layout_id = 1;
   size_t obj_size =
       S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
@@ -1276,8 +1275,7 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSizeMD5Fail) {
               get_last_modified_gmt())
       .WillOnce(Return("Sunday, 29 January 2017 08:05:01 GMT"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
-    .Times(AtLeast(1))
-    .WillOnce(Return("d41d8cd98f00b204e9800998ecf8427e"));
+      .Times(AtLeast(1));
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
 
@@ -1285,21 +1283,23 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSizeMD5Fail) {
       .Times(AtLeast(1));
   EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_first_block(_))
       .WillOnce(Return(obj_size));
-  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_next_block(_))
-      .WillOnce(Return(0));
-  EXPECT_CALL(*ptr_mock_request, send_reply_body(_, Eq(obj_size))).Times(1);
+
+  // Expect request cancelation due to checksum mismatch.
+  EXPECT_CALL(*ptr_mock_request, cancel()).Times(AtLeast(1));
 
   EXPECT_CALL(*(motr_reader_factory->mock_motr_reader),
               read_object_data(_, _, _))
       .Times(1)
       .WillOnce(Invoke(test_read_object_data_success));
 
-
   bool md5check = S3Option::get_instance()->get_s3_read_md5_check_enabled();
   S3Option::get_instance()->set_s3_read_md5_check_enabled(true);
 
   action_under_test->validate_object_info();
   action_under_test->read_object();
+
+  // Make sure checksum mismatch happens indeed.
+  EXPECT_TRUE(action_under_test->checksum_mismatch);
 
   S3Option::get_instance()->set_s3_read_md5_check_enabled(md5check);
 }
