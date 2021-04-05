@@ -214,7 +214,11 @@ cd ${BASEDIR}/../../../ansible
 if [ "$is_open_source" = false ];
 then
   echo "Installing ISA libraries"
-  yum install -y http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/centos/centos-7.8.2003-2.0.0-latest/motr_uploads/isa-l-2.30.0-1.el7.x86_64.rpm
+  if rpm -q 'isa-l' ; then
+  	echo "Library already present ... Skipping ..."
+  else
+  	yum install -y http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/centos/centos-7.8.2003-2.0.0-latest/motr_uploads/isa-l-2.30.0-1.el7.x86_64.rpm
+  fi
 fi
 
 # TODO Currently motr is not supported for CentOS 8, when support is there remove below check
