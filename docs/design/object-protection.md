@@ -8,11 +8,11 @@ This feature is about calculating checksums for entire S3 objects.
 
 - S3 PUT
   - MD5 checksum is calculated for each object. ETag from S3 client is checked
-    against caclulated checksum and the PUT request fails if there is a
+    against calculated checksum and the PUT request fails if there is a
     mismatch. The checksum is saved during save_metadata.
 - S3 multipart upload
   - MD5 checksum is calculated independently for each part and for each part
-    ETag from client is checked against caclulated checksum (the same as for
+    ETag from client is checked against calculated checksum (the same as for
     PUT).
   - S3AwsEtag class is used during CompleteMultipartUpload to calculate ETag
     for entire object.
