@@ -21,32 +21,30 @@
 
 #include "s3_bucket_metadata.h"
 
+#include <chrono>
 #include <functional>
 #include <list>
 #include <map>
 #include <memory>
+#include <queue>
 #include <string>
 
+#include <gtest/gtest_prod.h>
+
 // Forward declarations
-class MotrAPI;
-class S3GlobalBucketIndexMetadataFactory;
-class S3MotrKVSReaderFactory;
-class S3MotrKVSWriterFactory;
+class S3BucketMetadataV1;
+class S3MotrBucketMetadataFactory;
 class S3RequestObject;
 
 class S3BucketMetadataCache {
-
  protected:
   unsigned max_cache_size, expire_interval_sec, refresh_interval_sec;
   bool disabled = false;
 
  public:
-  S3BucketMetadataCache(
-      unsigned max_cache_size, unsigned expire_interval_sec,
-      unsigned refresh_interval_sec, std::shared_ptr<MotrAPI> = {},
-      std::shared_ptr<S3MotrKVSReaderFactory> = {},
-      std::shared_ptr<S3MotrKVSWriterFactory> = {},
-      std::shared_ptr<S3GlobalBucketIndexMetadataFactory> = {});
+  S3BucketMetadataCache(unsigned max_cache_size, unsigned expire_interval_sec,
+                        unsigned refresh_interval_sec,
+                        std::shared_ptr<S3MotrBucketMetadataFactory> = {});
 
   S3BucketMetadataCache(const S3BucketMetadataCache&) = delete;
   S3BucketMetadataCache& operator=(const S3BucketMetadataCache&) = delete;
@@ -66,11 +64,7 @@ class S3BucketMetadataCache {
   virtual void remove(const S3BucketMetadata& src, StateHandlerType callback);
 
  private:
-  std::shared_ptr<MotrAPI> s3_motr_api;
-  std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory;
-  std::shared_ptr<S3MotrKVSWriterFactory> motr_kvs_writer_factory;
-  std::shared_ptr<S3GlobalBucketIndexMetadataFactory>
-      global_bucket_index_metadata_factory;
+  std::shared_ptr<S3MotrBucketMetadataFactory> s3_motr_bucket_metadata_factory;
 
   void shrink();
   void remove_item(std::string bucket_name);
@@ -87,6 +81,55 @@ class S3BucketMetadataCache {
 
   ListItems sorted_by_access;
   ListItems sorted_by_update;
+
+  using Clock = std::chrono::steady_clock;
+  using Duration = Clock::duration;
+  using TimePoint = std::chrono::time_point<Clock>;
+
+  friend class S3BucketMetadataCacheTest;
+};
+
+class S3BucketMetadataCache::Item {
+ public:
+  explicit Item(const S3BucketMetadata& src);
+  ~Item();
+
+  void fetch(const S3BucketMetadata& src, FetchHanderType callback, bool force);
+  void save(const S3BucketMetadata& src, StateHandlerType callback);
+  void update(const S3BucketMetadata& src, StateHandlerType callback);
+  void remove(StateHandlerType callback);
+
+  bool can_remove() const;
+  const std::string& get_bucket_name() const;
+
+  TimePoint update_time;
+  TimePoint access_time;
+
+  ListIterator ptr_access;
+  ListIterator ptr_update;
+
+  enum class CurrentOp {
+    none,
+    fetching,
+    saving,
+    deleting
+  };
+
+ private:
+  void create_engine(const S3BucketMetadata& src);
+  void on_done(S3BucketMetadataState state);
+  bool check_expiration();
+
+  CurrentOp current_op = CurrentOp::none;
+  // For save, update and remove operations
+  StateHandlerType on_changed;
+  // For fetch operation
+  std::queue<FetchHanderType> fetch_waiters;
+
+  std::unique_ptr<S3BucketMetadata> p_value;
+  std::unique_ptr<S3BucketMetadataV1> p_engine;
+
+  friend class S3BucketMetadataCacheTest;
 };
 
 // Single instance

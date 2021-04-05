@@ -28,6 +28,8 @@ S3BucketMetadataProxy::S3BucketMetadataProxy(
     std::shared_ptr<S3RequestObject> s3_req_obj, const std::string& bucket)
     : S3BucketMetadata(std::move(s3_req_obj), bucket) {}
 
+S3BucketMetadataProxy::~S3BucketMetadataProxy() = default;
+
 void S3BucketMetadataProxy::on_load(S3BucketMetadataState state,
                                     const S3BucketMetadata& src) {
 

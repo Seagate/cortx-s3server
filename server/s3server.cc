@@ -1141,7 +1141,6 @@ int main(int argc, char **argv) {
           g_option_instance->get_bucket_metadata_cache_max_size(),
           g_option_instance->get_bucket_metadata_cache_expire_sec(),
           g_option_instance->get_bucket_metadata_cache_refresh_sec()));
-  p_bucket_metadata_cache = sptr_bucket_metadata_cache.get();
 
   // new flag in Libevent 2.1
   // EVLOOP_NO_EXIT_ON_EMPTY tells event_base_loop()

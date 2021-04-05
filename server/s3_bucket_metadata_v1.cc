@@ -71,6 +71,8 @@ S3BucketMetadataV1::S3BucketMetadataV1(
   collision_salt = "index_salt_";
 }
 
+S3BucketMetadataV1::~S3BucketMetadataV1() = default;
+
 struct m0_uint128 S3BucketMetadataV1::get_bucket_metadata_list_index_oid() {
   return bucket_metadata_list_index_oid;
 }
@@ -98,12 +100,12 @@ S3BucketMetadataV1::get_global_bucket_index_metadata() {
 // Load {B1, A1} in global_bucket_list_index_oid, followed by {A1/B1, md} in
 // bucket_metadata_list_index_oid
 void S3BucketMetadataV1::load(const S3BucketMetadata& src,
-                              CallbackHandlerType callback) {
+                              CallbackHandlerType on_load) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_timer.start();
 
   static_cast<S3BucketMetadata&>(*this) = src;
-  this->callback = std::move(callback);
+  callback = std::move(on_load);
 
   fetch_global_bucket_account_id_info();
 
@@ -224,11 +226,11 @@ void S3BucketMetadataV1::load_bucket_info_failed() {
 // Create {B1, A1} in global_bucket_list_index_oid, followed by {A1/B1, md} in
 // bucket_metadata_list_index_oid
 void S3BucketMetadataV1::save(const S3BucketMetadata& src,
-                              CallbackHandlerType callback) {
+                              CallbackHandlerType on_save) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   static_cast<S3BucketMetadata&>(*this) = src;
-  this->callback = std::move(callback);
+  callback = std::move(on_save);
   assert(state == S3BucketMetadataState::missing);
 
   save_global_bucket_account_id_info();
@@ -237,11 +239,11 @@ void S3BucketMetadataV1::save(const S3BucketMetadata& src,
 }
 
 void S3BucketMetadataV1::update(const S3BucketMetadata& src,
-                                CallbackHandlerType callback) {
+                                CallbackHandlerType on_update) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   static_cast<S3BucketMetadata&>(*this) = src;
-  this->callback = std::move(callback);
+  callback = std::move(on_update);
   assert(state == S3BucketMetadataState::present);
 
   save_bucket_info(false);
@@ -254,8 +256,8 @@ void S3BucketMetadataV1::save_global_bucket_account_id_info() {
 
   (void)get_global_bucket_index_metadata();
 
-  assert(!global_bucket_index_metadata->get_account_id().empty());
-  assert(!global_bucket_index_metadata->get_account_name().empty());
+  assert(!(global_bucket_index_metadata->get_account_id().empty()));
+  assert(!(global_bucket_index_metadata->get_account_name().empty()));
 
   // set location_constraint attributes & save
   global_bucket_index_metadata->set_location_constraint(
@@ -516,11 +518,11 @@ void S3BucketMetadataV1::save_bucket_info_failed() {
 
 // Delete {A1/B1} from bucket_metadata_list_index_oid followed by {B1, A1} from
 // global_bucket_list_index_oid
-void S3BucketMetadataV1::remove(CallbackHandlerType callback) {
+void S3BucketMetadataV1::remove(CallbackHandlerType on_remove) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   assert(state == S3BucketMetadataState::present);
-  this->callback = std::move(callback);
+  callback = std::move(on_remove);
 
   remove_bucket_info();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);

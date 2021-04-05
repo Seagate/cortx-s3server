@@ -19,7 +19,6 @@
  */
 
 #include <cassert>
-#include <queue>
 
 #define S3_BUCKET_METADATA_CACHE_DEFINITION
 #define S3_BUCKET_METADATA_V1_DEFINITION
@@ -32,55 +31,12 @@
 
 S3BucketMetadataCache* p_bucket_metadata_cache;
 
-namespace {  // to make type aliases local
+std::unique_ptr<S3BucketMetadataV1>
+S3MotrBucketMetadataFactory::create_motr_bucket_metadata_obj(
+    const S3BucketMetadata& src) {
 
-using Clock = std::chrono::steady_clock;
-using Duration = Clock::duration;
-using TimePoint = std::chrono::time_point<Clock>;
+  return std::unique_ptr<S3BucketMetadataV1>(new S3BucketMetadataV1(src));
 }
-
-class S3BucketMetadataCache::Item {
-
-  enum class CurrentOp {
-    none,
-    fetching,
-    saving,
-    deleting
-  };
-
- public:
-  explicit Item(const S3BucketMetadata& src);
-  virtual ~Item();
-
-  virtual void fetch(const S3BucketMetadata& src, FetchHanderType callback,
-                     bool force);
-  virtual void save(const S3BucketMetadata& src, StateHandlerType callback);
-  virtual void update(const S3BucketMetadata& src, StateHandlerType callback);
-  virtual void remove(StateHandlerType callback);
-
-  bool can_remove() const;
-  const std::string& get_bucket_name() const;
-
-  TimePoint update_time;
-  TimePoint access_time;
-
-  ListIterator ptr_access;
-  ListIterator ptr_update;
-
- private:
-  void create_engine(const S3BucketMetadata& src);
-  void on_done(S3BucketMetadataState state);
-  bool check_expiration();
-
-  CurrentOp current_op = CurrentOp::none;
-  // For save, update and remove operations
-  StateHandlerType on_changed;
-  // For fetch operation
-  std::queue<FetchHanderType> fetch_waiters;
-
-  std::unique_ptr<S3BucketMetadata> p_value;
-  std::unique_ptr<S3BucketMetadataV1> p_engine;
-};
 
 S3BucketMetadataCache::Item::Item(const S3BucketMetadata& src)
     : p_value(new S3BucketMetadata(src)) {
@@ -106,11 +62,8 @@ inline const std::string& S3BucketMetadataCache::Item::get_bucket_name() const {
 void S3BucketMetadataCache::Item::create_engine(const S3BucketMetadata& src) {
   assert(!p_engine);
 
-  p_engine.reset(new S3BucketMetadataV1(
-      src, p_bucket_metadata_cache->s3_motr_api,
-      p_bucket_metadata_cache->motr_kvs_reader_factory,
-      p_bucket_metadata_cache->motr_kvs_writer_factory,
-      p_bucket_metadata_cache->global_bucket_index_metadata_factory));
+  p_engine = p_bucket_metadata_cache->s3_motr_bucket_metadata_factory
+                 ->create_motr_bucket_metadata_obj(src);
 }
 
 void S3BucketMetadataCache::Item::on_done(S3BucketMetadataState state) {
@@ -262,32 +215,26 @@ void S3BucketMetadataCache::Item::remove(StateHandlerType callback) {
 
 S3BucketMetadataCache::S3BucketMetadataCache(
     unsigned max_cache_size, unsigned expire_interval_sec,
-    unsigned refresh_interval_sec, std::shared_ptr<MotrAPI> s3_motr_api,
-    std::shared_ptr<S3MotrKVSReaderFactory> motr_kvs_reader_factory,
-    std::shared_ptr<S3MotrKVSWriterFactory> motr_kvs_writer_factory,
-    std::shared_ptr<S3GlobalBucketIndexMetadataFactory>
-        global_bucket_index_metadata_factory)
+    unsigned refresh_interval_sec,
+    std::shared_ptr<S3MotrBucketMetadataFactory> motr_bucket_metadata_factory)
     : max_cache_size(max_cache_size),
       expire_interval_sec(expire_interval_sec),
       refresh_interval_sec(refresh_interval_sec) {
 
-  assert(!p_bucket_metadata_cache);  // Only one instance is thought
-
-  this->s3_motr_api = s3_motr_api ? std::move(s3_motr_api)
-                                  : std::make_shared<ConcreteMotrAPI>();
-  this->motr_kvs_reader_factory =
-      motr_kvs_reader_factory ? std::move(motr_kvs_reader_factory)
-                              : std::make_shared<S3MotrKVSReaderFactory>();
-  this->motr_kvs_writer_factory =
-      motr_kvs_writer_factory ? std::move(motr_kvs_writer_factory)
-                              : std::make_shared<S3MotrKVSWriterFactory>();
-  this->global_bucket_index_metadata_factory =
-      global_bucket_index_metadata_factory
-          ? std::move(global_bucket_index_metadata_factory)
-          : std::make_shared<S3GlobalBucketIndexMetadataFactory>();
+  if (p_bucket_metadata_cache) {
+    s3_log(S3_LOG_FATAL, "",
+           "Only one instance of S3BucketMetadataCache is allowed");
+  }
+  this->s3_motr_bucket_metadata_factory =
+      motr_bucket_metadata_factory
+          ? std::move(motr_bucket_metadata_factory)
+          : std::make_shared<S3MotrBucketMetadataFactory>();
+  p_bucket_metadata_cache = this;
 }
 
-S3BucketMetadataCache::~S3BucketMetadataCache() = default;
+S3BucketMetadataCache::~S3BucketMetadataCache() {
+  p_bucket_metadata_cache = nullptr;
+}
 
 void S3BucketMetadataCache::remove_item(std::string bucket_name) {
 

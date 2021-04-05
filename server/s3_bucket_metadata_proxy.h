@@ -26,7 +26,10 @@ class S3BucketMetadataProxy : public S3BucketMetadata {
  public:
   S3BucketMetadataProxy(std::shared_ptr<S3RequestObject> req,
                         const std::string& bucket);
+  ~S3BucketMetadataProxy() override;
 
+  // The class doesn't make requests to Motr directly.
+  // All four operations below are forwarded to bucket metadata cache.
   void load(std::function<void(void)> on_success,
             std::function<void(void)> on_failed) override;
 
@@ -45,7 +48,6 @@ class S3BucketMetadataProxy : public S3BucketMetadata {
 
  private:
   void on_load(S3BucketMetadataState state, const S3BucketMetadata& src);
-
   void on_save(S3BucketMetadataState state);
   void on_update(S3BucketMetadataState state);
   void on_remove(S3BucketMetadataState state);

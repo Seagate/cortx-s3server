@@ -37,6 +37,8 @@
 #include "s3_put_bucket_body.h"
 #include "s3_put_tag_body.h"
 
+class S3BucketMetadataV1;
+
 class S3BucketMetadataFactory {
  public:
   virtual ~S3BucketMetadataFactory() {}
@@ -49,6 +51,14 @@ class S3BucketMetadataFactory {
     return std::make_shared<S3BucketMetadataProxy>(std::move(req),
                                                    str_bucket_name);
   }
+};
+
+class S3MotrBucketMetadataFactory {
+ public:
+  virtual ~S3MotrBucketMetadataFactory() = default;
+
+  virtual std::unique_ptr<S3BucketMetadataV1> create_motr_bucket_metadata_obj(
+      const S3BucketMetadata& src);
 };
 
 class S3ObjectMetadataFactory {

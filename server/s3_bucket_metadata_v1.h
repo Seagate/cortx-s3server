@@ -167,7 +167,7 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
   void set_state(S3BucketMetadataState state);
 
  public:
-  S3BucketMetadataV1(
+  explicit S3BucketMetadataV1(
       const S3BucketMetadata& tmplt,
       std::shared_ptr<MotrAPI> motr_api = nullptr,
       std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory =
@@ -177,11 +177,13 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
       std::shared_ptr<S3GlobalBucketIndexMetadataFactory>
           s3_global_bucket_index_metadata_factory = nullptr);
 
-  virtual void load(const S3BucketMetadata& src, CallbackHandlerType callback);
-  virtual void save(const S3BucketMetadata& src, CallbackHandlerType callback);
+  ~S3BucketMetadataV1() override;
+
+  virtual void load(const S3BucketMetadata& src, CallbackHandlerType on_load);
+  virtual void save(const S3BucketMetadata& src, CallbackHandlerType on_save);
   virtual void update(const S3BucketMetadata& src,
-                      CallbackHandlerType callback);
-  virtual void remove(CallbackHandlerType callback);
+                      CallbackHandlerType on_update);
+  virtual void remove(CallbackHandlerType on_remove);
 
   // Google tests
   friend class S3BucketMetadataV1Test;
