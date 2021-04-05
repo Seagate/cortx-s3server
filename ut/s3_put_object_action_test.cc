@@ -1196,11 +1196,13 @@ TEST_F(S3PutObjectActionTest, SaveObjectMetadataFailed) {
       "" /* Version does not exists yet */, false /* force_delete */,
       false /* is_multipart */, {0ULL, 0ULL});
   action_under_test->new_probable_del_rec.reset(prob_rec);
+  action_under_test->new_ext_probable_del_rec_list.push_back(
+      std::move(action_under_test->new_probable_del_rec));
   // expectations for mark_new_oid_for_deletion()
   EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
   EXPECT_CALL(*prob_rec, to_json()).Times(1);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _)).Times(1);
+              put_keyval(_, _, _, _)).Times(1);
 
   action_under_test->clear_tasks();
   action_under_test->save_object_metadata_failed();
@@ -1240,6 +1242,13 @@ TEST_F(S3PutObjectActionTest, SendSuccessResponse) {
   // Simulate success
   action_under_test->s3_put_action_state =
       S3PutObjectActionState::metadataSaved;
+  std::unique_ptr<S3ProbableDeleteRecord> new_probable_del_rec;
+  new_probable_del_rec.reset(new S3ProbableDeleteRecord(
+      "new_object", old_object_oid, "test", oid, 9, oid, oid, "test/2021",
+      false /* force_delete */));
+
+  action_under_test->new_ext_probable_del_rec_list.push_back(
+      std::move(new_probable_del_rec));
 
   // expectations for remove_new_oid_probable_record()
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
@@ -1284,7 +1293,9 @@ TEST_F(S3PutObjectActionTest, ValidateMissingContentLength) {
 TEST_F(S3PutObjectActionTest, AddExtendedObjectToProbableList) {
   struct m0_uint128 extended_oid = oid;
   unsigned int layout_id = 9;
-
+  size_t object_size = 1024 * 1024;
+  std::vector<std::unique_ptr<S3ProbableDeleteRecord>>
+      new_ext_probable_del_rec_list;
   CREATE_BUCKET_METADATA;
 
   action_under_test->new_object_metadata =
@@ -1317,7 +1328,8 @@ TEST_F(S3PutObjectActionTest, AddExtendedObjectToProbableList) {
               put_keyval(_, _, _, _, _)).Times(1);
 
   action_under_test->add_extended_object_oid_to_probable_dead_oid_list(
-      extended_oid, layout_id);
+      extended_oid, layout_id, object_size,
+      action_under_test->new_object_metadata, new_ext_probable_del_rec_list);
 }
 
 TEST_F(S3PutObjectActionTest, AddExtendedObjectToProbableListFailed) {
@@ -1340,9 +1352,6 @@ TEST_F(S3PutObjectActionTest, ContinueObjectWrite) {
   in_md5crypt.Update((const char *)data.c_str(), data.size());
   action_under_test->last_MD5Hash_state = in_md5crypt;
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_oid())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(oid));
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
               write_content(_, _, _, _)).Times(1);
