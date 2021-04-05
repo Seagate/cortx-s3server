@@ -299,8 +299,12 @@ std::string& S3ObjectListResponse::get_multiupload_xml() {
     std::string object_name = object->get_object_name();
     if (chop_uploadid) {
       // In case of multipart listing, chop uploadid from key
-      std::size_t pos = object_name.find("|");
-      object_name = object_name.substr(0, pos);
+      // The flag gets set only in case of multipart listing, wherein
+      // we append |uploadid to object name
+      std::size_t pos = object_name.rfind("|");
+      if (pos != std::string::npos) {
+        object_name = object_name.substr(0, pos);
+      }
     }
     response_xml += "<Upload>";
     response_xml += S3CommonUtilities::format_xml_string(
