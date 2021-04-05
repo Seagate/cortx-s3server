@@ -67,13 +67,19 @@ class S3PutObjectAction : public S3ObjectAction {
   unsigned int no_of_blocks_written;
   S3BufferSequence last_buffer_seq;
   MD5hash last_MD5Hash_state;
+  // Probable delete record for objects
+  std::vector<std::unique_ptr<S3ProbableDeleteRecord>>
+      old_ext_probable_del_rec_list;
+  std::vector<std::unique_ptr<S3ProbableDeleteRecord>>
+      new_ext_probable_del_rec_list;
 
   std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
   std::shared_ptr<S3PutTagsBodyFactory> put_object_tag_body_factory;
   std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
   std::shared_ptr<MotrAPI> s3_motr_api;
   std::shared_ptr<S3ObjectMetadata> new_object_metadata;
-  std::vector<struct m0_uint128> extended_obj_oids;
+  std::vector<struct m0_uint128> new_obj_oids;
+  std::vector<struct m0_uint128> old_obj_oids;
   std::map<std::string, std::string> new_object_tags_map;
 
   // Probable delete record for old object OID in case of overwrite
@@ -83,11 +89,6 @@ class S3PutObjectAction : public S3ObjectAction {
   std::string new_oid_str;  // Key for new probable delete rec
   std::unique_ptr<S3ProbableDeleteRecord> new_probable_del_rec;
 
-  /*
-  std::map<std::string extended_obj_oid_key,
-           std::unique_ptr<S3ProbableDeleteRecord>>
-      extended_probable_delete_list;
-  */
   void create_new_oid(struct m0_uint128 current_oid);
   void collision_detected();
 
@@ -121,7 +122,21 @@ class S3PutObjectAction : public S3ObjectAction {
   void create_object_failed();
 
   void add_extended_object_oid_to_probable_dead_oid_list(
-      struct m0_uint128 extended_oid, unsigned int layout_id);
+      struct m0_uint128 extended_oid, unsigned int layout_id,
+      const size_t& extended_object_size,
+      const std::shared_ptr<S3ObjectMetadata>& object_metadata,
+      std::vector<std::unique_ptr<S3ProbableDeleteRecord>>&
+          probable_del_rec_list);
+#if 0
+//TODO: Do we need this function?   
+  void add_extended_object_oids_to_probable_dead_oid_list(
+      std::vector<struct m0_uint128> extended_oids,
+      std::vector<unsigned int> layout_ids,
+      std::vector<size_t> extended_object_sizes,
+      const std::shared_ptr<S3ObjectMetadata>& object_metadata,
+      std::vector<std::unique_ptr<S3ProbableDeleteRecord>>&
+          probable_del_rec_list);
+#endif
   void continue_object_write();
   void add_extended_object_oid_to_probable_dead_oid_list_failed();
 
@@ -143,11 +158,14 @@ class S3PutObjectAction : public S3ObjectAction {
   void startcleanup() override;
   void mark_new_oid_for_deletion();
   void mark_old_oid_for_deletion();
+  void mark_new_extended_oid_for_deletion();
   void remove_old_oid_probable_record();
   void remove_new_oid_probable_record();
   void delete_old_object();
+  void delete_old_object_success();
   void remove_old_object_version_metadata();
   void delete_new_object();
+  void delete_new_object_success();
 
   FRIEND_TEST(S3PutObjectActionTest, ConstructorTest);
   FRIEND_TEST(S3PutObjectActionTest, ValidateRequestTags);
