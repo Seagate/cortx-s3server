@@ -16,7 +16,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-endpoint_fqdn: "ssc-vm-1823.colo.seagate.com"
+endpoint_fqdn: "s3.seagate.com"
 cortx:
   software:
     openldap:
