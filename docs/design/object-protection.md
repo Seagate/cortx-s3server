@@ -27,6 +27,7 @@ This feature is about calculating checksums for entire S3 objects.
     consumed by other components (e.g. HA) as an indicator of an integrity
     issue.
 
+
 ## Enable/Disable the feature
 
 Feature is controlled by two options in `s3config.yaml` file, under
@@ -60,3 +61,15 @@ S3_RANGED_READ_ENABLED: true
 
 Note: we make it disabled by default for dev environment because range reads
 is a valid feature and we need it available in dev env by default.
+
+
+## Range Read behavior
+
+If DI check is enabled (and range reads disabled), GET Object for range read
+request will return HTTP error 401, `OperationNotSupported`.
+
+Requests which are returning HTTP header `Accept-Ranges` (like Get Object
+request), before the fix were returning `Accept-Ranges: bytes`.  Now, with
+DI enabled (and range reads disabled) will return `Accept-Ranges: none`.
+If DI is disabled (and range reads enabled) will return
+`Accept-Ranges: bytes` -- as before.
