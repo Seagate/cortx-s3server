@@ -72,7 +72,7 @@ class SetupCmd(object):
       self.machine_id = f.read().strip()
 
     self.cluster_id = self.get_confvalue(self.get_confkey(
-      'CONFIG>CONFSTORE_CLUSTER_ID_KEY').format(self.machine_id))
+      'CONFIG>CONFSTORE_CLUSTER_ID_KEY').replace("machine-id", self.machine_id))
 
   @property
   def url(self) -> str:
