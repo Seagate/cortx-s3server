@@ -46,7 +46,7 @@ fi
 generate_keystore_password(){
   echo "Generating password for jks keystore used in authserver..."
   # Get password from cortx-utils
-  new_keystore_passwd=$(s3cipher generate_key --use_base64 --key_len  12 --const_key openldap)
+  new_keystore_passwd=$(s3cipher generate_key --const_key cortx)
   if [[ $? != 0 || -z "$new_keystore_passwd" ]] # Generate random password failed
   then
     echo "ERROR: failed to generate key using py-utils:Cipher utility, exiting."
