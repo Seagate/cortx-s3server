@@ -23,9 +23,17 @@ import shutil
 import time
 import re
 import yaml
+import hashlib
 from scripttest import TestFileEnvironment
 from ldap_setup import LdapSetup
 from cloud_setup import CloudGatewaySetup
+
+def calc_file_md5(fname):
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
 
 class Config:
     log_enabled = False
@@ -131,7 +139,7 @@ class PyCliTest(object):
         shutil.rmtree(self.working_dir, ignore_errors=True)
         return self
 
-    def execute_test(self, negative_case = False, ignore_err = False, stdin_values = None):
+    def execute_test(self, negative_case = False, ignore_err = False, stdin_values = None, need_MD5 = False):
         print("\nTest case [%s] - " % (self.description), end="")
         self.negative_case = negative_case
         self.ignore_err = ignore_err
@@ -140,6 +148,11 @@ class PyCliTest(object):
             self.run(stdin_values)
         else:
             self.run()
+
+        if need_MD5:
+            file_name = os.path.join(self.working_dir, self.filename)
+            self.fileMD5 = calc_file_md5(file_name)
+
         self.teardown()
         return self
 
