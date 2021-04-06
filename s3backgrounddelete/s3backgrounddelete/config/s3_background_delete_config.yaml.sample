@@ -61,7 +61,7 @@ indexid:
    global_bucket_index_id:   "AAAAAAAAAHg=-AQAQAAAAAAA="      # Index id containing bucket/account info
    bucket_metadata_index_id: "AAAAAAAAAHg=-AgAQAAAAAAA="      # Index id containing bucket metadata
    max_keys: 1000                                             # Maximum number of keys in global index to be queried from list of probable delete object oid.
-   threshold : 500                                            # Threshold value for Maximum number of messages allowed to be in queue before before we purge and reload the queue
+   threshold : 0                                              # Threshold value for Maximum number of messages allowed to be in queue before before we purge and reload the queue
 
 leakconfig:                                  # Section for object leak config
    leak_processing_delay_in_mins: 15                          # Time delay in mins after which probable delete entry is procesed for leak.
