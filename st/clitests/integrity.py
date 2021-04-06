@@ -3,14 +3,17 @@
 import json
 import uuid
 import random
+import string
 import argparse
+from os import path
 
 import plumbum
 from plumbum import local
 from typing import List
 
+from awss3api import AwsTest
 
-s3api = local["aws"]["s3api"]
+
 OBJECT_SIZE = [0, 1, 2, 4095, 4096, 4097,
                2**20 - 1, 2**20, 2**20 + 100, 2 ** 24]
 PART_SIZE = [5 * 2 ** 20, 6 * 2 ** 20]
@@ -34,55 +37,54 @@ def create_random_file(path: str, size: int, first_byte: str):
 
 
 def test_get(bucket: str, key: str, output: str, get_must_fail: bool):
-    try:
-        local['rm']['-vf', output]()
-        s3api["get-object", "--bucket", bucket, "--key", key, output]()
-        assert not get_must_fail
-    except plumbum.commands.processes.ProcessExecutionError as e:
-        print(e)
-        assert get_must_fail
+    local['rm']['-vf', output]()
+    s3api_res = AwsTest('get-object').with_cli_self(f'aws s3api get-object --bucket "{bucket}" --key "{key}" {output}').execute_test(negative_case=get_must_fail)
+    if get_must_fail:
+        s3api_res.command_should_fail()
+    else:
+        s3api_res.command_is_successful()
 
 
 def test_multipart_upload(bucket: str, key: str, output: str,
                           parts: List[str], get_must_fail: bool) -> None:
-    create_multipart = json.loads(s3api["create-multipart-upload",
-                                        "--bucket", bucket, "--key", key]())
+    s3api_res = AwsTest('create-multipart-upload').with_cli_self(f'aws s3api --output json create-multipart-upload --bucket "{bucket}" --key "{key}"').execute_test()
+    create_multipart = json.loads(s3api_res.status.stdout)
     upload_id = create_multipart["UploadId"]
     print(create_multipart)
     i: int = 1
     for part in parts:
-        print(s3api["upload-part", "--bucket", bucket, "--key", key,
-                    "--part-number", str(i), "--upload-id", upload_id,
-                    "--body", part]())
+        s3api_res = AwsTest('upload-part').with_cli_self(f'aws s3api upload-part --bucket "{bucket}" --key "{key}" --part-number "{i}" --upload-id "{upload_id}" --body "{part}"').execute_test()
+        print(s3api_res.status.stdout)
         i += 1
-    parts_list = json.loads(s3api["list-parts",
-                                  "--bucket", bucket, "--key", key,
-                                  "--upload-id", upload_id]())
+
+    s3api_res = AwsTest('list-parts').with_cli_self(f'aws s3api list-parts --output json --bucket "{bucket}" --key "{key}" --upload-id "{upload_id}"').execute_test()
+    parts_list = json.loads(s3api_res.status.stdout)
     print(parts_list)
     parts_file = {}
     parts_file["Parts"] = [{k: v for k, v in d.items()
                             if k in ["ETag", "PartNumber"]}
                            for d in parts_list["Parts"]]
     print(parts_file)
-    with open('./parts.json', 'w') as f:
+    part_json = path.abspath('./parts.json')
+    with open(part_json, 'w') as f:
         f.write(json.dumps(parts_file))
-    print(s3api["complete-multipart-upload", "--multipart-upload",
-                "file://./parts.json", "--bucket", bucket, "--key", key,
-                "--upload-id", upload_id]())
+
+    s3api_res = AwsTest('complete-multipart-upload').with_cli_self(f'aws s3api complete-multipart-upload --multipart-upload "file://{part_json}" --bucket "{bucket}" --key "{key}" --upload-id "{upload_id}"').execute_test()
+    print(s3api_res.status.stdout)
     test_get(bucket, key, output, get_must_fail)
     if not get_must_fail:
         (local['cat'][parts] |
          local['diff']['--report-identical-files', '-', output])()
-    s3api["delete-object",  "--bucket", bucket, "--key", key]()
+    AwsTest('delete-object').with_cli_self("aws s3api delete-object --bucket " + bucket + " --key " + key).execute_test().command_is_successful()
 
 
 def test_put_get(bucket: str, key: str, body: str, output: str,
                  get_must_fail: bool) -> None:
-    s3api["put-object",  "--bucket", bucket, "--key", key, '--body', body]()
+    AwsTest('test_put_get').with_cli_self(f'aws s3api put-object --bucket "{bucket}" --key "{key}" --body "{body}"').execute_test().command_is_successful()
     test_get(bucket, key, output, get_must_fail)
     if not get_must_fail:
         (local['diff']['--report-identical-files', body, output])()
-    s3api["delete-object",  "--bucket", bucket, "--key", key]()
+    AwsTest('delete-object').with_cli_self("aws s3api delete-object --bucket " + bucket + " --key " + key).execute_test().command_is_successful()
 
 
 def auto_test_put_get(args, object_size: List[int]) -> None:
@@ -140,7 +142,7 @@ def main() -> None:
     parser.add_argument('--auto-test-multipart', action='store_true')
     parser.add_argument('--test-put-get', action='store_true')
     parser.add_argument('--auto-test-all', action='store_true')
-    parser.add_argument('--bucket', type=str, default='test')
+    parser.add_argument('--bucket', type=str, default='')
     parser.add_argument('--object-size', type=int, default=2 ** 20)
     parser.add_argument('--body', type=str, default='./s3-object.bin')
     parser.add_argument('--output', type=str, default='./s3-object-output.bin')
@@ -150,7 +152,16 @@ def main() -> None:
                         default='none-on-write')
     args = parser.parse_args()
     print(args)
-    local["aws"]["s3 mb s3://test".split()].run(retcode=None)
+    args.body = path.abspath(args.body)
+    args.output = path.abspath(args.output)
+    if not args.bucket:
+        random.seed(a=None)
+        allsym = f"{string.ascii_lowercase}{string.digits}.-"
+        args.bucket = "{}{}{}".format(
+            random.choice(string.ascii_lowercase),
+            ''.join(random.choice(allsym) for i in range(20)),
+            random.choice(string.digits))
+    AwsTest('s3 mb').with_cli_self(f"aws s3 mb s3://{args.bucket}").execute_test().command_is_successful()
     if args.test_put_get:
         auto_test_put_get(args, [args.object_size])
     if args.auto_test_put_get:

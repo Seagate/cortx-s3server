@@ -64,6 +64,11 @@ class AwsTest(S3PyCliTest):
             cmd = cmd + " --endpoint-url %s" % (S3ClientConfig.s3_uri_https)
         super(S3PyCliTest, self).with_cli(cmd)
 
+    # with_cli and return self
+    def with_cli_self(self, cmd):
+        self.with_cli(cmd)
+        return self
+
     def teardown(self):
         super(AwsTest, self).teardown()
 
