@@ -37,6 +37,7 @@ class SetupCmd(object):
   """Base class for setup commands."""
   ldap_user = None
   ldap_passwd = None
+  ldap_root_user = None
   rootdn_passwd = None
   cluster_id = None
   machine_id = None
@@ -63,6 +64,7 @@ class SetupCmd(object):
       sys.stderr.write(f'config url:[{config}] must be a valid url path\n')
       raise Exception('empty config URL path')
 
+    self.endpoint = None
     self._url = config
     self._provisioner_confstore = S3CortxConfStore(self._url, 'setup_prov_index')
     self._s3_confkeys_store = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'setup_s3keys_index')
@@ -94,6 +96,10 @@ class SetupCmd(object):
     assert self.provisioner_confstore != None
     return self.provisioner_confstore.get_config(key)
 
+  def read_endpoint_value(self):
+    if self.endpoint is None:
+      self.endpoint = self.get_confvalue(self.get_confkey('CONFSTORE_ENDPOINT_KEY'))
+
   def read_ldap_credentials(self):
     """Get 'ldapadmin' user name and password from confstore."""
     try:
@@ -107,6 +113,8 @@ class SetupCmd(object):
       self.ldap_user = self.get_confvalue(self.get_confkey('CONFSTORE_LDAPADMIN_USER_KEY'))
 
       encrypted_ldapadmin_pass = self.get_confvalue(self.get_confkey('CONFSTORE_LDAPADMIN_PASSWD_KEY'))
+
+      self.ldap_root_user = self.get_confvalue(self.get_confkey('CONFSTORE_ROOTDN_USER_KEY'))
 
       encrypted_rootdn_pass = self.get_confvalue(self.get_confkey('CONFSTORE_ROOTDN_PASSWD_KEY'))
 
