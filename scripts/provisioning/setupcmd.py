@@ -177,7 +177,7 @@ class SetupCmd(object):
 
   def phase_keys_validate(self, arg_file: str, phase_name: str):
     """Validate keys of each phase derived from s3_prov_config and compare with argument file."""
-    token_list = ["machine-id", "cluster-id", "N"]
+    #token_list = ["machine-id", "cluster-id", "N"]
     phase_name = phase_name.upper()
     argument_file_confstore = S3CortxConfStore(arg_file, 'argument_file_index')
     try:
@@ -268,6 +268,7 @@ class SetupCmd(object):
              ):
               continue
           if not prev_phase:
+            curr_phase = False
             next_phase = True
             break
         value = self.get_confkey(key)
