@@ -1317,8 +1317,8 @@ TEST_F(S3GetObjectActionTest, ReadObjectEmulatedMultiPartMD5Passes) {
 
   int layout_id = 1;
   // Reading two parts of 4K length
-  size_t obj_size = 2 *
-      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+  size_t obj_size =
+      2 * S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
@@ -1331,10 +1331,10 @@ TEST_F(S3GetObjectActionTest, ReadObjectEmulatedMultiPartMD5Passes) {
               get_last_modified_gmt())
       .WillOnce(Return("Sunday, 29 January 2017 08:05:01 GMT"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
-    // Expected etag value
-    .WillOnce(Return("e9950e6dfe206f9eb9b3d09b2f1130f4-2"))
-    // Expected part md5 values
-    .WillRepeatedly(Return("d41d8cd98f00b204e9800998ecf8427e-0"));
+      // Expected etag value
+      .WillOnce(Return("e9950e6dfe206f9eb9b3d09b2f1130f4-2"))
+      // Expected part md5 values
+      .WillRepeatedly(Return("d41d8cd98f00b204e9800998ecf8427e-0"));
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
 

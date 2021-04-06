@@ -451,9 +451,6 @@ $USE_SUDO systemctl restart s3authserver
 
 # Start S3 gracefully, with max 3 attempts
 echo "Starting new built s3 services"
-retry=1
-max_retries=3
-statuss3=0
 fake_params=""
 if [ $fake_kvs -eq 1 ]
 then
@@ -505,7 +502,6 @@ if [ "$statuss3" != "0" ]; then
   exit 1
 fi
 
-
 # Add certificate to keystore
 if [ $use_http_client -eq 0 ]
 then
@@ -538,6 +534,10 @@ then
     fi
 fi
 
+function s3server_stop() {
+    $USE_SUDO ./dev-stops3.sh $callgraph_cmd || echo "Cannot stop s3 services"
+}
+
 # Run Unit tests and System tests
 S3_TEST_RET_CODE=0
 runalltest_options="--no-motr-rpm $use_ipv6_arg $basic_test_cmd_par"
@@ -553,11 +553,49 @@ if [ $skip_st_run -eq 1 ]; then
 fi
 ./runalltest.sh $runalltest_options || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
 
+# Data Integrity tests:
+# 1. stop s3server
+# 2. change config to enable DI params
+# 3. start s3server
+# 4. enable DI FI
+# 5. ensure extra python packets installed
+# 6. run DI systest
+# 7. restore config
+# 8. follow jenkins_build
+##########################################
+
+# 1. stop s3server
+s3server_stop
+
+# 2. change config to enable DI params
+$USE_SUDO sed -ri 's/(.*)S3_RANGED_READ_ENABLED:[[:space:]]*true(.*)/\1S3_RANGED_READ_ENABLED: false\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
+$USE_SUDO sed -ri 's/(.*)S3_READ_MD5_CHECK_ENABLED:[[:space:]]*false(.*)/\1S3_READ_MD5_CHECK_ENABLED: true\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
+s3_config_port=`grep -oE "S3_SERVER_BIND_PORT:\s*([0-9]?+)" /opt/seagate/cortx/s3/conf/s3config.yaml | tr -s ' ' | cut -d ' ' -f 2`
+
+# 3. start s3server
+s3server_start
+
+# 4. enable DI FI
+curl -X PUT -H "x-seagate-faultinjection: enable,always,di_data_corrupted_on_write,0,0" localhost:$s3_config_port
+curl -X PUT -H "x-seagate-faultinjection: enable,always,di_data_corrupted_on_read,0,0" localhost:$s3_config_port
+
+# 5. ensure extra python packets installed
+$USE_SUDO pip3 list | grep plumbum || $USE_SUDO pip3 install plumbum
+
+# 6. run DI systest
+$USE_SUDO st/clitests/integrity.py --auto-test-all
+
+# 7. restore config
+$USE_SUDO sed -ri 's/(.*)S3_RANGED_READ_ENABLED:[[:space:]]*false(.*)/\1S3_RANGED_READ_ENABLED: true\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
+$USE_SUDO sed -ri 's/(.*)S3_READ_MD5_CHECK_ENABLED:[[:space:]]*true(.*)/\1S3_READ_MD5_CHECK_ENABLED: false\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
+
+# 8. follow jenkins_build
+##########################################
 # Disable fault injection in AuthServer
 $USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
 
 $USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
-$USE_SUDO ./dev-stops3.sh $callgraph_cmd || echo "Cannot stop s3 services"
+s3server_stop
 
 if [ $s3server_enable_ssl -eq 1 ]
 then
