@@ -44,12 +44,56 @@ class S3LeakRecord(object):
         else:
             return None
 
+class S3FragmentRecord(object):
+    """
+    Represents S3 object's fragment metadata
+    """
+    def __init__(self, key=None, jsonFragmentRec=None):
+        self.key = key
+        if (jsonFragmentRec):
+            self.frag_info = json.loads(jsonFragmentRec)
+        else:
+            self.frag_info = {}
+
+    def get_frag_size(self):
+        if (self.frag_info):
+            return self.frag_info["size"]
+        else:
+            return None
+
+    def get_frag_layoutid(self):
+        if (self.frag_info):
+            return self.frag_info["layout-id"]
+        else:
+            return None
+
+    def get_frag_oid(self):
+        if (self.frag_info):
+            return self.frag_info["OID"]
+        else:
+            return None
+
+    def get_frag_pvid(self):
+        if (self.frag_info):
+            return self.frag_info["PVID"]
+        else:
+            return None
+
 # Find record in record list, return empty string otherwise
 def _find_record(fkey, record_list):
     for entry in record_list:
         if fkey in entry:
             return entry
     return ""
+
+# Find records in record list, return empty string list otherwise
+def _find_records(fkey, record_list):
+    records = []
+    for entry in record_list:
+        if fkey in entry:
+            records.append(entry)
+
+    return records
 
 # Extract json formatted value from given record
 def _find_keyval_json(record):
@@ -59,6 +103,27 @@ def _find_keyval_json(record):
             json_keyval_string = entry[5:]
             return json_keyval_string
     return ""
+
+def extract_keys_values(record_list):
+    kv_mp = dict()
+    for entry in record_list:
+        if len(entry) != 0 and entry != "\n":
+            (key, value) = extract_key_val(entry)
+            kv_mp[key] = value
+
+    return kv_mp
+
+# Extract key,value as tuple from given record
+def extract_key_val(record):
+    record_split = record.split('\n')
+    for entry in record_split:
+        if len(entry) != 0 and entry != "\n":
+            if entry.startswith("Key:"):
+                key = entry[5:]
+            else:
+                if entry.startswith("Val:"):
+                    value = entry[5:]
+    return (key, value)
 
 # Extract account id
 def _extract_account_id(json_keyval):
@@ -121,7 +186,7 @@ def _fetch_test_bucket_account_info(bucket_name):
 # Fetch given bucket record for System Test user account
 def _fetch_bucket_info(bucket_name):
     root_bucket_metadata_oid = S3kvTest('Kvtest fetch bucket metadata index').root_bucket_metadata_index()
-    result = S3kvTest('Kvtest list user bucket(s)').next_keyval(root_bucket_metadata_oid, bucket_name, 5).execute_test(ignore_err=True)
+    result = S3kvTest('Kvtest list user bucket(s)').next_keyval(root_bucket_metadata_oid, "", 5).execute_test(ignore_err=True)
     test_bucket_list = result.status.stdout.split('----------------------------------------------')
     bucket_record = _find_record(bucket_name, test_bucket_list)
     return bucket_record
@@ -140,6 +205,38 @@ def _fetch_object_info(key_name, bucket_record):
     bucket_entries = result.status.stdout.split('----------------------------------------------')
     file_record = _find_record(key_name, bucket_entries)
     return file_record
+
+def fetch_fragment_info(key, oli_oid_decoded, FNo):
+    result = S3kvTest('Kvtest list fragment(s)').next_keyval(oli_oid_decoded, key, FNo).execute_test(ignore_err=True)
+    frag_entries = result.status.stdout.split('----------------------------------------------')
+    return frag_entries
+
+# Given bucket name and key, returns a tuple consisting of
+# object metadata (as json) and information about fragments, if any.
+def fetch_object_info(bucket_name, key):
+    if key is None or (len(key) == 0):
+        return None, None
+
+    frag_kv_mp = dict()
+    obj_info = tuple()
+    bucket_record = _fetch_bucket_info(bucket_name)
+    if (bucket_record is None or (len(bucket_record) == 0)):
+        return (None, None)
+    file_record = _fetch_object_info(key, bucket_record)
+    file_json_keyval = _find_keyval_json(file_record)
+    file_keyval = json.loads(file_json_keyval)
+    # Check if any fragments on main object
+    if "FNo" in file_keyval:
+        # Read fragments
+        frag_key = "~" + key
+        bucket_json_keyval = _find_keyval_json(bucket_record)
+        oli_oid_decoded = _extract_oid(bucket_json_keyval, bucket=False)
+        frag_list = fetch_fragment_info(frag_key, oli_oid_decoded, file_keyval['FNo'])
+        frag_kv_mp = extract_keys_values(frag_list)
+        obj_info = (file_keyval, frag_kv_mp)
+
+    return obj_info
+
 
 # Test for record in bucket
 def expect_object_in_bucket(bucket_name, key):
