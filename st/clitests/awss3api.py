@@ -337,6 +337,8 @@ class AwsTest(S3PyCliTest):
         self.object_name = object_name
         if outfile is None:
             outfile = object_name
+            self.filename = outfile
+
         cmd = "aws s3api get-object --bucket " + bucket_name + " --key " + object_name + " " + outfile
         self.with_cli(cmd)
         if debug_flag is not None:
