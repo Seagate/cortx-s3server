@@ -164,6 +164,8 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
   // for UTs only
   struct m0_uint128 get_bucket_metadata_list_index_oid();
   void set_bucket_metadata_list_index_oid(struct m0_uint128 id);
+
+ protected:
   void set_state(S3BucketMetadataState state);
 
  public:
