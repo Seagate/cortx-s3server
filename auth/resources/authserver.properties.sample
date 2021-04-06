@@ -39,7 +39,7 @@ ldapLoginDN=cn=sgiamadmin,dc=seagate,dc=com
 # Use AuthPassEncryptCLI.jar CLI to encrypt the password
 ldapLoginPW=Rofaa+mJRYLVbuA2kF+CyVUJBjPx5IIFDBQfajmrn23o5aEZHonQj1ikUU9iMBoC6p/dZtVXMO1KFGzHXX3y1A==
 # ldap_const_key to decrypt ldap password
-ldap_const_key=openldap
+ldap_const_key=cortx
 consoleURL=https://console.s3.seagate.com:9292/sso
 enable_https=false
 enable_http=true

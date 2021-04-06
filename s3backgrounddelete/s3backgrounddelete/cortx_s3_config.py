@@ -244,95 +244,14 @@ class CORTXS3Config(object):
             #Return default mode as daemon mode i.e. "True"
             return True
 
-    def get_rabbitmq_username(self):
-        """Return username of rabbitmq from config file or KeyError."""
-        try:
-          rabbitmq_username = self.s3confstore.get_config('rabbitmq>username')
-          self.logger.info("rabbitmq_username : " + rabbitmq_username)
-          return rabbitmq_username
-        except:
-            raise KeyError(
-                "Could not parse rabbitmq username from config file " +
-                self._conf_file)
-
-    def get_rabbitmq_password(self):
-        """Return password of rabbitmq from config file or KeyError."""
-        try:
-          rabbitmq_password = self.s3confstore.get_config('rabbitmq>password')
-          return rabbitmq_password
-        except:
-            raise KeyError(
-                "Could not parse rabbitmq password from config file " +
-                self._conf_file)
-
-    def get_rabbitmq_host(self):
-        """Return host of rabbitmq from config file or KeyError."""
-        try:
-          rabbitmq_host = self.s3confstore.get_config('rabbitmq>host')
-          return rabbitmq_host
-        except:
-            raise KeyError(
-                "Could not parse rabbitmq host from config file " +
-                self._conf_file)
-
-    def get_rabbitmq_queue_name(self):
-        """Return queue name of rabbitmq from config file or KeyError."""
-        try:
-          rabbitmq_queue_name = self.s3confstore.get_config('rabbitmq>queue')
-          return rabbitmq_queue_name
-        except:
-            raise KeyError(
-                "Could not parse rabbitmq queue from config file " +
-                self._conf_file)
-
-    def get_rabbitmq_exchange(self):
-        """
-        Return exchange name of rabbitmq from config file.
-        The exchange parameter is the name of the exchange.
-        The empty string denotes the default or nameless exchange messages are
-        routed to the queue with the name specified by routing_key,if it exists
-        """
-        rabbitmq_exchange = self.s3confstore.get_config('rabbitmq>exchange')
-        return rabbitmq_exchange
-
-    def get_rabbitmq_exchange_type(self):
-        """Return exchange type of rabbitmq from config file or KeyError."""
-        try:
-          rabbitmq_exchange_type = self.s3confstore.get_config('rabbitmq>exchange_type')
-          return rabbitmq_exchange_type
-        except:
-            raise KeyError(
-                "Could not parse rabbitmq exchange_type from config file " +
-                self._conf_file)
-
-    def get_rabbitmq_mode(self):
-        """Return mode of rabbitmq from config file or KeyError."""
-        try:
-          rabbitmq_mode = self.s3confstore.get_config('rabbitmq>mode')
-          return int(rabbitmq_mode)
-        except:
-            raise KeyError(
-                "Could not parse rabbitmq mode from config file " +
-                self._conf_file)
-
-    def get_rabbitmq_durable(self):
-        """Return durable of rabbitmq from config file or KeyError."""
-        try:
-          rabbitmq_durable = self.s3confstore.get_config('rabbitmq>durable')
-          return rabbitmq_durable
-        except:
-            raise KeyError(
-                "Could not parse rabbitmq durable from config file " +
-                self._conf_file)
-
     def get_schedule_interval(self):
-        """Return schedule interval of rabbitmq from config file or KeyError."""
+        """Return schedule interval of object recovery scheduler from config file or KeyError."""
         try:
-          schedule_interval = self.s3confstore.get_config('rabbitmq>schedule_interval_secs')
+          schedule_interval = self.s3confstore.get_config('cortx_s3>scheduler_schedule_interval')
           return int(schedule_interval)
         except:
             raise KeyError(
-                "Could not parse rabbitmq schedule interval from config file " +
+                "Could not parse schedule interval for object recovery scheduler from config file " +
                 self._conf_file)
 
     def get_probable_delete_index_id(self):
@@ -352,6 +271,14 @@ class CORTXS3Config(object):
             return int(max_keys)
         else:
             return 1000
+
+    def get_threshold(self):
+        """Return the threshold for max."""
+        threshold = self.s3confstore.get_config('indexid>threshold')
+        if threshold:
+            return int(threshold)
+        else:
+            return 500
 
     def get_global_instance_index_id(self):
         """Return probable delete index-id from config file or KeyError."""
@@ -386,21 +313,20 @@ class CORTXS3Config(object):
     def get_leak_processing_delay_in_mins(self):
         """Return 'leak_processing_delay_in_mins' from 'leakconfig' section """
         leak_processing_delay_in_mins = self.s3confstore.get_config('leakconfig>leak_processing_delay_in_mins')
-        if not leak_processing_delay_in_mins:
+        if leak_processing_delay_in_mins is not None:
             return int(leak_processing_delay_in_mins)
         else:
-            # default delay is 15mins
-            return 15
+            raise Exception(f'Failed to read leakconfig>leak_processing_delay_in_mins: '
+                        f'{leak_processing_delay_in_mins}\n')
 
     def get_version_processing_delay_in_mins(self):
         """Return 'version_processing_delay_in_mins' from 'leakconfig' section """
         version_processing_delay_in_mins = self.s3confstore.get_config('leakconfig>version_processing_delay_in_mins')
-        if not version_processing_delay_in_mins:
+        if version_processing_delay_in_mins is not None:
             return int(version_processing_delay_in_mins)
         else:
-            # default delay is 15mins
-            return 15
-
+            raise Exception(f'Failed to read leakconfig>version_processing_delay_in_mins: '
+                        f'{version_processing_delay_in_mins}\n')
 
     def get_global_bucket_index_id(self):
         """Return probable delete index-id from config file or KeyError."""
@@ -526,4 +452,24 @@ class CORTXS3Config(object):
         except:
             raise KeyError(
                 "Could not parse producer_delivery_mechanism from config file " +
+                self._conf_file)
+
+    def get_msgbus_admin_id(self):
+        """Return admin id from config file or KeyError."""
+        try:
+          msgbus_admin_id = self.s3confstore.get_config('message_bus>admin_id')
+          return msgbus_admin_id
+        except:
+            raise KeyError(
+                "Could not parse admin id from config file " +
+                self._conf_file)
+
+    def get_purge_sleep_time(self):
+        """Return purge sleep time from config file or KeyError."""
+        try:
+          msgbus_purge_sleep = self.s3confstore.get_config('message_bus>purge_sleep')
+          return int(msgbus_purge_sleep)
+        except:
+            raise KeyError(
+                "Could not parse purge sleep from config file " +
                 self._conf_file)

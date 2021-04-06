@@ -84,6 +84,10 @@ else
   shift $((OPTIND-1))
 fi
 
+# add /usr/local/bin to PATH
+export PATH=$PATH:/usr/local/bin
+echo $PATH
+
 yum install -y ansible facter rpm-build
 
 cd ${BASEDIR}/../../../ansible
