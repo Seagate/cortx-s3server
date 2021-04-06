@@ -165,6 +165,7 @@ void S3GetMultipartBucketAction::get_next_objects_successful() {
   bool skip_marker_key = true;
   auto& kvps = motr_kv_reader->get_key_values();
   size_t length = kvps.size();
+  multipart_object_list.chop_uploadid_from_key();
   for (auto& kv : kvps) {
     s3_log(S3_LOG_DEBUG, request_id, "Read Object = %s\n", kv.first.c_str());
     auto object = object_metadata_factory->create_object_metadata_obj(request);
