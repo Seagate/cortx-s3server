@@ -196,6 +196,66 @@ TEST_F(S3ObjectListResponseTest, ObjectListResponseWithValidObjectsTruncated) {
   CHECK_XML_RESPONSE;
 }
 
+// Test get_xml response with valid object and all of the results were returned.
+TEST_F(S3ObjectListResponseTest,
+       ObjectListMultipartResponseWithUploadidChopped) {
+  response_under_test->set_request_marker_uploadid(
+      "test_request_marker_upload_id");
+  response_under_test->set_max_keys("test_max_keys");
+  response_under_test->set_next_marker_uploadid("test_next_marker_upload_id");
+  response_under_test->set_max_uploads("test_max_uploads");
+  response_under_test->set_response_is_truncated(true);
+  response_under_test->add_common_prefix("prefix1");
+  response_under_test->chop_uploadid_from_key();
+  std::shared_ptr<MockS3ObjectMetadata> mock_obj =
+      std::make_shared<MockS3ObjectMetadata>(mock_request);
+  mock_obj->set_object_list_index_oid(object_list_indx_oid);
+
+  response_under_test->add_object(mock_obj);
+
+  EXPECT_CALL(*mock_obj, get_object_name())
+      .WillOnce(Return("object_name|UploadID"));
+  EXPECT_CALL(*mock_obj, get_upload_id()).WillOnce(Return("upload_id"));
+  EXPECT_CALL(*mock_obj, get_last_modified_iso())
+      .WillRepeatedly(Return("last_modified"));
+  EXPECT_CALL(*mock_obj, get_user_id()).WillRepeatedly(Return("1"));
+  EXPECT_CALL(*mock_obj, get_user_name()).WillRepeatedly(Return("s3user"));
+  EXPECT_CALL(*mock_obj, get_storage_class())
+      .WillRepeatedly(Return("STANDARD"));
+  std::string response = response_under_test->get_multiupload_xml();
+  EXPECT_THAT(response, Not(HasSubstr("|UploadID")));
+  CHECK_MULTIUPLOAD_XML_RESPONSE;
+}
+
+// Test get_xml response with valid object.
+TEST_F(S3ObjectListResponseTest, ObjectListMultipartResponseWithUploadid) {
+  response_under_test->set_request_marker_uploadid(
+      "test_request_marker_upload_id");
+  response_under_test->set_max_keys("test_max_keys");
+  response_under_test->set_next_marker_uploadid("test_next_marker_upload_id");
+  response_under_test->set_max_uploads("test_max_uploads");
+  response_under_test->set_response_is_truncated(true);
+  response_under_test->add_common_prefix("prefix1");
+  std::shared_ptr<MockS3ObjectMetadata> mock_obj =
+      std::make_shared<MockS3ObjectMetadata>(mock_request);
+  mock_obj->set_object_list_index_oid(object_list_indx_oid);
+
+  response_under_test->add_object(mock_obj);
+
+  EXPECT_CALL(*mock_obj, get_object_name())
+      .WillOnce(Return("object_name|UploadID"));
+  EXPECT_CALL(*mock_obj, get_upload_id()).WillOnce(Return("upload_id"));
+  EXPECT_CALL(*mock_obj, get_last_modified_iso())
+      .WillRepeatedly(Return("last_modified"));
+  EXPECT_CALL(*mock_obj, get_user_id()).WillRepeatedly(Return("1"));
+  EXPECT_CALL(*mock_obj, get_user_name()).WillRepeatedly(Return("s3user"));
+  EXPECT_CALL(*mock_obj, get_storage_class())
+      .WillRepeatedly(Return("STANDARD"));
+  std::string response = response_under_test->get_multiupload_xml();
+  EXPECT_THAT(response, HasSubstr("|UploadID"));
+  CHECK_MULTIUPLOAD_XML_RESPONSE;
+}
+
 // Test get_xml response with valid object and results is truncated.
 TEST_F(S3ObjectListResponseTest,
        ObjectListResponseWithValidObjectsNotTruncated) {
