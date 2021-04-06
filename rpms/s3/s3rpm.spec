@@ -263,7 +263,6 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/auth/scripts/s3authserver.jks_template
 /opt/seagate/cortx/auth/scripts/create_auth_jks_password.sh
 /opt/seagate/cortx/auth/resources/s3authserver.jks
-/opt/seagate/cortx/s3/scripts/s3-sanity-test.sh
 /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh
 /opt/seagate/cortx/s3/docs/openldap_backup_readme
 /opt/seagate/cortx/s3/docs/s3_log_rotation_guide.txt
