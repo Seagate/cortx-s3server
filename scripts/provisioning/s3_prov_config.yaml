@@ -48,6 +48,7 @@ INIT:
 # Inheritance hierarchy ends here.
 
 TEST:
+  CONFSTORE_ENDPOINT_KEY: "endpoint_fqdn"
 RESET:
 CLEANUP:
 
@@ -56,3 +57,4 @@ LDAP_USER: "cn={},dc=seagate,dc=com"
 LDAP_URL: "ldapi:///"
 CONFSTORE_OPENLDAP_CONST_KEY: "cortx"
 CONFSTORE_SITE_COUNT_KEY: "cluster>cluster-id>site_count"
+
