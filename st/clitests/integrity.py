@@ -14,9 +14,8 @@ from typing import List
 from awss3api import AwsTest
 
 
-OBJECT_SIZE = [0, 1, 2, 4095, 4096, 4097,
-               2**20 - 1, 2**20, 2**20 + 100, 2 ** 24]
-PART_SIZE = [5 * 2 ** 20, 6 * 2 ** 20]
+OBJECT_SIZE = [0, 1, 4097, 2**20 - 1, 2**20 + 100]
+PART_SIZE = [5 * 2 ** 20]
 PART_NR = [i+1 for i in range(2)]
 CORRUPTIONS = {'none-on-write': 'k', 'zero-on-write': 'z',
                'first_byte-on-write': 'f', 'none-on-read': 'K',
