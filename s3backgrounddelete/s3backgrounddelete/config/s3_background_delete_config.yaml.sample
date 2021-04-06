@@ -26,7 +26,8 @@ cortx_s3:                                   # Section for S3 background delete c
    default_region: "us-west2"                              # CORTX s3 client will use the specified host
    daemon_mode: True                                       # S3background process run in daemon mode and ST's run in non-daemon mode.
    s3_instance_count: 22                                   # Number of active s3 instances in release setup
-   messaging_platform: "rabbit_mq"                       # Whether to use message_bus or rabbit_mq as the messaging platform
+   messaging_platform: "message_bus"                       # messaging platform
+   scheduler_schedule_interval: 1200                       # Schedule Interval is time period at which object recovery scheduler will be executed (in seconds). Increasing this value leads to reduced memory consumption.
    
 message_bus:
    topic: "bgdelete"
@@ -35,6 +36,8 @@ message_bus:
    producer_id: "S3MsgProducer"
    producer_delivery_mechanism: "sync"                      # sync, async
    consumer_sleep: 5
+   purge_sleep: 20
+   admin_id: "admin_s3_background_delete"
 
 logconfig:                                  # Section for scheduler & processor loggers.
 
@@ -51,20 +54,6 @@ logconfig:                                  # Section for scheduler & processor 
    max_bytes: 5242880                                                                         # Max size of a log files is set to 5mb
    backup_count: 5                                                                            # Max number of log files that can exist
 
-rabbitmq:                                    # Section for RabbitMQ configs
-
-   # RabbitMQ overview:  https://www.rabbitmq.com/getstarted.html
-
-    username: "cortx-s3"                                      # Username used to communicate with RabbitMQ
-    password: "password"                                    # Password corresponding to username
-    host: "127.0.0.1"                                       # Host on which RabbitMQ is runnning
-    queue: "s3_delete_obj_job_queue"                        # Queue name used in RabbitMQ
-    exchange: ""                                            # Exchanges control the routing of messages to queues.
-    exchange_type: "direct"                                 # Exchanges type includes direct, fanout, topic exchange, header exchange
-    mode: 2                                                 # Valid values are Non-persistent (1) or persistent (2). persistent ensures that the task_queue queue won't be lost even if RabbitMQ restarts.
-    durable: "True"                                         # Ensure that RabbitMQ will never lose our queue.
-    schedule_interval_secs: 1200                            # Schedule Interval is time period at which object recovery scheduler will be executed (in seconds). Increasing this value leads to reduced RabbitMQ memory consumption.
-
 indexid:
 
    probable_delete_index_id: "AAAAAAAAAHg=-AwAQAAAAAAA="      # Index id containing list of probable delete object oid. This is fixed index id shared with s3server.
@@ -72,6 +61,7 @@ indexid:
    global_bucket_index_id:   "AAAAAAAAAHg=-AQAQAAAAAAA="      # Index id containing bucket/account info
    bucket_metadata_index_id: "AAAAAAAAAHg=-AgAQAAAAAAA="      # Index id containing bucket metadata
    max_keys: 1000                                             # Maximum number of keys in global index to be queried from list of probable delete object oid.
+   threshold : 0                                              # Threshold value for Maximum number of messages allowed to be in queue before before we purge and reload the queue
 
 leakconfig:                                  # Section for object leak config
    leak_processing_delay_in_mins: 15                          # Time delay in mins after which probable delete entry is procesed for leak.

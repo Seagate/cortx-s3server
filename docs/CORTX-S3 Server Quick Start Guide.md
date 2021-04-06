@@ -42,7 +42,8 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
       * To install Python version 3.0, use: `$ yum install -y python3`
     * pip:
       * To check if pip is installed, use: `$ pip --version`
-      * To install pip use: `$ yum install python-pip`
+      * To check if epel is installed, use: `$ yum repolist`. If epel was installed, you'll see it in the output list. If not enable it using :`$ yum --enablerepo=extras install epel-release`.
+      * To install pip use: `$ pip install pip==20.3.3`
     * Ansible: `$ yum install -y ansible`
     * Extra Packages for Enterprise Linux:
         * To check if epel is installed, use: `$ yum repolist`
@@ -122,7 +123,7 @@ Refer to the image below to view the output of a successful `$ init.sh -a` run, 
 
 ![Successful run](../images/init_script_output.png)
 
-If you still see errors or a failed status, please [reach out to us for support](#Reach-Out-to-Us)
+If you still see errors or a failed status, please [reach out to us for support](https://github.com/Seagate/cortx/blob/main/SUPPORT.md)
 
 Please read our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Build-Installation-FAQ.md) for troubleshooting errors.
 
@@ -181,8 +182,11 @@ Before your test your build, ensure that you have installed and configured the f
     2. To view the `PID` of the active S3 service, run the command: `$ pgrep s3`
     3. To view the `PID` of the active Motr service, run the command: `$ pgrep m0`
 5. Follow these steps to install the AWS client and plugin:
-    1. To install the AWS client, use: `$ pip install awscli`
-    2. To install the AWS plugin, use: `$ pip install awscli-plugin-endpoint`
+    1. To install the AWS client, use: `$ pip3 install awscli`
+    2. To install the AWS plugin, use: `$ pip3 install awscli-plugin-endpoint`
+    
+    Note: If we install awscli on s3 development environment using pip3 then Jenkins system tests will break due to version dependancy conflict in s3iamcli. Fix for this is in progress.
+    
     3. Generate the AWS Access Key ID and Secret Key:
          1. To check for help messages, use: `$ s3iamcli -h`
          2. To create a new User, run: `$ s3iamcli CreateAccount -n <Account Name> -e <Email Id>`
@@ -353,7 +357,7 @@ Refer to our [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/ma
 
 ### Reach Out to Us
 
-Please refer to the [Support](../SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
+Please refer to the [Support](https://github.com/Seagate/cortx/blob/main/SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
 
 Tested by:
 

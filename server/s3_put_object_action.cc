@@ -173,11 +173,13 @@ void S3PutObjectAction::parse_x_amz_tagging_header(std::string content) {
     for (struct evkeyval* header = key_value.tqh_first; header;
          header = header->next.tqe_next) {
 
-      decoded_key = evhttp_decode_uri(header->key);
+      decoded_key = evhttp_uridecode(header->key, 0, NULL);
       s3_log(S3_LOG_DEBUG, request_id,
              "Successfully parsed the Key Values=%s %s", decoded_key,
              header->value);
       new_object_tags_map[decoded_key] = header->value;
+      free(decoded_key);
+      decoded_key = NULL;
     }
     validate_tags();
   } else {
@@ -382,8 +384,8 @@ void S3PutObjectAction::collision_detected() {
            "Exceeded maximum collision retry attempts."
            "Collision occurred %d times for uri %s\n",
            tried_count, request->get_object_uri().c_str());
-    s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,
-           S3_IEM_COLLISION_RES_FAIL_JSON);
+    // s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,
+    //     S3_IEM_COLLISION_RES_FAIL_JSON);
     s3_put_action_state = S3PutObjectActionState::newObjOidCreationFailed;
     set_s3_error("InternalError");
     send_response_to_s3_client();

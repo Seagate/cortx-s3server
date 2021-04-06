@@ -348,6 +348,9 @@ void S3GetObjectAction::read_object_data() {
 
   size_t max_blocks_in_one_read_op =
       S3Option::get_instance()->get_motr_units_per_request();
+  size_t motr_unit_size =
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
+          object_metadata->get_layout_id());
   size_t blocks_to_read = 0;
 
   s3_log(S3_LOG_DEBUG, request_id, "max_blocks_in_one_read_op: (%zu)\n",
@@ -357,8 +360,17 @@ void S3GetObjectAction::read_object_data() {
   s3_log(S3_LOG_DEBUG, request_id, "total_blocks_to_read: (%zu)\n",
          total_blocks_to_read);
   if (blocks_already_read != total_blocks_to_read) {
-    if ((total_blocks_to_read - blocks_already_read) >
-        max_blocks_in_one_read_op) {
+    if (blocks_already_read == 0 &&
+        content_length > max_blocks_in_one_read_op * motr_unit_size) {
+      size_t first_blocks_to_read =
+          S3Option::get_instance()->get_motr_first_read_size();
+      blocks_to_read = max_blocks_in_one_read_op < first_blocks_to_read
+                           ? max_blocks_in_one_read_op
+                           : first_blocks_to_read;
+      s3_log(S3_LOG_DEBUG, request_id, "First blocks_to_read: (%zu)\n",
+             blocks_to_read);
+    } else if ((total_blocks_to_read - blocks_already_read) >
+               max_blocks_in_one_read_op) {
       blocks_to_read = max_blocks_in_one_read_op;
     } else {
       blocks_to_read = total_blocks_to_read - blocks_already_read;

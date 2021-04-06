@@ -24,7 +24,7 @@ set -e
 
 #Variables
 KAFKA_INSTALL_PATH=/opt
-KAFKA_DOWNLOAD_URL="http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/centos/centos-7.8.2003-1.0.0-3/commons/kafka/kafka_2.13-2.7.0.tgz"
+KAFKA_DOWNLOAD_URL="http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/centos/centos-7.8.2003-2.0.0-latest/commons/kafka/kafka_2.13-2.7.0.tgz"
 KAFKA_DIR_NAME="kafka"
 consumer_count=0
 hosts=""
@@ -40,6 +40,8 @@ install_prerequisite() {
   echo "Installing Pre-requisites"
   yum install java -y
   yum install java-devel -y
+  #install confluent_kafka 1.5.0 version as this is compatible with kafka_2.13-2.7.0
+  pip3 install confluent_kafka==1.5.0
   echo "Pre-requisites installed successfully."
 }
 
@@ -108,10 +110,10 @@ configure_zookeeper() {
      sed -i '$ a autopurge.purgeInterval=24' config/zookeeper.properties
      
      node=1
-     for host in "$(echo $hosts | sed "s/,/ /g")"
+     for (( n=0; n < ${#hostarr[*]}; n++ ))
      do
-       sed -i "$ a server.${node}=${host}:2888:3888" config/zookeeper.properties
-	   node=$node+1
+       sed -i "$ a server.${node}=${hostarr[n]}:2888:3888" config/zookeeper.properties
+	     node=$((node+1))
      done
 	 
 	 # Set host number 
@@ -142,9 +144,9 @@ configure_server() {
   if [ $consumer_count -gt 1 ]; then
 	sed -i "s/broker.id=.*$/broker.id=${hostnumber}/g" config/server.properties
 	connect=""
-    for host in "$(echo $hosts | sed "s/,/ /g")"
+    for (( n=0; n < ${#hostarr[*]}; n++ ))
     do
-	  connect="${connect}${host}:2181,"
+	  connect="${connect}${hostarr[n]}:2181,"
     done
 	echo "zookeeper.connect : ${connect}"
     sed -i "s/zookeeper.connect=.*$/zookeeper.connect=${connect}/g" config/server.properties
@@ -176,10 +178,7 @@ create_myid_file() {
 # function to set the hostnumber for cluster
 set_host_number() {
 
-IFS=',' #setting comma as delimiter  
-read -a hostarr <<<"$hosts"
-
-for (( n=0; n < ${#hostarr[*]}; n++ ))  
+for (( n=0; n < ${#hostarr[*]}; n++ ))
 do 
    if [ ${hostarr[n]} == $HOSTNAME ]; then
     hostnumber=$((n + 1))
@@ -237,6 +236,9 @@ fi
 
 echo "Total number of consumers are: ${consumer_count}"
 echo "Host(s) on which kafka will be installed and setup are: ${hosts}"
+
+IFS=',' #setting comma as delimiter  
+read -a hostarr <<<"$hosts"
 
 # Check kafka already installed or not 
 is_kafka_installed

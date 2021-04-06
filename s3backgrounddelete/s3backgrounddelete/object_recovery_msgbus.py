@@ -145,7 +145,7 @@ class ObjectRecoveryMsgbus(object):
                     # In case of non-daemon mode we will exit once we encounter failure
                     # in receiving messages.
                     self._logger.debug("Receiving msg from S3MessageBus")
-                    ret,message = self.__msgbuslib.receive()
+                    ret,message = self.__msgbuslib.receive(self._daemon_mode)
                     if ret:
                         # Process message can fail, but we still acknowledge the message
                         # The last step in process message is to delete the entry from
@@ -159,15 +159,17 @@ class ObjectRecoveryMsgbus(object):
                         self._logger.debug("Failed to receive msg from message bus : " + str(message))
                         if not self._daemon_mode:
                             break
+                        #It works with/without sleep time but
+                        #In case of multiple exceptions, cpu utilization will be very high
                         time.sleep(self._sleep_time)
-
-                if not self._daemon_mode:
-                    break
             except Exception as exception:
                 self._logger.error("Receive Data Exception : {} {}".format(exception, traceback.format_exc()))
                 self.__isconsumersetupcomplete = False                
             finally:
                 time.sleep(self._sleep_time)
+            
+            if not self._daemon_mode:
+                break
 
     def __setup_producer(self,
         producer_id = None,
@@ -192,7 +194,7 @@ class ObjectRecoveryMsgbus(object):
             if not delivery_mechanism:
                 delivery_mechanism = self._config.get_msgbus_producer_delivery_mechanism()
 
-
+            self._logger.debug("producer id : " + producer_id +  "msg_type : " + str(msg_type) +  "delivery_mechanism : "+ str(delivery_mechanism) )
             ret,msg = self.__msgbuslib.setup_producer(producer_id, msg_type, delivery_mechanism)
             if not ret:
                 self._logger.error("setup_send failed {}".format(str(msg)))
@@ -204,11 +206,16 @@ class ObjectRecoveryMsgbus(object):
             self._logger.error("Exception:{}".format(exception))
             self.__isproducersetupcomplete = False
 
-    def send_data(self, data):
+    def send_data(self, data,
+        producer_id = None,
+        msg_type = None,
+        delivery_mechanism = None):
         """Send message data."""
         try:
             if not self.__isproducersetupcomplete:
-                self.__setup_producer()
+                self.__setup_producer(producer_id,
+                                      msg_type,
+                                      delivery_mechanism)
                 if not self.__isproducersetupcomplete:
                     self._logger.debug("producer connection issues")
                     return False
@@ -231,10 +238,29 @@ class ObjectRecoveryMsgbus(object):
                     self._logger.debug("producer connection issues")
                     return False
             self.__msgbuslib.purge()
-            #Insert a delay of 1 min after purge, so that the messages are deleted
-            time.sleep(60)
+            #Insert a delay of 1 min (default) after purge, so that the messages are deleted
+            time.sleep(self._config.get_purge_sleep_time())
             self._logger.debug("Purged Messages")
         except Exception as exception:
             self._logger.error("Exception:{}".format(exception))
             self.__isproducersetupcomplete = False
             return False
+            
+    def get_count(self):
+        """Get count of unread messages."""
+        try:
+            consumer_group = self._config.get_msgbus_consumer_group()
+            if not self.__isproducersetupcomplete:
+                self.__setup_producer()
+                if not self.__isproducersetupcomplete:
+                    self._logger.info("producer connection issues")
+                    return 0
+            
+            unread_count = self.__msgbuslib.count(consumer_group)
+            if unread_count is None:
+                return 0
+            else:
+                return unread_count
+        except Exception as exception:
+            self._logger.error("Exception:{}".format(exception))
+            return 0

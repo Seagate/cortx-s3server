@@ -96,15 +96,49 @@ cp -R scripts/haproxy/* $S3_INSTALL_LOCATION/install/haproxy
 # Copy the provisioning config
 cp scripts/provisioning/setup.yaml $S3_INSTALL_LOCATION/conf
 
-# Copy the provisioning script
-cp scripts/provisioning/s3_setup $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/templates/s3.post_install.tmpl.1-node $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/templates/s3.post_install.tmpl.1-node.sample $S3_INSTALL_LOCATION/conf
 
-# Copy the mini-provisioner pre-reqs validation check config files
-cp scripts/provisioning/s3setup_prereqs.json ${S3_MINI_PROV_CFG_LOCATION}/
+cp scripts/provisioning/templates/s3.prepare.tmpl.1-node $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/templates/s3.prepare.tmpl.1-node.sample $S3_INSTALL_LOCATION/conf
+
+cp scripts/provisioning/templates/s3.init.tmpl.1-node $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/templates/s3.init.tmpl.1-node.sample $S3_INSTALL_LOCATION/conf
+
+cp scripts/provisioning/templates/s3.test.tmpl.1-node.sample $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/templates/s3.test.tmpl.1-node $S3_INSTALL_LOCATION/conf
+
+cp scripts/provisioning/templates/s3.config.tmpl.1-node.sample $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/templates/s3.config.tmpl.1-node $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/templates/s3.config.tmpl.3-node.sample $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/templates/s3.config.tmpl.3-node $S3_INSTALL_LOCATION/conf
+
+cp scripts/provisioning/templates/s3.reset.tmpl.1-node $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/templates/s3.reset.tmpl.1-node.sample $S3_INSTALL_LOCATION/conf
+
+cp scripts/provisioning/templates/s3.cleanup.tmpl.1-node $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/templates/s3.cleanup.tmpl.1-node.sample $S3_INSTALL_LOCATION/conf
+
+# Copy the provisioning python scripts
+cp scripts/provisioning/s3_setup $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/postinstallcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/configcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/initcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/cleanupcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/testcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/resetcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/preparecmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/setupcmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/s3_haproxy_config.py $S3_INSTALL_LOCATION/bin
+cp scripts/ldap/ldapaccountaction.py $S3_INSTALL_LOCATION/bin
+cp -f scripts/swupdate/merge.py $S3_INSTALL_LOCATION/bin
+
+# Copy the mini-provisioner config files
+cp scripts/provisioning/s3setup_prereqs.json $S3_MINI_PROV_CFG_LOCATION/
+cp scripts/provisioning/s3_prov_config.yaml $S3_MINI_PROV_CFG_LOCATION/
 
 # Copy the S3 reset scripts
 cp scripts/reset/* $S3_INSTALL_LOCATION/reset
-cp scripts/provisioning/s3setup/clean_open_ldap_by_s3.sh $S3_INSTALL_LOCATION/reset
 
 # Copy the s3 dependencies
 cp -R third_party/libevent/s3_dist/lib/* $S3_INSTALL_LOCATION/libevent/
@@ -182,6 +216,9 @@ cp s3backgrounddelete/s3backgroundproducer.service $SERVICE_FILE_LOCATION
 # Copy the s3 background consumer file for systemctl support.
 cp s3backgrounddelete/s3backgroundconsumer.service $SERVICE_FILE_LOCATION
 
+# Copy the s3backgroundproducer service file for dynamic producer_name support.
+cp s3backgrounddelete/s3backgroundproducer@.service $SERVICE_FILE_LOCATION
+
 # Copy Auth server jar to install location
 cp -f auth/server/target/AuthServer-1.0-0.jar $AUTH_INSTALL_LOCATION/
 
@@ -193,15 +230,15 @@ cp -ru auth/resources/static $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/authserver-log4j2.xml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/authencryptcli-log4j2.xml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/authserver.properties.sample $AUTH_INSTALL_LOCATION/resources/
-cp -f auth/resources/authserver_unsafe_attributes.yaml $AUTH_INSTALL_LOCATION/resources/
+cp -f auth/resources/authserver_unsafe_attributes.properties $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/keystore.properties.sample $AUTH_INSTALL_LOCATION/resources/
-cp -f auth/resources/keystore_unsafe_attributes.yaml $AUTH_INSTALL_LOCATION/resources/
+cp -f auth/resources/keystore_unsafe_attributes.properties $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/defaultAclTemplate.xml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/AmazonS3.xsd $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/s3authserver.jks $AUTH_INSTALL_LOCATION/resources/
 cp -f scripts/s3authserver.jks_template $AUTH_INSTALL_LOCATION/scripts/
 cp -f scripts/create_auth_jks_password.sh $AUTH_INSTALL_LOCATION/scripts/
-cp -f scripts/swupdate/merge.sh $AUTH_INSTALL_LOCATION/scripts/swupdate
+
 
 # Copy LDAP replication to install location
 # remove this once changes are done in provisioning
@@ -237,11 +274,6 @@ cp -f scripts/ldap/rsyslog.d/slapdlog.conf $S3_INSTALL_LOCATION/install/ldap/rsy
 # Copy s3 slapd index file to install location
 cp -f scripts/ldap/s3slapdindex.ldif $S3_INSTALL_LOCATION/install/ldap/
 
-# Copy backgrounddelete account scripts to install location
-cp -f scripts/ldap/background_delete_account.ldif $S3_INSTALL_LOCATION/install/ldap/
-cp -f scripts/ldap/create_background_delete_account.sh $S3_INSTALL_LOCATION/install/ldap/
-cp -f scripts/ldap/delete_background_delete_account.sh $S3_INSTALL_LOCATION/install/ldap/
-
 cp -f scripts/ldap/cfg_ldap.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/cn={1}s3user.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/iam-admin-access.ldif $S3_INSTALL_LOCATION/install/ldap/
@@ -260,9 +292,6 @@ cp startauth.sh $AUTH_INSTALL_LOCATION/
 # Copy auth server Helper scripts
 cp -f scripts/enc_ldap_passwd_in_cfg.sh $AUTH_INSTALL_LOCATION/scripts/
 cp -f scripts/change_ldap_passwd.ldif $AUTH_INSTALL_LOCATION/scripts/
-
-# Copy s3-sanity
-cp -f s3-sanity-test.sh $S3_INSTALL_LOCATION/scripts/
 
 # Copy openldap_backup readme
 cp -f scripts/ldap/openldap_backup_readme $S3_INSTALL_LOCATION/docs/

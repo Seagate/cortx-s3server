@@ -20,7 +20,6 @@
 import os
 from framework import PyCliTest
 from framework import Config
-from framework import logit
 from s3client_config import S3ClientConfig
 
 class AuthTest(PyCliTest):

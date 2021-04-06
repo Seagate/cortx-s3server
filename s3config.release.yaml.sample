@@ -40,7 +40,7 @@ S3_SERVER_CONFIG:                                       # Section for S3 Server
    S3_AUDIT_LOGGER_KAFKA_WEB_PATH: "/topics/s3auditlogs" # URL path for POST requests
    S3_AUDIT_MAX_RETRY_COUNT: 5                          # Max retry count in case of audit log failure
    S3_SERVER_IPV4_BIND_ADDR: 0.0.0.0                    # S3 Server ipv4 bind address, 0.0.0.0 is default. ~ means option is ignored/not to listen on IPv4 address.
-   S3_SERVER_IPV6_BIND_ADDR: ~                          # S3 Server ipv6 bind address, ::/128 is default. ~ means option is ignored/not to listen on IPv6 address.
+   S3_SERVER_IPV6_BIND_ADDR: "~"                        # S3 Server ipv6 bind address, ::/128 is default. ~ means option is ignored/not to listen on IPv6 address.
    S3_SERVER_BIND_PORT: 28081                            # S3 Server port number
    S3_SERVER_MOTR_HTTP_BIND_ADDR: 127.0.0.1             # S3 Server bind addresss to perform motr operations over HTTP, 127.0.0.1 is default.
    S3_SERVER_MOTR_HTTP_BIND_PORT: 28049                  # Port number to perform motr operations over HTTP.
@@ -101,6 +101,7 @@ S3_MOTR_CONFIG:                                     # Section for S3 Motr
    S3_MOTR_READ_POOL_MAX_THRESHOLD: 1048576000        # 1GB, The maximum memory threshold for the pool, multiple of S3_MOTR_UNIT_SIZE
    S3_MOTR_READ_MEMPOOL_ZERO_BUFFER: false           # Enable Motr Mempool 'zeroing' after use (like secure erase) - disabled by default
    S3_MOTR_OPERATION_WAIT_PERIOD: 90                  # 90 s, Maximum wait duration for sync motr operations.
+   S3_MOTR_FIRST_READ_SIZE: 4                         # Size in MB of the First Read Request to MOTR
 S3_THIRDPARTY_CONFIG:
    S3_LIBEVENT_POOL_BUFFER_SIZE: 16384                  # Pool buffer size, in case of S3_MOTR_UNIT_SIZE of size 1MB, it is recommended to have S3_LIBEVENT_POOL_BUFFER_SIZE of size 16384
    S3_LIBEVENT_MAX_READ_SIZE: 16384                     # Maximum read in a single read operation, as per libevent documentation in code, user should not try to read more than this value

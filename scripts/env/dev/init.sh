@@ -34,7 +34,7 @@ os_major_version=""
 os_minor_version=""
 os_build_num=""
 ansible_automation=0
-
+is_open_source=false
 
 unsupported_os() {
   echo "S3 currently supports only CentOS 7.7.1908, CentOS 7.8.2003 or RHEL 7.7" 1>&2;
@@ -55,10 +55,11 @@ install_cortx_py_utils() {
   #rpm -q cortx-py-utils && yum remove cortx-py-utils -y && yum install cortx-py-utils -y
   if rpm -q cortx-py-utils ; then
     yum remove cortx-py-utils -y
-    yum install cortx-py-utils -y
-  else
-    yum install cortx-py-utils -y
   fi
+  yum install cortx-py-utils -y
+
+  # install cortx-py-utils prerequisite
+  pip3 install -r /opt/seagate/cortx/utils/conf/requirements.txt --ignore-installed
 }
 
 # function to install all prerequisite for dev vm 
@@ -70,14 +71,8 @@ install_pre_requisites() {
   #create topic
   sh ${S3_SRC_DIR}/scripts/kafka/create-topic.sh -c 1 -i $HOSTNAME
 
-  #install confluent_kafka
-  pip3 install confluent_kafka
-
-  #install toml
-  pip3 install toml
-
-  # install or upgrade cortx-py-utils
-  install_cortx_py_utils
+  # install configobj
+  pip3 install configobj
 
 }
 
@@ -129,10 +124,13 @@ else
   while getopts "ahs" x; do
       case "${x}" in
           a)
+              is_open_source=true
               yum install createrepo -y
               easy_install pip
               read -p "Git Access Token:" git_access_token
               source ${S3_SRC_DIR}/scripts/env/common/create-cortx-repo.sh -G $git_access_token
+              # install configobj
+              pip3 install configobj
               ;;
           s)
              source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
@@ -212,11 +210,33 @@ cd ${BASEDIR}/../../../ansible
 
 #Install motr build dependencies
 
+# install all rpms which requires gcc as dependency
+if [ "$is_open_source" = false ];
+then
+  echo "Installing ISA libraries"
+  if rpm -q 'isa-l' ; then
+  	echo "Library already present ... Skipping ..."
+  else
+  	yum install -y http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/centos/centos-7.8.2003-2.0.0-latest/motr_uploads/isa-l-2.30.0-1.el7.x86_64.rpm
+  fi
+fi
+
 # TODO Currently motr is not supported for CentOS 8, when support is there remove below check
 if [ "$os_major_version" = "7" ];
 then
   ./s3motr-build-depencies.sh
 fi
+
+# install all rpms which requires gcc as dependency
+if [ "$is_open_source" = false ];
+then
+  echo "Installing cortx-py-utils"
+  install_cortx_py_utils
+fi
+
+# add /usr/local/bin to PATH
+export PATH=$PATH:/usr/local/bin
+echo $PATH
 
 # configure backgrounddelete ST dependencies
 ./setup_backgrounddelete_config.sh

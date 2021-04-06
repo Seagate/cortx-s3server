@@ -35,10 +35,11 @@ install_cortx_py_utils() {
   #rpm -q cortx-py-utils && yum remove cortx-py-utils -y && yum install cortx-py-utils -y
   if rpm -q cortx-py-utils ; then
     yum remove cortx-py-utils -y
-    yum install cortx-py-utils -y
-  else
-    yum install cortx-py-utils -y
   fi
+  yum install cortx-py-utils -y
+
+  # install cortx-py-utils prerequisite
+  pip3 install -r /opt/seagate/cortx/utils/conf/requirements.txt --ignore-installed
 }
 
 # function to install all prerequisite for dev vm 
@@ -50,14 +51,14 @@ install_pre_requisites() {
   #create topic
   sh ${S3_SRC_DIR}/scripts/kafka/create-topic.sh -c 1 -i $HOSTNAME
 
-  #install confluent_kafka
-  pip3 install confluent_kafka
-
   #install toml
   pip3 install toml
 
   # install or upgrade cortx-py-utils
   install_cortx_py_utils
+
+  # install configobj
+  pip3 install configobj
 }
 
 usage() {
@@ -79,6 +80,8 @@ else
               easy_install pip
               read -p "Git Access Token:" git_access_token
               source ${S3_SRC_DIR}/scripts/env/common/create-cortx-repo.sh -G $git_access_token
+              # install configobj
+              pip3 install configobj
               ;;
           *)
               usage
@@ -127,6 +130,11 @@ cd ${BASEDIR}/../../../ansible
 
 # Erase old haproxy rpm and later install latest haproxy version 1.8.14
 rpm -q haproxy && rpm -e haproxy
+
+# add /usr/local/bin to PATH
+export PATH=$PATH:/usr/local/bin
+echo $PATH
+
 
 # Update ansible/hosts file with local ip
 cp -f ./hosts ./hosts_local

@@ -95,6 +95,7 @@ BuildRequires: python-keyring python-futures
 # Uncomment below line to enable motr version check during s3server rpm installation
 #Requires: cortx-motr = %{h_cortxmotr_version}
 Requires: cortx-motr
+Requires: cortx-py-utils
 %endif
 Requires: libxml2
 Requires: libyaml
@@ -107,6 +108,7 @@ Requires: pkgconfig
 Requires: log4cxx_cortx log4cxx_cortx-devel
 # Required by S3 background delete based on python
 Requires: python36
+Requires: python36-ldap
 Requires: python%{py_short_ver}-yaml
 Requires: python%{py_short_ver}-pika
 %if 0%{?el7}
@@ -157,18 +159,6 @@ cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore/s3con
 python%{py_ver} -m compileall -b *.py
 cp *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore/build/lib/s3confstore
 
-# Build scripts/s3haproxyconfig python module
-mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/haproxy/s3haproxyconfig/build/lib/s3haproxyconfig
-cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/haproxy/s3haproxyconfig/s3haproxyconfig
-python%{py_ver} -m compileall -b *.py
-cp *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/haproxy/s3haproxyconfig/build/lib/s3haproxyconfig
-
-# Build s3setup python module
-mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup/build/lib/s3setup
-cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup/s3setup
-python%{py_ver} -m compileall -b *.py
-cp *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup/build/lib/s3setup
-
 # Build the s3cortxutils/s3MsgBus wrapper python module
 mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/build/lib/s3msgbus
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus/s3msgbus
@@ -196,7 +186,7 @@ python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3msgbus
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
 
-# Install the s3msg bus wrapper module
+# Install the s3cipher wrapper module
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3cipher
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
 
@@ -204,13 +194,7 @@ python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
 
-# Install s3haproxyconfig python module
-cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/haproxy/s3haproxyconfig
-python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
-
-# Install s3setup python module
-cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/scripts/provisioning/s3setup
-python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
+echo "install complete"
 
 %clean
 bazel clean
@@ -269,17 +253,16 @@ rm -rf %{buildroot}
 /lib/systemd/system/s3authserver.service
 /lib/systemd/system/s3server@.service
 /lib/systemd/system/s3backgroundproducer.service
+/lib/systemd/system/s3backgroundproducer@.service
 /lib/systemd/system/s3backgroundconsumer.service
 /opt/seagate/cortx/auth/AuthServer-1.0-0.jar
 /opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar
 /opt/seagate/cortx/auth/startauth.sh
-/opt/seagate/cortx/auth/scripts/swupdate/merge.sh
 /opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh
 /opt/seagate/cortx/auth/scripts/change_ldap_passwd.ldif
 /opt/seagate/cortx/auth/scripts/s3authserver.jks_template
 /opt/seagate/cortx/auth/scripts/create_auth_jks_password.sh
 /opt/seagate/cortx/auth/resources/s3authserver.jks
-/opt/seagate/cortx/s3/scripts/s3-sanity-test.sh
 /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh
 /opt/seagate/cortx/s3/docs/openldap_backup_readme
 /opt/seagate/cortx/s3/docs/s3_log_rotation_guide.txt
@@ -347,9 +330,6 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/install/ldap/slapdlog.ldif
 /opt/seagate/cortx/s3/install/ldap/s3slapdindex.ldif
 /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf
-/opt/seagate/cortx/s3/install/ldap/background_delete_account.ldif
-/opt/seagate/cortx/s3/install/ldap/create_background_delete_account.sh
-/opt/seagate/cortx/s3/install/ldap/delete_background_delete_account.sh
 /opt/seagate/cortx/s3/install/ldap/cfg_ldap.ldif
 /opt/seagate/cortx/s3/install/ldap/cn={1}s3user.ldif
 /opt/seagate/cortx/s3/install/ldap/iam-admin-access.ldif
@@ -368,13 +348,40 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/stop-s3-iopath-services.sh
 /opt/seagate/cortx/s3/reset/precheck.py
 /opt/seagate/cortx/s3/reset/reset_s3.sh
-/opt/seagate/cortx/s3/reset/clean_open_ldap_by_s3.sh
 /opt/seagate/cortx/s3/conf/setup.yaml
-/opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.yaml
-/opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.yaml
+/opt/seagate/cortx/s3/conf/s3.post_install.tmpl.1-node
+/opt/seagate/cortx/s3/conf/s3.post_install.tmpl.1-node.sample
+/opt/seagate/cortx/s3/conf/s3.prepare.tmpl.1-node
+/opt/seagate/cortx/s3/conf/s3.prepare.tmpl.1-node.sample
+/opt/seagate/cortx/s3/conf/s3.config.tmpl.1-node
+/opt/seagate/cortx/s3/conf/s3.config.tmpl.1-node.sample
+/opt/seagate/cortx/s3/conf/s3.config.tmpl.3-node
+/opt/seagate/cortx/s3/conf/s3.config.tmpl.3-node.sample
+/opt/seagate/cortx/s3/conf/s3.init.tmpl.1-node
+/opt/seagate/cortx/s3/conf/s3.init.tmpl.1-node.sample
+/opt/seagate/cortx/s3/conf/s3.test.tmpl.1-node
+/opt/seagate/cortx/s3/conf/s3.test.tmpl.1-node.sample
+/opt/seagate/cortx/s3/conf/s3.reset.tmpl.1-node
+/opt/seagate/cortx/s3/conf/s3.reset.tmpl.1-node.sample
+/opt/seagate/cortx/s3/conf/s3.cleanup.tmpl.1-node
+/opt/seagate/cortx/s3/conf/s3.cleanup.tmpl.1-node.sample
+/opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.properties
+/opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.properties
 /opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml
 /opt/seagate/cortx/s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml
 /opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json
+/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml
+/opt/seagate/cortx/s3/bin/setupcmd.py
+/opt/seagate/cortx/s3/bin/postinstallcmd.py
+/opt/seagate/cortx/s3/bin/configcmd.py
+/opt/seagate/cortx/s3/bin/initcmd.py
+/opt/seagate/cortx/s3/bin/testcmd.py
+/opt/seagate/cortx/s3/bin/resetcmd.py
+/opt/seagate/cortx/s3/bin/preparecmd.py
+/opt/seagate/cortx/s3/bin/cleanupcmd.py
+/opt/seagate/cortx/s3/bin/ldapaccountaction.py
+/opt/seagate/cortx/s3/bin/merge.py
+/opt/seagate/cortx/s3/bin/s3_haproxy_config.py
 %attr(755, root, root) /opt/seagate/cortx/s3/bin/s3_setup
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer
 %attr(755, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer
@@ -388,8 +395,6 @@ rm -rf %{buildroot}
 %{_bindir}/s3cipher
 %{_bindir}/s3msgbus
 %{_bindir}/s3confstore
-%{_bindir}/s3haproxyconfig
-%{_bindir}/s3setup
 %{py36_sitelib}/s3backgrounddelete/config/*.yaml
 %{py36_sitelib}/s3backgrounddelete/config/s3_background_delete_config.yaml.sample
 %{py36_sitelib}/s3backgrounddelete/*.pyc
@@ -400,18 +405,10 @@ rm -rf %{buildroot}
 %{py36_sitelib}/s3cipher-%{version}-py?.?.egg-info
 %{py36_sitelib}/s3confstore/*.pyc
 %{py36_sitelib}/s3confstore-%{version}-py?.?.egg-info
-%{py36_sitelib}/s3haproxyconfig/*.pyc
-%{py36_sitelib}/s3haproxyconfig-%{version}-py?.?.egg-info
-%{py36_sitelib}/s3setup/*.pyc
-%{py36_sitelib}/s3setup-%{version}-py?.?.egg-info
 %exclude %{py36_sitelib}/s3backgrounddelete/__pycache__/*
 %exclude %{py36_sitelib}/s3backgrounddelete/*.py
 %exclude %{py36_sitelib}/s3confstore/*.py
 %exclude %{py36_sitelib}/s3confstore/__pycache__/*
-%exclude %{py36_sitelib}/s3haproxyconfig/*.py
-%exclude %{py36_sitelib}/s3haproxyconfig/__pycache__/*
-%exclude %{py36_sitelib}/s3setup/*.py
-%exclude %{py36_sitelib}/s3setup/__pycache__/*
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundconsumer
 %exclude %{py36_sitelib}/s3msgbus/s3msgbus
 %exclude %{py36_sitelib}/s3msgbus/__pycache__/*
@@ -420,15 +417,12 @@ rm -rf %{buildroot}
 %exclude %{py36_sitelib}/s3cipher/__pycache__/*
 %exclude %{py36_sitelib}/s3cipher/*.py
 %exclude %{py36_sitelib}/s3confstore/s3confstore
-%exclude %{py36_sitelib}/s3haproxyconfig/s3haproxyconfig
-%exclude %{py36_sitelib}/s3setup/s3setup
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundproducer
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyc
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyo
-%exclude /opt/seagate/cortx/s3/install/haproxy/s3haproxyconfig
 
 %post
-sh /opt/seagate/cortx/auth/scripts/swupdate/merge.sh
+python3.6 /opt/seagate/cortx/s3/bin/merge.py
 systemctl daemon-reload
 systemctl enable s3authserver
 systemctl restart rsyslog

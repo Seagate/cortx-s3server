@@ -22,8 +22,6 @@ import sys
 import os
 import yaml
 import shutil
-import re
-import json
 from framework import Config
 from ldap_setup import LdapInfo
 from framework import S3PyCliTest
@@ -35,7 +33,7 @@ from s3cmd import S3cmdTest
 from s3kvstool import S3kvTest
 import s3kvs
 import time
-from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS, RABBIT_MQ
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__),  '../../s3backgrounddelete/s3backgrounddelete')))
@@ -150,7 +148,7 @@ AwsTest('Create Bucket "seagatebucket" using s3-background-delete-svc account')\
     .create_bucket("seagatebucket").execute_test().command_is_successful()
 
 # Initialising the scheduler and processor
-scheduler = ObjectRecoveryScheduler()
+scheduler = ObjectRecoveryScheduler("bgtest")
 processor = ObjectRecoveryProcessor()
 
 
@@ -193,9 +191,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -255,9 +250,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 print("Schdeuler has stopped...")
@@ -325,9 +317,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -391,9 +380,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -490,9 +476,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -557,9 +540,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -640,9 +620,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -703,9 +680,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -750,9 +724,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -807,9 +778,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 

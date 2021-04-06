@@ -10,9 +10,8 @@ skinparam activity {
 }
 
 (*) --> "Client: Send Request to delete <Nobj> objects\n<Nobj> = 1..1000" << Client >>
---> S3->Auth: Authentication\n(Is this a valid user credential?) << Auth >>
 --> "S3->Motr: Load Bucket Metadata\n(2 Motr KVS reads)"
---> "S3->Auth: Authorization\n(Does user have access to bucket?)" << Auth >>
+--> "S3->Auth: Authentication and authorization\n(Does user have access to the bucket?)" << Auth >>
 --> S3->Motr: Fetch <N> s3 obj metadata entries from Motr KVS\n(N is currently 25)
 if "All objects loaded?" then
  -->[no] iterate

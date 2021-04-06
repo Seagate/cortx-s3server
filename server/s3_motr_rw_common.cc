@@ -102,8 +102,9 @@ void motr_op_done_on_main_thread(evutil_socket_t, short events,
         (error_code == -ECONNREFUSED) || (error_code == -EHOSTUNREACH) ||
         (error_code == -ENOTCONN) || (error_code == -ECANCELED)) {
       // fatal iem are genrated in motr as a result of appropriate action
-      s3_iem(LOG_ERR, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
-             S3_IEM_MOTR_CONN_FAIL_JSON);
+      // s3_iem(LOG_ERR, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
+      //     S3_IEM_MOTR_CONN_FAIL_JSON);
+      s3_log(S3_LOG_DEBUG, request_id, "Motr connection failed\n");
     }
     context->on_failed_handler()();  // Invoke the handler.
 

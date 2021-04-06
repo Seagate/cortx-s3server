@@ -72,6 +72,8 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
 
   void set_authorization_meta();
   void check_source_bucket_authorization();
+  void check_source_bucket_authorization_success();
+  void check_source_bucket_authorization_failed();
   void set_source_bucket_authorization_metadata();
 
  public:
@@ -103,6 +105,8 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   friend class S3CopyObjectActionTest;
 
   FRIEND_TEST(S3CopyObjectActionTest, GetSourceBucketAndObjectSuccess);
+  FRIEND_TEST(S3CopyObjectActionTest, GetSourceBucketAndSpecialObjectSuccess);
+  FRIEND_TEST(S3CopyObjectActionTest, UIGetSourceBucketAndObjectSuccess);
   FRIEND_TEST(S3CopyObjectActionTest, GetSourceBucketAndObjectFailure);
   FRIEND_TEST(S3CopyObjectActionTest, FetchSourceBucketInfo);
   FRIEND_TEST(S3CopyObjectActionTest, FetchSourceBucketInfoFailedMissing);
