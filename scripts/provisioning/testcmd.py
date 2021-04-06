@@ -23,26 +23,35 @@ import sys
 from setupcmd import SetupCmd
 from cortx.utils.process import SimpleProcess
 
+SANITY_SCRIPT_PATH = '/opt/seagate/cortx/s3/scripts/s3-sanity-test.sh'
+LDAP_SWITCH = '-p'
+ENDPOINT_SWITCH = '-e'
+
 class TestCmd(SetupCmd):
   """Test Setup Cmd."""
   name = "test"
 
-  def __init__(self, config: str):
+  def __init__(self, config: str, test_plan: str):
     """Constructor."""
     try:
       super(TestCmd, self).__init__(config)
       self.read_ldap_credentials()
+      self.test_plan = test_plan
 
     except Exception as e:
       raise e
 
   def process(self):
     """Main processing function."""
+    #TODO: remove the return in next sprint
+    return
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
 
     try:
-      cmd = ['/opt/seagate/cortx/s3/scripts/s3-sanity-test.sh', '-p',  f'{self.ldap_passwd}']
+      self.read_endpoint_value()
+      sys.stdout.write(f"Endpoint fqdn {self.endpoint}\n")
+      cmd = [SANITY_SCRIPT_PATH, LDAP_SWITCH,  f'{self.ldap_passwd}', ENDPOINT_SWITCH, f'{self.endpoint}']
       handler = SimpleProcess(cmd)
       stdout, stderr, retcode = handler.run()
       if retcode != 0:
