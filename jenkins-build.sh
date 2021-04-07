@@ -570,14 +570,14 @@ s3server_stop
 # 2. change config to enable DI params
 $USE_SUDO sed -ri 's/(.*)S3_RANGED_READ_ENABLED:[[:space:]]*true(.*)/\1S3_RANGED_READ_ENABLED: false\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
 $USE_SUDO sed -ri 's/(.*)S3_READ_MD5_CHECK_ENABLED:[[:space:]]*false(.*)/\1S3_READ_MD5_CHECK_ENABLED: true\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
-s3_config_port=`grep -oE "S3_SERVER_BIND_PORT:\s*([0-9]?+)" /opt/seagate/cortx/s3/conf/s3config.yaml | tr -s ' ' | cut -d ' ' -f 2`
+s3_config_port=$(grep -oE "S3_SERVER_BIND_PORT:\s*([0-9]?+)" /opt/seagate/cortx/s3/conf/s3config.yaml | tr -s ' ' | cut -d ' ' -f 2)
 
 # 3. start s3server
 s3server_start
 
 # 4. enable DI FI
-curl -X PUT -H "x-seagate-faultinjection: enable,always,di_data_corrupted_on_write,0,0" localhost:$s3_config_port
-curl -X PUT -H "x-seagate-faultinjection: enable,always,di_data_corrupted_on_read,0,0" localhost:$s3_config_port
+curl -X PUT -H "x-seagate-faultinjection: enable,always,di_data_corrupted_on_write,0,0" "localhost:$s3_config_port"
+curl -X PUT -H "x-seagate-faultinjection: enable,always,di_data_corrupted_on_read,0,0" "localhost:$s3_config_port"
 
 # 5. ensure extra python packets installed
 $USE_SUDO pip3 list | grep plumbum || $USE_SUDO pip3 install plumbum
