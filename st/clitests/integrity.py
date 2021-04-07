@@ -7,7 +7,6 @@ import string
 import argparse
 from os import path
 
-import plumbum
 from plumbum import local
 from typing import List
 
