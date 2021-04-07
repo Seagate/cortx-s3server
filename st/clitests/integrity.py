@@ -154,7 +154,7 @@ def main() -> None:
     args.output = path.abspath(args.output)
     if not args.bucket:
         random.seed(a=None)
-        allsym = f"{string.ascii_lowercase}{string.digits}.-"
+        allsym = f"{string.ascii_lowercase}{string.digits}-"
         args.bucket = "{}{}{}".format(
             random.choice(string.ascii_lowercase),
             ''.join(random.choice(allsym) for i in range(20)),
