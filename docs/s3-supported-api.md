@@ -54,9 +54,46 @@
 ## Supported Operations/APIs on Bucket
 
 1.  GetBucket (List objects in the specified bucket)  
+
     `aws s3 ls s3://<your_bucket>`  
     `aws s3api list-objects --bucket <your_bucket>`  
     `aws s3api list-objects-v2 --bucket <your_bucket>`  
+    
+    **Supported Common Request Headers**
+    
+    `Host`
+    
+    `Accept-Encoding`
+    
+    `X-Amz-Content-SHA256` 
+    
+    `Authorization`
+    
+    `X-Amz-Date`
+    
+    `User-Agent` 
+    
+    `X-Forwarded-For`
+    
+    **What's not supported**
+    
+    - **Additional headers**
+      
+      `x-amz-account-id`
+      
+    - **Common request headers**
+    
+      `x-amz-security-token`
+      
+    **Common Response Headers sent by S3**
+    
+    `Content-Type` 
+    
+    `Content-Length`
+    
+    `Connection` 
+    
+    `Retry-After`
 
 2.  Put bucket  
     `aws s3 mb s3://<your_bucket>`  
