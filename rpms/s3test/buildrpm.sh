@@ -81,12 +81,6 @@ elif ! [ -z "${PATH_SRC}" ]; then
     cd cortx-s3-test-"${S3TEST_SUITE_VERSION}"-git"${GIT_VER}"
 fi
 
-#mkdir -p scripts
-#mkdir -p certs/stx-s3-clients/s3/
-
-#cp "${PATH_SRC}/scripts/s3-sanity/s3-sanity-test.sh" "scripts/s3-sanity-test.sh"
-#cp "${PATH_SRC}/.s3cfg" ".s3cfg"
-#cp "${PATH_SRC}/ansible/files/certs/stx-s3-clients/s3/ca.crt" "certs/stx-s3-clients/s3/ca.crt"
 cd ~/rpmbuild/SOURCES/
 tar -zcvf cortx-s3-test-"${S3TEST_SUITE_VERSION}"-git"${GIT_VER}".tar.gz cortx-s3-test-"${S3TEST_SUITE_VERSION}"-git"${GIT_VER}"
 
