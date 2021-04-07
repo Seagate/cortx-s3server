@@ -59,9 +59,9 @@
     `aws s3api list-objects --bucket <your_bucket>`  
     `aws s3api list-objects-v2 --bucket <your_bucket>`  
     
-    | **Supported Common Request Headers** | **What's not supported** | **Common Response Headers sent by S3** |
+    | **What's supported** | **What's not supported** | **Common Response Headers sent by S3** |
     |:-------------------------------------|:--------------------------| :-------------------------------------|
-    | `Host` </br> `Accept-Encoding` </br> `X-Amz-Content-SHA256` </br> `Authorization` </br> `X-Amz-Date` </br> `User-Agent` </br> `X-Forwarded-For` | <ul><li> **Additional headers** </br> `x-amz-account-id`</li><li> **Common request headers** </br> `x-amz-security-token` </li> </ul> | `Content-Type` </br> `Content-Length` </br> `Connection` </br> `Retry-After` | 
+    | **Common Request Headers** </br> `Host` </br> `Accept-Encoding` </br> `X-Amz-Content-SHA256` </br> `Authorization` </br> `X-Amz-Date` </br> `User-Agent` </br> `X-Forwarded-For` | <ul><li> **Additional header** </br> `x-amz-account-id`</li><li> **Common request header** </br> `x-amz-security-token` </li> </ul> | `Content-Type` </br> `Content-Length` </br> `Connection` </br> `Retry-After` | 
 
 2.  Put bucket  
 
