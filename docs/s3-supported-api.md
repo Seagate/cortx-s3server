@@ -61,11 +61,16 @@
     
     | **Supported Common Request Headers** | **What's not supported** | **Common Response Headers sent by S3** |
     |:-------------------------------------|:--------------------------| :-------------------------------------|
-    | `Host` </br> `Accept-Encoding` </br> `X-Amz-Content-SHA256` </br> `Authorization` </br> `X-Amz-Date` </br> `User-Agent` </br> `X-Forwarded-For` | <ul> <li> **Additional headers** </li> `x-amz-account-id` </br><li> **Common request headers**</li>`x-amz-security-token` | `Content-Type` </br> `Content-Length` </br> `Connection` </br> `Retry-After` |
+    | `Host` </br> `Accept-Encoding` </br> `X-Amz-Content-SHA256` </br> `Authorization` </br> `X-Amz-Date` </br> `User-Agent` </br> `X-Forwarded-For` | <ul> <li> **Additional headers** </li> `x-amz-account-id` </br><li> **Common request headers**</li>`x-amz-security-token` | `Content-Type` </br> `Content-Length` </br> `Connection` </br> `Retry-After` | 
 
 2.  Put bucket  
+
     `aws s3 mb s3://<your_bucket>`  
     `aws s3api create-bucket --bucket <your_bucket>`  
+    
+    | **What's Supported** | **What's not supported** | **Common Response Headers sent by S3** |
+    |:-------------------------------------|:--------------------------| :-------------------------------------|
+    | **Common Request Headers** </br> `Host` </br> `Accept-Encoding` </br> `X-Amz-Content-SHA256` </br> `Content-Length` </br> `Authorization` </br> `X-Amz-Date` </br> `User-Agent` </br> `X-Forwarded-For`</br> **Additional headers** </br> `x-amz-acl` </br> `x-amz-grant-full-control` </br> `x-amz-grant-read` </br> `x-amz-grant-read-acp` </br> `x-amz-grant-write` </br> `x-amz-grant-write-acp` | <ul><li>**Unsupported common request header** </br> `x-amz-security-token` </li> <li> **Additional header** </br> `x-amz-bucket-object-lock-enabled` </li> | `Content-Type` </br> `Content-Length` </br> `Retry-After` |
 
 3.  Head bucket  
     `aws s3api head-bucket --bucket <your_bucket>`  
