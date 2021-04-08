@@ -347,6 +347,10 @@ void S3GetObjectAction::read_object() {
     int num_of_parts = S3AwsEtag::get_num_of_parts(etag);
     // it's impossible to have multipart upload with 0 parts
     assert(num_of_parts > 0);
+    if (num_of_parts == 0) {
+      s3_log(S3_LOG_FATAL, request_id,
+             "It's impossible to have multipart upload with 0 parts");
+    }
     motr_reader->set_multipart_num_of_parts(num_of_parts);
     s3_log(S3_LOG_DEBUG, "", "part_one_size=%zu etag=%s num_of_parts=%d",
            part_one_size, etag.c_str(), num_of_parts);

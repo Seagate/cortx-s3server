@@ -122,6 +122,6 @@ extern S3Option* g_option_instance;
   "transitioning to safe mode. Contact Seagate Support."
 #define S3_IEM_CHECKSUM_MISMATCH_JSON                                 \
   ", \"bucket_name\": \"%s\", \"object_name\": \"%s\", \"motr_oid\":" \
-  " \"%" SCNx64 ":%" SCNx64 "\", \"md5_calc\": \"%s\", \"md5_read\": \"%s\" "
+  " \"%" SCNx64 ":%" SCNx64 "\", \"md5_calculated\": \"%s\", \"md5_from_metadata\": \"%s\" "
 
 #endif  // __S3_SERVER_IEM_H__
