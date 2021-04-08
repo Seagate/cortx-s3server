@@ -283,6 +283,14 @@ TEST_F(S3ObjectMetadataTest, GetSet) {
                metadata_obj_under_test->get_multipart_index_name().c_str());
 }
 
+TEST_F(S3ObjectMetadataTest, RenameObjectName) {
+  std::string new_object_name = "object1";
+
+  metadata_obj_under_test->rename_object_name(new_object_name);
+  EXPECT_STREQ("object1",
+               metadata_obj_under_test->get_object_name().c_str());
+}
+
 TEST_F(S3MultipartObjectMetadataTest, GetUserIdUplodIdName) {
   EXPECT_STREQ("s3user-id", metadata_obj_under_test->user_id.c_str());
   EXPECT_STREQ("1234-1234", metadata_obj_under_test->upload_id.c_str());

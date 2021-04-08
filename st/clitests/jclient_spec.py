@@ -756,6 +756,19 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
 
+# ************ TEST: Multipart Initiate of same object twice ***********
+    JClientTest('Jclient can create bucket seagatebucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+
+    JClientTest('Jclient can initiate multipart upload').init_mpu("seagatebucket", "18MBfile", 18000000)\
+            .execute_test().command_is_successful()
+
+    JClientTest('Jclient can again initiate multipart upload').init_mpu("seagatebucket", "18MBfile", 18000000)\
+            .execute_test().command_is_successful()
+
+    result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagatebucket").execute_test()
+    result.command_response_should_have_n_times('18MBfile', 2)
+
+    JClientTest('Jclient can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
 
 # Add tests which are specific to Path style APIs
 
@@ -765,4 +778,3 @@ S3ClientConfig.pathstyle = True
 # /etc/hosts should not contains nondnsbucket. This is to test the path style APIs.
 JClientTest('Jclient can create bucket nondnsbucket').create_bucket("nondnsbucket").execute_test().command_is_successful()
 JClientTest('Jclient can delete bucket nondnsbucket').delete_bucket("nondnsbucket").execute_test().command_is_successful()
-
