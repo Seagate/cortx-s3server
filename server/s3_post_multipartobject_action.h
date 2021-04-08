@@ -113,6 +113,7 @@ class S3PostMultipartObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PostMultipartObjectTest, UploadInProgressMetadataCorrupt);
   FRIEND_TEST(S3PostMultipartObjectTest, ValidateRequestTags);
   FRIEND_TEST(S3PostMultipartObjectTest, VaidateEmptyTags);
+  FRIEND_TEST(S3PostMultipartObjectTest, CheckBucketObjectState);
   FRIEND_TEST(S3PostMultipartObjectTest, CreateObject);
   FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectFailed);
   FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectFailedToLaunch);
