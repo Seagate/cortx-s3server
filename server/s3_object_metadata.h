@@ -391,6 +391,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   FRIEND_TEST(S3ObjectMetadataTest, ConstructorTest);
   FRIEND_TEST(S3MultipartObjectMetadataTest, ConstructorTest);
   FRIEND_TEST(S3ObjectMetadataTest, GetSet);
+  FRIEND_TEST(S3ObjectMetadataTest, RenameObjectName);
   FRIEND_TEST(S3MultipartObjectMetadataTest, GetUserIdUplodIdName);
   FRIEND_TEST(S3ObjectMetadataTest, GetSetOIDsPolicyAndLocation);
   FRIEND_TEST(S3ObjectMetadataTest, SetAcl);
