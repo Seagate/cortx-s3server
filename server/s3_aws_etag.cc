@@ -129,7 +129,7 @@ std::string S3AwsEtag::finalize() {
 
 std::string S3AwsEtag::get_final_etag() { return final_etag; }
 
-int S3AwsEtag::get_num_of_parts(const std::string& etag)
+size_t S3AwsEtag::get_num_of_parts(const std::string& etag)
 {
   size_t dash_pos = etag.rfind('-');
   if (dash_pos == std::string::npos)
