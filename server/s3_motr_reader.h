@@ -257,7 +257,6 @@ class S3MotrReader {
 
   virtual void set_last_index(size_t index) { last_index = index; }
 
-  // copy-paste from server/s3_motr_writer.h
   virtual std::string get_content_md5() {
     // Complete MD5 computation and remember
     md5crypt.Finalize();
@@ -268,7 +267,6 @@ class S3MotrReader {
     return content_md5;
   }
 
-  // copy-paste from server/s3_motr_writer.h
   virtual std::string get_content_awsetag() { return awsetag.finalize(); }
 
   // For Testing purpose
