@@ -756,7 +756,7 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
 
-# ************ TEST: Multiple INIT-MPU ***********
+# ************ TEST: Multipart Initiate of same object twice ***********
     JClientTest('Jclient can create bucket seagatebucket').create_bucket("seagatebucket").execute_test().command_is_successful()
 
     JClientTest('Jclient can initiate multipart upload').init_mpu("seagatebucket", "18MBfile", 18000000)\
@@ -766,7 +766,7 @@ for i, val in enumerate(pathstyle_values):
             .execute_test().command_is_successful()
 
     result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagatebucket").execute_test()
-    result.command_response_should_have('18MBfile')
+    result.command_response_should_have_n_times('18MBfile', 2)
 
     JClientTest('Jclient can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
     

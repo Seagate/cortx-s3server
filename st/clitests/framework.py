@@ -161,6 +161,22 @@ class PyCliTest(object):
         print("Response has [%s]." % (msg))
         return self
 
+    def command_response_should_have_n_times(self, msg, count):
+        temp_count = 0
+        if not Config.dummy_run:
+            #counting the number of occurences of msg("should be equal to 'count' times")
+            text = self.status.stdout
+            index = 0
+            while index < len(text):
+                index = text.find(msg, index)
+                if index == -1:
+                    break
+                index += 8
+                temp_count += 1
+            assert count == temp_count, 'Test Failed'
+        print("Response has [%s] [%d] times." % (msg, count))
+        return self
+
     def command_response_should_be_empty(self):
         if not Config.dummy_run:
             assert self.status.stdout == ""
