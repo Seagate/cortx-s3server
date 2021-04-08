@@ -1360,5 +1360,6 @@ TEST_F(S3GetObjectActionTest, ReadObjectEmulatedMultiPartMD5Passes) {
   // it as volatile.
   action_under_test->object_metadata->set_part_one_size(4096);
   action_under_test->read_object();
+  EXPECT_FALSE(action_under_test->checksum_mismatch);
   S3Option::get_instance()->set_s3_read_md5_check_enabled(md5check);
 }
