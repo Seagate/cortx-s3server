@@ -148,6 +148,15 @@ TEST_F(S3PostMultipartObjectTest, VaidateEmptyTags) {
                action_under_test->get_s3_error_code().c_str());
 }
 
+TEST_F(S3PostMultipartObjectTest, CheckBucketObjectState) {
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(AtLeast(1));
+    
+  action_under_test->check_bucket_object_state();
+}
+
 TEST_F(S3PostMultipartObjectTest, RollbackPartMetadataIndex) {
   action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), remove_index(_, _))
