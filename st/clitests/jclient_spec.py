@@ -769,7 +769,7 @@ for i, val in enumerate(pathstyle_values):
     result.command_response_should_have_n_times('18MBfile', 2)
 
     JClientTest('Jclient can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
-    
+
 # Add tests which are specific to Path style APIs
 
 S3ClientConfig.pathstyle = True
