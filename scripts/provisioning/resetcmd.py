@@ -53,14 +53,14 @@ class ResetCmd(SetupCmd):
       self.DeleteLdapAccountsUsers()
       sys.stdout.write('INFO: LDAP Accounts and Users Cleanup successful.\n')
     except Exception as e:
-      sys.stderr.write(f'Failed to cleanup LDAP Accounts and Users, error: {e}\n')
+      sys.stderr.write(f'ERROR:Failed to cleanup LDAP Accounts and Users, error: {e}\n')
       raise e
 
     try:
-      sys.stdout.write("Shutting down s3 services...\n")
+      sys.stdout.write("INFO:Shutting down s3 services...\n")
       self.shutdown_services(services_list)
     except Exception as e:
-      sys.stderr.write(f'Failed to stop s3services, error: {e}\n')
+      sys.stderr.write(f'ERROR:Failed to stop s3services, error: {e}\n')
       raise e
 
     try:
@@ -79,7 +79,7 @@ class ResetCmd(SetupCmd):
         sys.stdout.write('INFO:Purge message successful.\n')
 
     except Exception as e:
-      sys.stderr.write(f'Failed to cleanup log directories or files, error: {e}\n')
+      sys.stderr.write(f'ERROR: Failed to cleanup log directories or files, error: {e}\n')
       raise e
 
 
@@ -167,25 +167,18 @@ class ResetCmd(SetupCmd):
       raise e
 
   def DeleteLdapAccountsUsers(self):
-    """Deletes all LDAP accounts and users."""
-    os.system('slapcat -n 3 -l conf_backup.ldif')
-    line_number = 0
-    for line in open("conf_backup.ldif"):
-      if re.match("dn: o=.*",line) != None:
-        break
-      line_number += 1
-    os.system('sed -i \'' + str(line_number) + ',$ d\' conf_backup.ldif')
-    self.delete_mdb_files()
-    self.restart_services(['slapd'])
-    os.system('slapadd -n 3 -F /etc/openldap/slapd.d -l conf_backup.ldif')
+    """Deletes all LDAP data entries e.g. accounts, users, access keys using admin credentials."""
+    self.read_ldap_credentials()
+
     try:
-      os.remove('conf_backup.ldif')
+      # Delete data directories e.g. ou=accesskeys, ou=accounts,ou=idp from dc=s3,dc=seagate,dc=com tree"
+      LdapAccountAction(self.ldap_root_user, self.rootdn_passwd).delete_s3_ldap_data()
     except Exception as e:
-      sys.stderr.write(f'ERROR: No such file! , error: {str(e)}\n')
+      sys.stderr.write(f'ERROR: Failed to delete s3 recoards exists in ldap, error: {e}\n')
       raise e
+
     try:
       # Recreate background delete account after LDAP reset
-      self.read_ldap_credentials()
       bgdelete_acc_input_params_dict = {'account_name': "s3-background-delete-svc",
                                   'account_id': "67891",
                                   'canonical_id': "C67891",
@@ -196,5 +189,5 @@ class ResetCmd(SetupCmd):
                                 }
       LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
     except Exception as e:
-      sys.stderr.write(f'Failed to create backgrounddelete service account, error: {e}\n')
+      sys.stderr.write(f'ERROR: Failed to create backgrounddelete service account, error: {e}\n')
       raise e

@@ -85,7 +85,10 @@ def main():
       
     elif args.command == 'test':
       from testcmd import TestCmd
-      TestCmd(args.config).process()
+      test_plan = None
+      if args.plan:
+        test_plan = args.plan
+      TestCmd(args.config, test_plan).process()
       sys.stdout.write('PASS: S3-Sanity test passed.\n')
       
     elif args.command == 'reset':
