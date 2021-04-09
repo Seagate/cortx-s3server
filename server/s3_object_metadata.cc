@@ -344,7 +344,7 @@ void S3ObjectMetadata::load_successful() {
   if (this->from_json(motr_kv_reader->get_value()) != 0) {
     s3_log(S3_LOG_ERROR, request_id,
            "Json Parsing failed. Index oid = "
-           "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
+           "%" SCNx64 ":%" SCNx64 ", Key = %s, Value = %s\n",
            object_list_index_oid.u_hi, object_list_index_oid.u_lo,
            object_name.c_str(), motr_kv_reader->get_value().c_str());
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
@@ -353,6 +353,22 @@ void S3ObjectMetadata::load_successful() {
     json_parsing_error = true;
     load_failed();
   } else if (!request->validate_attrs(bucket_name, object_name)) {
+    namespace s3cu = S3CommonUtilities;
+    const char* const req_bucket = request->get_bucket_name().c_str();
+    const char* const req_object = request->get_object_name().c_str();
+    const char* const got_object = s3cu::isprints(object_name)
+                                       ? "@@@object_corrupted@@@"
+                                       : object_name.c_str();
+    const char* const got_bucket = s3cu::isprints(bucket_name)
+                                       ? "@@@bucket_corrupted@@@"
+                                       : bucket_name.c_str();
+    s3_log(S3_LOG_ERROR, request_id,
+           "Metadata read from KVS are different from expected. Index oid = "
+           "%" SCNx64 ":%" SCNx64
+           ", req_bucket = %s, got_bucket = %s, req_object = %s, got_object = "
+           "%s\n",
+           object_list_index_oid.u_hi, object_list_index_oid.u_lo, req_bucket,
+           got_bucket, req_object, got_object);
     load_failed();
   } else {
     s3_timer.stop();

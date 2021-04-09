@@ -93,6 +93,8 @@ bool is_yaml_value_null(const std::string &value);
 
 std::string evhtp_error_flags_description(uint8_t errtype);
 
+bool isprints(const std::string &attr);
+
 }  // namespace S3CommonUtilities
 
 // Common graceful shutdown

@@ -91,9 +91,7 @@ class S3RequestObject : public RequestObject {
   bool validate_attrs(const std::string& c_bucket_name,
                       const std::string& c_object_name);
 
-
  public:
-
   FRIEND_TEST(S3MockAuthClientCheckTest, CheckAuth);
   FRIEND_TEST(S3RequestObjectTest, ReturnsValidUriPaths);
   FRIEND_TEST(S3RequestObjectTest, ReturnsValidRawQuery);
