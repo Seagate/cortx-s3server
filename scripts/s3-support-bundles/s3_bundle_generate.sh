@@ -51,8 +51,6 @@ then
     rootdnpasswd=$(s3cipher decrypt --data $encryptedkey --key $ldapcipherkey)
 fi
 
-echo $rootdnpasswd
-
 bundle_name="s3_$bundle_id.tar.xz"
 s3_bundle_location=$bundle_path/s3
 
