@@ -88,6 +88,9 @@ class S3RequestObject : public RequestObject {
   virtual void set_action_str(const std::string& action);
   virtual void set_default_acl(const std::string& name);
   virtual const std::string& get_default_acl();
+  bool validate_attrs(const std::string& c_bucket_name,
+                      const std::string& c_object_name);
+
 
  public:
 

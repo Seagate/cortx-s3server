@@ -46,7 +46,7 @@ class S3ObjectMetadataTest : public testing::Test {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
     call_count_one = 0;
-    bucket_name = "seagatebucket";
+    bucket_name = "seagate_bucket";
     object_name = "objectname";
 
     ptr_mock_request =
@@ -323,6 +323,10 @@ TEST_F(S3ObjectMetadataTest, Load) {
 }
 
 TEST_F(S3ObjectMetadataTest, LoadSuccessful) {
+  const std::string file = "3kfile";
+  EXPECT_CALL(*ptr_mock_request, get_object_name())
+    .WillRepeatedly(ReturnRef(file));
+
   metadata_obj_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_motr_kvs_reader;
 
@@ -335,6 +339,25 @@ TEST_F(S3ObjectMetadataTest, LoadSuccessful) {
   metadata_obj_under_test->load_successful();
   EXPECT_EQ(metadata_obj_under_test->state, S3ObjectMetadataState::present);
   EXPECT_TRUE(s3objectmetadata_callbackobj.success_called);
+}
+
+TEST_F(S3ObjectMetadataTest, LoadMetadataFail) {
+  const std::string file = "3kfile@@corrupted";
+  EXPECT_CALL(*ptr_mock_request, get_object_name())
+    .WillRepeatedly(ReturnRef(file));
+
+  metadata_obj_under_test->motr_kv_reader =
+      motr_kvs_reader_factory->mock_motr_kvs_reader;
+
+  metadata_obj_under_test->handler_on_failed =
+      std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
+
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
+      .WillRepeatedly(Return(
+           "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));
+  metadata_obj_under_test->load_successful();
+  EXPECT_EQ(metadata_obj_under_test->state, S3ObjectMetadataState::failed);
+  EXPECT_FALSE(s3objectmetadata_callbackobj.success_called);
 }
 
 TEST_F(S3ObjectMetadataTest, LoadSuccessInvalidJson) {
@@ -586,7 +609,7 @@ TEST_F(S3ObjectMetadataTest, ToJson) {
 TEST_F(S3ObjectMetadataTest, FromJson) {
   int ret_status;
   std::string json_str =
-      "{\"ACL\":\"PD94+Cg==\",\"Bucket-Name\":\"seagatebucket\"}";
+      "{\"ACL\":\"PD94+Cg==\",\"Bucket-Name\":\"seagate_bucket\"}";
 
   ret_status = metadata_obj_under_test->from_json(json_str);
   EXPECT_TRUE(ret_status == 0);
@@ -605,10 +628,9 @@ TEST_F(S3MultipartObjectMetadataTest, FromJson) {
 }
 
 TEST_F(S3ObjectMetadataTest, GetEncodedBucketAcl) {
-  std::string json_str = "{\"ACL\":\"PD94bg==\"}";
+  std::string json_str = "{\"ACL\":\"PD94bg==\",\"Bucket-Name\":\"seagate_bucket\"}";
 
   metadata_obj_under_test->from_json(json_str);
   EXPECT_STREQ("PD94bg==",
                metadata_obj_under_test->get_encoded_object_acl().c_str());
 }
-

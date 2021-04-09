@@ -307,6 +307,7 @@ class S3ObjectMetadata {
   FRIEND_TEST(S3ObjectMetadataTest, AddUserDefinedAttribute);
   FRIEND_TEST(S3ObjectMetadataTest, Load);
   FRIEND_TEST(S3ObjectMetadataTest, LoadSuccessful);
+  FRIEND_TEST(S3ObjectMetadataTest, LoadMetadataFail);
   FRIEND_TEST(S3ObjectMetadataTest, LoadSuccessInvalidJson);
   FRIEND_TEST(S3ObjectMetadataTest, LoadSuccessfulInvalidJson);
   FRIEND_TEST(S3ObjectMetadataTest, LoadObjectInfoFailedJsonParsingFailed);
@@ -333,4 +334,3 @@ class S3ObjectMetadata {
 };
 
 #endif
-

@@ -110,4 +110,11 @@ extern S3Option* g_option_instance;
   "Metadata has accessibility issues. Contact Seagate Support."
 #define S3_IEM_METADATA_CORRUPTED_JSON ""
 
+#define S3_IEM_OBJECT_METADATA_NOT_VALID "0030060005"
+#define S3_IEM_OBJECT_METADATA_NOT_VALID_STR \
+  "Metadata read from persistent storage doesn't match with requested."
+#define S3_IEM_OBJECT_METADATA_NOT_VALID_JSON \
+  ", \"req_bucket_name\": \"%s\", \"bucket_name\": \"%s\"" \
+  ", \"req_object_name\": \"%s\", \"object_name\": \"%s\""
+
 #endif  // __S3_SERVER_IEM_H__
