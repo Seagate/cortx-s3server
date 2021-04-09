@@ -37,7 +37,6 @@ using ::testing::ReturnRef;
 using ::testing::AtLeast;
 using ::testing::DefaultValue;
 
-
 #define DUMMY_ACL_STR "<Owner>\n<ID>1</ID>\n</Owner>"
 
 class S3ObjectMetadataTest : public testing::Test {
@@ -325,7 +324,7 @@ TEST_F(S3ObjectMetadataTest, Load) {
 TEST_F(S3ObjectMetadataTest, LoadSuccessful) {
   const std::string file = "3kfile";
   EXPECT_CALL(*ptr_mock_request, get_object_name())
-    .WillRepeatedly(ReturnRef(file));
+      .WillRepeatedly(ReturnRef(file));
 
   metadata_obj_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_motr_kvs_reader;
@@ -344,7 +343,7 @@ TEST_F(S3ObjectMetadataTest, LoadSuccessful) {
 TEST_F(S3ObjectMetadataTest, LoadMetadataFail) {
   const std::string file = "3kfile@@corrupted";
   EXPECT_CALL(*ptr_mock_request, get_object_name())
-    .WillRepeatedly(ReturnRef(file));
+      .WillRepeatedly(ReturnRef(file));
 
   metadata_obj_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_motr_kvs_reader;
@@ -628,7 +627,8 @@ TEST_F(S3MultipartObjectMetadataTest, FromJson) {
 }
 
 TEST_F(S3ObjectMetadataTest, GetEncodedBucketAcl) {
-  std::string json_str = "{\"ACL\":\"PD94bg==\",\"Bucket-Name\":\"seagate_bucket\"}";
+  std::string json_str =
+      "{\"ACL\":\"PD94bg==\",\"Bucket-Name\":\"seagate_bucket\"}";
 
   metadata_obj_under_test->from_json(json_str);
   EXPECT_STREQ("PD94bg==",

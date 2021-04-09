@@ -131,9 +131,10 @@ TEST_F(S3PartMetadataTest, GetSet) {
 
 TEST_F(S3PartMetadataTest, AddSystemAttribute) {
   metadata_under_test->add_system_attribute("LocationConstraint", "us-east");
-  EXPECT_STREQ("us-east", metadata_under_test
-                              ->system_defined_attribute["LocationConstraint"]
-                              .c_str());
+  EXPECT_STREQ(
+      "us-east",
+      metadata_under_test->system_defined_attribute["LocationConstraint"]
+          .c_str());
 }
 
 TEST_F(S3PartMetadataTest, AddUserDefinedAttribute) {
@@ -156,7 +157,7 @@ TEST_F(S3PartMetadataTest, Load) {
 TEST_F(S3PartMetadataTest, LoadSuccessful) {
   const std::string file = "3kfile";
   EXPECT_CALL(*ptr_mock_request, get_object_name())
-    .WillRepeatedly(ReturnRef(file));
+      .WillRepeatedly(ReturnRef(file));
 
   metadata_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_motr_kvs_reader;
@@ -175,7 +176,7 @@ TEST_F(S3PartMetadataTest, LoadSuccessful) {
 TEST_F(S3PartMetadataTest, LoadMetadataFail) {
   const std::string file = "3kfile@@corrupted";
   EXPECT_CALL(*ptr_mock_request, get_object_name())
-    .WillRepeatedly(ReturnRef(file));
+      .WillRepeatedly(ReturnRef(file));
 
   metadata_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_motr_kvs_reader;
