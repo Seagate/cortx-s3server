@@ -41,7 +41,7 @@ class S3PartMetadataTest : public testing::Test {
   S3PartMetadataTest() {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
-    bucket_name = "seagatebucket";
+    bucket_name = "seagate_bucket";
     object_name = "objname";
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
@@ -154,6 +154,10 @@ TEST_F(S3PartMetadataTest, Load) {
 }
 
 TEST_F(S3PartMetadataTest, LoadSuccessful) {
+  const std::string file = "3kfile";
+  EXPECT_CALL(*ptr_mock_request, get_object_name())
+    .WillRepeatedly(ReturnRef(file));
+
   metadata_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_motr_kvs_reader;
 
@@ -166,6 +170,25 @@ TEST_F(S3PartMetadataTest, LoadSuccessful) {
   metadata_under_test->load_successful();
   EXPECT_EQ(metadata_under_test->state, S3PartMetadataState::present);
   EXPECT_TRUE(s3objectmetadata_callbackobj.success_called);
+}
+
+TEST_F(S3PartMetadataTest, LoadMetadataFail) {
+  const std::string file = "3kfile@@corrupted";
+  EXPECT_CALL(*ptr_mock_request, get_object_name())
+    .WillRepeatedly(ReturnRef(file));
+
+  metadata_under_test->motr_kv_reader =
+      motr_kvs_reader_factory->mock_motr_kvs_reader;
+
+  metadata_under_test->handler_on_failed =
+      std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
+
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
+      .WillRepeatedly(Return(
+           "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));
+  metadata_under_test->load_successful();
+  EXPECT_EQ(metadata_under_test->state, S3PartMetadataState::failed);
+  EXPECT_FALSE(s3objectmetadata_callbackobj.success_called);
 }
 
 TEST_F(S3PartMetadataTest, LoadSuccessInvalidJson) {
@@ -477,7 +500,7 @@ TEST_F(S3PartMetadataTest, ToJson) {
 
 TEST_F(S3PartMetadataTest, FromJsonSuccess) {
   std::string json_str =
-      "{\"ACL\":\"PD94+Cg==\",\"Bucket-Name\":\"seagatebucket\"}";
+      "{\"ACL\":\"PD94+Cg==\",\"Bucket-Name\":\"seagate_bucket\"}";
   EXPECT_EQ(0, metadata_under_test->from_json(json_str));
 }
 
@@ -485,4 +508,3 @@ TEST_F(S3PartMetadataTest, FromJsonFailure) {
   std::string json_str = "This is invalid Json String";
   EXPECT_EQ(-1, metadata_under_test->from_json(json_str));
 }
-
