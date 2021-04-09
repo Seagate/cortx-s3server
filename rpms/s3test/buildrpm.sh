@@ -70,21 +70,17 @@ cd ~/rpmbuild/SOURCES/
 rm -rf cortx-s3-test*
 if ! [ -z "${GIT_VER}" ]; then
   mkdir -p cortx-s3-test-"${S3TEST_SUITE_VERSION}"-git"${GIT_VER}"
+  git clone https://github.com/Seagate/cortx-s3server.git cortx-s3-test-"${S3TEST_SUITE_VERSION}"-git"${GIT_VER}"
   cd cortx-s3-test-"${S3TEST_SUITE_VERSION}"-git"${GIT_VER}"
   # For sake of test, attempt checkout of version
   git checkout "${GIT_VER}"
 elif ! [ -z "${PATH_SRC}" ]; then
     GIT_VER=$(git --git-dir "${PATH_SRC}"/.git rev-parse --short HEAD)
     mkdir -p cortx-s3-test-"${S3TEST_SUITE_VERSION}"-git"${GIT_VER}"
+    cp -ar "${PATH_SRC}"/. ./cortx-s3-test-"${S3TEST_SUITE_VERSION}"-git"${GIT_VER}"
     cd cortx-s3-test-"${S3TEST_SUITE_VERSION}"-git"${GIT_VER}"
 fi
 
-mkdir -p scripts
-mkdir -p certs/stx-s3-clients/s3/
-
-cp "${PATH_SRC}/scripts/s3-sanity/s3-sanity-test.sh" "scripts/s3-sanity-test.sh"
-cp "${PATH_SRC}/.s3cfg" ".s3cfg"
-cp "${PATH_SRC}/ansible/files/certs/stx-s3-clients/s3/ca.crt" "certs/stx-s3-clients/s3/ca.crt"
 cd ~/rpmbuild/SOURCES/
 tar -zcvf cortx-s3-test-"${S3TEST_SUITE_VERSION}"-git"${GIT_VER}".tar.gz cortx-s3-test-"${S3TEST_SUITE_VERSION}"-git"${GIT_VER}"
 
