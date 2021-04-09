@@ -235,6 +235,12 @@ std::string evhtp_error_flags_description(uint8_t errtype) {
   return errtype_str;
 }
 
+bool isprints(const std::string &attr) {
+  return std::all_of(attr.begin(), attr.end(), [](std::string::value_type c) {
+    return static_cast<bool>(std::isprint(c));
+  });
+}
+
 }  // namespace S3CommonUtilities
 
 void s3_kickoff_graceful_shutdown(int ignore) {
