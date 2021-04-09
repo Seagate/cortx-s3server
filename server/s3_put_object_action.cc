@@ -570,20 +570,14 @@ void S3PutObjectAction::save_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   std::string s_md5_got = request->get_header_value("content-md5");
-  if (!s_md5_got.empty()) {
-    std::string s_md5_calc = motr_writer->get_content_md5_base64();
-    s3_log(S3_LOG_DEBUG, request_id, "MD5 calculated: %s, MD5 got %s",
-           s_md5_calc.c_str(), s_md5_got.c_str());
+  if (!s_md5_got.empty() && !motr_writer->content_md5_matches(s_md5_got)) {
+    s3_log(S3_LOG_ERROR, request_id, "Content MD5 mismatch\n");
+    s3_put_action_state = S3PutObjectActionState::md5ValidationFailed;
 
-    if (s_md5_calc != s_md5_got) {
-      s3_log(S3_LOG_ERROR, request_id, "Content MD5 mismatch\n");
-      s3_put_action_state = S3PutObjectActionState::md5ValidationFailed;
-
-      set_s3_error("BadDigest");
-      // Clean up will be done after response.
-      send_response_to_s3_client();
-      return;
-    }
+    set_s3_error("BadDigest");
+    // Clean up will be done after response.
+    send_response_to_s3_client();
+    return;
   }
   s3_timer.start();
   // for shutdown testcases, check FI and set shutdown signal
