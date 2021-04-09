@@ -29,6 +29,7 @@
 #include "s3_request_object.h"
 #include "s3_stats.h"
 #include "s3_audit_info_logger.h"
+#include "s3_iem.h"
 
 extern S3Option* g_option_instance;
 
@@ -177,4 +178,33 @@ void S3RequestObject::populate_and_log_audit_info() {
   }
   }
   s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
+}
+
+static inline bool isprints(const std::string& attr)
+{
+  return std::all_of(attr.begin(), attr.end(), [](std::string::value_type c) {
+    return static_cast<bool>(std::isprint(c));
+  });
+}
+
+bool S3RequestObject::validate_attrs(const std::string& c_bucket_name,
+                                     const std::string& c_object_name)
+{
+  // NOTE: don't call get_object_name() and get_bucket_name() twice;
+  // UTs have expectations about amount and order of these calls.
+  const std::string& req_object_name = get_object_name();
+  const std::string& req_bucket_name = get_bucket_name();
+
+  if (s3_fi_is_enabled("di_metadata_bucket_or_object_corrupted") ||
+      req_bucket_name != c_bucket_name || req_object_name != c_object_name) {
+    s3_iem(LOG_ERR, S3_IEM_OBJECT_METADATA_NOT_VALID,
+           S3_IEM_OBJECT_METADATA_NOT_VALID_STR,
+           S3_IEM_OBJECT_METADATA_NOT_VALID_JSON,
+           !isprints(req_bucket_name) ? "@@@corrupted@@@" : req_bucket_name.c_str(),
+           !isprints(c_bucket_name)   ? "@@@corrupted@@@" : c_bucket_name.c_str(),
+           !isprints(req_object_name) ? "@@@corrupted@@@" : req_object_name.c_str(),
+           !isprints(c_object_name)   ? "@@@corrupted@@@" : c_object_name.c_str());
+    return false;
+  }
+  return true;
 }

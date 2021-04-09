@@ -352,6 +352,8 @@ void S3ObjectMetadata::load_successful() {
 
     json_parsing_error = true;
     load_failed();
+  } else if (!request->validate_attrs(bucket_name, object_name)) {
+    load_failed();
   } else {
     s3_timer.stop();
     const auto mss = s3_timer.elapsed_time_in_millisec();

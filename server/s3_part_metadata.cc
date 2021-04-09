@@ -206,6 +206,8 @@ void S3PartMetadata::load_successful() {
 
     json_parsing_error = true;
     load_failed();
+  } else if (!request->validate_attrs(bucket_name, object_name)) {
+    load_failed();
   } else {
     state = S3PartMetadataState::present;
     this->handler_on_success();
