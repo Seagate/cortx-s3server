@@ -124,4 +124,11 @@ extern S3Option* g_option_instance;
   ", \"bucket_name\": \"%s\", \"object_name\": \"%s\", \"motr_oid\":" \
   " \"%" SCNx64 ":%" SCNx64 "\", \"md5_calculated\": \"%s\", \"md5_from_metadata\": \"%s\" "
 
+#define S3_IEM_OBJECT_METADATA_NOT_VALID "0030060005"
+#define S3_IEM_OBJECT_METADATA_NOT_VALID_STR \
+  "Metadata read from persistent storage doesn't match with requested."
+#define S3_IEM_OBJECT_METADATA_NOT_VALID_JSON \
+  ", \"req_bucket_name\": \"%s\", \"bucket_name\": \"%s\"" \
+  ", \"req_object_name\": \"%s\", \"object_name\": \"%s\""
+
 #endif  // __S3_SERVER_IEM_H__

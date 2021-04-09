@@ -192,6 +192,7 @@ class S3PartMetadata {
   FRIEND_TEST(S3PartMetadataTest, AddUserDefinedAttribute);
   FRIEND_TEST(S3PartMetadataTest, Load);
   FRIEND_TEST(S3PartMetadataTest, LoadSuccessful);
+  FRIEND_TEST(S3PartMetadataTest, LoadMetadataFail);
   FRIEND_TEST(S3PartMetadataTest, LoadSuccessInvalidJson);
   FRIEND_TEST(S3PartMetadataTest, LoadPartInfoFailedJsonParsingFailed);
   FRIEND_TEST(S3PartMetadataTest, LoadPartInfoFailedMetadataMissing);
