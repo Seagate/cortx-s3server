@@ -181,8 +181,11 @@ class S3MotrWiter {
     return content_md5;
   }
 
-  virtual std::string get_content_md5_base64() {
-    return md5crypt.get_md5_base64enc_string();
+  virtual bool content_md5_matches(std::string md5_base64) {
+    std::string calculated = md5crypt.get_md5_base64enc_string();
+    s3_log(S3_LOG_DEBUG, request_id, "MD5 calculated: %s, MD5 got %s",
+           calculated.c_str(), md5_base64.c_str());
+    return calculated == md5_base64;
   }
 
   // async create
