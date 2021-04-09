@@ -38,14 +38,13 @@ fi
 
 bundle_id=$1
 bundle_path=$2
-# TODO: till we find out how to get rootdn password, keep 'rootdnpasswd' variable empty.
+# Fetch iamuser password from properties file and decrypt it.
 rootdnpasswd=''
 constkey=cortx
 propertiesfilepath="properties:///opt/seagate/cortx/auth/resources/authserver.properties"
 ldapkey="ldapLoginPW"
 ldapcipherkey=$(s3cipher generate_key --const_key $constkey)
 encryptedkey=$(s3confstore $propertiesfilepath getkey --key $ldapkey)
-echo $encryptedkey
 if [[ -z $(echo "$encryptedkey" | grep -Eio Failed) ]];
 then
     rootdnpasswd=$(s3cipher decrypt --data $encryptedkey --key $ldapcipherkey)
