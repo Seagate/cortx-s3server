@@ -120,7 +120,7 @@ public class AccountResponseGenerator extends AbstractResponseGenerator {
    ServerResponse maxAccountLimitExceeded(int limit) {
      String errorMessage =
          "The request was rejected because maximum limit(i.e " + limit +
-         ") of accounts creation has exceeded.";
+         ") of account creation has exceeded.";
 
      return formatResponse(HttpResponseStatus.FORBIDDEN,
                            "MaxAccountLimitExceeded", errorMessage);

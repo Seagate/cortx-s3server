@@ -38,7 +38,8 @@ import org.slf4j.LoggerFactory;
 public class UserController extends AbstractController {
 
     private final UserDAO userDAO;
-    private final UserResponseGenerator userResponseGenerator;
+    private
+     static UserResponseGenerator userResponseGenerator = null;
     private final Logger LOGGER =
             LoggerFactory.getLogger(UserController.class.getName());
     private
@@ -61,8 +62,8 @@ public class UserController extends AbstractController {
       User user;
       String pathPrefix;
       int usersCount = 0;
-      if (requestBody.containsKey("PathPrefix")) {
-        pathPrefix = requestBody.get("PathPrefix");
+      if (requestBody.containsKey("Path")) {
+        pathPrefix = requestBody.get("Path");
       } else {
         pathPrefix = "/";
       }

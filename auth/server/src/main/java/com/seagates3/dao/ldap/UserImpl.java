@@ -561,3 +561,4 @@ public class UserImpl implements UserDAO {
      }
    }
  }
+
