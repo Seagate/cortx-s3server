@@ -66,4 +66,11 @@ public interface UserDAO {
     public
      int getTotalCountOfUsers(String accountName,
                               String pathPrefix) throws DataAccessException;
+
+     /**
+      * Delete user from LDAP silently.
+      * @param user
+      */
+    public
+     void ldap_delete_user(User user) throws DataAccessException;
 }

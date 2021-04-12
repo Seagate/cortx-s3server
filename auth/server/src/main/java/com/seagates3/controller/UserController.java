@@ -119,6 +119,20 @@ public class UserController extends AbstractController {
       catch (DataAccessException ex) {
         return userResponseGenerator.internalServerError();
       }
+      // Handle multi-threaded/ multi-node create() API calls.
+      try {
+        usersCount = userDAO.getTotalCountOfUsers(
+            requestor.getAccount().getName(), pathPrefix);
+        int maxIAMUserlimit = AuthServerConfig.getMaxIAMUserLimit();
+
+        if (usersCount >= maxIAMUserlimit) {
+          userDAO.ldap_delete_user(user);
+          return userResponseGenerator.internalServerError();
+        }
+      }
+      catch (DataAccessException ex) {
+        return userResponseGenerator.internalServerError();
+      }
 
       return userResponseGenerator.generateCreateResponse(user);
     }

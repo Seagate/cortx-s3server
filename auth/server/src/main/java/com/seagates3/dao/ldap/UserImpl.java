@@ -560,5 +560,23 @@ public class UserImpl implements UserDAO {
            ex);
      }
    }
+
+   @Override public void ldap_delete_user(User user)
+       throws DataAccessException {
+     String dn = String.format("%s=%s,%s=%s,%s=%s,%s=%s,%s", LDAPUtils.USER_ID,
+                               user.getId(), LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
+                               LDAPUtils.USER_OU, LDAPUtils.ORGANIZATIONAL_NAME,
+                               user.getAccountName(),
+                               LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
+                               LDAPUtils.ACCOUNT_OU, LDAPUtils.BASE_DN);
+
+     try {
+       LDAPUtils.delete (dn);
+     }
+     catch (LDAPException ex) {
+       // TODO handle errors
+       throw new DataAccessException("Failed to delete the user.\n" + ex);
+     }
+   }
  }
 
