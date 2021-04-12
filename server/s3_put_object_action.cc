@@ -49,6 +49,7 @@ S3PutObjectAction::S3PutObjectAction(
       last_object_size(0),
       primary_object_size(0),
       total_object_size_consumed(0),
+      last_fragment_calc_size(0),
       current_fault_iteration(0),
       fault_mode_active(false),
       create_fragment_when_write_success(false) {
@@ -306,10 +307,10 @@ void S3PutObjectAction::create_object() {
     // S3 fault mode is active
     // The actual fragment size might be less than what is set here, if there
     // is a further write fault, creating another object.
-    size_t size_of_this_fragment =
+    last_fragment_calc_size =
         request->get_content_length() - this->total_object_size_consumed;
     _set_layout_id(S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
-        size_of_this_fragment));
+        last_fragment_calc_size));
   }
   motr_writer->create_object(
       std::bind(&S3PutObjectAction::create_object_successful, this),
@@ -325,6 +326,9 @@ void S3PutObjectAction::create_object_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_put_action_state = S3PutObjectActionState::newObjOidCreated;
   new_obj_oids.push_back(motr_writer->get_oid());
+
+  // Reset the size of last object/fragment
+  last_object_size = 0;
 
   if (!this->fault_mode_active) {
     // New Object or overwrite, create new metadata and release old.
@@ -568,8 +572,8 @@ void S3PutObjectAction::write_object_successful() {
   request->get_buffered_input()->flush_used_buffers();
 
   no_of_blocks_written++;
-  last_object_size += motr_writer->get_size_of_data_written();
-  total_object_size_consumed += motr_writer->get_size_of_data_written();
+  last_object_size = motr_writer->get_size_of_data_written();
+
   motr_writer->set_buffer_rewrite_flag(false);
 
   if (fault_mode_active && create_fragment_when_write_success) {
@@ -586,10 +590,11 @@ void S3PutObjectAction::write_object_successful() {
       part_frag_ctx.PVID =
           S3M0Uint128Helper::to_m0_uint128("AAAAAAAAAAA=-AAAAAAAAAAA=");
       part_frag_ctx.versionID = new_object_metadata->get_obj_version_key();
-      part_frag_ctx.item_size = last_object_size;
-      part_frag_ctx.layout_id =
-          S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
-              last_object_size);
+      // Set the initial calculated size of fragment. The size may change
+      // if there is a fault during data write to this fragment.
+      // The effective size is set later, if another faults happens.
+      part_frag_ctx.item_size = last_fragment_calc_size;
+      part_frag_ctx.layout_id = layout_id;
       part_frag_ctx.is_multipart = false;
       // For simple (non-multipart) object, set part_no=0
       ext_object_metadata->add_extended_entry(part_frag_ctx,
@@ -679,6 +684,7 @@ void S3PutObjectAction::write_object_failed() {
         new_object_metadata->set_object_type(
             S3ObjectMetadataType::only_frgments);
       }
+      total_object_size_consumed += last_object_size;
       // TBD:Save current object oid (stored in new_object_oid), before creating
       // new OID.
       S3UriToMotrOID(s3_motr_api, request->get_object_uri().c_str(), request_id,
@@ -688,6 +694,8 @@ void S3PutObjectAction::write_object_failed() {
       if (current_fault_iteration == 1) {
         // Save the size of primary object
         primary_object_size = last_object_size;
+        s3_log(S3_LOG_DEBUG, request_id, "Primary object size = [%zu]",
+               last_object_size);
         new_object_metadata->set_primary_obj_size(primary_object_size);
       } else {
         // Save size of next fragment
@@ -697,9 +705,10 @@ void S3PutObjectAction::write_object_failed() {
           // Set size of the next fragment
           ext_object_metadata->set_size_of_extended_entry(
               last_object_size, (current_fault_iteration - 1), 0);
+          s3_log(S3_LOG_DEBUG, request_id, "Fragment size = [%zu]",
+                 last_object_size);
         }
       }
-      last_object_size = 0;
       tried_count = 0;
       // Set flag below to stop getting read-data-available callback,
       // until the fragmented object is created.
