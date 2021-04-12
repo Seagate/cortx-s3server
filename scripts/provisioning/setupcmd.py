@@ -186,7 +186,7 @@ class SetupCmd(object):
 
       # Since get_all_keys misses out listing entries inside
       # an array, the below code is required to fetch such
-      # array entries. The result will be stored in yardstick
+      # array entries. The result will be stored in a full
       # list which will be complete and will be used to verify
       # keys required for each phase.
       full_arg_keys_list = []
