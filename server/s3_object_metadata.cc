@@ -579,7 +579,13 @@ std::string S3ObjectMetadata::to_json() {
   s3_log(S3_LOG_DEBUG, request_id, "Called\n");
   Json::Value root;
   root["Bucket-Name"] = bucket_name;
+  if (s3_fi_is_enabled("di_metadata_bcktname_on_write_corrupted")) {
+    root["Bucket-Name"] = "@" + bucket_name + "@";
+  }
   root["Object-Name"] = object_name;
+  if (s3_fi_is_enabled("di_metadata_objname_on_write_corrupted")) {
+    root["Object-Name"] = "@" + object_name + "@";
+  }
   root["Object-URI"] = object_key_uri;
   root["layout_id"] = layout_id;
 
@@ -681,7 +687,13 @@ int S3ObjectMetadata::from_json(std::string content) {
   }
 
   bucket_name = newroot["Bucket-Name"].asString();
+  if (s3_fi_is_enabled("di_metadata_bcktname_on_read_corrupted")) {
+    bucket_name = "@" + bucket_name + "@";
+  }
   object_name = newroot["Object-Name"].asString();
+  if (s3_fi_is_enabled("di_metadata_objname_on_read_corrupted")) {
+    object_name = "@" + object_name + "@";
+  }
   object_key_uri = newroot["Object-URI"].asString();
   upload_id = newroot["Upload-ID"].asString();
   motr_part_oid_str = newroot["motr_part_oid"].asString();
