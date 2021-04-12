@@ -44,15 +44,17 @@ class S3PostMultipartObjectAction : public S3ObjectAction {
   std::string salt;
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;
   std::shared_ptr<S3PartMetadata> part_metadata;
+  std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   std::string upload_id;
+
+  S3Timer create_object_timer;
 
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
   std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;
   std::shared_ptr<S3PutTagsBodyFactory> put_object_tag_body_factory;
   std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
-  std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<MotrAPI> s3_motr_api;
   std::map<std::string, std::string> new_object_tags_map;
 
@@ -70,6 +72,7 @@ class S3PostMultipartObjectAction : public S3ObjectAction {
           nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
+      std::shared_ptr<S3MotrWriterFactory> motr_writer_factory = nullptr,
       std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory = nullptr,
       std::shared_ptr<MotrAPI> motr_api = nullptr,
       std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory = nullptr);
@@ -80,10 +83,15 @@ class S3PostMultipartObjectAction : public S3ObjectAction {
   void parse_x_amz_tagging_header(std::string content);
   void validate_tags();
   void fetch_bucket_info_failed();
-  void check_bucket_object_state();
+  void check_multipart_object_info_status();
+  void check_object_state();
   void fetch_object_info_success();
   void fetch_object_info_failed();
   void check_upload_is_inprogress();
+  void create_object();
+  void create_object_successful();
+  void create_object_failed();
+  virtual void collision_occured();
   void create_new_oid(struct m0_uint128 current_oid);
   void save_upload_metadata();
   void save_upload_metadata_failed();
