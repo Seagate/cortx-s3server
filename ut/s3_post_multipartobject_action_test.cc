@@ -153,7 +153,7 @@ TEST_F(S3PostMultipartObjectTest, CheckBucketObjectState) {
       bucket_meta_factory->mock_bucket_metadata;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .Times(AtLeast(1));
-    
+
   action_under_test->check_bucket_object_state();
 }
 

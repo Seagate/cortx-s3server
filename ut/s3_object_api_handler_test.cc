@@ -218,12 +218,13 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutMultiObjectAction) {
   EXPECT_CALL(*(mock_request), get_query_string_value(_))
       .WillRepeatedly(Return("123"));
   EXPECT_CALL(*(mock_request), is_chunked()).WillRepeatedly(Return(true));
-
+  S3Option::get_instance()->enable_murmurhash_oid();
   handler_under_test->create_action();
 
   EXPECT_FALSE((dynamic_cast<S3PutMultiObjectAction *>(
                    handler_under_test->_get_action().get())) == nullptr);
   handler_under_test->_get_action()->i_am_done();
+  S3Option::get_instance()->disable_murmurhash_oid();
 }
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3GetMultipartPartAction) {
