@@ -188,21 +188,13 @@ bool S3RequestObject::validate_attrs(const std::string& c_bucket_name,
   const std::string& req_object_name = get_object_name();
   const std::string& req_bucket_name = get_bucket_name();
 
-  namespace s3cu = S3CommonUtilities;
-
   if (s3_fi_is_enabled("di_metadata_bucket_or_object_corrupted") ||
       req_bucket_name != c_bucket_name || req_object_name != c_object_name) {
     s3_iem(LOG_ERR, S3_IEM_OBJECT_METADATA_NOT_VALID,
            S3_IEM_OBJECT_METADATA_NOT_VALID_STR,
-           S3_IEM_OBJECT_METADATA_NOT_VALID_JSON,
-           !s3cu::isprints(req_bucket_name) ? "@@@corrupted@@@"
-                                            : req_bucket_name.c_str(),
-           !s3cu::isprints(c_bucket_name) ? "@@@corrupted@@@"
-                                          : c_bucket_name.c_str(),
-           !s3cu::isprints(req_object_name) ? "@@@corrupted@@@"
-                                            : req_object_name.c_str(),
-           !s3cu::isprints(c_object_name) ? "@@@corrupted@@@"
-                                          : c_object_name.c_str());
+           S3_IEM_OBJECT_METADATA_NOT_VALID_JSON, req_bucket_name.c_str(),
+           c_bucket_name.c_str(), req_object_name.c_str(),
+           c_object_name.c_str());
     return false;
   }
   return true;
