@@ -106,8 +106,11 @@ public class AccountController extends AbstractController {
         try {
           accountCount = accountDao.getTotalCountOfAccounts();
           int maxAccountLimit = AuthServerConfig.getMaxAccountLimit();
+          int internalAccountCount =
+              AuthServerConfig.getS3InternalAccounts().size();
+          int maxAllowedLdapResults = maxAccountLimit + internalAccountCount;
 
-          if (accountCount >= maxAccountLimit) {
+          if (accountCount >= maxAllowedLdapResults) {
             LOGGER.error("Maximum allowed Account limit has exceeded (i.e." +
                          maxAccountLimit + ")");
             return accountResponseGenerator.maxAccountLimitExceeded(
@@ -186,6 +189,26 @@ public class AccountController extends AbstractController {
         catch (InterruptedException e) {
           LOGGER.error("Create account delay failing - ", e);
           Thread.currentThread().interrupt();
+        }
+        // Handle multi-threaded create API calls by deleting extra accounts,
+        // if account limit creation exceeded due to multiple thread/multiple
+        // node create() API calls.
+        try {
+          accountCount = accountDao.getTotalCountOfAccounts();
+          int maxAccountLimit = AuthServerConfig.getMaxAccountLimit();
+          int internalAccountCount =
+              AuthServerConfig.getS3InternalAccounts().size();
+          int maxAllowedLdapResults = maxAccountLimit + internalAccountCount;
+
+          if (accountCount >= maxAllowedLdapResults) {
+            // TODO delete newly created account since we exceeded account
+            // creation limit.
+            accountDao.ldap_delete_account(account);
+            return accountResponseGenerator.internalServerError();
+          }
+        }
+        catch (DataAccessException ex) {
+          return accountResponseGenerator.internalServerError();
         }
 
         return accountResponseGenerator.generateCreateResponse(account, root,

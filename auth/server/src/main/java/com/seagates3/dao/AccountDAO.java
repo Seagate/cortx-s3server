@@ -74,4 +74,11 @@ public interface AccountDAO {
       */
     public
      int getTotalCountOfAccounts() throws DataAccessException;
+
+     /**
+      * Delete account entry internally from account
+      * @param account
+      */
+    public
+     void ldap_delete_account(Account account) throws DataAccessException;
 }
