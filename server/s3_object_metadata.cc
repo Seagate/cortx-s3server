@@ -99,6 +99,7 @@ void S3ObjectMetadata::initialize() {
   if (is_multipart) {
     index_name = get_multipart_index_name();
     system_defined_attribute["Upload-ID"] = upload_id;
+    (void)system_defined_attribute["Part-One-Size"];
   } else {
     index_name = get_object_list_index_name();
   }
@@ -128,11 +129,6 @@ S3ObjectMetadata::S3ObjectMetadata(
     object_name = request->get_object_name();
   } else {
     object_name = std::move(objectname);
-  }
-  if (upload_id.size() != 0) {
-    // for multipart uoload object name is appended with
-    // upload id
-    object_name += "|" + upload_id;
   }
   if (motr_api) {
     s3_motr_api = std::move(motr_api);
@@ -173,10 +169,6 @@ std::string S3ObjectMetadata::get_owner_name() {
 }
 
 std::string S3ObjectMetadata::get_object_name() { return object_name; }
-
-void S3ObjectMetadata::rename_object_name(std::string new_object_name) {
-  object_name = new_object_name;
-}
 
 void S3ObjectMetadata::set_object_list_index_oid(struct m0_uint128 id) {
   object_list_index_oid.u_hi = id.u_hi;
@@ -274,11 +266,10 @@ std::string S3ObjectMetadata::get_content_length_str() {
   return system_defined_attribute["Content-Length"];
 }
 
-// TODO - Remove it later
 void S3ObjectMetadata::set_part_one_size(const size_t& part_size) {
   system_defined_attribute["Part-One-Size"] = std::to_string(part_size);
 }
-// TODO - Remove it later
+
 size_t S3ObjectMetadata::get_part_one_size() {
   if (system_defined_attribute["Part-One-Size"] == "") {
     return 0;
