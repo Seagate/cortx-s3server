@@ -58,10 +58,13 @@ class S3PutObjectAction : public S3ObjectAction {
   size_t last_object_size;
   size_t primary_object_size;
   size_t total_object_size_consumed;
+  size_t last_fragment_calc_size;
   unsigned short max_objects_in_s3_fault_mode;
   unsigned short current_fault_iteration;
   // S3 fault mode: When the fist object write fails, below flag is set
   bool fault_mode_active;
+  // Flag indicates new extended object creation and first data write to it is
+  // success
   bool create_fragment_when_write_success;
   // TODO: Remove below state when done with dev testing
   unsigned int no_of_blocks_written;
