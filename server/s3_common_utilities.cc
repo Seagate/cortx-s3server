@@ -21,7 +21,6 @@
 #include <cctype>
 #include <sstream>
 #include <algorithm>
-#include <locale>
 #include <libxml/parser.h>
 #include <evhtp.h>
 
@@ -234,12 +233,6 @@ std::string evhtp_error_flags_description(uint8_t errtype) {
     errtype_str.resize(errtype_str.size() - 1);
   }
   return errtype_str;
-}
-
-bool isprints(const std::string &attr) {
-  return std::all_of(attr.begin(), attr.end(), [](std::string::value_type c) {
-    return std::isprint(c, std::locale(""));
-  });
 }
 
 }  // namespace S3CommonUtilities
