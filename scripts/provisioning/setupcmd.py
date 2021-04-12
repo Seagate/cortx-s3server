@@ -195,7 +195,6 @@ class SetupCmd(object):
           storage_set = self.get_confvalue(key)
           for set_key in storage_set:
             key = key + ">" + set_key
-          storage_set = self.get_confvalue(key)
         full_arg_keys_list.append(key)
 
       # The s3 prov config file has below pairs :
