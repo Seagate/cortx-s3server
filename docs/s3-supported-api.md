@@ -98,11 +98,16 @@
     
     | **What's Supported** | **What's not supported** | **Common Response Headers sent by S3** |
     |:-------------------------------------|:--------------------------| :-------------------------------------|
-    |**Common Request Headers** </br> `Host` </br> `Accept-Encoding` </br> `X-Amz-Content-SHA256` </br> `Content-Length` </br> `Authorization` </br> `X-Amz-Date` </br> `User-Agent` </br> `X-Forwarded-For` | **Common Request Header** </br> `x-amz-security-token` | `Content-Type` </br> `Content-Length` </br> `Connection` </br> `Retry-After` |
+    |**Common Request Headers** </br> `Host` </br> `Accept-Encoding` </br> `X-Amz-Content-SHA256` </br> `Content-Length` </br> `Authorization` </br> `X-Amz-Date` </br> `User-Agent` </br> `X-Forwarded-For` | **Common Request Header** </br> `x-amz-security-token` | `Content-Type` </br> `Content-Length` </br> `Retry-After` |
 
 5.  Put Bucket ACL  
-    `aws s3api put-bucket-acl --bucket <your_bucket>`  
 
+    `aws s3api put-bucket-acl --bucket <your_bucket>`  
+    
+    | **What's Supported** | **What's not supported** | **Common Response Headers sent by S3** |
+    |:-------------------------------------|:--------------------------| :-------------------------------------|
+    |<ul><li>**Common Request Headers** </br> `Host` </br> `Accept-Encoding` </br> `X-Amz-Content-SHA256` </br> `Content-Length` </br> `Content-MD5` </br> `Authorization` </br> `X-Amz-Date` </br> `User-Agent` </br> `X-Forwarded-For`</li> </br> <li> **Additional Headers** </br> `x-amz-acl` </br> `x-amz-grant-full-control` </br> `x-amz-grant-read` </br> `x-amz-grant-read-acp` </br> `x-amz-grant-write` </br> `x-amz-grant-write-acp` </li></ul> | <ul><li> **Common Request Header** </br> `x-amz-security-token` </li><li> **Additional Headers** </br> `x-amz-bucket-object-lock-enabled` </br> `x-amz-expected-bucket-owner` | `Content-Type` </br> `Content-Length` </br> `Retry-After` |
+    
 6.  Get Bucket ACL  
     `aws s3api get-bucket-acl --bucket <your_bucket>`  
 
