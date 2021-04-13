@@ -55,7 +55,8 @@
 ## Supported Service API
 
 - List all your buckets  
-    `aws s3 ls`
+  
+  `aws s3 ls`
 
 ## Supported Operations/APIs on Bucket
 
@@ -91,8 +92,13 @@
     |**Common Request Headers** </br> `Host` </br> `Accept-Encoding` </br> `X-Amz-Content-SHA256` </br> `Authorization` </br> `X-Amz-Date` </br> `User-Agent` </br> `X-Forwarded-For` | <ul><li>**Common Request Header** </br> `x-amz-security-token` </li> <li> **Additional Header** </br> `x-amz-expected-bucket-owner` </li> </ul> | `Content-Type` </br> `Content-Length` </br> `Connection` </br> `Retry-After` |
 
 4.  Delete bucket  
+    
     `aws s3 rb s3://<your_bucket>`  
     `aws s3api delete-bucket --bucket <your_bucket>`  
+    
+    | **What's Supported** | **What's not supported** | **Common Response Headers sent by S3** |
+    |:-------------------------------------|:--------------------------| :-------------------------------------|
+    |**Common Request Headers** </br> `Host` </br> `Accept-Encoding` </br> `X-Amz-Content-SHA256` </br> `Content-Length` </br> `Authorization` </br> `X-Amz-Date` </br> `User-Agent` </br> `X-Forwarded-For` | **Common Request Header** </br> `x-amz-security-token` | `Content-Type` </br> `Content-Length` </br> `Connection` </br> `Retry-After` |
 
 5.  Put Bucket ACL  
     `aws s3api put-bucket-acl --bucket <your_bucket>`  
