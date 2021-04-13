@@ -126,9 +126,10 @@ extern S3Option* g_option_instance;
 
 #define S3_IEM_OBJECT_METADATA_NOT_VALID "0030060005"
 #define S3_IEM_OBJECT_METADATA_NOT_VALID_STR \
-  "Metadata read from persistent storage doesn't match with requested."
+  "Metadata integrity failure (bucket/object mismatch). Cluster is " \
+  "transitioning to safe mode. Contact Seagate Support."
 #define S3_IEM_OBJECT_METADATA_NOT_VALID_JSON              \
-  ", \"req_bucket_name\": \"%s\", \"bucket_name\": \"%s\"" \
-  ", \"req_object_name\": \"%s\", \"object_name\": \"%s\""
+  ", \"bucket_name_requested\": \"%s\", \"bucket_name_received\": \"%s\"" \
+  ", \"object_name_requested\": \"%s\", \"object_name_received\": \"%s\""
 
 #endif  // __S3_SERVER_IEM_H__
