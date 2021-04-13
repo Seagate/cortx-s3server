@@ -59,6 +59,10 @@
 
 ## Supported Operations/APIs on Bucket
 
+<details>
+<summary>Click to view more</summary>
+<p>
+
 1.  GetBucket (List objects in the specified bucket)  
 
     `aws s3 ls s3://<your_bucket>`  
@@ -134,8 +138,15 @@
 
 14. Get bucket location  
     `aws s3api get-bucket-location --bucket <your_bucket>`  
+    
+</p>
+</details>
 
 ## Supported Operations/APIs on Object
+
+<details>
+<summary>Click to view more</summary>
+<p>
 
 1.  Put Object  
     `aws s3api put-object --bucket <your_bucket> --key <key> --body <file>`  
@@ -168,8 +179,15 @@
 
 10. Delete Object tagging  
     `aws s3api delete-object-tagging --bucket <your_bucket> --key <key>`  
+    
+</p>
+</details>
 
 ## S3 IAM APIs (using client tool - s3iamcli)
+
+<details>
+<summary>Click to view more</summary>
+<p>
 
 1.  Create an account  
     `s3iamcli CreateAccount -n <Account Name> -e <Email Id>`  
@@ -227,3 +245,6 @@
 
 19. Retrieves the user name and password-creation date for the specified IAM user  
     `s3iamcli GetUserLoginProfile -n <User Name>`  
+
+</p>
+</details>
