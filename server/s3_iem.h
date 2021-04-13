@@ -34,21 +34,27 @@ extern S3Option* g_option_instance;
 // 2. For each IEM: timestamp, nodename, pid, filename & line is included in
 //    the JSON data format by default. If IEM event has any additional data to
 //    send, then pass it as `json_fmt` param.
-#define s3_iem(loglevel, event_code, event_description, json_fmt, ...)      \
-  do {                                                                      \
-    std::string timestamp = s3_get_timestamp();                             \
-    s3_log(S3_LOG_INFO, "",                                                 \
-           "IEC: " event_code ": " event_description                        \
-           ": { \"time\": \"%s\", \"node\": \"%s\", \"pid\": "              \
-           "%d, \"file\": \"%s\", \"line\": %d" json_fmt " }",              \
-           timestamp.c_str(), g_option_instance->get_s3_nodename().c_str(), \
-           getpid(), __FILE__, __LINE__, ##__VA_ARGS__);                    \
-    if (loglevel == LOG_ALERT) {                                            \
-      s3_syslog(loglevel, "IEC:AS" event_code ":" event_description);       \
-    } else {                                                                \
-      s3_syslog(LOG_ERR, "IEC:ES" event_code ":" event_description);        \
-    }                                                                       \
+#define s3_iem_(loglevel, s3_loglevel, event_code, event_desc, json_fmt, ...) \
+  do {                                                                        \
+    if (loglevel == LOG_ALERT) {                                              \
+      s3_syslog(loglevel, "IEC:AS" event_code ":" event_desc);                \
+    } else {                                                                  \
+      s3_syslog(LOG_ERR, "IEC:ES" event_code ":" event_desc);                 \
+    }                                                                         \
+    std::string timestamp = s3_get_timestamp();                               \
+    s3_log(S3_ ## s3_loglevel, "",                                            \
+           "IEC: " event_code ": " event_desc                                 \
+           ": { \"time\": \"%s\", \"node\": \"%s\", \"pid\": "                \
+           "%d, \"file\": \"%s\", \"line\": %d" json_fmt " }",                \
+           timestamp.c_str(), g_option_instance->get_s3_nodename().c_str(),   \
+           getpid(), __FILE__, __LINE__, ##__VA_ARGS__);                      \
   } while (0)
+
+#define s3_iem(loglevel, event_code, event_desc, json_fmt, ...) \
+  s3_iem_(loglevel, LOG_INFO, event_code, event_desc, json_fmt, ##__VA_ARGS__)
+
+#define s3_iem_fatal(loglevel, event_code, event_desc, json_fmt, ...) \
+  s3_iem_(loglevel, LOG_ERROR, event_code, event_desc, json_fmt, ##__VA_ARGS__)
 
 // Note: Logs IEM message into syslog only.
 // Use this macro to send addtional information to CSM
