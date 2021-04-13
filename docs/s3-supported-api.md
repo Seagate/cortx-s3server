@@ -124,18 +124,23 @@
     7.2    Upload part  
            `aws s3api upload-part --bucket <your_bucket> --key <key> --part-number 1 --body <part>`  
 
-    7.3    Lists parts of a multipart upload  
+    7.3    Lists parts of a multipart upload             
            `aws s3api list-parts --bucket <your_bucket> --key <key> --upload-id <id>`  
 
-    7.4    Abort/Complete multipart  
+    7.4    Abort/Complete multipart             
            `aws s3api complete-multipart-upload --multipart-upload <mpustruct_file> --bucket <your_bucket> --key <key> --upload-id <id>`  
            `aws s3api abort-multipart-upload --bucket <your_bucket> --key <key> --upload-id <id>`  
 
-    7.5    Lists in-progress multipart uploads in a bucket  
+    7.5    Lists in-progress multipart uploads in a bucket             
            `aws s3api list-multipart-uploads --bucket <your_bucket>`  
 
 8.  Put Bucket policy  
+    
     `aws s3api put-bucket-policy --bucket <your_bucket> --policy <policy_json_file>`  
+    
+    | **What's Supported** | **What's not supported** | **Common Response Headers sent by S3** |
+    |:-------------------------------------|:--------------------------| :-------------------------------------|
+    | **Common Request Headers** </br> `Host` </br> `Accept-Encoding` </br> `X-Amz-Content-SHA256` </br> `Content-Length` </br> `Content-MD5` </br> `Authorization` </br> `X-Amz-Date` </br> `User-Agent` </br> `X-Forwarded-For` | <ul><li> **Common Request Header** </br> `x-amz-security-token` </li> <li> **Additional Headers** </br> `x-amz-confirm-remove-self-bucket-access` </br> `x-amz-expected-bucket-owner` | `Content-Type` </br> `Content-Length` </br> `Connection` </br> `Retry-After` |
 
 9.  Get Bucket policy  
     `aws s3api get-bucket-policy --bucket <your_bucket>`  
