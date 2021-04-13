@@ -4,6 +4,10 @@
 
 :page_with_curl: **Note:** All operations listed in the tables below, are S3 compliant.
 
+<details>
+<summary>Click to view more</summary>
+<p>
+
 **Table 1: Basic Operations**
 
 | Service Operations | Bucket Operations | Operation on Objects | 
@@ -45,6 +49,8 @@
 | Put Bucket Policy |
 | Delete Bucket Policy |
 
+</p>
+</details>
 
 ## Supported Service API
 
