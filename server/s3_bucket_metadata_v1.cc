@@ -190,8 +190,8 @@ void S3BucketMetadataV1::load_bucket_info_successful() {
            bucket_metadata_list_index_oid.u_hi,
            bucket_metadata_list_index_oid.u_lo, bucket_name.c_str(),
            motr_kv_reader->get_value().c_str());
-    // s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
-    //     S3_IEM_METADATA_CORRUPTED_JSON);
+    s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
+           S3_IEM_METADATA_CORRUPTED_JSON);
 
     json_parsing_error = true;
     load_bucket_info_failed();
@@ -277,8 +277,6 @@ void S3BucketMetadataV1::save_global_bucket_account_id_info() {
 void S3BucketMetadataV1::save_global_bucket_account_id_info_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  // update bucket_owner_account_id
-  // bucket_owner_account_id = global_bucket_index_metadata->get_account_id();
   collision_attempt_count = 0;
   create_object_list_index();
 
@@ -590,7 +588,8 @@ void S3BucketMetadataV1::remove_global_bucket_account_id_info() {
 void S3BucketMetadataV1::remove_global_bucket_account_id_info_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  this->callback(state = S3BucketMetadataState::missing);
+  state = S3BucketMetadataState::missing;
+  this->callback(state);
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
