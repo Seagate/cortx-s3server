@@ -553,7 +553,6 @@ if [ $skip_st_run -eq 1 ]; then
 fi
 ./runalltest.sh $runalltest_options || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
 
-<<<<<<< HEAD
 # Data Integrity tests:
 # 1. stop s3server
 # 2. change config to enable DI params
@@ -562,7 +561,9 @@ fi
 # 5. ensure extra python packets installed
 # 6. run DI systest
 # 7. restore config
-# 8. follow jenkins_build
+# 8. metadata Integrity tests - regular PUT
+# 9. metadata Integrity tests - multipart
+# 10. follow jenkins_build
 ##########################################
 
 # 1. stop s3server
@@ -590,13 +591,18 @@ $USE_SUDO st/clitests/integrity.py --auto-test-all
 $USE_SUDO sed -ri 's/(.*)S3_RANGED_READ_ENABLED:[[:space:]]*false(.*)/\1S3_RANGED_READ_ENABLED: true\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
 $USE_SUDO sed -ri 's/(.*)S3_READ_MD5_CHECK_ENABLED:[[:space:]]*true(.*)/\1S3_READ_MD5_CHECK_ENABLED: false\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
 
-# 9. Metada Integrity tests
+# 8. metadata Integrity tests - regular PUT
 $USE_SUDO dd if=/dev/urandom of=./s3-data.bin count=1 bs=1K
 $USE_SUDO ./md_integrity.py --body ./s3-data.bin --test_plan ./regular_md_integrity.json
+$USE_SUDO rm -vf ./s3-data.bin
+# 9. metadata Integrity tests - multipart
+$USE_SUDO dd if=/dev/urandom of=./s3-data.bin count=1 bs=5M
+$USE_SUDO ./md_integrity.py --body ./s3-data.bin --test_plan ./metadata_md_integrity.json
 $USE_SUDO rm -vf ./s3-data.bin
 
 # 10. follow jenkins_build
 ##########################################
+
 # Disable fault injection in AuthServer
 $USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
 
