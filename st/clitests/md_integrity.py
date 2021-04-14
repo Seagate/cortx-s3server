@@ -16,12 +16,14 @@ def get_args():
     parser.add_argument('--bucket', type=str, default='')
     parser.add_argument('--key', type=str, default='')
     parser.add_argument('--body', type=str, default='', required=True)
-    parser.add_argument('--download', type=str, default='./s3-data-from-server.bin')
+    parser.add_argument('--download', type=str, default='/tmp/s3-data-from-server.bin')
+    parser.add_argument('--parts', type=str, default='/tmp/parts.json')
     parser.add_argument('--test_plan', type=str, default='', required=True)
 
     args = parser.parse_args()
 
     args.download = path.abspath(args.download)
+    args.parts = path.abspath(args.parts)
 
     if args.body:
         args.body = path.abspath(args.body)
@@ -184,8 +186,7 @@ def test_complete_multipart(**kwargs):
     bucket = kwargs["bucket"]
     upload_id = multipart_map[key]["UploadId"]
     parts = {"Parts": multipart_map[key]["Parts"]}
-
-    parts_json = path.abspath('./parts.json')
+    parts_json = kwargs["parts_json"]
     with open(parts_json, 'w') as f:
         f.write(json.dumps(parts))
 
@@ -227,7 +228,11 @@ operations_map = {
 
 
 def process_test_plan(tst_pln, args):
-    tar = {"body": args.body, "bucket": args.bucket, "download": args.download, "key": args.key}
+    tar = {"body": args.body,
+           "bucket": args.bucket,
+           "download": args.download,
+           "key": args.key,
+           "parts_json": args.parts}
     for t in tst_pln:
         tar.update(t)
         op = tar.get("op", None)

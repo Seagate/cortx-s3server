@@ -592,13 +592,17 @@ $USE_SUDO sed -ri 's/(.*)S3_RANGED_READ_ENABLED:[[:space:]]*false(.*)/\1S3_RANGE
 $USE_SUDO sed -ri 's/(.*)S3_READ_MD5_CHECK_ENABLED:[[:space:]]*true(.*)/\1S3_READ_MD5_CHECK_ENABLED: false\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
 
 # 8. metadata Integrity tests - regular PUT
-$USE_SUDO dd if=/dev/urandom of=./s3-data.bin count=1 bs=1K
-$USE_SUDO ./md_integrity.py --body ./s3-data.bin --test_plan ./regular_md_integrity.json
-$USE_SUDO rm -vf ./s3-data.bin
+md_di_data=/tmp/s3-data.bin
+md_di_dowload=/tmp/s3-data-download.bin
+md_di_parts=/tmp/s3-data-parts.json
+$USE_SUDO dd if=/dev/urandom of=$md_di_data count=1 bs=1K
+$USE_SUDO ./md_integrity.py --body $md_di_data --download $md_di_dowload --parts $md_di_parts --test_plan ./regular_md_integrity.json
 # 9. metadata Integrity tests - multipart
-$USE_SUDO dd if=/dev/urandom of=./s3-data.bin count=1 bs=5M
-$USE_SUDO ./md_integrity.py --body ./s3-data.bin --test_plan ./metadata_md_integrity.json
-$USE_SUDO rm -vf ./s3-data.bin
+$USE_SUDO dd if=/dev/urandom of=$md_di_data count=1 bs=5M
+$USE_SUDO ./md_integrity.py --body $md_di_data --download $md_di_dowload --parts $md_di_parts --test_plan ./metadata_md_integrity.json
+[ -f $md_di_data ] && $USE_SUDO rm -vf $md_di_data
+[ -f $md_di_dowload ] && $USE_SUDO rm -vf $md_di_dowload
+[ -f $md_di_parts ] && $USE_SUDO rm -vf $md_di_parts
 
 # 10. follow jenkins_build
 ##########################################
