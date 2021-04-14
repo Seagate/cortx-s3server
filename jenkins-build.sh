@@ -461,13 +461,17 @@ else
 fi
 
 # Metada Integrity tests - regular PUT
-$USE_SUDO dd if=/dev/urandom of=./s3-data.bin count=1 bs=1K
-$USE_SUDO ./md_integrity.py --body ./s3-data.bin --test_plan ./regular_md_integrity.json
-$USE_SUDO rm -vf ./s3-data.bin
+md_di_data=/tmp/s3-data.bin
+md_di_dowload=/tmp/s3-data-download.bin
+md_di_parts=/tmp/s3-data-parts.json
+$USE_SUDO dd if=/dev/urandom of=$md_di_data count=1 bs=1K
+$USE_SUDO ./md_integrity.py --body $md_di_data --download $md_di_dowload --parts $md_di_parts --test_plan ./regular_md_integrity.json
 # Metada Integrity tests - multipart
-$USE_SUDO dd if=/dev/urandom of=./s3-data.bin count=1 bs=5M
-$USE_SUDO ./md_integrity.py --body ./s3-data.bin --test_plan ./metadata_md_integrity.json
-$USE_SUDO rm -vf ./s3-data.bin
+$USE_SUDO dd if=/dev/urandom of=$md_di_data count=1 bs=5M
+$USE_SUDO ./md_integrity.py --body $md_di_data --download $md_di_dowload --parts $md_di_parts --test_plan ./metadata_md_integrity.json
+[ -f $md_di_data ] && $USE_SUDO rm -vf $md_di_data
+[ -f $md_di_dowload ] && $USE_SUDO rm -vf $md_di_dowload
+[ -f $md_di_parts ] && $USE_SUDO rm -vf $md_di_parts
 
 # Disable fault injection in AuthServer
 $USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
