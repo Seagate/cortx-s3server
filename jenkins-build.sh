@@ -460,6 +460,11 @@ else
   ./runalltest.sh --no-motr-rpm $use_ipv6_arg $basic_test_cmd_par || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
 fi
 
+# Metada Integrity tests
+$USE_SUDO dd if=/dev/urandom of=./s3-data.bin count=1 bs=1K
+$USE_SUDO ./md_integrity.py --body ./s3-data.bin --test_plan ./regular_md_integrity.json
+$USE_SUDO rm -vf ./s3-data.bin
+
 # Disable fault injection in AuthServer
 $USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
 
