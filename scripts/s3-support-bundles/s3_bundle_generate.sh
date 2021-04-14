@@ -38,8 +38,17 @@ fi
 
 bundle_id=$1
 bundle_path=$2
-# TODO: till we find out how to get rootdn password, keep 'rootdnpasswd' variable empty.
-rootdnpasswd=''
+# Fetch iamuser password from properties file and decrypt it.
+sgiamadminpwd=''
+constkey=cortx
+propertiesfilepath="properties:///opt/seagate/cortx/auth/resources/authserver.properties"
+ldapkey="ldapLoginPW"
+ldapcipherkey=$(s3cipher generate_key --const_key $constkey)
+encryptedkey=$(s3confstore $propertiesfilepath getkey --key $ldapkey)
+if [[ -z $(echo "$encryptedkey" | grep -Eio Failed) ]];
+then
+    sgiamadminpwd=$(s3cipher decrypt --data $encryptedkey --key $ldapcipherkey)
+fi
 
 bundle_name="s3_$bundle_id.tar.xz"
 s3_bundle_location=$bundle_path/s3
@@ -406,17 +415,17 @@ then
 fi
 
 ## Collect LDAP data
+echo "Collecting ldap data"
 mkdir -p $ldap_dir
-if [[ $? != 0 || -z "$rootdnpasswd" ]]
+if [[ $? != 0 || -z "$sgiamadminpwd" ]]
 then
-    echo "ERROR: ldap admin password: '$rootdnpasswd' is not correct, skipping collection of ldap data."
+    echo "ERROR: ldap admin password: '$sgiamadminpwd' is not correct, skipping collection of ldap data."
 else
     # Run ldap commands
-    ldapsearch -b "cn=config" -x -w "$rootdnpasswd" -D "cn=admin,cn=config" -H ldapi:/// > "$ldap_config"  2>&1
-    ldapsearch -s base -b "cn=subschema" objectclasses -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" -H ldapi:/// > "$ldap_subschema"  2>&1
-    ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" "objectClass=Account" -H ldapi:/// -LLL ldapentrycount > "$ldap_accounts" 2>&1
-    ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" "objectClass=iamUser" -H ldapi:/// -LLL ldapentrycount > "$ldap_users"  2>&1
-
+    ldapsearch -b "cn=config" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///  > "$ldap_config"  2>&1
+    ldapsearch -s base -b "cn=subschema" objectclasses -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:/// > "$ldap_subschema"  2>&1
+    ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" "objectClass=Account" -H ldapi:/// -LLL ldapentrycount > "$ldap_accounts" 2>&1
+    ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" "objectClass=iamUser" -H ldapi:/// -LLL ldapentrycount > "$ldap_users"  2>&1
     if [ -f "$ldap_config" ];
     then
         args=$args" "$ldap_config
