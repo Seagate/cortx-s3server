@@ -1,0 +1,32 @@
+@startuml
+
+header Bucket metadata cache workflow
+title Bucket metadata cache workflow
+
+participant "An Action" as action
+participant "2nd action" as action2
+participant "3rd action" as action3
+participant "Bucket metadata cache" as cache
+participant "Motr\nKVS API" as kvs
+
+
+action -> cache: Get metadata for "bucket_name"
+note left: Metadata is absent in cache or is stale
+cache -> kvs: Get metadata for "bucket_name"
+kvs --> cache: bucket metadata
+cache --> action: bucket metadata
+
+action2 -> cache: Get metadata for "bucket_name"
+note left: Metadata presents in cache and isn't stale
+cache --> action2: bucket metadata
+
+action3 -> cache: Get metadata for "bucket_name"
+note left
+  Metadata presents in cache, isn't stale
+  but refresh interval is expired
+end note
+cache --> action3: bucket metadata
+cache -> kvs: Get metadata for "bucket_name"
+kvs --> cache: bucket metadata
+
+@enduml
