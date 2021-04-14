@@ -460,9 +460,13 @@ else
   ./runalltest.sh --no-motr-rpm $use_ipv6_arg $basic_test_cmd_par || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
 fi
 
-# Metada Integrity tests
+# Metada Integrity tests - regular PUT
 $USE_SUDO dd if=/dev/urandom of=./s3-data.bin count=1 bs=1K
 $USE_SUDO ./md_integrity.py --body ./s3-data.bin --test_plan ./regular_md_integrity.json
+$USE_SUDO rm -vf ./s3-data.bin
+# Metada Integrity tests - multipart
+$USE_SUDO dd if=/dev/urandom of=./s3-data.bin count=1 bs=5M
+$USE_SUDO ./md_integrity.py --body ./s3-data.bin --test_plan ./metadata_md_integrity.json
 $USE_SUDO rm -vf ./s3-data.bin
 
 # Disable fault injection in AuthServer
