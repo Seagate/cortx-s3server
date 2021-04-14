@@ -44,24 +44,13 @@
 
 class MockS3BucketMetadataFactory : public S3BucketMetadataFactory {
  public:
-  MockS3BucketMetadataFactory(std::shared_ptr<S3RequestObject> req,
-                              std::shared_ptr<MockS3Motr> s3_motr_mock_ptr =
-                                  nullptr)
-      : S3BucketMetadataFactory() {
-    //  We create object here since we want to set some expectations
-    // Before create_bucket_metadata_obj() is called
+  explicit MockS3BucketMetadataFactory(std::shared_ptr<S3RequestObject> req) {
     mock_bucket_metadata =
-        std::make_shared<MockS3BucketMetadata>(req, s3_motr_mock_ptr);
+        std::make_shared<MockS3BucketMetadata>(std::move(req));
   }
-
   std::shared_ptr<S3BucketMetadata> create_bucket_metadata_obj(
       std::shared_ptr<S3RequestObject> req,
-      const std::string& str_bucket_name) override {
-    return mock_bucket_metadata;
-  }
-
-  std::shared_ptr<S3BucketMetadata> create_bucket_metadata_obj(
-      std::shared_ptr<S3RequestObject> req) override {
+      const std::string& str_bucket_name = "") override {
     return mock_bucket_metadata;
   }
   // Use this to setup your expectations.
@@ -324,15 +313,10 @@ class MockS3GlobalBucketIndexMetadataFactory
   }
 
   std::shared_ptr<S3GlobalBucketIndexMetadata>
-  create_s3_global_bucket_index_metadata(std::shared_ptr<S3RequestObject> req)
-      override {
-    return mock_global_bucket_index_metadata;
-  }
-
-  std::shared_ptr<S3GlobalBucketIndexMetadata>
   create_s3_global_bucket_index_metadata(std::shared_ptr<S3RequestObject> req,
-                                         const std::string& str_bucket_name)
-      override {
+                                         const std::string& = "",
+                                         const std::string& = "",
+                                         const std::string& = "") override {
     return mock_global_bucket_index_metadata;
   }
 

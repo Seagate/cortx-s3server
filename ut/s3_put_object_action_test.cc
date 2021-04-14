@@ -51,11 +51,11 @@ using ::testing::DefaultValue;
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
                 get_object_list_index_oid())                              \
         .Times(AtLeast(1))                                                \
-        .WillRepeatedly(Return(object_list_indx_oid));                    \
+        .WillRepeatedly(ReturnRef(object_list_indx_oid));                 \
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
                 get_objects_version_list_index_oid())                     \
         .Times(AtLeast(1))                                                \
-        .WillRepeatedly(Return(objects_version_list_idx_oid));            \
+        .WillRepeatedly(ReturnRef(objects_version_list_idx_oid));         \
     EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _)) \
         .Times(AtLeast(1));                                               \
     EXPECT_CALL(*(ptr_mock_request), http_verb())                         \
