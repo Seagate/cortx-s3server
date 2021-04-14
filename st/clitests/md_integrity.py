@@ -15,9 +15,12 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--bucket', type=str, default='')
     parser.add_argument('--body', type=str, default='', required=True)
+    parser.add_argument('--download', type=str, default='./s3-data-from-server.bin')
     parser.add_argument('--test_plan', type=str, default='', required=True)
 
     args = parser.parse_args()
+
+    args.download = path.abspath(args.download)
 
     if args.body:
         args.body = path.abspath(args.body)
@@ -52,6 +55,8 @@ def gen_default_test_plan():
                          "op": "put-object", "bucket": "test-bucket-1", "key": "object1", "expect": True})
     ret["tests"].append({"desc": "Head-object request for previous object",
                          "op": "head-object", "bucket": "test-bucket-1", "key": "object1", "expect": True})
+    ret["tests"].append({"desc": "Get-object request for previous object",
+                         "op": "get-object", "bucket": "test-bucket-1", "key": "object1", "expect": True})
 
     ret["tests"].append({"desc": "Enable FI di_metadata_bucket_or_object_corrupted",
                          "op": "enable-fi", "fi": "di_metadata_bucket_or_object_corrupted"})
@@ -103,13 +108,18 @@ def test_put(**kwargs):
         s3api_res.command_should_fail()
 
 
-def test_get(bucket: str, key: str, output: str, should_fail: bool):
-    system(f'rm -vf "{output}"')
-    s3api_res = AwsTest('get-object').with_cli_self(f'aws s3api get-object --bucket "{bucket}" --key "{key}" {output}').execute_test(negative_case=should_fail)
-    if should_fail:
-        s3api_res.command_should_fail()
-    else:
+def test_get(**kwargs):
+    expect = kwargs.get("expect", True)
+    desc = kwargs.get("desc", "Test")
+    bucket = kwargs["bucket"]
+    key = kwargs["key"]
+    download = kwargs["download"]
+    system(f'rm -vf "{download}"')
+    s3api_res = AwsTest(desc).with_cli_self(f'aws s3api get-object --bucket "{bucket}" --key "{key}" "{download}"').execute_test(negative_case=not expect)
+    if expect:
         s3api_res.command_is_successful()
+    else:
+        s3api_res.command_should_fail()
 
 
 def test_head(**kwargs):
@@ -153,6 +163,28 @@ def fi_disable(**kwargs):
     S3fiTest(desc).disable_fi(fi).execute_test().command_is_successful()
 
 
+def multipart_upload_with_test_list(bucket: str, key: str, obj: str, should_fail: bool) -> None:
+    s3api_res = AwsTest('create-multipart-upload').with_cli_self(f'aws s3api --output json create-multipart-upload --bucket "{bucket}" --key "{key}"').execute_test()
+    create_multipart = json.loads(s3api_res.status.stdout)
+    upload_id = create_multipart["UploadId"]
+    parts_file = {}
+    parts_file["Parts"] = []
+    for i, part in enumerate([obj, obj], start=1):
+        s3api_res = AwsTest('upload-part').with_cli_self(f'aws s3api upload-part --output json --bucket "{bucket}" --key "{key}" --part-number "{i}" --upload-id "{upload_id}" --body "{part}"').execute_test()
+        part_resp = json.loads(s3api_res.status.stdout)
+        p = {"PartNumber": i}
+        p.update(part_resp)
+        parts_file["Parts"].append(p)
+
+    test_list_mp(bucket, key, upload_id, should_fail)
+
+    part_json = path.abspath('./parts.json')
+    with open(part_json, 'w') as f:
+        f.write(json.dumps(parts_file))
+
+    AwsTest('complete-multipart-upload').with_cli_self(f'aws s3api complete-multipart-upload --multipart-upload "file://{part_json}" --bucket "{bucket}" --key "{key}" --upload-id "{upload_id}"').execute_test().command_is_successful()
+
+
 operations_map = {
     "create-bucket": test_create_bucket,
     "delete-bucket": test_delete_bucket,
@@ -166,7 +198,7 @@ operations_map = {
 
 
 def process_test_plan(tst_pln, args):
-    tar = {"body": args.body, "bucket": args.bucket}
+    tar = {"body": args.body, "bucket": args.bucket, "download": args.download}
     for t in tst_pln:
         tar.update(t)
         op = tar.get("op", None)
@@ -182,7 +214,7 @@ def main() -> None:
 
     with open(args.test_plan, 'r') as tp:
         test_plan = json.load(tp)
-    #test_plan = gen_default_test_plan()
+#    test_plan = gen_default_test_plan()
     test_desc = test_plan.get("desc", "Test")
     print(f"Testing {test_desc}...")
 
