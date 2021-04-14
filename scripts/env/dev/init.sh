@@ -52,12 +52,23 @@ check_supported_kernel() {
 
 #function to install/upgrade cortx-py-utils rpm
 install_cortx_py_utils() {
+  #install yum-utils
+  if rpm -q 'yum-utils' ; then
+    echo "yum-utils already present ... Skipping ..."
+  else
+    yum install yum-utils -y
+  fi
+
   #install cpio
   if rpm -q 'cpio' ; then
     echo "cpio already present ... Skipping ..."
   else
     yum install cpio -y
   fi
+
+  # cleanup
+  rm -rf "$PWD"/cortx-py-utils*
+  rm -rf "$PWD"/opt
 
   # download cortx-py-utils.
   yumdownloader --destdir="$PWD" cortx-py-utils
@@ -67,10 +78,6 @@ install_cortx_py_utils() {
 
   # install cortx-py-utils prerequisite
   pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/requirements.txt" --ignore-installed
-
-  # cleanup
-  rm -rf "$PWD"/cortx-py-utils*
-  rm -rf "$PWD"/opt
 
   # install cortx-py-utils
   if rpm -q cortx-py-utils ; then
