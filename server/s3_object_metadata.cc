@@ -552,8 +552,23 @@ void S3ObjectMetadata::remove_object_metadata_successful() {
     state = S3ObjectMetadataState::deleted;
     this->handler_on_success();
   } else {
-    remove_version_metadata();
+    // Remove extended metadata, if any
+    if (extended_object_metadata && extended_object_metadata->has_entries()) {
+      extended_object_metadata->remove(
+          std::bind(&S3ObjectMetadata::remove_ext_metadata_successful, this),
+          std::bind(&S3ObjectMetadata::remove_ext_metadata_successful, this));
+    } else {
+      remove_version_metadata();
+    }
   }
+}
+
+void S3ObjectMetadata::remove_ext_metadata_successful() {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Deleted extended metadata for Object [%s].\n", object_name.c_str());
+  remove_version_metadata();
+  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
 }
 
 void S3ObjectMetadata::remove_object_metadata_failed() {
@@ -1245,10 +1260,10 @@ void S3ObjectExtendedMetadata::remove_ext_object_metadata_failed() {
          object_name.c_str());
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed_to_launch) {
     // TODO
-    // state = S3ObjectMetadataState::failed_to_launch;
+    state = S3ObjectMetadataState::failed_to_launch;
   } else {
     // TODO
-    // state = S3ObjectMetadataState::failed;
+    state = S3ObjectMetadataState::failed;
   }
   this->handler_on_failed();
 }

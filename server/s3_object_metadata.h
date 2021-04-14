@@ -367,6 +367,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   void remove_object_metadata_successful();
   void remove_object_metadata_failed();
 
+  void remove_ext_metadata_successful();
   // Remove entry from objects version list index
   void remove_version_metadata();
   void remove_version_metadata_successful();

@@ -944,8 +944,13 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
 
     // prepending a char depending on the size of the object (size based
     // bucketing of object)
-    S3CommonUtilities::size_based_bucketing_of_objects(
-        old_oid_str, object_metadata->get_content_length());
+    size_t object_size = object_metadata->get_content_length();
+    if (object_metadata->is_object_extended()) {
+      // If object is extended, the primary object size will be in "Size" field
+      object_size = object_metadata->get_primary_obj_size();
+    }
+    S3CommonUtilities::size_based_bucketing_of_objects(old_oid_str,
+                                                       object_size);
 
     // key = oldoid + "-" + newoid
     std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
