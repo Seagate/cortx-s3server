@@ -37,6 +37,10 @@ class S3MotrBucketMetadataFactory;
 class S3RequestObject;
 
 class S3BucketMetadataCache {
+
+  // The class should have single instance
+  static S3BucketMetadataCache* p_instance;
+
  protected:
   unsigned max_cache_size, expire_interval_sec, refresh_interval_sec;
   bool disabled = false;
@@ -51,23 +55,29 @@ class S3BucketMetadataCache {
 
   virtual ~S3BucketMetadataCache();
 
+  // Getter for single instance
+  static S3BucketMetadataCache* get_instance();
+
   void disable() { disabled = true; }
   void enable() { disabled = false; }
 
-  using FetchHanderType =
+  using FetchHandlerType =
       std::function<void(S3BucketMetadataState, const S3BucketMetadata&)>;
   using StateHandlerType = std::function<void(S3BucketMetadataState)>;
 
-  virtual void fetch(const S3BucketMetadata& dst, FetchHanderType callback);
-  virtual void save(const S3BucketMetadata& src, StateHandlerType callback);
-  virtual void update(const S3BucketMetadata& src, StateHandlerType callback);
-  virtual void remove(const S3BucketMetadata& src, StateHandlerType callback);
+  virtual void fetch(const S3BucketMetadata& dst, FetchHandlerType on_fetch);
+  virtual void save(const S3BucketMetadata& src, StateHandlerType on_save);
+  virtual void update(const S3BucketMetadata& src, StateHandlerType on_update);
+  virtual void remove(const S3BucketMetadata& src, StateHandlerType on_remove);
 
  private:
   std::shared_ptr<S3MotrBucketMetadataFactory> s3_motr_bucket_metadata_factory;
 
-  void shrink();
+  bool shrink();
   void remove_item(std::string bucket_name);
+
+  std::unique_ptr<S3BucketMetadataV1> create_engine(
+      const S3BucketMetadata& src);
 
   class Item;
   Item* get_item(const S3BucketMetadata& src);
@@ -94,10 +104,10 @@ class S3BucketMetadataCache::Item {
   explicit Item(const S3BucketMetadata& src);
   ~Item();
 
-  void fetch(const S3BucketMetadata& src, FetchHanderType callback, bool force);
-  void save(const S3BucketMetadata& src, StateHandlerType callback);
-  void update(const S3BucketMetadata& src, StateHandlerType callback);
-  void remove(StateHandlerType callback);
+  void fetch(const S3BucketMetadata& src, FetchHandlerType on_fetch);
+  void save(const S3BucketMetadata& src, StateHandlerType on_save);
+  void update(const S3BucketMetadata& src, StateHandlerType on_update);
+  void remove(StateHandlerType on_remove);
 
   bool can_remove() const;
   const std::string& get_bucket_name() const;
@@ -116,21 +126,18 @@ class S3BucketMetadataCache::Item {
   };
 
  private:
-  void create_engine(const S3BucketMetadata& src);
   void on_done(S3BucketMetadataState state);
-  bool check_expiration();
+  void on_load(S3BucketMetadataState state);
 
   CurrentOp current_op = CurrentOp::none;
   // For save, update and remove operations
   StateHandlerType on_changed;
   // For fetch operation
-  std::queue<FetchHanderType> fetch_waiters;
+  std::queue<FetchHandlerType> fetch_waiters;
 
   std::unique_ptr<S3BucketMetadata> p_value;
-  std::unique_ptr<S3BucketMetadataV1> p_engine;
+  std::unique_ptr<S3BucketMetadataV1> p_engine_modify;
+  std::unique_ptr<S3BucketMetadataV1> p_engine_load;
 
   friend class S3BucketMetadataCacheTest;
 };
-
-// Single instance
-extern S3BucketMetadataCache* p_bucket_metadata_cache;

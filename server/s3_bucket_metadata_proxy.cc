@@ -116,7 +116,7 @@ void S3BucketMetadataProxy::load(std::function<void(void)> on_success,
 
   using namespace std::placeholders;
 
-  p_bucket_metadata_cache->fetch(
+  S3BucketMetadataCache::get_instance()->fetch(
       *this, std::bind(&S3BucketMetadataProxy::on_load, this, _1, _2));
 }
 
@@ -130,7 +130,7 @@ void S3BucketMetadataProxy::save(std::function<void(void)> on_success,
 
   initialize();
 
-  p_bucket_metadata_cache->save(
+  S3BucketMetadataCache::get_instance()->save(
       *this,
       std::bind(&S3BucketMetadataProxy::on_save, this, std::placeholders::_1));
 }
@@ -143,7 +143,7 @@ void S3BucketMetadataProxy::update(std::function<void(void)> on_success,
   handler_on_success = std::move(on_success);
   handler_on_failed = std::move(on_failed);
 
-  p_bucket_metadata_cache->update(
+  S3BucketMetadataCache::get_instance()->update(
       *this, std::bind(&S3BucketMetadataProxy::on_update, this,
                        std::placeholders::_1));
 }
@@ -156,7 +156,7 @@ void S3BucketMetadataProxy::remove(std::function<void(void)> on_success,
   handler_on_success = std::move(on_success);
   handler_on_failed = std::move(on_failed);
 
-  p_bucket_metadata_cache->remove(
+  S3BucketMetadataCache::get_instance()->remove(
       *this, std::bind(&S3BucketMetadataProxy::on_remove, this,
                        std::placeholders::_1));
 }
