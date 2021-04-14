@@ -32,14 +32,38 @@ install_toml() {
 
 #function to install/upgrade cortx-py-utils rpm
 install_cortx_py_utils() {
-  #rpm -q cortx-py-utils && yum remove cortx-py-utils -y && yum install cortx-py-utils -y
+  #install yum-utils
+  if rpm -q 'yum-utils' ; then
+    echo "yum-utils already present ... Skipping ..."
+  else
+    yum install yum-utils -y
+  fi
+
+  #install cpio
+  if rpm -q 'cpio' ; then
+    echo "cpio already present ... Skipping ..."
+  else
+    yum install cpio -y
+  fi
+
+  # cleanup
+  rm -rf "$PWD"/cortx-py-utils*
+  rm -rf "$PWD"/opt
+
+  # download cortx-py-utils.
+  yumdownloader --destdir="$PWD" cortx-py-utils
+
+  # extract requirements.txt
+  rpm2cpio cortx-py-utils-*.rpm | cpio -idv "./opt/seagate/cortx/utils/conf/requirements.txt"
+
+  # install cortx-py-utils prerequisite
+  pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/requirements.txt" --ignore-installed
+
+  # install cortx-py-utils
   if rpm -q cortx-py-utils ; then
     yum remove cortx-py-utils -y
   fi
   yum install cortx-py-utils -y
-
-  # install cortx-py-utils prerequisite
-  pip3 install -r /opt/seagate/cortx/utils/conf/requirements.txt --ignore-installed
 }
 
 # function to install all prerequisite for dev vm 
