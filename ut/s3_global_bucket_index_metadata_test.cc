@@ -49,14 +49,14 @@ using ::testing::_;
             ->create_motr_kvs_reader(request_mock, s3_motr_api_mock);      \
   } while (0)
 
-#define CREATE_ACTION_UNDER_TEST_OBJ                                     \
-  do {                                                                   \
-    request_mock->set_account_name(account_name);                        \
-    request_mock->set_account_id(account_id);                            \
-    global_bucket_idx_metadata_under_test_ptr =                          \
-        std::make_shared<S3GlobalBucketIndexMetadata>(                   \
-            request_mock, "", s3_motr_api_mock, motr_kvs_reader_factory, \
-            motr_kvs_writer_factory);                                    \
+#define CREATE_ACTION_UNDER_TEST_OBJ                           \
+  do {                                                         \
+    request_mock->set_account_name(account_name);              \
+    request_mock->set_account_id(account_id);                  \
+    global_bucket_idx_metadata_under_test_ptr =                \
+        std::make_shared<S3GlobalBucketIndexMetadata>(         \
+            request_mock, "", "", "", s3_motr_api_mock,        \
+            motr_kvs_reader_factory, motr_kvs_writer_factory); \
   } while (0)
 
 class S3GlobalBucketIndexMetadataTest : public testing::Test {
@@ -329,4 +329,3 @@ TEST_F(S3GlobalBucketIndexMetadataTest, Remove) {
       std::bind(&S3CallBack::on_success, &s3globalbucketindex_callbackobj),
       std::bind(&S3CallBack::on_failed, &s3globalbucketindex_callbackobj));
 }
-

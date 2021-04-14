@@ -70,8 +70,8 @@ class S3ObjectMetadataTest : public testing::Test {
     motr_kvs_writer_factory = std::make_shared<MockS3MotrKVSWriterFactory>(
         ptr_mock_request, ptr_mock_s3_motr_api);
 
-    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
-        ptr_mock_request, ptr_mock_s3_motr_api);
+    bucket_meta_factory =
+        std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
 
     object_list_index_oid = {0xffff, 0xffff};
     objects_version_list_index_oid = {0xffff, 0xfff0};
