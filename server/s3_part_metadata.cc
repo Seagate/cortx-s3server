@@ -412,7 +412,13 @@ std::string S3PartMetadata::to_json() {
   s3_log(S3_LOG_DEBUG, request_id, "\n");
   Json::Value root;
   root["Bucket-Name"] = bucket_name;
+  if (s3_fi_is_enabled("di_part_metadata_bcktname_on_write_corrupted")) {
+    root["Bucket-Name"] = "@" + bucket_name + "@";
+  }
   root["Object-Name"] = object_name;
+  if (s3_fi_is_enabled("di_part_metadata_objname_on_write_corrupted")) {
+    root["Object-Name"] = "@" + object_name + "@";
+  }
   root["Upload-ID"] = upload_id;
   root["Part-Num"] = part_number;
 
@@ -437,7 +443,13 @@ int S3PartMetadata::from_json(std::string content) {
   }
 
   bucket_name = newroot["Bucket-Name"].asString();
+  if (s3_fi_is_enabled("di_part_metadata_bcktname_on_read_corrupted")) {
+    bucket_name = "@" + bucket_name + "@";
+  }
   object_name = newroot["Object-Name"].asString();
+  if (s3_fi_is_enabled("di_part_metadata_objname_on_read_corrupted")) {
+    object_name = "@" + object_name + "@";
+  }
   upload_id = newroot["Upload-ID"].asString();
   part_number = newroot["Part-Num"].asString();
 
