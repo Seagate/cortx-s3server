@@ -58,6 +58,10 @@ S3ClientConfig.pathstyle = False
 S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
 S3ClientConfig.secret_key = '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'
 
+S3fiTest('Disable bucket metadata cache').\
+    enable_fi("enable", "", "disable_bucket_metadata_cache").\
+    execute_test().command_is_successful()
+
 config_types = ["pathstyle.s3cfg", "virtualhoststyle.s3cfg"]
 for i, type in enumerate(config_types):
     Config.config_file = type
@@ -260,7 +264,7 @@ for i, type in enumerate(config_types):
         execute_test(negative_case=True).command_should_fail().\
         command_error_should_have("ServiceUnavailable")
     S3cmdTest('s3cmd can not set acl on bucket').\
-        setacl_bucket("seagatebucket","read:123").\
+        setacl_bucket("seagatebucket","read:C12345").\
         execute_test(negative_case=True).command_should_fail().\
         command_error_should_have("ServiceUnavailable")
     S3cmdTest('s3cmd can not upload 18MBfile file').\
@@ -544,7 +548,7 @@ for i, type in enumerate(config_types):
         enable_fi_offnonm("enable", "motr_idx_op_fail", "3", "99").\
         execute_test().command_is_successful()
     S3cmdTest('s3cmd cannot set acl on bucket').\
-        setacl_bucket("seagatebucket","read:123").\
+        setacl_bucket("seagatebucket","read:C12345").\
         execute_test(negative_case=True).command_should_fail().\
         command_error_should_have("ServiceUnavailable")
     S3fiTest('s3cmd disable Fault injection').\
@@ -759,3 +763,7 @@ for i, type in enumerate(config_types):
     # ************ Delete bucket ************
     S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").\
         execute_test().command_is_successful()
+
+S3fiTest('Enable bucket metadata cache').\
+    disable_fi("disable_bucket_metadata_cache").\
+    execute_test().command_is_successful()
