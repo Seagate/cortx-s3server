@@ -14,6 +14,7 @@ from awss3api import AwsTest
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--bucket', type=str, default='')
+    parser.add_argument('--key', type=str, default='')
     parser.add_argument('--body', type=str, default='', required=True)
     parser.add_argument('--download', type=str, default='./s3-data-from-server.bin')
     parser.add_argument('--test_plan', type=str, default='', required=True)
@@ -40,36 +41,11 @@ def get_args():
             random.choice(string.ascii_lowercase),
             ''.join(random.choice(allsym) for i in range(20)),
             random.choice(string.digits))
+
+    if not args.key:
+        args.key = ''.join(random.choice(string.ascii_lowercase) for i in range(22))
+
     return args
-
-
-def gen_default_test_plan():
-    ret = {"desc": "Default system test plan for Metada Integrity check",
-           "tests": []}
-    # ret["tests"].append({"desc": "Disable FI di_metadata_bucket_or_object_corrupted",
-    #                      "op": "disable-fi", "fi": "di_metadata_bucket_or_object_corrupted"})
-
-    ret["tests"].append({"desc": "Create bucket test-bucket-1",
-                         "op": "create-bucket", "bucket": "test-bucket-1", "expect": True})
-    ret["tests"].append({"desc": "Put object object1 to bucket test-bucket-1",
-                         "op": "put-object", "bucket": "test-bucket-1", "key": "object1", "expect": True})
-    ret["tests"].append({"desc": "Head-object request for previous object",
-                         "op": "head-object", "bucket": "test-bucket-1", "key": "object1", "expect": True})
-    ret["tests"].append({"desc": "Get-object request for previous object",
-                         "op": "get-object", "bucket": "test-bucket-1", "key": "object1", "expect": True})
-
-    ret["tests"].append({"desc": "Enable FI di_metadata_bucket_or_object_corrupted",
-                         "op": "enable-fi", "fi": "di_metadata_bucket_or_object_corrupted"})
-    ret["tests"].append({"desc": "Head-object request for previous object",
-                         "op": "head-object", "bucket": "test-bucket-1", "key": "object1", "expect": False})
-    ret["tests"].append({"desc": "Disable FI di_metadata_bucket_or_object_corrupted",
-                         "op": "disable-fi", "fi": "di_metadata_bucket_or_object_corrupted"})
-
-    ret["tests"].append({"desc": "Delete-object request for previous object",
-                         "op": "delete-object", "bucket": "test-bucket-1", "key": "object1", "expect": True})
-    ret["tests"].append({"desc": "Delet bucket test-bucket-1",
-                         "op": "delete-bucket", "bucket": "test-bucket-1", "expect": True})
-    return ret
 
 
 def test_create_bucket(**kwargs):
@@ -163,26 +139,75 @@ def fi_disable(**kwargs):
     S3fiTest(desc).disable_fi(fi).execute_test().command_is_successful()
 
 
-def multipart_upload_with_test_list(bucket: str, key: str, obj: str, should_fail: bool) -> None:
-    s3api_res = AwsTest('create-multipart-upload').with_cli_self(f'aws s3api --output json create-multipart-upload --bucket "{bucket}" --key "{key}"').execute_test()
-    create_multipart = json.loads(s3api_res.status.stdout)
-    upload_id = create_multipart["UploadId"]
-    parts_file = {}
-    parts_file["Parts"] = []
-    for i, part in enumerate([obj, obj], start=1):
-        s3api_res = AwsTest('upload-part').with_cli_self(f'aws s3api upload-part --output json --bucket "{bucket}" --key "{key}" --part-number "{i}" --upload-id "{upload_id}" --body "{part}"').execute_test()
-        part_resp = json.loads(s3api_res.status.stdout)
-        p = {"PartNumber": i}
-        p.update(part_resp)
-        parts_file["Parts"].append(p)
+multipart_map = {}
 
-    test_list_mp(bucket, key, upload_id, should_fail)
 
-    part_json = path.abspath('./parts.json')
-    with open(part_json, 'w') as f:
-        f.write(json.dumps(parts_file))
+def test_create_multipart(**kwargs):
+    expect = kwargs.get("expect", True)
+    desc = kwargs.get("desc", "Test")
+    key = kwargs["key"]
+    bucket = kwargs["bucket"]
+    s3api_res = AwsTest(desc).with_cli_self(f'aws s3api --output json create-multipart-upload --bucket "{bucket}" --key "{key}"').execute_test(negative_case=not expect)
+    if expect:
+        s3api_res.command_is_successful()
+        cmo = json.loads(s3api_res.status.stdout)
+        multipart_map[key] = {"UploadId": cmo["UploadId"], "Parts": []}
+        print(f"{cmo}")
+    else:
+        s3api_res.command_should_fail()
 
-    AwsTest('complete-multipart-upload').with_cli_self(f'aws s3api complete-multipart-upload --multipart-upload "file://{part_json}" --bucket "{bucket}" --key "{key}" --upload-id "{upload_id}"').execute_test().command_is_successful()
+
+def test_upload_part(**kwargs):
+    expect = kwargs.get("expect", True)
+    desc = kwargs.get("desc", "Test")
+    key = kwargs["key"]
+    bucket = kwargs["bucket"]
+    body = kwargs["body"]
+    upload_id = multipart_map[key]["UploadId"]
+    part_number = len(multipart_map[key]["Parts"]) + 1
+    s3api_res = AwsTest(desc).with_cli_self(f'aws s3api upload-part --output json --bucket "{bucket}" --key "{key}" --part-number "{part_number}" --upload-id "{upload_id}" --body "{body}"').execute_test(negative_case=not expect)
+    if expect:
+        s3api_res.command_is_successful()
+        upo = json.loads(s3api_res.status.stdout)
+        p = {"PartNumber": part_number}
+        p.update(upo)
+        multipart_map[key]["Parts"].append(p)
+        print(f"{upo}")
+    else:
+        s3api_res.command_should_fail()
+
+
+def test_complete_multipart(**kwargs):
+    expect = kwargs.get("expect", True)
+    desc = kwargs.get("desc", "Test")
+    key = kwargs["key"]
+    bucket = kwargs["bucket"]
+    upload_id = multipart_map[key]["UploadId"]
+    parts = {"Parts": multipart_map[key]["Parts"]}
+
+    parts_json = path.abspath('./parts.json')
+    with open(parts_json, 'w') as f:
+        f.write(json.dumps(parts))
+
+    s3api_res = AwsTest(desc).with_cli_self(f'aws s3api complete-multipart-upload --multipart-upload "file://{parts_json}" --bucket "{bucket}" --key "{key}" --upload-id "{upload_id}"').execute_test(negative_case=not expect)
+    if expect:
+        s3api_res.command_is_successful()
+    else:
+        s3api_res.command_should_fail()
+
+
+def test_list_parts(**kwargs):
+    expect = kwargs.get("expect", True)
+    desc = kwargs.get("desc", "Test")
+    key = kwargs["key"]
+    bucket = kwargs["bucket"]
+    upload_id = multipart_map[key]["UploadId"]
+    s3api_res = AwsTest(desc).with_cli_self(f'aws s3api list-parts --output json --bucket "{bucket}" --key "{key}" --upload-id "{upload_id}"').execute_test(negative_case=not expect)
+    if expect:
+        s3api_res.command_is_successful()
+        print(f"{json.loads(s3api_res.status.stdout)}")
+    else:
+        s3api_res.command_should_fail()
 
 
 operations_map = {
@@ -193,12 +218,16 @@ operations_map = {
     "head-object": test_head,
     "delete-object": test_del,
     "enable-fi": fi_enable,
-    "disable-fi": fi_disable
+    "disable-fi": fi_disable,
+    "create-multipart": test_create_multipart,
+    "upload-part": test_upload_part,
+    "complete-multipart": test_complete_multipart,
+    "list-parts": test_list_parts
 }
 
 
 def process_test_plan(tst_pln, args):
-    tar = {"body": args.body, "bucket": args.bucket, "download": args.download}
+    tar = {"body": args.body, "bucket": args.bucket, "download": args.download, "key": args.key}
     for t in tst_pln:
         tar.update(t)
         op = tar.get("op", None)
@@ -214,7 +243,6 @@ def main() -> None:
 
     with open(args.test_plan, 'r') as tp:
         test_plan = json.load(tp)
-#    test_plan = gen_default_test_plan()
     test_desc = test_plan.get("desc", "Test")
     print(f"Testing {test_desc}...")
 
