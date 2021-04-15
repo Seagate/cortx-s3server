@@ -60,6 +60,7 @@ S3ProbableDeleteRecord::S3ProbableDeleteRecord(
     s3_log(S3_LOG_DEBUG, "", "part_list_idx_oid = %" SCNx64 " : %" SCNx64 "\n",
            part_list_idx_oid.u_hi, part_list_idx_oid.u_lo);
   } else {
+    assert(!object_key_in_index.empty());
     s3_log(S3_LOG_DEBUG, "",
            "objects_version_list_idx_oid = %" SCNx64 " : %" SCNx64 "\n",
            objects_version_list_idx_oid.u_hi,
@@ -71,7 +72,6 @@ S3ProbableDeleteRecord::S3ProbableDeleteRecord(
 
 std::string S3ProbableDeleteRecord::to_json() {
   Json::Value root;
-
   // current_object_oid is key for this record, hence not stored in json
 
   // Will be 0 for new object record or first object.
@@ -98,7 +98,6 @@ std::string S3ProbableDeleteRecord::to_json() {
     root["is_multipart"] = "false";
     root["version_key_in_index"] = version_key_in_index;
   }
-
   S3DateTime current_time;
   current_time.init_current_time();
   root["create_timestamp"] = current_time.get_isoformat_string();

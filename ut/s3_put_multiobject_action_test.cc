@@ -22,9 +22,11 @@
 #include "s3_put_multiobject_action.h"
 #include "mock_s3_motr_wrapper.h"
 #include "mock_s3_factory.h"
+#include "mock_s3_probable_delete_record.h"
 #include "mock_s3_request_object.h"
 #include "s3_motr_layout.h"
 #include "s3_ut_common.h"
+#include "s3_m0_uint128_helper.h"
 
 using ::testing::Eq;
 using ::testing::Return;
@@ -48,6 +50,8 @@ class S3PutMultipartObjectActionTest : public testing::Test {
     mp_indx_oid = {0xffff, 0xffff};
     oid = {0x1ffff, 0x1ffff};
     object_list_indx_oid = {0x11ffff, 0x1ffff};
+    objects_version_list_idx_oid = {0x1ffff, 0x11fff};
+    part_list_idx_oid = {0x1fff, 0x1fff};
     upload_id = "upload_id";
     call_count_one = 0;
     bucket_name = "seagatebucket";
@@ -87,6 +91,8 @@ class S3PutMultipartObjectActionTest : public testing::Test {
         ptr_mock_request, oid, upload_id, 0);
     motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
         ptr_mock_request, oid, ptr_mock_s3_motr_api);
+    motr_kvs_writer_factory = std::make_shared<MockS3MotrKVSWriterFactory>(
+        ptr_mock_request, ptr_mock_s3_motr_api);
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
@@ -95,10 +101,13 @@ class S3PutMultipartObjectActionTest : public testing::Test {
   std::shared_ptr<MockS3PartMetadataFactory> part_meta_factory;
   std::shared_ptr<MockS3ObjectMultipartMetadataFactory> object_mp_meta_factory;
   std::shared_ptr<MockS3MotrWriterFactory> motr_writer_factory;
+  std::shared_ptr<MockS3MotrKVSWriterFactory> motr_kvs_writer_factory;
   std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
   std::shared_ptr<S3PutMultiObjectAction> action_under_test;
   struct m0_uint128 mp_indx_oid;
   struct m0_uint128 object_list_indx_oid;
+  struct m0_uint128 objects_version_list_idx_oid;
+  struct m0_uint128 part_list_idx_oid;
   struct m0_uint128 oid;
   int layout_id;
   std::string upload_id;
@@ -120,13 +129,14 @@ class S3PutMultipartObjectActionTestNoMockAuth
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
     EXPECT_CALL(*ptr_mock_request, is_chunked()).WillRepeatedly(Return(false));
+
     std::map<std::string, std::string> input_headers;
     input_headers["Authorization"] = "1";
     EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
         ReturnRef(input_headers));
-    action_under_test.reset(
-        new S3PutMultiObjectAction(ptr_mock_request, object_mp_meta_factory,
-                                   part_meta_factory, motr_writer_factory));
+    action_under_test.reset(new S3PutMultiObjectAction(
+        ptr_mock_request, ptr_mock_s3_motr_api, object_mp_meta_factory,
+        part_meta_factory, motr_writer_factory, motr_kvs_writer_factory));
   }
 };
 
@@ -144,8 +154,9 @@ class S3PutMultipartObjectActionTestWithMockAuth
     EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
         ReturnRef(input_headers));
     action_under_test.reset(new S3PutMultiObjectAction(
-        ptr_mock_request, object_mp_meta_factory, part_meta_factory,
-        motr_writer_factory, mock_auth_factory));
+        ptr_mock_request, ptr_mock_s3_motr_api, object_mp_meta_factory,
+        part_meta_factory, motr_writer_factory, motr_kvs_writer_factory,
+        mock_auth_factory));
   }
   std::shared_ptr<MockS3AuthClientFactory> mock_auth_factory;
 };
@@ -407,218 +418,99 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
 }
 
-TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMultipartMetadata) {
-  action_under_test->bucket_metadata =
-      bucket_meta_factory->mock_bucket_metadata;
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  action_under_test->part_number = 1;
-
-  size_t unit_size =
-      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
-  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata,
-              get_part_one_size()).WillRepeatedly(Return(0));
-  EXPECT_CALL(*ptr_mock_request, get_content_length())
-      .WillRepeatedly(Return(unit_size));
-
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), save(_, _))
-      .Times(AtLeast(1));
-  action_under_test->save_multipart_metadata();
+TEST_F(S3PutMultipartObjectActionTestWithMockAuth, CreatePartObject) {
+  EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
+      Return(1024));
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
+      .Times(1);
+  action_under_test->create_part_object();
+  EXPECT_TRUE(action_under_test->motr_writer != nullptr);
 }
 
-TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMultipartMetadataError) {
-  action_under_test->bucket_metadata =
-      bucket_meta_factory->mock_bucket_metadata;
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  action_under_test->part_number = 1;
-
-  size_t unit_size =
-      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
-  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata,
-              get_part_one_size()).WillRepeatedly(Return(unit_size));
-  EXPECT_CALL(*ptr_mock_request, get_data_length())
-      .WillRepeatedly(Return(unit_size - 2));
-  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
-
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), save(_, _))
-      .Times(AtLeast(0));
+TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
+       CreatePartObjectFailedTestWhileShutdown) {
+  S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(403, _)).Times(1);
-  action_under_test->save_multipart_metadata();
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
+
+  action_under_test->create_part_object_failed();
+  EXPECT_TRUE(action_under_test->motr_writer == NULL);
+  S3Option::get_instance()->set_is_s3_shutting_down(false);
 }
 
-TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
-       SaveMultipartMetadataFailedServiceUnavailable) {
-  action_under_test->bucket_metadata =
-      bucket_meta_factory->mock_bucket_metadata;
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  action_under_test->part_number = 1;
+TEST_F(S3PutMultipartObjectActionTestWithMockAuth, CreateObjectFailedTest) {
+  EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
+      Return(1024));
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
+      .Times(1);
+  action_under_test->create_part_object();
 
-  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::failed_to_launch));
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3MotrWiterOpState::failed));
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
   EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
+
+  action_under_test->create_part_object_failed();
+  EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
+       CreateObjectFailedToLaunchTest) {
+  EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
+      Return(1024));
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
+      .Times(1);
+  action_under_test->create_part_object();
+
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3MotrWiterOpState::failed_to_launch));
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
-  action_under_test->save_multipart_metadata_failed();
-}
-
-TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
-       SaveMultipartMetadataFailedInternalError) {
-  action_under_test->bucket_metadata =
-      bucket_meta_factory->mock_bucket_metadata;
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  action_under_test->part_number = 1;
-
-  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
   EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
-  action_under_test->save_multipart_metadata_failed();
-}
-
-TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMultipartMetadataAssert) {
-  action_under_test->bucket_metadata =
-      bucket_meta_factory->mock_bucket_metadata;
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  action_under_test->part_number = 2;
-
-  size_t unit_size =
-      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
-  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata,
-              get_part_one_size()).WillRepeatedly(Return(0));
-  EXPECT_CALL(*ptr_mock_request, get_content_length())
-      .WillRepeatedly(Return(unit_size));
-
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), save(_, _))
-      .Times(0);
-  ASSERT_DEATH(action_under_test->save_multipart_metadata(), ".*");
-}
-
-TEST_F(S3PutMultipartObjectActionTestNoMockAuth, FetchFirstPartInfo) {
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), load(_, _, 1)).Times(1);
-  action_under_test->fetch_firstpart_info();
-}
-
-TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
-       FetchFirstPartInfoServiceUnavailableFailed) {
-  action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_state())
-      .WillOnce(Return(S3PartMetadataState::missing));
-
-  action_under_test->fetch_firstpart_info_failed();
-
+  action_under_test->create_part_object_failed();
   EXPECT_STREQ("ServiceUnavailable",
                action_under_test->get_s3_error_code().c_str());
 }
 
-TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
-       FetchFirstPartInfoInternalErrorFailed) {
-  action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_state())
-      .WillRepeatedly(Return(S3PartMetadataState::failed));
+TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
+       WriteObjectFailedShouldUndoMarkProgress) {
+  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
+  action_under_test->_set_layout_id(layout_id);
 
-  action_under_test->fetch_firstpart_info_failed();
+  // mock mark progress
+  action_under_test->motr_write_in_progress = true;
+  action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
+  MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
+      action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
+      object_list_indx_oid, objects_version_list_idx_oid,
+      "" /* Version does not exists yet */, false /* force_delete */,
+      true /* is_multipart */, part_list_idx_oid);
+  action_under_test->new_probable_del_rec.reset(prob_rec);
+  // expectations for mark_new_oid_for_deletion()
+  EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
+  EXPECT_CALL(*prob_rec, to_json()).Times(1);
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+              put_keyval(_, _, _, _, _)).Times(1);
+
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
+      .Times(1)
+      .WillOnce(Return(S3MotrWiterOpState::failed));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
+
+  action_under_test->write_object_failed();
 
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffsetPart1) {
-  action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
-
-  m0_uint128 oid = {0x1ffff, 0x1ffff};
-  size_t unit_size =
-      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
-  EXPECT_CALL(*part_meta_factory->mock_part_metadata, get_content_length())
-      .WillRepeatedly(Return(unit_size - 2));
-  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_layout_id())
-      .WillRepeatedly(Return(layout_id));
-  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_oid())
-      .WillRepeatedly(Return(oid));
-  EXPECT_CALL(*ptr_mock_request, get_content_length())
-      .WillRepeatedly(Return(unit_size - 2));
-  EXPECT_CALL(*ptr_mock_request, get_data_length())
-      .WillRepeatedly(Return(unit_size - 2));
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(400, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
-
-  action_under_test->compute_part_offset();
-  EXPECT_TRUE(action_under_test->motr_writer != nullptr);
-}
-
-TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffset) {
-  m0_uint128 oid = {0x1ffff, 0x1ffff};
-  action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  action_under_test->part_number = 2;
-  EXPECT_CALL(*(ptr_mock_request), is_chunked()).WillOnce(Return(true));
-
-  size_t unit_size =
-      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
-  EXPECT_CALL(*part_meta_factory->mock_part_metadata, get_content_length())
-      .WillRepeatedly(Return(unit_size));
-  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_oid())
-      .WillRepeatedly(Return(oid));
-  EXPECT_CALL(*ptr_mock_request, get_content_length())
-      .WillRepeatedly(Return(unit_size));
-  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_layout_id())
-      .WillRepeatedly(Return(layout_id));
-
-  action_under_test->clear_tasks();
-  ACTION_TASK_ADD_OBJPTR(action_under_test,
-                         S3PutMultipartObjectActionTest::func_callback_one,
-                         this);
-  action_under_test->compute_part_offset();
-  EXPECT_TRUE(action_under_test->motr_writer != nullptr);
-  EXPECT_EQ(1, call_count_one);
-}
-
-TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffsetNoChunk) {
-  m0_uint128 oid = {0x1ffff, 0x1ffff};
-  action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  action_under_test->part_number = 2;
-  EXPECT_CALL(*(ptr_mock_request), is_chunked()).WillOnce(Return(false));
-
-  size_t unit_size =
-      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
-  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata,
-              get_part_one_size()).WillRepeatedly(Return(unit_size));
-  EXPECT_CALL(*ptr_mock_request, get_content_length())
-      .WillRepeatedly(Return(unit_size));
-  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_layout_id())
-      .WillRepeatedly(Return(layout_id));
-  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_oid())
-      .WillRepeatedly(Return(oid));
-
-  action_under_test->clear_tasks();
-  ACTION_TASK_ADD_OBJPTR(action_under_test,
-                         S3PutMultipartObjectActionTest::func_callback_one,
-                         this);
-  action_under_test->compute_part_offset();
-  EXPECT_TRUE(action_under_test->motr_writer != nullptr);
-  EXPECT_EQ(1, call_count_one);
+  EXPECT_FALSE(action_under_test->motr_write_in_progress);
 }
 
 TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
