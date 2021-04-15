@@ -235,3 +235,93 @@ fault injection is enabled then the object may be corrupted.
 
 Enable fault injection for data, i.e. `di_obj_md5_corrupted`.
 Any file used for PUT/GET will generate `Content checksum mismatch` error
+
+# Metadata Integrity testing
+
+## Manual metadata integrity testing
+
+- Enable Fault Injection as described in [Enable `Fault Injection`](#enable-fault-injection)
+- Run test workload
+
+### Supported fault injections
+
+- `di_metadata_bcktname_on_write_corrupted` - corrupts bucket name in object metadata on writing to store
+- `di_metadata_objname_on_write_corrupted` - corrupts object name in object metadata on writing to store
+- `di_metadata_bcktname_on_read_corrupted` - corrupts bucket name in object metadata on reading from store
+- `di_metadata_objname_on_read_corrupted` - corrupts object name in object metadata on reading from store
+- `object_metadata_corrupted` - object metadata could not be parsed
+- `di_metadata_bucket_or_object_corrupted` - object and bucket names could not be validated against request data
+- `part_metadata_corrupted` - part metadata could not be parsed
+- `di_part_metadata_bcktname_on_write_corrupted` - corrupts bucket name in part metadata on writing to store
+- `di_part_metadata_objname_on_write_corrupted` - corrupts object name in part metadata on writing to store
+- `di_part_metadata_bcktname_on_read_corrupted` - corrupts bucket name in part metadata on reading from store
+- `di_part_metadata_objname_on_read_corrupted` - corrupts object name in part metadata on reading from store
+
+### Workload for manual testing
+
+Data used in testing does not require any special preparations - any files could be used.
+
+## Automated metadata integrity testing
+
+`st/clitests/md_integrity.md` script were created to do automated test.
+
+The script can run predefined test plans, which could be generated in form of json.
+`md_integrity.md` uses `aws s3api` to send requests, so it should be installed and
+properly configured.
+
+Test plan supports following operations
+
+- `aws s3api` commands
+    - create-bucket
+    - delete-bucket
+    - put-object
+    - get-object
+    - head-object
+    - delete-object
+    - create-multipart
+    - upload-part
+    - complete-multipart
+    - list-parts
+
+- `fault injection` commands
+    - enable-fi
+    - disable-fi
+
+Description and parameters for the commands from `aws s3api` group could be
+obtained with `aws s3api <command> help` shell command.
+
+`enable-fi` - enables specified fault injection. Command has a single parameter named
+`fi` which is the name of the fault injection to enable.
+
+`disable-fi` - disables specified fault injection. Command has a single parameter named
+`fi` which is the name of the fault injection to disable.
+
+### Test plan description
+
+Test plan is a simple json file with the following structure
+
+```
+{
+    "desc": "Plan Description",
+    "tests": [...]
+}
+```
+
+`desc` - optional - text description
+`tests` - mandatory - list of the operations to execute. All the commands are run
+sequentially in order of description.
+
+Each command has the following structure
+
+```
+{
+    "desc": "Create bucket test-bucket-1",
+    "expect": true,
+    "op": "create-bucket",
+    "bucket": "test-bucket-1",
+    ...
+}
+```
+
+
+It is not neccessary to enable any fault injections manualy
