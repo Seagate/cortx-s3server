@@ -20,6 +20,7 @@
 
 import sys
 import os
+import re
 import shutil
 from os import path
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
@@ -301,25 +302,25 @@ class SetupCmd(object):
       list_match_found = True
       key_match_found = False
       for key_yard in yardstick_list:
-        key_yard_token_list = key_yard.split(">")
+        key_yard_token_list = re.split('>|\[|\]',key_yard)
         key_match_found = False
         for key_arg in full_arg_keys_list:
           if key_match_found is False:
-            key_arg_token_list = key_arg.split(">")
+            key_arg_token_list = re.split('>|\[|\]',key_arg)
             if len(key_yard_token_list) == len(key_arg_token_list):
               for key_x,key_y in zip(key_yard_token_list, key_arg_token_list):
                 key_match_found = False
                 if key_x == "machine-id":
                   if key_y != machine_id_val:
-                    continue
+                    break
                 elif key_x == "cluster-id":
                   if key_y != cluster_id_val:
-                    continue
+                    break
                 elif key_x == "storage-set-count":
                   if int(key_y) >= storage_set_val:
-                    continue
+                    break
                 elif key_x != key_y:
-                  continue
+                  break
                 key_match_found = True
         if key_match_found is False:
           list_match_found = False
