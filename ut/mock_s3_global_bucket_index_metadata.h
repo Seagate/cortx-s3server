@@ -36,7 +36,7 @@
 class MockS3GlobalBucketIndexMetadata : public S3GlobalBucketIndexMetadata {
  public:
   MockS3GlobalBucketIndexMetadata(std::shared_ptr<S3RequestObject> req)
-      : S3GlobalBucketIndexMetadata(req) {}
+      : S3GlobalBucketIndexMetadata(std::move(req), "", "", "") {}
   MOCK_METHOD2(save, void(std::function<void(void)> on_success,
                           std::function<void(void)> on_failed));
   MOCK_METHOD2(load, void(std::function<void(void)> on_success,

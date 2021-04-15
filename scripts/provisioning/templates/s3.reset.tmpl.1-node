@@ -19,6 +19,9 @@
 cortx:
   software:
     openldap:
+      root:
+        user: "admin"
+        secret: "TMPL_ROOT_SECRET_KEY"
       sgiam:
         user: "sgiamadmin"
         secret: "TMPL_SGIAM_SECRET_KEY"
