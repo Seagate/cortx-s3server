@@ -151,6 +151,11 @@ std::string S3PartMetadata::get_md5() {
   return system_defined_attribute["Content-MD5"];
 }
 
+void S3PartMetadata::set_oid(struct m0_uint128 id) {
+  oid = id;
+  motr_oid_str = S3M0Uint128Helper::to_string(oid);
+}
+
 void S3PartMetadata::add_system_attribute(std::string key, std::string val) {
   system_defined_attribute[key] = val;
 }
@@ -443,6 +448,7 @@ std::string S3PartMetadata::to_json() {
   }
   root["Upload-ID"] = upload_id;
   root["Part-Num"] = part_number;
+  root["motr_oid"] = motr_oid_str;
 
   for (auto sit : system_defined_attribute) {
     root["System-Defined"][sit.first] = sit.second;
@@ -474,6 +480,8 @@ int S3PartMetadata::from_json(std::string content) {
   }
   upload_id = newroot["Upload-ID"].asString();
   part_number = newroot["Part-Num"].asString();
+  motr_oid_str = newroot["motr_oid"].asString();
+  oid = S3M0Uint128Helper::to_m0_uint128(motr_oid_str);
 
   Json::Value::Members members = newroot["System-Defined"].getMemberNames();
   for (auto it : members) {
