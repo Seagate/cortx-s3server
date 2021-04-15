@@ -4,7 +4,6 @@ import json
 import random
 import string
 import argparse
-from copy import deepcopy
 from os import path, system
 
 from s3fi import S3fiTest
@@ -15,10 +14,10 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--bucket', type=str, default='')
     parser.add_argument('--key', type=str, default='')
-    parser.add_argument('--body', type=str, default='', required=True)
+    argbody = parser.add_argument('--body', type=str, default='')
     parser.add_argument('--download', type=str, default='/tmp/s3-data-from-server.bin')
     parser.add_argument('--parts', type=str, default='/tmp/parts.json')
-    parser.add_argument('--test_plan', type=str, default='', required=True)
+    argtpl = parser.add_argument('--test_plan', type=str, default='', required=True)
 
     args = parser.parse_args()
 
@@ -27,15 +26,19 @@ def get_args():
 
     if args.body:
         args.body = path.abspath(args.body)
-
-    if not path.isfile(args.body):
-        raise argparse.ArgumentError("--body must be a path to existing file")
+        if not path.isfile(args.body):
+            raise argparse.ArgumentError(argbody, "--body must be a path to existing file")
 
     if args.test_plan:
         args.test_plan = path.abspath(args.test_plan)
 
-    if not path.isfile(args.test_plan):
-        raise argparse.ArgumentError("--test_plan must be a path to existing json file")
+
+    test_plan = {}
+    try:
+        with open(args.test_plan, 'r') as tp:
+            test_plan = json.load(tp)
+    except Exception as ex:
+        raise argparse.ArgumentError(argtpl, f"--test_plan must be a path to existing json file. {ex}")
 
     if not args.bucket:
         allsym = f"{string.ascii_lowercase}{string.digits}-"
@@ -47,7 +50,7 @@ def get_args():
     if not args.key:
         args.key = ''.join(random.choice(string.ascii_lowercase) for i in range(22))
 
-    return args
+    return args, test_plan
 
 
 def test_create_bucket(**kwargs):
@@ -118,7 +121,7 @@ def test_del(**kwargs):
     desc = kwargs.get("desc", "Test")
     key = kwargs["key"]
     bucket = kwargs["bucket"]
-    s3api_res = AwsTest('delete-object').with_cli_self(f"aws s3api delete-object --bucket {bucket} --key {key}").execute_test(negative_case=not expect)
+    s3api_res = AwsTest(desc).with_cli_self(f"aws s3api delete-object --bucket {bucket} --key {key}").execute_test(negative_case=not expect)
     if expect:
         s3api_res.command_is_successful()
     else:
@@ -244,10 +247,8 @@ def process_test_plan(tst_pln, args):
 
 def main() -> None:
     random.seed(a=None)
-    args = get_args()
+    args, test_plan = get_args()
 
-    with open(args.test_plan, 'r') as tp:
-        test_plan = json.load(tp)
     test_desc = test_plan.get("desc", "Test")
     print(f"Testing {test_desc}...")
 
