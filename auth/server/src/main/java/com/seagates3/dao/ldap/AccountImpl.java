@@ -591,6 +591,7 @@ public class AccountImpl implements AccountDAO {
 
     /**
      * Delete account entry silently from ldap.
+     * if we get connection error then retry once.
      */
    public
     void ldap_delete_account(Account account) throws DataAccessException {
@@ -603,10 +604,19 @@ public class AccountImpl implements AccountDAO {
         LDAPUtils.delete (dn);
       }
       catch (LDAPException ex) {
-        LOGGER.error("Failed to delete account: " + account.getName());
+        // Retry delete operation again if its connection error
+        if (ex.getResultCode() == LDAPException.CONNECT_ERROR) {
+          try {
+            LDAPUtils.delete (dn);
+          }
+          catch (LDAPException e) {
+            // Nothing can be done here
+          }
+          return;
+        } else {
         throw new DataAccessException("Failed to delete account.\n" + ex);
+        }
       }
-      // TODO Handle failures
     }
 }
 

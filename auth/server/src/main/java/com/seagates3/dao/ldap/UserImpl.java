@@ -574,8 +574,18 @@ public class UserImpl implements UserDAO {
        LDAPUtils.delete (dn);
      }
      catch (LDAPException ex) {
-       // TODO handle errors
-       throw new DataAccessException("Failed to delete the user.\n" + ex);
+       // Retry delete operation again if its connection error
+       if (ex.getResultCode() == LDAPException.CONNECT_ERROR) {
+         try {
+           LDAPUtils.delete (dn);
+         }
+         catch (LDAPException e) {
+           // Nothing can be done here
+         }
+         return;
+       } else {
+         throw new DataAccessException("Failed to delete the user.\n" + ex);
+       }
      }
    }
  }

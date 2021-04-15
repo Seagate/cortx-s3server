@@ -62,6 +62,8 @@ public class UserController extends AbstractController {
       User user;
       String pathPrefix;
       int usersCount = 0;
+      int maxIAMUserlimit = AuthServerConfig.getMaxIAMUserLimit();
+
       if (requestBody.containsKey("Path")) {
         pathPrefix = requestBody.get("Path");
       } else {
@@ -71,7 +73,6 @@ public class UserController extends AbstractController {
       try {
         usersCount = userDAO.getTotalCountOfUsers(
             requestor.getAccount().getName(), pathPrefix);
-        int maxIAMUserlimit = AuthServerConfig.getMaxIAMUserLimit();
 
         if (usersCount >= maxIAMUserlimit) {
           LOGGER.error("Maximum allowed Users limit has exceeded (i.e." +
@@ -119,13 +120,20 @@ public class UserController extends AbstractController {
       catch (DataAccessException ex) {
         return userResponseGenerator.internalServerError();
       }
+      try {
+        usersCount = userDAO.getTotalCountOfUsers(
+            requestor.getAccount().getName(), pathPrefix);
+      }
+      catch (DataAccessException ex) {
+        LOGGER.error("failed to get total count of users from ldap :" + ex);
+        return userResponseGenerator.internalServerError();
+      }
       // Handle multi-threaded/ multi-node create() API calls.
       try {
         usersCount = userDAO.getTotalCountOfUsers(
             requestor.getAccount().getName(), pathPrefix);
-        int maxIAMUserlimit = AuthServerConfig.getMaxIAMUserLimit();
 
-        if (usersCount >= maxIAMUserlimit) {
+        if (usersCount > maxIAMUserlimit) {
           userDAO.ldap_delete_user(user);
           return userResponseGenerator.internalServerError();
         }
