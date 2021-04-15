@@ -20,7 +20,6 @@
 
 import sys
 import os
-import re
 import shutil
 from os import path
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
