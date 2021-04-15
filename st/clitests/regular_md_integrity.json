@@ -1,7 +1,7 @@
 {"desc": "Default system test plan for Metada Integrity check",
  "tests": [
      {"desc": "Create bucket test-bucket-1",
-      "op": "create-bucket", "bucket": "test-bucket-1", "expect": false},
+      "op": "create-bucket", "bucket": "test-bucket-1", "expect": true},
      {"desc": "Put object object1 to bucket test-bucket-1",
       "op": "put-object", "bucket": "test-bucket-1", "key": "object1", "expect": true},
      {"desc": "Head-object request for previous object",
