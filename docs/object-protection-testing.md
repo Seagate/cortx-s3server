@@ -307,21 +307,120 @@ Test plan is a simple json file with the following structure
 }
 ```
 
-`desc` - optional - text description
-`tests` - mandatory - list of the operations to execute. All the commands are run
-sequentially in order of description.
+- `desc` - optional - Test plan description
+- `tests` - mandatory - List of commands to execute. All the commands are run
+  sequentially in order of description.
 
 Each command has the following structure
 
 ```
 {
-    "desc": "Create bucket test-bucket-1",
+    "desc": "Command description",
     "expect": true,
-    "op": "create-bucket",
-    "bucket": "test-bucket-1",
+    "op": <command-name>,
+    <command specific params>
     ...
 }
 ```
 
+- `desc` - optional - Command description.
+- `expect` - optional - Boolean value representing expectation about command status:
+  `true` - command should be succesful, `false` - command should fail.
+      If omitted `true` is assumed.
+- `op` - mandatory - Name of the command to perform. Should be from the list of
+  supported commands
+- `<command specific params>` - arguments specific to command.
 
-It is not neccessary to enable any fault injections manualy
+Examples
+
+```
+{"desc": "Create bucket and PUT one object, after that delete all. All command are expected to run ok.",
+ "tests": [
+     {"desc": "Create bucket test-bucket-1",
+      "op": "create-bucket", "bucket": "test-bucket-1", "expect": true},
+     {"desc": "Put object object1 to bucket test-bucket-1",
+      "op": "put-object", "bucket": "test-bucket-1", "key": "object1", "body": "/tmp/data.bin", "expect": true},
+     {"desc": "Delete-object request for previous object",
+      "op": "delete-object", "bucket": "test-bucket-1", "key": "object1", "expect": true},
+     {"desc": "Delet bucket test-bucket-1",
+      "op": "delete-bucket", "bucket": "test-bucket-1", "expect": true}
+ ]}
+```
+
+It is not neccessary to enable any fault injections manualy. It could be done
+in test plan
+
+```
+{"desc": "Create bucket, put object, enable FI, try to get, expect FAIL, disable FI, try to get, expect ok",
+ "tests": [
+     {"desc": "Create bucket test-bucket-1",
+      "op": "create-bucket", "bucket": "test-bucket-1", "expect": true},
+     {"desc": "Put object object1 to bucket test-bucket-1",
+      "op": "put-object", "bucket": "test-bucket-1", "key": "object1", "body": "/tmp/data.bin", "expect": true},
+     {"desc": "Enable FI di_metadata_bucket_or_object_corrupted",
+      "op": "enable-fi", "fi": "di_metadata_bucket_or_object_corrupted"},
+     {"desc": "Get-object request for previous object",
+      "op": "get-object", "bucket": "test-bucket-1", "key": "object1", "expect": false},
+     {"desc": "Disable FI di_metadata_bucket_or_object_corrupted",
+      "op": "disable-fi", "fi": "di_metadata_bucket_or_object_corrupted"},
+     {"desc": "Get-object request for previous object",
+      "op": "get-object", "bucket": "test-bucket-1", "key": "object1", "expect": true},
+     {"desc": "Delete-object request for previous object",
+      "op": "delete-object", "bucket": "test-bucket-1", "key": "object1", "expect": true},
+     {"desc": "Delet bucket test-bucket-1",
+      "op": "delete-bucket", "bucket": "test-bucket-1", "expect": true}
+ ]}
+```
+### Script parameters
+
+- Mandatory parameters
+    - `--test_plan` - Path to a json file with Test plan description
+    
+- Optional paramters
+    - `--download` - Path to temp location where to store downloaded file
+    - `--parts` - Path to temp location where to store part description for multipart upload
+    - Following params could be set via cmd to simplify Test plan
+        - `--bucket` - Bucket name that will be used in all commands if not redefined in Test plan.
+          If empty value provided bucket name will be generated randomly.
+        - `--key` - Key that will be used in all commands if not redefined in Test plan.
+        - `--body` - Body that will be used in all commands if not redefined in Test plan.
+
+Examples
+
+```
+./md_integrity.md --test_plan ./plan.json
+```
+
+```
+./md_integrity.md --test_plan ./plan.json --body ./data.bin
+```
+
+### Predefined Test plans
+
+There several predefined tests plans used in system tests
+
+- `st/clitests/multipart_md_integrity.json`
+- `st/clitests/regular_md_integrity.json`
+
+### `jenkins-build`
+
+System tests for Metadata integrity are run from `jenkins_build`
+
+```
+# Metada Integrity tests - regular PUT
+md_di_data=/tmp/s3-data.bin
+md_di_dowload=/tmp/s3-data-download.bin
+md_di_parts=/tmp/s3-data-parts.json
+
+$USE_SUDO dd if=/dev/urandom of=$md_di_data count=1 bs=1K
+$USE_SUDO ./md_integrity.py --body $md_di_data --download $md_di_dowload --parts $md_di_parts --test_plan ./regular_md_integrity.json
+
+# Metada Integrity tests - multipart
+$USE_SUDO dd if=/dev/urandom of=$md_di_data count=1 bs=5M
+$USE_SUDO ./md_integrity.py --body $md_di_data --download $md_di_dowload --parts $md_di_parts --test_plan ./metadata_md_integrity.json
+
+[ -f $md_di_data ] && $USE_SUDO rm -vf $md_di_data
+[ -f $md_di_dowload ] && $USE_SUDO rm -vf $md_di_dowload
+[ -f $md_di_parts ] && $USE_SUDO rm -vf $md_di_parts
+# ======================================
+```
