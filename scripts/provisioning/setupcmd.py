@@ -266,12 +266,12 @@ class SetupCmd(object):
       storage_set_val = 0
     # Set phase name to upper case required for inheritance
     phase_name = phase_name.upper()
-    # Set argument file confstore
-    argument_file_confstore = S3CortxConfStore(arg_file, 'argument_file_index')
     try:
       # Extract keys from yardstick file for current phase considering inheritance
       yardstick_list = self.extract_yardstick_list(phase_name)
 
+      # Set argument file confstore
+      argument_file_confstore = S3CortxConfStore(arg_file, 'argument_file_index')
       # Extract keys from argument file
       arg_keys_list = argument_file_confstore.get_all_keys()
       # Since get_all_keys misses out listing entries inside
@@ -287,54 +287,45 @@ class SetupCmd(object):
             key = key + ">" + set_key
         full_arg_keys_list.append(key)
 
-      # Below algorithm first checks if there is
-      # a grammar match between keys of yardstick
-      # file and argument file. If match found,
-      # then check whether there is any substring
-      # matching any of the tokens listed above.
+      # Below algorithm uses tokenization
+      # of both yardstick and argument key
+      # based on delimiter to generate
+      # smaller key-tokens. Then check if
+      # (A) all the key-tokens are pairs of
+      #     pre-defined token. e.g.,
+      #     if key_yard is machine-id, then
+      #     key_arg must have corresponding
+      #     value of machine_id_val.
+      # OR
+      # (B) both the key-tokens from key_arg
+      #     and key_yard are the same.
+      list_match_found = True
+      key_match_found = False
       for key_yard in yardstick_list:
-        match_found = False
-        # Create a regex for grammar match
-        key_yard_regex = key_yard
-        key_yard_regex = re.sub(r'\[.*\]', '.*', key_yard_regex)
-        for token in token_list:
-          key_yard_regex = key_yard_regex.replace(token, ".*")
+        key_yard_token_list = key_yard.split(">")
+        key_match_found = False
         for key_arg in full_arg_keys_list:
-          if re.search(key_yard_regex, key_arg) and match_found is False:
-            # Grammar matched, now check for token match.
-            # If token substring exists but there is no
-            # match found, then skip this key and continue.
-            # Else fall through until we complete all
-            # checks and raise match found flag.
-            yard = key_yard
-            # Extract machine-id and check for a match.
-            first_pos = yard.find("machine-id")
-            if first_pos != -1:
-              last_pos = key_arg.find(">", first_pos)
-              mac_id = key_arg[first_pos:last_pos]
-              if mac_id != machine_id_val:
-                continue
-            # Extract cluster-id and check for a match.
-            first_pos = yard.find("cluster-id")
-            if first_pos != -1:
-              last_pos = key_arg.find(">", first_pos)
-              cls_id = key_arg[first_pos:last_pos]
-              if cls_id != cluster_id_val:
-                continue
-            # Extract storage set index and check that
-            # it should be less than max value.
-            if yard.find("storage-set-count"):
-              first_pos = key_arg.find("[")
-              if first_pos != -1:
-                last_pos = key_arg.find("]", first_pos)
-                ss_idx = key_arg[first_pos+1:last_pos]
-                ss_idx = int(ss_idx)
-                if ss_idx >= storage_set_val:
+          if key_match_found is False:
+            key_arg_token_list = key_arg.split(">")
+            if len(key_yard_token_list) == len(key_arg_token_list):
+              for key_x,key_y in zip(key_yard_token_list, key_arg_token_list):
+                key_match_found = False
+                if key_x == "machine-id":
+                  if key_y != machine_id_val:
+                    continue
+                elif key_x == "cluster-id":
+                  if key_y != cluster_id_val:
+                    continue
+                elif key_x == "storage-set-count":
+                  if int(key_y) >= storage_set_val:
+                    continue
+                elif key_x != key_y:
                   continue
-            match_found = True
-            break
-        if match_found is False:
-          raise Exception(f'No match found for {key_yard}')
+                key_match_found = True
+        if key_match_found is False:
+          list_match_found = False
+      if list_match_found is False:
+        raise Exception(f'No match found for {key_yard}')
       sys.stdout.write("Validation complete\n")
 
     except Exception as e:
