@@ -1312,10 +1312,10 @@ TEST_F(S3PutObjectActionTest, AddExtendedObjectToProbableList) {
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
               get_object_list_index_oid())
-      .WillRepeatedly(Return(object_list_indx_oid));
+      .WillRepeatedly(ReturnRef(object_list_indx_oid));
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
               get_objects_version_list_index_oid())
-      .WillRepeatedly(Return(objects_version_list_idx_oid));
+      .WillRepeatedly(ReturnRef(objects_version_list_idx_oid));
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
       .Times(AtLeast(1))
