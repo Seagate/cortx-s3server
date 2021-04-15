@@ -25,7 +25,7 @@
 
 #include "s3_addb_map.h"
 
-const uint64_t g_s3_to_addb_idx_func_name_map_size = 208;
+const uint64_t g_s3_to_addb_idx_func_name_map_size = 213;
 
 const char* g_s3_to_addb_idx_func_name_map[] = {
     "Action::check_authentication",
@@ -200,12 +200,17 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3PutFiAction::send_response_to_s3_client",
     "S3PutFiAction::set_fault_injection",
     "S3PutMultiObjectAction::check_part_details",
-    "S3PutMultiObjectAction::compute_part_offset",
-    "S3PutMultiObjectAction::fetch_firstpart_info",
+    "S3PutMultiObjectAction::create_part_object",
+    "S3PutMultiObjectAction::delete_new_object",
+    "S3PutMultiObjectAction::delete_old_object",
     "S3PutMultiObjectAction::fetch_multipart_metadata",
+    "S3PutMultiObjectAction::fetch_part_info",
     "S3PutMultiObjectAction::initiate_data_streaming",
+    "S3PutMultiObjectAction::mark_new_oid_for_deletion",
+    "S3PutMultiObjectAction::mark_old_oid_for_deletion",
+    "S3PutMultiObjectAction::remove_new_oid_probable_record",
+    "S3PutMultiObjectAction::remove_old_oid_probable_record",
     "S3PutMultiObjectAction::save_metadata",
-    "S3PutMultiObjectAction::save_multipart_metadata",
     "S3PutMultiObjectAction::send_response_to_s3_client",
     "S3PutMultiObjectAction::validate_multipart_request",
     "S3PutMultipartObjectActionTest::func_callback_one",

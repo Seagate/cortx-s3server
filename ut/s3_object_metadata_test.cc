@@ -284,8 +284,7 @@ TEST_F(S3ObjectMetadataTest, RenameObjectName) {
   std::string new_object_name = "object1";
 
   metadata_obj_under_test->rename_object_name(new_object_name);
-  EXPECT_STREQ("object1",
-               metadata_obj_under_test->get_object_name().c_str());
+  EXPECT_STREQ("object1", metadata_obj_under_test->get_object_name().c_str());
 }
 
 TEST_F(S3MultipartObjectMetadataTest, GetUserIdUplodIdName) {
