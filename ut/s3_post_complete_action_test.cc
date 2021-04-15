@@ -130,8 +130,8 @@ class S3PostCompleteActionTest : public testing::Test {
     layout_id =
         S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
 
-    bucket_meta_factory =
-        std::make_shared<MockS3BucketMetadataFactory>(request_mock);
+    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
+        request_mock, s3_motr_api_mock);
     motr_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
         request_mock, s3_motr_api_mock);
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(

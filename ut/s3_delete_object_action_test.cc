@@ -47,11 +47,11 @@ using ::testing::AtLeast;
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
                 get_object_list_index_oid())                              \
         .Times(AtLeast(1))                                                \
-        .WillRepeatedly(ReturnRef(object_list_indx_oid));                 \
+        .WillRepeatedly(Return(object_list_indx_oid));                    \
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
                 get_objects_version_list_index_oid())                     \
         .Times(AtLeast(1))                                                \
-        .WillRepeatedly(ReturnRef(objects_version_list_index_oid));       \
+        .WillRepeatedly(Return(objects_version_list_index_oid));          \
     EXPECT_CALL(*(mock_request), http_verb())                             \
         .WillOnce(Return(S3HttpVerb::GET));                               \
     EXPECT_CALL(*(mock_request), get_operation_code())                    \
@@ -60,8 +60,6 @@ using ::testing::AtLeast;
         .Times(AtLeast(1));                                               \
     action_under_test->fetch_object_info();                               \
   } while (0)
-
-const struct m0_uint128 zero_oid = {};
 
 class S3DeleteObjectActionTest : public testing::Test {
  protected:
@@ -99,16 +97,8 @@ class S3DeleteObjectActionTest : public testing::Test {
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
     // Owned and deleted by shared_ptr in S3DeleteObjectAction
-    bucket_meta_factory =
-        std::make_shared<MockS3BucketMetadataFactory>(mock_request);
-
-    EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
-                get_object_list_index_oid())
-        .WillRepeatedly(ReturnRef(zero_oid));
-
-    EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
-                get_objects_version_list_index_oid())
-        .WillRepeatedly(ReturnRef(zero_oid));
+    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
+        mock_request, ptr_mock_s3_motr_api);
 
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
         mock_request, ptr_mock_s3_motr_api);
@@ -344,3 +334,4 @@ TEST_F(S3DeleteObjectActionTest, SendSuccessResponse) {
 
   action_under_test->send_response_to_s3_client();
 }
+

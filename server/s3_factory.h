@@ -26,7 +26,7 @@
 #include "s3_global_bucket_index_metadata.h"
 #include "s3_async_buffer_opt.h"
 #include "s3_auth_client.h"
-#include "s3_bucket_metadata_proxy.h"
+#include "s3_bucket_metadata_v1.h"
 #include "s3_motr_kvs_reader.h"
 #include "s3_motr_kvs_writer.h"
 #include "s3_motr_reader.h"
@@ -37,28 +37,23 @@
 #include "s3_put_bucket_body.h"
 #include "s3_put_tag_body.h"
 
-class S3BucketMetadataV1;
-
 class S3BucketMetadataFactory {
  public:
   virtual ~S3BucketMetadataFactory() {}
+  virtual std::shared_ptr<S3BucketMetadata> create_bucket_metadata_obj(
+      std::shared_ptr<S3RequestObject> req) {
+    s3_log(S3_LOG_DEBUG, "",
+           "S3BucketMetadataFactory::create_bucket_metadata_obj\n");
+    return std::make_shared<S3BucketMetadataV1>(req);
+  }
 
   virtual std::shared_ptr<S3BucketMetadata> create_bucket_metadata_obj(
       std::shared_ptr<S3RequestObject> req,
-      const std::string& str_bucket_name = "") {
+      const std::string& str_bucket_name) {
     s3_log(S3_LOG_DEBUG, "",
            "S3BucketMetadataFactory::create_bucket_metadata_obj\n");
-    return std::make_shared<S3BucketMetadataProxy>(std::move(req),
-                                                   str_bucket_name);
+    return std::make_shared<S3BucketMetadataV1>(req, str_bucket_name);
   }
-};
-
-class S3MotrBucketMetadataFactory {
- public:
-  virtual ~S3MotrBucketMetadataFactory() = default;
-
-  virtual std::unique_ptr<S3BucketMetadataV1> create_motr_bucket_metadata_obj(
-      const S3BucketMetadata& src);
 };
 
 class S3ObjectMetadataFactory {
@@ -246,19 +241,22 @@ class S3AuthClientFactory {
 
 class S3GlobalBucketIndexMetadataFactory {
  public:
-  virtual ~S3GlobalBucketIndexMetadataFactory() = default;
-
+  virtual ~S3GlobalBucketIndexMetadataFactory() {}
   virtual std::shared_ptr<S3GlobalBucketIndexMetadata>
-  create_s3_global_bucket_index_metadata(std::shared_ptr<S3RequestObject> req,
-                                         const std::string& str_bucket_name,
-                                         const std::string& account_id,
-                                         const std::string& account_name) {
-    s3_log(S3_LOG_DEBUG, req->get_request_id(),
+  create_s3_global_bucket_index_metadata(std::shared_ptr<S3RequestObject> req) {
+    s3_log(S3_LOG_DEBUG, "",
            "S3GlobalBucketIndexMetadataFactory::create_s3_root_bucket_index_"
            "metadata\n");
-    return std::make_shared<S3GlobalBucketIndexMetadata>(
-        std::move(req), str_bucket_name, account_id, account_name);
+    return std::make_shared<S3GlobalBucketIndexMetadata>(req);
+  }
+  virtual std::shared_ptr<S3GlobalBucketIndexMetadata>
+  create_s3_global_bucket_index_metadata(std::shared_ptr<S3RequestObject> req,
+                                         const std::string& str_bucket_name) {
+    s3_log(S3_LOG_DEBUG, "",
+           "S3GlobalBucketIndexMetadataFactory::create_s3_root_bucket_index_"
+           "metadata\n");
+    return std::make_shared<S3GlobalBucketIndexMetadata>(req, str_bucket_name);
   }
 };
 
-#endif  // __S3_SERVER_S3_FACTORY_H__
+#endif

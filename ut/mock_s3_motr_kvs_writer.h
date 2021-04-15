@@ -25,7 +25,6 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "s3_motr_kvs_writer.h"
 
 class MockS3MotrKVSWriter : public S3MotrKVSWriter {
  public:

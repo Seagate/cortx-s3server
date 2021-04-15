@@ -25,27 +25,25 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
-#include "s3_bucket_metadata.h"
+#include "mock_s3_motr_wrapper.h"
+#include "s3_bucket_metadata_v1.h"
+#include "s3_request_object.h"
 
 using ::testing::_;
 using ::testing::Return;
 
-class S3RequestObject;
-
-class MockS3BucketMetadata : public S3BucketMetadata {
+class MockS3BucketMetadata : public S3BucketMetadataV1 {
  public:
-  explicit MockS3BucketMetadata(std::shared_ptr<S3RequestObject> s3_req_obj,
-                                const std::string& bucket_name = "")
-      : S3BucketMetadata(std::move(s3_req_obj), bucket_name) {}
-
+  MockS3BucketMetadata(std::shared_ptr<S3RequestObject> req,
+                       std::shared_ptr<MockS3Motr> s3_mock_motr_api)
+      : S3BucketMetadataV1(req, s3_mock_motr_api) {}
   MOCK_METHOD2(load, void(std::function<void(void)> on_success,
                           std::function<void(void)> on_failed));
-  MOCK_METHOD(S3BucketMetadataState, get_state, (), (const));
+  MOCK_METHOD0(get_state, S3BucketMetadataState());
   MOCK_METHOD1(set_state, void(S3BucketMetadataState state));
-  MOCK_METHOD0(get_policy_as_json, std::string&());
+  MOCK_METHOD0(get_policy_as_json, std::string &());
   MOCK_METHOD0(get_acl_as_xml, std::string());
-  MOCK_METHOD(void, setpolicy, (std::string), (override));
+  MOCK_METHOD1(setpolicy, void(std::string& policy_str));
   MOCK_METHOD1(set_tags,
                void(const std::map<std::string, std::string>& tags_str));
   MOCK_METHOD1(setacl, void(const std::string& acl_str));
@@ -59,10 +57,11 @@ class MockS3BucketMetadata : public S3BucketMetadata {
   MOCK_METHOD0(delete_bucket_tags, void());
   MOCK_METHOD1(set_location_constraint, void(std::string location));
   MOCK_METHOD1(from_json, int(std::string content));
-  MOCK_METHOD0(get_owner_canonical_id, const std::string&());
-  MOCK_CONST_METHOD0(get_object_list_index_oid, const struct m0_uint128&());
-  MOCK_CONST_METHOD0(get_objects_version_list_index_oid,
-                     const struct m0_uint128&());
+  MOCK_METHOD0(get_owner_canonical_id, std::string());
+  MOCK_METHOD(struct m0_uint128 const, get_object_list_index_oid, (),
+              (override));
+  MOCK_METHOD(struct m0_uint128 const, get_objects_version_list_index_oid, (),
+              (override));
 };
 
 #endif

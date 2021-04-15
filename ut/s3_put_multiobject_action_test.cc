@@ -77,8 +77,8 @@ class S3PutMultipartObjectActionTest : public testing::Test {
     EXPECT_CALL(*ptr_mock_request, get_query_string_value("partNumber"))
         .WillRepeatedly(Return("1"));
 
-    bucket_meta_factory =
-        std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
+    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
+        ptr_mock_request, ptr_mock_s3_motr_api);
     object_mp_meta_factory =
         std::make_shared<MockS3ObjectMultipartMetadataFactory>(
             ptr_mock_request, ptr_mock_s3_motr_api, upload_id);

@@ -46,7 +46,7 @@ class S3HaproxyConfig:
 
     return self.provisioner_confstore.get_config(
       self.local_confstore.get_config(
-        'CONFIG>CONFSTORE_PUBLIC_FQDN_KEY').replace("machine-id", self.machine_id))
+        'CONFSTORE_PUBLIC_FQDN_KEY').format(self.machine_id))
 
   def get_privateip(self):
     assert self.provisioner_confstore != None
@@ -54,7 +54,7 @@ class S3HaproxyConfig:
 
     return self.provisioner_confstore.get_config(
       self.local_confstore.get_config(
-        'CONFIG>CONFSTORE_PRIVATE_FQDN_KEY').replace("machine-id", self.machine_id))
+        'CONFSTORE_PRIVATE_FQDN_KEY').format(self.machine_id))
 
   def get_s3instances(self):
     assert self.provisioner_confstore != None
@@ -62,7 +62,7 @@ class S3HaproxyConfig:
 
     return int(self.provisioner_confstore.get_config(
       self.local_confstore.get_config(
-        'CONFIG>CONFSTORE_S3INSTANCES_KEY').replace("machine-id", self.machine_id)))
+        'CONFSTORE_S3INSTANCES_KEY').format(self.machine_id)))
 
   def process(self):
     """Main Processing function."""

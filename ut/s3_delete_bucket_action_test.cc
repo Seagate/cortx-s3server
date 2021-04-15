@@ -60,17 +60,8 @@ class S3DeleteBucketActionTest : public testing::Test {
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
     // Owned and deleted by shared_ptr in S3PostMultipartObjectAction
-    bucket_meta_factory =
-        std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
-
-    EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
-                get_object_list_index_oid())
-        .WillRepeatedly(ReturnRef(zero_oid));
-
-    EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
-                get_objects_version_list_index_oid())
-        .WillRepeatedly(ReturnRef(zero_oid));
-
+    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
+        ptr_mock_request, ptr_mock_s3_motr_api);
     motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
         ptr_mock_request, ptr_mock_s3_motr_api);
 
@@ -137,14 +128,14 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataPresent) {
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
               get_object_list_index_oid())
       .Times(1)
-      .WillOnce(ReturnRef(oid));
+      .WillOnce(Return(oid));
 
   struct m0_uint128 version_list_oid = {0x1ffff, 0x1ffff};
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
               get_objects_version_list_index_oid())
       .Times(1)
-      .WillOnce(ReturnRef(version_list_oid));
+      .WillOnce(Return(version_list_oid));
 
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
               next_keyval(_, _, _, _, _, _)).Times(1);
