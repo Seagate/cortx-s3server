@@ -76,7 +76,7 @@ def test_put(**kwargs):
     expect = kwargs.get("expect", True)
     desc = kwargs.get("desc", "Test")
     key = kwargs["key"]
-    body = kwargs["body"]
+    body = path.abspath(kwargs["body"])
     bucket = kwargs["bucket"]
     s3api_res = AwsTest(desc).with_cli_self(f'aws s3api put-object --output json --bucket "{bucket}" --key "{key}" --body "{body}"').execute_test(negative_case=not expect)
     if expect:
@@ -91,7 +91,7 @@ def test_get(**kwargs):
     desc = kwargs.get("desc", "Test")
     bucket = kwargs["bucket"]
     key = kwargs["key"]
-    download = kwargs["download"]
+    download = path.abspath(kwargs["download"])
     system(f'rm -vf "{download}"')
     s3api_res = AwsTest(desc).with_cli_self(f'aws s3api get-object --bucket "{bucket}" --key "{key}" "{download}"').execute_test(negative_case=not expect)
     if expect:
@@ -164,7 +164,7 @@ def test_upload_part(**kwargs):
     desc = kwargs.get("desc", "Test")
     key = kwargs["key"]
     bucket = kwargs["bucket"]
-    body = kwargs["body"]
+    body = path.abspath(kwargs["body"])
     upload_id = multipart_map[key]["UploadId"]
     part_number = len(multipart_map[key]["Parts"]) + 1
     s3api_res = AwsTest(desc).with_cli_self(f'aws s3api upload-part --output json --bucket "{bucket}" --key "{key}" --part-number "{part_number}" --upload-id "{upload_id}" --body "{body}"').execute_test(negative_case=not expect)
@@ -186,7 +186,7 @@ def test_complete_multipart(**kwargs):
     bucket = kwargs["bucket"]
     upload_id = multipart_map[key]["UploadId"]
     parts = {"Parts": multipart_map[key]["Parts"]}
-    parts_json = kwargs["parts_json"]
+    parts_json = path.abspath(kwargs["parts_json"])
     with open(parts_json, 'w') as f:
         f.write(json.dumps(parts))
 
@@ -228,12 +228,12 @@ operations_map = {
 
 
 def process_test_plan(tst_pln, args):
-    tar = {"body": args.body,
-           "bucket": args.bucket,
-           "download": args.download,
-           "key": args.key,
-           "parts_json": args.parts}
     for t in tst_pln:
+        tar = {"body": args.body,
+               "bucket": args.bucket,
+               "download": args.download,
+               "key": args.key,
+               "parts_json": args.parts}
         tar.update(t)
         op = tar.get("op", None)
         if op in operations_map:
