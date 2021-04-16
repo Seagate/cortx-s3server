@@ -187,7 +187,8 @@ class ConfigCmd(SetupCmd):
       if type(server_nodes_list) is str:
         # list is stored as string in the confstore file
         server_nodes_list = literal_eval(server_nodes_list)
-        srv_count += len(server_nodes_list)
+
+      srv_count += len(server_nodes_list)
       index += 1
     sys.stdout.write(f"Server node count : {srv_count}\n")
     # Partition count should be ( number of hosts * 2 )
