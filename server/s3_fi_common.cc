@@ -116,4 +116,27 @@ void s3_fi_disable(const char *fp_tag) {
   m0_fi_disable(fp_ptr->fp_func, fp_ptr->fp_tag);
 }
 
+int s3_di_fi_is_enabled(const char *tag) { return s3_fi_is_enabled(tag); }
+
+#else /* ENABLE_FAULT_INJECTION */
+
+#include <unordered_map>
+
+static std::unordered_map<std::string, bool> allowed_di_faults = {
+    {"di_data_corrupted_on_write", false}, {"di_data_corrupted_on_read", false},
+    {"di_obj_md5_corrupted", false}};
+
+void s3_fi_enable(const char *tag) {
+  if (allowed_di_faults.count(tag) > 0) {
+    allowed_di_faults[tag] = true;
+  }
+}
+
+int s3_di_fi_is_enabled(const char *tag) {
+  if (allowed_di_faults.count(tag) > 0) {
+    return allowed_di_faults[tag];
+  }
+  return 0;
+}
+
 #endif /* ENABLE_FAULT_INJECTION */
