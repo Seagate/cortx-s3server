@@ -235,3 +235,192 @@ fault injection is enabled then the object may be corrupted.
 
 Enable fault injection for data, i.e. `di_obj_md5_corrupted`.
 Any file used for PUT/GET will generate `Content checksum mismatch` error
+
+# Metadata Integrity testing
+
+## Manual metadata integrity testing
+
+- Enable Fault Injection as described in [Enable `Fault Injection`](#enable-fault-injection)
+- Run test workload
+
+### Supported fault injections
+
+- `di_metadata_bcktname_on_write_corrupted` - corrupts bucket name in object metadata on writing to store
+- `di_metadata_objname_on_write_corrupted` - corrupts object name in object metadata on writing to store
+- `di_metadata_bcktname_on_read_corrupted` - corrupts bucket name in object metadata on reading from store
+- `di_metadata_objname_on_read_corrupted` - corrupts object name in object metadata on reading from store
+- `object_metadata_corrupted` - object metadata could not be parsed
+- `di_metadata_bucket_or_object_corrupted` - object and bucket names could not be validated against request data
+- `part_metadata_corrupted` - part metadata could not be parsed
+- `di_part_metadata_bcktname_on_write_corrupted` - corrupts bucket name in part metadata on writing to store
+- `di_part_metadata_objname_on_write_corrupted` - corrupts object name in part metadata on writing to store
+- `di_part_metadata_bcktname_on_read_corrupted` - corrupts bucket name in part metadata on reading from store
+- `di_part_metadata_objname_on_read_corrupted` - corrupts object name in part metadata on reading from store
+
+### Workload for manual testing
+
+Data used in testing does not require any special preparations - any files could be used.
+
+## Automated metadata integrity testing
+
+`st/clitests/md_integrity.md` script were created to do automated test.
+
+The script can run predefined test plans, which could be generated in form of json.
+`md_integrity.md` uses `aws s3api` to send requests, so it should be installed and
+properly configured.
+
+Test plan supports following operations
+
+- `aws s3api` commands
+    - create-bucket
+    - delete-bucket
+    - put-object
+    - get-object
+    - head-object
+    - delete-object
+    - create-multipart
+    - upload-part
+    - complete-multipart
+    - list-parts
+
+- `fault injection` commands
+    - enable-fi
+    - disable-fi
+
+Description and parameters for the commands from `aws s3api` group could be
+obtained with `aws s3api <command> help` shell command.
+
+`enable-fi` - enables specified fault injection. Command has a single parameter named
+`fi` which is the name of the fault injection to enable.
+
+`disable-fi` - disables specified fault injection. Command has a single parameter named
+`fi` which is the name of the fault injection to disable.
+
+### Test plan description
+
+Test plan is a simple json file with the following structure
+
+```
+{
+    "desc": "Plan Description",
+    "tests": [...]
+}
+```
+
+- `desc` - optional - Test plan description
+- `tests` - mandatory - List of commands to execute. All the commands are run
+  sequentially in order of description.
+
+Each command has the following structure
+
+```
+{
+    "desc": "Command description",
+    "expect": true,
+    "op": <command-name>,
+    <command specific params>
+    ...
+}
+```
+
+- `desc` - optional - Command description.
+- `expect` - optional - Boolean value representing expectation about command status:
+  `true` - command should be succesful, `false` - command should fail.
+      If omitted `true` is assumed.
+- `op` - mandatory - Name of the command to perform. Should be from the list of
+  supported commands
+- `<command specific params>` - arguments specific to command.
+
+Examples
+
+```
+{"desc": "Create bucket and PUT one object, after that delete all. All command are expected to run ok.",
+ "tests": [
+     {"desc": "Create bucket test-bucket-1",
+      "op": "create-bucket", "bucket": "test-bucket-1", "expect": true},
+     {"desc": "Put object object1 to bucket test-bucket-1",
+      "op": "put-object", "bucket": "test-bucket-1", "key": "object1", "body": "/tmp/data.bin", "expect": true},
+     {"desc": "Delete-object request for previous object",
+      "op": "delete-object", "bucket": "test-bucket-1", "key": "object1", "expect": true},
+     {"desc": "Delet bucket test-bucket-1",
+      "op": "delete-bucket", "bucket": "test-bucket-1", "expect": true}
+ ]}
+```
+
+It is not neccessary to enable any fault injections manualy. It could be done
+in test plan
+
+```
+{"desc": "Create bucket, put object, enable FI, try to get, expect FAIL, disable FI, try to get, expect ok",
+ "tests": [
+     {"desc": "Create bucket test-bucket-1",
+      "op": "create-bucket", "bucket": "test-bucket-1", "expect": true},
+     {"desc": "Put object object1 to bucket test-bucket-1",
+      "op": "put-object", "bucket": "test-bucket-1", "key": "object1", "body": "/tmp/data.bin", "expect": true},
+     {"desc": "Enable FI di_metadata_bucket_or_object_corrupted",
+      "op": "enable-fi", "fi": "di_metadata_bucket_or_object_corrupted"},
+     {"desc": "Get-object request for previous object",
+      "op": "get-object", "bucket": "test-bucket-1", "key": "object1", "expect": false},
+     {"desc": "Disable FI di_metadata_bucket_or_object_corrupted",
+      "op": "disable-fi", "fi": "di_metadata_bucket_or_object_corrupted"},
+     {"desc": "Get-object request for previous object",
+      "op": "get-object", "bucket": "test-bucket-1", "key": "object1", "expect": true},
+     {"desc": "Delete-object request for previous object",
+      "op": "delete-object", "bucket": "test-bucket-1", "key": "object1", "expect": true},
+     {"desc": "Delet bucket test-bucket-1",
+      "op": "delete-bucket", "bucket": "test-bucket-1", "expect": true}
+ ]}
+```
+### Script parameters
+
+- Mandatory parameters
+    - `--test_plan` - Path to a json file with Test plan description
+    
+- Optional paramters
+    - `--download` - Path to temp location where to store downloaded file
+    - `--parts` - Path to temp location where to store part description for multipart upload
+    - Following params could be set via cmd to simplify Test plan
+        - `--bucket` - Bucket name that will be used in all commands if not redefined in Test plan.
+          If empty value provided bucket name will be generated randomly.
+        - `--key` - Key that will be used in all commands if not redefined in Test plan.
+        - `--body` - Body that will be used in all commands if not redefined in Test plan.
+
+Examples
+
+```
+./md_integrity.md --test_plan ./plan.json
+```
+
+```
+./md_integrity.md --test_plan ./plan.json --body ./data.bin
+```
+
+### Predefined Test plans
+
+There several predefined tests plans used in system tests
+
+- `st/clitests/multipart_md_integrity.json`
+- `st/clitests/regular_md_integrity.json`
+
+### `jenkins-build`
+
+System tests for Metadata integrity are run from `jenkins_build`
+
+```
+# Metada Integrity tests - regular PUT
+md_di_data=/tmp/s3-data.bin
+md_di_dowload=/tmp/s3-data-download.bin
+md_di_parts=/tmp/s3-data-parts.json
+
+$USE_SUDO dd if=/dev/urandom of=$md_di_data count=1 bs=1K
+$USE_SUDO ./md_integrity.py --body $md_di_data --download $md_di_dowload --parts $md_di_parts --test_plan ./regular_md_integrity.json
+
+# Metada Integrity tests - multipart
+$USE_SUDO dd if=/dev/urandom of=$md_di_data count=1 bs=5M
+$USE_SUDO ./md_integrity.py --body $md_di_data --download $md_di_dowload --parts $md_di_parts --test_plan ./metadata_md_integrity.json
+
+[ -f $md_di_data ] && $USE_SUDO rm -vf $md_di_data
+[ -f $md_di_dowload ] && $USE_SUDO rm -vf $md_di_dowload
+[ -f $md_di_parts ] && $USE_SUDO rm -vf $md_di_parts
+# ======================================
+```
