@@ -465,7 +465,7 @@ void S3MotrWiter::write_content() {
   set_up_motr_data_buffers(rw_ctx, std::move(buffer_sequence), motr_buf_count);
 
   // see also similar code in S3MotrReader::read_object_successful()
-  if (s3_fi_is_enabled("di_data_corrupted_on_write")) {
+  if (s3_di_fi_is_enabled("di_data_corrupted_on_write")) {
     struct m0_bufvec *bv = rw_ctx->data;
     if (rw_ctx->ext->iv_index[0] == first_offset) {
       char first_byte = *(char *)bv->ov_buf[0];
