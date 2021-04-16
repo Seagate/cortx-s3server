@@ -149,4 +149,10 @@ int s3_di_fi_is_enabled(const char *tag) {
   return 0;
 }
 
+void s3_fi_disable(const char *tag) {
+  if (allowed_di_faults.count(tag) > 0) {
+    allowed_di_faults[tag] = false;
+  }
+}
+
 #endif /* ENABLE_FAULT_INJECTION */
