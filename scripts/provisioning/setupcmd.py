@@ -324,6 +324,7 @@ class SetupCmd(object):
                 key_match_found = True
         if key_match_found is False:
           list_match_found = False
+          break
       if list_match_found is False:
         raise Exception(f'No match found for {key_yard}')
       sys.stdout.write("Validation complete\n")
