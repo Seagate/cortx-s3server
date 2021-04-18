@@ -565,8 +565,7 @@ public class AccountImpl implements AccountDAO {
        */
       String accountFilter = String.format("(%s=%s)", LDAPUtils.OBJECT_CLASS,
                                            LDAPUtils.ACCOUNT_OBJECT_CLASS);
-      String[] attr = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID,
-                       LDAPUtils.EMAIL,               LDAPUtils.CANONICAL_ID};
+      String[] attr = {LDAPUtils.ACCOUNT_ID};
 
       LOGGER.debug("Searching baseDn: " + baseDn + " account filter: " +
                    accountFilter);
@@ -574,6 +573,16 @@ public class AccountImpl implements AccountDAO {
       try {
         ldapResults = LDAPUtils.search(baseDn, LDAPConnection.SCOPE_SUB,
                                        accountFilter, attr);
+        try {
+          // Added delay so that ldap entry count gets populated properly from
+          // ldap.
+          Thread.sleep(500);
+        }
+        catch (InterruptedException e) {
+          LOGGER.error("Delay failing to fetch account count from ldap- " + e);
+          Thread.currentThread().interrupt();
+        }
+
         if (ldapResults != null) {
           return ldapResults.getCount();
         } else {
@@ -583,7 +592,7 @@ public class AccountImpl implements AccountDAO {
         }
       }
       catch (LDAPException ex) {
-        LOGGER.error("Failed to fetch total count of accounts.");
+        LOGGER.error("Failed to fetch total count of accounts." + ex);
         throw new DataAccessException(
             "Failed to fetch total count of accounts.\n" + ex);
       }

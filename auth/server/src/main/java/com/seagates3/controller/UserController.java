@@ -62,7 +62,9 @@ public class UserController extends AbstractController {
       User user;
       String pathPrefix;
       int usersCount = 0;
-      int maxIAMUserlimit = AuthServerConfig.getMaxIAMUserLimit();
+      int maxIAMUserLimit = AuthServerConfig.getMaxIAMUserLimit();
+      // we create 'root' user per account hence adding this  1.
+      int maxAllowedIAMUserlimit = maxIAMUserLimit + 1;
 
       if (requestBody.containsKey("Path")) {
         pathPrefix = requestBody.get("Path");
@@ -74,13 +76,15 @@ public class UserController extends AbstractController {
         usersCount = userDAO.getTotalCountOfUsers(
             requestor.getAccount().getName(), pathPrefix);
 
-        if (usersCount >= maxIAMUserlimit) {
+        if (usersCount >= maxAllowedIAMUserlimit) {
           LOGGER.error("Maximum allowed Users limit has exceeded (i.e." +
-                       maxIAMUserlimit + ")");
-          return userResponseGenerator.maxUserLimitExceeded(maxIAMUserlimit);
+                       maxIAMUserLimit + ")");
+          return userResponseGenerator.maxUserLimitExceeded(
+              maxAllowedIAMUserlimit);
         }
       }
       catch (DataAccessException ex) {
+        LOGGER.error("Failed to validate user entry count limit -" + ex);
         return userResponseGenerator.internalServerError();
       }
 
@@ -89,6 +93,7 @@ public class UserController extends AbstractController {
                             requestBody.get("UserName"));
       }
       catch (DataAccessException ex) {
+        LOGGER.error("Failed to search user entry in ldap -" + ex);
         return userResponseGenerator.internalServerError();
       }
 
@@ -133,12 +138,13 @@ public class UserController extends AbstractController {
         usersCount = userDAO.getTotalCountOfUsers(
             requestor.getAccount().getName(), pathPrefix);
 
-        if (usersCount > maxIAMUserlimit) {
+        if (usersCount > maxAllowedIAMUserlimit) {
           userDAO.ldap_delete_user(user);
           return userResponseGenerator.internalServerError();
         }
       }
       catch (DataAccessException ex) {
+        LOGGER.error("Failed to create user entry -" + ex);
         return userResponseGenerator.internalServerError();
       }
 

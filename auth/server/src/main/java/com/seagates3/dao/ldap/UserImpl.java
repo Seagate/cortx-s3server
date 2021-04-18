@@ -522,9 +522,7 @@ public class UserImpl implements UserDAO {
 
    @Override public int getTotalCountOfUsers(
        String accountName, String pathPrefix) throws DataAccessException {
-     String[] attrs = {LDAPUtils.USER_ID, LDAPUtils.COMMON_NAME,
-                       LDAPUtils.PATH,    LDAPUtils.CREATE_TIMESTAMP,
-                       LDAPUtils.ARN};
+     String[] attrs = {LDAPUtils.USER_ID};
      String userBaseDN = String.format(
          "%s=%s,%s=%s,%s=%s,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
          LDAPUtils.USER_OU, LDAPUtils.ORGANIZATIONAL_NAME, accountName,
@@ -542,6 +540,16 @@ public class UserImpl implements UserDAO {
      try {
        ldapResults = LDAPUtils.search(userBaseDN, LDAPConnection.SCOPE_SUB,
                                       filter, attrs);
+       try {
+         // Added delay so that ldap entry count gets populated properly from
+         // ldap.
+         Thread.sleep(500);
+       }
+       catch (InterruptedException e) {
+         LOGGER.error("Delay failing to fetch total user count from ldap- " +
+                      e);
+         Thread.currentThread().interrupt();
+       }
        if (ldapResults != null) {
          return ldapResults.getCount();
        } else {

@@ -118,12 +118,14 @@ public class AccountController extends AbstractController {
           }
         }
         catch (DataAccessException ex) {
+          LOGGER.error("Failed to validate account entry count limit -" + ex);
           return accountResponseGenerator.internalServerError();
         }
 
         try {
             account = accountDao.find(name);
         } catch (DataAccessException ex) {
+          LOGGER.error("Failed to find account in ldap -" + ex);
             return accountResponseGenerator.internalServerError();
         }
 
@@ -212,6 +214,7 @@ public class AccountController extends AbstractController {
           }
         }
         catch (DataAccessException ex) {
+          LOGGER.error("Failed to create account -" + ex);
           return accountResponseGenerator.internalServerError();
         }
 
