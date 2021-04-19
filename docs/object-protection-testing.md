@@ -263,10 +263,10 @@ Data used in testing does not require any special preparations - any files could
 
 ## Automated metadata integrity testing
 
-`st/clitests/md_integrity.md` script were created to do automated test.
+`st/clitests/md_integrity.py` script were created to do automated test.
 
 The script can run predefined test plans, which could be generated in form of json.
-`md_integrity.md` uses `aws s3api` to send requests, so it should be installed and
+`md_integrity.py` uses `aws s3api` to send requests, so it should be installed and
 properly configured.
 
 Test plan supports following operations
@@ -375,7 +375,7 @@ in test plan
 
 - Mandatory parameters
     - `--test_plan` - Path to a json file with Test plan description
-    
+
 - Optional paramters
     - `--download` - Path to temp location where to store downloaded file
     - `--parts` - Path to temp location where to store part description for multipart upload
@@ -388,11 +388,11 @@ in test plan
 Examples
 
 ```
-./md_integrity.md --test_plan ./plan.json
+./md_integrity.py --test_plan ./plan.json
 ```
 
 ```
-./md_integrity.md --test_plan ./plan.json --body ./data.bin
+./md_integrity.py --test_plan ./plan.json --body ./data.bin
 ```
 
 ### Predefined Test plans
