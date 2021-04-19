@@ -283,9 +283,12 @@ class SetupCmd(object):
       for key in arg_keys_list:
         if ((key.find('[') != -1) and (key.find(']') != -1)):
           storage_set = self.get_confvalue(key)
+          base_key = key
           for set_key in storage_set:
-            key = key + ">" + set_key
-        full_arg_keys_list.append(key)
+            key = base_key + ">" + set_key
+            full_arg_keys_list.append(key)
+        else:
+          full_arg_keys_list.append(key)
 
       # Below algorithm uses tokenization
       # of both yardstick and argument key
