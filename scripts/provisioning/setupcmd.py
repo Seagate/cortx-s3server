@@ -220,6 +220,21 @@ class SetupCmd(object):
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
 
+  def reload_services(self, s3services_list):
+    """Reload services specified as parameter."""
+    for service_name in s3services_list:
+      try:
+        # if service name not found in the ha_service_map then use systemctl
+        service_name = self.ha_service_map[service_name]
+        cmd = ['cortx', 'reload',  f'{service_name}']
+      except KeyError:
+        cmd = ['/bin/systemctl', 'reload',  f'{service_name}']
+      handler = SimpleProcess(cmd)
+      sys.stdout.write(f"reloading {service_name}\n")
+      res_op, res_err, res_rc = handler.run()
+      if res_rc != 0:
+        raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
+
   def delete_mdb_files(self):
     """Deletes ldap mdb files."""
     for files in os.listdir(self.ldap_mdb_folder):
