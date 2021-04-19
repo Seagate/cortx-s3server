@@ -74,7 +74,7 @@ class SetupCmd(object):
       self.machine_id = f.read().strip()
 
     self.cluster_id = self.get_confvalue(self.get_confkey(
-      'CONFSTORE_CLUSTER_ID_KEY').format(self.machine_id))
+      'CONFIG>CONFSTORE_CLUSTER_ID_KEY').replace("machine-id", self.machine_id))
 
   @property
   def url(self) -> str:
@@ -98,7 +98,7 @@ class SetupCmd(object):
 
   def read_endpoint_value(self):
     if self.endpoint is None:
-      self.endpoint = self.get_confvalue(self.get_confkey('CONFSTORE_ENDPOINT_KEY'))
+      self.endpoint = self.get_confvalue(self.get_confkey('TEST>CONFSTORE_ENDPOINT_KEY'))
 
   def read_ldap_credentials(self):
     """Get 'ldapadmin' user name and password from confstore."""
@@ -110,13 +110,13 @@ class SetupCmd(object):
 
       cipher_key = s3cipher_obj.generate_key()
 
-      self.ldap_user = self.get_confvalue(self.get_confkey('CONFSTORE_LDAPADMIN_USER_KEY'))
+      self.ldap_user = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_LDAPADMIN_USER_KEY'))
 
-      encrypted_ldapadmin_pass = self.get_confvalue(self.get_confkey('CONFSTORE_LDAPADMIN_PASSWD_KEY'))
+      encrypted_ldapadmin_pass = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_LDAPADMIN_PASSWD_KEY'))
 
-      self.ldap_root_user = self.get_confvalue(self.get_confkey('CONFSTORE_ROOTDN_USER_KEY'))
+      self.ldap_root_user = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_ROOTDN_USER_KEY'))
 
-      encrypted_rootdn_pass = self.get_confvalue(self.get_confkey('CONFSTORE_ROOTDN_PASSWD_KEY'))
+      encrypted_rootdn_pass = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_ROOTDN_PASSWD_KEY'))
 
       if encrypted_ldapadmin_pass != None:
         self.ldap_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_ldapadmin_pass)

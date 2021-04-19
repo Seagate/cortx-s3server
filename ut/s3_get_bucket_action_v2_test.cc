@@ -107,8 +107,8 @@ class S3GetBucketActionV2Test : public testing::Test {
         .WillRepeatedly(ReturnRef(object_name));
 
     s3_motr_api_mock = std::make_shared<MockS3Motr>();
-    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
-        request_mock, s3_motr_api_mock);
+    bucket_meta_factory =
+        std::make_shared<MockS3BucketMetadataFactory>(request_mock);
     motr_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
         request_mock, s3_motr_api_mock);
     object_meta_factory =

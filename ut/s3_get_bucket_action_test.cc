@@ -48,20 +48,6 @@ using ::testing::InSequence;
             ->create_motr_kvs_reader(request_mock, s3_motr_api_mock); \
   } while (0)
 
-#define CREATE_ACTION_UNDER_TEST_OBJ                                     \
-  do {                                                                   \
-    EXPECT_CALL(*request_mock, get_query_string_value("encoding-type"))  \
-        .Times(AtLeast(1))                                               \
-        .WillRepeatedly(Return(""));                                     \
-    std::map<std::string, std::string> input_headers;                    \
-    input_headers["Authorization"] = "1";                                \
-    EXPECT_CALL(*request_mock, get_in_headers_copy()).Times(1).WillOnce( \
-        ReturnRef(input_headers));                                       \
-    action_under_test_ptr = std::make_shared<S3GetBucketAction>(         \
-        request_mock, s3_motr_api_mock, motr_kvs_reader_factory,         \
-        bucket_meta_factory, object_meta_factory);                       \
-  } while (0)
-
 #define SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS                                  \
   do {                                                                        \
     EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),             \
@@ -93,6 +79,8 @@ using ::testing::InSequence;
         .WillRepeatedly(Return("last_modified"));                              \
   } while (0)
 
+const struct m0_uint128 zero_object_list_indx_oid = {};
+
 class S3GetBucketActionTest : public testing::Test {
  protected:  // You should make the members protected s.t. they can be
              // accessed from sub-classes.
@@ -109,17 +97,28 @@ class S3GetBucketActionTest : public testing::Test {
         .WillRepeatedly(ReturnRef(object_name));
 
     s3_motr_api_mock = std::make_shared<MockS3Motr>();
-    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
-        request_mock, s3_motr_api_mock);
+
+    bucket_meta_factory =
+        std::make_shared<MockS3BucketMetadataFactory>(request_mock);
+
+    EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
+                get_object_list_index_oid())
+        .WillRepeatedly(ReturnRef(zero_object_list_indx_oid));
+
     motr_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
         request_mock, s3_motr_api_mock);
     object_meta_factory =
         std::make_shared<MockS3ObjectMetadataFactory>(request_mock);
     object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
+
+    input_headers["Authorization"] = "1";
+    EXPECT_CALL(*request_mock, get_in_headers_copy()).Times(1).WillOnce(
+        ReturnRef(input_headers));
   }
+  void SetUp() override;
 
   std::shared_ptr<MockS3RequestObject> request_mock;
-  std::shared_ptr<S3GetBucketAction> action_under_test_ptr;
+  std::unique_ptr<S3GetBucketAction> action_under_test_ptr;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3MotrKVSReaderFactory> motr_kvs_reader_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
@@ -127,6 +126,7 @@ class S3GetBucketActionTest : public testing::Test {
 
   struct m0_uint128 object_list_indx_oid;
   std::map<std::string, std::pair<int, std::string>> result_keys_values;
+  std::map<std::string, std::string> input_headers;
   std::string bucket_name, object_name;
 
  public:
@@ -135,14 +135,17 @@ class S3GetBucketActionTest : public testing::Test {
   }
 };
 
-TEST_F(S3GetBucketActionTest, Constructor) {
-  std::map<std::string, std::string> input_headers;
-  input_headers["Authorization"] = "1";
-  EXPECT_CALL(*request_mock, get_in_headers_copy()).Times(1).WillOnce(
-      ReturnRef(input_headers));
-  action_under_test_ptr = std::make_shared<S3GetBucketAction>(
+void S3GetBucketActionTest::SetUp() {
+  EXPECT_CALL(*request_mock, get_query_string_value("encoding-type"))
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(""));
+
+  action_under_test_ptr.reset(new S3GetBucketAction(
       request_mock, s3_motr_api_mock, motr_kvs_reader_factory,
-      bucket_meta_factory, object_meta_factory);
+      bucket_meta_factory, object_meta_factory));
+}
+
+TEST_F(S3GetBucketActionTest, Constructor) {
   EXPECT_NE(0, action_under_test_ptr->number_of_tasks());
   EXPECT_TRUE(action_under_test_ptr->bucket_metadata_factory != nullptr);
   EXPECT_TRUE(action_under_test_ptr->s3_motr_kvs_reader_factory != nullptr);
@@ -152,14 +155,12 @@ TEST_F(S3GetBucketActionTest, Constructor) {
 }
 
 TEST_F(S3GetBucketActionTest, FetchBucketInfo) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
       .Times(AtLeast(1));
   action_under_test_ptr->fetch_bucket_info();
 }
 
 TEST_F(S3GetBucketActionTest, FetchBucketInfoFailedMissing) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .Times(AtLeast(1))
@@ -172,7 +173,6 @@ TEST_F(S3GetBucketActionTest, FetchBucketInfoFailedMissing) {
 }
 
 TEST_F(S3GetBucketActionTest, FetchBucketInfoFailedInternalError) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .Times(AtLeast(1))
@@ -188,7 +188,6 @@ TEST_F(S3GetBucketActionTest, FetchBucketInfoFailedInternalError) {
  TODO: Fix this. Clean build fails with this UT on jenkins.
 
 TEST_F(S3GetBucketActionTest, GetNextObjects) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
   action_under_test_ptr->bucket_metadata->set_object_list_index_oid(
       object_list_indx_oid);
@@ -201,7 +200,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjects) {
 */
 
 TEST_F(S3GetBucketActionTest, GetNextObjectsWithZeroObjects) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
 
@@ -216,7 +214,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsWithZeroObjects) {
 }
 
 TEST_F(S3GetBucketActionTest, GetNextObjectsFailedNoEntries) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
 
@@ -231,7 +228,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsFailedNoEntries) {
 }
 
 TEST_F(S3GetBucketActionTest, GetNextObjectsFailed) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
 
@@ -248,7 +244,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsFailed) {
 }
 
 TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessful) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
 
@@ -287,7 +282,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessful) {
 }
 
 TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulJsonError) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
 
@@ -319,7 +313,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulJsonError) {
 }
 
 TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefix) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
 
@@ -342,7 +335,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefix) {
 }
 
 TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulDelimiter) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
 
@@ -368,7 +360,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulDelimiter) {
 }
 
 TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefixDelimiter) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
 
@@ -394,7 +385,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefixDelimiter) {
 // Enumerating hierarchical keys using delimiter "/".
 // Verify last key in the key enumeration.
 TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulDelimiterLastKey) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
 
@@ -420,7 +410,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulDelimiterLastKey) {
 
 // Prefix in multi-component object names
 TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulMultiComponentKey) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_state())
@@ -432,7 +421,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulMultiComponentKey) {
            this, &S3GetBucketActionTest::call_next_keyval_successful));
   EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
               get_object_list_index_oid())
-      .WillRepeatedly(Return(object_list_indx_oid));
+      .WillRepeatedly(ReturnRef(object_list_indx_oid));
   action_under_test_ptr->request_prefix.assign("");
   action_under_test_ptr->request_delimiter.assign("/");
   action_under_test_ptr->request_marker_key.assign("boo/");
@@ -484,7 +473,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulMultiComponentKey) {
 // Prefix in multi-component object names, with both prefix and delimiter string
 TEST_F(S3GetBucketActionTest,
        GetNextObjectsSuccessfulPrefixDelimMultiComponentKey) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
   // Prefix ends with delimiter character '/'
@@ -518,7 +506,6 @@ TEST_F(S3GetBucketActionTest,
 // Prefix specified and matches some objects.
 // Stops object enumeration, when prefix does not match further.
 TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefixMatchingStops) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
   // Prefix specified
@@ -659,7 +646,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefixMatchingStops) {
 }
 
 TEST_F(S3GetBucketActionTest, SendResponseToClientServiceUnavailable) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
 
   S3Option::get_instance()->set_is_s3_shutting_down(true);
@@ -675,7 +661,6 @@ TEST_F(S3GetBucketActionTest, SendResponseToClientServiceUnavailable) {
 }
 
 TEST_F(S3GetBucketActionTest, SendResponseToClientNoSuchBucket) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
   action_under_test_ptr->set_s3_error("NoSuchBucket");
 
@@ -685,7 +670,6 @@ TEST_F(S3GetBucketActionTest, SendResponseToClientNoSuchBucket) {
 }
 
 TEST_F(S3GetBucketActionTest, SendResponseToClientSuccess) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
 
   action_under_test_ptr->fetch_successful = true;
@@ -695,7 +679,6 @@ TEST_F(S3GetBucketActionTest, SendResponseToClientSuccess) {
 }
 
 TEST_F(S3GetBucketActionTest, SendResponseToClientInternalError) {
-  CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
 
   action_under_test_ptr->fetch_successful = false;
