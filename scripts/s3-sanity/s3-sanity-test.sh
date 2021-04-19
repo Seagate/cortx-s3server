@@ -211,7 +211,7 @@ fi
 echo "*** S3 Sanity tests start ***"
 
 echo "ldapsearch test starts ***"
-cmd_out=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
+cmd_out=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://"$end_point") || echo ""
 if [[ $cmd_out == *"No such object"* ]];then
   die_with_error "***** S3: SANITY ldapsearch TESTS COMPLETED WITH FAILURE, failed to find s3background delete account!*****"
 fi

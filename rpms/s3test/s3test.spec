@@ -35,7 +35,6 @@ Prefix:     %{_prefix}
 BuildArch:  noarch
 Vendor:     Seagate
 
-Requires:  cortx-s3server
 Requires:  cortx-s3iamcli
 Requires:  s3cmd
 

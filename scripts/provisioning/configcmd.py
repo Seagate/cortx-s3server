@@ -115,16 +115,7 @@ class ConfigCmd(SetupCmd):
 
     # set openldap-replication
     self.configure_openldap_replication()
-
-    # restart slapd service
-    try:
-      sys.stdout.write("Restarting slapd service...\n")
-      service_list = ["slapd"]
-      self.restart_services(service_list)
-    except Exception as e:
-      sys.stderr.write(f'Failed to restart slapd service, error: {e}\n')
-      raise e
-    sys.stdout.write("Restarted slapd service...\n")
+    
     sys.stdout.write("INFO: Successfully configured openldap on the node.\n")
 
   def configure_openldap_replication(self):
@@ -187,7 +178,8 @@ class ConfigCmd(SetupCmd):
       if type(server_nodes_list) is str:
         # list is stored as string in the confstore file
         server_nodes_list = literal_eval(server_nodes_list)
-        srv_count += len(server_nodes_list)
+
+      srv_count += len(server_nodes_list)
       index += 1
     sys.stdout.write(f"Server node count : {srv_count}\n")
     # Partition count should be ( number of hosts * 2 )
@@ -199,15 +191,15 @@ class ConfigCmd(SetupCmd):
     """Configure haproxy service."""
     try:
       S3HaproxyConfig(self.url).process()
-      # restart haproxy service
+      # reload haproxy service
       try:
-        sys.stdout.write("Restarting haproxy service...\n")
+        sys.stdout.write("Reloading haproxy service...\n")
         service_list = ["haproxy"]
-        self.restart_services(service_list)
+        self.reload_services(service_list)
       except Exception as e:
-        sys.stderr.write(f'Failed to restart haproxy service, error: {e}\n')
+        sys.stderr.write(f'Failed to reload haproxy service, error: {e}\n')
         raise e
-      sys.stdout.write("Restarted haproxy service...\n")
+      sys.stdout.write("Reloaded haproxy service...\n")
       sys.stdout.write("INFO: Successfully configured haproxy on the node.\n")
     except Exception as e:
       sys.stderr.write(f'Failed to configure haproxy for s3server, error: {e}')

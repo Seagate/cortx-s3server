@@ -221,4 +221,3 @@ backend s3-auth
     os.system("rm -rf /etc/cron.daily/logrotate")
     os.system("cp /opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate /etc/cron.hourly/logrotate")
     os.system("systemctl restart rsyslog")
-    os.system("systemctl restart haproxy")
