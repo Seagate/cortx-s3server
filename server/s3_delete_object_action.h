@@ -53,7 +53,11 @@ class S3DeleteObjectAction : public S3ObjectAction {
   // Probable delete record for object OID to be deleted
   std::string oid_str;  // Key for probable delete rec
   std::unique_ptr<S3ProbableDeleteRecord> probable_delete_rec;
+  // List of probable delete records for deleted objects
+  std::vector<std::unique_ptr<S3ProbableDeleteRecord>> probable_del_rec_list;
   S3DeleteObjectActionState s3_del_obj_action_state;
+  // List of object oids to be deleted
+  std::vector<std::pair<struct m0_uint128, int>> del_object_oids;
 
  public:
   S3DeleteObjectAction(
@@ -79,6 +83,7 @@ class S3DeleteObjectAction : public S3ObjectAction {
   void startcleanup() override;
   void mark_oid_for_deletion();
   void delete_object();
+  void delete_object_successful();
   void remove_probable_record();
 
   void send_response_to_s3_client();
