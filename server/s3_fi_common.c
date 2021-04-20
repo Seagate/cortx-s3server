@@ -60,7 +60,8 @@ s3_fp *s3_fp_alloc(const char *tag) {
 }
 
 static s3_fp *s3_fp_find(const char *tag) {
-  for (uint32_t i = 0; i < s3_fi_states_free_idx; i++) {
+  uint32_t i = 0;
+  for (; i < s3_fi_states_free_idx; i++) {
     if (strcmp(s3_fi_states[i]->fp_tag, tag) == 0) return s3_fi_states[i];
   }
   return NULL;
@@ -118,9 +119,12 @@ int s3_di_fi_is_enabled(const char *tag) { return s3_fi_is_enabled(tag); }
 
 #else /* ENABLE_FAULT_INJECTION */
 
-#include <unordered_map>
+typedef struct {
+  char *tag;
+  bool enabled;
+} s3_di_fi_point;
 
-static std::unordered_map<std::string, bool> allowed_di_faults = {
+static s3_di_fi_point allowed_di_faults[] = {
     {"di_data_corrupted_on_write", false},
     {"di_data_corrupted_on_read", false},
     {"di_obj_md5_corrupted", false},
@@ -136,23 +140,41 @@ static std::unordered_map<std::string, bool> allowed_di_faults = {
     {"di_part_metadata_bcktname_on_read_corrupted", false},
     {"di_part_metadata_objname_on_read_corrupted", false}};
 
+static s3_di_fi_point *s3_di_fi_is_allowed(const char *tag) {
+  size_t len = sizeof(allowed_di_faults) / sizeof(s3_di_fi_point);
+  s3_di_fi_point *ret = NULL;
+  size_t i = 0;
+  for (; i < len; ++i) {
+    if (strcmp(allowed_di_faults[i].tag, tag) == 0) {
+      ret = &allowed_di_faults[i];
+      break;
+    }
+  }
+  return ret;
+}
+
 void s3_fi_enable(const char *tag) {
-  if (allowed_di_faults.count(tag) > 0) {
-    allowed_di_faults[tag] = true;
+  s3_di_fi_point *s3df = s3_di_fi_is_allowed(tag);
+  if (s3df) {
+    s3df->enabled = true;
   }
 }
 
 int s3_di_fi_is_enabled(const char *tag) {
-  if (allowed_di_faults.count(tag) > 0) {
-    return allowed_di_faults[tag];
-  }
-  return 0;
+  s3_di_fi_point *s3df = s3_di_fi_is_allowed(tag);
+  return s3df && s3df->enabled;
 }
 
 void s3_fi_disable(const char *tag) {
-  if (allowed_di_faults.count(tag) > 0) {
-    allowed_di_faults[tag] = false;
+  s3_di_fi_point *s3df = s3_di_fi_is_allowed(tag);
+  if (s3df) {
+    s3df->enabled = false;
   }
+}
+
+int s3_fi_is_enabled(const char *tag) {
+  /* In this mode only DI FI is supported to the moment */
+  return s3_di_fi_is_enabled(tag);
 }
 
 #endif /* ENABLE_FAULT_INJECTION */
