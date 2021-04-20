@@ -81,6 +81,10 @@ for i, type in enumerate(config_types):
     S3cmdTest('s3cmd cannot create bucket').create_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
     S3fiTest('s3cmd disable Fault injection').disable_fi("motr_idx_create_fail").execute_test().command_is_successful()
 
+    # Create extended metadata index failure when creating bucket
+    S3fiTest('s3cmd enable FI create extended metadata index fail').enable_fi("enable", "always", "motr_idx_create_fail").execute_test().command_is_successful()
+    S3cmdTest('s3cmd cannot create bucket').create_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
+    S3fiTest('s3cmd disable Fault injection').disable_fi("motr_idx_create_fail").execute_test().command_is_successful()
 
     # ************ Create bucket ************
     S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket").\

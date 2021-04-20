@@ -50,6 +50,7 @@ class ConfigCmd(SetupCmd):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
+    self.phase_keys_validate(self.url, self.name)
 
     try:
       self.create_auth_jks_password()
@@ -126,7 +127,7 @@ class ConfigCmd(SetupCmd):
     index = 0
     while index < int(storage_set_count):
       server_nodes_list = self.get_confkey(
-        'CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("cluster-id", self.cluster_id).replace("N", str(index))
+        'CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("cluster-id", self.cluster_id).replace("storage-set-count", str(index))
       server_nodes_list = self.get_confvalue(server_nodes_list)
       if type(server_nodes_list) is str:
         # list is stored as string in the confstore file
@@ -173,7 +174,7 @@ class ConfigCmd(SetupCmd):
     index = 0
     while index < int(storage_set_count):
       server_nodes_list = self.get_confkey(
-        'CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("cluster-id", self.cluster_id).replace("N", str(index))
+        'CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("cluster-id", self.cluster_id).replace("storage-set-count", str(index))
       server_nodes_list = self.get_confvalue(server_nodes_list)
       if type(server_nodes_list) is str:
         # list is stored as string in the confstore file
