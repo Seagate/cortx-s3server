@@ -20,6 +20,7 @@
 
 package com.seagates3.controller;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
@@ -37,7 +38,8 @@ import org.slf4j.LoggerFactory;
 public class UserController extends AbstractController {
 
     private final UserDAO userDAO;
-    private final UserResponseGenerator userResponseGenerator;
+    private
+     static UserResponseGenerator userResponseGenerator = null;
     private final Logger LOGGER =
             LoggerFactory.getLogger(UserController.class.getName());
     private
@@ -56,45 +58,97 @@ public class UserController extends AbstractController {
      *
      * @return ServerResponse
      */
-    @Override
-    public ServerResponse create() {
-        User user;
-        try {
-            user = userDAO.find(requestor.getAccount().getName(),
-                    requestBody.get("UserName"));
-        } catch (DataAccessException ex) {
-            return userResponseGenerator.internalServerError();
+    @Override public ServerResponse create() {
+      User user;
+      String pathPrefix;
+      int usersCount = 0;
+      int maxIAMUserLimit = AuthServerConfig.getMaxIAMUserLimit();
+      // we create 'root' user per account hence adding this  1.
+      int maxAllowedIAMUserlimit = maxIAMUserLimit + 1;
+
+      if (requestBody.containsKey("Path")) {
+        pathPrefix = requestBody.get("Path");
+      } else {
+        pathPrefix = "/";
+      }
+
+      try {
+        usersCount = userDAO.getTotalCountOfUsers(
+            requestor.getAccount().getName(), pathPrefix);
+
+        if (usersCount >= maxAllowedIAMUserlimit) {
+          LOGGER.error("Maximum allowed Users limit has exceeded (i.e." +
+                       maxIAMUserLimit + ")");
+          return userResponseGenerator.maxUserLimitExceeded(
+              maxAllowedIAMUserlimit);
         }
+      }
+      catch (DataAccessException ex) {
+        LOGGER.error("Failed to validate user entry count limit -" + ex);
+        return userResponseGenerator.internalServerError();
+      }
 
-        if (user.exists()) {
-            LOGGER.error("User [" + user.getName() + "] already exists");
-            return userResponseGenerator.entityAlreadyExists();
+      try {
+        user = userDAO.find(requestor.getAccount().getName(),
+                            requestBody.get("UserName"));
+      }
+      catch (DataAccessException ex) {
+        LOGGER.error("Failed to search user entry in ldap -" + ex);
+        return userResponseGenerator.internalServerError();
+      }
+
+      if (user.exists()) {
+        LOGGER.error("User [" + user.getName() + "] already exists");
+        return userResponseGenerator.entityAlreadyExists();
+      }
+
+      LOGGER.info("Creating user : " + user.getName());
+
+      if (requestBody.containsKey("path")) {
+        user.setPath(requestBody.get("path"));
+      } else {
+        user.setPath("/");
+      }
+
+      user.setUserType(User.UserType.IAM_USER);
+      // UserId should starts with "AIDA".
+      user.setId(USER_ID_PREFIX + KeyGenUtil.createIamUserId());
+
+      // create and set arn here
+      String arn = "arn:aws:iam::" + requestor.getAccount().getId() + ":user/" +
+                   user.getName();
+      LOGGER.debug("Creating and setting ARN - " + arn);
+      user.setArn(arn);
+      try {
+        userDAO.save(user);
+      }
+      catch (DataAccessException ex) {
+        return userResponseGenerator.internalServerError();
+      }
+      try {
+        usersCount = userDAO.getTotalCountOfUsers(
+            requestor.getAccount().getName(), pathPrefix);
+      }
+      catch (DataAccessException ex) {
+        LOGGER.error("failed to get total count of users from ldap :" + ex);
+        return userResponseGenerator.internalServerError();
+      }
+      // Handle multi-threaded/ multi-node create() API calls.
+      try {
+        usersCount = userDAO.getTotalCountOfUsers(
+            requestor.getAccount().getName(), pathPrefix);
+
+        if (usersCount > maxAllowedIAMUserlimit) {
+          userDAO.ldap_delete_user(user);
+          return userResponseGenerator.internalServerError();
         }
+      }
+      catch (DataAccessException ex) {
+        LOGGER.error("Failed to create user entry -" + ex);
+        return userResponseGenerator.internalServerError();
+      }
 
-        LOGGER.info("Creating user : " + user.getName());
-
-        if (requestBody.containsKey("path")) {
-            user.setPath(requestBody.get("path"));
-        } else {
-            user.setPath("/");
-        }
-
-        user.setUserType(User.UserType.IAM_USER);
-        // UserId should starts with "AIDA".
-        user.setId(USER_ID_PREFIX + KeyGenUtil.createIamUserId());
-
-        // create and set arn here
-        String arn = "arn:aws:iam::" + requestor.getAccount().getId() +
-                     ":user/" + user.getName();
-        LOGGER.debug("Creating and setting ARN - " + arn);
-        user.setArn(arn);
-        try {
-            userDAO.save(user);
-        } catch (DataAccessException ex) {
-            return userResponseGenerator.internalServerError();
-        }
-
-        return userResponseGenerator.generateCreateResponse(user);
+      return userResponseGenerator.generateCreateResponse(user);
     }
 
     /**

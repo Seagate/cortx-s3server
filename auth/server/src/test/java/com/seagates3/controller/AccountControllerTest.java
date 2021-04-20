@@ -118,6 +118,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         PowerMockito.doReturn("0000").when(AuthServerConfig.class, "getReqId");
         PowerMockito.doReturn(new ArrayList<String>())
             .when(AuthServerConfig.class, "getS3InternalAccounts");
+        PowerMockito.doReturn(1000)
+            .when(AuthServerConfig.class, "getMaxAccountLimit");
     }
 
     @Test
@@ -202,7 +204,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             throws Exception {
         Mockito.when(accountDAO.find("s3test")).thenThrow(
                 new DataAccessException("failed to search account.\n"));
-
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
             "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
@@ -365,6 +366,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         PowerMockito.doReturn("htuspscae/123")
             .when(KeyGenUtil.class, "generateSecretKey");
 
+        Mockito.doReturn(0).when(accountDAO).getTotalCountOfAccounts();
         Mockito.doReturn(account).when(accountDAO).find("s3test");
         Mockito.doNothing().when(accountDAO).save(any(Account.class));
         Mockito.doNothing().when(userDAO).save(any(User.class));

@@ -20,6 +20,7 @@
 
 package com.seagates3.controller;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.AccountDAO;
 import com.seagates3.dao.DAODispatcher;
@@ -99,12 +100,32 @@ public class AccountController extends AbstractController {
         String name = requestBody.get("AccountName");
         String email = requestBody.get("Email");
         Account account;
-
+        int accountCount = 0;
         LOGGER.info("Creating account: " + name);
+        int maxAccountLimit = AuthServerConfig.getMaxAccountLimit();
+        int internalAccountCount =
+            AuthServerConfig.getS3InternalAccounts().size();
+        int maxAllowedLdapResults = maxAccountLimit + internalAccountCount;
+
+        try {
+          accountCount = accountDao.getTotalCountOfAccounts();
+
+          if (accountCount >= maxAllowedLdapResults) {
+            LOGGER.error("Maximum allowed Account limit has exceeded (i.e." +
+                         maxAccountLimit + ")");
+            return accountResponseGenerator.maxAccountLimitExceeded(
+                maxAccountLimit);
+          }
+        }
+        catch (DataAccessException ex) {
+          LOGGER.error("Failed to validate account entry count limit -" + ex);
+          return accountResponseGenerator.internalServerError();
+        }
 
         try {
             account = accountDao.find(name);
         } catch (DataAccessException ex) {
+          LOGGER.error("Failed to find account in ldap -" + ex);
             return accountResponseGenerator.internalServerError();
         }
 
@@ -170,6 +191,31 @@ public class AccountController extends AbstractController {
         catch (InterruptedException e) {
           LOGGER.error("Create account delay failing - ", e);
           Thread.currentThread().interrupt();
+        }
+
+        // Handle multi-threaded create API calls by deleting extra accounts,
+        // if account limit creation exceeded due to multiple thread/multiple
+        // node create() API calls.
+        try {
+          accountCount = accountDao.getTotalCountOfAccounts();
+        }
+        catch (DataAccessException ex) {
+          LOGGER.error("failed to get total count of accounts from ldap :" +
+                       ex);
+          return accountResponseGenerator.internalServerError();
+        }
+
+        try {
+          if (accountCount > maxAllowedLdapResults) {
+            // delete newly created account since we exceeded account
+            // creation limit.
+            accountDao.ldap_delete_account(account);
+            return accountResponseGenerator.internalServerError();
+          }
+        }
+        catch (DataAccessException ex) {
+          LOGGER.error("Failed to create account -" + ex);
+          return accountResponseGenerator.internalServerError();
         }
 
         return accountResponseGenerator.generateCreateResponse(account, root,

@@ -139,7 +139,11 @@ class LDAPUtils {
         lc = LdapConnectionManager.getConnection();
         LDAPSearchResults ldapSearchResult = null;
         LDAPSearchConstraints cons = new LDAPSearchConstraints();
-        cons.setMaxResults(AuthServerConfig.getLdapSearchResultsSizeLimit());
+        // this is to validate maxAccountLimit/maxIAMUsersLimit value
+        int ldapsearchmaxlimit =
+            AuthServerConfig.getLdapSearchResultsSizeLimit() +
+            AuthServerConfig.getS3InternalAccounts().size();
+        cons.setMaxResults(ldapsearchmaxlimit);
         if (lc != null && lc.isConnected()) {
             try {
                 if (FaultPoints.fiEnabled() &&
