@@ -517,7 +517,7 @@ $USE_SUDO st/clitests/md_integrity.py --body $md_di_data --download $md_di_dowlo
 
 # 9. metadata integrity tests - multipart
 $USE_SUDO dd if=/dev/urandom of=$md_di_data count=1 bs=5M
-$USE_SUDO st/clitests/md_integrity.py --body $md_di_data --download $md_di_dowload --parts $md_di_parts --test_plan st/clitests/metadata_md_integrity.json
+$USE_SUDO st/clitests/md_integrity.py --body $md_di_data --download $md_di_dowload --parts $md_di_parts --test_plan st/clitests/multipart_md_integrity.json
 
 [ -f $md_di_data ] && $USE_SUDO rm -vf $md_di_data
 [ -f $md_di_dowload ] && $USE_SUDO rm -vf $md_di_dowload
