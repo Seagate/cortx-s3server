@@ -20,6 +20,7 @@
 
 import sys
 import os
+import re
 import shutil
 from os import path
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
@@ -174,6 +175,165 @@ class SetupCmd(object):
                                 files=_prereqs_confstore.get_config(f'{phase_name}>files'))
     except Exception as e:
       raise S3PROVError(f'ERROR: {phase_name} prereqs validations failed, exception: {e} \n')
+
+  def extract_yardstick_list(self, phase_name: str):
+    """Extract keylist to be used as yardstick for validating keys of each phase."""
+    # The s3 prov config file has below pairs :
+    # "Key Constant" : "Actual Key"
+    # Example of "Key Constant" :
+    #   CONFSTORE_SITE_COUNT_KEY
+    #   PREPARE
+    #   CONFIG>CONFSTORE_LDAPADMIN_USER_KEY
+    #   INIT
+    # Example of "Actual Key" :
+    #   cluster>cluster-id>site>storage_set_count
+    #   cortx>software>openldap>sgiam>user
+    #
+    # When we call get_all_keys on s3 prov config
+    # file, it returns all the "Key Constant",
+    # which will contain PHASE(name) as the root
+    # attribute (except for unsolicited keys).
+    # To get "Actual Key" from each "Key Constant",
+    # we need to call get_confkey on every such key.
+    #
+    # Note that for each of these "Key Constant",
+    # there may not exist an "Actual Key" because
+    # some phases do not have any "Actual Key".
+    # Example of such cases -
+    #   POST_INSTALL
+    #   PREPARE
+    # For such examples, we skip and continue with
+    # remaining keys.
+
+    prov_keys_list = self._s3_confkeys_store.get_all_keys()
+    # We have all "Key Constant" in prov_keys_list,
+    # now extract "Actual Key" if it exists and
+    # depending on phase and hierarchy, decide
+    # whether it should be added to the yardstick
+    # list for the phase passed here.
+    yardstick_list = []
+    prev_phase = True
+    curr_phase = False
+    next_phase = False
+    for key in prov_keys_list:
+      # If PHASE is not relevant, skip the key.
+      # Or set flag as appropriate. For test,
+      # reset and cleanup, do not inherit keys
+      # from previous phases.
+      if next_phase:
+        break
+      if key.find(phase_name) == 0:
+        prev_phase = False
+        curr_phase = True
+      else:
+        if (
+             phase_name == "TEST" or
+             phase_name == "RESET" or
+             phase_name == "CLEANUP"
+           ):
+            continue
+        if not prev_phase:
+          curr_phase = False
+          next_phase = True
+          break
+      value = self.get_confkey(key)
+      # If value does not exist which can be the
+      # case for certain phases as mentioned above,
+      # skip the value.
+      if value is None:
+        continue
+      yardstick_list.append(value)
+    return yardstick_list
+
+  def phase_keys_validate(self, arg_file: str, phase_name: str):
+    """Validate keys of each phase derived from s3_prov_config and compare with argument file."""
+    # Setting the desired values before we begin
+    token_list = ["machine-id", "cluster-id", "storage-set-count"]
+    if self.machine_id is not None:
+      machine_id_val = self.machine_id
+    if self.cluster_id is not None:
+      cluster_id_val = self.cluster_id
+    # The 'storage_set_count' is read using
+    # below hard-coded key which is the max
+    # array size for storage set.
+    storage_set_count_key = "cluster>cluster-id>site>storage_set_count"
+    if self.cluster_id is not None:
+      storage_set_count_key = storage_set_count_key.replace("cluster-id", cluster_id_val)
+    storage_set_count_str = self.get_confvalue(storage_set_count_key)
+    if storage_set_count_str is not None:
+      storage_set_val = int(storage_set_count_str)
+    else:
+      storage_set_val = 0
+    # Set phase name to upper case required for inheritance
+    phase_name = phase_name.upper()
+    try:
+      # Extract keys from yardstick file for current phase considering inheritance
+      yardstick_list = self.extract_yardstick_list(phase_name)
+
+      # Set argument file confstore
+      argument_file_confstore = S3CortxConfStore(arg_file, 'argument_file_index')
+      # Extract keys from argument file
+      arg_keys_list = argument_file_confstore.get_all_keys()
+      # Since get_all_keys misses out listing entries inside
+      # an array, the below code is required to fetch such
+      # array entries. The result will be stored in a full
+      # list which will be complete and will be used to verify
+      # keys required for each phase.
+      full_arg_keys_list = []
+      for key in arg_keys_list:
+        if ((key.find('[') != -1) and (key.find(']') != -1)):
+          storage_set = self.get_confvalue(key)
+          base_key = key
+          for set_key in storage_set:
+            key = base_key + ">" + set_key
+            full_arg_keys_list.append(key)
+        else:
+          full_arg_keys_list.append(key)
+
+      # Below algorithm uses tokenization
+      # of both yardstick and argument key
+      # based on delimiter to generate
+      # smaller key-tokens. Then check if
+      # (A) all the key-tokens are pairs of
+      #     pre-defined token. e.g.,
+      #     if key_yard is machine-id, then
+      #     key_arg must have corresponding
+      #     value of machine_id_val.
+      # OR
+      # (B) both the key-tokens from key_arg
+      #     and key_yard are the same.
+      list_match_found = True
+      key_match_found = False
+      for key_yard in yardstick_list:
+        key_yard_token_list = re.split('>|\[|\]',key_yard)
+        key_match_found = False
+        for key_arg in full_arg_keys_list:
+          if key_match_found is False:
+            key_arg_token_list = re.split('>|\[|\]',key_arg)
+            if len(key_yard_token_list) == len(key_arg_token_list):
+              for key_x,key_y in zip(key_yard_token_list, key_arg_token_list):
+                key_match_found = False
+                if key_x == "machine-id":
+                  if key_y != machine_id_val:
+                    break
+                elif key_x == "cluster-id":
+                  if key_y != cluster_id_val:
+                    break
+                elif key_x == "storage-set-count":
+                  if int(key_y) >= storage_set_val:
+                    break
+                elif key_x != key_y:
+                  break
+                key_match_found = True
+        if key_match_found is False:
+          list_match_found = False
+          break
+      if list_match_found is False:
+        raise Exception(f'No match found for {key_yard}')
+      sys.stdout.write("Validation complete\n")
+
+    except Exception as e:
+      raise Exception(f'ERROR : Validating keys failed, exception {e}\n')
 
   def shutdown_services(self, s3services_list):
     """Stop services."""

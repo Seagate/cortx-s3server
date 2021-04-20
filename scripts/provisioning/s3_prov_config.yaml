@@ -28,7 +28,8 @@
 # "machine-id"- used to substitute machine id of the node
 # "cluster-id"- used to substitute cluster id of the setup, not to be confused
 #               with cluster_id which is component of a key.
-# "N": storage set count
+# "storage-set-count"- storage set count, not to be confused with
+#                      storage_set_count which is component of a key.
 
 POST_INSTALL:
 PREPARE:
@@ -41,16 +42,24 @@ CONFIG:
   CONFSTORE_S3INSTANCES_KEY: "server_node>machine-id>s3_instances"
   CONFSTORE_HOSTNAME_KEY: "server_node>machine-id>hostname"
   CONFSTORE_STORAGE_SET_COUNT_KEY: "cluster>cluster-id>site>storage_set_count"
-  CONFSTORE_STORAGE_SET_SERVER_NODES_KEY: "cluster>cluster-id>storage_set[N]>server_nodes"
+  CONFSTORE_STORAGE_SET_SERVER_NODES_KEY: "cluster>cluster-id>storage_set[storage-set-count]>server_nodes"
   CONFSTORE_PUBLIC_FQDN_KEY: "server_node>machine-id>network>data>public_fqdn"
   CONFSTORE_PRIVATE_FQDN_KEY: "server_node>machine-id>network>data>private_fqdn"
 INIT:
 # Inheritance hierarchy ends here.
 
 TEST:
+  CONFSTORE_LDAPADMIN_USER_KEY: "cortx>software>openldap>sgiam>user"
+  CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>software>openldap>sgiam>secret"
   CONFSTORE_ENDPOINT_KEY: "endpoint_fqdn"
 RESET:
+  CONFSTORE_LDAPADMIN_USER_KEY: "cortx>software>openldap>sgiam>user"
+  CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>software>openldap>sgiam>secret"
+  CONFSTORE_ROOTDN_USER_KEY: "cortx>software>openldap>root>user"
+  CONFSTORE_ROOTDN_PASSWD_KEY: "cortx>software>openldap>root>secret"
 CLEANUP:
+  CONFSTORE_LDAPADMIN_USER_KEY: "cortx>software>openldap>sgiam>user"
+  CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>software>openldap>sgiam>secret"
 
 # Unsolicited Keys should be added to the bottom.
 LDAP_USER: "cn={},dc=seagate,dc=com"

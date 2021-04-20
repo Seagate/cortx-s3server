@@ -72,6 +72,7 @@ class CleanupCmd(SetupCmd):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
+    self.phase_keys_validate(self.url, self.name)
 
     try:
       sys.stdout.write("checking if ldap service is running or not...\n")

@@ -56,7 +56,7 @@ def main():
   try:
     if args.command == 'post_install':
       from postinstallcmd import PostInstallCmd
-      PostInstallCmd().process()
+      PostInstallCmd(args.config).process()
       sys.stdout.write('INFO: post_install successful.\n')
 
     elif args.command == 'cleanup':
