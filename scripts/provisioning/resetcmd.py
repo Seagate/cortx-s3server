@@ -47,6 +47,7 @@ class ResetCmd(SetupCmd):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
+    self.phase_keys_validate(self.url, self.name)
 
     try:
       sys.stdout.write('INFO: Removing LDAP Accounts and Users.\n')
