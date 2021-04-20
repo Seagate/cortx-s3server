@@ -213,7 +213,9 @@ def fetch_fragment_info(key, oli_oid_decoded, FNo):
 
 # Given bucket name and key, returns a tuple consisting of
 # object metadata (as json) and information about fragments, if any.
-def fetch_object_info(bucket_name, key):
+# By default, deep_frag_check is false. When true, even if there is no
+# main object md record, it still checks for extended fragments.
+def fetch_object_info(bucket_name, key, deep_frag_check = False):
     if key is None or (len(key) == 0):
         return None, None
 
@@ -223,6 +225,19 @@ def fetch_object_info(bucket_name, key):
     if (bucket_record is None or (len(bucket_record) == 0)):
         return (None, None)
     file_record = _fetch_object_info(key, bucket_record)
+    print ("Object record:\n" + str(file_record))
+    if file_record is None or str(file_record) == "":
+        if not deep_frag_check:
+            return (None, None)
+        else:
+            # Though main object md is not available, attempt to check fragments
+            frag_key = "~" + key
+            bucket_json_keyval = _find_keyval_json(bucket_record)
+            oli_oid_decoded = _extract_oid(bucket_json_keyval, bucket=False)
+            frag_list = fetch_fragment_info(frag_key, oli_oid_decoded, 1)
+            frag_kv_mp = extract_keys_values(frag_list)
+            return (None, frag_kv_mp)
+
     file_json_keyval = _find_keyval_json(file_record)
     file_keyval = json.loads(file_json_keyval)
     # Check if any fragments on main object
