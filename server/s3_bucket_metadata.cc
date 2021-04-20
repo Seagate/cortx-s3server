@@ -81,6 +81,11 @@ const struct m0_uint128& S3BucketMetadata::get_multipart_index_oid() const {
   return multipart_index_oid;
 }
 
+const struct m0_uint128& S3BucketMetadata::get_extended_metadata_index_oid()
+    const {
+  return extended_metadata_index_oid;
+}
+
 const struct m0_uint128& S3BucketMetadata::get_object_list_index_oid() const {
   return object_list_index_oid;
 }
@@ -146,6 +151,9 @@ std::string S3BucketMetadata::to_json() {
   root["motr_multipart_index_oid"] =
       S3M0Uint128Helper::to_string(multipart_index_oid);
 
+  root["extended_metadata_index_oid"] =
+      S3M0Uint128Helper::to_string(extended_metadata_index_oid);
+
   root["motr_objects_version_list_index_oid"] =
       S3M0Uint128Helper::to_string(objects_version_list_index_oid);
 
@@ -189,6 +197,9 @@ int S3BucketMetadata::from_json(std::string content) {
 
   multipart_index_oid = S3M0Uint128Helper::to_m0_uint128(
       newroot["motr_multipart_index_oid"].asString());
+
+  extended_metadata_index_oid = S3M0Uint128Helper::to_m0_uint128(
+      newroot["extended_metadata_index_oid"].asString());
 
   objects_version_list_index_oid = S3M0Uint128Helper::to_m0_uint128(
       newroot["motr_objects_version_list_index_oid"].asString());

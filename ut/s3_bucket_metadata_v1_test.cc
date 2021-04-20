@@ -556,6 +556,53 @@ TEST_F(S3BucketMetadataV1Test, RegeneratedNewIndexName) {
                action_under_test->salted_object_list_index_name.c_str());
 }
 
+TEST_F(S3BucketMetadataV1Test, CreateExtendedMetadataIndexFailed) {
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_motr_kvs_writer;
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed));
+  action_under_test->global_bucket_index_metadata =
+      s3_global_bucket_index_metadata_factory
+          ->mock_global_bucket_index_metadata;
+  EXPECT_CALL(*(s3_global_bucket_index_metadata_factory
+                    ->mock_global_bucket_index_metadata),
+              remove(_, _))
+      .Times(1)
+      .WillOnce(Invoke([&](std::function<void(void)>,
+                           std::function<void(void)>) {
+         action_under_test
+             ->cleanup_on_create_err_global_bucket_account_id_info_fini_cb();
+       }));
+  action_under_test->create_extended_metadata_index_failed();
+  EXPECT_EQ(action_under_test->state, S3BucketMetadataState::failed);
+  EXPECT_TRUE(fail_called);
+}
+
+TEST_F(S3BucketMetadataV1Test, CreateExtendedMetadataIndexFailedToLaunch) {
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_motr_kvs_writer;
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3MotrKVSWriterOpState::failed_to_launch));
+  action_under_test->global_bucket_index_metadata =
+      s3_global_bucket_index_metadata_factory
+          ->mock_global_bucket_index_metadata;
+
+  EXPECT_CALL(*(s3_global_bucket_index_metadata_factory
+                    ->mock_global_bucket_index_metadata),
+              remove(_, _))
+      .Times(1)
+      .WillOnce(Invoke([&](std::function<void(void)>,
+                           std::function<void(void)>) {
+         action_under_test
+             ->cleanup_on_create_err_global_bucket_account_id_info_fini_cb();
+       }));
+  action_under_test->create_extended_metadata_index_failed();
+  EXPECT_EQ(action_under_test->state, S3BucketMetadataState::failed_to_launch);
+  EXPECT_TRUE(fail_called);
+}
+
 TEST_F(S3BucketMetadataV1Test, SaveBucketInfo) {
   action_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_motr_kvs_writer;
