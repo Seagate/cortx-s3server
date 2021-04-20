@@ -95,3 +95,11 @@ aws_test = AwsTest('Aws can download fragmented object').get_object("s3faultbuck
 download_MD5_hash = aws_test.fileMD5
 assert str(upload_MD5_hash) == str(download_MD5_hash), "Error! File hash of uploaded object not matching that of downloaded object"
 
+# Delete fragmented object.
+# Ensure that all entries associated with fragments are removed from object list index
+AwsTest('Aws can delete fragmented object').delete_object("s3faultbucket", "4_7MB")\
+    .execute_test().command_is_successful()
+# Ensure no entries (including fragments) in object list index
+obj_md, frag_info = s3kvs.fetch_object_info("s3faultbucket", "4_7MB", deep_frag_check=True)
+assert obj_md is None or (frag_info is None or len(frag_info) !=0), "Error! Fragments still exist in object list index"
+
