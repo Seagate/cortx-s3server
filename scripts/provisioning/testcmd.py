@@ -44,7 +44,6 @@ class TestCmd(SetupCmd):
   def process(self):
     """Main processing function."""
     #TODO: remove the return in next sprint
-    return
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
 

@@ -54,7 +54,7 @@
   },
   "test" :
   {
-    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "rpms": ["openldap-servers", "openldap-clients", "s3cmd", "s3iamcli"],
     "pip3s": ["s3confstore", "cryptography", "s3cipher"]
   }
 }
