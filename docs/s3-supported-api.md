@@ -12,6 +12,7 @@
 | | Put Bucket | Put Object | 
 | | Delete Bucket | Delete Object |
 | | Head Bucket | Head Object |
+| |             | Copy Object |
 
 **Table 2: Moderately Complex Operations**
 
@@ -147,6 +148,9 @@
 
 10. Delete Object tagging  
     `aws s3api delete-object-tagging --bucket <your_bucket> --key <key>`  
+
+11. Copy Object  
+    `aws s3api copy-object --copy-source bucket-1/test.txt --key test.txt --bucket bucket-2`
 
 ## S3 IAM APIs (using client tool - s3iamcli)
 
