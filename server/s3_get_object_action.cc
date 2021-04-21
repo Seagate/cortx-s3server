@@ -524,8 +524,8 @@ void S3GetObjectAction::send_data_to_client() {
                "checksum calculated: %s, checksum read %s",
                checksum_calculated.c_str(), checksum_read.c_str());
         if (checksum_calculated != checksum_read) {
-          if (!S3Option::get_instance()->
-              get_s3_di_disable_data_corruption_iem()) {
+          if (!S3Option::get_instance()
+                   ->get_s3_di_disable_data_corruption_iem()) {
             auto moid = object_metadata->get_oid();
             s3_iem(LOG_ERR, S3_IEM_CHECKSUM_MISMATCH,
                    S3_IEM_CHECKSUM_MISMATCH_STR, S3_IEM_CHECKSUM_MISMATCH_JSON,
