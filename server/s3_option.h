@@ -141,6 +141,8 @@ class S3Option {
 
   bool s3_ranged_read_enabled;
   bool s3_read_md5_check_enabled;
+  bool s3_di_disable_data_corruption_iem;
+  bool s3_di_disable_metadata_corruption_iem;
 
   unsigned short motr_layout_id;
   unsigned short motr_units_per_request;
@@ -331,6 +333,8 @@ class S3Option {
 
   bool get_s3_ranged_read_enabled();
   bool get_s3_read_md5_check_enabled();
+  bool get_s3_di_disable_data_corruption_iem();
+  bool get_s3_di_disable_metadata_corruption_iem();
 
   void set_s3_read_md5_check_enabled(bool value) {
     s3_read_md5_check_enabled = value;
