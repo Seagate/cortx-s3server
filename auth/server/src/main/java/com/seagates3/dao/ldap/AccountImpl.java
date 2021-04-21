@@ -623,7 +623,7 @@ public class AccountImpl implements AccountDAO {
           }
           return;
         } else {
-        throw new DataAccessException("Failed to delete account.\n" + ex);
+          throw new DataAccessException("Failed to delete account.\n" + ex);
         }
       }
     }
