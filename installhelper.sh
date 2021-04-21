@@ -71,6 +71,7 @@ mkdir -p $S3_INSTALL_LOCATION/resources
 mkdir -p $S3_INSTALL_LOCATION/scripts
 mkdir -p $S3_INSTALL_LOCATION/install/ldap/rsyslog.d
 mkdir -p $S3_INSTALL_LOCATION/install/ldap/replication
+mkdir -p $S3_INSTALL_LOCATION/install/ldap/replication/cleanup
 mkdir -p $S3_INSTALL_LOCATION/install/haproxy
 mkdir -p $S3_INSTALL_LOCATION/docs
 mkdir -p $S3_INSTALL_LOCATION/s3backgrounddelete
@@ -260,6 +261,12 @@ cp -f scripts/ldap/replication/serverIdTemplate.ldif $S3_INSTALL_LOCATION/instal
 cp -f scripts/ldap/replication/configTemplate.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
 cp -f scripts/ldap/replication/dataTemplate.ldif $S3_INSTALL_LOCATION/install/ldap/replication/
 
+# Copy LDAP replication cleanup to install location
+cp -f scripts/ldap/replication/cleanup/config.ldif $S3_INSTALL_LOCATION/install/ldap/replication/cleanup/
+cp -f scripts/ldap/replication/cleanup/data.ldif $S3_INSTALL_LOCATION/install/ldap/replication/cleanup/
+cp -f scripts/ldap/replication/cleanup/olcmirromode_config.ldif $S3_INSTALL_LOCATION/install/ldap/replication/cleanup/
+cp -f scripts/ldap/replication/cleanup/olcmirromode_data.ldif $S3_INSTALL_LOCATION/install/ldap/replication/cleanup/
+cp -f scripts/ldap/replication/cleanup/olcserverid.ldif $S3_INSTALL_LOCATION/install/ldap/replication/cleanup/
 
 # Copy check replication script to install location
 cp -f scripts/ldap/check_ldap_replication.sh $S3_INSTALL_LOCATION/install/ldap/
