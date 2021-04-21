@@ -87,12 +87,16 @@ If DI is disabled (and range reads enabled) will return
 
 ## Enable/Disable the feature
 
-Feature is controlled by two options in `s3config.yaml` file, under
+Feature is controlled by four options in `s3config.yaml` file, under
 section `S3_SERVER_CONFIG`:
 
 - `S3_READ_MD5_CHECK_ENABLED` -- when true, activates MD5 validation during
   GET object call.  When false, no validation.
 - `S3_RANGED_READ_ENABLED` -- when true, range read requests is enabled.
+- `S3_DI_DISABLE_DATA_CORRUPTION_IEM` -- when true, IEMs for md5 checksum
+  validation mismatch are not raised.
+- `S3_DI_DISABLE_METADATA_CORRUPTION_IEM` -- when true, IEMs for invalid
+  metadata entries are not raised.
 
 Note: range read is now coupled with DI check feature, reason -- R1
 implementation uses md5 checksum for entire object content, and it is not
