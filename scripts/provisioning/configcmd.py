@@ -50,6 +50,7 @@ class ConfigCmd(SetupCmd):
     """Main processing function."""
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
+    self.phase_keys_validate(self.url, self.name)
 
     try:
       self.create_auth_jks_password()
@@ -115,16 +116,7 @@ class ConfigCmd(SetupCmd):
 
     # set openldap-replication
     self.configure_openldap_replication()
-
-    # restart slapd service
-    try:
-      sys.stdout.write("Restarting slapd service...\n")
-      service_list = ["slapd"]
-      self.restart_services(service_list)
-    except Exception as e:
-      sys.stderr.write(f'Failed to restart slapd service, error: {e}\n')
-      raise e
-    sys.stdout.write("Restarted slapd service...\n")
+    
     sys.stdout.write("INFO: Successfully configured openldap on the node.\n")
 
   def configure_openldap_replication(self):
@@ -135,7 +127,7 @@ class ConfigCmd(SetupCmd):
     index = 0
     while index < int(storage_set_count):
       server_nodes_list = self.get_confkey(
-        'CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("cluster-id", self.cluster_id).replace("N", str(index))
+        'CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("cluster-id", self.cluster_id).replace("storage-set-count", str(index))
       server_nodes_list = self.get_confvalue(server_nodes_list)
       if type(server_nodes_list) is str:
         # list is stored as string in the confstore file
@@ -182,7 +174,7 @@ class ConfigCmd(SetupCmd):
     index = 0
     while index < int(storage_set_count):
       server_nodes_list = self.get_confkey(
-        'CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("cluster-id", self.cluster_id).replace("N", str(index))
+        'CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("cluster-id", self.cluster_id).replace("storage-set-count", str(index))
       server_nodes_list = self.get_confvalue(server_nodes_list)
       if type(server_nodes_list) is str:
         # list is stored as string in the confstore file
@@ -200,15 +192,15 @@ class ConfigCmd(SetupCmd):
     """Configure haproxy service."""
     try:
       S3HaproxyConfig(self.url).process()
-      # restart haproxy service
+      # reload haproxy service
       try:
-        sys.stdout.write("Restarting haproxy service...\n")
+        sys.stdout.write("Reloading haproxy service...\n")
         service_list = ["haproxy"]
-        self.restart_services(service_list)
+        self.reload_services(service_list)
       except Exception as e:
-        sys.stderr.write(f'Failed to restart haproxy service, error: {e}\n')
+        sys.stderr.write(f'Failed to reload haproxy service, error: {e}\n')
         raise e
-      sys.stdout.write("Restarted haproxy service...\n")
+      sys.stdout.write("Reloaded haproxy service...\n")
       sys.stdout.write("INFO: Successfully configured haproxy on the node.\n")
     except Exception as e:
       sys.stderr.write(f'Failed to configure haproxy for s3server, error: {e}')

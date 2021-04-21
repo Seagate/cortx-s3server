@@ -164,7 +164,7 @@ S3BucketMetadataCacheTest::S3BucketMetadataCacheTest() {
 void S3BucketMetadataCacheTest::TearDown() {
   // clear the cache
   for (auto n = get_cache_size(); n > 0; --n) {
-    p_bucket_metadata_cache->shrink();
+    S3BucketMetadataCache::get_instance()->shrink();
   }
   S3BucketMetadataV1Mock::n_called = 0;
 }
@@ -177,14 +177,14 @@ std::unique_ptr<S3BucketMetadataProxy> S3BucketMetadataCacheTest::create_proxy(
 }
 
 size_t S3BucketMetadataCacheTest::get_cache_size() const {
-  return p_bucket_metadata_cache->items.size();
+  return S3BucketMetadataCache::get_instance()->items.size();
 }
 
 S3BucketMetadataCacheTest::CurrentOp S3BucketMetadataCacheTest::get_current_op(
     const std::string& bucket_name) const {
 
-  auto it = p_bucket_metadata_cache->items.find(bucket_name);
-  assert(it != p_bucket_metadata_cache->items.end());
+  auto it = S3BucketMetadataCache::get_instance()->items.find(bucket_name);
+  assert(it != S3BucketMetadataCache::get_instance()->items.end());
 
   return it->second->current_op;
 }
@@ -290,6 +290,36 @@ TEST_F(S3BucketMetadataCacheTest, BucketFullLifeCycle) {
   f_success = false;
   EXPECT_EQ(ptr_metadata_proxy_3->get_state(), S3BucketMetadataState::missing);
   EXPECT_EQ(get_cache_size(), 0);
+}
+
+TEST_F(S3BucketMetadataCacheTest, LoadQueue) {
+  ASSERT_EQ(get_cache_size(), 0);
+  std::string bucket_name = "seagatebucket";
+
+  auto ptr_metadata_proxy_1 = create_proxy(bucket_name);
+  ptr_metadata_proxy_1->load(success_handler, failed_handler);
+
+  ASSERT_TRUE(p_s3_bucket_metadata_v1_test);
+  EXPECT_EQ(S3BucketMetadataV1Mock::n_called, 1);
+
+  auto ptr_metadata_proxy_2 = create_proxy(bucket_name);
+  ptr_metadata_proxy_2->load(success_handler, failed_handler);
+
+  auto ptr_metadata_proxy_3 = create_proxy(bucket_name);
+  ptr_metadata_proxy_3->load(success_handler, failed_handler);
+
+  EXPECT_EQ(S3BucketMetadataV1Mock::n_called, 1);
+  EXPECT_EQ(ptr_metadata_proxy_1->get_state(), S3BucketMetadataState::empty);
+  EXPECT_EQ(ptr_metadata_proxy_2->get_state(), S3BucketMetadataState::empty);
+  EXPECT_EQ(ptr_metadata_proxy_3->get_state(), S3BucketMetadataState::empty);
+
+  p_s3_bucket_metadata_v1_test->done(S3BucketMetadataState::present);
+
+  EXPECT_FALSE(p_s3_bucket_metadata_v1_test);
+
+  EXPECT_EQ(ptr_metadata_proxy_1->get_state(), S3BucketMetadataState::present);
+  EXPECT_EQ(ptr_metadata_proxy_2->get_state(), S3BucketMetadataState::present);
+  EXPECT_EQ(ptr_metadata_proxy_3->get_state(), S3BucketMetadataState::present);
 }
 
 TEST_F(S3BucketMetadataCacheTest, ExpirationTime) {

@@ -67,7 +67,7 @@ S3BucketMetadataV1::S3BucketMetadataV1(
   salted_object_list_index_name = get_object_list_index_name();
   salted_multipart_list_index_name = get_multipart_index_name();
   salted_objects_version_list_index_name = get_version_list_index_name();
-
+  extended_metadata_index_name = get_extended_metadata_index_name();
   collision_salt = "index_salt_";
 }
 
@@ -437,8 +437,7 @@ void S3BucketMetadataV1::create_objects_version_list_index() {
 
 void S3BucketMetadataV1::create_objects_version_list_index_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  collision_attempt_count = 0;
-  save_bucket_info(true);
+  create_extended_metadata_index();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -457,6 +456,40 @@ void S3BucketMetadataV1::create_objects_version_list_index_failed() {
     cleanup_on_create_err_global_bucket_account_id_info(
         motr_kv_writer->get_state());
   }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3BucketMetadataV1::create_extended_metadata_index() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  if (!motr_kv_writer) {
+    motr_kv_writer =
+        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+  }
+  // extended metadata list index oid
+  S3UriToMotrOID(s3_motr_api, extended_metadata_index_name.c_str(), request_id,
+                 &extended_metadata_index_oid, S3MotrEntityType::index);
+
+  motr_kv_writer->create_index_with_oid(
+      extended_metadata_index_oid,
+      std::bind(&S3BucketMetadataV1::create_extended_metadata_index_successful,
+                this),
+      std::bind(&S3BucketMetadataV1::create_extended_metadata_index_failed,
+                this));
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3BucketMetadataV1::create_extended_metadata_index_successful() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  save_bucket_info(true);
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3BucketMetadataV1::create_extended_metadata_index_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_ERROR, request_id,
+         "Extended metadata index creation failed.\n");
+  cleanup_on_create_err_global_bucket_account_id_info(
+      motr_kv_writer->get_state());
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 

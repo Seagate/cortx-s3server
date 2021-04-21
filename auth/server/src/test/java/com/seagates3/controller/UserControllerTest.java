@@ -32,7 +32,9 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.reflect.internal.WhiteboxImpl;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
@@ -42,13 +44,14 @@ import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
+import com.seagates3.response.generator.UserResponseGenerator;
 import com.seagates3.util.KeyGenUtil;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 @PowerMockIgnore({"javax.management.*"}) @RunWith(PowerMockRunner.class)
-    @PrepareForTest({DAODispatcher.class,
-                     KeyGenUtil.class}) public class UserControllerTest {
+    @PrepareForTest({DAODispatcher.class, KeyGenUtil.class,
+                     AuthServerConfig.class}) public class UserControllerTest {
 
     private UserController userController;
     private UserDAO userDAO;
@@ -87,6 +90,11 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                 String.CASE_INSENSITIVE_ORDER);
         requestBody.put("UserName", "s3testuser");
         requestBody.put("Path", path);
+
+        PowerMockito.mockStatic(AuthServerConfig.class);
+
+        PowerMockito.doReturn(1000)
+            .when(AuthServerConfig.class, "getMaxIAMUserLimit");
 
         userDAO = Mockito.mock(UserDAO.class);
 
@@ -202,7 +210,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     @Test
     public void CreateUser_UserSearchFailed_ReturnInternalServerError()
             throws Exception {
-        createUserController_CreateAPI();
+
+      createUserController_CreateAPI();
 
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenThrow(
                 new DataAccessException("failed to search user.\n"));
@@ -215,6 +224,18 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             "<Message>The request processing has failed because of an " +
             "unknown error, exception or failure.</Message></Error>" +
             "<RequestId>0000</RequestId>" + "</ErrorResponse>";
+
+        UserResponseGenerator mockResponseGenerator =
+            PowerMockito.mock(UserResponseGenerator.class);
+        WhiteboxImpl.setInternalState(UserController.class,
+                                      "userResponseGenerator",
+                                      mockResponseGenerator);
+        ServerResponse internalFailureResponse = new ServerResponse();
+        internalFailureResponse.setResponseBody(expectedResponseBody);
+        internalFailureResponse.setResponseStatus(
+            HttpResponseStatus.INTERNAL_SERVER_ERROR);
+        PowerMockito.when(mockResponseGenerator.internalServerError())
+            .thenReturn(internalFailureResponse);
 
         ServerResponse response = userController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -243,6 +264,17 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             "to create or update a resource that already " +
             "exists.</Message></Error>" + "<RequestId>0000</RequestId>" +
             "</ErrorResponse>";
+        UserResponseGenerator mockResponseGenerator =
+            PowerMockito.mock(UserResponseGenerator.class);
+        WhiteboxImpl.setInternalState(UserController.class,
+                                      "userResponseGenerator",
+                                      mockResponseGenerator);
+        ServerResponse entityAlreadyExistsResponse = new ServerResponse();
+        entityAlreadyExistsResponse.setResponseBody(expectedResponseBody);
+        entityAlreadyExistsResponse.setResponseStatus(
+            HttpResponseStatus.CONFLICT);
+        PowerMockito.when(mockResponseGenerator.entityAlreadyExists())
+            .thenReturn(entityAlreadyExistsResponse);
 
         ServerResponse response = userController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -272,6 +304,18 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             "unknown error, exception or failure.</Message></Error>" +
             "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
+        UserResponseGenerator mockResponseGenerator =
+            PowerMockito.mock(UserResponseGenerator.class);
+        WhiteboxImpl.setInternalState(UserController.class,
+                                      "userResponseGenerator",
+                                      mockResponseGenerator);
+        ServerResponse internalServerResponse = new ServerResponse();
+        internalServerResponse.setResponseBody(expectedResponseBody);
+        internalServerResponse.setResponseStatus(
+            HttpResponseStatus.INTERNAL_SERVER_ERROR);
+        PowerMockito.when(mockResponseGenerator.internalServerError())
+            .thenReturn(internalServerResponse);
+
         ServerResponse response = userController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
         Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
@@ -281,7 +325,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     @Test
     public void CreateUser_NewUserCreated_ReturnCreateResponse()
             throws Exception {
-        createUserController_CreateAPI();
+      createUserController_CreateAPI();
 
         User user = new User();
         user.setAccountName("s3test");
@@ -303,6 +347,17 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             "<RequestId>0000</RequestId>" + "</ResponseMetadata>" +
             "</CreateUserResponse>";
 
+        UserResponseGenerator mockResponseGenerator =
+            PowerMockito.mock(UserResponseGenerator.class);
+        WhiteboxImpl.setInternalState(UserController.class,
+                                      "userResponseGenerator",
+                                      mockResponseGenerator);
+        ServerResponse successResponse = new ServerResponse();
+        successResponse.setResponseBody(expectedResponseBody);
+        successResponse.setResponseStatus(HttpResponseStatus.CREATED);
+        PowerMockito.when(mockResponseGenerator.generateCreateResponse(user))
+            .thenReturn(successResponse);
+
         ServerResponse response = userController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
         Assert.assertEquals(HttpResponseStatus.CREATED,
@@ -312,6 +367,10 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     @Test
     public void CreateUser_NewUserCreatedWithDefaultPath_ReturnCreateResponse()
             throws Exception {
+      PowerMockito.mockStatic(AuthServerConfig.class);
+
+      PowerMockito.doReturn(1000)
+          .when(AuthServerConfig.class, "getMaxIAMUserLimit");
       final String expectedResponseBody =
           "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
           "<CreateUserResponse " +
@@ -339,6 +398,17 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         user.setName("s3testuser");
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
         Mockito.doNothing().when(userDAO).save(user);
+
+        UserResponseGenerator mockResponseGenerator =
+            PowerMockito.mock(UserResponseGenerator.class);
+        WhiteboxImpl.setInternalState(UserController.class,
+                                      "userResponseGenerator",
+                                      mockResponseGenerator);
+        ServerResponse successResponse = new ServerResponse();
+        successResponse.setResponseBody(expectedResponseBody);
+        successResponse.setResponseStatus(HttpResponseStatus.CREATED);
+        PowerMockito.when(mockResponseGenerator.generateCreateResponse(user))
+            .thenReturn(successResponse);
 
         ServerResponse response = userController.create();
 
@@ -371,6 +441,17 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             "</User>" + "</CreateUserResult>" + "<ResponseMetadata>" +
             "<RequestId>0000</RequestId>" + "</ResponseMetadata>" +
             "</CreateUserResponse>";
+
+        UserResponseGenerator mockResponseGenerator =
+            PowerMockito.mock(UserResponseGenerator.class);
+        WhiteboxImpl.setInternalState(UserController.class,
+                                      "userResponseGenerator",
+                                      mockResponseGenerator);
+        ServerResponse successResponse = new ServerResponse();
+        successResponse.setResponseBody(expectedResponseBody);
+        successResponse.setResponseStatus(HttpResponseStatus.CREATED);
+        PowerMockito.when(mockResponseGenerator.generateCreateResponse(user))
+            .thenReturn(successResponse);
 
         ServerResponse response = userController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -420,6 +501,17 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             "<Message>The request was rejected because it referenced an " +
             "entity that does not exist. </Message></Error>" +
             "<RequestId>0000</RequestId>" + "</ErrorResponse>";
+
+        UserResponseGenerator mockResponseGenerator =
+            PowerMockito.mock(UserResponseGenerator.class);
+        WhiteboxImpl.setInternalState(UserController.class,
+                                      "userResponseGenerator",
+                                      mockResponseGenerator);
+        ServerResponse noSuchEntityResponse = new ServerResponse();
+        noSuchEntityResponse.setResponseBody(expectedResponseBody);
+        noSuchEntityResponse.setResponseStatus(HttpResponseStatus.UNAUTHORIZED);
+        PowerMockito.when(mockResponseGenerator.noSuchEntity())
+            .thenReturn(noSuchEntityResponse);
 
         ServerResponse response = userController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());

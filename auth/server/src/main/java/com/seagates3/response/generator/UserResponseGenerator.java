@@ -24,6 +24,9 @@ import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.XMLResponseFormatter;
+
+import io.netty.handler.codec.http.HttpResponseStatus;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import com.seagates3.authorization.Authorizer;
@@ -69,5 +72,15 @@ public class UserResponseGenerator extends AbstractResponseGenerator {
 
     public ServerResponse generateUpdateResponse() {
         return new XMLResponseFormatter().formatUpdateResponse("UpdateUser");
+    }
+
+   public
+    ServerResponse maxUserLimitExceeded(int limit) {
+      String errorMessage =
+          "The request was rejected because maximum limit(i.e " + limit +
+          ") of user creation has exceeded.";
+
+      return new XMLResponseFormatter().formatErrorResponse(
+          HttpResponseStatus.FORBIDDEN, "MaxUserLimitExceeded", errorMessage);
     }
 }
