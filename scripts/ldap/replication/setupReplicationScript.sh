@@ -44,6 +44,7 @@ then
 fi
 
 INSTALLDIR="/opt/seagate/cortx/s3/install/ldap/replication"
+CLEANUPDIR="/opt/seagate/cortx/s3/install/ldap/replication/cleanup"
 
 # checkHostValidity will check if all provided hosts are valid and reachable
 checkHostValidity()
@@ -78,7 +79,7 @@ getServerIdFromHostFile()
 
 op=$(ldapsearch -w $password -x -D cn=admin,cn=config -b cn=config "olcServerID")
 if [[ $op == *"olcServerID:"* ]];then
-  ldapmodify -Y EXTERNAL  -H ldapi:/// -f cleanup/olcserverid.ldif
+  ldapmodify -Y EXTERNAL  -H ldapi:/// -f $CLEANUPDIR/olcserverid.ldif
   echo "olcserverid is cleaned up"
 fi
 
@@ -94,13 +95,13 @@ ldapadd -Y EXTERNAL -H ldapi:/// -f $INSTALLDIR/syncprov.ldif
 
 op=$(ldapsearch -w $password -x -D cn=admin,cn=config -b olcDatabase={0}config,cn=config "olcSyncrepl")
 if [[ $op == *"olcSyncrepl:"* ]];then
-  ldapmodify -Y EXTERNAL  -H ldapi:/// -f cleanup/config.ldif
+  ldapmodify -Y EXTERNAL  -H ldapi:/// -f $CLEANUPDIR/config.ldif
   echo "olcsynrepl at config level is cleaned up"
 fi
 
 op=$(ldapsearch -w $password -x -D cn=admin,cn=config -b olcDatabase={0}config,cn=config "olcMirrorMode")
 if [[ $op == *"olcMirrorMode:"* ]];then
-  ldapmodify -Y EXTERNAL  -H ldapi:/// -f cleanup/olcmirromode_config.ldif
+  ldapmodify -Y EXTERNAL  -H ldapi:/// -f $CLEANUPDIR/olcmirromode_config.ldif
   echo "olcmirrormode at config level is cleaned up"
 fi
 
@@ -123,13 +124,13 @@ rm scriptConfig.ldif
 
 op=$(ldapsearch -w $password -x -D cn=admin,cn=config -b olcDatabase={2}mdb,cn=config "olcSyncrepl")
 if [[ $op == *"olcSyncrepl:"* ]];then
-  ldapmodify -Y EXTERNAL  -H ldapi:/// -f cleanup/data.ldif
+  ldapmodify -Y EXTERNAL  -H ldapi:/// -f $CLEANUPDIR/data.ldif
   echo "olcsynrepl at data level is cleaned up"
 fi
 
 op=$(ldapsearch -w $password -x -D cn=admin,cn=config -b olcDatabase={2}mdb,cn=config "olcMirrorMode")
 if [[ $op == *"olcMirrorMode:"* ]];then
-  ldapmodify -Y EXTERNAL  -H ldapi:/// -f cleanup/olcmirromode_data.ldif
+  ldapmodify -Y EXTERNAL  -H ldapi:/// -f $CLEANUPDIR/olcmirromode_data.ldif
   echo "olcmirrormode at data level is cleaned up"
 fi
 

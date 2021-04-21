@@ -327,6 +327,11 @@ rm -rf %{buildroot}
 /opt/seagate/cortx/s3/install/ldap/replication/serverIdTemplate.ldif
 /opt/seagate/cortx/s3/install/ldap/replication/configTemplate.ldif
 /opt/seagate/cortx/s3/install/ldap/replication/dataTemplate.ldif
+/opt/seagate/cortx/s3/install/ldap/replication/cleanup/config.ldif
+/opt/seagate/cortx/s3/install/ldap/replication/cleanup/data.ldif
+/opt/seagate/cortx/s3/install/ldap/replication/cleanup/olcmirromode_config.ldif
+/opt/seagate/cortx/s3/install/ldap/replication/cleanup/olcmirromode_data.ldif
+/opt/seagate/cortx/s3/install/ldap/replication/cleanup/olcserverid.ldif
 /opt/seagate/cortx/s3/install/ldap/slapdlog.ldif
 /opt/seagate/cortx/s3/install/ldap/s3slapdindex.ldif
 /opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf
