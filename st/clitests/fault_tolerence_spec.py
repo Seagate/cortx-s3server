@@ -81,11 +81,11 @@ upload_MD5_hash = aws_test.fileMD5
 S3fiTest('s3cmd disable Fault injection').disable_fi("motr_obj_write_fail").execute_test().command_is_successful()
 
 # ********** Validate uploaded object using S3 metadata information **********
-# Validate FNo=5 and size of each fragment (except the last fragment) is 1MB
+# Validate FNo=4 and size of each fragment (except the last fragment) is 1MB
 obj_md, frag_info = s3kvs.fetch_object_info("s3faultbucket", "4_7MB")
 assert obj_md is None or not hasattr(obj_md, 'FNo'), "Error! Object metadata or FNo in metadata is missing"
 assert obj_md["FNo"] == 4, "Error! Fragment count (FNo) should be 4"
-assert frag_info is None or len(frag_info) == 4, "Error! No fragments found or count does not match 4"
+assert frag_info is not None and len(frag_info) == 4, "Error! No fragments found or count does not match 4"
 
 # Validate object by downloading it and comparing it's MD5 with the uploaded object
 aws_test = AwsTest('Aws can download fragmented object').get_object("s3faultbucket", "4_7MB")\

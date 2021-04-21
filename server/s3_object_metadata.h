@@ -41,7 +41,7 @@
 // to make them at the bottom of object list index table.
 // This special character is chosen, as it is not allowed in S3 object name and
 // also higher in the lexographical order.
-#define EXTENDED_METADATA_OBJECT_PREFIX "~"
+#define EXTENDED_METADATA_OBJECT_PREFIX ""
 #define EXTENDED_METADATA_OBJECT_SEP "|"
 
 enum class S3ObjectMetadataState {

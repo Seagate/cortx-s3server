@@ -151,6 +151,20 @@ def _extract_oid(json_keyval, bucket=True):
     oid_val.set_oid(hex(int_oid_hi), hex(int_oid_lo))
     return oid_val
 
+# Extract oid of extended metadata index from bucket record
+def _extract_extended_md_oid(json_keyval):
+    keyval = json.loads(json_keyval)
+    sbyteorder = sys.byteorder
+    oid_val = S3OID()
+    string_oid = keyval['extended_metadata_index_oid']
+    oid_list = string_oid.split("-")
+    dec_string_oid_hi = base64.b64decode(oid_list[0])
+    dec_string_oid_lo = base64.b64decode(oid_list[1])
+
+    int_oid_hi = int.from_bytes(dec_string_oid_hi,byteorder=sbyteorder)
+    int_oid_lo = int.from_bytes(dec_string_oid_lo,byteorder=sbyteorder)
+    oid_val.set_oid(hex(int_oid_hi), hex(int_oid_lo))
+    return oid_val
 
 # Fetch leak record from probable delete index corresponding to key 'rec_key'
 def _fetch_leak_record(rec_key):
@@ -225,15 +239,15 @@ def fetch_object_info(bucket_name, key, deep_frag_check = False):
     if (bucket_record is None or (len(bucket_record) == 0)):
         return (None, None)
     file_record = _fetch_object_info(key, bucket_record)
-    print ("Object record:\n" + str(file_record))
     if file_record is None or str(file_record) == "":
         if not deep_frag_check:
             return (None, None)
         else:
-            # Though main object md is not available, attempt to check fragments
+            # Though main object md is not available, attempt to check if 
+            # there is any stale fragment, indicating inconsistency.
             frag_key = "~" + key
             bucket_json_keyval = _find_keyval_json(bucket_record)
-            oli_oid_decoded = _extract_oid(bucket_json_keyval, bucket=False)
+            oli_oid_decoded = _extract_extended_md_oid(bucket_json_keyval)
             frag_list = fetch_fragment_info(frag_key, oli_oid_decoded, 1)
             frag_kv_mp = extract_keys_values(frag_list)
             return (None, frag_kv_mp)
@@ -243,9 +257,9 @@ def fetch_object_info(bucket_name, key, deep_frag_check = False):
     # Check if any fragments on main object
     if "FNo" in file_keyval:
         # Read fragments
-        frag_key = "~" + key
+        frag_key = key
         bucket_json_keyval = _find_keyval_json(bucket_record)
-        oli_oid_decoded = _extract_oid(bucket_json_keyval, bucket=False)
+        oli_oid_decoded = _extract_extended_md_oid(bucket_json_keyval)
         frag_list = fetch_fragment_info(frag_key, oli_oid_decoded, file_keyval['FNo'])
         frag_kv_mp = extract_keys_values(frag_list)
         obj_info = (file_keyval, frag_kv_mp)

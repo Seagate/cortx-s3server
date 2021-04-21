@@ -221,7 +221,6 @@ void S3GetBucketAction::get_next_objects_successful() {
   bool last_key_in_common_prefix = false;
   bool skip_no_further_prefix_match = false;
   bool b_skip_remaining_common_prefixes = false;
-  bool b_this_is_last_resultset = false;
   std::string last_common_prefix = "";
   auto& kvps = motr_kv_reader->get_key_values();
   size_t length = kvps.size();
@@ -263,11 +262,6 @@ void S3GetBucketAction::get_next_objects_successful() {
   // Statistics - Total keys visited/loaded
   if (!kvps.empty()) {
     total_keys_visited += length;
-    // Check if last key in the result key set starts with "~"
-    if (kvps.rbegin()->first.rfind(EXTENDED_METADATA_OBJECT_PREFIX, 0) !=
-        std::string::npos) {
-      b_this_is_last_resultset = true;
-    }
   }
 
   for (auto& kv : kvps) {
@@ -328,17 +322,6 @@ void S3GetBucketAction::get_next_objects_successful() {
       }
     }
 
-    if (b_this_is_last_resultset) {
-      // This is the last result set; check each key for "~"
-      if (kv.first.rfind(EXTENDED_METADATA_OBJECT_PREFIX, 0) !=
-          std::string::npos) {
-        // Hit extended object entries
-        // Set length to 0 to set truncation flag off
-        length = 0;
-        s3_log(S3_LOG_DEBUG, request_id, "Reached the end of index\n");
-        break;
-      }
-    }
     auto object = object_metadata_factory->create_object_metadata_obj(request);
     size_t delimiter_pos = std::string::npos;
     if (request_prefix.empty() && request_delimiter.empty()) {
