@@ -87,6 +87,7 @@ rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/*ppolicy.ldif
 # Removing configuration files
 rm -rf /etc/openldap/slapd.d/cn\=config/cn\=module\{0\}.ldif
 rm -rf /etc/openldap/slapd.d/cn\=config/cn\=module\{1\}.ldif
+rm -rf /etc/openldap/slapd.d/cn\=config/cn\=module\{2\}.ldif
 rm -rf /etc/openldap/slapd.d/cn\=config/olcDatabase\=\{2\}mdb
 rm -rf /etc/openldap/slapd.d/cn\=config/olcDatabase\=\{2\}mdb.ldif
 
