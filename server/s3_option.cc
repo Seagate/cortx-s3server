@@ -48,11 +48,13 @@ bool S3Option::load_section(std::string section_name,
       s3_read_md5_check_enabled =
           s3_option_node["S3_READ_MD5_CHECK_ENABLED"].as<bool>();
 
-      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_DI_DISABLE_DATA_CORRUPTION_IEM");
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_DI_DISABLE_DATA_CORRUPTION_IEM");
       s3_di_disable_data_corruption_iem =
           s3_option_node["S3_DI_DISABLE_DATA_CORRUPTION_IEM"].as<bool>();
 
-      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_DI_DISABLE_METADATA_CORRUPTION_IEM");
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_DI_DISABLE_METADATA_CORRUPTION_IEM");
       s3_di_disable_metadata_corruption_iem =
           s3_option_node["S3_DI_DISABLE_METADATA_CORRUPTION_IEM"].as<bool>();
 
@@ -931,9 +933,7 @@ void S3Option::dump_options() {
   return;
 }
 
-bool S3Option::get_s3_ranged_read_enabled() {
-  return s3_ranged_read_enabled;
-}
+bool S3Option::get_s3_ranged_read_enabled() { return s3_ranged_read_enabled; }
 
 bool S3Option::get_s3_read_md5_check_enabled() {
   return s3_read_md5_check_enabled;
