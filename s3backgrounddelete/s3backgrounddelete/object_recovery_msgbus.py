@@ -73,12 +73,7 @@ class ObjectRecoveryMsgbus(object):
         #Basically loads msgbus lib and reads its config file
         self._logger.debug("Instantiating S3MessageBus")
         self.__msgbuslib = S3CortxMsgBus()
-        self._logger.debug("Connecting to S3MessageBus")
-        ret,msg = self.__msgbuslib.connect()
-        if not ret:
-            self._logger.error("msgbus connect failed {}".format(msg))
-            self.__msgbuslib = None
-        return ret
+        return True
 
     def __setup_consumer(self,
         consumer_id = None,

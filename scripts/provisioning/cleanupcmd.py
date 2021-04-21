@@ -252,7 +252,6 @@ class CleanupCmd(SetupCmd):
     """delete topic for background delete services."""
     try:
       s3MessageBus = S3CortxMsgBus()
-      s3MessageBus.connect()
       if S3CortxMsgBus.is_topic_exist(admin_id, topic_name):
         S3CortxMsgBus.delete_topic(admin_id, [topic_name])
     except Exception as e:
