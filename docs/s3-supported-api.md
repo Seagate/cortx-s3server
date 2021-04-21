@@ -150,7 +150,7 @@
     `aws s3api delete-object-tagging --bucket <your_bucket> --key <key>`  
 
 11. Copy Object  
-    `aws s3api copy-object --copy-source bucket-1/test.txt --key test.txt --bucket bucket-2`
+    `aws s3api copy-object --copy-source <full_source_key> --key <dest_object_name> --bucket <dest_bucket>`
 
 ## S3 IAM APIs (using client tool - s3iamcli)
 
