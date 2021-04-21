@@ -189,11 +189,22 @@ bool S3RequestObject::validate_attrs(const std::string& c_bucket_name,
 
   if (s3_di_fi_is_enabled("di_metadata_bucket_or_object_corrupted") ||
       req_bucket_name != c_bucket_name || req_object_name != c_object_name) {
-    s3_iem(LOG_ERR, S3_IEM_OBJECT_METADATA_NOT_VALID,
-           S3_IEM_OBJECT_METADATA_NOT_VALID_STR,
-           S3_IEM_OBJECT_METADATA_NOT_VALID_JSON, req_bucket_name.c_str(),
-           c_bucket_name.c_str(), req_object_name.c_str(),
-           c_object_name.c_str());
+    if (!S3Option::get_instance()->
+        get_s3_di_disable_metadata_corruption_iem()) {
+      s3_iem(LOG_ERR, S3_IEM_OBJECT_METADATA_NOT_VALID,
+             S3_IEM_OBJECT_METADATA_NOT_VALID_STR,
+             S3_IEM_OBJECT_METADATA_NOT_VALID_JSON, req_bucket_name.c_str(),
+             c_bucket_name.c_str(), req_object_name.c_str(),
+             c_object_name.c_str());
+    } else {
+      s3_log(S3_LOG_ERROR, request_id,
+	     "Object metadata mismatch: "
+	     "req_bucket_name=\"%s\" c_bucket_name=\"%s\" "
+	     "req_object_name=\"%s\" c_object_name=\"%s\"",
+	     req_bucket_name.c_str(),
+             c_bucket_name.c_str(), req_object_name.c_str(),
+             c_object_name.c_str());
+    }
     return false;
   }
   return true;
