@@ -45,6 +45,7 @@ class CleanupCmd(SetupCmd):
                              "/etc/openldap/slapd.d/cn=config/cn=schema/cn={1}s3user.ldif",
                              "/etc/openldap/slapd.d/cn=config/cn=module{0}.ldif",
                              "/etc/openldap/slapd.d/cn=config/cn=module{1}.ldif",
+                             "/etc/openldap/slapd.d/cn=config/cn=module{2}.ldif",
                              "/etc/openldap/slapd.d/cn=config/olcDatabase={2}mdb.ldif"
                           ],
                   "files_wild": [
