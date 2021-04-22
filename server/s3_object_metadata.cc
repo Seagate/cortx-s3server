@@ -356,7 +356,7 @@ void S3ObjectMetadata::load_failed() {
     break;
   case S3MotrKVSReaderOpState::missing:
     state = S3ObjectMetadataState::missing;
-    s3_log(S3_LOG_DEBUG, request_id, "Object metadata missing for %s\n",
+    s3_log(S3_LOG_DEBUG, request_id, "Object metadata missing for %s",
            object_name.c_str());
     break;
   case S3MotrKVSReaderOpState::present:

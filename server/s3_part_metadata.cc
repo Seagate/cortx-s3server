@@ -28,7 +28,6 @@
 #include "s3_part_metadata.h"
 
 void S3PartMetadata::initialize(std::string uploadid, int part_num) {
-  json_parsing_error = false;
   bucket_name = request->get_bucket_name();
   object_name = request->get_object_name();
   state = S3PartMetadataState::empty;
@@ -182,6 +181,8 @@ void S3PartMetadata::load(std::function<void(void)> on_success,
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
+  state = S3PartMetadataState::empty;
+
   motr_kv_reader =
       motr_kv_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
 
@@ -202,7 +203,7 @@ void S3PartMetadata::load_successful() {
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
            S3_IEM_METADATA_CORRUPTED_JSON);
 
-    json_parsing_error = true;
+    state = S3PartMetadataState::invalid;
     load_failed();
   } else if (!request->validate_attrs(bucket_name, object_name)) {
     s3_log(S3_LOG_ERROR, request_id,
@@ -213,6 +214,8 @@ void S3PartMetadata::load_successful() {
            part_index_name_oid.u_hi, part_index_name_oid.u_lo,
            request->get_bucket_name().c_str(), bucket_name.c_str(),
            request->get_object_name().c_str(), object_name.c_str());
+
+    state = S3PartMetadataState::invalid;
     load_failed();
   } else {
     state = S3PartMetadataState::present;
@@ -221,14 +224,34 @@ void S3PartMetadata::load_successful() {
 }
 
 void S3PartMetadata::load_failed() {
-  s3_log(S3_LOG_WARN, request_id, "Missing part metadata\n");
-  if (json_parsing_error) {
+  switch (motr_kv_reader->get_state()) {
+  case S3MotrKVSReaderOpState::failed_to_launch:
+    state = S3PartMetadataState::failed_to_launch;
+    s3_log(S3_LOG_WARN, request_id, "Part metadata load failed to launch - ServiceUnavailable");
+    break;
+  case S3MotrKVSReaderOpState::failed:
+  case S3MotrKVSReaderOpState::failed_e2big:
+    s3_log(S3_LOG_WARN, request_id, "Internal server error - InternalError");
     state = S3PartMetadataState::failed;
-  } else if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
-    state = S3PartMetadataState::missing;  // Missing
-  } else {
+    break;
+  case S3MotrKVSReaderOpState::missing:
+    state = S3PartMetadataState::missing;
+    s3_log(S3_LOG_DEBUG, request_id, "Part metadata missing for %s",
+           object_name.c_str());
+    break;
+  case S3MotrKVSReaderOpState::present:
+    // This state is allowed here only if validaton failed
+    if (state != S3PartMetadataState::invalid) {
+      s3_log(S3_LOG_ERROR, request_id, "Invalid state - InternalError");
+      state = S3PartMetadataState::failed;
+    }
+    break;
+  default: // S3MotrKVSReaderOpState::{empty,start}
+    s3_log(S3_LOG_ERROR, request_id, "Unexpected state - InternalError");
     state = S3PartMetadataState::failed;
+    break;
   }
+
   this->handler_on_failed();
 }
 

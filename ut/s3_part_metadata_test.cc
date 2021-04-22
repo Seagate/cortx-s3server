@@ -199,21 +199,27 @@ TEST_F(S3PartMetadataTest, LoadSuccessInvalidJson) {
   metadata_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
 
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_state())
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::present));
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
       .WillRepeatedly(Return(""));
   metadata_under_test->load_successful();
-  EXPECT_TRUE(metadata_under_test->json_parsing_error);
-  EXPECT_EQ(metadata_under_test->state, S3PartMetadataState::failed);
+  EXPECT_EQ(metadata_under_test->state, S3PartMetadataState::invalid);
   EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
 }
 
 TEST_F(S3PartMetadataTest, LoadPartInfoFailedJsonParsingFailed) {
+  metadata_under_test->motr_kv_reader =
+      motr_kvs_reader_factory->mock_motr_kvs_reader;
+  EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_state())
+      .WillRepeatedly(Return(S3MotrKVSReaderOpState::present));
+  metadata_under_test->state = S3PartMetadataState::invalid;
+
   metadata_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
-  metadata_under_test->json_parsing_error = true;
   metadata_under_test->load_failed();
   EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
-  EXPECT_EQ(S3PartMetadataState::failed, metadata_under_test->state);
+  EXPECT_EQ(S3PartMetadataState::invalid, metadata_under_test->state);
 }
 
 TEST_F(S3PartMetadataTest, LoadPartInfoFailedMetadataMissing) {
