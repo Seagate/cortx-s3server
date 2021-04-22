@@ -28,6 +28,7 @@ from s3cipher.cortx_s3_cipher import CortxS3Cipher
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.validator.v_service import ServiceV
 from cortx.utils.validator.v_path import PathV
+from cortx.utils.validator.v_network import NetworkV
 from cortx.utils.process import SimpleProcess
 
 class S3PROVError(Exception):
@@ -186,6 +187,12 @@ class SetupCmd(object):
     value = self.get_confvalue(key)
     if not value:
       raise Exception(f'Empty value for key : {key}')
+    else:
+      address_token = ["hostname", "public_fqdn", "private_fqdn"]
+      for token in address_token:
+        if key.find(token) != -1:
+          NetworkV().validate('connectivity',[value])
+          break
 
   def extract_yardstick_list(self, phase_name: str):
     """Extract keylist to be used as yardstick for validating keys of each phase."""
