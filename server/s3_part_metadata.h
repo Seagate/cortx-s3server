@@ -34,7 +34,7 @@
 #include "s3_request_object.h"
 
 enum class S3PartMetadataState {
-  empty = 1,          // Initial state, no lookup done.
+  empty,              // Initial state, no lookup done.
   present,            // Part Metadata exists and was read successfully.
   missing,            // Part Metadata not present in store.
   missing_partially,  // Some of the Parts Metadata not present in store.
@@ -43,7 +43,8 @@ enum class S3PartMetadataState {
   deleted,            // Metadata deleted from store.
   index_deleted,      // store deleted.
   failed,
-  failed_to_launch  // Pre launch operation failed
+  failed_to_launch,  // Pre launch operation failed
+  invalid            // Metadata invalid or corrupted
 };
 
 // Forward declarations.
@@ -86,9 +87,6 @@ class S3PartMetadata {
 
   S3PartMetadataState state;
   size_t collision_attempt_count;
-
-  // `true` in case of json parsing failure.
-  bool json_parsing_error;
 
   std::shared_ptr<S3MotrKVSReaderFactory> motr_kv_reader_factory;
   std::shared_ptr<S3MotrKVSWriterFactory> mote_kv_writer_factory;
