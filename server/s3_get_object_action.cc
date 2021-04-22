@@ -525,11 +525,12 @@ void S3GetObjectAction::send_data_to_client() {
           if (!S3Option::get_instance()
                    ->get_s3_di_disable_data_corruption_iem()) {
             auto moid = object_metadata->get_oid();
-            s3_iem(LOG_ERR, S3_IEM_CHECKSUM_MISMATCH,
-                   S3_IEM_CHECKSUM_MISMATCH_STR, S3_IEM_CHECKSUM_MISMATCH_JSON,
-                   request->get_bucket_name().c_str(),
-                   request->get_object_name().c_str(), moid.u_hi, moid.u_lo,
-                   checksum_calculated.c_str(), checksum_read.c_str());
+            s3_iem_full(
+                LOG_ERR, S3_IEM_CHECKSUM_MISMATCH, S3_IEM_CHECKSUM_MISMATCH_STR,
+                S3_IEM_CHECKSUM_MISMATCH_JSON,
+                request->get_bucket_name().c_str(),
+                request->get_object_name().c_str(), moid.u_hi, moid.u_lo,
+                checksum_calculated.c_str(), checksum_read.c_str());
           }
           s3_log(S3_LOG_ERROR, request_id, "Content checksum mismatch\n");
           checksum_mismatch = true;
