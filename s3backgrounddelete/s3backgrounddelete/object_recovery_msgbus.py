@@ -34,7 +34,7 @@ class ObjectRecoveryMsgbus(object):
         """Initialize MessageBus."""
         self._config = config
         self._logger = logger
-        self.__msgbuslib = None
+        self.__msgbuslib = S3CortxMsgBus()
         self.__isproducersetupcomplete = False
         self.__isconsumersetupcomplete = False
         self._daemon_mode = config.get_daemon_mode()
@@ -68,13 +68,6 @@ class ObjectRecoveryMsgbus(object):
             return False
         return True
 
-    def __loadmsgbuslibrary(self):
-        """Load message bus library."""
-        #Basically loads msgbus lib and reads its config file
-        self._logger.debug("Instantiating S3MessageBus")
-        self.__msgbuslib = S3CortxMsgBus()
-        return True
-
     def __setup_consumer(self,
         consumer_id = None,
         consumer_group = None,
@@ -83,11 +76,9 @@ class ObjectRecoveryMsgbus(object):
         """Setup steps required for consumer to start receiving."""
         try:
             if not self.__msgbuslib:
-                ret = self.__loadmsgbuslibrary()
-                if not ret:
-                    self._logger.error("__loadmsgbuslibrary failed")
-                    self.__isconsumersetupcomplete = False
-                    return
+                self._logger.error("__msgbuslib is not initialized")
+                self.__isconsumersetupcomplete = False
+                return
 
             #Over here we will have msgbuslib loaded
             if not consumer_id:
@@ -173,12 +164,10 @@ class ObjectRecoveryMsgbus(object):
         """Setup steps required for producer to start sending."""
         try:
             if not self.__msgbuslib:
-                ret = self.__loadmsgbuslibrary()
-                if not ret:
-                    self._logger.error("__loadmsgbuslibrary failed")
-                    self.__msgbuslib = None
-                    self.__isproducersetupcomplete = False
-                    return
+                self._logger.error("__msgbuslib is not initialized")
+                self.__msgbuslib = None
+                self.__isproducersetupcomplete = False
+                return
 
             if not producer_id:
                 producer_id = self._config.get_msgbus_producer_id()
