@@ -15,7 +15,7 @@
      {"desc": "Get-object request for previous object",
       "op": "get-object", "bucket": "test-bucket-1", "key": "object1", "expect": false},
      {"desc": "Try to recreate object object1",
-      "op": "put-object", "bucket": "test-bucket-1", "key": "object1", "expect": true},
+      "op": "put-object", "bucket": "test-bucket-1", "key": "object1", "expect": false},
      {"desc": "Try to delete-object request for previous object",
       "op": "delete-object", "bucket": "test-bucket-1", "key": "object1", "expect": false},
      {"desc": "Disable FI di_metadata_bucket_or_object_corrupted",
