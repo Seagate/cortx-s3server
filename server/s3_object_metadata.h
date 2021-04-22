@@ -43,7 +43,7 @@ enum class S3ObjectMetadataState {
   deleted,  // Metadata deleted from store.
   failed,
   failed_to_launch,  // pre launch operation failed.
-  invalid
+  invalid   // Metadata invalid or corrupted
 };
 
 // Forward declarations.
@@ -123,9 +123,6 @@ class S3ObjectMetadata {
 
   S3ObjectMetadataState state;
   S3Timer s3_timer;
-
-  // `true` in case of json parsing failure.
-  bool json_parsing_error;
 
   void initialize(bool is_multipart, std::string uploadid);
 
