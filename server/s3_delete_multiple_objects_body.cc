@@ -165,22 +165,23 @@ bool S3DeleteMultipleObjectsBody::validate_attrs(const std::string &bckt,
   bool is_bckt = (bckt == bucket);
   bool is_key = (std::find(std::begin(object_keys), std::end(object_keys),
                            key) != std::end(object_keys));
-  bool ret = fi_en || (is_bckt && is_key);
+  bool ret = !fi_en || (is_bckt && is_key);
 
-  // if (!S3Option::get_instance()
-  //            ->get_s3_di_disable_metadata_corruption_iem()) {
-  //     s3_iem(LOG_ERR, S3_IEM_OBJECT_METADATA_NOT_VALID,
-  //            S3_IEM_OBJECT_METADATA_NOT_VALID_STR,
-  //            S3_IEM_OBJECT_METADATA_NOT_VALID_JSON, req_bucket_name.c_str(),
-  //            c_bucket_name.c_str(), req_object_name.c_str(),
-  //            c_object_name.c_str());
-  //   } else {
-  //     s3_log(S3_LOG_ERROR, request_id,
-  //            "Object metadata mismatch: "
-  //            "req_bucket_name=\"%s\" c_bucket_name=\"%s\" "
-  //            "req_object_name=\"%s\" c_object_name=\"%s\"",
-  //            req_bucket_name.c_str(), c_bucket_name.c_str(),
-  //            req_object_name.c_str(), c_object_name.c_str());
-  //   }
+  if (!ret) {
+    if (!S3Option::get_instance()
+             ->get_s3_di_disable_metadata_corruption_iem()) {
+      s3_iem_full(LOG_ERR, S3_IEM_OBJECT_METADATA_NOT_VALID,
+                  S3_IEM_OBJECT_METADATA_NOT_VALID_STR,
+                  S3_IEM_OBJECT_METADATA_NOT_VALID_JSON, bucket.c_str(),
+                  bckt.c_str(), "<delete-multiple-objects-list>", key.c_str());
+    } else {
+      s3_log(S3_LOG_ERROR, request_id,
+             "Object metadata mismatch: "
+             "req_bucket_name=\"%s\" c_bucket_name=\"%s\" "
+             "req_object_name=\"%s\" c_object_name=\"%s\"",
+             bucket.c_str(), bckt.c_str(), "<delete-multiple-objects-list>",
+             key.c_str());
+    }
+  }
   return ret;
 }
