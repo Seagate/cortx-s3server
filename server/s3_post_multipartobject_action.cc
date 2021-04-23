@@ -116,7 +116,7 @@ void S3PostMultipartObjectAction::setup_steps() {
   if (!request->get_header_value("x-amz-tagging").empty()) {
 
     ACTION_TASK_ADD(
-        S3PostMultipartObjectAction::validate_x_amz_tagging_if_present, this);
+      S3PostMultipartObjectAction::validate_x_amz_tagging_if_present, this);
   }
   ACTION_TASK_ADD(S3PostMultipartObjectAction::check_upload_is_inprogress,
                   this);
@@ -127,7 +127,25 @@ void S3PostMultipartObjectAction::setup_steps() {
                   this);
   // ...
 }
-void S3PostMultipartObjectAction::fetch_object_info_failed() { next(); }
+
+void S3PostMultipartObjectAction::fetch_object_info_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  auto omds = object_metadata->get_state();
+  if (omds == S3ObjectMetadataState::missing) {
+    s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
+    next();
+  } else {
+    s3_log(S3_LOG_ERROR, request_id, "Metadata load state %d", (int)omds);
+    if (omds == S3ObjectMetadataState::failed_to_launch) {
+      set_s3_error("ServiceUnavailable");
+    } else {
+      set_s3_error("InternalError");
+    }
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
 void S3PostMultipartObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
