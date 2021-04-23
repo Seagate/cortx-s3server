@@ -28,6 +28,7 @@ from s3cipher.cortx_s3_cipher import CortxS3Cipher
 from cortx.utils.validator.v_pkg import PkgV
 from cortx.utils.validator.v_service import ServiceV
 from cortx.utils.validator.v_path import PathV
+from cortx.utils.validator.v_network import NetworkV
 from cortx.utils.process import SimpleProcess
 
 class S3PROVError(Exception):
@@ -175,6 +176,23 @@ class SetupCmd(object):
                                 files=_prereqs_confstore.get_config(f'{phase_name}>files'))
     except Exception as e:
       raise S3PROVError(f'ERROR: {phase_name} prereqs validations failed, exception: {e} \n')
+
+  def key_value_verify(self, key: str):
+    """Verify if there exists a corresponding value for given key."""
+    # Once a key from yardstick file has found a
+    # matching pair in argument file, the value
+    # of that key from argument file needs to be
+    # verified. It should be neither none, empty
+    # nor any undesirable value.
+    value = self.get_confvalue(key)
+    if not value:
+      raise Exception(f'Empty value for key : {key}')
+    else:
+      address_token = ["hostname", "public_fqdn", "private_fqdn"]
+      for token in address_token:
+        if key.find(token) != -1:
+          NetworkV().validate('connectivity',[value])
+          break
 
   def extract_yardstick_list(self, phase_name: str):
     """Extract keylist to be used as yardstick for validating keys of each phase."""
@@ -325,6 +343,8 @@ class SetupCmd(object):
                 elif key_x != key_y:
                   break
                 key_match_found = True
+              if key_match_found:
+                self.key_value_verify(key_arg)
         if key_match_found is False:
           list_match_found = False
           break
