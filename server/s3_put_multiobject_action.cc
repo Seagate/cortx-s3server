@@ -699,4 +699,3 @@ void S3PutMultiObjectAction::set_authorization_meta() {
   next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
-

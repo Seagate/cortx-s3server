@@ -136,7 +136,7 @@ void S3DeleteMultipleObjectsAction::validate_request_body(std::string content) {
     set_s3_error("BadDigest");
     send_response_to_s3_client();
   } else {
-    delete_request.initialize(content);
+    delete_request.initialize(request->get_bucket_name(), content);
     if (delete_request.isOK()) {
       // AWS allows to delete maximum 1000 objects in one call
       if (delete_request.get_count() > MAX_OBJS_ALLOWED_TO_DELETE) {
@@ -237,10 +237,12 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info_successful() {
       object->set_objects_version_list_index_oid(
           bucket_metadata->get_objects_version_list_index_oid());
 
-      if (object->from_json(kv.second.second) != 0) {
+      if (object->from_json(kv.second.second) != 0 ||
+          !delete_request.validate_attrs(object->get_bucket_name(),
+                                         object->get_object_name())) {
         atleast_one_json_error = true;
         s3_log(S3_LOG_ERROR, request_id,
-               "Json Parsing failed. Index oid = "
+               "Invalid index value. Index oid = "
                "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
                object_list_index_oid.u_hi, object_list_index_oid.u_lo,
                kv.first.c_str(), kv.second.second.c_str());

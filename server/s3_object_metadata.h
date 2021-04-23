@@ -217,6 +217,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   std::string get_owner_name();
   std::string get_owner_id();
   virtual std::string get_object_name();
+  virtual std::string get_bucket_name();
   virtual std::string get_user_id();
   virtual std::string get_user_name();
   virtual std::string get_canonical_id();

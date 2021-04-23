@@ -176,6 +176,8 @@ class S3PartMetadata {
 
   std::string to_json();
 
+  bool validate_on_request();
+
   // returns 0 on success, -1 on parsing error.
   virtual int from_json(std::string content);
 
