@@ -23,13 +23,18 @@
 
 #include "s3_delete_multiple_objects_body.h"
 #include "s3_log.h"
+#include "s3_fi_common.h"
+
+#include <algorithm>
 
 S3DeleteMultipleObjectsBody::S3DeleteMultipleObjectsBody()
-    : is_valid(false), quiet(false) {
+    : is_valid(false), quiet(false), bucket("") {
   s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);
 }
 
-void S3DeleteMultipleObjectsBody::initialize(std::string &xml) {
+void S3DeleteMultipleObjectsBody::initialize(const std::string &bckt,
+                                             std::string &xml) {
+  bucket = bckt;
   xml_content = xml;
   parse_and_validate();
 }
@@ -152,4 +157,30 @@ bool S3DeleteMultipleObjectsBody::parse_and_validate() {
   xmlFreeDoc(document);
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return is_valid;
+}
+
+bool S3DeleteMultipleObjectsBody::validate_attrs(const std::string &bckt,
+                                                 const std::string &key) {
+  bool fi_en = s3_di_fi_is_enabled("di_metadata_bucket_or_object_corrupted");
+  bool is_bckt = (bckt == bucket);
+  bool is_key = (std::find(std::begin(object_keys), std::end(object_keys),
+                           key) != std::end(object_keys));
+  bool ret = fi_en || (is_bckt && is_key);
+
+  // if (!S3Option::get_instance()
+  //            ->get_s3_di_disable_metadata_corruption_iem()) {
+  //     s3_iem(LOG_ERR, S3_IEM_OBJECT_METADATA_NOT_VALID,
+  //            S3_IEM_OBJECT_METADATA_NOT_VALID_STR,
+  //            S3_IEM_OBJECT_METADATA_NOT_VALID_JSON, req_bucket_name.c_str(),
+  //            c_bucket_name.c_str(), req_object_name.c_str(),
+  //            c_object_name.c_str());
+  //   } else {
+  //     s3_log(S3_LOG_ERROR, request_id,
+  //            "Object metadata mismatch: "
+  //            "req_bucket_name=\"%s\" c_bucket_name=\"%s\" "
+  //            "req_object_name=\"%s\" c_object_name=\"%s\"",
+  //            req_bucket_name.c_str(), c_bucket_name.c_str(),
+  //            req_object_name.c_str(), c_object_name.c_str());
+  //   }
+  return ret;
 }
