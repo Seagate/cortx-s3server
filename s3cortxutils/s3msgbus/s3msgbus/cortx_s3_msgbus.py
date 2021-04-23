@@ -28,26 +28,13 @@ from cortx.utils.message_bus import MessageBus, MessageProducer, MessageConsumer
 
 class S3CortxMsgBus:
 
-    _message_bus = None
     def __init__(self):
         """Init."""
         self._producer = None
         self._consumer = None
 
-    def connect(self):
-        """Connect to Message Bus."""
-        try:
-            if S3CortxMsgBus._message_bus is None:
-                S3CortxMsgBus._message_bus = MessageBus()
-        except Exception as exception:
-            msg = ("msg_bus init except:%s %s") % (exception, traceback.format_exc())
-            return False, msg
-        return True, None
-
     def setup_producer(self, prod_id, msg_type, method):
         """Setup producer."""
-        if not S3CortxMsgBus._message_bus:
-            raise Exception("Non Existent Message Bus")
         try:
             self._producer = MessageProducer(producer_id=prod_id,
                                             message_type=msg_type,
@@ -70,14 +57,10 @@ class S3CortxMsgBus:
 
     def purge(self):
         """Purge/Delete all the messages."""
-        if not S3CortxMsgBus._message_bus:
-            raise Exception("Non Existent Message Bus, Cannot Purge")
         self._producer.delete()
 
     def setup_consumer(self, cons_id, group, msg_type, auto_ack, offset):
         """Setup the consumer."""
-        if not S3CortxMsgBus._message_bus:
-            raise Exception("Non Existent Message Bus")
         try:
             self._consumer = MessageConsumer(consumer_id=cons_id, \
             consumer_group=group, message_types=[msg_type], auto_ack=auto_ack, offset=offset)
@@ -125,10 +108,9 @@ class S3CortxMsgBus:
     def create_topic(admin_id: str, message_types: list, partitions: int):
         """create topic."""
         try:
-            if S3CortxMsgBus._message_bus:
-                mbadmin = MessageBusAdmin(admin_id = admin_id)
-                mbadmin.register_message_type(message_types = message_types,
-                                            partitions = partitions)
+            mbadmin = MessageBusAdmin(admin_id = admin_id)
+            mbadmin.register_message_type(message_types = message_types,
+                                        partitions = partitions)
         except:
             raise Exception("Failed to create topic")
 
@@ -136,10 +118,9 @@ class S3CortxMsgBus:
     def add_concurrency(admin_id: str, message_type: str, concurrency_count: int):
         """Increase partition count for given topic."""
         try:
-            if S3CortxMsgBus._message_bus:
-                mbadmin = MessageBusAdmin(admin_id = admin_id)
-                mbadmin.add_concurrency(message_type = message_type,
-                                        concurrency_count = concurrency_count)
+            mbadmin = MessageBusAdmin(admin_id = admin_id)
+            mbadmin.add_concurrency(message_type = message_type,
+                                    concurrency_count = concurrency_count)
         except:
             raise Exception("Failed to increase partition")
 
@@ -147,25 +128,22 @@ class S3CortxMsgBus:
     def delete_topic(admin_id: str, message_types: list):
         """Delete given topic"""
         try:
-            if S3CortxMsgBus._message_bus:
-                mbadmin = MessageBusAdmin(admin_id = admin_id)
-                mbadmin.deregister_message_type(message_types = message_types)
+            mbadmin = MessageBusAdmin(admin_id = admin_id)
+            mbadmin.deregister_message_type(message_types = message_types)
         except:
             raise Exception("Failed to delete topic")
 
     @staticmethod
     def list_topics(admin_id: str):
         """list all available topics"""
-        if S3CortxMsgBus._message_bus:
-            mbadmin = MessageBusAdmin(admin_id = admin_id)
-            return mbadmin.list_message_types()
+        mbadmin = MessageBusAdmin(admin_id = admin_id)
+        return mbadmin.list_message_types()
 
     @staticmethod
     def is_topic_exist(admin_id: str, topic_name: str):
         """retuns true if topic exist else false"""
-        if S3CortxMsgBus._message_bus:
-            mbadmin = MessageBusAdmin(admin_id = admin_id)
-            if topic_name in mbadmin.list_message_types():
-                return True
+        mbadmin = MessageBusAdmin(admin_id = admin_id)
+        if topic_name in mbadmin.list_message_types():
+            return True
             return False
 

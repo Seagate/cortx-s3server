@@ -160,7 +160,6 @@ class ConfigCmd(SetupCmd):
     """create topic for background delete services."""
     try:
       s3MessageBus = S3CortxMsgBus()
-      s3MessageBus.connect()
       if not S3CortxMsgBus.is_topic_exist(admin_id, topic_name):
         S3CortxMsgBus.create_topic(admin_id, [topic_name], partitions)
     except Exception as e:
