@@ -246,6 +246,7 @@ void S3PutChunkUploadObjectAction::validate_tags() {
 
 void S3PutChunkUploadObjectAction::fetch_object_info_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  auto omds = object_metadata->get_state();
   struct m0_uint128 object_list_oid =
       bucket_metadata->get_object_list_index_oid();
   if ((object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) ||
@@ -263,26 +264,10 @@ void S3PutChunkUploadObjectAction::fetch_object_info_failed() {
         S3PutChunkUploadObjectActionState::validationFailed;
     set_s3_error("MetaDataCorruption");
     send_response_to_s3_client();
-  } else {
-    next();
-  }
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3PutChunkUploadObjectAction::fetch_object_info_success() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  if (object_metadata->get_state() == S3ObjectMetadataState::present) {
-    s3_log(S3_LOG_DEBUG, request_id, "S3ObjectMetadataState::present\n");
-    old_object_oid = object_metadata->get_oid();
-    old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
-    old_layout_id = object_metadata->get_layout_id();
-    create_new_oid(old_object_oid);
-    next();
-  } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
+  } else if (omds == S3ObjectMetadataState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "S3ObjectMetadataState::missing\n");
     next();
-  } else if (object_metadata->get_state() ==
-             S3ObjectMetadataState::failed_to_launch) {
+  } else if (omds == S3ObjectMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Object metadata load operation failed due to pre launch failure\n");
     s3_put_chunk_action_state =
@@ -290,7 +275,29 @@ void S3PutChunkUploadObjectAction::fetch_object_info_success() {
     set_s3_error("ServiceUnavailable");
     send_response_to_s3_client();
   } else {
-    s3_log(S3_LOG_DEBUG, request_id, "Failed to look up metadata.\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Failed with metadata state %d",
+           (int)omds);
+    s3_put_chunk_action_state =
+        S3PutChunkUploadObjectActionState::validationFailed;
+    set_s3_error("InternalError");
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutChunkUploadObjectAction::fetch_object_info_success() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  auto omds = object_metadata->get_state();
+  if (omds == S3ObjectMetadataState::present) {
+    s3_log(S3_LOG_DEBUG, request_id, "S3ObjectMetadataState::present\n");
+    old_object_oid = object_metadata->get_oid();
+    old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
+    old_layout_id = object_metadata->get_layout_id();
+    create_new_oid(old_object_oid);
+    next();
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Unexpected Metadata state %d in success handler", (int)omds);
     s3_put_chunk_action_state =
         S3PutChunkUploadObjectActionState::validationFailed;
     set_s3_error("InternalError");
