@@ -165,7 +165,6 @@ class ObjectRecoveryMsgbus(object):
         try:
             if not self.__msgbuslib:
                 self._logger.error("__msgbuslib is not initialized")
-                self.__msgbuslib = None
                 self.__isproducersetupcomplete = False
                 return
 
