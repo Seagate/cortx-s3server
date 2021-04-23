@@ -132,6 +132,8 @@ std::string S3ObjectMetadata::get_owner_name() {
 
 std::string S3ObjectMetadata::get_object_name() { return object_name; }
 
+std::string S3ObjectMetadata::get_bucket_name() { return bucket_name; }
+
 void S3ObjectMetadata::set_object_list_index_oid(struct m0_uint128 id) {
   object_list_index_oid.u_hi = id.u_hi;
   object_list_index_oid.u_lo = id.u_lo;

@@ -192,6 +192,10 @@ void S3PartMetadata::load(std::function<void(void)> on_success,
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+bool S3PartMetadata::validate_on_request() {
+  return request->validate_attrs(bucket_name, object_name);
+}
+
 void S3PartMetadata::load_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Found part metadata\n");
   if (this->from_json(motr_kv_reader->get_value()) != 0) {
@@ -205,7 +209,7 @@ void S3PartMetadata::load_successful() {
 
     state = S3PartMetadataState::invalid;
     load_failed();
-  } else if (!request->validate_attrs(bucket_name, object_name)) {
+  } else if (!validate_on_request()) {
     s3_log(S3_LOG_ERROR, request_id,
            "Metadata read from KVS are different from expected. Index oid = "
            "%" SCNx64 ":%" SCNx64

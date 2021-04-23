@@ -116,7 +116,7 @@ void S3PostMultipartObjectAction::setup_steps() {
   if (!request->get_header_value("x-amz-tagging").empty()) {
 
     ACTION_TASK_ADD(
-      S3PostMultipartObjectAction::validate_x_amz_tagging_if_present, this);
+        S3PostMultipartObjectAction::validate_x_amz_tagging_if_present, this);
   }
   ACTION_TASK_ADD(S3PostMultipartObjectAction::check_upload_is_inprogress,
                   this);
@@ -164,6 +164,7 @@ void S3PostMultipartObjectAction::fetch_bucket_info_failed() {
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
+
 void S3PostMultipartObjectAction::fetch_object_info_success() { next(); }
 
 void S3PostMultipartObjectAction::validate_x_amz_tagging_if_present() {
@@ -259,12 +260,20 @@ void S3PostMultipartObjectAction::check_multipart_object_info_status() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (object_multipart_metadata->get_state() !=
       S3ObjectMetadataState::present) {
-    if (object_multipart_metadata->get_state() ==
-        S3ObjectMetadataState::failed_to_launch) {
+    auto omds = object_multipart_metadata->get_state();
+    if (omds == S3ObjectMetadataState::failed_to_launch) {
       s3_log(
           S3_LOG_ERROR, request_id,
           "Object metadata load operation failed due to pre launch failure\n");
       set_s3_error("ServiceUnavailable");
+      send_response_to_s3_client();
+      s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+      return;
+    } else if (omds == S3ObjectMetadataState::failed ||
+               omds == S3ObjectMetadataState::invalid) {
+      s3_log(S3_LOG_ERROR, request_id, "Object metadata failed state %d",
+             (int)omds);
+      set_s3_error("InternalError");
       send_response_to_s3_client();
       s3_log(S3_LOG_DEBUG, "", "Exiting\n");
       return;
