@@ -156,7 +156,6 @@ class ResetCmd(SetupCmd):
     """purge messages on message bus."""
     try:
       s3MessageBus = S3CortxMsgBus()
-      s3MessageBus.connect()
       s3MessageBus.setup_producer(producer_id, msg_type, delivery_mechanism)
       try:
         s3MessageBus.purge()
