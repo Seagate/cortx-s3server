@@ -54,7 +54,7 @@ checkHostValidity()
         if [ "$isValid" -le 1 ]
         then
             echo "ERROR: $host is either invalid or not reachable."
-            exit
+            exit 1
         else
             echo "INFO: $host is valid and reachable."
         fi
