@@ -234,7 +234,8 @@ void S3PutObjectAction::fetch_object_info_failed() {
   } else {
     // both S3ObjectMetadataState::failed and S3ObjectMetadataState::invalid
     // are mapped to InternalError
-    s3_log(S3_LOG_DEBUG, request_id, "Failed with metadata state %d", omds);
+    s3_log(S3_LOG_DEBUG, request_id, "Failed with metadata state %d",
+           (int)omds);
     s3_put_action_state = S3PutObjectActionState::validationFailed;
     set_s3_error("InternalError");
     send_response_to_s3_client();
