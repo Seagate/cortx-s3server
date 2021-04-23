@@ -113,11 +113,12 @@ void S3ObjectAction::fetch_object_info_success() {
   // If object is extended, create S3ObjectExtendedMetadata and load extended
   // entries.
   if (object_metadata->is_object_extended()) {
-    // Read the extended parts of the object
+    // Read the extended parts of the object from extended index table
     std::shared_ptr<S3ObjectExtendedMetadata> extended_obj_metadata =
         object_metadata_factory->create_object_ext_metadata_obj(
             request, request->get_bucket_name(), request->get_object_name(),
-            object_metadata->get_obj_version_key(), object_list_oid,
+            object_metadata->get_obj_version_key(),
+            bucket_metadata->get_extended_metadata_index_oid(),
             object_metadata->get_number_of_parts(),
             object_metadata->get_number_of_fragments());
     object_metadata->set_extended_object_metadata(extended_obj_metadata);
