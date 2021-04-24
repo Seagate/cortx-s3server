@@ -24,6 +24,8 @@
 #include "s3_delete_multiple_objects_body.h"
 #include "s3_log.h"
 #include "s3_fi_common.h"
+#include "s3_option.h"
+#include "s3_iem.h"
 
 #include <algorithm>
 
@@ -175,7 +177,7 @@ bool S3DeleteMultipleObjectsBody::validate_attrs(const std::string &bckt,
                   S3_IEM_OBJECT_METADATA_NOT_VALID_JSON, bucket.c_str(),
                   bckt.c_str(), "<delete-multiple-objects-list>", key.c_str());
     } else {
-      s3_log(S3_LOG_ERROR, request_id,
+      s3_log(S3_LOG_ERROR, "",
              "Object metadata mismatch: "
              "req_bucket_name=\"%s\" c_bucket_name=\"%s\" "
              "req_object_name=\"%s\" c_object_name=\"%s\"",
