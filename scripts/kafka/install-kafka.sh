@@ -24,7 +24,7 @@ set -e
 
 #Variables
 KAFKA_INSTALL_PATH=/opt
-KAFKA_DOWNLOAD_URL="http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/centos/centos-7.8.2003-2.0.0-latest/commons/kafka/kafka_2.13-2.7.0.tgz"
+KAFKA_DOWNLOAD_URL="http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/custom-deps/foundation/kafka-2.13_2.7.0-el7.x86_64.rpm"
 KAFKA_DIR_NAME="kafka"
 consumer_count=0
 hosts=""
@@ -38,58 +38,47 @@ SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
 # Function to install all pre-requisites
 install_prerequisite() {
   echo "Installing Pre-requisites"
-  yum install java -y
-  yum install java-devel -y
   #install confluent_kafka 1.5.0 version as this is compatible with kafka_2.13-2.7.0
   pip3 install confluent_kafka==1.5.0
   echo "Pre-requisites installed successfully."
 }
 
-# function to download and setup kafka
+#function to setup kafka from rpm location
 setup_kafka() {
-  echo "Installing and Setting up kafka."
-  cd $KAFKA_INSTALL_PATH
-  curl $KAFKA_DOWNLOAD_URL -o $KAFKA_DIR_NAME.tgz
-  if [ -d "$KAFKA_INSTALL_PATH/$KAFKA_DIR_NAME" ]; then
-    echo "kafka directory is already exist"
-  else
-    mkdir -p $KAFKA_DIR_NAME    
-  fi
-  tar -xzf $KAFKA_DIR_NAME.tgz -C $KAFKA_DIR_NAME --strip-components 1
+   echo "Installing and Setting up kafka."
+  #  cd $KAFKA_INSTALL_PATH
+   if rpm -q 'kafka' ; then
+  	echo "Kafka is already installed. Hence, removing it."
+    yum remove kafka -y
+   fi
+   yum install -y $KAFKA_DOWNLOAD_URL
+   echo "Kafka installed successfully."
 }
 
 #function to start services of kafka
 start_services() {
   echo "Starting services..."
   
-  cd $KAFKA_INSTALL_PATH/$KAFKA_DIR_NAME
-  
   #start zookeeper
-  bin/zookeeper-server-start.sh -daemon config/zookeeper.properties
-  sleep 10s
+  systemctl start kafka-zookeeper
   echo "zookeeper server started successfully."
   
   # start kafka server
-  bin/kafka-server-start.sh -daemon config/server.properties
-  sleep 10s
+  systemctl start kafka
   echo "kafka server started successfully."
 }
 
 #function to stop kafka services.
 stop_services() {
   echo "Stopping services..."
-  
-  cd $KAFKA_INSTALL_PATH/$KAFKA_DIR_NAME
-  
-  # stop kafka server
-  bin/kafka-server-stop.sh config/server.properties || true
-  sleep 10s
-  echo "kafka server stopped successfully."
-  
-  #stop zookeeper
-  bin/zookeeper-server-stop.sh config/zookeeper.properties || true
-  sleep 10s
+
+  # stop zookeeper
+  systemctl stop kafka-zookeeper
   echo "zookeeper server stopped successfully."
+  
+  #stop kafka server
+  systemctl stop kafka
+  echo "kafka server stopped successfully."
 }
 
 # function to Add/Edit zookeeper properties 
@@ -156,10 +145,11 @@ configure_server() {
 
 # function to validate kafka is installed or not
 is_kafka_installed() {
-  if [ -d "$KAFKA_INSTALL_PATH/$KAFKA_DIR_NAME" ]; then
-    echo "Kafka is already installed"
-	#stop services before overwriting kafka files
-	stop_services
+  if rpm -q 'kafka' ; then
+    echo "Kafka is already installed. Hence removing kafka...."
+    yum remove kafka -y
+	  #stop services before overwriting kafka files
+	  stop_services
   fi
 }
 
@@ -167,7 +157,7 @@ is_kafka_installed() {
 create_myid_file() {
   echo "Creating myid file"
   if [ -d "${KAFKA_INSTALL_PATH}/${KAFKA_DIR_NAME}/${ZOOKEEPER_DIR_NAME}" ]; then
-   echo "zookeeper directory is already exist"
+   echo "zookeeper directory already exists"
   else
    mkdir -p $KAFKA_INSTALL_PATH/$KAFKA_DIR_NAME/$ZOOKEEPER_DIR_NAME    
   fi
@@ -191,7 +181,7 @@ done
 setup_message_bus_config() {
   echo "Setup messagebus config file"
   if [ -d "$MESSAGEBUS_CONFIG_PATH" ]; then
-   echo "/etc/cortx directory is already exist"
+   echo "/etc/cortx directory already exists"
   else
    mkdir -p $MESSAGEBUS_CONFIG_PATH   
    echo "/etc/cortx directory created successfully"   
