@@ -46,7 +46,7 @@ extern "C" int consume_header(evhtp_kv_t* kvobj, void* arg) {
   if (kvobj->key != NULL) {
     request->header_size += strlen(kvobj->key);
     if (strncasecmp(kvobj->key, "x-amz-meta-", strlen("x-amz-meta-")) == 0) {
-      // subtracting the lenght of key 'x-amz-meta-' from the metadata size
+      // subtracting the length of key 'x-amz-meta-' from the metadata size
       // as this is added by S3server as an identifier for metadata
       request->user_metadata_size +=
           (strlen(kvobj->key) - strlen("x-amz-meta-"));
