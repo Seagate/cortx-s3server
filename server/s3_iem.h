@@ -145,8 +145,8 @@ extern S3Option* g_option_instance;
 
 #define S3_IEM_CHECKSUM_MISMATCH "0030060004"
 #define S3_IEM_CHECKSUM_MISMATCH_STR                                \
-  "Data integrity failure (content checksum mismatch). Cluster is " \
-  "transitioning to safe mode. Contact Seagate Support."
+  "Data integrity validation failure (content checksum mismatch). " \
+  "Cluster is transitioning to safe mode. Contact Seagate Support."
 #define S3_IEM_CHECKSUM_MISMATCH_JSON                                 \
   ", \"bucket_name\": \"%s\", \"object_name\": \"%s\", \"motr_oid\":" \
   " \"%" SCNx64 ":%" SCNx64                                           \
@@ -154,8 +154,8 @@ extern S3Option* g_option_instance;
 
 #define S3_IEM_OBJECT_METADATA_NOT_VALID "0030060005"
 #define S3_IEM_OBJECT_METADATA_NOT_VALID_STR                         \
-  "Metadata integrity failure (bucket/object mismatch). Cluster is " \
-  "transitioning to safe mode. Contact Seagate Support."
+  "Metadata integrity validation failure (bucket/object mismatch). " \
+  "Cluster is transitioning to safe mode. Contact Seagate Support."
 #define S3_IEM_OBJECT_METADATA_NOT_VALID_JSON                             \
   ", \"bucket_name_requested\": \"%s\", \"bucket_name_received\": \"%s\"" \
   ", \"object_name_requested\": \"%s\", \"object_name_received\": \"%s\""
