@@ -812,6 +812,25 @@ void RequestObject::send_reply_body(const char* data, int length) {
   }
 }
 
+void RequestObject::send_reply_body(struct evbuffer* p_reply_buffer) {
+  if (p_reply_buffer == nullptr) {
+    return;
+  }
+  if (client_connected()) {
+    evhtp_obj->http_send_reply_body(ev_req, p_reply_buffer);
+  } else {
+    request_timer.stop();
+    LOG_PERF("total_request_time_ms", request_id.c_str(),
+             request_timer.elapsed_time_in_millisec());
+    s3_stats_timing("total_request_time",
+                    request_timer.elapsed_time_in_millisec());
+  }
+  // In case of http_send_reply_body, internal references are moved, so we can
+  // free wrapper struct, data still lives till written to socket.
+  // In case client is disconnected, else part this will free buffers as well.
+  evbuffer_free(p_reply_buffer);
+}
+
 void RequestObject::send_reply_end() {
   if (client_connected()) {
     evhtp_obj->http_send_reply_end(ev_req);

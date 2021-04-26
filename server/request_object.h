@@ -353,6 +353,7 @@ class RequestObject {
   virtual void send_response(int code, std::string body = "");
   virtual void send_reply_start(int code);
   virtual void send_reply_body(const char* data, int length);
+  virtual void send_reply_body(struct evbuffer*);
   virtual void send_reply_end();
   virtual void close_connection();
 

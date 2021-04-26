@@ -44,6 +44,7 @@ class S3GetObjectAction : public S3ObjectAction {
   size_t first_byte_offset_to_read;
   size_t last_byte_offset_to_read;
   size_t total_blocks_to_read;
+  size_t blocks_to_read;
 
   bool read_object_reply_started;
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;

@@ -56,6 +56,8 @@ S3MotrReader::S3MotrReader(std::shared_ptr<RequestObject> req,
 
   oid = id;
   layout_id = layoutid;
+  motr_unit_size =
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
 }
 
 S3MotrReader::~S3MotrReader() { clean_up_contexts(); }
@@ -242,7 +244,8 @@ bool S3MotrReader::read_object() {
       std::bind(&S3MotrReader::read_object_failed, this), layout_id));
 
   /* Read the requisite number of blocks from the entity */
-  if (!reader_context->init_read_op_ctx(num_of_blocks_to_read, &last_index)) {
+  if (!reader_context->init_read_op_ctx(request_id, num_of_blocks_to_read,
+                                        motr_unit_size, &last_index)) {
     // out-of-memory
     state = S3MotrReaderOpState::ooo;
     s3_log(S3_LOG_ERROR, request_id,
