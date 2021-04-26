@@ -56,7 +56,7 @@ failure.
 
 Current version of alert text:
 
-> Data integrity failure (content checksum mismatch).
+> Data integrity validation failure (content checksum mismatch).
 > Cluster is transitioning to safe mode. Contact Seagate Support.
 
 Alert also includes JSON with details on the failure -- bucket/object name,
@@ -66,7 +66,7 @@ saved/calculated checksum, and OID of the object.
 
 Current version of alert text:
 
-> Metadata integrity failure (bucket/object mismatch).
+> Metadata integrity validation failure (bucket/object mismatch).
 > Cluster is transitioning to safe mode. Contact Seagate Support.
 
 Alert also includes JSON with details on the failure -- bucket, object names
