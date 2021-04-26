@@ -33,6 +33,7 @@
 #include "s3_stats.h"
 #include "s3_addb.h"
 #include "base64.h"
+#include "s3_action_base.h"
 
 extern S3Option* g_option_instance;
 
@@ -49,7 +50,8 @@ extern "C" int consume_header(evhtp_kv_t* kvobj, void* arg) {
       // subtracting the length of key 'x-amz-meta-' from the metadata size
       // as this is added by S3server as an identifier for metadata
       request->user_metadata_size +=
-          (strlen(kvobj->key) - strlen("x-amz-meta-"));
+          (strnlen(kvobj->key, MAX_OBJECT_KEY_LENGTH) -
+           strnlen("x-amz-meta-", MAX_OBJECT_KEY_LENGTH));
     }
   }
   if (kvobj->val != NULL) {
