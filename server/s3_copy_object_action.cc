@@ -425,7 +425,7 @@ std::string S3CopyObjectAction::get_response_xml() {
       "LastModified", new_object_metadata->get_last_modified_iso());
   // ETag for the destination object would be same as Etag for Source Object
   response_xml += S3CommonUtilities::format_xml_string(
-      "ETag", new_object_metadata->get_md5());
+      "ETag", new_object_metadata->get_md5(), true);
   response_xml += "\n</CopyObjectResult>";
   return response_xml;
 }
