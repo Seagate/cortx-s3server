@@ -407,6 +407,13 @@ void S3MotrKVSReader::next_keyval_successful() {
 
   std::string key;
   std::string val;
+  if (reader_context->get_errno_for(0) == -E2BIG) {
+    s3_log(S3_LOG_WARN, request_id,
+           "Motr failed to retrieve metadata as RPC threshold exceeded\n");
+    next_keyval_failed();
+    return;
+  }
+
   for (size_t i = 0; i < kvs_ctx->keys->ov_vec.v_nr; i++) {
     if (kvs_ctx->keys->ov_buf[i] == NULL) {
       break;
