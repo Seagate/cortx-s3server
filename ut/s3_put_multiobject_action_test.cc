@@ -342,11 +342,10 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
                action_under_test->get_s3_error_code().c_str());
 }
 
-TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
-       ValidateMetadataLengthBeyond8KNegativeCase) {
-  EXPECT_CALL(*ptr_mock_request, get_header_size()).WillOnce(Return(8193));
+TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ValidateMetadataLength8K) {
+  EXPECT_CALL(*ptr_mock_request, get_header_size()).WillOnce(Return(8192));
   action_under_test->check_part_details();
-  EXPECT_STREQ("MetadataTooLarge",
+  EXPECT_STRNE("MetadataTooLarge",
                action_under_test->get_s3_error_code().c_str());
 }
 
@@ -359,12 +358,11 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
                action_under_test->get_s3_error_code().c_str());
 }
 
-TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
-       ValidateUserMetadataLengthBeyond2KNegativeCase) {
+TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ValidateUserMetadataLength2K) {
   EXPECT_CALL(*ptr_mock_request, get_user_metadata_size())
-      .WillOnce(Return(2049));
+      .WillOnce(Return(2048));
   action_under_test->check_part_details();
-  EXPECT_STREQ("MetadataTooLarge",
+  EXPECT_STRNE("MetadataTooLarge",
                action_under_test->get_s3_error_code().c_str());
 }
 
