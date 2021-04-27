@@ -30,13 +30,13 @@
 #include <algorithm>
 
 S3DeleteMultipleObjectsBody::S3DeleteMultipleObjectsBody()
-    : is_valid(false), quiet(false), bucket("") {
+    : is_valid(false), quiet(false), request() {
   s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);
 }
 
-void S3DeleteMultipleObjectsBody::initialize(const std::string &bckt,
-                                             std::string &xml) {
-  bucket = bckt;
+void S3DeleteMultipleObjectsBody::initialize(
+    std::shared_ptr<S3RequestObject> req, std::string &xml) {
+  request = req;
   xml_content = xml;
   parse_and_validate();
 }
@@ -164,7 +164,8 @@ bool S3DeleteMultipleObjectsBody::parse_and_validate() {
 bool S3DeleteMultipleObjectsBody::validate_attrs(const std::string &bckt,
                                                  const std::string &key) {
   bool fi_en = s3_di_fi_is_enabled("di_metadata_bucket_or_object_corrupted");
-  bool is_bckt = (bckt == bucket);
+  std::string body_bucket = request ? request->get_bucket_name() : "";
+  bool is_bckt = (bckt == body_bucket);
   bool is_key = (std::find(std::begin(object_keys), std::end(object_keys),
                            key) != std::end(object_keys));
   bool ret = !fi_en || (is_bckt && is_key);
@@ -172,17 +173,19 @@ bool S3DeleteMultipleObjectsBody::validate_attrs(const std::string &bckt,
   if (!ret) {
     if (!S3Option::get_instance()
              ->get_s3_di_disable_metadata_corruption_iem()) {
+      std::string body_accname = request ? request->get_account_name() : "";
       s3_iem_full(LOG_ERR, S3_IEM_OBJECT_METADATA_NOT_VALID,
                   S3_IEM_OBJECT_METADATA_NOT_VALID_STR,
-                  S3_IEM_OBJECT_METADATA_NOT_VALID_JSON, bucket.c_str(),
-                  bckt.c_str(), "<delete-multiple-objects-list>", key.c_str());
+                  S3_IEM_OBJECT_METADATA_NOT_VALID_JSON, body_bucket.c_str(),
+                  bckt.c_str(), "<delete-multiple-objects-list>", key.c_str(),
+                  body_accname.c_str());
     } else {
       s3_log(S3_LOG_ERROR, "",
              "Object metadata mismatch: "
              "req_bucket_name=\"%s\" c_bucket_name=\"%s\" "
              "req_object_name=\"%s\" c_object_name=\"%s\"",
-             bucket.c_str(), bckt.c_str(), "<delete-multiple-objects-list>",
-             key.c_str());
+             body_bucket.c_str(), bckt.c_str(),
+             "<delete-multiple-objects-list>", key.c_str());
     }
   }
   return ret;

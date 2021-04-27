@@ -136,7 +136,7 @@ void S3DeleteMultipleObjectsAction::validate_request_body(std::string content) {
     set_s3_error("BadDigest");
     send_response_to_s3_client();
   } else {
-    delete_request.initialize(request->get_bucket_name(), content);
+    delete_request.initialize(request, content);
     if (delete_request.isOK()) {
       // AWS allows to delete maximum 1000 objects in one call
       if (delete_request.get_count() > MAX_OBJS_ALLOWED_TO_DELETE) {
