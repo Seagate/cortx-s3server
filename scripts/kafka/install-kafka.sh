@@ -51,7 +51,7 @@ setup_kafka() {
   	echo "Kafka is already installed. Hence, removing it."
     yum remove kafka -y
    fi
-   yum install -y $KAFKA_DOWNLOAD_URL
+   yum install $KAFKA_DOWNLOAD_URL -y 
    echo "Kafka installed successfully."
 }
 
@@ -59,26 +59,41 @@ setup_kafka() {
 start_services() {
   echo "Starting services..."
   
+  echo "Reloading systemd units."
+  systemctl daemon-reload
   #start zookeeper
   systemctl start kafka-zookeeper
-  echo "zookeeper server started successfully."
+  systemctl status kafka-zookeeper | grep "active (running)" > /tmp/zookeeper
+  if [[ -s /tmp/zookeeper ]]; then
+    echo "zookeeper server started successfully."
+  else
+    echo "There is a problem in starting zookeeper server."
+  fi
   
   # start kafka server
   systemctl start kafka
-  echo "kafka server started successfully."
+  systemctl status kafka | grep "active (running)" > /tmp/kafka
+  if [[ -s /tmp/kafka ]]; then
+    echo "kafka server started successfully."
+  else
+    echo "There is a problem in starting kafka server."
+  fi
 }
 
 #function to stop kafka services.
 stop_services() {
   echo "Stopping services..."
 
-  # stop zookeeper
-  systemctl stop kafka-zookeeper
-  echo "zookeeper server stopped successfully."
-  
+  # echo "Reloading systemd units."
+  # systemctl daemon-reload
+   
   #stop kafka server
   systemctl stop kafka
   echo "kafka server stopped successfully."
+
+  #stop zookeeper
+  systemctl stop kafka-zookeeper
+  echo "zookeeper server stopped successfully."
 }
 
 # function to Add/Edit zookeeper properties 
@@ -146,10 +161,11 @@ configure_server() {
 # function to validate kafka is installed or not
 is_kafka_installed() {
   if rpm -q 'kafka' ; then
-    echo "Kafka is already installed. Hence removing kafka...."
-    yum remove kafka -y
-	  #stop services before overwriting kafka files
+  echo "Kafka is already installed. Hence stopping services and removing kafka...."
+    #stop services before overwriting kafka files
 	  stop_services
+    yum remove kafka -y
+	  
   fi
 }
 

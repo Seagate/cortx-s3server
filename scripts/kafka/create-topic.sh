@@ -36,7 +36,7 @@ create_topic() {
   echo "Creating topic..."
 
   cd $KAFKA_INSTALL_PATH/$KAFKA_DIR_NAME
-
+  
   bin/kafka-topics.sh --list --bootstrap-server $HOSTNAME:9092 | grep "${BGDELETE_TOPIC_NAME}" &> /dev/null
   if [ $? -eq 1 ]; then
     echo "Topic 'bgdelete' does not exist."
