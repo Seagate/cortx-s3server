@@ -49,9 +49,8 @@ sh create-topic.sh -c 3 -i ssc-vm-1271.colo.seagate.com,ssc-vm-1272.colo.seagate
 Troubleshooting:
 
 1. To stop kafka services run the following commands
-cd /opt/kafka
-bin/kafka-server-stop.sh config/server.properties
-bin/zookeeper-server-stop.sh config/zookeeper.properties
+systemctl stop kafka
+systemctl stop kafka-zookeeper
 
 2. To kill all kafka processes run the following commands
 ps -ef | grep kafka
@@ -65,10 +64,8 @@ kill -9 <process id>
  kill -9 <process id>
 
 4. Start kafka server manually
-cd /opt/kafka
-bin/zookeeper-server-start.sh -daemon config/zookeeper.properties
-note: wait for 10-15 seconds then run below command
-bin/kafka-server-start.sh -daemon config/server.properties
+systemctl start kafka-zookeeper
+systemctl start kafka
 
 5. List topics
 cd /opt/kafka
