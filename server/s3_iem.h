@@ -150,7 +150,8 @@ extern S3Option* g_option_instance;
 #define S3_IEM_CHECKSUM_MISMATCH_JSON                                 \
   ", \"bucket_name\": \"%s\", \"object_name\": \"%s\", \"motr_oid\":" \
   " \"%" SCNx64 ":%" SCNx64                                           \
-  "\", \"md5_calculated\": \"%s\", \"md5_from_metadata\": \"%s\" "
+  "\", \"md5_calculated\": \"%s\", \"md5_from_metadata\": \"%s\" "    \
+  ", \"account_name\": \"%s\""
 
 #define S3_IEM_OBJECT_METADATA_NOT_VALID "0030060005"
 #define S3_IEM_OBJECT_METADATA_NOT_VALID_STR                         \
@@ -158,6 +159,7 @@ extern S3Option* g_option_instance;
   "Cluster is transitioning to safe mode. Contact Seagate Support."
 #define S3_IEM_OBJECT_METADATA_NOT_VALID_JSON                             \
   ", \"bucket_name_requested\": \"%s\", \"bucket_name_received\": \"%s\"" \
-  ", \"object_name_requested\": \"%s\", \"object_name_received\": \"%s\""
+  ", \"object_name_requested\": \"%s\", \"object_name_received\": \"%s\"" \
+  ", \"account_name\": \"%s\""
 
 #endif  // __S3_SERVER_IEM_H__

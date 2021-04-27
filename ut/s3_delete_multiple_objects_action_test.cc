@@ -416,7 +416,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
               put_keyval(_, _, _, _)).Times(1);
 
   std::string sdrf = "<Delete><Object><Key>objname</Key></Object></Delete>";
-  action_under_test->delete_request.initialize(bucket_name, sdrf);
+  action_under_test->delete_request.initialize(mock_request, sdrf);
 
   action_under_test->fetch_objects_info_successful();
 
@@ -473,7 +473,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest, FetchObjectsInfoSuccessful) {
               put_keyval(_, _, _, _)).Times(1);
 
   std::string sdrf = "<Delete><Object><Key>objname</Key></Object></Delete>";
-  action_under_test->delete_request.initialize(bucket_name, sdrf);
+  action_under_test->delete_request.initialize(mock_request, sdrf);
 
   action_under_test->fetch_objects_info_successful();
 
