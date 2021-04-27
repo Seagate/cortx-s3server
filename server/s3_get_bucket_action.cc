@@ -169,6 +169,8 @@ void S3GetBucketAction::get_next_objects() {
   } else {
     max_record_count = S3Option::get_instance()->get_motr_idx_fetch_count();
   }
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "max_record_count set to %zu\n",
+         max_record_count);
 
   if (max_keys == 0) {
     // as requested max_keys is 0
@@ -563,8 +565,7 @@ void S3GetBucketAction::get_next_objects_failed() {
   } else if (motr_kv_reader->get_state() ==
              S3MotrKVSReaderOpState::failed_e2big) {
     s3_log(S3_LOG_ERROR, request_id,
-           "Next keyval operation failed due rpc message size threshold, will "
-           "retry\n");
+           "Next keyval operation failed due rpc message size threshold\n");
     if (max_record_count <= 1) {
       set_s3_error("InternalError");
       fetch_successful = false;
@@ -573,7 +574,11 @@ void S3GetBucketAction::get_next_objects_failed() {
              "even with max record retrieval as one\n");
     } else {
       retry_count++;
+      s3_log(S3_LOG_INFO, request_id, "Retry next key val, retry count = %d\n",
+             retry_count);
       get_next_objects();
+      s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+      return;
     }
   } else {
     s3_log(S3_LOG_DEBUG, request_id, "Failed to find Object listing\n");

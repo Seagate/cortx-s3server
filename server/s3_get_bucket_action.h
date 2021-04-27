@@ -37,7 +37,7 @@ class S3GetBucketAction : public S3BucketAction {
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
   std::shared_ptr<MotrAPI> s3_motr_api;
   size_t max_record_count;
-  short retry_count;
+  short retry_count = 0;
   bool b_first_next_keyval_call;
   bool b_state_start_check_any_more_keys;
   std::string saved_last_key;
