@@ -42,7 +42,7 @@ extern S3Option* g_option_instance;
       s3_syslog(LOG_ERR, "IEC:ES" event_code ":" event_desc);                 \
     }                                                                         \
     std::string timestamp = s3_get_timestamp();                               \
-    s3_log(S3_ ## s3_loglevel, "",                                            \
+    s3_log(S3_##s3_loglevel, "",                                              \
            "IEC: " event_code ": " event_desc                                 \
            ": { \"time\": \"%s\", \"node\": \"%s\", \"pid\": "                \
            "%d, \"file\": \"%s\", \"line\": %d" json_fmt " }",                \

@@ -51,15 +51,46 @@ inline const char* s3_log_get_req_id(const std::string& requestid) {
   return requestid.empty() ? S3_DEFAULT_REQID : requestid.c_str();
 }
 
-template<int VERBOSITY> struct s3_logger_get {};
-template<> struct s3_logger_get<S3_LOG_DEBUG> { template<typename T> static inline void log(T const& p) { LOG(INFO)    << (p); } };
-template<> struct s3_logger_get<S3_LOG_INFO>  { template<typename T> static inline void log(T const& p) { LOG(INFO)    << (p); } };
-template<> struct s3_logger_get<S3_LOG_WARN>  { template<typename T> static inline void log(T const& p) { LOG(WARNING) << (p); } };
-template<> struct s3_logger_get<S3_LOG_ERROR> { template<typename T> static inline void log(T const& p) { LOG(ERROR)   << (p); } };
-template<> struct s3_logger_get<S3_LOG_FATAL> { template<typename T> static inline void log(T const& p) { LOG(ERROR)   << (p); } };
+template <int VERBOSITY>
+struct s3_logger_get {};
+template <>
+struct s3_logger_get<S3_LOG_DEBUG> {
+  template <typename T>
+  static inline void log(T const& p) {
+    LOG(INFO) << (p);
+  }
+};
+template <>
+struct s3_logger_get<S3_LOG_INFO> {
+  template <typename T>
+  static inline void log(T const& p) {
+    LOG(INFO) << (p);
+  }
+};
+template <>
+struct s3_logger_get<S3_LOG_WARN> {
+  template <typename T>
+  static inline void log(T const& p) {
+    LOG(WARNING) << (p);
+  }
+};
+template <>
+struct s3_logger_get<S3_LOG_ERROR> {
+  template <typename T>
+  static inline void log(T const& p) {
+    LOG(ERROR) << (p);
+  }
+};
+template <>
+struct s3_logger_get<S3_LOG_FATAL> {
+  template <typename T>
+  static inline void log(T const& p) {
+    LOG(ERROR) << (p);
+  }
+};
 
-char   *__log_buff();
-size_t  __log_buff_sz();
+char* __log_buff();
+size_t __log_buff_sz();
 
 // Note:
 // 1. Google glog doesn't have a separate severity level for DEBUG logs.
@@ -67,17 +98,16 @@ size_t  __log_buff_sz();
 //    only if S3 log level is set to DEBUG.
 // 2. Logging a FATAL message terminates the program (after the message is
 //    logged).so demote it to ERROR
-#define s3_log(loglevel, requestid, fmt, ...)                    \
-  do {                                                           \
-    if (loglevel >= s3log_level) {                               \
-      snprintf(__log_buff(), __log_buff_sz(),			 \
-	       "[%s] [ReqID: %s] " fmt "\n", __func__,		 \
-	       s3_log_get_req_id(requestid), ##__VA_ARGS__);     \
-      s3_logger_get<loglevel>::log(__log_buff());                \
-    }                                                            \
-    if (loglevel >= S3_LOG_FATAL) {                              \
-      s3_fatal_handler(1);                                       \
-    }                                                            \
+#define s3_log(loglevel, requestid, fmt, ...)                               \
+  do {                                                                      \
+    if (loglevel >= s3log_level) {                                          \
+      snprintf(__log_buff(), __log_buff_sz(), "[%s] [ReqID: %s] " fmt "\n", \
+               __func__, s3_log_get_req_id(requestid), ##__VA_ARGS__);      \
+      s3_logger_get<loglevel>::log(__log_buff());                           \
+    }                                                                       \
+    if (loglevel >= S3_LOG_FATAL) {                                         \
+      s3_fatal_handler(1);                                                  \
+    }                                                                       \
   } while (0)
 
 // Note:
