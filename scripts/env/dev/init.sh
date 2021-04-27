@@ -92,6 +92,9 @@ install_pre_requisites() {
   # install kafka server
   sh ${S3_SRC_DIR}/scripts/kafka/install-kafka.sh -c 1 -i $HOSTNAME
   
+  #sleep for 5 secs to make sure all the services are up and running.
+  sleep 5
+
   #create topic
   sh ${S3_SRC_DIR}/scripts/kafka/create-topic.sh -c 1 -i $HOSTNAME
 
