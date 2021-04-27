@@ -43,7 +43,7 @@ install_prerequisite() {
   echo "Pre-requisites installed successfully."
 }
 
-#function to setup kafka from rpm location
+#function to install kafka from rpm location
 setup_kafka() {
    echo "Installing kafka."
    yum install $KAFKA_DOWNLOAD_URL -y 
@@ -154,11 +154,10 @@ configure_server() {
 # function to validate kafka is installed or not
 is_kafka_installed() {
   if rpm -q 'kafka' ; then
-  echo "Kafka is already installed. Hence stopping services and removing kafka...."
+    echo "Kafka is already installed. Hence stopping services and removing kafka...."
     #stop services before overwriting kafka files
-	  stop_services
+    stop_services
     yum remove kafka -y
-	  
   fi
 }
 
