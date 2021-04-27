@@ -204,6 +204,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             throws Exception {
         Mockito.when(accountDAO.find("s3test")).thenThrow(
                 new DataAccessException("failed to search account.\n"));
+        Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
             "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
@@ -227,7 +228,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         account.setName("s3test");
 
         Mockito.when(accountDAO.find("s3test")).thenReturn(account);
-
+        Mockito.doReturn(new Account[1]).when(accountDAO).findAll();
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
             "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
@@ -251,6 +252,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
       Mockito.when(accountDAO.find("s3test")).thenReturn(account);
       Mockito.doReturn(account).when(accountDAO).findByCanonicalID("can1234");
+      Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
 
       final String expectedResponseBody =
           "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
@@ -273,6 +275,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         account.setName("s3test");
 
         Mockito.doReturn(account).when(accountDAO).find("s3test");
+        Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
         Mockito.doThrow(new DataAccessException("failed to add new account.\n"))
             .when(accountDAO)
             .save(account);
@@ -301,6 +304,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         account.setName("s3test");
 
         Mockito.doReturn(account).when(accountDAO).find("s3test");
+        Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
         Mockito.doNothing().when(accountDAO).save(any(Account.class));
         Mockito.doThrow(new DataAccessException("failed to save new user.\n"))
                 .when(userDAO).save(any(User.class));
@@ -328,6 +332,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         Account account = new Account();
         account.setName("s3test");
 
+        Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
         Mockito.doReturn(account).when(accountDAO).find("s3test");
         Mockito.doNothing().when(accountDAO).save(any(Account.class));
         Mockito.doNothing().when(userDAO).save(any(User.class));
@@ -366,7 +371,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         PowerMockito.doReturn("htuspscae/123")
             .when(KeyGenUtil.class, "generateSecretKey");
 
-        Mockito.doReturn(0).when(accountDAO).getTotalCountOfAccounts();
+        Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
         Mockito.doReturn(account).when(accountDAO).find("s3test");
         Mockito.doNothing().when(accountDAO).save(any(Account.class));
         Mockito.doNothing().when(userDAO).save(any(User.class));

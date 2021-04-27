@@ -108,7 +108,7 @@ public class AccountController extends AbstractController {
         int maxAllowedLdapResults = maxAccountLimit + internalAccountCount;
 
         try {
-          accountCount = accountDao.getTotalCountOfAccounts();
+          accountCount = getTotalCountOfAccounts();
 
           if (accountCount >= maxAllowedLdapResults) {
             LOGGER.error("Maximum allowed Account limit has exceeded (i.e." +
@@ -197,7 +197,7 @@ public class AccountController extends AbstractController {
         // if account limit creation exceeded due to multiple thread/multiple
         // node create() API calls.
         try {
-          accountCount = accountDao.getTotalCountOfAccounts();
+          accountCount = getTotalCountOfAccounts();
         }
         catch (DataAccessException ex) {
           LOGGER.error("failed to get total count of accounts from ldap :" +
@@ -223,9 +223,21 @@ public class AccountController extends AbstractController {
     }
 
     /**
-     * Generate canonical id and check if its unique in ldap
+     * Fetch total account count present in ldap
+     * @return count of accounts
      * @throws DataAccessException
      */
+   private
+    int getTotalCountOfAccounts() throws DataAccessException {
+      Account[] accounts;
+      accounts = accountDao.findAll();
+      return accounts.length;
+    }
+
+    /**
+ * Generate canonical id and check if its unique in ldap
+ * @throws DataAccessException
+ */
    private
     String generateUniqueCanonicalId() throws DataAccessException {
       Account account;
