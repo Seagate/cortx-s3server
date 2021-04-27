@@ -45,12 +45,7 @@ install_prerequisite() {
 
 #function to setup kafka from rpm location
 setup_kafka() {
-   echo "Installing and Setting up kafka."
-  #  cd $KAFKA_INSTALL_PATH
-   if rpm -q 'kafka' ; then
-  	echo "Kafka is already installed. Hence, removing it."
-    yum remove kafka -y
-   fi
+   echo "Installing kafka."
    yum install $KAFKA_DOWNLOAD_URL -y 
    echo "Kafka installed successfully."
 }
@@ -58,9 +53,10 @@ setup_kafka() {
 #function to start services of kafka
 start_services() {
   echo "Starting services..."
-  
+
   echo "Reloading systemd units."
   systemctl daemon-reload
+
   #start zookeeper
   systemctl start kafka-zookeeper
   systemctl status kafka-zookeeper | grep "active (running)" > /tmp/zookeeper
@@ -69,7 +65,7 @@ start_services() {
   else
     echo "There is a problem in starting zookeeper server."
   fi
-  
+
   # start kafka server
   systemctl start kafka
   systemctl status kafka | grep "active (running)" > /tmp/kafka
@@ -84,9 +80,6 @@ start_services() {
 stop_services() {
   echo "Stopping services..."
 
-  # echo "Reloading systemd units."
-  # systemctl daemon-reload
-   
   #stop kafka server
   systemctl stop kafka
   echo "kafka server stopped successfully."
