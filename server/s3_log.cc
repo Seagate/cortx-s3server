@@ -21,11 +21,9 @@
 #include "s3_log.h"
 #include "s3_option.h"
 
-enum {
-  KB = 1 << 10,
-};
+#define ONE_KB (1 << 10)
 
-static thread_local char log_buffer[10 * KB];
+static thread_local char log_buffer[10 * ONE_KB];
 char *__log_buff() { return log_buffer; }
 size_t __log_buff_sz() { return sizeof(log_buffer); }
 
