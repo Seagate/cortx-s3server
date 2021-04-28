@@ -311,7 +311,7 @@ void S3PutChunkUploadObjectAction::validate_put_chunk_request() {
              request->get_user_metadata_size() > MAX_USER_METADATA_SIZE) {
     s3_put_chunk_action_state =
         S3PutChunkUploadObjectActionState::validationFailed;
-    set_s3_error("BadRequest");
+    set_s3_error("MetadataTooLarge");
     send_response_to_s3_client();
   } else {
     next();

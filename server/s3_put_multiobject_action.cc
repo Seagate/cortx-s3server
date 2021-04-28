@@ -129,7 +129,7 @@ void S3PutMultiObjectAction::check_part_details() {
     send_response_to_s3_client();
   } else if (request->get_header_size() > MAX_HEADER_SIZE ||
              request->get_user_metadata_size() > MAX_USER_METADATA_SIZE) {
-    set_s3_error("BadRequest");
+    set_s3_error("MetadataTooLarge");
     send_response_to_s3_client();
   } else if ((request->get_object_name()).length() > MAX_OBJECT_KEY_LENGTH) {
     set_s3_error("KeyTooLongError");

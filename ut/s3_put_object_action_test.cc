@@ -210,7 +210,8 @@ TEST_F(S3PutObjectActionTest, ValidateMetadataLengthNegativeCase) {
       ReturnRef(object_name));
   EXPECT_CALL(*ptr_mock_request, get_header_size()).WillOnce(Return(9000));
   action_under_test->validate_put_request();
-  EXPECT_STREQ("BadRequest", action_under_test->get_s3_error_code().c_str());
+  EXPECT_STREQ("MetadataTooLarge",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3PutObjectActionTest, ValidateUserMetadataLengthNegativeCase) {
@@ -219,7 +220,8 @@ TEST_F(S3PutObjectActionTest, ValidateUserMetadataLengthNegativeCase) {
   EXPECT_CALL(*ptr_mock_request, get_user_metadata_size())
       .WillOnce(Return(3000));
   action_under_test->validate_put_request();
-  EXPECT_STREQ("BadRequest", action_under_test->get_s3_error_code().c_str());
+  EXPECT_STREQ("MetadataTooLarge",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3PutObjectActionTest, ValidateRequestTags) {
