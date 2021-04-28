@@ -145,5 +145,5 @@ class S3CortxMsgBus:
         mbadmin = MessageBusAdmin(admin_id = admin_id)
         if topic_name in mbadmin.list_message_types():
             return True
-            return False
+        return False
 

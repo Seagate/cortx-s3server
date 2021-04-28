@@ -161,7 +161,12 @@ class ConfigCmd(SetupCmd):
     try:
       s3MessageBus = S3CortxMsgBus()
       if not S3CortxMsgBus.is_topic_exist(admin_id, topic_name):
-        S3CortxMsgBus.create_topic(admin_id, [topic_name], partitions)
+        try:
+          S3CortxMsgBus.create_topic(admin_id, [topic_name], partitions)
+        except Exception as e:
+          errstr = str(e)
+          if "ALREADY_EXISTS" not in errstr:
+            raise(e)
     except Exception as e:
       raise e
 
