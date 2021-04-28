@@ -22,16 +22,16 @@
 # Sets up the S3 development environment.
 # Prerequisites: common_build_env.yml and jenkins_yum_repos.yml
 
-- name: install pip module python-ldap for cipher account
-  pip:
-    name: python-ldap
-    executable: pip3
+#- name: install pip module python-ldap for cipher account
+#  pip:
+#    name: python-ldap
+#    executable: pip3
 
-- name: Install patched s3cmd deps on CentOS/RHEL 7
-  when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
-  yum:
-    name: python-magic
-    state: present
+#- name: Install patched s3cmd deps on CentOS/RHEL 7
+#  when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
+#  yum:
+#    name: python-magic
+#    state: present
 
 - name: Install patched s3cmd deps on CentOS/RHEL 8
   when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '8')

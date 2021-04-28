@@ -35,6 +35,7 @@ os_minor_version=""
 os_build_num=""
 ansible_automation=0
 is_open_source=false
+re_prerequisite_script_path="http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/rpm/install-cortx-prereq.sh"
 
 unsupported_os() {
   echo "S3 currently supports only CentOS 7.7.1908, CentOS 7.8.2003 or RHEL 7.7" 1>&2;
@@ -89,11 +90,13 @@ install_cortx_py_utils() {
 # function to install all prerequisite for dev vm 
 install_pre_requisites() {
 
+  curl -s "$re_prerequisite_script_path" | bash
+
   # install kafka server
   sh ${S3_SRC_DIR}/scripts/kafka/install-kafka.sh -c 1 -i $HOSTNAME
   
-  #sleep for 5 secs to make sure all the services are up and running.
-  sleep 5
+  #sleep for 15 secs to make sure all the services are up and running.
+  sleep 15
 
   #create topic
   sh ${S3_SRC_DIR}/scripts/kafka/create-topic.sh -c 1 -i $HOSTNAME
@@ -193,13 +196,14 @@ rpm -q gtest-devel && rpm -e gtest-devel
 rpm -q gtest && rpm -e gtest
 
 # Erase old haproxy rpm and later install latest haproxy version 1.8.14
-rpm -q haproxy && rpm -e haproxy
+rpm -q haproxy && rpm -e --nodeps haproxy
 
 cd $BASEDIR
 
 # Attempt ldap clean up since ansible openldap setup is not idempotent
 systemctl stop slapd 2>/dev/null || /bin/true
-yum remove -y openldap-servers openldap-clients || /bin/true
+rpm -q  openldap-clients && rpm -e --nodeps openldap-clients || /bin/true
+rpm -q  openldap-servers && rpm -e --nodeps openldap-servers || /bin/true
 rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
 rm -rf /var/lib/ldap/*
 rm -f /etc/sysconfig/slapd* 2>/dev/null || /bin/true
