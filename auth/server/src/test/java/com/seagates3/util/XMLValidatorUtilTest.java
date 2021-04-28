@@ -27,7 +27,7 @@ import org.xml.sax.SAXException;
 
 public class XMLValidatorUtilTest {
 
-    String xsdPath = "../resources/AmazonS3.xsd";
+   String xsdPath = "../resources/AmazonS3_V2.xsd";
 
     String acl = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<AccessControlPolicy"
