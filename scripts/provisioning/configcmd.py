@@ -159,14 +159,11 @@ class ConfigCmd(SetupCmd):
   def create_topic(self, admin_id: str, topic_name:str, partitions: int):
     """create topic for background delete services."""
     try:
-      s3MessageBus = S3CortxMsgBus()
       if not S3CortxMsgBus.is_topic_exist(admin_id, topic_name):
-        try:
           S3CortxMsgBus.create_topic(admin_id, [topic_name], partitions)
-        except Exception as e:
-          errstr = str(e)
-          if "ALREADY_EXISTS" not in errstr:
-            raise(e)
+          sys.stdout.write("Topic Created\n")
+      else:
+          sys.stdout.write("Topic Already exists\n")
     except Exception as e:
       raise e
 

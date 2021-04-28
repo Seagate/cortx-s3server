@@ -107,31 +107,29 @@ class S3CortxMsgBus:
     @staticmethod
     def create_topic(admin_id: str, message_types: list, partitions: int):
         """create topic."""
+
+        mbadmin = MessageBusAdmin(admin_id = admin_id)
         try:
-            mbadmin = MessageBusAdmin(admin_id = admin_id)
             mbadmin.register_message_type(message_types = message_types,
-                                        partitions = partitions)
-        except:
-            raise Exception("Failed to create topic")
+                                    partitions = partitions)
+        except Exception as e:
+            if "TOPIC_ALREADY_EXISTS" not in str(e):
+                raise(e)
 
     @staticmethod
     def add_concurrency(admin_id: str, message_type: str, concurrency_count: int):
         """Increase partition count for given topic."""
-        try:
-            mbadmin = MessageBusAdmin(admin_id = admin_id)
-            mbadmin.add_concurrency(message_type = message_type,
-                                    concurrency_count = concurrency_count)
-        except:
-            raise Exception("Failed to increase partition")
+
+        mbadmin = MessageBusAdmin(admin_id = admin_id)
+        mbadmin.add_concurrency(message_type = message_type,
+                                concurrency_count = concurrency_count)
 
     @staticmethod
     def delete_topic(admin_id: str, message_types: list):
         """Delete given topic"""
-        try:
-            mbadmin = MessageBusAdmin(admin_id = admin_id)
-            mbadmin.deregister_message_type(message_types = message_types)
-        except:
-            raise Exception("Failed to delete topic")
+
+        mbadmin = MessageBusAdmin(admin_id = admin_id)
+        mbadmin.deregister_message_type(message_types = message_types)
 
     @staticmethod
     def list_topics(admin_id: str):
