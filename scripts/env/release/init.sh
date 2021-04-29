@@ -24,6 +24,7 @@ SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
 S3_SRC_DIR="$BASEDIR/../../../"
 CURRENT_DIR=`pwd`
+re_prerequisite_script_path="http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/rpm/install-cortx-prereq.sh"
 
 install_toml() {
   echo "Installing toml"
@@ -68,6 +69,8 @@ install_cortx_py_utils() {
 
 # function to install all prerequisite for dev vm 
 install_pre_requisites() {
+
+  curl -s "$re_prerequisite_script_path" | bash
 
   # install kafka server
   sh ${S3_SRC_DIR}/scripts/kafka/install-kafka.sh -c 1 -i $HOSTNAME
@@ -117,7 +120,8 @@ fi
 
 # We are setting up new VM, so just attempt clean openldap
 systemctl stop slapd 2>/dev/null || /bin/true
-yum remove -y openldap-servers openldap-clients || /bin/true
+rpm -q  openldap-clients && rpm -e --nodeps openldap-clients || /bin/true
+rpm -q  openldap-servers && rpm -e --nodeps openldap-servers || /bin/true
 rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
 rm -rf /var/lib/ldap/*
 rm -f /etc/sysconfig/slapd* 2>/dev/null || /bin/true
@@ -153,7 +157,7 @@ yum install -y ansible facter
 cd ${BASEDIR}/../../../ansible
 
 # Erase old haproxy rpm and later install latest haproxy version 1.8.14
-rpm -q haproxy && rpm -e haproxy
+rpm -q haproxy && rpm -e --nodeps haproxy
 
 # add /usr/local/bin to PATH
 export PATH=$PATH:/usr/local/bin

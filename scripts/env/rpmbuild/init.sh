@@ -25,6 +25,7 @@ SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
 S3_SRC_DIR="$BASEDIR/../../../"
 CURRENT_DIR=`pwd`
+re_prerequisite_script_path="http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/rpm/install-cortx-prereq.sh"
 
 #function to install/upgrade cortx-py-utils rpm
 install_cortx_py_utils() {
@@ -64,6 +65,8 @@ install_cortx_py_utils() {
 
 # function to install all prerequisite for dev vm 
 install_pre_requisites() {
+
+  curl -s "$re_prerequisite_script_path" | bash
 
   # install kafka server
   sh ${S3_SRC_DIR}/scripts/kafka/install-kafka.sh -c 1 -i $HOSTNAME
