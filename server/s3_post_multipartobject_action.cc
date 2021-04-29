@@ -319,15 +319,13 @@ void S3PostMultipartObjectAction::check_object_state() {
 void S3PostMultipartObjectAction::create_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   create_object_timer.start();
-  if (tried_count == 0) {
-    motr_writer = motr_writer_factory->create_motr_writer(request, oid);
-  } else {
-    motr_writer->set_oid(oid);
-  }
 
+  if (tried_count == 0) {
+    motr_writer = motr_writer_factory->create_motr_writer(request);
+  }
   motr_writer->create_object(
       std::bind(&S3PostMultipartObjectAction::create_object_successful, this),
-      std::bind(&S3PostMultipartObjectAction::create_object_failed, this),
+      std::bind(&S3PostMultipartObjectAction::create_object_failed, this), oid,
       layout_id);
 
   // for shutdown testcases, check FI and set shutdown signal
@@ -464,11 +462,12 @@ void S3PostMultipartObjectAction::create_part_meta_index_failed() {
 
 void S3PostMultipartObjectAction::rollback_create() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  motr_writer->set_oid(oid);
+
   motr_writer->delete_object(
       std::bind(&S3PostMultipartObjectAction::rollback_next, this),
       std::bind(&S3PostMultipartObjectAction::rollback_create_failed, this),
-      layout_id);
+      oid, layout_id);
+
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -513,6 +512,7 @@ void S3PostMultipartObjectAction::save_upload_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   object_multipart_metadata->set_layout_id(layout_id);
+  object_multipart_metadata->set_pvid(motr_writer->get_ppvid());
 
   for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {

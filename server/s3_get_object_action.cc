@@ -326,7 +326,8 @@ void S3GetObjectAction::read_object() {
   // get total number of blocks to read from an object
   set_total_blocks_to_read_from_object();
   motr_reader = motr_reader_factory->create_motr_reader(
-      request, object_metadata->get_oid(), object_metadata->get_layout_id());
+      request, object_metadata->get_oid(), object_metadata->get_layout_id(),
+      object_metadata->get_pvid());
   // get the block,in which first_byte_offset_to_read is present
   // and initilaize the last index with starting offset the block
   size_t block_start_offset =

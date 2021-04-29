@@ -144,10 +144,9 @@ class MockS3ObjectMultipartMetadataFactory
 
 class MockS3MotrWriterFactory : public S3MotrWriterFactory {
  public:
-  MockS3MotrWriterFactory(std::shared_ptr<RequestObject> req, m0_uint128 oid,
-                          std::shared_ptr<MockS3Motr> ptr_mock_s3_motr_api =
-                              nullptr)
-      : S3MotrWriterFactory() {
+  MockS3MotrWriterFactory(
+      std::shared_ptr<RequestObject> req, m0_uint128 oid,
+      std::shared_ptr<MockS3Motr> ptr_mock_s3_motr_api = {}) {
     mock_motr_writer =
         std::make_shared<MockS3MotrWiter>(req, oid, ptr_mock_s3_motr_api);
   }
@@ -160,18 +159,13 @@ class MockS3MotrWriterFactory : public S3MotrWriterFactory {
   }
 
   std::shared_ptr<S3MotrWiter> create_motr_writer(
-      std::shared_ptr<RequestObject> req, struct m0_uint128 oid) override {
-    return mock_motr_writer;
-  }
-
-  std::shared_ptr<S3MotrWiter> create_motr_writer(
       std::shared_ptr<RequestObject> req) override {
     return mock_motr_writer;
   }
 
   std::shared_ptr<S3MotrWiter> create_motr_writer(
       std::shared_ptr<RequestObject> req, struct m0_uint128 oid,
-      uint64_t offset) override {
+      struct m0_fid pv_id, uint64_t offset) override {
     return mock_motr_writer;
   }
 
@@ -182,16 +176,15 @@ class MockS3MotrReaderFactory : public S3MotrReaderFactory {
  public:
   MockS3MotrReaderFactory(std::shared_ptr<RequestObject> req, m0_uint128 oid,
                           int layout_id,
-                          std::shared_ptr<MockS3Motr> s3_motr_mock_apis =
-                              nullptr)
-      : S3MotrReaderFactory() {
+                          std::shared_ptr<MockS3Motr> s3_motr_mock_apis = {}) {
     mock_motr_reader = std::make_shared<MockS3MotrReader>(req, oid, layout_id,
                                                           s3_motr_mock_apis);
   }
 
   std::shared_ptr<S3MotrReader> create_motr_reader(
       std::shared_ptr<RequestObject> req, struct m0_uint128 oid, int layout_id,
-      std::shared_ptr<MotrAPI> motr_api = nullptr) override {
+      struct m0_fid pvid = {},
+      std::shared_ptr<MotrAPI> motr_api = {}) override {
     return mock_motr_reader;
   }
 
@@ -325,4 +318,3 @@ class MockS3GlobalBucketIndexMetadataFactory
 };
 
 #endif
-

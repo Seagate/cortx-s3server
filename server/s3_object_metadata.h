@@ -136,6 +136,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   // Any validations we want to do on metadata.
   void validate();
   std::string index_name;
+  std::string pvid_str;
 
   // TODO Eventually move these to s3_common as duplicated in s3_bucket_metadata
   // This index has keys as "object_name"
@@ -233,6 +234,12 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   std::string& get_encoded_object_acl();
   std::string get_acl_as_xml();
 
+  struct m0_fid get_pvid() const;
+  void set_pvid(const struct m0_fid* p_pvid);
+
+  const std::string& get_pvid_str() const { return pvid_str; }
+  void set_pvid_str(const std::string& val) { pvid_str = val; }
+
   // Load attributes.
   std::string get_system_attribute(std::string key);
   void add_system_attribute(std::string key, std::string val);
@@ -281,7 +288,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   virtual int object_tags_count();
 
   // Virtual Destructor
-  virtual ~S3ObjectMetadata(){};
+  virtual ~S3ObjectMetadata() {};
 
  private:
   // Methods used internally within
@@ -348,4 +355,3 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
 };
 
 #endif
-
