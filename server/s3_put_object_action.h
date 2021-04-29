@@ -169,6 +169,10 @@ class S3PutObjectAction : public S3ObjectAction {
   void remove_old_object_version_metadata();
   void delete_new_object();
   void delete_new_object_success();
+  // During PUT failure due to md failure, delete fragments,
+  // if existed any, from the fragment index
+  void remove_new_fragments();
+  void remove_new_ext_metadata_successful();
 
   FRIEND_TEST(S3PutObjectActionTest, ConstructorTest);
   FRIEND_TEST(S3PutObjectActionTest, ValidateRequestTags);

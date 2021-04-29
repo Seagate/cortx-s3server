@@ -31,6 +31,7 @@ import math
 
 #zero/null object oid in base64 encoded format
 NULL_OBJ_OID = "AAAAAAAAAAA=-AAAAAAAAAAA="
+EXTENDED_METADATA_SEPERATOR = "|"
 
 class ObjectRecoveryValidator:
     """This class is implementation of Validator for object recovery."""
@@ -170,6 +171,18 @@ class ObjectRecoveryValidator:
                                       " from version list")
             else:
                 return status
+
+        # Delete any stale entry in fragment index for this object
+        if ("fno" in self.object_leak_info and self.object_leak_info["fno"] != 0):
+            fragment_idx = self.object_leak_info["extended_md_idx_oid"]
+            if (fragment_idx is not None):
+                fragment = "F" + str(self.object_leak_info["fno"])
+                # Fetch version_id from version key string "<object_key>/<version_id>"
+                key_len = len(self.object_leak_info["object_key_in_index"]) + 1
+                version_id = (self.object_leak_info["version_key_in_index"])[key_len:]
+                fragment_key = self.object_leak_info["object_key_in_index"] + EXTENDED_METADATA_SEPERATOR + \
+                    version_id + EXTENDED_METADATA_SEPERATOR + fragment
+                self.delete_key_from_index(fragment_idx, fragment_key, "Extended MD Entry DEL")
 
         leak_rec_key = self.probable_delete_records["Key"]
         # If 'delete_entry =True', then delete record from probable delete index
