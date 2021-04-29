@@ -218,6 +218,7 @@ rm -rf %{buildroot}
 %config(noreplace) /opt/seagate/cortx/s3/conf/s3stats-allowlist.yaml
 %config(noreplace) /opt/seagate/cortx/auth/resources/defaultAclTemplate.xml
 %config(noreplace) /opt/seagate/cortx/auth/resources/AmazonS3.xsd
+%config(noreplace) /opt/seagate/cortx/auth/resources/AmazonS3_V2.xsd
 %config /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample
 %config(noreplace) /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml
 
@@ -227,6 +228,7 @@ rm -rf %{buildroot}
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/keystore.properties.sample
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/defaultAclTemplate.xml
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/AmazonS3.xsd
+%attr(4600, root, root) /opt/seagate/cortx/auth/resources/AmazonS3_V2.xsd
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/s3authserver.jks
 %attr(4600, root, root) /opt/seagate/cortx/s3/conf/s3config.yaml.sample 
 %attr(4600, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample
