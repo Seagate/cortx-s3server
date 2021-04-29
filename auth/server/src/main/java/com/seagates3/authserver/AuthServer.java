@@ -138,6 +138,17 @@ class AuthServer {
             System.exit(1);
           }
 
+          int maxldapsearchlimit =
+              AuthServerConfig.getLdapSearchResultsSizeLimit();
+          if (maxldapsearchlimit < AuthServerConfig.getMaxAccountLimit() ||
+              maxldapsearchlimit < AuthServerConfig.getMaxIAMUserLimit()) {
+            logger.error(
+                "Invalid configuration found in authserver.properties file!!!" +
+                "\n" +
+                "ldapSearchResultSizeLimit value must be greater than or " +
+                "equals to maxAccountLimit & maxIAMUserLimit value");
+            System.exit(1);
+          }
           SSLContextProvider.init();
           IAMResourceMapper.init();
           DAODispatcher.init();

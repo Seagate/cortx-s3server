@@ -520,55 +520,6 @@ public class UserImpl implements UserDAO {
      return user;
    }
 
-   @Override public int getTotalCountOfUsers(
-       String accountName, String pathPrefix) throws DataAccessException {
-     String[] attrs = {LDAPUtils.USER_ID};
-     String userBaseDN = String.format(
-         "%s=%s,%s=%s,%s=%s,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
-         LDAPUtils.USER_OU, LDAPUtils.ORGANIZATIONAL_NAME, accountName,
-         LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
-         LDAPUtils.BASE_DN);
-     String filter =
-         String.format("(&(%s=%s*)(%s=%s))", LDAPUtils.PATH, pathPrefix,
-                       LDAPUtils.OBJECT_CLASS, LDAPUtils.IAMUSER_OBJECT_CLASS,
-                       LDAPUtils.IAMUSER_OBJECT_CLASS);
-
-     LDAPSearchResults ldapResults;
-
-     LOGGER.debug("Searching user base dn: " + userBaseDN);
-
-     try {
-       ldapResults = LDAPUtils.search(userBaseDN, LDAPConnection.SCOPE_SUB,
-                                      filter, attrs);
-       try {
-         // Added delay so that ldap entry count gets populated properly from
-         // ldap.
-         Thread.sleep(500);
-       }
-       catch (InterruptedException e) {
-         LOGGER.error("Delay failing to fetch total user count from ldap- " +
-                      e);
-         Thread.currentThread().interrupt();
-       }
-       if (ldapResults != null) {
-         return ldapResults.getCount();
-       } else {
-         LOGGER.error("Failed to find total users count of path prefix: " +
-                      pathPrefix + " account: " + accountName);
-         throw new DataAccessException(
-             "Failed to find total users count in account." + accountName +
-             "\n");
-       }
-     }
-     catch (LDAPException ex) {
-       LOGGER.error("Failed to find total users count of path prefix: " +
-                    pathPrefix + " account: " + accountName);
-       throw new DataAccessException(
-           "Failed to find total users count in account." + accountName + "\n" +
-           ex);
-     }
-   }
-
    @Override public void ldap_delete_user(User user)
        throws DataAccessException {
      String dn = String.format("%s=%s,%s=%s,%s=%s,%s=%s,%s", LDAPUtils.USER_ID,
