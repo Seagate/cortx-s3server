@@ -59,14 +59,6 @@ public interface UserDAO {
     public
      User findByArn(String arn) throws DataAccessException;
 
-     /* Get total count of users present in ldap
-     *  @return int - Total count of users
-     *  @throws DataAccessException
-     */
-    public
-     int getTotalCountOfUsers(String accountName,
-                              String pathPrefix) throws DataAccessException;
-
      /**
       * Delete user from LDAP silently.
       * @param user
