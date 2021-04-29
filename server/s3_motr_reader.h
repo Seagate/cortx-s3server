@@ -151,20 +151,21 @@ class S3MotrReader {
   std::function<void()> handler_on_failed;
 
   struct m0_uint128 oid;
+  struct m0_fid pvid;
   int layout_id;
 
-  S3MotrReaderOpState state;
+  S3MotrReaderOpState state = S3MotrReaderOpState::start;
 
   // Holds references to buffers after the read so it can be consumed.
-  struct s3_motr_rw_op_context* motr_rw_op_context;
-  size_t iteration_index;
+  struct s3_motr_rw_op_context* motr_rw_op_context = nullptr;
+  size_t iteration_index = 0;
   // to Help iteration.
-  size_t num_of_blocks_to_read;
+  size_t num_of_blocks_to_read = 0;
 
-  uint64_t last_index;
+  uint64_t last_index = 0;
 
-  bool is_object_opened;
-  struct s3_motr_obj_context* obj_ctx;
+  bool is_object_opened = false;
+  struct s3_motr_obj_context* obj_ctx = nullptr;
 
   // Internal open operation so motr can fetch required object metadata
   // for example object pool version
@@ -184,7 +185,8 @@ class S3MotrReader {
  public:
   // object id is generated at upper level and passed to this constructor
   S3MotrReader(std::shared_ptr<RequestObject> req, struct m0_uint128 id,
-               int layout_id, std::shared_ptr<MotrAPI> motr_api = nullptr);
+               int layout_id, struct m0_fid pvid = {},
+               std::shared_ptr<MotrAPI> motr_api = {});
   virtual ~S3MotrReader();
 
   virtual S3MotrReaderOpState get_state() { return state; }

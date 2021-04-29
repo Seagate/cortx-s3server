@@ -859,6 +859,20 @@ bool S3ObjectMetadata::check_object_tags_exists() {
 
 int S3ObjectMetadata::object_tags_count() { return object_tags.size(); }
 
+struct m0_fid S3ObjectMetadata::get_pvid() const {
+  struct m0_fid pvid;
+  S3M0Uint128Helper::to_m0_fid(pvid_str, pvid);
+  return pvid;
+}
+
+void S3ObjectMetadata::set_pvid(const struct m0_fid* p_pvid) {
+  if (p_pvid) {
+    S3M0Uint128Helper::to_string(*p_pvid, pvid_str);
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id, "%s - NULL pointer", __func__);
+  }
+}
+
 // Class S3ObjectExtendedMetadata implementation
 S3ObjectExtendedMetadata::S3ObjectExtendedMetadata(
     std::shared_ptr<S3RequestObject> req, const std::string& bucketname,

@@ -403,13 +403,15 @@ void S3AbortMultipartAction::delete_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // process to delete object
   if (!motr_writer) {
-    motr_writer = motr_writer_factory->create_motr_writer(
-        request, object_multipart_metadata->get_oid());
+    motr_writer = motr_writer_factory->create_motr_writer(request);
   }
   motr_writer->delete_object(
       std::bind(&S3AbortMultipartAction::remove_probable_record, this),
       std::bind(&S3AbortMultipartAction::next, this),
-      object_multipart_metadata->get_layout_id());
+      object_multipart_metadata->get_oid(),
+      object_multipart_metadata->get_layout_id(),
+      object_multipart_metadata->get_pvid());
+
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 

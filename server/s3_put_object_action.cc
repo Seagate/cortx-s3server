@@ -290,11 +290,9 @@ void S3PutObjectAction::_set_layout_id(int layout_id) {
 void S3PutObjectAction::create_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_timer.start();
+
   if (tried_count == 0) {
-    motr_writer =
-        motr_writer_factory->create_motr_writer(request, new_object_oid);
-  } else {
-    motr_writer->set_oid(new_object_oid);
+    motr_writer = motr_writer_factory->create_motr_writer(request);
   }
   if (!this->fault_mode_active) {
     // S3 non-fault(normal) mode
@@ -314,7 +312,8 @@ void S3PutObjectAction::create_object() {
   }
   motr_writer->create_object(
       std::bind(&S3PutObjectAction::create_object_successful, this),
-      std::bind(&S3PutObjectAction::create_object_failed, this), layout_id);
+      std::bind(&S3PutObjectAction::create_object_failed, this), new_object_oid,
+      layout_id);
 
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
@@ -756,6 +755,7 @@ void S3PutObjectAction::save_metadata() {
   new_object_metadata->set_content_type(request->get_content_type());
   new_object_metadata->set_md5(motr_writer->get_content_md5());
   new_object_metadata->set_tags(new_object_tags_map);
+  new_object_metadata->set_pvid(motr_writer->get_ppvid());
 
   for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {
@@ -1158,16 +1158,16 @@ void S3PutObjectAction::startcleanup() {
     // If delete object is successful, attempt to delete new probable record
   } else {
     if (new_object_metadata && !new_object_metadata->is_object_extended()) {
-    s3_log(S3_LOG_DEBUG, request_id,
-           "No Cleanup required: s3_put_action_state[%d]\n",
-           s3_put_action_state);
-    assert(s3_put_action_state == S3PutObjectActionState::empty ||
-           s3_put_action_state == S3PutObjectActionState::validationFailed ||
-           s3_put_action_state ==
-               S3PutObjectActionState::probableEntryRecordFailed ||
-           s3_put_action_state ==
-               S3PutObjectActionState::newObjOidCreationFailed);
-    // Nothing to undo
+      s3_log(S3_LOG_DEBUG, request_id,
+             "No Cleanup required: s3_put_action_state[%d]\n",
+             s3_put_action_state);
+      assert(s3_put_action_state == S3PutObjectActionState::empty ||
+             s3_put_action_state == S3PutObjectActionState::validationFailed ||
+             s3_put_action_state ==
+                 S3PutObjectActionState::probableEntryRecordFailed ||
+             s3_put_action_state ==
+                 S3PutObjectActionState::newObjOidCreationFailed);
+      // Nothing to undo
     } else {
       // Object is extended/fragmented. If there were any objects created
       // and written to, before getting 'probableEntryRecordFailed' or
@@ -1337,10 +1337,10 @@ void S3PutObjectAction::delete_old_object() {
   }
   unsigned int object_count = old_obj_oids.size();
   if (object_count > 0) {
-    motr_writer->set_oid(old_obj_oids.back());
     motr_writer->delete_object(
         std::bind(&S3PutObjectAction::delete_old_object_success, this),
-        std::bind(&S3PutObjectAction::next, this), layout_id);
+        std::bind(&S3PutObjectAction::next, this), old_obj_oids.back(),
+        layout_id);
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -1381,10 +1381,10 @@ void S3PutObjectAction::delete_new_object() {
   assert(new_object_oid.u_hi != 0ULL || new_object_oid.u_lo != 0ULL);
   unsigned int object_count = new_obj_oids.size();
   if (object_count > 0) {
-    motr_writer->set_oid(new_obj_oids.back());
     motr_writer->delete_object(
         std::bind(&S3PutObjectAction::delete_new_object_success, this),
-        std::bind(&S3PutObjectAction::next, this), layout_id);
+        std::bind(&S3PutObjectAction::next, this), new_obj_oids.back(),
+        layout_id);
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

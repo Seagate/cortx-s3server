@@ -307,6 +307,7 @@ void S3CopyObjectAction::copy_object() {
     object_data_copier->copy(
         source_object_metadata->get_oid(), total_data_to_stream,
         source_object_metadata->get_layout_id(),
+        source_object_metadata->get_pvid(),
         std::bind(&S3CopyObjectAction::copy_object_cb, this),
         std::bind(&S3CopyObjectAction::copy_object_success, this),
         std::bind(&S3CopyObjectAction::copy_object_failed, this));

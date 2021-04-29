@@ -69,18 +69,13 @@ struct s3_motr_op_context *S3MotrWiterContext::get_motr_op_ctx() {
   return motr_op_context;
 }
 
-S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req, uint64_t offset,
+S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req,
                          std::shared_ptr<MotrAPI> motr_api)
-    : request(std::move(req)),
-      state(S3MotrWiterOpState::start),
-      last_index(offset),
-      size_in_current_write(0),
-      total_written(0),
-      is_object_opened(false),
-      obj_ctx(nullptr) {
-  re_write_buffer = false;
+    : request(std::move(req)) {
+
   request_id = request->get_request_id();
   stripped_request_id = request->get_stripped_request_id();
+
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   struct m0_uint128 oid = {0ULL, 0ULL};
@@ -90,35 +85,33 @@ S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req, uint64_t offset,
   } else {
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
-
   std::string uri_name;
+
   std::shared_ptr<S3RequestObject> s3_request =
       std::dynamic_pointer_cast<S3RequestObject>(request);
-  if (s3_request != nullptr) {
+
+  if (s3_request) {
     uri_name = s3_request->get_object_uri();
   } else {
     uri_name = request->c_get_full_path();
   }
   S3UriToMotrOID(s3_motr_api, uri_name.c_str(), request_id, &oid);
 
-  oid_list.clear();
   oid_list.push_back(oid);
-  layout_ids.clear();
-
-  place_holder_for_last_unit = NULL;
-  last_op_was_write = false;
-  unit_size_for_place_holder = -1;
 }
 
 S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req,
-                         struct m0_uint128 object_id, uint64_t offset,
-                         std::shared_ptr<MotrAPI> motr_api)
-    : S3MotrWiter(std::move(req), offset, std::move(motr_api)) {
+                         struct m0_uint128 object_id, struct m0_fid pv_id,
+                         uint64_t offset, std::shared_ptr<MotrAPI> motr_api)
+    : S3MotrWiter(std::move(req), std::move(motr_api)) {
 
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   oid_list.clear();
   oid_list.push_back(object_id);
+
+  pv_ids.push_back(pv_id);
+  last_index = offset;
 }
 
 S3MotrWiter::~S3MotrWiter() {
@@ -180,7 +173,10 @@ int S3MotrWiter::open_objects() {
   struct s3_motr_op_context *ctx = open_context->get_motr_op_ctx();
 
   std::ostringstream oid_list_stream;
-  size_t ops_count = oid_list.size();
+  const size_t ops_count = oid_list.size();
+
+  assert(layout_ids.size() == ops_count);
+  assert(pv_ids.size() == ops_count);
 
   for (size_t i = 0; i < ops_count; ++i) {
     struct s3_motr_context_obj *op_ctx = (struct s3_motr_context_obj *)calloc(
@@ -213,9 +209,11 @@ int S3MotrWiter::open_objects() {
       s3_motr_op_pre_launch_failure(op_ctx->application_context, rc);
       return rc;
     }
-
     ctx->ops[i]->op_datum = (void *)op_ctx;
     s3_motr_api->motr_op_setup(ctx->ops[i], &ctx->cbs[i], 0);
+
+    memcpy(&obj_ctx->objs[i].ob_attr.oa_pver, &pv_ids[i],
+           sizeof(struct m0_fid));
   }
   s3_log(S3_LOG_INFO, stripped_request_id, "Motr API: openobj(oid: %s)\n",
          oid_list_stream.str().c_str());
@@ -269,8 +267,20 @@ void S3MotrWiter::open_objects_failed() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+void S3MotrWiter::set_oid(const struct m0_uint128 &id) {
+  is_object_opened = false;
+  oid_list.clear();
+  oid_list.push_back(id);
+}
+
+void S3MotrWiter::set_layout_id(int id) {
+  layout_ids.clear();
+  layout_ids.push_back(id);
+}
+
 void S3MotrWiter::create_object(std::function<void(void)> on_success,
                                 std::function<void(void)> on_failed,
+                                const struct m0_uint128 &object_id,
                                 int layoutid) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry with layoutid = %d\n",
          __func__, layoutid);
@@ -282,11 +292,9 @@ void S3MotrWiter::create_object(std::function<void(void)> on_success,
     reset_buffers_if_any(unit_size_for_place_holder);
   }
   last_op_was_write = false;
-  layout_ids.clear();
-  layout_ids.push_back(layoutid);
-  is_object_opened = false;
 
-  assert(oid_list.size() == 1);
+  set_oid(object_id);
+  set_layout_id(layoutid);
 
   if (obj_ctx) {
     // clean up any old allocations
@@ -515,24 +523,26 @@ void S3MotrWiter::write_content_failed() {
 
 void S3MotrWiter::delete_object(std::function<void(void)> on_success,
                                 std::function<void(void)> on_failed,
-                                int layoutid) {
+                                const struct m0_uint128 &object_id,
+                                int layoutid, const struct m0_fid &pv_id) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry with layoutid = %d\n",
          __func__, layoutid);
+
   handler_on_success = std::move(on_success);
   handler_on_failed = std::move(on_failed);
 
-  assert(oid_list.size() == 1);
   if (last_op_was_write && !layout_ids.empty()) {
     reset_buffers_if_any(unit_size_for_place_holder);
   }
   last_op_was_write = false;
-  layout_ids.clear();
-  layout_ids.push_back(layoutid);
+
+  set_oid(object_id);
+  set_layout_id(layoutid);
+
+  pv_ids.clear();
+  pv_ids.push_back(pv_id);
 
   state = S3MotrWiterOpState::deleting;
-
-  // We should already have an OID
-  assert(oid_list.size() == 1);
 
   if (is_object_opened) {
     delete_objects();
@@ -580,8 +590,10 @@ void S3MotrWiter::delete_objects() {
 
     ctx->ops[i]->op_datum = (void *)op_ctx;
     s3_motr_api->motr_op_setup(ctx->ops[i], &ctx->cbs[i], 0);
-    oid_list_stream << "(" << oid_list[i].u_hi << " " << oid_list[i].u_lo
+    oid_list_stream << '(' << oid_list[i].u_hi << ' ' << oid_list[i].u_lo
                     << ") ";
+    memcpy(&obj_ctx->objs[i].ob_attr.oa_pver, &pv_ids[i],
+           sizeof(struct m0_fid));
   }
 
   delete_context->start_timer_for("delete_objects_from_motr");
@@ -625,6 +637,7 @@ void S3MotrWiter::delete_objects_failed() {
 
 void S3MotrWiter::delete_objects(std::vector<struct m0_uint128> oids,
                                  std::vector<int> layoutids,
+                                 std::vector<struct m0_fid> pvids,
                                  std::function<void(void)> on_success,
                                  std::function<void(void)> on_failed) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
@@ -634,6 +647,7 @@ void S3MotrWiter::delete_objects(std::vector<struct m0_uint128> oids,
 
   oid_list = std::move(oids);
   layout_ids = std::move(layoutids);
+  pv_ids = std::move(pvids);
 
   state = S3MotrWiterOpState::deleting;
 
@@ -736,4 +750,10 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
          size_in_current_write);
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+struct m0_fid *S3MotrWiter::get_ppvid() const {
+  return obj_ctx && obj_ctx->n_initialized_contexts && obj_ctx->objs
+             ? &obj_ctx->objs->ob_attr.oa_pver
+             : nullptr;
 }

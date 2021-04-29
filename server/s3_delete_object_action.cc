@@ -337,15 +337,14 @@ void S3DeleteObjectAction::delete_object() {
   if (object_count > 0) {
     // process to delete object
     std::pair<struct m0_uint128, int>& obj_layout_pair = del_object_oids.back();
+
     if (!motr_writer) {
-      motr_writer = motr_writer_factory->create_motr_writer(
-          request, obj_layout_pair.first);
-    } else {
-      motr_writer->set_oid(obj_layout_pair.first);
+      motr_writer = motr_writer_factory->create_motr_writer(request);
     }
     motr_writer->delete_object(
         std::bind(&S3DeleteObjectAction::delete_object_successful, this),
-        std::bind(&S3DeleteObjectAction::next, this), obj_layout_pair.second);
+        std::bind(&S3DeleteObjectAction::next, this), obj_layout_pair.first,
+        obj_layout_pair.second);
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

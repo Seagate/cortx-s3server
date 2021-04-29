@@ -231,6 +231,7 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
       if (multipart_obj_oid.u_hi != 0ULL || multipart_obj_oid.u_lo != 0ULL) {
         multipart_object_oids.push_back(multipart_obj_oid);
         multipart_object_layoutids.push_back(object->get_layout_id());
+        multipart_object_pv_ids.push_back(object->get_pvid());
       }
     }
     return_list_size++;
@@ -263,6 +264,7 @@ void S3DeleteBucketAction::delete_multipart_objects() {
     motr_writer = motr_writer_factory->create_motr_writer(request);
     motr_writer->delete_objects(
         multipart_object_oids, multipart_object_layoutids,
+        multipart_object_pv_ids,
         std::bind(&S3DeleteBucketAction::delete_multipart_objects_successful,
                   this),
         std::bind(&S3DeleteBucketAction::delete_multipart_objects_failed,

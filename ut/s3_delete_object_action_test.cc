@@ -308,8 +308,8 @@ TEST_F(S3DeleteObjectActionTest, DeleteObject) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(obj_oid));
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), delete_object(_, _, _))
-      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              delete_object(_, _, _, _, _)).Times(1);
   action_under_test->del_object_oids.push_back(std::make_pair(oid, layout_id));
   action_under_test->delete_object();
 }
@@ -325,8 +325,8 @@ TEST_F(S3DeleteObjectActionTest, DelayedDeleteObject) {
       .WillRepeatedly(Return(obj_oid));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .Times(0);
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), delete_object(_, _, _))
-      .Times(0);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              delete_object(_, _, _, _, _)).Times(0);
   action_under_test->delete_object();
 }
 
