@@ -21,6 +21,12 @@
 #include "s3_log.h"
 #include "s3_option.h"
 
+#define ONE_KB (1 << 10)
+
+static thread_local char log_buffer[10 * ONE_KB];
+char *__log_buff() { return log_buffer; }
+size_t __log_buff_sz() { return sizeof(log_buffer); }
+
 int s3log_level = S3_LOG_INFO;
 s3_fatal_log_handler s3_fatal_handler;
 

@@ -215,6 +215,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenThrow(
                 new DataAccessException("failed to search user.\n"));
+        Mockito.doReturn(new User[0]).when(userDAO).findAll("s3test", "/");
 
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
@@ -254,6 +255,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         user.setId("AIDA5KZQJXPTROAIAKCKO");
 
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
+        Mockito.doReturn(new User[1]).when(userDAO).findAll("s3test", "/");
 
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
@@ -291,6 +293,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         user.setAccountName("s3test");
         user.setName("s3testuser");
 
+        Mockito.doReturn(new User[0]).when(userDAO).findAll("s3test", "/");
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
         Mockito.doThrow(new DataAccessException("failed to save new user.\n"))
                 .when(userDAO).save(user);
@@ -332,6 +335,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         user.setName("s3testuser");
         user.setArn("arn:aws:iam::1:user/s3testuser");
 
+        Mockito.doReturn(new User[0]).when(userDAO).findAll("s3test", "/");
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
         Mockito.doNothing().when(userDAO).save(user);
 
@@ -391,6 +395,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         userDAO = Mockito.mock(UserDAO.class);
         PowerMockito.doReturn(userDAO)
             .when(DAODispatcher.class, "getResourceDAO", DAOResource.USER);
+        Mockito.doReturn(new User[0]).when(userDAO).findAll("s3test", "/");
         userController = new UserController(requestor, requestBody);
         User user = new User();
         user.setAccountName("s3test");
@@ -427,6 +432,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         user.setName("s3testuser");
         user.setArn("arn:aws:iam::1:user/s3testuser");
 
+        Mockito.doReturn(new User[0]).when(userDAO).findAll("s3test", "/test");
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
         Mockito.doNothing().when(userDAO).save(user);
 

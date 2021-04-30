@@ -546,57 +546,6 @@ public class AccountImpl implements AccountDAO {
         return account;
     }
 
-    /* Get total count of accounts present in ldap
-    *  @return int - Total count of accounts
-    *  @throws DataAccessException
-    */
-   public
-    int getTotalCountOfAccounts() throws DataAccessException {
-      LDAPSearchResults ldapResults;
-      /*
-       * search base: the starting point for search example:
-       * 'ou=accounts,dc=s3,dc=seagate,dc=com'
-       */
-      String baseDn =
-          String.format("%s=%s,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
-                        LDAPUtils.ACCOUNT_OU, LDAPUtils.BASE_DN);
-      /*
-       * search filter: '(objectClass=account)'
-       */
-      String accountFilter = String.format("(%s=%s)", LDAPUtils.OBJECT_CLASS,
-                                           LDAPUtils.ACCOUNT_OBJECT_CLASS);
-      String[] attr = {LDAPUtils.ACCOUNT_ID};
-
-      LOGGER.debug("Searching baseDn: " + baseDn + " account filter: " +
-                   accountFilter);
-
-      try {
-        ldapResults = LDAPUtils.search(baseDn, LDAPConnection.SCOPE_SUB,
-                                       accountFilter, attr);
-        try {
-          // Added delay so that ldap entry count gets populated properly from
-          // ldap.
-          Thread.sleep(500);
-        }
-        catch (InterruptedException e) {
-          LOGGER.error("Delay failing to fetch account count from ldap- " + e);
-          Thread.currentThread().interrupt();
-        }
-
-        if (ldapResults != null) {
-          return ldapResults.getCount();
-        } else {
-          LOGGER.error("Failed to fetch total count of accounts.");
-          throw new DataAccessException(
-              "Failed to fetch total count of accounts.\n");
-        }
-      }
-      catch (LDAPException ex) {
-        LOGGER.error("Failed to fetch total count of accounts." + ex);
-        throw new DataAccessException(
-            "Failed to fetch total count of accounts.\n" + ex);
-      }
-    }
 
     /**
      * Delete account entry silently from ldap.
