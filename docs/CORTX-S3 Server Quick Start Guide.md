@@ -124,6 +124,7 @@ Please read our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Build-In
 
 You'll have to set up the host system before you test your build. To do so, run the following command from the main source directory: `$ ./update-hosts.sh`
 
+**Procedure**
 
 - To perform Unit and System Tests, run the script `$ ./jenkins-build.sh`
 
@@ -232,6 +233,8 @@ Before your test your build, ensure that you have installed and configured the f
       ```
 
     4. Ensure that your AWS credential file contains your Access Key Id and Secret Key by using: `$ cat ~/.aws/credentials`
+
+**Procedure**
 
 Run the following test cases to check if your AWS S3 Server build is working correctly.
 
