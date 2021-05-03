@@ -381,6 +381,10 @@ if [ $cleanup_only -eq 1 ]; then
   exit
 fi
 
+# add /usr/local/bin to PATH
+export PATH=$PATH:/usr/local/bin
+echo $PATH
+
 # Configuration setting for using HTTP connection
 if [ $use_http_client -eq 1 ]
 then
