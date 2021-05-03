@@ -274,3 +274,4 @@ s3tests_boto3.functional:test_s3.test_object_copy_not_owned_bucket
 s3tests_boto3.functional:test_s3.test_object_copy_retaining_metadata 
 s3tests_boto3.functional:test_s3.test_object_copy_bucket_not_found 
 s3tests_boto3.functional:test_s3.test_object_copy_key_not_found
+s3tests_boto3.functional.test_s3.test_object_copy_not_owned_object_bucket

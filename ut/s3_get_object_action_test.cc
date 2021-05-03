@@ -60,14 +60,14 @@ using ::testing::AtLeast;
         .WillOnce(Return(S3OperationCode::tagging));                      \
     action_under_test->fetch_object_info();                               \
   } while (0)
-
+#if 0
 static bool test_read_object_data_success(size_t num_of_blocks,
                                           std::function<void(void)> on_success,
                                           std::function<void(void)> on_failed) {
   on_success();
   return true;
 }
-
+#endif
 class S3GetObjectActionTest : public testing::Test {
  protected:
   S3GetObjectActionTest() {
@@ -855,6 +855,7 @@ TEST_F(S3GetObjectActionTest,
   EXPECT_EQ(2, action_under_test->total_blocks_to_read);
   EXPECT_EQ(1, call_count_one);
 }
+#if 0
 TEST_F(S3GetObjectActionTest, ReadObjectOfSizeLessThanUnitSize) {
   CREATE_OBJECT_METADATA;
 
@@ -1094,6 +1095,7 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfGivenRange) {
   action_under_test->validate_object_info();
   action_under_test->read_object();
 }
+#endif
 
 TEST_F(S3GetObjectActionTest, ReadObjectFailedJustEndResponse1) {
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));

@@ -15,9 +15,6 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 
 ### 1.0 Prerequisites
 
-<details>
-<summary>Click to expand!</summary>
-<p>
 
 1. You'll need to set up SSC, Cloud VM, or a local VM on VMWare Fusion or Oracle VirtualBox.
 2. As a CORTX contributor you will need to refer, clone, contribute, and commit changes via the GitHub server. You can access the latest code via [Github](https://github.com/Seagate/cortx).
@@ -54,9 +51,11 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 
 7. You'll need to install CORTX Python Utilities. Follow the steps to install [CORTX Python Utilities](https://github.com/Seagate/cortx-utils/blob/main/py-utils/README.md).
 
-8. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup).
+8. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup/a32f44e0591e3fcf020398c0a23b8cdafcdd3c26).
 
-9. You'll need to disable selinux and firewall. Run the following commands:
+9. Copy "message_bus.conf" file from the git checkout at "cortx-s3server/scripts/kafka/" to "/etc/cortx"
+
+10. You'll need to disable selinux and firewall. Run the following commands:
 
      `$ systemctl stop firewalld` 
 
@@ -79,8 +78,6 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 
 All done! You are now ready for cloning the CORTX-S3 Server repository.
 
-</p>
-</details>
 
 ### 1.1 Clone the CORTX-S3 Server Repository
 
@@ -95,17 +92,13 @@ $ git submodule update --init --recursive && git status
 
 ### 1.2 Installing Dependencies
 
-<details>
-<summary>Before you begin</summary>
-<p>
+**Before you begin**
 
 At some point during the execution of the `init.sh` script, it will prompt for the following passwords. Enter them as mentioned below:
    * SSH password: `<Enter root password of VM>`
    * Enter new password for openldap rootDN: `seagate`
    * Enter new password for openldap IAM admin: `ldapadmin`
 
-</p>
-</details>
 
 Whenever you clone your repository or make changes to dependent packages, you'll have to initialize the packages:
 
@@ -129,14 +122,11 @@ Please read our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Build-In
 
 ### 1.3 Code Compilation and Unit Test
 
-<details>
-<summary>Before you begin</summary>
-<p>
+**Before you begin**
 
 You'll have to set up the host system before you test your build. To do so, run the following command from the main source directory: `$ ./update-hosts.sh`
 
-</p>
-</details>
+**Procedure**
 
 - To perform Unit and System Tests, run the script `$ ./jenkins-build.sh`
 
@@ -159,9 +149,7 @@ The image below illustrates the output log of a system test that is successful.
 
 ### 1.4 Test your Build using S3-CLI
 
-<details>
-<summary>Before you begin</summary>
-<p>
+**Before you begin**
 
 Before your test your build, ensure that you have installed and configured the following:
 
@@ -247,8 +235,8 @@ Before your test your build, ensure that you have installed and configured the f
       ```
 
     4. Ensure that your AWS credential file contains your Access Key Id and Secret Key by using: `$ cat ~/.aws/credentials`
-</p>
-</details>
+
+**Procedure**
 
 Run the following test cases to check if your AWS S3 Server build is working correctly.
 

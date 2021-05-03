@@ -73,8 +73,8 @@ public class UserController extends AbstractController {
       }
 
       try {
-        usersCount = userDAO.getTotalCountOfUsers(
-            requestor.getAccount().getName(), pathPrefix);
+        usersCount =
+            getTotalCountOfUsers(requestor.getAccount().getName(), pathPrefix);
 
         if (usersCount >= maxAllowedIAMUserlimit) {
           LOGGER.error("Maximum allowed Users limit has exceeded (i.e." +
@@ -125,19 +125,16 @@ public class UserController extends AbstractController {
       catch (DataAccessException ex) {
         return userResponseGenerator.internalServerError();
       }
+      // Handle multi-threaded/ multi-node create() API calls.
       try {
-        usersCount = userDAO.getTotalCountOfUsers(
-            requestor.getAccount().getName(), pathPrefix);
+        usersCount =
+            getTotalCountOfUsers(requestor.getAccount().getName(), pathPrefix);
       }
       catch (DataAccessException ex) {
         LOGGER.error("failed to get total count of users from ldap :" + ex);
         return userResponseGenerator.internalServerError();
       }
-      // Handle multi-threaded/ multi-node create() API calls.
       try {
-        usersCount = userDAO.getTotalCountOfUsers(
-            requestor.getAccount().getName(), pathPrefix);
-
         if (usersCount > maxAllowedIAMUserlimit) {
           userDAO.ldap_delete_user(user);
           return userResponseGenerator.internalServerError();
@@ -149,6 +146,18 @@ public class UserController extends AbstractController {
       }
 
       return userResponseGenerator.generateCreateResponse(user);
+    }
+
+    /* Get total count of users present in ldap
+    *  @return int - Total count of users
+    *  @throws DataAccessException
+    */
+   private
+    int getTotalCountOfUsers(String accountName,
+                             String pathPrefix) throws DataAccessException {
+      User[] users;
+      users = userDAO.findAll(accountName, pathPrefix);
+      return users.length;
     }
 
     /**

@@ -351,7 +351,7 @@ void S3GetObjectAction::read_object_data() {
   size_t motr_unit_size =
       S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
           object_metadata->get_layout_id());
-  size_t blocks_to_read = 0;
+  blocks_to_read = 0;
 
   s3_log(S3_LOG_DEBUG, request_id, "max_blocks_in_one_read_op: (%zu)\n",
          max_blocks_in_one_read_op);
@@ -448,43 +448,41 @@ void S3GetObjectAction::send_data_to_client() {
   s3_log(S3_LOG_DEBUG, request_id, "Earlier data_sent_to_client = %zu bytes.\n",
          data_sent_to_client);
 
-  char* data = NULL;
-  size_t length = 0;
+  S3Evbuffer* p_evbuffer = motr_reader->get_evbuffer();
+  size_t obj_unit_sz =
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
+          object_metadata->get_layout_id());
   size_t requested_content_length = get_requested_content_length();
   s3_log(S3_LOG_DEBUG, request_id,
          "object requested content length size(%zu).\n",
          requested_content_length);
-  length = motr_reader->get_first_block(&data);
-
-  while (length > 0) {
-    size_t read_data_start_offset = 0;
-    blocks_already_read++;
-    if (data_sent_to_client == 0) {
-      // get starting offset from the block,
-      // condition true for only statring block read object.
-      // this is to set get first offset byte from initial read block
-      // eg: read_data_start_offset will be set to 1000 on initial read block
-      // for a given range 1000-1500 to read from 2mb object
-      read_data_start_offset =
-          first_byte_offset_to_read %
-          S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
-              object_metadata->get_layout_id());
-      length -= read_data_start_offset;
+  size_t length_in_evbuf = blocks_to_read * obj_unit_sz;
+  blocks_already_read += blocks_to_read;
+  if (data_sent_to_client == 0) {
+    // get starting offset from the block,
+    // condition true for only statring block read object.
+    // this is to set get first offset byte from initial read block
+    // eg: read_data_start_offset will be set to 1000 on initial read block
+    // for a given range 1000-1500 to read from 2mb object
+    size_t read_data_start_offset = first_byte_offset_to_read % obj_unit_sz;
+    if (read_data_start_offset) {
+      // Move the starting range (1000-) if specified.
+      p_evbuffer->read_drain_data_from_buffer(read_data_start_offset);
+      length_in_evbuf = p_evbuffer->get_evbuff_length();
     }
-    // to read number of bytes from final read block of read object
-    // that is requested content length is lesser than the sum of data has been
-    // sent to client and current read block size
-    if ((data_sent_to_client + length) >= requested_content_length) {
-      // length will have the size of remaining byte to sent
-      length = requested_content_length - data_sent_to_client;
-    }
-    data_sent_to_client += length;
-    request->set_bytes_sent(data_sent_to_client);
-    s3_log(S3_LOG_DEBUG, request_id, "Sending %zu bytes to client.\n", length);
-    request->send_reply_body(data + read_data_start_offset, length);
-    s3_perf_count_outcoming_bytes(length);
-    length = motr_reader->get_next_block(&data);
   }
+  // to read number of bytes from final read block of read object
+  // that is requested content length is lesser than the sum of data has been
+  // sent to client and current read block size
+  if (((data_sent_to_client + length_in_evbuf) >= requested_content_length) ||
+      (p_evbuffer->get_evbuff_length() >= requested_content_length)) {
+    // length will have the size of remaining byte to sent
+    int length = requested_content_length - data_sent_to_client;
+    p_evbuffer->read_drain_data_from_buffer(length);
+  }
+  data_sent_to_client += p_evbuffer->get_evbuff_length();
+  // Send data to client. evbuf_body will be free'ed internally
+  request->send_reply_body(p_evbuffer->release_ownership());
   s3_timer.stop();
 
   if (data_sent_to_client != requested_content_length) {
