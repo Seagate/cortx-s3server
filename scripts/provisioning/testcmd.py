@@ -35,7 +35,7 @@ class TestCmd(SetupCmd):
     """Constructor."""
     try:
       super(TestCmd, self).__init__(config)
-      self.read_ldap_credentials()
+      self.read_ldap_credentials_for_test_phase()
       self.test_plan = test_plan
 
     except Exception as e:
