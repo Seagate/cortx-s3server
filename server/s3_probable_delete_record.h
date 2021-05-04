@@ -48,6 +48,9 @@ class S3ProbableDeleteRecord {
                       // delete object
   bool is_multipart;
   struct m0_uint128 part_list_idx_oid;  // present in case of multipart
+  unsigned int fragment;
+  unsigned int part;
+  struct m0_uint128 extended_md_idx_oid;
 
  public:
   S3ProbableDeleteRecord(std::string rec_key, struct m0_uint128 old_oid,
@@ -57,7 +60,9 @@ class S3ProbableDeleteRecord {
                          struct m0_uint128 objs_version_list_idx_oid,
                          std::string ver_key_in_index, bool force_del = false,
                          bool is_multipart = false,
-                         struct m0_uint128 part_list_oid = {0ULL, 0ULL});
+                         struct m0_uint128 part_list_oid = {0ULL, 0ULL},
+                         unsigned int frg = 0, unsigned int prt = 0,
+                         struct m0_uint128 extended_idx = {0ULL, 0ULL});
   virtual ~S3ProbableDeleteRecord() {}
 
   virtual const std::string& get_key() const { return record_key; }
