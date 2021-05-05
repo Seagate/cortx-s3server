@@ -449,6 +449,7 @@ std::string S3PartMetadata::to_json() {
   root["Upload-ID"] = upload_id;
   root["Part-Num"] = part_number;
   root["motr_oid"] = motr_oid_str;
+  root["layout_id"] = layout_id;
 
   for (auto sit : system_defined_attribute) {
     root["System-Defined"][sit.first] = sit.second;
@@ -482,6 +483,7 @@ int S3PartMetadata::from_json(std::string content) {
   part_number = newroot["Part-Num"].asString();
   motr_oid_str = newroot["motr_oid"].asString();
   oid = S3M0Uint128Helper::to_m0_uint128(motr_oid_str);
+  layout_id = newroot["layout_id"].asInt();
 
   Json::Value::Members members = newroot["System-Defined"].getMemberNames();
   for (auto it : members) {
