@@ -25,7 +25,7 @@
 
 #include "s3_addb_map.h"
 
-const uint64_t g_s3_to_addb_idx_func_name_map_size = 213;
+const uint64_t g_s3_to_addb_idx_func_name_map_size = 214;
 
 const char* g_s3_to_addb_idx_func_name_map[] = {
     "Action::check_authentication",
@@ -59,13 +59,14 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "MotrPutKeyValueAction::send_response_to_s3_client",
     "MotrPutKeyValueActionTest::func_callback",
     "S3APIHandlerTest::func_callback_one",
-    "S3AbortMultipartAction::add_object_oid_to_probable_dead_oid_list",
+    "S3AbortMultipartAction::add_parts_oids_to_probable_dead_oid_list",
     "S3AbortMultipartAction::delete_multipart_metadata",
-    "S3AbortMultipartAction::delete_object",
+    "S3AbortMultipartAction::delete_part",
     "S3AbortMultipartAction::delete_part_index_with_parts",
     "S3AbortMultipartAction::get_multipart_metadata",
-    "S3AbortMultipartAction::mark_oid_for_deletion",
-    "S3AbortMultipartAction::remove_probable_record",
+    "S3AbortMultipartAction::get_next_parts",
+    "S3AbortMultipartAction::mark_oids_for_deletion",
+    "S3AbortMultipartAction::remove_probable_records",
     "S3AbortMultipartAction::send_response_to_s3_client",
     "S3AbortMultipartActionTest::func_callback_one",
     "S3AccountDeleteMetadataAction::fetch_first_bucket_metadata",
