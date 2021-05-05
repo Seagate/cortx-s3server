@@ -53,6 +53,7 @@ S3AbortMultipartAction::S3AbortMultipartAction(
   action_uses_cleanup = true;
   multipart_oid = {0ULL, 0ULL};
   part_index_oid = {0ULL, 0ULL};
+  last_key = "";
 
   s3_abort_mp_action_state = S3AbortMultipartActionState::empty;
 
@@ -98,8 +99,9 @@ S3AbortMultipartAction::S3AbortMultipartAction(
 void S3AbortMultipartAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setup the action\n");
   ACTION_TASK_ADD(S3AbortMultipartAction::get_multipart_metadata, this);
+  ACTION_TASK_ADD(S3AbortMultipartAction::get_next_parts, this);
   ACTION_TASK_ADD(
-      S3AbortMultipartAction::add_object_oid_to_probable_dead_oid_list, this);
+      S3AbortMultipartAction::add_parts_oids_to_probable_dead_oid_list, this);
   ACTION_TASK_ADD(S3AbortMultipartAction::delete_multipart_metadata, this);
   // TODO: delete_part_index_with_parts can also be done after send response
   ACTION_TASK_ADD(S3AbortMultipartAction::delete_part_index_with_parts, this);
@@ -135,10 +137,12 @@ void S3AbortMultipartAction::get_multipart_metadata() {
       set_s3_error("NoSuchUpload");
       send_response_to_s3_client();
     } else {
+      std::string multipart_key_name =
+          request->get_object_name() + EXTENDED_METADATA_OBJECT_SEP + upload_id;
       object_multipart_metadata =
           object_mp_metadata_factory->create_object_mp_metadata_obj(
               request, multipart_oid, upload_id);
-
+      object_multipart_metadata->rename_object_name(multipart_key_name);
       object_multipart_metadata->load(
           std::bind(&S3AbortMultipartAction::get_multipart_metadata_status,
                     this),
@@ -181,48 +185,146 @@ void S3AbortMultipartAction::get_multipart_metadata_status() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3AbortMultipartAction::add_object_oid_to_probable_dead_oid_list() {
+void S3AbortMultipartAction::get_next_parts() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  struct m0_uint128 object_oid = object_multipart_metadata->get_oid();
-
-  assert(object_oid.u_hi || object_oid.u_lo);
-
-  oid_str = S3M0Uint128Helper::to_string(object_oid);
-
-  // prepending a char depending on the size of the object (size based
-  // bucketing
-  // of object)
-  S3CommonUtilities::size_based_bucketing_of_objects(
-      oid_str, request->get_content_length());
-
-  s3_log(S3_LOG_DEBUG, request_id, "Adding probable_delete_rec with key [%s]\n",
-         oid_str.c_str());
-
-  probable_delete_rec.reset(new S3ProbableDeleteRecord(
-      oid_str, {0ULL, 0ULL}, object_multipart_metadata->get_object_name(),
-      object_oid, object_multipart_metadata->get_layout_id(),
-      bucket_metadata->get_multipart_index_oid(),
-      bucket_metadata->get_objects_version_list_index_oid(),
-      "" /* Version does not exists yet */, false /* force_delete */,
-      true /* is_multipart */,
-      object_multipart_metadata->get_part_index_oid()));
-
-  if (!motr_kv_writer) {
-    motr_kv_writer =
-        mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+    return;
   }
+  s3_log(S3_LOG_DEBUG, request_id, "Fetching next part listing\n");
+  size_t count = S3Option::get_instance()->get_motr_idx_fetch_count();
 
-  motr_kv_writer->put_keyval(
-      global_probable_dead_object_list_index_oid, oid_str,
-      probable_delete_rec->to_json(),
-      std::bind(&S3AbortMultipartAction::next, this),
-      std::bind(&S3AbortMultipartAction::
-                     add_object_oid_to_probable_dead_oid_list_failed,
-                this));
+  motr_kv_reader =
+      motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
+  motr_kv_reader->next_keyval(
+      object_multipart_metadata->get_part_index_oid(), last_key, count,
+      std::bind(&S3AbortMultipartAction::get_next_parts_successful, this),
+      std::bind(&S3AbortMultipartAction::get_next_parts_failed, this));
+}
+
+void S3AbortMultipartAction::get_next_parts_successful() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+    return;
+  }
+  struct m0_uint128 part_index_oid =
+      object_multipart_metadata->get_part_index_oid();
+  bool atleast_one_json_error = false;
+  auto& kvps = motr_kv_reader->get_key_values();
+  size_t length = kvps.size();
+  for (auto& kv : kvps) {
+    s3_log(S3_LOG_DEBUG, request_id, "Read Object = %s\n", kv.first.c_str());
+    auto part = part_metadata_factory->create_part_metadata_obj(
+        request, part_index_oid, upload_id, atoi(kv.first.c_str()));
+
+    if (part->from_json(kv.second.second) != 0) {
+      atleast_one_json_error = true;
+      s3_log(S3_LOG_ERROR, request_id,
+             "Json Parsing failed. Index oid = "
+             "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
+             part_index_oid.u_hi, part_index_oid.u_lo, kv.first.c_str(),
+             kv.second.second.c_str());
+    } else {
+      multipart_parts.push_back(part);
+      s3_log(S3_LOG_DEBUG, request_id,
+             "Part oid = "
+             "%" SCNx64 " : %" SCNx64 ", layout_id = %d\n",
+             part->get_oid().u_hi, part->get_oid().u_lo, part->get_layout_id());
+    }
+
+    if (--length == 0) {
+      // this is the last element returned or we reached limit requested
+      last_key = kv.first;
+      break;
+    }
+  }
+  if (atleast_one_json_error) {
+    s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
+           S3_IEM_METADATA_CORRUPTED_JSON);
+  }
+  // We ask for more if there is any.
+  size_t count_we_requested =
+      S3Option::get_instance()->get_motr_idx_fetch_count();
+  if (kvps.size() < count_we_requested) {
+    // Go ahead
+    next();
+  } else {
+    get_next_parts();
+  }
+}
+
+void S3AbortMultipartAction::get_next_parts_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
+    s3_log(S3_LOG_DEBUG, request_id, "Missing part listing\n");
+    next();
+    return;
+  } else if (motr_kv_reader->get_state() ==
+             S3MotrKVSReaderOpState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Part metadata next keyval operation failed due to pre launch "
+           "failure\n");
+    set_s3_error("ServiceUnavailable");
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id, "Failed to find part listing\n");
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3AbortMultipartAction::add_object_oid_to_probable_dead_oid_list_failed() {
+void S3AbortMultipartAction::add_parts_oids_to_probable_dead_oid_list() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  std::map<std::string, std::string> probable_oid_list;
+
+  if (multipart_parts.size() == 0) {
+    s3_log(S3_LOG_DEBUG, request_id, "Parts not there\n");
+    next();
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+    return;
+  }
+
+  for (auto& part_metadata : multipart_parts) {
+    std::string part_oid_str = part_metadata->get_oid_str();
+
+    // prepending a char depending on the size of the object (size based
+    // bucketing of object)
+    S3CommonUtilities::size_based_bucketing_of_objects(
+        part_oid_str, part_metadata->get_content_length());
+    std::unique_ptr<S3ProbableDeleteRecord> probable_del_rec;
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Adding part probable del rec with key [%s]\n",
+           part_oid_str.c_str());
+    // TODO -- Verify whether background delete process it appropriately
+    probable_del_rec.reset(new S3ProbableDeleteRecord(
+        part_oid_str, {0ULL, 0ULL}, part_metadata->get_part_number(),
+        part_metadata->get_oid(), part_metadata->get_layout_id(),
+        part_metadata->get_part_index_oid(),
+        bucket_metadata->get_objects_version_list_index_oid(), "",
+        false /* force_delete */, true, part_metadata->get_part_index_oid()));
+    probable_oid_list[probable_del_rec->get_key()] =
+        probable_del_rec->to_json();
+    probable_del_rec_list.push_back(std::move(probable_del_rec));
+  }
+
+  if (probable_oid_list.size() > 0) {
+    if (!motr_kv_writer) {
+      motr_kv_writer =
+          mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+    }
+    motr_kv_writer->put_keyval(
+        global_probable_dead_object_list_index_oid, probable_oid_list,
+        std::bind(&S3AbortMultipartAction::next, this),
+        std::bind(&S3AbortMultipartAction::
+                       add_parts_oids_to_probable_dead_oid_list_failed,
+                  this));
+  }
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3AbortMultipartAction::add_parts_oids_to_probable_dead_oid_list_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_abort_mp_action_state =
       S3AbortMultipartActionState::probableEntryRecordFailed;
@@ -364,14 +466,14 @@ void S3AbortMultipartAction::startcleanup() {
              "uploadMetadataDeleteFailed\n");
       // Failed to delete metadata, so object is still can become live with
       // complete operation, remove probable rec
-      ACTION_TASK_ADD(S3AbortMultipartAction::remove_probable_record, this);
+      ACTION_TASK_ADD(S3AbortMultipartAction::remove_probable_records, this);
     } else {
       s3_log(S3_LOG_DEBUG, request_id,
              "Cleanup the object: s3_abort_mp_action_state[%d]\n",
              s3_abort_mp_action_state);
       // Metadata deleted, so object is gone for S3 client, clean storage.
-      ACTION_TASK_ADD(S3AbortMultipartAction::mark_oid_for_deletion, this);
-      ACTION_TASK_ADD(S3AbortMultipartAction::delete_object, this);
+      ACTION_TASK_ADD(S3AbortMultipartAction::mark_oids_for_deletion, this);
+      ACTION_TASK_ADD(S3AbortMultipartAction::delete_part, this);
       // If delete object is successful and part list deleted,
       // attempt to delete probable record
     }
@@ -382,41 +484,77 @@ void S3AbortMultipartAction::startcleanup() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3AbortMultipartAction::mark_oid_for_deletion() {
+void S3AbortMultipartAction::mark_oids_for_deletion() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   assert(!oid_str.empty());
+  if (probable_del_rec_list.size() == 0) {
+    next();
+    return;
+  }
 
-  probable_delete_rec->set_force_delete(true);
+  std::map<std::string, std::string> oid_key_val_map;
+  for (auto& delete_rec : probable_del_rec_list) {
+    delete_rec->set_force_delete(true);
+    oid_key_val_map[delete_rec->get_key()] = delete_rec->to_json();
+  }
 
   if (!motr_kv_writer) {
     motr_kv_writer =
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
   motr_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
-                             oid_str, probable_delete_rec->to_json(),
+                             oid_key_val_map,
                              std::bind(&S3AbortMultipartAction::next, this),
                              std::bind(&S3AbortMultipartAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3AbortMultipartAction::delete_object() {
+void S3AbortMultipartAction::delete_part() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // process to delete object
+  if (multipart_parts.size() == 0) {
+    next();
+    return;
+  }
   if (!motr_writer) {
     motr_writer = motr_writer_factory->create_motr_writer(request);
   }
-  motr_writer->delete_object(
-      std::bind(&S3AbortMultipartAction::remove_probable_record, this),
-      std::bind(&S3AbortMultipartAction::next, this),
-      object_multipart_metadata->get_oid(),
-      object_multipart_metadata->get_layout_id(),
-      object_multipart_metadata->get_pvid());
 
+  auto& part_metadata = multipart_parts.back();
+  struct m0_uint128 id = part_metadata->get_oid();
+  motr_writer->set_oid(id);
+  motr_writer->set_layout_id(part_metadata->get_layout_id());
+  motr_writer->delete_object(
+      std::bind(&S3AbortMultipartAction::delete_parts_successful, this),
+      std::bind(&S3AbortMultipartAction::next, this),
+      id,
+      part_metadata->get_layout_id(),
+      object_multipart_metadata->get_pvid());
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3AbortMultipartAction::remove_probable_record() {
+void S3AbortMultipartAction::delete_parts_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  if (multipart_parts.size() == 0) {
+    return;
+  }
+  s3_log(S3_LOG_INFO, request_id,
+         "Deleted old object oid "
+         "[%" SCNx64 " : %" SCNx64 "]",
+         (motr_writer->get_oid()).u_hi, (motr_writer->get_oid()).u_lo);
+  multipart_parts.erase(multipart_parts.end());
+
+  if (multipart_parts.size() > 0) {
+    delete_part();
+  } else {
+    remove_probable_records();
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3AbortMultipartAction::remove_probable_records() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  std::vector<std::string> keys_to_delete;
   assert(!oid_str.empty());
 
   if (s3_abort_mp_action_state ==
@@ -426,8 +564,15 @@ void S3AbortMultipartAction::remove_probable_record() {
       motr_kv_writer =
           mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
     }
+    for (auto& probable_rec : probable_del_rec_list) {
+      keys_to_delete.push_back(probable_rec->get_key());
+    }
+    if (!motr_kv_writer) {
+      motr_kv_writer =
+          mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
+    }
     motr_kv_writer->delete_keyval(
-        global_probable_dead_object_list_index_oid, oid_str,
+        global_probable_dead_object_list_index_oid, keys_to_delete,
         std::bind(&S3AbortMultipartAction::next, this),
         std::bind(&S3AbortMultipartAction::next, this));
   } else {

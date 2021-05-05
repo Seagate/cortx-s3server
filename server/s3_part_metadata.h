@@ -140,6 +140,7 @@ class S3PartMetadata {
   virtual std::string get_upload_id();
   std::string get_part_number();
   const virtual struct m0_uint128 get_oid() { return oid; }
+  virtual std::string get_oid_str() { return motr_oid_str; }
   virtual void set_oid(struct m0_uint128 id);
   void set_layout_id(int id) { layout_id = id; }
   virtual int get_layout_id() { return layout_id; }
