@@ -132,8 +132,9 @@ class IAMController {
         LOGGER.error("Incorrect signature. Request not authenticated");
         return serverResponse;
       }
-    } else if (requestAction.equals("UpdateAccountLoginProfile")) {
-      LOGGER.debug("Parsing UpdateAccountLoginProfile request" +
+    } else if (requestAction.equals("UpdateAccountLoginProfile") ||
+               requestAction.equals("DeleteAccount")) {
+      LOGGER.debug("Parsing UpdateAccountLoginProfile/DeleteAccount request" +
                    requestBody.get("AccountName"));
       try {
         clientRequestToken =
@@ -365,7 +366,8 @@ class IAMController {
           requestAction.equals("ResetAccountAccessKey") ||
           requestAction.equals("ChangePassword") ||
           requestAction.equals("GetTempAuthCredentials") ||
-          requestAction.equals("UpdateAccountLoginProfile"))) {
+          requestAction.equals("UpdateAccountLoginProfile") ||
+          requestAction.equals("DeleteAccount"))) {
       try {
         if (RootPermissionAuthorizer.getInstance().containsAction(
                 requestAction)) {

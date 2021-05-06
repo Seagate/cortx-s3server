@@ -32,11 +32,13 @@ import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPModification;
 import com.novell.ldap.LDAPSearchResults;
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.fi.FaultPoints;
 import com.seagates3.model.AccessKey;
 import com.seagates3.model.AccessKey.AccessKeyStatus;
+import com.seagates3.model.Account;
 import com.seagates3.model.User;
 import com.seagates3.util.DateUtil;
 
@@ -549,6 +551,82 @@ public class AccessKeyImpl implements AccessKeyDAO {
           count++;
         }
       }
+    }
+
+    /**
+     * Get the access key belonging to the account from LDAP.
+     *
+     * @param account {@link Account}
+     * @return accessKey {@link AccessKey}
+     * @throws com.seagates3.exception.DataAccessException
+     */
+    @Override public AccessKey findAccountAccessKey(Account account)
+        throws DataAccessException {
+      AccessKey accessKey;
+
+      String[] attrs = {LDAPUtils.ACCESS_KEY_ID, LDAPUtils.SECRET_KEY,
+                        LDAPUtils.STATUS,        LDAPUtils.EXPIRY,
+                        LDAPUtils.OBJECT_CLASS,  LDAPUtils.CREATE_TIMESTAMP,
+                        LDAPUtils.TOKEN};
+
+      String accessKeyBaseDN =
+          String.format("%s=accesskeys,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
+                        LDAPUtils.BASE_DN);
+
+      String filter = String.format("(&(%s=%s)(%s=%s))", LDAPUtils.ACCOUNT_ID,
+                                    account.getId(), LDAPUtils.OBJECT_CLASS,
+                                    LDAPUtils.ACCESS_KEY_OBJECT_CLASS);
+
+      LDAPSearchResults ldapResults;
+      try {
+        ldapResults = LDAPUtils.search(accessKeyBaseDN,
+                                       LDAPConnection.SCOPE_SUB, filter, attrs);
+      }
+      catch (LDAPException ex) {
+        LOGGER.error("Failed to search access key for account." +
+                     account.getName());
+        throw new DataAccessException("Failed to search access key" + ex);
+      }
+
+      AccessKeyStatus accessKeystatus;
+      accessKey = new AccessKey();
+
+      if (ldapResults != null && ldapResults.hasMore()) {
+        LDAPEntry entry;
+        try {
+          entry = ldapResults.next();
+        }
+        catch (LDAPException ex) {
+          LOGGER.error("Access key find failed.");
+          throw new DataAccessException("Access key find failed.\n" + ex);
+        }
+
+        accessKey.setId(
+            entry.getAttribute(LDAPUtils.ACCESS_KEY_ID).getStringValue());
+        accessKey.setSecretKey(
+            entry.getAttribute(LDAPUtils.SECRET_KEY).getStringValue());
+        accessKeystatus =
+            AccessKeyStatus.valueOf(entry.getAttribute(LDAPUtils.STATUS)
+                                        .getStringValue()
+                                        .toUpperCase());
+        accessKey.setStatus(accessKeystatus);
+
+        String createTime = DateUtil.toServerResponseFormat(
+            entry.getAttribute(LDAPUtils.CREATE_TIMESTAMP).getStringValue());
+        accessKey.setCreateDate(createTime);
+
+        String objectClass =
+            entry.getAttribute(LDAPUtils.OBJECT_CLASS).getStringValue();
+        if (objectClass.equalsIgnoreCase("fedaccesskey")) {
+          String expiry = DateUtil.toServerResponseFormat(
+              entry.getAttribute(LDAPUtils.EXPIRY).getStringValue());
+
+          accessKey.setExpiry(expiry);
+          accessKey.setToken(
+              entry.getAttribute(LDAPUtils.TOKEN).getStringValue());
+        }
+      }
+      return accessKey;
     }
 }
 

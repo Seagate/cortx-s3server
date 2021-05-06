@@ -22,6 +22,7 @@ package com.seagates3.dao;
 
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
+import com.seagates3.model.Account;
 import com.seagates3.model.User;
 
 public interface AccessKeyDAO {
@@ -74,5 +75,11 @@ public interface AccessKeyDAO {
       */
     public
      void deleteExpiredKeys(User user) throws DataAccessException;
+
+     /*
+      * Get the access key belonging to the account.
+      */
+    public
+     AccessKey findAccountAccessKey(Account account) throws DataAccessException;
 }
 
