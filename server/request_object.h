@@ -351,6 +351,7 @@ class RequestObject {
   virtual void send_reply_start(int code);
   virtual void send_reply_body(char* data, int length);
   virtual void send_reply_end();
+  virtual void cancel();
 
   void respond_error(std::string error_code,
                      const std::map<std::string, std::string>& headers =

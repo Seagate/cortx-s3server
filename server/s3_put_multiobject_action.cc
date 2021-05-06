@@ -185,11 +185,25 @@ void S3PutMultiObjectAction::fetch_bucket_info_success() {
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
+
 void S3PutMultiObjectAction::fetch_object_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  next();
+  auto omds = object_metadata->get_state();
+  if (omds == S3ObjectMetadataState::missing) {
+    s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
+    next();
+  } else {
+    s3_log(S3_LOG_ERROR, request_id, "Metadata load state %d", (int)omds);
+    if (omds == S3ObjectMetadataState::failed_to_launch) {
+      set_s3_error("ServiceUnavailable");
+    } else {
+      set_s3_error("InternalError");
+    }
+    send_response_to_s3_client();
+  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
+
 void S3PutMultiObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_ERROR, request_id, "Bucket does not exists\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
@@ -552,6 +566,13 @@ void S3PutMultiObjectAction::write_object_failed() {
 
 void S3PutMultiObjectAction::save_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  std::string s_md5_got = request->get_header_value("content-md5");
+  if (!s_md5_got.empty() && !motr_writer->content_md5_matches(s_md5_got)) {
+    s3_log(S3_LOG_ERROR, request_id, "Content MD5 mismatch\n");
+    set_s3_error("BadDigest");
+    send_response_to_s3_client();
+    return;
+  }
   part_metadata = part_metadata_factory->create_part_metadata_obj(
       request, object_multipart_metadata->get_part_index_oid(), upload_id,
       part_number);
@@ -655,4 +676,3 @@ void S3PutMultiObjectAction::set_authorization_meta() {
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
-

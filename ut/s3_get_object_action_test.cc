@@ -1202,3 +1202,117 @@ TEST_F(S3GetObjectActionTest, RangeHeaderContainsSpacesOnly) {
       range_value));
 }
 
+TEST_F(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSizeMD5Fail) {
+  CREATE_OBJECT_METADATA;
+
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1);
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              check_object_tags_exists()).WillOnce(Return(false));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
+      .WillRepeatedly(Return(oid));
+
+  int layout_id = 1;
+  size_t obj_size =
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(obj_size));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str())
+      .WillRepeatedly(Return(std::to_string(obj_size)));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_last_modified_gmt())
+      .WillOnce(Return("Sunday, 29 January 2017 08:05:01 GMT"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
+      .Times(AtLeast(1));
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+
+  EXPECT_CALL(*ptr_mock_request, send_reply_start(Eq(S3HttpSuccess200)))
+      .Times(AtLeast(1));
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_first_block(_))
+      .WillOnce(Return(obj_size));
+
+  // Expect request cancelation due to checksum mismatch.
+  EXPECT_CALL(*ptr_mock_request, cancel()).Times(AtLeast(1));
+
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader),
+              read_object_data(_, _, _))
+      .Times(1)
+      .WillOnce(Invoke(test_read_object_data_success));
+
+  bool md5check = S3Option::get_instance()->get_s3_read_md5_check_enabled();
+  S3Option::get_instance()->set_s3_read_md5_check_enabled(true);
+
+  action_under_test->validate_object_info();
+  action_under_test->read_object();
+
+  // Make sure checksum mismatch happens indeed.
+  EXPECT_TRUE(action_under_test->checksum_mismatch);
+
+  S3Option::get_instance()->set_s3_read_md5_check_enabled(md5check);
+}
+
+TEST_F(S3GetObjectActionTest, ReadObjectEmulatedMultiPartMD5Passes) {
+  CREATE_OBJECT_METADATA;
+
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1);
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              check_object_tags_exists()).WillOnce(Return(false));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
+      .WillRepeatedly(Return(oid));
+
+  int layout_id = 1;
+  // Reading two parts of 4K length
+  size_t obj_size =
+      2 * S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(obj_size));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str())
+      .WillRepeatedly(Return(std::to_string(obj_size)));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_last_modified_gmt())
+      .WillOnce(Return("Sunday, 29 January 2017 08:05:01 GMT"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
+      // Expected etag value
+      .WillOnce(Return("e9950e6dfe206f9eb9b3d09b2f1130f4-2"))
+      // Expected part md5 values
+      .WillRepeatedly(Return("d41d8cd98f00b204e9800998ecf8427e-0"));
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+
+  EXPECT_CALL(*ptr_mock_request, send_reply_start(Eq(S3HttpSuccess200)))
+      .Times(AtLeast(1));
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader), get_first_block(_))
+      .WillOnce(Return(obj_size));
+
+  EXPECT_CALL(*(motr_reader_factory->mock_motr_reader),
+              read_object_data(_, _, _))
+      .Times(1)
+      .WillOnce(Invoke(test_read_object_data_success));
+
+  bool md5check = S3Option::get_instance()->get_s3_read_md5_check_enabled();
+  S3Option::get_instance()->set_s3_read_md5_check_enabled(true);
+  action_under_test->validate_object_info();
+
+  // NOTE1: Set up internal part size being passed through
+  // `Part-One-Size' header. This will enable multipart read case.
+  //
+  // NOTE2: it's not pratical to touch `Part-One-Size' header value
+  // directly w.r.t. not breaking other tests logic, therefore leaving
+  // it as volatile.
+  action_under_test->object_metadata->set_part_one_size(4096);
+  action_under_test->read_object();
+  EXPECT_FALSE(action_under_test->checksum_mismatch);
+  S3Option::get_instance()->set_s3_read_md5_check_enabled(md5check);
+}

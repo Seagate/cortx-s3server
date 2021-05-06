@@ -45,6 +45,8 @@ class S3GetObjectAction : public S3ObjectAction {
   size_t last_byte_offset_to_read;
   size_t total_blocks_to_read;
 
+  bool checksum_mismatch = false;
+
   bool read_object_reply_started;
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
   S3Timer s3_timer;
@@ -153,6 +155,9 @@ class S3GetObjectAction : public S3ObjectAction {
   FRIEND_TEST(
       S3GetObjectActionTest,
       CheckFullOrRangeObjectReadWithUnsupportMultiRangeForContentLength8000);
+
+  FRIEND_TEST(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSizeMD5Fail);
+  FRIEND_TEST(S3GetObjectActionTest, ReadObjectEmulatedMultiPartMD5Passes);
 };
 
 #endif

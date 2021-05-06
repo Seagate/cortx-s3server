@@ -204,7 +204,7 @@ void S3PutObjectAction::validate_tags() {
 }
 
 void S3PutObjectAction::fetch_object_info_failed() {
-  // Proceed to to next task, object metadata doesnt exist, will create now
+  auto omds = object_metadata->get_state();
   struct m0_uint128 object_list_oid =
       bucket_metadata->get_object_list_index_oid();
   if ((object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) ||
@@ -221,32 +221,40 @@ void S3PutObjectAction::fetch_object_info_failed() {
     s3_put_action_state = S3PutObjectActionState::validationFailed;
     set_s3_error("MetaDataCorruption");
     send_response_to_s3_client();
-  } else {
-    next();
-  }
-}
-
-void S3PutObjectAction::fetch_object_info_success() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (object_metadata->get_state() == S3ObjectMetadataState::present) {
-    s3_log(S3_LOG_DEBUG, request_id, "S3ObjectMetadataState::present\n");
-    old_object_oid = object_metadata->get_oid();
-    old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
-    old_layout_id = object_metadata->get_layout_id();
-    create_new_oid(old_object_oid);
-    next();
-  } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
+  } else if (omds == S3ObjectMetadataState::missing) {
+    // Proceed to to next task, object metadata doesnt exist, will create now
     s3_log(S3_LOG_DEBUG, request_id, "S3ObjectMetadataState::missing\n");
     next();
-  } else if (object_metadata->get_state() ==
-             S3ObjectMetadataState::failed_to_launch) {
+  } else if (omds == S3ObjectMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Object metadata load operation failed due to pre launch failure\n");
     s3_put_action_state = S3PutObjectActionState::validationFailed;
     set_s3_error("ServiceUnavailable");
     send_response_to_s3_client();
   } else {
-    s3_log(S3_LOG_DEBUG, request_id, "Failed to look up metadata.\n");
+    // both S3ObjectMetadataState::failed and S3ObjectMetadataState::invalid
+    // are mapped to InternalError
+    s3_log(S3_LOG_DEBUG, request_id, "Failed with metadata state %d",
+           (int)omds);
+    s3_put_action_state = S3PutObjectActionState::validationFailed;
+    set_s3_error("InternalError");
+    send_response_to_s3_client();
+  }
+}
+
+void S3PutObjectAction::fetch_object_info_success() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  auto omds = object_metadata->get_state();
+  if (omds == S3ObjectMetadataState::present) {
+    s3_log(S3_LOG_DEBUG, request_id, "S3ObjectMetadataState::present\n");
+    old_object_oid = object_metadata->get_oid();
+    old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
+    old_layout_id = object_metadata->get_layout_id();
+    create_new_oid(old_object_oid);
+    next();
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Unexpected Metadata state %d in success handler", (int)omds);
     s3_put_action_state = S3PutObjectActionState::validationFailed;
     set_s3_error("InternalError");
     send_response_to_s3_client();
@@ -549,20 +557,14 @@ void S3PutObjectAction::save_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   std::string s_md5_got = request->get_header_value("content-md5");
-  if (!s_md5_got.empty()) {
-    std::string s_md5_calc = motr_writer->get_content_md5_base64();
-    s3_log(S3_LOG_DEBUG, request_id, "MD5 calculated: %s, MD5 got %s",
-           s_md5_calc.c_str(), s_md5_got.c_str());
+  if (!s_md5_got.empty() && !motr_writer->content_md5_matches(s_md5_got)) {
+    s3_log(S3_LOG_ERROR, request_id, "Content MD5 mismatch\n");
+    s3_put_action_state = S3PutObjectActionState::md5ValidationFailed;
 
-    if (s_md5_calc != s_md5_got) {
-      s3_log(S3_LOG_ERROR, request_id, "Content MD5 mismatch\n");
-      s3_put_action_state = S3PutObjectActionState::md5ValidationFailed;
-
-      set_s3_error("BadDigest");
-      // Clean up will be done after response.
-      send_response_to_s3_client();
-      return;
-    }
+    set_s3_error("BadDigest");
+    // Clean up will be done after response.
+    send_response_to_s3_client();
+    return;
   }
   s3_timer.start();
   // for shutdown testcases, check FI and set shutdown signal

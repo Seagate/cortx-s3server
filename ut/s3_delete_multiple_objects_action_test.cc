@@ -404,6 +404,8 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
       .WillRepeatedly(Return("objname"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_bucket_name())
+      .WillRepeatedly(Return(bucket_name));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
       .WillRepeatedly(Return(oid));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
@@ -412,6 +414,9 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
               get_version_key_in_index()).WillRepeatedly(Return("objname/v1"));
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, _, _, _)).Times(1);
+
+  std::string sdrf = "<Delete><Object><Key>objname</Key></Object></Delete>";
+  action_under_test->delete_request.initialize(mock_request, sdrf);
 
   action_under_test->fetch_objects_info_successful();
 
@@ -456,6 +461,8 @@ TEST_F(S3DeleteMultipleObjectsActionTest, FetchObjectsInfoSuccessful) {
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
       .WillRepeatedly(Return("objname"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_bucket_name())
+      .WillRepeatedly(Return(bucket_name));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
       .WillRepeatedly(Return(oid));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
@@ -464,6 +471,9 @@ TEST_F(S3DeleteMultipleObjectsActionTest, FetchObjectsInfoSuccessful) {
               get_version_key_in_index()).WillRepeatedly(Return("objname/v1"));
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, _, _, _)).Times(1);
+
+  std::string sdrf = "<Delete><Object><Key>objname</Key></Object></Delete>";
+  action_under_test->delete_request.initialize(mock_request, sdrf);
 
   action_under_test->fetch_objects_info_successful();
 

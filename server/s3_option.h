@@ -133,6 +133,11 @@ class S3Option {
   bool s3_enable_murmurhash_oid;
   int log_flush_frequency_sec;
 
+  bool s3_ranged_read_enabled;
+  bool s3_read_md5_check_enabled;
+  bool s3_di_disable_data_corruption_iem;
+  bool s3_di_disable_metadata_corruption_iem;
+
   unsigned short motr_layout_id;
   unsigned short motr_units_per_request;
   std::vector<int> motr_unit_sizes_for_mem_pool;
@@ -209,6 +214,9 @@ class S3Option {
 
     s3_grace_period_sec = 10;  // 10 seconds
     is_s3_shutting_down = false;
+
+    s3_ranged_read_enabled = true;
+    s3_read_md5_check_enabled = false;
 
     log_dir = "/var/log/seagate/s3";
     audit_log_dir = "/var/log/seagate/s3";
@@ -315,6 +323,15 @@ class S3Option {
  public:
   bool load_section(std::string section_name, bool force_override_from_config);
   bool load_all_sections(bool force_override_from_config);
+
+  bool get_s3_ranged_read_enabled();
+  bool get_s3_read_md5_check_enabled();
+  bool get_s3_di_disable_data_corruption_iem();
+  bool get_s3_di_disable_metadata_corruption_iem();
+
+  void set_s3_read_md5_check_enabled(bool value) {
+    s3_read_md5_check_enabled = value;
+  }
 
   std::string get_s3_nodename();
   std::string get_ipv4_bind_addr();

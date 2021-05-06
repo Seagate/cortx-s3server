@@ -96,6 +96,7 @@ class S3MotrWiter {
 
   std::string content_md5;
   uint64_t last_index;
+  uint64_t first_offset;
   std::string request_id;
   // md5 for the content written to motr.
   MD5hash md5crypt;
@@ -118,6 +119,11 @@ class S3MotrWiter {
 
   // buffer currently used to write, will be freed on completion
   std::shared_ptr<S3AsyncBufferOptContainer> write_async_buffer;
+
+  // used for checksum calculation testing
+  // fill entire object with zeroes after checksum calculation, but before
+  // writing to Motr
+  bool corrupt_fill_zero = false;
 
   // Write - single object, delete - multiple objects supported
   int open_objects();
@@ -178,8 +184,11 @@ class S3MotrWiter {
     return content_md5;
   }
 
-  virtual std::string get_content_md5_base64() {
-    return md5crypt.get_md5_base64enc_string();
+  virtual bool content_md5_matches(std::string md5_base64) {
+    std::string calculated = md5crypt.get_md5_base64enc_string();
+    s3_log(S3_LOG_DEBUG, request_id, "MD5 calculated: %s, MD5 got %s",
+           calculated.c_str(), md5_base64.c_str());
+    return calculated == md5_base64;
   }
 
   // async create

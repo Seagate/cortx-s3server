@@ -31,6 +31,8 @@
 #include "s3_motr_layout.h"
 #include "s3_motr_wrapper.h"
 #include "s3_log.h"
+#include "s3_md5_hash.h"
+#include "s3_aws_etag.h"
 #include "s3_option.h"
 #include "s3_request_object.h"
 
@@ -150,6 +152,16 @@ class S3MotrReader {
 
   S3MotrReaderOpState state;
 
+  // md5 for the content read from motr.
+  // In case of it's a GET for multipart upload it's calculated for each part
+  // independently.
+  MD5hash md5crypt;
+  size_t multipart_part_size;
+  size_t multipart_num_of_parts;
+  size_t total_size_read = 0;
+  size_t total_size_to_read;
+  S3AwsEtag awsetag;
+
   // Holds references to buffers after the read so it can be consumed.
   struct s3_motr_rw_op_context* motr_rw_op_context;
   size_t iteration_index;
@@ -160,6 +172,11 @@ class S3MotrReader {
 
   bool is_object_opened;
   struct s3_motr_obj_context* obj_ctx;
+
+  // used for checksum calculation testing
+  // fill entire object with zeroes when reading it from the storage
+  // See S3MotrWiter::corrupt_fill_zero.
+  bool corrupt_fill_zero = false;
 
   // Internal open operation so motr can fetch required object metadata
   // for example object pool version
@@ -186,6 +203,9 @@ class S3MotrReader {
   virtual struct m0_uint128 get_oid() { return oid; }
 
   virtual void set_oid(struct m0_uint128 id) { oid = id; }
+  void set_multipart_part_size(size_t size) { multipart_part_size = size; }
+  void set_multipart_num_of_parts(size_t num) { multipart_num_of_parts = num; }
+  void set_total_size_to_read(size_t size) { total_size_to_read = size; }
 
   // async read
   // Returns: true = launched, false = failed to launch (out-of-memory)
@@ -205,6 +225,18 @@ class S3MotrReader {
   virtual size_t get_last_index() { return last_index; }
 
   virtual void set_last_index(size_t index) { last_index = index; }
+
+  virtual std::string get_content_md5() {
+    // Complete MD5 computation and remember
+    md5crypt.Finalize();
+    std::string content_md5 = md5crypt.get_md5_string();
+    s3_log(S3_LOG_DEBUG, request_id,
+           "content_md5 of current piece of data read = %s\n",
+           content_md5.c_str());
+    return content_md5;
+  }
+
+  virtual std::string get_content_awsetag() { return awsetag.finalize(); }
 
   // For Testing purpose
   FRIEND_TEST(S3MotrReaderTest, Constructor);

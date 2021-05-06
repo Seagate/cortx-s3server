@@ -27,6 +27,8 @@
 #include "s3_common_utilities.h"
 #include "s3_stats.h"
 #include "s3_perf_metrics.h"
+#include "s3_iem.h"
+#include "s3_aws_etag.h"
 
 S3GetObjectAction::S3GetObjectAction(
     std::shared_ptr<S3RequestObject> req,
@@ -84,27 +86,22 @@ void S3GetObjectAction::fetch_bucket_info_failed() {
 }
 
 void S3GetObjectAction::fetch_object_info_failed() {
-  if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
-    object_list_oid = bucket_metadata->get_object_list_index_oid();
-    if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
-      s3_log(S3_LOG_ERROR, request_id, "Object not found\n");
-      set_s3_error("NoSuchKey");
-    } else {
-      if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
-        s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
-        set_s3_error("NoSuchKey");
-      } else if (object_metadata->get_state() ==
-                 S3ObjectMetadataState::failed_to_launch) {
-        s3_log(S3_LOG_ERROR, request_id,
-               "Object metadata load operation failed due to pre launch "
-               "failure\n");
-        set_s3_error("ServiceUnavailable");
-      } else {
-        s3_log(S3_LOG_DEBUG, request_id, "Object metadata fetch failed\n");
-        set_s3_error("InternalError");
-      }
-    }
+  object_list_oid = bucket_metadata->get_object_list_index_oid();
+  if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
+    s3_log(S3_LOG_ERROR, request_id, "Object not found\n");
+    set_s3_error("NoSuchKey");
+  } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
+    s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
+    set_s3_error("NoSuchKey");
+  } else if (object_metadata->get_state() ==
+             S3ObjectMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Object metadata load operation failed due to pre launch "
+           "failure\n");
+    set_s3_error("ServiceUnavailable");
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id, "Object metadata fetch failed\n");
+    set_s3_error("InternalError");
   }
   send_response_to_s3_client();
 }
@@ -133,7 +130,12 @@ void S3GetObjectAction::validate_object_info() {
     request->set_out_header_value("Last-Modified",
                                   object_metadata->get_last_modified_gmt());
     request->set_out_header_value("ETag", e_tag);
-    request->set_out_header_value("Accept-Ranges", "bytes");
+
+    request->set_out_header_value(
+        "Accept-Ranges", S3Option::get_instance()->get_s3_ranged_read_enabled()
+                             ? "bytes"
+                             : "none");
+
     request->set_out_header_value("Content-Type",
                                   object_metadata->get_content_type());
     request->set_out_header_value("Content-Length",
@@ -304,10 +306,16 @@ void S3GetObjectAction::check_full_or_range_object_read() {
     // eg: bytes=0-1024 value
     s3_log(S3_LOG_DEBUG, request_id, "Range found(%s)\n",
            range_header_value.c_str());
-    if (validate_range_header_and_set_read_options(range_header_value)) {
-      next();
+
+    if (S3Option::get_instance()->get_s3_ranged_read_enabled()) {
+      if (validate_range_header_and_set_read_options(range_header_value)) {
+        next();
+      } else {
+        set_s3_error("InvalidRange");
+        send_response_to_s3_client();
+      }
     } else {
-      set_s3_error("InvalidRange");
+      set_s3_error("OperationNotSupported");
       send_response_to_s3_client();
     }
   }
@@ -320,6 +328,21 @@ void S3GetObjectAction::read_object() {
   set_total_blocks_to_read_from_object();
   motr_reader = motr_reader_factory->create_motr_reader(
       request, object_metadata->get_oid(), object_metadata->get_layout_id());
+  size_t part_one_size = object_metadata->get_part_one_size();
+  motr_reader->set_multipart_part_size(part_one_size);
+  if (part_one_size > 0) {
+    std::string etag = object_metadata->get_md5();
+    int num_of_parts = S3AwsEtag::get_num_of_parts(etag);
+    // it's impossible to have multipart upload with 0 parts
+    assert(num_of_parts > 0);
+    if (num_of_parts == 0) {
+      s3_log(S3_LOG_FATAL, request_id,
+             "It's impossible to have multipart upload with 0 parts");
+    }
+    motr_reader->set_multipart_num_of_parts(num_of_parts);
+    s3_log(S3_LOG_DEBUG, "", "part_one_size=%zu etag=%s num_of_parts=%d",
+           part_one_size, etag.c_str(), num_of_parts);
+  }
   // get the block,in which first_byte_offset_to_read is present
   // and initilaize the last index with starting offset the block
   size_t block_start_offset =
@@ -405,12 +428,16 @@ void S3GetObjectAction::send_data_to_client() {
                                   object_metadata->get_content_type());
     request->set_out_header_value("ETag", e_tag);
     s3_log(S3_LOG_INFO, request_id, "e_tag= %s", e_tag.c_str());
-    request->set_out_header_value("Accept-Ranges", "bytes");
+    request->set_out_header_value(
+        "Accept-Ranges", S3Option::get_instance()->get_s3_ranged_read_enabled()
+                             ? "bytes"
+                             : "none");
     request->set_out_header_value(
         "Content-Length", std::to_string(get_requested_content_length()));
     for (auto it : object_metadata->get_user_attributes()) {
       request->set_out_header_value(it.first, it.second);
     }
+    motr_reader->set_total_size_to_read(object_metadata->get_content_length());
     if (!request->get_header_value("Range").empty()) {
       std::ostringstream content_range_stream;
       content_range_stream << "bytes " << first_byte_offset_to_read << "-"
@@ -458,6 +485,36 @@ void S3GetObjectAction::send_data_to_client() {
     if ((data_sent_to_client + length) >= requested_content_length) {
       // length will have the size of remaining byte to sent
       length = requested_content_length - data_sent_to_client;
+      // this is the iteration for the final block
+      if (length > 0 &&
+          S3Option::get_instance()->get_s3_read_md5_check_enabled()) {
+        std::string checksum_calculated;
+        if (object_metadata->get_part_one_size() == 0) {
+          checksum_calculated = motr_reader->get_content_md5();
+        } else {
+          checksum_calculated = motr_reader->get_content_awsetag();
+        }
+        std::string checksum_read = object_metadata->get_md5();
+        s3_log(S3_LOG_DEBUG, request_id,
+               "checksum calculated: %s, checksum read %s",
+               checksum_calculated.c_str(), checksum_read.c_str());
+        if (checksum_calculated != checksum_read) {
+          if (!S3Option::get_instance()
+                   ->get_s3_di_disable_data_corruption_iem()) {
+            auto moid = object_metadata->get_oid();
+            s3_iem_full(
+                LOG_ERR, S3_IEM_CHECKSUM_MISMATCH, S3_IEM_CHECKSUM_MISMATCH_STR,
+                S3_IEM_CHECKSUM_MISMATCH_JSON,
+                request->get_bucket_name().c_str(),
+                request->get_object_name().c_str(), moid.u_hi, moid.u_lo,
+                checksum_calculated.c_str(), checksum_read.c_str(),
+                request->get_account_name().c_str());
+          }
+          s3_log(S3_LOG_ERROR, request_id, "Content checksum mismatch\n");
+          checksum_mismatch = true;
+          break;
+        }
+      }
     }
     data_sent_to_client += length;
     request->set_bytes_sent(data_sent_to_client);
@@ -468,14 +525,17 @@ void S3GetObjectAction::send_data_to_client() {
   }
   s3_timer.stop();
 
-  if (data_sent_to_client != requested_content_length) {
-    read_object_data();
-  } else {
-    const auto mss = s3_timer.elapsed_time_in_millisec();
-    LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);
-    s3_stats_timing("get_object_send_data", mss);
-
+  if (checksum_mismatch) {
     send_response_to_s3_client();
+  } else {
+    if (data_sent_to_client != requested_content_length) {
+      read_object_data();
+    } else {
+      const auto mss = s3_timer.elapsed_time_in_millisec();
+      LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);
+      s3_stats_timing("get_object_send_data", mss);
+      send_response_to_s3_client();
+    }
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -492,7 +552,9 @@ void S3GetObjectAction::read_object_data_failed() {
 void S3GetObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  if (reject_if_shutting_down()) {
+  if (checksum_mismatch) {
+    request->cancel();
+  } else if (reject_if_shutting_down()) {
     if (read_object_reply_started) {
       request->send_reply_end();
     } else {

@@ -43,7 +43,7 @@ enum class S3ObjectMetadataState {
   deleted,  // Metadata deleted from store.
   failed,
   failed_to_launch,  // pre launch operation failed.
-  invalid
+  invalid   // Metadata invalid or corrupted
 };
 
 // Forward declarations.
@@ -124,9 +124,6 @@ class S3ObjectMetadata {
   S3ObjectMetadataState state;
   S3Timer s3_timer;
 
-  // `true` in case of json parsing failure.
-  bool json_parsing_error;
-
   void initialize(bool is_multipart, std::string uploadid);
 
   // Any validations we want to do on metadata.
@@ -204,6 +201,7 @@ class S3ObjectMetadata {
   std::string get_owner_name();
   std::string get_owner_id();
   virtual std::string get_object_name();
+  virtual std::string get_bucket_name();
   virtual std::string get_user_id();
   virtual std::string get_user_name();
   virtual std::string get_canonical_id();
@@ -307,6 +305,7 @@ class S3ObjectMetadata {
   FRIEND_TEST(S3ObjectMetadataTest, AddUserDefinedAttribute);
   FRIEND_TEST(S3ObjectMetadataTest, Load);
   FRIEND_TEST(S3ObjectMetadataTest, LoadSuccessful);
+  FRIEND_TEST(S3ObjectMetadataTest, LoadMetadataFail);
   FRIEND_TEST(S3ObjectMetadataTest, LoadSuccessInvalidJson);
   FRIEND_TEST(S3ObjectMetadataTest, LoadSuccessfulInvalidJson);
   FRIEND_TEST(S3ObjectMetadataTest, LoadObjectInfoFailedJsonParsingFailed);
@@ -333,4 +332,3 @@ class S3ObjectMetadata {
 };
 
 #endif
-

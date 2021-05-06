@@ -40,6 +40,24 @@ bool S3Option::load_section(std::string section_name,
   }
   if (force_override_from_config) {
     if (section_name == "S3_SERVER_CONFIG") {
+
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_RANGED_READ_ENABLED");
+      s3_ranged_read_enabled =
+          s3_option_node["S3_RANGED_READ_ENABLED"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_MD5_CHECK_ENABLED");
+      s3_read_md5_check_enabled =
+          s3_option_node["S3_READ_MD5_CHECK_ENABLED"].as<bool>();
+
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_DI_DISABLE_DATA_CORRUPTION_IEM");
+      s3_di_disable_data_corruption_iem =
+          s3_option_node["S3_DI_DISABLE_DATA_CORRUPTION_IEM"].as<bool>();
+
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_DI_DISABLE_METADATA_CORRUPTION_IEM");
+      s3_di_disable_metadata_corruption_iem =
+          s3_option_node["S3_DI_DISABLE_METADATA_CORRUPTION_IEM"].as<bool>();
+
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_DAEMON_WORKING_DIR");
       s3_daemon_dir = s3_option_node["S3_DAEMON_WORKING_DIR"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_DAEMON_DO_REDIRECTION");
@@ -629,6 +647,7 @@ bool S3Option::load_section(std::string section_name,
       s3_version = s3_option_node["VERSION"].as<std::string>();
     }
   }
+
   return true;
 }
 
@@ -912,6 +931,20 @@ void S3Option::dump_options() {
          libevent_mempool_zeroed_buffer ? "true" : "false");
 
   return;
+}
+
+bool S3Option::get_s3_ranged_read_enabled() { return s3_ranged_read_enabled; }
+
+bool S3Option::get_s3_read_md5_check_enabled() {
+  return s3_read_md5_check_enabled;
+}
+
+bool S3Option::get_s3_di_disable_data_corruption_iem() {
+  return s3_di_disable_data_corruption_iem;
+}
+
+bool S3Option::get_s3_di_disable_metadata_corruption_iem() {
+  return s3_di_disable_metadata_corruption_iem;
 }
 
 std::string S3Option::get_s3_nodename() { return s3_nodename; }

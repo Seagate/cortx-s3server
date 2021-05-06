@@ -23,13 +23,20 @@
 
 #include "s3_delete_multiple_objects_body.h"
 #include "s3_log.h"
+#include "s3_fi_common.h"
+#include "s3_option.h"
+#include "s3_iem.h"
+
+#include <algorithm>
 
 S3DeleteMultipleObjectsBody::S3DeleteMultipleObjectsBody()
-    : is_valid(false), quiet(false) {
+    : is_valid(false), quiet(false), request() {
   s3_log(S3_LOG_DEBUG, "", "Constructor\n");
 }
 
-void S3DeleteMultipleObjectsBody::initialize(std::string &xml) {
+void S3DeleteMultipleObjectsBody::initialize(
+    std::shared_ptr<S3RequestObject> req, std::string &xml) {
+  request = req;
   xml_content = xml;
   parse_and_validate();
 }
@@ -152,4 +159,34 @@ bool S3DeleteMultipleObjectsBody::parse_and_validate() {
   xmlFreeDoc(document);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return is_valid;
+}
+
+bool S3DeleteMultipleObjectsBody::validate_attrs(const std::string &bckt,
+                                                 const std::string &key) {
+  bool fi_en = s3_di_fi_is_enabled("di_metadata_bucket_or_object_corrupted");
+  std::string body_bucket = request ? request->get_bucket_name() : "";
+  bool is_bckt = (bckt == body_bucket);
+  bool is_key = (std::find(std::begin(object_keys), std::end(object_keys),
+                           key) != std::end(object_keys));
+  bool ret = !fi_en || (is_bckt && is_key);
+
+  if (!ret) {
+    if (!S3Option::get_instance()
+             ->get_s3_di_disable_metadata_corruption_iem()) {
+      std::string body_accname = request ? request->get_account_name() : "";
+      s3_iem_full(LOG_ERR, S3_IEM_OBJECT_METADATA_NOT_VALID,
+                  S3_IEM_OBJECT_METADATA_NOT_VALID_STR,
+                  S3_IEM_OBJECT_METADATA_NOT_VALID_JSON, body_bucket.c_str(),
+                  bckt.c_str(), "<delete-multiple-objects-list>", key.c_str(),
+                  body_accname.c_str());
+    } else {
+      s3_log(S3_LOG_ERROR, "",
+             "Object metadata mismatch: "
+             "req_bucket_name=\"%s\" c_bucket_name=\"%s\" "
+             "req_object_name=\"%s\" c_object_name=\"%s\"",
+             body_bucket.c_str(), bckt.c_str(),
+             "<delete-multiple-objects-list>", key.c_str());
+    }
+  }
+  return ret;
 }

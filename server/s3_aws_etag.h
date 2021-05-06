@@ -28,6 +28,10 @@
 #include "s3_log.h"
 
 // Used to generate Etag for multipart uploads.
+//
+// Etag format:
+// md5(contatenated binary representations of all part etags)-part_count
+// Example: e9950e6dfe206f9eb9b3d09b2f1130f4-3
 class S3AwsEtag {
   std::string hex_etag;
   std::string final_etag;
@@ -43,6 +47,7 @@ class S3AwsEtag {
   void add_part_etag(std::string etag);
   std::string finalize();
   std::string get_final_etag();
+  static size_t get_num_of_parts(const std::string& etag);
   FRIEND_TEST(S3AwsEtagTest, Constructor);
   FRIEND_TEST(S3AwsEtagTest, HexToDec);
   FRIEND_TEST(S3AwsEtagTest, HexToDecInvalid);

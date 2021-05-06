@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include "s3_common.h"
 
+#include <string.h>
 #include "s3_motr_layout.h"
 #include "s3_motr_rw_common.h"
 #include "s3_motr_writer.h"
@@ -74,6 +75,7 @@ S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req, uint64_t offset,
     : request(std::move(req)),
       state(S3MotrWiterOpState::start),
       last_index(offset),
+      first_offset(offset),
       size_in_current_write(0),
       total_written(0),
       is_object_opened(false),
@@ -473,6 +475,31 @@ void S3MotrWiter::write_content() {
   ctx->cbs[0].oop_stable = s3_motr_op_stable;
   ctx->cbs[0].oop_failed = s3_motr_op_failed;
   set_up_motr_data_buffers(rw_ctx, data_items, motr_buf_count);
+
+  // see also similar code in S3MotrReader::read_object_successful()
+  if (s3_di_fi_is_enabled("di_data_corrupted_on_write")) {
+    struct m0_bufvec *bv = rw_ctx->data;
+    if (rw_ctx->ext->iv_index[0] == first_offset) {
+      char first_byte = *(char *)bv->ov_buf[0];
+      s3_log(S3_LOG_DEBUG, "", "%s first_byte=%d", __func__, first_byte);
+      switch (first_byte) {
+        case 'z':  // zero
+          corrupt_fill_zero = true;
+          break;
+        case 'f':  // first
+          // corrupt the first byte
+          *(char *)bv->ov_buf[0] = 0;
+          break;
+        case 'k':  // OK
+          break;
+      }
+    }
+    if (corrupt_fill_zero) {
+      for (uint32_t i = 0; i < bv->ov_vec.v_nr; ++i)
+        memset(bv->ov_buf[i], 0, bv->ov_vec.v_count[i]);
+    }
+  }
+
   last_op_was_write = true;
 
   /* Create the write request */
