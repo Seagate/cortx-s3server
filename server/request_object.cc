@@ -878,7 +878,7 @@ void RequestObject::close_connection() {
 }
 
 void RequestObject::cancel() {
-  evhtp_obj->http_cancel_request(ev_req);
+  evhtp_obj->http_request_cancel(ev_req);
   client_has_disconnected();
   send_reply_end();
 }
