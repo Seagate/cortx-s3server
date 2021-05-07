@@ -56,52 +56,6 @@ extern S3Option* g_option_instance;
 #define s3_iem_fatal(loglevel, event_code, event_desc, json_fmt, ...) \
   s3_iem_(loglevel, LOG_ERROR, event_code, event_desc, json_fmt, ##__VA_ARGS__)
 
-// Extended version of s3_iem.  Will post full details to sys log (i.e. include
-// JSON), not just event_description.
-//
-// NOTE: Be careful! json format args wil be evaluated twice!  So they must not
-// have any side-effects.
-#define s3_iem_full(loglevel, event_code, event_description, json_fmt, ...)   \
-  do {                                                                        \
-    std::string timestamp = s3_get_timestamp();                               \
-    s3_log(S3_LOG_INFO, "",                                                   \
-           "IEC: " event_code ": " event_description                          \
-           ": { \"time\": \"%s\", \"node\": \"%s\", \"pid\": "                \
-           "%d, \"file\": \"%s\", \"line\": %d" json_fmt " }",                \
-           timestamp.c_str(), g_option_instance->get_s3_nodename().c_str(),   \
-           getpid(), __FILE__, __LINE__, ##__VA_ARGS__);                      \
-    if (loglevel == LOG_ALERT) {                                              \
-      s3_syslog(loglevel, "IEC:AS" event_code ":" event_description           \
-                          " Details"                                          \
-                          ": { \"time\": \"%s\", \"node\": \"%s\", \"pid\": " \
-                          "%d, \"file\": \"%s\", \"line\": %d" json_fmt " }", \
-                timestamp.c_str(),                                            \
-                g_option_instance->get_s3_nodename().c_str(), getpid(),       \
-                __FILE__, __LINE__, ##__VA_ARGS__);                           \
-    } else {                                                                  \
-      s3_syslog(LOG_ERR, "IEC:ES" event_code ":" event_description            \
-                         " Details"                                           \
-                         ": { \"time\": \"%s\", \"node\": \"%s\", \"pid\": "  \
-                         "%d, \"file\": \"%s\", \"line\": %d" json_fmt " }",  \
-                timestamp.c_str(),                                            \
-                g_option_instance->get_s3_nodename().c_str(), getpid(),       \
-                __FILE__, __LINE__, ##__VA_ARGS__);                           \
-    }                                                                         \
-  } while (0)
-
-// Note: Logs IEM message into syslog only.
-// Use this macro to send addtional information to CSM
-#define s3_iem_syslog(loglevel, event_code, event_description, ...)  \
-  do {                                                               \
-    if (loglevel == LOG_INFO) {                                      \
-      s3_syslog(loglevel, "IEC:IS" event_code ":" event_description, \
-                ##__VA_ARGS__);                                      \
-    } else {                                                         \
-      s3_syslog(LOG_ERR, "IEC:ES" event_code ":" event_description,  \
-                ##__VA_ARGS__);                                      \
-    }                                                                \
-  } while (0)
-
 // IEM helper macros
 // S3 Server IEM Event codes, description string & json data format
 #define S3_IEM_AUTH_CONN_FAIL "0030010001"

@@ -174,11 +174,11 @@ bool S3DeleteMultipleObjectsBody::validate_attrs(const std::string &bckt,
     if (!S3Option::get_instance()
              ->get_s3_di_disable_metadata_corruption_iem()) {
       std::string body_accname = request ? request->get_account_name() : "";
-      s3_iem_full(LOG_ERR, S3_IEM_OBJECT_METADATA_NOT_VALID,
-                  S3_IEM_OBJECT_METADATA_NOT_VALID_STR,
-                  S3_IEM_OBJECT_METADATA_NOT_VALID_JSON, body_bucket.c_str(),
-                  bckt.c_str(), "<delete-multiple-objects-list>", key.c_str(),
-                  body_accname.c_str());
+      s3_iem(LOG_ERR, S3_IEM_OBJECT_METADATA_NOT_VALID,
+             S3_IEM_OBJECT_METADATA_NOT_VALID_STR,
+             S3_IEM_OBJECT_METADATA_NOT_VALID_JSON, body_bucket.c_str(),
+             bckt.c_str(), "<delete-multiple-objects-list>", key.c_str(),
+             body_accname.c_str());
     } else {
       s3_log(S3_LOG_ERROR, "",
              "Object metadata mismatch: "
