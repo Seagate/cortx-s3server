@@ -21,6 +21,7 @@
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 import os.path
 import shutil
+import sys
 
 g_upgrade_items = {
   's3' : {
@@ -49,6 +50,13 @@ g_upgrade_items = {
         'oldSampleFile' : "/tmp/config.yaml.sample.old",
         'newSampleFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample",
         'unsafeAttributesFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml",
+        'fileType' : 'yaml://'
+    },
+    'cluster' : {
+        'configFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
+        'oldSampleFile' : "/tmp/s3_cluster.yaml.sample.old",
+        'newSampleFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample",
+        'unsafeAttributesFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster_unsafe_attributes.yaml",
         'fileType' : 'yaml://'
     }
 }
@@ -102,21 +110,22 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
     #logic to determine which keys to merge.
     keys_to_overwrite = []
     for key in conf_new_sample_keys:
-        #check if the key is safe for modification.
+        #If key is marked for unsafe then do not modify/overwrite.
         if key in conf_unsafe_file_keys:
             continue
-        #if key not present in config then add it to config.
+        #if key not present in old config then add it.
         if key not in conf_file_keys:
             keys_to_overwrite.append(key)
-        #if config value == old sample then change to new value.
+        #if key is not unsafe and value is not changed by user then overwrite it.
         elif cs_conf_file.get_config(key) == cs_conf_old_sample.get_config(key):
             keys_to_overwrite.append(key)
-        #if user has changed the value of this key then skip it.
+        #if user has changed the value of the key then skip it.
         else:
             continue
 
     cs_conf_file.merge_config(source_index=conf_new_sample, keys_to_include=keys_to_overwrite)
     cs_conf_file.save_config()
+    sys.stdout.write(f'INFO: config file {str(configFile)} upgraded successfully.\n')
 
 if __name__ == "__main__":
     for upgrade_item in g_upgrade_items:

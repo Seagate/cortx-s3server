@@ -208,8 +208,10 @@ cp s3backgrounddelete/s3backgrounddelete/s3backgroundconsumer $S3_INSTALL_LOCATI
 # Copy the s3 background configuration file.
 cp s3backgrounddelete/s3backgrounddelete/config/s3_background_delete_config.yaml.sample $S3_INSTALL_LOCATION/s3backgrounddelete/config.yaml.sample
 cp s3backgrounddelete/s3backgrounddelete/config/s3backgrounddelete_unsafe_attributes.yaml $S3_INSTALL_LOCATION/s3backgrounddelete/
+
 # Copy the s3 cluster configuration file.
-cp s3backgrounddelete/s3backgrounddelete/config/s3_cluster.yaml $S3_INSTALL_LOCATION/s3backgrounddelete/s3_cluster.yaml
+cp s3backgrounddelete/s3backgrounddelete/config/s3_cluster.yaml.sample $S3_INSTALL_LOCATION/s3backgrounddelete/
+cp s3backgrounddelete/s3backgrounddelete/config/s3_cluster_unsafe_attributes.yaml $S3_INSTALL_LOCATION/s3backgrounddelete/
 
 # Copy the s3 background producer file for systemctl support.
 cp s3backgrounddelete/s3backgroundproducer.service $SERVICE_FILE_LOCATION
