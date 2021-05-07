@@ -297,7 +297,7 @@ void S3MotrReader::read_object_successful() {
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid.u_hi, oid.u_lo);
   // see also similar code in S3MotrWiter::write_content()
-  if (s3_di_fi_is_enabled("di_data_corrupted_on_read")) {
+  if (s3_fi_is_enabled("di_data_corrupted_on_read")) {
     struct s3_motr_rw_op_context *rw_ctx = reader_context->get_motr_rw_op_ctx();
     struct m0_bufvec *bv = rw_ctx->data;
     if (rw_ctx->ext->iv_index[0] == 0) {

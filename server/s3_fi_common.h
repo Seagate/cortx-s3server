@@ -126,17 +126,11 @@ void s3_fi_enable_off_n_on_m(const char *tag, uint32_t n, uint32_t m);
  */
 void s3_fi_disable(const char *fp_tag);
 
-/**
- * Checks Data integrity specific fault point in code, identified by "tag"
- *
- * @param tag  FP tag, which can be activated using s3_fi_enable* routines
- *
- * eg: s3_fi_is_enabled("write_fail");
- *
- */
-int s3_di_fi_is_enabled(const char *tag);
-
 #else /* ENABLE_FAULT_INJECTION */
+
+inline int s3_fi_is_enabled(const char *tag) { return false; }
+
+inline void s3_fi_enable(const char *tag) {}
 
 inline void s3_fi_enable_once(const char *tag) {}
 
@@ -146,13 +140,7 @@ inline void s3_fi_enable_each_nth_time(const char *tag, uint32_t n) {}
 
 inline void s3_fi_enable_off_n_on_m(const char *tag, uint32_t n, uint32_t m) {}
 
-int s3_fi_is_enabled(const char *tag);
-
-void s3_fi_enable(const char *tag);
-
-int s3_di_fi_is_enabled(const char *tag);
-
-void s3_fi_disable(const char *tag);
+inline void s3_fi_enable(const char *tag) {}
 
 #endif /* ENABLE_FAULT_INJECTION */
 

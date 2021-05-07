@@ -163,7 +163,7 @@ bool S3DeleteMultipleObjectsBody::parse_and_validate() {
 
 bool S3DeleteMultipleObjectsBody::validate_attrs(const std::string &bckt,
                                                  const std::string &key) {
-  bool fi_en = s3_di_fi_is_enabled("di_metadata_bucket_or_object_corrupted");
+  bool fi_en = s3_fi_is_enabled("di_metadata_bucket_or_object_corrupted");
   std::string body_bucket = request ? request->get_bucket_name() : "";
   bool is_bckt = (bckt == body_bucket);
   bool is_key = (std::find(std::begin(object_keys), std::end(object_keys),

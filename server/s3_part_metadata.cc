@@ -439,11 +439,11 @@ std::string S3PartMetadata::to_json() {
   s3_log(S3_LOG_DEBUG, request_id, "\n");
   Json::Value root;
   root["Bucket-Name"] = bucket_name;
-  if (s3_di_fi_is_enabled("di_part_metadata_bcktname_on_write_corrupted")) {
+  if (s3_fi_is_enabled("di_part_metadata_bcktname_on_write_corrupted")) {
     root["Bucket-Name"] = "@" + bucket_name + "@";
   }
   root["Object-Name"] = object_name;
-  if (s3_di_fi_is_enabled("di_part_metadata_objname_on_write_corrupted")) {
+  if (s3_fi_is_enabled("di_part_metadata_objname_on_write_corrupted")) {
     root["Object-Name"] = "@" + object_name + "@";
   }
   root["Upload-ID"] = upload_id;
@@ -464,17 +464,17 @@ int S3PartMetadata::from_json(std::string content) {
   Json::Value newroot;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), newroot);
-  if (!parsingSuccessful || s3_di_fi_is_enabled("part_metadata_corrupted")) {
+  if (!parsingSuccessful || s3_fi_is_enabled("part_metadata_corrupted")) {
     s3_log(S3_LOG_ERROR, request_id, "Json Parsing failed.\n");
     return -1;
   }
 
   bucket_name = newroot["Bucket-Name"].asString();
-  if (s3_di_fi_is_enabled("di_part_metadata_bcktname_on_read_corrupted")) {
+  if (s3_fi_is_enabled("di_part_metadata_bcktname_on_read_corrupted")) {
     bucket_name = "@" + bucket_name + "@";
   }
   object_name = newroot["Object-Name"].asString();
-  if (s3_di_fi_is_enabled("di_part_metadata_objname_on_read_corrupted")) {
+  if (s3_fi_is_enabled("di_part_metadata_objname_on_read_corrupted")) {
     object_name = "@" + object_name + "@";
   }
   upload_id = newroot["Upload-ID"].asString();
