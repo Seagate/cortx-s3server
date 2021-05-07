@@ -140,7 +140,7 @@ inline void s3_fi_enable_each_nth_time(const char *tag, uint32_t n) {}
 
 inline void s3_fi_enable_off_n_on_m(const char *tag, uint32_t n, uint32_t m) {}
 
-inline void s3_fi_enable(const char *tag) {}
+inline void s3_fi_disable(const char *fp_tag) {}
 
 #endif /* ENABLE_FAULT_INJECTION */
 

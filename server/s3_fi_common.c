@@ -60,9 +60,9 @@ s3_fp *s3_fp_alloc(const char *tag) {
 }
 
 static s3_fp *s3_fp_find(const char *tag) {
-  int i = 0;
+  int i;
 
-  for (; i < s3_fi_states_free_idx; i++) {
+  for (i = 0; i < s3_fi_states_free_idx; i++) {
     if (strcmp(s3_fi_states[i]->fp_tag, tag) == 0) return s3_fi_states[i];
   }
   return NULL;
