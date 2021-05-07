@@ -60,7 +60,8 @@ s3_fp *s3_fp_alloc(const char *tag) {
 }
 
 static s3_fp *s3_fp_find(const char *tag) {
-  uint32_t i = 0;
+  int i = 0;
+
   for (; i < s3_fi_states_free_idx; i++) {
     if (strcmp(s3_fi_states[i]->fp_tag, tag) == 0) return s3_fi_states[i];
   }
@@ -113,68 +114,6 @@ void s3_fi_disable(const char *fp_tag) {
   if (fp_ptr == NULL) return;
   /* use with caution, non existent FP causes an ASSERTION */
   m0_fi_disable(fp_ptr->fp_func, fp_ptr->fp_tag);
-}
-
-int s3_di_fi_is_enabled(const char *tag) { return s3_fi_is_enabled(tag); }
-
-#else /* ENABLE_FAULT_INJECTION */
-
-typedef struct {
-  char *tag;
-  bool enabled;
-} s3_di_fi_point;
-
-static s3_di_fi_point allowed_di_faults[] = {
-    {"di_data_corrupted_on_write", false},
-    {"di_data_corrupted_on_read", false},
-    {"di_obj_md5_corrupted", false},
-    {"di_metadata_bcktname_on_write_corrupted", false},
-    {"di_metadata_objname_on_write_corrupted", false},
-    {"di_metadata_bcktname_on_read_corrupted", false},
-    {"di_metadata_objname_on_read_corrupted", false},
-    {"object_metadata_corrupted", false},
-    {"di_metadata_bucket_or_object_corrupted", false},
-    {"part_metadata_corrupted", false},
-    {"di_part_metadata_bcktname_on_write_corrupted", false},
-    {"di_part_metadata_objname_on_write_corrupted", false},
-    {"di_part_metadata_bcktname_on_read_corrupted", false},
-    {"di_part_metadata_objname_on_read_corrupted", false}};
-
-static s3_di_fi_point *s3_di_fi_is_allowed(const char *tag) {
-  size_t len = sizeof(allowed_di_faults) / sizeof(s3_di_fi_point);
-  s3_di_fi_point *ret = NULL;
-  size_t i = 0;
-  for (; i < len; ++i) {
-    if (strcmp(allowed_di_faults[i].tag, tag) == 0) {
-      ret = &allowed_di_faults[i];
-      break;
-    }
-  }
-  return ret;
-}
-
-void s3_fi_enable(const char *tag) {
-  s3_di_fi_point *s3df = s3_di_fi_is_allowed(tag);
-  if (s3df) {
-    s3df->enabled = true;
-  }
-}
-
-int s3_di_fi_is_enabled(const char *tag) {
-  s3_di_fi_point *s3df = s3_di_fi_is_allowed(tag);
-  return s3df && s3df->enabled;
-}
-
-void s3_fi_disable(const char *tag) {
-  s3_di_fi_point *s3df = s3_di_fi_is_allowed(tag);
-  if (s3df) {
-    s3df->enabled = false;
-  }
-}
-
-int s3_fi_is_enabled(const char *tag) {
-  /* In this mode only DI FI is supported to the moment */
-  return s3_di_fi_is_enabled(tag);
 }
 
 #endif /* ENABLE_FAULT_INJECTION */
