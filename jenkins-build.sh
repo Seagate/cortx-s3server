@@ -449,58 +449,65 @@ $USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=true/g' /opt/s
 
 $USE_SUDO systemctl restart s3authserver
 
-# Start S3 gracefully, with max 3 attempts
-echo "Starting new built s3 services"
-fake_params=""
-if [ $fake_kvs -eq 1 ]
-then
-    fake_params+=" --fake_kvs"
-fi
+function s3server_start() {
+    # Start S3 gracefully, with max 3 attempts
+    retry=1
+    max_retries=3
+    statuss3=0
+    echo "Starting new built s3 services"
+    fake_params=""
+    if [ $fake_kvs -eq 1 ]
+    then
+        fake_params+=" --fake_kvs"
+    fi
 
-if [ $local_redis_restart -eq 1 ]; then
-    rpm -q redis
-    set +e
-    $USE_SUDO kill -9 `pgrep redis`
-    set -e
-    redis-server --port 6379 &
-fi
+    if [ $local_redis_restart -eq 1 ]; then
+        rpm -q redis
+        set +e
+        $USE_SUDO kill -9 `pgrep redis`
+        set -e
+        redis-server --port 6379 &
+    fi
 
-if [ $redis_kvs -eq 1 ]
-then
-    fake_params+=" --redis_kvs"
-fi
+    if [ $redis_kvs -eq 1 ]
+    then
+        fake_params+=" --redis_kvs"
+    fi
 
-if [ $fake_obj -eq 1 ]
-then
-    fake_params+=" --fake_obj"
-fi
+    if [ $fake_obj -eq 1 ]
+    then
+        fake_params+=" --fake_obj"
+    fi
 
-while [[ $retry -le $max_retries ]]
-do
-  statuss3=0
-  $USE_SUDO ./dev-starts3.sh $num_instances $fake_params $callgraph_cmd $valgrind_memcheck_cmd
+    while [[ $retry -le $max_retries ]]
+    do
+        statuss3=0
+        $USE_SUDO ./dev-starts3.sh $num_instances $fake_params $callgraph_cmd $valgrind_memcheck_cmd
 
-  # Wait s3server to start
-  timeout 2m bash -c "while ! ./iss3up.sh; do sleep 1; done"
-  statuss3=$?
+        # Wait s3server to start
+        timeout 2m bash -c "while ! ./iss3up.sh; do sleep 1; done"
+        statuss3=$?
 
-  if [ "$statuss3" == "0" ]; then
-    echo "S3 service started successfully..."
-    break
-  else
-    # Sometimes if motr is not ready, S3 may fail to connect
-    # cleanup and restart
-    $USE_SUDO ./dev-stops3.sh $num_instances
-    sleep 1
-  fi
-  retry=$((retry+1))
-done
+        if [ "$statuss3" == "0" ]; then
+            echo "S3 service started successfully..."
+            break
+        else
+            # Sometimes if motr is not ready, S3 may fail to connect
+            # cleanup and restart
+            $USE_SUDO ./dev-stops3.sh $num_instances
+            sleep 1
+        fi
+        retry=$((retry+1))
+    done
 
-if [ "$statuss3" != "0" ]; then
-  echo "Cannot start S3 service"
-  tail -50 /var/log/seagate/s3/s3server.INFO
-  exit 1
-fi
+    if [ "$statuss3" != "0" ]; then
+        echo "Cannot start S3 service"
+        tail -50 /var/log/seagate/s3/s3server.INFO
+        exit 1
+    fi
+}
+
+s3server_start
 
 # Add certificate to keystore
 if [ $use_http_client -eq 0 ]
@@ -554,44 +561,20 @@ fi
 ./runalltest.sh $runalltest_options || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
 
 # Data Integrity tests:
-# 1. stop s3server
-# 2. change config to enable DI params
-# 3. start s3server
-# 4. enable DI FI
-# 5. ensure extra python packets installed
-# 6. run DI systest
-# 7. restore config
-# 8. metadata integrity tests - regular PUT
-# 9. metadata integrity tests - multipart
-# 10. follow jenkins_build
-##########################################
 
-# 1. stop s3server
-s3server_stop
-
-# 2. change config to enable DI params
-$USE_SUDO sed -ri 's/(.*)S3_RANGED_READ_ENABLED:[[:space:]]*true(.*)/\1S3_RANGED_READ_ENABLED: false\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
-$USE_SUDO sed -ri 's/(.*)S3_READ_MD5_CHECK_ENABLED:[[:space:]]*false(.*)/\1S3_READ_MD5_CHECK_ENABLED: true\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
 s3_config_port=$(grep -oE "S3_SERVER_BIND_PORT:\s*([0-9]?+)" /opt/seagate/cortx/s3/conf/s3config.yaml | tr -s ' ' | cut -d ' ' -f 2)
 
-# 3. start s3server
-s3server_start
+# enable DI FI
+# curl -X PUT -H "x-seagate-faultinjection: enable,always,di_data_corrupted_on_write,0,0" "localhost:$s3_config_port"
+# curl -X PUT -H "x-seagate-faultinjection: enable,always,di_data_corrupted_on_read,0,0" "localhost:$s3_config_port"
 
-# 4. enable DI FI
-curl -X PUT -H "x-seagate-faultinjection: enable,always,di_data_corrupted_on_write,0,0" "localhost:$s3_config_port"
-curl -X PUT -H "x-seagate-faultinjection: enable,always,di_data_corrupted_on_read,0,0" "localhost:$s3_config_port"
-
-# 5. ensure extra python packets installed
+# ensure extra python packets installed
 $USE_SUDO pip3 list | grep plumbum || $USE_SUDO pip3 install plumbum
 
-# 6. run DI systest
-$USE_SUDO st/clitests/integrity.py --auto-test-all
+# run DI systest
+# $USE_SUDO st/clitests/integrity.py --auto-test-all
 
-# 7. restore config
-$USE_SUDO sed -ri 's/(.*)S3_RANGED_READ_ENABLED:[[:space:]]*false(.*)/\1S3_RANGED_READ_ENABLED: true\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
-$USE_SUDO sed -ri 's/(.*)S3_READ_MD5_CHECK_ENABLED:[[:space:]]*true(.*)/\1S3_READ_MD5_CHECK_ENABLED: false\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
-
-# 8. metadata integrity tests - regular PUT
+# metadata integrity tests - regular PUT
 md_di_data=/tmp/s3-data.bin
 md_di_dowload=/tmp/s3-data-download.bin
 md_di_parts=/tmp/s3-data-parts.json
@@ -599,7 +582,7 @@ md_di_parts=/tmp/s3-data-parts.json
 $USE_SUDO dd if=/dev/urandom of=$md_di_data count=1 bs=1K
 $USE_SUDO st/clitests/md_integrity.py --body $md_di_data --download $md_di_dowload --parts $md_di_parts --test_plan st/clitests/regular_md_integrity.json
 
-# 9. metadata integrity tests - multipart
+# metadata integrity tests - multipart
 $USE_SUDO dd if=/dev/urandom of=$md_di_data count=1 bs=5M
 $USE_SUDO st/clitests/md_integrity.py --body $md_di_data --download $md_di_dowload --parts $md_di_parts --test_plan st/clitests/multipart_md_integrity.json
 
@@ -608,13 +591,11 @@ $USE_SUDO st/clitests/md_integrity.py --body $md_di_data --download $md_di_dowlo
 [ -f $md_di_parts ] && $USE_SUDO rm -vf $md_di_parts
 # ======================================
 
-# 10. follow jenkins_build
-##########################################
-
 # Disable fault injection in AuthServer
 $USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
 
 $USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
+
 s3server_stop
 
 if [ $s3server_enable_ssl -eq 1 ]
