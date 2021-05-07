@@ -53,9 +53,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 
 8. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup/a32f44e0591e3fcf020398c0a23b8cdafcdd3c26).
 
-9. Copy "message_bus.conf" file from the git checkout at "cortx-s3server/scripts/kafka/" to "/etc/cortx"
-
-10. You'll need to disable selinux and firewall. Run the following commands:
+9. You'll need to disable selinux and firewall. Run the following commands:
 
      `$ systemctl stop firewalld` 
 
@@ -102,7 +100,14 @@ At some point during the execution of the `init.sh` script, it will prompt for t
 
 Whenever you clone your repository or make changes to dependent packages, you'll have to initialize the packages:
 
-1. Run the command:
+1. Create Message bus configuration file and Kafka topic for messaging:
+
+```shell
+
+$ cp scripts/kafka/message_bus.conf /etc/cortx
+$ sh scripts/kafka/create-topic.sh -c 1 -i <Hostname/FQDN>
+```
+2. Run the command:
 
 ```shell
 
@@ -110,7 +115,7 @@ Whenever you clone your repository or make changes to dependent packages, you'll
    $ ./init.sh -a
 ```
 
-2. You'll be prompted to provide your GitHub token. Enter the PAT token that you generated in Step 4.iv. of the [1.0 Prerequisites Section](#10-Prerequisites).
+3. You'll be prompted to provide your GitHub token. Enter the PAT token that you generated in Step 4.iv. of the [1.0 Prerequisites Section](#10-Prerequisites).
 
 Refer to the image below to view the output of a successful `$ init.sh -a` run, where the `failed` field value should be zero.
 
