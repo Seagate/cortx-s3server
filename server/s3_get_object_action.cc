@@ -28,7 +28,6 @@
 #include "s3_stats.h"
 #include "s3_perf_metrics.h"
 #include "s3_iem.h"
-#include "s3_aws_etag.h"
 
 S3GetObjectAction::S3GetObjectAction(
     std::shared_ptr<S3RequestObject> req,
@@ -131,12 +130,7 @@ void S3GetObjectAction::validate_object_info() {
     request->set_out_header_value("Last-Modified",
                                   object_metadata->get_last_modified_gmt());
     request->set_out_header_value("ETag", e_tag);
-
-    request->set_out_header_value(
-        "Accept-Ranges", S3Option::get_instance()->get_s3_ranged_read_enabled()
-                             ? "bytes"
-                             : "none");
-
+    request->set_out_header_value("Accept-Ranges", "bytes");
     request->set_out_header_value("Content-Type",
                                   object_metadata->get_content_type());
     request->set_out_header_value("Content-Length",
@@ -314,16 +308,11 @@ void S3GetObjectAction::check_full_or_range_object_read() {
     s3_log(S3_LOG_DEBUG, request_id, "Range found(%s)\n",
            range_header_value.c_str());
 
-    if (S3Option::get_instance()->get_s3_ranged_read_enabled()) {
-      if (validate_range_header_and_set_read_options(range_header_value)) {
-        next();
-      } else {
+    if (validate_range_header_and_set_read_options(range_header_value)) {
+      next();
+    } else {
         set_s3_error("InvalidRange");
         send_response_to_s3_client();
-      }
-    } else {
-      set_s3_error("OperationNotSupported");
-      send_response_to_s3_client();
     }
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -336,20 +325,6 @@ void S3GetObjectAction::read_object() {
   motr_reader = motr_reader_factory->create_motr_reader(
       request, object_metadata->get_oid(), object_metadata->get_layout_id());
   size_t part_one_size = object_metadata->get_part_one_size();
-  motr_reader->set_multipart_part_size(part_one_size);
-  if (part_one_size > 0) {
-    std::string etag = object_metadata->get_md5();
-    int num_of_parts = S3AwsEtag::get_num_of_parts(etag);
-    // it's impossible to have multipart upload with 0 parts
-    assert(num_of_parts > 0);
-    if (num_of_parts == 0) {
-      s3_log(S3_LOG_FATAL, request_id,
-             "It's impossible to have multipart upload with 0 parts");
-    }
-    motr_reader->set_multipart_num_of_parts(num_of_parts);
-    s3_log(S3_LOG_DEBUG, "", "part_one_size=%zu etag=%s num_of_parts=%d",
-           part_one_size, etag.c_str(), num_of_parts);
-  }
   // get the block,in which first_byte_offset_to_read is present
   // and initilaize the last index with starting offset the block
   size_t block_start_offset =
@@ -447,16 +422,12 @@ void S3GetObjectAction::send_data_to_client() {
                                   object_metadata->get_content_type());
     request->set_out_header_value("ETag", e_tag);
     s3_log(S3_LOG_INFO, stripped_request_id, "e_tag= %s", e_tag.c_str());
-    request->set_out_header_value(
-        "Accept-Ranges", S3Option::get_instance()->get_s3_ranged_read_enabled()
-                             ? "bytes"
-                             : "none");
+    request->set_out_header_value("Accept-Ranges", "bytes");
     request->set_out_header_value(
         "Content-Length", std::to_string(get_requested_content_length()));
     for (auto it : object_metadata->get_user_attributes()) {
       request->set_out_header_value(it.first, it.second);
     }
-    motr_reader->set_total_size_to_read(object_metadata->get_content_length());
     if (!request->get_header_value("Range").empty()) {
       std::ostringstream content_range_stream;
       content_range_stream << "bytes " << first_byte_offset_to_read << "-"
