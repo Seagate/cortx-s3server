@@ -35,12 +35,11 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 6. Ensure that you've installed the following packages on your VM instance:
 
     * Python Version 3.0
-      * To check whether Python is installed on your VM, use one of the following commands: `--version`  , `-V` , or `-VV`
+      * To check whether Python is installed on your VM, use one of the following commands: `$ python3 --version` 
       * To install Python version 3.0, use: `$ yum install -y python3`
-    * pip:
-      * To check if pip is installed, use: `$ pip --version`
-      * To check if epel is installed, use: `$ yum repolist`. If epel was installed, you'll see it in the output list. If not enable it using :`$ yum --enablerepo=extras install epel-release`.
-      * To install pip use: `$ pip install pip==20.3.3`
+    * pip3:
+      * To check if pip is installed, use: `$ pip3 --version`
+      * Update to latest pip using `$ pip3 install --upgrade pip`
     * Ansible: `$ yum install -y ansible`
     * Extra Packages for Enterprise Linux:
         * To check if epel is installed, use: `$ yum repolist`
