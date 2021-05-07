@@ -307,12 +307,11 @@ void S3GetObjectAction::check_full_or_range_object_read() {
     // eg: bytes=0-1024 value
     s3_log(S3_LOG_DEBUG, request_id, "Range found(%s)\n",
            range_header_value.c_str());
-
     if (validate_range_header_and_set_read_options(range_header_value)) {
       next();
     } else {
-        set_s3_error("InvalidRange");
-        send_response_to_s3_client();
+      set_s3_error("InvalidRange");
+      send_response_to_s3_client();
     }
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -324,7 +323,6 @@ void S3GetObjectAction::read_object() {
   set_total_blocks_to_read_from_object();
   motr_reader = motr_reader_factory->create_motr_reader(
       request, object_metadata->get_oid(), object_metadata->get_layout_id());
-  size_t part_one_size = object_metadata->get_part_one_size();
   // get the block,in which first_byte_offset_to_read is present
   // and initilaize the last index with starting offset the block
   size_t block_start_offset =
@@ -468,49 +466,6 @@ void S3GetObjectAction::send_data_to_client() {
       p_evbuffer->read_drain_data_from_buffer(read_data_start_offset);
       length_in_evbuf = p_evbuffer->get_evbuff_length();
     }
-    // to read number of bytes from final read block of read object
-    // that is requested content length is lesser than the sum of data has been
-    // sent to client and current read block size
-    if ((data_sent_to_client + length) >= requested_content_length) {
-      // length will have the size of remaining byte to sent
-      length = requested_content_length - data_sent_to_client;
-      // this is the iteration for the final block
-      if (length > 0 &&
-          S3Option::get_instance()->get_s3_read_md5_check_enabled()) {
-        std::string checksum_calculated;
-        if (object_metadata->get_part_one_size() == 0) {
-          checksum_calculated = motr_reader->get_content_md5();
-        } else {
-          checksum_calculated = motr_reader->get_content_awsetag();
-        }
-        std::string checksum_read = object_metadata->get_md5();
-        s3_log(S3_LOG_DEBUG, request_id,
-               "checksum calculated: %s, checksum read %s",
-               checksum_calculated.c_str(), checksum_read.c_str());
-        if (checksum_calculated != checksum_read) {
-          if (!S3Option::get_instance()
-                   ->get_s3_di_disable_data_corruption_iem()) {
-            auto moid = object_metadata->get_oid();
-            s3_iem(
-                LOG_ERR, S3_IEM_CHECKSUM_MISMATCH, S3_IEM_CHECKSUM_MISMATCH_STR,
-                S3_IEM_CHECKSUM_MISMATCH_JSON,
-                request->get_bucket_name().c_str(),
-                request->get_object_name().c_str(), moid.u_hi, moid.u_lo,
-                checksum_calculated.c_str(), checksum_read.c_str(),
-                request->get_account_name().c_str());
-          }
-          s3_log(S3_LOG_ERROR, request_id, "Content checksum mismatch\n");
-          checksum_mismatch = true;
-          break;
-        }
-      }
-    }
-    data_sent_to_client += length;
-    request->set_bytes_sent(data_sent_to_client);
-    s3_log(S3_LOG_DEBUG, request_id, "Sending %zu bytes to client.\n", length);
-    request->send_reply_body(data + read_data_start_offset, length);
-    s3_perf_count_outcoming_bytes(length);
-    length = motr_reader->get_next_block(&data);
   }
   // to read number of bytes from final read block of read object
   // that is requested content length is lesser than the sum of data has been
@@ -526,17 +481,13 @@ void S3GetObjectAction::send_data_to_client() {
   request->send_reply_body(p_evbuffer->release_ownership());
   s3_timer.stop();
 
-  if (checksum_mismatch) {
-    send_response_to_s3_client();
+  if (data_sent_to_client != requested_content_length) {
+    read_object_data();
   } else {
-    if (data_sent_to_client != requested_content_length) {
-      read_object_data();
-    } else {
-      const auto mss = s3_timer.elapsed_time_in_millisec();
-      LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);
-      s3_stats_timing("get_object_send_data", mss);
-      send_response_to_s3_client();
-    }
+    const auto mss = s3_timer.elapsed_time_in_millisec();
+    LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);
+    s3_stats_timing("get_object_send_data", mss);
+    send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -553,9 +504,7 @@ void S3GetObjectAction::read_object_data_failed() {
 void S3GetObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  if (checksum_mismatch) {
-    request->cancel();
-  } else if (reject_if_shutting_down()) {
+  if (reject_if_shutting_down()) {
     if (read_object_reply_started) {
       request->send_reply_end();
     } else {
