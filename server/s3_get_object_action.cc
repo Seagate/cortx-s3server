@@ -27,7 +27,6 @@
 #include "s3_common_utilities.h"
 #include "s3_stats.h"
 #include "s3_perf_metrics.h"
-#include "s3_iem.h"
 
 S3GetObjectAction::S3GetObjectAction(
     std::shared_ptr<S3RequestObject> req,
@@ -489,6 +488,7 @@ void S3GetObjectAction::send_data_to_client() {
     const auto mss = s3_timer.elapsed_time_in_millisec();
     LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);
     s3_stats_timing("get_object_send_data", mss);
+
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
