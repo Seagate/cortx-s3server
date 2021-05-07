@@ -45,6 +45,13 @@ class SetupCmd(object):
   machine_id = None
   ldap_mdb_folder = "/var/lib/ldap"
   s3_prov_config = "/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml"
+  
+  #Logger details
+  s3deployment_logger_name = "s3-deployment-logger"
+  s3deployment_log_file = "/var/log/seagate/s3/s3deployment/s3deployment.log"
+  s3deployment_log_directory = "/var/log/seagate/s3/s3deployment/"
+  s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
   _preqs_conf_file = "/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
   #TODO
   # add the service name and HA service name in the following dictionary
@@ -77,6 +84,9 @@ class SetupCmd(object):
 
     self.cluster_id = self.get_confvalue(self.get_confkey(
       'CONFIG>CONFSTORE_CLUSTER_ID_KEY').replace("machine-id", self.machine_id))
+
+  self.create_logger_directory()
+  self.create_logger()
 
   @property
   def url(self) -> str:
@@ -423,3 +433,38 @@ class SetupCmd(object):
         os.unlink(path)
       elif os.path.isdir(path):
         shutil.rmtree(path)
+
+  def create_logger(self):
+	"""Create logger, file handler, console handler and formatter."""
+	# create logger with "object_recovery_scheduler"
+	self.logger = logging.getLogger(self.s3deployment_logger_name)
+	self.logger.setLevel(self.config.get_file_log_level())
+	fhandler = logging.handlers.RotatingFileHandler(self.s3deployment_log_file, mode='a',
+													maxBytes = self.config.get_max_bytes(),
+													backupCount = self.config.get_backup_count(), encoding=None,
+													delay=False )
+	fhandler.setLevel(logging.DEBUG)
+
+	# create console handler with a higher log level
+	chandler = logging.StreamHandler()
+	chandler.setLevel(logging.ERROR)
+
+	# create formatter and add it to the handlers
+	fhandler.setFormatter(self.s3deployment_log_format)
+	chandler.setFormatter(self.s3deployment_log_format)
+
+	# add the handlers to the logger
+	self.logger.addHandler(fhandler)
+	self.logger.addHandler(chandler)
+
+def create_logger_directory(self):
+	"""Create log directory if not exsists."""
+	self._logger_directory = os.path.join(self.s3deployment_log_directory)
+	if not os.path.isdir(self._logger_directory):
+		try:
+			os.mkdir(self._logger_directory)
+		except BaseException:
+			raise Exception(f"{self._logger_directory} Could not be created")
+
+
+        
