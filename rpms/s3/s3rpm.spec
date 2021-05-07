@@ -131,9 +131,10 @@ S3 server provides S3 REST API interface support for Motr object storage.
 ################################
 %pre
 if [ $1 == 1 ];then
-    echo "pre install section"
+    echo "S3 RPM Pre Install section started"
+    echo "S3 RPM Pre Install section completed"
 elif [ $1 == 2 ];then
-    echo "pre upgrade section"
+    echo "S3 RPM Pre Upgrade section started"
     echo "Backing up .sample config file to .old"
     if [ -f /opt/seagate/cortx/s3/conf/s3config.yaml.sample ]; then
         cp -f /opt/seagate/cortx/s3/conf/s3config.yaml.sample /tmp/s3config.yaml.sample.old
@@ -150,13 +151,14 @@ elif [ $1 == 2 ];then
     if [ -f /opt/seagate/cortx/auth/resources/authserver.properties.sample ]; then
         cp -f /opt/seagate/cortx/auth/resources/authserver.properties.sample /tmp/authserver.properties.sample.old
     fi
+    echo "S3 RPM Pre Upgrade section completed"
 fi
 
 ################################
 # build section
 ################################
 %build
-echo "build section"
+echo "S3 RPM Build section started"
 %if %{with cortx_motr}
 ./rebuildall.sh --no-check-code --no-install --no-s3ut-build --no-s3mempoolut-build --no-s3mempoolmgrut-build --no-java-tests
 %else
@@ -187,13 +189,13 @@ cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3cipher/s3cipher
 python%{py_ver} -m compileall -b *.py
 cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3cipher/build/lib/s3cipher 
 
-echo "build completed"
+echo "S3 RPM Build section completed"
 
 ################################
 # install section
 ################################
 %install
-echo "install section"
+echo "S3 RPM Install section started"
 
 rm -rf %{buildroot}
 ./installhelper.sh %{buildroot} --release
@@ -214,24 +216,25 @@ python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
 
-echo "install completed"
+echo "S3 RPM Install section completed"
 
 ################################
 # clean section
 ################################
 %clean
-echo "clean section"
+echo "S3 RPM Clean section started"
 bazel clean
 cd auth
 ./mvnbuild.sh clean
 cd ..
 rm -rf %{buildroot}
+echo "S3 RPM Clean section completed"
 
 ################################
 # files section
 ################################
 %files
-echo "files section"
+echo "S3 RPM Files section started"
 %defattr(-,root,root,-)
 # config file doesnt get replaced during rpm update if changed
 %config /opt/seagate/cortx/auth/resources/authserver.properties.sample
@@ -401,10 +404,13 @@ echo "files section"
 /opt/seagate/cortx/s3/conf/s3.reset.tmpl.1-node.sample
 /opt/seagate/cortx/s3/conf/s3.cleanup.tmpl.1-node
 /opt/seagate/cortx/s3/conf/s3.cleanup.tmpl.1-node.sample
+/opt/seagate/cortx/s3/conf/s3.upgrade.tmpl.1-node
+/opt/seagate/cortx/s3/conf/s3.upgrade.tmpl.1-node.sample
 /opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.properties
 /opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.properties
 /opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml
 /opt/seagate/cortx/s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml
+/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster_unsafe_attributes.yaml
 /opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json
 /opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml
 /opt/seagate/cortx/s3/bin/setupcmd.py
@@ -414,6 +420,7 @@ echo "files section"
 /opt/seagate/cortx/s3/bin/testcmd.py
 /opt/seagate/cortx/s3/bin/resetcmd.py
 /opt/seagate/cortx/s3/bin/preparecmd.py
+/opt/seagate/cortx/s3/bin/upgradecmd.py
 /opt/seagate/cortx/s3/bin/cleanupcmd.py
 /opt/seagate/cortx/s3/bin/ldapaccountaction.py
 /opt/seagate/cortx/s3/bin/merge.py
@@ -456,16 +463,22 @@ echo "files section"
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundproducer
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyc
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyo
+echo "S3 RPM Files section completed"
 
 ##############################
 # post install/upgrade section
 ##############################
 %post
+echo "S3 RPM Post section started"
 if [ $1 == 1 ];then
-    echo "post install section"
+    echo "S3 RPM Post Install section started"
+    # TODO 
+    # copy sample file to config file
+    echo "S3 RPM Post Install section completed"
 elif [ $1 == 2 ];then
-    echo "post upgrade section"
+    echo "S3 RPM Post Upgrade section started"
     python3.6 /opt/seagate/cortx/s3/bin/merge.py
+    echo "S3 RPM Post Upgrade section completed"
 fi
 systemctl daemon-reload
 systemctl enable s3authserver
@@ -475,18 +488,21 @@ if [ "$openssl_version" != "1.0.2k" ] && [ "$openssl_version" != "1.1.1" ]; then
   echo "Warning: Unsupported (untested) openssl version [$openssl_version] is installed which may work."
   echo "Supported openssl versions are [1.0.2k, 1.1.1]"
 fi
+echo "S3 RPM Post section completed"
+
 
 ################################
 # post uninstall/upgrade section
 ################################
 %postun
 if [ $1 == 1 ];then
-    echo "post uninstall upgrade section"
+    echo "S3 RPM Post Uninstall Upgrade section started"
     # removed temporary files from /tmp
     rm -f /tmp/*.sample.old
     echo "removed temporary files from /tmp/"
+    echo "S3 RPM Post Uninstall Upgrade section completed"
 elif [ $1 == 0 ];then
-    echo "post uninstall section"
+    echo "S3 RPM Post Uninstall section started"
     # remove config files.
     rm -f /opt/seagate/cortx/s3/conf/s3config.yaml*
     rm -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml*
@@ -494,4 +510,5 @@ elif [ $1 == 0 ];then
     rm -f /opt/seagate/cortx/auth/resources/authserver.properties*
     rm -f /opt/seagate/cortx/auth/resources/keystore.properties*
     echo "removed all S3 config files"
+    echo "S3 RPM Post Uninstall Upgrade section completed"
 fi

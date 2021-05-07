@@ -120,6 +120,9 @@ cp scripts/provisioning/templates/s3.reset.tmpl.1-node.sample $S3_INSTALL_LOCATI
 cp scripts/provisioning/templates/s3.cleanup.tmpl.1-node $S3_INSTALL_LOCATION/conf
 cp scripts/provisioning/templates/s3.cleanup.tmpl.1-node.sample $S3_INSTALL_LOCATION/conf
 
+cp scripts/provisioning/templates/s3.upgrade.tmpl.1-node $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/templates/s3.upgrade.tmpl.1-node.sample $S3_INSTALL_LOCATION/conf
+
 # Copy the provisioning python scripts
 cp scripts/provisioning/s3_setup $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/postinstallcmd.py $S3_INSTALL_LOCATION/bin
@@ -129,6 +132,7 @@ cp scripts/provisioning/cleanupcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/testcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/resetcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/preparecmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/upgradecmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/setupcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/s3_haproxy_config.py $S3_INSTALL_LOCATION/bin
 cp scripts/ldap/ldapaccountaction.py $S3_INSTALL_LOCATION/bin

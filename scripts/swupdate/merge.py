@@ -72,38 +72,45 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
         - diff the value in config and sample.old - if it is changed, skip
         - if it is not changed,  we will overwrite the value in cfg file from sample.new
         - if it does not exist in cfg file add the value from sample.new file to cfg file
+    - All the arrays in yaml are always overwritten
     """
 
     #If config file is not present then simply copy sample file.
+    # TODO this code should throw error in case config file is not present.
     if not os.path.isfile(configFile):
         shutil.copy(newSampleFile, configFile)
         return
 
-    conf_file =  filetype + configFile
+    # old sample file
     conf_old_sample = filetype + oldSampleFile
-    conf_new_sample = filetype + newSampleFile
-    conf_unsafe_file = filetype + unsafeAttributesFile
-
-    cs_conf_file = S3CortxConfStore(config=conf_file, index=conf_file)
     cs_conf_old_sample = S3CortxConfStore(config=conf_old_sample, index=conf_old_sample)
-    cs_conf_new_sample = S3CortxConfStore(config=conf_new_sample, index=conf_new_sample)
-    cs_conf_unsafe_file = S3CortxConfStore(config=conf_unsafe_file, index=conf_unsafe_file)
 
-    conf_file_keys = cs_conf_file.get_all_keys()
-    conf_unsafe_file_keys = cs_conf_unsafe_file.get_all_keys()
+    # new sample file
+    conf_new_sample = filetype + newSampleFile
+    cs_conf_new_sample = S3CortxConfStore(config=conf_new_sample, index=conf_new_sample)
     conf_new_sample_keys = cs_conf_new_sample.get_all_keys()
 
-    # Handle the special scenario where we have array of dictionaries in the config file 
+    # unsafe attribute file
+    conf_unsafe_file = filetype + unsafeAttributesFile
+    cs_conf_unsafe_file = S3CortxConfStore(config=conf_unsafe_file, index=conf_unsafe_file)
+    conf_unsafe_file_keys = cs_conf_unsafe_file.get_all_keys()
+
+    # active config file
+    conf_file =  filetype + configFile
+    cs_conf_file = S3CortxConfStore(config=conf_file, index=conf_file)
+    conf_file_keys = cs_conf_file.get_all_keys()
+
+    # Handle the special scenario where we have array in the config file 
     # 1)search for keys with [] in config
     # 2)delete these keys/values in config
     for key in conf_new_sample_keys:
         if ((key.find('[') != -1) and (key.find(']') != -1)):
-            # deleting key[0]..[n] has some issues where some keys
-            # are deleted and others are not. So deleting root key
+            # deleting key[0]..[n] has issues in confstore deletes
+            # so deleting the root key which will deletes all the child entires
             cs_conf_file.delete_key(key[:key.find('[')], True)
 
     # deleted keys dont go away in already loaded index.
-    # so we load another index.
+    # so we load at another index and re-populate conf_file_keys again.
     conf_file_keys_after_delete = S3CortxConfStore(config=conf_file, index=conf_file+"after_delete")
     conf_file_keys = conf_file_keys_after_delete.get_all_keys()
 
@@ -113,7 +120,9 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
         #If key is marked for unsafe then do not modify/overwrite.
         if key in conf_unsafe_file_keys:
             continue
-        #if key not present in old config then add it.
+        #if key not present active config file then add it
+        # (this will also add and hence effectively overwrite keys removed in above [] handing
+        # and hence will always result in overwrite for these keys from the new sample file).
         if key not in conf_file_keys:
             keys_to_overwrite.append(key)
         #if key is not unsafe and value is not changed by user then overwrite it.

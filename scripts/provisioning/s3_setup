@@ -61,6 +61,9 @@ def main():
   prepareCmd = subparsers.add_parser('prepare', help='setup prepare')
   prepareCmd.add_argument("--config", help='config URL', type=str, required=True)
 
+  upgradeCmd = subparsers.add_parser('upgrade', help='setup upgrade')
+  upgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
+
   args = parser.parse_args()
 
   create_logger_directory()
@@ -106,6 +109,11 @@ def main():
       from preparecmd import PrepareCmd
       PrepareCmd(args.config).process()
       logger.info('prepare successful.\n')
+
+    elif args.command == 'upgrade':
+      from upgradecmd import UpgradeCmd
+      UpgradeCmd(args.config).process()
+      sys.stdout.write('INFO: upgrade successful.\n')
 
   except Exception as e:
     logger.error(f"\n{str(e)}\n\n")
