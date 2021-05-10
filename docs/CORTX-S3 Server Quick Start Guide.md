@@ -50,7 +50,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 
 7. You'll need to install CORTX Python Utilities. Follow the steps to install [CORTX Python Utilities](https://github.com/Seagate/cortx-utils/blob/main/py-utils/README.md).
 
-8. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup/a32f44e0591e3fcf020398c0a23b8cdafcdd3c26).
+8. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup).
 
 9. You'll need to disable selinux and firewall. Run the following commands:
 
