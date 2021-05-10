@@ -80,6 +80,7 @@ public interface AccessKeyDAO {
       * Get the access key belonging to the account.
       */
     public
-     AccessKey findAccountAccessKey(Account account) throws DataAccessException;
+     AccessKey findAccountAccessKey(
+         String rootUserId) throws DataAccessException;
 }
 

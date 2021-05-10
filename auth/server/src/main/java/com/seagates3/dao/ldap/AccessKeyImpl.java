@@ -32,7 +32,6 @@ import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPModification;
 import com.novell.ldap.LDAPSearchResults;
-import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.fi.FaultPoints;
@@ -560,21 +559,21 @@ public class AccessKeyImpl implements AccessKeyDAO {
      * @return accessKey {@link AccessKey}
      * @throws com.seagates3.exception.DataAccessException
      */
-    @Override public AccessKey findAccountAccessKey(Account account)
+    @Override public AccessKey findAccountAccessKey(String rootUserId)
         throws DataAccessException {
       AccessKey accessKey;
 
       String[] attrs = {LDAPUtils.ACCESS_KEY_ID, LDAPUtils.SECRET_KEY,
                         LDAPUtils.STATUS,        LDAPUtils.EXPIRY,
                         LDAPUtils.OBJECT_CLASS,  LDAPUtils.CREATE_TIMESTAMP,
-                        LDAPUtils.TOKEN};
+                        LDAPUtils.TOKEN,         LDAPUtils.USER_ID};
 
       String accessKeyBaseDN =
           String.format("%s=accesskeys,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
                         LDAPUtils.BASE_DN);
 
-      String filter = String.format("(&(%s=%s)(%s=%s))", LDAPUtils.ACCOUNT_ID,
-                                    account.getId(), LDAPUtils.OBJECT_CLASS,
+      String filter = String.format("(&(%s=%s)(%s=%s))", LDAPUtils.USER_ID,
+                                    rootUserId, LDAPUtils.OBJECT_CLASS,
                                     LDAPUtils.ACCESS_KEY_OBJECT_CLASS);
 
       LDAPSearchResults ldapResults;
@@ -583,8 +582,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
                                        LDAPConnection.SCOPE_SUB, filter, attrs);
       }
       catch (LDAPException ex) {
-        LOGGER.error("Failed to search access key for account." +
-                     account.getName());
+        LOGGER.error("Failed to search access key for account");
         throw new DataAccessException("Failed to search access key" + ex);
       }
 
@@ -610,6 +608,8 @@ public class AccessKeyImpl implements AccessKeyDAO {
                                         .getStringValue()
                                         .toUpperCase());
         accessKey.setStatus(accessKeystatus);
+        accessKey.setUserId(
+            entry.getAttribute(LDAPUtils.USER_ID).getStringValue());
 
         String createTime = DateUtil.toServerResponseFormat(
             entry.getAttribute(LDAPUtils.CREATE_TIMESTAMP).getStringValue());
