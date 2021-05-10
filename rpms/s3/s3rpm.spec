@@ -244,7 +244,6 @@ echo "S3 RPM Clean section completed"
 # files section
 ################################
 %files
-echo "S3 RPM Files section started"
 %defattr(-,root,root,-)
 # config file doesnt get replaced during rpm update if changed
 %config /opt/seagate/cortx/auth/resources/authserver.properties.sample
@@ -261,7 +260,7 @@ echo "S3 RPM Files section started"
 %config(noreplace) /opt/seagate/cortx/auth/resources/AmazonS3.xsd
 %config(noreplace) /opt/seagate/cortx/auth/resources/AmazonS3_V2.xsd
 %config /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample
-%config(noreplace) /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample
+%config /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample
 
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/authserver.properties.sample
 %attr(4600, root, root) /opt/seagate/cortx/auth/resources/authserver-log4j2.xml
@@ -450,6 +449,7 @@ echo "S3 RPM Files section started"
 %{_bindir}/s3confstore
 %{py36_sitelib}/s3backgrounddelete/config/*.yaml
 %{py36_sitelib}/s3backgrounddelete/config/s3_background_delete_config.yaml.sample
+%{py36_sitelib}/s3backgrounddelete/config/s3_cluster.yaml.sample
 %{py36_sitelib}/s3backgrounddelete/*.pyc
 %{py36_sitelib}/s3backgrounddelete-%{version}-py?.?.egg-info
 %{py36_sitelib}/s3msgbus/*.pyc
@@ -473,7 +473,6 @@ echo "S3 RPM Files section started"
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundproducer
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyc
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyo
-echo "S3 RPM Files section completed"
 
 ##############################
 # post install/upgrade section
