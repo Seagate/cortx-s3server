@@ -129,9 +129,6 @@ $PythonV authpassencryptcli_spec.py
 echo "`date -u`: Running auth_spec_negative_and_fi.py..."
 $PythonV auth_spec_negative_and_fi.py
 
-echo "`date -u` : Running metadatarecovery_spec.py..."
-$PythonV metadatarecovery_spec.py
-
 git checkout -- $BASEDIR/framework.py
 git checkout -- $BASEDIR/s3iamcli_test_config.yaml
 
