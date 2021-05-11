@@ -98,8 +98,8 @@ if [ "$change_ldap_passwd" = true ] ; then
 fi
 
 # Encrypt the password using s3cipher
-ldapcipherkey=$(s3cipher generate_key --const_key cortx)
-encrypted_pass=$(s3cipher encrypt --data "$ldap_passwd" --key "$ldapcipherkey")
+ldapcipherkey=$(s3cipher generate_key --const_key 'cortx')
+encrypted_pass=$(s3cipher encrypt --data="$ldap_passwd" --key="$ldapcipherkey")
 
 # Update the config
 escaped_pass=`echo "$encrypted_pass" | sed 's/\//\\\\\\//g'`
