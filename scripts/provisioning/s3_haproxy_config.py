@@ -35,7 +35,7 @@ class S3HaproxyConfig:
       self.machine_id = mcid_file.read().strip()
 
     if not confstore.strip():
-      sys.stderr.write(f'config url:[{confstore}] must be a valid url path\n')
+      self.logger.error(f'config url:[{confstore}] must be a valid url path\n')
       raise Exception('empty config URL path')
 
     self.provisioner_confstore = S3CortxConfStore(confstore, 'haproxy_config_index')

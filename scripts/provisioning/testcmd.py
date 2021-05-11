@@ -44,18 +44,18 @@ class TestCmd(SetupCmd):
   def process(self):
     """Main processing function."""
     #TODO: remove the return in next sprint
-    sys.stdout.write(f"Processing {self.name} {self.url}\n")
+    self.logger.info(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
 
     try:
       self.read_endpoint_value()
-      sys.stdout.write(f"Endpoint fqdn {self.endpoint}\n")
+      self.logger.info(f"Endpoint fqdn {self.endpoint}\n")
       cmd = [SANITY_SCRIPT_PATH, LDAP_SWITCH,  f'{self.ldap_passwd}', ENDPOINT_SWITCH, f'{self.endpoint}']
       handler = SimpleProcess(cmd)
       stdout, stderr, retcode = handler.run()
       if retcode != 0:
         raise Exception(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
-      sys.stdout.write(f"{cmd}:{stdout}:{stderr}:{retcode}\n")
+      self.logger.info(f"{cmd}:{stdout}:{stderr}:{retcode}\n")
     except Exception as e:
       raise Exception(f"{self}: {cmd} exception: {e}")

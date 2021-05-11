@@ -48,7 +48,7 @@ class ConfigCmd(SetupCmd):
 
   def process(self, configure_only_openldap = False, configure_only_haproxy = False):
     """Main processing function."""
-    sys.stdout.write(f"Processing {self.name} {self.url}\n")
+    self.logger.info(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
 
@@ -69,11 +69,11 @@ class ConfigCmd(SetupCmd):
       # create topic for background delete
       bgdeleteconfig = CORTXS3Config()
       if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
-        sys.stdout.write('INFO: Creating topic.\n')
+        self.logger.info(' Creating topic.\n')
         self.create_topic(bgdeleteconfig.get_msgbus_admin_id,
                           bgdeleteconfig.get_msgbus_topic(),
                           self.get_msgbus_partition_count())
-        sys.stdout.write('INFO:Topic creation successful.\n')
+        self.logger.info('Topic creation successful.\n')
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}\n')
 
@@ -106,18 +106,18 @@ class ConfigCmd(SetupCmd):
 
     # restart rsyslog service
     try:
-      sys.stdout.write("Restarting rsyslog service...\n")
+      self.logger.info("Restarting rsyslog service...\n")
       service_list = ["rsyslog"]
       self.restart_services(service_list)
     except Exception as e:
-      sys.stderr.write(f'Failed to restart rsyslog service, error: {e}\n')
+      self.logger.error(f'Failed to restart rsyslog service, error: {e}\n')
       raise e
-    sys.stdout.write("Restarted rsyslog service...\n")
+    self.logger.info("Restarted rsyslog service...\n")
 
     # set openldap-replication
     self.configure_openldap_replication()
     
-    sys.stdout.write("INFO: Successfully configured openldap on the node.\n")
+    self.logger.info(' Successfully configured openldap on the node.\n")
 
   def configure_openldap_replication(self):
     """Configure openldap replication within a storage set."""
@@ -134,7 +134,7 @@ class ConfigCmd(SetupCmd):
         server_nodes_list = literal_eval(server_nodes_list)
 
       if len(server_nodes_list) > 1:
-        sys.stdout.write(f'\nSetting ldap-replication for storage_set:{index}\n\n')
+        self.logger.info(f'\nSetting ldap-replication for storage_set:{index}\n\n')
 
         with open("hosts_list_file.txt", "w") as f:
           for node_machine_id in server_nodes_list:
@@ -161,9 +161,9 @@ class ConfigCmd(SetupCmd):
     try:
       if not S3CortxMsgBus.is_topic_exist(admin_id, topic_name):
           S3CortxMsgBus.create_topic(admin_id, [topic_name], partitions)
-          sys.stdout.write("Topic Created\n")
+          self.logger.info("Topic Created\n")
       else:
-          sys.stdout.write("Topic Already exists\n")
+          self.logger.info("Topic Already exists\n")
     except Exception as e:
       raise e
 
@@ -183,10 +183,10 @@ class ConfigCmd(SetupCmd):
 
       srv_count += len(server_nodes_list)
       index += 1
-    sys.stdout.write(f"Server node count : {srv_count}\n")
+    self.logger.info(f"Server node count : {srv_count}\n")
     # Partition count should be ( number of hosts * 2 )
     srv_count = srv_count * 2
-    sys.stdout.write(f"Partition count : {srv_count}\n")
+    self.logger.info(f"Partition count : {srv_count}\n")
     return srv_count
 
   def configure_haproxy(self):
@@ -195,16 +195,16 @@ class ConfigCmd(SetupCmd):
       S3HaproxyConfig(self.url).process()
       # reload haproxy service
       try:
-        sys.stdout.write("Reloading haproxy service...\n")
+        self.logger.info("Reloading haproxy service...\n")
         service_list = ["haproxy"]
         self.reload_services(service_list)
       except Exception as e:
-        sys.stderr.write(f'Failed to reload haproxy service, error: {e}\n')
+        self.logger.error(f'Failed to reload haproxy service, error: {e}\n')
         raise e
-      sys.stdout.write("Reloaded haproxy service...\n")
-      sys.stdout.write("INFO: Successfully configured haproxy on the node.\n")
+      self.logger.info("Reloaded haproxy service...\n")
+      self.logger.info(' Successfully configured haproxy on the node.\n")
     except Exception as e:
-      sys.stderr.write(f'Failed to configure haproxy for s3server, error: {e}')
+      self.logger.error(f'Failed to configure haproxy for s3server, error: {e}')
       raise e
 
   @staticmethod
@@ -217,4 +217,4 @@ class ConfigCmd(SetupCmd):
     if retcode != 0:
       raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
     else:
-      sys.stdout.write('INFO: Successfully set auth JKS keystore password.\n')
+      self.logger.info(' Successfully set auth JKS keystore password.\n')

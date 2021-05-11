@@ -23,6 +23,7 @@ import sys
 from ldap.ldapobject import SimpleLDAPObject
 import ldap.modlist as modlist
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
+import logging
 
 LDAP_USER = "cn={},dc=seagate,dc=com"
 LDAP_URL = "ldapi:///"
@@ -57,12 +58,15 @@ class LdapAccountAction:
 
   def __init__(self, ldapuser: str, ldappasswd: str):
     """Constructor."""
+    
+    self.logger = logging.getLogger("s3deployment_logger_name")
+
     try:
       self.ldapuser = ldapuser.strip()
       self.ldappasswd = ldappasswd.strip()
 
     except Exception as e:
-      sys.stderr.write(f'initialization failed, err: {e}')
+      self.logger.error(f'initialization failed, err: {e}')
       raise e
 
   def __add_keys_to_dictionary(self, input_params:dict):
@@ -172,7 +176,7 @@ class LdapAccountAction:
         ldif = modlist.addModlist(attrs)
         self.ldap_conn.add_s(dn, ldif)
       else:
-        sys.stdout.write(f"ldap account: {input_params['account_name']} already exists.\n")
+        self.logger.info(f"ldap account: {input_params['account_name']} already exists.\n")
 
       self.__disconnect_from_ldap()
     except Exception as e:
@@ -192,7 +196,7 @@ class LdapAccountAction:
 
       for acc in input_params.keys():
         if not self.__is_account_present(self.ldap_conn, acc):
-          sys.stdout.write(f'LDAP account: {acc} does not exist, skipping deletion.\n')
+          self.logger.info(f'LDAP account: {acc} does not exist, skipping deletion.\n')
           continue
         acc_attr_dict = input_params[acc]
 
@@ -220,7 +224,7 @@ class LdapAccountAction:
 
       self.__disconnect_from_ldap()
     except Exception as e:
-      sys.stderr.write(f'Failed to delete account: {acc}\n')
+      self.logger.error(f'Failed to delete account: {acc}\n')
       raise e
 
   def get_account_count(self) -> None:
@@ -239,7 +243,7 @@ class LdapAccountAction:
     except Exception as e:
       if self.ldap_conn:
         self.__disconnect_from_ldap()
-      sys.stderr.write(f'ERROR: Failed to get count of ldap account, error: {str(e)}\n')
+      self.logger.error(f'ERROR: Failed to get count of ldap account, error: {str(e)}\n')
       raise e
 
   def delete_s3_ldap_data(self):
@@ -248,21 +252,21 @@ class LdapAccountAction:
                         "ou=accounts,dc=s3,dc=seagate,dc=com",
                         "ou=idp,dc=s3,dc=seagate,dc=com"]
     try:
-      sys.stdout.write('INFO:Deletion of ldap data started.')
+      self.logger.info('Deletion of ldap data started.')
       self.__connect_to_ldap_server()
       for entry in cleanup_records:
-        sys.stdout.write(f'INFO: deleting all entries from {str(entry)} & its sub-ordinate tree\n')
+        self.logger.info(' deleting all entries from {str(entry)} & its sub-ordinate tree\n')
         try:
           self.ldap_delete_recursive(self.ldap_conn, entry)
         except ldap.NO_SUCH_OBJECT:
           # If no entries found in ldap for given dn
           pass
       self.__disconnect_from_ldap()
-      sys.stdout.write('INFO:Deletion of ldap data completed successfully.')
+      self.logger.info('Deletion of ldap data completed successfully.')
     except Exception as e:
       if self.ldap_conn:
         self.__disconnect_from_ldap()
-      sys.stderr.write(f'ERROR: Failed to delete ldap data, error: {str(e)}\n')
+      self.logger.error(f'ERROR: Failed to delete ldap data, error: {str(e)}\n')
       raise e
 
   def ldap_delete_recursive(self, ldap_conn: SimpleLDAPObject, base_dn: str):
@@ -281,7 +285,7 @@ class LdapAccountAction:
     except ldap.NO_SUCH_OBJECT:
       return False
     except Exception as e:
-      sys.stderr.write(f'INFO: Failed to find ldap account: {account_name}, error: {str(e)}\n')
+      self.logger.error(f'ERROR: Failed to find ldap account: {account_name}, error: {str(e)}\n')
       raise e
     return True
 
@@ -293,7 +297,7 @@ class LdapAccountAction:
     except ldap.NO_SUCH_OBJECT:
       pass
     except Exception as e:
-      sys.stderr.write(f'Failed to delete DN: {dn}\n')
+      self.logger.error(f'Failed to delete DN: {dn}\n')
       raise e
 
   @staticmethod
@@ -305,7 +309,7 @@ class LdapAccountAction:
     except ldap.NO_SUCH_OBJECT:
       pass
     except Exception as e:
-      sys.stderr.write(f'failed to delete access key of userid: {userid}\n')
+      self.logger.error(f'failed to delete access key of userid: {userid}\n')
       raise e
 
   @staticmethod

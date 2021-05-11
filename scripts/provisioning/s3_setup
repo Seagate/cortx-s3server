@@ -113,8 +113,6 @@ def main():
       logger.info('Prepare Command successful.\n')
 
   except Exception as e:
-    #sys.stderr.write(f"\n{str(e)}\n\n")
-    #sys.stderr.write(f"{traceback.format_exc()}\n")
     logger.error(f"\n{str(e)}\n\n")
     logger.error(f"{traceback.format_exc()}\n")
     return errno.EINVAL

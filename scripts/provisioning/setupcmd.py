@@ -30,6 +30,7 @@ from cortx.utils.validator.v_service import ServiceV
 from cortx.utils.validator.v_path import PathV
 from cortx.utils.validator.v_network import NetworkV
 from cortx.utils.process import SimpleProcess
+import logging
 
 class S3PROVError(Exception):
   """Parent class for the s3 provisioner error classes."""
@@ -47,7 +48,7 @@ class SetupCmd(object):
   s3_prov_config = "/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml"
    
   _preqs_conf_file = "/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
-  logger = logging.getLogger("s3deployment_logger_name")
+
   #TODO
   # add the service name and HA service name in the following dictionary
   # as key value pair after confirming from the HA team
@@ -61,6 +62,8 @@ class SetupCmd(object):
 
   def __init__(self,config: str):
     """Constructor."""
+
+    self.logger = logging.getLogger("s3deployment_logger_name")
     
     if config is None:
       self.logger.error(f'Empty Config url\n')
@@ -355,7 +358,7 @@ class SetupCmd(object):
           break
       if list_match_found is False:
         raise Exception(f'No match found for {key_yard}')
-      sys.stdout.write("Validation complete\n")
+      self.logger.info("Validation complete\n")
 
     except Exception as e:
       raise Exception(f'ERROR : Validating keys failed, exception {e}\n')
@@ -370,7 +373,7 @@ class SetupCmd(object):
       except KeyError:
         cmd = ['/bin/systemctl', 'stop',  f'{service_name}']
       handler = SimpleProcess(cmd)
-      sys.stdout.write(f"shutting down {service_name}\n")
+      self.logger.info(f"shutting down {service_name}\n")
       res_op, res_err, res_rc = handler.run()
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
@@ -385,7 +388,7 @@ class SetupCmd(object):
       except KeyError:
         cmd = ['/bin/systemctl', 'start',  f'{service_name}']
       handler = SimpleProcess(cmd)
-      sys.stdout.write(f"starting {service_name}\n")
+      self.logger.info(f"starting {service_name}\n")
       res_op, res_err, res_rc = handler.run()
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
@@ -400,7 +403,7 @@ class SetupCmd(object):
       except KeyError:
         cmd = ['/bin/systemctl', 'restart',  f'{service_name}']
       handler = SimpleProcess(cmd)
-      sys.stdout.write(f"restarting {service_name}\n")
+      self.logger.info(f"restarting {service_name}\n")
       res_op, res_err, res_rc = handler.run()
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
@@ -415,7 +418,7 @@ class SetupCmd(object):
       except KeyError:
         cmd = ['/bin/systemctl', 'reload',  f'{service_name}']
       handler = SimpleProcess(cmd)
-      sys.stdout.write(f"reloading {service_name}\n")
+      self.logger.info(f"reloading {service_name}\n")
       res_op, res_err, res_rc = handler.run()
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
