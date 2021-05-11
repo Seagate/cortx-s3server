@@ -372,67 +372,6 @@ size_t S3MotrReader::get_next_block(char **data) {
   data_read = motr_rw_op_context->data->ov_vec.v_count[iteration_index];
   iteration_index++;
 
-  size_t length = data_read;
-  // Data is being read from Motr with at least 4KiB granularity.
-  // Actual data checksum has to be calculated for might be smaller.
-  // Example: object size = 1 byte, total_size_read would be 4096.
-  if (total_size_to_read < total_size_read + length) {
-    length = total_size_to_read - total_size_read;
-  }
-  if (multipart_part_size == 0) {
-    // non-multipart-upload case. Just calculate md5 of the entire object.
-    md5crypt.Update(*data, length);
-  } else {
-    // the object was created with multipart upload.
-    // Calculate md5 checksums for each part independently.
-    //
-    // Multipart upload is done in the following way: parts are uploaded one by
-    // one, then there is CompleteMultipartUpload call that is only about
-    // changing the metadata. To calculate the entire object md5 checksum we
-    // would have to read the entire object during CompleteMultipartUpload.
-    // There may be a hash that allows to calculate full hash using partial
-    // hashes, but md5 checksums were already implemented in the code for PUT
-    // and UploadPart, so sticking with md5 checksums was the easiest way to
-    // go.
-    size_t remaining = length;
-    // Each iteration jumps to the next part or the end of the buffer,
-    // whichever comes first.
-    while (remaining > 0) {
-      // current absolute position in object for the purpose of checksumming
-      size_t pos = total_size_read + length - remaining;
-      size_t next_part_pos;
-      // Current implementation supports only equal sized parts, except the
-      // last part. This allows to store only a part size (for all parts except
-      // the last) and total number of parts. Part boundaries could be derived
-      // from these 2 values.
-      // The following 'if' gets absolute position in object of the next part
-      // boundary.
-      if (pos >= multipart_part_size * (multipart_num_of_parts - 1)) {
-        // pos is over the boundary between last and last but one part.
-        // The part boundary is the end of object in this case.
-        next_part_pos = total_size_to_read;
-      } else {
-        // get the next part boundary by getting the next part index and
-        // multiplying it on the part size
-        next_part_pos = (pos / multipart_part_size + 1) * multipart_part_size;
-      }
-      // let's update hash as much data as we can, but don't cross part
-      // boundary.
-      size_t to_update = std::min(next_part_pos - pos, remaining);
-      md5crypt.Update(&(*data)[length - remaining], to_update);
-      // if the part boundary is reached add hash to awsetag. It would
-      // calculate the hash in exactly the same way as it's done in
-      // S3PostCompleteAction::validate_parts() during CompleteMultipartUpload.
-      if (pos + to_update == next_part_pos) {
-        std::string s = get_content_md5();
-        awsetag.add_part_etag(s);
-        md5crypt.Reset();
-      }
-      remaining -= to_update;
-    }
-  }
-  total_size_read += length;
-
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return data_read;
 }
