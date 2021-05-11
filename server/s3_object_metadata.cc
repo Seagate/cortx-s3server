@@ -54,7 +54,9 @@ static void str_set_default(std::string& sref, const char* sz) {
   }
 }
 
-void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
+void S3ObjectMetadata::initialize(bool ismultipart, const std::string& uploadid) {
+  is_multipart = ismultipart;
+  upload_id = uploadid;
   account_name = request->get_account_name();
   account_id = request->get_account_id();
   user_name = request->get_user_name();

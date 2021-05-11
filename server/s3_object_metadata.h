@@ -128,7 +128,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   S3ObjectMetadataState state;
   S3Timer s3_timer;
 
-  void initialize(bool is_multipart, std::string uploadid);
+  void initialize(bool is_multipart, const std::string& uploadid);
 
   // Any validations we want to do on metadata.
   void validate();
