@@ -139,8 +139,6 @@ class S3Option {
   unsigned bucket_metadata_cache_expire_sec;
   unsigned bucket_metadata_cache_refresh_sec;
 
-  bool s3_ranged_read_enabled;
-  bool s3_read_md5_check_enabled;
   bool s3_di_disable_data_corruption_iem;
   bool s3_di_disable_metadata_corruption_iem;
 
@@ -220,9 +218,6 @@ class S3Option {
 
     s3_grace_period_sec = 10;  // 10 seconds
     is_s3_shutting_down = false;
-
-    s3_ranged_read_enabled = true;
-    s3_read_md5_check_enabled = false;
 
     log_dir = "/var/log/seagate/s3";
     audit_log_dir = "/var/log/seagate/s3";
@@ -331,14 +326,8 @@ class S3Option {
   bool load_all_sections(bool force_override_from_config);
   bool reload_modifiable_options();
 
-  bool get_s3_ranged_read_enabled();
-  bool get_s3_read_md5_check_enabled();
   bool get_s3_di_disable_data_corruption_iem();
   bool get_s3_di_disable_metadata_corruption_iem();
-
-  void set_s3_read_md5_check_enabled(bool value) {
-    s3_read_md5_check_enabled = value;
-  }
 
   std::string get_s3_nodename();
   std::string get_ipv4_bind_addr();
