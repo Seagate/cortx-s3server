@@ -165,9 +165,9 @@ step_8 () {
 	# prepare the confstore related configs
 	myhostname=$(hostname -f)
 	myip=$(/sbin/ip -o -4 addr list eth2 | awk '{print $4}' | cut -d/ -f1)
-	key=$(s3cipher generate_key --const_key openldap)
-	iampasswd=$(s3cipher encrypt --data 'ldapadmin' --key "$key")
-	rootdnpasswd=$(s3cipher encrypt --data 'seagate' --key "$key")
+	key=$(s3cipher generate_key --const_key='openldap')
+	iampasswd=$(s3cipher encrypt --data="ldapadmin" --key="$key")
+	rootdnpasswd=$(s3cipher encrypt --data="seagate" --key="$key")
 	s3_conf_file="/tmp/s3_confstore.json"
 
 	s3instances=11

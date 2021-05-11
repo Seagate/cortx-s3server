@@ -43,8 +43,8 @@ sgiamadminpwd=''
 constkey=cortx
 propertiesfilepath="properties:///opt/seagate/cortx/auth/resources/authserver.properties"
 ldapkey="ldapLoginPW"
-ldapcipherkey=$(s3cipher generate_key --const_key "$constkey")
-encryptedkey=$(s3confstore $propertiesfilepath getkey --key="$ldapkey")
+ldapcipherkey=$(s3cipher generate_key --const_key="$constkey")
+encryptedkey=$(s3confstore "$propertiesfilepath" getkey --key="$ldapkey")
 if [[ -z $(echo "$encryptedkey" | grep -Eio Failed) ]];
 then
     sgiamadminpwd=$(s3cipher decrypt --data="$encryptedkey" --key="$ldapcipherkey")
