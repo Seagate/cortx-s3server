@@ -143,7 +143,7 @@ S3ObjectMetadata::S3ObjectMetadata(
   } else {
     mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
-  initialize();
+  initialize(is_multipart, upload_id);
 }
 
 S3ObjectMetadata::S3ObjectMetadata(
