@@ -363,9 +363,15 @@ public class AccountController extends AbstractController {
         try {
             root = userDAO.find(account.getName(), "root");
         } catch (DataAccessException e) {
+          LOGGER.error("Failed to find root user for account :" +
+                       account.getName());
             return accountResponseGenerator.internalServerError();
         }
 
+        if (root == null || root.getId() == null) {
+          LOGGER.error("Root user not found for account :" + account.getName());
+          return accountResponseGenerator.internalServerError();
+        }
         if (requestor.getId() != null &&
             !(requestor.getId().equals(root.getId()))) {
             return accountResponseGenerator.unauthorizedOperation();
@@ -382,20 +388,11 @@ public class AccountController extends AbstractController {
           // check if access key is ldap credentials or not
           if (requestor.getAccesskey().getId().equals(
                   AuthServerConfig.getLdapLoginCN())) {
-            User rootUser;
             AccessKey accountAccessKey;
             try {  // if ldap credentials are used then
-                   // 1. find root user id associated with account.
-                   // 2. find access key of account using root userid.
-              rootUser = userDAO.find(account.getName(), "root");
-              if (rootUser != null && rootUser.getId() != null) {
-                accountAccessKey =
-                    accessKeyDAO.findAccountAccessKey(rootUser.getId());
-              } else {
-                LOGGER.error("Failed to find root userid for account :" +
-                             account.getName());
-                return accountResponseGenerator.internalServerError();
-              }
+                   // find access key of account using root userid.
+              accountAccessKey =
+                  accessKeyDAO.findAccountAccessKey(root.getId());
             }
             catch (DataAccessException e) {
               LOGGER.error("Failed to find Access Key for account :" +

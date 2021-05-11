@@ -849,5 +849,71 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         Mockito.verify(accountDAO).delete(account);
         Mockito.verify(roleDAO).delete(roles[0]);
     }
+
+    @Test public void
+    DeleteAccountWithLdapCred_RootUserSearchFailed_ReturnInternalServerError()
+        throws DataAccessException {
+      Account account = mock(Account.class);
+
+      Mockito.when(account.getName()).thenReturn("s3test");
+      Mockito.when(accountDAO.find("s3test")).thenReturn(account);
+      Mockito.when(account.exists()).thenReturn(Boolean.TRUE);
+      Mockito.when(userDAO.find("s3test", "root")).thenReturn(new User());
+
+      final String expectedResponseBody =
+          "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+          "<ErrorResponse " +
+          "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+          "<Error><Code>InternalFailure</Code>" +
+          "<Message>The request processing has failed because of an " +
+          "unknown error, exception or failure.</Message></Error>" +
+          "<RequestId>0000</RequestId>" + "</ErrorResponse>";
+
+      ServerResponse response = accountController.delete ();
+      Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+      Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
+                          response.getResponseStatus());
+    }
+
+    @Test public void
+    DeleteAccountWithLdapCred_AccountAccessKeySearchFailed_ResturnInternalServerError()
+        throws Exception {
+      Account account = mock(Account.class);
+      User user = new User();
+      user = new User();
+      user.setName("root");
+      user.setId("abcxyz");
+      // AccessKey accessKeys = new AccessKey();
+      AccessKey accessKeys = mock(AccessKey.class);
+
+      PowerMockito.doReturn("abcxyz")
+          .when(AuthServerConfig.class, "getLdapLoginCN");
+      Mockito.when(requestor.getAccesskey()).thenReturn(accessKeys);
+      Mockito.when(accessKeys.getId()).thenReturn("abcxyz");
+
+      Mockito.when(account.getName()).thenReturn("s3test");
+      Mockito.when(accountDAO.find("s3test")).thenReturn(account);
+      Mockito.when(account.exists()).thenReturn(Boolean.TRUE);
+      Mockito.when(userDAO.find("s3test", "root")).thenReturn(user);
+      Mockito.when(requestor.getId()).thenReturn("abcxyz");
+      Mockito.doThrow(new DataAccessException(
+                          "Failed to find Access Key for account"))
+          .when(accessKeyDAO)
+          .findAccountAccessKey(user.getId());
+
+      final String expectedResponseBody =
+          "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+          "<ErrorResponse " +
+          "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+          "<Error><Code>InternalFailure</Code>" +
+          "<Message>The request processing has failed because of an " +
+          "unknown error, exception or failure.</Message></Error>" +
+          "<RequestId>0000</RequestId>" + "</ErrorResponse>";
+
+      ServerResponse response = accountController.delete ();
+      Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+      Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
+                          response.getResponseStatus());
+    }
 }
 
