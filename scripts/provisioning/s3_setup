@@ -23,18 +23,16 @@ import argparse
 import traceback
 import errno
 import logging
+import os
 from logging import handlers
 
-def main():
+#Logger details
+s3deployment_logger_name = "s3-deployment-logger"
+s3deployment_log_file = "/var/log/seagate/s3/s3deployment/s3deployment.log"
+s3deployment_log_directory = "/var/log/seagate/s3/s3deployment/"
+s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
-  #Logger details
-  s3deployment_logger_name = "s3-deployment-logger"
-  s3deployment_log_file = "/var/log/seagate/s3/s3deployment/s3deployment.log"
-  s3deployment_log_directory = "/var/log/seagate/s3/s3deployment/"
-  s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-  
-  create_logger_directory()
-  logger = create_logger()
+def main():
 
   parser = argparse.ArgumentParser("S3server setup command")
   subparsers = parser.add_subparsers(dest = 'command')
@@ -64,17 +62,19 @@ def main():
   prepareCmd.add_argument("--config", help='config URL', type=str, required=True)
 
   args = parser.parse_args()
+
+  create_logger_directory()
+  logger = create_logger(args.config)
+
   try:
     if args.command == 'post_install':
       from postinstallcmd import PostInstallCmd
       PostInstallCmd(args.config).process()
       logger.info('Post_install Command successful.\n')
-
     elif args.command == 'cleanup':
       from cleanupcmd import CleanupCmd
       CleanupCmd(args.config).process()
-      logger.info('Cleanup Command successful.\n')
-      
+      logger.info('Cleanup Command successful.\n') 
     elif args.command == 'config':
       from configcmd import ConfigCmd
 
@@ -88,25 +88,21 @@ def main():
       ConfigCmd(args.config).process(configure_only_openldap,
                                 configure_only_haproxy)
       logger.info('Config Command successful.\n')
-      
     elif args.command == 'init':
       from initcmd import InitCmd
       InitCmd(args.config).process()
-      logger.info('Init Command successful.\n')
-      
+      logger.info('Init Command successful.\n') 
     elif args.command == 'test':
       from testcmd import TestCmd
       test_plan = None
       if args.plan:
         test_plan = args.plan
-      TestCmd, args.config, test_plan).process()
+      TestCmd(args.config, test_plan).process()
       logger.info('S3-Test Successful.\n')
-      
     elif args.command == 'reset':
       from resetcmd import ResetCmd
-      ResetCmd, args.config).process()
+      ResetCmd(args.config).process()
       logger.info('Reset Command successful.\n')
-
     elif args.command == 'prepare':
       from preparecmd import PrepareCmd
       PrepareCmd(args.config).process()
@@ -119,7 +115,7 @@ def main():
 
   return 0
 
-def create_logger():
+def create_logger(config):
     """Create logger, file handler, console handler and formatter."""
     # create logger with "object_recovery_scheduler"
     logger = logging.getLogger(s3deployment_logger_name)
