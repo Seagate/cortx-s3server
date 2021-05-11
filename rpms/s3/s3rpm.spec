@@ -521,17 +521,5 @@ if [ $1 == 1 ];then
     echo "S3 RPM Post Uninstall Upgrade section completed"
 elif [ $1 == 0 ];then
     echo "S3 RPM Post Uninstall section started"
-    # remove config files.
-    rm -f /opt/seagate/cortx/s3/conf/s3config.yaml*
-    rm -f /opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml
-    rm -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml*
-    rm -f /opt/seagate/cortx/s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml
-    rm -f /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml*
-    rm -f /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster_unsafe_attributes.yaml
-    rm -f /opt/seagate/cortx/auth/resources/authserver.properties*
-    rm -f /opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.properties
-    rm -f /opt/seagate/cortx/auth/resources/keystore.properties*
-    rm -f /opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.properties
-    echo "removed all S3 config files"
     echo "S3 RPM Post Uninstall Upgrade section completed"
 fi
