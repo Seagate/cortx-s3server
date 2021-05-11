@@ -26,7 +26,7 @@ class PrepareCmd(SetupCmd):
   """Prepare Setup Cmd."""
   name = "prepare"
 
-  def __init__(self, config: str):
+  def __init__(self,   config: str):
     """Constructor."""
     try:
       super(PrepareCmd, self).__init__(config)

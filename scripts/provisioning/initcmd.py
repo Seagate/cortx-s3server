@@ -40,6 +40,7 @@ class InitCmd(SetupCmd):
     sys.stdout.write(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
+
     try:
       # Create background delete account
       bgdelete_acc_input_params_dict = {'account_name': "s3-background-delete-svc",

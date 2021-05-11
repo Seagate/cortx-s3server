@@ -45,14 +45,9 @@ class SetupCmd(object):
   machine_id = None
   ldap_mdb_folder = "/var/lib/ldap"
   s3_prov_config = "/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml"
-  
-  #Logger details
-  s3deployment_logger_name = "s3-deployment-logger"
-  s3deployment_log_file = "/var/log/seagate/s3/s3deployment/s3deployment.log"
-  s3deployment_log_directory = "/var/log/seagate/s3/s3deployment/"
-  s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-
+   
   _preqs_conf_file = "/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
+  logger = logging.getLogger("s3deployment_logger_name")
   #TODO
   # add the service name and HA service name in the following dictionary
   # as key value pair after confirming from the HA team
@@ -64,29 +59,24 @@ class SetupCmd(object):
   #                's3authserver': 's3auth'}
   ha_service_map = {}
 
-  def __init__(self, config: str):
+  def __init__(self,logger, config: str):
     """Constructor."""
+    
     if config is None:
+      self.logger.error(f'Empty Config url\n')
       return
 
     if not config.strip():
-      sys.stderr.write(f'config url:[{config}] must be a valid url path\n')
-      raise Exception('empty config URL path')
+      self.logger.error(f'Config url:[{config}] must be a valid url path\n')
+      raise Exception('Empty config URL path')
 
     self.endpoint = None
     self._url = config
     self._provisioner_confstore = S3CortxConfStore(self._url, 'setup_prov_index')
     self._s3_confkeys_store = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'setup_s3keys_index')
 
-    # machine_id will be used to read confstore keys
-    with open('/etc/machine-id') as f:
-      self.machine_id = f.read().strip()
-
     self.cluster_id = self.get_confvalue(self.get_confkey(
       'CONFIG>CONFSTORE_CLUSTER_ID_KEY').replace("machine-id", self.machine_id))
-
-  self.create_logger_directory()
-  self.create_logger()
 
   @property
   def url(self) -> str:
@@ -137,7 +127,7 @@ class SetupCmd(object):
         self.rootdn_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_rootdn_pass)
 
     except Exception as e:
-      sys.stderr.write(f'read ldap credentials failed, error: {e}\n')
+      self.logger.error(f'read ldap credentials failed, error: {e}\n')
       raise e
 
   def update_cluster_id(self, op_file: str = "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"):
@@ -162,7 +152,7 @@ class SetupCmd(object):
                         services: list = None,
                         files: list = None):
     """Validate pre requisites using cortx-py-utils validator."""
-    sys.stdout.write(f'Validations running from {self._preqs_conf_file}\n')
+    self.logger.error(f'Validations running from {self._preqs_conf_file}\n')
     if pip3s:
       PkgV().validate('pip3s', pip3s)
     if services:
@@ -277,6 +267,11 @@ class SetupCmd(object):
     """Validate keys of each phase derived from s3_prov_config and compare with argument file."""
     # Setting the desired values before we begin
     token_list = ["machine-id", "cluster-id", "storage-set-count"]
+		
+    # machine_id will be used to read confstore keys
+    with open('/etc/machine-id') as f:
+      self.machine_id = f.read().strip()
+
     if self.machine_id is not None:
       machine_id_val = self.machine_id
     if self.cluster_id is not None:
@@ -433,38 +428,6 @@ class SetupCmd(object):
         os.unlink(path)
       elif os.path.isdir(path):
         shutil.rmtree(path)
-
-  def create_logger(self):
-	"""Create logger, file handler, console handler and formatter."""
-	# create logger with "object_recovery_scheduler"
-	self.logger = logging.getLogger(self.s3deployment_logger_name)
-	self.logger.setLevel(self.config.get_file_log_level())
-	fhandler = logging.handlers.RotatingFileHandler(self.s3deployment_log_file, mode='a',
-													maxBytes = self.config.get_max_bytes(),
-													backupCount = self.config.get_backup_count(), encoding=None,
-													delay=False )
-	fhandler.setLevel(logging.DEBUG)
-
-	# create console handler with a higher log level
-	chandler = logging.StreamHandler()
-	chandler.setLevel(logging.ERROR)
-
-	# create formatter and add it to the handlers
-	fhandler.setFormatter(self.s3deployment_log_format)
-	chandler.setFormatter(self.s3deployment_log_format)
-
-	# add the handlers to the logger
-	self.logger.addHandler(fhandler)
-	self.logger.addHandler(chandler)
-
-def create_logger_directory(self):
-	"""Create log directory if not exsists."""
-	self._logger_directory = os.path.join(self.s3deployment_log_directory)
-	if not os.path.isdir(self._logger_directory):
-		try:
-			os.mkdir(self._logger_directory)
-		except BaseException:
-			raise Exception(f"{self._logger_directory} Could not be created")
 
 
         
