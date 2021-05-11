@@ -59,7 +59,7 @@ class SetupCmd(object):
   #                's3authserver': 's3auth'}
   ha_service_map = {}
 
-  def __init__(self,logger, config: str):
+  def __init__(self,config: str):
     """Constructor."""
     
     if config is None:
