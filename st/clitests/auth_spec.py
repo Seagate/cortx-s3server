@@ -178,6 +178,23 @@ def account_tests():
     '''
     load_test_config()
 
+    test_msg = "Create account s3deletetest for testing Account Deletion with ldap credentials"
+    account_args = {'AccountName': 's3deletetest', 'Email': 's3deletetest@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    AuthTest(test_msg).create_account(**account_args).execute_test()\
+            .command_should_match_pattern(account_response_pattern)
+
+    test_msg = 'DeleteAccount Successfull with ldap credentials'
+    account_args = {}
+    account_name_flag = "-n"
+    account_args['AccountName'] ="s3deletetest"
+    S3ClientConfig.access_key_id = S3ClientConfig.ldapuser
+    S3ClientConfig.secret_key = S3ClientConfig.ldappasswd
+    AuthTest(test_msg).delete_account(account_name_flag, **account_args).execute_test()\
+            .command_should_match_pattern("Account deleted successfully")
+
+    load_test_config()
+
 
 # Test create user API
 # Case 1 - Path not given (take default value).
