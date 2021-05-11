@@ -130,9 +130,11 @@ def create_logger():
     chandler = logging.StreamHandler()
     chandler.setLevel(logging.DEBUG)
 
+    formatter = logging.Formatter(s3deployment_log_format)
+
     # create formatter and add it to the handlers
-    fhandler.setFormatter(s3deployment_log_format)
-    chandler.setFormatter(s3deployment_log_format)
+    fhandler.setFormatter(formatter)
+    chandler.setFormatter(formatter)
 
     # add the handlers to the logger
     logger.addHandler(fhandler)
