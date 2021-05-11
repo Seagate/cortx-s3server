@@ -134,7 +134,7 @@ def create_logger():
 
     # create console handler with a higher log level
     chandler = logging.StreamHandler()
-    chandler.setLevel(logging.ERROR)
+    chandler.setLevel(logging.DEBUG)
 
     # create formatter and add it to the handlers
     fhandler.setFormatter(s3deployment_log_format)
