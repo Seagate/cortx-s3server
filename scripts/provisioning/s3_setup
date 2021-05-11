@@ -64,7 +64,7 @@ def main():
   args = parser.parse_args()
 
   create_logger_directory()
-  logger = create_logger(args.config)
+  logger = create_logger()
 
   try:
     if args.command == 'post_install':
@@ -115,14 +115,14 @@ def main():
 
   return 0
 
-def create_logger(config):
+def create_logger():
     """Create logger, file handler, console handler and formatter."""
     # create logger with "object_recovery_scheduler"
     logger = logging.getLogger(s3deployment_logger_name)
     logger.setLevel(logging.DEBUG)
     fhandler = logging.handlers.RotatingFileHandler(s3deployment_log_file, mode='a',
-                                                    maxBytes = config.get_max_bytes(),
-                                                    backupCount = config.get_backup_count(), encoding=None,
+                                                    maxBytes = 5242880,
+                                                    backupCount = 5, encoding=None,
                                                     delay=False )
     fhandler.setLevel(logging.DEBUG)
 
