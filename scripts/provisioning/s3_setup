@@ -70,11 +70,12 @@ def main():
     if args.command == 'post_install':
       from postinstallcmd import PostInstallCmd
       PostInstallCmd(args.config).process()
-      #logger.info('Post_install Command successful.\n')
+      logger.info('Post_install Command successful.\n')
     elif args.command == 'cleanup':
       from cleanupcmd import CleanupCmd
       CleanupCmd(args.config).process()
-      #logger.info('Cleanup Command successful.\n') 
+      #Cleanup will clean the log file hence writing to stdout.
+      sys.stdout.info('Cleanup Command successful.\n') 
     elif args.command == 'config':
       from configcmd import ConfigCmd
       configure_only_haproxy = False
@@ -85,26 +86,26 @@ def main():
         configure_only_haproxy = True
       ConfigCmd(args.config).process(configure_only_openldap,
                                 configure_only_haproxy)
-      #logger.info('Config Command successful.\n')
+      logger.info('Config Command successful.\n')
     elif args.command == 'init':
       from initcmd import InitCmd
       InitCmd(args.config).process()
-      #logger.info('Init Command successful.\n') 
+      logger.info('Init Command successful.\n') 
     elif args.command == 'test':
       from testcmd import TestCmd
       test_plan = None
       if args.plan:
         test_plan = args.plan
       TestCmd(args.config, test_plan).process()
-      #logger.info('S3-Test Successful.\n')
+      logger.info('S3-Test Successful.\n')
     elif args.command == 'reset':
       from resetcmd import ResetCmd
       ResetCmd(args.config).process()
-      #logger.info('Reset Command successful.\n')
+      logger.info('Reset Command successful.\n')
     elif args.command == 'prepare':
       from preparecmd import PrepareCmd
       PrepareCmd(args.config).process()
-      #logger.info('Prepare Command successful.\n')
+      logger.info('Prepare Command successful.\n')
 
   except Exception as e:
     logger.error(f"\n{str(e)}\n\n")
