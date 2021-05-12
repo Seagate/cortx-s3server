@@ -20,12 +20,12 @@
 # Following diagram represent the scriptlets flags for the RPM install/upgrade/uninstall phases in spec files.
 # new -> new RPM 
 # old -> old RPM
-#-----------------------------------------------------------------------------------------------------------------------
-#               Install RPM                             Upgrade RPM                             Uninstall RPM
-#                  |                                       |                                        |
-#                  |                       pre == 2 (new)  | preun == 1 (old)                       |
-#   pre == 1 (new) | post == 1 (new)       post == 2 (new) | postun == 1 (old)     preun == 0 (new) | postun == 0(new)
-#------------------------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------------------------------
+#                Install RPM                                  Upgrade RPM                                   Uninstall RPM
+#                    |                                             |                                              |
+#                    |                          pre $1 == 2 (new)  | preun $1 == 1 (old)                          |
+#   pre $1 = 1 (new) | post $1 == 1 (new)       post $1 == 2 (new) | postun $1 == 1 (old)     preun $1 == 0 (new) | postun $1 == 0(new)
+#--------------------------------------------------------------------------------------------------------------------------------------
 
 %if 0%{?disable_cortxmotr_dependencies:1}
 %bcond_with cortx_motr
@@ -141,11 +141,11 @@ S3 server provides S3 REST API interface support for Motr object storage.
 ################################
 %pre
 if [ $1 == 1 ];then
-    echo "S3 RPM Pre Install section started"
-    echo "S3 RPM Pre Install section completed"
+    echo "[cortx-s3server-rpm] INFO: S3 RPM Pre Install section started"
+    echo "[cortx-s3server-rpm] INFO: S3 RPM Pre Install section completed"
 elif [ $1 == 2 ];then
-    echo "S3 RPM Pre Upgrade section started"
-    echo "Backing up .sample config file to .old"
+    echo "[cortx-s3server-rpm] INFO: S3 RPM Pre Upgrade section started"
+    echo "[cortx-s3server-rpm] INFO: Backing up .sample config file to .old"
     if [ -f /opt/seagate/cortx/s3/conf/s3config.yaml.sample ]; then
         cp -f /opt/seagate/cortx/s3/conf/s3config.yaml.sample /tmp/s3config.yaml.sample.old
     fi
@@ -161,14 +161,14 @@ elif [ $1 == 2 ];then
     if [ -f /opt/seagate/cortx/auth/resources/authserver.properties.sample ]; then
         cp -f /opt/seagate/cortx/auth/resources/authserver.properties.sample /tmp/authserver.properties.sample.old
     fi
-    echo "S3 RPM Pre Upgrade section completed"
+    echo "[cortx-s3server-rpm] INFO: S3 RPM Pre Upgrade section completed"
 fi
 
 ################################
 # build section
 ################################
 %build
-echo "S3 RPM Build section started"
+echo "[cortx-s3server-rpm] INFO: S3 RPM Build section started"
 # This(makeinstall) will handle the copying of sample file to config file
 %if %{with cortx_motr}
 ./rebuildall.sh --no-check-code --no-install --no-s3ut-build --no-s3mempoolut-build --no-s3mempoolmgrut-build --no-java-tests
@@ -200,13 +200,13 @@ cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3cipher/s3cipher
 python%{py_ver} -m compileall -b *.py
 cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3cipher/build/lib/s3cipher 
 
-echo "S3 RPM Build section completed"
+echo "[cortx-s3server-rpm] INFO: S3 RPM Build section completed"
 
 ################################
 # install section
 ################################
 %install
-echo "S3 RPM Install section started"
+echo "[cortx-s3server-rpm] INFO: S3 RPM Install section started"
 
 rm -rf %{buildroot}
 ./installhelper.sh %{buildroot} --release
@@ -227,19 +227,19 @@ python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
 
-echo "S3 RPM Install section completed"
+echo "[cortx-s3server-rpm] INFO: S3 RPM Install section completed"
 
 ################################
 # clean section
 ################################
 %clean
-echo "S3 RPM Clean section started"
+echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section started"
 bazel clean
 cd auth
 ./mvnbuild.sh clean
 cd ..
 rm -rf %{buildroot}
-echo "S3 RPM Clean section completed"
+echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 
 ################################
 # files section
@@ -479,9 +479,9 @@ echo "S3 RPM Clean section completed"
 # post install/upgrade section
 ##############################
 %post
-echo "S3 RPM Post section started"
+echo "[cortx-s3server-rpm] INFO: S3 RPM Post section started"
 if [ $1 == 1 ];then
-    echo "S3 RPM Post Install section started"
+    echo "[cortx-s3server-rpm] INFO: S3 RPM Post Install section started"
     # copy sample file to config file
     [ -f /opt/seagate/cortx/s3/conf/s3config.yaml ] ||
         cp /opt/seagate/cortx/s3/conf/s3config.yaml.sample /opt/seagate/cortx/s3/conf/s3config.yaml
@@ -493,22 +493,22 @@ if [ $1 == 1 ];then
         cp /opt/seagate/cortx/auth/resources/authserver.properties.sample /opt/seagate/cortx/auth/resources/authserver.properties
     [ -f /opt/seagate/cortx/auth/resources/keystore.properties ] ||
         cp /opt/seagate/cortx/auth/resources/keystore.properties.sample /opt/seagate/cortx/auth/resources/keystore.properties
-    echo "S3 RPM Post Install section completed"
+    echo "[cortx-s3server-rpm] INFO: S3 RPM Post Install section completed"
 elif [ $1 == 2 ];then
-    echo "S3 RPM Post Upgrade section started"
+    echo "[cortx-s3server-rpm] INFO: S3 RPM Post Upgrade section started"
     python36 /opt/seagate/cortx/s3/bin/merge.py
-    echo "WARNING: All mini-provisioner template files are overwritten."
-    echo "S3 RPM Post Upgrade section completed"
+    echo "[cortx-s3server-rpm] WARNING: All mini-provisioner template files are overwritten."
+    echo "[cortx-s3server-rpm] INFO: S3 RPM Post Upgrade section completed"
 fi
 systemctl daemon-reload
 systemctl enable s3authserver
 systemctl restart rsyslog
 openssl_version=`rpm -q --queryformat '%{VERSION}' openssl`
 if [ "$openssl_version" != "1.0.2k" ] && [ "$openssl_version" != "1.1.1" ]; then
-  echo "Warning: Unsupported (untested) openssl version [$openssl_version] is installed which may work."
-  echo "Supported openssl versions are [1.0.2k, 1.1.1]"
+  echo "[cortx-s3server-rpm] WARNING: Unsupported (untested) openssl version [$openssl_version] is installed which may work."
+  echo "[cortx-s3server-rpm] INFO: Supported openssl versions are [1.0.2k, 1.1.1]"
 fi
-echo "S3 RPM Post section completed"
+echo "[cortx-s3server-rpm] INFO: S3 RPM Post section completed"
 
 
 ################################

@@ -75,11 +75,10 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
     - All the arrays in yaml are always overwritten
     """
 
-    #If config file is not present then simply copy sample file.
-    # TODO this code should throw error in case config file is not present.
+    #If config file is not present then abort merging.
     if not os.path.isfile(configFile):
-        shutil.copy(newSampleFile, configFile)
-        return
+        sys.stderr.write(f'[cortx-s3server-rpm] ERROR: config file {configFile} does not exist\n')
+        raise Exception(f'[cortx-s3server-rpm]  ERROR: config file {configFile} does not exist\n')
 
     # old sample file
     conf_old_sample = filetype + oldSampleFile
@@ -134,7 +133,7 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
 
     cs_conf_file.merge_config(source_index=conf_new_sample, keys_to_include=keys_to_overwrite)
     cs_conf_file.save_config()
-    sys.stdout.write(f'INFO: config file {str(configFile)} upgraded successfully.\n')
+    sys.stdout.write(f'[cortx-s3server-rpm] INFO: config file {str(configFile)} upgraded successfully.\n')
 
 if __name__ == "__main__":
     for upgrade_item in g_upgrade_items:
