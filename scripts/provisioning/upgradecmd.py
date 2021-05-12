@@ -18,7 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-from s3confstore.cortx_s3_confstore import S3CortxConfStore
 import sys
 
 from setupcmd import SetupCmd

@@ -430,11 +430,9 @@ class SetupCmd(object):
         shutil.rmtree(path)
 
   def validate_config_files(self, phase_name: str):
-    """
-    Validate the sample file and config file keys.
+    """Validate the sample file and config file keys.
     Both files should have same keys.
-    if keys mismatch then there is some issue in the config file
-    """
+    if keys mismatch then there is some issue in the config file."""
 
     sys.stdout.write(f'INFO: validating S3 config files for {phase_name}.\n')
     upgrade_items = {
@@ -464,7 +462,7 @@ class SetupCmd(object):
           'fileType' : 'yaml://'
       }
     }
-    
+
     for upgrade_item in upgrade_items:
       configFile = upgrade_items[upgrade_item]['configFile']
       SampleFile = upgrade_items[upgrade_item]['SampleFile']
@@ -481,7 +479,7 @@ class SetupCmd(object):
       cs_conf_file = S3CortxConfStore(config=conf_file, index=conf_file)
       conf_file_keys = cs_conf_file.get_all_keys()
 
-      # compare the keys of sample file and config file 
+      # compare the keys of sample file and config file
       if conf_sample_keys == conf_file_keys:
           sys.stdout.write(f'INFO: config file {str(configFile)} validated successfully.\n')
       else:

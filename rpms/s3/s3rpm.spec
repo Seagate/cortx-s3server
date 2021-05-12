@@ -450,6 +450,7 @@ echo "S3 RPM Clean section completed"
 %{_bindir}/s3confstore
 %{py36_sitelib}/s3backgrounddelete/config/*.yaml
 %{py36_sitelib}/s3backgrounddelete/config/s3_background_delete_config.yaml.sample
+%{py36_sitelib}/s3backgrounddelete/config/s3_cluster.yaml
 %{py36_sitelib}/s3backgrounddelete/config/s3_cluster.yaml.sample
 %{py36_sitelib}/s3backgrounddelete/*.pyc
 %{py36_sitelib}/s3backgrounddelete-%{version}-py?.?.egg-info
