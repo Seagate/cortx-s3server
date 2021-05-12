@@ -58,6 +58,24 @@ bool S3Option::load_section(std::string section_name,
           s3_option_node["S3_DAEMON_DO_REDIRECTION"].as<unsigned short>();
       s3_enable_auth_ssl = s3_option_node["S3_ENABLE_AUTH_SSL"].as<bool>();
       s3_reuseport = s3_option_node["S3_REUSEPORT"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_WRITE_DATA_INTEGRITY_CHECK");
+      s3_write_data_integrity_check =
+          s3_option_node["S3_WRITE_DATA_INTEGRITY_CHECK"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_DATA_INTEGRITY_CHECK");
+      s3_read_data_integrity_check =
+          s3_option_node["S3_READ_DATA_INTEGRITY_CHECK"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_METADATA_INTEGRITY_CHECK");
+      s3_metadata_integrity_check =
+          s3_option_node["S3_METADATA_INTEGRITY_CHECK"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SALT_CHECKSUM");
+      s3_salt_checksum = s3_option_node["S3_SALT_CHECKSUM"].as<bool>();
+      //
+      // if PI is not written during write then we
+      // wont verify during read operation.
+      //
+      if (!s3_write_data_integrity_check) {
+        s3_read_data_integrity_check = false;
+      }
       motr_http_reuseport = s3_option_node["S3_MOTR_HTTP_REUSEPORT"].as<bool>();
       s3_iam_cert_file = s3_option_node["S3_IAM_CERT_FILE"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_CERT_FILE");
@@ -438,6 +456,24 @@ bool S3Option::load_section(std::string section_name,
       s3_enable_auth_ssl = s3_option_node["S3_ENABLE_AUTH_SSL"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_REUSEPORT");
       s3_reuseport = s3_option_node["S3_REUSEPORT"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_WRITE_DATA_INTEGRITY_CHECK");
+      s3_write_data_integrity_check =
+          s3_option_node["S3_WRITE_DATA_INTEGRITY_CHECK"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_DATA_INTEGRITY_CHECK");
+      s3_read_data_integrity_check =
+          s3_option_node["S3_READ_DATA_INTEGRITY_CHECK"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_METADATA_INTEGRITY_CHECK");
+      s3_metadata_integrity_check =
+          s3_option_node["S3_METADATA_INTEGRITY_CHECK"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SALT_CHECKSUM");
+      s3_salt_checksum = s3_option_node["S3_SALT_CHECKSUM"].as<bool>();
+      //
+      // if PI is not written during write then we
+      // wont verify during read operation.
+      //
+      if (!s3_write_data_integrity_check) {
+        s3_read_data_integrity_check = false;
+      }
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_HTTP_REUSEPORT");
       motr_http_reuseport = s3_option_node["S3_MOTR_HTTP_REUSEPORT"].as<bool>();
       s3_iam_cert_file = s3_option_node["S3_IAM_CERT_FILE"].as<std::string>();
@@ -850,6 +886,14 @@ void S3Option::dump_options() {
          (s3_enable_auth_ssl) ? "true" : "false");
   s3_log(S3_LOG_INFO, "", "S3_REUSEPORT = %s\n",
          (s3_reuseport) ? "true" : "false");
+  s3_log(S3_LOG_INFO, "", "S3_WRITE_DATA_INTEGRITY_CHECK = %s\n",
+         (s3_write_data_integrity_check) ? "true" : "false");
+  s3_log(S3_LOG_INFO, "", "S3_READ_DATA_INTEGRITY_CHECK = %s\n",
+         (s3_read_data_integrity_check) ? "true" : "false");
+  s3_log(S3_LOG_INFO, "", "S3_METADATA_INTEGRITY_CHECK = %s\n",
+         (s3_metadata_integrity_check) ? "true" : "false");
+  s3_log(S3_LOG_INFO, "", "S3_SALT_CHECKSUM = %s\n",
+         (s3_salt_checksum) ? "true" : "false");
   s3_log(S3_LOG_INFO, "", "S3_MOTR_HTTP_REUSEPORT = %s\n",
          (motr_http_reuseport) ? "true" : "false");
   s3_log(S3_LOG_INFO, "", "S3_IAM_CERT_FILE = %s\n", s3_iam_cert_file.c_str());
@@ -1130,6 +1174,20 @@ bool S3Option::is_log_buffering_enabled() { return log_buffering_enable; }
 bool S3Option::is_murmurhash_oid_enabled() { return s3_enable_murmurhash_oid; }
 
 bool S3Option::is_s3_ssl_auth_enabled() { return s3_enable_auth_ssl; }
+
+bool S3Option::is_s3_write_di_check_enabled() {
+  return s3_write_data_integrity_check;
+}
+
+bool S3Option::is_s3_read_di_check_enabled() {
+  return s3_read_data_integrity_check;
+}
+
+bool S3Option::is_s3_metadata_integrity_check_enabled() {
+  return s3_metadata_integrity_check;
+}
+
+bool S3Option::is_s3_salt_checksum_enabled() { return s3_salt_checksum; }
 
 const char* S3Option::get_iam_cert_file() { return s3_iam_cert_file.c_str(); }
 
