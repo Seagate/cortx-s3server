@@ -132,6 +132,11 @@ class S3Option {
   bool s3server_ssl_enabled;
   bool s3server_obj_delayed_del_enabled;
   bool s3_reuseport;
+  bool s3_write_data_integrity_check;
+  int s3_pi_type;
+  bool s3_read_data_integrity_check;
+  bool s3_metadata_integrity_check;
+  bool s3_salt_checksum;
   bool motr_http_reuseport;
   bool log_buffering_enable;
   bool s3_enable_murmurhash_oid;
@@ -390,6 +395,11 @@ class S3Option {
   std::string get_log_level();
   int get_log_file_max_size_in_mb();
   bool is_s3_ssl_auth_enabled();
+  bool is_s3_write_di_check_enabled();
+  int get_pi_type();
+  bool is_s3_read_di_check_enabled();
+  bool is_s3_metadata_integrity_check_enabled();
+  bool is_s3_salt_checksum_enabled();
   bool is_s3server_ssl_enabled();
   bool is_s3server_addb_dump_enabled();
 
