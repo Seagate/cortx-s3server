@@ -159,7 +159,7 @@ class SetupCmd(object):
                         services: list = None,
                         files: list = None):
     """Validate pre requisites using cortx-py-utils validator."""
-    self.logger.error(f'Validations running from {self._preqs_conf_file}\n')
+    self.logger.info(f'Validations running from {self._preqs_conf_file}\n')
     if pip3s:
       PkgV().validate('pip3s', pip3s)
     if services:
