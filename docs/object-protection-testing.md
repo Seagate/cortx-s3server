@@ -17,11 +17,10 @@ limitations under the License.
 For any questions about this software or licensing,
 please email opensource@seagate.com or cortx-questions@seagate.com.
 
-# Object Integrity testing
+# Integrity testing
 
-- Ensure config paramter `S3_READ_MD5_CHECK_ENABLED` is set to `true`
 - Enable Fault Injection
-- Run test workload either automatically or manually
+- Run test workload
 
 ## Enable `Fault Injection`
 
@@ -43,12 +42,6 @@ Specific fault injection could be enabled or disabled by the following command
 where
 
 - `<fi_tag>` - name of particular fault injection, could be one of:
-
-  - `di_data_corrupted_on_write` - corrupts file before storing;
-  - `di_data_corrupted_on_read` - corrupts file during retrieval;
-  - `di_obj_md5_corrupted` - instead of md5 hash of the object stores
-    dm5 hash of empty string.
-
 - `<s3_instance>` - particular s3server instance to enable fault injection on
 
 ### FI example commands
@@ -169,81 +162,14 @@ Save script as `cmd_fi_s3.sh`.
 # NINST=32 NODES="node1,node2" FIS="di_data_corrupted_on_write,di_obj_md5_corrupted" ./cmd_fi_s3.sh test
 ```
 
-## Automatically
+## Metadata Integrity testing
 
-Enable fault injection for data, i.e. `di_data_corrupted_on_write`, and then
-
-    time st/clitests/integrity.py --auto-test-all
-
-`aws s3` and `aws s3api` must be configured and must work.
-
-## Manually
-
-### Data path
-
-If the first byte of the object is one of the following values and relevant
-fault injection is enabled then the object may be corrupted.
-
-- `di_data_corrupted_on_write`:
-  - 'k' then the file is not corrupted during `put-object` and `upload-part`;
-  - 'z' then it's zeroed during upload after calculating checksum, but before
-    sending data to Motr;
-  - 'f' then the first byte of the object is set to 0 like it's done for 'z'
-    case;
-- `di_data_corrupted_on_read`:
-  - 'K' then the file is not corrupted during `get-object`;
-  - 'Z' then it's zeroed during `get-object` just after reading data from Motr,
-    but before calculating checksum;
-  - 'F' then the first byte is set to 0 during `get-object` like it's done for
-    'Z' case.
-
-#### PUT/GET
-
-- create a file `dd if=/dev/urandom of=./s3-object.bin bs=1M count=1`, set the
-  size as needed;
-
-    aws s3api put-object --bucket test --key object_key --body ./s3-object.bin
-    aws s3api get-object --bucket test --key object_key ./s3-object-get.bin
-    diff --report-identical-files ./s3-object ./s3-object-get.bin
-
-#### Multipart
-
-    s3api create-multipart-upload --bucket test --key test00
-    s3api upload-part --bucket test --key test00 --upload-id 9db1fffe-0879-4113-a85d-9967481dda3c --part-number 1 --body file.42
-    s3api upload-part --bucket test --key test00 --upload-id 9db1fffe-0879-4113-a85d-9967481dda3c --part-number 2 --body file.1
-    s3api complete-multipart-upload --multipart-upload file://./parts.json --bucket test --key test00 --upload-id 9db1fffe-0879-4113-a85d-9967481dda3c
-    s3api get-object --bucket test --key test00 ./s3-object-output.bin
-
-- take `upload_id` from `create-multipart-upload output;
-- ./parts.json must be like this, `Etag` and `PartNumber` must be taken from
-  `upload-part` output:
-
-      {
-          "Parts": [
-              {
-                  "PartNumber": 1,
-                  "ETag": "\"72f0bd8323296e0c8706c085e8d1ff00\""
-              },
-              {
-                  "PartNumber": 2,
-                  "ETag": "\"4905c7a920af8680d07512f336999583\""
-              }
-          ]
-      }
-
-### Metadata path
-
-Enable fault injection for data, i.e. `di_obj_md5_corrupted`.
-Any file used for PUT/GET will generate `Content checksum mismatch` error
-
-# Metadata Integrity testing
-
-## Manual metadata integrity testing
+### Manual metadata integrity testing
 
 - Enable Fault Injection as described in [Enable `Fault Injection`](#enable-fault-injection)
 - Run test workload
 
-### Supported fault injections
+#### Metadata Integrity Supported fault injections
 
 - `di_metadata_bcktname_on_write_corrupted` - corrupts bucket name in object metadata on writing to store
 - `di_metadata_objname_on_write_corrupted` - corrupts object name in object metadata on writing to store
@@ -257,11 +183,11 @@ Any file used for PUT/GET will generate `Content checksum mismatch` error
 - `di_part_metadata_bcktname_on_read_corrupted` - corrupts bucket name in part metadata on reading from store
 - `di_part_metadata_objname_on_read_corrupted` - corrupts object name in part metadata on reading from store
 
-### Workload for manual testing
+#### Workload for manual testing
 
 Data used in testing does not require any special preparations - any files could be used.
 
-## Automated metadata integrity testing
+### Automated metadata integrity testing
 
 `st/clitests/md_integrity.py` script were created to do automated test.
 
@@ -296,7 +222,7 @@ obtained with `aws s3api <command> help` shell command.
 `disable-fi` - disables specified fault injection. Command has a single parameter named
 `fi` which is the name of the fault injection to disable.
 
-### Test plan description
+#### Test plan description
 
 Test plan is a simple json file with the following structure
 
@@ -371,7 +297,7 @@ in test plan
       "op": "delete-bucket", "bucket": "test-bucket-1", "expect": true}
  ]}
 ```
-### Script parameters
+#### Script parameters
 
 - Mandatory parameters
     - `--test_plan` - Path to a json file with Test plan description
@@ -395,16 +321,16 @@ Examples
 ./md_integrity.py --test_plan ./plan.json --body ./data.bin
 ```
 
-### Predefined Test plans
+#### Predefined Test plans
 
 There several predefined tests plans used in system tests
 
 - `st/clitests/multipart_md_integrity.json`
 - `st/clitests/regular_md_integrity.json`
 
-### `jenkins-build`
+#### `runallsystests.sh`
 
-System tests for Metadata integrity are run from `jenkins_build`
+System tests for Metadata integrity are run from `runallsystests.sh`
 
 ```
 # Metada Integrity tests - regular PUT
@@ -424,3 +350,79 @@ $USE_SUDO ./md_integrity.py --body $md_di_data --download $md_di_dowload --parts
 [ -f $md_di_parts ] && $USE_SUDO rm -vf $md_di_parts
 # ======================================
 ```
+
+## Object Integrity testing
+**Not Implemented - TBD**
+
+### Automatically
+
+Enable fault injection for data, i.e. `di_data_corrupted_on_write`, and then
+
+    time st/clitests/integrity.py --auto-test-all
+
+`aws s3` and `aws s3api` must be configured and must work.
+
+### Object Integrity Supported fault injections
+
+  - `di_data_corrupted_on_write` - corrupts file before storing;
+  - `di_data_corrupted_on_read` - corrupts file during retrieval;
+  - `di_obj_md5_corrupted` - instead of md5 hash of the object stores dm5 hash of empty string.
+
+### Manually
+
+#### Data path
+
+If the first byte of the object is one of the following values and relevant
+fault injection is enabled then the object may be corrupted.
+
+- `di_data_corrupted_on_write`:
+  - 'k' then the file is not corrupted during `put-object` and `upload-part`;
+  - 'z' then it's zeroed during upload after calculating checksum, but before
+    sending data to Motr;
+  - 'f' then the first byte of the object is set to 0 like it's done for 'z'
+    case;
+- `di_data_corrupted_on_read`:
+  - 'K' then the file is not corrupted during `get-object`;
+  - 'Z' then it's zeroed during `get-object` just after reading data from Motr,
+    but before calculating checksum;
+  - 'F' then the first byte is set to 0 during `get-object` like it's done for
+    'Z' case.
+
+##### PUT/GET
+
+- create a file `dd if=/dev/urandom of=./s3-object.bin bs=1M count=1`, set the
+  size as needed;
+
+    aws s3api put-object --bucket test --key object_key --body ./s3-object.bin
+    aws s3api get-object --bucket test --key object_key ./s3-object-get.bin
+    diff --report-identical-files ./s3-object ./s3-object-get.bin
+
+##### Multipart
+
+    s3api create-multipart-upload --bucket test --key test00
+    s3api upload-part --bucket test --key test00 --upload-id 9db1fffe-0879-4113-a85d-9967481dda3c --part-number 1 --body file.42
+    s3api upload-part --bucket test --key test00 --upload-id 9db1fffe-0879-4113-a85d-9967481dda3c --part-number 2 --body file.1
+    s3api complete-multipart-upload --multipart-upload file://./parts.json --bucket test --key test00 --upload-id 9db1fffe-0879-4113-a85d-9967481dda3c
+    s3api get-object --bucket test --key test00 ./s3-object-output.bin
+
+- take `upload_id` from `create-multipart-upload output;
+- ./parts.json must be like this, `Etag` and `PartNumber` must be taken from
+  `upload-part` output:
+
+      {
+          "Parts": [
+              {
+                  "PartNumber": 1,
+                  "ETag": "\"72f0bd8323296e0c8706c085e8d1ff00\""
+              },
+              {
+                  "PartNumber": 2,
+                  "ETag": "\"4905c7a920af8680d07512f336999583\""
+              }
+          ]
+      }
+
+##### Metadata path
+
+Enable fault injection for data, i.e. `di_obj_md5_corrupted`.
+Any file used for PUT/GET will generate `Content checksum mismatch` error

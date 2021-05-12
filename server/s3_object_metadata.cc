@@ -38,7 +38,10 @@
 extern struct m0_uint128 global_instance_id;
 
 S3ObjectMetadata::S3ObjectMetadata(const S3ObjectMetadata& src)
-    : S3ObjectMetadataCopyable(src), state(S3ObjectMetadataState::present) {
+    : S3ObjectMetadataCopyable(src),
+      requested_bucket_name(),
+      requested_object_name(),
+      state(S3ObjectMetadataState::present) {
 
   s3_log(S3_LOG_DEBUG, request_id, "Partial copy constructor");
 
@@ -54,7 +57,8 @@ static void str_set_default(std::string& sref, const char* sz) {
   }
 }
 
-void S3ObjectMetadata::initialize(bool ismultipart, const std::string& uploadid) {
+void S3ObjectMetadata::initialize(bool ismultipart,
+                                  const std::string& uploadid) {
   is_multipart = ismultipart;
   upload_id = uploadid;
   account_name = request->get_account_name();
@@ -109,7 +113,9 @@ S3ObjectMetadata::S3ObjectMetadata(
     std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<MotrAPI> motr_api)
-    : upload_id(std::move(uploadid)),
+    : requested_bucket_name(),
+      requested_object_name(),
+      upload_id(std::move(uploadid)),
       is_multipart(ismultipart),
       state(S3ObjectMetadataState::empty) {
 
@@ -337,11 +343,39 @@ void S3ObjectMetadata::load(std::function<void(void)> on_success,
 
   motr_kv_reader =
       motr_kv_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
+  requested_bucket_name = bucket_name;
+  requested_object_name = object_name;
   motr_kv_reader->get_keyval(
       object_list_index_oid, object_name,
       std::bind(&S3ObjectMetadata::load_successful, this),
       std::bind(&S3ObjectMetadata::load_failed, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+bool S3ObjectMetadata::validate_attrs() {
+
+  if (s3_fi_is_enabled("di_metadata_bucket_or_object_corrupted") ||
+      requested_bucket_name != bucket_name ||
+      requested_object_name != object_name) {
+    if (!S3Option::get_instance()
+             ->get_s3_di_disable_metadata_corruption_iem()) {
+      s3_iem(LOG_ERR, S3_IEM_OBJECT_METADATA_NOT_VALID,
+             S3_IEM_OBJECT_METADATA_NOT_VALID_STR,
+             S3_IEM_OBJECT_METADATA_NOT_VALID_JSON,
+             requested_bucket_name.c_str(), bucket_name.c_str(),
+             requested_object_name.c_str(), object_name.c_str(),
+             account_name.c_str());
+    } else {
+      s3_log(S3_LOG_ERROR, request_id,
+             "Object metadata mismatch: "
+             "req_bucket_name=\"%s\" c_bucket_name=\"%s\" "
+             "req_object_name=\"%s\" c_object_name=\"%s\"",
+             requested_bucket_name.c_str(), bucket_name.c_str(),
+             requested_object_name.c_str(), object_name.c_str());
+    }
+    return false;
+  }
+  return true;
 }
 
 void S3ObjectMetadata::load_successful() {
@@ -357,7 +391,7 @@ void S3ObjectMetadata::load_successful() {
 
     state = S3ObjectMetadataState::invalid;
     load_failed();
-  } else if (!request->validate_attrs(bucket_name, object_name)) {
+  } else if (!validate_attrs()) {
     s3_log(S3_LOG_ERROR, request_id,
            "Metadata read from KVS are different from expected. Index oid = "
            "%" SCNx64 ":%" SCNx64
@@ -381,31 +415,32 @@ void S3ObjectMetadata::load_successful() {
 
 void S3ObjectMetadata::load_failed() {
   switch (motr_kv_reader->get_state()) {
-  case S3MotrKVSReaderOpState::failed_to_launch:
-    state = S3ObjectMetadataState::failed_to_launch;
-    s3_log(S3_LOG_WARN, request_id, "Object metadata load failed to launch - ServiceUnavailable");
-    break;
-  case S3MotrKVSReaderOpState::failed:
-  case S3MotrKVSReaderOpState::failed_e2big:
-    s3_log(S3_LOG_WARN, request_id, "Internal server error - InternalError");
-    state = S3ObjectMetadataState::failed;
-    break;
-  case S3MotrKVSReaderOpState::missing:
-    state = S3ObjectMetadataState::missing;
-    s3_log(S3_LOG_DEBUG, request_id, "Object metadata missing for %s",
-           object_name.c_str());
-    break;
-  case S3MotrKVSReaderOpState::present:
-    // This state is allowed here only if validaton failed
-    if (state != S3ObjectMetadataState::invalid) {
-      s3_log(S3_LOG_ERROR, request_id, "Invalid state - InternalError");
+    case S3MotrKVSReaderOpState::failed_to_launch:
+      state = S3ObjectMetadataState::failed_to_launch;
+      s3_log(S3_LOG_WARN, request_id,
+             "Object metadata load failed to launch - ServiceUnavailable");
+      break;
+    case S3MotrKVSReaderOpState::failed:
+    case S3MotrKVSReaderOpState::failed_e2big:
+      s3_log(S3_LOG_WARN, request_id, "Internal server error - InternalError");
       state = S3ObjectMetadataState::failed;
-    }
-    break;
-  default: // S3MotrKVSReaderOpState::{empty,start}
-    s3_log(S3_LOG_ERROR, request_id, "Unexpected state - InternalError");
-    state = S3ObjectMetadataState::failed;
-    break;
+      break;
+    case S3MotrKVSReaderOpState::missing:
+      state = S3ObjectMetadataState::missing;
+      s3_log(S3_LOG_DEBUG, request_id, "Object metadata missing for %s",
+             object_name.c_str());
+      break;
+    case S3MotrKVSReaderOpState::present:
+      // This state is allowed here only if validaton failed
+      if (state != S3ObjectMetadataState::invalid) {
+        s3_log(S3_LOG_ERROR, request_id, "Invalid state - InternalError");
+        state = S3ObjectMetadataState::failed;
+      }
+      break;
+    default:  // S3MotrKVSReaderOpState::{empty,start}
+      s3_log(S3_LOG_ERROR, request_id, "Unexpected state - InternalError");
+      state = S3ObjectMetadataState::failed;
+      break;
   }
 
   this->handler_on_failed();

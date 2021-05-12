@@ -214,6 +214,19 @@ def test_list_parts(**kwargs):
         s3api_res.command_should_fail()
 
 
+def test_obj_copy(**kwargs):
+    expect = kwargs.get("expect", True)
+    desc = kwargs.get("desc", "Test")
+    key = kwargs["key"]
+    bucket = kwargs["bucket"]
+    cpy_src = kwargs["copy-source"]
+    s3api_res = AwsTest(desc).with_cli_self(f'aws s3api copy-object --bucket "{bucket}" --key "{key}" --copy-source "{cpy_src}"').execute_test(negative_case=not expect)
+    if expect:
+        s3api_res.command_is_successful()
+    else:
+        s3api_res.command_should_fail()
+
+
 operations_map = {
     "create-bucket": test_create_bucket,
     "delete-bucket": test_delete_bucket,
@@ -226,7 +239,8 @@ operations_map = {
     "create-multipart": test_create_multipart,
     "upload-part": test_upload_part,
     "complete-multipart": test_complete_multipart,
-    "list-parts": test_list_parts
+    "list-parts": test_list_parts,
+    "copy-object": test_obj_copy
 }
 
 

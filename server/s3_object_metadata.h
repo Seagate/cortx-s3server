@@ -83,6 +83,10 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   std::string bucket_name;
   std::string object_name;
 
+  // Used in validation
+  std::string requested_bucket_name;
+  std::string requested_object_name;
+
   // Reverse epoch time used as version id key in verion index
   std::string rev_epoch_version_id_key;
   // holds base64 encoding value of rev_epoch_version_id_key, this is used
@@ -314,6 +318,9 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   void remove_version_metadata();
   void remove_version_metadata_successful();
   void remove_version_metadata_failed();
+
+  // Validate just read metadata
+  bool validate_attrs();
 
  public:
   // Google tests.

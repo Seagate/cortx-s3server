@@ -335,6 +335,8 @@ TEST_F(S3ObjectMetadataTest, LoadSuccessful) {
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
       .WillRepeatedly(Return(
            "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));
+  metadata_obj_under_test->requested_bucket_name = "seagate_bucket";
+  metadata_obj_under_test->requested_object_name = "3kfile";
   metadata_obj_under_test->load_successful();
   EXPECT_EQ(metadata_obj_under_test->state, S3ObjectMetadataState::present);
   EXPECT_TRUE(s3objectmetadata_callbackobj.success_called);
