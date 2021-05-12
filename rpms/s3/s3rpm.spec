@@ -482,6 +482,17 @@ echo "S3 RPM Clean section completed"
 echo "S3 RPM Post section started"
 if [ $1 == 1 ];then
     echo "S3 RPM Post Install section started"
+    # copy sample file to config file
+    [ -f /opt/seagate/cortx/s3/conf/s3config.yaml ] ||
+        cp /opt/seagate/cortx/s3/conf/s3config.yaml.sample /opt/seagate/cortx/s3/conf/s3config.yaml
+    [ -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml ] ||
+        cp /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
+    [ -f /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml ] ||
+        cp /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml
+    [ -f /opt/seagate/cortx/auth/resources/authserver.properties ] ||
+        cp /opt/seagate/cortx/auth/resources/authserver.properties.sample /opt/seagate/cortx/auth/resources/authserver.properties
+    [ -f /opt/seagate/cortx/auth/resources/keystore.properties ] ||
+        cp /opt/seagate/cortx/auth/resources/keystore.properties.sample /opt/seagate/cortx/auth/resources/keystore.properties
     echo "S3 RPM Post Install section completed"
 elif [ $1 == 2 ];then
     echo "S3 RPM Post Upgrade section started"
