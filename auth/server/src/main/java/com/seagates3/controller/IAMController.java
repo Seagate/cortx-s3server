@@ -194,7 +194,7 @@ class IAMController {
           LOGGER.error("Invalid user, authentication failed");
           AuthenticationResponseGenerator responseGenerator =
               new AuthenticationResponseGenerator();
-          serverResponse = responseGenerator.invalidLdapUserId();
+          serverResponse = responseGenerator.invalidAccessKey();
           return serverResponse;
       } else {
         LOGGER.debug("Validating user with accesskey and secretkey entered");
