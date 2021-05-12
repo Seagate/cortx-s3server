@@ -27,8 +27,13 @@ S3_SERVER_CONFIG:                                       # Section for S3 Server
    S3_LOG_MODE: INFO                                    # logging levels, levels can be DEBUG, INFO, WARN, ERROR, FATAL, default is INFO
    S3_LOG_FILE_MAX_SIZE: 100                            # Maximum log file size in MB, default is 100 MB
    S3_LOG_ENABLE_BUFFERING: true                        # DEBUG, INFO & WARN logs are buffered if buffering is enabled. ERROR and FATAL logs are always flushed. Default is true.
-   S3_ENABLE_AUTH_SSL: false                             # Enable ssl communication between s3 server and auth server
+   S3_ENABLE_AUTH_SSL: false                            # Enable ssl communication between s3 server and auth server
    S3_REUSEPORT: true                                   # Enable reusing s3 server port
+   S3_WRITE_DATA_INTEGRITY_CHECK: true                  # TBD
+   S3_READ_DATA_INTEGRITY_CHECK: true                   # TBD
+   S3_METADATA_INTEGRITY_CHECK: true                    # TBD
+   S3_SALT_CHECKSUM: true                               # TBD 
+   S3_PI_TYPE: "PI_TYPE_MD5_INC_CONTEXT"                  # TBD
    S3_MOTR_HTTP_REUSEPORT: true                         # Enable reusing motr http server port
    S3_IAM_CERT_FILE: "/etc/ssl/stx-s3/s3auth/s3authserver.crt" # IAM Auth certificate file
    S3_LOG_FLUSH_FREQUENCY: 30                           # Time in seconds, after which logs will be flushed. Valid only if S3_LOG_ENABLE_BUFFERING is true. Default is 30 seconds.
