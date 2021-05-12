@@ -78,6 +78,10 @@ class SetupCmd(object):
     self._provisioner_confstore = S3CortxConfStore(self._url, 'setup_prov_index')
     self._s3_confkeys_store = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'setup_s3keys_index')
 
+    # machine_id will be used to read confstore keys
+    with open('/etc/machine-id') as f:
+      self.machine_id = f.read().strip()
+
     self.cluster_id = self.get_confvalue(self.get_confkey(
       'CONFIG>CONFSTORE_CLUSTER_ID_KEY').replace("machine-id", self.machine_id))
 
