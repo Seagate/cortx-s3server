@@ -516,13 +516,13 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Post section completed"
 ################################
 %postun
 if [ $1 == 1 ];then
-    echo "S3 RPM Post Uninstall Upgrade section started"
+    echo "[cortx-s3server-rpm] INFO: S3 RPM Post Uninstall Upgrade section started"
     # removed temporary files from /tmp
     rm -f /tmp/*.sample.old
-    echo "removed temporary files from /tmp/"
-    echo "S3 RPM Post Uninstall Upgrade section completed"
+    echo "[cortx-s3server-rpm] INFO: Removed temporary .old files from /tmp"
+    echo "[cortx-s3server-rpm] INFO: S3 RPM Post Uninstall Upgrade section completed"
 elif [ $1 == 0 ];then
-    echo "S3 RPM Post Uninstall section started"
+    echo "[cortx-s3server-rpm] INFO: S3 RPM Post Uninstall section started"
     # remove config files.
     rm -f /opt/seagate/cortx/s3/conf/s3config.yaml*
     rm -f /opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml
@@ -534,6 +534,6 @@ elif [ $1 == 0 ];then
     rm -f /opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.properties
     rm -f /opt/seagate/cortx/auth/resources/keystore.properties*
     rm -f /opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.properties
-    echo "removed all S3 config files"
-    echo "S3 RPM Post Uninstall Upgrade section completed"
+    echo "[cortx-s3server-rpm] INFO: Removed all S3 config files"
+    echo "[cortx-s3server-rpm] INFO: S3 RPM Post Uninstall Upgrade section completed"
 fi
