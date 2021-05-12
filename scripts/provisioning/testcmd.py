@@ -47,6 +47,7 @@ class TestCmd(SetupCmd):
     self.logger.info(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
+    self.validate_config_files(self.name)
 
     try:
       self.read_endpoint_value()

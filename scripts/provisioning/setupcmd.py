@@ -429,5 +429,63 @@ class SetupCmd(object):
       elif os.path.isdir(path):
         shutil.rmtree(path)
 
+  def validate_config_files(self, phase_name: str):
+    """
+    Validate the sample file and config file keys.
+    Both files should have same keys.
+    if keys mismatch then there is some issue in the config file
+    """
 
-        
+    sys.stdout.write(f'INFO: validating S3 config files for {phase_name}.\n')
+    upgrade_items = {
+    's3' : {
+          'configFile' : "/opt/seagate/cortx/s3/conf/s3config.yaml",
+          'SampleFile' : "/opt/seagate/cortx/s3/conf/s3config.yaml.sample",
+          'fileType' : 'yaml://'
+      },
+      'auth' : {
+          'configFile' : "/opt/seagate/cortx/auth/resources/authserver.properties",
+          'SampleFile' : "/opt/seagate/cortx/auth/resources/authserver.properties.sample",
+          'fileType' : 'properties://'
+      },
+      'keystore' : {
+          'configFile' : "/opt/seagate/cortx/auth/resources/keystore.properties",
+          'SampleFile' : "/opt/seagate/cortx/auth/resources/keystore.properties.sample",
+          'fileType' : 'properties://'
+      },
+      'bgdelete' : {
+          'configFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
+          'SampleFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample",
+          'fileType' : 'yaml://'
+      },
+      'cluster' : {
+          'configFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
+          'SampleFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample",
+          'fileType' : 'yaml://'
+      }
+    }
+    
+    for upgrade_item in upgrade_items:
+      configFile = upgrade_items[upgrade_item]['configFile']
+      SampleFile = upgrade_items[upgrade_item]['SampleFile']
+      filetype = upgrade_items[upgrade_item]['fileType']
+      sys.stdout.write(f'INFO: validating config file {str(configFile)}.\n')
+
+      # new sample file
+      conf_sample = filetype + SampleFile
+      cs_conf_sample = S3CortxConfStore(config=conf_sample, index=conf_sample)
+      conf_sample_keys = cs_conf_sample.get_all_keys()
+
+      # active config file
+      conf_file =  filetype + configFile
+      cs_conf_file = S3CortxConfStore(config=conf_file, index=conf_file)
+      conf_file_keys = cs_conf_file.get_all_keys()
+
+      # compare the keys of sample file and config file 
+      if conf_sample_keys == conf_file_keys:
+          sys.stdout.write(f'INFO: config file {str(configFile)} validated successfully.\n')
+      else:
+          sys.stderr.write(f'ERROR: config file {str(conf_file)} and sample file {str(conf_sample)} keys does not matched.\n')
+          sys.stderr.write(f'ERROR: sample file keys: {str(conf_sample_keys)}\n')
+          sys.stderr.write(f'ERROR: config file keys: {str(conf_file_keys)}\n')
+          raise Exception(f'ERROR: Failed to validate config file {str(configFile)}.\n')

@@ -522,6 +522,7 @@ then
   cd -
 fi
 
+# This will handle the copying of sample file to config file
 if [ $no_install -eq 0 ]
 then
   if [[ $EUID -ne 0 ]]; then

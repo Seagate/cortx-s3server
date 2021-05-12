@@ -38,4 +38,5 @@ class PostInstallCmd(SetupCmd):
     self.logger.info("Running validations..\n")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
-    self.logger.info("Validations passed..\n")
+    self.validate_config_files(self.name)
+    sys.stdout.write("Validations passed..\n")

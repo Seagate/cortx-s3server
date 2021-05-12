@@ -169,6 +169,7 @@ fi
 ################################
 %build
 echo "S3 RPM Build section started"
+# This(makeinstall) will handle the copying of sample file to config file
 %if %{with cortx_motr}
 ./rebuildall.sh --no-check-code --no-install --no-s3ut-build --no-s3mempoolut-build --no-s3mempoolmgrut-build --no-java-tests
 %else
@@ -481,21 +482,11 @@ echo "S3 RPM Clean section completed"
 echo "S3 RPM Post section started"
 if [ $1 == 1 ];then
     echo "S3 RPM Post Install section started"
-    # copy sample file to config file
-    [ -f /opt/seagate/cortx/s3/conf/s3config.yaml ] ||
-        cp /opt/seagate/cortx/s3/conf/s3config.yaml.sample /opt/seagate/cortx/s3/conf/s3config.yaml
-    [ -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml ] ||
-        cp /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml
-    [ -f /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml ] ||
-        cp /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml
-    [ -f /opt/seagate/cortx/auth/resources/authserver.properties ] ||
-        cp /opt/seagate/cortx/auth/resources/authserver.properties.sample /opt/seagate/cortx/auth/resources/authserver.properties
-    [ -f /opt/seagate/cortx/auth/resources/keystore.properties ] ||
-        cp /opt/seagate/cortx/auth/resources/keystore.properties.sample /opt/seagate/cortx/auth/resources/keystore.properties
     echo "S3 RPM Post Install section completed"
 elif [ $1 == 2 ];then
     echo "S3 RPM Post Upgrade section started"
-    python3.6 /opt/seagate/cortx/s3/bin/merge.py
+    python36 /opt/seagate/cortx/s3/bin/merge.py
+    echo "WARNING: All mini-provisioner template files are overwritten."
     echo "S3 RPM Post Upgrade section completed"
 fi
 systemctl daemon-reload
@@ -521,5 +512,17 @@ if [ $1 == 1 ];then
     echo "S3 RPM Post Uninstall Upgrade section completed"
 elif [ $1 == 0 ];then
     echo "S3 RPM Post Uninstall section started"
+    # remove config files.
+    rm -f /opt/seagate/cortx/s3/conf/s3config.yaml*
+    rm -f /opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml
+    rm -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml*
+    rm -f /opt/seagate/cortx/s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml
+    rm -f /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml*
+    rm -f /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster_unsafe_attributes.yaml
+    rm -f /opt/seagate/cortx/auth/resources/authserver.properties*
+    rm -f /opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.properties
+    rm -f /opt/seagate/cortx/auth/resources/keystore.properties*
+    rm -f /opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.properties
+    echo "removed all S3 config files"
     echo "S3 RPM Post Uninstall Upgrade section completed"
 fi
