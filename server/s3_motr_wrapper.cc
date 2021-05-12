@@ -24,6 +24,7 @@
 #include "s3_log.h"
 #include "s3_fake_motr_redis_kvs.h"
 #include "s3_addb.h"
+#include "s3_option.h"
 
 extern struct m0_ufid_generator s3_ufid_generator;
 
@@ -87,6 +88,23 @@ void ConcreteMotrAPI::motr_op_launch_addb_add(uint64_t addb_request_id,
            addb_request_id, op[i]->op_sm.sm_id);
     ADDB(S3_ADDB_REQUEST_TO_MOTR_ID, addb_request_id, op[i]->op_sm.sm_id);
   }
+}
+
+int ConcreteMotrAPI::motr_client_calculate_pi(
+    struct m0_generic_pi *pi, struct m0_pi_seed *seed, struct m0_bufvec *bvec,
+    enum m0_pi_calc_flag flag, unsigned char *curr_digest,
+    unsigned char *pi_value_without_seed) {
+  if (seed) {
+    s3_log(S3_LOG_INFO, "",
+           "%s fcontainer : %lu, fkey : %lu, Data offset : %lu", __func__,
+           seed->obj_id.f_container, seed->obj_id.f_key,
+           seed->data_unit_offset);
+  } else {
+    s3_log(S3_LOG_INFO, "", "%s Seed not passed.", __func__);
+  }
+
+  return m0_client_calculate_pi(pi, seed, bvec, flag, curr_digest,
+                                pi_value_without_seed);
 }
 
 void ConcreteMotrAPI::motr_idx_init(struct m0_idx *idx, struct m0_realm *parent,
@@ -171,6 +189,110 @@ int ConcreteMotrAPI::motr_idx_op(struct m0_idx *idx, enum m0_idx_opcode opcode,
 
 void ConcreteMotrAPI::motr_idx_fini(struct m0_idx *idx) { m0_idx_fini(idx); }
 
+#if 1
+#define MAX_ATTRS 128
+#define MAX_OBJECTS_TDATA 100
+
+/* Globals */
+typedef struct {
+  m0_uint128 oid;
+  m0_bufvec attr_data[MAX_ATTRS];
+  int calls;
+  int read;
+} Tdata;
+
+Tdata pi_data[MAX_OBJECTS_TDATA] = {0};
+unsigned int wt_idx = 0;
+m0_uint128 prev_oid = {0};
+
+void retrive_data(m0_uint128 oid, struct m0_bufvec *attr, m0_bindex_t offset) {
+  /* Search and get index*/
+  s3_log(S3_LOG_INFO, "", "%s ENTRY", __func__);
+  s3_log(S3_LOG_INFO, "", "%s Input oid hi : %lu", __func__, oid.u_hi);
+  s3_log(S3_LOG_INFO, "", "%s Input oid lo : %lu", __func__, oid.u_lo);
+
+  for (size_t i = 0; i < MAX_OBJECTS_TDATA; i++) {
+    s3_log(S3_LOG_INFO, "", "%s Matched oid hi : %lu", __func__,
+           pi_data[i].oid.u_hi);
+    s3_log(S3_LOG_INFO, "", "%s Matched oid lo : %lu", __func__,
+           pi_data[i].oid.u_lo);
+
+    if (pi_data[i].oid.u_hi == oid.u_hi && pi_data[i].oid.u_lo == oid.u_lo) {
+      s3_log(S3_LOG_INFO, "", "%s Match Found", __func__);
+
+      if (0 == offset) pi_data[i].read = 0;
+
+      /* Copy back the data to attr */
+      for (size_t k = 0; k < pi_data[i].attr_data[pi_data[i].read].ov_vec.v_nr;
+           k++) {
+        memcpy(attr->ov_buf[k], pi_data[i].attr_data[pi_data[i].read].ov_buf[k],
+               sizeof(m0_md5_inc_context_pi));
+        s3_log(S3_LOG_INFO, "",
+               "%s Printing Contents of buffer that was copied.", __func__);
+        /*print_pi_info((m0_md5_inc_context_pi *)pi_data[i]
+                          .attr_data[pi_data[i].read]
+                          .ov_buf[k]);*/
+      }
+      pi_data[i].read++;
+      break;
+    }
+  }
+}
+
+int find_data(m0_uint128 oid) {
+  for (size_t i = 0; i < MAX_OBJECTS_TDATA; i++) {
+    if (pi_data[i].oid.u_hi == oid.u_hi && pi_data[i].oid.u_lo == oid.u_lo) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+void store_data(m0_uint128 oid, struct m0_bufvec *attr, m0_bindex_t offset) {
+
+  s3_log(S3_LOG_INFO, "", "%s ENTRY", __func__);
+  s3_log(S3_LOG_INFO, "", "%s Input oid hi : %lu", __func__, oid.u_hi);
+  s3_log(S3_LOG_INFO, "", "%s Input oid lo : %lu", __func__, oid.u_lo);
+
+  int write_idx = find_data(oid);
+
+  if (-1 == write_idx) {
+    /* Increment */
+    wt_idx += 1;
+  } else {
+    wt_idx = write_idx;
+  }
+
+  if (wt_idx == MAX_OBJECTS_TDATA) {
+    assert(0);
+  }
+
+  /* Copy the attr unit */
+  pi_data[wt_idx].oid.u_hi = oid.u_hi;
+  pi_data[wt_idx].oid.u_lo = oid.u_lo;
+
+  /* Copy attrs */
+  if (0 == offset) pi_data[wt_idx].calls = 0;
+
+  m0_bufvec_alloc(&(pi_data[wt_idx].attr_data[pi_data[wt_idx].calls]),
+                  attr->ov_vec.v_nr, sizeof(m0_md5_inc_context_pi));
+  for (size_t i = 0; i < attr->ov_vec.v_nr; i++) {
+    memcpy(pi_data[wt_idx].attr_data[pi_data[wt_idx].calls].ov_buf[i],
+           attr->ov_buf[i], sizeof(m0_md5_inc_context_pi));
+    /*s3_log(S3_LOG_INFO, "", "%s Printing m0_md5_inc_context_pi in attr",
+           __func__);
+    print_pi_info((m0_md5_inc_context_pi *)attr->ov_buf[i]);
+    s3_log(S3_LOG_INFO, "",
+           "%s Printing m0_md5_inc_context_pi in temp fix buffer", __func__);
+    print_pi_info((m0_md5_inc_context_pi *)pi_data[wt_idx]
+                      .attr_data[pi_data[wt_idx].calls]
+                      .ov_buf[i]);*/
+  }
+  pi_data[wt_idx].calls++;
+}
+
+#endif
+
 int ConcreteMotrAPI::motr_obj_op(struct m0_obj *obj, enum m0_obj_opcode opcode,
                                  struct m0_indexvec *ext,
                                  struct m0_bufvec *data, struct m0_bufvec *attr,
@@ -188,6 +310,18 @@ int ConcreteMotrAPI::motr_obj_op(struct m0_obj *obj, enum m0_obj_opcode opcode,
     (*op)->op_sm.sm_state = M0_OS_INITIALISED;
     return 0;
   }
+
+/*  Stub for DI test - need to cleanup */
+#if 0
+  if (S3Option::get_instance()->is_s3_read_di_check_enabled()) {
+    /** Read object data. */
+    if (opcode == M0_OC_READ)
+      retrive_data(obj->ob_entity.en_id, attr, ext->iv_index[0]);
+    /** Write object data. */
+    if (opcode == M0_OC_WRITE)
+      store_data(obj->ob_entity.en_id, attr, ext->iv_index[0]);
+  }
+#endif
   return m0_obj_op(obj, opcode, ext, data, attr, mask, flags, op);
 }
 
