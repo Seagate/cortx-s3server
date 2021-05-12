@@ -186,11 +186,10 @@ def account_tests():
 
     test_msg = 'DeleteAccount Successfull with ldap credentials'
     account_args = {}
-    account_name_flag = "-n"
     account_args['AccountName'] ="s3deletetest"
     S3ClientConfig.access_key_id = S3ClientConfig.ldapuser
     S3ClientConfig.secret_key = S3ClientConfig.ldappasswd
-    AuthTest(test_msg).delete_account(account_name_flag, **account_args).execute_test()\
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
             .command_should_match_pattern("Account deleted successfully")
 
     load_test_config()
