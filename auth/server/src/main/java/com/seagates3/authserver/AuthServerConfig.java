@@ -164,8 +164,8 @@ public class AuthServerConfig {
            ldapCipherKey = line;
          }
          // 2. Decrypt openldap password using cipher Key.
-         String decryptCmd = "s3cipher decrypt --data " + encryptedPasswd +
-                             " --key " + ldapCipherKey;
+         String decryptCmd = "s3cipher decrypt --data=" + encryptedPasswd +
+                             " --key=" + ldapCipherKey;
          Process s3CipherDecrypt = Runtime.getRuntime().exec(decryptCmd);
 
          int exitCode = s3CipherDecrypt.waitFor();

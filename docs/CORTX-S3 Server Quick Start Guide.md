@@ -35,12 +35,11 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 6. Ensure that you've installed the following packages on your VM instance:
 
     * Python Version 3.0
-      * To check whether Python is installed on your VM, use one of the following commands: `--version`  , `-V` , or `-VV`
+      * To check whether Python is installed on your VM, use one of the following commands: `$ python3 --version` 
       * To install Python version 3.0, use: `$ yum install -y python3`
-    * pip:
-      * To check if pip is installed, use: `$ pip --version`
-      * To check if epel is installed, use: `$ yum repolist`. If epel was installed, you'll see it in the output list. If not enable it using :`$ yum --enablerepo=extras install epel-release`.
-      * To install pip use: `$ pip install pip==20.3.3`
+    * pip3:
+      * To check if pip is installed, use: `$ pip3 --version`
+      * Update to latest pip using `$ pip3 install --upgrade pip`
     * Ansible: `$ yum install -y ansible`
     * Extra Packages for Enterprise Linux:
         * To check if epel is installed, use: `$ yum repolist`
@@ -51,11 +50,9 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 
 7. You'll need to install CORTX Python Utilities. Follow the steps to install [CORTX Python Utilities](https://github.com/Seagate/cortx-utils/blob/main/py-utils/README.md).
 
-8. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup/a32f44e0591e3fcf020398c0a23b8cdafcdd3c26).
+8. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup).
 
-9. Copy "message_bus.conf" file from the git checkout at "cortx-s3server/scripts/kafka/" to "/etc/cortx"
-
-10. You'll need to disable selinux and firewall. Run the following commands:
+9. You'll need to disable selinux and firewall. Run the following commands:
 
      `$ systemctl stop firewalld` 
 
@@ -102,7 +99,14 @@ At some point during the execution of the `init.sh` script, it will prompt for t
 
 Whenever you clone your repository or make changes to dependent packages, you'll have to initialize the packages:
 
-1. Run the command:
+1. Create Message bus configuration file and Kafka topic for messaging:
+
+```shell
+
+$ cp scripts/kafka/message_bus.conf /etc/cortx
+$ sh scripts/kafka/create-topic.sh -c 1 -i <Hostname/FQDN>
+```
+2. Run the command:
 
 ```shell
 
@@ -110,7 +114,7 @@ Whenever you clone your repository or make changes to dependent packages, you'll
    $ ./init.sh -a
 ```
 
-2. You'll be prompted to provide your GitHub token. Enter the PAT token that you generated in Step 4.iv. of the [1.0 Prerequisites Section](#10-Prerequisites).
+3. You'll be prompted to provide your GitHub token. Enter the PAT token that you generated in Step 4.iv. of the [1.0 Prerequisites Section](#10-Prerequisites).
 
 Refer to the image below to view the output of a successful `$ init.sh -a` run, where the `failed` field value should be zero.
 
@@ -186,11 +190,9 @@ Before your test your build, ensure that you have installed and configured the f
 
 6. To Configure AWS run the following commands:
    
-   Keep the Access and Secret Keys generated in Step 4.iv. of the [1.0 Prerequisites Section](#10-Prerequisites).
-   
    1.  Run `$ aws configure` and enter the following details:
-        * `AWS Access Key ID [None]: <ACCESS KEY>`
-        * `AWS Secret Access Key [None]: <SECRET KEY>`
+        * `AWS Access Key ID [None]: <Access Key generated in last step>`
+        * `AWS Secret Access Key [None]: <Secret Key generated in last step>`
         * `Default region name [None]: US`
         * `Default output format [None]: text`
    2. Configure the AWS Plugin Endpoint using:
@@ -319,15 +321,11 @@ Your success log will look like the output in the image below:
     ```
 2. To build S3 RPM, use:
 
-    `$ ./rpms/s3/buildrpm.sh -G 44a07d2`
+    `$ ./rpms/s3/buildrpm.sh -a -G 44a07d2`
 
     :page_with_curl:**Note:** `44a07d2` is generated in Step 1.
 
-3. To build S3 RPM without Motr RPM dependency, use:
-
-    `$ ./rpms/s3/buildrpm.sh -a -G 44a07d2`
-
-4. To build s3iamcli RPM, use:
+3. To build s3iamcli RPM, use:
 
     `$ ./rpms/s3iamcli/buildrpm.sh -G 44a07d2`
 
