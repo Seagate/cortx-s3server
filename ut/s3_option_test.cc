@@ -113,6 +113,10 @@ TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_EQ("10.10.1.3", instance->get_motr_cass_cluster_ep());
   EXPECT_EQ(1, instance->get_motr_idx_service_id());
   EXPECT_TRUE(instance->get_motr_is_oostore());
+  EXPECT_TRUE(instance->is_s3_read_di_check_enabled());
+  EXPECT_TRUE(instance->is_s3_write_di_check_enabled());
+  EXPECT_TRUE(instance->is_s3_metadata_integrity_check_enabled());
+  EXPECT_TRUE(instance->is_s3_salt_checksum_enabled());
   EXPECT_FALSE(instance->get_motr_is_read_verify());
   EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
   EXPECT_FALSE(instance->is_log_buffering_enabled());
