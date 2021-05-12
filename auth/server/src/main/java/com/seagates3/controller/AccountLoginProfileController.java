@@ -168,8 +168,9 @@ class AccountLoginProfileController extends AbstractController {
           response = accountResponseGenerator.noSuchEntity(errorMessage);
 
         } else {
-
+          boolean isRequiredInputProvided = false;
           if (requestBody.get("Password") != null) {
+            isRequiredInputProvided = true;
             // Validate new password as per password policy
             if (!S3ParameterValidatorUtil.validatePasswordPolicy(
                      requestBody.get("Password"))) {
@@ -182,9 +183,16 @@ class AccountLoginProfileController extends AbstractController {
           }
 
           if (requestBody.get("PasswordResetRequired") != null) {
+            isRequiredInputProvided = true;
             account.setPwdResetRequired(
                 requestBody.get("PasswordResetRequired").toUpperCase());
             LOGGER.info("Updating password reset required flag");
+          }
+          if (!isRequiredInputProvided) {
+            LOGGER.error(
+                "Neither password not password-reset flag is provided");
+            return accountResponseGenerator.invalidRequest(
+                "Please provide password or password-reset flag");
           }
           accountLoginProfileDAO.save(account);
           response =
