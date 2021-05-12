@@ -151,11 +151,17 @@ class AccountLoginProfileController extends AbstractController {
   @Override public ServerResponse update() throws DataAccessException {
     Account account = null;
     ServerResponse response = null;
+    if (requestBody.get("AccountName") == null ||
+        requestBody.get("AccountName").trim().isEmpty()) {
+      LOGGER.error("Account name is either null or empty");
+      return accountResponseGenerator.invalidRequest(
+          "Please provide account name");
+    }
     try {
       account = accountDAO.find(requestBody.get("AccountName"));
       if (!account.exists()) {
-        LOGGER.error("Account [" + requestor.getAccount().getName() +
-                     "] does not exists");
+        LOGGER.error("Requested account - " + requestBody.get("AccountName") +
+                     "does not exists");
         response = accountResponseGenerator.noSuchEntity();
       } else {
         if (account.getPassword() == null &&
@@ -163,7 +169,7 @@ class AccountLoginProfileController extends AbstractController {
              account.getProfileCreateDate().isEmpty())) {
 
           String errorMessage = "LoginProfile not created for account - " +
-                                requestor.getAccount().getName();
+                                requestBody.get("AccountName");
           LOGGER.error(errorMessage);
           response = accountResponseGenerator.noSuchEntity(errorMessage);
 
@@ -189,8 +195,7 @@ class AccountLoginProfileController extends AbstractController {
             LOGGER.info("Updating password reset required flag");
           }
           if (!isRequiredInputProvided) {
-            LOGGER.error(
-                "Neither password not password-reset flag is provided");
+            LOGGER.error("Mandatory input arguments are missing");
             return accountResponseGenerator.invalidRequest(
                 "Please provide password or password-reset flag");
           }
@@ -202,7 +207,7 @@ class AccountLoginProfileController extends AbstractController {
     }
     catch (DataAccessException ex) {
       LOGGER.error("Exception occurred while doing ldap operation for user - " +
-                   requestor.getAccount().getName());
+                   requestBody.get("AccountName"));
       response = accountLoginProfileResponseGenerator.internalServerError();
     }
     return response;

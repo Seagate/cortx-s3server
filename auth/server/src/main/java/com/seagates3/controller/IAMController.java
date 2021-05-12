@@ -182,13 +182,13 @@ class IAMController {
           requestor = RequestorService.getRequestor(clientRequestToken);
         }
         catch (InvalidAccessKeyException ex) {
-          LOGGER.debug(ex.getServerResponse().getResponseBody());
+          LOGGER.error(ex.getServerResponse().getResponseBody());
         }
         catch (InternalServerException ex) {
-          LOGGER.debug(ex.getServerResponse().getResponseBody());
+          LOGGER.error(ex.getServerResponse().getResponseBody());
         }
         catch (InvalidRequestorException ex) {
-          LOGGER.debug(ex.getServerResponse().getResponseBody());
+          LOGGER.error(ex.getServerResponse().getResponseBody());
         }
         if (requestor == null) {
           LOGGER.error("Invalid user, authentication failed");
@@ -197,9 +197,6 @@ class IAMController {
           serverResponse = responseGenerator.invalidAccessKey();
           return serverResponse;
       } else {
-        LOGGER.debug("Validating user with accesskey and secretkey entered");
-        LOGGER.debug("Calling signature validator.");
-
         perf.startClock();
         serverResponse =
             new SignatureValidator().validate(clientRequestToken, requestor);
