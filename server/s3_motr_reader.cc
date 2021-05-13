@@ -72,7 +72,7 @@ bool S3MotrReader::read_object_data(size_t num_of_blocks,
                                     std::function<void(void)> on_failed) {
   s3_log(S3_LOG_INFO, stripped_request_id,
          "%s Entry with num_of_blocks = %zu from last_index = %zu\n", __func__,
-         num_of_blocks, last_index);
+         num_of_blocks, (size_t)last_index);
 
   bool rc = true;
   state = S3MotrReaderOpState::reading;
@@ -225,7 +225,7 @@ bool S3MotrReader::read_object() {
   int rc;
   s3_log(S3_LOG_INFO, stripped_request_id,
          "%s Entry with num_of_blocks_to_read = %zu from last_index = %zu\n",
-         __func__, num_of_blocks_to_read, last_index);
+         __func__, num_of_blocks_to_read, (size_t)last_index);
 
   assert(is_object_opened);
 

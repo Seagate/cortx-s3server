@@ -129,7 +129,7 @@ $PythonV authpassencryptcli_spec.py
 echo "`date -u`: Running auth_spec_negative_and_fi.py..."
 $PythonV auth_spec_negative_and_fi.py
 
-echo "`date -u`: Running md_integrity.py..."
+echo "$(date -u): Running md_integrity.py..."
 # metadata integrity tests - regular PUT
 md_di_data=/tmp/s3-data.bin
 md_di_dowload=/tmp/s3-data-download.bin

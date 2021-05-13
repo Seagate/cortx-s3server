@@ -721,7 +721,7 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
     s3_log(S3_LOG_DEBUG, request_id, "To Motr: address(%p), iter(%zu)\n",
            ptr_n_len.first, buf_idx);
     s3_log(S3_LOG_DEBUG, request_id, "To Motr: len(%zu) at last_index(%zu)\n",
-           len_in_buf, last_index);
+           len_in_buf, (size_t)last_index);
 
     rw_ctx->data->ov_buf[buf_idx] = ptr_n_len.first;
     rw_ctx->data->ov_vec.v_count[buf_idx] = size_of_each_buf;
@@ -756,7 +756,7 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
     s3_log(S3_LOG_DEBUG, request_id, "To Motr: address(%p), iter(%zu)\n",
            place_holder_for_last_unit, buf_idx);
     s3_log(S3_LOG_DEBUG, request_id, "To Motr: len(%zu) at last_index(%zu)\n",
-           size_of_each_buf, last_index);
+           size_of_each_buf, (size_t)last_index);
 
     rw_ctx->data->ov_buf[buf_idx] = place_holder_for_last_unit;
     rw_ctx->data->ov_vec.v_count[buf_idx] = size_of_each_buf;

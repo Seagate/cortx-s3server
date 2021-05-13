@@ -906,9 +906,9 @@ void S3Option::dump_options() {
          (motr_is_oostore ? "true" : "false"));
   s3_log(S3_LOG_INFO, "", "S3_MOTR_IS_READ_VERIFY = %s\n",
          (motr_is_read_verify ? "true" : "false"));
-  s3_log(S3_LOG_INFO, "", "S3_MOTR_TM_RECV_QUEUE_MIN_LEN = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_MOTR_TM_RECV_QUEUE_MIN_LEN = %u\n",
          motr_tm_recv_queue_min_len);
-  s3_log(S3_LOG_INFO, "", "S3_MOTR_MAX_RPC_MSG_SIZE = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_MOTR_MAX_RPC_MSG_SIZE = %u\n",
          motr_max_rpc_msg_size);
   s3_log(S3_LOG_INFO, "", "S3_MOTR_PROCESS_FID = %s\n",
          motr_process_fid.c_str());
@@ -919,7 +919,7 @@ void S3Option::dump_options() {
          motr_cass_keyspace.c_str());
   s3_log(S3_LOG_INFO, "", "S3_MOTR_CASS_MAX_COL_FAMILY_NUM = %d\n",
          motr_cass_max_column_family_num);
-  s3_log(S3_LOG_INFO, "", "S3_MOTR_OPERATION_WAIT_PERIOD = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_MOTR_OPERATION_WAIT_PERIOD = %u\n",
          motr_op_wait_period);
 
   s3_log(S3_LOG_INFO, "", "S3_MOTR_READ_POOL_INITIAL_BUFFER_COUNT = %zu\n",
