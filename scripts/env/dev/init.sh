@@ -143,6 +143,9 @@ else
   unsupported_os
 fi
 
+# validate and configure lnet
+sh ${S3_SRC_DIR}/scripts/env/common/configure_lnet.sh
+
 if [[ $# -eq 0 ]] ; then
   source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
   #install pre-requisites on dev vm
