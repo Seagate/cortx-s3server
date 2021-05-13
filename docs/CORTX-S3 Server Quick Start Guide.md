@@ -52,7 +52,11 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 
 8. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup).
 
-9. You'll need to disable selinux and firewall. Run the following commands:
+9. In order to install Motr you will need to install the latest kernel version for your version of CentOS. If you are using CentOS version 7.8 or lower, you'll have to install the kernel dependencies by following this link: http://vault.centos.org/centos/<CentOS-version>/os/x86_64/Packages/ where <CentOS-version> is replaced with you version of CentOS. For example, if you are using CentOS 7.8.2003, you'll have to install this kernel dependency:
+
+   ```sudo yum install https://vault.centos.org/centos/7.8.2003/os/x86_64/Packages/kernel-devel-3.10.0-1127.el7.x86_64.rpm```
+
+10. You'll need to disable selinux and firewall. Run the following commands:
 
      `$ systemctl stop firewalld` 
 
