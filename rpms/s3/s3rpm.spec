@@ -535,5 +535,5 @@ elif [ $1 == 0 ];then
     rm -f /opt/seagate/cortx/auth/resources/keystore.properties*
     rm -f /opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.properties
     echo "[cortx-s3server-rpm] INFO: Removed all S3 config files"
-    echo "[cortx-s3server-rpm] INFO: S3 RPM Post Uninstall Upgrade section completed"
+    echo "[cortx-s3server-rpm] INFO: S3 RPM Post Uninstall section completed"
 fi
