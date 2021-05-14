@@ -153,7 +153,7 @@ Before your test your build, ensure that you have installed and configured the f
 2. Ensure you've installed pip.
     - To check if you have pip installed, run the command: `$ pip --version`
     - To install pip, run the command: `$ easy_install pip`
-3. If you don't have Python Version 2.6.5+, install Python using: `$ yum install python26`
+3. If you don't have Python Version 2.6.5+, install Python using: `$ yum install python`
     - If you don't have Python Version 3.3, then install python3 using: `$ yum install python3`
 4. Ensure that CORTX-S3 Server and its dependent services are running.
     1. To start CORTX-S3 Server and its dependent services, run the command: `$ ./jenkins-build.sh --skip_build --skip_tests`
