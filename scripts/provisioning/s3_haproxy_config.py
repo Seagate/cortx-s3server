@@ -21,6 +21,7 @@
 import os
 import sys
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
+import logging
 
 class S3HaproxyConfig:
   """HAProxy configration for S3."""
@@ -30,6 +31,7 @@ class S3HaproxyConfig:
 
   def __init__(self, confstore: str):
     """Constructor."""
+    self.logger = logging.getLogger("s3-deployment-logger")
     # Read machine-id of current node
     with open('/etc/machine-id', 'r') as mcid_file:
       self.machine_id = mcid_file.read().strip()

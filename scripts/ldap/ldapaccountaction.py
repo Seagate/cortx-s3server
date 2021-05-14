@@ -59,7 +59,7 @@ class LdapAccountAction:
   def __init__(self, ldapuser: str, ldappasswd: str):
     """Constructor."""
     
-    self.logger = logging.getLogger("s3deployment_logger_name")
+    self.logger = logging.getLogger("s3-deployment-logger")
 
     try:
       self.ldapuser = ldapuser.strip()
@@ -277,8 +277,7 @@ class LdapAccountAction:
           self.ldap_delete_recursive(self.ldap_conn, dn)
           ldap_conn.delete_s(dn)
 
-  @staticmethod
-  def __is_account_present(ldap_conn: SimpleLDAPObject, account_name: str):
+  def __is_account_present(self, ldap_conn: SimpleLDAPObject, account_name: str):
     """Checks if account is present in ldap db."""
     try:
       ldap_conn.search_s(f"o={account_name},ou=accounts,dc=s3,dc=seagate,dc=com", ldap.SCOPE_SUBTREE)
@@ -289,8 +288,7 @@ class LdapAccountAction:
       raise e
     return True
 
-  @staticmethod
-  def __delete_dn(ldap_conn: SimpleLDAPObject, dn: str):
+  def __delete_dn(self, ldap_conn: SimpleLDAPObject, dn: str):
     """Delete given DN from ldap."""
     try:
       ldap_conn.delete_s(dn)
@@ -300,8 +298,7 @@ class LdapAccountAction:
       self.logger.error(f'Failed to delete DN: {dn}\n')
       raise e
 
-  @staticmethod
-  def __delete_access_key(ldap_conn: SimpleLDAPObject, userid: str):
+  def __delete_access_key(self, ldap_conn: SimpleLDAPObject, userid: str):
     """Delete access key of given s3userid."""
     try:
       access_key = LdapAccountAction.__get_accesskey(ldap_conn, userid)
@@ -312,8 +309,7 @@ class LdapAccountAction:
       self.logger.error(f'failed to delete access key of userid: {userid}\n')
       raise e
 
-  @staticmethod
-  def __get_accesskey(ldap_conn: SimpleLDAPObject, s3userid: str) -> str:
+  def __get_accesskey(self, ldap_conn: SimpleLDAPObject, s3userid: str) -> str:
     """Get accesskey of the given userid."""
     access_key = None
 
@@ -328,23 +324,20 @@ class LdapAccountAction:
         break
     return access_key
 
-  @staticmethod
-  def __generate_access_secret_keys(const_secret_string, const_access_string):
+  def __generate_access_secret_keys(self, const_secret_string, const_access_string):
     """Generates access and secret keys."""
     cortx_access_key = CortxS3Cipher(None, True, 22, const_access_string).generate_key()
     cortx_secret_key = CortxS3Cipher(None, False, 40, const_secret_string).generate_key()
     return cortx_access_key, cortx_secret_key
 
-  @staticmethod
-  def __get_attr(index_key):
+  def __get_attr(self, index_key):
     """Fetches attr from map based on index."""
     if index_key in g_attr :
       return g_attr[index_key]
 
     raise Exception("Key Not Present")
 
-  @staticmethod
-  def __get_dn(index_key):
+  def __get_dn(self, index_key):
     """Fetches dn string from map based on index."""
     if index_key in g_dn_names:
       return g_dn_names[index_key]

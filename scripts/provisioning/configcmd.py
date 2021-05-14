@@ -117,7 +117,7 @@ class ConfigCmd(SetupCmd):
     # set openldap-replication
     self.configure_openldap_replication()
     
-    self.logger.info(' Successfully configured openldap on the node.\n")
+    self.logger.info("Successfully configured openldap on the node.\n")
 
   def configure_openldap_replication(self):
     """Configure openldap replication within a storage set."""
@@ -202,13 +202,12 @@ class ConfigCmd(SetupCmd):
         self.logger.error(f'Failed to reload haproxy service, error: {e}\n')
         raise e
       self.logger.info("Reloaded haproxy service...\n")
-      self.logger.info(' Successfully configured haproxy on the node.\n")
+      self.logger.info("Successfully configured haproxy on the node.\n")
     except Exception as e:
       self.logger.error(f'Failed to configure haproxy for s3server, error: {e}')
       raise e
 
-  @staticmethod
-  def create_auth_jks_password():
+  def create_auth_jks_password(self):
     """Create random password for auth jks keystore."""
     cmd = ['sh',
       '/opt/seagate/cortx/auth/scripts/create_auth_jks_password.sh']

@@ -63,7 +63,7 @@ class SetupCmd(object):
   def __init__(self,config: str):
     """Constructor."""
 
-    self.logger = logging.getLogger("s3deployment_logger_name")
+    self.logger = logging.getLogger("s3-deployment-logger")
     
     if config is None:
       self.logger.error(f'Empty Config url\n')
