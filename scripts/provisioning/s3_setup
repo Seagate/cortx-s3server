@@ -97,7 +97,7 @@ def main():
       if args.plan:
         test_plan = args.plan
       TestCmd(args.config, test_plan).process()
-      logger.info('S3-Sanity test passed.\n')
+      logger.info('PASS: S3-Sanity test passed.\n')
     elif args.command == 'reset':
       from resetcmd import ResetCmd
       ResetCmd(args.config).process()
