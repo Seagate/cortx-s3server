@@ -30,6 +30,7 @@ validte_configure_lnet() {
     service lnet restart
     # it has been observed that the lnet does not get restart in first go
     # so for safer side restarting again and then verify
+    sleep 5
     service lnet restart
     lctl list_nids | grep "@tcp" &> /dev/null
     if [ $? -eq 0 ]; then
