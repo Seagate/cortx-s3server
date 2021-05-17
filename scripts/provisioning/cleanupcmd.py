@@ -210,7 +210,7 @@ class CleanupCmd(SetupCmd):
     """Validate ldap data is cleaned."""
     account_count=0
     try :
-      self.logger.info('Validating ldap account entries\n")
+      self.logger.info("Validating ldap account entries\n")
       ldap_action_obj = LdapAccountAction(self.ldap_user, self.ldap_passwd)
       account_count = ldap_action_obj.get_account_count()
     except Exception as e:
@@ -218,7 +218,7 @@ class CleanupCmd(SetupCmd):
       raise e
     if account_count > 1:
       raise S3PROVError("Stale account entries found in ldap !!!! hence reset needs to be performed before cleanup can be processed\n")
-    self.logger.info('Validation of ldap account entries successful.\n")
+    self.logger.info("Validation of ldap account entries successful.\n")
 
   def delete_ldap_config(self):
     """Delete the ldap configs created by setup_ldap.sh during config phase."""

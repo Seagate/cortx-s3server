@@ -68,7 +68,7 @@ s3_core_dir="/var/log/crash"
 sys_auditlog_dir="/var/log/audit"
 
 # S3 deployment log
-s3deployment_log = "/var/log/seagate/s3/s3deployment/s3deployment.log"
+s3deployment_log="/var/log/seagate/s3/s3deployment/s3deployment.log"
 
 # Create tmp folder with pid value to allow parallel execution
 pid_value=$$

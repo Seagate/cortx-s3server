@@ -60,6 +60,19 @@ class LdapAccountAction:
     """Constructor."""
     
     self.logger = logging.getLogger("s3-deployment-logger")
+    if self.logger.hasHandlers():
+      self.logger.info("Logger has valid handler")
+    else:
+      self.logger.setLevel(logging.DEBUG)
+      # create console handler with a higher log level
+      chandler = logging.StreamHandler(sys.stdout)
+      chandler.setLevel(logging.DEBUG)
+      s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+      formatter = logging.Formatter(s3deployment_log_format)
+      # create formatter and add it to the handlers
+      chandler.setFormatter(formatter)
+      # add the handlers to the logger
+      self.logger.addHandler(chandler)
 
     try:
       self.ldapuser = ldapuser.strip()

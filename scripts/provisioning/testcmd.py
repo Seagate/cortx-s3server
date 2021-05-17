@@ -54,6 +54,8 @@ class TestCmd(SetupCmd):
       cmd = [SANITY_SCRIPT_PATH, LDAP_SWITCH,  f'{self.ldap_passwd}', ENDPOINT_SWITCH, f'{self.endpoint}']
       handler = SimpleProcess(cmd)
       stdout, stderr, retcode = handler.run()
+      self.logger.info(f'output of s3-sanity-test.sh: {stdout}')
+      self.logger.error(f'error of s3-sanity-test.sh: {stderr}')
       if retcode != 0:
         raise Exception(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
       self.logger.info(f"{cmd}:{stdout}:{stderr}:{retcode}\n")

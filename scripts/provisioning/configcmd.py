@@ -92,6 +92,8 @@ class ConfigCmd(SetupCmd):
            '--skipssl']
     handler = SimpleProcess(cmd)
     stdout, stderr, retcode = handler.run()
+    self.logger.info(f'output of setup_ldap.sh: {stdout}')
+    self.logger.error(f'error of setup_ldap.sh: {stderr}')
     if retcode != 0:
       raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
 
@@ -148,7 +150,8 @@ class ConfigCmd(SetupCmd):
              f'{self.rootdn_passwd}']
         handler = SimpleProcess(cmd)
         stdout, stderr, retcode = handler.run()
-
+        self.logger.info(f'output of setupReplicationScript.sh: {stdout}')
+        self.logger.error(f'error of setupReplicationScript.sh: {stderr}')
         os.remove("hosts_list_file.txt")
 
         if retcode != 0:
@@ -213,6 +216,8 @@ class ConfigCmd(SetupCmd):
       '/opt/seagate/cortx/auth/scripts/create_auth_jks_password.sh']
     handler = SimpleProcess(cmd)
     stdout, stderr, retcode = handler.run()
+    self.logger.info(f'output of create_auth_jks_password.sh: {stdout}')
+    self.logger.error(f'error of create_auth_jks_password.sh: {stderr}')
     if retcode != 0:
       raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
     else:

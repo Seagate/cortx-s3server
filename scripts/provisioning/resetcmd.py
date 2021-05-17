@@ -58,7 +58,7 @@ class ResetCmd(SetupCmd):
       raise e
 
     try:
-      self.logger.info('Shutting down s3 services...\n")
+      self.logger.info("Shutting down s3 services...\n")
       self.shutdown_services(services_list)
     except Exception as e:
       self.logger.error(f'ERROR:Failed to stop s3services, error: {e}\n')
