@@ -468,7 +468,7 @@ void S3GetObjectAction::send_data_to_client() {
     size_t read_data_start_offset = first_byte_offset_to_read % obj_unit_sz;
     if (read_data_start_offset) {
       // Move the starting range (1000-) if specified.
-      p_evbuffer->read_drain_data_from_buffer(read_data_start_offset);
+      p_evbuffer->drain_data(read_data_start_offset);
       length_in_evbuf = p_evbuffer->get_evbuff_length();
     }
   }

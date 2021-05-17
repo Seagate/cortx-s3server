@@ -38,6 +38,7 @@ S3ObjectDataCopier::S3ObjectDataCopier(
       motr_api(std::move(motr_api)) {
 
   request_id = this->request_object->get_request_id();
+  size_of_ev_buffer = g_option_instance->get_libevent_pool_buffer_size();
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 }
 
@@ -200,14 +201,13 @@ void S3ObjectDataCopier::write_data_block() {
   data_blocks_writing = std::move(data_blocks_read);
   // We have just separated part of data for writing and
   // also freed a 'slot' for futher reading
-
   motr_writer->write_content(
       std::bind(&S3ObjectDataCopier::write_data_block_success, this),
       std::bind(&S3ObjectDataCopier::write_data_block_failed, this),
       data_blocks_writing,  // NO std::move()!
                             // We must pass a copy of the stucture.
                             // Data buffers will be freed just after writing.
-      motr_unit_size);
+      size_of_ev_buffer);
 
   if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id, "Write of data block failed to start");
