@@ -99,6 +99,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
     requestorObj.setAccount(ACCOUNT);
     requestBodyObj = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     requestBodyObj.put("AccountName", "s3test");
+    requestBodyObj.put("PasswordResetRequired", "False");
   }
 
   @Test public void GetAccountLoginProfile_Sucessful_Api_Response()
