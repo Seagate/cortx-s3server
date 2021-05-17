@@ -483,7 +483,7 @@ void S3MotrWiter::write_content() {
     struct m0_bufvec *bv = rw_ctx->data;
     if (rw_ctx->ext->iv_index[0] == first_offset) {
       char first_byte = *(char *)bv->ov_buf[0];
-      s3_log(S3_LOG_DEBUG, "", "%s first_byte=%d", __func__, first_byte);
+      s3_log(S3_LOG_DEBUG, "", "%s first_byte=%d\n", __func__, first_byte);
       switch (first_byte) {
         case 'z':  // zero
           corrupt_fill_zero = true;

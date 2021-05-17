@@ -183,7 +183,7 @@ bool S3DeleteMultipleObjectsBody::validate_attrs(const std::string &bckt,
       s3_log(S3_LOG_ERROR, "",
              "Object metadata mismatch: "
              "req_bucket_name=\"%s\" c_bucket_name=\"%s\" "
-             "req_object_name=\"%s\" c_object_name=\"%s\"",
+             "req_object_name=\"%s\" c_object_name=\"%s\"\n",
              body_bucket.c_str(), bckt.c_str(),
              "<delete-multiple-objects-list>", key.c_str());
     }

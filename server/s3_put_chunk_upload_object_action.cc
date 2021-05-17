@@ -275,7 +275,7 @@ void S3PutChunkUploadObjectAction::fetch_object_info_failed() {
     set_s3_error("ServiceUnavailable");
     send_response_to_s3_client();
   } else {
-    s3_log(S3_LOG_DEBUG, request_id, "Failed with metadata state %d",
+    s3_log(S3_LOG_DEBUG, request_id, "Failed with metadata state %d\n",
            (int)omds);
     s3_put_chunk_action_state =
         S3PutChunkUploadObjectActionState::validationFailed;
@@ -297,7 +297,7 @@ void S3PutChunkUploadObjectAction::fetch_object_info_success() {
     next();
   } else {
     s3_log(S3_LOG_DEBUG, request_id,
-           "Unexpected Metadata state %d in success handler", (int)omds);
+           "Unexpected Metadata state %d in success handler\n", (int)omds);
     s3_put_chunk_action_state =
         S3PutChunkUploadObjectActionState::validationFailed;
     set_s3_error("InternalError");

@@ -231,31 +231,33 @@ void S3PartMetadata::load_successful() {
 
 void S3PartMetadata::load_failed() {
   switch (motr_kv_reader->get_state()) {
-  case S3MotrKVSReaderOpState::failed_to_launch:
-    state = S3PartMetadataState::failed_to_launch;
-    s3_log(S3_LOG_WARN, request_id, "Part metadata load failed to launch - ServiceUnavailable");
-    break;
-  case S3MotrKVSReaderOpState::failed:
-  case S3MotrKVSReaderOpState::failed_e2big:
-    s3_log(S3_LOG_WARN, request_id, "Internal server error - InternalError");
-    state = S3PartMetadataState::failed;
-    break;
-  case S3MotrKVSReaderOpState::missing:
-    state = S3PartMetadataState::missing;
-    s3_log(S3_LOG_DEBUG, request_id, "Part metadata missing for %s",
-           object_name.c_str());
-    break;
-  case S3MotrKVSReaderOpState::present:
-    // This state is allowed here only if validaton failed
-    if (state != S3PartMetadataState::invalid) {
-      s3_log(S3_LOG_ERROR, request_id, "Invalid state - InternalError");
+    case S3MotrKVSReaderOpState::failed_to_launch:
+      state = S3PartMetadataState::failed_to_launch;
+      s3_log(S3_LOG_WARN, request_id,
+             "Part metadata load failed to launch - ServiceUnavailable\n");
+      break;
+    case S3MotrKVSReaderOpState::failed:
+    case S3MotrKVSReaderOpState::failed_e2big:
+      s3_log(S3_LOG_WARN, request_id,
+             "Internal server error - InternalError\n");
       state = S3PartMetadataState::failed;
-    }
-    break;
-  default: // S3MotrKVSReaderOpState::{empty,start}
-    s3_log(S3_LOG_ERROR, request_id, "Unexpected state - InternalError");
-    state = S3PartMetadataState::failed;
-    break;
+      break;
+    case S3MotrKVSReaderOpState::missing:
+      state = S3PartMetadataState::missing;
+      s3_log(S3_LOG_DEBUG, request_id, "Part metadata missing for %s\n",
+             object_name.c_str());
+      break;
+    case S3MotrKVSReaderOpState::present:
+      // This state is allowed here only if validaton failed
+      if (state != S3PartMetadataState::invalid) {
+        s3_log(S3_LOG_ERROR, request_id, "Invalid state - InternalError\n");
+        state = S3PartMetadataState::failed;
+      }
+      break;
+    default:  // S3MotrKVSReaderOpState::{empty,start}
+      s3_log(S3_LOG_ERROR, request_id, "Unexpected state - InternalError\n");
+      state = S3PartMetadataState::failed;
+      break;
   }
 
   this->handler_on_failed();

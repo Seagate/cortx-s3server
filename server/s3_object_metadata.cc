@@ -369,7 +369,7 @@ bool S3ObjectMetadata::validate_attrs() {
       s3_log(S3_LOG_ERROR, request_id,
              "Object metadata mismatch: "
              "req_bucket_name=\"%s\" c_bucket_name=\"%s\" "
-             "req_object_name=\"%s\" c_object_name=\"%s\"",
+             "req_object_name=\"%s\" c_object_name=\"%s\"\n",
              requested_bucket_name.c_str(), bucket_name.c_str(),
              requested_object_name.c_str(), object_name.c_str());
     }
@@ -418,27 +418,28 @@ void S3ObjectMetadata::load_failed() {
     case S3MotrKVSReaderOpState::failed_to_launch:
       state = S3ObjectMetadataState::failed_to_launch;
       s3_log(S3_LOG_WARN, request_id,
-             "Object metadata load failed to launch - ServiceUnavailable");
+             "Object metadata load failed to launch - ServiceUnavailable\n");
       break;
     case S3MotrKVSReaderOpState::failed:
     case S3MotrKVSReaderOpState::failed_e2big:
-      s3_log(S3_LOG_WARN, request_id, "Internal server error - InternalError");
+      s3_log(S3_LOG_WARN, request_id,
+             "Internal server error - InternalError\n");
       state = S3ObjectMetadataState::failed;
       break;
     case S3MotrKVSReaderOpState::missing:
       state = S3ObjectMetadataState::missing;
-      s3_log(S3_LOG_DEBUG, request_id, "Object metadata missing for %s",
+      s3_log(S3_LOG_DEBUG, request_id, "Object metadata missing for %s\n",
              object_name.c_str());
       break;
     case S3MotrKVSReaderOpState::present:
       // This state is allowed here only if validaton failed
       if (state != S3ObjectMetadataState::invalid) {
-        s3_log(S3_LOG_ERROR, request_id, "Invalid state - InternalError");
+        s3_log(S3_LOG_ERROR, request_id, "Invalid state - InternalError\n");
         state = S3ObjectMetadataState::failed;
       }
       break;
     default:  // S3MotrKVSReaderOpState::{empty,start}
-      s3_log(S3_LOG_ERROR, request_id, "Unexpected state - InternalError");
+      s3_log(S3_LOG_ERROR, request_id, "Unexpected state - InternalError\n");
       state = S3ObjectMetadataState::failed;
       break;
   }

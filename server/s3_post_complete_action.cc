@@ -144,7 +144,7 @@ void S3PostCompleteAction::fetch_object_info_failed() {
     s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
     next();
   } else {
-    s3_log(S3_LOG_ERROR, request_id, "Metadata load state %d", (int)omds);
+    s3_log(S3_LOG_ERROR, request_id, "Metadata load state %d\n", (int)omds);
     if (omds == S3ObjectMetadataState::failed_to_launch) {
       set_s3_error("ServiceUnavailable");
     } else {

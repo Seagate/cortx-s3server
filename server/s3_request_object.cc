@@ -175,7 +175,7 @@ void S3RequestObject::populate_and_log_audit_info() {
   if (audit_log_obj.get_publish_flag()) {
     if (S3AuditInfoLogger::save_msg(request_id, audit_log_obj.to_string()) <
         0) {
-      s3_log(S3_LOG_FATAL, request_id, "Audit Logger Error. STOP Server");
+      s3_log(S3_LOG_FATAL, request_id, "Audit Logger Error. STOP Server\n");
     }
   }
   s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
@@ -202,7 +202,7 @@ bool S3RequestObject::validate_attrs(const std::string& c_bucket_name,
       s3_log(S3_LOG_ERROR, request_id,
              "Object metadata mismatch: "
              "req_bucket_name=\"%s\" c_bucket_name=\"%s\" "
-             "req_object_name=\"%s\" c_object_name=\"%s\"",
+             "req_object_name=\"%s\" c_object_name=\"%s\"\n",
              req_bucket_name.c_str(), c_bucket_name.c_str(),
              req_object_name.c_str(), c_object_name.c_str());
     }
