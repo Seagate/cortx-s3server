@@ -203,8 +203,12 @@ then the request will be rejected with error code: '503', with retry interval as
 14. Creates a password for the specified account  
     `s3iamcli CreateAccountLoginProfile -n <Account Name> --password <Account Password> [--password-reset-required |--no-password-reset-required]`  
 
-15. Updates/changes password for the specified account  
-    `UpdateAccountLoginProfile -n <Account Name> [--password <Account Password>] [--password-reset-required|--no-password-reset-required]`  
+15. Updates/changes password for the specified account   
+    `s3iamcli UpdateAccountLoginProfile -n <Account Name> [--password <Account Password>] [--password-reset-required|--no-password-reset-required]`  
+
+    OR
+
+    `s3iamcli UpdateAccountLoginProfile -n <Account-name> --password <new-password> --access_key <ldap-user-name> --secret_key <ldapapssword>`
 
 16. Retrieves the account name and password-creation date for the specified account  
     `s3iamcli GetAccountLoginProfile -n <Account Name>`  
