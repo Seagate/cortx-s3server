@@ -699,10 +699,8 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
   if (buf_idx < motr_buf_count) {
     // Allocate place_holder_for_last_unit only if its required.
     // Its required when writing last block of object.
+    unit_size_for_place_holder = 16384;
     reset_buffers_if_any(unit_size_for_place_holder);
-    unit_size_for_place_holder =
-        S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
-            layout_ids[0]);
     place_holder_for_last_unit =
         (void *)S3MempoolManager::get_instance()->get_buffer_for_unit_size(
             unit_size_for_place_holder);
