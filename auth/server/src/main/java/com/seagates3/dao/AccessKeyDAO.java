@@ -22,7 +22,6 @@ package com.seagates3.dao;
 
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
-import com.seagates3.model.Account;
 import com.seagates3.model.User;
 
 public interface AccessKeyDAO {

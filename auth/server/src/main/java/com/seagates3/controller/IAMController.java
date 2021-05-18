@@ -134,8 +134,6 @@ class IAMController {
       }
     } else if (requestAction.equals("UpdateAccountLoginProfile") ||
                requestAction.equals("DeleteAccount")) {
-      LOGGER.debug("Parsing UpdateAccountLoginProfile/DeleteAccount request" +
-                   requestBody.get("AccountName"));
       try {
         clientRequestToken =
             ClientRequestParser.parse(httpRequest, requestBody);
