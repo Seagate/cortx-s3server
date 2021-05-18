@@ -67,6 +67,9 @@ s3_motr_dir="/var/log/seagate/motr/s3server-*"
 s3_core_dir="/var/log/crash"
 sys_auditlog_dir="/var/log/audit"
 
+# S3 deployment log
+s3deployment_log="/var/log/seagate/s3/s3deployment/s3deployment.log"
+
 # Create tmp folder with pid value to allow parallel execution
 pid_value=$$
 tmp_dir="$s3_bundle_location/s3_support_bundle_$pid_value"
@@ -269,6 +272,12 @@ then
 fi
 
 ## Add file/directory locations for bundling
+
+# Collect S3 deployment log
+if [ -f "$s3deployment_log" ];
+then
+    args=$args" "$s3deployment_log*
+fi
 
 # Collect s3 core files if available
 collect_core_files
