@@ -74,6 +74,7 @@ class CleanupCmd(SetupCmd):
     self.logger.info(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
+    self.validate_config_files(self.name)
 
     try:
       self.logger.info("checking if ldap service is running or not...\n")
