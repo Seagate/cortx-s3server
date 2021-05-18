@@ -1,4 +1,4 @@
-{"desc": "Default system test plan for Metada Integrity check for multipart with auto bucket name gen and auto key name gen",
+{"desc": "Default system test plan for Metadata Integrity check for multipart with auto bucket name gen and auto key name gen",
  "tests": [
      {"desc": "Enable FI always,di_metadata_bucket_or_object_corrupted",
       "op": "enable-fi", "fi": "di_metadata_bucket_or_object_corrupted"},

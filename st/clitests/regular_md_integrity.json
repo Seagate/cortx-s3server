@@ -1,4 +1,4 @@
-{"desc": "Default system test plan for Metada Integrity check",
+{"desc": "Default system test plan for Metadata Integrity check",
  "tests": [
      {"desc": "Disable FI di_metadata_bucket_or_object_corrupted",
       "op": "disable-fi", "fi": "di_metadata_bucket_or_object_corrupted"},
