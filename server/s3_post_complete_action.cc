@@ -610,6 +610,7 @@ void S3PostCompleteAction::save_metadata() {
     new_object_metadata->set_content_type(
         multipart_metadata->get_content_type());
     new_object_metadata->set_md5(etag);
+    new_object_metadata->set_pvid_str(multipart_metadata->get_pvid_str());
 
     new_object_metadata->save(
         std::bind(&S3PostCompleteAction::save_object_metadata_succesful, this),
@@ -902,8 +903,7 @@ void S3PostCompleteAction::mark_old_oid_for_deletion() {
 
 void S3PostCompleteAction::delete_old_object() {
   if (!motr_writer) {
-    motr_writer =
-        motr_writer_factory->create_motr_writer(request, old_object_oid);
+    motr_writer = motr_writer_factory->create_motr_writer(request);
   }
   // process to delete old object
   assert(old_object_oid.u_hi || old_object_oid.u_lo);
@@ -918,11 +918,12 @@ void S3PostCompleteAction::delete_old_object() {
     next();
     return;
   }
-  motr_writer->set_oid(old_object_oid);
   motr_writer->delete_object(
       std::bind(&S3PostCompleteAction::remove_old_object_version_metadata,
                 this),
-      std::bind(&S3PostCompleteAction::next, this), old_layout_id);
+      std::bind(&S3PostCompleteAction::next, this), old_object_oid,
+      old_layout_id, multipart_metadata->get_pvid());
+
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -989,14 +990,11 @@ void S3PostCompleteAction::delete_new_object() {
   assert(is_abort_multipart());
 
   if (!motr_writer) {
-    motr_writer =
-        motr_writer_factory->create_motr_writer(request, new_object_oid);
-  } else {
-    motr_writer->set_oid(new_object_oid);
+    motr_writer = motr_writer_factory->create_motr_writer(request);
   }
   motr_writer->delete_object(
       std::bind(&S3PostCompleteAction::remove_new_oid_probable_record, this),
-      std::bind(&S3PostCompleteAction::next, this), layout_id);
+      std::bind(&S3PostCompleteAction::next, this), new_object_oid, layout_id);
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
