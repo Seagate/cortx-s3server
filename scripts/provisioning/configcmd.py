@@ -93,9 +93,11 @@ class ConfigCmd(SetupCmd):
     handler = SimpleProcess(cmd)
     stdout, stderr, retcode = handler.run()
     self.logger.info(f'output of setup_ldap.sh: {stdout}')
-    self.logger.error(f'error of setup_ldap.sh: {stderr}')
     if retcode != 0:
+      self.logger.error(f'error of setup_ldap.sh: {stderr}')
       raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
+    else:
+      self.logger.warning(f'warning of setup_ldap.sh: {stderr}')
 
     if os.path.isfile("/opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf"):
       try:
@@ -151,11 +153,13 @@ class ConfigCmd(SetupCmd):
         handler = SimpleProcess(cmd)
         stdout, stderr, retcode = handler.run()
         self.logger.info(f'output of setupReplicationScript.sh: {stdout}')
-        self.logger.error(f'error of setupReplicationScript.sh: {stderr}')
         os.remove("hosts_list_file.txt")
 
         if retcode != 0:
+          self.logger.error(f'error of setupReplicationScript.sh: {stderr}')
           raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
+        else:
+          self.logger.warning(f'warning of setupReplicationScript.sh: {stderr}')
       index += 1
     # TODO: set replication across storage-sets
 
@@ -217,8 +221,9 @@ class ConfigCmd(SetupCmd):
     handler = SimpleProcess(cmd)
     stdout, stderr, retcode = handler.run()
     self.logger.info(f'output of create_auth_jks_password.sh: {stdout}')
-    self.logger.error(f'error of create_auth_jks_password.sh: {stderr}')
     if retcode != 0:
+      self.logger.error(f'error of create_auth_jks_password.sh: {stderr}')
       raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
     else:
+      self.logger.warning(f'warning of create_auth_jks_password.sh: {stderr}')
       self.logger.info(' Successfully set auth JKS keystore password.\n')

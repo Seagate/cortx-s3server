@@ -55,9 +55,10 @@ class TestCmd(SetupCmd):
       handler = SimpleProcess(cmd)
       stdout, stderr, retcode = handler.run()
       self.logger.info(f'output of s3-sanity-test.sh: {stdout}')
-      self.logger.error(f'error of s3-sanity-test.sh: {stderr}')
       if retcode != 0:
+        self.logger.error(f'error of s3-sanity-test.sh: {stderr}')
         raise Exception(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
-      self.logger.info(f"{cmd}:{stdout}:{stderr}:{retcode}\n")
+      else:
+        self.logger.warning(f'warning of s3-sanity-test.sh: {stderr}')
     except Exception as e:
       raise Exception(f"{self}: {cmd} exception: {e}")
