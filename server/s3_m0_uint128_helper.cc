@@ -18,8 +18,9 @@
  *
  */
 
-#include "s3_m0_uint128_helper.h"
 #include "base64.h"
+#include "s3_log.h"
+#include "s3_m0_uint128_helper.h"
 
 namespace S3M0Uint128Helper {
 
@@ -60,6 +61,26 @@ m0_uint128 to_m0_uint128(const std::string &id_str) {
     }
   }
   return id;
+}
+
+void to_string(const struct m0_fid &fid, std::string &s_res) {
+  s3_log(S3_LOG_DEBUG, "", "Entering with fid %" SCNx64 " : %" SCNx64 "\n",
+         fid.f_container, fid.f_key);
+  s_res = base64_encode(reinterpret_cast<unsigned char const *>(&fid),
+                        sizeof(struct m0_fid));
+}
+
+bool to_m0_fid(const std::string &encoded, struct m0_fid &dst) {
+  std::string s_decoded = base64_decode(encoded);
+  const bool f_correct = (s_decoded.size() == sizeof(struct m0_fid));
+
+  if (f_correct) {
+    memcpy(&dst, s_decoded.c_str(), sizeof(struct m0_fid));
+  } else {
+    s3_log(S3_LOG_DEBUG, "", "Incorrect encoded m0_fid");
+    memset(&dst, 0, sizeof(struct m0_fid));
+  }
+  return f_correct;
 }
 
 }  // namespace S3M0Uint128Helper

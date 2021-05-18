@@ -353,7 +353,8 @@ void S3PutMultiObjectAction::compute_part_offset() {
   }
   // Create writer to write from given offset as per the partnumber
   motr_writer = motr_writer_factory->create_motr_writer(
-      request, object_multipart_metadata->get_oid(), offset);
+      request, object_multipart_metadata->get_oid(),
+      object_multipart_metadata->get_pvid(), offset);
 
   _set_layout_id(object_multipart_metadata->get_layout_id());
   motr_writer->set_layout_id(layout_id);

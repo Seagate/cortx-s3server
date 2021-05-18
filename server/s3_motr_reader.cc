@@ -34,28 +34,17 @@ extern int shutdown_motr_teardown_called;
 
 S3MotrReader::S3MotrReader(std::shared_ptr<RequestObject> req,
                            struct m0_uint128 id, int layoutid,
+                           struct m0_fid pvid,
                            std::shared_ptr<MotrAPI> motr_api)
-    : request(req),
-      s3_motr_api(motr_api),
-      state(S3MotrReaderOpState::start),
-      motr_rw_op_context(NULL),
-      iteration_index(0),
-      num_of_blocks_to_read(0),
-      last_index(0),
-      is_object_opened(false),
-      obj_ctx(nullptr) {
+    : request(std::move(req)), oid(id), pvid(pvid), layout_id(layoutid) {
+
   request_id = request->get_request_id();
   stripped_request_id = request->get_stripped_request_id();
+
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
-  if (motr_api) {
-    s3_motr_api = motr_api;
-  } else {
-    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
-  }
-
-  oid = id;
-  layout_id = layoutid;
+  s3_motr_api =
+      motr_api ? std::move(motr_api) : std::make_shared<ConcreteMotrAPI>();
   motr_unit_size =
       S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
 }
@@ -165,6 +154,7 @@ int S3MotrReader::open_object(std::function<void(void)> on_success,
   s3_motr_api->motr_obj_init(&obj_ctx->objs[0], &motr_uber_realm, &oid,
                              layout_id);
   obj_ctx->n_initialized_contexts = 1;
+  memcpy(&obj_ctx->objs->ob_attr.oa_pver, &pvid, sizeof(struct m0_fid));
 
   rc = s3_motr_api->motr_entity_open(&(obj_ctx->objs[0].ob_entity),
                                      &(ctx->ops[0]));

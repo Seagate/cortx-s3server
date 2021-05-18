@@ -582,6 +582,7 @@ std::string S3ObjectMetadata::to_json() {
   }
 
   root["motr_oid"] = motr_oid_str;
+  root["PVID"] = this->pvid_str;
 
   for (auto sit : system_defined_attribute) {
     root["System-Defined"][sit.first] = sit.second;
@@ -672,7 +673,7 @@ int S3ObjectMetadata::from_json(std::string content) {
 
   motr_oid_str = newroot["motr_oid"].asString();
   layout_id = newroot["layout_id"].asInt();
-
+  pvid_str = newroot["PVID"].asString();
   oid = S3M0Uint128Helper::to_m0_uint128(motr_oid_str);
 
   //
@@ -778,3 +779,17 @@ bool S3ObjectMetadata::check_object_tags_exists() {
 
 int S3ObjectMetadata::object_tags_count() { return object_tags.size(); }
 
+struct m0_fid S3ObjectMetadata::get_pvid() const {
+  struct m0_fid pvid;
+  S3M0Uint128Helper::to_m0_fid(pvid_str, pvid);
+  return pvid;
+}
+
+void S3ObjectMetadata::set_pvid(const struct m0_fid* p_pvid) {
+  if (p_pvid) {
+    S3M0Uint128Helper::to_string(*p_pvid, pvid_str);
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id, "%s - NULL pointer", __func__);
+    pvid_str.clear();
+  }
+}

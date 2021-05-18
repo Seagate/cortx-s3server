@@ -158,17 +158,15 @@ void S3PutObjectActionBase::create_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (!tried_count) {
-    motr_writer =
-        motr_writer_factory->create_motr_writer(request, new_object_oid);
-  } else {
-    motr_writer->set_oid(new_object_oid);
+    motr_writer = motr_writer_factory->create_motr_writer(request);
   }
   _set_layout_id(S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
       total_data_to_stream));
 
   motr_writer->create_object(
       std::bind(&S3PutObjectActionBase::create_object_successful, this),
-      std::bind(&S3PutObjectActionBase::create_object_failed, this), layout_id);
+      std::bind(&S3PutObjectActionBase::create_object_failed, this),
+      new_object_oid, layout_id);
 
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
@@ -467,11 +465,12 @@ void S3PutObjectActionBase::delete_old_object() {
   // If PUT is success, we delete old object if present
   assert(old_object_oid.u_hi != 0ULL || old_object_oid.u_lo != 0ULL);
 
-  motr_writer->set_oid(old_object_oid);
   motr_writer->delete_object(
       std::bind(&S3PutObjectActionBase::remove_old_object_version_metadata,
                 this),
-      std::bind(&S3PutObjectActionBase::next, this), old_layout_id);
+      std::bind(&S3PutObjectActionBase::next, this), old_object_oid,
+      old_layout_id, object_metadata->get_pvid());
+
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -490,10 +489,10 @@ void S3PutObjectActionBase::delete_new_object() {
   assert(s3_put_action_state != S3PutObjectActionState::completed);
   assert(new_object_oid.u_hi != 0ULL || new_object_oid.u_lo != 0ULL);
 
-  motr_writer->set_oid(new_object_oid);
   motr_writer->delete_object(
       std::bind(&S3PutObjectActionBase::remove_new_oid_probable_record, this),
-      std::bind(&S3PutObjectActionBase::next, this), layout_id);
+      std::bind(&S3PutObjectActionBase::next, this), new_object_oid, layout_id);
+
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

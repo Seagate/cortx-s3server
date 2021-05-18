@@ -269,18 +269,17 @@ void S3PutObjectAction::_set_layout_id(int layout_id) {
 void S3PutObjectAction::create_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_timer.start();
+
   if (tried_count == 0) {
-    motr_writer =
-        motr_writer_factory->create_motr_writer(request, new_object_oid);
-  } else {
-    motr_writer->set_oid(new_object_oid);
+    motr_writer = motr_writer_factory->create_motr_writer(request);
   }
   _set_layout_id(S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
       request->get_content_length()));
 
   motr_writer->create_object(
       std::bind(&S3PutObjectAction::create_object_successful, this),
-      std::bind(&S3PutObjectAction::create_object_failed, this), layout_id);
+      std::bind(&S3PutObjectAction::create_object_failed, this), new_object_oid,
+      layout_id);
 
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
@@ -588,6 +587,7 @@ void S3PutObjectAction::save_metadata() {
   new_object_metadata->set_content_type(request->get_content_type());
   new_object_metadata->set_md5(motr_writer->get_content_md5());
   new_object_metadata->set_tags(new_object_tags_map);
+  new_object_metadata->set_pvid(motr_writer->get_ppvid());
 
   for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {
@@ -906,10 +906,11 @@ void S3PutObjectAction::delete_old_object() {
     next();
     return;
   }
-  motr_writer->set_oid(old_object_oid);
   motr_writer->delete_object(
       std::bind(&S3PutObjectAction::remove_old_object_version_metadata, this),
-      std::bind(&S3PutObjectAction::next, this), old_layout_id);
+      std::bind(&S3PutObjectAction::next, this), old_object_oid, old_layout_id,
+      object_metadata->get_pvid());
+
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -928,10 +929,9 @@ void S3PutObjectAction::delete_new_object() {
   assert(s3_put_action_state != S3PutObjectActionState::completed);
   assert(new_object_oid.u_hi != 0ULL || new_object_oid.u_lo != 0ULL);
 
-  motr_writer->set_oid(new_object_oid);
   motr_writer->delete_object(
       std::bind(&S3PutObjectAction::remove_new_oid_probable_record, this),
-      std::bind(&S3PutObjectAction::next, this), layout_id);
+      std::bind(&S3PutObjectAction::next, this), new_object_oid, layout_id);
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
