@@ -26,7 +26,7 @@ class PrepareCmd(SetupCmd):
   """Prepare Setup Cmd."""
   name = "prepare"
 
-  def __init__(self, config: str):
+  def __init__(self,   config: str):
     """Constructor."""
     try:
       super(PrepareCmd, self).__init__(config)
@@ -35,6 +35,6 @@ class PrepareCmd(SetupCmd):
 
   def process(self):
     """Main processing function."""
-    sys.stdout.write(f"Processing {self.name} {self.url}\n")
+    self.logger.info(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
