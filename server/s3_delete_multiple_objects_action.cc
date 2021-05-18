@@ -360,6 +360,7 @@ void S3DeleteMultipleObjectsAction::delete_objects_metadata_successful() {
     delete_objects_response.add_success(obj->get_object_name());
     oids_to_delete.push_back(obj->get_oid());
     layout_id_for_objs_to_delete.push_back(obj->get_layout_id());
+    pv_ids_to_delete.push_back(obj->get_pvid());
   }
 
   if (delete_index_in_req < delete_request.get_count()) {
@@ -451,7 +452,7 @@ void S3DeleteMultipleObjectsAction::cleanup() {
     } else {
       // Now trigger the delete.
       motr_writer->delete_objects(
-          oids_to_delete, layout_id_for_objs_to_delete,
+          oids_to_delete, layout_id_for_objs_to_delete, pv_ids_to_delete,
           std::bind(&S3DeleteMultipleObjectsAction::cleanup_successful, this),
           std::bind(&S3DeleteMultipleObjectsAction::cleanup_failed, this));
     }

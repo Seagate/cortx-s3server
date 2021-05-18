@@ -759,7 +759,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest, CleanupOnMetadataSavedDelayedDel) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
-              delete_objects(_, _, _, _)).Times(AtLeast(0));
+              delete_objects(_, _, _, _, _)).Times(AtLeast(0));
 
   action_under_test->cleanup();
 }
@@ -775,7 +775,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest, CleanupOnMetadataSavedTest1) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
-              delete_objects(_, _, _, _)).Times(AtLeast(1));
+              delete_objects(_, _, _, _, _)).Times(AtLeast(1));
 
   action_under_test->cleanup();
 }
@@ -786,8 +786,8 @@ TEST_F(S3DeleteMultipleObjectsActionTest, CleanupOnMetadataSavedTest2) {
       motr_kvs_writer_factory->mock_motr_kvs_writer;
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), delete_object(_, _, _))
-      .Times(0);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              delete_object(_, _, _, _, _)).Times(0);
 
   action_under_test->cleanup();
 }
@@ -865,7 +865,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest, DelayedDeleteMultipleObjects) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
-              delete_objects(_, _, _, _)).Times(0);
+              delete_objects(_, _, _, _, _)).Times(0);
 
   action_under_test->cleanup();
 }
