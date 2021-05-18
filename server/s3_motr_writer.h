@@ -98,7 +98,7 @@ class S3MotrWiter {
 
   std::string content_md5;
   uint64_t last_index = 0;
-  uint64_t first_offset;
+  uint64_t first_offset = 0;
   std::string request_id;
   std::string stripped_request_id;
   // md5 for the content written to motr.

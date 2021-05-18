@@ -74,8 +74,6 @@ S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req,
                          std::shared_ptr<MotrAPI> motr_api)
     : request(std::move(req)),
       state(S3MotrWiterOpState::start),
-      last_index(offset),
-      first_offset(offset),
       size_in_current_write(0),
       total_written(0),
       is_object_opened(false),
