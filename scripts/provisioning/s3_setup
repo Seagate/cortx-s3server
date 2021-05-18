@@ -113,7 +113,7 @@ def main():
     elif args.command == 'upgrade':
       from upgradecmd import UpgradeCmd
       UpgradeCmd(args.config).process()
-      sys.stdout.write('INFO: upgrade successful.\n')
+      logger.info('upgrade successful.\n')
 
   except Exception as e:
     logger.error(f"\n{str(e)}\n\n")

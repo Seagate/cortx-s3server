@@ -434,7 +434,7 @@ class SetupCmd(object):
     Both files should have same keys.
     if keys mismatch then there is some issue in the config file."""
 
-    sys.stdout.write(f'INFO: validating S3 config files for {phase_name}.\n')
+    self.logger.info(f'validating S3 config files for {phase_name}.\n')
     upgrade_items = {
     's3' : {
           'configFile' : "/opt/seagate/cortx/s3/conf/s3config.yaml",
@@ -467,7 +467,7 @@ class SetupCmd(object):
       configFile = upgrade_items[upgrade_item]['configFile']
       SampleFile = upgrade_items[upgrade_item]['SampleFile']
       filetype = upgrade_items[upgrade_item]['fileType']
-      sys.stdout.write(f'INFO: validating config file {str(configFile)}.\n')
+      self.logger.info(f'validating config file {str(configFile)}.\n')
 
       # new sample file
       conf_sample = filetype + SampleFile
@@ -481,9 +481,9 @@ class SetupCmd(object):
 
       # compare the keys of sample file and config file
       if conf_sample_keys == conf_file_keys:
-          sys.stdout.write(f'INFO: config file {str(configFile)} validated successfully.\n')
+          self.logger.info(f'config file {str(configFile)} validated successfully.\n')
       else:
-          sys.stderr.write(f'ERROR: config file {str(conf_file)} and sample file {str(conf_sample)} keys does not matched.\n')
-          sys.stderr.write(f'ERROR: sample file keys: {str(conf_sample_keys)}\n')
-          sys.stderr.write(f'ERROR: config file keys: {str(conf_file_keys)}\n')
+          self.logger.error(f'config file {str(conf_file)} and sample file {str(conf_sample)} keys does not matched.\n')
+          self.logger.error(f'sample file keys: {str(conf_sample_keys)}\n')
+          self.logger.error(f'config file keys: {str(conf_file_keys)}\n')
           raise Exception(f'ERROR: Failed to validate config file {str(configFile)}.\n')
