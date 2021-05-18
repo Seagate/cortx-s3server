@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,20 +22,20 @@ import sys
 
 from setupcmd import SetupCmd
 
-class PrepareCmd(SetupCmd):
-  """Prepare Setup Cmd."""
-  name = "prepare"
+class UpgradeCmd(SetupCmd):
+  """Upgrade Setup Cmd."""
+  name = "upgrade"
 
-  def __init__(self,   config: str):
+  def __init__(self, config: str):
     """Constructor."""
     try:
-      super(PrepareCmd, self).__init__(config)
+      super(UpgradeCmd, self).__init__(config)
     except Exception as e:
       raise e
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name} {self.url}\n")
+    sys.stdout.write(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
     self.validate_config_files(self.name)
