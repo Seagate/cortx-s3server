@@ -143,6 +143,9 @@ else
   unsupported_os
 fi
 
+# validate and configure lnet
+sh ${S3_SRC_DIR}/scripts/env/common/configure_lnet.sh
+
 if [[ $# -eq 0 ]] ; then
   source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
   #install pre-requisites on dev vm
@@ -153,7 +156,6 @@ else
           a)
               is_open_source=true
               yum install createrepo -y
-              easy_install pip
               read -p "Git Access Token:" git_access_token
               source ${S3_SRC_DIR}/scripts/env/common/create-cortx-repo.sh -G $git_access_token
               # install configobj
