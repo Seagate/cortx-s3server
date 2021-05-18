@@ -410,7 +410,7 @@ TEST_F(S3DeleteBucketActionTest,
        DeleteMultipartObjectsMultipartObjectsPresent) {
   action_under_test->multipart_object_oids.push_back(oid);
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
-              delete_objects(_, _, _, _)).Times(1);
+              delete_objects(_, _, _, _, _)).Times(1);
   action_under_test->delete_multipart_objects();
 }
 

@@ -34,11 +34,11 @@ using ::testing::Return;
 class MockS3MotrReader : public S3MotrReader {
  public:
   MockS3MotrReader(std::shared_ptr<RequestObject> req, struct m0_uint128 oid,
-                   int layout_id, std::shared_ptr<MotrAPI> motr_api = nullptr)
-      : S3MotrReader(req, oid, layout_id, motr_api) {}
+                   int layout_id, std::shared_ptr<MotrAPI> motr_api = {})
+      : S3MotrReader(req, oid, layout_id, {}, motr_api) {}
+
   MOCK_METHOD0(get_state, S3MotrReaderOpState());
   MOCK_METHOD0(get_oid, struct m0_uint128());
-  MOCK_METHOD0(get_value, std::string());
   MOCK_METHOD1(set_oid, void(struct m0_uint128 oid));
   MOCK_METHOD3(read_object_data,
                bool(size_t num_of_blocks, std::function<void(void)> on_success,
