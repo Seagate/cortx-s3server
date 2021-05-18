@@ -60,6 +60,8 @@ class S3ObjectDataCopier {
   bool copy_failed;
   bool read_in_progress;
   bool write_in_progress;
+  // Size of each ev buffer (e.g, 16384)
+  size_t size_of_ev_buffer;
 
   void cleanup_blocks_written();
   void read_data_block();
