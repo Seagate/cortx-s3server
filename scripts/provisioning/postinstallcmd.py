@@ -35,7 +35,7 @@ class PostInstallCmd(SetupCmd):
 
   def process(self):
     """Main processing function."""
-    sys.stdout.write("Running validations..\n")
+    self.logger.info("Running validations..\n")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
-    sys.stdout.write("Validations passed..\n")
+    self.logger.info("Validations passed..\n")

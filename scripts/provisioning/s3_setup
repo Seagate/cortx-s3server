@@ -22,9 +22,18 @@ import sys
 import argparse
 import traceback
 import errno
+import logging
+import os
+from logging import handlers
 
+#Logger details
+s3deployment_logger_name = "s3-deployment-logger"
+s3deployment_log_file = "/var/log/seagate/s3/s3deployment/s3deployment.log"
+s3deployment_log_directory = "/var/log/seagate/s3/s3deployment/"
+s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 def main():
+
   parser = argparse.ArgumentParser("S3server setup command")
   subparsers = parser.add_subparsers(dest = 'command')
 
@@ -53,60 +62,94 @@ def main():
   prepareCmd.add_argument("--config", help='config URL', type=str, required=True)
 
   args = parser.parse_args()
+
+  create_logger_directory()
+  logger = create_logger()
+
   try:
     if args.command == 'post_install':
       from postinstallcmd import PostInstallCmd
       PostInstallCmd(args.config).process()
-      sys.stdout.write('INFO: post_install successful.\n')
-
+      logger.info('post_install successful.\n')
     elif args.command == 'cleanup':
       from cleanupcmd import CleanupCmd
       CleanupCmd(args.config).process()
-      sys.stdout.write('INFO: cleanup successful.\n')
-      
+      #Cleanup will clean the log file hence writing to stdout.
+      sys.stdout.info('cleanup successful.\n') 
     elif args.command == 'config':
       from configcmd import ConfigCmd
-
       configure_only_haproxy = False
       configure_only_openldap = False
-
       if args.only_ldap == True:
         configure_only_openldap = True
       elif args.only_haproxy == True:
         configure_only_haproxy = True
       ConfigCmd(args.config).process(configure_only_openldap,
                                 configure_only_haproxy)
-      sys.stdout.write('INFO: config successful.\n')
-      
+      logger.info('config successful.\n')
     elif args.command == 'init':
       from initcmd import InitCmd
       InitCmd(args.config).process()
-      sys.stdout.write('INFO: init successful.\n')
-      
+      logger.info('init successful.\n') 
     elif args.command == 'test':
       from testcmd import TestCmd
       test_plan = None
       if args.plan:
         test_plan = args.plan
       TestCmd(args.config, test_plan).process()
-      sys.stdout.write('PASS: S3-Sanity test passed.\n')
-      
+      logger.info('PASS: S3-Sanity test passed.\n')
     elif args.command == 'reset':
       from resetcmd import ResetCmd
       ResetCmd(args.config).process()
-      sys.stdout.write('INFO: reset successful.\n')
-
+      logger.info('reset successful.\n')
     elif args.command == 'prepare':
       from preparecmd import PrepareCmd
       PrepareCmd(args.config).process()
-      sys.stdout.write('INFO: prepare successful.\n')
+      logger.info('prepare successful.\n')
 
   except Exception as e:
-    sys.stderr.write(f"\n{str(e)}\n\n")
-    sys.stderr.write(f"{traceback.format_exc()}\n")
+    logger.error(f"\n{str(e)}\n\n")
+    logger.error(f"{traceback.format_exc()}\n")
     return errno.EINVAL
 
   return 0
+
+def create_logger():
+    """Create logger, file handler, console handler and formatter."""
+    # create logger with "object_recovery_scheduler"
+    logger = logging.getLogger(s3deployment_logger_name)
+    logger.setLevel(logging.DEBUG)
+    fhandler = logging.handlers.RotatingFileHandler(s3deployment_log_file, mode='a',
+                                                    maxBytes = 5242880,
+                                                    backupCount = 5, encoding=None,
+                                                    delay=False )
+    fhandler.setLevel(logging.DEBUG)
+
+    # create console handler with a higher log level
+    chandler = logging.StreamHandler(sys.stdout)
+    chandler.setLevel(logging.DEBUG)
+
+    formatter = logging.Formatter(s3deployment_log_format)
+
+    # create formatter and add it to the handlers
+    fhandler.setFormatter(formatter)
+    chandler.setFormatter(formatter)
+
+    # add the handlers to the logger
+    logger.addHandler(fhandler)
+    logger.addHandler(chandler)
+
+    return logger
+
+def create_logger_directory():
+    """Create log directory if not exsists."""
+    _logger_directory = os.path.join(s3deployment_log_directory)
+    if not os.path.isdir(_logger_directory):
+        try:
+            os.mkdir(_logger_directory)
+        except BaseException:
+            raise Exception(f"{_logger_directory} Could not be created")
+
 
 if __name__ == '__main__':
   sys.exit(main())
