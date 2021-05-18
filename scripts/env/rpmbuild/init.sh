@@ -88,6 +88,9 @@ usage() {
        -h    show this help message and exit" 1>&2;
   exit 1; }
 
+# validate and configure lnet
+sh ${S3_SRC_DIR}/scripts/env/common/configure_lnet.sh
+
 if [[ $# -eq 0 ]] ; then
   source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
   #install pre-requisites on dev vm
@@ -97,7 +100,6 @@ else
       case "${x}" in
           a)
               yum install createrepo -y
-              easy_install pip
               read -p "Git Access Token:" git_access_token
               source ${S3_SRC_DIR}/scripts/env/common/create-cortx-repo.sh -G $git_access_token
               # install configobj
