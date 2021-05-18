@@ -196,7 +196,7 @@ class IAMController {
               new AuthenticationResponseGenerator();
           serverResponse = responseGenerator.invalidAccessKey();
           return serverResponse;
-      } else {
+        } else {
         perf.startClock();
         serverResponse =
             new SignatureValidator().validate(clientRequestToken, requestor);
