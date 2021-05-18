@@ -950,7 +950,6 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, SaveMetadata) {
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_oid())
       .Times(AtLeast(1))
       .WillOnce(Return(oid));
-      .Times(AtLeast(1));
 
   std::map<std::string, std::string> input_headers;
   input_headers["x-amz-meta-item-1"] = "1024";

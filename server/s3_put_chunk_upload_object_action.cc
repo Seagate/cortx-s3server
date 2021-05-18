@@ -995,7 +995,7 @@ void S3PutChunkUploadObjectAction::delete_old_object() {
             &S3PutChunkUploadObjectAction::remove_old_object_version_metadata,
             this),
         std::bind(&S3PutChunkUploadObjectAction::next, this), old_object_oid,
-        old_layout_id);
+        old_layout_id, object_metadata->get_pvid());
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

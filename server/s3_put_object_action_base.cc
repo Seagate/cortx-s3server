@@ -469,7 +469,7 @@ void S3PutObjectActionBase::delete_old_object() {
       std::bind(&S3PutObjectActionBase::remove_old_object_version_metadata,
                 this),
       std::bind(&S3PutObjectActionBase::next, this), old_object_oid,
-      old_layout_id);
+      old_layout_id, object_metadata->get_pvid());
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

@@ -922,7 +922,7 @@ void S3PostCompleteAction::delete_old_object() {
       std::bind(&S3PostCompleteAction::remove_old_object_version_metadata,
                 this),
       std::bind(&S3PostCompleteAction::next, this), old_object_oid,
-      old_layout_id);
+      old_layout_id, multipart_metadata->get_pvid());
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

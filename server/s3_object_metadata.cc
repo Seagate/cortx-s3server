@@ -790,5 +790,6 @@ void S3ObjectMetadata::set_pvid(const struct m0_fid* p_pvid) {
     S3M0Uint128Helper::to_string(*p_pvid, pvid_str);
   } else {
     s3_log(S3_LOG_DEBUG, request_id, "%s - NULL pointer", __func__);
+    pvid_str.clear();
   }
 }

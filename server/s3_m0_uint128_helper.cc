@@ -64,6 +64,8 @@ m0_uint128 to_m0_uint128(const std::string &id_str) {
 }
 
 void to_string(const struct m0_fid &fid, std::string &s_res) {
+  s3_log(S3_LOG_DEBUG, "", "Entering with fid %" SCNx64 " : %" SCNx64 "\n",
+         fid.f_container, fid.f_key);
   s_res = base64_encode(reinterpret_cast<unsigned char const *>(&fid),
                         sizeof(struct m0_fid));
 }
