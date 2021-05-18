@@ -34,6 +34,13 @@
 | Abort Multipart Upload |
 | List Part |
 
+:page_with_curl: **Note:** CORTX has following limitations in Multipart upload APIs:
+1. Each part other than last part of multipart upload, has to be of same size.
+2. Part 1 needs to be uploaded first. If other parts are received first at CORTX-S3server,
+then the request will be rejected with error code: '503', with retry interval as 1 second.
+3. Each part other than the last part, should have size in multiples of 1MB.
+4. Parallel simultaneous multipart upload of same object is not allowed.
+
 **Table 3: Advance Complex Operations** 
 
 | Bucket Operations | 
