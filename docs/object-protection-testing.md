@@ -19,6 +19,8 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
 
 # Integrity testing
 
+***Work-in-Progress***
+
 - Enable Fault Injection
 - Run test workload
 
