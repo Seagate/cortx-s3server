@@ -69,7 +69,7 @@ class CleanupCmd(SetupCmd):
       self.logger.error(f'Failed to read ldap credentials, error: {e}\n')
       raise e
 
-  def process(self):
+  def process(self, delete_deployment_log = False):
     """Main processing function."""
     self.logger.info(f"Processing {self.name} {self.url}\n")
     self.phase_prereqs_validate(self.name)
@@ -131,6 +131,16 @@ class CleanupCmd(SetupCmd):
       if os.path.isfile(slapd_log):
         os.remove(slapd_log)
         self.logger.info(f"{slapd_log} removed\n")
+
+      #delete deployment log
+      if delete_deployment_log == True:
+        self.logger.info("Deleting S3 Deployment log file")
+        filepath = "/var/log/seagate/s3/s3deployment/s3deployment.log"
+        if os.path.exists(filepath):
+          os.remove(filepath)
+          self.logger.info("S3 Deployment log file deleted successfully")
+      else:
+        self.logger.info("Skippped Delete of S3 Deployment log file")
 
     except Exception as e:
       raise e
