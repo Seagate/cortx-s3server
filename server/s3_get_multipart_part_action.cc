@@ -198,7 +198,7 @@ void S3GetMultipartPartAction::get_key_object_successful() {
         part_metadata_factory->create_part_metadata_obj(
             request, part_index_oid, upload_id, atoi(key_name.c_str()));
 
-    if (part->from_json(value) != 0) {
+    if (part->from_json(value) != 0 || !part->validate_on_request()) {
       s3_log(S3_LOG_ERROR, request_id,
              "Json Parsing failed. Index oid = "
              "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
@@ -280,7 +280,8 @@ void S3GetMultipartPartAction::get_next_objects_successful() {
     auto part = part_metadata_factory->create_part_metadata_obj(
         request, part_index_oid, upload_id, atoi(kv.first.c_str()));
 
-    if (part->from_json(kv.second.second) != 0) {
+    if (part->from_json(kv.second.second) != 0 ||
+        !part->validate_on_request()) {
       atleast_one_json_error = true;
       s3_log(S3_LOG_ERROR, request_id,
              "Json Parsing failed. Index oid = "

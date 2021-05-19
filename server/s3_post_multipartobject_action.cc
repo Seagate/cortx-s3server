@@ -127,7 +127,25 @@ void S3PostMultipartObjectAction::setup_steps() {
                   this);
   // ...
 }
-void S3PostMultipartObjectAction::fetch_object_info_failed() { next(); }
+
+void S3PostMultipartObjectAction::fetch_object_info_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  auto omds = object_metadata->get_state();
+  if (omds == S3ObjectMetadataState::missing) {
+    s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
+    next();
+  } else {
+    s3_log(S3_LOG_ERROR, request_id, "Metadata load state %d\n", (int)omds);
+    if (omds == S3ObjectMetadataState::failed_to_launch) {
+      set_s3_error("ServiceUnavailable");
+    } else {
+      set_s3_error("InternalError");
+    }
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
 void S3PostMultipartObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
@@ -146,6 +164,7 @@ void S3PostMultipartObjectAction::fetch_bucket_info_failed() {
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
+
 void S3PostMultipartObjectAction::fetch_object_info_success() { next(); }
 
 void S3PostMultipartObjectAction::validate_x_amz_tagging_if_present() {
@@ -243,14 +262,22 @@ void S3PostMultipartObjectAction::check_multipart_object_info_status() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (object_multipart_metadata->get_state() !=
       S3ObjectMetadataState::present) {
-    if (object_multipart_metadata->get_state() ==
-        S3ObjectMetadataState::failed_to_launch) {
+    auto omds = object_multipart_metadata->get_state();
+    if (omds == S3ObjectMetadataState::failed_to_launch) {
       s3_log(
           S3_LOG_ERROR, request_id,
           "Object metadata load operation failed due to pre launch failure\n");
       set_s3_error("ServiceUnavailable");
       send_response_to_s3_client();
       s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+      return;
+    } else if (omds == S3ObjectMetadataState::failed ||
+               omds == S3ObjectMetadataState::invalid) {
+      s3_log(S3_LOG_ERROR, request_id, "Object metadata failed state %d\n",
+             (int)omds);
+      set_s3_error("InternalError");
+      send_response_to_s3_client();
+      s3_log(S3_LOG_DEBUG, "", "Exiting\n");
       return;
     }
     // Multipart upload not in progress for this object_name

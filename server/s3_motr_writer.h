@@ -98,6 +98,7 @@ class S3MotrWiter {
 
   std::string content_md5;
   uint64_t last_index = 0;
+  uint64_t first_offset = 0;
   std::string request_id;
   std::string stripped_request_id;
   // md5 for the content written to motr.
@@ -122,6 +123,10 @@ class S3MotrWiter {
   // buffer currently used to write, will be freed on completion
   S3BufferSequence buffer_sequence;
   size_t size_of_each_buf;
+
+  // fill entire object with zeroes after checksum calculation, but before
+  // writing to Motr
+  bool corrupt_fill_zero = false;
 
   // Write - single object, delete - multiple objects supported
   void create_object_successful();
