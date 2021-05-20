@@ -77,7 +77,7 @@ do
   shift
 done
 
-INSTALLDIR="/root/cortx-s3server/scripts/ldap"
+INSTALLDIR="/opt/seagate/cortx/s3/install/ldap"
 # yum list installed selinux-policy && yum update -y selinux-policy
 # mv /etc/openldap/slapd.d/cn\=config/olcDatabase={2}hdb.ldif /root/
 # Clean up old configuration if any for idempotency
@@ -96,7 +96,6 @@ rm -rf /etc/openldap/slapd.d/cn\=config/olcDatabase\=\{2\}mdb.ldif
 if [[ $forceclean == true ]]
 then
   rm -rf /var/lib/ldap/*
-#   rm -rf /etc/openldap/*
   yum remove -y symas-openldap-clients symas-openldap-servers
 fi
 
@@ -104,7 +103,8 @@ wget -q https://repo.symas.com/configs/SOFL/rhel7/sofl.repo -O /etc/yum.repos.d/
 yum clean all
 yum install -y symas-openldap-clients symas-openldap-servers
 
-# mv /etc/openldap/slapd.d/cn\=config/olcDatabase={2}hdb.ldif /root/
+#removes the hdb if it exists, non-existence of file doesn't throw an error as well.
+rm -f /etc/openldap/slapd.d/cn\=config/olcDatabase={2}hdb.ldif
 cp -f $INSTALLDIR/olcDatabase\=\{2\}mdb.ldif /etc/openldap/slapd.d/cn\=config/
 
 chgrp ldap /etc/openldap/certs/password # onlyif: grep -q ldap /etc/group && test -f /etc/openldap/certs/password
@@ -200,10 +200,10 @@ ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/s3slapdind
 ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/resultssizelimit.ldif
 
 echo "Encrypting Authserver LDAP password.."
-# /root/cortx-s3server/scripts/enc_ldap_passwd_in_cfg.sh -l $LDAPADMINPASS -p /root/cortx-s3server/auth/resources/authserver.properties
+/root/cortx-s3server/scripts/enc_ldap_passwd_in_cfg.sh -l $LDAPADMINPASS -p /root/cortx-s3server/auth/resources/authserver.properties
 
 echo "Restart S3authserver.."
-# systemctl restart s3authserver
+systemctl restart s3authserver
 
 if [[ $usessl == true ]]
 then
