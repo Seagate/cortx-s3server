@@ -140,7 +140,7 @@ class CleanupCmd(SetupCmd):
           os.remove(filepath)
           self.logger.info("S3 Deployment log file deleted successfully")
       else:
-        self.logger.info("Skippped Delete of S3 Deployment log file")
+        self.logger.info("Skipped Delete of S3 Deployment log file")
 
     except Exception as e:
       raise e
