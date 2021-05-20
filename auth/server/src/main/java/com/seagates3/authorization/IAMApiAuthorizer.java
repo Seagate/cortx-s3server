@@ -86,7 +86,12 @@ class IAMApiAuthorizer {
  private
   static Boolean isSameUser(Map<String, String> requestBody,
                             Requestor requestor) {
-    return (requestBody.get("UserName").equals(requestor.getName()));
+    // handle a case where account delete is done by iam user access key.
+    if (requestBody.get("UserName") == null) {
+      return false;
+    } else {
+      return (requestBody.get("UserName").equals(requestor.getName()));
+    }
   }
 
   /**
