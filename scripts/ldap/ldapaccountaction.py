@@ -314,7 +314,7 @@ class LdapAccountAction:
   def __delete_access_key(self, ldap_conn: SimpleLDAPObject, userid: str):
     """Delete access key of given s3userid."""
     try:
-      access_key = LdapAccountAction.__get_accesskey(ldap_conn, userid)
+      access_key = self.__get_accesskey(ldap_conn, userid)
       ldap_conn.delete_s(f'ak={access_key},ou=accesskeys,dc=s3,dc=seagate,dc=com')
     except ldap.NO_SUCH_OBJECT:
       pass
