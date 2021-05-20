@@ -78,8 +78,7 @@ do
 done
 
 INSTALLDIR="/opt/seagate/cortx/s3/install/ldap"
-# yum list installed selinux-policy && yum update -y selinux-policy
-# mv /etc/openldap/slapd.d/cn\=config/olcDatabase={2}hdb.ldif /root/
+
 # Clean up old configuration if any for idempotency
 # Removing schemas
 rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
