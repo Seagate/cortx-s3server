@@ -63,6 +63,11 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
         
      Once you power on your VM, you can verify if selinux and firewall are disabled by using: `$ getenforce` - you'll get a 'disabled' status.
 
+
+
+10. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup).
+
+
 All done! You are now ready for cloning the CORTX-S3 Server repository.
 
 

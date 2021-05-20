@@ -26,6 +26,7 @@ import static org.mockito.Mockito.times;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.Assert;
@@ -404,9 +405,77 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                 response.getResponseStatus());
     }
 
-    @Test
-    public void ResetAccountAccessKey_AccountDoesNotExists_ReturnNoSuchEntity()
-            throws Exception {
+    @Test public void CreateAccount_ReturnMaxAccountLimitExceeded()
+        throws Exception {
+      PowerMockito.doReturn(0)
+          .when(AuthServerConfig.class, "getMaxAccountLimit");
+
+      Mockito.doReturn(new Account[1]).when(accountDAO).findAll();
+      final String expectedResponseBody =
+          "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+          "<ErrorResponse " +
+          "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+          "<Error><Code>MaxAccountLimitExceeded</Code>" +
+          "<Message>The request was rejected because " +
+          "maximum limit(i.e 0) of account creation has " +
+          "exceeded.</Message></Error>" + "<RequestId>0000</RequestId>" +
+          "</ErrorResponse>";
+
+      ServerResponse response = accountController.create();
+      Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+      Assert.assertEquals(HttpResponseStatus.FORBIDDEN,
+                          response.getResponseStatus());
+    }
+
+    @Test public void
+    CreateAccount_ConcurrencyIssues_ReturnInternalServerError()
+        throws Exception {
+      PowerMockito.when(AuthServerConfig.class, "getMaxAccountLimit")
+          .thenReturn(1);
+      List<String> internalacc = new ArrayList<>();
+      internalacc.add("abcd");
+      PowerMockito.when(AuthServerConfig.class, "getS3InternalAccounts")
+          .thenReturn(internalacc);
+      PowerMockito.when(accountDAO, "findAll")
+          .thenReturn(new Account[0])
+          .thenReturn(new Account[3]);
+      Account account = new Account();
+      account.setName("s3test");
+
+      PowerMockito.doReturn("AKIASIAS")
+          .when(KeyGenUtil.class, "createUserAccessKeyId", true);
+
+      PowerMockito.doReturn("htuspscae/123")
+          .when(KeyGenUtil.class, "generateSecretKey");
+      ServerResponse resp = new ServerResponse();
+      resp.setResponseStatus(HttpResponseStatus.OK);
+
+      Mockito.doReturn(account).when(accountDAO).find("s3test");
+      Mockito.doNothing().when(accountDAO).save(any(Account.class));
+      Mockito.doNothing().when(userDAO).save(any(User.class));
+      Mockito.doNothing().when(accessKeyDAO).save(any(AccessKey.class));
+      Mockito.doReturn(resp).when(s3).notifyNewAccount(
+          any(String.class), any(String.class), any(String.class));
+      Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
+          "can1234");
+
+      final String expectedResponseBody =
+          "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+          "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+          "<Error><Code>InternalFailure</Code>" +
+          "<Message>The request processing has failed because of an " +
+          "unknown error, exception or failure.</Message></Error>" +
+          "<RequestId>0000</RequestId>" + "</ErrorResponse>";
+
+      ServerResponse response = accountController.create();
+      Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+      Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
+                          response.getResponseStatus());
+    }
+
+    @Test public void
+    ResetAccountAccessKey_AccountDoesNotExists_ReturnNoSuchEntity()
+        throws Exception {
         Account account = mock(Account.class);
         Mockito.when(accountDAO.find("s3test")).thenReturn(account);
         Mockito.when(account.exists()).thenReturn(Boolean.FALSE);

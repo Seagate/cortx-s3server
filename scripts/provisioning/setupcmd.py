@@ -30,6 +30,7 @@ from cortx.utils.validator.v_service import ServiceV
 from cortx.utils.validator.v_path import PathV
 from cortx.utils.validator.v_network import NetworkV
 from cortx.utils.process import SimpleProcess
+import logging
 
 class S3PROVError(Exception):
   """Parent class for the s3 provisioner error classes."""
@@ -57,14 +58,18 @@ class SetupCmd(object):
   #                's3authserver': 's3auth'}
   ha_service_map = {}
 
-  def __init__(self, config: str):
+  def __init__(self,config: str):
     """Constructor."""
+
+    self.logger = logging.getLogger("s3-deployment-logger")
+    
     if config is None:
+      self.logger.error(f'Empty Config url\n')
       return
 
     if not config.strip():
-      sys.stderr.write(f'config url:[{config}] must be a valid url path\n')
-      raise Exception('empty config URL path')
+      self.logger.error(f'Config url:[{config}] must be a valid url path\n')
+      raise Exception('Empty config URL path')
 
     self.endpoint = None
     self._url = config
@@ -127,7 +132,7 @@ class SetupCmd(object):
         self.rootdn_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_rootdn_pass)
 
     except Exception as e:
-      sys.stderr.write(f'read ldap credentials failed, error: {e}\n')
+      self.logger.error(f'read ldap credentials failed, error: {e}\n')
       raise e
 
   def update_cluster_id(self, op_file: str = "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"):
@@ -152,7 +157,7 @@ class SetupCmd(object):
                         services: list = None,
                         files: list = None):
     """Validate pre requisites using cortx-py-utils validator."""
-    sys.stdout.write(f'Validations running from {self._preqs_conf_file}\n')
+    self.logger.info(f'Validations running from {self._preqs_conf_file}\n')
     if pip3s:
       PkgV().validate('pip3s', pip3s)
     if services:
@@ -350,7 +355,7 @@ class SetupCmd(object):
           break
       if list_match_found is False:
         raise Exception(f'No match found for {key_yard}')
-      sys.stdout.write("Validation complete\n")
+      self.logger.info("Validation complete\n")
 
     except Exception as e:
       raise Exception(f'ERROR : Validating keys failed, exception {e}\n')
@@ -365,7 +370,7 @@ class SetupCmd(object):
       except KeyError:
         cmd = ['/bin/systemctl', 'stop',  f'{service_name}']
       handler = SimpleProcess(cmd)
-      sys.stdout.write(f"shutting down {service_name}\n")
+      self.logger.info(f"shutting down {service_name}\n")
       res_op, res_err, res_rc = handler.run()
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
@@ -380,7 +385,7 @@ class SetupCmd(object):
       except KeyError:
         cmd = ['/bin/systemctl', 'start',  f'{service_name}']
       handler = SimpleProcess(cmd)
-      sys.stdout.write(f"starting {service_name}\n")
+      self.logger.info(f"starting {service_name}\n")
       res_op, res_err, res_rc = handler.run()
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
@@ -395,7 +400,7 @@ class SetupCmd(object):
       except KeyError:
         cmd = ['/bin/systemctl', 'restart',  f'{service_name}']
       handler = SimpleProcess(cmd)
-      sys.stdout.write(f"restarting {service_name}\n")
+      self.logger.info(f"restarting {service_name}\n")
       res_op, res_err, res_rc = handler.run()
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
@@ -410,7 +415,7 @@ class SetupCmd(object):
       except KeyError:
         cmd = ['/bin/systemctl', 'reload',  f'{service_name}']
       handler = SimpleProcess(cmd)
-      sys.stdout.write(f"reloading {service_name}\n")
+      self.logger.info(f"reloading {service_name}\n")
       res_op, res_err, res_rc = handler.run()
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
@@ -423,3 +428,62 @@ class SetupCmd(object):
         os.unlink(path)
       elif os.path.isdir(path):
         shutil.rmtree(path)
+
+  def validate_config_files(self, phase_name: str):
+    """Validate the sample file and config file keys.
+    Both files should have same keys.
+    if keys mismatch then there is some issue in the config file."""
+
+    self.logger.info(f'validating S3 config files for {phase_name}.\n')
+    upgrade_items = {
+    's3' : {
+          'configFile' : "/opt/seagate/cortx/s3/conf/s3config.yaml",
+          'SampleFile' : "/opt/seagate/cortx/s3/conf/s3config.yaml.sample",
+          'fileType' : 'yaml://'
+      },
+      'auth' : {
+          'configFile' : "/opt/seagate/cortx/auth/resources/authserver.properties",
+          'SampleFile' : "/opt/seagate/cortx/auth/resources/authserver.properties.sample",
+          'fileType' : 'properties://'
+      },
+      'keystore' : {
+          'configFile' : "/opt/seagate/cortx/auth/resources/keystore.properties",
+          'SampleFile' : "/opt/seagate/cortx/auth/resources/keystore.properties.sample",
+          'fileType' : 'properties://'
+      },
+      'bgdelete' : {
+          'configFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
+          'SampleFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample",
+          'fileType' : 'yaml://'
+      },
+      'cluster' : {
+          'configFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
+          'SampleFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample",
+          'fileType' : 'yaml://'
+      }
+    }
+
+    for upgrade_item in upgrade_items:
+      configFile = upgrade_items[upgrade_item]['configFile']
+      SampleFile = upgrade_items[upgrade_item]['SampleFile']
+      filetype = upgrade_items[upgrade_item]['fileType']
+      self.logger.info(f'validating config file {str(configFile)}.\n')
+
+      # new sample file
+      conf_sample = filetype + SampleFile
+      cs_conf_sample = S3CortxConfStore(config=conf_sample, index=conf_sample)
+      conf_sample_keys = cs_conf_sample.get_all_keys()
+
+      # active config file
+      conf_file =  filetype + configFile
+      cs_conf_file = S3CortxConfStore(config=conf_file, index=conf_file)
+      conf_file_keys = cs_conf_file.get_all_keys()
+
+      # compare the keys of sample file and config file
+      if conf_sample_keys == conf_file_keys:
+          self.logger.info(f'config file {str(configFile)} validated successfully.\n')
+      else:
+          self.logger.error(f'config file {str(conf_file)} and sample file {str(conf_sample)} keys does not matched.\n')
+          self.logger.error(f'sample file keys: {str(conf_sample_keys)}\n')
+          self.logger.error(f'config file keys: {str(conf_file_keys)}\n')
+          raise Exception(f'ERROR: Failed to validate config file {str(configFile)}.\n')

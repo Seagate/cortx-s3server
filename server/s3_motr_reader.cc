@@ -34,28 +34,17 @@ extern int shutdown_motr_teardown_called;
 
 S3MotrReader::S3MotrReader(std::shared_ptr<RequestObject> req,
                            struct m0_uint128 id, int layoutid,
+                           struct m0_fid pvid,
                            std::shared_ptr<MotrAPI> motr_api)
-    : request(req),
-      s3_motr_api(motr_api),
-      state(S3MotrReaderOpState::start),
-      motr_rw_op_context(NULL),
-      iteration_index(0),
-      num_of_blocks_to_read(0),
-      last_index(0),
-      is_object_opened(false),
-      obj_ctx(nullptr) {
+    : request(std::move(req)), oid(id), pvid(pvid), layout_id(layoutid) {
+
   request_id = request->get_request_id();
   stripped_request_id = request->get_stripped_request_id();
+
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
-  if (motr_api) {
-    s3_motr_api = motr_api;
-  } else {
-    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
-  }
-
-  oid = id;
-  layout_id = layoutid;
+  s3_motr_api =
+      motr_api ? std::move(motr_api) : std::make_shared<ConcreteMotrAPI>();
   motr_unit_size =
       S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
 }
@@ -83,7 +72,7 @@ bool S3MotrReader::read_object_data(size_t num_of_blocks,
                                     std::function<void(void)> on_failed) {
   s3_log(S3_LOG_INFO, stripped_request_id,
          "%s Entry with num_of_blocks = %zu from last_index = %zu\n", __func__,
-         num_of_blocks, last_index);
+         num_of_blocks, (size_t)last_index);
 
   bool rc = true;
   state = S3MotrReaderOpState::reading;
@@ -165,6 +154,7 @@ int S3MotrReader::open_object(std::function<void(void)> on_success,
   s3_motr_api->motr_obj_init(&obj_ctx->objs[0], &motr_uber_realm, &oid,
                              layout_id);
   obj_ctx->n_initialized_contexts = 1;
+  memcpy(&obj_ctx->objs->ob_attr.oa_pver, &pvid, sizeof(struct m0_fid));
 
   rc = s3_motr_api->motr_entity_open(&(obj_ctx->objs[0].ob_entity),
                                      &(ctx->ops[0]));
@@ -235,7 +225,7 @@ bool S3MotrReader::read_object() {
   int rc;
   s3_log(S3_LOG_INFO, stripped_request_id,
          "%s Entry with num_of_blocks_to_read = %zu from last_index = %zu\n",
-         __func__, num_of_blocks_to_read, last_index);
+         __func__, num_of_blocks_to_read, (size_t)last_index);
 
   assert(is_object_opened);
 
@@ -306,6 +296,30 @@ void S3MotrReader::read_object_successful() {
          "Motr API Successful: readobj(oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid.u_hi, oid.u_lo);
+  // see also similar code in S3MotrWiter::write_content()
+  if (s3_di_fi_is_enabled("di_data_corrupted_on_read")) {
+    struct s3_motr_rw_op_context *rw_ctx = reader_context->get_motr_rw_op_ctx();
+    struct m0_bufvec *bv = rw_ctx->data;
+    if (rw_ctx->ext->iv_index[0] == 0) {
+      char first_byte = *(char *)bv->ov_buf[0];
+      s3_log(S3_LOG_DEBUG, "", "%s first_byte=%d", __func__, first_byte);
+      switch (first_byte) {
+        case 'Z':  // zero
+          corrupt_fill_zero = true;
+          break;
+        case 'F':  // first
+          // corrupt the first byte
+          *(char *)bv->ov_buf[0] = 0;
+          break;
+        case 'K':  // OK
+          break;
+      }
+    }
+    if (corrupt_fill_zero) {
+      for (uint32_t i = 0; i < bv->ov_vec.v_nr; ++i)
+        memset(bv->ov_buf[i], 0, bv->ov_vec.v_count[i]);
+    }
+  }
   state = S3MotrReaderOpState::success;
   this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -347,6 +361,7 @@ size_t S3MotrReader::get_next_block(char **data) {
   *data = (char *)motr_rw_op_context->data->ov_buf[iteration_index];
   data_read = motr_rw_op_context->data->ov_vec.v_count[iteration_index];
   iteration_index++;
+
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return data_read;
 }

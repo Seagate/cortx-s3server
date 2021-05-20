@@ -559,7 +559,7 @@ TEST_F(S3CopyObjectActionTest, CreateObjectFirstAttempt) {
   action_under_test->total_data_to_stream = 1024;
 
   EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
-              create_object(_, _, _)).Times(1);
+              create_object(_, _, _, _)).Times(1);
 
   action_under_test->create_object();
 
@@ -574,10 +574,8 @@ TEST_F(S3CopyObjectActionTest, CreateObjectSecondAttempt) {
 
   action_under_test->tried_count = 1;
 
-  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer, set_oid(_))
-      .Times(1);
   EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
-              create_object(_, _, _)).Times(1);
+              create_object(_, _, _, _)).Times(1);
 
   action_under_test->create_object();
 }
@@ -618,10 +616,8 @@ TEST_F(S3CopyObjectActionTest, CreateObjectFailedWithCollisionRetry) {
   EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer, get_state())
       .Times(1)
       .WillOnce(Return(S3MotrWiterOpState::exists));
-  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer, set_oid(_))
-      .Times(1);
   EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
-              create_object(_, _, _)).Times(1);
+              create_object(_, _, _, _)).Times(1);
 
   action_under_test->create_object_failed();
 }
@@ -629,7 +625,7 @@ TEST_F(S3CopyObjectActionTest, CreateObjectFailedWithCollisionRetry) {
 TEST_F(S3CopyObjectActionTest, CreateObjectFailedTest) {
   action_under_test->total_data_to_stream = 1024;
   EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
-              create_object(_, _, _)).Times(1);
+              create_object(_, _, _, _)).Times(1);
   action_under_test->create_object();
 
   EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer, get_state())
@@ -646,7 +642,7 @@ TEST_F(S3CopyObjectActionTest, CreateObjectFailedTest) {
 TEST_F(S3CopyObjectActionTest, CreateObjectFailedToLaunchTest) {
   action_under_test->total_data_to_stream = 1024;
   EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
-              create_object(_, _, _)).Times(1);
+              create_object(_, _, _, _)).Times(1);
   action_under_test->create_object();
 
   EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer, get_state())

@@ -51,43 +51,11 @@ inline const char* s3_log_get_req_id(const std::string& requestid) {
   return requestid.empty() ? S3_DEFAULT_REQID : requestid.c_str();
 }
 
-template <int VERBOSITY>
-struct s3_logger_get {};
-template <>
-struct s3_logger_get<S3_LOG_DEBUG> {
-  template <typename T>
-  static inline void log(T const& p) {
-    LOG(INFO) << (p);
-  }
-};
-template <>
-struct s3_logger_get<S3_LOG_INFO> {
-  template <typename T>
-  static inline void log(T const& p) {
-    LOG(INFO) << (p);
-  }
-};
-template <>
-struct s3_logger_get<S3_LOG_WARN> {
-  template <typename T>
-  static inline void log(T const& p) {
-    LOG(WARNING) << (p);
-  }
-};
-template <>
-struct s3_logger_get<S3_LOG_ERROR> {
-  template <typename T>
-  static inline void log(T const& p) {
-    LOG(ERROR) << (p);
-  }
-};
-template <>
-struct s3_logger_get<S3_LOG_FATAL> {
-  template <typename T>
-  static inline void log(T const& p) {
-    LOG(ERROR) << (p);
-  }
-};
+#define s3_log_msg_S3_LOG_DEBUG(p) (LOG(INFO) << (p))
+#define s3_log_msg_S3_LOG_INFO(p) (LOG(INFO) << (p))
+#define s3_log_msg_S3_LOG_WARN(p) (LOG(WARNING) << (p))
+#define s3_log_msg_S3_LOG_ERROR(p) (LOG(ERROR) << (p))
+#define s3_log_msg_S3_LOG_FATAL(p) (LOG(ERROR) << (p))
 
 char* __log_buff();
 size_t __log_buff_sz();
@@ -103,7 +71,7 @@ size_t __log_buff_sz();
     if (loglevel >= s3log_level) {                                          \
       snprintf(__log_buff(), __log_buff_sz(), "[%s] [ReqID: %s] " fmt "\n", \
                __func__, s3_log_get_req_id(requestid), ##__VA_ARGS__);      \
-      s3_logger_get<loglevel>::log(__log_buff());                           \
+      s3_log_msg_##loglevel(__log_buff());                                  \
     }                                                                       \
     if (loglevel >= S3_LOG_FATAL) {                                         \
       s3_fatal_handler(1);                                                  \

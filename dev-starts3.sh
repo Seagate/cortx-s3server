@@ -134,19 +134,6 @@ ulimit -c unlimited
 #Set max open file limit to 10240
 ulimit -n 10240
 
-# Run m0dixinit
-set +e
-./third_party/motr/dix/utils/m0dixinit -l $local_nid:12345:34:100 -H $local_nid:12345:34:1 \
-                 -p '<0x7000000000000001:0>' -I 'v|1:20' -d 'v|1:20' -a check 2> /dev/null \
-                 | grep -E 'Metadata exists: false' > /dev/null
-rc=$?
-set -e
-if [ $rc -eq 0 ]
-then
-./third_party/motr/dix/utils/m0dixinit -l $local_nid:12345:34:100 -H $local_nid:12345:34:1 \
-                 -p '<0x7000000000000001:0>' -I 'v|1:20' -d 'v|1:20' -a create
-fi
-
 s3_config_file="/opt/seagate/cortx/s3/conf/s3config.yaml"
 
 # Ensure default working dir is present
