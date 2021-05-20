@@ -97,11 +97,13 @@ class ResetCmd(SetupCmd):
     #Slapd -> /var/log/slapd.log
     #S3 Crash dumps -> /var/log/crash/core-s3server.*.gz
 
-    logFolders = ["/var/log/seagate/s3",
+    logDirs = ["/var/log/seagate/s3",
                   "/var/log/seagate/auth"]
+    # Skipping s3deployment.log file directory as we dont need to remove it as part of log cleanup
+    skipDirs = ["/var/log/seagate/s3/s3deployment"]
 
-    for logFolder in logFolders:
-      self.DeleteDirContents(logFolder)
+    for logDir in logDirs:
+      self.DeleteDirContents(logDir, skipDirs)
 
     logFiles = ["/var/log/haproxy.log",
                 "/var/log/haproxy-status.log",
@@ -115,7 +117,7 @@ class ResetCmd(SetupCmd):
     for path in logRegexPath:
       self.DeleteFileOrDirWithRegex(path, logRegexPath[path])
 
-  def DeleteDirContents(self, dirname: str):
+  def DeleteDirContents(self, dirname: str,  skipdirs: list):
     """Delete files and directories inside given directory."""
     if os.path.exists(dirname):
       for filename in os.listdir(dirname):
@@ -124,7 +126,10 @@ class ResetCmd(SetupCmd):
           if os.path.isfile(filepath):
             os.remove(filepath)
           elif os.path.isdir(filepath):
-            shutil.rmtree(filepath)
+            if filepath in skipdirs:
+              self.logger.info(f'Skipping the dir {filepath}')
+            else:
+              shutil.rmtree(filepath)
         except Exception as e:
           self.logger.error(f'ERROR: DeleteDirContents(): Failed to delete: {filepath}, error: {str(e)}\n')
           raise e
