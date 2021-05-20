@@ -50,6 +50,7 @@ def main():
 
   cleanupCmd = subparsers.add_parser('cleanup', help='setup cleanup')
   cleanupCmd.add_argument("--config", help='config URL', type=str, required=True)
+  cleanupCmd.add_argument("--delete_deployment_log", help='Delete deployment log', action='store_true')
 
   testCmd = subparsers.add_parser('test', help='setup test')
   testCmd.add_argument("--config", help='config URL', type=str, required=True)
@@ -76,9 +77,8 @@ def main():
       logger.info('post_install successful.\n')
     elif args.command == 'cleanup':
       from cleanupcmd import CleanupCmd
-      CleanupCmd(args.config).process()
-      #Cleanup will clean the log file hence writing to stdout.
-      sys.stdout.info('cleanup successful.\n') 
+      CleanupCmd(args.config).process(args.delete_deployment_log)
+      logger.info('cleanup successful.\n')
     elif args.command == 'config':
       from configcmd import ConfigCmd
       configure_only_haproxy = False
@@ -109,7 +109,6 @@ def main():
       from preparecmd import PrepareCmd
       PrepareCmd(args.config).process()
       logger.info('prepare successful.\n')
-
     elif args.command == 'upgrade':
       from upgradecmd import UpgradeCmd
       UpgradeCmd(args.config).process()
