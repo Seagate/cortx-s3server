@@ -199,7 +199,7 @@ ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/s3slapdind
 ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/resultssizelimit.ldif
 
 echo "Encrypting Authserver LDAP password.."
-/root/cortx-s3server/scripts/enc_ldap_passwd_in_cfg.sh -l $LDAPADMINPASS -p /root/cortx-s3server/auth/resources/authserver.properties
+/opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh -l $LDAPADMINPASS -p /opt/seagate/cortx/auth/resources/authserver.properties
 
 echo "Restart S3authserver.."
 systemctl restart s3authserver
