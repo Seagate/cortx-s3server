@@ -22,4 +22,4 @@ description: Seagate ldap admin for iam.
 objectclass: organizationalRole
 objectclass: simpleSecurityObject
 cn: sgiamadmin
-userPassword: {SSHA}jfcmNiJN1J9S2XLMdBz3kAUlmRl5botE
+userPassword: {{ ldapadminpasswdhash.stdout }}
