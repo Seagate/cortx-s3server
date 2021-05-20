@@ -185,11 +185,25 @@ void S3PutMultiObjectAction::fetch_bucket_info_success() {
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
+
 void S3PutMultiObjectAction::fetch_object_info_failed() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  next();
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+  s3_log(S3_LOG_INFO, stripped_request_id, "Entering\n");
+  auto omds = object_metadata->get_state();
+  if (omds == S3ObjectMetadataState::missing) {
+    s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
+    next();
+  } else {
+    s3_log(S3_LOG_ERROR, request_id, "Metadata load state %d\n", (int)omds);
+    if (omds == S3ObjectMetadataState::failed_to_launch) {
+      set_s3_error("ServiceUnavailable");
+    } else {
+      set_s3_error("InternalError");
+    }
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "Exiting\n");
 }
+
 void S3PutMultiObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_ERROR, request_id, "Bucket does not exists\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
@@ -685,4 +699,3 @@ void S3PutMultiObjectAction::set_authorization_meta() {
   next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
-

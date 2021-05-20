@@ -139,8 +139,20 @@ void S3PostCompleteAction::fetch_bucket_info_failed() {
 
 void S3PostCompleteAction::fetch_object_info_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  next();
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+  auto omds = object_metadata->get_state();
+  if (omds == S3ObjectMetadataState::missing) {
+    s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
+    next();
+  } else {
+    s3_log(S3_LOG_ERROR, request_id, "Metadata load state %d\n", (int)omds);
+    if (omds == S3ObjectMetadataState::failed_to_launch) {
+      set_s3_error("ServiceUnavailable");
+    } else {
+      set_s3_error("InternalError");
+    }
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "Exiting\n");
 }
 
 void S3PostCompleteAction::load_and_validate_request() {
@@ -602,6 +614,9 @@ void S3PostCompleteAction::save_metadata() {
     for (auto it : multipart_metadata->get_user_attributes()) {
       new_object_metadata->add_user_defined_attribute(it.first, it.second);
     }
+    // save part size for checksum calculation in GET for multipart upload case
+    new_object_metadata->set_part_one_size(
+        multipart_metadata->get_part_one_size());
 
     // to rest Date and Last-Modfied time object metadata
     new_object_metadata->reset_date_time_to_current();

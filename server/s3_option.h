@@ -139,6 +139,9 @@ class S3Option {
   unsigned bucket_metadata_cache_expire_sec;
   unsigned bucket_metadata_cache_refresh_sec;
 
+  bool s3_di_disable_data_corruption_iem;
+  bool s3_di_disable_metadata_corruption_iem;
+
   unsigned short motr_layout_id;
   unsigned short motr_units_per_request;
   std::vector<int> motr_unit_sizes_for_mem_pool;
@@ -322,6 +325,9 @@ class S3Option {
   bool load_section(std::string section_name, bool force_override_from_config);
   bool load_all_sections(bool force_override_from_config);
   bool reload_modifiable_options();
+
+  bool get_s3_di_disable_data_corruption_iem();
+  bool get_s3_di_disable_metadata_corruption_iem();
 
   std::string get_s3_nodename();
   std::string get_ipv4_bind_addr();

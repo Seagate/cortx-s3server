@@ -471,7 +471,7 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoReturnedNotFoundShouldUseURL2OID) {
 
   // Remember default generated OID
   struct m0_uint128 oid_before_regen = action_under_test->new_object_oid;
-  action_under_test->fetch_object_info_success();
+  action_under_test->fetch_object_info_failed();
 
   EXPECT_EQ(1, call_count_one);
   EXPECT_OID_EQ(zero_oid_idx, action_under_test->old_object_oid);

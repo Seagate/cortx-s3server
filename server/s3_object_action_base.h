@@ -87,4 +87,3 @@ class S3ObjectAction : public S3Action {
 };
 
 #endif
-

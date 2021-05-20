@@ -50,9 +50,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 
 7. You'll need to install CORTX Python Utilities. Follow the steps to install [CORTX Python Utilities](https://github.com/Seagate/cortx-utils/blob/main/py-utils/README.md).
 
-8. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup).
-
-9. You'll need to disable selinux and firewall. Run the following commands:
+8. You'll need to disable selinux and firewall. Run the following commands:
 
      `$ systemctl stop firewalld` 
 
@@ -72,6 +70,11 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
       - To use command line to shutdown your VM, use: `$ shutdown -r now` and Restart your VM.
         
      Once you power on your VM, you can verify if selinux and firewall are disabled by using: `$ getenforce` - you'll get a 'disabled' status.
+
+
+
+9. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup).
+
 
 All done! You are now ready for cloning the CORTX-S3 Server repository.
 
