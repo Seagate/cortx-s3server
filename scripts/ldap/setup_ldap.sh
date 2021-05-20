@@ -77,9 +77,9 @@ do
   shift
 done
 
-INSTALLDIR="/opt/seagate/cortx/s3/install/ldap"
-yum list installed selinux-policy && yum update -y selinux-policy
-
+INSTALLDIR="/root/cortx-s3server/scripts/ldap"
+# yum list installed selinux-policy && yum update -y selinux-policy
+# mv /etc/openldap/slapd.d/cn\=config/olcDatabase={2}hdb.ldif /root/
 # Clean up old configuration if any for idempotency
 # Removing schemas
 rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
@@ -96,8 +96,15 @@ rm -rf /etc/openldap/slapd.d/cn\=config/olcDatabase\=\{2\}mdb.ldif
 if [[ $forceclean == true ]]
 then
   rm -rf /var/lib/ldap/*
+#   rm -rf /etc/openldap/*
+  yum remove -y symas-openldap-clients symas-openldap-servers
 fi
 
+wget -q https://repo.symas.com/configs/SOFL/rhel7/sofl.repo -O /etc/yum.repos.d/sofl.repo
+yum clean all
+yum install -y symas-openldap-clients symas-openldap-servers
+
+# mv /etc/openldap/slapd.d/cn\=config/olcDatabase={2}hdb.ldif /root/
 cp -f $INSTALLDIR/olcDatabase\=\{2\}mdb.ldif /etc/openldap/slapd.d/cn\=config/
 
 chgrp ldap /etc/openldap/certs/password # onlyif: grep -q ldap /etc/group && test -f /etc/openldap/certs/password
@@ -167,7 +174,7 @@ ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"
 ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ROOTDNPASSWORD" -f "$ADMIN_USERS_FILE" -H ldapi:/// || /bin/true
 rm -f $ADMIN_USERS_FILE
 
-ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/iam-admin-access.ldif
+# ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/iam-admin-access.ldif
 
 # Enable IAM constraints
 ldapadd -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/iam-constraints.ldif
@@ -193,10 +200,10 @@ ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/s3slapdind
 ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/resultssizelimit.ldif
 
 echo "Encrypting Authserver LDAP password.."
-/opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh -l $LDAPADMINPASS -p /opt/seagate/cortx/auth/resources/authserver.properties
+# /root/cortx-s3server/scripts/enc_ldap_passwd_in_cfg.sh -l $LDAPADMINPASS -p /root/cortx-s3server/auth/resources/authserver.properties
 
 echo "Restart S3authserver.."
-systemctl restart s3authserver
+# systemctl restart s3authserver
 
 if [[ $usessl == true ]]
 then
