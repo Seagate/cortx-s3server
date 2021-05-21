@@ -53,8 +53,10 @@ class S3MotrWiterContext : public S3AsyncOpContextBase {
   struct s3_motr_op_context* get_motr_op_ctx();
 
   // Call this when you want to do write op.
-  void init_write_op_ctx(size_t motr_buf_count) {
-    motr_rw_op_context = create_basic_rw_op_ctx(motr_buf_count, 0);
+  void init_write_op_ctx(size_t motr_buf_count,
+                         size_t motr_checksums_buf_count) {
+    motr_rw_op_context =
+        create_basic_rw_op_ctx(motr_buf_count, motr_checksums_buf_count, 0);
   }
 
   struct s3_motr_rw_op_context* get_motr_rw_op_ctx() {
@@ -104,6 +106,7 @@ class S3MotrWiter {
 
   // maintain state for debugging.
   size_t size_in_current_write;
+  size_t motr_unit_size;
   size_t total_written;
 
   bool is_object_opened;
@@ -116,6 +119,7 @@ class S3MotrWiter {
   // followed by reusing same object for deleting obj layout id =1
   // This causes buffer to be returned to pool with wrong id.
   bool last_op_was_write;
+  bool is_s3_write_di_check_enabled;
   int unit_size_for_place_holder;
 
   // buffer currently used to write, will be freed on completion

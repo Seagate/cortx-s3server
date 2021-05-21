@@ -21,8 +21,24 @@
 #include "base64.h"
 
 #include "s3_md5_hash.h"
+#include "s3_option.h"
 
-MD5hash::MD5hash() { status = MD5_Init(&md5ctx); }
+MD5hash::MD5hash() {
+  if (!S3Option::get_instance()->is_s3_write_di_check_enabled()) {
+    status = MD5_Init(&md5ctx);
+  }
+}
+
+void MD5hash::save_motr_unit_checksum(unsigned char *current_digest) {
+  memcpy((void *)&md5ctx_unit_size, (void *)current_digest,
+         sizeof(md5ctx_unit_size));
+}
+
+void MD5hash::save_unaligned_running_checksum(unsigned char *current_digest) {
+  memcpy((void *)&md5ctx, (void *)current_digest, sizeof(md5ctx));
+}
+
+void *MD5hash::get_prev_unit_checksum() { return (void *)&md5ctx_unit_size; }
 
 int MD5hash::Update(const char *input, size_t length) {
   if (input == NULL) {

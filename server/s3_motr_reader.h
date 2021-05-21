@@ -100,7 +100,7 @@ class S3MotrReaderContext : public S3AsyncOpContextBase {
     size_t buf_count_in_evbuf =
         (total_read_sz + (evbuf_unit_buf_sz - 1)) / evbuf_unit_buf_sz;
     motr_rw_op_context =
-        create_basic_rw_op_ctx(buf_count_in_evbuf, evbuf_unit_buf_sz);
+        create_basic_rw_op_ctx(buf_count_in_evbuf, 0, evbuf_unit_buf_sz);
     if (motr_rw_op_context == NULL) {
       // out of memory
       return false;
