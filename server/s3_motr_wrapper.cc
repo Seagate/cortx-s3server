@@ -180,6 +180,16 @@ int ConcreteMotrAPI::motr_idx_op(struct m0_idx *idx, enum m0_idx_opcode opcode,
 
 void ConcreteMotrAPI::motr_idx_fini(struct m0_idx *idx) { m0_idx_fini(idx); }
 
+
+void retrive_data(m0_uint128   oid,struct m0_bufvec *attr)
+{
+}
+
+void store_data(m0_uint128     oid,struct m0_bufvec *attr)
+{
+}
+
+
 int ConcreteMotrAPI::motr_obj_op(struct m0_obj *obj, enum m0_obj_opcode opcode,
                                  struct m0_indexvec *ext,
                                  struct m0_bufvec *data, struct m0_bufvec *attr,
@@ -197,6 +207,17 @@ int ConcreteMotrAPI::motr_obj_op(struct m0_obj *obj, enum m0_obj_opcode opcode,
     (*op)->op_sm.sm_state = M0_OS_INITIALISED;
     return 0;
   }
+
+
+  /* Backup / Populate the attr */	
+
+  /** Read object data. */
+  if (opcode == M0_OC_READ)
+  retrive_data(obj->ob_entity.en_id, attr);	
+  /** Write object data. */
+  if (opcode == M0_OC_WRITE)
+  store_data(obj->ob_entity.en_id, attr);
+
   return m0_obj_op(obj, opcode, ext, data, attr, mask, flags, op);
 }
 
