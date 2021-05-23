@@ -15,11 +15,9 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 
 ### 1.0 Prerequisites
 
-
-1. You'll need to set up SSC, Cloud VM, or a local VM on VMWare Fusion or Oracle VirtualBox.
-2. As a CORTX contributor you will need to refer, clone, contribute, and commit changes via the GitHub server. You can access the latest code via [Github](https://github.com/Seagate/cortx).
-3. You'll need a valid GitHub Account.
-4. Before you clone your Git repository, you'll need to create the following:
+1. Verify if kernel version is 3.10.0-1062 (for centos-7.7) or 3.10.0-1127 (for centos-7.8), using: `$ uname -r`
+2. You'll need to set up SSC, Cloud VM, or a local VM on VMWare Fusion or Oracle VirtualBox.
+3. Before you clone your Git repository, you'll need to create the following:
     1. Follow the link to generate the [SSH Public Key](https://git-scm.com/book/en/v2/Git-on-the-Server-Generating-Your-SSH-Public-Key).
     2. Add the newly created SSH Public Key to [Github](https://github.com/settings/keys).
     3. When you clone your Github repository, you'll be prompted to enter your GitHub Username and Password. Refer to the article to [Generate Personal Access Token or PAT](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
@@ -27,12 +25,12 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 
        :page_with_curl: **Note:** From this point onwards, you'll need to execute all steps logged in as a **Root User**.
 
-5. We've assumed that `git` is preinstalled. If not then follow these steps to install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
+4. We've assumed that `git` is preinstalled. If not then follow these steps to install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
    * To check your Git Version, use the command: `$ git --version`
 
      :page_with_curl:**Note:** We recommended that you install Git Version 2.x.x.
 
-6. Ensure that you've installed the following packages on your VM instance:
+5. Ensure that you've installed the following packages on your VM instance:
 
     * Python Version 3.0
       * To check whether Python is installed on your VM, use one of the following commands: `$ python3 --version` 
@@ -46,34 +44,28 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
             * If epel was installed, you'll see it in the output list.
             * You might also see exclamation mark in front of the repositories id. Refer to the [Redhat Knowledge Base](https://access.redhat.com/solutions/2267871).
         * `$ yum install -y epel-release`
-    * Verify if kernel version is 3.10.0-1062 (for centos-7.7) or 3.10.0-1127 (for centos-7.8), using: `$ uname -r`
 
-7. You'll need to install CORTX Python Utilities. Follow the steps to install [CORTX Python Utilities](https://github.com/Seagate/cortx-utils/blob/main/py-utils/README.md).
+6. You'll need to install CORTX Python Utilities. Follow the steps to install [CORTX Python Utilities](https://github.com/Seagate/cortx-utils/blob/main/py-utils/README.md).
 
-8. You'll need to disable selinux and firewall. Run the following commands:
+7. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup).
+
+8. You will need to set your hostname to something other than localhost `hostnamectl set-hostname --static --transient --pretty <new-name>`
+
+9. You'll need to disable selinux and firewall. Run the following commands:
 
      `$ systemctl stop firewalld` 
 
      `$ systemctl disable firewalld` 
 
-     `$ sestatus` - you'll get a `SELinux status: disabled` status.
+     `$ sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config`
 
-     `$ setenforce 0` - you'll get a `setenforce: SELinux is disabled` status.
-
-     `$ sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config` - you'll get a `SELINUX=disabled` status.
-
-     Run `$ shutdown -r now` - to reboot your system.
-     
-     :page_with_curl: **Notes:**
-     
-      - If you're using cloud VM, go to your cloud VM website and select the VM. You'll have to stop the VM and then start it again to complete the reboot process
-      - To use command line to shutdown your VM, use: `$ shutdown -r now` and Restart your VM.
+     Run `$ reboot` - to reboot your system.
         
      Once you power on your VM, you can verify if selinux and firewall are disabled by using: `$ getenforce` - you'll get a 'disabled' status.
 
 
 
-9. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup).
+10. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup).
 
 
 All done! You are now ready for cloning the CORTX-S3 Server repository.
@@ -166,7 +158,7 @@ Before your test your build, ensure that you have installed and configured the f
 2. Ensure you've installed pip.
     - To check if you have pip installed, run the command: `$ pip --version`
     - To install pip, run the command: `$ easy_install pip`
-3. If you don't have Python Version 2.6.5+, install Python using: `$ yum install python26`
+3. If you don't have Python Version 2.6.5+, install Python using: `$ yum install python`
     - If you don't have Python Version 3.3, then install python3 using: `$ yum install python3`
 4. Ensure that CORTX-S3 Server and its dependent services are running.
     1. To start CORTX-S3 Server and its dependent services, run the command: `$ ./jenkins-build.sh --skip_build --skip_tests`
