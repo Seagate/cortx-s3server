@@ -20,6 +20,7 @@
 import os
 import sys
 import yaml
+import time
 from ldap_setup import LdapInfo
 from framework import Config
 from framework import S3PyCliTest
@@ -30,6 +31,7 @@ from s3fi import S3fiTest
 from awss3api import AwsTest
 from shutil import copyfile
 import shutil
+from configobj import ConfigObj
 
 home_dir = os.path.expanduser("~")
 original_config_file = os.path.join(home_dir,  '.sgs3iamcli/config.yaml')
@@ -2043,6 +2045,82 @@ def auth_health_check_tests():
     result = AuthTest('Auth server health check').get_auth_health(health_check_uri).\
     execute_test().command_is_successful().command_response_should_have("200 OK")
 
+# Validate maxAccount and maxUser limit values from authserver.properties file
+def test_max_account_and_user_limit_value_of_auth_config():
+    print("Updating autherver.properties (/opt/seagate/cortx/auth/resources/authserver.properties) file with test values..")
+    config = ConfigObj("/opt/seagate/cortx/auth/resources/authserver.properties")
+    old_maxAccountValue=config.get('maxAccountLimit')
+    old_maxIAMUserValue=config.get('maxIAMUserLimit')
+    config['maxAccountLimit'] = "1"
+    config['maxIAMUserLimit'] = "1"
+    config.write()
+    print("setting maxAccountLimit as :", config['maxAccountLimit'])
+    print("setting maxIAMUserLimit as :", config['maxIAMUserLimit'])
+    os.system('systemctl restart s3authserver')
+    time.sleep(1) # sometime authserver takes more time to restart
+    print("auth config values are changed successfully..")
+
+    # Try to create two account and it should with MaxAccountLimitExceeded error.
+    test_msg = "Create account authconfigValidatorAccount1 should successfull."
+    account_args = {'AccountName': 'authconfigValidatorAccount1', 'Email': 'authconfigValidatorAccount1@seagate.com', \
+                   'ldapuser': S3ClientConfig.ldapuser, \
+                   'ldappasswd': S3ClientConfig.ldappasswd}
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    result = AuthTest(test_msg).create_account(**account_args).execute_test()
+    result.command_should_match_pattern(account_response_pattern)
+    account_response_elements = get_response_elements(result.status.stdout)
+    access_key_args = {}
+    access_key_args['AccountName'] = "authconfigValidatorAccount1"
+    access_key_args['AccessKeyId'] = account_response_elements['AccessKeyId']
+    access_key_args['SecretAccessKey'] = account_response_elements['SecretKey']
+
+    test_msg = "Create account authconfigValidatorAccount2 should fail with MaxAccountLimitExceeded with limit as 1."
+    account_args = {'AccountName': 'authconfigValidatorAccount2', 'Email': 'authconfigValidatorAccount2@seagate.com', \
+                   'ldapuser': S3ClientConfig.ldapuser, \
+                   'ldappasswd': S3ClientConfig.ldappasswd}
+    result = AuthTest(test_msg).create_account(**account_args).execute_test(negative_case=True)
+    result.command_response_should_have("MaxAccountLimitExceeded")
+
+    # Test IAM User limit
+    S3ClientConfig.access_key_id = access_key_args['AccessKeyId']
+    S3ClientConfig.secret_key = access_key_args['SecretAccessKey']
+
+    test_msg = "Create User s3user1 in authconfigValidatorAccount1 should successful."
+    user_args = {'UserName': 's3user1'}
+    user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+    AuthTest(test_msg).create_user(**user_args).execute_test()\
+            .command_should_match_pattern(user1_response_pattern)
+
+    test_msg = "Create User s3user2 in authconfigValidatorAccount1 should fail with MaxUserLimitExceeded with limit as 1."
+    user_args = {'UserName': 's3user2'}
+    AuthTest(test_msg).create_user(**user_args).execute_test(negative_case=True)\
+            .command_response_should_have("MaxUserLimitExceeded")
+
+    # cleanup delete iam user
+    test_msg = "Delete User s3user1 should successfull."
+    user_args = {}
+    user_args['UserName'] = "s3user1"
+    AuthTest(test_msg).delete_user(**user_args).execute_test()\
+            .command_response_should_have("User deleted.")
+
+    # Delete account
+    test_msg = 'Delete Account should successfull.'
+    account_args = {}
+    account_args['AccountName'] = access_key_args['AccountName']
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+            .command_response_should_have("Account deleted successfully")
+
+    # Revert config paramters
+    config1 = ConfigObj("/opt/seagate/cortx/auth/resources/authserver.properties")
+    config1['maxAccountLimit'] = old_maxAccountValue
+    config1['maxIAMUserLimit'] = old_maxIAMUserValue
+    print("setting maxAccountLimit as :", config1['maxAccountLimit'])
+    print("setting maxIAMUserLimit as :", config1['maxIAMUserLimit'])
+    config1.write()
+    os.system('systemctl restart s3authserver')
+    time.sleep(1) # sometime authserver takes more time to restart
+    print("Reverted authserver.properties (/opt/seagate/cortx/auth/resources/authserver.properties) with origional values successfully...")
+
 def execute_all_system_tests():
     if Config.no_ssl :
         print('Executing auth system tests over HTTP connection')
@@ -2051,6 +2129,7 @@ def execute_all_system_tests():
 
     # Do not change the order.
     before_all()
+    test_max_account_and_user_limit_value_of_auth_config()
     account_tests()
     user_tests()
     accesskey_tests()
