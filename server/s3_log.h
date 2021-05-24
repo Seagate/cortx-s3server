@@ -108,6 +108,26 @@ static inline std::string s3_get_timestamp() {
   return std::string(timestamp);
 }
 
+// returns timestamp in format: "yyyy:mm:dd hh:mm:ss.uuuuuu tzoffset (TZname)"
+static inline std::string s3_get_timestamp_tz() {
+  struct timespec ts = {0};
+  struct tm result = {0};
+  char date_time[32] = {0};
+  char timestamp[64] = {0};
+  char tzstr[32] = {0};
+
+  tzset();
+  clock_gettime(CLOCK_REALTIME, &ts);
+  if (localtime_r(&ts.tv_sec, &result) == NULL) {
+    return std::string();
+  }
+  strftime(tzstr, sizeof(tzstr), "%z (%Z)", &result);
+  strftime(date_time, sizeof(date_time), "%Y:%m:%d %H:%M:%S", &result);
+  snprintf(timestamp, sizeof(timestamp), "%s.%06li %s", date_time,
+           ts.tv_nsec / 1000, tzstr);
+  return std::string(timestamp);
+}
+
 int init_log(char *process_name);
 void fini_log();
 void flushall_log();

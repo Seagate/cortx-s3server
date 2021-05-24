@@ -57,7 +57,7 @@ extern S3Option* g_option_instance;
 // have any side-effects.
 #define s3_iem_full(loglevel, event_code, event_description, json_fmt, ...)   \
   do {                                                                        \
-    std::string timestamp = s3_get_timestamp();                               \
+    std::string timestamp = s3_get_timestamp_tz();                            \
     s3_log(S3_LOG_INFO, "",                                                   \
            "IEC: " event_code ": " event_description                          \
            ": { \"time\": \"%s\", \"node\": \"%s\", \"pid\": "                \
