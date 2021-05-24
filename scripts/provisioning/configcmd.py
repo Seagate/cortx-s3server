@@ -49,12 +49,16 @@ class ConfigCmd(SetupCmd):
   def process(self, configure_only_openldap = False, configure_only_haproxy = False):
     """Main processing function."""
     self.logger.info(f"Processing {self.name} {self.url}")
+    self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
     self.validate_config_files(self.name)
+    self.logger.info("validations completed")
 
     try:
+      self.logger.info('create auth jks password started')
       self.create_auth_jks_password()
+      self.logger.info('create auth jks password completed')
 
       if configure_only_openldap == True:
         # Configure openldap only
@@ -70,11 +74,11 @@ class ConfigCmd(SetupCmd):
       # create topic for background delete
       bgdeleteconfig = CORTXS3Config()
       if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
-        self.logger.info(' Creating topic.')
+        self.logger.info('Create topic started')
         self.create_topic(bgdeleteconfig.get_msgbus_admin_id,
                           bgdeleteconfig.get_msgbus_topic(),
                           self.get_msgbus_partition_count())
-        self.logger.info('Topic creation successful.')
+        self.logger.info('Create topic completed')
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}')
 
@@ -84,6 +88,7 @@ class ConfigCmd(SetupCmd):
     # 2. Enable slapd logging in rsyslog config
     # 3. Set openldap-replication
     # 4. Check number of nodes in the cluster
+    self.logger.info('Open ldap configuration started')
     cmd = ['/opt/seagate/cortx/s3/install/ldap/setup_ldap.sh',
            '--ldapadminpasswd',
            f'{self.ldap_passwd}',
@@ -121,11 +126,11 @@ class ConfigCmd(SetupCmd):
 
     # set openldap-replication
     self.configure_openldap_replication()
-    
-    self.logger.info("Successfully configured openldap on the node.")
+    self.logger.info('Open ldap configuration completed')
 
   def configure_openldap_replication(self):
     """Configure openldap replication within a storage set."""
+    self.logger.info('Open ldap replication configuration started')
     storage_set_count = self.get_confvalue(self.get_confkey(
         'CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY').replace("cluster-id", self.cluster_id))
 
@@ -163,6 +168,7 @@ class ConfigCmd(SetupCmd):
           self.logger.warning(f'warning of setupReplicationScript.sh: {stderr}')
       index += 1
     # TODO: set replication across storage-sets
+    self.logger.info('Open ldap replication configuration completed')
 
   def create_topic(self, admin_id: str, topic_name:str, partitions: int):
     """create topic for background delete services."""
@@ -199,6 +205,7 @@ class ConfigCmd(SetupCmd):
 
   def configure_haproxy(self):
     """Configure haproxy service."""
+    self.logger.info('haproxy configuration started')
     try:
       S3HaproxyConfig(self.url).process()
       # reload haproxy service
@@ -214,6 +221,7 @@ class ConfigCmd(SetupCmd):
     except Exception as e:
       self.logger.error(f'Failed to configure haproxy for s3server, error: {e}')
       raise e
+    self.logger.info('haproxy configuration completed')
 
   def create_auth_jks_password(self):
     """Create random password for auth jks keystore."""

@@ -72,9 +72,11 @@ class CleanupCmd(SetupCmd):
   def process(self, delete_deployment_log = False):
     """Main processing function."""
     self.logger.info(f"Processing {self.name} {self.url}")
+    self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
     self.validate_config_files(self.name)
+    self.logger.info("validations completed")
 
     try:
       self.logger.info("checking if ldap service is running or not...")
@@ -93,26 +95,32 @@ class CleanupCmd(SetupCmd):
       self.detect_if_reset_done()
 
       # cleanup ldap accounts related to S3
+      self.logger.info("delete ldap account of S3 started")
       ldap_action_obj = LdapAccountAction(self.ldap_user, self.ldap_passwd)
       ldap_action_obj.delete_account(self.account_cleanup_dict)
+      self.logger.info("delete ldap account of S3 completed")
 
       # Erase haproxy configurations
+      self.logger.info("erase haproxy configuration started")
       self.cleanup_haproxy_configurations()
+      self.logger.info("erase haproxy configuration completed")
 
       # cleanup ldap config and schemas
+      self.logger.info("delete ldap config and schemas started")
       self.delete_ldap_config()
+      self.logger.info("delete ldap config and schemas completed")
 
       # Delete topic created for background delete
       bgdeleteconfig = CORTXS3Config()
       if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
-        self.logger.info(' Deleting topic.')
+        self.logger.info('Deleting topic started')
         self.delete_topic(bgdeleteconfig.get_msgbus_admin_id, bgdeleteconfig.get_msgbus_topic())
-        self.logger.info('Topic deletion successful.')
+        self.logger.info('Deleting topic completed')
 
       # revert config files to their origional config state
-      self.logger.info(' Reverting config files.')
+      self.logger.info('revert s3 config files started')
       self.revert_config_files()
-      self.logger.info(' Reverting config files successful.')
+      self.logger.info('revert s3 config files completed')
 
       try:
         self.logger.info("Stopping slapd service...")
@@ -124,20 +132,23 @@ class CleanupCmd(SetupCmd):
       self.logger.info("Stopped slapd service...")
 
       # cleanup ldap config and schemas
+      self.logger.info("delete ldap config and schemas started")
       self.delete_ldap_config()
+      self.logger.info("delete ldap config and schemas completed")
 
       # delete slapd logs
+      self.logger.info("delete slapd log file started")
       slapd_log="/var/log/slapd.log"
       if os.path.isfile(slapd_log):
         os.remove(slapd_log)
-        self.logger.info(f"{slapd_log} removed")
+        self.logger.info("delete slapd log file completed")
 
       #delete deployment log
       if delete_deployment_log == True:
-        self.logger.info("Deleting S3 Deployment log file")
+        self.logger.info("Delete S3 Deployment log file started")
         dirpath = "/var/log/seagate/s3/s3deployment"
         self.DeleteDirContents(dirpath)
-        self.logger.info("S3 Deployment log file deleted successfully")
+        self.logger.info("Delete S3 Deployment log file completed")
       else:
         self.logger.info("Skipped Delete of S3 Deployment log file")
 

@@ -73,14 +73,17 @@ def main():
   try:
     if args.command == 'post_install':
       from postinstallcmd import PostInstallCmd
+      logger.info('post_install started.')
       PostInstallCmd(args.config).process()
       logger.info('post_install successful.')
     elif args.command == 'cleanup':
       from cleanupcmd import CleanupCmd
+      logger.info('cleanup started.')
       CleanupCmd(args.config).process(args.delete_deployment_log)
       logger.info('cleanup successful.')
     elif args.command == 'config':
       from configcmd import ConfigCmd
+      logger.info('config started.')
       configure_only_haproxy = False
       configure_only_openldap = False
       if args.only_ldap == True:
@@ -92,10 +95,12 @@ def main():
       logger.info('config successful.')
     elif args.command == 'init':
       from initcmd import InitCmd
+      logger.info('init started.')
       InitCmd(args.config).process()
       logger.info('init successful.') 
     elif args.command == 'test':
       from testcmd import TestCmd
+      logger.info('test started.')
       test_plan = None
       if args.plan:
         test_plan = args.plan
@@ -103,14 +108,17 @@ def main():
       logger.info('PASS: S3-Sanity test passed.')
     elif args.command == 'reset':
       from resetcmd import ResetCmd
+      logger.info('reset started.')
       ResetCmd(args.config).process()
       logger.info('reset successful.')
     elif args.command == 'prepare':
       from preparecmd import PrepareCmd
+      logger.info('prepare started.')
       PrepareCmd(args.config).process()
       logger.info('prepare successful.')
     elif args.command == 'upgrade':
       from upgradecmd import UpgradeCmd
+      logger.info('upgrade started.')
       UpgradeCmd(args.config).process()
       logger.info('upgrade successful.')
 

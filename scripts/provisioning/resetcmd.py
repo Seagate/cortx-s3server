@@ -43,39 +43,42 @@ class ResetCmd(SetupCmd):
   def process(self):
     """Main processing function."""
     self.logger.info(f"Processing {self.name} {self.url}")
+    self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
     self.validate_config_files(self.name)
+    self.logger.info("validations completed")
 
     try:
-      self.logger.info(' Removing LDAP Accounts and Users.')
+      self.logger.info('Remove LDAP Accounts and Users started')
       self.DeleteLdapAccountsUsers()
-      self.logger.info(' LDAP Accounts and Users Cleanup successful.')
+      self.logger.info('Remove LDAP Accounts and Users completed')
     except Exception as e:
       self.logger.error(f'ERROR:Failed to cleanup LDAP Accounts and Users, error: {e}')
       raise e
 
     try:
-      self.logger.info("Shutting down s3 services...")
+      self.logger.info("Shutdown S3 services started")
       self.shutdown_services(services_list)
+      self.logger.info("Shutdown S3 services completed")
     except Exception as e:
       self.logger.error(f'ERROR:Failed to stop s3services, error: {e}')
       raise e
 
     try:
-      self.logger.info(' Cleaning up log files.')
+      self.logger.info('Cleanup log file started')
       self.CleanupLogs()
-      self.logger.info('Log files cleanup successful.')
+      self.logger.info('Cleanup log file completed')
 
       # purge messages from message bus
       bgdeleteconfig = CORTXS3Config()
       if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
-        self.logger.info(' Purging messages from message bus.')
+        self.logger.info('purge messages from message bus started')
         self.purge_messages(bgdeleteconfig.get_msgbus_producer_id(),
                             bgdeleteconfig.get_msgbus_topic(),
                             bgdeleteconfig.get_msgbus_producer_delivery_mechanism(),
                             bgdeleteconfig.get_purge_sleep_time())
-        self.logger.info('Purge message successful.')
+        self.logger.info('purge messages from message bus completed')
 
     except Exception as e:
       self.logger.error(f'ERROR: Failed to cleanup log directories or files, error: {e}')
