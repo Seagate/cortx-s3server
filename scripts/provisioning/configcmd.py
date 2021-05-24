@@ -148,8 +148,8 @@ class ConfigCmd(SetupCmd):
 
         with open("hosts_list_file.txt", "w") as f:
           for node_machine_id in server_nodes_list:
-            hostname = self.get_confvalue(f'server_node>{node_machine_id}>hostname')
-            f.write(f'{hostname}')
+            private_fqdn = self.get_confvalue(f'server_node>{node_machine_id}>network>data>private_fqdn')
+            f.write(f'{private_fqdn}\n')
 
         cmd = ['/opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh',
              '-h',
@@ -159,7 +159,7 @@ class ConfigCmd(SetupCmd):
         handler = SimpleProcess(cmd)
         stdout, stderr, retcode = handler.run()
         self.logger.info(f'output of setupReplicationScript.sh: {stdout}')
-        os.remove("hosts_list_file.txt")
+        #os.remove("hosts_list_file.txt")
 
         if retcode != 0:
           self.logger.error(f'error of setupReplicationScript.sh: {stderr}')
