@@ -40,6 +40,17 @@ bool S3Option::load_section(std::string section_name,
   }
   if (force_override_from_config) {
     if (section_name == "S3_SERVER_CONFIG") {
+
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_DI_DISABLE_DATA_CORRUPTION_IEM");
+      s3_di_disable_data_corruption_iem =
+          s3_option_node["S3_DI_DISABLE_DATA_CORRUPTION_IEM"].as<bool>();
+
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_DI_DISABLE_METADATA_CORRUPTION_IEM");
+      s3_di_disable_metadata_corruption_iem =
+          s3_option_node["S3_DI_DISABLE_METADATA_CORRUPTION_IEM"].as<bool>();
+
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_DAEMON_WORKING_DIR");
       s3_daemon_dir = s3_option_node["S3_DAEMON_WORKING_DIR"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_DAEMON_DO_REDIRECTION");
@@ -647,6 +658,7 @@ bool S3Option::load_section(std::string section_name,
       s3_version = s3_option_node["VERSION"].as<std::string>();
     }
   }
+
   return true;
 }
 
@@ -894,9 +906,9 @@ void S3Option::dump_options() {
          (motr_is_oostore ? "true" : "false"));
   s3_log(S3_LOG_INFO, "", "S3_MOTR_IS_READ_VERIFY = %s\n",
          (motr_is_read_verify ? "true" : "false"));
-  s3_log(S3_LOG_INFO, "", "S3_MOTR_TM_RECV_QUEUE_MIN_LEN = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_MOTR_TM_RECV_QUEUE_MIN_LEN = %u\n",
          motr_tm_recv_queue_min_len);
-  s3_log(S3_LOG_INFO, "", "S3_MOTR_MAX_RPC_MSG_SIZE = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_MOTR_MAX_RPC_MSG_SIZE = %u\n",
          motr_max_rpc_msg_size);
   s3_log(S3_LOG_INFO, "", "S3_MOTR_PROCESS_FID = %s\n",
          motr_process_fid.c_str());
@@ -907,7 +919,7 @@ void S3Option::dump_options() {
          motr_cass_keyspace.c_str());
   s3_log(S3_LOG_INFO, "", "S3_MOTR_CASS_MAX_COL_FAMILY_NUM = %d\n",
          motr_cass_max_column_family_num);
-  s3_log(S3_LOG_INFO, "", "S3_MOTR_OPERATION_WAIT_PERIOD = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_MOTR_OPERATION_WAIT_PERIOD = %u\n",
          motr_op_wait_period);
 
   s3_log(S3_LOG_INFO, "", "S3_MOTR_READ_POOL_INITIAL_BUFFER_COUNT = %zu\n",
@@ -981,6 +993,14 @@ void S3Option::dump_options() {
          libevent_mempool_zeroed_buffer ? "true" : "false");
 
   return;
+}
+
+bool S3Option::get_s3_di_disable_data_corruption_iem() {
+  return s3_di_disable_data_corruption_iem;
+}
+
+bool S3Option::get_s3_di_disable_metadata_corruption_iem() {
+  return s3_di_disable_metadata_corruption_iem;
 }
 
 std::string S3Option::get_s3_nodename() { return s3_nodename; }

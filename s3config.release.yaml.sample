@@ -19,6 +19,8 @@
 
 S3Config_Sections: [S3_SERVER_CONFIG, S3_AUTH_CONFIG, S3_MOTR_CONFIG, S3_THIRDPARTY_CONFIG, S3_VERSION_CONFIG]
 S3_SERVER_CONFIG:                                       # Section for S3 Server
+   S3_DI_DISABLE_DATA_CORRUPTION_IEM: false             # disable sending of IEM messages by s3server in case of data integrity checksum fails
+   S3_DI_DISABLE_METADATA_CORRUPTION_IEM: false         # disable sending of IEM messages by s3server in case of metadata corruption is detected
    S3_DAEMON_WORKING_DIR: "/var/log/seagate/motr/"      # S3 Daemon will run in the specified directory
    S3_DAEMON_DO_REDIRECTION: 1                          # Do redirection of stderr, stdout and stdin to /dev/null
    S3_LOG_DIR: "/var/log/seagate/s3"                    # S3 Log directory, for output to stderr have value as "" and set S3_DAEMON_DO_REDIRECTION to 0
@@ -98,7 +100,7 @@ S3_MOTR_CONFIG:                                     # Section for S3 Motr
    S3_MOTR_CASS_CLUSTER_EP: 127.0.0.1                 # Cassandra cluster end point
    S3_MOTR_CASS_KEYSPACE: "motr_index_keyspace"     # Cassandra keyspace
    S3_MOTR_CASS_MAX_COL_FAMILY_NUM: 1                 # Cassandra max column family number, default is 1
-   S3_UNIT_SIZES_FOR_MEMORY_POOL: [4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576] # Memory pool will be created for each of these unit_size with following properties
+   S3_UNIT_SIZES_FOR_MEMORY_POOL: [16384]            # Memory pool will be created for each of these unit_size with following properties
    S3_MOTR_READ_POOL_INITIAL_BUFFER_COUNT: 10        # 10 blocks, the initial pool size = multiple of S3_MOTR_UNIT_SIZE
    S3_MOTR_READ_POOL_EXPANDABLE_COUNT: 50            # 50 blocks, pool's expandable size, multiple of S3_MOTR_UNIT_SIZE
    S3_MOTR_READ_POOL_MAX_THRESHOLD: 1048576000        # 1GB, The maximum memory threshold for the pool, multiple of S3_MOTR_UNIT_SIZE

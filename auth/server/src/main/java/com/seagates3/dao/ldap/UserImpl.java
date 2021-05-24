@@ -32,7 +32,6 @@ import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPModification;
 import com.novell.ldap.LDAPSearchResults;
-import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.UserDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.User;
@@ -232,7 +231,7 @@ public class UserImpl implements UserDAO {
     */
    @Override public User[] findAll(String accountName, String pathPrefix)
        throws DataAccessException {
-     ArrayList users = new ArrayList();
+     ArrayList<User> users = new ArrayList<User>();
      User user;
 
      String[] attrs = {LDAPUtils.USER_ID, LDAPUtils.COMMON_NAME,
@@ -249,7 +248,6 @@ public class UserImpl implements UserDAO {
                        LDAPUtils.IAMUSER_OBJECT_CLASS);
 
      LDAPSearchResults ldapResults;
-
      LOGGER.debug("Searching user base dn: " + userBaseDN);
 
      try {
@@ -262,13 +260,10 @@ public class UserImpl implements UserDAO {
        throw new DataAccessException("Failed to find all user details.\n" + ex);
      }
      if (ldapResults != null) {
-       int maxLdapResults = AuthServerConfig.getLdapSearchResultsSizeLimit();
-       int resultCount = 0;
        while (ldapResults.hasMore()) {
          user = new User();
          LDAPEntry entry;
          try {
-           // Prevent client failure for fetching more than 500 entries
            entry = ldapResults.next();
          }
          catch (LDAPException ex) {
@@ -288,11 +283,6 @@ public class UserImpl implements UserDAO {
          user.setCreateDate(createTime);
          user.setArn(entry.getAttribute(LDAPUtils.ARN).getStringValue());
          users.add(user);
-         ++resultCount;
-         if (resultCount >= maxLdapResults) {
-           LOGGER.info("Fetched max records of accounts " + maxLdapResults);
-           break;
-         }
        }
      }
      User[] userList = new User[users.size()];

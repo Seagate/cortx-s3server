@@ -55,6 +55,7 @@ class S3DeleteMultipleObjectsAction : public S3BucketAction {
   int delete_index_in_req;
   std::vector<struct m0_uint128> oids_to_delete;
   std::vector<int> layout_id_for_objs_to_delete;
+  std::vector<struct m0_fid> pv_ids_to_delete;
   std::vector<std::string> keys_to_delete;
   bool at_least_one_delete_successful;
 

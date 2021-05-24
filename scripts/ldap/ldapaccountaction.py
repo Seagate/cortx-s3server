@@ -23,6 +23,7 @@ import sys
 from ldap.ldapobject import SimpleLDAPObject
 import ldap.modlist as modlist
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
+import logging
 
 LDAP_USER = "cn={},dc=seagate,dc=com"
 LDAP_URL = "ldapi:///"
@@ -57,12 +58,28 @@ class LdapAccountAction:
 
   def __init__(self, ldapuser: str, ldappasswd: str):
     """Constructor."""
+    
+    self.logger = logging.getLogger("s3-deployment-logger")
+    if self.logger.hasHandlers():
+      self.logger.info("Logger has valid handler")
+    else:
+      self.logger.setLevel(logging.DEBUG)
+      # create console handler with a higher log level
+      chandler = logging.StreamHandler(sys.stdout)
+      chandler.setLevel(logging.DEBUG)
+      s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+      formatter = logging.Formatter(s3deployment_log_format)
+      # create formatter and add it to the handlers
+      chandler.setFormatter(formatter)
+      # add the handlers to the logger
+      self.logger.addHandler(chandler)
+
     try:
       self.ldapuser = ldapuser.strip()
       self.ldappasswd = ldappasswd.strip()
 
     except Exception as e:
-      sys.stderr.write(f'initialization failed, err: {e}')
+      self.logger.error(f'initialization failed, err: {e}')
       raise e
 
   def __add_keys_to_dictionary(self, input_params:dict):
@@ -172,7 +189,7 @@ class LdapAccountAction:
         ldif = modlist.addModlist(attrs)
         self.ldap_conn.add_s(dn, ldif)
       else:
-        sys.stdout.write(f"ldap account: {input_params['account_name']} already exists.\n")
+        self.logger.info(f"ldap account: {input_params['account_name']} already exists.\n")
 
       self.__disconnect_from_ldap()
     except Exception as e:
@@ -192,7 +209,7 @@ class LdapAccountAction:
 
       for acc in input_params.keys():
         if not self.__is_account_present(self.ldap_conn, acc):
-          sys.stdout.write(f'LDAP account: {acc} does not exist, skipping deletion.\n')
+          self.logger.info(f'LDAP account: {acc} does not exist, skipping deletion.\n')
           continue
         acc_attr_dict = input_params[acc]
 
@@ -220,7 +237,7 @@ class LdapAccountAction:
 
       self.__disconnect_from_ldap()
     except Exception as e:
-      sys.stderr.write(f'Failed to delete account: {acc}\n')
+      self.logger.error(f'Failed to delete account: {acc}\n')
       raise e
 
   def get_account_count(self) -> None:
@@ -239,7 +256,7 @@ class LdapAccountAction:
     except Exception as e:
       if self.ldap_conn:
         self.__disconnect_from_ldap()
-      sys.stderr.write(f'ERROR: Failed to get count of ldap account, error: {str(e)}\n')
+      self.logger.error(f'ERROR: Failed to get count of ldap account, error: {str(e)}\n')
       raise e
 
   def delete_s3_ldap_data(self):
@@ -248,21 +265,21 @@ class LdapAccountAction:
                         "ou=accounts,dc=s3,dc=seagate,dc=com",
                         "ou=idp,dc=s3,dc=seagate,dc=com"]
     try:
-      sys.stdout.write('INFO:Deletion of ldap data started.')
+      self.logger.info('Deletion of ldap data started.')
       self.__connect_to_ldap_server()
       for entry in cleanup_records:
-        sys.stdout.write(f'INFO: deleting all entries from {str(entry)} & its sub-ordinate tree\n')
+        self.logger.info(' deleting all entries from {str(entry)} & its sub-ordinate tree\n')
         try:
           self.ldap_delete_recursive(self.ldap_conn, entry)
         except ldap.NO_SUCH_OBJECT:
           # If no entries found in ldap for given dn
           pass
       self.__disconnect_from_ldap()
-      sys.stdout.write('INFO:Deletion of ldap data completed successfully.')
+      self.logger.info('Deletion of ldap data completed successfully.')
     except Exception as e:
       if self.ldap_conn:
         self.__disconnect_from_ldap()
-      sys.stderr.write(f'ERROR: Failed to delete ldap data, error: {str(e)}\n')
+      self.logger.error(f'ERROR: Failed to delete ldap data, error: {str(e)}\n')
       raise e
 
   def ldap_delete_recursive(self, ldap_conn: SimpleLDAPObject, base_dn: str):
@@ -273,43 +290,39 @@ class LdapAccountAction:
           self.ldap_delete_recursive(self.ldap_conn, dn)
           ldap_conn.delete_s(dn)
 
-  @staticmethod
-  def __is_account_present(ldap_conn: SimpleLDAPObject, account_name: str):
+  def __is_account_present(self, ldap_conn: SimpleLDAPObject, account_name: str):
     """Checks if account is present in ldap db."""
     try:
       ldap_conn.search_s(f"o={account_name},ou=accounts,dc=s3,dc=seagate,dc=com", ldap.SCOPE_SUBTREE)
     except ldap.NO_SUCH_OBJECT:
       return False
     except Exception as e:
-      sys.stderr.write(f'INFO: Failed to find ldap account: {account_name}, error: {str(e)}\n')
+      self.logger.error(f'ERROR: Failed to find ldap account: {account_name}, error: {str(e)}\n')
       raise e
     return True
 
-  @staticmethod
-  def __delete_dn(ldap_conn: SimpleLDAPObject, dn: str):
+  def __delete_dn(self, ldap_conn: SimpleLDAPObject, dn: str):
     """Delete given DN from ldap."""
     try:
       ldap_conn.delete_s(dn)
     except ldap.NO_SUCH_OBJECT:
       pass
     except Exception as e:
-      sys.stderr.write(f'Failed to delete DN: {dn}\n')
+      self.logger.error(f'Failed to delete DN: {dn}\n')
       raise e
 
-  @staticmethod
-  def __delete_access_key(ldap_conn: SimpleLDAPObject, userid: str):
+  def __delete_access_key(self, ldap_conn: SimpleLDAPObject, userid: str):
     """Delete access key of given s3userid."""
     try:
-      access_key = LdapAccountAction.__get_accesskey(ldap_conn, userid)
+      access_key = self.__get_accesskey(ldap_conn, userid)
       ldap_conn.delete_s(f'ak={access_key},ou=accesskeys,dc=s3,dc=seagate,dc=com')
     except ldap.NO_SUCH_OBJECT:
       pass
     except Exception as e:
-      sys.stderr.write(f'failed to delete access key of userid: {userid}\n')
+      self.logger.error(f'failed to delete access key of userid: {userid}\n')
       raise e
 
-  @staticmethod
-  def __get_accesskey(ldap_conn: SimpleLDAPObject, s3userid: str) -> str:
+  def __get_accesskey(self, ldap_conn: SimpleLDAPObject, s3userid: str) -> str:
     """Get accesskey of the given userid."""
     access_key = None
 
@@ -324,23 +337,20 @@ class LdapAccountAction:
         break
     return access_key
 
-  @staticmethod
-  def __generate_access_secret_keys(const_secret_string, const_access_string):
+  def __generate_access_secret_keys(self, const_secret_string, const_access_string):
     """Generates access and secret keys."""
     cortx_access_key = CortxS3Cipher(None, True, 22, const_access_string).generate_key()
     cortx_secret_key = CortxS3Cipher(None, False, 40, const_secret_string).generate_key()
     return cortx_access_key, cortx_secret_key
 
-  @staticmethod
-  def __get_attr(index_key):
+  def __get_attr(self, index_key):
     """Fetches attr from map based on index."""
     if index_key in g_attr :
       return g_attr[index_key]
 
     raise Exception("Key Not Present")
 
-  @staticmethod
-  def __get_dn(index_key):
+  def __get_dn(self, index_key):
     """Fetches dn string from map based on index."""
     if index_key in g_dn_names:
       return g_dn_names[index_key]

@@ -87,8 +87,6 @@ def clean_18mb_multipart():
     if '18MBfile' in result.status.stdout:
         upload_id = result.status.stdout.split('\n')[2].split('\t')[2]
         S3cmdTest('S3cmd can abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id).execute_test().command_is_successful()
-    else:
-        raise AssertionError("Failed to find multipart info.")
     return
 
 S3fiTest('s3cmd enable FI create index fail').enable_fi("enable", "always", "motr_idx_create_fail").execute_test().command_is_successful()

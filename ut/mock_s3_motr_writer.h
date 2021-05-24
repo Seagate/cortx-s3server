@@ -37,29 +37,28 @@ class MockS3MotrWiter : public S3MotrWiter {
  public:
   MockS3MotrWiter(std::shared_ptr<RequestObject> req, struct m0_uint128 oid,
                   std::shared_ptr<MockS3Motr> s3_motr_mock_ptr)
-      : S3MotrWiter(req, oid, 0, s3_motr_mock_ptr) {}
+      : S3MotrWiter(req, oid, {}, 0, s3_motr_mock_ptr) {}
   MockS3MotrWiter(std::shared_ptr<RequestObject> req,
                   std::shared_ptr<MockS3Motr> s3_motr_mock_ptr)
-      : S3MotrWiter(req, 0, s3_motr_mock_ptr) {}
+      : S3MotrWiter(req, s3_motr_mock_ptr) {}
 
   MOCK_METHOD0(get_state, S3MotrWiterOpState());
   MOCK_METHOD0(get_oid, struct m0_uint128());
   MOCK_METHOD0(get_content_md5, std::string());
   MOCK_METHOD1(get_op_ret_code_for, int(int));
   MOCK_METHOD1(get_op_ret_code_for_delete_op, int(int));
-  MOCK_METHOD3(create_object,
-               void(std::function<void(void)> on_success,
-                    std::function<void(void)> on_failed, int layout_id));
-  MOCK_METHOD3(delete_object,
-               void(std::function<void(void)> on_success,
-                    std::function<void(void)> on_failed, int layout_id));
-  MOCK_METHOD3(delete_index,
-               void(struct m0_uint128 oid, std::function<void(void)> on_success,
+  MOCK_METHOD4(create_object, void(std::function<void(void)> on_success,
+                                   std::function<void(void)> on_failed,
+                                   const struct m0_uint128&, int layout_id));
+  MOCK_METHOD5(delete_object, void(std::function<void(void)> on_success,
+                                   std::function<void(void)> on_failed,
+                                   const struct m0_uint128&, int layout_id,
+                                   const struct m0_fid&));
+  MOCK_METHOD5(delete_objects,
+               void(std::vector<struct m0_uint128> oids,
+                    std::vector<int> layoutids, std::vector<struct m0_fid>,
+                    std::function<void(void)> on_success,
                     std::function<void(void)> on_failed));
-  MOCK_METHOD4(delete_objects, void(std::vector<struct m0_uint128> oids,
-                                    std::vector<int> layoutids,
-                                    std::function<void(void)> on_success,
-                                    std::function<void(void)> on_failed));
   MOCK_METHOD1(set_oid, void(struct m0_uint128 oid));
   MOCK_METHOD4(write_content, void(std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed,
