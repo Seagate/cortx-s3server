@@ -4,7 +4,8 @@ _Describe the problem this patch intends to solve._
 
 ## Design
 
-_For Bug describe the fix here._
+- _For Bug describe the fix here._
+- _For feature, post the link to the solution page._
 
 ## Coding
 
