@@ -300,12 +300,33 @@ bool S3MotrReader::read_object() {
   return true;
 }
 
+bool S3MotrReader::ValidateStoredChksum() {
+
+  // PI Comparison here.
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Motr Buffer count %u \n",
+          __func__,
+          reader_context->get_motr_rw_op_ctx()->data->ov_vec.v_nr);
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Attr Buffer count %u \n",
+          __func__,
+          reader_context->get_motr_rw_op_ctx()->attr->ov_vec.v_nr);
+
+  return true;
+}
+
 void S3MotrReader::read_object_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, stripped_request_id,
          "Motr API Successful: readobj(oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid.u_hi, oid.u_lo);
+
+  if (S3Option::get_instance()->is_s3_read_di_check_enabled()) {
+    if (!this->ValidateStoredChksum()) {
+      state = S3MotrReaderOpState::failed;
+      this->handler_on_failed();
+    }
+  }
+
   state = S3MotrReaderOpState::success;
   this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
