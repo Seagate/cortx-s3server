@@ -20,11 +20,12 @@ _Describe the problem this patch intends to solve._
 
 ## Checklist
 
-- Any interface change Yes/No?
-- Change notified to other gatekeepers: Yes/No?
-- Code reviews done and addressed: Yes/No?
-- Codacy issues reviewed and addressed: Yes/No?
-- Deployment test : Done/Not?
-- UT/smoke test: Done/Not?
-- Jira number added to PR: Yes/No?
-- Github merge done using UI: Yes/No?
+- _PR is self-reviewed? Yes/No?_
+- _Any interface change Yes/No?_
+- _Change notified to other gatekeepers: Yes/No?_
+- _Code reviews done and addressed: Yes/No?_
+- _Codacy issues reviewed and addressed: Yes/No?_
+- _Deployment test : Done/Not?_
+- _UT/smoke test: Done/Not?_
+- _Jira number added to PR: Yes/No?_
+- _Github merge done using UI: Yes/No?_
