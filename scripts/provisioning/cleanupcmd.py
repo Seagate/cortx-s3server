@@ -66,27 +66,27 @@ class CleanupCmd(SetupCmd):
 
       self.read_ldap_credentials()
     except Exception as e:
-      self.logger.error(f'Failed to read ldap credentials, error: {e}\n')
+      self.logger.error(f'Failed to read ldap credentials, error: {e}')
       raise e
 
   def process(self, delete_deployment_log = False):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name} {self.url}\n")
+    self.logger.info(f"Processing {self.name} {self.url}")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
     self.validate_config_files(self.name)
 
     try:
-      self.logger.info("checking if ldap service is running or not...\n")
+      self.logger.info("checking if ldap service is running or not...")
       self.validate_pre_requisites(rpms=None, pip3s=None, services="slapd", files=None)
     except VError as e:
-      self.logger.info("slapd service is not running hence starting it...\n")
+      self.logger.info("slapd service is not running hence starting it...")
       service_list = ["slapd"]
       self.start_services(service_list)
     except Exception as e:
-      self.logger.error(f'Failed to validate/restart slapd, error: {e}\n')
+      self.logger.error(f'Failed to validate/restart slapd, error: {e}')
       raise e
-    self.logger.info("slapd service is running...\n")
+    self.logger.info("slapd service is running...")
 
     try:
       # Check if reset phase was performed before this
@@ -105,23 +105,23 @@ class CleanupCmd(SetupCmd):
       # Delete topic created for background delete
       bgdeleteconfig = CORTXS3Config()
       if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
-        self.logger.info(' Deleting topic.\n')
+        self.logger.info(' Deleting topic.')
         self.delete_topic(bgdeleteconfig.get_msgbus_admin_id, bgdeleteconfig.get_msgbus_topic())
-        self.logger.info('Topic deletion successful.\n')
+        self.logger.info('Topic deletion successful.')
 
       # revert config files to their origional config state
-      self.logger.info(' Reverting config files.\n')
+      self.logger.info(' Reverting config files.')
       self.revert_config_files()
-      self.logger.info(' Reverting config files successful.\n')
+      self.logger.info(' Reverting config files successful.')
 
       try:
-        self.logger.info("Stopping slapd service...\n")
+        self.logger.info("Stopping slapd service...")
         service_list = ["slapd"]
         self.shutdown_services(service_list)
       except Exception as e:
-        self.logger.error(f'Failed to stop slapd service, error: {e}\n')
+        self.logger.error(f'Failed to stop slapd service, error: {e}')
         raise e
-      self.logger.info("Stopped slapd service...\n")
+      self.logger.info("Stopped slapd service...")
 
       # cleanup ldap config and schemas
       self.delete_ldap_config()
@@ -130,15 +130,14 @@ class CleanupCmd(SetupCmd):
       slapd_log="/var/log/slapd.log"
       if os.path.isfile(slapd_log):
         os.remove(slapd_log)
-        self.logger.info(f"{slapd_log} removed\n")
+        self.logger.info(f"{slapd_log} removed")
 
       #delete deployment log
       if delete_deployment_log == True:
         self.logger.info("Deleting S3 Deployment log file")
-        filepath = "/var/log/seagate/s3/s3deployment/s3deployment.log"
-        if os.path.exists(filepath):
-          os.remove(filepath)
-          self.logger.info("S3 Deployment log file deleted successfully")
+        dirpath = "/var/log/seagate/s3/s3deployment"
+        self.DeleteDirContents(dirpath)
+        self.logger.info("S3 Deployment log file deleted successfully")
       else:
         self.logger.info("Skipped Delete of S3 Deployment log file")
 
@@ -165,7 +164,7 @@ class CleanupCmd(SetupCmd):
         shutil.copy(auth_jksstore_template, auth_jksstore)
 
     except Exception as e:
-      self.logger.error(f'Failed to revert config files in Cleanup phase, error: {e}\n')
+      self.logger.error(f'Failed to revert config files in Cleanup phase, error: {e}')
       raise e
 
   def cleanup_haproxy_configurations(self):
@@ -207,29 +206,29 @@ class CleanupCmd(SetupCmd):
 
   def detect_if_reset_done(self):
     """Validate if reset phase has done or not, throw exception."""
-    self.logger.info(f"Processing {self.name} detect_if_reset_done\n")
+    self.logger.info(f"Processing {self.name} detect_if_reset_done")
     # Validate log file cleanup.
     log_files = ['/var/log/seagate/auth/server/app.log', '/var/log/seagate/s3/s3server-*/s3server.INFO']
     for fpath in log_files:
       if os.path.exists(fpath):
-        raise S3PROVError("Stale log files found in system!!!! hence reset needs to be performed before cleanup can be processed\n")
+        raise S3PROVError("Stale log files found in system!!!! hence reset needs to be performed before cleanup can be processed")
     # Validate ldap entry cleanup.
     self.validate_ldap_account_cleanup()
-    self.logger.info(f"Processing {self.name} detect_if_reset_done completed successfully..\n")
+    self.logger.info(f"Processing {self.name} detect_if_reset_done completed successfully..")
 
   def validate_ldap_account_cleanup(self):
     """Validate ldap data is cleaned."""
     account_count=0
     try :
-      self.logger.info("Validating ldap account entries\n")
+      self.logger.info("Validating ldap account entries")
       ldap_action_obj = LdapAccountAction(self.ldap_user, self.ldap_passwd)
       account_count = ldap_action_obj.get_account_count()
     except Exception as e:
-      self.logger.error(f"ERROR: Failed to find total count of ldap account, error: {str(e)}\n")
+      self.logger.error(f"ERROR: Failed to find total count of ldap account, error: {str(e)}")
       raise e
     if account_count > 1:
-      raise S3PROVError("Stale account entries found in ldap !!!! hence reset needs to be performed before cleanup can be processed\n")
-    self.logger.info("Validation of ldap account entries successful.\n")
+      raise S3PROVError("Stale account entries found in ldap !!!! hence reset needs to be performed before cleanup can be processed")
+    self.logger.info("Validation of ldap account entries successful.")
 
   def delete_ldap_config(self):
     """Delete the ldap configs created by setup_ldap.sh during config phase."""
@@ -242,23 +241,23 @@ class CleanupCmd(SetupCmd):
     for curr_file in files:
       if os.path.isfile(curr_file):
         os.remove(curr_file)
-        self.logger.info(f"{curr_file} removed\n")
+        self.logger.info(f"{curr_file} removed")
 
     for file_wild in files_wild:
       for path in Path(f"{file_wild['path']}").glob(f"{file_wild['glob']}"):
         if os.path.isfile(path):
           os.remove(path)
-          self.logger.info(f"{path} removed\n")
+          self.logger.info(f"{path} removed")
         elif os.path.isdir(path):
           shutil.rmtree(path)
-          self.logger.info(f"{path} removed\n")
+          self.logger.info(f"{path} removed")
 
     for curr_dir in dirs:
       if os.path.isdir(curr_dir):
         shutil.rmtree(curr_dir)
-        self.logger.info(f"{curr_dir} removed\n")
+        self.logger.info(f"{curr_dir} removed")
     self.delete_mdb_files()
-    self.logger.info("/var/lib/ldap removed\n")
+    self.logger.info("/var/lib/ldap removed")
 
   def delete_topic(self, admin_id, topic_name):
     """delete topic for background delete services."""
@@ -266,6 +265,6 @@ class CleanupCmd(SetupCmd):
       if S3CortxMsgBus.is_topic_exist(admin_id, topic_name):
         S3CortxMsgBus.delete_topic(admin_id, [topic_name])
       else:
-        self.logger.info("Topic does not exist\n")
+        self.logger.info("Topic does not exist")
     except Exception as e:
       raise e

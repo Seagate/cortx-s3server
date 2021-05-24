@@ -44,13 +44,13 @@ class TestCmd(SetupCmd):
   def process(self):
     """Main processing function."""
     #TODO: remove the return in next sprint
-    self.logger.info(f"Processing {self.name} {self.url}\n")
+    self.logger.info(f"Processing {self.name} {self.url}")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
 
     try:
       self.read_endpoint_value()
-      self.logger.info(f"Endpoint fqdn {self.endpoint}\n")
+      self.logger.info(f"Endpoint fqdn {self.endpoint}")
       cmd = [SANITY_SCRIPT_PATH, LDAP_SWITCH,  f'{self.ldap_passwd}', ENDPOINT_SWITCH, f'{self.endpoint}']
       handler = SimpleProcess(cmd)
       stdout, stderr, retcode = handler.run()

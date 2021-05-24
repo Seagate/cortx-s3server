@@ -19,9 +19,6 @@
 #
 
 import sys
-import os
-import shutil
-import glob
 import time
 import re
 from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
@@ -45,43 +42,43 @@ class ResetCmd(SetupCmd):
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name} {self.url}\n")
+    self.logger.info(f"Processing {self.name} {self.url}")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
     self.validate_config_files(self.name)
 
     try:
-      self.logger.info(' Removing LDAP Accounts and Users.\n')
+      self.logger.info(' Removing LDAP Accounts and Users.')
       self.DeleteLdapAccountsUsers()
-      self.logger.info(' LDAP Accounts and Users Cleanup successful.\n')
+      self.logger.info(' LDAP Accounts and Users Cleanup successful.')
     except Exception as e:
-      self.logger.error(f'ERROR:Failed to cleanup LDAP Accounts and Users, error: {e}\n')
+      self.logger.error(f'ERROR:Failed to cleanup LDAP Accounts and Users, error: {e}')
       raise e
 
     try:
-      self.logger.info("Shutting down s3 services...\n")
+      self.logger.info("Shutting down s3 services...")
       self.shutdown_services(services_list)
     except Exception as e:
-      self.logger.error(f'ERROR:Failed to stop s3services, error: {e}\n')
+      self.logger.error(f'ERROR:Failed to stop s3services, error: {e}')
       raise e
 
     try:
-      self.logger.info(' Cleaning up log files.\n')
+      self.logger.info(' Cleaning up log files.')
       self.CleanupLogs()
-      self.logger.info('Log files cleanup successful.\n')
+      self.logger.info('Log files cleanup successful.')
 
       # purge messages from message bus
       bgdeleteconfig = CORTXS3Config()
       if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
-        self.logger.info(' Purging messages from message bus.\n')
+        self.logger.info(' Purging messages from message bus.')
         self.purge_messages(bgdeleteconfig.get_msgbus_producer_id(),
                             bgdeleteconfig.get_msgbus_topic(),
                             bgdeleteconfig.get_msgbus_producer_delivery_mechanism(),
                             bgdeleteconfig.get_purge_sleep_time())
-        self.logger.info('Purge message successful.\n')
+        self.logger.info('Purge message successful.')
 
     except Exception as e:
-      self.logger.error(f'ERROR: Failed to cleanup log directories or files, error: {e}\n')
+      self.logger.error(f'ERROR: Failed to cleanup log directories or files, error: {e}')
       raise e
 
 
@@ -117,47 +114,6 @@ class ResetCmd(SetupCmd):
     for path in logRegexPath:
       self.DeleteFileOrDirWithRegex(path, logRegexPath[path])
 
-  def DeleteDirContents(self, dirname: str,  skipdirs: list):
-    """Delete files and directories inside given directory."""
-    if os.path.exists(dirname):
-      for filename in os.listdir(dirname):
-        filepath = os.path.join(dirname, filename)
-        try:
-          if os.path.isfile(filepath):
-            os.remove(filepath)
-          elif os.path.isdir(filepath):
-            if filepath in skipdirs:
-              self.logger.info(f'Skipping the dir {filepath}')
-            else:
-              shutil.rmtree(filepath)
-        except Exception as e:
-          self.logger.error(f'ERROR: DeleteDirContents(): Failed to delete: {filepath}, error: {str(e)}\n')
-          raise e
-
-  def DeleteFile(self, filepath: str):
-    """Delete file."""
-    if os.path.exists(filepath):
-      try:
-        os.remove(filepath)
-      except Exception as e:
-        self.logger.error(f'ERROR: DeleteFile(): Failed to delete file: {filepath}, error: {str(e)}\n')
-        raise e
-
-  def DeleteFileOrDirWithRegex(self, path: str, regex: str):
-    """Delete files and directories inside given directory for which regex matches."""
-    if os.path.exists(path):
-      filepath = os.path.join(path, regex)
-      files = glob.glob(filepath)
-      for file in files:
-        try:
-          if os.path.isfile(file):
-            os.remove(file)
-          elif os.path.isdir(file):
-            shutil.rmtree(file)
-        except Exception as e:
-          self.logger.error(f'ERROR: DeleteFileOrDirWithRegex(): Failed to delete: {file}, error: {str(e)}\n')
-          raise e
-
   def purge_messages(self, producer_id: str, msg_type: str, delivery_mechanism: str, sleep_time: int):
     """purge messages on message bus."""
     try:
@@ -168,7 +124,7 @@ class ResetCmd(SetupCmd):
         #Insert a delay of 1 min after purge, so that the messages are deleted
         time.sleep(sleep_time)
       except:
-        self.logger.info('Exception during purge. May be there are no messages to purge\n')
+        self.logger.info('Exception during purge. May be there are no messages to purge')
     except Exception as e:
       raise e
 
@@ -180,7 +136,7 @@ class ResetCmd(SetupCmd):
       # Delete data directories e.g. ou=accesskeys, ou=accounts,ou=idp from dc=s3,dc=seagate,dc=com tree"
       LdapAccountAction(self.ldap_root_user, self.rootdn_passwd).delete_s3_ldap_data()
     except Exception as e:
-      self.logger.error(f'ERROR: Failed to delete s3 recoards exists in ldap, error: {e}\n')
+      self.logger.error(f'ERROR: Failed to delete s3 recoards exists in ldap, error: {e}')
       raise e
 
     try:
@@ -195,5 +151,5 @@ class ResetCmd(SetupCmd):
                                 }
       LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
     except Exception as e:
-      self.logger.error(f'ERROR: Failed to create backgrounddelete service account, error: {e}\n')
+      self.logger.error(f'ERROR: Failed to create backgrounddelete service account, error: {e}')
       raise e

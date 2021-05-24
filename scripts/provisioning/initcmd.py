@@ -37,7 +37,7 @@ class InitCmd(SetupCmd):
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name} {self.url}\n")
+    self.logger.info(f"Processing {self.name} {self.url}")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
     self.validate_config_files(self.name)
@@ -54,5 +54,5 @@ class InitCmd(SetupCmd):
                                 }
       LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
     except Exception as e:
-      self.logger.error(f'Failed to create backgrounddelete service account, error: {e}\n')
+      self.logger.error(f'Failed to create backgrounddelete service account, error: {e}')
       raise e
