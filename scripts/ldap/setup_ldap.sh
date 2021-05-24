@@ -102,8 +102,8 @@ wget -q https://repo.symas.com/configs/SOFL/rhel7/sofl.repo -O /etc/yum.repos.d/
 yum clean all
 yum install -y symas-openldap-clients symas-openldap-servers
 
-#removes the hdb if it exists, non-existence of file doesn't throw an error as well.
-rm -f /etc/openldap/slapd.d/cn\=config/olcDatabase={2}hdb.ldif
+#removes all hdb file instances if they exist, non-existence of files doesn't throw an error as well.
+rm -f /etc/openldap/slapd.d/cn\=config/olcDatabase=*hdb.ldif
 cp -f $INSTALLDIR/olcDatabase\=\{2\}mdb.ldif /etc/openldap/slapd.d/cn\=config/
 
 chgrp ldap /etc/openldap/certs/password # onlyif: grep -q ldap /etc/group && test -f /etc/openldap/certs/password
