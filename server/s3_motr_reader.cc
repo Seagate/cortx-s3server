@@ -304,11 +304,9 @@ bool S3MotrReader::ValidateStoredChksum() {
 
   // PI Comparison here.
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Motr Buffer count %u \n",
-          __func__,
-          reader_context->get_motr_rw_op_ctx()->data->ov_vec.v_nr);
+         __func__, reader_context->get_motr_rw_op_ctx()->data->ov_vec.v_nr);
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Attr Buffer count %u \n",
-          __func__,
-          reader_context->get_motr_rw_op_ctx()->attr->ov_vec.v_nr);
+         __func__, reader_context->get_motr_rw_op_ctx()->attr->ov_vec.v_nr);
 
   return true;
 }

@@ -20,6 +20,7 @@
 
 #include "s3_evbuffer_wrapper.h"
 #include "s3_motr_context.h"
+#include "s3_option.h"
 
 // Create evbuffer of size buf_sz, with each basic buffer buf_unit_sz
 S3Evbuffer::S3Evbuffer(const std::string req_id, size_t buf_sz,
