@@ -77,35 +77,39 @@ const std::string& S3BucketMetadata::get_owner_canonical_id() {
   return system_defined_attribute["Owner-Canonical-id"];
 }
 
-const struct m0_uint128& S3BucketMetadata::get_multipart_index_oid() const {
-  return multipart_index_oid;
-}
-
-const struct m0_uint128& S3BucketMetadata::get_extended_metadata_index_oid()
+const struct s3_motr_idx_layout& S3BucketMetadata::get_multipart_index_layout()
     const {
-  return extended_metadata_index_oid;
+  return multipart_index_layout;
 }
 
-const struct m0_uint128& S3BucketMetadata::get_object_list_index_oid() const {
-  return object_list_index_oid;
+const struct s3_motr_idx_layout&
+S3BucketMetadata::get_extended_metadata_index_layout() const {
+  return extended_metadata_index_layout;
 }
 
-const struct m0_uint128& S3BucketMetadata::get_objects_version_list_index_oid()
-    const {
-  return objects_version_list_index_oid;
+const struct s3_motr_idx_layout&
+S3BucketMetadata::get_object_list_index_layout() const {
+  return object_list_index_layout;
 }
 
-void S3BucketMetadata::set_multipart_index_oid(struct m0_uint128 oid) {
-  multipart_index_oid = oid;
+const struct s3_motr_idx_layout&
+S3BucketMetadata::get_objects_version_list_index_layout() const {
+  return objects_version_list_index_layout;
 }
 
-void S3BucketMetadata::set_object_list_index_oid(struct m0_uint128 oid) {
-  object_list_index_oid = oid;
+void S3BucketMetadata::set_multipart_index_layout(
+    const struct s3_motr_idx_layout& idx_lo) {
+  multipart_index_layout = idx_lo;
 }
 
-void S3BucketMetadata::set_objects_version_list_index_oid(
-    struct m0_uint128 oid) {
-  objects_version_list_index_oid = oid;
+void S3BucketMetadata::set_object_list_index_layout(
+    const struct s3_motr_idx_layout& idx_lo) {
+  object_list_index_layout = idx_lo;
+}
+
+void S3BucketMetadata::set_objects_version_list_index_layout(
+    const struct s3_motr_idx_layout& idx_lo) {
+  objects_version_list_index_layout = idx_lo;
 }
 
 void S3BucketMetadata::set_location_constraint(std::string location) {
@@ -145,17 +149,17 @@ std::string S3BucketMetadata::to_json() {
     root["User-Defined-Tags"][tag.first] = tag.second;
   }
 
-  root["motr_object_list_index_oid"] =
-      S3M0Uint128Helper::to_string(object_list_index_oid);
+  root["motr_object_list_index_layout"] =
+      S3M0Uint128Helper::to_string(object_list_index_layout);
 
-  root["motr_multipart_index_oid"] =
-      S3M0Uint128Helper::to_string(multipart_index_oid);
+  root["motr_multipart_index_layout"] =
+      S3M0Uint128Helper::to_string(multipart_index_layout);
 
-  root["extended_metadata_index_oid"] =
-      S3M0Uint128Helper::to_string(extended_metadata_index_oid);
+  root["extended_metadata_index_layout"] =
+      S3M0Uint128Helper::to_string(extended_metadata_index_layout);
 
-  root["motr_objects_version_list_index_oid"] =
-      S3M0Uint128Helper::to_string(objects_version_list_index_oid);
+  root["motr_objects_version_list_index_layout"] =
+      S3M0Uint128Helper::to_string(objects_version_list_index_layout);
 
   S3DateTime current_time;
   current_time.init_current_time();
@@ -192,17 +196,17 @@ int S3BucketMetadata::from_json(std::string content) {
   account_id = system_defined_attribute["Owner-Account-id"];
   owner_canonical_id = system_defined_attribute["Owner-Canonical-id"];
 
-  object_list_index_oid = S3M0Uint128Helper::to_m0_uint128(
-      newroot["motr_object_list_index_oid"].asString());
+  object_list_index_layout = S3M0Uint128Helper::to_idx_layout(
+      newroot["motr_object_list_index_layout"].asString());
 
-  multipart_index_oid = S3M0Uint128Helper::to_m0_uint128(
-      newroot["motr_multipart_index_oid"].asString());
+  multipart_index_layout = S3M0Uint128Helper::to_idx_layout(
+      newroot["motr_multipart_index_layout"].asString());
 
-  extended_metadata_index_oid = S3M0Uint128Helper::to_m0_uint128(
-      newroot["extended_metadata_index_oid"].asString());
+  extended_metadata_index_layout = S3M0Uint128Helper::to_idx_layout(
+      newroot["extended_metadata_index_layout"].asString());
 
-  objects_version_list_index_oid = S3M0Uint128Helper::to_m0_uint128(
-      newroot["motr_objects_version_list_index_oid"].asString());
+  objects_version_list_index_layout = S3M0Uint128Helper::to_idx_layout(
+      newroot["motr_objects_version_list_index_layout"].asString());
 
   acl_from_json((newroot["ACL"]).asString());
   bucket_policy = base64_decode(newroot["Policy"].asString());

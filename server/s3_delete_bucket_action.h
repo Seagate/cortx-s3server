@@ -39,13 +39,17 @@ class S3DeleteBucketAction : public S3BucketAction {
   std::shared_ptr<MotrAPI> s3_motr_api;
   std::map<std::string, std::string>::iterator multipart_kv;
   std::map<std::string, std::string> multipart_objects;
-  std::vector<struct m0_uint128> part_oids;
+
+  std::vector<struct s3_motr_idx_layout> part_idx_layouts;
+
   std::vector<struct m0_uint128> multipart_object_oids;
   std::vector<int> multipart_object_layoutids;
   std::vector<struct m0_fid> multipart_object_pv_ids;
-  m0_uint128 object_list_index_oid;
-  m0_uint128 objects_version_list_index_oid;
-  m0_uint128 extended_metadata_index_oid;
+
+  s3_motr_idx_layout object_list_index_layout;
+  s3_motr_idx_layout objects_version_list_index_layout;
+  s3_motr_idx_layout extended_metadata_index_layout;
+
   std::string last_key;  // last key during each iteration
 
   bool is_bucket_empty;

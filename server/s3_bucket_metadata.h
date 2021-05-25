@@ -28,7 +28,7 @@
 #include <memory>
 #include <string>
 
-#include "lib/types.h"  // struct m0_uint128
+#include "s3_motr_context.h"
 
 enum class S3BucketMetadataState {
   empty,    // Initial state, no lookup done
@@ -60,10 +60,10 @@ class S3BucketMetadata {
   std::map<std::string, std::string> system_defined_attribute;
   std::map<std::string, std::string> user_defined_attribute;
 
-  struct m0_uint128 multipart_index_oid = {};
-  struct m0_uint128 object_list_index_oid = {};
-  struct m0_uint128 objects_version_list_index_oid = {};
-  struct m0_uint128 extended_metadata_index_oid = {};
+  struct s3_motr_idx_layout multipart_index_layout = {};
+  struct s3_motr_idx_layout object_list_index_layout = {};
+  struct s3_motr_idx_layout objects_version_list_index_layout = {};
+  struct s3_motr_idx_layout extended_metadata_index_layout = {};
 
   std::shared_ptr<S3RequestObject> request;
 
@@ -106,14 +106,16 @@ class S3BucketMetadata {
 
   void acl_from_json(std::string acl_json_str);
 
-  virtual const struct m0_uint128& get_object_list_index_oid() const;
-  virtual const struct m0_uint128& get_objects_version_list_index_oid() const;
-  const struct m0_uint128& get_multipart_index_oid() const;
-  const struct m0_uint128& get_extended_metadata_index_oid() const;
+  virtual const struct s3_motr_idx_layout& get_object_list_index_layout() const;
+  virtual const struct s3_motr_idx_layout&
+      get_objects_version_list_index_layout() const;
+  const struct s3_motr_idx_layout& get_multipart_index_layout() const;
+  const struct s3_motr_idx_layout& get_extended_metadata_index_layout() const;
 
-  void set_multipart_index_oid(struct m0_uint128 id);
-  void set_object_list_index_oid(struct m0_uint128 id);
-  void set_objects_version_list_index_oid(struct m0_uint128 id);
+  void set_multipart_index_layout(const struct s3_motr_idx_layout& idx_lo);
+  void set_object_list_index_layout(const struct s3_motr_idx_layout& idx_lo);
+  void set_objects_version_list_index_layout(
+      const struct s3_motr_idx_layout& idx_lo);
 
   virtual void set_location_constraint(std::string location);
 

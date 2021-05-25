@@ -174,7 +174,7 @@ TEST_F(S3MotrKVSReaderTest, GetKeyvalTest) {
       .WillOnce(Invoke(s3_test_motr_op_launch));
 
   ptr_motrkvs_reader->get_keyval(
-      index_oid, test_key,
+      {index_oid}, test_key,
       std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
@@ -195,7 +195,7 @@ TEST_F(S3MotrKVSReaderTest, GetKeyvalFailTest) {
   EXPECT_CALL(*ptr_mock_s3motr, motr_op_launch(_, _, _, _)).Times(0);
 
   ptr_motrkvs_reader->get_keyval(
-      index_oid, test_key,
+      {index_oid}, test_key,
       std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
@@ -224,7 +224,7 @@ TEST_F(S3MotrKVSReaderTest, GetKeyvalIdxPresentTest) {
   EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(2);
 
   ptr_motrkvs_reader->get_keyval(
-      index_oid, test_key,
+      {index_oid}, test_key,
       std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
@@ -247,7 +247,7 @@ TEST_F(S3MotrKVSReaderTest, GetKeyvalTestEmpty) {
       .WillOnce(Invoke(s3_test_motr_op_launch));
 
   ptr_motrkvs_reader->get_keyval(
-      index_oid, test_key,
+      {index_oid}, test_key,
       std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
@@ -268,7 +268,7 @@ TEST_F(S3MotrKVSReaderTest, GetKeyvalSuccessfulTest) {
       .WillOnce(Invoke(s3_test_motr_op_launch));
 
   ptr_motrkvs_reader->get_keyval(
-      index_oid, test_key,
+      {index_oid}, test_key,
       std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
@@ -294,7 +294,7 @@ TEST_F(S3MotrKVSReaderTest, GetKeyvalFailedTest) {
       ptr_mock_s3request, NULL, NULL, ptr_mock_s3motr));
   EXPECT_CALL(*ptr_mock_s3motr, motr_op_rc(_)).WillRepeatedly(Return(-EPERM));
   ptr_motrkvs_reader->get_keyval(
-      index_oid, test_key,
+      {index_oid}, test_key,
       std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
@@ -320,7 +320,7 @@ TEST_F(S3MotrKVSReaderTest, GetKeyvalFailedTestMissing) {
       ptr_mock_s3request, NULL, NULL, ptr_mock_s3motr));
   EXPECT_CALL(*ptr_mock_s3motr, motr_op_rc(_)).WillRepeatedly(Return(-ENOENT));
   ptr_motrkvs_reader->get_keyval(
-      index_oid, test_key,
+      {index_oid}, test_key,
       std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
@@ -344,7 +344,7 @@ TEST_F(S3MotrKVSReaderTest, NextKeyvalTest) {
   EXPECT_CALL(*ptr_mock_s3motr, motr_op_launch(_, _, _, _))
       .WillOnce(Invoke(s3_test_motr_op_launch));
   ptr_motrkvs_reader->next_keyval(
-      index_oid, test_key, nr_kvp,
+      {index_oid}, test_key, nr_kvp,
       std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
@@ -372,7 +372,7 @@ TEST_F(S3MotrKVSReaderTest, NextKeyvalIdxPresentTest) {
   EXPECT_CALL(*ptr_mock_s3motr, motr_idx_fini(_)).Times(1);
 
   ptr_motrkvs_reader->next_keyval(
-      index_oid, test_key, nr_kvp,
+      {index_oid}, test_key, nr_kvp,
       std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
@@ -397,7 +397,7 @@ TEST_F(S3MotrKVSReaderTest, NextKeyvalSuccessfulTest) {
       .WillOnce(Invoke(s3_test_motr_op_launch));
 
   ptr_motrkvs_reader->next_keyval(
-      index_oid, test_key, nr_kvp,
+      {index_oid}, test_key, nr_kvp,
       std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
@@ -426,7 +426,7 @@ TEST_F(S3MotrKVSReaderTest, NextKeyvalFailedTest) {
   ptr_motrkvs_reader->reader_context.reset(new S3MotrKVSReaderContext(
       ptr_mock_s3request, NULL, NULL, ptr_mock_s3motr));
   ptr_motrkvs_reader->next_keyval(
-      index_oid, test_key, nr_kvp,
+      {index_oid}, test_key, nr_kvp,
       std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 
@@ -452,7 +452,7 @@ TEST_F(S3MotrKVSReaderTest, NextKeyvalFailedTestMissing) {
       .WillOnce(Invoke(s3_test_motr_op_launch_fail_enoent));
   EXPECT_CALL(*ptr_mock_s3motr, motr_op_rc(_)).WillRepeatedly(Return(-ENOENT));
   ptr_motrkvs_reader->next_keyval(
-      index_oid, test_key, nr_kvp,
+      {index_oid}, test_key, nr_kvp,
       std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj));
 

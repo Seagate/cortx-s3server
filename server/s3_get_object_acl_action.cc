@@ -21,6 +21,7 @@
 #include "s3_get_object_acl_action.h"
 #include "s3_error_codes.h"
 #include "s3_log.h"
+#include "s3_m0_uint128_helper.h"
 
 S3GetObjectACLAction::S3GetObjectACLAction(
     std::shared_ptr<S3RequestObject> req,
@@ -62,7 +63,7 @@ void S3GetObjectACLAction::fetch_bucket_info_failed() {
 
 void S3GetObjectACLAction::fetch_object_info_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  if ((object_list_oid.u_lo == 0ULL && object_list_oid.u_hi == 0ULL) ||
+  if (zero(obj_list_idx_lo.oid) ||
       object_metadata->get_state() == S3ObjectMetadataState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
     set_s3_error("NoSuchKey");
