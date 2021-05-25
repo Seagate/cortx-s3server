@@ -134,10 +134,7 @@ void S3PutMultiObjectAction::check_part_details() {
   } else if ((request->get_object_name()).length() > MAX_OBJECT_KEY_LENGTH) {
     set_s3_error("KeyTooLongError");
     send_response_to_s3_client();
-  } else if (request->get_data_length() <= MINIMUM_ALLOWED_PART_SIZE) {
-    set_s3_error("EntityTooSmall");
-    send_response_to_s3_client();
-  } else if (request->get_data_length() >= MAXIMUM_ALLOWED_PART_SIZE) {
+  } else if (request->get_content_length() >= MAXIMUM_ALLOWED_PART_SIZE) {
     set_s3_error("EntityTooLarge");
     send_response_to_s3_client();
   } else {
