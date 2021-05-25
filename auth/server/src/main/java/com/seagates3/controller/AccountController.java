@@ -396,7 +396,7 @@ public class AccountController extends AbstractController {
             }
             catch (DataAccessException e) {
               LOGGER.error("Failed to find Access Key for account :" +
-                           account.getName() + "exception: " + e);
+                           account.getName() + " exception: " + e);
               return accountResponseGenerator.internalServerError();
             }
 
