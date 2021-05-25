@@ -74,7 +74,7 @@ S3PutMultiObjectAction::S3PutMultiObjectAction(
   } else {
     motr_writer_factory = std::make_shared<S3MotrWriterFactory>();
   }
-
+  is_first_write_part_request = true;
   setup_steps();
 }
 

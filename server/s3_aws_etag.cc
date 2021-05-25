@@ -118,7 +118,7 @@ void S3AwsEtag::add_part_etag(std::string etag) {
 std::string S3AwsEtag::finalize() {
   std::string binary_etag = convert_hex_bin(hex_etag);
 
-  MD5hash hash;
+  MD5hash hash(true);
   hash.Update(binary_etag.c_str(), binary_etag.length());
   hash.Finalize();
 
