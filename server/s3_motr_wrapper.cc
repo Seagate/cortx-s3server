@@ -89,6 +89,15 @@ void ConcreteMotrAPI::motr_op_launch_addb_add(uint64_t addb_request_id,
   }
 }
 
+int ConcreteMotrAPI::motr_client_calculate_pi(
+    struct m0_generic_pi *pi, struct m0_pi_seed *seed, struct m0_bufvec *bvec,
+    enum m0_pi_calc_flag flag, unsigned char *curr_digest,
+    unsigned char *pi_value_without_seed) {
+
+  return m0_client_calculate_pi(pi, seed, bvec, flag, curr_digest,
+                                pi_value_without_seed);
+}
+
 void ConcreteMotrAPI::motr_idx_init(struct m0_idx *idx, struct m0_realm *parent,
                                     const struct m0_uint128 *id) {
   m0_idx_init(idx, parent, id);
