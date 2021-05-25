@@ -48,6 +48,11 @@ enum class MotrOpType {
 
 class MotrAPI {
  public:
+  virtual int motr_client_calculate_pi(
+      struct m0_generic_pi *pi, struct m0_pi_seed *seed, struct m0_bufvec *bvec,
+      enum m0_pi_calc_flag flag, unsigned char *curr_digest,
+      unsigned char *pi_value_without_seed) = 0;
+
   virtual void motr_idx_init(struct m0_idx *idx, struct m0_realm *parent,
                              const struct m0_uint128 *id) = 0;
 
@@ -109,6 +114,13 @@ class ConcreteMotrAPI : public MotrAPI {
                                       struct m0_op **op, uint32_t nr);
 
  public:
+  virtual int motr_client_calculate_pi(struct m0_generic_pi *pi,
+                                       struct m0_pi_seed *seed,
+                                       struct m0_bufvec *bvec,
+                                       enum m0_pi_calc_flag flag,
+                                       unsigned char *curr_digest,
+                                       unsigned char *pi_value_without_seed);
+
   virtual void motr_idx_init(struct m0_idx *idx, struct m0_realm *parent,
                              const struct m0_uint128 *id);
 

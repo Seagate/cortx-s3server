@@ -28,7 +28,7 @@
 #include <openssl/md5.h>
 
 class MD5hash {
-  MD5_CTX md5ctx;
+  MD5_CTX md5ctx, md5ctx_unit_size;
   unsigned char md5_digest[MD5_DIGEST_LENGTH];
   int status;
   bool is_finalized = false;
@@ -36,6 +36,9 @@ class MD5hash {
  public:
   MD5hash();
   int Update(const char *input, size_t length);
+  void save_motr_unit_checksum(unsigned char *curr_digest);
+  void save_unaligned_running_checksum(unsigned char *curr_digest);
+  void *get_prev_unit_checksum();
   int Finalize();
   void Reset();
 
