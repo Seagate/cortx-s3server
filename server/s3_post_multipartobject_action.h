@@ -39,7 +39,7 @@ class S3PostMultipartObjectAction : public S3ObjectAction {
   int layout_id;
   struct m0_uint128 old_oid;
   int old_layout_id;
-  struct m0_uint128 multipart_index_oid;
+  struct s3_motr_idx_layout multipart_index_layout = {};
   short tried_count;
   std::string salt;
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;

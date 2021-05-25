@@ -23,15 +23,14 @@
 #ifndef __S3_SERVER_S3_PART_METADATA_H__
 #define __S3_SERVER_S3_PART_METADATA_H__
 
-#include <gtest/gtest_prod.h>
 #include <functional>
 #include <map>
 #include <memory>
 #include <string>
 
-#include "s3_motr_kvs_reader.h"
-#include "s3_motr_kvs_writer.h"
-#include "s3_request_object.h"
+#include <gtest/gtest_prod.h>
+
+#include "s3_motr_context.h"
 
 enum class S3PartMetadataState {
   empty = 1,          // Initial state, no lookup done.
@@ -47,8 +46,12 @@ enum class S3PartMetadataState {
 };
 
 // Forward declarations.
+class MotrAPI;
+class S3MotrKVSReader;
 class S3MotrKVSReaderFactory;
+class S3MotrKVSWriter;
 class S3MotrKVSWriterFactory;
+class S3RequestObject;
 
 class S3PartMetadata {
   // Holds system-defined metadata (creation date etc).
@@ -78,7 +81,8 @@ class S3PartMetadata {
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   bool put_metadata;
-  struct m0_uint128 part_index_name_oid;
+
+  struct s3_motr_idx_layout part_index_layout = {};
 
   // Used to report to caller.
   std::function<void()> handler_on_success;
@@ -109,7 +113,8 @@ class S3PartMetadata {
                  std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory =
                      nullptr);
 
-  S3PartMetadata(std::shared_ptr<S3RequestObject> req, struct m0_uint128 oid,
+  S3PartMetadata(std::shared_ptr<S3RequestObject> req,
+                 const struct s3_motr_idx_layout& part_index_layout,
                  std::string uploadid, int part_num,
                  std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory =
                      nullptr,
@@ -120,8 +125,8 @@ class S3PartMetadata {
     return "BUCKET/" + bucket_name + "/" + object_name + "/" + upload_id;
   }
 
-  struct m0_uint128 get_part_index_oid() {
-    return part_index_name_oid;
+  const struct s3_motr_idx_layout& get_part_index_layout() const {
+    return part_index_layout;
   }
 
   virtual void set_content_length(std::string length);

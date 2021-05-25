@@ -24,6 +24,7 @@
 #include "s3_factory.h"
 #include "s3_iem.h"
 #include "s3_log.h"
+#include "s3_m0_uint128_helper.h"
 #include "s3_option.h"
 #include "s3_part_metadata.h"
 
@@ -86,7 +87,6 @@ S3GetMultipartPartAction::S3GetMultipartPartAction(
   s3_log(S3_LOG_DEBUG, request_id, "part-number-marker = %s\n",
          request_marker_key.c_str());
 
-  multipart_oid = {0ULL, 0ULL};
   multipart_part_list.set_bucket_name(bucket_name);
   multipart_part_list.set_object_name(object_name);
   multipart_part_list.set_upload_id(upload_id);
@@ -132,9 +132,11 @@ void S3GetMultipartPartAction::fetch_bucket_info_failed() {
 void S3GetMultipartPartAction::get_multipart_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   S3BucketMetadataState bucket_state = bucket_metadata->get_state();
+
   if (bucket_state == S3BucketMetadataState::present) {
-    multipart_oid = bucket_metadata->get_multipart_index_oid();
-    if (multipart_oid.u_hi == 0ULL && multipart_oid.u_lo == 0ULL) {
+    mp_idx_lo = bucket_metadata->get_multipart_index_layout();
+
+    if (zero(mp_idx_lo.oid)) {
       s3_log(S3_LOG_DEBUG, request_id,
              "No such upload in progress within the bucket\n");
       set_s3_error("NoSuchUpload");
@@ -142,7 +144,7 @@ void S3GetMultipartPartAction::get_multipart_metadata() {
     } else {
       object_multipart_metadata =
           object_mp_metadata_factory->create_object_mp_metadata_obj(
-              request, multipart_oid, upload_id);
+              request, mp_idx_lo, upload_id);
 
       object_multipart_metadata->load(
           std::bind(&S3GetMultipartPartAction::next, this),
@@ -162,7 +164,7 @@ void S3GetMultipartPartAction::get_key_object() {
       motr_kv_reader =
           motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
       motr_kv_reader->get_keyval(
-          object_multipart_metadata->get_part_index_oid(), last_key,
+          object_multipart_metadata->get_part_index_layout(), last_key,
           std::bind(&S3GetMultipartPartAction::get_key_object_successful, this),
           std::bind(&S3GetMultipartPartAction::get_key_object_failed, this));
     } else {
@@ -190,20 +192,21 @@ void S3GetMultipartPartAction::get_key_object_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Found part listing\n");
   std::string key_name = last_key;
   value = motr_kv_reader->get_value();
+
   if (!(value.empty())) {
-    struct m0_uint128 part_index_oid =
-        object_multipart_metadata->get_part_index_oid();
+    const auto& part_index_layout =
+        object_multipart_metadata->get_part_index_layout();
     s3_log(S3_LOG_DEBUG, request_id, "Read Part = %s\n", key_name.c_str());
     std::shared_ptr<S3PartMetadata> part =
         part_metadata_factory->create_part_metadata_obj(
-            request, part_index_oid, upload_id, atoi(key_name.c_str()));
+            request, part_index_layout, upload_id, atoi(key_name.c_str()));
 
     if (part->from_json(value) != 0) {
       s3_log(S3_LOG_ERROR, request_id,
              "Json Parsing failed. Index oid = "
              "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
-             part_index_oid.u_hi, part_index_oid.u_lo, key_name.c_str(),
-             value.c_str());
+             part_index_layout.oid.u_hi, part_index_layout.oid.u_lo,
+             key_name.c_str(), value.c_str());
       s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
              S3_IEM_METADATA_CORRUPTED_JSON);
     } else {
@@ -250,7 +253,7 @@ void S3GetMultipartPartAction::get_next_objects() {
     motr_kv_reader =
         motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
     motr_kv_reader->next_keyval(
-        object_multipart_metadata->get_part_index_oid(), last_key, count,
+        object_multipart_metadata->get_part_index_layout(), last_key, count,
         std::bind(&S3GetMultipartPartAction::get_next_objects_successful, this),
         std::bind(&S3GetMultipartPartAction::get_next_objects_failed, this));
   } else {
@@ -270,23 +273,24 @@ void S3GetMultipartPartAction::get_next_objects_successful() {
     return;
   }
   s3_log(S3_LOG_DEBUG, request_id, "Found part listing\n");
-  struct m0_uint128 part_index_oid =
-      object_multipart_metadata->get_part_index_oid();
+
+  const auto& part_index_layout =
+      object_multipart_metadata->get_part_index_layout();
   bool atleast_one_json_error = false;
   auto& kvps = motr_kv_reader->get_key_values();
   size_t length = kvps.size();
   for (auto& kv : kvps) {
     s3_log(S3_LOG_DEBUG, request_id, "Read Object = %s\n", kv.first.c_str());
     auto part = part_metadata_factory->create_part_metadata_obj(
-        request, part_index_oid, upload_id, atoi(kv.first.c_str()));
+        request, part_index_layout, upload_id, atoi(kv.first.c_str()));
 
     if (part->from_json(kv.second.second) != 0) {
       atleast_one_json_error = true;
       s3_log(S3_LOG_ERROR, request_id,
              "Json Parsing failed. Index oid = "
              "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
-             part_index_oid.u_hi, part_index_oid.u_lo, kv.first.c_str(),
-             kv.second.second.c_str());
+             part_index_layout.oid.u_hi, part_index_layout.oid.u_lo,
+             kv.first.c_str(), kv.second.second.c_str());
     } else {
       multipart_part_list.add_part(part);
       return_list_size++;

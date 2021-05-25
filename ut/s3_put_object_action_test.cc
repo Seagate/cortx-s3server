@@ -49,13 +49,13 @@ using ::testing::DefaultValue;
   do {                                                                    \
     CREATE_BUCKET_METADATA;                                               \
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
-                get_object_list_index_oid())                              \
+                get_object_list_index_layout())                           \
         .Times(AtLeast(1))                                                \
-        .WillRepeatedly(ReturnRef(object_list_indx_oid));                 \
+        .WillRepeatedly(ReturnRef(index_layout));                         \
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
-                get_objects_version_list_index_oid())                     \
+                get_objects_version_list_index_layout())                  \
         .Times(AtLeast(1))                                                \
-        .WillRepeatedly(ReturnRef(objects_version_list_idx_oid));         \
+        .WillRepeatedly(ReturnRef(index_layout));                         \
     EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _)) \
         .Times(AtLeast(1));                                               \
     EXPECT_CALL(*(ptr_mock_request), http_verb())                         \
@@ -76,9 +76,8 @@ class S3PutObjectActionTest : public testing::Test {
     oid = {0x1ffff, 0x1ffff};
     old_object_oid = {0x1ffff, 0x1fff0};
     old_layout_id = 2;
-    object_list_indx_oid = {0x11ffff, 0x1ffff};
-    objects_version_list_idx_oid = {0x1ffff, 0x11fff};
-    zero_oid_idx = {0ULL, 0ULL};
+    index_layout = {{0x11ffff, 0x1ffff}};
+    zero_oid = {0ULL, 0ULL};
 
     layout_id =
         S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
@@ -109,7 +108,7 @@ class S3PutObjectActionTest : public testing::Test {
 
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
         ptr_mock_request, ptr_mock_s3_motr_api);
-    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
+    object_meta_factory->set_object_list_index_oid(index_layout.oid);
 
     motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
         ptr_mock_request, oid, ptr_mock_s3_motr_api);
@@ -141,10 +140,9 @@ class S3PutObjectActionTest : public testing::Test {
 
   std::shared_ptr<S3PutObjectAction> action_under_test;
 
-  struct m0_uint128 object_list_indx_oid;
-  struct m0_uint128 objects_version_list_idx_oid;
+  struct s3_motr_idx_layout index_layout;
   struct m0_uint128 oid, old_object_oid;
-  struct m0_uint128 zero_oid_idx;
+  struct m0_uint128 zero_oid;
   int layout_id, old_layout_id;
   std::map<std::string, std::string> request_header_map;
 
@@ -413,7 +411,7 @@ TEST_F(S3PutObjectActionTest,
       .Times(AtLeast(1))
       .WillOnce(Return(S3BucketMetadataState::present));
   bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
-      zero_oid_idx);
+      zero_oid);
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
       .Times(0);
@@ -454,7 +452,7 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoReturnedFoundShouldHaveNewOID) {
   action_under_test->fetch_object_info_success();
 
   EXPECT_EQ(1, call_count_one);
-  EXPECT_OID_NE(zero_oid_idx, action_under_test->old_object_oid);
+  EXPECT_OID_NE(zero_oid, action_under_test->old_object_oid);
   EXPECT_OID_NE(oid_before_regen, action_under_test->new_object_oid);
 }
 
@@ -474,7 +472,7 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoReturnedNotFoundShouldUseURL2OID) {
   action_under_test->fetch_object_info_success();
 
   EXPECT_EQ(1, call_count_one);
-  EXPECT_OID_EQ(zero_oid_idx, action_under_test->old_object_oid);
+  EXPECT_OID_EQ(zero_oid, action_under_test->old_object_oid);
   EXPECT_OID_EQ(oid_before_regen, action_under_test->new_object_oid);
 }
 
@@ -500,7 +498,7 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoReturnedInvalidStateReportsError) {
 
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
   EXPECT_EQ(0, call_count_one);
-  EXPECT_OID_EQ(zero_oid_idx, action_under_test->old_object_oid);
+  EXPECT_OID_EQ(zero_oid, action_under_test->old_object_oid);
   EXPECT_OID_EQ(oid_before_regen, action_under_test->new_object_oid);
 }
 
@@ -825,9 +823,8 @@ TEST_F(S3PutObjectActionTest, WriteObjectFailedShouldUndoMarkProgress) {
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
   MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
       action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
-      object_list_indx_oid, objects_version_list_idx_oid,
-      "" /* Version does not exists yet */, false /* force_delete */,
-      false /* is_multipart */, {0ULL, 0ULL});
+      index_layout.oid, index_layout.oid, "" /* Version does not exists yet */,
+      false /* force_delete */, false /* is_multipart */, {0ULL, 0ULL});
   action_under_test->new_probable_del_rec.reset(prob_rec);
   // expectations for mark_new_oid_for_deletion()
   EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
@@ -857,9 +854,8 @@ TEST_F(S3PutObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure) {
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
   MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
       action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
-      object_list_indx_oid, objects_version_list_idx_oid,
-      "" /* Version does not exists yet */, false /* force_delete */,
-      false /* is_multipart */, {0ULL, 0ULL});
+      index_layout.oid, index_layout.oid, "" /* Version does not exists yet */,
+      false /* force_delete */, false /* is_multipart */, {0ULL, 0ULL});
   action_under_test->new_probable_del_rec.reset(prob_rec);
   // expectations for mark_new_oid_for_deletion()
   EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
@@ -1031,8 +1027,8 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulShouldRestartReadingData) {
 
 TEST_F(S3PutObjectActionTest, SaveMetadata) {
   CREATE_BUCKET_METADATA;
-  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
+  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_layout(
+      index_layout);
 
   action_under_test->new_object_metadata =
       object_meta_factory->mock_object_metadata;
@@ -1082,8 +1078,8 @@ TEST_F(S3PutObjectActionTest, SaveMetadata) {
 
 TEST_F(S3PutObjectActionTest, SaveObjectMetadataFailed) {
   CREATE_OBJECT_METADATA;
-  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
+  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_layout(
+      index_layout);
   action_under_test->new_object_metadata =
       object_meta_factory->mock_object_metadata;
 
@@ -1100,9 +1096,8 @@ TEST_F(S3PutObjectActionTest, SaveObjectMetadataFailed) {
 
   MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
       action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
-      object_list_indx_oid, objects_version_list_idx_oid,
-      "" /* Version does not exists yet */, false /* force_delete */,
-      false /* is_multipart */, {0ULL, 0ULL});
+      index_layout.oid, index_layout.oid, "" /* Version does not exists yet */,
+      false /* force_delete */, false /* is_multipart */, {0ULL, 0ULL});
   action_under_test->new_probable_del_rec.reset(prob_rec);
   // expectations for mark_new_oid_for_deletion()
   EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);

@@ -41,7 +41,8 @@ class S3GetMultipartPartAction : public S3BucketAction {
   std::string bucket_name;
   std::string object_name;
   std::string upload_id;
-  m0_uint128 multipart_oid;
+
+  struct s3_motr_idx_layout mp_idx_lo = {};
 
   bool fetch_successful;
   bool invalid_upload_id;

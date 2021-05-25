@@ -47,13 +47,13 @@ using ::testing::DefaultValue;
   do {                                                                    \
     CREATE_BUCKET_METADATA;                                               \
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
-                get_object_list_index_oid())                              \
+                get_object_list_index_layout())                           \
         .Times(AtLeast(1))                                                \
-        .WillRepeatedly(ReturnRef(object_list_indx_oid));                 \
+        .WillRepeatedly(ReturnRef(index_layout));                         \
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
-                get_objects_version_list_index_oid())                     \
+                get_objects_version_list_index_layout())                  \
         .Times(AtLeast(1))                                                \
-        .WillRepeatedly(ReturnRef(objects_version_list_index_oid));       \
+        .WillRepeatedly(ReturnRef(index_layout));                         \
     EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _)) \
         .Times(AtLeast(1));                                               \
     EXPECT_CALL(*(mock_request), http_verb())                             \
@@ -70,9 +70,8 @@ class S3PutChunkUploadObjectActionTestBase : public testing::Test {
     bucket_name = "seagatebucket";
     object_name = "objname";
     oid = {0x1ffff, 0x1ffff};
-    object_list_indx_oid = {0x11ffff, 0x1ffff};
-    objects_version_list_index_oid = {0x111fff, 0x1ffff};
-    zero_oid_idx = {0ULL, 0ULL};
+    index_layout = {{0x11ffff, 0x1ffff}};
+    zero_oid = {0ULL, 0ULL};
 
     layout_id =
         S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
@@ -103,7 +102,7 @@ class S3PutChunkUploadObjectActionTestBase : public testing::Test {
 
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
         mock_request, ptr_mock_s3_motr_api);
-    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
+    object_meta_factory->set_object_list_index_oid(index_layout.oid);
 
     motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
         mock_request, oid, ptr_mock_s3_motr_api);
@@ -122,10 +121,9 @@ class S3PutChunkUploadObjectActionTestBase : public testing::Test {
 
   std::shared_ptr<S3PutChunkUploadObjectAction> action_under_test;
 
-  struct m0_uint128 object_list_indx_oid;
-  struct m0_uint128 objects_version_list_index_oid;
+  struct s3_motr_idx_layout index_layout;
   struct m0_uint128 oid;
-  struct m0_uint128 zero_oid_idx;
+  struct m0_uint128 zero_oid;
   int layout_id;
   std::map<std::string, std::string> request_header_map;
   std::string bucket_name, object_name;
@@ -352,7 +350,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   action_under_test->fetch_object_info_success();
 
   EXPECT_EQ(1, call_count_one);
-  EXPECT_OID_NE(zero_oid_idx, action_under_test->old_object_oid);
+  EXPECT_OID_NE(zero_oid, action_under_test->old_object_oid);
   EXPECT_OID_NE(oid_before_regen, action_under_test->new_object_oid);
 }
 
@@ -374,7 +372,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   action_under_test->fetch_object_info_success();
 
   EXPECT_EQ(1, call_count_one);
-  EXPECT_OID_EQ(zero_oid_idx, action_under_test->old_object_oid);
+  EXPECT_OID_EQ(zero_oid, action_under_test->old_object_oid);
   EXPECT_OID_EQ(oid_before_regen, action_under_test->new_object_oid);
 }
 
@@ -402,7 +400,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
   EXPECT_EQ(0, call_count_one);
-  EXPECT_OID_EQ(zero_oid_idx, action_under_test->old_object_oid);
+  EXPECT_OID_EQ(zero_oid, action_under_test->old_object_oid);
   EXPECT_OID_EQ(oid_before_regen, action_under_test->new_object_oid);
 }
 
@@ -722,9 +720,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
   MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
       action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
-      object_list_indx_oid, objects_version_list_index_oid,
-      "" /* Version does not exists yet */, false /* force_delete */,
-      false /* is_multipart */, {0ULL, 0ULL});
+      index_layout.oid, index_layout.oid, "" /* Version does not exists yet */,
+      false /* force_delete */, false /* is_multipart */, {0ULL, 0ULL});
   action_under_test->new_probable_del_rec.reset(prob_rec);
   EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
   EXPECT_CALL(*prob_rec, to_json()).Times(1);
@@ -752,9 +749,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
   MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
       action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
-      object_list_indx_oid, objects_version_list_index_oid,
-      "" /* Version does not exists yet */, false /* force_delete */,
-      false /* is_multipart */, {0ULL, 0ULL});
+      index_layout.oid, index_layout.oid, "" /* Version does not exists yet */,
+      false /* force_delete */, false /* is_multipart */, {0ULL, 0ULL});
   action_under_test->new_probable_del_rec.reset(prob_rec);
   EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
   EXPECT_CALL(*prob_rec, to_json()).Times(1);
@@ -931,7 +927,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth, SaveMetadata) {
   CREATE_BUCKET_METADATA;
   bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
+      index_layout);
 
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
 

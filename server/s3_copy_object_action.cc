@@ -150,25 +150,21 @@ void S3CopyObjectAction::fetch_source_bucket_info_failed() {
 void S3CopyObjectAction::fetch_source_object_info() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, request_id, "Found source bucket metadata\n");
-  m0_uint128 source_object_list_oid =
-      source_bucket_metadata->get_object_list_index_oid();
-  m0_uint128 source_object_version_list_oid =
-      source_bucket_metadata->get_objects_version_list_index_oid();
 
-  if ((source_object_list_oid.u_hi == 0ULL &&
-       source_object_list_oid.u_lo == 0ULL) ||
-      (source_object_version_list_oid.u_hi == 0ULL &&
-       source_object_version_list_oid.u_lo == 0ULL)) {
+  const auto& source_object_list_layout =
+      source_bucket_metadata->get_object_list_index_layout();
+  const auto& source_object_version_list_layout =
+      source_bucket_metadata->get_objects_version_list_index_layout();
+
+  if (zero(source_object_list_layout.oid) ||
+      zero(source_object_version_list_layout.oid)) {
     // Object list index and version list index missing.
     fetch_source_object_info_failed();
   } else {
     source_object_metadata =
         object_metadata_factory->create_object_metadata_obj(
             request, source_bucket_name, source_object_name,
-            source_object_list_oid);
-
-    source_object_metadata->set_objects_version_list_index_oid(
-        source_object_version_list_oid);
+            source_object_list_layout, source_object_version_list_layout);
 
     source_object_metadata->load(
         std::bind(&S3CopyObjectAction::fetch_source_object_info_success, this),
@@ -198,10 +194,7 @@ void S3CopyObjectAction::fetch_source_object_info_failed() {
 
   s3_put_action_state = S3PutObjectActionState::validationFailed;
 
-  m0_uint128 source_object_list_oid =
-      source_bucket_metadata->get_object_list_index_oid();
-  if (source_object_list_oid.u_hi == 0ULL &&
-      source_object_list_oid.u_lo == 0ULL) {
+  if (zero(source_bucket_metadata->get_object_list_index_layout().oid)) {
     s3_log(S3_LOG_ERROR, request_id, "Object not found\n");
     set_s3_error("NoSuchKey");
   } else {

@@ -105,15 +105,15 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   struct m0_uint128 old_oid = {};
   // Will be object list index oid when simple object upload.
   // Will be multipart object list index oid when multipart object upload.
-  struct m0_uint128 object_list_index_oid = {};
-  struct m0_uint128 objects_version_list_index_oid = {};
-  struct m0_uint128 part_index_oid;
+  struct s3_motr_idx_layout object_list_index_layout = {};
+  struct s3_motr_idx_layout objects_version_list_index_layout = {};
+  struct s3_motr_idx_layout part_index_layout = {};
 
   std::string motr_oid_str;
   std::string motr_old_oid_str;
   std::string motr_old_object_version_id;
 
-  std::string motr_part_oid_str;
+  std::string motr_part_layout_str;
 
   bool is_multipart = false;
 
@@ -175,12 +175,14 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   // Call these when Object metadata save/remove needs to be called.
   // id can be object list index OID or
   // id can be multipart upload list index OID
-  void set_object_list_index_oid(struct m0_uint128 id);
-  void set_objects_version_list_index_oid(struct m0_uint128 id);
+  void set_object_list_index_layout(const struct s3_motr_idx_layout& lo);
+  void set_objects_version_list_index_layout(
+      const struct s3_motr_idx_layout& lo);
 
   virtual std::string get_version_key_in_index();
-  virtual struct m0_uint128 get_object_list_index_oid() const;
-  virtual struct m0_uint128 get_objects_version_list_index_oid() const;
+  virtual const struct s3_motr_idx_layout& get_object_list_index_layout() const;
+  virtual const struct s3_motr_idx_layout&
+      get_objects_version_list_index_layout() const;
 
   virtual void set_content_length(std::string length);
   virtual size_t get_content_length();
@@ -196,7 +198,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   virtual void set_oid(struct m0_uint128 id);
   void set_old_oid(struct m0_uint128 id);
   void acl_from_json(std::string acl_json_str);
-  void set_part_index_oid(struct m0_uint128 id);
+  void set_part_index_layout(const struct s3_motr_idx_layout&);
   virtual struct m0_uint128 get_oid() { return oid; }
   virtual int get_layout_id() { return layout_id; }
   void set_layout_id(int id) { layout_id = id; }
@@ -205,7 +207,9 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
 
   virtual struct m0_uint128 get_old_oid() { return old_oid; }
 
-  struct m0_uint128 get_part_index_oid() const { return part_index_oid; }
+  const struct s3_motr_idx_layout& get_part_index_layout() const {
+    return part_index_layout;
+  }
 
   void regenerate_version_id();
 

@@ -37,6 +37,53 @@
 
 extern struct m0_uint128 global_instance_id;
 
+std::shared_ptr<S3ObjectMetadata>
+S3ObjectMetadataFactory::create_object_metadata_obj(
+    std::shared_ptr<S3RequestObject> req,
+    const struct s3_motr_idx_layout& obj_idx_lo,
+    const struct s3_motr_idx_layout& obj_ver_idx_lo) {
+
+  return create_object_metadata_obj(std::move(req), "", "", obj_idx_lo,
+                                    obj_ver_idx_lo);
+}
+
+std::shared_ptr<S3ObjectMetadata>
+S3ObjectMetadataFactory::create_object_metadata_obj(
+    std::shared_ptr<S3RequestObject> req, const std::string& str_bucket_name,
+    const std::string& str_object_name,
+    const struct s3_motr_idx_layout& obj_idx_lo,
+    const struct s3_motr_idx_layout& obj_ver_idx_lo) {
+
+  s3_log(S3_LOG_DEBUG, req->get_request_id(),
+         "S3ObjectMetadataFactory::create_object_metadata_obj\n");
+
+  std::shared_ptr<S3ObjectMetadata> meta = std::make_shared<S3ObjectMetadata>(
+      std::move(req), str_bucket_name, str_object_name);
+
+  if (non_zero(obj_idx_lo.oid)) {
+    meta->set_object_list_index_layout(obj_idx_lo);
+  }
+  if (non_zero(obj_ver_idx_lo.oid)) {
+    meta->set_objects_version_list_index_layout(obj_ver_idx_lo);
+  }
+  return meta;
+}
+
+std::shared_ptr<S3ObjectMetadata>
+S3ObjectMultipartMetadataFactory::create_object_mp_metadata_obj(
+    std::shared_ptr<S3RequestObject> req,
+    const struct s3_motr_idx_layout& mp_idx_lo, std::string upload_id) {
+
+  s3_log(S3_LOG_DEBUG, req->get_request_id(),
+         "S3ObjectMultipartMetadataFactory::create_object_mp_metadata_obj\n");
+
+  std::shared_ptr<S3ObjectMetadata> meta = std::make_shared<S3ObjectMetadata>(
+      std::move(req), true, std::move(upload_id));
+  meta->set_object_list_index_layout(mp_idx_lo);
+
+  return meta;
+}
+
 S3ObjectMetadata::S3ObjectMetadata(const S3ObjectMetadata& src)
     : S3ObjectMetadataCopyable(src), state(S3ObjectMetadataState::present) {
 
@@ -165,23 +212,24 @@ std::string S3ObjectMetadata::get_owner_name() {
 
 std::string S3ObjectMetadata::get_object_name() { return object_name; }
 
-void S3ObjectMetadata::set_object_list_index_oid(struct m0_uint128 id) {
-  object_list_index_oid.u_hi = id.u_hi;
-  object_list_index_oid.u_lo = id.u_lo;
+void S3ObjectMetadata::set_object_list_index_layout(
+    const struct s3_motr_idx_layout& lo) {
+  object_list_index_layout = lo;
 }
 
-void S3ObjectMetadata::set_objects_version_list_index_oid(
-    struct m0_uint128 id) {
-  objects_version_list_index_oid.u_hi = id.u_hi;
-  objects_version_list_index_oid.u_lo = id.u_lo;
+void S3ObjectMetadata::set_objects_version_list_index_layout(
+    const struct s3_motr_idx_layout& lo) {
+  objects_version_list_index_layout = lo;
 }
 
-struct m0_uint128 S3ObjectMetadata::get_object_list_index_oid() const {
-  return object_list_index_oid;
+const struct s3_motr_idx_layout&
+S3ObjectMetadata::get_object_list_index_layout() const {
+  return object_list_index_layout;
 }
 
-struct m0_uint128 S3ObjectMetadata::get_objects_version_list_index_oid() const {
-  return objects_version_list_index_oid;
+const struct s3_motr_idx_layout&
+S3ObjectMetadata::get_objects_version_list_index_layout() const {
+  return objects_version_list_index_layout;
 }
 
 void S3ObjectMetadata::regenerate_version_id() {
@@ -301,9 +349,10 @@ void S3ObjectMetadata::set_old_version_id(std::string old_obj_ver_id) {
   motr_old_object_version_id = old_obj_ver_id;
 }
 
-void S3ObjectMetadata::set_part_index_oid(struct m0_uint128 id) {
-  part_index_oid = id;
-  motr_part_oid_str = S3M0Uint128Helper::to_string(part_index_oid);
+void S3ObjectMetadata::set_part_index_layout(
+    const struct s3_motr_idx_layout& lo) {
+  part_index_layout = lo;
+  motr_part_layout_str = S3M0Uint128Helper::to_string(part_index_layout);
 }
 
 void S3ObjectMetadata::add_system_attribute(std::string key, std::string val) {
@@ -322,8 +371,8 @@ void S3ObjectMetadata::validate() {
 void S3ObjectMetadata::load(std::function<void(void)> on_success,
                             std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  // object_list_index_oid should be set before using this method
-  assert(object_list_index_oid.u_hi || object_list_index_oid.u_lo);
+  // object_list_index_layout should be set before using this method
+  assert(non_zero(object_list_index_layout.oid));
 
   s3_timer.start();
 
@@ -333,7 +382,7 @@ void S3ObjectMetadata::load(std::function<void(void)> on_success,
   motr_kv_reader =
       motr_kv_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
   motr_kv_reader->get_keyval(
-      object_list_index_oid, object_name,
+      object_list_index_layout, object_name,
       std::bind(&S3ObjectMetadata::load_successful, this),
       std::bind(&S3ObjectMetadata::load_failed, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -345,7 +394,7 @@ void S3ObjectMetadata::load_successful() {
     s3_log(S3_LOG_ERROR, request_id,
            "Json Parsing failed. Index oid = "
            "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
-           object_list_index_oid.u_hi, object_list_index_oid.u_lo,
+           object_list_index_layout.oid.u_hi, object_list_index_layout.oid.u_lo,
            object_name.c_str(), motr_kv_reader->get_value().c_str());
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
            S3_IEM_METADATA_CORRUPTED_JSON);
@@ -400,14 +449,13 @@ void S3ObjectMetadata::save(std::function<void(void)> on_success,
 // Save to objects version list index
 void S3ObjectMetadata::save_version_metadata() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  // objects_version_list_index_oid should be set before using this method
-  assert(objects_version_list_index_oid.u_hi ||
-         objects_version_list_index_oid.u_lo);
+  // objects_version_list_index_layout should be set before using this method
+  assert(non_zero(objects_version_list_index_layout.oid));
 
   motr_kv_writer =
       mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   motr_kv_writer->put_keyval(
-      objects_version_list_index_oid, get_version_key_in_index(),
+      objects_version_list_index_layout, get_version_key_in_index(),
       this->version_entry_to_json(),
       std::bind(&S3ObjectMetadata::save_version_metadata_successful, this),
       std::bind(&S3ObjectMetadata::save_version_metadata_failed, this));
@@ -434,13 +482,13 @@ void S3ObjectMetadata::save_version_metadata_failed() {
 
 void S3ObjectMetadata::save_metadata() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  // object_list_index_oid should be set before using this method
-  assert(object_list_index_oid.u_hi || object_list_index_oid.u_lo);
+  // object_list_index_layout should be set before using this method
+  assert(non_zero(object_list_index_layout.oid));
 
   motr_kv_writer =
       mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   motr_kv_writer->put_keyval(
-      object_list_index_oid, object_name, this->to_json(),
+      object_list_index_layout, object_name, this->to_json(),
       std::bind(&S3ObjectMetadata::save_metadata_successful, this),
       std::bind(&S3ObjectMetadata::save_metadata_failed, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -487,13 +535,13 @@ void S3ObjectMetadata::remove(std::function<void(void)> on_success,
 
 void S3ObjectMetadata::remove_object_metadata() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  // object_list_index_oid should be set before using this method
-  assert(object_list_index_oid.u_hi || object_list_index_oid.u_lo);
+  // object_list_index_layout should be set before using this method
+  assert(non_zero(object_list_index_layout.oid));
 
   motr_kv_writer =
       mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   motr_kv_writer->delete_keyval(
-      object_list_index_oid, object_name,
+      object_list_index_layout, object_name,
       std::bind(&S3ObjectMetadata::remove_object_metadata_successful, this),
       std::bind(&S3ObjectMetadata::remove_object_metadata_failed, this));
 }
@@ -534,14 +582,13 @@ void S3ObjectMetadata::remove_version_metadata(
 
 void S3ObjectMetadata::remove_version_metadata() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  // objects_version_list_index_oid should be set before using this method
-  assert(objects_version_list_index_oid.u_hi ||
-         objects_version_list_index_oid.u_lo);
+  // objects_version_list_index_layout should be set before using this method
+  assert(non_zero(objects_version_list_index_layout.oid));
 
   motr_kv_writer =
       mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   motr_kv_writer->delete_keyval(
-      objects_version_list_index_oid, get_version_key_in_index(),
+      objects_version_list_index_layout, get_version_key_in_index(),
       std::bind(&S3ObjectMetadata::remove_version_metadata_successful, this),
       std::bind(&S3ObjectMetadata::remove_version_metadata_failed, this));
 }
@@ -575,7 +622,7 @@ std::string S3ObjectMetadata::to_json() {
 
   if (is_multipart) {
     root["Upload-ID"] = upload_id;
-    root["motr_part_oid"] = motr_part_oid_str;
+    root["motr_part_layout"] = motr_part_layout_str;
     root["motr_old_oid"] = motr_old_oid_str;
     root["old_layout_id"] = old_layout_id;
     root["motr_old_object_version_id"] = motr_old_object_version_id;
@@ -669,7 +716,7 @@ int S3ObjectMetadata::from_json(std::string content) {
   object_name = newroot["Object-Name"].asString();
   object_key_uri = newroot["Object-URI"].asString();
   upload_id = newroot["Upload-ID"].asString();
-  motr_part_oid_str = newroot["motr_part_oid"].asString();
+  motr_part_layout_str = newroot["motr_part_layout"].asString();
 
   motr_oid_str = newroot["motr_oid"].asString();
   layout_id = newroot["layout_id"].asInt();
@@ -689,8 +736,7 @@ int S3ObjectMetadata::from_json(std::string content) {
     motr_old_object_version_id =
         newroot["motr_old_object_version_id"].asString();
   }
-
-  part_index_oid = S3M0Uint128Helper::to_m0_uint128(motr_part_oid_str);
+  part_index_layout = S3M0Uint128Helper::to_idx_layout(motr_part_layout_str);
 
   Json::Value::Members members = newroot["System-Defined"].getMemberNames();
   for (auto it : members) {

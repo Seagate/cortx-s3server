@@ -63,7 +63,7 @@ class S3PartMetadataTest : public testing::Test {
                                                  1, motr_kvs_reader_factory,
                                                  motr_kvs_writer_factory));
     metadata_under_test_with_oid.reset(
-        new S3PartMetadata(ptr_mock_request, part_indx_oid, "uploadid", 1,
+        new S3PartMetadata(ptr_mock_request, {part_indx_oid}, "uploadid", 1,
                            motr_kvs_reader_factory, motr_kvs_writer_factory));
   }
 
@@ -81,9 +81,9 @@ class S3PartMetadataTest : public testing::Test {
 TEST_F(S3PartMetadataTest, ConstructorTest) {
   struct m0_uint128 zero_oid = {0ULL, 0ULL};
   std::string index_name;
-  EXPECT_OID_EQ(zero_oid, metadata_under_test->part_index_name_oid);
+  EXPECT_OID_EQ(zero_oid, metadata_under_test->part_index_layout.oid);
   EXPECT_OID_EQ(part_indx_oid,
-                metadata_under_test_with_oid->part_index_name_oid);
+                metadata_under_test_with_oid->part_index_layout.oid);
   EXPECT_STREQ(
       "", metadata_under_test->system_defined_attribute["Owner-User"].c_str());
   EXPECT_STREQ(
@@ -131,9 +131,10 @@ TEST_F(S3PartMetadataTest, GetSet) {
 
 TEST_F(S3PartMetadataTest, AddSystemAttribute) {
   metadata_under_test->add_system_attribute("LocationConstraint", "us-east");
-  EXPECT_STREQ("us-east", metadata_under_test
-                              ->system_defined_attribute["LocationConstraint"]
-                              .c_str());
+  EXPECT_STREQ(
+      "us-east",
+      metadata_under_test->system_defined_attribute["LocationConstraint"]
+          .c_str());
 }
 
 TEST_F(S3PartMetadataTest, AddUserDefinedAttribute) {
@@ -159,10 +160,10 @@ TEST_F(S3PartMetadataTest, LoadSuccessful) {
 
   metadata_under_test->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3objectmetadata_callbackobj);
-
+  std::string s_retval =
+      "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}";
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
-      .WillRepeatedly(Return(
-           "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));
+      .WillRepeatedly(ReturnRef(s_retval));
   metadata_under_test->load_successful();
   EXPECT_EQ(metadata_under_test->state, S3PartMetadataState::present);
   EXPECT_TRUE(s3objectmetadata_callbackobj.success_called);
@@ -174,9 +175,9 @@ TEST_F(S3PartMetadataTest, LoadSuccessInvalidJson) {
 
   metadata_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
-
+  std::string s_retval;
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
-      .WillRepeatedly(Return(""));
+      .WillRepeatedly(ReturnRef(s_retval));
   metadata_under_test->load_successful();
   EXPECT_TRUE(metadata_under_test->json_parsing_error);
   EXPECT_EQ(metadata_under_test->state, S3PartMetadataState::failed);
@@ -242,12 +243,11 @@ TEST_F(S3PartMetadataTest, CreatePartIndexSuccessful) {
   struct m0_uint128 myoid = {0xfff, 0xffff};
   metadata_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_motr_kvs_writer;
-  metadata_under_test->motr_kv_writer->oid_list.push_back(myoid);
+  metadata_under_test->motr_kv_writer->idx_los.push_back({myoid});
 
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, _, _, _, _)).Times(1);
   metadata_under_test->create_part_index_successful();
-  EXPECT_OID_EQ(myoid, metadata_under_test->part_index_name_oid);
 }
 
 TEST_F(S3PartMetadataTest, CreatePartIndexSuccessfulSaveMetadata) {
@@ -255,11 +255,10 @@ TEST_F(S3PartMetadataTest, CreatePartIndexSuccessfulSaveMetadata) {
   struct m0_uint128 myoid = {0xfff, 0xffff};
   metadata_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_motr_kvs_writer;
-  metadata_under_test->motr_kv_writer->oid_list.push_back(myoid);
+  metadata_under_test->motr_kv_writer->idx_los.push_back({myoid});
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, _, _, _, _)).Times(1);
   metadata_under_test->create_part_index_successful();
-  EXPECT_OID_EQ(myoid, metadata_under_test->part_index_name_oid);
 }
 
 TEST_F(S3PartMetadataTest, CreatePartIndexSuccessfulOnlyCreateIndex) {
@@ -267,7 +266,7 @@ TEST_F(S3PartMetadataTest, CreatePartIndexSuccessfulOnlyCreateIndex) {
   metadata_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_motr_kvs_writer;
   metadata_under_test->put_metadata = false;
-  metadata_under_test->motr_kv_writer->oid_list.push_back(myoid);
+  metadata_under_test->motr_kv_writer->idx_los.push_back({myoid});
   metadata_under_test->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3objectmetadata_callbackobj);
 
@@ -485,4 +484,3 @@ TEST_F(S3PartMetadataTest, FromJsonFailure) {
   std::string json_str = "This is invalid Json String";
   EXPECT_EQ(-1, metadata_under_test->from_json(json_str));
 }
-

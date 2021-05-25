@@ -45,27 +45,28 @@ using ::testing::_;
             ->create_bucket_metadata_obj(request_mock); \
   } while (0)
 
-#define CREATE_PART_METADATA_OBJ                                             \
-  do {                                                                       \
-    action_under_test_ptr->part_metadata =                                   \
-        action_under_test_ptr->part_metadata_factory                         \
-            ->create_part_metadata_obj(request_mock, mp_indx_oid, upload_id, \
-                                       0);                                   \
+#define CREATE_PART_METADATA_OBJ                                               \
+  do {                                                                         \
+    action_under_test_ptr->part_metadata =                                     \
+        action_under_test_ptr->part_metadata_factory                           \
+            ->create_part_metadata_obj(request_mock, {mp_indx_oid}, upload_id, \
+                                       0);                                     \
   } while (0)
 
-#define CREATE_MP_METADATA_OBJ                                         \
-  do {                                                                 \
-    action_under_test_ptr->multipart_metadata =                        \
-        action_under_test_ptr->object_mp_metadata_factory              \
-            ->create_object_mp_metadata_obj(request_mock, mp_indx_oid, \
-                                            upload_id);                \
+#define CREATE_MP_METADATA_OBJ                                           \
+  do {                                                                   \
+    action_under_test_ptr->multipart_metadata =                          \
+        action_under_test_ptr->object_mp_metadata_factory                \
+            ->create_object_mp_metadata_obj(request_mock, {mp_indx_oid}, \
+                                            upload_id);                  \
   } while (0)
 
-#define CREATE_METADATA_OBJ                                                   \
-  do {                                                                        \
-    action_under_test_ptr->object_metadata =                                  \
-        action_under_test_ptr->object_metadata_factory                        \
-            ->create_object_metadata_obj(request_mock, object_list_indx_oid); \
+#define CREATE_METADATA_OBJ                                       \
+  do {                                                            \
+    action_under_test_ptr->object_metadata =                      \
+        action_under_test_ptr->object_metadata_factory            \
+            ->create_object_metadata_obj(request_mock,            \
+                                         {object_list_indx_oid}); \
   } while (0)
 
 #define CREATE_KVS_READER_OBJ                                         \
@@ -177,7 +178,8 @@ class S3PostCompleteActionTest : public testing::Test {
  public:
   void func_callback_one() { call_count_one += 1; }
 
-  void dummy_put_keyval(struct m0_uint128 oid, std::string key, std::string val,
+  void dummy_put_keyval(const struct s3_motr_idx_layout&, const std::string&,
+                        const std::string&,
                         std::function<void(void)> on_success,
                         std::function<void(void)> on_failed) {
     action_under_test_ptr->next();
