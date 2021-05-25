@@ -104,6 +104,13 @@ S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req,
   S3UriToMotrOID(s3_motr_api, uri_name.c_str(), request_id, &oid);
 
   oid_list.push_back(oid);
+  layout_ids.clear();
+
+  place_holder_for_last_unit = NULL;
+  last_op_was_write = false;
+  unit_size_for_place_holder = -1;
+  is_s3_write_di_check_enabled =
+      S3Option::get_instance()->is_s3_write_di_check_enabled();
 }
 
 S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req,
@@ -439,7 +446,7 @@ void S3MotrWiter::write_content() {
 
   assert(is_object_opened);
 
-  const size_t motr_unit_size =
+  motr_unit_size =
       S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_ids[0]);
   size_t motr_buf_count = buffer_sequence.size();
 
@@ -463,7 +470,11 @@ void S3MotrWiter::write_content() {
       request, std::bind(&S3MotrWiter::write_content_successful, this),
       std::bind(&S3MotrWiter::write_content_failed, this)));
 
-  writer_context->init_write_op_ctx(motr_buf_count);
+  // After padding motr_buf_count, it will be an absolute multiple
+  // of buffers_per_unit
+  size_t motr_checksums_buf_count = motr_buf_count / buffers_per_unit;
+
+  writer_context->init_write_op_ctx(motr_buf_count, motr_checksums_buf_count);
 
   struct s3_motr_op_context *ctx = writer_context->get_motr_op_ctx();
 
@@ -711,12 +722,14 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
                                            S3BufferSequence buffer_sequence,
                                            size_t motr_buf_count) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-
+  int rc;
   size_in_current_write = 0;
   size_t buf_idx = 0;
-
+  size_t chksum_buf_idx = 0;
+  bool calculated_chksum_at_unit_boundary = false;
+  size_t saved_last_index = last_index;
   while (!buffer_sequence.empty()) {
-
+    calculated_chksum_at_unit_boundary = false;
     const auto &ptr_n_len = buffer_sequence.front();
     const size_t len_in_buf = ptr_n_len.second;
 
@@ -729,8 +742,46 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
     rw_ctx->data->ov_buf[buf_idx] = ptr_n_len.first;
     rw_ctx->data->ov_vec.v_count[buf_idx] = size_of_each_buf;
 
-    // Here we use actual length to get md5
-    md5crypt.Update((const char *)ptr_n_len.first, len_in_buf);
+    if (!is_s3_write_di_check_enabled) {
+      // Here we use actual length to get md5
+      md5crypt.Update((const char *)ptr_n_len.first, len_in_buf);
+    } else {
+      rw_ctx->pi_bufvec->ov_buf[0] = ptr_n_len.first;
+      rw_ctx->pi_bufvec->ov_vec.v_count[0] = size_of_each_buf;
+      rw_ctx->pi_bufvec->ov_vec.v_nr = 1;
+
+      if (last_index > 0) {
+        rc = s3_motr_api->motr_client_calculate_pi(
+            &rw_ctx->pi, NULL, rw_ctx->pi_bufvec,
+            static_cast<m0_pi_calc_flag>(0),
+            (unsigned char *)rw_ctx->current_digest, NULL);
+        if (rc != 0) {
+          s3_log(
+              S3_LOG_ERROR, request_id,
+              "motr api motr_client_calculate_pi failed with return code %d\n",
+              rc);
+        }
+        assert(rc == 0);
+      } else {
+        // Checksum initialization and also update will happen one after another
+        rw_ctx->pi_bufvec->ov_vec.v_nr = 0;
+        rc = s3_motr_api->motr_client_calculate_pi(
+            &rw_ctx->pi, NULL, rw_ctx->pi_bufvec, M0_PI_CALC_UNIT_ZERO,
+            (unsigned char *)rw_ctx->current_digest, NULL);
+        if (rc != 0) {
+          s3_log(
+              S3_LOG_ERROR, request_id,
+              "motr api motr_client_calculate_pi failed with return code %d\n",
+              rc);
+        }
+        assert(rc == 0);
+        // save digest of checksum init
+        // md5crypt.save_motr_unit_checksum(rw_ctx->pi.t_pi->prev_digest);
+        // md5crypt.save_motr_unit_checksum((unsigned char *)rw_ctx->pi.t_pi);
+        md5crypt.save_motr_unit_checksum(
+            (unsigned char *)rw_ctx->current_digest);
+      }
+    }
 
     // Init motr buffer attrs.
     rw_ctx->ext->iv_index[buf_idx] = last_index;
@@ -738,11 +789,47 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
     last_index += /*data_len*/ size_of_each_buf;
 
     /* we don't want any attributes */
-    rw_ctx->attr->ov_vec.v_count[buf_idx] = 0;
+    // rw_ctx->attr->ov_vec.v_count[buf_idx] = 0;
 
     ++buf_idx;
     size_in_current_write += len_in_buf;
+    if (is_s3_write_di_check_enabled) {
+      if (size_in_current_write % motr_unit_size == 0) {
+        struct m0_pi_seed seed;
+        seed.data_unit_offset = saved_last_index;
+        seed.obj_id.f_container = oid_list[0].u_hi;
+        seed.obj_id.f_key = oid_list[0].u_lo;
+        saved_last_index = last_index;
+        assert(chksum_buf_idx <= rw_ctx->motr_checksums_buf_count);
+
+        memcpy(
+            ((struct m0_md5_inc_digest_pi *)((struct m0_generic_pi *)rw_ctx
+                                                 ->attr->ov_buf[chksum_buf_idx])
+                 ->t_pi)->prev_digest,
+            md5crypt.get_prev_unit_checksum(), PI_DIGEST_LENGTH);
+        md5crypt.save_motr_unit_checksum(rw_ctx->current_digest);
+        // Only seeding is needed here, assuming for all 16k buffers
+        // m0_client_calculate_pi() called, so set v_nr to 0
+        rw_ctx->pi_bufvec->ov_vec.v_nr = 0;
+        // Get seeded finalzed checksum in pi_value
+        rc = s3_motr_api->motr_client_calculate_pi(
+            &rw_ctx->pi, &seed, rw_ctx->pi_bufvec, M0_PI_CALC_FINAL,
+            (unsigned char *)rw_ctx->current_digest,
+            ((struct m0_md5_inc_digest_pi *)((struct m0_generic_pi *)
+                                             rw_ctx->attr->ov_buf
+                                                 [chksum_buf_idx++])->t_pi)
+                ->pi_value);
+        assert(rc == 0);
+        calculated_chksum_at_unit_boundary = true;
+      }
+    }
     buffer_sequence.pop_front();
+  }
+
+  if (is_s3_write_di_check_enabled) {
+    // Store checksum of actual data
+    // This checksum will be finalized and stored in metadata
+    md5crypt.save_unaligned_running_checksum(rw_ctx->current_digest);
   }
 
   if (buf_idx < motr_buf_count) {
@@ -769,12 +856,47 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
     rw_ctx->ext->iv_vec.v_count[buf_idx] = /*data_len*/ size_of_each_buf;
     last_index += /*data_len*/ size_of_each_buf;
 
-    /* we don't want any attributes */
-    rw_ctx->attr->ov_vec.v_count[buf_idx] = 0;
+    rc = s3_motr_api->motr_client_calculate_pi(
+        &rw_ctx->pi, NULL, rw_ctx->pi_bufvec, static_cast<m0_pi_calc_flag>(0),
+        (unsigned char *)rw_ctx->current_digest, NULL);
+    if (rc != 0) {
+      s3_log(S3_LOG_ERROR, request_id,
+             "motr api motr_client_calculate_pi failed with return code %d\n",
+             rc);
+    }
+    assert(rc == 0);
 
     ++buf_idx;
   }
+
   assert(buf_idx == motr_buf_count);
+
+  // Seed, Finalize after padding (In case of un aligned data)
+  if ((is_s3_write_di_check_enabled) && !calculated_chksum_at_unit_boundary) {
+    struct m0_pi_seed seed;
+    seed.data_unit_offset = saved_last_index;
+    seed.obj_id.f_container = oid_list[0].u_hi;
+    seed.obj_id.f_key = oid_list[0].u_lo;
+    saved_last_index = last_index;
+    assert(chksum_buf_idx <= rw_ctx->motr_checksums_buf_count);
+    // Running checksum of previous motr unit
+    memcpy(((struct m0_md5_inc_digest_pi *)((struct m0_generic_pi *)rw_ctx->attr
+                                                ->ov_buf[chksum_buf_idx])->t_pi)
+               ->prev_digest,
+           md5crypt.get_prev_unit_checksum(), PI_DIGEST_LENGTH);
+    // Save current running checksum
+    md5crypt.save_motr_unit_checksum(rw_ctx->current_digest);
+
+    // Set v_nr to 0, only seeding needed
+    rw_ctx->pi_bufvec->ov_vec.v_nr = 0;
+    // seeing and finalization only
+    s3_motr_api->motr_client_calculate_pi(
+        &rw_ctx->pi, &seed, rw_ctx->pi_bufvec, M0_PI_CALC_FINAL,
+        (unsigned char *)rw_ctx->current_digest,
+        ((struct m0_md5_inc_digest_pi *)((struct m0_generic_pi *)
+                                         rw_ctx->attr->ov_buf[chksum_buf_idx++])
+             ->t_pi)->pi_value);
+  }
 
   s3_log(S3_LOG_DEBUG, request_id, "size_in_current_write = %zu\n",
          size_in_current_write);
