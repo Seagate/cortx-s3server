@@ -34,6 +34,12 @@
 class MockS3Motr : public MotrAPI {
  public:
   MockS3Motr() : MotrAPI() {}
+  MOCK_METHOD6(motr_client_calculate_pi,
+               int(struct m0_generic_pi *pi, struct m0_pi_seed *seed,
+                   struct m0_bufvec *bvec, enum m0_pi_calc_flag flag,
+                   unsigned char *curr_digest,
+                   unsigned char *pi_value_without_seed));
+
   MOCK_METHOD3(motr_idx_init, void(struct m0_idx *idx, struct m0_realm *parent,
                                    const struct m0_uint128 *id));
   MOCK_METHOD1(motr_idx_fini, void(struct m0_idx *idx));
