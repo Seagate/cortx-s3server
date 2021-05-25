@@ -92,7 +92,7 @@ S3MotrWiter::S3MotrWiter(std::shared_ptr<RequestObject> req,
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
   std::string uri_name;
-
+  is_first_write_part_segment = false;
   std::shared_ptr<S3RequestObject> s3_request =
       std::dynamic_pointer_cast<S3RequestObject>(request);
 
@@ -723,6 +723,7 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
   size_t chksum_buf_idx = 0;
   bool calculated_chksum_at_unit_boundary = false;
   size_t saved_last_index = last_index;
+  bool first_buffer_part_write = is_first_write_part_segment;
   while (!buffer_sequence.empty()) {
     calculated_chksum_at_unit_boundary = false;
     const auto &ptr_n_len = buffer_sequence.front();
@@ -745,7 +746,10 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
       rw_ctx->pi_bufvec->ov_vec.v_count[0] = size_of_each_buf;
       rw_ctx->pi_bufvec->ov_vec.v_nr = 1;
 
-      if (last_index > 0) {
+      if (last_index > 0 && !first_buffer_part_write) {
+        // if last_index 0 then its first write of write sessions
+        // if is_first_write_part_segment is false its not
+        // first write of the part
         rc = s3_motr_api->motr_client_calculate_pi(
             &rw_ctx->pi, NULL, rw_ctx->pi_bufvec,
             static_cast<m0_pi_calc_flag>(0),
@@ -770,6 +774,7 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
               rc);
         }
         assert(rc == 0);
+        first_buffer_part_write = false;
         // save digest of checksum init
         // md5crypt.save_motr_unit_checksum(rw_ctx->pi.t_pi->prev_digest);
         // md5crypt.save_motr_unit_checksum((unsigned char *)rw_ctx->pi.t_pi);

@@ -499,6 +499,12 @@ void S3PutMultiObjectAction::write_object(
   if (content_length > motr_write_payload_size) {
     content_length = motr_write_payload_size;
   }
+  if (is_first_write_part_request) {
+    // Used for motr unit checksum computation, for part's first write
+    // init need to be called
+    motr_writer->first_write_part_request(true);
+    is_first_write_part_request = false;
+  }
   motr_writer->write_content(
       std::bind(&S3PutMultiObjectAction::write_object_successful, this),
       std::bind(&S3PutMultiObjectAction::write_object_failed, this),
@@ -512,7 +518,12 @@ void S3PutMultiObjectAction::write_object(
 void S3PutMultiObjectAction::write_object_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   motr_write_in_progress = false;
-
+  if (is_first_write_part_request) {
+    // Used for motr unit checksum computation, for part's first write
+    // init need to be called
+    motr_writer->first_write_part_request(false);
+    is_first_write_part_request = false;
+  }
   request->get_buffered_input()->flush_used_buffers();
 
   if (check_shutdown_and_rollback()) {
@@ -563,6 +574,13 @@ void S3PutMultiObjectAction::write_object_failed() {
 
   motr_write_in_progress = false;
   motr_write_completed = true;
+
+  if (is_first_write_part_request) {
+    // Used for motr unit checksum computation, for part's first write
+    // init need to be called
+    motr_writer->first_write_part_request(false);
+    is_first_write_part_request = false;
+  }
 
   request->get_buffered_input()->flush_used_buffers();
 
