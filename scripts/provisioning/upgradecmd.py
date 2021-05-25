@@ -21,6 +21,7 @@
 import sys
 
 from setupcmd import SetupCmd
+from merge import merge_configs
 
 class UpgradeCmd(SetupCmd):
   """Upgrade Setup Cmd."""
@@ -39,5 +40,13 @@ class UpgradeCmd(SetupCmd):
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
+
+    # merge_configs() is imported from the merge.py
+    # Upgrade config files
+    self.logger.info("merge configs started")
+    merge_configs()
+    self.logger.info("merge configs completed")
+
+    # Validating config files after upgrade
     self.validate_config_files(self.name)
     self.logger.info("validations completed")

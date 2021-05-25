@@ -496,7 +496,6 @@ if [ $1 == 1 ];then
     echo "[cortx-s3server-rpm] INFO: S3 RPM Post Install section completed"
 elif [ $1 == 2 ];then
     echo "[cortx-s3server-rpm] INFO: S3 RPM Post Upgrade section started"
-    python3.6 /opt/seagate/cortx/s3/bin/merge.py
     echo "[cortx-s3server-rpm] WARNING: All mini-provisioner template files are overwritten."
     echo "[cortx-s3server-rpm] INFO: S3 RPM Post Upgrade section completed"
 fi
