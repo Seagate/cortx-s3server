@@ -290,6 +290,40 @@ bool S3MotrReader::read_object() {
   return true;
 }
 
+bool S3MotrReader::ValidateStoredMD5Chksum(m0_bufvec *motr_data_unit,
+                                           struct m0_generic_pi *pi_info,
+                                           struct m0_pi_seed *seed) {
+  assert(NULL != motr_data_unit);
+  assert(NULL != pi_info);
+  assert(NULL != seed);
+
+  unsigned char current_digest[PI_DIGEST_LENGTH] = {0};
+  m0_md5_inc_digest_pi md5_info = {0};
+
+  memcpy(md5_info.prev_digest, ((m0_md5_inc_digest_pi *)(pi_info))->prev_digest,
+         PI_DIGEST_LENGTH);
+  md5_info.hdr.pi_type = M0_PI_TYPE_MD5_INC_DIGEST;
+
+  int rc = m0_client_calculate_pi((struct m0_generic_pi *)&md5_info, seed,
+                                  motr_data_unit, M0_PI_CALC_FINAL,
+                                  current_digest, NULL);
+  if (rc != 0) {
+    s3_log(S3_LOG_ERROR, "", "%s Motr API to Calculate PI Info failed.",
+           __func__);
+    return false;
+  }
+
+  if (0 != memcmp(md5_info.pi_value,
+                  ((m0_md5_inc_digest_pi *)(pi_info))->pi_value,
+                  PI_DIGEST_LENGTH)) {
+    s3_log(S3_LOG_ERROR, "", "%s Saved and Calculated Pi dont match.",
+           __func__);
+    return false;
+  }
+
+  return true;
+}
+
 bool S3MotrReader::ValidateStoredChksum() {
 
   uint32_t data_buffer_count =
@@ -302,8 +336,13 @@ bool S3MotrReader::ValidateStoredChksum() {
   assert(data_buffer_count % pi_buffer_count == 0);
 
   uint32_t pi_to_data_buffer_ratio = data_buffer_count / pi_buffer_count;
+
   s3_log(S3_LOG_INFO, "", "%s pi_to_data_buffer_ratio %u", __func__,
          pi_to_data_buffer_ratio);
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Motr Data Buffer count %u \n",
+         __func__, databuf->ov_vec.v_nr);
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Attr PI Buffer count %u \n",
+         __func__, pibuf->ov_vec.v_nr);
 
   uint32_t start_offset = 0;
   uint32_t end_offset = pi_to_data_buffer_ratio;
@@ -313,15 +352,12 @@ bool S3MotrReader::ValidateStoredChksum() {
 
     assert(end_offset <= data_buffer_count);
 
-    struct m0_pi_seed seed;
+    struct m0_pi_seed seed = {0};
     seed.data_unit_offset = current_index;
     seed.obj_id.f_container = oid.u_hi;
     seed.obj_id.f_key = oid.u_lo;
 
-    unsigned char current_digest[PI_DIGEST_LENGTH] = {0};
     m0_bufvec motr_data_unit = {0};
-    m0_md5_inc_digest_pi md5_info = {0};
-
     motr_data_unit.ov_vec.v_nr = pi_to_data_buffer_ratio;
     motr_data_unit.ov_vec.v_count = databuf->ov_vec.v_count + start_offset;
     motr_data_unit.ov_buf = databuf->ov_buf + start_offset;
@@ -330,43 +366,24 @@ bool S3MotrReader::ValidateStoredChksum() {
     s3_log(S3_LOG_INFO, "", "%s end_offset %u", __func__, end_offset);
     s3_log(S3_LOG_INFO, "", "%s current_index %lu", __func__, current_index);
 
-    memcpy(md5_info.prev_digest,
-           ((m0_md5_inc_digest_pi *)(pibuf->ov_buf[i]))->prev_digest,
-           PI_DIGEST_LENGTH);
-    md5_info.hdr.pi_type = M0_PI_TYPE_MD5_INC_DIGEST;
+    struct m0_generic_pi *pi_info = ((struct m0_generic_pi **)pibuf->ov_buf)[i];
 
-    int rc = m0_client_calculate_pi((struct m0_generic_pi *)&md5_info, &seed,
-                                    &motr_data_unit, M0_PI_CALC_FINAL,
-                                    current_digest, NULL);
-    if (rc != 0) {
-      return false;
-    }
-
-    if (0 != memcmp(md5_info.pi_value,
-                    ((m0_md5_inc_digest_pi *)(pibuf->ov_buf[i]))->pi_value,
-                    PI_DIGEST_LENGTH)) {
-      return false;
+    switch (pi_info->hdr.pi_type) {
+      case M0_PI_TYPE_MD5_INC_DIGEST:
+        if (false == ValidateStoredMD5Chksum(&motr_data_unit, pi_info, &seed)) {
+          s3_log(S3_LOG_ERROR, "", "%s Saved and Calculated Pi dont match.",
+                 __func__);
+          return false;
+        }
+        break;
+      default:
+        return false;
     }
 
     start_offset = end_offset;
     end_offset += pi_to_data_buffer_ratio;
     current_index += 1;
   }
-
-  //
-  // pi
-  // seed
-  // data
-  // flag
-  // current digest buffer
-  // NULL
-  //
-
-  // PI Comparison here.
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Motr Buffer count %u \n",
-         __func__, reader_context->get_motr_rw_op_ctx()->data->ov_vec.v_nr);
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Attr Buffer count %u \n",
-         __func__, reader_context->get_motr_rw_op_ctx()->attr->ov_vec.v_nr);
 
   return true;
 }

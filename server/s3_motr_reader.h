@@ -199,6 +199,9 @@ class S3MotrReader {
   virtual bool read_object();
   void read_object_successful();
   bool ValidateStoredChksum();
+  bool ValidateStoredMD5Chksum(m0_bufvec* motr_data_unit,
+                               struct m0_generic_pi* pi_info,
+                               struct m0_pi_seed* seed);
   void read_object_failed();
 
   void clean_up_contexts();
