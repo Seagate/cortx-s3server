@@ -79,6 +79,10 @@ class Authorizer {
     ServerResponse serverResponse = null;
     AuthorizationResponseGenerator responseGenerator =
         new AuthorizationResponseGenerator();
+    // CopyObject not allowed for anonymous user
+    if (requestor == null && requestBody.get("x-amz-copy-source") != null) {
+      return responseGenerator.AccessDenied();
+    }
     try {
       String existingPolicy = requestBody.get("Policy");
       // Below will check put/get/delete policy for first time
