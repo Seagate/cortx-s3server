@@ -28,7 +28,7 @@ pip install virtualenv
 virtualenv -p /usr/local/bin/python3.6 motr_st
 source motr_st/bin/activate
 pip3 install python-dateutil==2.4.2
-pip3 install pyyaml==3.11
+pip3 install pyyaml==5.4.1
 pip3 install xmltodict==0.9.2
 pip3 install boto3==1.2.2
 pip3 install botocore==1.3.8
