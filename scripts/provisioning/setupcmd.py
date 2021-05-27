@@ -472,16 +472,16 @@ class SetupCmd(object):
 
       # new sample file
       conf_sample = filetype + SampleFile
-      cs_conf_sample = S3CortxConfStore(config=conf_sample, index=conf_sample)
+      cs_conf_sample = S3CortxConfStore(config=conf_sample, index=conf_sample + "validator")
       conf_sample_keys = cs_conf_sample.get_all_keys()
 
       # active config file
       conf_file =  filetype + configFile
-      cs_conf_file = S3CortxConfStore(config=conf_file, index=conf_file)
+      cs_conf_file = S3CortxConfStore(config=conf_file, index=conf_file + "validator")
       conf_file_keys = cs_conf_file.get_all_keys()
 
       # compare the keys of sample file and config file
-      if conf_sample_keys == conf_file_keys:
+      if conf_sample_keys.sort() == conf_file_keys.sort():
           self.logger.info(f'config file {str(configFile)} validated successfully.')
       else:
           self.logger.error(f'config file {str(conf_file)} and sample file {str(conf_sample)} keys does not matched.')
