@@ -53,7 +53,6 @@ import com.seagates3.policy.PolicyUtil;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
 import com.seagates3.util.BinaryUtil;
-
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 public
@@ -79,6 +78,12 @@ class Authorizer {
     ServerResponse serverResponse = null;
     AuthorizationResponseGenerator responseGenerator =
         new AuthorizationResponseGenerator();
+    // Deny access if any action is restricted for public access
+    if (requestor == null &&
+        PublicAccessAuthorizer.isActionRestricted(requestBody)) {
+      return responseGenerator.AccessDenied(
+          "Anonymous users cannot copy objects.Please authenticate.");
+    }
     try {
       String existingPolicy = requestBody.get("Policy");
       // Below will check put/get/delete policy for first time
