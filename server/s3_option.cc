@@ -61,6 +61,7 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_WRITE_DATA_INTEGRITY_CHECK");
       s3_write_data_integrity_check =
           s3_option_node["S3_WRITE_DATA_INTEGRITY_CHECK"].as<bool>();
+      s3_pi_type = s3_option_node["S3_PI_TYPE"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_DATA_INTEGRITY_CHECK");
       s3_read_data_integrity_check =
           s3_option_node["S3_READ_DATA_INTEGRITY_CHECK"].as<bool>();
@@ -459,6 +460,7 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_WRITE_DATA_INTEGRITY_CHECK");
       s3_write_data_integrity_check =
           s3_option_node["S3_WRITE_DATA_INTEGRITY_CHECK"].as<bool>();
+      s3_pi_type = s3_option_node["S3_PI_TYPE"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_DATA_INTEGRITY_CHECK");
       s3_read_data_integrity_check =
           s3_option_node["S3_READ_DATA_INTEGRITY_CHECK"].as<bool>();
@@ -1178,6 +1180,8 @@ bool S3Option::is_s3_ssl_auth_enabled() { return s3_enable_auth_ssl; }
 bool S3Option::is_s3_write_di_check_enabled() {
   return s3_write_data_integrity_check;
 }
+
+int S3Option::get_pi_type() { return s3_pi_type; }
 
 bool S3Option::is_s3_read_di_check_enabled() {
   return s3_read_data_integrity_check;
