@@ -534,6 +534,9 @@ void S3CopyObjectAction::set_source_bucket_authorization_metadata() {
       source_object_metadata->get_encoded_object_acl(),
       source_bucket_metadata->get_policy_as_json());
   request->set_action_str("GetObject");
+  if (!source_object_metadata->get_tags().empty()) {
+    request->set_action_list("GetObjectTagging");
+  }
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -549,6 +552,14 @@ void S3CopyObjectAction::check_source_bucket_authorization() {
 
 void S3CopyObjectAction::check_source_bucket_authorization_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  // Do destination bucket authorization for secondary operations like
+  // PutTag, PutACL
+  auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
+                                  bucket_metadata->get_policy_as_json());
+  if (!source_object_metadata->get_tags().empty()) {
+    request->set_action_list("PutObjectTagging");
+  }
+  request->set_action_list("PutObjectAcl");
   next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

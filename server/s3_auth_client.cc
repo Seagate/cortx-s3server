@@ -584,6 +584,18 @@ void S3AuthClient::add_non_empty_key_val_to_body(std::string key,
   }
 }
 
+void S3AuthClient::add_non_empty_key_val_to_body(
+    std::string key, const std::list<std::string> &val_list) {
+  std::string val_str;
+  for (const auto &val : val_list) {
+    if (!val.empty()) {
+      val_str += val + " ";
+    }
+  }
+  val_str.pop_back();  // remove last space
+  add_key_val_to_body(std::move(key), std::move(val_str));
+}
+
 void S3AuthClient::set_event_with_retry_interval() {
   S3Option *option_instance = S3Option::get_instance();
 
@@ -801,6 +813,8 @@ bool S3AuthClient::setup_auth_request_body() {
         add_key_val_to_body("Request-ACL", "false");
       }
       add_non_empty_key_val_to_body("S3Action", s3_request->get_action_str());
+      add_non_empty_key_val_to_body("S3ActionList",
+                                    s3_request->get_action_list());
     }
     add_non_empty_key_val_to_body("Policy", policy_str);
     add_non_empty_key_val_to_body("Auth-ACL", acl_str);
