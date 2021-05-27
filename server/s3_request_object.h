@@ -29,6 +29,7 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <list>
 
 /* libevhtp */
 #include <gtest/gtest_prod.h>
@@ -52,6 +53,7 @@ class S3RequestObject : public RequestObject {
   std::string object_name;
   std::string default_acl;
   std::string s3_action;
+  std::list<std::string> s3_action_list;
 
   S3AuditInfo audit_log_obj;
   size_t object_size;
@@ -79,6 +81,7 @@ class S3RequestObject : public RequestObject {
   // Operation params.
   std::string get_object_uri();
   std::string get_action_str();
+  const std::list<std::string>& get_action_list();
   virtual S3AuditInfo& get_audit_info();
 
   virtual void set_bucket_name(const std::string& name);
@@ -86,6 +89,7 @@ class S3RequestObject : public RequestObject {
   virtual void set_object_name(const std::string& name);
   virtual const std::string& get_object_name();
   virtual void set_action_str(const std::string& action);
+  virtual void set_action_list(const std::string& action);
   virtual void set_default_acl(const std::string& name);
   virtual const std::string& get_default_acl();
   bool validate_attrs(const std::string& c_bucket_name,
