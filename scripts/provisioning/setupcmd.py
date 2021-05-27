@@ -22,6 +22,7 @@ import sys
 import os
 import re
 import shutil
+import glob
 from os import path
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
@@ -64,11 +65,11 @@ class SetupCmd(object):
     self.logger = logging.getLogger("s3-deployment-logger")
     
     if config is None:
-      self.logger.error(f'Empty Config url\n')
+      self.logger.error(f'Empty Config url')
       return
 
     if not config.strip():
-      self.logger.error(f'Config url:[{config}] must be a valid url path\n')
+      self.logger.error(f'Config url:[{config}] must be a valid url path')
       raise Exception('Empty config URL path')
 
     self.endpoint = None
@@ -132,14 +133,14 @@ class SetupCmd(object):
         self.rootdn_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_rootdn_pass)
 
     except Exception as e:
-      self.logger.error(f'read ldap credentials failed, error: {e}\n')
+      self.logger.error(f'read ldap credentials failed, error: {e}')
       raise e
 
   def update_cluster_id(self, op_file: str = "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"):
     """Set 'cluster_id' to op_file."""
     try:
       if path.isfile(f'{op_file}') == False:
-        raise S3PROVError(f'{op_file} must be present\n')
+        raise S3PROVError(f'{op_file} must be present')
       else:
         key = 'cluster_config>cluster_id'
         opfileconfstore = S3CortxConfStore(f'yaml://{op_file}', 'write_cluster_id_idx')
@@ -147,9 +148,9 @@ class SetupCmd(object):
         updated_cluster_id = opfileconfstore.get_config(f'{key}')
 
         if updated_cluster_id != self.cluster_id:
-          raise S3PROVError(f'set_config failed to set {key}: {self.cluster_id} in {op_file} \n')
+          raise S3PROVError(f'set_config failed to set {key}: {self.cluster_id} in {op_file} ')
     except Exception as e:
-      raise S3PROVError(f'exception: {e}\n')
+      raise S3PROVError(f'exception: {e}')
 
   def validate_pre_requisites(self,
                         rpms: list = None,
@@ -157,7 +158,7 @@ class SetupCmd(object):
                         services: list = None,
                         files: list = None):
     """Validate pre requisites using cortx-py-utils validator."""
-    self.logger.info(f'Validations running from {self._preqs_conf_file}\n')
+    self.logger.info(f'Validations running from {self._preqs_conf_file}')
     if pip3s:
       PkgV().validate('pip3s', pip3s)
     if services:
@@ -180,7 +181,7 @@ class SetupCmd(object):
                                 pip3s=_prereqs_confstore.get_config(f'{phase_name}>pip3s'),
                                 files=_prereqs_confstore.get_config(f'{phase_name}>files'))
     except Exception as e:
-      raise S3PROVError(f'ERROR: {phase_name} prereqs validations failed, exception: {e} \n')
+      raise S3PROVError(f'ERROR: {phase_name} prereqs validations failed, exception: {e} ')
 
   def key_value_verify(self, key: str):
     """Verify if there exists a corresponding value for given key."""
@@ -355,10 +356,10 @@ class SetupCmd(object):
           break
       if list_match_found is False:
         raise Exception(f'No match found for {key_yard}')
-      self.logger.info("Validation complete\n")
+      self.logger.info("Validation complete")
 
     except Exception as e:
-      raise Exception(f'ERROR : Validating keys failed, exception {e}\n')
+      raise Exception(f'ERROR : Validating keys failed, exception {e}')
 
   def shutdown_services(self, s3services_list):
     """Stop services."""
@@ -370,7 +371,7 @@ class SetupCmd(object):
       except KeyError:
         cmd = ['/bin/systemctl', 'stop',  f'{service_name}']
       handler = SimpleProcess(cmd)
-      self.logger.info(f"shutting down {service_name}\n")
+      self.logger.info(f"shutting down {service_name}")
       res_op, res_err, res_rc = handler.run()
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
@@ -385,7 +386,7 @@ class SetupCmd(object):
       except KeyError:
         cmd = ['/bin/systemctl', 'start',  f'{service_name}']
       handler = SimpleProcess(cmd)
-      self.logger.info(f"starting {service_name}\n")
+      self.logger.info(f"starting {service_name}")
       res_op, res_err, res_rc = handler.run()
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
@@ -400,7 +401,7 @@ class SetupCmd(object):
       except KeyError:
         cmd = ['/bin/systemctl', 'restart',  f'{service_name}']
       handler = SimpleProcess(cmd)
-      self.logger.info(f"restarting {service_name}\n")
+      self.logger.info(f"restarting {service_name}")
       res_op, res_err, res_rc = handler.run()
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
@@ -415,7 +416,7 @@ class SetupCmd(object):
       except KeyError:
         cmd = ['/bin/systemctl', 'reload',  f'{service_name}']
       handler = SimpleProcess(cmd)
-      self.logger.info(f"reloading {service_name}\n")
+      self.logger.info(f"reloading {service_name}")
       res_op, res_err, res_rc = handler.run()
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
@@ -434,7 +435,7 @@ class SetupCmd(object):
     Both files should have same keys.
     if keys mismatch then there is some issue in the config file."""
 
-    self.logger.info(f'validating S3 config files for {phase_name}.\n')
+    self.logger.info(f'validating S3 config files for {phase_name}.')
     upgrade_items = {
     's3' : {
           'configFile' : "/opt/seagate/cortx/s3/conf/s3config.yaml",
@@ -467,7 +468,7 @@ class SetupCmd(object):
       configFile = upgrade_items[upgrade_item]['configFile']
       SampleFile = upgrade_items[upgrade_item]['SampleFile']
       filetype = upgrade_items[upgrade_item]['fileType']
-      self.logger.info(f'validating config file {str(configFile)}.\n')
+      self.logger.info(f'validating config file {str(configFile)}.')
 
       # new sample file
       conf_sample = filetype + SampleFile
@@ -481,9 +482,52 @@ class SetupCmd(object):
 
       # compare the keys of sample file and config file
       if conf_sample_keys == conf_file_keys:
-          self.logger.info(f'config file {str(configFile)} validated successfully.\n')
+          self.logger.info(f'config file {str(configFile)} validated successfully.')
       else:
-          self.logger.error(f'config file {str(conf_file)} and sample file {str(conf_sample)} keys does not matched.\n')
-          self.logger.error(f'sample file keys: {str(conf_sample_keys)}\n')
-          self.logger.error(f'config file keys: {str(conf_file_keys)}\n')
-          raise Exception(f'ERROR: Failed to validate config file {str(configFile)}.\n')
+          self.logger.error(f'config file {str(conf_file)} and sample file {str(conf_sample)} keys does not matched.')
+          self.logger.error(f'sample file keys: {str(conf_sample_keys)}')
+          self.logger.error(f'config file keys: {str(conf_file_keys)}')
+          raise Exception(f'ERROR: Failed to validate config file {str(configFile)}.')
+
+  def DeleteDirContents(self, dirname: str,  skipdirs: list = []):
+    """Delete files and directories inside given directory.
+    It will skips the directories which are part of skipdirs list.
+    """
+    if os.path.exists(dirname):
+      for filename in os.listdir(dirname):
+        filepath = os.path.join(dirname, filename)
+        try:
+          if os.path.isfile(filepath):
+            os.remove(filepath)
+          elif os.path.isdir(filepath):
+            if filepath in skipdirs:
+              self.logger.info(f'Skipping the dir {filepath}')
+            else:
+              shutil.rmtree(filepath)
+        except Exception as e:
+          self.logger.error(f'ERROR: DeleteDirContents(): Failed to delete: {filepath}, error: {str(e)}')
+          raise e
+
+  def DeleteFile(self, filepath: str):
+    """Delete file."""
+    if os.path.exists(filepath):
+      try:
+        os.remove(filepath)
+      except Exception as e:
+        self.logger.error(f'ERROR: DeleteFile(): Failed to delete file: {filepath}, error: {str(e)}')
+        raise e
+
+  def DeleteFileOrDirWithRegex(self, path: str, regex: str):
+    """Delete files and directories inside given directory for which regex matches."""
+    if os.path.exists(path):
+      filepath = os.path.join(path, regex)
+      files = glob.glob(filepath)
+      for file in files:
+        try:
+          if os.path.isfile(file):
+            os.remove(file)
+          elif os.path.isdir(file):
+            shutil.rmtree(file)
+        except Exception as e:
+          self.logger.error(f'ERROR: DeleteFileOrDirWithRegex(): Failed to delete: {file}, error: {str(e)}')
+          raise e
