@@ -1,7 +1,7 @@
 # Problem Statement
 
-- _Describe the problem this patch intends to solve._
 - _Overview: JIRA number/GitHub Issue added to PR: [Y/N]:_
+- _Describe the problem this patch intends to solve._
 
 ## Design
 
@@ -20,10 +20,17 @@
 - _Confirm that Test Cases are added (for both the cases, fix and feature). Yes/No?_
 - _Confirm Test Cases cover Happy Path, Non-Happy Path and Scalability. Yes/No?_
 - _Confirm Testing was performed with installed RPM. Yes/No?_
+- _Confirm all the ut/regression/smoke test has been performed [Y/N]_
 
 ## Checklist
 
 - _PR is self-reviewed? Yes/No?_
+- _GitHub Issue is updated_
+- _Jira is updated_
+  -  _Check if the description is clear and explained._ 
+  -  _Check Acceptance Criterion is defined._
+  -  _All the tests performed should be mentioned before Resolving a JIRA._
+  -  _Verification needs to be done before marked as Closed/Verified_
 - _Any interface change Yes/No?_
 - _Change notified to other gatekeepers: Yes/No?_
 - _Code reviews done and addressed: Yes/No?_
