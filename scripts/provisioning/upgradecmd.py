@@ -39,13 +39,19 @@ class UpgradeCmd(SetupCmd):
     self.logger.info(f"Processing {self.name} {self.url}")
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
-    self.phase_keys_validate(self.url, self.name)
 
     # merge_configs() is imported from the merge.py
     # Upgrade config files
     self.logger.info("merge configs started")
     merge_configs()
     self.logger.info("merge configs completed")
+
+    # Remove temporary .old files from /tmp
+    self.logger.info("Remove sample.old files started")
+    path = "/tmp"
+    regex = "*.sample.old"
+    self.DeleteFileOrDirWithRegex(path, regex)
+    self.logger.info("Remove sample.old files completed")
 
     # Validating config files after upgrade
     self.validate_config_files(self.name)
