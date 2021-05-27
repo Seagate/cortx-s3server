@@ -31,12 +31,13 @@ class PostInstallCmd(SetupCmd):
     try:
       super(PostInstallCmd, self).__init__(config)
     except Exception as e:
-      raise S3PROVError(f'exception: {e}\n')
+      raise S3PROVError(f'exception: {e}')
 
   def process(self):
     """Main processing function."""
-    self.logger.info("Running validations..\n")
+    self.logger.info(f"Processing {self.name} {self.url}")
+    self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
     self.validate_config_files(self.name)
-    self.logger.info("Validations passed..\n")
+    self.logger.info("validations completed")
