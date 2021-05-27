@@ -263,7 +263,6 @@ s3tests_boto3.functional.test_s3:test_multipart_upload_contents
 s3tests_boto3.functional.test_s3:test_multipart_upload_overwrite_existing_object 
 s3tests_boto3.functional.test_s3:test_abort_multipart_upload 
 s3tests_boto3.functional.test_s3:test_abort_multipart_upload_not_found 
-s3tests_boto3.functional.test_s3:test_set_tagging 
 s3tests_boto3.functional.test_s3:test_atomic_read_1mb 
 s3tests_boto3.functional.test_s3:test_atomic_read_4mb 
 s3tests_boto3.functional.test_s3:test_atomic_read_8mb 
