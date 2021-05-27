@@ -29,3 +29,7 @@ _Describe the problem this patch intends to solve._
 - _UT/smoke test: Done/Not?_
 - _Jira number added to PR: Yes/No?_
 - _Github merge done using UI: Yes/No?_
+- _side effects on other features - deployment/update/node-replacement_
+- _Changes to quick-start-guide/community impact_
+- _All dependent component code PR are raised or already merged Yes/No_
+- _All dependent code already merged in landing branch Yes/No_
