@@ -516,9 +516,6 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Post section completed"
 %postun
 if [ $1 == 1 ];then
     echo "[cortx-s3server-rpm] INFO: S3 RPM Post Uninstall Upgrade section started"
-    # removed temporary files from /tmp
-    rm -f /tmp/*.sample.old
-    echo "[cortx-s3server-rpm] INFO: Removed temporary .old files from /tmp"
     echo "[cortx-s3server-rpm] INFO: S3 RPM Post Uninstall Upgrade section completed"
 elif [ $1 == 0 ];then
     echo "[cortx-s3server-rpm] INFO: S3 RPM Post Uninstall section started"

@@ -24,9 +24,6 @@ import shutil
 import sys
 import logging
 
-logger = None
-setup_logger()
-
 g_upgrade_items = {
   's3' : {
         'configFile' : "/opt/seagate/cortx/s3/conf/s3config.yaml",
@@ -161,6 +158,7 @@ def setup_logger():
     - This function will use as is s3-deployment-logger if it is available
     - else it will log to console
     """
+    global logger
     logger = logging.getLogger("s3-deployment-logger")
     if logger.hasHandlers():
         logger.info("Logger has valid handler")
