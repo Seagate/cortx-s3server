@@ -1,11 +1,14 @@
 # Problem Statement
 
-_Describe the problem this patch intends to solve._
+- _Describe the problem this patch intends to solve._
+- _Overview: JIRA number/GitHub Issue added to PR: [Y/N]:_
 
 ## Design
 
 - _For Bug describe the fix here._
 - _For feature, post the link to the solution page._
+- _Any northbound interface change and has been notified to other gatekeepers [Y/N]:_
+
 
 ## Coding
 
