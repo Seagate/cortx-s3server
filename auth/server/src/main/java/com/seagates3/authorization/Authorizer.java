@@ -79,7 +79,7 @@ class Authorizer {
     ServerResponse serverResponse = null;
     AuthorizationResponseGenerator responseGenerator =
         new AuthorizationResponseGenerator();
-    // CopyObject not allowed for anonymous user
+    // CopyObject operation is not allowed for anonymous user
     if (requestor == null && requestBody.get("x-amz-copy-source") != null) {
       return responseGenerator.AccessDenied();
     }
