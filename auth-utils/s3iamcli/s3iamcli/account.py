@@ -122,7 +122,7 @@ class Account:
     # delete account
     def delete(self):
         if self.cli_args.name is None:
-            print('Account name is required.')
+            message = "Account name is required."
             CLIResponse.send_error_out(message)
         # Get host value from url https://iam.seagate.com:9443
         url_parse_result  = urllib.parse.urlparse(Config.endpoint)

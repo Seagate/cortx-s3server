@@ -122,23 +122,20 @@ class S3PartMetadataFactory {
 
 class S3MotrWriterFactory {
  public:
-  virtual ~S3MotrWriterFactory() {}
-  virtual std::shared_ptr<S3MotrWiter> create_motr_writer(
-      std::shared_ptr<RequestObject> req, m0_uint128 oid) {
-    s3_log(S3_LOG_DEBUG, "", "S3MotrWriterFactory::create_motr_writer\n");
-    return std::make_shared<S3MotrWiter>(req, oid);
-  }
+  virtual ~S3MotrWriterFactory() = default;
+
   virtual std::shared_ptr<S3MotrWiter> create_motr_writer(
       std::shared_ptr<RequestObject> req) {
     s3_log(S3_LOG_DEBUG, "",
            "S3MotrWriterFactory::create_motr_writer with zero offset\n");
-    return std::make_shared<S3MotrWiter>(req);
+    return std::make_shared<S3MotrWiter>(std::move(req));
   }
   virtual std::shared_ptr<S3MotrWiter> create_motr_writer(
-      std::shared_ptr<RequestObject> req, m0_uint128 oid, uint64_t offset) {
+      std::shared_ptr<RequestObject> req, struct m0_uint128 oid,
+      struct m0_fid pv_id, uint64_t offset) {
     s3_log(S3_LOG_DEBUG, "",
            "S3MotrWriterFactory::create_motr_writer with offset %zu\n", offset);
-    return std::make_shared<S3MotrWiter>(req, oid, offset);
+    return std::make_shared<S3MotrWiter>(std::move(req), oid, pv_id, offset);
   }
 };
 
@@ -148,9 +145,10 @@ class S3MotrReaderFactory {
 
   virtual std::shared_ptr<S3MotrReader> create_motr_reader(
       std::shared_ptr<RequestObject> req, struct m0_uint128 oid, int layout_id,
-      std::shared_ptr<MotrAPI> motr_api = nullptr) {
+      struct m0_fid pvid = {}, std::shared_ptr<MotrAPI> motr_api = {}) {
     s3_log(S3_LOG_DEBUG, "", "S3MotrReaderFactory::create_motr_reader\n");
-    return std::make_shared<S3MotrReader>(req, oid, layout_id, motr_api);
+    return std::make_shared<S3MotrReader>(std::move(req), oid, layout_id, pvid,
+                                          std::move(motr_api));
   }
 };
 

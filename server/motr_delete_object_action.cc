@@ -73,10 +73,11 @@ void MotrDeleteObjectAction::validate_request() {
 void MotrDeleteObjectAction::delete_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  motr_writer = motr_writer_factory->create_motr_writer(request, oid);
+  motr_writer = motr_writer_factory->create_motr_writer(request);
+
   motr_writer->delete_object(
       std::bind(&MotrDeleteObjectAction::delete_object_successful, this),
-      std::bind(&MotrDeleteObjectAction::delete_object_failed, this),
+      std::bind(&MotrDeleteObjectAction::delete_object_failed, this), oid,
       layout_id);
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);

@@ -43,11 +43,11 @@ sgiamadminpwd=''
 constkey=cortx
 propertiesfilepath="properties:///opt/seagate/cortx/auth/resources/authserver.properties"
 ldapkey="ldapLoginPW"
-ldapcipherkey=$(s3cipher generate_key --const_key $constkey)
-encryptedkey=$(s3confstore $propertiesfilepath getkey --key $ldapkey)
+ldapcipherkey=$(s3cipher generate_key --const_key="$constkey")
+encryptedkey=$(s3confstore "$propertiesfilepath" getkey --key="$ldapkey")
 if [[ -z $(echo "$encryptedkey" | grep -Eio Failed) ]];
 then
-    sgiamadminpwd=$(s3cipher decrypt --data $encryptedkey --key $ldapcipherkey)
+    sgiamadminpwd=$(s3cipher decrypt --data="$encryptedkey" --key="$ldapcipherkey")
 fi
 
 bundle_name="s3_$bundle_id.tar.xz"
@@ -66,6 +66,9 @@ s3server_binary="/opt/seagate/cortx/s3/bin/s3server"
 s3_motr_dir="/var/log/seagate/motr/s3server-*"
 s3_core_dir="/var/log/crash"
 sys_auditlog_dir="/var/log/audit"
+
+# S3 deployment log
+s3deployment_log="/var/log/seagate/s3/s3deployment/s3deployment.log"
 
 # Create tmp folder with pid value to allow parallel execution
 pid_value=$$
@@ -269,6 +272,12 @@ then
 fi
 
 ## Add file/directory locations for bundling
+
+# Collect S3 deployment log
+if [ -f "$s3deployment_log" ];
+then
+    args=$args" "$s3deployment_log*
+fi
 
 # Collect s3 core files if available
 collect_core_files

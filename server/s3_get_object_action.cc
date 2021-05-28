@@ -85,27 +85,22 @@ void S3GetObjectAction::fetch_bucket_info_failed() {
 }
 
 void S3GetObjectAction::fetch_object_info_failed() {
-  if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
-    object_list_oid = bucket_metadata->get_object_list_index_oid();
-    if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
-      s3_log(S3_LOG_ERROR, request_id, "Object not found\n");
-      set_s3_error("NoSuchKey");
-    } else {
-      if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
-        s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
-        set_s3_error("NoSuchKey");
-      } else if (object_metadata->get_state() ==
-                 S3ObjectMetadataState::failed_to_launch) {
-        s3_log(S3_LOG_ERROR, request_id,
-               "Object metadata load operation failed due to pre launch "
-               "failure\n");
-        set_s3_error("ServiceUnavailable");
-      } else {
-        s3_log(S3_LOG_DEBUG, request_id, "Object metadata fetch failed\n");
-        set_s3_error("InternalError");
-      }
-    }
+  object_list_oid = bucket_metadata->get_object_list_index_oid();
+  if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
+    s3_log(S3_LOG_ERROR, request_id, "Object not found\n");
+    set_s3_error("NoSuchKey");
+  } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
+    s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
+    set_s3_error("NoSuchKey");
+  } else if (object_metadata->get_state() ==
+             S3ObjectMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Object metadata load operation failed due to pre launch "
+           "failure\n");
+    set_s3_error("ServiceUnavailable");
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id, "Object metadata fetch failed\n");
+    set_s3_error("InternalError");
   }
   send_response_to_s3_client();
 }
@@ -326,7 +321,8 @@ void S3GetObjectAction::read_object() {
   // get total number of blocks to read from an object
   set_total_blocks_to_read_from_object();
   motr_reader = motr_reader_factory->create_motr_reader(
-      request, object_metadata->get_oid(), object_metadata->get_layout_id());
+      request, object_metadata->get_oid(), object_metadata->get_layout_id(),
+      object_metadata->get_pvid());
   // get the block,in which first_byte_offset_to_read is present
   // and initilaize the last index with starting offset the block
   size_t block_start_offset =
@@ -467,7 +463,7 @@ void S3GetObjectAction::send_data_to_client() {
     size_t read_data_start_offset = first_byte_offset_to_read % obj_unit_sz;
     if (read_data_start_offset) {
       // Move the starting range (1000-) if specified.
-      p_evbuffer->read_drain_data_from_buffer(read_data_start_offset);
+      p_evbuffer->drain_data(read_data_start_offset);
       length_in_evbuf = p_evbuffer->get_evbuff_length();
     }
   }
@@ -560,5 +556,5 @@ void S3GetObjectAction::send_response_to_s3_client() {
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
 }
