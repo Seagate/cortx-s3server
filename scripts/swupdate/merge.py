@@ -80,8 +80,8 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
     if not os.path.isfile(configFile):
         logger.error(f'config file {configFile} does not exist')
         raise Exception(f'ERROR: config file {configFile} does not exist')
-    
-    logger.info(f'config file {str(configFile)} upgraded started.')
+
+    logger.info(f'config file {str(configFile)} upgrade started.')
 
     # old sample file
     conf_old_sample = filetype + oldSampleFile
@@ -136,7 +136,7 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
 
     cs_conf_file.merge_config(source_index=conf_new_sample, keys_to_include=keys_to_overwrite)
     cs_conf_file.save_config()
-    logger.info(f'config file {str(configFile)} upgraded successfully.')
+    logger.info(f'config file {str(configFile)} upgrade completed')
 
 def merge_configs():
     """
