@@ -999,7 +999,7 @@ S3ObjectExtendedMetadata::S3ObjectExtendedMetadata(
   } else {
     mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
-  last_object = EXTENDED_METADATA_OBJECT_PREFIX + objectname;
+  last_object = objectname;
 }
 
 void S3ObjectExtendedMetadata::load(std::function<void(void)> on_success,
@@ -1049,7 +1049,7 @@ void S3ObjectExtendedMetadata::get_obj_ext_entries_successful() {
            kv.second.second.c_str());
     last_object = kv.first;
     // Check if fetched key starts with object prefix
-    std::string object_prefix = EXTENDED_METADATA_OBJECT_PREFIX + object_name;
+    std::string object_prefix = object_name;
     bool prefix_match = (kv.first.find(object_prefix) == 0) ? true : false;
     if (!prefix_match) {
       end_of_enumeration = true;
@@ -1131,9 +1131,9 @@ void S3ObjectExtendedMetadata::save_extended_metadata_failed() {
 }
 
 int S3ObjectExtendedMetadata::from_json(std::string key, std::string content) {
-  // key of simple object with fragment := ~ObjectOne|versionID|F1
+  // key of simple object with fragment := ObjectOne|versionID|F1
   // or
-  // Key of multpart object with fragment := ~ObjectTwo|versionId|P1|F1 
+  // Key of multpart object with fragment := ObjectTwo|versionId|P1|F1 
   s3_log(S3_LOG_DEBUG, request_id, "Extended object metadata value [%s]\n",
          content.c_str());
   Json::Value newroot;
@@ -1147,14 +1147,24 @@ int S3ObjectExtendedMetadata::from_json(std::string key, std::string content) {
   item_ctx.is_multipart = false;
 
   std::vector<std::string> tokens;
-  // Check type of item: whether part or fragment
-  // e.g., key:= ~ObjectOne|versionID|F1
-  std::istringstream in(key);
+  // As object name can contain a delimiter (|) character, skip object name
+  // from below parsing logic.
+  assert(object_name.size() != 0);
+  int pos_after_skipping_object_name = object_name.size();
+  // (pos_after_skipping_object_name + 1) is done below to skip first '|'
+  // after the object name.
+  std::istringstream in(key.substr(pos_after_skipping_object_name + 1));
+  // First token is always the object name
+  tokens.push_back(object_name);
+
   std::string token;
   std::string sep = EXTENDED_METADATA_OBJECT_SEP;
   while (getline(in, token, sep[0])) {
     tokens.push_back(token);
   }
+  // Check the type of item: whether just part or fragment on part
+  // e.g., if key:= ObjectOne|versionID|F1, it has only fragment
+  // if key:= ObjectOne|versionID|P1|F1, it has one fragment on first part.
   if ((tokens.size() == 4) ||
       ((tokens.size() == 3) && (tokens[2].find("P", 0) != std::string::npos))) {
     // multipart (could be fragmented)
@@ -1208,7 +1218,7 @@ std::string S3ObjectExtendedMetadata::to_json() {
       std::vector<s3_part_frag_context> fragments;
       fragments = ext_objects[0];
       std::ostringstream buffer;
-      buffer << EXTENDED_METADATA_OBJECT_PREFIX << object_name
+      buffer << object_name
              << EXTENDED_METADATA_OBJECT_SEP << << frag_counter;
 
       root[buffer.str()] = ext_objects;
@@ -1217,7 +1227,7 @@ std::string S3ObjectExtendedMetadata::to_json() {
   } else {
     // This is multipart object
     for (const auto& ext_obj : ext_objects) {
-      std::string key = EXTENDED_METADATA_OBJECT_PREFIX + object_name +
+      std::string key = object_name +
                         EXTENDED_METADATA_OBJECT_SEP root[key] = ;
     }
   }
@@ -1246,8 +1256,7 @@ S3ObjectExtendedMetadata::get_kv_list_of_extended_entries() {
       std::string frag_field = "F" + std::to_string(frag_index);
       sskey.str("");
       sskey.clear();
-      sskey << EXTENDED_METADATA_OBJECT_PREFIX << object_name
-            << EXTENDED_METADATA_OBJECT_SEP << version_id;
+      sskey << object_name << EXTENDED_METADATA_OBJECT_SEP << version_id;
 
       if (part_field.empty()) {
         sskey << EXTENDED_METADATA_OBJECT_SEP << frag_field;
