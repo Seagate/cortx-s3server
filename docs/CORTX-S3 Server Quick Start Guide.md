@@ -47,8 +47,17 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
     
 6. You will need to set your hostname to something other than localhost `hostnamectl set-hostname --static --transient --pretty <new-name>`
 
-7. Add/set entry corresponding to <new-name> in above command to /etc/hosts file
+7. Add/set entry corresponding to <new-name> in above command to `/etc/hosts` file
+    
+    For example if your hostname is `cortxhost`
+    
+    Then `/etc/hosts` should something like:
 
+    ```
+    127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4 cortxhost
+    ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+    ```
+    
 8. You'll need to disable selinux and firewall. Run the following commands:
 
      `$ systemctl stop firewalld` 
