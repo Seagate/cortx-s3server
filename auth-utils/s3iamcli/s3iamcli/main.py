@@ -37,7 +37,7 @@ from s3iamcli.cli_response import CLIResponse
 class S3IamCli:
     def iam_usage(self):
         return '''
-        CreateAccount -n <Account Name> -e <Email Id>
+        CreateAccount -n <Account Name> -e <Email Id> --ldapuser <ldap-user> --ldappasswd <ldap-password>
         CreateUserLoginProfile -n <User Name>
             --password <User Password>
             [--password-reset-required | --no-password-reset-required]
@@ -54,7 +54,7 @@ class S3IamCli:
             [--password <User Password>]
             [--password-reset-required | --no-password-reset-required]
         ResetAccountAccessKey -n <Account Name>
-        ListAccounts
+        ListAccounts --ldapuser <ldap-user> --ldappasswd <ldap-password>
             [--showall]
         CreateAccessKey
             -n <User Name>
