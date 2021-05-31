@@ -82,7 +82,7 @@ class Authorizer {
     if (requestor == null &&
         PublicAccessAuthorizer.isActionRestricted(requestBody)) {
       return responseGenerator.AccessDenied(
-          "Anonymous users cannot copy objects.Please authenticate.");
+          "Anonymous users cannot copy objects. Please authenticate.");
     }
     try {
       String existingPolicy = requestBody.get("Policy");
