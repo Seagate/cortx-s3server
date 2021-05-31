@@ -23,7 +23,7 @@ package com.seagates3.policy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
+import java.util.Arrays;
 import com.amazonaws.auth.policy.Action;
 import com.amazonaws.auth.policy.Condition;
 import com.amazonaws.auth.policy.Policy;
@@ -62,6 +62,23 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
       if (requestedOperation != null) {
         serverResponse =
             authorizeOperation(requestBody, requestedOperation, requestor);
+      }
+      // Below authorization is for CopyObject in case of tagging
+      if ("PutObject".equals(requestedOperation) &&
+          (serverResponse == null ||
+           serverResponse.getResponseStatus() == HttpResponseStatus.OK) &&
+          requestBody.get("S3ActionList") != null) {
+        List<String> actionList =
+            Arrays.asList(requestBody.get("S3ActionList").split(","));
+        for (String action : actionList) {
+          ServerResponse response =
+              authorizeOperation(requestBody, action, requestor);
+          if (response != null &&
+              response.getResponseStatus() != HttpResponseStatus.OK) {
+            serverResponse = response;
+            break;
+          }
+        }
       }
     }
     catch (Exception e) {
