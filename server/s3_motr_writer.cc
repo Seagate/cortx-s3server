@@ -872,11 +872,11 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
       } else {
         if (md5crypt.is_checksum_saved()) {
             // If there is checksum from previous write-set, then take that
-            memcpy(((struct m0_md5_inc_digest_pi *)((struct m0_generic_pi *)
-                                                    rw_ctx->attr->ov_buf
-                                                        [chksum_buf_idx])->t_pi)
-                       ->prev_digest,
-                   md5crypt.get_prev_write_checksum(), sizeof(MD5_CTX));
+          memcpy(((struct m0_md5_inc_context_pi *)((struct m0_generic_pi *)
+                                                   rw_ctx->attr->ov_buf
+                                                       [chksum_buf_idx])->t_pi)
+                     ->prev_context,
+                 md5crypt.get_prev_write_checksum(), sizeof(MD5_CTX));
           }
       }
 
