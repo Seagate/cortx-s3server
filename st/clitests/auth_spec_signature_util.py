@@ -41,8 +41,10 @@ def _use_root_credentials():
     for line in content.splitlines():
         if 'aws_access_key_id =' in line:
            GlobalCredentials.root_access_key = line.split('=')[1].strip()
+           print("Using Access key:", GlobalCredentials.root_access_key)
         if 'aws_secret_access_key =' in line:
            GlobalCredentials.root_secret_key = line.split('=')[1].strip()
+           print("Using secret key:", GlobalCredentials.root_secret_key)
     f.close()
 
 def utf8_encode(msg):
@@ -71,6 +73,7 @@ def _get_canonicalized_resource(canonical_uri, params):
     # Extract bucket name from host entry
     bucket_name = params['Host'].split('.')[0]
     canonicalized_resource = canonical_uri + bucket_name + '/?' + params['ClientQueryParams']
+    print("Generated canonicalized resource :", canonicalized_resource)
     return canonicalized_resource
 
 def _create_str_to_sign(http_method, canonical_uri, headers):
@@ -98,6 +101,7 @@ def _create_str_to_sign(http_method, canonical_uri, headers):
 
     canonicalized_resource = _get_canonicalized_resource(canonical_uri, headers)
     str_to_sign += canonicalized_resource
+    print("Generated string_to_signin :", str_to_sign)
     str_to_sign = utf8_encode(str_to_sign)
 
     return str_to_sign

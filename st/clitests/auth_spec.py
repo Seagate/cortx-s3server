@@ -1903,8 +1903,9 @@ def delete_account_tests():
     AuthTest(test_msg).delete_account(**account_args).execute_test()\
             .command_response_should_have("Account deleted successfully")
 
-    load_test_config()
     # DeleteAccount fails with IAM credentials/temp auth credentials of IAM User --- end
+    load_test_config()
+    _use_root_credentials()
 
 
 def reset_account_accesskey_tests():
