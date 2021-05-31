@@ -461,7 +461,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
     Mockito.doNothing().when(userDAO).save(user);
     ServerResponse response = userLoginProfileController.update();
-    Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+    Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
+                        response.getResponseStatus());
   }
 
   /**
