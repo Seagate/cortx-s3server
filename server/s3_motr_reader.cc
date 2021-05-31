@@ -297,15 +297,15 @@ bool S3MotrReader::ValidateStoredMD5Chksum(m0_bufvec *motr_data_unit,
   assert(NULL != pi_info);
   assert(NULL != seed);
 
-  unsigned char current_digest[PI_DIGEST_LENGTH] = {0};
-  m0_md5_inc_digest_pi md5_info = {0};
+  unsigned char current_digest[sizeof(MD5_CTX)] = {0};
+  m0_md5_inc_context_pi md5_info = {0};
 
-  memcpy(md5_info.prev_digest, ((m0_md5_inc_digest_pi *)(pi_info))->prev_digest,
-         PI_DIGEST_LENGTH);
-  md5_info.hdr.pi_type = M0_PI_TYPE_MD5_INC_DIGEST;
+  memcpy(md5_info.prev_context,
+         ((m0_md5_inc_context_pi *)(pi_info))->prev_context, sizeof(MD5_CTX));
+  md5_info.hdr.pi_type = M0_PI_TYPE_MD5_INC_CONTEXT;
 
   int rc = m0_client_calculate_pi((struct m0_generic_pi *)&md5_info, seed,
-                                  motr_data_unit, M0_PI_CALC_FINAL,
+                                  motr_data_unit, (m0_pi_calc_flag)0,
                                   current_digest, NULL);
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, "", "%s Motr API to Calculate PI Info failed.",
@@ -314,8 +314,8 @@ bool S3MotrReader::ValidateStoredMD5Chksum(m0_bufvec *motr_data_unit,
   }
 
   if (0 != memcmp(md5_info.pi_value,
-                  ((m0_md5_inc_digest_pi *)(pi_info))->pi_value,
-                  PI_DIGEST_LENGTH)) {
+                  ((m0_md5_inc_context_pi *)(pi_info))->pi_value,
+                  MD5_DIGEST_LENGTH)) {
     s3_log(S3_LOG_ERROR, "", "%s Saved and Calculated Pi dont match.",
            __func__);
     return false;
@@ -369,7 +369,7 @@ bool S3MotrReader::ValidateStoredChksum() {
     struct m0_generic_pi *pi_info = ((struct m0_generic_pi **)pibuf->ov_buf)[i];
 
     switch (pi_info->hdr.pi_type) {
-      case M0_PI_TYPE_MD5_INC_DIGEST:
+      case M0_PI_TYPE_MD5_INC_CONTEXT:
         if (false == ValidateStoredMD5Chksum(&motr_data_unit, pi_info, &seed)) {
           s3_log(S3_LOG_ERROR, "", "%s Saved and Calculated Pi dont match.",
                  __func__);

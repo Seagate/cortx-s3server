@@ -164,8 +164,8 @@ int free_basic_op_ctx(struct s3_motr_op_context *ctx) {
 
 unsigned long get_sizeof_pi_info(struct s3_motr_rw_op_context *ctx) {
   switch (ctx->pi.hdr.pi_type) {
-    case M0_PI_TYPE_MD5_INC_DIGEST:
-      return sizeof(m0_md5_inc_digest_pi);
+    case M0_PI_TYPE_MD5_INC_CONTEXT:
+      return sizeof(m0_md5_inc_context_pi);
     default:
       s3_log(S3_LOG_ERROR, "", "%s Invalid PI Type\n", __func__);
       return 0;
