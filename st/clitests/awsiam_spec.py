@@ -47,7 +47,7 @@ def user_tests():
     result.command_should_match_pattern(login_profile_response_pattern)
     result.command_response_should_have("testUser")
 
-    AwsIamTest('UpdateLoginProfile Test').update_login_profile("testUser").execute_test().command_is_successful()
+    AwsIamTest('UpdateLoginProfile Test').update_login_profile("testUser").execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidRequest")
 
     AwsIamTest('UpdateLoginProfile with optional parameter- password').update_login_profile_with_optional_arguments\
         ("testUser","NewPassword",None,None).execute_test().command_is_successful()
