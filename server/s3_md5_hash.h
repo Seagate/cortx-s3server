@@ -28,19 +28,27 @@
 #include <openssl/md5.h>
 
 class MD5hash {
-  MD5_CTX md5ctx, md5ctx_unit_size;
+  MD5_CTX md5ctx, md5ctx_pre_unaligned;
   unsigned char md5_digest[MD5_DIGEST_LENGTH];
   int status;
   bool is_finalized = false;
+  bool checksum_saved = false;
 
  public:
   MD5hash();
+  MD5hash(bool call_init);
   int Update(const char *input, size_t length);
   void save_motr_unit_checksum(unsigned char *curr_digest);
-  void save_unaligned_running_checksum(unsigned char *curr_digest);
-  void *get_prev_unit_checksum();
+  void save_motr_unit_checksum_for_unaligned_bufs(
+      unsigned char *curr_digest_at_unit);
+  bool is_checksum_saved();
+  void *get_prev_write_checksum();
+  void *get_prev_unaligned_checksum();
   int Finalize();
+  void Finalized();
   void Reset();
+  void Reset(bool call_init);
+  unsigned char *get_md5_digest() { return md5_digest; }
 
   std::string get_md5_string();
   std::string get_md5_base64enc_string();

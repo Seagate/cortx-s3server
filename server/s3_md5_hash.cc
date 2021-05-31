@@ -23,18 +23,23 @@
 #include "s3_md5_hash.h"
 #include "s3_option.h"
 
+MD5hash::MD5hash(bool call_init) { Reset(call_init); }
 MD5hash::MD5hash() { Reset(); }
 
 void MD5hash::save_motr_unit_checksum(unsigned char *current_digest) {
-  memcpy((void *)&md5ctx_unit_size, (void *)current_digest,
-         sizeof(md5ctx_unit_size));
+  memcpy((void *)&md5ctx, (void *)current_digest, sizeof(MD5_CTX));
+  checksum_saved = true;
 }
 
-void MD5hash::save_unaligned_running_checksum(unsigned char *current_digest) {
-  memcpy((void *)&md5ctx, (void *)current_digest, sizeof(md5ctx));
+void MD5hash::save_motr_unit_checksum_for_unaligned_bufs(unsigned char *current_digest) {
+  memcpy((void *)&md5ctx_pre_unaligned, (void *)current_digest, sizeof(MD5_CTX));
 }
 
-void *MD5hash::get_prev_unit_checksum() { return (void *)&md5ctx_unit_size; }
+void *MD5hash::get_prev_unaligned_checksum() { return (void *)&md5ctx_pre_unaligned; }
+
+void *MD5hash::get_prev_write_checksum() { return (void *)&md5ctx; }
+
+bool MD5hash::is_checksum_saved() { return checksum_saved; }
 
 int MD5hash::Update(const char *input, size_t length) {
   if (input == NULL) {
@@ -63,9 +68,18 @@ int MD5hash::Finalize() {
   return 0;
 }
 
+void MD5hash::Finalized() { is_finalized = true; }
+
+void MD5hash::Reset(bool call_init) {
+  if (call_init) {
+    status = MD5_Init(&md5ctx);
+  }
+  is_finalized = false;
+}
+
 void MD5hash::Reset() {
   if (!S3Option::get_instance()->is_s3_write_di_check_enabled()) {
-  status = MD5_Init(&md5ctx);
+    status = MD5_Init(&md5ctx);
   }
   is_finalized = false;
 }

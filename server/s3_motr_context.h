@@ -59,6 +59,7 @@ struct s3_motr_rw_op_context {
   struct m0_bufvec *pi_bufvec;
   size_t unit_size;
   size_t motr_checksums_buf_count;
+  size_t buffers_per_motr_unit;
   unsigned char current_digest[sizeof(MD5_CTX)];
   struct m0_generic_pi pi;
   bool allocated_bufs;  // Do we own data bufs and we should free?
