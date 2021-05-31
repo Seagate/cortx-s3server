@@ -39,11 +39,11 @@ class MD5hash {
   MD5hash(bool call_init);
   int Update(const char *input, size_t length);
   void save_motr_unit_checksum(unsigned char *curr_digest);
-  void save_motr_unit_checksum_for_unaligned_bufs(
-      unsigned char *curr_digest_at_unit);
+  void save_motr_unit_checksum_for_unaligned_bufs(unsigned char *curr_digest_at_unit);
   bool is_checksum_saved();
   void *get_prev_write_checksum();
   void *get_prev_unaligned_checksum();
+  
   int Finalize();
   void Finalized();
   void Reset();

@@ -771,15 +771,13 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
           flag = M0_PI_CALC_UNIT_ZERO;
           initial_buffers_part_write = false;
         } else {
-          if (md5crypt.is_checksum_saved()) {
+          if ((chksum_buf_idx == 0) && md5crypt.is_checksum_saved()) {
             // If there is checksum from previous write-set, then take that
             memcpy(((struct m0_md5_inc_digest_pi *)((struct m0_generic_pi *)
                                                     rw_ctx->attr->ov_buf
                                                         [chksum_buf_idx])->t_pi)
                        ->prev_digest,
                    md5crypt.get_prev_write_checksum(), sizeof(MD5_CTX));
-          } else {
-            // Should not be the case
           }
         }
 
@@ -799,6 +797,14 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
         // copy current running digest to previous context
         saved_last_index = last_index;
         assert(chksum_buf_idx <= rw_ctx->motr_checksums_buf_count);
+        if (chksum_buf_idx < rw_ctx->motr_checksums_buf_count) {
+          // Save the current running checksum as prev_context of next unit
+          memcpy(((struct m0_md5_inc_digest_pi *)((struct m0_generic_pi *)
+                                                  rw_ctx->attr->ov_buf
+                                                      [chksum_buf_idx])->t_pi)
+                     ->prev_digest,
+                 rw_ctx->current_digest, sizeof(MD5_CTX));
+        }
 
         starting_checksum_buf_idx = 0;
         unaligned_buf_idx_offset = buf_idx;
@@ -836,6 +842,14 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
 
     rw_ctx->data->ov_buf[buf_idx] = place_holder_for_last_unit;
     rw_ctx->data->ov_vec.v_count[buf_idx] = size_of_each_buf;
+
+    if (is_s3_write_di_check_enabled) {
+      assert(starting_checksum_buf_idx < rw_ctx->buffers_per_motr_unit);
+      rw_ctx->pi_bufvec->ov_buf[starting_checksum_buf_idx] =
+          place_holder_for_last_unit;
+      rw_ctx->pi_bufvec->ov_vec.v_count[starting_checksum_buf_idx++] =
+          size_of_each_buf;
+    }
 
     // Init motr buffer attrs.
     rw_ctx->ext->iv_index[buf_idx] = last_index;
