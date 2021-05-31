@@ -180,11 +180,11 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
         }
       }
       } else {
-        if (requestor == null && response != null) {
-          return responseGenerator.generateAuthorizationResponse(null, null);
-        }
         if (response != null &&
             response.getResponseStatus() == HttpResponseStatus.OK) {
+          if (requestor == null) {
+            return responseGenerator.generateAuthorizationResponse(null, null);
+          } else {
           boolean isRootUser = Authorizer.isRootUser(
               new UserImpl().findByUserId(requestor.getId()));
           if (isRootUser ||
@@ -193,6 +193,7 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
           } else {
             response = responseGenerator.AccessDenied();
           }
+        }
         }
       }
     return response;
