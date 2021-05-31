@@ -25,6 +25,12 @@
 #include "s3_motr_layout.h"
 #include "s3_log.h"
 #include "s3_common_utilities.h"
+#include <map>
+#include <string>
+#include "motr/client.h"
+
+std::map<std::string, int> g_pi_map = {
+    {std::string("PI_TYPE_MD5_INC_CONTEXT"), (int)M0_PI_TYPE_MD5_INC_CONTEXT}};
 
 S3Option* S3Option::option_instance = NULL;
 
@@ -61,7 +67,15 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_WRITE_DATA_INTEGRITY_CHECK");
       s3_write_data_integrity_check =
           s3_option_node["S3_WRITE_DATA_INTEGRITY_CHECK"].as<bool>();
-      s3_pi_type = s3_option_node["S3_PI_TYPE"].as<int>();
+      std::string pi_val = s3_option_node["S3_PI_TYPE"].as<std::string>();
+      std::map<std::string, int>::iterator pi_map_iterator =
+          g_pi_map.find(pi_val);
+      if (pi_map_iterator == g_pi_map.end()) {
+        fprintf(stderr, "%s:%d:option [%s] has incorrect value\n", __FILE__,
+                __LINE__, pi_val.c_str());
+        return false;
+      }
+      s3_pi_type = pi_map_iterator->second;
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_DATA_INTEGRITY_CHECK");
       s3_read_data_integrity_check =
           s3_option_node["S3_READ_DATA_INTEGRITY_CHECK"].as<bool>();
@@ -460,7 +474,15 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_WRITE_DATA_INTEGRITY_CHECK");
       s3_write_data_integrity_check =
           s3_option_node["S3_WRITE_DATA_INTEGRITY_CHECK"].as<bool>();
-      s3_pi_type = s3_option_node["S3_PI_TYPE"].as<int>();
+      std::string pi_val = s3_option_node["S3_PI_TYPE"].as<std::string>();
+      std::map<std::string, int>::iterator pi_map_iterator =
+          g_pi_map.find(pi_val);
+      if (pi_map_iterator == g_pi_map.end()) {
+        fprintf(stderr, "%s:%d:option [%s] has incorrect value\n", __FILE__,
+                __LINE__, pi_val.c_str());
+        return false;
+      }
+      s3_pi_type = pi_map_iterator->second;
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_DATA_INTEGRITY_CHECK");
       s3_read_data_integrity_check =
           s3_option_node["S3_READ_DATA_INTEGRITY_CHECK"].as<bool>();

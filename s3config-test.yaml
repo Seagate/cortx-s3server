@@ -33,7 +33,7 @@ S3_SERVER_CONFIG:                                     # Section for S3 Server
    S3_READ_DATA_INTEGRITY_CHECK: true                   # TBD
    S3_METADATA_INTEGRITY_CHECK: true                    # TBD
    S3_SALT_CHECKSUM: true                               # TBD 
-   S3_PI_TYPE: 1                                        # Currently only supported value is 1, valid values 0-7
+   S3_PI_TYPE: "PI_TYPE_MD5_INC_CONTEXT"                  # TBD
    S3_MOTR_HTTP_REUSEPORT: true                         # Enable reusing motr http server port
    S3_IAM_CERT_FILE: "/etc/ssl/stx-s3/s3/ca.crt"        # IAM Auth certificate file
    S3_LOG_FLUSH_FREQUENCY: 3                            # Time in seconds, after which logs will be flushed. Valid only if S3_LOG_ENABLE_BUFFERING is true. Default is 30 seconds.
