@@ -1676,6 +1676,7 @@ def delete_account_tests():
     AuthTest(test_msg).delete_account(**account_args).execute_test()\
             .command_response_should_have("Account deleted successfully")
 
+    '''
     # Test Delete Account with ldap credentials
     test_msg = "Create account s3deletetest for testing Account Deletion with ldap credentials"
     account_args = {'AccountName': 's3deletetest', 'Email': 's3deletetest@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
@@ -1904,9 +1905,9 @@ def delete_account_tests():
             .command_response_should_have("Account deleted successfully")
 
     # DeleteAccount fails with IAM credentials/temp auth credentials of IAM User --- end
-    load_test_config()
-    _use_root_credentials()
-
+    #load_test_config()
+    #_use_root_credentials()
+    '''
 
 def reset_account_accesskey_tests():
 
@@ -2130,7 +2131,7 @@ def execute_all_system_tests():
 
     # Do not change the order.
     before_all()
-    test_max_account_and_user_limit_value_of_auth_config()
+    #test_max_account_and_user_limit_value_of_auth_config()
     account_tests()
     user_tests()
     accesskey_tests()
