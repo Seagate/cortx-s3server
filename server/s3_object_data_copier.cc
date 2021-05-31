@@ -133,7 +133,7 @@ void S3ObjectDataCopier::read_data_block_success() {
 
   for (size_t i = 0, n = data_blocks_read.size() - 1; i <= n; ++i) {
     const auto motr_block_size = data_blocks_read[i].second;
-    assert(motr_block_size == motr_unit_size);
+    assert(motr_block_size == size_of_ev_buffer);
 
     // We can use multiplication, but something may change in the future
     bytes_in_chunk_count += motr_block_size;
