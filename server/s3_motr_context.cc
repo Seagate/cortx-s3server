@@ -165,8 +165,9 @@ int free_basic_op_ctx(struct s3_motr_op_context *ctx) {
 // To create a motr RW operation
 // default allocate_bufs = true -> allocate memory for each buffer
 struct s3_motr_rw_op_context *create_basic_rw_op_ctx(
-    size_t motr_buf_count, size_t motr_checksums_buf_count, size_t unit_size,
+    size_t motr_buf_count, size_t buffers_per_motr_unit, size_t unit_size,
     bool allocate_bufs) {
+  size_t motr_checksums_buf_count;
   s3_log(S3_LOG_DEBUG, "", "%s Entry motr_buf_count = %zu, unit_size = %zu\n",
          __func__, motr_buf_count, unit_size);
 
@@ -176,12 +177,16 @@ struct s3_motr_rw_op_context *create_basic_rw_op_ctx(
   // TODO - Need to take from config file
   ctx->pi.hdr.pi_type = M0_PI_TYPE_MD5_INC_DIGEST;
 
+  // motr_buf_count will be multiple of buffers_per_motr_unit
+  motr_checksums_buf_count = motr_buf_count / buffers_per_motr_unit;
+
   ctx->unit_size = unit_size;
   ctx->ext = (struct m0_indexvec *)calloc(1, sizeof(struct m0_indexvec));
   ctx->data = (struct m0_bufvec *)calloc(1, sizeof(struct m0_bufvec));
   ctx->attr = (struct m0_bufvec *)calloc(1, sizeof(struct m0_bufvec));
   ctx->motr_checksums_buf_count = motr_checksums_buf_count;
   ctx->pi_bufvec = (struct m0_bufvec *)calloc(1, sizeof(struct m0_bufvec));
+  ctx->buffers_per_motr_unit = buffers_per_motr_unit;
 
   if (ctx->ext == nullptr || ctx->data == nullptr || ctx->attr == nullptr ||
       ctx->pi_bufvec == nullptr) {
@@ -207,7 +212,7 @@ struct s3_motr_rw_op_context *create_basic_rw_op_ctx(
   }
 
   if (S3Option::get_instance()->is_s3_write_di_check_enabled()) {
-    rc = m0_bufvec_alloc(ctx->pi_bufvec, 1, 1);
+    rc = m0_bufvec_alloc(ctx->pi_bufvec, buffers_per_motr_unit, sizeof(void *));
     if (rc != 0) {
       s3_bufvec_free_aligned(ctx->data, unit_size, allocate_bufs);
       free(ctx->data);

@@ -31,6 +31,7 @@
 #include "s3_motr_context.h"
 #include "s3_motr_wrapper.h"
 #include "s3_log.h"
+#include "s3_option.h"
 #include "s3_md5_hash.h"
 #include "s3_request_object.h"
 #include "s3_buffer_sequence.h"
@@ -54,9 +55,9 @@ class S3MotrWiterContext : public S3AsyncOpContextBase {
 
   // Call this when you want to do write op.
   void init_write_op_ctx(size_t motr_buf_count,
-                         size_t motr_checksums_buf_count) {
-    motr_rw_op_context =
-        create_basic_rw_op_ctx(motr_buf_count, motr_checksums_buf_count, 0);
+                         size_t number_of_buffers_per_motr_unit) {
+    motr_rw_op_context = create_basic_rw_op_ctx(
+        motr_buf_count, number_of_buffers_per_motr_unit, 0);
   }
 
   struct s3_motr_rw_op_context* get_motr_rw_op_ctx() {
@@ -112,6 +113,7 @@ class S3MotrWiter {
   size_t total_written;
 
   bool is_object_opened = false;
+  bool is_first_write_part_segment;
   struct s3_motr_obj_context* obj_ctx = nullptr;
 
   void* place_holder_for_last_unit = nullptr;
@@ -177,6 +179,9 @@ class S3MotrWiter {
 
   virtual void set_oid(const struct m0_uint128& id);
   virtual void set_layout_id(int id);
+  void first_write_part_request(bool is_first_write_part_request) {
+    is_first_write_part_segment = is_first_write_part_request;
+  }
 
   // This concludes the md5 calculation
   virtual std::string get_content_md5() {

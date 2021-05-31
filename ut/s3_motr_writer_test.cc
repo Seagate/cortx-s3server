@@ -511,6 +511,10 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest) {
   EXPECT_CALL(*s3_motr_api_mock, motr_op_launch(_, _, _, _))
       .WillRepeatedly(Invoke(s3_test_motr_op_launch));
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_fini(_)).Times(1);
+  // buffers of size 4K and layout ID 9
+  // motr_client_calculate_pi -- (1 + 1 + 254 + 1)
+  EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
+      .Times(257);
 
   S3Option::get_instance()->set_eventbase(evbase);
 
