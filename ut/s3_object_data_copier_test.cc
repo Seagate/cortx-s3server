@@ -165,7 +165,7 @@ TEST_F(S3ObjectDataCopierTest, ReadDataBlockSuccessShouldStartWrite) {
   entity_under_test->read_in_progress = true;
 
   S3BufferSequence data_blocks_read;
-  data_blocks_read.emplace_back(nullptr, 0);
+  data_blocks_read.emplace_back(nullptr, entity_under_test->size_of_ev_buffer);
 
   EXPECT_CALL(*ptr_mock_motr_reader_factory->mock_motr_reader,
               extract_blocks_read())
