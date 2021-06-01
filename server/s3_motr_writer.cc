@@ -728,7 +728,7 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
   m0_pi_calc_flag flag;
   size_t len_in_buf = 0;
   size_t number_of_unit_unaligned = 0;
-  size_t last_data_buf_indx_for_pi;
+  size_t last_data_buf_indx_for_pi = 0;
   while (!buffer_sequence.empty()) {
     calculated_chksum_at_unit_boundary = false;
     const auto &ptr_n_len = buffer_sequence.front();
@@ -756,8 +756,8 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
     // rw_ctx->attr->ov_vec.v_count[buf_idx] = 0;
     ++buf_idx;
     size_in_current_write += len_in_buf;
-    if (is_s3_write_di_check_enabled) {
       if (size_in_current_write % motr_unit_size == 0) {
+        struct m0_pi_seed *p_seed = nullptr;
         struct m0_pi_seed seed;
         seed.data_unit_offset = saved_last_index;
         seed.obj_id.f_container = oid_list[0].u_hi;
@@ -773,18 +773,20 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
         } else {
           if (md5crypt.is_checksum_saved()) {
             // If there is checksum from previous write-set, then take that
-            memcpy(((struct m0_md5_inc_digest_pi *)((struct m0_generic_pi *)
-                                                    rw_ctx->attr->ov_buf
-                                                        [chksum_buf_idx])->t_pi)
-                       ->prev_digest,
+            memcpy(((struct m0_md5_inc_context_pi *)((struct m0_generic_pi *)
+                                                     rw_ctx->attr->ov_buf
+                                                         [chksum_buf_idx])
+                        ->t_pi)->prev_context,
                    md5crypt.get_prev_write_checksum(), sizeof(MD5_CTX));
           } else {
             // Should not be the case
           }
         }
-
+        if (is_s3_write_di_check_enabled) {
+          p_seed = &seed;
+        }
         rc = s3_motr_api->motr_client_calculate_pi(
-            (m0_generic_pi *)rw_ctx->attr->ov_buf[chksum_buf_idx++], &seed,
+            (m0_generic_pi *)rw_ctx->attr->ov_buf[chksum_buf_idx++], p_seed,
             rw_ctx->pi_bufvec, flag, (unsigned char *)rw_ctx->current_digest,
             NULL);
         if (rc != 0) {
@@ -804,12 +806,13 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
         unaligned_buf_idx_offset = buf_idx;
         calculated_chksum_at_unit_boundary = true;
       }
-    }
     buffer_sequence.pop_front();
   }
 
   number_of_unit_unaligned = buf_idx - unaligned_buf_idx_offset;
-  last_data_buf_indx_for_pi = starting_checksum_buf_idx - 1;
+  if (number_of_unit_unaligned != 0) {
+    last_data_buf_indx_for_pi = starting_checksum_buf_idx - 1;
+  }
 
   // Save current running checksum, as this will change after padding
   // and its checksum calculation
@@ -858,11 +861,11 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
       } else {
         if (md5crypt.is_checksum_saved()) {
             // If there is checksum from previous write-set, then take that
-            memcpy(((struct m0_md5_inc_digest_pi *)((struct m0_generic_pi *)
-                                                    rw_ctx->attr->ov_buf
-                                                        [chksum_buf_idx])->t_pi)
-                       ->prev_digest,
-                   md5crypt.get_prev_write_checksum(), sizeof(MD5_CTX));
+          memcpy(((struct m0_md5_inc_context_pi *)((struct m0_generic_pi *)
+                                                   rw_ctx->attr->ov_buf
+                                                       [chksum_buf_idx])->t_pi)
+                     ->prev_context,
+                 md5crypt.get_prev_write_checksum(), sizeof(MD5_CTX));
           }
       }
 
@@ -890,8 +893,8 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
   // those unaligned buffers and finalize
   if (!calculated_chksum_at_unit_boundary) {
     struct m0_generic_pi generic_pi_for_unaligned;
-    struct m0_md5_inc_digest_pi s3_md5_inc_digest_pi;
-    generic_pi_for_unaligned.hdr.pi_type = M0_PI_TYPE_MD5_INC_DIGEST;
+    struct m0_md5_inc_context_pi s3_md5_inc_digest_pi;
+    generic_pi_for_unaligned.hdr.pi_type = M0_PI_TYPE_MD5_INC_CONTEXT;
     generic_pi_for_unaligned.t_pi = &s3_md5_inc_digest_pi;
     if ((saved_last_index == 0) || (initial_buffers_part_write)) {
       // If the write is with offset as 0 or multipart part
@@ -900,9 +903,10 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
       flag = M0_PI_CALC_UNIT_ZERO;
     } else {
       // Copy the checksum at last unit boundary
-      memcpy((void *)((struct m0_md5_inc_digest_pi *)(generic_pi_for_unaligned
-                                                          .t_pi))->prev_digest,
-             md5crypt.get_prev_unaligned_checksum(), sizeof(MD5_CTX));
+      memcpy(
+          (void *)((struct m0_md5_inc_context_pi *)(generic_pi_for_unaligned
+                                                        .t_pi))->prev_context,
+          md5crypt.get_prev_unaligned_checksum(), sizeof(MD5_CTX));
     }
 
     // Let only unaligned buffers be taken into consideration
