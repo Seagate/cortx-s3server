@@ -63,7 +63,7 @@ logConfigFile=/opt/seagate/cortx/auth/resources/authserver-log4j2.xml
 # If this option is set along with logConfigFile, the log level set in the
 # config file will be overridden.
 #
-logLevel=DEBUG
+logLevel=INFO
 
 #comma separated list of s3 internal accounts
 s3InternalAccounts=s3-background-delete-svc

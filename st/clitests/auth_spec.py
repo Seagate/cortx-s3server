@@ -1676,8 +1676,10 @@ def delete_account_tests():
     AuthTest(test_msg).delete_account(**account_args).execute_test()\
             .command_response_should_have("Account deleted successfully")
 
-    '''
-    # Test Delete Account with ldap credentials
+    # DeleteAccount with ldap credentials tests -- starts
+    s3test_access_key = S3ClientConfig.access_key_id
+    s3test_secret_key = S3ClientConfig.secret_key
+
     test_msg = "Create account s3deletetest for testing Account Deletion with ldap credentials"
     account_args = {'AccountName': 's3deletetest', 'Email': 's3deletetest@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
     account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
@@ -1724,7 +1726,9 @@ def delete_account_tests():
     AuthTest(test_msg).delete_account(**account_args).execute_test()\
             .command_response_should_have("Account deleted successfully")
 
-    load_test_config()
+    S3ClientConfig.access_key_id = s3test_access_key
+    S3ClientConfig.secret_key = s3test_secret_key
+    # DeleteAccount with ldap credentials tests -- ends
 
     # DeleteAccount fail if account has bucket/iam-users -- start
 
@@ -1789,6 +1793,7 @@ def delete_account_tests():
             .command_response_should_have("Account deleted successfully")
 
     # DeleteAccount fail if account has bucket/iam-users -- end
+
     # DeleteAccount fails with IAM credentials/temp auth credentials of IAM User --- start
     date_pattern_for_tempAuthCred = "[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T(2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9].[0-9]*[\+-][0-9]*"
     test_msg = "Create account tempAuthDeleteAccount"
@@ -1905,9 +1910,9 @@ def delete_account_tests():
             .command_response_should_have("Account deleted successfully")
 
     # DeleteAccount fails with IAM credentials/temp auth credentials of IAM User --- end
-    #load_test_config()
-    #_use_root_credentials()
-    '''
+    # Restore root account credentials at end of test
+    S3ClientConfig.access_key_id = s3test_access_key
+    S3ClientConfig.secret_key = s3test_secret_key
 
 def reset_account_accesskey_tests():
 
@@ -2131,7 +2136,7 @@ def execute_all_system_tests():
 
     # Do not change the order.
     before_all()
-    #test_max_account_and_user_limit_value_of_auth_config()
+    test_max_account_and_user_limit_value_of_auth_config()
     account_tests()
     user_tests()
     accesskey_tests()
