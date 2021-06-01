@@ -96,6 +96,8 @@ int free_obj_context(struct s3_motr_obj_context *ctx);
 struct s3_motr_op_context *create_basic_op_ctx(size_t op_count);
 int free_basic_op_ctx(struct s3_motr_op_context *ctx);
 
+unsigned long get_sizeof_pi_info(struct s3_motr_rw_op_context *ctx);
+
 struct s3_motr_rw_op_context *create_basic_rw_op_ctx(
     size_t motr_buf_count, size_t motr_checksums_buf_count, size_t unit_size,
     bool allocate_bufs = false);
