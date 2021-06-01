@@ -290,6 +290,104 @@ bool S3MotrReader::read_object() {
   return true;
 }
 
+bool S3MotrReader::ValidateStoredMD5Chksum(m0_bufvec *motr_data_unit,
+                                           struct m0_generic_pi *pi_info,
+                                           struct m0_pi_seed *seed) {
+  assert(NULL != motr_data_unit);
+  assert(NULL != pi_info);
+  assert(NULL != seed);
+
+  unsigned char current_digest[sizeof(MD5_CTX)] = {0};
+  m0_md5_inc_context_pi md5_info = {0};
+
+  memcpy(md5_info.prev_context,
+         ((m0_md5_inc_context_pi *)(pi_info))->prev_context, sizeof(MD5_CTX));
+  md5_info.hdr.pi_type = M0_PI_TYPE_MD5_INC_CONTEXT;
+
+  int rc = m0_client_calculate_pi((struct m0_generic_pi *)&md5_info, seed,
+                                  motr_data_unit, (m0_pi_calc_flag)0,
+                                  current_digest, NULL);
+  if (rc != 0) {
+    s3_log(S3_LOG_ERROR, "", "%s Motr API to Calculate PI Info failed.",
+           __func__);
+    return false;
+  }
+
+  if (0 != memcmp(md5_info.pi_value,
+                  ((m0_md5_inc_context_pi *)(pi_info))->pi_value,
+                  MD5_DIGEST_LENGTH)) {
+    s3_log(S3_LOG_ERROR, "", "%s Saved and Calculated Pi dont match.",
+           __func__);
+    return false;
+  }
+
+  return true;
+}
+
+bool S3MotrReader::ValidateStoredChksum() {
+
+  uint32_t data_buffer_count =
+      reader_context->get_motr_rw_op_ctx()->data->ov_vec.v_nr;
+  uint32_t pi_buffer_count =
+      reader_context->get_motr_rw_op_ctx()->attr->ov_vec.v_nr;
+  m0_bufvec *databuf = reader_context->get_motr_rw_op_ctx()->data;
+  m0_bufvec *pibuf = reader_context->get_motr_rw_op_ctx()->attr;
+
+  assert(data_buffer_count % pi_buffer_count == 0);
+
+  uint32_t pi_to_data_buffer_ratio = data_buffer_count / pi_buffer_count;
+
+  s3_log(S3_LOG_INFO, "", "%s pi_to_data_buffer_ratio %u", __func__,
+         pi_to_data_buffer_ratio);
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Motr Data Buffer count %u \n",
+         __func__, databuf->ov_vec.v_nr);
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Attr PI Buffer count %u \n",
+         __func__, pibuf->ov_vec.v_nr);
+
+  uint32_t start_offset = 0;
+  uint32_t end_offset = pi_to_data_buffer_ratio;
+  uint64_t current_index = last_index;
+
+  for (uint32_t i = 0; i < pi_buffer_count; i++) {
+
+    assert(end_offset <= data_buffer_count);
+
+    struct m0_pi_seed seed = {0};
+    seed.data_unit_offset = current_index;
+    seed.obj_id.f_container = oid.u_hi;
+    seed.obj_id.f_key = oid.u_lo;
+
+    m0_bufvec motr_data_unit = {0};
+    motr_data_unit.ov_vec.v_nr = pi_to_data_buffer_ratio;
+    motr_data_unit.ov_vec.v_count = databuf->ov_vec.v_count + start_offset;
+    motr_data_unit.ov_buf = databuf->ov_buf + start_offset;
+
+    s3_log(S3_LOG_INFO, "", "%s start_offset %u", __func__, start_offset);
+    s3_log(S3_LOG_INFO, "", "%s end_offset %u", __func__, end_offset);
+    s3_log(S3_LOG_INFO, "", "%s current_index %lu", __func__, current_index);
+
+    struct m0_generic_pi *pi_info = ((struct m0_generic_pi **)pibuf->ov_buf)[i];
+
+    switch (pi_info->hdr.pi_type) {
+      case M0_PI_TYPE_MD5_INC_CONTEXT:
+        if (false == ValidateStoredMD5Chksum(&motr_data_unit, pi_info, &seed)) {
+          s3_log(S3_LOG_ERROR, "", "%s Saved and Calculated Pi dont match.",
+                 __func__);
+          return false;
+        }
+        break;
+      default:
+        return false;
+    }
+
+    start_offset = end_offset;
+    end_offset += pi_to_data_buffer_ratio;
+    current_index += 1;
+  }
+
+  return true;
+}
+
 void S3MotrReader::read_object_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, stripped_request_id,
@@ -320,6 +418,15 @@ void S3MotrReader::read_object_successful() {
         memset(bv->ov_buf[i], 0, bv->ov_vec.v_count[i]);
     }
   }
+
+  if (S3Option::get_instance()->is_s3_read_di_check_enabled()) {
+    if (!this->ValidateStoredChksum()) {
+      state = S3MotrReaderOpState::failed;
+      this->handler_on_failed();
+      return;
+    }
+  }
+
   state = S3MotrReaderOpState::success;
   this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
