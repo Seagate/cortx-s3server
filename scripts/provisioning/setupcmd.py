@@ -23,6 +23,7 @@ import os
 import re
 import shutil
 import glob
+import socket
 from os import path
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
@@ -61,8 +62,8 @@ class SetupCmd(object):
 
   def __init__(self,config: str):
     """Constructor."""
-
-    self.logger = logging.getLogger("s3-deployment-logger")
+    s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
+    self.logger = logging.getLogger(s3deployment_logger_name)
     
     if config is None:
       self.logger.error(f'Empty Config url')
