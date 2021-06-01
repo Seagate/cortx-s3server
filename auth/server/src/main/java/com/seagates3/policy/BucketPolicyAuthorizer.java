@@ -64,13 +64,16 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
             authorizeOperation(requestBody, requestedOperation, requestor);
       }
       // Below authorization is for CopyObject in case of tagging
-      if ("PutObject".equals(requestedOperation) &&
+      if ("s3:putobject".equals(requestedOperation) &&
           (serverResponse == null ||
            serverResponse.getResponseStatus() == HttpResponseStatus.OK) &&
           requestBody.get("S3ActionList") != null) {
         List<String> actionList =
             Arrays.asList(requestBody.get("S3ActionList").split(","));
         for (String action : actionList) {
+          action = "s3:" + action.toLowerCase();
+          LOGGER.debug("copy object dependent operation to authorize - " +
+                       action);
           ServerResponse response =
               authorizeOperation(requestBody, action, requestor);
           if (response != null &&
