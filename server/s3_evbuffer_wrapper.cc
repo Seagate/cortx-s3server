@@ -20,6 +20,7 @@
 
 #include "s3_evbuffer_wrapper.h"
 #include "s3_motr_context.h"
+#include "s3_option.h"
 
 // Create evbuffer of size buf_sz, with each basic buffer buf_unit_sz
 S3Evbuffer::S3Evbuffer(const std::string req_id, size_t buf_sz,
@@ -77,7 +78,9 @@ void S3Evbuffer::to_motr_read_buffers(struct s3_motr_rw_op_context* rw_ctx,
     *last_index += len;
 
     /* we don't want any attributes */
-    rw_ctx->attr->ov_vec.v_count[i] = 0;
+    if (!S3Option::get_instance()->is_s3_write_di_check_enabled()) {
+      rw_ctx->attr->ov_vec.v_count[i] = 0;
+    }
   }
 }
 
