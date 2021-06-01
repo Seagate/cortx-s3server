@@ -24,10 +24,11 @@ import traceback
 import errno
 import logging
 import os
+import socket
 from logging import handlers
 
 #Logger details
-s3deployment_logger_name = "s3-deployment-logger"
+s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
 s3deployment_log_file = "/var/log/seagate/s3/s3deployment/s3deployment.log"
 s3deployment_log_directory = "/var/log/seagate/s3/s3deployment/"
 s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
