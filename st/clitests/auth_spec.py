@@ -412,16 +412,6 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
                **user_args).execute_test(negative_case=True)
     result.command_response_should_have("User password is required for user login-profile creation")
 
-    test_msg = 'create user login profile should fail for password length less than 6 with PasswordPolicyVoilation.'
-    user_args = {}
-    user_name_flag = "-n"
-    password_flag = "--password"
-    user_args['UserName'] ="s3user1New"
-    user_args['Password'] = "abcd"
-    result = AuthTest(test_msg).create_login_profile(user_name_flag , password_flag,\
-               **user_args).execute_test(negative_case=True)
-    result.command_response_should_have("PasswordPolicyVoilation")
-
     test_msg = 'create user login profile should fail with username as root.'
     user_args = {}
     user_name_flag = "-n"
@@ -593,14 +583,6 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     result = AuthTest(test_msg).update_login_profile(user_name_flag , **user_args).execute_test(negative_case=True)
     result.command_response_should_have("Cannot update account login profile with UpdateUserLoginProfile")
 
-    test_msg = 'UpdateLoginProfile should fail for password length less than 6 with PasswordPolicyVoilation.'
-    user_args = {}
-    user_name_flag = "-n"
-    user_args['UserName'] ="s3user1New"
-    user_args['Password'] = "abcd"
-    result = AuthTest(test_msg).update_login_profile(user_name_flag , **user_args).execute_test(negative_case=True)
-    result.command_response_should_have("PasswordPolicyVoilation")
-
     test_msg = 'UpdateLoginProfile is successful with only password-reset flag entered'
     user_args = {}
     user_name_flag = "-n"
@@ -706,16 +688,6 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     result = AuthTest(test_msg).change_user_password(**test_access_key_args).execute_test(negative_case=True)
     result.command_response_should_have("ChangePassword failed")
     result.command_response_should_have("InvalidPassword")
-
-    test_msg = 'ChangePassword should fail with for password length less than 6 with PasswordPolicyVoilation.'
-    test_access_key_args = {}
-    test_access_key_args['AccessKeyId'] = user_access_key_args['AccessKeyId']
-    test_access_key_args['SecretAccessKey'] = user_access_key_args['SecretAccessKey']
-    test_access_key_args['NewPassword'] = "pqrs"
-    test_access_key_args['OldPassword'] = "abcdfs"
-    result = AuthTest(test_msg).change_user_password(**test_access_key_args).execute_test(negative_case=True)
-    result.command_response_should_have("ChangePassword failed")
-    result.command_response_should_have("PasswordPolicyVoilation")
 
     test_msg = 'ChangePassword with IAM User accessKey-secretKey, OldPassword and NewPassowrd should succeed.'
     user_access_key_args['OldPassword'] ="abcdfs"
