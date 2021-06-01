@@ -158,7 +158,6 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   // Any validations we want to do on metadata.
   void validate();
   std::string index_name;
-  std::string pvid_str;
 
   // TODO Eventually move these to s3_common as duplicated in s3_bucket_metadata
   // This index has keys as "object_name"

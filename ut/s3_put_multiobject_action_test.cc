@@ -419,10 +419,14 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 }
 
 TEST_F(S3PutMultipartObjectActionTestWithMockAuth, CreatePartObject) {
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
+  object_mp_meta_factory->mock_object_mp_metadata->set_pvid(
+      (struct m0_fid *)&oid);
   EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
       Return(1024));
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
-      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              create_object(_, _, _, _)).Times(1);
   action_under_test->create_part_object();
   EXPECT_TRUE(action_under_test->motr_writer != nullptr);
 }
@@ -441,10 +445,14 @@ TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
 }
 
 TEST_F(S3PutMultipartObjectActionTestWithMockAuth, CreateObjectFailedTest) {
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
+  object_mp_meta_factory->mock_object_mp_metadata->set_pvid(
+      (struct m0_fid *)&oid);
   EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
       Return(1024));
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
-      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              create_object(_, _, _, _)).Times(1);
   action_under_test->create_part_object();
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
@@ -461,10 +469,14 @@ TEST_F(S3PutMultipartObjectActionTestWithMockAuth, CreateObjectFailedTest) {
 
 TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
        CreateObjectFailedToLaunchTest) {
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
+  object_mp_meta_factory->mock_object_mp_metadata->set_pvid(
+      (struct m0_fid *)&oid);
   EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
       Return(1024));
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
-      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              create_object(_, _, _, _)).Times(1);
   action_under_test->create_part_object();
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())

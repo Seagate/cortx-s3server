@@ -334,8 +334,8 @@ void S3PutMultiObjectAction::_set_layout_id(int layout_id) {
 void S3PutMultiObjectAction::create_part_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_timer.start();
-  motr_writer =
-      motr_writer_factory->create_motr_writer(request, new_object_oid);
+  motr_writer = motr_writer_factory->create_motr_writer(
+      request, new_object_oid, object_multipart_metadata->get_pvid(), 0);
   _set_layout_id(S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
       request->get_content_length()));
   motr_writer->set_layout_id(layout_id);
@@ -343,7 +343,7 @@ void S3PutMultiObjectAction::create_part_object() {
   motr_writer->create_object(
       std::bind(&S3PutMultiObjectAction::create_part_object_successful, this),
       std::bind(&S3PutMultiObjectAction::create_part_object_failed, this),
-      layout_id);
+      new_object_oid, layout_id);
 
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
@@ -920,7 +920,8 @@ void S3PutMultiObjectAction::delete_old_object() {
   motr_writer->set_oid(old_object_oid);
   motr_writer->delete_object(
       std::bind(&S3PutMultiObjectAction::remove_old_oid_probable_record, this),
-      std::bind(&S3PutMultiObjectAction::next, this), old_layout_id);
+      std::bind(&S3PutMultiObjectAction::next, this), old_object_oid,
+      old_layout_id, object_multipart_metadata->get_pvid());
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -933,6 +934,7 @@ void S3PutMultiObjectAction::delete_new_object() {
   motr_writer->set_oid(new_object_oid);
   motr_writer->delete_object(
       std::bind(&S3PutMultiObjectAction::remove_new_oid_probable_record, this),
-      std::bind(&S3PutMultiObjectAction::next, this), layout_id);
+      std::bind(&S3PutMultiObjectAction::next, this), new_object_oid, layout_id,
+      object_multipart_metadata->get_pvid());
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
