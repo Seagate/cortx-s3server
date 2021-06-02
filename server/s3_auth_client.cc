@@ -589,10 +589,12 @@ void S3AuthClient::add_non_empty_key_val_to_body(
   std::string val_str;
   for (const auto &val : val_list) {
     if (!val.empty()) {
-      val_str += val + " ";
+      val_str += val + ",";
     }
   }
-  val_str.pop_back();  // remove last space
+  if (!val_str.empty()) {
+    val_str.pop_back();  // remove last delimiter
+  }
   add_key_val_to_body(std::move(key), std::move(val_str));
 }
 
@@ -997,7 +999,7 @@ void S3AuthClient::trigger_request() {
         evbuffer_copyout(req_body_buffer, sz_request, buffer_len);
     sz_request[nread > 0 ? nread : 0] = '\0';
 
-    s3_log(S3_LOG_DEBUG, request_id, "Data being send to Auth server: = %s\n",
+    s3_log(S3_LOG_DEBUG, request_id, "Data being sent to Auth server: = %s\n",
            sz_request);
     ::free(sz_request);
   }
