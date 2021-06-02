@@ -84,16 +84,19 @@ void S3RequestObject::set_action_str(const std::string& action) {
 }
 
 void S3RequestObject::set_action_list(const std::string& action) {
+  if (!action.empty()) {
   s3_log(S3_LOG_INFO, stripped_request_id, "Adding S3Action: [%s] to list\n",
          action.c_str());
-  if (!action.empty()) {
     s3_action_list.push_back(action);
   }
 }
 
+void S3RequestObject::reset_action_list() { s3_action_list.clear(); }
+
 void S3RequestObject::set_object_size(size_t obj_size) {
   object_size = obj_size;
 }
+
 const std::string& S3RequestObject::get_bucket_name() { return bucket_name; }
 
 void S3RequestObject::set_object_name(const std::string& name) {

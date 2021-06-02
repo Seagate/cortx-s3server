@@ -63,7 +63,7 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
         serverResponse =
             authorizeOperation(requestBody, requestedOperation, requestor);
       }
-      // Below authorization is for CopyObject in case of tagging
+      // Below authorization is for CopyObject in case of secondary operations
       if ("s3:putobject".equals(requestedOperation) &&
           (serverResponse == null ||
            serverResponse.getResponseStatus() == HttpResponseStatus.OK) &&
@@ -100,20 +100,22 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
  private
   String identifyOperationToAuthorize(Map<String, String> requestBody) {
     String s3Action = requestBody.get("S3Action");
-    switch (s3Action) {
-      case "HeadBucket":
-        s3Action = "ListBucket";
-        break;
-      case "HeadObject":
-        s3Action = "GetObject";
-        break;
-      case "DeleteBucketTagging":
-        s3Action = "PutBucketTagging";
-        break;
+    if (null != s3Action) {
+      switch (s3Action) {
+        case "HeadBucket":
+          s3Action = "ListBucket";
+          break;
+        case "HeadObject":
+          s3Action = "GetObject";
+          break;
+        case "DeleteBucketTagging":
+          s3Action = "PutBucketTagging";
+          break;
+      }
+      s3Action = "s3:" + s3Action;
+      LOGGER.debug("identifyOperationToAuthorize has returned action as - " +
+                   s3Action);
     }
-    s3Action = "s3:" + s3Action;
-    LOGGER.debug("identifyOperationToAuthorize has returned action as - " +
-                 s3Action);
     return s3Action;
   }
 

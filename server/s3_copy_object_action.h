@@ -75,6 +75,7 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   void check_source_bucket_authorization_success();
   void check_source_bucket_authorization_failed();
   void set_source_bucket_authorization_metadata();
+  void check_destination_bucket_authorization_failed();
 
  public:
   S3CopyObjectAction(
