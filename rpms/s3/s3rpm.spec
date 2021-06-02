@@ -145,22 +145,6 @@ if [ $1 == 1 ];then
     echo "[cortx-s3server-rpm] INFO: S3 RPM Pre Install section completed"
 elif [ $1 == 2 ];then
     echo "[cortx-s3server-rpm] INFO: S3 RPM Pre Upgrade section started"
-    echo "[cortx-s3server-rpm] INFO: Backing up .sample config file to .old"
-    if [ -f /opt/seagate/cortx/s3/conf/s3config.yaml.sample ]; then
-        cp -f /opt/seagate/cortx/s3/conf/s3config.yaml.sample /tmp/s3config.yaml.sample.old
-    fi
-    if [ -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample ]; then
-        cp -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample /tmp/config.yaml.sample.old
-    fi
-    if [ -f /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample ]; then
-        cp -f /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample /tmp/s3_cluster.yaml.sample.old
-    fi
-    if [ -f /opt/seagate/cortx/auth/resources/keystore.properties.sample ]; then
-        cp -f /opt/seagate/cortx/auth/resources/keystore.properties.sample /tmp/keystore.properties.sample.old
-    fi
-    if [ -f /opt/seagate/cortx/auth/resources/authserver.properties.sample ]; then
-        cp -f /opt/seagate/cortx/auth/resources/authserver.properties.sample /tmp/authserver.properties.sample.old
-    fi
     echo "[cortx-s3server-rpm] INFO: S3 RPM Pre Upgrade section completed"
 fi
 

@@ -49,6 +49,7 @@ class SetupCmd(object):
   ldap_mdb_folder = "/var/lib/ldap"
   s3_prov_config = "/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml"
   _preqs_conf_file = "/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
+  s3_tmp_dir = "/opt/seagate/cortx/s3/tmp"
   #TODO
   # add the service name and HA service name in the following dictionary
   # as key value pair after confirming from the HA team

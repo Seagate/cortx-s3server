@@ -89,7 +89,7 @@ S3_MOTR_CONFIG:                                     # Section for S3 Motr
                                                         # 1->4K, 2->8K, 3->16K, 4->32K, 5->64K, 6->128K, 7->256K, 8->512K, 9->1024K,
                                                         # 10->2048K, 11->4096K, 12->8192K, 13->16384K, 14->32768K, default is layout id 9 (1 MB)
    S3_MOTR_UNIT_SIZE: 1048576                         # Motr unit size w.r.t layout id for an IO operation
-   S3_MOTR_MAX_UNITS_PER_REQUEST: 32                  # Maximum units per read/write request to motr
+   S3_MOTR_MAX_UNITS_PER_REQUEST: 8                  # Maximum units per read/write request to motr
    S3_MOTR_MAX_IDX_FETCH_COUNT: 30                    # Motr will read from index at a time maximim of this many key values, used in objects listing
    S3_MOTR_IS_OOSTORE: true                           # Motr oostore mode is set when this flag is true, default is false (oostore mode is not set)
    S3_MOTR_IS_READ_VERIFY: false                      # Motr Flag for verify-on-read. Parity is checked during READ's if this flag is true, default is false
