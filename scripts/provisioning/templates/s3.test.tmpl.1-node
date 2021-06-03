@@ -22,4 +22,4 @@ cortx:
     openldap:
       sgiam:
         user: "sgiamadmin"
-        secret: "TMPL_SGIAM_PLAINTEXT_PASSWORD"
+        password: "TMPL_SGIAM_PLAINTEXT_PASSWORD"

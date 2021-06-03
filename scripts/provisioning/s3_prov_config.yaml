@@ -50,7 +50,7 @@ INIT:
 
 TEST:
   CONFSTORE_LDAPADMIN_USER_KEY: "cortx>software>openldap>sgiam>user"
-  CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>software>openldap>sgiam>secret"
+  CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>software>openldap>sgiam>password"
   CONFSTORE_ENDPOINT_KEY: "endpoint_fqdn"
 RESET:
   CONFSTORE_LDAPADMIN_USER_KEY: "cortx>software>openldap>sgiam>user"
