@@ -18,8 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-import sys
-
 from setupcmd import SetupCmd, S3PROVError
 from merge import merge_configs
 
