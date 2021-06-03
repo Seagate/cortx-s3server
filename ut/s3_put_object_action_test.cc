@@ -96,13 +96,13 @@ class S3PutObjectActionTest : public testing::Test {
     ptr_mock_request = std::make_shared<MockS3RequestObject>(
         req, evhtp_obj_ptr, async_buffer_factory);
     EXPECT_CALL(*ptr_mock_request, get_bucket_name())
+        .Times(AtLeast(1))
         .WillRepeatedly(ReturnRef(bucket_name));
     EXPECT_CALL(*ptr_mock_request, get_object_name())
         .Times(AtLeast(1))
-        .WillOnce(ReturnRef(object_name));
+        .WillRepeatedly(ReturnRef(object_name));
     EXPECT_CALL(*(ptr_mock_request), get_header_value(StrEq("x-amz-tagging")))
         .WillOnce(Return(""));
-
     // Owned and deleted by shared_ptr in S3PutObjectAction
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);

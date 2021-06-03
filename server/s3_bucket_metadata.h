@@ -109,7 +109,7 @@ class S3BucketMetadata {
   virtual const struct m0_uint128& get_object_list_index_oid() const;
   virtual const struct m0_uint128& get_objects_version_list_index_oid() const;
   const struct m0_uint128& get_multipart_index_oid() const;
-  const struct m0_uint128& get_extended_metadata_index_oid() const;
+  virtual const struct m0_uint128& get_extended_metadata_index_oid() const;
 
   void set_multipart_index_oid(struct m0_uint128 id);
   void set_object_list_index_oid(struct m0_uint128 id);
