@@ -184,7 +184,7 @@ S3fiTest('Disable FI motr entity delete').disable_fi("motr_entity_delete_fail")\
    .execute_test().command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(5)
+time.sleep(15)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
@@ -243,7 +243,7 @@ S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fa
 object2_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(5)
+time.sleep(15)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
@@ -285,7 +285,7 @@ result = AwsTest('Upload Object "object3" to bucket "seagatebucket"')\
     .execute_test(ignore_err=True).command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
+time.sleep(15)
 
 object3_old_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
@@ -303,7 +303,7 @@ result = AwsTest('Upload Object "object3" to bucket "seagatebucket"')\
     .command_error_should_have("InternalError")
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
+time.sleep(15)
 
 S3fiTest('Disable FI motr object write fail').disable_fi("motr_obj_write_fail")\
    .execute_test().command_is_successful()
@@ -369,7 +369,7 @@ S3cmdTest('s3cmd can delete multiple objects "object4" and "object5"')\
     .multi_delete_test("seagatebucket").execute_test().command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
+time.sleep(15)
 
 S3fiTest('Disable FI motr entity delete fail')\
     .disable_fi("motr_entity_delete_fail").execute_test()\
@@ -466,7 +466,7 @@ result=AwsTest('Aws can complete multipart upload object6 10Mb file')\
     .command_response_should_have("seagatebucket/object6")
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
+time.sleep(15)
 
 S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fail")\
     .execute_test().command_is_successful()
@@ -530,7 +530,7 @@ result=AwsTest('Aws can abort multipart upload object7 10Mb file')\
     .execute_test().command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
+time.sleep(15)
 
 S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fail")\
     .execute_test().command_is_successful()
@@ -613,7 +613,7 @@ S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fa
     .execute_test().command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(5)
+time.sleep(15)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
@@ -673,7 +673,7 @@ result = AwsTest('Delete Object "object1" from bucket "seagatebucket"')\
 object1_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(5)
+time.sleep(15)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
@@ -717,7 +717,7 @@ result = AwsTest('Upload Object "object1" to bucket "seagatebucket"')\
     .execute_test(ignore_err=True).command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(5)
+time.sleep(15)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
@@ -770,7 +770,7 @@ S3cmdTest('s3cmd can delete multiple objects "object2" and "object3"')\
     .multi_delete_test("seagatebucket").execute_test().command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
+time.sleep(15)
 
 
 # ************ Start Schedular*****************************

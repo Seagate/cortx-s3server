@@ -128,8 +128,14 @@ public abstract class AbstractResponseGenerator {
       return formatResponse(HttpResponseStatus.FORBIDDEN, "AccessDenied",
                             errorMessage);
     }
+   public
+    ServerResponse AccessDenied(String message) {
+      return formatResponse(HttpResponseStatus.FORBIDDEN, "AccessDenied",
+                            message);
+    }
 
-    public ServerResponse invalidAction() {
+   public
+    ServerResponse invalidAction() {
         String errorMessage = "The action or operation requested is "
                 + "invalid. Verify that the action is typed correctly.";
 

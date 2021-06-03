@@ -76,6 +76,16 @@ class AccountLoginProfileController extends AbstractController {
 
   @Override public ServerResponse create() {
     Account account;
+    if (requestBody.get("Password") == null) {
+      LOGGER.error("password is missing");
+      return accountResponseGenerator.invalidRequest(
+          "Account login password is required");
+    }
+    if (requestBody.get("AccountName") == null) {
+      LOGGER.error("accountname is missing");
+      return accountResponseGenerator.invalidRequest(
+          "Account name is required");
+    }
     try {
       account = accountDAO.find(requestor.getAccount().getName());
     }

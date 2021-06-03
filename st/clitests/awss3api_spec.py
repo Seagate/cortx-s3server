@@ -25,7 +25,7 @@ from awss3api import AwsTest
 from s3client_config import S3ClientConfig
 from aclvalidation import AclTest
 from auth import AuthTest
-
+from ldap_setup import LdapInfo
 # Helps debugging
 # Config.log_enabled = True
 # Config.dummy_run = True
@@ -408,6 +408,44 @@ os.rmdir(temp_dir)
 
 
 # ************ CopyObject API supported *****************************************************************
+
+
+
+AwsTest('Aws can create bucket').create_bucket("sourcebucket").execute_test().command_is_successful()
+AwsTest('Aws can create object with canned acl input').put_object("sourcebucket", "sourceobj", canned_acl="public-read").execute_test().command_is_successful()
+
+test_msg = "Create account testAcc2"
+account_args = {'AccountName': 'testAcc2', 'Email': 'testAcc2@seagate.com', 'ldapuser': "sgiamadmin", 'ldappasswd': LdapInfo.get_ldap_admin_pwd()}
+account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+result = AuthTest(test_msg).create_account(**account_args).execute_test()
+result.command_should_match_pattern(account_response_pattern)
+account_response_elements = AuthTest.get_response_elements(result.status.stdout)
+testAcc2_access_key = account_response_elements['AccessKeyId']
+testAcc2_secret_key = account_response_elements['SecretKey']
+testAcc2_cannonicalid = account_response_elements['CanonicalId']
+testAcc2_email = "testAcc2@seagate.com"
+
+os.environ["AWS_ACCESS_KEY_ID"] = testAcc2_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = testAcc2_secret_key
+
+AwsTest('Aws can create bucket').create_bucket("destbucket").execute_test().command_is_successful()
+
+cmd = "curl -s -X PUT -H \"Accept: application/json\" -H \"Content-Type: application/json\" --header 'x-amz-copy-source: /sourcebucket/sourceobj' https://s3.seagate.com/destbucket/destobj --cacert /etc/ssl/stx-s3-clients/s3/ca.crt"
+AwsTest('CopyObject not accessible for allusers').execute_curl(cmd).execute_test().command_response_should_have("AccessDenied")
+
+AwsTest('Aws can delete destination bucket').delete_bucket("destbucket").execute_test().command_is_successful()
+
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+AwsTest('Aws can delete sourceobj').delete_object("sourcebucket", "sourceobj").execute_test().command_is_successful()
+AwsTest('Aws can delete sourcebucket').delete_bucket("sourcebucket").execute_test().command_is_successful()
+
+S3ClientConfig.access_key_id = testAcc2_access_key
+S3ClientConfig.secret_key = testAcc2_secret_key
+account_args = {'AccountName': 'testAcc2', 'Email': 'testAcc2@seagate.com',  'force': True}
+AuthTest('Delete account testAcc2').delete_account(**account_args).execute_test().command_response_should_have("Account deleted successfully")
+
 
 AwsTest('Aws can put object').put_object("seagatebucket", "1kfile", 1024)\
     .execute_test().command_is_successful()
