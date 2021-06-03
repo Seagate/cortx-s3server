@@ -758,7 +758,8 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
     size_in_current_write += len_in_buf;
       if (size_in_current_write % motr_unit_size == 0) {
         struct m0_pi_seed *p_seed = nullptr;
-        struct m0_pi_seed seed;
+
+        struct m0_pi_seed seed = {0};
         seed.data_unit_offset = saved_last_index;
         seed.obj_id.f_container = oid_list[0].u_hi;
         seed.obj_id.f_key = oid_list[0].u_lo;
@@ -773,18 +774,26 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
         } else {
           if (md5crypt.is_checksum_saved()) {
             // If there is checksum from previous write-set, then take that
-            memcpy(((struct m0_md5_inc_context_pi *)((struct m0_generic_pi *)
-                                                     rw_ctx->attr->ov_buf
-                                                         [chksum_buf_idx])
-                        ->t_pi)->prev_context,
-                   md5crypt.get_prev_write_checksum(), sizeof(MD5_CTX));
+            s3_log(S3_LOG_ERROR, request_id,
+                   "Saving previously written checksum to "
+                   "rw_ctx->attr->ov_buf[%zu]'s prev_context "
+                   "size_in_current_write(%zu)",
+                   chksum_buf_idx, size_in_current_write);
+            struct m0_md5_inc_context_pi *s3_pi =
+                (struct m0_md5_inc_context_pi *)
+                rw_ctx->attr->ov_buf[chksum_buf_idx];
+            memcpy(s3_pi->prev_context, md5crypt.get_prev_write_checksum(),
+                   sizeof(MD5_CTX));
           } else {
-            // Should not be the case
+            s3_log(S3_LOG_FATAL, request_id,
+                   "previous checksum at motr unit size boundary not saved\n");
           }
         }
         if (is_s3_write_di_check_enabled) {
           p_seed = &seed;
         }
+        rw_ctx->pi_bufvec->ov_vec.v_nr = rw_ctx->buffers_per_motr_unit;
+
         rc = s3_motr_api->motr_client_calculate_pi(
             (m0_generic_pi *)rw_ctx->attr->ov_buf[chksum_buf_idx++], p_seed,
             rw_ctx->pi_bufvec, flag, (unsigned char *)rw_ctx->current_digest,
@@ -860,12 +869,16 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
         initial_buffers_part_write = false;
       } else {
         if (md5crypt.is_checksum_saved()) {
+          struct m0_md5_inc_context_pi *s3_pi =
+              (struct m0_md5_inc_context_pi *)
+              rw_ctx->attr->ov_buf[chksum_buf_idx];
+          s3_log(S3_LOG_ERROR, request_id,
+                 "Unpadded buffers retrieving of previous unit size checksum "
+                 "chksum_buf_idx(%zu)\n",
+                 chksum_buf_idx);
             // If there is checksum from previous write-set, then take that
-          memcpy(((struct m0_md5_inc_context_pi *)((struct m0_generic_pi *)
-                                                   rw_ctx->attr->ov_buf
-                                                       [chksum_buf_idx])->t_pi)
-                     ->prev_context,
-                 md5crypt.get_prev_write_checksum(), sizeof(MD5_CTX));
+          memcpy(s3_pi->prev_context, md5crypt.get_prev_write_checksum(),
+                 sizeof(MD5_CTX));
           }
       }
 
@@ -874,6 +887,7 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
           place_holder_for_last_unit;
       rw_ctx->pi_bufvec->ov_vec.v_count[starting_checksum_buf_idx] =
           size_of_each_buf;
+      rw_ctx->pi_bufvec->ov_vec.v_nr = rw_ctx->buffers_per_motr_unit;
     rc = s3_motr_api->motr_client_calculate_pi(
         (m0_generic_pi *)rw_ctx->attr->ov_buf[chksum_buf_idx++], &seed, rw_ctx->pi_bufvec, flag,
         (unsigned char *)rw_ctx->current_digest, NULL);
@@ -892,10 +906,8 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
   // In case of unaligned buffers, calculate checksums for
   // those unaligned buffers and finalize
   if (!calculated_chksum_at_unit_boundary) {
-    struct m0_generic_pi generic_pi_for_unaligned;
-    struct m0_md5_inc_context_pi s3_md5_inc_digest_pi;
-    generic_pi_for_unaligned.hdr.pi_type = M0_PI_TYPE_MD5_INC_CONTEXT;
-    generic_pi_for_unaligned.t_pi = &s3_md5_inc_digest_pi;
+    struct m0_md5_inc_context_pi s3_md5_inc_digest_pi = {0};
+    s3_md5_inc_digest_pi.hdr.pi_type = M0_PI_TYPE_MD5_INC_CONTEXT;
     if ((saved_last_index == 0) || (initial_buffers_part_write)) {
       // If the write is with offset as 0 or multipart part
       // upload (offset wont be 0 for R1) for initial write
@@ -903,10 +915,11 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
       flag = M0_PI_CALC_UNIT_ZERO;
     } else {
       // Copy the checksum at last unit boundary
-      memcpy(
-          (void *)((struct m0_md5_inc_context_pi *)(generic_pi_for_unaligned
-                                                        .t_pi))->prev_context,
-          md5crypt.get_prev_unaligned_checksum(), sizeof(MD5_CTX));
+      s3_log(S3_LOG_ERROR, request_id,
+             "Unaligned buffers, Copying previous checksum for unaligned "
+             "buffers\n");
+      memcpy((void *)s3_md5_inc_digest_pi.prev_context,
+             md5crypt.get_prev_unaligned_checksum(), sizeof(MD5_CTX));
     }
 
     // Let only unaligned buffers be taken into consideration
@@ -915,8 +928,9 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
     rw_ctx->pi_bufvec->ov_vec.v_count[last_data_buf_indx_for_pi] = len_in_buf;
     // Update (with actual data length) + Finalize without seed
     rc = s3_motr_api->motr_client_calculate_pi(
-        &generic_pi_for_unaligned, NULL, rw_ctx->pi_bufvec, flag,
-        (unsigned char *)rw_ctx->current_digest, md5crypt.get_md5_digest());
+        (struct m0_generic_pi *)&s3_md5_inc_digest_pi, NULL, rw_ctx->pi_bufvec,
+        flag, (unsigned char *)rw_ctx->current_digest,
+        md5crypt.get_md5_digest());
     if (rc != 0) {
       s3_log(S3_LOG_ERROR, request_id,
              "motr api motr_client_calculate_pi failed with return code %d\n",

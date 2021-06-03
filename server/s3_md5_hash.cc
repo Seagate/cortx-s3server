@@ -24,7 +24,7 @@
 #include "s3_option.h"
 
 MD5hash::MD5hash(bool call_init) { Reset(call_init); }
-MD5hash::MD5hash() { Reset(); }
+MD5hash::MD5hash(std::shared_ptr<MotrAPI> motr_api) { Reset(motr_api); }
 
 void MD5hash::save_motr_unit_checksum(unsigned char *current_digest) {
   memcpy((void *)&md5ctx, (void *)current_digest, sizeof(MD5_CTX));
@@ -58,10 +58,11 @@ int MD5hash::Finalize() {
   if (is_finalized) {
     return 0;
   }
-  if (status > 0) {
-    status = MD5_Final(md5_digest, &md5ctx);
-  }
-  if (status < 1) {
+  memcpy(s3_md5_inc_digest_pi.prev_context, &md5ctx, sizeof(MD5_CTX));
+  status = s3_motr_api->motr_client_calculate_pi(
+      (struct m0_generic_pi *)&s3_md5_inc_digest_pi, NULL, &pi_bufvec, flag,
+      (unsigned char *)&md5ctx, md5_digest);
+  if (status < 0) {
     return -1;  // failure
   }
   is_finalized = true;
@@ -77,10 +78,16 @@ void MD5hash::Reset(bool call_init) {
   is_finalized = false;
 }
 
-void MD5hash::Reset() {
-  if (!S3Option::get_instance()->is_s3_write_di_check_enabled()) {
-    status = MD5_Init(&md5ctx);
+void MD5hash::Reset(std::shared_ptr<MotrAPI> motr_api) {
+  if (motr_api) {
+    s3_motr_api = std::move(motr_api);
+  } else {
+    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
+  s3_md5_inc_digest_pi = {0};
+  s3_md5_inc_digest_pi.hdr.pi_type = M0_PI_TYPE_MD5_INC_CONTEXT;
+  pi_bufvec.ov_vec.v_nr = 0;
+  flag = (m0_pi_calc_flag)0;
   is_finalized = false;
 }
 
