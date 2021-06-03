@@ -18,12 +18,10 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-import sys
 import os
 import ntpath
 from shutil import copyfile
 from setupcmd import SetupCmd, S3PROVError
-from merge import merge_configs
 
 class PreUpgradeCmd(SetupCmd):
   """Pre Upgrade Setup Cmd."""
@@ -52,7 +50,7 @@ class PreUpgradeCmd(SetupCmd):
       raise S3PROVError(f'process: {self.name} failed with exception: {e}')
 
   def backup_sample_file(self):
-    """ function to backup .sample config file to .old """
+    """function to backup .sample config file to .old"""
     sampleconfigfiles = {
       "/opt/seagate/cortx/s3/conf/s3config.yaml.sample",
       "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample",
@@ -63,7 +61,7 @@ class PreUpgradeCmd(SetupCmd):
 
     for sampleconfigfile in sampleconfigfiles:
       # check file exist
-      if os.path.isfile(sampleconfigfile): 
+      if os.path.isfile(sampleconfigfile):
         #backup .sample to .old at S3 temporary location
         copyfile(sampleconfigfile, os.path.join(self.s3_tmp_dir, ntpath.basename(sampleconfigfile) + ".old"))
         self.logger.info(f"sample config file {sampleconfigfile} backup successfully")
