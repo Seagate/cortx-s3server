@@ -99,8 +99,11 @@ class S3MotrReaderContext : public S3AsyncOpContextBase {
         S3Option::get_instance()->get_libevent_pool_buffer_size();
     size_t buf_count_in_evbuf =
         (total_read_sz + (evbuf_unit_buf_sz - 1)) / evbuf_unit_buf_sz;
+
+    size_t buf_per_motr_unit = buf_count_in_evbuf / motr_block_count;
+
     motr_rw_op_context = create_basic_rw_op_ctx(
-        buf_count_in_evbuf, motr_block_count, evbuf_unit_buf_sz);
+        buf_count_in_evbuf, buf_per_motr_unit, evbuf_unit_buf_sz);
     if (motr_rw_op_context == NULL) {
       // out of memory
       return false;
