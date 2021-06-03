@@ -32,6 +32,7 @@
 #                      storage_set_count which is component of a key.
 
 POST_INSTALL:
+  CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST : "cortx>software>s3>motr_max_units_per_request"
 PREPARE:
 CONFIG:
   CONFSTORE_LDAPADMIN_USER_KEY: "cortx>software>openldap>sgiam>user"
@@ -67,4 +68,5 @@ LDAP_USER: "cn={},dc=seagate,dc=com"
 LDAP_URL: "ldapi:///"
 CONFSTORE_OPENLDAP_CONST_KEY: "cortx"
 CONFSTORE_SITE_COUNT_KEY: "cluster>cluster-id>site_count"
+S3_CONFIG_FILE: "/opt/seagate/cortx/s3/conf/s3config.yaml"
 
