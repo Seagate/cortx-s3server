@@ -63,6 +63,9 @@ class S3ObjectDataCopier {
   bool write_in_progress;
   // Size of each ev buffer (e.g, 16384)
   size_t size_of_ev_buffer;
+  // Queue of ev Buffers containing read data blocks,
+  // which will be freed after write data completion
+  std::deque<struct evbuffer*> read_data_buffer;
 
   void cleanup_blocks_written();
   void read_data_block();
@@ -88,6 +91,11 @@ class S3ObjectDataCopier {
             std::function<void(void)> on_failure);
 
   const std::string& get_s3_error() { return s3_error; }
+  // Trims input 'buffer' to the expected size
+  // Used when we need specific portion of 'buffer', discarding the remianing
+  // data.
+  void get_buffers(S3BufferSequence& buffer, size_t total_size,
+                   size_t expected_size);
 
   friend class S3ObjectDataCopierTest;
 

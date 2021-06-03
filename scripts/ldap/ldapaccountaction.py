@@ -20,6 +20,7 @@
 
 import ldap
 import sys
+import socket
 from ldap.ldapobject import SimpleLDAPObject
 import ldap.modlist as modlist
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
@@ -58,8 +59,8 @@ class LdapAccountAction:
 
   def __init__(self, ldapuser: str, ldappasswd: str):
     """Constructor."""
-    
-    self.logger = logging.getLogger("s3-deployment-logger")
+    s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
+    self.logger = logging.getLogger(s3deployment_logger_name)
     if self.logger.hasHandlers():
       self.logger.info("Logger has valid handler")
     else:
