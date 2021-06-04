@@ -1,4 +1,5 @@
 #!/bin/sh -xe
+cd motr
 # Script to build motr.
 # github repo: https://github.com/Seagate/cortx-motr
 # branch: master commit: 70701eea1dd1e20fd7c6bdc5bdd1203795d09958
