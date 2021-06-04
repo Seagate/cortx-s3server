@@ -80,7 +80,7 @@ class Authorizer {
         new AuthorizationResponseGenerator();
     // Deny access if any action is restricted for public access
     if (requestor == null &&
-        PublicAccessAuthorizer.isActionRestricted(requestBody)) {
+        PublicAccessAuthorizer.getInstance().isActionRestricted(requestBody)) {
       return responseGenerator.AccessDenied(
           "Anonymous users cannot copy objects. Please authenticate.");
     }
