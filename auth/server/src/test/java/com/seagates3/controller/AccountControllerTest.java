@@ -492,8 +492,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
         ServerResponse response = accountController.resetAccountAccessKey();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
-                response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
+                            response.getResponseStatus());
     }
 
     @Test
@@ -546,8 +546,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
         ServerResponse response = accountController.resetAccountAccessKey();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
-                response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
+                            response.getResponseStatus());
     }
 
     @Test public void ResetAccountAccessKey_Success_Return() throws Exception {
@@ -639,7 +639,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
         ServerResponse response = accountController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+        Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
                             response.getResponseStatus());
     }
 

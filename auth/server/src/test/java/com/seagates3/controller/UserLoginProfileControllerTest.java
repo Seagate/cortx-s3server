@@ -329,7 +329,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     userLoginProfileController = Mockito.spy(
         new UserLoginProfileController(requestorObj, requestBodyObj));
     ServerResponse response = userLoginProfileController.list();
-    Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+    Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
                         response.getResponseStatus());
   }
 
@@ -415,7 +415,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
     Mockito.doNothing().when(userDAO).save(user);
     ServerResponse response = userLoginProfileController.update();
-    Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+    Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
                         response.getResponseStatus());
   }
 
@@ -436,7 +436,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
     Mockito.doNothing().when(userDAO).save(user);
     ServerResponse response = userLoginProfileController.update();
-    Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+    Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
                         response.getResponseStatus());
   }
 
@@ -560,7 +560,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
     Mockito.doNothing().when(userDAO).save(user);
     ServerResponse response = userLoginProfileController.changepassword();
-    Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+    Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
                         response.getResponseStatus());
   }
 
@@ -609,7 +609,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
     Mockito.doNothing().when(userDAO).save(user);
     ServerResponse response = userLoginProfileController.changepassword();
-    Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+    Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
                         response.getResponseStatus());
   }
 
