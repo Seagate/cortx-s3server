@@ -20,6 +20,7 @@
 import os
 import sys
 import yaml
+import time
 from ldap_setup import LdapInfo
 from framework import Config
 from framework import S3PyCliTest
@@ -30,6 +31,7 @@ from s3fi import S3fiTest
 from awss3api import AwsTest
 from shutil import copyfile
 import shutil
+from configobj import ConfigObj
 
 home_dir = os.path.expanduser("~")
 original_config_file = os.path.join(home_dir,  '.sgs3iamcli/config.yaml')
@@ -1784,6 +1786,342 @@ def auth_health_check_tests():
     result = AuthTest('Auth server health check').get_auth_health(health_check_uri).\
     execute_test().command_is_successful().command_response_should_have("200 OK")
 
+
+# Validate maxAccount and maxUser limit values from authserver.properties file
+def test_max_account_and_user_limit_value_of_auth_config():
+    print("Updating autherver.properties (/opt/seagate/cortx/auth/resources/authserver.properties) file with test values..")
+    config = ConfigObj("/opt/seagate/cortx/auth/resources/authserver.properties")
+    old_maxAccountValue=config.get('maxAccountLimit')
+    old_maxIAMUserValue=config.get('maxIAMUserLimit')
+    config['maxAccountLimit'] = "1"
+    config['maxIAMUserLimit'] = "1"
+    config.write()
+    print("setting maxAccountLimit as :", config['maxAccountLimit'])
+    print("setting maxIAMUserLimit as :", config['maxIAMUserLimit'])
+    os.system('systemctl restart s3authserver')
+    time.sleep(1) # sometime authserver takes more time to restart
+    print("auth config values are changed successfully..")
+
+    # Try to create two account and it should with MaxAccountLimitExceeded error.
+    test_msg = "Create account authconfigValidatorAccount1 should successfull."
+    account_args = {'AccountName': 'authconfigValidatorAccount1', 'Email': 'authconfigValidatorAccount1@seagate.com', \
+                   'ldapuser': S3ClientConfig.ldapuser, \
+                   'ldappasswd': S3ClientConfig.ldappasswd}
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    result = AuthTest(test_msg).create_account(**account_args).execute_test()
+    result.command_should_match_pattern(account_response_pattern)
+    account_response_elements = get_response_elements(result.status.stdout)
+    access_key_args = {}
+    access_key_args['AccountName'] = "authconfigValidatorAccount1"
+    access_key_args['AccessKeyId'] = account_response_elements['AccessKeyId']
+    access_key_args['SecretAccessKey'] = account_response_elements['SecretKey']
+
+    test_msg = "Create account authconfigValidatorAccount2 should fail with MaxAccountLimitExceeded with limit as 1."
+    account_args = {'AccountName': 'authconfigValidatorAccount2', 'Email': 'authconfigValidatorAccount2@seagate.com', \
+                   'ldapuser': S3ClientConfig.ldapuser, \
+                   'ldappasswd': S3ClientConfig.ldappasswd}
+    result = AuthTest(test_msg).create_account(**account_args).execute_test(negative_case=True)
+    result.command_response_should_have("MaxAccountLimitExceeded")
+
+    test_access_key = S3ClientConfig.access_key_id
+    test_secret_key = S3ClientConfig.secret_key
+
+    # Test IAM User limit
+    S3ClientConfig.access_key_id = access_key_args['AccessKeyId']
+    S3ClientConfig.secret_key = access_key_args['SecretAccessKey']
+
+    test_msg = "Create User s3user1 in authconfigValidatorAccount1 should successful."
+    user_args = {'UserName': 's3user1'}
+    user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+    AuthTest(test_msg).create_user(**user_args).execute_test()\
+            .command_should_match_pattern(user1_response_pattern)
+
+    test_msg = "Create User s3user2 in authconfigValidatorAccount1 should fail with MaxUserLimitExceeded with limit as 1."
+    user_args = {'UserName': 's3user2'}
+    AuthTest(test_msg).create_user(**user_args).execute_test(negative_case=True)\
+            .command_response_should_have("MaxUserLimitExceeded")
+
+    # cleanup delete iam user
+    test_msg = "Delete User s3user1 should successfull."
+    user_args = {}
+    user_args['UserName'] = "s3user1"
+    AuthTest(test_msg).delete_user(**user_args).execute_test()\
+            .command_response_should_have("User deleted.")
+
+    # Delete account
+    test_msg = 'Delete Account should successfull.'
+    account_args = {}
+    account_args['AccountName'] = access_key_args['AccountName']
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+            .command_response_should_have("Account deleted successfully")
+
+    # Restore config paramters
+    S3ClientConfig.access_key_id = test_access_key
+    S3ClientConfig.secret_key = test_secret_key
+
+    # Revert config paramters
+    config1 = ConfigObj("/opt/seagate/cortx/auth/resources/authserver.properties")
+    config1['maxAccountLimit'] = old_maxAccountValue
+    config1['maxIAMUserLimit'] = old_maxIAMUserValue
+    print("setting maxAccountLimit as :", config1['maxAccountLimit'])
+    print("setting maxIAMUserLimit as :", config1['maxIAMUserLimit'])
+    config1.write()
+    os.system('systemctl restart s3authserver')
+    time.sleep(1) # sometime authserver takes more time to restart
+    print("Reverted authserver.properties (/opt/seagate/cortx/auth/resources/authserver.properties) with origional values successfully...")
+
+
+# Validate delete account functionality with ldap credentials
+def delete_acc_ldap_cred_tests():
+    # DeleteAccount with ldap credentials tests -- starts
+    test_access_key = S3ClientConfig.access_key_id
+    test_secret_key = S3ClientConfig.secret_key
+
+    test_msg = "Create account s3deletetest for testing Account Deletion with ldap credentials"
+    account_args = {'AccountName': 's3deletetest', 'Email': 's3deletetest@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    AuthTest(test_msg).create_account(**account_args).execute_test()\
+            .command_should_match_pattern(account_response_pattern)
+
+    test_msg = 'DeleteAccount should fails with InvalidAccessKeyId error with wrong ldapadmin username i.e. dummyUser'
+    account_args = {}
+    account_args['AccountName'] ="s3deletetest"
+    S3ClientConfig.access_key_id = "dummyUser"
+    S3ClientConfig.secret_key = S3ClientConfig.ldappasswd
+    AuthTest(test_msg).delete_account(**account_args).execute_test(negative_case=True)\
+            .command_response_should_have("InvalidAccessKeyId")
+
+    test_msg = 'DeleteAccount should fails with InvalidAccessKeyId error with empty ldapadmin username'
+    account_args = {}
+    account_args['AccountName'] ="s3deletetest"
+    S3ClientConfig.access_key_id = ""
+    S3ClientConfig.secret_key = S3ClientConfig.ldappasswd
+    AuthTest(test_msg).delete_account(**account_args).execute_test(negative_case=True)\
+            .command_response_should_have("InvalidAccessKeyId")
+
+    test_msg = 'DeleteAccount should fails with SignatureDoesNotMatch error with invalid ldappassword i.e. dummykey'
+    account_args = {}
+    account_args['AccountName'] ="s3deletetest"
+    S3ClientConfig.access_key_id = S3ClientConfig.ldapuser
+    S3ClientConfig.secret_key = "dummykey"
+    AuthTest(test_msg).delete_account(**account_args).execute_test(negative_case=True)\
+            .command_response_should_have("SignatureDoesNotMatch")
+
+    test_msg = 'DeleteAccount should fails with SignatureDoesNotMatch error with empty ldappassword'
+    account_args = {}
+    account_args['AccountName'] ="s3deletetest"
+    S3ClientConfig.access_key_id = S3ClientConfig.ldapuser
+    S3ClientConfig.secret_key = ""
+    AuthTest(test_msg).delete_account(**account_args).execute_test(negative_case=True)\
+            .command_response_should_have("SignatureDoesNotMatch")
+
+    test_msg = 'DeleteAccount Successfull with ldap credentials'
+    account_args = {}
+    account_args['AccountName'] ="s3deletetest"
+    S3ClientConfig.access_key_id = S3ClientConfig.ldapuser
+    S3ClientConfig.secret_key = S3ClientConfig.ldappasswd
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+            .command_response_should_have("Account deleted successfully")
+
+    S3ClientConfig.access_key_id = test_access_key
+    S3ClientConfig.secret_key = test_secret_key
+    ldap_user_name = S3ClientConfig.ldapuser
+    ldap_user_passwd = S3ClientConfig.ldappasswd
+
+    test_msg = "Create account s3deletetest1 for testing Account Deletion scnearios with ldap credentials"
+    account_args = {'AccountName': 's3deletetest1', 'Email': 's3deletetest@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    result = AuthTest(test_msg).create_account(**account_args).execute_test()\
+            .command_should_match_pattern(account_response_pattern)
+    response_elements = get_response_elements(result.status.stdout)
+    accesskey = response_elements['AccessKeyId']
+    secretkey = response_elements['SecretKey']
+    os.environ["AWS_ACCESS_KEY_ID"] = accesskey
+    os.environ["AWS_SECRET_ACCESS_KEY"] = secretkey
+
+    AwsTest('Aws can create bucket').create_bucket("tbucket").execute_test().command_is_successful()
+
+    test_msg = 'DeleteAccount should fails with AccountNotEmpty error with ldap credentials'
+    account_args = {}
+    account_args['AccountName'] ="s3deletetest1"
+    S3ClientConfig.access_key_id = S3ClientConfig.ldapuser
+    S3ClientConfig.secret_key = S3ClientConfig.ldappasswd
+    AuthTest(test_msg).delete_account(**account_args).execute_test(negative_case=True)\
+            .command_response_should_have("AccountNotEmpty")
+
+    S3ClientConfig.access_key_id = accesskey
+    S3ClientConfig.secret_key = secretkey
+    # Delete bucket with account access key
+    AwsTest('Aws can delete bucket').delete_bucket("tbucket").execute_test().command_is_successful()
+
+    # create IAM User and try to delete account
+
+    test_msg = "Create User s3user1 (default path)"
+    user_args = {'UserName': 's3user1'}
+    user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+    result = AuthTest(test_msg).create_user(**user_args).execute_test()
+    result.command_should_match_pattern(user1_response_pattern)
+
+    # Try to delete account
+    test_msg = 'DeleteAccount should fails with DeleteConflict error with ldap credentials with IAM user as sub-resource'
+    account_args = {}
+    account_args['AccountName'] ="s3deletetest1"
+    S3ClientConfig.access_key_id = S3ClientConfig.ldapuser
+    S3ClientConfig.secret_key = S3ClientConfig.ldappasswd
+    AuthTest(test_msg).delete_account(**account_args).execute_test(negative_case=True)\
+            .command_response_should_have("DeleteConflict")
+
+    S3ClientConfig.access_key_id = accesskey
+    S3ClientConfig.secret_key = secretkey
+
+    test_msg = 'Delete User s3user1'
+    user_args = {}
+    user_args['UserName'] = "s3user1"
+    result = AuthTest(test_msg).delete_user(**user_args).execute_test()
+    result.command_response_should_have("User deleted.")
+
+    test_msg = 'DeleteAccount Successfull with ldap credentials'
+    account_args = {}
+    account_args['AccountName'] ="s3deletetest1"
+    S3ClientConfig.access_key_id = S3ClientConfig.ldapuser
+    S3ClientConfig.secret_key = S3ClientConfig.ldappasswd
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+            .command_response_should_have("Account deleted successfully")
+
+    # DeleteAccount fail if account has bucket/iam-users -- end
+
+    # Restore config paramters
+    S3ClientConfig.access_key_id = test_access_key
+    S3ClientConfig.secret_key = test_secret_key
+    S3ClientConfig.ldapuser = ldap_user_name
+    S3ClientConfig.ldappasswd = ldap_user_passwd
+    del os.environ["AWS_ACCESS_KEY_ID"]
+    del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+    # DeleteAccount fails with IAM credentials/temp auth credentials of IAM User --- start
+    date_pattern_for_tempAuthCred = "[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T(2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9].[0-9]*[\+-][0-9]*"
+    test_msg = "Create account tempAuthDeleteAccount"
+    account_args = {'AccountName': 'tempAuthDeleteAccount', 'Email': 'tempAuthDeleteAccount@seagate.com', \
+                   'ldapuser': S3ClientConfig.ldapuser, \
+                   'ldappasswd': S3ClientConfig.ldappasswd}
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    result1 = AuthTest(test_msg).create_account(**account_args).execute_test()
+    result1.command_should_match_pattern(account_response_pattern)
+    account_response_elements = get_response_elements(result1.status.stdout)
+    acc_access_key_args = {}
+    acc_access_key_args['AccountName'] = "tempAuthDeleteAccount"
+    acc_access_key_args['AccessKeyId'] = account_response_elements['AccessKeyId']
+    acc_access_key_args['SecretAccessKey'] = account_response_elements['SecretKey']
+
+
+    S3ClientConfig.access_key_id = acc_access_key_args['AccessKeyId']
+    S3ClientConfig.secret_key = acc_access_key_args['SecretAccessKey']
+
+
+    test_msg = "Create User s3user1 (default path)"
+    user_args = {'UserName': 's3user1'}
+    user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+    result = AuthTest(test_msg).create_user(**user_args).execute_test()
+    result.command_should_match_pattern(user1_response_pattern)
+
+    test_msg = 'Create access key (user name is s3user1) using account credentials.'
+    accesskey_response_elements = {}
+    iam_access_key_args = {}
+    iam_access_key_args['UserName'] = 's3user1'
+    accesskey_response_pattern = "AccessKeyId = [\w-]*, SecretAccessKey = [\w/+]*, Status = [\w]*$"
+    result = AuthTest(test_msg).create_access_key(**iam_access_key_args).execute_test()
+    result.command_should_match_pattern(accesskey_response_pattern)
+    accesskey_response_elements = get_response_elements(result.status.stdout)
+    iam_access_key_args['AccessKeyId'] = accesskey_response_elements['AccessKeyId']
+    iam_access_key_args['SecretAccessKey'] = accesskey_response_elements['SecretAccessKey']
+
+    # Test DeleteAccount should fail with IAM user credentials
+    test_msg = 'DeleteAccount tempAuthDeleteAccount should fails with InvalidUser error with IAM user access key'
+    account_args = {}
+    account_args['AccountName'] ="tempAuthDeleteAccount"
+    S3ClientConfig.access_key_id = iam_access_key_args['AccessKeyId']
+    S3ClientConfig.secret_key = iam_access_key_args['SecretAccessKey']
+    AuthTest(test_msg).delete_account(**account_args).execute_test(negative_case=True)\
+            .command_response_should_have("InvalidUser")
+
+    date_pattern = "[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1]) (2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9][\+-][0-9]*:[0-9]*"
+    test_msg = 'Create UserLoginProfile for user s3user1 should succeed.'
+    user_args = {}
+    user_name_flag = "-n"
+    password_flag = "--password"
+    user_args['UserName'] ="s3user1"
+    user_args['Password'] ="abcdefg"
+    S3ClientConfig.access_key_id = acc_access_key_args['AccessKeyId']
+    S3ClientConfig.secret_key = acc_access_key_args['SecretAccessKey']
+    login_profile_response_pattern = "Login Profile "+date_pattern+" False "+user_args['UserName']
+    result = AuthTest(test_msg).create_login_profile(user_name_flag , password_flag,\
+               **user_args).execute_test()
+    result.command_should_match_pattern(login_profile_response_pattern)
+
+    #Get Temp Auth Credentials for IAM user s3user1
+    user_access_key_args = {}
+    user_args['AccountName'] = acc_access_key_args['AccountName']
+    test_msg = 'Generate GetTempAuthCredentials for IAM User s3user1'
+    account_name_flag = "-a"
+    password_flag = "--password"
+    response_pattern = "AccessKeyId = [\w-]*, SecretAccessKey = [\w/+]*, ExpiryTime = "+date_pattern_for_tempAuthCred+", SessionToken = [\w/+]*$"
+    result = AuthTest(test_msg).get_temp_auth_credentials(account_name_flag, password_flag ,**user_args).execute_test()
+    result.command_should_match_pattern(response_pattern)
+    response_elements = get_response_elements(result.status.stdout)
+    user_access_key_args['AccessKeyId'] = response_elements['AccessKeyId']
+    user_access_key_args['SecretAccessKey'] = response_elements['SecretAccessKey']
+    user_access_key_args['SessionToken'] = response_elements['SessionToken']
+
+    # Test DeleteAccount with IAM user temp credentials should fail.
+    test_msg = 'DeleteAccount should fails with InvalidUser error by using IAM user temporary credentials'
+    account_args = {}
+    account_args['AccountName'] =acc_access_key_args['AccountName']
+    S3ClientConfig.access_key_id = user_access_key_args['AccessKeyId']
+    S3ClientConfig.secret_key = user_access_key_args['SecretAccessKey']
+    S3ClientConfig.token = user_access_key_args['SessionToken']
+    result =AuthTest(test_msg).delete_account(**account_args).execute_test(negative_case=True)
+    result.command_response_should_have("InvalidUser")
+
+    S3ClientConfig.access_key_id = acc_access_key_args['AccessKeyId']
+    S3ClientConfig.secret_key = acc_access_key_args['SecretAccessKey']
+
+    test_msg = 'Delete IAM users temporary access key for s3user1 should successful.'
+    user_access_key_args['userName'] = iam_access_key_args['UserName']
+    result = AuthTest(test_msg).delete_access_key(**user_access_key_args).execute_test()
+    result.command_response_should_have("Access key deleted.")
+
+    test_msg = 'Delete IAM users access key for s3user1 should successful.'
+    user_access_key_args['AccessKeyId'] = iam_access_key_args['AccessKeyId']
+    S3ClientConfig.token = ""
+    result = AuthTest(test_msg).delete_access_key(**user_access_key_args).execute_test()
+    result.command_response_should_have("Access key deleted.")
+
+    test_msg = 'Delete User s3user1 using account credentials should successful.'
+    user_args = {}
+    user_args['UserName'] = iam_access_key_args['UserName']
+    S3ClientConfig.access_key_id = acc_access_key_args['AccessKeyId']
+    S3ClientConfig.secret_key = acc_access_key_args['SecretAccessKey']
+    result = AuthTest(test_msg).delete_user(**user_args).execute_test()
+    result.command_response_should_have("User deleted.")
+
+    # Test if DeleteAccount successful or not.
+    test_msg = 'DeleteAccount Successfull with ldap credentials'
+    account_args = {}
+    account_args['AccountName'] =acc_access_key_args['AccountName']
+    S3ClientConfig.access_key_id = S3ClientConfig.ldapuser
+    S3ClientConfig.secret_key = S3ClientConfig.ldappasswd
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+            .command_response_should_have("Account deleted successfully")
+
+    # DeleteAccount fails with IAM credentials/temp auth credentials of IAM User --- end
+
+    # Restore config paramters
+    S3ClientConfig.access_key_id = test_access_key
+    S3ClientConfig.secret_key = test_secret_key
+    S3ClientConfig.ldapuser = ldap_user_name
+    S3ClientConfig.ldappasswd = ldap_user_passwd
+
+
 def execute_all_system_tests():
     if Config.no_ssl :
         print('Executing auth system tests over HTTP connection')
@@ -1792,6 +2130,7 @@ def execute_all_system_tests():
 
     # Do not change the order.
     before_all()
+    #test_max_account_and_user_limit_value_of_auth_config()
     account_tests()
     user_tests()
     accesskey_tests()
@@ -1801,6 +2140,7 @@ def execute_all_system_tests():
     delete_account_tests()
     reset_account_accesskey_tests()
     auth_health_check_tests()
+    delete_acc_ldap_cred_tests()
 
 if __name__ == '__main__':
 

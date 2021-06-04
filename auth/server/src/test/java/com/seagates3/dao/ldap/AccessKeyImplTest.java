@@ -754,6 +754,82 @@ import com.seagates3.model.User;
         // Verify
         Assert.assertThat(expectedAccessKey, new ReflectionEquals(accessKey));
     }
+
+    @Test public void findAccountAccessKey_Success() throws Exception {
+      User user = new User();
+      user.setId("123");
+      String filter = "(&(s3userid=123)(objectclass=accesskey))";
+      String[] attrs = {LDAPUtils.ACCESS_KEY_ID, LDAPUtils.SECRET_KEY,
+                        LDAPUtils.STATUS,        LDAPUtils.EXPIRY,
+                        LDAPUtils.OBJECT_CLASS,  LDAPUtils.CREATE_TIMESTAMP,
+                        LDAPUtils.TOKEN,         LDAPUtils.USER_ID};
+      AccessKey expectedAccessKey = new AccessKey();
+      expectedAccessKey.setId("AKIATEST");
+      expectedAccessKey.setUserId("123");
+      expectedAccessKey.setSecretKey("sk-123/test");
+      expectedAccessKey.setCreateDate(EXPECTED_DATE);
+      expectedAccessKey.setStatus(AccessKey.AccessKeyStatus.ACTIVE);
+
+      setupAccessKeyAttr();
+
+      PowerMockito.doReturn(ldapResults)
+          .when(LDAPUtils.class, "search", ACCESSKEY_BASE_DN, 2, filter, attrs);
+      Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.TRUE);
+      Mockito.when(ldapResults.next()).thenReturn(entry);
+
+      AccessKey accessKey = accesskeyImpl.findAccountAccessKey("123");
+      Assert.assertThat(expectedAccessKey, new ReflectionEquals(accessKey));
+    }
+
+    @Test public void findAccountAccessKey_EmptyAccessKey() throws Exception {
+      String filter = "(&(s3userid=123)(objectclass=accesskey))";
+      String[] attrs = {LDAPUtils.ACCESS_KEY_ID, LDAPUtils.SECRET_KEY,
+                        LDAPUtils.STATUS,        LDAPUtils.EXPIRY,
+                        LDAPUtils.OBJECT_CLASS,  LDAPUtils.CREATE_TIMESTAMP,
+                        LDAPUtils.TOKEN,         LDAPUtils.USER_ID};
+
+      PowerMockito.doReturn(ldapResults)
+          .when(LDAPUtils.class, "search", ACCESSKEY_BASE_DN, 2, filter, attrs);
+      Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.FALSE);
+
+      accesskeyImpl.findAccountAccessKey("123");
+    }
+
+    @Test(
+        expected =
+            DataAccessException
+                .class) public void findAccountAccessKey_SearchFailedThrowsException()
+        throws Exception {
+      String filter = "(&(s3userid=123)(objectclass=accesskey))";
+      String[] attrs = {LDAPUtils.ACCESS_KEY_ID, LDAPUtils.SECRET_KEY,
+                        LDAPUtils.STATUS,        LDAPUtils.EXPIRY,
+                        LDAPUtils.OBJECT_CLASS,  LDAPUtils.CREATE_TIMESTAMP,
+                        LDAPUtils.TOKEN,         LDAPUtils.USER_ID};
+
+      PowerMockito.doThrow(new LDAPException())
+          .when(LDAPUtils.class, "search", ACCESSKEY_BASE_DN, 2, filter, attrs);
+
+      accesskeyImpl.findAccountAccessKey("123");
+    }
+
+    @Test(
+        expected =
+            DataAccessException
+                .class) public void findAccountAccessKey_SearchNextFailedThrowsException()
+        throws Exception {
+      String filter = "(&(s3userid=123)(objectclass=accesskey))";
+      String[] attrs = {LDAPUtils.ACCESS_KEY_ID, LDAPUtils.SECRET_KEY,
+                        LDAPUtils.STATUS,        LDAPUtils.EXPIRY,
+                        LDAPUtils.OBJECT_CLASS,  LDAPUtils.CREATE_TIMESTAMP,
+                        LDAPUtils.TOKEN,         LDAPUtils.USER_ID};
+
+      PowerMockito.doReturn(ldapResults)
+          .when(LDAPUtils.class, "search", ACCESSKEY_BASE_DN, 2, filter, attrs);
+      Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.TRUE);
+      Mockito.when(ldapResults.next()).thenThrow(new LDAPException());
+
+      accesskeyImpl.findAccountAccessKey("123");
+    }
 }
 
 
