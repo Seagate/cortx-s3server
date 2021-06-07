@@ -499,10 +499,10 @@ void S3PutMultiObjectAction::write_object(
   if (content_length > motr_write_payload_size) {
     content_length = motr_write_payload_size;
   }
+  motr_writer->first_write_part_request(is_first_write_part_request);
   if (is_first_write_part_request) {
     // Used for motr unit checksum computation, for part's first write
     // init need to be called
-    motr_writer->first_write_part_request(true);
     is_first_write_part_request = false;
   }
   motr_writer->write_content(
