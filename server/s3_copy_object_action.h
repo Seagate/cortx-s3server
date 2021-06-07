@@ -48,25 +48,12 @@ const char DirectiveValueCOPY[] = "COPY";
 class S3ObjectDataCopier;
 
 class S3CopyObjectAction : public S3PutObjectActionBase {
-  std::string source_bucket_name;
-  std::string source_object_name;
   std::string auth_acl;
 
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
-  std::shared_ptr<S3ObjectMetadata> source_object_metadata;
-  std::shared_ptr<S3BucketMetadata> source_bucket_metadata;
   std::unique_ptr<S3ObjectDataCopier> object_data_copier;
 
   bool response_started = false;
-
-  void get_source_bucket_and_object();
-  void fetch_source_bucket_info();
-  void fetch_source_bucket_info_success();
-  void fetch_source_bucket_info_failed();
-
-  void fetch_source_object_info();
-  void fetch_source_object_info_success();
-  void fetch_source_object_info_failed();
 
   bool if_source_and_destination_same();
 
@@ -75,7 +62,6 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   void check_source_bucket_authorization_success();
   void check_source_bucket_authorization_failed();
   void set_source_bucket_authorization_metadata();
-  void check_destination_bucket_authorization_failed();
 
  public:
   S3CopyObjectAction(
@@ -109,7 +95,6 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   FRIEND_TEST(S3CopyObjectActionTest, GetSourceBucketAndSpecialObjectSuccess);
   FRIEND_TEST(S3CopyObjectActionTest, UIGetSourceBucketAndObjectSuccess);
   FRIEND_TEST(S3CopyObjectActionTest, GetSourceBucketAndObjectFailure);
-  FRIEND_TEST(S3CopyObjectActionTest, FetchSourceBucketInfo);
   FRIEND_TEST(S3CopyObjectActionTest, FetchSourceBucketInfoFailedMissing);
   FRIEND_TEST(S3CopyObjectActionTest,
               FetchSourceBucketInfoFailedFailedToLaunch);

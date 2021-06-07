@@ -653,3 +653,10 @@ void S3PostMultipartObjectAction::set_authorization_meta() {
   next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
+
+void S3PostMultipartObjectAction::fetch_additional_bucket_info_failed() {
+  next();
+}
+void S3PostMultipartObjectAction::fetch_additional_object_info_failed() {
+  next();
+}

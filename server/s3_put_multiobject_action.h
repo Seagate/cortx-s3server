@@ -96,6 +96,8 @@ class S3PutMultiObjectAction : public S3ObjectAction {
   void save_multipart_metadata();
   void save_multipart_metadata_failed();
   void compute_part_offset();
+  void fetch_additional_bucket_info_failed();
+  void fetch_additional_object_info_failed();
 
   void initiate_data_streaming();
   void consume_incoming_content();

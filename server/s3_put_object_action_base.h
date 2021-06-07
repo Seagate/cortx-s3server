@@ -69,6 +69,10 @@ class S3PutObjectActionBase : public S3ObjectAction {
   void fetch_object_info_success() final;
   void fetch_object_info_failed() final;
 
+  // additional bucket (Incase of copy-object API)
+  void fetch_additional_bucket_info_failed() final;
+  void fetch_additional_object_info_failed() final;
+
   // Create object
   void create_object();
   void create_object_successful();

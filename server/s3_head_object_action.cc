@@ -138,3 +138,6 @@ void S3HeadObjectAction::send_response_to_s3_client() {
   done();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
+
+void S3HeadObjectAction::fetch_additional_bucket_info_failed() { next(); }
+void S3HeadObjectAction::fetch_additional_object_info_failed() { next(); }

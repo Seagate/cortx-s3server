@@ -52,6 +52,8 @@ class S3PutObjectTaggingAction : public S3ObjectAction {
   void validate_request_body(std::string content);
   void fetch_bucket_info_failed();
   void fetch_object_info_failed();
+  void fetch_additional_bucket_info_failed();
+  void fetch_additional_object_info_failed();
   void save_tags_to_object_metadata();
   void save_tags_to_object_metadata_failed();
   void send_response_to_s3_client();
