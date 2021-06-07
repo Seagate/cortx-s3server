@@ -252,6 +252,8 @@ class S3MotrWiter {
   FRIEND_TEST(S3MotrWiterTest, OpenObjectsFailedTest);
   FRIEND_TEST(S3MotrWiterTest, OpenObjectsFailedMissingTest);
   FRIEND_TEST(S3MotrWiterTest, WriteContentSuccessfulTest);
+  FRIEND_TEST(S3MotrWiterTest, WriteContentSuccessfulTest1MUnaligned);
+  FRIEND_TEST(S3MotrWiterTest, WriteContentSuccessfulTest1M);
   FRIEND_TEST(S3MotrWiterTest, WriteContentFailedTest);
 };
 
