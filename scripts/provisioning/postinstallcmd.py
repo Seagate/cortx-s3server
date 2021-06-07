@@ -69,5 +69,5 @@ class PostInstallCmd(SetupCmd):
     else:
       motr_max_units_per_request_key = 'S3_MOTR_CONFIG>S3_MOTR_MAX_UNITS_PER_REQUEST'
       s3configfileconfstore = S3CortxConfStore(f'yaml://{s3configfile}', 'write_s3_motr_max_unit_idx')
-      s3configfileconfstore.set_config(f'{motr_max_units_per_request_key}', f'{motr_max_units_per_request}', True)
+      s3configfileconfstore.set_config(motr_max_units_per_request_key, int(motr_max_units_per_request), True)
       self.logger.info(f'Key {motr_max_units_per_request_key} updated successfully in {s3configfile}')
