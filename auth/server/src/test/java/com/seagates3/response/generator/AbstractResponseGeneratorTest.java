@@ -207,7 +207,7 @@ class AbstractResponseGeneratorTest extends AbstractResponseGenerator {
 
     ServerResponse response = noSuchEntity();
     Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-    Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+    Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
                         response.getResponseStatus());
   }
 
