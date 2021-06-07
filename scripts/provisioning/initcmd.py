@@ -37,11 +37,16 @@ class InitCmd(SetupCmd):
 
   def process(self):
     """Main processing function."""
-    sys.stdout.write(f"Processing {self.name} {self.url}\n")
+    self.logger.info(f"Processing {self.name} {self.url}")
+    self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
+    self.validate_config_files(self.name)
+    self.logger.info("validations completed")
+
     try:
       # Create background delete account
+      self.logger.info("create background delete account started")
       bgdelete_acc_input_params_dict = {'account_name': "s3-background-delete-svc",
                                   'account_id': "67891",
                                   'canonical_id': "C67891",
@@ -52,5 +57,9 @@ class InitCmd(SetupCmd):
                                 }
       LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
     except Exception as e:
-      sys.stderr.write(f'Failed to create backgrounddelete service account, error: {e}\n')
-      raise e
+      if "Already exists" not in str(e):
+        self.logger.error(f'Failed to create backgrounddelete service account, error: {e}')
+        raise(e)
+      else:
+        self.logger.warning("backgrounddelete service account already exist")
+    self.logger.info("create background delete account completed")

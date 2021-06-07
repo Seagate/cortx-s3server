@@ -210,7 +210,8 @@ TEST_F(S3PutObjectActionTest, ValidateMetadataLengthNegativeCase) {
       ReturnRef(object_name));
   EXPECT_CALL(*ptr_mock_request, get_header_size()).WillOnce(Return(9000));
   action_under_test->validate_put_request();
-  EXPECT_STREQ("BadRequest", action_under_test->get_s3_error_code().c_str());
+  EXPECT_STREQ("MetadataTooLarge",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3PutObjectActionTest, ValidateUserMetadataLengthNegativeCase) {
@@ -219,7 +220,8 @@ TEST_F(S3PutObjectActionTest, ValidateUserMetadataLengthNegativeCase) {
   EXPECT_CALL(*ptr_mock_request, get_user_metadata_size())
       .WillOnce(Return(3000));
   action_under_test->validate_put_request();
-  EXPECT_STREQ("BadRequest", action_under_test->get_s3_error_code().c_str());
+  EXPECT_STREQ("MetadataTooLarge",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3PutObjectActionTest, ValidateRequestTags) {
@@ -469,7 +471,7 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoReturnedNotFoundShouldUseURL2OID) {
 
   // Remember default generated OID
   struct m0_uint128 oid_before_regen = action_under_test->new_object_oid;
-  action_under_test->fetch_object_info_success();
+  action_under_test->fetch_object_info_failed();
 
   EXPECT_EQ(1, call_count_one);
   EXPECT_OID_EQ(zero_oid_idx, action_under_test->old_object_oid);
@@ -505,8 +507,8 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoReturnedInvalidStateReportsError) {
 TEST_F(S3PutObjectActionTest, CreateObjectFirstAttempt) {
   EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
       Return(1024));
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
-      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              create_object(_, _, _, _)).Times(1);
   action_under_test->create_object();
   EXPECT_TRUE(action_under_test->motr_writer != nullptr);
 }
@@ -515,11 +517,10 @@ TEST_F(S3PutObjectActionTest, CreateObjectSecondAttempt) {
   EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(2).WillRepeatedly(
       Return(1024));
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
-      .Times(2);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              create_object(_, _, _, _)).Times(2);
   action_under_test->create_object();
   action_under_test->tried_count = 1;
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_)).Times(1);
   action_under_test->create_object();
   EXPECT_TRUE(action_under_test->motr_writer != nullptr);
 }
@@ -561,9 +562,8 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedWithCollisionRetry) {
       Return(1024));
 
   action_under_test->tried_count = MAX_COLLISION_RETRY_COUNT - 1;
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_)).Times(1);
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
-      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              create_object(_, _, _, _)).Times(1);
 
   action_under_test->create_object_failed();
 }
@@ -571,8 +571,8 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedWithCollisionRetry) {
 TEST_F(S3PutObjectActionTest, CreateObjectFailedTest) {
   EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
       Return(1024));
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
-      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              create_object(_, _, _, _)).Times(1);
   action_under_test->create_object();
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
@@ -590,8 +590,8 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedTest) {
 TEST_F(S3PutObjectActionTest, CreateObjectFailedToLaunchTest) {
   EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
       Return(1024));
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), create_object(_, _, _))
-      .Times(1);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              create_object(_, _, _, _)).Times(1);
   action_under_test->create_object();
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), get_state())
@@ -781,9 +781,8 @@ TEST_F(S3PutObjectActionTest, DelayedDeleteOldObject) {
   action_under_test->old_object_oid = old_object_oid;
   action_under_test->old_layout_id = old_layout_id;
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_)).Times(0);
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
-              delete_object(_, _, old_layout_id)).Times(0);
+              delete_object(_, _, _, old_layout_id, _)).Times(0);
 
   action_under_test->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test,

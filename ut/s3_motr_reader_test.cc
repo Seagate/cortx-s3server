@@ -88,12 +88,13 @@ class S3MotrReaderTest : public testing::Test {
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
     s3_motr_api_mock = std::make_shared<MockS3Motr>();
     motr_reader_ptr = std::make_shared<S3MotrReader>(
-        request_mock, oid, layout_id, s3_motr_api_mock);
+        request_mock, oid, layout_id, pv_id, s3_motr_api_mock);
   }
 
   ~S3MotrReaderTest() { event_base_free(evbase); }
 
   struct m0_uint128 oid;
+  struct m0_fid pv_id = {};
   int layout_id;
   evbase_t *evbase;
   evhtp_request_t *req;
@@ -302,8 +303,8 @@ TEST_F(S3MotrReaderTest, OpenObjectTest) {
 TEST_F(S3MotrReaderTest, OpenObjectFailedTest) {
   S3CallBack S3MotrWiter_callbackobj;
 
-  motr_reader_ptr =
-      std::make_shared<S3MotrReader>(request_mock, oid, 1, s3_motr_api_mock);
+  motr_reader_ptr = std::make_shared<S3MotrReader>(request_mock, oid, 1, pv_id,
+                                                   s3_motr_api_mock);
 
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_init(_, _, _, _)).Times(1);
   EXPECT_CALL(*s3_motr_api_mock, motr_entity_open(_, _))

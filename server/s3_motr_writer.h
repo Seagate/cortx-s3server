@@ -54,7 +54,7 @@ class S3MotrWiterContext : public S3AsyncOpContextBase {
 
   // Call this when you want to do write op.
   void init_write_op_ctx(size_t motr_buf_count) {
-    motr_rw_op_context = create_basic_rw_op_ctx(motr_buf_count, 0, false);
+    motr_rw_op_context = create_basic_rw_op_ctx(motr_buf_count, 0);
   }
 
   struct s3_motr_rw_op_context* get_motr_rw_op_ctx() {
@@ -92,37 +92,46 @@ class S3MotrWiter {
 
   std::vector<struct m0_uint128> oid_list;
   std::vector<int> layout_ids;
+  std::vector<struct m0_fid> pv_ids;
 
-  S3MotrWiterOpState state;
+  S3MotrWiterOpState state = S3MotrWiterOpState::start;
 
   std::string content_md5;
-  uint64_t last_index;
+  uint64_t last_index = 0;
+  uint64_t first_offset = 0;
   std::string request_id;
   std::string stripped_request_id;
   // md5 for the content written to motr.
   MD5hash md5crypt;
 
   // maintain state for debugging.
-  size_t size_in_current_write;
-  size_t total_written;
+  size_t size_in_current_write = 0;
+  size_t total_written = 0;
 
-  bool is_object_opened;
-  struct s3_motr_obj_context* obj_ctx;
+  bool is_object_opened = false;
+  struct s3_motr_obj_context* obj_ctx = nullptr;
 
-  void* place_holder_for_last_unit;
+  void* place_holder_for_last_unit = nullptr;
   // layout_id for place_holder_for_last_unit can be changed if
   // the motr_writer object is reused after use for writing data.
   // create motr_writer and use for write data with layout id = 9
   // followed by reusing same object for deleting obj layout id =1
   // This causes buffer to be returned to pool with wrong id.
-  bool last_op_was_write;
-  int unit_size_for_place_holder;
+  bool last_op_was_write = false;
+  int unit_size_for_place_holder = -1;
 
   // buffer currently used to write, will be freed on completion
   S3BufferSequence buffer_sequence;
   size_t size_of_each_buf;
 
+  // fill entire object with zeroes after checksum calculation, but before
+  // writing to Motr
+  bool corrupt_fill_zero = false;
+
   // Write - single object, delete - multiple objects supported
+  void create_object_successful();
+  void create_object_failed();
+
   int open_objects();
   void open_objects_successful();
   void open_objects_failed();
@@ -140,10 +149,14 @@ class S3MotrWiter {
  public:
   // struct m0_uint128 id;
   S3MotrWiter(std::shared_ptr<RequestObject> req, struct m0_uint128 object_id,
-              uint64_t offset = 0, std::shared_ptr<MotrAPI> motr_api = nullptr);
-  S3MotrWiter(std::shared_ptr<RequestObject> req, uint64_t offset = 0,
-              std::shared_ptr<MotrAPI> motr_api = nullptr);
+              struct m0_fid pv_id, uint64_t offset = 0,
+              std::shared_ptr<MotrAPI> motr_api = {});
+
+  S3MotrWiter(std::shared_ptr<RequestObject> req,
+              std::shared_ptr<MotrAPI> motr_api = {});
+
   virtual ~S3MotrWiter();
+
   void reset_buffers_if_any(int buf_unit_sz);
 
   virtual S3MotrWiterOpState get_state() { return state; }
@@ -158,16 +171,8 @@ class S3MotrWiter {
     return layout_ids[0];
   }
 
-  virtual void set_oid(struct m0_uint128 id) {
-    is_object_opened = false;
-    oid_list.clear();
-    oid_list.push_back(id);
-  }
-
-  virtual void set_layout_id(int id) {
-    layout_ids.clear();
-    layout_ids.push_back(id);
-  }
+  virtual void set_oid(const struct m0_uint128& id);
+  virtual void set_layout_id(int id);
 
   // This concludes the md5 calculation
   virtual std::string get_content_md5() {
@@ -190,10 +195,8 @@ class S3MotrWiter {
 
   // async create
   virtual void create_object(std::function<void(void)> on_success,
-                             std::function<void(void)> on_failed, int layoutid);
-  void create_object_successful();
-  void create_object_failed();
-
+                             std::function<void(void)> on_failed,
+                             const struct m0_uint128& object_id, int layoutid);
   // Async save operation.
   virtual void write_content(std::function<void(void)> on_success,
                              std::function<void(void)> on_failed,
@@ -201,11 +204,15 @@ class S3MotrWiter {
                              size_t size_of_each_buf);
 
   // Async delete operation.
+  // TODO: add pool version id into BackgroundDelete memo
   virtual void delete_object(std::function<void(void)> on_success,
-                             std::function<void(void)> on_failed, int layoutid);
+                             std::function<void(void)> on_failed,
+                             const struct m0_uint128& object_id, int layoutid,
+                             const struct m0_fid& pv_id = {});  // BG delete
 
   virtual void delete_objects(std::vector<struct m0_uint128> oids,
                               std::vector<int> layoutids,
+                              std::vector<struct m0_fid> pv_ids,
                               std::function<void(void)> on_success,
                               std::function<void(void)> on_failed);
 
@@ -215,6 +222,7 @@ class S3MotrWiter {
   void set_up_motr_data_buffers(struct s3_motr_rw_op_context* rw_ctx,
                                 S3BufferSequence buffer_sequence,
                                 size_t motr_buf_count);
+  struct m0_fid* get_ppvid() const;
 
   // For Testing purpose
   FRIEND_TEST(S3MotrWiterTest, Constructor);

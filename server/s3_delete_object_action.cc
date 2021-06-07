@@ -275,13 +275,12 @@ void S3DeleteObjectAction::delete_object() {
   }
   // process to delete object
   if (!motr_writer) {
-    motr_writer = motr_writer_factory->create_motr_writer(
-        request, object_metadata->get_oid());
+    motr_writer = motr_writer_factory->create_motr_writer(request);
   }
   motr_writer->delete_object(
       std::bind(&S3DeleteObjectAction::remove_probable_record, this),
-      std::bind(&S3DeleteObjectAction::next, this),
-      object_metadata->get_layout_id());
+      std::bind(&S3DeleteObjectAction::next, this), obj_oid,
+      object_metadata->get_layout_id(), object_metadata->get_pvid());
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -308,3 +307,6 @@ void S3DeleteObjectAction::set_authorization_meta() {
   next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
+
+void S3DeleteObjectAction::fetch_additional_bucket_info_failed() { next(); }
+void S3DeleteObjectAction::fetch_additional_object_info_failed() { next(); }

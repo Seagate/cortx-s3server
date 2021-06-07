@@ -42,6 +42,8 @@ class S3GetObjectACLAction : public S3ObjectAction {
   void fetch_bucket_info_failed();
 
   void fetch_object_info_failed();
+  void fetch_additional_bucket_info_failed();
+  void fetch_additional_object_info_failed();
   void send_response_to_s3_client();
 
   FRIEND_TEST(S3GetObjectAclActionTest, Constructor);

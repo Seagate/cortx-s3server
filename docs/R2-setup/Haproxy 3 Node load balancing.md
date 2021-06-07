@@ -60,11 +60,11 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
 
 3. Open `/etc/haproxy/haproxy.cfg` and navigate to `backend app-main` section. 
 
-4. Locate S3 instance - `server s3-instance-1 0.0.0.0:28081 check maxconn 110`. Replace the 0.0.0.0 of all instances with the IP addresses (eth0) of the current node 
+4. Locate S3 instance - `server s3-instance-1 0.0.0.0:28071 check maxconn 110`. Replace the 0.0.0.0 of all instances with the IP addresses (eth0) of the current node 
 
 5. Keep the instance name `s3-instance-x` for each instance unique, incrementing `x` by 1. 
 
-6. Also increment the port number `28081` for the next instances by 1. 
+6. Also increment the port number `28071` for the next instances by 1. 
 
 7. Navigate to `backend s3-auth` section 
 
@@ -217,12 +217,12 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
 
        # For ssl communication between haproxy and s3server 
        # Replace below line 
-       server s3-instance-1 10.230.243.16:28081 check maxconn 110        # s3 instance 1 
-       server s3-instance-2 10.230.243.16:28082 check maxconn 110        # s3 instance 2 
+       server s3-instance-1 10.230.243.16:28071 check maxconn 110        # s3 instance 1 
+       server s3-instance-2 10.230.243.16:28072 check maxconn 110        # s3 instance 2 
        # with 
-       # server s3-instance-1 0.0.0.0:28081 check maxconn 110 ssl verify required ca-file /etc/ssl/stx-s3/s3/ca.crt 
+       # server s3-instance-1 0.0.0.0:28071 check maxconn 110 ssl verify required ca-file /etc/ssl/stx-s3/s3/ca.crt 
 
-       # server s3-instance-2 0.0.0.0:28082 check maxconn 110      # s3 instance 2 
+       # server s3-instance-2 0.0.0.0:28072 check maxconn 110      # s3 instance 2 
 
    #---------------------------------------------------------------------- 
    # BackEnd roundrobin as balance algorith for s3 auth server 

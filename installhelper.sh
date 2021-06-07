@@ -120,6 +120,9 @@ cp scripts/provisioning/templates/s3.reset.tmpl.1-node.sample $S3_INSTALL_LOCATI
 cp scripts/provisioning/templates/s3.cleanup.tmpl.1-node $S3_INSTALL_LOCATION/conf
 cp scripts/provisioning/templates/s3.cleanup.tmpl.1-node.sample $S3_INSTALL_LOCATION/conf
 
+cp scripts/provisioning/templates/s3.upgrade.tmpl.1-node $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/templates/s3.upgrade.tmpl.1-node.sample $S3_INSTALL_LOCATION/conf
+
 # Copy the provisioning python scripts
 cp scripts/provisioning/s3_setup $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/postinstallcmd.py $S3_INSTALL_LOCATION/bin
@@ -129,6 +132,7 @@ cp scripts/provisioning/cleanupcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/testcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/resetcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/preparecmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/upgradecmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/setupcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/s3_haproxy_config.py $S3_INSTALL_LOCATION/bin
 cp scripts/ldap/ldapaccountaction.py $S3_INSTALL_LOCATION/bin
@@ -208,8 +212,10 @@ cp s3backgrounddelete/s3backgrounddelete/s3backgroundconsumer $S3_INSTALL_LOCATI
 # Copy the s3 background configuration file.
 cp s3backgrounddelete/s3backgrounddelete/config/s3_background_delete_config.yaml.sample $S3_INSTALL_LOCATION/s3backgrounddelete/config.yaml.sample
 cp s3backgrounddelete/s3backgrounddelete/config/s3backgrounddelete_unsafe_attributes.yaml $S3_INSTALL_LOCATION/s3backgrounddelete/
+
 # Copy the s3 cluster configuration file.
-cp s3backgrounddelete/s3backgrounddelete/config/s3_cluster.yaml $S3_INSTALL_LOCATION/s3backgrounddelete/s3_cluster.yaml
+cp s3backgrounddelete/s3backgrounddelete/config/s3_cluster.yaml.sample $S3_INSTALL_LOCATION/s3backgrounddelete/
+cp s3backgrounddelete/s3backgrounddelete/config/s3_cluster_unsafe_attributes.yaml $S3_INSTALL_LOCATION/s3backgrounddelete/
 
 # Copy the s3 background producer file for systemctl support.
 cp s3backgrounddelete/s3backgroundproducer.service $SERVICE_FILE_LOCATION
@@ -236,6 +242,7 @@ cp -f auth/resources/keystore.properties.sample $AUTH_INSTALL_LOCATION/resources
 cp -f auth/resources/keystore_unsafe_attributes.properties $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/defaultAclTemplate.xml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/AmazonS3.xsd $AUTH_INSTALL_LOCATION/resources/
+cp -f auth/resources/AmazonS3_V2.xsd $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/s3authserver.jks $AUTH_INSTALL_LOCATION/resources/
 cp -f scripts/s3authserver.jks_template $AUTH_INSTALL_LOCATION/scripts/
 cp -f scripts/create_auth_jks_password.sh $AUTH_INSTALL_LOCATION/scripts/

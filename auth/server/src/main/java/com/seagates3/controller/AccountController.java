@@ -108,7 +108,7 @@ public class AccountController extends AbstractController {
         int maxAllowedLdapResults = maxAccountLimit + internalAccountCount;
 
         try {
-          accountCount = accountDao.getTotalCountOfAccounts();
+          accountCount = getTotalCountOfAccounts();
 
           if (accountCount >= maxAllowedLdapResults) {
             LOGGER.error("Maximum allowed Account limit has exceeded (i.e." +
@@ -197,7 +197,7 @@ public class AccountController extends AbstractController {
         // if account limit creation exceeded due to multiple thread/multiple
         // node create() API calls.
         try {
-          accountCount = accountDao.getTotalCountOfAccounts();
+          accountCount = getTotalCountOfAccounts();
         }
         catch (DataAccessException ex) {
           LOGGER.error("failed to get total count of accounts from ldap :" +
@@ -223,9 +223,21 @@ public class AccountController extends AbstractController {
     }
 
     /**
-     * Generate canonical id and check if its unique in ldap
+     * Fetch total account count present in ldap
+     * @return count of accounts
      * @throws DataAccessException
      */
+   private
+    int getTotalCountOfAccounts() throws DataAccessException {
+      Account[] accounts;
+      accounts = accountDao.findAll();
+      return accounts.length;
+    }
+
+    /**
+ * Generate canonical id and check if its unique in ldap
+ * @throws DataAccessException
+ */
    private
     String generateUniqueCanonicalId() throws DataAccessException {
       Account account;
@@ -351,10 +363,17 @@ public class AccountController extends AbstractController {
         try {
             root = userDAO.find(account.getName(), "root");
         } catch (DataAccessException e) {
+          LOGGER.error("Failed to find root user for account :" +
+                       account.getName());
             return accountResponseGenerator.internalServerError();
         }
 
-        if (!requestor.getId().equals(root.getId())) {
+        if (root == null || root.getId() == null) {
+          LOGGER.error("Root user not found for account :" + account.getName());
+          return accountResponseGenerator.internalServerError();
+        }
+        if (requestor.getId() != null &&
+            !(requestor.getId().equals(root.getId()))) {
             return accountResponseGenerator.unauthorizedOperation();
         }
 
@@ -364,15 +383,45 @@ public class AccountController extends AbstractController {
         }
 
         //Notify S3 Server of account deletion
-
         if (!internalRequest) {
+          ServerResponse resp = null;
+          // check if access key is ldap credentials or not
+          if (requestor.getAccesskey().getId().equals(
+                  AuthServerConfig.getLdapLoginCN())) {
+            AccessKey accountAccessKey;
+            try {  // if ldap credentials are used then
+                   // find access key of account using root userid.
+              accountAccessKey =
+                  accessKeyDAO.findAccountAccessKey(root.getId());
+            }
+            catch (DataAccessException e) {
+              LOGGER.error("Failed to find Access Key for account :" +
+                           account.getName() + " exception: " + e);
+              return accountResponseGenerator.internalServerError();
+            }
+
+            if (accountAccessKey == null || accountAccessKey.getId() == null) {
+              LOGGER.error("Failed to find Access Key for account :" +
+                           account.getName());
+              return accountResponseGenerator.internalServerError();
+            }
+
             LOGGER.debug("Sending delete account [" + account.getName() +
-                                       "] notification to S3 Server");
-            ServerResponse resp = s3.notifyDeleteAccount(
+                         "] notification to S3 Server");
+            resp = s3.notifyDeleteAccount(
+                account.getId(), accountAccessKey.getId(),
+                accountAccessKey.getSecretKey(), accountAccessKey.getToken());
+          } else {
+            LOGGER.debug("Sending delete account [" + account.getName() +
+                         "] notification to S3 Server");
+            resp = s3.notifyDeleteAccount(
                 account.getId(), requestor.getAccesskey().getId(),
                 requestor.getAccesskey().getSecretKey(),
                 requestor.getAccesskey().getToken());
-            if(!resp.getResponseStatus().equals(HttpResponseStatus.OK)) {
+          }
+
+          if (resp == null ||
+              !resp.getResponseStatus().equals(HttpResponseStatus.OK)) {
                 LOGGER.error("Account [" + account.getName() + "] delete "
                     + "notification failed.");
                 return resp;

@@ -74,10 +74,12 @@ install_cortx_py_utils() {
   yumdownloader --destdir="$PWD" cortx-py-utils
 
   # extract requirements.txt
-  rpm2cpio cortx-py-utils-*.rpm | cpio -idv "./opt/seagate/cortx/utils/conf/requirements.txt"
+  rpm2cpio cortx-py-utils-*.rpm | cpio -idv "./opt/seagate/cortx/utils/conf/python_requirements.txt"
+  rpm2cpio cortx-py-utils-*.rpm | cpio -idv "./opt/seagate/cortx/utils/conf/python_requirements.ext.txt"
 
   # install cortx-py-utils prerequisite
-  pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/requirements.txt" --ignore-installed
+  pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/python_requirements.txt"
+  pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/python_requirements.ext.txt"
 
   # install cortx-py-utils
   if rpm -q cortx-py-utils ; then
@@ -92,6 +94,9 @@ install_pre_requisites() {
   # install kafka server
   sh ${S3_SRC_DIR}/scripts/kafka/install-kafka.sh -c 1 -i $HOSTNAME
   
+  #sleep for 60 secs to make sure all the services are up and running.
+  sleep 60
+
   #create topic
   sh ${S3_SRC_DIR}/scripts/kafka/create-topic.sh -c 1 -i $HOSTNAME
 
@@ -140,6 +145,9 @@ else
   unsupported_os
 fi
 
+# validate and configure lnet
+sh ${S3_SRC_DIR}/scripts/env/common/configure_lnet.sh
+
 if [[ $# -eq 0 ]] ; then
   source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
   #install pre-requisites on dev vm
@@ -150,7 +158,6 @@ else
           a)
               is_open_source=true
               yum install createrepo -y
-              easy_install pip
               read -p "Git Access Token:" git_access_token
               source ${S3_SRC_DIR}/scripts/env/common/create-cortx-repo.sh -G $git_access_token
               # install configobj

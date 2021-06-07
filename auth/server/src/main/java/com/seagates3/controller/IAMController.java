@@ -132,9 +132,8 @@ class IAMController {
         LOGGER.error("Incorrect signature. Request not authenticated");
         return serverResponse;
       }
-    } else if (requestAction.equals("UpdateAccountLoginProfile")) {
-      LOGGER.debug("Parsing UpdateAccountLoginProfile request" +
-                   requestBody.get("AccountName"));
+    } else if (requestAction.equals("UpdateAccountLoginProfile") ||
+               requestAction.equals("DeleteAccount")) {
       try {
         clientRequestToken =
             ClientRequestParser.parse(httpRequest, requestBody);
@@ -153,30 +152,12 @@ class IAMController {
             "AuthorizationHeaderMalformed");
       }
 
-      try {
-        requestor = RequestorService.getRequestor(clientRequestToken);
-      }
-      catch (InvalidAccessKeyException ex) {
-        LOGGER.debug(ex.getServerResponse().getResponseBody());
-      }
-      catch (InternalServerException ex) {
-        LOGGER.debug(ex.getServerResponse().getResponseBody());
-      }
-      catch (InvalidRequestorException ex) {
-        LOGGER.debug(ex.getServerResponse().getResponseBody());
-      }
-      if (requestor == null) {
+      String ldapUser = AuthServerConfig.getLdapLoginCN();
+      if (ldapUser.equals(clientRequestToken.getAccessKeyId())) {
+
         LOGGER.debug(
             "Validating user on the basis of ldap credentials entered");
         AccessKey akey = new AccessKey();
-        String ldapUser = AuthServerConfig.getLdapLoginCN();
-        if (!ldapUser.equals(clientRequestToken.getAccessKeyId())) {
-          LOGGER.error("Invalid ldap user, authentication failed");
-          AuthenticationResponseGenerator responseGenerator =
-              new AuthenticationResponseGenerator();
-          serverResponse = responseGenerator.invalidLdapUserId();
-          return serverResponse;
-        }
         akey.setId(ldapUser);
         akey.setSecretKey(AuthServerConfig.getLdapLoginPassword());
         requestor = new Requestor();
@@ -193,10 +174,28 @@ class IAMController {
           LOGGER.error("Incorrect signature. Request not authenticated");
           return serverResponse;
         }
-      } else {
-        LOGGER.debug("Validating user with accesskey and secretkey entered");
-        LOGGER.debug("Calling signature validator.");
 
+      } else {
+
+        try {
+          requestor = RequestorService.getRequestor(clientRequestToken);
+        }
+        catch (InvalidAccessKeyException ex) {
+          LOGGER.error(ex.getServerResponse().getResponseBody());
+        }
+        catch (InternalServerException ex) {
+          LOGGER.error(ex.getServerResponse().getResponseBody());
+        }
+        catch (InvalidRequestorException ex) {
+          LOGGER.error(ex.getServerResponse().getResponseBody());
+        }
+        if (requestor == null) {
+          LOGGER.error("Invalid user, authentication failed");
+          AuthenticationResponseGenerator responseGenerator =
+              new AuthenticationResponseGenerator();
+          serverResponse = responseGenerator.invalidAccessKey();
+          return serverResponse;
+        } else {
         perf.startClock();
         serverResponse =
             new SignatureValidator().validate(clientRequestToken, requestor);
@@ -223,7 +222,7 @@ class IAMController {
           return e.getServerResponse();
         }
       }
-
+      }
     } else if ((requestBody.get("Authorization") == null) &&
                requestAction.equals("AuthorizeUser")) {
 
@@ -365,7 +364,8 @@ class IAMController {
           requestAction.equals("ResetAccountAccessKey") ||
           requestAction.equals("ChangePassword") ||
           requestAction.equals("GetTempAuthCredentials") ||
-          requestAction.equals("UpdateAccountLoginProfile"))) {
+          requestAction.equals("UpdateAccountLoginProfile") ||
+          requestAction.equals("DeleteAccount"))) {
       try {
         if (RootPermissionAuthorizer.getInstance().containsAction(
                 requestAction)) {

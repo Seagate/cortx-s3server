@@ -23,7 +23,7 @@ package com.seagates3.policy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
+import java.util.Arrays;
 import com.amazonaws.auth.policy.Action;
 import com.amazonaws.auth.policy.Condition;
 import com.amazonaws.auth.policy.Policy;
@@ -52,6 +52,8 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
   @Override public ServerResponse authorizePolicy(
       Requestor requestor, Map<String, String> requestBody) {
     ServerResponse serverResponse = null;
+    AuthorizationResponseGenerator responseGenerator =
+        new AuthorizationResponseGenerator();
     // authorizePolicy will return NULL if no relevant entry found in policy
     // authorized if match is found
     // AccessDenied if Deny found
@@ -62,6 +64,40 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
       if (requestedOperation != null) {
         serverResponse =
             authorizeOperation(requestBody, requestedOperation, requestor);
+      }
+      // Below authorization is for CopyObject in case of secondary operations
+      if ((serverResponse == null ||
+           serverResponse.getResponseStatus() == HttpResponseStatus.OK) &&
+          requestBody.get("S3ActionList") != null) {
+        List<String> actionList =
+            Arrays.asList(requestBody.get("S3ActionList").split(","));
+        for (String action : actionList) {
+          String dependentOperation = "s3:" + action.toLowerCase();
+          LOGGER.debug("copy object dependent operation to authorize - " +
+                       dependentOperation);
+          ServerResponse response =
+              authorizeOperation(requestBody, dependentOperation, requestor);
+          if (response != null &&
+              response.getResponseStatus() != HttpResponseStatus.OK) {
+            serverResponse = response;
+            break;
+          } else if (response == null &&
+                     PolicyAuthorizedS3Actions.getInstance()
+                         .isOnlyPolicyAuthorizationRequired(action)) {
+            LOGGER.debug(
+                "copyobject scenario and only policy authorization required "+
+                "for action- " +
+                action);
+            serverResponse = responseGenerator.AccessDenied();
+            break;
+          }
+        }
+      } else if (PolicyAuthorizedS3Actions.getInstance()
+                     .isOnlyPolicyAuthorizationRequired(
+                          requestBody.get("S3Action")) &&
+                 serverResponse == null) {
+        LOGGER.debug("Only Policy Authorization is required");
+        serverResponse = responseGenerator.ok();
       }
     }
     catch (Exception e) {
@@ -80,20 +116,22 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
  private
   String identifyOperationToAuthorize(Map<String, String> requestBody) {
     String s3Action = requestBody.get("S3Action");
-    switch (s3Action) {
-      case "HeadBucket":
-        s3Action = "ListBucket";
-        break;
-      case "HeadObject":
-        s3Action = "GetObject";
-        break;
-      case "DeleteBucketTagging":
-        s3Action = "PutBucketTagging";
-        break;
+    if (null != s3Action) {
+      switch (s3Action) {
+        case "HeadBucket":
+          s3Action = "ListBucket";
+          break;
+        case "HeadObject":
+          s3Action = "GetObject";
+          break;
+        case "DeleteBucketTagging":
+          s3Action = "PutBucketTagging";
+          break;
+      }
+      s3Action = "s3:" + s3Action;
+      LOGGER.debug("identifyOperationToAuthorize has returned action as - " +
+                   s3Action);
     }
-    s3Action = "s3:" + s3Action;
-    LOGGER.debug("identifyOperationToAuthorize has returned action as - " +
-                 s3Action);
     return s3Action;
   }
 
@@ -180,11 +218,11 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
         }
       }
       } else {
-        if (requestor == null && response != null) {
-          return responseGenerator.generateAuthorizationResponse(null, null);
-        }
         if (response != null &&
             response.getResponseStatus() == HttpResponseStatus.OK) {
+          if (requestor == null) {
+            return responseGenerator.generateAuthorizationResponse(null, null);
+          } else {
           boolean isRootUser = Authorizer.isRootUser(
               new UserImpl().findByUserId(requestor.getId()));
           if (isRootUser ||
@@ -193,6 +231,7 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
           } else {
             response = responseGenerator.AccessDenied();
           }
+        }
         }
       }
     return response;

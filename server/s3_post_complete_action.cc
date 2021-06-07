@@ -139,8 +139,20 @@ void S3PostCompleteAction::fetch_bucket_info_failed() {
 
 void S3PostCompleteAction::fetch_object_info_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  next();
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+  auto omds = object_metadata->get_state();
+  if (omds == S3ObjectMetadataState::missing) {
+    s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
+    next();
+  } else {
+    s3_log(S3_LOG_ERROR, request_id, "Metadata load state %d\n", (int)omds);
+    if (omds == S3ObjectMetadataState::failed_to_launch) {
+      set_s3_error("ServiceUnavailable");
+    } else {
+      set_s3_error("InternalError");
+    }
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "Exiting\n");
 }
 
 void S3PostCompleteAction::load_and_validate_request() {
@@ -399,8 +411,8 @@ bool S3PostCompleteAction::validate_parts() {
         set_s3_error("EntityTooLarge");
         s3_post_complete_action_state =
             S3PostCompleteActionState::validationFailed;
-        set_abort_multipart(true);
-        break;
+        send_response_to_s3_client();
+        return false;
       }
       if (current_parts_size < MINIMUM_ALLOWED_PART_SIZE &&
           store_kv->first != total_parts) {
@@ -412,8 +424,8 @@ bool S3PostCompleteAction::validate_parts() {
         set_s3_error("EntityTooSmall");
         s3_post_complete_action_state =
             S3PostCompleteActionState::validationFailed;
-        set_abort_multipart(true);
-        break;
+        send_response_to_s3_client();
+        return false;
       }
 
       if (part_one_size_in_multipart_metadata != 0) {
@@ -602,6 +614,9 @@ void S3PostCompleteAction::save_metadata() {
     for (auto it : multipart_metadata->get_user_attributes()) {
       new_object_metadata->add_user_defined_attribute(it.first, it.second);
     }
+    // save part size for checksum calculation in GET for multipart upload case
+    new_object_metadata->set_part_one_size(
+        multipart_metadata->get_part_one_size());
 
     // to rest Date and Last-Modfied time object metadata
     new_object_metadata->reset_date_time_to_current();
@@ -610,6 +625,7 @@ void S3PostCompleteAction::save_metadata() {
     new_object_metadata->set_content_type(
         multipart_metadata->get_content_type());
     new_object_metadata->set_md5(etag);
+    new_object_metadata->set_pvid_str(multipart_metadata->get_pvid_str());
 
     new_object_metadata->save(
         std::bind(&S3PostCompleteAction::save_object_metadata_succesful, this),
@@ -902,8 +918,7 @@ void S3PostCompleteAction::mark_old_oid_for_deletion() {
 
 void S3PostCompleteAction::delete_old_object() {
   if (!motr_writer) {
-    motr_writer =
-        motr_writer_factory->create_motr_writer(request, old_object_oid);
+    motr_writer = motr_writer_factory->create_motr_writer(request);
   }
   // process to delete old object
   assert(old_object_oid.u_hi || old_object_oid.u_lo);
@@ -918,11 +933,12 @@ void S3PostCompleteAction::delete_old_object() {
     next();
     return;
   }
-  motr_writer->set_oid(old_object_oid);
   motr_writer->delete_object(
       std::bind(&S3PostCompleteAction::remove_old_object_version_metadata,
                 this),
-      std::bind(&S3PostCompleteAction::next, this), old_layout_id);
+      std::bind(&S3PostCompleteAction::next, this), old_object_oid,
+      old_layout_id, multipart_metadata->get_pvid());
+
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -989,14 +1005,11 @@ void S3PostCompleteAction::delete_new_object() {
   assert(is_abort_multipart());
 
   if (!motr_writer) {
-    motr_writer =
-        motr_writer_factory->create_motr_writer(request, new_object_oid);
-  } else {
-    motr_writer->set_oid(new_object_oid);
+    motr_writer = motr_writer_factory->create_motr_writer(request);
   }
   motr_writer->delete_object(
       std::bind(&S3PostCompleteAction::remove_new_oid_probable_record, this),
-      std::bind(&S3PostCompleteAction::next, this), layout_id);
+      std::bind(&S3PostCompleteAction::next, this), new_object_oid, layout_id);
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -1022,3 +1035,6 @@ void S3PostCompleteAction::set_authorization_meta() {
   next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
+
+void S3PostCompleteAction::fetch_additional_bucket_info_failed() { next(); }
+void S3PostCompleteAction::fetch_additional_object_info_failed() { next(); }

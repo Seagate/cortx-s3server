@@ -215,6 +215,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenThrow(
                 new DataAccessException("failed to search user.\n"));
+        Mockito.doReturn(new User[0]).when(userDAO).findAll("s3test", "/");
 
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
@@ -254,6 +255,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         user.setId("AIDA5KZQJXPTROAIAKCKO");
 
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
+        Mockito.doReturn(new User[1]).when(userDAO).findAll("s3test", "/");
 
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
@@ -282,15 +284,90 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                 response.getResponseStatus());
     }
 
-    @Test
-    public void CreateUser_UserSaveFailed_ReturnInternalServerError()
-            throws Exception {
+    @Test public void CreateUser_ReturnMaxUserLimitExceeded() throws Exception {
+      createUserController_CreateAPI();
+
+      PowerMockito.doReturn(0)
+          .when(AuthServerConfig.class, "getMaxIAMUserLimit");
+
+      Mockito.doReturn(new User[1]).when(userDAO).findAll("s3test", "/");
+
+      final String expectedResponseBody =
+          "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+          "<ErrorResponse " +
+          "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+          "<Error><Code>MaxUserLimitExceeded</Code>" +
+          "<Message>The request was rejected because " +
+          "maximum limit(i.e 0) of user creation has " +
+          "exceeded.</Message></Error>" + "<RequestId>0000</RequestId>" +
+          "</ErrorResponse>";
+
+      UserResponseGenerator mockResponseGenerator =
+          PowerMockito.mock(UserResponseGenerator.class);
+      WhiteboxImpl.setInternalState(
+          UserController.class, "userResponseGenerator", mockResponseGenerator);
+      ServerResponse maxUserLimitExceeded = new ServerResponse();
+      maxUserLimitExceeded.setResponseBody(expectedResponseBody);
+      maxUserLimitExceeded.setResponseStatus(HttpResponseStatus.FORBIDDEN);
+      PowerMockito.when(mockResponseGenerator.maxUserLimitExceeded(0))
+          .thenReturn(maxUserLimitExceeded);
+
+      ServerResponse response = userController.create();
+      Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+      Assert.assertEquals(HttpResponseStatus.FORBIDDEN,
+                          response.getResponseStatus());
+    }
+
+    @Test public void CreateUser_ConcurrencyIssues_ReturnInternalServerError()
+        throws Exception {
+      createUserController_CreateAPI();
+
+      User user = new User();
+      user.setAccountName("s3test");
+      user.setName("s3testuser");
+      PowerMockito.doReturn(1)
+          .when(AuthServerConfig.class, "getMaxIAMUserLimit");
+
+      Mockito.doReturn(new User[0]).doReturn(new User[3]).when(userDAO).findAll(
+          "s3test", "/");
+      Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
+      Mockito.doNothing().when(userDAO).save(user);
+
+      final String expectedResponseBody =
+          "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+          "<ErrorResponse " +
+          "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+          "<Error><Code>InternalFailure</Code>" +
+          "<Message>The request processing has failed because of an " +
+          "unknown error, exception or failure.</Message></Error>" +
+          "<RequestId>0000</RequestId>" + "</ErrorResponse>";
+
+      UserResponseGenerator mockResponseGenerator =
+          PowerMockito.mock(UserResponseGenerator.class);
+      WhiteboxImpl.setInternalState(
+          UserController.class, "userResponseGenerator", mockResponseGenerator);
+      ServerResponse internalServerResponse = new ServerResponse();
+      internalServerResponse.setResponseBody(expectedResponseBody);
+      internalServerResponse.setResponseStatus(
+          HttpResponseStatus.INTERNAL_SERVER_ERROR);
+      PowerMockito.when(mockResponseGenerator.internalServerError())
+          .thenReturn(internalServerResponse);
+
+      ServerResponse response = userController.create();
+      Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+      Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
+                          response.getResponseStatus());
+    }
+
+    @Test public void CreateUser_UserSaveFailed_ReturnInternalServerError()
+        throws Exception {
         createUserController_CreateAPI();
 
         User user = new User();
         user.setAccountName("s3test");
         user.setName("s3testuser");
 
+        Mockito.doReturn(new User[0]).when(userDAO).findAll("s3test", "/");
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
         Mockito.doThrow(new DataAccessException("failed to save new user.\n"))
                 .when(userDAO).save(user);
@@ -332,6 +409,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         user.setName("s3testuser");
         user.setArn("arn:aws:iam::1:user/s3testuser");
 
+        Mockito.doReturn(new User[0]).when(userDAO).findAll("s3test", "/");
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
         Mockito.doNothing().when(userDAO).save(user);
 
@@ -391,6 +469,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         userDAO = Mockito.mock(UserDAO.class);
         PowerMockito.doReturn(userDAO)
             .when(DAODispatcher.class, "getResourceDAO", DAOResource.USER);
+        Mockito.doReturn(new User[0]).when(userDAO).findAll("s3test", "/");
         userController = new UserController(requestor, requestBody);
         User user = new User();
         user.setAccountName("s3test");
@@ -427,6 +506,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         user.setName("s3testuser");
         user.setArn("arn:aws:iam::1:user/s3testuser");
 
+        Mockito.doReturn(new User[0]).when(userDAO).findAll("s3test", "/test");
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
         Mockito.doNothing().when(userDAO).save(user);
 
@@ -891,8 +971,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
         ServerResponse response = userController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
-                response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
+                            response.getResponseStatus());
     }
 
     @Test

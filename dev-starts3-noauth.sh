@@ -82,19 +82,6 @@ local_nid=`lctl list_nids | head -1`
 local_ep=$local_nid:12345:33
 ha_ep=$local_nid:12345:34:1
 
-# Run m0dixinit
-set +e
-./third_party/motr/dix/utils/m0dixinit -l $local_nid:12345:34:100 -H $local_nid:12345:34:1 \
-                 -p '<0x7000000000000001:0>' -I 'v|1:20' -d 'v|1:20' -a check 2> /dev/null \
-                 | grep -E 'Metadata exists: false' > /dev/null
-rc=$?
-set -e
-if [ $rc -eq 0 ]
-then
-./third_party/motr/dix/utils/m0dixinit -l $local_nid:12345:34:100 -H $local_nid:12345:34:1 \
-                 -p '<0x7000000000000001:0>' -I 'v|1:20' -d 'v|1:20' -a create
-fi
-
 # Ensure default working dir is present
 s3_working_dir="/var/seagate/s3/"
 mkdir -p $s3_working_dir

@@ -26,6 +26,7 @@ import static org.mockito.Mockito.times;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.Assert;
@@ -204,6 +205,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             throws Exception {
         Mockito.when(accountDAO.find("s3test")).thenThrow(
                 new DataAccessException("failed to search account.\n"));
+        Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
             "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
@@ -227,7 +229,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         account.setName("s3test");
 
         Mockito.when(accountDAO.find("s3test")).thenReturn(account);
-
+        Mockito.doReturn(new Account[1]).when(accountDAO).findAll();
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
             "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
@@ -251,6 +253,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
       Mockito.when(accountDAO.find("s3test")).thenReturn(account);
       Mockito.doReturn(account).when(accountDAO).findByCanonicalID("can1234");
+      Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
 
       final String expectedResponseBody =
           "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
@@ -273,6 +276,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         account.setName("s3test");
 
         Mockito.doReturn(account).when(accountDAO).find("s3test");
+        Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
         Mockito.doThrow(new DataAccessException("failed to add new account.\n"))
             .when(accountDAO)
             .save(account);
@@ -301,6 +305,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         account.setName("s3test");
 
         Mockito.doReturn(account).when(accountDAO).find("s3test");
+        Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
         Mockito.doNothing().when(accountDAO).save(any(Account.class));
         Mockito.doThrow(new DataAccessException("failed to save new user.\n"))
                 .when(userDAO).save(any(User.class));
@@ -328,6 +333,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         Account account = new Account();
         account.setName("s3test");
 
+        Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
         Mockito.doReturn(account).when(accountDAO).find("s3test");
         Mockito.doNothing().when(accountDAO).save(any(Account.class));
         Mockito.doNothing().when(userDAO).save(any(User.class));
@@ -366,7 +372,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         PowerMockito.doReturn("htuspscae/123")
             .when(KeyGenUtil.class, "generateSecretKey");
 
-        Mockito.doReturn(0).when(accountDAO).getTotalCountOfAccounts();
+        Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
         Mockito.doReturn(account).when(accountDAO).find("s3test");
         Mockito.doNothing().when(accountDAO).save(any(Account.class));
         Mockito.doNothing().when(userDAO).save(any(User.class));
@@ -399,9 +405,77 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                 response.getResponseStatus());
     }
 
-    @Test
-    public void ResetAccountAccessKey_AccountDoesNotExists_ReturnNoSuchEntity()
-            throws Exception {
+    @Test public void CreateAccount_ReturnMaxAccountLimitExceeded()
+        throws Exception {
+      PowerMockito.doReturn(0)
+          .when(AuthServerConfig.class, "getMaxAccountLimit");
+
+      Mockito.doReturn(new Account[1]).when(accountDAO).findAll();
+      final String expectedResponseBody =
+          "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+          "<ErrorResponse " +
+          "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+          "<Error><Code>MaxAccountLimitExceeded</Code>" +
+          "<Message>The request was rejected because " +
+          "maximum limit(i.e 0) of account creation has " +
+          "exceeded.</Message></Error>" + "<RequestId>0000</RequestId>" +
+          "</ErrorResponse>";
+
+      ServerResponse response = accountController.create();
+      Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+      Assert.assertEquals(HttpResponseStatus.FORBIDDEN,
+                          response.getResponseStatus());
+    }
+
+    @Test public void
+    CreateAccount_ConcurrencyIssues_ReturnInternalServerError()
+        throws Exception {
+      PowerMockito.when(AuthServerConfig.class, "getMaxAccountLimit")
+          .thenReturn(1);
+      List<String> internalacc = new ArrayList<>();
+      internalacc.add("abcd");
+      PowerMockito.when(AuthServerConfig.class, "getS3InternalAccounts")
+          .thenReturn(internalacc);
+      PowerMockito.when(accountDAO, "findAll")
+          .thenReturn(new Account[0])
+          .thenReturn(new Account[3]);
+      Account account = new Account();
+      account.setName("s3test");
+
+      PowerMockito.doReturn("AKIASIAS")
+          .when(KeyGenUtil.class, "createUserAccessKeyId", true);
+
+      PowerMockito.doReturn("htuspscae/123")
+          .when(KeyGenUtil.class, "generateSecretKey");
+      ServerResponse resp = new ServerResponse();
+      resp.setResponseStatus(HttpResponseStatus.OK);
+
+      Mockito.doReturn(account).when(accountDAO).find("s3test");
+      Mockito.doNothing().when(accountDAO).save(any(Account.class));
+      Mockito.doNothing().when(userDAO).save(any(User.class));
+      Mockito.doNothing().when(accessKeyDAO).save(any(AccessKey.class));
+      Mockito.doReturn(resp).when(s3).notifyNewAccount(
+          any(String.class), any(String.class), any(String.class));
+      Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
+          "can1234");
+
+      final String expectedResponseBody =
+          "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+          "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+          "<Error><Code>InternalFailure</Code>" +
+          "<Message>The request processing has failed because of an " +
+          "unknown error, exception or failure.</Message></Error>" +
+          "<RequestId>0000</RequestId>" + "</ErrorResponse>";
+
+      ServerResponse response = accountController.create();
+      Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+      Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
+                          response.getResponseStatus());
+    }
+
+    @Test public void
+    ResetAccountAccessKey_AccountDoesNotExists_ReturnNoSuchEntity()
+        throws Exception {
         Account account = mock(Account.class);
         Mockito.when(accountDAO.find("s3test")).thenReturn(account);
         Mockito.when(account.exists()).thenReturn(Boolean.FALSE);
@@ -418,8 +492,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
         ServerResponse response = accountController.resetAccountAccessKey();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
-                response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
+                            response.getResponseStatus());
     }
 
     @Test
@@ -472,8 +546,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
         ServerResponse response = accountController.resetAccountAccessKey();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
-                response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
+                            response.getResponseStatus());
     }
 
     @Test public void ResetAccountAccessKey_Success_Return() throws Exception {
@@ -565,7 +639,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
         ServerResponse response = accountController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+        Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
                             response.getResponseStatus());
     }
 
@@ -774,6 +848,123 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         Mockito.verify(accountDAO).deleteOu(account, LDAPUtils.POLICY_OU);
         Mockito.verify(accountDAO).delete(account);
         Mockito.verify(roleDAO).delete(roles[0]);
+    }
+
+    @Test public void
+    DeleteAccountWithLdapCred_RootUserSearchFailed_ReturnInternalServerError()
+        throws DataAccessException {
+      Account account = mock(Account.class);
+
+      Mockito.when(account.getName()).thenReturn("s3test");
+      Mockito.when(accountDAO.find("s3test")).thenReturn(account);
+      Mockito.when(account.exists()).thenReturn(Boolean.TRUE);
+      Mockito.when(userDAO.find("s3test", "root")).thenReturn(new User());
+
+      final String expectedResponseBody =
+          "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+          "<ErrorResponse " +
+          "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+          "<Error><Code>InternalFailure</Code>" +
+          "<Message>The request processing has failed because of an " +
+          "unknown error, exception or failure.</Message></Error>" +
+          "<RequestId>0000</RequestId>" + "</ErrorResponse>";
+
+      ServerResponse response = accountController.delete ();
+      Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+      Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
+                          response.getResponseStatus());
+    }
+
+    @Test public void
+    DeleteAccountWithLdapCred_AccountAccessKeySearchFailed_ResturnInternalServerError()
+        throws Exception {
+      Account account = mock(Account.class);
+      User user = new User();
+      user = new User();
+      user.setName("root");
+      user.setId("abcxyz");
+      AccessKey accessKeys = mock(AccessKey.class);
+
+      PowerMockito.doReturn("abcxyz")
+          .when(AuthServerConfig.class, "getLdapLoginCN");
+      Mockito.when(requestor.getAccesskey()).thenReturn(accessKeys);
+      Mockito.when(accessKeys.getId()).thenReturn("abcxyz");
+
+      Mockito.when(account.getName()).thenReturn("s3test");
+      Mockito.when(accountDAO.find("s3test")).thenReturn(account);
+      Mockito.when(account.exists()).thenReturn(Boolean.TRUE);
+      Mockito.when(userDAO.find("s3test", "root")).thenReturn(user);
+      Mockito.when(requestor.getId()).thenReturn("abcxyz");
+      Mockito.doThrow(new DataAccessException(
+                          "Failed to find Access Key for account"))
+          .when(accessKeyDAO)
+          .findAccountAccessKey(user.getId());
+
+      final String expectedResponseBody =
+          "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+          "<ErrorResponse " +
+          "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+          "<Error><Code>InternalFailure</Code>" +
+          "<Message>The request processing has failed because of an " +
+          "unknown error, exception or failure.</Message></Error>" +
+          "<RequestId>0000</RequestId>" + "</ErrorResponse>";
+
+      ServerResponse response = accountController.delete ();
+      Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+      Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
+                          response.getResponseStatus());
+    }
+
+    @Test public void DeleteAccountWithLdapCred_Success() throws Exception {
+      Account account = mock(Account.class);
+
+      User[] users = new User[1];
+      users[0] = new User();
+      users[0].setName("root");
+      users[0].setId("abcxyz");
+
+      AccessKey accessKey = mock(AccessKey.class);
+      accessKey.setId("akey123");
+      accessKey.setSecretKey("skey1234");
+      accessKey.setToken("test");
+      Role role = mock(Role.class);
+      AccessKey[] accessKeys = new AccessKey[1];
+      accessKeys[0] = accessKey;
+      Role[] roles = new Role[1];
+      roles[0] = role;
+
+      PowerMockito.doReturn("abcxyz")
+          .when(AuthServerConfig.class, "getLdapLoginCN");
+      Mockito.when(requestor.getAccesskey()).thenReturn(accessKey);
+      Mockito.when(accessKey.getId()).thenReturn("abcxyz");
+
+      Mockito.when(account.getName()).thenReturn("s3test");
+      Mockito.when(accountDAO.find("s3test")).thenReturn(account);
+      Mockito.when(account.exists()).thenReturn(Boolean.TRUE);
+      Mockito.when(userDAO.find("s3test", "root")).thenReturn(users[0]);
+      Mockito.when(requestor.getId()).thenReturn("abcxyz");
+      Mockito.doReturn(accessKey).when(accessKeyDAO).findAccountAccessKey(
+          users[0].getId());
+
+      ServerResponse resp = new ServerResponse();
+      resp.setResponseStatus(HttpResponseStatus.OK);
+      Mockito.doReturn(resp).when(s3).notifyDeleteAccount(
+          any(String.class), any(String.class), any(String.class),
+          any(String.class));
+      Mockito.when(userDAO.findAll("s3test", "/")).thenReturn(users);
+      Mockito.when(accessKeyDAO.findAll(users[0])).thenReturn(accessKeys);
+      Mockito.when(roleDAO.findAll(account, "/")).thenReturn(roles);
+
+      final String expectedResponseBody =
+          "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+          "standalone=\"no\"?><DeleteAccountResponse " +
+          "xmlns=\"https://iam.seagate" +
+          ".com/doc/2010-05-08/\"><ResponseMetadata><RequestId>0000</" +
+          "RequestId><" + "/ResponseMetadata></DeleteAccountResponse>";
+
+      ServerResponse response = accountController.delete ();
+      Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+      Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
     }
 }
 

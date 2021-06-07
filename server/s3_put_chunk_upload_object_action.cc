@@ -246,6 +246,7 @@ void S3PutChunkUploadObjectAction::validate_tags() {
 
 void S3PutChunkUploadObjectAction::fetch_object_info_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  auto omds = object_metadata->get_state();
   struct m0_uint128 object_list_oid =
       bucket_metadata->get_object_list_index_oid();
   if ((object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) ||
@@ -263,26 +264,10 @@ void S3PutChunkUploadObjectAction::fetch_object_info_failed() {
         S3PutChunkUploadObjectActionState::validationFailed;
     set_s3_error("MetaDataCorruption");
     send_response_to_s3_client();
-  } else {
-    next();
-  }
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3PutChunkUploadObjectAction::fetch_object_info_success() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  if (object_metadata->get_state() == S3ObjectMetadataState::present) {
-    s3_log(S3_LOG_DEBUG, request_id, "S3ObjectMetadataState::present\n");
-    old_object_oid = object_metadata->get_oid();
-    old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
-    old_layout_id = object_metadata->get_layout_id();
-    create_new_oid(old_object_oid);
-    next();
-  } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
+  } else if (omds == S3ObjectMetadataState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "S3ObjectMetadataState::missing\n");
     next();
-  } else if (object_metadata->get_state() ==
-             S3ObjectMetadataState::failed_to_launch) {
+  } else if (omds == S3ObjectMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Object metadata load operation failed due to pre launch failure\n");
     s3_put_chunk_action_state =
@@ -290,7 +275,29 @@ void S3PutChunkUploadObjectAction::fetch_object_info_success() {
     set_s3_error("ServiceUnavailable");
     send_response_to_s3_client();
   } else {
-    s3_log(S3_LOG_DEBUG, request_id, "Failed to look up metadata.\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Failed with metadata state %d\n",
+           (int)omds);
+    s3_put_chunk_action_state =
+        S3PutChunkUploadObjectActionState::validationFailed;
+    set_s3_error("InternalError");
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutChunkUploadObjectAction::fetch_object_info_success() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  auto omds = object_metadata->get_state();
+  if (omds == S3ObjectMetadataState::present) {
+    s3_log(S3_LOG_DEBUG, request_id, "S3ObjectMetadataState::present\n");
+    old_object_oid = object_metadata->get_oid();
+    old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
+    old_layout_id = object_metadata->get_layout_id();
+    create_new_oid(old_object_oid);
+    next();
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Unexpected Metadata state %d in success handler\n", (int)omds);
     s3_put_chunk_action_state =
         S3PutChunkUploadObjectActionState::validationFailed;
     set_s3_error("InternalError");
@@ -311,7 +318,7 @@ void S3PutChunkUploadObjectAction::validate_put_chunk_request() {
              request->get_user_metadata_size() > MAX_USER_METADATA_SIZE) {
     s3_put_chunk_action_state =
         S3PutChunkUploadObjectActionState::validationFailed;
-    set_s3_error("BadRequest");
+    set_s3_error("MetadataTooLarge");
     send_response_to_s3_client();
   } else {
     next();
@@ -330,11 +337,9 @@ void S3PutChunkUploadObjectAction::_set_layout_id(int layout_id) {
 void S3PutChunkUploadObjectAction::create_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   create_object_timer.start();
+
   if (tried_count == 0) {
-    motr_writer =
-        motr_writer_factory->create_motr_writer(request, new_object_oid);
-  } else {
-    motr_writer->set_oid(new_object_oid);
+    motr_writer = motr_writer_factory->create_motr_writer(request);
   }
   _set_layout_id(S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
       request->get_data_length()));
@@ -342,7 +347,7 @@ void S3PutChunkUploadObjectAction::create_object() {
   motr_writer->create_object(
       std::bind(&S3PutChunkUploadObjectAction::create_object_successful, this),
       std::bind(&S3PutChunkUploadObjectAction::create_object_failed, this),
-      layout_id);
+      new_object_oid, layout_id);
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -662,6 +667,7 @@ void S3PutChunkUploadObjectAction::save_metadata() {
   new_object_metadata->set_content_type(request->get_content_type());
   new_object_metadata->set_md5(motr_writer->get_content_md5());
   new_object_metadata->set_tags(new_object_tags_map);
+  new_object_metadata->set_pvid(motr_writer->get_ppvid());
 
   for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {
@@ -990,15 +996,14 @@ void S3PutChunkUploadObjectAction::delete_old_object() {
            "BD.\n");
     // Call next task in the pipeline
     next();
-    return;
+  } else {
+    motr_writer->delete_object(
+        std::bind(
+            &S3PutChunkUploadObjectAction::remove_old_object_version_metadata,
+            this),
+        std::bind(&S3PutChunkUploadObjectAction::next, this), old_object_oid,
+        old_layout_id, object_metadata->get_pvid());
   }
-
-  motr_writer->set_oid(old_object_oid);
-  motr_writer->delete_object(
-      std::bind(
-          &S3PutChunkUploadObjectAction::remove_old_object_version_metadata,
-          this),
-      std::bind(&S3PutChunkUploadObjectAction::next, this), old_layout_id);
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -1019,11 +1024,12 @@ void S3PutChunkUploadObjectAction::delete_new_object() {
          S3PutChunkUploadObjectActionState::completed);
   assert(new_object_oid.u_hi != 0ULL || new_object_oid.u_lo != 0ULL);
 
-  motr_writer->set_oid(new_object_oid);
   motr_writer->delete_object(
       std::bind(&S3PutChunkUploadObjectAction::remove_new_oid_probable_record,
                 this),
-      std::bind(&S3PutChunkUploadObjectAction::next, this), layout_id);
+      std::bind(&S3PutChunkUploadObjectAction::next, this), new_object_oid,
+      layout_id);
+
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -1033,4 +1039,11 @@ void S3PutChunkUploadObjectAction::set_authorization_meta() {
                                   bucket_metadata->get_policy_as_json());
   next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutChunkUploadObjectAction::fetch_additional_bucket_info_failed() {
+  next();
+}
+void S3PutChunkUploadObjectAction::fetch_additional_object_info_failed() {
+  next();
 }

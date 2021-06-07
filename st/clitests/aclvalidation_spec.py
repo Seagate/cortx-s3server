@@ -67,6 +67,9 @@ invalid_acl_incorrect_granteeemail = "file://" + os.path.abspath(invalid_acl_inc
 invalid_acl_owner_id = os.path.join(os.path.dirname(__file__), 'acp_files', 'invalid_acl_owner_id.json')
 invalid_acl_owner_id = "file://" + os.path.abspath(invalid_acl_owner_id)
 
+acl_with_grant_first_owner_last_relative = os.path.join(os.path.dirname(__file__), 'acp_files', 'acl_with_grant_first_owner_last.json')
+acl_with_grant_first_owner_last = "file://" + os.path.abspath(acl_with_grant_first_owner_last_relative)
+
 # Load test config file
 def load_test_config():
     conf_file = os.path.join(os.path.dirname(__file__),'s3iamcli_test_config.yaml')
@@ -1584,3 +1587,14 @@ cmd = "curl -s -X PUT -H \"Accept: application/json\" -H \"Content-Type: applica
 
 AwsTest('AccessDenied For allusers to create buckets').execute_curl(cmd).\
 execute_test().command_is_successful().command_response_should_have("AccessDenied")
+
+bucket="seagatebucketacltest"
+AwsTest('Aws can create bucket').create_bucket(bucket).execute_test().command_is_successful()
+
+#******** Validate put-bucket-acl with owner and grant in reverse order ********
+AwsTest('AWS can not put bucket acl with grant first owner last')\
+.put_bucket_acl_with_acp_file(bucket, acl_with_grant_first_owner_last)\
+.execute_test().command_is_successful()
+
+AwsTest('Aws can delete bucket').delete_bucket(bucket).execute_test().command_is_successful()
+

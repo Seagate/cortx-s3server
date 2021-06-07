@@ -22,6 +22,7 @@ import sys
 import os
 import errno
 import shutil
+from pathlib import Path
 from  ast import literal_eval
 
 from setupcmd import SetupCmd, S3PROVError
@@ -44,16 +45,21 @@ class ConfigCmd(SetupCmd):
       self.read_ldap_credentials()
 
     except Exception as e:
-      raise S3PROVError(f'exception: {e}\n')
+      raise S3PROVError(f'exception: {e}')
 
   def process(self, configure_only_openldap = False, configure_only_haproxy = False):
     """Main processing function."""
-    sys.stdout.write(f"Processing {self.name} {self.url}\n")
+    self.logger.info(f"Processing {self.name} {self.url}")
+    self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
+    self.validate_config_files(self.name)
+    self.logger.info("validations completed")
 
     try:
+      self.logger.info('create auth jks password started')
       self.create_auth_jks_password()
+      self.logger.info('create auth jks password completed')
 
       if configure_only_openldap == True:
         # Configure openldap only
@@ -69,13 +75,13 @@ class ConfigCmd(SetupCmd):
       # create topic for background delete
       bgdeleteconfig = CORTXS3Config()
       if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
-        sys.stdout.write('INFO: Creating topic.\n')
+        self.logger.info('Create topic started')
         self.create_topic(bgdeleteconfig.get_msgbus_admin_id,
                           bgdeleteconfig.get_msgbus_topic(),
                           self.get_msgbus_partition_count())
-        sys.stdout.write('INFO:Topic creation successful.\n')
+        self.logger.info('Create topic completed')
     except Exception as e:
-      raise S3PROVError(f'process() failed with exception: {e}\n')
+      raise S3PROVError(f'process() failed with exception: {e}')
 
   def configure_openldap(self):
     """Install and Configure Openldap over Non-SSL."""
@@ -83,6 +89,7 @@ class ConfigCmd(SetupCmd):
     # 2. Enable slapd logging in rsyslog config
     # 3. Set openldap-replication
     # 4. Check number of nodes in the cluster
+    self.logger.info('Open ldap configuration started')
     cmd = ['/opt/seagate/cortx/s3/install/ldap/setup_ldap.sh',
            '--ldapadminpasswd',
            f'{self.ldap_passwd}',
@@ -92,35 +99,39 @@ class ConfigCmd(SetupCmd):
            '--skipssl']
     handler = SimpleProcess(cmd)
     stdout, stderr, retcode = handler.run()
+    self.logger.info(f'output of setup_ldap.sh: {stdout}')
     if retcode != 0:
-      raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
+      self.logger.error(f'error of setup_ldap.sh: {stderr}')
+      raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
+    else:
+      self.logger.warning(f'warning of setup_ldap.sh: {stderr}')
 
     if os.path.isfile("/opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf"):
       try:
         os.makedirs("/etc/rsyslog.d")
       except OSError as e:
         if e.errno != errno.EEXIST:
-          raise S3PROVError(f"mkdir /etc/rsyslog.d failed with errno: {e.errno}, exception: {e}\n")
+          raise S3PROVError(f"mkdir /etc/rsyslog.d failed with errno: {e.errno}, exception: {e}")
       shutil.copy('/opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf',
                   '/etc/rsyslog.d/slapdlog.conf')
 
     # restart rsyslog service
     try:
-      sys.stdout.write("Restarting rsyslog service...\n")
+      self.logger.info("Restarting rsyslog service...")
       service_list = ["rsyslog"]
       self.restart_services(service_list)
     except Exception as e:
-      sys.stderr.write(f'Failed to restart rsyslog service, error: {e}\n')
+      self.logger.error(f'Failed to restart rsyslog service, error: {e}')
       raise e
-    sys.stdout.write("Restarted rsyslog service...\n")
+    self.logger.info("Restarted rsyslog service...")
 
     # set openldap-replication
     self.configure_openldap_replication()
-    
-    sys.stdout.write("INFO: Successfully configured openldap on the node.\n")
+    self.logger.info('Open ldap configuration completed')
 
   def configure_openldap_replication(self):
     """Configure openldap replication within a storage set."""
+    self.logger.info('Open ldap replication configuration started')
     storage_set_count = self.get_confvalue(self.get_confkey(
         'CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY').replace("cluster-id", self.cluster_id))
 
@@ -134,35 +145,44 @@ class ConfigCmd(SetupCmd):
         server_nodes_list = literal_eval(server_nodes_list)
 
       if len(server_nodes_list) > 1:
-        sys.stdout.write(f'\nSetting ldap-replication for storage_set:{index}\n\n')
+        self.logger.info(f'Setting ldap-replication for storage_set:{index}')
 
-        with open("hosts_list_file.txt", "w") as f:
+        tmpdir = "/opt/seagate/cortx/s3/tmp"
+        Path(tmpdir).mkdir(parents=True, exist_ok=True)
+        ldap_hosts_list_file = os.path.join(tmpdir, "ldap_hosts_list_file.txt")
+        with open(ldap_hosts_list_file, "w") as f:
           for node_machine_id in server_nodes_list:
-            hostname = self.get_confvalue(f'server_node>{node_machine_id}>hostname')
-            f.write(f'{hostname}\n')
+            private_fqdn = self.get_confvalue(f'server_node>{node_machine_id}>network>data>private_fqdn')
+            f.write(f'{private_fqdn}\n')
+            self.logger.info(f'output of ldap_hosts_list_file.txt: {private_fqdn}')
 
         cmd = ['/opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh',
              '-h',
-             'hosts_list_file.txt',
+             ldap_hosts_list_file,
              '-p',
              f'{self.rootdn_passwd}']
         handler = SimpleProcess(cmd)
         stdout, stderr, retcode = handler.run()
-
-        os.remove("hosts_list_file.txt")
+        self.logger.info(f'output of setupReplicationScript.sh: {stdout}')
+        os.remove(ldap_hosts_list_file)
 
         if retcode != 0:
-          raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
+          self.logger.error(f'error of setupReplicationScript.sh: {stderr}')
+          raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
+        else:
+          self.logger.warning(f'warning of setupReplicationScript.sh: {stderr}')
       index += 1
     # TODO: set replication across storage-sets
+    self.logger.info('Open ldap replication configuration completed')
 
   def create_topic(self, admin_id: str, topic_name:str, partitions: int):
     """create topic for background delete services."""
     try:
-      s3MessageBus = S3CortxMsgBus()
-      s3MessageBus.connect()
       if not S3CortxMsgBus.is_topic_exist(admin_id, topic_name):
-        S3CortxMsgBus.create_topic(admin_id, [topic_name], partitions)
+          S3CortxMsgBus.create_topic(admin_id, [topic_name], partitions)
+          self.logger.info("Topic Created")
+      else:
+          self.logger.info("Topic Already exists")
     except Exception as e:
       raise e
 
@@ -182,38 +202,42 @@ class ConfigCmd(SetupCmd):
 
       srv_count += len(server_nodes_list)
       index += 1
-    sys.stdout.write(f"Server node count : {srv_count}\n")
+    self.logger.info(f"Server node count : {srv_count}")
     # Partition count should be ( number of hosts * 2 )
     srv_count = srv_count * 2
-    sys.stdout.write(f"Partition count : {srv_count}\n")
+    self.logger.info(f"Partition count : {srv_count}")
     return srv_count
 
   def configure_haproxy(self):
     """Configure haproxy service."""
+    self.logger.info('haproxy configuration started')
     try:
       S3HaproxyConfig(self.url).process()
       # reload haproxy service
       try:
-        sys.stdout.write("Reloading haproxy service...\n")
+        self.logger.info("Reloading haproxy service...")
         service_list = ["haproxy"]
         self.reload_services(service_list)
       except Exception as e:
-        sys.stderr.write(f'Failed to reload haproxy service, error: {e}\n')
+        self.logger.error(f'Failed to reload haproxy service, error: {e}')
         raise e
-      sys.stdout.write("Reloaded haproxy service...\n")
-      sys.stdout.write("INFO: Successfully configured haproxy on the node.\n")
+      self.logger.info("Reloaded haproxy service...")
+      self.logger.info("Successfully configured haproxy on the node.")
     except Exception as e:
-      sys.stderr.write(f'Failed to configure haproxy for s3server, error: {e}')
+      self.logger.error(f'Failed to configure haproxy for s3server, error: {e}')
       raise e
+    self.logger.info('haproxy configuration completed')
 
-  @staticmethod
-  def create_auth_jks_password():
+  def create_auth_jks_password(self):
     """Create random password for auth jks keystore."""
     cmd = ['sh',
       '/opt/seagate/cortx/auth/scripts/create_auth_jks_password.sh']
     handler = SimpleProcess(cmd)
     stdout, stderr, retcode = handler.run()
+    self.logger.info(f'output of create_auth_jks_password.sh: {stdout}')
     if retcode != 0:
-      raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}\n")
+      self.logger.error(f'error of create_auth_jks_password.sh: {stderr}')
+      raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
     else:
-      sys.stdout.write('INFO: Successfully set auth JKS keystore password.\n')
+      self.logger.warning(f'warning of create_auth_jks_password.sh: {stderr}')
+      self.logger.info(' Successfully set auth JKS keystore password.')
