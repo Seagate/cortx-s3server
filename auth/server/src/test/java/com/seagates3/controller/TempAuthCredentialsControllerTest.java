@@ -149,7 +149,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
       throws Exception {
     Mockito.when(accountDAO.find("s3test")).thenReturn(nonExistingAccount);
     ServerResponse response = controller.create();
-    Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+    Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
                         response.getResponseStatus());
   }
   /**
@@ -164,7 +164,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Mockito.when(userDAO.find("s3test", "s3testuser"))
         .thenReturn(nonExistingUser);
     ServerResponse response = controller.create();
-    Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+    Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
                         response.getResponseStatus());
   }
 
