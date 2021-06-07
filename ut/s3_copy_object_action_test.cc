@@ -124,7 +124,7 @@ void S3CopyObjectActionTest::create_src_bucket_metadata() {
 
   EXPECT_CALL(*ptr_mock_bucket_meta_factory->mock_bucket_metadata, load(_, _))
       .Times(AtLeast(1));
-  action_under_test->fetch_source_bucket_info();
+  action_under_test->fetch_additional_bucket_info();
 }
 
 void S3CopyObjectActionTest::create_src_object_metadata() {
@@ -142,7 +142,7 @@ void S3CopyObjectActionTest::create_src_object_metadata() {
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata, load(_, _))
       .Times(AtLeast(1));
 
-  action_under_test->fetch_source_object_info();
+  action_under_test->fetch_additional_object_info();
 }
 
 void S3CopyObjectActionTest::create_dst_bucket_metadata() {
@@ -169,166 +169,6 @@ void S3CopyObjectActionTest::create_dst_object_metadata() {
       .WillOnce(Return(S3HttpVerb::PUT));
 
   action_under_test->fetch_object_info();
-}
-
-TEST_F(S3CopyObjectActionTest, GetSourceBucketAndObjectSuccess) {
-  EXPECT_CALL(*ptr_mock_request, get_headers_copysource()).Times(1).WillOnce(
-      Return("my-source-bucket/my-source-object"));
-
-  action_under_test->get_source_bucket_and_object();
-
-  ASSERT_STREQ("my-source-bucket",
-               action_under_test->source_bucket_name.c_str());
-  ASSERT_STREQ("my-source-object",
-               action_under_test->source_object_name.c_str());
-}
-
-TEST_F(S3CopyObjectActionTest, GetSourceBucketAndSpecialObjectSuccess) {
-  EXPECT_CALL(*ptr_mock_request, get_headers_copysource()).Times(1).WillOnce(
-      Return("my-source-bucket/my-source-object(1)"));
-
-  action_under_test->get_source_bucket_and_object();
-
-  ASSERT_STREQ("my-source-bucket",
-               action_under_test->source_bucket_name.c_str());
-  ASSERT_STREQ("my-source-object(1)",
-               action_under_test->source_object_name.c_str());
-}
-
-TEST_F(S3CopyObjectActionTest, UIGetSourceBucketAndObjectSuccess) {
-  EXPECT_CALL(*ptr_mock_request, get_headers_copysource()).Times(1).WillOnce(
-      Return("/my-source-bucket/my-source-object-ui"));
-
-  action_under_test->get_source_bucket_and_object();
-
-  ASSERT_STREQ("my-source-bucket",
-               action_under_test->source_bucket_name.c_str());
-  ASSERT_STREQ("my-source-object-ui",
-               action_under_test->source_object_name.c_str());
-}
-
-TEST_F(S3CopyObjectActionTest, GetSourceBucketAndObjectFailure) {
-  EXPECT_CALL(*ptr_mock_request, get_headers_copysource()).Times(1).WillOnce(
-      Return("my-source-bucket-my-source-object"));
-
-  action_under_test->get_source_bucket_and_object();
-
-  ASSERT_STREQ("", action_under_test->source_bucket_name.c_str());
-  ASSERT_STREQ("", action_under_test->source_object_name.c_str());
-}
-
-TEST_F(S3CopyObjectActionTest, FetchSourceBucketInfo) {
-  create_src_bucket_metadata();
-  EXPECT_TRUE(action_under_test->source_bucket_metadata != NULL);
-}
-
-TEST_F(S3CopyObjectActionTest, FetchSourceBucketInfoFailedMissing) {
-  create_src_bucket_metadata();
-
-  EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
-              get_state())
-      .Times(1)
-      .WillOnce(Return(S3BucketMetadataState::missing));
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(404, _)).Times(1);
-
-  action_under_test->fetch_source_bucket_info_failed();
-
-  EXPECT_STREQ("NoSuchBucket", action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3CopyObjectActionTest, FetchSourceBucketInfoFailedFailedToLaunch) {
-  create_src_bucket_metadata();
-
-  EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
-              get_state())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3BucketMetadataState::failed_to_launch));
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
-
-  action_under_test->fetch_source_bucket_info_failed();
-
-  EXPECT_STREQ("ServiceUnavailable",
-               action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3CopyObjectActionTest, FetchSourceBucketInfoFailedInternalError) {
-  create_src_bucket_metadata();
-
-  EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
-              get_state())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3BucketMetadataState::failed));
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
-
-  action_under_test->fetch_source_bucket_info_failed();
-
-  EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3CopyObjectActionTest, FetchSourceObjectInfoListIndexGood) {
-  create_src_object_metadata();
-
-  EXPECT_TRUE(action_under_test->source_object_metadata != NULL);
-}
-
-TEST_F(S3CopyObjectActionTest, FetchSourceObjectInfoListIndexNull) {
-  create_src_bucket_metadata();
-
-  EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
-              get_object_list_index_oid())
-      .Times(AtLeast(1))
-      .WillRepeatedly(ReturnRef(zero_oid_idx));
-
-  EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
-              get_objects_version_list_index_oid())
-      .Times(AtLeast(1))
-      .WillRepeatedly(ReturnRef(zero_oid_idx));
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(404, _)).Times(1);
-
-  action_under_test->fetch_source_object_info();
-
-  EXPECT_STREQ("NoSuchKey", action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3CopyObjectActionTest, FetchSourceObjectInfoSuccessGreaterThan5GB) {
-  create_src_object_metadata();
-  EXPECT_CALL(*(ptr_mock_object_meta_factory->mock_object_metadata),
-              get_content_length())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(MaxCopyObjectSourceSize + 1));
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(400, _)).Times(1);
-
-  action_under_test->fetch_source_object_info_success();
-
-  EXPECT_STREQ("InvalidRequest",
-               action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3CopyObjectActionTest, FetchSourceObjectInfoSuccessLessThan5GB) {
-  create_src_object_metadata();
-
-  EXPECT_CALL(*(ptr_mock_object_meta_factory->mock_object_metadata),
-              get_content_length())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(MaxCopyObjectSourceSize - 1));
-
-  action_under_test->clear_tasks();
-  ACTION_TASK_ADD_OBJPTR(action_under_test,
-                         S3CopyObjectActionTest::func_callback_one, this);
-
-  action_under_test->fetch_source_object_info_success();
-
-  EXPECT_EQ(1, call_count_one);
 }
 
 TEST_F(S3CopyObjectActionTest, ValidateCopyObjectRequestSourceBucketEmpty) {
@@ -444,8 +284,8 @@ TEST_F(S3CopyObjectActionTest,
 
   action_under_test->validate_copyobject_request();
 
-  ASSERT_STREQ("my-bucket", action_under_test->source_bucket_name.c_str());
-  ASSERT_STREQ("my-object", action_under_test->source_object_name.c_str());
+  ASSERT_STREQ("my-bucket", action_under_test->additional_bucket_name.c_str());
+  ASSERT_STREQ("my-object", action_under_test->additional_object_name.c_str());
   EXPECT_EQ(action_under_test->s3_put_action_state,
             S3PutObjectActionState::validationFailed);
   EXPECT_STREQ("InvalidRequest",
@@ -474,7 +314,7 @@ TEST_F(S3CopyObjectActionTest, ValidateCopyObjectRequestSuccess) {
 
   action_under_test->validate_copyobject_request();
 
-  EXPECT_TRUE(action_under_test->source_bucket_metadata != NULL);
+  EXPECT_TRUE(action_under_test->additional_bucket_metadata != NULL);
 }
 
 TEST_F(S3CopyObjectActionTest,

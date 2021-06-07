@@ -56,11 +56,19 @@ class S3ObjectActionTestBase : public S3ObjectAction {
 
   void fetch_bucket_info_failed() { fetch_bucket_info_failed_called = 1; }
   void fetch_object_info_failed() { fetch_object_info_failed_called = 1; }
+  void fetch_additional_bucket_info_failed() {
+    fetch_additional_bucket_info_failed_called = 1;
+  }
+  void fetch_additional_object_info_failed() {
+    fetch_additional_object_info_failed_called = 1;
+  }
 
   void send_response_to_s3_client() { response_called += 1; }
 
   int fetch_bucket_info_failed_called = 0;
   int fetch_object_info_failed_called = 0;
+  int fetch_additional_object_info_failed_called = 0;
+  int fetch_additional_bucket_info_failed_called = 0;
   int response_called = 0;
 };
 

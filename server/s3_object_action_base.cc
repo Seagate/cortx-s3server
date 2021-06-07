@@ -23,6 +23,7 @@
 #include "s3_error_codes.h"
 #include "s3_option.h"
 #include "s3_stats.h"
+#include <evhttp.h>
 
 S3ObjectAction::S3ObjectAction(
     std::shared_ptr<S3RequestObject> req,
@@ -106,11 +107,105 @@ void S3ObjectAction::fetch_object_info() {
 }
 
 void S3ObjectAction::fetch_object_info_success() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   request->set_object_size(object_metadata->get_content_length());
-  next();
+  // load additional metadata if any. Below are the APIs for which
+  // additional metadata needs to be loaded:
+
+  // CopyObject API
+  std::string source = request->get_headers_copysource();
+  if (!source.empty()) {  // this is CopyObject API request
+    get_source_bucket_and_object(source);
+    fetch_additional_bucket_info();
+  } else {
+    next();
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3ObjectAction::load_metadata() { fetch_bucket_info(); }
+void S3ObjectAction::fetch_additional_bucket_info() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_DEBUG, request_id, "Fetch metadata of bucket: %s\n",
+         additional_bucket_name.c_str());
+
+  additional_bucket_metadata =
+      bucket_metadata_factory->create_bucket_metadata_obj(
+          request, additional_bucket_name);
+
+  additional_bucket_metadata->load(
+      std::bind(&S3ObjectAction::fetch_additional_bucket_info_success, this),
+      std::bind(&S3ObjectAction::fetch_additional_bucket_info_failed, this));
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3ObjectAction::fetch_additional_bucket_info_success() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  // fetch additional object metadata
+  fetch_additional_object_info();
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3ObjectAction::fetch_additional_object_info() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  m0_uint128 additional_object_list_oid =
+      additional_bucket_metadata->get_object_list_index_oid();
+  m0_uint128 additional_object_version_list_oid =
+      additional_bucket_metadata->get_objects_version_list_index_oid();
+
+  if ((additional_object_list_oid.u_hi == 0ULL &&
+       additional_object_list_oid.u_lo == 0ULL) ||
+      (additional_object_version_list_oid.u_hi == 0ULL &&
+       additional_object_version_list_oid.u_lo == 0ULL)) {
+    // Object list index and version list index missing.
+    fetch_additional_object_info_failed();
+  } else {
+    additional_object_metadata =
+        object_metadata_factory->create_object_metadata_obj(
+            request, additional_bucket_name, additional_object_name,
+            additional_object_list_oid);
+
+    additional_object_metadata->set_objects_version_list_index_oid(
+        additional_object_version_list_oid);
+
+    additional_object_metadata->load(
+        std::bind(&S3ObjectAction::fetch_additional_object_info_success, this),
+        std::bind(&S3ObjectAction::fetch_additional_object_info_failed, this));
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3ObjectAction::fetch_additional_object_info_success() { next(); }
+
+void S3ObjectAction::load_metadata() {
+  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
+  fetch_bucket_info();
+}
+
+void S3ObjectAction::get_source_bucket_and_object(const std::string& header) {
+  size_t separator_pos;
+  if (header[0] != '/') {
+    separator_pos = header.find("/");
+    if (separator_pos != std::string::npos) {
+      additional_bucket_name = header.substr(0, separator_pos);
+      additional_object_name = header.substr(separator_pos + 1);
+    }
+  } else {
+    separator_pos = header.find("/", 1);
+    if (separator_pos != std::string::npos) {
+      additional_bucket_name = header.substr(1, separator_pos - 1);
+      additional_object_name = header.substr(separator_pos + 1);
+    }
+  }
+  char* decode_uri = evhttp_uridecode(additional_object_name.c_str(), 0, NULL);
+  additional_object_name = decode_uri;
+  free(decode_uri);
+  decode_uri = NULL;
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
 
 void S3ObjectAction::set_authorization_meta() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
