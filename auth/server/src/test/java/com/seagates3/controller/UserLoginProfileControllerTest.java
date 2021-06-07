@@ -240,7 +240,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
   /**
    * Below test will check when CreateUserLoginProfile API executed on user
-   * with new password length less than 6, it returns -
+   * with new password length less than 1, it returns -
    *'PasswordPolicyVoilation'
    *
    * @throws Exception
@@ -249,7 +249,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
       throws Exception {
     createUserLoginProfileController_CreateAPI();
 
-    userLoginProfileController.requestBody.put("Password", "abcd");
+    userLoginProfileController.requestBody.put("Password", "");
     User user = new User();
     user.setAccountName("s3test");
     user.setName("s3testuser");
@@ -490,7 +490,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
   /**
    * Below test will check when UpdateUserLoginProfile API executed on user
-   * with new password length less than 6, it returns -
+   * with new password length less than 1, it returns -
    *'PasswordPolicyVoilation'
    *
    * @throws Exception
@@ -499,7 +499,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
       throws Exception {
     createUserLoginProfileController_CreateAPI();
 
-    userLoginProfileController.requestBody.put("Password", "abcd");
+    userLoginProfileController.requestBody.put("Password", "");
     User user = new User();
     user.setAccountName("s3test");
     user.setName("s3testuser");
@@ -732,7 +732,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
   /**
    * Below test will check when ChangePassword API executed on user
-   * with new password length less than 6,
+   * with new password length less than 1,
    * it returns an error- 'PasswordPolicyVoilation'
    *
    * @throws Exception
@@ -743,7 +743,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
     userLoginProfileController.requestBody.remove("UserName");
     userLoginProfileController.requestBody.put("OldPassword", "password1");
-    userLoginProfileController.requestBody.put("NewPassword", "pass");
+    userLoginProfileController.requestBody.put("NewPassword", "");
     userLoginProfileController.requestor.setId("123");
     userLoginProfileController.requestor.setName("s3testuser");
 
