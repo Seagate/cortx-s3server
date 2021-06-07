@@ -514,7 +514,8 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest) {
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_fini(_)).Times(1);
   // buffers of size 4K and layout ID 9
   // TODO : uncomment and fill exact number of calls.
-  //EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _)).Times(257);
+  EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
+      .Times(1);
   ON_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
       .WillByDefault(Return(0));
 
@@ -542,15 +543,16 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest1MUnaligned) {
   S3CallBack S3MotrWiter_callbackobj;
   bool is_last_buf = true;
   std::string sdata("Hello.World");
-  int no_of_fourkbuffs = 1048576 / g_option_instance->get_libevent_pool_buffer_size();
+  int no_of_fourkbuffs =
+      1048576 / g_option_instance->get_libevent_pool_buffer_size();
   std::cout << no_of_fourkbuffs << std::endl;
   std::cout << g_option_instance->get_libevent_pool_buffer_size() << std::endl;
   std::vector<std::string> mb_buffer;
 
-  for(int i=0; i<no_of_fourkbuffs; i++){
+  for (int i = 0; i < no_of_fourkbuffs; i++) {
     std::string temp;
-    temp.assign(fourk_buffer);
-    mb_buffer.push_back(temp);
+    temp.assign(g_option_instance->get_libevent_pool_buffer_size(), 'A');
+    mb_buffer.push_back(std::move(temp));
   }
 
   motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
@@ -568,15 +570,18 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest1MUnaligned) {
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_fini(_)).Times(1);
   // buffers of size 4K and layout ID 9
   // TODO fill this Expect call with accurate number of calls expected.
-  //EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _)).Times(257);
+  EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
+      .Times(2);
   ON_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
       .WillByDefault(Return(0));
 
   S3Option::get_instance()->set_eventbase(evbase);
 
-  //buffer->add_content(get_evbuf_t_with_data(fourk_buffer), false, false, true);
-  for(int i=0; i<no_of_fourkbuffs; i++){
-    buffer->add_content(get_evbuf_t_with_data(mb_buffer[i]), false, false, true);
+  // buffer->add_content(get_evbuf_t_with_data(fourk_buffer), false, false,
+  // true);
+  for (int i = 0; i < no_of_fourkbuffs; i++) {
+    buffer->add_content(get_evbuf_t_with_data(mb_buffer[i]), false, false,
+                        true);
   }
 
   buffer->add_content(get_evbuf_t_with_data(sdata.c_str()), false, is_last_buf,
@@ -590,21 +595,26 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest1MUnaligned) {
       buffer->size_of_each_evbuf);
 
   EXPECT_TRUE(motr_writer_ptr->get_state() == S3MotrWiterOpState::saved);
-  EXPECT_EQ(motr_writer_ptr->size_in_current_write,
-            fourk_buffer.length() + sdata.length());
+  int total_length = 0;
+  for (int i = 0; i < no_of_fourkbuffs; i++) {
+    total_length += mb_buffer[i].length();
+  }
+  total_length += sdata.length();
+  EXPECT_EQ(motr_writer_ptr->size_in_current_write, total_length);
   EXPECT_TRUE(S3MotrWiter_callbackobj.success_called);
   EXPECT_FALSE(S3MotrWiter_callbackobj.fail_called);
 }
 
 TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest1M) {
   S3CallBack S3MotrWiter_callbackobj;
-  std::string sdata("Hello.World");
-  int no_of_fourkbuffs = 1048576 / g_option_instance->get_libevent_pool_buffer_size();
-  std::string mb_buffer[no_of_fourkbuffs];
+  int no_of_fourkbuffs =
+      1048576 / g_option_instance->get_libevent_pool_buffer_size();
+  std::vector<std::string> mb_buffer;
 
-  for(int i=0; i<no_of_fourkbuffs; i++){
-    mb_buffer[i].assign(g_option_instance->get_libevent_pool_buffer_size(),
-                    'A');
+  for (int i = 0; i < no_of_fourkbuffs; i++) {
+    std::string temp;
+    temp.assign(g_option_instance->get_libevent_pool_buffer_size(), 'A');
+    mb_buffer.push_back(std::move(temp));
   }
 
   motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
@@ -622,16 +632,20 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest1M) {
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_fini(_)).Times(1);
   // buffers of size 4K and layout ID 9
   // TODO fill this Expect call with accurate number of calls expected.
-  //EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _)).Times(257);
+  EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
+      .Times(1);
   ON_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
       .WillByDefault(Return(0));
 
   S3Option::get_instance()->set_eventbase(evbase);
 
-  for(int i=0; i<no_of_fourkbuffs; i++) {
-    buffer->add_content(get_evbuf_t_with_data(mb_buffer[i]), false, false, true);
-    if (i == no_of_fourkbuffs-1){
-      buffer->add_content(get_evbuf_t_with_data(mb_buffer[i]), false, true, true);
+  for (int i = 0; i < no_of_fourkbuffs; i++) {
+    if (i == no_of_fourkbuffs - 1) {
+      buffer->add_content(get_evbuf_t_with_data(mb_buffer[i]), false, true,
+                          true);
+    } else {
+      buffer->add_content(get_evbuf_t_with_data(mb_buffer[i]), false, false,
+                          true);
     }
   }
 
@@ -644,12 +658,15 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest1M) {
       buffer->size_of_each_evbuf);
 
   EXPECT_TRUE(motr_writer_ptr->get_state() == S3MotrWiterOpState::saved);
-  EXPECT_EQ(motr_writer_ptr->size_in_current_write,
-            fourk_buffer.length() + sdata.length());
+
+  int total_length = 0;
+  for (int i = 0; i < no_of_fourkbuffs; i++) {
+    total_length += mb_buffer[i].length();
+  }
+  EXPECT_EQ(motr_writer_ptr->size_in_current_write, total_length);
   EXPECT_TRUE(S3MotrWiter_callbackobj.success_called);
   EXPECT_FALSE(S3MotrWiter_callbackobj.fail_called);
 }
-
 
 TEST_F(S3MotrWiterTest, WriteContentFailedTest) {
   S3CallBack S3MotrWiter_callbackobj;

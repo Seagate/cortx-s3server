@@ -324,6 +324,18 @@ bool S3MotrReader::ValidateStoredMD5Chksum(m0_bufvec *motr_data_unit,
   return true;
 }
 
+size_t S3MotrReader::CalculateBytesProcessed(m0_bufvec *motr_data_unit) {
+  size_t bytesProcessed = 0;
+
+  assert(motr_data_unit != NULL);
+
+  for (size_t i = 0; i < motr_data_unit->ov_vec.v_nr; i++) {
+    bytesProcessed += motr_data_unit->ov_vec.v_count[i];
+  }
+
+  return bytesProcessed;
+}
+
 bool S3MotrReader::ValidateStoredChksum() {
 
   uint32_t data_buffer_count =
@@ -382,7 +394,7 @@ bool S3MotrReader::ValidateStoredChksum() {
 
     start_offset = end_offset;
     end_offset += pi_to_data_buffer_ratio;
-    current_index += 1;
+    current_index += CalculateBytesProcessed(&motr_data_unit);
   }
 
   return true;
