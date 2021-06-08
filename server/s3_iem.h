@@ -56,19 +56,6 @@ extern S3Option* g_option_instance;
 #define s3_iem_fatal(loglevel, event_code, event_desc, json_fmt, ...) \
   s3_iem_(loglevel, LOG_ERROR, event_code, event_desc, json_fmt, ##__VA_ARGS__)
 
-// Note: Logs IEM message into syslog only.
-// Use this macro to send addtional information to CSM
-#define s3_iem_syslog(loglevel, event_code, event_description, ...)  \
-  do {                                                               \
-    if (loglevel == LOG_INFO) {                                      \
-      s3_syslog(loglevel, "IEC:IS" event_code ":" event_description, \
-                ##__VA_ARGS__);                                      \
-    } else {                                                         \
-      s3_syslog(LOG_ERR, "IEC:ES" event_code ":" event_description,  \
-                ##__VA_ARGS__);                                      \
-    }                                                                \
-  } while (0)
-
 // IEM helper macros
 // S3 Server IEM Event codes, description string & json data format
 #define S3_IEM_AUTH_CONN_FAIL "0030010001"
@@ -115,5 +102,24 @@ extern S3Option* g_option_instance;
 #define S3_IEM_METADATA_CORRUPTED_STR \
   "Metadata may be corrupted. Contact Seagate Support."
 #define S3_IEM_METADATA_CORRUPTED_JSON ""
+
+#define S3_IEM_CHECKSUM_MISMATCH "0030060004"
+#define S3_IEM_CHECKSUM_MISMATCH_STR                                \
+  "Data integrity validation failure (content checksum mismatch). " \
+  "Cluster is transitioning to safe mode. Contact Seagate Support."
+#define S3_IEM_CHECKSUM_MISMATCH_JSON                                 \
+  ", \"bucket_name\": \"%s\", \"object_name\": \"%s\", \"motr_oid\":" \
+  " \"%" SCNx64 ":%" SCNx64                                           \
+  "\", \"md5_calculated\": \"%s\", \"md5_from_metadata\": \"%s\" "    \
+  ", \"account_name\": \"%s\""
+
+#define S3_IEM_OBJECT_METADATA_NOT_VALID "0030060005"
+#define S3_IEM_OBJECT_METADATA_NOT_VALID_STR                         \
+  "Metadata integrity validation failure (bucket/object mismatch). " \
+  "Cluster is transitioning to safe mode. Contact Seagate Support."
+#define S3_IEM_OBJECT_METADATA_NOT_VALID_JSON                             \
+  ", \"bucket_name_requested\": \"%s\", \"bucket_name_received\": \"%s\"" \
+  ", \"object_name_requested\": \"%s\", \"object_name_received\": \"%s\"" \
+  ", \"account_name\": \"%s\""
 
 #endif  // __S3_SERVER_IEM_H__

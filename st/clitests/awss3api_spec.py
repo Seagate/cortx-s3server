@@ -19,13 +19,15 @@
 
 import os
 import yaml
+import hashlib
+import shutil
 from framework import Config
 from framework import S3PyCliTest
 from awss3api import AwsTest
 from s3client_config import S3ClientConfig
 from aclvalidation import AclTest
 from auth import AuthTest
-
+from ldap_setup import LdapInfo
 # Helps debugging
 # Config.log_enabled = True
 # Config.dummy_run = True
@@ -109,6 +111,100 @@ def create_object_list_file(file_name, obj_list=[], quiet_mode="false"):
 
 def delete_object_list_file(file_name):
     os.remove(file_name)
+
+def get_md5_sum(fname):
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+
+#******** Create Bucket ********
+AwsTest('Aws can create bucket').create_bucket("copyobjectbucket").execute_test().command_is_successful()
+
+# creating dir for files.
+upload_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "copy_object_test_upload")
+os.makedirs(upload_dir, exist_ok=True)
+filesize = [1024, 5120, 32768]
+start = 0
+
+# Create root level files under upload_dir, also calculating the checksum of files.
+md5sum_dict_before_upload = {}
+file_list_before_upload = ['1kfile', '5kfile', '32kfile']
+for root_file in file_list_before_upload:
+    file_to_create = os.path.join(upload_dir, root_file)
+    key = root_file
+    with open(file_to_create, 'wb+') as fout:
+        fout.write(os.urandom(filesize[start]))
+    md5sum_dict_before_upload[root_file] = get_md5_sum(file_to_create)
+    start = start + 1
+
+#Recursively upload all files from upload_dir to 'copyobjectbucket'.
+AwsTest('Aws Upload folder recursively').upload_objects("copyobjectbucket", upload_dir)\
+        .execute_test().command_is_successful()
+
+# Create a new destination bucket.
+AwsTest('Aws can create destination bucket for CopyObject API')\
+    .create_bucket("destination-bucket")\
+    .execute_test().command_is_successful()
+
+#copy all objects to destination bucket using CopyObject API.
+for file in file_list_before_upload:
+    filename = "copyobjectbucket/" + file
+    AwsTest('Aws can copy object to different bucket')\
+    .copy_object(filename, "destination-bucket", file)\
+    .execute_test().command_is_successful()
+
+#creating download_dir to download objects.
+download_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "copy_object_test_download")
+os.makedirs(download_dir, exist_ok=True)
+
+#Download files from destination bucket to local download_dir.
+AwsTest('Aws can Download folder recursively').download_objects("destination-bucket", download_dir)\
+        .execute_test().command_is_successful()
+
+#getting files from download_dir.
+file_list_after_download = os.listdir(download_dir)
+
+print("***************Checksum test start****************")
+corruption = False
+
+#calculating md5sum after downloading the objects, also comparing the checksums of files.
+md5sum_dict_after_download = {}
+for file in file_list_after_download:
+    path = os.path.join(download_dir, file)
+    md5sum_dict_after_download[file] = get_md5_sum(path)
+    if md5sum_dict_before_upload[file] != md5sum_dict_after_download[file]:
+        corruption = True
+        break
+
+#deleting all objects from source bucket.
+for file in file_list_before_upload:
+    AwsTest('Aws can delete '+ file + ' from source bucket').delete_object("copyobjectbucket", file)\
+    .execute_test().command_is_successful()
+
+#deleting source bucket.
+AwsTest('Aws can delete source bucket').delete_bucket("copyobjectbucket")\
+    .execute_test().command_is_successful()
+
+#deleting all objects from destination bucket.
+for file in file_list_before_upload:
+    AwsTest('Aws can delete '+ file + ' from destination bucket').delete_object("destination-bucket", file)\
+    .execute_test().command_is_successful()
+
+#deleting destination bucket.
+AwsTest('Aws can delete destination bucket').delete_bucket("destination-bucket")\
+    .execute_test().command_is_successful()
+
+if corruption:
+    assert False, "***************Checksum test Failed****************"
+else:
+    print("***************Checksum test successful ****************")
+
+
+#removing the directories.
+shutil.rmtree(upload_dir)
+shutil.rmtree(download_dir)
 
 #******** Create Bucket ********
 AwsTest('Aws can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
@@ -408,6 +504,44 @@ os.rmdir(temp_dir)
 
 
 # ************ CopyObject API supported *****************************************************************
+
+
+
+AwsTest('Aws can create bucket').create_bucket("sourcebucket").execute_test().command_is_successful()
+AwsTest('Aws can create object with canned acl input').put_object("sourcebucket", "sourceobj", canned_acl="public-read").execute_test().command_is_successful()
+
+test_msg = "Create account testAcc2"
+account_args = {'AccountName': 'testAcc2', 'Email': 'testAcc2@seagate.com', 'ldapuser': "sgiamadmin", 'ldappasswd': LdapInfo.get_ldap_admin_pwd()}
+account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+result = AuthTest(test_msg).create_account(**account_args).execute_test()
+result.command_should_match_pattern(account_response_pattern)
+account_response_elements = AuthTest.get_response_elements(result.status.stdout)
+testAcc2_access_key = account_response_elements['AccessKeyId']
+testAcc2_secret_key = account_response_elements['SecretKey']
+testAcc2_cannonicalid = account_response_elements['CanonicalId']
+testAcc2_email = "testAcc2@seagate.com"
+
+os.environ["AWS_ACCESS_KEY_ID"] = testAcc2_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = testAcc2_secret_key
+
+AwsTest('Aws can create bucket').create_bucket("destbucket").execute_test().command_is_successful()
+
+cmd = "curl -s -X PUT -H \"Accept: application/json\" -H \"Content-Type: application/json\" --header 'x-amz-copy-source: /sourcebucket/sourceobj' https://s3.seagate.com/destbucket/destobj --cacert /etc/ssl/stx-s3-clients/s3/ca.crt"
+AwsTest('CopyObject not accessible for allusers').execute_curl(cmd).execute_test().command_response_should_have("AccessDenied")
+
+AwsTest('Aws can delete destination bucket').delete_bucket("destbucket").execute_test().command_is_successful()
+
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+AwsTest('Aws can delete sourceobj').delete_object("sourcebucket", "sourceobj").execute_test().command_is_successful()
+AwsTest('Aws can delete sourcebucket').delete_bucket("sourcebucket").execute_test().command_is_successful()
+
+S3ClientConfig.access_key_id = testAcc2_access_key
+S3ClientConfig.secret_key = testAcc2_secret_key
+account_args = {'AccountName': 'testAcc2', 'Email': 'testAcc2@seagate.com',  'force': True}
+AuthTest('Delete account testAcc2').delete_account(**account_args).execute_test().command_response_should_have("Account deleted successfully")
+
 
 AwsTest('Aws can put object').put_object("seagatebucket", "1kfile", 1024)\
     .execute_test().command_is_successful()

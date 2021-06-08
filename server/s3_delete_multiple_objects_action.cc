@@ -136,7 +136,7 @@ void S3DeleteMultipleObjectsAction::validate_request_body(std::string content) {
     set_s3_error("BadDigest");
     send_response_to_s3_client();
   } else {
-    delete_request.initialize(content);
+    delete_request.initialize(request, content);
     if (delete_request.isOK()) {
       // AWS allows to delete maximum 1000 objects in one call
       if (delete_request.get_count() > MAX_OBJS_ALLOWED_TO_DELETE) {
@@ -237,10 +237,12 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info_successful() {
       object->set_objects_version_list_index_oid(
           bucket_metadata->get_objects_version_list_index_oid());
 
-      if (object->from_json(kv.second.second) != 0) {
+      if (object->from_json(kv.second.second) != 0 ||
+          !delete_request.validate_attrs(object->get_bucket_name(),
+                                         object->get_object_name())) {
         atleast_one_json_error = true;
         s3_log(S3_LOG_ERROR, request_id,
-               "Json Parsing failed. Index oid = "
+               "Invalid index value. Index oid = "
                "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
                object_list_index_oid.u_hi, object_list_index_oid.u_lo,
                kv.first.c_str(), kv.second.second.c_str());
@@ -360,6 +362,7 @@ void S3DeleteMultipleObjectsAction::delete_objects_metadata_successful() {
     delete_objects_response.add_success(obj->get_object_name());
     oids_to_delete.push_back(obj->get_oid());
     layout_id_for_objs_to_delete.push_back(obj->get_layout_id());
+    pv_ids_to_delete.push_back(obj->get_pvid());
   }
 
   if (delete_index_in_req < delete_request.get_count()) {
@@ -451,7 +454,7 @@ void S3DeleteMultipleObjectsAction::cleanup() {
     } else {
       // Now trigger the delete.
       motr_writer->delete_objects(
-          oids_to_delete, layout_id_for_objs_to_delete,
+          oids_to_delete, layout_id_for_objs_to_delete, pv_ids_to_delete,
           std::bind(&S3DeleteMultipleObjectsAction::cleanup_successful, this),
           std::bind(&S3DeleteMultipleObjectsAction::cleanup_failed, this));
     }

@@ -79,8 +79,7 @@ public class UserController extends AbstractController {
         if (usersCount >= maxAllowedIAMUserlimit) {
           LOGGER.error("Maximum allowed Users limit has exceeded (i.e." +
                        maxIAMUserLimit + ")");
-          return userResponseGenerator.maxUserLimitExceeded(
-              maxAllowedIAMUserlimit);
+          return userResponseGenerator.maxUserLimitExceeded(maxIAMUserLimit);
         }
       }
       catch (DataAccessException ex) {

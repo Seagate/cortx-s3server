@@ -27,6 +27,7 @@
 #include <gtest/gtest_prod.h>
 
 #include "lib/types.h"  // struct m0_uint128
+#include "fid/fid.h"    // struct m0_fid
 #include "s3_buffer_sequence.h"
 
 class RequestObject;
@@ -60,6 +61,11 @@ class S3ObjectDataCopier {
   bool copy_failed;
   bool read_in_progress;
   bool write_in_progress;
+  // Size of each ev buffer (e.g, 16384)
+  size_t size_of_ev_buffer;
+  // Queue of ev Buffers containing read data blocks,
+  // which will be freed after write data completion
+  std::deque<struct evbuffer*> read_data_buffer;
 
   void cleanup_blocks_written();
   void read_data_block();
@@ -79,11 +85,17 @@ class S3ObjectDataCopier {
   ~S3ObjectDataCopier();
 
   void copy(struct m0_uint128 src_obj_id, size_t object_size, int layout_id,
+            struct m0_fid pvid,
             std::function<bool(void)> check_shutdown_and_rollback,
             std::function<void(void)> on_success,
             std::function<void(void)> on_failure);
 
   const std::string& get_s3_error() { return s3_error; }
+  // Trims input 'buffer' to the expected size
+  // Used when we need specific portion of 'buffer', discarding the remianing
+  // data.
+  void get_buffers(S3BufferSequence& buffer, size_t total_size,
+                   size_t expected_size);
 
   friend class S3ObjectDataCopierTest;
 

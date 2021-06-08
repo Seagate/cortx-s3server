@@ -128,8 +128,14 @@ public abstract class AbstractResponseGenerator {
       return formatResponse(HttpResponseStatus.FORBIDDEN, "AccessDenied",
                             errorMessage);
     }
+   public
+    ServerResponse AccessDenied(String message) {
+      return formatResponse(HttpResponseStatus.FORBIDDEN, "AccessDenied",
+                            message);
+    }
 
-    public ServerResponse invalidAction() {
+   public
+    ServerResponse invalidAction() {
         String errorMessage = "The action or operation requested is "
                 + "invalid. Verify that the action is typed correctly.";
 
@@ -170,8 +176,8 @@ public abstract class AbstractResponseGenerator {
         String errorMessage = "The request was rejected because it referenced an "
                 + "entity that does not exist. ";
 
-        return formatResponse(HttpResponseStatus.UNAUTHORIZED, "NoSuchEntity",
-                errorMessage);
+        return formatResponse(HttpResponseStatus.NOT_FOUND, "NoSuchEntity",
+                              errorMessage);
     }
 
     public ServerResponse operationNotSupported() {
@@ -327,7 +333,7 @@ public abstract class AbstractResponseGenerator {
 
    public
     ServerResponse noSuchEntity(String errorMessage) {
-      return formatResponse(HttpResponseStatus.UNAUTHORIZED, "NoSuchEntity",
+      return formatResponse(HttpResponseStatus.NOT_FOUND, "NoSuchEntity",
                             errorMessage);
     }
 

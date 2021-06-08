@@ -38,6 +38,8 @@ S3ObjectDataCopier::S3ObjectDataCopier(
       motr_api(std::move(motr_api)) {
 
   request_id = this->request_object->get_request_id();
+  size_of_ev_buffer = g_option_instance->get_libevent_pool_buffer_size();
+  assert(read_data_buffer.size() == 0);
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 }
 
@@ -89,6 +91,14 @@ void S3ObjectDataCopier::read_data_block_success() {
 
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, request_id, "Reading a part of data succeeded");
+  // Save ev buffer containing the read data, which will be freed after
+  // data write completion.
+  struct evbuffer* read_buffer = motr_reader->get_evbuffer_ownership();
+  if (read_buffer) {
+    read_data_buffer.push_back(read_buffer);
+    s3_log(S3_LOG_DEBUG, request_id, "Added read buffer (%p) to queue",
+           read_buffer);
+  }
 
   assert(read_in_progress);
   read_in_progress = false;
@@ -121,38 +131,23 @@ void S3ObjectDataCopier::read_data_block_success() {
   }
   // Calculating actial size of data that has just been read
 
-  for (size_t i = 0, n = data_blocks_read.size() - 1; i < n; ++i) {
+  for (size_t i = 0, n = data_blocks_read.size() - 1; i <= n; ++i) {
     const auto motr_block_size = data_blocks_read[i].second;
-    assert(motr_block_size == motr_unit_size);
+    assert(motr_block_size == size_of_ev_buffer);
 
     // We can use multiplication, but something may change in the future
     bytes_in_chunk_count += motr_block_size;
   }
   if (bytes_in_chunk_count >= bytes_left_to_read) {
-    s3_log(S3_LOG_ERROR, request_id,
+    s3_log(S3_LOG_DEBUG, request_id,
            "Too many data has been read. Data left - %zu, got - %zu",
            bytes_left_to_read, bytes_in_chunk_count);
-
-    copy_failed = true;
-    set_s3_error("InternalError");
-
-    if (!write_in_progress) {
-      this->on_failure();
-    }
-    return;
-  }
-  bytes_left_to_read -= bytes_in_chunk_count;
-
-  auto& r_last_block_size =
-      data_blocks_read[data_blocks_read.size() - 1].second;
-
-  if (r_last_block_size >= bytes_left_to_read) {
-    r_last_block_size = bytes_left_to_read;
+    get_buffers(data_blocks_read, bytes_in_chunk_count, bytes_left_to_read);
+    bytes_in_chunk_count = bytes_left_to_read;
     bytes_left_to_read = 0;
   } else {
-    bytes_left_to_read -= r_last_block_size;
+    bytes_left_to_read -= bytes_in_chunk_count;
   }
-  bytes_in_chunk_count += r_last_block_size;
 
   s3_log(S3_LOG_DEBUG, request_id, "Got %zu bytes in %zu blocks",
          bytes_in_chunk_count, data_blocks_read.size());
@@ -200,14 +195,13 @@ void S3ObjectDataCopier::write_data_block() {
   data_blocks_writing = std::move(data_blocks_read);
   // We have just separated part of data for writing and
   // also freed a 'slot' for futher reading
-
   motr_writer->write_content(
       std::bind(&S3ObjectDataCopier::write_data_block_success, this),
       std::bind(&S3ObjectDataCopier::write_data_block_failed, this),
       data_blocks_writing,  // NO std::move()!
                             // We must pass a copy of the stucture.
                             // Data buffers will be freed just after writing.
-      motr_unit_size);
+      size_of_ev_buffer);
 
   if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id, "Write of data block failed to start");
@@ -225,18 +219,17 @@ void S3ObjectDataCopier::write_data_block() {
 }
 
 void S3ObjectDataCopier::cleanup_blocks_written() {
-  auto* p_mem_pool_man = S3MempoolManager::get_instance();
-  assert(p_mem_pool_man != nullptr);
-
-  while (!data_blocks_writing.empty()) {
-    auto* p_data_block = data_blocks_writing.back().first;
-
-    if (p_data_block) {
-      p_mem_pool_man->release_buffer_for_unit_size(p_data_block,
-                                                   motr_unit_size);
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  if (!read_data_buffer.empty()) {
+    struct evbuffer* buffer = read_data_buffer.front();
+    read_data_buffer.pop_front();
+    if (buffer) {
+      s3_log(S3_LOG_DEBUG, request_id, "Released read data block (%p)", buffer);
+      // Below will release buffer to mempool
+      evbuffer_free(buffer);
     }
-    data_blocks_writing.pop_back();
   }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3ObjectDataCopier::write_data_block_success() {
@@ -306,7 +299,7 @@ void S3ObjectDataCopier::write_data_block_failed() {
 
 void S3ObjectDataCopier::copy(
     struct m0_uint128 src_obj_id, size_t object_size, int layout_id,
-    std::function<bool(void)> check_shutdown_and_rollback,
+    struct m0_fid pvid, std::function<bool(void)> check_shutdown_and_rollback,
     std::function<void(void)> on_success,
     std::function<void(void)> on_failure) {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
@@ -326,7 +319,7 @@ void S3ObjectDataCopier::copy(
       S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
 
   motr_reader = motr_reader_factory->create_motr_reader(
-      request_object, src_obj_id, layout_id, motr_api);
+      request_object, src_obj_id, layout_id, pvid, motr_api);
   motr_reader->set_last_index(0);
 
   bytes_left_to_read = object_size;
@@ -342,4 +335,48 @@ void S3ObjectDataCopier::copy(
 
 void S3ObjectDataCopier::set_s3_error(std::string s3_error) {
   this->s3_error = std::move(s3_error);
+}
+
+// Trims the input buffer (in-place) to the specified expected size
+void S3ObjectDataCopier::get_buffers(S3BufferSequence& buffer,
+                                     size_t total_size, size_t expected_size) {
+  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
+  assert(buffer.size() > 0);
+  assert(expected_size < total_size);
+  if (buffer.size() > 0 && (expected_size > 0 && expected_size < total_size)) {
+    // Process to shrink buffer
+    // Identify block in 'buffer' after which we need to discard all blocks
+    // For this, identify the last block (0 index based) in 'buffer' sequence
+    // that occupies the 'expected_size' of data
+    size_t last_block_occupied_by_expected_size =
+        ((expected_size + size_of_ev_buffer - 1) / size_of_ev_buffer) - 1;
+    assert(last_block_occupied_by_expected_size < buffer.size());
+    // Re-set the size of last block with data
+    // Also, discard memory of all subsequent blocks
+    size_t size_of_last_block = expected_size % size_of_ev_buffer;
+    if (size_of_last_block > 0) {
+      // The last block is not filled with all data bytes. Re-set its length
+      buffer[last_block_occupied_by_expected_size].second = size_of_last_block;
+    }
+    // Discard subsequent blocks from 'buffer'
+    size_t next_block = last_block_occupied_by_expected_size + 1;
+    if (next_block < buffer.size()) {
+      s3_log(S3_LOG_DEBUG, request_id,
+             "Discarding [%zu] blocks, starting from block index [%zu]",
+             (buffer.size() - last_block_occupied_by_expected_size - 1),
+             next_block);
+      auto* p_mem_pool_man = S3MempoolManager::get_instance();
+      assert(p_mem_pool_man != nullptr);
+      for (size_t i = buffer.size(); i > next_block; --i) {
+        auto* p_data_block = buffer.back().first;
+
+        if (p_data_block) {
+          p_mem_pool_man->release_buffer_for_unit_size(p_data_block,
+                                                       size_of_ev_buffer);
+        }
+        buffer.pop_back();
+      }
+    }
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
