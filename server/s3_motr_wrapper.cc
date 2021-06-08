@@ -180,13 +180,72 @@ int ConcreteMotrAPI::motr_idx_op(struct m0_idx *idx, enum m0_idx_opcode opcode,
 
 void ConcreteMotrAPI::motr_idx_fini(struct m0_idx *idx) { m0_idx_fini(idx); }
 
+/* Globals */
+typedef struct {
+	m0_uint128	   oid;
+	m0_bufvec      attr_data[MAX_ATTRS];
+	int            calls;
+} test_data Tdata;
 
-void retrive_data(m0_uint128   oid,struct m0_bufvec *attr)
+Tdata pi_data[MAX_OBJECTS_TDATA] = {0};
+unsigned int wt_idx = 0;
+m0_uint128 prev_oid = 0;
+
+
+#define MAX_ATTRS         128
+#define MAX_OBJECTS_TDATA 10
+
+void retrive_data(m0_uint128   oid,struct m0_bufvec *attr,m0_bindex_t offset)
 {
+	int i;
+	/* Search and get index*/
+	for(i = 0; i<MAX_OBJECTS_TDATA;i++)
+	{
+		if(pi_data[wt_idx].oid.u_hi = oid.u_hi && pi_data[i].oid.u_lo = oid.u_lo)
+	}
+
+	if (0 == offset)
+		pi_data.calls = 0;
+	
+	/* Copy back the data to attr */
+	for (i = 0; i < attr->ov_vec.v_nr; i++) 
+	{
+		memcpy(attr->ov_buf[i],pi_data[wt_idx].attr_data[pi_data.calls].ov_buf[i],128);
+	}
+	pi_data.calls ++;
 }
 
-void store_data(m0_uint128     oid,struct m0_bufvec *attr)
+void store_data(m0_uint128     oid,struct m0_bufvec *attr, m0_bindex_t offset)
 {
+	int i;
+
+	if((prev_oid.u_hi || prev_oid.u_lo) && ((prev_oid.u_hi != oid.u_hi )|| (prev_oid.u_lo != oid.u_lo)))
+	{
+		/* Increment */
+		wt_idx += 1 ;
+	}
+
+
+	if (wt_idx == MAX_OBJECTS_TDATA)
+	{
+		assert(0);
+	}
+
+	/* Copy the attr unit */
+	pi_data[wt_idx].oid.u_hi = oid.u_hi;
+	pi_data[wt_idx].oid.u_lo = oid.u_lo;
+
+	/* Copy attrs */
+	if (0 == offset)
+		pi_data.calls = 0;
+
+	m0_bufvec_alloc(&(pi_data[wt_idx].attr_data[pi_data.calls]),attr->ov_vec.v_nr,128);
+	for (i = 0; i < attr->ov_vec.v_nr; i++) 
+	{
+		memcpy(pi_data[wt_idx].attr_data[pi_data.calls].ov_buf[i],attr->ov_buf[i],128);
+	}
+	pi_data.calls ++;
+			
 }
 
 
@@ -207,17 +266,15 @@ int ConcreteMotrAPI::motr_obj_op(struct m0_obj *obj, enum m0_obj_opcode opcode,
     (*op)->op_sm.sm_state = M0_OS_INITIALISED;
     return 0;
   }
-
-
   /* Backup / Populate the attr */	
-
+# if 1
   /** Read object data. */
   if (opcode == M0_OC_READ)
-  retrive_data(obj->ob_entity.en_id, attr);	
+  retrive_data(obj->ob_entity.en_id, attr,ext->iv_index[0]);	
   /** Write object data. */
   if (opcode == M0_OC_WRITE)
-  store_data(obj->ob_entity.en_id, attr);
-
+  store_data(obj->ob_entity.en_id, attr,ext->iv_index[0]);
+#endif
   return m0_obj_op(obj, opcode, ext, data, attr, mask, flags, op);
 }
 
