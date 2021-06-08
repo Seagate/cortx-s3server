@@ -172,8 +172,7 @@ void S3CopyObjectActionTest::create_dst_object_metadata() {
 }
 
 TEST_F(S3CopyObjectActionTest, ValidateCopyObjectRequestSourceBucketEmpty) {
-  EXPECT_CALL(*ptr_mock_request, get_headers_copysource()).Times(1).WillOnce(
-      Return("sourcebucketsourceobject"));
+  action_under_test->additional_bucket_name = std::string();
   EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-metadata-directive"))
       .Times(1)
       .WillOnce(Return(""));
@@ -262,14 +261,16 @@ TEST_F(S3CopyObjectActionTest,
   std::string destination_bucket = "my-bucket";
   std::string destination_object = "my-object";
 
+  action_under_test->additional_bucket_name = "my-bucket";
+  action_under_test->additional_object_name = "my-object";
+
   EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-metadata-directive"))
       .Times(1)
       .WillOnce(Return(""));
+
   EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-tagging-directive"))
       .Times(1)
       .WillOnce(Return(""));
-  EXPECT_CALL(*ptr_mock_request, get_headers_copysource()).Times(1).WillOnce(
-      Return("my-bucket/my-object"));
 
   EXPECT_CALL(*ptr_mock_request, get_bucket_name())
       .Times(AtLeast(1))
@@ -284,8 +285,6 @@ TEST_F(S3CopyObjectActionTest,
 
   action_under_test->validate_copyobject_request();
 
-  ASSERT_STREQ("my-bucket", action_under_test->additional_bucket_name.c_str());
-  ASSERT_STREQ("my-object", action_under_test->additional_object_name.c_str());
   EXPECT_EQ(action_under_test->s3_put_action_state,
             S3PutObjectActionState::validationFailed);
   EXPECT_STREQ("InvalidRequest",
@@ -294,14 +293,27 @@ TEST_F(S3CopyObjectActionTest,
 
 TEST_F(S3CopyObjectActionTest, ValidateCopyObjectRequestSuccess) {
   std::string destination_bucket = "my-destination-bucket";
+  action_under_test->additional_bucket_name = "my-source-bucket";
+  action_under_test->additional_object_name = "my-source-object";
+  action_under_test->clear_tasks();
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3CopyObjectActionTest::func_callback_one, this);
+
   EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-metadata-directive"))
       .Times(1)
       .WillOnce(Return(""));
   EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-tagging-directive"))
       .Times(1)
       .WillOnce(Return(""));
-  EXPECT_CALL(*ptr_mock_request, get_headers_copysource()).Times(1).WillOnce(
-      Return("my-source-bucket/my-source-object"));
+
+  action_under_test->additional_object_metadata =
+      action_under_test->object_metadata_factory->create_object_metadata_obj(
+          ptr_mock_request);
+
+  EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
+              get_content_length())
+      .Times(2)
+      .WillRepeatedly(Return(1024));
 
   EXPECT_CALL(*ptr_mock_request, get_bucket_name())
       .Times(AtLeast(1))
@@ -309,12 +321,9 @@ TEST_F(S3CopyObjectActionTest, ValidateCopyObjectRequestSuccess) {
 
   EXPECT_CALL(*ptr_mock_request, get_object_name()).Times(0);
 
-  EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata), load(_, _))
-      .Times(AtLeast(1));
-
   action_under_test->validate_copyobject_request();
 
-  EXPECT_TRUE(action_under_test->additional_bucket_metadata != NULL);
+  EXPECT_EQ(1, call_count_one);
 }
 
 TEST_F(S3CopyObjectActionTest,
@@ -733,7 +742,6 @@ TEST_F(S3CopyObjectActionTest, SendFailedResponseSpread) {
 }
 
 TEST_F(S3CopyObjectActionTest, DestinationAuthorization) {
-
   create_dst_bucket_metadata();
   action_under_test->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test,
@@ -742,12 +750,22 @@ TEST_F(S3CopyObjectActionTest, DestinationAuthorization) {
       action_under_test->bucket_metadata_factory->create_bucket_metadata_obj(
           ptr_mock_request);
 
+  action_under_test->additional_object_metadata =
+      action_under_test->object_metadata_factory->create_object_metadata_obj(
+          ptr_mock_request);
+
+  const std::map<std::string, std::string> tagsmap;
+  EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata, get_tags())
+      .Times(1)
+      .WillOnce(ReturnRef(tagsmap));
   std::string MockJsonResponse("Mockresponse");
   EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
               get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::present));
   EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
               get_policy_as_json()).WillRepeatedly(ReturnRef(MockJsonResponse));
+
   action_under_test->set_authorization_meta();
+
   EXPECT_EQ(1, call_count_one);
 }

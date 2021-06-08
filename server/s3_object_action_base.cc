@@ -108,19 +108,7 @@ void S3ObjectAction::fetch_object_info() {
 
 void S3ObjectAction::fetch_object_info_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  request->set_object_size(object_metadata->get_content_length());
-  // load additional metadata if any. Below are the APIs for which
-  // additional metadata needs to be loaded:
-
-  // CopyObject API
-  std::string source = request->get_headers_copysource();
-  if (!source.empty()) {  // this is CopyObject API request
-    get_source_bucket_and_object(source);
-    fetch_additional_bucket_info();
-  } else {
-    next();
-  }
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+  next();
 }
 
 void S3ObjectAction::fetch_additional_bucket_info() {
