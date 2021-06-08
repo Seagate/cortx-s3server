@@ -174,6 +174,8 @@ unsigned long get_sizeof_pi_info(struct s3_motr_rw_op_context *ctx) {
 
 // To create a motr RW operation
 // default allocate_bufs = true -> allocate memory for each buffer
+// 1st Param Total no of buffers.
+// 2nd Param No of buffers per motr unit/block
 struct s3_motr_rw_op_context *create_basic_rw_op_ctx(
     size_t motr_buf_count, size_t buffers_per_motr_unit, size_t unit_size,
     bool allocate_bufs) {
@@ -231,8 +233,14 @@ struct s3_motr_rw_op_context *create_basic_rw_op_ctx(
              __func__);
       return NULL;
     }
-    rc = m0_bufvec_alloc(ctx->attr, motr_checksums_buf_count,
-                         get_sizeof_pi_info(ctx));
+
+    if (S3Option::get_instance()->is_s3_read_di_check_enabled()) {
+      rc = m0_bufvec_alloc(ctx->attr, motr_checksums_buf_count,
+                           get_sizeof_pi_info(ctx));
+    } else {
+      rc = m0_bufvec_alloc(ctx->attr, motr_buf_count, 1);
+    }
+
 #if 0
 
   } else {
