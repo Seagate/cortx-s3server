@@ -63,18 +63,24 @@ class SetupCmd(object):
 
   def __init__(self,config: str):
     """Constructor."""
+    self.endpoint = None
+    self._url = None
+    self._provisioner_confstore = None
+    self._s3_confkeys_store = None
+    self.machine_id = None
+    self.cluster_id = None
+
     s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
     self.logger = logging.getLogger(s3deployment_logger_name)
     
     if config is None:
-      self.logger.error(f'Empty Config url')
+      self.logger.warning(f'Empty Config url')
       return
 
     if not config.strip():
       self.logger.error(f'Config url:[{config}] must be a valid url path')
       raise Exception('Empty config URL path')
 
-    self.endpoint = None
     self._url = config
     self._provisioner_confstore = S3CortxConfStore(self._url, 'setup_prov_index')
     self._s3_confkeys_store = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'setup_s3keys_index')
