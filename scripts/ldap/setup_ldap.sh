@@ -78,7 +78,7 @@ do
 done
 
 INSTALLDIR="/opt/seagate/cortx/s3/install/ldap"
-yum list installed selinux-policy && yum update -y selinux-policy
+
 
 # Clean up old configuration if any for idempotency
 # Removing schemas
