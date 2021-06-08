@@ -29,7 +29,7 @@ S3_SERVER_CONFIG:                                     # Section for S3 Server
    S3_LOG_ENABLE_BUFFERING: false                       # DEBUG, INFO & WARN logs are buffered if buffering is enabled. ERROR and FATAL logs are always flushed. Default is true.
    S3_ENABLE_AUTH_SSL: true                             # Enable ssl communication between s3 server and auth server
    S3_REUSEPORT: false                                  # Enable reusing s3 server port
-   S3_WRITE_DATA_INTEGRITY_CHECK: false                  # TBD
+   S3_WRITE_DATA_INTEGRITY_CHECK: true                  # TBD
    S3_READ_DATA_INTEGRITY_CHECK: false                   # TBD
    S3_METADATA_INTEGRITY_CHECK: true                    # TBD
    S3_SALT_CHECKSUM: true                               # TBD 
@@ -113,7 +113,7 @@ S3_MOTR_CONFIG:                                     # Section for S3 Motr
    S3_MOTR_OPERATION_WAIT_PERIOD: 90                  # 90 s, Maximum wait duration for sync motr operations.
    S3_MOTR_FIRST_READ_SIZE: 4                         # Num of units of First Read Request to MOTR
 S3_THIRDPARTY_CONFIG:
-   S3_LIBEVENT_POOL_BUFFER_SIZE: 4096                   # Pool buffer size
+   S3_LIBEVENT_POOL_BUFFER_SIZE: 16384                   # Pool buffer size
                                                         # For S3_MOTR_UNIT_SIZE of size 1MB, it is recommended to have S3_LIBEVENT_POOL_BUFFER_SIZE of size 16384
    S3_LIBEVENT_MAX_READ_SIZE: 16384                     # Maximum read in a single read operation
                                                         # as per libevent documentation in code, user should not try to read more than this value
