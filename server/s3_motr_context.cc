@@ -220,10 +220,6 @@ struct s3_motr_rw_op_context *create_basic_rw_op_ctx(
            __func__, motr_buf_count, unit_size, allocate_bufs);
     return NULL;
   }
-#if 0
-  if (S3Option::get_instance()->is_s3_write_di_check_enabled() ||
-      S3Option::get_instance()->is_s3_read_di_check_enabled()) {
-#endif
     rc = m0_bufvec_alloc(ctx->pi_bufvec, buffers_per_motr_unit, sizeof(void *));
     if (rc != 0) {
       s3_bufvec_free_aligned(ctx->data, unit_size, allocate_bufs);
@@ -256,6 +252,11 @@ struct s3_motr_rw_op_context *create_basic_rw_op_ctx(
            __func__, motr_buf_count);
     return NULL;
   }
+  for (unsigned int i = 0; i < motr_checksums_buf_count; i++) {
+    struct m0_md5_inc_context_pi *s3_pi =
+        (struct m0_md5_inc_context_pi *)ctx->attr->ov_buf[i];
+    s3_pi->hdr.pi_type = ctx->pi.hdr.pi_type;
+  }
 
   rc = m0_indexvec_alloc(ctx->ext, motr_buf_count);
   if (rc != 0) {
@@ -281,7 +282,6 @@ int free_basic_rw_op_ctx(struct s3_motr_rw_op_context *ctx) {
   s3_bufvec_free_aligned(ctx->data, ctx->unit_size, ctx->allocated_bufs);
   m0_bufvec_free(ctx->attr);
   m0_indexvec_free(ctx->ext);
-  m0_bufvec_free(ctx->pi_bufvec);
   free(ctx->ext);
   free(ctx->data);
   free(ctx->attr);

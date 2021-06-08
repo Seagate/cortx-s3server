@@ -26,6 +26,8 @@
 #include <string>
 #include <gtest/gtest_prod.h>
 #include <openssl/md5.h>
+#include "motr/client.h"
+#include "s3_motr_wrapper.h"
 
 class MD5hash {
   MD5_CTX md5ctx, md5ctx_pre_unaligned;
@@ -33,9 +35,15 @@ class MD5hash {
   int status;
   bool is_finalized = false;
   bool checksum_saved = false;
+  bool is_initialized = false;
+  bool native_call = false;
+  struct m0_md5_inc_context_pi s3_md5_inc_digest_pi;
+  std::shared_ptr<MotrAPI> s3_motr_api;
+  struct m0_bufvec pi_bufvec;
+  m0_pi_calc_flag flag;
 
  public:
-  MD5hash();
+  MD5hash(std::shared_ptr<MotrAPI> motr_api = nullptr);
   MD5hash(bool call_init);
   int Update(const char *input, size_t length);
   void save_motr_unit_checksum(unsigned char *curr_digest);
@@ -46,7 +54,8 @@ class MD5hash {
   void *get_prev_unaligned_checksum();
   int Finalize();
   void Finalized();
-  void Reset();
+  void Initialized();
+  void Reset(std::shared_ptr<MotrAPI> motr_api);
   void Reset(bool call_init);
   unsigned char *get_md5_digest() { return md5_digest; }
 
