@@ -79,7 +79,6 @@ done
 
 INSTALLDIR="/opt/seagate/cortx/s3/install/ldap"
 
-
 # Clean up old configuration if any for idempotency
 # Removing schemas
 rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
