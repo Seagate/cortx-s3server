@@ -257,6 +257,11 @@ class ConfigCmd(SetupCmd):
     # get the motr_max_units_per_request count from the config file
     motr_max_units_per_request = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST'))
     self.logger.info(f'motr_max_units_per_request: {motr_max_units_per_request}')
+    #validate min and max unit should be between 1 to 128
+    if 1 <= int(motr_max_units_per_request) <= 128:
+      self.logger.error("motr_max_units_per_request is in valid range")
+    else:
+      raise S3PROVError("motr_max_units_per_request should be between 1 to 128")
 
     # update the S3_MOTR_MAX_UNITS_PER_REQUEST in s3config.yaml file
     s3configfile = self.get_confkey('S3_CONFIG_FILE')
