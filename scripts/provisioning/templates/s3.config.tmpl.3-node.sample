@@ -50,6 +50,8 @@ cortx:
       sgiam:
         user: "sgiamadmin"
         secret: "gAAAAABgWFPz2w_t6IBVictZmgTCgBXn5V-oy2JUVtvZkJvHM5KaaZKXRwtz4YKYieIy8mVKF8PUaZ6WYJEttcsi2KDpLOk9Vg=="
+    s3:
+      motr_max_units_per_request : "8"
 cluster:
   TMPL_CLUSTER_ID:
     site:

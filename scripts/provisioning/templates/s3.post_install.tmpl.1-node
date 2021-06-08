@@ -17,7 +17,3 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-cortx:
-  software:
-    s3:
-      motr_max_units_per_request : "8"

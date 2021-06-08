@@ -34,6 +34,8 @@ cortx:
       sgiam:
         user: "sgiamadmin"
         secret: "TMPL_SGIAM_SECRET_KEY"
+    s3:
+      motr_max_units_per_request : "8"
 cluster:
   TMPL_CLUSTER_ID:
     site:

@@ -32,13 +32,13 @@
 #                      storage_set_count which is component of a key.
 
 POST_INSTALL:
-  CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST : "cortx>software>s3>motr_max_units_per_request"
 PREPARE:
 CONFIG:
   CONFSTORE_LDAPADMIN_USER_KEY: "cortx>software>openldap>sgiam>user"
   CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>software>openldap>sgiam>secret"
   CONFSTORE_ROOTDN_USER_KEY: "cortx>software>openldap>root>user"
   CONFSTORE_ROOTDN_PASSWD_KEY: "cortx>software>openldap>root>secret"
+  CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST : "cortx>software>s3>motr_max_units_per_request"
   CONFSTORE_CLUSTER_ID_KEY: "server_node>machine-id>cluster_id"
   CONFSTORE_S3INSTANCES_KEY: "server_node>machine-id>s3_instances"
   CONFSTORE_HOSTNAME_KEY: "server_node>machine-id>hostname"
