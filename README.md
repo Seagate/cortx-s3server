@@ -1,6 +1,5 @@
 [![ license](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/Seagate/EOS-Sandbox/blob/master/LICENSE) 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/e02de8d738bb4701b6345624ea2de66c)](https://www.codacy.com/gh/Seagate/cortx-s3server/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Seagate/cortx-s3server&amp;utm_campaign=Badge_Grade)
-![codacy-analysis-cli](https://github.com/Seagate/EOS-Sandbox/workflows/codacy-analysis-cli/badge.svg)
 [![Slack](https://img.shields.io/badge/chat-on%20Slack-blue")](https://cortx.link/join-slack) [![YouTube](https://img.shields.io/badge/Video-YouTube-red)](https://cortx.link/videos) [![GitHub contributors](https://img.shields.io/github/contributors/Seagate/cortx-s3server)](https://github.com/Seagate/cortx-s3server/graphs/contributors/)
 
 # CORTX-S3 Server
