@@ -398,8 +398,6 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /opt/seagate/cortx/s3/conf/s3.reset.tmpl.1-node.sample
 /opt/seagate/cortx/s3/conf/s3.cleanup.tmpl.1-node
 /opt/seagate/cortx/s3/conf/s3.cleanup.tmpl.1-node.sample
-/opt/seagate/cortx/s3/conf/s3.upgrade.tmpl.1-node
-/opt/seagate/cortx/s3/conf/s3.upgrade.tmpl.1-node.sample
 /opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.properties
 /opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.properties
 /opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml
@@ -414,7 +412,8 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /opt/seagate/cortx/s3/bin/testcmd.py
 /opt/seagate/cortx/s3/bin/resetcmd.py
 /opt/seagate/cortx/s3/bin/preparecmd.py
-/opt/seagate/cortx/s3/bin/upgradecmd.py
+/opt/seagate/cortx/s3/bin/preupgradecmd.py
+/opt/seagate/cortx/s3/bin/postupgradecmd.py
 /opt/seagate/cortx/s3/bin/cleanupcmd.py
 /opt/seagate/cortx/s3/bin/ldapaccountaction.py
 /opt/seagate/cortx/s3/bin/merge.py
