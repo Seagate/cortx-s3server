@@ -21,6 +21,7 @@
 import os
 import ntpath
 from shutil import copyfile
+from pathlib import Path
 from setupcmd import SetupCmd, S3PROVError
 
 class PreUpgradeCmd(SetupCmd):
@@ -36,7 +37,7 @@ class PreUpgradeCmd(SetupCmd):
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name} {self.url}")
+    self.logger.info(f"Processing {self.name}")
     try:
       self.logger.info("validations started")
       self.phase_prereqs_validate(self.name)
@@ -58,6 +59,9 @@ class PreUpgradeCmd(SetupCmd):
       "/opt/seagate/cortx/auth/resources/keystore.properties.sample",
       "/opt/seagate/cortx/auth/resources/authserver.properties.sample"
     }
+
+    # make S3 temp dir if does not exist 
+    Path(self.s3_tmp_dir).mkdir(parents=True, exist_ok=True)
 
     for sampleconfigfile in sampleconfigfiles:
       # check file exist

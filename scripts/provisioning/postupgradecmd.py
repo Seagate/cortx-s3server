@@ -34,7 +34,7 @@ class PostUpgradeCmd(SetupCmd):
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name} {self.url}")
+    self.logger.info(f"Processing {self.name}")
     try:
       self.logger.info("validations started")
       self.phase_prereqs_validate(self.name)
