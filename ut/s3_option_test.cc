@@ -114,7 +114,7 @@ TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_EQ(1, instance->get_motr_idx_service_id());
   EXPECT_TRUE(instance->get_motr_is_oostore());
   EXPECT_FALSE(instance->is_s3_read_di_check_enabled());
-  EXPECT_FALSE(instance->is_s3_write_di_check_enabled());
+  EXPECT_TRUE(instance->is_s3_write_di_check_enabled());
   EXPECT_TRUE(instance->is_s3_metadata_integrity_check_enabled());
   EXPECT_TRUE(instance->is_s3_salt_checksum_enabled());
   EXPECT_FALSE(instance->get_motr_is_read_verify());
