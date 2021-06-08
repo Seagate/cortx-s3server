@@ -304,9 +304,9 @@ bool S3MotrReader::ValidateStoredMD5Chksum(m0_bufvec *motr_data_unit,
          ((m0_md5_inc_context_pi *)(pi_info))->prev_context, sizeof(MD5_CTX));
   md5_info.hdr.pi_type = M0_PI_TYPE_MD5_INC_CONTEXT;
 
-  int rc = m0_client_calculate_pi((struct m0_generic_pi *)&md5_info, seed,
-                                  motr_data_unit, (m0_pi_calc_flag)0,
-                                  current_digest, NULL);
+  int rc = s3_motr_api->motr_client_calculate_pi(
+      (struct m0_generic_pi *)&md5_info, seed, motr_data_unit,
+      (m0_pi_calc_flag)0, current_digest, NULL);
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, "", "%s Motr API to Calculate PI Info failed.",
            __func__);
