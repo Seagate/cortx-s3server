@@ -116,12 +116,13 @@ void S3CopyObjectAction::validate_copyobject_request() {
   if (additional_bucket_name.empty() || additional_object_name.empty()) {
     set_s3_error("InvalidArgument");
     send_response_to_s3_client();
+    return;
   } else if (if_source_and_destination_same()) {
     s3_put_action_state = S3PutObjectActionState::validationFailed;
     set_s3_error("InvalidRequest");
     send_response_to_s3_client();
+    return;
   }
-
   if (MaxCopyObjectSourceSize <
       additional_object_metadata->get_content_length()) {
     s3_put_action_state = S3PutObjectActionState::validationFailed;
