@@ -482,7 +482,7 @@ class SetupCmd(object):
       conf_file_keys = cs_conf_file.get_all_keys()
 
       # compare the keys of sample file and config file
-      if conf_sample_keys == conf_file_keys:
+      if conf_sample_keys.sort() == conf_file_keys.sort():
           self.logger.info(f'config file {str(configFile)} validated successfully.')
       else:
           self.logger.error(f'config file {str(conf_file)} and sample file {str(conf_sample)} keys does not matched.')
