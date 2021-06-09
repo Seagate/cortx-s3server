@@ -73,11 +73,11 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
         List<String> actionList =
             Arrays.asList(requestBody.get("S3ActionList").split(","));
         for (String action : actionList) {
-          action = "s3:" + action.toLowerCase();
+          String dependentOperation = "s3:" + action.toLowerCase();
           LOGGER.debug("copy object dependent operation to authorize - " +
-                       action);
+                       dependentOperation);
           ServerResponse response =
-              authorizeOperation(requestBody, action, requestor);
+              authorizeOperation(requestBody, dependentOperation, requestor);
           if (response != null &&
               response.getResponseStatus() != HttpResponseStatus.OK) {
             serverResponse = response;
