@@ -52,6 +52,8 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
   @Override public ServerResponse authorizePolicy(
       Requestor requestor, Map<String, String> requestBody) {
     ServerResponse serverResponse = null;
+AuthorizationResponseGenerator responseGenerator =
+            new AuthorizationResponseGenerator();
     // authorizePolicy will return NULL if no relevant entry found in policy
     // authorized if match is found
     // AccessDenied if Deny found
@@ -81,7 +83,16 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
             serverResponse = response;
             break;
           }
+          else if(response == null && PolicyAuthorizedS3Actions.getInstance().isOnlyPolicyAuthorizationRequired(action)) {
+LOGGER.debug("copyobject scenario and only policy authorization required for action- "+ action);
+    			  serverResponse = responseGenerator.AccessDenied();
+    			  break;
+    		  }
         }
+      }
+else if(PolicyAuthorizedS3Actions.getInstance().isOnlyPolicyAuthorizationRequired(requestBody.get("S3Action")) && serverResponse == null) {
+LOGGER.debug("Only Policy Authorization is required");
+    	  serverResponse = responseGenerator.ok();
       }
     }
     catch (Exception e) {
