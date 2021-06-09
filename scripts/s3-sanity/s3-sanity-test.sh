@@ -211,14 +211,14 @@ fi
 echo "*** S3 Sanity tests start ***"
 
 echo "Replication test starts"
-cmd_out="$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://"$end_point")"
-accounts_before="$(echo $cmd_out | grep accountId | wc -l)"
+cmd_out="$(s3iamcli listaccounts --ldapuser sgiamadmin --ldappasswd "$ldappasswd" --no-ssl --showall)"
+accounts_before="$(echo $cmd_out | grep AccountName | wc -l)"
 END=10
 for "((a=1;a<=$END;a++))"
 do
 	cmd_out=""
-	cmd_out=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://"$end_point")
-	accounts_after="$(echo $cmd_out | grep accountId | wc -l)"
+	cmd_out=$(s3iamcli listaccounts --ldapuser sgiamadmin --ldappasswd "$ldappasswd" --no-ssl --showall)
+	accounts_after=$(echo $cmd_out | grep AccountName | wc -l)
 	if "[ $accounts_before != $accounts_after ]"
 	then
 	   echo "S3 sanity test failed"
