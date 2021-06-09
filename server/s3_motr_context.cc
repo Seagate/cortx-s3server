@@ -105,34 +105,6 @@ static int s3_bufvec_alloc_aligned(struct m0_bufvec *bufvec, uint32_t num_segs,
   return 0;
 }
 
-
-int s3_bufvec_alloc_offset(struct m0_bufvec *bufvec,struct m0_bufvec *bufvec_dst,
-				  uint32_t offset,uint32_t num_segs, )
-{	
-	int i,last_seg = offset + num_segs;
-
-	bufvec_dst->ov_buf = NULL;
-	bufvec_dst->ov_vec.v_nr = num_segs;
-	bufvec_dst->ov_vec.v_count = (m0_bcount_t *)calloc(num_segs, sizeof(m0_bcount_t));
-	if (bufvec_dst->ov_vec.v_count == NULL) {
-	  s3_bufvec_free_aligned(bufvec_dst, unit_size, false);
-	  return -ENOMEM;
-	}
-	
-	bufvec_dst->ov_buf = (void **)calloc(num_segs, sizeof(void *));
-	if (bufvec_dst->ov_buf == NULL) {
-	  s3_bufvec_free_aligned(bufvec_dst, unit_size, false);
-	  return -ENOMEM;
-	}
-	
-	for (uint32_t i = 0; i < num_segs; i++, offset++)
-	{
-		bufvec_dst->ov_buf[i] = bufvec->ov_buf[offset]
-		bufvec_dst->ov_vec.v_count[i] = bufvec_dst->ov_vec.v_count[offset];
-	}	
-}
-
-
 struct s3_motr_obj_context *create_obj_context(size_t count) {
   s3_log(S3_LOG_DEBUG, "", "%s Entry with object count = %zu\n", __func__,
          count);

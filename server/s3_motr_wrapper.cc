@@ -93,6 +93,14 @@ int ConcreteMotrAPI::motr_client_calculate_pi(
     struct m0_generic_pi *pi, struct m0_pi_seed *seed, struct m0_bufvec *bvec,
     enum m0_pi_calc_flag flag, unsigned char *curr_digest,
     unsigned char *pi_value_without_seed) {
+  if (seed) {
+    s3_log(S3_LOG_INFO, "",
+           "%s fcontainer : %lu, fkey : %lu, Data offset : %lu", __func__,
+           seed->obj_id.f_container, seed->obj_id.f_key,
+           seed->data_unit_offset);
+  } else {
+    s3_log(S3_LOG_INFO, "", "%s Seed not passed.", __func__);
+  }
 
   return m0_client_calculate_pi(pi, seed, bvec, flag, curr_digest,
                                 pi_value_without_seed);
@@ -180,74 +188,122 @@ int ConcreteMotrAPI::motr_idx_op(struct m0_idx *idx, enum m0_idx_opcode opcode,
 
 void ConcreteMotrAPI::motr_idx_fini(struct m0_idx *idx) { m0_idx_fini(idx); }
 
+#if 1
+#define MAX_ATTRS 128
+#define MAX_OBJECTS_TDATA 100
+
 /* Globals */
 typedef struct {
-	m0_uint128	   oid;
-	m0_bufvec      attr_data[MAX_ATTRS];
-	int            calls;
-} test_data Tdata;
+  m0_uint128 oid;
+  m0_bufvec attr_data[MAX_ATTRS];
+  int calls;
+  int read;
+} Tdata;
 
 Tdata pi_data[MAX_OBJECTS_TDATA] = {0};
 unsigned int wt_idx = 0;
-m0_uint128 prev_oid = 0;
+m0_uint128 prev_oid = {0};
 
+void print_pi_info(struct m0_md5_inc_context_pi *pi_info) {
+  s3_log(S3_LOG_INFO, "", "%s ENTRY", __func__);
 
-#define MAX_ATTRS         128
-#define MAX_OBJECTS_TDATA 10
+  const char hex_tbl[] = "0123456789abcdef";
+  std::string s_hex;
+  s_hex.reserve(sizeof(MD5_CTX) * 2);
+  for (size_t i = 0; i < sizeof(MD5_CTX); ++i) {
+    const unsigned ch = pi_info->prev_context[i] & 255;
+    s_hex += hex_tbl[ch >> 4];
+    s_hex += hex_tbl[ch & 15];
+  }
+  s3_log(S3_LOG_INFO, "", "%s prev_context : %s", __func__, s_hex.c_str());
 
-void retrive_data(m0_uint128   oid,struct m0_bufvec *attr,m0_bindex_t offset)
-{
-	int i;
-	/* Search and get index*/
-	for(i = 0; i<MAX_OBJECTS_TDATA;i++)
-	{
-		if(pi_data[wt_idx].oid.u_hi = oid.u_hi && pi_data[i].oid.u_lo = oid.u_lo)
-	}
+  std::string s_hex_1;
+  s_hex_1.reserve(MD5_DIGEST_LENGTH * 2);
+  for (size_t i = 0; i < MD5_DIGEST_LENGTH; ++i) {
+    const unsigned ch = pi_info->pi_value[i] & 255;
+    s_hex_1 += hex_tbl[ch >> 4];
+    s_hex_1 += hex_tbl[ch & 15];
+  }
+  s3_log(S3_LOG_INFO, "", "%s pi_value : %s", __func__, s_hex_1.c_str());
 
-	if (0 == offset)
-		pi_data.calls = 0;
-	
-	/* Copy back the data to attr */
-	for (i = 0; i < attr->ov_vec.v_nr; i++) 
-	{
-		memcpy(attr->ov_buf[i],pi_data[wt_idx].attr_data[pi_data.calls].ov_buf[i],128);
-	}
-	pi_data.calls ++;
+  s3_log(S3_LOG_INFO, "", "%s EXIT", __func__);
 }
 
-void store_data(m0_uint128     oid,struct m0_bufvec *attr, m0_bindex_t offset)
-{
-	int i;
+void retrive_data(m0_uint128 oid, struct m0_bufvec *attr, m0_bindex_t offset) {
+  /* Search and get index*/
+  s3_log(S3_LOG_INFO, "", "%s ENTRY", __func__);
+  s3_log(S3_LOG_INFO, "", "%s Input oid hi : %lu", __func__, oid.u_hi);
+  s3_log(S3_LOG_INFO, "", "%s Input oid lo : %lu", __func__, oid.u_lo);
 
-	if((prev_oid.u_hi || prev_oid.u_lo) && ((prev_oid.u_hi != oid.u_hi )|| (prev_oid.u_lo != oid.u_lo)))
-	{
-		/* Increment */
-		wt_idx += 1 ;
-	}
+  for (size_t i = 0; i < MAX_OBJECTS_TDATA; i++) {
+    s3_log(S3_LOG_INFO, "", "%s Matched oid hi : %lu", __func__,
+           pi_data[i].oid.u_hi);
+    s3_log(S3_LOG_INFO, "", "%s Matched oid lo : %lu", __func__,
+           pi_data[i].oid.u_lo);
 
+    if (pi_data[i].oid.u_hi == oid.u_hi && pi_data[i].oid.u_lo == oid.u_lo) {
+      s3_log(S3_LOG_INFO, "", "%s Match Found", __func__);
 
-	if (wt_idx == MAX_OBJECTS_TDATA)
-	{
-		assert(0);
-	}
+      if (0 == offset) pi_data[i].read = 0;
 
-	/* Copy the attr unit */
-	pi_data[wt_idx].oid.u_hi = oid.u_hi;
-	pi_data[wt_idx].oid.u_lo = oid.u_lo;
-
-	/* Copy attrs */
-	if (0 == offset)
-		pi_data.calls = 0;
-
-	m0_bufvec_alloc(&(pi_data[wt_idx].attr_data[pi_data.calls]),attr->ov_vec.v_nr,128);
-	for (i = 0; i < attr->ov_vec.v_nr; i++) 
-	{
-		memcpy(pi_data[wt_idx].attr_data[pi_data.calls].ov_buf[i],attr->ov_buf[i],128);
-	}
-	pi_data.calls ++;
-			
+      /* Copy back the data to attr */
+      for (size_t k = 0; k < pi_data[i].attr_data[pi_data[i].read].ov_vec.v_nr;
+           k++) {
+        memcpy(attr->ov_buf[k], pi_data[i].attr_data[pi_data[i].read].ov_buf[k],
+               sizeof(m0_md5_inc_context_pi));
+        s3_log(S3_LOG_INFO, "",
+               "%s Printing Contents of buffer that was copied.", __func__);
+        print_pi_info((m0_md5_inc_context_pi *)pi_data[i]
+                          .attr_data[pi_data[i].read]
+                          .ov_buf[k]);
+      }
+      pi_data[i].read++;
+      break;
+    }
+  }
 }
 
+void store_data(m0_uint128 oid, struct m0_bufvec *attr, m0_bindex_t offset) {
+
+  s3_log(S3_LOG_INFO, "", "%s ENTRY", __func__);
+  s3_log(S3_LOG_INFO, "", "%s Input oid hi : %lu", __func__, oid.u_hi);
+  s3_log(S3_LOG_INFO, "", "%s Input oid lo : %lu", __func__, oid.u_lo);
+
+  if ((prev_oid.u_hi || prev_oid.u_lo) &&
+      ((prev_oid.u_hi != oid.u_hi) || (prev_oid.u_lo != oid.u_lo))) {
+    /* Increment */
+    wt_idx += 1;
+  }
+
+  if (wt_idx == MAX_OBJECTS_TDATA) {
+    assert(0);
+  }
+
+  /* Copy the attr unit */
+  pi_data[wt_idx].oid.u_hi = oid.u_hi;
+  pi_data[wt_idx].oid.u_lo = oid.u_lo;
+
+  /* Copy attrs */
+  if (0 == offset) pi_data[wt_idx].calls = 0;
+
+  m0_bufvec_alloc(&(pi_data[wt_idx].attr_data[pi_data[wt_idx].calls]),
+                  attr->ov_vec.v_nr, sizeof(m0_md5_inc_context_pi));
+  for (size_t i = 0; i < attr->ov_vec.v_nr; i++) {
+    memcpy(pi_data[wt_idx].attr_data[pi_data[wt_idx].calls].ov_buf[i],
+           attr->ov_buf[i], sizeof(m0_md5_inc_context_pi));
+    s3_log(S3_LOG_INFO, "", "%s Printing m0_md5_inc_context_pi in attr",
+           __func__);
+    print_pi_info((m0_md5_inc_context_pi *)attr->ov_buf[i]);
+    s3_log(S3_LOG_INFO, "",
+           "%s Printing m0_md5_inc_context_pi in temp fix buffer", __func__);
+    print_pi_info((m0_md5_inc_context_pi *)pi_data[wt_idx]
+                      .attr_data[pi_data[wt_idx].calls]
+                      .ov_buf[i]);
+  }
+  pi_data[wt_idx].calls++;
+}
+
+#endif
 
 int ConcreteMotrAPI::motr_obj_op(struct m0_obj *obj, enum m0_obj_opcode opcode,
                                  struct m0_indexvec *ext,
@@ -266,14 +322,15 @@ int ConcreteMotrAPI::motr_obj_op(struct m0_obj *obj, enum m0_obj_opcode opcode,
     (*op)->op_sm.sm_state = M0_OS_INITIALISED;
     return 0;
   }
-  /* Backup / Populate the attr */	
-# if 1
+
+/* Backup / Populate the attr */
+#if 1
   /** Read object data. */
   if (opcode == M0_OC_READ)
-  retrive_data(obj->ob_entity.en_id, attr,ext->iv_index[0]);	
+    retrive_data(obj->ob_entity.en_id, attr, ext->iv_index[0]);
   /** Write object data. */
   if (opcode == M0_OC_WRITE)
-  store_data(obj->ob_entity.en_id, attr,ext->iv_index[0]);
+    store_data(obj->ob_entity.en_id, attr, ext->iv_index[0]);
 #endif
   return m0_obj_op(obj, opcode, ext, data, attr, mask, flags, op);
 }

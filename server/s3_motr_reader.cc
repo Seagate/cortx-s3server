@@ -297,6 +297,8 @@ bool S3MotrReader::ValidateStoredMD5Chksum(m0_bufvec *motr_data_unit,
   assert(NULL != pi_info);
   assert(NULL != seed);
 
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s ENTRY", __func__);
+
   unsigned char current_digest[sizeof(MD5_CTX)] = {0};
   m0_md5_inc_context_pi md5_info = {0};
 
@@ -305,27 +307,39 @@ bool S3MotrReader::ValidateStoredMD5Chksum(m0_bufvec *motr_data_unit,
   md5_info.hdr.pi_type = M0_PI_TYPE_MD5_INC_CONTEXT;
 
   int rc = s3_motr_api->motr_client_calculate_pi(
-      (struct m0_generic_pi *)&md5_info, seed, motr_data_unit,
-      (m0_pi_calc_flag)0, current_digest, NULL);
+      (struct m0_generic_pi *)&md5_info, seed, motr_data_unit, M0_PI_NO_FLAG,
+      current_digest, NULL);
   if (rc != 0) {
-    s3_log(S3_LOG_ERROR, "", "%s Motr API to Calculate PI Info failed.",
-           __func__);
+    s3_log(S3_LOG_ERROR, stripped_request_id,
+           "%s Motr API to Calculate PI Info failed.", __func__);
     return false;
   }
+
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "%s motr_client_calculate_pi returned %d", __func__, rc);
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "%s Printing returned m0_md5_inc_context_pi", __func__);
+  print_pi_info(&md5_info);
+
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Printing m0_md5_inc_context_pi in attr",
+         __func__);
+  print_pi_info(((m0_md5_inc_context_pi *)(pi_info)));
 
   if (0 != memcmp(md5_info.pi_value,
                   ((m0_md5_inc_context_pi *)(pi_info))->pi_value,
                   MD5_DIGEST_LENGTH)) {
-    s3_log(S3_LOG_ERROR, "", "%s Saved and Calculated Pi dont match.",
-           __func__);
+    s3_log(S3_LOG_ERROR, stripped_request_id,
+           "%s Saved and Calculated Pi dont match.", __func__);
     return false;
   }
 
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s EXIT", __func__);
   return true;
 }
 
 size_t S3MotrReader::CalculateBytesProcessed(m0_bufvec *motr_data_unit) {
   size_t bytesProcessed = 0;
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s ENTRY", __func__);
 
   assert(motr_data_unit != NULL);
 
@@ -333,6 +347,7 @@ size_t S3MotrReader::CalculateBytesProcessed(m0_bufvec *motr_data_unit) {
     bytesProcessed += motr_data_unit->ov_vec.v_count[i];
   }
 
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s EXIT", __func__);
   return bytesProcessed;
 }
 
@@ -345,12 +360,14 @@ bool S3MotrReader::ValidateStoredChksum() {
   m0_bufvec *databuf = reader_context->get_motr_rw_op_ctx()->data;
   m0_bufvec *pibuf = reader_context->get_motr_rw_op_ctx()->attr;
 
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s ENTRY", __func__);
+
   assert(data_buffer_count % pi_buffer_count == 0);
 
   uint32_t pi_to_data_buffer_ratio = data_buffer_count / pi_buffer_count;
 
-  s3_log(S3_LOG_INFO, "", "%s pi_to_data_buffer_ratio %u", __func__,
-         pi_to_data_buffer_ratio);
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s pi_to_data_buffer_ratio %u",
+         __func__, pi_to_data_buffer_ratio);
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Motr Data Buffer count %u \n",
          __func__, databuf->ov_vec.v_nr);
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Attr PI Buffer count %u \n",
@@ -358,7 +375,7 @@ bool S3MotrReader::ValidateStoredChksum() {
 
   uint32_t start_offset = 0;
   uint32_t end_offset = pi_to_data_buffer_ratio;
-  uint64_t current_index = last_index;
+  uint64_t current_index = starting_index_for_read;
 
   for (uint32_t i = 0; i < pi_buffer_count; i++) {
 
@@ -374,17 +391,22 @@ bool S3MotrReader::ValidateStoredChksum() {
     motr_data_unit.ov_vec.v_count = databuf->ov_vec.v_count + start_offset;
     motr_data_unit.ov_buf = databuf->ov_buf + start_offset;
 
-    s3_log(S3_LOG_INFO, "", "%s start_offset %u", __func__, start_offset);
-    s3_log(S3_LOG_INFO, "", "%s end_offset %u", __func__, end_offset);
-    s3_log(S3_LOG_INFO, "", "%s current_index %lu", __func__, current_index);
+    s3_log(S3_LOG_INFO, stripped_request_id, "%s start_offset %u", __func__,
+           start_offset);
+    s3_log(S3_LOG_INFO, stripped_request_id, "%s end_offset %u", __func__,
+           end_offset);
+    s3_log(S3_LOG_INFO, stripped_request_id, "%s current_index %lu", __func__,
+           current_index);
 
     struct m0_generic_pi *pi_info = ((struct m0_generic_pi **)pibuf->ov_buf)[i];
 
     switch (pi_info->hdr.pi_type) {
       case M0_PI_TYPE_MD5_INC_CONTEXT:
+        s3_log(S3_LOG_INFO, stripped_request_id,
+                 "%s PI_INFO saved is of type M0_PI_TYPE_MD5_INC_CONTEXT", __func__);
         if (false == ValidateStoredMD5Chksum(&motr_data_unit, pi_info, &seed)) {
-          s3_log(S3_LOG_ERROR, "", "%s Saved and Calculated Pi dont match.",
-                 __func__);
+          s3_log(S3_LOG_ERROR, stripped_request_id,
+                 "%s Saved and Calculated Pi dont match.", __func__);
           return false;
         }
         break;
@@ -396,7 +418,12 @@ bool S3MotrReader::ValidateStoredChksum() {
     end_offset += pi_to_data_buffer_ratio;
     current_index += CalculateBytesProcessed(&motr_data_unit);
   }
+  //
+  // This is so that we are able to know seed offset on next run.
+  //
+  starting_index_for_read = last_index;
 
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s EXIT", __func__);
   return true;
 }
 
