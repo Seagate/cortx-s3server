@@ -321,8 +321,8 @@ bool S3MotrReader::ValidateStoredMD5Chksum(m0_bufvec *motr_data_unit,
          "%s Printing returned m0_md5_inc_context_pi", __func__);
   print_pi_info(&md5_info);
 
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Printing m0_md5_inc_context_pi in attr",
-         __func__);
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "%s Printing m0_md5_inc_context_pi in attr", __func__);
   print_pi_info(((m0_md5_inc_context_pi *)(pi_info)));
 
   if (0 != memcmp(md5_info.pi_value,
@@ -403,7 +403,8 @@ bool S3MotrReader::ValidateStoredChksum() {
     switch (pi_info->hdr.pi_type) {
       case M0_PI_TYPE_MD5_INC_CONTEXT:
         s3_log(S3_LOG_INFO, stripped_request_id,
-                 "%s PI_INFO saved is of type M0_PI_TYPE_MD5_INC_CONTEXT", __func__);
+               "%s PI_INFO saved is of type M0_PI_TYPE_MD5_INC_CONTEXT",
+               __func__);
         if (false == ValidateStoredMD5Chksum(&motr_data_unit, pi_info, &seed)) {
           s3_log(S3_LOG_ERROR, stripped_request_id,
                  "%s Saved and Calculated Pi dont match.", __func__);
