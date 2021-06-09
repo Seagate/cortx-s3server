@@ -73,11 +73,11 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
         List<String> actionList =
             Arrays.asList(requestBody.get("S3ActionList").split(","));
         for (String action : actionList) {
-          action = "s3:" + action.toLowerCase();
+          String dependentOperation = "s3:" + action.toLowerCase();
           LOGGER.debug("copy object dependent operation to authorize - " +
-                       action);
+                       dependentOperation);
           ServerResponse response =
-              authorizeOperation(requestBody, action, requestor);
+              authorizeOperation(requestBody, dependentOperation, requestor);
           if (response != null &&
               response.getResponseStatus() != HttpResponseStatus.OK) {
             serverResponse = response;
@@ -92,11 +92,6 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
             serverResponse = responseGenerator.AccessDenied();
             break;
           }
-          else if(response == null && PolicyAuthorizedS3Actions.getInstance().isOnlyPolicyAuthorizationRequired(action)) {
-LOGGER.debug("copyobject scenario and only policy authorization required for action- "+ action);
-    			  serverResponse = responseGenerator.AccessDenied();
-    			  break;
-    		  }
         }
       } else if (PolicyAuthorizedS3Actions.getInstance()
                      .isOnlyPolicyAuthorizationRequired(
@@ -104,10 +99,6 @@ LOGGER.debug("copyobject scenario and only policy authorization required for act
                  serverResponse == null) {
         LOGGER.debug("Only Policy Authorization is required");
         serverResponse = responseGenerator.ok();
-      }
-else if(PolicyAuthorizedS3Actions.getInstance().isOnlyPolicyAuthorizationRequired(requestBody.get("S3Action")) && serverResponse == null) {
-LOGGER.debug("Only Policy Authorization is required");
-    	  serverResponse = responseGenerator.ok();
       }
     }
     catch (Exception e) {
