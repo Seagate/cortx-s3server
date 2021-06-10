@@ -807,10 +807,12 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
         }
 
         rw_ctx->pi_bufvec->ov_vec.v_nr = rw_ctx->buffers_per_motr_unit;
-        s3_log(
-            S3_LOG_DEBUG, request_id,
-            "Calculating checksum at motr unit boundary, chksum_buf_idx(%zu)\n",
-            chksum_buf_idx);
+        s3_log(S3_LOG_DEBUG, request_id,
+               "Calculating checksum at motr unit boundary(%zu), "
+               "seed_offset(%zu) chksum_buf_idx(%zu) flag(%d), number of "
+               "bufvec(%u)\n",
+               size_in_current_write, saved_last_index, chksum_buf_idx, flag,
+               rw_ctx->pi_bufvec->ov_vec.v_nr);
         rc = s3_motr_api->motr_client_calculate_pi(
             (m0_generic_pi *)rw_ctx->attr->ov_buf[chksum_buf_idx++], p_seed,
             rw_ctx->pi_bufvec, flag, (unsigned char *)rw_ctx->current_digest,
@@ -912,9 +914,12 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
       }
 
       rw_ctx->pi_bufvec->ov_vec.v_nr = rw_ctx->buffers_per_motr_unit;
-      s3_log(S3_LOG_ERROR, request_id,
-             "Calling motr_client_calculate_pi chksum_buf_idx(%zu)\n",
-             chksum_buf_idx);
+      s3_log(S3_LOG_DEBUG, request_id,
+             "Calculating checksum for unaligned and padded buffers "
+             "number_of_unit_unaligned(%zu) seed_offset(%zu) "
+             "chksum_buf_idx(%zu) flag(%d), number of bufvec(%u)\n",
+             number_of_unit_unaligned, saved_last_index, chksum_buf_idx, flag,
+             rw_ctx->pi_bufvec->ov_vec.v_nr);
     rc = s3_motr_api->motr_client_calculate_pi(
         (m0_generic_pi *)rw_ctx->attr->ov_buf[chksum_buf_idx++], &seed, rw_ctx->pi_bufvec, flag,
         (unsigned char *)rw_ctx->current_digest, NULL);
@@ -951,6 +956,12 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
     rw_ctx->pi_bufvec->ov_vec.v_nr = last_data_buf_indx_for_pi + 1;
     // Set the last data buf length to the actual data size
     rw_ctx->pi_bufvec->ov_vec.v_count[last_data_buf_indx_for_pi] = len_in_buf;
+
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Calculating checksum for actual unaligned data chksum_buf_idx(%zu) "
+           "flag(%d) number of bufvec(%u) len_in_buf(%zu)\n",
+           chksum_buf_idx, flag, rw_ctx->pi_bufvec->ov_vec.v_nr, len_in_buf);
+
     // Update (with actual data length) + Finalize without seed
     rc = s3_motr_api->motr_client_calculate_pi(
         (struct m0_generic_pi *)&s3_md5_inc_digest_pi, NULL, rw_ctx->pi_bufvec,
