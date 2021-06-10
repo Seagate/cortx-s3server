@@ -263,16 +263,30 @@ void retrive_data(m0_uint128 oid, struct m0_bufvec *attr, m0_bindex_t offset) {
   }
 }
 
+int find_data(m0_uint128 oid) {
+  for (size_t i = 0; i < MAX_OBJECTS_TDATA; i++) {
+    if (pi_data[i].oid.u_hi == oid.u_hi && pi_data[i].oid.u_lo == oid.u_lo) {
+      return i;
+    }
+  }
+  return -1;
+}
+
 void store_data(m0_uint128 oid, struct m0_bufvec *attr, m0_bindex_t offset) {
 
   s3_log(S3_LOG_INFO, "", "%s ENTRY", __func__);
   s3_log(S3_LOG_INFO, "", "%s Input oid hi : %lu", __func__, oid.u_hi);
   s3_log(S3_LOG_INFO, "", "%s Input oid lo : %lu", __func__, oid.u_lo);
 
-  if ((prev_oid.u_hi || prev_oid.u_lo) &&
-      ((prev_oid.u_hi != oid.u_hi) || (prev_oid.u_lo != oid.u_lo))) {
+  int write_idx = find_data(oid);
+
+  if (-1 == write_idx) {
     /* Increment */
     wt_idx += 1;
+    printf("%s wt_idx %d\n", __func__, wt_idx);
+  } else {
+    wt_idx = write_idx;
+    printf("%s wt_idx %d\n", __func__, wt_idx);
   }
 
   if (wt_idx == MAX_OBJECTS_TDATA) {
