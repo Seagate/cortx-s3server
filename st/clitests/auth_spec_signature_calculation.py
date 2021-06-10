@@ -125,6 +125,7 @@ for test in test_data:
     test_response = AuthHTTPClient().authenticate_user(headers, updated_params)
     print("TEST RESPONSE.........: ", test_response)
 
+
     check_response(expected_response, test_response)
     print("Test was successful\n")
 
