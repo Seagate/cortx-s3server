@@ -65,3 +65,5 @@ st/clitests/jcloud.properties
 scripts/coverage/.coverage
 st/clitests/aws_iam_credential_file
 ansible/opt/
+ansible/cortx-motr/
+ansible/hosts_local
