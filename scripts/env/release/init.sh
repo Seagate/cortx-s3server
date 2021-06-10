@@ -61,6 +61,9 @@ install_cortx_py_utils() {
   pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/python_requirements.txt" --ignore-installed
   pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/python_requirements.ext.txt" --ignore-installed
 
+  # uninstall the numpy-1.19.5 as py-utils required numpy==1.19.2
+  pip3 uninstall numpy==1.19.5 -y
+
   # install cortx-py-utils
   if rpm -q cortx-py-utils ; then
     yum remove cortx-py-utils -y
