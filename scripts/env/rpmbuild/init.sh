@@ -53,12 +53,14 @@ install_cortx_py_utils() {
   rpm2cpio cortx-py-utils-*.rpm | cpio -idv "./opt/seagate/cortx/utils/conf/python_requirements.txt"
   rpm2cpio cortx-py-utils-*.rpm | cpio -idv "./opt/seagate/cortx/utils/conf/python_requirements.ext.txt"
 
+  # uninstall cortx-py-utils prerequisite
+  # This will help to remove dependent packages which are not compatible with cortx-py-utils
+  pip3 uninstall -r "$PWD/opt/seagate/cortx/utils/conf/python_requirements.txt" -y
+  pip3 uninstall -r "$PWD/opt/seagate/cortx/utils/conf/python_requirements.ext.txt" -y
+
   # install cortx-py-utils prerequisite
   pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/python_requirements.txt" --ignore-installed
   pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/python_requirements.ext.txt" --ignore-installed
-
-  # uninstall the numpy-1.19.5 as py-utils required numpy==1.19.2
-  pip3 uninstall numpy==1.19.5 -y
 
   # install cortx-py-utils
   if rpm -q cortx-py-utils ; then
