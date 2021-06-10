@@ -66,8 +66,7 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
             authorizeOperation(requestBody, requestedOperation, requestor);
       }
       // Below authorization is for CopyObject in case of secondary operations
-      if ("s3:putobject".equals(requestedOperation) &&
-          (serverResponse == null ||
+      if ((serverResponse == null ||
            serverResponse.getResponseStatus() == HttpResponseStatus.OK) &&
           requestBody.get("S3ActionList") != null) {
         List<String> actionList =
