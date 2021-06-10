@@ -108,6 +108,7 @@ void S3PutObjectActionBase::fetch_additional_bucket_info_failed() {
     case S3BucketMetadataState::missing:
       s3_log(S3_LOG_ERROR, request_id, "Bucket: [%s] not found",
              additional_bucket_name.c_str());
+      set_s3_error("NoSuchBucket");
       break;
     case S3BucketMetadataState::failed_to_launch:
       s3_log(S3_LOG_ERROR, request_id,
