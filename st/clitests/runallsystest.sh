@@ -81,8 +81,8 @@ sed -i "s/password :.*/password : $ldap_root_pwd/g" test_data/ldap_config.yaml
 #Using Python 3.6 version for Running System Tests
 PythonV="python3.6"
 
-echo "`date -u`: Running backgrounddelete_spec.py"
-$PythonV backgrounddelete_spec.py
+# echo "`date -u`: Running backgrounddelete_spec.py"
+# $PythonV backgrounddelete_spec.py
 
 echo "`date -u`: Running auth_spec.py..."
 $PythonV auth_spec.py
@@ -96,55 +96,55 @@ $PythonV auth_spec_param_validation.py
 echo "`date -u`: Running auth_spec_signature_calculation.py..."
 $PythonV auth_spec_signature_calculation.py
 
-echo "`date -u`: Running s3cmd_spec.py..."
-$PythonV s3cmd_spec.py
+# echo "`date -u`: Running s3cmd_spec.py..."
+# $PythonV s3cmd_spec.py
 
-echo "`date -u`: Running jclient_spec.py..."
-$PythonV jclient_spec.py
+# echo "`date -u`: Running jclient_spec.py..."
+# $PythonV jclient_spec.py
 
-echo "`date -u`: Running jcloud_spec.py..."
-$PythonV jcloud_spec.py
+# echo "`date -u`: Running jcloud_spec.py..."
+# $PythonV jcloud_spec.py
 
-echo "`date -u`: Running rollback_spec.py..."
-$PythonV rollback_spec.py
+# echo "`date -u`: Running rollback_spec.py..."
+# $PythonV rollback_spec.py
 
-echo "`date -u`: Running negative_spec.py..."
-$PythonV negative_spec.py
+# echo "`date -u`: Running negative_spec.py..."
+# $PythonV negative_spec.py
 
-echo "`date -u`: Running shutdown_spec.py..."
-$PythonV shutdown_spec.py
+# echo "`date -u`: Running shutdown_spec.py..."
+# $PythonV shutdown_spec.py
 
-echo "`date -u`: Running awss3api_spec.py..."
-$PythonV awss3api_spec.py
+# echo "`date -u`: Running awss3api_spec.py..."
+# $PythonV awss3api_spec.py
 
-echo "`date -u`: Running aclvalidation_spec.py..."
-$PythonV aclvalidation_spec.py
+# echo "`date -u`: Running aclvalidation_spec.py..."
+# $PythonV aclvalidation_spec.py
 
-echo "`date -u`: Running policy_spec.py..."
-$PythonV policy_spec.py
+# echo "`date -u`: Running policy_spec.py..."
+# $PythonV policy_spec.py
 
-echo "`date -u`: Running authpassencryptcli_spec.py..."
-$PythonV authpassencryptcli_spec.py
+# echo "`date -u`: Running authpassencryptcli_spec.py..."
+# $PythonV authpassencryptcli_spec.py
 
-echo "`date -u`: Running auth_spec_negative_and_fi.py..."
-$PythonV auth_spec_negative_and_fi.py
+# echo "`date -u`: Running auth_spec_negative_and_fi.py..."
+# $PythonV auth_spec_negative_and_fi.py
 
-echo "$(date -u): Running md_integrity.py..."
-# metadata integrity tests - regular PUT
-md_di_data=/tmp/s3-data.bin
-md_di_dowload=/tmp/s3-data-download.bin
-md_di_parts=/tmp/s3-data-parts.json
+# echo "$(date -u): Running md_integrity.py..."
+# # metadata integrity tests - regular PUT
+# md_di_data=/tmp/s3-data.bin
+# md_di_dowload=/tmp/s3-data-download.bin
+# md_di_parts=/tmp/s3-data-parts.json
 
-dd if=/dev/urandom of=$md_di_data count=1 bs=1K
-./md_integrity.py --body $md_di_data --download $md_di_dowload --parts $md_di_parts --test_plan ./regular_md_integrity.json
+# dd if=/dev/urandom of=$md_di_data count=1 bs=1K
+# ./md_integrity.py --body $md_di_data --download $md_di_dowload --parts $md_di_parts --test_plan ./regular_md_integrity.json
 
-# metadata integrity tests - multipart
-dd if=/dev/urandom of=$md_di_data count=1 bs=5M
-./md_integrity.py --body $md_di_data --download $md_di_dowload --parts $md_di_parts --test_plan ./multipart_md_integrity.json
+# # metadata integrity tests - multipart
+# dd if=/dev/urandom of=$md_di_data count=1 bs=5M
+# ./md_integrity.py --body $md_di_data --download $md_di_dowload --parts $md_di_parts --test_plan ./multipart_md_integrity.json
 
-[ -f $md_di_data ] && rm -vf $md_di_data
-[ -f $md_di_dowload ] && rm -vf $md_di_dowload
-[ -f $md_di_parts ] && rm -vf $md_di_parts
+# [ -f $md_di_data ] && rm -vf $md_di_data
+# [ -f $md_di_dowload ] && rm -vf $md_di_dowload
+# [ -f $md_di_parts ] && rm -vf $md_di_parts
 # ==================================================
 
 #echo "`date -u`: Running integrity.py..."

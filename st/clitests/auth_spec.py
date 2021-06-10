@@ -1789,10 +1789,15 @@ def auth_health_check_tests():
 
 # Validate maxAccount and maxUser limit values from authserver.properties file
 def test_max_account_and_user_limit_value_of_auth_config():
+    print("printing access key and secret key using s3client config...")
+    print(GlobalTestState.root_access_key)
+    print(GlobalTestState.root_secret_key)
     print("Updating autherver.properties (/opt/seagate/cortx/auth/resources/authserver.properties) file with test values..")
     config = ConfigObj("/opt/seagate/cortx/auth/resources/authserver.properties")
     old_maxAccountValue=config.get('maxAccountLimit')
     old_maxIAMUserValue=config.get('maxIAMUserLimit')
+    print("old max account value : ", old_maxAccountValue)
+    print("old max user value : ", old_maxIAMUserValue)
     config['maxAccountLimit'] = "1"
     config['maxIAMUserLimit'] = "1"
     config.write()
@@ -1800,7 +1805,8 @@ def test_max_account_and_user_limit_value_of_auth_config():
     print("setting maxIAMUserLimit as :", config['maxIAMUserLimit'])
     os.system('systemctl restart s3authserver')
     time.sleep(1) # sometime authserver takes more time to restart
-    print("auth config values are changed successfully..")
+    os.system(('systemctl status s3authserver'))
+    # print("auth config values are changed successfully..")
 
     # Try to create two account and it should with MaxAccountLimitExceeded error.
     test_msg = "Create account authconfigValidatorAccount1 should successfull."
@@ -1814,7 +1820,9 @@ def test_max_account_and_user_limit_value_of_auth_config():
     access_key_args = {}
     access_key_args['AccountName'] = "authconfigValidatorAccount1"
     access_key_args['AccessKeyId'] = account_response_elements['AccessKeyId']
+    print("access key from account created.....", access_key_args['AccessKeyId'])
     access_key_args['SecretAccessKey'] = account_response_elements['SecretKey']
+    print("secret key from account created.....", access_key_args['SecretAccessKey'])
 
     test_msg = "Create account authconfigValidatorAccount2 should fail with MaxAccountLimitExceeded with limit as 1."
     account_args = {'AccountName': 'authconfigValidatorAccount2', 'Email': 'authconfigValidatorAccount2@seagate.com', \
@@ -1824,11 +1832,15 @@ def test_max_account_and_user_limit_value_of_auth_config():
     result.command_response_should_have("MaxAccountLimitExceeded")
 
     test_access_key = S3ClientConfig.access_key_id
+    print("test access key....", test_access_key)
     test_secret_key = S3ClientConfig.secret_key
+    print("test secret key....", test_secret_key)
 
     # Test IAM User limit
     S3ClientConfig.access_key_id = access_key_args['AccessKeyId']
+    print("checking if the s3client config access key is set properly.....", S3ClientConfig.access_key_id)
     S3ClientConfig.secret_key = access_key_args['SecretAccessKey']
+    print("checking if the s3client config secret key is set properly.....", S3ClientConfig.secret_key)
 
     test_msg = "Create User s3user1 in authconfigValidatorAccount1 should successful."
     user_args = {'UserName': 's3user1'}
@@ -1856,13 +1868,21 @@ def test_max_account_and_user_limit_value_of_auth_config():
             .command_response_should_have("Account deleted successfully")
 
     # Restore config paramters
-    S3ClientConfig.access_key_id = test_access_key
-    S3ClientConfig.secret_key = test_secret_key
+    restore_config_yaml()
+    print("*****testing while restoring*****")
+    # print("test access key : ", test_access_key)
+    # print("test secret key : ", test_secret_key)
+    # S3ClientConfig.access_key_id = test_access_key
+    print("test access key....after", S3ClientConfig.access_key_id)
+    # S3ClientConfig.secret_key = test_secret_key
+    print("test secret key....after", S3ClientConfig.secret_key)
 
     # Revert config paramters
     config1 = ConfigObj("/opt/seagate/cortx/auth/resources/authserver.properties")
-    config1['maxAccountLimit'] = old_maxAccountValue
-    config1['maxIAMUserLimit'] = old_maxIAMUserValue
+    # config1['maxAccountLimit'] = old_maxAccountValue
+    # config1['maxIAMUserLimit'] = old_maxIAMUserValue
+    config1['maxAccountLimit'] = 1000
+    config1['maxIAMUserLimit'] = 1000
     print("setting maxAccountLimit as :", config1['maxAccountLimit'])
     print("setting maxIAMUserLimit as :", config1['maxIAMUserLimit'])
     config1.write()
@@ -1874,6 +1894,9 @@ def test_max_account_and_user_limit_value_of_auth_config():
 # Validate delete account functionality with ldap credentials
 def delete_acc_ldap_cred_tests():
     # DeleteAccount with ldap credentials tests -- starts
+    print("*************printing access and secret kets in deleteaccldapcredtests.....**********")
+    print(S3ClientConfig.access_key_id)
+    print(S3ClientConfig.secret_key)
     test_access_key = S3ClientConfig.access_key_id
     test_secret_key = S3ClientConfig.secret_key
 
@@ -2130,7 +2153,7 @@ def execute_all_system_tests():
 
     # Do not change the order.
     before_all()
-    #test_max_account_and_user_limit_value_of_auth_config()
+    test_max_account_and_user_limit_value_of_auth_config()
     account_tests()
     user_tests()
     accesskey_tests()
