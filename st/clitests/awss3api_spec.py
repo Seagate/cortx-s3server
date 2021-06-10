@@ -1150,6 +1150,8 @@ parts="Parts=[{ETag="+e_tag_1.strip('\n')+",PartNumber=1},{ETag="+e_tag_2.strip(
 print(parts)
 
 result=AwsTest('Aws cannot complete multipart upload when non-last part is less than 5MB').complete_multipart_upload("seagatebuckettag", "10Mbfile", parts, upload_id).execute_test(negative_case=True).command_should_fail().command_error_should_have("EntityTooSmall")
+#Above test would not abort multipart operation, so need to do it explicitly
+result=AwsTest('Aws abort previous multipart upload').abort_multipart_upload("seagatebuckettag", "10Mbfile", upload_id).execute_test(negative_case=True).command_is_successful()
 
 #******* Multipart upload should fail if user completes multipart-upload with wrong ETag ******
 
