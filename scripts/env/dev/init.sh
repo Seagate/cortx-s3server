@@ -74,10 +74,12 @@ install_cortx_py_utils() {
   yumdownloader --destdir="$PWD" cortx-py-utils
 
   # extract requirements.txt
-  rpm2cpio cortx-py-utils-*.rpm | cpio -idv "./opt/seagate/cortx/utils/conf/requirements.txt"
+  rpm2cpio cortx-py-utils-*.rpm | cpio -idv "./opt/seagate/cortx/utils/conf/python_requirements.txt"
+  rpm2cpio cortx-py-utils-*.rpm | cpio -idv "./opt/seagate/cortx/utils/conf/python_requirements.ext.txt"
 
   # install cortx-py-utils prerequisite
-  pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/requirements.txt" --ignore-installed
+  pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/python_requirements.txt" --ignore-installed
+  pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/python_requirements.ext.txt" --ignore-installed
 
   # install cortx-py-utils
   if rpm -q cortx-py-utils ; then
