@@ -82,7 +82,7 @@ class S3fiTest(PyCliTest):
         # sleep to avoid the impact on previous request cleanup of fault injection
         # TODO fault injection should be embeded into actual request.
         # This will restrict the fault injection scope/lifetime to that specific request only.
-        time.sleep(1)
+        time.sleep(2)
         curl_cmd = "curl -sS --header \"x-seagate-faultinjection: "
         self.opcode = opcode
         self.tag = tag

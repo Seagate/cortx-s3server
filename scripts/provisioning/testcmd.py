@@ -44,13 +44,16 @@ class TestCmd(SetupCmd):
   def process(self):
     """Main processing function."""
     #TODO: remove the return in next sprint
-    self.logger.info(f"Processing {self.name} {self.url}\n")
+    self.logger.info(f"Processing {self.name} {self.url}")
+    self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
+    self.logger.info("validations completed")
 
+    self.logger.info("test started")
     try:
       self.read_endpoint_value()
-      self.logger.info(f"Endpoint fqdn {self.endpoint}\n")
+      self.logger.info(f"Endpoint fqdn {self.endpoint}")
       cmd = [SANITY_SCRIPT_PATH, LDAP_SWITCH,  f'{self.ldap_passwd}', ENDPOINT_SWITCH, f'{self.endpoint}']
       handler = SimpleProcess(cmd)
       stdout, stderr, retcode = handler.run()
@@ -62,3 +65,4 @@ class TestCmd(SetupCmd):
         self.logger.warning(f'warning of s3-sanity-test.sh: {stderr}')
     except Exception as e:
       raise Exception(f"{self}: {cmd} exception: {e}")
+    self.logger.info("test completed")

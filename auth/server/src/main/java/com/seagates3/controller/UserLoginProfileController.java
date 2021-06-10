@@ -70,6 +70,11 @@ class UserLoginProfileController extends AbstractController {
 
   @Override public ServerResponse create() {
     User user;
+    if (requestBody.get("UserName") == null) {
+      LOGGER.error("username is missing");
+      return userResponseGenerator.invalidRequest(
+          "User name is required for user login-profile creation");
+    }
     try {
       user = userDAO.find(requestor.getAccount().getName(),
                           requestBody.get("UserName"));
@@ -86,6 +91,11 @@ class UserLoginProfileController extends AbstractController {
         LOGGER.error(
             "Cannot create account login profile with CreateUserLoginProfile");
         return userResponseGenerator.invalidUserType("Create");
+      }
+      if (requestBody.get("Password") == null) {
+        LOGGER.error("password is missing");
+        return userResponseGenerator.invalidRequest(
+            "User password is required for user login-profile creation");
       }
       if (user.getPassword() == null) {
         try {
@@ -164,6 +174,11 @@ class UserLoginProfileController extends AbstractController {
   @Override public ServerResponse update() throws DataAccessException {
     User user = null;
     ServerResponse response = null;
+    if (requestBody.get("UserName") == null) {
+      LOGGER.error("UserName is missing");
+      return userResponseGenerator.invalidRequest(
+          "User name is required for user login-profile creation");
+    }
     try {
       user = userDAO.find(requestor.getAccount().getName(),
                           requestBody.get("UserName"));
@@ -199,8 +214,13 @@ class UserLoginProfileController extends AbstractController {
 
             user.setPassword(requestBody.get("Password"));
             LOGGER.info("Updating old password with new password");
+          } else {
+            if (requestBody.get("PasswordResetRequired") == null) {
+              LOGGER.error("Mandatory input arguments are missing");
+              return userResponseGenerator.invalidRequest(
+                  "Please provide password or password-reset flag");
+            }
           }
-
           if (requestBody.get("PasswordResetRequired") != null) {
             user.setPwdResetRequired(
                 requestBody.get("PasswordResetRequired").toUpperCase());

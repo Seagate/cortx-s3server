@@ -20,6 +20,7 @@
 
 import os
 import sys
+import socket
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 import logging
 
@@ -32,7 +33,8 @@ class S3HaproxyConfig:
   def __init__(self, confstore: str):
     """Constructor."""
 
-    self.logger = logging.getLogger("s3-deployment-logger")
+    s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
+    self.logger = logging.getLogger(s3deployment_logger_name)
     if self.logger.hasHandlers():
       self.logger.info("Logger has valid handler")
     else:
@@ -52,7 +54,7 @@ class S3HaproxyConfig:
       self.machine_id = mcid_file.read().strip()
 
     if not confstore.strip():
-      self.logger.error(f'config url:[{confstore}] must be a valid url path\n')
+      self.logger.error(f'config url:[{confstore}] must be a valid url path')
       raise Exception('empty config URL path')
 
     self.provisioner_confstore = S3CortxConfStore(confstore, 'haproxy_config_index')

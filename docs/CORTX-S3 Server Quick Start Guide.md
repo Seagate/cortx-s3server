@@ -38,20 +38,27 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
     * pip3:
       * To check if pip is installed, use: `$ pip3 --version`
       * Update to latest pip using `$ pip3 install --upgrade pip`
-    * Ansible: `$ yum install -y ansible`
     * Extra Packages for Enterprise Linux:
         * To check if epel is installed, use: `$ yum repolist`
             * If epel was installed, you'll see it in the output list.
             * You might also see exclamation mark in front of the repositories id. Refer to the [Redhat Knowledge Base](https://access.redhat.com/solutions/2267871).
         * `$ yum install -y epel-release`
+    * Ansible: Install ansible if not there already `$ yum install -y ansible`
+    
+6. You will need to set your hostname to something other than localhost `hostnamectl set-hostname --static --transient --pretty <new-name>`
 
-6. You'll need to install CORTX Python Utilities. Follow the steps to install [CORTX Python Utilities](https://github.com/Seagate/cortx-utils/blob/main/py-utils/README.md).
+7. Add/set entry corresponding to <new-name> in above command to `/etc/hosts` file
+    
+    For example if your hostname is `cortxhost`
+    
+    Then `/etc/hosts` should something like:
 
-7. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup).
-
-8. You will need to set your hostname to something other than localhost `hostnamectl set-hostname --static --transient --pretty <new-name>`
-
-9. You'll need to disable selinux and firewall. Run the following commands:
+    ```
+    127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4 cortxhost
+    ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+    ```
+    
+8. You'll need to disable selinux and firewall. Run the following commands:
 
      `$ systemctl stop firewalld` 
 
@@ -64,6 +71,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
      Once you power on your VM, you can verify if selinux and firewall are disabled by using: `$ getenforce` - you'll get a 'disabled' status.
 
 
+9. You'll need to install CORTX Python Utilities. Follow the steps to install [CORTX Python Utilities](https://github.com/Seagate/cortx-utils/blob/main/py-utils/README.md).
 
 10. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup).
 
@@ -86,19 +94,12 @@ $ git submodule update --init --recursive && git status
 
 **Before you begin**
 
-At some point during the execution of the `init.sh` script, it will prompt for the following passwords. Enter them as mentioned below:
-   * SSH password: `<Enter root password of VM>`
-   * Enter new password for openldap rootDN: `seagate`
-   * Enter new password for openldap IAM admin: `ldapadmin`
-
-
-Whenever you clone your repository or make changes to dependent packages, you'll have to initialize the packages:
-
 1. Create Message bus configuration file and Kafka topic for messaging:
 
 ```shell
 
-$ cp scripts/kafka/message_bus.conf /etc/cortx
+$ mkdir -p /etc/cortx
+$ cp scripts/kafka/message_bus.conf /etc/cortx/
 $ sh scripts/kafka/create-topic.sh -c 1 -i <Hostname/FQDN>
 ```
 2. Run the command:
@@ -108,6 +109,11 @@ $ sh scripts/kafka/create-topic.sh -c 1 -i <Hostname/FQDN>
    $ cd ./scripts/env/dev
    $ ./init.sh -a
 ```
+
+At some point during the execution of the `init.sh` script, it will prompt for the following passwords. Enter them as mentioned below:
+   * SSH password: `<Enter root password of VM>`
+   * Enter new password for openldap rootDN: `seagate`
+   * Enter new password for openldap IAM admin: `ldapadmin`
 
 3. You'll be prompted to provide your GitHub token. Enter the PAT token that you generated in Step 4.iv. of the [1.0 Prerequisites Section](#10-Prerequisites).
 

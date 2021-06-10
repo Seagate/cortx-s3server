@@ -971,8 +971,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
         ServerResponse response = userController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
-                response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
+                            response.getResponseStatus());
     }
 
     @Test
