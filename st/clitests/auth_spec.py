@@ -1813,9 +1813,7 @@ def test_max_account_and_user_limit_value_of_auth_config():
     access_key_args = {}
     access_key_args['AccountName'] = "authconfigValidatorAccount1"
     access_key_args['AccessKeyId'] = account_response_elements['AccessKeyId']
-    print("access key from account created.....", access_key_args['AccessKeyId'])
     access_key_args['SecretAccessKey'] = account_response_elements['SecretKey']
-    print("secret key from account created.....", access_key_args['SecretAccessKey'])
 
     test_msg = "Create account authconfigValidatorAccount2 should fail with MaxAccountLimitExceeded with limit as 1."
     account_args = {'AccountName': 'authconfigValidatorAccount2', 'Email': 'authconfigValidatorAccount2@seagate.com', \
@@ -1825,15 +1823,11 @@ def test_max_account_and_user_limit_value_of_auth_config():
     result.command_response_should_have("MaxAccountLimitExceeded")
 
     test_access_key = S3ClientConfig.access_key_id
-    print("test access key....", test_access_key)
     test_secret_key = S3ClientConfig.secret_key
-    print("test secret key....", test_secret_key)
 
     # Test IAM User limit
     S3ClientConfig.access_key_id = access_key_args['AccessKeyId']
-    print("checking if the s3client config access key is set properly.....", S3ClientConfig.access_key_id)
     S3ClientConfig.secret_key = access_key_args['SecretAccessKey']
-    print("checking if the s3client config secret key is set properly.....", S3ClientConfig.secret_key)
 
     test_msg = "Create User s3user1 in authconfigValidatorAccount1 should successful."
     user_args = {'UserName': 's3user1'}
@@ -1873,7 +1867,6 @@ def test_max_account_and_user_limit_value_of_auth_config():
 # Validate delete account functionality with ldap credentials
 def delete_acc_ldap_cred_tests():
     # DeleteAccount with ldap credentials tests -- starts
-    print("*************printing access and secret kets in deleteaccldapcredtests.....**********")
     print(S3ClientConfig.access_key_id)
     print(S3ClientConfig.secret_key)
     test_access_key = S3ClientConfig.access_key_id
