@@ -1866,8 +1866,6 @@ def test_max_account_and_user_limit_value_of_auth_config():
 # Validate delete account functionality with ldap credentials
 def delete_acc_ldap_cred_tests():
     # DeleteAccount with ldap credentials tests -- starts
-    print(S3ClientConfig.access_key_id)
-    print(S3ClientConfig.secret_key)
     test_access_key = S3ClientConfig.access_key_id
     test_secret_key = S3ClientConfig.secret_key
 
@@ -2121,7 +2119,6 @@ def execute_all_system_tests():
         print('Executing auth system tests over HTTP connection')
     else:
         print('Executing auth system tests over HTTPS connection')
-
 
     # Do not change the order.
     before_all()
