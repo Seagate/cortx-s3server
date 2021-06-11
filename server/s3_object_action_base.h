@@ -68,8 +68,8 @@ class S3ObjectAction : public S3Action {
   void get_source_bucket_and_object(const std::string&);
   virtual void fetch_bucket_info_failed() = 0;
   virtual void fetch_object_info_failed() = 0;
-  virtual void fetch_additional_bucket_info_failed() = 0;
-  virtual void fetch_additional_object_info_failed() = 0;
+  virtual void fetch_additional_bucket_info_failed();
+  virtual void fetch_additional_object_info_failed();
   virtual void fetch_object_info_success();
   virtual void fetch_bucket_info_success();
   virtual void fetch_additional_bucket_info_success();

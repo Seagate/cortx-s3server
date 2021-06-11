@@ -48,8 +48,6 @@ class S3PutObjectACLAction : public S3ObjectAction {
   void set_authorization_meta();
   void fetch_bucket_info_failed();
   void fetch_object_info_failed();
-  void fetch_additional_bucket_info_failed();
-  void fetch_additional_object_info_failed();
   void setacl();
   void setacl_failed();
   void send_response_to_s3_client();

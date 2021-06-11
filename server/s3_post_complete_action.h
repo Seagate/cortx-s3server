@@ -111,8 +111,6 @@ class S3PostCompleteAction : public S3ObjectAction {
   void fetch_bucket_info_success();
   void fetch_bucket_info_failed();
   void fetch_object_info_failed();
-  void fetch_additional_bucket_info_failed();
-  void fetch_additional_object_info_failed();
   void fetch_multipart_info();
   void fetch_multipart_info_success();
   void fetch_multipart_info_failed();

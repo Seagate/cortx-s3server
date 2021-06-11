@@ -42,8 +42,6 @@ class S3DeleteObjectTaggingAction : public S3ObjectAction {
   void setup_steps();
   void fetch_bucket_info_failed();
   void fetch_object_info_failed();
-  void fetch_additional_bucket_info_failed();
-  void fetch_additional_object_info_failed();
   void delete_object_tags();
   void delete_object_tags_failed();
   void send_response_to_s3_client();

@@ -138,6 +138,11 @@ void S3ObjectAction::fetch_additional_bucket_info_success() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+void S3ObjectAction::fetch_additional_bucket_info_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  next();
+}
+
 void S3ObjectAction::fetch_additional_object_info() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
@@ -173,6 +178,11 @@ void S3ObjectAction::fetch_additional_object_info_success() { next(); }
 void S3ObjectAction::load_metadata() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   fetch_bucket_info();
+}
+
+void S3ObjectAction::fetch_additional_object_info_failed() {
+  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
+  next();
 }
 
 void S3ObjectAction::get_source_bucket_and_object(const std::string& header) {
