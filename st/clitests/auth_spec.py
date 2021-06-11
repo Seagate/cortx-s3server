@@ -31,7 +31,6 @@ from s3fi import S3fiTest
 from awss3api import AwsTest
 from shutil import copyfile
 import shutil
-from configobj import ConfigObj
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 home_dir = os.path.expanduser("~")
@@ -1799,7 +1798,7 @@ def test_max_account_and_user_limit_value_of_auth_config():
     s3confstore.set_config('maxIAMUserLimit', '1', True)
     os.system('systemctl restart s3authserver')
     time.sleep(1) # sometime authserver takes more time to restart
-    # print("auth config values are changed successfully..")
+    print("auth config values are changed successfully..")
 
     # Try to create two account and it should with MaxAccountLimitExceeded error.
     test_msg = "Create account authconfigValidatorAccount1 should successfull."
