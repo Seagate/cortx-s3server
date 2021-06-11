@@ -31,7 +31,7 @@ from s3fi import S3fiTest
 from awss3api import AwsTest
 from shutil import copyfile
 import shutil
-from configobj import ConfigObj
+from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 home_dir = os.path.expanduser("~")
 original_config_file = os.path.join(home_dir,  '.sgs3iamcli/config.yaml')
@@ -1790,14 +1790,12 @@ def auth_health_check_tests():
 # Validate maxAccount and maxUser limit values from authserver.properties file
 def test_max_account_and_user_limit_value_of_auth_config():
     print("Updating autherver.properties (/opt/seagate/cortx/auth/resources/authserver.properties) file with test values..")
-    config = ConfigObj("/opt/seagate/cortx/auth/resources/authserver.properties")
-    old_maxAccountValue=config.get('maxAccountLimit')
-    old_maxIAMUserValue=config.get('maxIAMUserLimit')
-    config['maxAccountLimit'] = "1"
-    config['maxIAMUserLimit'] = "1"
-    config.write()
-    print("setting maxAccountLimit as :", config['maxAccountLimit'])
-    print("setting maxIAMUserLimit as :", config['maxIAMUserLimit'])
+    s3confstore = S3CortxConfStore('properties:///opt/seagate/cortx/auth/resources/authserver.properties', 'index')
+
+    old_maxAccountValue=s3confstore.get_config('maxAccountLimit')
+    old_maxIAMUserValue=s3confstore.get_config('maxIAMUserLimit')
+    s3confstore.set_config('maxAccountLimit', '1', True)
+    s3confstore.set_config('maxIAMUserLimit', '1', True)
     os.system('systemctl restart s3authserver')
     time.sleep(1) # sometime authserver takes more time to restart
     print("auth config values are changed successfully..")
@@ -1858,14 +1856,8 @@ def test_max_account_and_user_limit_value_of_auth_config():
     # Restore config paramters
     S3ClientConfig.access_key_id = test_access_key
     S3ClientConfig.secret_key = test_secret_key
-
-    # Revert config paramters
-    config1 = ConfigObj("/opt/seagate/cortx/auth/resources/authserver.properties")
-    config1['maxAccountLimit'] = old_maxAccountValue
-    config1['maxIAMUserLimit'] = old_maxIAMUserValue
-    print("setting maxAccountLimit as :", config1['maxAccountLimit'])
-    print("setting maxIAMUserLimit as :", config1['maxIAMUserLimit'])
-    config1.write()
+    s3confstore.set_config('maxAccountLimit', old_maxAccountValue, True)
+    s3confstore.set_config('maxIAMUserLimit', old_maxIAMUserValue, True)
     os.system('systemctl restart s3authserver')
     time.sleep(1) # sometime authserver takes more time to restart
     print("Reverted authserver.properties (/opt/seagate/cortx/auth/resources/authserver.properties) with origional values successfully...")
@@ -2130,7 +2122,7 @@ def execute_all_system_tests():
 
     # Do not change the order.
     before_all()
-    #test_max_account_and_user_limit_value_of_auth_config()
+    test_max_account_and_user_limit_value_of_auth_config()
     account_tests()
     user_tests()
     accesskey_tests()
