@@ -1789,7 +1789,7 @@ def auth_health_check_tests():
 
 
 # Validate maxAccount and maxUser limit values from authserver.properties file
-def test_max_account_and_user_limit_value_of_auth_config():    
+def test_max_account_and_user_limit_value_of_auth_config():
     print("Updating autherver.properties (/opt/seagate/cortx/auth/resources/authserver.properties) file with test values..")
     s3confstore = S3CortxConfStore('properties:///opt/seagate/cortx/auth/resources/authserver.properties', 'index')
 
