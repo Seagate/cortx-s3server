@@ -142,20 +142,19 @@ dd if=/dev/urandom of=$md_di_data count=1 bs=1K
 dd if=/dev/urandom of=$md_di_data count=1 bs=5M
 ./md_integrity.py --body $md_di_data --download $md_di_dowload --parts $md_di_parts --test_plan ./multipart_md_integrity.json
 
-
 [ -f $md_di_data ] && rm -vf $md_di_data
 [ -f $md_di_dowload ] && rm -vf $md_di_dowload
 [ -f $md_di_parts ] && rm -vf $md_di_parts
-==================================================
+# ==================================================
 
-echo "`date -u`: Running integrity.py..."
-Data Integrity tests:
-s3_config_port=$(grep -oE "S3_SERVER_BIND_PORT:\s*([0-9]?+)" /opt/seagate/cortx/s3/conf/s3config.yaml | tr -s ' ' | cut -d ' ' -f 2)
-enable DI FI
-curl -X PUT -H "x-seagate-faultinjection: enable,always,di_data_corrupted_on_write,0,0" "localhost:$s3_config_port"
-curl -X PUT -H "x-seagate-faultinjection: enable,always,di_data_corrupted_on_read,0,0" "localhost:$s3_config_port"
-run DI systest
-$USE_SUDO st/clitests/integrity.py --auto-test-all
+#echo "`date -u`: Running integrity.py..."
+# Data Integrity tests:
+# s3_config_port=$(grep -oE "S3_SERVER_BIND_PORT:\s*([0-9]?+)" /opt/seagate/cortx/s3/conf/s3config.yaml | tr -s ' ' | cut -d ' ' -f 2)
+# enable DI FI
+# curl -X PUT -H "x-seagate-faultinjection: enable,always,di_data_corrupted_on_write,0,0" "localhost:$s3_config_port"
+# curl -X PUT -H "x-seagate-faultinjection: enable,always,di_data_corrupted_on_read,0,0" "localhost:$s3_config_port"
+# run DI systest
+# $USE_SUDO st/clitests/integrity.py --auto-test-all
 # ======================================
 
 git checkout -- $BASEDIR/framework.py

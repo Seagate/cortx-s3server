@@ -112,6 +112,7 @@ for test in test_data:
     print("Test case [%s] - " % test_data[test]['test-title'])
     headers = test_data[test]['req-headers']
     params = test_data[test]['req-params']
+
     # Update Authroization header with current date timestamp
     updated_params = update_signature_headers(params)
     expected_response = test_data[test]['output']
