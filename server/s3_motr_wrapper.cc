@@ -283,10 +283,8 @@ void store_data(m0_uint128 oid, struct m0_bufvec *attr, m0_bindex_t offset) {
   if (-1 == write_idx) {
     /* Increment */
     wt_idx += 1;
-    printf("%s wt_idx %d\n", __func__, wt_idx);
   } else {
     wt_idx = write_idx;
-    printf("%s wt_idx %d\n", __func__, wt_idx);
   }
 
   if (wt_idx == MAX_OBJECTS_TDATA) {
