@@ -54,8 +54,8 @@ install_cortx_py_utils() {
   rpm2cpio cortx-py-utils-*.rpm | cpio -idv "./opt/seagate/cortx/utils/conf/python_requirements.ext.txt"
 
   # install cortx-py-utils prerequisite
-  pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/python_requirements.txt" --ignore-installed
-  pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/python_requirements.ext.txt" --ignore-installed
+  pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/python_requirements.txt"
+  pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/python_requirements.ext.txt"
 
   # install cortx-py-utils
   if rpm -q cortx-py-utils ; then
