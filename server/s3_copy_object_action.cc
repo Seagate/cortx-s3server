@@ -418,7 +418,45 @@ void S3CopyObjectAction::check_source_bucket_authorization() {
 
 void S3CopyObjectAction::check_source_bucket_authorization_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  // Do destination bucket authorization for secondary operations
+  request->set_action_str("PutObject");
+
+  // clear action list
+  request->reset_action_list();
+
+  auth_client->set_entity_path("/" + request->get_bucket_name() + "/" +
+                               request->get_object_name());
+
+  auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
+                                  bucket_metadata->get_policy_as_json());
+  if (!source_object_metadata->get_tags().empty()) {
+    request->set_action_list("PutObjectTagging");
+  }
+  // request->set_action_list("PutObjectAcl");
+  if (!request->get_action_list().empty()) {
+    auth_client->check_authorization(
+        std::bind(&S3CopyObjectAction::next, this),
+        std::bind(
+            &S3CopyObjectAction::check_destination_bucket_authorization_failed,
+            this));
+  }
   next();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3CopyObjectAction::check_destination_bucket_authorization_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  s3_put_action_state = S3PutObjectActionState::validationFailed;
+  std::string error_code = auth_client->get_error_code();
+
+  set_s3_error(error_code);
+  s3_log(S3_LOG_ERROR, request_id, "Authorization failure: %s\n",
+         error_code.c_str());
+
+  if (request->client_connected()) {
+    send_response_to_s3_client();
+  }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
