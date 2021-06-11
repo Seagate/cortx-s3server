@@ -96,18 +96,16 @@ $ git submodule update --init --recursive && git status
 
 1. Create Message bus configuration file and Kafka topic for messaging:
 
-```shell
-
-$ mkdir -p /etc/cortx
-$ cp scripts/kafka/message_bus.conf /etc/cortx/
-$ sh scripts/kafka/create-topic.sh -c 1 -i <Hostname/FQDN>
+```
+mkdir -p /etc/cortx
+cp scripts/kafka/message_bus.conf /etc/cortx/
+sh scripts/kafka/create-topic.sh -c 1 -i <Hostname/FQDN>
 ```
 2. Run the command:
 
 ```shell
-
-   $ cd ./scripts/env/dev
-   $ ./init.sh -a
+cd ./scripts/env/dev
+./init.sh -a
 ```
 
 At some point during the execution of the `init.sh` script, it will prompt for the following passwords. Enter them as mentioned below:
