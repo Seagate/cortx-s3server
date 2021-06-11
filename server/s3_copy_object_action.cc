@@ -429,7 +429,7 @@ void S3CopyObjectAction::check_source_bucket_authorization_success() {
 
   auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
                                   bucket_metadata->get_policy_as_json());
-  if (!source_object_metadata->get_tags().empty()) {
+  if (!additional_object_metadata->get_tags().empty()) {
     request->set_action_list("PutObjectTagging");
   }
   // request->set_action_list("PutObjectAcl");
