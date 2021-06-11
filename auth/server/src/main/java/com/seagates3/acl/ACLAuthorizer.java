@@ -93,9 +93,7 @@ class ACLAuthorizer {
           requestor.getAccount(), requiredPermission,
           acp.getOwner().getCanonicalId(), true, requestBody.get("S3Action"));
       if (!isAuthorized) {
-        LOGGER.debug("No Grants found in ACL for requested account: " +
-                     requestor.getAccount().getName() + ", cannonicalID: " +
-                     requestor.getAccount().getCanonicalId());
+        LOGGER.debug("No Grants found in ACL for requested account");
         return false;
       }
       LOGGER.info("Request authorized");
