@@ -53,6 +53,7 @@ class S3RequestObject : public RequestObject {
   std::string object_name;
   std::string default_acl;
   std::string s3_action;
+  // list of secondary actions which needed to be authorized
   std::list<std::string> s3_action_list;
 
   S3AuditInfo audit_log_obj;

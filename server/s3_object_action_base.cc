@@ -111,6 +111,8 @@ void S3ObjectAction::fetch_object_info_success() {
   next();
 }
 
+// For certain APIs like CopyObject, fetch additional (source)
+// bucket metadata/information
 void S3ObjectAction::fetch_additional_bucket_info() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, request_id, "Fetch metadata of bucket: %s\n",
