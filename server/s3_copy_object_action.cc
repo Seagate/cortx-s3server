@@ -391,17 +391,14 @@ void S3CopyObjectAction::set_source_bucket_authorization_metadata() {
   auth_acl = request->get_default_acl();
   auth_client->set_get_method = true;
 
+  request->reset_action_list();
   auth_client->set_entity_path("/" + additional_bucket_name + "/" +
                                additional_object_name);
 
-  request->reset_action_list();
   auth_client->set_acl_and_policy(
       additional_object_metadata->get_encoded_object_acl(),
       additional_bucket_metadata->get_policy_as_json());
   request->set_action_str("GetObject");
-  if (!additional_object_metadata->get_tags().empty()) {
-    request->set_action_list("GetObjectTagging");
-  }
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -418,28 +415,6 @@ void S3CopyObjectAction::check_source_bucket_authorization() {
 
 void S3CopyObjectAction::check_source_bucket_authorization_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  // Do destination bucket authorization for secondary operations
-  request->set_action_str("PutObject");
-
-  // clear action list
-  request->reset_action_list();
-
-  auth_client->set_entity_path("/" + request->get_bucket_name() + "/" +
-                               request->get_object_name());
-
-  auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
-                                  bucket_metadata->get_policy_as_json());
-  if (!additional_object_metadata->get_tags().empty()) {
-    request->set_action_list("PutObjectTagging");
-  }
-  // request->set_action_list("PutObjectAcl");
-  if (!request->get_action_list().empty()) {
-    auth_client->check_authorization(
-        std::bind(&S3CopyObjectAction::next, this),
-        std::bind(
-            &S3CopyObjectAction::check_destination_bucket_authorization_failed,
-            this));
-  }
   next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

@@ -107,7 +107,7 @@ void S3ObjectAction::fetch_object_info() {
 }
 
 void S3ObjectAction::fetch_object_info_success() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  request->set_object_size(object_metadata->get_content_length());
   next();
 }
 

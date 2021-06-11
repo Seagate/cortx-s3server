@@ -594,8 +594,8 @@ void S3AuthClient::add_non_empty_key_val_to_body(
   }
   if (!val_str.empty()) {
     val_str.pop_back();  // remove last delimiter
+    add_key_val_to_body(std::move(key), std::move(val_str));
   }
-  add_key_val_to_body(std::move(key), std::move(val_str));
 }
 
 void S3AuthClient::set_event_with_retry_interval() {
