@@ -32,6 +32,7 @@ from awss3api import AwsTest
 from shutil import copyfile
 import shutil
 from configobj import ConfigObj
+from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 home_dir = os.path.expanduser("~")
 original_config_file = os.path.join(home_dir,  '.sgs3iamcli/config.yaml')
@@ -1788,24 +1789,16 @@ def auth_health_check_tests():
 
 
 # Validate maxAccount and maxUser limit values from authserver.properties file
-def test_max_account_and_user_limit_value_of_auth_config():
-    print("printing access key and secret key using s3client config...")
-    print(GlobalTestState.root_access_key)
-    print(GlobalTestState.root_secret_key)
+def test_max_account_and_user_limit_value_of_auth_config():    
     print("Updating autherver.properties (/opt/seagate/cortx/auth/resources/authserver.properties) file with test values..")
-    config = ConfigObj("/opt/seagate/cortx/auth/resources/authserver.properties")
-    old_maxAccountValue=config.get('maxAccountLimit')
-    old_maxIAMUserValue=config.get('maxIAMUserLimit')
-    print("old max account value : ", old_maxAccountValue)
-    print("old max user value : ", old_maxIAMUserValue)
-    config['maxAccountLimit'] = "1"
-    config['maxIAMUserLimit'] = "1"
-    config.write()
-    print("setting maxAccountLimit as :", config['maxAccountLimit'])
-    print("setting maxIAMUserLimit as :", config['maxIAMUserLimit'])
+    s3confstore = S3CortxConfStore('properties:///opt/seagate/cortx/auth/resources/authserver.properties', 'index')
+
+    old_maxAccountValue=s3confstore.get_config('maxAccountLimit')
+    old_maxIAMUserValue=s3confstore.get_config('maxIAMUserLimit')
+    s3confstore.set_config('maxAccountLimit', '1', True)
+    s3confstore.set_config('maxIAMUserLimit', '1', True)
     os.system('systemctl restart s3authserver')
     time.sleep(1) # sometime authserver takes more time to restart
-    os.system(('systemctl status s3authserver'))
     # print("auth config values are changed successfully..")
 
     # Try to create two account and it should with MaxAccountLimitExceeded error.
@@ -1868,24 +1861,10 @@ def test_max_account_and_user_limit_value_of_auth_config():
             .command_response_should_have("Account deleted successfully")
 
     # Restore config paramters
-    restore_config_yaml()
-    print("*****testing while restoring*****")
-    # print("test access key : ", test_access_key)
-    # print("test secret key : ", test_secret_key)
-    # S3ClientConfig.access_key_id = test_access_key
-    print("test access key....after", S3ClientConfig.access_key_id)
-    # S3ClientConfig.secret_key = test_secret_key
-    print("test secret key....after", S3ClientConfig.secret_key)
-
-    # Revert config paramters
-    config1 = ConfigObj("/opt/seagate/cortx/auth/resources/authserver.properties")
-    # config1['maxAccountLimit'] = old_maxAccountValue
-    # config1['maxIAMUserLimit'] = old_maxIAMUserValue
-    config1['maxAccountLimit'] = 1000
-    config1['maxIAMUserLimit'] = 1000
-    print("setting maxAccountLimit as :", config1['maxAccountLimit'])
-    print("setting maxIAMUserLimit as :", config1['maxIAMUserLimit'])
-    config1.write()
+    S3ClientConfig.access_key_id = test_access_key
+    S3ClientConfig.secret_key = test_secret_key
+    s3confstore.set_config('maxAccountLimit', old_maxAccountValue, True)
+    s3confstore.set_config('maxIAMUserLimit', old_maxIAMUserValue, True)
     os.system('systemctl restart s3authserver')
     time.sleep(1) # sometime authserver takes more time to restart
     print("Reverted authserver.properties (/opt/seagate/cortx/auth/resources/authserver.properties) with origional values successfully...")

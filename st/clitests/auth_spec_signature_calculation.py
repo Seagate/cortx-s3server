@@ -66,7 +66,6 @@ def update_signature_headers(params):
         origional_headers = params['Authorization']
         # Split by space
         authorization_headers = origional_headers.split()
-        print("AUTHORIZATION HEADERS..........:", authorization_headers)
         # Handle aws v4 signature
         if 'AWS4-HMAC-SHA256' in authorization_headers:
             # Generate Signature header
@@ -96,7 +95,6 @@ def update_signature_headers(params):
                   print("date is ...", params['Date'])
               # Calculate Authorization header value
               authroization_value = sign_request_v2(params['Method'], params['ClientAbsoluteUri'], params)
-              print("AUTHORIZATION VALUE..........:", authroization_value)
               params['Authorization'] = authroization_value
 
     return params
@@ -115,15 +113,10 @@ for test in test_data:
     print("Test case [%s] - " % test_data[test]['test-title'])
     headers = test_data[test]['req-headers']
     params = test_data[test]['req-params']
-    print("HEADERS.........: ", headers)
-    print("PARAMS.........: ", params)
     # Update Authroization header with current date timestamp
     updated_params = update_signature_headers(params)
-    print("UPDATED PARAMS.........: ", updated_params)
     expected_response = test_data[test]['output']
-    print("EXPECTED RESPONSE.........: ", expected_response)
     test_response = AuthHTTPClient().authenticate_user(headers, updated_params)
-    print("TEST RESPONSE.........: ", test_response)
 
 
     check_response(expected_response, test_response)
