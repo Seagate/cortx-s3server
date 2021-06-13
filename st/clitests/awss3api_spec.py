@@ -1166,7 +1166,7 @@ result=AwsTest('Aws cannot complete multipart upload with wrong ETag').complete_
 #******* Delete bucket **********
 AwsTest('Aws can delete bucket').delete_bucket("seagatebuckettag").execute_test().command_is_successful()
 
-#************ Autorize copy-object ********************
+#************ Authorize copy-object ********************
 
 load_test_config()
 
@@ -1219,7 +1219,8 @@ os.environ["AWS_ACCESS_KEY_ID"] = source_access_key_args['AccessKeyId']
 os.environ["AWS_SECRET_ACCESS_KEY"] = source_access_key_args['SecretAccessKey']
 
 AwsTest('Aws can create bucket').create_bucket("source-bucket").execute_test().command_is_successful()
-AwsTest('Aws can create object').put_object("source-bucket", "source-object").execute_test().command_is_successful()
+AwsTest('Aws can create object').put_object("source-bucket", "source-object", 93323264)\
+    .execute_test().command_is_successful()
 #--------------------------create target bucket----------------------
 os.environ["AWS_ACCESS_KEY_ID"] = destination_access_key_args['AccessKeyId']
 os.environ["AWS_SECRET_ACCESS_KEY"] = destination_access_key_args['SecretAccessKey']
@@ -1229,7 +1230,7 @@ AwsTest('Aws can create bucket').create_bucket("target-bucket").execute_test().c
 #---------------------------copy-object------------------------------
 os.environ["AWS_ACCESS_KEY_ID"] = cross_access_key_args['AccessKeyId']
 os.environ["AWS_SECRET_ACCESS_KEY"] = cross_access_key_args['SecretAccessKey']
-AwsTest('Aws can copy object').copy_object("source-bucket/source-object", "target-bucket", "source-object")\
+AwsTest('Aws cannot copy object').copy_object("source-bucket/source-object", "target-bucket", "source-object")\
     .execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
 os.environ["AWS_ACCESS_KEY_ID"] = source_access_key_args['AccessKeyId']
 os.environ["AWS_SECRET_ACCESS_KEY"] = source_access_key_args['SecretAccessKey']
@@ -1250,6 +1251,36 @@ os.environ["AWS_SECRET_ACCESS_KEY"] = cross_access_key_args['SecretAccessKey']
 AwsTest('Aws can copy object').copy_object("source-bucket/source-object", "target-bucket", "source-object")\
     .execute_test().command_is_successful()
 
+
+# Put object tags on source object
+os.environ["AWS_ACCESS_KEY_ID"] = source_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = source_access_key_args['SecretAccessKey']
+AwsTest('Aws can put tags on source object')\
+    .put_object_tagging("source-bucket", "source-object", [{'Key': 'seagate','Value': 'storage'}] )\
+        .execute_test().command_is_successful()
+
+# Copy Object should fail now
+AwsTest('Aws can not copy source object with tags')\
+    .copy_object("source-bucket/source-object", "target-bucket", "copy1")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+
+# Update bucket policy on destination bucket to allow PutObjectTagging
+policy_target_bucket_relative_new = os.path.join(os.path.dirname(__file__), 'policy_files', 'target_bucket_putobjecttagging.json')
+policy_target_bucket_new = "file://" + os.path.abspath(policy_target_bucket_relative_new)
+
+os.environ["AWS_ACCESS_KEY_ID"] = destination_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = destination_access_key_args['SecretAccessKey']
+
+AwsTest("Aws can update bucket policy on target bucket")\
+    .put_bucket_policy("target-bucket", policy_target_bucket_new)\
+    .execute_test().command_is_successful()
+
+# Copy object should pass now
+os.environ["AWS_ACCESS_KEY_ID"] = source_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = source_access_key_args['SecretAccessKey']
+AwsTest('Aws can copy object after policy update').copy_object("source-bucket/source-object", "target-bucket", "copy1")\
+    .execute_test().command_is_successful()
+
 os.environ["AWS_ACCESS_KEY_ID"] = source_access_key_args['AccessKeyId']
 os.environ["AWS_SECRET_ACCESS_KEY"] = source_access_key_args['SecretAccessKey']
 AwsTest("Aws can delete policy on bucket").delete_bucket_policy("source-bucket").execute_test().command_is_successful()
@@ -1257,6 +1288,8 @@ os.environ["AWS_ACCESS_KEY_ID"] = destination_access_key_args['AccessKeyId']
 os.environ["AWS_SECRET_ACCESS_KEY"] = destination_access_key_args['SecretAccessKey']
 AwsTest("Aws can delete policy on bucket").delete_bucket_policy("target-bucket").execute_test().command_is_successful()
 AwsTest('Aws can delete object').delete_object("target-bucket", "source-object")\
+    .execute_test().command_is_successful()
+AwsTest('Aws can delete object').delete_object("target-bucket", "copy1")\
     .execute_test().command_is_successful()
 
 os.environ["AWS_ACCESS_KEY_ID"] = source_access_key_args['AccessKeyId']
