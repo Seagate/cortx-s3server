@@ -75,11 +75,3 @@ olcAccess: {0}to attrs=userPassword by self write by dn.base="cn=admin,dc=seagat
 -
 add: olcAccess
 olcAccess: {1}to * by dn.base="cn=admin,dc=seagate,dc=com" write by self write by * none
-
-dn: olcDatabase={2}mdb,cn=config
-changetype: modify
-replace: olcAccess
-olcAccess: {0}to attrs=userPassword by self write by dn.base="cn=sgiamadmin,dc=seagate,dc=com" write by anonymous auth by * none
--
-add: olcAccess
-olcAccess: {1}to * by dn.base="cn=sgiamadmin,dc=seagate,dc=com" write by self write by * none

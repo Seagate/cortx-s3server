@@ -94,8 +94,12 @@ rm -rf /etc/openldap/slapd.d/cn\=config/olcDatabase\=\{2\}mdb.ldif
 if [[ $forceclean == true ]]
 then
   rm -rf /var/lib/ldap/*
+  yum remove -y symas-openldap-clients symas-openldap-servers
 fi
 
+yum install -y symas-openldap-clients symas-openldap-servers
+#removes all hdb file instances if they exist, non-existence of files doesn't throw an error as well.
+rm -f /etc/openldap/slapd.d/cn\=config/olcDatabase=*hdb.ldif
 cp -f $INSTALLDIR/olcDatabase\=\{2\}mdb.ldif /etc/openldap/slapd.d/cn\=config/
 
 chgrp ldap /etc/openldap/certs/password # onlyif: grep -q ldap /etc/group && test -f /etc/openldap/certs/password
