@@ -48,17 +48,32 @@ class S3ObjectAction : public S3Action {
  protected:
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
+
+  // Certain APIs like CopyObject, would need more than single
+  // bucket and object metadata to be loaded.
+  std::shared_ptr<S3BucketMetadata> additional_bucket_metadata;
+  std::shared_ptr<S3ObjectMetadata> additional_object_metadata;
+
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
 
+  std::string additional_bucket_name;
+  std::string additional_object_name;
   m0_uint128 object_list_oid;
   m0_uint128 objects_version_list_oid;
   void fetch_bucket_info();
   void fetch_object_info();
+  void fetch_additional_bucket_info();
+  void fetch_additional_object_info();
+  void get_source_bucket_and_object(const std::string&);
   virtual void fetch_bucket_info_failed() = 0;
   virtual void fetch_object_info_failed() = 0;
+  virtual void fetch_additional_bucket_info_failed();
+  virtual void fetch_additional_object_info_failed();
   virtual void fetch_object_info_success();
   virtual void fetch_bucket_info_success();
+  virtual void fetch_additional_bucket_info_success();
+  virtual void fetch_additional_object_info_success();
 
   // Sets appropriate Fault points for any shutdown tests.
   void setup_fi_for_shutdown_tests();
@@ -79,6 +94,8 @@ class S3ObjectAction : public S3Action {
 
   FRIEND_TEST(S3ObjectActionTest, Constructor);
   FRIEND_TEST(S3ObjectActionTest, FetchBucketInfo);
+  FRIEND_TEST(S3ObjectActionTest, FetchAdditionalBucketInfo);
+  FRIEND_TEST(S3ObjectActionTest, FetchAdditionalBucketInfoSuccess);
   FRIEND_TEST(S3ObjectActionTest, FetchBucketInfoSuccess);
   FRIEND_TEST(S3ObjectActionTest, LoadMetadata);
   FRIEND_TEST(S3ObjectActionTest, SetAuthorizationMeta);

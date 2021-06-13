@@ -1,0 +1,10 @@
+{
+   "Statement": [
+      {
+         "Effect": "Allow",
+         "Principal": "*",
+         "Action": ["s3:PutObject","s3:PutObjectTagging"],
+         "Resource": "arn:aws:s3:::target-bucket/*"
+      }
+   ]
+}

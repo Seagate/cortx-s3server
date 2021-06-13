@@ -64,7 +64,6 @@ class S3GetObjectAction : public S3ObjectAction {
   void setup_steps();
 
   void fetch_bucket_info_failed();
-
   void fetch_object_info_failed();
   void validate_object_info();
   void check_full_or_range_object_read();
