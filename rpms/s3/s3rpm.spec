@@ -145,22 +145,6 @@ if [ $1 == 1 ];then
     echo "[cortx-s3server-rpm] INFO: S3 RPM Pre Install section completed"
 elif [ $1 == 2 ];then
     echo "[cortx-s3server-rpm] INFO: S3 RPM Pre Upgrade section started"
-    echo "[cortx-s3server-rpm] INFO: Backing up .sample config file to .old"
-    if [ -f /opt/seagate/cortx/s3/conf/s3config.yaml.sample ]; then
-        cp -f /opt/seagate/cortx/s3/conf/s3config.yaml.sample /tmp/s3config.yaml.sample.old
-    fi
-    if [ -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample ]; then
-        cp -f /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample /tmp/config.yaml.sample.old
-    fi
-    if [ -f /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample ]; then
-        cp -f /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample /tmp/s3_cluster.yaml.sample.old
-    fi
-    if [ -f /opt/seagate/cortx/auth/resources/keystore.properties.sample ]; then
-        cp -f /opt/seagate/cortx/auth/resources/keystore.properties.sample /tmp/keystore.properties.sample.old
-    fi
-    if [ -f /opt/seagate/cortx/auth/resources/authserver.properties.sample ]; then
-        cp -f /opt/seagate/cortx/auth/resources/authserver.properties.sample /tmp/authserver.properties.sample.old
-    fi
     echo "[cortx-s3server-rpm] INFO: S3 RPM Pre Upgrade section completed"
 fi
 
@@ -414,8 +398,6 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /opt/seagate/cortx/s3/conf/s3.reset.tmpl.1-node.sample
 /opt/seagate/cortx/s3/conf/s3.cleanup.tmpl.1-node
 /opt/seagate/cortx/s3/conf/s3.cleanup.tmpl.1-node.sample
-/opt/seagate/cortx/s3/conf/s3.upgrade.tmpl.1-node
-/opt/seagate/cortx/s3/conf/s3.upgrade.tmpl.1-node.sample
 /opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.properties
 /opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.properties
 /opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml
@@ -430,7 +412,8 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /opt/seagate/cortx/s3/bin/testcmd.py
 /opt/seagate/cortx/s3/bin/resetcmd.py
 /opt/seagate/cortx/s3/bin/preparecmd.py
-/opt/seagate/cortx/s3/bin/upgradecmd.py
+/opt/seagate/cortx/s3/bin/preupgradecmd.py
+/opt/seagate/cortx/s3/bin/postupgradecmd.py
 /opt/seagate/cortx/s3/bin/cleanupcmd.py
 /opt/seagate/cortx/s3/bin/ldapaccountaction.py
 /opt/seagate/cortx/s3/bin/merge.py
@@ -496,7 +479,6 @@ if [ $1 == 1 ];then
     echo "[cortx-s3server-rpm] INFO: S3 RPM Post Install section completed"
 elif [ $1 == 2 ];then
     echo "[cortx-s3server-rpm] INFO: S3 RPM Post Upgrade section started"
-    python3.6 /opt/seagate/cortx/s3/bin/merge.py
     echo "[cortx-s3server-rpm] WARNING: All mini-provisioner template files are overwritten."
     echo "[cortx-s3server-rpm] INFO: S3 RPM Post Upgrade section completed"
 fi
@@ -517,9 +499,6 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Post section completed"
 %postun
 if [ $1 == 1 ];then
     echo "[cortx-s3server-rpm] INFO: S3 RPM Post Uninstall Upgrade section started"
-    # removed temporary files from /tmp
-    rm -f /tmp/*.sample.old
-    echo "[cortx-s3server-rpm] INFO: Removed temporary .old files from /tmp"
     echo "[cortx-s3server-rpm] INFO: S3 RPM Post Uninstall Upgrade section completed"
 elif [ $1 == 0 ];then
     echo "[cortx-s3server-rpm] INFO: S3 RPM Post Uninstall section started"

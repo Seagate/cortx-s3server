@@ -189,7 +189,7 @@ backend s3-auth
 '''
 
     #Initialize port numbers
-    s3inport = 28081
+    s3inport = 28071
     s3auport = 28050
 
     #Add complete information to haproxy.cfg file

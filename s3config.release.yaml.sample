@@ -43,7 +43,7 @@ S3_SERVER_CONFIG:                                       # Section for S3 Server
    S3_AUDIT_MAX_RETRY_COUNT: 5                          # Max retry count in case of audit log failure
    S3_SERVER_IPV4_BIND_ADDR: 0.0.0.0                    # S3 Server ipv4 bind address, 0.0.0.0 is default. ~ means option is ignored/not to listen on IPv4 address.
    S3_SERVER_IPV6_BIND_ADDR: "~"                        # S3 Server ipv6 bind address, ::/128 is default. ~ means option is ignored/not to listen on IPv6 address.
-   S3_SERVER_BIND_PORT: 28081                            # S3 Server port number
+   S3_SERVER_BIND_PORT: 28071                            # S3 Server port number
    S3_SERVER_MOTR_HTTP_BIND_ADDR: 127.0.0.1             # S3 Server bind addresss to perform motr operations over HTTP, 127.0.0.1 is default.
    S3_SERVER_MOTR_HTTP_BIND_PORT: 28049                  # Port number to perform motr operations over HTTP.
    S3_SERVER_REGION_ENDPOINTS: [s3-us-west-2.seagate.com, s3-us.seagate.com, s3-europe.seagate.com, s3-asia.seagate.com]

@@ -152,9 +152,8 @@ class ConfigCmd(SetupCmd):
       if len(server_nodes_list) > 1:
         self.logger.info(f'Setting ldap-replication for storage_set:{index}')
 
-        tmpdir = "/opt/seagate/cortx/s3/tmp"
-        Path(tmpdir).mkdir(parents=True, exist_ok=True)
-        ldap_hosts_list_file = os.path.join(tmpdir, "ldap_hosts_list_file.txt")
+        Path(self.s3_tmp_dir).mkdir(parents=True, exist_ok=True)
+        ldap_hosts_list_file = os.path.join(self.s3_tmp_dir, "ldap_hosts_list_file.txt")
         with open(ldap_hosts_list_file, "w") as f:
           for node_machine_id in server_nodes_list:
             private_fqdn = self.get_confvalue(f'server_node>{node_machine_id}>network>data>private_fqdn')

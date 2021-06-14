@@ -51,20 +51,20 @@ where
 - Enable file corruption for a single instance of s3server
 
 ```
-# curl -X PUT -H "x-seagate-faultinjection: enable,always,di_data_corrupted_on_write,0,0" localhost:28081
+# curl -X PUT -H "x-seagate-faultinjection: enable,always,di_data_corrupted_on_write,0,0" localhost:28071
 ```
 
 - Disable file corruption for a single instance of s3server
 
 ```
-# curl -X PUT -H "x-seagate-faultinjection: disable,always,di_data_corrupted_on_write,0,0" localhost:28081
+# curl -X PUT -H "x-seagate-faultinjection: disable,always,di_data_corrupted_on_write,0,0" localhost:28071
 ```
 
 - Test if FI file corruption is enabled for a single instance of s3server.
   Following command prints FI status to s3server instance's log file
 
 ```
-# curl -X PUT -H "x-seagate-faultinjection: test,always,di_data_corrupted_on_write,0,0" localhost:28081
+# curl -X PUT -H "x-seagate-faultinjection: test,always,di_data_corrupted_on_write,0,0" localhost:28071
 ```
 
 ### Helper script for edit startup command line flags
@@ -119,7 +119,7 @@ By default script will look for a s3server's startup script in
 [ -z "$FIS" ] && { echo "Provide FIS"; exit 1; }
 [ -z "$1" ] && { echo "Operation missed"; exit 1; }
 inst_num=${NINST:-"45"}
-start_port=28081
+start_port=28071
 end_port=$(( $start_port + $inst_num - 1 ))
 for f in $(echo $FIS | tr "," " ")
 do
