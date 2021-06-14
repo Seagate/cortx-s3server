@@ -245,6 +245,114 @@ TEST_F(S3MotrReaderTest, ReadObjectDataSuccessful) {
   EXPECT_FALSE(s3motrreader_callbackobj.fail_called);
 }
 
+TEST_F(S3MotrReaderTest, ValidateStoredMD5ChksumSuccess) {
+  struct m0_bufvec bv_data;
+  struct m0_md5_inc_context_pi pi_info;
+  struct m0_pi_seed seed;
+  EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
+      .Times(1);
+  ON_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
+      .WillByDefault(Return(0));
+  memset(pi_info.pi_value, '\0', MD5_DIGEST_LENGTH);
+  EXPECT_TRUE(motr_reader_ptr->ValidateStoredMD5Chksum(
+      &bv_data, (struct m0_generic_pi *)&pi_info, &seed));
+}
+
+TEST_F(S3MotrReaderTest, ValidateStoredMD5ChksumFailure) {
+  struct m0_bufvec bv_data;
+  struct m0_generic_pi pi_info;
+  struct m0_pi_seed seed;
+  EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
+      .Times(1);
+  ON_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
+      .WillByDefault(Return(-1));
+  EXPECT_FALSE(
+      motr_reader_ptr->ValidateStoredMD5Chksum(&bv_data, &pi_info, &seed));
+}
+
+TEST_F(S3MotrReaderTest, CalculateBytesProcessed) {
+  size_t bytesProcessed;
+  size_t no_of_bufs = 2;
+  struct m0_bufvec bv_data;
+  bv_data.ov_vec.v_nr = no_of_bufs;
+  bv_data.ov_vec.v_count =
+      (m0_bcount_t *)calloc(no_of_bufs, sizeof(m0_bcount_t));
+  bv_data.ov_vec.v_count[0] = 20;
+  bv_data.ov_vec.v_count[1] = 100;
+  bytesProcessed = motr_reader_ptr->CalculateBytesProcessed(&bv_data);
+  EXPECT_EQ(120, bytesProcessed);
+  free(bv_data.ov_vec.v_count);
+}
+
+TEST_F(S3MotrReaderTest, ValidateStoredChksumSuccess) {
+  struct m0_md5_inc_context_pi s3_pi = {0};
+  motr_reader_ptr->reader_context.reset(
+      new S3MotrReaderContext(request_mock, NULL, NULL, 1));
+  motr_reader_ptr->reader_context->motr_rw_op_context =
+      (struct s3_motr_rw_op_context *)calloc(
+          1, sizeof(struct s3_motr_rw_op_context));
+  motr_reader_ptr->reader_context->motr_rw_op_context->unit_size = 16 * 1024;
+  motr_reader_ptr->reader_context->motr_rw_op_context->data =
+      (struct m0_bufvec *)calloc(1, sizeof(struct m0_bufvec));
+  motr_reader_ptr->reader_context->motr_rw_op_context->attr =
+      (struct m0_bufvec *)calloc(1, sizeof(struct m0_bufvec));
+  motr_reader_ptr->reader_context->motr_rw_op_context->data->ov_vec.v_nr = 1;
+  motr_reader_ptr->reader_context->motr_rw_op_context->data->ov_vec.v_count =
+      (m0_bcount_t *)calloc(1, sizeof(m0_bcount_t));
+  m0_bufvec *pibuf = motr_reader_ptr->reader_context->motr_rw_op_context->attr;
+  pibuf->ov_vec.v_nr = 1;
+  pibuf->ov_buf = (void **)calloc(1, sizeof(struct m0_generic_pi *));
+  pibuf->ov_buf[0] = (struct m0_md5_inc_context_pi *)&s3_pi;
+  pibuf->ov_vec.v_nr = 1;
+  pibuf->ov_vec.v_count = (m0_bcount_t *)calloc(1, sizeof(m0_bcount_t));
+  EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
+      .Times(1);
+  s3_pi.hdr.pi_type = M0_PI_TYPE_MD5_INC_CONTEXT;
+  ON_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
+      .WillByDefault(Return(0));
+  EXPECT_TRUE(motr_reader_ptr->ValidateStoredChksum());
+  free(pibuf->ov_vec.v_count);
+  free(motr_reader_ptr->reader_context->motr_rw_op_context->data->ov_vec
+           .v_count);
+  free(motr_reader_ptr->reader_context->motr_rw_op_context->attr);
+  free(motr_reader_ptr->reader_context->motr_rw_op_context->data);
+  free(motr_reader_ptr->reader_context->motr_rw_op_context);
+}
+
+TEST_F(S3MotrReaderTest, ValidateStoredChksumFailure) {
+  struct m0_md5_inc_context_pi s3_pi = {0};
+  motr_reader_ptr->reader_context.reset(
+      new S3MotrReaderContext(request_mock, NULL, NULL, 1));
+  motr_reader_ptr->reader_context->motr_rw_op_context =
+      (struct s3_motr_rw_op_context *)calloc(
+          1, sizeof(struct s3_motr_rw_op_context));
+  motr_reader_ptr->reader_context->motr_rw_op_context->unit_size = 16 * 1024;
+  motr_reader_ptr->reader_context->motr_rw_op_context->data =
+      (struct m0_bufvec *)calloc(1, sizeof(struct m0_bufvec));
+  motr_reader_ptr->reader_context->motr_rw_op_context->attr =
+      (struct m0_bufvec *)calloc(1, sizeof(struct m0_bufvec));
+  motr_reader_ptr->reader_context->motr_rw_op_context->data->ov_vec.v_nr = 1;
+  motr_reader_ptr->reader_context->motr_rw_op_context->data->ov_vec.v_count =
+      (m0_bcount_t *)calloc(1, sizeof(m0_bcount_t));
+  m0_bufvec *pibuf = motr_reader_ptr->reader_context->motr_rw_op_context->attr;
+  pibuf->ov_buf = (void **)calloc(1, sizeof(struct m0_generic_pi *));
+  pibuf->ov_buf[0] = (struct m0_md5_inc_context_pi *)&s3_pi;
+  pibuf->ov_vec.v_nr = 1;
+  pibuf->ov_vec.v_count = (m0_bcount_t *)calloc(1, sizeof(m0_bcount_t));
+  s3_pi.hdr.pi_type = M0_PI_TYPE_MD5_INC_CONTEXT;
+  EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
+      .Times(1);
+  ON_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
+      .WillByDefault(Return(-1));
+  EXPECT_FALSE(motr_reader_ptr->ValidateStoredChksum());
+  free(pibuf->ov_vec.v_count);
+  free(motr_reader_ptr->reader_context->motr_rw_op_context->data->ov_vec
+           .v_count);
+  free(motr_reader_ptr->reader_context->motr_rw_op_context->attr);
+  free(motr_reader_ptr->reader_context->motr_rw_op_context->data);
+  free(motr_reader_ptr->reader_context->motr_rw_op_context);
+}
+
 TEST_F(S3MotrReaderTest, ReadObjectDataFailed) {
   S3CallBack s3motrreader_callbackobj;
 
