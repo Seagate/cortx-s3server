@@ -148,6 +148,9 @@ class S3MotrReaderContext : public S3AsyncOpContextBase {
   }
 
   S3Evbuffer* get_evbuffer() { return p_s3_evbuffer.get(); }
+
+  FRIEND_TEST(S3MotrReaderTest, ValidateStoredChksumSuccess);
+  FRIEND_TEST(S3MotrReaderTest, ValidateStoredChksumFailure);
 };
 
 enum class S3MotrReaderOpState {
@@ -271,6 +274,11 @@ class S3MotrReader {
   FRIEND_TEST(S3MotrReaderTest, ReadObjectDataCheckNoHoleFlagTest);
   FRIEND_TEST(S3MotrReaderTest, ReadObjectDataSuccessful);
   FRIEND_TEST(S3MotrReaderTest, ReadObjectDataFailed);
+  FRIEND_TEST(S3MotrReaderTest, ValidateStoredMD5ChksumSuccess);
+  FRIEND_TEST(S3MotrReaderTest, ValidateStoredMD5ChksumFailure);
+  FRIEND_TEST(S3MotrReaderTest, CalculateBytesProcessed);
+  FRIEND_TEST(S3MotrReaderTest, ValidateStoredChksumSuccess);
+  FRIEND_TEST(S3MotrReaderTest, ValidateStoredChksumFailure);
   FRIEND_TEST(S3MotrReaderTest, CleanupContexts);
   FRIEND_TEST(S3MotrReaderTest, OpenObjectTest);
   FRIEND_TEST(S3MotrReaderTest, OpenObjectFailedTest);
