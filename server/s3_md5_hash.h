@@ -30,7 +30,8 @@
 #include "s3_motr_wrapper.h"
 
 class MD5hash {
-  MD5_CTX md5ctx, md5ctx_pre_unaligned;
+  MD5_CTX md5ctx = {0};
+  MD5_CTX md5ctx_pre_unaligned = {0};
   unsigned char md5_digest[MD5_DIGEST_LENGTH];
   int status;
   bool is_finalized = false;
