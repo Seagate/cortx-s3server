@@ -24,7 +24,6 @@ server_node:
       data:
         public_fqdn: "srvnode-1.data.public"
         private_fqdn: "srvnode-1.data.private"
-    s3_instances: "1"
 cortx:
   software:
     openldap:
@@ -35,7 +34,10 @@ cortx:
         user: "sgiamadmin"
         secret: "gAAAAABgWFPz2w_t6IBVictZmgTCgBXn5V-oy2JUVtvZkJvHM5KaaZKXRwtz4YKYieIy8mVKF8PUaZ6WYJEttcsi2KDpLOk9Vg=="
     s3:
-      motr_max_units_per_request : "8"
+      io:
+        motr_max_units_per_request : "8"
+      service:
+        instances : "1"
 cluster:
   3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6:
     site:

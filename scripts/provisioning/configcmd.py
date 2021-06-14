@@ -22,6 +22,7 @@ import sys
 import os
 import errno
 import shutil
+import math
 from pathlib import Path
 from  ast import literal_eval
 from os import path
@@ -257,10 +258,13 @@ class ConfigCmd(SetupCmd):
     motr_max_units_per_request = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST'))
     self.logger.info(f'motr_max_units_per_request: {motr_max_units_per_request}')
     #validate min and max unit should be between 1 to 128
-    if 1 <= int(motr_max_units_per_request) <= 128:
-      self.logger.error("motr_max_units_per_request is in valid range")
+    if 2 <= int(motr_max_units_per_request) <= 128:
+      if math.log2(motr_max_units_per_request).is_integer():
+        self.logger.error("motr_max_units_per_request is in valid range")
+      else:
+        raise S3PROVError("motr_max_units_per_request should be power of 2")
     else:
-      raise S3PROVError("motr_max_units_per_request should be between 1 to 128")
+      raise S3PROVError("motr_max_units_per_request should be between 2 to 128")
 
     # update the S3_MOTR_MAX_UNITS_PER_REQUEST in s3config.yaml file
     s3configfile = self.get_confkey('S3_CONFIG_FILE')

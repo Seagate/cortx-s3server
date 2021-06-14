@@ -24,7 +24,6 @@ server_node:
       data:
         public_fqdn: "srvnode-1.data.public"
         private_fqdn: "srvnode-1.data.private"
-    s3_instances: "1"
 cortx:
   software:
     openldap:
@@ -35,7 +34,10 @@ cortx:
         user: "sgiamadmin"
         secret: "TMPL_SGIAM_SECRET_KEY"
     s3:
-      motr_max_units_per_request : "8"
+      io:
+        motr_max_units_per_request : "8"
+      service:
+        instances : "1"
 cluster:
   TMPL_CLUSTER_ID:
     site:
