@@ -255,7 +255,7 @@ class S3MotrWiter {
   FRIEND_TEST(S3MotrWiterTest, WriteContentSuccessfulTestObytes);
   FRIEND_TEST(S3MotrWiterTest, WriteContentSuccessfulTest8kUnaligned);
   FRIEND_TEST(S3MotrWiterTest, WriteContentSuccessfulTest16kUnaligned);
-  FRIEND_TEST(S3MotrWiterTest, WriteContentSuccessfulTest10MUnaligned);
+  FRIEND_TEST(S3MotrWiterTest, WriteContentSuccessfulTest2MUnaligned);
   FRIEND_TEST(S3MotrWiterTest, WriteContentSuccessfulTest1MUnaligned);
   FRIEND_TEST(S3MotrWiterTest, WriteContentSuccessfulTest1M);
   FRIEND_TEST(S3MotrWiterTest, WriteContentFailedTest);

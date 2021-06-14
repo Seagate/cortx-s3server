@@ -515,8 +515,14 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest) {
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_fini(_)).Times(1);
   // buffers of size 4K and layout ID 9
   // TODO : uncomment and fill exact number of calls.
+  int expect_call_count = 0;
+  if (S3Option::get_instance()->is_s3_write_di_check_enabled()) {
+    expect_call_count = 2;
+  } else {
+    expect_call_count = 1;
+  }
   EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
-      .Times(1);
+      .Times(expect_call_count);
   ON_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
       .WillByDefault(Return(0));
 
@@ -555,6 +561,7 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTestObytes) {
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_fini(_)).Times(0);
   // buffers of size 4K and layout ID 9
   // TODO : uncomment and fill exact number of calls.
+
   EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
       .Times(0);
   ON_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
@@ -592,7 +599,7 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest8kUnaligned) {
 
   motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
                                                   0, s3_motr_api_mock);
-  motr_writer_ptr->set_layout_id(2);
+  motr_writer_ptr->set_layout_id(3);
 
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_init(_, _, _, _));
   EXPECT_CALL(*s3_motr_api_mock, motr_entity_open(_, _))
@@ -605,8 +612,14 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest8kUnaligned) {
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_fini(_)).Times(1);
   // buffers of size 4K and layout ID 9
   // TODO fill this Expect call with accurate number of calls expected.
+  int expect_call_count = 0;
+  if (S3Option::get_instance()->is_s3_write_di_check_enabled()) {
+    expect_call_count = 2;
+  } else {
+    expect_call_count = 1;
+  }
   EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
-      .Times(2);
+      .Times(expect_call_count);
   ON_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
       .WillByDefault(Return(0));
 
@@ -656,7 +669,7 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest16kUnaligned) {
 
   motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
                                                   0, s3_motr_api_mock);
-  motr_writer_ptr->set_layout_id(3);
+  motr_writer_ptr->set_layout_id(4);
 
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_init(_, _, _, _));
   EXPECT_CALL(*s3_motr_api_mock, motr_entity_open(_, _))
@@ -669,8 +682,14 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest16kUnaligned) {
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_fini(_)).Times(1);
   // buffers of size 4K and layout ID 9
   // TODO fill this Expect call with accurate number of calls expected.
+  int expect_call_count = 0;
+  if (S3Option::get_instance()->is_s3_write_di_check_enabled()) {
+    expect_call_count = 2;
+  } else {
+    expect_call_count = 1;
+  }
   EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
-      .Times(2);
+      .Times(expect_call_count);
   ON_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
       .WillByDefault(Return(0));
 
@@ -704,12 +723,13 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest16kUnaligned) {
   EXPECT_FALSE(S3MotrWiter_callbackobj.fail_called);
 }
 
-TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest10MUnaligned) {
+TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest2MUnaligned) {
   S3CallBack S3MotrWiter_callbackobj;
   bool is_last_buf = true;
   std::string sdata("Hello.World");
   int no_of_fourkbuffs =
-      10485760 / g_option_instance->get_libevent_pool_buffer_size();
+      2097152 / g_option_instance->get_libevent_pool_buffer_size();
+
   std::vector<std::string> mb_buffer;
 
   for (int i = 0; i < no_of_fourkbuffs; i++) {
@@ -733,8 +753,14 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest10MUnaligned) {
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_fini(_)).Times(1);
   // buffers of size 4K and layout ID 9
   // TODO fill this Expect call with accurate number of calls expected.
+  int expect_call_count = 0;
+  if (S3Option::get_instance()->is_s3_write_di_check_enabled()) {
+    expect_call_count = 4;
+  } else {
+    expect_call_count = 3;
+  }
   EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
-      .Times(2);
+      .Times(expect_call_count);
   ON_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
       .WillByDefault(Return(0));
 
@@ -797,8 +823,14 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest1MUnaligned) {
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_fini(_)).Times(1);
   // buffers of size 4K and layout ID 9
   // TODO fill this Expect call with accurate number of calls expected.
+  int expect_call_count = 0;
+  if (S3Option::get_instance()->is_s3_write_di_check_enabled()) {
+    expect_call_count = 3;
+  } else {
+    expect_call_count = 2;
+  }
   EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
-      .Times(2);
+      .Times(expect_call_count);
   ON_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
       .WillByDefault(Return(0));
 
@@ -859,8 +891,14 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest1M) {
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_fini(_)).Times(1);
   // buffers of size 4K and layout ID 9
   // TODO fill this Expect call with accurate number of calls expected.
+  int expect_call_count = 0;
+  if (S3Option::get_instance()->is_s3_write_di_check_enabled()) {
+    expect_call_count = 1;
+  } else {
+    expect_call_count = 1;
+  }
   EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
-      .Times(1);
+      .Times(expect_call_count);
   ON_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
       .WillByDefault(Return(0));
 

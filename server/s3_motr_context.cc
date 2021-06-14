@@ -234,12 +234,8 @@ struct s3_motr_rw_op_context *create_basic_rw_op_ctx(
       return NULL;
     }
 
-    if (S3Option::get_instance()->is_s3_read_di_check_enabled()) {
-      rc = m0_bufvec_alloc(ctx->attr, motr_checksums_buf_count,
-                           get_sizeof_pi_info(ctx));
-    } else {
-      rc = m0_bufvec_alloc(ctx->attr, motr_buf_count, 1);
-    }
+    rc = m0_bufvec_alloc(ctx->attr, motr_checksums_buf_count,
+                         get_sizeof_pi_info(ctx));
 
 #if 0
 
