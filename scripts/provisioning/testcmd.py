@@ -24,7 +24,8 @@ from setupcmd import SetupCmd
 from cortx.utils.process import SimpleProcess
 
 SANITY_SCRIPT_PATH = '/opt/seagate/cortx/s3/scripts/s3-sanity-test.sh'
-LDAP_SWITCH = '-p'
+LDAP_USER_SWITCH = '-u'
+LDAP_PASSWORD_SWITCH = '-p'
 ENDPOINT_SWITCH = '-e'
 
 class TestCmd(SetupCmd):
@@ -54,7 +55,7 @@ class TestCmd(SetupCmd):
     try:
       self.read_endpoint_value()
       self.logger.info(f"Endpoint fqdn {self.endpoint}")
-      cmd = [SANITY_SCRIPT_PATH, LDAP_SWITCH,  f'{self.ldap_passwd}', ENDPOINT_SWITCH, f'{self.endpoint}']
+      cmd = [SANITY_SCRIPT_PATH, LDAP_USER_SWITCH, f'{self.ldap_user}', LDAP_PASSWORD_SWITCH,  f'{self.ldap_passwd}', ENDPOINT_SWITCH, f'{self.endpoint}']
       handler = SimpleProcess(cmd)
       stdout, stderr, retcode = handler.run()
       self.logger.info(f'output of s3-sanity-test.sh: {stdout}')
