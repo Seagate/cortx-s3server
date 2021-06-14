@@ -188,6 +188,7 @@ class S3MotrReader {
   size_t num_of_blocks_to_read = 0;
 
   uint64_t last_index = 0;
+  uint64_t starting_index_for_read = 0;
 
   bool is_object_opened = false;
   struct s3_motr_obj_context* obj_ctx = nullptr;
@@ -253,7 +254,14 @@ class S3MotrReader {
     return NULL;
   }
 
-  virtual void set_last_index(size_t index) { last_index = index; }
+  virtual void set_last_index(size_t index) {
+    last_index = index;
+    starting_index_for_read = index;
+    s3_log(S3_LOG_INFO, stripped_request_id, "%s Index : %lu ", __func__,
+           index);
+    s3_log(S3_LOG_INFO, stripped_request_id, "%s Index : %lu ", __func__,
+           starting_index_for_read);
+  }
 
   // For Testing purpose
   FRIEND_TEST(S3MotrReaderTest, Constructor);
