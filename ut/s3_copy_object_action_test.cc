@@ -758,6 +758,46 @@ TEST_F(S3CopyObjectActionTest, DestinationAuthorization) {
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata, get_tags())
       .Times(1)
       .WillOnce(ReturnRef(tagsmap));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-acl"))
+      .Times(1)
+      .WillOnce(Return(""));
+  std::string MockJsonResponse("Mockresponse");
+  EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
+              get_state())
+      .WillRepeatedly(Return(S3BucketMetadataState::present));
+  EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
+              get_policy_as_json()).WillRepeatedly(ReturnRef(MockJsonResponse));
+
+  action_under_test->set_authorization_meta();
+
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3CopyObjectActionTest, DestinationAuthorizationSourceTagsAndACLHeader) {
+  create_dst_bucket_metadata();
+  action_under_test->clear_tasks();
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3CopyObjectActionTest::func_callback_one, this);
+  action_under_test->bucket_metadata =
+      action_under_test->bucket_metadata_factory->create_bucket_metadata_obj(
+          ptr_mock_request);
+
+  action_under_test->additional_object_metadata =
+      action_under_test->object_metadata_factory->create_object_metadata_obj(
+          ptr_mock_request);
+
+  std::map<std::string, std::string> tagsmap{{"tag1", "value1"}};
+
+  EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata, get_tags())
+      .Times(1)
+      .WillOnce(ReturnRef(tagsmap));
+
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-amz-acl"))
+      .Times(1)
+      .WillOnce(Return("test-acl"));
+
+  EXPECT_CALL(*ptr_mock_request, set_action_list(_)).Times(2);
+
   std::string MockJsonResponse("Mockresponse");
   EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
               get_state())
