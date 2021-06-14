@@ -111,6 +111,7 @@
 - get_multipart_parts_request_count
 - abort_multipart_request_count
 - head_object_request_count
+- copy_object_request_count
 - put_object_request_count
 - put_object_chunkupload_request_count
 - get_object_request_count
