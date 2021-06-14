@@ -49,6 +49,7 @@ class SetupCmd(object):
   ldap_mdb_folder = "/var/lib/ldap"
   s3_prov_config = "/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml"
   _preqs_conf_file = "/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
+  s3_tmp_dir = "/opt/seagate/cortx/s3/tmp"
   #TODO
   # add the service name and HA service name in the following dictionary
   # as key value pair after confirming from the HA team
@@ -62,18 +63,24 @@ class SetupCmd(object):
 
   def __init__(self,config: str):
     """Constructor."""
+    self.endpoint = None
+    self._url = None
+    self._provisioner_confstore = None
+    self._s3_confkeys_store = None
+    self.machine_id = None
+    self.cluster_id = None
+
     s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
     self.logger = logging.getLogger(s3deployment_logger_name)
     
     if config is None:
-      self.logger.error(f'Empty Config url')
+      self.logger.warning(f'Empty Config url')
       return
 
     if not config.strip():
       self.logger.error(f'Config url:[{config}] must be a valid url path')
       raise Exception('Empty config URL path')
 
-    self.endpoint = None
     self._url = config
     self._provisioner_confstore = S3CortxConfStore(self._url, 'setup_prov_index')
     self._s3_confkeys_store = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'setup_s3keys_index')
@@ -473,16 +480,16 @@ class SetupCmd(object):
 
       # new sample file
       conf_sample = filetype + SampleFile
-      cs_conf_sample = S3CortxConfStore(config=conf_sample, index=conf_sample)
+      cs_conf_sample = S3CortxConfStore(config=conf_sample, index=conf_sample + "validator")
       conf_sample_keys = cs_conf_sample.get_all_keys()
 
       # active config file
       conf_file =  filetype + configFile
-      cs_conf_file = S3CortxConfStore(config=conf_file, index=conf_file)
+      cs_conf_file = S3CortxConfStore(config=conf_file, index=conf_file + "validator")
       conf_file_keys = cs_conf_file.get_all_keys()
 
       # compare the keys of sample file and config file
-      if conf_sample_keys == conf_file_keys:
+      if conf_sample_keys.sort() == conf_file_keys.sort():
           self.logger.info(f'config file {str(configFile)} validated successfully.')
       else:
           self.logger.error(f'config file {str(conf_file)} and sample file {str(conf_sample)} keys does not matched.')
