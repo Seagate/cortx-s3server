@@ -74,5 +74,12 @@ public interface AccessKeyDAO {
       */
     public
      void deleteExpiredKeys(User user) throws DataAccessException;
+
+     /*
+      * Get the access key belonging to the account.
+      */
+    public
+     AccessKey findAccountAccessKey(
+         String rootUserId) throws DataAccessException;
 }
 

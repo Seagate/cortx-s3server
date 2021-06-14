@@ -26,7 +26,8 @@ validte_configure_lnet() {
   else
     echo "Lnet is down."
     echo "configuring lnet"
-    echo "options lnet networks=tcp(eth0) config_on_load=1" > '/etc/modprobe.d/lnet.conf'
+    iface=$(ip route | grep default | awk 'NR==1{print $5}')
+    echo "options lnet networks=tcp($iface) config_on_load=1" > '/etc/modprobe.d/lnet.conf'
     service lnet restart
     # it has been observed that the lnet does not get restart in first go
     # so for safer side restarting again and then verify
@@ -40,10 +41,11 @@ validte_configure_lnet() {
     fi
   fi
 }
-
 ###############################
 ### Main script starts here ###
 ###############################
 
 # validate and configure lnet
-validte_configure_lnet
+  if rpm -q 'kmod-lustre-client' ; then
+    validte_configure_lnet
+  fi

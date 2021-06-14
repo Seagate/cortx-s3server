@@ -411,8 +411,8 @@ bool S3PostCompleteAction::validate_parts() {
         set_s3_error("EntityTooLarge");
         s3_post_complete_action_state =
             S3PostCompleteActionState::validationFailed;
-        set_abort_multipart(true);
-        break;
+        send_response_to_s3_client();
+        return false;
       }
       if (current_parts_size < MINIMUM_ALLOWED_PART_SIZE &&
           store_kv->first != total_parts) {
@@ -424,8 +424,8 @@ bool S3PostCompleteAction::validate_parts() {
         set_s3_error("EntityTooSmall");
         s3_post_complete_action_state =
             S3PostCompleteActionState::validationFailed;
-        set_abort_multipart(true);
-        break;
+        send_response_to_s3_client();
+        return false;
       }
 
       if (part_one_size_in_multipart_metadata != 0) {

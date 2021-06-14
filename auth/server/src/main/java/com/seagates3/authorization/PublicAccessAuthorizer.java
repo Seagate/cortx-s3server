@@ -23,11 +23,20 @@ class PublicAccessAuthorizer {
 
  private
   static Set<String> actionsList = new HashSet<>();
-
  private
   static final Logger LOGGER =
       LoggerFactory.getLogger(PublicAccessAuthorizer.class.getName());
-
+ private
+  static PublicAccessAuthorizer instance = null;
+ private
+  PublicAccessAuthorizer() { init(); }
+ public
+  static PublicAccessAuthorizer getInstance() {
+    if (instance == null) {
+      instance = new PublicAccessAuthorizer();
+    }
+    return instance;
+  }
  public
   static void init() {
     try {
@@ -46,12 +55,12 @@ class PublicAccessAuthorizer {
   }
 
  public
-  static boolean isActionRestricted(Map<String, String> requestBody) {
+  boolean isActionRestricted(Map<String, String> requestBody) {
     return actionsList.contains(getActionType(requestBody));
   }
 
  private
-  static String getActionType(Map<String, String> requestBody) {
+  String getActionType(Map<String, String> requestBody) {
     String action = requestBody.get("S3Action");
     if (requestBody.get("x-amz-copy-source") != null &&
         "PutObject".equals(action)) {
