@@ -91,8 +91,9 @@ S3CopyObjectActionTest::S3CopyObjectActionTest() {
   EXPECT_CALL(*ptr_mock_request, get_bucket_name())
       .WillRepeatedly(ReturnRef(destination_bucket_name));
 
-  EXPECT_CALL(*ptr_mock_request, get_object_name()).Times(AtLeast(1)).WillOnce(
-      ReturnRef(destination_object_name));
+  EXPECT_CALL(*ptr_mock_request, get_object_name())
+      .Times(AtLeast(1))
+      .WillRepeatedly(ReturnRef(destination_object_name));
 
   ptr_mock_bucket_meta_factory =
       std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);

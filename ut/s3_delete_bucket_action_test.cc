@@ -138,7 +138,10 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataPresent) {
               get_object_list_index_oid())
       .Times(1)
       .WillOnce(ReturnRef(oid));
-
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_extended_metadata_index_oid())
+      .Times(1)
+      .WillOnce(ReturnRef(oid));
   struct m0_uint128 version_list_oid = {0x1ffff, 0x1ffff};
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
@@ -159,7 +162,10 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataEmptyBucket) {
       bucket_meta_factory->mock_bucket_metadata;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillOnce(Return(S3BucketMetadataState::present));
-
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_extended_metadata_index_oid())
+      .Times(1)
+      .WillOnce(ReturnRef(oid));
   // set the OID
   action_under_test->bucket_metadata->set_object_list_index_oid(zero_oid);
 

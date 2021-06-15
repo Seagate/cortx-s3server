@@ -63,6 +63,8 @@ class MockS3BucketMetadata : public S3BucketMetadata {
   MOCK_CONST_METHOD0(get_object_list_index_oid, const struct m0_uint128&());
   MOCK_CONST_METHOD0(get_objects_version_list_index_oid,
                      const struct m0_uint128&());
+  MOCK_CONST_METHOD0(get_extended_metadata_index_oid,
+                     const struct m0_uint128&());
 };
 
 #endif
