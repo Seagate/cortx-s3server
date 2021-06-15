@@ -63,8 +63,9 @@ def main():
   prepareCmd = subparsers.add_parser('prepare', help='setup prepare')
   prepareCmd.add_argument("--config", help='config URL', type=str, required=True)
 
-  upgradeCmd = subparsers.add_parser('upgrade', help='setup upgrade')
-  upgradeCmd.add_argument("--config", help='config URL', type=str, required=True)
+  preupgradeCmd = subparsers.add_parser('preupgrade', help='setup pre upgrade')
+
+  postupgradeCmd = subparsers.add_parser('postupgrade', help='setup post upgrade')
 
   args = parser.parse_args()
 
@@ -117,11 +118,16 @@ def main():
       logger.info('prepare started.')
       PrepareCmd(args.config).process()
       logger.info('prepare successful.')
-    elif args.command == 'upgrade':
-      from upgradecmd import UpgradeCmd
-      logger.info('upgrade started.')
-      UpgradeCmd(args.config).process()
-      logger.info('upgrade successful.')
+    elif args.command == 'preupgrade':
+      from preupgradecmd import PreUpgradeCmd
+      logger.info('pre-upgrade started.')
+      PreUpgradeCmd(None).process()
+      logger.info('pre-upgrade successful.')
+    elif args.command == 'postupgrade':
+      from postupgradecmd import PostUpgradeCmd
+      logger.info('post-upgrade started.')
+      PostUpgradeCmd(None).process()
+      logger.info('post-upgrade successful.')
 
   except Exception as e:
     logger.error(f"{str(e)}")

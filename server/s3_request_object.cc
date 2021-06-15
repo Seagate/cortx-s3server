@@ -85,8 +85,8 @@ void S3RequestObject::set_action_str(const std::string& action) {
 
 void S3RequestObject::set_action_list(const std::string& action) {
   if (!action.empty()) {
-  s3_log(S3_LOG_INFO, stripped_request_id, "Adding S3Action: [%s] to list\n",
-         action.c_str());
+    s3_log(S3_LOG_INFO, stripped_request_id, "Adding S3Action: [%s] to list\n",
+           action.c_str());
     s3_action_list.push_back(action);
   }
 }
