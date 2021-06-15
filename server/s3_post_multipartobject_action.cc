@@ -138,8 +138,6 @@ void S3PostMultipartObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3PostMultipartObjectAction::fetch_object_info_success() { next(); }
-
 void S3PostMultipartObjectAction::validate_x_amz_tagging_if_present() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   std::string new_object_tags = request->get_header_value("x-amz-tagging");
@@ -341,7 +339,8 @@ void S3PostMultipartObjectAction::save_upload_metadata() {
       request->get_object_name() + "|" + upload_id;
   object_multipart_metadata->rename_object_name(multipart_object_name);
   object_multipart_metadata->set_layout_id(layout_id);
-  object_multipart_metadata->set_pvid(motr_writer->get_ppvid());
+  // Save empty pv id string
+  object_multipart_metadata->set_pvid(nullptr);
 
   for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {

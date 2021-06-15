@@ -331,19 +331,6 @@ std::string S3ObjectMetadata::get_content_length_str() {
   return system_defined_attribute["Content-Length"];
 }
 
-// TODO - Remove it later
-void S3ObjectMetadata::set_part_one_size(const size_t& part_size) {
-  system_defined_attribute["Part-One-Size"] = std::to_string(part_size);
-}
-// TODO - Remove it later
-size_t S3ObjectMetadata::get_part_one_size() {
-  if (system_defined_attribute["Part-One-Size"] == "") {
-    return 0;
-  } else {
-    return std::stoul(system_defined_attribute["Part-One-Size"].c_str());
-  }
-}
-
 void S3ObjectMetadata::set_md5(std::string md5) {
   system_defined_attribute["Content-MD5"] = md5;
 }
@@ -869,11 +856,15 @@ int S3ObjectMetadata::from_json(std::string content) {
     primary_obj_size = newroot["Size"].asUInt64();
   }
 
-  if (obj_fragments == 0 && obj_parts != 0) {
+  if (obj_fragments != 0 && obj_parts != 0 && (obj_fragments == obj_parts)) {
+    // In case of multipart upload, no. of fragments == no. of parts
     obj_type = S3ObjectMetadataType::only_parts;
   } else if (obj_fragments != 0 && obj_parts == 0) {
     obj_type = S3ObjectMetadataType::only_frgments;
-  } else if (obj_fragments != 0 && obj_parts != 0) {
+  } else if (obj_fragments != 0 && obj_parts != 0 &&
+             (obj_fragments > obj_parts)) {
+    // In case of multipart upload with some parts with fragmented object,
+    // no. of fragments > no. of parts
     obj_type = S3ObjectMetadataType::parts_fragments;
   }
 
@@ -1111,6 +1102,9 @@ void S3ObjectExtendedMetadata::get_obj_ext_entries_successful() {
              "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
              object_list_index_oid.u_hi, object_list_index_oid.u_lo,
              object_name.c_str(), motr_kv_reader->get_value().c_str());
+      state = S3ObjectMetadataState::invalid;
+      this->handler_on_failed();
+      return;
     } else {
       // Added extended entry.
       s3_log(S3_LOG_DEBUG, request_id, "Added extended object key [%s]\n",
@@ -1127,6 +1121,36 @@ void S3ObjectExtendedMetadata::get_obj_ext_entries_successful() {
 }
 
 void S3ObjectExtendedMetadata::get_obj_ext_entries_failed() {
+  switch (motr_kv_reader->get_state()) {
+    case S3MotrKVSReaderOpState::failed_to_launch:
+      state = S3ObjectMetadataState::failed_to_launch;
+      s3_log(S3_LOG_WARN, request_id,
+             "Extended object metadata load failed to launch - "
+             "ServiceUnavailable\n");
+      break;
+    case S3MotrKVSReaderOpState::failed:
+    case S3MotrKVSReaderOpState::failed_e2big:
+      s3_log(S3_LOG_WARN, request_id,
+             "Internal server error - InternalError\n");
+      state = S3ObjectMetadataState::failed;
+      break;
+    case S3MotrKVSReaderOpState::missing:
+      state = S3ObjectMetadataState::missing;
+      s3_log(S3_LOG_DEBUG, request_id, "Object metadata missing for %s\n",
+             object_name.c_str());
+      break;
+    case S3MotrKVSReaderOpState::present:
+      // This state is allowed here only if validaton failed
+      if (state != S3ObjectMetadataState::invalid) {
+        s3_log(S3_LOG_ERROR, request_id, "Invalid state - InternalError\n");
+        state = S3ObjectMetadataState::failed;
+      }
+      break;
+    default:  // S3MotrKVSReaderOpState::{empty,start}
+      s3_log(S3_LOG_ERROR, request_id, "Unexpected state - InternalError\n");
+      state = S3ObjectMetadataState::failed;
+      break;
+  }
   this->handler_on_failed();
 }
 
@@ -1222,7 +1246,7 @@ int S3ObjectExtendedMetadata::from_json(std::string key, std::string content) {
 
   item_ctx.motr_OID =
       S3M0Uint128Helper::to_m0_uint128(newroot["OID"].asString());
-  item_ctx.PVID = S3M0Uint128Helper::to_m0_uint128(newroot["PVID"].asString());
+  S3M0Uint128Helper::to_m0_fid(newroot["PVID"].asString(), item_ctx.PVID);
   item_ctx.item_size = newroot["size"].asUInt64();
   item_ctx.layout_id = newroot["layout-id"].asInt();
   total_size += item_ctx.item_size;
@@ -1235,6 +1259,7 @@ int S3ObjectExtendedMetadata::from_json(std::string key, std::string content) {
         S3CommonUtilities::stoi(tokens[2].substr(pos + 1), ext_objects_key)) {
       // key is the part number
       ext_objects[ext_objects_key].push_back(item_ctx);
+      parts = ext_objects_key;
     } else {
       s3_log(S3_LOG_ERROR, request_id, "Failed to retrive part number\n");
       return -1;
@@ -1322,7 +1347,9 @@ std::string S3ObjectExtendedMetadata::get_json_str(
     struct s3_part_frag_context& frag_entry) {
   Json::Value root;
   root["OID"] = S3M0Uint128Helper::to_string(frag_entry.motr_OID);
-  root["PVID"] = S3M0Uint128Helper::to_string(frag_entry.PVID);
+  std::string pvid_str;
+  S3M0Uint128Helper::to_string(frag_entry.PVID, pvid_str);
+  root["PVID"] = pvid_str;
   root["size"] = Json::Value((Json::Value::UInt64)(frag_entry.item_size));
   root["layout-id"] = Json::Value((Json::Value::UInt)frag_entry.layout_id);
   Json::FastWriter fastWriter;

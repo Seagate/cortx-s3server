@@ -360,6 +360,7 @@ void S3PutMultiObjectAction::create_part_object_successful() {
       part_number);
   part_metadata->set_oid(motr_writer->get_oid());
   part_metadata->set_layout_id(layout_id);
+  part_metadata->set_pvid(motr_writer->get_ppvid());
   new_oid_str = S3M0Uint128Helper::to_string(new_object_oid);
 
   add_object_oid_to_probable_dead_oid_list();
@@ -647,19 +648,21 @@ void S3PutMultiObjectAction::add_object_oid_to_probable_dead_oid_list() {
     // prepending a char depending on the size of the object (size based
     // bucketing of object)
     S3CommonUtilities::size_based_bucketing_of_objects(
-        old_oid_str, object_metadata->get_content_length());
+        old_oid_str, part_metadata->get_content_length());
 
     // key = oldoid + "-" + newoid
     std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
     s3_log(S3_LOG_DEBUG, request_id,
            "Adding old_probable_del_rec with key [%s]\n",
            old_oid_rec_key.c_str());
-    // TODO - Revisit later to see the changes needed here
     old_probable_del_rec.reset(new S3ProbableDeleteRecord(
-        old_oid_rec_key, {0ULL, 0ULL}, std::to_string(part_number),
-        old_object_oid, old_layout_id, part_metadata->get_part_index_oid(),
+        old_oid_rec_key, {0ULL, 0ULL},
+        object_multipart_metadata->get_object_name(), old_object_oid,
+        old_layout_id, bucket_metadata->get_multipart_index_oid(),
         bucket_metadata->get_objects_version_list_index_oid(), "",
-        false /* force_delete */, true, part_metadata->get_part_index_oid()));
+        false /* force_delete */, true, part_metadata->get_part_index_oid(), 0,
+        strtoul(part_metadata->get_part_number().c_str(), NULL, 0),
+        bucket_metadata->get_extended_metadata_index_oid()));
 
     probable_oid_list[old_oid_rec_key] = old_probable_del_rec->to_json();
   }
@@ -671,10 +674,12 @@ void S3PutMultiObjectAction::add_object_oid_to_probable_dead_oid_list() {
   s3_log(S3_LOG_DEBUG, request_id,
          "Adding new_probable_del_rec with key [%s]\n", new_oid_str.c_str());
   new_probable_del_rec.reset(new S3ProbableDeleteRecord(
-      new_oid_str, old_object_oid, std::to_string(part_number), new_object_oid,
-      layout_id, part_metadata->get_part_index_oid(),
+      new_oid_str, old_object_oid, object_multipart_metadata->get_object_name(),
+      new_object_oid, layout_id, bucket_metadata->get_multipart_index_oid(),
       bucket_metadata->get_objects_version_list_index_oid(), "",
-      false /* force_delete */, true, part_metadata->get_part_index_oid()));
+      false /* force_delete */, true, part_metadata->get_part_index_oid(), 0,
+      strtoul(part_metadata->get_part_number().c_str(), NULL, 0),
+      bucket_metadata->get_extended_metadata_index_oid()));
   // store new oid, key = newoid
   probable_oid_list[new_oid_str] = new_probable_del_rec->to_json();
 

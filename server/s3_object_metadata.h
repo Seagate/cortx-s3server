@@ -223,14 +223,12 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
 
   virtual void set_content_length(std::string length);
   virtual size_t get_content_length();
-  virtual size_t get_part_one_size();
   virtual void rename_object_name(std::string new_object_name);
   virtual std::string get_content_length_str();
   virtual void set_content_type(std::string content_type);
   virtual std::string get_content_type();
 
   virtual void set_md5(std::string md5);
-  virtual void set_part_one_size(const size_t& part_size);
   virtual std::string get_md5();
 
   virtual void set_oid(struct m0_uint128 id);
@@ -323,8 +321,8 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   // Remove object metadata from object list index & versions list index
   virtual void remove(std::function<void(void)> on_success,
                       std::function<void(void)> on_failed);
-  void remove_version_metadata(std::function<void(void)> on_success,
-                               std::function<void(void)> on_failed);
+  virtual void remove_version_metadata(std::function<void(void)> on_success,
+                                       std::function<void(void)> on_failed);
 
   virtual S3ObjectMetadataState get_state() { return state; }
 
@@ -424,7 +422,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
 // Fragment or the part detail structure
 struct s3_part_frag_context {
   struct m0_uint128 motr_OID;
-  struct m0_uint128 PVID;
+  struct m0_fid PVID;
   std::string versionID;
   size_t item_size;
   int layout_id;
@@ -459,10 +457,9 @@ class S3ObjectExtendedMetadata : private S3ObjectMetadataCopyable {
   // 0 if fragments of simple object.
   std::map<int, std::vector<struct s3_part_frag_context>> ext_objects;
 
-  void get_obj_ext_entries(std::string last_object);
-  int from_json(std::string key, std::string content);
-  // TODO: Do we need this - void to_json();
-  std::string get_json_str(struct s3_part_frag_context& frag_entry);
+  virtual void get_obj_ext_entries(std::string last_object);
+  virtual int from_json(std::string key, std::string content);
+  virtual std::string get_json_str(struct s3_part_frag_context& frag_entry);
 
  protected:
   void save_extended_metadata();
@@ -486,37 +483,40 @@ class S3ObjectExtendedMetadata : private S3ObjectMetadataCopyable {
 
   // Virtual Destructor
   virtual ~S3ObjectExtendedMetadata() {};
-  bool has_entries() { return (ext_objects.size() > 0) ? true : false; }
-  inline const std::map<int, std::vector<struct s3_part_frag_context>>&
+  virtual bool has_entries() { return (ext_objects.size() > 0) ? true : false; }
+  virtual inline const std::map<int, std::vector<struct s3_part_frag_context>>&
   get_raw_extended_entries() {
     return ext_objects;
   }
 
-  unsigned int get_fragment_count() { return fragments; }
-  void load(std::function<void(void)> on_success,
-            std::function<void(void)> on_failed);
-  void save(std::function<void(void)> on_success,
-            std::function<void(void)> on_failed);
-  void set_object_list_index_oid(struct m0_uint128 id) {
+  virtual unsigned int get_fragment_count() { return fragments; }
+  virtual unsigned int get_part_count() { return parts; }
+  virtual void load(std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed);
+  virtual void save(std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed);
+  virtual void set_object_list_index_oid(struct m0_uint128 id) {
     object_list_index_oid.u_hi = id.u_hi;
     object_list_index_oid.u_lo = id.u_lo;
   };
+  void set_version_id(const std::string& versionid) { version_id = versionid; }
   void get_obj_ext_entries_failed();
   void get_obj_ext_entries_successful();
   inline size_t get_size() { return total_size; }
   // Returns extended key/value pair of entries of object with fragments/parts
-  std::map<std::string, std::string> get_kv_list_of_extended_entries();
+  virtual std::map<std::string, std::string> get_kv_list_of_extended_entries();
   // Adds an extended entry, when object write fails due to degradation
   // For first part, part_no=1 and for first fragment on part, fragment_no=1
-  void add_extended_entry(struct s3_part_frag_context& part_frag_ctx,
-                          unsigned int fragment_no, unsigned int part_no);
+  virtual void add_extended_entry(struct s3_part_frag_context& part_frag_ctx,
+                                  unsigned int fragment_no,
+                                  unsigned int part_no);
   void set_size_of_extended_entry(size_t fragment_size,
                                   unsigned int fragment_no,
                                   unsigned int part_no);
 
   // Delete extended metadata entries
-  void remove(std::function<void(void)> on_success,
-              std::function<void(void)> on_failed);
+  virtual void remove(std::function<void(void)> on_success,
+                      std::function<void(void)> on_failed);
 
   void remove_ext_object_metadata();
   void remove_ext_object_metadata_successful();

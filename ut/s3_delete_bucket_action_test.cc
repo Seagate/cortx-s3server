@@ -158,7 +158,10 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataEmptyBucket) {
       bucket_meta_factory->mock_bucket_metadata;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillOnce(Return(S3BucketMetadataState::present));
-
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_extended_metadata_index_oid())
+      .Times(1)
+      .WillOnce(ReturnRef(oid));
   // set the OID
   action_under_test->bucket_metadata->set_object_list_index_layout(
       zero_index_layout);

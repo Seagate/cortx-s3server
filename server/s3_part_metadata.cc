@@ -41,7 +41,7 @@ void S3PartMetadata::initialize(std::string uploadid, int part_num) {
   salt = "index_salt_";
   collision_attempt_count = 0;
   s3_motr_api = std::make_shared<ConcreteMotrAPI>();
-
+  pvid_str = "";
   // Set the defaults
   system_defined_attribute["Date"] = "";
   system_defined_attribute["Content-Length"] = "";
@@ -163,6 +163,21 @@ void S3PartMetadata::add_system_attribute(std::string key, std::string val) {
 void S3PartMetadata::add_user_defined_attribute(std::string key,
                                                 std::string val) {
   user_defined_attribute[key] = val;
+}
+
+struct m0_fid S3PartMetadata::get_pvid() {
+  struct m0_fid pvid;
+  S3M0Uint128Helper::to_m0_fid(pvid_str, pvid);
+  return pvid;
+}
+
+void S3PartMetadata::set_pvid(const struct m0_fid* p_pvid) {
+  if (p_pvid) {
+    S3M0Uint128Helper::to_string(*p_pvid, pvid_str);
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id, "%s - NULL pointer", __func__);
+    pvid_str.clear();
+  }
 }
 
 void S3PartMetadata::load(std::function<void(void)> on_success,
@@ -450,6 +465,7 @@ std::string S3PartMetadata::to_json() {
   root["Part-Num"] = part_number;
   root["motr_oid"] = motr_oid_str;
   root["layout_id"] = layout_id;
+  root["PVID"] = this->pvid_str;
 
   for (auto sit : system_defined_attribute) {
     root["System-Defined"][sit.first] = sit.second;
@@ -484,6 +500,7 @@ int S3PartMetadata::from_json(std::string content) {
   motr_oid_str = newroot["motr_oid"].asString();
   oid = S3M0Uint128Helper::to_m0_uint128(motr_oid_str);
   layout_id = newroot["layout_id"].asInt();
+  pvid_str = newroot["PVID"].asString();
 
   Json::Value::Members members = newroot["System-Defined"].getMemberNames();
   for (auto it : members) {
