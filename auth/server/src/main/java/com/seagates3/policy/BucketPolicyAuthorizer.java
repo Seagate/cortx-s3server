@@ -85,9 +85,8 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
                      PolicyAuthorizedS3Actions.getInstance()
                          .isOnlyPolicyAuthorizationRequired(action)) {
             LOGGER.debug(
-                "copyobject scenario and only policy authorization required "+
-                "for action- " +
-                action);
+                "copyobject scenario and only policy authorization required " +
+                "for action- " + action);
             serverResponse = responseGenerator.AccessDenied();
             break;
           }

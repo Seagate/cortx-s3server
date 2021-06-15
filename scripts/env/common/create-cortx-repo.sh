@@ -44,7 +44,8 @@ while getopts "G:" x; do
 done
 shift $((OPTIND-1))
 
-pip install githubrelease
+export LANG=en_US.UTF-8 && export LC_ALL=en_US.UTF-8
+pip3 install click==7.1.2 && pip3 install githubrelease
 
 # Clean existing cache
 rm -rf /root/releases_cortx_s3deps /etc/yum.repos.d/releases_cortx_s3deps.repo
