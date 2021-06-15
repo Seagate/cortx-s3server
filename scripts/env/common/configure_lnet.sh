@@ -38,6 +38,7 @@ validte_configure_lnet() {
       echo "Lnet is up and running"
     else
       echo "Lnet is down after configuring too"
+      exit
     fi
   fi
 }
