@@ -381,7 +381,9 @@ void S3CopyObjectAction::set_authorization_meta() {
   if (!additional_object_metadata->get_tags().empty()) {
     request->set_action_list("PutObjectTagging");
   }
-  // request->set_action_list("PutObjectAcl");
+  if (!request->get_header_value("x-amz-acl").empty()) {
+    request->set_action_list("PutObjectAcl");
+  }
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
