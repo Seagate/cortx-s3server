@@ -230,14 +230,19 @@ TEST_F(S3MotrReaderTest, ReadObjectDataCheckNoHoleFlagTest) {
 
 TEST_F(S3MotrReaderTest, ReadObjectDataSuccessful) {
   S3CallBack s3motrreader_callbackobj;
+  uint64_t last_index = 0;
+  size_t motr_unit_size = 1048576;
+  size_t motr_block_count = 1;
   motr_reader_ptr->reader_context.reset(
       new S3MotrReaderContext(request_mock, NULL, NULL, 1));
+  motr_reader_ptr->reader_context->init_read_op_ctx(
+      request_mock->get_request_id(), motr_block_count, motr_unit_size,
+      &last_index);
 
   motr_reader_ptr->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3motrreader_callbackobj);
   motr_reader_ptr->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3motrreader_callbackobj);
-  ;
 
   motr_reader_ptr->read_object_successful();
   EXPECT_TRUE(motr_reader_ptr->get_state() == S3MotrReaderOpState::success);
