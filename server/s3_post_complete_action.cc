@@ -99,6 +99,21 @@ S3PostCompleteAction::S3PostCompleteAction(
   setup_steps();
 }
 
+std::string S3PostCompleteAction::generate_etag() {
+  s3_log(S3_LOG_DEBUG, request_id, "Generating etag...\n");
+
+  S3AwsEtag awsetag;
+  for (std::pair<unsigned int, std::string> p_md5 : part_etags) {
+    s3_log(S3_LOG_DEBUG, request_id, "part num [%u] -> etag [%s]\n",
+           p_md5.first, p_md5.second.c_str());
+    awsetag.add_part_etag(p_md5.second);
+  }
+
+  std::string etg = awsetag.finalize();
+  s3_log(S3_LOG_DEBUG, request_id, "Resulting etag [%s]\n", etg.c_str());
+  return etg;
+}
+
 void S3PostCompleteAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
 
@@ -302,7 +317,7 @@ void S3PostCompleteAction::get_next_parts_info_successful() {
       }
       // All parts info processed and validated, finalize etag and move ahead.
       s3_log(S3_LOG_DEBUG, request_id, "finalizing");
-      etag = awsetag.finalize();
+      etag = generate_etag();
       next();
     } else {
       // Continue fetching
@@ -331,7 +346,7 @@ void S3PostCompleteAction::get_next_parts_info_failed() {
       send_response_to_s3_client();
       return;
     }
-    etag = awsetag.finalize();
+    etag = generate_etag();
     next();
   } else {
     if (motr_kv_reader->get_state() ==
@@ -445,12 +460,13 @@ bool S3PostCompleteAction::validate_parts() {
           break;
         }
       }
+      unsigned int pnum = std::stoul(store_kv->first.c_str());
       if ((prev_fetched_parts_size != 0) &&
           (prev_fetched_parts_size != current_parts_size)) {
         if (store_kv->first == total_parts) {
           // This is the last part, ignore it after size calculation
           object_size += part_metadata->get_content_length();
-          awsetag.add_part_etag(part_metadata->get_md5());
+          part_etags[pnum] = part_metadata->get_md5();
           part_kv = parts.erase(part_kv);
           continue;
         }
@@ -471,7 +487,7 @@ bool S3PostCompleteAction::validate_parts() {
         prev_fetched_parts_size = current_parts_size;
       }
       object_size += part_metadata->get_content_length();
-      awsetag.add_part_etag(part_metadata->get_md5());
+      part_etags[pnum] = part_metadata->get_md5();
       // Remove the entry from parts map, so that in next
       // validate_parts() we dont have to scan it again
       part_kv = parts.erase(part_kv);
