@@ -56,7 +56,10 @@ class S3CortxConfStore:
 
   def get_all_keys(self):
     """Get all the key value pairs from confstore."""
-    return Conf.get_keys(self.default_index)
+    # TODO deep_scan flag will be deprecated in future.
+    # Do changes in all places wherever its applicable
+    # refer validate_config_files() and phase_keys_validate() in setupcmd.py
+    return Conf.get_keys(self.default_index, deep_scan = False)
 
   def delete_key(self, key: str, save: bool = False):
     """Deletes the specified key."""
@@ -70,7 +73,10 @@ class S3CortxConfStore:
     In-place replaces of keys specified in keys_to_include from source to destination.
     In case keys_to_include is empty all keys are replace in-place.
     """
-    Conf.copy(source_index, self.default_index, keys_to_include)
+    # TODO deep_scan flag will be deprecated in future.
+    # Do changes in all places wherever its applicable
+    # refer upgrade_config() in merge.py
+    Conf.copy(source_index, self.default_index, keys_to_include, deep_scan = False)
 
   def save_config(self):
     """Saves to config file."""
