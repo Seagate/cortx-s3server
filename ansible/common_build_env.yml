@@ -51,8 +51,6 @@
   yum: pkg={{item}} state=installed
   with_items:
     - "{{python_version}}-pytest"
-    - "{{python_version}}-pika"
     - "{{python_version}}-jsonschema"
     - "{{python_version}}-nose"
     - "{{python_version}}-mock"
-    - "{{python_version}}-ply"
