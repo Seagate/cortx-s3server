@@ -76,7 +76,6 @@ class S3PostCompleteAction : public S3ObjectAction {
   size_t prev_fetched_parts_size;
   size_t validated_parts_count;
   std::string last_key;
-  S3AwsEtag awsetag;
 
   struct m0_uint128 old_object_oid;
   int old_layout_id;
@@ -89,6 +88,9 @@ class S3PostCompleteAction : public S3ObjectAction {
   // Probable delete record for new object OID in case of current req failure
   std::string new_oid_str;  // Key for new probable delete rec
   std::unique_ptr<S3ProbableDeleteRecord> new_probable_del_rec;
+
+  std::map<unsigned int, std::string> part_etags;
+  std::string generate_etag();
 
  public:
   S3PostCompleteAction(
