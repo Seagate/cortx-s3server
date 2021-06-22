@@ -1,0 +1,46 @@
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+
+Link for installation and configuration steps of kafka (single node and cluster) are available at https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup
+
+Pre-requisites:
+- Run the init.sh script which will install and configure kafka.
+
+To configure IEM on 'N' node cluster run the script as follows:
+sh configure-iem.sh -c N -i hosts
+where "N" is number of consumers and hosts are cluster of hosts on whih IEM should be configured with comma seperated list
+
+e.g.
+1. To configure IEM on single node then run
+sh configure-iem.sh -c 1 -i ssc-vm-1271.colo.seagate.com
+
+2. To configure IEM on three node cluster then run
+sh configure-iem.sh -c 3 -i ssc-vm-1271.colo.seagate.com,ssc-vm-1272.colo.seagate.com,ssc-vm-1273.colo.seagate.com
+
+Troubleshooting:
+To verify IEM configured successfully or not run the following command:
+/opt/kafka/bin/kafka-topics.sh --list --bootstrap-server localhost:9092
+
+If list topic command is successful and topic "IEM" is listed then IEM configured successfully.
+e.g.
+
+[root@ssc-vm-3161 iem]# /opt/kafka/bin/kafka-topics.sh --list --bootstrap-server localhost:9092
+IEM
+__consumer_offsets
+bgdelete
