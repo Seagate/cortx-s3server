@@ -483,7 +483,6 @@ elif [ $1 == 2 ];then
     echo "[cortx-s3server-rpm] INFO: S3 RPM Post Upgrade section completed"
 fi
 systemctl daemon-reload
-systemctl enable s3authserver
 systemctl restart rsyslog
 openssl_version=`rpm -q --queryformat '%{VERSION}' openssl`
 if [ "$openssl_version" != "1.0.2k" ] && [ "$openssl_version" != "1.1.1" ]; then
