@@ -77,6 +77,7 @@ std::string S3ProbableDeleteRecord::to_json() {
 
   // Will be 0 for new object record or first object.
   root["old_oid"] = S3M0Uint128Helper::to_string(old_object_oid);
+  root["new_oid"] = S3M0Uint128Helper::to_string(new_oid);
   root["object_key_in_index"] =
       object_key_in_index;  // Object key in object list index
   root["object_layout_id"] =
