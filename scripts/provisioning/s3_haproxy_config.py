@@ -23,6 +23,7 @@ import sys
 import socket
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 import logging
+import configparser
 
 class S3HaproxyConfig:
   """HAProxy configration for S3."""
@@ -85,6 +86,12 @@ class S3HaproxyConfig:
 
   def process(self):
     """Main Processing function."""
+    # provisioner is creating override.conf file for haproxy in which
+    # restart should be 'no' as it is managed by HA
+    self.logger.info('Set haproxy restart to NO started')
+    self.set_haproxy_restart_to_no()
+    self.logger.info('Set haproxy restart to NO completed')
+
     self.local_confstore = S3CortxConfStore(
       "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml",
       'localstore')
@@ -240,3 +247,14 @@ backend s3-auth
     os.system("rm -rf /etc/cron.daily/logrotate")
     os.system("cp /opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate /etc/cron.hourly/logrotate")
     os.system("systemctl restart rsyslog")
+
+  def set_haproxy_restart_to_no(self):
+    """Set restart to 'no' in /etc/systemd/system/haproxy.service.d/override.conf."""
+    overridefilepath = "/etc/systemd/system/haproxy.service.d/override.conf"
+    if os.path.isfile(overridefilepath):
+      self.logger.info(f"file {overridefilepath} exist")
+      config = configparser.ConfigParser()
+      config.read(overridefilepath)
+      config.set("Service", "Restart", "no")
+      with open(overridefilepath, 'w') as configfile:
+          config.write(configfile)

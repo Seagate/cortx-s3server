@@ -22,7 +22,6 @@ import sys
 import os
 import errno
 import shutil
-import configparser
 from pathlib import Path
 from  ast import literal_eval
 
@@ -64,12 +63,6 @@ class ConfigCmd(SetupCmd):
       services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver"]
       self.disable_services(services_list)
       self.logger.info('Disable services on reboot completed')
-
-      # provisioner is creating override.conf file for haproxy in which 
-      # restart should be 'no' as it is managed by HA
-      self.logger.info('Set haproxy restart to NO started')
-      self.set_haproxy_restart_to_no()
-      self.logger.info('Set haproxy restart to NO completed')
 
       self.logger.info('create auth jks password started')
       self.create_auth_jks_password()
@@ -254,14 +247,3 @@ class ConfigCmd(SetupCmd):
     else:
       self.logger.warning(f'warning of create_auth_jks_password.sh: {stderr}')
       self.logger.info(' Successfully set auth JKS keystore password.')
-
-  def set_haproxy_restart_to_no(self):
-    """Set restart to 'no' in /etc/systemd/system/haproxy.service.d/override.conf"""
-    overridefilepath = "/etc/systemd/system/haproxy.service.d/override.conf"
-    if os.path.isfile(overridefilepath):
-      self.logger.info(f"file {overridefilepath} exist")
-      config = configparser.ConfigParser()
-      config.read(overridefilepath)
-      config.set("Service", "Restart", "no")
-      with open(overridefilepath, 'w') as configfile:
-          config.write(configfile)
