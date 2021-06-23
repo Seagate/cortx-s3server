@@ -51,7 +51,7 @@ def main():
 
   cleanupCmd = subparsers.add_parser('cleanup', help='setup cleanup')
   cleanupCmd.add_argument("--config", help='config URL', type=str, required=True)
-  cleanupCmd.add_argument("--delete_deployment_log", help='Delete deployment log', action='store_true')
+  cleanupCmd.add_argument("--pre_factory", help='Revert to factory state', action='store_true')
 
   testCmd = subparsers.add_parser('test', help='setup test')
   testCmd.add_argument("--config", help='config URL', type=str, required=True)
@@ -81,7 +81,7 @@ def main():
     elif args.command == 'cleanup':
       from cleanupcmd import CleanupCmd
       logger.info('cleanup started.')
-      CleanupCmd(args.config).process(args.delete_deployment_log)
+      CleanupCmd(args.config).process(args.pre_factory)
       logger.info('cleanup successful.')
     elif args.command == 'config':
       from configcmd import ConfigCmd
