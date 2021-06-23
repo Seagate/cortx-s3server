@@ -29,7 +29,7 @@ class S3CortxIem:
     def send(self, module, event_id, severity, message_blob):
         """Send the message."""
         source = 'S'
-        component= 'S3' 
+        component= 'S3'
         EventMessage.init(component, source)
 
         try:
@@ -46,7 +46,7 @@ class S3CortxIem:
         EventMessage.subscribe(component)
 
         while True:
-            try: 
+            try:
                 alert = EventMessage.receive()
                 if alert is None:
                     break

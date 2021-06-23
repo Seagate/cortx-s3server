@@ -30,8 +30,8 @@ class S3IemAPIsUT(unittest.TestCase):
     def test_mock_send(self, mock_send_return):
         s3iem = S3CortxIem()
         mock_send_return.return_value = True
-        severity = 'X' 
-        module = 'HPI' 
+        severity = 'X'
+        module = 'HPI'
         event_id = 100
         message_blob = "*******This is a test IEM message********"
 
