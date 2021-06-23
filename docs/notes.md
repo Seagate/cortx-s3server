@@ -123,6 +123,13 @@ cd -
 python3.6 req_timelines.py -p 191874 13 -e 1
 ```
 
+where 191874 is a pid of the s3server instance, 13 is a request id that should be visualized,
+1 is a number of lines that should be displayed. Each line is logical level of requet processing,
+e.g. s3server, clovis, dix, fom, etc
+
+pid and request id could be found in m0play.db file - result of the convertion of text addb files to database.
+`sqlite3` utility can be used to analize the database with help of SQL requests.
+
 - it is possible to use GNUPlot to draw timelines. Example `cortx-experiments/S3/addb-low-write-256kb`
 
 
@@ -205,7 +212,7 @@ bash-4.2$ ./s3bench -version
 
 #### AWS credentials
 
-s3bench can use aws utility credential file - ww`~/.aws/credentials`.
+s3bench can use aws utility credential file - `~/.aws/credentials`.
 if no credential parameters provided s3bench will use `default` profile from `~/.aws/credentials`.
 
 Different profile could be used via command line parameter `-profile` - name of the required profile.
@@ -217,6 +224,9 @@ Different profile could be used via command line parameter `-profile` - name of 
 - `-bucketName` - the bucket for which to run the test
 
 ### Network settings
+
+s3bench uses Amazon AWS SDK for go v1. Following parameters are directly mapped to corresponding AWS SDK parametrs.
+Additional information could be found in documentation for Amazon AWS SDK for go v1
 
 - `-s3MaxRetries` - The maximum number of times that a request will be retried for failures. Defaults to -1, which defers the max retry setting to the service specific configuration
 - `-s3Disable100Continue` - Set this to `true` to disable the SDK adding the `Expect: 100-Continue` header to PUT requests over 2MB of content. 100-Continue instructs the HTTP client not to send the body until the service responds with a `continue` status. This is useful to prevent sending the request body until after the request is authenticated, and validated. You should use this flag to disable 100-Continue if you experience issues with proxies or third party S3 compatible services
