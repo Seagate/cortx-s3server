@@ -21,13 +21,15 @@
     eventcode part  005 represents s3background component
     and 0001 repesents connection failures """
 
-import syslog
+import traceback
 
+from cortx.utils.iem_framework import EventMessage
 
 class IEMutil(object):
     severity = ""
     eventCode = ""
     eventstring = ""
+    module = 'HPI'
 
     # List of eventcodes
     S3_CONN_FAILURE = "0050010001"
@@ -35,10 +37,11 @@ class IEMutil(object):
     # List of eventstrings
     S3_CONN_FAILURE_STR = "Failed to connect to S3 server. For more information refer the Troubleshooting Guide."
 
-    def __init__(self, loglevel, eventcode, eventstring):
+    def __init__(self, module, loglevel, eventcode, eventstring):
         self.eventCode = eventcode
         self.loglevel = loglevel
         self.eventString = eventstring
+        self.module = module
         if(loglevel == "INFO"):
             self.severity = "I"
         if(loglevel == "WARN"):
@@ -49,5 +52,34 @@ class IEMutil(object):
         self.log_iem()
 
     def log_iem(self):
-        IEM = "IEC:%sS%s:%s" % (self.severity, self.eventCode, self.eventString)
-        syslog.syslog(IEM)
+        self.send(self.module, self.eventCode, self.severity, self.eventString)
+
+    def send(self, module, event_id, severity, message_blob):
+        """Send the message."""
+        source = 'S'
+        component= 'S3'
+        EventMessage.init(component, source)
+
+        try:
+            EventMessage.send(module=module, event_id=event_id, severity=severity, message_blob=message_blob)
+        except Exception as exception:
+            msg = ("msg_bus ack except:%s %s") % (
+                    exception, traceback.format_exc())
+            return False, msg
+        return True, None
+
+
+    def receive(self, component):
+        """Receive the incoming message."""
+        EventMessage.subscribe(component)
+
+        while True:
+            try:
+                alert = EventMessage.receive()
+                if alert is None:
+                    break
+            except Exception as exception: 
+                msg = ("msg_bus ack except:%s %s") % (
+                    exception, traceback.format_exc())
+                return False, msg
+        return True, None
