@@ -184,6 +184,12 @@ cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3cipher/s3cipher
 python%{py_ver} -m compileall -b *.py
 cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3cipher/build/lib/s3cipher 
 
+# Build the s3cortxutils/s3iem wrapper python module
+mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3iem/build/lib/s3iem
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3iem/s3iem
+python%{py_ver} -m compileall -b *.py
+cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3iem/build/lib/s3iem 
+
 echo "[cortx-s3server-rpm] INFO: S3 RPM Build section completed"
 
 ################################
@@ -209,6 +215,10 @@ python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=
 
 # Install s3confstore python module
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3confstore
+python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
+
+# Install the s3msg bus wrapper module
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3cortxutils/s3iem
 python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --version=%{version}
 
 echo "[cortx-s3server-rpm] INFO: S3 RPM Install section completed"
@@ -431,6 +441,7 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 %{_bindir}/s3cipher
 %{_bindir}/s3msgbus
 %{_bindir}/s3confstore
+%{_bindir}/s3iem
 %{py36_sitelib}/s3backgrounddelete/config/*.yaml
 %{py36_sitelib}/s3backgrounddelete/config/s3_background_delete_config.yaml.sample
 %{py36_sitelib}/s3backgrounddelete/config/s3_cluster.yaml.sample
@@ -442,6 +453,8 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 %{py36_sitelib}/s3cipher-%{version}-py?.?.egg-info
 %{py36_sitelib}/s3confstore/*.pyc
 %{py36_sitelib}/s3confstore-%{version}-py?.?.egg-info
+%{py36_sitelib}/s3iem/*.pyc
+%{py36_sitelib}/s3iem-%{version}-py?.?.egg-info
 %exclude %{py36_sitelib}/s3backgrounddelete/__pycache__/*
 %exclude %{py36_sitelib}/s3backgrounddelete/*.py
 %exclude %{py36_sitelib}/s3confstore/*.py
@@ -455,6 +468,8 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 %exclude %{py36_sitelib}/s3cipher/*.py
 %exclude %{py36_sitelib}/s3confstore/s3confstore
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundproducer
+%exclude %{py36_sitelib}/s3iem/s3iem
+%exclude %{py36_sitelib}/s3iem/__pycache__/*
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyc
 %exclude /opt/seagate/cortx/s3/reset/precheck.pyo
 

@@ -121,6 +121,7 @@ then
   UT_MEMPOOLMGR_BIN=./bazel-bin/s3mempoolmgrut
   UT_S3BACKGROUNDDELETE=./s3backgrounddelete/scripts/run_all_ut.sh
   UT_S3CONFSTORE=./s3cortxutils/s3confstore/scripts/run_all_ut.sh
+  UT_S3IEM=./s3cortxutils/s3iem/scripts/run_all_ut.sh
 
   printf "\nCheck s3ut..."
   type  $UT_BIN >/dev/null
@@ -157,6 +158,12 @@ then
   printf "OK \n"
 
   $UT_S3CONFSTORE 2>&1
+
+  printf "\nCheck s3iemut..."
+  type $UT_S3IEM >/dev/null
+  printf "OK \n"
+
+  $UT_S3IEM 2>&1
 fi
 
 if [ $no_st_run -eq 0 ]

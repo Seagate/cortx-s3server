@@ -21,13 +21,13 @@
     eventcode part  005 represents s3background component
     and 0001 repesents connection failures """
 
-import syslog
-
+from s3iem.cortx_s3_iem import S3CortxIem
 
 class IEMutil(object):
     severity = ""
     eventCode = ""
     eventstring = ""
+    module = 'HPI'
 
     # List of eventcodes
     S3_CONN_FAILURE = "0050010001"
@@ -39,6 +39,8 @@ class IEMutil(object):
         self.eventCode = eventcode
         self.loglevel = loglevel
         self.eventString = eventstring
+        self.module = module
+        self.__iemlib = S3CortxIem()
         if(loglevel == "INFO"):
             self.severity = "I"
         if(loglevel == "WARN"):
@@ -49,5 +51,4 @@ class IEMutil(object):
         self.log_iem()
 
     def log_iem(self):
-        IEM = "IEC:%sS%s:%s" % (self.severity, self.eventCode, self.eventString)
-        syslog.syslog(IEM)
+        self.__iemlib.send(self.module, self.eventCode, self.severity, self.eventString)
