@@ -29,7 +29,7 @@ class IEMutil(object):
     severity = ""
     eventCode = ""
     eventstring = ""
-    module = 'HPI'
+    module = ""
 
     # List of eventcodes
     S3_CONN_FAILURE = "0050010001"
@@ -54,6 +54,7 @@ class IEMutil(object):
     def log_iem(self):
         self.send(self.module, self.eventCode, self.severity, self.eventString)
 
+    @classmethod
     def send(self, module, event_id, severity, message_blob):
         """Send the message."""
         source = 'S'
@@ -63,23 +64,20 @@ class IEMutil(object):
         try:
             EventMessage.send(module=module, event_id=event_id, severity=severity, message_blob=message_blob)
         except Exception as exception:
-            msg = ("msg_bus ack except:%s %s") % (
+            msg = ("iem except:%s %s") % (
                     exception, traceback.format_exc())
             return False, msg
         return True, None
 
-
+    @classmethod
     def receive(self, component):
         """Receive the incoming message."""
         EventMessage.subscribe(component)
 
-        while True:
-            try:
-                alert = EventMessage.receive()
-                if alert is None:
-                    break
-            except Exception as exception: 
-                msg = ("msg_bus ack except:%s %s") % (
-                    exception, traceback.format_exc())
-                return False, msg
+        try:
+            alert = EventMessage.receive()
+        except Exception as exception:
+            msg = ("iem except:%s %s") % (
+                exception, traceback.format_exc())
+            return False, msg
         return True, None

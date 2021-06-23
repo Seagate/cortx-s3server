@@ -17,8 +17,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-import pytest
-
 from s3backgrounddelete.IEMutil import IEMutil
 
 def test_send():
@@ -28,12 +26,19 @@ def test_send():
     event_id = 100
     message_blob = "*******This is a test IEM message********"
 
-    result_data, msg = s3iem.send(module, event_id, severity, message_blob)
-    assert result_data == True
+    result_data = s3iem.send(module, event_id, severity, message_blob)
+    assert result_data[0] == True
 
 def test_receive():
-    s3iem = IEMutil("HPI", "INFO", 100, "Test_message")
+    s3iem = IEMutil("HPI", "INFO", 100, "")
     component = 'S3'
+    severity = 'X'
+    module = 'HPI'
+    event_id = 100
+    message_blob = "Test message"
 
-    result_data, msg = s3iem.receive(component)
-    assert result_data == True
+    ret, msg = s3iem.send(module, event_id, severity, message_blob)
+
+    result_data = s3iem.receive(component)
+    assert result_data[0] == True
+    assert result_data[1] == None 
