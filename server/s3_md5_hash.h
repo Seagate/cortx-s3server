@@ -28,11 +28,13 @@
 #include <openssl/md5.h>
 #include "motr/client.h"
 #include "s3_motr_wrapper.h"
+#include "s3_motr_context.h"
 
 class MD5hash {
   MD5_CTX md5ctx = {0};
   MD5_CTX md5ctx_pre_unaligned = {0};
   unsigned char md5_digest[MD5_DIGEST_LENGTH];
+  struct m0_pi_seed seed;
   int status;
   bool is_finalized = false;
   bool checksum_saved = false;
@@ -50,6 +52,15 @@ class MD5hash {
   void save_motr_unit_checksum(unsigned char *curr_digest);
   void save_motr_unit_checksum_for_unaligned_bufs(
       unsigned char *curr_digest_at_unit);
+  int s3_calculate_unit_pi(struct s3_motr_rw_op_context *rw_ctx,
+                           size_t current_attr_index, size_t seed_offset,
+                           m0_uint128 oid, unsigned int s3_flag);
+  int s3_motr_client_calculate_pi(struct m0_generic_pi *, struct m0_pi_seed *,
+                                  struct m0_bufvec *, enum m0_pi_calc_flag,
+                                  unsigned char *current_digest,
+                                  unsigned char *without_seed);
+  int s3_calculate_unaligned_buffs_pi(struct s3_motr_rw_op_context *rw_ctx,
+                                      unsigned int s3_flag);
   bool is_checksum_saved();
   void *get_prev_write_checksum();
   void *get_prev_unaligned_checksum();
