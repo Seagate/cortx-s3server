@@ -22,6 +22,7 @@ import sys
 import os
 import errno
 import shutil
+from pathlib import Path
 from  ast import literal_eval
 
 from setupcmd import SetupCmd, S3PROVError
@@ -146,20 +147,23 @@ class ConfigCmd(SetupCmd):
       if len(server_nodes_list) > 1:
         self.logger.info(f'Setting ldap-replication for storage_set:{index}')
 
-        with open("hosts_list_file.txt", "w") as f:
+        Path(self.s3_tmp_dir).mkdir(parents=True, exist_ok=True)
+        ldap_hosts_list_file = os.path.join(self.s3_tmp_dir, "ldap_hosts_list_file.txt")
+        with open(ldap_hosts_list_file, "w") as f:
           for node_machine_id in server_nodes_list:
             private_fqdn = self.get_confvalue(f'server_node>{node_machine_id}>network>data>private_fqdn')
             f.write(f'{private_fqdn}\n')
+            self.logger.info(f'output of ldap_hosts_list_file.txt: {private_fqdn}')
 
         cmd = ['/opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh',
              '-h',
-             'hosts_list_file.txt',
+             ldap_hosts_list_file,
              '-p',
              f'{self.rootdn_passwd}']
         handler = SimpleProcess(cmd)
         stdout, stderr, retcode = handler.run()
         self.logger.info(f'output of setupReplicationScript.sh: {stdout}')
-        #os.remove("hosts_list_file.txt")
+        os.remove(ldap_hosts_list_file)
 
         if retcode != 0:
           self.logger.error(f'error of setupReplicationScript.sh: {stderr}')

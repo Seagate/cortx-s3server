@@ -207,6 +207,8 @@ class S3AuthClient {
   virtual void execute_authconnect_request(struct s3_auth_op_context* auth_ctx);
   void add_key_val_to_body(std::string key, std::string val);
   void add_non_empty_key_val_to_body(std::string key, std::string val);
+  void add_non_empty_key_val_to_body(std::string key,
+                                     const std::list<std::string>& val_list);
   void set_is_authheader_present(bool is_authorizationheader_present);
   void trigger_request();
 

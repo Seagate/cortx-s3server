@@ -269,9 +269,20 @@ class AwsTest(S3PyCliTest):
         self.with_cli(cmd)
         return self
 
-    def copy_object(self, copy_source, destination_bucket_name, destination_key_name, debug_flag=None):
+    def download_objects(self, bucket_name, root_dir_path="./tests-out", debug_flag=None):
+        self.bucket_name = bucket_name
+        self.filename = None
+        cmd = "aws s3 cp s3://{bucket} {dir_path} --recursive".format(bucket=bucket_name, dir_path=root_dir_path)
+        if(debug_flag is not None):
+           cmd = cmd + " --debug"
+        self.with_cli(cmd)
+        return self
+
+    def copy_object(self, copy_source, destination_bucket_name, destination_key_name, acl=None, debug_flag=None):
         cmd = "aws s3api copy-object --bucket {bucket} --copy-source {source} --key {key}"\
             .format(bucket=destination_bucket_name, source=copy_source, key=destination_key_name)
+        if(acl is not None):
+            cmd = cmd + " --acl " + acl
         if(debug_flag is not None):
             cmd = cmd + " --debug"
         self.with_cli(cmd)

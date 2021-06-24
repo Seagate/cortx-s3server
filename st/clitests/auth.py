@@ -76,6 +76,9 @@ class AuthTest(PyCliTest):
                  account_args['AccountName'], S3ClientConfig.access_key_id,
                  S3ClientConfig.secret_key)
 
+        if(not S3ClientConfig.token is ""):
+            cmd += " --session_token '%s'" % S3ClientConfig.token
+
         if ('force' in account_args.keys() and account_args['force']):
             cmd += " --force"
 

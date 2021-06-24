@@ -22,39 +22,42 @@ from s3confstore.cortx_s3_confstore import S3CortxConfStore
 import os.path
 import shutil
 import sys
+import logging
+
+s3_tmp_dir = __import__('setupcmd').SetupCmd.s3_tmp_dir
 
 g_upgrade_items = {
   's3' : {
         'configFile' : "/opt/seagate/cortx/s3/conf/s3config.yaml",
-        'oldSampleFile' : "/tmp/s3config.yaml.sample.old",
+        'oldSampleFile' : os.path.join(s3_tmp_dir, "s3config.yaml.sample.old"),
         'newSampleFile' : "/opt/seagate/cortx/s3/conf/s3config.yaml.sample",
         'unsafeAttributesFile' : "/opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml",
         'fileType' : 'yaml://'
     },
     'auth' : {
         'configFile' : "/opt/seagate/cortx/auth/resources/authserver.properties",
-        'oldSampleFile' : "/tmp/authserver.properties.sample.old",
+        'oldSampleFile' : os.path.join(s3_tmp_dir, "authserver.properties.sample.old"),
         'newSampleFile' : "/opt/seagate/cortx/auth/resources/authserver.properties.sample",
         'unsafeAttributesFile' : "/opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.properties",
         'fileType' : 'properties://'
     },
     'keystore' : {
         'configFile' : "/opt/seagate/cortx/auth/resources/keystore.properties",
-        'oldSampleFile' : "/tmp/keystore.properties.sample.old",
+        'oldSampleFile' : os.path.join(s3_tmp_dir,"keystore.properties.sample.old"),
         'newSampleFile' : "/opt/seagate/cortx/auth/resources/keystore.properties.sample",
         'unsafeAttributesFile' : "/opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.properties",
         'fileType' : 'properties://'
     },
     'bgdelete' : {
         'configFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
-        'oldSampleFile' : "/tmp/config.yaml.sample.old",
+        'oldSampleFile' : os.path.join(s3_tmp_dir, "config.yaml.sample.old"),
         'newSampleFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample",
         'unsafeAttributesFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml",
         'fileType' : 'yaml://'
     },
     'cluster' : {
         'configFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
-        'oldSampleFile' : "/tmp/s3_cluster.yaml.sample.old",
+        'oldSampleFile' : os.path.join(s3_tmp_dir, "s3_cluster.yaml.sample.old"),
         'newSampleFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample",
         'unsafeAttributesFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster_unsafe_attributes.yaml",
         'fileType' : 'yaml://'
@@ -77,8 +80,10 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
 
     #If config file is not present then abort merging.
     if not os.path.isfile(configFile):
-        sys.stderr.write(f'[cortx-s3server-rpm] ERROR: config file {configFile} does not exist\n')
-        raise Exception(f'[cortx-s3server-rpm]  ERROR: config file {configFile} does not exist\n')
+        logger.error(f'config file {configFile} does not exist')
+        raise Exception(f'ERROR: config file {configFile} does not exist')
+
+    logger.info(f'config file {str(configFile)} upgrade started.')
 
     # old sample file
     conf_old_sample = filetype + oldSampleFile
@@ -133,12 +138,43 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
 
     cs_conf_file.merge_config(source_index=conf_new_sample, keys_to_include=keys_to_overwrite)
     cs_conf_file.save_config()
-    sys.stdout.write(f'[cortx-s3server-rpm] INFO: config file {str(configFile)} upgraded successfully.\n')
+    logger.info(f'config file {str(configFile)} upgrade completed')
 
-if __name__ == "__main__":
+def merge_configs():
+    """
+    - This function will merge all S3 config files during upgrade
+    - This function should be used outside this file to call configs upgrade
+    """
+    # Use existing s3-deployment-logger or setup new console logger
+    setup_logger()
+
     for upgrade_item in g_upgrade_items:
         upgrade_config(g_upgrade_items[upgrade_item]['configFile'],
             g_upgrade_items[upgrade_item]['oldSampleFile'],
             g_upgrade_items[upgrade_item]['newSampleFile'],
             g_upgrade_items[upgrade_item]['unsafeAttributesFile'],
             g_upgrade_items[upgrade_item]['fileType'])
+
+def setup_logger():
+    """
+    - This function will use as is s3-deployment-logger if it is available
+    - else it will log to console
+    """
+    global logger
+    logger = logging.getLogger("s3-deployment-logger")
+    if logger.hasHandlers():
+        logger.info("Logger has valid handler")
+    else:
+        logger.setLevel(logging.DEBUG)
+        # create console handler with a higher log level
+        chandler = logging.StreamHandler(sys.stdout)
+        chandler.setLevel(logging.DEBUG)
+        s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        formatter = logging.Formatter(s3deployment_log_format)
+        # create formatter and add it to the handlers
+        chandler.setFormatter(formatter)
+        # add the handlers to the logger
+        logger.addHandler(chandler)
+
+if __name__ == "__main__":
+    merge_configs()

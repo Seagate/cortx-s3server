@@ -148,7 +148,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
     accountLoginProfileController = Mockito.spy(
         new AccountLoginProfileController(requestorObj, requestBodyObj));
     ServerResponse response = accountLoginProfileController.list();
-    Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+    Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
                         response.getResponseStatus());
   }
 
@@ -254,7 +254,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
     ServerResponse response = accountLoginProfileController.create();
 
     String expectedString = "<Error><Code>NoSuchEntity</Code>";
-    Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+    Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
                         response.getResponseStatus());
     Assert.assertTrue(response.getResponseBody().contains(expectedString));
   }

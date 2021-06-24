@@ -947,6 +947,14 @@ void S3PutObjectAction::set_authorization_meta() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
                                   bucket_metadata->get_policy_as_json());
+  request->reset_action_list();
+  if (!request->get_header_value("x-amz-tagging").empty()) {
+    request->set_action_list("PutObjectTagging");
+  }
+
+  if (!request->get_header_value("x-amz-acl").empty()) {
+    request->set_action_list("PutObjectACL");
+  }
   next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

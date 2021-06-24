@@ -34,6 +34,7 @@ class RequestObject;
 class S3MotrReader;
 class S3MotrReaderFactory;
 class S3MotrWiter;
+struct evbuffer;
 
 class S3ObjectDataCopier {
 
@@ -50,10 +51,8 @@ class S3ObjectDataCopier {
   std::shared_ptr<MotrAPI> motr_api;
   std::shared_ptr<S3MotrReader> motr_reader;
 
-  S3BufferSequence data_blocks_read;     // Source's data has been read but not
-                                         // taken for writing.
-  S3BufferSequence data_blocks_writing;  // Source's data currently beeing
-                                         // written
+  S3BufferSequence data_blocks_read;  // Source's data has been read but not
+                                      // taken for writing.
 
   // All POD variables should be (re)initialized in This::copy()
   size_t bytes_left_to_read;
@@ -63,6 +62,9 @@ class S3ObjectDataCopier {
   bool write_in_progress;
   // Size of each ev buffer (e.g, 16384)
   size_t size_of_ev_buffer;
+
+  struct evbuffer* p_evbuffer_read = nullptr;
+  struct evbuffer* p_evbuffer_write = nullptr;
 
   void cleanup_blocks_written();
   void read_data_block();
@@ -88,6 +90,11 @@ class S3ObjectDataCopier {
             std::function<void(void)> on_failure);
 
   const std::string& get_s3_error() { return s3_error; }
+  // Trims input 'buffer' to the expected size
+  // Used when we need specific portion of 'buffer', discarding the remianing
+  // data.
+  void get_buffers(S3BufferSequence& buffer, size_t total_size,
+                   size_t expected_size);
 
   friend class S3ObjectDataCopierTest;
 

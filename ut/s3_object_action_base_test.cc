@@ -56,11 +56,19 @@ class S3ObjectActionTestBase : public S3ObjectAction {
 
   void fetch_bucket_info_failed() { fetch_bucket_info_failed_called = 1; }
   void fetch_object_info_failed() { fetch_object_info_failed_called = 1; }
+  void fetch_additional_bucket_info_failed() {
+    fetch_additional_bucket_info_failed_called = 1;
+  }
+  void fetch_additional_object_info_failed() {
+    fetch_additional_object_info_failed_called = 1;
+  }
 
   void send_response_to_s3_client() { response_called += 1; }
 
   int fetch_bucket_info_failed_called = 0;
   int fetch_object_info_failed_called = 0;
+  int fetch_additional_object_info_failed_called = 0;
+  int fetch_additional_bucket_info_failed_called = 0;
   int response_called = 0;
 };
 
@@ -149,6 +157,34 @@ TEST_F(S3ObjectActionTest, FetchBucketInfo) {
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
       .Times(AtLeast(1));
   action_under_test_ptr->fetch_bucket_info();
+}
+
+TEST_F(S3ObjectActionTest, FetchAdditionalBucketInfo) {
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
+      .Times(AtLeast(1));
+  action_under_test_ptr->fetch_additional_bucket_info();
+}
+
+TEST_F(S3ObjectActionTest, FetchAdditionalBucketInfoSuccess) {
+  action_under_test_ptr->additional_bucket_metadata =
+      action_under_test_ptr->bucket_metadata_factory
+          ->create_bucket_metadata_obj(request_mock);
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_oid())
+      .Times(1)
+      .WillOnce(ReturnRef(object_list_indx_oid));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_objects_version_list_index_oid())
+      .Times(1)
+      .WillOnce(ReturnRef(objects_version_list_index_oid));
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
+      .Times(AtLeast(1));
+
+  action_under_test_ptr->fetch_additional_bucket_info_success();
+
+  EXPECT_TRUE(action_under_test_ptr->additional_bucket_metadata != NULL);
+  EXPECT_TRUE(action_under_test_ptr->additional_object_metadata != NULL);
 }
 
 TEST_F(S3ObjectActionTest, LoadMetadata) {

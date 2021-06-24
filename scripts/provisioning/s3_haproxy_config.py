@@ -20,6 +20,7 @@
 
 import os
 import sys
+import socket
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 import logging
 
@@ -32,7 +33,8 @@ class S3HaproxyConfig:
   def __init__(self, confstore: str):
     """Constructor."""
 
-    self.logger = logging.getLogger("s3-deployment-logger")
+    s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
+    self.logger = logging.getLogger(s3deployment_logger_name)
     if self.logger.hasHandlers():
       self.logger.info("Logger has valid handler")
     else:
@@ -187,7 +189,7 @@ backend s3-auth
 '''
 
     #Initialize port numbers
-    s3inport = 28081
+    s3inport = 28071
     s3auport = 28050
 
     #Add complete information to haproxy.cfg file
