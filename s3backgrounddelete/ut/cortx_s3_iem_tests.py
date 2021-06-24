@@ -20,7 +20,7 @@
 from s3backgrounddelete.IEMutil import IEMutil
 
 def test_send():
-    s3iem = IEMutil("HPI", "INFO", 100, "")
+    s3iem = IEMutil("HPI", "INFO", 100, "Test")
     severity = 'X'
     module = 'HPI'
     event_id = 100
@@ -30,7 +30,7 @@ def test_send():
     assert result_data[0] == True
 
 def test_receive():
-    s3iem = IEMutil("HPI", "INFO", 100, "")
+    s3iem = IEMutil("HPI", "INFO", 100, "Test")
     component = 'S3'
     severity = 'X'
     module = 'HPI'
