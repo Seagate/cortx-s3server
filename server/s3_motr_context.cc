@@ -197,6 +197,7 @@ struct s3_motr_rw_op_context *create_basic_rw_op_ctx(
   ctx->data = (struct m0_bufvec *)calloc(1, sizeof(struct m0_bufvec));
   ctx->attr = (struct m0_bufvec *)calloc(1, sizeof(struct m0_bufvec));
   ctx->motr_checksums_buf_count = motr_checksums_buf_count;
+  // points to the data buffers
   ctx->pi_bufvec = (struct m0_bufvec *)calloc(1, sizeof(struct m0_bufvec));
   ctx->buffers_per_motr_unit = buffers_per_motr_unit;
 
@@ -234,9 +235,7 @@ struct s3_motr_rw_op_context *create_basic_rw_op_ctx(
 
     rc = m0_bufvec_alloc(ctx->attr, motr_checksums_buf_count,
                          get_sizeof_pi_info(ctx));
-
 #if 0
-
   } else {
     rc = m0_bufvec_alloc(ctx->attr, motr_buf_count, 1);
   }
@@ -284,8 +283,13 @@ int free_basic_rw_op_ctx(struct s3_motr_rw_op_context *ctx) {
   m0_indexvec_free(ctx->ext);
   free(ctx->ext);
   free(ctx->data);
-  free(ctx->attr);
+  m0_bufvec_free(ctx->attr);
+  // reset v_nr, as we dont want to free ov_buf[*] in m0_bufvec_free()
+  // s3_bufvec_free_aligned(ctx->data..) has freed it
+  ctx->pi_bufvec->ov_vec.v_nr = 0;
+  m0_bufvec_free(ctx->pi_bufvec);
   free(ctx->pi_bufvec);
+  free(ctx->attr);
   free(ctx);
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   return 0;
