@@ -88,6 +88,8 @@ class S3MotrWiter {
   std::unique_ptr<S3MotrWiterContext> writer_context;
   std::unique_ptr<S3MotrWiterContext> delete_context;
   std::shared_ptr<MotrAPI> s3_motr_api;
+  // md5 for the content written to motr.
+  std::shared_ptr<MD5hash> s3_md5crypt;
 
   // Used to report to caller
   std::function<void()> handler_on_success;
@@ -104,8 +106,6 @@ class S3MotrWiter {
   uint64_t first_offset = 0;
   std::string request_id;
   std::string stripped_request_id;
-  // md5 for the content written to motr.
-  MD5hash md5crypt;
 
   // maintain state for debugging.
   size_t size_in_current_write;
@@ -187,8 +187,8 @@ class S3MotrWiter {
   virtual std::string get_content_md5() {
     // Complete MD5 computation and remember
     if (content_md5.empty()) {
-      md5crypt.Finalize();
-      content_md5 = md5crypt.get_md5_string();
+      s3_md5crypt->Finalize();
+      content_md5 = s3_md5crypt->get_md5_string();
     }
     s3_log(S3_LOG_DEBUG, request_id, "content_md5 of data written = %s\n",
            content_md5.c_str());
@@ -196,7 +196,7 @@ class S3MotrWiter {
   }
 
   virtual bool content_md5_matches(std::string md5_base64) {
-    std::string calculated = md5crypt.get_md5_base64enc_string();
+    std::string calculated = s3_md5crypt->get_md5_base64enc_string();
     s3_log(S3_LOG_DEBUG, request_id, "MD5 calculated: %s, MD5 got %s",
            calculated.c_str(), md5_base64.c_str());
     return calculated == md5_base64;

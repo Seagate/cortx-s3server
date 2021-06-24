@@ -23,6 +23,8 @@
 #include "s3_md5_hash.h"
 #include "s3_option.h"
 #include "s3_log.h"
+#include <assert.h>
+
 
 MD5hash::MD5hash(bool call_init) { Reset(call_init); }
 MD5hash::MD5hash(std::shared_ptr<MotrAPI> motr_api) { Reset(motr_api); }
@@ -53,6 +55,87 @@ int MD5hash::Update(const char *input, size_t length) {
     return -1;  // failure
   }
   return 0;  // success
+}
+
+int MD5hash::s3_motr_client_calculate_pi(m0_generic_pi *pi,
+                                         struct m0_pi_seed *seed,
+                                         m0_bufvec *pi_bufvec,
+                                         enum m0_pi_calc_flag pi_flag,
+                                         unsigned char *current_digest,
+                                         unsigned char *pi_value_without_seed) {
+  int rc = s3_motr_api->motr_client_calculate_pi(
+      pi, seed, pi_bufvec, pi_flag, current_digest, pi_value_without_seed);
+  return rc;
+}
+
+int MD5hash::s3_calculate_unit_pi(struct s3_motr_rw_op_context *rw_ctx,
+                                  size_t current_attr_index, size_t seed_offset,
+                                  m0_uint128 seed_oid, unsigned int s3_flag) {
+  int rc;
+  enum m0_pi_calc_flag motr_pi_flag = M0_PI_NO_FLAG;
+  struct m0_pi_seed *p_seed = nullptr;
+  struct m0_md5_inc_context_pi *s3_pi;
+  struct m0_pi_seed seed = {0};
+  assert(rw_ctx != nullptr);
+  assert(current_attr_index <= rw_ctx->motr_checksums_buf_count);
+  s3_pi =
+      (struct m0_md5_inc_context_pi *)rw_ctx->attr->ov_buf[current_attr_index];
+  if (s3_flag & S3_FIRST_UNIT) {
+    motr_pi_flag = M0_PI_CALC_UNIT_ZERO;
+  } else {
+    if (checksum_saved) {
+      // If previous checksum is there then get it
+      memcpy(s3_pi->prev_context, &md5ctx, sizeof(MD5_CTX));
+    }
+  }
+  if (s3_flag & S3_SEED_UNIT) {
+    seed.data_unit_offset = seed_offset;
+    seed.obj_id.f_container = seed_oid.u_hi;
+    seed.obj_id.f_key = seed_oid.u_lo;
+    p_seed = &seed;
+  }
+
+  rw_ctx->pi_bufvec->ov_vec.v_nr = rw_ctx->buffers_per_motr_unit;
+  rc = s3_motr_client_calculate_pi(
+      (m0_generic_pi *)s3_pi, p_seed, rw_ctx->pi_bufvec, motr_pi_flag,
+      (unsigned char *)rw_ctx->current_digest, NULL);
+  assert(rc == 0);
+  if (s3_flag & S3_FIRST_UNIT) {
+    is_initialized = true;
+  }
+  if (p_seed) {
+    memset(&seed, '\0', sizeof(struct m0_pi_seed));
+  }
+  save_motr_unit_checksum((unsigned char *)rw_ctx->current_digest);
+  return rc;
+}
+
+int MD5hash::s3_calculate_unaligned_buffs_pi(
+    struct s3_motr_rw_op_context *rw_ctx, unsigned int s3_flag) {
+  int rc;
+  assert(rw_ctx != nullptr);
+  enum m0_pi_calc_flag pi_flag = M0_PI_NO_FLAG;
+  struct m0_md5_inc_context_pi s3_md5_inc_digest_unaligned_pi = {0};
+  s3_md5_inc_digest_unaligned_pi.hdr.pi_type =
+      S3Option::get_instance()->get_pi_type();
+  if (s3_flag & S3_FIRST_UNIT) {
+    pi_flag = M0_PI_CALC_UNIT_ZERO;
+  } else {
+    memcpy((void *)s3_md5_inc_digest_unaligned_pi.prev_context,
+           (void *)&md5ctx_pre_unaligned, sizeof(MD5_CTX));
+  }
+
+  // Update (with actual data length) + Finalize without seed
+  rc = s3_motr_client_calculate_pi(
+      (m0_generic_pi *)&s3_md5_inc_digest_unaligned_pi, NULL, rw_ctx->pi_bufvec,
+      pi_flag, (unsigned char *)rw_ctx->current_digest, md5_digest);
+  assert(rc == 0);
+  if (s3_flag & S3_FIRST_UNIT) {
+    is_initialized = true;
+  }
+  // We have even Finalized (without seed)
+  is_finalized = true;
+  return rc;
 }
 
 int MD5hash::Finalize() {
@@ -112,6 +195,7 @@ void MD5hash::Reset(std::shared_ptr<MotrAPI> motr_api) {
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
   s3_md5_inc_digest_pi = {0};
+  seed = {0};
   s3_md5_inc_digest_pi.hdr.pi_type = M0_PI_TYPE_MD5_INC_CONTEXT;
   pi_bufvec.ov_vec.v_nr = 0;
   flag = (m0_pi_calc_flag)M0_PI_SKIP_CALC_FINAL;
