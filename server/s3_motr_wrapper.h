@@ -31,6 +31,9 @@
 #include "s3_fi_common.h"
 #include "s3_post_to_main_loop.h"
 
+#define S3_FIRST_UNIT 0x00000001
+#define S3_SEED_UNIT 0x00000002
+
 enum class MotrOpType {
   unknown,
   openobj,
