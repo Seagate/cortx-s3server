@@ -319,11 +319,7 @@ bool S3MotrReader::ValidateStoredMD5Chksum(m0_bufvec *motr_data_unit,
          "%s motr_client_calculate_pi returned %d", __func__, rc);
   s3_log(S3_LOG_INFO, stripped_request_id,
          "%s Printing returned m0_md5_inc_context_pi", __func__);
-  print_pi_info(&md5_info);
-
-  s3_log(S3_LOG_INFO, stripped_request_id,
-         "%s Printing m0_md5_inc_context_pi in attr", __func__);
-  print_pi_info(((m0_md5_inc_context_pi *)(pi_info)));
+  // print_pi_info(&md5_info);
 
   if (0 != memcmp(md5_info.pi_value,
                   ((m0_md5_inc_context_pi *)(pi_info))->pi_value,
