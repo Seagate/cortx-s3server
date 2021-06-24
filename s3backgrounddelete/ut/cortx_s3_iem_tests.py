@@ -29,7 +29,6 @@ def test_send():
         event_id = 100
         message_blob = "*******This is a test IEM message********"
 
-        
         result_data = s3iem.send(module, event_id, severity, message_blob)
         assert result_data == True
     else:

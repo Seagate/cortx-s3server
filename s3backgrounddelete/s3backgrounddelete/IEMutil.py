@@ -37,6 +37,7 @@ class IEMutil(object):
     S3_CONN_FAILURE_STR = "Failed to connect to S3 server. For more information refer the Troubleshooting Guide."
 
     def __init__(self, logger, loglevel, eventcode, eventstring):
+        """Init."""
         self.eventCode = eventcode
         self.loglevel = loglevel
         self.eventString = eventstring
@@ -57,7 +58,6 @@ class IEMutil(object):
     @classmethod
     def send(self, module, event_id, severity, message_blob):
         """Send the message."""
-
         try:
             EventMessage.send(module='S3 BG delete', event_id=event_id, severity=severity, message_blob=message_blob)
         except:
