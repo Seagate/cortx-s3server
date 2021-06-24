@@ -188,7 +188,7 @@ int ConcreteMotrAPI::motr_idx_op(struct m0_idx *idx, enum m0_idx_opcode opcode,
 
 void ConcreteMotrAPI::motr_idx_fini(struct m0_idx *idx) { m0_idx_fini(idx); }
 
-#if 0
+#if 1
 #define MAX_ATTRS 128
 #define MAX_OBJECTS_TDATA 100
 
@@ -336,7 +336,7 @@ int ConcreteMotrAPI::motr_obj_op(struct m0_obj *obj, enum m0_obj_opcode opcode,
   }
 
 /* Backup / Populate the attr */
-#if 0
+#if 1
   /** Read object data. */
   if (opcode == M0_OC_READ)
     retrive_data(obj->ob_entity.en_id, attr, ext->iv_index[0]);

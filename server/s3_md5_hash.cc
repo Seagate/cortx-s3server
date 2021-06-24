@@ -25,6 +25,7 @@
 #include "s3_log.h"
 #include <assert.h>
 
+
 MD5hash::MD5hash(bool call_init) { Reset(call_init); }
 MD5hash::MD5hash(std::shared_ptr<MotrAPI> motr_api) { Reset(motr_api); }
 

@@ -235,9 +235,7 @@ struct s3_motr_rw_op_context *create_basic_rw_op_ctx(
 
     rc = m0_bufvec_alloc(ctx->attr, motr_checksums_buf_count,
                          get_sizeof_pi_info(ctx));
-
 #if 0
-
   } else {
     rc = m0_bufvec_alloc(ctx->attr, motr_buf_count, 1);
   }
