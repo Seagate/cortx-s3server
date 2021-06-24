@@ -26,9 +26,9 @@
 #include "s3_http_post_queue.h"
 
 S3AuditInfoLoggerIEM::S3AuditInfoLoggerIEM(evbase_t* p_base,
-                                                     std::string host_ip,
-                                                     uint16_t port,
-                                                     std::string path) {
+                                          std::string host_ip,
+                                          long port,
+                                          std::string path) {
   s3_log(S3_LOG_INFO, nullptr, "%s Ctor\n", __func__);
 
   std::map<std::string, std::string> headers;
@@ -38,18 +38,17 @@ S3AuditInfoLoggerIEM::S3AuditInfoLoggerIEM(evbase_t* p_base,
       p_base, std::move(host_ip), port, std::move(path), std::move(headers)));
 }
 
-S3AuditInfoLoggerIEM::~S3AuditInfoLoggerIEM() = default;
-
-int S3AuditInfoLoggerIEM::save_msg(std::string const& request_id,
-                                        std::string const& msg) {
-  s3_log(S3_LOG_INFO, request_id, "%s Entry", __func__);
-  s3_log(S3_LOG_DEBUG, request_id, "%s", msg.c_str());
+int S3AuditInfoLoggerIEM::save_msg(std::string const& eventID,
+                                  std::string const& severity,
+                                  std::string const& msg) {
+  s3_log(S3_LOG_INFO, nullptr, "%s Entry", __func__);
+  s3_log(S3_LOG_DEBUG, nullptr, "%s", msg.c_str());
 
   /*
   {
-  "component": "cmp",
-  "source": "H",
-  "module": "mod",
+  "component": "S3",
+  "source": "S",
+  "module": "S3server",
   "event_id": "500",
   "severity": "B",
   "message_blob": "This is alert"
@@ -66,6 +65,6 @@ int S3AuditInfoLoggerIEM::save_msg(std::string const& request_id,
       }";
   const bool fSucc = p_s3_post_queue->post(std::move(fmt_msg));
 
-  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
+  s3_log(S3_LOG_DEBUG, nullptr, "%s Exit", __func__);
   return !fSucc;
 }

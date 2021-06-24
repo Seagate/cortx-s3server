@@ -112,6 +112,9 @@ bool S3Option::load_section(std::string section_name,
                                "S3_AUDIT_LOGGER_KAFKA_WEB_PATH");
       audit_logger_kafka_web_path =
           s3_option_node["S3_AUDIT_LOGGER_KAFKA_WEB_PATH"].as<std::string>();
+      audit_logger_iem_port = s3_option_node["S3_AUDIT_LOGGER_IEM_PORT"].as<int>();
+      audit_logger_iem_path =
+          s3_option_node["S3_AUDIT_LOGGER_IEM_PATH"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_FILE_MAX_SIZE");
       log_file_max_size_mb = s3_option_node["S3_LOG_FILE_MAX_SIZE"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_ENABLE_BUFFERING");
@@ -1035,6 +1038,12 @@ std::string S3Option::get_audit_logger_rsyslog_msgid() {
 
 std::string S3Option::get_audit_logger_kafka_web_path() {
   return audit_logger_kafka_web_path;
+}
+
+long S3Option::get_audit_logger_iem_port() { return audit_logger_iem_port; }
+
+std::string S3Option::get_audit_logger_iem_path() {
+  return audit_logger_iem_path;
 }
 
 unsigned short S3Option::get_s3_grace_period_sec() {

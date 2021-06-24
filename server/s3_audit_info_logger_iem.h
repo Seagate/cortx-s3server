@@ -26,26 +26,20 @@
 #include <string>
 #include <memory>
 
-#include "s3_audit_info_logger_base.h"
-
 class S3HttpPostQueue;
 
-class S3AuditInfoLoggerIEM : public S3AuditInfoLoggerBase {
+class S3AuditInfoLoggerIEM {
   typedef struct event_base evbase_t;
 
  public:
   S3AuditInfoLoggerIEM(evbase_t* p_base, std::string host_ip,
-                            uint16_t port, std::string path);
-  ~S3AuditInfoLoggerIEM();
-
-  S3AuditInfoLoggerIEM(const S3AuditInfoLoggerIEM&) = delete;
-  S3AuditInfoLoggerIEM& operator=(const S3AuditInfoLoggerIEM&) =
-      delete;
-
-  int save_msg(std::string const&, std::string const&) override;
+                            long port, std::string path);
+  int save_msg(std::string const& eventID,
+              std::string const& severity,
+              std::string const& msg);
 
  private:
   std::unique_ptr<S3HttpPostQueue> p_s3_post_queue;
 };
 
-#endif  // __S3_SERVER_AUDIT_LOGGER_KAFKA_WEB__
+#endif  // __S3_SERVER_AUDIT_LOGGER_IEM__

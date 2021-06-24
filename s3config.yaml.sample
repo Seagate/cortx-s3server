@@ -40,6 +40,8 @@ S3_SERVER_CONFIG:
    S3_AUDIT_LOGGER_PORT: 514                            # Port on which rsyslog or kafka webserver is listening
    S3_AUDIT_LOGGER_RSYSLOG_MSGID: "s3server-audit-logging"  # Rsyslog msgid to filter messages
    S3_AUDIT_LOGGER_KAFKA_WEB_PATH: "/topics/s3auditlogs" # URL path for POST requests
+   S3_AUDIT_LOGGER_IEM_PORT: 28300                    # IEM rest server port
+   S3_AUDIT_LOGGER_IEM_PATH: "/EventMessage/event"      # URL path for POST requests
    S3_AUDIT_MAX_RETRY_COUNT: 5                          # Max retry count in case of audit log failure
    S3_SERVER_IPV4_BIND_ADDR: 0.0.0.0                    # S3 Server ipv4 bind address, 0.0.0.0 is default. ~ means option is ignored/not to listen on IPv4 address.
    S3_SERVER_IPV6_BIND_ADDR: "~"                        # S3 Server ipv6 bind address, ::/128 is default. ~ means option is ignored/not to listen on IPv6 address.
