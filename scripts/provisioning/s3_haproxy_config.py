@@ -23,7 +23,6 @@ import sys
 import socket
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 import logging
-import configparser
 
 class S3HaproxyConfig:
   """HAProxy configration for S3."""
