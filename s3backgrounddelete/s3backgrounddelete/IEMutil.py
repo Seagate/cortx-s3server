@@ -21,8 +21,6 @@
     eventcode part  005 represents s3background component
     and 0001 repesents connection failures """
 
-import traceback
-
 from cortx.utils.iem_framework import EventMessage
 
 class IEMutil(object):
@@ -31,7 +29,6 @@ class IEMutil(object):
     eventstring = ""
     source = 'S'
     component= 'S3'
-    EventMessage.init(component, source)
     _logger = None
     # List of eventcodes
     S3_CONN_FAILURE = "0050010001"
@@ -44,6 +41,7 @@ class IEMutil(object):
         self.loglevel = loglevel
         self.eventString = eventstring
         self._logger = logger
+        EventMessage.init(self.component, self.source)
         if(loglevel == "INFO"):
             self.severity = "I"
         if(loglevel == "WARN"):
