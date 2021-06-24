@@ -21,6 +21,9 @@
     eventcode part  005 represents s3background component
     and 0001 repesents connection failures """
 
+import os.path
+from os import path
+
 from cortx.utils.iem_framework import EventMessage
 
 class IEMutil(object):
@@ -52,7 +55,8 @@ class IEMutil(object):
         self.log_iem()
 
     def log_iem(self):
-        self.send('S3 BG delete', self.eventCode, self.severity, self.eventString)
+        if (os.path.isfile('/etc/cortx/cluster.conf')):
+            self.send('S3 BG delete', self.eventCode, self.severity, self.eventString)
 
     @classmethod
     def send(self, module, event_id, severity, message_blob):
