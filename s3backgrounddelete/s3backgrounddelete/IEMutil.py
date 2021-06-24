@@ -29,19 +29,21 @@ class IEMutil(object):
     severity = ""
     eventCode = ""
     eventstring = ""
-    module = ""
-
+    source = 'S'
+    component= 'S3'
+    EventMessage.init(component, source)
+    _logger = None
     # List of eventcodes
     S3_CONN_FAILURE = "0050010001"
 
     # List of eventstrings
     S3_CONN_FAILURE_STR = "Failed to connect to S3 server. For more information refer the Troubleshooting Guide."
 
-    def __init__(self, module, loglevel, eventcode, eventstring):
+    def __init__(self, logger, loglevel, eventcode, eventstring):
         self.eventCode = eventcode
         self.loglevel = loglevel
         self.eventString = eventstring
-        self.module = module
+        self._logger = logger
         if(loglevel == "INFO"):
             self.severity = "I"
         if(loglevel == "WARN"):
@@ -52,22 +54,18 @@ class IEMutil(object):
         self.log_iem()
 
     def log_iem(self):
-        self.send(self.module, self.eventCode, self.severity, self.eventString)
+        self.send('S3 BG delete', self.eventCode, self.severity, self.eventString)
 
     @classmethod
     def send(self, module, event_id, severity, message_blob):
         """Send the message."""
-        source = 'S'
-        component= 'S3'
-        EventMessage.init(component, source)
 
         try:
-            EventMessage.send(module=module, event_id=event_id, severity=severity, message_blob=message_blob)
-        except Exception as exception:
-            msg = ("iem except:%s %s") % (
-                    exception, traceback.format_exc())
-            return False, msg
-        return True, None
+            EventMessage.send(module='S3 BG delete', event_id=event_id, severity=severity, message_blob=message_blob)
+        except:
+            self._logger.ERROR("Error in sending the IEM message.")
+            return False
+        return True
 
     @classmethod
     def receive(self, component):
@@ -76,8 +74,7 @@ class IEMutil(object):
 
         try:
             alert = EventMessage.receive()
-        except Exception as exception:
-            msg = ("iem except:%s %s") % (
-                exception, traceback.format_exc())
-            return False, msg
-        return True, None
+        except:
+            self._logger.ERROR("Error in receiving the IEM message.")
+            return False
+        return True
