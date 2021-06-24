@@ -17,33 +17,33 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-import os.path
-from os import path
+import os
 
 from s3backgrounddelete.IEMutil import IEMutil
 
 def test_send():
-    s3iem = IEMutil("object_recovery_scheduler", "INFO", 100, "Test")
-    severity = 'X'
-    module = 'S3 BG delete'
-    event_id = 100
-    message_blob = "*******This is a test IEM message********"
+    if os.stat("/etc/cortx/cluster.conf").st_size == 0:
+        s3iem = IEMutil("object_recovery_scheduler", "INFO", 100, "Test")
+        severity = 'X'
+        module = 'S3 BG delete'
+        event_id = 100
+        message_blob = "*******This is a test IEM message********"
 
-    if (os.path.isfile('/etc/cortx/cluster.conf')):
+        
         result_data = s3iem.send(module, event_id, severity, message_blob)
         assert result_data == True
     else:
         assert True == True
 
 def test_receive():
-    s3iem = IEMutil("object_recovery_scheduler", "INFO", 100, "Test")
-    component = 'S3'
-    severity = 'X'
-    module = 'S3 BG delete'
-    event_id = 100
-    message_blob = "Test message"
+    if os.stat("/etc/cortx/cluster.conf").st_size == 0:
+        s3iem = IEMutil("object_recovery_scheduler", "INFO", 100, "Test")
+        component = 'S3'
+        severity = 'X'
+        module = 'S3 BG delete'
+        event_id = 100
+        message_blob = "Test message"
 
-    if (os.path.isfile('/etc/cortx/cluster.conf')):
         ret = s3iem.send(module, event_id, severity, message_blob)
         result_data = s3iem.receive(component)
 
