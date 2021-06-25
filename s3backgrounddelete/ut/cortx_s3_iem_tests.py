@@ -22,20 +22,21 @@ import os
 from s3backgrounddelete.IEMutil import IEMutil
 
 def test_send():
-    if os.stat("/etc/cortx/cluster.conf").st_size == 0:
+    if os.path.isfile('/etc/cortx/cluster.conf') and os.stat("/etc/cortx/cluster.conf").st_size > 10:
         s3iem = IEMutil("object_recovery_scheduler", "INFO", 100, "Test")
         severity = 'X'
         module = 'S3 BG delete'
         event_id = 100
         message_blob = "*******This is a test IEM message********"
 
+        
         result_data = s3iem.send(module, event_id, severity, message_blob)
         assert result_data == True
     else:
         assert True == True
 
 def test_receive():
-    if os.stat("/etc/cortx/cluster.conf").st_size == 0:
+    if os.path.isfile('/etc/cortx/cluster.conf') and os.stat("/etc/cortx/cluster.conf").st_size > 10:
         s3iem = IEMutil("object_recovery_scheduler", "INFO", 100, "Test")
         component = 'S3'
         severity = 'X'
