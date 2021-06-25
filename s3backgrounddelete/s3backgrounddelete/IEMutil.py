@@ -60,8 +60,8 @@ class IEMutil(object):
         """Send the message."""
         try:
             EventMessage.send(module='S3 BG delete', event_id=event_id, severity=severity, message_blob=message_blob)
-        except:
-            self._logger.ERROR("Error in sending the IEM message.")
+        except Exception as exception:
+            self._logger.ERROR("Exception : ", exception)
             return False
         return True
 
@@ -73,7 +73,7 @@ class IEMutil(object):
         try:
             alert = EventMessage.receive()
             self._logger.DEBUG("Received message --> ", alert)
-        except:
-            self._logger.ERROR("Error in receiving the IEM message.")
+        except Exception as exception:
+            self._logger.ERROR("Exception : ", exception)
             return False
         return True
