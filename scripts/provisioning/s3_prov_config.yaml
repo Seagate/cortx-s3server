@@ -49,9 +49,9 @@ INIT:
 # Inheritance hierarchy ends here.
 
 TEST:
-  CONFSTORE_LDAPADMIN_USER_KEY: "test>s3>iam_username"
-  CONFSTORE_LDAPADMIN_PASSWD_KEY: "test>s3>iam_password"
-  CONFSTORE_ENDPOINT_KEY: "test>s3>endpoint_url"
+  TEST_CONFSTORE_LDAPADMIN_USER_KEY: "test>s3>iam_username"
+  TEST_CONFSTORE_LDAPADMIN_PASSWD_KEY: "test>s3>iam_password"
+  TEST_CONFSTORE_ENDPOINT_KEY: "test>s3>endpoint_url"
 RESET:
   CONFSTORE_LDAPADMIN_USER_KEY: "cortx>software>openldap>sgiam>user"
   CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>software>openldap>sgiam>secret"

@@ -114,13 +114,13 @@ class SetupCmd(object):
 
   def read_endpoint_value(self):
     if self.endpoint is None:
-      self.endpoint = self.get_confvalue(self.get_confkey('TEST>CONFSTORE_ENDPOINT_KEY'))
+      self.endpoint = self.get_confvalue(self.get_confkey('TEST>TEST_CONFSTORE_ENDPOINT_KEY'))
 
   def read_ldap_credentials_for_test_phase(self):
     """Get 'ldapadmin' user name and plaintext password from confstore for test phase."""
     try:
-      self.ldap_user = self.get_confvalue(self.get_confkey('TEST>CONFSTORE_LDAPADMIN_USER_KEY'))
-      self.ldap_passwd = self.get_confvalue(self.get_confkey('TEST>CONFSTORE_OPENLDAP_PASSWD_KEY'))
+      self.ldap_user = self.get_confvalue(self.get_confkey('TEST>TEST_CONFSTORE_LDAPADMIN_USER_KEY'))
+      self.ldap_passwd = self.get_confvalue(self.get_confkey('TEST>TEST_CONFSTORE_LDAPADMIN_PASSWD_KEY'))
     except Exception as e:
       sys.stderr.write(f'read ldap credentials failed, error: {e}\n')
       raise e
