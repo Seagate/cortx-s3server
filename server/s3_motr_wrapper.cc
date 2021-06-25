@@ -24,6 +24,7 @@
 #include "s3_log.h"
 #include "s3_fake_motr_redis_kvs.h"
 #include "s3_addb.h"
+#include "s3_option.h"
 
 extern struct m0_ufid_generator s3_ufid_generator;
 
@@ -338,13 +339,13 @@ int ConcreteMotrAPI::motr_obj_op(struct m0_obj *obj, enum m0_obj_opcode opcode,
 /* Backup / Populate the attr */
 #if 1
   if (S3Option::get_instance()->is_s3_read_di_check_enabled()) {
-	  /** Read object data. */
-	  if (opcode == M0_OC_READ)
-	    retrive_data(obj->ob_entity.en_id, attr, ext->iv_index[0]);
-	  /** Write object data. */
-	  if (opcode == M0_OC_WRITE)
-	    store_data(obj->ob_entity.en_id, attr, ext->iv_index[0]);
- }
+    /** Read object data. */
+    if (opcode == M0_OC_READ)
+      retrive_data(obj->ob_entity.en_id, attr, ext->iv_index[0]);
+    /** Write object data. */
+    if (opcode == M0_OC_WRITE)
+      store_data(obj->ob_entity.en_id, attr, ext->iv_index[0]);
+  }
 #endif
   return m0_obj_op(obj, opcode, ext, data, attr, mask, flags, op);
 }
