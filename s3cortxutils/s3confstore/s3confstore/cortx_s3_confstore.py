@@ -41,7 +41,8 @@ class S3CortxConfStore:
   @staticmethod
   def load_config(index: str = "default_s3confstore_index", config: str = ""):
     """Load Config into confstore."""
-    Conf.load(index, config)
+    # TODO deep_scan flag will be deprecated in future.
+    Conf.load(index, config, deep_scan = False)
 
   def get_config(self, key: str):
     """Get the key's config from confstore."""
