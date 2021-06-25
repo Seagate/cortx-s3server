@@ -72,6 +72,7 @@ class IEMutil(object):
 
         try:
             alert = EventMessage.receive()
+            self._logger.DEBUG("Received message --> ", alert)
         except:
             self._logger.ERROR("Error in receiving the IEM message.")
             return False
