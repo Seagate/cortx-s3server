@@ -42,9 +42,9 @@ int S3AuditInfoLoggerIEM::save_msg(std::string const& eventID,
                                   std::string const& severity,
                                   std::string const& msg) {
   s3_log(S3_LOG_INFO, nullptr, "%s Entry", __func__);
-  s3_log(S3_LOG_DEBUG, nullptr, "%s", msg.c_str());
 
-  /*
+  /* 
+  Sample JSON
   {
   "component": "S3",
   "source": "S",
@@ -56,13 +56,14 @@ int S3AuditInfoLoggerIEM::save_msg(std::string const& eventID,
   */
   std::string fmt_msg =
       "{                        \
-        \"component\": \"cmp\", \
-        \"source\": \"H\",      \
-        \"module\": \"mod\",    \
-        \"event_id\": \"500\",  \
-        \"severity\": \"B\",    \
-        \"message_blob\": \"This is alert\" \
+        \"component\": \"S3\", \
+        \"source\": \"S\",      \
+        \"module\": \"S3server\",    \
+        \"event_id\": " + eventID + ",  \
+        \"severity\": " + severity + ",    \
+        \"message_blob\": " + msg + " \
       }";
+  s3_log(S3_LOG_DEBUG, nullptr, "IEM Message : %s", fmt_msg.c_str());
   const bool fSucc = p_s3_post_queue->post(std::move(fmt_msg));
 
   s3_log(S3_LOG_DEBUG, nullptr, "%s Exit", __func__);

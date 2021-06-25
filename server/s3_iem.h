@@ -26,6 +26,7 @@
 #include <unistd.h>
 #include "s3_log.h"
 #include "s3_option.h"
+#include "s3_audit_info_logger_iem.h"
 
 extern S3Option* g_option_instance;
 
@@ -35,12 +36,16 @@ extern S3Option* g_option_instance;
 //    the JSON data format by default. If IEM event has any additional data to
 //    send, then pass it as `json_fmt` param.
 #define s3_iem_(loglevel, s3_loglevel, event_code, event_desc, json_fmt, ...) \
-  do {                                                                        \
-    if (loglevel == LOG_ALERT) {                                              \
-      s3_syslog(loglevel, "IEC:AS" event_code ":" event_desc);                \
-    } else {                                                                  \
-      s3_syslog(LOG_ERR, "IEC:ES" event_code ":" event_desc);                 \
-    }                                                                         \
+  S3AuditInfoLoggerIEM objIEM = new S3AuditInfoLoggerIEM(                     \
+  S3Option::get_instance()->get_eventbase(),                                  \
+  S3Option::get_instance()->get_audit_logger_host(),                          \
+  S3Option::get_instance()->get_audit_logger_iem_port(),                      \
+  S3Option::get_instance()->get_audit_logger_iem_path());                     \
+  if (loglevel == LOG_ALERT) {                                                \
+    objIEM.save_msg(event_code, "A", event_desc);                             \
+  } else {                                                                    \
+      objIEM.save_msg(event_code, "E", event_desc);                           \
+}                                                                             \
     std::string timestamp = s3_get_timestamp();                               \
     s3_log(S3_##s3_loglevel, "",                                              \
            "IEC: " event_code ": " event_desc                                 \
