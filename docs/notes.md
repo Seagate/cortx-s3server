@@ -109,13 +109,13 @@ cd -
             - content `dumps_<PID>.txt`
             - content `dumpc_<PID>.txt`
 
-- it is possible to add S3Authserver logs - `app.log` - to DB
-
 - generate histograms
 
 ```
 ./hist.py -t s3_request_state -u ms -r 2 [[Action::check_authentication,S3Action::load_metadata],[S3Action::load_metadata,S3Action::check_authorization],[S3Action::check_authorization,S3GetObjectAction::validate_object_info]] -o hist_auth.png -f png -s 20 10 --db m0play_4k_auth.db
 ```
+
+detailed description of all params could be found in `./hist.py --help`
 
 - draw timeline
 
@@ -337,17 +337,19 @@ Objects are deleted with batches. Batches could be send in parallel.
 List of some features implemented in jenkins-build
 
 - skiping different steps
-    - skiping build
-    - skiping different types or tests
-- run several instancies of s3server
-- run basic tests - do not run ut/st. with help of s3cmd run following scenario
+    - skiping build: `./jenkins-build.sh --skip_build`
+    - skiping different types or tests: ` ./jenkins-build.sh --skip_tests --skip_ut_run --skip_st_run`
+- delete all data and temp files: `./jenkins-build.sh --cleanup_only && rm -rf /var/motr`
+- run several instancies of s3server: `./jenkins-build.sh --num_instances N`
+- run basic tests: `./jenkins-build.sh --basic_test_only`.  with help of s3cmd run following scenario
     - Create Buckets
     - List Buckets
     - Put Object of various sizes
     - Get Object the uploaded objects
     - Delete Object
     - Delete Bucket
-- generate valgrind memleak reports
-- generate valgrind callgraph
-- run s3server with fake io/kvs
-- run s3server with redis kvs
+- generate valgrind memleak reports: `./jenkins-build.sh --valgrind_memcheck /path/to/output/file`
+- generate valgrind callgraph:  `./jenkins-build.sh --callgraph /path/to/output/file`
+- callgraph and memleak could be used with basic tests
+- run s3server with fake io/kvs: `./jenkins-build.sh --fake_obj --fake_kvs`
+- run s3server with redis kvs: `./jenkins-build.sh --local_redis_restart --redis_kvs`
