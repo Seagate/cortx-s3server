@@ -1,0 +1,44 @@
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+# vi ldap-init.ldif
+## DEFINE DIT ROOT/BASE/SUFFIX ####
+## uses RFC 2377 format
+## replace idevelopment and info as necessary below
+## or for experimentation, leave as is
+## dcObject is an AUXILIARY objectclass and MUST
+## have a STRUCTURAL objectclass (organization in this case)
+dn: dc=s3,dc=seagate,dc=com
+dc: s3
+o: s3
+description: Seagate S3 directory.
+objectclass: top
+objectclass: dcObject
+objectclass: organization
+
+dn: ou=accounts,dc=s3,dc=seagate,dc=com
+ou: accounts
+objectclass: organizationalunit
+
+dn: ou=accesskeys,dc=s3,dc=seagate,dc=com
+ou: accesskeys
+objectclass: organizationalunit
+
+dn: ou=idp,dc=s3,dc=seagate,dc=com
+ou: idp
+objectclass: organizationalunit
