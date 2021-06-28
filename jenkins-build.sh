@@ -31,6 +31,9 @@ USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ]
                         [--generate_support_bundle]
                         [--job_id]
                         [--gid]
+                        [--restart_haproxy]
+                        [--remove_m0trace]
+                        [--collect_addb /path/to/output/dir/]
                         [--help | -h] [--help-short | -H]
 
 where:
@@ -101,6 +104,14 @@ where:
 
                           Value: Int
 
+--restart_haproxy         Restart haproxy
+
+--remove_m0trace          Remove motr m0trace.* files
+
+--collect_addb            Collect addb data before files are removed
+
+                          Value: /path/to/output/dir/
+
 --help (-h)        Display help
 
 --help-short (-H)  Display short, abbreviated help with just a list of options."
@@ -128,6 +139,9 @@ generate_support_bundle=
 job_id=0
 gid=0
 ansible=0
+restart_haproxy=0
+remove_m0trace=0
+collect_addb=""
 
 
 if [ $# -eq 0 ]
@@ -253,6 +267,22 @@ else
                               ;;
       --automate_ansible ) ansible=1;
                            ;;
+      --restart_haproxy ) restart_haproxy=1;
+                          echo "haproxy will be restarted";
+                          ;;
+      --remove_m0trace ) remove_m0trace=1
+                         echo "m0trace.* files will be removed";
+                         ;;
+      --collect_addb ) shift;
+                       collect_addb=$(realpath -e $1)
+                       if [ -z "$collect_addb"]
+                       then
+                           echo "Path to existing dir should be provided"
+                           echo "$USAGE"
+                           exit 1
+                       fi
+                       echo "Collect addb data to $collect_addb dir";
+                       ;;
       --help | -h )
           echo "$USAGE"
           exit 1
@@ -311,6 +341,10 @@ rpm -q haproxy
 #rpm -q stx-s3-certs
 #rpm -q stx-s3-client-certs
 systemctl status haproxy
+
+if [ $restart_haproxy -eq 1 ]; then
+    $USE_SUDO systemctl restart haproxy
+fi
 
 cd $S3_BUILD_DIR
 
@@ -372,10 +406,37 @@ echo "Stopping any old running motr services"
 $USE_SUDO ./m0t1fs/../motr/st/utils/motr_services.sh stop || echo "Cannot stop motr services"
 cd $S3_BUILD_DIR
 
+if [ ! -z "$collect_addb" ]
+then
+    cd ./third_party/motr/addb2/
+
+    # motr addb
+    dump_s="/var/motr/systest-*/ios*/addb-stobs-*/o/100000000000000:2"
+    for d in $dump_s; do
+        pid=$(echo $d | sed -E 's/.*addb-stobs-([a-z0-9]*)[/].*/\1/')
+        echo 'mero '${pid}
+        ./m0addb2dump -f -- "$d" > "$collect_addb/dumps_${pid}.txt"
+    done
+
+    # s3server addb
+    dump_s="/var/log/seagate/motr/s3server-*/addb_*/o/100000000000000:2"
+    for d in $dump_s; do
+        pid=$(echo $d | sed -E 's/.*addb_([0-9]+)[/].*/\1/')
+        echo 's3server '${pid}
+        ./m0addb2dump -f -p /opt/seagate/cortx/s3/addb-plugin/libs3addbplugin.so -- "$d" > "$collect_addb/dumpc_${pid}.txt"
+    done
+
+    cd -
+fi
+
 # Clean up motr and S3 log and data dirs
 $USE_SUDO rm -rf /mnt/store/motr/* /var/log/motr/* /var/log/seagate/motr/* \
                  /var/log/seagate/s3/* /var/log/seagate/auth/server/* \
-                 /var/log/seagate/auth/tools/* /var/crash/*
+                 /var/log/seagate/auth/tools/* /var/crash/* /var/motr/*
+
+if [ $remove_m0trace -eq 1 ]; then
+    $USE_SUDO find . -type f -name "m0trace.*" -exec rm -- '{}' +
+fi
 
 if [ $cleanup_only -eq 1 ]; then
   exit
