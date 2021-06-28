@@ -68,7 +68,7 @@ def test_object_metadata_not_exists():
     object_api_mock = Mock(spec=CORTXS3ObjectApi)
 
     ol_res_val = {'ACL':'','Bucket-Name':'mybucket','Object-Name':'test_object','Object-URI':'mybucket\\test_object',
-        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9,'motr_oid':'Tgj8AgAAAAA=-dQAAAAAABCY='}
+        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9, 'pv_id':'AQAAAAAAAHYKAAAAAAAAAA==','motr_oid':'Tgj8AgAAAAA=-dQAAAAAABCY='}
 
     index_content = {'Delimiter': '', 'Index-Id': 'AAAAAAAAAHg=-BAAQAAAAAAA=',
                     'IsTruncated': 'false', 'Keys': [{'Key': 'test_object', 'Value': ol_res_val}],
@@ -108,7 +108,7 @@ def test_object_metadata_exists_and_matches():
     object_api_mock = Mock(spec=CORTXS3ObjectApi)
 
     ol_res_val = {'ACL':'','Bucket-Name':'mybucket','Object-Name':'test_object','Object-URI':'mybucket\\test_object',
-        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9,'motr_oid':'Tgj8AgAAAAA=-dQAAAAAABCY='}
+        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9, 'pv_id':'AQAAAAAAAHYKAAAAAAAAAA==','motr_oid':'Tgj8AgAAAAA=-dQAAAAAABCY='}
 
     index_content = {'Delimiter': '', 'Index-Id': 'AAAAAAAAAHg=-BAAQAAAAAAA=',
                     'IsTruncated': 'false', 'Keys': [{'Key': 'test_object', 'Value': ol_res_val}],
@@ -154,7 +154,7 @@ def test_object_metadata_exists_mismatches():
     object_api_mock = Mock(spec=CORTXS3ObjectApi)
 
     ol_res_val = {'ACL':'','Bucket-Name':'mybucket','Object-Name':'test_object','Object-URI':'mybucket\\test_object',
-        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9,'motr_oid':'TAifBwAAAHg=-AQAAAAAA2lk='}
+        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9, 'pv_id':'AQAAAAAAAHYKAAAAAAAAAA==','motr_oid':'TAifBwAAAHg=-AQAAAAAA2lk='}
 
     index_content = {'Delimiter': '', 'Index-Id': 'AAAAAAAAAHg=-BAAQAAAAAAA=',
                     'IsTruncated': 'false', 'Keys': [{'Key': 'test_object', 'Value': ol_res_val}],
