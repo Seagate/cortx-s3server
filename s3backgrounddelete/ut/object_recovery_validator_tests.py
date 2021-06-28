@@ -46,7 +46,7 @@ def test_list_instance_index_fail():
     probable_delete_records = {'Key': 'TAcGAQAAAAA=-AwAAAAAAhEs=', \
         'Value':'{"motr_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
         "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \
-        "object_key_in_index":"object_1","object_layout_id":9,"object_list_index_oid":"TAifBwAAAHg=-AQAAAAAA2lk=", \
+        "object_key_in_index":"object_1","object_layout_id":9, "pv_id":"AQAAAAAAAHYKAAAAAAAAAA==","object_list_index_oid":"TAifBwAAAHg=-AQAAAAAA2lk=", \
         "objects_version_list_index_oid":"TAifBwAAAHg=-AwAAAAAA2lk=","old_oid":"AAAAAAAAAAA=-AAAAAAAAAAA=", \
         "version_key_in_index":"object_1/18446742489333709430"}'}
 
@@ -68,7 +68,7 @@ def test_object_metadata_not_exists():
     object_api_mock = Mock(spec=CORTXS3ObjectApi)
 
     ol_res_val = {'ACL':'','Bucket-Name':'mybucket','Object-Name':'test_object','Object-URI':'mybucket\\test_object',
-        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9, 'pv_id':'AQAAAAAAAHYKAAAAAAAAAA==','motr_oid':'Tgj8AgAAAAA=-dQAAAAAABCY='}
+        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9,'motr_oid':'Tgj8AgAAAAA=-dQAAAAAABCY='}
 
     index_content = {'Delimiter': '', 'Index-Id': 'AAAAAAAAAHg=-BAAQAAAAAAA=',
                     'IsTruncated': 'false', 'Keys': [{'Key': 'test_object', 'Value': ol_res_val}],
@@ -85,7 +85,7 @@ def test_object_metadata_not_exists():
     probable_delete_records = {'Key': 'TAcGAQAAAAA=-AwAAAAAAhEs=', \
         'Value':'{"motr_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
         "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \
-        "object_key_in_index":"object_1","object_layout_id":9,"object_list_index_oid":"TAifBwAAAHg=-AQAAAAAA2lk=", \
+        "object_key_in_index":"object_1","object_layout_id":9,"pv_id":"AQAAAAAAAHYKAAAAAAAAAA==","object_list_index_oid":"TAifBwAAAHg=-AQAAAAAA2lk=", \
         "objects_version_list_index_oid":"TAifBwAAAHg=-AwAAAAAA2lk=","old_oid":"Tgj8AgAAAAA=-kwAAAAAABCY=", \
         "version_key_in_index":"object_1/18446742489333709430"}\n'}
 
@@ -108,7 +108,7 @@ def test_object_metadata_exists_and_matches():
     object_api_mock = Mock(spec=CORTXS3ObjectApi)
 
     ol_res_val = {'ACL':'','Bucket-Name':'mybucket','Object-Name':'test_object','Object-URI':'mybucket\\test_object',
-        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9, 'pv_id':'AQAAAAAAAHYKAAAAAAAAAA==','motr_oid':'Tgj8AgAAAAA=-dQAAAAAABCY='}
+        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9,'motr_oid':'Tgj8AgAAAAA=-dQAAAAAABCY='}
 
     index_content = {'Delimiter': '', 'Index-Id': 'AAAAAAAAAHg=-BAAQAAAAAAA=',
                     'IsTruncated': 'false', 'Keys': [{'Key': 'test_object', 'Value': ol_res_val}],
@@ -130,7 +130,7 @@ def test_object_metadata_exists_and_matches():
     probable_delete_records = {'Key': 'Tgj8AgAAAAA=-dQAAAAAABCY=', \
         'Value':'{"motr_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
         "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \
-        "object_key_in_index":"object_1","object_layout_id":9,"object_list_index_oid":"TAifBwAAAHg=-AQAAAAAA2lk=", \
+        "object_key_in_index":"object_1","object_layout_id":9,"pv_id":"AQAAAAAAAHYKAAAAAAAAAA==","object_list_index_oid":"TAifBwAAAHg=-AQAAAAAA2lk=", \
         "objects_version_list_index_oid":"TAifBwAAAHg=-AwAAAAAA2lk=","old_oid":"AAAAAAAAAAA=-AAAAAAAAAAA=", \
         "version_key_in_index":"object_1/18446742489333709430"}\n'}
     validator = ObjectRecoveryValidator(
@@ -154,7 +154,7 @@ def test_object_metadata_exists_mismatches():
     object_api_mock = Mock(spec=CORTXS3ObjectApi)
 
     ol_res_val = {'ACL':'','Bucket-Name':'mybucket','Object-Name':'test_object','Object-URI':'mybucket\\test_object',
-        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9, 'pv_id':'AQAAAAAAAHYKAAAAAAAAAA==','motr_oid':'TAifBwAAAHg=-AQAAAAAA2lk='}
+        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9,'motr_oid':'TAifBwAAAHg=-AQAAAAAA2lk='}
 
     index_content = {'Delimiter': '', 'Index-Id': 'AAAAAAAAAHg=-BAAQAAAAAAA=',
                     'IsTruncated': 'false', 'Keys': [{'Key': 'test_object', 'Value': ol_res_val}],
@@ -177,7 +177,7 @@ def test_object_metadata_exists_mismatches():
     probable_delete_records = {'Key': 'Tgj8AgAAAAA=-dQAAAAAABCY=', \
         'Value':'{"motr_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
         "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \
-        "object_key_in_index":"object_1","object_layout_id":9,"object_list_index_oid":"TAifBwAAAHg=-AQAAAAAA2lk=", \
+        "object_key_in_index":"object_1","object_layout_id":9,"pv_id":"AQAAAAAAAHYKAAAAAAAAAA==","object_list_index_oid":"TAifBwAAAHg=-AQAAAAAA2lk=", \
         "objects_version_list_index_oid":"TAifBwAAAHg=-AwAAAAAA2lk=","old_oid":"AAAAAAAAAAA=-AAAAAAAAAAA=", \
         "version_key_in_index":"object_1/18446742489333709430"}\n'}
 
