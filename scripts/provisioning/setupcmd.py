@@ -209,6 +209,9 @@ class SetupCmd(object):
     if not os.path.isfile(self._preqs_conf_file):
       raise FileNotFoundError(f'pre-requisite json file: {self._preqs_conf_file} not found')
     _prereqs_confstore = S3CortxConfStore(f'json://{self._preqs_conf_file}', f'{phase_name}')
+
+    if self.ldap_user != "sgiamadmin":
+      raise ValueError('provide correct ldap username')
     try:
       prereqs_block = _prereqs_confstore.get_config(f'{phase_name}')
       if prereqs_block is not None:
@@ -393,9 +396,6 @@ class SetupCmd(object):
       if list_match_found is False:
         raise Exception(f'No match found for {key_yard}')
       self.logger.info("Validation complete")
-
-    if self.ldap_user != "sgiamadmin":
-      raise ValueError('provide correct rootdn username')
 
     except Exception as e:
       raise Exception(f'ERROR : Validating keys failed, exception {e}')
