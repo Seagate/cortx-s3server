@@ -69,9 +69,10 @@ class ObjectRecoveryValidator:
         timedelta_mns = math.floor(timedelta.total_seconds()/60)
         return (timedelta_mns >= older_in_mins)
 
-    def delete_object_from_storage(self, obj_oid, layout_id):
+    def delete_object_from_storage(self, obj_oid, layout_id, pvid_str):
         status = False
-        ret, response = self._objectapi.delete(obj_oid, layout_id)
+        self._logger.info("pvid_str : " + pvid_str)
+        ret, response = self._objectapi.delete(obj_oid, layout_id, pvid_str)
         if (ret):
             status = ret
             self._logger.info("Deleted obj " + obj_oid + " from motr store")
@@ -194,14 +195,14 @@ class ObjectRecoveryValidator:
                 obj_oid = versionInfo["motr_oid"]
                 layout_id = versionInfo["layout_id"]
                 #Delete version object from motr store
-                status = self.delete_object_from_storage(obj_oid, layout_id)
+                status = self.delete_object_from_storage(obj_oid, layout_id, self.pvid_str)
                 if (status):
                     self._logger.info("Deleted object version with oid " + obj_oid + " from motr store")
                 else:
                     self._logger.info("Failed to delete object version with oid [" + obj_oid + "] from motr store")
             else:
                 self._logger.info("The version key: " + versionKey + " does not exist. Delete motr object")
-                status = self.delete_object_from_storage(self.object_leak_id, self.object_leak_layout_id)
+                status = self.delete_object_from_storage(self.object_leak_id, self.object_leak_layout_id, self.pvid_str)
 
             if (status):
                 status = self.delete_key_from_index(versionListIndx, versionKey, "VERSION LIST DEL")
@@ -253,6 +254,7 @@ class ObjectRecoveryValidator:
             self.object_leak_info = json.loads(probable_delete_value)
             self.object_leak_id = probable_delete_oid[1:]
             self.object_leak_layout_id = self.object_leak_info["object_layout_id"]
+            self.pvid_str = self.object_leak_info["pv_id"]
 
         except ValueError as error:
             self._logger.error(
@@ -387,7 +389,7 @@ class ObjectRecoveryValidator:
                 oid = self.object_leak_id
                 self._logger.info("Object " + self.object_leak_id + " is for multipart request")
                 layout = self.object_leak_info["object_layout_id"]
-                status = self.delete_object_from_storage(oid, layout)
+                status = self.delete_object_from_storage(oid, layout, self.pvid_str)
                 if (status):
                     self._logger.info("Object for Leak entry " + self.object_leak_id + " deleted from store")
                     status = self.process_probable_delete_record(True, False)
@@ -428,7 +430,7 @@ class ObjectRecoveryValidator:
                         # delete entry from probable delete index.
                         oid = self.object_leak_id
                         layout = self.object_leak_info["object_layout_id"]
-                        status = self.delete_object_from_storage(oid, layout)
+                        status = self.delete_object_from_storage(oid, layout, self.pvid_str)
                         if (status):
                             self._logger.info("Object for Leak entry " + self.object_leak_id + " deleted from store")
                             status = self.process_probable_delete_record(True, False)

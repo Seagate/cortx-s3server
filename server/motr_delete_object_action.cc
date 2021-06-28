@@ -63,8 +63,8 @@ void MotrDeleteObjectAction::validate_request() {
 
     if (!S3CommonUtilities::stoi(object_layout_id, layout_id) &&
         !S3M0Uint128Helper::to_m0_fid(pv_id_str, pv_id_fid)) {
-      s3_log(S3_LOG_ERROR, request_id, "Invalid object layout-id: %s\n",
-             object_layout_id.c_str());
+      s3_log(S3_LOG_ERROR, request_id, "Invalid object layout-id: %s or pvid %s\n",
+             object_layout_id.c_str(), pv_id_str.c_str());
       set_s3_error("BadRequest");
       send_response_to_s3_client();
     } else {
