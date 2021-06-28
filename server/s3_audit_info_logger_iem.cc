@@ -26,9 +26,8 @@
 #include "s3_http_post_queue.h"
 
 S3AuditInfoLoggerIEM::S3AuditInfoLoggerIEM(evbase_t* p_base,
-                                          std::string host_ip,
-                                          long port,
-                                          std::string path) {
+                                           std::string host_ip, uint16_t port,
+                                           std::string path) {
   s3_log(S3_LOG_INFO, nullptr, "%s Ctor\n", __func__);
 
   std::map<std::string, std::string> headers;

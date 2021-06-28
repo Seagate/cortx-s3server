@@ -1040,7 +1040,7 @@ std::string S3Option::get_audit_logger_kafka_web_path() {
   return audit_logger_kafka_web_path;
 }
 
-long S3Option::get_audit_logger_iem_port() { return audit_logger_iem_port; }
+int S3Option::get_audit_logger_iem_port() { return audit_logger_iem_port; }
 
 std::string S3Option::get_audit_logger_iem_path() {
   return audit_logger_iem_path;
