@@ -21,6 +21,7 @@
 import sys
 import time
 import re
+from s3confstore.cortx_s3_confstore import S3CortxConfStore
 from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
@@ -133,9 +134,18 @@ class ResetCmd(SetupCmd):
 
   def DeleteLdapAccountsUsers(self):
     """Deletes all LDAP data entries e.g. accounts, users, access keys using admin credentials."""
-    self.read_ldap_credentials()
+    # self.read_ldap_credentials()
 
     try:
+      op_file = "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"
+      key = 'cluster_config>rootdn_user'
+
+      opfileconfstore = S3CortxConfStore(f'yaml://{op_file}', 'read_rootdn_idx')
+      self.ldap_root_user = opfileconfstore.get_config(f'{key}')
+
+      key = 'cluster_config>rootdn_pass'
+      self.rootdn_passwd = opfileconfstore.get_config(f'{key}')
+
       # Delete data directories e.g. ou=accesskeys, ou=accounts,ou=idp from dc=s3,dc=seagate,dc=com tree"
       LdapAccountAction(self.ldap_root_user, self.rootdn_passwd).delete_s3_ldap_data()
     except Exception as e:
@@ -152,6 +162,13 @@ class ResetCmd(SetupCmd):
                                   'const_cipher_secret_str': "s3backgroundsecretkey",
                                   'const_cipher_access_str': "s3backgroundaccesskey"
                                 }
+
+      op_file = "/opt/seagate/cortx/auth/resources/authserver.properties"
+      opfileconfstore = S3CortxConfStore(f'properties://{op_file}', 'read_ldap_idx')
+
+      self.ldap_user = opfileconfstore.get_config('ldapLoginDN')
+      self.ldap_passwd = opfileconfstore.get_config('ldapLoginPW')
+
       LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
     except Exception as e:
       if "Already exists" not in str(e):

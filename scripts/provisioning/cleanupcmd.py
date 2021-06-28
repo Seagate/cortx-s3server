@@ -23,6 +23,7 @@ import os
 from pathlib import Path
 import shutil
 
+from s3confstore.cortx_s3_confstore import S3CortxConfStore
 from setupcmd import SetupCmd, S3PROVError
 from ldapaccountaction import LdapAccountAction
 from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
@@ -64,7 +65,13 @@ class CleanupCmd(SetupCmd):
     try:
       super(CleanupCmd, self).__init__(config)
 
-      self.read_ldap_credentials()
+      # self.read_ldap_credentials()
+      op_file = "/opt/seagate/cortx/auth/resources/authserver.properties"
+      opfileconfstore = S3CortxConfStore(f'properties://{op_file}', 'read_ldap_idx')
+
+      self.ldap_user = opfileconfstore.get_config('ldapLoginDN')
+      self.ldap_passwd = opfileconfstore.get_config('ldapLoginPW')
+
     except Exception as e:
       self.logger.error(f'Failed to read ldap credentials, error: {e}')
       raise e

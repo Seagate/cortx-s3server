@@ -130,18 +130,52 @@ class SetupCmd(object):
 
       encrypted_ldapadmin_pass = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_LDAPADMIN_PASSWD_KEY'))
 
+      if encrypted_ldapadmin_pass != None:
+        self.ldap_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_ldapadmin_pass)
+
+    except Exception as e:
+      self.logger.error(f'read ldap credentials failed, error: {e}')
+      raise e
+
+  def write_rootdn_credentials(self):
+    """Set rootdn username and password to opfile."""
+    try:
+      s3cipher_obj = CortxS3Cipher(None,
+                                False,
+                                0,
+                                self.get_confkey('CONFSTORE_OPENLDAP_CONST_KEY'))
+
+      cipher_key = s3cipher_obj.generate_key()
+
       self.ldap_root_user = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_ROOTDN_USER_KEY'))
 
       encrypted_rootdn_pass = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_ROOTDN_PASSWD_KEY'))
 
-      if encrypted_ldapadmin_pass != None:
-        self.ldap_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_ldapadmin_pass)
-
       if encrypted_rootdn_pass != None:
-        self.rootdn_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_rootdn_pass)
+          self.rootdn_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_rootdn_pass)
+
+      if self.ldap_root_user != "sgiamadmin":
+        raise ValueError('provide correct rootdn username')
+
+      op_file = "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"
+
+      key = 'cluster_config>rootdn_user'
+      opfileconfstore = S3CortxConfStore(f'yaml://{op_file}', 'write_rootdn_idx')
+      opfileconfstore.set_config(f'{key}', f'{self.ldap_root_user}', True)
+      updated_rootdn_user = opfileconfstore.get_config(f'{key}')
+
+      if updated_rootdn_user != self.ldap_root_user:
+          raise S3PROVError(f'set_config failed to set {key}: {self.ldap_root_user} in {op_file} ')
+
+      key = 'cluster_config>rootdn_pass'
+      opfileconfstore.set_config(f'{key}', f'{self.rootdn_passwd}', True)
+      updated_rootdn_pass = opfileconfstore.get_config(f'{key}')
+
+      if updated_rootdn_pass != self.encrypted_rootdn_pass:
+          raise S3PROVError(f'set_config failed to set {key}: {self.rootdn_passwd} in {op_file} ')
 
     except Exception as e:
-      self.logger.error(f'read ldap credentials failed, error: {e}')
+      self.logger.error(f'write rootdn credentials failed, error: {e}')
       raise e
 
   def update_cluster_id(self, op_file: str = "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"):
