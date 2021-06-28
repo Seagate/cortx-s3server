@@ -50,7 +50,7 @@ def main():
   initCmd.add_argument("--config", help='config URL', type=str, required=True)
 
   cleanupCmd = subparsers.add_parser('cleanup', help='setup cleanup')
-  # cleanupCmd.add_argument("--config", help='config URL', type=str, required=True)
+  cleanupCmd.add_argument("--config", help='config URL', type=str, required=True)
   cleanupCmd.add_argument("--pre_factory", help='Revert to factory state', action='store_true')
 
   testCmd = subparsers.add_parser('test', help='setup test')
@@ -58,7 +58,7 @@ def main():
   testCmd.add_argument("--plan", help='test plan', type=str, required=False)
 
   resetCmd = subparsers.add_parser('reset', help='setup reset')
-  # resetCmd.add_argument("--config", help='config URL', type=str, required=True)
+  resetCmd.add_argument("--config", help='config URL', type=str, required=True)
 
   prepareCmd = subparsers.add_parser('prepare', help='setup prepare')
   prepareCmd.add_argument("--config", help='config URL', type=str, required=True)

@@ -72,7 +72,9 @@ class SetupCmd(object):
 
     s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
     self.logger = logging.getLogger(s3deployment_logger_name)
-    
+
+    self._s3_confkeys_store = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'setup_s3keys_index')
+
     if config is None:
       self.logger.warning(f'Empty Config url')
       return
@@ -83,7 +85,6 @@ class SetupCmd(object):
 
     self._url = config
     self._provisioner_confstore = S3CortxConfStore(self._url, 'setup_prov_index')
-    self._s3_confkeys_store = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'setup_s3keys_index')
 
     # machine_id will be used to read confstore keys
     with open('/etc/machine-id') as f:
@@ -154,25 +155,17 @@ class SetupCmd(object):
 
       encrypted_rootdn_pass = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_ROOTDN_PASSWD_KEY'))
 
-      if encrypted_rootdn_pass != None:
-          self.rootdn_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_rootdn_pass)
+      if encrypted_rootdn_pass is None:
+        raise S3PROVError('password cannot be None.') 
 
       op_file = "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"
 
       key = 'cluster_config>rootdn_user'
       opfileconfstore = S3CortxConfStore(f'yaml://{op_file}', 'write_rootdn_idx')
       opfileconfstore.set_config(f'{key}', f'{self.ldap_root_user}', True)
-      updated_rootdn_user = opfileconfstore.get_config(f'{key}')
-
-      if updated_rootdn_user != self.ldap_root_user:
-          raise S3PROVError(f'set_config failed to set {key}: {self.ldap_root_user} in {op_file} ')
 
       key = 'cluster_config>rootdn_pass'
-      opfileconfstore.set_config(f'{key}', f'{self.rootdn_passwd}', True)
-      updated_rootdn_pass = opfileconfstore.get_config(f'{key}')
-
-      if updated_rootdn_pass != self.rootdn_passwd:
-          raise S3PROVError(f'set_config failed to set {key}: {self.rootdn_passwd} in {op_file} ')
+      opfileconfstore.set_config(f'{key}', f'{encrypted_rootdn_pass}', True)
 
     except Exception as e:
       self.logger.error(f'write rootdn credentials failed, error: {e}')
@@ -573,3 +566,41 @@ class SetupCmd(object):
         except Exception as e:
           self.logger.error(f'ERROR: DeleteFileOrDirWithRegex(): Failed to delete: {file}, error: {str(e)}')
           raise e
+
+  def get_iam_admin_credentials(self):
+    """Used for reset and cleanup phase to get the iam-admin user and decrypted passwd."""
+    op_file = "/opt/seagate/cortx/auth/resources/authserver.properties"
+    opfileconfstore = S3CortxConfStore(f'properties://{op_file}', 'read_ldap_idx')
+    s3cipher_obj = CortxS3Cipher(None,
+                              False,
+                              0,
+                              self.get_confkey('CONFSTORE_OPENLDAP_CONST_KEY'))
+
+    self.ldap_user = "sgiamadmin"
+    # self.ldap_passwd = opfileconfstore.get_config('ldapLoginPW')
+    enc_ldap_passwd = opfileconfstore.get_config('ldapLoginPW')
+    cipher_key = s3cipher_obj.generate_key()
+
+    if enc_ldap_passwd != None:
+      self.ldap_passwd = s3cipher_obj.decrypt(cipher_key, enc_ldap_passwd)
+
+  def get_ldap_root_credentials(self):
+    """Used for reset and cleanup phase to get the ldap root user and decrypted passwd."""
+    op_file = "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"
+    key = 'cluster_config>rootdn_user'
+
+    opfileconfstore = S3CortxConfStore(f'yaml://{op_file}', 'read_rootdn_idx')
+    self.ldap_root_user = opfileconfstore.get_config(f'{key}')
+
+    key = 'cluster_config>rootdn_pass'
+    enc_rootdn_passwd = opfileconfstore.get_config(f'{key}')
+
+    s3cipher_obj = CortxS3Cipher(None,
+                            False,
+                            0,
+                            self.get_confkey('CONFSTORE_OPENLDAP_CONST_KEY'))
+    
+    cipher_key = s3cipher_obj.generate_key()
+
+    if enc_rootdn_passwd != None:
+      self.rootdn_passwd = s3cipher_obj.decrypt(cipher_key, enc_rootdn_passwd)

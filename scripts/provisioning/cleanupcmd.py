@@ -24,6 +24,7 @@ from pathlib import Path
 import shutil
 
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
+from s3cipher.cortx_s3_cipher import CortxS3Cipher
 from setupcmd import SetupCmd, S3PROVError
 from ldapaccountaction import LdapAccountAction
 from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
@@ -64,24 +65,17 @@ class CleanupCmd(SetupCmd):
     """Constructor."""
     try:
       super(CleanupCmd, self).__init__(config)
-
-      # self.read_ldap_credentials()
-      op_file = "/opt/seagate/cortx/auth/resources/authserver.properties"
-      opfileconfstore = S3CortxConfStore(f'properties://{op_file}', 'read_ldap_idx')
-
-      self.ldap_user = opfileconfstore.get_config('ldapLoginDN')
-      self.ldap_passwd = opfileconfstore.get_config('ldapLoginPW')
-
+      self.get_iam_admin_credentials()
+      
     except Exception as e:
       self.logger.error(f'Failed to read ldap credentials, error: {e}')
       raise e
 
   def process(self, pre_factory = False):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name} {self.url}")
+    self.logger.info(f"Processing {self.name}")
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
-    self.phase_keys_validate(self.url, self.name)
     self.validate_config_files(self.name)
     self.logger.info("validations completed")
 
