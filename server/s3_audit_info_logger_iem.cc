@@ -43,7 +43,7 @@ int S3AuditInfoLoggerIEM::save_msg(std::string const& eventID,
                                   std::string const& msg) {
   s3_log(S3_LOG_INFO, nullptr, "%s Entry", __func__);
 
-  /* 
+  /*
   Sample JSON
   {
   "component": "S3",
@@ -59,9 +59,15 @@ int S3AuditInfoLoggerIEM::save_msg(std::string const& eventID,
         \"component\": \"S3\", \
         \"source\": \"S\",      \
         \"module\": \"S3server\",    \
-        \"event_id\": " + eventID + ",  \
-        \"severity\": " + severity + ",    \
-        \"message_blob\": " + msg + " \
+        \"event_id\": " +
+      eventID +
+      ",  \
+        \"severity\": " +
+      severity +
+      ",    \
+        \"message_blob\": " +
+      msg +
+      " \
       }";
   s3_log(S3_LOG_DEBUG, nullptr, "IEM Message : %s", fmt_msg.c_str());
   const bool fSucc = p_s3_post_queue->post(std::move(fmt_msg));
