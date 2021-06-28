@@ -171,7 +171,7 @@ class SetupCmd(object):
       opfileconfstore.set_config(f'{key}', f'{self.rootdn_passwd}', True)
       updated_rootdn_pass = opfileconfstore.get_config(f'{key}')
 
-      if updated_rootdn_pass != self.encrypted_rootdn_pass:
+      if updated_rootdn_pass != self.rootdn_passwd:
           raise S3PROVError(f'set_config failed to set {key}: {self.rootdn_passwd} in {op_file} ')
 
     except Exception as e:
