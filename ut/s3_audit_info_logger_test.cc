@@ -19,7 +19,7 @@
  */
 
 #include <gtest/gtest.h>
-
+#include <iostream>
 #include <event2/event.h>
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
@@ -28,6 +28,7 @@
 
 #include "s3_option.h"
 #include "s3_audit_info_logger.h"
+#include "s3_audit_info_logger_iem.h"
 
 class OptionsWrapper {
  private:
@@ -186,4 +187,18 @@ TEST(S3AuditInfoLoggerTest, PolicyKafkaWeb) {
   EXPECT_EQ(false, S3AuditInfoLogger::audit_info_logger_enabled);
   EXPECT_EQ(false, S3AuditInfoLogger::is_enabled());
   EXPECT_EQ(1, S3AuditInfoLogger::save_msg("test_req_id", "{unit_tests=true}"));
+}
+
+TEST(S3AuditInfoLoggerTest, IEM) {
+  std::cout << "Inside Test" << "\n";
+  OptionsWrapper ow("rsyslog-tcp");
+  ow.upd_base();
+  S3AuditInfoLoggerIEM* audit_info_logger_iem = new S3AuditInfoLoggerIEM(
+        S3Option::get_instance()->get_eventbase(),
+        "localhost",
+        28300,
+        "/EventMessage/event");
+  std::cout << "Init done" << "\n";
+  audit_info_logger_iem->save_msg("500", "A", "IEM Test Alert");
+  std::cout << "Message Sent" << "\n";
 }
