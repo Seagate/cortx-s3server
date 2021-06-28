@@ -24,7 +24,6 @@ from s3backgrounddelete.cortx_list_index_response import CORTXS3ListIndexRespons
 from s3backgrounddelete.cortx_s3_error_respose import CORTXS3ErrorResponse
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
-from s3backgrounddelete.IEMutil import IEMutil
 
 class CORTXS3Countkv:
        
@@ -39,11 +38,10 @@ class CORTXS3Countkv:
                             counter = counter + 1
         return counter
 
-    # Compare threshold value and total count of kv entries, raise IEM alert if count of kv entries exceeds threshold value and exit immediately
+    # Compare threshold value and total count of kv entries, if count of kv entries exceeds threshold value, exit immediately
     def checkthreshold(self, thld, kvcount):
         if(thld):
             if kvcount > int(thld):
-                IEMutil("ERROR", IEMutil.THRESHOLD_CROSS, IEMutil.THRESHOLD_CROSS_STR)
                 print("The kv entries are more than threshold value")
                 sys.exit()
 
