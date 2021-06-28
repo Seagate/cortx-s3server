@@ -133,6 +133,9 @@ class SetupCmd(object):
       if encrypted_ldapadmin_pass != None:
         self.ldap_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_ldapadmin_pass)
 
+      if self.ldap_user != "sgiamadmin":
+        raise ValueError('provide correct rootdn username')      
+
     except Exception as e:
       self.logger.error(f'read ldap credentials failed, error: {e}')
       raise e
@@ -153,9 +156,6 @@ class SetupCmd(object):
 
       if encrypted_rootdn_pass != None:
           self.rootdn_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_rootdn_pass)
-
-      if self.ldap_root_user != "sgiamadmin":
-        raise ValueError('provide correct rootdn username')
 
       op_file = "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"
 
