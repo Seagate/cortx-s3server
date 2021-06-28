@@ -1,7 +1,6 @@
 {
 	"actions": [
 		"PutObjectTagging",
-		"GetObjectTagging",
 		"DeleteObjectTagging"
 		]
 }

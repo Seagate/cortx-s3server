@@ -127,6 +127,8 @@ class AccessControlList {
         isPermissionAvailable = true;
         } else if (s3Action.equals("DeleteBucket")) {
           isPermissionAvailable = true;
+        } else if (s3Action.endsWith("GetObjectTagging")) {
+          isPermissionAvailable = true;
         }
       }
     }
