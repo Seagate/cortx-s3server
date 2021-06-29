@@ -28,7 +28,12 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 4. We've assumed that `git` is preinstalled. If not then follow these steps to install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
    * To check your Git Version, use the command: `$ git --version`
 
-     :page_with_curl:**Note:** We recommended that you install Git Version 2.x.x.
+     :page_with_curl:**Note:** We recommended that you install Git Version 2.x.x. To update git to the latest version, use:
+     ```sh
+     yum remove git*
+     yum -y install https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.7-1.x86_64.rpm
+     yum install git
+     ```
 
 5. Ensure that you've installed the following packages on your VM instance:
 
