@@ -242,7 +242,7 @@ class ObjectRecoveryValidator:
             return False
 
     def process_results(self):
-        # Execute object leak algorithm by processing each of the entries from RabbitMQ
+        # Execute object leak algorithm by processing each of the entries from message_bus
         probable_delete_oid = self.probable_delete_records["Key"]
         probable_delete_value = self.probable_delete_records["Value"]
         

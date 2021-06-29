@@ -20,7 +20,6 @@
 import os
 from framework import PyCliTest
 from framework import Config
-from framework import logit
 from s3client_config import S3ClientConfig
 
 class AuthTest(PyCliTest):
@@ -76,6 +75,9 @@ class AuthTest(PyCliTest):
         cmd = "s3iamcli deleteaccount -n %s --access_key '%s' --secret_key '%s'" % (
                  account_args['AccountName'], S3ClientConfig.access_key_id,
                  S3ClientConfig.secret_key)
+
+        if(not S3ClientConfig.token is ""):
+            cmd += " --session_token '%s'" % S3ClientConfig.token
 
         if ('force' in account_args.keys() and account_args['force']):
             cmd += " --force"

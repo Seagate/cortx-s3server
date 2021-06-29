@@ -57,29 +57,25 @@ inline const char* s3_log_get_req_id(const std::string& requestid) {
 #define s3_log_msg_S3_LOG_ERROR(p) (LOG(ERROR) << (p))
 #define s3_log_msg_S3_LOG_FATAL(p) (LOG(ERROR) << (p))
 
+char* __log_buff();
+size_t __log_buff_sz();
+
 // Note:
 // 1. Google glog doesn't have a separate severity level for DEBUG logs.
 //    So we map our DEBUG logs to INFO level. This level promotion happens
 //    only if S3 log level is set to DEBUG.
 // 2. Logging a FATAL message terminates the program (after the message is
 //    logged).so demote it to ERROR
-#define s3_log(loglevel, requestid, fmt, ...)                    \
-  do {                                                           \
-    if (loglevel >= s3log_level) {                               \
-      char* s3_log_msg__ = nullptr;                              \
-      int s3_log_len__ =                                         \
-          asprintf(&s3_log_msg__, "[Req:%s] " fmt "\n",          \
-                   s3_log_get_req_id(requestid), ##__VA_ARGS__); \
-      if (s3_log_len__ > 0) {                                    \
-        if (s3_log_msg__[s3_log_len__ - 2] == '\n')              \
-          s3_log_msg__[s3_log_len__ - 1] = '\0';                 \
-        s3_log_msg_##loglevel(s3_log_msg__);                     \
-        free(s3_log_msg__);                                      \
-      }                                                          \
-    }                                                            \
-    if (loglevel >= S3_LOG_FATAL) {                              \
-      s3_fatal_handler(1);                                       \
-    }                                                            \
+#define s3_log(loglevel, requestid, fmt, ...)                               \
+  do {                                                                      \
+    if (loglevel >= s3log_level) {                                          \
+      snprintf(__log_buff(), __log_buff_sz(), "[%s] [ReqID: %s] " fmt "\n", \
+               __func__, s3_log_get_req_id(requestid), ##__VA_ARGS__);      \
+      s3_log_msg_##loglevel(__log_buff());                                  \
+    }                                                                       \
+    if (loglevel >= S3_LOG_FATAL) {                                         \
+      s3_fatal_handler(1);                                                  \
+    }                                                                       \
   } while (0)
 
 // Note:

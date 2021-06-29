@@ -127,7 +127,25 @@ void S3PostMultipartObjectAction::setup_steps() {
                   this);
   // ...
 }
-void S3PostMultipartObjectAction::fetch_object_info_failed() { next(); }
+
+void S3PostMultipartObjectAction::fetch_object_info_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  auto omds = object_metadata->get_state();
+  if (omds == S3ObjectMetadataState::missing) {
+    s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
+    next();
+  } else {
+    s3_log(S3_LOG_ERROR, request_id, "Metadata load state %d\n", (int)omds);
+    if (omds == S3ObjectMetadataState::failed_to_launch) {
+      set_s3_error("ServiceUnavailable");
+    } else {
+      set_s3_error("InternalError");
+    }
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
 void S3PostMultipartObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
@@ -146,6 +164,7 @@ void S3PostMultipartObjectAction::fetch_bucket_info_failed() {
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
+
 void S3PostMultipartObjectAction::fetch_object_info_success() { next(); }
 
 void S3PostMultipartObjectAction::validate_x_amz_tagging_if_present() {
@@ -171,11 +190,13 @@ void S3PostMultipartObjectAction::parse_x_amz_tagging_header(
     for (struct evkeyval* header = key_value.tqh_first; header;
          header = header->next.tqe_next) {
 
-      decoded_key = evhttp_decode_uri(header->key);
+      decoded_key = evhttp_uridecode(header->key, 0, NULL);
       s3_log(S3_LOG_DEBUG, request_id,
              "Successfully parsed the Key Values=%s %s", decoded_key,
              header->value);
       new_object_tags_map[decoded_key] = header->value;
+      free(decoded_key);
+      decoded_key = NULL;
     }
     validate_tags();
   } else {
@@ -241,14 +262,22 @@ void S3PostMultipartObjectAction::check_multipart_object_info_status() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (object_multipart_metadata->get_state() !=
       S3ObjectMetadataState::present) {
-    if (object_multipart_metadata->get_state() ==
-        S3ObjectMetadataState::failed_to_launch) {
+    auto omds = object_multipart_metadata->get_state();
+    if (omds == S3ObjectMetadataState::failed_to_launch) {
       s3_log(
           S3_LOG_ERROR, request_id,
           "Object metadata load operation failed due to pre launch failure\n");
       set_s3_error("ServiceUnavailable");
       send_response_to_s3_client();
       s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+      return;
+    } else if (omds == S3ObjectMetadataState::failed ||
+               omds == S3ObjectMetadataState::invalid) {
+      s3_log(S3_LOG_ERROR, request_id, "Object metadata failed state %d\n",
+             (int)omds);
+      set_s3_error("InternalError");
+      send_response_to_s3_client();
+      s3_log(S3_LOG_DEBUG, "", "Exiting\n");
       return;
     }
     // Multipart upload not in progress for this object_name
@@ -317,15 +346,13 @@ void S3PostMultipartObjectAction::check_object_state() {
 void S3PostMultipartObjectAction::create_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   create_object_timer.start();
-  if (tried_count == 0) {
-    motr_writer = motr_writer_factory->create_motr_writer(request, oid);
-  } else {
-    motr_writer->set_oid(oid);
-  }
 
+  if (tried_count == 0) {
+    motr_writer = motr_writer_factory->create_motr_writer(request);
+  }
   motr_writer->create_object(
       std::bind(&S3PostMultipartObjectAction::create_object_successful, this),
-      std::bind(&S3PostMultipartObjectAction::create_object_failed, this),
+      std::bind(&S3PostMultipartObjectAction::create_object_failed, this), oid,
       layout_id);
 
   // for shutdown testcases, check FI and set shutdown signal
@@ -402,8 +429,9 @@ void S3PostMultipartObjectAction::collision_occured() {
       s3_log(S3_LOG_ERROR, request_id,
              "Failed to resolve object id collision %d times for uri %s\n",
              tried_count, request->get_object_uri().c_str());
-      s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,
-             S3_IEM_COLLISION_RES_FAIL_JSON);
+      // s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL,
+      // S3_IEM_COLLISION_RES_FAIL_STR,
+      //     S3_IEM_COLLISION_RES_FAIL_JSON);
     }
     set_s3_error("InternalError");
     send_response_to_s3_client();
@@ -461,11 +489,12 @@ void S3PostMultipartObjectAction::create_part_meta_index_failed() {
 
 void S3PostMultipartObjectAction::rollback_create() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  motr_writer->set_oid(oid);
+
   motr_writer->delete_object(
       std::bind(&S3PostMultipartObjectAction::rollback_next, this),
       std::bind(&S3PostMultipartObjectAction::rollback_create_failed, this),
-      layout_id);
+      oid, layout_id);
+
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -476,8 +505,8 @@ void S3PostMultipartObjectAction::rollback_create_failed() {
            "Deletion of object failed, this oid will be stale in Motr: "
            "%" SCNx64 " : %" SCNx64 "\n",
            oid.u_hi, oid.u_lo);
-    s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
-           S3_IEM_DELETE_OBJ_FAIL_JSON);
+    // s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
+    //     S3_IEM_DELETE_OBJ_FAIL_JSON);
   }
   rollback_next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -500,8 +529,8 @@ void S3PostMultipartObjectAction::rollback_create_part_meta_index_failed() {
          "Deletion of index failed, this oid will be stale in Motr"
          "%" SCNx64 " : %" SCNx64 "\n",
          part_index_oid.u_hi, part_index_oid.u_lo);
-  s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
-         S3_IEM_DELETE_IDX_FAIL_JSON);
+  // s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
+  //     S3_IEM_DELETE_IDX_FAIL_JSON);
   rollback_next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -510,6 +539,7 @@ void S3PostMultipartObjectAction::save_upload_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   object_multipart_metadata->set_layout_id(layout_id);
+  object_multipart_metadata->set_pvid(motr_writer->get_ppvid());
 
   for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {

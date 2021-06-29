@@ -1,0 +1,43 @@
+@startuml
+
+header Separate Auth Calls\n By Ivan Tishchenko\n2021-03-01
+title S3 Auth Sequence (Separate Auth Calls)
+
+participant "S3 Client" as client
+participant "S3 Server" as server
+participant "S3 Auth Server" as auth
+participant "Motr\nKVS API" as kvs
+participant "Motr\nObject API" as object
+
+autoactivate on
+
+client -> server: GET /bucket_name/object_name
+
+server -> auth #red: AuthenticateUser(key, secret)
+note left: Are user credentials valid?
+note right #FFAAAA: NOTE - First Auth call
+auth --> server: OK
+
+server -> kvs: get_keyval(global_bucket_index,\n     key = "bucket_name")
+note left: Find bucket owner account ID.
+kvs --> server: value = account_id of bucket owner
+
+server -> kvs: get_keyval(global_bucket_md_index,\n     key = "account_id/bucket_name")
+note left: Load bucket MD.
+kvs --> server: value = bucket metadata JSON
+
+server -> kvs: get_keyval(BUCKET_nnn_obj_index,\n     key = "object_name");
+note left: Load object MD.
+kvs --> server: value = object metadata JSON
+
+server -> auth #red: AuthorizeUser(user id,\n     bucket MD, object MD)
+note left: Does user have access rights?
+note right #FFAAAA: NOTE - Second Auth call
+auth --> server: OK
+
+server -> object: read data
+object --> server: data
+
+server --> client: 200 OK, with data
+
+@enduml

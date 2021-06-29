@@ -156,7 +156,8 @@ public class AccessKeyResponseGeneratorTest {
         ServerResponse response = responseGenerator.noSuchEntity();
 
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED, response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
+                            response.getResponseStatus());
     }
 
     @Test

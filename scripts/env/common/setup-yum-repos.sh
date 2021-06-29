@@ -58,6 +58,7 @@ if [ "$os_major_version" = "7" ]; then
     # centos 7.8
     if [ ! -z "$centos_release" ]; then
       if [ "$os_build_num" = "2003" ]; then
+        rm -f /etc/yum.repos.d/cortx*
         cp -f ${S3_SRC_DIR}/ansible/files/yum.repos.d/centos7.8.2003/* /etc/yum.repos.d/
       fi
     fi

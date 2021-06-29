@@ -1,5 +1,109 @@
 {
-    "rpms": ["openldap-servers", "openldap-clients", "haproxy"],
-    "pip3s": ["toml", "s3confstore", "crypto"],
-    "services": ["sshd", "rabbitmq-server"]
+  "post_install": {
+    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"],
+    "files": [
+      "file:/etc/machine-id",
+      "file:/etc/haproxy/haproxy.cfg",
+      "file:/etc/ssl/stx/stx.pem",
+      "file:/opt/seagate/cortx/s3/install/haproxy/503.http",
+      "file:/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy",
+      "file:/opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf",
+      "file:/opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate",
+      "file:/opt/seagate/cortx/s3/conf/s3config.yaml",
+      "file:/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
+      "file:/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
+      "file:/opt/seagate/cortx/auth/resources/keystore.properties",
+      "file:/opt/seagate/cortx/auth/resources/authserver.properties"
+    ]
+  },
+  "config": {
+    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"],
+    "services": ["sshd", "haproxy", "slapd", "rsyslog"],
+    "files": [
+      "file:/etc/machine-id",
+      "file:/etc/haproxy/haproxy.cfg",
+      "file:/etc/ssl/stx/stx.pem",
+      "file:/opt/seagate/cortx/s3/install/haproxy/503.http",
+      "file:/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy",
+      "file:/opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf",
+      "file:/opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate",
+      "file:/opt/seagate/cortx/s3/conf/s3config.yaml",
+      "file:/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
+      "file:/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
+      "file:/opt/seagate/cortx/auth/resources/keystore.properties",
+      "file:/opt/seagate/cortx/auth/resources/authserver.properties"
+    ]
+  },
+  "init": {
+    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"],
+    "services": ["sshd", "haproxy", "slapd", "rsyslog"],
+    "files": [
+      "file:/etc/machine-id",
+      "file:/etc/haproxy/haproxy.cfg",
+      "file:/etc/ssl/stx/stx.pem",
+      "file:/opt/seagate/cortx/s3/install/haproxy/503.http",
+      "file:/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy",
+      "file:/opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf",
+      "file:/opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate",
+      "file:/opt/seagate/cortx/s3/conf/s3config.yaml",
+      "file:/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
+      "file:/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
+      "file:/opt/seagate/cortx/auth/resources/keystore.properties",
+      "file:/opt/seagate/cortx/auth/resources/authserver.properties"
+    ]
+  },
+  "reset": {
+    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"]
+  },
+  "prepare": {
+    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"]
+  },
+  "cleanup": {
+    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"]
+  },
+  "test" :
+  {
+    "rpms": ["openldap-servers", "openldap-clients", "s3cmd", "s3iamcli"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"]
+  },
+  "preupgrade" :
+  {
+    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"],
+    "files": [
+      "file:/opt/seagate/cortx/s3/conf/s3config.yaml",
+      "file:/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
+      "file:/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
+      "file:/opt/seagate/cortx/auth/resources/keystore.properties",
+      "file:/opt/seagate/cortx/auth/resources/authserver.properties",
+      "file:/opt/seagate/cortx/s3/conf/s3config.yaml.sample",
+      "file:/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample",
+      "file:/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample",
+      "file:/opt/seagate/cortx/auth/resources/keystore.properties.sample",
+      "file:/opt/seagate/cortx/auth/resources/authserver.properties.sample"
+    ]
+  },
+  "postupgrade" :
+  {
+    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "pip3s": ["s3confstore", "cryptography", "s3cipher"],
+    "files": [
+      "file:/opt/seagate/cortx/s3/conf/s3config.yaml",
+      "file:/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
+      "file:/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
+      "file:/opt/seagate/cortx/auth/resources/keystore.properties",
+      "file:/opt/seagate/cortx/auth/resources/authserver.properties",
+      "file:/opt/seagate/cortx/s3/conf/s3config.yaml.sample",
+      "file:/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample",
+      "file:/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample",
+      "file:/opt/seagate/cortx/auth/resources/keystore.properties.sample",
+      "file:/opt/seagate/cortx/auth/resources/authserver.properties.sample"
+    ]
+  }
 }

@@ -205,9 +205,9 @@ S3cmdTest('s3cmd can upload 3k file').upload_test("seagatebucket", "3kfile", 300
 
 S3cmdTest('s3cmd can download 3k file').download_test("seagatebucket", "3kfile").execute_test().command_is_successful().command_created_file("3kfile")
 
-S3cmdTest('s3cmd cannot copy object 3k file').upload_copy_test("seagatebucket", "3kfile", "3kfile.copy").execute_test(negative_case=True).command_should_fail()
+S3cmdTest('s3cmd can copy object 3k file').upload_copy_test("seagatebucket", "3kfile", "3kfile.copy").execute_test().command_is_successful()
 
-S3cmdTest('s3cmd cannot move object 3k file').upload_move_test("seagatebucket", "3kfile", "seagatebucket", "3kfile.moved").execute_test(negative_case=True).command_should_fail()
+S3cmdTest('s3cmd can move object 3k file').upload_move_test("seagatebucket", "3kfile", "seagatebucket", "3kfile.moved").execute_test().command_is_successful()
 
 # ************ FILE Overwrite TEST ************
 S3cmdTest('s3cmd can upload 3k file with size 3072').upload_test("seagatebucket", "3kfile", 3072).execute_test().command_is_successful()
@@ -240,10 +240,13 @@ S3cmdTest('s3cmd can list all objects').list_all_objects().execute_test().comman
 S3cmdTest('s3cmd can show disk usage').disk_usage_bucket("seagatebucket").execute_test().command_is_successful()
 
 # ************ DELETE OBJECT TEST ************
-S3cmdTest('s3cmd can delete 3k file').delete_test("seagatebucket", "3kfile").execute_test().command_is_successful()
+S3cmdTest('s3cmd can delete 3k file moved').delete_test("seagatebucket", "3kfile.moved").execute_test().command_is_successful()
 
-S3cmdTest('s3cmd should not have object after its delete').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('3kfile')
+S3cmdTest('s3cmd can delete 3k file copy').delete_test("seagatebucket", "3kfile.copy").execute_test().command_is_successful()
 
+S3cmdTest('s3cmd should not have object after its delete').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('3kfile.moved')
+
+S3cmdTest('s3cmd should not have object after its delete').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('3kfile.copy')
 
 S3cmdTest('s3cmd can delete 3k file').delete_test("seagatebucket/2016-04:32:21", "3kfile").execute_test().command_is_successful()
 
@@ -559,7 +562,15 @@ S3cmdTest('s3cmd can upload 18MB file for Collision resolution test').upload_tes
 
 s3kvs.delete_bucket_info("seagatebucket")
 
+S3fiTest('Disable bucket metadata cache').\
+    enable_fi("enable", "", "disable_bucket_metadata_cache").\
+    execute_test().command_is_successful()
+
 S3cmdTest('Create bucket for Collision resolution test').create_bucket("seagatebucket").execute_test().command_is_successful()
+
+S3fiTest('Enable bucket metadata cache').\
+    disable_fi("disable_bucket_metadata_cache").\
+    execute_test().command_is_successful()
 
 S3cmdTest('s3cmd can upload 3k file after Collision resolution').upload_test("seagatebucket", "3kfilecollision", 3000).execute_test().command_is_successful()
 

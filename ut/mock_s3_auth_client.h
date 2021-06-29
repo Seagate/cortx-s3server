@@ -31,8 +31,11 @@ class MockS3AuthClientOpContext : public S3AuthClientOpContext {
  public:
   MockS3AuthClientOpContext(std::shared_ptr<S3RequestObject> req,
                             std::function<void()> success_callback,
-                            std::function<void()> failed_callback)
-      : S3AuthClientOpContext(req, success_callback, failed_callback) {}
+                            std::function<void()> failed_callback,
+                            S3AuthClientOpType auth_request_type =
+                                S3AuthClientOpType::authentication)
+      : S3AuthClientOpContext(req, success_callback, failed_callback,
+                              auth_request_type) {}
   MOCK_METHOD0(init_auth_op_ctx, bool());
   MOCK_METHOD1(create_basic_auth_op_ctx,
                struct s3_auth_op_context *(struct event_base *eventbase));

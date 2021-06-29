@@ -441,6 +441,43 @@ fi
 # Just to free up resources
 bazel shutdown
 
+if [ $no_motr_rpm -eq 1 ]
+then
+  if [ $no_s3msgbus_build -eq 0 ]
+  then
+    cd s3cortxutils/s3msgbus
+    if [ $no_clean_build -eq 0 ]
+    then
+      python36 setup.py install --force
+    else
+      python36 setup.py install
+    fi
+    cd -
+  fi
+  if [ $no_s3cipher_build -eq 0 ]
+  then
+    cd s3cortxutils/s3cipher
+    if [ $no_clean_build -eq 0 ]
+    then
+      python36 setup.py install --force
+    else
+      python36 setup.py install
+    fi
+    cd -      
+  fi
+  if [ $no_s3confstoretool_build -eq 0 ]
+  then
+    cd s3cortxutils/s3confstore
+    if [ $no_clean_build -eq 0 ]
+    then
+      python36 setup.py install --force
+    else
+      python36 setup.py install
+    fi
+    cd -      
+  fi
+fi
+
 extra_mvnbuild_pkg_opts=""
 extra_mvn_pkg_opts=""
 if [ $no_java_tests -eq 1 ]; then
@@ -485,6 +522,7 @@ then
   cd -
 fi
 
+# This will handle the copying of sample file to config file
 if [ $no_install -eq 0 ]
 then
   if [[ $EUID -ne 0 ]]; then
@@ -513,39 +551,6 @@ then
       python36 setup.py install
     fi
     cd -
-  fi
-  if [ $no_s3msgbus_build -eq 0 ]
-  then
-    cd s3cortxutils/s3msgbus
-    if [ $no_clean_build -eq 0 ]
-    then
-      python36 setup.py install --force
-    else
-      python36 setup.py install
-    fi
-    cd -
-  fi
-  if [ $no_s3cipher_build -eq 0 ]
-  then
-    cd s3cortxutils/s3cipher
-    if [ $no_clean_build -eq 0 ]
-    then
-      python36 setup.py install --force
-    else
-      python36 setup.py install
-    fi
-    cd -      
-  fi
-  if [ $no_s3confstoretool_build -eq 0 ]
-  then
-    cd s3cortxutils/s3confstore
-    if [ $no_clean_build -eq 0 ]
-    then
-      python36 setup.py install --force
-    else
-      python36 setup.py install
-    fi
-    cd -      
   fi
 fi
 

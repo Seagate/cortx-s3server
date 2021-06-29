@@ -308,11 +308,9 @@ ulimit -c unlimited
 
 # Few assertions - prerun checks
 rpm -q haproxy
-rpm -q rabbitmq-server
 #rpm -q stx-s3-certs
 #rpm -q stx-s3-client-certs
 systemctl status haproxy
-systemctl status rabbitmq-server
 
 cd $S3_BUILD_DIR
 
@@ -383,6 +381,10 @@ if [ $cleanup_only -eq 1 ]; then
   exit
 fi
 
+# add /usr/local/bin to PATH
+export PATH=$PATH:/usr/local/bin
+echo $PATH
+
 # Configuration setting for using HTTP connection
 if [ $use_http_client -eq 1 ]
 then
@@ -447,62 +449,65 @@ $USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=true/g' /opt/s
 
 $USE_SUDO systemctl restart s3authserver
 
-# Start S3 gracefully, with max 3 attempts
-echo "Starting new built s3 services"
-retry=1
-max_retries=3
-statuss3=0
-fake_params=""
-if [ $fake_kvs -eq 1 ]
-then
-    fake_params+=" --fake_kvs"
-fi
+function s3server_start() {
+    # Start S3 gracefully, with max 3 attempts
+    retry=1
+    max_retries=3
+    statuss3=0
+    echo "Starting new built s3 services"
+    fake_params=""
+    if [ $fake_kvs -eq 1 ]
+    then
+        fake_params+=" --fake_kvs"
+    fi
 
-if [ $local_redis_restart -eq 1 ]; then
-    rpm -q redis
-    set +e
-    $USE_SUDO kill -9 `pgrep redis`
-    set -e
-    redis-server --port 6379 &
-fi
+    if [ $local_redis_restart -eq 1 ]; then
+        rpm -q redis
+        set +e
+        $USE_SUDO kill -9 `pgrep redis`
+        set -e
+        redis-server --port 6379 &
+    fi
 
-if [ $redis_kvs -eq 1 ]
-then
-    fake_params+=" --redis_kvs"
-fi
+    if [ $redis_kvs -eq 1 ]
+    then
+        fake_params+=" --redis_kvs"
+    fi
 
-if [ $fake_obj -eq 1 ]
-then
-    fake_params+=" --fake_obj"
-fi
+    if [ $fake_obj -eq 1 ]
+    then
+        fake_params+=" --fake_obj"
+    fi
 
-while [[ $retry -le $max_retries ]]
-do
-  statuss3=0
-  $USE_SUDO ./dev-starts3.sh $num_instances $fake_params $callgraph_cmd $valgrind_memcheck_cmd
+    while [[ $retry -le $max_retries ]]
+    do
+        statuss3=0
+        $USE_SUDO ./dev-starts3.sh $num_instances $fake_params $callgraph_cmd $valgrind_memcheck_cmd
 
-  # Wait s3server to start
-  timeout 2m bash -c "while ! ./iss3up.sh; do sleep 1; done"
-  statuss3=$?
+        # Wait s3server to start
+        timeout 2m bash -c "while ! ./iss3up.sh; do sleep 1; done"
+        statuss3=$?
 
-  if [ "$statuss3" == "0" ]; then
-    echo "S3 service started successfully..."
-    break
-  else
-    # Sometimes if motr is not ready, S3 may fail to connect
-    # cleanup and restart
-    $USE_SUDO ./dev-stops3.sh $num_instances
-    sleep 1
-  fi
-  retry=$((retry+1))
-done
+        if [ "$statuss3" == "0" ]; then
+            echo "S3 service started successfully..."
+            break
+        else
+            # Sometimes if motr is not ready, S3 may fail to connect
+            # cleanup and restart
+            $USE_SUDO ./dev-stops3.sh $num_instances
+            sleep 1
+        fi
+        retry=$((retry+1))
+    done
 
-if [ "$statuss3" != "0" ]; then
-  echo "Cannot start S3 service"
-  tail -50 /var/log/seagate/s3/s3server.INFO
-  exit 1
-fi
+    if [ "$statuss3" != "0" ]; then
+        echo "Cannot start S3 service"
+        tail -50 /var/log/seagate/s3/s3server.INFO
+        exit 1
+    fi
+}
 
+s3server_start
 
 # Add certificate to keystore
 if [ $use_http_client -eq 0 ]
@@ -536,6 +541,13 @@ then
     fi
 fi
 
+function s3server_stop() {
+    $USE_SUDO ./dev-stops3.sh $callgraph_cmd || echo "Cannot stop s3 services"
+}
+
+# ensure extra python packets installed
+$USE_SUDO pip3 list | grep plumbum || $USE_SUDO pip3 install plumbum
+
 # Run Unit tests and System tests
 S3_TEST_RET_CODE=0
 runalltest_options="--no-motr-rpm $use_ipv6_arg $basic_test_cmd_par"
@@ -555,7 +567,8 @@ fi
 $USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
 
 $USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
-$USE_SUDO ./dev-stops3.sh $callgraph_cmd || echo "Cannot stop s3 services"
+
+s3server_stop
 
 if [ $s3server_enable_ssl -eq 1 ]
 then

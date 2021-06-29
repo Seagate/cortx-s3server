@@ -33,6 +33,7 @@
 #include "s3_stats.h"
 #include "s3_addb.h"
 #include "base64.h"
+#include "s3_action_base.h"
 
 extern S3Option* g_option_instance;
 
@@ -46,7 +47,10 @@ extern "C" int consume_header(evhtp_kv_t* kvobj, void* arg) {
   if (kvobj->key != NULL) {
     request->header_size += strlen(kvobj->key);
     if (strncasecmp(kvobj->key, "x-amz-meta-", strlen("x-amz-meta-")) == 0) {
-      request->user_metadata_size += strlen(kvobj->key);
+      // subtracting the length of key 'x-amz-meta-' from the metadata size
+      // as this is added by S3server as an identifier for metadata
+      request->user_metadata_size +=
+          (strlen(kvobj->key) - strlen("x-amz-meta-"));
     }
   }
   if (kvobj->val != NULL) {
@@ -812,6 +816,25 @@ void RequestObject::send_reply_body(const char* data, int length) {
   }
 }
 
+void RequestObject::send_reply_body(struct evbuffer* p_reply_buffer) {
+  if (p_reply_buffer == nullptr) {
+    return;
+  }
+  if (client_connected()) {
+    evhtp_obj->http_send_reply_body(ev_req, p_reply_buffer);
+  } else {
+    request_timer.stop();
+    LOG_PERF("total_request_time_ms", request_id.c_str(),
+             request_timer.elapsed_time_in_millisec());
+    s3_stats_timing("total_request_time",
+                    request_timer.elapsed_time_in_millisec());
+  }
+  // In case of http_send_reply_body, internal references are moved, so we can
+  // free wrapper struct, data still lives till written to socket.
+  // In case client is disconnected, else part this will free buffers as well.
+  evbuffer_free(p_reply_buffer);
+}
+
 void RequestObject::send_reply_end() {
   if (client_connected()) {
     evhtp_obj->http_send_reply_end(ev_req);
@@ -852,6 +875,12 @@ void RequestObject::close_connection() {
 
   ev_req = nullptr;
   is_client_connected = false;
+}
+
+void RequestObject::cancel() {
+  evhtp_obj->http_request_cancel(ev_req);
+  client_has_disconnected();
+  send_reply_end();
 }
 
 void RequestObject::respond_error(

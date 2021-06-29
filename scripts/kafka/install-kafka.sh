@@ -24,7 +24,7 @@ set -e
 
 #Variables
 KAFKA_INSTALL_PATH=/opt
-KAFKA_DOWNLOAD_URL="http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/centos/centos-7.8.2003-1.0.0-3/commons/kafka/kafka_2.13-2.7.0.tgz"
+KAFKA_DOWNLOAD_URL="http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/custom-deps/foundation/kafka-2.13_2.7.0-el7.x86_64.rpm"
 KAFKA_DIR_NAME="kafka"
 consumer_count=0
 hosts=""
@@ -38,55 +38,61 @@ SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
 # Function to install all pre-requisites
 install_prerequisite() {
   echo "Installing Pre-requisites"
-  yum install java -y
-  yum install java-devel -y
+  #install confluent_kafka 1.5.0 version as this is compatible with kafka_2.13-2.7.0
+  pip3 install confluent_kafka==1.5.0
   echo "Pre-requisites installed successfully."
 }
 
-# function to download and setup kafka
+#function to install kafka from rpm location
 setup_kafka() {
-  echo "Installing and Setting up kafka."
-  cd $KAFKA_INSTALL_PATH
-  curl $KAFKA_DOWNLOAD_URL -o $KAFKA_DIR_NAME.tgz
-  if [ -d "$KAFKA_INSTALL_PATH/$KAFKA_DIR_NAME" ]; then
-    echo "kafka directory is already exist"
-  else
-    mkdir -p $KAFKA_DIR_NAME    
-  fi
-  tar -xzf $KAFKA_DIR_NAME.tgz -C $KAFKA_DIR_NAME --strip-components 1
+   echo "Installing kafka."
+   yum install $KAFKA_DOWNLOAD_URL -y 
+   echo "Kafka installed successfully."
 }
 
 #function to start services of kafka
 start_services() {
   echo "Starting services..."
-  
-  cd $KAFKA_INSTALL_PATH/$KAFKA_DIR_NAME
-  
+
+  echo "Reloading systemd units."
+  systemctl daemon-reload
+
   #start zookeeper
-  bin/zookeeper-server-start.sh -daemon config/zookeeper.properties
-  sleep 10s
-  echo "zookeeper server started successfully."
-  
+  systemctl start kafka-zookeeper
+
+  # add sleep time of 10 sec before starting kafka server
+  sleep 10
+
+  systemctl status kafka-zookeeper | grep "active (running)" > /tmp/zookeeper
+  if [[ -s /tmp/zookeeper ]]; then
+    echo "zookeeper server started successfully."
+  else
+    echo "There is a problem in starting zookeeper server."
+  fi
+
   # start kafka server
-  bin/kafka-server-start.sh -daemon config/server.properties
-  sleep 10s
-  echo "kafka server started successfully."
+  systemctl start kafka
+  # add sleep time of 10 sec before starting kafka server
+  sleep 10
+
+  systemctl status kafka | grep "active (running)" > /tmp/kafka
+  if [[ -s /tmp/kafka ]]; then
+    echo "kafka server started successfully."
+  else
+    echo "There is a problem in starting kafka server."
+  fi
 }
 
 #function to stop kafka services.
 stop_services() {
   echo "Stopping services..."
-  
-  cd $KAFKA_INSTALL_PATH/$KAFKA_DIR_NAME
-  
-  # stop kafka server
-  bin/kafka-server-stop.sh config/server.properties || true
-  sleep 10s
+
+  #stop kafka server
+  systemctl stop kafka
   echo "kafka server stopped successfully."
-  
+
   #stop zookeeper
-  bin/zookeeper-server-stop.sh config/zookeeper.properties || true
-  sleep 10s
+  systemctl stop kafka-zookeeper
   echo "zookeeper server stopped successfully."
 }
 
@@ -108,10 +114,10 @@ configure_zookeeper() {
      sed -i '$ a autopurge.purgeInterval=24' config/zookeeper.properties
      
      node=1
-     for host in "$(echo $hosts | sed "s/,/ /g")"
+     for (( n=0; n < ${#hostarr[*]}; n++ ))
      do
-       sed -i "$ a server.${node}=${host}:2888:3888" config/zookeeper.properties
-	   node=$node+1
+       sed -i "$ a server.${node}=${hostarr[n]}:2888:3888" config/zookeeper.properties
+	     node=$((node+1))
      done
 	 
 	 # Set host number 
@@ -142,9 +148,9 @@ configure_server() {
   if [ $consumer_count -gt 1 ]; then
 	sed -i "s/broker.id=.*$/broker.id=${hostnumber}/g" config/server.properties
 	connect=""
-    for host in "$(echo $hosts | sed "s/,/ /g")"
+    for (( n=0; n < ${#hostarr[*]}; n++ ))
     do
-	  connect="${connect}${host}:2181,"
+	  connect="${connect}${hostarr[n]}:2181,"
     done
 	echo "zookeeper.connect : ${connect}"
     sed -i "s/zookeeper.connect=.*$/zookeeper.connect=${connect}/g" config/server.properties
@@ -154,10 +160,11 @@ configure_server() {
 
 # function to validate kafka is installed or not
 is_kafka_installed() {
-  if [ -d "$KAFKA_INSTALL_PATH/$KAFKA_DIR_NAME" ]; then
-    echo "Kafka is already installed"
-	#stop services before overwriting kafka files
-	stop_services
+  if rpm -q 'kafka' ; then
+    echo "Kafka is already installed. Hence stopping services and removing kafka...."
+    #stop services before overwriting kafka files
+    stop_services
+    yum remove kafka -y
   fi
 }
 
@@ -165,7 +172,7 @@ is_kafka_installed() {
 create_myid_file() {
   echo "Creating myid file"
   if [ -d "${KAFKA_INSTALL_PATH}/${KAFKA_DIR_NAME}/${ZOOKEEPER_DIR_NAME}" ]; then
-   echo "zookeeper directory is already exist"
+   echo "zookeeper directory already exists"
   else
    mkdir -p $KAFKA_INSTALL_PATH/$KAFKA_DIR_NAME/$ZOOKEEPER_DIR_NAME    
   fi
@@ -176,10 +183,7 @@ create_myid_file() {
 # function to set the hostnumber for cluster
 set_host_number() {
 
-IFS=',' #setting comma as delimiter  
-read -a hostarr <<<"$hosts"
-
-for (( n=0; n < ${#hostarr[*]}; n++ ))  
+for (( n=0; n < ${#hostarr[*]}; n++ ))
 do 
    if [ ${hostarr[n]} == $HOSTNAME ]; then
     hostnumber=$((n + 1))
@@ -192,7 +196,7 @@ done
 setup_message_bus_config() {
   echo "Setup messagebus config file"
   if [ -d "$MESSAGEBUS_CONFIG_PATH" ]; then
-   echo "/etc/cortx directory is already exist"
+   echo "/etc/cortx directory already exists"
   else
    mkdir -p $MESSAGEBUS_CONFIG_PATH   
    echo "/etc/cortx directory created successfully"   
@@ -237,6 +241,9 @@ fi
 
 echo "Total number of consumers are: ${consumer_count}"
 echo "Host(s) on which kafka will be installed and setup are: ${hosts}"
+
+IFS=',' #setting comma as delimiter  
+read -a hostarr <<<"$hosts"
 
 # Check kafka already installed or not 
 is_kafka_installed

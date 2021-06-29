@@ -43,6 +43,8 @@ using ::testing::ReturnRef;
                                                         object_list_indx_oid); \
   } while (0)
 
+const struct m0_uint128 zero_oid = {};
+
 class S3GetObjectAclActionTest : public testing::Test {
  protected:  // You should make the members protected s.t. they can be
              // accessed from sub-classes.
@@ -64,6 +66,13 @@ class S3GetObjectAclActionTest : public testing::Test {
 
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(request_mock);
+    EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
+                get_object_list_index_oid())
+        .WillRepeatedly(ReturnRef(zero_oid));
+    EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
+                get_objects_version_list_index_oid())
+        .WillRepeatedly(ReturnRef(zero_oid));
+
     std::map<std::string, std::string> input_headers;
     input_headers["Authorization"] = "1";
     EXPECT_CALL(*request_mock, get_in_headers_copy()).Times(1).WillOnce(

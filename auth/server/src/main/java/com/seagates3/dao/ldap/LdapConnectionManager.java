@@ -69,12 +69,12 @@ public class LdapConnectionManager {
             String msg = "Failed to initialise LDAP.\n" + ex.toString();
             if (retryLdapConnection(ex.getResultCode())) {
               LOGGER.error(msg);
-              IEMUtil.log(
-                  IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
-                  "An error occurred while establishing ldap " +
-                      "connection. For more information, please refer " +
-                      "Troubleshooting Guide.",
-                  String.format("\"cause\": \"%s\"", ex.getCause()));
+              // IEMUtil.log(
+              //  IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
+              //"An error occurred while establishing ldap " +
+              //  "connection. For more information, please refer " +
+              //"Troubleshooting Guide.",
+              // String.format("\"cause\": \"%s\"", ex.getCause()));
             }
             throw new ServerInitialisationException(msg);
         }
@@ -98,12 +98,12 @@ public class LdapConnectionManager {
           if (retryLdapConnection(ex.getResultCode())) {
             LOGGER.error("LDAPException Cause: " + ex.getCause() +
                          ". Message: " + ex.getMessage());
-            IEMUtil.log(
-                IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
-                "An error occurred while establishing ldap connection. " +
-                    "For more information, please refer Troubleshooting " +
-                    "Guide.",
-                String.format("\"cause\": \"%s\"", ex.getCause()));
+            // IEMUtil.log(
+            //  IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
+            //"An error occurred while establishing ldap connection. " +
+            //  "For more information, please refer Troubleshooting " +
+            //"Guide.",
+            // String.format("\"cause\": \"%s\"", ex.getCause()));
           }
         } catch (InterruptedException ex) {
             LOGGER.error("Failed to connect to LDAP server. Cause: "
@@ -143,12 +143,12 @@ public class LdapConnectionManager {
         catch (LDAPException e) {
           LOGGER.error("LDAPException Cause: " + e.getCause() + ". Message: " +
                        e.getMessage());
-          IEMUtil.log(
-              IEMUtil.Level.FATAL, IEMUtil.LDAP_EX,
-              "An error occurred while establishing ldap connection. " +
-                  "For more information, please refer Troubleshooting " +
-                  "Guide.",
-              String.format("\"cause\": \"%s\"", e.getCause()));
+          // IEMUtil.log(
+          //  IEMUtil.Level.FATAL, IEMUtil.LDAP_EX,
+          //"An error occurred while establishing ldap connection. " +
+          //  "For more information, please refer Troubleshooting " +
+          //"Guide.",
+          // String.format("\"cause\": \"%s\"", e.getCause()));
         }
         catch (InterruptedException e) {
           LOGGER.error("Reset key  delay failing - ", e);
@@ -193,12 +193,12 @@ public class LdapConnectionManager {
         if (retryLdapConnection(ex.getResultCode())) {
           LOGGER.error("LDAPException Cause: " + ex.getCause() + ". Message: " +
                        ex.getMessage());
-          IEMUtil.log(
-              IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
-              "An error occurred while establishing ldap connection. " +
-                  "For more information, please refer Troubleshooting " +
-                  "Guide.",
-              String.format("\"cause\": \"%s\"", ex.getCause()));
+          // IEMUtil.log(
+          //  IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
+          //"An error occurred while establishing ldap connection. " +
+          //  "For more information, please refer Troubleshooting " +
+          //"Guide.",
+          // String.format("\"cause\": \"%s\"", ex.getCause()));
         }
       }
 

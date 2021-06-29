@@ -32,6 +32,7 @@
 #include "evhtp_wrapper.h"
 #include "fid/fid.h"
 #include "murmur3_hash.h"
+#include "s3_bucket_metadata_cache.h"
 #include "s3_motr_layout.h"
 #include "s3_common_utilities.h"
 #include "s3_daemonize_server.h"
@@ -94,9 +95,9 @@ std::set<struct s3_motr_idx_context *> global_motr_idx;
 std::set<struct s3_motr_obj_context *> global_motr_obj;
 
 void s3_motr_init_timeout_cb(evutil_socket_t fd, short event, void *arg) {
-  s3_log(S3_LOG_ERROR, "", "%s Entry\n", __func__);
-  s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
-         S3_IEM_MOTR_CONN_FAIL_JSON);
+  // s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
+  //     S3_IEM_MOTR_CONN_FAIL_JSON);
+  s3_log(S3_LOG_ERROR, "", "Motr connection failed\n");
   event_base_loopbreak(global_evbase_handle);
   return;
 }
@@ -385,16 +386,18 @@ extern "C" evhtp_res dispatch_motr_api_request(evhtp_request_t *req,
 static evhtp_res process_request_data(evhtp_request_t *p_evhtp_req,
                                       evbuf_t *buf, void *arg) {
   RequestObject *p_s3_req = static_cast<RequestObject *>(p_evhtp_req->cbarg);
-  const char *psz_request_id =
-      p_s3_req ? p_s3_req->get_request_id().c_str() : nullptr;
+  std::string request_id = "";
+  if (p_s3_req) {
+    request_id = p_s3_req->get_request_id();
+  }
 
-  s3_log(S3_LOG_DEBUG, psz_request_id, "RequestObject(%p)\n", p_s3_req);
+  s3_log(S3_LOG_DEBUG, request_id, "RequestObject(%p)\n", p_s3_req);
 
   if (p_s3_req) {
     // Data has arrived so disable read timeout
     p_s3_req->stop_client_read_timer();
 
-    s3_log(S3_LOG_DEBUG, psz_request_id,
+    s3_log(S3_LOG_DEBUG, request_id,
            "Received Request body %zu bytes for sock = %d\n",
            evbuffer_get_length(buf), p_evhtp_req->conn->sock);
 
@@ -408,7 +411,7 @@ static evhtp_res process_request_data(evhtp_request_t *p_evhtp_req,
     }
   }
   if (buf) {
-    s3_log(S3_LOG_DEBUG, psz_request_id, "Drain incoming data\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Drain incoming data\n");
     evbuffer_drain(buf, -1);
   }
   return EVHTP_RES_OK;
@@ -1134,6 +1137,12 @@ int main(int argc, char **argv) {
 
   /* Set the fatal handler to graceful shutdown*/
   set_graceful_handler();
+
+  std::unique_ptr<S3BucketMetadataCache> sptr_bucket_metadata_cache(
+      new S3BucketMetadataCache(
+          g_option_instance->get_bucket_metadata_cache_max_size(),
+          g_option_instance->get_bucket_metadata_cache_expire_sec(),
+          g_option_instance->get_bucket_metadata_cache_refresh_sec()));
 
   // new flag in Libevent 2.1
   // EVLOOP_NO_EXIT_ON_EMPTY tells event_base_loop()

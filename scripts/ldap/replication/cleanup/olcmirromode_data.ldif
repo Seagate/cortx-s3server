@@ -1,0 +1,3 @@
+dn: olcDatabase={2}mdb,cn=config
+changetype: modify
+delete: olcMirrorMode

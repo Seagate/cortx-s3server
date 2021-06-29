@@ -4,5 +4,10 @@ import sys
 import os
 from s3backgrounddelete.object_recovery_scheduler import ObjectRecoveryScheduler
 
-scheduler = ObjectRecoveryScheduler()
+if (len(sys.argv)>1):
+  producer_name = str(sys.argv[1])
+else:
+  producer_name = "prod1"
+
+scheduler = ObjectRecoveryScheduler(producer_name)
 scheduler.schedule_periodically()

@@ -58,4 +58,11 @@ public interface UserDAO {
      User findByUserId(String userId) throws DataAccessException;
     public
      User findByArn(String arn) throws DataAccessException;
+
+     /**
+      * Delete user from LDAP silently.
+      * @param user
+      */
+    public
+     void ldap_delete_user(User user) throws DataAccessException;
 }

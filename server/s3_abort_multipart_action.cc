@@ -309,8 +309,8 @@ void S3AbortMultipartAction::delete_part_index_with_parts_failed() {
          "Failed to delete part index, this oid will be stale in Motr: "
          "%" SCNx64 " : %" SCNx64,
          part_index_oid.u_hi, part_index_oid.u_lo);
-  s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
-         S3_IEM_DELETE_IDX_FAIL_JSON);
+  // s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
+  //     S3_IEM_DELETE_IDX_FAIL_JSON);
   next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -403,13 +403,15 @@ void S3AbortMultipartAction::delete_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   // process to delete object
   if (!motr_writer) {
-    motr_writer = motr_writer_factory->create_motr_writer(
-        request, object_multipart_metadata->get_oid());
+    motr_writer = motr_writer_factory->create_motr_writer(request);
   }
   motr_writer->delete_object(
       std::bind(&S3AbortMultipartAction::remove_probable_record, this),
       std::bind(&S3AbortMultipartAction::next, this),
-      object_multipart_metadata->get_layout_id());
+      object_multipart_metadata->get_oid(),
+      object_multipart_metadata->get_layout_id(),
+      object_multipart_metadata->get_pvid());
+
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 

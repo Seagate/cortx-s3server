@@ -67,4 +67,11 @@ public interface AccountDAO {
 
     public
      Account findByEmailAddress(String emailAddress) throws DataAccessException;
+
+     /**
+      * Delete account entry internally from account
+      * @param account
+      */
+    public
+     void ldap_delete_account(Account account) throws DataAccessException;
 }

@@ -1,5 +1,0 @@
-[releases_cortx_py_utils]
-baseurl = http://cortx-storage.colo.seagate.com/releases/cortx/components/github/stable/centos-7.8.2003/dev/cortx-utils/last_successful/
-gpgcheck = 0
-name = Yum repo for CORTX Python Utilities build - OS Centos 7.8.2003
-priority = 1

@@ -152,8 +152,8 @@ int create_new_instance_id(struct m0_uint128 *ufid) {
   rc = s3_motr_api->m0_h_ufid_next(ufid);
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, "", "Failed to generate UFID\n");
-    s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
-           S3_IEM_MOTR_CONN_FAIL_JSON);
+    // s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
+    //     S3_IEM_MOTR_CONN_FAIL_JSON);
     return rc;
   }
   s3_log(S3_LOG_INFO, "",

@@ -145,6 +145,7 @@ class Action {
   // Allow class object instiantiation without support for authentication
   bool skip_auth;
   bool is_authorizationheader_present;
+  bool skip_authorization;
   std::shared_ptr<S3AuthClient> auth_client;
 
   std::shared_ptr<S3MemoryProfile> mem_profile;
@@ -158,7 +159,7 @@ class Action {
  public:
   Action(std::shared_ptr<RequestObject> req, bool check_shutdown = true,
          std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr,
-         bool skip_auth = false);
+         bool skip_auth = false, bool skip_authorization = true);
   virtual ~Action();
 
   void set_s3_error(std::string code);
@@ -259,7 +260,7 @@ class Action {
   // This can register the function as
   // task_list.push_back(std::bind( &S3SomeDerivedAction::step1, this ));
   // Ensure you call this in Derived class constructor.
-  virtual void setup_steps();
+  void setup_steps();
 
   // Common Actions.
   void start();

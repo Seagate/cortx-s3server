@@ -28,7 +28,6 @@
 #include "s3_part_metadata.h"
 
 void S3PartMetadata::initialize(std::string uploadid, int part_num) {
-  json_parsing_error = false;
   bucket_name = request->get_bucket_name();
   object_name = request->get_object_name();
   state = S3PartMetadataState::empty;
@@ -184,6 +183,8 @@ void S3PartMetadata::load(std::function<void(void)> on_success,
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
+  state = S3PartMetadataState::empty;
+
   motr_kv_reader =
       motr_kv_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
 
@@ -193,18 +194,34 @@ void S3PartMetadata::load(std::function<void(void)> on_success,
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+bool S3PartMetadata::validate_on_request() {
+  return request->validate_attrs(bucket_name, object_name);
+}
+
 void S3PartMetadata::load_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Found part metadata\n");
   if (this->from_json(motr_kv_reader->get_value()) != 0) {
     s3_log(S3_LOG_ERROR, request_id,
            "Json Parsing failed. Index oid = "
-           "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
+           "%" SCNx64 ":%" SCNx64 ", Key = %s, Value = %s\n",
            part_index_name_oid.u_hi, part_index_name_oid.u_lo,
            str_part_num.c_str(), motr_kv_reader->get_value().c_str());
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
            S3_IEM_METADATA_CORRUPTED_JSON);
 
-    json_parsing_error = true;
+    state = S3PartMetadataState::invalid;
+    load_failed();
+  } else if (!validate_on_request()) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Metadata read from KVS are different from expected. Index oid = "
+           "%" SCNx64 ":%" SCNx64
+           ", req_bucket = %s, got_bucket = %s, req_object = %s, got_object = "
+           "%s\n",
+           part_index_name_oid.u_hi, part_index_name_oid.u_lo,
+           request->get_bucket_name().c_str(), bucket_name.c_str(),
+           request->get_object_name().c_str(), object_name.c_str());
+
+    state = S3PartMetadataState::invalid;
     load_failed();
   } else {
     state = S3PartMetadataState::present;
@@ -213,14 +230,36 @@ void S3PartMetadata::load_successful() {
 }
 
 void S3PartMetadata::load_failed() {
-  s3_log(S3_LOG_WARN, request_id, "Missing part metadata\n");
-  if (json_parsing_error) {
-    state = S3PartMetadataState::failed;
-  } else if (motr_kv_reader->get_state() == S3MotrKVSReaderOpState::missing) {
-    state = S3PartMetadataState::missing;  // Missing
-  } else {
-    state = S3PartMetadataState::failed;
+  switch (motr_kv_reader->get_state()) {
+    case S3MotrKVSReaderOpState::failed_to_launch:
+      state = S3PartMetadataState::failed_to_launch;
+      s3_log(S3_LOG_WARN, request_id,
+             "Part metadata load failed to launch - ServiceUnavailable\n");
+      break;
+    case S3MotrKVSReaderOpState::failed:
+    case S3MotrKVSReaderOpState::failed_e2big:
+      s3_log(S3_LOG_WARN, request_id,
+             "Internal server error - InternalError\n");
+      state = S3PartMetadataState::failed;
+      break;
+    case S3MotrKVSReaderOpState::missing:
+      state = S3PartMetadataState::missing;
+      s3_log(S3_LOG_DEBUG, request_id, "Part metadata missing for %s\n",
+             object_name.c_str());
+      break;
+    case S3MotrKVSReaderOpState::present:
+      // This state is allowed here only if validaton failed
+      if (state != S3PartMetadataState::invalid) {
+        s3_log(S3_LOG_ERROR, request_id, "Invalid state - InternalError\n");
+        state = S3PartMetadataState::failed;
+      }
+      break;
+    default:  // S3MotrKVSReaderOpState::{empty,start}
+      s3_log(S3_LOG_ERROR, request_id, "Unexpected state - InternalError\n");
+      state = S3PartMetadataState::failed;
+      break;
   }
+
   this->handler_on_failed();
 }
 
@@ -386,8 +425,8 @@ void S3PartMetadata::remove_index_successful() {
 
 void S3PartMetadata::remove_index_failed() {
   s3_log(S3_LOG_WARN, request_id, "Failed to remove index for part info\n");
-  s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
-         S3_IEM_DELETE_IDX_FAIL_JSON);
+  // s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
+  //     S3_IEM_DELETE_IDX_FAIL_JSON);
   if (motr_kv_writer->get_state() == S3MotrKVSWriterOpState::failed) {
     state = S3PartMetadataState::failed;
   } else if (motr_kv_writer->get_state() ==
@@ -402,7 +441,13 @@ std::string S3PartMetadata::to_json() {
   s3_log(S3_LOG_DEBUG, request_id, "\n");
   Json::Value root;
   root["Bucket-Name"] = bucket_name;
+  if (s3_di_fi_is_enabled("di_part_metadata_bcktname_on_write_corrupted")) {
+    root["Bucket-Name"] = "@" + bucket_name + "@";
+  }
   root["Object-Name"] = object_name;
+  if (s3_di_fi_is_enabled("di_part_metadata_objname_on_write_corrupted")) {
+    root["Object-Name"] = "@" + object_name + "@";
+  }
   root["Upload-ID"] = upload_id;
   root["Part-Num"] = part_number;
 
@@ -421,13 +466,19 @@ int S3PartMetadata::from_json(std::string content) {
   Json::Value newroot;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), newroot);
-  if (!parsingSuccessful || s3_fi_is_enabled("part_metadata_corrupted")) {
+  if (!parsingSuccessful || s3_di_fi_is_enabled("part_metadata_corrupted")) {
     s3_log(S3_LOG_ERROR, request_id, "Json Parsing failed.\n");
     return -1;
   }
 
   bucket_name = newroot["Bucket-Name"].asString();
+  if (s3_di_fi_is_enabled("di_part_metadata_bcktname_on_read_corrupted")) {
+    bucket_name = "@" + bucket_name + "@";
+  }
   object_name = newroot["Object-Name"].asString();
+  if (s3_di_fi_is_enabled("di_part_metadata_objname_on_read_corrupted")) {
+    object_name = "@" + object_name + "@";
+  }
   upload_id = newroot["Upload-ID"].asString();
   part_number = newroot["Part-Num"].asString();
 
@@ -467,8 +518,9 @@ void S3PartMetadata::handle_collision() {
       s3_log(S3_LOG_ERROR, request_id,
              "Failed to resolve object id collision %zu times for index %s\n",
              collision_attempt_count, index_name.c_str());
-      s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,
-             S3_IEM_COLLISION_RES_FAIL_JSON);
+      // s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL,
+      // S3_IEM_COLLISION_RES_FAIL_STR,
+      //     S3_IEM_COLLISION_RES_FAIL_JSON);
     }
     state = S3PartMetadataState::failed;
     this->handler_on_failed();

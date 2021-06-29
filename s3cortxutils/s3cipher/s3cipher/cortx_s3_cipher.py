@@ -133,15 +133,17 @@ class CortxS3Cipher:
         except AttributeError:
             data = ""
 
-        s3_cipher = CortxS3Cipher(None, use_base64_flag, key_len_flag, const_key_flag)
+        self.use_base64 = use_base64_flag
+        self.key_len = key_len_flag
+        self.const_key = const_key_flag
 
         try:
             if args.command == 'encrypt':
-                print(s3_cipher.encrypt(key, data))
+                print(self.encrypt(key, data))
             elif args.command == 'decrypt':
-                print(s3_cipher.decrypt(key, data))
+                print(self.decrypt(key, data))
             elif args.command == 'generate_key':
-                print(s3_cipher.generate_key())
+                print(self.generate_key())
             else:
                 sys.exit("Invalid command option passed, see help.")
         except CipherInvalidToken as err:

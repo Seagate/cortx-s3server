@@ -34,34 +34,27 @@ extern S3Option* g_option_instance;
 // 2. For each IEM: timestamp, nodename, pid, filename & line is included in
 //    the JSON data format by default. If IEM event has any additional data to
 //    send, then pass it as `json_fmt` param.
-#define s3_iem(loglevel, event_code, event_description, json_fmt, ...)      \
-  do {                                                                      \
-    std::string timestamp = s3_get_timestamp();                             \
-    s3_log(S3_LOG_INFO, "",                                                 \
-           "IEC: " event_code ": " event_description                        \
-           ": { \"time\": \"%s\", \"node\": \"%s\", \"pid\": "              \
-           "%d, \"file\": \"%s\", \"line\": %d" json_fmt " }",              \
-           timestamp.c_str(), g_option_instance->get_s3_nodename().c_str(), \
-           getpid(), __FILE__, __LINE__, ##__VA_ARGS__);                    \
-    if (loglevel == LOG_ALERT) {                                            \
-      s3_syslog(loglevel, "IEC:AS" event_code ":" event_description);       \
-    } else {                                                                \
-      s3_syslog(LOG_ERR, "IEC:ES" event_code ":" event_description);        \
-    }                                                                       \
+#define s3_iem_(loglevel, s3_loglevel, event_code, event_desc, json_fmt, ...) \
+  do {                                                                        \
+    if (loglevel == LOG_ALERT) {                                              \
+      s3_syslog(loglevel, "IEC:AS" event_code ":" event_desc);                \
+    } else {                                                                  \
+      s3_syslog(LOG_ERR, "IEC:ES" event_code ":" event_desc);                 \
+    }                                                                         \
+    std::string timestamp = s3_get_timestamp();                               \
+    s3_log(S3_##s3_loglevel, "",                                              \
+           "IEC: " event_code ": " event_desc                                 \
+           ": { \"time\": \"%s\", \"node\": \"%s\", \"pid\": "                \
+           "%d, \"file\": \"%s\", \"line\": %d" json_fmt " }",                \
+           timestamp.c_str(), g_option_instance->get_s3_nodename().c_str(),   \
+           getpid(), __FILE__, __LINE__, ##__VA_ARGS__);                      \
   } while (0)
 
-// Note: Logs IEM message into syslog only.
-// Use this macro to send addtional information to CSM
-#define s3_iem_syslog(loglevel, event_code, event_description, ...)  \
-  do {                                                               \
-    if (loglevel == LOG_INFO) {                                      \
-      s3_syslog(loglevel, "IEC:IS" event_code ":" event_description, \
-                ##__VA_ARGS__);                                      \
-    } else {                                                         \
-      s3_syslog(LOG_ERR, "IEC:ES" event_code ":" event_description,  \
-                ##__VA_ARGS__);                                      \
-    }                                                                \
-  } while (0)
+#define s3_iem(loglevel, event_code, event_desc, json_fmt, ...) \
+  s3_iem_(loglevel, LOG_INFO, event_code, event_desc, json_fmt, ##__VA_ARGS__)
+
+#define s3_iem_fatal(loglevel, event_code, event_desc, json_fmt, ...) \
+  s3_iem_(loglevel, LOG_ERROR, event_code, event_desc, json_fmt, ##__VA_ARGS__)
 
 // IEM helper macros
 // S3 Server IEM Event codes, description string & json data format
@@ -106,9 +99,27 @@ extern S3Option* g_option_instance;
 #define S3_IEM_DELETE_IDX_FAIL_JSON ""
 
 #define S3_IEM_METADATA_CORRUPTED "0030060003"
-#define S3_IEM_METADATA_CORRUPTED_STR                                          \
-  "Metadata may be corrupted. For more information refer the Troubleshooting " \
-  "Guide."
+#define S3_IEM_METADATA_CORRUPTED_STR \
+  "Metadata may be corrupted. Contact Seagate Support."
 #define S3_IEM_METADATA_CORRUPTED_JSON ""
+
+#define S3_IEM_CHECKSUM_MISMATCH "0030060004"
+#define S3_IEM_CHECKSUM_MISMATCH_STR                                \
+  "Data integrity validation failure (content checksum mismatch). " \
+  "Cluster is transitioning to safe mode. Contact Seagate Support."
+#define S3_IEM_CHECKSUM_MISMATCH_JSON                                 \
+  ", \"bucket_name\": \"%s\", \"object_name\": \"%s\", \"motr_oid\":" \
+  " \"%" SCNx64 ":%" SCNx64                                           \
+  "\", \"md5_calculated\": \"%s\", \"md5_from_metadata\": \"%s\" "    \
+  ", \"account_name\": \"%s\""
+
+#define S3_IEM_OBJECT_METADATA_NOT_VALID "0030060005"
+#define S3_IEM_OBJECT_METADATA_NOT_VALID_STR                         \
+  "Metadata integrity validation failure (bucket/object mismatch). " \
+  "Cluster is transitioning to safe mode. Contact Seagate Support."
+#define S3_IEM_OBJECT_METADATA_NOT_VALID_JSON                             \
+  ", \"bucket_name_requested\": \"%s\", \"bucket_name_received\": \"%s\"" \
+  ", \"object_name_requested\": \"%s\", \"object_name_received\": \"%s\"" \
+  ", \"account_name\": \"%s\""
 
 #endif  // __S3_SERVER_IEM_H__
