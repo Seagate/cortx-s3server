@@ -585,7 +585,7 @@ fi
 if [ $skip_tests -eq 1 ]
 then
     echo "Skip tests. S3server will not be stopped"
-    exit 1
+    exit 0
 fi
 
 # Stop S3 background services before tests are run
