@@ -142,7 +142,7 @@ class SetupCmd(object):
       self.logger.error(f'read ldap credentials failed, error: {e}')
       raise e
 
-  def write_rootdn_credentials(self):
+  def update_rootdn_credentials(self):
     """Set rootdn username and password to opfile."""
     try:
       s3cipher_obj = CortxS3Cipher(None,
@@ -211,7 +211,7 @@ class SetupCmd(object):
     _prereqs_confstore = S3CortxConfStore(f'json://{self._preqs_conf_file}', f'{phase_name}')
 
     if self.ldap_user != "sgiamadmin":
-      raise ValueError('provide correct ldap username')
+      raise ValueError('Username should be "sgiamadmin"')
     try:
       prereqs_block = _prereqs_confstore.get_config(f'{phase_name}')
       if prereqs_block is not None:

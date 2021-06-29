@@ -147,6 +147,8 @@ class LdapAccountAction:
     self.ldap_conn = initialize(LDAP_URL)
     self.ldap_conn.protocol_version = VERSION3
     self.ldap_conn.set_option(OPT_REFERRALS, 0)
+    print("user : ", self.ldapuser)
+    print("passwd : ", self.ldappasswd)
     self.ldap_conn.simple_bind_s(LDAP_USER.format(self.ldapuser), self.ldappasswd)
 
   def __disconnect_from_ldap(self):
@@ -269,7 +271,7 @@ class LdapAccountAction:
       self.logger.info('Deletion of ldap data started.')
       self.__connect_to_ldap_server()
       for entry in cleanup_records:
-        self.logger.info(' deleting all entries from {str(entry)} & its sub-ordinate tree')
+        self.logger.info(' deleting all entries from {entry} & its sub-ordinate tree')
         try:
           self.ldap_delete_recursive(self.ldap_conn, entry)
         except ldap.NO_SUCH_OBJECT:

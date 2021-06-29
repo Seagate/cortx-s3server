@@ -43,7 +43,7 @@ class ConfigCmd(SetupCmd):
 
       self.update_cluster_id()
       self.read_ldap_credentials()
-      self.write_rootdn_credentials()
+      self.update_rootdn_credentials()
 
     except Exception as e:
       raise S3PROVError(f'exception: {e}')

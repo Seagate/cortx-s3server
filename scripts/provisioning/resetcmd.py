@@ -39,8 +39,8 @@ class ResetCmd(SetupCmd):
     """Constructor."""
     try:
       super(ResetCmd, self).__init__(config)
-      self.get_iam_admin_credentials()
       self.get_ldap_root_credentials()
+      self.get_iam_admin_credentials()
     except Exception as e:
       raise e
 
@@ -136,8 +136,6 @@ class ResetCmd(SetupCmd):
 
   def DeleteLdapAccountsUsers(self):
     """Deletes all LDAP data entries e.g. accounts, users, access keys using admin credentials."""
-    # self.read_ldap_credentials()
-
     try:
       print("rootdnuser : ", self.ldap_root_user)
       print("rootdnpasswd : ", self.rootdn_passwd)
@@ -157,7 +155,6 @@ class ResetCmd(SetupCmd):
                                   'const_cipher_secret_str': "s3backgroundsecretkey",
                                   'const_cipher_access_str': "s3backgroundaccesskey"
                                 }
-
       print("user : ", self.ldap_user)
       print("passwd : ", self.ldap_passwd)
       LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
