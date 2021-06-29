@@ -81,7 +81,7 @@ def main():
     elif args.command == 'cleanup':
       from cleanupcmd import CleanupCmd
       logger.info('cleanup started.')
-      CleanupCmd(args.config).process(args.pre_factory)
+      CleanupCmd(None).process(args.pre_factory)
       logger.info('cleanup successful.')
     elif args.command == 'config':
       from configcmd import ConfigCmd
@@ -111,7 +111,7 @@ def main():
     elif args.command == 'reset':
       from resetcmd import ResetCmd
       logger.info('reset started.')
-      ResetCmd(args.config).process()
+      ResetCmd(None).process()
       logger.info('reset successful.')
     elif args.command == 'prepare':
       from preparecmd import PrepareCmd

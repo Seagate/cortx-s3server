@@ -20,3 +20,5 @@
 
 cluster_config:
    cluster_id: "dummy"
+   rootdn_pass: "dummy"
+   rootdn_user: "dummy"
