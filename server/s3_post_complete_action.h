@@ -90,6 +90,9 @@ class S3PostCompleteAction : public S3ObjectAction {
   std::string new_oid_str;  // Key for new probable delete rec
   std::unique_ptr<S3ProbableDeleteRecord> new_probable_del_rec;
 
+  std::map<unsigned int, std::string> part_etags;
+  std::string generate_etag();
+
  public:
   S3PostCompleteAction(
       std::shared_ptr<S3RequestObject> req,

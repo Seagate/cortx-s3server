@@ -41,13 +41,14 @@ class MD5hash {
   bool is_initialized = false;
   bool native_call = false;
   struct m0_md5_inc_context_pi s3_md5_inc_digest_pi;
-  std::shared_ptr<MotrAPI> s3_motr_api;
+  std::shared_ptr<MotrAPI> s3_motr_api = nullptr;
   struct m0_bufvec pi_bufvec;
+  struct m0_bufvec pi_update_bufvec;
   m0_pi_calc_flag flag;
 
  public:
-  MD5hash(std::shared_ptr<MotrAPI> motr_api = nullptr);
-  MD5hash(bool call_init);
+  MD5hash(std::shared_ptr<MotrAPI> motr_api = nullptr, bool call_init = false);
+  ~MD5hash();
   int Update(const char *input, size_t length);
   void save_motr_unit_checksum(unsigned char *curr_digest);
   void save_motr_unit_checksum_for_unaligned_bufs(
@@ -67,8 +68,7 @@ class MD5hash {
   int Finalize();
   void Finalized();
   void Initialized();
-  void Reset(std::shared_ptr<MotrAPI> motr_api);
-  void Reset(bool call_init);
+  void Reset(std::shared_ptr<MotrAPI> motr_api, bool call_init);
   unsigned char *get_md5_digest() { return md5_digest; }
 
   std::string get_md5_string();

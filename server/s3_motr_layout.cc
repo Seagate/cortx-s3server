@@ -26,13 +26,20 @@
 #include "s3_log.h"
 
 S3MotrLayoutMap* S3MotrLayoutMap::instance = NULL;
+#define ADDITIONAL_CHKSUM_PADDING_FOR4k 12288
+#define ADDITIONAL_CHKSUM_PADDING_FOR8k 8192
 
 S3MotrLayoutMap::S3MotrLayoutMap() {
   best_layout_id = 11;
   obj_size_cap = 0;
   layout_id_cap = -1;
-  layout_map[1] = 4096 * 1;  // bytes
-  layout_map[2] = 4096 * 2;  // 8192 bytes
+  layout_map[1] =
+      4096 * 1 + ADDITIONAL_CHKSUM_PADDING_FOR4k;  // bytes + padding for
+                                                   // checksum to make it 16k
+                                                   // unit
+  layout_map[2] =
+      4096 * 2 +
+      ADDITIONAL_CHKSUM_PADDING_FOR8k;  // 8192 bytes + padding for checksum
   layout_map[3] = 4096 * 4;
   layout_map[4] = 4096 * 8;
   layout_map[5] = 4096 * 16;
