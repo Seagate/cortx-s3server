@@ -22,14 +22,14 @@
 #include "gtest/gtest.h"
 
 TEST(MD5HashTest, Constructor) {
-  MD5hash md5hashobj(true);
-  EXPECT_NE(0, md5hashobj.status);
+  MD5hash md5hashobj(NULL, true);
+  EXPECT_EQ(0, md5hashobj.status);
 }
 
 TEST(MD5HashTest, Update) {
   char input[] = "abcdefghijklmnopqrstuvwxyz";
   int ret;
-  MD5hash md5hashobj(true);
+  MD5hash md5hashobj(NULL, true);
 
   ret = md5hashobj.Update(input, sizeof(input));
   EXPECT_EQ(0, ret);
@@ -41,7 +41,7 @@ TEST(MD5HashTest, Update) {
 TEST(MD5HashTest, FinalBasic) {
   char input[] = "abcdefghijklmnopqrstuvwxyz";
   int ret;
-  MD5hash md5hashobj(true);
+  MD5hash md5hashobj(NULL, true);
 
   md5hashobj.Update(input, 26);
   ret = md5hashobj.Finalize();
@@ -55,7 +55,7 @@ TEST(MD5HashTest, FinalBasic) {
 TEST(MD5HashTest, FinalEmptyStr) {
   char input[] = "";
   int ret;
-  MD5hash md5hashobj(true);
+  MD5hash md5hashobj(NULL, true);
   md5hashobj.Update(input, 0);
   ret = md5hashobj.Finalize();
   EXPECT_EQ(0, ret);
@@ -68,7 +68,7 @@ TEST(MD5HashTest, FinalNumeral) {
       "123456789012345678901234567890123456789012345678901234567890123456789012"
       "34567890";
   int ret;
-  MD5hash md5hashobj(true);
+  MD5hash md5hashobj(NULL, true);
   md5hashobj.Update(input, 80);
   ret = md5hashobj.Finalize();
   EXPECT_EQ(0, ret);
@@ -78,7 +78,7 @@ TEST(MD5HashTest, FinalNumeral) {
 
 TEST(MD5HashTest, GetMD5) {
   char input[] = "abcdefghijklmnopqrstuvwxyz";
-  MD5hash md5hashobj(true);
+  MD5hash md5hashobj(NULL, true);
   md5hashobj.Update(input, 26);
   md5hashobj.Finalize();
   std::string str = md5hashobj.get_md5_string();
