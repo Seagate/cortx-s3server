@@ -28,7 +28,7 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
-            <version>4.1.42.Final</version>
+            <version>4.1.63.Final</version>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
@@ -112,7 +112,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.5.5</version>
+            <version>4.5.13</version>
         </dependency>
 <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-core -->
 <dependency>

@@ -510,7 +510,6 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooSmall) {
                action_under_test_ptr->get_s3_error_code().c_str());
   EXPECT_EQ(S3PostCompleteActionState::validationFailed,
             action_under_test_ptr->s3_post_complete_action_state);
-  EXPECT_EQ(true, action_under_test_ptr->is_abort_multipart());
 }
 
 TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooLarge) {
@@ -544,7 +543,6 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooLarge) {
                action_under_test_ptr->get_s3_error_code().c_str());
   EXPECT_EQ(S3PostCompleteActionState::validationFailed,
             action_under_test_ptr->s3_post_complete_action_state);
-  EXPECT_EQ(true, action_under_test_ptr->is_abort_multipart());
 }
 
 TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulJsonError) {

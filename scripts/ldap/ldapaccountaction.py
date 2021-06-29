@@ -20,6 +20,7 @@
 
 import ldap
 import sys
+import socket
 from ldap.ldapobject import SimpleLDAPObject
 import ldap.modlist as modlist
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
@@ -58,8 +59,8 @@ class LdapAccountAction:
 
   def __init__(self, ldapuser: str, ldappasswd: str):
     """Constructor."""
-    
-    self.logger = logging.getLogger("s3-deployment-logger")
+    s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
+    self.logger = logging.getLogger(s3deployment_logger_name)
     if self.logger.hasHandlers():
       self.logger.info("Logger has valid handler")
     else:
@@ -268,7 +269,7 @@ class LdapAccountAction:
       self.logger.info('Deletion of ldap data started.')
       self.__connect_to_ldap_server()
       for entry in cleanup_records:
-        self.logger.info(' deleting all entries from {str(entry)} & its sub-ordinate tree')
+        self.logger.info(' deleting all entries from {entry} & its sub-ordinate tree')
         try:
           self.ldap_delete_recursive(self.ldap_conn, entry)
         except ldap.NO_SUCH_OBJECT:

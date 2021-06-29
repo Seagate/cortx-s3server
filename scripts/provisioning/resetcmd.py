@@ -37,15 +37,16 @@ class ResetCmd(SetupCmd):
     """Constructor."""
     try:
       super(ResetCmd, self).__init__(config)
+      self.get_ldap_root_credentials()
+      self.get_iam_admin_credentials()
     except Exception as e:
       raise e
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name} {self.url}")
+    self.logger.info(f"Processing {self.name}")
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
-    self.phase_keys_validate(self.url, self.name)
     self.validate_config_files(self.name)
     self.logger.info("validations completed")
 
@@ -133,13 +134,11 @@ class ResetCmd(SetupCmd):
 
   def DeleteLdapAccountsUsers(self):
     """Deletes all LDAP data entries e.g. accounts, users, access keys using admin credentials."""
-    self.read_ldap_credentials()
-
     try:
       # Delete data directories e.g. ou=accesskeys, ou=accounts,ou=idp from dc=s3,dc=seagate,dc=com tree"
       LdapAccountAction(self.ldap_root_user, self.rootdn_passwd).delete_s3_ldap_data()
     except Exception as e:
-      self.logger.error(f'ERROR: Failed to delete s3 recoards exists in ldap, error: {e}')
+      self.logger.error(f'ERROR: Failed to delete s3 records exists in ldap, error: {e}')
       raise e
 
     try:
@@ -154,5 +153,8 @@ class ResetCmd(SetupCmd):
                                 }
       LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
     except Exception as e:
-      self.logger.error(f'ERROR: Failed to create backgrounddelete service account, error: {e}')
-      raise e
+      if "Already exists" not in str(e):
+        self.logger.error(f'Failed to create backgrounddelete service account, error: {e}')
+        raise(e)
+      else:
+        self.logger.warning("backgrounddelete service account already exist")

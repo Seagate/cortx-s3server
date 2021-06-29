@@ -79,6 +79,7 @@ class MockS3RequestObject : public S3RequestObject {
   MOCK_METHOD1(is_header_present, bool(const std::string &key));
   MOCK_METHOD0(get_audit_info, S3AuditInfo &());
   MOCK_METHOD(std::string, get_headers_copysource, (), (override));
+  MOCK_METHOD(void, set_action_list, (const std::string &));
 };
 
 #endif

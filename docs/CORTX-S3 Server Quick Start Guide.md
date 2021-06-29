@@ -28,7 +28,12 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 4. We've assumed that `git` is preinstalled. If not then follow these steps to install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
    * To check your Git Version, use the command: `$ git --version`
 
-     :page_with_curl:**Note:** We recommended that you install Git Version 2.x.x.
+     :page_with_curl:**Note:** We recommended that you install Git Version 2.x.x. To update git to the latest version, use:
+     ```sh
+     yum remove git*
+     yum -y install https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.7-1.x86_64.rpm
+     yum install git
+     ```
 
 5. Ensure that you've installed the following packages on your VM instance:
 
@@ -44,11 +49,21 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
             * You might also see exclamation mark in front of the repositories id. Refer to the [Redhat Knowledge Base](https://access.redhat.com/solutions/2267871).
         * `$ yum install -y epel-release`
     * Ansible: Install ansible if not there already `$ yum install -y ansible`
+    * ipaddress: Install ipaddress if not there already `$ pip install ipaddress`
     
 6. You will need to set your hostname to something other than localhost `hostnamectl set-hostname --static --transient --pretty <new-name>`
 
-7. Add/set entry corresponding to <new-name> in above command to /etc/hosts file
+7. Add/set entry corresponding to <new-name> in above command to `/etc/hosts` file
+    
+    For example if your hostname is `cortxhost`
+    
+    Then `/etc/hosts` should something like:
 
+    ```
+    127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4 cortxhost
+    ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+    ```
+    
 8. You'll need to disable selinux and firewall. Run the following commands:
 
      `$ systemctl stop firewalld` 

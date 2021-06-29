@@ -21,7 +21,6 @@
 #include <cassert>
 #include <algorithm>
 #include <utility>
-#include <evhttp.h>
 
 #include "s3_common.h"
 #include "s3_common_utilities.h"
@@ -74,154 +73,6 @@ void S3CopyObjectAction::setup_steps() {
   ACTION_TASK_ADD(S3CopyObjectAction::send_response_to_s3_client, this);
 }
 
-void S3CopyObjectAction::get_source_bucket_and_object() {
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  std::string source = request->get_headers_copysource();
-  size_t separator_pos;
-  if (source[0] != '/') {
-    separator_pos = source.find("/");
-    if (separator_pos != std::string::npos) {
-      source_bucket_name = source.substr(0, separator_pos);
-      source_object_name = source.substr(separator_pos + 1);
-    }
-  } else {
-    separator_pos = source.find("/", 1);
-    if (separator_pos != std::string::npos) {
-      source_bucket_name = source.substr(1, separator_pos - 1);
-      source_object_name = source.substr(separator_pos + 1);
-    }
-  }
-  char* decode_uri = evhttp_uridecode(source_object_name.c_str(), 0, NULL);
-  source_object_name = decode_uri;
-  free(decode_uri);
-  decode_uri = NULL;
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3CopyObjectAction::fetch_source_bucket_info() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_DEBUG, request_id, "Fetch metadata of bucket: %s\n",
-         source_bucket_name.c_str());
-
-  source_bucket_metadata = bucket_metadata_factory->create_bucket_metadata_obj(
-      request, source_bucket_name);
-
-  source_bucket_metadata->load(
-      std::bind(&S3CopyObjectAction::fetch_source_bucket_info_success, this),
-      std::bind(&S3CopyObjectAction::fetch_source_bucket_info_failed, this));
-
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3CopyObjectAction::fetch_source_bucket_info_success() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_DEBUG, request_id, "Found source bucket: [%s] metadata\n",
-         source_bucket_name.c_str());
-
-  // fetch source object metadata
-  fetch_source_object_info();
-
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3CopyObjectAction::fetch_source_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
-  s3_put_action_state = S3PutObjectActionState::validationFailed;
-
-  if (source_bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    s3_log(S3_LOG_DEBUG, request_id, "Source bucket: [%s] not found\n",
-           source_bucket_name.c_str());
-    set_s3_error("NoSuchBucket");
-  } else if (source_bucket_metadata->get_state() ==
-             S3BucketMetadataState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Source bucket metadata load operation failed due to pre launch "
-           "failure\n");
-    set_s3_error("ServiceUnavailable");
-  } else {
-    s3_log(S3_LOG_DEBUG, request_id, "Source bucket metadata fetch failed\n");
-    set_s3_error("InternalError");
-  }
-  send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3CopyObjectAction::fetch_source_object_info() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_DEBUG, request_id, "Found source bucket metadata\n");
-  m0_uint128 source_object_list_oid =
-      source_bucket_metadata->get_object_list_index_oid();
-  m0_uint128 source_object_version_list_oid =
-      source_bucket_metadata->get_objects_version_list_index_oid();
-
-  if ((source_object_list_oid.u_hi == 0ULL &&
-       source_object_list_oid.u_lo == 0ULL) ||
-      (source_object_version_list_oid.u_hi == 0ULL &&
-       source_object_version_list_oid.u_lo == 0ULL)) {
-    // Object list index and version list index missing.
-    fetch_source_object_info_failed();
-  } else {
-    source_object_metadata =
-        object_metadata_factory->create_object_metadata_obj(
-            request, source_bucket_name, source_object_name,
-            source_object_list_oid);
-
-    source_object_metadata->set_objects_version_list_index_oid(
-        source_object_version_list_oid);
-
-    source_object_metadata->load(
-        std::bind(&S3CopyObjectAction::fetch_source_object_info_success, this),
-        std::bind(&S3CopyObjectAction::fetch_source_object_info_failed, this));
-  }
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3CopyObjectAction::fetch_source_object_info_success() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_DEBUG, request_id,
-         "Successfully fetched source object metadata\n");
-
-  if (MaxCopyObjectSourceSize < source_object_metadata->get_content_length()) {
-    s3_put_action_state = S3PutObjectActionState::validationFailed;
-    set_s3_error("InvalidRequest");
-    send_response_to_s3_client();
-  } else {
-    total_data_to_stream = source_object_metadata->get_content_length();
-    next();
-  }
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3CopyObjectAction::fetch_source_object_info_failed() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
-  s3_put_action_state = S3PutObjectActionState::validationFailed;
-
-  m0_uint128 source_object_list_oid =
-      source_bucket_metadata->get_object_list_index_oid();
-  if (source_object_list_oid.u_hi == 0ULL &&
-      source_object_list_oid.u_lo == 0ULL) {
-    s3_log(S3_LOG_ERROR, request_id, "Object not found\n");
-    set_s3_error("NoSuchKey");
-  } else {
-    if (S3ObjectMetadataState::missing == source_object_metadata->get_state()) {
-      set_s3_error("NoSuchKey");
-    } else if (S3ObjectMetadataState::failed_to_launch ==
-               source_object_metadata->get_state()) {
-      s3_log(S3_LOG_ERROR, request_id,
-             "Source object metadata load operation failed due to pre launch "
-             "failure\n");
-      set_s3_error("ServiceUnavailable");
-    } else {
-      s3_log(S3_LOG_DEBUG, request_id, "Source object metadata fetch failed\n");
-      set_s3_error("InternalError");
-    }
-  }
-  send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
 // Validate source bucket and object
 void S3CopyObjectAction::validate_copyobject_request() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
@@ -262,17 +113,24 @@ void S3CopyObjectAction::validate_copyobject_request() {
       return;
     }
   }
-  get_source_bucket_and_object();
-
-  if (source_bucket_name.empty() || source_object_name.empty()) {
+  if (additional_bucket_name.empty() || additional_object_name.empty()) {
     set_s3_error("InvalidArgument");
     send_response_to_s3_client();
+    return;
   } else if (if_source_and_destination_same()) {
     s3_put_action_state = S3PutObjectActionState::validationFailed;
     set_s3_error("InvalidRequest");
     send_response_to_s3_client();
+    return;
+  }
+  if (MaxCopyObjectSourceSize <
+      additional_object_metadata->get_content_length()) {
+    s3_put_action_state = S3PutObjectActionState::validationFailed;
+    set_s3_error("InvalidRequest");
+    send_response_to_s3_client();
   } else {
-    fetch_source_bucket_info();
+    total_data_to_stream = additional_object_metadata->get_content_length();
+    next();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -305,9 +163,9 @@ void S3CopyObjectAction::copy_object() {
         request, motr_writer, motr_reader_factory, s3_motr_api));
 
     object_data_copier->copy(
-        source_object_metadata->get_oid(), total_data_to_stream,
-        source_object_metadata->get_layout_id(),
-        source_object_metadata->get_pvid(),
+        additional_object_metadata->get_oid(), total_data_to_stream,
+        additional_object_metadata->get_layout_id(),
+        additional_object_metadata->get_pvid(),
         std::bind(&S3CopyObjectAction::copy_object_cb, this),
         std::bind(&S3CopyObjectAction::copy_object_success, this),
         std::bind(&S3CopyObjectAction::copy_object_failed, this));
@@ -363,19 +221,19 @@ void S3CopyObjectAction::save_metadata() {
   new_object_metadata->reset_date_time_to_current();
   new_object_metadata->set_content_length(std::to_string(total_data_to_stream));
   new_object_metadata->set_content_type(
-      source_object_metadata->get_content_type());
+      additional_object_metadata->get_content_type());
   new_object_metadata->set_md5(motr_writer->get_content_md5());
   new_object_metadata->setacl(auth_acl);
 
   // put source object tags on new object
   s3_log(S3_LOG_DEBUG, stripped_request_id,
          "copying source object tags on new object..");
-  new_object_metadata->set_tags(source_object_metadata->get_tags());
+  new_object_metadata->set_tags(additional_object_metadata->get_tags());
 
   // copy source object user-defined metadata, to new object
   s3_log(S3_LOG_DEBUG, stripped_request_id,
          "copying source object metadata on new object..");
-  for (auto it : source_object_metadata->get_user_attributes()) {
+  for (auto it : additional_object_metadata->get_user_attributes()) {
     new_object_metadata->add_user_defined_attribute(it.first, it.second);
   }
 
@@ -466,7 +324,7 @@ void S3CopyObjectAction::send_response_to_s3_client() {
         "InvalidRequest" == get_s3_error_code()) {
       if (if_source_and_destination_same()) {  // Source and Destination same
         error.set_auth_error_message(InvalidRequestSourceAndDestinationSame);
-      } else if (source_object_metadata->get_content_length() >
+      } else if (additional_object_metadata->get_content_length() >
                  MaxCopyObjectSourceSize) {  // Source object size greater than
                                              // 5GB
         error.set_auth_error_message(
@@ -509,8 +367,8 @@ void S3CopyObjectAction::send_response_to_s3_client() {
 }
 
 bool S3CopyObjectAction::if_source_and_destination_same() {
-  return ((source_bucket_name == request->get_bucket_name()) &&
-          (source_object_name == request->get_object_name()));
+  return ((additional_bucket_name == request->get_bucket_name()) &&
+          (additional_object_name == request->get_object_name()));
 }
 
 void S3CopyObjectAction::set_authorization_meta() {
@@ -518,6 +376,14 @@ void S3CopyObjectAction::set_authorization_meta() {
   auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
                                   bucket_metadata->get_policy_as_json());
   request->set_action_str("PutObject");
+  request->reset_action_list();
+
+  if (!additional_object_metadata->get_tags().empty()) {
+    request->set_action_list("PutObjectTagging");
+  }
+  if (!request->get_header_value("x-amz-acl").empty()) {
+    request->set_action_list("PutObjectAcl");
+  }
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -527,12 +393,13 @@ void S3CopyObjectAction::set_source_bucket_authorization_metadata() {
   auth_acl = request->get_default_acl();
   auth_client->set_get_method = true;
 
-  auth_client->set_entity_path("/" + source_bucket_name + "/" +
-                               source_object_name);
+  request->reset_action_list();
+  auth_client->set_entity_path("/" + additional_bucket_name + "/" +
+                               additional_object_name);
 
   auth_client->set_acl_and_policy(
-      source_object_metadata->get_encoded_object_acl(),
-      source_bucket_metadata->get_policy_as_json());
+      additional_object_metadata->get_encoded_object_acl(),
+      additional_bucket_metadata->get_policy_as_json());
   request->set_action_str("GetObject");
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -540,6 +407,7 @@ void S3CopyObjectAction::set_source_bucket_authorization_metadata() {
 
 void S3CopyObjectAction::check_source_bucket_authorization() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
   auth_client->check_authorization(
       std::bind(&S3CopyObjectAction::check_source_bucket_authorization_success,
                 this),
@@ -550,6 +418,22 @@ void S3CopyObjectAction::check_source_bucket_authorization() {
 void S3CopyObjectAction::check_source_bucket_authorization_success() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   next();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3CopyObjectAction::check_destination_bucket_authorization_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  s3_put_action_state = S3PutObjectActionState::validationFailed;
+  std::string error_code = auth_client->get_error_code();
+
+  set_s3_error(error_code);
+  s3_log(S3_LOG_ERROR, request_id, "Authorization failure: %s\n",
+         error_code.c_str());
+
+  if (request->client_connected()) {
+    send_response_to_s3_client();
+  }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 

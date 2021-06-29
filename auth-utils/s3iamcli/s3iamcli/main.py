@@ -37,7 +37,7 @@ from s3iamcli.cli_response import CLIResponse
 class S3IamCli:
     def iam_usage(self):
         return '''
-        CreateAccount -n <Account Name> -e <Email Id>
+        CreateAccount -n <Account Name> -e <Email Id> --ldapuser <ldap-user> --ldappasswd <ldap-password>
         CreateUserLoginProfile -n <User Name>
             --password <User Password>
             [--password-reset-required | --no-password-reset-required]
@@ -47,13 +47,14 @@ class S3IamCli:
         UpdateAccountLoginProfile -n <Account Name>
             [--password <Account Password>]
             [--password-reset-required | --no-password-reset-required]
+            [--access_key <access-key | ldap_admin_user> --secret_key <secret-key | ldap_admin_password>]
         GetUserLoginProfile -n <User Name>
         GetAccountLoginProfile -n <Account Name>
         UpdateUserLoginProfile -n <User Name>
             [--password <User Password>]
             [--password-reset-required | --no-password-reset-required]
         ResetAccountAccessKey -n <Account Name>
-        ListAccounts
+        ListAccounts --ldapuser <ldap-user> --ldappasswd <ldap-password>
             [--showall]
         CreateAccessKey
             -n <User Name>
@@ -61,6 +62,7 @@ class S3IamCli:
             [-p <Path>]
         DeleteAccount -n <Account Name>
             [--force]
+            [--access_key <access-key | ldap_admin_user> --secret_key <secret-key | ldap_admin_password>]
         DeleteAccesskey -k <Access Key Id>
             -n <User Name>
         DeleteUser -n <User Name>
