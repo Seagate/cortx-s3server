@@ -147,8 +147,6 @@ class LdapAccountAction:
     self.ldap_conn = initialize(LDAP_URL)
     self.ldap_conn.protocol_version = VERSION3
     self.ldap_conn.set_option(OPT_REFERRALS, 0)
-    print("user : ", self.ldapuser)
-    print("passwd : ", self.ldappasswd)
     self.ldap_conn.simple_bind_s(LDAP_USER.format(self.ldapuser), self.ldappasswd)
 
   def __disconnect_from_ldap(self):

@@ -21,8 +21,6 @@
 import sys
 import time
 import re
-from s3confstore.cortx_s3_confstore import S3CortxConfStore
-from s3cipher.cortx_s3_cipher import CortxS3Cipher
 from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
@@ -137,8 +135,6 @@ class ResetCmd(SetupCmd):
   def DeleteLdapAccountsUsers(self):
     """Deletes all LDAP data entries e.g. accounts, users, access keys using admin credentials."""
     try:
-      print("rootdnuser : ", self.ldap_root_user)
-      print("rootdnpasswd : ", self.rootdn_passwd)
       # Delete data directories e.g. ou=accesskeys, ou=accounts,ou=idp from dc=s3,dc=seagate,dc=com tree"
       LdapAccountAction(self.ldap_root_user, self.rootdn_passwd).delete_s3_ldap_data()
     except Exception as e:
@@ -155,8 +151,6 @@ class ResetCmd(SetupCmd):
                                   'const_cipher_secret_str': "s3backgroundsecretkey",
                                   'const_cipher_access_str': "s3backgroundaccesskey"
                                 }
-      print("user : ", self.ldap_user)
-      print("passwd : ", self.ldap_passwd)
       LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
     except Exception as e:
       if "Already exists" not in str(e):

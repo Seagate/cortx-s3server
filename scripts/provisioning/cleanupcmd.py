@@ -23,8 +23,6 @@ import os
 from pathlib import Path
 import shutil
 
-from s3confstore.cortx_s3_confstore import S3CortxConfStore
-from s3cipher.cortx_s3_cipher import CortxS3Cipher
 from setupcmd import SetupCmd, S3PROVError
 from ldapaccountaction import LdapAccountAction
 from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
@@ -66,7 +64,7 @@ class CleanupCmd(SetupCmd):
     try:
       super(CleanupCmd, self).__init__(config)
       self.get_iam_admin_credentials()
-      
+
     except Exception as e:
       self.logger.error(f'Failed to read ldap credentials, error: {e}')
       raise e
