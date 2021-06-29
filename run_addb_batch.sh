@@ -26,7 +26,7 @@ do
     reads=$(echo "$test_plan" |  jq -r ".[$i].reads")
 
     echo "i=$i clients=$clients size=$size reads=$reads"
-    ./run_addb_test.sh --s3bench_path "$s3bpath" --addb_path "$addb_dir" -c $clients -s $size -r $reads --s3bench_ext "$ext"
+    (time ./run_addb_test.sh --s3bench_path "$s3bpath" --addb_path "$addb_dir" -c $clients -s $size -r $reads --s3bench_ext "$ext")  2>&1 | tee -a $addb_dir/workload.log
 
     ext="-o ${addb_dir}/test_report.csv -t csv+"
 done

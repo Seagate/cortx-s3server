@@ -52,4 +52,4 @@ s3b="$s3bench_path -endpoint https://s3.seagate.com -label $test_name -skipClean
 eval "$s3b"
 
 ./jenkins-build.sh --cleanup_only --remove_m0trace --collect_addb "$test_dir"
-cp "./s3bench-${test_name}.log" "$test_dir"
+mv "./s3bench-${test_name}.log" "$test_dir"
