@@ -76,6 +76,16 @@ class AccountLoginProfileController extends AbstractController {
 
   @Override public ServerResponse create() {
     Account account;
+    if (requestBody.get("Password") == null) {
+      LOGGER.error("password is missing");
+      return accountResponseGenerator.invalidRequest(
+          "Account login password is required");
+    }
+    if (requestBody.get("AccountName") == null) {
+      LOGGER.error("accountname is missing");
+      return accountResponseGenerator.invalidRequest(
+          "Account name is required");
+    }
     try {
       account = accountDAO.find(requestor.getAccount().getName());
     }
@@ -151,11 +161,17 @@ class AccountLoginProfileController extends AbstractController {
   @Override public ServerResponse update() throws DataAccessException {
     Account account = null;
     ServerResponse response = null;
+    if (requestBody.get("AccountName") == null ||
+        requestBody.get("AccountName").trim().isEmpty()) {
+      LOGGER.error("Account name is either null or empty");
+      return accountResponseGenerator.invalidRequest(
+          "Please provide account name");
+    }
     try {
       account = accountDAO.find(requestBody.get("AccountName"));
       if (!account.exists()) {
-        LOGGER.error("Account [" + requestor.getAccount().getName() +
-                     "] does not exists");
+        LOGGER.error("Requested account - " + requestBody.get("AccountName") +
+                     "does not exists");
         response = accountResponseGenerator.noSuchEntity();
       } else {
         if (account.getPassword() == null &&
@@ -163,13 +179,14 @@ class AccountLoginProfileController extends AbstractController {
              account.getProfileCreateDate().isEmpty())) {
 
           String errorMessage = "LoginProfile not created for account - " +
-                                requestor.getAccount().getName();
+                                requestBody.get("AccountName");
           LOGGER.error(errorMessage);
           response = accountResponseGenerator.noSuchEntity(errorMessage);
 
         } else {
-
+          boolean isRequiredInputProvided = false;
           if (requestBody.get("Password") != null) {
+            isRequiredInputProvided = true;
             // Validate new password as per password policy
             if (!S3ParameterValidatorUtil.validatePasswordPolicy(
                      requestBody.get("Password"))) {
@@ -182,9 +199,15 @@ class AccountLoginProfileController extends AbstractController {
           }
 
           if (requestBody.get("PasswordResetRequired") != null) {
+            isRequiredInputProvided = true;
             account.setPwdResetRequired(
                 requestBody.get("PasswordResetRequired").toUpperCase());
             LOGGER.info("Updating password reset required flag");
+          }
+          if (!isRequiredInputProvided) {
+            LOGGER.error("Mandatory input arguments are missing");
+            return accountResponseGenerator.invalidRequest(
+                "Please provide password or password-reset flag");
           }
           accountLoginProfileDAO.save(account);
           response =
@@ -194,7 +217,7 @@ class AccountLoginProfileController extends AbstractController {
     }
     catch (DataAccessException ex) {
       LOGGER.error("Exception occurred while doing ldap operation for user - " +
-                   requestor.getAccount().getName());
+                   requestBody.get("AccountName"));
       response = accountLoginProfileResponseGenerator.internalServerError();
     }
     return response;

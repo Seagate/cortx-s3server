@@ -44,11 +44,11 @@ using ::testing::AtLeast;
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
                 get_object_list_index_oid())                              \
         .Times(AtLeast(1))                                                \
-        .WillRepeatedly(Return(object_list_indx_oid));                    \
+        .WillRepeatedly(ReturnRef(object_list_indx_oid));                 \
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
                 get_objects_version_list_index_oid())                     \
         .Times(AtLeast(1))                                                \
-        .WillRepeatedly(Return(objects_version_list_index_oid));          \
+        .WillRepeatedly(ReturnRef(objects_version_list_index_oid));       \
     EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _)) \
         .Times(AtLeast(1));                                               \
     EXPECT_CALL(*(mock_request), http_verb())                             \
@@ -239,8 +239,7 @@ TEST_F(S3HeadObjectActionTest, SendSuccessResponse) {
               get_last_modified_gmt())
       .WillOnce(Return("Sunday, 29 January 2017 08:05:01 GMT"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
-              get_content_length_str())
-      .WillOnce(Return("512"));
+              get_content_length_str()).WillOnce(Return("512"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
@@ -257,4 +256,3 @@ TEST_F(S3HeadObjectActionTest, SendSuccessResponse) {
 
   action_under_test->send_response_to_s3_client();
 }
-

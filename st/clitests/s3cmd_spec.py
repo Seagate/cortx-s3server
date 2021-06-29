@@ -562,7 +562,15 @@ S3cmdTest('s3cmd can upload 18MB file for Collision resolution test').upload_tes
 
 s3kvs.delete_bucket_info("seagatebucket")
 
+S3fiTest('Disable bucket metadata cache').\
+    enable_fi("enable", "", "disable_bucket_metadata_cache").\
+    execute_test().command_is_successful()
+
 S3cmdTest('Create bucket for Collision resolution test').create_bucket("seagatebucket").execute_test().command_is_successful()
+
+S3fiTest('Enable bucket metadata cache').\
+    disable_fi("disable_bucket_metadata_cache").\
+    execute_test().command_is_successful()
 
 S3cmdTest('s3cmd can upload 3k file after Collision resolution').upload_test("seagatebucket", "3kfilecollision", 3000).execute_test().command_is_successful()
 

@@ -42,8 +42,10 @@ class S3DeleteBucketAction : public S3BucketAction {
   std::vector<struct m0_uint128> part_oids;
   std::vector<struct m0_uint128> multipart_object_oids;
   std::vector<int> multipart_object_layoutids;
+  std::vector<struct m0_fid> multipart_object_pv_ids;
   m0_uint128 object_list_index_oid;
   m0_uint128 objects_version_list_index_oid;
+  m0_uint128 extended_metadata_index_oid;
   std::string last_key;  // last key during each iteration
 
   bool is_bucket_empty;
@@ -104,6 +106,8 @@ class S3DeleteBucketAction : public S3BucketAction {
   void remove_object_list_index_failed();
   void remove_objects_version_list_index();
   void remove_objects_version_list_index_failed();
+  void remove_extended_metadata_index();
+  void remove_extended_metadata_index_failed();
   void send_response_to_s3_client();
 
   // Google tests

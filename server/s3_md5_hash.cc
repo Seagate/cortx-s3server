@@ -22,7 +22,7 @@
 
 #include "s3_md5_hash.h"
 
-MD5hash::MD5hash() { status = MD5_Init(&md5ctx); }
+MD5hash::MD5hash() { Reset(); }
 
 int MD5hash::Update(const char *input, size_t length) {
   if (input == NULL) {
@@ -49,6 +49,11 @@ int MD5hash::Finalize() {
   }
   is_finalized = true;
   return 0;
+}
+
+void MD5hash::Reset() {
+  status = MD5_Init(&md5ctx);
+  is_finalized = false;
 }
 
 const char hex_tbl[] = "0123456789abcdef";

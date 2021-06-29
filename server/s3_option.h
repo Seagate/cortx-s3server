@@ -135,6 +135,13 @@ class S3Option {
   int log_flush_frequency_sec;
   unsigned int motr_first_obj_read_size;
 
+  unsigned bucket_metadata_cache_max_size;
+  unsigned bucket_metadata_cache_expire_sec;
+  unsigned bucket_metadata_cache_refresh_sec;
+
+  bool s3_di_disable_data_corruption_iem;
+  bool s3_di_disable_metadata_corruption_iem;
+
   unsigned short motr_layout_id;
   unsigned short motr_units_per_request;
   std::vector<int> motr_unit_sizes_for_mem_pool;
@@ -319,6 +326,9 @@ class S3Option {
   bool load_all_sections(bool force_override_from_config);
   bool reload_modifiable_options();
 
+  bool get_s3_di_disable_data_corruption_iem();
+  bool get_s3_di_disable_metadata_corruption_iem();
+
   std::string get_s3_nodename();
   std::string get_ipv4_bind_addr();
   std::string get_ipv6_bind_addr();
@@ -384,6 +394,10 @@ class S3Option {
 
   unsigned short s3_performance_enabled();
   std::string get_perf_log_filename();
+
+  unsigned get_bucket_metadata_cache_max_size() const;
+  unsigned get_bucket_metadata_cache_expire_sec() const;
+  unsigned get_bucket_metadata_cache_refresh_sec() const;
 
   std::string get_motr_local_addr();
   std::string get_motr_ha_addr();

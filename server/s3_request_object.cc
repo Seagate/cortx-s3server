@@ -29,6 +29,7 @@
 #include "s3_request_object.h"
 #include "s3_stats.h"
 #include "s3_audit_info_logger.h"
+#include "s3_iem.h"
 
 extern S3Option* g_option_instance;
 
@@ -66,6 +67,10 @@ std::string S3RequestObject::get_object_uri() {
 
 std::string S3RequestObject::get_action_str() { return s3_action; }
 
+const std::list<std::string>& S3RequestObject::get_action_list() {
+  return s3_action_list;
+}
+
 void S3RequestObject::set_bucket_name(const std::string& name) {
   bucket_name = name;
 }
@@ -78,9 +83,20 @@ void S3RequestObject::set_action_str(const std::string& action) {
   s3_action = action;
 }
 
+void S3RequestObject::set_action_list(const std::string& action) {
+  if (!action.empty()) {
+    s3_log(S3_LOG_INFO, stripped_request_id, "Adding S3Action: [%s] to list\n",
+           action.c_str());
+    s3_action_list.push_back(action);
+  }
+}
+
+void S3RequestObject::reset_action_list() { s3_action_list.clear(); }
+
 void S3RequestObject::set_object_size(size_t obj_size) {
   object_size = obj_size;
 }
+
 const std::string& S3RequestObject::get_bucket_name() { return bucket_name; }
 
 void S3RequestObject::set_object_name(const std::string& name) {
@@ -172,9 +188,40 @@ void S3RequestObject::populate_and_log_audit_info() {
 
   // Skip audit logs for health checks.
   if (audit_log_obj.get_publish_flag()) {
-  if (S3AuditInfoLogger::save_msg(request_id, audit_log_obj.to_string()) < 0) {
-    s3_log(S3_LOG_FATAL, request_id, "Audit Logger Error. STOP Server");
-  }
+    if (S3AuditInfoLogger::save_msg(request_id, audit_log_obj.to_string()) <
+        0) {
+      s3_log(S3_LOG_FATAL, request_id, "Audit Logger Error. STOP Server\n");
+    }
   }
   s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
+}
+
+bool S3RequestObject::validate_attrs(const std::string& c_bucket_name,
+                                     const std::string& c_object_name) {
+  // NOTE: don't call get_object_name() and get_bucket_name() twice;
+  // UTs have expectations about amount and order of these calls.
+  const std::string& req_object_name = get_object_name();
+  const std::string& req_bucket_name = get_bucket_name();
+
+  if (s3_di_fi_is_enabled("di_metadata_bucket_or_object_corrupted") ||
+      req_bucket_name != c_bucket_name || req_object_name != c_object_name) {
+    if (!S3Option::get_instance()
+             ->get_s3_di_disable_metadata_corruption_iem()) {
+      s3_iem(LOG_ERR, S3_IEM_OBJECT_METADATA_NOT_VALID,
+             S3_IEM_OBJECT_METADATA_NOT_VALID_STR,
+             S3_IEM_OBJECT_METADATA_NOT_VALID_JSON,
+             req_bucket_name.c_str(), c_bucket_name.c_str(),
+             req_object_name.c_str(), c_object_name.c_str(),
+             account_name.c_str());
+    } else {
+      s3_log(S3_LOG_ERROR, request_id,
+             "Object metadata mismatch: "
+             "req_bucket_name=\"%s\" c_bucket_name=\"%s\" "
+             "req_object_name=\"%s\" c_object_name=\"%s\"\n",
+             req_bucket_name.c_str(), c_bucket_name.c_str(),
+             req_object_name.c_str(), c_object_name.c_str());
+    }
+    return false;
+  }
+  return true;
 }

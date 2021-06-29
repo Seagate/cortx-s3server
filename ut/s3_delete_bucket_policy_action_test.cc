@@ -42,8 +42,8 @@ class S3DeleteBucketPolicyActionTest : public testing::Test {
     EXPECT_CALL(*request_mock, get_bucket_name())
         .WillRepeatedly(ReturnRef(bucket_name));
     ptr_mock_s3_motr_api = std::make_shared<MockS3Motr>();
-    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
-        request_mock, ptr_mock_s3_motr_api);
+    bucket_meta_factory =
+        std::make_shared<MockS3BucketMetadataFactory>(request_mock);
     std::map<std::string, std::string> input_headers;
     input_headers["Authorization"] = "1";
     EXPECT_CALL(*request_mock, get_in_headers_copy()).Times(1).WillOnce(

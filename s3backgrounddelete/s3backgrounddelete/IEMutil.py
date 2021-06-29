@@ -21,24 +21,28 @@
     eventcode part  005 represents s3background component
     and 0001 repesents connection failures """
 
-import syslog
-
+from cortx.utils.iem_framework import EventMessage
 
 class IEMutil(object):
     severity = ""
     eventCode = ""
     eventstring = ""
-
+    source = 'S'
+    component= 'S3'
+    _logger = None
     # List of eventcodes
     S3_CONN_FAILURE = "0050010001"
 
     # List of eventstrings
     S3_CONN_FAILURE_STR = "Failed to connect to S3 server. For more information refer the Troubleshooting Guide."
 
-    def __init__(self, loglevel, eventcode, eventstring):
+    def __init__(self, logger, loglevel, eventcode, eventstring):
+        """Init."""
         self.eventCode = eventcode
         self.loglevel = loglevel
         self.eventString = eventstring
+        self._logger = logger
+        EventMessage.init(self.component, self.source)
         if(loglevel == "INFO"):
             self.severity = "I"
         if(loglevel == "WARN"):
@@ -49,5 +53,27 @@ class IEMutil(object):
         self.log_iem()
 
     def log_iem(self):
-        IEM = "IEC:%sS%s:%s" % (self.severity, self.eventCode, self.eventString)
-        syslog.syslog(IEM)
+        self.send('S3 BG delete', self.eventCode, self.severity, self.eventString)
+
+    @classmethod
+    def send(self, module, event_id, severity, message_blob):
+        """Send the message."""
+        try:
+            EventMessage.send(module='S3 BG delete', event_id=event_id, severity=severity, message_blob=message_blob)
+        except Exception as exception:
+            self._logger.ERROR("Exception : ", exception)
+            return False
+        return True
+
+    @classmethod
+    def receive(self, component):
+        """Receive the incoming message."""
+        EventMessage.subscribe(component)
+
+        try:
+            alert = EventMessage.receive()
+            self._logger.DEBUG("Received message --> ", alert)
+        except Exception as exception:
+            self._logger.ERROR("Exception : ", exception)
+            return False
+        return True

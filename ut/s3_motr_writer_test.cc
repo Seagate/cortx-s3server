@@ -135,6 +135,7 @@ class S3MotrWiterTest : public testing::Test {
   evbase_t *evbase;
   evhtp_request_t *req;
   struct m0_uint128 obj_oid;
+  struct m0_fid pv_id = {};
   int layout_id;
   std::shared_ptr<MockS3RequestObject> request_mock;
   std::shared_ptr<MockS3Motr> s3_motr_api_mock;
@@ -145,8 +146,8 @@ class S3MotrWiterTest : public testing::Test {
 };
 
 TEST_F(S3MotrWiterTest, Constructor) {
-  motr_writer_ptr =
-      std::make_shared<S3MotrWiter>(request_mock, obj_oid, 0, s3_motr_api_mock);
+  motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
+                                                  0, s3_motr_api_mock);
   EXPECT_EQ(S3MotrWiterOpState::start, motr_writer_ptr->get_state());
   EXPECT_EQ(request_mock, motr_writer_ptr->request);
   EXPECT_EQ(0, motr_writer_ptr->size_in_current_write);
@@ -158,7 +159,7 @@ TEST_F(S3MotrWiterTest, Constructor) {
 
 TEST_F(S3MotrWiterTest, Constructor2) {
   motr_writer_ptr =
-      std::make_shared<S3MotrWiter>(request_mock, 0, s3_motr_api_mock);
+      std::make_shared<S3MotrWiter>(request_mock, s3_motr_api_mock);
   EXPECT_EQ(S3MotrWiterOpState::start, motr_writer_ptr->get_state());
   EXPECT_EQ(request_mock, motr_writer_ptr->request);
   EXPECT_EQ(0, motr_writer_ptr->size_in_current_write);
@@ -169,8 +170,8 @@ TEST_F(S3MotrWiterTest, Constructor2) {
 TEST_F(S3MotrWiterTest, CreateObjectTest) {
   S3CallBack S3MotrWiter_callbackobj;
 
-  motr_writer_ptr =
-      std::make_shared<S3MotrWiter>(request_mock, obj_oid, 0, s3_motr_api_mock);
+  motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
+                                                  0, s3_motr_api_mock);
 
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_init(_, _, _, _));
   EXPECT_CALL(*s3_motr_api_mock, motr_entity_create(_, _))
@@ -184,7 +185,8 @@ TEST_F(S3MotrWiterTest, CreateObjectTest) {
 
   motr_writer_ptr->create_object(
       std::bind(&S3CallBack::on_success, &S3MotrWiter_callbackobj),
-      std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj), layout_id);
+      std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj), obj_oid,
+      layout_id);
 
   EXPECT_TRUE(S3MotrWiter_callbackobj.success_called);
   EXPECT_FALSE(S3MotrWiter_callbackobj.fail_called);
@@ -193,8 +195,8 @@ TEST_F(S3MotrWiterTest, CreateObjectTest) {
 TEST_F(S3MotrWiterTest, CreateObjectEntityCreateFailTest) {
   S3CallBack S3MotrWiter_callbackobj;
 
-  motr_writer_ptr =
-      std::make_shared<S3MotrWiter>(request_mock, obj_oid, 0, s3_motr_api_mock);
+  motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
+                                                  0, s3_motr_api_mock);
 
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_init(_, _, _, _));
   EXPECT_CALL(*s3_motr_api_mock, motr_entity_create(_, _)).WillOnce(Return(-1));
@@ -204,7 +206,8 @@ TEST_F(S3MotrWiterTest, CreateObjectEntityCreateFailTest) {
 
   motr_writer_ptr->create_object(
       std::bind(&S3CallBack::on_success, &S3MotrWiter_callbackobj),
-      std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj), layout_id);
+      std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj), obj_oid,
+      layout_id);
 
   EXPECT_FALSE(S3MotrWiter_callbackobj.success_called);
   EXPECT_TRUE(S3MotrWiter_callbackobj.fail_called);
@@ -213,8 +216,8 @@ TEST_F(S3MotrWiterTest, CreateObjectEntityCreateFailTest) {
 TEST_F(S3MotrWiterTest, CreateObjectSuccessfulTest) {
   S3CallBack S3MotrWiter_callbackobj;
 
-  motr_writer_ptr =
-      std::make_shared<S3MotrWiter>(request_mock, obj_oid, 0, s3_motr_api_mock);
+  motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
+                                                  0, s3_motr_api_mock);
 
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_init(_, _, _, _));
   EXPECT_CALL(*s3_motr_api_mock, motr_entity_create(_, _))
@@ -228,7 +231,8 @@ TEST_F(S3MotrWiterTest, CreateObjectSuccessfulTest) {
 
   motr_writer_ptr->create_object(
       std::bind(&S3CallBack::on_success, &S3MotrWiter_callbackobj),
-      std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj), layout_id);
+      std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj), obj_oid,
+      layout_id);
 
   EXPECT_TRUE(S3MotrWiter_callbackobj.success_called);
   EXPECT_FALSE(S3MotrWiter_callbackobj.fail_called);
@@ -237,8 +241,8 @@ TEST_F(S3MotrWiterTest, CreateObjectSuccessfulTest) {
 TEST_F(S3MotrWiterTest, DeleteObjectSuccessfulTest) {
   S3CallBack S3MotrWiter_callbackobj;
 
-  motr_writer_ptr =
-      std::make_shared<S3MotrWiter>(request_mock, obj_oid, 0, s3_motr_api_mock);
+  motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
+                                                  0, s3_motr_api_mock);
 
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_init(_, _, _, _));
   EXPECT_CALL(*s3_motr_api_mock, motr_entity_open(_, _))
@@ -254,7 +258,8 @@ TEST_F(S3MotrWiterTest, DeleteObjectSuccessfulTest) {
 
   motr_writer_ptr->delete_object(
       std::bind(&S3CallBack::on_success, &S3MotrWiter_callbackobj),
-      std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj), layout_id);
+      std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj), obj_oid,
+      layout_id);
 
   EXPECT_TRUE(S3MotrWiter_callbackobj.success_called);
   EXPECT_FALSE(S3MotrWiter_callbackobj.fail_called);
@@ -263,8 +268,8 @@ TEST_F(S3MotrWiterTest, DeleteObjectSuccessfulTest) {
 TEST_F(S3MotrWiterTest, DeleteObjectFailedTest) {
   S3CallBack S3MotrWiter_callbackobj;
 
-  motr_writer_ptr =
-      std::make_shared<S3MotrWiter>(request_mock, obj_oid, 0, s3_motr_api_mock);
+  motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
+                                                  0, s3_motr_api_mock);
 
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_init(_, _, _, _));
   EXPECT_CALL(*s3_motr_api_mock, motr_entity_open(_, _))
@@ -279,7 +284,8 @@ TEST_F(S3MotrWiterTest, DeleteObjectFailedTest) {
 
   motr_writer_ptr->delete_object(
       std::bind(&S3CallBack::on_success, &S3MotrWiter_callbackobj),
-      std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj), layout_id);
+      std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj), obj_oid,
+      layout_id);
 
   EXPECT_FALSE(S3MotrWiter_callbackobj.success_called);
   EXPECT_TRUE(S3MotrWiter_callbackobj.fail_called);
@@ -294,9 +300,10 @@ TEST_F(S3MotrWiterTest, DeleteObjectmotrEntityDeleteFailedTest) {
     oids.push_back(obj_oid);
     layoutids.push_back(layout_id);
   }
+  std::vector<struct m0_fid> pv_ids(3, pv_id);
 
-  motr_writer_ptr =
-      std::make_shared<S3MotrWiter>(request_mock, obj_oid, 0, s3_motr_api_mock);
+  motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
+                                                  0, s3_motr_api_mock);
 
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_init(_, _, _, _)).Times(oids.size());
   EXPECT_CALL(*s3_motr_api_mock, motr_entity_open(_, _))
@@ -314,7 +321,7 @@ TEST_F(S3MotrWiterTest, DeleteObjectmotrEntityDeleteFailedTest) {
   S3Option::get_instance()->set_eventbase(evbase);
 
   motr_writer_ptr->delete_objects(
-      oids, layoutids,
+      oids, layoutids, pv_ids,
       std::bind(&S3CallBack::on_success, &S3MotrWiter_callbackobj),
       std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj));
 
@@ -331,9 +338,10 @@ TEST_F(S3MotrWiterTest, DeleteObjectsSuccessfulTest) {
     oids.push_back(obj_oid);
     layoutids.push_back(layout_id);
   }
+  std::vector<struct m0_fid> pv_ids(3, pv_id);
 
-  motr_writer_ptr =
-      std::make_shared<S3MotrWiter>(request_mock, obj_oid, 0, s3_motr_api_mock);
+  motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
+                                                  0, s3_motr_api_mock);
 
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_init(_, _, _, _)).Times(oids.size());
   EXPECT_CALL(*s3_motr_api_mock, motr_entity_open(_, _))
@@ -351,7 +359,7 @@ TEST_F(S3MotrWiterTest, DeleteObjectsSuccessfulTest) {
   S3Option::get_instance()->set_eventbase(evbase);
 
   motr_writer_ptr->delete_objects(
-      oids, layoutids,
+      oids, layoutids, pv_ids,
       std::bind(&S3CallBack::on_success, &S3MotrWiter_callbackobj),
       std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj));
 
@@ -368,9 +376,10 @@ TEST_F(S3MotrWiterTest, DeleteObjectsFailedTest) {
     oids.push_back(obj_oid);
     layoutids.push_back(layout_id);
   }
+  std::vector<struct m0_fid> pv_ids(3, pv_id);
 
-  motr_writer_ptr =
-      std::make_shared<S3MotrWiter>(request_mock, obj_oid, 0, s3_motr_api_mock);
+  motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
+                                                  0, s3_motr_api_mock);
 
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_init(_, _, _, _)).Times(oids.size());
   EXPECT_CALL(*s3_motr_api_mock, motr_entity_open(_, _))
@@ -384,7 +393,7 @@ TEST_F(S3MotrWiterTest, DeleteObjectsFailedTest) {
   S3Option::get_instance()->set_eventbase(evbase);
 
   motr_writer_ptr->delete_objects(
-      oids, layoutids,
+      oids, layoutids, pv_ids,
       std::bind(&S3CallBack::on_success, &S3MotrWiter_callbackobj),
       std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj));
 
@@ -393,8 +402,8 @@ TEST_F(S3MotrWiterTest, DeleteObjectsFailedTest) {
 }
 
 TEST_F(S3MotrWiterTest, OpenObjectsTest) {
-  motr_writer_ptr =
-      std::make_shared<S3MotrWiter>(request_mock, obj_oid, 0, s3_motr_api_mock);
+  motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
+                                                  0, s3_motr_api_mock);
   motr_writer_ptr->set_layout_id(layout_id);
 
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_init(_, _, _, _)).Times(1);
@@ -413,8 +422,8 @@ TEST_F(S3MotrWiterTest, OpenObjectsTest) {
 TEST_F(S3MotrWiterTest, OpenObjectsEntityOpenFailedTest) {
   S3CallBack S3MotrWiter_callbackobj;
   int rc;
-  motr_writer_ptr =
-      std::make_shared<S3MotrWiter>(request_mock, obj_oid, 0, s3_motr_api_mock);
+  motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
+                                                  0, s3_motr_api_mock);
   motr_writer_ptr->set_layout_id(layout_id);
 
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_init(_, _, _, _)).Times(1);
@@ -434,8 +443,8 @@ TEST_F(S3MotrWiterTest, OpenObjectsEntityOpenFailedTest) {
 TEST_F(S3MotrWiterTest, OpenObjectsFailedTest) {
   S3CallBack S3MotrWiter_callbackobj;
 
-  motr_writer_ptr =
-      std::make_shared<S3MotrWiter>(request_mock, obj_oid, 0, s3_motr_api_mock);
+  motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
+                                                  0, s3_motr_api_mock);
   motr_writer_ptr->set_layout_id(layout_id);
 
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_init(_, _, _, _)).Times(1);
@@ -460,8 +469,8 @@ TEST_F(S3MotrWiterTest, OpenObjectsFailedTest) {
 TEST_F(S3MotrWiterTest, OpenObjectsFailedMissingTest) {
   S3CallBack S3MotrWiter_callbackobj;
 
-  motr_writer_ptr =
-      std::make_shared<S3MotrWiter>(request_mock, obj_oid, 0, s3_motr_api_mock);
+  motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
+                                                  0, s3_motr_api_mock);
   motr_writer_ptr->set_layout_id(layout_id);
 
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_init(_, _, _, _)).Times(1);
@@ -489,8 +498,8 @@ TEST_F(S3MotrWiterTest, WriteContentSuccessfulTest) {
   bool is_last_buf = true;
   std::string sdata("Hello.World");
 
-  motr_writer_ptr =
-      std::make_shared<S3MotrWiter>(request_mock, obj_oid, 0, s3_motr_api_mock);
+  motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
+                                                  0, s3_motr_api_mock);
   motr_writer_ptr->set_layout_id(layout_id);
 
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_init(_, _, _, _));
@@ -526,8 +535,8 @@ TEST_F(S3MotrWiterTest, WriteContentFailedTest) {
   S3CallBack S3MotrWiter_callbackobj;
   bool is_last_buf = true;
 
-  motr_writer_ptr =
-      std::make_shared<S3MotrWiter>(request_mock, obj_oid, 0, s3_motr_api_mock);
+  motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
+                                                  0, s3_motr_api_mock);
   motr_writer_ptr->set_layout_id(layout_id);
 
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_init(_, _, _, _));
@@ -558,8 +567,8 @@ TEST_F(S3MotrWiterTest, WriteEntityFailedTest) {
   S3CallBack S3MotrWiter_callbackobj;
   bool is_last_buf = true;
 
-  motr_writer_ptr =
-      std::make_shared<S3MotrWiter>(request_mock, obj_oid, 0, s3_motr_api_mock);
+  motr_writer_ptr = std::make_shared<S3MotrWiter>(request_mock, obj_oid, pv_id,
+                                                  0, s3_motr_api_mock);
   motr_writer_ptr->set_layout_id(layout_id);
 
   EXPECT_CALL(*s3_motr_api_mock, motr_obj_init(_, _, _, _));

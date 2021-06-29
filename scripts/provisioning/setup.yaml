@@ -17,6 +17,71 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+
+# Hooks:
+#   - there a set of main hooks which reflects provisioning stages
+#     (e.g. prepare, config, upgrade ...)
+#   - 'pre'/'post' hooks provide an ability for more granular subscription
+#     logic over the main hooks:
+#     - by default - not expected and not called
+#     - if defined - spec format is the same
+#
+# Flows:
+#  - a hook can be called in scope of different Cortx flows
+#  - supported flows:
+#    - deploy: deployment flow
+#    - upgrade: online (rolling) upgrade flow
+#    - upgrade-offline: offline upgrade flow
+#
+# Levels:
+#  - a hook can be called on different levels
+#  - supported levels:
+#    - cluster: these hooks are called only once per a cluster (TBD which node)
+#    - node: these hooks are called once per a node
+#
+# Constraints:
+#   - a hook can be subsribed / unsubscribed using spec constraints
+#   - a constraint is specified using `when` key and Jinja2 expression
+#     over predefined context variables as a value
+#   - An expression should result into a boolean
+#   - if the constraint is not specified then default constraint is applied:
+#     - level: node
+#     - flow: not defined but set of hooks itself depends on the flow
+#
+# Context variables:
+#   - level: cluster | node
+#   - flow: deploy | upgrade | upgrade-offline
+# 
+# Environment variables for hook commands:
+#   - can be used to build conditional logic internally in a component command
+#   - list of variables:
+#     - PRVSNR_MINI_HOOK - the hook name (e.g. 'prepare', 'post-config', 'pre-test'')
+#     - PRVSNR_MINI_FLOW - active flow
+#     - PRVSNR_MINI_LEVEL - active level
+#
+# CLI arguments for hook commands (not for PI-2, under discussion):
+#   --level
+#   --flow
+#
+# Rules:
+#   - case when 'cmd' is missed or undefined means 'no call is needed'
+#   - the same if the whole spec for a hook is missed
+#   - case when 'cmd' is udnefined for the main hook (stage) but specified
+#     for pre or post is valid
+#   - 'args' is optional
+#   - 'when' is optional:
+#      - if not specified then a hook (if it's considered for a flow)
+#        would be called on 'node' level only
+#      - if presented: should be checked as a boolean flag to call / not call the interface
+#   - pre/post are optional keys of any hook (optional keys), values for them can be:
+#     - string - which is equal to "cmd" (as a shortest form of a hook spec)
+#     - dict - should have a usual hook spec format (cmd, args, when...) but pre/post are not expected there
+#       if any key is omitted here main hook spec would be used as a source of defaults
+#     - boolean :
+#       - true: call the hook with the same spec as for main one
+#       - false: do not call
+#     - undefined (null): do not call
+
 # post_install handler is called only for primary node
 # consider config handler if some actions should be
 # called on all nodes before server is run
@@ -32,7 +97,7 @@ s3:
     args: --config $URL
   test:
     cmd: /opt/seagate/cortx/s3/bin/s3_setup test
-    args: --config $URL --plan $plan
+    args: --config $URL
   reset:
     cmd: /opt/seagate/cortx/s3/bin/s3_setup reset
     args: --config $URL
@@ -49,8 +114,12 @@ s3:
     cmd: /opt/seagate/cortx/s3/bin/s3_setup restore
     args: --location $END-POINT
   upgrade:
-    cmd: /opt/seagate/cortx/s3/bin/s3_setup upgrade
-    args: --config $URL
+    pre:
+      cmd: /opt/seagate/cortx/s3/bin/s3_setup preupgrade
+      when: {{ level == 'node' and flow == 'upgrade-offline' }}
+    post:
+      cmd: /opt/seagate/cortx/s3/bin/s3_setup postupgrade
+      when: {{ level == 'node' and flow == 'upgrade-offline' }}
 # Script path used by CSM to generate s3 support bundle
 support_bundle:
   - sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh

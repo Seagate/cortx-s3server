@@ -99,6 +99,63 @@ void S3PutObjectActionBase::fetch_bucket_info_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+void S3PutObjectActionBase::fetch_additional_bucket_info_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  s3_put_action_state = S3PutObjectActionState::validationFailed;
+
+  switch (additional_bucket_metadata->get_state()) {
+    case S3BucketMetadataState::missing:
+      s3_log(S3_LOG_ERROR, request_id, "Bucket: [%s] not found",
+             additional_bucket_name.c_str());
+      set_s3_error("NoSuchBucket");
+      break;
+    case S3BucketMetadataState::failed_to_launch:
+      s3_log(S3_LOG_ERROR, request_id,
+             "Bucket metadata load operation failed due to pre launch failure");
+      set_s3_error("ServiceUnavailable");
+      break;
+    default:
+      s3_log(S3_LOG_DEBUG, request_id, "Bucket metadata fetch failed");
+      set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PutObjectActionBase::fetch_additional_object_info_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  s3_put_action_state = S3PutObjectActionState::validationFailed;
+
+  m0_uint128 additional_object_list_oid =
+      additional_bucket_metadata->get_object_list_index_oid();
+  if (additional_object_list_oid.u_hi == 0ULL &&
+      additional_object_list_oid.u_lo == 0ULL) {
+    s3_log(S3_LOG_ERROR, request_id, "Object not found\n");
+    set_s3_error("NoSuchKey");
+  } else {
+    switch (additional_object_metadata->get_state()) {
+      case S3ObjectMetadataState::missing:
+        set_s3_error("NoSuchKey");
+        break;
+      case S3ObjectMetadataState::failed_to_launch:
+        s3_log(S3_LOG_ERROR, request_id,
+               "Additional object metadata load operation failed due to pre "
+               "launch "
+               "failure\n");
+        set_s3_error("ServiceUnavailable");
+        break;
+      default:
+        s3_log(S3_LOG_DEBUG, request_id,
+               "Additional object metadata fetch failed\n");
+        set_s3_error("InternalError");
+    }
+  }
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
 void S3PutObjectActionBase::fetch_object_info_success() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
@@ -106,7 +163,6 @@ void S3PutObjectActionBase::fetch_object_info_success() {
 
   if (metadata_state == S3ObjectMetadataState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Destination object is absent");
-    next();
   } else if (metadata_state == S3ObjectMetadataState::present) {
     s3_log(S3_LOG_DEBUG, request_id, "Destination object already exists");
 
@@ -115,7 +171,6 @@ void S3PutObjectActionBase::fetch_object_info_success() {
     old_layout_id = object_metadata->get_layout_id();
 
     create_new_oid(old_object_oid);
-    next();
   } else {
     s3_put_action_state = S3PutObjectActionState::validationFailed;
 
@@ -128,6 +183,17 @@ void S3PutObjectActionBase::fetch_object_info_success() {
       set_s3_error("InternalError");
     }
     send_response_to_s3_client();
+    return;
+  }
+  // Check if additioanl metadata needs to be loaded,
+  // case1: CopyObject API
+  std::string source = request->get_headers_copysource();
+  if (!source.empty()) {  // this is CopyObject API request
+    get_source_bucket_and_object(source);
+    fetch_additional_bucket_info();
+  } else {
+    // No additional metadata load required.
+    next();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -149,7 +215,16 @@ void S3PutObjectActionBase::fetch_object_info_failed() {
     s3_put_action_state = S3PutObjectActionState::validationFailed;
     set_s3_error("MetaDataCorruption");
     send_response_to_s3_client();
+    return;
+  }
+  // Check if additioanl metadata needs to be loaded,
+  // case1: CopyObject API
+  std::string source = request->get_headers_copysource();
+  if (!source.empty()) {  // this is CopyObject API request
+    get_source_bucket_and_object(source);
+    fetch_additional_bucket_info();
   } else {
+    // No additional metadata load required.
     next();
   }
 }
@@ -158,17 +233,15 @@ void S3PutObjectActionBase::create_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (!tried_count) {
-    motr_writer =
-        motr_writer_factory->create_motr_writer(request, new_object_oid);
-  } else {
-    motr_writer->set_oid(new_object_oid);
+    motr_writer = motr_writer_factory->create_motr_writer(request);
   }
   _set_layout_id(S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
       total_data_to_stream));
 
   motr_writer->create_object(
       std::bind(&S3PutObjectActionBase::create_object_successful, this),
-      std::bind(&S3PutObjectActionBase::create_object_failed, this), layout_id);
+      std::bind(&S3PutObjectActionBase::create_object_failed, this),
+      new_object_oid, layout_id);
 
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
@@ -467,11 +540,12 @@ void S3PutObjectActionBase::delete_old_object() {
   // If PUT is success, we delete old object if present
   assert(old_object_oid.u_hi != 0ULL || old_object_oid.u_lo != 0ULL);
 
-  motr_writer->set_oid(old_object_oid);
   motr_writer->delete_object(
       std::bind(&S3PutObjectActionBase::remove_old_object_version_metadata,
                 this),
-      std::bind(&S3PutObjectActionBase::next, this), old_layout_id);
+      std::bind(&S3PutObjectActionBase::next, this), old_object_oid,
+      old_layout_id, object_metadata->get_pvid());
+
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -490,10 +564,10 @@ void S3PutObjectActionBase::delete_new_object() {
   assert(s3_put_action_state != S3PutObjectActionState::completed);
   assert(new_object_oid.u_hi != 0ULL || new_object_oid.u_lo != 0ULL);
 
-  motr_writer->set_oid(new_object_oid);
   motr_writer->delete_object(
       std::bind(&S3PutObjectActionBase::remove_new_oid_probable_record, this),
-      std::bind(&S3PutObjectActionBase::next, this), layout_id);
+      std::bind(&S3PutObjectActionBase::next, this), new_object_oid, layout_id);
+
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

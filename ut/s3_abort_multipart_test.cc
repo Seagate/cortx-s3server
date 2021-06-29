@@ -67,8 +67,8 @@ class S3AbortMultipartActionTest : public testing::Test {
     EXPECT_CALL(*ptr_mock_s3_motr_api, m0_h_ufid_next(_))
         .WillOnce(Invoke(dummy_helpers_ufid_next));
 
-    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
-        ptr_mock_request, ptr_mock_s3_motr_api);
+    bucket_meta_factory =
+        std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
     object_mp_meta_factory =
         std::make_shared<MockS3ObjectMultipartMetadataFactory>(
             ptr_mock_request, ptr_mock_s3_motr_api, upload_id);

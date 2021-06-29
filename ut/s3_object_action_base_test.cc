@@ -56,13 +56,19 @@ class S3ObjectActionTestBase : public S3ObjectAction {
 
   void fetch_bucket_info_failed() { fetch_bucket_info_failed_called = 1; }
   void fetch_object_info_failed() { fetch_object_info_failed_called = 1; }
-
-  void send_response_to_s3_client() {
-    response_called += 1;
+  void fetch_additional_bucket_info_failed() {
+    fetch_additional_bucket_info_failed_called = 1;
   }
+  void fetch_additional_object_info_failed() {
+    fetch_additional_object_info_failed_called = 1;
+  }
+
+  void send_response_to_s3_client() { response_called += 1; }
 
   int fetch_bucket_info_failed_called = 0;
   int fetch_object_info_failed_called = 0;
+  int fetch_additional_object_info_failed_called = 0;
+  int fetch_additional_bucket_info_failed_called = 0;
   int response_called = 0;
 };
 
@@ -119,6 +125,14 @@ S3ObjectActionTest::S3ObjectActionTest()
   object_meta_factory =
       std::make_shared<MockS3ObjectMetadataFactory>(request_mock);
   object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
+
+  EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
+              get_object_list_index_oid())
+      .WillRepeatedly(ReturnRef(zero_oid_idx));
+
+  EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
+              get_objects_version_list_index_oid())
+      .WillRepeatedly(ReturnRef(zero_oid_idx));
 }
 
 void S3ObjectActionTest::SetUp() {
@@ -145,6 +159,34 @@ TEST_F(S3ObjectActionTest, FetchBucketInfo) {
   action_under_test_ptr->fetch_bucket_info();
 }
 
+TEST_F(S3ObjectActionTest, FetchAdditionalBucketInfo) {
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
+      .Times(AtLeast(1));
+  action_under_test_ptr->fetch_additional_bucket_info();
+}
+
+TEST_F(S3ObjectActionTest, FetchAdditionalBucketInfoSuccess) {
+  action_under_test_ptr->additional_bucket_metadata =
+      action_under_test_ptr->bucket_metadata_factory
+          ->create_bucket_metadata_obj(request_mock);
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_object_list_index_oid())
+      .Times(1)
+      .WillOnce(ReturnRef(object_list_indx_oid));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_objects_version_list_index_oid())
+      .Times(1)
+      .WillOnce(ReturnRef(objects_version_list_index_oid));
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
+      .Times(AtLeast(1));
+
+  action_under_test_ptr->fetch_additional_bucket_info_success();
+
+  EXPECT_TRUE(action_under_test_ptr->additional_bucket_metadata != NULL);
+  EXPECT_TRUE(action_under_test_ptr->additional_object_metadata != NULL);
+}
+
 TEST_F(S3ObjectActionTest, LoadMetadata) {
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
       .Times(AtLeast(1));
@@ -155,6 +197,7 @@ TEST_F(S3ObjectActionTest, LoadMetadata) {
 
 TEST_F(S3ObjectActionTest, FetchBucketInfoSuccess) {
   S3AuditInfo s3_audit_info;
+  std::string owner_canonical_id;
 
   action_under_test_ptr->load_metadata();
   action_under_test_ptr->clear_tasks();
@@ -167,7 +210,9 @@ TEST_F(S3ObjectActionTest, FetchBucketInfoSuccess) {
 
   EXPECT_CALL(*dynamic_cast<MockS3BucketMetadata*>(
                    action_under_test_ptr->bucket_metadata.get()),
-              get_owner_canonical_id()).Times(1);
+              get_owner_canonical_id())
+      .Times(1)
+      .WillOnce(ReturnRef(owner_canonical_id));
 
   action_under_test_ptr->fetch_bucket_info_success();
 }
@@ -195,11 +240,11 @@ TEST_F(S3ObjectActionTest, FetchObjectInfoSuccess) {
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
               get_object_list_index_oid())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(object_list_indx_oid));
+      .WillRepeatedly(ReturnRef(object_list_indx_oid));
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
               get_objects_version_list_index_oid())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(objects_version_list_index_oid));
+      .WillRepeatedly(ReturnRef(objects_version_list_index_oid));
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
       .Times(AtLeast(1));
@@ -230,4 +275,3 @@ TEST_F(S3ObjectActionTest, SetAuthorizationMeta) {
   action_under_test_ptr->set_authorization_meta();
   EXPECT_EQ(1, call_count_one);
 }
-

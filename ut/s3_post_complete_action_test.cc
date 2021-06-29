@@ -79,7 +79,7 @@ using ::testing::_;
   do {                                                                  \
     action_under_test_ptr->motr_writer =                                \
         action_under_test_ptr->motr_writer_factory->create_motr_writer( \
-            request_mock, oid);                                         \
+            request_mock);                                              \
   } while (0)
 
 #define CREATE_KVS_WRITER_OBJ                                                  \
@@ -108,8 +108,8 @@ class S3PostCompleteActionTest : public testing::Test {
  protected:  // You should make the members protected s.t. they can be
              // accessed from sub-classes.
   S3PostCompleteActionTest() {
-    evhtp_request_t *req = NULL;
-    EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+    evhtp_request_t* req = NULL;
+    EvhtpInterface* evhtp_obj_ptr = new EvhtpWrapper();
     upload_id = "upload_id";
     mp_indx_oid = {0xffff, 0xffff};
     oid = {0xfff, 0xfff};
@@ -130,8 +130,8 @@ class S3PostCompleteActionTest : public testing::Test {
     layout_id =
         S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
 
-    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
-        request_mock, s3_motr_api_mock);
+    bucket_meta_factory =
+        std::make_shared<MockS3BucketMetadataFactory>(request_mock);
     motr_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
         request_mock, s3_motr_api_mock);
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
@@ -183,7 +183,9 @@ class S3PostCompleteActionTest : public testing::Test {
     action_under_test_ptr->next();
   }
   void dummy_delete_object(std::function<void(void)> on_success,
-                           std::function<void(void)> on_failed, int layoutid) {
+                           std::function<void(void)> on_failed,
+                           const struct m0_uint128& object_id, int layoutid,
+                           const struct m0_fid& pv_id) {
     action_under_test_ptr->next();
   }
 };
@@ -508,7 +510,6 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooSmall) {
                action_under_test_ptr->get_s3_error_code().c_str());
   EXPECT_EQ(S3PostCompleteActionState::validationFailed,
             action_under_test_ptr->s3_post_complete_action_state);
-  EXPECT_EQ(true, action_under_test_ptr->is_abort_multipart());
 }
 
 TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooLarge) {
@@ -542,7 +543,6 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooLarge) {
                action_under_test_ptr->get_s3_error_code().c_str());
   EXPECT_EQ(S3PostCompleteActionState::validationFailed,
             action_under_test_ptr->s3_post_complete_action_state);
-  EXPECT_EQ(true, action_under_test_ptr->is_abort_multipart());
 }
 
 TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulJsonError) {
@@ -663,7 +663,7 @@ TEST_F(S3PostCompleteActionTest, DeleteNewObject) {
   action_under_test_ptr->set_abort_multipart(true);
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
-              delete_object(_, _, layout_id)).Times(1);
+              delete_object(_, _, _, layout_id, _)).Times(1);
 
   action_under_test_ptr->delete_new_object();
 }
@@ -680,10 +680,8 @@ TEST_F(S3PostCompleteActionTest, DeleteOldObject) {
   action_under_test_ptr->old_layout_id = old_layout_id;
   action_under_test_ptr->set_abort_multipart(true);
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_))
-      .Times(AtLeast(1));
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
-              delete_object(_, _, old_layout_id)).Times(AtLeast(1));
+              delete_object(_, _, _, old_layout_id, _)).Times(AtLeast(1));
 
   action_under_test_ptr->delete_old_object();
 }
@@ -700,9 +698,8 @@ TEST_F(S3PostCompleteActionTest, DelayedDeleteOldObject) {
   action_under_test_ptr->old_layout_id = old_layout_id;
   action_under_test_ptr->set_abort_multipart(true);
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), set_oid(_)).Times(0);
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
-              delete_object(_, _, old_layout_id)).Times(0);
+              delete_object(_, _, _, old_layout_id, _)).Times(0);
 
   action_under_test_ptr->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
@@ -760,7 +757,8 @@ TEST_F(S3PostCompleteActionTest, StartCleanupAbortedSinceValidationFailed) {
       .WillRepeatedly(
            Invoke(this, &S3PostCompleteActionTest::dummy_put_keyval));
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), delete_object(_, _, _))
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              delete_object(_, _, _, _, _))
       .Times(1)
       .WillRepeatedly(
            Invoke(this, &S3PostCompleteActionTest::dummy_delete_object));

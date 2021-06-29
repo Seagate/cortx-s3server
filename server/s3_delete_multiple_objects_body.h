@@ -26,6 +26,8 @@
 #include <string>
 #include <vector>
 
+#include "s3_request_object.h"
+
 class S3DeleteMultipleObjectsBody {
   std::string xml_content;
   bool is_valid;
@@ -37,11 +39,13 @@ class S3DeleteMultipleObjectsBody {
   std::vector<std::string> version_ids;
   bool quiet;
 
+  std::shared_ptr<S3RequestObject> request;
+
   bool parse_and_validate();
 
  public:
   S3DeleteMultipleObjectsBody();
-  void initialize(std::string& xml);
+  void initialize(std::shared_ptr<S3RequestObject> req, std::string &xml);
 
   bool isOK();
 
@@ -82,6 +86,8 @@ class S3DeleteMultipleObjectsBody {
   }
 
   bool is_quiet() { return quiet; }
+
+  bool validate_attrs(const std::string &bckt, const std::string &key);
 };
 
 #endif

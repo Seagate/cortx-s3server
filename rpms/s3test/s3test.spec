@@ -35,7 +35,6 @@ Prefix:     %{_prefix}
 BuildArch:  noarch
 Vendor:     Seagate
 
-Requires:  cortx-s3server
 Requires:  cortx-s3iamcli
 Requires:  s3cmd
 
@@ -52,11 +51,11 @@ Seagate S3 Test Suite
 %install
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/opt/seagate/cortx/s3/scripts/
-cp scripts/* $RPM_BUILD_ROOT/opt/seagate/cortx/s3/scripts/
+cp scripts/s3-sanity/s3-sanity-test.sh $RPM_BUILD_ROOT/opt/seagate/cortx/s3/scripts/s3-sanity-test.sh
 mkdir -p $RPM_BUILD_ROOT/root/
 cp .s3cfg $RPM_BUILD_ROOT/root/.s3cfg
 mkdir -p $RPM_BUILD_ROOT/etc/ssl/stx-s3-clients/s3/
-cp "certs/stx-s3-clients/s3/ca.crt" "$RPM_BUILD_ROOT/etc/ssl/stx-s3-clients/s3/ca.crt"
+cp "ansible/files/certs/stx-s3-clients/s3/ca.crt" "$RPM_BUILD_ROOT/etc/ssl/stx-s3-clients/s3/ca.crt"
 
 %clean
 rm -rf $RPM_BUILD_ROOT

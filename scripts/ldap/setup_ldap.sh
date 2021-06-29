@@ -78,15 +78,15 @@ do
 done
 
 INSTALLDIR="/opt/seagate/cortx/s3/install/ldap"
-yum list installed selinux-policy && yum update -y selinux-policy
-
-# Clean up old configuration if any
+# Clean up old configuration if any for idempotency
 # Removing schemas
 rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
 rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/*ppolicy.ldif
-# Removing configuration files
+# Removing all loaded modules in ldap
 rm -rf /etc/openldap/slapd.d/cn\=config/cn\=module\{0\}.ldif
 rm -rf /etc/openldap/slapd.d/cn\=config/cn\=module\{1\}.ldif
+rm -rf /etc/openldap/slapd.d/cn\=config/cn\=module\{2\}.ldif
+# Removing mdb configuration
 rm -rf /etc/openldap/slapd.d/cn\=config/olcDatabase\=\{2\}mdb
 rm -rf /etc/openldap/slapd.d/cn\=config/olcDatabase\=\{2\}mdb.ldif
 
@@ -155,9 +155,6 @@ echo "started slapd"
 ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $CFG_FILE
 rm -f $CFG_FILE
 
-# restart slapd
-systemctl restart slapd
-
 # add S3 schema
 ldapadd -x -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -f $INSTALLDIR/cn\=\{1\}s3user.ldif -H ldapi:///
 
@@ -192,9 +189,6 @@ ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/s3slapdind
 
 # Set ldap search Result size
 ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/resultssizelimit.ldif
-
-# Restart slapd
-systemctl restart slapd
 
 echo "Encrypting Authserver LDAP password.."
 /opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh -l $LDAPADMINPASS -p /opt/seagate/cortx/auth/resources/authserver.properties
