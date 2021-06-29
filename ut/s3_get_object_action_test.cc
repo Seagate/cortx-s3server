@@ -588,7 +588,8 @@ TEST_F(S3GetObjectActionTest,
 
   EXPECT_EQ(400, action_under_test->first_byte_offset_to_read);
   EXPECT_EQ(7999, action_under_test->last_byte_offset_to_read);
-  EXPECT_EQ(2, action_under_test->total_blocks_to_read);
+  // Data less than 16k uses 16k uunit size
+  EXPECT_EQ(1, action_under_test->total_blocks_to_read);
   EXPECT_EQ(1, call_count_one);
 }
 
@@ -653,7 +654,7 @@ TEST_F(
 
   EXPECT_EQ(4000, action_under_test->first_byte_offset_to_read);
   EXPECT_EQ(6000, action_under_test->last_byte_offset_to_read);
-  EXPECT_EQ(2, action_under_test->total_blocks_to_read);
+  EXPECT_EQ(1, action_under_test->total_blocks_to_read);
   EXPECT_EQ(1, call_count_one);
 }
 
@@ -852,7 +853,7 @@ TEST_F(S3GetObjectActionTest,
   // offset should have 0 and content_length-1, that is complete object
   EXPECT_EQ(0, action_under_test->first_byte_offset_to_read);
   EXPECT_EQ(7999, action_under_test->last_byte_offset_to_read);
-  EXPECT_EQ(2, action_under_test->total_blocks_to_read);
+  EXPECT_EQ(1, action_under_test->total_blocks_to_read);
   EXPECT_EQ(1, call_count_one);
 }
 #if 0
