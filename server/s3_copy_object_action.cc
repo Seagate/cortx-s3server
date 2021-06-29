@@ -401,14 +401,6 @@ void S3CopyObjectAction::set_source_bucket_authorization_metadata() {
       additional_object_metadata->get_encoded_object_acl(),
       additional_bucket_metadata->get_policy_as_json());
   request->set_action_str("GetObject");
-  request->reset_action_list();
-
-  if (!additional_object_metadata->get_tags().empty()) {
-    request->set_action_list("GetObjectTagging");
-  }
-  if (!request->get_header_value("x-amz-acl").empty()) {
-    request->set_action_list("GetObjectAcl");
-  }
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
