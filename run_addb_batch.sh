@@ -1,19 +1,24 @@
 #!/usr/bin/env bash
 
-set -ex
+# Set `addb_dir` to the required output dir
+# Set `s3bpath` to the s3bench executable binary
+# Set `test_plan` to the required test plan in form of json just like in example
+# Run `./run_addb_batch.sh`
 
 addb_dir="/var/log/addb_res/"
 s3bpath="../s3bench/s3bench"
-
-s3bpath=$(realpath -e "$s3bpath")
-mkdir -p "$addb_dir"
-
 test_plan=$(cat <<-EOF
 [
 {"clients": 1, "size": "100b", "reads": 10000},
 {"clients": 5, "size": "10Kb", "reads": 10000}]
 EOF
          )
+
+#################################
+set -ex
+
+s3bpath=$(realpath -e "$s3bpath")
+mkdir -p "$addb_dir"
 
 tests_num=$(echo "$test_plan" |  jq -r ". | length")
 
