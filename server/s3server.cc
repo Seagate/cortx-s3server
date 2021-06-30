@@ -386,16 +386,18 @@ extern "C" evhtp_res dispatch_motr_api_request(evhtp_request_t *req,
 static evhtp_res process_request_data(evhtp_request_t *p_evhtp_req,
                                       evbuf_t *buf, void *arg) {
   RequestObject *p_s3_req = static_cast<RequestObject *>(p_evhtp_req->cbarg);
-  const char *psz_request_id =
-      p_s3_req ? p_s3_req->get_request_id().c_str() : nullptr;
+  std::string request_id = "";
+  if (p_s3_req) {
+    request_id = p_s3_req->get_request_id();
+  }
 
-  s3_log(S3_LOG_DEBUG, psz_request_id, "RequestObject(%p)\n", p_s3_req);
+  s3_log(S3_LOG_DEBUG, request_id, "RequestObject(%p)\n", p_s3_req);
 
   if (p_s3_req) {
     // Data has arrived so disable read timeout
     p_s3_req->stop_client_read_timer();
 
-    s3_log(S3_LOG_DEBUG, psz_request_id,
+    s3_log(S3_LOG_DEBUG, request_id,
            "Received Request body %zu bytes for sock = %d\n",
            evbuffer_get_length(buf), p_evhtp_req->conn->sock);
 
@@ -409,7 +411,7 @@ static evhtp_res process_request_data(evhtp_request_t *p_evhtp_req,
     }
   }
   if (buf) {
-    s3_log(S3_LOG_DEBUG, psz_request_id, "Drain incoming data\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Drain incoming data\n");
     evbuffer_drain(buf, -1);
   }
   return EVHTP_RES_OK;
