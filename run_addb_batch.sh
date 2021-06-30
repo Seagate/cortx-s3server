@@ -24,14 +24,14 @@ tests_num=$(echo "$test_plan" |  jq -r ". | length")
 
 ext="-o ${addb_dir}/test_report.csv -t csv"
 
-for i in $(seq 0 $(( $tests_num - 1 )))
+for i in $(seq 0 $(( tests_num - 1 )))
 do
     clients=$(echo "$test_plan" |  jq -r ".[$i].clients")
     size=$(echo "$test_plan" |  jq -r ".[$i].size")
     reads=$(echo "$test_plan" |  jq -r ".[$i].reads")
 
     echo "i=$i clients=$clients size=$size reads=$reads"
-    (time ./run_addb_test.sh --s3bench_path "$s3bpath" --addb_path "$addb_dir" -c $clients -s $size -r $reads --s3bench_ext "$ext")  2>&1 | tee -a $addb_dir/workload.log
+    (time ./run_addb_test.sh --s3bench_path "$s3bpath" --addb_path "$addb_dir" -c "$clients" -s "$size" -r "$reads" --s3bench_ext "$ext")  2>&1 | tee -a "$addb_dir/workload.log"
 
     ext="-o ${addb_dir}/test_report.csv -t csv+"
 done
