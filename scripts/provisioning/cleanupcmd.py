@@ -63,18 +63,17 @@ class CleanupCmd(SetupCmd):
     """Constructor."""
     try:
       super(CleanupCmd, self).__init__(config)
+      self.get_iam_admin_credentials()
 
-      self.read_ldap_credentials()
     except Exception as e:
       self.logger.error(f'Failed to read ldap credentials, error: {e}')
       raise e
 
-  def process(self, delete_deployment_log = False):
+  def process(self, pre_factory = False):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name} {self.url}")
+    self.logger.info(f"Processing {self.name}")
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
-    self.phase_keys_validate(self.url, self.name)
     self.validate_config_files(self.name)
     self.logger.info("validations completed")
 
@@ -117,11 +116,6 @@ class CleanupCmd(SetupCmd):
         self.delete_topic(bgdeleteconfig.get_msgbus_admin_id, bgdeleteconfig.get_msgbus_topic())
         self.logger.info('Deleting topic completed')
 
-      # revert config files to their origional config state
-      self.logger.info('revert s3 config files started')
-      self.revert_config_files()
-      self.logger.info('revert s3 config files completed')
-
       try:
         self.logger.info("Stopping slapd service...")
         service_list = ["slapd"]
@@ -144,11 +138,15 @@ class CleanupCmd(SetupCmd):
         self.logger.info("delete slapd log file completed")
 
       #delete deployment log
-      if delete_deployment_log == True:
+      if pre_factory == True:
         self.logger.info("Delete S3 Deployment log file started")
         dirpath = "/var/log/seagate/s3/s3deployment"
         self.DeleteDirContents(dirpath)
         self.logger.info("Delete S3 Deployment log file completed")
+        # revert config files to their origional config state
+        self.logger.info('revert s3 config files started')
+        self.revert_config_files()
+        self.logger.info('revert s3 config files completed')
       else:
         self.logger.info("Skipped Delete of S3 Deployment log file")
 
@@ -161,8 +159,8 @@ class CleanupCmd(SetupCmd):
     configFiles = ["/opt/seagate/cortx/auth/resources/authserver.properties",
                   "/opt/seagate/cortx/auth/resources/keystore.properties",
                   "/opt/seagate/cortx/s3/conf/s3config.yaml",
-                  "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"]
-
+                  "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
+                  "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"]
     try:
       for configFile in configFiles:
         if os.path.isfile(configFile):

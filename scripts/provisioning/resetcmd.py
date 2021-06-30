@@ -37,15 +37,16 @@ class ResetCmd(SetupCmd):
     """Constructor."""
     try:
       super(ResetCmd, self).__init__(config)
+      self.get_ldap_root_credentials()
+      self.get_iam_admin_credentials()
     except Exception as e:
       raise e
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name} {self.url}")
+    self.logger.info(f"Processing {self.name}")
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
-    self.phase_keys_validate(self.url, self.name)
     self.validate_config_files(self.name)
     self.logger.info("validations completed")
 
@@ -133,13 +134,11 @@ class ResetCmd(SetupCmd):
 
   def DeleteLdapAccountsUsers(self):
     """Deletes all LDAP data entries e.g. accounts, users, access keys using admin credentials."""
-    self.read_ldap_credentials()
-
     try:
       # Delete data directories e.g. ou=accesskeys, ou=accounts,ou=idp from dc=s3,dc=seagate,dc=com tree"
       LdapAccountAction(self.ldap_root_user, self.rootdn_passwd).delete_s3_ldap_data()
     except Exception as e:
-      self.logger.error(f'ERROR: Failed to delete s3 recoards exists in ldap, error: {e}')
+      self.logger.error(f'ERROR: Failed to delete s3 records exists in ldap, error: {e}')
       raise e
 
     try:
