@@ -59,58 +59,55 @@ class MockS3BucketMetadataFactory : public S3BucketMetadataFactory {
 
 class MockS3ObjectMetadataFactory : public S3ObjectMetadataFactory {
  public:
-  MockS3ObjectMetadataFactory(std::shared_ptr<S3RequestObject> req,
-                              std::shared_ptr<MockS3Motr> s3_motr_mock_ptr =
-                                  nullptr)
-      : S3ObjectMetadataFactory() {
+  explicit MockS3ObjectMetadataFactory(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<MockS3Motr> s3_motr_mock_ptr = {}) {
     mock_object_metadata =
         std::make_shared<MockS3ObjectMetadata>(req, s3_motr_mock_ptr);
   }
-
-  void set_object_list_index_oid(struct m0_uint128 id) {
-    mock_object_metadata->set_object_list_index_oid(id);
+  void set_object_list_index_oid(const struct m0_uint128& id) {
+    mock_object_metadata->set_object_list_index_layout({id});
   }
-
   std::shared_ptr<S3ObjectMetadata> create_object_metadata_obj(
       std::shared_ptr<S3RequestObject> req,
-      struct m0_uint128 indx_oid = {0ULL, 0ULL}) override {
-    mock_object_metadata->set_object_list_index_oid(indx_oid);
+      const struct s3_motr_idx_layout& obj_idx_lo = {},
+      const struct s3_motr_idx_layout& obj_ver_idx_lo = {}) override {
+
+    mock_object_metadata->set_object_list_index_layout(obj_idx_lo);
     return mock_object_metadata;
   }
-
   std::shared_ptr<S3ObjectMetadata> create_object_metadata_obj(
       std::shared_ptr<S3RequestObject> req, const std::string& str_bucket_name,
       const std::string& str_object_name,
-      struct m0_uint128 indx_oid = {0ULL, 0ULL}) override {
-    mock_object_metadata->set_object_list_index_oid(indx_oid);
+      const struct s3_motr_idx_layout& obj_idx_lo = {},
+      const struct s3_motr_idx_layout& obj_ver_idx_lo = {}) override {
+
+    mock_object_metadata->set_object_list_index_layout(obj_idx_lo);
     return mock_object_metadata;
   }
-
   std::shared_ptr<MockS3ObjectMetadata> mock_object_metadata;
 };
 
 class MockS3PartMetadataFactory : public S3PartMetadataFactory {
  public:
   MockS3PartMetadataFactory(std::shared_ptr<S3RequestObject> req,
-                            m0_uint128 indx_oid, std::string upload_id,
-                            int part_num)
-      : S3PartMetadataFactory() {
+                            const m0_uint128& indx_oid, std::string upload_id,
+                            int part_num) {
     mock_part_metadata = std::make_shared<MockS3PartMetadata>(
         req, indx_oid, upload_id, part_num);
   }
-
   std::shared_ptr<S3PartMetadata> create_part_metadata_obj(
-      std::shared_ptr<S3RequestObject> req, struct m0_uint128 indx_oid,
+      std::shared_ptr<S3RequestObject> req, const s3_motr_idx_layout& idx_lo,
       std::string upload_id, int part_num) override {
+
     return mock_part_metadata;
   }
-
   std::shared_ptr<S3PartMetadata> create_part_metadata_obj(
       std::shared_ptr<S3RequestObject> req, std::string upload_id,
       int part_num) override {
+
     return mock_part_metadata;
   }
-
   std::shared_ptr<MockS3PartMetadata> mock_part_metadata;
 };
 
@@ -119,25 +116,23 @@ class MockS3ObjectMultipartMetadataFactory
  public:
   MockS3ObjectMultipartMetadataFactory(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<MockS3Motr> s3_motr_mock_ptr, std::string upload_id)
-      : S3ObjectMultipartMetadataFactory() {
+      std::shared_ptr<MockS3Motr> s3_motr_mock_ptr, std::string upload_id) {
     //  We create object here since we want to set some expectations
     // Before create_bucket_metadata_obj() is called
     mock_object_mp_metadata = std::make_shared<MockS3ObjectMultipartMetadata>(
         req, s3_motr_mock_ptr, upload_id);
   }
-
-  void set_object_list_index_oid(struct m0_uint128 id) {
-    mock_object_mp_metadata->set_object_list_index_oid(id);
+  void set_object_list_index_oid(const struct m0_uint128& id) {
+    mock_object_mp_metadata->set_object_list_index_layout({id});
   }
-
   std::shared_ptr<S3ObjectMetadata> create_object_mp_metadata_obj(
-      std::shared_ptr<S3RequestObject> req, struct m0_uint128 mp_indx_oid,
+      std::shared_ptr<S3RequestObject> req,
+      const struct s3_motr_idx_layout& mp_idx_lo,
       std::string upload_id) override {
-    mock_object_mp_metadata->set_object_list_index_oid(mp_indx_oid);
+
+    mock_object_mp_metadata->set_object_list_index_layout(mp_idx_lo);
     return mock_object_mp_metadata;
   }
-
   // Use this to setup your expectations.
   std::shared_ptr<MockS3ObjectMultipartMetadata> mock_object_mp_metadata;
 };

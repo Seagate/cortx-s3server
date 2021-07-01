@@ -27,6 +27,7 @@
 #include "s3_common_utilities.h"
 #include "s3_stats.h"
 #include "s3_perf_metrics.h"
+#include "s3_m0_uint128_helper.h"
 
 S3GetObjectAction::S3GetObjectAction(
     std::shared_ptr<S3RequestObject> req,
@@ -85,8 +86,8 @@ void S3GetObjectAction::fetch_bucket_info_failed() {
 }
 
 void S3GetObjectAction::fetch_object_info_failed() {
-  object_list_oid = bucket_metadata->get_object_list_index_oid();
-  if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
+  obj_list_idx_lo = bucket_metadata->get_object_list_index_layout();
+  if (zero(obj_list_idx_lo.oid)) {
     s3_log(S3_LOG_ERROR, request_id, "Object not found\n");
     set_s3_error("NoSuchKey");
   } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {

@@ -28,6 +28,7 @@
 #include <string>
 
 #include "motr_helpers.h"
+#include "s3_motr_context.h"
 
 struct m0_fid;
 
@@ -41,6 +42,9 @@ m0_uint128 to_m0_uint128(const std::string &id_str);
 
 void to_string(const struct m0_fid &fid, std::string &s_res);
 bool to_m0_fid(const std::string &encoded, struct m0_fid &dst);
+
+std::string to_string(const struct s3_motr_idx_layout &lo);
+struct s3_motr_idx_layout to_idx_layout(const std::string &encoded);
 
 template <size_t IntSize>
 int non_zero_tmpl_hlpr(const m0_uint128 &id);

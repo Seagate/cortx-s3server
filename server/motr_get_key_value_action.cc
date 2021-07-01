@@ -61,8 +61,9 @@ void MotrGetKeyValueAction::fetch_key_value() {
   } else {
     motr_kv_reader = motr_kvs_reader_factory_ptr->create_motr_kvs_reader(
         request, s3_motr_api);
+    // HTTP request doesn't contain pool version and laoyut_id info
     motr_kv_reader->get_keyval(
-        index_id, request->get_key_name(),
+        {index_id}, request->get_key_name(),
         std::bind(&MotrGetKeyValueAction::fetch_key_value_successful, this),
         std::bind(&MotrGetKeyValueAction::fetch_key_value_failed, this));
   }

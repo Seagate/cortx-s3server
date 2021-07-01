@@ -22,6 +22,7 @@
 #include "s3_error_codes.h"
 #include "s3_log.h"
 #include "base64.h"
+#include "s3_m0_uint128_helper.h"
 
 S3PutObjectACLAction::S3PutObjectACLAction(
     std::shared_ptr<S3RequestObject> req,
@@ -156,7 +157,7 @@ void S3PutObjectACLAction::fetch_bucket_info_failed() {
 void S3PutObjectACLAction::fetch_object_info_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if ((object_metadata->get_state() == S3ObjectMetadataState::missing) ||
-      (object_list_oid.u_lo == 0ULL && object_list_oid.u_hi == 0ULL)) {
+      zero(obj_list_idx_lo.oid)) {
     set_s3_error("NoSuchKey");
   } else if (object_metadata->get_state() ==
              S3ObjectMetadataState::failed_to_launch) {

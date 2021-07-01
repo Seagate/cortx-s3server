@@ -79,7 +79,7 @@ using ::testing::InSequence;
         .WillRepeatedly(Return("last_modified"));                              \
   } while (0)
 
-const struct m0_uint128 zero_object_list_indx_oid = {};
+const struct s3_motr_idx_layout zero_index_layout = {};
 
 class S3GetBucketActionTest : public testing::Test {
  protected:  // You should make the members protected s.t. they can be
@@ -87,7 +87,7 @@ class S3GetBucketActionTest : public testing::Test {
   S3GetBucketActionTest() {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
-    object_list_indx_oid = {0x11ffff, 0x1ffff};
+    index_layout = {{0x11ffff, 0x1ffff}};
     bucket_name = "seagatebucket";
     object_name = "objname";
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
@@ -102,14 +102,14 @@ class S3GetBucketActionTest : public testing::Test {
         std::make_shared<MockS3BucketMetadataFactory>(request_mock);
 
     EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
-                get_object_list_index_oid())
-        .WillRepeatedly(ReturnRef(zero_object_list_indx_oid));
+                get_object_list_index_layout())
+        .WillRepeatedly(ReturnRef(zero_index_layout));
 
     motr_kvs_reader_factory = std::make_shared<MockS3MotrKVSReaderFactory>(
         request_mock, s3_motr_api_mock);
     object_meta_factory =
         std::make_shared<MockS3ObjectMetadataFactory>(request_mock);
-    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
+    object_meta_factory->set_object_list_index_oid(index_layout.oid);
 
     input_headers["Authorization"] = "1";
     EXPECT_CALL(*request_mock, get_in_headers_copy()).Times(1).WillOnce(
@@ -124,7 +124,7 @@ class S3GetBucketActionTest : public testing::Test {
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3Motr> s3_motr_api_mock;
 
-  struct m0_uint128 object_list_indx_oid;
+  struct s3_motr_idx_layout index_layout;
   std::map<std::string, std::pair<int, std::string>> result_keys_values;
   std::map<std::string, std::string> input_headers;
   std::string bucket_name, object_name;
@@ -190,7 +190,7 @@ TEST_F(S3GetBucketActionTest, FetchBucketInfoFailedInternalError) {
 TEST_F(S3GetBucketActionTest, GetNextObjects) {
   CREATE_BUCKET_METADATA_OBJ;
   action_under_test_ptr->bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
+      index_layout);
 
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
               next_keyval(_, _, _, _, _, _))
@@ -420,8 +420,8 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulMultiComponentKey) {
       .WillRepeatedly(InvokeWithoutArgs(
            this, &S3GetBucketActionTest::call_next_keyval_successful));
   EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
-              get_object_list_index_oid())
-      .WillRepeatedly(ReturnRef(object_list_indx_oid));
+              get_object_list_index_layout())
+      .WillRepeatedly(ReturnRef(index_layout));
   action_under_test_ptr->request_prefix.assign("");
   action_under_test_ptr->request_delimiter.assign("/");
   action_under_test_ptr->request_marker_key.assign("boo/");
