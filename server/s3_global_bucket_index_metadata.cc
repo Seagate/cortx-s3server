@@ -28,7 +28,7 @@
 #include "s3_motr_kvs_writer.h"
 #include "s3_request_object.h"
 
-extern struct m0_uint128 global_bucket_list_index_oid;
+extern struct s3_motr_idx_layout global_bucket_list_index_layout;
 
 S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
     std::shared_ptr<S3RequestObject> req, const std::string& str_bucket_name,
@@ -95,7 +95,7 @@ void S3GlobalBucketIndexMetadata::load(std::function<void(void)> on_success,
   motr_kv_reader =
       motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
   motr_kv_reader->get_keyval(
-      global_bucket_list_index_oid, bucket_name,
+      global_bucket_list_index_layout, bucket_name,
       std::bind(&S3GlobalBucketIndexMetadata::load_successful, this),
       std::bind(&S3GlobalBucketIndexMetadata::load_failed, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -108,8 +108,9 @@ void S3GlobalBucketIndexMetadata::load_successful() {
     s3_log(S3_LOG_ERROR, request_id,
            "Json Parsing failed. Index oid = "
            "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
-           global_bucket_list_index_oid.u_hi, global_bucket_list_index_oid.u_lo,
-           bucket_name.c_str(), motr_kv_reader->get_value().c_str());
+           global_bucket_list_index_layout.oid.u_hi,
+           global_bucket_list_index_layout.oid.u_lo, bucket_name.c_str(),
+           motr_kv_reader->get_value().c_str());
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
            S3_IEM_METADATA_CORRUPTED_JSON);
 
@@ -155,7 +156,7 @@ void S3GlobalBucketIndexMetadata::save(std::function<void(void)> on_success,
   motr_kv_writer =
       motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   motr_kv_writer->put_keyval(
-      global_bucket_list_index_oid, bucket_name, this->to_json(),
+      global_bucket_list_index_layout, bucket_name, this->to_json(),
       std::bind(&S3GlobalBucketIndexMetadata::save_successful, this),
       std::bind(&S3GlobalBucketIndexMetadata::save_failed, this));
 
@@ -194,7 +195,7 @@ void S3GlobalBucketIndexMetadata::remove(std::function<void(void)> on_success,
   motr_kv_writer =
       motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   motr_kv_writer->delete_keyval(
-      global_bucket_list_index_oid, bucket_name,
+      global_bucket_list_index_layout, bucket_name,
       std::bind(&S3GlobalBucketIndexMetadata::remove_successful, this),
       std::bind(&S3GlobalBucketIndexMetadata::remove_failed, this));
 

@@ -63,7 +63,7 @@ getent passwd haproxy 2>/dev/null || { \
   exit 1; }
 
 getent passwd ldap 2>/dev/null || { \
-  echo -e "\n*ERROR* User 'ldap' missing. Please install openldap-servers package.";
+  echo -e "\n*ERROR* User 'ldap' missing. Please install symas-openldap-servers package.";
   exit 1; }
 
 %files

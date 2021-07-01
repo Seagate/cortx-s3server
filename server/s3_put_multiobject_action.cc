@@ -226,7 +226,7 @@ void S3PutMultiObjectAction::fetch_multipart_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   object_multipart_metadata =
       object_mp_metadata_factory->create_object_mp_metadata_obj(
-          request, bucket_metadata->get_multipart_index_oid(), upload_id);
+          request, bucket_metadata->get_multipart_index_layout(), upload_id);
 
   object_multipart_metadata->load(
       std::bind(&S3PutMultiObjectAction::next, this),
@@ -304,7 +304,8 @@ void S3PutMultiObjectAction::save_multipart_metadata_failed() {
 void S3PutMultiObjectAction::fetch_firstpart_info() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   part_metadata = part_metadata_factory->create_part_metadata_obj(
-      request, object_multipart_metadata->get_part_index_oid(), upload_id, 1);
+      request, object_multipart_metadata->get_part_index_layout(), upload_id,
+      1);
   part_metadata->load(
       std::bind(&S3PutMultiObjectAction::next, this),
       std::bind(&S3PutMultiObjectAction::fetch_firstpart_info_failed, this), 1);
@@ -600,7 +601,7 @@ void S3PutMultiObjectAction::save_metadata() {
     return;
   }
   part_metadata = part_metadata_factory->create_part_metadata_obj(
-      request, object_multipart_metadata->get_part_index_oid(), upload_id,
+      request, object_multipart_metadata->get_part_index_layout(), upload_id,
       part_number);
 
   // to rest Date and Last-Modfied time object metadata

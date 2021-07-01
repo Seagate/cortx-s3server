@@ -72,8 +72,8 @@ class S3ObjectMetadataTest : public testing::Test {
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
 
-    object_list_index_oid = {0xffff, 0xffff};
-    objects_version_list_index_oid = {0xffff, 0xfff0};
+    object_list_index_layout = {{0xffff, 0xffff}};
+    objects_version_list_index_layout = {{0xffff, 0xfff0}};
 
     metadata_obj_under_test.reset(new S3ObjectMetadata(
         ptr_mock_request, false, "", motr_kvs_reader_factory,
@@ -81,10 +81,10 @@ class S3ObjectMetadataTest : public testing::Test {
     metadata_obj_under_test_with_oid.reset(new S3ObjectMetadata(
         ptr_mock_request, false, "", motr_kvs_reader_factory,
         motr_kvs_writer_factory, ptr_mock_s3_motr_api));
-    metadata_obj_under_test_with_oid->set_object_list_index_oid(
-        object_list_index_oid);
-    metadata_obj_under_test_with_oid->set_objects_version_list_index_oid(
-        objects_version_list_index_oid);
+    metadata_obj_under_test_with_oid->set_object_list_index_layout(
+        object_list_index_layout);
+    metadata_obj_under_test_with_oid->set_objects_version_list_index_layout(
+        objects_version_list_index_layout);
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
@@ -95,8 +95,8 @@ class S3ObjectMetadataTest : public testing::Test {
   S3CallBack s3objectmetadata_callbackobj;
   std::shared_ptr<S3ObjectMetadata> metadata_obj_under_test;
   std::shared_ptr<S3ObjectMetadata> metadata_obj_under_test_with_oid;
-  struct m0_uint128 object_list_index_oid;
-  struct m0_uint128 objects_version_list_index_oid;
+  struct s3_motr_idx_layout object_list_index_layout;
+  struct s3_motr_idx_layout objects_version_list_index_layout;
   int call_count_one;
   std::string bucket_name, object_name;
 
@@ -135,7 +135,7 @@ class S3MultipartObjectMetadataTest : public testing::Test {
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
 
-    object_list_index_oid = {0xffff, 0xffff};
+    object_list_index_layout = {{0xffff, 0xffff}};
     metadata_obj_under_test.reset(new S3ObjectMetadata(
         ptr_mock_request, true, "1234-1234", motr_kvs_reader_factory,
         motr_kvs_writer_factory, ptr_mock_s3_motr_api));
@@ -143,8 +143,8 @@ class S3MultipartObjectMetadataTest : public testing::Test {
     metadata_obj_under_test_with_oid.reset(new S3ObjectMetadata(
         ptr_mock_request, true, "1234-1234", motr_kvs_reader_factory,
         motr_kvs_writer_factory, ptr_mock_s3_motr_api));
-    metadata_obj_under_test_with_oid->set_object_list_index_oid(
-        object_list_index_oid);
+    metadata_obj_under_test_with_oid->set_object_list_index_layout(
+        object_list_index_layout);
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
@@ -155,7 +155,7 @@ class S3MultipartObjectMetadataTest : public testing::Test {
   S3CallBack s3objectmetadata_callbackobj;
   std::shared_ptr<S3ObjectMetadata> metadata_obj_under_test;
   std::shared_ptr<S3ObjectMetadata> metadata_obj_under_test_with_oid;
-  struct m0_uint128 object_list_index_oid;
+  struct s3_motr_idx_layout object_list_index_layout;
   int call_count_one;
   std::string bucket_name, object_name;
 
@@ -168,9 +168,10 @@ TEST_F(S3ObjectMetadataTest, ConstructorTest) {
   std::string index_name;
   EXPECT_STREQ("s3user", metadata_obj_under_test->user_name.c_str());
   EXPECT_STREQ("s3account", metadata_obj_under_test->account_name.c_str());
-  EXPECT_OID_EQ(zero_oid, metadata_obj_under_test->object_list_index_oid);
-  EXPECT_OID_EQ(object_list_index_oid,
-                metadata_obj_under_test_with_oid->object_list_index_oid);
+  EXPECT_OID_EQ(zero_oid,
+                metadata_obj_under_test->object_list_index_layout.oid);
+  EXPECT_OID_EQ(object_list_index_layout.oid,
+                metadata_obj_under_test_with_oid->object_list_index_layout.oid);
   EXPECT_OID_EQ(zero_oid, metadata_obj_under_test->old_oid);
   EXPECT_OID_EQ(M0_ID_APP, metadata_obj_under_test->oid);
   EXPECT_STREQ(
@@ -197,9 +198,10 @@ TEST_F(S3MultipartObjectMetadataTest, ConstructorTest) {
   std::string index_name;
   EXPECT_STREQ("s3user", metadata_obj_under_test->user_name.c_str());
   EXPECT_STREQ("s3account", metadata_obj_under_test->account_name.c_str());
-  EXPECT_OID_EQ(zero_oid, metadata_obj_under_test->object_list_index_oid);
-  EXPECT_OID_EQ(object_list_index_oid,
-                metadata_obj_under_test_with_oid->object_list_index_oid);
+  EXPECT_OID_EQ(zero_oid,
+                metadata_obj_under_test->object_list_index_layout.oid);
+  EXPECT_OID_EQ(object_list_index_layout.oid,
+                metadata_obj_under_test_with_oid->object_list_index_layout.oid);
   EXPECT_OID_EQ(zero_oid, metadata_obj_under_test->old_oid);
   EXPECT_OID_EQ(M0_ID_APP, metadata_obj_under_test->oid);
   EXPECT_STREQ(
@@ -260,16 +262,17 @@ TEST_F(S3ObjectMetadataTest, GetSet) {
   EXPECT_OID_EQ(myoid, metadata_obj_under_test->oid);
   EXPECT_TRUE(metadata_obj_under_test->motr_oid_str != "");
 
-  metadata_obj_under_test->object_list_index_oid = myoid;
-  EXPECT_OID_EQ(myoid, metadata_obj_under_test->get_object_list_index_oid());
+  metadata_obj_under_test->object_list_index_layout = {myoid};
+  EXPECT_OID_EQ(myoid,
+                metadata_obj_under_test->get_object_list_index_layout().oid);
 
   metadata_obj_under_test->set_old_oid(myoid);
   EXPECT_OID_EQ(myoid, metadata_obj_under_test->old_oid);
   EXPECT_TRUE(metadata_obj_under_test->motr_old_oid_str != "");
 
-  metadata_obj_under_test->set_part_index_oid(myoid);
-  EXPECT_OID_EQ(myoid, metadata_obj_under_test->part_index_oid);
-  EXPECT_TRUE(metadata_obj_under_test->motr_part_oid_str != "");
+  metadata_obj_under_test->set_part_index_layout({myoid});
+  EXPECT_OID_EQ(myoid, metadata_obj_under_test->part_index_layout.oid);
+  EXPECT_TRUE(metadata_obj_under_test->motr_part_layout_str != "");
 
   metadata_obj_under_test->bucket_name = "seagatebucket";
   EXPECT_STREQ("BUCKET/seagatebucket",
@@ -311,7 +314,8 @@ TEST_F(S3ObjectMetadataTest, AddUserDefinedAttribute) {
 TEST_F(S3ObjectMetadataTest, Load) {
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
               get_keyval(_, "objectname", _, _)).Times(1);
-  metadata_obj_under_test->set_object_list_index_oid(object_list_index_oid);
+  metadata_obj_under_test->set_object_list_index_layout(
+      object_list_index_layout);
 
   metadata_obj_under_test->load(
       std::bind(&S3CallBack::on_success, &s3objectmetadata_callbackobj),
@@ -332,11 +336,14 @@ TEST_F(S3ObjectMetadataTest, LoadSuccessful) {
   metadata_obj_under_test->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3objectmetadata_callbackobj);
 
+  std::string s_retval =
+      "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}";
+
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
-      .WillRepeatedly(Return(
-           "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));
+      .WillRepeatedly(ReturnRef(s_retval));
   metadata_obj_under_test->requested_bucket_name = "seagate_bucket";
   metadata_obj_under_test->requested_object_name = "3kfile";
+
   metadata_obj_under_test->load_successful();
   EXPECT_EQ(metadata_obj_under_test->state, S3ObjectMetadataState::present);
   EXPECT_TRUE(s3objectmetadata_callbackobj.success_called);
@@ -353,9 +360,11 @@ TEST_F(S3ObjectMetadataTest, LoadMetadataFail) {
   metadata_obj_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
 
+  std::string s_retval =
+      "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}";
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
-      .WillRepeatedly(Return(
-           "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));
+      .WillRepeatedly(ReturnRef(s_retval));
+
   metadata_obj_under_test->load_successful();
   EXPECT_EQ(metadata_obj_under_test->state, S3ObjectMetadataState::failed);
   EXPECT_FALSE(s3objectmetadata_callbackobj.success_called);
@@ -367,11 +376,12 @@ TEST_F(S3ObjectMetadataTest, LoadSuccessInvalidJson) {
 
   metadata_obj_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
+  std::string s_retval;
 
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_state())
       .WillRepeatedly(Return(S3MotrKVSReaderOpState::present));
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
-      .WillRepeatedly(Return(""));
+      .WillRepeatedly(ReturnRef(s_retval));
   metadata_obj_under_test->load_successful();
   EXPECT_EQ(metadata_obj_under_test->state, S3ObjectMetadataState::invalid);
   EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
@@ -431,9 +441,10 @@ TEST_F(S3ObjectMetadataTest, LoadObjectInfoFailedMetadataFailedToLaunch) {
 }
 
 TEST_F(S3ObjectMetadataTest, SaveMeatdataIndexOIDPresent) {
-  metadata_obj_under_test->set_object_list_index_oid(object_list_index_oid);
-  metadata_obj_under_test->set_objects_version_list_index_oid(
-      objects_version_list_index_oid);
+  metadata_obj_under_test->set_object_list_index_layout(
+      object_list_index_layout);
+  metadata_obj_under_test->set_objects_version_list_index_layout(
+      objects_version_list_index_layout);
 
   // Generate version id for tests
   metadata_obj_under_test->regenerate_version_id();
@@ -450,7 +461,8 @@ TEST_F(S3ObjectMetadataTest, SaveMetadataWithoutParam) {
       motr_kvs_writer_factory->mock_motr_kvs_writer;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, _, _, _, _)).Times(1);
-  metadata_obj_under_test->set_object_list_index_oid(object_list_index_oid);
+  metadata_obj_under_test->set_object_list_index_layout(
+      object_list_index_layout);
 
   metadata_obj_under_test->save_metadata();
   EXPECT_STREQ(
@@ -475,7 +487,8 @@ TEST_F(S3ObjectMetadataTest, SaveMetadataWithParam) {
       motr_kvs_writer_factory->mock_motr_kvs_writer;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, _, _, _, _)).Times(1);
-  metadata_obj_under_test->set_object_list_index_oid(object_list_index_oid);
+  metadata_obj_under_test->set_object_list_index_layout(
+      object_list_index_layout);
 
   metadata_obj_under_test->save_metadata(
       std::bind(&S3CallBack::on_success, &s3objectmetadata_callbackobj),
@@ -537,7 +550,8 @@ TEST_F(S3ObjectMetadataTest, SaveMetadataFailedToLaunch) {
 TEST_F(S3ObjectMetadataTest, Remove) {
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               delete_keyval(_, _, _, _)).Times(1);
-  metadata_obj_under_test->set_object_list_index_oid(object_list_index_oid);
+  metadata_obj_under_test->set_object_list_index_layout(
+      object_list_index_layout);
 
   metadata_obj_under_test->remove(
       std::bind(&S3CallBack::on_success, &s3objectmetadata_callbackobj),
@@ -550,8 +564,8 @@ TEST_F(S3ObjectMetadataTest, RemoveObjectMetadataSuccessful) {
   // Expect to call Version remove/delete
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               delete_keyval(_, _, _, _)).Times(1);
-  metadata_obj_under_test->set_objects_version_list_index_oid(
-      objects_version_list_index_oid);
+  metadata_obj_under_test->set_objects_version_list_index_layout(
+      objects_version_list_index_layout);
   // Generate version id for tests
   metadata_obj_under_test->regenerate_version_id();
 

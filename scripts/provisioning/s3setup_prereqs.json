@@ -1,6 +1,6 @@
 {
   "post_install": {
-    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
     "pip3s": ["s3confstore", "cryptography", "s3cipher"],
     "files": [
       "file:/etc/machine-id",
@@ -18,7 +18,7 @@
     ]
   },
   "config": {
-    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
     "pip3s": ["s3confstore", "cryptography", "s3cipher"],
     "services": ["sshd", "haproxy", "slapd", "rsyslog"],
     "files": [
@@ -37,7 +37,7 @@
     ]
   },
   "init": {
-    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
     "pip3s": ["s3confstore", "cryptography", "s3cipher"],
     "services": ["sshd", "haproxy", "slapd", "rsyslog"],
     "files": [
@@ -56,25 +56,25 @@
     ]
   },
   "reset": {
-    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
     "pip3s": ["s3confstore", "cryptography", "s3cipher"]
   },
   "prepare": {
-    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
     "pip3s": ["s3confstore", "cryptography", "s3cipher"]
   },
   "cleanup": {
-    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
     "pip3s": ["s3confstore", "cryptography", "s3cipher"]
   },
   "test" :
   {
-    "rpms": ["openldap-servers", "openldap-clients", "s3cmd", "s3iamcli"],
+    "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "s3cmd", "s3iamcli"],
     "pip3s": ["s3confstore", "cryptography", "s3cipher"]
   },
   "preupgrade" :
   {
-    "rpms": ["openldap-servers", "openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
+    "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
     "pip3s": ["s3confstore", "cryptography", "s3cipher"],
     "files": [
       "file:/opt/seagate/cortx/s3/conf/s3config.yaml",

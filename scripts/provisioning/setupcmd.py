@@ -448,6 +448,16 @@ class SetupCmd(object):
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
 
+  def disable_services(self, s3services_list):
+    """Disable services specified as parameter."""
+    for service_name in s3services_list:
+      cmd = ['/bin/systemctl', 'disable', f'{service_name}']
+      handler = SimpleProcess(cmd)
+      self.logger.info(f"Disabling {service_name}")
+      res_op, res_err, res_rc = handler.run()
+      if res_rc != 0:
+        raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
+
   def delete_mdb_files(self):
     """Deletes ldap mdb files."""
     for files in os.listdir(self.ldap_mdb_folder):

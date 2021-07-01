@@ -25,7 +25,10 @@
 #include "s3_factory.h"
 #include "s3_iem.h"
 #include "s3_log.h"
+#include "s3_motr_kvs_reader.h"
+#include "s3_motr_kvs_writer.h"
 #include "s3_part_metadata.h"
+#include "s3_request_object.h"
 
 void S3PartMetadata::initialize(std::string uploadid, int part_num) {
   bucket_name = request->get_bucket_name();
@@ -64,37 +67,22 @@ S3PartMetadata::S3PartMetadata(
     std::shared_ptr<S3RequestObject> req, std::string uploadid, int part_num,
     std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory)
-    : request(req) {
-  request_id = request->get_request_id();
-  stripped_request_id = request->get_stripped_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
-  initialize(uploadid, part_num);
-  part_index_name_oid = {0ULL, 0ULL};
-
-  if (kv_reader_factory) {
-    motr_kv_reader_factory = kv_reader_factory;
-  } else {
-    motr_kv_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
-  }
-
-  if (kv_writer_factory) {
-    mote_kv_writer_factory = kv_writer_factory;
-  } else {
-    mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
-  }
-}
+    : S3PartMetadata(std::move(req), s3_motr_idx_layout{}, std::move(uploadid),
+                     part_num, std::move(kv_reader_factory),
+                     std::move(kv_writer_factory)) {}
 
 S3PartMetadata::S3PartMetadata(
-    std::shared_ptr<S3RequestObject> req, struct m0_uint128 oid,
-    std::string uploadid, int part_num,
-    std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
+    std::shared_ptr<S3RequestObject> req,
+    const struct s3_motr_idx_layout& part_index_layout, std::string uploadid,
+    int part_num, std::shared_ptr<S3MotrKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3MotrKVSWriterFactory> kv_writer_factory)
-    : request(req) {
+    : request(std::move(req)), part_index_layout(part_index_layout) {
+
   request_id = request->get_request_id();
   stripped_request_id = request->get_stripped_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
-  initialize(uploadid, part_num);
-  part_index_name_oid = oid;
+
+  initialize(std::move(uploadid), part_num);
 
   if (kv_reader_factory) {
     motr_kv_reader_factory = kv_reader_factory;
@@ -188,7 +176,7 @@ void S3PartMetadata::load(std::function<void(void)> on_success,
   motr_kv_reader =
       motr_kv_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
 
-  motr_kv_reader->get_keyval(part_index_name_oid, str_part_num,
+  motr_kv_reader->get_keyval(part_index_layout, str_part_num,
                              std::bind(&S3PartMetadata::load_successful, this),
                              std::bind(&S3PartMetadata::load_failed, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -200,12 +188,15 @@ bool S3PartMetadata::validate_on_request() {
 
 void S3PartMetadata::load_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Found part metadata\n");
+
   if (this->from_json(motr_kv_reader->get_value()) != 0) {
+
     s3_log(S3_LOG_ERROR, request_id,
            "Json Parsing failed. Index oid = "
            "%" SCNx64 ":%" SCNx64 ", Key = %s, Value = %s\n",
-           part_index_name_oid.u_hi, part_index_name_oid.u_lo,
+           part_index_layout.oid.u_hi, part_index_layout.oid.u_lo,
            str_part_num.c_str(), motr_kv_reader->get_value().c_str());
+
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
            S3_IEM_METADATA_CORRUPTED_JSON);
 
@@ -217,7 +208,7 @@ void S3PartMetadata::load_successful() {
            "%" SCNx64 ":%" SCNx64
            ", req_bucket = %s, got_bucket = %s, req_object = %s, got_object = "
            "%s\n",
-           part_index_name_oid.u_hi, part_index_name_oid.u_lo,
+           part_index_layout.oid.u_hi, part_index_layout.oid.u_lo,
            request->get_bucket_name().c_str(), bucket_name.c_str(),
            request->get_object_name().c_str(), object_name.c_str());
 
@@ -301,7 +292,9 @@ void S3PartMetadata::create_part_index() {
 
 void S3PartMetadata::create_part_index_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Created index for part info\n");
-  part_index_name_oid = motr_kv_writer->get_oid();
+
+  part_index_layout = motr_kv_writer->get_index_layout();
+
   if (put_metadata) {
     save_metadata();
   } else {
@@ -338,7 +331,7 @@ void S3PartMetadata::save_metadata() {
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
   motr_kv_writer->put_keyval(
-      part_index_name_oid, part_number, this->to_json(),
+      part_index_layout, part_number, this->to_json(),
       std::bind(&S3PartMetadata::save_metadata_successful, this),
       std::bind(&S3PartMetadata::save_metadata_failed, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -378,7 +371,7 @@ void S3PartMetadata::remove(std::function<void(void)> on_success,
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
   motr_kv_writer->delete_keyval(
-      part_index_name_oid, part_removal,
+      part_index_layout, part_removal,
       std::bind(&S3PartMetadata::remove_successful, this),
       std::bind(&S3PartMetadata::remove_failed, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -411,7 +404,7 @@ void S3PartMetadata::remove_index(std::function<void(void)> on_success,
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
   motr_kv_writer->delete_index(
-      part_index_name_oid,
+      part_index_layout,
       std::bind(&S3PartMetadata::remove_index_successful, this),
       std::bind(&S3PartMetadata::remove_index_failed, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);

@@ -182,8 +182,8 @@ TEST_F(S3GetMultipartBucketActionTest, FetchBucketInfoFailedInternalError) {
 
 TEST_F(S3GetMultipartBucketActionTest, GetNextObjects) {
   CREATE_BUCKET_METADATA_OBJ;
-  action_under_test_ptr->bucket_metadata->set_multipart_index_oid(
-      object_list_indx_oid);
+  action_under_test_ptr->bucket_metadata->set_multipart_index_layout(
+      {object_list_indx_oid});
 
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader),
               next_keyval(_, _, _, _, _, _)).Times(1);

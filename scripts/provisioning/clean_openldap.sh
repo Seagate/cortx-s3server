@@ -31,7 +31,9 @@ die_with_error () {
 
 # Attempt ldap clean up since ansible openldap setup is not idempotent
 systemctl stop slapd 2>/dev/null
-yum remove -y openldap-servers openldap-clients
+# remove old openldap pkg if installed
+yum remove -y openldap-servers openldap-clients || /bin/true
+yum remove -y symas-openldap symas-openldap-servers symas-openldap-clients
 
 rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
 rm -rf /var/lib/ldap/*
@@ -39,5 +41,5 @@ rm -f /etc/sysconfig/slapd* 2>/dev/null || /bin/true
 rm -f /etc/openldap/slapd* 2>/dev/null || /bin/true
 rm -rf /etc/openldap/slapd.d/*
 
-yum install -y openldap-servers openldap-clients
+yum install -y symas-openldap symas-openldap-servers symas-openldap-clients
 systemctl start slapd 2>/dev/null || die_with_error "slapd could not be started!"

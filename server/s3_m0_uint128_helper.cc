@@ -83,4 +83,27 @@ bool to_m0_fid(const std::string &encoded, struct m0_fid &dst) {
   return f_correct;
 }
 
+std::string to_string(const struct s3_motr_idx_layout &lo) {
+
+  s3_log(S3_LOG_DEBUG, "",
+         "Entering with oid: %" SCNx64 ",%" SCNx64 "; fid: %" SCNx64 ",%" SCNx64
+         "; layout_type: %08X\n",
+         lo.oid.u_lo, lo.oid.u_hi, lo.pver.f_container, lo.pver.f_key,
+         lo.layout_type);
+
+  return base64_encode(reinterpret_cast<unsigned char const *>(&lo),
+                       sizeof(struct s3_motr_idx_layout));
+}
+
+struct s3_motr_idx_layout to_idx_layout(const std::string &encoded) {
+
+  struct s3_motr_idx_layout lo;
+  memset(&lo, 0, sizeof lo);
+
+  std::string s_decoded = base64_decode(encoded);
+  memcpy(&lo, s_decoded.c_str(), s_decoded.length());
+
+  return lo;
+}
+
 }  // namespace S3M0Uint128Helper
