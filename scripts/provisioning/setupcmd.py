@@ -340,21 +340,6 @@ class SetupCmd(object):
       argument_file_confstore = S3CortxConfStore(arg_file, 'argument_file_index')
       # Extract keys from argument file
       arg_keys_list = argument_file_confstore.get_all_keys()
-      # Since get_all_keys misses out listing entries inside
-      # an array, the below code is required to fetch such
-      # array entries. The result will be stored in a full
-      # list which will be complete and will be used to verify
-      # keys required for each phase.
-      full_arg_keys_list = []
-      for key in arg_keys_list:
-        if ((key.find('[') != -1) and (key.find(']') != -1)):
-          storage_set = self.get_confvalue(key)
-          base_key = key
-          for set_key in storage_set:
-            key = base_key + ">" + set_key
-            full_arg_keys_list.append(key)
-        else:
-          full_arg_keys_list.append(key)
 
       # Below algorithm uses tokenization
       # of both yardstick and argument key
@@ -373,7 +358,7 @@ class SetupCmd(object):
       for key_yard in yardstick_list:
         key_yard_token_list = re.split('>|\[|\]',key_yard)
         key_match_found = False
-        for key_arg in full_arg_keys_list:
+        for key_arg in arg_keys_list:
           if key_match_found is False:
             key_arg_token_list = re.split('>|\[|\]',key_arg)
             if len(key_yard_token_list) == len(key_arg_token_list):

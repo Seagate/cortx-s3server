@@ -104,15 +104,6 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
     cs_conf_file = S3CortxConfStore(config=conf_file, index=conf_file)
     conf_file_keys = cs_conf_file.get_all_keys()
 
-    # Handle the special scenario where we have array in the config file
-    # 1)search for keys with [] in config
-    # 2)delete these keys/values in config
-    for key in conf_new_sample_keys:
-        if ((key.find('[') != -1) and (key.find(']') != -1)):
-            # deleting key[0]..[n] has issues in confstore deletes
-            # so deleting the root key which will deletes all the child entires
-            cs_conf_file.delete_key(key[:key.find('[')], True)
-
     # deleted keys dont go away in already loaded index.
     # so we load at another index and re-populate conf_file_keys again.
     conf_file_keys_after_delete = S3CortxConfStore(config=conf_file, index=conf_file+"after_delete")
