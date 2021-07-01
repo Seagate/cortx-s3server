@@ -30,7 +30,7 @@
 #include "s3_stats.h"
 #include "s3_uri_to_motr_oid.h"
 
-extern struct m0_uint128 bucket_metadata_list_index_oid;
+extern struct s3_motr_idx_layout bucket_metadata_list_index_layout;
 
 S3BucketMetadataV1::S3BucketMetadataV1(
     const S3BucketMetadata& tmplt, std::shared_ptr<MotrAPI> motr_api,
@@ -73,15 +73,6 @@ S3BucketMetadataV1::S3BucketMetadataV1(
 
 S3BucketMetadataV1::~S3BucketMetadataV1() = default;
 
-struct m0_uint128 S3BucketMetadataV1::get_bucket_metadata_list_index_oid() {
-  return bucket_metadata_list_index_oid;
-}
-
-void S3BucketMetadataV1::set_bucket_metadata_list_index_oid(
-    struct m0_uint128 oid) {
-  bucket_metadata_list_index_oid = oid;
-}
-
 void S3BucketMetadataV1::set_state(S3BucketMetadataState state) {
   this->state = state;
 }
@@ -98,7 +89,7 @@ S3BucketMetadataV1::get_global_bucket_index_metadata() {
 }
 
 // Load {B1, A1} in global_bucket_list_index_oid, followed by {A1/B1, md} in
-// bucket_metadata_list_index_oid
+// bucket_metadata_list_index_layout
 void S3BucketMetadataV1::load(const S3BucketMetadata& src,
                               CallbackHandlerType on_load) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
@@ -167,7 +158,7 @@ void S3BucketMetadataV1::load_bucket_info() {
       motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
   // example key "AccountId_1/bucket_x'
   motr_kv_reader->get_keyval(
-      bucket_metadata_list_index_oid, get_bucket_metadata_index_key_name(),
+      bucket_metadata_list_index_layout, get_bucket_metadata_index_key_name(),
       std::bind(&S3BucketMetadataV1::load_bucket_info_successful, this),
       std::bind(&S3BucketMetadataV1::load_bucket_info_failed, this));
 
@@ -187,8 +178,8 @@ void S3BucketMetadataV1::load_bucket_info_successful() {
     s3_log(S3_LOG_ERROR, request_id,
            "Json Parsing failed. Index oid ="
            "%" SCNx64 " : %" SCNx64 ", Key = %s Value = %s\n",
-           bucket_metadata_list_index_oid.u_hi,
-           bucket_metadata_list_index_oid.u_lo, bucket_name.c_str(),
+           bucket_metadata_list_index_layout.oid.u_hi,
+           bucket_metadata_list_index_layout.oid.u_lo, bucket_name.c_str(),
            motr_kv_reader->get_value().c_str());
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
            S3_IEM_METADATA_CORRUPTED_JSON);
@@ -224,7 +215,7 @@ void S3BucketMetadataV1::load_bucket_info_failed() {
 }
 
 // Create {B1, A1} in global_bucket_list_index_oid, followed by {A1/B1, md} in
-// bucket_metadata_list_index_oid
+// bucket_metadata_list_index_layout
 void S3BucketMetadataV1::save(const S3BucketMetadata& src,
                               CallbackHandlerType on_save) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
@@ -306,10 +297,10 @@ void S3BucketMetadataV1::create_object_list_index() {
         motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
   S3UriToMotrOID(s3_motr_api, salted_object_list_index_name.c_str(), request_id,
-                 &object_list_index_oid, S3MotrEntityType::index);
+                 &object_list_index_layout.oid, S3MotrEntityType::index);
 
   motr_kv_writer->create_index_with_oid(
-      object_list_index_oid,
+      object_list_index_layout.oid,
       std::bind(&S3BucketMetadataV1::create_object_list_index_successful, this),
       std::bind(&S3BucketMetadataV1::create_object_list_index_failed, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -318,6 +309,7 @@ void S3BucketMetadataV1::create_object_list_index() {
 void S3BucketMetadataV1::create_object_list_index_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   collision_attempt_count = 0;
+  object_list_index_layout = motr_kv_writer->get_index_layout();
   create_multipart_list_index();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -376,16 +368,17 @@ void S3BucketMetadataV1::create_object_list_index_failed() {
 
 void S3BucketMetadataV1::create_multipart_list_index() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
   if (!motr_kv_writer) {
     motr_kv_writer =
         motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-
   S3UriToMotrOID(s3_motr_api, salted_multipart_list_index_name.c_str(),
-                 request_id, &multipart_index_oid, S3MotrEntityType::index);
+                 request_id, &multipart_index_layout.oid,
+                 S3MotrEntityType::index);
 
   motr_kv_writer->create_index_with_oid(
-      multipart_index_oid,
+      multipart_index_layout.oid,
       std::bind(&S3BucketMetadataV1::create_multipart_list_index_successful,
                 this),
       std::bind(&S3BucketMetadataV1::create_multipart_list_index_failed, this));
@@ -394,6 +387,7 @@ void S3BucketMetadataV1::create_multipart_list_index() {
 
 void S3BucketMetadataV1::create_multipart_list_index_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  multipart_index_layout = motr_kv_writer->get_index_layout();
   create_objects_version_list_index();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -422,11 +416,11 @@ void S3BucketMetadataV1::create_objects_version_list_index() {
   }
   // version list index oid
   S3UriToMotrOID(s3_motr_api, salted_objects_version_list_index_name.c_str(),
-                 request_id, &objects_version_list_index_oid,
+                 request_id, &objects_version_list_index_layout.oid,
                  S3MotrEntityType::index);
 
   motr_kv_writer->create_index_with_oid(
-      objects_version_list_index_oid,
+      objects_version_list_index_layout.oid,
       std::bind(
           &S3BucketMetadataV1::create_objects_version_list_index_successful,
           this),
@@ -437,6 +431,7 @@ void S3BucketMetadataV1::create_objects_version_list_index() {
 
 void S3BucketMetadataV1::create_objects_version_list_index_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  objects_version_list_index_layout = motr_kv_writer->get_index_layout();
   create_extended_metadata_index();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -467,10 +462,10 @@ void S3BucketMetadataV1::create_extended_metadata_index() {
   }
   // extended metadata list index oid
   S3UriToMotrOID(s3_motr_api, extended_metadata_index_name.c_str(), request_id,
-                 &extended_metadata_index_oid, S3MotrEntityType::index);
+                 &extended_metadata_index_layout.oid, S3MotrEntityType::index);
 
   motr_kv_writer->create_index_with_oid(
-      extended_metadata_index_oid,
+      extended_metadata_index_layout.oid,
       std::bind(&S3BucketMetadataV1::create_extended_metadata_index_successful,
                 this),
       std::bind(&S3BucketMetadataV1::create_extended_metadata_index_failed,
@@ -480,6 +475,7 @@ void S3BucketMetadataV1::create_extended_metadata_index() {
 
 void S3BucketMetadataV1::create_extended_metadata_index_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  extended_metadata_index_layout = motr_kv_writer->get_index_layout();
   save_bucket_info(true);
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -513,7 +509,7 @@ void S3BucketMetadataV1::save_bucket_info(bool clean_glob_on_err) {
   }
   should_cleanup_global_idx = clean_glob_on_err;
   motr_kv_writer->put_keyval(
-      bucket_metadata_list_index_oid, get_bucket_metadata_index_key_name(),
+      bucket_metadata_list_index_layout, get_bucket_metadata_index_key_name(),
       this->to_json(),
       std::bind(&S3BucketMetadataV1::save_bucket_info_successful, this),
       std::bind(&S3BucketMetadataV1::save_bucket_info_failed, this));
@@ -547,8 +543,8 @@ void S3BucketMetadataV1::save_bucket_info_failed() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-// Delete {A1/B1} from bucket_metadata_list_index_oid followed by {B1, A1} from
-// global_bucket_list_index_oid
+// Delete {A1/B1} from bucket_metadata_list_index_layout followed by {B1, A1}
+// from global_bucket_list_index_oid
 void S3BucketMetadataV1::remove(CallbackHandlerType on_remove) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
@@ -568,7 +564,7 @@ void S3BucketMetadataV1::remove_bucket_info() {
   }
 
   motr_kv_writer->delete_keyval(
-      bucket_metadata_list_index_oid, get_bucket_metadata_index_key_name(),
+      bucket_metadata_list_index_layout, get_bucket_metadata_index_key_name(),
       std::bind(&S3BucketMetadataV1::remove_bucket_info_successful, this),
       std::bind(&S3BucketMetadataV1::remove_bucket_info_failed, this));
 
@@ -581,7 +577,8 @@ void S3BucketMetadataV1::remove_bucket_info_successful() {
   // If FI: 'kv_delete_failed_from_global_index' is set, then do not remove KV
   // from global_bucket_list_index_oid. This is to simulate possible "partial"
   // delete bucket action, where the KV got deleted from
-  // bucket_metadata_list_index_oid, but not from global_bucket_list_index_oid.
+  // bucket_metadata_list_index_layout, but not from
+  // global_bucket_list_index_oid.
   // If FI not set, then remove KV from global_bucket_list_index_oid as well.
 
   if (s3_fi_is_enabled("kv_delete_failed_from_global_index")) {

@@ -25,7 +25,7 @@
 #include "s3_iem.h"
 #include "s3_account_delete_metadata_action.h"
 
-extern struct m0_uint128 bucket_metadata_list_index_oid;
+extern struct s3_motr_idx_layout bucket_metadata_list_index_layout;
 
 S3AccountDeleteMetadataAction::S3AccountDeleteMetadataAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
@@ -86,7 +86,7 @@ void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata() {
       motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
   bucket_account_id_key_prefix = account_id_from_uri + "/";
   motr_kv_reader->next_keyval(
-      bucket_metadata_list_index_oid, bucket_account_id_key_prefix, 1,
+      bucket_metadata_list_index_layout, bucket_account_id_key_prefix, 1,
       std::bind(&S3AccountDeleteMetadataAction::
                      fetch_first_bucket_metadata_successful,
                 this),

@@ -45,13 +45,13 @@ using ::testing::AtLeast;
   do {                                                                    \
     CREATE_BUCKET_METADATA;                                               \
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
-                get_object_list_index_oid())                              \
+                get_object_list_index_layout())                           \
         .Times(AtLeast(1))                                                \
-        .WillRepeatedly(ReturnRef(object_list_indx_oid));                 \
+        .WillRepeatedly(ReturnRef(index_layout));                         \
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),             \
-                get_objects_version_list_index_oid())                     \
+                get_objects_version_list_index_layout())                  \
         .Times(AtLeast(1))                                                \
-        .WillRepeatedly(ReturnRef(objects_version_list_index_oid));       \
+        .WillRepeatedly(ReturnRef(index_layout));                         \
     EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _)) \
         .Times(AtLeast(1));                                               \
     EXPECT_CALL(*(ptr_mock_request), http_verb())                         \
@@ -77,9 +77,8 @@ class S3GetObjectActionTest : public testing::Test {
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
 
     oid = {0x1ffff, 0x1ffff};
-    object_list_indx_oid = {0x11ffff, 0x1ffff};
-    objects_version_list_index_oid = {0x11ffff, 0x1fff};
-    zero_oid_idx = {0ULL, 0ULL};
+    index_layout = {{0x11ffff, 0x1fff}};
+    zero_index_layout = {0ULL, 0ULL};
 
     call_count_one = 0;
     bucket_name = "seagatebucket";
@@ -101,16 +100,16 @@ class S3GetObjectActionTest : public testing::Test {
         std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
 
     EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
-                get_object_list_index_oid())
-        .WillRepeatedly(ReturnRef(zero_oid_idx));
+                get_object_list_index_layout())
+        .WillRepeatedly(ReturnRef(zero_index_layout));
 
     EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
-                get_objects_version_list_index_oid())
-        .WillRepeatedly(ReturnRef(zero_oid_idx));
+                get_objects_version_list_index_layout())
+        .WillRepeatedly(ReturnRef(zero_index_layout));
 
     object_meta_factory =
         std::make_shared<MockS3ObjectMetadataFactory>(ptr_mock_request);
-    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
+    object_meta_factory->set_object_list_index_oid(index_layout.oid);
 
     layout_id =
         S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
@@ -134,11 +133,10 @@ class S3GetObjectActionTest : public testing::Test {
 
   std::shared_ptr<S3GetObjectAction> action_under_test;
 
-  struct m0_uint128 object_list_indx_oid;
-  struct m0_uint128 objects_version_list_index_oid;
+  struct s3_motr_idx_layout index_layout;
   struct m0_uint128 oid;
   int layout_id;
-  struct m0_uint128 zero_oid_idx;
+  struct s3_motr_idx_layout zero_index_layout;
 
   int call_count_one;
   std::string bucket_name, object_name;
@@ -236,14 +234,14 @@ TEST_F(S3GetObjectActionTest, FetchObjectInfoWhenBucketAndObjIndexPresent) {
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::present));
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_object_list_index_oid())
+              get_object_list_index_layout())
       .Times(AtLeast(1))
-      .WillRepeatedly(ReturnRef(object_list_indx_oid));
+      .WillRepeatedly(ReturnRef(index_layout));
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_objects_version_list_index_oid())
+              get_objects_version_list_index_layout())
       .Times(AtLeast(1))
-      .WillRepeatedly(ReturnRef(objects_version_list_index_oid));
+      .WillRepeatedly(ReturnRef(index_layout));
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
       .Times(AtLeast(1));
@@ -1185,7 +1183,7 @@ TEST_F(S3GetObjectActionTest, SendSuccessResponseForZeroSizeObject) {
 
   action_under_test->object_metadata =
       object_meta_factory->create_object_metadata_obj(ptr_mock_request,
-                                                      object_list_indx_oid);
+                                                      index_layout);
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_content_length())
@@ -1204,7 +1202,7 @@ TEST_F(S3GetObjectActionTest, SendSuccessResponseForNonZeroSizeObject) {
 
   action_under_test->object_metadata =
       object_meta_factory->create_object_metadata_obj(ptr_mock_request,
-                                                      object_list_indx_oid);
+                                                      index_layout);
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_content_length())
@@ -1227,7 +1225,7 @@ TEST_F(S3GetObjectActionTest, SendErrorResponseForErrorReadingObject) {
 
   action_under_test->object_metadata =
       object_meta_factory->create_object_metadata_obj(ptr_mock_request,
-                                                      object_list_indx_oid);
+                                                      index_layout);
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_content_length())

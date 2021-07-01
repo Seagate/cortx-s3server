@@ -24,7 +24,7 @@
 #include "s3_m0_uint128_helper.h"
 #include "s3_common_utilities.h"
 
-extern struct m0_uint128 global_probable_dead_object_list_index_oid;
+extern struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
 S3DeleteObjectAction::S3DeleteObjectAction(
     std::shared_ptr<S3RequestObject> req,
@@ -103,7 +103,7 @@ void S3DeleteObjectAction::fetch_bucket_info_failed() {
 void S3DeleteObjectAction::fetch_object_info_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_del_obj_action_state = S3DeleteObjectActionState::validationFailed;
-  if ((object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) ||
+  if (zero(obj_list_idx_lo.oid) ||
       (object_metadata->get_state() == S3ObjectMetadataState::missing)) {
     s3_log(S3_LOG_WARN, request_id, "Object not found\n");
   } else if (object_metadata->get_state() ==
@@ -138,12 +138,12 @@ void S3DeleteObjectAction::add_object_oid_to_probable_dead_oid_list() {
   probable_delete_rec.reset(new S3ProbableDeleteRecord(
       oid_str, {0ULL, 0ULL}, object_metadata->get_object_name(),
       object_metadata->get_oid(), object_metadata->get_layout_id(),
-      bucket_metadata->get_object_list_index_oid(),
-      bucket_metadata->get_objects_version_list_index_oid(),
+      bucket_metadata->get_object_list_index_layout().oid,
+      bucket_metadata->get_objects_version_list_index_layout().oid,
       object_metadata->get_version_key_in_index(), false /* force_delete */));
 
   motr_kv_writer->put_keyval(
-      global_probable_dead_object_list_index_oid, oid_str,
+      global_probable_dead_object_list_index_layout, oid_str,
       probable_delete_rec->to_json(),
       std::bind(&S3DeleteObjectAction::next, this),
       std::bind(&S3DeleteObjectAction::
@@ -199,7 +199,7 @@ void S3DeleteObjectAction::send_response_to_s3_client() {
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else {
-    assert((object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) ||
+    assert(zero(obj_list_idx_lo.oid) ||
            object_metadata->get_state() == S3ObjectMetadataState::missing ||
            object_metadata->get_state() == S3ObjectMetadataState::deleted);
     request->send_response(S3HttpSuccess204);
@@ -252,7 +252,7 @@ void S3DeleteObjectAction::mark_oid_for_deletion() {
     motr_kv_writer =
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
+  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_layout,
                              oid_str, probable_delete_rec->to_json(),
                              std::bind(&S3DeleteObjectAction::next, this),
                              std::bind(&S3DeleteObjectAction::next, this));
@@ -292,7 +292,7 @@ void S3DeleteObjectAction::remove_probable_record() {
     motr_kv_writer =
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_oid,
+  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_layout,
                                 oid_str,
                                 std::bind(&S3DeleteObjectAction::next, this),
                                 std::bind(&S3DeleteObjectAction::next, this));

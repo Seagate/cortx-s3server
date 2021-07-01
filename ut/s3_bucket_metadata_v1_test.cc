@@ -145,9 +145,9 @@ TEST_F(S3BucketMetadataV1Test, ConstructorTest) {
   EXPECT_STREQ("index_salt_", action_under_test->collision_salt.c_str());
   EXPECT_EQ(0, action_under_test->collision_attempt_count);
   EXPECT_OID_EQ(zero_oid,
-                action_under_test->get_bucket_metadata_list_index_oid());
-  EXPECT_OID_EQ(zero_oid, action_under_test->object_list_index_oid);
-  EXPECT_OID_EQ(zero_oid, action_under_test->multipart_index_oid);
+                action_under_test->get_object_list_index_layout().oid);
+  EXPECT_OID_EQ(zero_oid, action_under_test->object_list_index_layout.oid);
+  EXPECT_OID_EQ(zero_oid, action_under_test->multipart_index_layout.oid);
   EXPECT_STREQ(
       "", action_under_test->system_defined_attribute["Owner-User"].c_str());
   EXPECT_STREQ(
@@ -176,19 +176,19 @@ TEST_F(S3BucketMetadataV1Test, GetSystemAttributesTest) {
 
 TEST_F(S3BucketMetadataV1Test, GetSetOIDsPolicyAndLocation) {
   struct m0_uint128 oid = {0x1ffff, 0x1fff};
-  action_under_test->multipart_index_oid = {0x1fff, 0xff1};
-  action_under_test->object_list_index_oid = {0xff, 0xff};
+  action_under_test->multipart_index_layout = {{0x1fff, 0xff1}};
+  action_under_test->object_list_index_layout = {{0xff, 0xff}};
 
-  EXPECT_OID_EQ(action_under_test->get_multipart_index_oid(),
-                action_under_test->multipart_index_oid);
-  EXPECT_OID_EQ(action_under_test->get_object_list_index_oid(),
-                action_under_test->object_list_index_oid);
+  EXPECT_OID_EQ(action_under_test->get_multipart_index_layout().oid,
+                action_under_test->multipart_index_layout.oid);
+  EXPECT_OID_EQ(action_under_test->get_object_list_index_layout().oid,
+                action_under_test->object_list_index_layout.oid);
 
-  action_under_test->set_multipart_index_oid(oid);
-  EXPECT_OID_EQ(action_under_test->multipart_index_oid, oid);
+  action_under_test->set_multipart_index_layout({oid});
+  EXPECT_OID_EQ(action_under_test->multipart_index_layout.oid, oid);
 
-  action_under_test->set_object_list_index_oid(oid);
-  EXPECT_OID_EQ(action_under_test->object_list_index_oid, oid);
+  action_under_test->set_object_list_index_layout({oid});
+  EXPECT_OID_EQ(action_under_test->object_list_index_layout.oid, oid);
 
   action_under_test->set_location_constraint("us-east");
   EXPECT_STREQ("us-east",
@@ -316,7 +316,7 @@ TEST_F(S3BucketMetadataV1Test, LoadBucketInfoFailedMetadataFailedToLaunch) {
 
 TEST_F(S3BucketMetadataV1Test, SaveMetadataIndexOIDMissing) {
   struct m0_uint128 oid = {0ULL, 0ULL};
-  action_under_test->set_bucket_metadata_list_index_oid(oid);
+  action_under_test->set_object_list_index_layout({oid});
 
   action_under_test->global_bucket_index_metadata =
       s3_global_bucket_index_metadata_factory
@@ -347,8 +347,8 @@ TEST_F(S3BucketMetadataV1Test, SaveMetadataIndexOIDPresent) {
 
 TEST_F(S3BucketMetadataV1Test, UpdateMetadataIndexOIDPresent) {
   struct m0_uint128 oid = {0x111f, 0xffff};
-  action_under_test->set_bucket_metadata_list_index_oid(oid);
-  action_under_test->object_list_index_oid = {0x11ff, 0x1fff};
+  action_under_test->set_object_list_index_layout({oid});
+  action_under_test->object_list_index_layout = {{0x11ff, 0x1fff}};
   action_under_test->account_id = "12345";
 
   bucket_metadata_proxy->set_state(S3BucketMetadataState::present);
@@ -385,6 +385,8 @@ TEST_F(S3BucketMetadataV1Test, CreateMultipartListIndexCollisionCount0) {
 
 TEST_F(S3BucketMetadataV1Test, CreateObjectListIndexSuccessful) {
   action_under_test->collision_attempt_count = 0;
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_motr_kvs_writer;
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               create_index_with_oid(_, _, _)).Times(1);
   action_under_test->create_object_list_index_successful();
@@ -806,21 +808,21 @@ TEST_F(S3BucketMetadataV1Test, ToJson) {
 
 TEST_F(S3BucketMetadataV1Test, FromJson) {
   struct m0_uint128 zero_oid = {0ULL, 0ULL};
-  EXPECT_OID_EQ(zero_oid, action_under_test->multipart_index_oid);
+  EXPECT_OID_EQ(zero_oid, action_under_test->multipart_index_layout.oid);
   std::string json_str =
       "{\"ACL\":\"PD94+Cg==\",\"Bucket-Name\":\"seagatebucket\",\"System-"
       "Defined\":{\"Date\":\"2016-10-18T16:01:00.000Z\",\"Owner-Account\":\"s3_"
       "test\",\"Owner-Account-id\":\"s3accountid\",\"Owner-User\":\"tester\",\""
-      "Owner-User-id\":\"s3userid\"},\"motr_multipart_index_oid\":\""
-      "g1qTetGfvWk=-lvH6Q65xFAI=\","
-      "\"motr_object_list_index_oid\":\"AAAAAAAAAAA=-AAAAAAAAAAA=\"}";
+      "Owner-User-id\":\"s3userid\"},\"motr_multipart_index_layout\":\""
+      "g1qTetGfvWklvH6Q65xFAI==\","
+      "\"motr_object_list_index_layout\":\"ABAAAAAAAAAAAAAAAAAAAA==\"}";
 
   action_under_test->from_json(json_str);
   EXPECT_STREQ("seagatebucket", action_under_test->bucket_name.c_str());
   EXPECT_STREQ("tester", action_under_test->user_name.c_str());
   EXPECT_STREQ("s3_test", action_under_test->account_name.c_str());
   EXPECT_STREQ("s3accountid", action_under_test->account_id.c_str());
-  EXPECT_OID_NE(zero_oid, action_under_test->multipart_index_oid);
+  EXPECT_OID_NE(zero_oid, action_under_test->multipart_index_layout.oid);
 }
 
 TEST_F(S3BucketMetadataV1Test, GetEncodedBucketAcl) {

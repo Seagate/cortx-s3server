@@ -78,6 +78,12 @@ struct s3_motr_kvs_op_context {
   int *rcs;  // per key return status array
 };
 
+struct s3_motr_idx_layout {
+  struct m0_uint128 oid;
+  struct m0_fid pver;
+  uint32_t layout_type;
+};
+
 struct s3_motr_obj_context *create_obj_context(size_t count);
 int free_obj_context(struct s3_motr_obj_context *ctx);
 
