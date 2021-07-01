@@ -375,6 +375,7 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /opt/seagate/cortx/s3/install/ldap/ppolicyoverlay.ldif
 /opt/seagate/cortx/s3/install/ldap/setup_ldap.sh
 /opt/seagate/cortx/s3/resources/s3_error_messages.json
+/opt/seagate/cortx/s3/resources/s3_audit_log_schema.json
 /opt/seagate/cortx/s3/s3startsystem.sh
 /opt/seagate/cortx/s3/s3stopsystem.sh
 /opt/seagate/cortx/s3/start-s3-iopath-services.sh

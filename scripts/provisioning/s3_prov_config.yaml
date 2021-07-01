@@ -52,14 +52,6 @@ TEST:
   CONFSTORE_LDAPADMIN_USER_KEY: "cortx>software>openldap>sgiam>user"
   CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>software>openldap>sgiam>secret"
   CONFSTORE_ENDPOINT_KEY: "endpoint_fqdn"
-RESET:
-  CONFSTORE_LDAPADMIN_USER_KEY: "cortx>software>openldap>sgiam>user"
-  CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>software>openldap>sgiam>secret"
-  CONFSTORE_ROOTDN_USER_KEY: "cortx>software>openldap>root>user"
-  CONFSTORE_ROOTDN_PASSWD_KEY: "cortx>software>openldap>root>secret"
-CLEANUP:
-  CONFSTORE_LDAPADMIN_USER_KEY: "cortx>software>openldap>sgiam>user"
-  CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>software>openldap>sgiam>secret"
 
 # Unsolicited Keys should be added to the bottom.
 LDAP_USER: "cn={},dc=seagate,dc=com"
