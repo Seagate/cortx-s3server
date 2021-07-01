@@ -26,6 +26,7 @@
 #include "s3_error_messages.h"
 #include "s3_log.h"
 #include "s3_mem_pool_manager.h"
+#include "s3_motr_context.h"
 #include "s3_option.h"
 #include "s3_stats.h"
 #include "s3_audit_info_logger.h"
@@ -36,9 +37,9 @@
 const char *auth_ip_addr = "127.0.0.1";
 uint16_t auth_port = 8095;
 extern int s3log_level;
-struct m0_uint128 global_bucket_list_index_oid;
-struct m0_uint128 bucket_metadata_list_index_oid;
-struct m0_uint128 global_probable_dead_object_list_index_oid;
+struct s3_motr_idx_layout global_bucket_list_index_layout;
+struct s3_motr_idx_layout bucket_metadata_list_index_layout;
+struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 struct m0_uint128 global_instance_id;
 pthread_t global_tid_indexop;
 pthread_t global_tid_objop;

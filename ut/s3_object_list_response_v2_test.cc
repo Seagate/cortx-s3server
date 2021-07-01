@@ -103,7 +103,7 @@ TEST_F(S3ObjectListResponseV2Test, VerifyObjectListV2Setters) {
 TEST_F(S3ObjectListResponseV2Test, getXML_V2) {
   std::shared_ptr<MockS3ObjectMetadata> mock_obj =
       std::make_shared<MockS3ObjectMetadata>(mock_request);
-  mock_obj->set_object_list_index_oid(object_list_indx_oid);
+  mock_obj->set_object_list_index_layout({object_list_indx_oid});
 
   response_under_test->add_object(mock_obj);
 

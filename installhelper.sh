@@ -157,6 +157,7 @@ cp bazel-bin/libs3addbplugin.so $S3_INSTALL_LOCATION/addb-plugin/
 
 # Copy the resources
 cp resources/s3_error_messages.json $S3_INSTALL_LOCATION/resources/s3_error_messages.json
+cp resources/s3_audit_log_schema.json $S3_INSTALL_LOCATION/resources/s3_audit_log_schema.json
 
 # Copy the S3 Config option file
 if [ -z "${IS_RELEASE}" ] ; then

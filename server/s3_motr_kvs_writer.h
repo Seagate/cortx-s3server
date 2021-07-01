@@ -122,7 +122,8 @@ enum class S3MotrKVSWriterOpState {
 
 class S3MotrKVSWriter {
  private:
-  std::vector<struct m0_uint128> oid_list;
+  // std::vector<struct m0_uint128> oid_list;
+  std::vector<struct s3_motr_idx_layout> idx_los;
   std::vector<std::string> keys_list;  // used in delete multiple KV
 
   std::shared_ptr<RequestObject> request;
@@ -146,6 +147,24 @@ class S3MotrKVSWriter {
 
   void clean_up_contexts();
 
+  void create_index_successful();
+  void create_index_failed();
+  void delete_index_successful();
+  void delete_index_failed();
+  void delete_indices_successful();
+  void delete_indices_failed();
+  void put_keyval_successful();
+  void put_keyval_failed();
+  void delete_keyval_successful();
+  void delete_keyval_failed();
+  // void sync_index_successful();
+  // void sync_index_failed();
+  // void sync_keyval_successful();
+  // void sync_keyval_failed();
+
+  virtual int put_keyval_impl(const std::map<std::string, std::string>& kv_list,
+                              bool is_async);
+
  public:
   S3MotrKVSWriter(std::shared_ptr<RequestObject> req,
                   std::shared_ptr<MotrAPI> motr_api = nullptr);
@@ -154,18 +173,18 @@ class S3MotrKVSWriter {
                   std::shared_ptr<MotrAPI> motr_api = nullptr);
   virtual ~S3MotrKVSWriter();
 
-  virtual S3MotrKVSWriterOpState get_state() { return state; }
+  virtual S3MotrKVSWriterOpState get_state() const { return state; }
 
-  struct m0_uint128 get_oid() { return oid_list[0]; }
+  virtual struct s3_motr_idx_layout get_index_layout() const {
+    return idx_los[0];
+  }
 
   // async create
-  virtual void create_index(std::string index_name,
+  virtual void create_index(const std::string& index_name,
                             std::function<void(void)> on_success,
                             std::function<void(void)> on_failed);
-  void create_index_successful();
-  void create_index_failed();
 
-  virtual void create_index_with_oid(struct m0_uint128 idx_id,
+  virtual void create_index_with_oid(const struct m0_uint128& idx_id,
                                      std::function<void(void)> on_success,
                                      std::function<void(void)> on_failed);
 
@@ -173,59 +192,47 @@ class S3MotrKVSWriter {
 
   // void sync_index(std::function<void(void)> on_success,
   //                 std::function<void(void)> on_failed, int index_count = 1);
-  // void sync_index_successful();
-  // void sync_index_failed();
 
   // void sync_keyval(std::function<void(void)> on_success,
   //                  std::function<void(void)> on_failed);
-  // void sync_keyval_successful();
-  // void sync_keyval_failed();
 
   // async delete
-  virtual void delete_index(struct m0_uint128 idx_oid,
+  virtual void delete_index(const struct s3_motr_idx_layout& idx_lo,
                             std::function<void(void)> on_success,
                             std::function<void(void)> on_failed);
   // void delete_index(std::string index_name,
   //                   std::function<void(void)> on_success,
   //                   std::function<void(void)> on_failed);
-  void delete_index_successful();
-  void delete_index_failed();
 
-  virtual void delete_indexes(std::vector<struct m0_uint128> oids,
-                              std::function<void(void)> on_success,
-                              std::function<void(void)> on_failed);
-  void delete_indexes_successful();
-  void delete_indexes_failed();
+  virtual void delete_indices(
+      const std::vector<struct s3_motr_idx_layout>& idx_los,
+      std::function<void(void)> on_success,
+      std::function<void(void)> on_failed);
 
-  virtual void put_keyval(struct m0_uint128 oid,
+  virtual void put_keyval(const struct s3_motr_idx_layout& idx_lo,
                           const std::map<std::string, std::string>& kv_list,
                           std::function<void(void)> on_success,
                           std::function<void(void)> on_failed);
   // Async save operation.
-  virtual void put_keyval(struct m0_uint128 oid, std::string key,
-                          std::string val, std::function<void(void)> on_success,
+  virtual void put_keyval(const struct s3_motr_idx_layout& idx_lo,
+                          const std::string& key, const std::string& val,
+                          std::function<void(void)> on_success,
                           std::function<void(void)> on_failed);
-  virtual int put_keyval_impl(const std::map<std::string, std::string>& kv_list,
-                              bool is_async);
-
-  void put_keyval_successful();
-  void put_keyval_failed();
-
   // Sync save operation.
   virtual int put_keyval_sync(
-      struct m0_uint128 oid, const std::map<std::string, std::string>& kv_list);
+      const struct s3_motr_idx_layout& idx_lo,
+      const std::map<std::string, std::string>& kv_list);
+
   // Async delete operation.
-  void delete_keyval(struct m0_uint128 oid, std::string key,
+  void delete_keyval(const struct s3_motr_idx_layout& idx_lo,
+                     const std::string& key,
                      std::function<void(void)> on_success,
                      std::function<void(void)> on_failed);
 
-  virtual void delete_keyval(struct m0_uint128 oid,
-                             std::vector<std::string> keys,
+  virtual void delete_keyval(const struct s3_motr_idx_layout& idx_lo,
+                             const std::vector<std::string>& keys,
                              std::function<void(void)> on_success,
                              std::function<void(void)> on_failed);
-
-  void delete_keyval_successful();
-  void delete_keyval_failed();
 
   void set_up_key_value_store(struct s3_motr_kvs_op_context* kvs_ctx,
                               const std::string& key, const std::string& val,

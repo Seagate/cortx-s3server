@@ -21,6 +21,7 @@
 #include "s3_action_base.h"
 #include "s3_api_handler.h"
 #include "s3_account_delete_metadata_action.h"
+#include "s3_get_audit_log_schema_action.h"
 
 void S3ManagementAPIHandler::create_action() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry", __func__);
@@ -30,10 +31,17 @@ void S3ManagementAPIHandler::create_action() {
     case S3OperationCode::none:
       // Perform operation on Service.
       switch (request->http_verb()) {
-        case S3HttpVerb::DELETE:
+        case S3HttpVerb::DELETE: {
           action = std::make_shared<S3AccountDeleteMetadataAction>(request);
           s3_log(S3_LOG_DEBUG, request_id, "S3AccountDeleteMetadataAction");
-          break;
+        } break;
+        case S3HttpVerb::GET: {
+          std::string full_uri(request->c_get_full_path());
+          if (full_uri.compare("/s3/audit-log/schema") == 0) {
+            action = std::make_shared<S3GetAuditLogSchemaAction>(request);
+            s3_log(S3_LOG_DEBUG, request_id, "S3GetAuditLogSchemaAction");
+          }
+        } break;
         default:
           // should never be here.
           return;

@@ -53,9 +53,10 @@ class S3CopyObjectActionTest : public testing::Test {
 
   int call_count_one;
   struct m0_uint128 oid = {0x1ffff, 0x1ffff};
-  struct m0_uint128 objects_version_list_idx_oid = {0x1ffff, 0x11fff};
-  struct m0_uint128 object_list_indx_oid = {0x11ffff, 0x1ffff};
-  struct m0_uint128 zero_oid_idx = {};
+  struct s3_motr_idx_layout objects_version_list_index_layout = {
+      {0x1ffff, 0x11fff}};
+  struct s3_motr_idx_layout object_list_index_layout = {{0x11ffff, 0x1ffff}};
+  struct s3_motr_idx_layout zero_index_layout = {};
   int layout_id;
   std::string destination_bucket_name = "detination-bucket";
   std::string destination_object_name = "destination-object";
@@ -132,13 +133,13 @@ void S3CopyObjectActionTest::create_src_object_metadata() {
   create_src_bucket_metadata();
 
   EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
-              get_object_list_index_oid())
+              get_object_list_index_layout())
       .Times(1)
-      .WillOnce(ReturnRef(object_list_indx_oid));
+      .WillOnce(ReturnRef(object_list_index_layout));
   EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
-              get_objects_version_list_index_oid())
+              get_objects_version_list_index_layout())
       .Times(1)
-      .WillOnce(ReturnRef(objects_version_list_idx_oid));
+      .WillOnce(ReturnRef(objects_version_list_index_layout));
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata, load(_, _))
       .Times(AtLeast(1));
 
@@ -156,13 +157,13 @@ void S3CopyObjectActionTest::create_dst_object_metadata() {
   create_dst_bucket_metadata();
 
   EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
-              get_object_list_index_oid())
+              get_object_list_index_layout())
       .Times(AtLeast(1))
-      .WillRepeatedly(ReturnRef(object_list_indx_oid));
+      .WillRepeatedly(ReturnRef(object_list_index_layout));
   EXPECT_CALL(*(ptr_mock_bucket_meta_factory->mock_bucket_metadata),
-              get_objects_version_list_index_oid())
+              get_objects_version_list_index_layout())
       .Times(AtLeast(1))
-      .WillRepeatedly(ReturnRef(objects_version_list_idx_oid));
+      .WillRepeatedly(ReturnRef(objects_version_list_index_layout));
   EXPECT_CALL(*(ptr_mock_object_meta_factory->mock_object_metadata), load(_, _))
       .Times(AtLeast(1));
   EXPECT_CALL(*(ptr_mock_request), http_verb())
@@ -531,8 +532,8 @@ TEST_F(S3CopyObjectActionTest, SaveMetadata) {
   create_dst_bucket_metadata();
   create_src_object_metadata();
 
-  ptr_mock_bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
+  ptr_mock_bucket_meta_factory->mock_bucket_metadata
+      ->set_object_list_index_layout(object_list_index_layout);
 
   action_under_test->new_object_metadata =
       ptr_mock_object_meta_factory->mock_object_metadata;
@@ -593,8 +594,8 @@ TEST_F(S3CopyObjectActionTest, SaveMetadata) {
 
 TEST_F(S3CopyObjectActionTest, SaveObjectMetadataFailed) {
   create_dst_object_metadata();
-  ptr_mock_bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
+  ptr_mock_bucket_meta_factory->mock_bucket_metadata
+      ->set_object_list_index_layout(object_list_index_layout);
   action_under_test->new_object_metadata =
       ptr_mock_object_meta_factory->mock_object_metadata;
 
@@ -611,7 +612,7 @@ TEST_F(S3CopyObjectActionTest, SaveObjectMetadataFailed) {
 
   MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
       action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
-      object_list_indx_oid, objects_version_list_idx_oid,
+      object_list_index_layout.oid, objects_version_list_index_layout.oid,
       "",     // Version does not exists yet
       false,  // force_delete
       false,  // is_multipart
@@ -649,8 +650,8 @@ TEST_F(S3CopyObjectActionTest, SendErrorResponse) {
 
 TEST_F(S3CopyObjectActionTest, SendSuccessResponse) {
   create_dst_object_metadata();
-  ptr_mock_bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
+  ptr_mock_bucket_meta_factory->mock_bucket_metadata
+      ->set_object_list_index_layout(object_list_index_layout);
   action_under_test->new_object_metadata =
       ptr_mock_object_meta_factory->mock_object_metadata;
 

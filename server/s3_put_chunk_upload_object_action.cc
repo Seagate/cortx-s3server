@@ -33,7 +33,7 @@
 #include <evhttp.h>
 #include "s3_common_utilities.h"
 
-extern struct m0_uint128 global_probable_dead_object_list_index_oid;
+extern struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
 S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
     std::shared_ptr<S3RequestObject> req,
@@ -246,12 +246,9 @@ void S3PutChunkUploadObjectAction::validate_tags() {
 
 void S3PutChunkUploadObjectAction::fetch_object_info_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  auto omds = object_metadata->get_state();
-  struct m0_uint128 object_list_oid =
-      bucket_metadata->get_object_list_index_oid();
-  if ((object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) ||
-      (objects_version_list_oid.u_hi == 0ULL &&
-       objects_version_list_oid.u_lo == 0ULL)) {
+  const auto omds = object_metadata->get_state();
+
+  if (zero(obj_list_idx_lo.oid) || zero(obj_version_list_idx_lo.oid)) {
     // Rare/unlikely: Motr KVS data corruption:
     // object_list_oid/objects_version_list_oid is null only when bucket
     // metadata is corrupted.
@@ -358,9 +355,8 @@ void S3PutChunkUploadObjectAction::create_object_successful() {
 
   // New Object or overwrite, create new metadata and release old.
   new_object_metadata = object_metadata_factory->create_object_metadata_obj(
-      request, bucket_metadata->get_object_list_index_oid());
-  new_object_metadata->set_objects_version_list_index_oid(
-      bucket_metadata->get_objects_version_list_index_oid());
+      request, bucket_metadata->get_object_list_index_layout(),
+      bucket_metadata->get_objects_version_list_index_layout());
 
   new_oid_str = S3M0Uint128Helper::to_string(new_object_oid);
 
@@ -730,8 +726,8 @@ void S3PutChunkUploadObjectAction::add_object_oid_to_probable_dead_oid_list() {
     old_probable_del_rec.reset(new S3ProbableDeleteRecord(
         old_oid_rec_key, {0ULL, 0ULL}, object_metadata->get_object_name(),
         old_object_oid, old_layout_id,
-        bucket_metadata->get_object_list_index_oid(),
-        bucket_metadata->get_objects_version_list_index_oid(),
+        bucket_metadata->get_object_list_index_layout().oid,
+        bucket_metadata->get_objects_version_list_index_layout().oid,
         object_metadata->get_version_key_in_index(), false /* force_delete */));
 
     probable_oid_list[old_oid_rec_key] = old_probable_del_rec->to_json();
@@ -746,8 +742,9 @@ void S3PutChunkUploadObjectAction::add_object_oid_to_probable_dead_oid_list() {
          "Adding new_probable_del_rec with key [%s]\n", new_oid_str.c_str());
   new_probable_del_rec.reset(new S3ProbableDeleteRecord(
       new_oid_str, {0ULL, 0ULL}, new_object_metadata->get_object_name(),
-      new_object_oid, layout_id, bucket_metadata->get_object_list_index_oid(),
-      bucket_metadata->get_objects_version_list_index_oid(),
+      new_object_oid, layout_id,
+      bucket_metadata->get_object_list_index_layout().oid,
+      bucket_metadata->get_objects_version_list_index_layout().oid,
       new_object_metadata->get_version_key_in_index(),
       false /* force_delete */));
 
@@ -759,7 +756,7 @@ void S3PutChunkUploadObjectAction::add_object_oid_to_probable_dead_oid_list() {
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
   motr_kv_writer->put_keyval(
-      global_probable_dead_object_list_index_oid, probable_oid_list,
+      global_probable_dead_object_list_index_layout, probable_oid_list,
       std::bind(&S3PutChunkUploadObjectAction::next, this),
       std::bind(&S3PutChunkUploadObjectAction::
                      add_object_oid_to_probable_dead_oid_list_failed,
@@ -917,7 +914,7 @@ void S3PutChunkUploadObjectAction::mark_new_oid_for_deletion() {
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
   motr_kv_writer->put_keyval(
-      global_probable_dead_object_list_index_oid, new_oid_str,
+      global_probable_dead_object_list_index_layout, new_oid_str,
       new_probable_del_rec->to_json(),
       std::bind(&S3PutChunkUploadObjectAction::next, this),
       std::bind(&S3PutChunkUploadObjectAction::next, this));
@@ -942,7 +939,7 @@ void S3PutChunkUploadObjectAction::mark_old_oid_for_deletion() {
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
   motr_kv_writer->put_keyval(
-      global_probable_dead_object_list_index_oid, old_oid_rec_key,
+      global_probable_dead_object_list_index_layout, old_oid_rec_key,
       old_probable_del_rec->to_json(),
       std::bind(&S3PutChunkUploadObjectAction::next, this),
       std::bind(&S3PutChunkUploadObjectAction::next, this));
@@ -962,7 +959,7 @@ void S3PutChunkUploadObjectAction::remove_old_oid_probable_record() {
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
   motr_kv_writer->delete_keyval(
-      global_probable_dead_object_list_index_oid, old_oid_rec_key,
+      global_probable_dead_object_list_index_layout, old_oid_rec_key,
       std::bind(&S3PutChunkUploadObjectAction::next, this),
       std::bind(&S3PutChunkUploadObjectAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -977,7 +974,7 @@ void S3PutChunkUploadObjectAction::remove_new_oid_probable_record() {
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
   motr_kv_writer->delete_keyval(
-      global_probable_dead_object_list_index_oid, new_oid_str,
+      global_probable_dead_object_list_index_layout, new_oid_str,
       std::bind(&S3PutChunkUploadObjectAction::next, this),
       std::bind(&S3PutChunkUploadObjectAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);

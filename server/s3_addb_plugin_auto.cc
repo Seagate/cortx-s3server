@@ -52,6 +52,7 @@
 #include "s3_delete_multiple_objects_action.h"
 #include "s3_delete_object_action.h"
 #include "s3_delete_object_tagging_action.h"
+#include "s3_get_audit_log_schema_action.h"
 #include "s3_get_bucket_acl_action.h"
 #include "s3_get_bucket_action_v2.h"
 #include "s3_get_bucket_location_action.h"
@@ -119,6 +120,8 @@ int s3_addb_init() {
       S3_ADDB_S3_DELETE_OBJECT_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3DeleteObjectTaggingAction))] =
       S3_ADDB_S3_DELETE_OBJECT_TAGGING_ACTION_ID;
+  gs_addb_map[std::type_index(typeid(S3GetAuditLogSchemaAction))] =
+      S3_ADDB_S3_GET_AUDIT_LOG_SCHEMA_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3GetBucketACLAction))] =
       S3_ADDB_S3_GET_BUCKET_ACL_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3GetBucketActionV2))] =
@@ -273,6 +276,12 @@ int s3_addb_init() {
          ": class S3DeleteObjectTaggingAction\n",
          (uint64_t)S3_ADDB_S3_DELETE_OBJECT_TAGGING_ACTION_ID,
          (int64_t)S3_ADDB_S3_DELETE_OBJECT_TAGGING_ACTION_ID);
+
+  s3_log(S3_LOG_DEBUG, "",
+         "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
+         ": class S3GetAuditLogSchemaAction\n",
+         (uint64_t)S3_ADDB_S3_GET_AUDIT_LOG_SCHEMA_ACTION_ID,
+         (int64_t)S3_ADDB_S3_GET_AUDIT_LOG_SCHEMA_ACTION_ID);
 
   s3_log(S3_LOG_DEBUG, "",
          "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
