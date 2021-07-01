@@ -203,7 +203,9 @@ cd $BASEDIR
 
 # Attempt ldap clean up since ansible openldap setup is not idempotent
 systemctl stop slapd 2>/dev/null || /bin/true
+# remove old openldap pkg if installed
 yum remove -y openldap-servers openldap-clients || /bin/true
+yum remove -y symas-openldap symas-openldap-servers symas-openldap-clients || /bin/true
 rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
 rm -rf /var/lib/ldap/*
 rm -f /etc/sysconfig/slapd* 2>/dev/null || /bin/true
@@ -224,7 +226,7 @@ yum install -y openssl java-1.8.0-openjdk-headless
 
 # install the built certs
 #rpm -e stx-s3-certs stx-s3-client-certs || /bin/true
-#yum install openldap-servers haproxy -y # so we have "ldap" and "haproxy" users.
+#yum install symas-openldap-servers haproxy -y # so we have "ldap" and "haproxy" users.
 #yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-certs*
 #yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
 # Coping the certificates
