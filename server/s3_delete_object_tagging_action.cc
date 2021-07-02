@@ -21,6 +21,7 @@
 #include "s3_delete_object_tagging_action.h"
 #include "s3_error_codes.h"
 #include "s3_log.h"
+#include "s3_m0_uint128_helper.h"
 
 S3DeleteObjectTaggingAction::S3DeleteObjectTaggingAction(
     std::shared_ptr<S3RequestObject> req,
@@ -64,7 +65,7 @@ void S3DeleteObjectTaggingAction::fetch_bucket_info_failed() {
 
 void S3DeleteObjectTaggingAction::fetch_object_info_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  if ((object_list_oid.u_lo == 0ULL && object_list_oid.u_hi == 0ULL) ||
+  if (zero(obj_list_idx_lo.oid) ||
       (object_metadata->get_state() == S3ObjectMetadataState::missing)) {
     set_s3_error("NoSuchKey");
   } else if (object_metadata->get_state() ==

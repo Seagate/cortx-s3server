@@ -161,7 +161,7 @@ TEST_F(S3PostMultipartObjectTest, UploadInProgress) {
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::present));
-  action_under_test->bucket_metadata->set_multipart_index_oid(oid);
+  action_under_test->bucket_metadata->set_multipart_index_layout({oid});
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), load(_, _))
       .Times(1);
   action_under_test->check_upload_is_inprogress();
@@ -180,7 +180,7 @@ TEST_F(S3PostMultipartObjectTest, UploadInProgressMetadataCorrupt) {
   action_under_test->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test,
                          S3PostMultipartObjectTest::func_callback_one, this);
-  action_under_test->bucket_metadata->set_multipart_index_oid(empty_oid);
+  action_under_test->bucket_metadata->set_multipart_index_layout({empty_oid});
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), load(_, _))
       .Times(0);
 
@@ -215,7 +215,7 @@ TEST_F(S3PostMultipartObjectTest, FetchObjectInfoStatusObjectNotPresent) {
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
       .Times(2)
       .WillRepeatedly(Return(S3ObjectMetadataState::missing));
-  action_under_test->object_list_oid = {0xfff, 0xf1ff};
+  action_under_test->obj_list_idx_lo = {{0xfff, 0xf1ff}};
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .Times(1)
       .WillRepeatedly(Return(S3ObjectMetadataState::missing));

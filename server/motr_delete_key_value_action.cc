@@ -70,7 +70,7 @@ void MotrDeleteKeyValueAction::delete_key_value() {
           request, s3_motr_api);
     }
     motr_kv_writer->delete_keyval(
-        index_id, request->get_key_name(),
+        {index_id}, request->get_key_name(),
         std::bind(&MotrDeleteKeyValueAction::delete_key_value_successful, this),
         std::bind(&MotrDeleteKeyValueAction::delete_key_value_failed, this));
   }

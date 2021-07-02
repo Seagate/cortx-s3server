@@ -59,7 +59,7 @@ S3CopyObjectAction::S3CopyObjectAction(
     motr_reader_factory = std::make_shared<S3MotrReaderFactory>();
   }
   setup_steps();
-};
+}
 
 void S3CopyObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");

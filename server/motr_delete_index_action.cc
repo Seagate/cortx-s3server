@@ -75,7 +75,7 @@ void MotrDeleteIndexAction::delete_index() {
       motr_kvs_writer_factory_ptr->create_motr_kvs_writer(request, motr_api);
 
   motr_kv_writer->delete_index(
-      index_id,
+      {index_id},
       std::bind(&MotrDeleteIndexAction::delete_index_successful, this),
       std::bind(&MotrDeleteIndexAction::delete_index_failed, this));
 

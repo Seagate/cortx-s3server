@@ -140,8 +140,8 @@ print(account_response_elements)
 load_and_update_config(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])
 
 #Clear probable delete list index
-s3kvs.clean_all_data()
-s3kvs.create_s3root_index()
+#s3kvs.clean_all_data()
+#s3kvs.create_s3root_index()
 
 # ********** Create test bucket in s3-background-delete-svc account********
 AwsTest('Create Bucket "seagatebucket" using s3-background-delete-svc account')\
@@ -805,8 +805,8 @@ AwsTest('Delete Bucket "seagatebucket"').delete_bucket("seagatebucket")\
    .execute_test().command_is_successful()
 
 #Clear probable delete list index
-s3kvs.clean_all_data()
-s3kvs.create_s3root_index()
+#s3kvs.clean_all_data()
+#s3kvs.create_s3root_index()
 
 # ************ Delete Account*******************************
 test_msg = "Delete account s3-background-delete-svc"

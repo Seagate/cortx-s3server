@@ -26,7 +26,7 @@
 #include "s3_m0_uint128_helper.h"
 #include "s3_common_utilities.h"
 
-extern struct m0_uint128 global_probable_dead_object_list_index_oid;
+extern struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
 // AWS allows to delete maximum 1000 objects in one call
 #define MAX_OBJS_ALLOWED_TO_DELETE 1000
@@ -46,8 +46,6 @@ S3DeleteMultipleObjectsAction::S3DeleteMultipleObjectsAction(
   s3_log(S3_LOG_INFO, stripped_request_id,
          "S3 API: Delete Multiple Objects API. Bucket[%s]\n",
          request->get_bucket_name().c_str());
-
-  object_list_index_oid = {0ULL, 0ULL};
 
   if (object_md_factory) {
     object_metadata_factory = std::move(object_md_factory);
@@ -171,10 +169,11 @@ void S3DeleteMultipleObjectsAction::fetch_bucket_info_failed() {
 
 void S3DeleteMultipleObjectsAction::fetch_objects_info() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  object_list_index_oid = bucket_metadata->get_object_list_index_oid();
-  if (object_list_index_oid.u_lo == 0ULL &&
-      object_list_index_oid.u_hi == 0ULL) {
-    for (auto& key : keys_to_delete) {
+
+  object_list_index_layout = bucket_metadata->get_object_list_index_layout();
+
+  if (zero(object_list_index_layout.oid)) {
+    for (const auto& key : keys_to_delete) {
       delete_objects_response.add_success(key);
     }
     send_response_to_s3_client();
@@ -188,7 +187,7 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info() {
         s3_fi_enable_once("motr_kv_get_fail");
       }
       motr_kv_reader->get_keyval(
-          object_list_index_oid, keys_to_delete,
+          object_list_index_layout, keys_to_delete,
           std::bind(
               &S3DeleteMultipleObjectsAction::fetch_objects_info_successful,
               this),
@@ -223,19 +222,20 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info_successful() {
 
   // Create a list of objects found to be deleted
 
-  auto& kvps = motr_kv_reader->get_key_values();
+  const auto& kvps = motr_kv_reader->get_key_values();
   objects_metadata.clear();
 
   bool atleast_one_json_error = false;
   bool all_had_json_error = true;
-  for (auto& kv : kvps) {
+
+  for (const auto& kv : kvps) {
     if ((kv.second.first == 0) && (!kv.second.second.empty())) {
       s3_log(S3_LOG_DEBUG, request_id, "Found Object metadata for = %s\n",
              kv.first.c_str());
-      auto object =
-          object_metadata_factory->create_object_metadata_obj(request);
-      object->set_objects_version_list_index_oid(
-          bucket_metadata->get_objects_version_list_index_oid());
+
+      auto object = object_metadata_factory->create_object_metadata_obj(
+          request, bucket_metadata->get_object_list_index_layout(),
+          bucket_metadata->get_objects_version_list_index_layout());
 
       if (object->from_json(kv.second.second) != 0 ||
           !delete_request.validate_attrs(object->get_bucket_name(),
@@ -244,8 +244,9 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info_successful() {
         s3_log(S3_LOG_ERROR, request_id,
                "Invalid index value. Index oid = "
                "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
-               object_list_index_oid.u_hi, object_list_index_oid.u_lo,
-               kv.first.c_str(), kv.second.second.c_str());
+               object_list_index_layout.oid.u_hi,
+               object_list_index_layout.oid.u_lo, kv.first.c_str(),
+               kv.second.second.c_str());
         delete_objects_response.add_failure(kv.first, "InternalError");
         object->mark_invalid();
       } else {
@@ -306,15 +307,14 @@ void S3DeleteMultipleObjectsAction::add_object_oid_to_probable_dead_oid_list() {
           std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
               oid_str, {0ULL, 0ULL}, obj->get_object_name(), obj->get_oid(),
               obj->get_layout_id(),
-              bucket_metadata->get_object_list_index_oid(),
-              bucket_metadata->get_objects_version_list_index_oid(),
+              bucket_metadata->get_object_list_index_layout().oid,
+              bucket_metadata->get_objects_version_list_index_layout().oid,
               obj->get_version_key_in_index(), false /* force_delete */));
       delete_list[oid_str] = probable_oid_list[oid_str]->to_json();
     }
   }
-
   motr_kv_writer->put_keyval(
-      global_probable_dead_object_list_index_oid, delete_list,
+      global_probable_dead_object_list_index_layout, delete_list,
       std::bind(&S3DeleteMultipleObjectsAction::delete_objects_metadata, this),
       std::bind(&S3DeleteMultipleObjectsAction::
                      add_object_oid_to_probable_dead_oid_list_failed,
@@ -346,7 +346,7 @@ void S3DeleteMultipleObjectsAction::delete_objects_metadata() {
     s3_fi_enable_once("motr_kv_delete_fail");
   }
   motr_kv_writer->delete_keyval(
-      object_list_index_oid, keys,
+      object_list_index_layout, keys,
       std::bind(
           &S3DeleteMultipleObjectsAction::delete_objects_metadata_successful,
           this),
@@ -482,7 +482,7 @@ void S3DeleteMultipleObjectsAction::cleanup_failed() {
       if (motr_writer->get_op_ret_code_for_delete_op(obj_index) != -ENOENT) {
         // object oid failed to delete, so erase the object oid from
         // probable_oid_list map and so that this object oid will be retained in
-        // global_probable_dead_object_list_index_oid
+        // global_probable_dead_object_list_index_layout
         probable_oid_list.erase(S3M0Uint128Helper::to_string(oid));
       }
       ++obj_index;
@@ -497,14 +497,14 @@ void S3DeleteMultipleObjectsAction::cleanup_oid_from_probable_dead_oid_list() {
   std::vector<std::string> clean_valid_oid_from_probable_dead_object_list_index;
 
   // final probable_oid_list map will have valid object oids
-  // that needs to be cleanup from global_probable_dead_object_list_index_oid
+  // that needs to be cleanup from global_probable_dead_object_list_index_layout
   for (auto& kv : probable_oid_list) {
     clean_valid_oid_from_probable_dead_object_list_index.push_back(kv.first);
   }
 
   if (!clean_valid_oid_from_probable_dead_object_list_index.empty()) {
     motr_kv_writer->delete_keyval(
-        global_probable_dead_object_list_index_oid,
+        global_probable_dead_object_list_index_layout,
         clean_valid_oid_from_probable_dead_object_list_index,
         std::bind(&Action::done, this), std::bind(&Action::done, this));
   } else {
