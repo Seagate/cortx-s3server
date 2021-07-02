@@ -31,7 +31,7 @@
 #include "s3_m0_uint128_helper.h"
 #include <evhttp.h>
 
-extern struct m0_uint128 global_probable_dead_object_list_index_oid;
+extern struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
 S3PostMultipartObjectAction::S3PostMultipartObjectAction(
     std::shared_ptr<S3RequestObject> req,
@@ -74,7 +74,6 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
   layout_id =
       S3MotrLayoutMap::get_instance()->get_best_layout_for_object_size();
 
-  multipart_index_oid = {0ULL, 0ULL};
   salt = "uri_salt_";
 
   if (object_mp_meta_factory) {
@@ -227,12 +226,12 @@ void S3PostMultipartObjectAction::check_upload_is_inprogress() {
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     S3Uuid uuid;
     upload_id = uuid.get_string_uuid();
-    multipart_index_oid = bucket_metadata->get_multipart_index_oid();
+    multipart_index_layout = bucket_metadata->get_multipart_index_layout();
     object_multipart_metadata =
         object_mp_metadata_factory->create_object_mp_metadata_obj(
-            request, multipart_index_oid, upload_id);
-    if (multipart_index_oid.u_lo == 0ULL && multipart_index_oid.u_hi == 0ULL) {
-      // multipart_index_oid is null only when bucket metadata is corrupted.
+            request, multipart_index_layout, upload_id);
+    if (zero(multipart_index_layout.oid)) {
+      // multipart_index_layout is null only when bucket metadata is corrupted.
       // user has to delete and recreate the bucket again to make it work.
       s3_log(S3_LOG_ERROR, request_id, "Bucket(%s) metadata is corrupted.\n",
              request->get_bucket_name().c_str());
@@ -284,7 +283,7 @@ void S3PostMultipartObjectAction::check_multipart_object_info_status() {
     s3_log(S3_LOG_DEBUG, request_id,
            "Multipart upload not in progress for this object_name [%s]\n",
            request->get_object_name().c_str());
-    if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
+    if (zero(obj_list_idx_lo.oid)) {
       // object_list_oid is null only when bucket metadata is corrupted.
       // user has to delete and recreate the bucket again to make it work.
       s3_log(S3_LOG_ERROR, request_id, "Bucket(%s) metadata is corrupted.\n",
@@ -468,8 +467,8 @@ void S3PostMultipartObjectAction::create_part_meta_index() {
 
 void S3PostMultipartObjectAction::create_part_meta_index_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  object_multipart_metadata->set_part_index_oid(
-      part_metadata->get_part_index_oid());
+  object_multipart_metadata->set_part_index_layout(
+      part_metadata->get_part_index_layout());
   add_task_rollback(std::bind(
       &S3PostMultipartObjectAction::rollback_create_part_meta_index, this));
   next();
@@ -524,11 +523,11 @@ void S3PostMultipartObjectAction::rollback_create_part_meta_index() {
 
 void S3PostMultipartObjectAction::rollback_create_part_meta_index_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  m0_uint128 part_index_oid = part_metadata->get_part_index_oid();
+  const auto& part_index_layout = part_metadata->get_part_index_layout();
   s3_log(S3_LOG_ERROR, request_id,
          "Deletion of index failed, this oid will be stale in Motr"
          "%" SCNx64 " : %" SCNx64 "\n",
-         part_index_oid.u_hi, part_index_oid.u_lo);
+         part_index_layout.oid.u_hi, part_index_layout.oid.u_lo);
   // s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
   //     S3_IEM_DELETE_IDX_FAIL_JSON);
   rollback_next();
@@ -553,8 +552,8 @@ void S3PostMultipartObjectAction::save_upload_metadata() {
   object_multipart_metadata->reset_date_time_to_current();
   object_multipart_metadata->set_oid(oid);
   object_multipart_metadata->set_content_type(request->get_content_type());
-  object_multipart_metadata->set_part_index_oid(
-      part_metadata->get_part_index_oid());
+  object_multipart_metadata->set_part_index_layout(
+      part_metadata->get_part_index_layout());
   object_multipart_metadata->regenerate_version_id();
 
   object_multipart_metadata->save(

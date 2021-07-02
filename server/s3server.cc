@@ -75,13 +75,13 @@ evhtp_ssl_ctx_t *g_ssl_auth_ctx = NULL;
 evbase_t *global_evbase_handle;
 extern struct m0_realm motr_uber_realm;
 // index will have bucket and account information
-struct m0_uint128 global_bucket_list_index_oid;
+struct s3_motr_idx_layout global_bucket_list_index_layout;
 // index will have bucket metada information
-struct m0_uint128 bucket_metadata_list_index_oid;
+struct s3_motr_idx_layout bucket_metadata_list_index_layout;
 // index will have s3server instance information
-struct m0_uint128 global_instance_list_index;
+struct s3_motr_idx_layout global_instance_list_index_layout;
 // objects listed in this index are probable delete candidates and not absolute.
-struct m0_uint128 global_probable_dead_object_list_index_oid;
+struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
 int global_shutdown_in_progress;
 pthread_t global_tid_indexop;
@@ -386,16 +386,18 @@ extern "C" evhtp_res dispatch_motr_api_request(evhtp_request_t *req,
 static evhtp_res process_request_data(evhtp_request_t *p_evhtp_req,
                                       evbuf_t *buf, void *arg) {
   RequestObject *p_s3_req = static_cast<RequestObject *>(p_evhtp_req->cbarg);
-  const char *psz_request_id =
-      p_s3_req ? p_s3_req->get_request_id().c_str() : nullptr;
+  std::string request_id = "";
+  if (p_s3_req) {
+    request_id = p_s3_req->get_request_id();
+  }
 
-  s3_log(S3_LOG_DEBUG, psz_request_id, "RequestObject(%p)\n", p_s3_req);
+  s3_log(S3_LOG_DEBUG, request_id, "RequestObject(%p)\n", p_s3_req);
 
   if (p_s3_req) {
     // Data has arrived so disable read timeout
     p_s3_req->stop_client_read_timer();
 
-    s3_log(S3_LOG_DEBUG, psz_request_id,
+    s3_log(S3_LOG_DEBUG, request_id,
            "Received Request body %zu bytes for sock = %d\n",
            evbuffer_get_length(buf), p_evhtp_req->conn->sock);
 
@@ -409,7 +411,7 @@ static evhtp_res process_request_data(evhtp_request_t *p_evhtp_req,
     }
   }
   if (buf) {
-    s3_log(S3_LOG_DEBUG, psz_request_id, "Drain incoming data\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Drain incoming data\n");
     evbuffer_drain(buf, -1);
   }
   return EVHTP_RES_OK;
@@ -532,7 +534,7 @@ void fini_auth_ssl() {
 }
 
 // This index will be holding the ids for the bucket
-int create_global_index(struct m0_uint128 &root_index_oid,
+int create_global_index(struct s3_motr_idx_layout &idx_lo,
                         const uint64_t &u_lo_index_offset) {
   int rc = 0;
 
@@ -541,12 +543,12 @@ int create_global_index(struct m0_uint128 &root_index_oid,
 
   // reserving an oid for root index -- M0_ID_APP + offset
   const auto m0_timeout = m0_time_from_now(motr_op_wait_period, 0);
-  init_s3_index_oid(root_index_oid, u_lo_index_offset);
+  init_s3_index_oid(idx_lo.oid, u_lo_index_offset);
 
   struct m0_idx idx;
   memset(&idx, 0, sizeof idx);
 
-  m0_idx_init(&idx, &motr_uber_realm, &root_index_oid);
+  m0_idx_init(&idx, &motr_uber_realm, &idx_lo.oid);
 
   for (; --n_retry > 0; ::sleep(1)) {  // suspend current thread for 1 second
     struct m0_op *cr_op = nullptr;
@@ -594,15 +596,18 @@ int create_global_index(struct m0_uint128 &root_index_oid,
   if (rc) {
     s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
            S3_IEM_MOTR_CONN_FAIL_JSON);
+  } else {
+    idx_lo.pver = idx.in_attr.idx_pver;
+    idx_lo.layout_type = idx.in_attr.idx_layout_type;
   }
   return rc;
 }
-
+/*
 int create_global_replica_index(struct m0_uint128 &root_index_oid,
                                 const uint64_t &u_lo_index_offset) {
   return create_global_index(root_index_oid, u_lo_index_offset);
 }
-
+*/
 void log_resource_limits() {
   int rc;
   struct rlimit rlimit;
@@ -951,9 +956,9 @@ int main(int argc, char **argv) {
     s3_log(S3_LOG_FATAL, "", "S3 ADDB Init failed!\n");
   }
 
-  // global_bucket_list_index_oid - will hold bucket name as key, its owner
+  // global_bucket_list_index_layout - will hold bucket name as key, its owner
   // account information and region as value.
-  rc = create_global_index(global_bucket_list_index_oid,
+  rc = create_global_index(global_bucket_list_index_layout,
                            GLOBAL_BUCKET_LIST_INDEX_OID_U_LO);
   if (rc < 0) {
     s3daemon.delete_pidfile();
@@ -962,10 +967,18 @@ int main(int argc, char **argv) {
     // fatal message will call exit
     s3_log(S3_LOG_FATAL, "", "Failed to create a global bucket KVS index\n");
   }
+  s3_log(S3_LOG_DEBUG, nullptr,
+         "Global bucket list index OID: %08zx-%08zx, PVer: %08zx-%08zx, "
+         "layout_type: 0x%x",
+         global_bucket_list_index_layout.oid.u_hi,
+         global_bucket_list_index_layout.oid.u_lo,
+         global_bucket_list_index_layout.pver.f_container,
+         global_bucket_list_index_layout.pver.f_key,
+         global_bucket_list_index_layout.layout_type);
 
-  // bucket_metadata_list_index_oid - will hold accountid/bucket_name as key,
+  // bucket_metadata_list_index_layout - will hold accountid/bucket_name as key,
   // bucket medata as value.
-  rc = create_global_index(bucket_metadata_list_index_oid,
+  rc = create_global_index(bucket_metadata_list_index_layout,
                            BUCKET_METADATA_LIST_INDEX_OID_U_LO);
   if (rc < 0) {
     s3daemon.delete_pidfile();
@@ -974,10 +987,18 @@ int main(int argc, char **argv) {
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "Failed to create a bucket metadata KVS index\n");
   }
+  s3_log(S3_LOG_DEBUG, nullptr,
+         "Bucket metadata list index OID: %08zx-%08zx, PVer: %08zx-%08zx, "
+         "layout_type: 0x%x",
+         bucket_metadata_list_index_layout.oid.u_hi,
+         bucket_metadata_list_index_layout.oid.u_lo,
+         bucket_metadata_list_index_layout.pver.f_container,
+         bucket_metadata_list_index_layout.pver.f_key,
+         bucket_metadata_list_index_layout.layout_type);
 
-  // global_probable_dead_object_list_index_oid - will have stale object oid
+  // global_probable_dead_object_list_index_layout - will have stale object oid
   // information
-  rc = create_global_index(global_probable_dead_object_list_index_oid,
+  rc = create_global_index(global_probable_dead_object_list_index_layout,
                            OBJECT_PROBABLE_DEAD_OID_LIST_INDEX_OID_U_LO);
   if (rc < 0) {
     s3daemon.delete_pidfile();
@@ -986,10 +1007,18 @@ int main(int argc, char **argv) {
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "Failed to global object leak list KVS index\n");
   }
+  s3_log(S3_LOG_DEBUG, nullptr,
+         "Global probable dead object list index OID: %08zx-%08zx, PVer: "
+         "%08zx-%08zx, layout_type: 0x%x",
+         global_probable_dead_object_list_index_layout.oid.u_hi,
+         global_probable_dead_object_list_index_layout.oid.u_lo,
+         global_probable_dead_object_list_index_layout.pver.f_container,
+         global_probable_dead_object_list_index_layout.pver.f_key,
+         global_probable_dead_object_list_index_layout.layout_type);
 
-  // global_instance_list_index - will hold s3server fid as key,
+  // global_instance_list_index_layout - will hold s3server fid as key,
   // instance id as value.
-  rc = create_global_index(global_instance_list_index,
+  rc = create_global_index(global_instance_list_index_layout,
                            GLOBAL_INSTANCE_INDEX_U_LO);
   if (rc < 0) {
     s3daemon.delete_pidfile();
@@ -998,6 +1027,14 @@ int main(int argc, char **argv) {
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "Failed to create global instance index\n");
   }
+  s3_log(S3_LOG_DEBUG, nullptr,
+         "Global  instance list index OID: %08zx-%08zx, PVer: %08zx-%08zx, "
+         "layout_type: 0x%x",
+         global_instance_list_index_layout.oid.u_hi,
+         global_instance_list_index_layout.oid.u_lo,
+         global_instance_list_index_layout.pver.f_container,
+         global_instance_list_index_layout.pver.f_key,
+         global_instance_list_index_layout.layout_type);
 
   extern struct m0_config motr_conf;
 
@@ -1030,7 +1067,7 @@ int main(int argc, char **argv) {
           mote_kv_writer_factory->create_sync_motr_kvs_writer("", s3_motr_api);
     }
 
-    rc = motr_kv_writer->put_keyval_sync(global_instance_list_index,
+    rc = motr_kv_writer->put_keyval_sync(global_instance_list_index_layout,
                                          s3server_instance_id);
     if (rc != 0) {
       s3daemon.delete_pidfile();

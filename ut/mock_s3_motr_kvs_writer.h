@@ -32,32 +32,34 @@ class MockS3MotrKVSWriter : public S3MotrKVSWriter {
   MockS3MotrKVSWriter(std::shared_ptr<RequestObject> req,
                       std::shared_ptr<MotrAPI> s3_motr_api)
       : S3MotrKVSWriter(req, s3_motr_api) {}
-  MOCK_METHOD0(get_state, S3MotrKVSWriterOpState());
+  MOCK_CONST_METHOD0(get_state, S3MotrKVSWriterOpState());
+  MOCK_CONST_METHOD0(get_index_layout, struct s3_motr_idx_layout());
   MOCK_METHOD1(get_op_ret_code_for, int(int index));
   MOCK_METHOD1(get_op_ret_code_for_del_kv, int(int index));
-  MOCK_METHOD3(create_index, void(std::string index_name,
+  MOCK_METHOD3(create_index, void(const std::string& index_name,
                                   std::function<void(void)> on_success,
                                   std::function<void(void)> on_failed));
   MOCK_METHOD3(create_index_with_oid,
-               void(struct m0_uint128, std::function<void(void)> on_success,
+               void(const struct m0_uint128&, std::function<void(void)>,
                     std::function<void(void)> on_failed));
   MOCK_METHOD3(delete_index,
-               void(struct m0_uint128, std::function<void(void)> on_success,
+               void(const struct s3_motr_idx_layout&, std::function<void(void)>,
                     std::function<void(void)> on_failed));
-  MOCK_METHOD3(delete_indexes, void(std::vector<struct m0_uint128> oids,
-                                    std::function<void(void)> on_success,
-                                    std::function<void(void)> on_failed));
-  MOCK_METHOD4(delete_keyval,
-               void(struct m0_uint128 oid, std::vector<std::string> keys,
+  MOCK_METHOD3(delete_indices,
+               void(const std::vector<struct s3_motr_idx_layout>&,
                     std::function<void(void)> on_success,
                     std::function<void(void)> on_failed));
+  MOCK_METHOD4(delete_keyval, void(const struct s3_motr_idx_layout&,
+                                   const std::vector<std::string>&,
+                                   std::function<void(void)> on_success,
+                                   std::function<void(void)> on_failed));
 
   MOCK_METHOD5(put_keyval,
-               void(struct m0_uint128 oid, std::string key, std::string val,
-                    std::function<void(void)> on_success,
+               void(const struct s3_motr_idx_layout&, const std::string&,
+                    const std::string&, std::function<void(void)> on_success,
                     std::function<void(void)> on_failed));
   MOCK_METHOD4(put_keyval,
-               void(struct m0_uint128 oid,
+               void(const struct s3_motr_idx_layout&,
                     const std::map<std::string, std::string>& kv_list,
                     std::function<void(void)> on_success,
                     std::function<void(void)> on_failed));

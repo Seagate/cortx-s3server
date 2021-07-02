@@ -93,7 +93,7 @@ TEST_F(S3MotrKVSWriterTest, PutKeyValEmpty) {
   S3CallBack s3motrkvscallbackobj;
 
   ASSERT_DEATH((action_under_test->put_keyval(
-                   oid, "", "",
+                   {oid}, "", "",
                    std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
                    std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj))),
                ".*");
@@ -104,7 +104,7 @@ TEST_F(S3MotrKVSWriterTest, DelKeyValEmpty) {
 
   ASSERT_DEATH(
       (action_under_test->delete_keyval(
-          oid, "", std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
+          {oid}, "", std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj),
           std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj))),
       ".*");
 }

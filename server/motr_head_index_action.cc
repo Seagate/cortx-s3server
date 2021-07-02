@@ -63,7 +63,7 @@ void MotrHeadIndexAction::check_index_exist() {
   motr_kv_reader =
       motr_kvs_reader_factory_ptr->create_motr_kvs_reader(request, motr_api);
   motr_kv_reader->lookup_index(
-      index_id,
+      {index_id},
       std::bind(&MotrHeadIndexAction::check_index_exist_success, this),
       std::bind(&MotrHeadIndexAction::check_index_exist_failure, this));
 }

@@ -59,8 +59,10 @@ class S3ObjectAction : public S3Action {
 
   std::string additional_bucket_name;
   std::string additional_object_name;
-  m0_uint128 object_list_oid;
-  m0_uint128 objects_version_list_oid;
+
+  struct s3_motr_idx_layout obj_list_idx_lo = {};
+  struct s3_motr_idx_layout obj_version_list_idx_lo = {};
+
   void fetch_bucket_info();
   void fetch_object_info();
   void fetch_additional_bucket_info();

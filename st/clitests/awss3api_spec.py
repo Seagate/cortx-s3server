@@ -1281,6 +1281,25 @@ os.environ["AWS_SECRET_ACCESS_KEY"] = source_access_key_args['SecretAccessKey']
 AwsTest('Aws can copy object after policy update').copy_object("source-bucket/source-object", "target-bucket", "copy1")\
     .execute_test().command_is_successful()
 
+# update destination bucket policy to deny putobjectacl permission
+policy_target_bucket_relative_acl = os.path.join(os.path.dirname(__file__), 'policy_files', 'target_bucket_denyobjectacl.json')
+policy_target_bucket_acl = "file://" + os.path.abspath(policy_target_bucket_relative_acl)
+
+os.environ["AWS_ACCESS_KEY_ID"] = destination_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = destination_access_key_args['SecretAccessKey']
+
+AwsTest("Aws can update bucket policy on target bucket to deny putobjectacl")\
+    .put_bucket_policy("target-bucket", policy_target_bucket_acl)\
+    .execute_test().command_is_successful()
+
+# Copy object should fail with acl header
+os.environ["AWS_ACCESS_KEY_ID"] = source_access_key_args['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = source_access_key_args['SecretAccessKey']
+AwsTest('Aws cannot copy object after policy update')\
+    .copy_object("source-bucket/source-object", "target-bucket", "copy2", "bucket-owner-full-control")\
+        .execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+
+
 os.environ["AWS_ACCESS_KEY_ID"] = source_access_key_args['AccessKeyId']
 os.environ["AWS_SECRET_ACCESS_KEY"] = source_access_key_args['SecretAccessKey']
 AwsTest("Aws can delete policy on bucket").delete_bucket_policy("source-bucket").execute_test().command_is_successful()

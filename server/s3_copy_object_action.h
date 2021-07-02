@@ -147,5 +147,7 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   FRIEND_TEST(S3CopyObjectActionTest, SendFailedResponseAtEnd);
   FRIEND_TEST(S3CopyObjectActionTest, SendFailedResponseSpread);
   FRIEND_TEST(S3CopyObjectActionTest, DestinationAuthorization);
+  FRIEND_TEST(S3CopyObjectActionTest,
+              DestinationAuthorizationSourceTagsAndACLHeader);
 };
 #endif  // __S3_SERVER_S3_COPY_OBJECT_ACTION_H__

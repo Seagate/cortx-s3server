@@ -47,6 +47,7 @@ class MockS3MotrReader : public S3MotrReader {
   MOCK_METHOD1(get_next_block, size_t(char** data));
   MOCK_METHOD0(extract_blocks_read, S3BufferSequence());
   MOCK_METHOD1(set_last_index, void(size_t));
+  MOCK_METHOD0(get_evbuffer_ownership, struct evbuffer*());
 };
 
 #endif

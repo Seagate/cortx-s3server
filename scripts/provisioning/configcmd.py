@@ -45,6 +45,7 @@ class ConfigCmd(SetupCmd):
 
       self.update_cluster_id()
       self.read_ldap_credentials()
+      self.update_rootdn_credentials()
 
     except Exception as e:
       raise S3PROVError(f'exception: {e}')
@@ -59,9 +60,18 @@ class ConfigCmd(SetupCmd):
     self.logger.info("validations completed")
 
     try:
+
       self.logger.info("update motr max units per request started")
       self.update_motr_max_units_per_request()
       self.logger.info("update motr max units per request completed")
+
+      # disable S3server, S3authserver, haproxy, BG delete services on reboot as 
+      # it will be managed by HA
+      self.logger.info('Disable services on reboot started')
+      services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver"]
+      self.disable_services(services_list)
+      self.logger.info('Disable services on reboot completed')
+
 
       self.logger.info('create auth jks password started')
       self.create_auth_jks_password()

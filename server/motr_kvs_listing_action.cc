@@ -136,7 +136,7 @@ void MotrKVSListingAction::get_next_key_value() {
     // is passed during listing of all keys. If this flag is not passed then
     // input key is returned in result.
     motr_kv_reader->next_keyval(
-        index_id, last_key, max_record_count,
+        {index_id}, last_key, max_record_count,
         std::bind(&MotrKVSListingAction::get_next_key_value_successful, this),
         std::bind(&MotrKVSListingAction::get_next_key_value_failed, this));
   }
