@@ -277,7 +277,7 @@ class SetupCmd(object):
       "PREPARE" : ["POST_INSTALL", "PREPARE"],
       "CONFIG" : ["POST_INSTALL", "PREPARE", "CONFIG"],
       "INIT" : ["POST_INSTALL", "PREPARE", "CONFIG", "INIT"],
-      "RESET": ["reset"],
+      "RESET": ["RESET"],
       "CLEANUP": ["CLEANUP"],
       "TEST" : ["TEST"]}
 
