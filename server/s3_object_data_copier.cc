@@ -39,17 +39,15 @@ S3ObjectDataCopier::S3ObjectDataCopier(
 
   request_id = this->request_object->get_request_id();
   size_of_ev_buffer = g_option_instance->get_libevent_pool_buffer_size();
-  assert(read_data_buffer.size() == 0);
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 }
 
 S3ObjectDataCopier::~S3ObjectDataCopier() {
-  if (!data_blocks_writing.empty()) {
-    cleanup_blocks_written();
+  if (p_evbuffer_write) {
+    ::evbuffer_free(p_evbuffer_write);
   }
-  if (!data_blocks_read.empty()) {
-    data_blocks_writing = std::move(data_blocks_read);
-    cleanup_blocks_written();
+  if (p_evbuffer_read) {
+    ::evbuffer_free(p_evbuffer_read);
   }
 }
 
@@ -58,6 +56,7 @@ void S3ObjectDataCopier::read_data_block() {
 
   assert(!read_in_progress);
   assert(data_blocks_read.empty());
+  assert(!p_evbuffer_read);
   assert(bytes_left_to_read > 0);
 
   const auto n_blocks = std::min<size_t>(
@@ -91,14 +90,6 @@ void S3ObjectDataCopier::read_data_block_success() {
 
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_INFO, request_id, "Reading a part of data succeeded");
-  // Save ev buffer containing the read data, which will be freed after
-  // data write completion.
-  struct evbuffer* read_buffer = motr_reader->get_evbuffer_ownership();
-  if (read_buffer) {
-    read_data_buffer.push_back(read_buffer);
-    s3_log(S3_LOG_DEBUG, request_id, "Added read buffer (%p) to queue",
-           read_buffer);
-  }
 
   assert(read_in_progress);
   read_in_progress = false;
@@ -116,6 +107,12 @@ void S3ObjectDataCopier::read_data_block_success() {
   assert(data_blocks_read.empty());
   data_blocks_read = motr_reader->extract_blocks_read();
 
+  // Save ev buffer containing the read data, which will be freed after
+  // data write completion.
+  assert(!p_evbuffer_read);
+  p_evbuffer_read = motr_reader->get_evbuffer_ownership();
+  assert(p_evbuffer_read != nullptr);
+
   size_t bytes_in_chunk_count = 0;
 
   if (data_blocks_read.empty()) {
@@ -131,7 +128,7 @@ void S3ObjectDataCopier::read_data_block_success() {
   }
   // Calculating actial size of data that has just been read
 
-  for (size_t i = 0, n = data_blocks_read.size() - 1; i <= n; ++i) {
+  for (size_t i = 0, n = data_blocks_read.size(); i < n; ++i) {
     const auto motr_block_size = data_blocks_read[i].second;
     assert(motr_block_size == size_of_ev_buffer);
 
@@ -142,7 +139,7 @@ void S3ObjectDataCopier::read_data_block_success() {
     s3_log(S3_LOG_DEBUG, request_id,
            "Too many data has been read. Data left - %zu, got - %zu",
            bytes_left_to_read, bytes_in_chunk_count);
-    get_buffers(data_blocks_read, bytes_in_chunk_count, bytes_left_to_read);
+    // get_buffers(data_blocks_read, bytes_in_chunk_count, bytes_left_to_read);
     bytes_in_chunk_count = bytes_left_to_read;
     bytes_left_to_read = 0;
   } else {
@@ -160,6 +157,7 @@ void S3ObjectDataCopier::read_data_block_success() {
       // Writing has started successfully.
       // So we have 'space' for reading.
       assert(data_blocks_read.empty());
+      assert(!p_evbuffer_read);
 
       read_data_block();
     }
@@ -189,19 +187,20 @@ void S3ObjectDataCopier::write_data_block() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
 
   assert(!write_in_progress);
-  assert(data_blocks_writing.empty());
+
   assert(!data_blocks_read.empty());
 
-  data_blocks_writing = std::move(data_blocks_read);
+  assert(p_evbuffer_read != nullptr);
+  assert(!p_evbuffer_write);
+  p_evbuffer_write = p_evbuffer_read;
+  p_evbuffer_read = nullptr;
+
   // We have just separated part of data for writing and
   // also freed a 'slot' for futher reading
   motr_writer->write_content(
       std::bind(&S3ObjectDataCopier::write_data_block_success, this),
       std::bind(&S3ObjectDataCopier::write_data_block_failed, this),
-      data_blocks_writing,  // NO std::move()!
-                            // We must pass a copy of the stucture.
-                            // Data buffers will be freed just after writing.
-      size_of_ev_buffer);
+      std::move(data_blocks_read), size_of_ev_buffer);
 
   if (motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id, "Write of data block failed to start");
@@ -218,27 +217,15 @@ void S3ObjectDataCopier::write_data_block() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3ObjectDataCopier::cleanup_blocks_written() {
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  if (!read_data_buffer.empty()) {
-    struct evbuffer* buffer = read_data_buffer.front();
-    read_data_buffer.pop_front();
-    if (buffer) {
-      s3_log(S3_LOG_DEBUG, request_id, "Released read data block (%p)", buffer);
-      // Below will release buffer to mempool
-      evbuffer_free(buffer);
-    }
-  }
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
 void S3ObjectDataCopier::write_data_block_success() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
 
+  assert(p_evbuffer_write != nullptr);
+  ::evbuffer_free(p_evbuffer_write);
+  p_evbuffer_write = nullptr;
+
   assert(write_in_progress);
   write_in_progress = false;
-
-  cleanup_blocks_written();
 
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, nullptr, "Shutdown or rollback");
@@ -285,8 +272,6 @@ void S3ObjectDataCopier::write_data_block_failed() {
   write_in_progress = false;
 
   copy_failed = true;
-
-  cleanup_blocks_written();
 
   set_s3_error(motr_writer->get_state() == S3MotrWiterOpState::failed_to_launch
                    ? "ServiceUnavailable"

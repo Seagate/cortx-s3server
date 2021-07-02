@@ -100,8 +100,6 @@ enum class S3MotrKVSReaderOpState {
 
 class S3MotrKVSReader {
  private:
-  struct m0_uint128 id;
-
   std::shared_ptr<RequestObject> request;
   std::unique_ptr<S3MotrKVSReaderContext> reader_context;
   std::shared_ptr<MotrAPI> s3_motr_api;
@@ -112,31 +110,38 @@ class S3MotrKVSReader {
   // Used to report to caller
   std::function<void()> handler_on_success;
   std::function<void()> handler_on_failed;
-  S3MotrKVSReaderOpState state;
+  S3MotrKVSReaderOpState state = S3MotrKVSReaderOpState::start;
 
   // Holds references to keys and values after the read so it can be consumed.
-  struct s3_motr_kvs_op_context* motr_kvs_op_context;
+  struct s3_motr_kvs_op_context* motr_kvs_op_context = nullptr;
   std::string last_value;
   // Map to hold last result: first element is `key`, the second is a pair of
   // `return status` & the `value` corresponding to the `key`.
   // `value` is valid if `return status` is 0.
   std::map<std::string, std::pair<int, std::string>> last_result_keys_values;
-  size_t iteration_index;
+  size_t iteration_index = 0;
 
-  struct s3_motr_idx_context* idx_ctx;
+  struct s3_motr_idx_context* idx_ctx = nullptr;
 
   // save reference of key buffer in case of next_keyval op. It needs to be
   // freed post op if any keys were returned successfully.
-  void* key_ref_copy;
+  void* key_ref_copy = nullptr;
 
   void clean_up_contexts();
+
+  void get_keyval_successful();
+  void get_keyval_failed();
+  void next_keyval_successful();
+  void next_keyval_failed();
+  void lookup_index_successful();
+  void lookup_index_failed();
 
  public:
   S3MotrKVSReader(std::shared_ptr<RequestObject> req,
                   std::shared_ptr<MotrAPI> motr_api = nullptr);
   virtual ~S3MotrKVSReader();
 
-  virtual S3MotrKVSReaderOpState get_state() { return state; }
+  virtual S3MotrKVSReaderOpState get_state() const { return state; }
 
   // Async get operation.
   // Note -- get_keyval() is called with oid of index
@@ -144,19 +149,18 @@ class S3MotrKVSReader {
   // std::function<void(void)> on_success, std::function<void(void)> on_failed);
   // void get_keyval(std::string index_name, std::string key,
   // std::function<void(void)> on_success, std::function<void(void)> on_failed);
-  virtual void get_keyval(struct m0_uint128 oid, std::vector<std::string> keys,
+  virtual void get_keyval(const struct s3_motr_idx_layout& idx_lo,
+                          const std::vector<std::string>& keys,
                           std::function<void(void)> on_success,
                           std::function<void(void)> on_failed);
-  virtual void get_keyval(struct m0_uint128 oid, std::string key,
+  virtual void get_keyval(const struct s3_motr_idx_layout& idx_lo,
+                          const std::string& key,
                           std::function<void(void)> on_success,
                           std::function<void(void)> on_failed);
-
-  void get_keyval_successful();
-  void get_keyval_failed();
 
   // When looking up for just one KV, use this else for multiple use
   // get_key_values
-  virtual std::string get_value() { return last_value; }
+  virtual const std::string& get_value() const { return last_value; }
 
   // Used to iterate over the key-value pairs.
   // If the input key is empty string "", it returns the first count key-value
@@ -166,22 +170,19 @@ class S3MotrKVSReader {
   // Default behaviour of this API is exclude input key from results.
   // If input key should be included in the results, then flag should be
   // specified as 0.
-  virtual void next_keyval(struct m0_uint128 idx_oid, std::string key,
-                           size_t nr_kvp, std::function<void(void)> on_success,
+  virtual void next_keyval(const struct s3_motr_idx_layout& idx_lo,
+                           const std::string& key, size_t nr_kvp,
+                           std::function<void(void)> on_success,
                            std::function<void(void)> on_failed,
                            unsigned int flag = M0_OIF_EXCLUDE_START_KEY);
-  void next_keyval_successful();
-  void next_keyval_failed();
 
-  virtual void lookup_index(struct m0_uint128 idx_oid,
+  virtual void lookup_index(const struct s3_motr_idx_layout& idx_lo,
                             std::function<void(void)> on_success,
                             std::function<void(void)> on_failed);
 
-  void lookup_index_successful();
-  void lookup_index_failed();
-
   // returns the fetched kv pairs
-  virtual std::map<std::string, std::pair<int, std::string>>& get_key_values() {
+  virtual const std::map<std::string, std::pair<int, std::string>>&
+  get_key_values() const {
     return last_result_keys_values;
   }
 

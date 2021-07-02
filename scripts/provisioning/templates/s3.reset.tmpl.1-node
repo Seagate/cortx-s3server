@@ -16,12 +16,4 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-cortx:
-  software:
-    openldap:
-      root:
-        user: "admin"
-        secret: "TMPL_ROOT_SECRET_KEY"
-      sgiam:
-        user: "sgiamadmin"
-        secret: "TMPL_SGIAM_SECRET_KEY"
+

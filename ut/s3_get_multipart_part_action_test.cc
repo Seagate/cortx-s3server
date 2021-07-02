@@ -111,7 +111,7 @@ TEST_F(S3GetMultipartPartActionTest, ConstructorTest) {
       "1", action_under_test->multipart_part_list.request_marker_key.c_str());
   EXPECT_STREQ("206440e0-1f5b-4114-9f93-aa96350e4a16",
                action_under_test->upload_id.c_str());
-  EXPECT_OID_EQ(action_under_test->multipart_oid, zero_oid);
+  EXPECT_OID_EQ(action_under_test->mp_idx_lo.oid, zero_oid);
   EXPECT_STREQ("206440e0-1f5b-4114-9f93-aa96350e4a16",
                action_under_test->multipart_part_list.upload_id.c_str());
   EXPECT_STREQ("STANDARD",
@@ -129,7 +129,7 @@ TEST_F(S3GetMultipartPartActionTest,
       bucket_meta_factory->mock_bucket_metadata;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillOnce(Return(S3BucketMetadataState::present));
-  action_under_test->bucket_metadata->set_multipart_index_oid(oid);
+  action_under_test->bucket_metadata->set_multipart_index_layout({oid});
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), load(_, _))
       .Times(1);
   action_under_test->get_multipart_metadata();
@@ -143,7 +143,7 @@ TEST_F(S3GetMultipartPartActionTest, GetMultiPartMetadataPresentOIDNullTest) {
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(S3BucketMetadataState::present));
-  action_under_test->bucket_metadata->set_multipart_index_oid(empty_oid);
+  action_under_test->bucket_metadata->set_multipart_index_layout({empty_oid});
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), load(_, _))
       .Times(0);
 
@@ -262,8 +262,9 @@ TEST_F(S3GetMultipartPartActionTest, GetKeyObjectSuccessfulShutdownSet) {
 TEST_F(S3GetMultipartPartActionTest, GetKeyObjectSuccessfulValueEmpty) {
   action_under_test->motr_kv_reader =
       motr_kvs_reader_factory->mock_motr_kvs_reader;
+  std::string s_retval;
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
-      .WillRepeatedly(Return(""));
+      .WillRepeatedly(ReturnRef(s_retval));
   action_under_test->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test,
                          S3GetMultipartPartActionTest::func_callback_one, this);
@@ -278,9 +279,10 @@ TEST_F(S3GetMultipartPartActionTest,
       motr_kvs_reader_factory->mock_motr_kvs_reader;
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
+  std::string s_retval =
+      "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}";
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
-      .WillRepeatedly(Return(
-           "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));
+      .WillRepeatedly(ReturnRef(s_retval));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
       .WillRepeatedly(Return(0));
   action_under_test->return_list_size = action_under_test->max_parts - 1;
@@ -298,9 +300,10 @@ TEST_F(S3GetMultipartPartActionTest,
       motr_kvs_reader_factory->mock_motr_kvs_reader;
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
+  std::string s_retval =
+      "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}";
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
-      .WillRepeatedly(Return(
-           "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));
+      .WillRepeatedly(ReturnRef(s_retval));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
       .WillRepeatedly(Return(0));
   action_under_test->return_list_size = 0;
@@ -320,9 +323,10 @@ TEST_F(S3GetMultipartPartActionTest,
       motr_kvs_reader_factory->mock_motr_kvs_reader;
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
+  std::string s_retval =
+      "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}";
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
-      .WillRepeatedly(Return(
-           "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));
+      .WillRepeatedly(ReturnRef(s_retval));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
       .WillRepeatedly(Return(1));
   action_under_test->clear_tasks();
@@ -586,4 +590,3 @@ TEST_F(S3GetMultipartPartActionTest, SendInternalErrorRetry) {
 
   action_under_test->send_response_to_s3_client();
 }
-

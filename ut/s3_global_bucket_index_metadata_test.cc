@@ -154,7 +154,7 @@ TEST_F(S3GlobalBucketIndexMetadataTest, LoadSuccessful) {
 
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(mock_json_string));
+      .WillRepeatedly(ReturnRef(mock_json_string));
 
   global_bucket_idx_metadata_under_test_ptr->handler_on_success =
       std::bind(&S3GlobalBucketIndexMetadataTest::func_callback_one, this);
@@ -172,7 +172,7 @@ TEST_F(S3GlobalBucketIndexMetadataTest, LoadSuccessfulJsonError) {
 
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(mock_json_string));
+      .WillRepeatedly(ReturnRef(mock_json_string));
 
   global_bucket_idx_metadata_under_test_ptr->handler_on_failed =
       std::bind(&S3GlobalBucketIndexMetadataTest::func_callback_one, this);
