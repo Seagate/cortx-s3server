@@ -36,11 +36,11 @@ using ::testing::ReturnRef;
     action_under_test_ptr->fetch_bucket_info();                           \
   } while (0)
 
-#define CREATE_OBJECT_METADATA                                                 \
-  do {                                                                         \
-    action_under_test_ptr->object_metadata =                                   \
-        object_meta_factory->create_object_metadata_obj(request_mock,          \
-                                                        object_list_indx_oid); \
+#define CREATE_OBJECT_METADATA                           \
+  do {                                                   \
+    action_under_test_ptr->object_metadata =             \
+        object_meta_factory->create_object_metadata_obj( \
+            request_mock, {object_list_indx_oid});       \
   } while (0)
 
 class S3DeleteObjectTaggingActionTest : public testing::Test {
@@ -128,7 +128,7 @@ TEST_F(S3DeleteObjectTaggingActionTest, GetObjectMetadataFailedMissing) {
       .WillRepeatedly(Return(S3ObjectMetadataState::missing));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(404, _)).Times(AtLeast(1));
-  action_under_test_ptr->object_list_oid = {0xffff, 0xfff1f};
+  action_under_test_ptr->obj_list_idx_lo = {{0xffff, 0xfff1f}};
   action_under_test_ptr->fetch_object_info_failed();
 
   EXPECT_TRUE(action_under_test_ptr->object_metadata != NULL);
@@ -142,7 +142,7 @@ TEST_F(S3DeleteObjectTaggingActionTest, GetObjectMetadataFailedInternalError) {
       .WillRepeatedly(Return(S3ObjectMetadataState::failed));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
-  action_under_test_ptr->object_list_oid = {0xffff, 0xfff1f};
+  action_under_test_ptr->obj_list_idx_lo = {{0xffff, 0xfff1f}};
   action_under_test_ptr->fetch_object_info_failed();
 
   EXPECT_TRUE(action_under_test_ptr->object_metadata != NULL);
@@ -203,4 +203,3 @@ TEST_F(S3DeleteObjectTaggingActionTest, SendResponseToClientSuccess) {
   EXPECT_CALL(*request_mock, send_response(204, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
 }
-

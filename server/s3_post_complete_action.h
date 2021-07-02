@@ -67,7 +67,7 @@ class S3PostCompleteAction : public S3ObjectAction {
   std::string etag;
   std::map<std::string, std::string, S3NumStrComparator> parts;
   uint64_t object_size;
-  m0_uint128 multipart_index_oid;
+  struct s3_motr_idx_layout multipart_index_layout;
   bool delete_multipart_object;
   bool obj_metadata_updated;
   void parse_xml_str(std::string &xml_str);

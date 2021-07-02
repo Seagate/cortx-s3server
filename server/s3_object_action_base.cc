@@ -19,6 +19,7 @@
  */
 
 #include "s3_object_action_base.h"
+#include "s3_m0_uint128_helper.h"
 #include "s3_motr_layout.h"
 #include "s3_error_codes.h"
 #include "s3_option.h"
@@ -35,8 +36,7 @@ S3ObjectAction::S3ObjectAction(
                skip_auth) {
 
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
-  object_list_oid = {0ULL, 0ULL};
-  objects_version_list_oid = {0ULL, 0ULL};
+
   if (bucket_meta_factory) {
     bucket_metadata_factory = std::move(bucket_meta_factory);
   } else {
@@ -77,9 +77,11 @@ void S3ObjectAction::fetch_object_info() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   // Object create case no object metadata exist
   s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
-  object_list_oid = bucket_metadata->get_object_list_index_oid();
-  objects_version_list_oid =
-      bucket_metadata->get_objects_version_list_index_oid();
+
+  obj_list_idx_lo = bucket_metadata->get_object_list_index_layout();
+  obj_version_list_idx_lo =
+      bucket_metadata->get_objects_version_list_index_layout();
+
   if (request->http_verb() == S3HttpVerb::GET) {
     S3OperationCode operation_code = request->get_operation_code();
     if ((operation_code == S3OperationCode::tagging) ||
@@ -88,16 +90,12 @@ void S3ObjectAction::fetch_object_info() {
       check_shutdown_signal_for_next_task(false);
     }
   }
-  if ((object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) ||
-      (objects_version_list_oid.u_hi == 0ULL &&
-       objects_version_list_oid.u_lo == 0ULL)) {
+  if (zero(obj_list_idx_lo.oid) || zero(obj_version_list_idx_lo.oid)) {
     // Object list index and version list index missing.
     fetch_object_info_failed();
   } else {
     object_metadata = object_metadata_factory->create_object_metadata_obj(
-        request, object_list_oid);
-    object_metadata->set_objects_version_list_index_oid(
-        objects_version_list_oid);
+        request, obj_list_idx_lo, obj_version_list_idx_lo);
 
     object_metadata->load(
         std::bind(&S3ObjectAction::fetch_object_info_success, this),
@@ -146,25 +144,21 @@ void S3ObjectAction::fetch_additional_bucket_info_failed() {
 void S3ObjectAction::fetch_additional_object_info() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-  m0_uint128 additional_object_list_oid =
-      additional_bucket_metadata->get_object_list_index_oid();
-  m0_uint128 additional_object_version_list_oid =
-      additional_bucket_metadata->get_objects_version_list_index_oid();
+  const auto& additional_object_list_layout =
+      additional_bucket_metadata->get_object_list_index_layout();
+  const auto& additional_object_version_list_layout =
+      additional_bucket_metadata->get_objects_version_list_index_layout();
 
-  if ((additional_object_list_oid.u_hi == 0ULL &&
-       additional_object_list_oid.u_lo == 0ULL) ||
-      (additional_object_version_list_oid.u_hi == 0ULL &&
-       additional_object_version_list_oid.u_lo == 0ULL)) {
+  if (zero(additional_object_list_layout.oid) ||
+      zero(additional_object_version_list_layout.oid)) {
     // Object list index and version list index missing.
     fetch_additional_object_info_failed();
   } else {
     additional_object_metadata =
         object_metadata_factory->create_object_metadata_obj(
             request, additional_bucket_name, additional_object_name,
-            additional_object_list_oid);
-
-    additional_object_metadata->set_objects_version_list_index_oid(
-        additional_object_version_list_oid);
+            additional_object_list_layout,
+            additional_object_version_list_layout);
 
     additional_object_metadata->load(
         std::bind(&S3ObjectAction::fetch_additional_object_info_success, this),

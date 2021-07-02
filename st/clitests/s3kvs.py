@@ -77,10 +77,10 @@ def _extract_oid(json_keyval, bucket=True):
         dec_string_oid_hi = base64.b64decode(oid_list[0])
         dec_string_oid_lo = base64.b64decode(oid_list[1])
     else:
-        string_oid = keyval['motr_object_list_index_oid']
-        oid_list = string_oid.split("-")
-        dec_string_oid_hi = base64.b64decode(oid_list[0])
-        dec_string_oid_lo = base64.b64decode(oid_list[1])
+        string_layout = keyval['motr_object_list_index_layout']
+        decoded_bytes = base64.b64decode(string_layout)
+        dec_string_oid_hi = decoded_bytes[0:8]
+        dec_string_oid_lo = decoded_bytes[8:16]
     int_oid_hi = int.from_bytes(dec_string_oid_hi,byteorder=sbyteorder)
     int_oid_lo = int.from_bytes(dec_string_oid_lo,byteorder=sbyteorder)
     oid_val.set_oid(hex(int_oid_hi), hex(int_oid_lo))
@@ -163,10 +163,10 @@ def _check_bucket_not_empty(bucket_record):
     default_empty_object_list_index_oid = "AAAAAAAAAAA="
     bucket_json_keyval = _find_keyval_json(bucket_record)
     bucket_keyval = json.loads(bucket_json_keyval)
-    string_oid = bucket_keyval['motr_object_list_index_oid']
-    oid_list = string_oid.split("-")
-    motr_object_list_index_oid_u_hi = base64.b64decode(oid_list[0])
-    motr_object_list_index_oid_u_lo = base64.b64decode(oid_list[1])
+    string_layout = bucket_keyval['motr_object_list_index_layout']
+    decoded_bytes = base64.b64decode(string_layout)
+    motr_object_list_index_oid_u_hi = decoded_bytes[0:8]
+    motr_object_list_index_oid_u_lo = decoded_bytes[8:16]
 
     if (motr_object_list_index_oid_u_hi == default_empty_object_list_index_oid and
         motr_object_list_index_oid_u_lo == default_empty_object_list_index_oid):

@@ -24,6 +24,7 @@
 #include "s3_get_bucket_action.h"
 #include "s3_iem.h"
 #include "s3_log.h"
+#include "s3_m0_uint128_helper.h"
 #include "s3_object_metadata.h"
 #include "s3_option.h"
 #include "s3_common_utilities.h"
@@ -152,9 +153,9 @@ void S3GetBucketAction::get_next_objects() {
     done();
     return;
   }
+  const auto& object_list_index_layout =
+      bucket_metadata->get_object_list_index_layout();
 
-  m0_uint128 object_list_index_oid =
-      bucket_metadata->get_object_list_index_oid();
   if (motr_kv_reader == nullptr) {
     motr_kv_reader = s3_motr_kvs_reader_factory->create_motr_kvs_reader(
         request, s3_motr_api);
@@ -178,8 +179,7 @@ void S3GetBucketAction::get_next_objects() {
     fetch_successful = true;
     object_list->set_key_count(key_Count);
     send_response_to_s3_client();
-  } else if (object_list_index_oid.u_hi == 0ULL &&
-             object_list_index_oid.u_lo == 0ULL) {
+  } else if (zero(object_list_index_layout.oid)) {
     fetch_successful = true;
     object_list->set_key_count(key_Count);
     send_response_to_s3_client();
@@ -192,12 +192,12 @@ void S3GetBucketAction::get_next_objects() {
       b_first_next_keyval_call = false;
       last_key = request_prefix;
       motr_kv_reader->next_keyval(
-          object_list_index_oid, last_key, max_record_count,
+          object_list_index_layout, last_key, max_record_count,
           std::bind(&S3GetBucketAction::get_next_objects_successful, this),
           std::bind(&S3GetBucketAction::get_next_objects_failed, this), 0);
     } else {
       motr_kv_reader->next_keyval(
-          object_list_index_oid, last_key, max_record_count,
+          object_list_index_layout, last_key, max_record_count,
           std::bind(&S3GetBucketAction::get_next_objects_successful, this),
           std::bind(&S3GetBucketAction::get_next_objects_failed, this));
     }
@@ -218,7 +218,7 @@ void S3GetBucketAction::get_next_objects_successful() {
   retry_count = 0;
   s3_log(S3_LOG_DEBUG, request_id, "Found Object listing\n");
   m0_uint128 object_list_index_oid =
-      bucket_metadata->get_object_list_index_oid();
+      bucket_metadata->get_object_list_index_layout().oid;
   bool atleast_one_json_error = false;
   bool last_key_in_common_prefix = false;
   bool skip_no_further_prefix_match = false;

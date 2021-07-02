@@ -36,14 +36,14 @@ using ::testing::ReturnRef;
     action_under_test_ptr->fetch_bucket_info();                           \
   } while (0)
 
-#define CREATE_OBJECT_METADATA                                                 \
-  do {                                                                         \
-    action_under_test_ptr->object_metadata =                                   \
-        object_meta_factory->create_object_metadata_obj(request_mock,          \
-                                                        object_list_indx_oid); \
+#define CREATE_OBJECT_METADATA                                         \
+  do {                                                                 \
+    action_under_test_ptr->object_metadata =                           \
+        object_meta_factory->create_object_metadata_obj(request_mock,  \
+                                                        index_layout); \
   } while (0)
 
-const struct m0_uint128 zero_oid = {};
+const struct s3_motr_idx_layout zero_index_layout = {};
 
 class S3GetObjectAclActionTest : public testing::Test {
  protected:  // You should make the members protected s.t. they can be
@@ -59,19 +59,19 @@ class S3GetObjectAclActionTest : public testing::Test {
     EXPECT_CALL(*request_mock, get_object_name())
         .WillRepeatedly(ReturnRef(object_name));
 
-    object_list_indx_oid = {0x11ffff, 0x1ffff};
+    index_layout = {{0x11ffff, 0x1ffff}};
     object_meta_factory =
         std::make_shared<MockS3ObjectMetadataFactory>(request_mock);
-    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
+    object_meta_factory->set_object_list_index_oid(index_layout.oid);
 
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(request_mock);
     EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
-                get_object_list_index_oid())
-        .WillRepeatedly(ReturnRef(zero_oid));
+                get_object_list_index_layout())
+        .WillRepeatedly(ReturnRef(zero_index_layout));
     EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
-                get_objects_version_list_index_oid())
-        .WillRepeatedly(ReturnRef(zero_oid));
+                get_objects_version_list_index_layout())
+        .WillRepeatedly(ReturnRef(zero_index_layout));
 
     std::map<std::string, std::string> input_headers;
     input_headers["Authorization"] = "1";
@@ -82,7 +82,7 @@ class S3GetObjectAclActionTest : public testing::Test {
         request_mock, bucket_meta_factory, object_meta_factory);
   }
 
-  struct m0_uint128 object_list_indx_oid;
+  struct s3_motr_idx_layout index_layout;
   std::shared_ptr<MockS3RequestObject> request_mock;
   std::shared_ptr<S3GetObjectACLAction> action_under_test_ptr;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
@@ -94,8 +94,8 @@ TEST_F(S3GetObjectAclActionTest, Constructor) {
   EXPECT_NE(0, action_under_test_ptr->number_of_tasks());
   EXPECT_TRUE(action_under_test_ptr->bucket_metadata_factory != NULL);
   EXPECT_TRUE(action_under_test_ptr->object_metadata_factory != NULL);
-  EXPECT_EQ(0, action_under_test_ptr->object_list_oid.u_lo);
-  EXPECT_EQ(0, action_under_test_ptr->object_list_oid.u_hi);
+  EXPECT_EQ(0, action_under_test_ptr->obj_list_idx_lo.oid.u_lo);
+  EXPECT_EQ(0, action_under_test_ptr->obj_list_idx_lo.oid.u_hi);
 }
 
 TEST_F(S3GetObjectAclActionTest, FetchBucketInfo) {
@@ -131,9 +131,7 @@ TEST_F(S3GetObjectAclActionTest, FetchBucketInfoFailedInternalError) {
 
 TEST_F(S3GetObjectAclActionTest, FetchObjectInfoEmpty) {
   CREATE_BUCKET_METADATA;
-  struct m0_uint128 object_list_oid = {0ULL, 0ULL};
-  action_under_test_ptr->bucket_metadata->set_object_list_index_oid(
-      object_list_oid);
+  action_under_test_ptr->bucket_metadata->set_object_list_index_layout({});
   EXPECT_CALL(*(request_mock), http_verb()).WillOnce(Return(S3HttpVerb::GET));
   EXPECT_CALL(*(request_mock), get_operation_code())
       .WillOnce(Return(S3OperationCode::tagging));
@@ -162,7 +160,7 @@ TEST_F(S3GetObjectAclActionTest, FetchObjectInfoFailedMissing) {
 TEST_F(S3GetObjectAclActionTest, FetchObjectInfoFailedInternalError) {
   CREATE_BUCKET_METADATA;
   CREATE_OBJECT_METADATA;
-  action_under_test_ptr->object_list_oid = {0x11ffff, 0x1ffff};
+  action_under_test_ptr->obj_list_idx_lo = {{0x11ffff, 0x1ffff}};
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::failed));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
@@ -206,4 +204,3 @@ TEST_F(S3GetObjectAclActionTest, SendResponseToClientSuccess) {
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
 }
-

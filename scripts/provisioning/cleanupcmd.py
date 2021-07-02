@@ -63,18 +63,17 @@ class CleanupCmd(SetupCmd):
     """Constructor."""
     try:
       super(CleanupCmd, self).__init__(config)
+      self.get_iam_admin_credentials()
 
-      self.read_ldap_credentials()
     except Exception as e:
       self.logger.error(f'Failed to read ldap credentials, error: {e}')
       raise e
 
   def process(self, pre_factory = False):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name} {self.url}")
+    self.logger.info(f"Processing {self.name}")
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
-    self.phase_keys_validate(self.url, self.name)
     self.validate_config_files(self.name)
     self.logger.info("validations completed")
 

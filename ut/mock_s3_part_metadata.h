@@ -32,7 +32,7 @@ class MockS3PartMetadata : public S3PartMetadata {
  public:
   MockS3PartMetadata(std::shared_ptr<S3RequestObject> req,
                      struct m0_uint128 oid, std::string uploadid, int part_num)
-      : S3PartMetadata(req, oid, uploadid, part_num) {}
+      : S3PartMetadata(req, {oid}, uploadid, part_num) {}
   MOCK_METHOD0(get_state, S3PartMetadataState());
   MOCK_METHOD1(set_md5, void(std::string));
   MOCK_METHOD0(reset_date_time_to_current, void());
