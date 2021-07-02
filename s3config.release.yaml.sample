@@ -29,8 +29,8 @@ S3_SERVER_CONFIG:                                       # Section for S3 Server
    S3_LOG_ENABLE_BUFFERING: true                        # DEBUG, INFO & WARN logs are buffered if buffering is enabled. ERROR and FATAL logs are always flushed. Default is true.
    S3_ENABLE_AUTH_SSL: false                            # Enable ssl communication between s3 server and auth server
    S3_REUSEPORT: true                                   # Enable reusing s3 server port
-   S3_WRITE_DATA_INTEGRITY_CHECK: true                  # TBD
-   S3_READ_DATA_INTEGRITY_CHECK: true                   # TBD
+   S3_WRITE_DATA_INTEGRITY_CHECK: false                  # TBD
+   S3_READ_DATA_INTEGRITY_CHECK: false                   # TBD
    S3_METADATA_INTEGRITY_CHECK: true                    # TBD
    S3_SALT_CHECKSUM: true                               # TBD 
    S3_PI_TYPE: "PI_TYPE_MD5_INC_CONTEXT"                  # TBD
