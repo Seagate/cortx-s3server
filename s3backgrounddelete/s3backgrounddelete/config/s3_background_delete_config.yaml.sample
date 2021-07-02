@@ -67,3 +67,12 @@ leakconfig:                                  # Section for object leak config
    leak_processing_delay_in_mins: 15                          # Time delay in mins after which probable delete entry is procesed for leak.
    version_processing_delay_in_mins: 5                        # Time delay in mins after which object version is processed
    cleanup_enabled: False                                     # Flag for cleanup during S3 instance non-active.
+
+background_delete_account:
+   account_name: "s3-background-delete-svc"
+   account_id: "67891"
+   canonical_id: "C67891"
+   mail: "s3-background-delete-svc@seagate.com"
+   s3_user_id: "450"
+   const_cipher_secret_str: "s3backgroundsecretkey"
+   const_cipher_access_str: "s3backgroundaccesskey"
