@@ -619,9 +619,9 @@ class SetupCmd(object):
     if enc_rootdn_passwd != None:
       self.rootdn_passwd = s3cipher_obj.decrypt(cipher_key, enc_rootdn_passwd)
 
-  def create_dict_for_BG_delete_account(self):
-    """returns a dictionary required for creating a BG delete account in init and reset phase."""
-    opfileconfstore = S3CortxConfStore(f'yaml://{self.BG_delete_config_file}', 'read_config_idx')
+  def get_config_param_for_BG_delete_account(self):
+    """to get the config parameters required in init and reset phase."""
+    opfileconfstore = S3CortxConfStore(f'yaml://{self.BG_delete_config_file}', 'read_bg_delete_config_idx')
 
     param_list = ['account_name', 'account_id', 'canonical_id', 'mail', 's3_user_id', 'const_cipher_secret_str', 'const_cipher_access_str']
     bgdelete_acc_input_params_dict = {}
