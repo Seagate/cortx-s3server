@@ -143,7 +143,7 @@ class ResetCmd(SetupCmd):
 
     try:
       # Recreate background delete account after LDAP reset
-      bgdelete_acc_input_params_dict = self.create_dict_for_BG_delete_account()
+      bgdelete_acc_input_params_dict = self.get_config_param_for_BG_delete_account()
       LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
     except Exception as e:
       if "Already exists" not in str(e):
