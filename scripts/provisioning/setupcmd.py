@@ -330,7 +330,7 @@ class SetupCmd(object):
     try:
       # Extract keys from yardstick file for current phase considering inheritance
       yardstick_list = self.extract_yardstick_list(phase_name)
-
+      self.logger.info(f"yardstick_list -> {yardstick_list}")
       # Set argument file confstore
       argument_file_confstore = S3CortxConfStore(arg_file, 'argument_file_index')
       # Extract keys from argument file
