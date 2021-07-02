@@ -104,11 +104,6 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
     cs_conf_file = S3CortxConfStore(config=conf_file, index=conf_file)
     conf_file_keys = cs_conf_file.get_all_keys()
 
-    # deleted keys dont go away in already loaded index.
-    # so we load at another index and re-populate conf_file_keys again.
-    conf_file_keys_after_delete = S3CortxConfStore(config=conf_file, index=conf_file+"after_delete")
-    conf_file_keys = conf_file_keys_after_delete.get_all_keys()
-
     #logic to determine which keys to merge.
     keys_to_overwrite = []
     for key in conf_new_sample_keys:

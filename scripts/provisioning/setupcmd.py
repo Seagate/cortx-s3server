@@ -270,45 +270,40 @@ class SetupCmd(object):
     #   PREPARE
     # For such examples, we skip and continue with
     # remaining keys.
+    
+    # map to identify which all keys to validate from phases
+    phase_list = {
+      "POST_INSTALL": ["POST_INSTALL"],
+      "PREPARE" : ["POST_INSTALL", "PREPARE"],
+      "CONFIG" : ["POST_INSTALL", "PREPARE", "CONFIG"],
+      "INIT" : ["POST_INSTALL", "PREPARE", "CONFIG", "INIT"],
+      "RESET": ["reset"],
+      "CLEANUP": ["CLEANUP"],
+      "TEST" : ["TEST"]}
 
+    # get all phases required to validate on current phase name
+    phases_to_validate = phase_list[phase_name]
+
+    # Get all keys from the s3_prov_config.yaml
     prov_keys_list = self._s3_confkeys_store.get_all_keys()
+
     # We have all "Key Constant" in prov_keys_list,
     # now extract "Actual Key" if it exists and
     # depending on phase and hierarchy, decide
     # whether it should be added to the yardstick
     # list for the phase passed here.
     yardstick_list = []
-    prev_phase = True
-    curr_phase = False
-    next_phase = False
-    for key in prov_keys_list:
-      # If PHASE is not relevant, skip the key.
-      # Or set flag as appropriate. For test,
-      # reset and cleanup, do not inherit keys
-      # from previous phases.
-      if next_phase:
-        break
-      if key.find(phase_name) == 0:
-        prev_phase = False
-        curr_phase = True
-      else:
-        if (
-             phase_name == "TEST" or
-             phase_name == "RESET" or
-             phase_name == "CLEANUP"
-           ):
+    for phase in phases_to_validate:
+      for key in prov_keys_list:
+        # comparing phase name with '>' to match exact key
+        if key.find(phase + ">") == 0:
+          value = self.get_confkey(key)
+          # If value does not exist which can be the
+          # case for certain phases as mentioned above,
+          # skip the value.
+          if value is None:
             continue
-        if not prev_phase:
-          curr_phase = False
-          next_phase = True
-          break
-      value = self.get_confkey(key)
-      # If value does not exist which can be the
-      # case for certain phases as mentioned above,
-      # skip the value.
-      if value is None:
-        continue
-      yardstick_list.append(value)
+          yardstick_list.append(value)
     return yardstick_list
 
   def phase_keys_validate(self, arg_file: str, phase_name: str):
@@ -340,7 +335,6 @@ class SetupCmd(object):
       argument_file_confstore = S3CortxConfStore(arg_file, 'argument_file_index')
       # Extract keys from argument file
       arg_keys_list = argument_file_confstore.get_all_keys()
-
       # Below algorithm uses tokenization
       # of both yardstick and argument key
       # based on delimiter to generate
