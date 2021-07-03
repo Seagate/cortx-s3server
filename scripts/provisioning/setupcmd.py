@@ -327,60 +327,44 @@ class SetupCmd(object):
       storage_set_val = 0
     # Set phase name to upper case required for inheritance
     phase_name = phase_name.upper()
-    try:
-      # Extract keys from yardstick file for current phase considering inheritance
-      yardstick_list = self.extract_yardstick_list(phase_name)
-      self.logger.info(f"yardstick_list -> {yardstick_list}")
-      # Set argument file confstore
-      argument_file_confstore = S3CortxConfStore(arg_file, 'argument_file_index')
-      # Extract keys from argument file
-      arg_keys_list = argument_file_confstore.get_all_keys()
-      # Below algorithm uses tokenization
-      # of both yardstick and argument key
-      # based on delimiter to generate
-      # smaller key-tokens. Then check if
-      # (A) all the key-tokens are pairs of
-      #     pre-defined token. e.g.,
-      #     if key_yard is machine-id, then
-      #     key_arg must have corresponding
-      #     value of machine_id_val.
-      # OR
-      # (B) both the key-tokens from key_arg
-      #     and key_yard are the same.
-      list_match_found = True
-      key_match_found = False
-      for key_yard in yardstick_list:
-        key_yard_token_list = re.split('>|\[|\]',key_yard)
-        key_match_found = False
-        for key_arg in arg_keys_list:
-          if key_match_found is False:
-            key_arg_token_list = re.split('>|\[|\]',key_arg)
-            if len(key_yard_token_list) == len(key_arg_token_list):
-              for key_x,key_y in zip(key_yard_token_list, key_arg_token_list):
-                key_match_found = False
-                if key_x == "machine-id":
-                  if key_y != machine_id_val:
-                    break
-                elif key_x == "cluster-id":
-                  if key_y != cluster_id_val:
-                    break
-                elif key_x == "storage-set-count":
-                  if int(key_y) >= storage_set_val:
-                    break
-                elif key_x != key_y:
-                  break
-                key_match_found = True
-              if key_match_found:
-                self.key_value_verify(key_arg)
-        if key_match_found is False:
-          list_match_found = False
-          break
-      if list_match_found is False:
-        raise Exception(f'No match found for {key_yard}')
-      self.logger.info("Validation complete")
+    # Extract keys from yardstick file for current phase considering inheritance
+    yardstick_list = self.extract_yardstick_list(phase_name)
+    self.logger.info(f"yardstick_list -> {yardstick_list}")
+    # Set argument file confstore
+    argument_file_confstore = S3CortxConfStore(arg_file, 'argument_file_index')
+    # Extract keys from argument file
+    arg_keys_list = argument_file_confstore.get_all_keys()
+    # Below algorithm uses tokenization
+    # of both yardstick and argument key
+    # based on delimiter to generate
+    # smaller key-tokens. Then check if
+    # (A) all the key-tokens are pairs of
+    #     pre-defined token. e.g.,
+    #     if key_yard is machine-id, then
+    #     key_arg must have corresponding
+    #     value of machine_id_val.
+    # OR
+    # (B) both the key-tokens from key_arg
+    #     and key_yard are the same.
+    for key_yard in yardstick_list:
+      key_yard = key_yard.replace("machine-id", machine_id_val) \
+      .replace("cluster-id", cluster_id_val)
 
-    except Exception as e:
-      raise Exception(f'ERROR : Validating keys failed, exception {e}')
+      if "server_nodes" in key_yard:
+        index = 0
+        while index <  storage_set_val:
+          key_yard_server_nodes = self.get_confvalue(key_yard.replace("machine-id", machine_id_val) \
+          .replace("cluster-id", cluster_id_val) \
+          .replace("storage-set-count", str(index)))
+          if key_yard_server_nodes is None:
+            raise Exception("Validation for server_nodes failed")
+          index += 1
+      else:
+        if key_yard in arg_keys_list:
+          self.key_value_verify(key_yard)
+        else:
+          raise Exception(f'No match found for {key_yard}')
+    self.logger.info("Validation complete")
 
   def shutdown_services(self, s3services_list):
     """Stop services."""
