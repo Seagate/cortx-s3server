@@ -20,7 +20,6 @@
 
 import sys
 import os
-import re
 import shutil
 import glob
 import socket
@@ -347,15 +346,14 @@ class SetupCmd(object):
     # (B) both the key-tokens from key_arg
     #     and key_yard are the same.
     for key_yard in yardstick_list:
-      key_yard = key_yard.replace("machine-id", machine_id_val) \
-      .replace("cluster-id", cluster_id_val)
-
+      if "machine-id" in key_yard:
+        key_yard = key_yard.replace("machine-id", machine_id_val)
+      if "cluster-id" in key_yard:
+        key_yard = key_yard.replace("cluster-id", cluster_id_val)
       if "server_nodes" in key_yard:
         index = 0
-        while index <  storage_set_val:
-          key_yard_server_nodes = self.get_confvalue(key_yard.replace("machine-id", machine_id_val) \
-          .replace("cluster-id", cluster_id_val) \
-          .replace("storage-set-count", str(index)))
+        while index < storage_set_val:
+          key_yard_server_nodes = self.get_confvalue(key_yard.replace("storage-set-count", str(index)))
           if key_yard_server_nodes is None:
             raise Exception("Validation for server_nodes failed")
           index += 1
