@@ -291,7 +291,7 @@ void S3PostCompleteAction::get_next_parts_info_successful() {
   if (motr_kv_reader->get_key_values().size() > 0) {
     // Do validation of parts
     if (!validate_parts()) {
-      s3_log(S3_LOG_DEBUG, request_id, "validate_parts failed");
+      s3_log(S3_LOG_DEBUG, "", "validate_parts failed");
       return;
     }
   }
@@ -871,6 +871,7 @@ void S3PostCompleteAction::startcleanup() {
           S3PostCompleteActionState::probableEntryRecordFailed) {
     // Nothing to undo.
     done();
+    return;
   } else if (s3_post_complete_action_state ==
              S3PostCompleteActionState::completed) {
     // New object has taken life, old object should be deleted if any.
