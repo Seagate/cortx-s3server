@@ -30,21 +30,20 @@ import java.lang.management.ManagementFactory;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
-import java.security.PrivateKey;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import java.util.List;
+
 import com.seagates3.authencryptutil.JKSUtil;
 import com.seagates3.authencryptutil.RSAEncryptDecryptUtil;
-
 
 /**
  * Store the auth server configuration properties like default endpoint and
@@ -59,7 +58,7 @@ public class AuthServerConfig {
     public
      static final String DEFAULT_ACL_XML = "/defaultAclTemplate.xml";
     public
-     static final String XSD_PATH = "/AmazonS3.xsd";
+     static final String XSD_PATH = "/AmazonS3_V2.xsd";
     public
      static final int MAX_GRANT_SIZE = 100;
     private static Logger logger;
@@ -118,8 +117,8 @@ public class AuthServerConfig {
        logger.info("Configuring AuthServer with following properties");
        while (authProps.hasMoreElements()) {
                 String key = (String) authProps.nextElement();
-                Set<String> secureProps = new HashSet<>(Arrays.asList("s3KeyPassword",
-                       "ldapLoginPW", "s3KeyStorePassword"));
+                Set<String> secureProps = new HashSet<>(Arrays.asList(
+                    "s3KeyPassword", "ldapLoginPW", "s3KeyStorePassword"));
                 if( !secureProps.contains(key) ) {
                      String value = authServerConfig.getProperty(key);
                      logger.info("Config [" + key + "] = " + value);
@@ -128,47 +127,73 @@ public class AuthServerConfig {
     }
 
     /**
-     * Initialize Ldap-Password
-     *
+     * Initialize Openldap-Password.
+     * 1. fetch ldap cipher key from s3cipher
+     * 2. decrypt ldap password using s3cipher
      * @param authServerConfig Server configuration parameters.
      * @throws GeneralSecurityException
      */
     public static void loadCredentials() throws GeneralSecurityException, Exception {
        logger = LoggerFactory.getLogger(AuthServerConfig.class.getName());
        logger.debug("Loading Openldap credentials");
-       String keystorePasswd = null;
+       String ldapCipherKey = null;
+
        String encryptedPasswd = authServerConfig.getProperty("ldapLoginPW");
-       Path keyStoreFilePath = getKeyStorePath();
+       String ldap_const_key = authServerConfig.getProperty("ldap_const_key");
+       String ldapCipherCmd =
+           "s3cipher generate_key --const_key " + ldap_const_key;
+       BufferedReader reader1 = null;
+       BufferedReader reader2 = null;
        try {
-         String cmd = authServerConfig.getProperty("s3CipherUtil");
-         Process s3Cipher = Runtime.getRuntime().exec(cmd);
+         // 1. Generate openldap cipher key
+         Process s3Cipher = Runtime.getRuntime().exec(ldapCipherCmd);
          int exitVal = s3Cipher.waitFor();
          if (exitVal != 0) {
-           logger.debug("S3 Cipher util failed to return keystore password");
+           logger.error(
+               "S3 Cipher util failed to generate openldap cipher key");
            throw new IOException("S3 cipher util exited with error.");
          }
-         BufferedReader reader = new BufferedReader(
+         reader1 = new BufferedReader(
              new InputStreamReader(s3Cipher.getInputStream()));
-         String line = reader.readLine();
+         String line = reader1.readLine();
          if (line == null || line.isEmpty()) {
-           throw new IOException("S3 cipher returned empty stream.");
+           throw new IOException(
+               "S3 cipher returned empty stream while fetching openldap " +
+               "cipher " + "key.");
          } else {
-           keystorePasswd = line;
+           ldapCipherKey = line;
+         }
+         // 2. Decrypt openldap password using cipher Key.
+         String decryptCmd = "s3cipher decrypt --data=" + encryptedPasswd +
+                             " --key=" + ldapCipherKey;
+         Process s3CipherDecrypt = Runtime.getRuntime().exec(decryptCmd);
+
+         int exitCode = s3CipherDecrypt.waitFor();
+         if (exitCode != 0) {
+           logger.error("S3 Cipher util failed to decrypt openldap password");
+           throw new IOException("S3 cipher util exited with error.");
+         }
+         reader2 = new BufferedReader(
+             new InputStreamReader(s3CipherDecrypt.getInputStream()));
+         String output = reader2.readLine();
+         if (output == null || output.isEmpty()) {
+           throw new IOException(
+               "S3 cipher returned empty stream while decrypting openldap " +
+               "password.");
+         } else {
+           ldapPasswd = output;
          }
        }
        catch (Exception e) {
-         logger.debug(
+         logger.error(
              e.getMessage() +
-             " IO error in S3 cipher. Loading default keystore credentilas.");
-         keystorePasswd = getKeyStorePassword();
+             " Error occured in S3 cipher while decrypting openldap password.");
+         System.exit(1);
        }
-       PrivateKey privateKey = JKSUtil.getPrivateKeyFromJKS(
-           keyStoreFilePath.toString(), getCertAlias(), keystorePasswd);
-       if (privateKey == null) {
-         throw new GeneralSecurityException("Failed to find Private Key [" +
-                                            keyStoreFilePath + "].");
+       finally {
+         if (reader1 != null) reader1.close();
+         if (reader2 != null) reader2.close();
        }
-       ldapPasswd = RSAEncryptDecryptUtil.decrypt(encryptedPasswd, privateKey);
     }
 
     /**
@@ -203,6 +228,27 @@ public class AuthServerConfig {
         return samlMetadataFilePath;
     }
 
+    public
+     static String getKeyStoreName() {
+       return authServerConfig.getProperty("s3KeyStoreName");
+     }
+
+    public
+     static Path getKeyStorePath() {
+       return Paths.get(authServerConfig.getProperty("s3KeyStorePath"),
+                        getKeyStoreName());
+     }
+
+    public
+     static String getKeyStorePassword() {
+       return authServerConfig.getProperty("s3KeyStorePassword");
+     }
+
+    public
+     static String getKeyPassword() {
+       return authServerConfig.getProperty("s3KeyPassword");
+     }
+
     public static int getHttpPort() {
         return Integer.parseInt(authServerConfig.getProperty("httpPort"));
     }
@@ -213,23 +259,6 @@ public class AuthServerConfig {
 
     public static String getDefaultHost() {
         return authServerConfig.getProperty("defaultHost");
-    }
-
-    public static String getKeyStoreName() {
-        return authServerConfig.getProperty("s3KeyStoreName");
-    }
-
-    public static Path getKeyStorePath() {
-        return Paths.get(authServerConfig.getProperty("s3KeyStorePath"),
-                         getKeyStoreName());
-    }
-
-    public static String getKeyStorePassword() {
-        return authServerConfig.getProperty("s3KeyStorePassword");
-    }
-
-    public static String getKeyPassword() {
-        return authServerConfig.getProperty("s3KeyPassword");
     }
 
     public static boolean isHttpEnabled() {
@@ -283,8 +312,9 @@ public class AuthServerConfig {
         return ldapPasswd;
     }
 
-    public static String getCertAlias() {
-        return authServerConfig.getProperty("s3AuthCertAlias");
+    public
+     static String getCertAlias() {
+       return authServerConfig.getProperty("s3AuthCertAlias");
     }
 
     public static String getConsoleURL() {
@@ -398,6 +428,21 @@ public class AuthServerConfig {
    public
     int getVersion() {
       return Integer.parseInt(authServerConfig.getProperty("version"));
+    }
+
+   public
+    static int getCacheTimeout() {
+      return Integer.parseInt(authServerConfig.getProperty("cacheTimeout"));
+    }
+
+   public
+    static int getMaxAccountLimit() {
+      return Integer.parseInt(authServerConfig.getProperty("maxAccountLimit"));
+    }
+
+   public
+    static int getMaxIAMUserLimit() {
+      return Integer.parseInt(authServerConfig.getProperty("maxIAMUserLimit"));
     }
 }
 

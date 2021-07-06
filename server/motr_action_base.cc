@@ -50,8 +50,7 @@ void MotrAction::setup_steps() {
 
 void MotrAction::check_authorization() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  if ((request->get_account_name() == BACKGROUND_STALE_OBJECT_DELETE_ACCOUNT) ||
-      (request->get_account_name() == S3RECOVERY_ACCOUNT)) {
+  if ((request->get_account_name() == BACKGROUND_STALE_OBJECT_DELETE_ACCOUNT)) {
     next();
   } else {
     if (request->client_connected()) {

@@ -19,10 +19,6 @@
 
 [Unit]
 Description=Motr-S3 Core instance Server
-Requires=haproxy.service
-After=haproxy.service
-Requires=s3authserver.service
-After=s3authserver.service
 
 [Service]
 Type=forking

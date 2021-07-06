@@ -22,6 +22,7 @@
 #include <sstream>
 #include <string>
 
+#include "s3_bucket_metadata_cache.h"
 #include "s3_error_codes.h"
 #include "s3_fi_common.h"
 #include "s3_log.h"
@@ -108,6 +109,8 @@ void S3PutFiAction::set_fault_injection() {
       s3_fi_enable_each_nth_time(fi_tag.c_str(), stoi(fi_param1));
     else if (fi_cmd.compare("offnonm") == 0)
       s3_fi_enable_off_n_on_m(fi_tag.c_str(), stoi(fi_param1), stoi(fi_param2));
+    else if (fi_tag.compare("disable_bucket_metadata_cache") == 0)
+      S3BucketMetadataCache::get_instance()->disable();
     else {
       s3_log(S3_LOG_DEBUG, request_id, "Invalid command:%s\n", fi_cmd.c_str());
       set_s3_error("MalformedFICmd");
@@ -116,7 +119,10 @@ void S3PutFiAction::set_fault_injection() {
   } else if (fi_opcode.compare("disable") == 0) {
     s3_log(S3_LOG_DEBUG, request_id, " Fault disable:%s:%s\n", fi_cmd.c_str(),
            fi_tag.c_str());
-    s3_fi_disable(fi_tag.c_str());
+    if (fi_tag.compare("disable_bucket_metadata_cache") == 0)
+      S3BucketMetadataCache::get_instance()->enable();
+    else
+      s3_fi_disable(fi_tag.c_str());
 
   } else if (fi_opcode.compare("test") == 0) {
     if (s3_fi_is_enabled(fi_tag.c_str())) {

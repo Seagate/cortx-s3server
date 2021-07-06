@@ -27,6 +27,7 @@
 #include "s3_common_utilities.h"
 #include "s3_stats.h"
 #include "s3_perf_metrics.h"
+#include "s3_m0_uint128_helper.h"
 
 S3GetObjectAction::S3GetObjectAction(
     std::shared_ptr<S3RequestObject> req,
@@ -85,27 +86,22 @@ void S3GetObjectAction::fetch_bucket_info_failed() {
 }
 
 void S3GetObjectAction::fetch_object_info_failed() {
-  if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
-    object_list_oid = bucket_metadata->get_object_list_index_oid();
-    if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
-      s3_log(S3_LOG_ERROR, request_id, "Object not found\n");
-      set_s3_error("NoSuchKey");
-    } else {
-      if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
-        s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
-        set_s3_error("NoSuchKey");
-      } else if (object_metadata->get_state() ==
-                 S3ObjectMetadataState::failed_to_launch) {
-        s3_log(S3_LOG_ERROR, request_id,
-               "Object metadata load operation failed due to pre launch "
-               "failure\n");
-        set_s3_error("ServiceUnavailable");
-      } else {
-        s3_log(S3_LOG_DEBUG, request_id, "Object metadata fetch failed\n");
-        set_s3_error("InternalError");
-      }
-    }
+  obj_list_idx_lo = bucket_metadata->get_object_list_index_layout();
+  if (zero(obj_list_idx_lo.oid)) {
+    s3_log(S3_LOG_ERROR, request_id, "Object not found\n");
+    set_s3_error("NoSuchKey");
+  } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
+    s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
+    set_s3_error("NoSuchKey");
+  } else if (object_metadata->get_state() ==
+             S3ObjectMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Object metadata load operation failed due to pre launch "
+           "failure\n");
+    set_s3_error("ServiceUnavailable");
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id, "Object metadata fetch failed\n");
+    set_s3_error("InternalError");
   }
   send_response_to_s3_client();
 }
@@ -326,7 +322,8 @@ void S3GetObjectAction::read_object() {
   // get total number of blocks to read from an object
   set_total_blocks_to_read_from_object();
   motr_reader = motr_reader_factory->create_motr_reader(
-      request, object_metadata->get_oid(), object_metadata->get_layout_id());
+      request, object_metadata->get_oid(), object_metadata->get_layout_id(),
+      object_metadata->get_pvid());
   // get the block,in which first_byte_offset_to_read is present
   // and initilaize the last index with starting offset the block
   size_t block_start_offset =
@@ -348,7 +345,10 @@ void S3GetObjectAction::read_object_data() {
 
   size_t max_blocks_in_one_read_op =
       S3Option::get_instance()->get_motr_units_per_request();
-  size_t blocks_to_read = 0;
+  size_t motr_unit_size =
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
+          object_metadata->get_layout_id());
+  blocks_to_read = 0;
 
   s3_log(S3_LOG_DEBUG, request_id, "max_blocks_in_one_read_op: (%zu)\n",
          max_blocks_in_one_read_op);
@@ -357,8 +357,17 @@ void S3GetObjectAction::read_object_data() {
   s3_log(S3_LOG_DEBUG, request_id, "total_blocks_to_read: (%zu)\n",
          total_blocks_to_read);
   if (blocks_already_read != total_blocks_to_read) {
-    if ((total_blocks_to_read - blocks_already_read) >
-        max_blocks_in_one_read_op) {
+    if (blocks_already_read == 0 &&
+        content_length > max_blocks_in_one_read_op * motr_unit_size) {
+      size_t first_blocks_to_read =
+          S3Option::get_instance()->get_motr_first_read_size();
+      blocks_to_read = max_blocks_in_one_read_op < first_blocks_to_read
+                           ? max_blocks_in_one_read_op
+                           : first_blocks_to_read;
+      s3_log(S3_LOG_DEBUG, request_id, "First blocks_to_read: (%zu)\n",
+             blocks_to_read);
+    } else if ((total_blocks_to_read - blocks_already_read) >
+               max_blocks_in_one_read_op) {
       blocks_to_read = max_blocks_in_one_read_op;
     } else {
       blocks_to_read = total_blocks_to_read - blocks_already_read;
@@ -436,43 +445,41 @@ void S3GetObjectAction::send_data_to_client() {
   s3_log(S3_LOG_DEBUG, request_id, "Earlier data_sent_to_client = %zu bytes.\n",
          data_sent_to_client);
 
-  char* data = NULL;
-  size_t length = 0;
+  S3Evbuffer* p_evbuffer = motr_reader->get_evbuffer();
+  size_t obj_unit_sz =
+      S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
+          object_metadata->get_layout_id());
   size_t requested_content_length = get_requested_content_length();
   s3_log(S3_LOG_DEBUG, request_id,
          "object requested content length size(%zu).\n",
          requested_content_length);
-  length = motr_reader->get_first_block(&data);
-
-  while (length > 0) {
-    size_t read_data_start_offset = 0;
-    blocks_already_read++;
-    if (data_sent_to_client == 0) {
-      // get starting offset from the block,
-      // condition true for only statring block read object.
-      // this is to set get first offset byte from initial read block
-      // eg: read_data_start_offset will be set to 1000 on initial read block
-      // for a given range 1000-1500 to read from 2mb object
-      read_data_start_offset =
-          first_byte_offset_to_read %
-          S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
-              object_metadata->get_layout_id());
-      length -= read_data_start_offset;
+  size_t length_in_evbuf = blocks_to_read * obj_unit_sz;
+  blocks_already_read += blocks_to_read;
+  if (data_sent_to_client == 0) {
+    // get starting offset from the block,
+    // condition true for only statring block read object.
+    // this is to set get first offset byte from initial read block
+    // eg: read_data_start_offset will be set to 1000 on initial read block
+    // for a given range 1000-1500 to read from 2mb object
+    size_t read_data_start_offset = first_byte_offset_to_read % obj_unit_sz;
+    if (read_data_start_offset) {
+      // Move the starting range (1000-) if specified.
+      p_evbuffer->drain_data(read_data_start_offset);
+      length_in_evbuf = p_evbuffer->get_evbuff_length();
     }
-    // to read number of bytes from final read block of read object
-    // that is requested content length is lesser than the sum of data has been
-    // sent to client and current read block size
-    if ((data_sent_to_client + length) >= requested_content_length) {
-      // length will have the size of remaining byte to sent
-      length = requested_content_length - data_sent_to_client;
-    }
-    data_sent_to_client += length;
-    request->set_bytes_sent(data_sent_to_client);
-    s3_log(S3_LOG_DEBUG, request_id, "Sending %zu bytes to client.\n", length);
-    request->send_reply_body(data + read_data_start_offset, length);
-    s3_perf_count_outcoming_bytes(length);
-    length = motr_reader->get_next_block(&data);
   }
+  // to read number of bytes from final read block of read object
+  // that is requested content length is lesser than the sum of data has been
+  // sent to client and current read block size
+  if (((data_sent_to_client + length_in_evbuf) >= requested_content_length) ||
+      (p_evbuffer->get_evbuff_length() >= requested_content_length)) {
+    // length will have the size of remaining byte to sent
+    int length = requested_content_length - data_sent_to_client;
+    p_evbuffer->read_drain_data_from_buffer(length);
+  }
+  data_sent_to_client += p_evbuffer->get_evbuff_length();
+  // Send data to client. evbuf_body will be free'ed internally
+  request->send_reply_body(p_evbuffer->release_ownership());
   s3_timer.stop();
 
   if (data_sent_to_client != requested_content_length) {

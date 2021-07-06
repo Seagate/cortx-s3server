@@ -21,6 +21,7 @@
 #include "s3_head_object_action.h"
 #include "s3_error_codes.h"
 #include "s3_log.h"
+#include "s3_m0_uint128_helper.h"
 
 S3HeadObjectAction::S3HeadObjectAction(
     std::shared_ptr<S3RequestObject> req,
@@ -62,18 +63,17 @@ void S3HeadObjectAction::fetch_bucket_info_failed() {
 
 void S3HeadObjectAction::fetch_object_info_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  if (object_metadata->get_state() == S3ObjectMetadataState::present) {
-    struct m0_uint128 object_list_index_oid =
-        bucket_metadata->get_object_list_index_oid();
-    // bypass shutdown signal check for next task
-    check_shutdown_signal_for_next_task(false);
 
-    if (object_list_index_oid.u_lo == 0ULL &&
-        object_list_index_oid.u_hi == 0ULL) {
-      // There is no object list index, hence object doesn't exist
-      s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
-      set_s3_error("NoSuchKey");
-    }
+  // bypass shutdown signal check for next task
+  check_shutdown_signal_for_next_task(false);
+
+  const auto& object_list_index_layout =
+      bucket_metadata->get_object_list_index_layout();
+
+  if (zero(object_list_index_layout.oid)) {
+    // There is no object list index, hence object doesn't exist
+    s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
+    set_s3_error("NoSuchKey");
   } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
     s3_log(S3_LOG_WARN, request_id, "Object not found\n");
     set_s3_error("NoSuchKey");

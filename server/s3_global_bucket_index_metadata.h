@@ -23,17 +23,19 @@
 #ifndef __S3_SERVER_GLOBAL_BUCKET_INDEX_METADATA_H__
 #define __S3_SERVER_GLOBAL_BUCKET_INDEX_METADATA_H__
 
+#include <functional>
+#include <memory>
 #include <string>
 
-#include "gtest/gtest_prod.h"
-#include "s3_motr_kvs_reader.h"
-#include "s3_motr_kvs_writer.h"
-#include "s3_log.h"
-#include "s3_request_object.h"
+#include <gtest/gtest_prod.h>
 
 // Forward declarations
+class MotrAPI;
+class S3MotrKVSReader;
 class S3MotrKVSReaderFactory;
+class S3MotrKVSWriter;
 class S3MotrKVSWriterFactory;
+class S3RequestObject;
 
 enum class S3GlobalBucketIndexMetadataState {
   empty,  // Initial state, no lookup done
@@ -60,7 +62,7 @@ class S3GlobalBucketIndexMetadata {
   std::string account_id;
   std::string bucket_name;
   // region
-  std::string location_constraint;
+  std::string location_constraint = "us-west-2";
   std::string request_id;
   std::string stripped_request_id;
 
@@ -78,20 +80,12 @@ class S3GlobalBucketIndexMetadata {
   S3GlobalBucketIndexMetadataState state;
 
   // `true` in case of json parsing failure
-  bool json_parsing_error;
-
-  void initialize(const std::string& str_bucket_name = "");
+  bool json_parsing_error = false;
 
  public:
   S3GlobalBucketIndexMetadata(
-      std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<MotrAPI> s3_motr_apii = nullptr,
-      std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory =
-          nullptr,
-      std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory =
-          nullptr);
-  S3GlobalBucketIndexMetadata(
       std::shared_ptr<S3RequestObject> req, const std::string& str_bucket_name,
+      const std::string& account_id, const std::string& account_name,
       std::shared_ptr<MotrAPI> s3_motr_apii = nullptr,
       std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory =
           nullptr,
@@ -118,14 +112,12 @@ class S3GlobalBucketIndexMetadata {
                     std::function<void(void)> on_failed);
   void save_successful();
   void save_failed();
-  void save_replica();
 
   // Remove Account user info(bucket list oid)
   virtual void remove(std::function<void(void)> on_success,
                       std::function<void(void)> on_failed);
   void remove_successful();
   void remove_failed();
-  void remove_replica();
 
   virtual S3GlobalBucketIndexMetadataState get_state() { return state; }
 
@@ -142,14 +134,12 @@ class S3GlobalBucketIndexMetadata {
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, LoadFailed);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, LoadFailedMissing);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, Save);
-  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, SaveSuccessful);
-  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, SaveReplica);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, SaveFailed);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, SaveFailedToLaunch);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, SaveSuccessful);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, Remove);
-  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, RemoveSuccessful);
-  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, RemoveReplica);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, RemoveFailed);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, RemoveSuccessful);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, RemoveFailedToLaunch);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, ToJson);
   FRIEND_TEST(S3GlobalBucketIndexMetadataTest, FromJson);

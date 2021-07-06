@@ -134,19 +134,6 @@ ulimit -c unlimited
 #Set max open file limit to 10240
 ulimit -n 10240
 
-# Run m0dixinit
-set +e
-./third_party/motr/dix/utils/m0dixinit -l $local_nid:12345:34:100 -H $local_nid:12345:34:1 \
-                 -p '<0x7000000000000001:0>' -I 'v|1:20' -d 'v|1:20' -a check 2> /dev/null \
-                 | grep -E 'Metadata exists: false' > /dev/null
-rc=$?
-set -e
-if [ $rc -eq 0 ]
-then
-./third_party/motr/dix/utils/m0dixinit -l $local_nid:12345:34:100 -H $local_nid:12345:34:1 \
-                 -p '<0x7000000000000001:0>' -I 'v|1:20' -d 'v|1:20' -a create
-fi
-
 s3_config_file="/opt/seagate/cortx/s3/conf/s3config.yaml"
 
 # Ensure default working dir is present
@@ -200,7 +187,7 @@ fi
 
 if [ $fake_obj -eq 1 ]
 then
-    fake_params+=" --fake_motr_writeobj true --fake_motr_readobj true"
+    fake_params+=" --fake_motr_writeobj true --fake_motr_readobj true --fake_motr_openobj true --fake_motr_createobj true --fake_motr_deleteobj true"
 fi
 
 valgrind_cmd=""
@@ -220,7 +207,8 @@ do
   pid_filename='/var/run/s3server.'$s3port'.pid'
   $valgrind_cmd s3server --s3pidfile $pid_filename \
            --motrlocal $local_ep:${motr_local_port} --motrha $ha_ep \
-           --s3port $s3port --fault_injection true $fake_params --loading_indicators --getoid true
+           --s3port $s3port --fault_injection true $fake_params --loading_indicators --getoid true \
+           --addb
   ((++counter))
 done
 
@@ -239,4 +227,3 @@ fi
 
 $USE_SUDO systemctl start s3backgroundproducer
 $USE_SUDO systemctl start s3backgroundconsumer
-

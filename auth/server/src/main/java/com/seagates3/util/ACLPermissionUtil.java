@@ -23,7 +23,8 @@ package com.seagates3.util;
 import java.util.HashMap;
 
 import io.netty.handler.codec.http.HttpMethod;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /*
  * Utility class to get ACL permission type given method and request uri
  */
@@ -36,6 +37,9 @@ public class ACLPermissionUtil {
     public static final String ACL_WRITE_ACP = "WRITE_ACP";
     public static final String ACL_FULL_CONTROL = "FULL_CONTROL";
 
+    private
+     static final Logger LOGGER =
+         LoggerFactory.getLogger(ACLPermissionUtil.class.getName());
     static final String ACL_QUERY = "?acl";
 
     static final HashMap<HttpMethod, String> permissionMap = initPermissionMap();
@@ -75,9 +79,10 @@ public class ACLPermissionUtil {
                                    String queryParam) {
 
         if (uri == null || uri.isEmpty()) {
-          IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.INVALID_REST_URI_ERROR,
-                      "Value for URI is required.", null);
-            return null;
+          // IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.INVALID_REST_URI_ERROR,
+          //          "Value for URI is required.", null);
+          LOGGER.error("Invalid REST URI");
+          return null;
         }
         if (isACLReadWrite(uri, queryParam)) {
            return permissionMapACP.get(method);

@@ -33,622 +33,606 @@
 #include "s3_common_utilities.h"
 #include "atexit.h"
 
-void s3_auth_op_done_on_main_thread(evutil_socket_t, short events,
-                                    void *user_data) {
-  if (user_data == NULL) {
-    s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
-    s3_log(S3_LOG_ERROR, "", "Input argument user_data is NULL\n");
-    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-    return;
-  }
-  struct user_event_context *user_context =
-      (struct user_event_context *)user_data;
-  S3AsyncOpContextBase *context = (S3AsyncOpContextBase *)user_context->app_ctx;
-  if (context == NULL) {
-    s3_log(S3_LOG_ERROR, "", "context pointer is NULL\n");
-  }
-  const auto request_id = context->get_request()->get_request_id();
-  const auto stripped_request_id =
-      context->get_request()->get_stripped_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  struct event *s3user_event = (struct event *)user_context->user_event;
-  if (s3user_event == NULL) {
-    s3_log(S3_LOG_ERROR, request_id, "User event is NULL\n");
-  }
+// S3 Auth client callbacks
 
-  if (context->is_at_least_one_op_successful()) {
-    ADDB(S3_ADDB_AUTH_ID, context->get_request()->addb_request_id,
-         ACTS_AUTH_OP_MT_SUCC);
-    context->on_success_handler()();  // Invoke the handler.
-  } else {
-    ADDB(S3_ADDB_AUTH_ID, context->get_request()->addb_request_id,
-         ACTS_AUTH_OP_MT_FAILED);
-    context->on_failed_handler()();  // Invoke the handler.
-  }
-  free(user_data);
-  // Free user event
-  if (s3user_event) event_free(s3user_event);
-  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
+static int log_http_header(evhtp_header_t *header, void *arg) {
+  s3_log(S3_LOG_DEBUG, (char *)arg, "%s: %s", header->key, header->val);
+  return 0;
 }
 
-// Post success handler on main thread so that current auth callback stack can
-// unwind and let the current request-response of evhtp to complete.
-// This is primarily required as evhtp request object should not be deleted
-// during the response callbacks like auth_response.
-void s3_auth_op_success(void *application_context, int rc) {
-  S3AsyncOpContextBase *app_ctx = (S3AsyncOpContextBase *)application_context;
-  const auto request_id = app_ctx->get_request()->get_request_id();
-  const auto stripped_request_id =
-      app_ctx->get_request()->get_stripped_request_id();
+static evhtp_res on_conn_err_callback(evhtp_connection_t *p_evhtp_conn,
+                                      evhtp_error_flags errtype, void *p_arg) {
+  assert(p_arg != nullptr);
+  auto *p_auth_ctx = static_cast<S3AuthClientOpContext *>(p_arg);
+
+  auto request_inst = p_auth_ctx->get_request();
+
+  const auto &request_id = p_auth_ctx->get_request_id();
+  const auto &stripped_request_id = p_auth_ctx->get_stripped_request_id();
+
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_DEBUG, request_id, "Error code = %d\n", rc);
-  app_ctx->set_op_errno_for(0, rc);
-  struct user_event_context *user_ctx =
-      (struct user_event_context *)calloc(1, sizeof(struct user_event_context));
-  user_ctx->app_ctx = app_ctx;
-  ADDB(S3_ADDB_AUTH_ID, app_ctx->get_request()->addb_request_id,
-       ACTS_AUTH_OP_SCHED_MT);
-#ifdef S3_GOOGLE_TEST
-  evutil_socket_t test_sock = 0;
-  short events = 0;
-  s3_auth_op_done_on_main_thread(test_sock, events, (void *)user_ctx);
-#else
-  S3PostToMainLoop((void *)user_ctx)(s3_auth_op_done_on_main_thread,
-                                     request_id);
-#endif  // S3_GOOGLE_TEST
-  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
-}
-
-/* S3 Auth client callbacks */
-
-extern "C" evhtp_res on_conn_err_callback(evhtp_connection_t *connection,
-                                          evhtp_error_flags errtype,
-                                          void *arg) {
-  S3AuthClientOpContext *context = (S3AuthClientOpContext *)arg;
-  if (context == NULL) {
-    s3_log(S3_LOG_ERROR, "", "input arg is NULL\n");
+  if (p_evhtp_conn == NULL) {
+    s3_log(S3_LOG_ERROR, request_id, "input p_evhtp_conn is NULL\n");
     return EVHTP_RES_OK;
   }
-  const auto request_id = context->get_request()->get_request_id();
-  const auto stripped_request_id =
-      context->get_request()->get_stripped_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  if (connection == NULL) {
-    s3_log(S3_LOG_ERROR, request_id, "input connection is NULL\n");
-    return EVHTP_RES_OK;
-  }
-  if (connection != context->get_auth_op_ctx()->conn) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Mismatch between input connection and auth context connection\n");
+  if (p_evhtp_conn != p_auth_ctx->get_auth_op_ctx()->conn) {
+    s3_log(
+        S3_LOG_ERROR, request_id,
+        "Mismatch between input p_evhtp_conn and auth context p_evhtp_conn\n");
   }
   std::string errtype_str =
       S3CommonUtilities::evhtp_error_flags_description(errtype);
-  if (connection->request) {
+  if (p_evhtp_conn->request) {
     s3_log(S3_LOG_INFO, stripped_request_id, "Connection status = %d\n",
-           connection->request->status);
+           p_evhtp_conn->request->status);
+
+    if (p_evhtp_conn->request->headers_in) {
+      s3_log(S3_LOG_DEBUG, request_id, "Headers IN:");
+      evhtp_headers_for_each(p_evhtp_conn->request->headers_in, log_http_header,
+                             (void *)request_id.c_str());
+    }
   }
   s3_log(
       S3_LOG_WARN, request_id, "Socket error: %s, errno: %d, set errtype: %s\n",
-      evutil_socket_error_to_string(evutil_socket_geterror(connection->sock)),
-      evutil_socket_geterror(connection->sock), errtype_str.c_str());
+      evutil_socket_error_to_string(evutil_socket_geterror(p_evhtp_conn->sock)),
+      evutil_socket_geterror(p_evhtp_conn->sock), errtype_str.c_str());
 
-  ADDB(S3_ADDB_AUTH_ID, context->get_request()->addb_request_id,
+  ADDB(S3_ADDB_AUTH_ID, request_inst->addb_request_id,
        ACTS_AUTH_OP_ON_CONN_ERR);
 
   // Note: Do not remove this, else you will have s3 crashes as the
   // callbacks are invoked after request/connection is freed.
-  context->unset_hooks();
+  evhtp_unset_all_hooks(&p_evhtp_conn->hooks);
 
-  if (context->get_request()->client_connected()) {
-    context->set_op_status_for(0, S3AsyncOpStatus::connection_failed,
-                               "Cannot connect to Auth server.");
-    context->set_auth_response_xml("", false);
+  if (p_evhtp_conn->request) {
+    evhtp_unset_all_hooks(&p_evhtp_conn->request->hooks);
   }
-  context->on_failed_handler()();  // Invoke the handler.
+  if (request_inst->client_connected()) {
+    p_auth_ctx->set_op_status_for(0, S3AsyncOpStatus::connection_failed,
+                                  "Cannot connect to Auth server.");
+    p_auth_ctx->set_auth_response_error(
+        "InternalError", "Cannot connect to Auth server", request_id);
+  }
+  p_auth_ctx->on_failed_handler()();  // Invoke the handler.
+
   return EVHTP_RES_OK;
 }
 
-extern "C" evhtp_res on_authorization_response(evhtp_request_t *req,
-                                               evbuf_t *buf, void *arg) {
-  unsigned int auth_resp_status = evhtp_request_status(req);
-  S3AuthClientOpContext *context = (S3AuthClientOpContext *)arg;
-  const auto request_id = context->get_request()->get_request_id();
-  const auto stripped_request_id =
-      context->get_request()->get_stripped_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_DEBUG, request_id, "auth_resp_status = %d\n", auth_resp_status);
+evhtp_res on_read_response(evhtp_request_t *p_req, evbuf_t *p_buf,
+                           void *p_arg) {
+  int resp_status;
+  unsigned addb_type;
 
-  ADDB(S3_ADDB_AUTH_ID, context->get_request()->addb_request_id,
-       ACTS_AUTH_OP_ON_AUTHZ_RESP);
+  assert(p_arg != nullptr);
+  auto *p_auth_ctx = static_cast<S3AuthClientOpContext *>(p_arg);
+
+  if (S3AuthClientOpType::authentication == p_auth_ctx->op_type &&
+      s3_fi_is_enabled("fake_authentication_fail")) {
+    resp_status = S3HttpFailed401;
+  } else {
+    assert(p_req != nullptr);
+    resp_status = evhtp_request_status(p_req);
+  }
+  s3_log(S3_LOG_DEBUG, p_auth_ctx->get_request_id(),
+         "Response status from Auth server is %d\n", resp_status);
+
+  switch (p_auth_ctx->op_type) {
+    case S3AuthClientOpType::authorization:
+      addb_type = ACTS_AUTH_OP_ON_AUTHZ_RESP;
+      break;
+    case S3AuthClientOpType::combo_auth:
+      addb_type = ACTS_AUTH_OP_ON_AUTHZ_RESP;
+      break;
+    case S3AuthClientOpType::aclvalidation:
+      addb_type = ACTS_AUTH_OP_ON_ACL_RESP;
+      break;
+    case S3AuthClientOpType::policyvalidation:
+      addb_type = ACTS_AUTH_OP_ON_POLICY_RESP;
+      break;
+    default:
+      addb_type = ACTS_AUTH_OP_ON_AUTH_RESP;
+  }
+  auto request_inst = p_auth_ctx->get_request();
+
+  ADDB(S3_ADDB_AUTH_ID, request_inst->addb_request_id, addb_type);
 
   // Note: Do not remove this, else you will have s3 crashes as the
   // callbacks are invoked after request/connection is freed.
-  context->unset_hooks();
+  p_auth_ctx->unset_hooks();
 
-  if (!context->get_request()->client_connected()) {
+  if (!request_inst->client_connected()) {
     // S3 client has already disconnected, ignore
-    s3_log(S3_LOG_DEBUG, context->get_request()->get_request_id(),
+    s3_log(S3_LOG_DEBUG, p_auth_ctx->get_request_id(),
            "S3 Client has already disconnected.\n");
+
     // Calling failed handler to do proper cleanup to avoid leaks
     // i.e cleanup of S3Request and respective action chain.
-    context->on_failed_handler()();  // Invoke the handler.
-    s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
+    p_auth_ctx->on_failed_handler()();  // Invoke the handler.
+    s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+
     return EVHTP_RES_OK;
   }
-  size_t buffer_len = evbuffer_get_length(buf);
-  char *auth_response_body = (char *)malloc(buffer_len + 1);
+  assert(p_buf != nullptr);
+  const auto buffer_len = evbuffer_get_length(p_buf);
+
+  char *auth_response_body = (char *)::malloc(buffer_len + 1);
   if (auth_response_body == NULL) {
-    s3_log(S3_LOG_FATAL, request_id, "malloc() returned NULL\n");
+    s3_log(S3_LOG_FATAL, p_auth_ctx->get_request_id(),
+           "malloc() returned NULL\n");
   }
-  const auto nread = evbuffer_copyout(buf, auth_response_body, buffer_len);
-  if (nread > 0) {
-    auth_response_body[nread] = '\0';
-  } else {
-    auth_response_body[0] = '\0';
-  }
-  s3_log(S3_LOG_DEBUG, request_id,
-         "Response data received from Auth service = %s\n", auth_response_body);
-  if (auth_resp_status == S3HttpSuccess200) {
-    s3_log(S3_LOG_DEBUG, request_id, "Authorization successful\n");
-    context->set_op_status_for(0, S3AsyncOpStatus::success,
-                               "Authorization successful");
-    context->set_authorization_response(auth_response_body, true);
-  } else if (auth_resp_status == S3HttpFailed400) {
-    s3_log(S3_LOG_ERROR, request_id, "Authorization failed\n");
-    context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                               "Authorization failed: BadRequest");
-    context->set_authorization_response(auth_response_body, false);
-  } else if (auth_resp_status == S3HttpFailed401) {
-    s3_log(S3_LOG_ERROR, request_id, "Authorization failed\n");
-    context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                               "Authorization failed");
-    context->set_authorization_response(auth_response_body, false);
-  } else if (auth_resp_status == S3HttpFailed405) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Authorization failed: Method Not Allowed \n");
-    context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                               "Authorization failed: Method Not Allowed");
-    context->set_authorization_response(auth_response_body, false);
-  } else if (auth_resp_status == S3HttpFailed403) {
-    s3_log(S3_LOG_ERROR, request_id, "Authorization failed: Access Denied \n");
-    context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                               "Authorization failed: AccessDenied");
-    context->set_authorization_response(auth_response_body, false);
-  } else {
-    s3_log(S3_LOG_ERROR, request_id, "Something is wrong with Auth server\n");
-    context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                               "Something is wrong with Auth server");
-    context->set_authorization_response("", false);
-  }
-  free(auth_response_body);
-  if (context->get_op_status_for(0) == S3AsyncOpStatus::success) {
-    s3_auth_op_success(context, 0);  // Invoke the handler.
-  } else {
-    context->on_failed_handler()();  // Invoke the handler.
-  }
-  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
-  return EVHTP_RES_OK;
-}
+  const auto nread = evbuffer_copyout(p_buf, auth_response_body, buffer_len);
+  auth_response_body[nread > 0 ? nread : 0] = '\0';
 
-extern "C" evhtp_res on_aclvalidation_response(evhtp_request_t *req,
-                                               evbuf_t *buf, void *arg) {
-  unsigned int auth_resp_status = evhtp_request_status(req);
-
-  // S3AuthClientOpContext *context = (S3AuthClientOpContext *)arg;
-  S3AuthClientOpContext *context = static_cast<S3AuthClientOpContext *>(arg);
-
-  const auto request_id = context->get_request()->get_request_id();
-  const auto stripped_request_id =
-      context->get_request()->get_stripped_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  if (context->get_request()) {
-    s3_log(S3_LOG_DEBUG, request_id, "auth_resp_status = %d\n",
-           auth_resp_status);
-  }
-
-  ADDB(S3_ADDB_AUTH_ID, context->get_request()->addb_request_id,
-       ACTS_AUTH_OP_ON_ACL_RESP);
-
-  // Note: Do not remove this, else you will have s3 crashes as the
-  // callbacks are invoked after request/connection is freed.
-  context->unset_hooks();
-
-  if (!context->get_request()->client_connected()) {
-    // S3 client has already disconnected, ignore
-    s3_log(S3_LOG_DEBUG, request_id, "S3 Client has already disconnected.\n");
-    // Calling failed handler to do proper cleanup to avoid leaks
-    // i.e cleanup of S3Request and respective action chain.
-    context->on_failed_handler()();  // Invoke the handler.
-    return EVHTP_RES_OK;
-  }
-  size_t buffer_len = evbuffer_get_length(buf);
-  char *auth_response_body = (char *)malloc(buffer_len + 1);
-  if (auth_response_body == NULL) {
-    s3_log(S3_LOG_FATAL, request_id, "malloc() returned NULL\n");
-  }
-  const auto nread = evbuffer_copyout(buf, auth_response_body, buffer_len);
-  if (nread > 0) {
-    auth_response_body[nread] = '\0';
-  } else {
-    auth_response_body[0] = '\0';
-  }
-  s3_log(S3_LOG_DEBUG, request_id,
+  s3_log(S3_LOG_DEBUG, p_auth_ctx->get_request_id(),
          "Response data received from Auth service = %s\n", auth_response_body);
 
-  if (auth_resp_status == S3HttpSuccess200) {
-    s3_log(S3_LOG_DEBUG, request_id, "AclValidation successful\n");
-    context->set_op_status_for(0, S3AsyncOpStatus::success,
-                               "Aclvalidation successful");
+  p_auth_ctx->handle_response(auth_response_body, resp_status);
+  ::free(auth_response_body);
 
-  } else if (auth_resp_status == S3HttpFailed401) {
-    s3_log(S3_LOG_ERROR, request_id, "Aclvalidation failed\n");
-    context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                               "Aclvalidation failed");
-    context->set_aclvalidation_response_xml(auth_response_body, false);
-
-  } else if (auth_resp_status == S3HttpFailed405) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Aclvalidation failed: Method Not Allowed \n");
-    context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                               "AclValidation failed: Method Not Allowed");
-    context->set_aclvalidation_response_xml(auth_response_body, false);
-
+  if (S3HttpSuccess200 == resp_status) {
+    p_auth_ctx->on_success_handler()();
   } else {
-    s3_log(S3_LOG_ERROR, request_id, "Something is wrong with Auth server\n");
-    context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                               "Something is wrong with Auth server");
-    context->set_aclvalidation_response_xml(auth_response_body, false);
+    p_auth_ctx->on_failed_handler()();  // Invoke the handler.
   }
-
-  free(auth_response_body);
-  if (context->get_op_status_for(0) == S3AsyncOpStatus::success) {
-    s3_auth_op_success(context, 0);  // Invoke the handler.
-  } else {
-    context->on_failed_handler()();  // Invoke the handler.
-  }
-  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
   return EVHTP_RES_OK;
 }
 
-extern "C" evhtp_res on_policy_validation_response(evhtp_request_t *req,
-                                                   evbuf_t *buf, void *arg) {
-  unsigned int auth_resp_status = evhtp_request_status(req);
-
-  // S3AuthClientOpContext *context = (S3AuthClientOpContext *)arg;
-  S3AuthClientOpContext *context = static_cast<S3AuthClientOpContext *>(arg);
-  const auto request_id = context->get_request()->get_request_id();
-  const auto stripped_request_id =
-      context->get_request()->get_stripped_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  if (context->get_request()) {
-    s3_log(S3_LOG_DEBUG, request_id, "auth_resp_status = %d\n",
-           auth_resp_status);
-  }
-
-  ADDB(S3_ADDB_AUTH_ID, context->get_request()->addb_request_id,
-       ACTS_AUTH_OP_ON_POLICY_RESP);
-
-  // Note: Do not remove this, else you will have s3 crashes as the
-  // callbacks are invoked after request/connection is freed.
-  context->unset_hooks();
-
-  if (!context->get_request()->client_connected()) {
-    // S3 client has already disconnected, ignore
-    s3_log(S3_LOG_DEBUG, request_id, "S3 Client has already disconnected.\n");
-    // Calling failed handler to do proper cleanup to avoid leaks
-    // i.e cleanup of S3Request and respective action chain.
-    context->on_failed_handler()();  // Invoke the handler.
-    return EVHTP_RES_OK;
-  }
-  size_t buffer_len = evbuffer_get_length(buf);
-  char *auth_response_body = (char *)malloc(buffer_len + 1);
-  if (auth_response_body == NULL) {
-    s3_log(S3_LOG_FATAL, request_id, "malloc() returned NULL\n");
-  }
-  const auto nread = evbuffer_copyout(buf, auth_response_body, buffer_len);
-  if (nread > 0) {
-    auth_response_body[nread] = '\0';
-  } else {
-    auth_response_body[0] = '\0';
-  }
-  s3_log(S3_LOG_DEBUG, request_id,
-         "Response data received from Auth service = %s\n", auth_response_body);
-
-  if (auth_resp_status == S3HttpSuccess200) {
-    s3_log(S3_LOG_DEBUG, request_id, "Policy validation successful\n");
-    context->set_op_status_for(0, S3AsyncOpStatus::success,
-                               "Policy validation successful");
-
-  } else if (auth_resp_status == S3HttpFailed401) {
-    s3_log(S3_LOG_ERROR, request_id, "Policy validation failed\n");
-    context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                               "Policy validation failed");
-    context->set_policyvalidation_response_xml(auth_response_body, false);
-
-  } else if (auth_resp_status == S3HttpFailed405) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Policy validation failed: Method Not Allowed \n");
-    context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                               "Policy validation failed: Method Not Allowed");
-    context->set_policyvalidation_response_xml(auth_response_body, false);
-
-  } else {
-    s3_log(S3_LOG_ERROR, request_id, "Something is wrong with Auth server\n");
-    context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                               "Something is wrong with Auth server");
-    context->set_policyvalidation_response_xml(auth_response_body, false);
-  }
-  free(auth_response_body);
-  if (context->get_op_status_for(0) == S3AsyncOpStatus::success) {
-    s3_auth_op_success(context, 0);  // Invoke the handler.
-  } else {
-    context->on_failed_handler()();  // Invoke the handler.
-  }
-  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
-  return EVHTP_RES_OK;
-}
-
-extern "C" evhtp_res on_auth_response(evhtp_request_t *req, evbuf_t *buf,
-                                      void *arg) {
-  unsigned int auth_resp_status;
-  S3AuthClientOpContext *context = (S3AuthClientOpContext *)arg;
-  const auto request_id = context->get_request()->get_request_id();
-  const auto stripped_request_id =
-      context->get_request()->get_stripped_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-
-  if (s3_fi_is_enabled("fake_authentication_fail")) {
-    auth_resp_status = S3HttpFailed401;
-  } else {
-    auth_resp_status = evhtp_request_status(req);
-  }
-
-  s3_log(S3_LOG_DEBUG, request_id, "auth_resp_status = %d\n", auth_resp_status);
-
-  ADDB(S3_ADDB_AUTH_ID, context->get_request()->addb_request_id,
-       ACTS_AUTH_OP_ON_AUTH_RESP);
-
-  // Note: Do not remove this, else you will have s3 crashes as the
-  // callbacks are invoked after request/connection is freed.
-  context->unset_hooks();
-
-  if (!context->get_request()->client_connected()) {
-    // S3 client has already disconnected, ignore
-    s3_log(S3_LOG_DEBUG, request_id, "S3 Client has already disconnected.\n");
-    // Calling failed handler to do proper cleanup to avoid leaks
-    // i.e cleanup of S3Request and respective action chain.
-    context->on_failed_handler()();  // Invoke the handler.
-    return EVHTP_RES_OK;
-  }
-  const auto buffer_len = evbuffer_get_length(buf);
-  char *auth_response_body = (char *)malloc(buffer_len + 1);
-
-  if (auth_response_body) {
-    const auto nread = evbuffer_copyout(buf, auth_response_body, buffer_len);
-
-    if (nread > 0) {
-      auth_response_body[nread] = '\0';
-    } else {
-      auth_response_body[0] = '\0';
-    }
-    s3_log(S3_LOG_DEBUG, request_id,
-           "Response data received from Auth service = [[%s]]\n\n\n",
-           auth_response_body);
-    if (auth_resp_status == S3HttpSuccess200) {
-      s3_log(S3_LOG_DEBUG, request_id, "Authentication successful\n");
-      context->set_op_status_for(0, S3AsyncOpStatus::success,
-                                 "Authentication successful");
-      context->set_auth_response_xml(auth_response_body, true);
-    } else if (auth_resp_status == S3HttpFailed401) {
-      s3_log(S3_LOG_ERROR, request_id, "Authentication failed\n");
-      context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                                 "Authentication failed");
-      context->set_auth_response_xml(auth_response_body, false);
-    } else if (auth_resp_status == S3HttpFailed400) {
-      s3_log(S3_LOG_ERROR, request_id, "Authentication failed\n");
-      context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                                 "Authentication failed:Bad Request");
-      context->set_auth_response_xml(auth_response_body, false);
-    } else if (auth_resp_status == S3HttpFailed403) {
-      s3_log(S3_LOG_ERROR, request_id, "Authentication failed\n");
-      context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                                 "Authentication failed:Access denied");
-      context->set_auth_response_xml(auth_response_body, false);
-    } else {
-      s3_log(S3_LOG_ERROR, request_id, "Something is wrong with Auth server\n");
-      context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                                 "Something is wrong with Auth server");
-      context->set_auth_response_xml("", false);
-    }
-    free(auth_response_body);
-  } else {
-    s3_log(S3_LOG_FATAL, request_id, "malloc() returned NULL\n");
-  }
-  if (context->get_op_status_for(0) == S3AsyncOpStatus::success) {
-    s3_auth_op_success(context, 0);  // Invoke the handler.
-  } else {
-    context->on_failed_handler()();  // Invoke the handler.
-  }
-  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
-  return EVHTP_RES_OK;
-}
-
-extern "C" void timeout_cb_auth_retry(evutil_socket_t fd, short event,
-                                      void *arg) {
+static void timeout_cb_auth_retry(evutil_socket_t fd, short event, void *arg) {
   struct event_auth_timeout_arg *timeout_arg =
       (struct event_auth_timeout_arg *)arg;
   S3AuthClient *auth_client = (S3AuthClient *)(timeout_arg->auth_client);
-  const auto request_id = auth_client->get_request_id();
-  const auto stripped_request_id = auth_client->get_stripped_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+
+  auto request = auth_client->get_request();
+  auto request_id = request->get_request_id();
+  auto stripped_request_id = request->get_stripped_request_id();
+
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_DEBUG, request_id, "Retring to connect to Auth server\n");
+
   ADDB(S3_ADDB_AUTH_ID, auth_client->get_request()->addb_request_id,
        ACTS_AUTH_OP_ON_TIMEOUT);
-  struct event *timeout_event = (struct event *)(timeout_arg->event);
-  S3AuthClientOpType auth_request_type = auth_client->get_op_type();
-  if (auth_request_type == S3AuthClientOpType::authorization) {
-    auth_client->check_authorization();
-  } else {
-    auth_client->check_authentication();
+
+  unsigned addb_type;
+
+  switch (auth_client->get_op_type()) {
+    case S3AuthClientOpType::authorization:
+      addb_type = ACTS_AUTH_CLNT_CHK_AUTHZ_R;
+      break;
+    case S3AuthClientOpType::combo_auth:
+      addb_type = ACTS_AUTH_CLNT_CHK_AUTHZ_R;
+      break;
+    default:
+      addb_type = ACTS_AUTH_CLNT_CHK_AUTH_R;
   }
-  event_free(timeout_event);
+  ADDB_AUTH(addb_type);
+  auth_client->trigger_request();
+
+  event_free((struct event *)timeout_arg->event);
   free(timeout_arg);
-  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-extern "C" void on_event_hook(evhtp_connection_t *conn, short events,
-                              void *arg) {
-  S3AuthClientOpContext *context = (S3AuthClientOpContext *)arg;
-  const auto request_id = context->get_request()->get_request_id();
-  const auto stripped_request_id =
-      context->get_request()->get_stripped_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "event (%x) EOF:%d ER:%d T:%d C:%d\n",
-         (int)events, (int)!!(events & BEV_EVENT_EOF),
-         (int)!!(events & BEV_EVENT_ERROR), (int)!!(events & BEV_EVENT_TIMEOUT),
+static void on_event_hook(evhtp_connection_t *conn, short events, void *p_arg) {
+
+  auto *p_auth_ctx = static_cast<S3AuthClientOpContext *>(p_arg);
+  auto addb_request_id = p_auth_ctx->get_request()->addb_request_id;
+
+  s3_log(S3_LOG_DEBUG, p_auth_ctx->get_request_id(),
+         "event (%x) EOF:%d ER:%d T:%d C:%d\n", (int)events,
+         (int)!!(events & BEV_EVENT_EOF), (int)!!(events & BEV_EVENT_ERROR),
+         (int)!!(events & BEV_EVENT_TIMEOUT),
          (int)!!(events & BEV_EVENT_CONNECTED));
 
   if (events & BEV_EVENT_CONNECTED) {
-    ADDB(S3_ADDB_AUTH_ID, context->get_request()->addb_request_id,
-         ACTS_AUTH_OP_ON_EVENT_CONNECTED);
+    ADDB(S3_ADDB_AUTH_ID, addb_request_id, ACTS_AUTH_OP_ON_EVENT_CONNECTED);
   }
 
   if (events & BEV_EVENT_ERROR) {
-    ADDB(S3_ADDB_AUTH_ID, context->get_request()->addb_request_id,
-         ACTS_AUTH_OP_ON_EVENT_ERROR);
+    ADDB(S3_ADDB_AUTH_ID, addb_request_id, ACTS_AUTH_OP_ON_EVENT_ERROR);
   }
 
   if (events & BEV_EVENT_TIMEOUT) {
-    ADDB(S3_ADDB_AUTH_ID, context->get_request()->addb_request_id,
-         ACTS_AUTH_OP_ON_EVENT_TIMEOUT);
+    ADDB(S3_ADDB_AUTH_ID, addb_request_id, ACTS_AUTH_OP_ON_EVENT_TIMEOUT);
   }
 
   if (events & BEV_EVENT_EOF) {
-    ADDB(S3_ADDB_AUTH_ID, context->get_request()->addb_request_id,
-         ACTS_AUTH_OP_ON_EVENT_EOF);
+    ADDB(S3_ADDB_AUTH_ID, addb_request_id, ACTS_AUTH_OP_ON_EVENT_EOF);
   }
 }
 
-extern "C" void on_write_hook(evhtp_connection_t *conn, void *arg) {
-  S3AuthClientOpContext *context = (S3AuthClientOpContext *)arg;
-  const auto request_id = context->get_request()->get_request_id();
-  const auto stripped_request_id =
-      context->get_request()->get_stripped_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "on socket write\n");
+static void on_write_hook(evhtp_connection_t *conn, void *p_arg) {
+  auto *p_auth_ctx = static_cast<S3AuthClientOpContext *>(p_arg);
 
-  ADDB(S3_ADDB_AUTH_ID, context->get_request()->addb_request_id,
+  s3_log(S3_LOG_DEBUG, p_auth_ctx->get_request_id(), "on socket write\n");
+
+  ADDB(S3_ADDB_AUTH_ID, p_auth_ctx->get_request()->addb_request_id,
        ACTS_AUTH_OP_ON_WRITE);
 }
 
-extern "C" evhtp_res on_request_headers(evhtp_request_t *r, void *arg) {
-  S3AuthClientOpContext *context = (S3AuthClientOpContext *)arg;
-  const auto request_id = context->get_request()->get_request_id();
-  const auto stripped_request_id =
-      context->get_request()->get_stripped_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "request headers read\n");
+static evhtp_res on_response_headers_start(evhtp_request_t *r, void *p_arg) {
 
-  ADDB(S3_ADDB_AUTH_ID, context->get_request()->addb_request_id,
+  assert(p_arg != NULL);
+  auto *p_auth_ctx = static_cast<S3AuthClientOpContext *>(p_arg);
+
+  s3_log(S3_LOG_DEBUG, p_auth_ctx->get_request_id(),
+         "Response from Auth server: headers start");
+
+  ADDB(S3_ADDB_AUTH_ID, p_auth_ctx->get_request()->addb_request_id,
        ACTS_AUTH_OP_ON_HEADERS_READ);
+
   return EVHTP_RES_OK;
 }
 
-/******/
+static evhtp_res on_response_header(evhtp_request_t *,
+                                    evhtp_header_t *p_evhtp_hdr,
+                                    void *p_arg) noexcept {
+  assert(p_evhtp_hdr != NULL);
+  assert(p_evhtp_hdr->key != NULL);
+  assert(p_evhtp_hdr->val != NULL);
+  assert(p_arg != NULL);
+
+  auto *p_auth_ctx = static_cast<S3AuthClientOpContext *>(p_arg);
+
+  s3_log(S3_LOG_DEBUG, p_auth_ctx->get_stripped_request_id(),
+         "Response's header from Auth Server - %s: %s", p_evhtp_hdr->key,
+         p_evhtp_hdr->val);
+
+  if (!strcasecmp(p_evhtp_hdr->key, "Content-Length")) {
+    p_auth_ctx->save_content_length(atol(p_evhtp_hdr->val));
+  }
+  return EVHTP_RES_OK;
+}
+
+static evhtp_res on_response_headers_end(evhtp_request_t *p_evhtp_req,
+                                         evhtp_headers_t *,
+                                         void *p_arg) noexcept {
+  assert(p_arg != NULL);
+  auto *p_auth_ctx = static_cast<S3AuthClientOpContext *>(p_arg);
+
+  s3_log(S3_LOG_DEBUG, p_auth_ctx->get_stripped_request_id(),
+         "Response from Auth server: headers end");
+
+  const int resp_status = evhtp_request_status(p_evhtp_req);
+
+  s3_log(S3_LOG_DEBUG, p_auth_ctx->get_request_id(),
+         "HTTP response status from Auth server - %d", resp_status);
+
+  const auto content_lentgh = p_auth_ctx->get_content_length();
+
+  if (content_lentgh == -1) {
+    s3_log(S3_LOG_WARN, p_auth_ctx->get_request_id(),
+           "S3AuthClient doesn't return \"Content-Length\" header");
+  } else if (content_lentgh == 0) {
+
+    switch (p_auth_ctx->op_type) {
+      case S3AuthClientOpType::aclvalidation:
+      case S3AuthClientOpType::policyvalidation:
+
+        if (S3HttpSuccess200 == resp_status) {
+          // s3_auth_op_success(p_auth_ctx, 0);  // Invoke the handler.
+          p_auth_ctx->on_success_handler()();
+        } else {
+          p_auth_ctx->on_failed_handler()();  // Invoke the handler.
+        }
+        break;
+      default:
+        s3_log(S3_LOG_ERROR, p_auth_ctx->get_request_id(),
+               "Auth server returns response without body");
+        p_auth_ctx->set_auth_response_error(
+            "InternalError", "Incorrect response from Auth server",
+            p_auth_ctx->get_request_id());
+
+        p_auth_ctx->on_failed_handler()();  // Invoke the handler.
+    }
+  }
+  return EVHTP_RES_OK;
+}
+
+// S3AuthClientOpContext
+
+S3AuthClientOpContext::S3AuthClientOpContext(
+    std::shared_ptr<RequestObject> req, std::function<void()> success_callback,
+    std::function<void()> failed_callback, S3AuthClientOpType op_type)
+    : S3AsyncOpContextBase(std::move(req), std::move(success_callback),
+                           std::move(failed_callback)),
+      op_type(op_type) {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
+  ADDB_AUTH(ACTS_AUTH_OP_CTX_CONSTRUCT);
+}
+
+S3AuthClientOpContext::~S3AuthClientOpContext() {
+  s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__);
+  ADDB_AUTH(ACTS_AUTH_OP_CTX_DESTRUCT);
+  clear_op_context();
+}
+
+const char *S3AuthClientOpContext::get_auth_status_message(int http_status)
+    const noexcept {
+  switch (op_type) {
+    case S3AuthClientOpType::authentication:
+
+      switch (http_status) {
+        case S3HttpSuccess200:
+          return "Authentication successful";
+        case S3HttpFailed400:
+          return "Authentication failed:Bad Request";
+        case S3HttpFailed401:
+          return "Authentication failed";
+        case S3HttpFailed403:
+          return "Authentication failed:Access denied";
+      }
+      break;
+    case S3AuthClientOpType::authorization:
+
+      switch (http_status) {
+        case S3HttpSuccess200:
+          return "Authorization successful";
+        case S3HttpFailed400:
+          return "Authorization failed: BadRequest";
+        case S3HttpFailed401:
+          return "Authorization failed";
+        case S3HttpFailed403:
+          return "Authorization failed: AccessDenied";
+        case S3HttpFailed405:
+          return "Authorization failed: Method Not Allowed";
+      }
+      break;
+    case S3AuthClientOpType::combo_auth:
+
+      switch (http_status) {
+        case S3HttpSuccess200:
+          return "Combo Auth successful";
+        case S3HttpFailed400:
+          return "Combo Auth failed: BadRequest";
+        case S3HttpFailed401:
+          return "Combo Auth failed";
+        case S3HttpFailed403:
+          return "Combo Auth failed: AccessDenied";
+        case S3HttpFailed405:
+          return "Combo Auth failed: Method Not Allowed";
+      }
+      break;
+    case S3AuthClientOpType::aclvalidation:
+
+      switch (http_status) {
+        case S3HttpSuccess200:
+          return "Aclvalidation successful";
+        case S3HttpFailed401:
+          return "Aclvalidation failed";
+        case S3HttpFailed405:
+          return "AclValidation failed: Method Not Allowed";
+      }
+      break;
+    case S3AuthClientOpType::policyvalidation:
+
+      switch (http_status) {
+        case S3HttpSuccess200:
+          return "Policy validation successful";
+        case S3HttpFailed401:
+          return "Policy validation failed";
+        case S3HttpFailed405:
+          return "Policy validation failed: Method Not Allowed";
+      }
+      break;
+    default:
+      s3_log(S3_LOG_WARN, request_id, "Unknown S3AuthClientOpType");
+  }
+  return "Something is wrong with Auth server";
+}
+
+void S3AuthClientOpContext::handle_response(const char *sz_resp,
+                                            int http_status) {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+
+  assert(sz_resp != nullptr);
+  s_resp.assign(sz_resp);
+
+  f_success = (S3HttpSuccess200 == http_status);
+  const char *sz_auth_msg = get_auth_status_message(http_status);
+
+  if (f_success) {
+    s3_log(S3_LOG_DEBUG, request_id, "%s\n", sz_auth_msg);
+  } else {
+    s3_log(S3_LOG_ERROR, request_id, "%s\n", sz_auth_msg);
+  }
+  set_op_status_for(
+      0, f_success ? S3AsyncOpStatus::success : S3AsyncOpStatus::failed,
+      sz_auth_msg);
+
+  if (!f_success) {
+    error_obj.reset(new S3AuthResponseError(s_resp));
+    s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
+    return;
+  }
+  switch (op_type) {
+    case S3AuthClientOpType::aclvalidation:
+    case S3AuthClientOpType::policyvalidation:
+      s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
+      return;
+    default:
+      ;  // -Wall
+  }
+  success_obj.reset(new S3AuthResponseSuccess(s_resp));
+
+  if (!success_obj->isOK()) {
+    s3_log(S3_LOG_ERROR, request_id, "Incorrect response from Auth server");
+    f_success = false;
+    return;
+  }
+  if (S3AuthClientOpType::combo_auth == op_type ||
+      S3AuthClientOpType::authentication == op_type) {
+
+    request->set_user_name(success_obj->get_user_name());
+    request->set_canonical_id(success_obj->get_canonical_id());
+    request->set_user_id(success_obj->get_user_id());
+    request->set_account_name(success_obj->get_account_name());
+    request->set_account_id(success_obj->get_account_id());
+    request->set_email(success_obj->get_email());
+  }
+  if (S3AuthClientOpType::authentication == op_type) {
+    s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
+    return;
+  }
+  switch (op_type) {
+    case S3AuthClientOpType::authorization:
+    case S3AuthClientOpType::combo_auth:
+      break;
+    default:
+      s3_log(S3_LOG_ERROR, request_id, "%s LOGIC ERROR: auth op type is missed",
+             __func__);
+  }
+  std::shared_ptr<S3RequestObject> s3_request =
+      std::dynamic_pointer_cast<S3RequestObject>(request);
+
+  if (!s3_request) {
+    s3_log(S3_LOG_ERROR, request_id, "Illegal type of Request instance");
+    f_success = false;  // since auth response details are bad
+    return;
+  }
+  s3_request->set_default_acl(success_obj->get_acl());
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
 
 void S3AuthClientOpContext::set_auth_response_error(std::string error_code,
                                                     std::string error_message,
                                                     std::string request_id) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   error_obj.reset(new S3AuthResponseError(
-      std::move(error_code), std::move(error_message), std::move(request_id)));
+      std::move(error_code), std::move(error_message), request_id));
   s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
 }
 
+bool S3AuthClientOpContext::init_auth_op_ctx() {
+  struct event_base *p_event_base = S3Option::get_instance()->get_eventbase();
+
+  if (!p_event_base) {
+    s3_log(S3_LOG_FATAL, request_id, "%s EventBase handler is NULL", __func__);
+  }
+
+  ADDB_AUTH(ACTS_AUTH_OP_CTX_NEW_CONN);
+  clear_op_context();
+
+  auth_op_context = create_basic_auth_op_ctx(p_event_base);
+
+  if (auth_op_context == NULL) {
+    return false;
+  }
+  evhtp_set_hook(&auth_op_context->auth_request->hooks, evhtp_hook_on_read,
+                 (evhtp_hook)on_read_response, this);
+  evhtp_set_hook(&auth_op_context->conn->hooks, evhtp_hook_on_event,
+                 (evhtp_hook)on_event_hook, (void *)this);
+  evhtp_set_hook(&auth_op_context->conn->hooks, evhtp_hook_on_write,
+                 (evhtp_hook)on_write_hook, (void *)this);
+  evhtp_set_hook(&auth_op_context->auth_request->hooks,
+                 evhtp_hook_on_headers_start,
+                 (evhtp_hook)on_response_headers_start, this);
+  evhtp_set_hook(&auth_op_context->auth_request->hooks, evhtp_hook_on_header,
+                 (evhtp_hook)on_response_header, this);
+  evhtp_set_hook(&auth_op_context->auth_request->hooks, evhtp_hook_on_headers,
+                 (evhtp_hook)on_response_headers_end, this);
+  evhtp_set_hook(&auth_op_context->conn->hooks, evhtp_hook_on_conn_error,
+                 (evhtp_hook)on_conn_err_callback, (void *)this);
+
+  return true;
+}
+
+void S3AuthClientOpContext::unset_hooks() {
+  if (auth_op_context) {
+    if (auth_op_context->conn) {
+      evhtp_unset_all_hooks(&auth_op_context->conn->hooks);
+    }
+    if (auth_op_context->auth_request) {
+      evhtp_unset_all_hooks(&auth_op_context->auth_request->hooks);
+    }
+  }
+}
+
+void S3AuthClientOpContext::clear_op_context() {
+  free_basic_auth_client_op_ctx(auth_op_context);
+  auth_op_context = NULL;
+}
+
+// S3AuthClient
+
 S3AuthClient::S3AuthClient(std::shared_ptr<RequestObject> req,
                            bool skip_authorization)
-    : request(req),
-      state(S3AuthClientOpState::init),
-      req_body_buffer(NULL),
-      is_chunked_auth(false),
-      last_chunk_added(false),
-      chunk_auth_aborted(false),
-      skip_authorization(skip_authorization) {
+    : request(std::move(req)), skip_authorization(skip_authorization) {
+
   request_id = request->get_request_id();
   stripped_request_id = request->get_stripped_request_id();
+
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
+
   ADDB_AUTH(ACTS_AUTH_CLNT_CONSTRUCT);
-  retry_count = 0;
-  op_type = S3AuthClientOpType::authentication;
+}
+
+S3AuthClient::~S3AuthClient() {
+  s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__);
+  ADDB_AUTH(ACTS_AUTH_CLNT_DESTRUCT);
 }
 
 void S3AuthClient::add_key_val_to_body(std::string key, std::string val) {
-  data_key_val[key] = val;
+  data_key_val[std::move(key)] = std::move(val);
+}
+
+void S3AuthClient::add_non_empty_key_val_to_body(std::string key,
+                                                 std::string val) {
+  if (!val.empty()) {
+    add_key_val_to_body(std::move(key), std::move(val));
+  }
+}
+
+void S3AuthClient::add_non_empty_key_val_to_body(
+    std::string key, const std::list<std::string> &val_list) {
+  std::string val_str;
+  for (const auto &val : val_list) {
+    if (!val.empty()) {
+      val_str += val + ",";
+    }
+  }
+  if (!val_str.empty()) {
+    val_str.pop_back();  // remove last delimiter
+    add_key_val_to_body(std::move(key), std::move(val_str));
+  }
 }
 
 void S3AuthClient::set_event_with_retry_interval() {
   S3Option *option_instance = S3Option::get_instance();
-  short interval = option_instance->get_retry_interval_in_millisec();
+
+  auto interval = option_instance->get_retry_interval_in_millisec();
   interval = interval * retry_count;
+
   struct timeval s_tv;
   s_tv.tv_sec = interval / 1000;
   s_tv.tv_usec = (interval % 1000) * 1000;
-  struct event *ev;
+
   // Will be freed in callback
   struct event_auth_timeout_arg *arg = (struct event_auth_timeout_arg *)calloc(
       1, sizeof(struct event_auth_timeout_arg));
   arg->auth_client = this;
-  ev = event_new(option_instance->get_eventbase(), -1, 0, timeout_cb_auth_retry,
-                 (void *)arg);
+  struct event *ev = event_new(option_instance->get_eventbase(), -1, 0,
+                               timeout_cb_auth_retry, (void *)arg);
 
   arg->event = ev;  // Will be freed in callback
   event_add(ev, &s_tv);
 }
 
 std::string S3AuthClient::get_signature_from_response() {
-  if (auth_context->auth_successful()) {
-    return auth_context->get_signature_sha256();
-  }
-  return "";
+  return auth_context->is_success() ? auth_context->get_signature_sha256() : "";
 }
 
-void S3AuthClient::remember_auth_details_in_request() {
-  if (auth_context->auth_successful()) {
-    request->set_user_id(auth_context->get_user_id());
-    request->set_user_name(auth_context->get_user_name());
-    request->set_canonical_id(auth_context->get_canonical_id());
-    request->set_account_id(auth_context->get_account_id());
-    request->set_account_name(auth_context->get_account_name());
-    request->set_email(auth_context->get_email());
-  }
-}
-
-std::string S3AuthClient::get_error_message() {
-  if ((((!auth_context->auth_successful()) &&
-        get_op_type() == S3AuthClientOpType::authentication)) ||
-      ((!auth_context->authorization_successful()) &&
-       get_op_type() == S3AuthClientOpType::authorization) ||
-      ((!auth_context->aclvalidation_successful() &&
-        get_op_type() == S3AuthClientOpType::aclvalidation)) ||
-      ((!auth_context->policyvalidation_successful() &&
-        get_op_type() == S3AuthClientOpType::policyvalidation))) {
-
-    std::string message = auth_context->get_error_message();
-    return message;
-  }
-  return "";
+std::string S3AuthClient::get_error_message() const {
+  return auth_context->is_success() ? "" : auth_context->get_error_message();
 }
 
 // Returns AccessDenied | InvalidAccessKeyId | SignatureDoesNotMatch
 // auth InactiveAccessKey maps to InvalidAccessKeyId in S3
-std::string S3AuthClient::get_error_code() {
+std::string S3AuthClient::get_error_code() const {
 
-  if ((((!auth_context->auth_successful()) &&
-        get_op_type() == S3AuthClientOpType::authentication)) ||
-      ((!auth_context->authorization_successful()) &&
-       get_op_type() == S3AuthClientOpType::authorization) ||
-      ((!auth_context->aclvalidation_successful() &&
-        get_op_type() == S3AuthClientOpType::aclvalidation)) ||
-      ((!auth_context->policyvalidation_successful() &&
-        get_op_type() == S3AuthClientOpType::policyvalidation))) {
-    std::string code = auth_context->get_error_code();
+  if (!auth_context->is_success()) {
+    const auto &code = auth_context->get_error_code();
 
     if (code == "InactiveAccessKey") {
       return "InvalidAccessKeyId";
@@ -672,19 +656,43 @@ std::string S3AuthClient::get_error_code() {
 bool S3AuthClient::setup_auth_request_body() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
 
-  S3AuthClientOpType auth_request_type = get_op_type();
+  // Setup the headers to forward to auth service
+  s3_log(S3_LOG_DEBUG, request_id, "Headers from S3 client:\n");
+
+  data_key_val.clear();
+
+  if (op_type != S3AuthClientOpType::policyvalidation) {
+
+    for (const auto &hdr_val : request->get_in_headers_copy()) {
+      const auto &s_hdr = hdr_val.first;
+      const auto &s_val = hdr_val.second;
+
+      s3_log(S3_LOG_DEBUG, request_id, "%s: %s\n", s_hdr.c_str(),
+             s_val.c_str());
+      add_key_val_to_body(s_hdr, s_val);
+    }
+  }
   std::string auth_request_body;
-  std::string method = "";
-  if (request->http_verb() == S3HttpVerb::GET) {
-    method = "GET";
-  } else if (request->http_verb() == S3HttpVerb::HEAD) {
-    method = "HEAD";
-  } else if (request->http_verb() == S3HttpVerb::PUT) {
-    method = "PUT";
-  } else if (request->http_verb() == S3HttpVerb::DELETE) {
-    method = "DELETE";
-  } else if (request->http_verb() == S3HttpVerb::POST) {
-    method = "POST";
+  std::string method;
+
+  switch (request->http_verb()) {
+    case S3HttpVerb::GET:
+      method = "GET";
+      break;
+    case S3HttpVerb::HEAD:
+      method = "HEAD";
+      break;
+    case S3HttpVerb::PUT:
+      method = "PUT";
+      break;
+    case S3HttpVerb::DELETE:
+      method = "DELETE";
+      break;
+    case S3HttpVerb::POST:
+      method = "POST";
+      break;
+    default:
+      ;  // -Wall
   }
   if (set_get_method) {
     method = "GET";
@@ -697,26 +705,34 @@ bool S3AuthClient::setup_auth_request_body() {
   add_key_val_to_body("RequestorEmail", request->get_email());
   add_key_val_to_body("RequestorCanonicalId", request->get_canonical_id());
 
-  const char *full_path = request->c_get_full_encoded_path();
-  if (full_path != NULL) {
-    std::string uri_full_path = full_path;
-    // in encoded uri path space is encoding as '+'
-    // but cannonical request should have '%20' for verification.
-    // decode plus into space, this special handling
-    // is not required for other charcters.
-    S3CommonUtilities::find_and_replaceall(uri_full_path, "+", "%20");
-    std::string authorization_header =
-        request->get_header_value("Authorization");
-    if (authorization_header.rfind("AWS4-HMAC-SHA256", 0) == 0) {
-      S3CommonUtilities::find_and_replaceall(uri_full_path, "!", "%21");
+  std::shared_ptr<S3RequestObject> s3_request =
+      std::dynamic_pointer_cast<S3RequestObject>(request);
+
+  if (entity_path.empty()) {
+
+    const char *sz_full_path = request->c_get_full_encoded_path();
+
+    if (sz_full_path) {
+      entity_path.assign(sz_full_path);
+
+      // in encoded uri path space is encoding as '+'
+      // but cannonical request should have '%20' for verification.
+      // decode plus into space, this special handling
+      // is not required for other charcters.
+      S3CommonUtilities::find_and_replaceall(entity_path, "+", "%20");
+
+      std::string authorization_header =
+          request->get_header_value("Authorization");
+
+      if (authorization_header.rfind("AWS4-HMAC-SHA256", 0) == 0) {
+        S3CommonUtilities::find_and_replaceall(entity_path, "!", "%21");
+      }
     }
-    if (!clientabsoulte_uri.empty()) {
-      uri_full_path = clientabsoulte_uri;
-    }
-    add_key_val_to_body("ClientAbsoluteUri", uri_full_path);
-  } else {
-    add_key_val_to_body("ClientAbsoluteUri", "");
   }
+  if (entity_path == "/" && S3AuthClientOpType::policyvalidation == op_type) {
+    entity_path.append(s3_request->get_bucket_name());
+  }
+  add_key_val_to_body("ClientAbsoluteUri", entity_path);
 
   // get the query paramters in a map
   // eg: query_map = { {prefix, abc&def}, {delimiter, /}};
@@ -760,11 +776,11 @@ bool S3AuthClient::setup_auth_request_body() {
   // May need to take it from config
   add_key_val_to_body("Version", "2010-05-08");
   add_key_val_to_body("Request_id", request_id);
-  if (auth_request_type == S3AuthClientOpType::authorization) {
 
-    std::shared_ptr<S3RequestObject> s3_request =
-        std::dynamic_pointer_cast<S3RequestObject>(request);
-    if (s3_request != nullptr) {
+  if (op_type == S3AuthClientOpType::authorization ||
+      op_type == S3AuthClientOpType::combo_auth) {
+
+    if (s3_request) {
 
       // Set flag to request default bucket acl from authserver.
       if ((s3_request->http_verb() == S3HttpVerb::PUT &&
@@ -798,24 +814,20 @@ bool S3AuthClient::setup_auth_request_body() {
       if (set_get_method) {
         add_key_val_to_body("Request-ACL", "false");
       }
+      add_non_empty_key_val_to_body("S3Action", s3_request->get_action_str());
+      add_non_empty_key_val_to_body("S3ActionList",
+                                    s3_request->get_action_list());
     }
-    if (policy_str != "") {
-      add_key_val_to_body("Policy", policy_str);
-    }
-    if (acl_str != "") {
+    add_non_empty_key_val_to_body("Policy", policy_str);
+    add_non_empty_key_val_to_body("Auth-ACL", acl_str);
+    add_non_empty_key_val_to_body("Bucket-ACL", bucket_acl);
 
-      add_key_val_to_body("Auth-ACL", acl_str);
+    if (op_type == S3AuthClientOpType::combo_auth) {
+      auth_request_body = "Action=AuthenticateAndAuthorize";
+    } else {
+      auth_request_body = "Action=AuthorizeUser";
     }
-    if (bucket_acl != "") {
-      add_key_val_to_body("Bucket-ACL", bucket_acl);
-    }
-    if (s3_request->get_action_str() != "") {
-      add_key_val_to_body("S3Action", s3_request->get_action_str());
-    }
-
-    auth_request_body = "Action=AuthorizeUser";
-  } else if (auth_request_type ==
-             S3AuthClientOpType::authentication) {  // Auth request
+  } else if (op_type == S3AuthClientOpType::authentication) {  // Auth request
 
     if (is_chunked_auth && !(prev_chunk_signature_from_auth.empty() ||
                              current_chunk_signature_from_auth.empty())) {
@@ -827,12 +839,12 @@ bool S3AuthClient::setup_auth_request_body() {
     }
 
     auth_request_body = "Action=AuthenticateUser";
-  } else if (auth_request_type == S3AuthClientOpType::aclvalidation) {
+  } else if (op_type == S3AuthClientOpType::aclvalidation) {
 
     add_key_val_to_body("ACL", user_acl);
     add_key_val_to_body("Auth-ACL", acl_str);
     auth_request_body = "Action=ValidateACL";
-  } else if (auth_request_type == S3AuthClientOpType::policyvalidation) {
+  } else if (op_type == S3AuthClientOpType::policyvalidation) {
     add_key_val_to_body("Policy", policy_str);
     auth_request_body = "Action=ValidatePolicy";
   }
@@ -886,28 +898,30 @@ void S3AuthClient::set_validate_acl(const std::string &validateacl) {
 
 void S3AuthClient::setup_auth_request_headers() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  struct s3_auth_op_context *op_ctx = auth_context->get_auth_op_ctx();
-  char sz_size[100] = {0};
-  size_t out_len = evbuffer_get_length(req_body_buffer);
-  evhtp_request_t *auth_request = op_ctx->auth_request;
 
-  sprintf(sz_size, "%zu", out_len);
+  char sz_size[32];
+  const size_t out_len = evbuffer_get_length(req_body_buffer);
+
+  if (snprintf(sz_size, sizeof(sz_size), "%zu", out_len) < 0) {
+    s3_log(S3_LOG_FATAL, request_id, "%s Too small buffer", __func__);
+  }
   s3_log(S3_LOG_DEBUG, request_id, "Header - Length = %zu\n", out_len);
-  s3_log(S3_LOG_DEBUG, request_id, "Header - Length-str = %s\n", sz_size);
+
   std::string host = request->get_host_header();
+  evhtp_request_t *p_evhtp_req = auth_context->get_auth_op_ctx()->auth_request;
 
   if (!host.empty()) {
-    evhtp_headers_add_header(auth_request->headers_out,
+    evhtp_headers_add_header(p_evhtp_req->headers_out,
                              evhtp_header_new("Host", host.c_str(), 1, 1));
   }
-  evhtp_headers_add_header(auth_request->headers_out,
+  evhtp_headers_add_header(p_evhtp_req->headers_out,
                            evhtp_header_new("Content-Length", sz_size, 1, 1));
   evhtp_headers_add_header(
-      auth_request->headers_out,
+      p_evhtp_req->headers_out,
       evhtp_header_new("Content-Type", "application/x-www-form-urlencoded", 0,
                        0));
 
-  evhtp_headers_add_header(auth_request->headers_out,
+  evhtp_headers_add_header(p_evhtp_req->headers_out,
                            evhtp_header_new("User-Agent", "s3server", 1, 1));
   /* Using a new connection per request, all types of requests like
   *   authenticarion, authorization, validateacl, validatepolicy open
@@ -916,7 +930,7 @@ void S3AuthClient::setup_auth_request_headers() {
   *   connections
   */
 
-  evhtp_headers_add_header(auth_request->headers_out,
+  evhtp_headers_add_header(p_evhtp_req->headers_out,
                            evhtp_header_new("Connection", "close", 1, 1));
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -929,15 +943,14 @@ void S3AuthClient::set_is_authheader_present(
 
 void S3AuthClient::execute_authconnect_request(
     struct s3_auth_op_context *auth_ctx) {
-  S3AuthClientOpType auth_request_type = get_op_type();
 
   ADDB_AUTH(ACTS_AUTH_CLNT_EXEC_AUTH_CONN);
 
-  if ((auth_request_type == S3AuthClientOpType::authorization &&
+  if ((op_type == S3AuthClientOpType::authorization &&
        s3_fi_is_enabled("fake_authorization_fail")) ||
-      (auth_request_type == S3AuthClientOpType::authentication &&
+      (op_type == S3AuthClientOpType::authentication &&
        s3_fi_is_enabled("fake_authentication_fail"))) {
-    s3_auth_fake_evhtp_request(auth_request_type, auth_context.get());
+    s3_auth_fake_evhtp_request(op_type, auth_context.get());
   } else {
     evhtp_make_request(auth_ctx->conn, auth_ctx->auth_request, htp_method_POST,
                        "/");
@@ -948,10 +961,8 @@ void S3AuthClient::execute_authconnect_request(
   req_body_buffer = NULL;
 }
 
-void S3AuthClient::trigger_authentication() {
+void S3AuthClient::trigger_request() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-
-  ADDB_AUTH(ACTS_AUTH_CLNT_TRIGGER_AUTH);
 
   AtExit at_exit_on_error([this]() {
     if (auth_context) {
@@ -959,71 +970,75 @@ void S3AuthClient::trigger_authentication() {
           "InternalError", "Error while preparing request to Auth server",
           request_id);
     }
-    if (handler_on_failed) {
-      handler_on_failed();
-    }
+    state = S3AuthClientOpState::failed;
+    handler_on_failed();
   });
-
-  state = S3AuthClientOpState::started;
-  S3AuthClientOpType auth_request_type = get_op_type();
-  auth_context->init_auth_op_ctx(auth_request_type);
-  struct s3_auth_op_context *auth_ctx = auth_context->get_auth_op_ctx();
-  // Setup the auth callbacks
-  evhtp_set_hook(&auth_ctx->auth_request->hooks, evhtp_hook_on_read,
-                 (evhtp_hook)on_auth_response, auth_context.get());
-
-  // Setup the headers to forward to auth service
-  s3_log(S3_LOG_DEBUG, request_id, "Headers from S3 client:\n");
-  for (auto it : request->get_in_headers_copy()) {
-    s3_log(S3_LOG_DEBUG, request_id, "Header = %s, Value = %s\n",
-           it.first.c_str(), it.second.c_str());
-    add_key_val_to_body(it.first.c_str(), it.second.c_str());
-  }
+  auth_context->init_auth_op_ctx();
 
   // Setup the body to be sent to auth service
   if (!setup_auth_request_body()) {
-    if (req_body_buffer != NULL) {
+    state = S3AuthClientOpState::failed;
+
+    if (req_body_buffer) {
       evbuffer_free(req_body_buffer);
       req_body_buffer = NULL;
     }
     return;
   }
   setup_auth_request_headers();
-  S3Option *option_instance = S3Option::get_instance();
-  if (option_instance->get_log_level() == "DEBUG") {
-    size_t buffer_len = evbuffer_get_length(req_body_buffer);
-    char *auth_response_body = (char *)malloc(buffer_len + 1);
-    if (auth_response_body == NULL) {
+
+  if (S3Option::get_instance()->get_log_level() == "DEBUG") {
+
+    const size_t buffer_len = evbuffer_get_length(req_body_buffer);
+    char *sz_request = (char *)::malloc(buffer_len + 1);
+
+    if (!sz_request) {
       s3_log(S3_LOG_FATAL, request_id, "malloc() returned NULL\n");
     }
     const auto nread =
-        evbuffer_copyout(req_body_buffer, auth_response_body, buffer_len);
-    if (nread > 0) {
-      auth_response_body[nread] = '\0';
-    } else {
-      auth_response_body[0] = '\0';
-    }
-    s3_log(S3_LOG_DEBUG, request_id, "Data being send to Auth server: = %s\n",
-           auth_response_body);
-    free(auth_response_body);
-  }
+        evbuffer_copyout(req_body_buffer, sz_request, buffer_len);
+    sz_request[nread > 0 ? nread : 0] = '\0';
 
-  execute_authconnect_request(auth_ctx);
+    s3_log(S3_LOG_DEBUG, request_id, "Data being sent to Auth server: = %s\n",
+           sz_request);
+    ::free(sz_request);
+  }
+  execute_authconnect_request(auth_context->get_auth_op_ctx());
 
   at_exit_on_error.cancel();
+  state = S3AuthClientOpState::started;
+
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 // Note: S3AuthClientOpContext should be created before calling this.
 // This is called by check_authentication and start_chunk_auth
-void S3AuthClient::trigger_authentication(std::function<void(void)> on_success,
-                                          std::function<void(void)> on_failed) {
+void S3AuthClient::trigger_request(std::function<void(void)> on_success,
+                                   std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
 
-  this->handler_on_success = on_success;
-  this->handler_on_failed = on_failed;
+  assert(on_success);
+  assert(on_failed);
 
-  trigger_authentication();
+  if (op_type == S3AuthClientOpType::authentication ||
+      op_type == S3AuthClientOpType::combo_auth) {
+
+    if (s3_fi_is_enabled("fake_authentication_fail")) {
+      auth_context->set_auth_response_error(
+          "InvalidAccessKeyId", "Test of authentication failure", request_id);
+      on_failed();
+
+      s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+      return;
+    }
+  }
+  handler_on_success = std::move(on_success);
+  handler_on_failed = std::move(on_failed);
+
+  retry_count = 0;
+
+  trigger_request();
+
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -1033,50 +1048,13 @@ void S3AuthClient::validate_acl(std::function<void(void)> on_success,
   ADDB_AUTH(ACTS_AUTH_CLNT_VALIDATE_ACL);
 
   data_key_val.clear();
-  this->handler_on_success = on_success;
-  this->handler_on_failed = on_failed;
 
   auth_context.reset(new S3AuthClientOpContext(
-      request, std::bind(&S3AuthClient::check_aclvalidation_successful, this),
-      std::bind(&S3AuthClient::check_aclvalidation_failed, this)));
+      request, std::bind(&S3AuthClient::on_common_success, this),
+      std::bind(&S3AuthClient::on_common_failed, this),
+      op_type = S3AuthClientOpType::aclvalidation));
 
-  S3AuthClientOpType auth_request_type = S3AuthClientOpType::aclvalidation;
-  set_op_type(auth_request_type);
-  auth_context->init_auth_op_ctx(auth_request_type);
-
-  struct s3_auth_op_context *auth_ctx = auth_context->get_auth_op_ctx();
-  evhtp_set_hook(&auth_ctx->auth_request->hooks, evhtp_hook_on_read,
-                 (evhtp_hook)on_aclvalidation_response, auth_context.get());
-
-  // Setup the Aclvalidation body to be sent to auth service
-
-  for (auto it : request->get_in_headers_copy()) {
-    s3_log(S3_LOG_DEBUG, request_id, "Header = %s, Value = %s\n",
-           it.first.c_str(), it.second.c_str());
-    add_key_val_to_body(it.first.c_str(), it.second.c_str());
-  }
-
-  setup_auth_request_body();
-
-  setup_auth_request_headers();
-  S3Option *option_instance = S3Option::get_instance();
-  if (option_instance->get_log_level() == "DEBUG") {
-    size_t buffer_len = evbuffer_get_length(req_body_buffer);
-    char *auth_body = (char *)malloc(buffer_len + 1);
-    if (auth_body == NULL) {
-      s3_log(S3_LOG_FATAL, request_id, "malloc() returned NULL\n");
-    }
-    const auto nread = evbuffer_copyout(req_body_buffer, auth_body, buffer_len);
-    if (nread > 0) {
-      auth_body[nread] = '\0';
-    } else {
-      auth_body[0] = '\0';
-    }
-    s3_log(S3_LOG_DEBUG, request_id,
-           "Aclvalidation Data being send to Auth server: %s\n", auth_body);
-    free(auth_body);
-  }
-  execute_authconnect_request(auth_ctx);
+  trigger_request(std::move(on_success), std::move(on_failed));
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -1086,192 +1064,148 @@ void S3AuthClient::validate_policy(std::function<void(void)> on_success,
 
   ADDB_AUTH(ACTS_AUTH_CLNT_VALIDATE_POLICY);
 
-  data_key_val.clear();
-  this->handler_on_success = on_success;
-  this->handler_on_failed = on_failed;
-
   auth_context.reset(new S3AuthClientOpContext(
-      request, std::bind(&S3AuthClient::policy_validation_successful, this),
-      std::bind(&S3AuthClient::policy_validation_failed, this)));
+      request, std::bind(&S3AuthClient::on_common_success, this),
+      std::bind(&S3AuthClient::on_common_failed, this),
+      op_type = S3AuthClientOpType::policyvalidation));
 
-  S3AuthClientOpType auth_request_type = S3AuthClientOpType::policyvalidation;
-  set_op_type(auth_request_type);
-  auth_context->init_auth_op_ctx(auth_request_type);
+  trigger_request(std::move(on_success), std::move(on_failed));
 
-  struct s3_auth_op_context *auth_ctx = auth_context->get_auth_op_ctx();
-  evhtp_set_hook(&auth_ctx->auth_request->hooks, evhtp_hook_on_read,
-                 (evhtp_hook)on_policy_validation_response, auth_context.get());
+  s3_log(S3_LOG_DEBUG, nullptr, "%s Exit", __func__);
+}
 
-  // Setup the Policy validation body to be sent to auth service
+void S3AuthClient::on_common_success() {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  state = S3AuthClientOpState::succeded;
 
-  setup_auth_request_body();
+  unsigned addb_type;
 
-  setup_auth_request_headers();
-  S3Option *option_instance = S3Option::get_instance();
-  if (option_instance->get_log_level() == "DEBUG") {
-    size_t buffer_len = evbuffer_get_length(req_body_buffer);
-    char *auth_body = (char *)malloc(buffer_len + 1);
-    if (auth_body == NULL) {
-      s3_log(S3_LOG_FATAL, request_id, "malloc() returned NULL\n");
-    }
-    const auto nread = evbuffer_copyout(req_body_buffer, auth_body, buffer_len);
-    if (nread > 0) {
-      auth_body[nread] = '\0';
-    } else {
-      auth_body[0] = '\0';
-    }
-    s3_log(S3_LOG_DEBUG, request_id,
-           "Policy validation Data being send to Auth server: %s\n", auth_body);
-    free(auth_body);
+  switch (op_type) {
+    case S3AuthClientOpType::authorization:
+      addb_type = ACTS_AUTH_CLNT_CHK_AUTHZ_SUCC;
+      break;
+    case S3AuthClientOpType::combo_auth:
+      addb_type = ACTS_AUTH_CLNT_CHK_AUTHZ_SUCC;
+      break;
+    case S3AuthClientOpType::aclvalidation:
+      addb_type = ACTS_AUTH_CLNT_VALIDATE_ACL_SUCC;
+      break;
+    case S3AuthClientOpType::policyvalidation:
+      addb_type = ACTS_AUTH_CLNT_VALIDATE_POLICY_SUCC;
+      break;
+    default:
+      addb_type = ACTS_AUTH_CLNT_CHK_AUTH_SUCC;
   }
-  execute_authconnect_request(auth_ctx);
+  ADDB_AUTH(addb_type);
 
-  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
-}
-
-void S3AuthClient::policy_validation_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  ADDB_AUTH(ACTS_AUTH_CLNT_VALIDATE_POLICY_SUCC);
-  state = S3AuthClientOpState::authenticated;
-  remember_auth_details_in_request();
-  // prev_chunk_signature_from_auth = get_signature_from_response();
+  if (is_chunked_auth) {
+    assert(S3AuthClientOpType::authentication == op_type);
+    prev_chunk_signature_from_auth = get_signature_from_response();
+  }
   this->handler_on_success();
-  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
+
+  s3_log(S3_LOG_DEBUG, nullptr, "%s Exit", __func__);
 }
 
-void S3AuthClient::policy_validation_failed() {
+void S3AuthClient::on_common_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  ADDB_AUTH(ACTS_AUTH_CLNT_VALIDATE_POLICY_FAILED);
+  state = S3AuthClientOpState::failed;
+
+  unsigned addb_type;
+
+  switch (op_type) {
+    case S3AuthClientOpType::authorization:
+      addb_type = ACTS_AUTH_CLNT_CHK_AUTHZ_FAILED;
+      break;
+    case S3AuthClientOpType::combo_auth:
+      addb_type = ACTS_AUTH_CLNT_CHK_AUTHZ_FAILED;
+      break;
+    case S3AuthClientOpType::aclvalidation:
+      addb_type = ACTS_AUTH_CLNT_VALIDATE_ACL_FAILED;
+      break;
+    case S3AuthClientOpType::policyvalidation:
+      addb_type = ACTS_AUTH_CLNT_VALIDATE_POLICY_FAILED;
+      break;
+    default:
+      addb_type = ACTS_AUTH_CLNT_CHK_AUTH_FAILED;
+  }
+  ADDB_AUTH(addb_type);
+
   S3AsyncOpStatus op_state = auth_context.get()->get_op_status_for(0);
+
   if (op_state == S3AsyncOpStatus::connection_failed) {
-    S3Option *option_instance = S3Option::get_instance();
-    s3_log(S3_LOG_WARN, request_id,
-           "Policy validation failure, not able to connect to Auth server\n");
-    if (retry_count < option_instance->get_max_retry_count()) {
-      retry_count++;
+    s3_log(S3_LOG_WARN, request_id, "Unable to connect to Auth server");
+    state = S3AuthClientOpState::connection_error;
+
+    if (retry_count < S3Option::get_instance()->get_max_retry_count()) {
+
+      ++retry_count;
       set_event_with_retry_interval();
+      return;
+
     } else {
       s3_log(S3_LOG_ERROR, request_id,
              "Cannot connect to Auth server (Retry count = %d).\n",
              retry_count);
-      s3_iem(LOG_ERR, S3_IEM_AUTH_CONN_FAIL, S3_IEM_AUTH_CONN_FAIL_STR,
-             S3_IEM_AUTH_CONN_FAIL_JSON);
-      this->handler_on_failed();
+      // s3_iem(LOG_ERR, S3_IEM_AUTH_CONN_FAIL, S3_IEM_AUTH_CONN_FAIL_STR,
+      //     S3_IEM_AUTH_CONN_FAIL_JSON);
     }
   } else {
-    s3_log(S3_LOG_ERROR, request_id, "Policy validation failure\n");
-
-    this->handler_on_failed();
+    s3_log(S3_LOG_ERROR, request_id, "Auth/validation failure\n");
+    state = S3AuthClientOpState::failed;
   }
+  this->handler_on_failed();
+
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3AuthClient::check_authorization() {
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  set_op_type(S3AuthClientOpType::authorization);
-  state = S3AuthClientOpState::started;
-  ADDB_AUTH(ACTS_AUTH_CLNT_CHK_AUTHZ_R);
-  // New connection in case of retry
-  S3AuthClientOpType auth_request_type = get_op_type();
-  auth_context->init_auth_op_ctx(auth_request_type);
-  struct s3_auth_op_context *auth_ctx = auth_context->get_auth_op_ctx();
-
-  // Setup the auth callbacks
-  evhtp_set_hook(&auth_ctx->auth_request->hooks, evhtp_hook_on_read,
-                 (evhtp_hook)on_authorization_response, auth_context.get());
-
-  // Setup the Authorization body to be sent to auth service
-  setup_auth_request_body();
-  setup_auth_request_headers();
-  S3Option *option_instance = S3Option::get_instance();
-  if (option_instance->get_log_level() == "DEBUG") {
-    size_t buffer_len = evbuffer_get_length(req_body_buffer);
-    char *auth_body = (char *)malloc(buffer_len + 1);
-    if (auth_body == NULL) {
-      s3_log(S3_LOG_FATAL, request_id, "malloc() returned NULL\n");
-    }
-    const auto nread = evbuffer_copyout(req_body_buffer, auth_body, buffer_len);
-    if (nread > 0) {
-      auth_body[nread] = '\0';
-    } else {
-      auth_body[0] = '\0';
-    }
-    s3_log(S3_LOG_DEBUG, request_id,
-           "Authorization Data being send to Auth server: %s\n", auth_body);
-    free(auth_body);
-  }
-
-  execute_authconnect_request(auth_ctx);
-
-  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
 }
 
 void S3AuthClient::check_authorization(std::function<void(void)> on_success,
                                        std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+
   ADDB_AUTH(ACTS_AUTH_CLNT_CHK_AUTHZ);
-  set_op_type(S3AuthClientOpType::authorization);
 
-  if (!is_authheader_present) {
-    auth_context.reset(new S3AuthClientOpContext(
-        request, std::bind(&S3AuthClient::check_authorization_successful, this),
-        std::bind(&S3AuthClient::check_authorization_failed, this)));
+  auth_context.reset(new S3AuthClientOpContext(
+      request, std::bind(&S3AuthClient::on_common_success, this),
+      std::bind(&S3AuthClient::on_common_failed, this),
+      op_type = S3AuthClientOpType::authorization));
 
-    for (auto it : request->get_in_headers_copy()) {
-      s3_log(S3_LOG_DEBUG, request_id, "Header = %s, Value = %s\n",
-             it.first.c_str(), it.second.c_str());
-      add_key_val_to_body(it.first.c_str(), it.second.c_str());
-    }
-  } else {
-    auth_context->reset_callbacks(
-        std::bind(&S3AuthClient::check_authorization_successful, this),
-        std::bind(&S3AuthClient::check_authorization_failed, this));
-  }
-
-  state = S3AuthClientOpState::started;
-
-  this->handler_on_success = on_success;
-  this->handler_on_failed = on_failed;
-  S3AuthClientOpType auth_request_type = get_op_type();
-
-  auth_context->init_auth_op_ctx(auth_request_type);
-
-  struct s3_auth_op_context *auth_ctx = auth_context->get_auth_op_ctx();
-  // Setup the auth callbacks
-  evhtp_set_hook(&auth_ctx->auth_request->hooks, evhtp_hook_on_read,
-                 (evhtp_hook)on_authorization_response, auth_context.get());
-
-  // Setup the Authorization body to be sent to auth service
-  setup_auth_request_body();
-  setup_auth_request_headers();
-  S3Option *option_instance = S3Option::get_instance();
-  if (option_instance->get_log_level() == "DEBUG") {
-    size_t buffer_len = evbuffer_get_length(req_body_buffer);
-    char *auth_body = (char *)malloc(buffer_len + 1);
-    if (auth_body == NULL) {
-      s3_log(S3_LOG_FATAL, request_id, "malloc failed to allocate memory\n");
-    }
-    const auto nread = evbuffer_copyout(req_body_buffer, auth_body, buffer_len);
-    if (nread > 0) {
-      auth_body[nread] = '\0';
-    } else {
-      auth_body[0] = '\0';
-    }
-    s3_log(S3_LOG_DEBUG, request_id,
-           "Authorization Data being send to Auth server: %s\n", auth_body);
-    free(auth_body);
-  }
-  execute_authconnect_request(auth_ctx);
+  trigger_request(std::move(on_success), std::move(on_failed));
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3AuthClient::check_authorization_successful() {
+void S3AuthClient::check_combo_auth(std::function<void(void)> on_success,
+                                    std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  ADDB_AUTH(ACTS_AUTH_CLNT_CHK_AUTHZ_SUCC);
-  state = S3AuthClientOpState::authorized;
-  retry_count = 0;
-  this->handler_on_success();
+
+  ADDB_AUTH(ACTS_AUTH_CLNT_CHK_AUTHZ);
+
+  auth_context.reset(new S3AuthClientOpContext(
+      request, std::bind(&S3AuthClient::on_common_success, this),
+      std::bind(&S3AuthClient::on_common_failed, this),
+      op_type = S3AuthClientOpType::combo_auth));
+
+  for (const auto &hdr_val : request->get_in_headers_copy()) {
+    if (!strcasecmp(hdr_val.first.c_str(), "Authorization")) {
+      std::string to_find("Signature");
+      const auto pos = hdr_val.second.find(to_find);
+
+      if (std::string::npos == pos) {
+        s3_log(S3_LOG_WARN, request_id,
+               "\"Authorization\" header doesn't contain \"Signature\" value");
+      } else {
+        prev_chunk_signature_from_auth =
+            hdr_val.second.substr(pos + to_find.length() + 1, 64);
+        // 64 is the length of SHA256's string in hexadecimal
+        s3_log(S3_LOG_DEBUG, request_id, "Signature=%s",
+               prev_chunk_signature_from_auth.c_str());
+      }
+      break;
+    }
+  }
+  trigger_request(std::move(on_success), std::move(on_failed));
+
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -1299,135 +1233,21 @@ void S3AuthClient::check_authorization_successful() {
  *  </IEM_INLINE_DOCUMENTATION>
  */
 
-void S3AuthClient::check_authorization_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_ERROR, request_id, "Authorization failure\n");
-  ADDB_AUTH(ACTS_AUTH_CLNT_CHK_AUTHZ_FAILED);
-  S3AsyncOpStatus op_state = auth_context.get()->get_op_status_for(0);
-  if (op_state == S3AsyncOpStatus::connection_failed) {
-    S3Option *option_instance = S3Option::get_instance();
-    s3_log(S3_LOG_WARN, request_id,
-           "Authorization failure, not able to connect to Auth server\n");
-    if (retry_count < option_instance->get_max_retry_count()) {
-      retry_count++;
-      set_event_with_retry_interval();
-    } else {
-      s3_log(S3_LOG_ERROR, request_id,
-             "Cannot connect to Auth server (Retry count = %d).\n",
-             retry_count);
-      s3_iem(LOG_ERR, S3_IEM_AUTH_CONN_FAIL, S3_IEM_AUTH_CONN_FAIL_STR,
-             S3_IEM_AUTH_CONN_FAIL_JSON);
-      this->handler_on_failed();
-    }
-  } else {
-    s3_log(S3_LOG_ERROR, request_id, "Authorization failure\n");
-    state = S3AuthClientOpState::unauthorized;
-    this->handler_on_failed();
-  }
-
-  // this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3AuthClient::check_authentication() {
-  ADDB_AUTH(ACTS_AUTH_CLNT_CHK_AUTH_R);
-  auth_context.reset(new S3AuthClientOpContext(
-      request, std::bind(&S3AuthClient::check_authentication_successful, this),
-      std::bind(&S3AuthClient::check_authentication_failed, this)));
-  is_chunked_auth = false;
-  set_op_type(S3AuthClientOpType::authentication);
-  trigger_authentication();
-}
-
 void S3AuthClient::check_authentication(std::function<void(void)> on_success,
                                         std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+
   ADDB_AUTH(ACTS_AUTH_CLNT_CHK_AUTH);
   auth_context.reset(new S3AuthClientOpContext(
-      request, std::bind(&S3AuthClient::check_authentication_successful, this),
-      std::bind(&S3AuthClient::check_authentication_failed, this)));
+      request, std::bind(&S3AuthClient::on_common_success, this),
+      std::bind(&S3AuthClient::on_common_failed, this),
+      op_type = S3AuthClientOpType::authentication));
 
   is_chunked_auth = false;
-  set_op_type(S3AuthClientOpType::authentication);
 
-  trigger_authentication(on_success, on_failed);
-  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
-}
+  trigger_request(std::move(on_success), std::move(on_failed));
 
-void S3AuthClient::check_authentication_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  ADDB_AUTH(ACTS_AUTH_CLNT_CHK_AUTH_SUCC);
-  state = S3AuthClientOpState::authenticated;
-  retry_count = 0;
-  remember_auth_details_in_request();
-  prev_chunk_signature_from_auth = get_signature_from_response();
-  this->handler_on_success();
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3AuthClient::check_aclvalidation_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  ADDB_AUTH(ACTS_AUTH_CLNT_VALIDATE_ACL_SUCC);
-  state = S3AuthClientOpState::authenticated;
-  retry_count = 0;
-  remember_auth_details_in_request();
-  prev_chunk_signature_from_auth = get_signature_from_response();
-  this->handler_on_success();
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3AuthClient::check_authentication_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  ADDB_AUTH(ACTS_AUTH_CLNT_CHK_AUTH_FAILED);
-  S3AsyncOpStatus op_state = auth_context.get()->get_op_status_for(0);
-  if (op_state == S3AsyncOpStatus::connection_failed) {
-    S3Option *option_instance = S3Option::get_instance();
-    s3_log(S3_LOG_WARN, request_id,
-           "Authentication failure, not able to connect to Auth server\n");
-    if (retry_count < option_instance->get_max_retry_count()) {
-      retry_count++;
-      set_event_with_retry_interval();
-    } else {
-      s3_log(S3_LOG_ERROR, request_id,
-             "Cannot connect to Auth server (Retry count = %d).\n",
-             retry_count);
-      s3_iem(LOG_ERR, S3_IEM_AUTH_CONN_FAIL, S3_IEM_AUTH_CONN_FAIL_STR,
-             S3_IEM_AUTH_CONN_FAIL_JSON);
-      this->handler_on_failed();
-    }
-  } else {
-    s3_log(S3_LOG_ERROR, request_id, "Authentication failure\n");
-    state = S3AuthClientOpState::unauthenticated;
-    this->handler_on_failed();
-  }
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3AuthClient::check_aclvalidation_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  ADDB_AUTH(ACTS_AUTH_CLNT_VALIDATE_ACL_FAILED);
-  S3AsyncOpStatus op_state = auth_context.get()->get_op_status_for(0);
-  if (op_state == S3AsyncOpStatus::connection_failed) {
-    S3Option *option_instance = S3Option::get_instance();
-    s3_log(S3_LOG_WARN, request_id,
-           "Aclvalidation failure, not able to connect to Auth server\n");
-    if (retry_count < option_instance->get_max_retry_count()) {
-      retry_count++;
-      set_event_with_retry_interval();
-    } else {
-      s3_log(S3_LOG_ERROR, request_id,
-             "Cannot connect to Auth server (Retry count = %d).\n",
-             retry_count);
-      s3_iem(LOG_ERR, S3_IEM_AUTH_CONN_FAIL, S3_IEM_AUTH_CONN_FAIL_STR,
-             S3_IEM_AUTH_CONN_FAIL_JSON);
-      this->handler_on_failed();
-    }
-  } else {
-    s3_log(S3_LOG_ERROR, request_id, "Aclvalidation failure\n");
-
-    this->handler_on_failed();
-  }
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+  s3_log(S3_LOG_DEBUG, nullptr, "%s Exit", __func__);
 }
 
 // This is same as above but will cycle through with the
@@ -1437,15 +1257,19 @@ void S3AuthClient::init_chunk_auth_cycle(std::function<void(void)> on_success,
                                          std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   ADDB_AUTH(ACTS_AUTH_CLNT_CHUNK_AUTH_INIT);
-  this->handler_on_success = on_success;
-  this->handler_on_failed = on_failed;
+
+  this->handler_on_success = std::move(on_success);
+  this->handler_on_failed = std::move(on_failed);
 
   auth_context.reset(new S3AuthClientOpContext(
       request, std::bind(&S3AuthClient::chunk_auth_successful, this),
-      std::bind(&S3AuthClient::chunk_auth_failed, this)));
+      std::bind(&S3AuthClient::chunk_auth_failed, this),
+      op_type = S3AuthClientOpType::authentication));
 
+  retry_count = 0;
   is_chunked_auth = true;
-  set_op_type(S3AuthClientOpType::authentication);
+  state = S3AuthClientOpState::init;
+
   s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
   // trigger is done when sign and hash are available for any chunk
 }
@@ -1456,58 +1280,68 @@ void S3AuthClient::add_checksum_for_chunk(std::string current_sign,
                                           std::string sha256_of_payload) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   ADDB_AUTH(ACTS_AUTH_CLNT_CHUNK_ADD_CHKSUMM);
-  chunk_validation_data.push(std::make_tuple(current_sign, sha256_of_payload));
+
+  chunk_validation_data.push(
+      std::make_pair(std::move(current_sign), std::move(sha256_of_payload)));
+
   if (state != S3AuthClientOpState::started) {
+
     current_chunk_signature_from_auth =
-        std::get<0>(chunk_validation_data.front());
-    hash_sha256_current_chunk = std::get<1>(chunk_validation_data.front());
+        std::move(chunk_validation_data.front().first);
+    hash_sha256_current_chunk = std::move(chunk_validation_data.front().second);
+
     chunk_validation_data.pop();
-    trigger_authentication(this->handler_on_success, this->handler_on_failed);
+
+    trigger_request();
   }
-  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
+  s3_log(S3_LOG_DEBUG, nullptr, "%s Exit", __func__);
 }
 
 void S3AuthClient::add_last_checksum_for_chunk(std::string current_sign,
                                                std::string sha256_of_payload) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+
   last_chunk_added = true;
-  add_checksum_for_chunk(current_sign, sha256_of_payload);
-  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
+  add_checksum_for_chunk(std::move(current_sign), std::move(sha256_of_payload));
+
+  s3_log(S3_LOG_DEBUG, nullptr, "%s Exit", __func__);
 }
 
 void S3AuthClient::chunk_auth_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  state = S3AuthClientOpState::succeded;
+
   ADDB_AUTH(ACTS_AUTH_CLNT_CHUNK_AUTH_SUCC);
-  state = S3AuthClientOpState::authenticated;
-  retry_count = 0;
-  remember_auth_details_in_request();
+  // remember_auth_details_in_request();
   prev_chunk_signature_from_auth = get_signature_from_response();
 
   if (chunk_auth_aborted ||
       (last_chunk_added && chunk_validation_data.empty())) {
     // we are done with all validations
     this->handler_on_success();
+
+  } else if (chunk_validation_data.empty()) {
+    // we have to wait for more chunk signatures, which will be
+    // added with add_checksum_for_chunk/add_last_checksum_for_chunk
   } else {
-    if (chunk_validation_data.empty()) {
-      // we have to wait for more chunk signatures, which will be
-      // added with add_checksum_for_chunk/add_last_checksum_for_chunk
-    } else {
-      // Validate next chunk signature
-      current_chunk_signature_from_auth =
-          std::get<0>(chunk_validation_data.front());
-      hash_sha256_current_chunk = std::get<1>(chunk_validation_data.front());
-      chunk_validation_data.pop();
-      trigger_authentication(this->handler_on_success, this->handler_on_failed);
-    }
+    // Validate next chunk signature
+    current_chunk_signature_from_auth =
+        std::move(chunk_validation_data.front().first);
+    hash_sha256_current_chunk = std::move(chunk_validation_data.front().second);
+
+    chunk_validation_data.pop();
+
+    trigger_request();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
 void S3AuthClient::chunk_auth_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_ERROR, request_id, "Authentication failure\n");
+  state = S3AuthClientOpState::failed;
+
   ADDB_AUTH(ACTS_AUTH_CLNT_CHUNK_AUTH_FAILED);
-  state = S3AuthClientOpState::unauthenticated;
   this->handler_on_failed();
+
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

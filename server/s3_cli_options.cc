@@ -61,6 +61,7 @@ DEFINE_bool(getoid, false, "Enable getoid in S3 request for testing");
 DEFINE_bool(fake_authenticate, false, "Fake out authenticate");
 DEFINE_bool(fake_authorization, false, "Fake out authorization");
 
+DEFINE_bool(fake_motr_openobj, false, "Fake out motr open object");
 DEFINE_bool(fake_motr_createobj, false, "Fake out motr create object");
 DEFINE_bool(fake_motr_writeobj, false, "Fake out motr write object data");
 DEFINE_bool(fake_motr_readobj, false, "Fake out motr read object data");

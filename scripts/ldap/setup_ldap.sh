@@ -23,22 +23,26 @@
 # configure OpenLDAP #
 ##################################
 
-USAGE="USAGE: bash $(basename "$0") [--confurl <URL path>] [--defaultpasswd] [--skipssl]
+USAGE="USAGE: bash $(basename "$0") [--ldapadminpasswd <passwd>] [--rootdnpasswd <passwd>] [--defaultpasswd] [--skipssl]
       [--forceclean] [--help | -h]
 Install and configure OpenLDAP.
 
 where:
---confurl           configuration file url, for using with py-utils:ConfStore
---defaultpasswd     set default password using cortx-utils
+--ldapadminpasswd   optional ldapadmin password
+--rootdnpasswd      optional rootdn password
+--defaultpasswd     optional set default password
 --skipssl           skips all ssl configuration for LDAP
 --forceclean        Clean old openldap setup (** careful: deletes data **)
---help              display this help and exit"
+--help              display this help and exit
+NOTE: If either one or both --ldapadminpasswd and --rootdnpasswd are not provided and --defaultpasswd is not provided, runtime input will be required from the user."
 
 set -e
 defaultpasswd=false
 usessl=true
 forceclean=false
-confstore_config_url=
+LDAPADMINPASS=
+ROOTDNPASSWORD=
+defaultpasswds="ldapadmin"
 
 echo "Running setup_ldap.sh script"
 if [ $# -lt 1 ]
@@ -50,8 +54,11 @@ fi
 while test $# -gt 0
 do
   case "$1" in
-    --confurl ) shift;
-        confstore_config_url=$1
+    --ldapadminpasswd ) shift;
+        LDAPADMINPASS=$1
+        ;;
+    --rootdnpasswd ) shift;
+        ROOTDNPASSWORD=$1
         ;;
     --defaultpasswd )
         defaultpasswd=true
@@ -70,50 +77,55 @@ do
   shift
 done
 
-if [ -z "$confstore_config_url" ]
-then
-    echo "ERROR: confstore_config_url is empty, exiting."
-    exit 1
-fi
-
 INSTALLDIR="/opt/seagate/cortx/s3/install/ldap"
-# install openldap server and client
-yum list installed selinux-policy && yum update -y selinux-policy
+# Clean up old configuration if any for idempotency
+# Removing schemas
+rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
+rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/*ppolicy.ldif
+# Removing all loaded modules in ldap
+rm -rf /etc/openldap/slapd.d/cn\=config/cn\=module\{0\}.ldif
+rm -rf /etc/openldap/slapd.d/cn\=config/cn\=module\{1\}.ldif
+rm -rf /etc/openldap/slapd.d/cn\=config/cn\=module\{2\}.ldif
+# Removing mdb configuration
+rm -rf /etc/openldap/slapd.d/cn\=config/olcDatabase\=\{2\}mdb
+rm -rf /etc/openldap/slapd.d/cn\=config/olcDatabase\=\{2\}mdb.ldif
 
-# Clean up old setup if any
+# Data Cleanup
 if [[ $forceclean == true ]]
 then
-  systemctl stop slapd 2>/dev/null || /bin/true
-  yum remove -y openldap-servers openldap-clients || /bin/true
-  rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
   rm -rf /var/lib/ldap/*
-  rm -f /etc/sysconfig/slapd* || /bin/true
-  rm -f /etc/openldap/slapd* || /bin/true
-  rm -rf /etc/openldap/slapd.d/*
-
-  yum install -y openldap-servers openldap-clients
 fi
 
+#removes all hdb file instances if they exist, non-existence of files doesn't throw an error as well.
+rm -f /etc/openldap/slapd.d/cn\=config/olcDatabase=*hdb.ldif
 cp -f $INSTALLDIR/olcDatabase\=\{2\}mdb.ldif /etc/openldap/slapd.d/cn\=config/
 
 chgrp ldap /etc/openldap/certs/password # onlyif: grep -q ldap /etc/group && test -f /etc/openldap/certs/password
 
-if [[ $defaultpasswd == true ]]
-then # Get password from cortx-utils
-    cipherkey=$(s3cipher --generate_key --const_key openldap 2>/dev/null)
+if [ -z "$LDAPADMINPASS" ]
+then
+    # If --defaultpasswd is set, use it. Else ask from user as input
+    if [[ $defaultpasswd == true ]]
+    then
+        LDAPADMINPASS=$defaultpasswds
+    else
+        # Fetch password from User
+        echo -en "\nEnter Password for LDAP IAM admin: "
+        read -s LDAPADMINPASS && [[ -z $LDAPADMINPASS ]] && echo 'Password can not be null.' && exit 1
+    fi
+fi
 
-    sgiamadminpassd=$(s3confstore "$confstore_config_url" getkey --key "openldap>sgiam>secret")
-    rootdnpasswd=$(s3confstore "$confstore_config_url" getkey --key "openldap>root>secret")
-
-    # decrypt the passwords read from the confstore
-    LDAPADMINPASS=$(s3cipher --decrypt --data "$sgiamadminpassd" --key "$cipherkey" 2>/dev/null)
-    ROOTDNPASSWORD=$(s3cipher --decrypt --data "$rootdnpasswd" --key "$cipherkey" 2>/dev/null)
-else # Fetch Root DN & IAM admin passwords from User
-    echo -en "\nEnter Password for LDAP rootDN: "
-    read -s ROOTDNPASSWORD && [[ -z $ROOTDNPASSWORD ]] && echo 'Password can not be null.' && exit 1
-
-    echo -en "\nEnter Password for LDAP IAM admin: "
-    read -s LDAPADMINPASS && [[ -z $LDAPADMINPASS ]] && echo 'Password can not be null.' && exit 1
+if [ -z "$ROOTDNPASSWORD" ]
+then
+    # If --defaultpasswd is set, use it. Else ask from user as input
+    if [[ $defaultpasswd == true ]]
+    then
+        ROOTDNPASSWORD=$defaultpasswds
+    else
+        # Fetch password from User
+        echo -en "\nEnter Password for LDAP rootDN: "
+        read -s ROOTDNPASSWORD && [[ -z $ROOTDNPASSWORD ]] && echo 'Password can not be null.' && exit 1
+    fi
 fi
 
 # generate encrypted password for rootDN
@@ -136,6 +148,7 @@ sed -i "$EXPR" $ADMIN_USERS_FILE
 chkconfig slapd on
 
 # start slapd
+systemctl stop slapd
 systemctl enable slapd
 systemctl start slapd
 echo "started slapd"
@@ -144,20 +157,14 @@ echo "started slapd"
 ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $CFG_FILE
 rm -f $CFG_FILE
 
-# restart slapd
-systemctl restart slapd
-
-# delete the schema from LDAP.
-rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
-
 # add S3 schema
 ldapadd -x -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -f $INSTALLDIR/cn\=\{1\}s3user.ldif -H ldapi:///
 
 # initialize ldap
-ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $ROOTDNPASSWORD -f $INSTALLDIR/ldap-init.ldif -H ldapi:///
+ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/ldap-init.ldif -H ldapi:/// || /bin/true
 
 # Setup iam admin and necessary permissions
-ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $ROOTDNPASSWORD -f $ADMIN_USERS_FILE -H ldapi:///
+ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ROOTDNPASSWORD" -f "$ADMIN_USERS_FILE" -H ldapi:/// || /bin/true
 rm -f $ADMIN_USERS_FILE
 
 ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/iam-admin-access.ldif
@@ -173,7 +180,7 @@ ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f $INSTALLDIR/ppolicym
 
 ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f $INSTALLDIR/ppolicyoverlay.ldif -H ldapi:///
 
-ldapmodify -x -a -H ldapi:/// -D cn=admin,dc=seagate,dc=com -w $ROOTDNPASSWORD -f $INSTALLDIR/ppolicy-default.ldif
+ldapmodify -x -a -H ldapi:/// -D cn=admin,dc=seagate,dc=com -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/ppolicy-default.ldif || /bin/true
 
 # Enable slapd log with logLevel as "none"
 # for more info : http://www.openldap.org/doc/admin24/slapdconfig.html
@@ -185,14 +192,10 @@ ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/s3slapdind
 # Set ldap search Result size
 ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/resultssizelimit.ldif
 
-# Restart slapd
-systemctl enable slapd
-systemctl restart slapd
-
-echo "Encrypting Authserver LDAP password"
+echo "Encrypting Authserver LDAP password.."
 /opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh -l $LDAPADMINPASS -p /opt/seagate/cortx/auth/resources/authserver.properties
 
-echo "Restart S3authserver"
+echo "Restart S3authserver.."
 systemctl restart s3authserver
 
 if [[ $usessl == true ]]

@@ -86,7 +86,7 @@ void MotrPutKeyValueAction::put_key_value() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   motr_kv_writer->put_keyval(
-      index_id, request->get_key_name(), json_value,
+      {index_id}, request->get_key_name(), json_value,
       std::bind(&MotrPutKeyValueAction::put_key_value_successful, this),
       std::bind(&MotrPutKeyValueAction::put_key_value_failed, this));
 

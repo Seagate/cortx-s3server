@@ -40,7 +40,11 @@ public class ClientConfig {
     public static ClientConfiguration getClientConfiguration() {
         ClientConfiguration config = new ClientConfiguration();
         config.setProtocol(Protocol.HTTP);
-
+        config.setMaxErrorRetry(2);
+        config.setConnectionTimeout(72000000);
+        config.setSocketTimeout(72000000);
+        config.setRequestTimeout(72000000);
+        config.setClientExecutionTimeout(72000000);
         return config;
     }
 

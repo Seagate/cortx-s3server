@@ -165,7 +165,7 @@ TEST_F(S3ObjectDataCopierTest, ReadDataBlockSuccessShouldStartWrite) {
   entity_under_test->read_in_progress = true;
 
   S3BufferSequence data_blocks_read;
-  data_blocks_read.emplace_back(nullptr, 0);
+  data_blocks_read.emplace_back(nullptr, entity_under_test->size_of_ev_buffer);
 
   EXPECT_CALL(*ptr_mock_motr_reader_factory->mock_motr_reader,
               extract_blocks_read())
@@ -176,6 +176,11 @@ TEST_F(S3ObjectDataCopierTest, ReadDataBlockSuccessShouldStartWrite) {
               write_content(_, _, _, _)).Times(1);
   EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer, get_state())
       .Times(1);
+  auto *p_evbuffer = evbuffer_new();
+  EXPECT_CALL(*ptr_mock_motr_reader_factory->mock_motr_reader,
+              get_evbuffer_ownership())
+      .Times(1)
+      .WillOnce(Return(p_evbuffer));
 
   entity_under_test->read_data_block_success();
 
@@ -200,6 +205,7 @@ TEST_F(S3ObjectDataCopierTest, ReadDataBlockFailed) {
 TEST_F(S3ObjectDataCopierTest, WriteObjectStarted) {
 
   entity_under_test->data_blocks_read.emplace_back(nullptr, 0);
+  entity_under_test->p_evbuffer_read = evbuffer_new();
 
   EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
               write_content(_, _, _, _)).Times(1);
@@ -211,7 +217,6 @@ TEST_F(S3ObjectDataCopierTest, WriteObjectStarted) {
 
   EXPECT_TRUE(entity_under_test->write_in_progress);
   EXPECT_TRUE(entity_under_test->data_blocks_read.empty());
-  EXPECT_FALSE(entity_under_test->data_blocks_writing.empty());
 }
 
 TEST_F(S3ObjectDataCopierTest, WriteObjectFailedShouldUndoMarkProgress) {
@@ -248,6 +253,7 @@ TEST_F(S3ObjectDataCopierTest, WriteObjectSuccessfulWhileShuttingDown) {
 
   entity_under_test->check_shutdown_and_rollback = &fn_true_cb;
   entity_under_test->write_in_progress = true;
+  entity_under_test->p_evbuffer_write = evbuffer_new();
 
   entity_under_test->write_data_block_success();
 
@@ -258,6 +264,8 @@ TEST_F(S3ObjectDataCopierTest, WriteObjectSuccessfulShouldRestartWritingData) {
 
   entity_under_test->write_in_progress = true;
   entity_under_test->data_blocks_read.emplace_back(nullptr, 0);
+  entity_under_test->p_evbuffer_read = evbuffer_new();
+  entity_under_test->p_evbuffer_write = evbuffer_new();
 
   EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
               write_content(_, _, _, _)).Times(1);
@@ -275,6 +283,7 @@ TEST_F(S3ObjectDataCopierTest,
 
   entity_under_test->write_in_progress = true;
   entity_under_test->bytes_left_to_read = 0;
+  entity_under_test->p_evbuffer_write = evbuffer_new();
 
   entity_under_test->write_data_block_success();
 

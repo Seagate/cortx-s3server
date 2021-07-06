@@ -78,6 +78,12 @@ struct s3_motr_kvs_op_context {
   int *rcs;  // per key return status array
 };
 
+struct s3_motr_idx_layout {
+  struct m0_uint128 oid;
+  struct m0_fid pver;
+  uint32_t layout_type;
+};
+
 struct s3_motr_obj_context *create_obj_context(size_t count);
 int free_obj_context(struct s3_motr_obj_context *ctx);
 
@@ -86,7 +92,8 @@ int free_basic_op_ctx(struct s3_motr_op_context *ctx);
 
 struct s3_motr_rw_op_context *create_basic_rw_op_ctx(size_t motr_buf_count,
                                                      size_t unit_size,
-                                                     bool allocate_bufs = true);
+                                                     bool allocate_bufs =
+                                                         false);
 int free_basic_rw_op_ctx(struct s3_motr_rw_op_context *ctx);
 
 struct s3_motr_idx_context *create_idx_context(size_t idx_count);

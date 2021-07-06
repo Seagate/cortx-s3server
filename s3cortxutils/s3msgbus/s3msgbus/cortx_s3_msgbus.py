@@ -24,32 +24,21 @@
 import os.path
 import errno
 import traceback
-from cortx.utils.message_bus import MessageBus, MessageProducer, MessageConsumer
+from cortx.utils.message_bus import MessageBus, MessageProducer, MessageConsumer, MessageBusAdmin
 
 class S3CortxMsgBus:
 
     def __init__(self):
         """Init."""
-        self._message_bus = None
         self._producer = None
         self._consumer = None
 
-    def connect(self):
-        """Connect to Message Bus."""
-        try:
-            self._message_bus = MessageBus()
-        except Exception as exception:
-            msg = ("msg_bus init except:%s %s") % (exception, traceback.format_exc())
-            return False, msg
-        return True, None
-
     def setup_producer(self, prod_id, msg_type, method):
         """Setup producer."""
-        if not self._message_bus:
-            raise Exception("Non Existent Message Bus")
         try:
-            self._producer = MessageProducer(self._message_bus, \
-            producer_id=prod_id, message_type=msg_type, method=method)
+            self._producer = MessageProducer(producer_id=prod_id,
+                                            message_type=msg_type,
+                                            method=method)
         except Exception as exception:
              msg = ("msg_bus setup producer except:%s %s") % (
                 exception, traceback.format_exc())
@@ -68,27 +57,28 @@ class S3CortxMsgBus:
 
     def purge(self):
         """Purge/Delete all the messages."""
-        if not self._message_bus:
-            raise Exception("Non Existent Message Bus, Cannot Purge")
         self._producer.delete()
 
     def setup_consumer(self, cons_id, group, msg_type, auto_ack, offset):
         """Setup the consumer."""
-        if not self._message_bus:
-            raise Exception("Non Existent Message Bus")
         try:
-            self._consumer = MessageConsumer(self._message_bus, consumer_id=cons_id, \
-            consumer_group=group, message_type=[msg_type], auto_ack=auto_ack, offset=offset)
+            self._consumer = MessageConsumer(consumer_id=cons_id, \
+            consumer_group=group, message_types=[msg_type], auto_ack=auto_ack, offset=offset)
         except Exception as exception:
             msg = ("msg_bus setup_consumer except:%s %s") % (
                 exception, traceback.format_exc())
             return False, msg
         return True, None
 
-    def receive(self):
+    def receive(self, daemon_mode):
         """Receive the incoming message."""
         try:
-            message = self._consumer.receive()
+            if daemon_mode:
+                #timeout=0 makes it as blocking indefinitely
+                message = self._consumer.receive(timeout=0)
+            else:
+                #timeout = 0.5 sec, by default, which is non-blocking
+                message = self._consumer.receive()
         except Exception as exception:
             msg = ("msg_bus receive except:%s %s") % (
                 exception, traceback.format_exc())
@@ -104,4 +94,54 @@ class S3CortxMsgBus:
                 exception, traceback.format_exc())
             return False, msg
         return True, None
+
+    def count(self, consumer_group):
+        """Get the count of unread messages."""
+        unread_count = 0
+        try:
+            unread_count = self._producer.get_unread_count(consumer_group)
+        except:
+            return 0
+        return unread_count
+
+    @staticmethod
+    def create_topic(admin_id: str, message_types: list, partitions: int):
+        """create topic."""
+
+        mbadmin = MessageBusAdmin(admin_id = admin_id)
+        try:
+            mbadmin.register_message_type(message_types = message_types,
+                                    partitions = partitions)
+        except Exception as e:
+            if "TOPIC_ALREADY_EXISTS" not in str(e):
+                raise(e)
+
+    @staticmethod
+    def add_concurrency(admin_id: str, message_type: str, concurrency_count: int):
+        """Increase partition count for given topic."""
+
+        mbadmin = MessageBusAdmin(admin_id = admin_id)
+        mbadmin.add_concurrency(message_type = message_type,
+                                concurrency_count = concurrency_count)
+
+    @staticmethod
+    def delete_topic(admin_id: str, message_types: list):
+        """Delete given topic"""
+
+        mbadmin = MessageBusAdmin(admin_id = admin_id)
+        mbadmin.deregister_message_type(message_types = message_types)
+
+    @staticmethod
+    def list_topics(admin_id: str):
+        """list all available topics"""
+        mbadmin = MessageBusAdmin(admin_id = admin_id)
+        return mbadmin.list_message_types()
+
+    @staticmethod
+    def is_topic_exist(admin_id: str, topic_name: str):
+        """retuns true if topic exist else false"""
+        mbadmin = MessageBusAdmin(admin_id = admin_id)
+        if topic_name in mbadmin.list_message_types():
+            return True
+        return False
 

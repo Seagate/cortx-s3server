@@ -20,6 +20,7 @@
 
 #include "s3_service_list_response.h"
 #include "s3_common_utilities.h"
+#include "s3_log.h"
 
 S3ServiceListResponse::S3ServiceListResponse() {
   s3_log(S3_LOG_DEBUG, "", "%s Ctor\n", __func__);

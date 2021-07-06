@@ -38,8 +38,17 @@ fi
 
 bundle_id=$1
 bundle_path=$2
-# TODO: till we find out how to get rootdn password, keep 'rootdnpasswd' variable empty.
-rootdnpasswd=''
+# Fetch iamuser password from properties file and decrypt it.
+sgiamadminpwd=''
+constkey=cortx
+propertiesfilepath="properties:///opt/seagate/cortx/auth/resources/authserver.properties"
+ldapkey="ldapLoginPW"
+ldapcipherkey=$(s3cipher generate_key --const_key="$constkey")
+encryptedkey=$(s3confstore "$propertiesfilepath" getkey --key="$ldapkey")
+if [[ -z $(echo "$encryptedkey" | grep -Eio Failed) ]];
+then
+    sgiamadminpwd=$(s3cipher decrypt --data="$encryptedkey" --key="$ldapcipherkey")
+fi
 
 bundle_name="s3_$bundle_id.tar.xz"
 s3_bundle_location=$bundle_path/s3
@@ -58,9 +67,12 @@ s3_motr_dir="/var/log/seagate/motr/s3server-*"
 s3_core_dir="/var/log/crash"
 sys_auditlog_dir="/var/log/audit"
 
+# S3 deployment log
+s3deployment_log="/var/log/seagate/s3/s3deployment/s3deployment.log"
+
 # Create tmp folder with pid value to allow parallel execution
 pid_value=$$
-tmp_dir="/tmp/s3_support_bundle_$pid_value"
+tmp_dir="$s3_bundle_location/s3_support_bundle_$pid_value"
 disk_usage="$tmp_dir/disk_usage.txt"
 cpu_info="$tmp_dir/cpuinfo.txt"
 ram_usage="$tmp_dir/ram_usage.txt"
@@ -98,9 +110,9 @@ then
 fi
 
 # 1. Get log directory path from config file
-s3server_logdir=`cat $s3server_config | grep "S3_LOG_DIR:" | cut -f2 -d: | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
-authserver_logdir=`cat $authserver_config | grep "logFilePath=" | cut -f2 -d'=' | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
-backgrounddelete_logdir=`cat $backgrounddelete_config | grep "logger_directory:" | cut -f2 -d: | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
+s3server_logdir=`cat $s3server_config | grep "S3_LOG_DIR" | cut -f2 -d: | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
+authserver_logdir=`cat $authserver_config | grep "logFilePath" | cut -f2 -d'=' | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
+backgrounddelete_logdir=`cat $backgrounddelete_config | grep "logger_directory" | cut -f2 -d: | sed -e 's/^[ \t]*//' -e 's/#.*//' -e 's/^[ \t]*"\(.*\)"[ \t]*$/\1/'`
 
 # Collect call stack of latest <s3_core_files_max_count> s3server core files
 # from s3_core_dir directory, if available
@@ -174,7 +186,7 @@ collect_core_files(){
 }
 
 # Collect <m0trace_files_count> m0trace files from each s3 instance present in /var/log/seagate/motr/s3server-* directory if available
-# Files will be available at /tmp/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
+# Files will be available at $tmp_path/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
 collect_m0trace_files(){
   echo "Collecting m0trace files dump..."
   m0trace_filename_pattern="m0trace.*"
@@ -201,7 +213,7 @@ collect_m0trace_files(){
         return;
     fi
     s3instance_name=$s3_dir   # e.g s3server-0x7200000000000000:0
-    # m0trace file path will be /tmp/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
+    # m0trace file path will be /var/log/seagate/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
     m0trace_file_path=$s3_m0trace_files/$s3instance_name
     mkdir -p $m0trace_file_path
     cd $tmpr_dir
@@ -260,6 +272,12 @@ then
 fi
 
 ## Add file/directory locations for bundling
+
+# Collect S3 deployment log
+if [ -f "$s3deployment_log" ];
+then
+    args=$args" "$s3deployment_log*
+fi
 
 # Collect s3 core files if available
 collect_core_files
@@ -406,17 +424,17 @@ then
 fi
 
 ## Collect LDAP data
+echo "Collecting ldap data"
 mkdir -p $ldap_dir
-if [[ $? != 0 || -z "$rootdnpasswd" ]]
+if [[ $? != 0 || -z "$sgiamadminpwd" ]]
 then
-    echo "ERROR: ldap admin password: '$rootdnpasswd' is not correct, skipping collection of ldap data."
+    echo "ERROR: ldap admin password: '$sgiamadminpwd' is not correct, skipping collection of ldap data."
 else
     # Run ldap commands
-    ldapsearch -b "cn=config" -x -w "$rootdnpasswd" -D "cn=admin,cn=config" -H ldapi:/// > "$ldap_config"  2>&1
-    ldapsearch -s base -b "cn=subschema" objectclasses -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" -H ldapi:/// > "$ldap_subschema"  2>&1
-    ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" "objectClass=Account" -H ldapi:/// -LLL ldapentrycount > "$ldap_accounts" 2>&1
-    ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$rootdnpasswd" -D "cn=admin,dc=seagate,dc=com" "objectClass=iamUser" -H ldapi:/// -LLL ldapentrycount > "$ldap_users"  2>&1
-
+    ldapsearch -b "cn=config" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:///  > "$ldap_config"  2>&1
+    ldapsearch -s base -b "cn=subschema" objectclasses -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldapi:/// > "$ldap_subschema"  2>&1
+    ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" "objectClass=Account" -H ldapi:/// -LLL ldapentrycount > "$ldap_accounts" 2>&1
+    ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w "$sgiamadminpwd" -D "cn=sgiamadmin,dc=seagate,dc=com" "objectClass=iamUser" -H ldapi:/// -LLL ldapentrycount > "$ldap_users"  2>&1
     if [ -f "$ldap_config" ];
     then
         args=$args" "$ldap_config
@@ -440,7 +458,7 @@ fi
 
 # Clean up temp files
 cleanup_tmp_files(){
-rm -rf /tmp/s3_support_bundle_$pid_value
+rm -rf "$tmp_dir"
 }
 
 ## 2. Build tar.gz file with bundleid at bundle_path location

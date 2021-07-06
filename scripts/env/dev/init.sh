@@ -34,7 +34,7 @@ os_major_version=""
 os_minor_version=""
 os_build_num=""
 ansible_automation=0
-
+is_open_source=false
 
 unsupported_os() {
   echo "S3 currently supports only CentOS 7.8.2003 and CentOS 7.9.2009" 1>&2;
@@ -52,13 +52,40 @@ check_supported_kernel() {
 
 #function to install/upgrade cortx-py-utils rpm
 install_cortx_py_utils() {
-  #rpm -q cortx-py-utils && yum remove cortx-py-utils -y && yum install cortx-py-utils -y
+  #install yum-utils
+  if rpm -q 'yum-utils' ; then
+    echo "yum-utils already present ... Skipping ..."
+  else
+    yum install yum-utils -y
+  fi
+
+  #install cpio
+  if rpm -q 'cpio' ; then
+    echo "cpio already present ... Skipping ..."
+  else
+    yum install cpio -y
+  fi
+
+  # cleanup
+  rm -rf "$PWD"/cortx-py-utils*
+  rm -rf "$PWD"/opt
+
+  # download cortx-py-utils.
+  yumdownloader --destdir="$PWD" cortx-py-utils
+
+  # extract requirements.txt
+  rpm2cpio cortx-py-utils-*.rpm | cpio -idv "./opt/seagate/cortx/utils/conf/python_requirements.txt"
+  rpm2cpio cortx-py-utils-*.rpm | cpio -idv "./opt/seagate/cortx/utils/conf/python_requirements.ext.txt"
+
+  # install cortx-py-utils prerequisite
+  pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/python_requirements.txt"
+  pip3 install -r "$PWD/opt/seagate/cortx/utils/conf/python_requirements.ext.txt"
+
+  # install cortx-py-utils
   if rpm -q cortx-py-utils ; then
     yum remove cortx-py-utils -y
-    yum install cortx-py-utils -y
-  else
-    yum install cortx-py-utils -y
   fi
+  yum install cortx-py-utils -y
 }
 
 # function to install all prerequisite for dev vm 
@@ -67,17 +94,14 @@ install_pre_requisites() {
   # install kafka server
   sh ${S3_SRC_DIR}/scripts/kafka/install-kafka.sh -c 1 -i $HOSTNAME
   
+  #sleep for 60 secs to make sure all the services are up and running.
+  sleep 60
+
   #create topic
   sh ${S3_SRC_DIR}/scripts/kafka/create-topic.sh -c 1 -i $HOSTNAME
 
-  #install confluent_kafka
-  pip3 install confluent_kafka
-
-  #install toml
-  pip3 install toml
-
-  # install or upgrade cortx-py-utils
-  install_cortx_py_utils
+  # install configobj
+  pip3 install configobj
 
 }
 
@@ -111,6 +135,9 @@ else
   unsupported_os
 fi
 
+# validate and configure lnet
+sh ${S3_SRC_DIR}/scripts/env/common/configure_lnet.sh
+
 if [[ $# -eq 0 ]] ; then
   source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
   #install pre-requisites on dev vm
@@ -119,10 +146,12 @@ else
   while getopts "ahs" x; do
       case "${x}" in
           a)
+              is_open_source=true
               yum install createrepo -y
-              easy_install pip
               read -p "Git Access Token:" git_access_token
               source ${S3_SRC_DIR}/scripts/env/common/create-cortx-repo.sh -G $git_access_token
+              # install configobj
+              pip3 install configobj
               ;;
           s)
              source ${S3_SRC_DIR}/scripts/env/common/setup-yum-repos.sh
@@ -164,7 +193,9 @@ cd $BASEDIR
 
 # Attempt ldap clean up since ansible openldap setup is not idempotent
 systemctl stop slapd 2>/dev/null || /bin/true
+# remove old openldap pkg if installed
 yum remove -y openldap-servers openldap-clients || /bin/true
+yum remove -y symas-openldap symas-openldap-servers symas-openldap-clients || /bin/true
 rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
 rm -rf /var/lib/ldap/*
 rm -f /etc/sysconfig/slapd* 2>/dev/null || /bin/true
@@ -185,7 +216,7 @@ yum install -y openssl java-1.8.0-openjdk-headless
 
 # install the built certs
 #rpm -e stx-s3-certs stx-s3-client-certs || /bin/true
-#yum install openldap-servers haproxy -y # so we have "ldap" and "haproxy" users.
+#yum install symas-openldap-servers haproxy -y # so we have "ldap" and "haproxy" users.
 #yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-certs*
 #yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
 # Coping the certificates
@@ -202,11 +233,33 @@ cd ${BASEDIR}/../../../ansible
 
 #Install motr build dependencies
 
+# install all rpms which requires gcc as dependency
+if [ "$is_open_source" = false ];
+then
+  echo "Installing ISA libraries"
+  if rpm -q 'isa-l' ; then
+  	echo "Library already present ... Skipping ..."
+  else
+  	yum install -y http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/centos/centos-7.8.2003-2.0.0-latest/motr_uploads/isa-l-2.30.0-1.el7.x86_64.rpm
+  fi
+fi
+
 # TODO Currently motr is not supported for CentOS 8, when support is there remove below check
 if [ "$os_major_version" = "7" ];
 then
   ./s3motr-build-depencies.sh
 fi
+
+# install all rpms which requires gcc as dependency
+if [ "$is_open_source" = false ];
+then
+  echo "Installing cortx-py-utils"
+  install_cortx_py_utils
+fi
+
+# add /usr/local/bin to PATH
+export PATH=$PATH:/usr/local/bin
+echo $PATH
 
 # configure backgrounddelete ST dependencies
 ./setup_backgrounddelete_config.sh

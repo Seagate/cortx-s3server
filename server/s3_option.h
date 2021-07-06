@@ -75,6 +75,7 @@
 #include "evhtp_wrapper.h"
 #include "s3_cli_options.h"
 #include "s3_audit_info.h"
+#include "motr_helpers.h"
 
 #define DAY_IN_SECONDS 60 * 60 * 24
 
@@ -132,6 +133,14 @@ class S3Option {
   bool log_buffering_enable;
   bool s3_enable_murmurhash_oid;
   int log_flush_frequency_sec;
+  unsigned int motr_first_obj_read_size;
+
+  unsigned bucket_metadata_cache_max_size;
+  unsigned bucket_metadata_cache_expire_sec;
+  unsigned bucket_metadata_cache_refresh_sec;
+
+  bool s3_di_disable_data_corruption_iem;
+  bool s3_di_disable_metadata_corruption_iem;
 
   unsigned short motr_layout_id;
   unsigned short motr_units_per_request;
@@ -317,6 +326,9 @@ class S3Option {
   bool load_all_sections(bool force_override_from_config);
   bool reload_modifiable_options();
 
+  bool get_s3_di_disable_data_corruption_iem();
+  bool get_s3_di_disable_metadata_corruption_iem();
+
   std::string get_s3_nodename();
   std::string get_ipv4_bind_addr();
   std::string get_ipv6_bind_addr();
@@ -383,6 +395,10 @@ class S3Option {
   unsigned short s3_performance_enabled();
   std::string get_perf_log_filename();
 
+  unsigned get_bucket_metadata_cache_max_size() const;
+  unsigned get_bucket_metadata_cache_expire_sec() const;
+  unsigned get_bucket_metadata_cache_refresh_sec() const;
+
   std::string get_motr_local_addr();
   std::string get_motr_ha_addr();
   std::string get_motr_prof();
@@ -399,6 +415,7 @@ class S3Option {
   size_t get_motr_read_pool_initial_buffer_count();
   size_t get_motr_read_pool_expandable_count();
   size_t get_motr_read_pool_max_threshold();
+  unsigned int get_motr_first_read_size();
 
   size_t get_libevent_pool_initial_size();
   size_t get_libevent_pool_expandable_size();
@@ -422,6 +439,8 @@ class S3Option {
   int get_cmd_opt_flag();
 
   // Check if any fake out options are provided.
+  bool is_fake_motr_obj_op_read(m0_obj_opcode opcode);
+  bool is_fake_motr_openobj();
   bool is_fake_motr_createobj();
   bool is_fake_motr_writeobj();
   bool is_fake_motr_readobj();

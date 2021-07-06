@@ -41,13 +41,14 @@ void Action::s3_task_name_to_addb_task_id_map_init() {
 
 Action::Action(std::shared_ptr<RequestObject> req, bool check_shutdown,
                std::shared_ptr<S3AuthClientFactory> auth_factory,
-               bool skip_auth)
+               bool skip_auth, bool skip_authorization)
     : base_request(req),
       check_shutdown_signal(check_shutdown),
       is_response_scheduled(false),
       is_fi_hit(false),
       invalid_request(false),
       skip_auth(skip_auth),
+      skip_authorization(skip_authorization),
       action_uses_cleanup(false),
       cleanup_started(false) {
 
@@ -122,7 +123,7 @@ void Action::setup_steps() {
          S3Option::get_instance()->is_auth_disabled(), skip_auth);
 
   if (!S3Option::get_instance()->is_auth_disabled() && !skip_auth &&
-      (is_authorizationheader_present)) {
+      is_authorizationheader_present && skip_authorization) {
 
     ACTION_TASK_ADD(Action::check_authentication, this);
   }

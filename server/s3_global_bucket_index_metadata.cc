@@ -18,81 +18,60 @@
  *
  */
 
-#include "s3_global_bucket_index_metadata.h"
 #include <json/json.h>
-#include <string>
+
 #include "s3_factory.h"
+#include "s3_global_bucket_index_metadata.h"
 #include "s3_iem.h"
-#include "s3_datetime.h"
+#include "s3_log.h"
+#include "s3_motr_kvs_reader.h"
+#include "s3_motr_kvs_writer.h"
+#include "s3_request_object.h"
 
-extern struct m0_uint128 global_bucket_list_index_oid;
-extern struct m0_uint128 replica_global_bucket_list_index_oid;
+extern struct s3_motr_idx_layout global_bucket_list_index_layout;
 
-void S3GlobalBucketIndexMetadata::initialize(
-    const std::string& str_bucket_name) {
-  account_name = request->get_account_name();
-  account_id = request->get_account_id();
+S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
+    std::shared_ptr<S3RequestObject> req, const std::string& str_bucket_name,
+    const std::string& str_account_id, const std::string& str_account_name,
+    std::shared_ptr<MotrAPI> motr_api,
+    std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
+    std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory)
+    : request(std::move(req)) {
+
+  request_id = request->get_request_id();
+  stripped_request_id = request->get_stripped_request_id();
+
+  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
+
+  if (str_account_id.empty()) {
+    account_id = request->get_account_id();
+    state = S3GlobalBucketIndexMetadataState::empty;
+  } else {
+    account_id = str_account_id;
+    state = S3GlobalBucketIndexMetadataState::present;
+  }
+  if (str_account_name.empty()) {
+    account_name = request->get_account_name();
+  } else {
+    account_name = str_account_name;
+  }
   if (str_bucket_name.empty()) {
     bucket_name = request->get_bucket_name();
   } else {
     bucket_name = str_bucket_name;
   }
-  state = S3GlobalBucketIndexMetadataState::empty;
-  location_constraint = "us-west-2";
-}
-
-S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
-    std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
-    std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
-    std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory)
-    : request(req), json_parsing_error(false) {
-  request_id = request->get_request_id();
-  stripped_request_id = request->get_stripped_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
-
-  initialize();
-
   if (motr_api) {
-    s3_motr_api = motr_api;
+    s3_motr_api = std::move(motr_api);
   } else {
     s3_motr_api = std::make_shared<ConcreteMotrAPI>();
   }
   if (motr_s3_kvs_reader_factory) {
-    motr_kvs_reader_factory = motr_s3_kvs_reader_factory;
+    motr_kvs_reader_factory = std::move(motr_s3_kvs_reader_factory);
   } else {
     motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
   }
   if (motr_s3_kvs_writer_factory) {
-    motr_kvs_writer_factory = motr_s3_kvs_writer_factory;
-  } else {
-    motr_kvs_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
-  }
-}
-
-S3GlobalBucketIndexMetadata::S3GlobalBucketIndexMetadata(
-    std::shared_ptr<S3RequestObject> req, const std::string& str_bucket_name,
-    std::shared_ptr<MotrAPI> motr_api,
-    std::shared_ptr<S3MotrKVSReaderFactory> motr_s3_kvs_reader_factory,
-    std::shared_ptr<S3MotrKVSWriterFactory> motr_s3_kvs_writer_factory)
-    : request(req), json_parsing_error(false) {
-  request_id = request->get_request_id();
-  stripped_request_id = request->get_stripped_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
-
-  initialize(str_bucket_name);
-
-  if (motr_api) {
-    s3_motr_api = motr_api;
-  } else {
-    s3_motr_api = std::make_shared<ConcreteMotrAPI>();
-  }
-  if (motr_s3_kvs_reader_factory) {
-    motr_kvs_reader_factory = motr_s3_kvs_reader_factory;
-  } else {
-    motr_kvs_reader_factory = std::make_shared<S3MotrKVSReaderFactory>();
-  }
-  if (motr_s3_kvs_writer_factory) {
-    motr_kvs_writer_factory = motr_s3_kvs_writer_factory;
+    motr_kvs_writer_factory = std::move(motr_s3_kvs_writer_factory);
   } else {
     motr_kvs_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
@@ -116,7 +95,7 @@ void S3GlobalBucketIndexMetadata::load(std::function<void(void)> on_success,
   motr_kv_reader =
       motr_kvs_reader_factory->create_motr_kvs_reader(request, s3_motr_api);
   motr_kv_reader->get_keyval(
-      global_bucket_list_index_oid, bucket_name,
+      global_bucket_list_index_layout, bucket_name,
       std::bind(&S3GlobalBucketIndexMetadata::load_successful, this),
       std::bind(&S3GlobalBucketIndexMetadata::load_failed, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -129,8 +108,9 @@ void S3GlobalBucketIndexMetadata::load_successful() {
     s3_log(S3_LOG_ERROR, request_id,
            "Json Parsing failed. Index oid = "
            "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
-           global_bucket_list_index_oid.u_hi, global_bucket_list_index_oid.u_lo,
-           bucket_name.c_str(), motr_kv_reader->get_value().c_str());
+           global_bucket_list_index_layout.oid.u_hi,
+           global_bucket_list_index_layout.oid.u_lo, bucket_name.c_str(),
+           motr_kv_reader->get_value().c_str());
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
            S3_IEM_METADATA_CORRUPTED_JSON);
 
@@ -176,7 +156,7 @@ void S3GlobalBucketIndexMetadata::save(std::function<void(void)> on_success,
   motr_kv_writer =
       motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   motr_kv_writer->put_keyval(
-      global_bucket_list_index_oid, bucket_name, this->to_json(),
+      global_bucket_list_index_layout, bucket_name, this->to_json(),
       std::bind(&S3GlobalBucketIndexMetadata::save_successful, this),
       std::bind(&S3GlobalBucketIndexMetadata::save_failed, this));
 
@@ -188,32 +168,7 @@ void S3GlobalBucketIndexMetadata::save_successful() {
 
   state = S3GlobalBucketIndexMetadataState::saved;
 
-  // attempt to save the KV in replica global bucket list index
-  if (!motr_kv_writer) {
-    motr_kv_writer =
-        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
-  }
-  motr_kv_writer->put_keyval(
-      replica_global_bucket_list_index_oid, bucket_name, this->to_json(),
-      std::bind(&S3GlobalBucketIndexMetadata::save_replica, this),
-      std::bind(&S3GlobalBucketIndexMetadata::save_replica, this));
-
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3GlobalBucketIndexMetadata::save_replica() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
-  // PUT Operation pass even if we failed to put KV in replica index.
-  if (motr_kv_writer->get_state() != S3MotrKVSWriterOpState::created) {
-    s3_log(S3_LOG_ERROR, request_id, "Failed to save KV in replica index.\n");
-
-    s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
-                  "Failed to save KV in replica index for bucket: %s",
-                  bucket_name.c_str());
-  }
   this->handler_on_success();
-
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -240,7 +195,7 @@ void S3GlobalBucketIndexMetadata::remove(std::function<void(void)> on_success,
   motr_kv_writer =
       motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   motr_kv_writer->delete_keyval(
-      global_bucket_list_index_oid, bucket_name,
+      global_bucket_list_index_layout, bucket_name,
       std::bind(&S3GlobalBucketIndexMetadata::remove_successful, this),
       std::bind(&S3GlobalBucketIndexMetadata::remove_failed, this));
 
@@ -252,34 +207,7 @@ void S3GlobalBucketIndexMetadata::remove_successful() {
 
   state = S3GlobalBucketIndexMetadataState::deleted;
 
-  // attempt to remove KV from the replica index as well
-  if (!motr_kv_writer) {
-    motr_kv_writer =
-        motr_kvs_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
-  }
-  motr_kv_writer->delete_keyval(
-      replica_global_bucket_list_index_oid, bucket_name,
-      std::bind(&S3GlobalBucketIndexMetadata::remove_replica, this),
-      std::bind(&S3GlobalBucketIndexMetadata::remove_replica, this));
-
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3GlobalBucketIndexMetadata::remove_replica() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
-  // DELETE bucket operation pass even if we failed to remove KV
-  // from replica index
-  if (motr_kv_writer->get_state() != S3MotrKVSWriterOpState::deleted) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Failed to remove KV from replica index.\n");
-
-    s3_iem_syslog(LOG_INFO, S3_IEM_METADATA_CORRUPTED,
-                  "Failed to remove KV from replica index of bucket: %s",
-                  bucket_name.c_str());
-  }
   this->handler_on_success();
-
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -305,10 +233,6 @@ std::string S3GlobalBucketIndexMetadata::to_json() {
   root["account_name"] = account_name;
   root["account_id"] = account_id;
   root["location_constraint"] = location_constraint;
-
-  S3DateTime current_time;
-  current_time.init_current_time();
-  root["create_timestamp"] = current_time.get_isoformat_string();
 
   Json::FastWriter fastWriter;
   return fastWriter.write(root);

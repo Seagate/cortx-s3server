@@ -31,6 +31,9 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /*
  * TODO
  * replace java.util.date with org.joda.time.DateTime.
@@ -40,6 +43,9 @@ public class DateUtil {
     private static final String LDAP_DATE_FORMAT = "yyyyMMddHHmmss";
     private static final String SERVER_RESPONSE_DATE_FORMAT
             = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
+    private
+     static final Logger LOGGER =
+         LoggerFactory.getLogger(DateUtil.class.getName());
 
     public static String toLdapDate(Date date) {
         SimpleDateFormat sdf = getSimpleDateFormat(LDAP_DATE_FORMAT);
@@ -104,8 +110,9 @@ public class DateUtil {
         try {
             return dateFormatGmt.parse(dateFormatGmt.format(new Date())).getTime();
         } catch (ParseException ex) {
-          IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UNPARSABLE_DATE,
-                      "Invalid date format.", null);
+          // IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UNPARSABLE_DATE,
+          //          "Invalid date format.", null);
+          LOGGER.error("Unparsable Date");
         }
 
         return 0;
@@ -136,8 +143,9 @@ public class DateUtil {
         try {
             return sdf.parse(date);
         } catch (ParseException e) {
-          IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UNPARSABLE_DATE,
-                      "Invalid date format.", null);
+          // IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UNPARSABLE_DATE,
+          //          "Invalid date format.", null);
+          LOGGER.error("Unparsable Date");
         }
 
         return null;

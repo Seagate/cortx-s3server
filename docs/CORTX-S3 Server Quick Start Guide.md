@@ -10,19 +10,14 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 - [1.6 Build S3 RPMs](#16-Build-S3-RPMs)
 
 :warning: **Notes:** 
-- The following steps will not work if you have previously installed the COTX software using an OVA or RPMs.
+- The following steps will not work if you have previously installed the CORTX software using an OVA or RPMs.
     - To install and test the S3 submodule, you'll have to create a new VM. 
 
 ### 1.0 Prerequisites
 
-<details>
-<summary>Click to expand!</summary>
-<p>
-
-1. You'll need to set up SSC, Cloud VM, or a local VM on VMWare Fusion or Oracle VirtualBox.
-2. As a CORTX contributor you will need to refer, clone, contribute, and commit changes via the GitHub server. You can access the latest code via [Github](https://github.com/Seagate/cortx).
-3. You'll need a valid GitHub Account.
-4. Before you clone your Git repository, you'll need to create the following:
+1. Verify if kernel version is 3.10.0-1062 (for centos-7.7) or 3.10.0-1127 (for centos-7.8), using: `$ uname -r`
+2. You'll need to set up SSC, Cloud VM, or a local VM on VMWare Fusion or Oracle VirtualBox.
+3. Before you clone your Git repository, you'll need to create the following:
     1. Follow the link to generate the [SSH Public Key](https://git-scm.com/book/en/v2/Git-on-the-Server-Generating-Your-SSH-Public-Key).
     2. Add the newly created SSH Public Key to [Github](https://github.com/settings/keys).
     3. When you clone your Github repository, you'll be prompted to enter your GitHub Username and Password. Refer to the article to [Generate Personal Access Token or PAT](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
@@ -30,56 +25,65 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 
        :page_with_curl: **Note:** From this point onwards, you'll need to execute all steps logged in as a **Root User**.
 
-5. We've assumed that `git` is preinstalled. If not then follow these steps to install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
+4. We've assumed that `git` is preinstalled. If not then follow these steps to install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
    * To check your Git Version, use the command: `$ git --version`
 
-     :page_with_curl:**Note:** We recommended that you install Git Version 2.x.x.
+     :page_with_curl:**Note:** We recommended that you install Git Version 2.x.x. To update git to the latest version, use:
+     ```sh
+     yum remove git*
+     yum -y install https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.7-1.x86_64.rpm
+     yum install git
+     ```
 
-6. Ensure that you've installed the following packages on your VM instance:
+5. Ensure that you've installed the following packages on your VM instance:
 
     * Python Version 3.0
-      * To check whether Python is installed on your VM, use one of the following commands: `--version`  , `-V` , or `-VV`
+      * To check whether Python is installed on your VM, use one of the following commands: `$ python3 --version` 
       * To install Python version 3.0, use: `$ yum install -y python3`
-    * pip:
-      * To check if pip is installed, use: `$ pip --version`
-      * To install pip use: `$ yum install python-pip`
-    * Ansible: `$ yum install -y ansible`
+    * pip3:
+      * To check if pip is installed, use: `$ pip3 --version`
+      * Update to latest pip using `$ pip3 install --upgrade pip`
     * Extra Packages for Enterprise Linux:
         * To check if epel is installed, use: `$ yum repolist`
             * If epel was installed, you'll see it in the output list.
             * You might also see exclamation mark in front of the repositories id. Refer to the [Redhat Knowledge Base](https://access.redhat.com/solutions/2267871).
         * `$ yum install -y epel-release`
-    * Verify if kernel version is 3.10.0-1062 (for centos-7.7) or 3.10.0-1127 (for centos-7.8), using: `$ uname -r`
+    * Ansible: Install ansible if not there already `$ yum install -y ansible`
+    * ipaddress: Install ipaddress if not there already `$ pip install ipaddress`
+    
+6. You will need to set your hostname to something other than localhost `hostnamectl set-hostname --static --transient --pretty <new-name>`
 
-7. You'll need to install CORTX Python Utilities. Follow the steps to install [CORTX Python Utilities](https://github.com/Seagate/cortx-utils/blob/main/py-utils/README.md).
+7. Add/set entry corresponding to <new-name> in above command to `/etc/hosts` file
+    
+    For example if your hostname is `cortxhost`
+    
+    Then `/etc/hosts` should something like:
 
-8. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup).
-
-9. You'll need to disable selinux and firewall. Run the following commands:
+    ```
+    127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4 cortxhost
+    ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+    ```
+    
+8. You'll need to disable selinux and firewall. Run the following commands:
 
      `$ systemctl stop firewalld` 
 
      `$ systemctl disable firewalld` 
 
-     `$ sestatus` - you'll get a `SELinux status: disabled` status.
+     `$ sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config`
 
-     `$ setenforce 0` - you'll get a `setenforce: SELinux is disabled` status.
-
-     `$ sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config` - you'll get a `SELINUX=disabled` status.
-
-     Run `$ shutdown -r now` - to reboot your system.
-     
-     :page_with_curl: **Notes:**
-     
-      - If you're using cloud VM, go to your cloud VM website and select the VM. You'll have to stop the VM and then start it again to complete the reboot process
-      - To use command line to shutdown your VM, use: `$ shutdown -r now` and Restart your VM.
+     Run `$ reboot` - to reboot your system.
         
      Once you power on your VM, you can verify if selinux and firewall are disabled by using: `$ getenforce` - you'll get a 'disabled' status.
 
+
+9. You'll need to install CORTX Python Utilities. Follow the steps to install [CORTX Python Utilities](https://github.com/Seagate/cortx-utils/blob/main/py-utils/README.md).
+
+10. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup).
+
+
 All done! You are now ready for cloning the CORTX-S3 Server repository.
 
-</p>
-</details>
 
 ### 1.1 Clone the CORTX-S3 Server Repository
 
@@ -94,21 +98,17 @@ $ git submodule update --init --recursive && git status
 
 ### 1.2 Installing Dependencies
 
-<details>
-<summary>Before you begin</summary>
-<p>
+**Before you begin**
 
-At some point during the execution of the `init.sh` script, it will prompt for the following passwords. Enter them as mentioned below:
-   * SSH password: `<Enter root password of VM>`
-   * Enter new password for openldap rootDN: `seagate`
-   * Enter new password for openldap IAM admin: `ldapadmin`
+1. Create Message bus configuration file and Kafka topic for messaging:
 
-</p>
-</details>
+```shell
 
-Whenever you clone your repository or make changes to dependent packages, you'll have to initialize the packages:
-
-1. Run the command:
+$ mkdir -p /etc/cortx
+$ cp scripts/kafka/message_bus.conf /etc/cortx/
+$ sh scripts/kafka/create-topic.sh -c 1 -i <Hostname/FQDN>
+```
+2. Run the command:
 
 ```shell
 
@@ -116,26 +116,28 @@ Whenever you clone your repository or make changes to dependent packages, you'll
    $ ./init.sh -a
 ```
 
-2. You'll be prompted to provide your GitHub token. Enter the PAT token that you generated in Step 4.iv. of the [1.0 Prerequisites Section](#10-Prerequisites).
+At some point during the execution of the `init.sh` script, it will prompt for the following passwords. Enter them as mentioned below:
+   * SSH password: `<Enter root password of VM>`
+   * Enter new password for openldap rootDN: `seagate`
+   * Enter new password for openldap IAM admin: `ldapadmin`
+
+3. You'll be prompted to provide your GitHub token. Enter the PAT token that you generated in Step 4.iv. of the [1.0 Prerequisites Section](#10-Prerequisites).
 
 Refer to the image below to view the output of a successful `$ init.sh -a` run, where the `failed` field value should be zero.
 
 ![Successful run](../images/init_script_output.png)
 
-If you still see errors or a failed status, please [reach out to us for support](#Reach-Out-to-Us)
+If you still see errors or a failed status, please [reach out to us for support](https://github.com/Seagate/cortx/blob/main/SUPPORT.md)
 
 Please read our [FAQs](https://github.com/Seagate/cortx/blob/master/doc/Build-Installation-FAQ.md) for troubleshooting errors.
 
 ### 1.3 Code Compilation and Unit Test
 
-<details>
-<summary>Before you begin</summary>
-<p>
+**Before you begin**
 
 You'll have to set up the host system before you test your build. To do so, run the following command from the main source directory: `$ ./update-hosts.sh`
 
-</p>
-</details>
+**Procedure**
 
 - To perform Unit and System Tests, run the script `$ ./jenkins-build.sh`
 
@@ -158,9 +160,7 @@ The image below illustrates the output log of a system test that is successful.
 
 ### 1.4 Test your Build using S3-CLI
 
-<details>
-<summary>Before you begin</summary>
-<p>
+**Before you begin**
 
 Before your test your build, ensure that you have installed and configured the following:
 
@@ -170,7 +170,7 @@ Before your test your build, ensure that you have installed and configured the f
 2. Ensure you've installed pip.
     - To check if you have pip installed, run the command: `$ pip --version`
     - To install pip, run the command: `$ easy_install pip`
-3. If you don't have Python Version 2.6.5+, install Python using: `$ yum install python26`
+3. If you don't have Python Version 2.6.5+, install Python using: `$ yum install python`
     - If you don't have Python Version 3.3, then install python3 using: `$ yum install python3`
 4. Ensure that CORTX-S3 Server and its dependent services are running.
     1. To start CORTX-S3 Server and its dependent services, run the command: `$ ./jenkins-build.sh --skip_build --skip_tests`
@@ -181,8 +181,11 @@ Before your test your build, ensure that you have installed and configured the f
     2. To view the `PID` of the active S3 service, run the command: `$ pgrep s3`
     3. To view the `PID` of the active Motr service, run the command: `$ pgrep m0`
 5. Follow these steps to install the AWS client and plugin:
-    1. To install the AWS client, use: `$ pip install awscli`
-    2. To install the AWS plugin, use: `$ pip install awscli-plugin-endpoint`
+    1. To install the AWS client, use: `$ pip3 install awscli`
+    2. To install the AWS plugin, use: `$ pip3 install awscli-plugin-endpoint`
+    
+    Note: If we install awscli on s3 development environment using pip3 then Jenkins system tests will break due to version dependancy conflict in s3iamcli. Fix for this is in progress.
+    
     3. Generate the AWS Access Key ID and Secret Key:
          1. To check for help messages, use: `$ s3iamcli -h`
          2. To create a new User, run: `$ s3iamcli CreateAccount -n <Account Name> -e <Email Id>`
@@ -194,11 +197,9 @@ Before your test your build, ensure that you have installed and configured the f
 
 6. To Configure AWS run the following commands:
    
-   Keep the Access and Secret Keys generated in Step 4.iv. of the [1.0 Prerequisites Section](#10-Prerequisites).
-   
    1.  Run `$ aws configure` and enter the following details:
-        * `AWS Access Key ID [None]: <ACCESS KEY>`
-        * `AWS Secret Access Key [None]: <SECRET KEY>`
+        * `AWS Access Key ID [None]: <Access Key generated in last step>`
+        * `AWS Secret Access Key [None]: <Secret Key generated in last step>`
         * `Default region name [None]: US`
         * `Default output format [None]: text`
    2. Configure the AWS Plugin Endpoint using:
@@ -243,8 +244,8 @@ Before your test your build, ensure that you have installed and configured the f
       ```
 
     4. Ensure that your AWS credential file contains your Access Key Id and Secret Key by using: `$ cat ~/.aws/credentials`
-</p>
-</details>
+
+**Procedure**
 
 Run the following test cases to check if your AWS S3 Server build is working correctly.
 
@@ -327,15 +328,11 @@ Your success log will look like the output in the image below:
     ```
 2. To build S3 RPM, use:
 
-    `$ ./rpms/s3/buildrpm.sh -G 44a07d2`
+    `$ ./rpms/s3/buildrpm.sh -a -G 44a07d2`
 
     :page_with_curl:**Note:** `44a07d2` is generated in Step 1.
 
-3. To build S3 RPM without Motr RPM dependency, use:
-
-    `$ ./rpms/s3/buildrpm.sh -a -G 44a07d2`
-
-4. To build s3iamcli RPM, use:
+3. To build s3iamcli RPM, use:
 
     `$ ./rpms/s3iamcli/buildrpm.sh -G 44a07d2`
 
@@ -353,6 +350,8 @@ Refer to our [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/ma
 
 ### Reach Out to Us
 
-Please refer to the [Support](../SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
+Please refer to the [Support](https://github.com/Seagate/cortx/blob/main/SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
 
-**CORTX S3 Server submodule was last tested by @saumyasunder on 3/11/2020 on VMware Workstation 16 Pro.**
+Tested by:
+
+- Nov 03, 2020: Saumya Sunder (saumya.sunder@seagate.com) on a Windows laptop running VMWare Workstation 16 Pro.

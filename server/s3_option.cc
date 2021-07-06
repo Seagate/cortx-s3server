@@ -40,6 +40,17 @@ bool S3Option::load_section(std::string section_name,
   }
   if (force_override_from_config) {
     if (section_name == "S3_SERVER_CONFIG") {
+
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_DI_DISABLE_DATA_CORRUPTION_IEM");
+      s3_di_disable_data_corruption_iem =
+          s3_option_node["S3_DI_DISABLE_DATA_CORRUPTION_IEM"].as<bool>();
+
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_DI_DISABLE_METADATA_CORRUPTION_IEM");
+      s3_di_disable_metadata_corruption_iem =
+          s3_option_node["S3_DI_DISABLE_METADATA_CORRUPTION_IEM"].as<bool>();
+
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_DAEMON_WORKING_DIR");
       s3_daemon_dir = s3_option_node["S3_DAEMON_WORKING_DIR"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_DAEMON_DO_REDIRECTION");
@@ -196,6 +207,12 @@ bool S3Option::load_section(std::string section_name,
           s3_option_node["S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC"].as<uint>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_ENABLE_ADDB_DUMP");
       FLAGS_addb = s3_option_node["S3_SERVER_ENABLE_ADDB_DUMP"].as<bool>();
+      bucket_metadata_cache_max_size =
+          s3_option_node["S3_BUCKET_METADATA_CACHE_MAX_SIZE"].as<unsigned>();
+      bucket_metadata_cache_expire_sec =
+          s3_option_node["S3_BUCKET_METADATA_CACHE_EXPIRE_SEC"].as<unsigned>();
+      bucket_metadata_cache_refresh_sec =
+          s3_option_node["S3_BUCKET_METADATA_CACHE_REFRESH_SEC"].as<unsigned>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUTH_PORT");
       auth_port = s3_option_node["S3_AUTH_PORT"].as<unsigned short>();
@@ -257,6 +274,10 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_OPERATION_WAIT_PERIOD");
       motr_op_wait_period =
           s3_option_node["S3_MOTR_OPERATION_WAIT_PERIOD"].as<unsigned int>();
+
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MOTR_FIRST_READ_SIZE");
+      motr_first_obj_read_size =
+          s3_option_node["S3_MOTR_FIRST_READ_SIZE"].as<unsigned int>();
 
       std::string motr_read_pool_initial_buffer_count_str;
       std::string motr_read_pool_expandable_count_str;
@@ -502,6 +523,12 @@ bool S3Option::load_section(std::string section_name,
           s3_option_node["S3_SERVER_MOTR_ETIMEDOUT_WINDOW_SEC"].as<unsigned>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_ENABLE_ADDB_DUMP");
       FLAGS_addb = s3_option_node["S3_SERVER_ENABLE_ADDB_DUMP"].as<bool>();
+      bucket_metadata_cache_max_size =
+          s3_option_node["S3_BUCKET_METADATA_CACHE_MAX_SIZE"].as<unsigned>();
+      bucket_metadata_cache_expire_sec =
+          s3_option_node["S3_BUCKET_METADATA_CACHE_EXPIRE_SEC"].as<unsigned>();
+      bucket_metadata_cache_refresh_sec =
+          s3_option_node["S3_BUCKET_METADATA_CACHE_REFRESH_SEC"].as<unsigned>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       if (!(cmd_opt_flag & S3_OPTION_AUTH_PORT)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUTH_PORT");
@@ -631,6 +658,7 @@ bool S3Option::load_section(std::string section_name,
       s3_version = s3_option_node["VERSION"].as<std::string>();
     }
   }
+
   return true;
 }
 
@@ -878,9 +906,9 @@ void S3Option::dump_options() {
          (motr_is_oostore ? "true" : "false"));
   s3_log(S3_LOG_INFO, "", "S3_MOTR_IS_READ_VERIFY = %s\n",
          (motr_is_read_verify ? "true" : "false"));
-  s3_log(S3_LOG_INFO, "", "S3_MOTR_TM_RECV_QUEUE_MIN_LEN = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_MOTR_TM_RECV_QUEUE_MIN_LEN = %u\n",
          motr_tm_recv_queue_min_len);
-  s3_log(S3_LOG_INFO, "", "S3_MOTR_MAX_RPC_MSG_SIZE = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_MOTR_MAX_RPC_MSG_SIZE = %u\n",
          motr_max_rpc_msg_size);
   s3_log(S3_LOG_INFO, "", "S3_MOTR_PROCESS_FID = %s\n",
          motr_process_fid.c_str());
@@ -891,7 +919,7 @@ void S3Option::dump_options() {
          motr_cass_keyspace.c_str());
   s3_log(S3_LOG_INFO, "", "S3_MOTR_CASS_MAX_COL_FAMILY_NUM = %d\n",
          motr_cass_max_column_family_num);
-  s3_log(S3_LOG_INFO, "", "S3_MOTR_OPERATION_WAIT_PERIOD = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_MOTR_OPERATION_WAIT_PERIOD = %u\n",
          motr_op_wait_period);
 
   s3_log(S3_LOG_INFO, "", "S3_MOTR_READ_POOL_INITIAL_BUFFER_COUNT = %zu\n",
@@ -912,6 +940,8 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_LIBEVENT_POOL_RESERVE_PERCENT = %u\n",
          libevent_pool_reserve_percent);
 
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_motr_openobj = %d\n",
+         FLAGS_fake_motr_openobj);
   s3_log(S3_LOG_INFO, "", "FLAGS_fake_motr_createobj = %d\n",
          FLAGS_fake_motr_createobj);
   s3_log(S3_LOG_INFO, "", "FLAGS_fake_motr_writeobj = %d\n",
@@ -963,6 +993,14 @@ void S3Option::dump_options() {
          libevent_mempool_zeroed_buffer ? "true" : "false");
 
   return;
+}
+
+bool S3Option::get_s3_di_disable_data_corruption_iem() {
+  return s3_di_disable_data_corruption_iem;
+}
+
+bool S3Option::get_s3_di_disable_metadata_corruption_iem() {
+  return s3_di_disable_metadata_corruption_iem;
 }
 
 std::string S3Option::get_s3_nodename() { return s3_nodename; }
@@ -1123,6 +1161,18 @@ std::set<std::string>& S3Option::get_region_endpoints() {
   return s3_region_endpoints;
 }
 
+unsigned S3Option::get_bucket_metadata_cache_max_size() const {
+  return bucket_metadata_cache_max_size;
+}
+
+unsigned S3Option::get_bucket_metadata_cache_expire_sec() const {
+  return bucket_metadata_cache_expire_sec;
+}
+
+unsigned S3Option::get_bucket_metadata_cache_refresh_sec() const {
+  return bucket_metadata_cache_refresh_sec;
+}
+
 std::string S3Option::get_motr_local_addr() { return motr_local_addr; }
 
 std::string S3Option::get_motr_ha_addr() { return motr_ha_addr; }
@@ -1208,6 +1258,13 @@ bool S3Option::is_s3server_obj_delayed_del_enabled() {
 void S3Option::set_s3server_obj_delayed_del_enabled(const bool& flag) {
   s3server_obj_delayed_del_enabled = flag;
 }
+
+bool S3Option::is_fake_motr_obj_op_read(m0_obj_opcode opcode) {
+  return is_fake_motr_openobj() && is_fake_motr_createobj() &&
+         is_fake_motr_readobj() && opcode == M0_OC_READ;
+}
+
+bool S3Option::is_fake_motr_openobj() { return FLAGS_fake_motr_openobj; }
 
 bool S3Option::is_fake_motr_createobj() { return FLAGS_fake_motr_createobj; }
 
@@ -1308,4 +1365,8 @@ bool S3Option::get_motr_read_mempool_zeroed_buffer() {
 
 bool S3Option::get_libevent_mempool_zeroed_buffer() {
   return libevent_mempool_zeroed_buffer;
+}
+
+unsigned int S3Option::get_motr_first_read_size() {
+  return motr_first_obj_read_size;
 }

@@ -59,8 +59,9 @@ public class ClientRequestParser {
         String authorizationHeader;
         ClientRequestToken.AWSSigningVersion awsSigningVersion;
 
-        if (requestAction.equals("AuthenticateUser")
-                || requestAction.equals("AuthorizeUser")) {
+        if (requestAction.equals("AuthenticateUser") ||
+            requestAction.equals("AuthorizeUser") ||
+            requestAction.equals("AuthenticateAndAuthorize")) {
             authorizationHeader = requestBody.get("authorization");
 
         } else if (requestAction.equals("ValidateACL")) {
@@ -117,8 +118,9 @@ public class ClientRequestParser {
 
         AWSRequestParser awsRequestParser = getAWSRequestParser(awsSigningVersion);
         ClientRequestToken clientrequesttoken = null;
-        if (requestAction.equals("AuthenticateUser")
-                || requestAction.equals("AuthorizeUser")) {
+        if (requestAction.equals("AuthenticateUser") ||
+            requestAction.equals("AuthorizeUser") ||
+            requestAction.equals("AuthenticateAndAuthorize")) {
             try {
               if (awsRequestParser != null) {
                 clientrequesttoken = awsRequestParser.parse(requestBody);

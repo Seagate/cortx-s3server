@@ -33,12 +33,18 @@ import org.xml.sax.SAXException;
 
 import javax.xml.validation.Schema;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Utility Class to Validate XML using XSD schema file
  */
 public class XMLValidatorUtil {
 
     private Validator validator;
+    private
+     static final Logger LOGGER =
+         LoggerFactory.getLogger(XMLValidatorUtil.class.getName());
 
     public XMLValidatorUtil(String xsdPath) throws SAXException {
 
@@ -57,9 +63,11 @@ public class XMLValidatorUtil {
     public boolean validateXMLSchema(String xml) {
 
         if(xml == null || xml.isEmpty()) {
-          IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.XML_SCHEMA_VALIDATION_ERROR,
-                      "Invalid xml format.", null);
-            return false;
+          // IEMUtil.log(IEMUtil.Level.ERROR,
+          // IEMUtil.XML_SCHEMA_VALIDATION_ERROR,
+          //          "Invalid xml format.", null);
+          LOGGER.error("XML Schema validation error");
+          return false;
         }
         try {
             validator.validate(new StreamSource(new ByteArrayInputStream(xml.getBytes())));

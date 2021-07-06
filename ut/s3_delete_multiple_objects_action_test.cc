@@ -64,6 +64,8 @@ using ::testing::AtLeast;
   "  </Object>"
 // "</Delete>" tag missing
 
+const struct s3_motr_idx_layout zero_index_layout = {};
+
 class S3DeleteMultipleObjectsActionTest : public testing::Test {
  protected:
   S3DeleteMultipleObjectsActionTest() {
@@ -73,8 +75,7 @@ class S3DeleteMultipleObjectsActionTest : public testing::Test {
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
 
     oid = {0x1ffff, 0x1ffff};
-    object_list_indx_oid = {0x11ffff, 0x1ffff};
-    objects_version_list_indx_oid = {0x11ffff, 0x1fff0};
+    index_layout = {{0x11ffff, 0x1ffff}};
     bucket_name = "seagatebucket";
     object_name = "obj_abc";
     call_count_one = 0;
@@ -101,12 +102,20 @@ class S3DeleteMultipleObjectsActionTest : public testing::Test {
     keys = {"SampleDocument1.txt", "SampleDocument2.txt"};
 
     // Owned and deleted by shared_ptr in S3DeleteMultipleObjectsAction
-    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
-        mock_request, ptr_mock_s3_motr_api);
+    bucket_meta_factory =
+        std::make_shared<MockS3BucketMetadataFactory>(mock_request);
+
+    EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
+                get_object_list_index_layout())
+        .WillRepeatedly(ReturnRef(zero_index_layout));
+
+    EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
+                get_objects_version_list_index_layout())
+        .WillRepeatedly(ReturnRef(zero_index_layout));
 
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
         mock_request, ptr_mock_s3_motr_api);
-    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
+    object_meta_factory->set_object_list_index_oid(index_layout.oid);
 
     motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
         mock_request, oid, ptr_mock_s3_motr_api);
@@ -137,8 +146,7 @@ class S3DeleteMultipleObjectsActionTest : public testing::Test {
 
   std::shared_ptr<S3DeleteMultipleObjectsAction> action_under_test;
 
-  struct m0_uint128 object_list_indx_oid;
-  struct m0_uint128 objects_version_list_indx_oid;
+  struct s3_motr_idx_layout index_layout;
   struct m0_uint128 oid;
   std::string bucket_name, object_name;
 
@@ -283,9 +291,9 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
        FetchObjectInfoWhenBucketAndObjIndexPresent) {
   CREATE_BUCKET_METADATA;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_object_list_index_oid())
+              get_object_list_index_layout())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(object_list_indx_oid));
+      .WillRepeatedly(ReturnRef(index_layout));
 
   EXPECT_CALL(*mock_request, get_header_value(_))
       .WillOnce(Return("vxQpICn70jvA6+9R0/d5iA=="));
@@ -323,9 +331,9 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   CREATE_BUCKET_METADATA;
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_object_list_index_oid())
+              get_object_list_index_layout())
       .Times(1)
-      .WillOnce(Return(object_list_indx_oid));
+      .WillOnce(ReturnRef(index_layout));
 
   EXPECT_CALL(*mock_request, get_header_value(_))
       .WillOnce(Return("vxQpICn70jvA6+9R0/d5iA=="));
@@ -350,8 +358,8 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
        FetchObjectInfoFailedWithMissingAllDone) {
   CREATE_BUCKET_METADATA;
 
-  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
+  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_layout(
+      index_layout);
   EXPECT_CALL(*mock_request, get_header_value(_))
       .WillOnce(Return("vxQpICn70jvA6+9R0/d5iA=="));
   // Clear tasks so validate_request_body calls mocked next
@@ -387,14 +395,14 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   CREATE_BUCKET_METADATA;
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_object_list_index_oid())
+              get_object_list_index_layout())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(object_list_indx_oid));
+      .WillRepeatedly(ReturnRef(index_layout));
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_objects_version_list_index_oid())
+              get_objects_version_list_index_layout())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(objects_version_list_indx_oid));
+      .WillRepeatedly(ReturnRef(index_layout));
 
   // mock kv reader/writer
   action_under_test->motr_kv_reader =
@@ -416,6 +424,8 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
       .WillRepeatedly(Return("objname"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_bucket_name())
+      .WillRepeatedly(Return(bucket_name));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
       .WillRepeatedly(Return(oid));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
@@ -424,6 +434,9 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
               get_version_key_in_index()).WillRepeatedly(Return("objname/v1"));
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, _, _, _)).Times(1);
+
+  std::string sdrf = "<Delete><Object><Key>objname</Key></Object></Delete>";
+  action_under_test->delete_request.initialize(mock_request, sdrf);
 
   action_under_test->fetch_objects_info_successful();
 
@@ -443,14 +456,14 @@ TEST_F(S3DeleteMultipleObjectsActionTest, FetchObjectsInfoSuccessful) {
 
   CREATE_BUCKET_METADATA;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_object_list_index_oid())
+              get_object_list_index_layout())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(object_list_indx_oid));
+      .WillRepeatedly(ReturnRef(index_layout));
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_objects_version_list_index_oid())
+              get_objects_version_list_index_layout())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(objects_version_list_indx_oid));
+      .WillRepeatedly(ReturnRef(index_layout));
 
   // mock kv reader/writer
   action_under_test->motr_kv_reader =
@@ -472,6 +485,8 @@ TEST_F(S3DeleteMultipleObjectsActionTest, FetchObjectsInfoSuccessful) {
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
       .WillRepeatedly(Return("objname"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_bucket_name())
+      .WillRepeatedly(Return(bucket_name));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
       .WillRepeatedly(Return(oid));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
@@ -480,6 +495,9 @@ TEST_F(S3DeleteMultipleObjectsActionTest, FetchObjectsInfoSuccessful) {
               get_version_key_in_index()).WillRepeatedly(Return("objname/v1"));
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, _, _, _)).Times(1);
+
+  std::string sdrf = "<Delete><Object><Key>objname</Key></Object></Delete>";
+  action_under_test->delete_request.initialize(mock_request, sdrf);
 
   action_under_test->fetch_objects_info_successful();
 
@@ -498,10 +516,10 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
 
   CREATE_BUCKET_METADATA;
 
-  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
-  bucket_meta_factory->mock_bucket_metadata->set_objects_version_list_index_oid(
-      objects_version_list_indx_oid);
+  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_layout(
+      index_layout);
+  bucket_meta_factory->mock_bucket_metadata
+      ->set_objects_version_list_index_layout(index_layout);
 
   // mock kv reader/writer
   action_under_test->motr_kv_reader =
@@ -635,9 +653,9 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   CREATE_BUCKET_METADATA;
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_object_list_index_oid())
+              get_object_list_index_layout())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(object_list_indx_oid));
+      .WillRepeatedly(ReturnRef(index_layout));
 
   EXPECT_CALL(*mock_request, get_header_value(_))
       .WillOnce(Return("vxQpICn70jvA6+9R0/d5iA=="));
@@ -709,16 +727,13 @@ TEST_F(S3DeleteMultipleObjectsActionTest, CleanupOnMetadataFailedToSaveTest1) {
   std::string object_name = "abcd";
   std::string version_key_in_index = "abcd/v1";
   int layout_id = 9;
-  struct m0_uint128 object_list_indx_oid = {0x11ffff, 0x1ffff};
-  struct m0_uint128 objects_version_list_index_oid = {0x1ff1ff, 0x1ffff};
   struct m0_uint128 oid = {0x1ffff, 0x1ffff};
   std::string oid_str = S3M0Uint128Helper::to_string(oid);
 
   action_under_test->probable_oid_list[oid_str] =
       std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
-          oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, object_list_indx_oid,
-          objects_version_list_index_oid, version_key_in_index,
-          false /* force_delete */));
+          oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, index_layout.oid,
+          index_layout.oid, version_key_in_index, false /* force_delete */));
 
   action_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_motr_kvs_writer;
@@ -749,7 +764,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest, CleanupOnMetadataSavedDelayedDel) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
-              delete_objects(_, _, _, _)).Times(AtLeast(0));
+              delete_objects(_, _, _, _, _)).Times(AtLeast(0));
 
   action_under_test->cleanup();
 }
@@ -765,7 +780,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest, CleanupOnMetadataSavedTest1) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
-              delete_objects(_, _, _, _)).Times(AtLeast(1));
+              delete_objects(_, _, _, _, _)).Times(AtLeast(1));
 
   action_under_test->cleanup();
 }
@@ -776,8 +791,8 @@ TEST_F(S3DeleteMultipleObjectsActionTest, CleanupOnMetadataSavedTest2) {
       motr_kvs_writer_factory->mock_motr_kvs_writer;
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer), delete_object(_, _, _))
-      .Times(0);
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              delete_object(_, _, _, _, _)).Times(0);
 
   action_under_test->cleanup();
 }
@@ -855,7 +870,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest, DelayedDeleteMultipleObjects) {
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
-              delete_objects(_, _, _, _)).Times(0);
+              delete_objects(_, _, _, _, _)).Times(0);
 
   action_under_test->cleanup();
 }

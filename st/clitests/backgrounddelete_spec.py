@@ -22,8 +22,6 @@ import sys
 import os
 import yaml
 import shutil
-import re
-import json
 from framework import Config
 from ldap_setup import LdapInfo
 from framework import S3PyCliTest
@@ -35,7 +33,7 @@ from s3cmd import S3cmdTest
 from s3kvstool import S3kvTest
 import s3kvs
 import time
-from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS, RABBIT_MQ
+from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__),  '../../s3backgrounddelete/s3backgrounddelete')))
@@ -142,15 +140,15 @@ print(account_response_elements)
 load_and_update_config(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])
 
 #Clear probable delete list index
-s3kvs.clean_all_data()
-s3kvs.create_s3root_index()
+#s3kvs.clean_all_data()
+#s3kvs.create_s3root_index()
 
 # ********** Create test bucket in s3-background-delete-svc account********
 AwsTest('Create Bucket "seagatebucket" using s3-background-delete-svc account')\
     .create_bucket("seagatebucket").execute_test().command_is_successful()
 
 # Initialising the scheduler and processor
-scheduler = ObjectRecoveryScheduler()
+scheduler = ObjectRecoveryScheduler("bgtest")
 processor = ObjectRecoveryProcessor()
 
 
@@ -186,16 +184,13 @@ S3fiTest('Disable FI motr entity delete').disable_fi("motr_entity_delete_fail")\
    .execute_test().command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(5)
+time.sleep(15)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -248,16 +243,13 @@ S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fa
 object2_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(5)
+time.sleep(15)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 print("Schdeuler has stopped...")
@@ -293,7 +285,7 @@ result = AwsTest('Upload Object "object3" to bucket "seagatebucket"')\
     .execute_test(ignore_err=True).command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
+time.sleep(15)
 
 object3_old_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
@@ -311,7 +303,7 @@ result = AwsTest('Upload Object "object3" to bucket "seagatebucket"')\
     .command_error_should_have("InternalError")
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
+time.sleep(15)
 
 S3fiTest('Disable FI motr object write fail').disable_fi("motr_obj_write_fail")\
    .execute_test().command_is_successful()
@@ -325,9 +317,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -380,7 +369,7 @@ S3cmdTest('s3cmd can delete multiple objects "object4" and "object5"')\
     .multi_delete_test("seagatebucket").execute_test().command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
+time.sleep(15)
 
 S3fiTest('Disable FI motr entity delete fail')\
     .disable_fi("motr_entity_delete_fail").execute_test()\
@@ -391,9 +380,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -480,7 +466,7 @@ result=AwsTest('Aws can complete multipart upload object6 10Mb file')\
     .command_response_should_have("seagatebucket/object6")
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
+time.sleep(15)
 
 S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fail")\
     .execute_test().command_is_successful()
@@ -490,9 +476,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -547,7 +530,7 @@ result=AwsTest('Aws can abort multipart upload object7 10Mb file')\
     .execute_test().command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
+time.sleep(15)
 
 S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fail")\
     .execute_test().command_is_successful()
@@ -557,9 +540,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -633,16 +613,13 @@ S3fiTest('Disable FI motr entity delete fail').disable_fi("motr_entity_delete_fa
     .execute_test().command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(5)
+time.sleep(15)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -696,16 +673,13 @@ result = AwsTest('Delete Object "object1" from bucket "seagatebucket"')\
 object1_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(5)
+time.sleep(15)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -743,16 +717,13 @@ result = AwsTest('Upload Object "object1" to bucket "seagatebucket"')\
     .execute_test(ignore_err=True).command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(5)
+time.sleep(15)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -799,7 +770,7 @@ S3cmdTest('s3cmd can delete multiple objects "object2" and "object3"')\
     .multi_delete_test("seagatebucket").execute_test().command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
+time.sleep(15)
 
 
 # ************ Start Schedular*****************************
@@ -807,9 +778,6 @@ print("Running scheduler...")
 if scheduler.config.get_messaging_platform() == MESSAGE_BUS:
     print("Msgbus Scheduler")
     scheduler.add_kv_to_msgbus()
-elif scheduler.config.get_messaging_platform() == RABBIT_MQ:
-    print("Rabbitmq Scheduler")
-    scheduler.add_kv_to_queue()
 else:
     raise Exception("Unknown messaging platform.")
 
@@ -837,8 +805,8 @@ AwsTest('Delete Bucket "seagatebucket"').delete_bucket("seagatebucket")\
    .execute_test().command_is_successful()
 
 #Clear probable delete list index
-s3kvs.clean_all_data()
-s3kvs.create_s3root_index()
+#s3kvs.clean_all_data()
+#s3kvs.create_s3root_index()
 
 # ************ Delete Account*******************************
 test_msg = "Delete account s3-background-delete-svc"

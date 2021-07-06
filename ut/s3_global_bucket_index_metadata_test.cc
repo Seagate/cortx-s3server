@@ -28,7 +28,6 @@
 #include "s3_global_bucket_index_metadata.h"
 #include "s3_callback_test_helpers.h"
 #include "s3_test_utils.h"
-#include <json/json.h>
 
 using ::testing::Invoke;
 using ::testing::AtLeast;
@@ -50,14 +49,14 @@ using ::testing::_;
             ->create_motr_kvs_reader(request_mock, s3_motr_api_mock);      \
   } while (0)
 
-#define CREATE_ACTION_UNDER_TEST_OBJ                                     \
-  do {                                                                   \
-    request_mock->set_account_name(account_name);                        \
-    request_mock->set_account_id(account_id);                            \
-    global_bucket_idx_metadata_under_test_ptr =                          \
-        std::make_shared<S3GlobalBucketIndexMetadata>(                   \
-            request_mock, "", s3_motr_api_mock, motr_kvs_reader_factory, \
-            motr_kvs_writer_factory);                                    \
+#define CREATE_ACTION_UNDER_TEST_OBJ                           \
+  do {                                                         \
+    request_mock->set_account_name(account_name);              \
+    request_mock->set_account_id(account_id);                  \
+    global_bucket_idx_metadata_under_test_ptr =                \
+        std::make_shared<S3GlobalBucketIndexMetadata>(         \
+            request_mock, "", "", "", s3_motr_api_mock,        \
+            motr_kvs_reader_factory, motr_kvs_writer_factory); \
   } while (0)
 
 class S3GlobalBucketIndexMetadataTest : public testing::Test {
@@ -155,7 +154,7 @@ TEST_F(S3GlobalBucketIndexMetadataTest, LoadSuccessful) {
 
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(mock_json_string));
+      .WillRepeatedly(ReturnRef(mock_json_string));
 
   global_bucket_idx_metadata_under_test_ptr->handler_on_success =
       std::bind(&S3GlobalBucketIndexMetadataTest::func_callback_one, this);
@@ -173,7 +172,7 @@ TEST_F(S3GlobalBucketIndexMetadataTest, LoadSuccessfulJsonError) {
 
   EXPECT_CALL(*(motr_kvs_reader_factory->mock_motr_kvs_reader), get_value())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(mock_json_string));
+      .WillRepeatedly(ReturnRef(mock_json_string));
 
   global_bucket_idx_metadata_under_test_ptr->handler_on_failed =
       std::bind(&S3GlobalBucketIndexMetadataTest::func_callback_one, this);
@@ -210,28 +209,33 @@ TEST_F(S3GlobalBucketIndexMetadataTest, LoadFailedMissing) {
   EXPECT_EQ(1, call_count_one);
 }
 
-TEST_F(S3GlobalBucketIndexMetadataTest, SaveReplica) {
-  CREATE_KVS_WRITER_OBJ;
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
-      .Times(AtLeast(1))
-      .WillOnce(Return(S3MotrKVSWriterOpState::created));
+TEST_F(S3GlobalBucketIndexMetadataTest, SaveSuccessful) {
+  S3CallBack s3motrkvscallbackobj;
 
   global_bucket_idx_metadata_under_test_ptr->handler_on_success =
-      std::bind(&S3GlobalBucketIndexMetadataTest::func_callback_one, this);
-
-  global_bucket_idx_metadata_under_test_ptr->save_replica();
-
-  EXPECT_EQ(1, call_count_one);
-}
-
-TEST_F(S3GlobalBucketIndexMetadataTest, SaveSuccessful) {
-  CREATE_KVS_WRITER_OBJ;
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _, _)).Times(1);
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj);
+  global_bucket_idx_metadata_under_test_ptr->handler_on_failed =
+      std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj);
 
   global_bucket_idx_metadata_under_test_ptr->save_successful();
 
+  EXPECT_TRUE(s3motrkvscallbackobj.success_called);
   EXPECT_EQ(S3GlobalBucketIndexMetadataState::saved,
+            global_bucket_idx_metadata_under_test_ptr->state);
+}
+
+TEST_F(S3GlobalBucketIndexMetadataTest, RemoveSuccessful) {
+  S3CallBack s3motrkvscallbackobj;
+
+  global_bucket_idx_metadata_under_test_ptr->handler_on_success =
+      std::bind(&S3CallBack::on_success, &s3motrkvscallbackobj);
+  global_bucket_idx_metadata_under_test_ptr->handler_on_failed =
+      std::bind(&S3CallBack::on_failed, &s3motrkvscallbackobj);
+
+  global_bucket_idx_metadata_under_test_ptr->remove_successful();
+
+  EXPECT_TRUE(s3motrkvscallbackobj.success_called);
+  EXPECT_EQ(S3GlobalBucketIndexMetadataState::deleted,
             global_bucket_idx_metadata_under_test_ptr->state);
 }
 
@@ -259,30 +263,6 @@ TEST_F(S3GlobalBucketIndexMetadataTest, SaveFailedToLaunch) {
   EXPECT_EQ(S3GlobalBucketIndexMetadataState::failed_to_launch,
             global_bucket_idx_metadata_under_test_ptr->state);
   EXPECT_EQ(1, call_count_one);
-}
-
-TEST_F(S3GlobalBucketIndexMetadataTest, RemoveReplica) {
-  CREATE_KVS_WRITER_OBJ;
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer), get_state())
-      .Times(AtLeast(1))
-      .WillOnce(Return(S3MotrKVSWriterOpState::deleted));
-  global_bucket_idx_metadata_under_test_ptr->handler_on_success =
-      std::bind(&S3GlobalBucketIndexMetadataTest::func_callback_one, this);
-
-  global_bucket_idx_metadata_under_test_ptr->remove_replica();
-
-  EXPECT_EQ(1, call_count_one);
-}
-
-TEST_F(S3GlobalBucketIndexMetadataTest, RemoveSuccessful) {
-  CREATE_KVS_WRITER_OBJ;
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              delete_keyval(_, _, _, _)).Times(1);
-
-  global_bucket_idx_metadata_under_test_ptr->remove_successful();
-
-  EXPECT_EQ(S3GlobalBucketIndexMetadataState::deleted,
-            global_bucket_idx_metadata_under_test_ptr->state);
 }
 
 TEST_F(S3GlobalBucketIndexMetadataTest, RemoveFailed) {
@@ -322,12 +302,10 @@ TEST_F(S3GlobalBucketIndexMetadataTest, ToJson) {
   std::string actual_acc_name = root["account_name"].asString();
   std::string actual_acc_id = root["account_id"].asString();
   std::string actual_loc = root["location_constraint"].asString();
-  std::string actual_timestamp = root["create_timestamp"].asString();
 
   EXPECT_STREQ("s3_test", actual_acc_name.c_str());
   EXPECT_STREQ("12345", actual_acc_id.c_str());
   EXPECT_STREQ("us-west-2", actual_loc.c_str());
-  EXPECT_STRNE("", actual_timestamp.c_str());
 }
 
 TEST_F(S3GlobalBucketIndexMetadataTest, Save) {
@@ -351,4 +329,3 @@ TEST_F(S3GlobalBucketIndexMetadataTest, Remove) {
       std::bind(&S3CallBack::on_success, &s3globalbucketindex_callbackobj),
       std::bind(&S3CallBack::on_failed, &s3globalbucketindex_callbackobj));
 }
-

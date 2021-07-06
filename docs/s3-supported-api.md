@@ -12,6 +12,7 @@
 | | Put Bucket | Put Object | 
 | | Delete Bucket | Delete Object |
 | | Head Bucket | Head Object |
+| |             | Copy Object |
 
 **Table 2: Moderately Complex Operations**
 
@@ -32,6 +33,13 @@
 | Complete Multipart Upload |
 | Abort Multipart Upload |
 | List Part |
+
+:page_with_curl: **Note:** CORTX has following limitations in Multipart upload APIs:
+1. Each part other than last part of multipart upload, has to be of same size.
+2. Part 1 needs to be uploaded first. If other parts are received first at CORTX-S3server,
+then the request will be rejected with error code: '503', with retry interval as 1 second.
+3. Each part other than the last part, should have size in multiples of 1MB.
+4. Parallel simultaneous multipart upload of same object is not allowed.
 
 **Table 3: Advance Complex Operations** 
 
@@ -148,6 +156,9 @@
 10. Delete Object tagging  
     `aws s3api delete-object-tagging --bucket <your_bucket> --key <key>`  
 
+11. Copy Object  
+    `aws s3api copy-object --copy-source <full_source_key> --key <dest_object_name> --bucket <dest_bucket>`
+
 ## S3 IAM APIs (using client tool - s3iamcli)
 
 1.  Create an account  
@@ -192,8 +203,12 @@
 14. Creates a password for the specified account  
     `s3iamcli CreateAccountLoginProfile -n <Account Name> --password <Account Password> [--password-reset-required |--no-password-reset-required]`  
 
-15. Updates/changes password for the specified account  
-    `UpdateAccountLoginProfile -n <Account Name> [--password <Account Password>] [--password-reset-required|--no-password-reset-required]`  
+15. Updates/changes password for the specified account   
+    `s3iamcli UpdateAccountLoginProfile -n <Account Name> [--password <Account Password>] [--password-reset-required|--no-password-reset-required]`  
+
+    OR
+
+    `s3iamcli UpdateAccountLoginProfile -n <Account-name> --password <new-password> --access_key <ldap-user-name> --secret_key <ldapapssword>`
 
 16. Retrieves the account name and password-creation date for the specified account  
     `s3iamcli GetAccountLoginProfile -n <Account Name>`  

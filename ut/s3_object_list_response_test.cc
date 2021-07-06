@@ -178,7 +178,7 @@ TEST_F(S3ObjectListResponseTest, ObjectListResponseWithValidObjectsTruncated) {
 
   std::shared_ptr<MockS3ObjectMetadata> mock_obj =
       std::make_shared<MockS3ObjectMetadata>(mock_request);
-  mock_obj->set_object_list_index_oid(object_list_indx_oid);
+  mock_obj->set_object_list_index_layout({object_list_indx_oid});
 
   response_under_test->add_object(mock_obj);
 
@@ -203,7 +203,7 @@ TEST_F(S3ObjectListResponseTest,
   response_under_test->set_response_is_truncated(false);
   std::shared_ptr<MockS3ObjectMetadata> mock_obj =
       std::make_shared<MockS3ObjectMetadata>(mock_request);
-  mock_obj->set_object_list_index_oid(object_list_indx_oid);
+  mock_obj->set_object_list_index_layout({object_list_indx_oid});
 
   response_under_test->add_object(mock_obj);
 
@@ -234,7 +234,7 @@ TEST_F(S3ObjectListResponseTest,
 
   std::shared_ptr<MockS3ObjectMetadata> mock_obj =
       std::make_shared<MockS3ObjectMetadata>(mock_request);
-  mock_obj->set_object_list_index_oid(object_list_indx_oid);
+  mock_obj->set_object_list_index_layout({object_list_indx_oid});
 
   response_under_test->add_object(mock_obj);
 
@@ -265,7 +265,7 @@ TEST_F(S3ObjectListResponseTest,
 
   std::shared_ptr<MockS3ObjectMetadata> mock_obj =
       std::make_shared<MockS3ObjectMetadata>(mock_request);
-  mock_obj->set_object_list_index_oid(object_list_indx_oid);
+  mock_obj->set_object_list_index_layout({object_list_indx_oid});
 
   response_under_test->add_object(mock_obj);
 

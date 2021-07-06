@@ -44,6 +44,7 @@ fi
 
 # Setup the necessary yum repos as per OS.
 if [ "$os_major_version" = "7" ]; then
+
   if [ "$os_minor_version" = "8" ]; then
     # Centos 7.8
     cp -f ${S3_SRC_DIR}/ansible/files/yum.repos.d/centos7.8.2003/* /etc/yum.repos.d/
@@ -51,6 +52,7 @@ if [ "$os_major_version" = "7" ]; then
     # centos 7.9
     # TODO repo needs to be updated for Centos 7.9
     cp -f ${S3_SRC_DIR}/ansible/files/yum.repos.d/centos7.9.2009/* /etc/yum.repos.d/
+
   fi
 fi
 

@@ -23,7 +23,7 @@ set -e
 
 # This script can be used to update encrpted password in authserver.properties
 # file. Performs below steps
-# 1. Encrypts given password using /opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar
+# 1. Encrypts given password using s3cipher commands
 # 2. Updates encrypted password in given authserver.properites file
 # 3. Updates ldap password if provided by user
 
@@ -43,7 +43,6 @@ fi
 
 ldap_passwd=
 auth_properties=
-encrypt_cli="/opt/seagate/cortx/auth/AuthPassEncryptCLI-1.0-0.jar"
 change_ldap_passwd=false
 
 # read the options
@@ -67,8 +66,8 @@ while getopts ":l:p:c:h:" o; do
 done
 shift $((OPTIND-1))
 
-if [ ! -e $encrypt_cli ]; then
-    echo "$encrypt_cli does not exists."
+if [ ! command -v s3cipher &>/dev/null ]; then
+    echo "s3cipher utility does not exists."
     exit 1
 fi
 
@@ -98,8 +97,9 @@ if [ "$change_ldap_passwd" = true ] ; then
     echo -e "\n OpenLdap password Updated Successfully,You need to Restart Slapd"
 fi
 
-# Encrypt the password
-encrypted_pass=`java -jar $encrypt_cli -s $ldap_passwd`
+# Encrypt the password using s3cipher
+ldapcipherkey=$(s3cipher generate_key --const_key="cortx")
+encrypted_pass=$(s3cipher encrypt --data="$ldap_passwd" --key="$ldapcipherkey")
 
 # Update the config
 escaped_pass=`echo "$encrypted_pass" | sed 's/\//\\\\\\//g'`
