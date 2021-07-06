@@ -51,6 +51,7 @@ import com.seagates3.exception.BadRequestException;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.exception.GrantListFullException;
 import com.seagates3.model.Account;
+import com.seagates3.policy.PolicyAuthorizedS3Actions;
 import com.seagates3.util.BinaryUtil;
 
 public
@@ -127,12 +128,12 @@ class AccessControlList {
         isPermissionAvailable = true;
         } else if (s3Action.equals("DeleteBucket")) {
           isPermissionAvailable = true;
-        } else if (s3Action.endsWith("GetObjectTagging")) {
+        } else if (PolicyAuthorizedS3Actions.getInstance()
+                       .isOnlyPolicyAuthorizationRequired(s3Action)) {
           isPermissionAvailable = true;
         }
       }
     }
-
       if (!isPermissionAvailable) {
       for (int counter = 0; counter < this.getGrantList().size(); counter++) {
         Grant grantRecord = this.getGrantList().get(counter);
