@@ -33,7 +33,7 @@ S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown,
   setup_steps();
 }
 
-S3Action::~S3Action() { s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__); }
+S3Action::~S3Action() { s3_log(S3_LOG_DEBUG, "", "%s\n", __func__); }
 
 void S3Action::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setup the action\n");
