@@ -51,6 +51,7 @@ class SetupCmd(object):
   s3_tmp_dir = "/opt/seagate/cortx/s3/tmp"
   auth_conf_file = "/opt/seagate/cortx/auth/resources/authserver.properties"
   s3_cluster_file = "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"
+  BG_delete_config_file = "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
 
   #TODO
   # add the service name and HA service name in the following dictionary
@@ -578,3 +579,16 @@ class SetupCmd(object):
 
     if enc_rootdn_passwd != None:
       self.rootdn_passwd = s3cipher_obj.decrypt(cipher_key, enc_rootdn_passwd)
+
+  def get_config_param_for_BG_delete_account(self):
+    """To get the config parameters required in init and reset phase."""
+    opfileconfstore = S3CortxConfStore(f'yaml://{self.BG_delete_config_file}', 'read_bg_delete_config_idx')
+
+    param_list = ['account_name', 'account_id', 'canonical_id', 'mail', 's3_user_id', 'const_cipher_secret_str', 'const_cipher_access_str']
+    bgdelete_acc_input_params_dict = {}
+    for param in param_list:
+        key = 'background_delete_account' + '>' + param
+        value_for_key = opfileconfstore.get_config(f'{key}')
+        bgdelete_acc_input_params_dict[param] = value_for_key
+
+    return bgdelete_acc_input_params_dict
