@@ -42,7 +42,7 @@ class S3CortxConfStore:
   def load_config(index: str = "default_s3confstore_index", config: str = ""):
     """Load Config into confstore."""
     # TODO recurse flag will be deprecated in future.
-    Conf.load(index, config, recurse = False)
+    Conf.load(index, config, recurse = True)
 
   def get_config(self, key: str):
     """Get the key's config from confstore."""
@@ -60,7 +60,7 @@ class S3CortxConfStore:
     # TODO recurse flag will be deprecated in future.
     # Do changes in all places wherever its applicable
     # refer validate_config_files() and phase_keys_validate() in setupcmd.py
-    return Conf.get_keys(self.default_index, recurse = False)
+    return Conf.get_keys(self.default_index, recurse = True)
 
   def delete_key(self, key: str, save: bool = False):
     """Deletes the specified key."""
@@ -77,7 +77,7 @@ class S3CortxConfStore:
     # TODO recurse flag will be deprecated in future.
     # Do changes in all places wherever its applicable
     # refer upgrade_config() in merge.py
-    Conf.copy(source_index, self.default_index, keys_to_include, recurse = False)
+    Conf.copy(source_index, self.default_index, keys_to_include, recurse = True)
 
   def save_config(self):
     """Saves to config file."""
