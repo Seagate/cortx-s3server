@@ -143,14 +143,7 @@ class ResetCmd(SetupCmd):
 
     try:
       # Recreate background delete account after LDAP reset
-      bgdelete_acc_input_params_dict = {'account_name': "s3-background-delete-svc",
-                                  'account_id': "67891",
-                                  'canonical_id': "C67891",
-                                  'mail': "s3-background-delete-svc@seagate.com",
-                                  's3_user_id': "450",
-                                  'const_cipher_secret_str': "s3backgroundsecretkey",
-                                  'const_cipher_access_str': "s3backgroundaccesskey"
-                                }
+      bgdelete_acc_input_params_dict = self.get_config_param_for_BG_delete_account()
       LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
     except Exception as e:
       if "Already exists" not in str(e):
