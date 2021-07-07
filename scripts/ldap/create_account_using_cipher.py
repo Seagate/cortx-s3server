@@ -20,21 +20,26 @@
 
 import argparse
 import traceback
+import sys
+import os
 
+sys.path.append(
+    os.path.abspath(os.path.join(os.path.dirname(__file__),  '../../s3cortxutils/s3confstore')))
 from ldapaccountaction import LdapAccountAction
+from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 # supported ldap action and input params dict
-g_supported_ldap_action_table = {
-  'CreateBGDeleteAccount': {
-  'account_name': "s3-background-delete-svc",
-  'account_id': "67891",
-  'canonical_id': "C67891",
-  'mail': "s3-background-delete-svc@seagate.com",
-  's3_user_id': "450",
-  'const_cipher_secret_str': "s3backgroundsecretkey",
-  'const_cipher_access_str': "s3backgroundaccesskey"
-  }
-}
+opfileconfstore = S3CortxConfStore('yaml:///root/cortx-s3server/st/clitests/s3_background_delete_config_test.yaml', 'read_bg_delete_config_idx')
+
+param_list = ['account_name', 'account_id', 'canonical_id', 'mail', 's3_user_id', 'const_cipher_secret_str', 'const_cipher_access_str']
+bgdelete_acc_input_params_dict = {}
+for param in param_list:
+    key = 'background_delete_account' + '>' + param
+    value_for_key = opfileconfstore.get_config(f'{key}')
+    bgdelete_acc_input_params_dict[param] = value_for_key
+
+g_supported_ldap_action_table = {}
+g_supported_ldap_action_table['CreateBGDeleteAccount'] = bgdelete_acc_input_params_dict
 
 def supported_ldap_actions():
   """Get supported actions."""
