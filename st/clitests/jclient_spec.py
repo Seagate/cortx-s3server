@@ -361,6 +361,121 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can download 700K file uploaded in chunked mode').get_object("seagatebucket", "700Kfilec").execute_test().command_is_successful().command_created_file("700Kfilec")
 
+    # ************ 8K Unaligned FILE TEST ************
+    JClientTest('Jclient can upload 8K Unaligned file') \
+    .put_object("seagatebucket", "8KUnalignfile", 8400) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can upload 8K Unaligned file in chunked mode') \
+    .put_object("seagatebucket", "8KUnalignfilec", 8400, chunked=True) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can download 8K Unaligned file') \
+    .get_object("seagatebucket", "8KUnalignfile") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("8KUnalignfile")
+
+    JClientTest('Jclient can download 8K Unaligned file uploaded in chunked mode') \
+    .get_object("seagatebucket", "8KUnalignfilec") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("8KUnalignfilec")
+
+    # ************ 16K FILE TEST ************
+    JClientTest('Jclient can upload 16K file') \
+    .put_object("seagatebucket", "16Kfile", 16384) \
+    .execute_test() \
+    .command_is_successful()
+    
+    JClientTest('Jclient can upload 16K file in chunked mode') \
+    .put_object("seagatebucket", "16Kfilec", 16384, chunked=True) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can download 16k file') \
+    .get_object("seagatebucket", "16Kfile") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("16Kfile")
+
+    JClientTest('Jclient can download 16k file uploaded in chunked mode') \
+    .get_object("seagatebucket", "16Kfilec") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("16Kfilec")
+
+    # ************ 16K Unaligned FILE TEST ************
+    JClientTest('Jclient can upload 16K Unaligned file') \
+    .put_object("seagatebucket", "16KUnalignfile", 16500) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can upload 16K Unaligned file in chunked mode') \
+    .put_object("seagatebucket", "16KUnalignedfilec", 16500, chunked=True) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can download 16k Unaligned file') \
+    .get_object("seagatebucket", "16KUnalignedfile") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("16KUnalignedfile")
+
+    JClientTest('Jclient can download 16k Unaligned file uploaded in chunked mode') \
+    .get_object("seagatebucket", "16KUnalignedfilec") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("16KUnalignedfilec")
+
+    # ************ 1M FILE TEST ************
+    JClientTest('Jclient can upload 1M file') \
+    .put_object("seagatebucket", "1Mfile", 1048576) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can upload 1M file in chunked mode') \
+    .put_object("seagatebucket", "1Mfilec", 1048576, chunked=True) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can download 1M file') \
+    .get_object("seagatebucket", "1Mfile") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("1Mfile")
+
+    JClientTest('Jclient can download 1M file uploaded in chunked mode') \
+    .get_object("seagatebucket", "1Mfilec") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("1Mfilec")
+
+    # ************ 1M Unaligned FILE TEST ************
+    JClientTest('Jclient can upload 1M Unaligned file') \
+    .put_object("seagatebucket", "1MUnalignfile", 1049000) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can upload 1M Unaligned file in chunked mode') \
+    .put_object("seagatebucket", "1MUnalignfilec", 1049000, chunked=True) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can download 1M file') \
+    .get_object("seagatebucket", "1MUnalignfile") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("1MUnalignfile")
+
+    JClientTest('Jclient can download 1M file uploaded in chunked mode') \
+    .get_object("seagatebucket", "1MUnalignfilec") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("1MUnalignfilec")
+
     # ************ 18MB FILE TEST (Without multipart) ************
     JClientTest('Jclient can upload 18MB file').put_object("seagatebucket", "18MBfile", 18000000).execute_test().command_is_successful()
 
