@@ -39,10 +39,6 @@ message_bus:
    purge_sleep: 60
    admin_id: "admin_s3_background_delete"
 
-s3_recovery:                               # Section for S3 recovery config config
-   recovery_account_access_key: "A9IAJPINPFRBTPASATAZ"                     # Access Key corresponding to account-name "s3-recovery-svc"
-   recovery_account_secret_key: "h98ntpB9DoChDrneKZHvPVTm+1mHbs7UdCyNVME5" # Secret Key corresponding to account-name "s3-recovery-svc"
-
 logconfig:                                  # Section for scheduler & processor loggers.
 
    # Logging facility for Python https://docs.python.org/3/library/logging.html
