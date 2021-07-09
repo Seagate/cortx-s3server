@@ -575,12 +575,6 @@ for i, val in enumerate(pathstyle_values):
     # ************ DELETE MULTIPLE OBJECTS TEST ************
     JClientTest('Jclient can delete 8k, 700k and 18MB files and non existent 1MB file').delete_multiple_objects("seagatebucket", ["8kfile", "8KUnalignfile", "16Kfile", "16KUnalignfile", "700Kfile", "1Mfile", "1MUnalignfile", "18MBfile", "1MBfile", "3kfilec", "8kfilec", "8KUnalignfilec", "16Kfilec", "16KUnalignfilec", "700Kfilec", "1Mfilec", "1MUnalignfilec", "18MBfilec"]).execute_test().command_is_successful()
 
-    print('Bucket Contents : {}'.format(JClientTest('Deepak Test') \
-    .list_objects('seagatebucket') \
-    .execute_test() \
-    .command_is_successful() \
-    .status.stdout))
-
     JClientTest('Jclient should not list deleted objects') \
     .list_objects('seagatebucket') \
     .execute_test() \
@@ -593,7 +587,6 @@ for i, val in enumerate(pathstyle_values):
     .command_response_should_not_have('700Kfilec') \
     .command_response_should_not_have('18MBfilec') \
     .command_response_should_not_have('8KUnalignfile') \
-    .command_response_should_not_have('8KUnalignfilec') \            
     .command_response_should_not_have('16Kfile') \
     .command_response_should_not_have('16Kfilec') \
     .command_response_should_not_have('16KUnalignfile') \
@@ -601,7 +594,8 @@ for i, val in enumerate(pathstyle_values):
     .command_response_should_not_have('1Mfile') \
     .command_response_should_not_have('1Mfilec') \
     .command_response_should_not_have('1MUnalignfile') \
-    .command_response_should_not_have('1MUnalignfilec') 
+    .command_response_should_not_have('1MUnalignfilec') \
+    .command_response_should_not_have('8KUnalignfilec')
 
     JClientTest('Jclient multiple delete should succeed when objects not present').delete_multiple_objects("seagatebucket", ["8kfile", "700Kfile", "18MBfile"]).execute_test().command_is_successful()
 
