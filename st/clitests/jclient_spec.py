@@ -419,10 +419,10 @@ for i, val in enumerate(pathstyle_values):
     .command_is_successful()
 
     JClientTest('Jclient can download 16k Unaligned file') \
-    .get_object("seagatebucket", "16KUnalignedfile") \
+    .get_object("seagatebucket", "16KUnalignfile") \
     .execute_test() \
     .command_is_successful() \
-    .command_created_file("16KUnalignedfile")
+    .command_created_file("16KUnalignfile")
 
     JClientTest('Jclient can download 16k Unaligned file uploaded in chunked mode') \
     .get_object("seagatebucket", "16KUnalignedfilec") \
