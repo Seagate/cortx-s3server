@@ -577,7 +577,7 @@ for i, val in enumerate(pathstyle_values):
     .delete_multiple_objects("seagatebucket", \
     ["8kfile", "8KUnalignfile", "16Kfile", "16KUnalignfile", "700Kfile", \
      "1Mfile", "1MUnalignfile", "18MBfile", "1MBfile", "3kfilec", "8kfilec", \
-     "8KUnalignfilec", "16Kfilec", "16KUnalignfilec" \
+     "8KUnalignfilec", "16Kfilec", "16KUnalignfilec", \
      "700Kfilec", "1Mfilec", "1MUnalignfilec", "18MBfilec"]) \
     .execute_test() \
     .command_is_successful()
