@@ -32,6 +32,7 @@
 class MotrDeleteObjectAction : public MotrAction {
   int layout_id;
   m0_uint128 oid;
+  m0_fid pv_id_fid;
   std::shared_ptr<S3MotrWiter> motr_writer;
 
   std::shared_ptr<S3MotrWriterFactory> motr_writer_factory;

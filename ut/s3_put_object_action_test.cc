@@ -823,8 +823,9 @@ TEST_F(S3PutObjectActionTest, WriteObjectFailedShouldUndoMarkProgress) {
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
   MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
       action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
-      index_layout.oid, index_layout.oid, "" /* Version does not exists yet */,
-      false /* force_delete */, false /* is_multipart */, {0ULL, 0ULL});
+      "mock_pvid", index_layout.oid, index_layout.oid,
+      "" /* Version does not exists yet */, false /* force_delete */,
+      false /* is_multipart */, {0ULL, 0ULL});
   action_under_test->new_probable_del_rec.reset(prob_rec);
   // expectations for mark_new_oid_for_deletion()
   EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
@@ -854,8 +855,9 @@ TEST_F(S3PutObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure) {
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
   MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
       action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
-      index_layout.oid, index_layout.oid, "" /* Version does not exists yet */,
-      false /* force_delete */, false /* is_multipart */, {0ULL, 0ULL});
+      "mock_pvid", index_layout.oid, index_layout.oid,
+      "" /* Version does not exists yet */, false /* force_delete */,
+      false /* is_multipart */, {0ULL, 0ULL});
   action_under_test->new_probable_del_rec.reset(prob_rec);
   // expectations for mark_new_oid_for_deletion()
   EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
@@ -1096,8 +1098,9 @@ TEST_F(S3PutObjectActionTest, SaveObjectMetadataFailed) {
 
   MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
       action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
-      index_layout.oid, index_layout.oid, "" /* Version does not exists yet */,
-      false /* force_delete */, false /* is_multipart */, {0ULL, 0ULL});
+      "mock_pvid", index_layout.oid, index_layout.oid,
+      "" /* Version does not exists yet */, false /* force_delete */,
+      false /* is_multipart */, {0ULL, 0ULL});
   action_under_test->new_probable_del_rec.reset(prob_rec);
   // expectations for mark_new_oid_for_deletion()
   EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);

@@ -138,6 +138,7 @@ void S3DeleteObjectAction::add_object_oid_to_probable_dead_oid_list() {
   probable_delete_rec.reset(new S3ProbableDeleteRecord(
       oid_str, {0ULL, 0ULL}, object_metadata->get_object_name(),
       object_metadata->get_oid(), object_metadata->get_layout_id(),
+      object_metadata->get_pvid_str(),
       bucket_metadata->get_object_list_index_layout().oid,
       bucket_metadata->get_objects_version_list_index_layout().oid,
       object_metadata->get_version_key_in_index(), false /* force_delete */));
