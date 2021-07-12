@@ -31,7 +31,7 @@ for that particular package.
 
 
 Bazel:
-Currently we are using Version: 0.13.0.
+Currently we are using Version: 4.1.0.
 To create bazel package, perform below steps:
 1) Make sure the /tmp directory on your VM has atleast 4GB of free space.
 2) Run scripts/env/dev/init.sh [-a]
