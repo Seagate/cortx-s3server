@@ -22,7 +22,7 @@
 %global __os_install_post /usr/lib/rpm/brp-compress %{nil}
 
 Name:		bazel
-Version:	0.13.0
+Version:	4.1.0
 Release:	1%{?dist}
 Summary:	Build tool
 
