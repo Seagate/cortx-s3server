@@ -285,7 +285,7 @@ TEST_F(S3AbortMultipartActionTest, DeletePartIndexWithPartsFailedToLaunch) {
 TEST_F(S3AbortMultipartActionTest, Send200SuccessToS3Client) {
   action_under_test->oid_str = S3M0Uint128Helper::to_string(old_object_oid);
   MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
-      "oid_str", {0ULL, 0ULL}, "abc_obj", oid, new_layout_id,
+      "oid_str", {0ULL, 0ULL}, "abc_obj", oid, new_layout_id, "mock_pvid",
       object_list_indx_oid, objects_version_list_idx_oid,
       "" /* Version does not exists yet */, false /* force_delete */,
       true /* is_multipart */, part_list_idx_oid);

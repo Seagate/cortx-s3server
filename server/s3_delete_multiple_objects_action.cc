@@ -306,7 +306,7 @@ void S3DeleteMultipleObjectsAction::add_object_oid_to_probable_dead_oid_list() {
       probable_oid_list[oid_str] =
           std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
               oid_str, {0ULL, 0ULL}, obj->get_object_name(), obj->get_oid(),
-              obj->get_layout_id(),
+              obj->get_layout_id(), obj->get_pvid_str(),
               bucket_metadata->get_object_list_index_layout().oid,
               bucket_metadata->get_objects_version_list_index_layout().oid,
               obj->get_version_key_in_index(), false /* force_delete */));

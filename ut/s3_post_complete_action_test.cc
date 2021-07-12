@@ -638,9 +638,9 @@ TEST_F(S3PostCompleteActionTest, SendResponseToClientAbortMultipart) {
 
   action_under_test_ptr->new_probable_del_rec =
       std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
-          oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, object_list_indx_oid,
-          objects_version_list_index_oid, version_key_in_index,
-          false /* force_delete */));
+          oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, "mock_pvid",
+          object_list_indx_oid, objects_version_list_index_oid,
+          version_key_in_index, false /* force_delete */));
 
   EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
@@ -749,9 +749,9 @@ TEST_F(S3PostCompleteActionTest, StartCleanupAbortedSinceValidationFailed) {
 
   action_under_test_ptr->new_probable_del_rec =
       std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
-          oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, object_list_indx_oid,
-          objects_version_list_index_oid, version_key_in_index,
-          false /* force_delete */));
+          oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, "mock_pvid",
+          object_list_indx_oid, objects_version_list_index_oid,
+          version_key_in_index, false /* force_delete */));
   action_under_test_ptr->set_abort_multipart(true);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, _, _, _, _))
