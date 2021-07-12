@@ -67,7 +67,7 @@ URL:        https://github.com/Seagate/cortx-s3server
 Source:     %{name}-%{version}-%{_s3_git_ver}.tar.gz
 
 BuildRequires: automake
-BuildRequires: bazel
+BuildRequires: bazel >= 4.1.0
 BuildRequires: cmake >= 2.8.12
 BuildRequires: libtool
 %if %{with cortx_motr}
