@@ -37,13 +37,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-
-import com.seagates3.authencryptutil.JKSUtil;
-import com.seagates3.authencryptutil.RSAEncryptDecryptUtil;
 
 /**
  * Store the auth server configuration properties like default endpoint and
@@ -443,6 +438,11 @@ public class AuthServerConfig {
    public
     static int getMaxIAMUserLimit() {
       return Integer.parseInt(authServerConfig.getProperty("maxIAMUserLimit"));
+    }
+
+   public
+    static String getIEMServerURL() {
+      return authServerConfig.getProperty("IEMServerURL");
     }
 }
 
