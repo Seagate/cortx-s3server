@@ -612,10 +612,10 @@ TEST_F(S3CopyObjectActionTest, SaveObjectMetadataFailed) {
 
   MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
       action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
-      object_list_index_layout.oid, objects_version_list_index_layout.oid,
-      "",     // Version does not exists yet
-      false,  // force_delete
-      false,  // is_multipart
+      "mock_pvid", object_list_index_layout.oid,
+      objects_version_list_index_layout.oid, "",  // Version does not exists yet
+      false,                                      // force_delete
+      false,                                      // is_multipart
       {0ULL, 0ULL});
   action_under_test->new_probable_del_rec.reset(prob_rec);
 

@@ -39,10 +39,6 @@ message_bus:
    purge_sleep: 60
    admin_id: "admin_s3_background_delete"
 
-s3_recovery:                               # Section for S3 recovery config config
-   recovery_account_access_key: "A9IAJPINPFRBTPASATAZ"                     # Access Key corresponding to account-name "s3-recovery-svc"
-   recovery_account_secret_key: "h98ntpB9DoChDrneKZHvPVTm+1mHbs7UdCyNVME5" # Secret Key corresponding to account-name "s3-recovery-svc"
-
 logconfig:                                  # Section for scheduler & processor loggers.
 
    # Logging facility for Python https://docs.python.org/3/library/logging.html
@@ -69,3 +65,13 @@ indexid:
 leakconfig:                                  # Section for object leak config
    leak_processing_delay_in_mins: 15                          # Time delay in mins after which probable delete entry is procesed for leak.
    version_processing_delay_in_mins: 5                        # Time delay in mins after which object version is processed
+
+#DO NOT CHANGE ANY KEY NAME
+background_delete_account:
+   account_name: "s3-background-delete-svc"                   #BG delete account name
+   account_id: "67891"                                        #BG delete accound id
+   canonical_id: "C67891"                                     #BG delete account canonical id
+   mail: "s3-background-delete-svc@seagate.com"               #BG delete account mail
+   s3_user_id: "450"                                          #BG delete account user id
+   const_cipher_secret_str: "s3backgroundsecretkey"           #BG delete account secret key
+   const_cipher_access_str: "s3backgroundaccesskey"           #BG delete account access key

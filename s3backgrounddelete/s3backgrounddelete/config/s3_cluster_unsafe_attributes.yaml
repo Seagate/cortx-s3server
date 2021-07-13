@@ -22,3 +22,12 @@ cluster_config:
    cluster_id: "dummy"
    rootdn_pass: "dummy"
    rootdn_user: "dummy"
+
+background_delete_account:
+   account_name: "dummy"
+   account_id: "dummy123"
+   canonical_id: "dummy123"
+   mail: "dummy@dummy.com"
+   s3_user_id: "dummy123"
+   const_cipher_secret_str: "dummy"
+   const_cipher_access_str: "dummy"

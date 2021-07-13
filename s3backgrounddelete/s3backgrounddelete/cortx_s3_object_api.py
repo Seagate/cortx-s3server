@@ -135,13 +135,16 @@ class CORTXS3ObjectApi(CORTXS3Client):
             return False, CORTXS3ErrorResponse(
                 response['status'], response['reason'], response['body'])
 
-    def delete(self, oid, layout_id):
+    def delete(self, oid, layout_id, pvid_str):
         """Perform DELETE request and generate response."""
         if oid is None:
             self._logger.error("Object Id is required.")
             return False, None
         if layout_id is None:
             self._logger.error("Layout Id is required.")
+            return False, None
+        if pvid_str is None:
+            self._logger.error("pvid_str is required.")
             return False, None
 
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
@@ -153,6 +156,7 @@ class CORTXS3ObjectApi(CORTXS3Client):
         # absolute_request_uri is layout-id is '/objects/JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D?layout-id=1'
 
         query_params = urllib.parse.urlencode({'layout-id': layout_id})
+        query_params += "&" + urllib.parse.urlencode({'pvid': pvid_str}, safe='')
         request_uri = '/objects/' + urllib.parse.quote(oid, safe='')
         absolute_request_uri = request_uri + '?' + query_params
 
