@@ -25,6 +25,7 @@
 #include "s3_option.h"
 #include "s3_log.h"
 #include <assert.h>
+#include "motr/client.h"
 
 MD5hash::MD5hash(std::shared_ptr<MotrAPI> motr_api, bool call_init) {
   Reset(motr_api, call_init);
@@ -61,6 +62,8 @@ int MD5hash::Update(const char *input, size_t length) {
   if (status < 0) {
     return -1;  // failure
   }
+  s3_log(S3_LOG_DEBUG, "", "%s Displaying PI Info next", __func__);
+  MD5hash::log_pi_info((struct m0_generic_pi *)&s3_update_pi);
   return 0;  // success
 }
 
@@ -114,6 +117,8 @@ int MD5hash::s3_calculate_unit_pi(struct s3_motr_rw_op_context *rw_ctx,
     memset(&seed, '\0', sizeof(struct m0_pi_seed));
   }
   save_motr_unit_checksum((unsigned char *)rw_ctx->current_digest);
+  s3_log(S3_LOG_DEBUG, "", "%s Displaying PI Info next", __func__);
+  MD5hash::log_pi_info((struct m0_generic_pi *)s3_pi);
   return rc;
 }
 
@@ -140,6 +145,10 @@ int MD5hash::s3_calculate_unaligned_buffs_pi(
   if (s3_flag & S3_FIRST_UNIT) {
     is_initialized = true;
   }
+
+  s3_log(S3_LOG_DEBUG, "", "%s Displaying PI Info next", __func__);
+  MD5hash::log_pi_info((struct m0_generic_pi *)&s3_md5_inc_digest_unaligned_pi);
+
   // We have even Finalized (without seed)
   is_finalized = true;
   return rc;
@@ -157,6 +166,8 @@ int MD5hash::Finalize() {
     if (status < 0) {
       return -1;  // failure
     }
+    s3_log(S3_LOG_DEBUG, "", "%s Displaying PI Info next", __func__);
+    MD5hash::log_pi_info((struct m0_generic_pi *)&s3_md5_inc_digest_pi);
   }
   memcpy(s3_md5_inc_digest_pi.prev_context, &md5ctx, sizeof(MD5_CTX));
   // Pass M0_PI_SKIP_CALC_FINAL flag, finalized gets called and stored in
@@ -167,6 +178,8 @@ int MD5hash::Finalize() {
   if (status < 0) {
     return -1;  // failure
   }
+  s3_log(S3_LOG_DEBUG, "", "%s Displaying PI Info next", __func__);
+  MD5hash::log_pi_info((struct m0_generic_pi *)&s3_md5_inc_digest_pi);
   is_finalized = true;
   return 0;
 }
@@ -196,6 +209,10 @@ void MD5hash::Reset(std::shared_ptr<MotrAPI> motr_api,
     status = s3_motr_api->motr_client_calculate_pi(
         (struct m0_generic_pi *)&s3_md5_inc_digest_pi, NULL, &pi_update_bufvec,
         M0_PI_CALC_UNIT_ZERO, (unsigned char *)&md5ctx, NULL);
+    if (status == 0) {
+      s3_log(S3_LOG_DEBUG, "", "%s Displaying PI Info next", __func__);
+      MD5hash::log_pi_info((struct m0_generic_pi *)&s3_md5_inc_digest_pi);
+    }
     is_initialized = true;
   }
   is_finalized = false;
@@ -233,4 +250,46 @@ MD5hash::~MD5hash() {
   if (pi_update_bufvec.ov_buf) {
     free(pi_update_bufvec.ov_buf);
   }
+}
+
+void MD5hash::log_md5_inc_info(struct m0_md5_inc_context_pi *pi_info) {
+  s3_log(S3_LOG_INFO, "", "%s ENTRY", __func__);
+
+  const char hex_tbl[] = "0123456789abcdef";
+  std::string s_hex;
+  s_hex.reserve(sizeof(MD5_CTX) * 2);
+  for (size_t i = 0; i < sizeof(MD5_CTX); ++i) {
+    const unsigned ch = pi_info->prev_context[i] & 255;
+    s_hex += hex_tbl[ch >> 4];
+    s_hex += hex_tbl[ch & 15];
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s prev_context : %s", __func__, s_hex.c_str());
+
+  std::string s_hex_1;
+  s_hex_1.reserve(MD5_DIGEST_LENGTH * 2);
+  for (size_t i = 0; i < MD5_DIGEST_LENGTH; ++i) {
+    const unsigned ch = pi_info->pi_value[i] & 255;
+    s_hex_1 += hex_tbl[ch >> 4];
+    s_hex_1 += hex_tbl[ch & 15];
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s pi_value : %s", __func__, s_hex_1.c_str());
+
+  s3_log(S3_LOG_INFO, "", "%s EXIT", __func__);
+}
+
+void MD5hash::log_pi_info(struct m0_generic_pi *pi_info) {
+  s3_log(S3_LOG_INFO, "", "%s ENTRY", __func__);
+
+  switch (S3Option::get_instance()->get_pi_type()) {
+    case M0_PI_TYPE_MD5_INC_CONTEXT:
+      s3_log(S3_LOG_DEBUG, "",
+             "%s PI Info is of type M0_PI_TYPE_MD5_INC_CONTEXT", __func__);
+      MD5hash::log_md5_inc_info((struct m0_md5_inc_context_pi *)pi_info);
+      break;
+    default:
+      s3_log(S3_LOG_INFO, "", "%s Invalid PI Info Option.", __func__);
+      break;
+  }
+
+  s3_log(S3_LOG_INFO, "", "%s EXIT", __func__);
 }

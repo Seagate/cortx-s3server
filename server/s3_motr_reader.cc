@@ -26,6 +26,7 @@
 #include "s3_option.h"
 #include "s3_uri_to_motr_oid.h"
 #include "s3_addb.h"
+#include "s3_md5_hash.h"
 
 extern struct m0_realm motr_uber_realm;
 extern std::set<struct s3_motr_op_context *> global_motr_object_ops_list;
@@ -317,9 +318,12 @@ bool S3MotrReader::ValidateStoredMD5Chksum(m0_bufvec *motr_data_unit,
 
   s3_log(S3_LOG_INFO, stripped_request_id,
          "%s motr_client_calculate_pi returned %d", __func__, rc);
-  s3_log(S3_LOG_INFO, stripped_request_id,
+  s3_log(S3_LOG_DEBUG, stripped_request_id,
          "%s Printing returned m0_md5_inc_context_pi", __func__);
-  // print_pi_info(&md5_info);
+  MD5hash::log_pi_info((struct m0_generic_pi *)&md5_info);
+  s3_log(S3_LOG_DEBUG, stripped_request_id,
+         "%s Printing m0_md5_inc_context_pi retrieved from motr", __func__);
+  MD5hash::log_pi_info(pi_info);
 
   if (0 != memcmp(md5_info.pi_value,
                   ((m0_md5_inc_context_pi *)(pi_info))->pi_value,
