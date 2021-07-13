@@ -1,4 +1,4 @@
-teps to host swagger documentation
+# Steps to host swagger documentation
 
 1. Install NodeJS
 
