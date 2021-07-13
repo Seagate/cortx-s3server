@@ -351,7 +351,7 @@ void S3PutObjectActionBase::add_object_oid_to_probable_dead_oid_list() {
            old_oid_rec_key.c_str());
     old_probable_del_rec.reset(new S3ProbableDeleteRecord(
         old_oid_rec_key, {0, 0}, object_metadata->get_object_name(),
-        old_object_oid, old_layout_id,
+        old_object_oid, old_layout_id, object_metadata->get_pvid_str(),
         bucket_metadata->get_object_list_index_layout().oid,
         bucket_metadata->get_objects_version_list_index_layout().oid,
         object_metadata->get_version_key_in_index(), false /* force_delete */));
@@ -363,7 +363,7 @@ void S3PutObjectActionBase::add_object_oid_to_probable_dead_oid_list() {
          "Adding new_probable_del_rec with key [%s]\n", new_oid_str.c_str());
   new_probable_del_rec.reset(new S3ProbableDeleteRecord(
       new_oid_str, old_object_oid, new_object_metadata->get_object_name(),
-      new_object_oid, layout_id,
+      new_object_oid, layout_id, new_object_metadata->get_pvid_str(),
       bucket_metadata->get_object_list_index_layout().oid,
       bucket_metadata->get_objects_version_list_index_layout().oid,
       new_object_metadata->get_version_key_in_index(),
