@@ -785,6 +785,12 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
                "Calculating checksum at motr unit boundary(%zu), "
                "seed_offset(%zu) chksum_buf_idx(%zu)\n",
                size_in_current_write, saved_last_index, chksum_buf_idx);
+
+        if (s3_checksum_flag & S3_FIRST_UNIT) {
+          s3_log(S3_LOG_INFO, "", "%s Setting last index as 0", __func__);
+          saved_last_index = 0;
+        }
+
         rc = s3_md5crypt->s3_calculate_unit_pi(rw_ctx, chksum_buf_idx++,
                                                saved_last_index, oid_list[0],
                                                s3_checksum_flag);
@@ -869,6 +875,12 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
              "number_of_unit_unaligned(%zu) seed_offset(%zu) "
              "chksum_buf_idx(%zu)\n",
              number_of_unit_unaligned, saved_last_index, chksum_buf_idx);
+
+      if (s3_checksum_flag & S3_FIRST_UNIT) {
+        s3_log(S3_LOG_INFO, "", "%s Setting last index as 0", __func__);
+        saved_last_index = 0;
+      }
+
       rc = s3_md5crypt->s3_calculate_unit_pi(rw_ctx, chksum_buf_idx++,
                                              saved_last_index, oid_list[0],
                                              s3_checksum_flag);

@@ -92,10 +92,15 @@ int MD5hash::s3_calculate_unit_pi(struct s3_motr_rw_op_context *rw_ctx,
       (struct m0_md5_inc_context_pi *)rw_ctx->attr->ov_buf[current_attr_index];
   if (s3_flag & S3_FIRST_UNIT) {
     motr_pi_flag = M0_PI_CALC_UNIT_ZERO;
+    s3_log(S3_LOG_DEBUG, "", "%s First Block Calc", __func__);
   } else {
     if (checksum_saved) {
       // If previous checksum is there then get it
+      s3_log(S3_LOG_DEBUG, "", "%s Checksum is saved", __func__);
       memcpy(s3_pi->prev_context, &md5ctx, sizeof(MD5_CTX));
+    }
+    else{
+      s3_log(S3_LOG_ERROR, "", "%s Checksum is not saved and not first block", __func__);
     }
   }
   if (s3_flag & S3_SEED_UNIT) {
