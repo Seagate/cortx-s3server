@@ -1,0 +1,92 @@
+swagger: '2.0'
+info:
+  version: latest
+  description: aws s3api get-bucket-tagging --bucket <your_bucket>
+  title: S3 API - Get Bucket Tagging
+host: s3.seagate.com
+schemes:
+  - http
+  - https
+paths:
+  /{bucket_name}:
+    get:
+      tags:
+        - Get bucket tagging
+      parameters:
+        - name: bucket_name
+          in: path
+          type: string
+          required: true
+        - name: tagging
+          in: query
+          type: string
+          required: true
+        - name: User-Agent
+          in: header
+          description: Header to identify application, it's version number and programming language.
+          type: string
+          required: true
+        - name: X-Amz-Date
+          in: header
+          description: Date header used to create the signature.
+          type: string
+          required: false
+        - name: X-Amz-Content-SHA256
+          in: header
+          description: This header value informs whether s3 request signed or not.
+          type: string
+          required: true
+        - name: Authorization
+          in: header
+          description: >-
+            This Header contains credentials to authorize a User-Agent with
+            server.
+          type: string
+          required: true
+        - name: X-Forwarded-For
+          in: header
+          description: This header identify the originating IP address of a client connecting to a web server.
+          type: string
+          required: true
+      produces:
+        - application/xml
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            xml:
+              name: Tagging
+            properties:
+              Tagset:
+                type: object
+                properties:
+                  Tag:
+                    type: object
+                    properties:
+                      Key:
+                        type: string
+                      Value:
+                        type: string
+          headers:
+            x-amz-request-id:
+              type: string
+            Content-Length:
+              type: integer
+            Content-Type:
+              type: string
+            Server:
+              type: string
+        400:  
+          description: Request Timeout - The client did not produce a request within the time that the server was prepared to wait.
+        403:
+          description: |
+            Access Denied.
+
+            Invalid AccessKey Id - The AWS access key Id you provided does not exist in our records.
+        404:
+          description: No Such Bucket - The specified bucket does not exist.
+        500:
+          description: Internal Error - We encountered an internal error. Please try again.
+        503: 
+          description: Service Unavailable - Reduce your request rate.

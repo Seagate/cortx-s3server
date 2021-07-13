@@ -1,0 +1,108 @@
+swagger: '2.0'
+info:
+  version: latest
+  description: s3iamcli UpdateUserLoginProfile -n \<User Name> [--password <User Password>] [--password-reset-required | --no-password-reset-required]
+  title: IAM API - Update User Login Profile
+host: s3.seagate.com
+schemes:
+  - http
+  - https
+paths:
+  '/':
+    post:
+      tags:
+        - Update User Login Profile
+      parameters:
+        - name: Action
+          in: query
+          type: string
+          required: true
+        - name: Version
+          in: query
+          type: string
+          required: false
+        - name: Access Key
+          in: query
+          type: string
+          required: true
+        - name: Secret Key
+          in: query
+          type: string
+          required: true
+        - name: username
+          in: query
+          type: string
+          required: true
+        - name: PasswordResetRequired
+          in: query
+          type: boolean
+          required: false
+        - name: Content-Type
+          in: header
+          description: Specifies content type.
+          type: string
+        - name: User-agent
+          in: header
+          description: >-
+              Header to identify application, it's version number and programming
+              language.
+          type: string
+          required: true
+        - name: X-Amz-Date
+          in: header
+          description: Date header used to create the signature.
+          type: string 
+        - name: Content-Length
+          in: header
+          description: The Content-Length header indicates the size of the message body, in bytes.
+          type: string
+          required: true
+      produces:
+        - application/xml
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            xml:
+              name: UpdateLoginProfileResponse
+            properties:
+              ResponseMetadata:
+                type: object
+                properties:
+                  RequestId:
+                    type: string
+                  
+          headers:
+            Content-Type:
+              type: string
+            Content-length:
+              type: integer
+            connection:
+              type: string
+
+        '404':
+          description: NoSuchEntity
+          schema:
+            type: object
+            xml:
+              name: ErrorResponse
+            properties:
+              Error:
+                type: object
+                properties:
+                  Code:
+                    type: string
+                    example: NoSuchEntity
+                  Message:
+                    type: string
+                    example: The request was rejected because it referenced an entity that does not exist.
+              RequestId:
+                type: string
+          headers:
+            Content-Type:
+              type: string
+            Content-length:
+              type: integer
+            connection:
+              type: string
