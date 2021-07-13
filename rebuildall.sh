@@ -57,6 +57,8 @@ usage() {
   echo '          --no-install               : Do not install binaries after build, Default (false)'
   echo '          --just-gen-build-file      : Do not do anything, only produce BUILD file'
   echo '          --valgrind_memcheck        : Compile with debug flags and zero optimization to support valgrind memcheck'
+  echo '          --bazel-cpu-usage-limit    : Specify max percentage of CPU that bazel can consume during s3 build operation, Default is 50%i( i.e. .5)'
+  echo '          --bazel-ram-usage-limit    : Specify max percentage of RAM that bazel can consume during s3 build operation, Default is 50%i( i.e. .5)'
   echo '          --help (-h)                : Display help'
 }
 
@@ -142,7 +144,7 @@ OPTS=`getopt -o h --long no-motr-rpm,use-build-cache,no-check-code,no-clean-buil
 no-s3ut-build,no-s3mempoolut-build,no-s3mempoolmgrut-build,no-s3server-build,\
 no-motrkvscli-build,no-s3background-build,no-s3msgbus-build,no-s3cipher-build,no-s3confstoretool-build,\
 no-s3addbplugin-build,no-auth-build,no-jclient-build,no-jcloudclient-build,\
-no-s3iamcli-build,no-java-tests,no-install,just-gen-build-file,valgrind_memcheck,\
+no-s3iamcli-build,no-java-tests,no-install,just-gen-build-file,valgrind_memcheck,bazel-cpu-usage-limit,bazel-ram-usage-limit,\
 help -n 'rebuildall.sh' -- "$@"`
 
 eval set -- "$OPTS"
@@ -169,6 +171,8 @@ no_java_tests=0
 no_install=0
 just_gen_build_file=0
 valgrind_memcheck=0
+bazel-cpu-usage-limit=50
+bazel-ram-usage-limit=50
 
 # extract options and their arguments into variables.
 while true; do
