@@ -1,0 +1,119 @@
+swagger: '2.0'
+info:
+  version: latest
+  description: s3iamcli CreateAccessKey -n \<User Name>
+  title: IAM API - Create Access Key
+host: s3.seagate.com
+schemes:
+  - http
+  - https
+paths:
+  '/':
+    post:
+      tags:
+        - Create Access Key 
+      parameters:
+        - name: Action
+          in: query
+          type: string
+          required: true
+        - name: Version
+          in: query
+          type: string
+          required: false
+        - name: Access Key
+          in: query
+          type: string
+          required: true
+        - name: Secret Key
+          in: query
+          type: string
+          required: true
+        - name: username
+          in: query
+          type: string
+          required: true
+        - name: Content-Type
+          in: header
+          description: Specifies content type.
+          type: string
+        - name: User-agent
+          in: header
+          description: >-
+              Header to identify application, it's version number and programming
+              language.
+          type: string
+          required: true
+        - name: X-Amz-Date
+          in: header
+          description: Date header used to create the signature.
+          type: string 
+        - name: Content-Length
+          in: header
+          description: The Content-Length header indicates the size of the message body, in bytes.
+          type: string
+          required: true
+      produces:
+        - application/xml
+      responses:
+        '201':
+          description: OK
+          schema:
+            type: object
+            xml:
+              name: CreateAccessKeyResponse
+            properties:
+              CreateAccessKeyResult:
+                type: object
+                properties:
+                  AccessKey:
+                    type: object
+                    properties:
+                      UserName:
+                        type: string
+                      AccessKeyId:
+                        type: string
+                      Status:
+                        type: string
+                      SecretAccessKey:
+                        type: string
+              ResponseMetadata:
+                type: object
+                properties:
+                  RequestId:
+                    type: string
+                  
+          headers:
+            Content-Type:
+              type: string
+            Content-length:
+              type: integer
+            connection:
+              type: string
+
+        '401':
+          description: InvalidAccessKeyId
+          schema:
+            type: object
+            xml:
+              name: ErrorResponse
+            properties:
+              Error:
+                type: object
+                properties:
+                  Code:
+                    type: string
+                    example: InvalidAccessKeyId
+                  Message:
+                    type: string
+                    example: The AWS access key Id you provided does not exist in our         records.
+              RequestId:
+                type: string
+          headers:
+            Content-Type:
+              type: string
+            Content-length:
+              type: integer
+            connection:
+              type: string
+    

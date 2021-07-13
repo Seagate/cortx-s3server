@@ -1,0 +1,100 @@
+swagger: '2.0'
+info:
+  version: latest
+  description: s3iamcli ListAccounts
+  title: IAM API - List Accounts
+host: s3.seagate.com
+schemes:
+  - http
+  - https
+paths:
+  '/':
+    post:
+      tags:
+        - List Accounts
+      parameters:
+        - name: Action
+          in: query
+          type: string
+          required: true
+        - name: show-all
+          in: query
+          description: whether to show hidden accounts as well or not.
+          type: boolean
+          required: false
+        - name: Content-Type
+          in: header
+          description: Specifies content type.
+          type: string 
+        - name: X-Amz-Date
+          in: header
+          description: Date header used to create the signature.
+          type: string
+      produces:
+        - application/xml
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            xml:
+              name: ListAccountResponse
+            properties:
+              ListAccountsResult:
+                type: object
+                properties:
+                  Accounts:
+                    type: object
+                    properties:
+                      member:
+                        type: object
+                        properties:
+                          AccountName:
+                            type: string
+                          AccountId:
+                            type: string
+                          CanonicalId:
+                            type: string
+                          Email:
+                            type: string
+                  IsTruncated:
+                    type: boolean
+              ResponseMetadata:
+                type: object
+                properties:
+                  RequestId:
+                    type: string
+          headers:
+            Content-Type:
+              type: string
+            Content-length:
+              type: integer
+            connection:
+              type: string
+
+        '401':
+          description: InvalidAccessKeyId
+          schema:
+            type: object
+            xml:
+              name: ErrorResponse
+            properties:
+              Error:
+                type: object
+                properties:
+                  Code:
+                    type: string
+                    example: InvalidLdapUserId
+                  Message:
+                    type: string
+                    example: The Ldap user id you provided does not exist.
+              RequestId:
+                type: string
+          headers:
+            Content-Type:
+              type: string
+            Content-length:
+              type: integer
+            connection:
+              type: string
+    
