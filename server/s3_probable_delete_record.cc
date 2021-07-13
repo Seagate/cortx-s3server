@@ -32,7 +32,7 @@ extern struct m0_uint128 global_instance_id;
 S3ProbableDeleteRecord::S3ProbableDeleteRecord(
     std::string rec_key, struct m0_uint128 old_oid,
     std::string obj_key_in_index, struct m0_uint128 new_oid, int layout_id,
-    struct m0_uint128 obj_list_idx_oid,
+    std::string pvid_str, struct m0_uint128 obj_list_idx_oid,
     struct m0_uint128 objs_version_list_idx_oid, std::string ver_key_in_index,
     bool force_del, bool is_multipart, struct m0_uint128 part_list_oid)
     : record_key(rec_key),
@@ -40,6 +40,7 @@ S3ProbableDeleteRecord::S3ProbableDeleteRecord(
       object_key_in_index(obj_key_in_index),
       current_object_oid(new_oid),
       object_layout_id(layout_id),
+      pvid_str(pvid_str),
       object_list_idx_oid(obj_list_idx_oid),
       objects_version_list_idx_oid(objs_version_list_idx_oid),
       version_key_in_index(ver_key_in_index),
@@ -90,6 +91,7 @@ std::string S3ProbableDeleteRecord::to_json() {
   // LC - LIfecyle counter
   root["global_instance_id"] = S3M0Uint128Helper::to_string(global_instance_id);
   root["force_delete"] = force_delete ? "true" : "false";
+  root["pv_id"] = pvid_str.c_str();
 
   if (is_multipart) {
     root["is_multipart"] = "true";
