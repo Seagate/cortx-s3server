@@ -70,6 +70,8 @@ class MD5hash {
   void Initialized();
   void Reset(std::shared_ptr<MotrAPI> motr_api, bool call_init);
   unsigned char *get_md5_digest() { return md5_digest; }
+  static void log_md5_inc_info(struct m0_md5_inc_context_pi *pi_info);
+  static void log_pi_info(struct m0_generic_pi *pi_info);
 
   std::string get_md5_string();
   std::string get_md5_base64enc_string();
