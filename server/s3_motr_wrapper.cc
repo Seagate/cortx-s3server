@@ -205,31 +205,6 @@ Tdata pi_data[MAX_OBJECTS_TDATA] = {0};
 unsigned int wt_idx = 0;
 m0_uint128 prev_oid = {0};
 
-void print_pi_info(struct m0_md5_inc_context_pi *pi_info) {
-  s3_log(S3_LOG_INFO, "", "%s ENTRY", __func__);
-
-  const char hex_tbl[] = "0123456789abcdef";
-  std::string s_hex;
-  s_hex.reserve(sizeof(MD5_CTX) * 2);
-  for (size_t i = 0; i < sizeof(MD5_CTX); ++i) {
-    const unsigned ch = pi_info->prev_context[i] & 255;
-    s_hex += hex_tbl[ch >> 4];
-    s_hex += hex_tbl[ch & 15];
-  }
-  s3_log(S3_LOG_INFO, "", "%s prev_context : %s", __func__, s_hex.c_str());
-
-  std::string s_hex_1;
-  s_hex_1.reserve(MD5_DIGEST_LENGTH * 2);
-  for (size_t i = 0; i < MD5_DIGEST_LENGTH; ++i) {
-    const unsigned ch = pi_info->pi_value[i] & 255;
-    s_hex_1 += hex_tbl[ch >> 4];
-    s_hex_1 += hex_tbl[ch & 15];
-  }
-  s3_log(S3_LOG_INFO, "", "%s pi_value : %s", __func__, s_hex_1.c_str());
-
-  s3_log(S3_LOG_INFO, "", "%s EXIT", __func__);
-}
-
 void retrive_data(m0_uint128 oid, struct m0_bufvec *attr, m0_bindex_t offset) {
   /* Search and get index*/
   s3_log(S3_LOG_INFO, "", "%s ENTRY", __func__);
@@ -254,9 +229,9 @@ void retrive_data(m0_uint128 oid, struct m0_bufvec *attr, m0_bindex_t offset) {
                sizeof(m0_md5_inc_context_pi));
         s3_log(S3_LOG_INFO, "",
                "%s Printing Contents of buffer that was copied.", __func__);
-        print_pi_info((m0_md5_inc_context_pi *)pi_data[i]
+        /*print_pi_info((m0_md5_inc_context_pi *)pi_data[i]
                           .attr_data[pi_data[i].read]
-                          .ov_buf[k]);
+                          .ov_buf[k]);*/
       }
       pi_data[i].read++;
       break;
@@ -304,14 +279,14 @@ void store_data(m0_uint128 oid, struct m0_bufvec *attr, m0_bindex_t offset) {
   for (size_t i = 0; i < attr->ov_vec.v_nr; i++) {
     memcpy(pi_data[wt_idx].attr_data[pi_data[wt_idx].calls].ov_buf[i],
            attr->ov_buf[i], sizeof(m0_md5_inc_context_pi));
-    s3_log(S3_LOG_INFO, "", "%s Printing m0_md5_inc_context_pi in attr",
+    /*s3_log(S3_LOG_INFO, "", "%s Printing m0_md5_inc_context_pi in attr",
            __func__);
     print_pi_info((m0_md5_inc_context_pi *)attr->ov_buf[i]);
     s3_log(S3_LOG_INFO, "",
            "%s Printing m0_md5_inc_context_pi in temp fix buffer", __func__);
     print_pi_info((m0_md5_inc_context_pi *)pi_data[wt_idx]
                       .attr_data[pi_data[wt_idx].calls]
-                      .ov_buf[i]);
+                      .ov_buf[i]);*/
   }
   pi_data[wt_idx].calls++;
 }

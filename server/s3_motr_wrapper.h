@@ -49,8 +49,6 @@ enum class MotrOpType {
   deletekv,
 };
 
-void print_pi_info(struct m0_md5_inc_context_pi *pi_info);
-
 class MotrAPI {
  public:
   virtual int motr_client_calculate_pi(
