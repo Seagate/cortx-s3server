@@ -57,21 +57,20 @@ extern S3Option* g_option_instance;
            getpid(), __FILE__, __LINE__, ##__VA_ARGS__);                      \
   } while (0)
 #else
-#define s3_iem_(loglevel, s3_loglevel, event_code, event_desc, json_fmt, \
-                    ...)                                                     \
-  do {                                                                       \
-    if (loglevel == LOG_ALERT) {                                             \
-      s3_syslog(loglevel, "IEC:AS" event_code ":" event_desc);               \
-    } else {                                                                 \
-      s3_syslog(LOG_ERR, "IEC:ES" event_code ":" event_desc);                \
-    }                                                                        \
-    std::string timestamp = s3_get_timestamp();                              \
-    s3_log(S3_##s3_loglevel, "",                                             \
-           "IEC: " event_code ": " event_desc                                \
-           ": { \"time\": \"%s\", \"node\": \"%s\", \"pid\": "               \
-           "%d, \"file\": \"%s\", \"line\": %d" json_fmt " }",               \
-           timestamp.c_str(), g_option_instance->get_s3_nodename().c_str(),  \
-           getpid(), __FILE__, __LINE__, ##__VA_ARGS__);                     \
+#define s3_iem_(loglevel, s3_loglevel, event_code, event_desc, json_fmt, ...) \
+  do {                                                                        \
+    if (loglevel == LOG_ALERT) {                                              \
+      s3_syslog(loglevel, "IEC:AS" event_code ":" event_desc);                \
+    } else {                                                                  \
+      s3_syslog(LOG_ERR, "IEC:ES" event_code ":" event_desc);                 \
+    }                                                                         \
+    std::string timestamp = s3_get_timestamp();                               \
+    s3_log(S3_##s3_loglevel, "",                                              \
+           "IEC: " event_code ": " event_desc                                 \
+           ": { \"time\": \"%s\", \"node\": \"%s\", \"pid\": "                \
+           "%d, \"file\": \"%s\", \"line\": %d" json_fmt " }",                \
+           timestamp.c_str(), g_option_instance->get_s3_nodename().c_str(),   \
+           getpid(), __FILE__, __LINE__, ##__VA_ARGS__);                      \
   } while (0)
 #endif
 
