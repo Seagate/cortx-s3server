@@ -145,7 +145,9 @@ OPTS=`getopt -o h --long no-motr-rpm,use-build-cache,no-check-code,no-clean-buil
 no-s3ut-build,no-s3mempoolut-build,no-s3mempoolmgrut-build,no-s3server-build,\
 no-motrkvscli-build,no-s3background-build,no-s3msgbus-build,no-s3cipher-build,no-s3confstoretool-build,\
 no-s3addbplugin-build,no-auth-build,no-jclient-build,no-jcloudclient-build,\
-no-s3iamcli-build,no-java-tests,no-install,just-gen-build-file,valgrind_memcheck,bazel_cpu_usage_limit,bazel_ram_usage_limit,help -n 'rebuildall.sh' -- "$@"`
+no-s3iamcli-build,no-java-tests,no-install,just-gen-build-file,valgrind_memcheck,\
+bazel_cpu_usage_limit:,bazel_ram_usage_limit:,\
+help -n 'rebuildall.sh' -- "$@"`
 
 eval set -- "$OPTS"
 
@@ -172,7 +174,7 @@ no_install=0
 just_gen_build_file=0
 valgrind_memcheck=0
 bazel_cpu_limit=50
-bazel_ram_limit=70
+bazel_ram_limit=50
 
 # extract options and their arguments into variables.
 while true; do
@@ -199,8 +201,8 @@ while true; do
     --no-java-tests) no_java_tests=1; shift ;;
     --just-gen-build-file) just_gen_build_file=1; shift ;;
     --valgrind_memcheck) valgrind_memcheck=1; shift ;;
-    --bazel_cpu_usage_limit) echo "value received :$1"; bazel_cpu_limit=$1; shift ;;
-    --bazel_ram_usage_limit) bazel_ram_limit=$3; shift ;;
+    --bazel_cpu_usage_limit) bazel_cpu_limit=$2; shift 2 ;;
+    --bazel_ram_usage_limit) bazel_ram_limit=$2; shift 2 ;;
     -h|--help) usage; exit 0;;
     --) shift; break ;;
     *) echo "Internal error!" ; exit 1 ;;
@@ -379,17 +381,11 @@ fi
 prepare_BUILD_file
 # Add max CPU and RAM usage percentage for bazel.
 # Default value will be 50 but user can change value from jenkins-build.sh script.
-echo "bazel_cpu_limit : $bazel_cpu_limit"
-echo "bazel_ram_limit : $bazel_ram_limit"
 cpu_limit_input=$(echo "scale=1;($bazel_cpu_limit)/100" | bc)
 ram_limit_input=$(echo "scale=1;($bazel_ram_limit)/100" | bc)
 cpu_resource_limit_param="--local_cpu_resources=HOST_CPUS*$cpu_limit_input"
 ram_resource_limit_param="--local_ram_resources=HOST_RAM*$ram_limit_input"
-echo "cpu_limit_input : $cpu_limit_input"
-echo "ram_limit_input : $ram_limit_input"
-echo "cpu_resource_limit_param: $cpu_resource_limit_param"
-echo "ram_resource_limit_param : $ram_resource_limit_param"
-exit 1
+
 if [ $no_s3ut_build -eq 0 ]
 then
   bazel build //:s3ut --cxxopt="-std=c++11" --define $MOTR_INC_ \
