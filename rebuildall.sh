@@ -27,6 +27,7 @@ usage() {
   echo '                       [--no-s3server-build][--no-motrkvscli-build][--no-auth-build]'
   echo '                       [--no-jclient-build][--no-jcloudclient-build][--no-java-tests]'
   echo '                       [--no-install][--just-gen-build-file][--valgrind_memcheck]'
+  echo '                       [--bazel_cpu_usage_limit <max_cpu_percentage>][--bazel_ram_usage_limit <max_ram_percentage>]'
   echo '                       [--help]'
   echo 'Optional params as below:'
   echo '          --no-motr-rpm              : Use motr libs from source code (third_party/motr) location'
@@ -57,8 +58,8 @@ usage() {
   echo '          --no-install               : Do not install binaries after build, Default (false)'
   echo '          --just-gen-build-file      : Do not do anything, only produce BUILD file'
   echo '          --valgrind_memcheck        : Compile with debug flags and zero optimization to support valgrind memcheck'
-  echo '          --bazel-cpu-usage-limit    : Specify max percentage of CPU that bazel can consume during s3 build operation, Default is 50%i( i.e. .5)'
-  echo '          --bazel-ram-usage-limit    : Specify max percentage of RAM that bazel can consume during s3 build operation, Default is 50%i( i.e. .5)'
+  echo '          --bazel_cpu_usage_limit    : Specify max percentage of CPU that bazel can consume during s3 build operation, Value Range: 1-100, Default is 50'
+  echo '          --bazel_rpm_usage_limit    : Specify max percentage of RAM that bazel can consume during s3 build operation, Value Range: 1-100, Default is 50'
   echo '          --help (-h)                : Display help'
 }
 
@@ -144,8 +145,7 @@ OPTS=`getopt -o h --long no-motr-rpm,use-build-cache,no-check-code,no-clean-buil
 no-s3ut-build,no-s3mempoolut-build,no-s3mempoolmgrut-build,no-s3server-build,\
 no-motrkvscli-build,no-s3background-build,no-s3msgbus-build,no-s3cipher-build,no-s3confstoretool-build,\
 no-s3addbplugin-build,no-auth-build,no-jclient-build,no-jcloudclient-build,\
-no-s3iamcli-build,no-java-tests,no-install,just-gen-build-file,valgrind_memcheck,bazel-cpu-usage-limit,bazel-ram-usage-limit,\
-help -n 'rebuildall.sh' -- "$@"`
+no-s3iamcli-build,no-java-tests,no-install,just-gen-build-file,valgrind_memcheck,bazel_cpu_usage_limit,bazel_ram_usage_limit,help -n 'rebuildall.sh' -- "$@"`
 
 eval set -- "$OPTS"
 
@@ -171,8 +171,8 @@ no_java_tests=0
 no_install=0
 just_gen_build_file=0
 valgrind_memcheck=0
-bazel-cpu-usage-limit=50
-bazel-ram-usage-limit=50
+bazel_cpu_limit=50
+bazel_ram_limit=70
 
 # extract options and their arguments into variables.
 while true; do
@@ -199,6 +199,8 @@ while true; do
     --no-java-tests) no_java_tests=1; shift ;;
     --just-gen-build-file) just_gen_build_file=1; shift ;;
     --valgrind_memcheck) valgrind_memcheck=1; shift ;;
+    --bazel_cpu_usage_limit) echo "value received :$1"; bazel_cpu_limit=$1; shift ;;
+    --bazel_ram_usage_limit) bazel_ram_limit=$3; shift ;;
     -h|--help) usage; exit 0;;
     --) shift; break ;;
     *) echo "Internal error!" ; exit 1 ;;
@@ -375,8 +377,19 @@ then
 fi
 
 prepare_BUILD_file
-cpu_resource_limit_param="--local_cpu_resources=HOST_CPUS*.5"
-ram_resource_limit_param="--local_ram_resources=HOST_RAM*.5"
+# Add max CPU and RAM usage percentage for bazel.
+# Default value will be 50 but user can change value from jenkins-build.sh script.
+echo "bazel_cpu_limit : $bazel_cpu_limit"
+echo "bazel_ram_limit : $bazel_ram_limit"
+cpu_limit_input=$(echo "scale=1;($bazel_cpu_limit)/100" | bc)
+ram_limit_input=$(echo "scale=1;($bazel_ram_limit)/100" | bc)
+cpu_resource_limit_param="--local_cpu_resources=HOST_CPUS*$cpu_limit_input"
+ram_resource_limit_param="--local_ram_resources=HOST_RAM*$ram_limit_input"
+echo "cpu_limit_input : $cpu_limit_input"
+echo "ram_limit_input : $ram_limit_input"
+echo "cpu_resource_limit_param: $cpu_resource_limit_param"
+echo "ram_resource_limit_param : $ram_resource_limit_param"
+exit 1
 if [ $no_s3ut_build -eq 0 ]
 then
   bazel build //:s3ut --cxxopt="-std=c++11" --define $MOTR_INC_ \

@@ -34,6 +34,8 @@ USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ]
                         [--restart_haproxy]
                         [--remove_m0trace]
                         [--collect_addb /path/to/output/dir/]
+                        [--bazel_cpu_usage_limit <max_cpu_percentage>]
+                        [--bazel_ram_usage_limit <max_ram_percentage>]
                         [--help | -h] [--help-short | -H]
 
 where:
@@ -112,6 +114,12 @@ where:
 
                           Value: /path/to/output/dir/
 
+--bazel_cpu_usage_limit   Specify max percentage of CPU to be consumed by bazel during bazel build process.
+                          Value Range: 1-100 (Default value : 50)
+
+--bazel_ram_usage_limit   Specify max percentage of RAM to be consumed by bazel during bazel build process.
+                          Value Range: 1-100 (Default value : 50)
+
 --help (-h)        Display help
 
 --help-short (-H)  Display short, abbreviated help with just a list of options."
@@ -142,7 +150,8 @@ ansible=0
 restart_haproxy=0
 remove_m0trace=0
 collect_addb=""
-
+bazel_cpu_limit=50
+bazel_ram_limit=50
 
 if [ $# -eq 0 ]
 then
@@ -283,6 +292,30 @@ else
                        fi
                        echo "Collect addb data to $collect_addb dir";
                        ;;
+      --bazel_cpu_usage_limit )
+                       if [ ! -z "$2" ]
+                       then
+                           bazel_cpu_limit=$2;
+                           echo "Rahul cpu part 1.........parmeter value : $bazel_cpu_limit"
+                       else
+                           echo "Please provide valid value for CPU usage for --bazel_cpu_usage_limit"
+                           echo "$Usage"
+                           exit 1
+                       fi
+                       shift;
+                       ;;
+      --bazel_ram_usage_limit )
+                       if [ ! -z "$2" ]
+                       then
+                           bazel_ram_limit=$2;
+                           echo "Rahul ram part 1.........parmeter value : $bazel_ram_limit"
+                       else
+                           echo "Please provide valid value for RAM usage for --bazel_ram_usage_limit"
+                           echo "$Usage"
+                           exit 1
+                       fi
+                       shift;
+                       ;;
       --help | -h )
           echo "$USAGE"
           exit 1
@@ -380,6 +413,7 @@ then
     valgrind_flag="--valgrind_memcheck"
 fi
 
+
 if [ $skip_build -eq 0 ]
 then
     extra_opts=""
@@ -391,7 +425,7 @@ then
     then
         extra_opts+=" --no-java-tests"
     fi
-    ./rebuildall.sh --no-motr-rpm --use-build-cache $valgrind_flag $extra_opts
+    ./rebuildall.sh --no-motr-rpm --use-build-cache $valgrind_flag $extra_opts --bazel_cpu_usage_limit $bazel_cpu_limit --bazel_ram_usage_limit $bazel_ram_limit
 fi
 
 # Stop any old running S3 instances
