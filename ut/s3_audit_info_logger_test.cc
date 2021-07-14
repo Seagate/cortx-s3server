@@ -190,7 +190,6 @@ TEST(S3AuditInfoLoggerTest, PolicyKafkaWeb) {
 }
 
 TEST(S3AuditInfoLoggerTest, IEM) {
-  std::cout << "Inside Test" << "\n";
   OptionsWrapper ow("rsyslog-tcp");
   ow.upd_base();
   S3AuditInfoLoggerIEM* audit_info_logger_iem = new S3AuditInfoLoggerIEM(
@@ -198,7 +197,5 @@ TEST(S3AuditInfoLoggerTest, IEM) {
         "localhost",
         28300,
         "/EventMessage/event");
-  std::cout << "Init done" << "\n";
   audit_info_logger_iem->save_msg("500", "A", "IEM Test Alert");
-  std::cout << "Message Sent" << "\n";
 }
