@@ -41,12 +41,14 @@ import com.seagates3.model.Role;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AccountResponseGenerator;
+import com.seagates3.s3service.IEMRestClient;
 import com.seagates3.s3service.S3AccountNotifier;
 import com.seagates3.util.KeyGenUtil;
 import com.seagates3.service.GlobalDataStore;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 
+import java.io.IOException;
 import java.util.Map;
 
 
@@ -89,6 +91,13 @@ public class AccountController extends AbstractController {
             accounts = accountDao.findAll();
         } catch (DataAccessException ex) {
             return accountResponseGenerator.internalServerError();
+        }
+        try {
+          IEMRestClient.postRequest();
+        }
+        catch (IOException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
         }
 
         return accountResponseGenerator.generateListResponse(

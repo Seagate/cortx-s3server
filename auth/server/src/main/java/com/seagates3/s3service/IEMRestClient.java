@@ -20,28 +20,27 @@
 
 package com.seagates3.s3service;
 
+import com.amazonaws.util.json.JSONException;
+import com.amazonaws.util.json.JSONObject;
 import com.seagates3.authserver.AuthServerConfig;
+
+import io.netty.handler.codec.http.HttpResponseStatus;
+
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
-
 
 public
 class IEMRestClient {
 
  private
-  final Logger LOGGER =
+  final static Logger LOGGER =
       LoggerFactory.getLogger(IEMRestClient.class.getName());
-
 
   /**
    * Method sends IEM alerts to IEM server as POST request
@@ -49,25 +48,42 @@ class IEMRestClient {
    * @throws ClientProtocolException
    * @throws IOException
    */
-  public
-  S3HttpResponse postRequest() throws ClientProtocolException, IOException {
+ public
+  static S3HttpResponse postRequest() throws ClientProtocolException,
+      IOException {
     // URL will be stored in Authserver.properties file
-    //e.g. http://127.0.0.1:28300/EventMessage/event
+    // e.g. http://127.0.0.1:28300/EventMessage/event
     String URL = AuthServerConfig.getIEMServerURL();
-    
+
     HttpPost req = new HttpPost(URL);
     req.setHeader("Content-Type", "application/json");
-    List<NameValuePair> paramerters = new ArrayList<>();
-    //paramerters.add(new BasicNameValuePair(, URL));
-    //req.setParams(paramerters);
+    JSONObject iem_msg = new JSONObject();
+    try {
+      iem_msg.put("component", "S3");
+      iem_msg.put("source", "S");
+      iem_msg.put("module", "AuthServer");
+      iem_msg.put("event_id", "1500");
+      iem_msg.put("severity", "A");
+      iem_msg.put("message_blob", "This is test for Auth IEM alerts");
+    }
+    catch (JSONException e) {
+      // TODO Auto-generated catch block
+      LOGGER.error("Failed to create JSON message");
+    }
 
+    req.setHeader("message", iem_msg.toString());
     S3HttpResponse s3Resp = new S3HttpResponse();
     try(CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-            CloseableHttpResponse resp = httpClient.execute(req)) {
-          s3Resp.setHttpCode(resp.getStatusLine().getStatusCode());
-          s3Resp.setHttpStatusMessage(resp.getStatusLine().getReasonPhrase());
-        }
-        finally { req.releaseConnection(); }
+        CloseableHttpResponse resp = httpClient.execute(req)) {
+      s3Resp.setHttpCode(resp.getStatusLine().getStatusCode());
+      s3Resp.setHttpStatusMessage(resp.getStatusLine().getReasonPhrase());
+    }
+    catch (Exception e) {
+      s3Resp.setHttpCode(HttpResponseStatus.INTERNAL_SERVER_ERROR.code());
+      s3Resp.setHttpStatusMessage(e.getMessage());
+      LOGGER.error("Failed to send IEM alert message" + e.getMessage());
+    }
+    finally { req.releaseConnection(); }
     return s3Resp;
   }
 }
