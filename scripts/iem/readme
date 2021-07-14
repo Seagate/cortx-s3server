@@ -28,7 +28,7 @@ where "N" is number of consumers and hosts are cluster of hosts on whih IEM shou
 
 e.g.
 1. To configure IEM on single node then run
-sh configure-iem.sh -c 1 -i ssc-vm-1271.colo.seagate.com
+sh configure-iem.sh -c 1 -i $HOSTNAME
 
 2. To configure IEM on three node cluster then run
 sh configure-iem.sh -c 3 -i ssc-vm-1271.colo.seagate.com,ssc-vm-1272.colo.seagate.com,ssc-vm-1273.colo.seagate.com
