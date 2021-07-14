@@ -292,11 +292,10 @@ else
                        fi
                        echo "Collect addb data to $collect_addb dir";
                        ;;
-      --bazel_cpu_usage_limit )
-                       if [ ! -z "$2" ]
+      --bazel_cpu_usage_limit ) shift;
+                       if [ ! -z "$1" ]
                        then
-                           bazel_cpu_limit=$2;
-                           echo "Rahul cpu part 1.........parmeter value : $bazel_cpu_limit"
+                           bazel_cpu_limit=$1;
                        else
                            echo "Please provide valid value for CPU usage for --bazel_cpu_usage_limit"
                            echo "$Usage"
@@ -304,11 +303,10 @@ else
                        fi
                        shift;
                        ;;
-      --bazel_ram_usage_limit )
-                       if [ ! -z "$2" ]
+      --bazel_ram_usage_limit ) shift;
+                       if [ ! -z "$1" ]
                        then
-                           bazel_ram_limit=$2;
-                           echo "Rahul ram part 1.........parmeter value : $bazel_ram_limit"
+                           bazel_ram_limit=$1;
                        else
                            echo "Please provide valid value for RAM usage for --bazel_ram_usage_limit"
                            echo "$Usage"
