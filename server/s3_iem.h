@@ -35,6 +35,7 @@ extern S3Option* g_option_instance;
 // 2. For each IEM: timestamp, nodename, pid, filename & line is included in
 //    the JSON data format by default. If IEM event has any additional data to
 //    send, then pass it as `json_fmt` param.
+#ifdef IEM_FRAMEWORK_ENABLE
 #define s3_iem_(loglevel, s3_loglevel, event_code, event_desc, json_fmt, ...) \
   do {                                                                        \
     S3AuditInfoLoggerIEM* audit_info_logger_iem = new S3AuditInfoLoggerIEM(   \
@@ -55,8 +56,8 @@ extern S3Option* g_option_instance;
            timestamp.c_str(), g_option_instance->get_s3_nodename().c_str(),   \
            getpid(), __FILE__, __LINE__, ##__VA_ARGS__);                      \
   } while (0)
-
-#define s3_iem_old_(loglevel, s3_loglevel, event_code, event_desc, json_fmt, \
+#else
+#define s3_iem_(loglevel, s3_loglevel, event_code, event_desc, json_fmt, \
                     ...)                                                     \
   do {                                                                       \
     if (loglevel == LOG_ALERT) {                                             \
@@ -72,13 +73,10 @@ extern S3Option* g_option_instance;
            timestamp.c_str(), g_option_instance->get_s3_nodename().c_str(),  \
            getpid(), __FILE__, __LINE__, ##__VA_ARGS__);                     \
   } while (0)
+#endif
 
 #define s3_iem(loglevel, event_code, event_desc, json_fmt, ...) \
   s3_iem_(loglevel, LOG_INFO, event_code, event_desc, json_fmt, ##__VA_ARGS__)
-
-#define s3_iem_old(loglevel, event_code, event_desc, json_fmt, ...) \
-  s3_iem_old_(loglevel, LOG_INFO, event_code, event_desc, json_fmt, \
-              ##__VA_ARGS__)
 
 #define s3_iem_fatal(loglevel, event_code, event_desc, json_fmt, ...) \
   s3_iem_(loglevel, LOG_ERROR, event_code, event_desc, json_fmt, ##__VA_ARGS__)

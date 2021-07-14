@@ -111,10 +111,6 @@ void S3GetServiceAction::get_next_buckets_successful() {
     return;
   }
   s3_log(S3_LOG_DEBUG, request_id, "Found buckets listing\n");
-  s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
-         S3_IEM_METADATA_CORRUPTED_JSON);
-  s3_iem_old(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
-             S3_IEM_METADATA_CORRUPTED_JSON);
   auto& kvps = motr_kv_reader->get_key_values();
   size_t length = kvps.size();
   bool atleast_one_json_error = false;
