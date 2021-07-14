@@ -87,7 +87,7 @@ int S3AuditInfoLoggerIEM::save_msg(std::string const& eventID,
   std::cout << "Message format" <<  fmt_msg.c_str() << "\n";
   std::cout << "Message format1" <<  fmt_msg1.c_str() << "\n";
   s3_log(S3_LOG_DEBUG, nullptr, "IEM Message : %s", fmt_msg.c_str());
-  const bool fSucc = p_s3_post_queue->post(std::move(fmt_msg));
+  const bool fSucc = p_s3_post_queue->post(std::move(fmt_msg1));
   std::cout << "Message POST" << "\n";
   s3_log(S3_LOG_DEBUG, nullptr, "%s Exit", __func__);
   return !fSucc;
