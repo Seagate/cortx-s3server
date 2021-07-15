@@ -98,9 +98,9 @@ int MD5hash::s3_calculate_unit_pi(struct s3_motr_rw_op_context *rw_ctx,
       // If previous checksum is there then get it
       s3_log(S3_LOG_DEBUG, "", "%s Checksum is saved", __func__);
       memcpy(s3_pi->prev_context, &md5ctx, sizeof(MD5_CTX));
-    }
-    else{
-      s3_log(S3_LOG_ERROR, "", "%s Checksum is not saved and not first block", __func__);
+    } else {
+      s3_log(S3_LOG_ERROR, "", "%s Checksum is not saved and not first block",
+             __func__);
     }
   }
   if (s3_flag & S3_SEED_UNIT) {
