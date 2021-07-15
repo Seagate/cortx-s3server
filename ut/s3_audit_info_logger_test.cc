@@ -28,7 +28,7 @@
 
 #include "s3_option.h"
 #include "s3_audit_info_logger.h"
-#include "s3_audit_info_logger_iem.h"
+#include "s3_iem_wrapper.h"
 
 class OptionsWrapper {
  private:
@@ -192,10 +192,10 @@ TEST(S3AuditInfoLoggerTest, PolicyKafkaWeb) {
 TEST(S3AuditInfoLoggerTest, IEM) {
   OptionsWrapper ow("rsyslog-tcp");
   ow.upd_base();
-  S3AuditInfoLoggerIEM* audit_info_logger_iem = new S3AuditInfoLoggerIEM(
+  S3IEM* logger_iem = new S3IEM(
         S3Option::get_instance()->get_eventbase(),
         "localhost",
         28300,
         "/EventMessage/event");
-  audit_info_logger_iem->save_msg("500", "A", "IEM Test Alert");
+  logger_iem->save_msg("500", "A", "IEM Test Alert");
 }

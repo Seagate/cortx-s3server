@@ -23,10 +23,12 @@
 #ifndef __S3_SERVER_IEM_H__
 #define __S3_SERVER_IEM_H__
 
+#define IEM_FRAMEWORK_ENABLE
+
 #include <unistd.h>
 #include "s3_log.h"
 #include "s3_option.h"
-#include "s3_audit_info_logger_iem.h"
+#include "s3_iem_wrapper.h"
 
 extern S3Option* g_option_instance;
 
@@ -35,14 +37,15 @@ extern S3Option* g_option_instance;
 // 2. For each IEM: timestamp, nodename, pid, filename & line is included in
 //    the JSON data format by default. If IEM event has any additional data to
 //    send, then pass it as `json_fmt` param.
+
 #ifdef IEM_FRAMEWORK_ENABLE
 #define s3_iem_(loglevel, s3_loglevel, event_code, event_desc, json_fmt, ...) \
   do {                                                                        \
-    S3AuditInfoLoggerIEM* audit_info_logger_iem = new S3AuditInfoLoggerIEM(   \
+    S3IEM* audit_info_logger_iem = new S3IEM(   \
         S3Option::get_instance()->get_eventbase(),                            \
-        S3Option::get_instance()->get_audit_logger_host(),                    \
-        S3Option::get_instance()->get_audit_logger_iem_port(),                \
-        S3Option::get_instance()->get_audit_logger_iem_path());               \
+        S3Option::get_instance()->get_iem_host(),                    \
+        S3Option::get_instance()->get_iem_port(),                \
+        S3Option::get_instance()->get_iem_path());               \
     if (loglevel == LOG_ALERT) {                                              \
       audit_info_logger_iem->save_msg(event_code, "A", event_desc);           \
     } else {                                                                  \

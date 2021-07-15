@@ -22,10 +22,10 @@
 #include <map>
 
 #include "s3_log.h"
-#include "s3_audit_info_logger_iem.h"
+#include "s3_iem_wrapper.h"
 #include "s3_http_post_queue.h"
 
-S3AuditInfoLoggerIEM::S3AuditInfoLoggerIEM(evbase_t* p_base,
+S3IEM::S3IEM(evbase_t* p_base,
                                            std::string host_ip, uint16_t port,
                                            std::string path) {
   s3_log(S3_LOG_INFO, nullptr, "%s Ctor\n", __func__);
@@ -36,7 +36,7 @@ S3AuditInfoLoggerIEM::S3AuditInfoLoggerIEM(evbase_t* p_base,
       p_base, std::move(host_ip), port, std::move(path), std::move(headers)));
 }
 
-int S3AuditInfoLoggerIEM::save_msg(std::string const& eventID,
+int S3IEM::save_msg(std::string const& eventID,
                                   std::string const& severity,
                                   std::string const& msg) {
   s3_log(S3_LOG_INFO, nullptr, "%s Entry", __func__);

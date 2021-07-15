@@ -20,19 +20,19 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_AUDIT_LOGGER_IEM__
-#define __S3_SERVER_AUDIT_LOGGER_IEM__
+#ifndef __S3_SERVER_IEM__
+#define __S3_SERVER_IEM__
 
 #include <string>
 #include <memory>
 
 class S3HttpPostQueue;
 
-class S3AuditInfoLoggerIEM {
+class S3IEM {
   typedef struct event_base evbase_t;
 
  public:
-  S3AuditInfoLoggerIEM(evbase_t* p_base, std::string host_ip, uint16_t port,
+  S3IEM(evbase_t* p_base, std::string host_ip, uint16_t port,
                        std::string path);
   int save_msg(std::string const& eventID,
               std::string const& severity,
@@ -42,4 +42,4 @@ class S3AuditInfoLoggerIEM {
   std::unique_ptr<S3HttpPostQueue> p_s3_post_queue;
 };
 
-#endif  // __S3_SERVER_AUDIT_LOGGER_IEM__
+#endif  // __S3_SERVER_IEM__
