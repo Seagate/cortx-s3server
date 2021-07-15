@@ -30,6 +30,8 @@ import java.io.IOException;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
@@ -67,12 +69,13 @@ class IEMRestClient {
       iem_msg.put("message_blob", "This is test for Auth IEM alerts");
     }
     catch (JSONException e) {
-      // TODO Auto-generated catch block
       LOGGER.error("Failed to create JSON message");
     }
 
-    req.setHeader("message", iem_msg.toString());
+    req.setEntity(
+        new StringEntity(iem_msg.toString(), ContentType.APPLICATION_JSON));
     S3HttpResponse s3Resp = new S3HttpResponse();
+
     try(CloseableHttpClient httpClient = HttpClientBuilder.create().build();
         CloseableHttpResponse resp = httpClient.execute(req)) {
       s3Resp.setHttpCode(resp.getStatusLine().getStatusCode());
