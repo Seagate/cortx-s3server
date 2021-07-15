@@ -23,8 +23,6 @@
 #ifndef __S3_SERVER_IEM_H__
 #define __S3_SERVER_IEM_H__
 
-#define IEM_FRAMEWORK_ENABLE
-
 #include <unistd.h>
 #include "s3_log.h"
 #include "s3_option.h"
