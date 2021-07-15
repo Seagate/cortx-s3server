@@ -91,9 +91,9 @@ start_server() {
 
   sleep 10
 
-  systemctl status cortx_message_bus | grep "active (running)" > /tmp/cortx_message_bus
-  if [[ -s /tmp/cortx_message_bus ]]; then
-    echo "message bus server started successfully."
+  is_cortx_message_bus_started=$(systemctl is-active cortx_message_bus)
+  if [[ "$is_cortx_message_bus_started" -eq "active" ]]; then
+    echo "message bus server started successfully. !!!!\n Please check 'systemctl status cortx_message_bus' \n"
   else
     echo "There is a problem in starting message bus server."
   fi

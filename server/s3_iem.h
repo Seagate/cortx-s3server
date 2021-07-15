@@ -41,11 +41,11 @@ extern S3Option* g_option_instance;
 #ifdef IEM_FRAMEWORK_ENABLE
 #define s3_iem_(loglevel, s3_loglevel, event_code, event_desc, json_fmt, ...) \
   do {                                                                        \
-    S3IEM* audit_info_logger_iem = new S3IEM(   \
-        S3Option::get_instance()->get_eventbase(),                            \
-        S3Option::get_instance()->get_iem_host(),                    \
-        S3Option::get_instance()->get_iem_port(),                \
-        S3Option::get_instance()->get_iem_path());               \
+    S3IEM* audit_info_logger_iem =                                            \
+        new S3IEM(S3Option::get_instance()->get_eventbase(),                  \
+                  S3Option::get_instance()->get_iem_host(),                   \
+                  S3Option::get_instance()->get_iem_port(),                   \
+                  S3Option::get_instance()->get_iem_path());                  \
     if (loglevel == LOG_ALERT) {                                              \
       audit_info_logger_iem->save_msg(event_code, "A", event_desc);           \
     } else {                                                                  \

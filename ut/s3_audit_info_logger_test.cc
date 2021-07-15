@@ -192,10 +192,7 @@ TEST(S3AuditInfoLoggerTest, PolicyKafkaWeb) {
 TEST(S3AuditInfoLoggerTest, IEM) {
   OptionsWrapper ow("rsyslog-tcp");
   ow.upd_base();
-  S3IEM* logger_iem = new S3IEM(
-        S3Option::get_instance()->get_eventbase(),
-        "localhost",
-        28300,
-        "/EventMessage/event");
+  S3IEM *logger_iem = new S3IEM(S3Option::get_instance()->get_eventbase(),
+                                "localhost", 28300, "/EventMessage/event");
   logger_iem->save_msg("500", "A", "IEM Test Alert");
 }

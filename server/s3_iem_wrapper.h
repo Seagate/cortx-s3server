@@ -32,11 +32,9 @@ class S3IEM {
   typedef struct event_base evbase_t;
 
  public:
-  S3IEM(evbase_t* p_base, std::string host_ip, uint16_t port,
-                       std::string path);
-  int save_msg(std::string const& eventID,
-              std::string const& severity,
-              std::string const& msg);
+  S3IEM(evbase_t* p_base, std::string host_ip, uint16_t port, std::string path);
+  int save_msg(std::string const& eventID, std::string const& severity,
+               std::string const& msg);
 
  private:
   std::unique_ptr<S3HttpPostQueue> p_s3_post_queue;
