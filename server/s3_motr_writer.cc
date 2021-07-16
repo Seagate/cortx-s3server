@@ -773,7 +773,7 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
           // upload (offset wont be 0 for R1) for initial write
           // we need to call init
           s3_checksum_flag = S3_FIRST_UNIT;
-          initial_buffers_part_write = false;
+          // initial_buffers_part_write = false;
         }
 
         if (!(s3_checksum_flag & S3_SEED_UNIT) &&
@@ -785,6 +785,7 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
                "Calculating checksum at motr unit boundary(%zu), "
                "seed_offset(%zu) chksum_buf_idx(%zu)\n",
                size_in_current_write, saved_last_index, chksum_buf_idx);
+
         rc = s3_md5crypt->s3_calculate_unit_pi(rw_ctx, chksum_buf_idx++,
                                                saved_last_index, oid_list[0],
                                                s3_checksum_flag);
@@ -862,13 +863,14 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
         // we need to call init
 
         s3_checksum_flag |= S3_FIRST_UNIT;
-        initial_buffers_part_write = false;
+        // initial_buffers_part_write = false;
       }
       s3_log(S3_LOG_DEBUG, request_id,
              "Calculating checksum for unaligned and padded buffers "
              "number_of_unit_unaligned(%zu) seed_offset(%zu) "
              "chksum_buf_idx(%zu)\n",
              number_of_unit_unaligned, saved_last_index, chksum_buf_idx);
+
       rc = s3_md5crypt->s3_calculate_unit_pi(rw_ctx, chksum_buf_idx++,
                                              saved_last_index, oid_list[0],
                                              s3_checksum_flag);
