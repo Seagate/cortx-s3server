@@ -301,7 +301,6 @@ else
                            echo "$Usage"
                            exit 1
                        fi
-                       shift;
                        ;;
       --bazel_ram_usage_limit ) shift;
                        if [ ! -z "$1" ]
@@ -312,7 +311,6 @@ else
                            echo "$Usage"
                            exit 1
                        fi
-                       shift;
                        ;;
       --help | -h )
           echo "$USAGE"
