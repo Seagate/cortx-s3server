@@ -732,8 +732,9 @@ TEST_F(S3DeleteMultipleObjectsActionTest, CleanupOnMetadataFailedToSaveTest1) {
 
   action_under_test->probable_oid_list[oid_str] =
       std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
-          oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, index_layout.oid,
-          index_layout.oid, version_key_in_index, false /* force_delete */));
+          oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, "mock_pvid",
+          index_layout.oid, index_layout.oid, version_key_in_index,
+          false /* force_delete */));
 
   action_under_test->motr_kv_writer =
       motr_kvs_writer_factory->mock_motr_kvs_writer;
