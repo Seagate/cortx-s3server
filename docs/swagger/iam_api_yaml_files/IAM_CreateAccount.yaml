@@ -1,0 +1,106 @@
+swagger: '2.0'
+info:
+  version: latest
+  description: s3iamcli CreateAccount -n \<Account Name> -e \<Email Id>
+  title: IAM API - Create Account
+host: s3.seagate.com
+schemes:
+  - http
+  - https
+paths:
+  '/':
+    post:
+      tags:
+        - Create Account
+      parameters:
+        - name: Action
+          in: query
+          type: string
+          required: true
+        - name: Account-Name
+          in: query
+          description: Username.
+          type: string
+          required: true
+        - name: Email
+          in: query
+          description: Email.
+          type: string
+          required: true
+        - name: Content-Type
+          in: header
+          description: Specifies content type.
+          type: string 
+        - name: X-Amz-Date
+          in: header
+          description: Date header used to create the signature.
+          type: string
+      produces:
+        - application/xml
+      responses:
+        '201':
+          description: OK
+          schema:
+            type: object
+            xml:
+              name: CreateAccountResponse
+            properties:
+              CreateAccountResult:
+                type: object
+                properties:
+                  Account:
+                    type: object
+                    properties:
+                      AccountId:
+                        type: string
+                      CanonicalId:
+                        type: string
+                      AccountName:
+                        type: string
+                      RootUserName:
+                        type: string
+                      AccessKeyId:
+                        type: string
+                      RootSecretKeyId:
+                        type: string
+                      Status:
+                        type: string
+              ResponseMetadata:
+                type: object
+                properties:
+                  RequestId:
+                    type: string
+          headers:
+            Content-Type:
+              type: string
+            Content-length:
+              type: integer
+            connection:
+              type: string
+        
+        '401':
+          description: Invalid Email
+          schema:
+            type: object
+            xml:
+              name: ErrorResponse
+            properties:
+              Error:
+                type: object
+                properties:
+                  Code:
+                    type: string
+                    example: InvalidParameterValue
+                  Message:
+                    type: string
+                    example: An invalid or out-of-range value was supplied for the input parameter.
+              RequestId:
+                type: string
+          headers:
+            Content-Type:
+              type: string
+            Content-length:
+              type: integer
+            connection:
+              type: string
+    

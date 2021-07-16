@@ -1,0 +1,81 @@
+swagger: '2.0'
+info:
+  version: latest
+  description: aws s3api delete-bucket --bucket <your_bucket>
+  title: S3 API - Delete Bucket
+host: s3.seagate.com
+schemes:
+  - http
+  - https
+paths:
+  '/{bucket_name}':
+    delete:
+      tags:
+        - Delete Bucket
+      parameters:
+        - name: bucket_name
+          in: path
+          type: string
+          required: true
+        - name: User-Agent
+          in: header
+          description: >-
+            Header to identify application, it's version number and programming
+            language.
+          required: true
+          type: string
+        - name: X-Amz-Date
+          in: header
+          description: Date header used to create the signature.
+          required: false
+          type: string
+        - name: X-Amz-Content-SHA256
+          in: header
+          description: This header value informs whether s3 request signed or not.
+          required: true
+          type: string
+        - name: Authorization
+          in: header
+          description: >-
+            This Header contains credentials to authorize a User-Agent with
+            server.
+          required: true
+          type: string
+        - name: Content-Length
+          in: header
+          description: This header indicates the size of the message body, in bytes, sent
+            to the recipient.
+          required: true
+          type: string
+      produces:
+        - text/plain
+      responses:
+        204:
+          description: OK
+          schema:
+            type: string
+            example: null 
+          headers:
+            Content-Length:
+              type: integer
+            x-amz-request-id:
+              type: string
+            Content-Type:
+              type: string
+            Server:
+              type: string
+        400:  
+          description: Request Timeout - The client did not produce a request within the time that the server was prepared to wait.
+        403:
+          description: |
+            Access Denied.
+
+            Invalid AccessKey Id - The AWS access key Id you provided does not exist in our records.
+        404:
+          description: No Such Bucket - The specified bucket does not exist.
+        409:
+          description: Bucket not Empty - The bucket you tried to delete is not empty.
+        500:
+          description: Internal Error - We encountered an internal error. Please try again.
+        503: 
+          description: Service Unavailable - Reduce your request rate.

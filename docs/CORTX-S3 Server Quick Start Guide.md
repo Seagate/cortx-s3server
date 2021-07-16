@@ -75,9 +75,23 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
      Once you power on your VM, you can verify if selinux and firewall are disabled by using: `$ getenforce` - you'll get a 'disabled' status.
 
 
-9. You'll need to install CORTX Python Utilities. Follow the steps to install [CORTX Python Utilities](https://github.com/Seagate/cortx-utils/blob/main/py-utils/README.md).
+9. If not already present, you need to install Java OpenJDK 8 by running
+    ```sh
+    sudo yum install -y java-1.8.0-openjdk.x86_64 java-1.8.0-openjdk-devel.x86_64
+    ``` 
+    You can check the installed package by running `rpm -qa | grep java`, and the output should be:
+    ```sh
+    javapackages-tools-3.4.1-11.el7.noarch
+    tzdata-java-2021a-1.el7.noarch
+    java-1.8.0-openjdk-1.8.0.292.b10-1.el7_9.x86_64
+    python-javapackages-3.4.1-11.el7.noarch
+    java-1.8.0-openjdk-headless-1.8.0.292.b10-1.el7_9.x86_64
+    java-1.8.0-openjdk-devel-1.8.0.292.b10-1.el7_9.x86_64
+    ``` 
+    
+10. You'll need to install CORTX Python Utilities. Follow the steps to install [CORTX Python Utilities](https://github.com/Seagate/cortx-utils/blob/main/py-utils/README.md).
 
-10. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup).
+11. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup).
 
 
 All done! You are now ready for cloning the CORTX-S3 Server repository.

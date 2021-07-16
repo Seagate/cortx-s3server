@@ -48,6 +48,7 @@ class S3AuditInfoLogger {
   FRIEND_TEST(S3AuditInfoLoggerTest, PolicyRsyslogTcp);
   FRIEND_TEST(S3AuditInfoLoggerTest, PolicyRsyslogTcpBaseNULL);
   FRIEND_TEST(S3AuditInfoLoggerTest, PolicyKafkaWeb);
+  FRIEND_TEST(S3AuditInfoLoggerTest, IEM);
 };
 
 #endif

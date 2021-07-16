@@ -1,0 +1,79 @@
+swagger: '2.0'
+info:
+  version: latest
+  description: s3iamcli UpdateAccessKey -k \<Access Key Id> -s \<Active/Inactive> -n <User Name>
+  title: IAM API - Update Access Key
+host: s3.seagate.com
+schemes:
+  - http
+  - https
+paths:
+  '/':
+    post:
+      tags:
+        - Update Access Key
+      parameters:
+        - name: Action
+          in: query
+          type: string
+          required: true
+        - name: Version
+          in: query
+          type: string
+          required: false
+        - name: AccessKeyId
+          in: query
+          type: string
+          required: false
+        - name: Status
+          in: query
+          type: string
+          required: false
+        - name: Username
+          in: query
+          type: string
+          required: true
+        - name: Content-Type
+          in: header
+          description: Specifies content type.
+          type: string
+        - name: User-agent
+          in: header
+          description: >-
+              Header to identify application, it's version number and programming
+              language.
+          type: string
+          required: true
+        - name: X-Amz-Date
+          in: header
+          description: Date header used to create the signature.
+          type: string 
+        - name: Content-Length
+          in: header
+          description: The Content-Length header indicates the size of the message body, in bytes.
+          type: string
+          required: true
+      produces:
+        - application/xml
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            xml:
+              name: UpdateAccessKeyResponse
+            properties:
+              ResponseMetadata:
+                type: object
+                properties:
+                  RequestId:
+                    type: string
+                  
+          headers:
+            Content-Type:
+              type: string
+            Content-length:
+              type: integer
+            connection:
+              type: string
+    

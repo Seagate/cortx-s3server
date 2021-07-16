@@ -69,3 +69,6 @@ logLevel=INFO
 s3InternalAccounts=s3-background-delete-svc
 #Authentication Cache Timeout Interval in seconds
 cacheTimeout=30
+
+# IEM Server details for sending Auth IEM alerts,
+IEMServerURL=http://127.0.0.1:28300/EventMessage/event
