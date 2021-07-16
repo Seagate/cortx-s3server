@@ -776,11 +776,15 @@ TEST_F(S3PutObjectActionTest, DelayedDeleteOldObject) {
 
   m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
   int old_layout_id = 2;
+  struct m0_fid pv_id = {0x7810203002040bfe, 0x19be102030405060};
+
   action_under_test->old_object_oid = old_object_oid;
   action_under_test->old_layout_id = old_layout_id;
 
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
               delete_object(_, _, _, old_layout_id, _)).Times(0);
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_pvid())
+      .WillRepeatedly(Return(pv_id));
 
   action_under_test->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test,

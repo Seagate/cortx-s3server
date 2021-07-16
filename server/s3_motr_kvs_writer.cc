@@ -138,7 +138,13 @@ void S3MotrKVSWriter::create_index_with_oid(
 
   s3_motr_api->motr_idx_init(idx_ctx->idx, &motr_uber_realm, &idx_oid);
   idx_ctx->n_initialized_contexts = 1;
-
+  // Caller(S3) will save pv id and other attributes retuned by entity create
+  // API
+  // Note:
+  // M0_ENF_META flag is not passed during S3 global index creation. As a
+  // result, Motr fallback to older model of storing pv id
+  // and other attributes for S3 global indices.
+  idx_ctx->idx[0].in_entity.en_flags |= M0_ENF_META;
   int rc = s3_motr_api->motr_entity_create(&(idx_ctx->idx[0].in_entity),
                                            &(idx_op_ctx->ops[0]));
   if (rc != 0) {
