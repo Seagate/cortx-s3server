@@ -4,6 +4,10 @@
 
 :page_with_curl: **Note:** All operations listed in the tables below, are S3 compliant.
 
+<details>
+<summary>Click to view more</summary>
+<p>
+
 **Table 1: Basic Operations**
 
 | Service Operations | Bucket Operations | Operation on Objects | 
@@ -53,35 +57,72 @@ then the request will be rejected with error code: '503', with retry interval as
 | Put Bucket Policy |
 | Delete Bucket Policy |
 
+</p>
+</details>
 
 ## Supported Service API
 
 - List all your buckets  
-    `aws s3 ls`
+  
+  `aws s3 ls`
 
 ## Supported Operations/APIs on Bucket
 
+<details>
+<summary>Click to view more</summary>
+<p>
+
 1.  GetBucket (List objects in the specified bucket)  
+
     `aws s3 ls s3://<your_bucket>`  
     `aws s3api list-objects --bucket <your_bucket>`  
     `aws s3api list-objects-v2 --bucket <your_bucket>`  
+    
+    | **What's supported** | **What's not supported** | **Common Response Headers sent by S3** |
+    |:-------------------------------------|:--------------------------| :-------------------------------------|
+    | **Common Request Headers** </br> `Host` </br> `Accept-Encoding` </br> `X-Amz-Content-SHA256` </br> `Authorization` </br> `X-Amz-Date` </br> `User-Agent` </br> `X-Forwarded-For` | <ul><li> **Common Request Header** </br> `x-amz-security-token` </li> <li> **Additional Header** </br> `x-amz-account-id`</li> </ul> | `Content-Type` </br> `Content-Length` </br> `Connection` </br> `Retry-After` | 
 
 2.  Put bucket  
+
     `aws s3 mb s3://<your_bucket>`  
     `aws s3api create-bucket --bucket <your_bucket>`  
+    
+    | **What's Supported** | **What's not supported** | **Common Response Headers sent by S3** |
+    |:-------------------------------------|:--------------------------| :-------------------------------------|
+    | <ul><li>**Common Request Headers** </br> `Host`</br> `Accept-Encoding` </br> `X-Amz-Content-SHA256` </br> `Content-Length` </br> `Authorization` </br> `X-Amz-Date` </br> `User-Agent` </br> `X-Forwarded-For`</br> </br> <li> **Additional Headers** </br> `x-amz-acl` </br> `x-amz-grant-full-control` </br> `x-amz-grant-read` </br> `x-amz-grant-read-acp` </br> `x-amz-grant-write` </br> `x-amz-grant-write-acp`</li></ul> | <ul><li>**Common Request Header** </br> `x-amz-security-token` </li> <li> **Additional Header** </br> `x-amz-bucket-object-lock-enabled` </li></ul> | `Content-Type` </br> `Content-Length` </br> `Retry-After` |
 
 3.  Head bucket  
-    `aws s3api head-bucket --bucket <your_bucket>`  
+    
+    `aws s3api head-bucket --bucket <your_bucket>` 
+    
+    | **What's Supported** | **What's not supported** | **Common Response Headers sent by S3** |
+    |:-------------------------------------|:--------------------------| :-------------------------------------|
+    |**Common Request Headers** </br> `Host` </br> `Accept-Encoding` </br> `X-Amz-Content-SHA256` </br> `Authorization` </br> `X-Amz-Date` </br> `User-Agent` </br> `X-Forwarded-For` | <ul><li>**Common Request Header** </br> `x-amz-security-token` </li> <li> **Additional Header** </br> `x-amz-expected-bucket-owner` </li> </ul> | `Content-Type` </br> `Content-Length` </br> `Connection` </br> `Retry-After` |
 
 4.  Delete bucket  
+    
     `aws s3 rb s3://<your_bucket>`  
     `aws s3api delete-bucket --bucket <your_bucket>`  
+    
+    | **What's Supported** | **What's not supported** | **Common Response Headers sent by S3** |
+    |:-------------------------------------|:--------------------------| :-------------------------------------|
+    |**Common Request Headers** </br> `Host` </br> `Accept-Encoding` </br> `X-Amz-Content-SHA256` </br> `Content-Length` </br> `Authorization` </br> `X-Amz-Date` </br> `User-Agent` </br> `X-Forwarded-For` | **Common Request Header** </br> `x-amz-security-token` | `Content-Type` </br> `Content-Length` </br> `Retry-After` |
 
 5.  Put Bucket ACL  
-    `aws s3api put-bucket-acl --bucket <your_bucket>`  
 
+    `aws s3api put-bucket-acl --bucket <your_bucket>`  
+    
+    | **What's Supported** | **What's not supported** | **Common Response Headers sent by S3** |
+    |:-------------------------------------|:--------------------------| :-------------------------------------|
+    |<ul><li>**Common Request Headers** </br> `Host` </br> `Accept-Encoding` </br> `X-Amz-Content-SHA256` </br> `Content-Length` </br> `Content-MD5` </br> `Authorization` </br> `X-Amz-Date` </br> `User-Agent` </br> `X-Forwarded-For`</li> </br> <li> **Additional Headers** </br> `x-amz-acl` </br> `x-amz-grant-full-control` </br> `x-amz-grant-read` </br> `x-amz-grant-read-acp` </br> `x-amz-grant-write` </br> `x-amz-grant-write-acp` </li></ul> | <ul><li> **Common Request Header** </br> `x-amz-security-token` </li><li> **Additional Headers** </br> `x-amz-bucket-object-lock-enabled` </br> `x-amz-expected-bucket-owner` | `Content-Type` </br> `Content-Length` </br> `Retry-After` |
+    
 6.  Get Bucket ACL  
+    
     `aws s3api get-bucket-acl --bucket <your_bucket>`  
+ 
+    | **What's Supported** | **What's not supported** | **Common Response Headers sent by S3** |
+    |:-------------------------------------|:--------------------------| :-------------------------------------|
+    | **Common Request Headers** </br> `Host` </br> `Accept-Encoding` </br> `X-Amz-Content-SHA256` </br> `Authorization` </br> `X-Amz-Date` </br> `User-Agent` </br> `X-Forwarded-For` | <ul><li> **Common Request Header** </br> `x-amz-security-token` </li> <li> **Additional Header** </br> `x-amz-expected-bucket-owner` </li></br> | `Content-Type` </br> `Content-Length` </br> `Retry-After` |
 
 7.  Multipart uploads
 
@@ -91,18 +132,23 @@ then the request will be rejected with error code: '503', with retry interval as
     7.2    Upload part  
            `aws s3api upload-part --bucket <your_bucket> --key <key> --part-number 1 --body <part>`  
 
-    7.3    Lists parts of a multipart upload  
+    7.3    Lists parts of a multipart upload             
            `aws s3api list-parts --bucket <your_bucket> --key <key> --upload-id <id>`  
 
-    7.4    Abort/Complete multipart  
+    7.4    Abort/Complete multipart             
            `aws s3api complete-multipart-upload --multipart-upload <mpustruct_file> --bucket <your_bucket> --key <key> --upload-id <id>`  
            `aws s3api abort-multipart-upload --bucket <your_bucket> --key <key> --upload-id <id>`  
 
-    7.5    Lists in-progress multipart uploads in a bucket  
+    7.5    Lists in-progress multipart uploads in a bucket             
            `aws s3api list-multipart-uploads --bucket <your_bucket>`  
 
 8.  Put Bucket policy  
+    
     `aws s3api put-bucket-policy --bucket <your_bucket> --policy <policy_json_file>`  
+    
+    | **What's Supported** | **What's not supported** | **Common Response Headers sent by S3** |
+    |:-------------------------------------|:--------------------------| :-------------------------------------|
+    | **Common Request Headers** </br> `Host` </br> `Accept-Encoding` </br> `X-Amz-Content-SHA256` </br> `Content-Length` </br> `Content-MD5` </br> `Authorization` </br> `X-Amz-Date` </br> `User-Agent` </br> `X-Forwarded-For` | <ul><li> **Common Request Header** </br> `x-amz-security-token` </li> <li> **Additional Headers** </br> `x-amz-confirm-remove-self-bucket-access` </br> `x-amz-expected-bucket-owner` | `Content-Type` </br> `Content-Length` </br> `Connection` </br> `Retry-After` |
 
 9.  Get Bucket policy  
     `aws s3api get-bucket-policy --bucket <your_bucket>`  
@@ -121,8 +167,15 @@ then the request will be rejected with error code: '503', with retry interval as
 
 14. Get bucket location  
     `aws s3api get-bucket-location --bucket <your_bucket>`  
+    
+</p>
+</details>
 
 ## Supported Operations/APIs on Object
+
+<details>
+<summary>Click to view more</summary>
+<p>
 
 1.  Put Object  
     `aws s3api put-object --bucket <your_bucket> --key <key> --body <file>`  
@@ -155,11 +208,18 @@ then the request will be rejected with error code: '503', with retry interval as
 
 10. Delete Object tagging  
     `aws s3api delete-object-tagging --bucket <your_bucket> --key <key>`  
+    
+</p>
+</details>
 
 11. Copy Object  
     `aws s3api copy-object --copy-source <full_source_key> --key <dest_object_name> --bucket <dest_bucket>`
 
 ## S3 IAM APIs (using client tool - s3iamcli)
+
+<details>
+<summary>Click to view more</summary>
+<p>
 
 1.  Create an account  
     `s3iamcli CreateAccount -n <Account Name> -e <Email Id>`  
@@ -221,3 +281,6 @@ then the request will be rejected with error code: '503', with retry interval as
 
 19. Retrieves the user name and password-creation date for the specified IAM user  
     `s3iamcli GetUserLoginProfile -n <User Name>`  
+
+</p>
+</details>
