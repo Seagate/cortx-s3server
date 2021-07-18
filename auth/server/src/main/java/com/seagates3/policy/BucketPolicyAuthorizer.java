@@ -51,9 +51,9 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
 
   @Override public ServerResponse authorizePolicy(
       Requestor requestor, Map<String, String> requestBody) {
+
     ServerResponse serverResponse = null;
-    AuthorizationResponseGenerator responseGenerator =
-        new AuthorizationResponseGenerator();
+
     // authorizePolicy will return NULL if no relevant entry found in policy
     // authorized if match is found
     // AccessDenied if Deny found
@@ -64,39 +64,6 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
       if (requestedOperation != null) {
         serverResponse =
             authorizeOperation(requestBody, requestedOperation, requestor);
-      }
-      // Below authorization is for CopyObject in case of secondary operations
-      if ((serverResponse == null ||
-           serverResponse.getResponseStatus() == HttpResponseStatus.OK) &&
-          requestBody.get("S3ActionList") != null) {
-        List<String> actionList =
-            Arrays.asList(requestBody.get("S3ActionList").split(","));
-        for (String action : actionList) {
-          String dependentOperation = "s3:" + action.toLowerCase();
-          LOGGER.debug("Dependent operation to authorize - " +
-                       dependentOperation);
-          ServerResponse response =
-              authorizeOperation(requestBody, dependentOperation, requestor);
-          if (response != null &&
-              response.getResponseStatus() != HttpResponseStatus.OK) {
-            serverResponse = response;
-            break;
-          } else if (response == null &&
-                     PolicyAuthorizedS3Actions.getInstance()
-                         .isOnlyPolicyAuthorizationRequired(action)) {
-            LOGGER.debug(
-                "copyobject scenario and only policy authorization required " +
-                "for action- " + action);
-            serverResponse = responseGenerator.AccessDenied();
-            break;
-          }
-        }
-      } else if (PolicyAuthorizedS3Actions.getInstance()
-                     .isOnlyPolicyAuthorizationRequired(
-                          requestBody.get("S3Action")) &&
-                 serverResponse == null) {
-        LOGGER.debug("Only Policy Authorization is required");
-        serverResponse = responseGenerator.ok();
       }
     }
     catch (Exception e) {

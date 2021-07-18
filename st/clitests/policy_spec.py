@@ -445,7 +445,8 @@ AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "
 os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
 os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
 AwsTest('Aws can create object with \'bucket-owner-read\' canned acl input')\
-.put_object("seagate", "testObject", canned_acl="bucket-owner-read").execute_test().command_is_successful()
+.put_object("seagate", "testObject", canned_acl="bucket-owner-read").execute_test(negative_case=True)\
+.command_should_fail().command_error_should_have("AccessDenied")
 # seocndary account can not put object without canned acl bucket_owner_read
 AwsTest('AWS can put object to seagate bucket').put_object("seagate", "testObject")\
 .execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
@@ -467,7 +468,8 @@ AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "
 os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
 os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
 AwsTest('Aws can create object with \'bucket-owner-read\' canned acl input')\
-.put_object("seagate", "testObject", canned_acl="bucket-owner-read").execute_test().command_is_successful()
+.put_object("seagate", "testObject", canned_acl="bucket-owner-read").execute_test(negative_case=True)\
+.command_should_fail().command_error_should_have("AccessDenied")
 # seocndary account can not put object without canned acl bucket_owner_read
 AwsTest('AWS can put object to seagate bucket').put_object("seagate", "testObject")\
 .execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
@@ -489,7 +491,8 @@ AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "
 os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
 os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
 AwsTest('Aws can create object with \'bucket-owner-full-control\' canned acl input')\
-.put_object("seagate", "testObject", canned_acl="bucket-owner-full-control").execute_test().command_is_successful()
+.put_object("seagate", "testObject", canned_acl="bucket-owner-full-control").execute_test(negative_case=True)\
+.command_should_fail().command_error_should_have("AccessDenied")
 # seocndary account can not put object with canned acl bucket_owner_read
 AwsTest('Aws can create object with \'bucket-owner-read\' canned acl input')\
 .put_object("seagate", "testObject", canned_acl="bucket-owner-read").execute_test(negative_case=True)\

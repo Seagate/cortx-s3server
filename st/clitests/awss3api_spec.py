@@ -1299,12 +1299,16 @@ AwsTest('Aws cannot copy object after policy update')\
     .copy_object("source-bucket/source-object", "target-bucket", "copy2", "bucket-owner-full-control")\
         .execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
 
-
 os.environ["AWS_ACCESS_KEY_ID"] = source_access_key_args['AccessKeyId']
 os.environ["AWS_SECRET_ACCESS_KEY"] = source_access_key_args['SecretAccessKey']
 AwsTest("Aws can delete policy on bucket").delete_bucket_policy("source-bucket").execute_test().command_is_successful()
 os.environ["AWS_ACCESS_KEY_ID"] = destination_access_key_args['AccessKeyId']
 os.environ["AWS_SECRET_ACCESS_KEY"] = destination_access_key_args['SecretAccessKey']
+# Copy Object should fail now
+AwsTest('Aws can not copy source object with tags but without GetTagging permission')\
+    .copy_object("source-bucket/source-object", "target-bucket", "copy1")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+
 AwsTest("Aws can delete policy on bucket").delete_bucket_policy("target-bucket").execute_test().command_is_successful()
 AwsTest('Aws can delete object').delete_object("target-bucket", "source-object")\
     .execute_test().command_is_successful()
