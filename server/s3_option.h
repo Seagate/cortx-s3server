@@ -117,6 +117,9 @@ class S3Option {
   int audit_logger_port;
   std::string audit_logger_rsyslog_msgid;
   std::string audit_logger_kafka_web_path;
+  std::string s3_iem_host;
+  int s3_iem_port;
+  std::string s3_iem_path;
   unsigned short max_audit_retry_count;
   std::string s3server_ssl_cert_file;
   std::string s3server_ssl_pem_file;
@@ -236,6 +239,11 @@ class S3Option {
     audit_logger_kafka_web_path = "/topics/test";
     max_audit_retry_count = 5;
 
+    // IEM
+    s3_iem_host = "localhost";
+    s3_iem_port = 28300;
+    s3_iem_path = "/EventMessage/event";
+
     motr_layout_id = FLAGS_motrlayoutid;
     motr_local_addr = FLAGS_motrlocal;
     motr_ha_addr = FLAGS_motrha;
@@ -342,6 +350,9 @@ class S3Option {
   int get_audit_logger_port();
   std::string get_audit_logger_rsyslog_msgid();
   std::string get_audit_logger_kafka_web_path();
+  std::string get_iem_host();
+  int get_iem_port();
+  std::string get_iem_path();
   unsigned short get_audit_max_retry_count();
   unsigned short get_s3_bind_port();
   unsigned short get_motr_http_bind_port();
