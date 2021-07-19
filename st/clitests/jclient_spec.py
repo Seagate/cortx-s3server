@@ -512,6 +512,17 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient can download 18MB file uploaded in chunked mode').get_object("seagatebucket", "18MBfilec")\
             .execute_test().command_is_successful().command_created_file("18MBfilec")
 
+    JClientTest('Jclient can upload 5.2 MB file (multipart)') \
+    .put_object_multipart("seagatebucket", "5M2kfile", 5452595, 5) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can download 5.2 MB file') \
+    .get_object("seagatebucket", "5M2kfile") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("5M2kfile")
+
     # Partial multipart upload tests
     JClientTest('Jclient cannot list parts of multipart upload on nonexistent object.').list_parts("seagatebucket", "INVALID.file", "UPLOAD-ID")\
             .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchUpload")
@@ -577,7 +588,7 @@ for i, val in enumerate(pathstyle_values):
     .delete_multiple_objects("seagatebucket", ["8kfile", "8KUnalignfile", "16Kfile", \
     "16KUnalignfile", "700Kfile", "1Mfile", "1MUnalignfile", "18MBfile", "1MBfile", \
     "3kfilec", "8kfilec", "8KUnalignfilec", "16Kfilec", "16KUnalignedfilec", "700Kfilec", \
-    "1Mfilec", "1MUnalignfilec", "18MBfilec"]) \
+    "1Mfilec", "1MUnalignfilec", "18MBfilec", "5M2kfile"]) \
     .execute_test() \
     .command_is_successful()
 
@@ -601,7 +612,8 @@ for i, val in enumerate(pathstyle_values):
     .command_response_should_not_have('1Mfilec') \
     .command_response_should_not_have('1MUnalignfile') \
     .command_response_should_not_have('1MUnalignfilec') \
-    .command_response_should_not_have('8KUnalignfilec')
+    .command_response_should_not_have('8KUnalignfilec') \
+    .command_response_should_not_have('5M2kfile')
 
     JClientTest('Jclient multiple delete should succeed when objects not present').delete_multiple_objects("seagatebucket", ["8kfile", "700Kfile", "18MBfile"]).execute_test().command_is_successful()
 
