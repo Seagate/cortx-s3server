@@ -18,8 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-import sys
-
 from setupcmd import SetupCmd, S3PROVError
 
 class PostInstallCmd(SetupCmd):
@@ -36,8 +34,11 @@ class PostInstallCmd(SetupCmd):
   def process(self):
     """Main processing function."""
     self.logger.info(f"Processing {self.name} {self.url}")
-    self.logger.info("validations started")
-    self.phase_prereqs_validate(self.name)
-    self.phase_keys_validate(self.url, self.name)
-    self.validate_config_files(self.name)
-    self.logger.info("validations completed")
+    try:
+      self.logger.info("validations started")
+      self.phase_prereqs_validate(self.name)
+      self.phase_keys_validate(self.url, self.name)
+      self.validate_config_files(self.name)
+      self.logger.info("validations completed")
+    except Exception as e:
+      raise S3PROVError(f'process: {self.name} failed with exception: {e}')
