@@ -173,8 +173,8 @@ no_java_tests=0
 no_install=0
 just_gen_build_file=0
 valgrind_memcheck=0
-bazel_cpu_limit=50
-bazel_ram_limit=50
+bazel_cpu_limit=75
+bazel_ram_limit=75
 
 # extract options and their arguments into variables.
 while true; do

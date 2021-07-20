@@ -150,8 +150,8 @@ ansible=0
 restart_haproxy=0
 remove_m0trace=0
 collect_addb=""
-bazel_cpu_limit=50
-bazel_ram_limit=50
+bazel_cpu_limit=75
+bazel_ram_limit=75
 
 if [ $# -eq 0 ]
 then
