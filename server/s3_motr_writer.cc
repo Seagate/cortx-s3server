@@ -773,7 +773,7 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
           // upload (offset wont be 0 for R1) for initial write
           // we need to call init
           s3_checksum_flag = S3_FIRST_UNIT;
-          // initial_buffers_part_write = false;
+          initial_buffers_part_write = false;
         }
 
         if (!(s3_checksum_flag & S3_SEED_UNIT) &&
