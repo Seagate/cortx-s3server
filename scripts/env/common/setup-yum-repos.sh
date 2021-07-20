@@ -44,31 +44,22 @@ fi
 
 # Setup the necessary yum repos as per OS.
 if [ "$os_major_version" = "7" ]; then
-  if [ "$os_minor_version" = "7" ]; then
-    # Centos 7.7
-    if [ ! -z "$centos_release" ]; then
-      if [ "$os_build_num" = "1908" ]; then
-        cp -f ${S3_SRC_DIR}/ansible/files/yum.repos.d/centos7.7.1908/* /etc/yum.repos.d/
-      fi
-    # RHEL 7.7
-    elif [ ! -z "$redhat_release" ]; then
-      cp -f ${S3_SRC_DIR}/ansible/files/yum.repos.d/centos7.7.1908/* /etc/yum.repos.d/
-    fi
-  elif [ "$os_minor_version" = "8" ]; then
-    # centos 7.8
-    if [ ! -z "$centos_release" ]; then
-      if [ "$os_build_num" = "2003" ]; then
-        rm -f /etc/yum.repos.d/cortx*
-        cp -f ${S3_SRC_DIR}/ansible/files/yum.repos.d/centos7.8.2003/* /etc/yum.repos.d/
-      fi
-    fi
+
+  if [ "$os_minor_version" = "8" ]; then
+    # Centos 7.8
+    cp -f ${S3_SRC_DIR}/ansible/files/yum.repos.d/centos7.8.2003/* /etc/yum.repos.d/
+  elif [ "$os_minor_version" = "9" ]; then
+    # centos 7.9
+    # TODO repo needs to be updated for Centos 7.9
+    cp -f ${S3_SRC_DIR}/ansible/files/yum.repos.d/centos7.9.2009/* /etc/yum.repos.d/
+
   fi
 fi
 
-if [ "$major_version" = "8" ]; then
+#if [ "$major_version" = "8" ]; then
   # Centos/RHEL 8
-  cp -f ${S3_SRC_DIR}/ansible/files/yum.repos.d/rhel8/* /etc/yum.repos.d/
-fi
+#  cp -f ${S3_SRC_DIR}/ansible/files/yum.repos.d/rhel8/* /etc/yum.repos.d/
+#fi
 
 # Install plugin so our repos can take priority
 yum install yum-plugin-priorities -y
