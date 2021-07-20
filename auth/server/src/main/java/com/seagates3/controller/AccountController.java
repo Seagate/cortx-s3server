@@ -254,14 +254,13 @@ public class AccountController extends AbstractController {
    private
     String generateUniqueUidNo() throws DataAccessException {
       Account account;
-      String uidNo;
+      String accountUidNo;
       for (int i = 0; i < 5; i++) {
-        uidNo = KeyGenUtil.createAccountuidNo();
-        // TODO add ldap call to check if this id is unique or not
-        account = accountDao.findByCanonicalID(uidNo);
+        accountUidNo = KeyGenUtil.createAccountuidNo();
+        account = accountDao.findByUidNo(accountUidNo);
 
         if (!account.exists()) {
-          return uidNo;
+          return accountUidNo;
         }
       }
       return null;
