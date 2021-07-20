@@ -24,6 +24,7 @@
 #include "s3_log.h"
 #include "s3_m0_uint128_helper.h"
 #include "s3_uri_to_motr_oid.h"
+#include "s3_iem.h"
 
 S3DeleteBucketAction::S3DeleteBucketAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> s3_motr_apis,
@@ -575,6 +576,8 @@ void S3DeleteBucketAction::delete_bucket() {
 
 void S3DeleteBucketAction::delete_bucket_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
+         S3_IEM_METADATA_CORRUPTED_JSON);
   delete_successful = true;
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);

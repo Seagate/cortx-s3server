@@ -36,6 +36,7 @@ extern S3Option* g_option_instance;
 //    the JSON data format by default. If IEM event has any additional data to
 //    send, then pass it as `json_fmt` param.
 
+#define IEM_FRAMEWORK_ENABLE
 #ifdef IEM_FRAMEWORK_ENABLE
 #define s3_iem_(loglevel, s3_loglevel, event_code, event_desc, json_fmt, ...) \
   do {                                                                        \

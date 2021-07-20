@@ -39,7 +39,7 @@ from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
 from s3backgrounddelete.cortx_s3_signal import DynamicConfigHandler
 from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
-#from s3backgrounddelete.IEMutil import IEMutil
+from s3backgrounddelete.IEMutil import IEMutil
 
 class ObjectRecoveryScheduler(object):
     """Scheduler which will add key value to message_bus queue."""
@@ -67,6 +67,7 @@ class ObjectRecoveryScheduler(object):
     def add_kv_to_msgbus(self, marker = None):
         """Add object key value to msgbus topic."""
         self.logger.info("Inside add_kv_to_msgbus.")
+        s3iem = IEMutil("object_recovery_scheduler", "INFO", 100, "This is a test IEM msg in BG Delete......")
         try:
             from s3backgrounddelete.object_recovery_msgbus import ObjectRecoveryMsgbus
 
