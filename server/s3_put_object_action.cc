@@ -307,6 +307,7 @@ void S3PutObjectAction::create_object_successful() {
   new_object_metadata->regenerate_version_id();
   new_object_metadata->set_oid(motr_writer->get_oid());
   new_object_metadata->set_layout_id(layout_id);
+  new_object_metadata->set_pvid(motr_writer->get_ppvid());
 
   add_object_oid_to_probable_dead_oid_list();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -591,7 +592,6 @@ void S3PutObjectAction::save_metadata() {
   new_object_metadata->set_content_type(request->get_content_type());
   new_object_metadata->set_md5(motr_writer->get_content_md5());
   new_object_metadata->set_tags(new_object_tags_map);
-  new_object_metadata->set_pvid(motr_writer->get_ppvid());
 
   for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {
