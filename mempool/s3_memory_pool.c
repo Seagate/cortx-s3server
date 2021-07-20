@@ -540,6 +540,9 @@ int mempool_destroy(MemoryPoolHandle *handle) {
   }
 
   if (*handle == NULL) {
+    if ((pool->flags & ENABLE_LOCKING) != 0) {
+      pthread_mutex_unlock(&pool->lock);
+    }
     return S3_MEMPOOL_INVALID_ARG;
   }
 
