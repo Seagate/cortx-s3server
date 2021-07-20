@@ -149,6 +149,19 @@ public class AccountController extends AbstractController {
           return accountResponseGenerator.internalServerError();
         }
 
+        try {
+          // Generate unique uidNo for account
+          String uidNo = generateUniqueUidNo();
+          if (uidNo != null) {
+            account.setUidNo(uidNo);
+          } else {
+            // Failed to generate unique uidNo
+            return accountResponseGenerator.internalServerError();
+          }
+        }
+        catch (DataAccessException ex) {
+          return accountResponseGenerator.internalServerError();
+        }
         account.setEmail(email);
 
         try {
@@ -235,6 +248,26 @@ public class AccountController extends AbstractController {
     }
 
     /**
+ * Generate account uidNo and check if its unique in ldap
+ * @throws DataAccessException
+ */
+   private
+    String generateUniqueUidNo() throws DataAccessException {
+      Account account;
+      String uidNo;
+      for (int i = 0; i < 5; i++) {
+        uidNo = KeyGenUtil.createAccountuidNo();
+        // TODO add ldap call to check if this id is unique or not
+        account = accountDao.findByCanonicalID(uidNo);
+
+        if (!account.exists()) {
+          return uidNo;
+        }
+      }
+      return null;
+    }
+
+    /**
  * Generate canonical id and check if its unique in ldap
  * @throws DataAccessException
  */
@@ -252,7 +285,6 @@ public class AccountController extends AbstractController {
       }
       return null;
     }
-
     public ServerResponse resetAccountAccessKey() {
         String name = requestBody.get("AccountName");
         LOGGER.info("Resetting access key of account: " + name);

@@ -81,7 +81,7 @@ olcAttributeTypes: {24}( 1.3.6.1.4.99999.2.3.25 NAME 'profileCreateDate' DES
  C 'Login profile create Timestamp' SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 )
 olcAttributeTypes: {25}( 1.3.6.1.4.99999.2.3.26 NAME 'arn' DESC 'Resource Name
  s' EQUALITY caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
-olcAttributeTypes: {26}( 1.3.6.1.4.99999.2.3.26 NAME 'uidNo' DESC 'S3 Accoun
+olcAttributeTypes: {26}( 1.3.6.1.4.99999.2.3.27 NAME 'uidNo' DESC 'S3 Accoun
  t unique ID' EQUALITY caseExactMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
 olcObjectClasses: {0}( 1.3.6.1.4.99999.2.4.1 NAME 'Account' DESC 'S3 Account'
  SUP top STRUCTURAL MUST ( o $ accountId $ mail $ canonicalId ) MAY ( userPass
