@@ -63,11 +63,11 @@ start_services() {
   # add sleep time of 10 sec before starting kafka server
   sleep 10
 
-  systemctl status kafka-zookeeper | grep "active (running)" > /tmp/zookeeper
-  if [[ -s /tmp/zookeeper ]]; then
+  is_zookeeper_started=$(systemctl is-active kafka-zookeeper)
+  if [[ "$is_zookeeper_started" -eq "active" ]]; then
     echo "zookeeper server started successfully."
   else
-    echo "There is a problem in starting zookeeper server."
+    echo "There is a problem in starting zookeeper server!!!!\n Please check 'systemctl status kafka-zookeeper' \n"
   fi
 
   # start kafka server
@@ -75,11 +75,11 @@ start_services() {
   # add sleep time of 10 sec before starting kafka server
   sleep 10
 
-  systemctl status kafka | grep "active (running)" > /tmp/kafka
-  if [[ -s /tmp/kafka ]]; then
+  is_kafka_started=$(systemctl is-active kafka)
+  if [[ "$is_kafka_started" -eq "active" ]]; then
     echo "kafka server started successfully."
   else
-    echo "There is a problem in starting kafka server."
+    echo "There is a problem in starting kafka server!!! \n Please check 'systemctl status kafka' \n"
   fi
 }
 
