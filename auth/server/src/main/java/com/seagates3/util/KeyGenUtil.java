@@ -20,12 +20,12 @@
 
 package com.seagates3.util;
 
+import com.seagates3.authserver.AuthServerConstants;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Random;
-import com.seagates3.authserver.AuthServerConstants;
 
 public class KeyGenUtil {
 
@@ -201,5 +201,21 @@ public class KeyGenUtil {
       long min = 100000000000L;
       long account_id = min + (long)(Math.random() * ((max - min) + 1));
       return String.valueOf(account_id);
+    }
+
+    /**
+     * Generate a new uidNo for account.
+     * uidNo should be,
+     * 1. Contains digits only
+     * 2. number should be greater than 1000
+     * e.g 2232
+     * @return uidNo
+     */
+   public
+    static String createAccountuidNo() {
+      long max = 9999L;
+      long min = 1000L;
+      long account_uidNo = min + (long)(Math.random() * ((max - min) + 1));
+      return String.valueOf(account_uidNo);
     }
 }

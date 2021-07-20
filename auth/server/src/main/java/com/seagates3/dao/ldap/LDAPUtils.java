@@ -20,19 +20,19 @@
 
 package com.seagates3.dao.ldap;
 
-import java.util.ArrayList;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.novell.ldap.LDAPConnection;
 import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPModification;
-import com.novell.ldap.LDAPSearchResults;
 import com.novell.ldap.LDAPSearchConstraints;
+import com.novell.ldap.LDAPSearchResults;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.fi.FaultPoints;
 import com.seagates3.util.IEMUtil;
+import java.util.ArrayList;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public
 class LDAPUtils {
@@ -46,6 +46,8 @@ class LDAPUtils {
     public static final String ACCOUNT_OBJECT_CLASS = "account";
     public static final String ACCOUNT_OU = "accounts";
     public static final String CANONICAL_ID = "canonicalId";
+    public
+     static final String ACCOUNT_UID_NO = "uidNo";
     public static final String CERTIFICATE = "cacertificate;binary";
     public static final String COMMON_NAME = "cn";
     public static final String CREATE_TIMESTAMP = "createtimestamp";
