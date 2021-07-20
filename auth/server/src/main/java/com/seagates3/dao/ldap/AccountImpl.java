@@ -228,6 +228,57 @@ public class AccountImpl implements AccountDAO {
         return account;
     }
 
+    /**
+     * Search account by uidNo from LDAP.
+     *
+     * @param accountUidNo Account uidNo
+     * @return Account
+     * @throws com.seagates3.exception.DataAccessException
+     */
+    @Override public Account findByUidNo(String accountUidNo)
+        throws DataAccessException {
+      Account account = new Account();
+
+      String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID,
+                        LDAPUtils.ACCOUNT_UID_NO};
+      String filter = String.format(
+          "(&(%s=%s)(%s=%s))", LDAPUtils.ACCOUNT_UID_NO, accountUidNo,
+          LDAPUtils.OBJECT_CLASS, LDAPUtils.ACCOUNT_OBJECT_CLASS);
+
+      LOGGER.debug("Searching uidNo : " + accountUidNo);
+
+      LDAPSearchResults ldapResults;
+      try {
+        ldapResults = LDAPUtils.search(LDAPUtils.BASE_DN,
+                                       LDAPConnection.SCOPE_SUB, filter, attrs);
+      }
+      catch (LDAPException ex) {
+        LOGGER.error("Failed to search account " + "of uuidNo " + accountUidNo);
+        throw new DataAccessException("failed to search account.\n" + ex);
+      }
+
+      if (ldapResults != null && ldapResults.hasMore()) {
+        try {
+          LDAPEntry entry = ldapResults.next();
+          account.setUidNo(accountUidNo);
+          account.setName(entry.getAttribute(LDAPUtils.ORGANIZATIONAL_NAME)
+                              .getStringValue());
+          account.setId(
+              entry.getAttribute(LDAPUtils.ACCOUNT_ID).getStringValue());
+          account.setUidNo(
+              entry.getAttribute(LDAPUtils.ACCOUNT_UID_NO).getStringValue());
+        }
+        catch (LDAPException ex) {
+          LOGGER.error("Failed to find account details." +
+                       "of account uidNo : " + accountUidNo);
+          throw new DataAccessException("Failed to find account details.\n" +
+                                        ex);
+        }
+      }
+
+      return account;
+    }
+
     /*
      * fetch all accounts from database
      */
