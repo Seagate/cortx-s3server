@@ -64,6 +64,7 @@ class CleanupCmd(SetupCmd):
     try:
       super(CleanupCmd, self).__init__(config)
       self.get_iam_admin_credentials()
+      self.get_ldap_root_credentials()
 
     except Exception as e:
       self.logger.error(f'Failed to read ldap credentials, error: {e}')
@@ -92,6 +93,11 @@ class CleanupCmd(SetupCmd):
     try:
       # Check if reset phase was performed before this
       self.detect_if_reset_done()
+
+      # cleanup ldap replication configuration
+      self.logger.info("delete ldap replication configuration")
+      self.delete_replication_config()
+      self.logger.infor("delete ldap replication configuration completed")
 
       # cleanup ldap accounts related to S3
       self.logger.info("delete ldap account of S3 started")
@@ -277,3 +283,13 @@ class CleanupCmd(SetupCmd):
         self.logger.info("Topic does not exist")
     except Exception as e:
       raise e
+
+  def delete_replication_config(self):
+    """cleanup replication configuration"""
+    cmd = ['/opt/seagate/cortx/s3/install/ldap/replication/cleanup/cleanup_replication.sh',
+           '-p',
+           f'{self.rootdn_passwd}']
+    handler = SimpleProcess(cmd)
+    stdout, stderr, retcode = handler.run()
+    self.logger.info(f'output of cleanup_replication.sh: {stdout}')
+    

@@ -273,6 +273,7 @@ cp -f scripts/ldap/replication/cleanup/data.ldif $S3_INSTALL_LOCATION/install/ld
 cp -f scripts/ldap/replication/cleanup/olcmirromode_config.ldif $S3_INSTALL_LOCATION/install/ldap/replication/cleanup/
 cp -f scripts/ldap/replication/cleanup/olcmirromode_data.ldif $S3_INSTALL_LOCATION/install/ldap/replication/cleanup/
 cp -f scripts/ldap/replication/cleanup/olcserverid.ldif $S3_INSTALL_LOCATION/install/ldap/replication/cleanup/
+cp -f scripts/ldap/replication/cleanup/cleanup_replication.sh $S3_INSTALL_LOCATION/install/ldap/replication/cleanup/
 
 # Copy check replication script to install location
 cp -f scripts/ldap/check_ldap_replication.sh $S3_INSTALL_LOCATION/install/ldap/
