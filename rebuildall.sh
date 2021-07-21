@@ -58,8 +58,8 @@ usage() {
   echo '          --no-install               : Do not install binaries after build, Default (false)'
   echo '          --just-gen-build-file      : Do not do anything, only produce BUILD file'
   echo '          --valgrind_memcheck        : Compile with debug flags and zero optimization to support valgrind memcheck'
-  echo '          --bazel_cpu_usage_limit    : Specify max percentage of CPU that bazel can consume during s3 build operation, Value Range: 1-100, Default is 50'
-  echo '          --bazel_rpm_usage_limit    : Specify max percentage of RAM that bazel can consume during s3 build operation, Value Range: 1-100, Default is 50'
+  echo '          --bazel_cpu_usage_limit    : Specify max percentage of CPU that bazel can consume during s3 build (integer), Value Range: 1-99, Default is 70'
+  echo '          --bazel_rpm_usage_limit    : Specify max percentage of RAM that bazel can consume during s3 build (integer), Value Range: 1-99, Default is 70'
   echo '          --help (-h)                : Display help'
 }
 
@@ -173,8 +173,8 @@ no_java_tests=0
 no_install=0
 just_gen_build_file=0
 valgrind_memcheck=0
-bazel_cpu_limit=75
-bazel_ram_limit=75
+bazel_cpu_limit=70
+bazel_ram_limit=70
 
 # extract options and their arguments into variables.
 while true; do
