@@ -52,9 +52,9 @@ import com.seagates3.model.Account;
     private final String BASE_DN = "dc=s3,dc=seagate,dc=com";
     private final String FIND_FILTER = "(&(o=s3test)(objectclass=account))";
     private
-     final String[] FIND_ATTRS = {"accountid",         "canonicalId",
-                                  "userPassword",      "pwdReset",
-                                  "profileCreateDate", "mail"};
+     final String[] FIND_ATTRS = {
+         "accountid",         "canonicalId", "userPassword", "pwdReset",
+         "profileCreateDate", "mail",        "uidNo"};
 
     private final String ACCOUNT_DN
             = "o=s3test,ou=accounts,dc=s3,dc=seagate,dc=com";
@@ -69,6 +69,8 @@ import com.seagates3.model.Account;
     private final LDAPAttribute accountIdAttr;
     private final LDAPAttribute canonicalIdAttr;
     private final LDAPAttribute emailAttr;
+    private
+     final LDAPAttribute uidNoAttr;
     private final LDAPEntry entry;
     private final LDAPEntry accountEntry;
     private final LDAPEntry userEntry;
@@ -88,6 +90,7 @@ import com.seagates3.model.Account;
         accountIdAttr = Mockito.mock(LDAPAttribute.class);
         canonicalIdAttr = Mockito.mock(LDAPAttribute.class);
         emailAttr = Mockito.mock(LDAPAttribute.class);
+        uidNoAttr = Mockito.mock(LDAPAttribute.class);
 
         LDAPAttributeSet accountAttributeSet = new LDAPAttributeSet();
         accountAttributeSet.add(new LDAPAttribute("objectclass", "Account"));
@@ -96,6 +99,7 @@ import com.seagates3.model.Account;
         accountAttributeSet.add(new LDAPAttribute("accountid", "98765test"));
         accountAttributeSet.add(new LDAPAttribute("canonicalId", "C12345"));
         accountAttributeSet.add(new LDAPAttribute("mail", "test@seagate.com"));
+        accountAttributeSet.add(new LDAPAttribute("uidNo", "1234"));
         accountEntry = new LDAPEntry(ACCOUNT_DN, accountAttributeSet);
 
         LDAPAttributeSet userAttributeSet = new LDAPAttributeSet();
@@ -121,11 +125,13 @@ import com.seagates3.model.Account;
         Mockito.when(entry.getAttribute("accountid")).thenReturn(accountIdAttr);
         Mockito.when(entry.getAttribute("canonicalId")).thenReturn(canonicalIdAttr);
         Mockito.when(entry.getAttribute("mail")).thenReturn(emailAttr);
+        Mockito.when(entry.getAttribute("uidNo")).thenReturn(uidNoAttr);
 
         Mockito.when(accountNameAttr.getStringValue()).thenReturn("s3test");
         Mockito.when(accountIdAttr.getStringValue()).thenReturn("98765test");
         Mockito.when(canonicalIdAttr.getStringValue()).thenReturn("C12345");
         Mockito.when(emailAttr.getStringValue()).thenReturn("test@seagate.com");
+        Mockito.when(uidNoAttr.getStringValue()).thenReturn("1234");
         ldapConnection = Mockito.mock(LDAPConnection.class);
         PowerMockito.doReturn(maxResults)
             .when(AuthServerConfig.class, "getLdapSearchResultsSizeLimit");
@@ -143,6 +149,7 @@ import com.seagates3.model.Account;
         expectedAccount.setId("98765test");
         expectedAccount.setCanonicalId("C12345");
         expectedAccount.setEmail("test@seagate.com");
+        expectedAccount.setUidNo("1234");
 
         PowerMockito.mockStatic(LdapConnectionManager.class);
         PowerMockito.doReturn(ldapConnection)
@@ -226,6 +233,7 @@ import com.seagates3.model.Account;
         account.setName("s3test");
         account.setCanonicalId("C12345");
         account.setEmail("testuser@seagate.com");
+        account.setUidNo("1234");
 
         accountImpl.save(account);
 
@@ -251,6 +259,7 @@ import com.seagates3.model.Account;
         account.setName("s3test");
         account.setCanonicalId("C12345");
         account.setEmail("testuser@seagate.com");
+        account.setUidNo("1234");
 
         PowerMockito.doThrow(new LDAPException()).when(
                 LDAPUtils.class, "add", Mockito.refEq(accountEntry));
@@ -271,6 +280,7 @@ import com.seagates3.model.Account;
         account.setName("s3test");
         account.setCanonicalId("C12345");
         account.setEmail("testuser@seagate.com");
+        account.setUidNo("1234");
 
         PowerMockito.doThrow(new LDAPException()).when(
                 LDAPUtils.class, "add", Mockito.refEq(userEntry));
@@ -294,6 +304,7 @@ import com.seagates3.model.Account;
         account.setName("s3test");
         account.setCanonicalId("C12345");
         account.setEmail("testuser@seagate.com");
+        account.setUidNo("1234");
 
         PowerMockito.doThrow(new LDAPException()).when(
                 LDAPUtils.class, "add", Mockito.refEq(roleEntry));
@@ -349,6 +360,7 @@ import com.seagates3.model.Account;
         expectedAccount.setId("98765test");
         expectedAccount.setCanonicalId("C12345");
         expectedAccount.setEmail("test@seagate.com");
+        expectedAccount.setUidNo("1234");
         Account[] expectedAccounts = {expectedAccount};
 
         PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
@@ -387,8 +399,8 @@ import com.seagates3.model.Account;
 
     @Test(expected = DataAccessException.class)
     public void FindAccountById_ShouldThrowLDAPException() throws Exception {
-        String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME,
-                LDAPUtils.CANONICAL_ID};
+      String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.CANONICAL_ID,
+                        LDAPUtils.ACCOUNT_UID_NO};
         String filter = String.format("(&(%s=%s)(%s=%s))",
                 LDAPUtils.ACCOUNT_ID, "98765test", LDAPUtils.OBJECT_CLASS,
                 LDAPUtils.ACCOUNT_OBJECT_CLASS);
@@ -401,8 +413,8 @@ import com.seagates3.model.Account;
 
     @Test(expected = DataAccessException.class)
     public void FindAccountById_GetEntryShouldThrowException() throws Exception {
-        String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME,
-                LDAPUtils.CANONICAL_ID};
+      String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.CANONICAL_ID,
+                        LDAPUtils.ACCOUNT_UID_NO};
         String filter = String.format("(&(%s=%s)(%s=%s))",
                 LDAPUtils.ACCOUNT_ID, "98765test", LDAPUtils.OBJECT_CLASS,
                 LDAPUtils.ACCOUNT_OBJECT_CLASS);
@@ -440,8 +452,8 @@ import com.seagates3.model.Account;
 
     @Test(expected = DataAccessException.class)
     public void FindAccountByCanonicalId_ShouldThrowLDAPException() throws Exception {
-        String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME,
-                LDAPUtils.ACCOUNT_ID};
+      String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID,
+                        LDAPUtils.ACCOUNT_UID_NO};
         String filter = String.format("(&(%s=%s)(%s=%s))",
                 LDAPUtils.CANONICAL_ID, "C12345", LDAPUtils.OBJECT_CLASS,
                 LDAPUtils.ACCOUNT_OBJECT_CLASS);
@@ -454,8 +466,8 @@ import com.seagates3.model.Account;
 
     @Test(expected = DataAccessException.class)
     public void FindAccountByCanonicalId_GetEntryShouldThrowException() throws Exception {
-        String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME,
-                LDAPUtils.ACCOUNT_ID};
+      String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID,
+                        LDAPUtils.ACCOUNT_UID_NO};
         String filter = String.format("(&(%s=%s)(%s=%s))",
                 LDAPUtils.CANONICAL_ID, "C12345", LDAPUtils.OBJECT_CLASS,
                 LDAPUtils.ACCOUNT_OBJECT_CLASS);

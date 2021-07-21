@@ -121,6 +121,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             .when(AuthServerConfig.class, "getS3InternalAccounts");
         PowerMockito.doReturn(1000)
             .when(AuthServerConfig.class, "getMaxAccountLimit");
+        PowerMockito.doReturn("1234")
+            .when(KeyGenUtil.class, "createAccountuidNo");
     }
 
     @Test
@@ -274,6 +276,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             throws Exception {
         Account account = new Account();
         account.setName("s3test");
+        account.setUidNo("1234");
 
         Mockito.doReturn(account).when(accountDAO).find("s3test");
         Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
@@ -282,6 +285,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             .save(account);
         Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
             "can1234");
+        Mockito.doReturn(new Account()).when(accountDAO).findByUidNo("1234");
 
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
@@ -311,6 +315,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                 .when(userDAO).save(any(User.class));
         Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
             "can1234");
+        Mockito.doReturn(new Account()).when(accountDAO).findByUidNo("1234");
 
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
@@ -343,6 +348,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             .save(any(AccessKey.class));
         Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
             "can1234");
+        Mockito.doReturn(new Account()).when(accountDAO).findByUidNo("1234");
 
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
@@ -381,6 +387,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             any(String.class), any(String.class), any(String.class));
         Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
             "can1234");
+        Mockito.doReturn(new Account()).when(accountDAO).findByUidNo("1234");
 
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
@@ -458,6 +465,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
           any(String.class), any(String.class), any(String.class));
       Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
           "can1234");
+      Mockito.doReturn(new Account()).when(accountDAO).findByUidNo("1234");
 
       final String expectedResponseBody =
           "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
