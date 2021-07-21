@@ -380,9 +380,9 @@ fi
 
 prepare_BUILD_file
 # Add max CPU and RAM usage percentage for bazel.
-# Default value will be 50 but user can change value from jenkins-build.sh script.
-cpu_limit_input=$(echo "scale=1;($bazel_cpu_limit)/100" | bc)
-ram_limit_input=$(echo "scale=1;($bazel_ram_limit)/100" | bc)
+# Default value will be 70 but user can change value from jenkins-build.sh script.
+cpu_limit_input=$(awk 'BEGIN{printf "%.1f\n", ($bazel_cpu_limit/100)}')
+ram_limit_input=$(awk 'BEGIN{printf "%.1f\n", ($bazel_ram_limit/100)}')
 cpu_resource_limit_param="--local_cpu_resources=HOST_CPUS*$cpu_limit_input"
 ram_resource_limit_param="--local_ram_resources=HOST_RAM*$ram_limit_input"
 

@@ -114,11 +114,11 @@ where:
 
                           Value: /path/to/output/dir/
 
---bazel_cpu_usage_limit   Specify max percentage of CPU to be consumed by bazel during bazel build process.
-                          Value Range: 1-100 (Default value : 50)
+--bazel_cpu_usage_limit   Specify max percentage of CPU (integer) to be consumed by bazel during bazel build process.
+                          Value Range: 1-99 (Default value : 70)
 
---bazel_ram_usage_limit   Specify max percentage of RAM to be consumed by bazel during bazel build process.
-                          Value Range: 1-100 (Default value : 50)
+--bazel_ram_usage_limit   Specify max percentage of RAM (integer) to be consumed by bazel during bazel build process.
+                          Value Range: 1-99 (Default value : 70)
 
 --help (-h)        Display help
 
@@ -150,8 +150,8 @@ ansible=0
 restart_haproxy=0
 remove_m0trace=0
 collect_addb=""
-bazel_cpu_limit=75
-bazel_ram_limit=75
+bazel_cpu_limit=70
+bazel_ram_limit=70
 
 if [ $# -eq 0 ]
 then
@@ -293,8 +293,7 @@ else
                        echo "Collect addb data to $collect_addb dir";
                        ;;
       --bazel_cpu_usage_limit ) shift;
-                       if [ ! -z "$1" ]
-                       then
+                       if [ "$1" -ge 1 ] && [ "$1" -le 99 ]; then
                            bazel_cpu_limit=$1;
                        else
                            echo "Please provide valid value for CPU usage for --bazel_cpu_usage_limit"
@@ -303,8 +302,7 @@ else
                        fi
                        ;;
       --bazel_ram_usage_limit ) shift;
-                       if [ ! -z "$1" ]
-                       then
+                       if [ "$1" -ge 1 ] && [ "$1" -le 99 ]; then
                            bazel_ram_limit=$1;
                        else
                            echo "Please provide valid value for RAM usage for --bazel_ram_usage_limit"
