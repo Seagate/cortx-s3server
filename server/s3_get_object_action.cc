@@ -856,7 +856,7 @@ void S3GetObjectAction::send_data_to_client() {
   size_t bytes_sent = p_evbuffer->get_evbuff_length();
   data_sent_to_client += bytes_sent;
   request->set_bytes_sent(data_sent_to_client);
-  data_sent_to_client_for_object += data_sent_to_client;
+  data_sent_to_client_for_object += bytes_sent;
   // Send data to client. evbuf_body will be free'ed internally
   request->send_reply_body(p_evbuffer->release_ownership());
   s3_log(S3_LOG_DEBUG, request_id, "Sending %zu bytes to client.\n",
