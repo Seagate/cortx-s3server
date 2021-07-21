@@ -265,8 +265,6 @@ public class AccountImpl implements AccountDAO {
                               .getStringValue());
           account.setId(
               entry.getAttribute(LDAPUtils.ACCOUNT_ID).getStringValue());
-          account.setUidNo(
-              entry.getAttribute(LDAPUtils.ACCOUNT_UID_NO).getStringValue());
         }
         catch (LDAPException ex) {
           LOGGER.error("Failed to find account details." +
