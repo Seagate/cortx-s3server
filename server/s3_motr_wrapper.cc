@@ -311,8 +311,8 @@ int ConcreteMotrAPI::motr_obj_op(struct m0_obj *obj, enum m0_obj_opcode opcode,
     return 0;
   }
 
-/* Backup / Populate the attr */
-#if 1
+/*  Stub for DI test - need to cleanup */
+#if 0
   if (S3Option::get_instance()->is_s3_read_di_check_enabled()) {
     /** Read object data. */
     if (opcode == M0_OC_READ)
