@@ -481,6 +481,46 @@ import com.seagates3.model.Account;
         accountImpl.findByCanonicalID("C12345");
     }
 
+    @Test public void FindAccountByUidNo_AccountExists_ReturnAccountObject()
+        throws Exception {
+      Account expectedAccount = new Account();
+      expectedAccount.setName("s3test");
+      expectedAccount.setId("98765test");
+      expectedAccount.setCanonicalId("C12345");
+      expectedAccount.setEmail("test@seagate.com");
+      expectedAccount.setUidNo("1234");
+
+      String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID};
+      String filter =
+          String.format("(&(%s=%s)(%s=%s))", LDAPUtils.ACCOUNT_UID_NO, "1234",
+                        LDAPUtils.OBJECT_CLASS, LDAPUtils.ACCOUNT_OBJECT_CLASS);
+
+      PowerMockito.doReturn(ldapResults)
+          .when(LDAPUtils.class, "search", BASE_DN, 2, filter, attrs);
+
+      Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.TRUE);
+
+      Account account = accountImpl.findByUidNo("1234");
+      Assert.assertThat(account, new ReflectionEquals(account));
+    }
+
+    @Test(
+        expected =
+            DataAccessException
+                .class) public void FindAccountByUidNo_ShouldThrowLDAPException()
+        throws Exception {
+      String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID,
+                        LDAPUtils.ACCOUNT_UID_NO};
+      String filter =
+          String.format("(&(%s=%s)(%s=%s))", LDAPUtils.ACCOUNT_UID_NO, "1234",
+                        LDAPUtils.OBJECT_CLASS, LDAPUtils.ACCOUNT_OBJECT_CLASS);
+
+      PowerMockito.doThrow(new LDAPException())
+          .when(LDAPUtils.class, "search", BASE_DN, 2, filter, attrs);
+
+      accountImpl.findByUidNo("1234");
+    }
+
     @Test
     public void DeleteAccount_DeleteAccountSuccessful()
             throws DataAccessException, LDAPException {

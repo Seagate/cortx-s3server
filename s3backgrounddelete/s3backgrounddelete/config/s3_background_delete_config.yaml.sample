@@ -75,5 +75,6 @@ background_delete_account:
    canonical_id: "C67891"                                     #BG delete account canonical id
    mail: "s3-background-delete-svc@seagate.com"               #BG delete account mail
    s3_user_id: "450"                                          #BG delete account user id
+   uidNo: "1230"                                              #BG delete account uidNo
    const_cipher_secret_str: "s3backgroundsecretkey"           #BG delete account secret key
    const_cipher_access_str: "s3backgroundaccesskey"           #BG delete account access key

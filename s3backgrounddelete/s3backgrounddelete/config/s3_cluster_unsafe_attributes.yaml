@@ -29,5 +29,6 @@ background_delete_account:
    canonical_id: "dummy123"
    mail: "dummy@dummy.com"
    s3_user_id: "dummy123"
+   uidNo: "dummy1230"
    const_cipher_secret_str: "dummy"
    const_cipher_access_str: "dummy"

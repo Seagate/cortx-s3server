@@ -332,6 +332,42 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                 response.getResponseStatus());
     }
 
+    @Test public void
+    CreateAccount_FailedToGenerateUidNo_ReturnInternalServerError()
+        throws Exception {
+      Account account = new Account();
+      account.setName("s3test");
+
+      Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
+      Mockito.doReturn(account).when(accountDAO).find("s3test");
+      Mockito.doNothing().when(accountDAO).save(any(Account.class));
+      Mockito.doNothing().when(userDAO).save(any(User.class));
+      Mockito.doThrow(
+                  new DataAccessException("failed to save root access key.\n"))
+          .when(accessKeyDAO)
+          .save(any(AccessKey.class));
+      Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
+          "can1234");
+      Account account2 = new Account();
+      account2.setId("testid");
+      account2.setName("testacc");
+      Mockito.doReturn(account2).when(accountDAO).findByUidNo("1234");
+
+      final String expectedResponseBody =
+          "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+          "<ErrorResponse " +
+          "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+          "<Error><Code>InternalFailure</Code>" +
+          "<Message>The request processing has failed because of an " +
+          "unknown error, exception or failure.</Message></Error>" +
+          "<RequestId>0000</RequestId>" + "</ErrorResponse>";
+
+      ServerResponse response = accountController.create();
+      Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+      Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
+                          response.getResponseStatus());
+    }
+
     @Test
     public void CreateAccount_FailedToCreateRootAccessKey_ReturnInternalServerError()
             throws Exception {
