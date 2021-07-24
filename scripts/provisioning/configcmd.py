@@ -139,6 +139,9 @@ class ConfigCmd(SetupCmd):
 
   def configure_openldap_replication(self):
     """Configure openldap replication within a storage set."""
+    self.logger.info('Cleaning up old Openldap replication configuration')
+    # Delete ldap replication cofiguration
+    self.delete_replication_config()
     self.logger.info('Open ldap replication configuration started')
     storage_set_count = self.get_confvalue(self.get_confkey(
         'CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY').replace("cluster-id", self.cluster_id))

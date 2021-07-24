@@ -93,6 +93,9 @@ class CleanupCmd(SetupCmd):
       # Check if reset phase was performed before this
       self.detect_if_reset_done()
 
+      # Delete ldap replication cofiguration
+      self.delete_replication_config()
+
       # cleanup ldap accounts related to S3
       self.logger.info("delete ldap account of S3 started")
       ldap_action_obj = LdapAccountAction(self.ldap_user, self.ldap_passwd)
