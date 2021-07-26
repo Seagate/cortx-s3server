@@ -272,8 +272,8 @@ class ConfigCmd(SetupCmd):
     self.logger.info(f'motr_max_units_per_request: {motr_max_units_per_request}')
     #validate min and max unit should be between 1 to 128
     if 2 <= int(motr_max_units_per_request) <= 128:
-      if math.log2(motr_max_units_per_request).is_integer():
-        self.logger.error("motr_max_units_per_request is in valid range")
+      if math.log2(int(motr_max_units_per_request)).is_integer():
+        self.logger.info("motr_max_units_per_request is in valid range")
       else:
         raise S3PROVError("motr_max_units_per_request should be power of 2")
     else:
