@@ -24,7 +24,6 @@ server_node:
       data:
         public_fqdn: "srvnode-1.data.public"
         private_fqdn: "srvnode-1.data.private"
-    s3_instances: "1"
   TMPL_MACHINE_ID_2:
     cluster_id: "TMPL_CLUSTER_ID"
     hostname: "TMPL_HOSTNAME_2"
@@ -32,7 +31,6 @@ server_node:
       data:
         public_fqdn: "srvnode-2.data.public"
         private_fqdn: "srvnode-2.data.private"
-    s3_instances: "1"
   TMPL_MACHINE_ID_3:
     cluster_id: "TMPL_CLUSTER_ID"
     hostname: "TMPL_HOSTNAME_3"

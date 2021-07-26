@@ -24,7 +24,6 @@ server_node:
       data:
         public_fqdn: "srvnode-1.data.public"
         private_fqdn: "srvnode-1.data.private"
-    s3_instances: "1"
 cortx:
   software:
     openldap:
@@ -37,6 +36,8 @@ cortx:
     s3:
       io:
         max_units : "8"
+      service:
+        instances : "1"
 cluster:
   TMPL_CLUSTER_ID:
     site:
