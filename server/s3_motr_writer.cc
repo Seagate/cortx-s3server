@@ -797,7 +797,7 @@ void S3MotrWiter::calc_pi_info(
              rc);
       // Should we stop here? what should we do?
     }
-    assert(rc != 0);
+    assert(rc == 0);
   } else {
     if (!(s3_checksum_flag & S3_SEED_UNIT) && is_s3_write_di_check_enabled) {
       s3_checksum_flag |= S3_SEED_UNIT;
@@ -812,7 +812,7 @@ void S3MotrWiter::calc_pi_info(
              rc);
       // Should we stop here? what should we do?
     }
-    assert(rc != 0);
+    assert(rc == 0);
   }
 
   if (!is_called_for_unaligned_buffers) {
