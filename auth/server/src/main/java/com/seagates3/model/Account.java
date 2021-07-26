@@ -33,7 +33,7 @@ public class Account {
     private
      String pwdResetRequired;
     private
-     String uidNo;
+     String uidNumber;
 
     public String getId() {
         return id;
@@ -92,8 +92,8 @@ public class Account {
      String getPwdResetRequired() { return pwdResetRequired; }
 
     public
-     String getUidNo() { return uidNo; }
+     String getuidNumber() { return uidNumber; }
 
     public
-     void setUidNo(String uidNo) { this.uidNo = uidNo; }
+     void setuidNumber(String uidNumber) { this.uidNumber = uidNumber; }
 }

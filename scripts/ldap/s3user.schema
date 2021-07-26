@@ -139,17 +139,11 @@ attributetype (1.3.6.1.4.99999.2.3.24
   EQUALITY caseExactMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
 
-attributetype ( 1.3.6.1.4.99999.2.3.25
-  NAME 'uidNo'
-  DESC 'unique ID of S3 Account'
-  EQUALITY caseExactMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
-
 objectclass ( 1.3.6.1.4.99999.2.4.1 NAME 'Account'
   DESC 'S3 Account'
   SUP top STRUCTURAL
   MUST ( o $ accountId $ mail $ canonicalId )
-  MAY ( userPassword  $ uidNo ) )
+  MAY ( userPassword  $ uidNumber ) )
 
 objectclass ( 1.3.6.1.4.99999.2.4.2 NAME 'iamUser'
   DESC 'S3 User'

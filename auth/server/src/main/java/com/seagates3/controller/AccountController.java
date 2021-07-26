@@ -34,23 +34,16 @@ import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
 import com.seagates3.model.AccessKey.AccessKeyStatus;
 import com.seagates3.model.Account;
-import com.seagates3.model.Group;
-import com.seagates3.model.Policy;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.Role;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AccountResponseGenerator;
 import com.seagates3.s3service.S3AccountNotifier;
-import com.seagates3.util.KeyGenUtil;
 import com.seagates3.service.GlobalDataStore;
-
+import com.seagates3.util.KeyGenUtil;
 import io.netty.handler.codec.http.HttpResponseStatus;
-
 import java.util.Map;
-
-
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AccountController extends AbstractController {
@@ -82,7 +75,7 @@ public class AccountController extends AbstractController {
     /*
      * Fetch all accounts from database
      */
-    public ServerResponse list() {
+    @Override public ServerResponse list() {
         Account[] accounts;
 
         try {
@@ -150,12 +143,12 @@ public class AccountController extends AbstractController {
         }
 
         try {
-          // Generate unique uidNo for account
-          String uidNo = generateUniqueUidNo();
-          if (uidNo != null) {
-            account.setUidNo(uidNo);
+          // Generate unique uidNumber for account
+          String uidNumber = generateUniqueuidNumber();
+          if (uidNumber != null) {
+            account.setuidNumber(uidNumber);
           } else {
-            // Failed to generate unique uidNo
+            // Failed to generate unique uidNumber
             return accountResponseGenerator.internalServerError();
           }
         }
@@ -248,19 +241,19 @@ public class AccountController extends AbstractController {
     }
 
     /**
- * Generate account uidNo and check if its unique in ldap
+ * Generate account uidNumber and check if its unique in ldap
  * @throws DataAccessException
  */
    private
-    String generateUniqueUidNo() throws DataAccessException {
+    String generateUniqueuidNumber() throws DataAccessException {
       Account account;
-      String accountUidNo;
+      String accountuidNumber;
       for (int i = 0; i < 5; i++) {
-        accountUidNo = KeyGenUtil.createAccountuidNo();
-        account = accountDao.findByUidNo(accountUidNo);
+        accountuidNumber = KeyGenUtil.createAccountuidNumber();
+        account = accountDao.findByuidNumber(accountuidNumber);
 
         if (!account.exists()) {
-          return accountUidNo;
+          return accountuidNumber;
         }
       }
       return null;

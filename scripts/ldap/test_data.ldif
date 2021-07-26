@@ -22,7 +22,7 @@ accountid: 1234567
 objectclass: Account
 mail: s3_test3@seagate.com
 canonicalId: C1234567
-uidNo: 1234
+uidNumbermber: 1234
 
 dn: ou=users,o=s3_test3,ou=accounts,dc=s3,dc=seagate,dc=com
 ou: users
