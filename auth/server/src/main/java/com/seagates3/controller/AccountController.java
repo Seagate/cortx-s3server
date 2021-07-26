@@ -44,12 +44,12 @@ import com.seagates3.response.generator.AccountResponseGenerator;
 import com.seagates3.s3service.S3AccountNotifier;
 import com.seagates3.util.KeyGenUtil;
 import com.seagates3.service.GlobalDataStore;
-
+import com.seagates3.s3service.IEMRestClient;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 import java.util.Map;
 
-
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,6 +91,15 @@ public class AccountController extends AbstractController {
             return accountResponseGenerator.internalServerError();
         }
 
+        try {
+          AuthIEMAlert.generateIemAlert("X", "0040010001", "test iem message",
+                                        "invalid string");
+        }
+        catch (IOException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
+
         return accountResponseGenerator.generateListResponse(
             accounts, requestBody.get("ShowAll"));
     }
@@ -102,6 +111,15 @@ public class AccountController extends AbstractController {
         Account account;
         int accountCount = 0;
         LOGGER.info("Creating account: " + name);
+        try {
+          AuthIEMAlert.generateIemAlert("X", "0040010001", "test iem message",
+                                        "invalid string");
+        }
+        catch (IOException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
+        LOGGER.info("***********outside iem alert*************");
         int maxAccountLimit = AuthServerConfig.getMaxAccountLimit();
         int internalAccountCount =
             AuthServerConfig.getS3InternalAccounts().size();

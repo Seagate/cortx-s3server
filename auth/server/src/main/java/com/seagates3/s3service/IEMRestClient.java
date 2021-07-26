@@ -51,7 +51,8 @@ class IEMRestClient {
    * @throws IOException
    */
  public
-  static S3HttpResponse postRequest(String iem_msg) throws ClientProtocolException,
+  static S3HttpResponse postRequest(String iem_msg)
+      throws ClientProtocolException,
       IOException {
     // URL will be stored in Authserver.properties file
     // e.g. http://127.0.0.1:28300/EventMessage/event
@@ -60,8 +61,7 @@ class IEMRestClient {
     HttpPost req = new HttpPost(URL);
     req.setHeader("Content-Type", "application/json");
 
-    req.setEntity(
-        new StringEntity(iem_msg, ContentType.APPLICATION_JSON));
+    req.setEntity(new StringEntity(iem_msg, ContentType.APPLICATION_JSON));
     S3HttpResponse s3Resp = new S3HttpResponse();
 
     try(CloseableHttpClient httpClient = HttpClientBuilder.create().build();
