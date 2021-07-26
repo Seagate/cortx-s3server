@@ -231,6 +231,25 @@ class S3MotrWiter {
   void set_up_motr_data_buffers(struct s3_motr_rw_op_context* rw_ctx,
                                 S3BufferSequence buffer_sequence,
                                 size_t motr_buf_count);
+  void align_data_to_motr_unit_size(struct s3_motr_rw_op_context *rw_ctx,
+                                    size_t &buf_idx, size_t &motr_buf_count,
+                                    size_t &starting_checksum_buf_idx);
+  void find_and_allocate_placeholder_for_data_alignment(size_t &buf_idx,
+                                                        size_t &motr_buf_count);
+  void calc_pi_info(struct s3_motr_rw_op_context *rw_ctx,
+                    size_t &saved_last_index, bool &initial_buffers_part_write,
+                    int &s3_checksum_flag, size_t &chksum_buf_idx,
+                    size_t &unaligned_buf_idx_offset, size_t &buf_idx,
+                    size_t &starting_checksum_buf_idx,
+                    bool &calculated_chksum_at_unit_boundary,
+                    bool reset_initial_buffers,
+                    bool is_called_for_unaligned_buffers,
+                    bool is_finalize_call);
+  void add_buffer_to_motr_structures(struct s3_motr_rw_op_context *rw_ctx,
+                                     void *pbuffer, size_t &buf_idx,
+                                     size_t &starting_checksum_buf_idx,
+                                     bool is_this_alignment_buffer);
+
   struct m0_fid* get_ppvid() const;
 
   // For Testing purpose

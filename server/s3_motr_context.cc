@@ -283,7 +283,6 @@ int free_basic_rw_op_ctx(struct s3_motr_rw_op_context *ctx) {
   m0_indexvec_free(ctx->ext);
   free(ctx->ext);
   free(ctx->data);
-  m0_bufvec_free(ctx->attr);
   // reset v_nr, as we dont want to free ov_buf[*] in m0_bufvec_free()
   // s3_bufvec_free_aligned(ctx->data..) has freed it
   ctx->pi_bufvec->ov_vec.v_nr = 0;
