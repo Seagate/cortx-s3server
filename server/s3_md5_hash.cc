@@ -164,6 +164,9 @@ int MD5hash::Finalize() {
     return 0;
   }
   pi_bufvec.ov_vec.v_nr = 0;
+  // Function gets called in send_response_to_s3_client
+  // at this point i feel this is moot, since we have
+  // already written data to motr.
   if (!is_initialized) {
     status = s3_motr_api->motr_client_calculate_pi(
         (struct m0_generic_pi *)&s3_md5_inc_digest_pi, NULL, &pi_bufvec,
