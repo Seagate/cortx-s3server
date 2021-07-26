@@ -30,7 +30,6 @@ import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.fi.FaultPoints;
 import com.seagates3.util.IEMUtil;
 import java.util.ArrayList;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +46,7 @@ class LDAPUtils {
     public static final String ACCOUNT_OU = "accounts";
     public static final String CANONICAL_ID = "canonicalId";
     public
-     static final String ACCOUNT_UID_NO = "uidNo";
+     static final String ACCOUNT_UID_NO = "uidNumber";
     public static final String CERTIFICATE = "cacertificate;binary";
     public static final String COMMON_NAME = "cn";
     public static final String CREATE_TIMESTAMP = "createtimestamp";

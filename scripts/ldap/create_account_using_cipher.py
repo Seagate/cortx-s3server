@@ -31,7 +31,7 @@ from s3confstore.cortx_s3_confstore import S3CortxConfStore
 # supported ldap action and input params dict
 opfileconfstore = S3CortxConfStore('yaml:///opt/seagate/cortx/s3/s3backgrounddelete/config.yaml', 'read_bg_delete_config_idx')
 
-param_list = ['account_name', 'account_id', 'canonical_id', 'mail', 's3_user_id', 'uidNo', 'const_cipher_secret_str', 'const_cipher_access_str']
+param_list = ['account_name', 'account_id', 'canonical_id', 'mail', 's3_user_id', 'uidNumber', 'const_cipher_secret_str', 'const_cipher_access_str']
 bgdelete_acc_input_params_dict = {}
 for param in param_list:
     key = 'background_delete_account' + '>' + param

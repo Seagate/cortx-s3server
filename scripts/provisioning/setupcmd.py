@@ -585,7 +585,7 @@ class SetupCmd(object):
     """To get the config parameters required in init and reset phase."""
     opfileconfstore = S3CortxConfStore(f'yaml://{self.BG_delete_config_file}', 'read_bg_delete_config_idx')
 
-    param_list = ['account_name', 'account_id', 'canonical_id', 'mail', 's3_user_id', 'uidNo', 'const_cipher_secret_str', 'const_cipher_access_str']
+    param_list = ['account_name', 'account_id', 'canonical_id', 'mail', 's3_user_id', 'uidNumber', 'const_cipher_secret_str', 'const_cipher_access_str']
     bgdelete_acc_input_params_dict = {}
     for param in param_list:
         key = 'background_delete_account' + '>' + param

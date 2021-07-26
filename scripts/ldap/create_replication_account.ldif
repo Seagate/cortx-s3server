@@ -22,4 +22,4 @@ accountid: 78981
 objectclass: Account
 mail: replication-account@seagate.com
 canonicalId: C78981
-uidNo: 1235
+uidNumber: 1235

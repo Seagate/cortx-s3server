@@ -204,18 +204,18 @@ public class KeyGenUtil {
     }
 
     /**
-     * Generate a new uidNo for account.
-     * uidNo should be,
+     * Generate a new uidNumber for account.
+     * uidNumber should be,
      * 1. Contains digits only
      * 2. number should be greater than 1000
      * e.g 2232
-     * @return uidNo
+     * @return uidNumber
      */
    public
-    static String createAccountuidNo() {
+    static String createAccountuidNumber() {
       long max = 9999L;
       long min = 1000L;
-      long account_uidNo = min + (long)(Math.random() * ((max - min) + 1));
-      return String.valueOf(account_uidNo);
+      long account_uidNumber = min + (long)(Math.random() * ((max - min) + 1));
+      return String.valueOf(account_uidNumber);
     }
 }

@@ -41,12 +41,12 @@ public interface AccountDAO {
     */
    public Account findByCanonicalID(String canonicalID) throws DataAccessException;
 
-    /* @param uidNo of Account.
+    /* @param uidNumber of Account.
     *  @return Account
     *  @throws DataAccessException
     */
    public
-    Account findByUidNo(String uidNo) throws DataAccessException;
+    Account findByuidNumber(String uidNumber) throws DataAccessException;
     /*
       * Get account details from the database.
       */
