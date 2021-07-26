@@ -51,7 +51,7 @@ cortx:
         secret: "TMPL_SGIAM_SECRET_KEY"
     s3:
       io:
-        motr_max_units_per_request : "8"
+        max_units : "8"
       service:
         instances : "1"
 cluster:
