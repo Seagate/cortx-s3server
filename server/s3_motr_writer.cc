@@ -789,7 +789,7 @@ void S3MotrWiter::calc_pi_info(
          size_in_current_write, saved_last_index, chksum_buf_idx);
 
   if (is_finalize_call) {
-    // Update (with actual data length) + Finalize without seed
+    // Update (with actual data length) + Finalize without seed (for ETAG)
     rc = s3_md5crypt->s3_calculate_unaligned_buffs_pi(rw_ctx, s3_checksum_flag);
     if (rc != 0) {
       s3_log(S3_LOG_ERROR, request_id,
@@ -866,16 +866,43 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
                                            size_t motr_buf_count) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   size_in_current_write = 0;
+
+  // Buffer index within given write command 
+  // For example say 5.3M write  - it will range from 0 to 64*5 +3 -1 assuming 16K write buffer size
+  // Updated at every write buffer processing.
   size_t buf_idx = 0;
+
+  // Same as buf_idx - Difference is - it is updated only at motr size boundry 
+  // (interval of 64 in above example)
+  // It acts as marker for unaligned block.
   size_t unaligned_buf_idx_offset = 0;
+
+  // Index of attr/PI info.
+  // For example say 5.3M write  - it will range from 0 to 5 (0 to 4 for 0 to 5M and 5 value for last 0.3M )
+  // Updated at every checksum calculation.
   size_t chksum_buf_idx = 0;
+
   bool calculated_chksum_at_unit_boundary = false;
+  
+  // Byte offset of the last write (Before this write). 
+  // This will be progressed for current write as well in this function
   size_t saved_last_index = last_index;
+
+  //This is first write of a part 
   bool initial_buffers_part_write = is_first_write_part_segment;
+
+  // It is buffer index within given given motr unit. 
+  // For every 1M write in process this will range from 0 to 63 assuming 16K write buffer size
+  // and will be reset to 0 at motr unit boundry.
+  // It will have < 63 value for last unaligned portion (if any)
   size_t starting_checksum_buf_idx = 0;
+
+  //Valid data length in buffer (<=16k)
   size_t len_in_buf = 0;
+
   size_t number_of_unit_unaligned = 0;
   size_t last_data_buf_indx_for_pi = 0;
+	
   int s3_checksum_flag = 0;
 
   while (!buffer_sequence.empty()) {
@@ -886,10 +913,19 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
     s3_log(S3_LOG_DEBUG, request_id, "To Motr: len(%zu) at last_index(%zu)\n",
            len_in_buf, (size_t)last_index);
 
+	// Append  One Read buffer (typically 16k) to motr data structures in rw_ctx
+	// Increment starting_checksum_buf_idx and buf_idx
     add_buffer_to_motr_structures(rw_ctx, ptr_n_len.first, buf_idx,
                                   starting_checksum_buf_idx, false);
 
     size_in_current_write += len_in_buf;
+	
+	// At motr unit boundry calculate PI info
+	// if 5.3Mb write payload (for a part or object) and 16k is write buffer size & 1M is motr unit size;
+	// Checksum will be called at every 1M offset interval (so 1M and 2M 3M... to write to motr 
+	// as well as for ETAG)
+	// We will fall through for last 0.3M
+  
     if (size_in_current_write % motr_unit_size == 0) {
       calc_pi_info(rw_ctx, saved_last_index, initial_buffers_part_write,
                    s3_checksum_flag, chksum_buf_idx, unaligned_buf_idx_offset,
@@ -900,23 +936,28 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
     buffer_sequence.pop_front();
   }
 
+  // Number of unaligned write buffers calculated here for checksum / PI calculation.
   number_of_unit_unaligned = buf_idx - unaligned_buf_idx_offset;
   if (number_of_unit_unaligned != 0) {
     last_data_buf_indx_for_pi = starting_checksum_buf_idx - 1;
   }
 
   // Save current running checksum, as this will change after padding
-  // and its checksum calculation
+  // and its checksum calculation and we need 
+  // this twice (once for ETAG and once for writing to motr)
   if (s3_md5crypt->is_checksum_saved()) {
     s3_md5crypt->save_motr_unit_checksum_for_unaligned_bufs(
         (unsigned char *)s3_md5crypt->get_prev_write_checksum());
   }
 
+  // Placeholder buffer allocation for padding 	
   find_and_allocate_placeholder_for_data_alignment(buf_idx, motr_buf_count);
+  
+  // Perform padding using above placeholder buffer
   align_data_to_motr_unit_size(rw_ctx, buf_idx, motr_buf_count,
                                starting_checksum_buf_idx);
 
-  // checksum for unaligned + padded buffers
+  // Checksum for unaligned + padded buffers to be saved in motr
   if (is_s3_write_di_check_enabled && number_of_unit_unaligned != 0) {
     s3_checksum_flag = S3_SEED_UNIT;
 
@@ -934,7 +975,7 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
   assert(buf_idx == motr_buf_count);
 
   // In case of unaligned buffers, calculate checksums for
-  // those unaligned buffers and finalize
+  // those unaligned buffers and finalize for ETAG
   if (!calculated_chksum_at_unit_boundary || (len_in_buf != size_of_each_buf)) {
     s3_checksum_flag = 0;
 
