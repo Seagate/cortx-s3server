@@ -1,7 +1,7 @@
 #!/bin/sh -xe
 # Script to build motr.
 # github repo: https://github.com/Seagate/cortx-motr
-# commit : edc48e22 
+# commit : 7ca7a385
 
 cd motr
 # git checkout EOS-20955 
