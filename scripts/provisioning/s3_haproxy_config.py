@@ -80,8 +80,7 @@ class S3HaproxyConfig:
     assert self.local_confstore != None
 
     return int(self.provisioner_confstore.get_config(
-      self.local_confstore.get_config(
-        'CONFIG>CONFSTORE_S3INSTANCES_KEY').replace("machine-id", self.machine_id)))
+      self.local_confstore.get_config('CONFIG>CONFSTORE_S3INSTANCES_KEY')))
 
   def process(self):
     """Main Processing function."""
