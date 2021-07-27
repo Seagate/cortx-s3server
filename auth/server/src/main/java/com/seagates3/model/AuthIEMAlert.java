@@ -5,18 +5,6 @@ import com.seagates3.s3service.S3HttpResponse;
 
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
-import com.seagates3.authserver.AuthServerConfig;
-
-import io.netty.handler.codec.http.HttpResponseStatus;
-
-import java.io.IOException;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +15,6 @@ class AuthIEMAlert {
  private
  final static Logger LOGGER =
      LoggerFactory.getLogger(AuthIEMAlert.class.getName());
-  // TODO Base template class for IEM alerts
  public
   static final String LDAP_EX = "0040010001";
  public
@@ -65,16 +52,18 @@ class AuthIEMAlert {
     catch (JSONException e) {
       LOGGER.error("Failed to create JSON message");
     }
+    S3HttpResponse resp = new S3HttpResponse();
 
     try {
-      S3HttpResponse resp = new S3HttpResponse();
       resp = IEMRestClient.postRequest(iem_msg.toString());
 
-      if(resp.getStatusCode==200){
-        Logger.debug("IEM Alert send successful for this event : " + eventCodeString);
+      if (resp.getHttpCode() == 200) {
+        LOGGER.debug("IEM Alert send successful for this event : " +
+                     eventCodeString);
       }
       else{
-        Logger.error("Failed to send IEM alert message, status : " + resp.getStatusCode());
+        LOGGER.error("Failed to send IEM alert message, status : " +
+                     resp.getHttpCode());
       }
     }
     catch (Exception e) {
