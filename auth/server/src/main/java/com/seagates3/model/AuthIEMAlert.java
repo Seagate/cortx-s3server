@@ -8,13 +8,12 @@ import com.amazonaws.util.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public
 class AuthIEMAlert {
 
  private
- final static Logger LOGGER =
-     LoggerFactory.getLogger(AuthIEMAlert.class.getName());
+  final static Logger LOGGER =
+      LoggerFactory.getLogger(AuthIEMAlert.class.getName());
  public
   static final String LDAP_EX = "0040010001";
  public
@@ -60,8 +59,7 @@ class AuthIEMAlert {
       if (resp.getHttpCode() == 200) {
         LOGGER.debug("IEM Alert send successful for this event : " +
                      eventCodeString);
-      }
-      else{
+      } else {
         LOGGER.error("Failed to send IEM alert message, status : " +
                      resp.getHttpCode());
       }
