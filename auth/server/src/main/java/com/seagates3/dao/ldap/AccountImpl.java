@@ -20,11 +20,6 @@
 
 package com.seagates3.dao.ldap;
 
-import java.util.ArrayList;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.novell.ldap.LDAPAttribute;
 import com.novell.ldap.LDAPAttributeSet;
 import com.novell.ldap.LDAPConnection;
@@ -36,6 +31,9 @@ import com.seagates3.dao.AccountDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.fi.FaultPoints;
 import com.seagates3.model.Account;
+import java.util.ArrayList;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 public class AccountImpl implements AccountDAO {
 
@@ -46,8 +44,8 @@ public class AccountImpl implements AccountDAO {
     public Account findByID(String accountID) throws DataAccessException {
         Account account = new Account();
 
-        String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME,
-                          LDAPUtils.CANONICAL_ID};
+        String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.CANONICAL_ID,
+                          LDAPUtils.ACCOUNT_UID_NO};
         String filter = String.format("(&(%s=%s)(%s=%s))",
                 LDAPUtils.ACCOUNT_ID, accountID, LDAPUtils.OBJECT_CLASS,
                 LDAPUtils.ACCOUNT_OBJECT_CLASS);
@@ -74,6 +72,9 @@ public class AccountImpl implements AccountDAO {
                 account.setCanonicalId(
                     entry.getAttribute(LDAPUtils.CANONICAL_ID)
                         .getStringValue());
+                account.setuidNumber(
+                    entry.getAttribute(LDAPUtils.ACCOUNT_UID_NO)
+                        .getStringValue());
             } catch (LDAPException ex) {
                 LOGGER.error("Failed to find account details."
                         + "of account id: " + accountID);
@@ -89,7 +90,8 @@ public class AccountImpl implements AccountDAO {
         throws DataAccessException {
         Account account = new Account();
 
-        String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID};
+        String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID,
+                          LDAPUtils.ACCOUNT_UID_NO};
         String filter = String.format("(&(%s=%s)(%s=%s))",
                 LDAPUtils.CANONICAL_ID, canonicalID, LDAPUtils.OBJECT_CLASS,
                 LDAPUtils.ACCOUNT_OBJECT_CLASS);
@@ -115,6 +117,9 @@ public class AccountImpl implements AccountDAO {
                         .getStringValue());
                 account.setId(
                     entry.getAttribute(LDAPUtils.ACCOUNT_ID).getStringValue());
+                account.setuidNumber(
+                    entry.getAttribute(LDAPUtils.ACCOUNT_UID_NO)
+                        .getStringValue());
             } catch (LDAPException ex) {
                 LOGGER.error("Failed to find account details."
                         + "of canonical id: " + canonicalID);
@@ -141,7 +146,8 @@ public class AccountImpl implements AccountDAO {
         String[] attrs = {
             LDAPUtils.ACCOUNT_ID,          LDAPUtils.CANONICAL_ID,
             LDAPUtils.PASSWORD,            LDAPUtils.PASSWORD_RESET_REQUIRED,
-            LDAPUtils.PROFILE_CREATE_DATE, LDAPUtils.EMAIL};
+            LDAPUtils.PROFILE_CREATE_DATE, LDAPUtils.EMAIL,
+            LDAPUtils.ACCOUNT_UID_NO};
         String filter = String.format("(&(%s=%s)(%s=%s))",
                 LDAPUtils.ORGANIZATIONAL_NAME, name, LDAPUtils.OBJECT_CLASS,
                 LDAPUtils.ACCOUNT_OBJECT_CLASS);
@@ -209,6 +215,9 @@ public class AccountImpl implements AccountDAO {
                 catch (Exception e) {
                   LOGGER.debug("profileCreateDate value not found in ldap");
                 }
+                account.setuidNumber(
+                    entry.getAttribute(LDAPUtils.ACCOUNT_UID_NO)
+                        .getStringValue());
           }
         }
         catch (LDAPException ex) {
@@ -221,10 +230,60 @@ public class AccountImpl implements AccountDAO {
         return account;
     }
 
+    /**
+     * Search account by uidNumber from LDAP.
+     *
+     * @param accountuidNumber Account uidNumber
+     * @return Account
+     * @throws com.seagates3.exception.DataAccessException
+     */
+    @Override public Account findByuidNumber(String accountuidNumber)
+        throws DataAccessException {
+      Account account = new Account();
+
+      String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID,
+                        LDAPUtils.ACCOUNT_UID_NO};
+      String filter = String.format(
+          "(&(%s=%s)(%s=%s))", LDAPUtils.ACCOUNT_UID_NO, accountuidNumber,
+          LDAPUtils.OBJECT_CLASS, LDAPUtils.ACCOUNT_OBJECT_CLASS);
+
+      LOGGER.debug("Searching uidNumber : " + accountuidNumber);
+
+      LDAPSearchResults ldapResults;
+      try {
+        ldapResults = LDAPUtils.search(LDAPUtils.BASE_DN,
+                                       LDAPConnection.SCOPE_SUB, filter, attrs);
+      }
+      catch (LDAPException ex) {
+        LOGGER.error("Failed to search account " + "of uidNumber " +
+                     accountuidNumber);
+        throw new DataAccessException("failed to search account.\n" + ex);
+      }
+
+      if (ldapResults != null && ldapResults.hasMore()) {
+        try {
+          LDAPEntry entry = ldapResults.next();
+          account.setuidNumber(accountuidNumber);
+          account.setName(entry.getAttribute(LDAPUtils.ORGANIZATIONAL_NAME)
+                              .getStringValue());
+          account.setId(
+              entry.getAttribute(LDAPUtils.ACCOUNT_ID).getStringValue());
+        }
+        catch (LDAPException ex) {
+          LOGGER.error("Failed to find account details." +
+                       "of account uidNumber : " + accountuidNumber);
+          throw new DataAccessException("Failed to find account details.\n" +
+                                        ex);
+        }
+      }
+
+      return account;
+    }
+
     /*
      * fetch all accounts from database
      */
-    public Account[] findAll() throws DataAccessException {
+    @Override public Account[] findAll() throws DataAccessException {
        ArrayList<Account> accounts = new ArrayList<Account>();
         Account account;
         LDAPSearchResults ldapResults;
@@ -241,7 +300,8 @@ public class AccountImpl implements AccountDAO {
         String accountFilter = String.format("(%s=%s)", LDAPUtils.OBJECT_CLASS,
                                              LDAPUtils.ACCOUNT_OBJECT_CLASS);
         String[] attr = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID,
-                         LDAPUtils.EMAIL,               LDAPUtils.CANONICAL_ID};
+                         LDAPUtils.EMAIL,               LDAPUtils.CANONICAL_ID,
+                         LDAPUtils.ACCOUNT_UID_NO};
 
         LOGGER.debug("Searching baseDn: " + baseDn + " account filter: " +
                      accountFilter);
@@ -286,6 +346,9 @@ public class AccountImpl implements AccountDAO {
             account.setCanonicalId(
                 ldapEntry.getAttribute(LDAPUtils.CANONICAL_ID)
                     .getStringValue());
+            account.setuidNumber(
+                ldapEntry.getAttribute(LDAPUtils.ACCOUNT_UID_NO)
+                    .getStringValue());
             accounts.add(account);
             ++resultCount;
             if (resultCount >= maxAllowedLdapResults) {
@@ -327,6 +390,8 @@ public class AccountImpl implements AccountDAO {
             new LDAPAttribute(LDAPUtils.EMAIL, account.getEmail()));
         attributeSet.add(new LDAPAttribute(LDAPUtils.CANONICAL_ID,
                 account.getCanonicalId()));
+        attributeSet.add(new LDAPAttribute(LDAPUtils.ACCOUNT_UID_NO,
+                                           account.getuidNumber()));
 
         LOGGER.debug("Saving account dn: " + dn);
 
@@ -369,8 +434,8 @@ public class AccountImpl implements AccountDAO {
      * The dn format: ou=<ou>,o=<account
      *name>,ou=accounts,dc=s3,dc=seagate,dc=com
      */
-   public
-    void deleteOu(Account account, String ou) throws DataAccessException {
+    @Override public void deleteOu(Account account,
+                                   String ou) throws DataAccessException {
       String dn = String.format(
           "%s=%s,%s=%s,%s=%s,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME, ou,
           LDAPUtils.ORGANIZATIONAL_NAME, account.getName(),
@@ -506,8 +571,9 @@ public class AccountImpl implements AccountDAO {
       Account account = new Account();
       account.setEmail(emailAddress);
 
-      String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID,
-                        LDAPUtils.CANONICAL_ID};
+      String[] attrs = {
+          LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID,
+          LDAPUtils.CANONICAL_ID,        LDAPUtils.ACCOUNT_UID_NO};
       String filter =
           String.format("(&(%s=%s)(%s=%s))", LDAPUtils.EMAIL, emailAddress,
                         LDAPUtils.OBJECT_CLASS, LDAPUtils.ACCOUNT_OBJECT_CLASS);
@@ -534,6 +600,8 @@ public class AccountImpl implements AccountDAO {
                 entry.getAttribute(LDAPUtils.ACCOUNT_ID).getStringValue());
             account.setCanonicalId(
                 entry.getAttribute(LDAPUtils.CANONICAL_ID).getStringValue());
+            account.setuidNumber(
+                entry.getAttribute(LDAPUtils.ACCOUNT_UID_NO).getStringValue());
           }
           catch (LDAPException ex) {
             LOGGER.error("Failed to find account details." +
@@ -551,8 +619,8 @@ public class AccountImpl implements AccountDAO {
      * Delete account entry silently from ldap.
      * if we get connection error then retry once.
      */
-   public
-    void ldap_delete_account(Account account) throws DataAccessException {
+    @Override public void ldap_delete_account(Account account)
+        throws DataAccessException {
       String dn =
           String.format("%s=%s,%s=accounts,%s", LDAPUtils.ORGANIZATIONAL_NAME,
                         account.getName(), LDAPUtils.ORGANIZATIONAL_UNIT_NAME,

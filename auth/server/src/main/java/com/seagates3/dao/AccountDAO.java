@@ -40,9 +40,16 @@ public interface AccountDAO {
     *  @throws DataAccessException
     */
    public Account findByCanonicalID(String canonicalID) throws DataAccessException;
+
+    /* @param uidNumber of Account.
+    *  @return Account
+    *  @throws DataAccessException
+    */
+   public
+    Account findByuidNumber(String uidNumber) throws DataAccessException;
     /*
-     * Get account details from the database.
-     */
+      * Get account details from the database.
+      */
     public Account find(String name) throws DataAccessException;
 
     /*

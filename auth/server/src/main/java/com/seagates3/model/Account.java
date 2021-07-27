@@ -32,6 +32,8 @@ public class Account {
      String profileCreateDate;
     private
      String pwdResetRequired;
+    private
+     String uidNumber;
 
     public String getId() {
         return id;
@@ -88,4 +90,10 @@ public class Account {
 
     public
      String getPwdResetRequired() { return pwdResetRequired; }
+
+    public
+     String getuidNumber() { return uidNumber; }
+
+    public
+     void setuidNumber(String uidNumber) { this.uidNumber = uidNumber; }
 }

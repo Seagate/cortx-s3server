@@ -42,14 +42,10 @@ import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AccountResponseGenerator;
 import com.seagates3.s3service.S3AccountNotifier;
-import com.seagates3.util.KeyGenUtil;
 import com.seagates3.service.GlobalDataStore;
-
+import com.seagates3.util.KeyGenUtil;
 import io.netty.handler.codec.http.HttpResponseStatus;
-
 import java.util.Map;
-
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,7 +78,7 @@ public class AccountController extends AbstractController {
     /*
      * Fetch all accounts from database
      */
-    public ServerResponse list() {
+    @Override public ServerResponse list() {
         Account[] accounts;
 
         try {
@@ -149,6 +145,19 @@ public class AccountController extends AbstractController {
           return accountResponseGenerator.internalServerError();
         }
 
+        try {
+          // Generate unique uidNumber for account
+          String uidNumber = generateUniqueuidNumber();
+          if (uidNumber != null) {
+            account.setuidNumber(uidNumber);
+          } else {
+            // Failed to generate unique uidNumber
+            return accountResponseGenerator.internalServerError();
+          }
+        }
+        catch (DataAccessException ex) {
+          return accountResponseGenerator.internalServerError();
+        }
         account.setEmail(email);
 
         try {
@@ -235,6 +244,25 @@ public class AccountController extends AbstractController {
     }
 
     /**
+ * Generate account uidNumber and check if its unique in ldap
+ * @throws DataAccessException
+ */
+   private
+    String generateUniqueuidNumber() throws DataAccessException {
+      Account account;
+      String accountuidNumber;
+      for (int i = 0; i < 5; i++) {
+        accountuidNumber = KeyGenUtil.createAccountuidNumber();
+        account = accountDao.findByuidNumber(accountuidNumber);
+
+        if (!account.exists()) {
+          return accountuidNumber;
+        }
+      }
+      return null;
+    }
+
+    /**
  * Generate canonical id and check if its unique in ldap
  * @throws DataAccessException
  */
@@ -252,7 +280,6 @@ public class AccountController extends AbstractController {
       }
       return null;
     }
-
     public ServerResponse resetAccountAccessKey() {
         String name = requestBody.get("AccountName");
         LOGGER.info("Resetting access key of account: " + name);

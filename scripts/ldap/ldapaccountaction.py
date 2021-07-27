@@ -101,6 +101,7 @@ class LdapAccountAction:
     attrs['accountid'] = [input_params['account_id'].encode('utf-8')]
     attrs['mail'] = [input_params['mail'].encode('utf-8')]
     attrs['canonicalId'] = [input_params['canonical_id'].encode('utf-8')]
+    attrs['uidNumber'] = [input_params['uidNumber'].encode('utf-8')]
 
     dn = dn.format(input_params['account_name'])
 

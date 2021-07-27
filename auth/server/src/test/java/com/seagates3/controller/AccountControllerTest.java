@@ -24,21 +24,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.AccountDAO;
@@ -56,8 +41,20 @@ import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.s3service.S3AccountNotifier;
 import com.seagates3.util.KeyGenUtil;
-
 import io.netty.handler.codec.http.HttpResponseStatus;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
     @PrepareForTest({DAODispatcher.class,    KeyGenUtil.class,
@@ -121,6 +118,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             .when(AuthServerConfig.class, "getS3InternalAccounts");
         PowerMockito.doReturn(1000)
             .when(AuthServerConfig.class, "getMaxAccountLimit");
+        PowerMockito.doReturn("1234")
+            .when(KeyGenUtil.class, "createAccountuidNumber");
     }
 
     @Test
@@ -274,6 +273,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             throws Exception {
         Account account = new Account();
         account.setName("s3test");
+        account.setuidNumber("1234");
 
         Mockito.doReturn(account).when(accountDAO).find("s3test");
         Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
@@ -282,6 +282,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             .save(account);
         Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
             "can1234");
+        Mockito.doReturn(new Account()).when(accountDAO).findByuidNumber(
+            "1234");
 
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
@@ -311,6 +313,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                 .when(userDAO).save(any(User.class));
         Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
             "can1234");
+        Mockito.doReturn(new Account()).when(accountDAO).findByuidNumber(
+            "1234");
 
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
@@ -325,6 +329,42 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
         Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
                 response.getResponseStatus());
+    }
+
+    @Test public void
+    CreateAccount_FailedToGenerateuidNumber_ReturnInternalServerError()
+        throws Exception {
+      Account account = new Account();
+      account.setName("s3test");
+
+      Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
+      Mockito.doReturn(account).when(accountDAO).find("s3test");
+      Mockito.doNothing().when(accountDAO).save(any(Account.class));
+      Mockito.doNothing().when(userDAO).save(any(User.class));
+      Mockito.doThrow(
+                  new DataAccessException("failed to save root access key.\n"))
+          .when(accessKeyDAO)
+          .save(any(AccessKey.class));
+      Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
+          "can1234");
+      Account account2 = new Account();
+      account2.setId("testid");
+      account2.setName("testacc");
+      Mockito.doReturn(account2).when(accountDAO).findByuidNumber("1234");
+
+      final String expectedResponseBody =
+          "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+          "<ErrorResponse " +
+          "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+          "<Error><Code>InternalFailure</Code>" +
+          "<Message>The request processing has failed because of an " +
+          "unknown error, exception or failure.</Message></Error>" +
+          "<RequestId>0000</RequestId>" + "</ErrorResponse>";
+
+      ServerResponse response = accountController.create();
+      Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+      Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
+                          response.getResponseStatus());
     }
 
     @Test
@@ -343,6 +383,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             .save(any(AccessKey.class));
         Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
             "can1234");
+        Mockito.doReturn(new Account()).when(accountDAO).findByuidNumber(
+            "1234");
 
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
@@ -381,6 +423,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             any(String.class), any(String.class), any(String.class));
         Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
             "can1234");
+        Mockito.doReturn(new Account()).when(accountDAO).findByuidNumber(
+            "1234");
 
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
@@ -458,6 +502,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
           any(String.class), any(String.class), any(String.class));
       Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
           "can1234");
+      Mockito.doReturn(new Account()).when(accountDAO).findByuidNumber("1234");
 
       final String expectedResponseBody =
           "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
