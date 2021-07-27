@@ -42,6 +42,7 @@ import com.seagates3.response.generator.AccountResponseGenerator;
 import com.seagates3.s3service.S3AccountNotifier;
 import com.seagates3.util.KeyGenUtil;
 import com.seagates3.service.GlobalDataStore;
+
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 import java.util.Map;
@@ -87,7 +88,6 @@ public class AccountController extends AbstractController {
             return accountResponseGenerator.internalServerError();
         }
 
-
         return accountResponseGenerator.generateListResponse(
             accounts, requestBody.get("ShowAll"));
     }
@@ -99,7 +99,6 @@ public class AccountController extends AbstractController {
         Account account;
         int accountCount = 0;
         LOGGER.info("Creating account: " + name);
-
         int maxAccountLimit = AuthServerConfig.getMaxAccountLimit();
         int internalAccountCount =
             AuthServerConfig.getS3InternalAccounts().size();
