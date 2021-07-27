@@ -722,6 +722,13 @@ int S3MotrWiter::get_op_ret_code_for_delete_op(int index) {
   return -ENOENT;
 }
 
+//
+// This function adds given buffer to motr rw_ctx, buffer is assumed
+// to be of size size_of_each_buf
+// Imp Param :
+// is_this_alignment_buffer : true in case of padding buffers,
+//                            false otherwise.
+//
 void S3MotrWiter::add_buffer_to_motr_structures(
     struct s3_motr_rw_op_context *rw_ctx, void *pbuffer, size_t &buf_idx,
     size_t &starting_checksum_buf_idx, bool is_this_alignment_buffer) {
@@ -760,6 +767,17 @@ void S3MotrWiter::add_buffer_to_motr_structures(
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+//
+// This function calls actual pi info calculation call
+// Imp params :
+// reset_initial_buffers : should be true in case calc is done on
+//                         boundary. false for unaligned buffers.
+// is_called_for_unaligned_buffers : should be true when called for
+//                                   unaligned case and false for
+//                                   aligned case.
+// is_finalize_call : should be true only when calculating ETAG for
+//                    unaligned case. false otherwise
+//
 void S3MotrWiter::calc_pi_info(
     struct s3_motr_rw_op_context *rw_ctx, size_t &saved_last_index,
     bool &initial_buffers_part_write, int &s3_checksum_flag,
@@ -830,6 +848,11 @@ void S3MotrWiter::calc_pi_info(
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+//
+// if padding is required then this function finds
+// appropriate buffer size and allocates the buffer
+// from mempool.
+//
 void S3MotrWiter::find_and_allocate_placeholder_for_data_alignment(
     size_t &buf_idx, size_t &motr_buf_count) {
   s3_log(S3_LOG_DEBUG, "", "%s Entry", __func__);
@@ -848,6 +871,10 @@ void S3MotrWiter::find_and_allocate_placeholder_for_data_alignment(
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+//
+// if data buffers are unaligned this function aligns
+// them to the nearest motr unit size
+//
 void S3MotrWiter::align_data_to_motr_unit_size(
     struct s3_motr_rw_op_context *rw_ctx, size_t &buf_idx,
     size_t &motr_buf_count, size_t &starting_checksum_buf_idx) {
@@ -930,7 +957,6 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
     // to write to motr
     // as well as for ETAG)
     // We will fall through for last 0.3M
-
     if (size_in_current_write % motr_unit_size == 0) {
       calc_pi_info(rw_ctx, saved_last_index, initial_buffers_part_write,
                    s3_checksum_flag, chksum_buf_idx, unaligned_buf_idx_offset,
