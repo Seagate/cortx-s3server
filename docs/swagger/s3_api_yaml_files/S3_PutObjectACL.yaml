@@ -1,0 +1,142 @@
+swagger: '2.0'
+info:
+  version: latest
+  description: aws s3api put-object-acl --bucket <your_bucket> --key \<key> --grant-* emailaddress=\<email>
+  title: S3 API - Put Object ACL
+host: s3.seagate.com
+schemes:
+  - http
+  - https
+paths:
+  '/{bucket_name}/{object_name}':
+    put:
+      tags:
+        - Put Object ACL
+      parameters:
+        - name: bucket_name
+          in: path
+          type: string
+          required: true
+        - name: object_name
+          in: path
+          type: string
+          required: true
+        - name: acl
+          in: query
+          type: string
+          required: true
+        - name: Host
+          in: header
+          description: Host header specifies the host and port number of the server.
+          type: string
+          required: true
+        - name: Accept-Encoding
+          in: header
+          description: The Accept-Encoding request HTTP header advertises which content encoding.
+          type: string
+          required: true
+        - name: x-amz-acl
+          in: header
+          description: Used to specify a canned ACL.
+          type: string
+        - name: x-amz-grant-full-control
+          in: header
+          description: Allows grantee the read, write, read ACP, and write ACP permissions on the bucket.
+          type: string
+        - name: x-amz-grant-read
+          in: header
+          description: Allows grantee to list the objects in the bucket.
+          type: string
+        - name: x-amz-grant-read-acp
+          in: header
+          description: Allows grantee to read the bucket ACL.
+          type: string
+        - name: x-amz-grant-write
+          in: header
+          description: Allows grantee to create new objects in the bucket.
+          type: string
+        - name: x-amz-grant-write-acp
+          in: header
+          description: Allows grantee to write the ACL for the applicable bucket.
+          type: string
+        - name: Content-MD5
+          in: header
+          description: >-
+            This header is used to indicate the original media type of the
+            resource.
+          type: string
+          required: true
+        - name: User-Agent
+          in: header
+          description: >-
+            Header to identify application, it's version number and programming
+            language.
+          required: true
+          type: string
+        - name: X-Amz-Date
+          in: header
+          description: Date header used to create the signature.
+          required: false
+          type: string
+        - name: X-Amz-Content-SHA256
+          in: header
+          description: This header value informs whether s3 request signed or not.
+          required: true
+          type: string
+        - name: Authorization
+          in: header
+          description: >-
+            This Header contains credentials to authorize a User-Agent with
+            server.
+          required: true
+          type: string
+        - name: Content-Length
+          in: header
+          description: >-
+            This header indicates the size of the message body, in bytes, sent
+            to the recipient.
+          type: string
+          required: true
+        - name: X-Forwarded-For
+          in: header
+          description: This header identify the originating IP address of a client connecting to a web server.
+          type: string
+          required: true
+      produces:
+        - text/plain
+      responses:
+        200:
+          description: OK
+          schema:
+            type: string
+            example: null
+          headers:
+            Content-Length:
+              type: integer
+            x-amz-request-id:
+              type: string
+            Content-Type:
+              type: string
+            Server:
+              type: string
+        400:  
+          description: |
+            Request Timeout - The client did not produce a request within the time that the server was prepared to wait.
+
+            Malformed ACL Error - The XML you provided was not well-formed or did not validate against our published schema.
+
+            Unresolvable Grant By EmailAddress - The email address you provided does not match any account on record.
+        403:
+          description: |
+            Access Denied.
+
+            Invalid AccessKey Id - The AWS access key Id you provided does not exist in our records.
+        404:
+          description: | 
+            No Such Bucket - The specified bucket does not exist.
+
+            No Such Key - The specified key does not exist.
+        500:
+          description: Internal Error - We encountered an internal error. Please try again.
+        503: 
+          description: Service Unavailable - Reduce your request rate.

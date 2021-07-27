@@ -15,7 +15,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 
 ### 1.0 Prerequisites
 
-1. Verify if kernel version is 3.10.0-1062 (for centos-7.7) or 3.10.0-1127 (for centos-7.8), using: `$ uname -r`
+1. Verify if kernel version is 3.10.0-1160 (for centos-7.9) or 3.10.0-1127 (for centos-7.8), using: `$ uname -r`
 2. You'll need to set up SSC, Cloud VM, or a local VM on VMWare Fusion or Oracle VirtualBox.
 3. Before you clone your Git repository, you'll need to create the following:
     1. Follow the link to generate the [SSH Public Key](https://git-scm.com/book/en/v2/Git-on-the-Server-Generating-Your-SSH-Public-Key).
@@ -40,9 +40,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
     * Python Version 3.0
       * To check whether Python is installed on your VM, use one of the following commands: `$ python3 --version` 
       * To install Python version 3.0, use: `$ yum install -y python3`
-    * pip3:
-      * To check if pip is installed, use: `$ pip3 --version`
-      * Update to latest pip using `$ pip3 install --upgrade pip`
+      * `Pip3` will be automatically installed by running above command
     * Extra Packages for Enterprise Linux:
         * To check if epel is installed, use: `$ yum repolist`
             * If epel was installed, you'll see it in the output list.
@@ -77,9 +75,23 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
      Once you power on your VM, you can verify if selinux and firewall are disabled by using: `$ getenforce` - you'll get a 'disabled' status.
 
 
-9. You'll need to install CORTX Python Utilities. Follow the steps to install [CORTX Python Utilities](https://github.com/Seagate/cortx-utils/blob/main/py-utils/README.md).
+9. If not already present, you need to install Java OpenJDK 8 by running
+    ```sh
+    sudo yum install -y java-1.8.0-openjdk.x86_64 java-1.8.0-openjdk-devel.x86_64
+    ``` 
+    You can check the installed package by running `rpm -qa | grep java`, and the output should be:
+    ```sh
+    javapackages-tools-3.4.1-11.el7.noarch
+    tzdata-java-2021a-1.el7.noarch
+    java-1.8.0-openjdk-1.8.0.292.b10-1.el7_9.x86_64
+    python-javapackages-3.4.1-11.el7.noarch
+    java-1.8.0-openjdk-headless-1.8.0.292.b10-1.el7_9.x86_64
+    java-1.8.0-openjdk-devel-1.8.0.292.b10-1.el7_9.x86_64
+    ``` 
+    
+10. You'll need to install CORTX Python Utilities. Follow the steps to install [CORTX Python Utilities](https://github.com/Seagate/cortx-utils/blob/main/py-utils/README.md).
 
-10. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup).
+11. You'll need to install Kafka Server. Follow the steps to install [Kafka Server](https://github.com/Seagate/cortx-utils/wiki/Kafka-Server-Setup).
 
 
 All done! You are now ready for cloning the CORTX-S3 Server repository.

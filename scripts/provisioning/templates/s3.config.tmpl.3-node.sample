@@ -24,7 +24,6 @@ server_node:
       data:
         public_fqdn: "srvnode-1.data.public"
         private_fqdn: "srvnode-1.data.private"
-    s3_instances: "1"
   1114a50a6bf6f9c93ebd3c49d07d3fe5:
     cluster_id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
     hostname: "ssc-vm-1824.colo.seagate.com"
@@ -32,7 +31,6 @@ server_node:
       data:
         public_fqdn: "srvnode-2.data.public"
         private_fqdn: "srvnode-2.data.private"
-    s3_instances: "1"
   1114a50a6bf6f9c93ebd3c49d07d3fg6:
     cluster_id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
     hostname: "ssc-vm-1825.colo.seagate.com"
@@ -40,7 +38,6 @@ server_node:
       data:
         public_fqdn: "srvnode-3.data.public"
         private_fqdn: "srvnode-3.data.private"
-    s3_instances: "1"
 cortx:
   software:
     openldap:
@@ -50,6 +47,11 @@ cortx:
       sgiam:
         user: "sgiamadmin"
         secret: "gAAAAABgWFPz2w_t6IBVictZmgTCgBXn5V-oy2JUVtvZkJvHM5KaaZKXRwtz4YKYieIy8mVKF8PUaZ6WYJEttcsi2KDpLOk9Vg=="
+    s3:
+      io:
+        max_units : "8"
+      service:
+        instances : "1"
 cluster:
   TMPL_CLUSTER_ID:
     site:

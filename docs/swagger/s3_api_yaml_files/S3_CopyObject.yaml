@@ -1,0 +1,156 @@
+swagger: '2.0'
+info:
+  version: latest
+  description: aws s3api copy-object --copy-source \<full_source_key> --key \<dest_object_name> --bucket \<dest_bucket>
+  title: S3 API - Copy Object
+host: s3.seagate.com
+schemes:
+  - http
+  - https
+paths:
+  /{bucket_name}/{object_name}:
+    put:
+      tags:
+        - Copy Object
+      parameters:
+        - name: bucket_name
+          in: path
+          type: string
+          required: true
+        - name: object_name
+          in: path
+          type: string
+          required: true
+        - name: Host
+          in: header
+          description: Host header specifies the host and port number of the server.
+          type: string
+          required: true
+        - name: Accept-Encoding
+          in: header
+          description: The Accept-Encoding request HTTP header advertises which content encoding.
+          type: string
+          required: true
+        - name: x-amz-copy-source
+          in: header
+          description: Header to identify the current version of an object to copy.
+          required: true
+          type: string
+        - name: x-amz-acl
+          in: header
+          description: Used to specify a canned ACL.
+          type: string
+        - name: Content-Encoding
+          in: header
+          description: lists any encodings that have been applied to the representation.
+          type: string
+        - name: Content-Type
+          in: header
+          description: Specifies content type.
+          type: string
+        - name: x-amz-grant-full-control
+          in: header
+          description: Allows grantee the read, write, read ACP, and write ACP permissions on the bucket.
+          type: string
+        - name: x-amz-grant-read
+          in: header
+          description: Allows grantee to list the objects in the bucket.
+          type: string
+        - name: x-amz-grant-read-acp
+          in: header
+          description: Allows grantee to read the bucket ACL.
+          type: string
+        - name: x-amz-grant-write-acp
+          in: header
+          description: Allows grantee to write the ACL for the applicable bucket.
+          type: string
+        - name: x-amz-metadata-directive
+          in: header
+          description: Enables you to copy the object and associated metadata.
+          type: string
+        - name: x-amz-tagging-directive
+          in: header
+          description: copy/replace tags.
+          type: string
+        - name: x-amz-storage-class
+          in: header
+          description: Specifies storage class.
+          type: string
+        - name: x-amz-website-redirect-location
+          in: header
+          description: Redirect requests for an object to another object or URL.
+          type: string
+        - name: User-Agent
+          in: header
+          description: >-
+            Header to identify application, it's version number and programming
+            language.
+          required: true
+          type: string
+        - name: X-Amz-Date
+          in: header
+          description: Date header used to create the signature.
+          required: false
+          type: string
+        - name: X-Amz-Content-SHA256
+          in: header
+          description: This header value informs whether s3 request signed or not.
+          required: true
+          type: string
+        - name: Authorization
+          in: header
+          description: >-
+            This Header contains credentials to authorize a User-Agent with
+            server.
+          required: true
+          type: string
+        - name: Content-Length
+          in: header
+          description: This header indicates the size of the message body, in bytes, sent
+            to the recipient.
+          required: true
+          type: string
+        - name: X-Forwarded-For
+          in: header
+          description: This header identify the originating IP address of a client connecting to a web server.
+          type: string
+          required: true
+      produces:
+        - application/xml
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            xml:
+              name: CopyObjectResult
+            properties:
+              LastModified:
+                type: string
+              ETag:
+                type: string
+          headers:
+            Content-Type:
+              type: string
+            Content-Length:
+              type: integer
+            x-amz-request-id:
+              type: string
+            Server:
+              type: string
+        400:  
+          description: Request Timeout - The client did not produce a request within the time that the server was prepared to wait.
+        403:
+          description: |
+            Access Denied.
+
+            Invalid AccessKey Id - The AWS access key Id you provided does not exist in our records.
+        404:
+          description: |
+            No Such Bucket - The specified bucket does not exist.
+            
+            No Such Key - The specified key does not exist.
+        500:
+          description: Internal Error - We encountered an internal error. Please try again.
+        503: 
+          description: Service Unavailable - Reduce your request rate.

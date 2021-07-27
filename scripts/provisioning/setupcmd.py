@@ -23,6 +23,7 @@ import os
 import shutil
 import glob
 import socket
+import ldap
 from os import path
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
@@ -601,3 +602,25 @@ class SetupCmd(object):
         bgdelete_acc_input_params_dict[param] = value_for_key
 
     return bgdelete_acc_input_params_dict
+
+  def delete_replication_config(self):
+    conn = ldap.initialize("ldapi://")
+    conn.sasl_non_interactive_bind_s('EXTERNAL')
+
+    dn = "cn=config"
+    self.deleteattribute(conn, dn, "olcServerID")
+
+    dn = "olcDatabase={0}config,cn=config"
+    self.deleteattribute(conn, dn, "olcSyncrepl")
+    self.deleteattribute(conn, dn, "olcMirrorMode")
+
+    dn = "olcDatabase={2}mdb,cn=config"
+    self.deleteattribute(conn, dn, "olcSyncrepl")
+    self.deleteattribute(conn, dn, "olcMirrorMode")
+
+  def deleteattribute(self, conn, dn, attr_to_delete):
+    mod_attrs = [(ldap.MOD_DELETE, attr_to_delete, None)]
+    try:
+      conn.modify_s(dn, mod_attrs)
+    except:
+      self.logger.info('Attribute '+ attr_to_delete + ' is not configured for dn '+ dn)

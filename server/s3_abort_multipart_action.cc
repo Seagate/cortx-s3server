@@ -200,6 +200,7 @@ void S3AbortMultipartAction::add_object_oid_to_probable_dead_oid_list() {
   probable_delete_rec.reset(new S3ProbableDeleteRecord(
       oid_str, {0ULL, 0ULL}, object_multipart_metadata->get_object_name(),
       object_oid, object_multipart_metadata->get_layout_id(),
+      object_multipart_metadata->get_pvid_str(),
       bucket_metadata->get_multipart_index_layout().oid,
       bucket_metadata->get_objects_version_list_index_layout().oid,
       "" /* Version does not exists yet */, false /* force_delete */,

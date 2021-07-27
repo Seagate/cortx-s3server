@@ -37,15 +37,15 @@ ansible_automation=0
 is_open_source=false
 
 unsupported_os() {
-  echo "S3 currently supports only CentOS 7.7.1908, CentOS 7.8.2003 or RHEL 7.7" 1>&2;
+  echo "S3 currently supports only CentOS 7.8.2003 and CentOS 7.9.2009" 1>&2;
   exit 1;
 }
 
 check_supported_kernel() {
   kernel_version=$(uname -r)
-  if [[ "$kernel_version" != 3.10.0-1062.* && "$kernel_version" != 3.10.0-1127.* ]]
+  if [[ "$kernel_version" != 3.10.0-1127.* && "$kernel_version" != 3.10.0-1160.* ]]
   then
-    echo "S3 supports kernel version: [3.10.0-1062.el7.x86_64] or [3.10.0-1127.el7.x86_64] only." 1>&2;
+    echo "S3 supports kernel version: [3.10.0-1127.el7.x86_64] or [3.10.0-1160.el7.x86_64] only." 1>&2;
     exit 1
   fi
 }
@@ -120,24 +120,14 @@ if [ ! -z "$centos_release" ]; then
   os_build_num=`echo $os_full_version | awk -F '.' '{ print $3 }'`
 
   if [ "$os_major_version" = "7" ]; then
-    if [[ "$os_minor_version" != "7" && "$os_minor_version" != "8" ]]; then
+    if [[ "$os_minor_version" != "8" && "$os_minor_version" != "9" ]]; then
       unsupported_os
-    elif [[ "$os_build_num" != "1908" && "$os_build_num" != "2003" ]]; then
+    elif [[ "$os_build_num" != "2003" && "$os_build_num" != "2009" ]]; then
       echo "CentOS build $os_build_num is currently not supported."
       exit 1
     else
       check_supported_kernel
     fi
-  else
-    unsupported_os
-  fi
-elif [ ! -z "$redhat_release" ]; then
-  os_full_version=`cat /etc/redhat-release | awk  '{ print $7 }'`
-  os_major_version=`echo $os_full_version | awk -F '.' '{ print $1 }'`
-  os_minor_version=`echo $os_full_version | awk -F '.' '{ print $2 }'`
-
-  if [[ "$os_major_version" = "7" && "$os_minor_version" = "7" ]]; then
-    check_supported_kernel
   else
     unsupported_os
   fi
@@ -283,9 +273,9 @@ if [ $ansible_automation -eq 1 ]
 then
    OPENLDAP_PASSWD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 6 | head -n 1)
    LDAPADMIN_PASSWD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 7 | head -n 1)
-   ansible-playbook -i ./hosts_local --connection local setup_s3dev_centos77_8.yml -v --extra-vars "s3_src=${S3_SRC_DIR} openldappasswd=$OPENLDAP_PASSWD ldapiamadminpasswd=$LDAPADMIN_PASSWD"
+   ansible-playbook -i ./hosts_local --connection local setup_s3dev_centos7.yml -v --extra-vars "s3_src=${S3_SRC_DIR} openldappasswd=$OPENLDAP_PASSWD ldapiamadminpasswd=$LDAPADMIN_PASSWD"
 else
-   ansible-playbook -i ./hosts_local --connection local setup_s3dev_centos77_8.yml -v -k --extra-vars "s3_src=${S3_SRC_DIR}"
+   ansible-playbook -i ./hosts_local --connection local setup_s3dev_centos7.yml -v -k --extra-vars "s3_src=${S3_SRC_DIR}"
 fi
 
 rm -f ./hosts_local

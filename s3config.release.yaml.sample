@@ -41,6 +41,9 @@ S3_SERVER_CONFIG:                                       # Section for S3 Server
    S3_AUDIT_LOGGER_RSYSLOG_MSGID: "s3server-audit-logging"  # Rsyslog msgid to filter messages
    S3_AUDIT_LOGGER_KAFKA_WEB_PATH: "/topics/s3auditlogs" # URL path for POST requests
    S3_AUDIT_MAX_RETRY_COUNT: 5                          # Max retry count in case of audit log failure
+   S3_IEM_HOST: "localhost"                              # host to connect for IEM
+   S3_IEM_PORT: 28300                                    # IEM rest server port
+   S3_IEM_PATH: "/EventMessage/event"                    # IEM URL path for POST requests
    S3_SERVER_IPV4_BIND_ADDR: 0.0.0.0                    # S3 Server ipv4 bind address, 0.0.0.0 is default. ~ means option is ignored/not to listen on IPv4 address.
    S3_SERVER_IPV6_BIND_ADDR: "~"                        # S3 Server ipv6 bind address, ::/128 is default. ~ means option is ignored/not to listen on IPv6 address.
    S3_SERVER_BIND_PORT: 28071                            # S3 Server port number
@@ -89,7 +92,7 @@ S3_MOTR_CONFIG:                                     # Section for S3 Motr
                                                         # 1->4K, 2->8K, 3->16K, 4->32K, 5->64K, 6->128K, 7->256K, 8->512K, 9->1024K,
                                                         # 10->2048K, 11->4096K, 12->8192K, 13->16384K, 14->32768K, default is layout id 9 (1 MB)
    S3_MOTR_UNIT_SIZE: 1048576                         # Motr unit size w.r.t layout id for an IO operation
-   S3_MOTR_MAX_UNITS_PER_REQUEST: 32                  # Maximum units per read/write request to motr
+   S3_MOTR_MAX_UNITS_PER_REQUEST: 8                   # Maximum units per read/write request to motr. For hardware the value is set to 32, for VM/OVA the value is set to 8
    S3_MOTR_MAX_IDX_FETCH_COUNT: 30                    # Motr will read from index at a time maximim of this many key values, used in objects listing
    S3_MOTR_IS_OOSTORE: true                           # Motr oostore mode is set when this flag is true, default is false (oostore mode is not set)
    S3_MOTR_IS_READ_VERIFY: false                      # Motr Flag for verify-on-read. Parity is checked during READ's if this flag is true, default is false

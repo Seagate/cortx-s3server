@@ -307,6 +307,7 @@ void S3PutObjectAction::create_object_successful() {
   new_object_metadata->regenerate_version_id();
   new_object_metadata->set_oid(motr_writer->get_oid());
   new_object_metadata->set_layout_id(layout_id);
+  new_object_metadata->set_pvid(motr_writer->get_ppvid());
 
   add_object_oid_to_probable_dead_oid_list();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -591,7 +592,6 @@ void S3PutObjectAction::save_metadata() {
   new_object_metadata->set_content_type(request->get_content_type());
   new_object_metadata->set_md5(motr_writer->get_content_md5());
   new_object_metadata->set_tags(new_object_tags_map);
-  new_object_metadata->set_pvid(motr_writer->get_ppvid());
 
   for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {
@@ -652,7 +652,7 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
            old_oid_rec_key.c_str());
     old_probable_del_rec.reset(new S3ProbableDeleteRecord(
         old_oid_rec_key, {0ULL, 0ULL}, object_metadata->get_object_name(),
-        old_object_oid, old_layout_id,
+        old_object_oid, old_layout_id, object_metadata->get_pvid_str(),
         bucket_metadata->get_object_list_index_layout().oid,
         bucket_metadata->get_objects_version_list_index_layout().oid,
         object_metadata->get_version_key_in_index(), false /* force_delete */));
@@ -669,7 +669,7 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
          "Adding new_probable_del_rec with key [%s]\n", new_oid_str.c_str());
   new_probable_del_rec.reset(new S3ProbableDeleteRecord(
       new_oid_str, old_object_oid, new_object_metadata->get_object_name(),
-      new_object_oid, layout_id,
+      new_object_oid, layout_id, new_object_metadata->get_pvid_str(),
       bucket_metadata->get_object_list_index_layout().oid,
       bucket_metadata->get_objects_version_list_index_layout().oid,
       new_object_metadata->get_version_key_in_index(),

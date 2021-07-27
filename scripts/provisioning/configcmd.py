@@ -22,9 +22,11 @@ import sys
 import os
 import errno
 import shutil
+import math
 from pathlib import Path
 from  ast import literal_eval
-
+from os import path
+from s3confstore.cortx_s3_confstore import S3CortxConfStore
 from setupcmd import SetupCmd, S3PROVError
 from cortx.utils.process import SimpleProcess
 from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
@@ -58,12 +60,18 @@ class ConfigCmd(SetupCmd):
     self.logger.info("validations completed")
 
     try:
+
+      self.logger.info("update motr max units per request started")
+      self.update_motr_max_units_per_request()
+      self.logger.info("update motr max units per request completed")
+
       # disable S3server, S3authserver, haproxy, BG delete services on reboot as 
       # it will be managed by HA
       self.logger.info('Disable services on reboot started')
       services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver"]
       self.disable_services(services_list)
       self.logger.info('Disable services on reboot completed')
+
 
       self.logger.info('create auth jks password started')
       self.create_auth_jks_password()
@@ -139,6 +147,9 @@ class ConfigCmd(SetupCmd):
 
   def configure_openldap_replication(self):
     """Configure openldap replication within a storage set."""
+    self.logger.info('Cleaning up old Openldap replication configuration')
+    # Delete ldap replication cofiguration
+    self.delete_replication_config()
     self.logger.info('Open ldap replication configuration started')
     storage_set_count = self.get_confvalue(self.get_confkey(
         'CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY').replace("cluster-id", self.cluster_id))
@@ -248,3 +259,33 @@ class ConfigCmd(SetupCmd):
     else:
       self.logger.warning(f'warning of create_auth_jks_password.sh: {stderr}')
       self.logger.info(' Successfully set auth JKS keystore password.')
+
+  def update_motr_max_units_per_request(self):
+    """
+    update S3_MOTR_MAX_UNITS_PER_REQUEST in the s3config file based on VM/OVA/HW
+    S3_MOTR_MAX_UNITS_PER_REQUEST = 8 for VM/OVA
+    S3_MOTR_MAX_UNITS_PER_REQUEST = 32 for HW
+    """
+
+    # get the motr_max_units_per_request count from the config file
+    motr_max_units_per_request = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST'))
+    self.logger.info(f'motr_max_units_per_request: {motr_max_units_per_request}')
+    #validate min and max unit should be between 1 to 128
+    if 2 <= int(motr_max_units_per_request) <= 128:
+      if math.log2(int(motr_max_units_per_request)).is_integer():
+        self.logger.info("motr_max_units_per_request is in valid range")
+      else:
+        raise S3PROVError("motr_max_units_per_request should be power of 2")
+    else:
+      raise S3PROVError("motr_max_units_per_request should be between 2 to 128")
+
+    # update the S3_MOTR_MAX_UNITS_PER_REQUEST in s3config.yaml file
+    s3configfile = self.get_confkey('S3_CONFIG_FILE')
+    if path.isfile(f'{s3configfile}') == False:
+      self.logger.error(f'{s3configfile} file is not present')
+      raise S3PROVError(f'{s3configfile} file is not present')
+    else:
+      motr_max_units_per_request_key = 'S3_MOTR_CONFIG>S3_MOTR_MAX_UNITS_PER_REQUEST'
+      s3configfileconfstore = S3CortxConfStore(f'yaml://{s3configfile}', 'write_s3_motr_max_unit_idx')
+      s3configfileconfstore.set_config(motr_max_units_per_request_key, int(motr_max_units_per_request), True)
+      self.logger.info(f'Key {motr_max_units_per_request_key} updated successfully in {s3configfile}')

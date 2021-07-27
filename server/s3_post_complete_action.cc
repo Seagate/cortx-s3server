@@ -516,7 +516,7 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
 
     new_probable_del_rec.reset(new S3ProbableDeleteRecord(
         new_oid_str, old_object_oid, multipart_metadata->get_object_name(),
-        new_object_oid, layout_id,
+        new_object_oid, layout_id, multipart_metadata->get_pvid_str(),
         bucket_metadata->get_multipart_index_layout().oid,
         bucket_metadata->get_objects_version_list_index_layout().oid,
         new_object_metadata->get_version_key_in_index(),
@@ -558,12 +558,11 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
 
       old_probable_del_rec.reset(new S3ProbableDeleteRecord(
           old_oid_rec_key, {0ULL, 0ULL}, multipart_metadata->get_object_name(),
-          old_object_oid, old_layout_id,
+          old_object_oid, old_layout_id, multipart_metadata->get_pvid_str(),
           bucket_metadata->get_object_list_index_layout().oid,
           bucket_metadata->get_objects_version_list_index_layout().oid,
           multipart_metadata->get_version_key_in_index(),
-          false /* force_delete */
-          ));
+          false /* force_delete */));
       // backgrounddelete will delete this entry if current object metadata has
       // moved on
       motr_kv_writer->put_keyval(
