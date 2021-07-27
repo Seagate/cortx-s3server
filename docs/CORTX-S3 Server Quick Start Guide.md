@@ -15,7 +15,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 
 ### 1.0 Prerequisites
 
-1. Verify if kernel version is 3.10.0-1062 (for centos-7.7) or 3.10.0-1127 (for centos-7.8), using: `$ uname -r`
+1. Verify if kernel version is 3.10.0-1160 (for centos-7.9) or 3.10.0-1127 (for centos-7.8), using: `$ uname -r`
 2. You'll need to set up SSC, Cloud VM, or a local VM on VMWare Fusion or Oracle VirtualBox.
 3. Before you clone your Git repository, you'll need to create the following:
     1. Follow the link to generate the [SSH Public Key](https://git-scm.com/book/en/v2/Git-on-the-Server-Generating-Your-SSH-Public-Key).
