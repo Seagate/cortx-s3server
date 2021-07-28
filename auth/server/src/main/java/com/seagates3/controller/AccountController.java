@@ -34,8 +34,6 @@ import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
 import com.seagates3.model.AccessKey.AccessKeyStatus;
 import com.seagates3.model.Account;
-import com.seagates3.model.Group;
-import com.seagates3.model.Policy;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.Role;
 import com.seagates3.model.User;
@@ -48,7 +46,6 @@ import com.seagates3.service.GlobalDataStore;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 import java.util.Map;
-
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
