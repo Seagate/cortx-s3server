@@ -21,7 +21,6 @@
 package com.seagates3.dao.ldap;
 
 import java.util.ArrayList;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.novell.ldap.LDAPConnection;
@@ -165,6 +164,12 @@ class LDAPUtils {
                         "Troubleshooting Guide.",
                     String.format("\"cause\": \"%s\"",
                                   ldapException.getCause()));
+                // AuthIEMAlert.generateIemAlert(severity, AuthIEMAlert.LDAP_EX,
+                // "An error occurred while establishing ldap " +
+                //         "connection. For more information, please refer " +
+                //         "Troubleshooting Guide.", String.format("\"cause\":
+                // \"%s\"",
+                //                   ldapException.getCause()));
                 throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
@@ -204,6 +209,12 @@ class LDAPUtils {
                         "Troubleshooting Guide.",
                     String.format("\"cause\": \"%s\"",
                                   ldapException.getCause()));
+                // AuthIEMAlert.generateIemAlert(severity, AuthIEMAlert.LDAP_EX,
+                // "An error occurred while establishing ldap " +
+                //         "connection. For more information, please refer " +
+                //         "Troubleshooting Guide.", String.format("\"cause\":
+                // \"%s\"",
+                //                   ldapException.getCause()));
                 throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
@@ -241,6 +252,12 @@ class LDAPUtils {
                         "Troubleshooting Guide.",
                     String.format("\"cause\": \"%s\"",
                                   ldapException.getCause()));
+                // AuthIEMAlert.generateIemAlert(severity, AuthIEMAlert.LDAP_EX,
+                // "An error occurred while establishing ldap " +
+                //         "connection. For more information, please refer " +
+                //         "Troubleshooting Guide.", String.format("\"cause\":
+                // \"%s\"",
+                //                   ldapException.getCause()));
                 throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
@@ -280,6 +297,12 @@ class LDAPUtils {
                         "Troubleshooting Guide.",
                     String.format("\"cause\": \"%s\"",
                                   ldapException.getCause()));
+                // AuthIEMAlert.generateIemAlert(severity, AuthIEMAlert.LDAP_EX,
+                // "An error occurred while establishing ldap " +
+                //         "connection. For more information, please refer " +
+                //         "Troubleshooting Guide.", String.format("\"cause\":
+                // \"%s\"",
+                //                   ldapException.getCause()));
                 throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
@@ -321,6 +344,12 @@ class LDAPUtils {
                         "Troubleshooting Guide.",
                     String.format("\"cause\": \"%s\"",
                                   ldapException.getCause()));
+                // AuthIEMAlert.generateIemAlert(severity, AuthIEMAlert.LDAP_EX,
+                // "An error occurred while establishing ldap " +
+                //         "connection. For more information, please refer " +
+                //         "Troubleshooting Guide.", String.format("\"cause\":
+                // \"%s\"",
+                //                   ldapException.getCause()));
                 throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
@@ -358,6 +387,12 @@ class LDAPUtils {
               "An error occurred while establishing ldap connection. For " +
                   "more " + "information, please refer Troubleshooting Guide.",
               String.format("\"cause\": \"%s\"", ldapException.getCause()));
+          // AuthIEMAlert.generateIemAlert(severity, AuthIEMAlert.LDAP_EX, "An
+          // error occurred while establishing ldap " +
+          //                 "connection. For more information, please refer " +
+          //                 "Troubleshooting Guide.", String.format("\"cause\":
+          // \"%s\"",
+          //                           ldapException.getCause()));
           throw ldapException;
         }
         finally { lc.disconnect(); }
