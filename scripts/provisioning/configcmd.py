@@ -79,13 +79,13 @@ class ConfigCmd(SetupCmd):
 
       if configure_only_openldap == True:
         # Configure openldap only
-        self.configure_openldap()
+        self.configure_s3_schema()
       elif configure_only_haproxy == True:
         # Configure haproxy only
         self.configure_haproxy()
       else:
         # Configure both openldap and haproxy
-        self.configure_openldap()
+        self.configure_s3_schema()
         self.configure_haproxy()
 
       # create topic for background delete
@@ -99,19 +99,13 @@ class ConfigCmd(SetupCmd):
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}')
 
-  def configure_openldap(self):
-    """Install and Configure Openldap over Non-SSL."""
-    # 1. Install and Configure Openldap over Non-SSL.
-    # 2. Enable slapd logging in rsyslog config
-    # 3. Set openldap-replication
-    # 4. Check number of nodes in the cluster
-    self.logger.info('Open ldap configuration started')
-    cmd = ['/opt/seagate/cortx/s3/install/ldap/setup_ldap.sh',
+  def configure_s3_schema(self):
+    self.logger.info('openldap s3 configuration started')
+    cmd = ['/opt/seagate/cortx/s3/install/ldap/s3_setup_ldap.sh',
            '--ldapadminpasswd',
            f'{self.ldap_passwd}',
            '--rootdnpasswd',
            f'{self.rootdn_passwd}',
-           '--forceclean',
            '--skipssl']
     handler = SimpleProcess(cmd)
     stdout, stderr, retcode = handler.run()
@@ -121,77 +115,6 @@ class ConfigCmd(SetupCmd):
       raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
     else:
       self.logger.warning(f'warning of setup_ldap.sh: {stderr}')
-
-    if os.path.isfile("/opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf"):
-      try:
-        os.makedirs("/etc/rsyslog.d")
-      except OSError as e:
-        if e.errno != errno.EEXIST:
-          raise S3PROVError(f"mkdir /etc/rsyslog.d failed with errno: {e.errno}, exception: {e}")
-      shutil.copy('/opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf',
-                  '/etc/rsyslog.d/slapdlog.conf')
-
-    # restart rsyslog service
-    try:
-      self.logger.info("Restarting rsyslog service...")
-      service_list = ["rsyslog"]
-      self.restart_services(service_list)
-    except Exception as e:
-      self.logger.error(f'Failed to restart rsyslog service, error: {e}')
-      raise e
-    self.logger.info("Restarted rsyslog service...")
-
-    # set openldap-replication
-    self.configure_openldap_replication()
-    self.logger.info('Open ldap configuration completed')
-
-  def configure_openldap_replication(self):
-    """Configure openldap replication within a storage set."""
-    self.logger.info('Cleaning up old Openldap replication configuration')
-    # Delete ldap replication cofiguration
-    self.delete_replication_config()
-    self.logger.info('Open ldap replication configuration started')
-    storage_set_count = self.get_confvalue(self.get_confkey(
-        'CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY').replace("cluster-id", self.cluster_id))
-
-    index = 0
-    while index < int(storage_set_count):
-      server_nodes_list = self.get_confkey(
-        'CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("cluster-id", self.cluster_id).replace("storage-set-count", str(index))
-      server_nodes_list = self.get_confvalue(server_nodes_list)
-      if type(server_nodes_list) is str:
-        # list is stored as string in the confstore file
-        server_nodes_list = literal_eval(server_nodes_list)
-
-      if len(server_nodes_list) > 1:
-        self.logger.info(f'Setting ldap-replication for storage_set:{index}')
-
-        Path(self.s3_tmp_dir).mkdir(parents=True, exist_ok=True)
-        ldap_hosts_list_file = os.path.join(self.s3_tmp_dir, "ldap_hosts_list_file.txt")
-        with open(ldap_hosts_list_file, "w") as f:
-          for node_machine_id in server_nodes_list:
-            private_fqdn = self.get_confvalue(f'server_node>{node_machine_id}>network>data>private_fqdn')
-            f.write(f'{private_fqdn}\n')
-            self.logger.info(f'output of ldap_hosts_list_file.txt: {private_fqdn}')
-
-        cmd = ['/opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh',
-             '-h',
-             ldap_hosts_list_file,
-             '-p',
-             f'{self.rootdn_passwd}']
-        handler = SimpleProcess(cmd)
-        stdout, stderr, retcode = handler.run()
-        self.logger.info(f'output of setupReplicationScript.sh: {stdout}')
-        os.remove(ldap_hosts_list_file)
-
-        if retcode != 0:
-          self.logger.error(f'error of setupReplicationScript.sh: {stderr}')
-          raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
-        else:
-          self.logger.warning(f'warning of setupReplicationScript.sh: {stderr}')
-      index += 1
-    # TODO: set replication across storage-sets
-    self.logger.info('Open ldap replication configuration completed')
 
   def create_topic(self, admin_id: str, topic_name:str, partitions: int):
     """create topic for background delete services."""

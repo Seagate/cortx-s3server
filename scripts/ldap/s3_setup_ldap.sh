@@ -23,26 +23,23 @@
 # configure OpenLDAP #
 ##################################
 
-USAGE="USAGE: bash $(basename "$0") [--ldapadminpasswd <passwd>] [--rootdnpasswd <passwd>] [--defaultpasswd] [--skipssl]
+USAGE="USAGE: bash $(basename "$0") [--ldapadminpasswd <passwd>] [--rootdnpasswd <passwd>] [--skipssl]
       [--help | -h]
 Install and configure OpenLDAP.
 
 where:
 --ldapadminpasswd   optional ldapadmin password
 --rootdnpasswd      optional rootdn password
---defaultpasswd     optional set default password
 --skipssl           skips all ssl configuration for LDAP
 --help              display this help and exit
-NOTE: If either one or both --ldapadminpasswd and --rootdnpasswd are not provided and --defaultpasswd is not provided, runtime input will be required from the user."
+"
 
 set -e
-defaultpasswd=false
 usessl=true
 LDAPADMINPASS=
 ROOTDNPASSWORD=
-defaultpasswds="ldapadmin"
 
-echo "Running setup_ldap.sh script"
+echo "Running s3_setup_ldap.sh script"
 if [ $# -lt 1 ]
 then
   echo "$USAGE"
@@ -58,9 +55,6 @@ do
     --rootdnpasswd ) shift;
         ROOTDNPASSWORD=$1
         ;;
-    --defaultpasswd )
-        defaultpasswd=true
-        ;;
     --skipssl )
         usessl=false
         ;;
@@ -75,29 +69,16 @@ done
 
 if [ -z "$LDAPADMINPASS" ]
 then
-    # If --defaultpasswd is set, use it. Else ask from user as input
-    if [[ $defaultpasswd == true ]]
-    then
-        LDAPADMINPASS=$defaultpasswds
-    else
-        # Fetch password from User
-        echo -en "\nEnter Password for LDAP IAM admin: "
-        read -s LDAPADMINPASS && [[ -z $LDAPADMINPASS ]] && echo 'Password can not be null.' && exit 1
-    fi
+    echo "Password can not be null."
+    exit 1
 fi
 
 if [ -z "$ROOTDNPASSWORD" ]
 then
-    # If --defaultpasswd is set, use it. Else ask from user as input
-    if [[ $defaultpasswd == true ]]
-    then
-        ROOTDNPASSWORD=$defaultpasswds
-    else
-        # Fetch password from User
-        echo -en "\nEnter Password for LDAP rootDN: "
-        read -s ROOTDNPASSWORD && [[ -z $ROOTDNPASSWORD ]] && echo 'Password can not be null.' && exit 1
-    fi
+    echo "Password can not be null."
+    exit 1
 fi
+
 INSTALLDIR="/opt/seagate/cortx/s3/install/ldap"
 # generate encrypted password for ldap admin
 SHA=$(slappasswd -s "$LDAPADMINPASS")
