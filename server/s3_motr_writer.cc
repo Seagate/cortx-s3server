@@ -528,9 +528,17 @@ void S3MotrWiter::write_content() {
 
   last_op_was_write = true;
 
-  /* Create the write request */
-  rc = s3_motr_api->motr_obj_op(&obj_ctx->objs[0], M0_OC_WRITE, rw_ctx->ext,
-                                rw_ctx->data, rw_ctx->attr, 0, 0, &ctx->ops[0]);
+  if (is_s3_write_di_check_enabled) {
+    /* Create the write request */
+    rc = s3_motr_api->motr_obj_op(&obj_ctx->objs[0], M0_OC_WRITE, rw_ctx->ext,
+                                  rw_ctx->data, rw_ctx->attr, 0, 0,
+                                  &ctx->ops[0]);
+  } else {
+    /* Create the write request */
+    rc = s3_motr_api->motr_obj_op(&obj_ctx->objs[0], M0_OC_WRITE, rw_ctx->ext,
+                                  rw_ctx->data, NULL, 0, 0, &ctx->ops[0]);
+  }
+
   if (rc != 0) {
     s3_log(S3_LOG_WARN, request_id,
            "Motr API: motr_obj_op failed with error code %d\n", rc);
@@ -736,7 +744,7 @@ int S3MotrWiter::get_op_ret_code_for_delete_op(int index) {
 //
 void S3MotrWiter::add_buffer_to_motr_structures(
     struct s3_motr_rw_op_context *rw_ctx, void *pbuffer, size_t &buf_idx,
-    size_t &starting_checksum_buf_idx, bool is_this_alignment_buffer) {
+    size_t &starting_checksum_buf_idx) {
   assert(pbuffer != NULL);
   assert(rw_ctx != NULL);
   assert(buf_idx >= 0);
@@ -755,16 +763,9 @@ void S3MotrWiter::add_buffer_to_motr_structures(
   rw_ctx->ext->iv_vec.v_count[buf_idx] = /*data_len*/ size_of_each_buf;
   last_index += /*data_len*/ size_of_each_buf;
 
-  if (!is_this_alignment_buffer) {
-    rw_ctx->pi_bufvec->ov_buf[starting_checksum_buf_idx] = pbuffer;
-    rw_ctx->pi_bufvec->ov_vec.v_count[starting_checksum_buf_idx++] =
-        size_of_each_buf;
-  } else if (is_s3_write_di_check_enabled) {
-    assert(starting_checksum_buf_idx < rw_ctx->buffers_per_motr_unit);
-    rw_ctx->pi_bufvec->ov_buf[starting_checksum_buf_idx] = pbuffer;
-    rw_ctx->pi_bufvec->ov_vec.v_count[starting_checksum_buf_idx++] =
-        size_of_each_buf;
-  }
+  rw_ctx->pi_bufvec->ov_buf[starting_checksum_buf_idx] = pbuffer;
+  rw_ctx->pi_bufvec->ov_vec.v_count[starting_checksum_buf_idx++] =
+      size_of_each_buf;
 
   /* we don't want any attributes */
   // rw_ctx->attr->ov_vec.v_count[buf_idx] = 0;
@@ -842,11 +843,7 @@ void S3MotrWiter::calc_pi_info(
     saved_last_index = last_index;
     starting_checksum_buf_idx = 0;
     unaligned_buf_idx_offset = buf_idx;
-
-    if (s3_checksum_flag & S3_FIRST_UNIT) {
-      s3_checksum_flag &= ~S3_FIRST_UNIT;
-    }
-
+    s3_checksum_flag &= ~S3_FIRST_UNIT;
     calculated_chksum_at_unit_boundary = true;
   }
 
@@ -888,7 +885,7 @@ void S3MotrWiter::align_data_to_motr_unit_size(
 
   while (buf_idx < motr_buf_count) {
     add_buffer_to_motr_structures(rw_ctx, place_holder_for_last_unit, buf_idx,
-                                  starting_checksum_buf_idx, true);
+                                  starting_checksum_buf_idx);
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -951,7 +948,7 @@ void S3MotrWiter::set_up_motr_data_buffers(struct s3_motr_rw_op_context *rw_ctx,
     // Append  One Read buffer (typically 16k) to motr data structures in rw_ctx
     // Increment starting_checksum_buf_idx and buf_idx
     add_buffer_to_motr_structures(rw_ctx, ptr_n_len.first, buf_idx,
-                                  starting_checksum_buf_idx, false);
+                                  starting_checksum_buf_idx);
 
     size_in_current_write += len_in_buf;
 
