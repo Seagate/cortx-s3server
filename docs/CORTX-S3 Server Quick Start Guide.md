@@ -41,13 +41,14 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
       * To check whether Python is installed on your VM, use one of the following commands: `$ python3 --version` 
       * To install Python version 3.0, use: `$ yum install -y python3`
       * `Pip3` will be automatically installed by running above command
+
     * Extra Packages for Enterprise Linux:
         * To check if epel is installed, use: `$ yum repolist`
             * If epel was installed, you'll see it in the output list.
             * You might also see exclamation mark in front of the repositories id. Refer to the [Redhat Knowledge Base](https://access.redhat.com/solutions/2267871).
         * `$ yum install -y epel-release`
     * Ansible: Install ansible if not there already `$ yum install -y ansible`
-    * ipaddress: Install ipaddress if not there already `$ pip3 install ipaddress`
+    * ipaddress: Install ipaddress if not there already `$ pip3 install ipaddress==`
     
 6. You will need to set your hostname to something other than localhost `hostnamectl set-hostname --static --transient --pretty <new-name>`
 
