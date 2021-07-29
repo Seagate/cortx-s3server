@@ -41,15 +41,17 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
       * To check whether Python is installed on your VM, use one of the following commands: `$ python3 --version` 
       * To install Python version 3.0, use: `$ yum install -y python3`
       * `Pip3` will be automatically installed by running above command
+
     * Extra Packages for Enterprise Linux:
         * To check if epel is installed, use: `$ yum repolist`
             * If epel was installed, you'll see it in the output list.
             * You might also see exclamation mark in front of the repositories id. Refer to the [Redhat Knowledge Base](https://access.redhat.com/solutions/2267871).
         * `$ yum install -y epel-release`
     * Ansible: Install ansible if not there already `$ yum install -y ansible`
-    * ipaddress: Install ipaddress if not there already `$ pip install ipaddress`
+    * ipaddress: Install ipaddress if not there already `$ pip3 install ipaddress`
+    * Make sure that PATH variable has `/root/local/bin`,`/usr/local/sbin`,`/usr/sbin`,`/usr/bin` directories 
     
-6. You will need to set your hostname to something other than localhost `hostnamectl set-hostname --static --transient --pretty <new-name>`
+6. You will need to set your hostname to something other than localhost `hostnamectl set-hostname --static --transient --pretty <new-name>`. Try `sudo' if the command fails
 
 7. Add/set entry corresponding to <new-name> in above command to `/etc/hosts` file
     
@@ -365,5 +367,6 @@ Refer to our [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/ma
 Please refer to the [Support](https://github.com/Seagate/cortx/blob/main/SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
 
 Tested by:
+- June 11, 2021: Kapil Jinna (kapil.jinna@seagate.com) on Vsphere cloud VM (Centos 7.8)
 - May 09, 2021: Kapil Jinna (kapil.jinna@seagate.com) on SSC cloud VM (Centos 7.8)
 - Nov 03, 2020: Saumya Sunder (saumya.sunder@seagate.com) on a Windows laptop running VMWare Workstation 16 Pro.
