@@ -247,8 +247,7 @@ class S3MotrWiter {
                     bool is_finalize_call);
   void add_buffer_to_motr_structures(struct s3_motr_rw_op_context *rw_ctx,
                                      void *pbuffer, size_t &buf_idx,
-                                     size_t &starting_checksum_buf_idx,
-                                     bool is_this_alignment_buffer);
+                                     size_t &starting_checksum_buf_idx);
 
   struct m0_fid* get_ppvid() const;
 
