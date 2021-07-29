@@ -49,6 +49,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
         * `$ yum install -y epel-release`
     * Ansible: Install ansible if not there already `$ yum install -y ansible`
     * ipaddress: Install ipaddress if not there already `$ pip3 install ipaddress==`
+    * Make sure that PATH variable has `/root/local/bin`,`/usr/local/sbin`,`/usr/sbin`,`/usr/bin` directories 
     
 6. You will need to set your hostname to something other than localhost `hostnamectl set-hostname --static --transient --pretty <new-name>`
 
