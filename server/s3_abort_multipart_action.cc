@@ -51,13 +51,6 @@ S3AbortMultipartAction::S3AbortMultipartAction(
          bucket_name.c_str(), object_name.c_str(), upload_id.c_str());
 
   action_uses_cleanup = true;
-<<<<<<< HEAD
-=======
-  struct s3_motr_idx_layout bucket_metadata_list_index_layout;
-  multipart_oid = {0ULL, 0ULL};
-  part_index_oid = {0ULL, 0ULL};
-  last_key = "";
->>>>>>> EOS-17955: Multipart abort (#882)
 
   s3_abort_mp_action_state = S3AbortMultipartActionState::empty;
 
@@ -146,13 +139,8 @@ void S3AbortMultipartAction::get_multipart_metadata() {
           request->get_object_name() + EXTENDED_METADATA_OBJECT_SEP + upload_id;
       object_multipart_metadata =
           object_mp_metadata_factory->create_object_mp_metadata_obj(
-<<<<<<< HEAD
               request, multipart_index_layout, upload_id);
-
-=======
-              request, multipart_oid, upload_id);
       object_multipart_metadata->rename_object_name(multipart_key_name);
->>>>>>> EOS-17955: Multipart abort (#882)
       object_multipart_metadata->load(
           std::bind(&S3AbortMultipartAction::get_multipart_metadata_status,
                     this),
@@ -232,8 +220,8 @@ void S3AbortMultipartAction::get_next_parts_successful() {
       s3_log(S3_LOG_ERROR, request_id,
              "Json Parsing failed. Index oid = "
              "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
-             part_index_layout.u_hi, part_index_layout.u_lo, kv.first.c_str(),
-             kv.second.second.c_str());
+             part_index_layout.oid.u_hi, part_index_layout.oid.u_lo,
+             kv.first.c_str(), kv.second.second.c_str());
     } else {
       multipart_parts.push_back(part);
       s3_log(S3_LOG_DEBUG, request_id,
@@ -309,9 +297,11 @@ void S3AbortMultipartAction::add_parts_oids_to_probable_dead_oid_list() {
     probable_del_rec.reset(new S3ProbableDeleteRecord(
         part_oid_str, {0ULL, 0ULL}, part_metadata->get_part_number(),
         part_metadata->get_oid(), part_metadata->get_layout_id(),
-        part_metadata->get_part_index_oid(),
-        bucket_metadata->get_objects_version_list_index_oid(), "",
-        false /* force_delete */, true, part_metadata->get_part_index_oid()));
+        part_metadata->get_pvid_str(),
+        part_metadata->get_part_index_layout().oid,
+        bucket_metadata->get_objects_version_list_index_layout().oid, "",
+        false /* force_delete */, true,
+        part_metadata->get_part_index_layout().oid));
     probable_oid_list[probable_del_rec->get_key()] =
         probable_del_rec->to_json();
     probable_del_rec_list.push_back(std::move(probable_del_rec));
@@ -582,11 +572,7 @@ void S3AbortMultipartAction::remove_probable_records() {
           mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
     }
     motr_kv_writer->delete_keyval(
-<<<<<<< HEAD
-        global_probable_dead_object_list_index_layout, oid_str,
-=======
-        global_probable_dead_object_list_index_oid, keys_to_delete,
->>>>>>> EOS-17955: Multipart abort (#882)
+        global_probable_dead_object_list_index_layout, keys_to_delete,
         std::bind(&S3AbortMultipartAction::next, this),
         std::bind(&S3AbortMultipartAction::next, this));
   } else {

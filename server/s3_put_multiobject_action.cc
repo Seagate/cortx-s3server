@@ -30,7 +30,7 @@
 #include "s3_uri_to_motr_oid.h"
 #include "s3_common_utilities.h"
 
-extern struct m0_uint128 global_probable_dead_object_list_index_oid;
+extern struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
 S3PutMultiObjectAction::S3PutMultiObjectAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<MotrAPI> motr_api,
@@ -273,7 +273,7 @@ void S3PutMultiObjectAction::fetch_multipart_failed() {
 void S3PutMultiObjectAction::fetch_part_info() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   part_metadata = part_metadata_factory->create_part_metadata_obj(
-      request, object_multipart_metadata->get_part_index_oid(), upload_id,
+      request, object_multipart_metadata->get_part_index_layout(), upload_id,
       part_number);
 
   part_metadata->load(
@@ -356,7 +356,7 @@ void S3PutMultiObjectAction::create_part_object_successful() {
   s3_put_action_state = S3PutPartActionState::newObjOidCreated;
 
   part_metadata = part_metadata_factory->create_part_metadata_obj(
-      request, object_multipart_metadata->get_part_index_oid(), upload_id,
+      request, object_multipart_metadata->get_part_index_layout(), upload_id,
       part_number);
   part_metadata->set_oid(motr_writer->get_oid());
   part_metadata->set_layout_id(layout_id);
@@ -658,11 +658,13 @@ void S3PutMultiObjectAction::add_object_oid_to_probable_dead_oid_list() {
     old_probable_del_rec.reset(new S3ProbableDeleteRecord(
         old_oid_rec_key, {0ULL, 0ULL},
         object_multipart_metadata->get_object_name(), old_object_oid,
-        old_layout_id, bucket_metadata->get_multipart_index_oid(),
-        bucket_metadata->get_objects_version_list_index_oid(), "",
-        false /* force_delete */, true, part_metadata->get_part_index_oid(), 0,
+        old_layout_id, object_multipart_metadata->get_pvid_str(),
+        bucket_metadata->get_multipart_index_layout().oid,
+        bucket_metadata->get_objects_version_list_index_layout().oid, "",
+        false /* force_delete */, true,
+        part_metadata->get_part_index_layout().oid, 0,
         strtoul(part_metadata->get_part_number().c_str(), NULL, 0),
-        bucket_metadata->get_extended_metadata_index_oid()));
+        bucket_metadata->get_extended_metadata_index_layout().oid));
 
     probable_oid_list[old_oid_rec_key] = old_probable_del_rec->to_json();
   }
@@ -675,11 +677,13 @@ void S3PutMultiObjectAction::add_object_oid_to_probable_dead_oid_list() {
          "Adding new_probable_del_rec with key [%s]\n", new_oid_str.c_str());
   new_probable_del_rec.reset(new S3ProbableDeleteRecord(
       new_oid_str, old_object_oid, object_multipart_metadata->get_object_name(),
-      new_object_oid, layout_id, bucket_metadata->get_multipart_index_oid(),
-      bucket_metadata->get_objects_version_list_index_oid(), "",
-      false /* force_delete */, true, part_metadata->get_part_index_oid(), 0,
+      new_object_oid, layout_id, object_multipart_metadata->get_pvid_str(),
+      bucket_metadata->get_multipart_index_layout().oid,
+      bucket_metadata->get_objects_version_list_index_layout().oid, "",
+      false /* force_delete */, true,
+      part_metadata->get_part_index_layout().oid, 0,
       strtoul(part_metadata->get_part_number().c_str(), NULL, 0),
-      bucket_metadata->get_extended_metadata_index_oid()));
+      bucket_metadata->get_extended_metadata_index_layout().oid));
   // store new oid, key = newoid
   probable_oid_list[new_oid_str] = new_probable_del_rec->to_json();
 
@@ -689,7 +693,7 @@ void S3PutMultiObjectAction::add_object_oid_to_probable_dead_oid_list() {
   }
 
   motr_kv_writer->put_keyval(
-      global_probable_dead_object_list_index_oid, probable_oid_list,
+      global_probable_dead_object_list_index_layout, probable_oid_list,
       std::bind(&S3PutMultiObjectAction::next, this),
       std::bind(&S3PutMultiObjectAction::
                      add_object_oid_to_probable_dead_oid_list_failed,
@@ -841,7 +845,7 @@ void S3PutMultiObjectAction::mark_new_oid_for_deletion() {
     motr_kv_writer =
         motr_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
+  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_layout,
                              new_oid_str, new_probable_del_rec->to_json(),
                              std::bind(&S3PutMultiObjectAction::next, this),
                              std::bind(&S3PutMultiObjectAction::next, this));
@@ -866,7 +870,7 @@ void S3PutMultiObjectAction::mark_old_oid_for_deletion() {
     motr_kv_writer =
         motr_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
+  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_layout,
                              old_oid_rec_key, old_probable_del_rec->to_json(),
                              std::bind(&S3PutMultiObjectAction::next, this),
                              std::bind(&S3PutMultiObjectAction::next, this));
@@ -885,7 +889,7 @@ void S3PutMultiObjectAction::remove_old_oid_probable_record() {
     motr_kv_writer =
         motr_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_oid,
+  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_layout,
                                 old_oid_rec_key,
                                 std::bind(&S3PutMultiObjectAction::next, this),
                                 std::bind(&S3PutMultiObjectAction::next, this));
@@ -900,7 +904,7 @@ void S3PutMultiObjectAction::remove_new_oid_probable_record() {
     motr_kv_writer =
         motr_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_oid,
+  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_layout,
                                 new_oid_str,
                                 std::bind(&S3PutMultiObjectAction::next, this),
                                 std::bind(&S3PutMultiObjectAction::next, this));

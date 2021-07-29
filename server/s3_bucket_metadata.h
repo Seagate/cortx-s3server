@@ -106,18 +106,12 @@ class S3BucketMetadata {
 
   void acl_from_json(std::string acl_json_str);
 
-<<<<<<< HEAD
   virtual const struct s3_motr_idx_layout& get_object_list_index_layout() const;
   virtual const struct s3_motr_idx_layout&
       get_objects_version_list_index_layout() const;
   const struct s3_motr_idx_layout& get_multipart_index_layout() const;
-  const struct s3_motr_idx_layout& get_extended_metadata_index_layout() const;
-=======
-  virtual const struct m0_uint128& get_object_list_index_oid() const;
-  virtual const struct m0_uint128& get_objects_version_list_index_oid() const;
-  const struct m0_uint128& get_multipart_index_oid() const;
-  virtual const struct m0_uint128& get_extended_metadata_index_oid() const;
->>>>>>> EOS-17572: S3 Multipart Post Complete api implementation (Multipart re-design) (#976)
+  virtual const struct s3_motr_idx_layout& get_extended_metadata_index_layout()
+      const;
 
   void set_multipart_index_layout(const struct s3_motr_idx_layout& idx_lo);
   void set_object_list_index_layout(const struct s3_motr_idx_layout& idx_lo);

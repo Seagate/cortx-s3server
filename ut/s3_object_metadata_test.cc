@@ -700,14 +700,14 @@ class S3ObjectExtendedMetadataTest : public testing::Test {
         no_of_fragments, motr_kvs_reader_factory, motr_kvs_writer_factory,
         ptr_mock_s3_motr_api));
 
-    object_list_index_oid = {0xffff, 0xffff};
+    object_list_index_layout = {{0xffff, 0xffff}};
     extended_metadata_obj_under_test_with_oid.reset(
         new S3ObjectExtendedMetadata(
             ptr_mock_request, bucket_name, object_name, versionid, no_of_parts,
             no_of_fragments, motr_kvs_reader_factory, motr_kvs_writer_factory,
             ptr_mock_s3_motr_api));
-    extended_metadata_obj_under_test_with_oid->set_object_list_index_oid(
-        object_list_index_oid);
+    extended_metadata_obj_under_test_with_oid->set_object_list_index_layout(
+        object_list_index_layout);
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
@@ -717,7 +717,7 @@ class S3ObjectExtendedMetadataTest : public testing::Test {
   std::shared_ptr<S3ObjectExtendedMetadata> extended_metadata_obj_under_test;
   std::shared_ptr<S3ObjectExtendedMetadata>
       extended_metadata_obj_under_test_with_oid;
-  struct m0_uint128 object_list_index_oid;
+  struct s3_motr_idx_layout object_list_index_layout;
   int call_count_one;
   std::string bucket_name, object_name, versionid;
   unsigned int no_of_parts, no_of_fragments;

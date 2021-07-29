@@ -502,7 +502,7 @@ TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
   action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
   MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
       action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
-      object_list_indx_oid, objects_version_list_idx_oid,
+      "mock_pvid", object_list_indx_oid, objects_version_list_idx_oid,
       "" /* Version does not exists yet */, false /* force_delete */,
       true /* is_multipart */, part_list_idx_oid);
   action_under_test->new_probable_del_rec.reset(prob_rec);

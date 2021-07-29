@@ -69,7 +69,10 @@ class S3DeleteBucketActionTest : public testing::Test {
 
     EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
                 get_objects_version_list_index_layout())
-        .WillRepeatedly(ReturnRef(zero_index_layout));
+        .WillRepeatedly(ReturnRef(index_layout));
+    EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
+                get_extended_metadata_index_layout())
+        .WillRepeatedly(ReturnRef(index_layout));
 
     motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
         ptr_mock_request, ptr_mock_s3_motr_api);
@@ -159,9 +162,9 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataEmptyBucket) {
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillOnce(Return(S3BucketMetadataState::present));
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_extended_metadata_index_oid())
+              get_extended_metadata_index_layout())
       .Times(1)
-      .WillOnce(ReturnRef(oid));
+      .WillOnce(ReturnRef(index_layout));
   // set the OID
   action_under_test->bucket_metadata->set_object_list_index_layout(
       zero_index_layout);

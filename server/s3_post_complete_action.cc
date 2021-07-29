@@ -423,10 +423,7 @@ bool S3PostCompleteAction::validate_parts() {
         set_s3_error("EntityTooLarge");
         s3_post_complete_action_state =
             S3PostCompleteActionState::validationFailed;
-<<<<<<< HEAD
-=======
         // set_abort_multipart(true);
->>>>>>> EOS-17572: S3 Multipart Post Complete api implementation (Multipart re-design) (#976)
         send_response_to_s3_client();
         return false;
       }
@@ -440,60 +437,10 @@ bool S3PostCompleteAction::validate_parts() {
         set_s3_error("EntityTooSmall");
         s3_post_complete_action_state =
             S3PostCompleteActionState::validationFailed;
-<<<<<<< HEAD
         send_response_to_s3_client();
         return false;
       }
 
-      if (part_one_size_in_multipart_metadata != 0) {
-        // In non chunked mode if current part size is not same as
-        // that in multipart metadata and its not the last part,
-        // then bail out
-        if (current_parts_size != part_one_size_in_multipart_metadata &&
-            store_kv->first != total_parts) {
-          s3_log(S3_LOG_ERROR, request_id,
-                 "The part %s size (%zu) is not "
-                 "matching with part one size (%zu) "
-                 "in multipart metadata\n",
-                 store_kv->first.c_str(), current_parts_size,
-                 part_one_size_in_multipart_metadata);
-          set_s3_error("InvalidObjectState");
-          s3_post_complete_action_state =
-              S3PostCompleteActionState::validationFailed;
-          set_abort_multipart(true);
-          break;
-        }
-      }
-      if ((prev_fetched_parts_size != 0) &&
-          (prev_fetched_parts_size != current_parts_size)) {
-        if (store_kv->first == total_parts) {
-          // This is the last part, ignore it after size calculation
-          object_size += part_metadata->get_content_length();
-          awsetag.add_part_etag(part_metadata->get_md5());
-          part_kv = parts.erase(part_kv);
-          continue;
-        }
-        s3_log(S3_LOG_ERROR, request_id,
-               "The part %s size(%zu) is different "
-               "from previous part size(%zu), Will be "
-               "destroying the parts\n",
-               store_kv->first.c_str(), current_parts_size,
-               prev_fetched_parts_size);
-        // Will be deleting complete object along with the part index and
-        // multipart kv
-        set_s3_error("InvalidObjectState");
-        s3_post_complete_action_state =
-            S3PostCompleteActionState::validationFailed;
-        set_abort_multipart(true);
-        break;
-      } else {
-        prev_fetched_parts_size = current_parts_size;
-=======
-        // set_abort_multipart(true);
-        send_response_to_s3_client();
-        return false;
->>>>>>> EOS-17572: S3 Multipart Post Complete api implementation (Multipart re-design) (#976)
-      }
       object_size += part_metadata->get_content_length();
       awsetag.add_part_etag(part_metadata->get_md5());
       // Remove the entry from parts map, so that in next
@@ -514,9 +461,9 @@ void S3PostCompleteAction::add_part_object_to_object_extended(
   if (!object_metadata) {
     // Create new object metadata
     object_metadata = object_metadata_factory->create_object_metadata_obj(
-        request, bucket_metadata->get_object_list_index_oid());
-    object_metadata->set_objects_version_list_index_oid(
-        bucket_metadata->get_objects_version_list_index_oid());
+        request, bucket_metadata->get_object_list_index_layout());
+    object_metadata->set_objects_version_list_index_layout(
+        bucket_metadata->get_objects_version_list_index_layout());
     // Dummy oid and layout id for new object
     object_metadata->set_oid(new_object_oid);
     object_metadata->set_layout_id(layout_id);
@@ -531,7 +478,7 @@ void S3PostCompleteAction::add_part_object_to_object_extended(
           object_metadata_factory->create_object_ext_metadata_obj(
               request, request->get_bucket_name(), request->get_object_name(),
               object_metadata->get_obj_version_key(), 0, 0,
-              bucket_metadata->get_extended_metadata_index_oid());
+              bucket_metadata->get_extended_metadata_index_layout());
 
       object_metadata->set_extended_object_metadata(new_ext_object_metadata);
       s3_log(S3_LOG_DEBUG, stripped_request_id,
@@ -607,15 +554,10 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
           part_list_index_oid = {0ULL, 0ULL};
         } else {
           is_multipart = true;
-          part_list_index_oid = multipart_metadata->get_part_index_oid();
+          part_list_index_oid = multipart_metadata->get_part_index_layout().oid;
           old_oid = old_object_oid;
         }
 
-<<<<<<< HEAD
-  new_object_metadata = object_metadata_factory->create_object_metadata_obj(
-      request, bucket_metadata->get_object_list_index_layout(),
-      bucket_metadata->get_objects_version_list_index_layout());
-=======
         s3_log(S3_LOG_DEBUG, request_id,
                "Adding part object, with oid [%" SCNx64 " : %" SCNx64
                "]"
@@ -627,18 +569,19 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
         ext_del_rec.reset(new S3ProbableDeleteRecord(
             ext_oid_str, old_oid, object_metadata->get_object_name(),
             part_entry[0].motr_OID, part_entry[0].layout_id,
-            bucket_metadata->get_object_list_index_oid(),
-            bucket_metadata->get_objects_version_list_index_oid(),
+            object_metadata->get_pvid_str(),
+            bucket_metadata->get_object_list_index_layout().oid,
+            bucket_metadata->get_objects_version_list_index_layout().oid,
             object_metadata->get_version_key_in_index(),
             false /* force_delete */, is_multipart, part_list_index_oid, 1,
-            key_indx, bucket_metadata->get_extended_metadata_index_oid()));
+            key_indx,
+            bucket_metadata->get_extended_metadata_index_layout().oid));
 
         parts_probable_del_rec_list.push_back(std::move(ext_del_rec));
       }
     }  // End of For
   }
 }
->>>>>>> EOS-17572: S3 Multipart Post Complete api implementation (Multipart re-design) (#976)
 
 void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
@@ -652,72 +595,6 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
     // Mark new object for probable deletion, we delete obj only after object
     // metadata is deleted.
     assert(!new_oid_str.empty());
-<<<<<<< HEAD
-
-    // prepending a char depending on the size of the object (size based
-    // bucketing
-    // of object)
-    S3CommonUtilities::size_based_bucketing_of_objects(new_oid_str,
-                                                       object_size);
-
-    s3_log(S3_LOG_DEBUG, request_id,
-           "Adding new_probable_del_rec with key [%s]\n", new_oid_str.c_str());
-
-    new_probable_del_rec.reset(new S3ProbableDeleteRecord(
-        new_oid_str, old_object_oid, multipart_metadata->get_object_name(),
-        new_object_oid, layout_id, multipart_metadata->get_pvid_str(),
-        bucket_metadata->get_multipart_index_layout().oid,
-        bucket_metadata->get_objects_version_list_index_layout().oid,
-        new_object_metadata->get_version_key_in_index(),
-        false /* force_delete */, true /* is_multipart */,
-        multipart_metadata->get_part_index_layout().oid));
-    // backgrounddelete will delete this entry if multipart metadata has
-    // been deleted
-    motr_kv_writer->put_keyval(
-        global_probable_dead_object_list_index_layout, new_oid_str,
-        new_probable_del_rec->to_json(),
-        std::bind(&S3PostCompleteAction::
-                       add_object_oid_to_probable_dead_oid_list_success,
-                  this),
-        std::bind(&S3PostCompleteAction::
-                       add_object_oid_to_probable_dead_oid_list_failed,
-                  this));
-  } else {
-    // TODO add probable part list index delete record.
-
-    // Mark old object if any for probable deletion.
-    // store old object oid
-    if (old_object_oid.u_hi || old_object_oid.u_lo) {
-      assert(!old_oid_str.empty());
-      assert(!new_oid_str.empty());
-
-      // prepending a char depending on the size of the object (size based
-      // bucketing
-      // of object)
-
-      S3CommonUtilities::size_based_bucketing_of_objects(old_oid_str,
-                                                         object_size);
-
-      s3_log(S3_LOG_DEBUG, request_id,
-             "Adding old_probable_del_rec with key [%s]\n",
-             old_oid_str.c_str());
-
-      // key = oldoid + "-" + newoid
-      std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
-
-      old_probable_del_rec.reset(new S3ProbableDeleteRecord(
-          old_oid_rec_key, {0ULL, 0ULL}, multipart_metadata->get_object_name(),
-          old_object_oid, old_layout_id, multipart_metadata->get_pvid_str(),
-          bucket_metadata->get_object_list_index_layout().oid,
-          bucket_metadata->get_objects_version_list_index_layout().oid,
-          multipart_metadata->get_version_key_in_index(),
-          false /* force_delete */));
-      // backgrounddelete will delete this entry if current object metadata has
-      // moved on
-      motr_kv_writer->put_keyval(
-          global_probable_dead_object_list_index_layout, old_oid_rec_key,
-          old_probable_del_rec->to_json(),
-=======
     add_part_object_to_probable_dead_oid_list(new_object_metadata,
                                               new_parts_probable_del_rec_list);
     std::map<std::string, std::string> kv_list;
@@ -729,8 +606,7 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
       // S3 Background delete will delete new object parts, when multipart
       // metadata has been deleted
       motr_kv_writer->put_keyval(
-          global_probable_dead_object_list_index_oid, kv_list,
->>>>>>> EOS-17572: S3 Multipart Post Complete api implementation (Multipart re-design) (#976)
+          global_probable_dead_object_list_index_layout, kv_list,
           std::bind(&S3PostCompleteAction::
                          add_object_oid_to_probable_dead_oid_list_success,
                     this),
@@ -759,7 +635,7 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
         // object metadata has
         // moved on
         motr_kv_writer->put_keyval(
-            global_probable_dead_object_list_index_oid, kv_list,
+            global_probable_dead_object_list_index_layout, kv_list,
             std::bind(&S3PostCompleteAction::
                            add_object_oid_to_probable_dead_oid_list_success,
                       this),
@@ -1103,13 +979,8 @@ void S3PostCompleteAction::mark_old_oid_for_deletion() {
     motr_kv_writer =
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-<<<<<<< HEAD
   motr_kv_writer->put_keyval(global_probable_dead_object_list_index_layout,
-                             old_oid_rec_key, old_probable_del_rec->to_json(),
-=======
-  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
                              oid_key_val_mp,
->>>>>>> EOS-17572: S3 Multipart Post Complete api implementation (Multipart re-design) (#976)
                              std::bind(&S3PostCompleteAction::next, this),
                              std::bind(&S3PostCompleteAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -1167,18 +1038,12 @@ void S3PostCompleteAction::delete_old_object_success() {
 void S3PostCompleteAction::remove_old_object_version_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
-<<<<<<< HEAD
-  object_metadata = object_metadata_factory->create_object_metadata_obj(
-      request, bucket_metadata->get_object_list_index_layout(),
-      bucket_metadata->get_objects_version_list_index_layout());
-=======
   if (object_metadata) {
     assert(multipart_metadata->get_object_name() == request->get_object_name());
     object_metadata->set_oid(old_object_oid);
     object_metadata->set_layout_id(old_layout_id);
     object_metadata->set_version_id(
         multipart_metadata->get_old_obj_version_id());
->>>>>>> EOS-17572: S3 Multipart Post Complete api implementation (Multipart re-design) (#976)
 
     object_metadata->remove_version_metadata(
         std::bind(&S3PostCompleteAction::remove_old_fragments, this),
@@ -1240,13 +1105,8 @@ void S3PostCompleteAction::remove_old_oid_probable_record() {
     motr_kv_writer =
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-<<<<<<< HEAD
   motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_layout,
-                                old_oid_rec_key,
-=======
-  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_oid,
                                 keys_to_delete,
->>>>>>> EOS-17572: S3 Multipart Post Complete api implementation (Multipart re-design) (#976)
                                 std::bind(&S3PostCompleteAction::next, this),
                                 std::bind(&S3PostCompleteAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -1273,13 +1133,8 @@ void S3PostCompleteAction::mark_new_oid_for_deletion() {
     motr_kv_writer =
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-<<<<<<< HEAD
   motr_kv_writer->put_keyval(global_probable_dead_object_list_index_layout,
-                             new_oid_str, new_probable_del_rec->to_json(),
-=======
-  motr_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
                              oid_key_val_mp,
->>>>>>> EOS-17572: S3 Multipart Post Complete api implementation (Multipart re-design) (#976)
                              std::bind(&S3PostCompleteAction::next, this),
                              std::bind(&S3PostCompleteAction::next, this));
 
@@ -1375,13 +1230,8 @@ void S3PostCompleteAction::remove_new_oid_probable_record() {
     motr_kv_writer =
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
   }
-<<<<<<< HEAD
   motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_layout,
-                                new_oid_str,
-=======
-  motr_kv_writer->delete_keyval(global_probable_dead_object_list_index_oid,
                                 keys_to_delete,
->>>>>>> EOS-17572: S3 Multipart Post Complete api implementation (Multipart re-design) (#976)
                                 std::bind(&S3PostCompleteAction::next, this),
                                 std::bind(&S3PostCompleteAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);

@@ -444,7 +444,7 @@ class S3ObjectExtendedMetadata : private S3ObjectMetadataCopyable {
   std::string object_name;
   std::string last_object;
   std::string version_id;
-  struct m0_uint128 object_list_index_oid = {};
+  struct s3_motr_idx_layout object_list_index_layout = {};
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   unsigned int fragments;
@@ -495,10 +495,9 @@ class S3ObjectExtendedMetadata : private S3ObjectMetadataCopyable {
                     std::function<void(void)> on_failed);
   virtual void save(std::function<void(void)> on_success,
                     std::function<void(void)> on_failed);
-  virtual void set_object_list_index_oid(struct m0_uint128 id) {
-    object_list_index_oid.u_hi = id.u_hi;
-    object_list_index_oid.u_lo = id.u_lo;
-  };
+  virtual void set_object_list_index_layout(
+      const struct s3_motr_idx_layout& lo);
+  virtual const struct s3_motr_idx_layout& get_object_list_index_layout() const;
   void set_version_id(const std::string& versionid) { version_id = versionid; }
   void get_obj_ext_entries_failed();
   void get_obj_ext_entries_successful();

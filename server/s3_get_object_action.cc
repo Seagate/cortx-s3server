@@ -91,28 +91,10 @@ void S3GetObjectAction::fetch_bucket_info_failed() {
 }
 
 void S3GetObjectAction::fetch_object_info_failed() {
-<<<<<<< HEAD
-  obj_list_idx_lo = bucket_metadata->get_object_list_index_layout();
-  if (zero(obj_list_idx_lo.oid)) {
-    s3_log(S3_LOG_ERROR, request_id, "Object not found\n");
-    set_s3_error("NoSuchKey");
-  } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
-    s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
-    set_s3_error("NoSuchKey");
-  } else if (object_metadata->get_state() ==
-             S3ObjectMetadataState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Object metadata load operation failed due to pre launch "
-           "failure\n");
-    set_s3_error("ServiceUnavailable");
-  } else {
-    s3_log(S3_LOG_DEBUG, request_id, "Object metadata fetch failed\n");
-    set_s3_error("InternalError");
-=======
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
-    object_list_oid = bucket_metadata->get_object_list_index_oid();
-    if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
+    obj_list_idx_lo = bucket_metadata->get_object_list_index_layout();
+    if (zero(obj_list_idx_lo.oid)) {
       s3_log(S3_LOG_ERROR, request_id, "Object not found\n");
       set_s3_error("NoSuchKey");
     } else {
@@ -130,7 +112,6 @@ void S3GetObjectAction::fetch_object_info_failed() {
         set_s3_error("InternalError");
       }
     }
->>>>>>> EOS-17572: S3 Multipart Post Complete api implementation (Multipart re-design) (#976)
   }
   send_response_to_s3_client();
 }

@@ -60,18 +60,12 @@ class MockS3BucketMetadata : public S3BucketMetadata {
   MOCK_METHOD1(set_location_constraint, void(std::string location));
   MOCK_METHOD1(from_json, int(std::string content));
   MOCK_METHOD0(get_owner_canonical_id, const std::string&());
-<<<<<<< HEAD
   MOCK_CONST_METHOD0(get_object_list_index_layout,
                      const struct s3_motr_idx_layout&());
   MOCK_CONST_METHOD0(get_objects_version_list_index_layout,
                      const struct s3_motr_idx_layout&());
-=======
-  MOCK_CONST_METHOD0(get_object_list_index_oid, const struct m0_uint128&());
-  MOCK_CONST_METHOD0(get_objects_version_list_index_oid,
-                     const struct m0_uint128&());
-  MOCK_CONST_METHOD0(get_extended_metadata_index_oid,
-                     const struct m0_uint128&());
->>>>>>> EOS-17572: S3 Multipart Post Complete api implementation (Multipart re-design) (#976)
+  MOCK_CONST_METHOD0(get_extended_metadata_index_layout,
+                     const struct s3_motr_idx_layout&());
 };
 
 #endif

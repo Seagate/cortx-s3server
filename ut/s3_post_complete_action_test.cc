@@ -61,12 +61,12 @@ using ::testing::_;
                                             upload_id);                  \
   } while (0)
 
-#define CREATE_METADATA_OBJ                                       \
-  do {                                                            \
-    action_under_test_ptr->object_metadata =                      \
-        action_under_test_ptr->object_metadata_factory            \
-            ->create_object_metadata_obj(request_mock,            \
-                                         {object_list_indx_oid}); \
+#define CREATE_METADATA_OBJ                                        \
+  do {                                                             \
+    action_under_test_ptr->object_metadata =                       \
+        action_under_test_ptr->object_metadata_factory             \
+            ->create_object_metadata_obj(request_mock,             \
+                                         object_list_indx_layout); \
   } while (0)
 
 #define CREATE_KVS_READER_OBJ                                         \
@@ -114,7 +114,7 @@ class S3PostCompleteActionTest : public testing::Test {
     upload_id = "upload_id";
     mp_indx_oid = {0xffff, 0xffff};
     oid = {0xfff, 0xfff};
-    object_list_indx_oid = {0x11ffff, 0x1ffff};
+    object_list_indx_layout = {{0x11ffff, 0x1ffff}};
     bucket_name = "seagatebucket";
     object_name = "objname";
     pvid = {0xfff, 0xfff};
@@ -138,7 +138,7 @@ class S3PostCompleteActionTest : public testing::Test {
         request_mock, s3_motr_api_mock);
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
         request_mock, s3_motr_api_mock);
-    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
+    object_meta_factory->set_object_list_index_layout(object_list_indx_layout);
 
     motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
         request_mock, s3_motr_api_mock);
@@ -167,7 +167,7 @@ class S3PostCompleteActionTest : public testing::Test {
 
   std::string upload_id;
   struct m0_uint128 oid;
-  struct m0_uint128 object_list_indx_oid;
+  struct s3_motr_idx_layout object_list_indx_layout;
   struct m0_uint128 mp_indx_oid;
   std::map<std::string, std::pair<int, std::string>> result_keys_values;
   std::map<std::string, std::string, S3NumStrComparator> mock_parts;
@@ -180,8 +180,8 @@ class S3PostCompleteActionTest : public testing::Test {
  public:
   void func_callback_one() { call_count_one += 1; }
 
-  void dummy_put_keyval(const struct s3_motr_idx_layout&, const std::string&,
-                        const std::string&,
+  void dummy_put_keyval(const struct s3_motr_idx_layout&,
+                        const std::map<std::string, std::string>&,
                         std::function<void(void)> on_success,
                         std::function<void(void)> on_failed) {
     action_under_test_ptr->next();
@@ -490,14 +490,14 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessful) {
       .WillOnce(Return("3"));
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_object_list_index_oid())
-      .WillRepeatedly(ReturnRef(object_list_indx_oid));
+              get_object_list_index_layout())
+      .WillRepeatedly(ReturnRef(object_list_indx_layout));
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_objects_version_list_index_oid())
-      .WillRepeatedly(ReturnRef(object_list_indx_oid));
+              get_objects_version_list_index_layout())
+      .WillRepeatedly(ReturnRef(object_list_indx_layout));
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_extended_metadata_index_oid())
-      .WillRepeatedly(ReturnRef(object_list_indx_oid));
+              get_extended_metadata_index_layout())
+      .WillRepeatedly(ReturnRef(object_list_indx_layout));
 
   action_under_test_ptr->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
@@ -539,10 +539,7 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooSmall) {
                action_under_test_ptr->get_s3_error_code().c_str());
   EXPECT_EQ(S3PostCompleteActionState::validationFailed,
             action_under_test_ptr->s3_post_complete_action_state);
-<<<<<<< HEAD
-=======
   EXPECT_EQ(false, action_under_test_ptr->is_abort_multipart());
->>>>>>> EOS-17572: S3 Multipart Post Complete api implementation (Multipart re-design) (#976)
 }
 
 TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooLarge) {
@@ -576,10 +573,7 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooLarge) {
                action_under_test_ptr->get_s3_error_code().c_str());
   EXPECT_EQ(S3PostCompleteActionState::validationFailed,
             action_under_test_ptr->s3_post_complete_action_state);
-<<<<<<< HEAD
-=======
   EXPECT_EQ(false, action_under_test_ptr->is_abort_multipart());
->>>>>>> EOS-17572: S3 Multipart Post Complete api implementation (Multipart re-design) (#976)
 }
 
 TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulJsonError) {
@@ -673,15 +667,9 @@ TEST_F(S3PostCompleteActionTest, SendResponseToClientAbortMultipart) {
 
   action_under_test_ptr->new_parts_probable_del_rec_list.push_back(std::move(
       std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
-<<<<<<< HEAD
           oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, "mock_pvid",
           object_list_indx_oid, objects_version_list_index_oid,
-          version_key_in_index, false /* force_delete */));
-=======
-          oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, object_list_indx_oid,
-          objects_version_list_index_oid, version_key_in_index,
-          false /* force_delete */))));
->>>>>>> EOS-17572: S3 Multipart Post Complete api implementation (Multipart re-design) (#976)
+          version_key_in_index, false /* force_delete */))));
 
   EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
@@ -781,6 +769,7 @@ TEST_F(S3PostCompleteActionTest, StartCleanupAbortedSinceValidationFailed) {
   CREATE_WRITER_OBJ;
   CREATE_KVS_WRITER_OBJ;
   action_under_test_ptr->new_oid_str = "oid_new";
+  std::string str = "test_str";
   action_under_test_ptr->new_object_oid = {0x1ffff, 0x1ffff};
   std::string object_name = "abcd";
   std::string version_key_in_index = "abcd/v1";
@@ -795,15 +784,9 @@ TEST_F(S3PostCompleteActionTest, StartCleanupAbortedSinceValidationFailed) {
       action_under_test_ptr->new_object_oid);
   action_under_test_ptr->new_parts_probable_del_rec_list.push_back(std::move(
       std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
-<<<<<<< HEAD
           oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, "mock_pvid",
           object_list_indx_oid, objects_version_list_index_oid,
-          version_key_in_index, false /* force_delete */));
-=======
-          oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, object_list_indx_oid,
-          objects_version_list_index_oid, version_key_in_index,
-          false /* force_delete */))));
->>>>>>> EOS-17572: S3 Multipart Post Complete api implementation (Multipart re-design) (#976)
+          version_key_in_index, false /* force_delete */))));
   action_under_test_ptr->set_abort_multipart(true);
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, _, _, _))

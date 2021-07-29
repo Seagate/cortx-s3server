@@ -119,7 +119,7 @@ void S3ObjectAction::fetch_object_info_success() {
             object_metadata->get_obj_version_key(),
             object_metadata->get_number_of_parts(),
             object_metadata->get_number_of_fragments(),
-            bucket_metadata->get_extended_metadata_index_oid());
+            bucket_metadata->get_extended_metadata_index_layout());
     object_metadata->set_extended_object_metadata(extended_obj_metadata);
     extended_obj_metadata->load(
         std::bind(&S3ObjectAction::fetch_ext_object_info_success, this),

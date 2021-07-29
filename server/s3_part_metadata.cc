@@ -29,6 +29,7 @@
 #include "s3_motr_kvs_writer.h"
 #include "s3_part_metadata.h"
 #include "s3_request_object.h"
+#include "s3_m0_uint128_helper.h"
 
 void S3PartMetadata::initialize(std::string uploadid, int part_num) {
   bucket_name = request->get_bucket_name();

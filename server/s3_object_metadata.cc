@@ -69,6 +69,26 @@ S3ObjectMetadataFactory::create_object_metadata_obj(
   return meta;
 }
 
+std::shared_ptr<S3ObjectExtendedMetadata>
+S3ObjectMetadataFactory::create_object_ext_metadata_obj(
+    std::shared_ptr<S3RequestObject> req, const std::string& str_bucket_name,
+    const std::string& str_object_name, const std::string& str_versionid,
+    unsigned int parts, unsigned int fragments,
+    const struct s3_motr_idx_layout& obj_idx_lo) {
+  s3_log(S3_LOG_DEBUG, req->get_request_id(),
+         "S3ObjectMetadataFactory::create_object_metadata_obj\n");
+
+  std::shared_ptr<S3ObjectExtendedMetadata> meta =
+      std::make_shared<S3ObjectExtendedMetadata>(
+          std::move(req), str_bucket_name, str_object_name, str_versionid,
+          parts, fragments);
+
+  if (non_zero(obj_idx_lo.oid)) {
+    meta->set_object_list_index_layout(obj_idx_lo);
+  }
+  return meta;
+}
+
 std::shared_ptr<S3ObjectMetadata>
 S3ObjectMultipartMetadataFactory::create_object_mp_metadata_obj(
     std::shared_ptr<S3RequestObject> req,
@@ -1043,7 +1063,7 @@ void S3ObjectExtendedMetadata::load(std::function<void(void)> on_success,
                                     std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   // object_list_index_oid should be set before using this method
-  assert(object_list_index_oid.u_hi || object_list_index_oid.u_lo);
+  assert(non_zero(object_list_index_layout.oid));
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -1065,7 +1085,7 @@ void S3ObjectExtendedMetadata::get_obj_ext_entries(std::string last_object) {
     s3_log(S3_LOG_DEBUG, "", "Reset fragment fetch count to %u", fetch_count);
   }
   motr_kv_reader->next_keyval(
-      object_list_index_oid, last_object, fetch_count,
+      object_list_index_layout, last_object, fetch_count,
       std::bind(&S3ObjectExtendedMetadata::get_obj_ext_entries_successful,
                 this),
       std::bind(&S3ObjectExtendedMetadata::get_obj_ext_entries_failed, this));
@@ -1100,8 +1120,9 @@ void S3ObjectExtendedMetadata::get_obj_ext_entries_successful() {
       s3_log(S3_LOG_ERROR, request_id,
              "Json Parsing failed. Index oid = "
              "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
-             object_list_index_oid.u_hi, object_list_index_oid.u_lo,
-             object_name.c_str(), motr_kv_reader->get_value().c_str());
+             object_list_index_layout.oid.u_hi,
+             object_list_index_layout.oid.u_lo, object_name.c_str(),
+             motr_kv_reader->get_value().c_str());
       state = S3ObjectMetadataState::invalid;
       this->handler_on_failed();
       return;
@@ -1154,6 +1175,16 @@ void S3ObjectExtendedMetadata::get_obj_ext_entries_failed() {
   this->handler_on_failed();
 }
 
+void S3ObjectExtendedMetadata::set_object_list_index_layout(
+    const struct s3_motr_idx_layout& lo) {
+  object_list_index_layout = lo;
+}
+
+const struct s3_motr_idx_layout&
+S3ObjectExtendedMetadata::get_object_list_index_layout() const {
+  return object_list_index_layout;
+}
+
 void S3ObjectExtendedMetadata::save(std::function<void(void)> on_success,
                                     std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, request_id, "Saving extended object metadata\n");
@@ -1167,7 +1198,7 @@ void S3ObjectExtendedMetadata::save(std::function<void(void)> on_success,
 void S3ObjectExtendedMetadata::save_extended_metadata() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   // objects_version_list_index_oid should be set before using this method
-  assert(object_list_index_oid.u_hi || object_list_index_oid.u_lo);
+  assert(non_zero(object_list_index_layout.oid));
 
   std::map<std::string, std::string> key_values =
       get_kv_list_of_extended_entries();
@@ -1177,7 +1208,7 @@ void S3ObjectExtendedMetadata::save_extended_metadata() {
     // TODO: Saves all entries in one call. May hit RPC limit.
     // It may require to save entries in chunk, instead of all in one RPC call.
     motr_kv_writer->put_keyval(
-        object_list_index_oid, key_values,
+        object_list_index_layout, key_values,
         std::bind(&S3ObjectExtendedMetadata::save_extended_metadata_successful,
                   this),
         std::bind(&S3ObjectExtendedMetadata::save_extended_metadata_failed,
@@ -1398,7 +1429,7 @@ void S3ObjectExtendedMetadata::remove(std::function<void(void)> on_success,
 void S3ObjectExtendedMetadata::remove_ext_object_metadata() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   // object_list_index_oid should be set before using this method
-  assert(object_list_index_oid.u_hi || object_list_index_oid.u_lo);
+  assert(non_zero(object_list_index_layout.oid));
 
   std::map<std::string, std::string> key_values =
       get_kv_list_of_extended_entries();
@@ -1411,7 +1442,7 @@ void S3ObjectExtendedMetadata::remove_ext_object_metadata() {
     motr_kv_writer =
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
     motr_kv_writer->delete_keyval(
-        object_list_index_oid, keys,
+        object_list_index_layout, keys,
         std::bind(
             &S3ObjectExtendedMetadata::remove_ext_object_metadata_successful,
             this),

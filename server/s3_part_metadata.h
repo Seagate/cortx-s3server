@@ -83,15 +83,10 @@ class S3PartMetadata {
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   bool put_metadata;
-<<<<<<< HEAD
-
   struct s3_motr_idx_layout part_index_layout = {};
-=======
-  struct m0_uint128 part_index_name_oid;
   struct m0_uint128 oid = M0_ID_APP;
   std::string motr_oid_str;
   std::string pvid_str;
->>>>>>> EOS-17572: S3 Multipart Post Complete api implementation (Multipart re-design) (#976)
 
   // Used to report to caller.
   std::function<void()> handler_on_success;
