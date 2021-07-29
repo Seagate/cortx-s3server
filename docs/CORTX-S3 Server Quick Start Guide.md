@@ -47,7 +47,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
             * You might also see exclamation mark in front of the repositories id. Refer to the [Redhat Knowledge Base](https://access.redhat.com/solutions/2267871).
         * `$ yum install -y epel-release`
     * Ansible: Install ansible if not there already `$ yum install -y ansible`
-    * ipaddress: Install ipaddress if not there already `$ pip install ipaddress`
+    * ipaddress: Install ipaddress if not there already `$ pip3 install ipaddress`
     
 6. You will need to set your hostname to something other than localhost `hostnamectl set-hostname --static --transient --pretty <new-name>`
 
@@ -365,5 +365,6 @@ Refer to our [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/ma
 Please refer to the [Support](https://github.com/Seagate/cortx/blob/main/SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
 
 Tested by:
+- June 11, 2021: Kapil Jinna (kapil.jinna@seagate.com) on Vsphere cloud VM (Centos 7.8)
 - May 09, 2021: Kapil Jinna (kapil.jinna@seagate.com) on SSC cloud VM (Centos 7.8)
 - Nov 03, 2020: Saumya Sunder (saumya.sunder@seagate.com) on a Windows laptop running VMWare Workstation 16 Pro.
