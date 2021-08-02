@@ -233,6 +233,7 @@ void S3PostCompleteAction::fetch_multipart_info_success() {
   old_layout_id = multipart_metadata->get_old_layout_id();
   new_object_oid = multipart_metadata->get_oid();
   layout_id = multipart_metadata->get_layout_id();
+  new_pvid = multipart_metadata->get_pvid();
 
   if (old_object_oid.u_hi != 0ULL || old_object_oid.u_lo != 0ULL) {
     old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
@@ -492,6 +493,7 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
 
   new_object_metadata->set_oid(new_object_oid);
   new_object_metadata->set_layout_id(layout_id);
+  new_object_metadata->set_pvid(&new_pvid);
   // Generate version id for the new obj as it will become live to s3 clients.
   new_object_metadata->regenerate_version_id();
 
@@ -936,7 +938,7 @@ void S3PostCompleteAction::delete_old_object() {
       std::bind(&S3PostCompleteAction::remove_old_object_version_metadata,
                 this),
       std::bind(&S3PostCompleteAction::next, this), old_object_oid,
-      old_layout_id, multipart_metadata->get_pvid());
+      old_layout_id, object_metadata->get_pvid());
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -1007,7 +1009,8 @@ void S3PostCompleteAction::delete_new_object() {
   }
   motr_writer->delete_object(
       std::bind(&S3PostCompleteAction::remove_new_oid_probable_record, this),
-      std::bind(&S3PostCompleteAction::next, this), new_object_oid, layout_id);
+      std::bind(&S3PostCompleteAction::next, this), new_object_oid, layout_id,
+      multipart_metadata->get_pvid());
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 

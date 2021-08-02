@@ -262,6 +262,7 @@ void S3PutObjectActionBase::create_object_successful() {
   new_object_metadata->regenerate_version_id();
   new_object_metadata->set_oid(motr_writer->get_oid());
   new_object_metadata->set_layout_id(layout_id);
+  new_object_metadata->set_pvid(motr_writer->get_ppvid());
 
   add_object_oid_to_probable_dead_oid_list();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -564,7 +565,8 @@ void S3PutObjectActionBase::delete_new_object() {
 
   motr_writer->delete_object(
       std::bind(&S3PutObjectActionBase::remove_new_oid_probable_record, this),
-      std::bind(&S3PutObjectActionBase::next, this), new_object_oid, layout_id);
+      std::bind(&S3PutObjectActionBase::next, this), new_object_oid, layout_id,
+      new_object_metadata->get_pvid());
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

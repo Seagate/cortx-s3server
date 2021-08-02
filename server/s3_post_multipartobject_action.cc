@@ -369,6 +369,7 @@ void S3PostMultipartObjectAction::create_object_successful() {
            time_in_millisecond);
   s3_stats_timing("multipart_create_object_success", time_in_millisecond);
   object_multipart_metadata->set_oid(oid);
+  object_multipart_metadata->set_pvid(motr_writer->get_ppvid());
   add_task_rollback(
       std::bind(&S3PostMultipartObjectAction::rollback_create, this));
   next();
@@ -492,7 +493,7 @@ void S3PostMultipartObjectAction::rollback_create() {
   motr_writer->delete_object(
       std::bind(&S3PostMultipartObjectAction::rollback_next, this),
       std::bind(&S3PostMultipartObjectAction::rollback_create_failed, this),
-      oid, layout_id);
+      oid, layout_id, object_multipart_metadata->get_pvid());
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -538,7 +539,6 @@ void S3PostMultipartObjectAction::save_upload_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   object_multipart_metadata->set_layout_id(layout_id);
-  object_multipart_metadata->set_pvid(motr_writer->get_ppvid());
 
   for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {
