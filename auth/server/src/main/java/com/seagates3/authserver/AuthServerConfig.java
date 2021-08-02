@@ -446,5 +446,13 @@ public class AuthServerConfig {
     static String getIEMServerURL() {
       return authServerConfig.getProperty("IEMServerURL");
     }
+   public
+    static String getRsyslogServerURL() {
+      return authServerConfig.getProperty("RsyslogServerURL");
+    }
+   public
+    static String getRsyslogMsgId() {
+      return authServerConfig.getProperty("RsyslogMsgId");
+    }
 }
 
