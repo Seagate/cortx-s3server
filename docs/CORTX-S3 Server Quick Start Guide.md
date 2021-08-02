@@ -49,7 +49,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
         * `$ yum install -y epel-release`
     * Ansible: Install ansible if not there already `$ yum install -y ansible`
     * ipaddress: Install ipaddress if not there already `$ pip3 install ipaddress`
-    * Make sure that PATH variable has `/root/local/bin`,`/usr/local/sbin`,`/usr/sbin`,`/usr/bin`, `/usr/local/bin` directories 
+    * Make sure that PATH variable has `/usr/local/sbin`,`/usr/sbin`,`/usr/bin`, `/usr/local/bin` directories 
     
 6. You will need to set your hostname to something other than localhost `hostnamectl set-hostname --static --transient --pretty <new-name>`. Try `sudo' if the command fails
 
@@ -352,7 +352,7 @@ Your success log will look like the output in the image below:
 
     `$ ./rpms/s3iamcli/buildrpm.sh -G 44a07d2`
 
-All the built RPMs will be available at `~/rpmbuild/RPMS/x86_64/`. You can copy these RPMs to release VM for testing.
+All the built RPMs will be available at `~/rpmbuild/RPMS/`. You can copy these RPMs to release VM for testing.
 
 ## You're All Set & You're Awesome!
 
@@ -369,6 +369,7 @@ Refer to our [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/ma
 Please refer to the [Support](https://github.com/Seagate/cortx/blob/main/SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
 
 Tested by:
+- Aug 1, 2021: Kapil Jinna (kapil.jinna@seagate.com) on SSC cloud VM (Centos 7.9)    
 - Aug 1, 2021: Bo Wei (bo.b.wei@seagate.com) on Windows laptop running Oracle VirtualBox (Centos 7.8).
 - July 30, 2021: Kapil Jinna (kapil.jinna@seagate.com) on G2 cloud VM (Centos 7.8)
 - June 11, 2021: Kapil Jinna (kapil.jinna@seagate.com) on Vsphere cloud VM (Centos 7.8)
