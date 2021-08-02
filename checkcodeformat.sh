@@ -33,8 +33,11 @@ then
   printf "%s\n%s\n%s\n\t%s\n\n" \
           "[ERROR:Code formatting]" \
           "One or more modified files do not comply with clang-format." \
-          "Run below command to see required changes:" \
-          "'git clang-format --style=Google --extensions=c,cc,h,java --diff --commit HEAD~1'"
+          "Running below command to see required changes:" \
+          "'git clang-format --style=Google --extensions=c,cc,h,java --diff --commit HEAD~1'" \
+          "===================================================================="
+  git clang-format --style=Google --extensions=c,cc,h,java --diff --commit HEAD~1
+  printf "===================================================================="
 fi
 
 # For untracked files (new files):

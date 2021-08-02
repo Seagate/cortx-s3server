@@ -50,9 +50,10 @@ INIT:
 # Inheritance hierarchy ends here.
 
 TEST:
-  CONFSTORE_LDAPADMIN_USER_KEY: "cortx>software>openldap>sgiam>user"
-  CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>software>openldap>sgiam>secret"
-  CONFSTORE_ENDPOINT_KEY: "endpoint_fqdn"
+  TEST_CONFSTORE_LDAPADMIN_USER_KEY: "test>s3>iam_username"
+  TEST_CONFSTORE_LDAPADMIN_PASSWD_KEY: "test>s3>iam_password"
+  TEST_CONFSTORE_ENDPOINT_KEY: "test>s3>endpoint_url"
+
 
 # Unsolicited Keys should be added to the bottom.
 LDAP_USER: "cn={},dc=seagate,dc=com"
