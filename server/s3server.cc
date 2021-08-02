@@ -233,11 +233,16 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
   // so initialise the s3 request;
   s3_request->initialise();
 
-  if ((S3Option::get_instance()->get_is_s3_shutting_down() &&
-       !s3_fi_is_enabled("shutdown_system_tests_in_progress")) &&
-      ((strcmp(req->uri->path->full, "/") ||
-        strcmp(s3_request->get_http_verb_str(s3_request->http_verb()),
-               "HEAD")))) {
+  bool is_haproxy_head_request = false;
+  // Check if request is head request from haproxy
+  if(strcmp(req->uri->path->full, "/") == 0 && 
+      strcmp(s3_request->get_http_verb_str(s3_request->http_verb(), "HEAD") == 0) {
+      is_haproxy_head_request = true;
+  }
+  
+  if (S3Option::get_instance()->get_is_s3_shutting_down() &&
+       !s3_fi_is_enabled("shutdown_system_tests_in_progress") &&
+       !is_haproxy_head_request) {
     // We are shutting down, so don't entertain new requests.
     s3_request->pause();
     evhtp_unset_all_hooks(&req->conn->hooks);
