@@ -233,8 +233,11 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
   // so initialise the s3 request;
   s3_request->initialise();
 
-  if (S3Option::get_instance()->get_is_s3_shutting_down() &&
-      !s3_fi_is_enabled("shutdown_system_tests_in_progress")) {
+  if ((S3Option::get_instance()->get_is_s3_shutting_down() &&
+       !s3_fi_is_enabled("shutdown_system_tests_in_progress")) &&
+      ((strcmp(req->uri->path->full, "/") ||
+        strcmp(s3_request->get_http_verb_str(s3_request->http_verb()),
+               "HEAD")))) {
     // We are shutting down, so don't entertain new requests.
     s3_request->pause();
     evhtp_unset_all_hooks(&req->conn->hooks);
@@ -246,10 +249,7 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
     s3_request->set_out_header_value("Content-Length",
                                      std::to_string(response_xml.length()));
     s3_request->set_out_header_value("Connection", "close");
-    int shutdown_grace_period =
-        S3Option::get_instance()->get_s3_grace_period_sec();
-    s3_request->set_out_header_value("Retry-After",
-                                     std::to_string(shutdown_grace_period));
+    s3_request->set_out_header_value("Retry-After", "2");
 
     s3_request->send_response(error.get_http_status_code(), response_xml);
     return EVHTP_RES_OK;
