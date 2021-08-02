@@ -51,7 +51,7 @@ S3_SERVER_CONFIG:
    S3_SERVER_MOTR_HTTP_BIND_PORT: 28049                 # Port number to perform motr operations over HTTP.
    S3_SERVER_REGION_ENDPOINTS: [s3-us-west-2.seagate.com, s3-us.seagate.com, s3-europe.seagate.com, s3-asia.seagate.com]
    S3_SERVER_DEFAULT_ENDPOINT: s3.seagate.com
-   S3_SERVER_SHUTDOWN_GRACE_PERIOD: 7                  # S3 server shutdown grace period in seconds, default is 10 seconds.
+   S3_SERVER_SHUTDOWN_GRACE_PERIOD: 4                  # S3 server shutdown grace period in seconds, default is 10 seconds.
    S3_SERVER_SSL_ENABLE: false                          # Enable ssl in s3server
    S3_SERVER_CERT_FILE: "/etc/ssl/stx-s3/s3/ca.crt"     # s3server ssl cerificate file
    S3_SERVER_PEM_FILE: "/etc/ssl/stx-s3/s3/s3server.pem" # s3server ssl pem file
