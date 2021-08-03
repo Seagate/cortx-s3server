@@ -260,14 +260,16 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
   if (rc != 0) {
     s3_log(S3_LOG_FATAL, "", "Issue with memory pool!\n");
   } else {
-    s3_log(S3_LOG_DEBUG, "",
-           "mempool info: mempool_item_size = %zu "
-           "free_bufs_in_pool = %d "
-           "number_of_bufs_shared = %d "
-           "total_bufs_allocated_by_pool = %d\n",
-           poolinfo.mempool_item_size, poolinfo.free_bufs_in_pool,
-           poolinfo.number_of_bufs_shared,
-           poolinfo.total_bufs_allocated_by_pool);
+    if (s3_request->http_verb() != S3HttpVerb::HEAD) {
+      s3_log(S3_LOG_ERROR, "",
+             "mempool info: mempool_item_size = %zu "
+             "free_bufs_in_pool = %d "
+             "number_of_bufs_shared = %d "
+             "total_bufs_allocated_by_pool = %d\n",
+             poolinfo.mempool_item_size, poolinfo.free_bufs_in_pool,
+             poolinfo.number_of_bufs_shared,
+             poolinfo.total_bufs_allocated_by_pool);
+    }
   }
 
   // Check if we have enough approx memory to proceed with request
