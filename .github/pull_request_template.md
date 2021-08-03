@@ -1,32 +1,33 @@
 # Problem Statement
-- Overview: JIRA number/GitHub Issue added to PR: [Y/N]:
 - Problem statement
 
 # Design
--  For Bug describe the fix here.
--  For Feature, Post the link to the solution page on the confluence CORTX Foundation Library
+-  For Bug, Describe the fix here.
+-  For Feature, Post the link for design
 
-# Coding 
--  Coding conventions are followed and code is consistent [Y/N]:
+# Coding
+   Checklist for Author
+-  [ ] Coding conventions are followed and code is consistent
 
 # Testing 
-- Unit and System Tests are added [Y/N]:
-- Test Cases cover Happy Path, Non-Happy Path and Scalability [Y/N]:
-- Testing was performed with RPM [Y/N]:
+  Checklist for Author
+- [ ] Unit and System Tests are added
+- [ ] Test Cases cover Happy Path, Non-Happy Path and Scalability
+- [ ] Testing was performed with RPM
 
 # Impact Analysis
-  Before Merging the PR please ensure
-- Interface change (if any) are documented [Y/N]:
-- Side effects on other features (deployment/upgrade) [Y/N]:
-- Changes to quick-start-guide/community impact [Y/N]:
-- Dependencies on other component(s) [Y/N]:
+  Checklist for Author/Reviewer/GateKeeper
+- [ ] Interface change (if any) are documented
+- [ ] Side effects on other features (deployment/upgrade)
+- [ ] Dependencies on other component(s)
 
 # Review Checklist 
-  Before posting the PR please ensure
+  Checklist for Author
+- [ ] JIRA number/GitHub Issue added to PR
 - [ ] PR is self reviewed
-- [ ] Jira is updated
+- [ ] Jira and state/status is updated and JIRA is updated with PR link
 - [ ] Check if the description is clear and explained
-- [ ] All the tests performed should be mentioned before Resolving a JIRA
 
 # Documentation
-- [ ] Changes done to WIKI / Confluence page
+  Checklist for Author
+- [ ] Changes done to WIKI / Confluence page / Quick Start Guide
