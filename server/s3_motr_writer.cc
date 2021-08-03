@@ -329,7 +329,11 @@ void S3MotrWiter::create_object(std::function<void(void)> on_success,
   s3_motr_api->motr_obj_init(&obj_ctx->objs[0], &motr_uber_realm, &oid_list[0],
                              layout_ids[0]);
   obj_ctx->n_initialized_contexts = 1;
-
+  // Caller(S3) will save pv id and other attributes retuned by entity create
+  // API
+  // When M0_ENF_META flag is passed, Motr will not save pv id and other
+  // attributes in its backend metadata; it passes them to the caller.
+  obj_ctx->objs[0].ob_entity.en_flags |= M0_ENF_META;
   int rc = s3_motr_api->motr_entity_create(&(obj_ctx->objs[0].ob_entity),
                                            &(ctx->ops[0]));
   if (rc != 0) {
@@ -358,11 +362,13 @@ void S3MotrWiter::create_object_successful() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   is_object_opened = true;  // created object is also open
   state = S3MotrWiterOpState::created;
-
+  struct m0_fid &pv_id = obj_ctx->objs->ob_attr.oa_pver;
   s3_log(S3_LOG_INFO, stripped_request_id,
          "Motr API Successful: createobj(oid: ("
-         "%" SCNx64 " : %" SCNx64 "))\n",
-         oid_list[0].u_hi, oid_list[0].u_lo);
+         "%" SCNx64 " : %" SCNx64
+         ")"
+         ", pvid: (%" SCNx64 " : %" SCNx64 "))\n",
+         oid_list[0].u_hi, oid_list[0].u_lo, pv_id.f_container, pv_id.f_key);
 
   handler_on_success();
 
@@ -607,7 +613,8 @@ void S3MotrWiter::delete_objects() {
     ctx->cbs[i].oop_executed = NULL;
     ctx->cbs[i].oop_stable = s3_motr_op_stable;
     ctx->cbs[i].oop_failed = s3_motr_op_failed;
-
+    memcpy(&obj_ctx->objs[i].ob_attr.oa_pver, &pv_ids[i],
+           sizeof(struct m0_fid));
     int rc = s3_motr_api->motr_entity_delete(&(obj_ctx->objs[i].ob_entity),
                                              &(ctx->ops[i]));
     if (rc != 0) {
@@ -622,8 +629,6 @@ void S3MotrWiter::delete_objects() {
     s3_motr_api->motr_op_setup(ctx->ops[i], &ctx->cbs[i], 0);
     oid_list_stream << '(' << oid_list[i].u_hi << ' ' << oid_list[i].u_lo
                     << ") ";
-    memcpy(&obj_ctx->objs[i].ob_attr.oa_pver, &pv_ids[i],
-           sizeof(struct m0_fid));
   }
 
   delete_context->start_timer_for("delete_objects_from_motr");

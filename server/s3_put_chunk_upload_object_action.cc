@@ -364,6 +364,7 @@ void S3PutChunkUploadObjectAction::create_object_successful() {
   new_object_metadata->regenerate_version_id();
   new_object_metadata->set_oid(motr_writer->get_oid());
   new_object_metadata->set_layout_id(layout_id);
+  new_object_metadata->set_pvid(motr_writer->get_ppvid());
 
   add_object_oid_to_probable_dead_oid_list();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -663,7 +664,6 @@ void S3PutChunkUploadObjectAction::save_metadata() {
   new_object_metadata->set_content_type(request->get_content_type());
   new_object_metadata->set_md5(motr_writer->get_content_md5());
   new_object_metadata->set_tags(new_object_tags_map);
-  new_object_metadata->set_pvid(motr_writer->get_ppvid());
 
   for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {
@@ -1025,7 +1025,7 @@ void S3PutChunkUploadObjectAction::delete_new_object() {
       std::bind(&S3PutChunkUploadObjectAction::remove_new_oid_probable_record,
                 this),
       std::bind(&S3PutChunkUploadObjectAction::next, this), new_object_oid,
-      layout_id);
+      layout_id, new_object_metadata->get_pvid());
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
