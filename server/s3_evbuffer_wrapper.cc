@@ -38,6 +38,7 @@ S3Evbuffer::S3Evbuffer(const std::string req_id, size_t buf_sz,
 int S3Evbuffer::init() {
   vec = (struct evbuffer_iovec*)calloc(nvecs, sizeof(struct evbuffer_iovec));
   if (vec == nullptr) {
+    s3_log(S3_LOG_ERROR, request_id, "memory allocation failure\n");
     return -ENOMEM;
   }
   for (size_t i = 0; i < nvecs; i++) {
@@ -45,9 +46,14 @@ int S3Evbuffer::init() {
     int no_of_extends =
         evbuffer_reserve_space(p_evbuf, buffer_unit_sz, &vec[i], 1);
     if (no_of_extends < 0) {
+      s3_log(S3_LOG_ERROR, request_id,
+             "evbuffer_reserve_space failed, no_of_extends = %d\n",
+             no_of_extends);
       return no_of_extends;
     }
     if (evbuffer_commit_space(p_evbuf, &vec[i], 1) < 0) {
+      s3_log(S3_LOG_ERROR, request_id,
+             "evbuffer_commit_space failed i = %zu, nvecs = %zu\n", i, nvecs);
       return -1;
     }
   }
