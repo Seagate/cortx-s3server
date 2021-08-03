@@ -218,7 +218,9 @@ Before your test your build, ensure that you have installed and configured the f
         * `AWS Secret Access Key [None]: <Secret Key generated in last step>`
         * `Default region name [None]: US`
         * `Default output format [None]: text`
-   2. Configure the AWS Plugin Endpoint using:
+   2. Install the `awscli_plugin_endpoint` package if it's not installed:
+        `$ pip install awscli-plugin-endpoint`
+   3. Configure the AWS Plugin Endpoint using:
       `$ aws configure set plugins.endpoint awscli_plugin_endpoint`
         - To configure AWS in SSL mode run:
             `$ aws configure set s3.endpoint_url https://s3.seagate.com`
@@ -226,7 +228,7 @@ Before your test your build, ensure that you have installed and configured the f
         - To configure AWS in non-SSL mode, please run:
             `$ aws configure set s3.endpoint_url http://s3.seagate.com`
             `$ aws configure set s3api.endpoint_url http://s3.seagate.com`
-   3. Run the following command to view the contents of your AWS config file: 
+   4. Run the following command to view the contents of your AWS config file: 
       `$ cat ~/.aws/config`
       
       1. For AWS in SSL mode, you'll need to configure the `[default]` section with the `ca_bundle=<path to ca.crt file>` parameter.
