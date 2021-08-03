@@ -236,8 +236,7 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
   bool is_haproxy_head_request = false;
   // Check if request is head request from haproxy
   if (std::strcmp(req->uri->path->full, "/") == 0 &&
-      std::strcmp(s3_request->get_http_verb_str(s3_request->http_verb()),
-                  "HEAD") == 0) {
+      s3_request->http_verb() == S3HttpVerb::HEAD) {
       is_haproxy_head_request = true;
   }
   
