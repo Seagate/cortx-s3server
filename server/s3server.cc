@@ -102,6 +102,22 @@ void s3_motr_init_timeout_cb(evutil_socket_t fd, short event, void *arg) {
   return;
 }
 
+extern "C" void mem_log_msg_func(int mempool_log_level, const char *msg) {
+  if (mempool_log_level == MEMPOOL_LOG_INFO) {
+    s3_log(S3_LOG_INFO, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_FATAL) {
+    s3_log(S3_LOG_FATAL, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_ERROR) {
+    s3_log(S3_LOG_ERROR, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_WARN) {
+    s3_log(S3_LOG_WARN, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_DEBUG) {
+    s3_log(S3_LOG_DEBUG, "", "%s\n", msg);
+  } else {
+    s3_log(S3_LOG_FATAL, "", "Invalid mempool log level. %s\n", msg);
+  }
+}
+
 void *base_loop_thread(void *arg) {
   pthread_detach(pthread_self());
   event_base_loop(global_evbase_handle, EVLOOP_NO_EXIT_ON_EMPTY);
@@ -260,14 +276,16 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
   if (rc != 0) {
     s3_log(S3_LOG_FATAL, "", "Issue with memory pool!\n");
   } else {
-    s3_log(S3_LOG_DEBUG, "",
-           "mempool info: mempool_item_size = %zu "
-           "free_bufs_in_pool = %d "
-           "number_of_bufs_shared = %d "
-           "total_bufs_allocated_by_pool = %d\n",
-           poolinfo.mempool_item_size, poolinfo.free_bufs_in_pool,
-           poolinfo.number_of_bufs_shared,
-           poolinfo.total_bufs_allocated_by_pool);
+    if (s3_request->http_verb() != S3HttpVerb::HEAD) {
+      s3_log(S3_LOG_ERROR, "",
+             "mempool info: mempool_item_size = %zu "
+             "free_bufs_in_pool = %d "
+             "number_of_bufs_shared = %d "
+             "total_bufs_allocated_by_pool = %d\n",
+             poolinfo.mempool_item_size, poolinfo.free_bufs_in_pool,
+             poolinfo.number_of_bufs_shared,
+             poolinfo.total_bufs_allocated_by_pool);
+    }
   }
 
   // Check if we have enough approx memory to proceed with request
@@ -773,14 +791,13 @@ int main(int argc, char **argv) {
   if (g_option_instance->get_libevent_mempool_zeroed_buffer()) {
     libevent_mempool_flags = libevent_mempool_flags | ZEROED_BUFFER;
   }
-
   // Call this function at starting as we need to make use of our own
   // memory allocation/deallocation functions
   rc = event_use_mempool(g_option_instance->get_libevent_pool_buffer_size(),
                          g_option_instance->get_libevent_pool_initial_size(),
                          g_option_instance->get_libevent_pool_expandable_size(),
                          g_option_instance->get_libevent_pool_max_threshold(),
-                         libevent_mempool_flags);
+                         mem_log_msg_func, libevent_mempool_flags);
 
   if (rc != 0) {
     s3daemon.delete_pidfile();

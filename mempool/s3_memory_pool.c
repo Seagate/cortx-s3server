@@ -127,7 +127,7 @@ int freelist_allocate(struct mempool *pool, int items_count_to_allocate) {
                  pool->mempool_item_size, buf, rc, pool->alignment,
                  pool->mempool_item_size);
       }
-      pool->log_callback_func(MEMPOOL_LOG_DEBUG, log_msg);
+      pool->log_callback_func(MEMPOOL_LOG_ERROR, log_msg);
     }
     if (buf == NULL || rc != 0) {
       return S3_MEMPOOL_ERROR;
@@ -502,7 +502,7 @@ int mempool_downsize(MemoryPoolHandle handle, size_t mem_to_free) {
       if (pool->log_callback_func) {
         snprintf(log_msg, sizeof(log_msg), log_msg_fmt, (void *)pool,
                  (void *)pool_item, pool->mempool_item_size, mem_to_free);
-        pool->log_callback_func(MEMPOOL_LOG_DEBUG, log_msg);
+        pool->log_callback_func(MEMPOOL_LOG_ERROR, log_msg);
       }
       free(pool_item);
       pool->total_bufs_allocated_by_pool--;
@@ -556,7 +556,7 @@ int mempool_destroy(MemoryPoolHandle *handle) {
     if (pool->log_callback_func) {
       snprintf(log_msg, sizeof(log_msg), log_msg_fmt, (void *)pool,
                (void *)pool_item, pool->mempool_item_size);
-      pool->log_callback_func(MEMPOOL_LOG_DEBUG, log_msg);
+      pool->log_callback_func(MEMPOOL_LOG_ERROR, log_msg);
     }
     free(pool_item);
 #if 0
