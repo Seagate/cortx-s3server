@@ -337,6 +337,93 @@ TEST_F(S3PostCompleteActionTest, ValidateRequestBodyMissingTag) {
   EXPECT_FALSE(action_under_test_ptr->validate_request_body(mock_xml));
   EXPECT_STREQ("", action_under_test_ptr->total_parts.c_str());
 }
+
+TEST_F(S3PostCompleteActionTest, FetchBucketInfoFailedMissing){
+  CREATE_BUCKET_METADATA_OBJ;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3BucketMetadataState::missing));
+  action_under_test_ptr->fetch_bucket_info_failed();
+}
+
+TEST_F(S3PostCompleteActionTest, FetchBucketInfoFailedServiceUnavailable){
+  CREATE_BUCKET_METADATA_OBJ;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3BucketMetadataState::failed_to_launch));
+  action_under_test_ptr->fetch_bucket_info_failed();
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PostCompleteActionTest, FetchBucketInfoFailedInternalError){
+  CREATE_BUCKET_METADATA_OBJ;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3BucketMetadataState::failed));
+  action_under_test_ptr->fetch_bucket_info_failed();
+  EXPECT_STREQ("InternalError",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PostCompleteActionTest, FetchObjectInfoFailedMissing){
+  CREATE_METADATA_OBJ;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ObjectMetadataState::missing));
+  action_under_test_ptr->fetch_object_info_failed();
+}
+
+TEST_F(S3PostCompleteActionTest, FetchObjectInfoFailedServiceUnavailable){
+  CREATE_METADATA_OBJ;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed_to_launch));
+  action_under_test_ptr->fetch_object_info_failed();
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PostCompleteActionTest, FetchObjectInfoFailedInternalError){
+  CREATE_METADATA_OBJ;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
+  action_under_test_ptr->fetch_object_info_failed();
+  EXPECT_STREQ("InternalError",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PostCompleteActionTest, FetchExtendedObjectInfoFailedMissing){
+  CREATE_METADATA_OBJ;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ObjectMetadataState::missing));
+  action_under_test_ptr->fetch_ext_object_info_failed();
+  EXPECT_STREQ("InternalError",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PostCompleteActionTest, FetchExtendedObjectInfoFailedServiceUnavailable){
+  CREATE_METADATA_OBJ;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed_to_launch));
+  action_under_test_ptr->fetch_ext_object_info_failed();
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PostCompleteActionTest, FetchExtendedObjectInfoFailedInternalError){
+  CREATE_METADATA_OBJ;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
+  action_under_test_ptr->fetch_ext_object_info_failed();
+  EXPECT_STREQ("InternalError",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
 TEST_F(S3PostCompleteActionTest, FetchMultipartInfo) {
   CREATE_BUCKET_METADATA_OBJ;
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), load(_, _))
@@ -373,6 +460,23 @@ TEST_F(S3PostCompleteActionTest, FetchMultipartInfoFailedInternalError) {
   EXPECT_STREQ("InternalError",
                action_under_test_ptr->get_s3_error_code().c_str());
 }
+
+// TEST_F(S3PostCompleteActionTest, AddPartObjectToObjectExtended) {
+//   CREATE_METADATA_OBJ;
+//   CREATE_PART_METADATA_OBJ;
+
+//   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), set_oid(_))
+//       .Times(AtLeast(1));
+//   action_under_test_ptr->add_part_object_to_object_extended(CREATE_METADATA_OBJ, CREATE_PART_METADATA_OBJ);
+// }
+
+// TEST_F(S3PostCompleteActionTest, AddPartObjectToDeadOidList) {
+//   CREATE_PART_METADATA_OBJ;
+
+//   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_extended_object_metadata())
+//       .Times(AtLeast(1));
+//   action_under_test_ptr->add_part_object_to_probable_dead_oid_list();
+// }
 
 TEST_F(S3PostCompleteActionTest, GetNextPartsInfo) {
   CREATE_KVS_READER_OBJ;
@@ -720,6 +824,23 @@ TEST_F(S3PostCompleteActionTest, DeleteOldObject) {
 
   action_under_test_ptr->delete_old_object();
 }
+
+// TEST_F(S3PostCompleteActionTest, RemoveOldObjectVersionMetadata) {
+//   printf("11111111111111111111111111111");
+//   CREATE_METADATA_OBJ;
+//   CREATE_MP_METADATA_OBJ;
+//   printf("222222222222222222222222222222");
+//   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_object_name())
+//       .Times(AtLeast(1))
+//       .WillRepeatedly(Return("test_object"));
+//   EXPECT_CALL(*request_mock, get_object_name())
+//       .WillRepeatedly(ReturnRef("test_object"));
+//   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), remove_version_metadata(_, _))
+//   .Times(1);
+//   printf("333333333333333333333333333333333");
+//   action_under_test_ptr->remove_old_object_version_metadata();
+//   printf("4444444444444444444444444444444444");
+// }
 
 TEST_F(S3PostCompleteActionTest, DelayedDeleteOldObject) {
   CREATE_WRITER_OBJ;
