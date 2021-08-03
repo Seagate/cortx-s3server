@@ -116,6 +116,9 @@ class CleanupCmd(SetupCmd):
       else:
         self.logger.info("Skipped Delete of S3 Deployment log file")
 
+      service_list = ["slapd","haproxy"]
+      self.restart_services(service_list) 
+
     except Exception as e:
       raise e
 
@@ -216,6 +219,8 @@ class CleanupCmd(SetupCmd):
         self.logger.info(f"{curr_file} removed")
     # Delete s3 specific slapd indices and revert to original basic
     self.modify_attribute('olcDatabase={2}mdb,cn=config', 'olcDbIndex', 'ou,cn,mail,surname,givenname eq,pres,sub')
+    # Delete s3 specific olcAccess
+    self.search_and_delete_attribute("olcDatabase={2}mdb,cn=config", "olcAccess")
 
   def delete_topic(self, admin_id, topic_name):
     """delete topic for background delete services."""
