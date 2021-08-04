@@ -864,6 +864,41 @@ TEST_F(S3PostCompleteActionTest, DelayedDeleteOldObject) {
   EXPECT_EQ(1, call_count_one);
 }
 
+TEST_F(S3PostCompleteActionTest, DeleteOldObjectSuccess) {
+  CREATE_WRITER_OBJ;
+  int old_layout_id = 2;
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              delete_object(_, _, _, old_layout_id, _)).Times(0);
+
+  action_under_test_ptr->clear_tasks();
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PostCompleteActionTest::func_callback_one, this);
+  action_under_test_ptr->delete_old_object_success();
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3PostCompleteActionTest, RemoveOldExtMetadataSuccess) {
+  CREATE_WRITER_OBJ;
+
+  action_under_test_ptr->old_oid_str = {0x0};
+  action_under_test_ptr->new_oid_str = {0x0};
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+              delete_keyval(_, _, _, _)).Times(0);
+
+  action_under_test_ptr->remove_old_ext_metadata_successful();
+}
+
+TEST_F(S3PostCompleteActionTest, RemoveNewExtMetadataSuccess) {
+  CREATE_WRITER_OBJ;
+
+  action_under_test_ptr->old_oid_str = {0x0};
+  action_under_test_ptr->new_oid_str = {0x0};
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+              delete_keyval(_, _, _, _)).Times(0);
+
+  action_under_test_ptr->remove_new_ext_metadata_successful();
+}
+
 TEST_F(S3PostCompleteActionTest, StartCleanupEmptyState) {
   action_under_test_ptr->startcleanup();
   EXPECT_EQ(false, action_under_test_ptr->is_error_state());

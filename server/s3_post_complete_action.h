@@ -229,6 +229,8 @@ class S3PostCompleteAction : public S3ObjectAction {
   FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientSuccess);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteNewObject);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObject);
+  FRIEND_TEST(S3PostCompleteActionTest, RemoveOldExtMetadataSuccess);
+  FRIEND_TEST(S3PostCompleteActionTest, RemoveNewExtMetadataSuccess);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObjectSuccess);
   FRIEND_TEST(S3PostCompleteActionTest, DelayedDeleteOldObject);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteMultipartMetadataSucessWithAbort);

@@ -1056,7 +1056,7 @@ S3ObjectExtendedMetadata::S3ObjectExtendedMetadata(
   } else {
     mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
-  last_object = objectname;
+  last_object = objectname + '|' + version_id;
 }
 
 void S3ObjectExtendedMetadata::load(std::function<void(void)> on_success,
