@@ -137,8 +137,9 @@ class CleanupCmd(SetupCmd):
       self.logger.info("truncate slapd log file started")
       slapd_log="/var/log/slapd.log"
       if os.path.isfile(slapd_log):
-        fo = open(slapd_log, "rw+")
-        fo.truncate()
+        fslapd = open(slapd_log, "w")
+        fslapd.truncate()
+        fslapd.close()
         self.logger.info("truncate slapd log file completed")
 
       #delete deployment log
