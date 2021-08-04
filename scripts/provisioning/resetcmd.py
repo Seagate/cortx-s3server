@@ -19,6 +19,7 @@
 #
 
 import sys
+import os
 import time
 import re
 from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
@@ -27,7 +28,7 @@ from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 from setupcmd import SetupCmd
 from ldapaccountaction import LdapAccountAction
 
-services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver", "slapd"]
+services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver"]
 
 class ResetCmd(SetupCmd):
   """Reset Setup Cmd."""
@@ -107,8 +108,7 @@ class ResetCmd(SetupCmd):
       self.DeleteDirContents(logDir, skipDirs)
 
     logFiles = ["/var/log/haproxy.log",
-                "/var/log/haproxy-status.log",
-                "/var/log/slapd.log"]
+                "/var/log/haproxy-status.log"]
     for logFile in logFiles:
       self.DeleteFile(logFile)
 
@@ -117,6 +117,15 @@ class ResetCmd(SetupCmd):
                       '/var/log/crash':'core-s3server.*.gz'}
     for path in logRegexPath:
       self.DeleteFileOrDirWithRegex(path, logRegexPath[path])
+
+    # truncate slapd logs
+    self.logger.info("truncate slapd log file started")
+    slapd_log="/var/log/slapd.log"
+    if os.path.isfile(slapd_log):
+      fo = open(slapd_log, "rw+")
+      fo.truncate()
+      self.logger.info("truncate slapd log file completed")
+
 
   def purge_messages(self, producer_id: str, msg_type: str, delivery_mechanism: str, sleep_time: int):
     """purge messages on message bus."""
