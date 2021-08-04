@@ -369,6 +369,7 @@ Refer to our [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/ma
 Please refer to the [Support](https://github.com/Seagate/cortx/blob/main/SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
 
 Tested by:
+- Aug 3, 2021: Daniar Kurniawan (daniar.kurniawan@seagate.com)
 - Aug 3, 2021: Meng Wang (meng.wang@seagate.com) 
 - Aug 3, 2021: Akhil Bhansali (akhil.bhansali@seagate.com) on SSC cloud VM (Centos 7.9)
 - Aug 1, 2021: Kapil Jinna (kapil.jinna@seagate.com) on SSC-G2 cloud VM (Centos 7.9)    
