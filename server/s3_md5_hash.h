@@ -27,6 +27,7 @@
 #include <gtest/gtest_prod.h>
 #include <openssl/md5.h>
 #include "motr/client.h"
+#include "lib/cksum.h"
 #include "s3_motr_wrapper.h"
 #include "s3_motr_context.h"
 
