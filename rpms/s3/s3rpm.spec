@@ -383,6 +383,7 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /opt/seagate/cortx/s3/reset/precheck.py
 /opt/seagate/cortx/s3/reset/reset_s3.sh
 /opt/seagate/cortx/s3/conf/setup.yaml
+/opt/seagate/cortx/s3/conf/support.yaml
 /opt/seagate/cortx/s3/conf/s3.post_install.tmpl.1-node
 /opt/seagate/cortx/s3/conf/s3.post_install.tmpl.1-node.sample
 /opt/seagate/cortx/s3/conf/s3.prepare.tmpl.1-node

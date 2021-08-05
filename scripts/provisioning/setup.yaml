@@ -120,6 +120,4 @@ s3:
     post:
       cmd: /opt/seagate/cortx/s3/bin/s3_setup postupgrade
       when: {{ level == 'node' and flow == 'upgrade-offline' }}
-# Script path used by CSM to generate s3 support bundle
-support_bundle:
-  - sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh
+
