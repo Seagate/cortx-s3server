@@ -208,7 +208,6 @@ class S3PostCompleteAction : public S3ObjectAction {
   FRIEND_TEST(S3PostCompleteActionTest, FetchMultipartInfo);
   FRIEND_TEST(S3PostCompleteActionTest, FetchMultipartInfoFailedInvalidObject);
   FRIEND_TEST(S3PostCompleteActionTest, FetchMultipartInfoFailedInternalError);
-  FRIEND_TEST(S3PostCompleteActionTest, AddPartObjectToObjectExtended);
   FRIEND_TEST(S3PostCompleteActionTest, AddPartObjectToDeadOidList);
   FRIEND_TEST(S3PostCompleteActionTest, GetNextPartsInfo);
   FRIEND_TEST(S3PostCompleteActionTest, GetPartsInfoFailed);
@@ -220,7 +219,6 @@ class S3PostCompleteAction : public S3ObjectAction {
   FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooLarge);
   FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessfulJsonError);
   FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessfulAbortMultiPart);
-  FRIEND_TEST(S3PostCompleteActionTest, RemoveOldObjectVersionMetadata);
   FRIEND_TEST(S3PostCompleteActionTest, DeletePartIndex);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteMultipartMetadata);
   FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientInternalError);

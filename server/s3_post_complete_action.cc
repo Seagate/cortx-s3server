@@ -1036,30 +1036,21 @@ void S3PostCompleteAction::delete_old_object_success() {
 }
 
 void S3PostCompleteAction::remove_old_object_version_metadata() {
-  printf("************************************");
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  printf("outside function......");
   if (object_metadata) {
-    printf("in function....");
     // printf("object name from multipart : ");
     // printf(multipart_metadata->get_object_name());
     // printf("object name from request : ");
     // printf(request->get_object_name());
     assert(multipart_metadata->get_object_name() == request->get_object_name());
-    printf("After assert****************");
     object_metadata->set_oid(old_object_oid);
-    printf("After setoid****************");
     object_metadata->set_layout_id(old_layout_id);
-    printf("After set layout oid****************");
     object_metadata->set_version_id(
         multipart_metadata->get_old_obj_version_id());
-    printf("before remove version metadata.....");
     object_metadata->remove_version_metadata(
         std::bind(&S3PostCompleteAction::remove_old_fragments, this),
         std::bind(&S3PostCompleteAction::remove_old_fragments, this));
-    printf("after remove version metadata.....");
   }
-  printf("after function.........");
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
