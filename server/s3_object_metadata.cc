@@ -225,6 +225,8 @@ S3ObjectMetadata::S3ObjectMetadata(
     mote_kv_writer_factory = std::make_shared<S3MotrKVSWriterFactory>();
   }
   obj_type = S3ObjectMetadataType::simple;
+  // This will be initially object size, in case of object fragment this will be
+  // fragment size.
   primary_obj_size = request->get_content_length();
   initialize(is_multipart, upload_id);
 }
