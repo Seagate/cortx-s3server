@@ -47,6 +47,7 @@ class MockS3ObjectMultipartMetadata : public S3ObjectMetadata {
   MOCK_METHOD0(get_part_one_size, size_t());
   MOCK_METHOD1(set_part_one_size, void(size_t part_size));
   MOCK_METHOD0(get_layout_id, int());
+  MOCK_METHOD0(get_pvid, struct m0_fid());
   MOCK_METHOD2(load, void(std::function<void(void)> on_success,
                           std::function<void(void)> on_failed));
   MOCK_METHOD2(save, void(std::function<void(void)> on_success,

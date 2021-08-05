@@ -597,8 +597,14 @@ int create_global_index(struct s3_motr_idx_layout &idx_lo,
     s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
            S3_IEM_MOTR_CONN_FAIL_JSON);
   } else {
-    idx_lo.pver = idx.in_attr.idx_pver;
-    idx_lo.layout_type = idx.in_attr.idx_layout_type;
+    // Store pv id and layout type only if flag 'M0_ENF_META' is set.
+    if (idx.in_entity.en_flags & M0_ENF_META) {
+      idx_lo.pver = idx.in_attr.idx_pver;
+      idx_lo.layout_type = idx.in_attr.idx_layout_type;
+    } else {
+      idx_lo.pver.f_container = idx_lo.pver.f_key = 0;
+      idx_lo.layout_type = 0;
+    }
   }
   return rc;
 }

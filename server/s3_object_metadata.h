@@ -275,7 +275,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   std::string& get_encoded_object_acl();
   std::string get_acl_as_xml();
 
-  struct m0_fid get_pvid() const;
+  virtual struct m0_fid get_pvid() const;
   void set_pvid(const struct m0_fid* p_pvid);
 
   const std::string& get_pvid_str() const { return pvid_str; }

@@ -291,7 +291,7 @@ void S3PostMultipartObjectAction::rollback_create() {
   motr_writer->delete_object(
       std::bind(&S3PostMultipartObjectAction::rollback_next, this),
       std::bind(&S3PostMultipartObjectAction::rollback_create_failed, this),
-      oid, layout_id);
+      oid, layout_id, object_multipart_metadata->get_pvid());
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

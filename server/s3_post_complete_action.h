@@ -81,6 +81,7 @@ class S3PostCompleteAction : public S3ObjectAction {
   struct m0_uint128 old_object_oid;
   int old_layout_id;
   struct m0_uint128 new_object_oid;
+  struct m0_fid new_pvid;
   int layout_id;
 
   // Probable delete record for old object OID in case of overwrite
