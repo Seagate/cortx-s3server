@@ -936,7 +936,8 @@ void S3PutObjectAction::delete_new_object() {
 
   motr_writer->delete_object(
       std::bind(&S3PutObjectAction::remove_new_oid_probable_record, this),
-      std::bind(&S3PutObjectAction::next, this), new_object_oid, layout_id);
+      std::bind(&S3PutObjectAction::next, this), new_object_oid, layout_id,
+      new_object_metadata->get_pvid());
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 

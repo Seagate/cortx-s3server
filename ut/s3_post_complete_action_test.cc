@@ -775,7 +775,9 @@ TEST_F(S3PostCompleteActionTest, SendResponseToClientSuccess) {
 TEST_F(S3PostCompleteActionTest, DeleteNewObject) {
   CREATE_WRITER_OBJ;
   CREATE_MP_METADATA_OBJ;
-
+  struct m0_fid pv_id = {0x7810203002040bfe, 0x19be102030405060};
+  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_pvid())
+      .WillRepeatedly(Return(pv_id));
   action_under_test_ptr->new_object_oid = oid;
   action_under_test_ptr->layout_id = layout_id;
   action_under_test_ptr->new_obj_oids.push_back(oid);
@@ -797,11 +799,13 @@ TEST_F(S3PostCompleteActionTest, DeleteOldObject) {
 
   m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
   int old_layout_id = 2;
+  struct m0_fid pv_id = {0x7810203002040bfe, 0x19be102030405060};
   action_under_test_ptr->old_object_oid = old_object_oid;
   action_under_test_ptr->old_layout_id = old_layout_id;
   action_under_test_ptr->old_obj_oids.push_back(old_object_oid);
   action_under_test_ptr->set_abort_multipart(true);
-
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_pvid())
+      .WillRepeatedly(Return(pv_id));
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
               delete_object(_, _, _, _, _)).Times(AtLeast(1));
 
@@ -816,10 +820,13 @@ TEST_F(S3PostCompleteActionTest, DelayedDeleteOldObject) {
 
   m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
   int old_layout_id = 2;
+  struct m0_fid pv_id = {0x7810203002040bfe, 0x19be102030405060};
   action_under_test_ptr->old_object_oid = old_object_oid;
   action_under_test_ptr->old_layout_id = old_layout_id;
   action_under_test_ptr->set_abort_multipart(true);
 
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_pvid())
+      .WillRepeatedly(Return(pv_id));
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
               delete_object(_, _, _, old_layout_id, _)).Times(0);
 
@@ -896,6 +903,7 @@ TEST_F(S3PostCompleteActionTest, StartCleanupAbortedSinceValidationFailed) {
   std::string object_name = "abcd";
   std::string version_key_in_index = "abcd/v1";
   int layout_id = 9;
+  struct m0_fid pv_id = {0x7810203002040bfe, 0x19be102030405060};
   struct m0_uint128 object_list_indx_oid = {0x11ffff, 0x1ffff};
   struct m0_uint128 objects_version_list_index_oid = {0x1ff1ff, 0x1ffff};
   struct m0_uint128 oid = {0x1ffff, 0x1ffff};
@@ -910,6 +918,8 @@ TEST_F(S3PostCompleteActionTest, StartCleanupAbortedSinceValidationFailed) {
           object_list_indx_oid, objects_version_list_index_oid,
           version_key_in_index, false /* force_delete */))));
   action_under_test_ptr->set_abort_multipart(true);
+  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_pvid())
+      .WillRepeatedly(Return(pv_id));
   EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
               put_keyval(_, _, _, _))
       .Times(1)
@@ -921,7 +931,8 @@ TEST_F(S3PostCompleteActionTest, StartCleanupAbortedSinceValidationFailed) {
       .Times(1)
       .WillRepeatedly(
            Invoke(this, &S3PostCompleteActionTest::dummy_delete_object));
-
+  action_under_test_ptr->multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
   action_under_test_ptr->startcleanup();
   EXPECT_EQ(false, action_under_test_ptr->is_error_state());
   EXPECT_EQ(2, action_under_test_ptr->number_of_tasks());
