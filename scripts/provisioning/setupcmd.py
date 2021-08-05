@@ -601,13 +601,7 @@ class SetupCmd(object):
         conn = ldap.initialize("ldapi://")
         conn.sasl_non_interactive_bind_s('EXTERNAL')
         ldap_result_id = conn.search_s(dn, ldap.SCOPE_BASE, None, [attr_to_delete])
-        total = 0
-        # Below will count the entries
-        for result1,result2 in ldap_result_id:
-            if(result2):
-                for value in result2[attr_to_delete]:
-                    if(value and (('dc=s3,dc=seagate,dc=com' in value.decode('UTF-8')) or ('cn=sgiamadmin,dc=seagate,dc=com' in value.decode('UTF-8')))):
-                        total = total + 1
+        total = self.get_record_count(dn, attr_to_delete)
         count = 0
         # Below will perform delete operation
         while (count < total):
@@ -624,3 +618,17 @@ class SetupCmd(object):
                                 print(e)
             count = count + 1
         conn.unbind_s()   
+
+  def get_record_count(self, dn, attr_to_delete):
+        conn = ldap.initialize("ldapi://")
+        conn.sasl_non_interactive_bind_s('EXTERNAL')
+        ldap_result_id = conn.search_s(dn, ldap.SCOPE_BASE, None, [attr_to_delete])
+        total = 0
+        # Below will count the entries
+        for result1,result2 in ldap_result_id:
+            if(result2):
+                for value in result2[attr_to_delete]:
+                    if(value and (('dc=s3,dc=seagate,dc=com' in value.decode('UTF-8')) or ('cn=sgiamadmin,dc=seagate,dc=com' in value.decode('UTF-8')))):
+                        total = total + 1
+        conn.unbind_s()
+        return total

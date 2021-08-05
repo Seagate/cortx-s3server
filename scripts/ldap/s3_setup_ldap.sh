@@ -91,7 +91,7 @@ sed -i "$EXPR" "$ADMIN_USERS_FILE"
 chkconfig slapd on
 
 # add S3 schema
-ldapadd -x -D "cn=admin,cn=config" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/cn\=\{1\}s3user.ldif -H ldapi:///
+ldapadd -x -D "cn=admin,cn=config" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/cn\=\{2\}s3user.ldif -H ldapi:///
 
 # initialize ldap
 ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/s3-ldap-init.ldif -H ldapi:/// || /bin/true
@@ -101,14 +101,6 @@ ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ROOTDNPASSWORD" -f "$ADMIN_USERS
 rm -f $ADMIN_USERS_FILE
 
 ldapmodify -Y EXTERNAL -H ldapi:/// -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/iam-admin-access.ldif
-
-#Enable ppolicy schema
-ldapmodify -D "cn=admin,cn=config" -w "$ROOTDNPASSWORD" -a -f /etc/openldap/schema/ppolicy.ldif -H ldapi:///
-
-
-ldapmodify -D "cn=admin,cn=config" -w "$ROOTDNPASSWORD" -a -f "$INSTALLDIR"/ppolicyoverlay.ldif -H ldapi:///
-
-ldapmodify -x -a -H ldapi:/// -D cn=admin,dc=seagate,dc=com -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/ppolicy-default.ldif || /bin/true
 
 # Enable slapd log with logLevel as "none"
 # for more info : http://www.openldap.org/doc/admin24/slapdconfig.html
