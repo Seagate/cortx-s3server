@@ -358,7 +358,8 @@ void S3GetObjectAction::read_object_data() {
          total_blocks_to_read);
   if (blocks_already_read != total_blocks_to_read) {
     if (blocks_already_read == 0 &&
-        content_length > max_blocks_in_one_read_op * motr_unit_size) {
+        get_requested_content_length() >
+            max_blocks_in_one_read_op * motr_unit_size) {
       size_t first_blocks_to_read =
           S3Option::get_instance()->get_motr_first_read_size();
       blocks_to_read = max_blocks_in_one_read_op < first_blocks_to_read
@@ -403,7 +404,6 @@ void S3GetObjectAction::send_data_to_client() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_stats_inc("read_object_data_success_count");
   log_timed_counter(get_timed_counter, "outgoing_object_data_blocks");
-
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
     return;
@@ -479,6 +479,7 @@ void S3GetObjectAction::send_data_to_client() {
   }
   data_sent_to_client += p_evbuffer->get_evbuff_length();
   // Send data to client. evbuf_body will be free'ed internally
+  s3_perf_count_outcoming_bytes(p_evbuffer->get_evbuff_length());
   request->send_reply_body(p_evbuffer->release_ownership());
   s3_timer.stop();
 

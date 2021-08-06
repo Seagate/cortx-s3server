@@ -47,6 +47,7 @@ where:
     -c     clean s3 resources if present
     -e     specify the s3 server endpoint, pass 127.0.0.1 if running on s3 server node
            else provide data interface ip which needs to be in /etc/hosts
+    -u     specify ldap username
     -p     specify ldap password in text form, mandatory
 
 Operations performed:
@@ -84,7 +85,7 @@ update_config() {
   fi
 
   if [ ! -z "$end_point" ];then
-    s3iamcli listaccounts --ldapuser sgiamadmin --ldappasswd "$ldappasswd" --no-ssl >/dev/null 2>&1 || echo "configured s3iamcli"
+    s3iamcli listaccounts --ldapuser "$ldapuser" --ldappasswd "$ldappasswd" --no-ssl >/dev/null 2>&1 || echo "configured s3iamcli"
     echo "using s3endpoint $end_point"
     ls /root/.sgs3iamcli/config.yaml 2> /dev/null || die_with_error "S3iamcli configuration file is missing"
 
@@ -133,7 +134,7 @@ cleanup() {
     return
   fi
 
-  output=$(s3iamcli resetaccountaccesskey -n SanityAccountToDeleteAfterUse --ldapuser sgiamadmin --ldappasswd "$ldappasswd" --no-ssl) 2> /dev/null || echo ""
+  output=$(s3iamcli resetaccountaccesskey -n SanityAccountToDeleteAfterUse --ldapuser "$ldapuser" --ldappasswd "$ldappasswd" --no-ssl) 2> /dev/null || echo ""
   if [[ $output == *"Name or service not known"*  || $output == *"Invalid argument"* ]];then
     restore_config
     die_with_error "Provide the Appropriate endpoint"
@@ -159,8 +160,11 @@ cleanup() {
 
 # Start of the script main
 # Process command line args
-while getopts ":p:e:c" o; do
+while getopts ":u:p:e:c" o; do
     case "${o}" in
+        u)
+            ldapuser=${OPTARG}
+            ;;
         e)
             end_point=${OPTARG}
             ;;
@@ -211,13 +215,13 @@ fi
 echo "*** S3 Sanity tests start ***"
 
 echo "Replication test starts"
-cmd_out="$(s3iamcli listaccounts --ldapuser sgiamadmin --ldappasswd "$ldappasswd" --no-ssl --showall)"
+cmd_out="$(s3iamcli listaccounts --ldapuser "$ldapuser" --ldappasswd "$ldappasswd" --no-ssl --showall)"
 accounts_before="$(echo $cmd_out | grep AccountName | wc -l)"
 END=10
 for "((a=1;a<=$END;a++))"
 do
 	cmd_out=""
-	cmd_out=$(s3iamcli listaccounts --ldapuser sgiamadmin --ldappasswd "$ldappasswd" --no-ssl --showall)
+	cmd_out=$(s3iamcli listaccounts --ldapuser "$ldapuser" --ldappasswd "$ldappasswd" --no-ssl --showall)
 	accounts_after=$(echo $cmd_out | grep AccountName | wc -l)
 	if "[ $accounts_before != $accounts_after ]"
 	then
@@ -228,7 +232,7 @@ done
 echo "Replication TESTS SUCCESSFULLY COMPLETED"
 
 echo "ldapsearch test starts ***"
-cmd_out=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://"$end_point") || echo ""
+cmd_out=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn="$ldapuser",dc=seagate,dc=com" -H ldap://"$end_point") || echo ""
 if [[ $cmd_out == *"No such object"* ]];then
   die_with_error "***** S3: SANITY ldapsearch TESTS COMPLETED WITH FAILURE, failed to find s3background delete account!*****"
 fi
@@ -240,7 +244,7 @@ if [ "$s3iamclitestson" == false ];then
 fi
 echo "S3IAMCLI tests start"
 echo "Create Account"
-output=$(s3iamcli createaccount -n SanityAccountToDeleteAfterUse  -e SanityAccountToDeleteAfterUse@sanitybucket.com --ldapuser sgiamadmin --ldappasswd "$ldappasswd" --no-ssl)
+output=$(s3iamcli createaccount -n SanityAccountToDeleteAfterUse  -e SanityAccountToDeleteAfterUse@sanitybucket.com --ldapuser "$ldapuser" --ldappasswd "$ldappasswd" --no-ssl)
 access_key=$(echo -e "$output" | tr ',' '\n' | grep "AccessKeyId" | awk '{print $3}')
 secret_key=$(echo -e "$output" | tr ',' '\n' | grep "SecretKey" | awk '{print $3}')
 s3iamcli CreateUser -n SanityUserToDeleteAfterUse --access_key "$access_key" --secret_key "$secret_key" --no-ssl 2> /dev/null

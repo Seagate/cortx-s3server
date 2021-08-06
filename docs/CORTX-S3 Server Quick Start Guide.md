@@ -41,15 +41,17 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
       * To check whether Python is installed on your VM, use one of the following commands: `$ python3 --version` 
       * To install Python version 3.0, use: `$ yum install -y python3`
       * `Pip3` will be automatically installed by running above command
+
     * Extra Packages for Enterprise Linux:
         * To check if epel is installed, use: `$ yum repolist`
             * If epel was installed, you'll see it in the output list.
             * You might also see exclamation mark in front of the repositories id. Refer to the [Redhat Knowledge Base](https://access.redhat.com/solutions/2267871).
         * `$ yum install -y epel-release`
     * Ansible: Install ansible if not there already `$ yum install -y ansible`
-    * ipaddress: Install ipaddress if not there already `$ pip install ipaddress`
+    * ipaddress: Install ipaddress if not there already `$ pip3 install ipaddress`
+    * Make sure that PATH variable has `/usr/local/sbin`,`/usr/sbin`,`/usr/bin`, `/usr/local/bin` directories 
     
-6. You will need to set your hostname to something other than localhost `hostnamectl set-hostname --static --transient --pretty <new-name>`
+6. You will need to set your hostname to something other than localhost `hostnamectl set-hostname --static --transient --pretty <new-name>`. Try `sudo' if the command fails
 
 7. Add/set entry corresponding to <new-name> in above command to `/etc/hosts` file
     
@@ -103,7 +105,7 @@ You'll need to clone the S3 Server Repository from the main branch. To clone the
 
 ```shell
 
-$ git clone --recursive git@github.com:Seagate/cortx-s3server.git -b main
+$ git clone --recursive https://github.com/Seagate/cortx-s3server.git -b main
 $ cd cortx-s3server
 $ git submodule update --init --recursive && git status
 ```
@@ -138,6 +140,8 @@ At some point during the execution of the `init.sh` script, it will prompt for t
 Refer to the image below to view the output of a successful `$ init.sh -a` run, where the `failed` field value should be zero.
 
 ![Successful run](../images/init_script_output.png)
+
+If you encounter `failed=1` that is caused by Motr dependency conflicts (such as gcc or python3 version conflict), you can install Motr dependencies first (in cortx-motr, run `scripts/install-build-deps`), before follow this guide. Refer to [Motr guide](https://github.com/Seagate/cortx-motr/blob/main/doc/Quick-Start-Guide.rst)
 
 If you still see errors or a failed status, please [reach out to us for support](https://github.com/Seagate/cortx/blob/main/SUPPORT.md)
 
@@ -214,7 +218,9 @@ Before your test your build, ensure that you have installed and configured the f
         * `AWS Secret Access Key [None]: <Secret Key generated in last step>`
         * `Default region name [None]: US`
         * `Default output format [None]: text`
-   2. Configure the AWS Plugin Endpoint using:
+   2. Install the `awscli_plugin_endpoint` package if it's not installed:
+        `$ pip install awscli-plugin-endpoint`
+   3. Configure the AWS Plugin Endpoint using:
       `$ aws configure set plugins.endpoint awscli_plugin_endpoint`
         - To configure AWS in SSL mode run:
             `$ aws configure set s3.endpoint_url https://s3.seagate.com`
@@ -222,7 +228,7 @@ Before your test your build, ensure that you have installed and configured the f
         - To configure AWS in non-SSL mode, please run:
             `$ aws configure set s3.endpoint_url http://s3.seagate.com`
             `$ aws configure set s3api.endpoint_url http://s3.seagate.com`
-   3. Run the following command to view the contents of your AWS config file: 
+   4. Run the following command to view the contents of your AWS config file: 
       `$ cat ~/.aws/config`
       
       1. For AWS in SSL mode, you'll need to configure the `[default]` section with the `ca_bundle=<path to ca.crt file>` parameter.
@@ -348,7 +354,7 @@ Your success log will look like the output in the image below:
 
     `$ ./rpms/s3iamcli/buildrpm.sh -G 44a07d2`
 
-All the built RPMs will be available at `~/rpmbuild/RPMS/x86_64/`. You can copy these RPMs to release VM for testing.
+All the built RPMs will be available at `~/rpmbuild/RPMS/`. You can copy these RPMs to release VM for testing.
 
 ## You're All Set & You're Awesome!
 
@@ -365,5 +371,12 @@ Refer to our [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/ma
 Please refer to the [Support](https://github.com/Seagate/cortx/blob/main/SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
 
 Tested by:
-
+- Aug 3, 2021: Daniar Kurniawan (daniar.kurniawan@seagate.com)
+- Aug 3, 2021: Meng Wang (meng.wang@seagate.com) 
+- Aug 3, 2021: Akhil Bhansali (akhil.bhansali@seagate.com) on SSC cloud VM (Centos 7.9)
+- Aug 1, 2021: Kapil Jinna (kapil.jinna@seagate.com) on SSC-G2 cloud VM (Centos 7.9)    
+- Aug 1, 2021: Bo Wei (bo.b.wei@seagate.com) on Windows laptop running Oracle VirtualBox (Centos 7.8).
+- July 30, 2021: Kapil Jinna (kapil.jinna@seagate.com) on SSC-G2 cloud VM (Centos 7.8)
+- June 11, 2021: Kapil Jinna (kapil.jinna@seagate.com) on Vsphere cloud VM (Centos 7.8)
+- May 09, 2021: Kapil Jinna (kapil.jinna@seagate.com) on SSC cloud VM (Centos 7.8)
 - Nov 03, 2020: Saumya Sunder (saumya.sunder@seagate.com) on a Windows laptop running VMWare Workstation 16 Pro.

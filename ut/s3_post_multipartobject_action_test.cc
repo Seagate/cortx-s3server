@@ -328,9 +328,14 @@ TEST_F(S3PostMultipartObjectTest, CreateNewOid) {
 }
 
 TEST_F(S3PostMultipartObjectTest, RollbackCreate) {
+  struct m0_fid pv_id = {0x7810203002040bfe, 0x19be102030405060};
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
   action_under_test->motr_writer = motr_writer_factory->mock_motr_writer;
   EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
               delete_object(_, _, _, _, _)).Times(1);
+  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_pvid())
+      .WillRepeatedly(Return(pv_id));
   action_under_test->rollback_create();
 }
 
