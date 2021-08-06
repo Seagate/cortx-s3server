@@ -106,13 +106,13 @@ class ConfigCmd(SetupCmd):
 
       if configure_only_openldap == True:
         # Configure openldap only
-        self.configure_openldap()
+        self.configure_s3_schema()
       elif configure_only_haproxy == True:
         # Configure haproxy only
         self.configure_haproxy()
       else:
         # Configure both openldap and haproxy
-        self.configure_openldap()
+        self.configure_s3_schema()
         self.configure_haproxy()
 
       # create topic for background delete
@@ -131,22 +131,13 @@ class ConfigCmd(SetupCmd):
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}')
 
-  def configure_openldap(self):
-    """Install and Configure Openldap over Non-SSL."""
-    # 1. Install and Configure Openldap over Non-SSL.
-    # 2. Enable slapd logging in rsyslog config
-    # 3. Set openldap-replication
-    # 4. Check number of nodes in the cluster
-    # TODO pass the base config file path to the script.
-    self.logger.info('Open ldap configuration started')
-    cmd = ['/opt/seagate/cortx/s3/install/ldap/setup_ldap.sh',
+  def configure_s3_schema(self):
+    self.logger.info('openldap s3 configuration started')
+    cmd = ['/opt/seagate/cortx/s3/install/ldap/s3_setup_ldap.sh',
            '--ldapadminpasswd',
            f'{self.ldap_passwd}',
            '--rootdnpasswd',
            f'{self.rootdn_passwd}',
-           '--baseconfigpath',
-           f'{self.base_config_file_path}',
-           '--forceclean',
            '--skipssl']
     handler = SimpleProcess(cmd)
     stdout, stderr, retcode = handler.run()
@@ -305,6 +296,7 @@ class ConfigCmd(SetupCmd):
         raise(e)
       else:
         self.logger.warning("backgrounddelete service account already exist")
+<<<<<<< HEAD
 
   def update_config_value(self, config_file_path : str,
                           config_file_type : str,
@@ -592,3 +584,5 @@ class ConfigCmd(SetupCmd):
         shutil.copytree(source, destination)
       else:
           shutil.copy2(source, destination)
+=======
+>>>>>>> 5070677f (EOS-22277: Accommodating openldap mini prov with s3 prov (#1061))
