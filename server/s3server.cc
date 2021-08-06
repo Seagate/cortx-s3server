@@ -254,8 +254,9 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
     s3_request->set_out_header_value("Content-Length",
                                      std::to_string(response_xml.length()));
     s3_request->set_out_header_value("Connection", "close");
-    s3_request->set_out_header_value("Retry-After", "2");
-
+    int retry_after_period = S3Option::get_instance()->get_s3_retry_after_sec();
+    s3_request->set_out_header_value("Retry-After",
+                                     std::to_string(retry_after_period));
     s3_request->send_response(error.get_http_status_code(), response_xml);
     return EVHTP_RES_OK;
   }

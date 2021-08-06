@@ -731,7 +731,14 @@ void S3PutObjectAction::send_response_to_s3_client() {
     }
 
     if (get_s3_error_code() == "ServiceUnavailable") {
-      request->set_out_header_value("Retry-After", "1");
+      if (reject_if_shutting_down()) {
+        int retry_after_period =
+            S3Option::get_instance()->get_s3_retry_after_sec();
+        request->set_out_header_value("Retry-After",
+                                      std::to_string(retry_after_period));
+      } else {
+        request->set_out_header_value("Retry-After", "1");
+      }
     }
 
     request->send_response(error.get_http_status_code(), response_xml);
