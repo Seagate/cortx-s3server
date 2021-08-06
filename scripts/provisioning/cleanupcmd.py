@@ -42,21 +42,8 @@ class CleanupCmd(SetupCmd):
   # ldap config and schema related constants
   ldap_configs = {
                   "files": [
-                             "/etc/openldap/slapd.d/cn=config/cn=schema/cn={1}s3user.ldif",
-                             "/etc/openldap/slapd.d/cn=config/cn=module{0}.ldif",
-                             "/etc/openldap/slapd.d/cn=config/cn=module{1}.ldif",
-                             "/etc/openldap/slapd.d/cn=config/cn=module{2}.ldif",
-                             "/etc/openldap/slapd.d/cn=config/olcDatabase={2}mdb.ldif"
-                          ],
-                  "files_wild": [
-                             {
-                              "path": "/etc/openldap/slapd.d/cn=config/cn=schema/",
-                              "glob": "*ppolicy.ldif"
-                             }
-                          ],
-                  "dirs": [
-                             "/etc/openldap/slapd.d/cn=config/olcDatabase={2}mdb"
-                          ]
+                             "/etc/openldap/slapd.d/cn=config/cn=schema/cn={2}s3user.ldif"
+                           ]
                  }
 
   def __init__(self, config: str):
@@ -93,9 +80,6 @@ class CleanupCmd(SetupCmd):
       # Check if reset phase was performed before this
       self.detect_if_reset_done()
 
-      # Delete ldap replication cofiguration
-      self.delete_replication_config()
-
       # cleanup ldap accounts related to S3
       self.logger.info("delete ldap account of S3 started")
       ldap_action_obj = LdapAccountAction(self.ldap_user, self.ldap_passwd)
@@ -119,29 +103,6 @@ class CleanupCmd(SetupCmd):
         self.delete_topic(bgdeleteconfig.get_msgbus_admin_id, bgdeleteconfig.get_msgbus_topic())
         self.logger.info('Deleting topic completed')
 
-      try:
-        self.logger.info("Stopping slapd service...")
-        service_list = ["slapd"]
-        self.shutdown_services(service_list)
-      except Exception as e:
-        self.logger.error(f'Failed to stop slapd service, error: {e}')
-        raise e
-      self.logger.info("Stopped slapd service...")
-
-      # cleanup ldap config and schemas
-      self.logger.info("delete ldap config and schemas started")
-      self.delete_ldap_config()
-      self.logger.info("delete ldap config and schemas completed")
-
-      # truncate slapd logs
-      self.logger.info("truncate slapd log file started")
-      slapd_log="/var/log/slapd.log"
-      if os.path.isfile(slapd_log):
-        fslapd = open(slapd_log, "w")
-        fslapd.truncate()
-        fslapd.close()
-        self.logger.info("truncate slapd log file completed")
-
       #delete deployment log
       if pre_factory == True:
         self.logger.info("Delete S3 Deployment log file started")
@@ -154,6 +115,9 @@ class CleanupCmd(SetupCmd):
         self.logger.info('revert s3 config files completed')
       else:
         self.logger.info("Skipped Delete of S3 Deployment log file")
+
+      service_list = ["slapd","haproxy"]
+      self.restart_services(service_list) 
 
     except Exception as e:
       raise e
@@ -249,29 +213,14 @@ class CleanupCmd(SetupCmd):
     # Clean up old configuration if any
     # Removing schemas
     files = self.ldap_configs["files"]
-    files_wild = self.ldap_configs["files_wild"]
-    dirs = self.ldap_configs["dirs"]
-
     for curr_file in files:
       if os.path.isfile(curr_file):
         os.remove(curr_file)
         self.logger.info(f"{curr_file} removed")
-
-    for file_wild in files_wild:
-      for path in Path(f"{file_wild['path']}").glob(f"{file_wild['glob']}"):
-        if os.path.isfile(path):
-          os.remove(path)
-          self.logger.info(f"{path} removed")
-        elif os.path.isdir(path):
-          shutil.rmtree(path)
-          self.logger.info(f"{path} removed")
-
-    for curr_dir in dirs:
-      if os.path.isdir(curr_dir):
-        shutil.rmtree(curr_dir)
-        self.logger.info(f"{curr_dir} removed")
-    self.delete_mdb_files()
-    self.logger.info("/var/lib/ldap removed")
+    # Delete s3 specific slapd indices and revert to original basic
+    self.modify_attribute('olcDatabase={2}mdb,cn=config', 'olcDbIndex', 'ou,cn,mail,surname,givenname eq,pres,sub')
+    # Delete s3 specific olcAccess
+    self.search_and_delete_attribute("olcDatabase={2}mdb,cn=config", "olcAccess")
 
   def delete_topic(self, admin_id, topic_name):
     """delete topic for background delete services."""

@@ -46,7 +46,6 @@ class SetupCmd(object):
   rootdn_passwd = None
   cluster_id = None
   machine_id = None
-  ldap_mdb_folder = "/var/lib/ldap"
   s3_prov_config = "/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml"
   _preqs_conf_file = "/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
   s3_tmp_dir = "/opt/seagate/cortx/s3/tmp"
@@ -461,15 +460,6 @@ class SetupCmd(object):
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
 
-  def delete_mdb_files(self):
-    """Deletes ldap mdb files."""
-    for files in os.listdir(self.ldap_mdb_folder):
-      path = os.path.join(self.ldap_mdb_folder,files)
-      if os.path.isfile(path) or os.path.islink(path):
-        os.unlink(path)
-      elif os.path.isdir(path):
-        shutil.rmtree(path)
-
   def validate_config_files(self, phase_name: str):
     """Validate the sample file and config file keys.
     Both files should have same keys.
@@ -619,24 +609,51 @@ class SetupCmd(object):
 
     return bgdelete_acc_input_params_dict
 
-  def delete_replication_config(self):
-    conn = ldap.initialize("ldapi://")
-    conn.sasl_non_interactive_bind_s('EXTERNAL')
+  def modify_attribute(self, dn, attribute, value):
+        # Open a connection
+        ldap_conn = ldap.initialize("ldapi:///")
+        # Bind/authenticate with a user with apropriate rights to add objects
+        ldap_conn.sasl_non_interactive_bind_s('EXTERNAL')
+        mod_attrs = [(ldap.MOD_REPLACE, attribute, bytes(str(value), 'utf-8'))]
+        try:
+            ldap_conn.modify_s(dn, mod_attrs)
+        except:
+            self.logger.error('Error while modifying attribute- '+ attribute )
+            raise Exception('Error while modifying attribute' + attribute)
+        ldap_conn.unbind_s()
 
-    dn = "cn=config"
-    self.deleteattribute(conn, dn, "olcServerID")
+  def search_and_delete_attribute(self, dn, attr_to_delete):
+        conn = ldap.initialize("ldapi://")
+        conn.sasl_non_interactive_bind_s('EXTERNAL')
+        ldap_result_id = conn.search_s(dn, ldap.SCOPE_BASE, None, [attr_to_delete])
+        total = self.get_record_count(dn, attr_to_delete)
+        count = 0
+        # Below will perform delete operation
+        while (count < total):
+            ldap_result_id = conn.search_s(dn, ldap.SCOPE_BASE, None, [attr_to_delete])
+            for result1,result2 in ldap_result_id:
+                if(result2):
+                    for value in result2[attr_to_delete]:
+                        if(value and (('dc=s3,dc=seagate,dc=com' in value.decode('UTF-8')) or ('cn=sgiamadmin,dc=seagate,dc=com' in value.decode('UTF-8')))):
+                            mod_attrs = [( ldap.MOD_DELETE, attr_to_delete, value )]
+                            try:
+                                conn.modify_s(dn, mod_attrs)
+                                break
+                            except Exception as e:
+                                print(e)
+            count = count + 1
+        conn.unbind_s()   
 
-    dn = "olcDatabase={0}config,cn=config"
-    self.deleteattribute(conn, dn, "olcSyncrepl")
-    self.deleteattribute(conn, dn, "olcMirrorMode")
-
-    dn = "olcDatabase={2}mdb,cn=config"
-    self.deleteattribute(conn, dn, "olcSyncrepl")
-    self.deleteattribute(conn, dn, "olcMirrorMode")
-
-  def deleteattribute(self, conn, dn, attr_to_delete):
-    mod_attrs = [(ldap.MOD_DELETE, attr_to_delete, None)]
-    try:
-      conn.modify_s(dn, mod_attrs)
-    except:
-      self.logger.info('Attribute '+ attr_to_delete + ' is not configured for dn '+ dn)
+  def get_record_count(self, dn, attr_to_delete):
+        conn = ldap.initialize("ldapi://")
+        conn.sasl_non_interactive_bind_s('EXTERNAL')
+        ldap_result_id = conn.search_s(dn, ldap.SCOPE_BASE, None, [attr_to_delete])
+        total = 0
+        # Below will count the entries
+        for result1,result2 in ldap_result_id:
+            if(result2):
+                for value in result2[attr_to_delete]:
+                    if(value and (('dc=s3,dc=seagate,dc=com' in value.decode('UTF-8')) or ('cn=sgiamadmin,dc=seagate,dc=com' in value.decode('UTF-8')))):
+                        total = total + 1
+        conn.unbind_s()
+        return total
