@@ -80,7 +80,7 @@ done
 INSTALLDIR="/opt/seagate/cortx/s3/install/ldap"
 # Clean up old configuration if any for idempotency
 # Removing schemas
-rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
+rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{2\}s3user.ldif
 rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/*ppolicy.ldif
 # Removing all loaded modules in ldap
 rm -rf /etc/openldap/slapd.d/cn\=config/cn\=module\{0\}.ldif
@@ -157,8 +157,6 @@ echo "started slapd"
 ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $CFG_FILE
 rm -f $CFG_FILE
 
-# add S3 schema
-ldapadd -x -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -f $INSTALLDIR/cn\=\{1\}s3user.ldif -H ldapi:///
 
 # initialize ldap
 ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/ldap-init.ldif -H ldapi:/// || /bin/true
@@ -181,6 +179,10 @@ ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f $INSTALLDIR/ppolicym
 ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f $INSTALLDIR/ppolicyoverlay.ldif -H ldapi:///
 
 ldapmodify -x -a -H ldapi:/// -D cn=admin,dc=seagate,dc=com -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/ppolicy-default.ldif || /bin/true
+
+# add S3 schema
+ldapadd -x -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -f $INSTALLDIR/cn\=\{2\}s3user.ldif -H ldapi:///
+
 
 # Enable slapd log with logLevel as "none"
 # for more info : http://www.openldap.org/doc/admin24/slapdconfig.html

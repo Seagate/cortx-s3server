@@ -80,13 +80,13 @@ class ConfigCmd(SetupCmd):
 
       if configure_only_openldap == True:
         # Configure openldap only
-        self.configure_openldap()
+        self.configure_s3_schema()
       elif configure_only_haproxy == True:
         # Configure haproxy only
         self.configure_haproxy()
       else:
         # Configure both openldap and haproxy
-        self.configure_openldap()
+        self.configure_s3_schema()
         self.configure_haproxy()
 
       # create topic for background delete
@@ -105,19 +105,13 @@ class ConfigCmd(SetupCmd):
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}')
 
-  def configure_openldap(self):
-    """Install and Configure Openldap over Non-SSL."""
-    # 1. Install and Configure Openldap over Non-SSL.
-    # 2. Enable slapd logging in rsyslog config
-    # 3. Set openldap-replication
-    # 4. Check number of nodes in the cluster
-    self.logger.info('Open ldap configuration started')
-    cmd = ['/opt/seagate/cortx/s3/install/ldap/setup_ldap.sh',
+  def configure_s3_schema(self):
+    self.logger.info('openldap s3 configuration started')
+    cmd = ['/opt/seagate/cortx/s3/install/ldap/s3_setup_ldap.sh',
            '--ldapadminpasswd',
            f'{self.ldap_passwd}',
            '--rootdnpasswd',
            f'{self.rootdn_passwd}',
-           '--forceclean',
            '--skipssl']
     handler = SimpleProcess(cmd)
     stdout, stderr, retcode = handler.run()
