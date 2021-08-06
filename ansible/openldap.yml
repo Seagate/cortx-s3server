@@ -114,7 +114,7 @@
       - name: Copy ldap schema, data, replication-config files
         copy: src={{ item.src }} dest={{ item.dest }}
         with_items:
-          - { src: 'ldap/cn={1}s3user.ldif', dest: '/tmp/s3ldap/cn={1}s3user.ldif' }
+          - { src: 'ldap/cn={2}s3user.ldif', dest: '/tmp/s3ldap/cn={2}s3user.ldif' }
           - { src: 'ldap/ldap-init.ldif', dest: '/tmp/s3ldap/ldap-init.ldif' }
           - { src: 'ldap/iam-admin-access.ldif', dest: '/tmp/s3ldap/iam-admin-access.ldif' }
           - { src: 'ldap/iam-constraints.ldif', dest: '/tmp/s3ldap/iam-constraints.ldif' }
@@ -127,7 +127,7 @@
       - name: Clean up old ldap files
         file:
           state: absent
-          path: /etc/openldap/slapd.d/cn=config/cn=schema/cn={1}s3user.ldif
+          path: /etc/openldap/slapd.d/cn=config/cn=schema/cn={2}s3user.ldif
 
       - name: Start slapd
         service:
@@ -137,7 +137,7 @@
 
       - name: Remove old ldap files
         file:
-          name: /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
+          name: /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{2\}s3user.ldif
           state: absent
 
       - name: Configure OpenLDAP - Base config
@@ -155,7 +155,7 @@
           state: restarted
 
       - name: Configure OpenLDAP - Schema
-        command: ldapadd -x -D "cn=admin,cn=config" -w {{ openldappasswd }} -f /tmp/s3ldap/cn={1}s3user.ldif -H ldapi:///
+        command: ldapadd -x -D "cn=admin,cn=config" -w {{ openldappasswd }} -f /tmp/s3ldap/cn={2}s3user.ldif -H ldapi:///
         no_log: true
 
       - name: Configure OpenLDAP - Base data
