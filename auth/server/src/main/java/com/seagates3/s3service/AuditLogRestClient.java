@@ -20,57 +20,55 @@
 package com.seagates3.s3service;
 import com.seagates3.authserver.AuthServerConfig;
 
-import io.netty.handler.codec.http.HttpResponseStatus;
-
-import java.io.IOException;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.net.*;
+import java.nio.charset.Charset;
+import java.io.*;
 
 public class AuditLogRestClient {
 
-    private
-    final static Logger LOGGER =
-        LoggerFactory.getLogger(AuditLogRestClient.class.getName());
-  
-    /**
-     * Method sends IEM alerts to IEM server as POST request
-     * @return HttpRespose
-     * @throws ClientProtocolException
-     * @throws IOException
-     */
-   public
-    static S3HttpResponse postRequest(String iam_audit_log_msg)
-        throws ClientProtocolException,
-        IOException {
-      // URL will be stored in Authserver.properties file
-      // e.g. http://127.0.0.1:514
-      // Rsyslog messege id is AuthServer-audit-logging
+  private
+   final static Logger LOGGER =
+       LoggerFactory.getLogger(AuditLogRestClient.class.getName());
 
-      String URL = AuthServerConfig.getRsyslogServerURL();
-  
-      HttpPost req = new HttpPost(URL);
- 
-      req.setEntity(new StringEntity(iam_audit_log_msg, ContentType.APPLICATION_JSON));
-      S3HttpResponse s3Resp = new S3HttpResponse();
-  
-      try(CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-          CloseableHttpResponse resp = httpClient.execute(req)) {
-        s3Resp.setHttpCode(resp.getStatusLine().getStatusCode());
-        s3Resp.setHttpStatusMessage(resp.getStatusLine().getReasonPhrase());
+  public
+   static void sendMessage(String auth_iam_audit_log) {
+     // initialize socket and output streams
+     Socket socket = null;
+     DataOutputStream dataOutStream = null;
+     String rsyslogHostname = AuthServerConfig.getRsyslogHostname();
+     int rsyslogPortNUmber = AuthServerConfig.getRsyslogPort();
+     try {
+       // establish a connection
+       LOGGER.debug("Creating socket");
+       LOGGER.debug("rsyslog hostname : " + rsyslogHostname);
+       LOGGER.debug("rsyslog port : " + String.valueOf(rsyslogPortNUmber));
+       socket = new Socket(rsyslogHostname, rsyslogPortNUmber);
+       LOGGER.debug("Socket Connected");
+
+       LOGGER.debug("IAM Message to be sent for audit log : " +
+                    auth_iam_audit_log);
+       // sends message to the socket
+       dataOutStream = new DataOutputStream(socket.getOutputStream());
+       // Send Message
+       dataOutStream.write(
+           auth_iam_audit_log.getBytes(Charset.forName("UTF-8")));
+       LOGGER.debug("IAM Message sent");
+     }
+     catch (Exception ex) {
+       LOGGER.error("Failed to send IAM Audit log message : " + ex.toString());
+     }
+     finally {
+       try {
+         // close the connection
+         dataOutStream.close();
+         socket.close();
+         LOGGER.debug("Socket Disconnected");
       }
-      catch (Exception e) {
-        s3Resp.setHttpCode(HttpResponseStatus.INTERNAL_SERVER_ERROR.code());
-        s3Resp.setHttpStatusMessage(e.getMessage());
-        LOGGER.error("Failed to log IAM Audit log message" + e.getMessage());
+      catch (IOException ex) {
+        // No need to handle the exception
       }
-      finally { req.releaseConnection(); }
-      return s3Resp;
     }
+   }
 }
