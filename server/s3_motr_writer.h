@@ -208,7 +208,7 @@ class S3MotrWiter {
   virtual void delete_object(std::function<void(void)> on_success,
                              std::function<void(void)> on_failed,
                              const struct m0_uint128& object_id, int layoutid,
-                             const struct m0_fid& pv_id = {});  // BG delete
+                             const struct m0_fid& pv_id);  // BG delete
 
   virtual void delete_objects(std::vector<struct m0_uint128> oids,
                               std::vector<int> layoutids,

@@ -259,7 +259,7 @@ TEST_F(S3MotrWiterTest, DeleteObjectSuccessfulTest) {
   motr_writer_ptr->delete_object(
       std::bind(&S3CallBack::on_success, &S3MotrWiter_callbackobj),
       std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj), obj_oid,
-      layout_id);
+      layout_id, pv_id);
 
   EXPECT_TRUE(S3MotrWiter_callbackobj.success_called);
   EXPECT_FALSE(S3MotrWiter_callbackobj.fail_called);
@@ -285,7 +285,7 @@ TEST_F(S3MotrWiterTest, DeleteObjectFailedTest) {
   motr_writer_ptr->delete_object(
       std::bind(&S3CallBack::on_success, &S3MotrWiter_callbackobj),
       std::bind(&S3CallBack::on_failed, &S3MotrWiter_callbackobj), obj_oid,
-      layout_id);
+      layout_id, pv_id);
 
   EXPECT_FALSE(S3MotrWiter_callbackobj.success_called);
   EXPECT_TRUE(S3MotrWiter_callbackobj.fail_called);
