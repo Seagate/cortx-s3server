@@ -103,6 +103,10 @@ class S3MotrReaderContext : public S3AsyncOpContextBase {
         create_basic_rw_op_ctx(buf_count_in_evbuf, evbuf_unit_buf_sz);
     if (motr_rw_op_context == NULL) {
       // out of memory
+      s3_log(S3_LOG_ERROR, request_id,
+             "create_basic_rw_op_ctx failed, buf_count_in_evbuf = %zu "
+             "evbuf_unit_buf_sz = %zu\n",
+             buf_count_in_evbuf, evbuf_unit_buf_sz);
       return false;
     }
     // Create real buffer space using evbuffer
@@ -110,6 +114,7 @@ class S3MotrReaderContext : public S3AsyncOpContextBase {
         new S3Evbuffer(request_id, total_read_sz, evbuf_unit_buf_sz));
     int rc = p_s3_evbuffer->init();
     if (rc != 0) {
+      s3_log(S3_LOG_ERROR, request_id, "p_s3_evbuffer->init failed\n");
       return false;
     }
     // Setup the motr structs to point to evbuf buffers

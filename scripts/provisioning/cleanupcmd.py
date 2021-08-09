@@ -133,12 +133,14 @@ class CleanupCmd(SetupCmd):
       self.delete_ldap_config()
       self.logger.info("delete ldap config and schemas completed")
 
-      # delete slapd logs
-      self.logger.info("delete slapd log file started")
+      # truncate slapd logs
+      self.logger.info("truncate slapd log file started")
       slapd_log="/var/log/slapd.log"
       if os.path.isfile(slapd_log):
-        os.remove(slapd_log)
-        self.logger.info("delete slapd log file completed")
+        fslapd = open(slapd_log, "w")
+        fslapd.truncate()
+        fslapd.close()
+        self.logger.info("truncate slapd log file completed")
 
       #delete deployment log
       if pre_factory == True:

@@ -185,8 +185,10 @@ struct s3_motr_rw_op_context *create_basic_rw_op_ctx(size_t motr_buf_count,
     free(ctx->data);
     free(ctx->attr);
     free(ctx);
-    s3_log(S3_LOG_DEBUG, "", "%s Exit with NULL - possible out-of-memory\n",
-           __func__);
+    s3_log(S3_LOG_ERROR, "",
+           "%s Exit with NULL - possible out-of-memory motr_buf_count = %zu "
+           "unit_size = %zu, allocate_bufs = %d\n",
+           __func__, motr_buf_count, unit_size, allocate_bufs);
     return NULL;
   }
 
@@ -197,8 +199,9 @@ struct s3_motr_rw_op_context *create_basic_rw_op_ctx(size_t motr_buf_count,
     free(ctx->attr);
     free(ctx->ext);
     free(ctx);
-    s3_log(S3_LOG_DEBUG, "", "%s Exit with NULL - possible out-of-memory\n",
-           __func__);
+    s3_log(S3_LOG_ERROR, "",
+           "%s motr_buf_count = %zu Exit with NULL - possible out-of-memory\n",
+           __func__, motr_buf_count);
     return NULL;
   }
 
@@ -210,8 +213,9 @@ struct s3_motr_rw_op_context *create_basic_rw_op_ctx(size_t motr_buf_count,
     free(ctx->attr);
     free(ctx->ext);
     free(ctx);
-    s3_log(S3_LOG_DEBUG, "", "%s Exit with NULL - possible out-of-memory\n",
-           __func__);
+    s3_log(S3_LOG_ERROR, "",
+           "%s motr_buf_count = %zu Exit with NULL - possible out-of-memory\n",
+           __func__, motr_buf_count);
     return NULL;
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
