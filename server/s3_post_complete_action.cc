@@ -1097,8 +1097,6 @@ void S3PostCompleteAction::remove_old_ext_metadata_successful() {
 
 void S3PostCompleteAction::remove_old_oid_probable_record() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  assert(!old_oid_str.empty());
-  assert(!new_oid_str.empty());
 
   if (old_parts_probable_del_rec_list.size() == 0) {
     next();
@@ -1224,7 +1222,6 @@ void S3PostCompleteAction::remove_new_ext_metadata_successful() {
 
 void S3PostCompleteAction::remove_new_oid_probable_record() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  assert(!new_oid_str.empty());
 
   if (new_parts_probable_del_rec_list.size() == 0) {
     next();
