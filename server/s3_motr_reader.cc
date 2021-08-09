@@ -239,7 +239,7 @@ bool S3MotrReader::read_object() {
     // out-of-memory
     state = S3MotrReaderOpState::ooo;
     s3_log(S3_LOG_ERROR, request_id,
-           "Motr API failed: openobj(oid: ("
+           "S3 API failed: openobj(oid: ("
            "%" SCNx64 " : %" SCNx64 "), out-of-memory)\n",
            oid.u_hi, oid.u_lo);
     return false;
