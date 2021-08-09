@@ -47,8 +47,23 @@ int S3Evbuffer::init() {
         evbuffer_reserve_space(p_evbuf, buffer_unit_sz, &vec[i], 1);
     if (no_of_extends < 0) {
       s3_log(S3_LOG_ERROR, request_id,
-             "evbuffer_reserve_space failed, no_of_extends = %d\n",
-             no_of_extends);
+             "evbuffer_reserve_space failed, i = %zu buffer_unit_sz = %zu "
+             "no_of_extends = %d\n",
+             i, buffer_unit_sz, no_of_extends);
+      struct pool_info poolinfo;
+      int rc = event_mempool_getinfo(&poolinfo);
+      if (rc != 0) {
+        s3_log(S3_LOG_FATAL, "", "Issue with memory pool!\n");
+      } else {
+        s3_log(S3_LOG_ERROR, "",
+               "mempool info during init failure : mempool_item_size = %zu "
+               "free_bufs_in_pool = %d "
+               "number_of_bufs_shared = %d "
+               "total_bufs_allocated_by_pool = %d\n",
+               poolinfo.mempool_item_size, poolinfo.free_bufs_in_pool,
+               poolinfo.number_of_bufs_shared,
+               poolinfo.total_bufs_allocated_by_pool);
+      }
       return no_of_extends;
     }
     if (evbuffer_commit_space(p_evbuf, &vec[i], 1) < 0) {
