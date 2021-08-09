@@ -548,7 +548,7 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
         // bucketing of object)
         S3CommonUtilities::size_based_bucketing_of_objects(
             ext_oid_str, part_entry[0].item_size);
-        if (is_old_object) {
+        if (!is_old_object) {
           // key = oldoid + "-" + newoid; // (newoid = dummy oid of new object)
           ext_oid_str = ext_oid_str + '-' + new_oid_str;
           old_oid = {0ULL, 0ULL};
@@ -565,12 +565,12 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
                ", key [%s] to probable delete record\n",
                part_entry[0].motr_OID.u_hi, part_entry[0].motr_OID.u_lo,
                ext_oid_str.c_str());
-
+        std::string pvid_str;
+        S3M0Uint128Helper::to_string(part_entry[0].PVID, pvid_str);
         std::unique_ptr<S3ProbableDeleteRecord> ext_del_rec;
         ext_del_rec.reset(new S3ProbableDeleteRecord(
             ext_oid_str, old_oid, object_metadata->get_object_name(),
-            part_entry[0].motr_OID, part_entry[0].layout_id,
-            object_metadata->get_pvid_str(),
+            part_entry[0].motr_OID, part_entry[0].layout_id, pvid_str,
             bucket_metadata->get_object_list_index_layout().oid,
             bucket_metadata->get_objects_version_list_index_layout().oid,
             object_metadata->get_version_key_in_index(),
@@ -586,10 +586,6 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
 
 void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
- 
-  new_object_metadata = object_metadata_factory->create_object_metadata_obj(
-		       request, bucket_metadata->get_object_list_index_layout(),
-			   bucket_metadata->get_objects_version_list_index_layout());
 
   new_object_metadata->set_oid(new_object_oid);
   new_object_metadata->set_layout_id(layout_id);
@@ -937,13 +933,15 @@ void S3PostCompleteAction::startcleanup() {
       // mark old OID for deletion in overwrite case, this optimizes
       // backgrounddelete decisions.
       ACTION_TASK_ADD(S3PostCompleteAction::mark_old_oid_for_deletion, this);
-      ACTION_TASK_ADD(S3PostCompleteAction::delete_old_object, this);
+      // ACTION_TASK_ADD(S3PostCompleteAction::delete_old_object, this);
     }
+    ACTION_TASK_ADD(S3PostCompleteAction::remove_new_oid_probable_record, this);
   } else if (s3_post_complete_action_state ==
              S3PostCompleteActionState::abortedSinceValidationFailed) {
     // Abort is due to validation failures in part sizes 1..n
     ACTION_TASK_ADD(S3PostCompleteAction::mark_new_oid_for_deletion, this);
-    ACTION_TASK_ADD(S3PostCompleteAction::delete_new_object, this);
+    ACTION_TASK_ADD(S3PostCompleteAction::remove_old_oid_probable_record, this);
+    // ACTION_TASK_ADD(S3PostCompleteAction::delete_new_object, this);
   } else {
     // Any other failure/states we dont clean up objects as next S3 client
     // action will decide
