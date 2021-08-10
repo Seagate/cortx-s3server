@@ -198,14 +198,18 @@ class S3PostCompleteAction : public S3ObjectAction {
   FRIEND_TEST(S3PostCompleteActionTest, ValidateRequestBodyOutOrderParts);
   FRIEND_TEST(S3PostCompleteActionTest, ValidateRequestBodyMissingTag);
   FRIEND_TEST(S3PostCompleteActionTest, FetchBucketInfoFailedMissing);
-  FRIEND_TEST(S3PostCompleteActionTest, FetchBucketInfoFailedServiceUnavailable);
+  FRIEND_TEST(S3PostCompleteActionTest,
+              FetchBucketInfoFailedServiceUnavailable);
   FRIEND_TEST(S3PostCompleteActionTest, FetchBucketInfoFailedInternalError);
   FRIEND_TEST(S3PostCompleteActionTest, FetchObjectInfoFailedMissing);
-  FRIEND_TEST(S3PostCompleteActionTest, FetchObjectInfoFailedServiceUnavailable);
+  FRIEND_TEST(S3PostCompleteActionTest,
+              FetchObjectInfoFailedServiceUnavailable);
   FRIEND_TEST(S3PostCompleteActionTest, FetchObjectInfoFailedInternalError);
   FRIEND_TEST(S3PostCompleteActionTest, FetchExtendedObjectInfoFailedMissing);
-  FRIEND_TEST(S3PostCompleteActionTest, FetchExtendedObjectInfoFailedServiceUnavailable);
-  FRIEND_TEST(S3PostCompleteActionTest, FetchExtendedObjectInfoFailedInternalError);
+  FRIEND_TEST(S3PostCompleteActionTest,
+              FetchExtendedObjectInfoFailedServiceUnavailable);
+  FRIEND_TEST(S3PostCompleteActionTest,
+              FetchExtendedObjectInfoFailedInternalError);
   FRIEND_TEST(S3PostCompleteActionTest, FetchMultipartInfo);
   FRIEND_TEST(S3PostCompleteActionTest, FetchMultipartInfoFailedInvalidObject);
   FRIEND_TEST(S3PostCompleteActionTest, FetchMultipartInfoFailedInternalError);
