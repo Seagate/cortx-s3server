@@ -474,10 +474,10 @@ class IAMController {
         // Uncomment following function call to enable IAM Audit logs
         // Code uis complete and tested with Sample IAM Mssage.
         // Testing Pending for Account MAnagement and IO operations
-        //LOGGER.info("Sending IAM Alert");
-        //AuthIAMAuditlog.sendIAMAuditLog(
+        // LOGGER.info("Sending IAM Alert");
+        // AuthIAMAuditlog.sendIAMAuditLog(
         //    getIAMAuditLogMessage(requestBody, requestor));
-        //LOGGER.info("Sent IAM Alert");
+        // LOGGER.info("Sent IAM Alert");
       }
       catch (Exception ex) {
         LOGGER.error("Failed to send IAM Audit log message: ", ex.toString());

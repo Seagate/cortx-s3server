@@ -26,49 +26,50 @@ import java.net.*;
 import java.nio.charset.Charset;
 import java.io.*;
 
-public class AuditLogRestClient {
+public
+class AuditLogRestClient {
 
-  private
-   final static Logger LOGGER =
-       LoggerFactory.getLogger(AuditLogRestClient.class.getName());
+ private
+  final static Logger LOGGER =
+      LoggerFactory.getLogger(AuditLogRestClient.class.getName());
 
-  public
-   static void sendMessage(String auth_iam_audit_log) {
-     // initialize socket and output streams
-     Socket socket = null;
-     DataOutputStream dataOutStream = null;
-     String rsyslogHostname = AuthServerConfig.getRsyslogHostname();
-     int rsyslogPortNUmber = AuthServerConfig.getRsyslogPort();
-     try {
-       // establish a connection
-       LOGGER.debug("Creating socket");
-       LOGGER.debug("rsyslog hostname : " + rsyslogHostname);
-       LOGGER.debug("rsyslog port : " + String.valueOf(rsyslogPortNUmber));
-       socket = new Socket(rsyslogHostname, rsyslogPortNUmber);
-       LOGGER.debug("Socket Connected");
+ public
+  static void sendMessage(String auth_iam_audit_log) {
+    // initialize socket and output streams
+    Socket socket = null;
+    DataOutputStream dataOutStream = null;
+    String rsyslogHostname = AuthServerConfig.getRsyslogHostname();
+    int rsyslogPortNUmber = AuthServerConfig.getRsyslogPort();
+    try {
+      // establish a connection
+      LOGGER.debug("Creating socket");
+      LOGGER.debug("rsyslog hostname : " + rsyslogHostname);
+      LOGGER.debug("rsyslog port : " + String.valueOf(rsyslogPortNUmber));
+      socket = new Socket(rsyslogHostname, rsyslogPortNUmber);
+      LOGGER.debug("Socket Connected");
 
-       LOGGER.debug("IAM Message to be sent for audit log : " +
-                    auth_iam_audit_log);
-       // sends message to the socket
-       dataOutStream = new DataOutputStream(socket.getOutputStream());
-       // Send Message
-       dataOutStream.write(
-           auth_iam_audit_log.getBytes(Charset.forName("UTF-8")));
-       LOGGER.debug("IAM Message sent");
-     }
-     catch (Exception ex) {
-       LOGGER.error("Failed to send IAM Audit log message : " + ex.toString());
-     }
-     finally {
-       try {
-         // close the connection
-         dataOutStream.close();
-         socket.close();
-         LOGGER.debug("Socket Disconnected");
+      LOGGER.debug("IAM Message to be sent for audit log : " +
+                   auth_iam_audit_log);
+      // sends message to the socket
+      dataOutStream = new DataOutputStream(socket.getOutputStream());
+      // Send Message
+      dataOutStream.write(
+          auth_iam_audit_log.getBytes(Charset.forName("UTF-8")));
+      LOGGER.debug("IAM Message sent");
+    }
+    catch (Exception ex) {
+      LOGGER.error("Failed to send IAM Audit log message : " + ex.toString());
+    }
+    finally {
+      try {
+        // close the connection
+        dataOutStream.close();
+        socket.close();
+        LOGGER.debug("Socket Disconnected");
       }
       catch (IOException ex) {
         // No need to handle the exception
       }
     }
-   }
+  }
 }
