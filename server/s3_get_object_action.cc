@@ -684,7 +684,8 @@ void S3GetObjectAction::read_object_data() {
          total_blocks_to_read);
   if (blocks_already_read != total_blocks_to_read) {
     if (blocks_already_read == 0 && next_fragment_object == 0 &&
-        get_requested_content_length() > max_blocks_in_one_read_op * motr_unit_size) {
+        get_requested_content_length() >
+            max_blocks_in_one_read_op * motr_unit_size) {
       size_t first_blocks_to_read =
           S3Option::get_instance()->get_motr_first_read_size();
       blocks_to_read = max_blocks_in_one_read_op < first_blocks_to_read
