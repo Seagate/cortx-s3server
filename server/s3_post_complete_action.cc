@@ -998,10 +998,6 @@ void S3PostCompleteAction::mark_old_oid_for_deletion() {
 
 void S3PostCompleteAction::delete_old_object() {
 
-  if (S3Option::get_instance().is_s3server_obj_delayed_del_enabled()) {
-    return;
-  }
-
   if (!motr_writer) {
     motr_writer = motr_writer_factory->create_motr_writer(request);
   }
@@ -1160,10 +1156,6 @@ void S3PostCompleteAction::delete_new_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   assert(new_object_oid.u_hi || new_object_oid.u_lo);
   assert(is_abort_multipart());
-
-  if (S3Option::get_instance().is_s3server_obj_delayed_del_enabled()) {
-    return;
-  }
 
   if (!motr_writer) {
     motr_writer = motr_writer_factory->create_motr_writer(request);
