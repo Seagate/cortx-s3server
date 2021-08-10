@@ -48,6 +48,27 @@ enum class S3ObjectMetadataState {
   invalid   // Metadata invalid or corrupted
 };
 
+struct S3ExtendedObjectInfo {
+ public:
+  S3ExtendedObjectInfo() {
+    start_offset_in_object = 0;
+    object_OID = {0, 0};
+    object_layout = -1;
+    object_pvid = {0, 0};
+    total_blocks_in_object = 0;
+    object_size = 0;
+    requested_object_size = 0;
+  }
+  size_t start_offset_in_object;
+  size_t total_blocks_in_object;
+  size_t object_size;
+  // Actual length to be returned to client
+  size_t requested_object_size;
+  struct m0_uint128 object_OID;
+  int object_layout;
+  struct m0_fid object_pvid;
+};
+
 enum class S3ObjectMetadataType {
   simple,           // Object with no parts and/or fragments.
   only_parts,       // Object with only parts.
@@ -153,7 +174,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   std::string pvid_str;
   // Size of primary object, when object is fragmented
   size_t primary_obj_size;
-  std::shared_ptr<S3ObjectExtendedMetadata> extended_object_metadata;
+  std::shared_ptr<S3ObjectExtendedMetadata> extended_object_metadata = nullptr;
 
   // Any validations we want to do on metadata.
   void validate();
@@ -417,6 +438,7 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   FRIEND_TEST(S3ObjectMetadataTest, FromJson);
   FRIEND_TEST(S3MultipartObjectMetadataTest, FromJson);
   FRIEND_TEST(S3ObjectMetadataTest, GetEncodedBucketAcl);
+  FRIEND_TEST(S3DeleteObjectActionTest, CleanupOnMetadataDeletion);
 };
 
 // Fragment or the part detail structure
@@ -432,23 +454,24 @@ struct s3_part_frag_context {
 // TBD
 // Class to read/write S3 object parts and fragments from object list index
 // e.g., see object list table entry below:
-// ObjectOne                  <Basic object metadata> + versionID, FNo, PRTS​
+// ObjectOne                  <Basic object metadata> + versionID, FNo, PRTS
 // ObjectTwo                  <Basic object metadata> + versionID, FNo, PRTS
-// ~ObjectOne|versionID|F1    OID1, PVID, size, layout-id1​
-// ~ObjectTwo|versionID|P1    OID2, PVID, size, layout-id​2
-// ~ObjectTwo|versionID|P2|F1 OID3, PVID, size, layout-id​3
-// ~ObjectTwo|versionID|P2|F2 OID4, PVID, size, layout-id​4
+// ~ObjectOne|versionID|F1    OID1, PVID, size, layout-id1
+// ~ObjectTwo|versionID|P1    OID2, PVID, size, layout-id2
+// ~ObjectTwo|versionID|P2|F1 OID3, PVID, size, layout-id3
+// ~ObjectTwo|versionID|P2|F2 OID4, PVID, size, layout-id4
 class S3ObjectExtendedMetadata : private S3ObjectMetadataCopyable {
  private:
   std::string bucket_name;
   std::string object_name;
   std::string last_object;
   std::string version_id;
-  struct s3_motr_idx_layout object_list_index_layout = {};
+  struct s3_motr_idx_layout extended_list_index_layout = {};
   std::shared_ptr<S3MotrKVSReader> motr_kv_reader;
   std::shared_ptr<S3MotrKVSWriter> motr_kv_writer;
   unsigned int fragments;
   unsigned int parts;
+  std::vector<std::string> extended_keys;
   S3ObjectMetadataState state;
   // Total size of all fragments/parts
   size_t total_size;
@@ -495,9 +518,10 @@ class S3ObjectExtendedMetadata : private S3ObjectMetadataCopyable {
                     std::function<void(void)> on_failed);
   virtual void save(std::function<void(void)> on_success,
                     std::function<void(void)> on_failed);
-  virtual void set_object_list_index_layout(
+  virtual void set_extended_list_index_layout(
       const struct s3_motr_idx_layout& lo);
-  virtual const struct s3_motr_idx_layout& get_object_list_index_layout() const;
+  virtual const struct s3_motr_idx_layout& get_extended_list_index_layout()
+      const;
   void set_version_id(const std::string& versionid) { version_id = versionid; }
   void get_obj_ext_entries_failed();
   void get_obj_ext_entries_successful();
@@ -520,6 +544,7 @@ class S3ObjectExtendedMetadata : private S3ObjectMetadataCopyable {
   void remove_ext_object_metadata();
   void remove_ext_object_metadata_successful();
   void remove_ext_object_metadata_failed();
+  virtual std::vector<std::string> get_extended_entries_key_list();
 
  public:
   // Google tests.
