@@ -997,8 +997,8 @@ void S3PostCompleteAction::mark_old_oid_for_deletion() {
 }
 
 void S3PostCompleteAction::delete_old_object() {
-  
-  if(S3Option::get_instance().is_s3server_obj_delayed_del_enabled()){
+
+  if (S3Option::get_instance().is_s3server_obj_delayed_del_enabled()) {
     return;
   }
 
@@ -1161,7 +1161,7 @@ void S3PostCompleteAction::delete_new_object() {
   assert(new_object_oid.u_hi || new_object_oid.u_lo);
   assert(is_abort_multipart());
 
-  if(S3Option::get_instance().is_s3server_obj_delayed_del_enabled()){
+  if (S3Option::get_instance().is_s3server_obj_delayed_del_enabled()) {
     return;
   }
 
