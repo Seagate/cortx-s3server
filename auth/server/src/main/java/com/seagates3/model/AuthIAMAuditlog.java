@@ -20,13 +20,14 @@ class AuthIAMAuditlog {
     // <PRI>VERSION TIMESTAMP HOSTNAME APP-NAME PROCID MSGID SD MSG
     String message_id = AuthServerConfig.getRsyslogMsgId();
     int facility = 21;  // Rsyslog facility "local5"
-    int severity = 5;  // Rsyslog severity "notice"
+    int severity = 5;   // Rsyslog severity "notice"
     String hostname = "localhost";
     String app = "S3AuthServer";
     String app_procid = "-";  // no procid
 
-    String message_template = "<" + String.valueOf(facility * 8 + severity) + ">1 " +
-    "- " + hostname + " " + app + " " + app_procid + " " + message_id + " " + "-";
+    String message_template = "<" + String.valueOf(facility * 8 + severity) +
+                              ">1 " + "- " + hostname + " " + app + " " +
+                              app_procid + " " + message_id + " " + "-";
 
     String auth_iam_audit_log = message_template + " " + audit_logging_msg;
 
