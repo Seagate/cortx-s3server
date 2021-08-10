@@ -338,7 +338,7 @@ TEST_F(S3PostCompleteActionTest, ValidateRequestBodyMissingTag) {
   EXPECT_STREQ("", action_under_test_ptr->total_parts.c_str());
 }
 
-TEST_F(S3PostCompleteActionTest, FetchBucketInfoFailedMissing){
+TEST_F(S3PostCompleteActionTest, FetchBucketInfoFailedMissing) {
   CREATE_BUCKET_METADATA_OBJ;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .Times(AtLeast(1))
@@ -346,7 +346,7 @@ TEST_F(S3PostCompleteActionTest, FetchBucketInfoFailedMissing){
   action_under_test_ptr->fetch_bucket_info_failed();
 }
 
-TEST_F(S3PostCompleteActionTest, FetchBucketInfoFailedServiceUnavailable){
+TEST_F(S3PostCompleteActionTest, FetchBucketInfoFailedServiceUnavailable) {
   CREATE_BUCKET_METADATA_OBJ;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .Times(AtLeast(1))
@@ -356,7 +356,7 @@ TEST_F(S3PostCompleteActionTest, FetchBucketInfoFailedServiceUnavailable){
                action_under_test_ptr->get_s3_error_code().c_str());
 }
 
-TEST_F(S3PostCompleteActionTest, FetchBucketInfoFailedInternalError){
+TEST_F(S3PostCompleteActionTest, FetchBucketInfoFailedInternalError) {
   CREATE_BUCKET_METADATA_OBJ;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .Times(AtLeast(1))
@@ -366,7 +366,7 @@ TEST_F(S3PostCompleteActionTest, FetchBucketInfoFailedInternalError){
                action_under_test_ptr->get_s3_error_code().c_str());
 }
 
-TEST_F(S3PostCompleteActionTest, FetchObjectInfoFailedMissing){
+TEST_F(S3PostCompleteActionTest, FetchObjectInfoFailedMissing) {
   CREATE_METADATA_OBJ;
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .Times(AtLeast(1))
@@ -374,7 +374,7 @@ TEST_F(S3PostCompleteActionTest, FetchObjectInfoFailedMissing){
   action_under_test_ptr->fetch_object_info_failed();
 }
 
-TEST_F(S3PostCompleteActionTest, FetchObjectInfoFailedServiceUnavailable){
+TEST_F(S3PostCompleteActionTest, FetchObjectInfoFailedServiceUnavailable) {
   CREATE_METADATA_OBJ;
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .Times(AtLeast(1))
@@ -384,7 +384,7 @@ TEST_F(S3PostCompleteActionTest, FetchObjectInfoFailedServiceUnavailable){
                action_under_test_ptr->get_s3_error_code().c_str());
 }
 
-TEST_F(S3PostCompleteActionTest, FetchObjectInfoFailedInternalError){
+TEST_F(S3PostCompleteActionTest, FetchObjectInfoFailedInternalError) {
   CREATE_METADATA_OBJ;
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .Times(AtLeast(1))
@@ -394,7 +394,7 @@ TEST_F(S3PostCompleteActionTest, FetchObjectInfoFailedInternalError){
                action_under_test_ptr->get_s3_error_code().c_str());
 }
 
-TEST_F(S3PostCompleteActionTest, FetchExtendedObjectInfoFailedMissing){
+TEST_F(S3PostCompleteActionTest, FetchExtendedObjectInfoFailedMissing) {
   CREATE_METADATA_OBJ;
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .Times(AtLeast(1))
@@ -404,7 +404,8 @@ TEST_F(S3PostCompleteActionTest, FetchExtendedObjectInfoFailedMissing){
                action_under_test_ptr->get_s3_error_code().c_str());
 }
 
-TEST_F(S3PostCompleteActionTest, FetchExtendedObjectInfoFailedServiceUnavailable){
+TEST_F(S3PostCompleteActionTest,
+       FetchExtendedObjectInfoFailedServiceUnavailable) {
   CREATE_METADATA_OBJ;
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .Times(AtLeast(1))
@@ -414,7 +415,7 @@ TEST_F(S3PostCompleteActionTest, FetchExtendedObjectInfoFailedServiceUnavailable
                action_under_test_ptr->get_s3_error_code().c_str());
 }
 
-TEST_F(S3PostCompleteActionTest, FetchExtendedObjectInfoFailedInternalError){
+TEST_F(S3PostCompleteActionTest, FetchExtendedObjectInfoFailedInternalError) {
   CREATE_METADATA_OBJ;
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .Times(AtLeast(1))
