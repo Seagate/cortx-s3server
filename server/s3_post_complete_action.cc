@@ -30,6 +30,7 @@
 #include "s3_uri_to_motr_oid.h"
 #include "s3_m0_uint128_helper.h"
 #include "s3_common_utilities.h"
+#include "s3_option.h"
 
 extern struct s3_motr_idx_layout global_probable_dead_object_list_index_layout;
 
@@ -933,7 +934,7 @@ void S3PostCompleteAction::startcleanup() {
       // mark old OID for deletion in overwrite case, this optimizes
       // backgrounddelete decisions.
       ACTION_TASK_ADD(S3PostCompleteAction::mark_old_oid_for_deletion, this);
-      // ACTION_TASK_ADD(S3PostCompleteAction::delete_old_object, this);
+      ACTION_TASK_ADD(S3PostCompleteAction::delete_old_object, this);
     }
     ACTION_TASK_ADD(S3PostCompleteAction::remove_new_oid_probable_record, this);
   } else if (s3_post_complete_action_state ==
@@ -941,7 +942,7 @@ void S3PostCompleteAction::startcleanup() {
     // Abort is due to validation failures in part sizes 1..n
     ACTION_TASK_ADD(S3PostCompleteAction::mark_new_oid_for_deletion, this);
     ACTION_TASK_ADD(S3PostCompleteAction::remove_old_oid_probable_record, this);
-    // ACTION_TASK_ADD(S3PostCompleteAction::delete_new_object, this);
+    ACTION_TASK_ADD(S3PostCompleteAction::delete_new_object, this);
   } else {
     // Any other failure/states we dont clean up objects as next S3 client
     // action will decide
@@ -996,9 +997,15 @@ void S3PostCompleteAction::mark_old_oid_for_deletion() {
 }
 
 void S3PostCompleteAction::delete_old_object() {
+  
+  if(!S3Option::get_instance().is_s3server_obj_delayed_del_enabled()){
+    return;
+  }
+
   if (!motr_writer) {
     motr_writer = motr_writer_factory->create_motr_writer(request);
   }
+
   // process to delete old object
   assert(old_object_oid.u_hi || old_object_oid.u_lo);
 
@@ -1153,6 +1160,10 @@ void S3PostCompleteAction::delete_new_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   assert(new_object_oid.u_hi || new_object_oid.u_lo);
   assert(is_abort_multipart());
+
+  if(!S3Option::get_instance().is_s3server_obj_delayed_del_enabled()){
+    return;
+  }
 
   if (!motr_writer) {
     motr_writer = motr_writer_factory->create_motr_writer(request);
