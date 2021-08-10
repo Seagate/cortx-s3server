@@ -1018,7 +1018,8 @@ void S3PostCompleteAction::delete_old_object() {
     motr_writer->set_oid(old_oid);
     motr_writer->delete_object(
         std::bind(&S3PostCompleteAction::delete_old_object_success, this),
-        std::bind(&S3PostCompleteAction::next, this), old_oid, layout_id,object_metadata->get_pvid());
+        std::bind(&S3PostCompleteAction::next, this), old_oid, layout_id,
+        object_metadata->get_pvid());
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -1046,14 +1047,12 @@ void S3PostCompleteAction::delete_old_object_success() {
 
 void S3PostCompleteAction::remove_old_object_version_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
   if (object_metadata) {
     assert(multipart_metadata->get_object_name() == request->get_object_name());
     object_metadata->set_oid(old_object_oid);
     object_metadata->set_layout_id(old_layout_id);
     object_metadata->set_version_id(
         multipart_metadata->get_old_obj_version_id());
-
     object_metadata->remove_version_metadata(
         std::bind(&S3PostCompleteAction::remove_old_fragments, this),
         std::bind(&S3PostCompleteAction::remove_old_fragments, this));
@@ -1164,7 +1163,8 @@ void S3PostCompleteAction::delete_new_object() {
     motr_writer->set_oid(new_oid);
     motr_writer->delete_object(
         std::bind(&S3PostCompleteAction::delete_new_object_success, this),
-        std::bind(&S3PostCompleteAction::next, this), new_oid, layout_id,multipart_metadata->get_pvid());
+        std::bind(&S3PostCompleteAction::next, this), new_oid, layout_id,
+        multipart_metadata->get_pvid());
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }

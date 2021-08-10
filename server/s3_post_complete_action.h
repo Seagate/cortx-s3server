@@ -197,12 +197,23 @@ class S3PostCompleteAction : public S3ObjectAction {
   FRIEND_TEST(S3PostCompleteActionTest, ValidateRequestBodyEmpty);
   FRIEND_TEST(S3PostCompleteActionTest, ValidateRequestBodyOutOrderParts);
   FRIEND_TEST(S3PostCompleteActionTest, ValidateRequestBodyMissingTag);
-  FRIEND_TEST(S3PostCompleteActionTest, FetchBucketInfo);
   FRIEND_TEST(S3PostCompleteActionTest, FetchBucketInfoFailedMissing);
+  FRIEND_TEST(S3PostCompleteActionTest,
+              FetchBucketInfoFailedServiceUnavailable);
   FRIEND_TEST(S3PostCompleteActionTest, FetchBucketInfoFailedInternalError);
+  FRIEND_TEST(S3PostCompleteActionTest, FetchObjectInfoFailedMissing);
+  FRIEND_TEST(S3PostCompleteActionTest,
+              FetchObjectInfoFailedServiceUnavailable);
+  FRIEND_TEST(S3PostCompleteActionTest, FetchObjectInfoFailedInternalError);
+  FRIEND_TEST(S3PostCompleteActionTest, FetchExtendedObjectInfoFailedMissing);
+  FRIEND_TEST(S3PostCompleteActionTest,
+              FetchExtendedObjectInfoFailedServiceUnavailable);
+  FRIEND_TEST(S3PostCompleteActionTest,
+              FetchExtendedObjectInfoFailedInternalError);
   FRIEND_TEST(S3PostCompleteActionTest, FetchMultipartInfo);
   FRIEND_TEST(S3PostCompleteActionTest, FetchMultipartInfoFailedInvalidObject);
   FRIEND_TEST(S3PostCompleteActionTest, FetchMultipartInfoFailedInternalError);
+  FRIEND_TEST(S3PostCompleteActionTest, AddPartObjectToDeadOidList);
   FRIEND_TEST(S3PostCompleteActionTest, GetNextPartsInfo);
   FRIEND_TEST(S3PostCompleteActionTest, GetPartsInfoFailed);
   FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessful);
@@ -221,6 +232,9 @@ class S3PostCompleteAction : public S3ObjectAction {
   FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientSuccess);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteNewObject);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObject);
+  FRIEND_TEST(S3PostCompleteActionTest, RemoveOldExtMetadataSuccess);
+  FRIEND_TEST(S3PostCompleteActionTest, RemoveNewExtMetadataSuccess);
+  FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObjectSuccess);
   FRIEND_TEST(S3PostCompleteActionTest, DelayedDeleteOldObject);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteMultipartMetadataSucessWithAbort);
   FRIEND_TEST(S3PostCompleteActionTest, StartCleanupValidationFailed);
