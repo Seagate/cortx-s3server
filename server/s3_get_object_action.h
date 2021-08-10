@@ -130,6 +130,7 @@ class S3GetObjectAction : public S3ObjectAction {
               ValidateObjectWhenObjInfoFetchFailedReportError);
   FRIEND_TEST(S3GetObjectActionTest, ReadObjectFailedJustEndResponse1);
   FRIEND_TEST(S3GetObjectActionTest, ReadObjectFailedJustEndResponse2);
+  FRIEND_TEST(S3GetObjectActionTest, SetTotalBlocksToReadFromNextObject);
   FRIEND_TEST(S3GetObjectActionTest, ValidateObjectOfSizeZero);
   FRIEND_TEST(S3GetObjectActionTest, ReadObjectOfSizeLessThanUnitSize);
   FRIEND_TEST(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSize);
