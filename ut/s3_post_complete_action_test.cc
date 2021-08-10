@@ -680,6 +680,8 @@ TEST_F(S3PostCompleteActionTest, SendResponseToClientAbortMultipart) {
 TEST_F(S3PostCompleteActionTest, SendResponseToClientSuccess) {
   action_under_test_ptr->obj_metadata_updated = true;
   action_under_test_ptr->old_object_oid = {0x0, 0x0};
+  action_under_test_ptr->old_oid_str = "abcd";
+  action_under_test_ptr->new_oid_str = "abcd";
   EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
@@ -778,6 +780,8 @@ TEST_F(S3PostCompleteActionTest, StartCleanupAbortedSinceValidationFailed) {
   action_under_test_ptr->new_oid_str = "oid_new";
   std::string str = "test_str";
   action_under_test_ptr->new_object_oid = {0x1ffff, 0x1ffff};
+  action_under_test_ptr->old_oid_str = "abcd";
+  action_under_test_ptr->new_oid_str = "abcd";
   std::string object_name = "abcd";
   std::string version_key_in_index = "abcd/v1";
   int layout_id = 9;
