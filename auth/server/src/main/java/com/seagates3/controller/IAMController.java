@@ -50,7 +50,9 @@ import com.seagates3.perf.S3Perf;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthenticationResponseGenerator;
 import com.seagates3.service.RequestorService;
-
+import com.seagates3.model.AuthIAMAuditlog;
+import com.amazonaws.util.json.JSONObject;
+import com.amazonaws.util.json.JSONException;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
@@ -465,8 +467,71 @@ class IAMController {
            InstantiationException ex) {
       LOGGER.error("Exception: ", ex);
     }
+    finally {
+      try {
+        ;
+        // TODO
+        // Uncomment following function call to enable IAM Audit logs
+        // Code uis complete and tested with Sample IAM Mssage.
+        // Testing Pending for Account MAnagement and IO operations
+        // LOGGER.info("Sending IAM Alert");
+        // AuthIAMAuditlog.sendIAMAuditLog(
+        //    getIAMAuditLogMessage(requestBody, requestor));
+        // LOGGER.info("Sent IAM Alert");
+      }
+      catch (Exception ex) {
+        LOGGER.error("Failed to send IAM Audit log message: ", ex.toString());
+      }
+    }
 
     return null;
+  }
+
+  /**
+  * get IAM Audit Log Message string.
+  */
+ private
+  String getIAMAuditLogMessage(Map<String, String> requestBody,
+                               Requestor requestor) {
+    JSONObject iam_audit_log_msg = new JSONObject();
+    try {
+      // IAM Audit log JSON
+      iam_audit_log_msg.put("eventTime",
+                            java.time.Clock.systemUTC().instant().toString());
+      iam_audit_log_msg.put("eventSource", requestBody.get("AccountName"));
+      iam_audit_log_msg.put("eventName", requestBody.get("Action"));
+      // iam_audit_log_msg.put("awsRegion", "");
+      iam_audit_log_msg.put("requestID", requestBody.get("Request_id"));
+      iam_audit_log_msg.put("userIdentity", getIAMUSerIdentityAuditLogMessage(
+                                                requestBody, requestor));
+    }
+    catch (JSONException e) {
+      LOGGER.error("Failed to create JSON for IAM Audit log");
+    }
+    finally { return iam_audit_log_msg.toString(); }
+  }
+
+  /**
+  * get IAM User Identity Audit Log Message string.
+  */
+ private
+  String getIAMUSerIdentityAuditLogMessage(Map<String, String> requestBody,
+                                           Requestor requestor) {
+    JSONObject user_Identity = new JSONObject();
+    try {
+      // IAM User Identity JSON
+      user_Identity.put("type", "IAMUser");
+      user_Identity.put("arn", "arn:aws:iam::" +
+                                   requestor.getAccount().getId() + ":user/" +
+                                   requestBody.get("UserName"));
+      user_Identity.put("accountId", requestor.getAccount().getId());
+      user_Identity.put("accessKeyId", requestor.getAccesskey().getId());
+      user_Identity.put("userName", requestBody.get("UserName"));
+    }
+    catch (JSONException e) {
+      LOGGER.error("Failed to create JSON for IAM User Identity");
+    }
+    finally { return user_Identity.toString(); }
   }
 }
 
