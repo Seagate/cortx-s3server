@@ -5,7 +5,8 @@
     {
       "Sid": "Stmt1462526862401",
       "Action": [
-        "s3:PutObject"
+        "s3:PutObject",
+        "s3:PutObjectAcl"
       ],
       "Effect": "Allow",
       "Resource": "arn:aws:s3:::seagate/*",
