@@ -380,8 +380,7 @@ for i, type in enumerate(config_types):
     #Post complete operation -- fetch_multipart_info
     S3cmdTest('s3cmd can not upload 18MBfile file').\
         upload_test("seagatebucket", "18MBfile", 18000000).\
-        execute_test(negative_case=True).command_should_fail().\
-        command_error_should_have("ServiceUnavailable")
+        execute_test(negative_case=True).command_should_fail()
     S3fiTest('s3cmd can disable FI motr_idx_op_fail').\
         disable_fi("motr_idx_op_fail").\
         execute_test().command_is_successful()
