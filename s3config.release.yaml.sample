@@ -52,7 +52,7 @@ S3_SERVER_CONFIG:                                       # Section for S3 Server
    S3_SERVER_REGION_ENDPOINTS: [s3-us-west-2.seagate.com, s3-us.seagate.com, s3-europe.seagate.com, s3-asia.seagate.com]
    S3_SERVER_DEFAULT_ENDPOINT: s3.seagate.com
    S3_SERVER_SHUTDOWN_GRACE_PERIOD: 4                   # S3 server shutdown grace period in seconds, hare provisioning sets TimeoutStopSec to 7 sec, any change to this must match with that.
-   S3_RETRY_SHUTDOWN_AFTER_SEC: 30                      # Retry After in seconds
+   S3_RETRY_AFTER_SEC: 30                               # Retry After in seconds
    S3_SERVER_SSL_ENABLE: false                          # Enable ssl in s3server
    S3_SERVER_CERT_FILE: "/etc/ssl/stx-s3/s3/ca.crt"     # s3server ssl cerificate file
    S3_SERVER_PEM_FILE: "/etc/ssl/stx-s3/s3/s3server.pem" # s3server ssl pem file

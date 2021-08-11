@@ -154,12 +154,10 @@ TEST_F(S3PutBucketAclActionTest, SetAclShouldUpdateMetadata) {
 
 TEST_F(S3PutBucketAclActionTest, SendResponseWhenShuttingDown) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
-  int retry_after_period = S3Option::get_instance()->get_s3_retry_after_sec();
+
   EXPECT_CALL(*mock_request, pause()).Times(1);
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_request,
-              set_out_header_value(Eq("Retry-After"),
-                                   Eq(std::to_string(retry_after_period))))
+  EXPECT_CALL(*mock_request, set_out_header_value(Eq("Retry-After"), Eq("1")))
       .Times(1);
   EXPECT_CALL(*mock_request, send_response(S3HttpFailed503, _))
       .Times(AtLeast(1));
