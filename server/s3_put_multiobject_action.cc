@@ -805,7 +805,8 @@ void S3PutMultiObjectAction::startcleanup() {
   clear_tasks();
   cleanup_started = true;
   // Success conditions
-  if (s3_put_action_state == S3PutPartActionState::completed) {
+  if (s3_put_action_state == S3PutPartActionState::completed ||
+      s3_put_action_state == S3PutPartActionState::metadataSaved) {
     s3_log(S3_LOG_DEBUG, request_id, "Cleanup old Object\n");
     if (old_object_oid.u_hi || old_object_oid.u_lo) {
       // mark old OID for deletion in overwrite case, this optimizes
