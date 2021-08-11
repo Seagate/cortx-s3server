@@ -263,9 +263,16 @@ bool S3MotrReader::read_object() {
   ctx->cbs[0].oop_failed = s3_motr_op_failed;
 
   /* Create the read request */
-  rc = s3_motr_api->motr_obj_op(&obj_ctx->objs[0], M0_OC_READ, rw_ctx->ext,
-                                rw_ctx->data, rw_ctx->attr, 0, M0_OOF_NOHOLE,
-                                &ctx->ops[0]);
+  if (S3Option::get_instance()->is_s3_read_di_check_enabled()) {
+    rc = s3_motr_api->motr_obj_op(&obj_ctx->objs[0], M0_OC_READ, rw_ctx->ext,
+                                  rw_ctx->data, rw_ctx->attr, 0, M0_OOF_NOHOLE,
+                                  &ctx->ops[0]);
+  } else {
+    rc = s3_motr_api->motr_obj_op(&obj_ctx->objs[0], M0_OC_READ, rw_ctx->ext,
+                                  rw_ctx->data, NULL, 0, M0_OOF_NOHOLE,
+                                  &ctx->ops[0]);
+  }
+
   if (rc != 0) {
     s3_log(S3_LOG_WARN, request_id,
            "Motr API: motr_obj_op failed with error code %d\n", rc);
