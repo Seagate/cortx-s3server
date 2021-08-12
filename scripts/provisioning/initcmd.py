@@ -26,17 +26,17 @@ class InitCmd(SetupCmd):
   """Init Setup Cmd."""
   name = "init"
 
-  def __init__(self, config: str):
+  def __init__(self, config: str, module: str = None):
     """Constructor."""
     try:
-      super(InitCmd, self).__init__(config)
+      super(InitCmd, self).__init__(config, module)
       self.read_ldap_credentials()
     except Exception as e:
       raise e
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name} {self.url}")
+    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, module = {self.module}")
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
