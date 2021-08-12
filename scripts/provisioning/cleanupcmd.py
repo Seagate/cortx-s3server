@@ -59,10 +59,10 @@ class CleanupCmd(SetupCmd):
                           ]
                  }
 
-  def __init__(self, config: str):
+  def __init__(self, config: str, module: str = None):
     """Constructor."""
     try:
-      super(CleanupCmd, self).__init__(config)
+      super(CleanupCmd, self).__init__(config, module)
       self.get_iam_admin_credentials()
 
     except Exception as e:
@@ -71,7 +71,7 @@ class CleanupCmd(SetupCmd):
 
   def process(self, pre_factory = False):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name}")
+    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, module = {self.module}")
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.validate_config_files(self.name)

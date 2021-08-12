@@ -35,7 +35,7 @@ class TestCmd(SetupCmd):
   def __init__(self, config: str, test_plan: str):
     """Constructor."""
     try:
-      super(TestCmd, self).__init__(config)
+      super(TestCmd, self).__init__(config, None)
       self.read_ldap_credentials_for_test_phase()
       self.test_plan = test_plan
 
