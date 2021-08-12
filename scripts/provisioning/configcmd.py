@@ -64,10 +64,10 @@ class ConfigCmd(SetupCmd):
       self.update_motr_max_units_per_request()
       self.logger.info("update motr max units per request completed")
 
-      # disable S3server, S3authserver, haproxy, BG delete services on reboot as 
+      # disable S3server, S3authserver, haproxy on reboot as 
       # it will be managed by HA
       self.logger.info('Disable services on reboot started')
-      services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver"]
+      services_list = ["haproxy", "s3server@*", "s3authserver"]
       self.disable_services(services_list)
       self.logger.info('Disable services on reboot completed')
 
@@ -87,14 +87,22 @@ class ConfigCmd(SetupCmd):
         self.configure_openldap()
         self.configure_haproxy()
 
-      # create topic for background delete
-      bgdeleteconfig = CORTXS3Config()
-      if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
-        self.logger.info('Create topic started')
-        self.create_topic(bgdeleteconfig.get_msgbus_admin_id,
-                          bgdeleteconfig.get_msgbus_topic(),
-                          self.get_msgbus_partition_count())
-        self.logger.info('Create topic completed')
+      if self.module == "S3BGProducer" or self.module == None :
+        # disable BG delete services on reboot as 
+        # it will be managed by HA
+        self.logger.info('Disable services on reboot started')
+        services_list = ["s3backgroundproducer", "s3backgroundconsumer"]
+        self.disable_services(services_list)
+        self.logger.info('Disable services on reboot completed')
+
+        # create topic for background delete
+        bgdeleteconfig = CORTXS3Config()
+        if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
+          self.logger.info('Create topic started')
+          self.create_topic(bgdeleteconfig.get_msgbus_admin_id,
+                            bgdeleteconfig.get_msgbus_topic(),
+                            self.get_msgbus_partition_count())
+          self.logger.info('Create topic completed')
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}')
 
