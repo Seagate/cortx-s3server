@@ -38,10 +38,10 @@ class ConfigCmd(SetupCmd):
   """Config Setup Cmd."""
   name = "config"
 
-  def __init__(self, config: str):
+  def __init__(self, config: str, module: str = None):
     """Constructor."""
     try:
-      super(ConfigCmd, self).__init__(config)
+      super(ConfigCmd, self).__init__(config, module)
 
       self.update_cluster_id()
       self.read_ldap_credentials()
@@ -52,7 +52,7 @@ class ConfigCmd(SetupCmd):
 
   def process(self, configure_only_openldap = False, configure_only_haproxy = False):
     """Main processing function."""
-    self.logger.info(f"Processing {self.name} {self.url}")
+    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, module = {self.module}")
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
@@ -60,7 +60,6 @@ class ConfigCmd(SetupCmd):
     self.logger.info("validations completed")
 
     try:
-
       self.logger.info("update motr max units per request started")
       self.update_motr_max_units_per_request()
       self.logger.info("update motr max units per request completed")
