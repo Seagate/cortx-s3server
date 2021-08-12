@@ -25,6 +25,7 @@
 S3Evbuffer::S3Evbuffer(const std::string req_id, size_t buf_sz,
                        int buf_unit_sz) {
   p_evbuf = evbuffer_new();
+  evbuffer_enable_locking(p_evbuf, NULL);
   assert(p_evbuf);
   assert(buf_unit_sz);
   // example, if buf_unit_sz = 16K, total buf size = 8mb, then nvecs = 8mb/16k
@@ -126,6 +127,7 @@ size_t S3Evbuffer::get_evbuff_length() {
 
 void S3Evbuffer::read_drain_data_from_buffer(size_t length) {
   struct evbuffer* new_evbuf_body = evbuffer_new();
+  evbuffer_enable_locking(new_evbuf_body, NULL);
   int moved_bytes = evbuffer_remove_buffer(p_evbuf, new_evbuf_body, length);
   evbuffer_free(p_evbuf);
   if (moved_bytes != (int)length) {

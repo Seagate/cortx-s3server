@@ -344,6 +344,7 @@ bool S3HttpPostEngineImpl::send_request(const std::string &msg) {
     return false;
   }
   evbuf_t *p_ev_buf = evbuffer_new();
+  evbuffer_enable_locking(p_ev_buf, NULL);
 
   if (!p_ev_buf) {
     s3_log(S3_LOG_ERROR, nullptr, "evbuffer_new() failed");

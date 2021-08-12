@@ -876,6 +876,7 @@ bool S3AuthClient::setup_auth_request_body() {
   // evbuffer_add_printf(op_ctx->authrequest->buffer_out,
   // auth_request_body.c_str());
   req_body_buffer = evbuffer_new();
+  evbuffer_enable_locking(req_body_buffer, NULL);
   evbuffer_add(req_body_buffer, auth_request_body.c_str(),
                auth_request_body.length());
 

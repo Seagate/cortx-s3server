@@ -102,10 +102,40 @@ void s3_motr_init_timeout_cb(evutil_socket_t fd, short event, void *arg) {
   return;
 }
 
+static FILE *logfile = NULL;
+static void write_to_file_cb(int severity, const char *msg) {
+  const char *s;
+  if (!logfile) return;
+  switch (severity) {
+    case _EVENT_LOG_DEBUG:
+      s = "debug";
+      break;
+    case _EVENT_LOG_MSG:
+      s = "msg";
+      break;
+    case _EVENT_LOG_WARN:
+      s = "warn";
+      break;
+    case _EVENT_LOG_ERR:
+      s = "error";
+      break;
+    default:
+      s = "?";
+      break; /* never reached */
+  }
+  fprintf(logfile, "[%s] %s\n", s, msg);
+}
+
 void *base_loop_thread(void *arg) {
   pthread_detach(pthread_self());
   event_base_loop(global_evbase_handle, EVLOOP_NO_EXIT_ON_EMPTY);
   return NULL;
+}
+
+/* Redirect all Libevent log messages to a file */
+void set_logfile(FILE *f) {
+  logfile = f;
+  event_set_log_callback(write_to_file_cb);
 }
 
 extern "C" void s3_handler(evhtp_request_t *req, void *a) {
@@ -403,6 +433,7 @@ static evhtp_res process_request_data(evhtp_request_t *p_evhtp_req,
 
     if (!p_s3_req->is_incoming_data_ignored()) {
       evbuf_t *s3_buf = evbuffer_new();
+      evbuffer_enable_locking(s3_buf, NULL);
       evbuffer_add_buffer(s3_buf, buf);
 
       p_s3_req->notify_incoming_data(s3_buf);
@@ -428,6 +459,7 @@ extern "C" evhtp_res process_motr_api_request_data(evhtp_request_t *req,
     // Data has arrived so disable read timeout
     request->stop_client_read_timer();
     evbuf_t *s3_buf = evbuffer_new();
+    evbuffer_enable_locking(s3_buf, NULL);
     evbuffer_add_buffer(s3_buf, buf);
 
     request->notify_incoming_data(s3_buf);
@@ -794,10 +826,11 @@ int main(int argc, char **argv) {
   // Call this function before creating event base
   evthread_use_pthreads();
 
+  FILE *fp = fopen("/tmp/libevent.txt", "w+");
+  set_logfile(fp);
   // Uncomment below apis if we want to run libevent in debug mode
-  // event_enable_debug_logging(EVENT_DBG_ALL);
-  // event_enable_debug_mode();
-
+  event_enable_debug_logging(EVENT_DBG_ALL);
+  event_enable_debug_mode();
   global_evbase_handle = event_base_new();
   g_option_instance->set_eventbase(global_evbase_handle);
 

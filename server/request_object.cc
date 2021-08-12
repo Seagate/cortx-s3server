@@ -794,6 +794,7 @@ void RequestObject::send_reply_start(int code) {
   if (client_connected()) {
     evhtp_obj->http_send_reply_start(ev_req, code);
     reply_buffer = evbuffer_new();
+    evbuffer_enable_locking(reply_buffer, NULL);
   } else {
     request_timer.stop();
     LOG_PERF("total_request_time_ms", request_id.c_str(),

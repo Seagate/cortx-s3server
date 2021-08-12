@@ -1,24 +1,5 @@
-@@ 
-@@ Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
-@@
-@@ Licensed under the Apache License, Version 2.0 (the "License");
-@@ you may not use this file except in compliance with the License.
-@@ You may obtain a copy of the License at
-@@ 
-@@   http://www.apache.org/licenses/LICENSE-2.0
-@@ 
-@@ Unless required by applicable law or agreed to in writing, software
-@@ distributed under the License is distributed on an "AS IS" BASIS,
-@@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-@@ See the License for the specific language governing permissions and
-@@ limitations under the License.
-@@ 
-@@ For any questions about this software or licensing,
-@@ please email opensource@seagate.com or cortx-questions@seagate.com.
-@@
-
 diff --git a/Makefile.am b/Makefile.am
-index 240d0146..d376ade3 100644
+index 240d014..d376ade 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -231,6 +231,7 @@ CORE_SRC =					\
@@ -47,10 +28,28 @@ index 240d0146..d376ade3 100644
  	evthread-internal.h			\
  	ht-internal.h				\
 diff --git a/buffer.c b/buffer.c
-index 5e3d91b5..9a6957d9 100644
+index 5e3d91b..e49606d 100644
 --- a/buffer.c
 +++ b/buffer.c
-@@ -140,6 +140,7 @@
+@@ -27,6 +27,8 @@
+ 
+ #include "event2/event-config.h"
+ #include "evconfig-private.h"
++#include <stdlib.h>
++#include <stdio.h>
+ 
+ #ifdef _WIN32
+ #include <winsock2.h>
+@@ -40,6 +42,8 @@
+  */
+ #endif
+ 
++FILE * myfile = NULL;
++
+ #include <sys/types.h>
+ 
+ #ifdef EVENT__HAVE_SYS_TIME_H
+@@ -140,6 +144,7 @@
  	(ptr)->internal_.pos_in_chain = 0;	\
  } while (0)
  
@@ -58,13 +57,22 @@ index 5e3d91b5..9a6957d9 100644
  static void evbuffer_chain_align(struct evbuffer_chain *chain);
  static int evbuffer_chain_should_realign(struct evbuffer_chain *chain,
      size_t datalen);
-@@ -158,12 +159,10 @@ evbuffer_chain_new(size_t size)
+@@ -158,12 +163,19 @@ evbuffer_chain_new(size_t size)
  {
  	struct evbuffer_chain *chain;
  	size_t to_alloc;
 -
 -	if (size > EVBUFFER_CHAIN_MAX - EVBUFFER_CHAIN_SIZE)
 +	size_t pool_item_size = 0;
++        event_debug(("%s: evbuffer_chain_new",__func__));
++#if 0
++        if(myfile) {
++          fprintf(myfile, "Calling mempool_getbuffer\n");
++        } else {
++          myfile = fopen("/tmp/debug.txt", "w+");
++          fprintf(myfile, "Calling mempool_getbuffer\n");
++        }
++#endif
 +	if (size > EVBUFFER_CHAIN_MAX)
  		return (NULL);
  
@@ -73,7 +81,7 @@ index 5e3d91b5..9a6957d9 100644
  	/* get the next largest memory that can hold the buffer */
  	if (size < EVBUFFER_CHAIN_MAX / 2) {
  		to_alloc = MIN_BUFFER_SIZE;
-@@ -174,18 +173,32 @@ evbuffer_chain_new(size_t size)
+@@ -174,18 +186,57 @@ evbuffer_chain_new(size_t size)
  		to_alloc = size;
  	}
  
@@ -95,14 +103,39 @@ index 5e3d91b5..9a6957d9 100644
 -	chain->buffer = EVBUFFER_CHAIN_EXTRA(unsigned char, chain);
 +	memset(chain, 0, EVBUFFER_CHAIN_SIZE);
 +        if ((pool_item_size >= to_alloc) && (pool_item_size % to_alloc == 0)) {
++#if 0
++                event_msgx("Calling mempool_getbuffer\n");
++                fprintf(stderr, "Calling mempool_getbuffer\n");
++                if(myfile) {
++                  fprintf(myfile, "Calling mempool_getbuffer\n");
++                } else {
++                  myfile = fopen("/tmp/debug.txt", "w+");
++                  fprintf(myfile, "Calling mempool_getbuffer\n");
++                }
++#endif
 +                if ((chain->buffer = (unsigned char *)mempool_getbuffer(
 +                        g_pool_handle, pool_item_size)) == NULL) {
++#if 0
++                        event_debug(("mempool_getbuffer failed Addr:%p\n",chain));
++#endif
 +                        mm_free(chain);
 +                        return NULL;
 +                }
++                event_debug(("%s: Called mempool_getbuffer Addr:%p", __func__,chain->buffer));
 +                chain->buffer_len = pool_item_size;
 +                chain->chain_buffer_len = pool_item_size;
 +        } else {
++                event_debug(("%s: ****** Calling mm_malloc problem %zu\n", __func__, to_alloc));
++#if 0
++                fprintf(stderr,"****** Calling mm_malloc problem %zu\n", to_alloc);
++                event_msgx("****** Calling mm_malloc problem %zu\n", to_alloc);
++                if(myfile) {
++                  fprintf(myfile, "****** Calling mm_malloc problem %zu\n",to_alloc);
++                } else {
++                  myfile = fopen("/tmp/debug.txt", "w+");
++                  fprintf(myfile, "****** Calling mm_malloc problem %zu\n",to_alloc);
++                }
++#endif
 +                if ((chain->buffer = (unsigned char *)mm_malloc(to_alloc)) ==
 +                    NULL) {
 +                        mm_free(chain);
@@ -115,32 +148,143 @@ index 5e3d91b5..9a6957d9 100644
  
  	chain->refcnt = 1;
  
-@@ -195,6 +208,7 @@ evbuffer_chain_new(size_t size)
+@@ -195,6 +246,16 @@ evbuffer_chain_new(size_t size)
  static inline void
  evbuffer_chain_free(struct evbuffer_chain *chain)
  {
 +	size_t pool_item_size = 0;
++        event_debug(("%s: TEST 2",__func__));
++#if 0
++        if(myfile) {
++          fprintf(myfile, "TEST 2 in evbuffer_chain_free\n");
++        } else {
++         myfile = fopen("/tmp/debug.txt", "a+");
++         fprintf(myfile, "TEST 2 in evbuffer_chain_free\n");
++        }
++#endif
  	EVUTIL_ASSERT(chain->refcnt > 0);
  	if (--chain->refcnt > 0) {
  		/* chain is still referenced by other chains */
-@@ -249,6 +263,16 @@ evbuffer_chain_free(struct evbuffer_chain *chain)
+@@ -249,6 +310,42 @@ evbuffer_chain_free(struct evbuffer_chain *chain)
  		evbuffer_decref_and_unlock_(info->source);
  	}
  
 +	mempool_getbuffer_size(g_pool_handle, &pool_item_size);
 +
 +	if (chain->chain_buffer_len == pool_item_size) {
++                event_debug(("Calling mempool_releasebuffer Addr:%p\n", chain->chain_buffer));
++#if 0
++                fprintf(stderr,"Calling mempool_releasebuffer\n");
++                event_msgx("Calling mempool_releasebuffer\n");
++                if(myfile) {
++                  fprintf(myfile, "Calling mempool_releasebuffer\n");
++                } else {
++                  myfile = fopen("/tmp/debug.txt", "w+");
++                  fprintf(myfile, "Calling mempool_releasebuffer\n");
++                }
++#endif
 +		/* If the buffer size is same as that of pool's buffer size then
 +		 * this have been allocated from pool, so release to pool */
 +		mempool_releasebuffer(g_pool_handle, chain->chain_buffer,
 +				      chain->chain_buffer_len);
 +	} else {
++#if 0
++                event_debug(("Calling mm_free problem %zu\n", chain->chain_buffer_len));
++#endif
++#if 0
++                fprintf(stderr, "Calling mm_free problem %zu\n", chain->chain_buffer_len);
++                if(myfile) {
++                  fprintf(myfile, "Calling mm_free\n");
++                } else {
++                  myfile = fopen("/tmp/debug.txt", "w+");
++                  fprintf(myfile, "Calling mm_free\n");
++                }
++#endif
 +		mm_free(chain->chain_buffer);
 +	}
++#if 0
++        event_debug(("Calling mm_free of chain Addr:%p\n", chain));
++#endif
  	mm_free(chain);
  }
  
-@@ -690,8 +714,13 @@ evbuffer_reserve_space(struct evbuffer *buf, ev_ssize_t size,
+@@ -291,6 +388,13 @@ static struct evbuffer_chain **
+ evbuffer_free_trailing_empty_chains(struct evbuffer *buf)
+ {
+ 	struct evbuffer_chain **ch = buf->last_with_datap;
++        if(myfile) {
++          fprintf(myfile, "TEST 2 in evbuffer_free_trailing_empty_chains\n");
++        } else {
++         myfile = fopen("/tmp/debug.txt", "a+");
++         fprintf(myfile, "TEST 2 in evbuffer_free_trailing_empty_chains\n");
++        }
++
+ 	/* Find the first victim chain.  It might be *last_with_datap */
+ 	while ((*ch) && ((*ch)->off != 0 || CHAIN_PINNED(*ch)))
+ 		ch = &(*ch)->next;
+@@ -310,6 +414,13 @@ evbuffer_chain_insert(struct evbuffer *buf,
+     struct evbuffer_chain *chain)
+ {
+ 	ASSERT_EVBUFFER_LOCKED(buf);
++        if(myfile) {
++          fprintf(myfile, "TEST 2 in evbuffer_chain_insert\n");
++        } else {
++         myfile = fopen("/tmp/debug.txt", "a+");
++         fprintf(myfile, "TEST 2 in evbuffer_chain_insert\n");
++        }
++
+ 	if (*buf->last_with_datap == NULL) {
+ 		/* There are no chains data on the buffer at all. */
+ 		EVUTIL_ASSERT(buf->last_with_datap == &buf->first);
+@@ -330,6 +441,13 @@ static inline struct evbuffer_chain *
+ evbuffer_chain_insert_new(struct evbuffer *buf, size_t datlen)
+ {
+ 	struct evbuffer_chain *chain;
++        if(myfile) {
++          fprintf(myfile, "TEST 2 in evbuffer_chain_insert_new\n");
++        } else {
++         myfile = fopen("/tmp/debug.txt", "a+");
++         fprintf(myfile, "TEST 2 in evbuffer_chain_insert_new\n");
++        }
++
+ 	if ((chain = evbuffer_chain_new(datlen)) == NULL)
+ 		return NULL;
+ 	evbuffer_chain_insert(buf, chain);
+@@ -362,7 +480,12 @@ struct evbuffer *
+ evbuffer_new(void)
+ {
+ 	struct evbuffer *buffer;
+-
++        if(myfile) {
++          fprintf(myfile, "TEST 2 in evbuffer_new\n");
++        } else {
++         myfile = fopen("/tmp/debug.txt", "a+");
++         fprintf(myfile, "TEST 2 in evbuffer_new\n");
++        }
+ 	buffer = mm_calloc(1, sizeof(struct evbuffer));
+ 	if (buffer == NULL)
+ 		return (NULL);
+@@ -553,6 +676,9 @@ evbuffer_remove_all_callbacks(struct evbuffer *buffer)
+ 
+ 	while ((cbent = LIST_FIRST(&buffer->callbacks))) {
+ 		LIST_REMOVE(cbent, next);
++#if 0
++                event_debug(("mm_free evbuffer_remove_all_callbacks Addr:%p\n", cbent));
++#endif
+ 		mm_free(cbent);
+ 	}
+ }
+@@ -581,6 +707,9 @@ evbuffer_decref_and_unlock_(struct evbuffer *buffer)
+ 	EVBUFFER_UNLOCK(buffer);
+ 	if (buffer->own_lock)
+ 		EVTHREAD_FREE_LOCK(buffer->lock, EVTHREAD_LOCKTYPE_RECURSIVE);
++#if 0
++        event_debug(("mm_free evbuffer_decref_and_unlock_ Addr:%p\n", buffer));
++#endif
+ 	mm_free(buffer);
+ }
+ 
+@@ -690,8 +819,13 @@ evbuffer_reserve_space(struct evbuffer *buf, ev_ssize_t size,
  	} else {
  		if (evbuffer_expand_fast_(buf, size, n_vecs)<0)
  			goto done;
@@ -155,7 +299,7 @@ index 5e3d91b5..9a6957d9 100644
  	}
  
  done:
-@@ -2204,7 +2233,7 @@ evbuffer_expand(struct evbuffer *buf, size_t datlen)
+@@ -2204,7 +2338,7 @@ evbuffer_expand(struct evbuffer *buf, size_t datlen)
  #endif
  #define NUM_READ_IOVEC 4
  
@@ -164,7 +308,7 @@ index 5e3d91b5..9a6957d9 100644
  
  /** Helper function to figure out which space to use for reading data into
      an evbuffer.  Internal use only.
-@@ -2267,12 +2296,23 @@ get_n_bytes_readable_on_socket(evutil_socket_t fd)
+@@ -2267,12 +2401,23 @@ get_n_bytes_readable_on_socket(evutil_socket_t fd)
  	/* Can overflow, but mostly harmlessly. XXXX */
  	return (int)lng;
  #elif defined(FIONREAD)
@@ -190,7 +334,7 @@ index 5e3d91b5..9a6957d9 100644
  #endif
  }
  
-@@ -2300,11 +2340,14 @@ evbuffer_read(struct evbuffer *buf, evutil_socket_t fd, int howmuch)
+@@ -2300,11 +2445,14 @@ evbuffer_read(struct evbuffer *buf, evutil_socket_t fd, int howmuch)
  	}
  
  	n = get_n_bytes_readable_on_socket(fd);
@@ -208,16 +352,80 @@ index 5e3d91b5..9a6957d9 100644
  #ifdef USE_IOVEC_IMPL
  	/* Since we can use iovecs, we're willing to use the last
  	 * NUM_READ_IOVEC chains. */
-@@ -2941,6 +2984,7 @@ evbuffer_add_reference(struct evbuffer *outbuf,
+@@ -2940,7 +3088,11 @@ evbuffer_add_reference(struct evbuffer *outbuf,
+ 	if (outbuf->freeze_end) {
  		/* don't call chain_free; we do not want to actually invoke
  		 * the cleanup function */
++#if 0
++                event_debug(("mm_free of chain and info Addr:%p %p\n", chain, info));
++#endif
  		mm_free(chain);
 +		mm_free(info);
  		goto done;
  	}
  	evbuffer_chain_insert(outbuf, chain);
+@@ -3014,6 +3166,9 @@ done:
+ 	}
+ 	return seg;
+ err:
++#if 0
++        event_debug(("mm_free of seg %p\n", seg));
++#endif
+ 	mm_free(seg);
+ 	return NULL;
+ }
+@@ -3107,6 +3262,9 @@ evbuffer_file_segment_materialize(struct evbuffer_file_segment *seg)
+ 		if (!(mem = mm_malloc(length)))
+ 			goto err;
+ 		if (start_pos < 0) {
++#if 0
++                        event_debug(("mm_free in evbuffer_file_segment_materialize Addr:%p\n", mem));
++#endif
+ 			mm_free(mem);
+ 			goto err;
+ 		}
+@@ -3124,6 +3282,9 @@ evbuffer_file_segment_materialize(struct evbuffer_file_segment *seg)
+ 		e = errno;
+ 		pos = lseek(fd, start_pos, SEEK_SET);
+ 		if (n < 0 || (n == 0 && length > read_so_far)) {
++#if 0
++                        event_debug(("mm_free 2 in evbuffer_file_segment_materialize Addr:%p\n", mem));
++#endif
+ 			mm_free(mem);
+ 			errno = e;
+ 			goto err;
+@@ -3170,6 +3331,9 @@ evbuffer_file_segment_free(struct evbuffer_file_segment *seg)
+ 			event_warn("%s: munmap failed", __func__);
+ #endif
+ 	} else if (seg->contents) {
++#if 0
++                event_debug(("mm_free in evbuffer_file_segment_free Addr:%p\n", seg->contents));
++#endif
+ 		mm_free(seg->contents);
+ 	}
+ 
+@@ -3185,6 +3349,9 @@ evbuffer_file_segment_free(struct evbuffer_file_segment *seg)
+ 	}
+ 
+ 	EVTHREAD_FREE_LOCK(seg->lock, 0);
++#if 0
++        event_debug(("mm_free 2 in evbuffer_file_segment_free Addr:%p\n", seg));
++#endif
+ 	mm_free(seg);
+ }
+ 
+@@ -3343,6 +3510,9 @@ evbuffer_remove_cb_entry(struct evbuffer *buffer,
+ 	EVBUFFER_LOCK(buffer);
+ 	LIST_REMOVE(ent, next);
+ 	EVBUFFER_UNLOCK(buffer);
++#if 0
++        event_debug(("mm_free evbuffer_remove_cb_entry Addr:%p\n", ent));
++#endif
+ 	mm_free(ent);
+ 	return 0;
+ }
 diff --git a/bufferevent.c b/bufferevent.c
-index 08c0486c..7b5643dd 100644
+index 08c0486..7b5643d 100644
 --- a/bufferevent.c
 +++ b/bufferevent.c
 @@ -587,9 +587,19 @@ bufferevent_disable(struct bufferevent *bufev, short event)
@@ -242,7 +450,7 @@ index 08c0486c..7b5643dd 100644
  bufferevent_setwatermark(struct bufferevent *bufev, short events,
      size_t lowmark, size_t highmark)
 diff --git a/bufferevent_openssl.c b/bufferevent_openssl.c
-index b51b834b..1b14e779 100644
+index b51b834..6161af6 100644
 --- a/bufferevent_openssl.c
 +++ b/bufferevent_openssl.c
 @@ -67,6 +67,8 @@
@@ -383,7 +591,7 @@ index b51b834b..1b14e779 100644
 +}
 +/* S3 edit ends */
 diff --git a/bufferevent_sock.c b/bufferevent_sock.c
-index f275b023..9db766fc 100644
+index f275b02..9db766f 100644
 --- a/bufferevent_sock.c
 +++ b/bufferevent_sock.c
 @@ -179,6 +179,10 @@ bufferevent_readcb(evutil_socket_t fd, short event, void *arg)
@@ -407,7 +615,7 @@ index f275b023..9db766fc 100644
  
  	/* Invoke the user callback - must always be called last */
 diff --git a/epoll.c b/epoll.c
-index a0df0d21..27313294 100644
+index a0df0d2..2731329 100644
 --- a/epoll.c
 +++ b/epoll.c
 @@ -126,7 +126,7 @@ const struct eventop epollops = {
@@ -420,7 +628,7 @@ index a0df0d21..27313294 100644
  
  /* On Linux kernels at least up to 2.6.24.4, epoll can't handle timeout
 diff --git a/evbuffer-internal.h b/evbuffer-internal.h
-index d09b4f1d..44fe4e5b 100644
+index d09b4f1..44fe4e5 100644
 --- a/evbuffer-internal.h
 +++ b/evbuffer-internal.h
 @@ -54,7 +54,7 @@ extern "C" {
@@ -463,7 +671,7 @@ index d09b4f1d..44fe4e5b 100644
  /** Assert that we are holding the lock on an evbuffer */
  #define ASSERT_EVBUFFER_LOCKED(buffer)			\
 diff --git a/event.c b/event.c
-index a778f96c..b6683646 100644
+index a778f96..a63e637 100644
 --- a/event.c
 +++ b/event.c
 @@ -26,7 +26,7 @@
@@ -534,8 +742,20 @@ index a778f96c..b6683646 100644
  static int
  event_del_(struct event *ev, int blocking)
  {
+@@ -3561,8 +3597,10 @@ event_mm_free_(void *ptr)
+ {
+ 	if (mm_free_fn_)
+ 		mm_free_fn_(ptr);
+-	else
++	else {
++                event_debug(("mm_free Addr:%p\n",ptr));
+ 		free(ptr);
++        }
+ }
+ 
+ void
 diff --git a/include/event2/buffer.h b/include/event2/buffer.h
-index 468588b9..8a048e92 100644
+index 468588b..8a048e9 100644
 --- a/include/event2/buffer.h
 +++ b/include/event2/buffer.h
 @@ -1052,6 +1052,10 @@ struct event_base;
@@ -550,14 +770,13 @@ index 468588b9..8a048e92 100644
  /**
    Append data from 1 or more iovec's to an evbuffer
 diff --git a/include/event2/bufferevent.h b/include/event2/bufferevent.h
-index dac34dc7..bc5ef66d 100644
+index dac34dc..bc5ef66 100644
 --- a/include/event2/bufferevent.h
 +++ b/include/event2/bufferevent.h
-@@ -512,6 +512,18 @@ EVENT2_EXPORT_SYMBOL
- int bufferevent_set_timeouts(struct bufferevent *bufev,
+@@ -513,6 +513,18 @@ int bufferevent_set_timeouts(struct bufferevent *bufev,
      const struct timeval *timeout_read, const struct timeval *timeout_write);
  
-+/**
+ /**
 +  Gets the low water mark for the buffer set during memory pool creation.
 +*/
 +EVENT2_EXPORT_SYMBOL
@@ -569,11 +788,12 @@ index dac34dc7..bc5ef66d 100644
 +EVENT2_EXPORT_SYMBOL
 +void bufferevent_set_read_data(struct bufferevent *bufev, size_t max_val);
 +
- /**
++/**
    Sets the watermarks for read and write events.
  
+   On input, a bufferevent does not invoke the user read callback unless
 diff --git a/include/event2/bufferevent_ssl.h b/include/event2/bufferevent_ssl.h
-index bf39b844..4bffe01d 100644
+index bf39b84..4bffe01 100644
 --- a/include/event2/bufferevent_ssl.h
 +++ b/include/event2/bufferevent_ssl.h
 @@ -125,6 +125,11 @@ int bufferevent_ssl_renegotiate(struct bufferevent *bev);
@@ -589,7 +809,7 @@ index bf39b844..4bffe01d 100644
  
  #ifdef __cplusplus
 diff --git a/include/event2/bufferevent_struct.h b/include/event2/bufferevent_struct.h
-index e84c082c..1848430c 100644
+index e84c082..1848430 100644
 --- a/include/event2/bufferevent_struct.h
 +++ b/include/event2/bufferevent_struct.h
 @@ -107,6 +107,7 @@ struct bufferevent {
@@ -601,14 +821,13 @@ index e84c082c..1848430c 100644
  
  #ifdef __cplusplus
 diff --git a/include/event2/event.h b/include/event2/event.h
-index ff208517..54854b00 100644
+index ff20851..54854b0 100644
 --- a/include/event2/event.h
 +++ b/include/event2/event.h
-@@ -298,6 +298,51 @@ struct event_config
- #endif
+@@ -299,6 +299,51 @@ struct event_config
  ;
  
-+/**
+ /**
 + * Enable use of memory pool for libevent.
 + * Memory pool is created with some pre allocated buffers of fixed size.
 + * Memory will be allocated/released from/to the buffer pool for the libevent
@@ -653,11 +872,48 @@ index ff208517..54854b00 100644
 +EVENT2_EXPORT_SYMBOL
 +void event_set_max_read(size_t max_read);
 +
- /**
++/**
   * Enable some relatively expensive debugging checks in Libevent that
   * would normally be turned off.  Generally, these checks cause code that
+  * would otherwise crash mysteriously to fail earlier with an assertion
+diff --git a/log-internal.h b/log-internal.h
+index 2c31608..4ce7250 100644
+--- a/log-internal.h
++++ b/log-internal.h
+@@ -43,9 +43,9 @@ extern "C" {
+ 
+ #define EVENT_ERR_ABORT_ ((int)0xdeaddead)
+ 
+-#if !defined(EVENT__DISABLE_DEBUG_MODE) || defined(USE_DEBUG)
++//#if !defined(EVENT__DISABLE_DEBUG_MODE) || defined(USE_DEBUG)
+ #define EVENT_DEBUG_LOGGING_ENABLED
+-#endif
++//#endif
+ 
+ #ifdef EVENT_DEBUG_LOGGING_ENABLED
+ EVENT2_CORE_EXPORT_SYMBOL extern ev_uint32_t event_debug_logging_mask_;
+@@ -75,15 +75,15 @@ EVENT2_EXPORT_SYMBOL
+ void event_logv_(int severity, const char *errstr, const char *fmt, va_list ap)
+ 	EV_CHECK_FMT(3,0);
+ 
+-#ifdef EVENT_DEBUG_LOGGING_ENABLED
++//#ifdef EVENT_DEBUG_LOGGING_ENABLED
+ #define event_debug(x) do {			\
+ 	if (event_debug_get_logging_mask_()) {	\
+ 		event_debugx_ x;		\
+ 	}					\
+ 	} while (0)
+-#else
+-#define event_debug(x) ((void)0)
+-#endif
++//#else
++//#define event_debug(x) ((void)0)
++//#endif
+ 
+ #undef EV_CHECK_FMT
+ 
 diff --git a/mm-internal.h b/mm-internal.h
-index 7a95c995..d9c971ff 100644
+index 7a95c99..b9d2c11 100644
 --- a/mm-internal.h
 +++ b/mm-internal.h
 @@ -27,6 +27,7 @@
@@ -668,8 +924,12 @@ index 7a95c995..d9c971ff 100644
  
  #ifdef __cplusplus
  extern "C" {
-@@ -85,6 +86,8 @@ void event_mm_free_(void *p);
- #define mm_free(p) free(p)
+@@ -82,9 +83,11 @@ void event_mm_free_(void *p);
+ #define mm_calloc(n, sz) calloc((n), (sz))
+ #define mm_strdup(s) strdup(s)
+ #define mm_realloc(p, sz) realloc((p), (sz))
+-#define mm_free(p) free(p)
++#define mm_free(p) event_debug(("mm_free Addr:%p content=%s",p,p)); free(p)
  #endif
  
 +/* Memory Pool handle declaration */
