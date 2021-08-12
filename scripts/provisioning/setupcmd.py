@@ -65,7 +65,7 @@ class SetupCmd(object):
   #                's3authserver': 's3auth'}
   ha_service_map = {}
 
-  def __init__(self,config: str):
+  def __init__(self,config: str, module: str):
     """Constructor."""
     self.endpoint = None
     self._url = None
@@ -74,6 +74,7 @@ class SetupCmd(object):
     self.machine_id = None
     self.cluster_id = None
     self.ldap_user = "sgiamadmin"
+    self.module = module
 
     s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
     self.logger = logging.getLogger(s3deployment_logger_name)
