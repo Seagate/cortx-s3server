@@ -72,15 +72,16 @@ class ResetCmd(SetupCmd):
       self.CleanupLogs()
       self.logger.info('Cleanup log file completed')
 
-      # purge messages from message bus
-      bgdeleteconfig = CORTXS3Config()
-      if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
-        self.logger.info('purge messages from message bus started')
-        self.purge_messages(bgdeleteconfig.get_msgbus_producer_id(),
-                            bgdeleteconfig.get_msgbus_topic(),
-                            bgdeleteconfig.get_msgbus_producer_delivery_mechanism(),
-                            bgdeleteconfig.get_purge_sleep_time())
-        self.logger.info('purge messages from message bus completed')
+      if self.module == "S3BGProducer" or self.module == None :
+        # purge messages from message bus
+        bgdeleteconfig = CORTXS3Config()
+        if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
+          self.logger.info('purge messages from message bus started')
+          self.purge_messages(bgdeleteconfig.get_msgbus_producer_id(),
+                              bgdeleteconfig.get_msgbus_topic(),
+                              bgdeleteconfig.get_msgbus_producer_delivery_mechanism(),
+                              bgdeleteconfig.get_purge_sleep_time())
+          self.logger.info('purge messages from message bus completed')
 
     except Exception as e:
       self.logger.error(f'ERROR: Failed to cleanup log directories or files, error: {e}')
