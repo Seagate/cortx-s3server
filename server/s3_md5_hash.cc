@@ -54,8 +54,8 @@ int MD5hash::Update(const char *input, size_t length) {
   pi_update_bufvec.ov_vec.v_count[0] = length;
   pi_update_bufvec.ov_vec.v_nr = 1;
   struct m0_md5_inc_context_pi s3_update_pi;
-  s3_update_pi.hdr.pi_type = M0_PI_TYPE_MD5_INC_CONTEXT;
-  memcpy(s3_update_pi.prev_context, &md5ctx, sizeof(MD5_CTX));
+  s3_update_pi.pimd5c_hdr.pih_type = M0_PI_TYPE_MD5_INC_CONTEXT;
+  memcpy(s3_update_pi.pimd5c_prev_context, &md5ctx, sizeof(MD5_CTX));
   status = s3_motr_api->motr_client_calculate_pi(
       (struct m0_generic_pi *)&s3_update_pi, NULL, &pi_update_bufvec,
       M0_PI_SKIP_CALC_FINAL, (unsigned char *)&md5ctx, NULL);
@@ -97,16 +97,16 @@ int MD5hash::s3_calculate_unit_pi(struct s3_motr_rw_op_context *rw_ctx,
     if (checksum_saved) {
       // If previous checksum is there then get it
       s3_log(S3_LOG_DEBUG, "", "%s Checksum is saved", __func__);
-      memcpy(s3_pi->prev_context, &md5ctx, sizeof(MD5_CTX));
+      memcpy(s3_pi->pimd5c_prev_context, &md5ctx, sizeof(MD5_CTX));
     } else {
       s3_log(S3_LOG_ERROR, "", "%s Checksum is not saved and not first block",
              __func__);
     }
   }
   if (s3_flag & S3_SEED_UNIT) {
-    seed.data_unit_offset = seed_offset;
-    seed.obj_id.f_container = seed_oid.u_hi;
-    seed.obj_id.f_key = seed_oid.u_lo;
+    seed.pis_data_unit_offset = seed_offset;
+    seed.pis_obj_id.f_container = seed_oid.u_hi;
+    seed.pis_obj_id.f_key = seed_oid.u_lo;
     p_seed = &seed;
   }
 
@@ -133,12 +133,12 @@ int MD5hash::s3_calculate_unaligned_buffs_pi(
   assert(rw_ctx != nullptr);
   enum m0_pi_calc_flag pi_flag = M0_PI_NO_FLAG;
   struct m0_md5_inc_context_pi s3_md5_inc_digest_unaligned_pi = {0};
-  s3_md5_inc_digest_unaligned_pi.hdr.pi_type =
+  s3_md5_inc_digest_unaligned_pi.pimd5c_hdr.pih_type =
       S3Option::get_instance()->get_pi_type();
   if (s3_flag & S3_FIRST_UNIT) {
     pi_flag = M0_PI_CALC_UNIT_ZERO;
   } else {
-    memcpy((void *)s3_md5_inc_digest_unaligned_pi.prev_context,
+    memcpy((void *)s3_md5_inc_digest_unaligned_pi.pimd5c_prev_context,
            (void *)&md5ctx_pre_unaligned, sizeof(MD5_CTX));
   }
 
@@ -177,7 +177,7 @@ int MD5hash::Finalize() {
     s3_log(S3_LOG_DEBUG, "", "%s Displaying PI Info next", __func__);
     MD5hash::log_pi_info((struct m0_generic_pi *)&s3_md5_inc_digest_pi);
   }
-  memcpy(s3_md5_inc_digest_pi.prev_context, &md5ctx, sizeof(MD5_CTX));
+  memcpy(s3_md5_inc_digest_pi.pimd5c_prev_context, &md5ctx, sizeof(MD5_CTX));
   // Pass M0_PI_SKIP_CALC_FINAL flag, finalized gets called and stored in
   // md5_digest (without seed)
   status = s3_motr_api->motr_client_calculate_pi(
@@ -206,7 +206,7 @@ void MD5hash::Reset(std::shared_ptr<MotrAPI> motr_api,
   status = 0;
   s3_md5_inc_digest_pi = {0};
   seed = {0};
-  s3_md5_inc_digest_pi.hdr.pi_type = M0_PI_TYPE_MD5_INC_CONTEXT;
+  s3_md5_inc_digest_pi.pimd5c_hdr.pih_type = M0_PI_TYPE_MD5_INC_CONTEXT;
   pi_update_bufvec = {0};
   pi_bufvec.ov_vec.v_nr = 0;
   if (call_init_for_update) {
@@ -267,7 +267,7 @@ void MD5hash::log_md5_inc_info(struct m0_md5_inc_context_pi *pi_info) {
   std::string s_hex;
   s_hex.reserve(sizeof(MD5_CTX) * 2);
   for (size_t i = 0; i < sizeof(MD5_CTX); ++i) {
-    const unsigned ch = pi_info->prev_context[i] & 255;
+    const unsigned ch = pi_info->pimd5c_prev_context[i] & 255;
     s_hex += hex_tbl[ch >> 4];
     s_hex += hex_tbl[ch & 15];
   }
@@ -276,7 +276,7 @@ void MD5hash::log_md5_inc_info(struct m0_md5_inc_context_pi *pi_info) {
   std::string s_hex_1;
   s_hex_1.reserve(MD5_DIGEST_LENGTH * 2);
   for (size_t i = 0; i < MD5_DIGEST_LENGTH; ++i) {
-    const unsigned ch = pi_info->pi_value[i] & 255;
+    const unsigned ch = pi_info->pimd5c_prev_context[i] & 255;
     s_hex_1 += hex_tbl[ch >> 4];
     s_hex_1 += hex_tbl[ch & 15];
   }

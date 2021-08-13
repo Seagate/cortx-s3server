@@ -310,9 +310,10 @@ bool S3MotrReader::ValidateStoredMD5Chksum(m0_bufvec *motr_data_unit,
   unsigned char current_digest[sizeof(MD5_CTX)] = {0};
   m0_md5_inc_context_pi md5_info = {0};
 
-  memcpy(md5_info.prev_context,
-         ((m0_md5_inc_context_pi *)(pi_info))->prev_context, sizeof(MD5_CTX));
-  md5_info.hdr.pi_type = M0_PI_TYPE_MD5_INC_CONTEXT;
+  memcpy(md5_info.pimd5c_prev_context,
+         ((m0_md5_inc_context_pi *)(pi_info))->pimd5c_prev_context,
+         sizeof(MD5_CTX));
+  md5_info.pimd5c_hdr.pih_type = M0_PI_TYPE_MD5_INC_CONTEXT;
 
   int rc = s3_motr_api->motr_client_calculate_pi(
       (struct m0_generic_pi *)&md5_info, seed, motr_data_unit, M0_PI_NO_FLAG,
@@ -332,8 +333,8 @@ bool S3MotrReader::ValidateStoredMD5Chksum(m0_bufvec *motr_data_unit,
          "%s Printing m0_md5_inc_context_pi retrieved from motr", __func__);
   MD5hash::log_pi_info(pi_info);
 
-  if (0 != memcmp(md5_info.pi_value,
-                  ((m0_md5_inc_context_pi *)(pi_info))->pi_value,
+  if (0 != memcmp(md5_info.pimd5c_value,
+                  ((m0_md5_inc_context_pi *)(pi_info))->pimd5c_value,
                   MD5_DIGEST_LENGTH)) {
     s3_log(S3_LOG_ERROR, stripped_request_id,
            "%s Saved and Calculated Pi dont match.", __func__);
@@ -389,9 +390,9 @@ bool S3MotrReader::ValidateStoredChksum() {
     assert(end_offset <= data_buffer_count);
 
     struct m0_pi_seed seed = {0};
-    seed.data_unit_offset = current_index;
-    seed.obj_id.f_container = oid.u_hi;
-    seed.obj_id.f_key = oid.u_lo;
+    seed.pis_data_unit_offset = current_index;
+    seed.pis_obj_id.f_container = oid.u_hi;
+    seed.pis_obj_id.f_key = oid.u_lo;
 
     m0_bufvec motr_data_unit = {0};
     motr_data_unit.ov_vec.v_nr = pi_to_data_buffer_ratio;
@@ -407,7 +408,7 @@ bool S3MotrReader::ValidateStoredChksum() {
 
     struct m0_generic_pi *pi_info = ((struct m0_generic_pi **)pibuf->ov_buf)[i];
 
-    switch (pi_info->hdr.pi_type) {
+    switch (pi_info->pi_hdr.pih_type) {
       case M0_PI_TYPE_MD5_INC_CONTEXT:
         s3_log(S3_LOG_INFO, stripped_request_id,
                "%s PI_INFO saved is of type M0_PI_TYPE_MD5_INC_CONTEXT",

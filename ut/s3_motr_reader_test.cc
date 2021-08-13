@@ -258,7 +258,7 @@ TEST_F(S3MotrReaderTest, ValidateStoredMD5ChksumSuccess) {
       .Times(1);
   ON_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
       .WillByDefault(Return(0));
-  memset(pi_info.pi_value, '\0', MD5_DIGEST_LENGTH);
+  memset(pi_info.pimd5c_value, '\0', MD5_DIGEST_LENGTH);
   EXPECT_TRUE(motr_reader_ptr->ValidateStoredMD5Chksum(
       &bv_data, (struct m0_generic_pi *)&pi_info, &seed));
 }
@@ -312,7 +312,7 @@ TEST_F(S3MotrReaderTest, ValidateStoredChksumSuccess) {
   pibuf->ov_vec.v_count = (m0_bcount_t *)calloc(1, sizeof(m0_bcount_t));
   EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
       .Times(1);
-  s3_pi.hdr.pi_type = M0_PI_TYPE_MD5_INC_CONTEXT;
+  s3_pi.pimd5c_hdr.pih_type = M0_PI_TYPE_MD5_INC_CONTEXT;
   ON_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
       .WillByDefault(Return(0));
   EXPECT_TRUE(motr_reader_ptr->ValidateStoredChksum());
@@ -344,7 +344,7 @@ TEST_F(S3MotrReaderTest, ValidateStoredChksumFailure) {
   pibuf->ov_buf[0] = (struct m0_md5_inc_context_pi *)&s3_pi;
   pibuf->ov_vec.v_nr = 1;
   pibuf->ov_vec.v_count = (m0_bcount_t *)calloc(1, sizeof(m0_bcount_t));
-  s3_pi.hdr.pi_type = M0_PI_TYPE_MD5_INC_CONTEXT;
+  s3_pi.pimd5c_hdr.pih_type = M0_PI_TYPE_MD5_INC_CONTEXT;
   EXPECT_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))
       .Times(1);
   ON_CALL(*s3_motr_api_mock, motr_client_calculate_pi(_, _, _, _, _, _))

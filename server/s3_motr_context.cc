@@ -163,7 +163,7 @@ int free_basic_op_ctx(struct s3_motr_op_context *ctx) {
 }
 
 unsigned long get_sizeof_pi_info(struct s3_motr_rw_op_context *ctx) {
-  switch (ctx->pi.hdr.pi_type) {
+  switch (ctx->pi.pi_hdr.pih_type) {
     case M0_PI_TYPE_MD5_INC_CONTEXT:
       return sizeof(m0_md5_inc_context_pi);
     default:
@@ -187,7 +187,7 @@ struct s3_motr_rw_op_context *create_basic_rw_op_ctx(
       1, sizeof(struct s3_motr_rw_op_context));
 
   // TODO - Need to take from config file
-  ctx->pi.hdr.pi_type = S3Option::get_instance()->get_pi_type();
+  ctx->pi.pi_hdr.pih_type = S3Option::get_instance()->get_pi_type();
 
   // motr_buf_count will be multiple of buffers_per_motr_unit
   motr_checksums_buf_count = motr_buf_count / buffers_per_motr_unit;
@@ -258,7 +258,7 @@ struct s3_motr_rw_op_context *create_basic_rw_op_ctx(
   for (unsigned int i = 0; i < motr_checksums_buf_count; i++) {
     struct m0_md5_inc_context_pi *s3_pi =
         (struct m0_md5_inc_context_pi *)ctx->attr->ov_buf[i];
-    s3_pi->hdr.pi_type = ctx->pi.hdr.pi_type;
+    s3_pi->pimd5c_hdr.pih_type = ctx->pi.pi_hdr.pih_type;
   }
 
   rc = m0_indexvec_alloc(ctx->ext, motr_buf_count);

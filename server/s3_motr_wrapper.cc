@@ -97,8 +97,8 @@ int ConcreteMotrAPI::motr_client_calculate_pi(
   if (seed) {
     s3_log(S3_LOG_INFO, "",
            "%s fcontainer : %lu, fkey : %lu, Data offset : %lu", __func__,
-           seed->obj_id.f_container, seed->obj_id.f_key,
-           seed->data_unit_offset);
+           seed->pis_obj_id.f_container, seed->pis_obj_id.f_key,
+           seed->pis_data_unit_offset);
   } else {
     s3_log(S3_LOG_INFO, "", "%s Seed not passed.", __func__);
   }
