@@ -96,6 +96,7 @@ cp -R scripts/haproxy/* $S3_INSTALL_LOCATION/install/haproxy
 
 # Copy the provisioning config
 cp scripts/provisioning/setup.yaml $S3_INSTALL_LOCATION/conf
+cp scripts/provisioning/support.yaml $S3_INSTALL_LOCATION/conf
 
 cp scripts/provisioning/templates/s3.post_install.tmpl.1-node $S3_INSTALL_LOCATION/conf
 cp scripts/provisioning/templates/s3.post_install.tmpl.1-node.sample $S3_INSTALL_LOCATION/conf
