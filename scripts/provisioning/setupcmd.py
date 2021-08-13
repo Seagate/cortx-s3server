@@ -53,6 +53,7 @@ class SetupCmd(object):
   auth_conf_file = "/opt/seagate/cortx/auth/resources/authserver.properties"
   s3_cluster_file = "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"
   BG_delete_config_file = "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
+  s3_config_tmpl_file = "/opt/seagate/cortx/s3/conf/s3.config.tmpl.1-node"
 
   #TODO
   # add the service name and HA service name in the following dictionary

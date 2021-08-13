@@ -72,7 +72,7 @@ class ResetCmd(SetupCmd):
       self.CleanupLogs()
       self.logger.info('Cleanup log file completed')
 
-      if self.module == "S3BGProducer" or self.module == None :
+      if self.module == "s3bgdeleteproducer" or self.module == None :
         # purge messages from message bus
         bgdeleteconfig = CORTXS3Config()
         if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:

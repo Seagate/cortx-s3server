@@ -38,7 +38,9 @@ cortx:
         max_units : "8"
       service:
         instances : "1"
-      ipaddress : "127.0.0.1"
+    s3bgdelete:
+      endpoint : "127.0.0.1"
+      port : "28049"
 cluster:
   TMPL_CLUSTER_ID:
     site:

@@ -87,7 +87,7 @@ class ConfigCmd(SetupCmd):
         self.configure_openldap()
         self.configure_haproxy()
 
-      if self.module == "S3BGProducer" or self.module == None :
+      if self.module == "s3bgdeleteproducer" or self.module == None :
         # disable BG delete services on reboot as 
         # it will be managed by HA
         self.logger.info('Disable services on reboot started')
@@ -95,6 +95,8 @@ class ConfigCmd(SetupCmd):
         self.disable_services(services_list)
         self.logger.info('Disable services on reboot completed')
 
+        #update endpoint and port in s3BG config file
+        update_endpoint_and_port()
         # create topic for background delete
         bgdeleteconfig = CORTXS3Config()
         if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
@@ -105,6 +107,18 @@ class ConfigCmd(SetupCmd):
           self.logger.info('Create topic completed')
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}')
+
+  def update_endpoint_and_port(self):
+    """Update endpoint and port in BG delete config file."""
+    opfileconfstore = S3CortxConfStore(f'yaml://{s3_config_tmpl_file}', 'read_endpoint_and_port_idx')
+
+    ip_address = opfileconfstore.get_config('cortx>software>s3bgdelete>endpoint')
+    port = opfileconfstore.get_config('cortx>software>s3bgdelete>port')
+
+    complete_ip_address = "http://" + ip_address + ":" + port
+
+    opfileconfstorenew = S3CortxConfStore(f'yaml://{BG_delete_config_file}', 'update_endpoint_and_port_idx')
+    opfileconfstorenew.set_config('cortx_s3>endpoint', complete_ip_address, True)
 
   def configure_openldap(self):
     """Install and Configure Openldap over Non-SSL."""
