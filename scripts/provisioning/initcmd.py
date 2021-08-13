@@ -45,7 +45,7 @@ class InitCmd(SetupCmd):
     self.logger.info("validations completed")
 
     try:
-      if self.module == "S3BGProducer" or self.module == None :
+      if self.module == "s3bgdeleteproducer" or self.module == None :
         # Create background delete account
         self.logger.info("create background delete account started")
         bgdelete_acc_input_params_dict = self.get_config_param_for_BG_delete_account()

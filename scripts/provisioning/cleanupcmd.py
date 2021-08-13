@@ -112,7 +112,7 @@ class CleanupCmd(SetupCmd):
       self.delete_ldap_config()
       self.logger.info("delete ldap config and schemas completed")
 
-      if self.module == "S3BGProducer" or self.module == None :
+      if self.module == "s3bgdeleteproducer" or self.module == None :
         # Delete topic created for background delete
         bgdeleteconfig = CORTXS3Config()
         if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
@@ -125,7 +125,7 @@ class CleanupCmd(SetupCmd):
                                   "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"]
         self.logger.info('revert s3 background config files started')
         self.revert_config_files(s3BackgroundconfigFiles)
-        self.logger.info('revert s3 background config files completed')          
+        self.logger.info('revert s3 background config files completed')
 
       try:
         self.logger.info("Stopping slapd service...")
