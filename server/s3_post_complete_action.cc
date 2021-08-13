@@ -549,8 +549,11 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
         // bucketing of object)
         S3CommonUtilities::size_based_bucketing_of_objects(
             ext_oid_str, part_entry[0].item_size);
-        if (!is_old_object) {
+        if (is_old_object) {
           // key = oldoid + "-" + newoid; // (newoid = dummy oid of new object)
+          if (old_parts_probable_del_rec_list.size() > 0) {
+            is_multipart = true;
+          }
           ext_oid_str = ext_oid_str + '-' + new_oid_str;
           old_oid = {0ULL, 0ULL};
           part_list_index_oid = {0ULL, 0ULL};
@@ -576,9 +579,9 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
             bucket_metadata->get_objects_version_list_index_layout().oid,
             object_metadata->get_version_key_in_index(),
             false /* force_delete */, is_multipart, part_list_index_oid, 1,
-            key_indx,
-            bucket_metadata->get_extended_metadata_index_layout().oid));
-
+            key_indx, bucket_metadata->get_extended_metadata_index_layout().oid,
+            pvid_str, pvid_str, object_metadata->get_layout_id(),
+            object_metadata->get_layout_id(), part_entry[0].versionID));
         parts_probable_del_rec_list.push_back(std::move(ext_del_rec));
       }
     }  // End of For
@@ -934,7 +937,7 @@ void S3PostCompleteAction::startcleanup() {
       // mark old OID for deletion in overwrite case, this optimizes
       // backgrounddelete decisions.
       ACTION_TASK_ADD(S3PostCompleteAction::mark_old_oid_for_deletion, this);
-      ACTION_TASK_ADD(S3PostCompleteAction::delete_old_object, this);
+      // ACTION_TASK_ADD(S3PostCompleteAction::delete_old_object, this);
     }
     ACTION_TASK_ADD(S3PostCompleteAction::remove_new_oid_probable_record, this);
   } else if (s3_post_complete_action_state ==
@@ -1099,8 +1102,6 @@ void S3PostCompleteAction::remove_old_ext_metadata_successful() {
 
 void S3PostCompleteAction::remove_old_oid_probable_record() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  assert(!old_oid_str.empty());
-  assert(!new_oid_str.empty());
 
   if (old_parts_probable_del_rec_list.size() == 0) {
     next();
@@ -1227,7 +1228,6 @@ void S3PostCompleteAction::remove_new_ext_metadata_successful() {
 
 void S3PostCompleteAction::remove_new_oid_probable_record() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  assert(!new_oid_str.empty());
 
   if (new_parts_probable_del_rec_list.size() == 0) {
     next();

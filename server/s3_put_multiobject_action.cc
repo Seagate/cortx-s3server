@@ -664,7 +664,11 @@ void S3PutMultiObjectAction::add_object_oid_to_probable_dead_oid_list() {
         false /* force_delete */, true,
         part_metadata->get_part_index_layout().oid, 0,
         strtoul(part_metadata->get_part_number().c_str(), NULL, 0),
-        bucket_metadata->get_extended_metadata_index_layout().oid));
+        bucket_metadata->get_extended_metadata_index_layout().oid,
+        object_multipart_metadata->get_pvid_str(),
+        object_multipart_metadata->get_pvid_str(),
+        object_multipart_metadata->get_layout_id(),
+        object_multipart_metadata->get_layout_id()));
 
     probable_oid_list[old_oid_rec_key] = old_probable_del_rec->to_json();
   }
@@ -683,7 +687,11 @@ void S3PutMultiObjectAction::add_object_oid_to_probable_dead_oid_list() {
       false /* force_delete */, true,
       part_metadata->get_part_index_layout().oid, 0,
       strtoul(part_metadata->get_part_number().c_str(), NULL, 0),
-      bucket_metadata->get_extended_metadata_index_layout().oid));
+      bucket_metadata->get_extended_metadata_index_layout().oid,
+      object_multipart_metadata->get_pvid_str(),
+      object_multipart_metadata->get_pvid_str(),
+      object_multipart_metadata->get_layout_id(),
+      object_multipart_metadata->get_layout_id()));
   // store new oid, key = newoid
   probable_oid_list[new_oid_str] = new_probable_del_rec->to_json();
 

@@ -269,12 +269,12 @@ class ObjectRecoveryValidator:
             #   Each object oid has 1 '-', seperating high and low values
             # e.g., variable 'probable_delete_oid' contains: "Tgj8AgAAAAA=-kwAAAAAABCY=-Tgj8AgAAAAA=-lgAAAAAABCY="
             # where old obj id is "Tgj8AgAAAAA=-kwAAAAAABCY=" and new obj id is "Tgj8AgAAAAA=-lgAAAAAABCY="
-            oil_list = self.object_leak_id.split("-")
-            if (oil_list is None or (len(oil_list) not in [2, 4])):
+            old_list = self.object_leak_id.split("-")
+            if (old_list is None or (len(old_list) not in [2, 4])):
                 self._logger.error("The key for old object " + str(self.object_leak_id) +
                                    " is not in the required format 'oldoid-newoid'")
                 return
-            self.object_leak_id = oil_list[0] + "-" + oil_list[1]
+            self.object_leak_id = old_list[0] + "-" + old_list[1]
 
         # Determine object leak using information in metadata
         # Below is the implementaion of leak algorithm
@@ -401,14 +401,40 @@ class ObjectRecoveryValidator:
                     self._logger.error("Failed to process leak oid, failed to delete object  " +
                         self.object_leak_id + " Skipping entry for next run")
 
-                # Delete part list index, if any
-                part_list_index_id = self.object_leak_info["part_list_idx_oid"]
-                if (part_list_index_id):
-                    status = self.delete_index(part_list_index_id)
-                    if (status):
-                        self._logger.info("Deleted part list index " + str(part_list_index_id) + " successfully")
-                    else:
-                        self._logger.info("Failed to delete part list index " + str(part_list_index_id))
+                # Delete Version Entry from Version Table.
+                self._logger.info("Trying to delete Version entry from version Table")
+                self._logger.info("Version key" + self.object_leak_info["version_key_in_index"])
+
+                status = self.delete_object_from_storage(self.object_leak_info["version_key_in_index"], \
+                                                            self.object_leak_info["version_layout_id"], \
+                                                            self.object_leak_info["version_pvid"])
+                if(not status):
+                    self._logger.error("Failed to process leak oid, failed to delete object  " +
+                                    self.object_leak_info["version_key_in_index"] + 
+                                    " Skipping entry for next run")                
+
+                # Delete Entry from Extended Table.
+                self._logger.info("Trying to part entry from part list Table")
+                ext_key = self.object_leak_info["object_key_in_index"] + "|" + \
+                          self.object_leak_info["ext_version_id"] + "|" + "P" + \
+                          self.object_leak_info["part"] + "|" + "F" + \
+                          self.object_leak_info["fno"]
+                self._logger.info("Extended key" + ext_key)
+                status = self.delete_object_from_storage(ext_key, \
+                                                        self.object_leak_info["part_layout_id"], \
+                                                        self.object_leak_info["part_pvid_str"])
+                if(not status):
+                    self._logger.error("Failed to process leak oid, failed to delete object  " +
+                                        ext_key + " Skipping entry for next run")
+
+                # # Delete part list index, if any (TODO)
+                # part_list_index_id = self.object_leak_info["part_list_idx_oid"]
+                # if (part_list_index_id):
+                #     status = self.delete_index(part_list_index_id)
+                #     if (status):
+                #         self._logger.info("Deleted part list index " + str(part_list_index_id) + " successfully")
+                #     else:
+                #         self._logger.info("Failed to delete part list index " + str(part_list_index_id))
             return
 
         obj_key = self.object_leak_info["object_key_in_index"]
@@ -443,14 +469,40 @@ class ObjectRecoveryValidator:
                             self._logger.error("Failed to process leak oid, failed to delete object " +
                                 self.object_leak_id + " Skipping entry for next run")
 
-                        # Delete part list index, if any exists
-                        part_list_index_id = self.object_leak_info["part_list_idx_oid"]
-                        if (part_list_index_id):
-                            status = self.delete_index(part_list_index_id)
-                            if (status):
-                                self._logger.info("Deleted part list index " +  str(part_list_index_id) + " successfully")
-                            else:
-                                self._logger.info("Failed to delete part list index " + str(part_list_index_id))
+                        # Delete Version Entry from Version Table.
+                        self._logger.info("Trying to delete Version entry from version Table")
+                        self._logger.info("Version key" + self.object_leak_info["version_key_in_index"])
+
+                        status = self.delete_object_from_storage(self.object_leak_info["version_key_in_index"], \
+                                                                    self.object_leak_info["version_layout_id"], \
+                                                                    self.object_leak_info["version_pvid"])
+                        if(not status):
+                            self._logger.error("Failed to process leak oid, failed to delete object  " +
+                                            self.object_leak_info["version_key_in_index"] + 
+                                            " Skipping entry for next run")                
+
+                        # Delete Entry from Extended Table.
+                        self._logger.info("Trying to part entry from part list Table")
+                        ext_key = self.object_leak_info["object_key_in_index"] + "|" + \
+                                self.object_leak_info["ext_version_id"] + "|" + "P" + \
+                                self.object_leak_info["part"] + "|" + "F" + \
+                                self.object_leak_info["fno"]
+                        self._logger.info("Extended key" + ext_key)
+                        status = self.delete_object_from_storage(ext_key, \
+                                                                self.object_leak_info["ext_layout_id"], \
+                                                                self.object_leak_info["ext_pvid_str"])
+                        if(not status):
+                            self._logger.error("Failed to process leak oid, failed to delete object  " +
+                                                ext_key + " Skipping entry for next run")
+                                                
+                        # # Delete part list index, if any exists
+                        # part_list_index_id = self.object_leak_info["part_list_idx_oid"]
+                        # if (part_list_index_id):
+                        #     status = self.delete_index(part_list_index_id)
+                        #     if (status):
+                        #         self._logger.info("Deleted part list index " +  str(part_list_index_id) + " successfully")
+                        #     else:
+                        #         self._logger.info("Failed to delete part list index " + str(part_list_index_id))
                     else:
                         self._logger.info("Skipping leak entry " + self.object_leak_id + " as it exists in multipart index")
                 else:

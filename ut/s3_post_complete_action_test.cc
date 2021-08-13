@@ -931,11 +931,11 @@ TEST_F(S3PostCompleteActionTest, StartCleanupAbortedSinceValidationFailed) {
       .WillRepeatedly(
            Invoke(this, &S3PostCompleteActionTest::dummy_put_keyval));
 
-  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+  /*EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
               delete_object(_, _, _, _, _))
       .Times(1)
       .WillRepeatedly(
-           Invoke(this, &S3PostCompleteActionTest::dummy_delete_object));
+           Invoke(this, &S3PostCompleteActionTest::dummy_delete_object));*/
   action_under_test_ptr->multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
   action_under_test_ptr->startcleanup();
