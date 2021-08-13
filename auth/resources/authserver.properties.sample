@@ -72,3 +72,10 @@ cacheTimeout=30
 
 # IEM Server details for sending Auth IEM alerts,
 IEMServerURL=http://127.0.0.1:28300/EventMessage/event
+
+# Rsyslog server details for sending IAM audit log,
+RsyslogHostname=127.0.0.1
+RsyslogPort=514
+# Rsyslog msgid to filter messages for S3AuthServer
+RsyslogMsgId=s3authserver-audit-logging
+

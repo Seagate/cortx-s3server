@@ -378,32 +378,48 @@ class SetupCmd(object):
   def shutdown_services(self, s3services_list):
     """Stop services."""
     for service_name in s3services_list:
-      try:
-        # if service name not found in the ha_service_map then use systemctl
-        service_name = self.ha_service_map[service_name]
-        cmd = ['cortx', 'stop',  f'{service_name}']
-      except KeyError:
-        cmd = ['/bin/systemctl', 'stop',  f'{service_name}']
+      cmd = ['/bin/systemctl', 'is-active',  f'{service_name}']
       handler = SimpleProcess(cmd)
-      self.logger.info(f"shutting down {service_name}")
+      self.logger.info(f"Check {service_name} service is active or not ")
       res_op, res_err, res_rc = handler.run()
-      if res_rc != 0:
-        raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
+      if res_rc == 0:
+        self.logger.info(f"Service {service_name} is active")
+        try:
+          # if service name not found in the ha_service_map then use systemctl
+          service_name = self.ha_service_map[service_name]
+          cmd = ['cortx', 'stop',  f'{service_name}']
+        except KeyError:
+          cmd = ['/bin/systemctl', 'stop',  f'{service_name}']
+        self.logger.info(f"Command: {cmd}")
+        handler = SimpleProcess(cmd)
+        res_op, res_err, res_rc = handler.run()
+        if res_rc != 0:
+          raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
+      else:
+        self.logger.info(f"Service {service_name} is not active")
 
   def start_services(self, s3services_list):
     """Start services specified as parameter."""
     for service_name in s3services_list:
-      try:
-        # if service name not found in the ha_service_map then use systemctl
-        service_name = self.ha_service_map[service_name]
-        cmd = ['cortx', 'start',  f'{service_name}']
-      except KeyError:
-        cmd = ['/bin/systemctl', 'start',  f'{service_name}']
+      cmd = ['/bin/systemctl', 'is-active',  f'{service_name}']
       handler = SimpleProcess(cmd)
-      self.logger.info(f"starting {service_name}")
+      self.logger.info(f"Check {service_name} service is active or not ")
       res_op, res_err, res_rc = handler.run()
       if res_rc != 0:
-        raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
+        self.logger.info(f"Service {service_name} is not active")
+        try:
+          # if service name not found in the ha_service_map then use systemctl
+          service_name = self.ha_service_map[service_name]
+          cmd = ['cortx', 'start',  f'{service_name}']
+        except KeyError:
+          cmd = ['/bin/systemctl', 'start',  f'{service_name}']
+        self.logger.info(f"Command: {cmd}")
+        handler = SimpleProcess(cmd)
+        res_op, res_err, res_rc = handler.run()
+        if res_rc != 0:
+          raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
+      else:
+        self.logger.info(f"Service {service_name} is already active")
 
   def restart_services(self, s3services_list):
     """Restart services specified as parameter."""

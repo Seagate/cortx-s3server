@@ -79,7 +79,7 @@ check_report() {
 
 cleanup
 check_prerequisite
-run_ut
+# run_ut
 run_coverage
 check_report
 
