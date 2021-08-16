@@ -97,6 +97,10 @@ class ConfigCmd(SetupCmd):
 
         #update endpoint and port in s3BG config file
         self.update_endpoint_and_port()
+
+        #copy config file to /etc/cortx
+        self.copy_config_file()
+
         # create topic for background delete
         bgdeleteconfig = CORTXS3Config()
         if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
@@ -119,6 +123,13 @@ class ConfigCmd(SetupCmd):
 
     opfileconfstorenew = S3CortxConfStore(f'yaml://{self.BG_delete_config_file}', 'update_endpoint_and_port_idx')
     opfileconfstorenew.set_config('cortx_s3>endpoint', complete_ip_address, True)
+
+  def copy_config_file(self):
+    """Copy config file to /etx/cortx."""
+    if not os.path.exists("/etc/cortx/s3/s3backgrounddelete/"):
+      os.makedirs("/etc/cortx/s3/s3backgrounddelete/")
+
+    shutil.copy2("/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml", "/etc/cortx/s3/s3backgrounddelete/")
 
   def configure_openldap(self):
     """Install and Configure Openldap over Non-SSL."""
