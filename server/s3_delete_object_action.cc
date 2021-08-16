@@ -171,7 +171,7 @@ void S3DeleteObjectAction::delete_metadata() {
 }
 
 void S3DeleteObjectAction::delete_metadata_successful() {
-  s3_log(S3_LOG_WARN, request_id, "Deleted Object metadata\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Deleted Object metadata\n");
   s3_del_obj_action_state = S3DeleteObjectActionState::metadataDeleted;
   next();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
