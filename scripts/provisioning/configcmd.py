@@ -88,7 +88,7 @@ class ConfigCmd(SetupCmd):
         self.configure_haproxy()
 
       if self.module == "s3bgdeleteproducer" or self.module == None :
-        # disable BG delete services on reboot as 
+        # disable BG delete services on reboot as
         # it will be managed by HA
         self.logger.info('Disable services on reboot started')
         services_list = ["s3backgroundproducer", "s3backgroundconsumer"]
