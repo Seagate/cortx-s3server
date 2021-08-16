@@ -112,20 +112,12 @@ class CleanupCmd(SetupCmd):
       self.delete_ldap_config()
       self.logger.info("delete ldap config and schemas completed")
 
-      if self.module == "s3bgdeleteproducer" or self.module == None :
-        # Delete topic created for background delete
-        bgdeleteconfig = CORTXS3Config()
-        if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
-          self.logger.info('Deleting topic started')
-          self.delete_topic(bgdeleteconfig.get_msgbus_admin_id, bgdeleteconfig.get_msgbus_topic())
-          self.logger.info('Deleting topic completed')
-
-        # revert s3 background config files to their origional config state
-        s3BackgroundconfigFiles = ["/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
-                                  "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"]
-        self.logger.info('revert s3 background config files started')
-        self.revert_config_files(s3BackgroundconfigFiles)
-        self.logger.info('revert s3 background config files completed')
+      # Delete topic created for background delete
+      bgdeleteconfig = CORTXS3Config()
+      if bgdeleteconfig.get_messaging_platform() == MESSAGE_BUS:
+        self.logger.info('Deleting topic started')
+        self.delete_topic(bgdeleteconfig.get_msgbus_admin_id, bgdeleteconfig.get_msgbus_topic())
+        self.logger.info('Deleting topic completed')
 
       try:
         self.logger.info("Stopping slapd service...")
@@ -156,22 +148,24 @@ class CleanupCmd(SetupCmd):
         dirpath = "/var/log/seagate/s3/s3deployment"
         self.DeleteDirContents(dirpath)
         self.logger.info("Delete S3 Deployment log file completed")
-        # revert s3 config files to their origional config state
-        s3configFiles = ["/opt/seagate/cortx/auth/resources/authserver.properties",
-                        "/opt/seagate/cortx/auth/resources/keystore.properties",
-                        "/opt/seagate/cortx/s3/conf/s3config.yaml"]
+        # revert config files to their origional config state
         self.logger.info('revert s3 config files started')
-        self.revert_config_files(s3configFiles)
+        self.revert_config_files()
         self.logger.info('revert s3 config files completed')
-
       else:
         self.logger.info("Skipped Delete of S3 Deployment log file")
 
     except Exception as e:
       raise e
 
-  def revert_config_files(self, configFiles):
+  def revert_config_files(self):
     """Revert config files to their original config state."""
+
+    configFiles = ["/opt/seagate/cortx/auth/resources/authserver.properties",
+                  "/opt/seagate/cortx/auth/resources/keystore.properties",
+                  "/opt/seagate/cortx/s3/conf/s3config.yaml",
+                  "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
+                  "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"]
     try:
       for configFile in configFiles:
         if os.path.isfile(configFile):

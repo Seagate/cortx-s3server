@@ -41,6 +41,8 @@ cortx:
     s3bgdelete:
       endpoint : "127.0.0.1"
       port : "28049"
+      scheduler_schedule_interval: 1200
+      max_keys: 1000
 cluster:
   TMPL_CLUSTER_ID:
     site:
