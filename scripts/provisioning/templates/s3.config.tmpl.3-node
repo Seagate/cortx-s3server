@@ -52,6 +52,28 @@ cortx:
         max_units : "8"
       service:
         instances : "1"
+        s3server_ip_address : "srvnode-1.data.private"
+        s3server_port : "28071"
+        motr_ip_address : "127.0.0.1"
+        motr_port : "28049"
+        authserver_ip_address : "127.0.0.1"
+        authserver_port : "9080"
+        s3_enable_stats: "true"
+        s3_audit_logger: "rsyslog-tcp"
+    s3authserver:
+      defaultEndpoint:
+      httpPort: "9080"
+      httpsPort: "9443"
+      ldapHost: "127.0.0.7"
+      ldapPort: "389"
+      ldapSSLPort: "636"
+      s3Endpoints: "s3.seagate.com"
+      iamAuditLog: "rsyslog-tcp"
+    s3bgdelete:
+      endpoint: "127.0.0.1"
+      port: "28049"
+      scheduler_schedule_interval: "1200"
+      max_keys: "1000"
 cluster:
   TMPL_CLUSTER_ID:
     site:
