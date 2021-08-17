@@ -96,10 +96,10 @@ class ConfigCmd(SetupCmd):
         self.logger.info('Disable services on reboot completed')
 
         #update endpoint and port in s3BG config file
-        self.update_endpoint_and_port()
+        self.update_config_file()
 
         #copy config file to /etc/cortx
-        self.copy_config_file()
+        self.move_config_file()
 
         # create topic for background delete
         bgdeleteconfig = CORTXS3Config()
@@ -112,7 +112,7 @@ class ConfigCmd(SetupCmd):
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}')
 
-  def update_endpoint_and_port(self):
+  def update_config_file(self):
     """Update endpoint and port in BG delete config file."""
     opfileconfstore = S3CortxConfStore(f'yaml://{self.s3_config_tmpl_file}', 'read_endpoint_and_port_idx')
 
@@ -121,15 +121,21 @@ class ConfigCmd(SetupCmd):
 
     complete_ip_address = "http://" + ip_address + ":" + port
 
+    scheduler_interval = opfileconfstore.get_config('cortx>software>s3bgdelete>scheduler_schedule_interval')
+    max_keys = opfileconfstore.get_config('cortx>software>s3bgdelete>max_keys')
+
+    #setting the values in BG config file
     opfileconfstorenew = S3CortxConfStore(f'yaml://{self.BG_delete_config_file}', 'update_endpoint_and_port_idx')
     opfileconfstorenew.set_config('cortx_s3>endpoint', complete_ip_address, True)
+    opfileconfstorenew.set_config('cortx_s3>scheduler_schedule_interval', scheduler_interval, True)
+    opfileconfstorenew.set_config('indexid>max_keys', max_keys, True)
 
-  def copy_config_file(self):
-    """Copy config file to /etx/cortx."""
+  def move_config_file(self):
+    """Move config file to /etx/cortx."""
     if not os.path.exists("/etc/cortx/s3/s3backgrounddelete/"):
       os.makedirs("/etc/cortx/s3/s3backgrounddelete/")
 
-    shutil.copy2("/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml", "/etc/cortx/s3/s3backgrounddelete/")
+    shutil.copy2("/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml", "/etc/cortx/s3/s3backgrounddelete/config.yaml")
 
   def configure_openldap(self):
     """Install and Configure Openldap over Non-SSL."""

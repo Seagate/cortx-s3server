@@ -38,6 +38,11 @@ cortx:
         max_units : "8"
       service:
         instances : "1"
+    s3bgdelete:
+      endpoint : "127.0.0.1"
+      port : "28049"
+      scheduler_schedule_interval: 1200
+      max_keys: 1000
 cluster:
   3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6:
     site:
