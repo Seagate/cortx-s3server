@@ -53,10 +53,6 @@ class S3ProbableDeleteRecord {
   unsigned int fragment;
   unsigned int part;
   struct m0_uint128 extended_md_idx_oid;
-  std::string version_pvid_str;
-  std::string ext_pvid_str;
-  int version_layout_id;
-  int ext_layout_id;
   std::string ext_version_id;
 
  public:
@@ -68,8 +64,6 @@ class S3ProbableDeleteRecord {
       bool force_del = false, bool is_multipart = false,
       struct m0_uint128 part_list_oid = {0ULL, 0ULL}, unsigned int frg = 0,
       unsigned int prt = 0, struct m0_uint128 extended_idx = {0ULL, 0ULL},
-      std::string ver_pvid_str = "", std::string ext_pvid_str = "",
-      int ver_layout_id = 0, int ext_layout_id = 0,
       std::string ext_version_id = {});
   virtual ~S3ProbableDeleteRecord() {}
 

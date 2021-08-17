@@ -64,8 +64,8 @@ indexid:
    threshold : 0                                              # Threshold value for Maximum number of messages allowed to be in queue before before we purge and reload the queue
 
 leakconfig:                                  # Section for object leak config
-   leak_processing_delay_in_mins: 1                          # Time delay in mins after which probable delete entry is procesed for leak.
-   version_processing_delay_in_mins: 1                        # Time delay in mins after which object version is processed
+   leak_processing_delay_in_mins: 15                          # Time delay in mins after which probable delete entry is procesed for leak.
+   version_processing_delay_in_mins: 5                        # Time delay in mins after which object version is processed
    cleanup_enabled: False                                     # Flag for cleanup during S3 instance non-active.
 
 #DO NOT CHANGE ANY KEY NAME

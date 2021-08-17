@@ -536,7 +536,7 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
     const std::map<int, std::vector<struct s3_part_frag_context>>&
         ext_entries_mp = object_ext_metadata->get_raw_extended_entries();
     struct m0_uint128 old_oid, part_list_index_oid;
-    bool is_multipart = false;
+    // bool is_multipart = false;
     for (unsigned int key_indx = 1; key_indx <= total_parts; key_indx++) {
       const std::vector<struct s3_part_frag_context>& part_entry =
           ext_entries_mp.at(key_indx);
@@ -551,14 +551,11 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
             ext_oid_str, part_entry[0].item_size);
         if (is_old_object) {
           // key = oldoid + "-" + newoid; // (newoid = dummy oid of new object)
-          if (old_parts_probable_del_rec_list.size() > 0) {
-            is_multipart = true;
-          }
           ext_oid_str = ext_oid_str + '-' + new_oid_str;
           old_oid = {0ULL, 0ULL};
           part_list_index_oid = {0ULL, 0ULL};
         } else {
-          is_multipart = true;
+          // is_multipart = true;
           part_list_index_oid = multipart_metadata->get_part_index_layout().oid;
           old_oid = old_object_oid;
         }
@@ -578,10 +575,10 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
             bucket_metadata->get_object_list_index_layout().oid,
             bucket_metadata->get_objects_version_list_index_layout().oid,
             object_metadata->get_version_key_in_index(),
-            false /* force_delete */, is_multipart, part_list_index_oid, 1,
-            key_indx, bucket_metadata->get_extended_metadata_index_layout().oid,
-            pvid_str, pvid_str, object_metadata->get_layout_id(),
-            object_metadata->get_layout_id(), part_entry[0].versionID));
+            false /* force_delete */, part_entry[0].is_multipart,
+            part_list_index_oid, 1, key_indx,
+            bucket_metadata->get_extended_metadata_index_layout().oid,
+            part_entry[0].versionID));
         parts_probable_del_rec_list.push_back(std::move(ext_del_rec));
       }
     }  // End of For
@@ -1102,6 +1099,8 @@ void S3PostCompleteAction::remove_old_ext_metadata_successful() {
 
 void S3PostCompleteAction::remove_old_oid_probable_record() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  assert(!old_oid_str.empty());
+  assert(!new_oid_str.empty());
 
   if (old_parts_probable_del_rec_list.size() == 0) {
     next();
@@ -1228,6 +1227,7 @@ void S3PostCompleteAction::remove_new_ext_metadata_successful() {
 
 void S3PostCompleteAction::remove_new_oid_probable_record() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  assert(!new_oid_str.empty());
 
   if (new_parts_probable_del_rec_list.size() == 0) {
     next();
