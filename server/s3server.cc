@@ -897,13 +897,12 @@ int main(int argc, char **argv) {
   // This thread is created to do event base looping
   // Its to send IEM message in case of motr initialization hang
   rc = pthread_create(&tid, NULL, &base_loop_thread, NULL);
-  //s3_log(S3_LOG_FATAL, "", std::to_string(rc));
+  // s3_log(S3_LOG_FATAL, "", std::to_string(rc));
   s3_log(S3_LOG_INFO, "", "pthread rc= %d\n", (int)rc);
   if (rc != 0) {
     s3daemon.delete_pidfile();
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "Failed to create pthread\n");
-
   }
 
   int motr_read_mempool_flags = CREATE_ALIGNED_MEMORY;
