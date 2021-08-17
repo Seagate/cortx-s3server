@@ -558,7 +558,8 @@ int create_global_index(struct s3_motr_idx_layout &idx_lo,
 
   for (; --n_retry > 0; ::sleep(1)) {  // suspend current thread for 1 second
     struct m0_op *cr_op = nullptr;
-
+    // Pass M0_ENF_META to avoid lookup by Motr
+    idx.in_entity.en_flags |= M0_ENF_META;
     m0_entity_create(NULL, &idx.in_entity, &cr_op);
     m0_op_launch(&cr_op, 1);
 
@@ -603,14 +604,12 @@ int create_global_index(struct s3_motr_idx_layout &idx_lo,
     s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
            S3_IEM_MOTR_CONN_FAIL_JSON);
   } else {
-    // Store pv id and layout type only if flag 'M0_ENF_META' is set.
-    if (idx.in_entity.en_flags & M0_ENF_META) {
-      idx_lo.pver = idx.in_attr.idx_pver;
-      idx_lo.layout_type = idx.in_attr.idx_layout_type;
-    } else {
-      idx_lo.pver.f_container = idx_lo.pver.f_key = 0;
-      idx_lo.layout_type = 0;
-    }
+    idx_lo.pver = idx.in_attr.idx_pver;
+    idx_lo.layout_type = idx.in_attr.idx_layout_type;
+    s3_log(S3_LOG_INFO, "Global index details",
+           "Index OID: %08zx-%08zx PV Id: %08zx-%08zx Layout_type: 0x%x",
+           idx_lo.oid.u_hi, idx_lo.oid.u_lo, idx_lo.pver.f_container,
+           idx_lo.pver.f_key, idx_lo.layout_type);
   }
   return rc;
 }
