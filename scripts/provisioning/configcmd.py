@@ -33,6 +33,7 @@ from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 from s3_haproxy_config import S3HaproxyConfig
+from ldapaccountaction import LdapAccountAction
 
 class ConfigCmd(SetupCmd):
   """Config Setup Cmd."""
@@ -60,9 +61,9 @@ class ConfigCmd(SetupCmd):
     self.logger.info("validations completed")
 
     try:
-      self.logger.info("update motr max units per request started")
-      self.update_motr_max_units_per_request()
-      self.logger.info("update motr max units per request completed")
+      self.logger.info("update all modules config files started")
+      self.update_configs()
+      self.logger.info("update all modules config files completed")
 
       # disable S3server, S3authserver, haproxy, BG delete services on reboot as 
       # it will be managed by HA
@@ -95,6 +96,11 @@ class ConfigCmd(SetupCmd):
                           bgdeleteconfig.get_msgbus_topic(),
                           self.get_msgbus_partition_count())
         self.logger.info('Create topic completed')
+
+      # create background delete account
+      self.logger.info("create background delete account started")
+      self.create_bgdelete_account()
+      self.logger.info("create background delete account completed")
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}')
 
@@ -259,6 +265,20 @@ class ConfigCmd(SetupCmd):
       self.logger.warning(f'warning of create_auth_jks_password.sh: {stderr}')
       self.logger.info(' Successfully set auth JKS keystore password.')
 
+  def create_bgdelete_account(self):
+    """ create bgdelete account."""
+    try:
+      # Create background delete account
+      bgdelete_acc_input_params_dict = self.get_config_param_for_BG_delete_account()
+      LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
+    except Exception as e:
+      if "Already exists" not in str(e):
+        self.logger.error(f'Failed to create backgrounddelete service account, error: {e}')
+        raise(e)
+      else:
+        self.logger.warning("backgrounddelete service account already exist")
+
+
   def update_motr_max_units_per_request(self):
     """
     update S3_MOTR_MAX_UNITS_PER_REQUEST in the s3config file based on VM/OVA/HW
@@ -288,3 +308,88 @@ class ConfigCmd(SetupCmd):
       s3configfileconfstore = S3CortxConfStore(f'yaml://{s3configfile}', 'write_s3_motr_max_unit_idx')
       s3configfileconfstore.set_config(motr_max_units_per_request_key, int(motr_max_units_per_request), True)
       self.logger.info(f'Key {motr_max_units_per_request_key} updated successfully in {s3configfile}')
+
+  def update_config_value(self, config_file_path : str,
+                          config_file_type : str,
+                          key_to_read : str,
+                          key_to_update: str,
+                          isInteger: bool = False):
+    """ update config value"""
+
+    # get the value to be updated from provisioner config for given key
+    value_to_update = self.get_confvalue(self.get_confkey(key_to_read))
+    self.logger.info(f'{key_to_read}: {value_to_update}')
+
+    # update the S3_MOTR_MAX_UNITS_PER_REQUEST in s3config.yaml file
+    configfile = self.get_confkey(config_file_path)
+    if path.isfile(f'{configfile}') == False:
+      self.logger.error(f'{configfile} file is not present')
+      raise S3PROVError(f'{configfile} file is not present')
+    else:
+      s3configfileconfstore = S3CortxConfStore(f'{config_file_type}://{configfile}', 'update_config_file_idx' + key_to_update)
+      if isInteger is True:
+        s3configfileconfstore.set_config(key_to_update, int(value_to_update), True)
+      else:
+        s3configfileconfstore.set_config(key_to_update, value_to_update, True)
+      self.logger.info(f'Key {key_to_update} updated successfully in {configfile}')
+
+  def update_configs(self):
+    """Update all module configs."""
+    self.update_s3_configs()
+    self.update_s3_auth_configs()
+    self.update_s3_bgdelete_configs()
+
+  def update_s3_configs(self):
+    """ Update s3 configs."""
+    self.logger.info("Update s3 server config file started")
+    self.update_motr_max_units_per_request()
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3SERVER_IP_ADDRESS", "S3_SERVER_CONFIG>S3_SERVER_IPV4_BIND_ADDR")
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3SERVER_PORT", "S3_SERVER_CONFIG>S3_SERVER_BIND_PORT")
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_MOTR_IP_ADDRESS", "S3_SERVER_CONFIG>S3_SERVER_MOTR_HTTP_BIND_ADDR")
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_MOTR_PORT", "S3_SERVER_CONFIG>S3_SERVER_MOTR_HTTP_BIND_PORT")
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_AUTHSERVER_IP_ADDRESS", "S3_AUTH_CONFIG>S3_AUTH_IP_ADDR")
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_AUTHSERVER_PORT", "S3_AUTH_CONFIG>S3_AUTH_PORT")
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_ENABLE_STATS", "S3_SERVER_CONFIG>S3_ENABLE_STATS")
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_AUDIT_LOGGER", "S3_SERVER_CONFIG>S3_AUDIT_LOGGER_POLICY")
+    self.logger.info("Update s3 server config file completed")
+
+  def update_s3_auth_configs(self):
+    """ Update s3 auth configs."""
+    self.logger.info("Update s3 authserver config file started")
+    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_DEFAULT_HOST", "defaultHost")
+    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_HTTP_PORT", "httpPort")
+    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_HTTPS_PORT", "httpsPort")
+    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_LDAP_HOST", "ldapHost")
+    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_LDAP_PORT", "ldapPort")
+    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_LDAP_SSL_PORT", "ldapSSLPort")
+    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_DEFAULT_ENDPOINT", "defaultEndpoint")
+    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_S3_ENDPOINT", "s3Endpoints")
+    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_IAM_AUDITLOG", "IAMAuditlog")
+    self.logger.info("Update s3 authserver config file completed")
+
+  def update_s3_bgdelete_configs(self):
+    """ Update s3 bgdelete configs."""
+    self.logger.info("Update s3 bgdelete config file started")
+    self.update_s3_bgdelete_endpoint_config()
+    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL", "CORTX_S3>SCHEDULER_SCHEDULE_INTERVAL")
+    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_MAX_KEYS", "INDEXID>MAX_KEYS")
+    self.logger.info("Update s3 bgdelete config file completed")
+
+  def update_s3_bgdelete_endpoint_config(self):
+    """ Update s3 bgdelete endpoint config"""
+    # get the bgdelete endpoints from the config file
+    bgdelete_endpoint = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_S3_BGDELETE_ENDPOINT'))
+    bgdelete_port = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_S3_BGDELETE_PORT'))
+    bgdelete_url = "http://" + bgdelete_endpoint + ":" + bgdelete_port
+    self.logger.info(f'bgdelete_url: {bgdelete_url}')
+
+    # update bgdelete endpoints in to config file
+    configfile = self.get_confkey('S3_BGDELETE_CONFIG_FILE')
+    if path.isfile(f'{configfile}') == False:
+      self.logger.error(f'{configfile} file is not present')
+      raise S3PROVError(f'{configfile} file is not present')
+    else:
+      endpoint_key = 'CORTX_S3>ENDPOINT'
+      s3configfileconfstore = S3CortxConfStore(f'yaml://{configfile}', 'update_bgdelete_endpoint')
+      s3configfileconfstore.set_config(endpoint_key, bgdelete_url, True)
+      self.logger.info(f'Key {endpoint_key} updated successfully in {configfile}')
