@@ -36,11 +36,15 @@ void MD5hash::save_motr_unit_checksum(unsigned char *current_digest) {
   checksum_saved = true;
 }
 
-void MD5hash::save_motr_unit_checksum_for_unaligned_bufs(unsigned char *current_digest) {
-  memcpy((void *)&md5ctx_pre_unaligned, (void *)current_digest, sizeof(MD5_CTX));
+void MD5hash::save_motr_unit_checksum_for_unaligned_bufs(
+    unsigned char *current_digest) {
+  memcpy((void *)&md5ctx_pre_unaligned, (void *)current_digest,
+         sizeof(MD5_CTX));
 }
 
-void *MD5hash::get_prev_unaligned_checksum() { return (void *)&md5ctx_pre_unaligned; }
+void *MD5hash::get_prev_unaligned_checksum() {
+  return (void *)&md5ctx_pre_unaligned;
+}
 
 void *MD5hash::get_prev_write_checksum() { return (void *)&md5ctx; }
 
