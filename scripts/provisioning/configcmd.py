@@ -292,8 +292,7 @@ class ConfigCmd(SetupCmd):
   def update_config_value(self, config_file_path : str,
                           config_file_type : str,
                           key_to_read : str,
-                          key_to_update: str,
-                          isInteger: bool = False):
+                          key_to_update: str):
     """ update config value"""
 
     # get the value to be updated from provisioner config for given key
@@ -307,10 +306,7 @@ class ConfigCmd(SetupCmd):
       raise S3PROVError(f'{configfile} file is not present')
     else:
       s3configfileconfstore = S3CortxConfStore(f'{config_file_type}://{configfile}', 'update_config_file_idx' + key_to_update)
-      if isInteger is True:
-        s3configfileconfstore.set_config(key_to_update, int(value_to_update), True)
-      else:
-        s3configfileconfstore.set_config(key_to_update, value_to_update, True)
+      s3configfileconfstore.set_config(key_to_update, value_to_update, True)
       self.logger.info(f'Key {key_to_update} updated successfully in {configfile}')
 
   def update_configs(self):
