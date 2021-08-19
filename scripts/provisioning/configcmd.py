@@ -33,7 +33,6 @@ from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 from s3_haproxy_config import S3HaproxyConfig
-from ldapaccountaction import LdapAccountAction
 
 class ConfigCmd(SetupCmd):
   """Config Setup Cmd."""
@@ -96,11 +95,6 @@ class ConfigCmd(SetupCmd):
                           bgdeleteconfig.get_msgbus_topic(),
                           self.get_msgbus_partition_count())
         self.logger.info('Create topic completed')
-
-      # create background delete account
-      self.logger.info("create background delete account started")
-      self.create_bgdelete_account()
-      self.logger.info("create background delete account completed")
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}')
 
@@ -264,20 +258,6 @@ class ConfigCmd(SetupCmd):
     else:
       self.logger.warning(f'warning of create_auth_jks_password.sh: {stderr}')
       self.logger.info(' Successfully set auth JKS keystore password.')
-
-  def create_bgdelete_account(self):
-    """ create bgdelete account."""
-    try:
-      # Create background delete account
-      bgdelete_acc_input_params_dict = self.get_config_param_for_BG_delete_account()
-      LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
-    except Exception as e:
-      if "Already exists" not in str(e):
-        self.logger.error(f'Failed to create backgrounddelete service account, error: {e}')
-        raise(e)
-      else:
-        self.logger.warning("backgrounddelete service account already exist")
-
 
   def update_motr_max_units_per_request(self):
     """
