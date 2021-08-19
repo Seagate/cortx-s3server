@@ -66,7 +66,7 @@ class SetupCmd(object):
   ha_service_map = {}
 
   def __init__(self,config: str):
-        """Constructor."""
+    """Constructor."""
     self.endpoint = None
     self._url = None
     self._provisioner_confstore = None
