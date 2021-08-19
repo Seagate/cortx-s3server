@@ -72,6 +72,22 @@ int S3Evbuffer::init() {
       return -1;
     }
   }
+  // Dump Mem pool stats after successfully allocating buffer from mempool
+  struct pool_info poolinfo;
+  int rc = event_mempool_getinfo(&poolinfo);
+  if (rc != 0) {
+    s3_log(S3_LOG_ERROR, "",
+           "Issue in memory pool during buffer allocation!\n");
+  } else {
+    s3_log(S3_LOG_INFO, "",
+           "S3 mempool allocation: mempool_item_size = %zu "
+           "free_bufs_in_pool = %d "
+           "number_of_bufs_shared = %d "
+           "total_bufs_allocated_by_pool = %d\n",
+           poolinfo.mempool_item_size, poolinfo.free_bufs_in_pool,
+           poolinfo.number_of_bufs_shared,
+           poolinfo.total_bufs_allocated_by_pool);
+  }
   return 0;
 }
 

@@ -82,7 +82,6 @@ class RequestObject {
   std::string request_id;
   std::string stripped_request_id;
   bool is_service_req_head;
-
   std::string error_code_str;
 
   bool is_paused;  // indicates whether request is explicitly paused
@@ -339,7 +338,10 @@ class RequestObject {
   std::shared_ptr<S3AsyncBufferOptContainer> get_buffered_input() {
     return buffered_input;
   }
-
+  size_t get_mempool_buffer_count() { return used_mempool_buffer_count; }
+  void add_to_mempool_buffer_count(size_t& buffer_cnt) {
+    used_mempool_buffer_count += buffer_cnt;
+  }
   // See detailed comment in Action::addb_request_id.
   const uint64_t addb_request_id;
   // Helper counter for assigning unique addb_request_id's for each request.
@@ -348,6 +350,7 @@ class RequestObject {
   // Response Helpers
  private:
   struct evbuffer* reply_buffer;
+  size_t used_mempool_buffer_count;
 
  public:
   virtual void send_response(int code, std::string body = "");

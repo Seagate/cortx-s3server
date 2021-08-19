@@ -506,7 +506,9 @@ void S3GetObjectAction::read_object_data_failed() {
 
 void S3GetObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
+  s3_log(S3_LOG_INFO, request_id,
+         "S3 request [%s] with total allocated mempool buffers(16k) = %zu\n",
+         request_id.c_str(), request->get_mempool_buffer_count());
   if (reject_if_shutting_down()) {
     if (read_object_reply_started) {
       request->send_reply_end();

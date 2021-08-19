@@ -127,7 +127,8 @@ RequestObject::RequestObject(
       // proper globally unique IDs here.  Specifically, we'll need to address
       // uniqueness across all instances of S3 Server.
       addb_request_id(++addb_request_id_gc),
-      reply_buffer(NULL) {
+      reply_buffer(NULL),
+      used_mempool_buffer_count(0) {
 
   S3Uuid uuid;
   request_id = uuid.get_string_uuid();

@@ -270,6 +270,13 @@ void *mempool_getbuffer(MemoryPoolHandle handle, size_t expected_buffer_size) {
       "expected_buffer_size(%zu), current pool manages only "
       "mempool_item_size(%zu)";
   char log_msg[300];
+  char *log_memool_stats =
+      "S3 Mempool stats after allocation:"
+      "mempool_item_size = %zu "
+      "free_bufs_in_pool = %d "
+      "number_of_bufs_shared = %d "
+      "total_bufs_allocated_by_pool = %d\n";
+  char log_mem_stats[1024];
 
   if (pool == NULL) {
     return NULL;
@@ -330,6 +337,12 @@ void *mempool_getbuffer(MemoryPoolHandle handle, size_t expected_buffer_size) {
   if (pool_item) {
     pool->number_of_bufs_shared++;
   }
+  snprintf(log_mem_stats, sizeof(log_mem_stats), log_memool_stats,
+           pool->mempool_item_size, pool->free_bufs_in_pool,
+           pool->number_of_bufs_shared, pool->total_bufs_allocated_by_pool);
+  if (pool->log_callback_func) {
+    pool->log_callback_func(MEMPOOL_LOG_INFO, log_mem_stats);
+  }
 
   if ((pool->flags & ENABLE_LOCKING) != 0) {
     pthread_mutex_unlock(&pool->lock);
@@ -347,6 +360,13 @@ int mempool_releasebuffer(MemoryPoolHandle handle, void *buf,
       "released_buffer_size(%zu), current pool manages only "
       "mempool_item_size(%zu)";
   char log_msg[300];
+  char *log_memool_stats =
+      "S3 Mempool stats after de-allocation:"
+      "mempool_item_size = %zu "
+      "free_bufs_in_pool = %d "
+      "number_of_bufs_shared = %d "
+      "total_bufs_allocated_by_pool = %d\n";
+  char log_mem_stats[1024];
 
   if ((pool == NULL) || (pool_item == NULL)) {
     return S3_MEMPOOL_INVALID_ARG;
@@ -380,10 +400,17 @@ int mempool_releasebuffer(MemoryPoolHandle handle, void *buf,
 
   pool->number_of_bufs_shared--;
 
+  snprintf(log_mem_stats, sizeof(log_mem_stats), log_memool_stats,
+           pool->mempool_item_size, pool->free_bufs_in_pool,
+           pool->number_of_bufs_shared, pool->total_bufs_allocated_by_pool);
+  if (pool->log_callback_func) {
+    pool->log_callback_func(MEMPOOL_LOG_INFO, log_mem_stats);
+  }
+
   if ((pool->flags & ENABLE_LOCKING) != 0) {
     pthread_mutex_unlock(&pool->lock);
   }
-
+  // printf(log_mem_stats);
   return 0;
 }
 
