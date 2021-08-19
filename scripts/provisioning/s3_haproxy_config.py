@@ -49,15 +49,14 @@ class S3HaproxyConfig:
       # add the handlers to the logger
       self.logger.addHandler(chandler)
 
-    # Read machine-id of current node
-    with open('/etc/machine-id', 'r') as mcid_file:
-      self.machine_id = mcid_file.read().strip()
-
     if not confstore.strip():
       self.logger.error(f'config url:[{confstore}] must be a valid url path')
       raise Exception('empty config URL path')
 
     self.provisioner_confstore = S3CortxConfStore(confstore, 'haproxy_config_index')
+
+    # Get machine-id of current node from constore
+    self.machine_id = provisioner_confstore.get_machine_id()
 
   def get_publicip(self):
     assert self.provisioner_confstore != None

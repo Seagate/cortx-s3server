@@ -66,7 +66,7 @@ class SetupCmd(object):
   ha_service_map = {}
 
   def __init__(self,config: str):
-    """Constructor."""
+        """Constructor."""
     self.endpoint = None
     self._url = None
     self._provisioner_confstore = None
@@ -91,9 +91,8 @@ class SetupCmd(object):
     self._url = config
     self._provisioner_confstore = S3CortxConfStore(self._url, 'setup_prov_index')
 
-    # machine_id will be used to read confstore keys
-    with open('/etc/machine-id') as f:
-      self.machine_id = f.read().strip()
+    # Get machine-id of current node from constore
+    self.machine_id = provisioner_confstore.get_machine_id()
 
     self.cluster_id = self.get_confvalue(self.get_confkey(
       'CONFIG>CONFSTORE_CLUSTER_ID_KEY').replace("machine-id", self.machine_id))

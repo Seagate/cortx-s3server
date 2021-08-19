@@ -21,7 +21,6 @@
 import sys
 
 from setupcmd import SetupCmd
-from ldapaccountaction import LdapAccountAction
 
 class InitCmd(SetupCmd):
   """Init Setup Cmd."""
@@ -44,15 +43,3 @@ class InitCmd(SetupCmd):
     self.validate_config_files(self.name)
     self.logger.info("validations completed")
 
-    try:
-      # Create background delete account
-      self.logger.info("create background delete account started")
-      bgdelete_acc_input_params_dict = self.get_config_param_for_BG_delete_account()
-      LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
-    except Exception as e:
-      if "Already exists" not in str(e):
-        self.logger.error(f'Failed to create backgrounddelete service account, error: {e}')
-        raise(e)
-      else:
-        self.logger.warning("backgrounddelete service account already exist")
-    self.logger.info("create background delete account completed")
