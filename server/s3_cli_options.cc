@@ -38,13 +38,13 @@ DEFINE_string(s3pidfile, "/var/run/s3server.pid", "S3 server pid file");
 DEFINE_string(audit_config,
               "/opt/seagate/cortx/s3/conf/s3server_audit_log.properties",
               "S3 Audit log Config Path");
-DEFINE_string(audit_log_dir, "/var/log/seagate/s3", "S3 Audit log Directory");
+DEFINE_string(audit_log_dir, "/var/log/cortx/s3", "S3 Audit log Directory");
 DEFINE_string(s3loglevel, "INFO",
               "options: DEBUG | INFO | WARN | ERROR | FATAL");
 
 DEFINE_bool(perfenable, false, "Enable performance log");
 DEFINE_bool(reuseport, false, "Enable reusing s3 server port");
-DEFINE_string(perflogfile, "/var/log/seagate/s3/perf.log",
+DEFINE_string(perflogfile, "/var/log/cortx/s3/perf.log",
               "Performance log path");
 
 DEFINE_string(motrlocal, "localhost@tcp:12345:33:100", "Motr local address");

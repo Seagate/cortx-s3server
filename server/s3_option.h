@@ -222,8 +222,8 @@ class S3Option {
     s3_grace_period_sec = 10;  // 10 seconds
     is_s3_shutting_down = false;
 
-    log_dir = "/var/log/seagate/s3";
-    audit_log_dir = "/var/log/seagate/s3";
+    log_dir = "/var/log/cortx/s3";
+    audit_log_dir = "/var/log/cortx/s3";
     s3_version = "1";
     log_level = FLAGS_s3loglevel;
     audit_log_conf_file = FLAGS_audit_config;

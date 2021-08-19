@@ -272,9 +272,9 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 %dir /opt/seagate/cortx/s3/nodejs
 %dir /opt/seagate/cortx/s3/resources
 %dir /opt/seagate/cortx/s3/install/haproxy
-%dir /var/log/seagate/
-%dir /var/log/seagate/auth
-%dir /var/log/seagate/s3
+%dir /var/log/cortx/
+%dir /var/log/cortx/auth
+%dir /var/log/cortx/s3
 /etc/cron.hourly/s3logfilerollover.sh
 /etc/cron.hourly/s3m0tracelogfilerollover.sh
 /etc/cron.hourly/s3addblogfilerollover.sh
