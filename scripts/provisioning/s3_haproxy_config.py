@@ -56,7 +56,8 @@ class S3HaproxyConfig:
     self.provisioner_confstore = S3CortxConfStore(confstore, 'haproxy_config_index')
 
     # Get machine-id of current node from constore
-    self.machine_id = provisioner_confstore.get_machine_id()
+    self.machine_id = self.provisioner_confstore.get_machine_id()
+    self.logger.info(f'Machine id : {self.machine_id}')
 
   def get_publicip(self):
     assert self.provisioner_confstore != None

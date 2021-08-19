@@ -92,7 +92,8 @@ class SetupCmd(object):
     self._provisioner_confstore = S3CortxConfStore(self._url, 'setup_prov_index')
 
     # Get machine-id of current node from constore
-    self.machine_id = provisioner_confstore.get_machine_id()
+    self.machine_id = self._provisioner_confstore.get_machine_id()
+    self.logger.info(f'Machine id : {self.machine_id}')
 
     self.cluster_id = self.get_confvalue(self.get_confkey(
       'CONFIG>CONFSTORE_CLUSTER_ID_KEY').replace("machine-id", self.machine_id))
