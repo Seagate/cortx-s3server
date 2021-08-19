@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+ * Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ S3PutBucketVersioningAction::S3PutBucketVersioningAction(
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   s3_log(S3_LOG_INFO, stripped_request_id,
-         "S3 API: Put Bucket Tagging. Bucket[%s]\n",
+         "S3 API: Put Bucket Versioning. Bucket[%s]\n",
          request->get_bucket_name().c_str());
 
   if (bucket_body_factory) {
@@ -92,8 +92,15 @@ void S3PutBucketVersioningAction::validate_request_body(std::string content) {
     bucket_version_status = put_bucket_version_body->get_versioning_status();
     next();
   } else {
+    std::string s3_error =
+        put_bucket_version_body->get_additional_error_information();
+    if (s3_error.compare("OperationNotSupported") == 0) {
+      set_s3_error("OperationNotSupported");
+      send_response_to_s3_client();
+    } else {
     set_s3_error("MalformedXML");
     send_response_to_s3_client();
+    }
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -111,7 +118,7 @@ void S3PutBucketVersioningAction::validate_request_xml_tags() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-/*void S3PutBucketVersioningAction::fetch_bucket_info_failed() {
+void S3PutBucketVersioningAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
@@ -125,7 +132,7 @@ void S3PutBucketVersioningAction::validate_request_xml_tags() {
   }
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}*/
+}
 
 void S3PutBucketVersioningAction::save_versioning_status_to_bucket_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
@@ -176,6 +183,7 @@ void S3PutBucketVersioningAction::send_response_to_s3_client() {
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else {
+    s3_log(S3_LOG_INFO, stripped_request_id, "S3HttpSuccess200\n");
     request->send_response(S3HttpSuccess200);
   }
 

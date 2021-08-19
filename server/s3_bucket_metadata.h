@@ -139,7 +139,7 @@ class S3BucketMetadata {
   virtual void set_tags(const std::map<std::string, std::string>& tags_as_map);
   virtual void deletepolicy();
   virtual void delete_bucket_tags();
-  virtual void set_bucket_versioning(const std::string bucket_version_status);
+  virtual void set_bucket_versioning(const std::string& bucket_version_status);
   virtual void setacl(const std::string& acl_str);
 
   virtual void remove(std::function<void(void)> on_success,

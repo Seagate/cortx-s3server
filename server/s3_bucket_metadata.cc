@@ -124,8 +124,9 @@ void S3BucketMetadata::set_tags(
     const std::map<std::string, std::string>& tags_as_map) {
   bucket_tags = tags_as_map;
 }
+
 void S3BucketMetadata::set_bucket_versioning(
-    const std::string bucket_version_status) {
+    const std::string& bucket_version_status) {
   bucket_versioning_status = bucket_version_status;
 }
 

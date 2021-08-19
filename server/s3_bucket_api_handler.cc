@@ -247,7 +247,7 @@ void S3BucketAPIHandler::create_action() {
           break;
         case S3HttpVerb::PUT:
           request->set_action_str("PutBucketVersioning");
-          action = std::make_shared<S3PutBucketTaggingAction>(request);
+          action = std::make_shared<S3PutBucketVersioningAction>(request);
           s3_stats_inc("put_bucket_versioning_count");
           break;
         default:
