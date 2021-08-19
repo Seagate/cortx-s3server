@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+ * Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,6 @@ class S3PutBucketVersioningAction : public S3BucketAction {
   std::shared_ptr<S3PutBucketVersioningBodyFactory> put_bucket_version_factory;
   std::shared_ptr<S3PutVersioningBody> put_bucket_version_body;
 
-  // std::string new_bucket_tags;
-  // std::map<std::string, std::string> bucket_tags_map;
   std::string bucket_content_string;
   std::string bucket_version_status;
 
@@ -54,27 +52,35 @@ class S3PutBucketVersioningAction : public S3BucketAction {
   void validate_request_xml_tags();
   void save_versioning_status_to_bucket_metadata();
   void save_versioning_status_to_bucket_metadata_failed();
-  // void fetch_bucket_info_failed();
+  void fetch_bucket_info_failed();
   void send_response_to_s3_client();
 
   // For Testing purpose
-  /*FRIEND_TEST(S3PutBucketTaggingActionTest, Constructor);
-  FRIEND_TEST(S3PutBucketTaggingActionTest, ValidateRequest);
-  FRIEND_TEST(S3PutBucketTaggingActionTest, ValidateInvalidRequest);
-  FRIEND_TEST(S3PutBucketTaggingActionTest, ValidateRequestXmlTags);
-  FRIEND_TEST(S3PutBucketTaggingActionTest, ValidateInvalidRequestXmlTags);
-  FRIEND_TEST(S3PutBucketTaggingActionTest, ValidateRequestMoreContent);
-  FRIEND_TEST(S3PutBucketTaggingActionTest, SetTags);
-  FRIEND_TEST(S3PutBucketTaggingActionTest, SetTagsWhenBucketMissing);
-  FRIEND_TEST(S3PutBucketTaggingActionTest, SetTagsWhenBucketFailed);
-  FRIEND_TEST(S3PutBucketTaggingActionTest, SetTagsWhenBucketFailedToLaunch);
-  FRIEND_TEST(S3PutBucketTaggingActionTest,
+  FRIEND_TEST(S3PutBucketVersioningActionTest, Constructor);
+  FRIEND_TEST(S3PutBucketVersioningActionTest, ValidateRequest);
+  FRIEND_TEST(S3PutBucketVersioningActionTest, ValidateInvalidRequest);
+  FRIEND_TEST(S3PutBucketVersioningActionTest,
+              ValidateRequestXmlTagsWithEnableState);
+  FRIEND_TEST(S3PutBucketVersioningActionTest,
+              ValidateRequestXmlTagswithSuspendedState);
+  FRIEND_TEST(S3PutBucketVersioningActionTest, ValidateInvalidRequestXmlTags);
+  FRIEND_TEST(S3PutBucketVersioningActionTest, ValidateRequestMoreContent);
+  FRIEND_TEST(S3PutBucketVersioningActionTest, SetVersioningState);
+  FRIEND_TEST(S3PutBucketVersioningActionTest,
+              SetVersioningStateWhenBucketMissing);
+  FRIEND_TEST(S3PutBucketVersioningActionTest,
+              SetVersioningStateWhenBucketFailed);
+  FRIEND_TEST(S3PutBucketVersioningActionTest,
+              SetVersioningStateWhenBucketFailedToLaunch);
+  FRIEND_TEST(S3PutBucketVersioningActionTest,
               SendResponseToClientServiceUnavailable);
-  FRIEND_TEST(S3PutBucketTaggingActionTest, SendResponseToClientMalformedXML);
-  FRIEND_TEST(S3PutBucketTaggingActionTest, SendResponseToClientNoSuchBucket);
-  FRIEND_TEST(S3PutBucketTaggingActionTest, SendResponseToClientSuccess);
-  FRIEND_TEST(S3PutBucketTaggingActionTest,
-  SendResponseToClientInternalError);*/
+  FRIEND_TEST(S3PutBucketVersioningActionTest,
+              SendResponseToClientMalformedXML);
+  FRIEND_TEST(S3PutBucketVersioningActionTest,
+              SendResponseToClientNoSuchBucket);
+  FRIEND_TEST(S3PutBucketVersioningActionTest, SendResponseToClientSuccess);
+  FRIEND_TEST(S3PutBucketVersioningActionTest,
+              SendResponseToClientInternalError);
 };
 
 #endif

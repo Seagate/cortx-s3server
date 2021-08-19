@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+ * Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,9 @@ class S3PutVersioningBody {
   std::string xml_content;
   std::string request_id;
   // std::map<std::string, std::string> bucket_tags;
-  std::string versioning_Status;
+  std::string versioning_status;
   bool is_valid;
+  std::string s3_error;
   bool parse_and_validate();
 
  public:
@@ -41,17 +42,19 @@ class S3PutVersioningBody {
   virtual bool isOK();
   virtual bool read_status_node(xmlNodePtr& sub_child);
   virtual bool validate_bucket_xml_versioning_status(
-      std::string& versioning_Status);
+      std::string& versioning_status);
   virtual const std::string& get_versioning_status();
+  std::string get_additional_error_information();
 
   // For Testing purpose
-  // FRIEND_TEST(S3PutVersioningBodyTest, ValidateRequestBodyXml);
-  // FRIEND_TEST(S3PutVersioningBodyTest, ValidateVersioningEnabledRequest);
-  // FRIEND_TEST(S3PutVersioningBodyTest, ValidateVersioningSuspendedRequest);
-  // FRIEND_TEST(S3PutVersioningBodyTest,
-  // ValidateEmptyVersioningConfigurationXmlTag);
-  // FRIEND_TEST(S3PutVersioningBodyTest, ValidateEmptyStatusXmlTag);
-  // FRIEND_TEST(S3PutVersioningBodyTest, ValidateUnversionedStatus);
+  FRIEND_TEST(S3PutVersioningBodyTest, ValidateRequestBodyXml);
+  FRIEND_TEST(S3PutVersioningBodyTest, ValidateVersioningEnabledRequest);
+  FRIEND_TEST(S3PutVersioningBodyTest, ValidateVersioningSuspendedRequest);
+  FRIEND_TEST(S3PutVersioningBodyTest,
+              ValidateEmptyVersioningConfigurationXmlTag);
+  FRIEND_TEST(S3PutVersioningBodyTest, ValidateEmptyStatusXmlTag);
+  FRIEND_TEST(S3PutVersioningBodyTest, ValidateUnversionedStatus);
+  FRIEND_TEST(S3PutVersioningBodyTest, ValidateMFADeleteCase);
 };
 
 #endif

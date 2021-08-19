@@ -34,10 +34,10 @@ class MockS3PutVersioningBody : public S3PutVersioningBody {
  public:
   MockS3PutVersioningBody(std::string& xml, std::string& request_id)
       : S3PutVersioningBody(xml, request_id) {}
-  MOCK_METHOD0(isOK, bool());
-  MOCK_METHOD0(get_versioning_status, const std::string&());
-  MOCK_METHOD1(validate_bucket_xml_versioning_status,
-               bool(std::string& versioning_Status));
+  MOCK_METHOD(bool, isOK, (), (override));
+  MOCK_METHOD(const std::string&, get_versioning_status, (), (override));
+  MOCK_METHOD(bool, validate_bucket_xml_versioning_status,
+              (std::string& versioning_Status), (override));
 };
 
 #endif
