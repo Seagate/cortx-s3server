@@ -49,10 +49,7 @@ class SetupCmd(object):
   ldap_mdb_folder = "/var/lib/ldap"
   s3_prov_config = "/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml"
   _preqs_conf_file = "/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
-  s3_tmp_dir = "/opt/seagate/cortx/s3/tmp"
-  auth_conf_file = "/opt/seagate/cortx/auth/resources/authserver.properties"
-  s3_cluster_file = "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"
-  BG_delete_config_file = "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
+  s3_tmp_dir = "/etc/cortx/s3/tmp"
 
   #TODO
   # add the service name and HA service name in the following dictionary
@@ -173,10 +170,10 @@ class SetupCmd(object):
       if encrypted_rootdn_pass is None:
         raise S3PROVError('password cannot be None.')
 
-      op_file = "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"
+      s3_cluster_file = self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH'))
 
       key = 'cluster_config>rootdn_user'
-      opfileconfstore = S3CortxConfStore(f'yaml://{op_file}', 'write_rootdn_idx')
+      opfileconfstore = S3CortxConfStore(f'yaml://{s3_cluster_file}', 'write_rootdn_idx')
       opfileconfstore.set_config(f'{key}', f'{self.ldap_root_user}', True)
 
       key = 'cluster_config>rootdn_pass'
@@ -186,7 +183,7 @@ class SetupCmd(object):
       self.logger.error(f'update rootdn credentials failed, error: {e}')
       raise e
 
-  def update_cluster_id(self, op_file: str = "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"):
+  def update_cluster_id(self, op_file: str = "/etc/cortx/s3/s3backgrounddelete/s3_cluster.yaml"):
     """Set 'cluster_id' to op_file."""
     try:
       if path.isfile(f'{op_file}') == False:
@@ -479,28 +476,28 @@ class SetupCmd(object):
     self.logger.info(f'validating S3 config files for {phase_name}.')
     upgrade_items = {
     's3' : {
-          'configFile' : "/opt/seagate/cortx/s3/conf/s3config.yaml",
-          'SampleFile' : "/opt/seagate/cortx/s3/conf/s3config.yaml.sample",
+          'configFile' : self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
+          'SampleFile' : self.get_confkey('S3_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
           'fileType' : 'yaml://'
       },
       'auth' : {
-          'configFile' : "/opt/seagate/cortx/auth/resources/authserver.properties",
-          'SampleFile' : "/opt/seagate/cortx/auth/resources/authserver.properties.sample",
+          'configFile' : self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
+          'SampleFile' : self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
           'fileType' : 'properties://'
       },
       'keystore' : {
-          'configFile' : "/opt/seagate/cortx/auth/resources/keystore.properties",
-          'SampleFile' : "/opt/seagate/cortx/auth/resources/keystore.properties.sample",
+          'configFile' : self.get_confkey('S3_KEYSTORE_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
+          'SampleFile' : self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
           'fileType' : 'properties://'
       },
       'bgdelete' : {
-          'configFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
-          'SampleFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample",
+          'configFile' : self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
+          'SampleFile' : self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
           'fileType' : 'yaml://'
       },
       'cluster' : {
-          'configFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
-          'SampleFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample",
+          'configFile' : self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
+          'SampleFile' : self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
           'fileType' : 'yaml://'
       }
     }
@@ -575,7 +572,8 @@ class SetupCmd(object):
 
   def get_iam_admin_credentials(self):
     """Used for reset and cleanup phase to get the iam-admin user and decrypted passwd."""
-    opfileconfstore = S3CortxConfStore(f'properties://{self.auth_conf_file}', 'read_ldap_idx')
+    auth_conf_file = self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH'))
+    opfileconfstore = S3CortxConfStore(f'properties://{auth_conf_file}', 'read_ldap_idx')
     s3cipher_obj = CortxS3Cipher(None,
                               False,
                               0,
@@ -591,7 +589,8 @@ class SetupCmd(object):
     """Used for reset and cleanup phase to get the ldap root user and decrypted passwd."""
     key = 'cluster_config>rootdn_user'
 
-    opfileconfstore = S3CortxConfStore(f'yaml://{self.s3_cluster_file}', 'read_rootdn_idx')
+    s3_cluster_file = self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH'))
+    opfileconfstore = S3CortxConfStore(f'yaml://{s3_cluster_file}', 'read_rootdn_idx')
     self.ldap_root_user = opfileconfstore.get_config(f'{key}')
 
     key = 'cluster_config>rootdn_pass'
@@ -609,7 +608,8 @@ class SetupCmd(object):
 
   def get_config_param_for_BG_delete_account(self):
     """To get the config parameters required in init and reset phase."""
-    opfileconfstore = S3CortxConfStore(f'yaml://{self.BG_delete_config_file}', 'read_bg_delete_config_idx')
+    BG_delete_config_file = self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH'))
+    opfileconfstore = S3CortxConfStore(f'yaml://{BG_delete_config_file}', 'read_bg_delete_config_idx')
 
     param_list = ['account_name', 'account_id', 'canonical_id', 'mail', 's3_user_id', 'const_cipher_secret_str', 'const_cipher_access_str']
     bgdelete_acc_input_params_dict = {}

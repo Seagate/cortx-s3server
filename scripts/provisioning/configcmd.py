@@ -60,13 +60,10 @@ class ConfigCmd(SetupCmd):
     self.logger.info("validations completed")
 
     try:
+      # first update all the config files then do rest of the configurations
       self.logger.info("update all modules config files started")
       self.update_configs()
       self.logger.info("update all modules config files completed")
-
-      self.logger.info("copy config files started")
-      self.copy_config_files()
-      self.logger.info("copy config files completed")
 
       # disable S3server, S3authserver, haproxy, BG delete services on reboot as 
       # it will be managed by HA
@@ -263,13 +260,21 @@ class ConfigCmd(SetupCmd):
       self.logger.warning(f'warning of create_auth_jks_password.sh: {stderr}')
       self.logger.info(' Successfully set auth JKS keystore password.')
 
-  def update_motr_max_units_per_request(self):
-    """
-    update S3_MOTR_MAX_UNITS_PER_REQUEST in the s3config file based on VM/OVA/HW
-    S3_MOTR_MAX_UNITS_PER_REQUEST = 8 for VM/OVA
-    S3_MOTR_MAX_UNITS_PER_REQUEST = 32 for HW
-    """
+  def update_s3_server_config(self):
+    """Update s3 server config which required modification."""
 
+    # validate config file exist
+    s3configfile = self.get_confkey('S3_CONFIG_FILE')
+    if path.isfile(f'{s3configfile}') == False:
+      self.logger.error(f'{s3configfile} file is not present')
+      raise S3PROVError(f'{s3configfile} file is not present')
+
+    # load s3config file
+    s3configfileconfstore = S3CortxConfStore(f'yaml://{s3configfile}', 'write_s3_motr_max_unit_idx')
+
+    #update S3_MOTR_MAX_UNITS_PER_REQUEST in the s3config file based on VM/OVA/HW
+    #S3_MOTR_MAX_UNITS_PER_REQUEST = 8 for VM/OVA
+    #S3_MOTR_MAX_UNITS_PER_REQUEST = 32 for HW
     # get the motr_max_units_per_request count from the config file
     motr_max_units_per_request = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST'))
     self.logger.info(f'motr_max_units_per_request: {motr_max_units_per_request}')
@@ -283,46 +288,52 @@ class ConfigCmd(SetupCmd):
       raise S3PROVError("motr_max_units_per_request should be between 2 to 128")
 
     # update the S3_MOTR_MAX_UNITS_PER_REQUEST in s3config.yaml file
-    s3configfile = self.get_confkey('S3_CONFIG_FILE')
-    if path.isfile(f'{s3configfile}') == False:
-      self.logger.error(f'{s3configfile} file is not present')
-      raise S3PROVError(f'{s3configfile} file is not present')
-    else:
-      motr_max_units_per_request_key = 'S3_MOTR_CONFIG>S3_MOTR_MAX_UNITS_PER_REQUEST'
-      s3configfileconfstore = S3CortxConfStore(f'yaml://{s3configfile}', 'write_s3_motr_max_unit_idx')
-      s3configfileconfstore.set_config(motr_max_units_per_request_key, int(motr_max_units_per_request), True)
-      self.logger.info(f'Key {motr_max_units_per_request_key} updated successfully in {s3configfile}')
+    motr_max_units_per_request_key = 'S3_MOTR_CONFIG>S3_MOTR_MAX_UNITS_PER_REQUEST'
+    s3configfileconfstore.set_config(motr_max_units_per_request_key, int(motr_max_units_per_request), True)
+    self.logger.info(f'Key {motr_max_units_per_request_key} updated successfully in {s3configfile}')
+
+    # update log path
+    s3_log_path = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_BASE_LOG_PATH'))
+    s3_log_path = os.path.join(s3_log_path, "s3")
+    self.logger.info(f's3_log_path: {s3_log_path}')
+    s3_log_path_key  = 'S3_SERVER_CONFIG>S3_LOG_DIR'
+    s3configfileconfstore.set_config(s3_log_path_key, s3_log_path, True)
+    self.logger.info(f'Key {s3_log_path_key} updated successfully in {s3configfile}')
+
 
   def update_config_value(self, config_file_path : str,
                           config_file_type : str,
                           key_to_read : str,
                           key_to_update: str):
-    """ update config value"""
+    """Update provided config key and value to provided config file."""
 
-    # get the value to be updated from provisioner config for given key
-    value_to_update = self.get_confvalue(self.get_confkey(key_to_read))
-    self.logger.info(f'{key_to_read}: {value_to_update}')
-
-    # update the S3_MOTR_MAX_UNITS_PER_REQUEST in s3config.yaml file
+    # validate config file exist
     configfile = self.get_confkey(config_file_path)
     if path.isfile(f'{configfile}') == False:
       self.logger.error(f'{configfile} file is not present')
       raise S3PROVError(f'{configfile} file is not present')
-    else:
-      s3configfileconfstore = S3CortxConfStore(f'{config_file_type}://{configfile}', 'update_config_file_idx' + key_to_update)
-      s3configfileconfstore.set_config(key_to_update, value_to_update, True)
-      self.logger.info(f'Key {key_to_update} updated successfully in {configfile}')
+
+    # load config file
+    s3configfileconfstore = S3CortxConfStore(f'{config_file_type}://{configfile}', 'update_config_file_idx' + key_to_update)
+    
+    # get the value to be updated from provisioner config for given key
+    value_to_update = self.get_confvalue(self.get_confkey(key_to_read))
+    self.logger.info(f'{key_to_read}: {value_to_update}')
+
+    # set the config value in to config file
+    s3configfileconfstore.set_config(key_to_update, value_to_update, True)
+    self.logger.info(f'Key {key_to_update} updated successfully in {configfile}')
 
   def update_configs(self):
     """Update all module configs."""
-    self.update_s3_configs()
+    self.update_s3_server_configs()
     self.update_s3_auth_configs()
     self.update_s3_bgdelete_configs()
 
-  def update_s3_configs(self):
-    """ Update s3 configs."""
+  def update_s3_server_configs(self):
+    """ Update s3 server configs."""
     self.logger.info("Update s3 server config file started")
-    self.update_motr_max_units_per_request()
+    self.update_s3_server_config()
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3SERVER_IP_ADDRESS", "S3_SERVER_CONFIG>S3_SERVER_IPV4_BIND_ADDR")
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3SERVER_PORT", "S3_SERVER_CONFIG>S3_SERVER_BIND_PORT")
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_MOTR_IP_ADDRESS", "S3_SERVER_CONFIG>S3_SERVER_MOTR_HTTP_BIND_ADDR")
@@ -336,6 +347,7 @@ class ConfigCmd(SetupCmd):
   def update_s3_auth_configs(self):
     """ Update s3 auth configs."""
     self.logger.info("Update s3 authserver config file started")
+    self.update_s3_auth_config()
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_DEFAULT_HOST", "defaultHost")
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_HTTP_PORT", "httpPort")
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_HTTPS_PORT", "httpsPort")
@@ -347,56 +359,74 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_IAM_AUDITLOG", "IAMAuditlog")
     self.logger.info("Update s3 authserver config file completed")
 
+  def update_s3_auth_config(self):
+    """Update s3 auth config which required modification."""
+
+    s3auth_configfile = self.get_confkey('S3_AUTHSERVER_CONFIG_FILE')
+    if path.isfile(f'{s3auth_configfile}') == False:
+      self.logger.error(f'{s3auth_configfile} file is not present')
+      raise S3PROVError(f'{s3auth_configfile} file is not present')
+
+    # load s3 auth config file 
+    s3configfileconfstore = S3CortxConfStore(f'yaml://{s3auth_configfile}', 'update_s3_auth_config')
+
+    s3_auth_base_log_path = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_BASE_LOG_PATH'))
+    # update log path
+    s3_auth_log_path = os.path.join(s3_auth_base_log_path, "auth/server")
+    self.logger.info(f's3_auth_log_path: {s3_auth_log_path}')
+    s3_auth_log_path_key  = 'logFilePath'
+    s3configfileconfstore.set_config(s3_auth_log_path_key, s3_auth_log_path, True)
+    self.logger.info(f'Key {s3_auth_log_path_key} updated successfully in {s3auth_configfile}')
+
   def update_s3_bgdelete_configs(self):
     """ Update s3 bgdelete configs."""
     self.logger.info("Update s3 bgdelete config file started")
-    self.update_s3_bgdelete_endpoint_config()
+    self.update_s3_bgdelete_config()
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL", "CORTX_S3>SCHEDULER_SCHEDULE_INTERVAL")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_MAX_KEYS", "INDEXID>MAX_KEYS")
     self.logger.info("Update s3 bgdelete config file completed")
 
-  def update_s3_bgdelete_endpoint_config(self):
-    """ Update s3 bgdelete endpoint config"""
+  def update_s3_bgdelete_config(self):
+    """ Update s3 bgdelete config which required modification."""
+
+    # update bgdelete endpoints in to config file
+    bgdelete_configfile = self.get_confkey('S3_BGDELETE_CONFIG_FILE')
+    if path.isfile(f'{bgdelete_configfile}') == False:
+      self.logger.error(f'{bgdelete_configfile} file is not present')
+      raise S3PROVError(f'{bgdelete_configfile} file is not present')
+
+    # load bgdelete config file 
+    s3configfileconfstore = S3CortxConfStore(f'yaml://{bgdelete_configfile}', 'update_bgdelete_endpoint')
+
     # get the bgdelete endpoints from the config file
     bgdelete_endpoint = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_S3_BGDELETE_ENDPOINT'))
     bgdelete_port = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_S3_BGDELETE_PORT'))
     bgdelete_url = "http://" + bgdelete_endpoint + ":" + bgdelete_port
     self.logger.info(f'bgdelete_url: {bgdelete_url}')
 
-    # update bgdelete endpoints in to config file
-    configfile = self.get_confkey('S3_BGDELETE_CONFIG_FILE')
-    if path.isfile(f'{configfile}') == False:
-      self.logger.error(f'{configfile} file is not present')
-      raise S3PROVError(f'{configfile} file is not present')
-    else:
-      endpoint_key = 'CORTX_S3>ENDPOINT'
-      s3configfileconfstore = S3CortxConfStore(f'yaml://{configfile}', 'update_bgdelete_endpoint')
-      s3configfileconfstore.set_config(endpoint_key, bgdelete_url, True)
-      self.logger.info(f'Key {endpoint_key} updated successfully in {configfile}')
+    # update bgdelete endpoint
+    endpoint_key = 'CORTX_S3>ENDPOINT'
+    s3configfileconfstore.set_config(endpoint_key, bgdelete_url, True)
+    self.logger.info(f'Key {endpoint_key} updated successfully in {bgdelete_configfile}')
 
-  def copy_config_files(self):
-    """ Copy config files from /opt/seagate/cortx to /etc/cortx."""
-    config_files = [self.get_confkey('S3_CONFIG_FILE'),
-                    self.get_confkey('S3_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_CONFIG_UNSAFE_ATTR_FILE'),
-                    self.get_confkey('S3_AUTHSERVER_CONFIG_FILE'),
-                    self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_AUTHSERVER_CONFIG_UNSAFE_ATTR_FILE'),
-                    self.get_confkey('S3_KEYSTORE_CONFIG_FILE'),
-                    self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_KEYSTORE_CONFIG_UNSAFE_ATTR_FILE'),
-                    self.get_confkey('S3_BGDELETE_CONFIG_FILE'),
-                    self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE'),
-                    self.get_confkey('S3_CLUSTER_CONFIG_FILE'),
-                    self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE'),
-                    self.get_confkey('S3_CLUSTER_CONFIG_UNSAFE_ATTR_FILE')]
+    s3_bgdelete_base_log_path = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_BASE_LOG_PATH'))
+    # update log path
+    s3_bgdelete_log_path = os.path.join(s3_bgdelete_base_log_path, "s3/s3backgrounddelete")
+    self.logger.info(f's3_bgdelete_log_path: {s3_bgdelete_log_path}')
+    s3_bgdelete_log_path_key  = 'logconfig>logger_directory'
+    s3configfileconfstore.set_config(s3_bgdelete_log_path_key, s3_bgdelete_log_path, True)
+    self.logger.info(f'Key {s3_bgdelete_log_path_key} updated successfully in {bgdelete_configfile}')
 
-    # copy all the config files from the /opt/seagate/cortx to /etc/cortx
-    for config_file in config_files:
-      self.logger.info("Source config file: {config_file}")
-      dest_config_file = config_file.replace("/opt/seagate/cortx"), self.get_confkey('S3_TARGET_CONFIG_PATH')
-      self.logger.info("Dest config file: {dest_config_file}")
-      os.makedirs(os.path.dirname(dest_config_file), exist_ok=True)
-      shutil.copy(config_file, dest_config_file)
-      self.logger.info("Config file copied successfully to /etc/cortx")
+    # update producer log path
+    s3_bgdelete_producer_log_path = os.path.join(s3_bgdelete_base_log_path, "s3/s3backgrounddelete/object_recovery_scheduler.log")
+    self.logger.info(f's3_bgdelete_producer_log_path: {s3_bgdelete_producer_log_path}')
+    s3_bgdelete_producer_log_path_key  = 'logconfig>scheduler_log_file'
+    s3configfileconfstore.set_config(s3_bgdelete_producer_log_path_key, s3_bgdelete_producer_log_path, True)
+    self.logger.info(f'Key {s3_bgdelete_producer_log_path_key} updated successfully in {bgdelete_configfile}')
+
+    # update consumer log path
+    s3_bgdelete_consumer_log_path = os.path.join(s3_bgdelete_base_log_path, "s3/s3backgrounddelete/object_recovery_processor.log")
+    self.logger.info(f's3_bgdelete_consumer_log_path: {s3_bgdelete_consumer_log_path}')
+    s3_bgdelete_consumer_log_path_key  = 'logconfig>processor_log_file'
+    s3configfileconfstore.set_config(s3_bgdelete_consumer_log_path_key, s3_bgdelete_consumer_log_path, True)
+    self.logger.info(f'Key {s3_bgdelete_consumer_log_path_key} updated successfully in {bgdelete_configfile}')

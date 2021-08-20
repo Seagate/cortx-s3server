@@ -70,6 +70,9 @@ CONFIG:
   CONFSTORE_S3_BGDELETE_PORT: "cortx>software>s3bgdelete>port"
   CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL: "cortx>software>s3bgdelete>scheduler_schedule_interval"
   CONFSTORE_S3_BGDELETE_MAX_KEYS: "cortx>software>s3bgdelete>max_keys"
+
+  CONFSTORE_BASE_LOG_PATH: "cortx>software>base_log_path"
+  CONFSTORE_BASE_CONFIG_PATH: "cortx>software>base_config_path"
 INIT:
 # Inheritance hierarchy ends here.
 

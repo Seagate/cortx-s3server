@@ -28,38 +28,38 @@ s3_tmp_dir = __import__('setupcmd').SetupCmd.s3_tmp_dir
 
 g_upgrade_items = {
   's3' : {
-        'configFile' : "/opt/seagate/cortx/s3/conf/s3config.yaml",
+        'configFile' : "/etc/cortx/s3/conf/s3config.yaml",
         'oldSampleFile' : os.path.join(s3_tmp_dir, "s3config.yaml.sample.old"),
-        'newSampleFile' : "/opt/seagate/cortx/s3/conf/s3config.yaml.sample",
-        'unsafeAttributesFile' : "/opt/seagate/cortx/s3/conf/s3config_unsafe_attributes.yaml",
+        'newSampleFile' : "/etc/cortx/s3/conf/s3config.yaml.sample",
+        'unsafeAttributesFile' : "/etc/cortx/s3/conf/s3config_unsafe_attributes.yaml",
         'fileType' : 'yaml://'
     },
     'auth' : {
-        'configFile' : "/opt/seagate/cortx/auth/resources/authserver.properties",
+        'configFile' : "/etc/cortx/auth/resources/authserver.properties",
         'oldSampleFile' : os.path.join(s3_tmp_dir, "authserver.properties.sample.old"),
-        'newSampleFile' : "/opt/seagate/cortx/auth/resources/authserver.properties.sample",
-        'unsafeAttributesFile' : "/opt/seagate/cortx/auth/resources/authserver_unsafe_attributes.properties",
+        'newSampleFile' : "/etc/cortx/auth/resources/authserver.properties.sample",
+        'unsafeAttributesFile' : "/etc/cortx/auth/resources/authserver_unsafe_attributes.properties",
         'fileType' : 'properties://'
     },
     'keystore' : {
-        'configFile' : "/opt/seagate/cortx/auth/resources/keystore.properties",
+        'configFile' : "/etc/cortx/auth/resources/keystore.properties",
         'oldSampleFile' : os.path.join(s3_tmp_dir,"keystore.properties.sample.old"),
-        'newSampleFile' : "/opt/seagate/cortx/auth/resources/keystore.properties.sample",
-        'unsafeAttributesFile' : "/opt/seagate/cortx/auth/resources/keystore_unsafe_attributes.properties",
+        'newSampleFile' : "/etc/cortx/auth/resources/keystore.properties.sample",
+        'unsafeAttributesFile' : "/etc/cortx/auth/resources/keystore_unsafe_attributes.properties",
         'fileType' : 'properties://'
     },
     'bgdelete' : {
-        'configFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
+        'configFile' : "/etc/cortx/s3/s3backgrounddelete/config.yaml",
         'oldSampleFile' : os.path.join(s3_tmp_dir, "config.yaml.sample.old"),
-        'newSampleFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample",
-        'unsafeAttributesFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml",
+        'newSampleFile' : "/etc/cortx/s3/s3backgrounddelete/config.yaml.sample",
+        'unsafeAttributesFile' : "/etc/cortx/s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml",
         'fileType' : 'yaml://'
     },
     'cluster' : {
-        'configFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
+        'configFile' : "/etc/cortx/s3/s3backgrounddelete/s3_cluster.yaml",
         'oldSampleFile' : os.path.join(s3_tmp_dir, "s3_cluster.yaml.sample.old"),
-        'newSampleFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample",
-        'unsafeAttributesFile' : "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster_unsafe_attributes.yaml",
+        'newSampleFile' : "/etc/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample",
+        'unsafeAttributesFile' : "/etc/cortx/s3/s3backgrounddelete/s3_cluster_unsafe_attributes.yaml",
         'fileType' : 'yaml://'
     }
 }
