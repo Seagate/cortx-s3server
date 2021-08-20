@@ -33,6 +33,7 @@ from s3msgbus.cortx_s3_msgbus import S3CortxMsgBus
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 from s3_haproxy_config import S3HaproxyConfig
+from ldapaccountaction import LdapAccountAction
 
 class ConfigCmd(SetupCmd):
   """Config Setup Cmd."""
@@ -96,6 +97,11 @@ class ConfigCmd(SetupCmd):
                           bgdeleteconfig.get_msgbus_topic(),
                           self.get_msgbus_partition_count())
         self.logger.info('Create topic completed')
+
+      # create background delete account
+      self.logger.info("create background delete account started")
+      self.create_bgdelete_account()
+      self.logger.info("create background delete account completed")
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}')
 

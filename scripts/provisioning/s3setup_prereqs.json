@@ -3,7 +3,6 @@
     "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
     "pip3s": ["s3confstore", "cryptography", "s3cipher"],
     "files": [
-      "file:/etc/machine-id",
       "file:/etc/haproxy/haproxy.cfg",
       "file:/etc/ssl/stx/stx.pem",
       "file:/opt/seagate/cortx/s3/install/haproxy/503.http",
@@ -22,7 +21,6 @@
     "pip3s": ["s3confstore", "cryptography", "s3cipher"],
     "services": ["sshd", "haproxy", "slapd", "rsyslog"],
     "files": [
-      "file:/etc/machine-id",
       "file:/etc/haproxy/haproxy.cfg",
       "file:/etc/ssl/stx/stx.pem",
       "file:/opt/seagate/cortx/s3/install/haproxy/503.http",
@@ -41,7 +39,6 @@
     "pip3s": ["s3confstore", "cryptography", "s3cipher"],
     "services": ["sshd", "haproxy", "slapd", "rsyslog"],
     "files": [
-      "file:/etc/machine-id",
       "file:/etc/haproxy/haproxy.cfg",
       "file:/etc/ssl/stx/stx.pem",
       "file:/opt/seagate/cortx/s3/install/haproxy/503.http",
