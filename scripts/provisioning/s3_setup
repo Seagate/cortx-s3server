@@ -171,7 +171,7 @@ def create_logger_directory():
     _logger_directory = os.path.join(s3deployment_log_directory)
     if not os.path.isdir(_logger_directory):
         try:
-            os.mkdir(_logger_directory)
+            os.makedirs(_logger_directory)
         except BaseException:
             raise Exception(f"{_logger_directory} Could not be created")
 
