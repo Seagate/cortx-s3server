@@ -153,9 +153,6 @@ cp bazel-bin/s3server $S3_INSTALL_LOCATION/bin/
 # Copy motrkvscli tool
 cp bazel-bin/motrkvscli $S3_INSTALL_LOCATION/bin/
 
-# Copy base64encoderdecoder tool
-cp bazel-bin/base64_encoder_decoder $S3_INSTALL_LOCATION/bin/
-
 # Copy addb plugin
 cp bazel-bin/libs3addbplugin.so $S3_INSTALL_LOCATION/addb-plugin/
 
