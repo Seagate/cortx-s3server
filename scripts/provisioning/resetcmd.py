@@ -89,20 +89,20 @@ class ResetCmd(SetupCmd):
 
   def CleanupLogs(self):
     """Cleanup all the log directories and files."""
-    # Backgrounddelete -> /var/log/seagate/s3/s3backgrounddelete/
-    #Audit -> /var/log/seagate/s3/audit
-    # s3 -> /var/log/seagate/s3/
-    #Auth -> /var/log/seagate/auth/
-    #S3 Motr -> /var/log/seagate/motr/s3server-*
+    # Backgrounddelete -> /var/log/cortx/s3/s3backgrounddelete/
+    #Audit -> /var/log/cortx/s3/audit
+    # s3 -> /var/log/cortx/s3/
+    #Auth -> /var/log/cortx/auth/
+    #S3 Motr -> /var/log/cortx/motr/s3server-*
     #HAproxy -> /var/log/haproxy.log
     #HAproxy -> /var/log/haproxy-status.log
     #Slapd -> /var/log/slapd.log
     #S3 Crash dumps -> /var/log/crash/core-s3server.*.gz
 
-    logDirs = ["/var/log/seagate/s3",
-                  "/var/log/seagate/auth"]
+    logDirs = ["/var/log/cortx/s3",
+                  "/var/log/cortx/auth"]
     # Skipping s3deployment.log file directory as we dont need to remove it as part of log cleanup
-    skipDirs = ["/var/log/seagate/s3/s3deployment"]
+    skipDirs = ["/var/log/cortx/s3/s3deployment"]
 
     for logDir in logDirs:
       self.DeleteDirContents(logDir, skipDirs)
@@ -113,7 +113,7 @@ class ResetCmd(SetupCmd):
       self.DeleteFile(logFile)
 
     # logRegexPath represents key->path and value->regex
-    logRegexPath =  { '/var/log/seagate/motr':'s3server-*',
+    logRegexPath =  { '/var/log/cortx/motr':'s3server-*',
                       '/var/log/crash':'core-s3server.*.gz'}
     for path in logRegexPath:
       self.DeleteFileOrDirWithRegex(path, logRegexPath[path])

@@ -145,7 +145,7 @@ class CleanupCmd(SetupCmd):
       #delete deployment log
       if pre_factory == True:
         self.logger.info("Delete S3 Deployment log file started")
-        dirpath = "/var/log/seagate/s3/s3deployment"
+        dirpath = "/var/log/cortx/s3/s3deployment"
         self.DeleteDirContents(dirpath)
         self.logger.info("Delete S3 Deployment log file completed")
         # revert config files to their origional config state
@@ -222,7 +222,7 @@ class CleanupCmd(SetupCmd):
     """Validate if reset phase has done or not, throw exception."""
     self.logger.info(f"Processing {self.name} detect_if_reset_done")
     # Validate log file cleanup.
-    log_files = ['/var/log/seagate/auth/server/app.log', '/var/log/seagate/s3/s3server-*/s3server.INFO']
+    log_files = ['/var/log/cortx/auth/server/app.log', '/var/log/cortx/s3/s3server-*/s3server.INFO']
     for fpath in log_files:
       if os.path.exists(fpath):
         raise S3PROVError("Stale log files found in system!!!! hence reset needs to be performed before cleanup can be processed")
