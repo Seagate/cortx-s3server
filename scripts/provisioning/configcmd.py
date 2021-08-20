@@ -266,6 +266,19 @@ class ConfigCmd(SetupCmd):
       self.logger.warning(f'warning of create_auth_jks_password.sh: {stderr}')
       self.logger.info(' Successfully set auth JKS keystore password.')
 
+  def create_bgdelete_account(self):
+    """ create bgdelete account."""
+    try:
+      # Create background delete account
+      bgdelete_acc_input_params_dict = self.get_config_param_for_BG_delete_account()
+      LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
+    except Exception as e:
+      if "Already exists" not in str(e):
+        self.logger.error(f'Failed to create backgrounddelete service account, error: {e}')
+        raise(e)
+      else:
+        self.logger.warning("backgrounddelete service account already exist")
+
   def update_s3_server_config(self):
     """Update s3 server config which required modification."""
 
