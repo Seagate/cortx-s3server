@@ -61,6 +61,8 @@ cortx:
       port: "28049"
       scheduler_schedule_interval: 1200
       max_keys: 1000
+    base_log_path: "/var/log/cortx"
+    base_config_path: "/etc/cortx"
 cluster:
   3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6:
     site:

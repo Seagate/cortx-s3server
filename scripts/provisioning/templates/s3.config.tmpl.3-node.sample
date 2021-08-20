@@ -75,6 +75,8 @@ cortx:
       port: "28049"
       scheduler_schedule_interval: 1200
       max_keys: 1000
+    base_log_path: "/var/log/cortx"
+    base_config_path: "/etc/cortx"
 cluster:
   TMPL_CLUSTER_ID:
     site:
