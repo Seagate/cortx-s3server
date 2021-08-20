@@ -296,6 +296,7 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /opt/seagate/cortx/s3/docs/s3_log_rotation_guide.txt
 /opt/seagate/cortx/s3/addb-plugin/libs3addbplugin.so
 /opt/seagate/cortx/s3/bin/motrkvscli
+/opt/seagate/cortx/s3/bin/base64_encoder_decoder
 /opt/seagate/cortx/s3/bin/s3server
 /opt/seagate/cortx/s3/libevent/libevent-2.1.so.6
 /opt/seagate/cortx/s3/libevent/libevent-2.1.so.6.0.4
