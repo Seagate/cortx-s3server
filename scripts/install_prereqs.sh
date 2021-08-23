@@ -19,6 +19,7 @@
 #
 # shell automation script for https://github.com/Seagate/cortx-s3server/wiki/S3server-provisioning-on-single-node-VM-cluster:-Manual
 
+
 die_with_error () {
 	echo "$1 Exitting.." >&2
 	exit -1
