@@ -50,7 +50,8 @@ class PostUpgradeCmd(SetupCmd):
       # merge_configs() is imported from the merge.py
       # Upgrade config files
       self.logger.info("merge configs started")
-      merge_configs()
+      config_file_path = self.get_confkey('S3_TARGET_CONFIG_PATH')
+      merge_configs(config_file_path)
       self.logger.info("merge configs completed")
 
       # Remove temporary .old files from S3 temporary location

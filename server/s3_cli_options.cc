@@ -21,7 +21,7 @@
 #include "s3_cli_options.h"
 #include "s3_option.h"
 
-DEFINE_string(s3config, "/opt/seagate/cortx/s3/conf/s3config.yaml",
+DEFINE_string(s3config, "/etc/cortx/s3/conf/s3config.yaml",
               "S3 server config file");
 
 DEFINE_string(s3layoutmap,

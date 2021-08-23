@@ -44,7 +44,8 @@ class ConfigCmd(SetupCmd):
     try:
       super(ConfigCmd, self).__init__(config, module)
 
-      self.update_cluster_id()
+      s3_cluster_file = self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH'))
+      self.update_cluster_id(s3_cluster_file)
       self.read_ldap_credentials()
       self.update_rootdn_credentials()
 
@@ -65,6 +66,10 @@ class ConfigCmd(SetupCmd):
       self.logger.info("update all modules config files started")
       self.update_configs()
       self.logger.info("update all modules config files completed")
+
+      self.logger.info("copy config files started")
+      self.copy_config_files()
+      self.logger.info("copy config files completed")
 
       # disable S3server, S3authserver, haproxy, BG delete services on reboot as 
       # it will be managed by HA
@@ -479,3 +484,30 @@ class ConfigCmd(SetupCmd):
     except:
       self.logger.error(f'Failed to update config file path {file_to_search}')
       raise S3PROVError(f'Failed to update config file path {file_to_search}')
+
+  def copy_config_files(self):
+    """ Copy config files from /opt/seagate/cortx to /etc/cortx."""
+    config_files = [self.get_confkey('S3_CONFIG_FILE'),
+                    self.get_confkey('S3_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_CONFIG_UNSAFE_ATTR_FILE'),
+                    self.get_confkey('S3_AUTHSERVER_CONFIG_FILE'),
+                    self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_AUTHSERVER_CONFIG_UNSAFE_ATTR_FILE'),
+                    self.get_confkey('S3_KEYSTORE_CONFIG_FILE'),
+                    self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_KEYSTORE_CONFIG_UNSAFE_ATTR_FILE'),
+                    self.get_confkey('S3_BGDELETE_CONFIG_FILE'),
+                    self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE'),
+                    self.get_confkey('S3_CLUSTER_CONFIG_FILE'),
+                    self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE'),
+                    self.get_confkey('S3_CLUSTER_CONFIG_UNSAFE_ATTR_FILE')]
+
+    # copy all the config files from the /opt/seagate/cortx to /etc/cortx
+    for config_file in config_files:
+      self.logger.info(f"Source config file: {config_file}")
+      dest_config_file = config_file.replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH'))
+      self.logger.info(f"Dest config file: {dest_config_file}")
+      os.makedirs(os.path.dirname(dest_config_file), exist_ok=True)
+      shutil.copy(config_file, dest_config_file)
+      self.logger.info("Config file copied successfully to /etc/cortx")

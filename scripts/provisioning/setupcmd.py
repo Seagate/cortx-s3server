@@ -76,7 +76,8 @@ class SetupCmd(object):
     s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
     self.logger = logging.getLogger(s3deployment_logger_name)
 
-    self._s3_confkeys_store = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'setup_s3keys_index')
+    self._s3_
+    confkeys_store = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'setup_s3keys_index')
 
     if config is None:
       self.logger.warning(f'Empty Config url')
@@ -183,7 +184,7 @@ class SetupCmd(object):
       self.logger.error(f'update rootdn credentials failed, error: {e}')
       raise e
 
-  def update_cluster_id(self, op_file: str = "/etc/cortx/s3/s3backgrounddelete/s3_cluster.yaml"):
+  def update_cluster_id(self, op_file: str):
     """Set 'cluster_id' to op_file."""
     try:
       if path.isfile(f'{op_file}') == False:

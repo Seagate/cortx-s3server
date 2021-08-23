@@ -277,7 +277,7 @@ class S3Option {
     auth_ip_addr = FLAGS_authhost;
     auth_port = FLAGS_authport;
 
-    option_file = "/opt/seagate/cortx/s3/conf/s3config.yaml";
+    option_file = "/etc/cortx/s3/conf/s3config.yaml";
     layout_recommendation_file =
         "/opt/seagate/cortx/s3/conf/s3_obj_layout_mapping.yaml";
 
