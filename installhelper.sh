@@ -123,6 +123,7 @@ cp scripts/provisioning/templates/s3.cleanup.tmpl.1-node.sample $S3_INSTALL_LOCA
 
 # Copy the provisioning python scripts
 cp scripts/provisioning/s3_setup $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/s3_start $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/postinstallcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/configcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/initcmd.py $S3_INSTALL_LOCATION/bin
