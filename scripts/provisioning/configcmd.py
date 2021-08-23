@@ -349,6 +349,24 @@ class ConfigCmd(SetupCmd):
     self.update_s3_auth_configs()
     self.update_s3_bgdelete_configs()
 
+    # update config file path in to following files:
+    #/opt/seagate/cortx/s3/s3startsystem.sh
+    self.update_config_path_files("/opt/seagate/cortx/s3/s3startsystem.sh",
+                                  "/opt/seagate/cortx/s3/conf",
+                                  os.path.join(self.get_confkey('S3_TARGET_CONFIG_PATH'), "s3/conf"))
+
+    # /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh
+    self.update_config_path_files("/opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh",
+                                  "/opt/seagate/cortx/s3/conf",
+                                  os.path.join(self.get_confkey('S3_TARGET_CONFIG_PATH'), "s3/conf"))
+    self.update_config_path_files("/opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh",
+                                  "/opt/seagate/cortx/auth/resources",
+                                  os.path.join(self.get_confkey('S3_TARGET_CONFIG_PATH'), "auth/resources"))
+    self.update_config_path_files("/opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh",
+                                  "/opt/seagate/cortx/s3/s3backgrounddelete",
+                                  os.path.join(self.get_confkey('S3_TARGET_CONFIG_PATH'), "s3/s3backgrounddelete"))
+
+
   def update_s3_server_configs(self):
     """ Update s3 server configs."""
     self.logger.info("Update s3 server config file started")
@@ -387,7 +405,7 @@ class ConfigCmd(SetupCmd):
       raise S3PROVError(f'{s3auth_configfile} file is not present')
 
     # load s3 auth config file 
-    s3configfileconfstore = S3CortxConfStore(f'yaml://{s3auth_configfile}', 'update_s3_auth_config')
+    s3configfileconfstore = S3CortxConfStore(f'properties://{s3auth_configfile}', 'update_s3_auth_config')
 
     s3_auth_base_log_path = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_BASE_LOG_PATH'))
     # update log path
@@ -401,8 +419,8 @@ class ConfigCmd(SetupCmd):
     """ Update s3 bgdelete configs."""
     self.logger.info("Update s3 bgdelete config file started")
     self.update_s3_bgdelete_config()
-    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL", "CORTX_S3>SCHEDULER_SCHEDULE_INTERVAL")
-    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_MAX_KEYS", "INDEXID>MAX_KEYS")
+    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL", "cortx_s3>scheduler_schedule_interval")
+    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_MAX_KEYS", "indexid>max_keys")
     self.logger.info("Update s3 bgdelete config file completed")
 
   def update_s3_bgdelete_config(self):
@@ -424,7 +442,7 @@ class ConfigCmd(SetupCmd):
     self.logger.info(f'bgdelete_url: {bgdelete_url}')
 
     # update bgdelete endpoint
-    endpoint_key = 'CORTX_S3>ENDPOINT'
+    endpoint_key = 'cortx_s3>endpoint'
     s3configfileconfstore.set_config(endpoint_key, bgdelete_url, True)
     self.logger.info(f'Key {endpoint_key} updated successfully in {bgdelete_configfile}')
 
@@ -449,3 +467,15 @@ class ConfigCmd(SetupCmd):
     s3_bgdelete_consumer_log_path_key  = 'logconfig>processor_log_file'
     s3configfileconfstore.set_config(s3_bgdelete_consumer_log_path_key, s3_bgdelete_consumer_log_path, True)
     self.logger.info(f'Key {s3_bgdelete_consumer_log_path_key} updated successfully in {bgdelete_configfile}')
+
+  def update_config_path_files(self, file_to_search: str, key_to_search: str, key_to_replace: str):
+    """ update the config file path in the files"""
+    try:
+      with open(file_to_search) as f:
+        data=f.read().replace(key_to_search, key_to_replace)
+
+      with open(file_to_search, "w") as f:
+        f.write(data)
+    except:
+      self.logger.error(f'Failed to update config file path {file_to_search}')
+      raise S3PROVError(f'Failed to update config file path {file_to_search}')
