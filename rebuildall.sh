@@ -24,7 +24,7 @@ set -e
 usage() {
   echo 'Usage: ./rebuildall.sh [--no-motr-rpm][--use-build-cache][--no-check-code]'
   echo '                       [--no-clean-build][--no-s3ut-build][--no-s3mempoolut-build][--no-s3mempoolmgrut-build]'
-  echo '                       [--no-s3server-build][--no-motrkvscli-build][--no-auth-build]'
+  echo '                       [--no-s3server-build][--no-motrkvscli-build][--no-base64-encoder-decoder-build][--no-auth-build]'
   echo '                       [--no-jclient-build][--no-jcloudclient-build][--no-java-tests]'
   echo '                       [--no-install][--just-gen-build-file][--valgrind_memcheck]'
   echo '                       [--bazel_cpu_usage_limit <max_cpu_percentage>][--bazel_ram_usage_limit <max_ram_percentage>]'
@@ -45,6 +45,7 @@ usage() {
   echo '          --no-s3mempoolmgrut-build  : Do not build Memory pool Manager UT, Default (false)'
   echo '          --no-s3server-build        : Do not build S3 Server, Default (false)'
   echo '          --no-motrkvscli-build    : Do not build motrkvscli tool, Default (false)'
+  echo '          --no-base64-encoder-decoder-build    : Do not build base64_encoder_decoder tool, Default (false)'
   echo '          --no-s3background-build    : Do not build s3background process, Default (false)'
   echo '          --no-s3msgbus-build    : Do not build s3msgbus, Default (false)'
   echo '          --no-s3cipher-build    : Do not build s3cipher, Default (false)'
@@ -160,6 +161,7 @@ no_s3mempoolut_build=0
 no_s3mempoolmgrut_build=0
 no_s3server_build=0
 no_motrkvscli_build=0
+no_base64_encoder_decoder_build=0
 no_s3background_build=0
 no_s3msgbus_build=0
 no_s3cipher_build=0
@@ -188,6 +190,7 @@ while true; do
     --no-s3mempoolmgrut-build) no_s3mempoolmgrut_build=1; shift ;;
     --no-s3server-build) no_s3server_build=1; shift ;;
     --no-motrkvscli-build) no_motrkvscli_build=1; shift ;;
+    --no-base64-encoder-decoder-build) no_base64_encoder_decoder_build=1; shift ;;
     --no-s3background-build) no_s3background_build=1; shift ;;
 	--no-s3msgbus-build) no_s3msgbus_build=1; shift ;;
     --no-s3cipher-build) no_s3cipher_build=1; shift ;;
@@ -370,6 +373,7 @@ then
   if [[ $no_s3ut_build -eq 0   || \
       $no_s3server_build -eq 0 || \
       $no_motrkvscli_build -eq 0 || \
+      $no_base64_encoder_decoder_build -eq 0 || \
       $no_s3mempoolmgrut_build -eq 0 || \
       $no_s3mempoolut_build -eq 0 ]]
   then
@@ -447,6 +451,14 @@ fi
 if [ $no_motrkvscli_build -eq 0 ]
 then
   bazel build //:motrkvscli --cxxopt="-std=c++11" --define $MOTR_INC_ \
+                              --define $MOTR_LIB_ --define $MOTR_HELPERS_LIB_ \
+                              --spawn_strategy=standalone \
+                              --strip=never "$cpu_resource_limit_param" "$ram_resource_limit_param"
+fi
+
+if [ $no_base64_encoder_decoder_build -eq 0 ]
+then
+    bazel build //:base64_encoder_decoder --cxxopt="-std=c++11" --define $MOTR_INC_ \
                               --define $MOTR_LIB_ --define $MOTR_HELPERS_LIB_ \
                               --spawn_strategy=standalone \
                               --strip=never "$cpu_resource_limit_param" "$ram_resource_limit_param"

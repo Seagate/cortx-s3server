@@ -84,7 +84,7 @@ get_probable_delete_index() {
             then
                 break
             else
-                KEYS[i]=$(./base64_encoder_decoder -d $(echo "$line"))
+                KEYS[i]=$(./base64_encoder_decoder -decode_oid $(echo "$line"))
                 i=$((i+1))
             fi
         done
@@ -126,21 +126,21 @@ get_probable_delete_index() {
             i=0
             for line in $(grep -Ei -o "\"object_list_index_oid\":\"[0-9a-zA-Z=+-]*" /tmp/m0kvprobable.log | cut -c26-)
             do
-                OBJECT_LIST_INDEX_OID[i]=$(./base64_encoder_decoder -d $(echo "$line"))
+                OBJECT_LIST_INDEX_OID[i]=$(./base64_encoder_decoder -decode_oid $(echo "$line"))
                 i=$((i+1))
             done
 
             i=0
             for line in $(grep -Ei -o "\"objects_version_list_index_oid\":\"[0-9a-zA-Z=+-]*" /tmp/m0kvprobable.log | cut -c35-)
             do
-                OBJECT_VERSION_LIST_INDEX_OID[i]=$(./base64_encoder_decoder -d $(echo "$line"))
+                OBJECT_VERSION_LIST_INDEX_OID[i]=$(./base64_encoder_decoder -decode_oid $(echo "$line"))
                 i=$((i+1))
             done
 
             i=0
             for line in $(grep -Ei -o "\"part_list_idx_oid\":\"[0-9a-zA-Z=+-]*" /tmp/m0kvprobable.log | cut -c22-)
             do
-                PART_LIST_INDEX_OID[i]=$(./base64_encoder_decoder -d $(echo "$line"))
+                PART_LIST_INDEX_OID[i]=$(./base64_encoder_decoder -decode_oid $(echo "$line"))
                 i=$((i+1))
             done
 
@@ -261,14 +261,14 @@ get_multipart_metadata() {
         i=0
         for line in $(grep -Ei -o "\"motr_part_oid\":[\"0-9a-zA-Z+=-]*" /tmp/countObjects.log)
         do
-            MOTR_PART_OID[i]=$(./base64_encoder_decoder -d $(echo "$line" | cut -c18-$((${#line}-1))))
+            MOTR_PART_OID[i]=$(./base64_encoder_decoder -decode_oid $(echo "$line" | cut -c18-$((${#line}-1))))
             i=$((i+1))
         done
 
         i=0
         for line in $(grep -Ei -o "\"motr_oid\":[\"0-9a-zA-Z+=-]*" /tmp/countObjects.log)
         do
-            MOTR_OID[i]=$(./base64_encoder_decoder -d $(echo "$line" | cut -c13-$((${#line}-1))))
+            MOTR_OID[i]=$(./base64_encoder_decoder -decode_oid $(echo "$line" | cut -c13-$((${#line}-1))))
             i=$((i+1))
         done
 
@@ -349,7 +349,7 @@ get_object_metadata() {
         i=0
         for line in $(grep -Ei -o "\"motr_oid\":[\"0-9a-zA-Z+=-]*" /tmp/m0kvbucket.log)
         do
-            MOTR_OIDS[i]=$(./base64_encoder_decoder -d $(echo "$line" | cut -c13-$((${#line}-1))))
+            MOTR_OIDS[i]=$(./base64_encoder_decoder -decode_oid $(echo "$line" | cut -c13-$((${#line}-1))))
             i=$((i+1))
         done
 
@@ -411,7 +411,7 @@ get_all_buckets_metadata() {
         for line in $(grep -Ei -o "\"motr_multipart_index_oid\":[\"0-9a-zA-Z+=-]*" /tmp/m0kvtest.log)
         do
             MOTR_MULTIPART_INDEX_OID_VAL=$(echo "$line" | cut -c29-$((${#line}-1)))
-            MOTR_MULTIPART_INDEX_OID[i]=$(./base64_encoder_decoder -d "$MOTR_MULTIPART_INDEX_OID_VAL")
+            MOTR_MULTIPART_INDEX_OID[i]=$(./base64_encoder_decoder -decode_oid "$MOTR_MULTIPART_INDEX_OID_VAL")
             i=$((i+1))
         done
 
@@ -419,7 +419,7 @@ get_all_buckets_metadata() {
         for line in $(grep -Ei -o "\"motr_object_list_index_oid\":[\"0-9a-zA-Z+=-]*" /tmp/m0kvtest.log)
         do
             MOTR_OBJECT_LIST_INDEX_OID_VAL=$(echo "$line" | cut -c31-$((${#line}-1)))
-            MOTR_OBJECT_LIST_INDEX_OID[i]=$(./base64_encoder_decoder -d "$MOTR_OBJECT_LIST_INDEX_OID_VAL")
+            MOTR_OBJECT_LIST_INDEX_OID[i]=$(./base64_encoder_decoder -decode_oid "$MOTR_OBJECT_LIST_INDEX_OID_VAL")
             i=$((i+1))
         done
 
@@ -427,7 +427,7 @@ get_all_buckets_metadata() {
         for line in $(grep -Ei -o "\"motr_objects_version_list_index_oid\":[\"0-9a-zA-Z+=-]*" /tmp/m0kvtest.log)
         do
             MOTR_OBJECTS_VERSION_LIST_INDEX_OID_VAL=$(echo "$line" | cut -c40-$((${#line}-1)))
-            MOTR_OBJECTS_VERSION_LIST_INDEX_OID[i]=$(./base64_encoder_decoder -d "$MOTR_OBJECTS_VERSION_LIST_INDEX_OID_VAL")
+            MOTR_OBJECTS_VERSION_LIST_INDEX_OID[i]=$(./base64_encoder_decoder -decode_oid "$MOTR_OBJECTS_VERSION_LIST_INDEX_OID_VAL")
             i=$((i+1))
         done
 
@@ -490,9 +490,9 @@ get_metadata_of_bucket() {
         MOTR_MULTIPART_INDEX_OID_VAL=$(echo "$BUCKET_GREP" | grep -Ei -o "\"motr_multipart_index_oid\":[\"0-9a-zA-Z+=-]*")
         MOTR_OBJECT_LIST_INDEX_OID_VAL=$(echo "$BUCKET_GREP" | grep -Ei -o "\"motr_object_list_index_oid\":[\"0-9a-zA-Z+=-]*")
         MOTR_OBJECTS_VERSION_LIST_INDEX_OID_VAL=$(echo "$BUCKET_GREP" | grep -Ei -o "\"motr_objects_version_list_index_oid\":[\"0-9a-zA-Z+=-]*")
-        MOTR_MULTIPART_INDEX_OID=$(./base64_encoder_decoder -d $(echo "$MOTR_MULTIPART_INDEX_OID_VAL" | cut -c29-$((${#MOTR_MULTIPART_INDEX_OID_VAL}-1))))
-        MOTR_OBJECT_LIST_INDEX_OID=$(./base64_encoder_decoder -d $(echo "$MOTR_OBJECT_LIST_INDEX_OID_VAL" | cut -c31-$((${#MOTR_OBJECT_LIST_INDEX_OID_VAL}-1))))
-        MOTR_OBJECTS_VERSION_LIST_INDEX_OID=$(./base64_encoder_decoder -d $(echo "$MOTR_OBJECTS_VERSION_LIST_INDEX_OID_VAL" | cut -c40-$((${#MOTR_OBJECTS_VERSION_LIST_INDEX_OID_VAL}-1))))
+        MOTR_MULTIPART_INDEX_OID=$(./base64_encoder_decoder -decode_oid $(echo "$MOTR_MULTIPART_INDEX_OID_VAL" | cut -c29-$((${#MOTR_MULTIPART_INDEX_OID_VAL}-1))))
+        MOTR_OBJECT_LIST_INDEX_OID=$(./base64_encoder_decoder -decode_oid $(echo "$MOTR_OBJECT_LIST_INDEX_OID_VAL" | cut -c31-$((${#MOTR_OBJECT_LIST_INDEX_OID_VAL}-1))))
+        MOTR_OBJECTS_VERSION_LIST_INDEX_OID=$(./base64_encoder_decoder -decode_oid $(echo "$MOTR_OBJECTS_VERSION_LIST_INDEX_OID_VAL" | cut -c40-$((${#MOTR_OBJECTS_VERSION_LIST_INDEX_OID_VAL}-1))))
         
         echo -e "Metadata of $1\n"
         echo -e "${green}##########################################################################################${reset}"
