@@ -24,13 +24,7 @@
 #include<inttypes.h>
 #include<iomanip>
 #include<sstream>
-
-#define __STDC_LIMIT_MACROS
-
-struct m0_uint128 {
-    uint64_t u_hi;
-    uint64_t u_lo;
-};
+#include "s3_motr_context.h"
 
 static const std::string base64_chars =
              "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -40,8 +34,6 @@ static const std::string base64_chars =
 static inline bool is_base64(unsigned char c) {
   return (isalnum(c) || (c == '+') || (c == '/'));
 }
-
-
 
 /****************************************************
 this function decodes the base64 encoded string 
@@ -180,6 +172,22 @@ std::string to_string(std::string input_string) {
          base64_encode((unsigned char const *)&u_lo, sizeof(u_lo));
 }
 
+struct s3_motr_idx_layout to_idx_layout(const std::string &encoded) {
+
+  struct s3_motr_idx_layout lo;
+  memset(&lo, 0, sizeof lo);
+
+  std::string s_decoded = base64_decode(encoded);
+  memcpy(&lo, s_decoded.c_str(), s_decoded.length());
+
+  return lo;
+}
+
+std::string to_string(const m0_uint128 &id) {
+  return base64_encode((unsigned char const *)&id.u_hi, sizeof(id.u_hi)) + "-" +
+         base64_encode((unsigned char const *)&id.u_lo, sizeof(id.u_lo));
+}
+
 /****************************************
 main function 
 ****************************************/
@@ -187,25 +195,34 @@ int main(int argc, char *argv[])
 {
   if (argc == 3)
   {
-    if (std::string(argv[1]) == "-d") {
+    if (std::string(argv[1]) == "-decode_oid") {
       struct m0_uint128 id;
       id = to_m0_uint128(std::string(argv[2]));
       std::cout << "0x" << std::hex << id.u_hi << ":0x" << std::hex << id.u_lo <<"\n";
-    }
-    else if (std::string(argv[1]) == "-e") {
+    } else if (std::string(argv[1]) == "-encode_oid") {
       std::string encoded_string = to_string(std::string(argv[2]));
-      std::cout << encoded_string<<"\n";
-    }
-    else {
+      std::cout << encoded_string <<"\n";
+    } else if (std::string(argv[1]) == "-decode_layout") {
+      struct s3_motr_idx_layout idx = to_idx_layout(std::string(argv[2]));
+      std::cout << to_string(idx.oid) << std::endl;
+    } else {
       std::cout << "-----------------------Usage------------------------\n";
-      std::cout << "(ENCODE): ./base64_encoder_decoder -e <input_string>\n";
-      std::cout << "(DECODE): ./base64_encoder_decoder -d <input_string>\n";
+      std::cout << "(ENCODE OID): ./base64_encoder_decoder -encode_oid "
+                   "<input_string>\n";
+      std::cout << "(DECODE OID): ./base64_encoder_decoder -decode_oid "
+                   "<input_string>\n";
+      std::cout << "(DECODE LAYOUT): ./base64_encoder_decoder -decode_layout "
+                   "<input_string>\n";
     }
   } 
   else {
-    std::cout << "Please provide input arguements.";
-    std::cout << "Usage(decode): ./base64_encoder_decoder -d <encoded_string>";
-    std::cout << "Usage(encode) : ./base64_encoder_decoder -e <decoded_string>";
+    std::cout << "-----------------------Usage------------------------\n";
+    std::cout << "(ENCODE OID): ./base64_encoder_decoder -encode_oid "
+                 "<input_string>\n";
+    std::cout << "(DECODE OID): ./base64_encoder_decoder -decode_oid "
+                 "<input_string>\n";
+    std::cout << "(DECODE LAYOUT): ./base64_encoder_decoder -decode_layout "
+                 "<input_string>\n";
   }
   return 0;
 }
