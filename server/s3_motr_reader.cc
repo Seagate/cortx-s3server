@@ -263,7 +263,7 @@ bool S3MotrReader::read_object() {
   ctx->cbs[0].oop_failed = s3_motr_op_failed;
 
   /* Create the read request */
-  if (S3Option::get_instance()->is_s3_read_di_check_enabled()) {
+  if (S3Option::get_instance()->is_s3_write_di_check_enabled()) {
     rc = s3_motr_api->motr_obj_op(&obj_ctx->objs[0], M0_OC_READ, rw_ctx->ext,
                                   rw_ctx->data, rw_ctx->attr, 0, M0_OOF_NOHOLE,
                                   &ctx->ops[0]);
