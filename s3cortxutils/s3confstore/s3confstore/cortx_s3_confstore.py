@@ -84,7 +84,7 @@ class S3CortxConfStore:
     Conf.save(self.default_index)
 
   def get_machine_id(self):
-        """Get machine id from the constore"""
+    """Get machine id from the constore"""
     return Conf.machine_id
 
   @staticmethod
