@@ -373,7 +373,9 @@ class ConfigCmd(SetupCmd):
     self.update_config_path_files("/opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh",
                                   "/opt/seagate/cortx/s3/s3backgrounddelete",
                                   os.path.join(self.get_confkey('S3_TARGET_CONFIG_PATH'), "s3/s3backgrounddelete"))
-
+    self.update_config_path_files("/opt/seagate/cortx/s3/install/ldap/setup_ldap.sh",
+                                  "/opt/seagate/cortx/auth/resources",
+                                  os.path.join(self.get_confkey('S3_TARGET_CONFIG_PATH'), "auth/resources"))
 
   def update_s3_server_configs(self):
     """ Update s3 server configs."""
