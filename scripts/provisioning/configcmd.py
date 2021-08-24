@@ -44,7 +44,7 @@ class ConfigCmd(SetupCmd):
     try:
       super(ConfigCmd, self).__init__(config, module)
 
-      s3_cluster_file = self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH'))
+      s3_cluster_file = self.get_confkey('S3_CLUSTER_CONFIG_FILE')
       self.update_cluster_id(s3_cluster_file)
       self.read_ldap_credentials()
       self.update_rootdn_credentials()
