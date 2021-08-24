@@ -58,7 +58,6 @@ class ConfigCmd(SetupCmd):
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
-    self.validate_config_files(self.name)
     self.logger.info("validations completed")
 
     try:
@@ -70,6 +69,9 @@ class ConfigCmd(SetupCmd):
       self.logger.info("copy config files started")
       self.copy_config_files()
       self.logger.info("copy config files completed")
+
+      # validating config file after copying to /etc/cortx
+      self.validate_config_files(self.name)
 
       # disable S3server, S3authserver, haproxy, BG delete services on reboot as 
       # it will be managed by HA
@@ -509,5 +511,5 @@ class ConfigCmd(SetupCmd):
       dest_config_file = config_file.replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH'))
       self.logger.info(f"Dest config file: {dest_config_file}")
       os.makedirs(os.path.dirname(dest_config_file), exist_ok=True)
-      shutil.copy(config_file, dest_config_file)
+      shutil.move(config_file, dest_config_file)
       self.logger.info("Config file copied successfully to /etc/cortx")
