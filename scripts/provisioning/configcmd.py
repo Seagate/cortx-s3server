@@ -65,10 +65,14 @@ class ConfigCmd(SetupCmd):
       self.logger.info("copy config files completed")
 
       # validating config file after copying to /etc/cortx
+      self.logger.info("validate config file started")
       self.validate_config_files(self.name)
+      self.logger.info("validate config files completed")
 
       # read ldap credentials from config file
+      self.logger.info("read ldap credentials started")
       self.read_ldap_credentials()
+      self.logger.info("read ldap credentials completed")
 
       # disable S3server, S3authserver, haproxy, BG delete services on reboot as 
       # it will be managed by HA
