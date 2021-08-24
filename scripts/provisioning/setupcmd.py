@@ -170,7 +170,7 @@ class SetupCmd(object):
       if encrypted_rootdn_pass is None:
         raise S3PROVError('password cannot be None.')
 
-      s3_cluster_file = self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH'))
+      s3_cluster_file = self.get_confkey('S3_CLUSTER_CONFIG_FILE')
 
       key = 'cluster_config>rootdn_user'
       opfileconfstore = S3CortxConfStore(f'yaml://{s3_cluster_file}', 'write_rootdn_idx')

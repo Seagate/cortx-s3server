@@ -43,12 +43,6 @@ class ConfigCmd(SetupCmd):
     """Constructor."""
     try:
       super(ConfigCmd, self).__init__(config, module)
-
-      s3_cluster_file = self.get_confkey('S3_CLUSTER_CONFIG_FILE')
-      self.update_cluster_id(s3_cluster_file)
-      self.read_ldap_credentials()
-      self.update_rootdn_credentials()
-
     except Exception as e:
       raise S3PROVError(f'exception: {e}')
 
@@ -72,6 +66,9 @@ class ConfigCmd(SetupCmd):
 
       # validating config file after copying to /etc/cortx
       self.validate_config_files(self.name)
+
+      # read ldap credentials from config file
+      self.read_ldap_credentials()
 
       # disable S3server, S3authserver, haproxy, BG delete services on reboot as 
       # it will be managed by HA
@@ -425,6 +422,8 @@ class ConfigCmd(SetupCmd):
   def update_s3_bgdelete_configs(self):
     """ Update s3 bgdelete configs."""
     self.logger.info("Update s3 bgdelete config file started")
+    self.update_cluster_id(self.get_confkey('S3_CLUSTER_CONFIG_FILE'))
+    self.update_rootdn_credentials()
     self.update_s3_bgdelete_config()
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL", "cortx_s3>scheduler_schedule_interval")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_MAX_KEYS", "indexid>max_keys")
