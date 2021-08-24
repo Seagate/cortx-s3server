@@ -48,8 +48,9 @@ class CORTXS3Config(object):
         self.s3bgd_secret_key = None
         if os.path.isfile("/etc/cortx/s3/s3backgrounddelete/config.yaml"):
             # Load config.yaml file through confstore.
-            self._conf_file ='yaml://' + self._conf_file
-            self.s3confstore = S3CortxConfStore(config=self._conf_file, index= str(uuid.uuid1()))
+            bgdelete_conf_file = 'yaml://' + "/etc/cortx/s3/s3backgrounddelete/config.yaml"
+            if self.s3confstore is None:
+                self.s3confstore = S3CortxConfStore(config=bgdelete_conf_file, index= str(uuid.uuid1()))
         else:
             self._load_and_fetch_config()
         self.cache_credentials()
