@@ -934,7 +934,7 @@ void S3PostCompleteAction::startcleanup() {
       // mark old OID for deletion in overwrite case, this optimizes
       // backgrounddelete decisions.
       ACTION_TASK_ADD(S3PostCompleteAction::mark_old_oid_for_deletion, this);
-      // ACTION_TASK_ADD(S3PostCompleteAction::delete_old_object, this);
+      ACTION_TASK_ADD(S3PostCompleteAction::delete_old_object, this);
     }
     ACTION_TASK_ADD(S3PostCompleteAction::remove_new_oid_probable_record, this);
   } else if (s3_post_complete_action_state ==
