@@ -135,7 +135,7 @@ class CleanupCmd(SetupCmd):
 
       # truncate slapd logs
       self.logger.info("truncate slapd log file started")
-      slapd_log="/var/log/slapd.log"
+      slapd_log="/var/log/cortx/slapd.log"
       if os.path.isfile(slapd_log):
         fslapd = open(slapd_log, "w")
         fslapd.truncate()

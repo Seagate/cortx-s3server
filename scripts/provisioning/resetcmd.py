@@ -94,9 +94,9 @@ class ResetCmd(SetupCmd):
     # s3 -> /var/log/cortx/s3/
     #Auth -> /var/log/cortx/auth/
     #S3 Motr -> /var/log/cortx/motr/s3server-*
-    #HAproxy -> /var/log/haproxy.log
-    #HAproxy -> /var/log/haproxy-status.log
-    #Slapd -> /var/log/slapd.log
+    #HAproxy -> /var/log/cortx/haproxy.log
+    #HAproxy -> /var/log/cortx/haproxy-status.log
+    #Slapd -> /var/log/cortx/slapd.log
     #S3 Crash dumps -> /var/log/crash/core-s3server.*.gz
 
     logDirs = ["/var/log/cortx/s3",
@@ -107,8 +107,8 @@ class ResetCmd(SetupCmd):
     for logDir in logDirs:
       self.DeleteDirContents(logDir, skipDirs)
 
-    logFiles = ["/var/log/haproxy.log",
-                "/var/log/haproxy-status.log"]
+    logFiles = ["/var/log/cortx/haproxy.log",
+                "/var/log/cortx/haproxy-status.log"]
     for logFile in logFiles:
       self.DeleteFile(logFile)
 
@@ -120,7 +120,7 @@ class ResetCmd(SetupCmd):
 
     # truncate slapd logs
     self.logger.info("truncate slapd log file started")
-    slapd_log="/var/log/slapd.log"
+    slapd_log="/var/log/cortx/slapd.log"
     if os.path.isfile(slapd_log):
       fslapd = open(slapd_log, "w")
       fslapd.truncate()

@@ -55,8 +55,8 @@ s3_bundle_location=$bundle_path/s3
 
 haproxy_config="/etc/haproxy/haproxy.cfg"
 # Collecting rotated logs for haproxy and ldap along with live log
-haproxy_log="/var/log/haproxy.log"
-ldap_log="/var/log/slapd.log"
+haproxy_log="/var/log/cortx/haproxy.log"
+ldap_log="/var/log/cortx/slapd.log"
 
 s3server_config="/opt/seagate/cortx/s3/conf/s3config.yaml"
 authserver_config="/opt/seagate/cortx/auth/resources/authserver.properties"
