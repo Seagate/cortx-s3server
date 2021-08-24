@@ -17,4 +17,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 #
-
+S3_SERVER_CONFIG:
+   S3_WRITE_DATA_INTEGRITY_CHECK: dummy                  # TBD
+   S3_READ_DATA_INTEGRITY_CHECK: dummy                   # TBD

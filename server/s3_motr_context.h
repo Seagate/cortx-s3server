@@ -26,6 +26,7 @@
 #include "s3_common.h"
 #include "s3_log.h"
 #include <set>
+#include <openssl/md5.h>
 
 EXTERN_C_BLOCK_BEGIN
 
@@ -33,6 +34,7 @@ EXTERN_C_BLOCK_BEGIN
 #include "module/instance.h"
 
 #include "motr/client.h"
+#include "lib/cksum.h"
 
 EXTERN_C_BLOCK_END
 
@@ -55,7 +57,12 @@ struct s3_motr_rw_op_context {
   struct m0_indexvec *ext;
   struct m0_bufvec *data;
   struct m0_bufvec *attr;
+  struct m0_bufvec *pi_bufvec;
   size_t unit_size;
+  size_t motr_checksums_buf_count;
+  size_t buffers_per_motr_unit;
+  unsigned char current_digest[sizeof(MD5_CTX)];
+  struct m0_generic_pi pi;
   bool allocated_bufs;  // Do we own data bufs and we should free?
 };
 
@@ -90,10 +97,11 @@ int free_obj_context(struct s3_motr_obj_context *ctx);
 struct s3_motr_op_context *create_basic_op_ctx(size_t op_count);
 int free_basic_op_ctx(struct s3_motr_op_context *ctx);
 
-struct s3_motr_rw_op_context *create_basic_rw_op_ctx(size_t motr_buf_count,
-                                                     size_t unit_size,
-                                                     bool allocate_bufs =
-                                                         false);
+unsigned long get_sizeof_pi_info(struct s3_motr_rw_op_context *ctx);
+
+struct s3_motr_rw_op_context *create_basic_rw_op_ctx(
+    size_t motr_buf_count, size_t motr_checksums_buf_count, size_t unit_size,
+    bool allocate_bufs = false);
 int free_basic_rw_op_ctx(struct s3_motr_rw_op_context *ctx);
 
 struct s3_motr_idx_context *create_idx_context(size_t idx_count);
