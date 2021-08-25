@@ -22,6 +22,7 @@
 #include <stdlib.h>
 
 #include "s3_motr_context.h"
+#include "s3_option.h"
 #include "s3_mem_pool_manager.h"
 #include "motr_helpers.h"
 
@@ -161,21 +162,51 @@ int free_basic_op_ctx(struct s3_motr_op_context *ctx) {
   return 0;
 }
 
+unsigned long get_sizeof_pi_info(struct s3_motr_rw_op_context *ctx) {
+  switch (ctx->pi.pi_hdr.pih_type) {
+    case M0_PI_TYPE_MD5_INC_CONTEXT:
+      return sizeof(m0_md5_inc_context_pi);
+    default:
+      s3_log(S3_LOG_ERROR, "", "%s Invalid PI Type\n", __func__);
+      return 0;
+  }
+}
+
 // To create a motr RW operation
 // default allocate_bufs = true -> allocate memory for each buffer
-struct s3_motr_rw_op_context *create_basic_rw_op_ctx(size_t motr_buf_count,
-                                                     size_t unit_size,
-                                                     bool allocate_bufs) {
+// 1st Param Total no of buffers.
+// 2nd Param No of buffers per motr unit/block
+struct s3_motr_rw_op_context *create_basic_rw_op_ctx(
+    size_t motr_buf_count, size_t buffers_per_motr_unit, size_t unit_size,
+    bool allocate_bufs) {
+  size_t motr_checksums_buf_count;
   s3_log(S3_LOG_DEBUG, "", "%s Entry motr_buf_count = %zu, unit_size = %zu\n",
          __func__, motr_buf_count, unit_size);
 
   struct s3_motr_rw_op_context *ctx = (struct s3_motr_rw_op_context *)calloc(
       1, sizeof(struct s3_motr_rw_op_context));
 
+  // TODO - Need to take from config file
+  ctx->pi.pi_hdr.pih_type = S3Option::get_instance()->get_pi_type();
+
+  // motr_buf_count will be multiple of buffers_per_motr_unit
+  motr_checksums_buf_count = motr_buf_count / buffers_per_motr_unit;
+
   ctx->unit_size = unit_size;
   ctx->ext = (struct m0_indexvec *)calloc(1, sizeof(struct m0_indexvec));
   ctx->data = (struct m0_bufvec *)calloc(1, sizeof(struct m0_bufvec));
   ctx->attr = (struct m0_bufvec *)calloc(1, sizeof(struct m0_bufvec));
+  ctx->motr_checksums_buf_count = motr_checksums_buf_count;
+  // points to the data buffers
+  ctx->pi_bufvec = (struct m0_bufvec *)calloc(1, sizeof(struct m0_bufvec));
+  ctx->buffers_per_motr_unit = buffers_per_motr_unit;
+
+  if (ctx->ext == nullptr || ctx->data == nullptr || ctx->attr == nullptr ||
+      ctx->pi_bufvec == nullptr) {
+    s3_log(S3_LOG_FATAL, "", "%s Exit with NULL - possible out-of-memory\n",
+           __func__);
+    return NULL;
+  }
 
   ctx->allocated_bufs = allocate_bufs;
   int rc = s3_bufvec_alloc_aligned(ctx->data, motr_buf_count, unit_size,
@@ -184,6 +215,7 @@ struct s3_motr_rw_op_context *create_basic_rw_op_ctx(size_t motr_buf_count,
     free(ctx->ext);
     free(ctx->data);
     free(ctx->attr);
+    free(ctx->pi_bufvec);
     free(ctx);
     s3_log(S3_LOG_ERROR, "",
            "%s Exit with NULL - possible out-of-memory motr_buf_count = %zu "
@@ -191,18 +223,42 @@ struct s3_motr_rw_op_context *create_basic_rw_op_ctx(size_t motr_buf_count,
            __func__, motr_buf_count, unit_size, allocate_bufs);
     return NULL;
   }
-
-  rc = m0_bufvec_alloc(ctx->attr, motr_buf_count, 1);
+  rc = m0_bufvec_alloc(ctx->pi_bufvec, buffers_per_motr_unit, sizeof(void *));
   if (rc != 0) {
     s3_bufvec_free_aligned(ctx->data, unit_size, allocate_bufs);
     free(ctx->data);
+    free(ctx->ext);
+    free(ctx->pi_bufvec);
+    free(ctx);
+    s3_log(S3_LOG_FATAL, "", "%s Exit with NULL - possible out-of-memory\n",
+           __func__);
+    return NULL;
+  }
+
+  rc = m0_bufvec_alloc(ctx->attr, motr_checksums_buf_count,
+                       get_sizeof_pi_info(ctx));
+#if 0
+  } else {
+    rc = m0_bufvec_alloc(ctx->attr, motr_buf_count, 1);
+  }
+#endif
+  if (rc != 0) {
+    s3_bufvec_free_aligned(ctx->data, unit_size, allocate_bufs);
+    free(ctx->data);
+    free(ctx->pi_bufvec);
     free(ctx->attr);
     free(ctx->ext);
+    free(ctx->pi_bufvec);
     free(ctx);
     s3_log(S3_LOG_ERROR, "",
            "%s motr_buf_count = %zu Exit with NULL - possible out-of-memory\n",
            __func__, motr_buf_count);
     return NULL;
+  }
+  for (unsigned int i = 0; i < motr_checksums_buf_count; i++) {
+    struct m0_md5_inc_context_pi *s3_pi =
+        (struct m0_md5_inc_context_pi *)ctx->attr->ov_buf[i];
+    s3_pi->pimd5c_hdr.pih_type = ctx->pi.pi_hdr.pih_type;
   }
 
   rc = m0_indexvec_alloc(ctx->ext, motr_buf_count);
@@ -212,6 +268,7 @@ struct s3_motr_rw_op_context *create_basic_rw_op_ctx(size_t motr_buf_count,
     free(ctx->data);
     free(ctx->attr);
     free(ctx->ext);
+    free(ctx->pi_bufvec);
     free(ctx);
     s3_log(S3_LOG_ERROR, "",
            "%s motr_buf_count = %zu Exit with NULL - possible out-of-memory\n",
@@ -230,6 +287,11 @@ int free_basic_rw_op_ctx(struct s3_motr_rw_op_context *ctx) {
   m0_indexvec_free(ctx->ext);
   free(ctx->ext);
   free(ctx->data);
+  // reset v_nr, as we dont want to free ov_buf[*] in m0_bufvec_free()
+  // s3_bufvec_free_aligned(ctx->data..) has freed it
+  ctx->pi_bufvec->ov_vec.v_nr = 0;
+  m0_bufvec_free(ctx->pi_bufvec);
+  free(ctx->pi_bufvec);
   free(ctx->attr);
   free(ctx);
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
