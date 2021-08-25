@@ -29,6 +29,7 @@ import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.io.File;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,6 +70,11 @@ public class AuthServerConfig {
                             String keyStoreFile) throws FileNotFoundException,
          IOException, GeneralSecurityException, Exception {
         authResourceDir = resourceDir;
+        File file = new File(
+            authResourceDir.replace("/opt/seagate/cortx", "/etc/cortx"));
+        if (file.exists())
+          authResourceDir =
+              authResourceDir.replace("/opt/seagate/cortx", "/etc/cortx");
         Path authProperties = Paths.get(authResourceDir, authServerFile);
         Path authSecureProperties = Paths.get(authResourceDir, keyStoreFile);
         Properties authServerConfig = new Properties();
