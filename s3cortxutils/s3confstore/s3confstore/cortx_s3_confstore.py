@@ -83,6 +83,10 @@ class S3CortxConfStore:
     """Saves to config file."""
     Conf.save(self.default_index)
 
+  def get_machine_id(self):
+    """Get machine id from the constore"""
+    return Conf.machine_id
+
   @staticmethod
   def validate_configfile(configfile: str):
     """Validate the 'configfile' url, if its a valid file and of supported format."""

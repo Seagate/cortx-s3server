@@ -68,7 +68,6 @@ TEST_F(S3AwsEtagTest, Finalize) {
   EXPECT_NE(std::string::npos, part_num_delimiter);
   EXPECT_EQ(s3AwsEtag_ptr->part_count,
             atoi(final_etag.substr(part_num_delimiter + 1).c_str()));
-
   s3AwsEtag_ptr->add_part_etag("abcd");
   final_etag = s3AwsEtag_ptr->finalize();
   part_num_delimiter = final_etag.find("-");
