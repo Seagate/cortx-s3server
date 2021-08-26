@@ -59,8 +59,8 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
    > {s3 src}/s3backgrounddelete/scripts/update_object_leak.sh
 
 8.  Check scheduler and processor logs at
-   > /var/log/seagate/s3/s3backgrounddelete/object_recovery_scheduler.log &
-   > /var/log/seagate/s3/s3backgrounddelete/object_recovery_processor.log respectively.
+   > /var/log/cortx/s3/s3backgrounddelete/object_recovery_scheduler.log &
+   > /var/log/cortx/s3/s3backgrounddelete/object_recovery_processor.log respectively.
 
 9.  For s3backgroudelete algorithm please refer
    > {s3 src}/docs/design/probable-delete-processing.txt &
