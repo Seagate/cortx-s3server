@@ -20,7 +20,7 @@
 -->
 <Configuration status="fatal" name="AuthServer" monitorInterval="30">
     <Properties>
-        <Property name="baseDir">/var/log/seagate/auth/server</Property>
+        <Property name="baseDir">/var/log/cortx/auth/server</Property>
     </Properties>
 
     <Appenders>
