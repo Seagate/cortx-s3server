@@ -1,4 +1,4 @@
-/var/log/slapd.log
+/var/log/cortx/slapd.log
 {
     daily
     rotate 10

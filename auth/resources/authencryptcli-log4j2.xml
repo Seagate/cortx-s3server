@@ -20,7 +20,7 @@
 -->
 <Configuration status="warn" name="AuthServer" monitorInterval="30">
     <Properties>
-        <Property name="baseDir">/var/log/seagate/auth/tools</Property>
+        <Property name="baseDir">/var/log/cortx/auth/tools</Property>
     </Properties>
 
     <Appenders>
