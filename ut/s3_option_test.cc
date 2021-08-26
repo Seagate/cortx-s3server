@@ -49,7 +49,7 @@ class S3OptionsTest : public testing::Test {
 };
 
 TEST_F(S3OptionsTest, Constructor) {
-  EXPECT_STREQ("/var/log/seagate/s3", instance->get_log_dir().c_str());
+  EXPECT_STREQ("/var/log/cortx/s3", instance->get_log_dir().c_str());
   EXPECT_STREQ("INFO", instance->get_log_level().c_str());
   EXPECT_STREQ("/etc/ssl/stx-s3/s3/ca.crt", instance->get_iam_cert_file());
   EXPECT_STREQ("10.10.1.1", instance->get_ipv4_bind_addr().c_str());
@@ -94,7 +94,7 @@ TEST_F(S3OptionsTest, SingletonCheck) {
 TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_TRUE(instance->load_all_sections(false));
   EXPECT_EQ(std::string("s3config-test.yaml"), instance->get_option_file());
-  EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
+  EXPECT_EQ(std::string("/var/log/cortx/s3"), instance->get_log_dir());
   EXPECT_STREQ("/etc/ssl/stx-s3/s3/ca.crt", instance->get_iam_cert_file());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string("10.10.1.1"), instance->get_ipv4_bind_addr());
@@ -149,7 +149,7 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   instance->set_cmdline_option(S3_OPTION_REUSEPORT, "true");
   // load from Config file, overriding the command options
   EXPECT_TRUE(instance->load_all_sections(true));
-  EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
+  EXPECT_EQ(std::string("/var/log/cortx/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string("10.10.1.1"), instance->get_ipv4_bind_addr());
   EXPECT_EQ(std::string(""), instance->get_ipv6_bind_addr());
@@ -235,7 +235,7 @@ TEST_F(S3OptionsTest, LoadThirdPartySectionFromFile) {
 TEST_F(S3OptionsTest, LoadS3SectionFromFile) {
   EXPECT_TRUE(instance->load_section("S3_SERVER_CONFIG", false));
 
-  EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
+  EXPECT_EQ(std::string("/var/log/cortx/s3"), instance->get_log_dir());
   EXPECT_STREQ("/etc/ssl/stx-s3/s3/ca.crt", instance->get_iam_cert_file());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string("10.10.1.1"), instance->get_ipv4_bind_addr());
@@ -277,7 +277,7 @@ TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
   instance->set_cmdline_option(S3_OPTION_REUSEPORT, "true");
   EXPECT_TRUE(instance->load_section("S3_SERVER_CONFIG", true));
 
-  EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
+  EXPECT_EQ(std::string("/var/log/cortx/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string("10.10.1.1"), instance->get_ipv4_bind_addr());
   EXPECT_EQ(std::string(""), instance->get_ipv6_bind_addr());
@@ -315,7 +315,7 @@ TEST_F(S3OptionsTest, LoadAuthSectionFromFile) {
   EXPECT_EQ(8095, instance->get_auth_port());
 
   // Others should not be loaded
-  EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
+  EXPECT_EQ(std::string("/var/log/cortx/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string(""), instance->get_ipv4_bind_addr());
   EXPECT_EQ(std::string(""), instance->get_ipv6_bind_addr());
@@ -346,7 +346,7 @@ TEST_F(S3OptionsTest, LoadSelectiveAuthSectionFromFile) {
   EXPECT_EQ(8095, instance->get_auth_port());
 
   // Others should not be loaded
-  EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
+  EXPECT_EQ(std::string("/var/log/cortx/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string(""), instance->get_ipv4_bind_addr());
   EXPECT_EQ(std::string(""), instance->get_ipv6_bind_addr());
@@ -381,7 +381,7 @@ TEST_F(S3OptionsTest, LoadMotrSectionFromFile) {
   EXPECT_FALSE(instance->get_motr_is_read_verify());
 
   // Others should not be loaded
-  EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
+  EXPECT_EQ(std::string("/var/log/cortx/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string(""), instance->get_ipv4_bind_addr());
   EXPECT_EQ(std::string(""), instance->get_ipv6_bind_addr());
@@ -408,7 +408,7 @@ TEST_F(S3OptionsTest, LoadSelectiveMotrSectionFromFile) {
   EXPECT_FALSE(instance->get_motr_is_read_verify());
 
   // Others should not be loaded
-  EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
+  EXPECT_EQ(std::string("/var/log/cortx/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string(""), instance->get_ipv4_bind_addr());
   EXPECT_EQ(std::string(""), instance->get_ipv6_bind_addr());
