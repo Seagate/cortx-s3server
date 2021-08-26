@@ -53,13 +53,13 @@ ldapdelete -x -w $PASSWORD -D "cn=admin,dc=seagate,dc=com" -r "dc=seagate,dc=com
 systemctl stop slapd
 
 # Delete the schema from LDAP.
-rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
+rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{2\}s3user.ldif
 
 # Start slapd
 systemctl start slapd
 
 # Add S3 schema
-ldapadd -x -w $PASSWORD -D "cn=admin,cn=config" -f cn\=\{1\}s3user.ldif
+ldapadd -x -w $PASSWORD -D "cn=admin,cn=config" -f cn\=\{2\}s3user.ldif
 
 # Restart slapd to update the changes
 systemctl restart slapd

@@ -76,7 +76,7 @@ class ConfigCmd(SetupCmd):
     # lock and file descriptor released automatically here.
     self.logger.info(f'released the lock at {lockfile}.')
 
-  def process_under_flock(self, configure_only_openldap = False, configure_only_haproxy = False):
+  def process_under_flock(self, skip_haproxy = False):
     """Main processing function."""
     self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
     self.logger.info("validations started")
@@ -121,19 +121,13 @@ class ConfigCmd(SetupCmd):
       self.read_ldap_root_credentials()
       self.logger.info("read ldap credentials completed")
 
-      # disable S3server, S3authserver, haproxy, BG delete services on reboot as
-      # it will be managed by HA
-      self.logger.info('Disable services on reboot started')
-      services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver"]
-      self.disable_services(services_list)
-      self.logger.info('Disable services on reboot completed')
-
       self.logger.info('create auth jks password started')
       self.create_auth_jks_password()
       self.logger.info('create auth jks password completed')
 
+
       if (self.services is not None) and (not 'openldap' in self.services):
-        sysconfig_path = os.path.join(self.base_config_file_path,"s3", self.machine_id, "sysconfig")
+        sysconfig_path = os.path.join(self.base_config_file_path,"s3","sysconfig",self.machine_id)
         file_name = sysconfig_path + '/s3server-0x*'
         list_matching = []
         for name in glob.glob(file_name):
@@ -151,15 +145,12 @@ class ConfigCmd(SetupCmd):
           self.create_symbolic_link(src_path, dst_path)
           index += 1
 
-      if configure_only_openldap == True:
+      if(self.services is None or 'openldap' in self.services):
         # Configure openldap only
-        self.configure_openldap()
-      elif configure_only_haproxy == True:
+        self.configure_s3_schema()
+
+      if skip_haproxy == False:
         # Configure haproxy only
-        self.configure_haproxy()
-      else:
-        # Configure both openldap and haproxy
-        self.configure_openldap()
         self.configure_haproxy()
 
       # create topic for background delete
@@ -217,99 +208,29 @@ class ConfigCmd(SetupCmd):
       raise S3PROVError(f"{confstore_key} does not specify endpoint fqdn {endpoint} for endpoint type {endpoint_type}")
     return endpoint[expected_token]
 
-  def configure_openldap(self):
-    """Install and Configure Openldap over Non-SSL."""
-    # 1. Install and Configure Openldap over Non-SSL.
-    # 2. Enable slapd logging in rsyslog config
-    # 3. Set openldap-replication
-    # 4. Check number of nodes in the cluster
-    # TODO pass the base config file path to the script.
-    self.logger.info('Open ldap configuration started')
-    cmd = ['/opt/seagate/cortx/s3/install/ldap/setup_ldap.sh',
-           '--ldapadminpasswd',
-           f'{self.ldap_passwd}',
-           '--rootdnpasswd',
-           f'{self.rootdn_passwd}',
-           '--baseconfigpath',
-           f'{self.base_config_file_path}',
-           '--forceclean',
-           '--skipssl']
-    handler = SimpleProcess(cmd)
-    stdout, stderr, retcode = handler.run()
-    self.logger.info(f'output of setup_ldap.sh: {stdout}')
-    if retcode != 0:
-      self.logger.error(f'error of setup_ldap.sh: {stderr}')
-      raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
-    else:
-      self.logger.warning(f'warning of setup_ldap.sh: {stderr}')
-
-    if os.path.isfile("/opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf"):
-      try:
-        os.makedirs("/etc/rsyslog.d")
-      except OSError as e:
-        if e.errno != errno.EEXIST:
-          raise S3PROVError(f"mkdir /etc/rsyslog.d failed with errno: {e.errno}, exception: {e}")
-      shutil.copy('/opt/seagate/cortx/s3/install/ldap/rsyslog.d/slapdlog.conf',
-                  '/etc/rsyslog.d/slapdlog.conf')
-
-    # restart rsyslog service
-    try:
-      self.logger.info("Restarting rsyslog service...")
-      service_list = ["rsyslog"]
-      self.restart_services(service_list)
-    except Exception as e:
-      self.logger.error(f'Failed to restart rsyslog service, error: {e}')
-      raise e
-    self.logger.info("Restarted rsyslog service...")
-
-    # set openldap-replication
-    self.configure_openldap_replication()
-    self.logger.info('Open ldap configuration completed')
-
-  def configure_openldap_replication(self):
-    """Configure openldap replication within a storage set."""
-    self.logger.info('Cleaning up old Openldap replication configuration')
-    # Delete ldap replication cofiguration
-    self.delete_replication_config()
-    self.logger.info('Open ldap replication configuration started')
-    # Get storage set count to loop over to get all nodes
-    storage_set_count = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_STORAGE_SET_COUNT')
-    self.logger.info(f"storage_set_count : {storage_set_count}")
-    srv_io_node_count = 0
-    index = 0
-    while index < int(storage_set_count):
-      # Get all server nodes
-      server_nodes_list_key = self.get_confkey('CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("storage_set_count", str(index))
-      self.logger.info(f"server_nodes_list_key : {server_nodes_list_key}")
-      server_nodes_list = self.get_confvalue(server_nodes_list_key)
-      if len(server_nodes_list) > 1:
-        Path(self.s3_tmp_dir).mkdir(parents=True, exist_ok=True)
-        ldap_hosts_list_file = os.path.join(self.s3_tmp_dir, "ldap_hosts_list_file.txt")
-        with open(ldap_hosts_list_file, "w") as f:
-          for node_machine_id in server_nodes_list:
-            self.logger.info(f'Setting ldap-replication for node-id: {node_machine_id}')
-            private_fqdn = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_PRIVATE_FQDN_KEY').replace('machine-id', node_machine_id))
-            f.write(f'{private_fqdn}\n')
-            self.logger.info(f'output of ldap_hosts_list_file.txt: {private_fqdn}')
-
-        cmd = ['/opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh',
-              '-h',
-              ldap_hosts_list_file,
-              '-p',
-              f'{self.rootdn_passwd}']
+  def configure_s3_schema(self):
+    self.logger.info('openldap s3 configuration started')
+    server_nodes_list_key = self.get_confkey('CONFIG>CONFSTORE_S3_OPENLDAP_SERVERS')
+    server_nodes_list = self.get_confvalue(server_nodes_list_key)
+    if type(server_nodes_list) is str:
+      # list is stored as string in the confstore file
+      server_nodes_list = literal_eval(server_nodes_list)
+    for node_machine_id in server_nodes_list:
+        cmd = ['/opt/seagate/cortx/s3/install/ldap/s3_setup_ldap.sh',
+                '--hostname',
+                f'{node_machine_id}',
+                '--ldapadminpasswd',
+                f'{self.ldap_passwd}',
+                '--rootdnpasswd',
+                f'{self.rootdn_passwd}']
         handler = SimpleProcess(cmd)
         stdout, stderr, retcode = handler.run()
-        self.logger.info(f'output of setupReplicationScript.sh: {stdout}')
-        os.remove(ldap_hosts_list_file)
-
+        self.logger.info(f'output of setup_ldap.sh: {stdout}')
         if retcode != 0:
-          self.logger.error(f'error of setupReplicationScript.sh: {stderr}')
+          self.logger.error(f'error of setup_ldap.sh: {stderr} {node_machine_id}')
           raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
         else:
-          self.logger.warning(f'warning of setupReplicationScript.sh: {stderr}')
-      index += 1
-    # TODO: set replication across storage-sets
-    self.logger.info('Open ldap replication configuration completed')
+          self.logger.warning(f'warning of setup_ldap.sh: {stderr} {node_machine_id}')
 
   def create_topic(self, admin_id: str, topic_name:str, partitions: int):
     """create topic for background delete services."""
@@ -357,23 +278,6 @@ class ConfigCmd(SetupCmd):
     """Configure haproxy service."""
     self.logger.info('haproxy configuration started')
     try:
-      # create empty haproxy syconfi file (e.g. /etc/cortx/s3/sysconfig/haproxy)
-      sysconfig_file = os.path.join(self.base_config_file_path, self.get_confkey("S3_HAPROXY_LOG_CONFIG_FILE"))
-      self.logger.info(f"sysconfig_file: {sysconfig_file}")
-      os.makedirs(os.path.dirname(sysconfig_file), exist_ok=True)
-      with open(sysconfig_file, 'w') as fp_haproxy_sys_config:
-        pass
-      self.logger.info("haproxy sys config file created successfully")
-      # load with confstore with properties format
-      haproxy_sysconfigfile_confstore = S3CortxConfStore(f'properties://{sysconfig_file}',
-                                                          'update_haproxy_sysconfig_file_idx')
-      # set key LOG_FILE with value {haproxy_sysconfig_log_file}
-      haproxy_sysconfig_log_file = os.path.join(self.base_log_file_path, 's3', self.machine_id, 'haproxy/haproxy.log')
-      self.logger.info(f"haproxy_sysconfig_log_file : {haproxy_sysconfig_log_file}")
-      haproxy_sysconfigfile_confstore.set_config("LOG_FILE", haproxy_sysconfig_log_file, True)
-      self.logger.info("haproxy sys config file updated successfully")
-      # create haproxy log directory path
-      os.makedirs(os.path.dirname(haproxy_sysconfig_log_file), exist_ok=True)
 
       # Create main config file for haproxy.
       S3HaproxyConfig(self.url).process()
@@ -551,6 +455,7 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logFilePath", self.update_auth_log_dir_path)
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_BASE_CONFIG_PATH", "logConfigFile", self.update_auth_log4j_config_file_path)
     self.update_auth_log4j_log_dir_path()
+    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_LDAPADMIN_PASSWD_KEY", "ldapLoginPW")
     self.logger.info("Update s3 authserver config file completed")
 
   def get_endpoint_for_scheme(self, value_to_update, scheme):
