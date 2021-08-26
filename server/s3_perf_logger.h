@@ -35,7 +35,7 @@ class S3PerfLogger {
 
  public:
   // Opens the Performance log file
-  // "/var/log/seagate/s3/perf.log" should be by default
+  // "/var/log/cortx/s3/perf.log" should be by default
   S3PerfLogger(const std::string& log_file);
 
   static bool is_enabled() noexcept { return instance; }
