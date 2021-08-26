@@ -89,7 +89,7 @@ public class AuthServerConfigTest {
 
         assertFalse(AuthServerConfig.isPerfEnabled());
 
-        assertEquals("/var/log/seagate/auth/perf.log", AuthServerConfig.getPerfLogFile());
+        assertEquals("/var/log/cortx/auth/perf.log", AuthServerConfig.getPerfLogFile());
 
         assertEquals(4, AuthServerConfig.getEventExecutorThreads());
 
@@ -181,7 +181,7 @@ public class AuthServerConfigTest {
         authServerConfig.setProperty("nettyEventExecutorThreads", "4");
         authServerConfig.setProperty("httpPort", "28050");
         authServerConfig.setProperty("httpsPort", "28051");
-        authServerConfig.setProperty("logFilePath", "/var/log/seagate/auth/");
+        authServerConfig.setProperty("logFilePath", "/var/log/cortx/auth/");
         authServerConfig.setProperty("dataSource", "ldap");
         authServerConfig.setProperty("ldapHost", "127.0.0.1");
         authServerConfig.setProperty("ldapPort", "389");
@@ -197,7 +197,7 @@ public class AuthServerConfigTest {
         authServerConfig.setProperty("enable_http", "false");
         authServerConfig.setProperty("enableFaultInjection", "false");
         authServerConfig.setProperty("perfEnabled", "false");
-        authServerConfig.setProperty("perfLogFile", "/var/log/seagate/auth/perf.log");
+        authServerConfig.setProperty("perfLogFile", "/var/log/cortx/auth/perf.log");
         authServerConfig.setProperty("s3KeyStorePath", "../../scripts/");
         authServerConfig.setProperty("s3KeyStoreName",
                                      "s3authserver.jks_template");
