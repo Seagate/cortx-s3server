@@ -86,7 +86,7 @@ ha_ep=$local_nid:12345:34:1
 s3_working_dir="/var/seagate/s3/"
 mkdir -p $s3_working_dir
 
-s3_log_dir="/var/log/seagate/s3/"
+s3_log_dir="/var/log/cortx/s3/"
 mkdir -p $s3_log_dir
 
 # Start the s3server
