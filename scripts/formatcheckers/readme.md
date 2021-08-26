@@ -42,14 +42,14 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
 ## Test examples
 ** only reports :
 
-    ./python_check.sh /var/seagate/s3server/s3backgrounddelete /var/log/seagate/pyreports
+    ./python_check.sh /var/seagate/s3server/s3backgrounddelete /var/log/cortx/pyreports
 
 > Note: Only python lint report will be generated at OUTPUT_DIR/pylint-report/report.txt
 > Developer has to fix all warnings,errors.
 
 ** with --dryrunfix :
 
-    ./python_check.sh /var/seagate/s3server/s3backgrounddelete /var/log/seagate/pyreports --dryrunfix
+    ./python_check.sh /var/seagate/s3server/s3backgrounddelete /var/log/cortx/pyreports --dryrunfix
 
 > Note: this will list out all files that autopep8 will autofix in order to conform to PEP 8 style guide.
 > This will also generate detailed dryrunfix report at OUTPUT_DIR/dryrunfix_report.txt.
@@ -58,7 +58,7 @@ please email opensource@seagate.com or cortx-questions@seagate.com.
 
 ** with --autofix :
 
-     ./python_check.sh /var/seagate/s3server/s3backgrounddelete /var/log/seagate/pyreports --autofix
+     ./python_check.sh /var/seagate/s3server/s3backgrounddelete /var/log/cortx/pyreports --autofix
 
 > Note: this will format python code in SOURCE_DIR to conform to PEP 8 style guide.
 > It will not fix all the warnings or errors.
