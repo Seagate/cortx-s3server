@@ -103,4 +103,4 @@ encrypted_pass=$(s3cipher encrypt --data="$ldap_passwd" --key="$ldapcipherkey")
 
 # Update the config
 escaped_pass=`echo "$encrypted_pass" | sed 's/\//\\\\\\//g'`
-sed -i "s/^ldapLoginPW=.*/ldapLoginPW=${escaped_pass}/" $auth_properties
+sed -i "s/^ldapLoginPW = .*/ldapLoginPW=${escaped_pass}/" $auth_properties
