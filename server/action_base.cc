@@ -78,7 +78,7 @@ Action::Action(std::shared_ptr<RequestObject> req, bool check_shutdown,
   setup_steps();
 }
 
-Action::~Action() { s3_log(S3_LOG_DEBUG, request_id, "%s\n", __func__); }
+Action::~Action() { s3_log(S3_LOG_DEBUG, "", "%s\n", __func__); }
 
 void Action::set_s3_error(std::string code) {
   state = ACTS_ERROR;

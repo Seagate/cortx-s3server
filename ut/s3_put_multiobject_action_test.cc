@@ -897,7 +897,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
   EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
-
+  action_under_test->is_first_write_part_request = false;
   action_under_test->write_object_successful();
 
   S3Option::get_instance()->set_is_s3_shutting_down(false);
@@ -912,7 +912,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
   EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
-
+  action_under_test->is_first_write_part_request = false;
   action_under_test->write_object_successful();
 
   S3Option::get_instance()->set_is_s3_shutting_down(false);
