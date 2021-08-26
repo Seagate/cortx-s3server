@@ -45,6 +45,7 @@ def main():
 
   args = parser.parse_args()
 
+
   # global variables
   global s3_confkeys_store
   global base_config_path
@@ -66,6 +67,7 @@ def main():
     # Get Config entries
     config_key = s3_confkeys_store.get_config\
                      ("CONFIG>CONFSTORE_BASE_CONFIG_PATH")
+
     base_config_path = prov_confkeys_store.get_config(config_key)
     logdir_key = s3_confkeys_store.get_config\
                      ("CONFIG>CONFSTORE_BASE_LOG_PATH")
@@ -97,7 +99,7 @@ def main():
       s3configfile = s3_confkeys_store.get_config("S3_CONFIG_FILE").replace("/opt/seagate/cortx", base_config_path)
       logger.info(f"s3configfile : {s3configfile}")
       # create symbolic link for this config file to be used by log rotation
-      create_symbolic_link(s3configfile, s3_confkeys_store.get_confkey("S3_CONF_SYMLINK"))
+      create_symbolic_link(s3configfile, s3_confkeys_store.get_config("S3_CONF_SYMLINK"))
 
       # configure s3server, s3m0trace, s3addb logrotate
       configure_log_rotate("S3_LOGROTATE_S3LOG", "/etc/cron.hourly/")
@@ -109,7 +111,7 @@ def main():
       os.system("/usr/sbin/crond start")
 
       #Sys config path
-      sysconfig_path = os.path.join(base_config_path, "s3", machine_id, "sysconfig")
+      sysconfig_path = os.path.join(base_config_path, "s3", "sysconfig",machine_id)
 
       fid_file = "s3server-" + args.index
       fid_path = os.path.join(sysconfig_path, fid_file)
@@ -123,8 +125,12 @@ def main():
 
       logger.info(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3configfile} -d")
       logger.info(f"Starting S3 Server with FID {Fid}...")
-      # Start S3 Server
-      os.system(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3configfile} -d")
+      i = 0
+      while i < 10:
+        # Start S3 Server
+        os.system(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3configfile} -d")
+        i += 1
+        time.sleep(60)
 
       # Read the log directory path from s3config file
       s3_log_dir = read_config_value("S3_CONFIG_FILE", "yaml", "S3_SERVER_CONFIG>S3_LOG_DIR")
@@ -151,6 +157,9 @@ def main():
       # Print last few line of S3 authserver log  file
       os.system(f"tail -f {s3_auth_server_log_file_path}")
     elif args.service == 's3bgproducer':
+      # Uncomment below two lines if you want return bgdelete schedule timings.
+      # os.system("sed -i -e \"s,scheduler_schedule_interval:.*,scheduler_schedule_interval:\ 120,\" /etc/cortx/s3/s3backgrounddelete/config.yaml")
+      # os.system("sed -i -e \"s,leak_processing_delay_in_mins:.*,leak_processing_delay_in_mins:\ 2,\" /etc/cortx/s3/s3backgrounddelete/config.yaml")
       # Start S3 Background Producer
       logger.info(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh")
       logger.info(f"Starting S3 Background delete Producer...")
@@ -178,14 +187,13 @@ def main():
       # create symbolic link for this config file to be used by log rotation
       s3_haproxy_config_file = os.path.join(base_config_path, s3_confkeys_store.get_config("S3_HAPROXY_LOG_CONFIG_FILE"))
       logger.info(f"s3_haproxy_config_file : {s3_haproxy_config_file}")
-      create_symbolic_link(s3_haproxy_config_file, s3_confkeys_store.get_confkey("S3_HAPROXY_SYSCONF_SYMLINK"))
+      create_symbolic_link(s3_haproxy_config_file, s3_confkeys_store.get_config("S3_HAPROXY_SYSCONF_SYMLINK"))
 
       # configure haproxy logrotate
       configure_log_rotate("S3_LOGROTATE_HAPROXY_ROLLOVER", "/etc/cron.daily/")
 
       # start crond
       os.system("/usr/sbin/crond start")
-
       # Start haproxy
       logger.info(f"sh /opt/seagate/cortx/s3/bin/starthaproxy.sh {base_config_path}")
       logger.info(f"Starting HAProxy...")
