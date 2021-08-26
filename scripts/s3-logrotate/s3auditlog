@@ -1,4 +1,4 @@
-/var/log/seagate/s3/audit/audit.log
+/var/log/cortx/s3/audit/audit.log
 {
     daily
     rotate 10
