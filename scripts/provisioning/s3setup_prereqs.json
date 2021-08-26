@@ -14,7 +14,7 @@
   "config": {
     "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
     "pip3s": ["s3confstore", "cryptography", "s3cipher"],
-    "services": ["sshd", "haproxy", "slapd", "rsyslog"],
+    "services": ["sshd", "haproxy", "slapd", "rsyslogd"],
     "files": [
       "file:/opt/seagate/cortx/s3/install/haproxy/503.http",
       "file:/opt/seagate/cortx/s3/conf/s3config.yaml",
@@ -27,7 +27,7 @@
   "init": {
     "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
     "pip3s": ["s3confstore", "cryptography", "s3cipher"],
-    "services": ["sshd", "haproxy", "slapd", "rsyslog"],
+    "services": ["sshd", "haproxy", "slapd", "rsyslogd"],
     "files": [
       "file:/opt/seagate/cortx/s3/install/haproxy/503.http",
       "file:/etc/cortx/s3/conf/s3config.yaml",

@@ -82,9 +82,6 @@ s3_bundle_location=$bundle_path/s3
 
 haproxy_config="/etc/haproxy/haproxy.cfg"
 # Collecting rotated logs for haproxy and ldap along with live log
-haproxy_status_log="/var/log/cortx/haproxy-status.log"
-haproxy_log="/var/log/cortx/haproxy.log"
-ldap_log="/var/log/cortx/slapd.log"
 
 haproxy_log="$base_log_file_path/haproxy.log"
 haproxy_status_log="$base_log_file_path/haproxy-status.log"
@@ -280,7 +277,6 @@ collect_m0trace_files(){
 collect_first_m0trace_file(){
   echo "Collecting oldest m0trace file dump..."
   dir="$base_log_file_path/motr"
-
   cwd=$(pwd)
   m0trace_filename_pattern="*/m0trace.*"
   if [ ! -d "$s3_motr_dir" ];
@@ -399,6 +395,12 @@ fi
 if [ -f "$s3cluster_config" ];
 then
     args+=($s3cluster_config)
+fi
+
+# Collect s3cluster config file if available
+if [ -f "$s3cluster_config" ];
+then
+    args=$args" "$s3cluster_config
 fi
 
 # Collect s3startsystem script file if available
