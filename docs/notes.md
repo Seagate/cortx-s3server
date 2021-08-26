@@ -24,7 +24,7 @@ s3server --s3pidfile $pid_filename \
 Notes:
 
 - motr and s3server addb are stored separatelly
-    - s3server on dev env: `/var/log/seagate/motr/s3server-*/addb_*/o/100000000000000:2`
+    - s3server on dev env: `/var/log/cortx/motr/s3server-*/addb_*/o/100000000000000:2`
     - motr on dev env: `/var/motr/systest-*/ios*/addb-stobs-*/o/100000000000000:2`
 
 - all motr and s3 addb are collected on individual process basis on each node
@@ -60,7 +60,7 @@ cd -
 ```
 cd ./third_party/motr/addb2/
 # s3server addb
-dump_s="/var/log/seagate/motr/s3server-*/addb_*/o/100000000000000:2"
+dump_s="/var/log/cortx/motr/s3server-*/addb_*/o/100000000000000:2"
 for d in $dump_s; do
     pid=$(echo $d | sed -E 's/.*addb_([0-9]+)[/].*/\1/')
     echo 's3server '${pid}

@@ -35,4 +35,4 @@ BOTO:
     ENABLE_LOGGER: True
     # Log level can be DEBUG, CRITICAL, ERROR, WARNING, INFO, NOTSET
     LOG_LEVEL: DEBUG
-    LOG_FILE_PATH: /var/log/seagate/auth/s3iamcli.log
+    LOG_FILE_PATH: /var/log/cortx/auth/s3iamcli.log
