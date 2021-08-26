@@ -447,7 +447,7 @@ then
     done
 
     # s3server addb
-    dump_s="/var/log/seagate/motr/s3server-*/addb_*/o/100000000000000:2"
+    dump_s="/var/log/cortx/motr/s3server-*/addb_*/o/100000000000000:2"
     for d in $dump_s; do
         pid=$(echo $d | sed -E 's/.*addb_([0-9]+)[/].*/\1/')
         echo 's3server '${pid}
@@ -458,9 +458,9 @@ then
 fi
 
 # Clean up motr and S3 log and data dirs
-$USE_SUDO rm -rf /mnt/store/motr/* /var/log/motr/* /var/log/seagate/motr/* \
-                 /var/log/seagate/s3/* /var/log/seagate/auth/server/* \
-                 /var/log/seagate/auth/tools/* /var/crash/* /var/motr/*
+$USE_SUDO rm -rf /mnt/store/motr/* /var/log/motr/* /var/log/cortx/motr/* \
+                 /var/log/cortx/s3/* /var/log/cortx/auth/server/* \
+                 /var/log/cortx/auth/tools/* /var/crash/* /var/motr/*
 
 if [ $remove_m0trace -eq 1 ]; then
     $USE_SUDO find . -type f -name "m0trace.*" -exec rm -- '{}' +
@@ -591,7 +591,7 @@ function s3server_start() {
 
     if [ "$statuss3" != "0" ]; then
         echo "Cannot start S3 service"
-        tail -50 /var/log/seagate/s3/s3server.INFO
+        tail -50 /var/log/cortx/s3/s3server.INFO
         exit 1
     fi
 }
@@ -667,7 +667,7 @@ then
 fi
 
 # To debug if there are any errors
-tail -50 /var/log/seagate/s3/s3server.ERROR || echo "No Errors"
+tail -50 /var/log/cortx/s3/s3server.ERROR || echo "No Errors"
 
 # jenkins pipeline to give this argument.
 if [ ! -z "$generate_support_bundle" ]
