@@ -457,7 +457,7 @@ bool S3PostCompleteAction::validate_parts() {
         send_response_to_s3_client();
         return false;
       }
-
+      unsigned int pnum = std::stoul(store_kv->first.c_str());
       object_size += part_metadata->get_content_length();
       part_etags[pnum] = part_metadata->get_md5();
       // Remove the entry from parts map, so that in next
