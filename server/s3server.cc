@@ -743,7 +743,7 @@ int main(int argc, char **argv) {
 
   S3Daemonize s3daemon;
   set_fatal_handler_exit();
-  s3daemon.daemonize();
+  if (!g_option_instance->is_dameon_disabled()) s3daemon.daemonize();
 #if 0
   s3daemon.register_signals();
 #endif

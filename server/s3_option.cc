@@ -1437,6 +1437,8 @@ void S3Option::enable_murmurhash_oid() { s3_enable_murmurhash_oid = true; }
 
 void S3Option::disable_murmurhash_oid() { s3_enable_murmurhash_oid = false; }
 
+void S3Option::disable_Dameon() { FLAGS_disable_dameon = true; }
+
 void S3Option::enable_reuseport() { FLAGS_reuseport = true; }
 
 bool S3Option::is_s3_reuseport_enabled() { return s3_reuseport; }
@@ -1446,6 +1448,8 @@ bool S3Option::is_motr_http_reuseport_enabled() { return motr_http_reuseport; }
 bool S3Option::is_fi_enabled() { return FLAGS_fault_injection; }
 
 bool S3Option::is_getoid_enabled() { return FLAGS_getoid; }
+
+bool S3Option::is_dameon_disabled() { return FLAGS_disable_dameon; }
 
 std::string S3Option::get_redis_srv_addr() { return redis_srv_addr; }
 

@@ -510,6 +510,8 @@ class S3Option {
   void enable_murmurhash_oid();
   void disable_murmurhash_oid();
 
+  bool is_dameon_disabled();
+  void disable_Dameon();
   void dump_options();
 
   static S3Option* get_instance() {
