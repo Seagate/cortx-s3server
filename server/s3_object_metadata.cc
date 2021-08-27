@@ -812,6 +812,7 @@ std::string S3ObjectMetadata::version_entry_to_json() {
   // root["Object-Name"] = object_name;
   root["motr_oid"] = motr_oid_str;
   root["layout_id"] = layout_id;
+  root["PVID"] = pvid_str;
 
   S3DateTime current_time;
   current_time.init_current_time();
@@ -1065,6 +1066,7 @@ void S3ObjectExtendedMetadata::load(std::function<void(void)> on_success,
                                     std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   // object_list_index_oid should be set before using this method
+
   assert(non_zero(extended_list_index_layout.oid));
 
   this->handler_on_success = on_success;
@@ -1177,6 +1179,7 @@ void S3ObjectExtendedMetadata::get_obj_ext_entries_failed() {
   this->handler_on_failed();
 }
 
+
 void S3ObjectExtendedMetadata::set_extended_list_index_layout(
     const struct s3_motr_idx_layout& lo) {
   extended_list_index_layout = lo;
@@ -1200,6 +1203,7 @@ void S3ObjectExtendedMetadata::save(std::function<void(void)> on_success,
 void S3ObjectExtendedMetadata::save_extended_metadata() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   // objects_version_list_index_oid should be set before using this method
+
   assert(non_zero(extended_list_index_layout.oid));
 
   std::map<std::string, std::string> key_values =

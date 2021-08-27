@@ -99,6 +99,9 @@ class S3PostCompleteAction : public S3ObjectAction {
       new_parts_probable_del_rec_list;
   std::vector<std::unique_ptr<S3ProbableDeleteRecord>>
       old_parts_probable_del_rec_list;
+  std::map<unsigned int, std::string> part_etags;
+  std::string generate_etag();
+
 
  public:
   S3PostCompleteAction(

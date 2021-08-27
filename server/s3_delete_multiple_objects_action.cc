@@ -125,7 +125,7 @@ void S3DeleteMultipleObjectsAction::consume_incoming_content() {
 
 void S3DeleteMultipleObjectsAction::validate_request_body(std::string content) {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  MD5hash calc_md5;
+  MD5hash calc_md5(NULL, true);
   calc_md5.Update(content.c_str(), content.length());
   calc_md5.Finalize();
 

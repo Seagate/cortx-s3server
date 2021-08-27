@@ -72,6 +72,7 @@ class S3PutMultiObjectAction : public S3ObjectAction {
   }
 
   bool auth_failed;
+  bool is_first_write_part_request;
   bool write_failed;
   // These 2 flags help respond to client gracefully when either auth or write
   // fails.

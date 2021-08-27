@@ -101,6 +101,21 @@ S3PostCompleteAction::S3PostCompleteAction(
   setup_steps();
 }
 
+std::string S3PostCompleteAction::generate_etag() {
+  s3_log(S3_LOG_DEBUG, request_id, "Generating etag...\n");
+
+  S3AwsEtag awsetag;
+  for (std::pair<unsigned int, std::string> p_md5 : part_etags) {
+    s3_log(S3_LOG_DEBUG, request_id, "part num [%u] -> etag [%s]\n",
+           p_md5.first, p_md5.second.c_str());
+    awsetag.add_part_etag(p_md5.second);
+  }
+
+  std::string etg = awsetag.finalize();
+  s3_log(S3_LOG_DEBUG, request_id, "Resulting etag [%s]\n", etg.c_str());
+  return etg;
+}
+
 void S3PostCompleteAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
 
@@ -292,7 +307,7 @@ void S3PostCompleteAction::get_next_parts_info_successful() {
   if (motr_kv_reader->get_key_values().size() > 0) {
     // Do validation of parts
     if (!validate_parts()) {
-      s3_log(S3_LOG_DEBUG, request_id, "validate_parts failed");
+      s3_log(S3_LOG_DEBUG, "", "validate_parts failed");
       return;
     }
   }
@@ -320,7 +335,7 @@ void S3PostCompleteAction::get_next_parts_info_successful() {
       }
       // All parts info processed and validated, finalize etag and move ahead.
       s3_log(S3_LOG_DEBUG, request_id, "finalizing");
-      etag = awsetag.finalize();
+      etag = generate_etag();
       next();
     } else {
       // Continue fetching
@@ -349,7 +364,7 @@ void S3PostCompleteAction::get_next_parts_info_failed() {
       send_response_to_s3_client();
       return;
     }
-    etag = awsetag.finalize();
+    etag = generate_etag();
     next();
   } else {
     if (motr_kv_reader->get_state() ==
@@ -444,7 +459,7 @@ bool S3PostCompleteAction::validate_parts() {
       }
 
       object_size += part_metadata->get_content_length();
-      awsetag.add_part_etag(part_metadata->get_md5());
+      part_etags[pnum] = part_metadata->get_md5();
       // Remove the entry from parts map, so that in next
       // validate_parts() we dont have to scan it again
       part_kv = parts.erase(part_kv);
@@ -536,7 +551,7 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
     const std::map<int, std::vector<struct s3_part_frag_context>>&
         ext_entries_mp = object_ext_metadata->get_raw_extended_entries();
     struct m0_uint128 old_oid, part_list_index_oid;
-    bool is_multipart = false;
+    // bool is_multipart = false;
     for (unsigned int key_indx = 1; key_indx <= total_parts; key_indx++) {
       const std::vector<struct s3_part_frag_context>& part_entry =
           ext_entries_mp.at(key_indx);
@@ -549,13 +564,13 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
         // bucketing of object)
         S3CommonUtilities::size_based_bucketing_of_objects(
             ext_oid_str, part_entry[0].item_size);
-        if (!is_old_object) {
+        if (is_old_object) {
           // key = oldoid + "-" + newoid; // (newoid = dummy oid of new object)
           ext_oid_str = ext_oid_str + '-' + new_oid_str;
           old_oid = {0ULL, 0ULL};
           part_list_index_oid = {0ULL, 0ULL};
         } else {
-          is_multipart = true;
+          // is_multipart = true;
           part_list_index_oid = multipart_metadata->get_part_index_layout().oid;
           old_oid = old_object_oid;
         }
@@ -575,10 +590,10 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
             bucket_metadata->get_object_list_index_layout().oid,
             bucket_metadata->get_objects_version_list_index_layout().oid,
             object_metadata->get_version_key_in_index(),
-            false /* force_delete */, is_multipart, part_list_index_oid, 1,
-            key_indx,
-            bucket_metadata->get_extended_metadata_index_layout().oid));
-
+            false /* force_delete */, part_entry[0].is_multipart,
+            part_list_index_oid, 1, key_indx,
+            bucket_metadata->get_extended_metadata_index_layout().oid,
+            part_entry[0].versionID));
         parts_probable_del_rec_list.push_back(std::move(ext_del_rec));
       }
     }  // End of For
@@ -927,6 +942,7 @@ void S3PostCompleteAction::startcleanup() {
           S3PostCompleteActionState::probableEntryRecordFailed) {
     // Nothing to undo.
     done();
+    return;
   } else if (s3_post_complete_action_state ==
              S3PostCompleteActionState::completed) {
     // New object has taken life, old object should be deleted if any.
@@ -1192,6 +1208,37 @@ void S3PostCompleteAction::delete_new_object_success() {
     remove_new_fragments();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3PostCompleteAction::remove_new_fragments() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  if (new_object_metadata && new_object_metadata->is_object_extended()) {
+    const std::shared_ptr<S3ObjectExtendedMetadata>& ext_metadata =
+        new_object_metadata->get_extended_object_metadata();
+    if (ext_metadata->has_entries()) {
+      // Delete fragments, if any
+      ext_metadata->remove(
+          std::bind(&S3PostCompleteAction::remove_new_ext_metadata_successful,
+                    this),
+          std::bind(&S3PostCompleteAction::remove_new_ext_metadata_successful,
+                    this));
+    } else {
+      // Extended object exist, but no fragments, delete probbale index entries
+      remove_new_oid_probable_record();
+    }
+  } else {
+    // If this is not extended object, delete entries from probable index
+    remove_new_oid_probable_record();
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+void S3PostCompleteAction::remove_new_ext_metadata_successful() {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Removed extended metadata for Object [%s].\n",
+         (new_object_metadata->get_object_name()).c_str());
+  remove_new_oid_probable_record();
+  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
 }
 
 void S3PostCompleteAction::remove_new_fragments() {

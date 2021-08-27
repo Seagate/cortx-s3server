@@ -99,8 +99,17 @@ class S3MotrReaderContext : public S3AsyncOpContextBase {
         S3Option::get_instance()->get_libevent_pool_buffer_size();
     size_t buf_count_in_evbuf =
         (total_read_sz + (evbuf_unit_buf_sz - 1)) / evbuf_unit_buf_sz;
-    motr_rw_op_context =
-        create_basic_rw_op_ctx(buf_count_in_evbuf, evbuf_unit_buf_sz);
+
+    // Motr unit size / size of 1 evbuf.
+    int motr_unit_size =
+        S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+    int sz_of_one_evt_buf =
+        S3Option::get_instance()->get_libevent_pool_buffer_size();
+    size_t buf_per_motr_unit =
+        (motr_unit_size + (sz_of_one_evt_buf - 1)) / sz_of_one_evt_buf;
+
+    motr_rw_op_context = create_basic_rw_op_ctx(
+        buf_count_in_evbuf, buf_per_motr_unit, evbuf_unit_buf_sz);
     if (motr_rw_op_context == NULL) {
       // out of memory
       s3_log(S3_LOG_ERROR, request_id,
@@ -144,6 +153,9 @@ class S3MotrReaderContext : public S3AsyncOpContextBase {
   }
 
   S3Evbuffer* get_evbuffer() { return p_s3_evbuffer.get(); }
+
+  FRIEND_TEST(S3MotrReaderTest, ValidateStoredChksumSuccess);
+  FRIEND_TEST(S3MotrReaderTest, ValidateStoredChksumFailure);
 };
 
 enum class S3MotrReaderOpState {
@@ -184,6 +196,7 @@ class S3MotrReader {
   size_t num_of_blocks_to_read = 0;
 
   uint64_t last_index = 0;
+  uint64_t starting_index_for_read = 0;
 
   bool is_object_opened = false;
   struct s3_motr_obj_context* obj_ctx = nullptr;
@@ -203,6 +216,11 @@ class S3MotrReader {
   // opened.
   virtual bool read_object();
   void read_object_successful();
+  bool ValidateStoredChksum();
+  size_t CalculateBytesProcessed(m0_bufvec* motr_data_unit);
+  bool ValidateStoredMD5Chksum(m0_bufvec* motr_data_unit,
+                               struct m0_generic_pi* pi_info,
+                               struct m0_pi_seed* seed);
   void read_object_failed();
 
   void clean_up_contexts();
@@ -244,7 +262,14 @@ class S3MotrReader {
     return NULL;
   }
 
-  virtual void set_last_index(size_t index) { last_index = index; }
+  virtual void set_last_index(size_t index) {
+    last_index = index;
+    starting_index_for_read = index;
+    s3_log(S3_LOG_INFO, stripped_request_id, "%s Index : %lu ", __func__,
+           index);
+    s3_log(S3_LOG_INFO, stripped_request_id, "%s Index : %lu ", __func__,
+           starting_index_for_read);
+  }
 
   // For Testing purpose
   FRIEND_TEST(S3MotrReaderTest, Constructor);
@@ -254,6 +279,11 @@ class S3MotrReader {
   FRIEND_TEST(S3MotrReaderTest, ReadObjectDataCheckNoHoleFlagTest);
   FRIEND_TEST(S3MotrReaderTest, ReadObjectDataSuccessful);
   FRIEND_TEST(S3MotrReaderTest, ReadObjectDataFailed);
+  FRIEND_TEST(S3MotrReaderTest, ValidateStoredMD5ChksumSuccess);
+  FRIEND_TEST(S3MotrReaderTest, ValidateStoredMD5ChksumFailure);
+  FRIEND_TEST(S3MotrReaderTest, CalculateBytesProcessed);
+  FRIEND_TEST(S3MotrReaderTest, ValidateStoredChksumSuccess);
+  FRIEND_TEST(S3MotrReaderTest, ValidateStoredChksumFailure);
   FRIEND_TEST(S3MotrReaderTest, CleanupContexts);
   FRIEND_TEST(S3MotrReaderTest, OpenObjectTest);
   FRIEND_TEST(S3MotrReaderTest, OpenObjectFailedTest);

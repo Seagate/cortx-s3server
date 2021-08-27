@@ -361,6 +361,121 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can download 700K file uploaded in chunked mode').get_object("seagatebucket", "700Kfilec").execute_test().command_is_successful().command_created_file("700Kfilec")
 
+    # ************ 8K Unaligned FILE TEST ************
+    JClientTest('Jclient can upload 8K Unaligned file') \
+    .put_object("seagatebucket", "8KUnalignfile", 8400) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can upload 8K Unaligned file in chunked mode') \
+    .put_object("seagatebucket", "8KUnalignfilec", 8400, chunked=True) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can download 8K Unaligned file') \
+    .get_object("seagatebucket", "8KUnalignfile") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("8KUnalignfile")
+
+    JClientTest('Jclient can download 8K Unaligned file uploaded in chunked mode') \
+    .get_object("seagatebucket", "8KUnalignfilec") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("8KUnalignfilec")
+
+    # ************ 16K FILE TEST ************
+    JClientTest('Jclient can upload 16K file') \
+    .put_object("seagatebucket", "16Kfile", 16384) \
+    .execute_test() \
+    .command_is_successful()
+    
+    JClientTest('Jclient can upload 16K file in chunked mode') \
+    .put_object("seagatebucket", "16Kfilec", 16384, chunked=True) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can download 16k file') \
+    .get_object("seagatebucket", "16Kfile") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("16Kfile")
+
+    JClientTest('Jclient can download 16k file uploaded in chunked mode') \
+    .get_object("seagatebucket", "16Kfilec") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("16Kfilec")
+
+    # ************ 16K Unaligned FILE TEST ************
+    JClientTest('Jclient can upload 16K Unaligned file') \
+    .put_object("seagatebucket", "16KUnalignfile", 16500) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can upload 16K Unaligned file in chunked mode') \
+    .put_object("seagatebucket", "16KUnalignedfilec", 16500, chunked=True) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can download 16k Unaligned file') \
+    .get_object("seagatebucket", "16KUnalignfile") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("16KUnalignfile")
+
+    JClientTest('Jclient can download 16k Unaligned file uploaded in chunked mode') \
+    .get_object("seagatebucket", "16KUnalignedfilec") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("16KUnalignedfilec")
+
+    # ************ 1M FILE TEST ************
+    JClientTest('Jclient can upload 1M file') \
+    .put_object("seagatebucket", "1Mfile", 1048576) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can upload 1M file in chunked mode') \
+    .put_object("seagatebucket", "1Mfilec", 1048576, chunked=True) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can download 1M file') \
+    .get_object("seagatebucket", "1Mfile") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("1Mfile")
+
+    JClientTest('Jclient can download 1M file uploaded in chunked mode') \
+    .get_object("seagatebucket", "1Mfilec") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("1Mfilec")
+
+    # ************ 1M Unaligned FILE TEST ************
+    JClientTest('Jclient can upload 1M Unaligned file') \
+    .put_object("seagatebucket", "1MUnalignfile", 1049000) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can upload 1M Unaligned file in chunked mode') \
+    .put_object("seagatebucket", "1MUnalignfilec", 1049000, chunked=True) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can download 1M file') \
+    .get_object("seagatebucket", "1MUnalignfile") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("1MUnalignfile")
+
+    JClientTest('Jclient can download 1M file uploaded in chunked mode') \
+    .get_object("seagatebucket", "1MUnalignfilec") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("1MUnalignfilec")
+
     # ************ 18MB FILE TEST (Without multipart) ************
     JClientTest('Jclient can upload 18MB file').put_object("seagatebucket", "18MBfile", 18000000).execute_test().command_is_successful()
 
@@ -396,6 +511,17 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can download 18MB file uploaded in chunked mode').get_object("seagatebucket", "18MBfilec")\
             .execute_test().command_is_successful().command_created_file("18MBfilec")
+
+    JClientTest('Jclient can upload 5.2 MB file (multipart)') \
+    .put_object_multipart("seagatebucket", "5M2kfile", 5452595, 5) \
+    .execute_test() \
+    .command_is_successful()
+
+    JClientTest('Jclient can download 5.2 MB file') \
+    .get_object("seagatebucket", "5M2kfile") \
+    .execute_test() \
+    .command_is_successful() \
+    .command_created_file("5M2kfile")
 
     # Partial multipart upload tests
     JClientTest('Jclient cannot list parts of multipart upload on nonexistent object.').list_parts("seagatebucket", "INVALID.file", "UPLOAD-ID")\
@@ -456,9 +582,36 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient can delete nonexistent file').delete_object("seagatebucket", "3kfile").execute_test().command_is_successful()
 
     # ************ DELETE MULTIPLE OBJECTS TEST ************
-    JClientTest('Jclient can delete 8k, 700k and 18MB files and non existent 1MB file').delete_multiple_objects("seagatebucket", ["8kfile", "700Kfile", "18MBfile", "1MBfile", "3kfilec", "8kfilec", "700Kfilec", "18MBfilec"]).execute_test().command_is_successful()
+    JClientTest('Jclient can delete 8k, 700k and 18MB files and non existent 1MB file') \
+    .delete_multiple_objects("seagatebucket", ["8kfile", "8KUnalignfile", "16Kfile", \
+    "16KUnalignfile", "700Kfile", "1Mfile", "1MUnalignfile", "18MBfile", "1MBfile", \
+    "3kfilec", "8kfilec", "8KUnalignfilec", "16Kfilec", "16KUnalignedfilec", "700Kfilec", \
+    "1Mfilec", "1MUnalignfilec", "18MBfilec", "5M2kfile"]) \
+    .execute_test() \
+    .command_is_successful()
 
-    JClientTest('Jclient should not list deleted objects').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('8kfile').command_response_should_not_have('700Kfile').command_response_should_not_have('18MBfile').command_response_should_not_have('3kfilec').command_response_should_not_have('8kfilec').command_response_should_not_have('700Kfilec').command_response_should_not_have('18MBfilec')
+    JClientTest('Jclient should not list deleted objects') \
+    .list_objects('seagatebucket') \
+    .execute_test() \
+    .command_is_successful() \
+    .command_response_should_not_have('8kfile') \
+    .command_response_should_not_have('700Kfile') \
+    .command_response_should_not_have('18MBfile') \
+    .command_response_should_not_have('3kfilec') \
+    .command_response_should_not_have('8kfilec') \
+    .command_response_should_not_have('700Kfilec') \
+    .command_response_should_not_have('18MBfilec') \
+    .command_response_should_not_have('8KUnalignfile') \
+    .command_response_should_not_have('16Kfile') \
+    .command_response_should_not_have('16Kfilec') \
+    .command_response_should_not_have('16KUnalignfile') \
+    .command_response_should_not_have('16KUnalignedfilec') \
+    .command_response_should_not_have('1Mfile') \
+    .command_response_should_not_have('1Mfilec') \
+    .command_response_should_not_have('1MUnalignfile') \
+    .command_response_should_not_have('1MUnalignfilec') \
+    .command_response_should_not_have('8KUnalignfilec') \
+    .command_response_should_not_have('5M2kfile')
 
     JClientTest('Jclient multiple delete should succeed when objects not present').delete_multiple_objects("seagatebucket", ["8kfile", "700Kfile", "18MBfile"]).execute_test().command_is_successful()
 
