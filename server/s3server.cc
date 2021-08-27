@@ -950,7 +950,6 @@ int main(int argc, char **argv) {
       if (icounter > max_retry_count) {
         s3_log(S3_LOG_FATAL, "", "motr_init failed!\n");
       }
-      sleep(sleep_time);
     }
     // delete the timer event
     event_del(timer_event);
@@ -960,6 +959,8 @@ int main(int argc, char **argv) {
 
     if (rc == 0) {
       break;
+    } else {
+      sleep(sleep_time);
     }
   }
 
