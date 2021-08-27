@@ -457,7 +457,7 @@ bool S3PostCompleteAction::validate_parts() {
         send_response_to_s3_client();
         return false;
       }
-
+      unsigned int pnum = std::stoul(store_kv->first.c_str());
       object_size += part_metadata->get_content_length();
       part_etags[pnum] = part_metadata->get_md5();
       // Remove the entry from parts map, so that in next
@@ -1208,37 +1208,6 @@ void S3PostCompleteAction::delete_new_object_success() {
     remove_new_fragments();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-
-void S3PostCompleteAction::remove_new_fragments() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  if (new_object_metadata && new_object_metadata->is_object_extended()) {
-    const std::shared_ptr<S3ObjectExtendedMetadata>& ext_metadata =
-        new_object_metadata->get_extended_object_metadata();
-    if (ext_metadata->has_entries()) {
-      // Delete fragments, if any
-      ext_metadata->remove(
-          std::bind(&S3PostCompleteAction::remove_new_ext_metadata_successful,
-                    this),
-          std::bind(&S3PostCompleteAction::remove_new_ext_metadata_successful,
-                    this));
-    } else {
-      // Extended object exist, but no fragments, delete probbale index entries
-      remove_new_oid_probable_record();
-    }
-  } else {
-    // If this is not extended object, delete entries from probable index
-    remove_new_oid_probable_record();
-  }
-  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
-}
-void S3PostCompleteAction::remove_new_ext_metadata_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
-  s3_log(S3_LOG_DEBUG, request_id,
-         "Removed extended metadata for Object [%s].\n",
-         (new_object_metadata->get_object_name()).c_str());
-  remove_new_oid_probable_record();
-  s3_log(S3_LOG_DEBUG, request_id, "%s Exit", __func__);
 }
 
 void S3PostCompleteAction::remove_new_fragments() {
