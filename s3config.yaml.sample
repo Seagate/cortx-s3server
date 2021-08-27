@@ -115,6 +115,8 @@ S3_MOTR_CONFIG:                                     # Section for S3 Motr
    S3_MOTR_READ_MEMPOOL_ZERO_BUFFER: false           # Enable Motr Mempool 'zeroing' after use (like secure erase) - disabled by default
    S3_MOTR_OPERATION_WAIT_PERIOD: 90                 # 90 s, Maximum wait duration for sync motr operations.
    S3_MOTR_FIRST_READ_SIZE: 4                        # Size in MB of the First Read Request to MOTR
+   S3_MOTR_SLEEP_DURING_RECONNECT: 1                 # Time in seconds
+   S3_MOTR_RECONNECT_RETRY_COUNT: 10                 # No of times s3 will try to retry connection to motr.
 S3_THIRDPARTY_CONFIG:
    S3_LIBEVENT_POOL_BUFFER_SIZE: 16384                  # Pool buffer size, in case of S3_MOTR_UNIT_SIZE of size 1MB, it is recommended to have S3_LIBEVENT_POOL_BUFFER_SIZE of size 16384
    S3_LIBEVENT_MAX_READ_SIZE: 16384                     # Maximum read in a single read operation, as per libevent documentation in code, user should not try to read more than this value

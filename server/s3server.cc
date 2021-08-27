@@ -918,6 +918,8 @@ int main(int argc, char **argv) {
   log_resource_limits();
 
   int icounter = 0;
+  int max_retry_count = g_option_instance->get_motr_reconnect_retry_count();
+  int sleep_time = g_option_instance->get_motr_reconnect_sleep_time();
   while (true) {
     // This thread is created to do event base looping
     // Its to send IEM message in case of motr initialization hang
@@ -945,10 +947,10 @@ int main(int argc, char **argv) {
     rc = init_motr();
     if (rc < 0) {
       icounter++;
-      if (icounter > 10) {
+      if (icounter > max_retry_count) {
         s3_log(S3_LOG_FATAL, "", "motr_init failed!\n");
       }
-      sleep(1);
+      sleep(sleep_time);
     }
     // delete the timer event
     event_del(timer_event);
