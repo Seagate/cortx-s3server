@@ -894,15 +894,6 @@ int main(int argc, char **argv) {
     }
   }
 
-  // This thread is created to do event base looping
-  // Its to send IEM message in case of motr initialization hang
-  rc = pthread_create(&tid, NULL, &base_loop_thread, NULL);
-  if (rc != 0) {
-    s3daemon.delete_pidfile();
-    finalize_cli_options();
-    s3_log(S3_LOG_FATAL, "", "Failed to create pthread\n");
-  }
-
   int motr_read_mempool_flags = CREATE_ALIGNED_MEMORY;
   if (g_option_instance->get_motr_read_mempool_zeroed_buffer()) {
     motr_read_mempool_flags = motr_read_mempool_flags | ZEROED_BUFFER;
@@ -925,31 +916,50 @@ int main(int argc, char **argv) {
   }
 
   log_resource_limits();
-  struct timeval tv;
-  tv.tv_usec = 0;
-  tv.tv_sec = MOTR_INIT_MAX_ALLOWED_TIME;
 
-  struct event *timer_event =
-      event_new(global_evbase_handle, -1, 0, s3_motr_init_timeout_cb, NULL);
+  int icounter = 0;
+  while (true) {
+    // This thread is created to do event base looping
+    // Its to send IEM message in case of motr initialization hang
+    rc = pthread_create(&tid, NULL, &base_loop_thread, NULL);
+    if (rc != 0) {
+      s3daemon.delete_pidfile();
+      fini_auth_ssl();
+      finalize_cli_options();
+      s3_log(S3_LOG_FATAL, "", "Failed to create pthread\n");
+    }
 
-  // Register the timer event, in case if Motr initialization hangs, then in
-  // callback
-  // we will send IEM Alert, so that IO stack gets restarted
-  event_add(timer_event, &tv);
+    struct timeval tv;
+    tv.tv_usec = 0;
+    tv.tv_sec = MOTR_INIT_MAX_ALLOWED_TIME;
 
-  /* Initialise Motr */
-  rc = init_motr();
-  if (rc < 0) {
-    s3daemon.delete_pidfile();
-    fini_auth_ssl();
-    finalize_cli_options();
-    s3_log(S3_LOG_FATAL, "", "motr_init failed!\n");
+    struct event *timer_event =
+        event_new(global_evbase_handle, -1, 0, s3_motr_init_timeout_cb, NULL);
+
+    // Register the timer event, in case if Motr initialization hangs, then in
+    // callback
+    // we will send IEM Alert, so that IO stack gets restarted
+    event_add(timer_event, &tv);
+
+    /* Initialise Motr */
+    rc = init_motr();
+    if (rc < 0) {
+      icounter++;
+      if (icounter > 10) {
+        s3_log(S3_LOG_FATAL, "", "motr_init failed!\n");
+      }
+      sleep(1);
+    }
+    // delete the timer event
+    event_del(timer_event);
+    event_free(timer_event);
+    // Bail out of the event loop
+    event_base_loopbreak(global_evbase_handle);
+
+    if (rc == 0) {
+      break;
+    }
   }
-  // delete the timer event
-  event_del(timer_event);
-  event_free(timer_event);
-  // Bail out of the event loop
-  event_base_loopbreak(global_evbase_handle);
 
   // Init addb
   rc = s3_addb_init();
