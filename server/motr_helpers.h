@@ -45,6 +45,7 @@ EXTERN_C_BLOCK_BEGIN
 #include <sys/stat.h>
 
 #include "motr/client.h"
+#include "lib/cksum.h"
 #include "motr/idx.h"
 #include "helpers/helpers.h"
 

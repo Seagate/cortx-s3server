@@ -30,7 +30,7 @@ EXTERN_C_BLOCK_BEGIN
 #include "module/instance.h"
 
 #include "motr/client.h"
-
+#include "lib/cksum.h"
 /* libevhtp */
 #include <evhtp.h>
 

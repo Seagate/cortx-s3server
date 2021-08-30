@@ -25,7 +25,7 @@ import pytest
 
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 
-CONFIG_LOG_DIR = "/var/log/seagate/s3/s3backgrounddelete"
+CONFIG_LOG_DIR = "/var/log/cortx/s3/s3backgrounddelete"
 
 def test_get_config_dir():
     """Test get_config_dir() method """

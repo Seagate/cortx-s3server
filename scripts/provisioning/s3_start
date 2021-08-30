@@ -1,0 +1,113 @@
+#!/usr/bin/env python3
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+
+import sys
+import argparse
+import traceback
+import errno
+import logging
+import os
+import socket
+from logging import handlers
+
+#Logger details
+s3_single_entry_logger_name = \
+    "s3-single_entry-logger-" + "[" + str(socket.gethostname()) + "]"
+s3_single_entry_log_file = \
+    "/var/log/cortx/s3/s3deployment/s3_single_entry.log"
+s3_single_entry_log_directory = "/var/log/cortx/s3/s3deployment/"
+s3_single_entry_log_format = \
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+def main():
+
+  parser = argparse.ArgumentParser("S3server single entry command")
+  parser.add_argument("--service", required=True)
+
+  args = parser.parse_args()
+
+  create_logger_directory()
+  logger = create_logger()
+
+  try:
+    if args.service == 's3server':
+      # Add action and remove pass
+      pass
+    elif args.service == 's3authserver':
+      os.system("sh /opt/seagate/cortx/auth/startauth.sh")
+    elif args.service == 's3bgproducer':
+      # Add action and remove pass
+      pass
+    elif args.service == 's3bgconsumer':
+      # Add action and remove pass
+      pass
+    else:
+      logger.error(f"Invalid argument {args.service}")
+  except Exception as e:
+    logger.error(f"{str(e)}")
+    logger.error(f"{traceback.format_exc()}")
+    return errno.EINVAL
+
+  return 0
+
+def create_logger():
+    """Create logger, file handler, console handler and formatter."""
+    # create logger with "S3 deployment logger"
+    logger = logging.getLogger(s3_single_entry_logger_name)
+    logger.setLevel(logging.DEBUG)
+    # maxBytes 5242880 will allow base file s3_single_entry.log to rotate 
+    # after every 5MB. With a backupCount of 5, files will be generated 
+    # like s3_single_entry.log, s3_single_entry.log.1 and up to s3.log.5.
+    # The file being written to is always s3_single_entry.log.
+    fhandler = logging.handlers.RotatingFileHandler(s3_single_entry_log_file, \
+                                                    mode='a',\
+                                                    maxBytes = 5242880,\
+                                                    backupCount = 5,\
+                                                    encoding=None, delay=False)
+    fhandler.setLevel(logging.DEBUG)
+
+    # create console handler with a higher log level
+    chandler = logging.StreamHandler(sys.stdout)
+    chandler.setLevel(logging.DEBUG)
+
+    formatter = logging.Formatter(s3_single_entry_log_format)
+
+    # create formatter and add it to the handlers
+    fhandler.setFormatter(formatter)
+    chandler.setFormatter(formatter)
+
+    # add the handlers to the logger
+    logger.addHandler(fhandler)
+    logger.addHandler(chandler)
+
+    return logger
+
+def create_logger_directory():
+    """Create log directory if not exsists."""
+    _logger_directory = os.path.join(s3_single_entry_log_directory)
+    if not os.path.isdir(_logger_directory):
+        try:
+            os.makedirs(_logger_directory)
+        except BaseException:
+            raise Exception(f"{_logger_directory} Could not be created")
+
+
+if __name__ == '__main__':
+  sys.exit(main())
