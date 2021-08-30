@@ -71,7 +71,7 @@ int init_motr(void) {
       motr_conf.mc_idx_service_id        = M0_IDX_MOCK;
       motr_conf.mc_idx_service_conf      = (void *)motr_indices;
 #endif
-      s3_log(S3_LOG_FATAL, "", "KVS Index service Id [%d] not supported\n",
+      s3_log(S3_LOG_ERROR, "", "KVS Index service Id [%d] not supported\n",
              idx_service_id);
       return -1;
       break;
@@ -96,7 +96,7 @@ int init_motr(void) {
       break;
 
     default:
-      s3_log(S3_LOG_FATAL, "", "KVS Index service Id [%d] not supported\n",
+      s3_log(S3_LOG_ERROR, "", "KVS Index service Id [%d] not supported\n",
              idx_service_id);
       return -1;
   }
@@ -105,7 +105,7 @@ int init_motr(void) {
   rc = m0_client_init(&motr_instance, &motr_conf, true);
 
   if (rc != 0) {
-    s3_log(S3_LOG_FATAL, "", "Failed to initilise Motr Client: %d\n", rc);
+    s3_log(S3_LOG_ERROR, "", "Failed to initilise Motr Client: %d\n", rc);
     return rc;
   }
 
@@ -114,7 +114,7 @@ int init_motr(void) {
   rc = motr_container.co_realm.re_entity.en_sm.sm_rc;
 
   if (rc != 0) {
-    s3_log(S3_LOG_FATAL, "", "Failed to open uber scope\n");
+    s3_log(S3_LOG_ERROR, "", "Failed to open uber scope\n");
     fini_motr();
     return rc;
   }
@@ -122,7 +122,7 @@ int init_motr(void) {
   motr_uber_realm = motr_container.co_realm;
   rc = m0_ufid_init(motr_instance, &s3_ufid_generator);
   if (rc != 0) {
-    s3_log(S3_LOG_FATAL, "", "Failed to initialize ufid generator: %d\n", rc);
+    s3_log(S3_LOG_ERROR, "", "Failed to initialize ufid generator: %d\n", rc);
     return rc;
   }
 
