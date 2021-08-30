@@ -161,11 +161,11 @@ class CleanupCmd(SetupCmd):
   def revert_config_files(self):
     """Revert config files to their original config state."""
 
-    configFiles = [self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
-                  self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
-                  self.get_confkey('S3_KEYSTORE_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
-                  self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
-                  self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH'))]
+    configFiles = [self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                  self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                  self.get_confkey('S3_KEYSTORE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                  self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                  self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)]
     try:
       for configFile in configFiles:
         if os.path.isfile(configFile):

@@ -119,12 +119,15 @@ class ConfigCmd(SetupCmd):
     # 2. Enable slapd logging in rsyslog config
     # 3. Set openldap-replication
     # 4. Check number of nodes in the cluster
+    # TODO pass the base config file path to the script.
     self.logger.info('Open ldap configuration started')
     cmd = ['/opt/seagate/cortx/s3/install/ldap/setup_ldap.sh',
            '--ldapadminpasswd',
            f'{self.ldap_passwd}',
            '--rootdnpasswd',
            f'{self.rootdn_passwd}',
+           '--baseconfigpath'
+           f'{self.base_config_file_path}',
            '--forceclean',
            '--skipssl']
     handler = SimpleProcess(cmd)
@@ -357,26 +360,6 @@ class ConfigCmd(SetupCmd):
     self.update_s3_auth_configs()
     self.update_s3_bgdelete_configs()
 
-    # update config file path in to following files:
-    #/opt/seagate/cortx/s3/s3startsystem.sh
-    self.update_config_path_files("/opt/seagate/cortx/s3/s3startsystem.sh",
-                                  "/opt/seagate/cortx/s3/conf",
-                                  os.path.join(self.get_confkey('S3_TARGET_CONFIG_PATH'), "s3/conf"))
-
-    # /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh
-    self.update_config_path_files("/opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh",
-                                  "/opt/seagate/cortx/s3/conf",
-                                  os.path.join(self.get_confkey('S3_TARGET_CONFIG_PATH'), "s3/conf"))
-    self.update_config_path_files("/opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh",
-                                  "/opt/seagate/cortx/auth/resources",
-                                  os.path.join(self.get_confkey('S3_TARGET_CONFIG_PATH'), "auth/resources"))
-    self.update_config_path_files("/opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh",
-                                  "/opt/seagate/cortx/s3/s3backgrounddelete",
-                                  os.path.join(self.get_confkey('S3_TARGET_CONFIG_PATH'), "s3/s3backgrounddelete"))
-    self.update_config_path_files("/opt/seagate/cortx/s3/install/ldap/setup_ldap.sh",
-                                  "/opt/seagate/cortx/auth/resources",
-                                  os.path.join(self.get_confkey('S3_TARGET_CONFIG_PATH'), "auth/resources"))
-
   def update_s3_server_configs(self):
     """ Update s3 server configs."""
     self.logger.info("Update s3 server config file started")
@@ -513,7 +496,7 @@ class ConfigCmd(SetupCmd):
     # copy all the config files from the /opt/seagate/cortx to /etc/cortx
     for config_file in config_files:
       self.logger.info(f"Source config file: {config_file}")
-      dest_config_file = config_file.replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH'))
+      dest_config_file = config_file.replace("/opt/seagate/cortx", self.base_config_file_path)
       self.logger.info(f"Dest config file: {dest_config_file}")
       os.makedirs(os.path.dirname(dest_config_file), exist_ok=True)
       shutil.move(config_file, dest_config_file)

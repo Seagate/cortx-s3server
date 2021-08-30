@@ -38,10 +38,12 @@ fi
 
 bundle_id=$1
 bundle_path=$2
+base_config_file_path=${3:-/etc/cortx}
+base_log_file_path=${4:-/var/log/cortx}
 # Fetch iamuser password from properties file and decrypt it.
 sgiamadminpwd=''
 constkey=cortx
-propertiesfilepath="properties:///opt/seagate/cortx/auth/resources/authserver.properties"
+propertiesfilepath="properties://$base_config_file_path/auth/resources/authserver.properties"
 ldapkey="ldapLoginPW"
 ldapcipherkey=$(s3cipher generate_key --const_key="$constkey")
 encryptedkey=$(s3confstore "$propertiesfilepath" getkey --key="$ldapkey")
@@ -55,21 +57,21 @@ s3_bundle_location=$bundle_path/s3
 
 haproxy_config="/etc/haproxy/haproxy.cfg"
 # Collecting rotated logs for haproxy and ldap along with live log
-haproxy_log="/var/log/cortx/haproxy.log"
-ldap_log="/var/log/cortx/slapd.log"
+haproxy_log="$base_log_file_path/haproxy.log"
+ldap_log="$base_log_file_path/slapd.log"
 
-s3server_config="/opt/seagate/cortx/s3/conf/s3config.yaml"
-authserver_config="/opt/seagate/cortx/auth/resources/authserver.properties"
-backgrounddelete_config="/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
-s3cluster_config="/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"
+s3server_config="$base_config_file_path/s3/conf/s3config.yaml"
+authserver_config="$base_config_file_path/auth/resources/authserver.properties"
+backgrounddelete_config="$base_config_file_path/s3/s3backgrounddelete/config.yaml"
+s3cluster_config="$base_config_file_path/s3/s3backgrounddelete/s3_cluster.yaml"
 s3startsystem_script="/opt/seagate/cortx/s3/s3startsystem.sh"
 s3server_binary="/opt/seagate/cortx/s3/bin/s3server"
-s3_motr_dir="/var/log/cortx/motr/s3server-*"
+s3_motr_dir="$base_log_file_path/motr/s3server-*"
 s3_core_dir="/var/log/crash"
 sys_auditlog_dir="/var/log/audit"
 
 # S3 deployment log
-s3deployment_log="/var/log/cortx/s3/s3deployment/s3deployment.log"
+s3deployment_log="$base_log_file_path/s3/s3deployment/s3deployment.log"
 
 # Create tmp folder with pid value to allow parallel execution
 pid_value=$$
@@ -186,15 +188,15 @@ collect_core_files(){
   cd $cwd
 }
 
-# Collect <m0trace_files_count> m0trace files from each s3 instance present in /var/log/cortx/motr/s3server-* directory if available
+# Collect <m0trace_files_count> m0trace files from each s3 instance present in $base_log_file_path/motr/s3server-* directory if available
 # Files will be available at $tmp_path/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
 collect_m0trace_files(){
   echo "Collecting m0trace files dump..."
   m0trace_filename_pattern="m0trace.*"
-  dir="/var/log/cortx/motr"
+  dir="$base_log_file_path/motr"
   tmpr_dir="$tmp_dir/m0trraces_tmp"
   cwd=$(pwd)
-  # if /var/log/cortx/motr missing then return
+  # if $base_log_file_path/motr missing then return
   if [ ! -d "$dir" ];
   then
       return;
@@ -214,7 +216,7 @@ collect_m0trace_files(){
         return;
     fi
     s3instance_name=$s3_dir   # e.g s3server-0x7200000000000000:0
-    # m0trace file path will be /var/log/cortx/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
+    # m0trace file path will be $base_log_file_path/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
     m0trace_file_path=$s3_m0trace_files/$s3instance_name
     mkdir -p $m0trace_file_path
     cd $tmpr_dir
@@ -239,7 +241,7 @@ collect_m0trace_files(){
 
 collect_first_m0trace_file(){
   echo "Collecting oldest m0trace file dump..."
-  dir="/var/log/cortx/motr"
+  dir="$base_log_file_path/motr"
   cwd=$(pwd)
   m0trace_filename_pattern="*/m0trace.*"
   if [ ! -d "$dir" ];
@@ -293,7 +295,7 @@ then
    args=$args" "$first_s3_m0trace_file
 fi
 
-# collect latest 5 m0trace files from /var/log/cortx/motr/s3server-* directory
+# collect latest 5 m0trace files from $base_log_file_path/motr/s3server-* directory
 # S3server name is generated with random name e.g s3server-0x7200000000000001:0x22
 # check if s3server name with compgen globpat is available
 if compgen -G $s3_motr_dir > /dev/null;

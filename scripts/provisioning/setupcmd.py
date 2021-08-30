@@ -70,6 +70,8 @@ class SetupCmd(object):
     self._s3_confkeys_store = None
     self.machine_id = None
     self.cluster_id = None
+    self.base_config_file_path = None
+    self.base_log_file_path = None
     self.ldap_user = "sgiamadmin"
     self.module = module
 
@@ -95,6 +97,10 @@ class SetupCmd(object):
 
     self.cluster_id = self.get_confvalue(self.get_confkey(
       'CONFIG>CONFSTORE_CLUSTER_ID_KEY').replace("machine-id", self.machine_id))
+    self.base_config_file_path = self.get_confvalue(self.get_confkey(
+      'CONFIG>CONFSTORE_BASE_CONFIG_PATH'))
+    self.base_log_file_path = self.get_confvalue(self.get_confkey(
+      'CONFIG>CONFSTORE_BASE_LOG_PATH'))
 
   @property
   def url(self) -> str:
@@ -476,28 +482,28 @@ class SetupCmd(object):
     self.logger.info(f'validating S3 config files for {phase_name}.')
     upgrade_items = {
     's3' : {
-          'configFile' : self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
-          'SampleFile' : self.get_confkey('S3_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
+          'configFile' : self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'SampleFile' : self.get_confkey('S3_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
           'fileType' : 'yaml://'
       },
       'auth' : {
-          'configFile' : self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
-          'SampleFile' : self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
+          'configFile' : self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'SampleFile' : self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
           'fileType' : 'properties://'
       },
       'keystore' : {
-          'configFile' : self.get_confkey('S3_KEYSTORE_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
-          'SampleFile' : self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
+          'configFile' : self.get_confkey('S3_KEYSTORE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'SampleFile' : self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
           'fileType' : 'properties://'
       },
       'bgdelete' : {
-          'configFile' : self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
-          'SampleFile' : self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
+          'configFile' : self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'SampleFile' : self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
           'fileType' : 'yaml://'
       },
       'cluster' : {
-          'configFile' : self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
-          'SampleFile' : self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
+          'configFile' : self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+          'SampleFile' : self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
           'fileType' : 'yaml://'
       }
     }
@@ -572,7 +578,7 @@ class SetupCmd(object):
 
   def get_iam_admin_credentials(self):
     """Used for reset and cleanup phase to get the iam-admin user and decrypted passwd."""
-    auth_conf_file = self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH'))
+    auth_conf_file = self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)
     opfileconfstore = S3CortxConfStore(f'properties://{auth_conf_file}', 'read_ldap_idx')
     s3cipher_obj = CortxS3Cipher(None,
                               False,
@@ -589,7 +595,7 @@ class SetupCmd(object):
     """Used for reset and cleanup phase to get the ldap root user and decrypted passwd."""
     key = 'cluster_config>rootdn_user'
 
-    s3_cluster_file = self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH'))
+    s3_cluster_file = self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)
     opfileconfstore = S3CortxConfStore(f'yaml://{s3_cluster_file}', 'read_rootdn_idx')
     self.ldap_root_user = opfileconfstore.get_config(f'{key}')
 
@@ -608,7 +614,7 @@ class SetupCmd(object):
 
   def get_config_param_for_BG_delete_account(self):
     """To get the config parameters required in init and reset phase."""
-    BG_delete_config_file = self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH'))
+    BG_delete_config_file = self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)
     opfileconfstore = S3CortxConfStore(f'yaml://{BG_delete_config_file}', 'read_bg_delete_config_idx')
 
     param_list = ['account_name', 'account_id', 'canonical_id', 'mail', 's3_user_id', 'const_cipher_secret_str', 'const_cipher_access_str']

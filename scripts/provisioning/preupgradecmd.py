@@ -53,11 +53,11 @@ class PreUpgradeCmd(SetupCmd):
   def backup_sample_file(self):
     """function to backup .sample config file to .old"""
     sampleconfigfiles = {
-      self.get_confkey('S3_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
-      self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
-      self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
-      self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH')),
-      self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", self.get_confkey('S3_TARGET_CONFIG_PATH'))
+      self.get_confkey('S3_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", "/etc/cortx"),
+      self.get_confkey('S3_AUTHSERVER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", "/etc/cortx"),
+      self.get_confkey('S3_KEYSTORE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", "/etc/cortx"),
+      self.get_confkey('S3_BGDELETE_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", "/etc/cortx"),
+      self.get_confkey('S3_CLUSTER_CONFIG_SAMPLE_FILE').replace("/opt/seagate/cortx", "/etc/cortx")
       }
 
     # make S3 temp dir if does not exist 

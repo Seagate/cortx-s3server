@@ -102,5 +102,5 @@ S3_BGDELETE_CONFIG_UNSAFE_ATTR_FILE: "/opt/seagate/cortx/s3/s3backgrounddelete/s
 S3_CLUSTER_CONFIG_FILE: "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"
 S3_CLUSTER_CONFIG_SAMPLE_FILE: "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample"
 S3_CLUSTER_CONFIG_UNSAFE_ATTR_FILE: "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster_unsafe_attributes.yaml"
-S3_TARGET_CONFIG_PATH: "/etc/cortx"
+
 
