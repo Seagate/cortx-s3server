@@ -113,6 +113,10 @@ class S3DeleteMultipleObjectsActionTest : public testing::Test {
                 get_objects_version_list_index_layout())
         .WillRepeatedly(ReturnRef(zero_index_layout));
 
+    EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
+                get_extended_metadata_index_layout())
+        .WillRepeatedly(ReturnRef(index_layout));
+
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
         mock_request, ptr_mock_s3_motr_api);
     object_meta_factory->set_object_list_index_oid(index_layout.oid);
@@ -281,6 +285,10 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
        FetchObjectInfoWhenBucketPresentAndObjIndexAbsent) {
   CREATE_BUCKET_METADATA;
 
+  EXPECT_CALL(*bucket_meta_factory->mock_bucket_metadata,
+              get_object_list_index_layout())
+      .WillRepeatedly(ReturnRef(zero_index_layout));
+
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _)).Times(1);
   EXPECT_CALL(*mock_request, resume(_)).Times(1);
@@ -432,8 +440,6 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
       .WillRepeatedly(Return(layout_id));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_version_key_in_index()).WillRepeatedly(Return("objname/v1"));
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _)).Times(1);
 
   std::string sdrf = "<Delete><Object><Key>objname</Key></Object></Delete>";
   action_under_test->delete_request.initialize(mock_request, sdrf);
@@ -493,8 +499,6 @@ TEST_F(S3DeleteMultipleObjectsActionTest, FetchObjectsInfoSuccessful) {
       .WillRepeatedly(Return(layout_id));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_version_key_in_index()).WillRepeatedly(Return("objname/v1"));
-  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
-              put_keyval(_, _, _, _)).Times(1);
 
   std::string sdrf = "<Delete><Object><Key>objname</Key></Object></Delete>";
   action_under_test->delete_request.initialize(mock_request, sdrf);
@@ -567,7 +571,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest, DeleteObjectMetadataSucceeded) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
       .WillOnce(Return("objname"));
 
-  action_under_test->delete_objects_metadata_successful();
+  action_under_test->delete_extended_metadata_successful();
 
   EXPECT_TRUE(action_under_test->at_least_one_delete_successful);
   EXPECT_EQ(1, action_under_test->delete_objects_response.get_success_count());

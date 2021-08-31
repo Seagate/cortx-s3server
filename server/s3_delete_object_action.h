@@ -53,6 +53,8 @@ class S3DeleteObjectAction : public S3ObjectAction {
   // Probable delete record for object OID to be deleted
   std::string oid_str;  // Key for probable delete rec
   std::unique_ptr<S3ProbableDeleteRecord> probable_delete_rec;
+  std::vector<std::unique_ptr<S3ProbableDeleteRecord>> probable_del_rec_list;
+  std::vector<struct S3ExtendedObjectInfo> extended_objects;
   S3DeleteObjectActionState s3_del_obj_action_state;
 
  public:
@@ -73,13 +75,22 @@ class S3DeleteObjectAction : public S3ObjectAction {
   void delete_metadata_successful();
   void set_authorization_meta();
 
+  void populate_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();
 
   void startcleanup() override;
   void mark_oid_for_deletion();
+  void mark_oids_for_deletion();
   void delete_object();
+  void delete_objects();
+  void delete_objects_success();
   void remove_probable_record();
+  void remove_fragments_keyval();
+  void remove_fragments();
+  void remove_fragments_successful();
+  void remove_oids_from_probable_record_index();
+  void add_oids_to_probable_dead_oid_list();
 
   void send_response_to_s3_client();
 
@@ -108,6 +119,10 @@ class S3DeleteObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3DeleteObjectActionTest, SendSuccessResponse);
   FRIEND_TEST(S3DeleteObjectActionTest, DeleteObject);
   FRIEND_TEST(S3DeleteObjectActionTest, DelayedDeleteObject);
+  FRIEND_TEST(S3DeleteObjectActionTest, CleanupOnMetadataDeletion);
+  FRIEND_TEST(S3DeleteObjectActionTest, MarkOIDSForDeletion);
+  FRIEND_TEST(S3DeleteObjectActionTest, DeleteObjectsDelayedEnabled);
+  FRIEND_TEST(S3DeleteObjectActionTest, DeleteObjectsDelayedDisabled);
 };
 
 #endif

@@ -25,7 +25,7 @@
 
 #include "s3_addb_map.h"
 
-const uint64_t g_s3_to_addb_idx_func_name_map_size = 216;
+const uint64_t g_s3_to_addb_idx_func_name_map_size = 219;
 
 const char* g_s3_to_addb_idx_func_name_map[] = {
     "Action::check_authentication",
@@ -101,14 +101,17 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3DeleteBucketTaggingAction::delete_bucket_tags",
     "S3DeleteBucketTaggingAction::send_response_to_s3_client",
     "S3DeleteBucketTaggingActionTest::func_callback_one",
+    "S3DeleteMultipleObjectsAction::fetch_objects_extended_info",
     "S3DeleteMultipleObjectsAction::fetch_objects_info",
     "S3DeleteMultipleObjectsAction::send_response_to_s3_client",
     "S3DeleteMultipleObjectsAction::validate_request",
     "S3DeleteMultipleObjectsActionTest::func_callback_one",
-    "S3DeleteObjectAction::add_object_oid_to_probable_dead_oid_list",
     "S3DeleteObjectAction::delete_metadata",
     "S3DeleteObjectAction::delete_object",
+    "S3DeleteObjectAction::delete_objects",
     "S3DeleteObjectAction::mark_oid_for_deletion",
+    "S3DeleteObjectAction::mark_oids_for_deletion",
+    "S3DeleteObjectAction::populate_probable_dead_oid_list",
     "S3DeleteObjectAction::remove_probable_record",
     "S3DeleteObjectAction::send_response_to_s3_client",
     "S3DeleteObjectTaggingAction::delete_object_tags",
