@@ -32,27 +32,6 @@
 #include "s3_factory.h"
 #include "s3_timer.h"
 
-struct S3ExtendedObjectInfo {
- public:
-  S3ExtendedObjectInfo() {
-    start_offset_in_object = 0;
-    object_OID = {0, 0};
-    object_layout = -1;
-    object_pvid = {0, 0};
-    total_blocks_in_object = 0;
-    object_size = 0;
-    requested_object_size = 0;
-  }
-  size_t start_offset_in_object;
-  size_t total_blocks_in_object;
-  size_t object_size;
-  // Actual length to be returned to client
-  size_t requested_object_size;
-  struct m0_uint128 object_OID;
-  int object_layout;
-  struct m0_fid object_pvid;
-};
-
 class S3GetObjectAction : public S3ObjectAction {
 
   std::shared_ptr<S3MotrReader> motr_reader;

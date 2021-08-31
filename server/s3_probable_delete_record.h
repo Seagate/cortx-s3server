@@ -53,6 +53,7 @@ class S3ProbableDeleteRecord {
   unsigned int fragment;
   unsigned int part;
   struct m0_uint128 extended_md_idx_oid;
+
   std::string ext_version_id;
 
  public:
