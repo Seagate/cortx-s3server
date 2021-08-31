@@ -70,11 +70,11 @@ class MockS3ObjectMetadataFactory : public S3ObjectMetadataFactory {
   }
   void set_object_list_index_oid(const struct m0_uint128& id) {
     mock_object_metadata->set_object_list_index_layout({id});
-    mock_object_extnd_metadata->set_object_list_index_layout({id});
+    mock_object_extnd_metadata->set_extended_list_index_layout({id});
   }
   void set_object_list_index_layout(struct s3_motr_idx_layout& id) {
     mock_object_metadata->set_object_list_index_layout(id);
-    mock_object_extnd_metadata->set_object_list_index_layout(id);
+    mock_object_extnd_metadata->set_extended_list_index_layout(id);
   }
   std::shared_ptr<S3ObjectMetadata> create_object_metadata_obj(
       std::shared_ptr<S3RequestObject> req,
@@ -99,7 +99,7 @@ class MockS3ObjectMetadataFactory : public S3ObjectMetadataFactory {
       const std::string& object_name, const std::string& versionid,
       unsigned int parts = 0, unsigned int fragments = 0,
       const struct s3_motr_idx_layout& obj_idx_lo = {}) {
-    mock_object_extnd_metadata->set_object_list_index_layout(obj_idx_lo);
+    mock_object_extnd_metadata->set_extended_list_index_layout(obj_idx_lo);
     mock_object_extnd_metadata->set_version_id(versionid);
     return mock_object_extnd_metadata;
   }

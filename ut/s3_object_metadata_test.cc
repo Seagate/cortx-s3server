@@ -706,7 +706,7 @@ class S3ObjectExtendedMetadataTest : public testing::Test {
             ptr_mock_request, bucket_name, object_name, versionid, no_of_parts,
             no_of_fragments, motr_kvs_reader_factory, motr_kvs_writer_factory,
             ptr_mock_s3_motr_api));
-    extended_metadata_obj_under_test_with_oid->set_object_list_index_layout(
+    extended_metadata_obj_under_test_with_oid->set_extended_list_index_layout(
         object_list_index_layout);
   }
 
