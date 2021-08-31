@@ -120,6 +120,11 @@ class AuthServer {
             IOException, ServerInitialisationException,
             GeneralSecurityException, Exception {
 
+          if (args.length > 0) {
+            AuthServerConstants.setResourceDir(args[0]);
+            logger.info("Resource dir : " + AuthServerConstants.RESOURCE_DIR);
+          }
+
           AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR,
                                       "authserver.properties",
                                       "keystore.properties");

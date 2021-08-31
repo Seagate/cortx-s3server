@@ -49,8 +49,8 @@ CONFIG:
 
   CONFSTORE_S3SERVER_IP_ADDRESS: "cortx>software>s3>service>s3server_ip_address"
   CONFSTORE_S3SERVER_PORT: "cortx>software>s3>service>s3server_port"
-  CONFSTORE_S3_MOTR_IP_ADDRESS: "cortx>software>s3>service>motr_ip_address"
-  CONFSTORE_S3_MOTR_PORT: "cortx>software>s3>service>motr_port"
+  CONFSTORE_S3_SERVER_BGDELETE_BIND_ADDR: "cortx>software>s3>service>s3_server_bgdelete_bind_addr"
+  CONFSTORE_S3_SERVER_BGDELETE_BIND_PORT: "cortx>software>s3>service>s3_server_bgdelete_bind_port"
   CONFSTORE_S3_AUTHSERVER_IP_ADDRESS: "cortx>software>s3>service>authserver_ip_address"
   CONFSTORE_S3_AUTHSERVER_PORT: "cortx>software>s3>service>authserver_port"
   CONFSTORE_S3_ENABLE_STATS: "cortx>software>s3>service>s3_enable_stats"

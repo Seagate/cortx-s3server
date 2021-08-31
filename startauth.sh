@@ -21,4 +21,4 @@
 
 cd $(dirname $0)
 
-java -jar AuthServer-1.0-0.jar
+java -jar AuthServer-1.0-0.jar "/etc/cortx"

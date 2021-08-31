@@ -21,7 +21,7 @@
 #include "s3_cli_options.h"
 #include "s3_option.h"
 
-DEFINE_string(s3config, "/etc/cortx/s3/conf/s3config.yaml",
+DEFINE_string(s3config, "/opt/seagate/cortx/s3/conf/s3config.yaml",
               "S3 server config file");
 
 DEFINE_string(s3layoutmap,
@@ -85,16 +85,21 @@ int parse_and_load_config_options(int argc, char **argv) {
 
   // Create the initial options object with default values.
   S3Option *option_instance = S3Option::get_instance();
+  option_instance->set_option_file(FLAGS_s3config);
+  // Override with options set on command line
+  gflags::CommandLineFlagInfo flag_info;
+
+  // get the s3 config file
+  gflags::GetCommandLineFlagInfo("config_file", &flag_info);
+  if (!flag_info.is_default) {
+    option_instance->set_option_file(flag_info.current_value.c_str());
+  }
 
   // load the configurations from config file.
-  option_instance->set_option_file(FLAGS_s3config);
   bool force_override_from_config = true;
   if (!option_instance->load_all_sections(force_override_from_config)) {
     return -1;
   }
-
-  // Override with options set on command line
-  gflags::CommandLineFlagInfo flag_info;
 
   gflags::GetCommandLineFlagInfo("s3hostv4", &flag_info);
   if (!flag_info.is_default) {
