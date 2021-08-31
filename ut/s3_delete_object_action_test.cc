@@ -26,6 +26,7 @@
 #include "s3_error_codes.h"
 #include "s3_test_utils.h"
 #include "s3_ut_common.h"
+#include "s3_m0_uint128_helper.h"
 
 using ::testing::Eq;
 using ::testing::Return;
@@ -115,6 +116,10 @@ class S3DeleteObjectActionTest : public testing::Test {
 
     motr_writer_factory = std::make_shared<MockS3MotrWriterFactory>(
         mock_request, oid, ptr_mock_s3_motr_api);
+
+    motr_kvs_writer_factory = std::make_shared<MockS3MotrKVSWriterFactory>(
+        mock_request, ptr_mock_s3_motr_api);
+
     std::map<std::string, std::string> input_headers;
     input_headers["Authorization"] = "1";
     EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
@@ -130,6 +135,7 @@ class S3DeleteObjectActionTest : public testing::Test {
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3MotrWriterFactory> motr_writer_factory;
+  std::shared_ptr<MockS3MotrKVSWriterFactory> motr_kvs_writer_factory;
   std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
 
   std::shared_ptr<S3DeleteObjectAction> action_under_test;
@@ -340,4 +346,77 @@ TEST_F(S3DeleteObjectActionTest, SendSuccessResponse) {
       .Times(AtLeast(1));
 
   action_under_test->send_response_to_s3_client();
+}
+
+TEST_F(S3DeleteObjectActionTest, CleanupOnMetadataDeletion) {
+  CREATE_OBJECT_METADATA;
+  std::string version_key_in_index = "abcd/v1";
+  int layout_id = 9;
+  struct m0_uint128 oid = {0x1ffff, 0x1ffff};
+  std::string oid_str = S3M0Uint128Helper::to_string(oid);
+  action_under_test->probable_del_rec_list.push_back(std::move(
+      std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
+          oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, "mock_pvid",
+          index_layout.oid, index_layout.oid, version_key_in_index,
+          false /* force_delete */))));
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_motr_kvs_writer;
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+              put_keyval(_, _, _, _)).Times(1);
+  // EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+  //            delete_keyval(_, _, _, _)).Times(1);
+  action_under_test->s3_del_obj_action_state =
+      S3DeleteObjectActionState::metadataDeleted;
+  action_under_test->object_metadata->obj_fragments = 2;
+  action_under_test->startcleanup();
+}
+
+TEST_F(S3DeleteObjectActionTest, MarkOIDSForDeletion) {
+  CREATE_OBJECT_METADATA;
+  std::string version_key_in_index = "abcd/v1";
+  int layout_id = 9;
+  struct m0_uint128 oid = {0x1ffff, 0x1ffff};
+  std::string oid_str = S3M0Uint128Helper::to_string(oid);
+  action_under_test->probable_del_rec_list.push_back(std::move(
+      std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
+          oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, "mock_pvid",
+          index_layout.oid, index_layout.oid, version_key_in_index,
+          false /* force_delete */))));
+  action_under_test->motr_kv_writer =
+      motr_kvs_writer_factory->mock_motr_kvs_writer;
+  EXPECT_CALL(*(motr_kvs_writer_factory->mock_motr_kvs_writer),
+              put_keyval(_, _, _, _)).Times(1);
+  action_under_test->mark_oids_for_deletion();
+}
+
+TEST_F(S3DeleteObjectActionTest, DeleteObjectsDelayedDisabled) {
+  CREATE_OBJECT_METADATA;
+
+  S3Option::get_instance()->set_s3server_obj_delayed_del_enabled(false);
+  struct S3ExtendedObjectInfo obj_info;
+  action_under_test->extended_objects.push_back(obj_info);
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              remove_version_metadata(_, _)).Times(0);
+
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              delete_object(_, _, _, _, _)).Times(1);
+
+  action_under_test->delete_objects();
+}
+
+TEST_F(S3DeleteObjectActionTest, DeleteObjectsDelayedEnabled) {
+  CREATE_OBJECT_METADATA;
+
+  S3Option::get_instance()->set_s3server_obj_delayed_del_enabled(false);
+  struct S3ExtendedObjectInfo obj_info;
+  action_under_test->extended_objects.push_back(obj_info);
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              remove_version_metadata(_, _)).Times(1);
+
+  EXPECT_CALL(*(motr_writer_factory->mock_motr_writer),
+              delete_object(_, _, _, _, _)).Times(0);
+  S3Option::get_instance()->set_s3server_obj_delayed_del_enabled(true);
+  action_under_test->delete_objects();
 }
