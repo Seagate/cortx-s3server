@@ -84,7 +84,7 @@ S3ObjectMetadataFactory::create_object_ext_metadata_obj(
           parts, fragments);
 
   if (non_zero(obj_idx_lo.oid)) {
-    meta->set_object_list_index_layout(obj_idx_lo);
+    meta->set_extended_list_index_layout(obj_idx_lo);
   }
   return meta;
 }
@@ -1066,7 +1066,8 @@ void S3ObjectExtendedMetadata::load(std::function<void(void)> on_success,
                                     std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   // object_list_index_oid should be set before using this method
-  assert(non_zero(object_list_index_layout.oid));
+
+  assert(non_zero(extended_list_index_layout.oid));
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -1088,7 +1089,7 @@ void S3ObjectExtendedMetadata::get_obj_ext_entries(std::string last_object) {
     s3_log(S3_LOG_DEBUG, "", "Reset fragment fetch count to %u", fetch_count);
   }
   motr_kv_reader->next_keyval(
-      object_list_index_layout, last_object, fetch_count,
+      extended_list_index_layout, last_object, fetch_count,
       std::bind(&S3ObjectExtendedMetadata::get_obj_ext_entries_successful,
                 this),
       std::bind(&S3ObjectExtendedMetadata::get_obj_ext_entries_failed, this));
@@ -1123,8 +1124,8 @@ void S3ObjectExtendedMetadata::get_obj_ext_entries_successful() {
       s3_log(S3_LOG_ERROR, request_id,
              "Json Parsing failed. Index oid = "
              "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
-             object_list_index_layout.oid.u_hi,
-             object_list_index_layout.oid.u_lo, object_name.c_str(),
+             extended_list_index_layout.oid.u_hi,
+             extended_list_index_layout.oid.u_lo, object_name.c_str(),
              motr_kv_reader->get_value().c_str());
       state = S3ObjectMetadataState::invalid;
       this->handler_on_failed();
@@ -1178,14 +1179,15 @@ void S3ObjectExtendedMetadata::get_obj_ext_entries_failed() {
   this->handler_on_failed();
 }
 
-void S3ObjectExtendedMetadata::set_object_list_index_layout(
+
+void S3ObjectExtendedMetadata::set_extended_list_index_layout(
     const struct s3_motr_idx_layout& lo) {
-  object_list_index_layout = lo;
+  extended_list_index_layout = lo;
 }
 
 const struct s3_motr_idx_layout&
-S3ObjectExtendedMetadata::get_object_list_index_layout() const {
-  return object_list_index_layout;
+S3ObjectExtendedMetadata::get_extended_list_index_layout() const {
+  return extended_list_index_layout;
 }
 
 void S3ObjectExtendedMetadata::save(std::function<void(void)> on_success,
@@ -1201,7 +1203,8 @@ void S3ObjectExtendedMetadata::save(std::function<void(void)> on_success,
 void S3ObjectExtendedMetadata::save_extended_metadata() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   // objects_version_list_index_oid should be set before using this method
-  assert(non_zero(object_list_index_layout.oid));
+
+  assert(non_zero(extended_list_index_layout.oid));
 
   std::map<std::string, std::string> key_values =
       get_kv_list_of_extended_entries();
@@ -1211,7 +1214,7 @@ void S3ObjectExtendedMetadata::save_extended_metadata() {
     // TODO: Saves all entries in one call. May hit RPC limit.
     // It may require to save entries in chunk, instead of all in one RPC call.
     motr_kv_writer->put_keyval(
-        object_list_index_layout, key_values,
+        extended_list_index_layout, key_values,
         std::bind(&S3ObjectExtendedMetadata::save_extended_metadata_successful,
                   this),
         std::bind(&S3ObjectExtendedMetadata::save_extended_metadata_failed,
@@ -1377,6 +1380,41 @@ S3ObjectExtendedMetadata::get_kv_list_of_extended_entries() {
   return kv_map;
 }
 
+std::vector<std::string>
+S3ObjectExtendedMetadata::get_extended_entries_key_list() {
+  std::stringstream sskey;
+  std::vector<std::string> key_list;
+
+  int part_index = 1;
+  // TODO
+  for (auto& ext_entry_kv : ext_objects) {
+    int frag_index = 1;
+    for (auto& ext_entry_frag : ext_entry_kv.second) {
+      std::string part_field = "";
+      if (ext_entry_frag.is_multipart) {
+        part_field = "P" + std::to_string(part_index);
+      } else {
+        part_field = "";
+      }
+      std::string frag_field = "F" + std::to_string(frag_index);
+      sskey.str("");
+      sskey.clear();
+      sskey << object_name << EXTENDED_METADATA_OBJECT_SEP << version_id;
+
+      if (part_field.empty()) {
+        sskey << EXTENDED_METADATA_OBJECT_SEP << frag_field;
+      } else {
+        sskey << EXTENDED_METADATA_OBJECT_SEP << part_field;
+        sskey << EXTENDED_METADATA_OBJECT_SEP << frag_field;
+      }
+      key_list.push_back(sskey.str());
+      frag_index++;
+    }  // End of fragment items
+    part_index++;
+  }  // End of part items
+  return key_list;
+}
+
 std::string S3ObjectExtendedMetadata::get_json_str(
     struct s3_part_frag_context& frag_entry) {
   Json::Value root;
@@ -1432,25 +1470,26 @@ void S3ObjectExtendedMetadata::remove(std::function<void(void)> on_success,
 void S3ObjectExtendedMetadata::remove_ext_object_metadata() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   // object_list_index_oid should be set before using this method
-  assert(non_zero(object_list_index_layout.oid));
+  assert(non_zero(extended_list_index_layout.oid));
 
   std::map<std::string, std::string> key_values =
       get_kv_list_of_extended_entries();
-  std::vector<std::string> keys;
   for (auto& key : key_values) {
-    keys.push_back(key.first);
+    extended_keys.push_back(key.first);
   }
 
   if (key_values.size() > 0) {
     motr_kv_writer =
         mote_kv_writer_factory->create_motr_kvs_writer(request, s3_motr_api);
     motr_kv_writer->delete_keyval(
-        object_list_index_layout, keys,
+        extended_list_index_layout, extended_keys,
         std::bind(
             &S3ObjectExtendedMetadata::remove_ext_object_metadata_successful,
             this),
         std::bind(&S3ObjectExtendedMetadata::remove_ext_object_metadata_failed,
                   this));
+  } else {
+    this->handler_on_success();
   }
 }
 
@@ -1470,6 +1509,15 @@ void S3ObjectExtendedMetadata::remove_ext_object_metadata_failed() {
   } else {
     // TODO
     // state = S3ObjectMetadataState::failed;
+  }
+  s3_log(S3_LOG_WARN, request_id,
+         "Failed to delete extended keys from index oid = "
+         "%" SCNx64 " : %" SCNx64 ", Bucket = %s this may remain stale\n",
+         extended_list_index_layout.oid.u_hi,
+         extended_list_index_layout.oid.u_lo, bucket_name.c_str());
+
+  for (auto& key : extended_keys) {
+    s3_log(S3_LOG_WARN, request_id, "Stale key: %s", key.c_str());
   }
   this->handler_on_failed();
 }
