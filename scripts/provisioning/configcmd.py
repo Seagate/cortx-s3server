@@ -127,7 +127,7 @@ class ConfigCmd(SetupCmd):
            f'{self.ldap_passwd}',
            '--rootdnpasswd',
            f'{self.rootdn_passwd}',
-           '--baseconfigpath'
+           '--baseconfigpath',
            f'{self.base_config_file_path}',
            '--forceclean',
            '--skipssl']
