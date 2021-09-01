@@ -142,6 +142,8 @@ class S3Option {
   bool s3_enable_murmurhash_oid;
   int log_flush_frequency_sec;
   unsigned int motr_first_obj_read_size;
+  unsigned int motr_reconnect_retry_count;
+  unsigned int motr_reconnect_sleep_time;
 
   unsigned bucket_metadata_cache_max_size;
   unsigned bucket_metadata_cache_expire_sec;
@@ -437,6 +439,8 @@ class S3Option {
   size_t get_motr_read_pool_expandable_count();
   size_t get_motr_read_pool_max_threshold();
   unsigned int get_motr_first_read_size();
+  unsigned int get_motr_reconnect_sleep_time();
+  unsigned int get_motr_reconnect_retry_count();
 
   size_t get_libevent_pool_initial_size();
   size_t get_libevent_pool_expandable_size();

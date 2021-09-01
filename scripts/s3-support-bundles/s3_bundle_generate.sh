@@ -188,7 +188,8 @@ collect_core_files(){
   cd $cwd
 }
 
-# Collect <m0trace_files_count> m0trace files from each s3 instance present in $base_log_file_path/motr/s3server-* directory if available
+
+# Collect <m0trace_files_count> m0trace files from each s3 instance present in /var/log/cortx/motr/s3server-* directory if available
 # Files will be available at $tmp_path/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
 collect_m0trace_files(){
   echo "Collecting m0trace files dump..."
@@ -216,7 +217,8 @@ collect_m0trace_files(){
         return;
     fi
     s3instance_name=$s3_dir   # e.g s3server-0x7200000000000000:0
-    # m0trace file path will be $base_log_file_path/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
+
+    # m0trace file path will be /var/log/cortx/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
     m0trace_file_path=$s3_m0trace_files/$s3instance_name
     mkdir -p $m0trace_file_path
     cd $tmpr_dir
@@ -295,7 +297,8 @@ then
    args=$args" "$first_s3_m0trace_file
 fi
 
-# collect latest 5 m0trace files from $base_log_file_path/motr/s3server-* directory
+
+# collect latest 5 m0trace files from /var/log/cortx/motr/s3server-* directory
 # S3server name is generated with random name e.g s3server-0x7200000000000001:0x22
 # check if s3server name with compgen globpat is available
 if compgen -G $s3_motr_dir > /dev/null;
