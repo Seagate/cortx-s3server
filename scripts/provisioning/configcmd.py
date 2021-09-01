@@ -55,14 +55,15 @@ class ConfigCmd(SetupCmd):
     self.logger.info("validations completed")
 
     try:
-      # first update all the config files then do rest of the configurations
-      self.logger.info("update all modules config files started")
-      self.update_configs()
-      self.logger.info("update all modules config files completed")
-
+      # copy config files from /opt/seagate to base dir of config files (/etc/cortx)
       self.logger.info("copy config files started")
       self.copy_config_files()
       self.logger.info("copy config files completed")
+
+      # update all the config files
+      self.logger.info("update all modules config files started")
+      self.update_configs()
+      self.logger.info("update all modules config files completed")
 
       # validating config file after copying to /etc/cortx
       self.logger.info("validate config file started")
@@ -294,7 +295,7 @@ class ConfigCmd(SetupCmd):
     """Update s3 server config which required modification."""
 
     # validate config file exist
-    s3configfile = self.get_confkey('S3_CONFIG_FILE')
+    s3configfile = self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)
     if path.isfile(f'{s3configfile}') == False:
       self.logger.error(f'{s3configfile} file is not present')
       raise S3PROVError(f'{s3configfile} file is not present')
@@ -338,7 +339,7 @@ class ConfigCmd(SetupCmd):
     """Update provided config key and value to provided config file."""
 
     # validate config file exist
-    configfile = self.get_confkey(config_file_path)
+    configfile = self.get_confkey(config_file_path).replace("/opt/seagate/cortx", self.base_config_file_path)
     if path.isfile(f'{configfile}') == False:
       self.logger.error(f'{configfile} file is not present')
       raise S3PROVError(f'{configfile} file is not present')
@@ -392,7 +393,7 @@ class ConfigCmd(SetupCmd):
   def update_s3_auth_config(self):
     """Update s3 auth config which required modification."""
 
-    s3auth_configfile = self.get_confkey('S3_AUTHSERVER_CONFIG_FILE')
+    s3auth_configfile = self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)
     if path.isfile(f'{s3auth_configfile}') == False:
       self.logger.error(f'{s3auth_configfile} file is not present')
       raise S3PROVError(f'{s3auth_configfile} file is not present')
@@ -411,7 +412,7 @@ class ConfigCmd(SetupCmd):
   def update_s3_bgdelete_configs(self):
     """ Update s3 bgdelete configs."""
     self.logger.info("Update s3 bgdelete config file started")
-    self.update_cluster_id(self.get_confkey('S3_CLUSTER_CONFIG_FILE'))
+    self.update_cluster_id(self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path))
     self.update_rootdn_credentials()
     self.update_s3_bgdelete_config()
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL", "cortx_s3>scheduler_schedule_interval")
@@ -422,7 +423,7 @@ class ConfigCmd(SetupCmd):
     """ Update s3 bgdelete config which required modification."""
 
     # update bgdelete endpoints in to config file
-    bgdelete_configfile = self.get_confkey('S3_BGDELETE_CONFIG_FILE')
+    bgdelete_configfile = self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)
     if path.isfile(f'{bgdelete_configfile}') == False:
       self.logger.error(f'{bgdelete_configfile} file is not present')
       raise S3PROVError(f'{bgdelete_configfile} file is not present')
