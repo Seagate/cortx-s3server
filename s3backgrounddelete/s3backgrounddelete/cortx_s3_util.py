@@ -25,17 +25,20 @@ from hashlib import sha1, sha256
 import urllib
 import datetime
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_CONSUMER
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
 
 class CORTXS3Util(object):
    """Generate Authorization headers to validate requests."""
    _config = None
 
-   def __init__(self, config):
+   def __init__(self, config, connectionType):
         """Initialise config."""
         if (config is None):
             self._config = CORTXS3Config()
         else:
             self._config = config
+        self._connectionType = connectionType
 
    def get_headers(self, host, epoch_t, body_256hash):
         headers = {
@@ -129,13 +132,17 @@ class CORTXS3Util(object):
        return epoch_t.strftime('%Y%m%dT%H%M%SZ')
 
    def prepare_signed_header(self, http_request, request_uri, query_params, body):
-       """Generate headers used for authorization requests."""
-       url_parse_result  = urllib.parse.urlparse(self._config.get_cortx_s3_endpoint())
-       epoch_t = datetime.datetime.utcnow()
-       headers = {'content-type': 'application/x-www-form-urlencoded',
-               'Accept': 'text/plain'}
-       headers['Authorization'] = self.sign_request_v4(http_request, request_uri ,query_params, body, epoch_t, url_parse_result.netloc,
-           self._config.get_cortx_s3_service(), self._config.get_cortx_s3_region())
-       headers['x-amz-date'] = self.get_amz_timestamp(epoch_t)
-       headers['x-amz-content-sha256'] = self.body_hash_hex
-       return headers
+        """Generate headers used for authorization requests."""
+        if self._connectionType == CONNECTION_TYPE_PRODUCER:
+            url_parse_result  = urllib.parse.urlparse(self._config.get_cortx_s3_endpoint_for_producer())
+        else:
+            url_parse_result  = urllib.parse.urlparse(self._config.get_cortx_s3_endpoint_for_consumer())
+        
+        epoch_t = datetime.datetime.utcnow()
+        headers = {'content-type': 'application/x-www-form-urlencoded',
+                'Accept': 'text/plain'}
+        headers['Authorization'] = self.sign_request_v4(http_request, request_uri ,query_params, body, epoch_t, url_parse_result.netloc,
+            self._config.get_cortx_s3_service(), self._config.get_cortx_s3_region())
+        headers['x-amz-date'] = self.get_amz_timestamp(epoch_t)
+        headers['x-amz-content-sha256'] = self.body_hash_hex
+        return headers

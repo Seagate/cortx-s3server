@@ -34,6 +34,7 @@ from s3kvstool import S3kvTest
 import s3kvs
 import time
 from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
 
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__),  '../../s3backgrounddelete/s3backgrounddelete')))
@@ -114,7 +115,7 @@ def perform_head_object(oid_dict):
     print("Probable dead list should not contain :" + str(list(oid_dict.keys())))
     config = CORTXS3Config()
     for oid,layout_id in oid_dict.items():
-        response = CORTXS3ObjectApi(config).head(oid, layout_id)
+        response = CORTXS3ObjectApi(config, CONNECTION_TYPE_PRODUCER).head(oid, layout_id)
         assert response is not None
         assert response[0] is False
         assert isinstance(response[1], CORTXS3ErrorResponse)
@@ -640,7 +641,7 @@ AwsTest('Do head-object for "object8" on bucket "seagatebucket"')\
 # ************* Verify part list index is deleted *************
 # Use HEAD /indexes/<index oid> API to ensure that
 # the part list index is deleted by the object leak task.
-status, res = CORTXS3IndexApi(CONFIG).head(part_index)
+status, res = CORTXS3IndexApi(CONFIG, CONNECTION_TYPE_PRODUCER).head(part_index)
 if (not status):
     if (res):
         assert isinstance(res, CORTXS3ErrorResponse)
