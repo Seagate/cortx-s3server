@@ -72,6 +72,8 @@ class SetupCmd(object):
     self.cluster_id = None
     self.base_config_file_path = None
     self.base_log_file_path = None
+    self.shared_base_config_file_path = None
+    self.shared_base_log_file_path = None
     self.ldap_user = "sgiamadmin"
     self.module = module
 
@@ -97,10 +99,19 @@ class SetupCmd(object):
 
     self.cluster_id = self.get_confvalue(self.get_confkey(
       'CONFIG>CONFSTORE_CLUSTER_ID_KEY').replace("machine-id", self.machine_id))
+    self.logger.info(f'Cluster  id : {self.cluster_id}')
     self.base_config_file_path = self.get_confvalue(self.get_confkey(
       'CONFIG>CONFSTORE_BASE_CONFIG_PATH'))
+    self.logger.info(f'config file path : {self.base_config_file_path}')
     self.base_log_file_path = self.get_confvalue(self.get_confkey(
       'CONFIG>CONFSTORE_BASE_LOG_PATH'))
+    self.logger.info(f'log file path : {self.base_log_file_path}')
+    self.shared_base_config_file_path = self.get_confvalue(self.get_confkey(
+      'CONFIG>SHARED_CONFSTORE_BASE_CONFIG_PATH'))
+    self.logger.info(f'shared config path : {self.shared_base_config_file_path}')
+    self.shared_base_log_file_path = self.get_confvalue(self.get_confkey(
+      'CONFIG>SHARED_CONFSTORE_BASE_LOG_PATH'))
+    self.logger.info(f'shared log path : {self.shared_base_log_file_path}')
 
   @property
   def url(self) -> str:

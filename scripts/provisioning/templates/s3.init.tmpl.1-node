@@ -63,6 +63,8 @@ cortx:
       max_keys: 1000
     base_log_path: "/var/log/cortx"
     base_config_path: "/etc/cortx"
+    shared_base_log_path: "/shared/var/log/cortx"
+    shared_base_config_path: "/shared/etc/cortx"
 cluster:
   TMPL_CLUSTER_ID:
     site:
