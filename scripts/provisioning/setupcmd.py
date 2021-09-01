@@ -107,10 +107,10 @@ class SetupCmd(object):
       'CONFIG>CONFSTORE_BASE_LOG_PATH'))
     self.logger.info(f'log file path : {self.base_log_file_path}')
     self.shared_base_config_file_path = self.get_confvalue(self.get_confkey(
-      'CONFIG>SHARED_CONFSTORE_BASE_CONFIG_PATH'))
+      'CONFIG>CONFSTORE_SHARED_BASE_CONFIG_PATH'))
     self.logger.info(f'shared config path : {self.shared_base_config_file_path}')
     self.shared_base_log_file_path = self.get_confvalue(self.get_confkey(
-      'CONFIG>SHARED_CONFSTORE_BASE_LOG_PATH'))
+      'CONFIG>CONFSTORE_SHARED_BASE_LOG_PATH'))
     self.logger.info(f'shared log path : {self.shared_base_log_file_path}')
 
   @property
