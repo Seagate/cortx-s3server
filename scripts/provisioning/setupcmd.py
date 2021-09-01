@@ -167,7 +167,7 @@ class SetupCmd(object):
       self.logger.error(f'read ldap credentials failed, error: {e}')
       raise e
 
-  def update_rootdn_credentials(self):
+  def update_rootdn_credentials(self, s3_cluster_file : str):
     """Set rootdn username and password to opfile."""
     try:
       s3cipher_obj = CortxS3Cipher(None,
@@ -186,8 +186,6 @@ class SetupCmd(object):
 
       if encrypted_rootdn_pass is None:
         raise S3PROVError('password cannot be None.')
-
-      s3_cluster_file = self.get_confkey('S3_CLUSTER_CONFIG_FILE')
 
       key = 'cluster_config>rootdn_user'
       opfileconfstore = S3CortxConfStore(f'yaml://{s3_cluster_file}', 'write_rootdn_idx')

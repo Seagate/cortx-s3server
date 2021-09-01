@@ -413,7 +413,7 @@ class ConfigCmd(SetupCmd):
     """ Update s3 bgdelete configs."""
     self.logger.info("Update s3 bgdelete config file started")
     self.update_cluster_id(self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path))
-    self.update_rootdn_credentials()
+    self.update_rootdn_credentials(self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path))
     self.update_s3_bgdelete_config()
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL", "cortx_s3>scheduler_schedule_interval")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_MAX_KEYS", "indexid>max_keys")
