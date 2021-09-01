@@ -70,6 +70,22 @@
 #define OBJECT_PROBABLE_DEAD_OID_LIST_INDEX_OID_U_LO 3
 #define GLOBAL_INSTANCE_INDEX_U_LO 4
 
+extern "C" void mem_log_msg_func(int mempool_log_level, const char *msg) {
+  if (mempool_log_level == MEMPOOL_LOG_INFO) {
+    s3_log(S3_LOG_INFO, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_FATAL) {
+    s3_log(S3_LOG_FATAL, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_ERROR) {
+    s3_log(S3_LOG_ERROR, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_WARN) {
+    s3_log(S3_LOG_WARN, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_DEBUG) {
+    s3_log(S3_LOG_DEBUG, "", "%s\n", msg);
+  } else {
+    s3_log(S3_LOG_FATAL, "", "Invalid mempool log level. %s\n", msg);
+  }
+}
+
 S3Option *g_option_instance = NULL;
 evhtp_ssl_ctx_t *g_ssl_auth_ctx = NULL;
 evbase_t *global_evbase_handle;
@@ -400,6 +416,12 @@ static evhtp_res process_request_data(evhtp_request_t *p_evhtp_req,
     s3_log(S3_LOG_DEBUG, request_id,
            "Received Request body %zu bytes for sock = %d\n",
            evbuffer_get_length(buf), p_evhtp_req->conn->sock);
+    size_t buff_count = (evbuffer_get_length(buf) + 16384 - 1) / 16384;
+    s3_log(S3_LOG_DEBUG, request_id,
+           "S3 request [%s] allocated mempool buffer(16k) with total buffer "
+           "count = %zu\n",
+           request_id.c_str(), buff_count);
+    p_s3_req->add_to_mempool_buffer_count(buff_count);
 
     if (!p_s3_req->is_incoming_data_ignored()) {
       evbuf_t *s3_buf = evbuffer_new();
@@ -779,7 +801,7 @@ int main(int argc, char **argv) {
                          g_option_instance->get_libevent_pool_initial_size(),
                          g_option_instance->get_libevent_pool_expandable_size(),
                          g_option_instance->get_libevent_pool_max_threshold(),
-                         libevent_mempool_flags);
+                         mem_log_msg_func, libevent_mempool_flags);
 
   if (rc != 0) {
     s3daemon.delete_pidfile();

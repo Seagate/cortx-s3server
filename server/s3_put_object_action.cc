@@ -706,7 +706,9 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list_failed() {
 
 void S3PutObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
+  s3_log(S3_LOG_INFO, request_id,
+         "S3 request [%s] with total allocated mempool buffers(16k) = %zu\n",
+         request_id.c_str(), request->get_mempool_buffer_count());
   if (S3Option::get_instance()->is_getoid_enabled()) {
 
     request->set_out_header_value("x-stx-oid",

@@ -482,14 +482,37 @@ void S3GetObjectAction::send_data_to_client() {
   s3_perf_count_outcoming_bytes(p_evbuffer->get_evbuff_length());
   request->send_reply_body(p_evbuffer->release_ownership());
   s3_timer.stop();
-
-  if (data_sent_to_client != requested_content_length) {
-    read_object_data();
+  // Dump Mem pool stats after sending data to client
+  struct pool_info poolinfo;
+  int rc = event_mempool_getinfo(&poolinfo);
+  if (rc != 0) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Issue in memory pool during S3 Get API send data call!\n");
   } else {
-    const auto mss = s3_timer.elapsed_time_in_millisec();
-    LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);
-    s3_stats_timing("get_object_send_data", mss);
+    s3_log(S3_LOG_INFO, request_id,
+           "S3 Get API send data mempool stats: mempool_item_size = %zu "
+           "free_bufs_in_pool = %d "
+           "number_of_bufs_shared = %d "
+           "total_bufs_allocated_by_pool = %d\n",
+           poolinfo.mempool_item_size, poolinfo.free_bufs_in_pool,
+           poolinfo.number_of_bufs_shared,
+           poolinfo.total_bufs_allocated_by_pool);
+  }
 
+  if (request->client_connected()) {
+    if (data_sent_to_client != requested_content_length) {
+      read_object_data();
+    } else {
+      const auto mss = s3_timer.elapsed_time_in_millisec();
+      LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);
+      s3_stats_timing("get_object_send_data", mss);
+
+      send_response_to_s3_client();
+    }
+  } else {
+    s3_log(S3_LOG_INFO, request_id,
+           "Client disconnected. Aborting S3 GET operation\n");
+    set_s3_error("InternalError");
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -506,6 +529,9 @@ void S3GetObjectAction::read_object_data_failed() {
 
 void S3GetObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_INFO, request_id,
+         "S3 request [%s] with total allocated mempool buffers(16k) = %zu\n",
+         request_id.c_str(), request->get_mempool_buffer_count());
 
   if (reject_if_shutting_down()) {
     if (read_object_reply_started) {
