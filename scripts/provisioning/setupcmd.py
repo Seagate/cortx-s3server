@@ -70,8 +70,8 @@ class SetupCmd(object):
     self._s3_confkeys_store = None
     self.machine_id = None
     self.cluster_id = None
-    self.base_config_file_path = None
-    self.base_log_file_path = None
+    self.base_config_file_path = "/etc/cortx"
+    self.base_log_file_path = "/var/log/cortx"
     self.shared_base_config_file_path = None
     self.shared_base_log_file_path = None
     self.ldap_user = "sgiamadmin"

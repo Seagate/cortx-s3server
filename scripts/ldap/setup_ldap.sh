@@ -42,6 +42,7 @@ usessl=true
 forceclean=false
 LDAPADMINPASS=
 ROOTDNPASSWORD=
+base_config_file_path=
 defaultpasswds="ldapadmin"
 
 echo "Running setup_ldap.sh script"
