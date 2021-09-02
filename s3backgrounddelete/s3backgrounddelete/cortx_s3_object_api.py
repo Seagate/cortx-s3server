@@ -32,19 +32,19 @@ class CORTXS3ObjectApi(CORTXS3Client):
     """CORTXS3ObjectApi provides object REST-API's Get, Put and Delete."""
     _logger = None
 
-    def __init__(self, config, logger=None, connection=None):
+    def __init__(self, config, connectionType, logger=None, connection=None):
         """Initialise logger and config."""
         if (logger is None):
             self._logger = logging.getLogger("CORTXS3ObjectApi")
         else:
             self._logger = logger
         self.config = config
-        self.s3_util = CORTXS3Util(self.config)
+        self.s3_util = CORTXS3Util(self.config, connectionType)
 
         if (connection is None):
-            super(CORTXS3ObjectApi, self).__init__(self.config, logger = self._logger)
+            super(CORTXS3ObjectApi, self).__init__(self.config, connectionType=connectionType, logger = self._logger)
         else:
-            super(CORTXS3ObjectApi, self).__init__(self.config, logger=self._logger, connection=connection)
+            super(CORTXS3ObjectApi, self).__init__(self.config, connectionType=connectionType, logger=self._logger, connection=connection)
 
 
     def put(self, oid, value):

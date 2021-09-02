@@ -26,11 +26,12 @@ from unittest.mock import Mock
 
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
 
 def test_list_no_index_id():
     """Test List api without index_id should return response as "None"."""
     config = CORTXS3Config()
-    response = CORTXS3IndexApi(config).list(None)
+    response = CORTXS3IndexApi(config, CONNECTION_TYPE_PRODUCER).list(None)
     if (response is not None):
         assert response[0] is False
         assert response[1] is None
@@ -50,7 +51,7 @@ def test_list_success():
     httpconnection.getresponse.return_value = httpresponse
 
     config = CORTXS3Config()
-    response = CORTXS3IndexApi(config, connection=httpconnection).list("test_index1")
+    response = CORTXS3IndexApi(config, CONNECTION_TYPE_PRODUCER, connection=httpconnection).list("test_index1")
     if (response is not None):
         assert response[0] is True
         assert response[1] is not None
@@ -68,7 +69,7 @@ def test_list_failure():
     httpconnection.getresponse.return_value = httpresponse
 
     config = CORTXS3Config()
-    response = CORTXS3IndexApi(config, connection=httpconnection).list("test_index2")
+    response = CORTXS3IndexApi(config, CONNECTION_TYPE_PRODUCER, connection=httpconnection).list("test_index2")
     if (response is not None):
         assert response[0] is False
         assert response[1] is not None
@@ -86,7 +87,7 @@ def test_put_success():
     httpconnection.getresponse.return_value = httpresponse
 
     config = CORTXS3Config()
-    response = CORTXS3IndexApi(config, connection=httpconnection).put("test_index1")
+    response = CORTXS3IndexApi(config, CONNECTION_TYPE_PRODUCER, connection=httpconnection).put("test_index1")
     if (response is not None):
         assert response[0] is True
 
@@ -103,7 +104,7 @@ def test_put_failure():
     httpconnection.getresponse.return_value = httpresponse
 
     config = CORTXS3Config()
-    response = CORTXS3IndexApi(config, connection=httpconnection).put("test_index1")
+    response = CORTXS3IndexApi(config, CONNECTION_TYPE_PRODUCER, connection=httpconnection).put("test_index1")
     if (response is not None):
         assert response[0] is False
 
@@ -111,6 +112,6 @@ def test_put_failure():
 def test_put_no_index_id():
     """Test PUT request without index_id, it should return response as "None"."""
     config = CORTXS3Config()
-    response = CORTXS3IndexApi(config).put(None)
+    response = CORTXS3IndexApi(config, CONNECTION_TYPE_PRODUCER).put(None)
     if (response is not None):
         assert response[0] is False
