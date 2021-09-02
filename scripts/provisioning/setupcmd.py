@@ -118,14 +118,21 @@ class SetupCmd(object):
     assert self.provisioner_confstore != None
     return self.provisioner_confstore.get_config(key)
 
+  def get_confvalue_with_validation(self, key: str):
+    assert self.provisioner_confstore != None
+    value = self.provisioner_confstore.get_config(self.get_confkey(key))
+    if value is None:
+      value = self.s3_confkeys_store.get_config("DEFAULT_"+ key)
+    return value
+
   def read_endpoint_value(self):
     if self.endpoint is None:
-      self.endpoint = self.get_confvalue(self.get_confkey('TEST>TEST_CONFSTORE_ENDPOINT_KEY'))
+      self.endpoint = self.get_confvalue_with_validation('TEST>TEST_CONFSTORE_ENDPOINT_KEY')
 
   def read_ldap_credentials_for_test_phase(self):
     """Get 'ldapadmin' user name and plaintext password from confstore for test phase."""
     try:
-      self.ldap_user = self.get_confvalue(self.get_confkey('TEST>TEST_CONFSTORE_LDAPADMIN_USER_KEY'))
+      self.ldap_user = self.get_confvalue_with_validation('TEST>TEST_CONFSTORE_LDAPADMIN_USER_KEY')
       self.ldap_passwd = self.get_confvalue(self.get_confkey('TEST>TEST_CONFSTORE_LDAPADMIN_PASSWD_KEY'))
     except Exception as e:
       sys.stderr.write(f'read ldap credentials failed, error: {e}\n')
@@ -141,7 +148,7 @@ class SetupCmd(object):
 
       cipher_key = s3cipher_obj.generate_key()
 
-      self.ldap_user = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_LDAPADMIN_USER_KEY'))
+      self.ldap_user = self.get_confvalue_with_validation('CONFIG>CONFSTORE_LDAPADMIN_USER_KEY')
 
       encrypted_ldapadmin_pass = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_LDAPADMIN_PASSWD_KEY'))
 
@@ -162,7 +169,7 @@ class SetupCmd(object):
 
       cipher_key = s3cipher_obj.generate_key()
 
-      self.ldap_root_user = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_ROOTDN_USER_KEY'))
+      self.ldap_root_user = self.get_confvalue_with_validation('CONFIG>CONFSTORE_ROOTDN_USER_KEY')
 
       encrypted_rootdn_pass = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_ROOTDN_PASSWD_KEY'))
 
