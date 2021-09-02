@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-if [ $# -ne 3 ]
+if [ $# -ne 1 ]
 then
   echo "Invalid number of arguments passed to the script"
   echo "Usage: startauth.sh <base config path>"
