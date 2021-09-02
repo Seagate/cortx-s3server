@@ -258,6 +258,8 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 %attr(4600, root, root) /opt/seagate/cortx/s3/conf/s3config.yaml.sample 
 %attr(4600, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/config.yaml.sample
 %attr(4600, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml.sample
+%attr(4600, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.sh
+%attr(4600, root, root) /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh
 
 %dir /opt/seagate/cortx/
 %dir /opt/seagate/cortx/auth
