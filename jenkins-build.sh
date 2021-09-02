@@ -489,7 +489,7 @@ if [ $use_ipv6 -eq 1 ]
 then
   $USE_SUDO sed -i 's/S3_SERVER_IPV4_BIND_ADDR:.*$/S3_SERVER_IPV4_BIND_ADDR: ~/g' /opt/seagate/cortx/s3/conf/s3config.yaml
   $USE_SUDO sed -i 's/S3_SERVER_IPV6_BIND_ADDR:.*$/S3_SERVER_IPV6_BIND_ADDR: ::\/128/g' /opt/seagate/cortx/s3/conf/s3config.yaml
-  $USE_SUDO sed -i 's/\(\s*S3_AUTH_IP_ADDR:\s*\)ipv4:[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\(\s*.*\)/\1ipv6:::1\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
+  $USE_SUDO sed -i 's/\(\s*S3_AUTH_IP_ADDR:\s*\)[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\(\s*.*\)/\1ipv6:::1\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
   # backup
   $USE_SUDO \cp /etc/haproxy/haproxy.cfg{,.bak}
   $USE_SUDO sed -i 's/0\.0\.0\.0/::/g' /etc/haproxy/haproxy.cfg

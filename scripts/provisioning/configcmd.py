@@ -365,9 +365,7 @@ class ConfigCmd(SetupCmd):
     """ Update s3 server configs."""
     self.logger.info("Update s3 server config file started")
     self.update_s3_server_config()
-    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3SERVER_IP_ADDRESS", "S3_SERVER_CONFIG>S3_SERVER_IPV4_BIND_ADDR")
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3SERVER_PORT", "S3_SERVER_CONFIG>S3_SERVER_BIND_PORT")
-    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_SERVER_BGDELETE_BIND_ADDR", "S3_SERVER_CONFIG>S3_SERVER_BGDELETE_BIND_ADDR")
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_SERVER_BGDELETE_BIND_PORT", "S3_SERVER_CONFIG>S3_SERVER_BGDELETE_BIND_PORT")
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_AUTHSERVER_IP_ADDRESS", "S3_AUTH_CONFIG>S3_AUTH_IP_ADDR")
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_AUTHSERVER_PORT", "S3_AUTH_CONFIG>S3_AUTH_PORT")
@@ -379,14 +377,12 @@ class ConfigCmd(SetupCmd):
     """ Update s3 auth configs."""
     self.logger.info("Update s3 authserver config file started")
     self.update_s3_auth_config()
-    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_DEFAULT_HOST", "defaultHost")
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_HTTP_PORT", "httpPort")
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_HTTPS_PORT", "httpsPort")
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_LDAP_HOST", "ldapHost")
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_LDAP_PORT", "ldapPort")
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_LDAP_SSL_PORT", "ldapSSLPort")
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_DEFAULT_ENDPOINT", "defaultEndpoint")
-    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_S3_ENDPOINT", "s3Endpoints")
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_IAM_AUDITLOG", "IAMAuditlog")
     self.logger.info("Update s3 authserver config file completed")
 

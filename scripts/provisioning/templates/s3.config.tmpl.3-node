@@ -53,23 +53,19 @@ cortx:
       service:
       service:
         instances : "1"
-        s3server_ip_address : "0.0.0.0"
         s3server_port : 28071
-        s3_server_bgdelete_bind_addr : "127.0.0.1"
         s3_server_bgdelete_bind_port : 28049
         authserver_ip_address : "ipv4:127.0.0.1"
         authserver_port : 28050
         s3_enable_stats: true
         s3_audit_logger: "rsyslog-tcp"
     s3authserver:
-      defaultHost: "0.0.0.0"
       defaultEndpoint: "127.0.0.1"
       httpPort: 28050
       httpsPort: 28051
       ldapHost: "127.0.0.1"
       ldapPort: 389
       ldapSSLPort: 636
-      s3Endpoints: "s3-us-west-2.seagate.com,s3-us.seagate.com,s3-europe.seagate.com,s3-asia.seagate.com,s3.seagate.com"
       iamAuditLog: "rsyslog-tcp"
     s3bgdelete:
       endpoint: "127.0.0.1"

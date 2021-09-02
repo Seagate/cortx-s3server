@@ -35,11 +35,11 @@ struct s3_auth_op_context *create_basic_auth_op_ctx(
   ctx->evbase = eventbase;
   if (option_instance->is_s3_ssl_auth_enabled()) {
     ctx->conn = evhtp_connection_ssl_new(
-        ctx->evbase, option_instance->get_auth_ip_addr().c_str(),
+        ctx->evbase, "ipv4:" + option_instance->get_auth_ip_addr().c_str(),
         option_instance->get_auth_port(), g_ssl_auth_ctx);
   } else {
     ctx->conn = evhtp_connection_new(
-        ctx->evbase, option_instance->get_auth_ip_addr().c_str(),
+        ctx->evbase, "ipv4:" + option_instance->get_auth_ip_addr().c_str(),
         option_instance->get_auth_port());
   }
 
