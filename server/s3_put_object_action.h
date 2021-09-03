@@ -44,6 +44,7 @@ class S3PutObjectAction : public S3ObjectAction {
   // Maximum retry count for collision resolution
   unsigned short tried_count;
   int layout_id;
+  int number_of_parts;
   unsigned motr_write_payload_size;
   // string used for salting the uri
   std::string salt;
@@ -62,11 +63,15 @@ class S3PutObjectAction : public S3ObjectAction {
   std::map<std::string, std::string> new_object_tags_map;
 
   // Probable delete record for old object OID in case of overwrite
-  std::string old_oid_str;  // Key for old probable delete rec
   std::unique_ptr<S3ProbableDeleteRecord> old_probable_del_rec;
+  std::string old_oid_str;  // Key for old probable delete rec
+  std::vector<std::unique_ptr<S3ProbableDeleteRecord>> probable_del_rec_list;
   // Probable delete record for new object OID in case of current req failure
   std::string new_oid_str;  // Key for new probable delete rec
   std::unique_ptr<S3ProbableDeleteRecord> new_probable_del_rec;
+  std::vector<struct m0_uint128> old_obj_oids;
+  std::vector<struct m0_fid> old_obj_pvids;
+  std::vector<int> old_obj_layout_ids;
 
   void create_new_oid(struct m0_uint128 current_oid);
   void collision_detected();
@@ -102,6 +107,9 @@ class S3PutObjectAction : public S3ObjectAction {
 
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();
+  void add_part_object_to_probable_dead_oid_list(
+      const std::shared_ptr<S3ObjectMetadata> &,
+      std::vector<std::unique_ptr<S3ProbableDeleteRecord>> &);
 
   void initiate_data_streaming();
   void consume_incoming_content();
@@ -121,6 +129,7 @@ class S3PutObjectAction : public S3ObjectAction {
   void remove_old_oid_probable_record();
   void remove_new_oid_probable_record();
   void delete_old_object();
+  void delete_old_object_success();
   void remove_old_object_version_metadata();
   void delete_new_object();
 

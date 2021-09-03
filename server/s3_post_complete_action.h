@@ -102,7 +102,6 @@ class S3PostCompleteAction : public S3ObjectAction {
   std::map<unsigned int, std::string> part_etags;
   std::string generate_etag();
 
-
  public:
   S3PostCompleteAction(
       std::shared_ptr<S3RequestObject> req,
