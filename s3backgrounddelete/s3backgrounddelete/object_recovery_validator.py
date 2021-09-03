@@ -211,8 +211,8 @@ class ObjectRecoveryValidator:
 
             for (index, key_in_index, oid_key, layout_id_key, api_prefix) in index_key_list:
                 if ((index is None) or (key_in_index is None) or (len(key_in_index) == 0)):
-                    self._logger.info("Either key: " + key_in_index +
-                                      " or index: " + index + " is Empty")
+                    self._logger.info("Either key: " + str(key_in_index) +
+                                      " or index: " + str(index) + " is Empty")
                     continue
 
                 self._logger.info("key: " + key_in_index +
