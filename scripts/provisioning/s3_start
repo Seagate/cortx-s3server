@@ -58,6 +58,8 @@ def main():
     elif args.service == 's3bgconsumer':
       # Add action and remove pass
       pass
+    elif args.service == 'haproxy':
+      os.system("/usr/sbin/haproxy -Ws -f /etc/cortx/s3/haproxy.cfg -p /run/haproxy.pid &")
     else:
       logger.error(f"Invalid argument {args.service}")
   except Exception as e:
