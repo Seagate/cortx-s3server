@@ -46,6 +46,9 @@ def main():
   create_logger_directory()
   logger = create_logger()
 
+  # TODO: to be removed when end-to-end logging integration is done:
+  os.makedirs("/var/log/cortx/s3", mode=0o755, exist_ok=True)
+
   try:
     if args.service == 's3server':
       # Add action and remove pass
@@ -59,7 +62,9 @@ def main():
       # Add action and remove pass
       pass
     elif args.service == 'haproxy':
-      os.system("/usr/sbin/haproxy -Ws -f /etc/cortx/s3/haproxy.cfg -p /run/haproxy.pid &")
+      # TODO: logging path has to come from conf store -- to be fixed during
+      # end-to-end logging integration.
+      os.system("/usr/sbin/haproxy -Ws -f /etc/cortx/s3/haproxy.cfg -p /run/haproxy.pid 2>&1 1>/var/log/cortx/s3/haproxy.log")
     else:
       logger.error(f"Invalid argument {args.service}")
   except Exception as e:
