@@ -119,7 +119,7 @@ class SetupCmd(object):
 
   def get_confvalue_with_defaults(self, key: str):
     assert self.provisioner_confstore != None
-    if "DEFAULT" in key:
+    if key.startswith("DEFAULT_"):
       return self.s3_confkeys_store.get_config(key)
     conf_key = self.get_confkey(key)
     if conf_key is not None:
