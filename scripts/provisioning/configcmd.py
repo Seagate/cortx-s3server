@@ -357,7 +357,7 @@ class ConfigCmd(SetupCmd):
                           config_file_type : str,
                           key_to_read : str,
                           key_to_update: str,
-                          modifier_function=dummy_func,
+                          modifier_function=self.dummy_func,
                           appending_key: str = ""):
     """Update provided config key and value to provided config file."""
 
@@ -407,15 +407,15 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_AUDIT_LOGGER",
                             "S3_SERVER_CONFIG>S3_AUDIT_LOGGER_POLICY")
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH",
-                            "S3_SERVER_CONFIG>S3_LOG_DIR", append_to_base_path, "CONFIG>CONFSTORE_S3_LOG_DIR")
+                            "S3_SERVER_CONFIG>S3_LOG_DIR", self.append_to_base_path, "CONFIG>CONFSTORE_S3_LOG_DIR")
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH",
-                            "S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR", append_to_base_path, 
+                            "S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR", self.append_to_base_path, 
                             "CONFIG>CONFSTORE_DAEMON_LOG_DIR")
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH",
-                            "S3_SERVER_CONFIG>S3_AUDIT_LOG_DIR", append_to_base_path,
+                            "S3_SERVER_CONFIG>S3_AUDIT_LOG_DIR", self.append_to_base_path,
                             "CONFIG>CONFSTORE_S3_LOG_DIR")
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH",
-                            "S3_SERVER_CONFIG>S3_PERF_LOG_FILENAME", append_to_base_path,
+                            "S3_SERVER_CONFIG>S3_PERF_LOG_FILENAME", self.append_to_base_path,
                             "CONFIG>CONFSTORE_S3_PERF_FILE_PATH")
     self.logger.info("Update s3 server config file completed")
 
