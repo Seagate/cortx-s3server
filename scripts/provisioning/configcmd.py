@@ -351,12 +351,13 @@ class ConfigCmd(SetupCmd):
       value_of_key = value_of_key + "/" + str(machine_id)
     
     self.logger.info(f'Value : {value_of_key}')
+    return value_of_key
   
   def dummy_func(self, 
                 s3configfileconfstore : S3CortxConfStore,
                 value_of_key: str,
                 appending_key: str = ""):
-    pass
+    return value_of_key
           
   #Modifier function should have the signature func_name(confstore, value)
   def update_config_value(self, config_file_path : str,
@@ -382,7 +383,7 @@ class ConfigCmd(SetupCmd):
 
     if modifier_function is not None:
       self.logger.info(f'Modifier function provided to update_config_value')
-      modifier_function(s3configfileconfstore, value_to_update, appending_key)
+      value_to_update = modifier_function(s3configfileconfstore, value_to_update, appending_key)
 
     self.logger.info(f'Final : {key_to_read}: {value_to_update}')
 
