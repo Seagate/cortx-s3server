@@ -19,7 +19,7 @@
   "config": {
     "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
     "pip3s": ["s3confstore", "cryptography", "s3cipher"],
-    "services": ["sshd", "haproxy", "slapd", "rsyslog"],
+    "services": ["sshd", "haproxy", "slapd", "rsyslogd"],
     "files": [
       "file:/etc/haproxy/haproxy.cfg",
       "file:/etc/ssl/stx/stx.pem",
@@ -37,7 +37,7 @@
   "init": {
     "rpms": ["symas-openldap", "symas-openldap-servers", "symas-openldap-clients", "haproxy", "cortx-motr", "python36-ldap"],
     "pip3s": ["s3confstore", "cryptography", "s3cipher"],
-    "services": ["sshd", "haproxy", "slapd", "rsyslog"],
+    "services": ["sshd", "haproxy", "slapd", "rsyslogd"],
     "files": [
       "file:/etc/haproxy/haproxy.cfg",
       "file:/etc/ssl/stx/stx.pem",

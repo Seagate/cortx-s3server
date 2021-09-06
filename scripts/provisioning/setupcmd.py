@@ -210,7 +210,10 @@ class SetupCmd(object):
     if pip3s:
       PkgV().validate('pip3s', pip3s)
     if services:
-      ServiceV().validate('isrunning', services)
+      for service in services:
+            pid = os.popen('pidof '+service).read()
+            if pid is None:
+                raise Exception('Validation failed for service %s' % (service))
     if rpms:
       PkgV().validate('rpms', rpms)
     if files:

@@ -107,20 +107,36 @@ class ConfigCmd(SetupCmd):
 
   def configure_s3_schema(self):
     self.logger.info('openldap s3 configuration started')
-    cmd = ['/opt/seagate/cortx/s3/install/ldap/s3_setup_ldap.sh',
-           '--ldapadminpasswd',
-           f'{self.ldap_passwd}',
-           '--rootdnpasswd',
-           f'{self.rootdn_passwd}',
-           '--skipssl']
-    handler = SimpleProcess(cmd)
-    stdout, stderr, retcode = handler.run()
-    self.logger.info(f'output of setup_ldap.sh: {stdout}')
-    if retcode != 0:
-      self.logger.error(f'error of setup_ldap.sh: {stderr}')
-      raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
-    else:
-      self.logger.warning(f'warning of setup_ldap.sh: {stderr}')
+
+    storage_set_count = self.get_confvalue(self.get_confkey(
+        'CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY').replace("cluster-id", self.cluster_id))
+    index = 0
+    while index < int(storage_set_count):
+      server_nodes_list = self.get_confkey(
+        'CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("cluster-id", self.cluster_id).replace("storage-set-count", str(index))
+      server_nodes_list = self.get_confvalue(server_nodes_list)
+      if type(server_nodes_list) is str:
+        # list is stored as string in the confstore file
+        server_nodes_list = literal_eval(server_nodes_list)
+      for node_machine_id in server_nodes_list:
+          host_name = self.get_confvalue(f'server_node>{node_machine_id}>hostname')
+          cmd = ['/opt/seagate/cortx/s3/install/ldap/s3_setup_ldap.sh',
+                 '--hostname',
+                 f'{host_name}',
+                 '--ldapadminpasswd',
+                 f'{self.ldap_passwd}',
+                 '--rootdnpasswd',
+                 f'{self.rootdn_passwd}',
+                 '--skipssl']
+          handler = SimpleProcess(cmd)
+          stdout, stderr, retcode = handler.run()
+          self.logger.info(f'output of setup_ldap.sh: {stdout}')
+          if retcode != 0:
+            self.logger.error(f'error of setup_ldap.sh: {stderr} {host_name}')
+            raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
+          else:
+            self.logger.warning(f'warning of setup_ldap.sh: {stderr} {host_name}')
+      index += 1
 
   def create_topic(self, admin_id: str, topic_name:str, partitions: int):
     """create topic for background delete services."""
