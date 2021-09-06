@@ -334,26 +334,31 @@ class ConfigCmd(SetupCmd):
   def append_to_base_path(self, 
                         s3configfileconfstore : S3CortxConfStore,
                         value_of_key: str,
-                        appending_key: str = None):
+                        appending_key: str = ""):
     "Modifies S3_daemon_dir to include machine-id"
-    appending_value = None
-    if appending_key is not None:
+    appending_value = ""
+    if appending_key != "":
       appending_value = self.get_confvalue(self.get_confkey(appending_key))
 
     machine_id = s3configfileconfstore.get_machine_id()
-    if appending_value is not None:
+    if appending_value != "":
       value_of_key = value_of_key + "/" + str(machine_id) + "/" + appending_value
     else:
       value_of_key = value_of_key + "/" + str(machine_id)
   
-
+  def dummy_func(self, 
+                s3configfileconfstore : S3CortxConfStore,
+                value_of_key: str,
+                appending_key: str = ""):
+    pass
+          
   #Modifier function should have the signature func_name(confstore, value)
   def update_config_value(self, config_file_path : str,
                           config_file_type : str,
                           key_to_read : str,
                           key_to_update: str,
-                          modifier_function=None,
-                          appending_key=None):
+                          modifier_function=dummy_func,
+                          appending_key: str = ""):
     """Update provided config key and value to provided config file."""
 
     # validate config file exist
@@ -369,7 +374,7 @@ class ConfigCmd(SetupCmd):
     value_to_update = self.get_confvalue(self.get_confkey(key_to_read))
     self.logger.info(f'{key_to_read}: {value_to_update}')
 
-    if modifier_function not None:
+    if modifier_function is not None:
       self.logger.info(f'Modifier function provided to update_config_value')
       modifier_function(s3configfileconfstore, value_to_update, appending_key)
 
