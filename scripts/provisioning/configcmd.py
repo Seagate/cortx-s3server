@@ -465,13 +465,13 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml",
                             "CONFIG>CONFSTORE_S3_BGDELETE_MAX_KEYS", "indexid>max_keys")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", 
-                            "logconfig>logger_directory", append_to_base_path,
+                            "logconfig>logger_directory", self.append_to_base_path,
                             "CONFIG>CONFSTORE_BG_DEL_LOG_FOLDER")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH",
-                            "logconfig>scheduler_log_file", append_to_base_path,
+                            "logconfig>scheduler_log_file", self.append_to_base_path,
                             "CONFIG>CONFSTORE_BG_DEL_SCHEDULER_LOG_PATH")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH",
-                            "logconfig>processor_log_file", append_to_base_path,
+                            "logconfig>processor_log_file", self.append_to_base_path,
                             "CONFIG>CONFSTORE_BG_DEL_PROCESSOR_LOG_PATH")
     self.logger.info("Update s3 bgdelete config file completed")
 
