@@ -126,7 +126,8 @@ class SetupCmd(object):
       if "machine-id" in conf_key:
         conf_key = conf_key.replace("machine-id", self.machine_id)
       if "cluster-id" in conf_key:
-        conf_key = conf_key.replace("cluster-id", self.cluster_id)
+        if self.cluster_id is not None:
+          conf_key = conf_key.replace("cluster-id", self.cluster_id)
       value = self.provisioner_confstore.get_config(conf_key)
       if value is None:
         value = self.s3_confkeys_store.get_config("DEFAULT_"+ key)
