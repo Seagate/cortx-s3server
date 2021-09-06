@@ -68,7 +68,7 @@ CONFIG:
   CONFSTORE_S3_BGDELETE_MAX_KEYS: "cortx>software>s3bgdelete>max_keys"
 
   CONFSTORE_BASE_LOG_PATH: "cortx>software>base_log_path"
-  CONFSTORE_DAEMON_LOG_DIR: "cortx>software>s3_daemon_working_dir"
+  CONFSTORE_S3_DAEMON_LOG_DIR: "cortx>software>s3_daemon_working_dir"
   CONFSTORE_S3_LOG_DIR: "cortx>software>s3_log_dir"
   CONFSTORE_S3_PERF_FILE_PATH: "cortx>software>s3_perf_file_path"
   CONFSTORE_BG_DEL_LOG_FOLDER: "cortx>software>bg_del_log_folder"

@@ -407,10 +407,11 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_AUDIT_LOGGER",
                             "S3_SERVER_CONFIG>S3_AUDIT_LOGGER_POLICY")
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH",
-                            "S3_SERVER_CONFIG>S3_LOG_DIR", self.append_to_base_path, "CONFIG>CONFSTORE_S3_LOG_DIR")
+                            "S3_SERVER_CONFIG>S3_LOG_DIR", self.append_to_base_path, 
+                            "CONFIG>CONFSTORE_S3_LOG_DIR")
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH",
                             "S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR", self.append_to_base_path, 
-                            "CONFIG>CONFSTORE_DAEMON_LOG_DIR")
+                            "CONFIG>CONFSTORE_S3_DAEMON_LOG_DIR")
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH",
                             "S3_SERVER_CONFIG>S3_AUDIT_LOG_DIR", self.append_to_base_path,
                             "CONFIG>CONFSTORE_S3_LOG_DIR")

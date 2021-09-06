@@ -76,6 +76,12 @@ cortx:
     base_config_path: "/etc/cortx"
     shared_base_log_path: "/shared/var/log/cortx"
     shared_base_config_path: "/shared/etc/cortx"
+    s3_daemon_working_dir: "motr"
+    s3_log_dir: "s3"
+    s3_perf_file_path: "s3/perf.log"
+    bg_del_log_folder: "s3/s3backgrounddelete"
+    bg_del_scheduler_log_path: "s3/s3backgrounddelete/object_recovery_scheduler.log"
+    bg_del_processor_log_path: "s3/s3backgrounddelete/object_recovery_processor.log"
 cluster:
   TMPL_CLUSTER_ID:
     site:
