@@ -357,7 +357,7 @@ class ConfigCmd(SetupCmd):
                           config_file_type : str,
                           key_to_read : str,
                           key_to_update: str,
-                          modifier_function=self.dummy_func,
+                          modifier_function=dummy_func,
                           appending_key: str = ""):
     """Update provided config key and value to provided config file."""
 
