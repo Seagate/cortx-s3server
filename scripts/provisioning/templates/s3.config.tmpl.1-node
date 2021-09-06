@@ -40,7 +40,7 @@ cortx:
         instances : "1"
         s3server_port : 28071
         s3_server_bgdelete_bind_port : 28049
-        authserver_ip_address : "ipv4:127.0.0.1"
+        authserver_ip_address : "127.0.0.1"
         authserver_port : 28050
         s3_enable_stats: true
         s3_audit_logger: "rsyslog-tcp"
