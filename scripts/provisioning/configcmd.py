@@ -338,13 +338,19 @@ class ConfigCmd(SetupCmd):
     "Modifies S3_daemon_dir to include machine-id"
     appending_value = ""
     if appending_key != "":
+      self.logger.info(f'Appending Key : {appending_key}')
       appending_value = self.get_confvalue(self.get_confkey(appending_key))
+      self.logger.info(f'Appending Value : {appending_value}')
 
     machine_id = s3configfileconfstore.get_machine_id()
+    self.logger.info(f'Machine-id : {machine_id}')
+
     if appending_value != "":
       value_of_key = value_of_key + "/" + str(machine_id) + "/" + appending_value
     else:
       value_of_key = value_of_key + "/" + str(machine_id)
+    
+    self.logger.info(f'Value : {value_of_key}')
   
   def dummy_func(self, 
                 s3configfileconfstore : S3CortxConfStore,
@@ -378,7 +384,7 @@ class ConfigCmd(SetupCmd):
       self.logger.info(f'Modifier function provided to update_config_value')
       modifier_function(s3configfileconfstore, value_to_update, appending_key)
 
-    self.logger.info(f'{key_to_read}: {value_to_update}')
+    self.logger.info(f'Final : {key_to_read}: {value_to_update}')
 
     # set the config value in to config file
     s3configfileconfstore.set_config(key_to_update, value_to_update, True)
