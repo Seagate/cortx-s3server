@@ -449,11 +449,25 @@ class ConfigCmd(SetupCmd):
   def update_s3_bgdelete_configs(self):
     """ Update s3 bgdelete configs."""
     self.logger.info("Update s3 bgdelete config file started")
-    self.update_cluster_id(self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path))
-    self.update_rootdn_credentials(self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path))
+    self.update_cluster_id(self.get_confkey('S3_CLUSTER_CONFIG_FILE')\
+                          .replace("/opt/seagate/cortx", self.base_config_file_path))
+    self.update_rootdn_credentials(self.get_confkey('S3_CLUSTER_CONFIG_FILE')\
+                          .replace("/opt/seagate/cortx", self.base_config_file_path))
     self.update_s3_bgdelete_config()
-    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL", "cortx_s3>scheduler_schedule_interval")
-    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_MAX_KEYS", "indexid>max_keys")
+    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml",
+                            "CONFIG>CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL", 
+                            "cortx_s3>scheduler_schedule_interval")
+    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml",
+                            "CONFIG>CONFSTORE_S3_BGDELETE_MAX_KEYS", "indexid>max_keys")
+    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", 
+                            "logconfig>logger_directory", append_to_base_path,
+                            "CONFIG>CONFSTORE_BG_DEL_LOG_FOLDER")
+    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH",
+                            "logconfig>scheduler_log_file", append_to_base_path,
+                            "CONFIG>CONFSTORE_BG_DEL_SCHEDULER_LOG_PATH")
+    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH",
+                            "logconfig>processor_log_file", append_to_base_path,
+                            "CONFIG>CONFSTORE_BG_DEL_PROCESSOR_LOG_PATH")
     self.logger.info("Update s3 bgdelete config file completed")
 
   def update_s3_bgdelete_config(self):
