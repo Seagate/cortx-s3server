@@ -73,7 +73,7 @@ CONFIG:
   CONFSTORE_S3_PERF_FILE_PATH: "cortx>software>s3_perf_file_path"
   CONFSTORE_BG_DEL_LOG_FOLDER: "cortx>software>bg_del_log_folder"
   CONFSTORE_BG_DEL_SCHEDULER_LOG_PATH: "cortx>software>bg_del_scheduler_log_path"
-  CONFSTORE_BG_DEL_PROCESSOR_LOG_PATH: "cortx>software>bg_del_scheduler_log_path"
+  CONFSTORE_BG_DEL_PROCESSOR_LOG_PATH: "cortx>software>bg_del_processor_log_path"
   CONFSTORE_BASE_CONFIG_PATH: "cortx>software>base_config_path"
   CONFSTORE_SHARED_BASE_LOG_PATH: "cortx>software>shared_base_log_path"
   CONFSTORE_SHARED_BASE_CONFIG_PATH: "cortx>software>shared_base_config_path"

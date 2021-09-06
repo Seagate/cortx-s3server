@@ -352,11 +352,24 @@ class ConfigCmd(SetupCmd):
     
     self.logger.info(f'Value : {value_of_key}')
     return value_of_key
-  
-  def dummy_func(self, 
-                s3configfileconfstore : S3CortxConfStore,
-                value_of_key: str,
-                appending_key: str = ""):
+
+  def create_scheduler_path(self, 
+                        s3configfileconfstore : S3CortxConfStore,
+                        value_of_key: str,
+                        appending_key: str = ""):
+    "Modifies S3_daemon_dir to include machine-id"
+    appending_value = ""
+    if appending_key != "":
+      self.logger.info(f'Appending Key : {appending_key}')
+      appending_value = self.get_confvalue(self.get_confkey(appending_key))
+      self.logger.info(f'Appending Value : {appending_value}')
+
+    if appending_value != "":
+      value_of_key = value_of_key + "/" + appending_value
+    else:
+      value_of_key = value_of_key
+    
+    self.logger.info(f'Value : {value_of_key}')
     return value_of_key
           
   #Modifier function should have the signature func_name(confstore, value)
@@ -364,7 +377,7 @@ class ConfigCmd(SetupCmd):
                           config_file_type : str,
                           key_to_read : str,
                           key_to_update: str,
-                          modifier_function=dummy_func,
+                          modifier_function=None,
                           appending_key: str = ""):
     """Update provided config key and value to provided config file."""
 
@@ -476,7 +489,7 @@ class ConfigCmd(SetupCmd):
                             "logconfig>logger_directory", self.append_to_base_path,
                             "CONFIG>CONFSTORE_BG_DEL_LOG_FOLDER")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH",
-                            "logconfig>scheduler_log_file", self.append_to_base_path,
+                            "logconfig>scheduler_log_file", self.create_scheduler_path,
                             "CONFIG>CONFSTORE_BG_DEL_SCHEDULER_LOG_PATH")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH",
                             "logconfig>processor_log_file", self.append_to_base_path,
