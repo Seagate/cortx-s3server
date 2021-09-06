@@ -331,11 +331,29 @@ class ConfigCmd(SetupCmd):
     s3configfileconfstore.set_config(s3_log_path_key, s3_log_path, True)
     self.logger.info(f'Key {s3_log_path_key} updated successfully in {s3configfile}')
 
+  def append_to_base_path(self, 
+                        s3configfileconfstore : S3CortxConfStore,
+                        value_of_key: str,
+                        appending_key: str = None):
+    "Modifies S3_daemon_dir to include machine-id"
+    appending_value = None
+    if appending_key is not None:
+      appending_value = self.get_confvalue(self.get_confkey(appending_key))
 
+    machine_id = s3configfileconfstore.get_machine_id()
+    if appending_value is not None:
+      value_of_key = value_of_key + "/" + str(machine_id) + "/" + appending_value
+    else:
+      value_of_key = value_of_key + "/" + str(machine_id)
+  
+
+  #Modifier function should have the signature func_name(confstore, value)
   def update_config_value(self, config_file_path : str,
                           config_file_type : str,
                           key_to_read : str,
-                          key_to_update: str):
+                          key_to_update: str,
+                          modifier_function=None,
+                          appending_key=None):
     """Update provided config key and value to provided config file."""
 
     # validate config file exist
@@ -349,6 +367,12 @@ class ConfigCmd(SetupCmd):
     
     # get the value to be updated from provisioner config for given key
     value_to_update = self.get_confvalue(self.get_confkey(key_to_read))
+    self.logger.info(f'{key_to_read}: {value_to_update}')
+
+    if modifier_function not None:
+      self.logger.info(f'Modifier function provided to update_config_value')
+      modifier_function(s3configfileconfstore, value_to_update, appending_key)
+
     self.logger.info(f'{key_to_read}: {value_to_update}')
 
     # set the config value in to config file
@@ -365,12 +389,29 @@ class ConfigCmd(SetupCmd):
     """ Update s3 server configs."""
     self.logger.info("Update s3 server config file started")
     self.update_s3_server_config()
-    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3SERVER_PORT", "S3_SERVER_CONFIG>S3_SERVER_BIND_PORT")
-    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_SERVER_BGDELETE_BIND_PORT", "S3_SERVER_CONFIG>S3_SERVER_BGDELETE_BIND_PORT")
-    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_AUTHSERVER_IP_ADDRESS", "S3_AUTH_CONFIG>S3_AUTH_IP_ADDR")
-    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_AUTHSERVER_PORT", "S3_AUTH_CONFIG>S3_AUTH_PORT")
-    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_ENABLE_STATS", "S3_SERVER_CONFIG>S3_ENABLE_STATS")
-    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_AUDIT_LOGGER", "S3_SERVER_CONFIG>S3_AUDIT_LOGGER_POLICY")
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3SERVER_PORT", 
+                            "S3_SERVER_CONFIG>S3_SERVER_BIND_PORT")
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_SERVER_BGDELETE_BIND_PORT",
+                            "S3_SERVER_CONFIG>S3_SERVER_BGDELETE_BIND_PORT")
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_AUTHSERVER_IP_ADDRESS", 
+                            "S3_AUTH_CONFIG>S3_AUTH_IP_ADDR")
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_AUTHSERVER_PORT",
+                            "S3_AUTH_CONFIG>S3_AUTH_PORT")
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_ENABLE_STATS",
+                            "S3_SERVER_CONFIG>S3_ENABLE_STATS")
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_AUDIT_LOGGER",
+                            "S3_SERVER_CONFIG>S3_AUDIT_LOGGER_POLICY")
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH",
+                            "S3_SERVER_CONFIG>S3_LOG_DIR", append_to_base_path, "CONFIG>CONFSTORE_S3_LOG_DIR")
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH",
+                            "S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR", append_to_base_path, 
+                            "CONFIG>CONFSTORE_DAEMON_LOG_DIR")
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH",
+                            "S3_SERVER_CONFIG>S3_AUDIT_LOG_DIR", append_to_base_path,
+                            "CONFIG>CONFSTORE_S3_LOG_DIR")
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH",
+                            "S3_SERVER_CONFIG>S3_PERF_LOG_FILENAME", append_to_base_path,
+                            "CONFIG>CONFSTORE_S3_PERF_FILE_PATH")
     self.logger.info("Update s3 server config file completed")
 
   def update_s3_auth_configs(self):

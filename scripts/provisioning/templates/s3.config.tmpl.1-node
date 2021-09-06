@@ -61,6 +61,9 @@ cortx:
     base_config_path: "/etc/cortx"
     shared_base_log_path: "/shared/var/log/cortx"
     shared_base_config_path: "/shared/etc/cortx"
+    s3_daemon_working_dir: "motr"
+    s3_log_dir: "s3"
+    s3_perf_file_path: "s3/perf.log"
 cluster:
   TMPL_CLUSTER_ID:
     site:
