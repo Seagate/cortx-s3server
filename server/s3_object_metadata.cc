@@ -1179,7 +1179,6 @@ void S3ObjectExtendedMetadata::get_obj_ext_entries_failed() {
   this->handler_on_failed();
 }
 
-
 void S3ObjectExtendedMetadata::set_extended_list_index_layout(
     const struct s3_motr_idx_layout& lo) {
   extended_list_index_layout = lo;
