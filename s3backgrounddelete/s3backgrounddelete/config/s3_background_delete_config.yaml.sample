@@ -21,7 +21,8 @@ version_config:                             # Section for version of S3 backgrou
    version: 1                                              # Default version for S3 background delete config
 
 cortx_s3:                                   # Section for S3 background delete config
-   endpoint: "http://127.0.0.1:28049"                       # Service specified for CORTX s3 client
+   producer_endpoint: "http://127.0.0.1:28049"              # Service specified for CORTX s3 producer
+   consumer_endpoint: "http://127.0.0.1:28049"             # Service specified for CORTX s3 consumer
    service: "cortxs3"                                      # Default region specified for CORTX s3 client
    default_region: "us-west2"                              # CORTX s3 client will use the specified host
    daemon_mode: True                                       # S3background process run in daemon mode and ST's run in non-daemon mode.

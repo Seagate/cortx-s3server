@@ -29,23 +29,24 @@ from cortx_s3_config import CORTXS3Config
 from cortx_s3_kv_api import CORTXS3KVApi
 from cortx_s3_index_api import CORTXS3IndexApi
 from cortx_s3_object_api import CORTXS3ObjectApi
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
 
 
 # Create sample data for s3 background delete.
 if __name__ == "__main__":
     CONFIG = CORTXS3Config()
-    CORTXS3IndexApi(CONFIG).put("probable_delete_index_id")
-    CORTXS3KVApi(CONFIG).put(
+    CORTXS3IndexApi(CONFIG, CONNECTION_TYPE_PRODUCER).put("probable_delete_index_id")
+    CORTXS3KVApi(CONFIG, CONNECTION_TYPE_PRODUCER).put(
         "probable_delete_index_id",
         "oid-1",
         "{ \"obj-name\" : \"bucket_1/obj_1\"}")
-    CORTXS3KVApi(CONFIG).put(
+    CORTXS3KVApi(CONFIG, CONNECTION_TYPE_PRODUCER).put(
         "probable_delete_index_id",
         "oid-2",
         "{ \"obj-name\" : \"bucket_1/obj_2\"}")
-    CORTXS3IndexApi(CONFIG).list("probable_delete_index_id")
-    CORTXS3KVApi(CONFIG).get("probable_delete_index_id", "oid-1")
-    CORTXS3KVApi(CONFIG).get("probable_delete_index_id", "oid-3")
+    CORTXS3IndexApi(CONFIG, CONNECTION_TYPE_PRODUCER).list("probable_delete_index_id")
+    CORTXS3KVApi(CONFIG, CONNECTION_TYPE_PRODUCER).get("probable_delete_index_id", "oid-1")
+    CORTXS3KVApi(CONFIG, CONNECTION_TYPE_PRODUCER).get("probable_delete_index_id", "oid-3")
 
     # Sample object metadata
     '''{
@@ -88,16 +89,16 @@ if __name__ == "__main__":
                            \"motr_oid_u_hi\" : \"oid-2\", \
                            \"motr_oid_u_lo\" : \"FzVUkUG8V+0=\"}"
 
-    CORTXS3IndexApi(CONFIG).put("object_metadata_index_id")
-    CORTXS3KVApi(CONFIG).put(
+    CORTXS3IndexApi(CONFIG, CONNECTION_TYPE_PRODUCER).put("object_metadata_index_id")
+    CORTXS3KVApi(CONFIG, CONNECTION_TYPE_PRODUCER).put(
         "object_metadata_index_id",
         "oid-1",
         OBJECTID1_METADATA)
-    CORTXS3KVApi(CONFIG).put(
+    CORTXS3KVApi(CONFIG, CONNECTION_TYPE_PRODUCER).put(
         "object_metadata_index_id",
         "oid-2",
         OBJECTID2_METADATA)
-    CORTXS3IndexApi(CONFIG).list("object_metadata_index_id")
-    CORTXS3KVApi(CONFIG).get("object_metadata_index_id", "oid-1")
-    CORTXS3KVApi(CONFIG).get("object_metadata_index_id", "oid-2")
-    CORTXS3ObjectApi(CONFIG).delete("0x-7200000000000000x0","test")
+    CORTXS3IndexApi(CONFIG, CONNECTION_TYPE_PRODUCER).list("object_metadata_index_id")
+    CORTXS3KVApi(CONFIG, CONNECTION_TYPE_PRODUCER).get("object_metadata_index_id", "oid-1")
+    CORTXS3KVApi(CONFIG, CONNECTION_TYPE_PRODUCER).get("object_metadata_index_id", "oid-2")
+    CORTXS3ObjectApi(CONFIG, CONNECTION_TYPE_PRODUCER).delete("0x-7200000000000000x0","test")

@@ -33,7 +33,7 @@ class CORTXS3KVApi(CORTXS3Client):
     """CORTXS3KVApi provides key-value REST-API's Put, Get & Delete."""
     _logger = None
 
-    def __init__(self, config, logger=None, connection=None):
+    def __init__(self, config, connectionType, logger=None, connection=None):
         """Initialise logger and config."""
         if (logger is None):
             self._logger = logging.getLogger("CORTXS3KVApi")
@@ -41,12 +41,12 @@ class CORTXS3KVApi(CORTXS3Client):
             self._logger = logger
         self._logger = logging.getLogger()
         self.config = config
-        self.s3_util = CORTXS3Util(self.config)
+        self.s3_util = CORTXS3Util(self.config, connectionType)
 
         if (connection is None):
-            super(CORTXS3KVApi, self).__init__(self.config, logger=self._logger)
+            super(CORTXS3KVApi, self).__init__(self.config, connectionType, logger=self._logger)
         else:
-            super(CORTXS3KVApi, self).__init__(self.config, logger=self._logger, connection=connection)
+            super(CORTXS3KVApi, self).__init__(self.config, connectionType, logger=self._logger, connection=connection)
 
 
     def put(self, index_id=None, object_key_name=None, value=""):

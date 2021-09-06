@@ -36,20 +36,20 @@ class CORTXS3IndexApi(CORTXS3Client):
     """CORTXS3IndexApi provides index REST-API's List and Put."""
     _logger = None
 
-    def __init__(self, config, logger=None, connection=None):
+    def __init__(self, config, connectionType, logger=None, connection=None):
         """Initialise logger and config."""
         if (logger is None):
             self._logger = logging.getLogger("CORTXS3IndexApi")
         else:
             self._logger = logger
         self.config = config
-        self.s3_util = CORTXS3Util(self.config)
+        self.s3_util = CORTXS3Util(self.config, connectionType)
 
         #for testing scenarios, pass the mocked http connection object in init method..
         if (connection is None):
-            super(CORTXS3IndexApi, self).__init__(self.config, logger = self._logger)
+            super(CORTXS3IndexApi, self).__init__(self.config, connectionType, logger = self._logger)
         else:
-            super(CORTXS3IndexApi, self).__init__(self.config, logger = self._logger, connection=connection)
+            super(CORTXS3IndexApi, self).__init__(self.config, connectionType, logger = self._logger, connection=connection)
 
 
     def list(self, index_id, max_keys=1000, next_marker=None, additional_Query_params=None):
