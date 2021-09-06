@@ -82,6 +82,9 @@ class ConfigCmd(SetupCmd):
       self.disable_services(services_list)
       self.logger.info('Disable services on reboot completed')
 
+      self.logger.info("copy s3 authserver resources started")
+      self.copy_s3authserver_resources()
+      self.logger.info("copy s3 authserver resources completed")
 
       self.logger.info('create auth jks password started')
       self.create_auth_jks_password()
@@ -267,7 +270,7 @@ class ConfigCmd(SetupCmd):
   def create_auth_jks_password(self):
     """Create random password for auth jks keystore."""
     cmd = ['sh',
-      '/opt/seagate/cortx/auth/scripts/create_auth_jks_password.sh']
+      '/opt/seagate/cortx/auth/scripts/create_auth_jks_password.sh', self.base_config_file_path]
     handler = SimpleProcess(cmd)
     stdout, stderr, retcode = handler.run()
     self.logger.info(f'output of create_auth_jks_password.sh: {stdout}')
@@ -498,3 +501,15 @@ class ConfigCmd(SetupCmd):
       os.makedirs(os.path.dirname(dest_config_file), exist_ok=True)
       shutil.move(config_file, dest_config_file)
       self.logger.info("Config file copied successfully to /etc/cortx")
+
+  def copy_s3authserver_resources(self):
+    """Copy config files from /opt/seagate/cortx/auth/resources  to /etc/cortx/auth/resources."""
+    src_authserver_resource_dir= self.get_confkey("S3_AUTHSERVER_RESOURCES_DIR")
+    dest_authserver_resource_dir= self.get_confkey("S3_AUTHSERVER_RESOURCES_DIR").replace("/opt/seagate/cortx", self.base_config_file_path)
+    for item in os.listdir(src_authserver_resource_dir):
+      source = os.path.join(src_authserver_resource_dir, item)
+      destination = os.path.join(dest_authserver_resource_dir, item)
+      if os.path.isdir(source):
+          shutil.copytree(source, destination)
+      else:
+          shutil.copy2(source, destination)
