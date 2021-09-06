@@ -174,7 +174,7 @@ int S3MempoolManager::release_buffer_for_unit_size(void *buf,
     snprintf(log_mem_stats, sizeof(log_mem_stats), log_memool_stats,
              poolinfo.mempool_item_size, poolinfo.free_bufs_in_pool,
              poolinfo.expandable_size, poolinfo.total_bufs_allocated_by_pool);
-    s3_log(S3_LOG_INFO, "S3_Mempool_Stats", "%s\n", log_mem_stats);
+    s3_log(S3_LOG_DEBUG, "S3_Mempool_Stats", "%s\n", log_mem_stats);
     return retn;
   }
   s3_log(S3_LOG_ERROR, "", "%s Exit: Not found unit_size[%zu]\n", __func__,

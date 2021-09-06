@@ -126,6 +126,10 @@ class S3Option {
   int s3server_ssl_session_timeout_in_sec;
 
   int read_ahead_multiple;
+  int write_buffer_multiple;
+  // When Lib event's write buffer is getting accumulated,
+  // Throttle S3 GET request by 's3_req_throttle_time' seconds
+  int s3_req_throttle_time;
   std::string log_level;
   int log_file_max_size_mb;
   bool s3_enable_auth_ssl;
@@ -216,6 +220,9 @@ class S3Option {
     s3_pidfile = "/var/run/s3server.pid";
 
     read_ahead_multiple = 1;
+    write_buffer_multiple = 1;
+    // Default, throttle S3 Get request for 3 seconds when there is memory issue
+    s3_req_throttle_time = 3;
 
     s3_default_endpoint = "s3.seagate.com";
     s3_region_endpoints.insert("s3-us.seagate.com");
@@ -368,6 +375,9 @@ class S3Option {
   int get_s3server_ssl_session_timeout();
 
   int get_read_ahead_multiple();
+  int get_write_buffer_multiple();
+  int get_s3_req_throttle_time();
+
   std::string get_default_endpoint();
   std::set<std::string>& get_region_endpoints();
   unsigned short get_s3_grace_period_sec();

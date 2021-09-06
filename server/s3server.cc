@@ -277,7 +277,7 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
     s3_log(S3_LOG_FATAL, "", "Issue with memory pool!\n");
   } else {
     s3_log(S3_LOG_DEBUG, "",
-           "mempool info: mempool_item_size = %zu "
+           "mempool stats during new request: mempool_item_size = %zu "
            "free_bufs_in_pool = %d "
            "number_of_bufs_shared = %d "
            "total_bufs_allocated_by_pool = %d\n",
@@ -288,13 +288,15 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
 
   // Check if we have enough approx memory to proceed with request
   if (s3_request->get_api_type() == S3ApiType::object &&
-      s3_request->http_verb() == S3HttpVerb::PUT) {
+      (s3_request->http_verb() == S3HttpVerb::PUT ||
+       (s3_request->http_verb() == S3HttpVerb::GET))) {
     int layout_id = S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
         s3_request->get_data_length());
     if (!S3MemoryProfile().we_have_enough_memory_for_put_obj(layout_id) ||
         !S3MemoryProfile().free_memory_in_pool_above_threshold_limits()) {
-      s3_log(S3_LOG_DEBUG, s3_request->get_request_id().c_str(),
-             "Limited memory: Rejecting PUT object/part request with retry.\n");
+      s3_log(S3_LOG_INFO, s3_request->get_request_id().c_str(),
+             "Limited memory: Rejecting PUT/GET object/part request with "
+             "retry.\n");
       s3_request->respond_retry_after(1);
       return EVHTP_RES_OK;
     } else if (req->buffer_out) {
@@ -416,7 +418,10 @@ static evhtp_res process_request_data(evhtp_request_t *p_evhtp_req,
     s3_log(S3_LOG_DEBUG, request_id,
            "Received Request body %zu bytes for sock = %d\n",
            evbuffer_get_length(buf), p_evhtp_req->conn->sock);
-    size_t buff_count = (evbuffer_get_length(buf) + 16384 - 1) / 16384;
+    size_t pool_buffer_sz =
+        S3Option::get_instance()->get_libevent_pool_buffer_size();
+    size_t buff_count =
+        (evbuffer_get_length(buf) + pool_buffer_sz - 1) / pool_buffer_sz;
     s3_log(S3_LOG_DEBUG, request_id,
            "S3 request [%s] allocated mempool buffer(16k) with total buffer "
            "count = %zu\n",

@@ -410,7 +410,6 @@ int mempool_releasebuffer(MemoryPoolHandle handle, void *buf,
   if ((pool->flags & ENABLE_LOCKING) != 0) {
     pthread_mutex_unlock(&pool->lock);
   }
-  // printf(log_mem_stats);
   return 0;
 }
 

@@ -78,6 +78,9 @@ class RequestObject {
   std::string account_id;  // Unique
   int http_status;
   struct event* client_read_timer_event;
+  // Delay the response to client by specific seconds
+  // This is needed when the response is consuming more memory
+  struct event* response_delay_timer_event;
 
   std::string request_id;
   std::string stripped_request_id;
@@ -140,6 +143,9 @@ class RequestObject {
   const char* c_get_file_name();
   virtual bool is_valid_ipaddress(std::string& ipaddr);
   virtual void set_start_client_request_read_timeout();
+  virtual int set_start_response_delay_timer(short int delay_in_seconds,
+                                             void* action_obj);
+  void free_response_delay_timer(bool s3_response_delay_timedout);
   virtual void stop_client_read_timer();
   virtual void restart_client_read_timer();
   virtual void free_client_read_timer(bool s3_client_read_timedout = false);
@@ -172,7 +178,9 @@ class RequestObject {
   virtual std::string get_header_value(std::string key);
   virtual std::string get_host_header();
   virtual std::string get_host_name();
-
+  // The length of outstanding write/output buffer not yet
+  // written to the client socket
+  virtual size_t get_write_buffer_outstanding_length();
   virtual std::string get_headers_copysource();
   // returns x-amz-decoded-content-length OR Content-Length
   // Always prefer get_data_length*() version since it takes
