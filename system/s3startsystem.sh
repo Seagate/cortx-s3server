@@ -24,9 +24,9 @@
 
 usage() { echo "Usage: $0 [-F <process FID>] [-P <FID file path>]" \
                "[-C <Config path>]" \
-               "(specify [-d] to disable_damon mode)" 1>&2; exit 1; }
+               "(specify [-d] to disable_daemon mode)" 1>&2; exit 1; }
 
-while getopts ":F:P:C:d:" x; do
+while getopts ":F:P:C:d" x; do
     case "${x}" in
         F)
             fid=${OPTARG}
@@ -38,7 +38,7 @@ while getopts ":F:P:C:d:" x; do
             s3_config_file=${OPTARG}
             ;;
         d)
-            disable_dameon=1
+            disable_daemon=1
             ;;
         *)
             usage
@@ -100,17 +100,16 @@ s3port=$MOTR_S3SERVER_PORT
 #    --fake_motr_createidx true --fake_motr_deleteidx true --fake_motr_getkv true --fake_motr_putkv true --fake_motr_deletekv true
 
 
-pid_filename='/var/run/s3server.'$fid'.pid'
-set -x
-if [ $disable_dameon == 1 ]
-then
-    s3server --s3pidfile $pid_filename \
-             --motrlocal $local_ep --motrha $ha_ep \
-             --motrprofilefid $profile_fid --motrprocessfid $process_fid \
-             --s3port $s3port --log_dir $s3_log_dir --disable_dameon true
-else
-    s3server --s3pidfile $pid_filename \
-             --motrlocal $local_ep --motrha $ha_ep \
-             --motrprofilefid $profile_fid --motrprocessfid $process_fid \
-             --s3port $s3port --log_dir $s3_log_dir
+extra_options=()
+if [[ $disable_daemon == 1 ]]; then
+  extra_options=("${extra_options[@]}" --disable_daemon true)
 fi
+
+pid_filename="/var/run/s3server.${fid}.pid"
+set -x
+
+s3server --s3pidfile "$pid_filename" \
+         --motrlocal "$local_ep" --motrha "$ha_ep" \
+         --motrprofilefid "$profile_fid" --motrprocessfid "$process_fid" \
+         --s3port "$s3port" --log_dir "$s3_log_dir" \
+         "${extra_options[@]}"

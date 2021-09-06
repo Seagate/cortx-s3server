@@ -53,7 +53,7 @@ DECLARE_string(authhost);
 DECLARE_int32(authport);
 DECLARE_bool(disable_auth);
 
-DECLARE_bool(disable_dameon);
+DECLARE_bool(disable_daemon);
 
 DECLARE_bool(fake_authenticate);
 DECLARE_bool(fake_authorization);
