@@ -27,6 +27,8 @@ from datetime import datetime
 from s3backgrounddelete.cortx_s3_kv_api import CORTXS3KVApi
 from s3backgrounddelete.cortx_s3_object_api import CORTXS3ObjectApi
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_CONSUMER
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
 import math
 
 #zero/null object oid in base64 encoded format
@@ -46,15 +48,15 @@ class ObjectRecoveryValidator:
         else:
             self._logger = logger
         if(objectapi is None):
-            self._objectapi = CORTXS3ObjectApi(self.config, logger=self._logger)
+            self._objectapi = CORTXS3ObjectApi(self.config, connectionType=CONNECTION_TYPE_CONSUMER, logger=self._logger)
         else:
             self._objectapi = objectapi
         if(kvapi is None):
-            self._kvapi = CORTXS3KVApi(self.config, logger=self._logger)
+            self._kvapi = CORTXS3KVApi(self.config, connectionType=CONNECTION_TYPE_CONSUMER, logger=self._logger)
         else:
             self._kvapi = kvapi
         if(indexapi is None):
-            self._indexapi = CORTXS3IndexApi(self.config, logger=self._logger)
+            self._indexapi = CORTXS3IndexApi(self.config, connectionType=CONNECTION_TYPE_CONSUMER, logger=self._logger)
         else:
             self._indexapi = indexapi
 
