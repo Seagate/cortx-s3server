@@ -184,7 +184,7 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   instance->set_cmdline_option(S3_OPTION_IPV6_BIND_ADDR, "::1");
   instance->set_cmdline_option(S3_OPTION_BIND_PORT, "1");
   instance->set_cmdline_option(S3_OPTION_MOTR_LOCAL_ADDR, "localhost@test");
-  instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR, "ipv4:192.168.15.131");
+  instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR, "192.168.15.131");
   instance->set_cmdline_option(S3_OPTION_AUTH_PORT, "2");
   instance->set_cmdline_option(S3_MOTR_LAYOUT_ID, "123");
   instance->set_cmdline_option(S3_OPTION_LOG_DIR, "/tmp/");
