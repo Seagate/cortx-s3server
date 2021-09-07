@@ -16,6 +16,9 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+# This file should only contain the mandatory parameters from provisioner confstore.
+# All the optional parameters should be added to default in s3_prov_config.yaml under DEFAULT_CONFIG.
+
 server_node:
   TMPL_MACHINE_ID:
     cluster_id: "TMPL_CLUSTER_ID"
@@ -35,7 +38,7 @@ cortx:
         secret: "TMPL_SGIAM_SECRET_KEY"
     s3:
       io:
-        max_units : "8"
+#       max_units : "8"       #commenting this to validate the default values from s3_prov_config.yaml.
       service:
         instances : "1"
 cluster:
