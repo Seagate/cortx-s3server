@@ -95,8 +95,7 @@ class SetupCmd(object):
     self.machine_id = self._provisioner_confstore.get_machine_id()
     self.logger.info(f'Machine id : {self.machine_id}')
 
-    self.cluster_id = self.get_confvalue(self.get_confkey(
-      'CONFIG>CONFSTORE_CLUSTER_ID_KEY').replace("machine-id", self.machine_id))
+    self.cluster_id = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_CLUSTER_ID_KEY')
 
   @property
   def url(self) -> str:
@@ -118,15 +117,32 @@ class SetupCmd(object):
     assert self.provisioner_confstore != None
     return self.provisioner_confstore.get_config(key)
 
+  def get_confvalue_with_defaults(self, key: str):
+    assert self.provisioner_confstore != None
+    if key.startswith("DEFAULT_"):
+      return self.s3_confkeys_store.get_config(key)
+    conf_key = self.get_confkey(key)
+    if conf_key is not None:
+      if "machine-id" in conf_key:
+        conf_key = conf_key.replace("machine-id", self.machine_id)
+      if "cluster-id" in conf_key:
+        if self.cluster_id is not None:
+          conf_key = conf_key.replace("cluster-id", self.cluster_id)
+      value = self.provisioner_confstore.get_config(conf_key)
+      if value is None:
+        value = self.s3_confkeys_store.get_config("DEFAULT_"+ key)
+      return value
+    return None
+
   def read_endpoint_value(self):
     if self.endpoint is None:
-      self.endpoint = self.get_confvalue(self.get_confkey('TEST>TEST_CONFSTORE_ENDPOINT_KEY'))
+      self.endpoint = self.get_confvalue_with_defaults('TEST>TEST_CONFSTORE_ENDPOINT_KEY')
 
   def read_ldap_credentials_for_test_phase(self):
     """Get 'ldapadmin' user name and plaintext password from confstore for test phase."""
     try:
-      self.ldap_user = self.get_confvalue(self.get_confkey('TEST>TEST_CONFSTORE_LDAPADMIN_USER_KEY'))
-      self.ldap_passwd = self.get_confvalue(self.get_confkey('TEST>TEST_CONFSTORE_LDAPADMIN_PASSWD_KEY'))
+      self.ldap_user = self.get_confvalue_with_defaults('TEST>TEST_CONFSTORE_LDAPADMIN_USER_KEY')
+      self.ldap_passwd = self.get_confvalue_with_defaults('TEST>TEST_CONFSTORE_LDAPADMIN_PASSWD_KEY')
     except Exception as e:
       sys.stderr.write(f'read ldap credentials failed, error: {e}\n')
       raise e
@@ -141,9 +157,9 @@ class SetupCmd(object):
 
       cipher_key = s3cipher_obj.generate_key()
 
-      self.ldap_user = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_LDAPADMIN_USER_KEY'))
+      self.ldap_user = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_LDAPADMIN_USER_KEY')
 
-      encrypted_ldapadmin_pass = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_LDAPADMIN_PASSWD_KEY'))
+      encrypted_ldapadmin_pass = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_LDAPADMIN_PASSWD_KEY')
 
       if encrypted_ldapadmin_pass != None:
         self.ldap_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_ldapadmin_pass)
@@ -162,9 +178,9 @@ class SetupCmd(object):
 
       cipher_key = s3cipher_obj.generate_key()
 
-      self.ldap_root_user = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_ROOTDN_USER_KEY'))
+      self.ldap_root_user = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_ROOTDN_USER_KEY')
 
-      encrypted_rootdn_pass = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_ROOTDN_PASSWD_KEY'))
+      encrypted_rootdn_pass = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_ROOTDN_PASSWD_KEY')
 
       if encrypted_rootdn_pass is not None:
         self.rootdn_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_rootdn_pass)
@@ -307,30 +323,20 @@ class SetupCmd(object):
       for key in prov_keys_list:
         # comparing phase name with '>' to match exact key
         if key.find(phase + ">") == 0:
-          value = self.get_confkey(key)
+          # Append default to key & check if it has a value
           # If value does not exist which can be the
           # case for certain phases as mentioned above,
           # skip the value.
-          if value is None:
+          default_key = "DEFAULT_" + key
+          value = self.get_confvalue_with_defaults(default_key)
+          if value is not None:
             continue
-          yardstick_list.append(value)
+          yardstick_list.append(self.get_confkey(key))
     return yardstick_list
 
   def phase_keys_validate(self, arg_file: str, phase_name: str):
     """Validate keys of each phase derived from s3_prov_config and compare with argument file."""
-    # Setting the desired values before we begin
-    token_list = ["machine-id", "cluster-id", "storage-set-count"]
-    if self.machine_id is not None:
-      machine_id_val = self.machine_id
-    if self.cluster_id is not None:
-      cluster_id_val = self.cluster_id
-    # The 'storage_set_count' is read using
-    # below hard-coded key which is the max
-    # array size for storage set.
-    storage_set_count_key = "cluster>cluster-id>site>storage_set_count"
-    if self.cluster_id is not None:
-      storage_set_count_key = storage_set_count_key.replace("cluster-id", cluster_id_val)
-    storage_set_count_str = self.get_confvalue(storage_set_count_key)
+    storage_set_count_str = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY')
     if storage_set_count_str is not None:
       storage_set_val = int(storage_set_count_str)
     else:
@@ -358,9 +364,9 @@ class SetupCmd(object):
     #     and key_yard are the same.
     for key_yard in yardstick_list:
       if "machine-id" in key_yard:
-        key_yard = key_yard.replace("machine-id", machine_id_val)
+        key_yard = key_yard.replace("machine-id", self.machine_id)
       if "cluster-id" in key_yard:
-        key_yard = key_yard.replace("cluster-id", cluster_id_val)
+        key_yard = key_yard.replace("cluster-id", self.cluster_id)
       if "server_nodes" in key_yard:
         index = 0
         while index < storage_set_val:

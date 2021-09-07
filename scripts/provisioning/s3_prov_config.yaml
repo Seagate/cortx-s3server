@@ -54,6 +54,23 @@ TEST:
   TEST_CONFSTORE_LDAPADMIN_PASSWD_KEY: "test>s3>iam_password"
   TEST_CONFSTORE_ENDPOINT_KEY: "test>s3>endpoint_url"
 
+#Default values of optional params
+
+DEFAULT_POST_INSTALL:
+DEFAULT_PREPARE:
+DEFAULT_CONFIG:
+  CONFSTORE_LDAPADMIN_USER_KEY: "sgiamadmin"
+  CONFSTORE_ROOTDN_USER_KEY: "admin"
+  CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST : "8"
+  CONFSTORE_S3INSTANCES_KEY: "1"
+  CONFSTORE_STORAGE_SET_COUNT_KEY: "1"
+  CONFSTORE_PUBLIC_FQDN_KEY: "srvnode-1.data.public"
+  CONFSTORE_PRIVATE_FQDN_KEY: "srvnode-1.data.private"
+DEFAULT_INIT:
+
+DEFAULT_TEST:
+  TEST_CONFSTORE_LDAPADMIN_USER_KEY: "sgiamadmin"
+  TEST_CONFSTORE_ENDPOINT_KEY: "s3.seagate.com"
 
 # Unsolicited Keys should be added to the bottom.
 LDAP_USER: "cn={},dc=seagate,dc=com"
@@ -61,4 +78,3 @@ LDAP_URL: "ldapi:///"
 CONFSTORE_OPENLDAP_CONST_KEY: "cortx"
 CONFSTORE_SITE_COUNT_KEY: "cluster>cluster-id>site_count"
 S3_CONFIG_FILE: "/opt/seagate/cortx/s3/conf/s3config.yaml"
-
