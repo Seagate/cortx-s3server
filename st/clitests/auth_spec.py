@@ -1789,14 +1789,13 @@ def auth_health_check_tests():
 
 # Validate maxAccount and maxUser limit values from authserver.properties file
 def test_max_account_and_user_limit_value_of_auth_config():
-    print("Updating autherver.properties (/opt/seagate/cortx/auth/resources/authserver.properties) file with test values..")
-    s3confstore = S3CortxConfStore('properties:///opt/seagate/cortx/auth/resources/authserver.properties', 'index')
+    print("Updating autherver.properties (/etc/cortx/auth/resources/authserver.properties) file with test values..")
+    s3confstore = S3CortxConfStore('properties://etc/cortx/auth/resources/authserver.properties', 'index')
 
     old_maxAccountValue=s3confstore.get_config('maxAccountLimit')
     old_maxIAMUserValue=s3confstore.get_config('maxIAMUserLimit')
     s3confstore.set_config('maxAccountLimit', '1', True)
     s3confstore.set_config('maxIAMUserLimit', '1', True)
-    shutil.copyfile("/opt/seagate/cortx/auth/resources/authserver.properties", "/etc/cortx/auth/resources/authserver.properties")
     os.system('systemctl restart s3authserver')
     time.sleep(1) # sometime authserver takes more time to restart
     print("auth config values are changed successfully..")
@@ -1859,7 +1858,6 @@ def test_max_account_and_user_limit_value_of_auth_config():
     S3ClientConfig.secret_key = test_secret_key
     s3confstore.set_config('maxAccountLimit', old_maxAccountValue, True)
     s3confstore.set_config('maxIAMUserLimit', old_maxIAMUserValue, True)
-    shutil.copyfile("/opt/seagate/cortx/auth/resources/authserver.properties", "/etc/cortx/auth/resources/authserver.properties")
     os.system('systemctl restart s3authserver')
     time.sleep(1) # sometime authserver takes more time to restart
     print("Reverted authserver.properties (/opt/seagate/cortx/auth/resources/authserver.properties) with origional values successfully...")

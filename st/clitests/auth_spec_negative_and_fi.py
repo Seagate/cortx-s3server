@@ -51,10 +51,9 @@ def get_response_elements(response):
 
 # Run before all to setup the test environment.
 def before_all():
-    config = ConfigObj("/opt/seagate/cortx/auth/resources/authserver.properties")
+    config = ConfigObj("/etc/cortx/auth/resources/authserver.properties")
     config['cacheTimeout'] = "0"
     config.write()
-    shutil.copyfile("/opt/seagate/cortx/auth/resources/authserver.properties", "/etc/cortx/auth/resources/authserver.properties")
     os.system('systemctl restart s3authserver')
     print("Configuring LDAP")
     S3PyCliTest('Before_all').before_all()
@@ -769,8 +768,7 @@ role_tests()
 saml_provider_tests()
 get_federation_token_test()
 
-config = ConfigObj("/opt/seagate/cortx/auth/resources/authserver.properties")
+config = ConfigObj("/etc/cortx/auth/resources/authserver.properties")
 config['cacheTimeout'] = "30"
 config.write()
-shutil.copyfile("/opt/seagate/cortx/auth/resources/authserver.properties", "/etc/cortx/auth/resources/authserver.properties")
 os.system('systemctl restart s3authserver')
