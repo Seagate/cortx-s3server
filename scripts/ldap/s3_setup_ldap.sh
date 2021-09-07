@@ -23,6 +23,7 @@
 # configure OpenLDAP #
 ##################################
 
+
 USAGE="USAGE: bash $(basename "$0") [--hostname] [--ldapadminpasswd <passwd>] [--rootdnpasswd <passwd>]
       [--help | -h]
 Install and configure OpenLDAP.
@@ -35,6 +36,7 @@ where:
 "
 
 set -e
+
 LDAPADMINPASS=
 ROOTDNPASSWORD=
 host=

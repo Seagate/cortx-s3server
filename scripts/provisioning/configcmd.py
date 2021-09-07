@@ -107,7 +107,6 @@ class ConfigCmd(SetupCmd):
 
   def configure_s3_schema(self):
     self.logger.info('openldap s3 configuration started')
-
     storage_set_count = self.get_confvalue(self.get_confkey(
         'CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY').replace("cluster-id", self.cluster_id))
     index = 0
@@ -151,8 +150,7 @@ class ConfigCmd(SetupCmd):
 
   def get_msgbus_partition_count(self):
     """get total server nodes which will act as partition count."""
-    storage_set_count = self.get_confvalue(self.get_confkey(
-      'CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY').replace("cluster-id", self.cluster_id))
+    storage_set_count = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY')
     srv_count=0
     index = 0
     while index < int(storage_set_count):
@@ -213,7 +211,7 @@ class ConfigCmd(SetupCmd):
     """
 
     # get the motr_max_units_per_request count from the config file
-    motr_max_units_per_request = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST'))
+    motr_max_units_per_request = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST')
     self.logger.info(f'motr_max_units_per_request: {motr_max_units_per_request}')
     #validate min and max unit should be between 1 to 128
     if 2 <= int(motr_max_units_per_request) <= 128:
