@@ -1,3 +1,4 @@
+#!/bin/sh -x
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,15 +18,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-[Unit]
-Description=Motr-S3 Core instance Server
+cd "$(dirname "$0")"
 
-[Service]
-Type=forking
-ExecStart=/opt/seagate/cortx/s3/s3startsystem.sh %i /etc/sysconfig/s3server-%i /opt/seagate/cortx/s3/conf/s3config.yaml
-ExecReload=/bin/kill -HUP $MAINPID
-ExecStop=/opt/seagate/cortx/s3/s3stopsystem.sh %i
-TimeoutStopSec=7
-
-[Install]
-WantedBy=multi-user.target
+/opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer

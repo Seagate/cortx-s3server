@@ -24,6 +24,7 @@ from s3backgrounddelete.cortx_list_index_response import CORTXS3ListIndexRespons
 from s3backgrounddelete.cortx_s3_error_respose import CORTXS3ErrorResponse
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
 
 class CORTXS3Countkv:
        
@@ -48,7 +49,7 @@ class CORTXS3Countkv:
     # Fetch the list of kv entries and get the total count of kv entries
     def count(self, index_id="AAAAAAAAAHg=-AwAQAAAAAAA=", threshold=None):
         CONFIG = CORTXS3Config()
-        index_api = CORTXS3IndexApi(CONFIG)
+        index_api = CORTXS3IndexApi(CONFIG, connectionType=CONNECTION_TYPE_PRODUCER)
         response, data = index_api.list(index_id)
         if(response):
             if isinstance(data, CORTXS3ListIndexResponse):

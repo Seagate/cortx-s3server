@@ -23,6 +23,8 @@ import sys
 import logging
 import http.client
 import urllib
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_CONSUMER
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
 
 
 class CORTXS3Client(object):
@@ -31,7 +33,7 @@ class CORTXS3Client(object):
     _logger = None
     _conn = None
 
-    def __init__(self, config, logger=None, connection=None):
+    def __init__(self, config, connectionType, logger=None, connection=None):
         """Initialise s3 client using config, connection object and logger."""
         if (logger is None):
             self._logger = logging.getLogger("CORTXS3Client")
@@ -39,15 +41,32 @@ class CORTXS3Client(object):
             self._logger = logger
         self._config = config
         if (connection is None):
-            self._conn = self._get_connection()
+            if (connectionType == CONNECTION_TYPE_CONSUMER):
+                self._conn = self._get_consumer_connection()
+            elif (connectionType == CONNECTION_TYPE_PRODUCER):
+                self._conn = self._get_producer_connection()
+            else:
+                self._logger.error("Connection is none, Invalid \
+                Connection type specified.")
+                self._conn = None
         else:
             self._conn = connection
 
-    def _get_connection(self):
-        """Creates new connection."""
+    def _get_consumer_connection(self):
+        """Creates new connection for consumer."""
         try:
             endpoint_url = urllib.parse.urlparse(
-                self._config.get_cortx_s3_endpoint()).netloc
+                self._config.get_cortx_s3_endpoint_for_consumer()).netloc
+        except KeyError as ex:
+            self._logger.error(str(ex))
+            return None
+        return http.client.HTTPConnection(endpoint_url)
+
+    def _get_producer_connection(self):
+        """Creates new connection for producer."""
+        try:
+            endpoint_url = urllib.parse.urlparse(
+                self._config.get_cortx_s3_endpoint_for_producer()).netloc
         except KeyError as ex:
             self._logger.error(str(ex))
             return None

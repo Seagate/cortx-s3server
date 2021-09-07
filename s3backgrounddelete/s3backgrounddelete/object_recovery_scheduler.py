@@ -39,6 +39,7 @@ from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
 from s3backgrounddelete.cortx_s3_signal import DynamicConfigHandler
 from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
 #from s3backgrounddelete.IEMutil import IEMutil
 
 class ObjectRecoveryScheduler(object):
@@ -89,7 +90,7 @@ class ObjectRecoveryScheduler(object):
             #PurgeAPI Here
             self.producer.purge()
             result, index_response = CORTXS3IndexApi(
-                self.config, logger=self.logger).list(
+                self.config, connectionType=CONNECTION_TYPE_PRODUCER, logger=self.logger).list(
                     self.config.get_probable_delete_index_id(), self.config.get_max_keys(), marker)
             if result:
                 self.logger.info("Index listing result :" +
