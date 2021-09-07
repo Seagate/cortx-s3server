@@ -537,6 +537,8 @@ cd $S3_BUILD_DIR
 $USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=true/g' /opt/seagate/cortx/auth/resources/authserver.properties
 
 # copy all the config/resource files of auth server to /etc/cortx directory
+echo "Copy all authserver resources file to /etc/cortx"
+rm -rf "/etc/cortx/auth/resources/"
 mkdir -p "/etc/cortx/auth/resources/"
 cp -r /opt/seagate/cortx/auth/resources/* "/etc/cortx/auth/resources/"
 $USE_SUDO systemctl restart s3authserver
