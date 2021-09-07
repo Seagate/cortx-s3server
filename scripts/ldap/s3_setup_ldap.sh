@@ -23,21 +23,23 @@
 # configure OpenLDAP #
 ##################################
 
-USAGE="USAGE: bash $(basename "$0") [--ldapadminpasswd <passwd>] [--rootdnpasswd <passwd>] [--skipssl]
+
+USAGE="USAGE: bash $(basename "$0") [--hostname] [--ldapadminpasswd <passwd>] [--rootdnpasswd <passwd>]
       [--help | -h]
 Install and configure OpenLDAP.
 
 where:
+--hostname          host to configure
 --ldapadminpasswd   optional ldapadmin password
 --rootdnpasswd      optional rootdn password
---skipssl           skips all ssl configuration for LDAP
 --help              display this help and exit
 "
 
 set -e
-usessl=true
+
 LDAPADMINPASS=
 ROOTDNPASSWORD=
+host=
 
 echo "Running s3_setup_ldap.sh script"
 if [ $# -lt 1 ]
@@ -49,14 +51,14 @@ fi
 while test $# -gt 0
 do
   case "$1" in
+    --hostname ) shift;
+        host=$1
+        ;;
     --ldapadminpasswd ) shift;
         LDAPADMINPASS=$1
         ;;
     --rootdnpasswd ) shift;
         ROOTDNPASSWORD=$1
-        ;;
-    --skipssl )
-        usessl=false
         ;;
     --help | -h )
         echo "$USAGE"
@@ -66,6 +68,11 @@ do
   shift
 done
 
+if [ -z "$host" ]
+then
+    echo "Hostname can not be null."
+    exit 1
+fi
 
 if [ -z "$LDAPADMINPASS" ]
 then
@@ -91,43 +98,30 @@ sed -i "$EXPR" "$ADMIN_USERS_FILE"
 chkconfig slapd on
 
 # add S3 schema
-ldapadd -x -D "cn=admin,cn=config" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/cn\=\{2\}s3user.ldif -H ldapi:///
+ldapadd -x -D "cn=admin,cn=config" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/cn\=\{2\}s3user.ldif -h "$host"
 
 # initialize ldap
-ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/s3-ldap-init.ldif -H ldapi:/// || /bin/true
+ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/s3-ldap-init.ldif -h "$host" || /bin/true
 
 # Setup iam admin and necessary permissions
-ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ROOTDNPASSWORD" -f "$ADMIN_USERS_FILE" -H ldapi:/// || /bin/true
+ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ROOTDNPASSWORD" -f "$ADMIN_USERS_FILE" -h "$host" || /bin/true
 rm -f $ADMIN_USERS_FILE
 
-ldapmodify -Y EXTERNAL -H ldapi:/// -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/iam-admin-access.ldif
+ldapmodify -x -D "cn=admin,cn=config" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/iam-admin-access.ldif -h "$host"
 
 # Enable slapd log with logLevel as "none"
 # for more info : http://www.openldap.org/doc/admin24/slapdconfig.html
 echo "Enable slapd log with logLevel"
-ldapmodify -Y EXTERNAL -H ldapi:/// -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/slapdlog.ldif
+ldapmodify -x -D "cn=admin,cn=config" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/slapdlog.ldif -h "$host"
 # Apply indexing on keys for performance improvement
-ldapmodify -Y EXTERNAL -H ldapi:/// -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/s3slapdindex.ldif
+ldapmodify -x -D "cn=admin,cn=config" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/s3slapdindex.ldif -h "$host"
 
 # Set ldap search Result size
-ldapmodify -Y EXTERNAL -H ldapi:/// -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/resultssizelimit.ldif
-
-# Restart slapd
-systemctl restart slapd
+ldapmodify -x -D "cn=admin,cn=config" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/resultssizelimit.ldif -h "$host"
 
 echo "Encrypting Authserver LDAP password.."
-/opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh -l "$LDAPADMINPASS" -p /opt/seagate/cortx/auth/resources/authserver.properties
+/opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh -t "$host" -l "$LDAPADMINPASS" -p /opt/seagate/cortx/auth/resources/authserver.properties
 
-echo "Restart S3authserver.."
-systemctl restart s3authserver
-
-if [[ $usessl == true ]]
-then
-#Deploy SSL certificates and enable OpenLDAP SSL port
-./ssl/enable_ssl_openldap.sh -cafile /etc/ssl/stx-s3/openldap/ca.crt \
-                   -certfile /etc/ssl/stx-s3/openldap/s3openldap.crt \
-                   -keyfile /etc/ssl/stx-s3/openldap/s3openldap.key
-fi
 
 echo "************************************************************"
 echo "You may have to redo any selinux settings as selinux-policy package was updated."
