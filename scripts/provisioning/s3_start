@@ -53,11 +53,9 @@ def main():
     elif args.service == 's3authserver':
       os.system("sh /opt/seagate/cortx/auth/startauth.sh")
     elif args.service == 's3bgproducer':
-      # Add action and remove pass
-      pass
+      os.system("sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh")
     elif args.service == 's3bgconsumer':
-      # Add action and remove pass
-      pass
+      os.system("sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.sh")
     else:
       logger.error(f"Invalid argument {args.service}")
   except Exception as e:

@@ -204,6 +204,12 @@ cp -f scripts/s3-logrotate/s3addblogfilerollover.sh $S3_LOG_ROTATE_FILE_LOCATION
 # Copy s3server support bundle script
 cp -f scripts/s3-support-bundles/s3_bundle_generate.sh $S3_INSTALL_LOCATION/scripts/
 
+# Copy s3 background producer startup script at installed location
+cp -f starts3backgroundproducer.sh $S3_INSTALL_LOCATION/s3backgrounddelete/
+
+# Copy s3 background consumer startup script at installed location
+cp -f starts3backgroundconsumer.sh $S3_INSTALL_LOCATION/s3backgrounddelete/
+
 # Copy the s3 background producer binary file into rpm location.
 cp s3backgrounddelete/s3backgrounddelete/s3backgroundproducer $S3_INSTALL_LOCATION/s3backgrounddelete/
 
