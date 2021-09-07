@@ -372,6 +372,8 @@ Refer to our [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/ma
 Please refer to the [Support](https://github.com/Seagate/cortx/blob/main/SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
 
 Tested by:
+- Sep 03, 2021: Sanal Kaarthikeyan (sanal.kaarthikeyan@segate.com), tested CentOS Linux release 7.9.2009 (Core)
+                verified with git #948f22cc07955bf5c1d6ec77c3a7ec2da6933251 on main branch
 - Aug 30, 2021: Yanqing Fu (yanqing.f.fu@seagate.com) in CentOS Linux release 7.9.2009 (Core)
 - Aug 19, 2021: Patrick Hession (patrick.hession@seagate.com) in CentOS 7.8.2003 on VMWare Workstation Pro 16 and bare metal CentOS server
 - Aug 3, 2021: Daniar Kurniawan (daniar@uchicago.edu) in CentOS 7.8.2003 on a Chameleon node (type=compute_skylake).
