@@ -746,6 +746,8 @@ int main(int argc, char **argv) {
   if (!g_option_instance->is_daemon_disabled()) {
     s3daemon.daemonize();
   }
+  s3daemon.change_work_dir();
+  s3daemon.write_to_pidfile();
 #if 0
   s3daemon.register_signals();
 #endif
