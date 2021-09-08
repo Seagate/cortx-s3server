@@ -22,7 +22,7 @@ Description=Motr-S3 Core instance Server
 
 [Service]
 Type=forking
-ExecStart=/opt/seagate/cortx/s3/s3startsystem.sh %i /etc/sysconfig/s3server-%i /opt/seagate/cortx/s3/conf/s3config.yaml
+ExecStart=/opt/seagate/cortx/s3/s3startsystem.sh -F  %i -P /etc/sysconfig/s3server-%i -C /opt/seagate/cortx/s3/conf/s3config.yaml
 ExecReload=/bin/kill -HUP $MAINPID
 ExecStop=/opt/seagate/cortx/s3/s3stopsystem.sh %i
 TimeoutStopSec=7
