@@ -33,14 +33,14 @@ struct s3_auth_op_context *create_basic_auth_op_ctx(
   struct s3_auth_op_context *ctx =
       (struct s3_auth_op_context *)calloc(1, sizeof(struct s3_auth_op_context));
   ctx->evbase = eventbase;
+  std::string ipv4_auth_ip = "ipv4:" + option_instance->get_auth_ip_addr();
   if (option_instance->is_s3_ssl_auth_enabled()) {
-    ctx->conn = evhtp_connection_ssl_new(
-        ctx->evbase, option_instance->get_auth_ip_addr().c_str(),
-        option_instance->get_auth_port(), g_ssl_auth_ctx);
+    ctx->conn = evhtp_connection_ssl_new(ctx->evbase, ipv4_auth_ip.c_str(),
+                                         option_instance->get_auth_port(),
+                                         g_ssl_auth_ctx);
   } else {
-    ctx->conn = evhtp_connection_new(
-        ctx->evbase, option_instance->get_auth_ip_addr().c_str(),
-        option_instance->get_auth_port());
+    ctx->conn = evhtp_connection_new(ctx->evbase, ipv4_auth_ip.c_str(),
+                                     option_instance->get_auth_port());
   }
 
   ctx->auth_request = evhtp_request_new(NULL, ctx->evbase);
