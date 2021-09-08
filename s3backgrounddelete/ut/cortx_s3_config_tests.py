@@ -157,21 +157,37 @@ def test_get_log_format_failure():
         assert config.s3confstore.get_config('logconfig>log_format') == ''
 
 
-def test_get_cortx_s3_endpoint_success():
+def test_get_cortx_s3_consumer_endpoint_success():
     """Test endpoint configuration in cortxs3."""
     config = CORTXS3Config()
-    config.s3confstore.set_config('cortx_s3>endpoint', 'http://127.0.0.1:28049', False)
-    s3_endpoint = config.s3confstore.get_config('cortx_s3>endpoint')
+    config.s3confstore.set_config('cortx_s3>consumer_endpoint', 'http://127.0.0.1:28049', False)
+    s3_endpoint = config.s3confstore.get_config('cortx_s3>consumer_endpoint')
     assert s3_endpoint == "http://127.0.0.1:28049"
 
-def test_get_cortx_s3_endpoint_failure():
+def test_get_cortx_s3_producer_endpoint_success():
+    """Test endpoint configuration in cortxs3."""
+    config = CORTXS3Config()
+    config.s3confstore.set_config('cortx_s3>producer_endpoint', 'http://127.0.0.1:28049', False)
+    s3_endpoint = config.s3confstore.get_config('cortx_s3>producer_endpoint')
+    assert s3_endpoint == "http://127.0.0.1:28049"
+
+def test_get_cortx_s3_consumer_endpoint_failure():
     """
     Test if endpoint is not configured then it should throw AssertionError.
     """
     with pytest.raises(AssertionError):
         config = CORTXS3Config()
-        del config._config['cortx_s3']['endpoint']
-        assert config.s3confstore.get_config('cortx_s3>endpoint') == ''
+        del config._config['cortx_s3']['consumer_endpoint']
+        assert config.s3confstore.get_config('cortx_s3>consumer_endpoint') == ''
+
+def test_get_cortx_s3_producer_endpoint_failure():
+    """
+    Test if endpoint is not configured then it should throw AssertionError.
+    """
+    with pytest.raises(AssertionError):
+        config = CORTXS3Config()
+        del config._config['cortx_s3']['producer_endpoint']
+        assert config.s3confstore.get_config('cortx_s3>prooducer_endpoint') == ''
 
 def test_get_cortx_s3_service_success():
     """Test service configuration in cortxs3."""
