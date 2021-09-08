@@ -82,6 +82,20 @@ class S3HaproxyConfig:
     return int(self.provisioner_confstore.get_config(
       self.local_confstore.get_config('CONFIG>CONFSTORE_S3INSTANCES_KEY')))
 
+  def get_s3serverport(self):
+    assert self.provisioner_confstore != None
+    assert self.local_confstore != None
+
+    return int(self.provisioner_confstore.get_config(
+      self.local_confstore.get_config('CONFIG>CONFSTORE_S3SERVER_PORT')))
+
+  def get_s3authserverport(self):
+    assert self.provisioner_confstore != None
+    assert self.local_confstore != None
+
+    return int(self.provisioner_confstore.get_config(
+      self.local_confstore.get_config('CONFIG>CONFSTORE_S3_AUTHSERVER_PORT')))
+
   def process(self):
     """Main Processing function."""
     self.local_confstore = S3CortxConfStore(
@@ -188,8 +202,10 @@ backend s3-auth
 '''
 
     #Initialize port numbers
-    s3inport = 28071
-    s3auport = 28050
+    s3inport = self.get_s3serverport()
+    self.logger.info(f'S3 server port: {s3inport}')
+    s3auport = self.get_s3authserverport()
+    self.logger.info(f'S3 auth server port: {s3auport}')
 
     #Add complete information to haproxy.cfg file
     cfg_file = '/etc/haproxy/haproxy.cfg'

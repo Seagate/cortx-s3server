@@ -105,7 +105,7 @@ bool S3Option::load_section(std::string section_name,
       s3_bind_port = s3_option_node["S3_SERVER_BIND_PORT"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_BIND_PORT");
       motr_http_bind_port =
-          s3_option_node["S3_SERVER_MOTR_HTTP_BIND_PORT"].as<unsigned short>();
+          s3_option_node["S3_SERVER_BGDELETE_BIND_PORT"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
                                "S3_SERVER_SHUTDOWN_GRACE_PERIOD");
       s3_grace_period_sec = s3_option_node["S3_SERVER_SHUTDOWN_GRACE_PERIOD"]
@@ -173,9 +173,9 @@ bool S3Option::load_section(std::string section_name,
       if (S3CommonUtilities::is_yaml_value_null(s3_ipv6_bind_addr)) {
         s3_ipv6_bind_addr = "";
       }
-      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_MOTR_HTTP_BIND_ADDR");
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_BGDELETE_BIND_ADDR");
       motr_http_bind_addr =
-          s3_option_node["S3_SERVER_MOTR_HTTP_BIND_ADDR"].as<std::string>();
+          s3_option_node["S3_SERVER_BGDELETE_BIND_ADDR"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_ENABLE_PERF");
       perf_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_SSL_ENABLE");
@@ -405,9 +405,9 @@ bool S3Option::load_section(std::string section_name,
       }
       if (!(cmd_opt_flag & S3_OPTION_MOTR_BIND_PORT)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node,
-                                 "S3_SERVER_MOTR_HTTP_BIND_PORT");
-        motr_http_bind_port = s3_option_node["S3_SERVER_MOTR_HTTP_BIND_PORT"]
-                                  .as<unsigned short>();
+                                 "S3_SERVER_BGDELETE_BIND_PORT");
+        motr_http_bind_port =
+            s3_option_node["S3_SERVER_BGDELETE_BIND_PORT"].as<unsigned short>();
       }
       if (!(cmd_opt_flag & S3_OPTION_LOG_DIR)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_DIR");
@@ -447,9 +447,9 @@ bool S3Option::load_section(std::string section_name,
       }
       if (!(cmd_opt_flag & S3_OPTION_MOTR_BIND_ADDR)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node,
-                                 "S3_SERVER_MOTR_HTTP_BIND_ADDR");
+                                 "S3_SERVER_BGDELETE_BIND_ADDR");
         motr_http_bind_addr =
-            s3_option_node["S3_SERVER_MOTR_HTTP_BIND_ADDR"].as<std::string>();
+            s3_option_node["S3_SERVER_BGDELETE_BIND_ADDR"].as<std::string>();
       }
       if (!(cmd_opt_flag & S3_OPTION_STATSD_PORT)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_PORT");
@@ -935,10 +935,10 @@ void S3Option::dump_options() {
          s3_ipv4_bind_addr.c_str());
   s3_log(S3_LOG_INFO, "", "S3_SERVER_IPV6_BIND_ADDR = %s\n",
          s3_ipv6_bind_addr.c_str());
-  s3_log(S3_LOG_INFO, "", "S3_SERVER_MOTR_HTTP_BIND_ADDR = %s\n",
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_BGDELETE_BIND_ADDR = %s\n",
          motr_http_bind_addr.c_str());
   s3_log(S3_LOG_INFO, "", "S3_SERVER_BIND_PORT = %d\n", s3_bind_port);
-  s3_log(S3_LOG_INFO, "", "S3_SERVER_MOTR_HTTP_BIND_PORT = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_BGDELETE_BIND_PORT = %d\n",
          motr_http_bind_port);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_SHUTDOWN_GRACE_PERIOD = %d\n",
          s3_grace_period_sec);

@@ -52,8 +52,8 @@ S3_SERVER_CONFIG:                                       # Section for S3 Server
    S3_SERVER_IPV4_BIND_ADDR: 0.0.0.0                    # S3 Server ipv4 bind address, 0.0.0.0 is default. ~ means option is ignored/not to listen on IPv4 address.
    S3_SERVER_IPV6_BIND_ADDR: "~"                        # S3 Server ipv6 bind address, ::/128 is default. ~ means option is ignored/not to listen on IPv6 address.
    S3_SERVER_BIND_PORT: 28071                            # S3 Server port number
-   S3_SERVER_MOTR_HTTP_BIND_ADDR: 127.0.0.1             # S3 Server bind addresss to perform motr operations over HTTP, 127.0.0.1 is default.
-   S3_SERVER_MOTR_HTTP_BIND_PORT: 28049                  # Port number to perform motr operations over HTTP.
+   S3_SERVER_BGDELETE_BIND_ADDR: 127.0.0.1             # S3 Server bind addresss to perform background delete operations over HTTP, 127.0.0.1 is default.
+   S3_SERVER_BGDELETE_BIND_PORT: 28049                 # S3 Server Port number to perform background delete operations over HTTP.
    S3_SERVER_REGION_ENDPOINTS: [s3-us-west-2.seagate.com, s3-us.seagate.com, s3-europe.seagate.com, s3-asia.seagate.com]
    S3_SERVER_DEFAULT_ENDPOINT: s3.seagate.com
    S3_SERVER_SHUTDOWN_GRACE_PERIOD: 7                   # S3 server shutdown grace period in seconds, hare provisioning sets TimeoutStopSec to 7 sec, any change to this must match with that.
@@ -84,9 +84,9 @@ S3_SERVER_CONFIG:                                       # Section for S3 Server
    S3_BUCKET_METADATA_CACHE_EXPIRE_SEC: 5               # Expiration time for bucket metadata in cache
    S3_BUCKET_METADATA_CACHE_REFRESH_SEC: 4              # Refresh timeout. After this timeout proactive MD re-load will happen.
 S3_AUTH_CONFIG:                                         # Section for S3 Auth Service
-   S3_AUTH_IP_ADDR: ipv4:127.0.0.1                      # Auth server IP address Should be in below format:
-                                                        # ipv4 address format: ipv4:127.0.0.1
-                                                        # ipv6 address format: ipv6:::1
+   S3_AUTH_IP_ADDR: 127.0.0.1                           # Auth server IP address Should be in below format:
+                                                        # ipv4 address format: 127.0.0.1
+                                                        # ipv6 address format: ::1
    S3_AUTH_PORT: 28050                                  # Auth server port for https request
 S3_MOTR_CONFIG:                                     # Section for S3 Motr
    S3_MOTR_LOCAL_ADDR: <ipaddress>@tcp:12345:33:100   # Motr end points, replace <ipaddress> with host's ip address
