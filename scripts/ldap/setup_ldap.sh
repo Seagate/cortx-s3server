@@ -23,13 +23,14 @@
 # configure OpenLDAP #
 ##################################
 
-USAGE="USAGE: bash $(basename "$0") [--ldapadminpasswd <passwd>] [--rootdnpasswd <passwd>] [--defaultpasswd] [--skipssl]
+USAGE="USAGE: bash $(basename "$0") [--ldapadminpasswd <passwd>] [--rootdnpasswd <passwd>] [--baseconfigpath <base_config_path>][--defaultpasswd] [--skipssl]
       [--forceclean] [--help | -h]
 Install and configure OpenLDAP.
 
 where:
 --ldapadminpasswd   optional ldapadmin password
 --rootdnpasswd      optional rootdn password
+--baseconfigpath    base directory path for authserver config file
 --defaultpasswd     optional set default password
 --skipssl           skips all ssl configuration for LDAP
 --forceclean        Clean old openldap setup (** careful: deletes data **)
@@ -42,6 +43,7 @@ usessl=true
 forceclean=false
 LDAPADMINPASS=
 ROOTDNPASSWORD=
+base_config_file_path=
 defaultpasswds="ldapadmin"
 
 echo "Running setup_ldap.sh script"
@@ -59,6 +61,9 @@ do
         ;;
     --rootdnpasswd ) shift;
         ROOTDNPASSWORD=$1
+        ;;
+    --baseconfigpath ) shift;
+        base_config_file_path=$1
         ;;
     --defaultpasswd )
         defaultpasswd=true
@@ -193,7 +198,8 @@ ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/s3slapdind
 ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $INSTALLDIR/resultssizelimit.ldif
 
 echo "Encrypting Authserver LDAP password.."
-/opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh -l $LDAPADMINPASS -p /opt/seagate/cortx/auth/resources/authserver.properties
+echo "base directory path: $base_config_file_path"
+/opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh -l $LDAPADMINPASS -p $base_config_file_path/auth/resources/authserver.properties
 
 echo "Restart S3authserver.."
 systemctl restart s3authserver
