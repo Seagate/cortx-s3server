@@ -19,6 +19,8 @@
 #
 
 from setupcmd import SetupCmd, S3PROVError
+import os
+import shutil
 
 class PostInstallCmd(SetupCmd):
   """PostInstall Setup Cmd."""
@@ -38,7 +40,7 @@ class PostInstallCmd(SetupCmd):
       self.logger.info("validations started")
       self.phase_prereqs_validate(self.name)
       self.phase_keys_validate(self.url, self.name)
-      self.validate_config_files(self.name)
+      #self.validate_config_files(self.name)
       self.logger.info("validations completed")
     except Exception as e:
       raise S3PROVError(f'process: {self.name} failed with exception: {e}')
