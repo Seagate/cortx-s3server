@@ -233,8 +233,16 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
   // so initialise the s3 request;
   s3_request->initialise();
 
+  bool is_haproxy_head_request = false;
+  // Check if request is head request from haproxy
+  if (std::strcmp(req->uri->path->full, "/") == 0 &&
+      s3_request->http_verb() == S3HttpVerb::HEAD) {
+      is_haproxy_head_request = true;
+  }
+  
   if (S3Option::get_instance()->get_is_s3_shutting_down() &&
-      !s3_fi_is_enabled("shutdown_system_tests_in_progress")) {
+       !s3_fi_is_enabled("shutdown_system_tests_in_progress") &&
+       !is_haproxy_head_request) {
     // We are shutting down, so don't entertain new requests.
     s3_request->pause();
     evhtp_unset_all_hooks(&req->conn->hooks);
@@ -246,11 +254,9 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
     s3_request->set_out_header_value("Content-Length",
                                      std::to_string(response_xml.length()));
     s3_request->set_out_header_value("Connection", "close");
-    int shutdown_grace_period =
-        S3Option::get_instance()->get_s3_grace_period_sec();
+    int retry_after_period = S3Option::get_instance()->get_s3_retry_after_sec();
     s3_request->set_out_header_value("Retry-After",
-                                     std::to_string(shutdown_grace_period));
-
+                                     std::to_string(retry_after_period));
     s3_request->send_response(error.get_http_status_code(), response_xml);
     return EVHTP_RES_OK;
   }
