@@ -57,6 +57,7 @@ s3_bundle_location=$bundle_path/s3
 
 haproxy_config="/etc/haproxy/haproxy.cfg"
 # Collecting rotated logs for haproxy and ldap along with live log
+
 haproxy_log="$base_log_file_path/haproxy.log"
 ldap_log="$base_log_file_path/slapd.log"
 
@@ -67,11 +68,14 @@ s3cluster_config="$base_config_file_path/s3/s3backgrounddelete/s3_cluster.yaml"
 s3startsystem_script="/opt/seagate/cortx/s3/s3startsystem.sh"
 s3server_binary="/opt/seagate/cortx/s3/bin/s3server"
 s3_motr_dir="$base_log_file_path/motr/s3server-*"
+
 s3_core_dir="/var/log/crash"
 sys_auditlog_dir="/var/log/audit"
 
 # S3 deployment log
+
 s3deployment_log="$base_log_file_path/s3/s3deployment/s3deployment.log"
+
 
 # Create tmp folder with pid value to allow parallel execution
 pid_value=$$
@@ -188,16 +192,17 @@ collect_core_files(){
   cd $cwd
 }
 
-
 # Collect <m0trace_files_count> m0trace files from each s3 instance present in /var/log/cortx/motr/s3server-* directory if available
 # Files will be available at $tmp_path/s3_support_bundle_<pid>/s3_m0trace_files/<s3instance-name>
 collect_m0trace_files(){
   echo "Collecting m0trace files dump..."
   m0trace_filename_pattern="m0trace.*"
+
   dir="$base_log_file_path/motr"
   tmpr_dir="$tmp_dir/m0trraces_tmp"
   cwd=$(pwd)
   # if $base_log_file_path/motr missing then return
+
   if [ ! -d "$dir" ];
   then
       return;
@@ -244,6 +249,7 @@ collect_m0trace_files(){
 collect_first_m0trace_file(){
   echo "Collecting oldest m0trace file dump..."
   dir="$base_log_file_path/motr"
+
   cwd=$(pwd)
   m0trace_filename_pattern="*/m0trace.*"
   if [ ! -d "$dir" ];
@@ -296,7 +302,6 @@ if [ -d "$first_s3_m0trace_file" ];
 then
    args=$args" "$first_s3_m0trace_file
 fi
-
 
 # collect latest 5 m0trace files from /var/log/cortx/motr/s3server-* directory
 # S3server name is generated with random name e.g s3server-0x7200000000000001:0x22

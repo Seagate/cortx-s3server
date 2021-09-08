@@ -30,6 +30,7 @@ class InitCmd(SetupCmd):
     """Constructor."""
     try:
       super(InitCmd, self).__init__(config, module)
+
     except Exception as e:
       raise e
 

@@ -43,6 +43,7 @@ class ConfigCmd(SetupCmd):
     """Constructor."""
     try:
       super(ConfigCmd, self).__init__(config, module)
+
     except Exception as e:
       raise S3PROVError(f'exception: {e}')
 
@@ -55,6 +56,7 @@ class ConfigCmd(SetupCmd):
     self.logger.info("validations completed")
 
     try:
+
       # copy config files from /opt/seagate to base dir of config files (/etc/cortx)
       self.logger.info("copy config files started")
       self.copy_config_files()
@@ -172,8 +174,7 @@ class ConfigCmd(SetupCmd):
     # Delete ldap replication cofiguration
     self.delete_replication_config()
     self.logger.info('Open ldap replication configuration started')
-    storage_set_count = self.get_confvalue(self.get_confkey(
-        'CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY').replace("cluster-id", self.cluster_id))
+    storage_set_count = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY')
 
     index = 0
     while index < int(storage_set_count):
@@ -191,7 +192,7 @@ class ConfigCmd(SetupCmd):
         ldap_hosts_list_file = os.path.join(self.s3_tmp_dir, "ldap_hosts_list_file.txt")
         with open(ldap_hosts_list_file, "w") as f:
           for node_machine_id in server_nodes_list:
-            private_fqdn = self.get_confvalue(f'server_node>{node_machine_id}>network>data>private_fqdn')
+            private_fqdn = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_PRIVATE_FQDN_KEY')
             f.write(f'{private_fqdn}\n')
             self.logger.info(f'output of ldap_hosts_list_file.txt: {private_fqdn}')
 
@@ -227,8 +228,7 @@ class ConfigCmd(SetupCmd):
 
   def get_msgbus_partition_count(self):
     """get total server nodes which will act as partition count."""
-    storage_set_count = self.get_confvalue(self.get_confkey(
-      'CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY').replace("cluster-id", self.cluster_id))
+    storage_set_count = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY')
     srv_count=0
     index = 0
     while index < int(storage_set_count):
@@ -310,7 +310,7 @@ class ConfigCmd(SetupCmd):
     #S3_MOTR_MAX_UNITS_PER_REQUEST = 8 for VM/OVA
     #S3_MOTR_MAX_UNITS_PER_REQUEST = 32 for HW
     # get the motr_max_units_per_request count from the config file
-    motr_max_units_per_request = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST'))
+    motr_max_units_per_request = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST')
     self.logger.info(f'motr_max_units_per_request: {motr_max_units_per_request}')
     #validate min and max unit should be between 1 to 128
     if 2 <= int(motr_max_units_per_request) <= 128:
