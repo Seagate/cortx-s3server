@@ -30,7 +30,7 @@ class InitCmd(SetupCmd):
     """Constructor."""
     try:
       super(InitCmd, self).__init__(config, module)
-      self.read_ldap_credentials()
+
     except Exception as e:
       raise e
 
@@ -42,4 +42,4 @@ class InitCmd(SetupCmd):
     self.phase_keys_validate(self.url, self.name)
     self.validate_config_files(self.name)
     self.logger.info("validations completed")
-
+    

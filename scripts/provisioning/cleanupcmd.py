@@ -161,11 +161,11 @@ class CleanupCmd(SetupCmd):
   def revert_config_files(self):
     """Revert config files to their original config state."""
 
-    configFiles = ["/opt/seagate/cortx/auth/resources/authserver.properties",
-                  "/opt/seagate/cortx/auth/resources/keystore.properties",
-                  "/opt/seagate/cortx/s3/conf/s3config.yaml",
-                  "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
-                  "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"]
+    configFiles = [self.get_confkey('S3_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                  self.get_confkey('S3_AUTHSERVER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                  self.get_confkey('S3_KEYSTORE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                  self.get_confkey('S3_BGDELETE_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path),
+                  self.get_confkey('S3_CLUSTER_CONFIG_FILE').replace("/opt/seagate/cortx", self.base_config_file_path)]
     try:
       for configFile in configFiles:
         if os.path.isfile(configFile):

@@ -489,7 +489,7 @@ if [ $use_ipv6 -eq 1 ]
 then
   $USE_SUDO sed -i 's/S3_SERVER_IPV4_BIND_ADDR:.*$/S3_SERVER_IPV4_BIND_ADDR: ~/g' /opt/seagate/cortx/s3/conf/s3config.yaml
   $USE_SUDO sed -i 's/S3_SERVER_IPV6_BIND_ADDR:.*$/S3_SERVER_IPV6_BIND_ADDR: ::\/128/g' /opt/seagate/cortx/s3/conf/s3config.yaml
-  $USE_SUDO sed -i 's/\(\s*S3_AUTH_IP_ADDR:\s*\)ipv4:[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\(\s*.*\)/\1ipv6:::1\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
+  $USE_SUDO sed -i 's/\(\s*S3_AUTH_IP_ADDR:\s*\)[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\(\s*.*\)/\1ipv6:::1\2/g' /opt/seagate/cortx/s3/conf/s3config.yaml
   # backup
   $USE_SUDO \cp /etc/haproxy/haproxy.cfg{,.bak}
   $USE_SUDO sed -i 's/0\.0\.0\.0/::/g' /etc/haproxy/haproxy.cfg
@@ -536,6 +536,11 @@ cd $S3_BUILD_DIR
 # Enable fault injection in AuthServer
 $USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=true/g' /opt/seagate/cortx/auth/resources/authserver.properties
 
+# copy all the config/resource files of auth server to /etc/cortx directory
+echo "Copy all authserver resources file to /etc/cortx"
+rm -rf "/etc/cortx/auth/resources/"
+mkdir -p "/etc/cortx/auth/resources/"
+cp -r /opt/seagate/cortx/auth/resources/* "/etc/cortx/auth/resources/"
 $USE_SUDO systemctl restart s3authserver
 
 function s3server_start() {
