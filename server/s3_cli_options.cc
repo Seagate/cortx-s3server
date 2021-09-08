@@ -53,7 +53,7 @@ DEFINE_int32(motrlayoutid, 9, "For options please see the readme");
 DEFINE_string(motrprofilefid, "<0x7000000000000001:0>", "Motr profile FID");
 DEFINE_string(motrprocessfid, "<0x7200000000000000:0>", "Motr process FID");
 
-DEFINE_string(authhost, "ipv4:127.0.0.1", "Auth server host");
+DEFINE_string(authhost, "127.0.0.1", "Auth server host");
 DEFINE_int32(authport, 8095, "Auth server port");
 DEFINE_bool(disable_auth, false, "Disable authentication");
 DEFINE_bool(getoid, false, "Enable getoid in S3 request for testing");

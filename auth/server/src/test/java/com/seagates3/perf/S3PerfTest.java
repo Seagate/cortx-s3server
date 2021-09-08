@@ -85,10 +85,12 @@ public class S3PerfTest {
         file = mock(File.class);
         fileWriter = mock(FileWriter.class);
         bufferedWriter = mock(BufferedWriter.class);
-
-        when(AuthServerConfig.getPerfLogFile()).thenReturn("/var/log/cortx/auth/perf.log");
+        when(AuthServerConfig.getPerfLogFile())
+            .thenReturn("/var/log/cortx/auth/perf.log");
         when(AuthServerConfig.isPerfEnabled()).thenReturn(true);
-        whenNew(File.class).withArguments("/var/log/cortx/auth/perf.log").thenReturn(file);
+        whenNew(File.class)
+            .withArguments("/var/log/cortx/auth/perf.log")
+            .thenReturn(file);
         when(file.getAbsoluteFile()).thenReturn(file);
     }
 
