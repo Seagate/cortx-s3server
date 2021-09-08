@@ -70,8 +70,6 @@ class SetupCmd(object):
     self.base_config_file_path = "/etc/cortx"
     self.base_log_file_path = "/var/log/cortx"
 
-    self.ldap_user = "sgiamadmin"
-
     self.services = services
 
     s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
@@ -81,7 +79,6 @@ class SetupCmd(object):
 
     # get all the param from the s3_prov_config file
     self._preqs_conf_file = self.get_confkey('VALIDATION_PREREQ_FILE')
-    self.s3_tmp_dir = self.get_confkey('TMP_DIR')
     self.ldap_mdb_folder = self.get_confkey('LDAP_MDB_LOCATION')
 
     # Get machine-id of current node from constore
@@ -98,6 +95,10 @@ class SetupCmd(object):
 
     self._url = config
     self._provisioner_confstore = S3CortxConfStore(self._url, 'setup_prov_index')
+    self.base_config_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_CONFIG_PATH')
+    self.logger.info(f'config file path : {self.base_config_file_path}')
+    self.s3_tmp_dir = os.path.join(self.base_config_file_path, "s3/tmp")
+    self.logger.info(f'tmp dir : {self.s3_tmp_dir}')
 
   @property
   def url(self) -> str:
@@ -247,8 +248,6 @@ class SetupCmd(object):
       raise FileNotFoundError(f'pre-requisite json file: {self._preqs_conf_file} not found')
     _prereqs_confstore = S3CortxConfStore(f'json://{self._preqs_conf_file}', f'{phase_name}')
 
-    if self.ldap_user != "sgiamadmin":
-      raise ValueError('Username should be "sgiamadmin"')
     try:
       prereqs_block = _prereqs_confstore.get_config(f'{phase_name}')
       if prereqs_block is not None:
@@ -478,15 +477,6 @@ class SetupCmd(object):
       if res_rc != 0:
         raise Exception(f"{cmd} failed with err: {res_err}, out: {res_op}, ret: {res_rc}")
 
-  def delete_mdb_files(self):
-    """Deletes ldap mdb files."""
-    for files in os.listdir(self.ldap_mdb_folder):
-      path = os.path.join(self.ldap_mdb_folder,files)
-      if os.path.isfile(path) or os.path.islink(path):
-        os.unlink(path)
-      elif os.path.isdir(path):
-        shutil.rmtree(path)
-
   def validate_config_files(self, phase_name: str):
     """Validate the sample file and config file keys.
     Both files should have same keys.
@@ -645,28 +635,6 @@ class SetupCmd(object):
 
     return bgdelete_acc_input_params_dict
 
-  def delete_replication_config(self):
-    conn = ldap.initialize("ldapi://")
-    conn.sasl_non_interactive_bind_s('EXTERNAL')
-
-    dn = "cn=config"
-    self.deleteattribute(conn, dn, "olcServerID")
-
-    dn = "olcDatabase={0}config,cn=config"
-    self.deleteattribute(conn, dn, "olcSyncrepl")
-    self.deleteattribute(conn, dn, "olcMirrorMode")
-
-    dn = "olcDatabase={2}mdb,cn=config"
-    self.deleteattribute(conn, dn, "olcSyncrepl")
-    self.deleteattribute(conn, dn, "olcMirrorMode")
-
-  def deleteattribute(self, conn, dn, attr_to_delete):
-    mod_attrs = [(ldap.MOD_DELETE, attr_to_delete, None)]
-    try:
-      conn.modify_s(dn, mod_attrs)
-    except:
-      self.logger.info('Attribute '+ attr_to_delete + ' is not configured for dn '+ dn)
-
   def copy_config_files(self, config_files: list):
     """ Copy config files from /opt/seagate/cortx to /etc/cortx."""
     # copy all the config files from the /opt/seagate/cortx to /etc/cortx
@@ -677,3 +645,64 @@ class SetupCmd(object):
       os.makedirs(os.path.dirname(dest_config_file), exist_ok=True)
       shutil.copy(config_file, dest_config_file)
       self.logger.info("Config file copied successfully to /etc/cortx")
+
+  def make_sample_old_files(self, config_files: list):
+    """ Copy from /opt/seagate/cortx to make '.old' files in /etc/cortx/s3/tmp."""
+    # for given config files at /opt/seagate/cortx, make '.old' in /etc/cortx/s3/tmp
+    for config_file in config_files:
+      self.logger.info(f"Source config file: {config_file}")
+      old_file_name = os.path.basename(config_file) + '.old'
+      old_config_file = os.path.join(self.s3_tmp_dir, old_file_name)
+      self.logger.info(f"Dest config file: {old_config_file}")
+      os.makedirs(os.path.dirname(old_config_file), exist_ok=True)
+      shutil.copy(config_file, old_config_file)
+      self.logger.info("Config file copied successfully to /etc/cortx/s3/tmp")
+
+  def modify_attribute(self, dn, attribute, value):
+        # Open a connection
+        ldap_conn = ldap.initialize("ldapi:///")
+        # Bind/authenticate with a user with apropriate rights to add objects
+        ldap_conn.sasl_non_interactive_bind_s('EXTERNAL')
+        mod_attrs = [(ldap.MOD_REPLACE, attribute, bytes(str(value), 'utf-8'))]
+        try:
+            ldap_conn.modify_s(dn, mod_attrs)
+        except:
+            self.logger.error('Error while modifying attribute- '+ attribute )
+            raise Exception('Error while modifying attribute' + attribute)
+        ldap_conn.unbind_s()
+
+  def search_and_delete_attribute(self, dn, attr_to_delete):
+        conn = ldap.initialize("ldapi://")
+        conn.sasl_non_interactive_bind_s('EXTERNAL')
+        ldap_result_id = conn.search_s(dn, ldap.SCOPE_BASE, None, [attr_to_delete])
+        total = self.get_record_count(dn, attr_to_delete)
+        count = 0
+        # Below will perform delete operation
+        while (count < total):
+            ldap_result_id = conn.search_s(dn, ldap.SCOPE_BASE, None, [attr_to_delete])
+            for result1,result2 in ldap_result_id:
+                if(result2):
+                    for value in result2[attr_to_delete]:
+                        if(value and (('dc=s3,dc=seagate,dc=com' in value.decode('UTF-8')) or ('cn=sgiamadmin,dc=seagate,dc=com' in value.decode('UTF-8')))):
+                            mod_attrs = [( ldap.MOD_DELETE, attr_to_delete, value )]
+                            try:
+                                conn.modify_s(dn, mod_attrs)
+                                break
+                            except Exception as e:
+                                print(e)
+            count = count + 1
+        conn.unbind_s()   
+
+  def get_record_count(self, dn, attr_to_delete):
+        conn = ldap.initialize("ldapi://")
+        conn.sasl_non_interactive_bind_s('EXTERNAL')
+        ldap_result_id = conn.search_s(dn, ldap.SCOPE_BASE, None, [attr_to_delete])
+        total = 0
+        # Below will count the entries
+        for result1,result2 in ldap_result_id:
+            if(result2):
+                for value in result2[attr_to_delete]:
+                    if(value and (('dc=s3,dc=seagate,dc=com' in value.decode('UTF-8')) or ('cn=sgiamadmin,dc=seagate,dc=com' in value.decode('UTF-8')))):
+                        total = total + 1
+        conn.unbind_s()
+        return total
