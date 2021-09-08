@@ -34,8 +34,9 @@ where:
 
 # max haproxy files count in each haproxy log directory
 haproxy_log_files_max_count=5
-haproxy_config=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="S3_HAPROXY_SYSCONF_SYMLINK")
-haproxy_log_file=$(s3confstore "properties://$haproxy_config" getkey --key="LOG_FILE")
+haproxy_max_file_size=5242880 # 5MB
+haproxy_log_file=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="S3_HAPROXY_LOG_SYMLINK")
+haproxy_log_file=$(readlink -f $haproxy_log_file)
 echo "haproxy log file: $haproxy_log_file"
 
 while getopts ":n:" option; do
@@ -54,6 +55,7 @@ while getopts ":n:" option; do
 done
 
 echo "Max haproxy log file count: $haproxy_log_files_max_count"
+echo "Max haproxy file size: $haproxy_max_file_size"
 echo "Rotating haproxy log files"
 
 haproxy_log_dir=$(dirname $haproxy_log_file)
@@ -61,26 +63,38 @@ echo "haproxy dir: $haproxy_log_dir"
 
 if [ -n "$haproxy_log_dir" ]
 then
+     # check haproxy log file needs log rotation or not. if required then rotate first and then apply max_count algorithm
+     #Get size in bytes
+     haproxy_file_size=`du -b $haproxy_log_file | tr -s '\t' ' ' | cut -d' ' -f1`
+     if [ $haproxy_file_size -gt $haproxy_max_file_size ];then
+         echo "haproxy file size [$haproxy_file_size] is grater than max size [$haproxy_max_file_size]"
+         timestamp=`date +%s`
+         mv $haproxy_log_file $haproxy_log_file.$timestamp
+         # create new haproxy log file
+         touch $haproxy_log_file
+         echo "haproxy log file rotated successfully"
+     fi
+
      # Find haproxy log files
-     haproxy_log_files=`find $haproxy_log_dir -maxdepth 1 -type f -name "haproxy.*"`
+     haproxy_log_files=`find $haproxy_log_dir -maxdepth 1 -type f -name "haproxy.log.*"`
      haproxy_log_files_count=`echo "$haproxy_log_files" | grep -v "^$" | wc -l`
      echo "## found $haproxy_log_files_count file(s) in log directory($haproxy_log_dir) ##"
+
      # check log files count is greater than max log file count or not
-     if [ $haproxy_log_files_count -gt $haproxy_log_files_max_count ]
+     if [ $haproxy_log_files_count -ge $haproxy_log_files_max_count ]
      then
          # get files sort by date - oldest will come on top
          remove_file_count=`expr $haproxy_log_files_count - $haproxy_log_files_max_count`
-         # remove oldest files except first generated haproxy log e.g.5 recent + 1 original file
-         remove_file_count=`expr $remove_file_count - 1`
          if [ $remove_file_count -gt 0 ]
          then
             echo "## ($remove_file_count) haproxy log file(s) can be removed from log directory($haproxy_log_dir) ##"
             # get the files sorted by time modified (most recently modified comes last), that is oldest files will come on top
             # ignore first file since we need to maintain first haproxy log file using 'sed' command
-            files_to_remove=`ls -tr "$haproxy_log_dir" | grep haproxy |sed "1 d" | head -n $remove_file_count`
+            files_to_remove=`ls -tr "$haproxy_log_dir" | grep haproxy.log. | head -n $remove_file_count`
             for file in $files_to_remove
             do
               rm -f "$haproxy_log_dir/$file"
+              echo "File deleted: $haproxy_log_dir/$file"
             done
             echo "## deleted ($remove_file_count) haproxy log file(s) from log directory($haproxy_log_dir) ##"
 

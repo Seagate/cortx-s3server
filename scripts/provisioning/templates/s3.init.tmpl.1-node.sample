@@ -22,7 +22,7 @@
 cortx:
   common:
     product_release: "LC"
-    setup_type: "VM"
+    setup_type: "k8"
     storage:
       log: "/var/log/cortx/"
       local: "/etc/cortx"
@@ -31,12 +31,12 @@ cortx:
       admin: "admin"
       secret: "gAAAAABgWFRxlYPfMDe3j03DlE1gDxsr8d7MJ5upQ2k8UC2fCU-kSWlf0tb5M3aBXOxNDnT8Rb_M2b0w9UOgw9CQH-fSKzn6sA=="
       endpoints:
-      - ldap://127.0.0.1:389
-      - ssl://127.0.0.1:636
+      - ldap://openldap-svc:389
+      - ssl://openldap-svc:636
       servers:
-      - localhost
-      - localhost
-      - localhost
+      - openldap-svc
+      - openldap-svc
+      - openldap-svc
   s3:
     auth_secret: "gAAAAABgWFPz2w_t6IBVictZmgTCgBXn5V-oy2JUVtvZkJvHM5KaaZKXRwtz4YKYieIy8mVKF8PUaZ6WYJEttcsi2KDpLOk9Vg=="
     iam:
@@ -49,7 +49,7 @@ cortx:
       - http://s3.seagate.com:80
     internal:
       endpoints:
-      - http://127.0.0.1:28049
+      - http://cortx-io-svc:28049
 cluster:
   id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
   storage_set_count: 1

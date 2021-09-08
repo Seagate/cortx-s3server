@@ -45,6 +45,7 @@ def main():
 
   args = parser.parse_args()
 
+
   # global variables
   global s3_confkeys_store
   global base_config_path
@@ -66,6 +67,7 @@ def main():
     # Get Config entries
     config_key = s3_confkeys_store.get_config\
                      ("CONFIG>CONFSTORE_BASE_CONFIG_PATH")
+
     base_config_path = prov_confkeys_store.get_config(config_key)
     logdir_key = s3_confkeys_store.get_config\
                      ("CONFIG>CONFSTORE_BASE_LOG_PATH")
@@ -84,11 +86,6 @@ def main():
     create_logger_directory(s3_single_entry_log_directory)
     logger = create_logger(s3_single_entry_log_file, s3_single_entry_logger_name, s3_single_entry_log_format)
 
-    # delete the /etc/logrotate.d/haproxy as it is installed by haproxy rpm on all containers
-    filename = "/etc/logrotate.d/haproxy"
-    if os.path.exists(filename):
-      os.remove(filename)
-
     if args.service == 's3server':
       if not args.index:
         raise Exception("provide instance id")
@@ -97,7 +94,7 @@ def main():
       s3configfile = s3_confkeys_store.get_config("S3_CONFIG_FILE").replace("/opt/seagate/cortx", base_config_path)
       logger.info(f"s3configfile : {s3configfile}")
       # create symbolic link for this config file to be used by log rotation
-      create_symbolic_link(s3configfile, s3_confkeys_store.get_confkey("S3_CONF_SYMLINK"))
+      create_symbolic_link(s3configfile, s3_confkeys_store.get_config("S3_CONF_SYMLINK"))
 
       # configure s3server, s3m0trace, s3addb logrotate
       configure_log_rotate("S3_LOGROTATE_S3LOG", "/etc/cron.hourly/")
@@ -108,31 +105,21 @@ def main():
       # start crond
       os.system("/usr/sbin/crond start")
 
-      # Get s3 deamon path for s3 core file.
-      s3_daemon_dir = read_config_value("S3_CONFIG_FILE", "yaml", "S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR")
-      # Enable core dump generation for s3server
-      logger.info("Enabling s3 core dump generation at kernel level...")
-      os.system("sysctl kernel.printk=8")
-      os.system(f"sysctl kernel.core_pattern={s3_daemon_dir}/core-%e.%p")
-      logger.info("Enabled s3 core dump generation...")
-
       #Sys config path
-      sysconfig_path = os.path.join(base_config_path, "s3", machine_id, "sysconfig")
+      sysconfig_path = os.path.join(base_config_path, "s3", "sysconfig",machine_id)
 
       fid_file = "s3server-" + args.index
       fid_path = os.path.join(sysconfig_path, fid_file)
       Fid = get_fid(fid_path)
-      i = 0
-      while i < 10:
-        # Start S3 Server
-        os.system(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3config_path} -d")
-        i += 1
-        time.sleep(60)
 
       logger.info(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3configfile} -d")
       logger.info(f"Starting S3 Server with FID {Fid}...")
-      # Start S3 Server
-      os.system(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3configfile} -d")
+      i = 0
+      while i < 10:
+        # Start S3 Server
+        os.system(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3configfile} -d")
+        i += 1
+        time.sleep(60)
 
       # Read the log directory path from s3config file
       s3_log_dir = read_config_value("S3_CONFIG_FILE", "yaml", "S3_SERVER_CONFIG>S3_LOG_DIR")
@@ -159,6 +146,9 @@ def main():
       # Print last few line of S3 authserver log  file
       os.system(f"tail -f {s3_auth_server_log_file_path}")
     elif args.service == 's3bgproducer':
+      # Uncomment below two lines if you want return bgdelete schedule timings.
+      # os.system("sed -i -e \"s,scheduler_schedule_interval:.*,scheduler_schedule_interval:\ 120,\" /etc/cortx/s3/s3backgrounddelete/config.yaml")
+      # os.system("sed -i -e \"s,leak_processing_delay_in_mins:.*,leak_processing_delay_in_mins:\ 2,\" /etc/cortx/s3/s3backgrounddelete/config.yaml")
       # Start S3 Background Producer
       logger.info(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh")
       logger.info(f"Starting S3 Background delete Producer...")
@@ -183,10 +173,15 @@ def main():
       # Print last few line of S3 bgdelete consumer log  file
       os.system(f"tail -f {s3_bgdelete_consumer_log_file_path}")
     elif args.service == 'haproxy':
+      haproxy_log_path = os.path.join(base_logdir_path, 's3', machine_id, 'haproxy/haproxy.log')
+      logger.info(f"haproxy_log_path: {haproxy_log_path}")
+      # create haproxy log directory path if does not exist
+      os.makedirs(os.path.dirname(haproxy_log_path), exist_ok=True)
+      # create empty haproxy log file
+      with open(haproxy_log_path, 'w') as fp:
+          pass
       # create symbolic link for this config file to be used by log rotation
-      s3_haproxy_config_file = os.path.join(base_config_path, s3_confkeys_store.get_config("S3_HAPROXY_LOG_CONFIG_FILE"))
-      logger.info(f"s3_haproxy_config_file : {s3_haproxy_config_file}")
-      create_symbolic_link(s3_haproxy_config_file, s3_confkeys_store.get_confkey("S3_HAPROXY_SYSCONF_SYMLINK"))
+      create_symbolic_link(haproxy_log_path,s3_confkeys_store.get_config("S3_HAPROXY_LOG_SYMLINK"))
 
       # configure haproxy logrotate
       configure_log_rotate("S3_LOGROTATE_HAPROXY_ROLLOVER", "/etc/cron.daily/")
@@ -195,16 +190,12 @@ def main():
       os.system("/usr/sbin/crond start")
 
       # Start haproxy
-      logger.info(f"sh /opt/seagate/cortx/s3/bin/starthaproxy.sh {base_config_path}")
+      logger.info(f"sh /opt/seagate/cortx/s3/bin/starthaproxy.sh {base_config_path} {haproxy_log_path}")
       logger.info(f"Starting HAProxy...")
-      os.system(f"sh /opt/seagate/cortx/s3/bin/starthaproxy.sh {base_config_path}")
+      os.system(f"sh /opt/seagate/cortx/s3/bin/starthaproxy.sh {base_config_path} {haproxy_log_path}")
 
-      # Read the log directory path from haproxy config file (e.g /etc/cortx/s3/sysconfig/haproxy)
-      s3_haproxy_log_path = read_config_value(s3_haproxy_config_file, "properties", "LOG_FILE")
-      logger.info(f"s3_haproxy_log_path : {s3_haproxy_log_path}")
-
-      # Print last few line of S3 bgdelete consumer log  file
-      os.system(f"tail -f {s3_haproxy_log_path}")
+      # Print last few line of S3 HAProxy log  file
+      os.system(f"tail -f {haproxy_log_path}")
     else:
       logger.error(f"Invalid argument {args.service}")
   except Exception as e:
