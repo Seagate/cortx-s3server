@@ -35,7 +35,7 @@ class S3CortxConfStore:
     self.default_index = index
 
     if config is not None:
-      self.validate_configfile(config)
+      # self.validate_configfile(config)
       self.load_config(self.default_index, self.config_file)
 
   @staticmethod
