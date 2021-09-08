@@ -93,6 +93,8 @@ class S3PostCompleteAction : public S3ObjectAction {
   std::vector<struct m0_uint128> new_obj_oids;
   // List of part object oids belong to old object
   std::vector<struct m0_uint128> old_obj_oids;
+  std::vector<struct m0_fid> old_obj_pvids;
+  std::vector<int> old_obj_layout_ids;
 
   // Probable delete record for object parts
   std::vector<std::unique_ptr<S3ProbableDeleteRecord>>

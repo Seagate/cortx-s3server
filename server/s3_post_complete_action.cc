@@ -574,6 +574,8 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
           part_list_index_oid = multipart_metadata->get_part_index_layout().oid;
           old_oid = old_object_oid;
         }
+        old_obj_pvids.push_back(part_entry[0].PVID);
+        old_obj_layout_ids.push_back(part_entry[0].layout_id);
 
         s3_log(S3_LOG_DEBUG, request_id,
                "Adding part object, with oid [%" SCNx64 " : %" SCNx64
@@ -653,6 +655,8 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
         kv_list[probable_rec->get_key()] = probable_rec->to_json();
         old_obj_oids.push_back(probable_rec->get_current_object_oid());
       }
+      assert(old_obj_oids.size() == old_obj_pvids.size());
+      assert(old_obj_oids.size() == old_obj_layout_ids.size());
       if (!kv_list.empty()) {
         // S3 Background delete will delete old object parts, when current
         // object metadata has
@@ -1013,7 +1017,7 @@ void S3PostCompleteAction::mark_old_oid_for_deletion() {
 }
 
 void S3PostCompleteAction::delete_old_object() {
-
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   if (!motr_writer) {
     motr_writer = motr_writer_factory->create_motr_writer(request);
   }
@@ -1034,11 +1038,14 @@ void S3PostCompleteAction::delete_old_object() {
   size_t object_count = old_obj_oids.size();
   if (object_count > 0) {
     struct m0_uint128 old_oid = old_obj_oids.back();
+    struct m0_fid pvid = old_obj_pvids.back();
+    int layout_id = old_obj_layout_ids.back();
     motr_writer->set_oid(old_oid);
     motr_writer->delete_object(
         std::bind(&S3PostCompleteAction::delete_old_object_success, this),
-        std::bind(&S3PostCompleteAction::next, this), old_oid, layout_id,
-        object_metadata->get_pvid());
+        std::bind(&S3PostCompleteAction::next, this), old_oid, layout_id, pvid);
+  } else {
+    next();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -1055,6 +1062,8 @@ void S3PostCompleteAction::delete_old_object_success() {
          "[%" SCNx64 " : %" SCNx64 "]",
          (old_obj_oids.back()).u_hi, (old_obj_oids.back()).u_lo);
   old_obj_oids.pop_back();
+  old_obj_pvids.pop_back();
+  old_obj_layout_ids.pop_back();
 
   if (old_obj_oids.size() > 0) {
     delete_old_object();

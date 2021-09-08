@@ -334,8 +334,7 @@ void S3PutMultiObjectAction::_set_layout_id(int layout_id) {
 void S3PutMultiObjectAction::create_part_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
   s3_timer.start();
-  motr_writer = motr_writer_factory->create_motr_writer(
-      request, new_object_oid, object_multipart_metadata->get_pvid(), 0);
+  motr_writer = motr_writer_factory->create_motr_writer(request);
   _set_layout_id(S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
       request->get_content_length()));
   motr_writer->set_layout_id(layout_id);
