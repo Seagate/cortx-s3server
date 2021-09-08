@@ -27,7 +27,8 @@ set -e
 # 2. Updates encrypted password in given authserver.properites file
 # 3. Updates ldap password if provided by user
 
-USAGE="USAGE: bash $(basename "$0") -l <ldap passwd>
+USAGE="USAGE: bash $(basename "$0") -t <host to configure>
+          -l <ldap passwd>
           -p <authserver.properties file path>
           -c <new ldap password to be set>  [-h]
 
@@ -36,18 +37,17 @@ provide either of -l and -c according to requirement, -p is mandatory.
 in case of change of ldap password, restart slapd after this script.
 "
 
-if [ "$#" -ne 4 ]; then
-    echo "$USAGE"
-    exit 1
-fi
-
 ldap_passwd=
 auth_properties=
 change_ldap_passwd=false
+hostname=
 
 # read the options
-while getopts ":l:p:c:h:" o; do
+while getopts ":t:l:p:c:h:" o; do
     case "${o}" in
+        t)
+            hostname=${OPTARG}
+            ;;
         l)
             ldap_passwd=${OPTARG}
             ;;
@@ -71,6 +71,11 @@ if [ ! command -v s3cipher &>/dev/null ]; then
     exit 1
 fi
 
+if [ -z $auth_properties ]; then
+    echo "AuthServer properties file not specified."
+    exit 1
+fi
+
 if [ ! -e $auth_properties ]; then
     echo "$auth_properties file does not exists."
     exit 1
@@ -81,7 +86,10 @@ if [ -z $ldap_passwd ]; then
     echo "$USAGE"
     exit 1
 fi
-
+#if host not specified then use localhost
+if [ -z $hostname ]; then
+    hostname=$HOSTNAME
+fi
 
 # generate encrypted password for ldap admin
 if [ "$change_ldap_passwd" = true ] ; then
@@ -92,7 +100,7 @@ if [ "$change_ldap_passwd" = true ] ; then
     cp -f change_ldap_passwd.ldif $ADMIN_USERS_FILE
     sed -i "$EXPR" $ADMIN_USERS_FILE
     # Setup iam admin and necessary permissions
-    ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ldap_passwd" -f "$ADMIN_USERS_FILE"
+    ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ldap_passwd" -f "$ADMIN_USERS_FILE" -h "$hostname"
     rm -f $ADMIN_USERS_FILE
     echo -e "\n OpenLdap password Updated Successfully,You need to Restart Slapd"
 fi
