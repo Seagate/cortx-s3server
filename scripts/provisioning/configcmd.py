@@ -327,7 +327,7 @@ class ConfigCmd(SetupCmd):
     self.logger.info(f'Key {motr_max_units_per_request_key} updated successfully in {s3configfile}')
 
     # update log path
-    s3_log_path = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_BASE_LOG_PATH'))
+    s3_log_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_LOG_PATH')
     s3_log_path = os.path.join(s3_log_path, "s3")
     self.logger.info(f's3_log_path: {s3_log_path}')
     s3_log_path_key  = 'S3_SERVER_CONFIG>S3_LOG_DIR'
@@ -351,7 +351,7 @@ class ConfigCmd(SetupCmd):
     s3configfileconfstore = S3CortxConfStore(f'{config_file_type}://{configfile}', 'update_config_file_idx' + key_to_update)
     
     # get the value to be updated from provisioner config for given key
-    value_to_update = self.get_confvalue(self.get_confkey(key_to_read))
+    value_to_update = self.get_confvalue_with_defaults(key_to_read)
     self.logger.info(f'{key_to_read}: {value_to_update}')
 
     # set the config value in to config file
@@ -400,7 +400,7 @@ class ConfigCmd(SetupCmd):
     # load s3 auth config file 
     s3configfileconfstore = S3CortxConfStore(f'properties://{s3auth_configfile}', 'update_s3_auth_config')
 
-    s3_auth_base_log_path = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_BASE_LOG_PATH'))
+    s3_auth_base_log_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_LOG_PATH')
     # update log path
     s3_auth_log_path = os.path.join(s3_auth_base_log_path, "auth/server")
     self.logger.info(f's3_auth_log_path: {s3_auth_log_path}')
@@ -431,8 +431,8 @@ class ConfigCmd(SetupCmd):
     s3configfileconfstore = S3CortxConfStore(f'yaml://{bgdelete_configfile}', 'update_bgdelete_endpoint')
 
     # get the bgdelete endpoints from the config file
-    bgdelete_endpoint = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_S3_BGDELETE_ENDPOINT'))
-    bgdelete_port = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_S3_BGDELETE_PORT'))
+    bgdelete_endpoint = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_S3_BGDELETE_ENDPOINT')
+    bgdelete_port = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_S3_BGDELETE_PORT')
     bgdelete_url = "http://" + bgdelete_endpoint + ":" + bgdelete_port
     self.logger.info(f'bgdelete_url: {bgdelete_url}')
 
@@ -441,7 +441,7 @@ class ConfigCmd(SetupCmd):
     s3configfileconfstore.set_config(endpoint_key, bgdelete_url, True)
     self.logger.info(f'Key {endpoint_key} updated successfully in {bgdelete_configfile}')
 
-    s3_bgdelete_base_log_path = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_BASE_LOG_PATH'))
+    s3_bgdelete_base_log_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_LOG_PATH')
     # update log path
     s3_bgdelete_log_path = os.path.join(s3_bgdelete_base_log_path, "s3/s3backgrounddelete")
     self.logger.info(f's3_bgdelete_log_path: {s3_bgdelete_log_path}')
