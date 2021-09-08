@@ -17,3 +17,10 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+cortx:
+  software:
+    base_log_path: "/var/log/cortx"
+    base_config_path: "/etc/cortx"
+    shared_base_log_path: "/shared/var/log/cortx"
+    shared_base_config_path: "/shared/etc/cortx"
+
