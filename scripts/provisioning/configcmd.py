@@ -111,9 +111,9 @@ class ConfigCmd(SetupCmd):
         'CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY').replace("cluster-id", self.cluster_id))
     index = 0
     while index < int(storage_set_count):
-      server_nodes_list = self.get_confkey(
+      server_nodes_list_key = self.get_confkey(
         'CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("cluster-id", self.cluster_id).replace("storage-set-count", str(index))
-      server_nodes_list = self.get_confvalue(server_nodes_list)
+      server_nodes_list = self.get_confvalue(server_nodes_list_key)
       if type(server_nodes_list) is str:
         # list is stored as string in the confstore file
         server_nodes_list = literal_eval(server_nodes_list)
