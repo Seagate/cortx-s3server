@@ -35,7 +35,7 @@ systemctl stop slapd 2>/dev/null
 yum remove -y openldap-servers openldap-clients || /bin/true
 yum remove -y symas-openldap symas-openldap-servers symas-openldap-clients
 
-rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
+rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{2\}s3user.ldif
 rm -rf /var/lib/ldap/*
 rm -f /etc/sysconfig/slapd* 2>/dev/null || /bin/true
 rm -f /etc/openldap/slapd* 2>/dev/null || /bin/true

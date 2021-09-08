@@ -17,12 +17,11 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# IMP : for upgrade cmd,
-# merge_configs() is imported from the merge.py
+# IMP : for preupgrade and postupgrade cmd,
+# merge_configs() is imported from the merge_pre_post.py
 
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 import os.path
-import shutil
 import sys
 import logging
 
@@ -33,13 +32,12 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
     Iterate over all parameters sample.new file
     for every parameter, check
     - if it is marked as 'unsafe' in attributes file, skip
-    - if it marked as 'safe' in the attributes file  
+    - if it marked as 'safe' in the attributes file
         - diff the value in config and sample.old - if it is changed, skip
         - if it is not changed,  we will overwrite the value in cfg file from sample.new
         - if it does not exist in cfg file add the value from sample.new file to cfg file
     - All the arrays in yaml are always overwritten
     """
-
     #If config file is not present then abort merging.
     if not os.path.isfile(configFile):
         logger.error(f'config file {configFile} does not exist')
@@ -88,8 +86,7 @@ def upgrade_config(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeA
     cs_conf_file.save_config()
     logger.info(f'config file {str(configFile)} upgrade completed')
 
-def merge_configs(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeAttributesFile:str, filetype:str):
-
+def merge_configs(config_file_path: str, s3_tmp_dir):
     """
     - This function will merge all S3 config files during upgrade
     - This function should be used outside this file to call configs upgrade
@@ -97,7 +94,50 @@ def merge_configs(configFile:str, oldSampleFile:str, newSampleFile:str, unsafeAt
     # Use existing s3-deployment-logger or setup new console logger
     setup_logger()
 
-    upgrade_config(configFile, oldSampleFile, newSampleFile, unsafeAttributesFile, filetype)
+    g_upgrade_items = {
+    's3' : {
+            'configFile' : os.path.join(config_file_path, "s3/conf/s3config.yaml"),
+            'oldSampleFile' : os.path.join(s3_tmp_dir, "s3config.yaml.sample.old"),
+            'newSampleFile' : os.path.join(config_file_path, "s3/conf/s3config.yaml.sample"),
+            'unsafeAttributesFile' : os.path.join(config_file_path, "s3/conf/s3config_unsafe_attributes.yaml"),
+            'fileType' : 'yaml://'
+        },
+        'auth' : {
+            'configFile' : os.path.join(config_file_path, "auth/resources/authserver.properties"),
+            'oldSampleFile' : os.path.join(s3_tmp_dir, "authserver.properties.sample.old"),
+            'newSampleFile' : os.path.join(config_file_path, "auth/resources/authserver.properties.sample"),
+            'unsafeAttributesFile' : os.path.join(config_file_path, "auth/resources/authserver_unsafe_attributes.properties"),
+            'fileType' : 'properties://'
+        },
+        'keystore' : {
+            'configFile' : os.path.join(config_file_path, "auth/resources/keystore.properties"),
+            'oldSampleFile' : os.path.join(s3_tmp_dir,"keystore.properties.sample.old"),
+            'newSampleFile' : os.path.join(config_file_path, "auth/resources/keystore.properties.sample"),
+            'unsafeAttributesFile' : os.path.join(config_file_path, "auth/resources/keystore_unsafe_attributes.properties"),
+            'fileType' : 'properties://'
+        },
+        'bgdelete' : {
+            'configFile' : os.path.join(config_file_path, "s3/s3backgrounddelete/config.yaml"),
+            'oldSampleFile' : os.path.join(s3_tmp_dir, "config.yaml.sample.old"),
+            'newSampleFile' : os.path.join(config_file_path, "s3/s3backgrounddelete/config.yaml.sample"),
+            'unsafeAttributesFile' : os.path.join(config_file_path, "s3/s3backgrounddelete/s3backgrounddelete_unsafe_attributes.yaml"),
+            'fileType' : 'yaml://'
+        },
+        'cluster' : {
+            'configFile' : os.path.join(config_file_path, "s3/s3backgrounddelete/s3_cluster.yaml"),
+            'oldSampleFile' : os.path.join(s3_tmp_dir, "s3_cluster.yaml.sample.old"),
+            'newSampleFile' : os.path.join(config_file_path, "s3/s3backgrounddelete/s3_cluster.yaml.sample"),
+            'unsafeAttributesFile' : os.path.join(config_file_path, "s3/s3backgrounddelete/s3_cluster_unsafe_attributes.yaml"),
+            'fileType' : 'yaml://'
+        }
+    }
+
+    for upgrade_item in g_upgrade_items:
+        upgrade_config(g_upgrade_items[upgrade_item]['configFile'],
+            g_upgrade_items[upgrade_item]['oldSampleFile'],
+            g_upgrade_items[upgrade_item]['newSampleFile'],
+            g_upgrade_items[upgrade_item]['unsafeAttributesFile'],
+            g_upgrade_items[upgrade_item]['fileType'])
 
 def setup_logger():
     """
@@ -121,4 +161,6 @@ def setup_logger():
         logger.addHandler(chandler)
 
 if __name__ == "__main__":
-    merge_configs()
+    config_file_path = "/etc/cortx"
+    s3_tmp_dir = os.path.join(config_file_path, "s3/tmp")
+    merge_configs(config_file_path, s3_tmp_dir)

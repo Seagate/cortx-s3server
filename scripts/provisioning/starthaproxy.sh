@@ -20,26 +20,17 @@
 
 set -e -x
 
-if [ $# -ne 1 ]
+if [ $# -ne 2 ]
 then
   echo "Invalid number of arguments passed to the script"
-  echo "Usage: starthaproxy.sh <haproxy config path>"
+  echo "Usage: starthaproxy.sh <config path> <log path>"
   exit 1
 fi
 
-haproxy_config_path=$1
+base_config_path=$1
+haproxy_log_path=$2
 
-log_file_source_path="$haproxy_config_path/s3/sysconfig/haproxy"
-haproxy_cfg_file_path="$haproxy_config_path/s3/haproxy.cfg"
-
-source "$log_file_source_path"
-if [ -z "$LOG_FILE" ]; then
-  echo 'LOG_FILE is not specified.'
-  exit 1
-fi
-
-# Create log dir
-mkdir -p "$(dirname "$LOG_FILE")"
+haproxy_cfg_file_path="$base_config_path/s3/haproxy.cfg"
 
 # Run the configured haproxy
-/usr/sbin/haproxy -Ws -f $haproxy_cfg_file_path -p /run/haproxy.pid 1>>"$LOG_FILE" 2>&1
+/usr/sbin/haproxy -Ws -f $haproxy_cfg_file_path -p /run/haproxy.pid 1>>"$haproxy_log_path" 2>&1
