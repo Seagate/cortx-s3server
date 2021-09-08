@@ -137,11 +137,13 @@ cp scripts/provisioning/resetcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/preparecmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/preupgradecmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/postupgradecmd.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/upgradecmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/setupcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/s3_haproxy_config.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/starthaproxy.sh $S3_INSTALL_LOCATION/bin
 cp scripts/ldap/ldapaccountaction.py $S3_INSTALL_LOCATION/bin
 cp -f scripts/swupdate/merge.py $S3_INSTALL_LOCATION/bin
+cp -f scripts/swupdate/merge_pre_post.py $S3_INSTALL_LOCATION/bin
 cp -f scripts/env/common/third-party-rpms.txt $S3_INSTALL_LOCATION/bin
 
 # Copy the mini-provisioner config files
@@ -293,16 +295,20 @@ cp -f scripts/ldap/rsyslog.d/slapdlog.conf $S3_INSTALL_LOCATION/install/ldap/rsy
 cp -f scripts/ldap/s3slapdindex.ldif $S3_INSTALL_LOCATION/install/ldap/
 
 cp -f scripts/ldap/cfg_ldap.ldif $S3_INSTALL_LOCATION/install/ldap/
-cp -f scripts/ldap/cn={1}s3user.ldif $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/cn=s3user.ldif $S3_INSTALL_LOCATION/install/ldap/
+
 cp -f scripts/ldap/iam-admin-access.ldif $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/s3-iam-admin-access.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/iam-admin.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/iam-constraints.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/ldap-init.ldif $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/s3-ldap-init.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/olcDatabase={2}mdb.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/ppolicy-default.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/ppolicymodule.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/ppolicyoverlay.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/setup_ldap.sh $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/s3_setup_ldap.sh $S3_INSTALL_LOCATION/install/ldap/
 
 # Copy the auth server startup script.
 cp startauth.sh $AUTH_INSTALL_LOCATION/

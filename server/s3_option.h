@@ -151,7 +151,6 @@ class S3Option {
   unsigned int motr_reconnect_retry_count;
   unsigned int motr_reconnect_sleep_time;
   unsigned int motr_init_max_timeout;
-
   unsigned bucket_metadata_cache_max_size;
   unsigned bucket_metadata_cache_expire_sec;
   unsigned bucket_metadata_cache_refresh_sec;
