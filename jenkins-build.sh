@@ -503,9 +503,9 @@ if [ $use_http_client -eq 1 ]
 then
   $USE_SUDO sed -i 's/S3_ENABLE_AUTH_SSL:.*$/S3_ENABLE_AUTH_SSL: false/g' /opt/seagate/cortx/s3/conf/s3config.yaml
   $USE_SUDO sed -i 's/S3_AUTH_PORT:.*$/S3_AUTH_PORT: 28051/g' /opt/seagate/cortx/s3/conf/s3config.yaml
-  $USE_SUDO sed -i 's/enableSSLToLdap=.*$/enableSSLToLdap=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
-  $USE_SUDO sed -i 's/enable_https=.*$/enable_https=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
-  $USE_SUDO sed -i 's/enableHttpsToS3=.*$/enableHttpsToS3=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
+  s3confstore "properties:///opt/seagate/cortx/auth/resources/authserver.properties" setkey --key enableSSLToLdap --value false
+  s3confstore "properties:///opt/seagate/cortx/auth/resources/authserver.properties" setkey --key enable_https --value false
+  s3confstore "properties:///opt/seagate/cortx/auth/resources/authserver.properties" setkey --key enableHttpsToS3 --value false
 fi
 
 # Configuration setting for ipv6 connection
@@ -558,7 +558,7 @@ cd $S3_BUILD_DIR
           -p /opt/seagate/cortx/auth/resources/authserver.properties
 
 # Enable fault injection in AuthServer
-$USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=true/g' /opt/seagate/cortx/auth/resources/authserver.properties
+s3confstore "properties:///opt/seagate/cortx/auth/resources/authserver.properties" setkey --key enableFaultInjection --value true
 
 # copy all the config/resource files of auth server to /etc/cortx directory
 echo "Copy all authserver resources file to /etc/cortx"
@@ -682,7 +682,7 @@ fi
 ./runalltest.sh $runalltest_options || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
 
 # Disable fault injection in AuthServer
-$USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=false/g' /opt/seagate/cortx/auth/resources/authserver.properties
+s3confstore "properties:///etc/cortx/auth/resources/authserver.properties" setkey --key enableFaultInjection --value false
 
 $USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
 
