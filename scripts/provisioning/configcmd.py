@@ -35,6 +35,7 @@ from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 from s3_haproxy_config import S3HaproxyConfig
 from ldapaccountaction import LdapAccountAction
 
+
 class ConfigCmd(SetupCmd):
   """Config Setup Cmd."""
   name = "config"
