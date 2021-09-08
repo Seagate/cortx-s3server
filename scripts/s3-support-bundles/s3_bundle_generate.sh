@@ -81,15 +81,9 @@ s3_bundle_location=$bundle_path/s3
 
 haproxy_config="/etc/haproxy/haproxy.cfg"
 # Collecting rotated logs for haproxy and ldap along with live log
-haproxy_status_log="/var/log/cortx/haproxy-status.log"
-haproxy_log="/var/log/cortx/haproxy.log"
-ldap_log="/var/log/cortx/slapd.log"
-
 haproxy_log="$base_log_file_path/haproxy.log"
 haproxy_status_log="$base_log_file_path/haproxy-status.log"
-
-haproxy_sysconfig=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="S3_HAPROXY_SYSCONF_SYMLINK")
-haproxy_sysconfig_log_file=$(s3confstore "properties://$haproxy_sysconfig" getkey --key="LOG_FILE")
+haproxy_log_k8s=$(s3confstore "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml" getkey --key="S3_HAPROXY_LOG_SYMLINK")
 
 s3server_config="$base_config_file_path/s3/conf/s3config.yaml"
 authserver_config="$base_config_file_path/auth/resources/authserver.properties"
@@ -122,7 +116,8 @@ first_s3_m0trace_file="$tmp_dir/first_s3_m0trace_file"
 m0trace_files_count=5
 s3_core_files_max_count=11
 max_allowed_core_size=10737418240 #e.g 10GB byte value
-compress_core_file=true
+compress_core_file=false
+debug_rpm_local_dir="/opt/seagate/cortx/debug-packages"
 
 # LDAP data
 ldap_dir="$tmp_dir/ldap"
@@ -158,7 +153,7 @@ s3_core_dir=$(s3confstore "yaml://$s3server_config" getkey --key="S3_SERVER_CONF
 collect_core_files(){
   echo "Collecting core files..."
   # core_filename_pattern="core-s3server.*.gz"
-  core_filename_pattern="core-s3server.*"
+  core_filename_pattern="core.*"
   mkdir -p $s3_core_files
   cwd=$(pwd)
   if [ ! -d "$s3_core_dir" ];
@@ -168,7 +163,7 @@ collect_core_files(){
 
   cd $s3_core_dir
   # get recent modified core files from directory
-  (ls -t $core_filename_pattern 2>/dev/null | head -$s3_core_files_max_count) | xargs -I '{}' cp '{}' $s3_core_files
+  (find . -name $core_filename_pattern 2>/dev/null | head -$s3_core_files_max_count) | xargs -I '{}' cp '{}' $s3_core_files
 
   # check for empty directory for core files
   if [ -z "$(ls -A $s3_core_files)" ];
@@ -333,12 +328,23 @@ then
     args+=($s3deployment_log*)
 fi
 
+# install debug rpms
+if [[ "$compress_core_file" == false  && -d "$debug_rpm_local_dir" ]];
+then
+    cd "$debug_rpm_local_dir"
+    yum install -y cortx*debuginfo*.rpm > /dev/null
+    cd -
+fi
+
 # Collect s3 core files if available
 collect_core_files
 if [ -d "$s3_core_files" ];
 then
     args+=($s3_core_files)
 fi
+
+# remove debug rpms
+rpm -qa | grep "cortx" | grep "debuginfo" | xargs yum remove -y > /dev/null
 
 collect_first_m0trace_file
 if [ -d "$first_s3_m0trace_file" ];
@@ -567,4 +573,3 @@ tar -cvJf $s3_bundle_location/$bundle_name "${args[@]}" --warning=no-file-change
 cleanup_tmp_files
 
 echo "S3 support bundle generated successfully at $s3_bundle_location/$bundle_name !!!"
-
