@@ -19,7 +19,7 @@
 # This file should only contain the mandatory parameters from provisioner confstore.
 # All the optional parameters should be added to default in s3_prov_config.yaml under DEFAULT_CONFIG.
 
-server_node:
+node:
   TMPL_MACHINE_ID_1:
     cluster_id: "TMPL_CLUSTER_ID"
     hostname: "TMPL_HOSTNAME_1"
@@ -42,22 +42,19 @@ server_node:
         public_fqdn: "srvnode-3.data.public"
         private_fqdn: "srvnode-3.data.private"
 cortx:
-  software:
+  external:
     openldap:
-      root:
-        user: "admin"
-        secret: "TMPL_ROOT_SECRET_KEY"
-      sgiam:
-        user: "sgiamadmin"
-        secret: "TMPL_SGIAM_SECRET_KEY"
-    s3:
-      io:
-#       max_units : "8"       #commenting this to validate the default values from s3_prov_config.yaml.
-      service:
-        instances : "1"
+      admin: "admin"
+      secret: "TMPL_ROOT_SECRET_KEY"
+  s3:
+    auth:
+      admin: "sgiamadmin"
+      secret: "TMPL_SGIAM_SECRET_KEY"
+    io_max_units:
+    service_instances: "1"
 cluster:
   TMPL_CLUSTER_ID:
     site:
       storage_set_count: "1"
     storage_set:
-    - server_nodes: "['TMPL_MACHINE_ID_1', 'TMPL_MACHINE_ID_2', 'TMPL_MACHINE_ID_3']"
+    - nodes: "['TMPL_MACHINE_ID_1', 'TMPL_MACHINE_ID_2', 'TMPL_MACHINE_ID_3']"

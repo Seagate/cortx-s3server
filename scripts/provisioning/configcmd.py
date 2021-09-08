@@ -118,7 +118,7 @@ class ConfigCmd(SetupCmd):
         # list is stored as string in the confstore file
         server_nodes_list = literal_eval(server_nodes_list)
       for node_machine_id in server_nodes_list:
-          host_name = self.get_confvalue(f'server_node>{node_machine_id}>hostname')
+          host_name = self.get_confvalue(f'node>{node_machine_id}>hostname')
           cmd = ['/opt/seagate/cortx/s3/install/ldap/s3_setup_ldap.sh',
                  '--hostname',
                  f'{host_name}',
