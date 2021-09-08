@@ -111,7 +111,7 @@ DEFAULT_CONFIG:
   CONFSTORE_S3_ENABLE_STATS: false
   CONFSTORE_S3_AUDIT_LOGGER: "disabled"
   CONFSTORE_S3_AUTHSERVER_DEFAULT_ENDPOINT: "127.0.0.1"
-  CONFSTORE_S3_BGDEL_BIND_ADDR: "127.0.0.1"
+  CONFSTORE_S3_BGDEL_BIND_ADDR: "0.0.0.0"
   CONFSTORE_S3_AUTHSERVER_HTTP_PORT: "28050"
   CONFSTORE_S3_AUTHSERVER_HTTPS_PORT: "28051"
   CONFSTORE_S3_AUTHSERVER_IAM_AUDITLOG: "disabled"
@@ -139,6 +139,7 @@ CONFSTORE_OPENLDAP_CONST_KEY: "cortx"
 LDAP_MDB_LOCATION: "/var/lib/ldap"
 VALIDATION_PREREQ_FILE: "/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
 TMP_DIR: "/etc/cortx/s3/tmp"
+CONFSTORE_SITE_COUNT_KEY: "cluster>cluster-id>site_count"
 
 # S3 config files
 S3_CONFIG_FILE: "/opt/seagate/cortx/s3/conf/s3config.yaml"
@@ -147,7 +148,6 @@ S3_KEYSTORE_CONFIG_FILE: "/opt/seagate/cortx/auth/resources/keystore.properties"
 S3_BGDELETE_CONFIG_FILE: "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
 S3_CLUSTER_CONFIG_FILE: "/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"
 S3_HAPROXY_ERROR_CONFIG_FILE: "/opt/seagate/cortx/s3/install/haproxy/503.http"
-S3_HAPROXY_LOG_CONFIG_FILE: "s3/sysconfig/haproxy"
 
 # S3 sample config files
 S3_CONFIG_SAMPLE_FILE: "/opt/seagate/cortx/s3/conf/s3config.yaml.sample"
@@ -176,5 +176,5 @@ S3_LOGROTATE_ADDB: "/opt/seagate/cortx/s3/install/logrotate/s3addblogfilerollove
 # S3 config file symbolic link path
 S3_CONF_SYMLINK: "/opt/seagate/cortx/s3/install/logrotate/s3config.yaml"
 
-# HAProxy sysconfig file symbolic link path
-S3_HAPROXY_SYSCONF_SYMLINK: "/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy_sysconfig.conf"
+# HAProxy log file symbolic link
+S3_HAPROXY_LOG_SYMLINK: "/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy.log"

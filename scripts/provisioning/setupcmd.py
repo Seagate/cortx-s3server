@@ -69,7 +69,6 @@ class SetupCmd(object):
     self.cluster_id = None
     self.base_config_file_path = "/etc/cortx"
     self.base_log_file_path = "/var/log/cortx"
-
     self.ldap_user = "sgiamadmin"
 
     self.services = services

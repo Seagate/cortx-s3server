@@ -230,11 +230,12 @@ collect_m0trace_files(){
   echo "Collecting m0trace files dump..."
   m0trace_filename_pattern="m0trace.*"
 
-  tmpr_dir="$tmp_dir/m0traces_tmp"
+  dir="$base_log_file_path/motr"
+  tmpr_dir="$tmp_dir/m0trraces_tmp"
   cwd=$(pwd)
   # if $base_log_file_path/motr missing then return
 
-  if [ ! -d "$s3_motr_dir" ];
+  if [ ! -d "$dir" ];
   then
       return;
   fi

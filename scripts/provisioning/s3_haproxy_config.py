@@ -170,6 +170,7 @@ class S3HaproxyConfig:
 
     return confkey_value
 
+
   def process(self):
 
     self.local_confstore = S3CortxConfStore(
