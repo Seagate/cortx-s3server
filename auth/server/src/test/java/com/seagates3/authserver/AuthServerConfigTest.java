@@ -89,6 +89,7 @@ public class AuthServerConfigTest {
 
         assertFalse(AuthServerConfig.isPerfEnabled());
 
+
         assertEquals("/var/log/cortx/auth/perf.log",
                      AuthServerConfig.getPerfLogFile());
 

@@ -26,7 +26,7 @@ class AuthServerConstants {
   final static String INSTALL_DIR = "/opt/seagate/cortx/auth";
 
  public
-  final static String RESOURCE_DIR = "/opt/seagate/cortx/auth/resources";
+  static String RESOURCE_DIR = "/opt/seagate/cortx/auth/resources";
 
  public
   final static int MAX_AND_DEFAULT_ROOT_USER_DURATION = 3600;
@@ -45,4 +45,9 @@ class AuthServerConstants {
 
  public
   final static String TEMPORARY_KEY_PREFIX = "ASIA";
+
+ public
+  static void setResourceDir(String basePath) {
+    AuthServerConstants.RESOURCE_DIR = basePath + "/auth/resources";
+  }
 }
