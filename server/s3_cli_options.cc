@@ -21,7 +21,7 @@
 #include "s3_cli_options.h"
 #include "s3_option.h"
 
-DEFINE_string(s3config, "/opt/seagate/cortx/s3/conf/s3config.yaml",
+DEFINE_string(s3config, "/etc/cortx/s3/conf/s3config.yaml",
               "S3 server config file");
 
 DEFINE_string(s3layoutmap,
@@ -53,7 +53,7 @@ DEFINE_int32(motrlayoutid, 9, "For options please see the readme");
 DEFINE_string(motrprofilefid, "<0x7000000000000001:0>", "Motr profile FID");
 DEFINE_string(motrprocessfid, "<0x7200000000000000:0>", "Motr process FID");
 
-DEFINE_string(authhost, "ipv4:127.0.0.1", "Auth server host");
+DEFINE_string(authhost, "127.0.0.1", "Auth server host");
 DEFINE_int32(authport, 8095, "Auth server port");
 DEFINE_bool(disable_auth, false, "Disable authentication");
 DEFINE_bool(getoid, false, "Enable getoid in S3 request for testing");
@@ -87,15 +87,20 @@ int parse_and_load_config_options(int argc, char **argv) {
   // Create the initial options object with default values.
   S3Option *option_instance = S3Option::get_instance();
 
+  // Override with options set on command line
+  gflags::CommandLineFlagInfo flag_info;
+
+  // get the s3 config file
+  gflags::GetCommandLineFlagInfo("s3config", &flag_info);
+  if (!flag_info.is_default) {
+    option_instance->set_option_file(flag_info.current_value.c_str());
+  }
+
   // load the configurations from config file.
-  option_instance->set_option_file(FLAGS_s3config);
   bool force_override_from_config = true;
   if (!option_instance->load_all_sections(force_override_from_config)) {
     return -1;
   }
-
-  // Override with options set on command line
-  gflags::CommandLineFlagInfo flag_info;
 
   gflags::GetCommandLineFlagInfo("s3hostv4", &flag_info);
   if (!flag_info.is_default) {
