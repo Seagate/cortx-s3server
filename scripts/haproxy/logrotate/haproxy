@@ -2,8 +2,8 @@
 /var/log/cortx/haproxy-status.log
 {
     daily
-    rotate 10
-    size 10M
+    rotate 5
+    size 5M
     missingok
     notifempty
     compress

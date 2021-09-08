@@ -170,6 +170,7 @@ class S3HaproxyConfig:
 
     return confkey_value
 
+
   def process(self):
 
     self.local_confstore = S3CortxConfStore(
@@ -182,7 +183,7 @@ class S3HaproxyConfig:
 
     if ("K8" == setup_type) :
       self.configure_haproxy_k8()
-    else :
+    else : 
       self.configure_haproxy_legacy()
 
   def configure_haproxy_k8(self):
