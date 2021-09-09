@@ -317,14 +317,14 @@ class ConfigCmd(SetupCmd):
     # get the value to be updated from provisioner config for given key
     # Fetchinng the incoming value from the provisioner config file
     # Which should be updated to key_to_update in s3 config file
-    value_to_update = self.get_confvalue(self.get_confkey(key_to_read))
+    value_to_update = self.get_confvalue_with_defaults(key_to_read)
 
     if modifier_function is not None:
-      self.logger.info(f'value_to_update before update function: {value_to_update}')
-      self.logger.info(f'Modifier function provided : {modifier_function}')
+      self.logger.info(f'Modifier function name : {modifier_function.__name__}')
       value_to_update = modifier_function(value_to_update, additional_param)
 
-    self.logger.info(f'{key_to_read}: {value_to_update}')
+    self.logger.info(f'Key to update: {key_to_read}')
+    self.logger.info(f'Value to update: {value_to_update}')
 
     # set the config value in to config file (example: s3 config file key_to_update = value_to_update, and save)
     s3configfileconfstore.set_config(key_to_update, value_to_update, True)
@@ -385,13 +385,29 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_DEFAULT_ENDPOINT", "defaultEndpoint")
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_IAM_AUDITLOG", "IAMAuditlog")
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logFilePath", self.update_auth_log_dir_path)
+    self.update_auth_log4j_log_dir_path()
     self.logger.info("Update s3 authserver config file completed")
 
   def update_auth_log_dir_path(self, value_to_update, additional_param):
     """Update s3 auth log directory path in config file."""
-    s3_auth_log_path = os.path.join(value_to_update, "auth/server")
+    s3_auth_log_path = os.path.join(value_to_update, "auth", self.machine_id, "server")
     self.logger.info(f's3_auth_log_path: {s3_auth_log_path}')
     return s3_auth_log_path
+
+  def update_auth_log4j_log_dir_path(self):
+    """Update s3 auth log directory path in log4j2 config file."""
+    # validate config file exist
+    log4j2_configfile = self.get_confkey("S3_AUTHSERVER_LOG4J2_CONFIG_FILE").replace("/opt/seagate/cortx", self.base_config_file_path)
+    if path.isfile(f'{log4j2_configfile}') == False:
+      self.logger.error(f'{log4j2_configfile} file is not present')
+      raise S3PROVError(f'{log4j2_configfile} file is not present')
+    with open(log4j2_configfile) as f:
+      s3_auth_log_path = os.path.join(self.base_config_file_path, "auth", self.machine_id, "server")
+      self.logger.info(f's3_auth_log_path: {s3_auth_log_path}')
+      modified_data=f.read().replace('/var/log/cortx/auth/server', s3_auth_log_path)
+    with open(log4j2_configfile, "w") as f:
+        f.write(modified_data)
+    self.logger.info(f'Updated s3 auth log directory path in log4j2 config file')
 
   def update_s3_bgdelete_configs(self):
     """ Update s3 bgdelete configs."""
