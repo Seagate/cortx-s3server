@@ -1,0 +1,2 @@
+THIS_IS_MASTER_K8S_NODE=1  # 0 or 1
+NODE_NAME=node1 # put incremental numbers, 1,2,3...  use node1 for k8s master
