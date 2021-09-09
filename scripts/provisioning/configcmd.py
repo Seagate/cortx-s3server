@@ -63,6 +63,10 @@ class ConfigCmd(SetupCmd):
       self.copy_config_files()
       self.logger.info("copy config files completed")
 
+      self.logger.info("copy s3 authserver resources started")
+      self.copy_s3authserver_resources()
+      self.logger.info("copy s3 authserver resources completed")
+
       # update all the config files
       self.logger.info("update all modules config files started")
       self.update_configs()
@@ -85,10 +89,6 @@ class ConfigCmd(SetupCmd):
       services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver"]
       self.disable_services(services_list)
       self.logger.info('Disable services on reboot completed')
-
-      self.logger.info("copy s3 authserver resources started")
-      self.copy_s3authserver_resources()
-      self.logger.info("copy s3 authserver resources completed")
 
       self.logger.info('create auth jks password started')
       self.create_auth_jks_password()
