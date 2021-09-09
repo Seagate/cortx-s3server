@@ -34,6 +34,7 @@
 POST_INSTALL:
 PREPARE:
 CONFIG:
+  CONFSTORE_SETUP_TYPE: "cortx>common>setup_type"
   CONFSTORE_LDAPADMIN_USER_KEY: "cortx>software>openldap>sgiam>user"
   CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>software>openldap>sgiam>secret"
   CONFSTORE_ROOTDN_USER_KEY: "cortx>software>openldap>root>user"
@@ -69,8 +70,6 @@ CONFIG:
 
   CONFSTORE_BASE_LOG_PATH: "cortx>software>base_log_path"
   CONFSTORE_BASE_CONFIG_PATH: "cortx>software>base_config_path"
-  CONFSTORE_SHARED_BASE_LOG_PATH: "cortx>software>shared_base_log_path"
-  CONFSTORE_SHARED_BASE_CONFIG_PATH: "cortx>software>shared_base_config_path"
 INIT:
 # Inheritance hierarchy ends here.
 
@@ -99,6 +98,10 @@ DEFAULT_TEST:
 LDAP_USER: "cn={},dc=seagate,dc=com"
 LDAP_URL: "ldapi:///"
 CONFSTORE_OPENLDAP_CONST_KEY: "cortx"
+LDAP_MDB_LOCATION: = "/var/lib/ldap"
+VALIDATION_PREREQ_FILE: = "/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
+TMP_DIR: = "/etc/cortx/s3/tmp"
+
 CONFSTORE_SITE_COUNT_KEY: "cluster>cluster-id>site_count"
 S3_CONFIG_FILE: "/opt/seagate/cortx/s3/conf/s3config.yaml"
 S3_CONFIG_SAMPLE_FILE: "/opt/seagate/cortx/s3/conf/s3config.yaml.sample"
