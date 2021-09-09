@@ -26,11 +26,12 @@ from unittest.mock import Mock
 
 from s3backgrounddelete.cortx_s3_kv_api import CORTXS3KVApi
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
 
 def test_get_no_index_id():
     """Test GET api without index_id should return response as "None"."""
     config = CORTXS3Config()
-    response = CORTXS3KVApi(config).get(None, "test_key1")
+    response = CORTXS3KVApi(config, CONNECTION_TYPE_PRODUCER).get(None, "test_key1")
     if (response is not None):
         assert response[0] is False
         assert response[1] is None
@@ -39,7 +40,7 @@ def test_get_no_index_id():
 def test_get_no_object_key_name():
     """Test GET api without object_key_name should return response as "None"."""
     config = CORTXS3Config()
-    response = CORTXS3KVApi(config).get("test_index1", None)
+    response = CORTXS3KVApi(config, CONNECTION_TYPE_PRODUCER).get("test_index1", None)
     if (response is not None):
         assert response[0] is False
 
@@ -57,7 +58,7 @@ def test_get_success():
     httpconnection.getresponse.return_value = httpresponse
 
     config = CORTXS3Config()
-    response = CORTXS3KVApi(config, connection=httpconnection).get("test_index1", "test_key1")
+    response = CORTXS3KVApi(config, CONNECTION_TYPE_PRODUCER, connection=httpconnection).get("test_index1", "test_key1")
     if (response is not None):
         assert response[0] is True
 
@@ -77,7 +78,7 @@ def test_get_failure():
     httpconnection.getresponse.return_value = httpresponse
 
     config = CORTXS3Config()
-    response = CORTXS3KVApi(config, connection=httpconnection).get("test_index2", "test_key2")
+    response = CORTXS3KVApi(config, CONNECTION_TYPE_PRODUCER, connection=httpconnection).get("test_index2", "test_key2")
     if (response is not None):
         assert response[0] is False
 
@@ -85,7 +86,7 @@ def test_get_failure():
 def test_delete_no_index_id():
     """Test DELETE api without index should return response as "None"."""
     config = CORTXS3Config()
-    response = CORTXS3KVApi(config).delete(None, "test_key1")
+    response = CORTXS3KVApi(config, CONNECTION_TYPE_PRODUCER).delete(None, "test_key1")
     if (response is not None):
         assert response[0] is False
         assert response[1] is None
@@ -94,7 +95,7 @@ def test_delete_no_index_id():
 def test_delete_no_object_key_name():
     """Test DELETE api without object key name should return response as "None"."""
     config = CORTXS3Config()
-    response = CORTXS3KVApi(config).delete("test_index1", None)
+    response = CORTXS3KVApi(config, CONNECTION_TYPE_PRODUCER).delete("test_index1", None)
     if (response is not None):
         assert response[0] is False
         assert response[1] is None
@@ -112,7 +113,7 @@ def test_delete_success():
     httpconnection.getresponse.return_value = httpresponse
 
     config = CORTXS3Config()
-    response = CORTXS3KVApi(config, connection=httpconnection).delete("test_index1", "test_key1")
+    response = CORTXS3KVApi(config, CONNECTION_TYPE_PRODUCER, connection=httpconnection).delete("test_index1", "test_key1")
     if (response is not None):
         assert response[0] is True
 
@@ -132,7 +133,7 @@ def test_delete_failure():
     httpconnection.getresponse.return_value = httpresponse
 
     config = CORTXS3Config()
-    response = CORTXS3KVApi(config, connection=httpconnection).delete("test_index1", "test_key1")
+    response = CORTXS3KVApi(config, CONNECTION_TYPE_PRODUCER, connection=httpconnection).delete("test_index1", "test_key1")
     if (response is not None):
         assert response[0] is False
 
@@ -140,7 +141,7 @@ def test_delete_failure():
 def test_put_no_index_id():
     """Test PUT api without index_id should return response as "None"."""
     config = CORTXS3Config()
-    response = CORTXS3KVApi(config).put(None, "test_key1")
+    response = CORTXS3KVApi(config, CONNECTION_TYPE_PRODUCER).put(None, "test_key1")
     if (response is not None):
         assert response[0] is False
         assert response[1] is None
@@ -148,7 +149,7 @@ def test_put_no_index_id():
 def test_put_no_object_key_name():
     """Test PUT api without key should return response as "None"."""
     config = CORTXS3Config()
-    response = CORTXS3KVApi(config).put("test_index1", None)
+    response = CORTXS3KVApi(config, CONNECTION_TYPE_PRODUCER).put("test_index1", None)
     if (response is not None):
         assert response[0] is False
         assert response[1] is None
@@ -166,7 +167,7 @@ def test_put_success():
     httpconnection.getresponse.return_value = httpresponse
 
     config = CORTXS3Config()
-    response = CORTXS3KVApi(config, connection=httpconnection).put("test_index1", "test_key1")
+    response = CORTXS3KVApi(config, CONNECTION_TYPE_PRODUCER, connection=httpconnection).put("test_index1", "test_key1")
     if (response is not None):
         assert response[0] is True
 
@@ -186,6 +187,6 @@ def test_put_failure():
     httpconnection.getresponse.return_value = httpresponse
 
     config = CORTXS3Config()
-    response = CORTXS3KVApi(config, connection=httpconnection).put("test_index2", "test_key2")
+    response = CORTXS3KVApi(config, CONNECTION_TYPE_PRODUCER, connection=httpconnection).put("test_index2", "test_key2")
     if (response is not None):
         assert response[0] is False

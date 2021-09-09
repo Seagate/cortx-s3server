@@ -233,8 +233,16 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
   // so initialise the s3 request;
   s3_request->initialise();
 
+  bool is_haproxy_head_request = false;
+  // Check if request is head request from haproxy
+  if (std::strcmp(req->uri->path->full, "/") == 0 &&
+      s3_request->http_verb() == S3HttpVerb::HEAD) {
+    is_haproxy_head_request = true;
+  }
+
   if (S3Option::get_instance()->get_is_s3_shutting_down() &&
-      !s3_fi_is_enabled("shutdown_system_tests_in_progress")) {
+      !s3_fi_is_enabled("shutdown_system_tests_in_progress") &&
+      !is_haproxy_head_request) {
     // We are shutting down, so don't entertain new requests.
     s3_request->pause();
     evhtp_unset_all_hooks(&req->conn->hooks);
@@ -246,11 +254,9 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
     s3_request->set_out_header_value("Content-Length",
                                      std::to_string(response_xml.length()));
     s3_request->set_out_header_value("Connection", "close");
-    int shutdown_grace_period =
-        S3Option::get_instance()->get_s3_grace_period_sec();
+    int retry_after_period = S3Option::get_instance()->get_s3_retry_after_sec();
     s3_request->set_out_header_value("Retry-After",
-                                     std::to_string(shutdown_grace_period));
-
+                                     std::to_string(retry_after_period));
     s3_request->send_response(error.get_http_status_code(), response_xml);
     return EVHTP_RES_OK;
   }
@@ -743,7 +749,11 @@ int main(int argc, char **argv) {
 
   S3Daemonize s3daemon;
   set_fatal_handler_exit();
-  s3daemon.daemonize();
+  if (!g_option_instance->is_daemon_disabled()) {
+    s3daemon.daemonize();
+  }
+  s3daemon.change_work_dir();
+  s3daemon.write_to_pidfile();
 #if 0
   s3daemon.register_signals();
 #endif
@@ -894,15 +904,6 @@ int main(int argc, char **argv) {
     }
   }
 
-  // This thread is created to do event base looping
-  // Its to send IEM message in case of motr initialization hang
-  rc = pthread_create(&tid, NULL, &base_loop_thread, NULL);
-  if (rc != 0) {
-    s3daemon.delete_pidfile();
-    finalize_cli_options();
-    s3_log(S3_LOG_FATAL, "", "Failed to create pthread\n");
-  }
-
   int motr_read_mempool_flags = CREATE_ALIGNED_MEMORY;
   if (g_option_instance->get_motr_read_mempool_zeroed_buffer()) {
     motr_read_mempool_flags = motr_read_mempool_flags | ZEROED_BUFFER;
@@ -925,31 +926,53 @@ int main(int argc, char **argv) {
   }
 
   log_resource_limits();
-  struct timeval tv;
-  tv.tv_usec = 0;
-  tv.tv_sec = MOTR_INIT_MAX_ALLOWED_TIME;
 
-  struct event *timer_event =
-      event_new(global_evbase_handle, -1, 0, s3_motr_init_timeout_cb, NULL);
+  int icounter = 0;
+  int max_retry_count = g_option_instance->get_motr_reconnect_retry_count();
+  int sleep_time = g_option_instance->get_motr_reconnect_sleep_time();
+  while (true) {
+    // This thread is created to do event base looping
+    // Its to send IEM message in case of motr initialization hang
+    rc = pthread_create(&tid, NULL, &base_loop_thread, NULL);
+    if (rc != 0) {
+      s3daemon.delete_pidfile();
+      fini_auth_ssl();
+      finalize_cli_options();
+      s3_log(S3_LOG_FATAL, "", "Failed to create pthread\n");
+    }
 
-  // Register the timer event, in case if Motr initialization hangs, then in
-  // callback
-  // we will send IEM Alert, so that IO stack gets restarted
-  event_add(timer_event, &tv);
+    struct timeval tv;
+    tv.tv_usec = 0;
+    tv.tv_sec = MOTR_INIT_MAX_ALLOWED_TIME;
 
-  /* Initialise Motr */
-  rc = init_motr();
-  if (rc < 0) {
-    s3daemon.delete_pidfile();
-    fini_auth_ssl();
-    finalize_cli_options();
-    s3_log(S3_LOG_FATAL, "", "motr_init failed!\n");
+    struct event *timer_event =
+        event_new(global_evbase_handle, -1, 0, s3_motr_init_timeout_cb, NULL);
+
+    // Register the timer event, in case if Motr initialization hangs, then in
+    // callback
+    // we will send IEM Alert, so that IO stack gets restarted
+    event_add(timer_event, &tv);
+
+    /* Initialise Motr */
+    rc = init_motr();
+    if (rc < 0) {
+      icounter++;
+      if (icounter > max_retry_count) {
+        s3_log(S3_LOG_FATAL, "", "motr_init failed!\n");
+      }
+    }
+    // delete the timer event
+    event_del(timer_event);
+    event_free(timer_event);
+    // Bail out of the event loop
+    event_base_loopbreak(global_evbase_handle);
+
+    if (rc == 0) {
+      break;
+    } else {
+      sleep(sleep_time);
+    }
   }
-  // delete the timer event
-  event_del(timer_event);
-  event_free(timer_event);
-  // Bail out of the event loop
-  event_base_loopbreak(global_evbase_handle);
 
   // Init addb
   rc = s3_addb_init();

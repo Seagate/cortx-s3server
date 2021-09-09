@@ -191,8 +191,30 @@ class CORTXS3Config(object):
     def get_cortx_s3_endpoint(self):
         """Return endpoint from config file or KeyError."""
         try:
-          cortx_s3_endpoint = self.s3confstore.get_config('cortx_s3>endpoint')
-          return cortx_s3_endpoint
+            cortx_s3_endpoint = self.s3confstore.get_config('cortx_s3>endpoint')
+            return cortx_s3_endpoint
+        except:
+            raise KeyError(
+                "Could not find cortx_s3 endpoint from config file " +
+                self._conf_file)
+
+    def get_cortx_s3_endpoint_for_consumer(self):
+        """Return endpoint from config file or KeyError."""
+        try:
+            #change from cortx_s3>endpoint to cortx_s3>consumer_endpoint
+            cortx_s3_endpoint = self.s3confstore.get_config('cortx_s3>consumer_endpoint')
+            return cortx_s3_endpoint
+        except:
+            raise KeyError(
+                "Could not find cortx_s3 endpoint from config file " +
+                self._conf_file)
+
+    def get_cortx_s3_endpoint_for_producer(self):
+        """Return endpoint from config file or KeyError."""
+        try:
+            #change from cortx_s3>endpoint to cortx_s3>producer_endpoint
+            cortx_s3_endpoint = self.s3confstore.get_config('cortx_s3>producer_endpoint')
+            return cortx_s3_endpoint
         except:
             raise KeyError(
                 "Could not find cortx_s3 endpoint from config file " +

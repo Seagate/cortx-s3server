@@ -26,13 +26,14 @@
 import sys
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
+from s3backgrounddelete.cortx_s3_constants import CONNECTION_TYPE_PRODUCER
 
 config = CORTXS3Config()
 
 def assert_index(index_name, index_id, expected_kv_count=0, error_message=None):
 
     print("Checking {}".format(index_name))
-    index_api = CORTXS3IndexApi(config)
+    index_api = CORTXS3IndexApi(config, CONNECTION_TYPE_PRODUCER)
 
     # Instance index has startup entries, other indexes should be empty.
     max_keys = 1

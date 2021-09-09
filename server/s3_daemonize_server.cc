@@ -86,16 +86,8 @@ S3Daemonize::S3Daemonize() : noclose(0) {
   pidfilename = option_instance->get_s3_pidfile();
 }
 
-void S3Daemonize::daemonize() {
-  int rc;
+void S3Daemonize::change_work_dir() {
   std::string daemon_wd;
-
-  rc = daemon(1, noclose);
-  if (rc) {
-    s3_log(S3_LOG_FATAL, "", "Failed to daemonize s3 server, errno = %d\n",
-           errno);
-    exit(1);
-  }
 
   // Set the working directory for current instance as s3server-process_fid
   std::string process_fid = option_instance->get_motr_process_fid();
@@ -115,7 +107,17 @@ void S3Daemonize::daemonize() {
   }
   s3_log(S3_LOG_INFO, "", "Working directory for S3 server = [%s]\n",
          daemon_wd.c_str());
-  write_to_pidfile();
+}
+
+void S3Daemonize::daemonize() {
+  int rc;
+
+  rc = daemon(1, noclose);
+  if (rc) {
+    s3_log(S3_LOG_FATAL, "", "Failed to daemonize s3 server, errno = %d\n",
+           errno);
+    exit(1);
+  }
 }
 
 int S3Daemonize::write_to_pidfile() {

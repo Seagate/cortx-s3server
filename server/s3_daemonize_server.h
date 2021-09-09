@@ -30,11 +30,12 @@
 class S3Daemonize {
   int noclose;
   std::string pidfilename;
-  int write_to_pidfile();
   S3Option *option_instance;
 
  public:
   S3Daemonize();
+  void change_work_dir();
+  int write_to_pidfile();
   void daemonize();
   void wait_for_termination();
   int delete_pidfile();

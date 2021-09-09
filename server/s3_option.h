@@ -100,6 +100,7 @@ class S3Option {
   std::string s3_default_endpoint;
   std::set<std::string> s3_region_endpoints;
   unsigned short s3_grace_period_sec;
+  unsigned short s3_retry_after_sec;
   bool is_s3_shutting_down;
 
   unsigned short perf_enabled;
@@ -142,6 +143,8 @@ class S3Option {
   bool s3_enable_murmurhash_oid;
   int log_flush_frequency_sec;
   unsigned int motr_first_obj_read_size;
+  unsigned int motr_reconnect_retry_count;
+  unsigned int motr_reconnect_sleep_time;
 
   unsigned bucket_metadata_cache_max_size;
   unsigned bucket_metadata_cache_expire_sec;
@@ -225,6 +228,7 @@ class S3Option {
     s3server_obj_delayed_del_enabled = true;
 
     s3_grace_period_sec = 10;  // 10 seconds
+    s3_retry_after_sec = 30;   // 30 seconds
     is_s3_shutting_down = false;
 
     log_dir = "/var/log/seagate/s3";
@@ -369,6 +373,7 @@ class S3Option {
   std::string get_default_endpoint();
   std::set<std::string>& get_region_endpoints();
   unsigned short get_s3_grace_period_sec();
+  unsigned short get_s3_retry_after_sec();
   bool get_is_s3_shutting_down();
   void set_is_s3_shutting_down(bool is_shutting_down);
 
@@ -437,6 +442,8 @@ class S3Option {
   size_t get_motr_read_pool_expandable_count();
   size_t get_motr_read_pool_max_threshold();
   unsigned int get_motr_first_read_size();
+  unsigned int get_motr_reconnect_sleep_time();
+  unsigned int get_motr_reconnect_retry_count();
 
   size_t get_libevent_pool_initial_size();
   size_t get_libevent_pool_expandable_size();
@@ -506,6 +513,8 @@ class S3Option {
   void enable_murmurhash_oid();
   void disable_murmurhash_oid();
 
+  bool is_daemon_disabled();
+  void disable_daemon();
   void dump_options();
 
   static S3Option* get_instance() {
