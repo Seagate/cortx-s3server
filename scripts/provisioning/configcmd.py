@@ -320,7 +320,8 @@ class ConfigCmd(SetupCmd):
     value_to_update = self.get_confvalue(self.get_confkey(key_to_read))
 
     if modifier_function is not None:
-      self.logger.info(f'Modifier function provided to update_config_value')
+      self.logger.info(f'value_to_update before update function: {value_to_update}')
+      self.logger.info(f'Modifier function provided : {modifier_function}')
       value_to_update = modifier_function(value_to_update, additional_param)
 
     self.logger.info(f'{key_to_read}: {value_to_update}')
