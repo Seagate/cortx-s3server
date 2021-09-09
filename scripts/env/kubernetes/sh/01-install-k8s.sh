@@ -59,13 +59,21 @@ net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
 EOF
 
+add_separator listing all rules
 sysctl --system
 
-self_check "Did you see the following lines in above output?
+add_separator listing k8s rules
+sysctl --system | grep k8s.conf -A3
+
+set +x
+self_check "Do you see the following lines in above output?
+
 Applying /etc/sysctl.d/k8s.conf ...
 net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
+
 "
+set -x
 
 if [ `getenforce` != 'Disabled' ]; then
   setenforce 0

@@ -1,2 +1,9 @@
-THIS_IS_MASTER_K8S_NODE=1  # 0 or 1
-NODE_NAME=node1 # put incremental numbers, 1,2,3...  use node1 for k8s master
+# for k8s install
+#
+THIS_IS_MASTER_K8S_NODE=1                  # 0 or 1
+NODE_NAME=node1                            # put incremental numbers, 1,2,3...  use node1 for k8s master
+
+# for image download
+#
+CORTX_ALL_IMAGE_TAG=2.0.0-latest-custom-ci # update if you want to test specific build instead of latest
+GITHUB_ACCESS_TOKEN=.........              # put your github container registry access token here (CR_PAT)

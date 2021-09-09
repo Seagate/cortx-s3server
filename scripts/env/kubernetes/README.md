@@ -12,11 +12,16 @@ and execute commands listed below.
 Note - Modify the repo URL and branch if needed.
 
 ```
+REPO_URL=https://github.com/Seagate/cortx-s3server.git
+BRANCH_NAME=k8s-automation
+```
+
+```
 mkdir -p /var/data/cortx
 cd /var/data/cortx
-git clone https://github.com/Seagate/cortx-s3server.git
+git clone "$REPO_URL"
 cd cortx-s3server
-git checkout k8s-automation
+git checkout "$BRANCH_NAME"
 ```
 
 # Config
@@ -33,5 +38,5 @@ vim config.sh
 
 ```
 cd /var/data/cortx/cortx-s3server/scripts/env/kubernetes
-./sh/install-k8s.sh
+./sh/00-run-all-steps.sh
 ```
