@@ -97,20 +97,15 @@ class SetupCmd(object):
     self.machine_id = self._provisioner_confstore.get_machine_id()
     self.logger.info(f'Machine id : {self.machine_id}')
 
-    self.cluster_id = self.get_confvalue(self.get_confkey(
-      'CONFIG>CONFSTORE_CLUSTER_ID_KEY').replace("machine-id", self.machine_id))
+    self.cluster_id = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_CLUSTER_ID_KEY')
     self.logger.info(f'Cluster  id : {self.cluster_id}')
-    self.base_config_file_path = self.get_confvalue(self.get_confkey(
-      'CONFIG>CONFSTORE_BASE_CONFIG_PATH'))
+    self.base_config_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_CONFIG_PATH')
     self.logger.info(f'config file path : {self.base_config_file_path}')
-    self.base_log_file_path = self.get_confvalue(self.get_confkey(
-      'CONFIG>CONFSTORE_BASE_LOG_PATH'))
+    self.base_log_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_LOG_PATH')
     self.logger.info(f'log file path : {self.base_log_file_path}')
-    self.shared_base_config_file_path = self.get_confvalue(self.get_confkey(
-      'CONFIG>CONFSTORE_SHARED_BASE_CONFIG_PATH'))
+    self.shared_base_config_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SHARED_BASE_CONFIG_PATH')
     self.logger.info(f'shared config path : {self.shared_base_config_file_path}')
-    self.shared_base_log_file_path = self.get_confvalue(self.get_confkey(
-      'CONFIG>CONFSTORE_SHARED_BASE_LOG_PATH'))
+    self.shared_base_log_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SHARED_BASE_LOG_PATH')
     self.logger.info(f'shared log path : {self.shared_base_log_file_path}')
 
 
