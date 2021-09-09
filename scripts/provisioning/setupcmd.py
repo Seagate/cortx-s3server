@@ -258,7 +258,10 @@ class SetupCmd(object):
     if not value:
       raise Exception(f'Empty value for key : {key}')
     else:
-      address_token = ["hostname", "public_fqdn", "private_fqdn"]
+      if ("K8S" !=	str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
+        address_token = ["hostname", "public_fqdn", "private_fqdn"]
+      else 
+        address_token = []
       for token in address_token:
         if key.find(token) != -1:
           NetworkV().validate('connectivity',[value])
