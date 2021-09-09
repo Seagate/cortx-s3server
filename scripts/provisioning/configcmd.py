@@ -326,35 +326,36 @@ class ConfigCmd(SetupCmd):
     s3configfileconfstore.set_config(motr_max_units_per_request_key, int(motr_max_units_per_request), True)
     self.logger.info(f'Key {motr_max_units_per_request_key} updated successfully in {s3configfile}')
 
-    # update log path
-    s3_log_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_LOG_PATH')
-    s3_log_path = os.path.join(s3_log_path, "s3")
-    self.logger.info(f's3_log_path: {s3_log_path}')
-    s3_log_path_key  = 'S3_SERVER_CONFIG>S3_LOG_DIR'
-    s3configfileconfstore.set_config(s3_log_path_key, s3_log_path, True)
-    self.logger.info(f'Key {s3_log_path_key} updated successfully in {s3configfile}')
-
-
   def update_config_value(self, config_file_path : str,
                           config_file_type : str,
                           key_to_read : str,
-                          key_to_update: str):
-    """Update provided config key and value to provided config file."""
+                          key_to_update: str,
+                          modifier_function = None,
+                          additional_param = None):
+    """Update provided config key and value to provided config file.
+       Modifier function should have the signature func_name(confstore, value)."""
 
-    # validate config file exist
+    # validate config file exist (example: configfile = /etc/cortx/s3/conf/s3config.yaml)
     configfile = self.get_confkey(config_file_path).replace("/opt/seagate/cortx", self.base_config_file_path)
     if path.isfile(f'{configfile}') == False:
       self.logger.error(f'{configfile} file is not present')
       raise S3PROVError(f'{configfile} file is not present')
 
-    # load config file
+    # load config file (example: s3configfileconfstore = confstore object to /etc/cortx/s3/conf/s3config.yaml)
     s3configfileconfstore = S3CortxConfStore(f'{config_file_type}://{configfile}', 'update_config_file_idx' + key_to_update)
     
     # get the value to be updated from provisioner config for given key
-    value_to_update = self.get_confvalue_with_defaults(key_to_read)
+    # Fetchinng the incoming value from the provisioner config file
+    # Which should be updated to key_to_update in s3 config file
+    value_to_update = self.get_confvalue(self.get_confkey(key_to_read))
+
+    if modifier_function is not None:
+      self.logger.info(f'Modifier function provided to update_config_value')
+      value_to_update = modifier_function(value_to_update, additional_param)
+
     self.logger.info(f'{key_to_read}: {value_to_update}')
 
-    # set the config value in to config file
+    # set the config value in to config file (example: s3 config file key_to_update = value_to_update, and save)
     s3configfileconfstore.set_config(key_to_update, value_to_update, True)
     self.logger.info(f'Key {key_to_update} updated successfully in {configfile}')
 
@@ -374,7 +375,21 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_AUTHSERVER_PORT", "S3_AUTH_CONFIG>S3_AUTH_PORT")
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_ENABLE_STATS", "S3_SERVER_CONFIG>S3_ENABLE_STATS")
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_AUDIT_LOGGER", "S3_SERVER_CONFIG>S3_AUDIT_LOGGER_POLICY")
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "S3_SERVER_CONFIG>S3_LOG_DIR", self.update_s3_log_dir_path)
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR", self.update_s3_daemon_working_dir)
     self.logger.info("Update s3 server config file completed")
+
+  def update_s3_log_dir_path(self, value_to_update, additional_param):
+    """ Update s3 server log directory path."""
+    s3_log_dir_path = os.path.join(value_to_update, "s3", self.machine_id)
+    self.logger.info(f"s3_log_dir_path : {s3_log_dir_path}")
+    return s3_log_dir_path
+
+  def update_s3_daemon_working_dir(self, value_to_update, additional_param):
+    """ Update s3 daemon working log directory"""
+    s3_daemon_working_dir = os.path.join(value_to_update, "motr", self.machine_id)
+    self.logger.info(f"s3_daemon_working_dir : {s3_daemon_working_dir}")
+    return s3_daemon_working_dir
 
   def update_s3_auth_configs(self):
     """ Update s3 auth configs."""
@@ -416,9 +431,30 @@ class ConfigCmd(SetupCmd):
     self.update_s3_bgdelete_config()
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL", "cortx_s3>scheduler_schedule_interval")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_MAX_KEYS", "indexid>max_keys")
+    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logconfig>logger_directory", self.update_bgdelete_log_dir)
+    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logconfig>scheduler_log_file", self.update_bgdelete_scheduler_log_file_path)
+    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logconfig>processor_log_file", self.update_bgdelete_processor_log_file_path)
     self.logger.info("Update s3 bgdelete config file completed")
 
-  def update_s3_bgdelete_config(self):
+  def update_bgdelete_log_dir(self, value_to_update, additional_param):
+    """ Update s3 bgdelete log dir path."""
+    bgdelete_log_dir_path = os.path.join(value_to_update, "s3", self.machine_id, "s3backgrounddelete")
+    self.logger.info(f"bgdelete_log_dir_path : {bgdelete_log_dir_path}")
+    return bgdelete_log_dir_path
+
+  def update_bgdelete_scheduler_log_file_path(self, value_to_update, additional_param):
+    """ Update s3 bgdelete scheduler log dir path."""
+    bgdelete_scheduler_log_file_path = os.path.join(value_to_update, "s3/s3backgrounddelete/object_recovery_scheduler.log")
+    self.logger.info(f"bgdelete_scheduler_log_file_path : {bgdelete_scheduler_log_file_path}")
+    return bgdelete_scheduler_log_file_path
+
+  def update_bgdelete_processor_log_file_path(self, value_to_update, additional_param):
+    """ Update s3 bgdelete processor log dir path."""
+    bgdelete_processor_log_file_path = os.path.join(value_to_update, "s3", self.machine_id, "s3backgrounddelete/object_recovery_processor.log")
+    self.logger.info(f"bgdelete_processor_log_file_path : {bgdelete_processor_log_file_path}")
+    return bgdelete_processor_log_file_path
+
+  def update_s3_bgdelete_config(self, value_to_update_, additional_param):
     """ Update s3 bgdelete config which required modification."""
 
     # update bgdelete endpoints in to config file
@@ -440,28 +476,6 @@ class ConfigCmd(SetupCmd):
     endpoint_key = 'cortx_s3>endpoint'
     s3configfileconfstore.set_config(endpoint_key, bgdelete_url, True)
     self.logger.info(f'Key {endpoint_key} updated successfully in {bgdelete_configfile}')
-
-    s3_bgdelete_base_log_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_LOG_PATH')
-    # update log path
-    s3_bgdelete_log_path = os.path.join(s3_bgdelete_base_log_path, "s3/s3backgrounddelete")
-    self.logger.info(f's3_bgdelete_log_path: {s3_bgdelete_log_path}')
-    s3_bgdelete_log_path_key  = 'logconfig>logger_directory'
-    s3configfileconfstore.set_config(s3_bgdelete_log_path_key, s3_bgdelete_log_path, True)
-    self.logger.info(f'Key {s3_bgdelete_log_path_key} updated successfully in {bgdelete_configfile}')
-
-    # update producer log path
-    s3_bgdelete_producer_log_path = os.path.join(s3_bgdelete_base_log_path, "s3/s3backgrounddelete/object_recovery_scheduler.log")
-    self.logger.info(f's3_bgdelete_producer_log_path: {s3_bgdelete_producer_log_path}')
-    s3_bgdelete_producer_log_path_key  = 'logconfig>scheduler_log_file'
-    s3configfileconfstore.set_config(s3_bgdelete_producer_log_path_key, s3_bgdelete_producer_log_path, True)
-    self.logger.info(f'Key {s3_bgdelete_producer_log_path_key} updated successfully in {bgdelete_configfile}')
-
-    # update consumer log path
-    s3_bgdelete_consumer_log_path = os.path.join(s3_bgdelete_base_log_path, "s3/s3backgrounddelete/object_recovery_processor.log")
-    self.logger.info(f's3_bgdelete_consumer_log_path: {s3_bgdelete_consumer_log_path}')
-    s3_bgdelete_consumer_log_path_key  = 'logconfig>processor_log_file'
-    s3configfileconfstore.set_config(s3_bgdelete_consumer_log_path_key, s3_bgdelete_consumer_log_path, True)
-    self.logger.info(f'Key {s3_bgdelete_consumer_log_path_key} updated successfully in {bgdelete_configfile}')
 
   def update_config_path_files(self, file_to_search: str, key_to_search: str, key_to_replace: str):
     """ update the config file path in the files"""
