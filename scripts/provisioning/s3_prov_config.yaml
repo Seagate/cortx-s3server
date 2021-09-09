@@ -62,8 +62,8 @@ CONFIG:
   CONFSTORE_S3_AUTHSERVER_DEFAULT_ENDPOINT: "cortx>software>s3authserver>defaultEndpoint"
   CONFSTORE_S3_AUTHSERVER_IAM_AUDITLOG: "cortx>software>s3authserver>iamAuditLog"
 
-  CONFSTORE_S3_BGDELETE_ENDPOINT: "cortx>software>s3bgdelete>endpoint"
-  CONFSTORE_S3_BGDELETE_PORT: "cortx>software>s3bgdelete>port"
+  CONFSTORE_S3_BGDELETE_PRODUCER_ENDPOINT: "cortx>software>s3bgdelete>producer_endpoint"
+  CONFSTORE_S3_BGDELETE_CONSUMER_ENDPOINT: "cortx>software>s3bgdelete>consumer_endpoint"
   CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL: "cortx>software>s3bgdelete>scheduler_schedule_interval"
   CONFSTORE_S3_BGDELETE_MAX_KEYS: "cortx>software>s3bgdelete>max_keys"
 
