@@ -24,17 +24,10 @@ source ./sh/functions.sh
 
 set -e
 
-add_separator "Pulling image at tag <$CORTX_ALL_IMAGE_TAG>"
+add_separator "Creating common k8s definitions"
 
-set -x
-docker pull "ghcr.io/seagate/cortx-all:$CORTX_ALL_IMAGE_TAG"
+kubectl apply -f k8s-blueprints/storage-class.yaml
 
 set +x
 
-add_separator "Listing CORTX images"
-
-docker images | grep 'REPOSITORY\|cortx-all'
-
-self_check "Is cortx-all image listed above?"
-
-add_separator SUCCESSFULLY PULLED CORTX-ALL IMAGE
+add_separator SUCCESSFULLY CREATED COMMON K8S DEFINITIONS

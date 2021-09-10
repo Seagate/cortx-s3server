@@ -19,7 +19,7 @@
 #
 
 source ./config.sh
-
+source ./env.sh
 source ./sh/functions.sh
 
 set -e # exit immediatly on errors
@@ -31,6 +31,8 @@ yum install -y docker-ce docker-ce-cli containerd.io
 systemctl start docker
 
 # self-check
+
+add_separator Testing docker.
 
 sudo docker run hello-world
 
@@ -68,9 +70,9 @@ sysctl --system | grep k8s.conf -A3
 set +x
 self_check "Do you see the following lines in above output?
 
-Applying /etc/sysctl.d/k8s.conf ...
-net.bridge.bridge-nf-call-ip6tables = 1
-net.bridge.bridge-nf-call-iptables = 1
+    Applying /etc/sysctl.d/k8s.conf ...
+    net.bridge.bridge-nf-call-ip6tables = 1
+    net.bridge.bridge-nf-call-iptables = 1
 
 "
 set -x
@@ -95,7 +97,7 @@ cat <<EOF > /etc/docker/daemon.json
 EOF
 sudo systemctl restart docker
 
-if [ "$THIS_IS_MASTER_K8S_NODE" -eq 1 ]; then
+if [ "$THIS_IS_PRIMARY_K8S_NODE" = yes ]; then
   kubeadm init --pod-network-cidr=192.168.0.0/16
   mkdir -p $HOME/.kube
   # This is a workaround for SSC machines where root cannot write to /home
@@ -120,7 +122,7 @@ Then paste the command back to this terminal below and hit CTRL-D:"
 fi
 
 
-if [ "$THIS_IS_MASTER_K8S_NODE" -eq 1 ]; then
+if [ "$THIS_IS_PRIMARY_K8S_NODE" = yes ]; then
   kubectl taint nodes --all node-role.kubernetes.io/master-
 else
   set +x
@@ -140,19 +142,19 @@ while true; do
   set -x
   kubectl get pods -n kube-system
   set +x
-  if [ "$THIS_IS_MASTER_K8S_NODE" -eq 1 ]; then
+  if [ "$THIS_IS_PRIMARY_K8S_NODE" = yes ]; then
     if self_check 'The above output should look similar to this example below:
 
-NAME                                                            READY   STATUS    RESTARTS   AGE
-calico-kube-controllers-58497c65d5-9vj4c                        1/1     Running   0          76m
-calico-node-p9xlb                                               1/1     Running   0          76m
-coredns-78fcd69978-bn5wb                                        1/1     Running   0          76m
-coredns-78fcd69978-httl2                                        1/1     Running   0          76m
-etcd-ssc-vm-g3-rhev4-0880.colo.seagate.com                      1/1     Running   0          77m
-kube-apiserver-ssc-vm-g3-rhev4-0880.colo.seagate.com            1/1     Running   0          77m
-kube-controller-manager-ssc-vm-g3-rhev4-0880.colo.seagate.com   1/1     Running   0          77m
-kube-proxy-r9h9s                                                1/1     Running   0          76m
-kube-scheduler-ssc-vm-g3-rhev4-0880.colo.seagate.com            1/1     Running   0          77m
+    NAME                                               READY   STATUS    RESTARTS   AGE
+    calico-kube-controllers-58497c65d5-9vj4c           1/1     Running   0          76m
+    calico-node-p9xlb                                  1/1     Running   0          76m
+    coredns-78fcd69978-bn5wb                           1/1     Running   0          76m
+    coredns-78fcd69978-httl2                           1/1     Running   0          76m
+    etcd-ssc-vm-g3-rhev4-0880.colo.seagate.com         1/1     Running   0          77m
+    kube-apiserver-ssc-vm-g3-rhev4-0880.colo.seag...   1/1     Running   0          77m
+    kube-controller-manager-ssc-vm-g3-rhev4-0880....   1/1     Running   0          77m
+    kube-proxy-r9h9s                                   1/1     Running   0          76m
+    kube-scheduler-ssc-vm-g3-rhev4-0880.colo.seag...   1/1     Running   0          77m
 
 Does the output above match? (all must be Running)'; then
       break
@@ -160,21 +162,20 @@ Does the output above match? (all must be Running)'; then
   else
     if self_check 'The above output should look similar to this example below:
 
-[root@sm6-r1 ~]# kubectl get pods -n kube-system
-NAME                                             READY   STATUS    RESTARTS   AGE
-calico-kube-controllers-78d6f96c7b-xz7jd         1/1     Running   0          6m52s
-calico-node-4s7fc                                1/1     Running   0          71s
-calico-node-jcqxg                                1/1     Running   0          71s
-calico-node-kxmm2                                1/1     Running   0          71s
-coredns-558bd4d5db-2tlnc                         1/1     Running   0          17m
-coredns-558bd4d5db-qwk5p                         1/1     Running   0          17m
-etcd-sm6-r1.pun.seagate.com                      1/1     Running   0          18m
-kube-apiserver-sm6-r1.pun.seagate.com            1/1     Running   0          18m
-kube-controller-manager-sm6-r1.pun.seagate.com   1/1     Running   0          18m
-kube-proxy-ctdhz                                 1/1     Running   0          17m
-kube-proxy-h765n                                 1/1     Running   0          14m
-kube-proxy-n2l8j                                 1/1     Running   0          14m
-kube-scheduler-sm6-r1.pun.seagate.com            1/1     Running   0          18m
+    NAME                                             READY   STATUS    RESTARTS   AGE
+    calico-kube-controllers-78d6f96c7b-xz7jd         1/1     Running   0          6m52s
+    calico-node-4s7fc                                1/1     Running   0          71s
+    calico-node-jcqxg                                1/1     Running   0          71s
+    calico-node-kxmm2                                1/1     Running   0          71s
+    coredns-558bd4d5db-2tlnc                         1/1     Running   0          17m
+    coredns-558bd4d5db-qwk5p                         1/1     Running   0          17m
+    etcd-sm6-r1.pun.seagate.com                      1/1     Running   0          18m
+    kube-apiserver-sm6-r1.pun.seagate.com            1/1     Running   0          18m
+    kube-controller-manager-sm6-r1.pun.seagate.com   1/1     Running   0          18m
+    kube-proxy-ctdhz                                 1/1     Running   0          17m
+    kube-proxy-h765n                                 1/1     Running   0          14m
+    kube-proxy-n2l8j                                 1/1     Running   0          14m
+    kube-scheduler-sm6-r1.pun.seagate.com            1/1     Running   0          18m
 
 There must be one calico-node and one kube-proxy per node in cluster.
 
@@ -202,16 +203,6 @@ while true; do
 done
 set -x
 
-add_separator "Adding node label"
-hostname=`hostname`
-set +x
-echo
-read -p "Input node FQDN (or hit enter if default value is correct) [$hostname] " var
-if [ -n "$var" ]; then
-  hostname="$var"
-fi
-set -x
-
-kubectl label node "$hostname" node-name="$NODE_LABEL"
+kubectl label node "$HOST_FQDN" node-name="$NODE_LABEL"
 
 add_separator SUCCESSFULLY INSTALLED KUBERNETES.

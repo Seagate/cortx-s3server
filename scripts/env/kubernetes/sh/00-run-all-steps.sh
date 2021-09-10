@@ -22,3 +22,5 @@ set -e -x
 
 ./sh/01-install-k8s.sh
 ./sh/02-pull-cortx-all-image.sh
+./sh/03-common-k8s-definitions.sh
+./sh/04-openldap.sh

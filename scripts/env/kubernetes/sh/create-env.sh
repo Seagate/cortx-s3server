@@ -19,22 +19,20 @@
 #
 
 source ./config.sh
-source ./env.sh
 source ./sh/functions.sh
 
-set -e
+set -e # exit immediatly on errors
+set -x # print each statement before execution
 
-add_separator "Pulling image at tag <$CORTX_ALL_IMAGE_TAG>"
+> ./env.sh
 
-set -x
-docker pull "ghcr.io/seagate/cortx-all:$CORTX_ALL_IMAGE_TAG"
-
+hostname=`hostname`
 set +x
+echo
+read -p "Input node FQDN (or hit Enter if default value is correct) [$hostname]:" var
+if [ -n "$var" ]; then
+  hostname="$var"
+fi
+set -x
 
-add_separator "Listing CORTX images"
-
-docker images | grep 'REPOSITORY\|cortx-all'
-
-self_check "Is cortx-all image listed above?"
-
-add_separator SUCCESSFULLY PULLED CORTX-ALL IMAGE
+echo "HOST_FQDN=$hostname" >> ./env.sh

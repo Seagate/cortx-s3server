@@ -1,9 +1,26 @@
-# for k8s install
+###########################################################################
 #
-THIS_IS_MASTER_K8S_NODE=1                  # 0 or 1
-NODE_NAME=node1                            # put incremental numbers, 1,2,3...  use node1 for k8s master
+# k8s installation parameters
+#
 
+THIS_IS_PRIMARY_K8S_NODE=yes
+  # yes/no
+  # Eyes for primary k8s node, no for worker nodes.
+  # For single-node, use yes.
+
+NODE_NAME=node1
+  # Label for node inside k8s cluster.  Put incremental numbers, 1,2,3...
+  # Use node1 for k8s master
+
+###########################################################################
+#
 # for image download
 #
-CORTX_ALL_IMAGE_TAG=2.0.0-latest-custom-ci # update if you want to test specific build instead of latest
-GITHUB_ACCESS_TOKEN=.........              # put your github container registry access token here (CR_PAT)
+
+CORTX_ALL_IMAGE_TAG=2.0.0-latest-custom-ci
+  # Update if you want to test specific build instead of latest.
+
+GITHUB_ACCESS_TOKEN=.........
+  # put your github container registry access token here (CR_PAT)
+
+export CR_PAT=$GITHUB_ACCESS_TOKEN # Don't edit this line, leave as is
