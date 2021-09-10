@@ -3,30 +3,31 @@ This page provides steps to set up s3 in k8s env using automated scripts.
 
 # Intro
 
-Go to the terminal on the node where you want to deploy k8s, login as root,
-and execute commands listed below.
+* Create VM with 8 CPUs, 12 disks 50GB each, 16 GB RAM.
+* Open terminal.
+* Switch to a `root` user.
+* Execute execute commands listed below.
+  * Simply copy the entire commands list from each box, and paste into the
+    console.
 
-Simply copy the entire commands list from a box, and paste into the
-console.
 
+# 1. Download needed files to your node
 
-# Download needed files to your node
-
-## Step 1 - define repo/branch as environment variables
+## 1.1. Define repo/branch as environment variables
 
 NOTE -- this is the only box which you may need to edit before running.
 Modify the repo URL and branch if needed.  (Modifications should only be
 needed if you're a developer and want to test your modifications to deploy
 scripts before merge.)
 
-```
+```sh
 REPO_URL=https://github.com/Seagate/cortx-s3server.git
 BRANCH_NAME=k8s-automation
 ```
 
-## Step 2
+## 1.2. Download
 
-```
+```bash
 mkdir -p /var/data/cortx
 cd /var/data/cortx
 git clone "$REPO_URL"
@@ -34,9 +35,9 @@ cd cortx-s3server
 git checkout "$BRANCH_NAME"
 ```
 
-# Provide deployment parameters
+# 2. Provide deployment parameters
 
-## Step 1 - user-defined parameters
+## 2.1. User-defined parameters
 
 Commands below will open config file in editor.  Update as needed, and
 save.
@@ -47,14 +48,14 @@ cp config.sh.template config.sh
 vi config.sh
 ```
 
-# Step 2 - auto-detected environment parameters
+# 2.2. Auto-detected environment parameters
 
 ```
 cd /var/data/cortx/cortx-s3server/scripts/env/kubernetes
 ./sh/create-env.sh
 ```
 
-# Run deployment
+# 3. Run deployment
 
 ```
 cd /var/data/cortx/cortx-s3server/scripts/env/kubernetes

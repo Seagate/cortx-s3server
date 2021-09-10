@@ -18,10 +18,22 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -e -x
+source ./config.sh
+source ./env.sh
+source ./sh/functions.sh
 
-./sh/01-install-k8s.sh
-./sh/02-pull-cortx-all-image.sh
-./sh/03-common-k8s-definitions.sh
-./sh/04-openldap.sh
-./sh/05-create-IO-containers.sh
+set -e # exit immediatly on errors
+set -x # print each statement before execution
+
+add_separator Creating IO POD and containers.
+
+sysctl -w vm.max_map_count=30000000
+mkdir /var/motr
+
+kubectl apply -f k8s-blueprints/motr-pv.yaml
+kubectl apply -f k8s-blueprints/motr-pvc.yaml
+kubectl apply -f k8s-blueprints/var-motr-pv.yaml
+kubectl apply -f k8s-blueprints/var-motr-pvc.yaml
+kubectl apply -f k8s-blueprints/depl-pod.yaml
+
+add_separator SUCCESSFULLY CREATED IO POD AND CONTAINERS.

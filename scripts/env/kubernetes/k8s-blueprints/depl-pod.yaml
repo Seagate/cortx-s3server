@@ -1,0 +1,121 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: depl-pod
+  annotations:
+    "cni.projectcalico.org/ipAddrs": "[\"192.168.134.219\"]"
+spec:
+  containers:
+    - name: haproxy
+      image: ghcr.io/seagate/cortx-all:2.0.0-latest-custom-ci
+      imagePullPolicy: Never
+      ports:
+        - containerPort: 80
+          name: "port80"
+        - containerPort: 443
+          name: "port443"
+        - containerPort: 9080
+          name: "port9080"
+        - containerPort: 9443
+          name: "port9443"
+      command:
+         - "/bin/bash"
+         - "-c"
+         - "--"
+      args:
+         - 'sleep infinity'
+    - name: authserver
+      image: ghcr.io/seagate/cortx-all:2.0.0-latest-custom-ci
+      imagePullPolicy: Never
+      command:
+         - "/bin/bash"
+         - "-c"
+         - "--"
+      args:
+         - 'sleep infinity'
+    - name: hare-motr
+      image: ghcr.io/seagate/cortx-all:2.0.0-latest-custom-ci
+      imagePullPolicy: Never
+      volumeMounts:
+        - name: var-motr
+          mountPath: /var/motr
+      volumeDevices:
+        - name: motr-sdb
+          devicePath: /dev/sdb
+        - name: motr-sdc
+          devicePath: /dev/sdc
+        - name: motr-sdd
+          devicePath: /dev/sdd
+        - name: motr-sde
+          devicePath: /dev/sde
+        - name: motr-sdf
+          devicePath: /dev/sdf
+        - name: motr-sdg
+          devicePath: /dev/sdg
+        - name: motr-sdh
+          devicePath: /dev/sdh
+        - name: motr-sdi
+          devicePath: /dev/sdi
+        - name: motr-sdj
+          devicePath: /dev/sdj
+        - name: motr-sdk
+          devicePath: /dev/sdk
+        - name: motr-sdl
+          devicePath: /dev/sdl
+        - name: motr-sdm
+          devicePath: /dev/sdm
+      command:
+         - "/bin/bash"
+         - "-c"
+         - "--"
+      args:
+         - 'sleep infinity'
+    - name: s3server
+      image: ghcr.io/seagate/cortx-all:2.0.0-latest-custom-ci
+      imagePullPolicy: Never
+      command:
+         - "/bin/bash"
+         - "-c"
+         - "--"
+      args:
+         - 'sleep infinity'
+  volumes:
+      - name: var-motr
+        persistentVolumeClaim:
+          claimName: var-motr
+      - name: motr-sdb
+        persistentVolumeClaim:
+          claimName: motr-sdb
+      - name: motr-sdc
+        persistentVolumeClaim:
+          claimName: motr-sdc
+      - name: motr-sdd
+        persistentVolumeClaim:
+          claimName: motr-sdd
+      - name: motr-sde
+        persistentVolumeClaim:
+          claimName: motr-sde
+      - name: motr-sdf
+        persistentVolumeClaim:
+          claimName: motr-sdf
+      - name: motr-sdg
+        persistentVolumeClaim:
+          claimName: motr-sdg
+      - name: motr-sdh
+        persistentVolumeClaim:
+          claimName: motr-sdh
+      - name: motr-sdi
+        persistentVolumeClaim:
+          claimName: motr-sdi
+      - name: motr-sdj
+        persistentVolumeClaim:
+          claimName: motr-sdj
+      - name: motr-sdk
+        persistentVolumeClaim:
+          claimName: motr-sdk
+      - name: motr-sdl
+        persistentVolumeClaim:
+          claimName: motr-sdl
+      - name: motr-sdm
+        persistentVolumeClaim:
+          claimName: motr-sdm
