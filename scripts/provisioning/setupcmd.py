@@ -47,7 +47,7 @@ class SetupCmd(object):
   cluster_id = None
   machine_id = None
   s3_prov_config = "/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml"
-  
+
   #TODO
   # add the service name and HA service name in the following dictionary
   # as key value pair after confirming from the HA team
@@ -69,11 +69,13 @@ class SetupCmd(object):
     self.cluster_id = None
     self.base_config_file_path = "/etc/cortx"
     self.base_log_file_path = "/var/log/cortx"
+
     self.ldap_user = "sgiamadmin"
-	self.module = module
-	self._preqs_conf_file = self.get_confkey('VALIDATION_PREREQ_FILE'))
-	self.s3_tmp_dir = self.get_confkey('TMP_DIR'))
-	self.ldap_mdb_folder = self.get_confkey('LDAP_MDB_LOCATION'))
+    self.module = module
+    self._preqs_conf_file = self.get_confkey('VALIDATION_PREREQ_FILE'))
+    self.s3_tmp_dir = self.get_confkey('TMP_DIR'))
+    self.ldap_mdb_folder = self.get_confkey('LDAP_MDB_LOCATION'))
+
 
     s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
     self.logger = logging.getLogger(s3deployment_logger_name)

@@ -24,3 +24,4 @@ cortx:
     base_log_path: "/var/log/cortx"
     base_config_path: "/etc/cortx"
 
+
