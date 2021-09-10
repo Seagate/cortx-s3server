@@ -444,33 +444,8 @@ class ConfigCmd(SetupCmd):
     self.logger.info("Update s3 cluster config file started")
     self.update_config_value("S3_CLUSTER_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_CLUSTER_ID_KEY", "cluster_config>cluster_id")
     self.update_config_value("S3_CLUSTER_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_ROOTDN_USER_KEY", "cluster_config>rootdn_user")
-    self.update_config_value("S3_CLUSTER_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_ROOTDN_PASSWD_KEY", "cluster_config>rootdn_pass", self.update_rootdn_password)
+    self.update_config_value("S3_CLUSTER_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_ROOTDN_PASSWD_KEY", "cluster_config>rootdn_pass")
     self.logger.info("Update s3 cluster config file completed")
-
-  def update_rootdn_password(self, value_to_update, additional_param):
-    """Set rootdn username and password to opfile."""
-    s3cipher_obj = CortxS3Cipher(None,
-                              False,
-                              0,
-                              self.get_confkey('CONFSTORE_OPENLDAP_CONST_KEY'))
-    cipher_key = s3cipher_obj.generate_key()
-    if value_to_update is not None:
-      encrypted_rootdn_pass = s3cipher_obj.decrypt(cipher_key, value_to_update)
-    if encrypted_rootdn_pass is None:
-      raise S3PROVError('password cannot be None.')
-    return encrypted_rootdn_pass
-
-  def update_config_path_files(self, file_to_search: str, key_to_search: str, key_to_replace: str):
-    """ update the config file path in the files"""
-    try:
-      with open(file_to_search) as f:
-        data=f.read().replace(key_to_search, key_to_replace)
-
-      with open(file_to_search, "w") as f:
-        f.write(data)
-    except:
-      self.logger.error(f'Failed to update config file path {file_to_search}')
-      raise S3PROVError(f'Failed to update config file path {file_to_search}')
 
   def copy_config_files(self):
     """ Copy config files from /opt/seagate/cortx to /etc/cortx."""
@@ -507,6 +482,8 @@ class ConfigCmd(SetupCmd):
       source = os.path.join(src_authserver_resource_dir, item)
       destination = os.path.join(dest_authserver_resource_dir, item)
       if os.path.isdir(source):
-          shutil.copytree(source, destination)
+        if os.path.exists(destination):
+          shutil.rmtree(destination)
+        shutil.copytree(source, destination)
       else:
           shutil.copy2(source, destination)
