@@ -78,6 +78,15 @@ class SetupCmd(object):
 
     self._s3_confkeys_store = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'setup_s3keys_index')
 
+    # get all the param from the s3_prov_config file
+    self._preqs_conf_file = self.get_confkey('VALIDATION_PREREQ_FILE')
+    self.s3_tmp_dir = self.get_confkey('TMP_DIR')
+    self.ldap_mdb_folder = self.get_confkey('LDAP_MDB_LOCATION')
+
+    # Get machine-id of current node from constore
+    self.machine_id = self._s3_confkeys_store.get_machine_id()
+    self.logger.info(f'Machine id : {self.machine_id}')
+
     if config is None:
       self.logger.warning(f'Empty Config url')
       return
@@ -88,14 +97,6 @@ class SetupCmd(object):
 
     self._url = config
     self._provisioner_confstore = S3CortxConfStore(self._url, 'setup_prov_index')
-
-    self._preqs_conf_file = self.get_confkey('VALIDATION_PREREQ_FILE')
-    self.s3_tmp_dir = self.get_confkey('TMP_DIR')
-    self.ldap_mdb_folder = self.get_confkey('LDAP_MDB_LOCATION')
-
-    # Get machine-id of current node from constore
-    self.machine_id = self._provisioner_confstore.get_machine_id()
-    self.logger.info(f'Machine id : {self.machine_id}')
 
   @property
   def url(self) -> str:
