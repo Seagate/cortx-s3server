@@ -30,6 +30,14 @@ class InitCmd(SetupCmd):
     """Constructor."""
     try:
       super(InitCmd, self).__init__(config, module)
+      self.setup_type = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE')
+      self.logger.info(f'log file path : {self.setup_type}')
+      self.cluster_id = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_CLUSTER_ID_KEY')
+      self.logger.info(f'Cluster	id : {self.cluster_id}')
+      self.base_config_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_CONFIG_PATH')
+      self.logger.info(f'config file path : {self.base_config_file_path}')
+      self.base_log_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_LOG_PATH')
+      self.logger.info(f'log file path : {self.base_log_file_path}')
 
     except Exception as e:
       raise e
