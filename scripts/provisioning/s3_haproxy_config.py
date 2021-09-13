@@ -102,7 +102,7 @@ class S3HaproxyConfig:
       
 	if ("K8S" == setup_type) :
 	  configure_haproxy_k8()
-	else 
+	else : 
 	  configure_haproxy_legacy()
 
   def configure_haproxy_k8(self):
