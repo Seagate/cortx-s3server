@@ -21,6 +21,6 @@
 
 cortx:
   common:
-    setup_type: "VM"
+    setup_type: "K8"
     storage:
       log: "/var/log/cortx/"
