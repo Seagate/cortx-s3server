@@ -38,7 +38,7 @@ class ResetCmd(SetupCmd):
     """Constructor."""
     try:
       super(ResetCmd, self).__init__(config, module)
-      self.get_ldap_root_credentials()
+      self.read_ldap_root_credentials()
       self.get_iam_admin_credentials()
     except Exception as e:
       raise e
