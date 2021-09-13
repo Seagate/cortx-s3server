@@ -22,7 +22,7 @@
 cortx:
   common:
     product_release: "LC"
-    setup_type: "VM"
+    setup_type: "K8"
     storage:
       log: "/var/log/cortx/"
       config: /etc/cortx
@@ -31,12 +31,12 @@ cortx:
       admin: "admin"
       secret: "TMPL_ROOT_SECRET_KEY"
       endpoints:
-      - ldap://127.0.0.1:389
-      - ssl://127.0.0.1:636
+      - ldap://openldap-svc:389
+      - ssl://openldap-svc:636
       servers:
-      - localhost
-      - localhost
-      - localhost
+      - openldap-svc
+      - openldap-svc
+      - openldap-svc
   s3:
     auth_secret: "TMPL_SGIAM_SECRET_KEY"
     iam:
@@ -49,7 +49,7 @@ cortx:
       - http://s3.seagate.com:80
     internal:
       endpoints:
-      - http://127.0.0.1:28049
+      - http://cortx-io-svc:28049
 cluster:
   id: "TMPL_CLUSTER_ID"
   storage_set_count: 1
