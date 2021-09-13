@@ -72,10 +72,6 @@ class SetupCmd(object):
 
     self.ldap_user = "sgiamadmin"
     self.module = module
-    self._preqs_conf_file = self.get_confkey('VALIDATION_PREREQ_FILE')
-    self.s3_tmp_dir = self.get_confkey('TMP_DIR')
-    self.ldap_mdb_folder = self.get_confkey('LDAP_MDB_LOCATION')
-
 
     s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
     self.logger = logging.getLogger(s3deployment_logger_name)
@@ -92,6 +88,11 @@ class SetupCmd(object):
 
     self._url = config
     self._provisioner_confstore = S3CortxConfStore(self._url, 'setup_prov_index')
+
+    self._preqs_conf_file = self.get_confkey('VALIDATION_PREREQ_FILE')
+    self.s3_tmp_dir = self.get_confkey('TMP_DIR')
+    self.ldap_mdb_folder = self.get_confkey('LDAP_MDB_LOCATION')
+
 
     # Get machine-id of current node from constore
     self.machine_id = self._provisioner_confstore.get_machine_id()
