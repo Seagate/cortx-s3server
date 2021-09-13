@@ -46,10 +46,7 @@ class SetupCmd(object):
   rootdn_passwd = None
   cluster_id = None
   machine_id = None
-  ldap_mdb_folder = "/var/lib/ldap"
   s3_prov_config = "/opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml"
-  _preqs_conf_file = "/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json"
-  s3_tmp_dir = "/etc/cortx/s3/tmp"
 
   #TODO
   # add the service name and HA service name in the following dictionary
@@ -72,8 +69,7 @@ class SetupCmd(object):
     self.cluster_id = None
     self.base_config_file_path = "/etc/cortx"
     self.base_log_file_path = "/var/log/cortx"
-    self.shared_base_config_file_path = None
-    self.shared_base_log_file_path = None
+
     self.ldap_user = "sgiamadmin"
     self.module = module
 
@@ -81,6 +77,15 @@ class SetupCmd(object):
     self.logger = logging.getLogger(s3deployment_logger_name)
 
     self._s3_confkeys_store = S3CortxConfStore(f'yaml://{self.s3_prov_config}', 'setup_s3keys_index')
+
+    # get all the param from the s3_prov_config file
+    self._preqs_conf_file = self.get_confkey('VALIDATION_PREREQ_FILE')
+    self.s3_tmp_dir = self.get_confkey('TMP_DIR')
+    self.ldap_mdb_folder = self.get_confkey('LDAP_MDB_LOCATION')
+
+    # Get machine-id of current node from constore
+    self.machine_id = self._s3_confkeys_store.get_machine_id()
+    self.logger.info(f'Machine id : {self.machine_id}')
 
     if config is None:
       self.logger.warning(f'Empty Config url')
@@ -92,22 +97,6 @@ class SetupCmd(object):
 
     self._url = config
     self._provisioner_confstore = S3CortxConfStore(self._url, 'setup_prov_index')
-
-    # Get machine-id of current node from constore
-    self.machine_id = self._provisioner_confstore.get_machine_id()
-    self.logger.info(f'Machine id : {self.machine_id}')
-
-    self.cluster_id = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_CLUSTER_ID_KEY')
-    self.logger.info(f'Cluster  id : {self.cluster_id}')
-    self.base_config_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_CONFIG_PATH')
-    self.logger.info(f'config file path : {self.base_config_file_path}')
-    self.base_log_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_LOG_PATH')
-    self.logger.info(f'log file path : {self.base_log_file_path}')
-    self.shared_base_config_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SHARED_BASE_CONFIG_PATH')
-    self.logger.info(f'shared config path : {self.shared_base_config_file_path}')
-    self.shared_base_log_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SHARED_BASE_LOG_PATH')
-    self.logger.info(f'shared log path : {self.shared_base_log_file_path}')
-
 
   @property
   def url(self) -> str:
@@ -272,7 +261,10 @@ class SetupCmd(object):
     if not value:
       raise Exception(f'Empty value for key : {key}')
     else:
-      address_token = ["hostname", "public_fqdn", "private_fqdn"]
+      if ("K8S" !=  str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
+        address_token = ["hostname", "public_fqdn", "private_fqdn"]
+      else : 
+        address_token = []
       for token in address_token:
         if key.find(token) != -1:
           NetworkV().validate('connectivity',[value])
