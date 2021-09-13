@@ -26,11 +26,15 @@ import logging
 import os
 import socket
 from logging import handlers
+from s3confstore.cortx_s3_confstore import S3CortxConfStore
+
+# Get the machine id from confstore
+s3_confkeys_store = S3CortxConfStore(f'yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml', 'machine_id_index')
 
 #Logger details
 s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
-s3deployment_log_file = "/var/log/cortx/s3/s3deployment/s3deployment.log"
-s3deployment_log_directory = "/var/log/cortx/s3/s3deployment/"
+s3deployment_log_file =  os.path.join("/var/log/cortx/s3", s3_confkeys_store.get_machine_id(), "s3deployment/s3deployment.log")
+s3deployment_log_directory =  os.path.join("/var/log/cortx/s3", s3_confkeys_store.get_machine_id(), "s3deployment")
 s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 def main():
