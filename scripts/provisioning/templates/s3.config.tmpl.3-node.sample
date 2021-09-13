@@ -70,8 +70,8 @@ cortx:
       ldapSSLPort: 636
       iamAuditLog: "rsyslog-tcp"
     s3bgdelete:
-      endpoint: "127.0.0.1"
-      port: "28049"
+      producer_endpoint: "http://127.0.0.1:28049"
+      consumer_endpoint: "http://127.0.0.1:28049"
       scheduler_schedule_interval: 1200
       max_keys: 1000
     base_log_path: "/var/log/cortx"
