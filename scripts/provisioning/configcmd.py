@@ -386,6 +386,7 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_DEFAULT_ENDPOINT", "defaultEndpoint")
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_IAM_AUDITLOG", "IAMAuditlog")
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logFilePath", self.update_auth_log_dir_path)
+    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_BASE_CONFIG_PATH", "logConfigFile", self.update_auth_log4j_config_file_path)
     self.update_auth_log4j_log_dir_path()
     self.logger.info("Update s3 authserver config file completed")
 
@@ -394,6 +395,12 @@ class ConfigCmd(SetupCmd):
     s3_auth_log_path = os.path.join(value_to_update, "auth", self.machine_id, "server")
     self.logger.info(f's3_auth_log_path: {s3_auth_log_path}')
     return s3_auth_log_path
+
+  def update_auth_log4j_config_file_path(self, value_to_update, additional_param):
+    """Update s3 auth log4j config path in config file."""
+    s3_auth_log4j_log_path = self.get_confkey("S3_AUTHSERVER_LOG4J2_CONFIG_FILE").replace("/opt/seagate/cortx", self.base_config_file_path)
+    self.logger.info(f's3_auth_log4j_log_path: {s3_auth_log4j_log_path}')
+    return s3_auth_log4j_log_path
 
   def update_auth_log4j_log_dir_path(self):
     """Update s3 auth log directory path in log4j2 config file."""
