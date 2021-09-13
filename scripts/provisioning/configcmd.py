@@ -35,6 +35,7 @@ from s3backgrounddelete.cortx_s3_constants import MESSAGE_BUS
 from s3_haproxy_config import S3HaproxyConfig
 from ldapaccountaction import LdapAccountAction
 from s3cipher.cortx_s3_cipher import CortxS3Cipher
+import xml.etree.ElementTree as ET
 
 class ConfigCmd(SetupCmd):
   """Config Setup Cmd."""
@@ -401,12 +402,19 @@ class ConfigCmd(SetupCmd):
     if path.isfile(f'{log4j2_configfile}') == False:
       self.logger.error(f'{log4j2_configfile} file is not present')
       raise S3PROVError(f'{log4j2_configfile} file is not present')
-    with open(log4j2_configfile) as f:
-      s3_auth_log_path = os.path.join(self.base_config_file_path, "auth", self.machine_id, "server")
-      self.logger.info(f's3_auth_log_path: {s3_auth_log_path}')
-      modified_data=f.read().replace('/var/log/cortx/auth/server', s3_auth_log_path)
-    with open(log4j2_configfile, "w") as f:
-        f.write(modified_data)
+    # parse the log4j xml file
+    log4j2_xmlTree = ET.parse(log4j2_configfile)
+    # get the root node
+    rootElement = log4j2_xmlTree.getroot()
+    # find the node Properties/Property
+    propertiesElement = rootElement.find("Properties")
+    propertyElement = propertiesElement.find("Property")
+    s3_auth_log_path = os.path.join(self.base_config_file_path, "auth", self.machine_id, "server")
+    self.logger.info(f's3_auth_log_path: {s3_auth_log_path}')
+    # update the path in to xml
+    propertyElement.text = s3_auth_log_path
+    # Write the modified xml file.
+    log4j2_xmlTree.write(log4j2_configfile)
     self.logger.info(f'Updated s3 auth log directory path in log4j2 config file')
 
   def update_s3_bgdelete_configs(self):
