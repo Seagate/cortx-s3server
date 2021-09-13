@@ -100,15 +100,15 @@ class S3HaproxyConfig:
     setup_type = str(self.provisioner_confstore.get_config(
       self.local_confstore.get_config('CONFIG>CONFSTORE_SETUP_TYPE')))
       
-	if ("K8S" == setup_type) :
-	  configure_haproxy_k8()
-	else : 
-	  configure_haproxy_legacy()
+    if ("K8S" == setup_type) :
+      configure_haproxy_k8()
+    else : 
+      configure_haproxy_legacy()
 
   def configure_haproxy_k8(self):
-  	pass
-	  
-  def configure_haproxy_legacy(self):		  
+    pass
+      
+  def configure_haproxy_legacy(self):         
     """Main Processing function."""
     self.local_confstore = S3CortxConfStore(
       "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml",
