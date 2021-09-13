@@ -22,7 +22,7 @@
 cortx:
   common:
     product_release: "LC"
-    setup_type: "VM"
+    setup_type: "K8"
     storage:
       log: "/var/log/cortx/"
       misc: "/var/data/cortx/"

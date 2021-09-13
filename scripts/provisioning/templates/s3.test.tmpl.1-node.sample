@@ -26,4 +26,4 @@ test:
     endpoint_url: "s3.seagate.com"
 cortx:
   common:
-    setup_type: "VM"
+    setup_type: "K8"
