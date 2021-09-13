@@ -180,6 +180,53 @@ class SetupCmd(object):
       self.logger.error(f'read ldap credentials failed, error: {e}')
       raise e
 
+  def update_rootdn_credentials(self, s3_cluster_file : str):
+    """Set rootdn username and password to opfile."""
+    try:
+      s3cipher_obj = CortxS3Cipher(None,
+                                False,
+                                0,
+                                self.get_confkey('CONFSTORE_OPENLDAP_CONST_KEY'))
+
+      cipher_key = s3cipher_obj.generate_key()
+
+      self.ldap_root_user = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_ROOTDN_USER_KEY')
+
+      encrypted_rootdn_pass = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_ROOTDN_PASSWD_KEY')
+
+      if encrypted_rootdn_pass is not None:
+        self.rootdn_passwd = s3cipher_obj.decrypt(cipher_key, encrypted_rootdn_pass)
+
+      if encrypted_rootdn_pass is None:
+        raise S3PROVError('password cannot be None.')
+
+      key = 'cluster_config>rootdn_user'
+      opfileconfstore = S3CortxConfStore(f'yaml://{s3_cluster_file}', 'write_rootdn_idx')
+      opfileconfstore.set_config(f'{key}', f'{self.ldap_root_user}', True)
+
+      key = 'cluster_config>rootdn_pass'
+      opfileconfstore.set_config(f'{key}', f'{encrypted_rootdn_pass}', True)
+
+    except Exception as e:
+      self.logger.error(f'update rootdn credentials failed, error: {e}')
+      raise e
+
+  def update_cluster_id(self, op_file: str):
+    """Set 'cluster_id' to op_file."""
+    try:
+      if path.isfile(f'{op_file}') == False:
+        raise S3PROVError(f'{op_file} must be present')
+      else:
+        key = 'cluster_config>cluster_id'
+        opfileconfstore = S3CortxConfStore(f'yaml://{op_file}', 'write_cluster_id_idx')
+        opfileconfstore.set_config(f'{key}', f'{self.cluster_id}', True)
+        updated_cluster_id = opfileconfstore.get_config(f'{key}')
+
+        if updated_cluster_id != self.cluster_id:
+          raise S3PROVError(f'set_config failed to set {key}: {self.cluster_id} in {op_file} ')
+    except Exception as e:
+      raise S3PROVError(f'exception: {e}')
+
   def validate_pre_requisites(self,
                         rpms: list = None,
                         pip3s: list = None,
