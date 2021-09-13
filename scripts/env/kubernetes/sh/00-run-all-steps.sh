@@ -25,3 +25,4 @@ set -e -x
 ./sh/03-common-k8s-definitions.sh
 ./sh/04-openldap.sh
 ./sh/05-create-IO-containers.sh
+./sh/06-haproxy-config.sh

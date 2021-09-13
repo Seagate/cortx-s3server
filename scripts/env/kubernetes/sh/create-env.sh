@@ -56,3 +56,5 @@ if [ "$NUM_DATA_DRIVES" -lt 12 ]; then
 fi
 echo "NUM_DATA_DRIVES=$NUM_DATA_DRIVES" >> ./env.sh
 
+add_separator SUCCESS
+cat env.sh

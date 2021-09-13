@@ -38,6 +38,14 @@ cat ./k8s-blueprints/openldap-pv.yaml.template \
 kubectl apply -f ./k8s-blueprints/openldap-pv.yaml
 kubectl apply -f ./k8s-blueprints/openldap-stateful.yaml
 
+set +x
+while [ `kubectl get pod | grep openldap | grep Running | wc -l` -lt 1 ]; do
+  echo openldap pod is not yet running, retrying ...
+  echo '(hit CTRL-C if it is taking too long)'
+  sleep 5
+done
+set -x
+
 yum install -y openldap-clients
 
 # Find LDAP cluster IP

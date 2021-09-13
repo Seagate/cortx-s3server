@@ -20,7 +20,7 @@ NODE_NAME=node1
 CORTX_ALL_IMAGE_TAG=2.0.0-latest-custom-ci
   # Update if you want to test specific build instead of latest.
 
-GITHUB_ACCESS_TOKEN=.........
-  # put your github container registry access token here (CR_PAT)
-
-export CR_PAT=$GITHUB_ACCESS_TOKEN # Don't edit this line, leave as is
+DOCKER_USER_NAME=
+DOCKER_PASSWORD=
+  # www.docker.com credentials.  Optional.  Fill in if you need to avoid Rate
+  # Limiting issue.

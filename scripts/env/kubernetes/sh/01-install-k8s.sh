@@ -30,13 +30,15 @@ yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce
 yum install -y docker-ce docker-ce-cli containerd.io
 systemctl start docker
 
+# authorize with docker.com (to fix rate limiting)
+if [ -n "${DOCKER_USER_NAME}{$DOCKER_PASSWORD}" ]; then
+  docker login -u "$DOCKER_USER_NAME" -p "$DOCKER_PASSWORD"
+fi
+
 # self-check
-
-add_separator Testing docker.
-
-sudo docker run hello-world
-
-self_check "Do you see success message above?  (Something like 'Hello from Docker!')"
+# add_separator Testing docker.
+# commenting out this check, as it is reaching Docker (and has rate limits)
+# sudo docker run hello-world
 
 cat <<EOF > /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
@@ -61,20 +63,18 @@ net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
 EOF
 
-add_separator listing all rules
-sysctl --system
-
-add_separator listing k8s rules
-sysctl --system | grep k8s.conf -A3
-
 set +x
-self_check "Do you see the following lines in above output?
-
-    Applying /etc/sysctl.d/k8s.conf ...
-    net.bridge.bridge-nf-call-ip6tables = 1
-    net.bridge.bridge-nf-call-iptables = 1
-
-"
+actual=$( sysctl --system \
+  | grep k8s.conf -A3 \
+  | grep -v 'Applying /etc/sysctl.d/k8s.conf' \
+  | grep -v 'net.bridge.bridge-nf-call-ip6tables = 1' \
+  | grep -v 'net.bridge.bridge-nf-call-iptables = 1' \
+  | wc -l)
+if [ "$actual" -ne 1 ]; then
+  echo 'Rules in /etc/sysctl.d/k8s.conf failed to apply. Exiting.'
+  add_separator FAILED
+  false
+fi
 set -x
 
 if [ `getenforce` != 'Disabled' ]; then
@@ -85,9 +85,14 @@ fi
 sed -i '/swap/d' /etc/fstab
 swapoff -a
 
-free -mh
-
-self_check "Is swap showing 0 bytes in output above?"
+set +x
+if [ "`free | grep ^Swap | awk '{print $2+$3+$4}'`" -ne 0 ]; then
+  add_separator 'FAILURE: Failed to disable swap'
+  set -x
+  free
+  false
+fi
+set -x
 
 systemctl enable docker.service
 cat <<EOF > /etc/docker/daemon.json
@@ -118,6 +123,9 @@ Then paste the command back to this terminal below and hit CTRL-D:"
   set -x
 
   curl https://docs.projectcalico.org/manifests/calico.yaml -O
+  # download images using docker -- 'kubectl init' is not able to apply user
+  # credentials, and so is suffering from rate limits.
+  cat calico.yaml | grep 'image:' | awk '{print $2}' | xargs -n1 docker pull
   kubectl apply -f calico.yaml
 fi
 

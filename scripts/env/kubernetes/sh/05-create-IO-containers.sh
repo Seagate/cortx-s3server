@@ -36,4 +36,10 @@ kubectl apply -f k8s-blueprints/var-motr-pv.yaml
 kubectl apply -f k8s-blueprints/var-motr-pvc.yaml
 kubectl apply -f k8s-blueprints/depl-pod.yaml
 
+while [ `kubectl get pod | grep depl-pod | grep Running | wc -l` -lt 1 ]; do
+  echo openldap pod is not yet running, retrying ...
+  echo '(hit CTRL-C if it is taking too long)'
+  sleep 5
+done
+
 add_separator SUCCESSFULLY CREATED IO POD AND CONTAINERS.
