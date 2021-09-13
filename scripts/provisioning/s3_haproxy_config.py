@@ -108,10 +108,10 @@ class S3HaproxyConfig:
     self.logger.info(f'Setup type is {setup_type}')
 
     if ("K8" == setup_type) :
-      configure_haproxy_k8()
-      configure_haproxy_legacy() # Remove his once k8s HAPROXY is running
+      self.configure_haproxy_k8()
+      self.configure_haproxy_legacy() # Remove his once k8s HAPROXY is running
     else : 
-      configure_haproxy_legacy()
+      self.configure_haproxy_legacy()
 
   def configure_haproxy_k8(self):
     self.logger.info("K8s HAPROXY configuration ...")
