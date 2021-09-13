@@ -409,7 +409,7 @@ class ConfigCmd(SetupCmd):
     # find the node Properties/Property
     propertiesElement = rootElement.find("Properties")
     propertyElement = propertiesElement.find("Property")
-    s3_auth_log_path = os.path.join(self.base_config_file_path, "auth", self.machine_id, "server")
+    s3_auth_log_path = os.path.join(self.base_log_file_path, "auth", self.machine_id, "server")
     self.logger.info(f's3_auth_log_path: {s3_auth_log_path}')
     # update the path in to xml
     propertyElement.text = s3_auth_log_path
