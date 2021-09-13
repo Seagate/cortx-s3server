@@ -138,6 +138,8 @@ copy the output and paste in this terminal below.  Then hit CTRL-D:"
   set -x
 fi
 
+sleep 15
+
 while true; do
   set -x
   kubectl get pods -n kube-system
@@ -203,6 +205,6 @@ while true; do
 done
 set -x
 
-kubectl label node "$HOST_FQDN" node-name="$NODE_LABEL"
+kubectl label node "$HOST_FQDN" node-name="$NODE_NAME"
 
 add_separator SUCCESSFULLY INSTALLED KUBERNETES.
