@@ -97,13 +97,19 @@ class S3HaproxyConfig:
       self.local_confstore.get_config('CONFIG>CONFSTORE_S3_AUTHSERVER_PORT')))
 
   def process(self):
+
+    self.local_confstore = S3CortxConfStore(
+    "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml",
+    'localstore')
+
     setup_type = str(self.provisioner_confstore.get_config(
       self.local_confstore.get_config('CONFIG>CONFSTORE_SETUP_TYPE')))
 
     self.logger.info(f'Setup type is {setup_type}')
 
     if ("K8" == setup_type) :
-      configure_haproxy_k8()
+      configure_haproxy_k8()      
+	  configure_haproxy_legacy() # Remove his once k8s HAPROXY is running
     else : 
       configure_haproxy_legacy()
 
@@ -114,9 +120,6 @@ class S3HaproxyConfig:
   def configure_haproxy_legacy(self):         
     """Main Processing function."""
     self.logger.info("Legacy HAPROXY configuration ...")
-    self.local_confstore = S3CortxConfStore(
-      "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml",
-      'localstore')
 
     #Get necessary info from confstore
     localhost = '127.0.0.1'
