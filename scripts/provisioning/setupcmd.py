@@ -603,7 +603,7 @@ class SetupCmd(object):
     if enc_ldap_passwd != None:
       self.ldap_passwd = s3cipher_obj.decrypt(cipher_key, enc_ldap_passwd)
 
-  def get_ldap_root_credentials(self):
+  def read_ldap_root_credentials(self):
     """Used for reset and cleanup phase to get the ldap root user and decrypted passwd."""
     key = 'cluster_config>rootdn_user'
 
