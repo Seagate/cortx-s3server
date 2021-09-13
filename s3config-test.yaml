@@ -120,6 +120,7 @@ S3_MOTR_CONFIG:                                     # Section for S3 Motr
    S3_MOTR_FIRST_READ_SIZE: 4                         # Num of units of First Read Request to MOTR
    S3_MOTR_SLEEP_DURING_RECONNECT: 4                 # Time in seconds
    S3_MOTR_RECONNECT_RETRY_COUNT: 15                 # No of times s3 will try to retry connection to motr.
+   S3_MOTR_INIT_MAX_TIMEOUT: 120                      # Motr init retry interval.
 S3_THIRDPARTY_CONFIG:
    S3_LIBEVENT_POOL_BUFFER_SIZE: 16384                   # Pool buffer size
                                                         # For S3_MOTR_UNIT_SIZE of size 1MB, it is recommended to have S3_LIBEVENT_POOL_BUFFER_SIZE of size 16384
