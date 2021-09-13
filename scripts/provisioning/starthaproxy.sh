@@ -29,4 +29,5 @@ if ! [ -f "/etc/cortx/s3/stx/stx.pem" ]; then
 fi
 
 # Run the configured haproxy
-/usr/sbin/haproxy -Ws -f /etc/cortx/s3/haproxy.cfg -p /run/haproxy.pid 1>/var/log/cortx/s3/haproxy.log 2>&1
+mkdir -p /var/log/cortx/s3
+/usr/sbin/haproxy -Ws -f /etc/cortx/s3/haproxy.cfg -p /run/haproxy.pid 1>>/var/log/cortx/s3/haproxy.log 2>&1
