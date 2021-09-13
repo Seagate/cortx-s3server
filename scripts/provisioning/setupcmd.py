@@ -89,9 +89,9 @@ class SetupCmd(object):
     self._url = config
     self._provisioner_confstore = S3CortxConfStore(self._url, 'setup_prov_index')
 
-    self._preqs_conf_file = "/opt/seagate/cortx/s3/mini-prov/s3setup_prereqs.json" #self.get_confkey('VALIDATION_PREREQ_FILE')
-    self.s3_tmp_dir = "/etc/cortx/s3/tmp" #self.get_confkey('TMP_DIR')
-    self.ldap_mdb_folder = "/var/lib/ldap" #self.get_confkey('LDAP_MDB_LOCATION')
+    self._preqs_conf_file = self.get_confkey('VALIDATION_PREREQ_FILE')
+    self.s3_tmp_dir = self.get_confkey('TMP_DIR')
+    self.ldap_mdb_folder = self.get_confkey('LDAP_MDB_LOCATION')
 
     # Get machine-id of current node from constore
     self.machine_id = self._provisioner_confstore.get_machine_id()
