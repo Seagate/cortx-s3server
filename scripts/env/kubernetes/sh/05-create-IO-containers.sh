@@ -32,8 +32,16 @@ mkdir /var/motr
 
 mkdir -p /etc/cortx /var/log/cortx /var/data/cortx
 
+# update image link for containers
+cat k8s-blueprints/depl-pod.yaml.template \
+  | sed "s,<s3-cortx-all-image>,ghcr.io/seagate/cortx-all:${S3_CORTX_ALL_IMAGE_TAG}," \
+  | sed "s,<motr-cortx-all-image>,ghcr.io/seagate/cortx-all:${MOTR_CORTX_ALL_IMAGE_TAG}," \
+  > k8s-blueprints/depl-pod.yaml
+
+# pull the images
 cat k8s-blueprints/depl-pod.yaml | grep 'image:' | awk '{print $2}' | xargs -n1 docker pull
 
+# create the POD and all whats needed
 kubectl apply -f k8s-blueprints/motr-pv.yaml
 kubectl apply -f k8s-blueprints/motr-pvc.yaml
 kubectl apply -f k8s-blueprints/var-motr-pv.yaml

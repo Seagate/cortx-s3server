@@ -7,7 +7,7 @@ metadata:
 spec:
   containers:
     - name: haproxy
-      image: ghcr.io/seagate/cortx-all:2.0.0-latest-custom-ci
+      image: <s3-cortx-all-image>
       imagePullPolicy: Never
       volumeMounts:
         - name: etc-cortx
@@ -32,7 +32,7 @@ spec:
       args:
          - 'sleep infinity'
     - name: authserver
-      image: ghcr.io/seagate/cortx-all:2.0.0-latest-custom-ci
+      image: <s3-cortx-all-image>
       imagePullPolicy: Never
       volumeMounts:
         - name: etc-cortx
@@ -48,7 +48,7 @@ spec:
       args:
          - 'sleep infinity'
     - name: hare-motr
-      image: ghcr.io/seagate/cortx-all:2.0.0-2042-custom-ci
+      image: <motr-cortx-all-image>
       imagePullPolicy: Never
       volumeMounts:
         - name: var-motr
@@ -85,7 +85,7 @@ spec:
       args:
          - 'sleep infinity'
     - name: s3server
-      image: ghcr.io/seagate/cortx-all:2.0.0-latest-custom-ci
+      image: <s3-cortx-all-image>
       imagePullPolicy: Never
       volumeMounts:
         - name: etc-cortx
