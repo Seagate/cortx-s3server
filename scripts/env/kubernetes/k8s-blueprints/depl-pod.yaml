@@ -9,6 +9,13 @@ spec:
     - name: haproxy
       image: ghcr.io/seagate/cortx-all:2.0.0-latest-custom-ci
       imagePullPolicy: Never
+      volumeMounts:
+        - name: etc-cortx
+          mountPath: /etc/cortx
+        - name: var-log-cortx
+          mountPath: /var/log/cortx
+        - name: var-data-cortx
+          mountPath: /var/data/cortx
       ports:
         - containerPort: 80
           name: "port80"
@@ -27,6 +34,13 @@ spec:
     - name: authserver
       image: ghcr.io/seagate/cortx-all:2.0.0-latest-custom-ci
       imagePullPolicy: Never
+      volumeMounts:
+        - name: etc-cortx
+          mountPath: /etc/cortx
+        - name: var-log-cortx
+          mountPath: /var/log/cortx
+        - name: var-data-cortx
+          mountPath: /var/data/cortx
       command:
          - "/bin/bash"
          - "-c"
@@ -34,7 +48,7 @@ spec:
       args:
          - 'sleep infinity'
     - name: hare-motr
-      image: ghcr.io/seagate/cortx-all:2.0.0-latest-custom-ci
+      image: ghcr.io/seagate/cortx-all:2.0.0-2042-custom-ci
       imagePullPolicy: Never
       volumeMounts:
         - name: var-motr
@@ -73,6 +87,13 @@ spec:
     - name: s3server
       image: ghcr.io/seagate/cortx-all:2.0.0-latest-custom-ci
       imagePullPolicy: Never
+      volumeMounts:
+        - name: etc-cortx
+          mountPath: /etc/cortx
+        - name: var-log-cortx
+          mountPath: /var/log/cortx
+        - name: var-data-cortx
+          mountPath: /var/data/cortx
       command:
          - "/bin/bash"
          - "-c"
@@ -80,6 +101,15 @@ spec:
       args:
          - 'sleep infinity'
   volumes:
+      - name: etc-cortx
+        persistentVolumeClaim:
+          claimName: etc-cortx
+      - name: var-log-cortx
+        persistentVolumeClaim:
+          claimName: var-log-cortx
+      - name: var-data-cortx
+        persistentVolumeClaim:
+          claimName: var-data-cortx
       - name: var-motr
         persistentVolumeClaim:
           claimName: var-motr

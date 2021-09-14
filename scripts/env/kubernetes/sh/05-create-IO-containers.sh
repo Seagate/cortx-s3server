@@ -30,10 +30,16 @@ add_separator Creating IO POD and containers.
 sysctl -w vm.max_map_count=30000000
 mkdir /var/motr
 
+mkdir -p /etc/cortx /var/log/cortx /var/data/cortx
+
+cat k8s-blueprints/depl-pod.yaml | grep 'image:' | awk '{print $2}' | xargs -n1 docker pull
+
 kubectl apply -f k8s-blueprints/motr-pv.yaml
 kubectl apply -f k8s-blueprints/motr-pvc.yaml
 kubectl apply -f k8s-blueprints/var-motr-pv.yaml
 kubectl apply -f k8s-blueprints/var-motr-pvc.yaml
+kubectl apply -f k8s-blueprints/s3-pv.yaml
+kubectl apply -f k8s-blueprints/s3-pvc.yaml
 kubectl apply -f k8s-blueprints/depl-pod.yaml
 
 set +x
