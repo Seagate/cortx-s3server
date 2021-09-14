@@ -263,7 +263,7 @@ class SetupCmd(object):
     else:
       if ("K8S" !=  str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
         address_token = ["hostname", "public_fqdn", "private_fqdn"]
-      else : 
+      else :
         address_token = []
       for token in address_token:
         if key.find(token) != -1:
