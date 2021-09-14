@@ -46,6 +46,7 @@ class ResetCmd(SetupCmd):
   def process(self):
     """Main processing function."""
     self.logger.info(f"Processing phase = {self.name}, config = {self.url}, module = {self.module}")
+    # disabling reset phase for K8s branch
     if ("K8" == str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
       return
     self.logger.info("validations started")
