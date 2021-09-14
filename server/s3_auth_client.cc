@@ -46,7 +46,6 @@ static evhtp_res on_conn_err_callback(evhtp_connection_t *p_evhtp_conn,
   auto *p_auth_ctx = static_cast<S3AuthClientOpContext *>(p_arg);
 
   auto request_inst = p_auth_ctx->get_request();
-
   const auto &request_id = p_auth_ctx->get_request_id();
   const auto &stripped_request_id = p_auth_ctx->get_stripped_request_id();
 
@@ -1145,7 +1144,7 @@ void S3AuthClient::on_common_failed() {
 
     } else {
       s3_log(S3_LOG_ERROR, request_id,
-             "Cannot connect to Auth server (Retry count = %d).\n",
+             "Cannot connect to Auth server (Retry count = %u).\n",
              retry_count);
       // s3_iem(LOG_ERR, S3_IEM_AUTH_CONN_FAIL, S3_IEM_AUTH_CONN_FAIL_STR,
       //     S3_IEM_AUTH_CONN_FAIL_JSON);

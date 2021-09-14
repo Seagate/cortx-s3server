@@ -1185,13 +1185,15 @@ unsigned S3Option::get_libevent_pool_reserve_percent() const {
 
 unsigned short S3Option::do_redirection() { return s3_daemon_redirect; }
 
-void S3Option::set_option_file(std::string filename) { option_file = filename; }
+void S3Option::set_option_file(const std::string& filename) {
+  option_file = filename;
+}
 
-void S3Option::set_layout_recommendation_file(std::string filename) {
+void S3Option::set_layout_recommendation_file(const std::string& filename) {
   layout_recommendation_file = filename;
 }
 
-void S3Option::set_daemon_dir(std::string path) { s3_daemon_dir = path; }
+void S3Option::set_daemon_dir(const std::string& path) { s3_daemon_dir = path; }
 
 void S3Option::set_redirection(unsigned short redirect) {
   s3_daemon_redirect = redirect;
@@ -1423,7 +1425,7 @@ uint32_t S3Option::get_perf_stats_inout_bytes_interval_msec() {
   return perf_stats_inout_bytes_interval_msec;
 }
 
-void S3Option::set_stats_allowlist_filename(std::string filename) {
+void S3Option::set_stats_allowlist_filename(const std::string& filename) {
   stats_allowlist_filename = filename;
 }
 

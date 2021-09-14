@@ -362,7 +362,7 @@ void S3DeleteBucketAction::remove_part_indexes_successful() {
   int op_ret_code;
   bool partial_failure = false;
   for (multipart_kv = multipart_objects.begin(), i = 0;
-       multipart_kv != multipart_objects.end(); multipart_kv++, i++) {
+       multipart_kv != multipart_objects.end(); ++multipart_kv, ++i) {
     op_ret_code = motr_kv_writer->get_op_ret_code_for(i);
     if (op_ret_code != 0 && op_ret_code != -ENOENT) {
       partial_failure = true;

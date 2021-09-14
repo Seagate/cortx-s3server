@@ -21,7 +21,7 @@
 #include "s3_error_codes.h"
 #include "s3_common_utilities.h"
 
-S3Error::S3Error(std::string error_code, std::string req_id,
+S3Error::S3Error(const std::string& error_code, std::string req_id,
                  std::string res_key, std::string error_message)
     : code(error_code),
       request_id(std::move(req_id)),

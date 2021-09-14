@@ -128,7 +128,7 @@ void S3Evbuffer::read_drain_data_from_buffer(size_t length) {
   evbuffer_free(p_evbuf);
   if (moved_bytes != (int)length) {
     s3_log(S3_LOG_ERROR, request_id,
-           "Error populating new_evbuf_body: len_to_send_to_client(%zd), "
+           "Error populating new_evbuf_body: len_to_send_to_client(%zu), "
            "len_in_reply_evbuffer(%d).\n",
            length, moved_bytes);
   }

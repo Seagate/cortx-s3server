@@ -43,8 +43,8 @@ static uint32_t s3_fi_states_free_idx;
   }
 
 s3_fp *s3_fp_alloc(const char *tag) {
-  s3_fp *fp_ptr;
-  char *tag_ptr;
+  s3_fp *fp_ptr = NULL;
+  char *tag_ptr = NULL;
 
   /* alloc mem */
   fp_ptr = (s3_fp *)calloc(1, sizeof(s3_fp));
@@ -68,7 +68,7 @@ static s3_fp *s3_fp_find(const char *tag) {
 }
 
 int s3_fi_is_enabled(const char *tag) {
-  s3_fp *fp_ptr;
+  s3_fp *fp_ptr = NULL;
   S3_FP_FETCH(tag);
   if (fp_ptr->fp_state == NULL) {
     m0_fi_register(fp_ptr);
@@ -84,31 +84,31 @@ void s3_fi_enable(const char *tag) {
 }
 
 void s3_fi_enable_once(const char *tag) {
-  s3_fp *fp_ptr;
+  s3_fp *fp_ptr = NULL;
   S3_FP_FETCH(tag);
   m0_fi_enable_once(fp_ptr->fp_func, fp_ptr->fp_tag);
 }
 
 void s3_fi_enable_random(const char *tag, uint32_t p) {
-  s3_fp *fp_ptr;
+  s3_fp *fp_ptr = NULL;
   S3_FP_FETCH(tag);
   m0_fi_enable_random(fp_ptr->fp_func, fp_ptr->fp_tag, p);
 }
 
 void s3_fi_enable_each_nth_time(const char *tag, uint32_t n) {
-  s3_fp *fp_ptr;
+  s3_fp *fp_ptr = NULL;
   S3_FP_FETCH(tag);
   m0_fi_enable_each_nth_time(fp_ptr->fp_func, fp_ptr->fp_tag, n);
 }
 
 void s3_fi_enable_off_n_on_m(const char *tag, uint32_t n, uint32_t m) {
-  s3_fp *fp_ptr;
+  s3_fp *fp_ptr = NULL;
   S3_FP_FETCH(tag);
   m0_fi_enable_off_n_on_m(fp_ptr->fp_func, fp_ptr->fp_tag, n, m);
 }
 
 void s3_fi_disable(const char *fp_tag) {
-  s3_fp *fp_ptr;
+  s3_fp *fp_ptr = NULL;
   fp_ptr = s3_fp_find(fp_tag);
   if (fp_ptr == NULL) return;
   /* use with caution, non existent FP causes an ASSERTION */
