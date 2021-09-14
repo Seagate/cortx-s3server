@@ -3,13 +3,18 @@ This page provides steps to set up s3 in k8s env using automated scripts.
 
 # Intro
 
-* Create VM with 8 CPUs, 12 disks 50GB each, 16 GB RAM.
+* Create VM with OS CentOS 7.9, at least 8 CPUs, 12 disks 50GB each, 16 GB
+  RAM.
 * Open terminal.
 * Switch to a `root` user.
 * Execute execute commands listed below.
   * Simply copy the entire commands list from each box, and paste into the
     console.
 
+NOTE: if you run this script many times during the day -- you will probably
+hit the docker registry rate limiting (docker will not allow you to
+download images).  To solve that, sign up on https://hub.docker.com, and
+provide user and password in `config.sh` step below.
 
 # 1. Download needed files to your node
 

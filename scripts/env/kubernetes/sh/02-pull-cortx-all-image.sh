@@ -23,18 +23,17 @@ source ./env.sh
 source ./sh/functions.sh
 
 set -e
+set -x
 
 add_separator "Pulling image at tag <$CORTX_ALL_IMAGE_TAG>"
-
-set -x
 docker pull "ghcr.io/seagate/cortx-all:$CORTX_ALL_IMAGE_TAG"
-
 set +x
-
-add_separator "Listing CORTX images"
-
-docker images | grep 'REPOSITORY\|cortx-all'
-
-self_check "Is cortx-all image listed above?"
+if [ -z "`docker images | grep 'cortx-all'`" ]; then
+  echo
+  docker images
+  echo
+  echo 'cortx-all image did not get downloaded (not in the list)'
+  false
+fi
 
 add_separator SUCCESSFULLY PULLED CORTX-ALL IMAGE

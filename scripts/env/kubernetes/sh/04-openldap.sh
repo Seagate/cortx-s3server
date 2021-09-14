@@ -36,11 +36,18 @@ cat ./k8s-blueprints/openldap-pv.yaml.template \
   > ./k8s-blueprints/openldap-pv.yaml
 
 kubectl apply -f ./k8s-blueprints/openldap-pv.yaml
+
+# download images using docker -- 'kubectl init' is not able to apply user
+# credentials, and so is suffering from rate limits.
+cat ./k8s-blueprints/openldap-stateful.yaml | grep 'image:' | awk '{print $2}' | xargs -n1 docker pull
 kubectl apply -f ./k8s-blueprints/openldap-stateful.yaml
 
 set +x
 while [ `kubectl get pod | grep openldap | grep Running | wc -l` -lt 1 ]; do
-  echo openldap pod is not yet running, retrying ...
+  echo
+  kubectl get pod | grep 'NAME\|openldap'
+  echo
+  echo Openldap pod is not yet in Running state, re-checking ...
   echo '(hit CTRL-C if it is taking too long)'
   sleep 5
 done
@@ -49,14 +56,7 @@ set -x
 yum install -y openldap-clients
 
 # Find LDAP cluster IP
-add_separator Listing k8s LDAP service
-kubectl get svc | grep 'NAME\|ldap'
-set +x
-echo
-read -p "Copy the CLUSTER-IP value for LDAP service:" var
-set -x
-OPENLDAP_SVC="$var"
-
+OPENLDAP_SVC=`kubectl get svc openldap-svc | grep ldap | awk '{print $3}'`
 
 # apply .ldif files
 

@@ -103,24 +103,17 @@ EOF
 sudo systemctl restart docker
 
 if [ "$THIS_IS_PRIMARY_K8S_NODE" = yes ]; then
-  kubeadm init --pod-network-cidr=192.168.0.0/16
+  kubeadm init --pod-network-cidr=192.168.0.0/16 2>&1 | tee kubeadm-init.log
+  cat kubeadm-init.log
   mkdir -p $HOME/.kube
   # This is a workaround for SSC machines where root cannot write to /home
   (sudo cat /etc/kubernetes/admin.conf) > ~/.kube/config
   sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
-  set +x
-  add_separator Save important data
-  echo "
-  
-Copy 'kubeadm join' command from above outputs.  Should look like the following:
-
-kubeadm join 10.230.244.241:6443 --token kxr1t6.iql7ih3uq2lr0e7l \\
-          --discovery-token-ca-cert-hash sha256:d221dd8ccd93871d4226ad60bda697f9cb98af8e0c5c0ece523a5c95a704ea27
-
-Then paste the command back to this terminal below and hit CTRL-D:"
-  cat >kubeadm-join-cmd.sh
-  set -x
+  # save kubeadm join command to separate file
+  cat kubeadm-init.log \
+    | grep 'kubeadm join\|--token\|--discovery-token-ca-cert-hash' \
+    > kubeadm-join-cmd.sh
 
   curl https://docs.projectcalico.org/manifests/calico.yaml -O
   # download images using docker -- 'kubectl init' is not able to apply user
@@ -146,70 +139,28 @@ copy the output and paste in this terminal below.  Then hit CTRL-D:"
   set -x
 fi
 
-sleep 15
-
-while true; do
-  set -x
-  kubectl get pods -n kube-system
-  set +x
-  if [ "$THIS_IS_PRIMARY_K8S_NODE" = yes ]; then
-    if self_check 'The above output should look similar to this example below:
-
-    NAME                                               READY   STATUS    RESTARTS   AGE
-    calico-kube-controllers-58497c65d5-9vj4c           1/1     Running   0          76m
-    calico-node-p9xlb                                  1/1     Running   0          76m
-    coredns-78fcd69978-bn5wb                           1/1     Running   0          76m
-    coredns-78fcd69978-httl2                           1/1     Running   0          76m
-    etcd-ssc-vm-g3-rhev4-0880.colo.seagate.com         1/1     Running   0          77m
-    kube-apiserver-ssc-vm-g3-rhev4-0880.colo.seag...   1/1     Running   0          77m
-    kube-controller-manager-ssc-vm-g3-rhev4-0880....   1/1     Running   0          77m
-    kube-proxy-r9h9s                                   1/1     Running   0          76m
-    kube-scheduler-ssc-vm-g3-rhev4-0880.colo.seag...   1/1     Running   0          77m
-
-Does the output above match? (all must be Running)'; then
-      break
-    fi
-  else
-    if self_check 'The above output should look similar to this example below:
-
-    NAME                                             READY   STATUS    RESTARTS   AGE
-    calico-kube-controllers-78d6f96c7b-xz7jd         1/1     Running   0          6m52s
-    calico-node-4s7fc                                1/1     Running   0          71s
-    calico-node-jcqxg                                1/1     Running   0          71s
-    calico-node-kxmm2                                1/1     Running   0          71s
-    coredns-558bd4d5db-2tlnc                         1/1     Running   0          17m
-    coredns-558bd4d5db-qwk5p                         1/1     Running   0          17m
-    etcd-sm6-r1.pun.seagate.com                      1/1     Running   0          18m
-    kube-apiserver-sm6-r1.pun.seagate.com            1/1     Running   0          18m
-    kube-controller-manager-sm6-r1.pun.seagate.com   1/1     Running   0          18m
-    kube-proxy-ctdhz                                 1/1     Running   0          17m
-    kube-proxy-h765n                                 1/1     Running   0          14m
-    kube-proxy-n2l8j                                 1/1     Running   0          14m
-    kube-scheduler-sm6-r1.pun.seagate.com            1/1     Running   0          18m
-
-There must be one calico-node and one kube-proxy per node in cluster.
-
-Does the output above match? (all must be Running)'; then
-      break
-    fi
-  fi
-  if ! self_check 'Retry again?  (Recommendation is retry at least a few times.  Typically it completes within a minute.)'; then
-    exit 1
-  fi
+set +x
+add_separator Checking kube-system PODs status
+while [ -n "`kubectl get pods -n kube-system | grep -v NAME | grep -v Running`" ]; do
+  echo
+  kubectl get pods -n kube-system | grep -v Running
+  echo
+  echo Some of the pods are not yet in Running state, re-checking ...
+  echo '(hit CTRL-C if it is taking too long)'
+  sleep 5
 done
 set -x
 
-while true; do
-  set -x
-  add_separator Checking nodes status
-  kubectl get nodes
-  set +x
-  if self_check "Is it showing STATUS=Ready?"; then
-    break
-  fi
-  if ! self_check 'Retry again?  (Recommendation is retry at least a few times.  Typically it completes within a minute.)'; then
-    exit 1
-  fi
+
+set +x
+add_separator Checking node status
+while [ -n "`kubectl get nodes | grep -v NAME | grep -v Ready`" ]; do
+  echo
+  kubectl get nodes | grep -v Running
+  echo
+  echo Some of the nodes are not yet in Ready state, re-checking ...
+  echo '(hit CTRL-C if it is taking too long)'
+  sleep 5
 done
 set -x
 

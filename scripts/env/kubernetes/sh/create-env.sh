@@ -37,6 +37,10 @@ set -x
 
 echo "HOST_FQDN=$hostname" >> ./env.sh
 
+if [ -z "`cat /etc/*rele* | grep 7.9.2009`" ]; then
+  self_check "OS is not CentOS 7.9.2009. Are you sure you want to proceed?"
+fi
+
 NUM_CPU=`lscpu | grep '^CPU(s):' | awk -F: '{ gsub(/ /, "", $2); print $2 }'`
 RAM_SIZE=`free | grep ^Mem | awk '{ print $2 }'`
 NUM_DATA_DRIVES=$[ `ls /dev/sd? -1 | wc -l` - 1 ]
