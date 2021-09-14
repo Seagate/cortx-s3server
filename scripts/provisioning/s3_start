@@ -45,7 +45,7 @@ def main():
   as a argument.
 
   """
-  s3config_path = "/opt/seagate/cortx/s3/conf/s3config.yaml"
+  s3config_path = "/etc/cortx/s3/conf/s3config.yaml"
   parser = argparse.ArgumentParser("S3server single entry command")
   parser.add_argument("--service", required=True)
   parser.add_argument("--index", required=False)
@@ -73,7 +73,7 @@ def main():
         time.sleep(60)
       pass
     elif args.service == 's3authserver':
-      os.system("sh /opt/seagate/cortx/auth/startauth.sh /opt/seagate/cortx")
+      os.system("sh /opt/seagate/cortx/auth/startauth.sh /etc/cortx")
     elif args.service == 's3bgproducer':
       os.system("sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh")
     elif args.service == 's3bgconsumer':
