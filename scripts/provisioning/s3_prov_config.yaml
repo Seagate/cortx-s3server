@@ -38,8 +38,8 @@ CONFIG:
   CONFSTORE_SETUP_TYPE: "cortx>common>setup_type" #M (Usedby : s3_deployment)
   CONFSTORE_BASE_LOG_PATH: "cortx>common>storage>log" #M (Usedby : all)
   CONFSTORE_S3_SECURITY_CERTIFICATE: "cortx>common>security>ssl_certificate" #O default - /etc/ssl/stx/stx.pem (Usedby : s3_deployment, haproxy)
-  CONFSTORE_S3_STORAGE_MISC: "cortx>common>storage>misc" #O default - /var/data/cortx (Usedby : none)
-  CONFSTORE_S3_PRODUCT_RELEASE: "cortx>common>product_release" #M (Usedby : none)
+  #CONFSTORE_S3_STORAGE_MISC: "cortx>common>storage>misc" #O default - /var/data/cortx (Usedby : none)
+  #CONFSTORE_S3_PRODUCT_RELEASE: "cortx>common>product_release" #M (Usedby : none)
 
   CONFSTORE_ROOTDN_USER_KEY: "cortx>external>openldap>admin" #M default - admin (Usedby : s3_deployment)
   CONFSTORE_ROOTDN_PASSWD_KEY: "cortx>external>openldap>secret" #M default  - encrypted string (Usedby : s3_deployment)
@@ -49,7 +49,7 @@ CONFIG:
 
 
   CONFSTORE_LDAPADMIN_USER_KEY: "cortx>s3>auth>admin" #O default - sgiamadmin (Usedby : s3_deployment, auth)
-  CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>s3>auth>secret" #O default - encrypted string (Usedby : s3_deployment, auth)
+  CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>s3>auth>secret" #M default - encrypted string (Usedby : s3_deployment, auth)
   CONFSTORE_S3_IAM_ENDPOINTS: "cortx>s3>iam>endpoints" #M default - http://iam.seagate.com:9080 , https://iam.seagate.com:9443 (Usedby : s3_deployment)
   CONFSTORE_S3_DATA_ENDPOINTS: "cortx>s3>data>endpoints" #M default - http://s3.seagate.com:80 , https://s3.seagate.com:443, https://s3.seagate.com:28049  (Usedby : s3_deployment, bgproducer)
   CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST : "cortx>s3>io_max_units" #O default - VM :8 , h/w : 32 (Usedby : s3_deployment, s3)
@@ -58,7 +58,7 @@ CONFIG:
 
   CONFSTORE_CLUSTER_ID_KEY: "node>machine-id>cluster_id" #M (Usedby: all)
   CONFSTORE_HOSTNAME_KEY: "node>machine-id>hostname" #M (Usedby: s3_deployment)
-  CONFSTORE_S3_MACHINE_NAME: "node>machine-id>name" #M (Usedby: None)
+  #CONFSTORE_S3_MACHINE_NAME: "node>machine-id>name" #M (Usedby: None)
   CONFSTORE_S3_CLUSTER_ID: "cluster>id" #M (Usedby: None)
   CONFSTORE_STORAGE_SET_COUNT_KEY: "cluster>storage_set_count" #M (Usedby: s3_deployment)
   CONFSTORE_STORAGE_SET_SERVER_NODES_KEY: "cluster>storage_set[storage-set-count]>nodes"  #M (Usedby: s3_deployment)
