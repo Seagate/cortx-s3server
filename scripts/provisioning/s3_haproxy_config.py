@@ -236,7 +236,7 @@ backend s3-auth
 
 #-------S3 Haproxy configuration end-----------------------------------'''
     config_handle = open(config_file, "w")
-    config_handle.write(full_text) 
+    config_handle.write(full_text)
     config_handle.close()
 
   def configure_haproxy_legacy(self):
