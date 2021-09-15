@@ -19,54 +19,70 @@
 # This file should only contain the mandatory parameters from provisioner confstore.
 # All the optional parameters should be added to default in s3_prov_config.yaml under DEFAULT_CONFIG.
 
+cortx:
+  common:
+    setup_type: "VM"
+    storage:
+      log: "/share/var/log/cortx/"
+      misc: "/var/data/cortx/"
+    security:
+      ssl_certificate: "/etc/ssl/stx/stx.pem"
+    product_release: 
+  external:
+    openldap:
+      admin: "admin"
+      secret: "gAAAAABgWFRxlYPfMDe3j03DlE1gDxsr8d7MJ5upQ2k8UC2fCU-kSWlf0tb5M3aBXOxNDnT8Rb_M2b0w9UOgw9CQH-fSKzn6sA=="
+      endpoints: "[ldap://oldap-server.cortx-cluster.lyve-cloud.com:389, ssl://oldap-server.cortx-cluster.lyve-cloud.com:636]"
+      servers: "oldap-server1.cortx-cluster.lyve-cloud.com"
+      base_dn: "dc=seagate,dc=com"
+  s3:
+    auth:
+      admin: "sgiamadmin"
+      secret: "gAAAAABgWFPz2w_t6IBVictZmgTCgBXn5V-oy2JUVtvZkJvHM5KaaZKXRwtz4YKYieIy8mVKF8PUaZ6WYJEttcsi2KDpLOk9Vg=="
+    io_max_units: "8"
+    service_instances: "1"
+    iam:
+      endpoints: "http://iam.seagate.com:9080"
+    data:
+      endpoints: "http://s3.seagate.com:80"
+  software:
+    storage:
+      config: "/etc/cortx"
+    private:
+      s3:
+        service:
+          s3server_port : 28071
+          s3_server_bgdelete_bind_port : 28049
+          authserver_ip_address : "127.0.0.1"
+          authserver_port : 28050
+          s3_enable_stats: true
+          s3_audit_logger: "rsyslog-tcp"
+      s3authserver:
+        defaultEndpoint: "127.0.0.1"
+        httpPort: 28050
+        httpsPort: 28051
+        ldapHost: "127.0.0.1"
+        ldapPort: 389
+        ldapSSLPort: 636
+        iamAuditLog: "rsyslog-tcp"
+      s3bgdelete:
+        producer_endpoint: "http://127.0.0.1:28049"
+        consumer_endpoint: "http://127.0.0.1:28049"
+        scheduler_schedule_interval: 1200
+        max_keys: 1000
+node:
+  1114a50a6bf6f9c93ebd3c49d07d3fd4:
+    3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6:
+    hostname: "ssc-vm-1823.colo.seagate.com"
+    name:
+3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6:
+cluster:
+  storage_set_count: "1"
+  storage_set[1]:
+    nodes: "['1114a50a6bf6f9c93ebd3c49d07d3fd4']"
 server_node:
   1114a50a6bf6f9c93ebd3c49d07d3fd4:
-    cluster_id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
-    hostname: "ssc-vm-1823.colo.seagate.com"
     network:
       data:
         public_fqdn: "srvnode-1.data.public"
         private_fqdn: "srvnode-1.data.private"
-cortx:
-  common:
-    setup_type: "VM"
-  software:
-    openldap:
-      root:
-        user: "admin"
-        secret: "gAAAAABgWFRxlYPfMDe3j03DlE1gDxsr8d7MJ5upQ2k8UC2fCU-kSWlf0tb5M3aBXOxNDnT8Rb_M2b0w9UOgw9CQH-fSKzn6sA=="
-      sgiam:
-        user: "sgiamadmin"
-        secret: "gAAAAABgWFPz2w_t6IBVictZmgTCgBXn5V-oy2JUVtvZkJvHM5KaaZKXRwtz4YKYieIy8mVKF8PUaZ6WYJEttcsi2KDpLOk9Vg=="
-    s3:
-      io:
-#       max_units : "8"       #commenting this to validate the default values from s3_prov_config.yaml.
-      service:
-        instances : "1"
-        s3server_port : 28071
-        s3_server_bgdelete_bind_port : 28049
-        authserver_ip_address : "127.0.0.1"
-        authserver_port : 28050
-        s3_enable_stats: true
-        s3_audit_logger: "rsyslog-tcp"
-    s3authserver:
-      defaultEndpoint: "127.0.0.1"
-      httpPort: 28050
-      httpsPort: 28051
-      ldapHost: "127.0.0.1"
-      ldapPort: 389
-      ldapSSLPort: 636
-      iamAuditLog: "rsyslog-tcp"
-    s3bgdelete:
-      producer_endpoint: "http://127.0.0.1:28049"
-      consumer_endpoint: "http://127.0.0.1:28049"
-      scheduler_schedule_interval: 1200
-      max_keys: 1000
-    base_log_path: "/var/log/cortx"
-    base_config_path: "/etc/cortx"
-cluster:
-  3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6:
-    site:
-      storage_set_count: "1"
-    storage_set:
-    - server_nodes: "['1114a50a6bf6f9c93ebd3c49d07d3fd4']"
