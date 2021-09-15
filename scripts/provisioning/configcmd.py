@@ -58,7 +58,7 @@ class ConfigCmd(SetupCmd):
     except Exception as e:
       raise S3PROVError(f'exception: {e}')
 
-  def process(self, configure_only_openldap = False, configure_only_haproxy = False):
+  def process(self, skip_openldap = False, skip_haproxy = False):
     """Main processing function."""
     self.logger.info(f"Processing phase = {self.name}, config = {self.url}, module = {self.module}")
     self.logger.info("validations started")
@@ -104,15 +104,11 @@ class ConfigCmd(SetupCmd):
       self.create_auth_jks_password()
       self.logger.info('create auth jks password completed')
 
-      if configure_only_openldap == True:
+      if skip_openldap == False:
         # Configure openldap only
         self.configure_s3_schema()
-      elif configure_only_haproxy == True:
+      if skip_haproxy == False:
         # Configure haproxy only
-        self.configure_haproxy()
-      else:
-        # Configure both openldap and haproxy
-        self.configure_s3_schema()
         self.configure_haproxy()
 
       # create topic for background delete
@@ -151,8 +147,7 @@ class ConfigCmd(SetupCmd):
                  '--ldapadminpasswd',
                  f'{self.ldap_passwd}',
                  '--rootdnpasswd',
-                 f'{self.rootdn_passwd}',
-                 '--skipssl']
+                 f'{self.rootdn_passwd}']
           handler = SimpleProcess(cmd)
           stdout, stderr, retcode = handler.run()
           self.logger.info(f'output of setup_ldap.sh: {stdout}')
@@ -241,7 +236,6 @@ class ConfigCmd(SetupCmd):
         raise(e)
       else:
         self.logger.warning("backgrounddelete service account already exist")
-<<<<<<< HEAD
 
   def update_config_value(self, config_file_path : str,
                           config_file_type : str,
@@ -529,5 +523,3 @@ class ConfigCmd(SetupCmd):
         shutil.copytree(source, destination)
       else:
           shutil.copy2(source, destination)
-=======
->>>>>>> 5070677f (EOS-22277: Accommodating openldap mini prov with s3 prov (#1061))
