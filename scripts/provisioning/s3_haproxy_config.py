@@ -196,6 +196,11 @@ frontend s3-main
     option forwardfor
     default_backend s3-main
 
+    # s3 bgdelete server port
+    bind 0.0.0.0:28049
+    acl s3bgdeleteacl dst_port 28049
+    use_backend s3-bgdelete if s3bgdeleteacl
+
     # s3 auth server port
     bind 0.0.0.0:9080
     bind 0.0.0.0:9443 ssl crt /etc/cortx/s3/stx/stx.pem
@@ -223,6 +228,13 @@ backend s3-main
     server s3-instance-3 0.0.0.0:28073 check maxconn 110        # s3 instance 3
     server s3-instance-4 0.0.0.0:28074 check maxconn 110        # s3 instance 4
     server s3-instance-5 0.0.0.0:28075 check maxconn 110        # s3 instance 5
+
+#----------------------------------------------------------------------
+# BackEnd roundrobin as balance algorithm for s3 bgdelete server
+#----------------------------------------------------------------------
+backend s3-bgdelete
+    balance static-rr                                     #Balance algorithm
+    server s3-bgdelete-instance-1 0.0.0.0:28049           # s3 bgdelete instance 1
 
 #----------------------------------------------------------------------
 # BackEnd roundrobin as balance algorith for s3 auth server
