@@ -123,12 +123,12 @@ def main():
     elif args.command == 'reset':
       from resetcmd import ResetCmd
       logger.info('reset started.')
-      ResetCmd(None, args.module).process()
+      ResetCmd(args.config, args.module).process()
       logger.info('reset successful.')
     elif args.command == 'cleanup':
       from cleanupcmd import CleanupCmd
       logger.info('cleanup started.')
-      CleanupCmd(None, args.module).process(args.pre_factory)
+      CleanupCmd(args.config, args.module).process(args.pre_factory)
       logger.info('cleanup successful.')
     elif args.command == 'preupgrade':
       from preupgradecmd import PreUpgradeCmd
