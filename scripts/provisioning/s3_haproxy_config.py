@@ -268,7 +268,7 @@ backend s3-auth
     config_handle.write(frontend_s3main_text)
     config_handle.write(backend_s3main_text)
     for i in range(0, numS3Instances):
-        target.write(
+        config_handle.write(
         "    server s3-instance-%s 0.0.0.0:%s check maxconn 110        # s3 instance %s\n"
         % (i+1, s3inport+i, i+1))
     config_handle.write(backend_s3bgdelete_text)
