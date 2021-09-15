@@ -225,8 +225,9 @@ class SetupCmd(object):
     self.logger.info(f'Validations running from {self._preqs_conf_file}')
     if pip3s:
       PkgV().validate('pip3s', pip3s)
-    if services:
-      ServiceV().validate('isrunning', services)
+    if ("K8" != str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
+	  if services:
+		ServiceV().validate('isrunning', services)
     if rpms:
       PkgV().validate('rpms', rpms)
     if files:
