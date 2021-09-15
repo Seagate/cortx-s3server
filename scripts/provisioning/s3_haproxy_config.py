@@ -109,7 +109,7 @@ class S3HaproxyConfig:
 
     if ("K8" == setup_type) :
       self.configure_haproxy_k8()
-    else : 
+    else :
       self.configure_haproxy_legacy()
 
   def configure_haproxy_k8(self):
@@ -238,8 +238,8 @@ backend s3-auth
     config_handle = open(config_file, "w")
     config_handle.write(full_text) 
     config_handle.close()
-      
-  def configure_haproxy_legacy(self):         
+
+  def configure_haproxy_legacy(self):
     """Main Processing function."""
     self.logger.info("Legacy HAPROXY configuration ...")
 
