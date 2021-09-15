@@ -26,7 +26,6 @@ import logging
 import os
 import socket
 from logging import handlers
-from s3_haproxy_config import S3HaproxyConfig
 
 #Logger details
 s3_single_entry_logger_name = \
