@@ -132,17 +132,15 @@ class ConfigCmd(SetupCmd):
         'CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY').replace("cluster-id", self.cluster_id))
     index = 0
     while index < int(storage_set_count):
-      server_nodes_list_key = self.get_confkey(
-        'CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("cluster-id", self.cluster_id).replace("storage-set-count", str(index))
+      server_nodes_list_key = self.get_confkey('CONFSTORE_EXTERNAL_SERVERS')
       server_nodes_list = self.get_confvalue(server_nodes_list_key)
       if type(server_nodes_list) is str:
         # list is stored as string in the confstore file
         server_nodes_list = literal_eval(server_nodes_list)
       for node_machine_id in server_nodes_list:
-          host_name = self.get_confvalue(f'server_node>{node_machine_id}>hostname')
           cmd = ['/opt/seagate/cortx/s3/install/ldap/s3_setup_ldap.sh',
                  '--hostname',
-                 f'{host_name}',
+                 f'{node_machine_id}',
                  '--ldapadminpasswd',
                  f'{self.ldap_passwd}',
                  '--rootdnpasswd',
