@@ -109,7 +109,6 @@ class S3HaproxyConfig:
 
     if ("K8" == setup_type) :
       self.configure_haproxy_k8()
-      self.configure_haproxy_legacy() # Remove his once k8s HAPROXY is running
     else :
       self.configure_haproxy_legacy()
 
