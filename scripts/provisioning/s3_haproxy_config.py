@@ -110,14 +110,14 @@ class S3HaproxyConfig:
     if ("K8" == setup_type) :
       self.configure_haproxy_k8()
       self.configure_haproxy_legacy() # Remove his once k8s HAPROXY is running
-    else : 
+    else :
       self.configure_haproxy_legacy()
 
   def configure_haproxy_k8(self):
     self.logger.info("K8s HAPROXY configuration ...")
     pass
-      
-  def configure_haproxy_legacy(self):         
+
+  def configure_haproxy_legacy(self):
     """Main Processing function."""
     self.logger.info("Legacy HAPROXY configuration ...")
 
