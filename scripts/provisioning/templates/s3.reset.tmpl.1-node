@@ -19,7 +19,7 @@
 
 cortx:
   common:
-    setup_type: "K8"
+    setup_type: "VM"
   software:
     base_log_path: "/var/log/cortx"
     base_config_path: "/etc/cortx"
