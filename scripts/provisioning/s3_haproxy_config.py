@@ -219,6 +219,10 @@ backend s3-main
     # For ssl communication between haproxy and s3server
     # Replace below line
     server s3-instance-1 0.0.0.0:28071 check maxconn 110        # s3 instance 1
+    server s3-instance-2 0.0.0.0:28072 check maxconn 110        # s3 instance 2
+    server s3-instance-3 0.0.0.0:28073 check maxconn 110        # s3 instance 3
+    server s3-instance-4 0.0.0.0:28074 check maxconn 110        # s3 instance 4
+    server s3-instance-5 0.0.0.0:28075 check maxconn 110        # s3 instance 5
 
 #----------------------------------------------------------------------
 # BackEnd roundrobin as balance algorith for s3 auth server

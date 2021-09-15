@@ -76,7 +76,6 @@ def main():
     elif args.service == 'haproxy':
       # TODO: logging path has to come from conf store -- to be fixed during
       # end-to-end logging integration.
-      S3HaproxyConfig(self.url).process()
       os.system("sh /opt/seagate/cortx/s3/bin/starthaproxy.sh")
     else:
       logger.error(f"Invalid argument {args.service}")

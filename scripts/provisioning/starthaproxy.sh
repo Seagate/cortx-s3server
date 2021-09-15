@@ -19,13 +19,13 @@
 #
 
 # Copy the SSL certificate file
-if [ -f "/etc/ssl/stx/stx.pem" ]
-then
-  mkdir -p /etc/cortx/s3/stx/
-  cp /etc/ssl/stx/stx.pem /etc/cortx/s3/stx/stx.pem
-else
-  echo "SSL file /etc/ssl/stx/stx.pem does not exist"
-  exit 1
+if ! [ -f "/etc/cortx/s3/stx/stx.pem" ]; then
+  if ! mkdir -p /etc/cortx/s3/stx/ && \
+       cp /etc/ssl/stx/stx.pem /etc/cortx/s3/stx/stx.pem \
+       ; then
+    echo "Failed to update SSL cert file /etc/cortx/s3/stx/stx.pem from /etc/ssl/stx/stx.pem."
+    exit 1
+  fi
 fi
 
 # Run the configured haproxy
