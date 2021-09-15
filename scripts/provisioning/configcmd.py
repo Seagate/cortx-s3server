@@ -157,7 +157,8 @@ class ConfigCmd(SetupCmd):
     # Delete ldap replication cofiguration
     self.delete_replication_config()
     self.logger.info('Open ldap replication configuration started')
-    storage_set_count = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY')
+    storage_set_count = self.get_confvalue(self.get_confkey(
+        'CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY').replace("cluster-id", self.cluster_id))
 
     index = 0
     while index < int(storage_set_count):
@@ -175,7 +176,7 @@ class ConfigCmd(SetupCmd):
         ldap_hosts_list_file = os.path.join(self.s3_tmp_dir, "ldap_hosts_list_file.txt")
         with open(ldap_hosts_list_file, "w") as f:
           for node_machine_id in server_nodes_list:
-            private_fqdn = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_PRIVATE_FQDN_KEY')
+            private_fqdn = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_PRIVATE_FQDN_KEY').replace('machine-id', node_machine_id))
             f.write(f'{private_fqdn}\n')
             self.logger.info(f'output of ldap_hosts_list_file.txt: {private_fqdn}')
 
