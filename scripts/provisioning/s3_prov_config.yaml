@@ -72,7 +72,6 @@ CONFIG:
   ##################################################################################################
   # Private keys which don't come from provisioner and which MUST have default values.
   CONFSTORE_S3SERVER_PORT: "cortx>software>private>s3>service>s3server_port" # Direct from default
-  CONFSTORE_S3_SERVER_BGDELETE_BIND_PORT: "cortx>software>private>s3>service>s3_server_bgdelete_bind_port" # Indirect from CONFSTORE_S3_DATA_ENDPOINTS
   CONFSTORE_S3_AUTHSERVER_IP_ADDRESS: "cortx>software>private>s3>service>authserver_ip_address" # Direct from default
   CONFSTORE_S3_AUTHSERVER_PORT: "cortx>software>private>s3>service>authserver_port" # Direct from default
   CONFSTORE_S3_ENABLE_STATS: "cortx>software>private>s3>service>s3_enable_stats" # Direct from default
@@ -80,9 +79,6 @@ CONFIG:
 
   CONFSTORE_S3_AUTHSERVER_HTTP_PORT: "cortx>software>private>s3authserver>httpPort"  # Direct from default
   CONFSTORE_S3_AUTHSERVER_HTTPS_PORT: "cortx>software>private>s3authserver>httpsPort" # Direct from default
-  CONFSTORE_S3_AUTHSERVER_LDAP_HOST: "cortx>software>private>s3authserver>ldapHost"  # Indirect from CONFSTORE_S3_OPENLDAP_ENDPOINTS
-  CONFSTORE_S3_AUTHSERVER_LDAP_PORT: "cortx>software>private>s3authserver>ldapPort" # Indirect from CONFSTORE_S3_OPENLDAP_ENDPOINTS
-  CONFSTORE_S3_AUTHSERVER_LDAP_SSL_PORT: "cortx>software>private>s3authserver>ldapSSLPort"  # Indirect from CONFSTORE_S3_OPENLDAP_ENDPOINTS
   CONFSTORE_S3_AUTHSERVER_DEFAULT_ENDPOINT: "cortx>software>private>s3authserver>defaultEndpoint" # Direct from default
   CONFSTORE_S3_AUTHSERVER_IAM_AUDITLOG: "cortx>software>private>s3authserver>iamAuditLog" # Direct from default
 
@@ -111,7 +107,6 @@ DEFAULT_CONFIG:
   CONFSTORE_S3INSTANCES_KEY: "1"
   CONFSTORE_STORAGE_SET_COUNT_KEY: "1"
   CONFSTORE_S3SERVER_PORT: "28071"
-  CONFSTORE_S3_SERVER_BGDELETE_BIND_PORT: "28049"
   CONFSTORE_S3_AUTHSERVER_IP_ADDRESS: "127.0.0.1"
   CONFSTORE_S3_AUTHSERVER_PORT: "28050"
   CONFSTORE_S3_ENABLE_STATS: "false"
@@ -119,8 +114,6 @@ DEFAULT_CONFIG:
   CONFSTORE_S3_AUTHSERVER_DEFAULT_ENDPOINT: "127.0.0.1"
   CONFSTORE_S3_AUTHSERVER_HTTP_PORT: "28050"
   CONFSTORE_S3_AUTHSERVER_HTTPS_PORT: "28051"
-  CONFSTORE_S3_AUTHSERVER_LDAP_PORT: "389"
-  CONFSTORE_S3_AUTHSERVER_LDAP_SSL_PORT: "636"
   CONFSTORE_S3_AUTHSERVER_IAM_AUDITLOG: "disabled"
   CONFSTORE_S3_BGDELETE_CONSUMER_ENDPOINT: "http://127.0.0.1:28049"
   CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL: "1200"
