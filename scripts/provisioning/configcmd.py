@@ -46,7 +46,7 @@ class ConfigCmd(SetupCmd):
     try:
       super(ConfigCmd, self).__init__(config, module)
       self.setup_type = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE')
-      self.logger.info(f'log file path : {self.setup_type}')
+      self.logger.info(f'Setup type : {self.setup_type}')
       self.cluster_id = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_CLUSTER_ID_KEY')
       self.logger.info(f'Cluster  id : {self.cluster_id}')
       self.base_config_file_path = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_BASE_CONFIG_PATH')
