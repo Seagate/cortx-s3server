@@ -35,18 +35,35 @@ POST_INSTALL:
 PREPARE:
 CONFIG:
   CONFSTORE_SETUP_TYPE: "cortx>common>setup_type"
-  CONFSTORE_LDAPADMIN_USER_KEY: "cortx>software>openldap>sgiam>user"
-  CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>software>openldap>sgiam>secret"
-  CONFSTORE_ROOTDN_USER_KEY: "cortx>software>openldap>root>user"
-  CONFSTORE_ROOTDN_PASSWD_KEY: "cortx>software>openldap>root>secret"
-  CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST : "cortx>software>s3>io>max_units"
-  CONFSTORE_CLUSTER_ID_KEY: "server_node>machine-id>cluster_id"
-  CONFSTORE_S3INSTANCES_KEY: "cortx>software>s3>service>instances"
-  CONFSTORE_HOSTNAME_KEY: "server_node>machine-id>hostname"
-  CONFSTORE_STORAGE_SET_COUNT_KEY: "cluster>cluster-id>site>storage_set_count"
-  CONFSTORE_STORAGE_SET_SERVER_NODES_KEY: "cluster>cluster-id>storage_set[storage-set-count]>server_nodes"
+  CONFSTORE_LDAPADMIN_USER_KEY: "cortx>s3>auth>admin"
+  CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>s3>auth>secret"
+  CONFSTORE_ROOTDN_USER_KEY: "cortx>external>openldap>admin"
+  CONFSTORE_ROOTDN_PASSWD_KEY: "cortx>external>openldap>secret"
+  CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST : "cortx>s3>io_max_units"
+  CONFSTORE_CLUSTER_ID_KEY: "node>machine-id>cluster_id"
+  CONFSTORE_S3INSTANCES_KEY: "cortx>s3>service_instances"
+  CONFSTORE_HOSTNAME_KEY: "node>machine-id>hostname"
+  CONFSTORE_STORAGE_SET_COUNT_KEY: "cluster>storage_set_count"
+  CONFSTORE_STORAGE_SET_SERVER_NODES_KEY: "cluster>storage_set[storage-set-count]>nodes"
+
   CONFSTORE_PUBLIC_FQDN_KEY: "server_node>machine-id>network>data>public_fqdn"
   CONFSTORE_PRIVATE_FQDN_KEY: "server_node>machine-id>network>data>private_fqdn"
+
+  CONFSTORE_BASE_LOG_PATH: "cortx>common>storage>log"
+  CONFSTORE_BASE_CONFIG_PATH: "cortx>software>base_config_path"
+############## new keys from confstore
+  CONFSTORE_S3_OPENLDAP_ENDPOINTS : "cortx>external>openldap>endpoints"
+  CONFSTORE_S3_OPENLDAP_SERVERS: "cortx>external>openldap>servers"
+  CONFSTORE_S3_OPENLDAP_BASE_DN: "cortx>external>openldap>base_dn"
+
+  CONFSTORE_S3_PRODUCT_RELEASE: "cortx>common>product_release"
+  CONFSTORE_S3_STORAGE_MISC: "cortx>common>storage>misc"
+  CONFSTORE_S3_SECURITY_CERTIFICATE: "cortx>common>security>ssl_certificate"
+  CONFSTORE_S3_IAM_ENDPOINTS: "cortx>s3>iam>endpoints"
+  CONFSTORE_S3_DATA_ENDPOINTS: "cortx>s3>data>endpoints"
+  CONFSTORE_S3_CLUSTER_ID: "cluster>id"
+  CONFSTORE_S3_MACHINE_NAME: "node>machine-id>name"
+#############
 
   CONFSTORE_S3SERVER_PORT: "cortx>software>s3>service>s3server_port"
   CONFSTORE_S3_SERVER_BGDELETE_BIND_PORT: "cortx>software>s3>service>s3_server_bgdelete_bind_port"
@@ -68,8 +85,6 @@ CONFIG:
   CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL: "cortx>software>s3bgdelete>scheduler_schedule_interval"
   CONFSTORE_S3_BGDELETE_MAX_KEYS: "cortx>software>s3bgdelete>max_keys"
 
-  CONFSTORE_BASE_LOG_PATH: "cortx>software>base_log_path"
-  CONFSTORE_BASE_CONFIG_PATH: "cortx>software>base_config_path"
 
 INIT:
 # Inheritance hierarchy ends here.
