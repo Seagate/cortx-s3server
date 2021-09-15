@@ -47,48 +47,50 @@ CONFIG:
   CONFSTORE_S3_OPENLDAP_SERVERS: "cortx>external>openldap>servers" #M (Usedby : s3_deployment)
   CONFSTORE_S3_OPENLDAP_BASE_DN: "cortx>external>openldap>base_dn" #O default - dc=seagate,dc=com (Usedby : s3_deployment)
 
-
   CONFSTORE_LDAPADMIN_USER_KEY: "cortx>s3>auth>admin" #O default - sgiamadmin (Usedby : s3_deployment, auth)
   CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>s3>auth>secret" #M default - encrypted string (Usedby : s3_deployment, auth)
-  CONFSTORE_S3_IAM_ENDPOINTS: "cortx>s3>iam>endpoints" #M default - http://iam.seagate.com:9080 , https://iam.seagate.com:9443 (Usedby : s3_deployment)
-  CONFSTORE_S3_DATA_ENDPOINTS: "cortx>s3>data>endpoints" #M default - http://s3.seagate.com:80 , https://s3.seagate.com:443, https://s3.seagate.com:28049  (Usedby : s3_deployment, bgproducer)
+  
   CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST : "cortx>s3>io_max_units" #O default - VM :8 , h/w : 32 (Usedby : s3_deployment, s3)
   CONFSTORE_S3INSTANCES_KEY: "cortx>s3>service_instances" #O default - 1 (change to 5 once we have stable deployment) (Usedby : s3_deployment, s3)
-
-
+  
+  CONFSTORE_S3_IAM_ENDPOINTS: "cortx>s3>iam>endpoints" #M default - http://iam.seagate.com:9080 , https://iam.seagate.com:9443 (Usedby : s3_deployment)
+  
+  CONFSTORE_S3_DATA_ENDPOINTS: "cortx>s3>data>endpoints" #M default - http://s3.seagate.com:80 , https://s3.seagate.com:443, https://s3.seagate.com:28049  (Usedby : s3_deployment, bgproducer)
+  
   CONFSTORE_CLUSTER_ID_KEY: "node>machine-id>cluster_id" #M (Usedby: all)
   CONFSTORE_HOSTNAME_KEY: "node>machine-id>hostname" #M (Usedby: s3_deployment)
   #CONFSTORE_S3_MACHINE_NAME: "node>machine-id>name" #M (Usedby: None)
+
   CONFSTORE_S3_CLUSTER_ID: "cluster>id" #M (Usedby: None)
   CONFSTORE_STORAGE_SET_COUNT_KEY: "cluster>storage_set_count" #M (Usedby: s3_deployment)
   CONFSTORE_STORAGE_SET_SERVER_NODES_KEY: "cluster>storage_set[storage-set-count]>nodes"  #M (Usedby: s3_deployment)
   CONFSTORE_BASE_CONFIG_PATH: "cortx>software>storage>config"  #M (Usedby: s3_deployment)
 
-  CONFSTORE_PUBLIC_FQDN_KEY: "server_node>machine-id>network>data>public_fqdn" #M (VM specific)
-  CONFSTORE_PRIVATE_FQDN_KEY: "server_node>machine-id>network>data>private_fqdn" #M (VM specific)
 
   ##################################################################################################
   # Private keys which don't come from provisioner and which MUST have default values.
-  CONFSTORE_S3SERVER_PORT: "cortx>software>s3>service>s3server_port" # Direct from default
-  CONFSTORE_S3_SERVER_BGDELETE_BIND_PORT: "cortx>software>s3>service>s3_server_bgdelete_bind_port" # Indirect from CONFSTORE_S3_DATA_ENDPOINTS
-  CONFSTORE_S3_AUTHSERVER_IP_ADDRESS: "cortx>software>s3>service>authserver_ip_address" # Direct from default
-  CONFSTORE_S3_AUTHSERVER_PORT: "cortx>software>s3>service>authserver_port" # Direct from default
-  CONFSTORE_S3_ENABLE_STATS: "cortx>software>s3>service>s3_enable_stats" # Direct from default
-  CONFSTORE_S3_AUDIT_LOGGER: "cortx>software>s3>service>s3_audit_logger" # Direct from default
+  CONFSTORE_S3SERVER_PORT: "cortx>software>private>s3>service>s3server_port" # Direct from default
+  CONFSTORE_S3_SERVER_BGDELETE_BIND_PORT: "cortx>software>private>s3>service>s3_server_bgdelete_bind_port" # Indirect from CONFSTORE_S3_DATA_ENDPOINTS
+  CONFSTORE_S3_AUTHSERVER_IP_ADDRESS: "cortx>software>private>s3>service>authserver_ip_address" # Direct from default
+  CONFSTORE_S3_AUTHSERVER_PORT: "cortx>software>private>s3>service>authserver_port" # Direct from default
+  CONFSTORE_S3_ENABLE_STATS: "cortx>software>private>s3>service>s3_enable_stats" # Direct from default
+  CONFSTORE_S3_AUDIT_LOGGER: "cortx>software>private>s3>service>s3_audit_logger" # Direct from default
 
-  CONFSTORE_S3_AUTHSERVER_HTTP_PORT: "cortx>software>s3authserver>httpPort"  # Direct from default
-  CONFSTORE_S3_AUTHSERVER_HTTPS_PORT: "cortx>software>s3authserver>httpsPort" # Direct from default
-  CONFSTORE_S3_AUTHSERVER_LDAP_HOST: "cortx>software>s3authserver>ldapHost"  # Indirect from CONFSTORE_S3_OPENLDAP_ENDPOINTS
-  CONFSTORE_S3_AUTHSERVER_LDAP_PORT: "cortx>software>s3authserver>ldapPort" # Indirect from CONFSTORE_S3_OPENLDAP_ENDPOINTS
-  CONFSTORE_S3_AUTHSERVER_LDAP_SSL_PORT: "cortx>software>s3authserver>ldapSSLPort"  # Indirect from CONFSTORE_S3_OPENLDAP_ENDPOINTS
-  CONFSTORE_S3_AUTHSERVER_DEFAULT_ENDPOINT: "cortx>software>s3authserver>defaultEndpoint" # Direct from default
-  CONFSTORE_S3_AUTHSERVER_IAM_AUDITLOG: "cortx>software>s3authserver>iamAuditLog" # Direct from default
+  CONFSTORE_S3_AUTHSERVER_HTTP_PORT: "cortx>software>private>s3authserver>httpPort"  # Direct from default
+  CONFSTORE_S3_AUTHSERVER_HTTPS_PORT: "cortx>software>private>s3authserver>httpsPort" # Direct from default
+  CONFSTORE_S3_AUTHSERVER_LDAP_HOST: "cortx>software>private>s3authserver>ldapHost"  # Indirect from CONFSTORE_S3_OPENLDAP_ENDPOINTS
+  CONFSTORE_S3_AUTHSERVER_LDAP_PORT: "cortx>software>private>s3authserver>ldapPort" # Indirect from CONFSTORE_S3_OPENLDAP_ENDPOINTS
+  CONFSTORE_S3_AUTHSERVER_LDAP_SSL_PORT: "cortx>software>private>s3authserver>ldapSSLPort"  # Indirect from CONFSTORE_S3_OPENLDAP_ENDPOINTS
+  CONFSTORE_S3_AUTHSERVER_DEFAULT_ENDPOINT: "cortx>software>private>s3authserver>defaultEndpoint" # Direct from default
+  CONFSTORE_S3_AUTHSERVER_IAM_AUDITLOG: "cortx>software>private>s3authserver>iamAuditLog" # Direct from default
 
-  CONFSTORE_S3_BGDELETE_PRODUCER_ENDPOINT: "cortx>software>s3bgdelete>producer_endpoint"  # Indirect from CONFSTORE_S3_DATA_ENDPOINTS
-  CONFSTORE_S3_BGDELETE_CONSUMER_ENDPOINT: "cortx>software>s3bgdelete>consumer_endpoint" # Direct from default
-  CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL: "cortx>software>s3bgdelete>scheduler_schedule_interval" # Direct from default
-  CONFSTORE_S3_BGDELETE_MAX_KEYS: "cortx>software>s3bgdelete>max_keys" # Direct from default
+  CONFSTORE_S3_BGDELETE_PRODUCER_ENDPOINT: "cortx>software>private>s3bgdelete>producer_endpoint"  # Indirect from CONFSTORE_S3_DATA_ENDPOINTS
+  CONFSTORE_S3_BGDELETE_CONSUMER_ENDPOINT: "cortx>software>private>s3bgdelete>consumer_endpoint" # Direct from default
+  CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL: "cortx>software>private>s3bgdelete>scheduler_schedule_interval" # Direct from default
+  CONFSTORE_S3_BGDELETE_MAX_KEYS: "cortx>software>private>s3bgdelete>max_keys" # Direct from default
 
+  CONFSTORE_PUBLIC_FQDN_KEY: "server_node>machine-id>network>data>public_fqdn" #M (VM specific)
+  CONFSTORE_PRIVATE_FQDN_KEY: "server_node>machine-id>network>data>private_fqdn" #M (VM specific)
 
 INIT:
 # Inheritance hierarchy ends here.
@@ -124,6 +126,13 @@ DEFAULT_CONFIG:
   CONFSTORE_S3_BGDELETE_CONSUMER_ENDPOINT: "http://127.0.0.1:28049"
   CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL: "1200"
   CONFSTORE_S3_BGDELETE_MAX_KEYS: "1000"
+
+  CONFSTORE_S3_SECURITY_CERTIFICATE: "/etc/ssl/stx/stx.pem"
+  CONFSTORE_S3_OPENLDAP_BASE_DN: "dc=seagate,dc=com"
+
+  CONFSTORE_PUBLIC_FQDN_KEY: "srvnode-1.data.public" #M (VM specific)
+  CONFSTORE_PRIVATE_FQDN_KEY: "srvnode-1.data.private" #M (VM specific)
+
 DEFAULT_INIT:
 
 DEFAULT_TEST:
