@@ -29,7 +29,7 @@ server_node:
         private_fqdn: "srvnode-1.data.private"
 cortx:
   common:
-    setup_type: "K8"
+    setup_type: "VM"
   software:
     openldap:
       root:
