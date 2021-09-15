@@ -55,11 +55,8 @@ set -x
 
 yum install -y openldap-clients
 
-# Find LDAP cluster IP
-OPENLDAP_SVC=`kubectl get svc openldap-svc | grep ldap | awk '{print $3}'`
-
 # apply .ldif files
-
+set_var_OPENLDAP_SVC
 ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w ldapadmin -f ldif/ldap-init.ldif -H "ldap://$OPENLDAP_SVC"
 ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w ldapadmin -f ldif/iam-admin.ldif -H "ldap://$OPENLDAP_SVC"
 ldapmodify -x -a -D cn=admin,dc=seagate,dc=com -w ldapadmin -f ldif/ppolicy-default.ldif -H "ldap://$OPENLDAP_SVC"

@@ -31,7 +31,7 @@ yum install -y docker-ce docker-ce-cli containerd.io
 systemctl start docker
 
 # authorize with docker.com (to fix rate limiting)
-if [ -n "${DOCKER_USER_NAME}{$DOCKER_PASSWORD}" ]; then
+if [ -n "${DOCKER_USER_NAME}${DOCKER_PASSWORD}" ]; then
   docker login -u "$DOCKER_USER_NAME" -p "$DOCKER_PASSWORD"
 fi
 

@@ -48,6 +48,8 @@ cat haproxy/stx.pem     | kube_run tee /etc/cortx/s3/stx/stx.pem
 
 kube_run /bin/bash -c '/opt/seagate/cortx/s3/bin/s3_start --service haproxy &'
 
+sleep 1
+
 set +x
 if [ -z "`kube_run ps ax | grep 'haproxy.pid'`" ]; then
   echo

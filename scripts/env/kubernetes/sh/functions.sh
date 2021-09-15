@@ -18,6 +18,10 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+###########################################################################
+### Generic functions ###
+#########################
+
 add_separator() {
   ( set +x +e
     echo -e '\n\n\n========================= '"$*"' =========================\n'
@@ -52,3 +56,15 @@ hit_enter_when_done() {
   )
 }
 
+###########################################################################
+### k8s-specific functions ###
+##############################
+
+set_var_OPENLDAP_SVC() {
+  OPENLDAP_SVC=`kubectl get svc openldap-svc | grep ldap | awk '{print $3}'`
+  if [[ ! "$OPENLDAP_SVC" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
+    add_separator "FAILED. openldap service endpoint is not accessible"
+    kubectl get svc openldap-svc
+    false
+  fi
+}
