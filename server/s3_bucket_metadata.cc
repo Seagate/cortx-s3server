@@ -125,6 +125,11 @@ void S3BucketMetadata::set_tags(
   bucket_tags = tags_as_map;
 }
 
+void S3BucketMetadata::set_bucket_replication_configuration(
+    const std::string& bucket_replication_config) {
+  bucket_replication_configuration = bucket_replication_config;
+}
+
 void S3BucketMetadata::set_bucket_versioning(
     const std::string& bucket_version_status) {
   bucket_versioning_status = bucket_version_status;
