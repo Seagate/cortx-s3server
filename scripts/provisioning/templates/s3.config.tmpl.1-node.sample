@@ -39,6 +39,8 @@ cortx:
       endpoint: "https://iam.seagate.com"
     data:
       endpoint: "https://s3.seagate.com"
+    internal:
+      endpoint: "http://s3.seagate.com"
   software:
     storage:
       config: "/etc/cortx"
