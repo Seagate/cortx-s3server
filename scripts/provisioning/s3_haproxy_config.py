@@ -114,8 +114,16 @@ class S3HaproxyConfig:
 
   def configure_haproxy_k8(self):
     self.logger.info("K8s HAPROXY configuration ...")
+
+    numS3Instances = self.get_s3instances()
+    if numS3Instances <= 0:
+        numS3Instances = 1
+    s3inport = self.get_s3serverport()
+    if s3inport == 0:
+        s3inport = 28071
+
     config_file = '/etc/cortx/s3/haproxy.cfg'
-    full_text = '''global
+    global_text = '''global
     log         127.0.0.1 local2
     log stdout format raw local0
     h1-case-adjust authorization Authorization
@@ -160,7 +168,8 @@ class S3HaproxyConfig:
 
     #SSL options            # utilize system-wide crypto-policies
     tune.ssl.default-dh-param 2048
-
+'''
+    default_text = '''
 #---------------------------------------------------------------------
 # common defaults that all the 'listen' and 'backend' sections will
 # use if not designated in their block
@@ -185,6 +194,8 @@ defaults
     timeout http-keep-alive 10s
     timeout check           10s
     maxconn                 3000
+'''
+    frontend_s3main_text = '''
 #----------------------------------------------------------------------
 # FrontEnd S3 Configuration
 #----------------------------------------------------------------------
@@ -208,7 +219,8 @@ frontend s3-main
     acl s3authbackendacl dst_port 9443
     acl s3authbackendacl dst_port 9080
     use_backend s3-auth if s3authbackendacl
-
+'''
+    backend_s3main_text = '''
 #----------------------------------------------------------------------
 # BackEnd roundrobin as balance algorithm
 #----------------------------------------------------------------------
@@ -223,12 +235,9 @@ backend s3-main
 
     # For ssl communication between haproxy and s3server
     # Replace below line
-    server s3-instance-1 0.0.0.0:28071 check maxconn 110        # s3 instance 1
-    server s3-instance-2 0.0.0.0:28072 check maxconn 110        # s3 instance 2
-    server s3-instance-3 0.0.0.0:28073 check maxconn 110        # s3 instance 3
-    server s3-instance-4 0.0.0.0:28074 check maxconn 110        # s3 instance 4
-    server s3-instance-5 0.0.0.0:28075 check maxconn 110        # s3 instance 5
 
+'''
+    backend_s3bgdelete_text = '''
 #----------------------------------------------------------------------
 # BackEnd roundrobin as balance algorithm for s3 bgdelete server
 #----------------------------------------------------------------------
@@ -236,6 +245,8 @@ backend s3-bgdelete
     balance static-rr                                     #Balance algorithm
     server s3-bgdelete-instance-1 0.0.0.0:28049           # s3 bgdelete instance 1
 
+'''
+    backend_s3auth_text = '''
 #----------------------------------------------------------------------
 # BackEnd roundrobin as balance algorith for s3 auth server
 #----------------------------------------------------------------------
@@ -251,8 +262,17 @@ backend s3-auth
     server s3authserver-instance1 0.0.0.0:28050 #check ssl verify required ca-file /etc/ssl/stx-s3/s3auth/s3authserver.crt   # s3 auth server instance 1
 
 #-------S3 Haproxy configuration end-----------------------------------'''
-    config_handle = open(config_file, "w")
-    config_handle.write(full_text)
+    config_handle = open(config_file, "w+")
+    config_handle.write(global_text)
+    config_handle.write(default_text)
+    config_handle.write(frontend_s3main_text)
+    config_handle.write(backend_s3main_text)
+    for i in range(0, numS3Instances):
+        target.write(
+        "    server s3-instance-%s 0.0.0.0:%s check maxconn 110        # s3 instance %s\n"
+        % (i+1, s3inport+i, i+1))
+    config_handle.write(backend_s3bgdelete_text)
+    config_handle.write(backend_s3auth_text)
     config_handle.close()
 
   def configure_haproxy_legacy(self):
