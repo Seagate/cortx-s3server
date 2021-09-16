@@ -30,8 +30,8 @@ cortx:
     openldap:
       admin: "admin"
       secret: "gAAAAABgWFRxlYPfMDe3j03DlE1gDxsr8d7MJ5upQ2k8UC2fCU-kSWlf0tb5M3aBXOxNDnT8Rb_M2b0w9UOgw9CQH-fSKzn6sA=="
-      endpoints: "['ldap://oldap-server.cortx-cluster.lyve-cloud.com:389','ssl://oldap-server.cortx-cluster.lyve-cloud.com:636']"
-      servers: "['oldap-server1.cortx-cluster.lyve-cloud.com', 'oldap-server2.cortx-cluster.lyve-cloud.com', oldap-server3.cortx-cluster.lyve-cloud.com]"
+      endpoints: "['ldap://127.0.0.1:389','ssl://127.0.0.1:389:636']"
+      servers: "['localhost', 'localhost', 'localhost']"
   s3:
     auth:
       secret: "gAAAAABgWFPz2w_t6IBVictZmgTCgBXn5V-oy2JUVtvZkJvHM5KaaZKXRwtz4YKYieIy8mVKF8PUaZ6WYJEttcsi2KDpLOk9Vg=="
@@ -40,7 +40,7 @@ cortx:
     data:
       endpoint: "https://s3.seagate.com"
     internal:
-      endpoint: "http://s3.seagate.com"
+      endpoint: "http://127.0.0.1"
   software:
     storage:
       config: "/etc/cortx"
