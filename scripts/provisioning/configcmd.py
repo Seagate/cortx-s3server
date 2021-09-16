@@ -375,11 +375,9 @@ class ConfigCmd(SetupCmd):
        'http://127.0.0.1:80'        -> {'scheme': 'http', 'fqdn': '127.0.0.1', 'port': '80'}
     """
     try:
-      print("endpoint str : ", endpoint_str)
       result1 = urllib.parse.urlparse(endpoint_str)
       result2 = result1.netloc.split(':')
       result = { 'scheme': result1.scheme, 'fqdn': result2[0] }
-      print("result : ", result)
       if len(result2) > 1:
         result['port'] = result2[1]
     except Exception as e:
@@ -391,11 +389,9 @@ class ConfigCmd(SetupCmd):
     if 'port' not in endpoint:
       #fetching default value from s3_provisioner private
       default_value = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_S3_BGDELETE_CONSUMER_ENDPOINT')
-      print(default_value)
       endpoint = self.parse_endpoint(default_value)
       if 'port' not in endpoint:
         raise S3PROVError(f"BG Delete endpoint {value_to_update} does not have port specified.")
-    print(endpoint['port'])
     return endpoint['port']
 
   def update_s3_log_dir_path(self, value_to_update, additional_param):
@@ -442,8 +438,6 @@ class ConfigCmd(SetupCmd):
       lst=value_to_update
     else:
       lst=[value_to_update]
-    print("lst : ")
-    print(lst)
     for endpoint_str in lst:
       endpoint = self.parse_endpoint(endpoint_str)
       if endpoint['scheme'] == scheme:
