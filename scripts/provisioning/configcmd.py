@@ -23,6 +23,7 @@ import os
 import errno
 import shutil
 import math
+import urllib
 from pathlib import Path
 from  ast import literal_eval
 from os import path
@@ -92,7 +93,7 @@ class ConfigCmd(SetupCmd):
       self.read_ldap_root_credentials()
       self.logger.info("read ldap credentials completed")
 
-      # disable S3server, S3authserver, haproxy, BG delete services on reboot as 
+      # disable S3server, S3authserver, haproxy, BG delete services on reboot as
       # it will be managed by HA
       self.logger.info('Disable services on reboot started')
       services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver"]
@@ -323,7 +324,7 @@ class ConfigCmd(SetupCmd):
 
     # load config file (example: s3configfileconfstore = confstore object to /etc/cortx/s3/conf/s3config.yaml)
     s3configfileconfstore = S3CortxConfStore(f'{config_file_type}://{configfile}', 'update_config_file_idx' + key_to_update)
-    
+
     # get the value to be updated from provisioner config for given key
     # Fetchinng the incoming value from the provisioner config file
     # Which should be updated to key_to_update in s3 config file
@@ -351,7 +352,7 @@ class ConfigCmd(SetupCmd):
     """ Update s3 server configs."""
     self.logger.info("Update s3 server config file started")
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3SERVER_PORT", "S3_SERVER_CONFIG>S3_SERVER_BIND_PORT")
-    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_SERVER_BGDELETE_BIND_PORT", "S3_SERVER_CONFIG>S3_SERVER_BGDELETE_BIND_PORT")
+    self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_INTERNAL_ENDPOINTS", "S3_SERVER_CONFIG>S3_SERVER_BGDELETE_BIND_PORT",self.update_s3_bgdelete_bind_port)
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_AUTHSERVER_IP_ADDRESS", "S3_AUTH_CONFIG>S3_AUTH_IP_ADDR")
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_AUTHSERVER_PORT", "S3_AUTH_CONFIG>S3_AUTH_PORT")
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_ENABLE_STATS", "S3_SERVER_CONFIG>S3_ENABLE_STATS")
@@ -360,6 +361,39 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "S3_SERVER_CONFIG>S3_DAEMON_WORKING_DIR", self.update_s3_daemon_working_dir)
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST", "S3_MOTR_CONFIG>S3_MOTR_MAX_UNITS_PER_REQUEST", self.update_motr_max_unit_per_request)
     self.logger.info("Update s3 server config file completed")
+
+  def parse_endpoint(self, endpoint_str):
+    """Parse endpoint string and return dictionary with components:
+         * scheme,
+         * fqdn,
+         * and optionally port, if present in the string.
+
+       Examples:
+
+       'https://s3.seagate.com:443' -> {'scheme': 'https', 'fqdn': 's3.seagate.com', 'port': '443'}
+       'https://s3.seagate.com'     -> {'scheme': 'https', 'fqdn': 's3.seagate.com'}
+       'http://s3.seagate.com:80'   -> {'scheme': 'http', 'fqdn': 's3.seagate.com', 'port': '80'}
+       'http://127.0.0.1:80'        -> {'scheme': 'http', 'fqdn': '127.0.0.1', 'port': '80'}
+    """
+    try:
+      result1 = urllib.parse.urlparse(endpoint_str)
+      result2 = result1.netloc.split(':')
+      result = { 'scheme': result1.scheme, 'fqdn': result2[0] }
+      if len(result2) > 1:
+        result['port'] = result2[1]
+    except Exception as e:
+      raise S3PROVError(f'Failed to parse endpoing {endpoint_str}.  Exception: {e}')
+    return result
+
+  def update_s3_bgdelete_bind_port(self, value_to_update, additional_param):
+    endpoint = self.parse_endpoint(value_to_update)
+    if 'port' not in endpoint:
+      #fetching default value from s3_provisioner private
+      default_value = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_S3_BGDELETE_CONSUMER_ENDPOINT')
+      endpoint = self.parse_endpoint(default_value)
+      if 'port' not in endpoint:
+        raise S3PROVError(f"BG Delete endpoint {value_to_update} does not have port specified.")
+    return endpoint['port']
 
   def update_s3_log_dir_path(self, value_to_update, additional_param):
     """ Update s3 server log directory path."""
@@ -389,15 +423,57 @@ class ConfigCmd(SetupCmd):
     self.logger.info("Update s3 authserver config file started")
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_HTTP_PORT", "httpPort")
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_HTTPS_PORT", "httpsPort")
-    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_LDAP_HOST", "ldapHost")
-    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_LDAP_PORT", "ldapPort")
-    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_LDAP_SSL_PORT", "ldapSSLPort")
+    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_OPENLDAP_ENDPOINTS", "ldapHost",self.update_auth_ldap_host)
+    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_OPENLDAP_ENDPOINTS", "ldapPort",self.update_auth_ldap_nonssl_port)
+    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_OPENLDAP_ENDPOINTS", "ldapSSLPort",self.update_auth_ldap_ssl_port)
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_DEFAULT_ENDPOINT", "defaultEndpoint")
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_S3_AUTHSERVER_IAM_AUDITLOG", "IAMAuditlog")
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logFilePath", self.update_auth_log_dir_path)
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_BASE_CONFIG_PATH", "logConfigFile", self.update_auth_log4j_config_file_path)
     self.update_auth_log4j_log_dir_path()
     self.logger.info("Update s3 authserver config file completed")
+
+  def get_endpoint_for_scheme(self, value_to_update, scheme):
+    """Scan list of endpoints, and return parsed endpoint for a given scheme."""
+    if not isinstance(value_to_update, str):
+      lst=value_to_update
+    else:
+      lst=[value_to_update]
+    for endpoint_str in lst:
+      print (endpoint_str)
+      endpoint = self.parse_endpoint(endpoint_str)
+      if endpoint['scheme'] == scheme:
+        return endpoint
+    return None
+
+  def update_auth_ldap_host (self, value_to_update, additional_param):
+    if type(value_to_update) is str:
+      value_to_update = literal_eval(value_to_update)
+    endpoint = self.get_endpoint_for_scheme(value_to_update, "ldap")
+    if endpoint is None:
+      raise S3PROVError(f"OpenLDAP endpoint for scheme 'ldap' is not specified")
+    return endpoint['fqdn']
+
+
+  def update_auth_ldap_ssl_port(self, value_to_update, additional_param):
+    if type(value_to_update) is str:
+      value_to_update = literal_eval(value_to_update)
+    endpoint = self.get_endpoint_for_scheme(value_to_update, "ssl")
+    if endpoint is None:
+      raise S3PROVError(f"SSL LDAP endpoint is not specified.")
+    if 'port' not in endpoint:
+      raise S3PROVError(f"SSL LDAP endpoint does not specify port number.")
+    return endpoint['port']
+
+  def update_auth_ldap_nonssl_port(self, value_to_update, additional_param):
+    if type(value_to_update) is str:
+      value_to_update = literal_eval(value_to_update)
+    endpoint = self.get_endpoint_for_scheme(value_to_update, "ldap")
+    if endpoint is None:
+      raise S3PROVError(f"Non-SSL LDAP endpoint is not specified.")
+    if 'port' not in endpoint:
+      raise S3PROVError(f"Non-SSL LDAP endpoint does not specify port number.")
+    return endpoint['port']
 
   def update_auth_log_dir_path(self, value_to_update, additional_param):
     """Update s3 auth log directory path in config file."""
@@ -436,7 +512,7 @@ class ConfigCmd(SetupCmd):
   def update_s3_bgdelete_configs(self):
     """ Update s3 bgdelete configs."""
     self.logger.info("Update s3 bgdelete config file started")
-    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_PRODUCER_ENDPOINT", "cortx_s3>producer_endpoint")
+    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_INTERNAL_ENDPOINTS", "cortx_s3>producer_endpoint",self.update_bgdelete_producer_endpoint)
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_CONSUMER_ENDPOINT", "cortx_s3>consumer_endpoint")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL", "cortx_s3>scheduler_schedule_interval")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_MAX_KEYS", "indexid>max_keys")
@@ -444,6 +520,12 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logconfig>scheduler_log_file", self.update_bgdelete_scheduler_log_file_path)
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logconfig>processor_log_file", self.update_bgdelete_processor_log_file_path)
     self.logger.info("Update s3 bgdelete config file completed")
+
+  def update_bgdelete_producer_endpoint(self, value_to_update, additional_param):
+    endpoint = self.get_endpoint_for_scheme(value_to_update, "http")
+    if endpoint is None:
+      raise S3PROVError(f"BG Producer endpoint for scheme 'http' is not specified")
+    return endpoint['scheme'] + "://" + endpoint['fqdn']
 
   def update_bgdelete_log_dir(self, value_to_update, additional_param):
     """ Update s3 bgdelete log dir path."""
@@ -495,7 +577,6 @@ class ConfigCmd(SetupCmd):
       dest_config_file = config_file.replace("/opt/seagate/cortx", self.base_config_file_path)
       self.logger.info(f"Dest config file: {dest_config_file}")
       os.makedirs(os.path.dirname(dest_config_file), exist_ok=True)
-      # Need to copy -else this breaks idempotancy
       shutil.copy(config_file, dest_config_file)
       self.logger.info("Config file copied successfully to /etc/cortx")
 
