@@ -63,38 +63,42 @@ class S3HaproxyConfig:
     assert self.provisioner_confstore != None
     assert self.local_confstore != None
 
-    return self.provisioner_confstore.get_config(
-      self.local_confstore.get_config(
-        'CONFIG>CONFSTORE_PUBLIC_FQDN_KEY').replace("machine-id", self.machine_id))
+    return self.get_config_with_defaults('CONFIG>CONFSTORE_PUBLIC_FQDN_KEY')
 
   def get_privateip(self):
     assert self.provisioner_confstore != None
     assert self.local_confstore != None
 
-    return self.provisioner_confstore.get_config(
-      self.local_confstore.get_config(
-        'CONFIG>CONFSTORE_PRIVATE_FQDN_KEY').replace("machine-id", self.machine_id))
+    return self.get_config_with_defaults('CONFIG>CONFSTORE_PRIVATE_FQDN_KEY')
 
   def get_s3instances(self):
     assert self.provisioner_confstore != None
     assert self.local_confstore != None
 
-    return int(self.provisioner_confstore.get_config(
-      self.local_confstore.get_config('CONFIG>CONFSTORE_S3INSTANCES_KEY')))
+    return int(self.get_config_with_defaults('CONFIG>CONFSTORE_S3INSTANCES_KEY'))
 
   def get_s3serverport(self):
     assert self.provisioner_confstore != None
     assert self.local_confstore != None
 
-    return int(self.provisioner_confstore.get_config(
-      self.local_confstore.get_config('CONFIG>CONFSTORE_S3SERVER_PORT')))
+    return int(self.get_config_with_defaults('CONFIG>CONFSTORE_S3SERVER_PORT'))
 
   def get_s3authserverport(self):
     assert self.provisioner_confstore != None
     assert self.local_confstore != None
 
-    return int(self.provisioner_confstore.get_config(
-      self.local_confstore.get_config('CONFIG>CONFSTORE_S3_AUTHSERVER_PORT')))
+    return int(self.get_config_with_defaults('CONFIG>CONFSTORE_S3_AUTHSERVER_PORT'))
+
+  def get_config_with_defaults(self, key: str):
+    confkey = self.local_confstore.get_config(key)
+    if "machine-id" in confkey:
+      confkey = confkey.replace("machine-id", self.machine_id) 
+    confkey_value = self.provisioner_confstore.get_config(confkey)
+
+    if confkey_value is None:
+      confkey_value = self.local_confstore.get_config("DEFAULT_" + key)
+
+    return confkey_value
 
   def process(self):
 
@@ -102,8 +106,7 @@ class S3HaproxyConfig:
     "yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml",
     'localstore')
 
-    setup_type = str(self.provisioner_confstore.get_config(
-      self.local_confstore.get_config('CONFIG>CONFSTORE_SETUP_TYPE')))
+    setup_type = str(self.get_config_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))
 
     self.logger.info(f'Setup type is {setup_type}')
 
