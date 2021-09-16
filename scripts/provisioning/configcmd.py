@@ -386,9 +386,12 @@ class ConfigCmd(SetupCmd):
     return result
 
   def update_s3_bgdelete_bind_port(self, value_to_update, additional_param):
-    endpoint = self.parse_endpoint(value_to_update)
+    scheme = 'http'
+    endpoint = self.get_endpoint_for_scheme(value_to_update, scheme)
+    if endpoint is None:
+      raise S3PROVError(f"BG Delete endpoint for scheme '{scheme}' is not specified")
     if 'port' not in endpoint:
-      raise S3PROVError(f"BG Delete endpoint {value_to_update} does not have port specified.")
+      raise S3PROVError(f"BG Delete '{scheme}' endpoint does not have port specified.")
     return endpoint['port']
 
   def update_s3_log_dir_path(self, value_to_update, additional_param):
@@ -443,7 +446,6 @@ class ConfigCmd(SetupCmd):
     return None # not found
 
   def update_auth_ldap_host (self, value_to_update, additional_param):
-      # TBD -- which scheme we want to pick? ssl or non ssl? -vvvv-
     endpoint = self.get_endpoint_for_scheme(value_to_update, "ldap")
     if endpoint is None:
       raise S3PROVError(f"OpenLDAP endpoint for scheme 'ldap' is not specified")
@@ -452,15 +454,15 @@ class ConfigCmd(SetupCmd):
   def update_auth_ldap_nonssl_port(self, value_to_update, additional_param):
     endpoint = self.get_endpoint_for_scheme(value_to_update, "ldap")
     if endpoint is None:
-      return "" # not found   -- TBD is this correct? Should we throw an exception?
+      raise S3PROVError(f"Non-SSL LDAP endpoint is not specified.")
     if 'port' not in endpoint:
       raise S3PROVError(f"Non-SSL LDAP endpoint does not specify port number.")
     return endpoint['port']
 
-  def update_auth_ldap_ssl_port (self, value_to_update, additional_param):
+  def update_auth_ldap_ssl_port(self, value_to_update, additional_param):
     endpoint = self.get_endpoint_for_scheme(value_to_update, "ssl")
     if endpoint is None:
-      return "" # not found   -- TBD is this correct? Should we throw an exception?
+      raise S3PROVError(f"SSL LDAP endpoint is not specified.")
     if 'port' not in endpoint:
       raise S3PROVError(f"SSL LDAP endpoint does not specify port number.")
     return endpoint['port']
@@ -512,7 +514,10 @@ class ConfigCmd(SetupCmd):
     self.logger.info("Update s3 bgdelete config file completed")
 
   def update_bgdelete_producer_endpoint(self, value_to_update, additional_param):
-    return "http://s3.seagate.com"
+    endpoint = self.get_endpoint_for_scheme(value_to_update, "http")
+    if endpoint is None:
+      raise S3PROVError(f"BG Producer endpoint for scheme 'http' is not specified")
+    return endpoint['scheme'] + "://" + endpoint['fqdn']
 
   def update_bgdelete_log_dir(self, value_to_update, additional_param):
     """ Update s3 bgdelete log dir path."""
