@@ -360,8 +360,35 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST", "S3_MOTR_CONFIG>S3_MOTR_MAX_UNITS_PER_REQUEST", self.update_motr_max_unit_per_request)
     self.logger.info("Update s3 server config file completed")
 
+  @staticmethod
+  def parse_endpoint(endpoint_str):
+    """Parse endpoint string and return dictionary with components:
+         * scheme,
+         * fqdn,
+         * and optionally port, if present in the string.
+
+       Examples:
+
+       'https://s3.seagate.com:443' -> {'scheme': 'https', 'fqdn': 's3.seagate.com', 'port': '443'}
+       'https://s3.seagate.com'     -> {'scheme': 'https', 'fqdn': 's3.seagate.com'}
+       'http://s3.seagate.com:80'   -> {'scheme': 'http', 'fqdn': 's3.seagate.com', 'port': '80'}
+       'http://127.0.0.1:80'        -> {'scheme': 'http', 'fqdn': '127.0.0.1', 'port': '80'}
+    """
+    try:
+      result1 = urllib.parse.urlparse(endpoint_str)
+      result2 = result1.netloc.split(':')
+      result = { 'scheme': result1.scheme, 'fqdn': result2[0] }
+      if len(result2) > 1:
+        result['port'] = result2[1]
+    except Exception as e:
+      raise S3PROVError(f'Failed to parse endpoing {endpoint_str}.  Exception: {e}')
+    return result
+
   def update_s3_bgdelete_bind_port(self, value_to_update, additional_param):
-    return "28049"
+    endpoint = self.parse_endpoint(value_to_update)
+    if 'port' not in endpoint:
+      raise S3PROVError(f"BG Delete endpoint {value_to_update} does not have port specified.")
+    return endpoint['port']
 
   def update_s3_log_dir_path(self, value_to_update, additional_param):
     """ Update s3 server log directory path."""
@@ -401,14 +428,41 @@ class ConfigCmd(SetupCmd):
     self.update_auth_log4j_log_dir_path()
     self.logger.info("Update s3 authserver config file completed")
 
-  def self.update_auth_ldap_host (self, value_to_update, additional_param):
-    return "127.0.0.1"
+  @staticmethod
+  def get_endpoint_for_scheme(value_to_update, scheme):
+    """Scan list of endpoints, and return parsed endpoint for a given scheme."""
+    if isinstance(value_to_update, basestring):
+      lst=[value_to_update]
+    else:
+      lst=value_to_update
+    for endpoint_str in lst:
+      endpoint = self.parse_endpoint(endpoint_str)
+      if endpoint['scheme'] == scheme:
+        return endpoint
+    return None # not found
 
-  def self.update_auth_ldap_nonssl_port, (self, value_to_update, additional_param):
-    return "389"
+  def self.update_auth_ldap_host (self, value_to_update, additional_param):
+      # TBD -- which scheme we want to pick? ssl or non ssl? -vvvv-
+    endpoint = self.get_endpoint_for_scheme(value_to_update, "ldap")
+    if endpoint is None:
+      raise S3PROVError(f"OpenLDAP endpoint for scheme 'ldap' is not specified")
+    return endpoint['fqdn']
+
+  def self.update_auth_ldap_nonssl_port(self, value_to_update, additional_param):
+    endpoint = self.get_endpoint_for_scheme(value_to_update, "ldap")
+    if endpoint is None:
+      return "" # not found   -- TBD is this correct? Should we throw an exception?
+    if 'port' not in endpoint:
+      raise S3PROVError(f"Non-SSL LDAP endpoint does not specify port number.")
+    return endpoint['port']
 
   def self.update_auth_ldap_ssl_port (self, value_to_update, additional_param):
-    return "636"
+    endpoint = self.get_endpoint_for_scheme(value_to_update, "ssl")
+    if endpoint is None:
+      return "" # not found   -- TBD is this correct? Should we throw an exception?
+    if 'port' not in endpoint:
+      raise S3PROVError(f"SSL LDAP endpoint does not specify port number.")
+    return endpoint['port']
 
   def update_auth_log_dir_path(self, value_to_update, additional_param):
     """Update s3 auth log directory path in config file."""
