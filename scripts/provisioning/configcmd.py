@@ -361,8 +361,7 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST", "S3_MOTR_CONFIG>S3_MOTR_MAX_UNITS_PER_REQUEST", self.update_motr_max_unit_per_request)
     self.logger.info("Update s3 server config file completed")
 
-  @staticmethod
-  def parse_endpoint(endpoint_str):
+  def parse_endpoint(self, endpoint_str):
     """Parse endpoint string and return dictionary with components:
          * scheme,
          * fqdn,
@@ -376,9 +375,11 @@ class ConfigCmd(SetupCmd):
        'http://127.0.0.1:80'        -> {'scheme': 'http', 'fqdn': '127.0.0.1', 'port': '80'}
     """
     try:
+      print("endpoint str : ", endpoint_str)
       result1 = urllib.parse.urlparse(endpoint_str)
       result2 = result1.netloc.split(':')
       result = { 'scheme': result1.scheme, 'fqdn': result2[0] }
+      print("result : ", result)
       if len(result2) > 1:
         result['port'] = result2[1]
     except Exception as e:
@@ -386,12 +387,15 @@ class ConfigCmd(SetupCmd):
     return result
 
   def update_s3_bgdelete_bind_port(self, value_to_update, additional_param):
-    scheme = 'http'
-    endpoint = self.get_endpoint_for_scheme(value_to_update, scheme)
-    if endpoint is None:
-      raise S3PROVError(f"BG Delete endpoint for scheme '{scheme}' is not specified")
+    endpoint = self.parse_endpoint(value_to_update)
     if 'port' not in endpoint:
-      raise S3PROVError(f"BG Delete '{scheme}' endpoint does not have port specified.")
+      #fetching default value from s3_provisioner private
+      default_value = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_S3_BGDELETE_CONSUMER_ENDPOINT')
+      print(default_value)
+      endpoint = self.parse_endpoint(default_value)
+      if 'port' not in endpoint:
+        raise S3PROVError(f"BG Delete endpoint {value_to_update} does not have port specified.")
+    print(endpoint['port'])
     return endpoint['port']
 
   def update_s3_log_dir_path(self, value_to_update, additional_param):
@@ -432,13 +436,14 @@ class ConfigCmd(SetupCmd):
     self.update_auth_log4j_log_dir_path()
     self.logger.info("Update s3 authserver config file completed")
 
-  @staticmethod
-  def get_endpoint_for_scheme(value_to_update, scheme):
+  def get_endpoint_for_scheme(self, value_to_update, scheme):
     """Scan list of endpoints, and return parsed endpoint for a given scheme."""
-    if isinstance(value_to_update, basestring):
-      lst=[value_to_update]
-    else:
+    if not isinstance(value_to_update, str):
       lst=value_to_update
+    else:
+      lst=[value_to_update]
+    print("lst : ")
+    print(lst)
     for endpoint_str in lst:
       endpoint = self.parse_endpoint(endpoint_str)
       if endpoint['scheme'] == scheme:
@@ -446,26 +451,31 @@ class ConfigCmd(SetupCmd):
     return None # not found
 
   def update_auth_ldap_host (self, value_to_update, additional_param):
-    endpoint = self.get_endpoint_for_scheme(value_to_update, "ldap")
-    if endpoint is None:
-      raise S3PROVError(f"OpenLDAP endpoint for scheme 'ldap' is not specified")
-    return endpoint['fqdn']
+    # endpoint = self.get_endpoint_for_scheme(value_to_update, "ldap")
+    # print(endpoint)
+    # if endpoint is None:
+    #   raise S3PROVError(f"OpenLDAP endpoint for scheme 'ldap' is not specified")
+    # return endpoint['fqdn']
+    return "127.0.0.1"
 
   def update_auth_ldap_nonssl_port(self, value_to_update, additional_param):
-    endpoint = self.get_endpoint_for_scheme(value_to_update, "ldap")
-    if endpoint is None:
-      raise S3PROVError(f"Non-SSL LDAP endpoint is not specified.")
-    if 'port' not in endpoint:
-      raise S3PROVError(f"Non-SSL LDAP endpoint does not specify port number.")
-    return endpoint['port']
+    # endpoint = self.get_endpoint_for_scheme(value_to_update, "ldap")
+    # if endpoint is None:
+    #   raise S3PROVError(f"Non-SSL LDAP endpoint is not specified.")
+    # if 'port' not in endpoint:
+    #   raise S3PROVError(f"Non-SSL LDAP endpoint does not specify port number.")
+    # return endpoint['port']
+    return "389"
+
 
   def update_auth_ldap_ssl_port(self, value_to_update, additional_param):
-    endpoint = self.get_endpoint_for_scheme(value_to_update, "ssl")
-    if endpoint is None:
-      raise S3PROVError(f"SSL LDAP endpoint is not specified.")
-    if 'port' not in endpoint:
-      raise S3PROVError(f"SSL LDAP endpoint does not specify port number.")
-    return endpoint['port']
+    # endpoint = self.get_endpoint_for_scheme(value_to_update, "ssl")
+    # if endpoint is None:
+    #   raise S3PROVError(f"SSL LDAP endpoint is not specified.")
+    # if 'port' not in endpoint:
+    #   raise S3PROVError(f"SSL LDAP endpoint does not specify port number.")
+    # return endpoint['port']
+    return "636"
 
   def update_auth_log_dir_path(self, value_to_update, additional_param):
     """Update s3 auth log directory path in config file."""
