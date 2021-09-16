@@ -24,7 +24,7 @@ cortx:
     product_release: "LC"
     setup_type: "VM"
     storage:
-      log: "/share/var/log/cortx/"
+      log: "/var/log/cortx/"
       misc: "/var/data/cortx/"
   external:
     openldap:
@@ -40,7 +40,7 @@ cortx:
     data:
       endpoints: "https://s3.seagate.com"
     internal:
-      endpoints: "http://127.0.0.1"
+      endpoints: "http://127.0.0.1:28049"
   software:
     storage:
       config: "/etc/cortx"
