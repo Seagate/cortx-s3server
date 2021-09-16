@@ -344,9 +344,6 @@ class SetupCmd(object):
       storage_set_val = int(storage_set_count_str)
     else:
       storage_set_val = 0
-    print("&&&&&&&&&&&&&&")
-    print(storage_set_val)
-    print("&&&&&&&&&&&&&&")
     # Set phase name to upper case required for inheritance
     phase_name = phase_name.upper()
     # Extract keys from yardstick file for current phase considering inheritance
@@ -375,14 +372,9 @@ class SetupCmd(object):
         key_yard = key_yard.replace("cluster-id", self.cluster_id)
       if "nodes" in key_yard:
         index = 0
-        print("*****************************")
         print(key_yard)
-        print("*****************************")
         while index < storage_set_val:
           key_yard_server_nodes = self.get_confvalue(key_yard.replace("storage-set-count", str(index)))
-          print("###########################")
-          print(key_yard_server_nodes)
-          print("##########################")
           if key_yard_server_nodes is None:
             raise Exception("Validation for server_nodes failed")
           index += 1
