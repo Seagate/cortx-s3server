@@ -23,6 +23,7 @@ import os
 import errno
 import shutil
 import math
+import urllib
 from pathlib import Path
 from  ast import literal_eval
 from os import path
@@ -441,14 +442,14 @@ class ConfigCmd(SetupCmd):
         return endpoint
     return None # not found
 
-  def self.update_auth_ldap_host (self, value_to_update, additional_param):
+  def update_auth_ldap_host (self, value_to_update, additional_param):
       # TBD -- which scheme we want to pick? ssl or non ssl? -vvvv-
     endpoint = self.get_endpoint_for_scheme(value_to_update, "ldap")
     if endpoint is None:
       raise S3PROVError(f"OpenLDAP endpoint for scheme 'ldap' is not specified")
     return endpoint['fqdn']
 
-  def self.update_auth_ldap_nonssl_port(self, value_to_update, additional_param):
+  def update_auth_ldap_nonssl_port(self, value_to_update, additional_param):
     endpoint = self.get_endpoint_for_scheme(value_to_update, "ldap")
     if endpoint is None:
       return "" # not found   -- TBD is this correct? Should we throw an exception?
@@ -456,7 +457,7 @@ class ConfigCmd(SetupCmd):
       raise S3PROVError(f"Non-SSL LDAP endpoint does not specify port number.")
     return endpoint['port']
 
-  def self.update_auth_ldap_ssl_port (self, value_to_update, additional_param):
+  def update_auth_ldap_ssl_port (self, value_to_update, additional_param):
     endpoint = self.get_endpoint_for_scheme(value_to_update, "ssl")
     if endpoint is None:
       return "" # not found   -- TBD is this correct? Should we throw an exception?

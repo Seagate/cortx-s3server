@@ -36,11 +36,11 @@ cortx:
     auth:
       secret: "gAAAAABgWFPz2w_t6IBVictZmgTCgBXn5V-oy2JUVtvZkJvHM5KaaZKXRwtz4YKYieIy8mVKF8PUaZ6WYJEttcsi2KDpLOk9Vg=="
     iam:
-      endpoint: "https://iam.seagate.com"
+      endpoints: "https://iam.seagate.com"
     data:
-      endpoint: "https://s3.seagate.com"
+      endpoints: "https://s3.seagate.com"
     internal:
-      endpoint: "http://127.0.0.1"
+      endpoints: "http://127.0.0.1"
   software:
     storage:
       config: "/etc/cortx"
@@ -48,7 +48,7 @@ cluster:
   id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
   storage_set_count: "1"
   storage_set:
-    nodes: "['1114a50a6bf6f9c93ebd3c49d07d3fd4']"
+  - nodes: "['1114a50a6bf6f9c93ebd3c49d07d3fd4']"
 node:
   1114a50a6bf6f9c93ebd3c49d07d3fd4:
     name: "POD-1"
