@@ -17,7 +17,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 # This file should only contain the mandatory parameters from provisioner confstore.
-# All the optional parameters should be added to default in s3_prov_config.yaml under DEFAULT_CONFIG.
+# All the optional parameters should be added to default in s3_prov_config.yaml under DEFAULT_INIT.
 
 cortx:
   common:
