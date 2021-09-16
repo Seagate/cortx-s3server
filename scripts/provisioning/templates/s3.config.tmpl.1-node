@@ -29,7 +29,7 @@ cortx:
   external:
     openldap:
       admin: "admin"
-      secret: "TMPL_ROOTDN_SECRET_KEY"
+      secret: "TMPL_ROOT_SECRET_KEY"
       endpoints: "['ldap://127.0.0.1:389','ssl://127.0.0.1:636']"
       servers: "['localhost', 'localhost', 'localhost']"
   s3:
