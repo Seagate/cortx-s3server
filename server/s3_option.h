@@ -100,6 +100,7 @@ class S3Option {
   std::string s3_default_endpoint;
   std::set<std::string> s3_region_endpoints;
   unsigned short s3_grace_period_sec;
+  unsigned short s3_retry_after_sec;
   bool is_s3_shutting_down;
 
   unsigned short perf_enabled;
@@ -234,6 +235,7 @@ class S3Option {
     s3server_obj_delayed_del_enabled = true;
 
     s3_grace_period_sec = 10;  // 10 seconds
+    s3_retry_after_sec = 30;   // 30 seconds
     is_s3_shutting_down = false;
 
     log_dir = "/var/log/seagate/s3";
@@ -381,6 +383,7 @@ class S3Option {
   std::string get_default_endpoint();
   std::set<std::string>& get_region_endpoints();
   unsigned short get_s3_grace_period_sec();
+  unsigned short get_s3_retry_after_sec();
   bool get_is_s3_shutting_down();
   void set_is_s3_shutting_down(bool is_shutting_down);
 
@@ -520,6 +523,8 @@ class S3Option {
   void enable_murmurhash_oid();
   void disable_murmurhash_oid();
 
+  bool is_daemon_disabled();
+  void disable_daemon();
   void dump_options();
 
   static S3Option* get_instance() {

@@ -180,7 +180,7 @@ class ObjectRecoveryMsgbus(object):
             self._logger.debug("producer id : " + producer_id +  "msg_type : " + str(msg_type) +  "delivery_mechanism : "+ str(delivery_mechanism) )
             ret,msg = self.__msgbuslib.setup_producer(producer_id, msg_type, delivery_mechanism)
             if not ret:
-                self._logger.error("setup_send failed {}".format(str(msg)))
+                self._logger.error("setup_producer failed {}".format(str(msg)))
                 self.__isproducersetupcomplete = False
             else:
                 self.__isproducersetupcomplete = True
@@ -194,13 +194,15 @@ class ObjectRecoveryMsgbus(object):
         msg_type = None,
         delivery_mechanism = None):
         """Send message data."""
+        self._logger.debug("In send_data")
+
         try:
             if not self.__isproducersetupcomplete:
                 self.__setup_producer(producer_id,
                                       msg_type,
                                       delivery_mechanism)
                 if not self.__isproducersetupcomplete:
-                    self._logger.debug("producer connection issues")
+                    self._logger.debug("send_data producer connection issues")
                     return False
 
             msgbody = json.dumps(data)
@@ -214,11 +216,13 @@ class ObjectRecoveryMsgbus(object):
 
     def purge(self):
         """Purge the messages."""
+        self._logger.debug("In Purge")
+
         try:
             if not self.__isproducersetupcomplete:
                 self.__setup_producer()
                 if not self.__isproducersetupcomplete:
-                    self._logger.debug("producer connection issues")
+                    self._logger.debug("purge producer connection issues")
                     return False
             self.__msgbuslib.purge()
             #Insert a delay of 1 min (default) after purge, so that the messages are deleted
@@ -231,12 +235,14 @@ class ObjectRecoveryMsgbus(object):
             
     def get_count(self):
         """Get count of unread messages."""
+        self._logger.debug("In get_count")
+        
         try:
             consumer_group = self._config.get_msgbus_consumer_group()
             if not self.__isproducersetupcomplete:
                 self.__setup_producer()
                 if not self.__isproducersetupcomplete:
-                    self._logger.info("producer connection issues")
+                    self._logger.debug("get_count producer connection issues")
                     return 0
             
             unread_count = self.__msgbuslib.count(consumer_group)

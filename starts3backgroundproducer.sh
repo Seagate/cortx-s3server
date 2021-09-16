@@ -1,5 +1,6 @@
+#!/bin/sh -x
 #
-# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,11 +17,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# This file should only contain the mandatory parameters from provisioner confstore.
-# All the optional parameters should be added to default in s3_prov_config.yaml under DEFAULT_TEST.
 
-test:
-  s3:
-    iam_username: "sgiamadmin"
-    iam_password: "TMPL_SGIAM_PLAINTEXT_PASSWORD"
-    endpoint_url: "s3.seagate.com"
+cd "$(dirname "$0")"
+
+/opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer

@@ -110,6 +110,9 @@ bool S3Option::load_section(std::string section_name,
                                "S3_SERVER_SHUTDOWN_GRACE_PERIOD");
       s3_grace_period_sec = s3_option_node["S3_SERVER_SHUTDOWN_GRACE_PERIOD"]
                                 .as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_RETRY_SHUTDOWN_AFTER_SEC");
+      s3_retry_after_sec =
+          s3_option_node["S3_RETRY_SHUTDOWN_AFTER_SEC"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_DIR");
       log_dir = s3_option_node["S3_LOG_DIR"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_MODE");
@@ -475,6 +478,9 @@ bool S3Option::load_section(std::string section_name,
                                "S3_SERVER_SHUTDOWN_GRACE_PERIOD");
       s3_grace_period_sec = s3_option_node["S3_SERVER_SHUTDOWN_GRACE_PERIOD"]
                                 .as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_RETRY_SHUTDOWN_AFTER_SEC");
+      s3_retry_after_sec =
+          s3_option_node["S3_RETRY_SHUTDOWN_AFTER_SEC"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_DEFAULT_ENDPOINT");
       s3_default_endpoint =
           s3_option_node["S3_SERVER_DEFAULT_ENDPOINT"].as<std::string>();
@@ -955,6 +961,8 @@ void S3Option::dump_options() {
          motr_http_bind_port);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_SHUTDOWN_GRACE_PERIOD = %d\n",
          s3_grace_period_sec);
+  s3_log(S3_LOG_INFO, "", "S3_RETRY_SHUTDOWN_AFTER_SEC = %d\n",
+         s3_retry_after_sec);
   s3_log(S3_LOG_INFO, "", "S3_ENABLE_PERF = %d\n", perf_enabled);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_SSL_ENABLE = %d\n", s3server_ssl_enabled);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_OBJECT_DELAYED_DELETE = %d\n",
@@ -1141,6 +1149,8 @@ std::string S3Option::get_iem_path() { return s3_iem_path; }
 unsigned short S3Option::get_s3_grace_period_sec() {
   return s3_grace_period_sec;
 }
+
+unsigned short S3Option::get_s3_retry_after_sec() { return s3_retry_after_sec; }
 
 bool S3Option::get_is_s3_shutting_down() { return is_s3_shutting_down; }
 
@@ -1458,6 +1468,8 @@ void S3Option::enable_murmurhash_oid() { s3_enable_murmurhash_oid = true; }
 
 void S3Option::disable_murmurhash_oid() { s3_enable_murmurhash_oid = false; }
 
+void S3Option::disable_daemon() { FLAGS_disable_daemon = true; }
+
 void S3Option::enable_reuseport() { FLAGS_reuseport = true; }
 
 bool S3Option::is_s3_reuseport_enabled() { return s3_reuseport; }
@@ -1467,6 +1479,8 @@ bool S3Option::is_motr_http_reuseport_enabled() { return motr_http_reuseport; }
 bool S3Option::is_fi_enabled() { return FLAGS_fault_injection; }
 
 bool S3Option::is_getoid_enabled() { return FLAGS_getoid; }
+
+bool S3Option::is_daemon_disabled() { return FLAGS_disable_daemon; }
 
 std::string S3Option::get_redis_srv_addr() { return redis_srv_addr; }
 

@@ -12,6 +12,7 @@ This guide provides a step-by-step walkthrough for getting you CORTX-S3 Server r
 :warning: **Notes:** 
 - The following steps will not work if you have previously installed the CORTX software using an OVA or RPMs.
     - To install and test the S3 submodule, you'll have to create a new VM. 
+- This quick start guide produces a working CORTX S3 system which can be used for testing functionality but is not intended for performance measurements.
 
 ### 1.0 Prerequisites
 
@@ -371,6 +372,8 @@ Refer to our [CORTX Contribution Guide](https://github.com/Seagate/cortx/blob/ma
 Please refer to the [Support](https://github.com/Seagate/cortx/blob/main/SUPPORT.md) section to reach out to us with your questions, contributions, and feedback.
 
 Tested by:
+- Sep 03, 2021: Sanal Kaarthikeyan (sanal.kaarthikeyan@segate.com), tested CentOS Linux release 7.9.2009 (Core)
+                verified with git #948f22cc07955bf5c1d6ec77c3a7ec2da6933251 on main branch
 - Aug 30, 2021: Yanqing Fu (yanqing.f.fu@seagate.com) in CentOS Linux release 7.9.2009 (Core)
 - Aug 19, 2021: Patrick Hession (patrick.hession@seagate.com) in CentOS 7.8.2003 on VMWare Workstation Pro 16 and bare metal CentOS server
 - Aug 3, 2021: Daniar Kurniawan (daniar@uchicago.edu) in CentOS 7.8.2003 on a Chameleon node (type=compute_skylake).
