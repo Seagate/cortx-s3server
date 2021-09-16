@@ -393,7 +393,7 @@ class ConfigCmd(SetupCmd):
       endpoint = self.parse_endpoint(default_value)
       if 'port' not in endpoint:
         raise S3PROVError(f"BG Delete endpoint {value_to_update} does not have port specified.")
-    return endpoint['port']
+    return int(endpoint['port'])
 
   def update_s3_log_dir_path(self, value_to_update, additional_param):
     """ Update s3 server log directory path."""
@@ -525,7 +525,7 @@ class ConfigCmd(SetupCmd):
     endpoint = self.get_endpoint_for_scheme(value_to_update, "http")
     if endpoint is None:
       raise S3PROVError(f"BG Producer endpoint for scheme 'http' is not specified")
-    return endpoint['scheme'] + "://" + endpoint['fqdn']
+    return endpoint['scheme'] + "://" + endpoint['fqdn'] + ":" + endpoint['port']
 
   def update_bgdelete_log_dir(self, value_to_update, additional_param):
     """ Update s3 bgdelete log dir path."""
