@@ -495,7 +495,8 @@ class ConfigCmd(SetupCmd):
       dest_config_file = config_file.replace("/opt/seagate/cortx", self.base_config_file_path)
       self.logger.info(f"Dest config file: {dest_config_file}")
       os.makedirs(os.path.dirname(dest_config_file), exist_ok=True)
-      shutil.move(config_file, dest_config_file)
+      # Need to copy -else this breaks idempotancy
+      shutil.copy(config_file, dest_config_file)
       self.logger.info("Config file copied successfully to /etc/cortx")
 
   def copy_s3authserver_resources(self):
