@@ -19,54 +19,38 @@
 # This file should only contain the mandatory parameters from provisioner confstore.
 # All the optional parameters should be added to default in s3_prov_config.yaml under DEFAULT_CONFIG.
 
-server_node:
-  TMPL_MACHINE_ID:
-    cluster_id: "TMPL_CLUSTER_ID"
-    hostname: "TMPL_HOSTNAME"
-    network:
-      data:
-        public_fqdn: "srvnode-1.data.public"
-        private_fqdn: "srvnode-1.data.private"
 cortx:
   common:
+    product_release: "LC"
     setup_type: "VM"
-  software:
+    storage:
+      log: "/share/var/log/cortx/"
+      misc: "/var/data/cortx/"
+  external:
     openldap:
-      root:
-        user: "admin"
-        secret: "TMPL_ROOT_SECRET_KEY"
-      sgiam:
-        user: "sgiamadmin"
-        secret: "TMPL_SGIAM_SECRET_KEY"
-    s3:
-      io:
-#       max_units : "8"       #commenting this to validate the default values from s3_prov_config.yaml.
-      service:
-        instances : "1"
-        s3server_port : 28071
-        s3_server_bgdelete_bind_port : 28049
-        authserver_ip_address : "127.0.0.1"
-        authserver_port : 28050
-        s3_enable_stats: true
-        s3_audit_logger: "rsyslog-tcp"
-    s3authserver:
-      defaultEndpoint: "127.0.0.1"
-      httpPort: 28050
-      httpsPort: 28051
-      ldapHost: "127.0.0.1"
-      ldapPort: 389
-      ldapSSLPort: 636
-      iamAuditLog: "rsyslog-tcp"
-    s3bgdelete:
-      producer_endpoint: "http://127.0.0.1:28049"
-      consumer_endpoint: "http://127.0.0.1:28049"
-      scheduler_schedule_interval: 1200
-      max_keys: 1000
-    base_log_path: "/var/log/cortx"
-    base_config_path: "/etc/cortx"
+      admin: "admin"
+      secret: "TMPL_ROOT_SECRET_KEY"
+      endpoints: "['ldap://127.0.0.1:389','ssl://127.0.0.1:636']"
+      servers: "['localhost', 'localhost', 'localhost']"
+  s3:
+    auth:
+      secret: "TMPL_SGIAM_SECRET_KEY"
+    iam:
+      endpoints: "https://iam.seagate.com"
+    data:
+      endpoints: "https://s3.seagate.com"
+    internal:
+      endpoints: "http://127.0.0.1"
+  software:
+    storage:
+      config: "/etc/cortx"
 cluster:
-  TMPL_CLUSTER_ID:
-    site:
-      storage_set_count: "1"
-    storage_set:
-    - server_nodes: "['TMPL_MACHINE_ID']"
+  id: "TMPL_CLUSTER_ID"
+  storage_set_count: "1"
+  storage_set:
+  - nodes: "['TMPL_MACHINE_ID']"
+node:
+  TMPL_MACHINE_ID:
+    name: "POD-1"
+    hostname: "TMPL_HOSTNAME"
+    cluster_id: "TMPL_CLUSTER_ID"
