@@ -228,8 +228,8 @@ class SetupCmd(object):
     if ("K8" != str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
       if services:
         ServiceV().validate('isrunning', services)
-    if rpms:
-      PkgV().validate('rpms', rpms)
+      if rpms:
+        PkgV().validate('rpms', rpms)
     if files:
       PathV().validate('exists', files)
 
