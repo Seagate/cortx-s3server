@@ -370,8 +370,9 @@ class SetupCmd(object):
         key_yard = key_yard.replace("machine-id", self.machine_id)
       if "cluster-id" in key_yard:
         key_yard = key_yard.replace("cluster-id", self.cluster_id)
-      if "server_nodes" in key_yard:
+      if "nodes" in key_yard:
         index = 0
+        print(key_yard)
         while index < storage_set_val:
           key_yard_server_nodes = self.get_confvalue(key_yard.replace("storage-set-count", str(index)))
           if key_yard_server_nodes is None:
