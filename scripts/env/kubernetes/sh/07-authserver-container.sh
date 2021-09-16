@@ -25,7 +25,7 @@ source ./sh/functions.sh
 set -e # exit immediatly on errors
 set -x # print each statement before execution
 
-add_separator CONFIGURING HAPROXY CONTAINER.
+add_separator CONFIGURING AUTHSERVER CONTAINER.
 
 kube_run() {
   kubectl exec -i depl-pod -c authserver -- "$@"

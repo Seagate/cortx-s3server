@@ -26,3 +26,4 @@ set -e -x
 ./sh/05-create-IO-containers.sh
 ./sh/06-haproxy-container.sh
 ./sh/07-authserver-container.sh
+./sh/08-motr-hare-container.sh
