@@ -44,9 +44,9 @@ public class LdapConnectionManager {
     public static void initLdap()
             throws ServerInitialisationException {
 
+       LDAPSocketFactory socketFactory = null;
+       int port = 0;
         try {
-            LDAPSocketFactory socketFactory = null;
-            int port;
             if (AuthServerConfig.isSSLToLdapEnabled()) {
                 port = AuthServerConfig.getLdapSSLPort();
                 LOGGER.info("Connecting ldap on SSL port :" + port);
@@ -56,7 +56,6 @@ public class LdapConnectionManager {
                 port = AuthServerConfig.getLdapPort();
                 LOGGER.info("Connecting ldap on port :" + port);
             }
-
             ldapPool = new PoolManager(AuthServerConfig.getLdapHost(),
                     port,
                     AuthServerConfig.getLdapMaxConnections(),
@@ -67,16 +66,13 @@ public class LdapConnectionManager {
             ldapLoginPW = AuthServerConfig.getLdapLoginPassword();
         } catch (LDAPException ex) {
             String msg = "Failed to initialise LDAP.\n" + ex.toString();
-            if (retryLdapConnection(ex.getResultCode())) {
-              LOGGER.error(msg);
-              // IEMUtil.log(
-              //  IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
-              //"An error occurred while establishing ldap " +
-              //  "connection. For more information, please refer " +
-              //"Troubleshooting Guide.",
-              // String.format("\"cause\": \"%s\"", ex.getCause()));
-            }
+            if (!retryLdapPoolConnection(socketFactory, port)) {
+
+              LOGGER.error("LDAPException Cause: " + ex.getCause() +
+                           ". Message: " + ex.getMessage());
+
             throw new ServerInitialisationException(msg);
+            }
         }
     }
 
@@ -95,7 +91,8 @@ public class LdapConnectionManager {
             lc = ldapPool.getBoundConnection(
                     ldapLoginDN, ldapLoginPW.getBytes("UTF-8"));
         } catch (LDAPException ex) {
-          if (retryLdapConnection(ex.getResultCode())) {
+          lc = retryLdapConnection(ex.getResultCode(), "", "");
+          if (lc == null) {
             LOGGER.error("LDAPException Cause: " + ex.getCause() +
                          ". Message: " + ex.getMessage());
             // IEMUtil.log(
@@ -118,7 +115,8 @@ public class LdapConnectionManager {
     }
 
    public
-    static boolean retryLdapConnection(int resultcode) {
+    static boolean retryLdapPoolConnection(LDAPSocketFactory socketFactory,
+                                           int port) {
 
       // resultcode 91 maps to CONNECT_ERROR,ldap client has either lost
       // connection
@@ -129,33 +127,93 @@ public class LdapConnectionManager {
       // connection with ldap server
       // either ldap server is down or specified hostname or port number is
       // incorrect.
-      boolean retryConnectionSuccess = false;
-      if (resultcode == 91 || resultcode == 52 || resultcode == 81) {
-        // wait on thread to retry new ldap connection
 
+      boolean success = false;
+      int retrycount = 10;
+      while (retrycount > 0) {
         try {
-          Thread.sleep(500);
-          LDAPConnection conn = new LDAPConnection(1000);
-          conn.connect(AuthServerConfig.getLdapHost(),
-                       AuthServerConfig.getLdapPort());
-          retryConnectionSuccess = true;
+          retrycount--;
+          ldapPool = new PoolManager(
+              AuthServerConfig.getLdapHost(), port,
+              AuthServerConfig.getLdapMaxConnections(),
+              AuthServerConfig.getLdapMaxSharedConnections(), socketFactory);
+
+          ldapLoginDN = AuthServerConfig.getLdapLoginDN();
+          ldapLoginPW = AuthServerConfig.getLdapLoginPassword();
+          success = true;
+          break;
         }
         catch (LDAPException e) {
           LOGGER.error("LDAPException Cause: " + e.getCause() + ". Message: " +
                        e.getMessage());
-          // IEMUtil.log(
-          //  IEMUtil.Level.FATAL, IEMUtil.LDAP_EX,
-          //"An error occurred while establishing ldap connection. " +
-          //  "For more information, please refer Troubleshooting " +
-          //"Guide.",
-          // String.format("\"cause\": \"%s\"", e.getCause()));
-        }
-        catch (InterruptedException e) {
-          LOGGER.error("Reset key  delay failing - ", e);
-          Thread.currentThread().interrupt();
+          try {
+            Thread.sleep(5000);
+          }
+          catch (InterruptedException ex) {
+            LOGGER.error("Reset key  delay failing - ", ex);
+          }
         }
       }
-      return retryConnectionSuccess;
+
+      return success;
+    }
+
+   public
+    static LDAPConnection retryLdapConnection(int resultcode, String dn,
+                                              String password) {
+
+      // resultcode 91 maps to CONNECT_ERROR,ldap client has either lost
+      // connection
+      // or can not establish connection to ldap server.
+      // resultcode 52 maps to UNAVAILABLE,ldap server can not process client's
+      // bind request usually because it is shutting down
+      // resultcode 81 maps to ldap libraries cannot establish initial
+      // connection with ldap server
+      // either ldap server is down or specified hostname or port number is
+      // incorrect.
+      LDAPConnection lc = null;
+      int retrycount = 10;
+      if (resultcode == 91 || resultcode == 52 || resultcode == 81) {
+        // wait on thread to retry new ldap connection
+        String DN = "", Password = "";
+        if (dn.isEmpty()) {
+          DN = ldapLoginDN;
+          Password = ldapLoginPW;
+        } else {
+          DN = dn;
+          Password = password;
+        }
+        while (retrycount > 0) {
+        try {
+          retrycount--;
+
+          lc = ldapPool.getBoundConnection(DN, Password.getBytes("UTF-8"));
+
+          break;
+        }
+        catch (LDAPException e) {
+
+          LOGGER.error("LDAPException Cause: " + e.getCause() + ". Message: " +
+                       e.getMessage());
+          try {
+            Thread.sleep(500);
+          }
+
+          catch (InterruptedException ex) {
+            LOGGER.error("Reset key  delay failing - ", ex);
+        }
+        }
+        catch (UnsupportedEncodingException ex) {
+          LOGGER.error("UnsupportedEncodingException Cause: " + ex.getCause() +
+                       ". Message: " + ex.getMessage());
+          LOGGER.error("UTF-8 encoding is not supported.");
+        }
+        catch (InterruptedException ex) {
+          LOGGER.error("Reset key  delay failing - ", ex);
+        }
+      }
+      }
+      return lc;
     }
 
     public static void releaseConnection(LDAPConnection lc) {
@@ -190,7 +248,8 @@ public class LdapConnectionManager {
         LOGGER.error("UTF-8 encoding is not supported.");
       }
       catch (LDAPException ex) {
-        if (retryLdapConnection(ex.getResultCode())) {
+        lc = retryLdapConnection(ex.getResultCode(), dn, password);
+        if (lc == null) {
           LOGGER.error("LDAPException Cause: " + ex.getCause() + ". Message: " +
                        ex.getMessage());
           // IEMUtil.log(
