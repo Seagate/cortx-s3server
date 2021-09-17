@@ -173,6 +173,9 @@ class S3HaproxyConfig:
   def configure_haproxy_k8(self):
     self.logger.info("K8s HAPROXY configuration ...")
 
+    # Fetching ssl certificate path
+    sslcertpath = self.get_sslcertpath()
+
     # Fetching S3 server instances
     numS3Instances = self.get_s3instances()
     if numS3Instances <= 0:
@@ -277,7 +280,7 @@ backend s3-main
     balance static-rr                                     #Balance algorithm
     http-response set-header Server SeagateS3
     # Check the S3 server application is up and healthy - 200 status code
-    option httpchk HEAD / HTTP/1.1\r\nHost:\ localhost
+    option httpchk HEAD / HTTP/1.1\\r\\nHost:\ localhost
 
     # option log-health-checks
     default-server inter 2s fastinter 100 rise 1 fall 5 on-error fastinter
@@ -301,7 +304,7 @@ backend s3-auth
     balance static-rr                                     #Balance algorithm
 
     # Check the S3 Auth server application is up and healthy - 200 status code
-    option httpchk HEAD /auth/health HTTP/1.1\r\nHost:\ localhost
+    option httpchk HEAD /auth/health HTTP/1.1\\r\\nHost:\ localhost
 
     # option log-health-checks
     default-server inter 2s fastinter 100 rise 1 fall 5 on-error fastinter
@@ -310,42 +313,53 @@ backend s3-auth
     config_handle.write(global_text)
     config_handle.write(default_text)
     config_handle.write(frontend_s3main_text)
-    config_handle.write("
-    bind 0.0.0.0:%s
-    bind 0.0.0.0:%s ssl crt /etc/cortx/s3/stx/stx.pem
-
-    option forwardfor
-    default_backend s3-main
-
-    # s3 bgdelete server port
-    bind 0.0.0.0:%s
-    acl s3bgdeleteacl dst_port %s
-    use_backend s3-bgdelete if s3bgdeleteacl
-
-    # s3 auth server port
-    bind 0.0.0.0:%s
-    bind 0.0.0.0:%s ssl crt /etc/cortx/s3/stx/stx.pem
-
-    acl s3authbackendacl dst_port %s
-    acl s3authbackendacl dst_port %s
-    use_backend s3-auth if s3authbackendacl\n"
-    % (s3fendhttpport, s3fendhttpsport, s3bgdeleteport, s3bgdeleteport, s3authfendhttpport, s3authfendhttpsport, s3authfendhttpsport, s3authfendhttpport))
+    config_handle.write(
+         "   bind 0.0.0.0:%s\n"
+         "   bind 0.0.0.0:%s ssl crt %s\n"
+         "\n"
+         "   option forwardfor\n"
+         "   default_backend s3-main\n"
+         "\n"
+         "   # s3 bgdelete server port\n"
+         "   bind 0.0.0.0:%s\n"
+         "   acl s3bgdeleteacl dst_port %s\n"
+         "   use_backend s3-bgdelete if s3bgdeleteacl\n"
+         "\n"
+         "   # s3 auth server port\n"
+         "   bind 0.0.0.0:%s\n"
+         "   bind 0.0.0.0:%s ssl crt %s\n"
+         "\n"
+         "   acl s3authbackendacl dst_port %s\n"
+         "   acl s3authbackendacl dst_port %s\n"
+         "   use_backend s3-auth if s3authbackendacl\n"
+         % (s3fendhttpport, s3fendhttpsport, sslcertpath, s3bgdeleteport, s3bgdeleteport, s3authfendhttpport, s3authfendhttpsport, sslcertpath, s3authfendhttpsport, s3authfendhttpport))
     config_handle.write(backend_s3main_text)
     for i in range(0, numS3Instances):
         config_handle.write(
         "    server s3-instance-%s 0.0.0.0:%s check maxconn 110        # s3 instance %s\n"
         % (i+1, s3backendport+i, i+1))
     config_handle.write(backend_s3bgdelete_text)
-    config_handle.write("
-    server s3-bgdelete-instance-1 0.0.0.0:%s           # s3 bgdelete instance 1\n"
-    % (s3bgdeleteport))
+    config_handle.write(
+        "    server s3-bgdelete-instance-1 0.0.0.0:%s           # s3 bgdelete instance 1\n"
+        % (s3bgdeleteport))
     config_handle.write(backend_s3auth_text)
-    config_handle.write("
-    server s3authserver-instance1 0.0.0.0:%s #check ssl verify required ca-file /etc/ssl/stx-s3/s3auth/s3authserver.crt   # s3 auth server instance 1
-
-#-------S3 Haproxy configuration end-----------------------------------\n"
-    % (s3authbendport))
+    config_handle.write(
+        "    server s3authserver-instance1 0.0.0.0:%s #check ssl verify required ca-file /etc/ssl/stx-s3/s3auth/s3authserver.crt   # s3 auth server instance 1\n"
+        "\n"
+        "#-------S3 Haproxy configuration end-----------------------------------\n"
+        % (s3authbendport))
     config_handle.close()
+
+    #Check for destination dirs and create if needed
+    pem_dir = os.path.dirname(sslcertpath)
+    if not os.path.exists(pem_dir):
+        os.makedirs(pem_dir)
+    if not os.path.exists('/etc/haproxy/errors/'):
+        os.makedirs('/etc/haproxy/errors/')
+
+    #Run config commands
+    os.system("cp /etc/ssl/stx/stx.pem %s" % sslcertpath)
+    os.system("cp /opt/seagate/cortx/s3/install/haproxy/503.http /etc/haproxy/errors/")
 
   def configure_haproxy_legacy(self):
     """Main Processing function."""
