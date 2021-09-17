@@ -71,7 +71,7 @@ class SetupCmd(object):
     self.base_log_file_path = "/var/log/cortx"
 
     self.ldap_user = "sgiamadmin"
-    self.service = service
+    self.services = service
 
     s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
     self.logger = logging.getLogger(s3deployment_logger_name)
