@@ -42,10 +42,10 @@ class ConfigCmd(SetupCmd):
   """Config Setup Cmd."""
   name = "config"
 
-  def __init__(self, config: str, service: str = None):
+  def __init__(self, config: str, services: str = None):
     """Constructor."""
     try:
-      super(ConfigCmd, self).__init__(config, service)
+      super(ConfigCmd, self).__init__(config, services)
       self.setup_type = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE')
       self.logger.info(f'Setup type : {self.setup_type}')
       self.cluster_id = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_CLUSTER_ID_KEY')

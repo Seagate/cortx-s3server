@@ -44,21 +44,21 @@ def main():
 
   postinstallCmd = subparsers.add_parser('post_install', help='setup post_install')
   postinstallCmd.add_argument("--config", help='config URL', type=str)
-  postinstallCmd.add_argument("--service", help='Service Name', type=str, required=False)
+  postinstallCmd.add_argument("--services", help='services', type=str, required=False)
 
   prepareCmd = subparsers.add_parser('prepare', help='setup prepare')
   prepareCmd.add_argument("--config", help='config URL', type=str, required=True)
-  prepareCmd.add_argument("--service", help='Service Name', type=str, required=False)
+  prepareCmd.add_argument("--services", help='Services', type=str, required=False)
 
   configCmd = subparsers.add_parser('config', help='setup config')
   configCmd.add_argument("--config", help='config URL', type=str, required=True)
   configCmd.add_argument("--only_ldap", help='Configure only openldap', action='store_true')
   configCmd.add_argument("--only_haproxy", help='Configure only haproxy', action='store_true')
-  configCmd.add_argument("--service", help='Service Name', type=str, required=False)
+  configCmd.add_argument("--services", help='services', type=str, required=False)
 
   initCmd = subparsers.add_parser('init', help='setup init')
   initCmd.add_argument("--config", help='config URL', type=str, required=True)
-  initCmd.add_argument("--service", help='Service Name', type=str, required=False)
+  initCmd.add_argument("--services", help='services', type=str, required=False)
 
   testCmd = subparsers.add_parser('test', help='setup test')
   testCmd.add_argument("--config", help='config URL', type=str, required=True)
@@ -66,18 +66,18 @@ def main():
 
   resetCmd = subparsers.add_parser('reset', help='setup reset')
   resetCmd.add_argument("--config", help='config URL', type=str, required=True)
-  resetCmd.add_argument("--service", help='Service Name', type=str, required=False)
+  resetCmd.add_argument("--services", help='services', type=str, required=False)
 
   cleanupCmd = subparsers.add_parser('cleanup', help='setup cleanup')
   cleanupCmd.add_argument("--config", help='config URL', type=str, required=True)
   cleanupCmd.add_argument("--pre_factory", help='Revert to factory state', action='store_true')
-  cleanupCmd.add_argument("--service", help='Service Name', type=str, required=False)
+  cleanupCmd.add_argument("--services", help='services', type=str, required=False)
 
   preupgradeCmd = subparsers.add_parser('preupgrade', help='setup pre upgrade')
-  preupgradeCmd.add_argument("--service", help='Service Name', type=str, required=False)
+  preupgradeCmd.add_argument("--services", help='services', type=str, required=False)
 
   postupgradeCmd = subparsers.add_parser('postupgrade', help='setup post upgrade')
-  postupgradeCmd.add_argument("--service", help='Service Name', type=str, required=False)
+  postupgradeCmd.add_argument("--services", help='services', type=str, required=False)
 
   args = parser.parse_args()
 
@@ -88,12 +88,12 @@ def main():
     if args.command == 'post_install':
       from postinstallcmd import PostInstallCmd
       logger.info('post_install started.')
-      PostInstallCmd(args.config, args.service).process()
+      PostInstallCmd(args.config, args.services).process()
       logger.info('post_install successful.')
     elif args.command == 'prepare':
       from preparecmd import PrepareCmd
       logger.info('prepare started.')
-      PrepareCmd(args.config, args.service).process()
+      PrepareCmd(args.config, args.services).process()
       logger.info('prepare successful.')
     elif args.command == 'config':
       from configcmd import ConfigCmd
@@ -104,13 +104,13 @@ def main():
         configure_only_openldap = True
       elif args.only_haproxy == True:
         configure_only_haproxy = True
-      ConfigCmd(args.config, args.service).process(configure_only_openldap,
+      ConfigCmd(args.config, args.services).process(configure_only_openldap,
                                 configure_only_haproxy)
       logger.info('config successful.')
     elif args.command == 'init':
       from initcmd import InitCmd
       logger.info('init started.')
-      InitCmd(args.config, args.service).process()
+      InitCmd(args.config, args.services).process()
       logger.info('init successful.') 
     elif args.command == 'test':
       from testcmd import TestCmd
@@ -123,22 +123,22 @@ def main():
     elif args.command == 'reset':
       from resetcmd import ResetCmd
       logger.info('reset started.')
-      ResetCmd(args.config, args.service).process()
+      ResetCmd(args.config, args.services).process()
       logger.info('reset successful.')
     elif args.command == 'cleanup':
       from cleanupcmd import CleanupCmd
       logger.info('cleanup started.')
-      CleanupCmd(args.config, args.service).process(args.pre_factory)
+      CleanupCmd(args.config, args.services).process(args.pre_factory)
       logger.info('cleanup successful.')
     elif args.command == 'preupgrade':
       from preupgradecmd import PreUpgradeCmd
       logger.info('pre-upgrade started.')
-      PreUpgradeCmd(None, args.service).process()
+      PreUpgradeCmd(None, args.services).process()
       logger.info('pre-upgrade successful.')
     elif args.command == 'postupgrade':
       from postupgradecmd import PostUpgradeCmd
       logger.info('post-upgrade started.')
-      PostUpgradeCmd(None, args.service).process()
+      PostUpgradeCmd(None, args.services).process()
       logger.info('post-upgrade successful.')
 
   except Exception as e:

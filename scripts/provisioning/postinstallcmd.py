@@ -26,10 +26,10 @@ class PostInstallCmd(SetupCmd):
   """PostInstall Setup Cmd."""
   name = "post_install"
 
-  def __init__(self, config: str = None, service: str = None):
+  def __init__(self, config: str = None, services: str = None):
     """Constructor."""
     try:
-      super(PostInstallCmd, self).__init__(config, service)
+      super(PostInstallCmd, self).__init__(config, services)
     except Exception as e:
       raise S3PROVError(f'exception: {e}')
 

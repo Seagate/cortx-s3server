@@ -59,7 +59,7 @@ class SetupCmd(object):
   #                's3authserver': 's3auth'}
   ha_service_map = {}
 
-  def __init__(self,config: str, service: str):
+  def __init__(self,config: str, services: str):
     """Constructor."""
     self.endpoint = None
     self._url = None
@@ -72,9 +72,6 @@ class SetupCmd(object):
 
     self.ldap_user = "sgiamadmin"
     self.service = service
-
-    if(self.service == 's3backgroundproducer'):
-        raise Exception('s3backgroundproducer service only passed')
 
     s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
     self.logger = logging.getLogger(s3deployment_logger_name)

@@ -26,10 +26,10 @@ class PrepareCmd(SetupCmd):
   """Prepare Setup Cmd."""
   name = "prepare"
 
-  def __init__(self, config: str, service: str = None):
+  def __init__(self, config: str, services: str = None):
     """Constructor."""
     try:
-      super(PrepareCmd, self).__init__(config, service)
+      super(PrepareCmd, self).__init__(config, services)
     except Exception as e:
       raise e
 
