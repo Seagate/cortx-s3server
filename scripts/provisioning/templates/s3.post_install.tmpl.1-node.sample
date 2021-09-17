@@ -18,3 +18,7 @@
 #
 # This file should only contain the mandatory parameters from provisioner confstore.
 # All the optional parameters should be added to default in s3_prov_config.yaml under DEFAULT_POST_INSTALL.
+
+cortx:
+  common:
+    setup_type: "VM"
