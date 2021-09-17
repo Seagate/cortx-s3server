@@ -135,6 +135,7 @@ cp scripts/provisioning/preupgradecmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/postupgradecmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/setupcmd.py $S3_INSTALL_LOCATION/bin
 cp scripts/provisioning/s3_haproxy_config.py $S3_INSTALL_LOCATION/bin
+cp scripts/provisioning/starthaproxy.sh $S3_INSTALL_LOCATION/bin
 cp scripts/ldap/ldapaccountaction.py $S3_INSTALL_LOCATION/bin
 cp -f scripts/swupdate/merge.py $S3_INSTALL_LOCATION/bin
 
