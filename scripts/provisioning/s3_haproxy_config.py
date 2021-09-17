@@ -77,7 +77,7 @@ class S3HaproxyConfig:
 
     return int(self.get_config_with_defaults('CONFIG>CONFSTORE_S3INSTANCES_KEY'))
 
-  def get_s3serverport(self):
+  def get_s3server_backend_port(self):
     assert self.provisioner_confstore != None
     assert self.local_confstore != None
 
@@ -88,6 +88,12 @@ class S3HaproxyConfig:
     assert self.local_confstore != None
 
     return int(self.get_config_with_defaults('CONFIG>CONFSTORE_S3_AUTHSERVER_PORT'))
+
+  def get_sslcertpath(self):
+    assert self.provisioner_confstore != None
+    assert self.local_confstore != None
+
+    return self.get_config_with_defaults('CONFIG>CONFSTORE_S3_SECURITY_CERTIFICATE')
 
   def get_config_with_defaults(self, key: str):
     confkey = self.local_confstore.get_config(key)
@@ -121,9 +127,9 @@ class S3HaproxyConfig:
     numS3Instances = self.get_s3instances()
     if numS3Instances <= 0:
         numS3Instances = 1
-    s3inport = self.get_s3serverport()
-    if s3inport == 0:
-        s3inport = 28071
+    s3backendport = self.get_s3server_backend_port()
+    if s3backendport == 0:
+        s3backendport = 28071
 
     config_file = '/etc/cortx/s3/haproxy.cfg'
     global_text = '''global
@@ -273,7 +279,7 @@ backend s3-auth
     for i in range(0, numS3Instances):
         config_handle.write(
         "    server s3-instance-%s 0.0.0.0:%s check maxconn 110        # s3 instance %s\n"
-        % (i+1, s3inport+i, i+1))
+        % (i+1, s3backendport+i, i+1))
     config_handle.write(backend_s3bgdelete_text)
     config_handle.write(backend_s3auth_text)
     config_handle.close()
@@ -382,10 +388,10 @@ backend s3-auth
 '''
 
     #Initialize port numbers
-    s3inport = self.get_s3serverport()
-    self.logger.info(f'S3 server port: {s3inport}')
+    s3backendport = self.get_s3server_backend_port()
+    self.logger.info(f'S3 server backend port: {s3backendport}')
     s3auport = self.get_s3authserverport()
-    self.logger.info(f'S3 auth server port: {s3auport}')
+    self.logger.info(f'S3 auth server backend port: {s3auport}')
 
     #Add complete information to haproxy.cfg file
     cfg_file = '/etc/haproxy/haproxy.cfg'
@@ -405,7 +411,7 @@ backend s3-auth
     for i in range(0, numS3Instances):
         target.write(
         "    server s3-instance-%s %s:%s check maxconn 110        # s3 instance %s\n"
-        % (i+1, pvt_ip, s3inport+i, i+1))
+        % (i+1, pvt_ip, s3backendport+i, i+1))
     target.write(backend_s3auth_text)
     for i in range(0, 1):
         target.write(
