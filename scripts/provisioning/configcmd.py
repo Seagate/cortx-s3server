@@ -42,10 +42,10 @@ class ConfigCmd(SetupCmd):
   """Config Setup Cmd."""
   name = "config"
 
-  def __init__(self, config: str, module: str = None):
+  def __init__(self, config: str, service: str = None):
     """Constructor."""
     try:
-      super(ConfigCmd, self).__init__(config, module)
+      super(ConfigCmd, self).__init__(config, service)
       self.setup_type = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE')
       self.logger.info(f'Setup type : {self.setup_type}')
       self.cluster_id = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_CLUSTER_ID_KEY')
@@ -60,7 +60,7 @@ class ConfigCmd(SetupCmd):
 
   def process(self, configure_only_openldap = False, configure_only_haproxy = False):
     """Main processing function."""
-    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, module = {self.module}")
+    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.service}")
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
@@ -78,9 +78,9 @@ class ConfigCmd(SetupCmd):
       self.logger.info("copy s3 authserver resources completed")
 
       # update all the config files
-      self.logger.info("update all modules config files started")
+      self.logger.info("update all services config files started")
       self.update_configs()
-      self.logger.info("update all modules config files completed")
+      self.logger.info("update all services config files completed")
 
       # validating config file after copying to /etc/cortx
       self.logger.info("validate config file started")
@@ -341,7 +341,7 @@ class ConfigCmd(SetupCmd):
     self.logger.info(f'Key {key_to_update} updated successfully in {configfile}')
 
   def update_configs(self):
-    """Update all module configs."""
+    """Update all service configs."""
     self.update_s3_server_configs()
     self.update_s3_auth_configs()
     self.update_s3_bgdelete_configs()
