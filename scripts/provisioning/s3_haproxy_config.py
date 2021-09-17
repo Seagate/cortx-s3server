@@ -21,8 +21,11 @@
 import os
 import sys
 import socket
-from s3confstore.cortx_s3_confstore import S3CortxConfStore
 import logging
+import urllib.parse
+from ast import literal_eval
+from setupcmd import S3PROVError
+from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
 class S3HaproxyConfig:
   """HAProxy configration for S3."""
@@ -59,6 +62,7 @@ class S3HaproxyConfig:
     self.machine_id = self.provisioner_confstore.get_machine_id()
     self.logger.info(f'Machine id : {self.machine_id}')
 
+  @staticmethod
   def parse_endpoint(self, endpoint_str):
     """Parse endpoint string and return dictionary with components:
          * scheme,
@@ -116,7 +120,7 @@ class S3HaproxyConfig:
   def get_endpoint_port(self, confstore_key, endpoint_type):
     confstore_key_value = self.get_confvalue_with_defaults(confstore_key)
     # Checking if the value is a string or not.
-    if type(confstore_key_value) is str:
+    if isinstance(confstore_key_value, str):
       confstore_key_value = literal_eval(confstore_key_value)
 
     endpoint = self.get_endpoint_for_scheme(confstore_key_value, endpoint_type)
@@ -358,7 +362,8 @@ backend s3-auth
         os.makedirs('/etc/haproxy/errors/')
 
     #Run config commands
-    os.system("cp /etc/ssl/stx/stx.pem %s" % sslcertpath)
+    cmd = 'cp /etc/ssl/stx/stx.pem ' + sslcertpath
+    os.system(cmd)
     os.system("cp /opt/seagate/cortx/s3/install/haproxy/503.http /etc/haproxy/errors/")
 
   def configure_haproxy_legacy(self):
