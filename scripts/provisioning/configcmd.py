@@ -58,7 +58,7 @@ class ConfigCmd(SetupCmd):
     except Exception as e:
       raise S3PROVError(f'exception: {e}')
 
-  def process(self, skip_openldap = False, skip_haproxy = False):
+  def process(self, skip_haproxy = False):
     """Main processing function."""
     self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
     self.logger.info("validations started")
@@ -104,7 +104,7 @@ class ConfigCmd(SetupCmd):
       self.create_auth_jks_password()
       self.logger.info('create auth jks password completed')
 
-      if skip_openldap == False:
+      if(self.services is None or 'openldap' in self.services):
         # Configure openldap only
         self.configure_s3_schema()
       if skip_haproxy == False:

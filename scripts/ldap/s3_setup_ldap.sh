@@ -86,6 +86,11 @@ then
     exit 1
 fi
 
+op=$(ldapsearch -w "$ROOTDNPASSWORD" -x -D cn=admin,cn=config -b cn=schema,cn=config -h "$host")
+if [[ $op == *"cn={2}s3user"* ]];then
+    echo "Skipping s3 schema configuration as its already present on ${host}"
+    exit 0
+fi
 INSTALLDIR="/opt/seagate/cortx/s3/install/ldap"
 # generate encrypted password for ldap admin
 SHA=$(slappasswd -s "$LDAPADMINPASS")
