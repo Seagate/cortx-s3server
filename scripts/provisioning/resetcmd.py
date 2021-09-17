@@ -34,10 +34,10 @@ class ResetCmd(SetupCmd):
   """Reset Setup Cmd."""
   name = "reset"
 
-  def __init__(self, config: str, service: str = None):
+  def __init__(self, config: str, services: str = None):
     """Constructor."""
     try:
-      super(ResetCmd, self).__init__(config, service)
+      super(ResetCmd, self).__init__(config, services)
       self.read_ldap_root_credentials()
       self.get_iam_admin_credentials()
     except Exception as e:
@@ -45,7 +45,7 @@ class ResetCmd(SetupCmd):
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.service}")
+    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
     # disabling reset phase for K8s branch
     if ("K8" == str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
       return
