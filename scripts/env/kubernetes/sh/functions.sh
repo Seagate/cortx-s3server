@@ -56,15 +56,32 @@ hit_enter_when_done() {
   )
 }
 
+validate_ip() {
+  if [[ ! "$1" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
+    echo "Not a valid IP address: <$1>"
+    false
+  fi
+  true
+}
+
 ###########################################################################
 ### k8s-specific functions ###
 ##############################
 
 set_var_OPENLDAP_SVC() {
   OPENLDAP_SVC=`kubectl get svc openldap-svc | grep ldap | awk '{print $3}'`
-  if [[ ! "$OPENLDAP_SVC" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
+  if ! validate_ip "$OPENLDAP_SVC"; then
     add_separator "FAILED. openldap service endpoint is not accessible"
     kubectl get svc openldap-svc
+    false
+  fi
+}
+
+set_var_DEPL_POD_IP() {
+  DEPL_POD_IP=`kubectl get pod depl-pod -o wide | grep -v ^NAME | awk '{print $6}'`
+  if ! validate_ip "$DEPL_POD_IP"; then
+    add_separator "FAILED. Cannot derive IO POD IP address"
+    kubectl get pod depl-pod -o wide
     false
   fi
 }

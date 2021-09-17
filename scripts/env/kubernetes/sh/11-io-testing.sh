@@ -18,15 +18,22 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -e -x
+set -e # exit immediatly on errors
 
-./sh/01-install-k8s.sh
-./sh/03-common-k8s-definitions.sh
-./sh/04-openldap.sh
-./sh/05-create-IO-containers.sh
-./sh/06-haproxy-container.sh
-./sh/07-authserver-container.sh
-./sh/08-motr-hare-container.sh
-./sh/09-s3server-container.sh
-./sh/10-s3-client-setup.sh
-./sh/11-io-testing.sh
+source ./config.sh
+source ./env.sh
+source ./sh/functions.sh
+
+set -x # print each statement before execution
+
+add_separator IO TESTING.
+
+aws s3 mb s3://test
+aws s3 ls
+date > test-obj.bin
+aws s3 cp test-obj.bin s3://test
+aws s3 ls s3://test
+aws s3 rm s3://test --recursive
+aws s3 rb s3://test
+
+add_separator SUCCESSFULLY PASSED IO TESTING.

@@ -18,11 +18,12 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+set -e # exit immediatly on errors
+
 source ./config.sh
 source ./env.sh
 source ./sh/functions.sh
 
-set -e # exit immediatly on errors
 set -x # print each statement before execution
 
 yum install -y yum-utils

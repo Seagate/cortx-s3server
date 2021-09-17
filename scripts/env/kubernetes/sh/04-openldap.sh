@@ -18,11 +18,11 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+set -e # exit immediatly on errors
+
 source ./config.sh
 source ./env.sh
 source ./sh/functions.sh
-
-set -e
 
 add_separator "Creating OpenLDAP POD"
 
