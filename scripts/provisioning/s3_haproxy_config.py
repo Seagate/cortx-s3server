@@ -59,6 +59,42 @@ class S3HaproxyConfig:
     self.machine_id = self.provisioner_confstore.get_machine_id()
     self.logger.info(f'Machine id : {self.machine_id}')
 
+  def parse_endpoint(self, endpoint_str):
+    """Parse endpoint string and return dictionary with components:
+         * scheme,
+         * fqdn,
+         * and optionally port, if present in the string.
+
+       Examples:
+
+       'https://s3.seagate.com:443' -> {'scheme': 'https', 'fqdn': 's3.seagate.com', 'port': '443'}
+       'https://s3.seagate.com'     -> {'scheme': 'https', 'fqdn': 's3.seagate.com'}
+       'http://s3.seagate.com:80'   -> {'scheme': 'http', 'fqdn': 's3.seagate.com', 'port': '80'}
+       'http://127.0.0.1:80'        -> {'scheme': 'http', 'fqdn': '127.0.0.1', 'port': '80'}
+    """
+    try:
+      result1 = urllib.parse.urlparse(endpoint_str)
+      result2 = result1.netloc.split(':')
+      result = { 'scheme': result1.scheme, 'fqdn': result2[0] }
+      if len(result2) > 1:
+        result['port'] = result2[1]
+    except Exception as e:
+      raise S3PROVError(f'Failed to parse endpoing {endpoint_str}.  Exception: {e}')
+    return result
+
+  def get_endpoint_for_scheme(self, confstore_key_value, scheme):
+    """Scan list of endpoints, and return parsed endpoint for a given scheme."""
+    if not isinstance(confstore_key_value, str):
+      lst=confstore_key_value
+    else:
+      lst=[confstore_key_value]
+    for endpoint_str in lst:
+      print (endpoint_str)
+      endpoint = self.parse_endpoint(endpoint_str)
+      if endpoint['scheme'] == scheme:
+        return endpoint
+    return None
+
   def get_publicip(self):
     assert self.provisioner_confstore != None
     assert self.local_confstore != None
@@ -77,13 +113,26 @@ class S3HaproxyConfig:
 
     return int(self.get_config_with_defaults('CONFIG>CONFSTORE_S3INSTANCES_KEY'))
 
+  def get_endpoint_port(self, confstore_key, endpoint_type):
+    confstore_key_value = self.get_confvalue_with_defaults(confstore_key)
+    # Checking if the value is a string or not.
+    if type(confstore_key_value) is str:
+      confstore_key_value = literal_eval(confstore_key_value)
+
+    endpoint = self.get_endpoint_for_scheme(confstore_key_value, endpoint_type)
+    if endpoint is None:
+      raise S3PROVError(f"{confstore_key} does not have any specified endpoint type : {endpoint_type}")
+    if 'port' not in endpoint:
+      raise S3PROVError(f"{confstore_key} does not specify endpoint port {endpoint} for endpoint type {endpoint_type}")
+    return endpoint['port']
+
   def get_s3server_backend_port(self):
     assert self.provisioner_confstore != None
     assert self.local_confstore != None
 
     return int(self.get_config_with_defaults('CONFIG>CONFSTORE_S3SERVER_PORT'))
 
-  def get_s3authserverport(self):
+  def get_s3auth_backend_port(self):
     assert self.provisioner_confstore != None
     assert self.local_confstore != None
 
@@ -124,12 +173,21 @@ class S3HaproxyConfig:
   def configure_haproxy_k8(self):
     self.logger.info("K8s HAPROXY configuration ...")
 
+    # Fetching S3 server instances
     numS3Instances = self.get_s3instances()
     if numS3Instances <= 0:
         numS3Instances = 1
+
+    # Fetching frontend service ports
+    s3fendhttpport = self.get_endpoint_port("CONFIG>CONFSTORE_S3_DATA_ENDPOINTS", "http")
+    s3fendhttpsport = self.get_endpoint_port("CONFIG>CONFSTORE_S3_DATA_ENDPOINTS", "https")
+    s3authfendhttpport = self.get_endpoint_port("CONFIG>CONFSTORE_S3_IAM_ENDPOINTS", "http")
+    s3authfendhttpsport = self.get_endpoint_port("CONFIG>CONFSTORE_S3_IAM_ENDPOINTS", "https")
+    s3bgdeleteport = self.get_endpoint_port("CONFIG>CONFSTORE_S3_INTERNAL_ENDPOINTS", "http")
+
+    # Fetching backend service ports
     s3backendport = self.get_s3server_backend_port()
-    if s3backendport == 0:
-        s3backendport = 28071
+    s3authbendport = self.get_s3auth_backend_port()
 
     config_file = '/etc/cortx/s3/haproxy.cfg'
     global_text = '''global
@@ -210,24 +268,6 @@ defaults
 #----------------------------------------------------------------------
 frontend s3-main
     # s3 server port
-    bind 0.0.0.0:80
-    bind 0.0.0.0:443 ssl crt /etc/cortx/s3/stx/stx.pem
-
-    option forwardfor
-    default_backend s3-main
-
-    # s3 bgdelete server port
-    bind 0.0.0.0:28049
-    acl s3bgdeleteacl dst_port 28049
-    use_backend s3-bgdelete if s3bgdeleteacl
-
-    # s3 auth server port
-    bind 0.0.0.0:9080
-    bind 0.0.0.0:9443 ssl crt /etc/cortx/s3/stx/stx.pem
-
-    acl s3authbackendacl dst_port 9443
-    acl s3authbackendacl dst_port 9080
-    use_backend s3-auth if s3authbackendacl
 '''
     backend_s3main_text = '''
 #----------------------------------------------------------------------
@@ -252,8 +292,6 @@ backend s3-main
 #----------------------------------------------------------------------
 backend s3-bgdelete
     balance static-rr                                     #Balance algorithm
-    server s3-bgdelete-instance-1 0.0.0.0:28049           # s3 bgdelete instance 1
-
 '''
     backend_s3auth_text = '''
 #----------------------------------------------------------------------
@@ -267,21 +305,46 @@ backend s3-auth
 
     # option log-health-checks
     default-server inter 2s fastinter 100 rise 1 fall 5 on-error fastinter
-
-    server s3authserver-instance1 0.0.0.0:28050 #check ssl verify required ca-file /etc/ssl/stx-s3/s3auth/s3authserver.crt   # s3 auth server instance 1
-
-#-------S3 Haproxy configuration end-----------------------------------'''
+'''
     config_handle = open(config_file, "w+")
     config_handle.write(global_text)
     config_handle.write(default_text)
     config_handle.write(frontend_s3main_text)
+    config_handle.write("
+    bind 0.0.0.0:%s
+    bind 0.0.0.0:%s ssl crt /etc/cortx/s3/stx/stx.pem
+
+    option forwardfor
+    default_backend s3-main
+
+    # s3 bgdelete server port
+    bind 0.0.0.0:%s
+    acl s3bgdeleteacl dst_port %s
+    use_backend s3-bgdelete if s3bgdeleteacl
+
+    # s3 auth server port
+    bind 0.0.0.0:%s
+    bind 0.0.0.0:%s ssl crt /etc/cortx/s3/stx/stx.pem
+
+    acl s3authbackendacl dst_port %s
+    acl s3authbackendacl dst_port %s
+    use_backend s3-auth if s3authbackendacl\n"
+    % (s3fendhttpport, s3fendhttpsport, s3bgdeleteport, s3bgdeleteport, s3authfendhttpport, s3authfendhttpsport, s3authfendhttpsport, s3authfendhttpport))
     config_handle.write(backend_s3main_text)
     for i in range(0, numS3Instances):
         config_handle.write(
         "    server s3-instance-%s 0.0.0.0:%s check maxconn 110        # s3 instance %s\n"
         % (i+1, s3backendport+i, i+1))
     config_handle.write(backend_s3bgdelete_text)
+    config_handle.write("
+    server s3-bgdelete-instance-1 0.0.0.0:%s           # s3 bgdelete instance 1\n"
+    % (s3bgdeleteport))
     config_handle.write(backend_s3auth_text)
+    config_handle.write("
+    server s3authserver-instance1 0.0.0.0:%s #check ssl verify required ca-file /etc/ssl/stx-s3/s3auth/s3authserver.crt   # s3 auth server instance 1
+
+#-------S3 Haproxy configuration end-----------------------------------\n"
+    % (s3authbendport))
     config_handle.close()
 
   def configure_haproxy_legacy(self):
@@ -390,8 +453,8 @@ backend s3-auth
     #Initialize port numbers
     s3backendport = self.get_s3server_backend_port()
     self.logger.info(f'S3 server backend port: {s3backendport}')
-    s3auport = self.get_s3authserverport()
-    self.logger.info(f'S3 auth server backend port: {s3auport}')
+    s3aubackendport = self.get_s3auth_backend_port()
+    self.logger.info(f'S3 auth server backend port: {s3aubackendport}')
 
     #Add complete information to haproxy.cfg file
     cfg_file = '/etc/haproxy/haproxy.cfg'
@@ -416,7 +479,7 @@ backend s3-auth
     for i in range(0, 1):
         target.write(
         "    server s3authserver-instance%s %s:%s #check ssl verify required ca-file /etc/ssl/stx-s3/s3auth/s3authserver.crt   # s3 auth server instance %s\n"
-        % (i+1, pvt_ip, s3auport+i, i+1))
+        % (i+1, pvt_ip, s3aubackendport+i, i+1))
     target.write(new_line_text)
     target.write(footer_text)
 
