@@ -64,6 +64,7 @@ class S3HaproxyConfig:
 
   @staticmethod
   def parse_endpoint(self, endpoint_str):
+
     """Parse endpoint string and return dictionary with components:
          * scheme,
          * fqdn,
@@ -92,6 +93,7 @@ class S3HaproxyConfig:
       lst=confstore_key_value
     else:
       lst=[confstore_key_value]
+    endpoint_str = ""
     for endpoint_str in lst:
       print (endpoint_str)
       endpoint = self.parse_endpoint(endpoint_str)
