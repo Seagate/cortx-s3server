@@ -36,9 +36,9 @@ cortx:
     auth:
       secret: "gAAAAABgWFPz2w_t6IBVictZmgTCgBXn5V-oy2JUVtvZkJvHM5KaaZKXRwtz4YKYieIy8mVKF8PUaZ6WYJEttcsi2KDpLOk9Vg=="
     iam:
-      endpoints: "https://iam.seagate.com"
+      endpoints: "['https://iam.seagate.com:9443', 'http://iam.seagate.com:9080']"
     data:
-      endpoints: "https://s3.seagate.com"
+      endpoints: "['https://s3.seagate.com:443', 'http://s3.seagate.com:80']"
     internal:
       endpoints: "http://127.0.0.1:28049"
   software:
