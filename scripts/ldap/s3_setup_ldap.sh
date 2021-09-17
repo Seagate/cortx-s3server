@@ -100,8 +100,9 @@ then
 fi
 INSTALLDIR="/opt/seagate/cortx/s3/install/ldap"
 # generate encrypted password for ldap admin
-SHA=$(slappasswd -s "$LDAPADMINPASS")
-ESC_SHA=$(echo "$SHA" | sed 's/[/]/\\\//g')
+#SHA=$(slappasswd -s "$LDAPADMINPASS")
+#ESC_SHA=$(echo "$SHA" | sed 's/[/]/\\\//g')
+ESC_SHA=$LDAPADMINPASS
 EXPR='s/userPassword: *.*/userPassword: '$ESC_SHA'/g'
 ADMIN_USERS_FILE=$(mktemp XXXX.ldif)
 cp -f "$INSTALLDIR"/iam-admin.ldif "$ADMIN_USERS_FILE"
