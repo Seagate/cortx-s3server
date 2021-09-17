@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -65,7 +65,6 @@ def main():
       fid_path = "/etc/cortx/s3/s3server-" + args.index
       Fid = get_fid(fid_path)
       os.system(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3config_path} -d")
-      pass
     elif args.service == 's3authserver':
       os.system("sh /opt/seagate/cortx/auth/startauth.sh /etc/cortx")
     elif args.service == 's3bgproducer':
@@ -76,7 +75,7 @@ def main():
     elif args.service == 'haproxy':
       # TODO: logging path has to come from conf store -- to be fixed during
       # end-to-end logging integration.
-      os.system("/usr/sbin/haproxy -Ws -f /etc/cortx/s3/haproxy.cfg -p /run/haproxy.pid 1>/var/log/cortx/s3/haproxy.log 2>&1")
+      os.system("sh /opt/seagate/cortx/s3/bin/starthaproxy.sh")
     else:
       logger.error(f"Invalid argument {args.service}")
   except Exception as e:
