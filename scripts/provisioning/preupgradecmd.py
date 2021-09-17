@@ -28,6 +28,7 @@ class PreUpgradeCmd(SetupCmd):
   """Pre Upgrade Setup Cmd."""
   name = "preupgrade"
 
+
   def __init__(self, config: str, services: str = None):
     """Constructor."""
     try:
@@ -37,6 +38,7 @@ class PreUpgradeCmd(SetupCmd):
 
   def process(self):
     """Main processing function."""
+
     self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
     try:
       self.logger.info("validations started")

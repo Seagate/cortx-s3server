@@ -71,6 +71,7 @@ class SetupCmd(object):
     self.base_log_file_path = "/var/log/cortx"
 
     self.ldap_user = "sgiamadmin"
+
     self.services = services
 
     s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
@@ -226,10 +227,13 @@ class SetupCmd(object):
     if pip3s:
       PkgV().validate('pip3s', pip3s)
     if ("K8" != str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
-      if services:
-        ServiceV().validate('isrunning', services)
-      if rpms:
-        PkgV().validate('rpms', rpms)
+        if services:
+          for service in services:
+            pid = os.popen('pidof '+service).read()
+            if pid is None:
+              raise Exception('Validation failed for service %s' % (service))
+        if rpms:
+          PkgV().validate('rpms', rpms)
     if files:
       PathV().validate('exists', files)
 
