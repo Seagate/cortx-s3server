@@ -21,4 +21,4 @@
 
 cortx:
   common:
-    setup_type: "VM"
+    setup_type: "K8"
