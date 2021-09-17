@@ -26,11 +26,10 @@ spec:
         - containerPort: 9443
           name: "port9443"
       command:
-         - "/bin/bash"
-         - "-c"
-         - "--"
+         - "/opt/seagate/cortx/s3/bin/s3_start"
       args:
-         - 'sleep infinity'
+         - "--service"
+         - "haproxy"
     - name: authserver
       image: <s3-cortx-all-image>
       imagePullPolicy: Never
@@ -42,17 +41,21 @@ spec:
         - name: var-data-cortx
           mountPath: /var/data/cortx
       command:
-         - "/bin/bash"
-         - "-c"
-         - "--"
+        - "/opt/seagate/cortx/auth/startauth.sh"
       args:
-         - 'sleep infinity'
+        - "/etc/cortx/s3"
     - name: hare-motr
       image: <motr-cortx-all-image>
       imagePullPolicy: Never
       volumeMounts:
         - name: var-motr
           mountPath: /var/motr
+        - name: etc-cortx
+          mountPath: /etc/cortx
+        - name: var-log-cortx
+          mountPath: /var/log/cortx
+        - name: var-data-cortx
+          mountPath: /var/data/cortx
       volumeDevices:
         - name: motr-sdb
           devicePath: /dev/sdb
@@ -79,11 +82,7 @@ spec:
         - name: motr-sdm
           devicePath: /dev/sdm
       command:
-         - "/bin/bash"
-         - "-c"
-         - "--"
-      args:
-         - 'sleep infinity'
+         - "/var/data/cortx/cortx-s3server/scripts/env/kubernetes/motr-hare/container-entry-point.sh"
     - name: s3server
       image: <s3-cortx-all-image>
       imagePullPolicy: Never
@@ -99,7 +98,7 @@ spec:
          - "-c"
          - "--"
       args:
-         - 'sleep infinity'
+         - 'set -e -x; echo "211072f61c4b4949839c624d6ed95115" > /etc/machine-id;  sleep 10; while sleep 1; do if [ -f /var/data/cortx/motr-hare-is-up.txt ]; then break; fi; done; /opt/seagate/cortx/s3/bin/s3_start --service s3server --index 1'
   volumes:
       - name: etc-cortx
         persistentVolumeClaim:

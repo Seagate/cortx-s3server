@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,15 +18,28 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -e -x
+set -e # exit immediatly on errors
 
-./sh/01-install-k8s.sh
-./sh/03-common-k8s-definitions.sh
-./sh/04-openldap.sh
-./sh/05-create-IO-containers.sh
-./sh/06-haproxy-container.sh
-./sh/07-authserver-container.sh
-./sh/08-motr-hare-container.sh
-./sh/09-s3server-container.sh
-./sh/10-s3-client-setup.sh
-./sh/11-io-testing.sh
+source ./config.sh
+source ./env.sh
+source ./sh/functions.sh
+
+set -x # print each statement before execution
+
+add_separator CONFIGURING MOTR-HARE CONTAINER.
+
+# kube_run() {
+#   kubectl exec -i depl-pod -c hare-motr -- "$@"
+# }
+# 
+# set +x
+# if [ "`kube_run ps ax | grep /usr/bin/m0d | wc -l`" -ne 3 ]; then
+#   echo
+#   kube_run ps ax
+#   echo
+#   add_separator FAILED.  Motr does not seem to be running properly.
+#   false
+# fi
+# set -x
+
+add_separator SUCCESSFULLY CONFIGURED MOTR-HARE CONTAINER.

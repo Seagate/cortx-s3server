@@ -64,5 +64,5 @@ cd /var/data/cortx/cortx-s3server/scripts/env/kubernetes
 
 ```
 cd /var/data/cortx/cortx-s3server/scripts/env/kubernetes
-./sh/00-run-all-steps.sh
+./sh/000-run-all-steps.sh
 ```

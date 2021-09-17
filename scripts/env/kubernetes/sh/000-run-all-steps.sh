@@ -20,21 +20,14 @@
 
 set -e -x
 
-kubectl delete -f k8s-blueprints/depl-pod.yaml
-kubectl apply -f k8s-blueprints/depl-pod.yaml
-
-set +x
-while [ `kubectl get pod | grep depl-pod | grep Running | wc -l` -lt 1 ]; do
-  echo
-  kubectl get pod | grep 'NAME\|depl-pod'
-  echo
-  echo depl-pod is not yet in Running state, re-checking ...
-  echo '(hit CTRL-C if it is taking too long)'
-  sleep 5
-done
-set -x
-
-./sh/06-haproxy-container.sh
-./sh/07-authserver-container.sh
-./sh/08-motr-hare-container.sh
-./sh/09-s3server-container.sh
+./sh/010-install-k8s.sh
+./sh/030-common-k8s-definitions.sh
+./sh/040-openldap.sh
+./sh/045-prepare-s3-containers-configs.sh
+./sh/050-create-IO-containers.sh
+./sh/060-haproxy-container.sh
+./sh/070-authserver-container.sh
+./sh/080-motr-hare-container.sh
+./sh/090-s3server-container.sh
+./sh/100-s3-client-setup.sh
+./sh/110-io-testing.sh

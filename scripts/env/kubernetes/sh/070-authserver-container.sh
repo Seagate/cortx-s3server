@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,25 +32,7 @@ kube_run() {
   kubectl exec -i depl-pod -c authserver -- "$@"
 }
 
-set_var_OPENLDAP_SVC
-
-# Generate encrypted ldap password for sgiam-admin on Pod
-
-const_key=`kube_run s3cipher generate_key --const_key cortx`
-encrypted_pwd=`kube_run  s3cipher encrypt --data "ldapadmin" --key "$const_key"`
-
-# Copy encrypted ldap-passsword (ldapLoginPW) and openldap endpoint (key name
-# ldapHost) to authserver.properties file.
-
-kube_run sed -i "s|^ldapLoginPW *=.*|ldapLoginPW=$encrypted_pwd|;
-                 s|^ldapHost *=.*|ldapHost=$OPENLDAP_SVC|" \
-             /opt/seagate/cortx/auth/resources/authserver.properties
-
-kube_run mkdir -p /etc/cortx/s3/ \
-                  /etc/cortx/s3/stx/ \
-                  /etc/haproxy/errors
-
-kube_run sh -c '/opt/seagate/cortx/auth/startauth.sh /opt/seagate/cortx &'
+#kube_run sh -c '/opt/seagate/cortx/auth/startauth.sh /etc/cortx/s3 &>/root/authserver.log &'
 
 sleep 1
 

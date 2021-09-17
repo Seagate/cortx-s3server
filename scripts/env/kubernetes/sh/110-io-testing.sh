@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,10 +24,16 @@ source ./config.sh
 source ./env.sh
 source ./sh/functions.sh
 
-add_separator "Creating common k8s definitions"
+set -x # print each statement before execution
 
-kubectl apply -f k8s-blueprints/storage-class.yaml
+add_separator IO TESTING.
 
-set +x
+aws s3 mb s3://test
+aws s3 ls
+date > test-obj.bin
+aws s3 cp test-obj.bin s3://test
+aws s3 ls s3://test
+aws s3 rm s3://test --recursive
+aws s3 rb s3://test
 
-add_separator SUCCESSFULLY CREATED COMMON K8S DEFINITIONS
+add_separator SUCCESSFULLY PASSED IO TESTING.

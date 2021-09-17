@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,21 +32,28 @@ kube_run() {
   kubectl exec -i depl-pod -c s3server -- "$@"
 }
 
-kube_run sh -c 'echo "211072f61c4b4949839c624d6ed95115" > /etc/machine-id'
+#kube_run sh -c 'echo "211072f61c4b4949839c624d6ed95115" > /etc/machine-id'
 
-mkdir -p /etc/cortx/s3/conf
-kube_run cp /opt/seagate/cortx/s3/conf/s3config.yaml /etc/cortx/s3/conf/s3config.yaml
+#kube_run sh -c '/opt/seagate/cortx/s3/bin/s3_start --service s3server --index 1 &>/root/entry-point.log &'
 
-cat s3server/s3server-1 > /etc/cortx/s3/s3server-1
+add_separator Waiting for Motr to become available
 
-kube_run sh -c '/opt/seagate/cortx/s3/bin/s3_start --service s3server --index 1 &>/root/entry-point.log &'
+while sleep 2; do
+  if [ -f /var/data/cortx/motr-hare-is-up.txt ]; then
+    break
+  fi
+  kubectl get pod depl-pod
+  kubectl exec -i depl-pod -c hare-motr -- ps ax | grep m0d
+done
+
+add_separator Checking if S3 is up
 
 sleep 5
 
 set +x
 if [ "`kube_run ps ax | grep 's3server --s3pidfile' | wc -l`" -ne 1 ]; then
   echo
-  kube_run cat /root/entry-point.log
+  kubectl logs depl-pod s3server
   echo
   kube_run ps ax
   echo

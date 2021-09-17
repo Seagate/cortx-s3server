@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,14 +26,31 @@ source ./sh/functions.sh
 
 set -x # print each statement before execution
 
-add_separator IO TESTING.
+add_separator CONFIGURING HAPROXY CONTAINER.
 
-aws s3 mb s3://test
-aws s3 ls
-date > test-obj.bin
-aws s3 cp test-obj.bin s3://test
-aws s3 ls s3://test
-aws s3 rm s3://test --recursive
-aws s3 rb s3://test
+kube_run() {
+  kubectl exec -i depl-pod -c haproxy -- "$@"
+}
 
-add_separator SUCCESSFULLY PASSED IO TESTING.
+## Find haproxy version:
+#haproxy_ver=$( kube_run yum list installed | grep haproxy | awk '{print $2}' )
+#
+#if [[ ! "$haproxy_ver" =~ ^2\.2\. ]]; then
+#  self_check "Haproxy version is <$haproxy_ver>; expected is 2.2.x.  Are you sure you want to continue?"
+#fi
+#
+#kube_run /bin/bash -c '/opt/seagate/cortx/s3/bin/s3_start --service haproxy &>/root/haproxy.log &'
+#
+#sleep 1
+
+set +x
+if [ -z "`kube_run ps ax | grep 'haproxy.pid'`" ]; then
+  echo
+  kube_run ps ax
+  echo
+  add_separator FAILED.  haproxy does not seem to be running.
+  false
+fi
+set -x
+
+add_separator SUCCESSFULLY CONFIGURED HAPROXY CONTAINER.

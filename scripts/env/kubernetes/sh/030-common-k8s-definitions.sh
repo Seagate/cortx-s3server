@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,42 +24,45 @@ source ./config.sh
 source ./env.sh
 source ./sh/functions.sh
 
-set -x # print each statement before execution
+add_separator "Creating common k8s definitions"
 
-add_separator Creating IO POD and containers.
+kubectl apply -f k8s-blueprints/storage-class.yaml
 
-sysctl -w vm.max_map_count=30000000
-mkdir /var/motr
-
+mkdir -p /var/motr
 mkdir -p /etc/cortx /var/log/cortx /var/data/cortx
 
-# update image link for containers
-cat k8s-blueprints/depl-pod.yaml.template \
-  | sed "s,<s3-cortx-all-image>,ghcr.io/seagate/cortx-all:${S3_CORTX_ALL_IMAGE_TAG}," \
-  | sed "s,<motr-cortx-all-image>,ghcr.io/seagate/cortx-all:${MOTR_CORTX_ALL_IMAGE_TAG}," \
-  > k8s-blueprints/depl-pod.yaml
-
-# pull the images
-cat k8s-blueprints/depl-pod.yaml | grep 'image:' | awk '{print $2}' | xargs -n1 docker pull
-
-# create the POD and all whats needed
 kubectl apply -f k8s-blueprints/motr-pv.yaml
 kubectl apply -f k8s-blueprints/motr-pvc.yaml
 kubectl apply -f k8s-blueprints/var-motr-pv.yaml
 kubectl apply -f k8s-blueprints/var-motr-pvc.yaml
 kubectl apply -f k8s-blueprints/s3-pv.yaml
 kubectl apply -f k8s-blueprints/s3-pvc.yaml
-kubectl apply -f k8s-blueprints/depl-pod.yaml
 
 set +x
-while [ `kubectl get pod | grep depl-pod | grep Running | wc -l` -lt 1 ]; do
+
+add_separator Waiting for PVs to become Bound
+
+while [ -n "`kubectl get pv | grep -v ^NAME | grep -v Bound`" ]; do
   echo
-  kubectl get pod | grep 'NAME\|depl-pod'
+  kubectl get pv | grep -v Bound
   echo
-  echo depl-pod is not yet in Running state, re-checking ...
+  echo Some PVs are not yet Bound, re-checking ...
   echo '(hit CTRL-C if it is taking too long)'
-  sleep 5
+  sleep 2
 done
+
+add_separator Waiting for PVCs to become Bound
+while [ -n "`kubectl get pvc | grep -v ^NAME | grep -v Bound`" ]; do
+  echo
+  kubectl get pvc | grep -v Bound
+  echo
+  echo Some PVs are not yet Bound, re-checking ...
+  echo '(hit CTRL-C if it is taking too long)'
+  sleep 2
+done
+
 set -x
 
-add_separator SUCCESSFULLY CREATED IO POD AND CONTAINERS.
+set +x
+
+add_separator SUCCESSFULLY CREATED COMMON K8S DEFINITIONS

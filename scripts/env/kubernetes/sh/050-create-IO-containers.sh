@@ -18,9 +18,35 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -e -x
+set -e # exit immediatly on errors
 
-kubectl delete -f k8s-blueprints/depl-pod.yaml
+source ./config.sh
+source ./env.sh
+source ./sh/functions.sh
+
+set -x # print each statement before execution
+
+add_separator Creating IO POD and containers.
+
+sysctl -w vm.max_map_count=30000000
+
+# update image link for containers
+cat k8s-blueprints/depl-pod.yaml.template \
+  | sed "s,<s3-cortx-all-image>,ghcr.io/seagate/cortx-all:${S3_CORTX_ALL_IMAGE_TAG}," \
+  | sed "s,<motr-cortx-all-image>,ghcr.io/seagate/cortx-all:${MOTR_CORTX_ALL_IMAGE_TAG}," \
+  > k8s-blueprints/depl-pod.yaml
+
+# pull the images
+cat k8s-blueprints/depl-pod.yaml | grep 'image:' | awk '{print $2}' | xargs -n1 docker pull
+
+# create the POD and all whats needed
+# moved to common k8s definitions
+# kubectl apply -f k8s-blueprints/motr-pv.yaml
+# kubectl apply -f k8s-blueprints/motr-pvc.yaml
+# kubectl apply -f k8s-blueprints/var-motr-pv.yaml
+# kubectl apply -f k8s-blueprints/var-motr-pvc.yaml
+# kubectl apply -f k8s-blueprints/s3-pv.yaml
+# kubectl apply -f k8s-blueprints/s3-pvc.yaml
 kubectl apply -f k8s-blueprints/depl-pod.yaml
 
 set +x
@@ -34,7 +60,4 @@ while [ `kubectl get pod | grep depl-pod | grep Running | wc -l` -lt 1 ]; do
 done
 set -x
 
-./sh/06-haproxy-container.sh
-./sh/07-authserver-container.sh
-./sh/08-motr-hare-container.sh
-./sh/09-s3server-container.sh
+add_separator SUCCESSFULLY CREATED IO POD AND CONTAINERS.
