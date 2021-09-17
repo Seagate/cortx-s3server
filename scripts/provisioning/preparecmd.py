@@ -26,16 +26,16 @@ class PrepareCmd(SetupCmd):
   """Prepare Setup Cmd."""
   name = "prepare"
 
-  def __init__(self, config: str, module: str = None):
+  def __init__(self, config: str, services: str = None):
     """Constructor."""
     try:
-      super(PrepareCmd, self).__init__(config, module)
+      super(PrepareCmd, self).__init__(config, services)
     except Exception as e:
       raise e
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, module = {self.module}")
+    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
