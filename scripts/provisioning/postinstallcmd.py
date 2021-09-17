@@ -26,16 +26,16 @@ class PostInstallCmd(SetupCmd):
   """PostInstall Setup Cmd."""
   name = "post_install"
 
-  def __init__(self, config: str = None, module: str = None):
+  def __init__(self, config: str = None, services: str = None):
     """Constructor."""
     try:
-      super(PostInstallCmd, self).__init__(config, module)
+      super(PostInstallCmd, self).__init__(config, services)
     except Exception as e:
       raise S3PROVError(f'exception: {e}')
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, module = {self.module}")
+    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
     try:
       self.logger.info("validations started")
       self.phase_prereqs_validate(self.name)
