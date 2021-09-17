@@ -389,6 +389,7 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logFilePath", self.update_auth_log_dir_path)
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_BASE_CONFIG_PATH", "logConfigFile", self.update_auth_log4j_config_file_path)
     self.update_auth_log4j_log_dir_path()
+    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_LDAPADMIN_PASSWD_KEY", "ldapLoginPW")
     self.logger.info("Update s3 authserver config file completed")
 
   def get_endpoint_for_scheme(self, value_to_update, scheme):

@@ -120,10 +120,6 @@ ldapmodify -x -D "cn=admin,cn=config" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/s3sl
 # Set ldap search Result size
 ldapmodify -x -D "cn=admin,cn=config" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/resultssizelimit.ldif -h "$host"
 
-echo "Encrypting Authserver LDAP password.."
-/opt/seagate/cortx/auth/scripts/enc_ldap_passwd_in_cfg.sh -t "$host" -l "$LDAPADMINPASS" -p /opt/seagate/cortx/auth/resources/authserver.properties
-
-
 echo "************************************************************"
 echo "You may have to redo any selinux settings as selinux-policy package was updated."
 echo "Example for nginx: setsebool httpd_can_network_connect on -P"
