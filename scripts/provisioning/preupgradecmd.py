@@ -28,16 +28,16 @@ class PreUpgradeCmd(SetupCmd):
   """Pre Upgrade Setup Cmd."""
   name = "preupgrade"
 
-  def __init__(self, config: str, module: str = None):
+  def __init__(self, config: str, service: str = None):
     """Constructor."""
     try:
-      super(PreUpgradeCmd, self).__init__(config, module)
+      super(PreUpgradeCmd, self).__init__(config, service)
     except Exception as e:
       raise e
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, module = {self.module}")
+    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.service}")
     try:
       self.logger.info("validations started")
       self.phase_prereqs_validate(self.name)

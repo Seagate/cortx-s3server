@@ -26,10 +26,10 @@ class InitCmd(SetupCmd):
   """Init Setup Cmd."""
   name = "init"
 
-  def __init__(self, config: str, module: str = None):
+  def __init__(self, config: str, services: str = None):
     """Constructor."""
     try:
-      super(InitCmd, self).__init__(config, module)
+      super(InitCmd, self).__init__(config, services)
       self.setup_type = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE')
       self.logger.info(f'log file path : {self.setup_type}')
       self.cluster_id = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_CLUSTER_ID_KEY')
@@ -44,7 +44,7 @@ class InitCmd(SetupCmd):
 
   def process(self):
     """Main processing function."""
-    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, module = {self.module}")
+    self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
     self.logger.info("validations started")
     self.phase_prereqs_validate(self.name)
     self.phase_keys_validate(self.url, self.name)
