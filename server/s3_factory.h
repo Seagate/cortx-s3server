@@ -36,6 +36,7 @@
 #include "s3_part_metadata.h"
 #include "s3_put_bucket_body.h"
 #include "s3_put_tag_body.h"
+#include "s3_put_replication_body.h"
 
 class S3BucketMetadataV1;
 
@@ -203,6 +204,18 @@ class S3PutTagsBodyFactory {
     s3_log(S3_LOG_DEBUG, "",
            "S3PutTagsBodyFactory::create_put_resource_tags_body\n");
     return std::make_shared<S3PutTagBody>(xml, request_id);
+  }
+};
+
+class S3PutBucketReplicationBodyFactory {
+ public:
+  virtual ~S3PutBucketReplicationBodyFactory() {}
+  virtual std::shared_ptr<S3PutReplicationBody> create_put_replication_body(
+      std::string& xml, std::string& request_id) {
+    s3_log(S3_LOG_DEBUG, "",
+           "S3PutBucketReplicationBodyFactory::create_put_replication_body\n");
+
+    return std::make_shared<S3PutReplicationBody>(xml, request_id);
   }
 };
 
