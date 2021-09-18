@@ -63,6 +63,7 @@ class S3ObjectMetadataCopyable {
   std::map<std::string, std::string> system_defined_attribute;
   std::map<std::string, std::string> user_defined_attribute;
   std::map<std::string, std::string> object_tags;
+  std::string replication_config;
 
   std::shared_ptr<S3RequestObject> request;
   std::shared_ptr<MotrAPI> s3_motr_api;
@@ -292,6 +293,8 @@ class S3ObjectMetadata : private S3ObjectMetadataCopyable {
   virtual std::string get_tags_as_xml();
   virtual bool check_object_tags_exists();
   virtual int object_tags_count();
+  virtual void set_bucket_replication_configuration(
+      const std::string& bucket_replication_config);
 
   // Virtual Destructor
   virtual ~S3ObjectMetadata() {};

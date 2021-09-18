@@ -56,6 +56,7 @@ class S3BucketMetadata {
   // http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
   std::string bucket_name;
   std::string bucket_policy;
+  std::string bucket_replication_configuration;
   std::map<std::string, std::string> bucket_tags;
   std::map<std::string, std::string> system_defined_attribute;
   std::map<std::string, std::string> user_defined_attribute;
@@ -138,8 +139,9 @@ class S3BucketMetadata {
   virtual void set_tags(const std::map<std::string, std::string>& tags_as_map);
   virtual void deletepolicy();
   virtual void delete_bucket_tags();
-
   virtual void setacl(const std::string& acl_str);
+  virtual void set_bucket_replication_configuration(
+      const std::string& bucket_replication_config);
 
   virtual void remove(std::function<void(void)> on_success,
                       std::function<void(void)> on_failed);

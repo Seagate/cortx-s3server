@@ -872,6 +872,11 @@ void S3ObjectMetadata::set_tags(
   object_tags = tags_as_map;
 }
 
+void S3ObjectMetadata::set_bucket_replication_configuration(
+    const std::string& bucket_replication_config) {
+  replication_config = bucket_replication_config;
+}
+
 const std::map<std::string, std::string>& S3ObjectMetadata::get_tags() {
   return object_tags;
 }
