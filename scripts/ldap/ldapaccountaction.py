@@ -199,7 +199,7 @@ class LdapAccountAction:
       raise e
 
 
-  def delete_account(self, ldap_endpoint: str, input_params: dict) -> None:
+  def delete_account(self, ldap_endpoint: str = LDAP_URL, input_params: dict) -> None:
     """
     Delete ldap account with given input params.
     @input_params: dictionary of format:
@@ -241,7 +241,7 @@ class LdapAccountAction:
       self.logger.error(f'Failed to delete account: {acc}')
       raise e
 
-  def get_account_count(self, ldap_endpoint: str) -> None:
+  def get_account_count(self, ldap_endpoint: str = LDAP_URL) -> None:
     """Get total count of account in ldap db."""
     try:
       self.__connect_to_ldap_server(ldap_endpoint)
@@ -260,7 +260,7 @@ class LdapAccountAction:
       self.logger.error(f'ERROR: Failed to get count of ldap account, error: {str(e)}')
       raise e
 
-  def delete_s3_ldap_data(self, ldap_endpoint: str):
+  def delete_s3_ldap_data(self, ldap_endpoint: str = LDAP_URL):
     """Delete all s3 data entries from ldap."""
     cleanup_records = ["ou=accesskeys,dc=s3,dc=seagate,dc=com",
                         "ou=accounts,dc=s3,dc=seagate,dc=com",
