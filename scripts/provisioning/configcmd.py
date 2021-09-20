@@ -328,7 +328,7 @@ class ConfigCmd(SetupCmd):
       # Create background delete account
       bgdelete_acc_input_params_dict = self.get_config_param_for_BG_delete_account()
       ldap_host_url="ldap://"+ldap_endpoint_fqdn
-      LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(ldap_host_url, bgdelete_acc_input_params_dict)
+      LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict, ldap_host_url)
     except Exception as e:
       if "Already exists" not in str(e):
         self.logger.error(f'Failed to create backgrounddelete service account, error: {e}')
