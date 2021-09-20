@@ -66,7 +66,7 @@ def main():
       Fid = get_fid(fid_path)
       os.system(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3config_path} -d")
     elif args.service == 's3authserver':
-      os.system("sh /opt/seagate/cortx/auth/startauth.sh /etc/cortx/s3")
+      os.system("sh /opt/seagate/cortx/auth/startauth.sh /etc/cortx")
     elif args.service == 's3bgproducer':
       os.system("sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh")
     elif args.service == 's3bgconsumer':
