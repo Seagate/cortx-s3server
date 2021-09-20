@@ -121,6 +121,8 @@ class S3HaproxyConfig:
 
   def get_endpoint_port(self, confstore_key, endpoint_type):
     confstore_key_value = self.get_config_with_defaults(confstore_key)
+    if isinstance(confstore_key_value, str):
+      confstore_key_value = literal_eval(confstore_key_value)
     endpoint = self.get_endpoint_for_scheme(confstore_key_value, endpoint_type)
     if endpoint is None:
       raise S3PROVError(f"{confstore_key} does not have any specified endpoint type : {endpoint_type}")
