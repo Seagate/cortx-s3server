@@ -39,7 +39,7 @@ kubectl apply -f ./k8s-blueprints/openldap-pv.yaml
 
 # download images using docker -- 'kubectl init' is not able to apply user
 # credentials, and so is suffering from rate limits.
-cat ./k8s-blueprints/openldap-stateful.yaml | grep 'image:' | awk '{print $2}' | xargs -n1 docker pull
+pull_images_for_pod ./k8s-blueprints/openldap-stateful.yaml
 kubectl apply -f ./k8s-blueprints/openldap-stateful.yaml
 
 set +x
