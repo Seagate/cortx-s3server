@@ -119,7 +119,7 @@ if [ "$THIS_IS_PRIMARY_K8S_NODE" = yes ]; then
   curl https://docs.projectcalico.org/manifests/calico.yaml -O
   # download images using docker -- 'kubectl init' is not able to apply user
   # credentials, and so is suffering from rate limits.
-  cat calico.yaml | grep 'image:' | awk '{print $2}' | xargs -n1 docker pull
+  pull_images_for_pod calico.yaml
   kubectl apply -f calico.yaml
 fi
 
