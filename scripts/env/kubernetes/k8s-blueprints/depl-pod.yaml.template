@@ -1,0 +1,150 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: depl-pod
+  annotations:
+    "cni.projectcalico.org/ipAddrs": "[\"192.168.134.219\"]"
+spec:
+  containers:
+    - name: haproxy
+      image: <s3-cortx-all-image>
+      imagePullPolicy: Never
+      volumeMounts:
+        - name: etc-cortx
+          mountPath: /etc/cortx
+        - name: var-log-cortx
+          mountPath: /var/log/cortx
+        - name: var-data-cortx
+          mountPath: /var/data/cortx
+      ports:
+        - containerPort: 80
+          name: "port80"
+        - containerPort: 443
+          name: "port443"
+        - containerPort: 9080
+          name: "port9080"
+        - containerPort: 9443
+          name: "port9443"
+      command:
+         - "/opt/seagate/cortx/s3/bin/s3_start"
+      args:
+         - "--service"
+         - "haproxy"
+    - name: authserver
+      image: <s3-cortx-all-image>
+      imagePullPolicy: Never
+      volumeMounts:
+        - name: etc-cortx
+          mountPath: /etc/cortx
+        - name: var-log-cortx
+          mountPath: /var/log/cortx
+        - name: var-data-cortx
+          mountPath: /var/data/cortx
+      command:
+        - "/opt/seagate/cortx/auth/startauth.sh"
+      args:
+        - "/etc/cortx/s3"
+    - name: hare-motr
+      image: <motr-cortx-all-image>
+      imagePullPolicy: Never
+      volumeMounts:
+        - name: var-motr
+          mountPath: /var/motr
+        - name: etc-cortx
+          mountPath: /etc/cortx
+        - name: var-log-cortx
+          mountPath: /var/log/cortx
+        - name: var-data-cortx
+          mountPath: /var/data/cortx
+      volumeDevices:
+        - name: motr-sdb
+          devicePath: /dev/sdb
+        - name: motr-sdc
+          devicePath: /dev/sdc
+        - name: motr-sdd
+          devicePath: /dev/sdd
+        - name: motr-sde
+          devicePath: /dev/sde
+        - name: motr-sdf
+          devicePath: /dev/sdf
+        - name: motr-sdg
+          devicePath: /dev/sdg
+        - name: motr-sdh
+          devicePath: /dev/sdh
+        - name: motr-sdi
+          devicePath: /dev/sdi
+        - name: motr-sdj
+          devicePath: /dev/sdj
+        - name: motr-sdk
+          devicePath: /dev/sdk
+        - name: motr-sdl
+          devicePath: /dev/sdl
+        - name: motr-sdm
+          devicePath: /dev/sdm
+      command:
+         - "/var/data/cortx/cortx-s3server/scripts/env/kubernetes/motr-hare/container-entry-point.sh"
+    - name: s3server
+      image: <s3-cortx-all-image>
+      imagePullPolicy: Never
+      volumeMounts:
+        - name: etc-cortx
+          mountPath: /etc/cortx
+        - name: var-log-cortx
+          mountPath: /var/log/cortx
+        - name: var-data-cortx
+          mountPath: /var/data/cortx
+      command:
+         - "/bin/bash"
+         - "-c"
+         - "--"
+      args:
+         - 'set -e -x; echo "211072f61c4b4949839c624d6ed95115" > /etc/machine-id;  sleep 10; while sleep 1; do if [ -f /var/data/cortx/motr-hare-is-up.txt ]; then break; fi; done; /opt/seagate/cortx/s3/bin/s3_start --service s3server --index 1'
+  volumes:
+      - name: etc-cortx
+        persistentVolumeClaim:
+          claimName: etc-cortx
+      - name: var-log-cortx
+        persistentVolumeClaim:
+          claimName: var-log-cortx
+      - name: var-data-cortx
+        persistentVolumeClaim:
+          claimName: var-data-cortx
+      - name: var-motr
+        persistentVolumeClaim:
+          claimName: var-motr
+      - name: motr-sdb
+        persistentVolumeClaim:
+          claimName: motr-sdb
+      - name: motr-sdc
+        persistentVolumeClaim:
+          claimName: motr-sdc
+      - name: motr-sdd
+        persistentVolumeClaim:
+          claimName: motr-sdd
+      - name: motr-sde
+        persistentVolumeClaim:
+          claimName: motr-sde
+      - name: motr-sdf
+        persistentVolumeClaim:
+          claimName: motr-sdf
+      - name: motr-sdg
+        persistentVolumeClaim:
+          claimName: motr-sdg
+      - name: motr-sdh
+        persistentVolumeClaim:
+          claimName: motr-sdh
+      - name: motr-sdi
+        persistentVolumeClaim:
+          claimName: motr-sdi
+      - name: motr-sdj
+        persistentVolumeClaim:
+          claimName: motr-sdj
+      - name: motr-sdk
+        persistentVolumeClaim:
+          claimName: motr-sdk
+      - name: motr-sdl
+        persistentVolumeClaim:
+          claimName: motr-sdl
+      - name: motr-sdm
+        persistentVolumeClaim:
+          claimName: motr-sdm

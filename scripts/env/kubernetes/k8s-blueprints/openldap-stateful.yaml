@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: openldap
+  labels:
+    app.kubernetes.io/name: openldap
+spec:
+  serviceName: openldap-svc
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: openldap
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: openldap
+    spec:
+      containers:
+        - name: openldap
+          image: docker.io/saumitra531/centos-openldap1:latest
+          imagePullPolicy: "Always"
+          securityContext:
+            privileged: true
+          ports:
+            - name: tcp-ldap
+              containerPort: 389
+          volumeMounts:
+            - name: openldap-data
+              mountPath: /var/lib/ldap
+  volumeClaimTemplates:
+  - metadata:
+      name: openldap-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "local-storage"
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openldap-svc
+  labels:
+    app.kubernetes.io/name: openldap
+spec:
+  type: ClusterIP
+  ports:
+    - name: tcp-ldap
+      port: 389
+      targetPort: tcp-ldap
+  selector:
+    app.kubernetes.io/name: openldap

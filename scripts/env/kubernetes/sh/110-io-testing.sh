@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/bash
 #
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
@@ -18,16 +18,22 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-# Copy the SSL certificate file
-if ! [ -f "/etc/cortx/s3/stx/stx.pem" ]; then
-  if ! ( mkdir -p /etc/cortx/s3/stx/ && \
-         cp /etc/ssl/stx/stx.pem /etc/cortx/s3/stx/stx.pem ) \
-  then
-    echo "Failed to update SSL cert file /etc/cortx/s3/stx/stx.pem from /etc/ssl/stx/stx.pem."
-    exit 1
-  fi
-fi
+set -e # exit immediatly on errors
 
-# Run the configured haproxy
-mkdir -p /var/log/cortx/s3
-/usr/sbin/haproxy -Ws -f /etc/cortx/s3/haproxy.cfg -p /run/haproxy.pid 1>>/var/log/cortx/s3/haproxy.log 2>&1
+source ./config.sh
+source ./env.sh
+source ./sh/functions.sh
+
+set -x # print each statement before execution
+
+add_separator IO TESTING.
+
+aws s3 mb s3://test
+aws s3 ls
+date > test-obj.bin
+aws s3 cp test-obj.bin s3://test
+aws s3 ls s3://test
+aws s3 rm s3://test --recursive
+aws s3 rb s3://test
+
+add_separator SUCCESSFULLY PASSED IO TESTING.

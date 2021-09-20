@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: etc-cortx
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  claimRef:
+    namespace: default
+    name: etc-cortx
+  local:
+    path: /etc/cortx
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: node-name
+          operator: In
+          values:
+          - node1
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: var-log-cortx
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  claimRef:
+    namespace: default
+    name: var-log-cortx
+  local:
+    path: /var/log/cortx
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: node-name
+          operator: In
+          values:
+          - node1
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: var-data-cortx
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  claimRef:
+    namespace: default
+    name: var-data-cortx
+  local:
+    path: /var/data/cortx
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: node-name
+          operator: In
+          values:
+          - node1
