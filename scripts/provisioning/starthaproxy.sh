@@ -21,7 +21,7 @@
 # Copy the SSL certificate file
 if ! [ -f "/etc/cortx/s3/stx/stx.pem" ]; then
   if ! ( mkdir -p /etc/cortx/s3/stx/ && \
-         cp /etc/ssl/stx/stx.pem /etc/cortx/s3/stx/stx.pem ) \
+         cp /opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem /etc/cortx/s3/stx/stx.pem ) \
   then
     echo "Failed to update SSL cert file /etc/cortx/s3/stx/stx.pem from /etc/ssl/stx/stx.pem."
     exit 1
