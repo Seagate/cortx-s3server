@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/bash
 #
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
@@ -18,16 +18,16 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-# Copy the SSL certificate file
-if ! [ -f "/etc/cortx/s3/stx/stx.pem" ]; then
-  if ! ( mkdir -p /etc/cortx/s3/stx/ && \
-         cp /etc/ssl/stx/stx.pem /etc/cortx/s3/stx/stx.pem ) \
-  then
-    echo "Failed to update SSL cert file /etc/cortx/s3/stx/stx.pem from /etc/ssl/stx/stx.pem."
-    exit 1
-  fi
-fi
+set -e -x
 
-# Run the configured haproxy
-mkdir -p /var/log/cortx/s3
-/usr/sbin/haproxy -Ws -f /etc/cortx/s3/haproxy.cfg -p /run/haproxy.pid 1>>/var/log/cortx/s3/haproxy.log 2>&1
+./sh/010-install-k8s.sh
+./sh/030-common-k8s-definitions.sh
+./sh/040-openldap.sh
+./sh/045-prepare-s3-containers-configs.sh
+./sh/050-create-IO-containers.sh
+./sh/060-haproxy-container.sh
+./sh/070-authserver-container.sh
+./sh/080-motr-hare-container.sh
+./sh/090-s3server-container.sh
+./sh/100-s3-client-setup.sh
+./sh/110-io-testing.sh
