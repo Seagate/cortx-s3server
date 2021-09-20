@@ -17,9 +17,13 @@ NODE_NAME=node1
 # for image download
 #
 
-S3_CORTX_ALL_IMAGE_TAG=2.0.0-latest-custom-ci
+S3_CORTX_ALL_IMAGE_TAG=2.0.0-156-custom-ci
+#S3_CORTX_ALL_IMAGE_TAG=2.0.0-latest-custom-ci
   # Specifies which image to use for S3 containers.
   # Update if you want to test specific build instead of latest.
+  # 
+  # List of avilable images here:
+  # https://github.com/Seagate/cortx-re/pkgs/container/cortx-all
 
 MOTR_CORTX_ALL_IMAGE_TAG=2.0.0-2042-custom-ci # latest known working image from Motr team
   # Specifies which image to use for Motr containers.
