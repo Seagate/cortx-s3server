@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: depl-pod
+  name: cortx-io-pod
   annotations:
     "cni.projectcalico.org/ipAddrs": "[\"192.168.134.219\"]"
 spec:
@@ -98,7 +98,14 @@ spec:
          - "-c"
          - "--"
       args:
-         - 'set -e -x; echo "211072f61c4b4949839c624d6ed95115" > /etc/machine-id;  sleep 10; while sleep 1; do if [ -f /var/data/cortx/motr-hare-is-up.txt ]; then break; fi; done; /opt/seagate/cortx/s3/bin/s3_start --service s3server --index 1'
+         - "cat /etc/cortx/s3/machine-id > /etc/machine-id && /opt/seagate/cortx/s3/bin/s3_start --service s3server --index 1"
+#     command:
+#        - "/opt/seagate/cortx/s3/bin/s3_start"
+#     args:
+#        - "--service"
+#        - "s3server"
+#        - "--index"
+#        - "1"
   volumes:
       - name: etc-cortx
         persistentVolumeClaim:
