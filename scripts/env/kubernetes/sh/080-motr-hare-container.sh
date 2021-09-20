@@ -29,7 +29,7 @@ set -x # print each statement before execution
 add_separator CONFIGURING MOTR-HARE CONTAINER.
 
 # kube_run() {
-#   kubectl exec -i depl-pod -c hare-motr -- "$@"
+#   kubectl exec -i cortx-io-pod -c hare-motr -- "$@"
 # }
 # 
 # set +x

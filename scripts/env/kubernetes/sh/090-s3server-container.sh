@@ -29,7 +29,7 @@ set -x # print each statement before execution
 add_separator CONFIGURING s3server CONTAINER.
 
 kube_run() {
-  kubectl exec -i depl-pod -c s3server -- "$@"
+  kubectl exec -i cortx-io-pod -c s3server -- "$@"
 }
 
 #kube_run sh -c 'echo "211072f61c4b4949839c624d6ed95115" > /etc/machine-id'
@@ -42,18 +42,18 @@ while sleep 2; do
   if [ -f /var/data/cortx/motr-hare-is-up.txt ]; then
     break
   fi
-  kubectl get pod depl-pod
-  kubectl exec -i depl-pod -c hare-motr -- ps ax | grep m0d
+  kubectl get pod cortx-io-pod
+  kubectl exec -i cortx-io-pod -c hare-motr -- ps ax | grep m0d || true
 done
 
 add_separator Checking if S3 is up
 
-sleep 5
+sleep 10
 
 set +x
 if [ "`kube_run ps ax | grep 's3server --s3pidfile' | wc -l`" -ne 1 ]; then
   echo
-  kubectl logs depl-pod s3server
+  kubectl logs cortx-io-pod s3server
   echo
   kube_run ps ax
   echo

@@ -25,7 +25,8 @@ sync_file_path=/var/data/cortx/motr-hare-is-up.txt
   # containers can know when motr is ready.
 rm -f "$sync_file_path"
 
-echo "211072f61c4b4949839c624d6ed95115" > /etc/machine-id
+#echo "211072f61c4b4949839c624d6ed95115" > /etc/machine-id
+cat /etc/cortx/s3/machine-id > /etc/machine-id
 sed -i '103,107 s/^/#/'                                  /usr/libexec/cortx-motr/motr-server
 sed -i '243,243 s/^/#/'                                  /usr/libexec/cortx-motr/motr-server
 sed -i '209 i fi'                                        /usr/libexec/cortx-motr/motr-server
@@ -38,9 +39,9 @@ mkdir /etc/motr
 src_dir=/var/data/cortx/cortx-s3server/scripts/env/kubernetes/motr-hare/
 
 cp "$src_dir"/confd.xc                   /etc/motr/confd.xc
-cp "$src_dir"/m0d-0x7200000000000001:0x6 /etc/sysconfig/m0d-0x7200000000000001:0x6
-cp "$src_dir"/m0d-0x7200000000000001:0x9 /etc/sysconfig/m0d-0x7200000000000001:0x9
-cp "$src_dir"/m0d-0x7200000000000001:0xc /etc/sysconfig/m0d-0x7200000000000001:0xc
+cp "$src_dir"/m0d-0x7200000000000001-0x6 /etc/sysconfig/m0d-0x7200000000000001:0x6
+cp "$src_dir"/m0d-0x7200000000000001-0x9 /etc/sysconfig/m0d-0x7200000000000001:0x9
+cp "$src_dir"/m0d-0x7200000000000001-0xc /etc/sysconfig/m0d-0x7200000000000001:0xc
 cp "$src_dir"/motr-deploy                /root/motr-deploy
 
 chmod +x /root/motr-deploy

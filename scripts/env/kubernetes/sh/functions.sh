@@ -60,6 +60,7 @@ validate_ip() {
   if [[ ! "$1" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
     echo "Not a valid IP address: <$1>"
     false
+    return
   fi
   true
 }
@@ -74,14 +75,20 @@ set_var_OPENLDAP_SVC() {
     add_separator "FAILED. openldap service endpoint is not accessible"
     kubectl get svc openldap-svc
     false
+    return
   fi
 }
 
 set_var_DEPL_POD_IP() {
-  DEPL_POD_IP=`kubectl get pod depl-pod -o wide | grep -v ^NAME | awk '{print $6}'`
+  DEPL_POD_IP=`kubectl describe pod cortx-io-pod | grep '^IP:' | awk '{print $2}'`
   if ! validate_ip "$DEPL_POD_IP"; then
     add_separator "FAILED. Cannot derive IO POD IP address"
-    kubectl get pod depl-pod -o wide
+    kubectl get pod cortx-io-pod -o wide
     false
+    return
   fi
+}
+
+pull_images_for_pod() {
+  cat "$1" | grep 'image:' | awk '{print $2}' | xargs -n1 docker pull
 }
