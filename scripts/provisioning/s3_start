@@ -73,7 +73,7 @@ def main():
         time.sleep(60)
       pass
     elif args.service == 's3authserver':
-      os.system("sh /opt/seagate/cortx/auth/startauth.sh /etc/cortx")
+      os.system("sh /opt/seagate/cortx/auth/startauth.sh /etc/cortx/s3")
     elif args.service == 's3bgproducer':
       os.system("sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh")
     elif args.service == 's3bgconsumer':
