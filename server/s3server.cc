@@ -97,7 +97,7 @@ std::set<struct s3_motr_obj_context *> global_motr_obj;
 void s3_motr_init_timeout_cb(evutil_socket_t fd, short event, void *arg) {
   // s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
   //     S3_IEM_MOTR_CONN_FAIL_JSON);
-  s3_log(S3_LOG_ERROR, "", "Motr connection failed\n");
+  s3_log(S3_LOG_FATAL, "", "Motr connection timet out (hang)\n");
   event_base_loopbreak(global_evbase_handle);
   return;
 }
