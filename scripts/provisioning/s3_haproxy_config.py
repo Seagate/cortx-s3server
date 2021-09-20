@@ -63,7 +63,7 @@ class S3HaproxyConfig:
     self.logger.info(f'Machine id : {self.machine_id}')
 
   @staticmethod
-  def parse_endpoint(self, endpoint_str):
+  def parse_endpoint(endpoint_str):
 
     """Parse endpoint string and return dictionary with components:
          * scheme,
@@ -120,11 +120,7 @@ class S3HaproxyConfig:
     return int(self.get_config_with_defaults('CONFIG>CONFSTORE_S3INSTANCES_KEY'))
 
   def get_endpoint_port(self, confstore_key, endpoint_type):
-    confstore_key_value = self.get_confvalue_with_defaults(confstore_key)
-    # Checking if the value is a string or not.
-    if isinstance(confstore_key_value, str):
-      confstore_key_value = literal_eval(confstore_key_value)
-
+    confstore_key_value = self.get_config_with_defaults(confstore_key)
     endpoint = self.get_endpoint_for_scheme(confstore_key_value, endpoint_type)
     if endpoint is None:
       raise S3PROVError(f"{confstore_key} does not have any specified endpoint type : {endpoint_type}")
@@ -360,13 +356,11 @@ backend s3-auth
     pem_dir = os.path.dirname(sslcertpath)
     if not os.path.exists(pem_dir):
         os.makedirs(pem_dir)
-    if not os.path.exists('/etc/haproxy/errors/'):
-        os.makedirs('/etc/haproxy/errors/')
+    if not os.path.exists('/etc/cortx/haproxy/errors/'):
+        os.makedirs('/etc/cortx/haproxy/errors/')
 
     #Run config commands
-    cmd = 'cp /etc/ssl/stx/stx.pem ' + sslcertpath
-    os.system(cmd)
-    os.system("cp /opt/seagate/cortx/s3/install/haproxy/503.http /etc/haproxy/errors/")
+    os.system("cp /opt/seagate/cortx/s3/install/haproxy/503.http /etc/cortx/haproxy/errors/")
 
   def configure_haproxy_legacy(self):
     """Main Processing function."""
