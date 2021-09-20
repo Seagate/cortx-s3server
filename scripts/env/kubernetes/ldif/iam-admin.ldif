@@ -1,0 +1,6 @@
+dn: cn=sgiamadmin,dc=seagate,dc=com
+description: Seagate ldap admin for iam.
+objectclass: organizationalRole
+objectclass: simpleSecurityObject
+cn: sgiamadmin
+userPassword: {SSHA}pqA6EWy5BUrW/jVHdzNs7VLCyEDzYm2+
