@@ -18,23 +18,33 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -e -x
+set -e # exit immediatly on errors
 
-kubectl delete -f k8s-blueprints/cortx-io-pod.yaml
-kubectl apply -f k8s-blueprints/cortx-io-pod.yaml
+source ./config.sh
+source ./env.sh
+source ./sh/functions.sh
+
+add_separator "Creating Message Bus POD"
+
+# download images using docker -- 'kubectl init' is not able to apply user
+# credentials, and so is suffering from rate limits.
+pull_images_for_pod ./k8s-blueprints/zookeper.yaml
+pull_images_for_pod ./k8s-blueprints/kafka.yaml
+
+kubectl create -f ./k8s-blueprints/zookeper.yaml
+kubectl create -f ./k8s-blueprints/kafka.yaml
 
 set +x
-while [ `kubectl get pod | grep cortx-io-pod | grep Running | wc -l` -lt 1 ]; do
+while [ `kubectl get pod | grep 'zookeper\|kafka' | grep Running | wc -l` -lt 1 ]; do
   echo
-  kubectl get pod | grep 'NAME\|cortx-io-pod'
+  kubectl get pod | grep 'NAME\|zookeper\|kafka'
   echo
-  echo cortx-io-pod is not yet in Running state, re-checking ...
+  echo Zookeper/Kafka pod is not yet in Running state, re-checking ...
   echo '(hit CTRL-C if it is taking too long)'
   sleep 5
 done
 set -x
 
-./sh/06-haproxy-container.sh
-./sh/07-authserver-container.sh
-./sh/08-motr-hare-container.sh
-./sh/09-s3server-container.sh
+set +x
+
+add_separator SUCCESSFULLY CREATED OPENLDAP POD

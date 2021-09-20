@@ -29,7 +29,7 @@ set -x # print each statement before execution
 add_separator CONFIGURING AUTHSERVER CONTAINER.
 
 kube_run() {
-  kubectl exec -i depl-pod -c authserver -- "$@"
+  kubectl exec -i cortx-io-pod -c authserver -- "$@"
 }
 
 #kube_run sh -c '/opt/seagate/cortx/auth/startauth.sh /etc/cortx/s3 &>/root/authserver.log &'
