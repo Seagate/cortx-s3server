@@ -143,13 +143,13 @@ class LdapAccountAction:
     dn = dn.format(input_params['access_key'])
     return dn, attrs
 
-  def __connect_to_ldap_server(self):
+  def __connect_to_ldap_server(self, ldap_endpoint: str):
     """Establish connection to ldap server."""
     from ldap import initialize
     from ldap import VERSION3
     from ldap import OPT_REFERRALS
 
-    self.ldap_conn = initialize(LDAP_URL)
+    self.ldap_conn = initialize(ldap_endpoint)
     self.ldap_conn.protocol_version = VERSION3
     self.ldap_conn.set_option(OPT_REFERRALS, 0)
     self.ldap_conn.simple_bind_s(LDAP_USER.format(self.ldapuser), self.ldappasswd)
@@ -158,11 +158,11 @@ class LdapAccountAction:
     """Disconnects from ldap."""
     self.ldap_conn.unbind_s()
 
-  def create_account(self, input_params: dict) -> None:
+  def create_account(self, ldap_endpoint:str = LDAP_URL, input_params: dict) -> None:
     """Creates account in ldap db."""
     self.__add_keys_to_dictionary(input_params)
     try:
-      self.__connect_to_ldap_server()
+      self.__connect_to_ldap_server(ldap_endpoint)
 
       if not self.__is_account_present(self.ldap_conn, input_params['account_name']):
         # create the account
@@ -204,14 +204,14 @@ class LdapAccountAction:
       raise e
 
 
-  def delete_account(self, input_params: dict) -> None:
+  def delete_account(self, ldap_endpoint: str = LDAP_URL, input_params: dict) -> None:
     """
     Delete ldap account with given input params.
     @input_params: dictionary of format:
     {'account_name': {'s3userId': 'user_id' } }
     """
     try:
-      self.__connect_to_ldap_server()
+      self.__connect_to_ldap_server(ldap_endpoint)
 
       for acc in input_params.keys():
         if not self.__is_account_present(self.ldap_conn, acc):
@@ -246,10 +246,10 @@ class LdapAccountAction:
       self.logger.error(f'Failed to delete account: {acc}')
       raise e
 
-  def get_account_count(self) -> None:
+  def get_account_count(self, ldap_endpoint: str = LDAP_URL) -> None:
     """Get total count of account in ldap db."""
     try:
-      self.__connect_to_ldap_server()
+      self.__connect_to_ldap_server(ldap_endpoint)
       result_list = self.ldap_conn.search_s("ou=accounts,dc=s3,dc=seagate,dc=com", ldap.SCOPE_SUBTREE,
        filterstr='(ObjectClass=Account)')
       self.__disconnect_from_ldap()
@@ -265,14 +265,14 @@ class LdapAccountAction:
       self.logger.error(f'ERROR: Failed to get count of ldap account, error: {str(e)}')
       raise e
 
-  def delete_s3_ldap_data(self):
+  def delete_s3_ldap_data(self, ldap_endpoint: str = LDAP_URL):
     """Delete all s3 data entries from ldap."""
     cleanup_records = ["ou=accesskeys,dc=s3,dc=seagate,dc=com",
                         "ou=accounts,dc=s3,dc=seagate,dc=com",
                         "ou=idp,dc=s3,dc=seagate,dc=com"]
     try:
       self.logger.info('Deletion of ldap data started.')
-      self.__connect_to_ldap_server()
+      self.__connect_to_ldap_server(ldap_endpoint)
       for entry in cleanup_records:
         self.logger.info(' deleting all entries from {entry} & its sub-ordinate tree')
         try:
