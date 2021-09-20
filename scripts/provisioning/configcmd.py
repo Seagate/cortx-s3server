@@ -304,7 +304,7 @@ class ConfigCmd(SetupCmd):
     self.logger.info('haproxy configuration started')
     try:
       S3HaproxyConfig(self.url).process()
-      if ("K8" != str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
+      if "K8" != str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE')):
         # reload haproxy service
         try:
           self.logger.info("Reloading haproxy service...")
@@ -481,7 +481,6 @@ class ConfigCmd(SetupCmd):
     else:
       lst=[value_to_update]
     for endpoint_str in lst:
-      print (endpoint_str)
       endpoint = self.parse_endpoint(endpoint_str)
       if endpoint['scheme'] == scheme:
         return endpoint
@@ -563,6 +562,7 @@ class ConfigCmd(SetupCmd):
     self.logger.info("Update s3 bgdelete config file completed")
 
   def update_bgdelete_producer_endpoint(self, value_to_update, additional_param):
+    value_to_update = literal_eval(value_to_update)
     endpoint = self.get_endpoint_for_scheme(value_to_update, "http")
     if endpoint is None:
       raise S3PROVError(f"BG Producer endpoint for scheme 'http' is not specified")
