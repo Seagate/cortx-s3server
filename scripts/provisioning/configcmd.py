@@ -163,7 +163,7 @@ class ConfigCmd(SetupCmd):
         'CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY').replace("cluster-id", self.cluster_id))
     index = 0
     while index < int(storage_set_count):
-      server_nodes_list_key = self.get_confkey('CONFSTORE_S3_OPENLDAP_SERVERS')
+      server_nodes_list_key = self.get_confkey('CONFIG>CONFSTORE_S3_OPENLDAP_SERVERS')
       server_nodes_list = self.get_confvalue(server_nodes_list_key)
       if type(server_nodes_list) is str:
         # list is stored as string in the confstore file
@@ -180,10 +180,10 @@ class ConfigCmd(SetupCmd):
           stdout, stderr, retcode = handler.run()
           self.logger.info(f'output of setup_ldap.sh: {stdout}')
           if retcode != 0:
-            self.logger.error(f'error of setup_ldap.sh: {stderr} {host_name}')
+            self.logger.error(f'error of setup_ldap.sh: {stderr} {node_machine_id}')
             raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
           else:
-            self.logger.warning(f'warning of setup_ldap.sh: {stderr} {host_name}')
+            self.logger.warning(f'warning of setup_ldap.sh: {stderr} {node_machine_id}')
       index += 1
 
   def create_topic(self, admin_id: str, topic_name:str, partitions: int):
