@@ -153,7 +153,7 @@ class LdapAccountAction:
     """Disconnects from ldap."""
     self.ldap_conn.unbind_s()
 
-  def create_account(self, ldap_endpoint:str = LDAP_URL, input_params: dict) -> None:
+  def create_account(self, input_params: dict, ldap_endpoint:str = LDAP_URL) -> None:
     """Creates account in ldap db."""
     self.__add_keys_to_dictionary(input_params)
     try:
@@ -199,7 +199,7 @@ class LdapAccountAction:
       raise e
 
 
-  def delete_account(self, ldap_endpoint: str = LDAP_URL, input_params: dict) -> None:
+  def delete_account(self, input_params: dict, ldap_endpoint: str = LDAP_URL) -> None:
     """
     Delete ldap account with given input params.
     @input_params: dictionary of format:
