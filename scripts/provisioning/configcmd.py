@@ -61,13 +61,13 @@ class ConfigCmd(SetupCmd):
 
   def process(self, *args, **kwargs):
     lockfile = path.join(self.base_config_file_path, 's3_setup.lock')
-    logger.info(f'acquiring the lock at {lockfile}...')
+    self.logger.info(f'acquiring the lock at {lockfile}...')
     with open(lockfile, 'w') as lock:
       fcntl.flock(lock, fcntl.LOCK_EX)
-      logger.info(f'acquired the lock at {lockfile}.')
+      self.logger.info(f'acquired the lock at {lockfile}.')
       self.process_under_flock(*args, **kwargs)
     # lock and file descriptor released automatically here.
-    logger.info(f'released the lock at {lockfile}.')
+    self.logger.info(f'released the lock at {lockfile}.')
 
   def process_under_flock(self, configure_only_openldap = False, configure_only_haproxy = False):
     """Main processing function."""
