@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/bash
 #
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
@@ -18,16 +18,32 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-# Copy the SSL certificate file
-if ! [ -f "/etc/cortx/s3/stx/stx.pem" ]; then
-  if ! ( mkdir -p /etc/cortx/s3/stx/ && \
-         cp /etc/ssl/stx/stx.pem /etc/cortx/s3/stx/stx.pem ) \
-  then
-    echo "Failed to update SSL cert file /etc/cortx/s3/stx/stx.pem from /etc/ssl/stx/stx.pem."
-    exit 1
-  fi
-fi
+set -e # exit immediatly on errors
 
-# Run the configured haproxy
-mkdir -p /var/log/cortx/s3
-/usr/sbin/haproxy -Ws -f /etc/cortx/s3/haproxy.cfg -p /run/haproxy.pid 1>>/var/log/cortx/s3/haproxy.log 2>&1
+source ./config.sh
+source ./env.sh
+source ./sh/functions.sh
+
+set -x # print each statement before execution
+
+add_separator CONFIGURING AUTHSERVER CONTAINER.
+
+kube_run() {
+  kubectl exec -i depl-pod -c authserver -- "$@"
+}
+
+#kube_run sh -c '/opt/seagate/cortx/auth/startauth.sh /etc/cortx/s3 &>/root/authserver.log &'
+
+sleep 1
+
+set +x
+if [ -z "`kube_run ps ax | grep 'java -jar AuthServer'`" ]; then
+  echo
+  kube_run ps ax
+  echo
+  add_separator FAILED.  AuthServer does not seem to be running.
+  false
+fi
+set -x
+
+add_separator SUCCESSFULLY CONFIGURED AUTHSERVER CONTAINER.
