@@ -266,7 +266,7 @@ class SetupCmd(object):
     if not value:
       raise Exception(f'Empty value for key : {key}')
     else:
-      if ("K8S" !=  str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
+      if ("K8" !=  str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
         address_token = ["hostname", "public_fqdn", "private_fqdn"]
       else :
         address_token = []

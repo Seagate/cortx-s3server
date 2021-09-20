@@ -121,11 +121,41 @@ class ConfigCmd(SetupCmd):
         self.logger.info('Create topic completed')
 
       # create background delete account
+      ldap_endpoint_fqdn = self.get_endpoint("CONFIG>CONFSTORE_S3_OPENLDAP_ENDPOINTS", "fqdn", "ldap")
+
       self.logger.info("create background delete account started")
-      self.create_bgdelete_account()
+      self.create_bgdelete_account(ldap_endpoint_fqdn)
       self.logger.info("create background delete account completed")
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}')
+
+
+  def get_endpoint(self, confstore_key, expected_token,  endpoint_type):
+    """1.Fetch confstore value from given key i.e. confstore_key
+       2.Parse endpoint string based on expected endpoint type i.e. endpoint_type
+       3.Return specific value as mentioned as per parameter i.e. expected_token.
+         this expected_token must has value from ['scheme', 'fqdn', 'port']
+       Examples:
+      fetch_ldap_host = self.get_endpoint("CONFIG>CONFSTORE_S3_OPENLDAP_ENDPOINTS", "fqdn", "ldap")
+      fetch_ldap_port = self.get_endpoint("CONFIG>CONFSTORE_S3_OPENLDAP_ENDPOINTS", "port", "ldap")
+    """
+    confstore_key_value = self.get_confvalue_with_defaults(confstore_key)
+    # Checking if the value is a string or not.
+    if isinstance(confstore_key_value, str):
+      confstore_key_value = literal_eval(confstore_key_value)
+
+    # Checking if valid token name is expected or not.
+    allowed_token_list = ['scheme', 'fqdn', 'port']
+    if not expected_token in allowed_token_list:
+      raise S3PROVError(f"Incorrect token string {expected_token} received for {confstore_key} for specified endpoint type : {endpoint_type}")
+
+    endpoint = self.get_endpoint_for_scheme(confstore_key_value, endpoint_type)
+    if endpoint is None:
+      raise S3PROVError(f"{confstore_key} does not have any specified endpoint type : {endpoint_type}")
+    if expected_token not in endpoint:
+      raise S3PROVError(f"{confstore_key} does not specify endpoint fqdn {endpoint} for endpoint type {endpoint_type}")
+    return endpoint[expected_token]
+
 
   def configure_s3_schema(self):
     self.logger.info('openldap s3 configuration started')
@@ -222,12 +252,13 @@ class ConfigCmd(SetupCmd):
       self.logger.warning(f'warning of create_auth_jks_password.sh: {stderr}')
       self.logger.info(' Successfully set auth JKS keystore password.')
 
-  def create_bgdelete_account(self):
+  def create_bgdelete_account(self, ldap_endpoint_fqdn: str):
     """ create bgdelete account."""
     try:
       # Create background delete account
       bgdelete_acc_input_params_dict = self.get_config_param_for_BG_delete_account()
-      LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(bgdelete_acc_input_params_dict)
+      ldap_host_url="ldap://"+ldap_endpoint_fqdn
+      LdapAccountAction(self.ldap_user, self.ldap_passwd).create_account(ldap_host_url, bgdelete_acc_input_params_dict)
     except Exception as e:
       if "Already exists" not in str(e):
         self.logger.error(f'Failed to create backgrounddelete service account, error: {e}')
