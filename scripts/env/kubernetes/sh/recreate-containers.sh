@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/bash
 #
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
@@ -18,16 +18,23 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-# Copy the SSL certificate file
-if ! [ -f "/etc/cortx/s3/stx/stx.pem" ]; then
-  if ! ( mkdir -p /etc/cortx/s3/stx/ && \
-         cp /etc/ssl/stx/stx.pem /etc/cortx/s3/stx/stx.pem ) \
-  then
-    echo "Failed to update SSL cert file /etc/cortx/s3/stx/stx.pem from /etc/ssl/stx/stx.pem."
-    exit 1
-  fi
-fi
+set -e -x
 
-# Run the configured haproxy
-mkdir -p /var/log/cortx/s3
-/usr/sbin/haproxy -Ws -f /etc/cortx/s3/haproxy.cfg -p /run/haproxy.pid 1>>/var/log/cortx/s3/haproxy.log 2>&1
+kubectl delete -f k8s-blueprints/depl-pod.yaml
+kubectl apply -f k8s-blueprints/depl-pod.yaml
+
+set +x
+while [ `kubectl get pod | grep depl-pod | grep Running | wc -l` -lt 1 ]; do
+  echo
+  kubectl get pod | grep 'NAME\|depl-pod'
+  echo
+  echo depl-pod is not yet in Running state, re-checking ...
+  echo '(hit CTRL-C if it is taking too long)'
+  sleep 5
+done
+set -x
+
+./sh/06-haproxy-container.sh
+./sh/07-authserver-container.sh
+./sh/08-motr-hare-container.sh
+./sh/09-s3server-container.sh
