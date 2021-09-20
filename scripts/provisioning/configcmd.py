@@ -75,7 +75,7 @@ class ConfigCmd(SetupCmd):
     # lock and file descriptor released automatically here.
     self.logger.info(f'released the lock at {lockfile}.')
 
-  def process_under_flock(self, configure_only_openldap = False, configure_only_haproxy = False):
+  def process_under_flock(self, skip_haproxy = False):
     """Main processing function."""
     self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
     self.logger.info("validations started")
@@ -124,6 +124,7 @@ class ConfigCmd(SetupCmd):
       if(self.services is None or 'openldap' in self.services):
         # Configure openldap only
         self.configure_s3_schema()
+
       if skip_haproxy == False:
         # Configure haproxy only
         self.configure_haproxy()
@@ -173,7 +174,6 @@ class ConfigCmd(SetupCmd):
       raise S3PROVError(f"{confstore_key} does not specify endpoint fqdn {endpoint} for endpoint type {endpoint_type}")
     return endpoint[expected_token]
 
-<<<<<<< HEAD
   def configure_openldap(self):
     """Install and Configure Openldap over Non-SSL."""
     # 1. Install and Configure Openldap over Non-SSL.
