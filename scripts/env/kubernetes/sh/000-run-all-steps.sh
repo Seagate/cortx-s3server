@@ -22,6 +22,7 @@ set -e -x
 
 ./sh/010-install-k8s.sh
 ./sh/030-common-k8s-definitions.sh
+#./sh/035-message-bus.sh
 ./sh/040-openldap.sh
 ./sh/045-prepare-s3-containers-configs.sh
 ./sh/050-create-IO-containers.sh

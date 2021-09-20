@@ -41,7 +41,8 @@ cat k8s-blueprints/shim-pod.yaml.template \
   | sed "s,<motr-cortx-all-image>,ghcr.io/seagate/cortx-all:${MOTR_CORTX_ALL_IMAGE_TAG}," \
   > k8s-blueprints/shim-pod.yaml
 
-# pull the images
+# download images using docker -- 'kubectl init' is not able to apply user
+# credentials, and so is suffering from rate limits.
 cat k8s-blueprints/shim-pod.yaml | grep 'image:' | awk '{print $2}' | xargs -n1 docker pull
 
 kubectl apply -f k8s-blueprints/shim-pod.yaml
@@ -60,6 +61,13 @@ set -x
 kube_run() {
   kubectl exec -i shim-pod -c shim -- "$@"
 }
+
+
+##############
+# machine ID #
+##############
+mkdir -p /etc/cortx/s3
+echo "211072f61c4b4949839c624d6ed95115" > /etc/cortx/s3/machine-id
 
 
 ###########
