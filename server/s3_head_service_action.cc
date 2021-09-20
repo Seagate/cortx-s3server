@@ -38,6 +38,7 @@ void S3HeadServiceAction::setup_steps() {
 }
 
 void S3HeadServiceAction::send_response_to_s3_client() {
+  bool is_haproxy_head_request = false;
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
 
   // Disable Audit logs for Haproxy healthchecks
@@ -46,13 +47,11 @@ void S3HeadServiceAction::send_response_to_s3_client() {
   if (full_path_uri) {
     if (std::strcmp(full_path_uri, "/") == 0) {
       request->get_audit_info().set_publish_flag(false);
+      is_haproxy_head_request = true;
     }
   }
-  if (reject_if_shutting_down()) {
-    int shutdown_grace_period =
-        S3Option::get_instance()->get_s3_grace_period_sec();
-    request->set_out_header_value("Retry-After",
-                                   std::to_string(shutdown_grace_period));
+  if (reject_if_shutting_down() && !is_haproxy_head_request) {
+    request->set_out_header_value("Retry-After", "2");
     request->set_out_header_value("Connection", "close");
     request->send_response(S3HttpFailed503);
   } else {

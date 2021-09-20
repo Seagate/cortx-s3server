@@ -244,11 +244,13 @@ void s3_kickoff_graceful_shutdown(int ignore) {
     global_shutdown_in_progress = 1;
     // signal handler
     S3Option *option_instance = S3Option::get_instance();
-
+    int shutdown_grace_period =
+        S3Option::get_instance()->get_s3_grace_period_sec();
+    struct timeval delay = {shutdown_grace_period, 0};
     // trigger rollbacks & stop handling new requests
     option_instance->set_is_s3_shutting_down(true);
     s3_log(S3_LOG_INFO, "", "Calling event_base_loopexit\n");
-    event_base_loopexit(global_evbase_handle, NULL);
+    event_base_loopexit(global_evbase_handle, &delay);
   }
   return;
 }
