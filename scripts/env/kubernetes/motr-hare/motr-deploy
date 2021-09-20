@@ -1,0 +1,112 @@
+set -ex
+
+MOTR_LIBEXEC="/usr/libexec/cortx-motr"
+MOTR_MKFS="$MOTR_LIBEXEC/motr-mkfs"
+MOTR_SERVER="$MOTR_LIBEXEC/motr-server"
+MOTR_STATUS_PATH="/var/motr/status"
+MOTR_MKFS_DIR="/var/motr/m0d"
+MOTR_SYSCONFIG="/etc/sysconfig/m0d"
+ha_config="/etc/sysconfig/m0d-${1#m0d-}"
+
+service="ha"
+ha_proxy=false
+mkfs_force=false
+mkfs_dir_present=false
+confd_proxy="/etc/motr/confd.xc"
+
+
+help()
+{
+    [[ $1 == stdout ]] && usage || usage >&2
+    exit 1
+}
+
+
+usage()
+{
+    cat <<USAGE_END
+Usage: $PROG_NAME [-h|--help] [-s] [-H]
+   -s              Enter the service that needs to be invoked
+                   [ha|confd|ios]
+
+   -H|--ha-proxy   Instead of actual HA. pseudo HA is created
+                   which is similar to motr ST setups
+
+   -f|--mkfs-force Overwrite MKFS by force
+
+   -h|--help       Print this help screen.
+USAGE_END
+}
+
+
+#
+# Parse CLI options
+#
+
+parse_cli_options()
+{
+
+    TEMP=$( getopt --options hsf \
+                   --longoptions help,--ha-proxy \
+                   --name "$PROG_NAME" -- "$@" )
+
+    [[ $? -ne 0 ]] && help
+
+    # Note the quotes around `$TEMP': they are essential!
+    eval set -- "$TEMP"
+
+    while true ; do
+        case "$1" in
+            -h|--help)          help stdout ;;
+            -s)                 service=$3;     shift;;
+            -f|--mkfs-force)    mkfs_force=true;  shift ;;
+            --)                 shift; break ;;
+             *)                 echo 'getopt: internal error...'; exit 1 ;;
+        esac
+    done
+}
+
+start_server()
+{
+    $MOTR_SERVER "m0d-$1"
+}
+
+update_local_ip()
+{
+    filename="$1"
+    IP=`ip addr show eth0|grep inet| head -1|awk '{print $2}'|cut -d '/' -f1`
+    sed -r 's/(\b[0-9]{1,3}\.){3}[0-9]{1,3}\b'/"$IP"/ $filename > temp
+    cp temp $filename
+    rm temp
+}
+#start of the program
+
+parse_cli_options "$@"
+echo "service $service"
+
+
+svc_tag=$(echo $service | cut -d ':' -f2)
+if [[ $svc_tag == "0x6" ]]; then
+    unset MOTR_HA_EP
+fi
+
+update_local_ip "$confd_proxy"
+ha_config="$MOTR_SYSCONFIG-$service"
+update_local_ip "$ha_config"
+
+ha_config="$MOTR_SYSCONFIG-$service"
+[[ -r $ha_config ]] && source $ha_config
+
+MKFS_DIR="$MOTR_MKFS_DIR-$service/db/o"
+if [[ -d "$MKFS_DIR" ]]; then
+    mkfs_dir_present=true;
+    echo "mkfs_dir_present $mkfs_dir_present"
+fi
+
+# starting the mkfs for each service ha, confd, ios
+if [[ "$mkfs_force" = "true" || "$mkfs_dir_present" = "false" ]]; then
+    $MOTR_MKFS $service
+fi
+
+#starting the server
+start_server "$service"
