@@ -20,7 +20,6 @@
 
 import os
 import sys
-import shutil
 import socket
 import logging
 import urllib.parse
