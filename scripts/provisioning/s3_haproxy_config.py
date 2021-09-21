@@ -207,6 +207,8 @@ class S3HaproxyConfig:
     s3authbendport = self.get_s3auth_backend_port()
 
     config_file = os.path.join(baseconfig_path, 's3/haproxy.cfg')
+    errors_path = os.path.join(baseconfig_path, 'haproxy/errors/')
+    errors_file = os.path.join(errors_path, '503.http')
     global_text = '''global
     log         127.0.0.1 local2
     log stdout format raw local0
@@ -268,7 +270,7 @@ defaults
     option http-server-close
     option forwardfor       except 127.0.0.0/8
     option                  redispatch
-    errorfile               503 /etc/haproxy/errors/503.http
+    errorfile               503 %s
     retries                 3
     timeout http-request    10s
     timeout queue           10s
@@ -325,7 +327,7 @@ backend s3-auth
 '''
     config_handle = open(config_file, "w+")
     config_handle.write(global_text)
-    config_handle.write(default_text)
+    config_handle.write(default_text % errors_file)
     config_handle.write(frontend_s3main_text)
     config_handle.write(
          "   bind 0.0.0.0:%s\n"
@@ -368,7 +370,6 @@ backend s3-auth
     pem_dir = os.path.dirname(sslcertpath)
     if not os.path.exists(pem_dir):
         os.makedirs(pem_dir)
-    errors_path = os.path.join(baseconfig_path, 'haproxy/errors/')
     if not os.path.exists(errors_path):
         os.makedirs(errors_path)
 
