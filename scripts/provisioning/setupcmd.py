@@ -280,7 +280,6 @@ class SetupCmd(object):
     # The s3 prov config file has below pairs :
     # "Key Constant" : "Actual Key"
     # Example of "Key Constant" :
-    #   CONFSTORE_SITE_COUNT_KEY
     #   PREPARE
     #   CONFIG>CONFSTORE_LDAPADMIN_USER_KEY
     #   INIT
