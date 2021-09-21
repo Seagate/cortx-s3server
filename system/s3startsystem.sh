@@ -55,6 +55,15 @@ else
   source $ha_config
 fi
 
+# Ensure /etc/machine-id is present
+if [ -f /etc/cortx/s3/machine-id ]; then
+  echo "/etc/cortx/s3/machine-id is not found!"
+  exit 1
+fi
+if ! cat /etc/cortx/s3/machine-id > /etc/machine-id; then
+  echo "failed to create /etc/machine-id !"
+  exit 1
+fi
 
 # Ensure default working dir is present
 # e.g. /var/log/cortx/motr/<machine-id>/s3server-<fid>

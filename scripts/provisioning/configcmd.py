@@ -60,7 +60,7 @@ class ConfigCmd(SetupCmd):
       raise S3PROVError(f'exception: {e}')
 
   def process(self, *args, **kwargs):
-    lockfile = path.join(self.base_config_file_path, 's3_setup.lock')
+    lockfile = path.join(self.base_config_file_path, 's3/s3_setup.lock')
     self.logger.info(f'acquiring the lock at {lockfile}...')
     with open(lockfile, 'w') as lock:
       fcntl.flock(lock, fcntl.LOCK_EX)
@@ -83,6 +83,10 @@ class ConfigCmd(SetupCmd):
       self.logger.info("copy config files started")
       self.copy_config_files()
       self.logger.info("copy config files completed")
+
+      self.logger.info("configuring machine-id started")
+      self.configure_machine_id()
+      self.logger.info("configuring machine-id completed")
 
       self.logger.info("copy s3 authserver resources started")
       self.copy_s3authserver_resources()
@@ -620,6 +624,12 @@ class ConfigCmd(SetupCmd):
       os.makedirs(os.path.dirname(dest_config_file), exist_ok=True)
       shutil.copy(config_file, dest_config_file)
       self.logger.info("Config file copied successfully to /etc/cortx")
+
+  def configure_machine_id(self):
+    """Creates /etc/cortx/s3/machine-id.  Needed for libmotr."""
+    file_path = os.path.join(self.base_config_file_path, "s3/machine-id")
+    with open(file_path, "w") as f:
+      f.write(self.machine_id)
 
   def copy_s3authserver_resources(self):
     """Copy config files from /opt/seagate/cortx/auth/resources  to /etc/cortx/auth/resources."""
