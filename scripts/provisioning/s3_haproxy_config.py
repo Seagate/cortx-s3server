@@ -155,6 +155,10 @@ class S3HaproxyConfig:
 
     return self.get_config_with_defaults('CONFIG>CONFSTORE_BASE_CONFIG_PATH')
 
+  def get_confkey(self, key: str):
+    assert self.local_confstore != None
+    return self.local_confstore.get_config(key)
+
   def get_config_with_defaults(self, key: str):
     confkey = self.local_confstore.get_config(key)
     if "machine-id" in confkey:
@@ -207,8 +211,7 @@ class S3HaproxyConfig:
     s3authbendport = self.get_s3auth_backend_port()
 
     config_file = os.path.join(baseconfig_path, 's3/haproxy.cfg')
-    errors_path = os.path.join(baseconfig_path, 'haproxy/errors/')
-    errors_file = os.path.join(errors_path, '503.http')
+    errors_file = self.get_confkey("S3_HAPROXY_ERROR_CONFIG_FILE")
     global_text = '''global
     log         127.0.0.1 local2
     log stdout format raw local0
@@ -370,11 +373,6 @@ backend s3-auth
     pem_dir = os.path.dirname(sslcertpath)
     if not os.path.exists(pem_dir):
         os.makedirs(pem_dir)
-    if not os.path.exists(errors_path):
-        os.makedirs(errors_path)
-
-    #Run config commands
-    shutil.copy('/opt/seagate/cortx/s3/install/haproxy/503.http', errors_path)
 
   def configure_haproxy_legacy(self):
     """Main Processing function."""
