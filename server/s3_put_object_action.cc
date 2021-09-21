@@ -723,7 +723,12 @@ void S3PutObjectAction::fetch_ext_object_info_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
   s3_log(S3_LOG_ERROR, request_id, "%s Failed Reading Ext md info.\n",
          __func__);
-  next();
+
+  s3_put_action_state = S3PutObjectActionState::writeFailed;
+  set_s3_error("InternalError");
+
+  // Clean up will be done after response.
+  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, request_id, "%s Exit\n", __func__);
 }
 
