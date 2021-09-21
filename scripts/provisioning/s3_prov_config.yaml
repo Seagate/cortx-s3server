@@ -122,7 +122,7 @@ DEFAULT_CONFIG:
   CONFSTORE_S3_BGDELETE_MAX_KEYS: 1000
 
   CONFSTORE_BASE_CONFIG_PATH: "/etc/cortx"
-  CONFSTORE_S3_SECURITY_CERTIFICATE: "/etc/ssl/stx/stx.pem"
+  CONFSTORE_S3_SECURITY_CERTIFICATE: "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem"
   CONFSTORE_S3_OPENLDAP_BASE_DN: "dc=seagate,dc=com"
 
   CONFSTORE_PUBLIC_FQDN_KEY: "srvnode-1.data.public" #M (VM specific)
