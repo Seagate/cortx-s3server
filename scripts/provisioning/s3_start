@@ -77,11 +77,8 @@ def main():
     elif args.service == 's3bgproducer':
       os.system("sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh")
     elif args.service == 's3bgconsumer':
-      # Add action and remove pass
-      pass
+      os.system("sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.sh")
     elif args.service == 'haproxy':
-      # TODO: logging path has to come from conf store -- to be fixed during
-      # end-to-end logging integration.
       os.system("sh /opt/seagate/cortx/s3/bin/starthaproxy.sh")
     else:
       logger.error(f"Invalid argument {args.service}")
