@@ -113,10 +113,21 @@ class CORTXS3Config(object):
         except:
             raise KeyError("Could not parse version from config file " + self._conf_file)
 
-    def get_logger_directory(self):
+    def get_processor_logger_directory(self):
         """Return logger directory path for background delete from config file or KeyError."""
         try:
-          log_directory = self.s3confstore.get_config('logconfig>logger_directory')
+          log_directory = self.s3confstore.get_config('logconfig>processor_logger_directory')
+          return log_directory
+        except:
+            raise KeyError(
+                "Could not parse logger directory path from config file " +
+                self._conf_file)
+
+
+    def get_scheduler_logger_directory(self):
+        """Return logger directory path for background delete from config file or KeyError."""
+        try:
+          log_directory = self.s3confstore.get_config('logconfig>scheduler_logger_directory')
           return log_directory
         except:
             raise KeyError(
