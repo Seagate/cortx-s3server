@@ -148,6 +148,16 @@ class S3HaproxyConfig:
 
     return self.get_config_with_defaults('CONFIG>CONFSTORE_S3_SECURITY_CERTIFICATE')
 
+  def get_baseconfig_path(self):
+    assert self.provisioner_confstore != None
+    assert self.local_confstore != None
+
+    return self.get_config_with_defaults('CONFIG>CONFSTORE_BASE_CONFIG_PATH')
+
+  def get_confkey(self, key: str):
+    assert self.local_confstore != None
+    return self.local_confstore.get_config(key)
+
   def get_config_with_defaults(self, key: str):
     confkey = self.local_confstore.get_config(key)
     if "machine-id" in confkey:
@@ -177,6 +187,9 @@ class S3HaproxyConfig:
   def configure_haproxy_k8(self):
     self.logger.info("K8s HAPROXY configuration ...")
 
+    # Fetching base config path
+    baseconfig_path = self.get_baseconfig_path()
+
     # Fetching ssl certificate path
     sslcertpath = self.get_sslcertpath()
 
@@ -196,7 +209,8 @@ class S3HaproxyConfig:
     s3backendport = self.get_s3server_backend_port()
     s3authbendport = self.get_s3auth_backend_port()
 
-    config_file = '/etc/cortx/s3/haproxy.cfg'
+    config_file = os.path.join(baseconfig_path, 's3/haproxy.cfg')
+    errors_file = self.get_confkey("S3_HAPROXY_ERROR_CONFIG_FILE")
     global_text = '''global
     log         127.0.0.1 local2
     log stdout format raw local0
@@ -258,7 +272,7 @@ defaults
     option http-server-close
     option forwardfor       except 127.0.0.0/8
     option                  redispatch
-    errorfile               503 /etc/haproxy/errors/503.http
+    errorfile               503 %s
     retries                 3
     timeout http-request    10s
     timeout queue           10s
@@ -315,7 +329,7 @@ backend s3-auth
 '''
     config_handle = open(config_file, "w+")
     config_handle.write(global_text)
-    config_handle.write(default_text)
+    config_handle.write(default_text % errors_file)
     config_handle.write(frontend_s3main_text)
     config_handle.write(
          "   bind 0.0.0.0:%s\n"
@@ -358,11 +372,6 @@ backend s3-auth
     pem_dir = os.path.dirname(sslcertpath)
     if not os.path.exists(pem_dir):
         os.makedirs(pem_dir)
-    if not os.path.exists('/etc/cortx/haproxy/errors/'):
-        os.makedirs('/etc/cortx/haproxy/errors/')
-
-    #Run config commands
-    os.system("cp /opt/seagate/cortx/s3/install/haproxy/503.http /etc/cortx/haproxy/errors/")
 
   def configure_haproxy_legacy(self):
     """Main Processing function."""
