@@ -1,0 +1,16 @@
+{
+  "message_broker": {
+    "type": "kafka",
+    "cluster": [
+      {
+        "server": "<kafka-external-ip>",
+        "port": "9092"
+      }
+    ],
+    "message_bus": {
+      "recv_message_timeout": 2,
+      "controller_socket_timeout": 15000,
+      "send_message_timeout": 5000
+    }
+  }
+}

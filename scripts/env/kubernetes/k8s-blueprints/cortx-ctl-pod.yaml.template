@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cortx-ctl-pod
+  annotations:
+    "cni.projectcalico.org/ipAddrs": "[\"192.168.134.12\"]"
+spec:
+  containers:
+    - name: s3-bg-producer
+      image: <s3-cortx-all-image>
+      imagePullPolicy: Never
+      volumeMounts:
+        - name: etc-cortx
+          mountPath: /etc/cortx
+        - name: var-log-cortx
+          mountPath: /var/log/cortx
+        - name: var-data-cortx
+          mountPath: /var/data/cortx
+#     command:
+#        - "/bin/bash"
+#        - "-c"
+#        - "--"
+#     args:
+#        - "sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh""
+      command:
+         - "/opt/seagate/cortx/s3/bin/s3_start"
+      args:
+         - "--service"
+         - "s3bgproducer"
+  volumes:
+      - name: etc-cortx
+        persistentVolumeClaim:
+          claimName: etc-cortx
+      - name: var-log-cortx
+        persistentVolumeClaim:
+          claimName: var-log-cortx
+      - name: var-data-cortx
+        persistentVolumeClaim:
+          claimName: var-data-cortx

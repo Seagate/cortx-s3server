@@ -22,13 +22,15 @@ set -e -x
 
 ./sh/010-install-k8s.sh
 ./sh/030-common-k8s-definitions.sh
-#./sh/035-message-bus.sh
+./sh/035-message-bus.sh
 ./sh/040-openldap.sh
 ./sh/045-prepare-s3-containers-configs.sh
-./sh/050-create-IO-containers.sh
+./sh/050-create-io-pod.sh
+./sh/055-bg-delete-pod.sh
 ./sh/060-haproxy-container.sh
 ./sh/070-authserver-container.sh
 ./sh/080-motr-hare-container.sh
 ./sh/090-s3server-container.sh
+./sh/095-bg-containers.sh
 ./sh/100-s3-client-setup.sh
 ./sh/110-io-testing.sh

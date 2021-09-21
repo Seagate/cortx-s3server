@@ -45,6 +45,13 @@ while [ `kubectl get pod | grep 'zookeper\|kafka' | grep Running | wc -l` -lt 1 
 done
 set -x
 
+set_var_SVC_IP zoo1
+echo "ZOOKEPER_SVC='$SVC_IP'" >> env.sh
+set_var_SVC_IP kaf1
+echo "KAFKA_SVC='$SVC_IP'" >> env.sh
+set_var_SVC_EXTERNAL_IP kaf1
+echo "KAFKA_EXTERNAL_IP='$SVC_EXTERNAL_IP'" >> env.sh
+
 set +x
 
 add_separator SUCCESSFULLY CREATED OPENLDAP POD

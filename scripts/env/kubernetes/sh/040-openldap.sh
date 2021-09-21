@@ -53,10 +53,13 @@ while [ `kubectl get pod | grep openldap | grep Running | wc -l` -lt 1 ]; do
 done
 set -x
 
+set_var_SVC_IP openldap-svc
+OPENLDAP_SVC="$SVC_IP"
+echo "OPENLDAP_SVC='$OPENLDAP_SVC'" >> env.sh
+
 yum install -y openldap-clients
 
 # apply .ldif files
-set_var_OPENLDAP_SVC
 ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w ldapadmin -f ldif/ldap-init.ldif -H "ldap://$OPENLDAP_SVC"
 ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w ldapadmin -f ldif/iam-admin.ldif -H "ldap://$OPENLDAP_SVC"
 ldapmodify -x -a -D cn=admin,dc=seagate,dc=com -w ldapadmin -f ldif/ppolicy-default.ldif -H "ldap://$OPENLDAP_SVC"

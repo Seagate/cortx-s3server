@@ -1,0 +1,44 @@
+# s3-background-delete-svc, accounts, s3.seagate.com
+dn: o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com
+objectClass: Account
+o: s3-background-delete-svc
+accountId: 67891
+mail: s3-background-delete-svc@seagate.com
+canonicalId: C67891
+
+# roles, s3-background-delete-svc, accounts, s3.seagate.com
+dn: ou=roles,o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com
+ou: roles
+objectClass: organizationalUnit
+
+# users, s3-background-delete-svc, accounts, s3.seagate.com
+dn: ou=users,o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com
+ou: users
+objectClass: organizationalUnit
+
+# groups, s3-background-delete-svc, accounts, s3.seagate.com
+dn: ou=groups,o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com
+ou: groups
+objectClass: organizationalUnit
+
+# policies, s3-background-delete-svc, accounts, s3.seagate.com
+dn: ou=policies,o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com
+ou: policies
+objectClass: organizationalUnit
+
+# 450, users, s3-background-delete-svc, accounts, s3.seagate.com
+dn: s3UserId=450,ou=users,o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seag
+ ate,dc=com
+path: /
+cn: root
+objectClass: iamUser
+s3UserId: 450
+arn: arn:aws:iam::67891:root
+
+dn: ak=NF9ZWTk3Nk5RN3ZjaDBaZW,ou=accesskeys,dc=s3,dc=seagate,dc=com
+ak: <access-key>
+s3userid: 450
+sk: <secret-key>
+status: Active
+objectclass: accessKey
+

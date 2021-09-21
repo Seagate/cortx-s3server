@@ -43,7 +43,7 @@ cat k8s-blueprints/shim-pod.yaml.template \
 
 # download images using docker -- 'kubectl init' is not able to apply user
 # credentials, and so is suffering from rate limits.
-cat k8s-blueprints/shim-pod.yaml | grep 'image:' | awk '{print $2}' | xargs -n1 docker pull
+pull_images_for_pod k8s-blueprints/shim-pod.yaml
 
 kubectl apply -f k8s-blueprints/shim-pod.yaml
 
@@ -102,8 +102,6 @@ cp /etc/cortx/s3/auth/resources/keystore.properties.sample \
 const_key=`kube_run s3cipher generate_key --const_key cortx`
 encrypted_pwd=`kube_run  s3cipher encrypt --data "ldapadmin" --key "$const_key"`
 
-set_var_OPENLDAP_SVC
-
 # Copy encrypted ldap-passsword (ldapLoginPW) and openldap endpoint (key name
 # ldapHost) to authserver.properties file.
 
@@ -118,7 +116,60 @@ sed -i "s|^ldapLoginPW *=.*|ldapLoginPW=$encrypted_pwd|;
 mkdir -p /etc/cortx/s3/conf
 cp "$s3_repo_dir"/s3config.release.yaml.sample \
    /etc/cortx/s3/conf/s3config.yaml
+sed -i \
+  -e 's/S3_SERVER_BGDELETE_BIND_ADDR *:.*/S3_SERVER_BGDELETE_BIND_ADDR: 0.0.0.0/' \
+  /etc/cortx/s3/conf/s3config.yaml
 cat s3server/s3server-1 > /etc/cortx/s3/s3server-1
+
+
+###############
+# Message Bus #
+###############
+
+mkdir -p /etc/cortx/utils/
+cat message-bus/message_bus.conf.template | \
+  sed -e "s/<kafka-external-ip>/$KAFKA_EXTERNAL_IP/" \
+  > /etc/cortx/utils/message_bus.conf
+
+mkdir -p /var/log/cortx/utils/message_bus
+chmod 755 /var/log/cortx/utils/*
+chmod 755 /var/log/cortx/utils/message_bus
+touch /var/log/cortx/utils/message_bus/message_bus.log
+chmod 755 /var/log/cortx/utils/message_bus/message_bus.log
+
+cp message-bus/cortx.conf /etc/cortx
+
+
+##################
+# S3 BG Services #
+##################
+
+mkdir -p /var/log/cortx/s3/s3backgrounddelete \
+         /etc/cortx/s3/s3backgrounddelete/
+
+cp "$s3_repo_dir/s3backgrounddelete/s3backgrounddelete/config/s3_background_delete_config.yaml.sample" \
+   /etc/cortx/s3/s3backgrounddelete/config.yaml
+cp "$s3_repo_dir/s3backgrounddelete/s3backgrounddelete/config/s3_cluster.yaml.sample" \
+   /etc/cortx/s3/s3backgrounddelete/s3_cluster.yaml
+
+sed -i \
+  -e 's,producer_endpoint:.*,producer_endpoint: "http://192.168.134.219:28049",' \
+  /etc/cortx/s3/s3backgrounddelete/config.yaml
+
+# create bgdelete account
+
+access_key=`kube_run s3cipher generate_key --const_key s3backgroundaccesskey --key_len 22 --use_base64`
+secret_key=`kube_run s3cipher generate_key --const_key s3backgroundsecretkey --key_len 40`
+
+cat ldif/bgdelete_account.ldif.template | \
+  sed -e "s,<access-key>,$access_key," \
+      -e "s,<secret-key>,$secret_key," \
+  > ldif/bgdelete_account.ldif
+
+ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w ldapadmin -f ldif/bgdelete_account.ldif -H "ldap://$OPENLDAP_SVC"
+
+# create s3 topic 'bgdelete'
+kube_run python3 "$src_dir/message-bus/create-bgdelete-topic.py"
 
 
 ###########################################################################

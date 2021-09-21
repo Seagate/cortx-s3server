@@ -34,14 +34,18 @@ yum install -y cortx-s3iamcli --nogpgcheck
 pip3 install awscli
 pip3 install awscli-plugin-endpoint
 
+if ! which aws; then
+  add_separator "AWS CLI installation failed"
+  exit 1
+fi
+
 # Add POD IP address to /etc/hosts file, for s3.seagate.com and iam.seagate.com
-set_var_DEPL_POD_IP
 sed -i \
   -e 's,\b\(dummy\.\)*\(iam\|s3\)\.seagate\.com\b,dummy.\2.seagate.com,g' \
-  -e "/$DEPL_POD_IP/d" \
+  -e "/$CORTX_IO_POD_IP/d" \
   /etc/hosts
 
-echo "$DEPL_POD_IP s3.seagate.com iam.seagate.com" >> /etc/hosts
+echo "$CORTX_IO_POD_IP s3.seagate.com iam.seagate.com" >> /etc/hosts
 
 mkdir -p /var/log/seagate/auth/
 
