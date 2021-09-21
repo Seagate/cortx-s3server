@@ -434,6 +434,17 @@ public class AuthServerConfig {
     }
 
    public
+    static int getRetryCount() {
+      return Integer.parseInt(authServerConfig.getProperty("ldapRetryCount"));
+    }
+
+   public
+    static int getRetryTimeInterval() {
+      return Integer.parseInt(
+          authServerConfig.getProperty("ldapRetryInterval"));
+    }
+
+   public
     static int getMaxAccountLimit() {
       return Integer.parseInt(authServerConfig.getProperty("maxAccountLimit"));
     }
