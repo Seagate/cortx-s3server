@@ -173,17 +173,17 @@ public class LdapConnectionManager {
       // connection with ldap server
       // either ldap server is down or specified hostname or port number is
       // incorrect.
-      if (FaultPoints.fiEnabled()) {
-        if (FaultPoints.getInstance().isFaultPointActive("LDAP_CONNECT_FAIL")) {
-          return null;
-        }
+      if (FaultPoints.fiEnabled() &&
+          FaultPoints.getInstance().isFaultPointActive("LDAP_CONNECT_FAIL")) {
+        return null;
       }
       LDAPConnection lc = null;
       int retrycount = AuthServerConfig.getRetryCount();
       int timeinterval = AuthServerConfig.getRetryTimeInterval();
       if (resultcode == 91 || resultcode == 52 || resultcode == 81) {
         // wait on thread to retry new ldap connection
-        String DN = "", Password = "";
+        String DN = "";
+        String Password = "";
         if (dn.isEmpty()) {
           DN = ldapLoginDN;
           Password = ldapLoginPW;
