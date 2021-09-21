@@ -359,7 +359,7 @@ backend s3-auth
     config_handle.write(backend_s3bgdelete_text)
     config_handle.write(
         "    server s3-bgdelete-instance-1 0.0.0.0:%s           # s3 bgdelete instance 1\n"
-        % (s3bgdeleteport))
+        % (int(s3bgdeleteport)-1))
     config_handle.write(backend_s3auth_text)
     config_handle.write(
         "    server s3authserver-instance1 0.0.0.0:%s #check ssl verify required ca-file /etc/ssl/stx-s3/s3auth/s3authserver.crt   # s3 auth server instance 1\n"
