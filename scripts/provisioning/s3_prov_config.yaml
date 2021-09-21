@@ -66,7 +66,7 @@ CONFIG:
   CONFSTORE_S3_CLUSTER_ID: "cluster>id" #M (Usedby: None)
   CONFSTORE_STORAGE_SET_COUNT_KEY: "cluster>storage_set_count" #M (Usedby: s3_deployment)
   CONFSTORE_STORAGE_SET_SERVER_NODES_KEY: "cluster>storage_set[storage-set-count]>nodes"  #M (Usedby: s3_deployment)
-  CONFSTORE_BASE_CONFIG_PATH: "cortx>software>storage>config"  #M (Usedby: s3_deployment)
+  CONFSTORE_BASE_CONFIG_PATH: "cortx>software>storage>config"  #O default - /etc/cortx (Usedby: s3_deployment)
 
 
   ##################################################################################################
@@ -119,6 +119,7 @@ DEFAULT_CONFIG:
   CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL: 1200
   CONFSTORE_S3_BGDELETE_MAX_KEYS: 1000
 
+  CONFSTORE_BASE_CONFIG_PATH: "/etc/cortx"
   CONFSTORE_S3_SECURITY_CERTIFICATE: "/etc/ssl/stx/stx.pem"
   CONFSTORE_S3_OPENLDAP_BASE_DN: "dc=seagate,dc=com"
 
