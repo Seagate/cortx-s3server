@@ -46,7 +46,8 @@ logconfig:                                  # Section for scheduler & processor 
 
    scheduler_logger_name: "object_recovery_scheduler"                                         # Root logger name for scheduler
    processor_logger_name: "object_recovery_processor"                                         # Root logger name for processor
-   logger_directory: "/var/log/cortx/s3/s3backgrounddelete"                                 # Log directory location for background delete
+   scheduler_logger_directory: "/var/log/cortx/s3/s3backgrounddelete"                                 # Log directory location for background delete
+   processor_logger_directory: "/var/log/cortx/s3/s3backgrounddelete"                                 # Log directory location for background delete
    scheduler_log_file: "/var/log/cortx/s3/s3backgrounddelete/object_recovery_scheduler.log" # Log file path for background delete scheduler
    processor_log_file: "/var/log/cortx/s3/s3backgrounddelete/object_recovery_processor.log" # Log file path for background delete processor
    file_log_level: 20                                                                         # Sets the threshold for above file loggers to level specified. https://docs.python.org/3/library/logging.html#levels
