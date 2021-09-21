@@ -76,6 +76,7 @@ CONFIG:
   CONFSTORE_S3_AUTHSERVER_PORT: "cortx>software>private>s3>service>authserver_port" # Direct from default
   CONFSTORE_S3_ENABLE_STATS: "cortx>software>private>s3>service>s3_enable_stats" # Direct from default
   CONFSTORE_S3_AUDIT_LOGGER: "cortx>software>private>s3>service>s3_audit_logger" # Direct from default
+  CONFSTORE_S3_BGDEL_BIND_ADDR: "cortx>software>private>s3>service>bgdel_bind_addr" #direct from default
 
   CONFSTORE_S3_AUTHSERVER_HTTP_PORT: "cortx>software>private>s3authserver>httpPort"  # Direct from default
   CONFSTORE_S3_AUTHSERVER_HTTPS_PORT: "cortx>software>private>s3authserver>httpsPort" # Direct from default
@@ -112,6 +113,7 @@ DEFAULT_CONFIG:
   CONFSTORE_S3_ENABLE_STATS: false
   CONFSTORE_S3_AUDIT_LOGGER: "disabled"
   CONFSTORE_S3_AUTHSERVER_DEFAULT_ENDPOINT: "127.0.0.1"
+  CONFSTORE_S3_BGDEL_BIND_ADDR: "127.0.0.1"
   CONFSTORE_S3_AUTHSERVER_HTTP_PORT: "28050"
   CONFSTORE_S3_AUTHSERVER_HTTPS_PORT: "28051"
   CONFSTORE_S3_AUTHSERVER_IAM_AUDITLOG: "disabled"
