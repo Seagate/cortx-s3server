@@ -104,6 +104,8 @@ class S3PutObjectAction : public S3ObjectAction {
   void create_object();
   void create_object_successful();
   void create_object_failed();
+  void fetch_ext_object_info_failed();
+  void fetch_ext_object_info_success();
 
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();
