@@ -441,7 +441,7 @@ class ConfigCmd(SetupCmd):
       endpoint = self.parse_endpoint(default_value)
       if 'port' not in endpoint:
         raise S3PROVError(f"BG Delete endpoint {value_to_update} does not have port specified.")
-    if ("K8" != str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :    
+    if ("K8" == str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :    
       return int(endpoint['port']) -1
     else :
       return int(endpoint['port'])
