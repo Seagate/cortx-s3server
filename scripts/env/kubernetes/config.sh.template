@@ -1,7 +1,8 @@
 ###########################################################################
-#
-# k8s installation parameters
-#
+#                             #
+# k8s installation parameters #
+#                             #
+###############################
 
 THIS_IS_PRIMARY_K8S_NODE=yes
   # yes/no
@@ -13,11 +14,12 @@ NODE_NAME=node1
   # Use node1 for k8s master
 
 ###########################################################################
-#
-# for image download
-#
+#                    #
+# for image download #
+#                    #
+######################
 
-S3_CORTX_ALL_IMAGE_TAG=2.0.0-156-custom-ci
+S3_CORTX_ALL_IMAGE_TAG=2.0.0-160-custom-ci
 #S3_CORTX_ALL_IMAGE_TAG=2.0.0-latest-custom-ci
   # Specifies which image to use for S3 containers.
   # Update if you want to test specific build instead of latest.
