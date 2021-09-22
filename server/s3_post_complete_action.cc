@@ -597,6 +597,24 @@ void S3PostCompleteAction::add_part_object_to_probable_dead_oid_list(
         parts_probable_del_rec_list.push_back(std::move(ext_del_rec));
       }
     }  // End of For
+  } else {
+    // Overwritten by Simple Object.
+    S3CommonUtilities::size_based_bucketing_of_objects(
+        old_oid_str, object_metadata->get_content_length());
+
+    // key = oldoid + "-" + newoid
+    std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Adding old_probable_del_rec with key [%s]\n",
+           old_oid_rec_key.c_str());
+    std::unique_ptr<S3ProbableDeleteRecord> simpleobj;
+    simpleobj.reset(new S3ProbableDeleteRecord(
+        old_oid_rec_key, {0ULL, 0ULL}, object_metadata->get_object_name(),
+        old_object_oid, old_layout_id, object_metadata->get_pvid_str(),
+        bucket_metadata->get_object_list_index_layout().oid,
+        bucket_metadata->get_objects_version_list_index_layout().oid,
+        object_metadata->get_version_key_in_index(), false /* force_delete */));
+    parts_probable_del_rec_list.push_back(std::move(simpleobj));
   }
 }
 
