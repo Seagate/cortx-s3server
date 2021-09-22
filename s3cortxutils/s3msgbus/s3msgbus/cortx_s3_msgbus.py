@@ -57,9 +57,7 @@ class S3CortxMsgBus:
 
     def purge(self):
         """Purge/Delete all the messages."""
-        # Issue 24813
-        #self._producer.delete()
-        pass
+        self._producer.delete()
 
     def setup_consumer(self, cons_id, group, msg_type, auto_ack, offset):
         """Setup the consumer."""
