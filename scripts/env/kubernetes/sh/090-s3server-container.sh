@@ -51,6 +51,10 @@ while ! curl -I "http://$IO_POD_IP:28071"; do
   echo "S3 is not yet listening on the port, re-trying..."
   echo "(hit CTRL-C if it's taking too long)"
   echo
+  echo "Note: as of 2021-09-23: known issue clovis may freeze. work around --"
+  echo "in separate console on the same VM - kill s3servers:"
+  echo "ps ax | grep s3startsy | grep -v grep | awk '{print \$1}' | xargs kill -9"
+  echo
   set -x
   sleep 2
 done
