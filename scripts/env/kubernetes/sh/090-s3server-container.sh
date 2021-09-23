@@ -55,7 +55,10 @@ while ! curl -I "http://$IO_POD_IP:28071"; do
   echo "in separate console on the same VM - kill s3servers:"
   echo "ps ax | grep s3startsy | grep -v grep | awk '{print \$1}' | xargs kill -9"
   echo
+  echo "NOTE -- kill -9 solution, you may need to wait for a minute till it works."
+  echo
   set -x
+  date
   sleep 2
 done
 
