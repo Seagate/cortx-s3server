@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: cortx-ctl-pod
+  name: s3-bg-producer-pod
   annotations:
     "cni.projectcalico.org/ipAddrs": "[\"192.168.134.12\"]"
 spec:

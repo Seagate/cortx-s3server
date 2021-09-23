@@ -20,15 +20,15 @@
 
 set -e -x
 
-kubectl delete -f k8s-blueprints/cortx-io-pod.yaml
-kubectl apply -f k8s-blueprints/cortx-io-pod.yaml
+kubectl delete -f k8s-blueprints/io-pod.yaml
+kubectl apply -f k8s-blueprints/io-pod.yaml
 
 set +x
-while [ `kubectl get pod | grep cortx-io-pod | grep Running | wc -l` -lt 1 ]; do
+while [ `kubectl get pod | grep io-pod | grep Running | wc -l` -lt 1 ]; do
   echo
-  kubectl get pod | grep 'NAME\|cortx-io-pod'
+  kubectl get pod | grep 'NAME\|io-pod'
   echo
-  echo cortx-io-pod is not yet in Running state, re-checking ...
+  echo io-pod is not yet in Running state, re-checking ...
   echo '(hit CTRL-C if it is taking too long)'
   sleep 5
 done

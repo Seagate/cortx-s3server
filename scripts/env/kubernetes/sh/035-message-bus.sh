@@ -24,7 +24,7 @@ source ./config.sh
 source ./env.sh
 source ./sh/functions.sh
 
-add_separator "Creating Message Bus POD"
+add_separator "Creating Message Bus PODs"
 
 # download images using docker -- 'kubectl init' is not able to apply user
 # credentials, and so is suffering from rate limits.
@@ -54,4 +54,4 @@ echo "KAFKA_EXTERNAL_IP='$SVC_EXTERNAL_IP'" >> env.sh
 
 set +x
 
-add_separator SUCCESSFULLY CREATED OPENLDAP POD
+add_separator SUCCESSFULLY CREATED OPENLDAP PODS

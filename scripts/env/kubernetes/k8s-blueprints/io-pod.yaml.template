@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: cortx-io-pod
+  name: io-pod
   annotations:
     "cni.projectcalico.org/ipAddrs": "[\"192.168.134.219\"]"
 spec:
@@ -43,9 +43,10 @@ spec:
         - name: var-data-cortx
           mountPath: /var/data/cortx
       command:
-        - "/opt/seagate/cortx/auth/startauth.sh"
+         - "/opt/seagate/cortx/s3/bin/s3_start"
       args:
-        - "/etc/cortx/s3"
+         - "--service"
+         - "s3authserver"
     - name: hare-motr
       image: <motr-cortx-all-image>
       imagePullPolicy: Never
@@ -85,7 +86,7 @@ spec:
           devicePath: /dev/sdm
       command:
          - "/var/data/cortx/cortx-s3server/scripts/env/kubernetes/motr-hare/container-entry-point.sh"
-    - name: s3server
+    - name: s3server-1
       image: <s3-cortx-all-image>
       imagePullPolicy: Never
       volumeMounts:
@@ -108,7 +109,7 @@ spec:
 #        - "s3server"
 #        - "--index"
 #        - "1"
-    - name: s3-bg-consumer
+    - name: s3server-2
       image: <s3-cortx-all-image>
       imagePullPolicy: Never
       volumeMounts:
@@ -119,16 +120,39 @@ spec:
         - name: var-data-cortx
           mountPath: /var/data/cortx
       command:
-        - "/bin/bash"
-        - "-c"
-        - "--"
+         - "/bin/bash"
+         - "-c"
+         - "--"
       args:
-        - "sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.sh"
+         - "cat /etc/cortx/s3/machine-id > /etc/machine-id && /opt/seagate/cortx/s3/bin/s3_start --service s3server --index 2"
 #     command:
-#       - "/opt/seagate/cortx/s3/bin/s3_start"
+#        - "/opt/seagate/cortx/s3/bin/s3_start"
 #     args:
-#       - "--service"
-#       - "s3bgconsumer"
+#        - "--service"
+#        - "s3server"
+#        - "--index"
+#        - "2"
+    - name: s3-bg-consumer
+      image: <s3-cortx-all-image>
+      imagePullPolicy: Never
+      volumeMounts:
+        - name: etc-cortx
+          mountPath: /etc/cortx
+        - name: var-log-cortx
+          mountPath: /var/log/cortx
+        - name: var-data-cortx
+          mountPath: /var/data/cortx
+#     command:
+#       - "/bin/bash"
+#       - "-c"
+#       - "--"
+#     args:
+#       - "sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.sh"
+      command:
+        - "/opt/seagate/cortx/s3/bin/s3_start"
+      args:
+        - "--service"
+        - "s3bgconsumer"
   volumes:
       - name: etc-cortx
         persistentVolumeClaim:

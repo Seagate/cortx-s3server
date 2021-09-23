@@ -87,13 +87,13 @@ cp haproxy/stx.pem     /etc/cortx/s3/stx/stx.pem
 # authserver #
 ##############
 
-mkdir -p /etc/cortx/s3/auth/resources
-cp -r "$s3_repo_dir"/auth/resources/* /etc/cortx/s3/auth/resources/
+mkdir -p /etc/cortx/auth/resources
+cp -r "$s3_repo_dir"/auth/resources/* /etc/cortx/auth/resources/
 
-cp /etc/cortx/s3/auth/resources/authserver.properties.sample \
-   /etc/cortx/s3/auth/resources/authserver.properties
-cp /etc/cortx/s3/auth/resources/keystore.properties.sample \
-   /etc/cortx/s3/auth/resources/keystore.properties
+cp /etc/cortx/auth/resources/authserver.properties.sample \
+   /etc/cortx/auth/resources/authserver.properties
+cp /etc/cortx/auth/resources/keystore.properties.sample \
+   /etc/cortx/auth/resources/keystore.properties
 
 # Update needed properties in Auth config
 
@@ -107,7 +107,7 @@ encrypted_pwd=`kube_run  s3cipher encrypt --data "ldapadmin" --key "$const_key"`
 
 sed -i "s|^ldapLoginPW *=.*|ldapLoginPW=$encrypted_pwd|;
         s|^ldapHost *=.*|ldapHost=$OPENLDAP_SVC|" \
-    /etc/cortx/s3/auth/resources/authserver.properties
+    /etc/cortx/auth/resources/authserver.properties
 
 #############
 # S3 server #
@@ -118,8 +118,13 @@ cp "$s3_repo_dir"/s3config.release.yaml.sample \
    /etc/cortx/s3/conf/s3config.yaml
 sed -i \
   -e 's/S3_SERVER_BGDELETE_BIND_ADDR *:.*/S3_SERVER_BGDELETE_BIND_ADDR: 0.0.0.0/' \
+  -e 's/S3_MOTR_RECONNECT_RETRY_COUNT *:.*/S3_MOTR_RECONNECT_RETRY_COUNT: 30/' \
   /etc/cortx/s3/conf/s3config.yaml
 cat s3server/s3server-1 > /etc/cortx/s3/s3server-1
+cat s3server/s3server-2 > /etc/cortx/s3/s3server-2
+cat s3server/s3server-3 > /etc/cortx/s3/s3server-3
+cat s3server/s3server-4 > /etc/cortx/s3/s3server-4
+cat s3server/s3server-5 > /etc/cortx/s3/s3server-5
 
 
 ###############

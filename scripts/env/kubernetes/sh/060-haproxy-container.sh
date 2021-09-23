@@ -29,7 +29,7 @@ set -x # print each statement before execution
 add_separator CONFIGURING HAPROXY CONTAINER.
 
 kube_run() {
-  kubectl exec -i cortx-io-pod -c haproxy -- "$@"
+  kubectl exec -i io-pod -c haproxy -- "$@"
 }
 
 ## Find haproxy version:

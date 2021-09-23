@@ -26,7 +26,7 @@ set -e -x
 ./sh/040-openldap.sh
 ./sh/045-prepare-s3-containers-configs.sh
 ./sh/050-create-io-pod.sh
-./sh/055-bg-delete-pod.sh
+./sh/055-bg-producer-pod.sh
 ./sh/060-haproxy-container.sh
 ./sh/070-authserver-container.sh
 ./sh/080-motr-hare-container.sh

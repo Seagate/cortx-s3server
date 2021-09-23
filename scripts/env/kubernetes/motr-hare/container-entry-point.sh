@@ -31,7 +31,7 @@ sed -i '103,107 s/^/#/'                                  /usr/libexec/cortx-motr
 sed -i '243,243 s/^/#/'                                  /usr/libexec/cortx-motr/motr-server
 sed -i '209 i fi'                                        /usr/libexec/cortx-motr/motr-server
 sed -i '209 i stob_type="-T AD"'                         /usr/libexec/cortx-motr/motr-server
-sed -i '209 i if [[ "$svc_tag" = "0xc" ]] ; then'        /usr/libexec/cortx-motr/motr-server
+sed -i '209 i if [[ "$svc_tag" = "0xa" ]] ; then'        /usr/libexec/cortx-motr/motr-server
 sed -i '209 i svc_tag=$(echo $service | cut -d ":" -f2)' /usr/libexec/cortx-motr/motr-server
 
 mkdir /etc/motr
@@ -39,33 +39,35 @@ mkdir /etc/motr
 src_dir=/var/data/cortx/cortx-s3server/scripts/env/kubernetes/motr-hare/
 
 cp "$src_dir"/confd.xc                   /etc/motr/confd.xc
-cp "$src_dir"/m0d-0x7200000000000001-0x6 /etc/sysconfig/m0d-0x7200000000000001:0x6
-cp "$src_dir"/m0d-0x7200000000000001-0x9 /etc/sysconfig/m0d-0x7200000000000001:0x9
-cp "$src_dir"/m0d-0x7200000000000001-0xc /etc/sysconfig/m0d-0x7200000000000001:0xc
+cp "$src_dir"/m0d-0x7200000000000001-0x1a /etc/sysconfig/m0d-0x7200000000000001:0x1a
+cp "$src_dir"/m0d-0x7200000000000001-0xa /etc/sysconfig/m0d-0x7200000000000001:0xa
+cp "$src_dir"/m0d-0x7200000000000001-0xd /etc/sysconfig/m0d-0x7200000000000001:0xd
+cp "$src_dir"/m0d-0x7200000000000001-0x7 /etc/sysconfig/m0d-0x7200000000000001:0x7
 cp "$src_dir"/motr-deploy                /root/motr-deploy
 
 chmod +x /root/motr-deploy
 
 m0setup -Mv -p "/dev/sd[b-m]" --no-m0t1fs || true
   # ignoring error code, it's expected to fail due to D-Bus issue
+sleep 5
+/root/motr-deploy -s 0x7200000000000001:0x7 &>/var/log/cortx/motr-0x7.log &
+sleep 5
+
+/root/motr-deploy -s 0x7200000000000001:0xa &>/var/log/cortx/motr-0xa.log &
 
 sleep 5
 
-/root/motr-deploy -s 0x7200000000000001:0x6 &>/var/log/cortx/motr-0x6.log &
-
-sleep 5
-
-/root/motr-deploy -s 0x7200000000000001:0x9 &>/var/log/cortx/motr-0x9.log &
+/root/motr-deploy -s 0x7200000000000001:0xd &>/var/log/cortx/motr-0xd.log &
   # Note: (confd) this service will throw rc = -111 error after start
   # and this errors will disappear once below command ioservice is started:
 
 sleep 5
 
-/root/motr-deploy -s 0x7200000000000001:0xc &>/var/log/cortx/motr-0xc.log &
+/root/motr-deploy -s 0x7200000000000001:0x1a &>/var/log/cortx/motr-0x1a.log &
 
 sleep 5
 
-if [ "`ps ax | grep /usr/bin/m0d | grep -v grep | wc -l`" -ne 3 ]; then
+if [ "`ps ax | grep /usr/bin/m0d | grep -v grep | wc -l`" -ne 4 ]; then
   echo
   ps ax
   echo

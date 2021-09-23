@@ -26,15 +26,12 @@ source ./sh/functions.sh
 
 set -x # print each statement before execution
 
-add_separator CONFIGURING s3server CONTAINER.
+add_separator Checking health of s3server container.
 
 kube_run() {
-  kubectl exec -i cortx-io-pod -c s3server -- "$@"
+  kubectl exec -i io-pod -c s3server-1 -- "$@"
 }
 
-#kube_run sh -c 'echo "211072f61c4b4949839c624d6ed95115" > /etc/machine-id'
-
-#kube_run sh -c '/opt/seagate/cortx/s3/bin/s3_start --service s3server --index 1 &>/root/entry-point.log &'
 
 add_separator Waiting for Motr to become available
 
@@ -42,24 +39,36 @@ while sleep 2; do
   if [ -f /var/data/cortx/motr-hare-is-up.txt ]; then
     break
   fi
-  kubectl get pod cortx-io-pod
-  kubectl exec -i cortx-io-pod -c hare-motr -- ps ax | grep m0d || true
+  kubectl get pod io-pod
+  kubectl exec -i io-pod -c hare-motr -- ps ax | grep m0d || true
 done
 
-add_separator Checking if S3 is up
+add_separator Checking if S3 is responsive
 
-sleep 10
+while ! curl -I "http://$IO_POD_IP:28071"; do
+  set +x
+  echo
+  echo "S3 is not yet listening on the port, re-trying..."
+  echo "(hit CTRL-C if it's taking too long)"
+  echo
+  set -x
+  sleep 2
+done
 
-set +x
-if [ "`kube_run ps ax | grep 's3server --s3pidfile' | wc -l`" -ne 1 ]; then
-  echo
-  kubectl logs cortx-io-pod s3server
-  echo
-  kube_run ps ax
-  echo
-  add_separator FAILED.  S3 Server does not seem to be running properly.
-  false
-fi
-set -x
+# add_separator Checking if S3 is up
+# 
+# sleep 10
+# 
+# set +x
+# if [ "`kube_run ps ax | grep 's3server --s3pidfile' | wc -l`" -ne 1 ]; then
+#   echo
+#   kubectl logs io-pod s3server-1
+#   echo
+#   kube_run ps ax
+#   echo
+#   add_separator FAILED.  S3 Server does not seem to be running properly.
+#   false
+# fi
+# set -x
 
-add_separator SUCCESSFULLY CONFIGURED s3server CONTAINER.
+add_separator S3SERVER CONTAINER IS HEALTHY.

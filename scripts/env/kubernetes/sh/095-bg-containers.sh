@@ -31,13 +31,13 @@ set -x # print each statement before execution
 add_separator Validating BG consumer.
 
 kube_run() {
-  kubectl exec -i cortx-io-pod -c s3-bg-consumer -- "$@"
+  kubectl exec -i io-pod -c s3-bg-consumer -- "$@"
 }
 
 set +x
 if [ "`kube_run ps ax | grep '/opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer' | wc -l`" -ne 1 ]; then
   echo
-  kubectl logs cortx-io-pod s3-bg-consumer
+  kubectl logs io-pod s3-bg-consumer
   echo
   kube_run ps ax
   echo
@@ -53,13 +53,13 @@ add_separator SUCCESS - BG consumer up and running.
 add_separator Validating BG producer.
 
 kube_run() {
-  kubectl exec -i cortx-ctl-pod -c s3-bg-producer -- "$@"
+  kubectl exec -i s3-bg-producer-pod -c s3-bg-producer -- "$@"
 }
 
 set +x
 if [ "`kube_run ps ax | grep '/opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer' | wc -l`" -ne 1 ]; then
   echo
-  kubectl logs cortx-ctl-pod s3-bg-producer
+  kubectl logs s3-bg-producer-pod s3-bg-producer
   echo
   kube_run ps ax
   echo

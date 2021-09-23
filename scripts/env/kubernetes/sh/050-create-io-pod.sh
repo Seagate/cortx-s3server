@@ -31,13 +31,13 @@ add_separator Creating IO POD and containers.
 sysctl -w vm.max_map_count=30000000
 
 # update image link for containers
-cat k8s-blueprints/cortx-io-pod.yaml.template \
+cat k8s-blueprints/io-pod.yaml.template \
   | sed "s,<s3-cortx-all-image>,ghcr.io/seagate/cortx-all:${S3_CORTX_ALL_IMAGE_TAG}," \
   | sed "s,<motr-cortx-all-image>,ghcr.io/seagate/cortx-all:${MOTR_CORTX_ALL_IMAGE_TAG}," \
-  > k8s-blueprints/cortx-io-pod.yaml
+  > k8s-blueprints/io-pod.yaml
 
 # pull the images
-pull_images_for_pod k8s-blueprints/cortx-io-pod.yaml
+pull_images_for_pod k8s-blueprints/io-pod.yaml
 
 # create the POD and all whats needed
 # moved to common k8s definitions
@@ -47,20 +47,20 @@ pull_images_for_pod k8s-blueprints/cortx-io-pod.yaml
 # kubectl apply -f k8s-blueprints/var-motr-pvc.yaml
 # kubectl apply -f k8s-blueprints/s3-pv.yaml
 # kubectl apply -f k8s-blueprints/s3-pvc.yaml
-kubectl apply -f k8s-blueprints/cortx-io-pod.yaml
+kubectl apply -f k8s-blueprints/io-pod.yaml
 
 set +x
-while [ `kubectl get pod | grep cortx-io-pod | grep Running | wc -l` -lt 1 ]; do
+while [ `kubectl get pod | grep io-pod | grep Running | wc -l` -lt 1 ]; do
   echo
-  kubectl get pod | grep 'NAME\|cortx-io-pod'
+  kubectl get pod | grep 'NAME\|io-pod'
   echo
-  echo cortx-io-pod is not yet in Running state, re-checking ...
+  echo io-pod is not yet in Running state, re-checking ...
   echo '(hit CTRL-C if it is taking too long)'
   sleep 5
 done
 set -x
 
-set_var_POD_IP cortx-io-pod
-echo "CORTX_IO_POD_IP='$POD_IP'" >> env.sh
+set_var_POD_IP io-pod
+echo "IO_POD_IP='$POD_IP'" >> env.sh
 
 add_separator SUCCESSFULLY CREATED IO POD AND CONTAINERS.

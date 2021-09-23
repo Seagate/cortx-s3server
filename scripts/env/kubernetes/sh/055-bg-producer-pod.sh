@@ -26,32 +26,27 @@ source ./sh/functions.sh
 
 set -x # print each statement before execution
 
-add_separator Creating IO POD and containers.
+add_separator Creating BG POD.
 
-sysctl -w vm.max_map_count=30000000
-
-# update image link for containers
-cat k8s-blueprints/cortx-ctl-pod.yaml.template \
-  | sed "s,<s3-cortx-all-image>,ghcr.io/seagate/cortx-all:${S3_CORTX_ALL_IMAGE_TAG}," \
-  > k8s-blueprints/cortx-ctl-pod.yaml
+# update image link for bgdelete-producer pod
+cat k8s-blueprints/s3-bg-producer-pod.yaml.template \
+| sed "s,<s3-cortx-all-image>,ghcr.io/seagate/cortx-all:${S3_CORTX_ALL_IMAGE_TAG}," \
+> k8s-blueprints/s3-bg-producer-pod.yaml
 
 # pull the images
-pull_images_for_pod k8s-blueprints/cortx-ctl-pod.yaml
+pull_images_for_pod k8s-blueprints/s3-bg-producer-pod.yaml
 
-kubectl apply -f k8s-blueprints/cortx-ctl-pod.yaml
+kubectl apply -f k8s-blueprints/s3-bg-producer-pod.yaml
 
 set +x
-while [ `kubectl get pod | grep cortx-ctl-pod | grep Running | wc -l` -lt 1 ]; do
+while [ `kubectl get pod | grep s3-bg-producer-pod | grep Running | wc -l` -lt 1 ]; do
   echo
-  kubectl get pod | grep 'NAME\|cortx-ctl-pod'
+  kubectl get pod | grep 'NAME\|s3-bg-producer-pod'
   echo
-  echo cortx-ctl-pod is not yet in Running state, re-checking ...
+  echo s3-bg-producer-pod is not yet in Running state, re-checking ...
   echo '(hit CTRL-C if it is taking too long)'
   sleep 5
 done
 set -x
 
-set_var_POD_IP cortx-ctl-pod
-echo "CORTX_CTL_POD_IP='$POD_IP'" >> env.sh
-
-add_separator SUCCESSFULLY CREATED IO POD AND CONTAINERS.
+add_separator SUCCESSFULLY CREATED BG POD.

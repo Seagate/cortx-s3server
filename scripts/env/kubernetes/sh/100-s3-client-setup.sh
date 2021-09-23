@@ -42,10 +42,10 @@ fi
 # Add POD IP address to /etc/hosts file, for s3.seagate.com and iam.seagate.com
 sed -i \
   -e 's,\b\(dummy\.\)*\(iam\|s3\)\.seagate\.com\b,dummy.\2.seagate.com,g' \
-  -e "/$CORTX_IO_POD_IP/d" \
+  -e "/$IO_POD_IP/d" \
   /etc/hosts
 
-echo "$CORTX_IO_POD_IP s3.seagate.com iam.seagate.com" >> /etc/hosts
+echo "$IO_POD_IP s3.seagate.com iam.seagate.com" >> /etc/hosts
 
 mkdir -p /var/log/seagate/auth/
 
