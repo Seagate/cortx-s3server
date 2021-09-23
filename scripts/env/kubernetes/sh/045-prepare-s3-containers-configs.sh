@@ -134,6 +134,6 @@ set_bg_config_param  purge_sleep     1
 # Destroy SHIM POD #
 ####################
 
-kubectl delete -f k8s-blueprints/shim-pod.yaml
+# kubectl delete -f k8s-blueprints/shim-pod.yaml
 
 add_separator SUCCESSFULLY CREATED CONFIGS FOR S3 CONTAINERS.
