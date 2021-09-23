@@ -108,7 +108,8 @@ ADMIN_USERS_FILE=$(mktemp XXXX.ldif)
 cp -f "$INSTALLDIR"/iam-admin.ldif "$ADMIN_USERS_FILE"
 sed -i "$EXPR" "$ADMIN_USERS_FILE"
 
-chkconfig slapd on
+# Commenting this since chkconfig uses systemd utility which is not available in kubernetes env.
+#chkconfig slapd on
 
 # add S3 schema
 ldapadd -x -D "cn=admin,cn=config" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/cn\=\{1\}s3user.ldif -H ldapi:///
