@@ -75,7 +75,7 @@ class ConfigCmd(SetupCmd):
     # lock and file descriptor released automatically here.
     self.logger.info(f'released the lock at {lockfile}.')
 
-  def process_under_flock(self, configure_only_openldap = False, configure_only_haproxy = False):
+  def process_under_flock(self, skip_haproxy = False):
     """Main processing function."""
     self.logger.info(f"Processing phase = {self.name}, config = {self.url}, service = {self.services}")
     self.logger.info("validations started")
@@ -121,15 +121,12 @@ class ConfigCmd(SetupCmd):
       self.create_auth_jks_password()
       self.logger.info('create auth jks password completed')
 
-      if configure_only_openldap == True:
+      if(self.services is None or 'openldap' in self.services):
         # Configure openldap only
-        self.configure_openldap()
-      elif configure_only_haproxy == True:
+        self.configure_s3_schema()
+
+      if skip_haproxy == False:
         # Configure haproxy only
-        self.configure_haproxy()
-      else:
-        # Configure both openldap and haproxy
-        self.configure_openldap()
         self.configure_haproxy()
 
       # create topic for background delete
@@ -149,6 +146,7 @@ class ConfigCmd(SetupCmd):
       self.logger.info("create background delete account completed")
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}')
+
 
   def get_endpoint(self, confstore_key, expected_token,  endpoint_type):
     """1.Fetch confstore value from given key i.e. confstore_key
@@ -234,44 +232,34 @@ class ConfigCmd(SetupCmd):
     storage_set_count = self.get_confvalue(self.get_confkey(
         'CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY').replace("cluster-id", self.cluster_id))
 
+  def configure_s3_schema(self):
+    self.logger.info('openldap s3 configuration started')
+    storage_set_count = self.get_confvalue(self.get_confkey(
+        'CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY').replace("cluster-id", self.cluster_id))
     index = 0
     while index < int(storage_set_count):
-      server_nodes_list = self.get_confkey(
-        'CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("cluster-id", self.cluster_id).replace("storage-set-count", str(index))
-      server_nodes_list = self.get_confvalue(server_nodes_list)
+      server_nodes_list_key = self.get_confkey('CONFIG>CONFSTORE_S3_OPENLDAP_SERVERS')
+      server_nodes_list = self.get_confvalue(server_nodes_list_key)
       if type(server_nodes_list) is str:
         # list is stored as string in the confstore file
         server_nodes_list = literal_eval(server_nodes_list)
-
-      if len(server_nodes_list) > 1:
-        self.logger.info(f'Setting ldap-replication for storage_set:{index}')
-
-        Path(self.s3_tmp_dir).mkdir(parents=True, exist_ok=True)
-        ldap_hosts_list_file = os.path.join(self.s3_tmp_dir, "ldap_hosts_list_file.txt")
-        with open(ldap_hosts_list_file, "w") as f:
-          for node_machine_id in server_nodes_list:
-            private_fqdn = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_PRIVATE_FQDN_KEY').replace('machine-id', node_machine_id))
-            f.write(f'{private_fqdn}\n')
-            self.logger.info(f'output of ldap_hosts_list_file.txt: {private_fqdn}')
-
-        cmd = ['/opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh',
-             '-h',
-             ldap_hosts_list_file,
-             '-p',
-             f'{self.rootdn_passwd}']
-        handler = SimpleProcess(cmd)
-        stdout, stderr, retcode = handler.run()
-        self.logger.info(f'output of setupReplicationScript.sh: {stdout}')
-        os.remove(ldap_hosts_list_file)
-
-        if retcode != 0:
-          self.logger.error(f'error of setupReplicationScript.sh: {stderr}')
-          raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
-        else:
-          self.logger.warning(f'warning of setupReplicationScript.sh: {stderr}')
+      for node_machine_id in server_nodes_list:
+          cmd = ['/opt/seagate/cortx/s3/install/ldap/s3_setup_ldap.sh',
+                 '--hostname',
+                 f'{node_machine_id}',
+                 '--ldapadminpasswd',
+                 f'{self.ldap_passwd}',
+                 '--rootdnpasswd',
+                 f'{self.rootdn_passwd}']
+          handler = SimpleProcess(cmd)
+          stdout, stderr, retcode = handler.run()
+          self.logger.info(f'output of setup_ldap.sh: {stdout}')
+          if retcode != 0:
+            self.logger.error(f'error of setup_ldap.sh: {stderr} {node_machine_id}')
+            raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
+          else:
+            self.logger.warning(f'warning of setup_ldap.sh: {stderr} {node_machine_id}')
       index += 1
-    # TODO: set replication across storage-sets
-    self.logger.info('Open ldap replication configuration completed')
 
   def create_topic(self, admin_id: str, topic_name:str, partitions: int):
     """create topic for background delete services."""
@@ -482,6 +470,7 @@ class ConfigCmd(SetupCmd):
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logFilePath", self.update_auth_log_dir_path)
     self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_BASE_CONFIG_PATH", "logConfigFile", self.update_auth_log4j_config_file_path)
     self.update_auth_log4j_log_dir_path()
+    self.update_config_value("S3_AUTHSERVER_CONFIG_FILE", "properties", "CONFIG>CONFSTORE_LDAPADMIN_PASSWD_KEY", "ldapLoginPW")
     self.logger.info("Update s3 authserver config file completed")
 
   def get_endpoint_for_scheme(self, value_to_update, scheme):
