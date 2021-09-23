@@ -43,8 +43,8 @@ CONFIG:
 
   CONFSTORE_ROOTDN_USER_KEY: "cortx>external>openldap>admin" #M admin (Usedby : s3_deployment)
   CONFSTORE_ROOTDN_PASSWD_KEY: "cortx>external>openldap>secret" #M Encrypted string (Usedby : s3_deployment)
-  CONFSTORE_S3_OPENLDAP_ENDPOINTS : "cortx>external>openldap>endpoints" #M (Usedby : s3_deployment, auth)
-  CONFSTORE_S3_OPENLDAP_SERVERS: "cortx>external>openldap>servers" #M (Usedby : s3_deployment)
+  CONFSTORE_S3_OPENLDAP_ENDPOINTS : "cortx>external>openldap>endpoints[0]" #M (Usedby : s3_deployment, auth)
+  CONFSTORE_S3_OPENLDAP_SERVERS: "cortx>external>openldap>servers[0]" #M (Usedby : s3_deployment)
   CONFSTORE_S3_OPENLDAP_BASE_DN: "cortx>external>openldap>base_dn" #O default - dc=seagate,dc=com (Usedby : s3_deployment)
 
   CONFSTORE_LDAPADMIN_USER_KEY: "cortx>s3>auth>admin" #O default - sgiamadmin (Usedby : s3_deployment, auth)
@@ -53,11 +53,11 @@ CONFIG:
   CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST : "cortx>s3>io_max_units" #O default - VM :8 , h/w : 32 (Usedby : s3_deployment, s3)
   CONFSTORE_S3INSTANCES_KEY: "cortx>s3>service_instances" #O default - 1 (change to 5 once we have stable deployment) (Usedby : s3_deployment, s3)
   
-  CONFSTORE_S3_IAM_ENDPOINTS: "cortx>s3>iam>endpoints" #M (Usedby : s3_deployment)
+  CONFSTORE_S3_IAM_ENDPOINTS: "cortx>s3>iam>endpoints[0]" #M (Usedby : s3_deployment)
   
-  CONFSTORE_S3_DATA_ENDPOINTS: "cortx>s3>data>endpoints" #M (Usedby : s3_deployment, bgproducer)
+  CONFSTORE_S3_DATA_ENDPOINTS: "cortx>s3>data>endpoints[0]" #M (Usedby : s3_deployment, bgproducer)
 
-  CONFSTORE_S3_INTERNAL_ENDPOINTS: "cortx>s3>internal>endpoints" #M (Usedby : s3_deployment, bgproducer)
+  CONFSTORE_S3_INTERNAL_ENDPOINTS: "cortx>s3>internal>endpoints[0]" #M (Usedby : s3_deployment, bgproducer)
   
   CONFSTORE_CLUSTER_ID_KEY: "node>machine-id>cluster_id" #M (Usedby: all)
   CONFSTORE_HOSTNAME_KEY: "node>machine-id>hostname" #M (Usedby: s3_deployment)
@@ -65,7 +65,7 @@ CONFIG:
 
   CONFSTORE_S3_CLUSTER_ID: "cluster>id" #M (Usedby: None)
   CONFSTORE_STORAGE_SET_COUNT_KEY: "cluster>storage_set_count" #M (Usedby: s3_deployment)
-  CONFSTORE_STORAGE_SET_SERVER_NODES_KEY: "cluster>storage_set[storage-set-count]>nodes"  #M (Usedby: s3_deployment)
+  CONFSTORE_STORAGE_SET_SERVER_NODES_KEY: "cluster>storage_set[storage-set-count]>nodes[0]"  #M (Usedby: s3_deployment)
   CONFSTORE_BASE_CONFIG_PATH: "cortx>software>storage>config"  #O default - /etc/cortx (Usedby: s3_deployment)
 
 
