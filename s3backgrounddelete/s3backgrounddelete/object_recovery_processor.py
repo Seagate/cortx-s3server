@@ -106,9 +106,11 @@ class ObjectRecoveryProcessor(object):
         if not os.path.isdir(self._logger_directory):
             try:
                 os.mkdir(self._logger_directory)
-            except BaseException:
-                self.logger.error(
-                    "Unable to create log directory at " + self._logger_directory)
+            except OSError as e:
+                if e.errno == errno.EEXIST:
+                    pass
+                else:
+                    raise Exception("Consumer Logger Could not be created")
 
 if __name__ == "__main__":
     PROCESSOR = ObjectRecoveryProcessor()
