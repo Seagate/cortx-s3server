@@ -36,11 +36,6 @@ cat k8s-blueprints/cortx-io-pod.yaml.template \
   | sed "s,<motr-cortx-all-image>,ghcr.io/seagate/cortx-all:${MOTR_CORTX_ALL_IMAGE_TAG}," \
   > k8s-blueprints/cortx-io-pod.yaml
 
-# update image link for bgdelete-producer pod
-cat k8s-blueprints/s3-bg-producer-pod.yaml.template \
-| sed "s,<s3-cortx-all-image>,ghcr.io/seagate/cortx-all:${S3_CORTX_ALL_IMAGE_TAG}," \
-> k8s-blueprints/s3-bg-producer-pod.yaml
-
 # pull the images
 cat k8s-blueprints/cortx-io-pod.yaml | grep 'image:' | awk '{print $2}' | xargs -n1 docker pull
 
