@@ -309,6 +309,15 @@ class ConfigCmd(SetupCmd):
     """Configure haproxy service."""
     self.logger.info('haproxy configuration started')
     try:
+      # Create sysconfig file for haproxy.
+      sysconfig_file = os.path.join(self.base_config_file_path, 's3/sysconfig/haproxy')
+      os.makedirs(os.path.dirname(sysconfig_file), exist_ok=True)
+      with open(sysconfig_file, 'w') as sysconfig:
+        log_file = os.path.join(self.base_log_file_path, 's3', self.machine_id, 'haproxy/haproxy.log')
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
+        sysconfig.write(f"LOG_FILE='{log_file}'\n")
+
+      # Create main config file for haproxy.
       S3HaproxyConfig(self.url).process()
       if "K8" != str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE')):
         # reload haproxy service
