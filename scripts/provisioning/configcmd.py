@@ -443,7 +443,9 @@ class ConfigCmd(SetupCmd):
     return result
 
   def update_s3_bgdelete_bind_port(self, value_to_update, additional_param):
-    endpoint = self.get_endpoint_for_scheme(value_to_update)
+    if isinstance(value_to_update, str):
+      value_to_update = literal_eval(value_to_update)
+    endpoint = self.get_endpoint_for_scheme(value_to_update, "http")
     if 'port' not in endpoint:
       raise S3PROVError(f"BG Delete endpoint {value_to_update} does not have port specified.")
     if ("K8" == str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
@@ -578,7 +580,8 @@ class ConfigCmd(SetupCmd):
     self.logger.info("Update s3 bgdelete config file completed")
 
   def update_bgdelete_producer_endpoint(self, value_to_update, additional_param):
-    value_to_update = literal_eval(value_to_update)
+    if isinstance(value_to_update, str):
+      value_to_update = literal_eval(value_to_update)
     endpoint = self.get_endpoint_for_scheme(value_to_update, "http")
     if endpoint is None:
       raise S3PROVError(f"BG Producer endpoint for scheme 'http' is not specified")
