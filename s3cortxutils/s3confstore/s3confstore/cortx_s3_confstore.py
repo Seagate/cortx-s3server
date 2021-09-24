@@ -60,7 +60,7 @@ class S3CortxConfStore:
     # TODO recurse flag will be deprecated in future.
     # Do changes in all places wherever its applicable
     # refer validate_config_files() and phase_keys_validate() in setupcmd.py
-    return Conf.get_keys(self.default_index, recurse)
+    return Conf.get_keys(self.default_index, recurse = recurse)
 
   def delete_key(self, key: str, save: bool = False):
     """Deletes the specified key."""
