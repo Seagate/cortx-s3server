@@ -102,6 +102,14 @@ sed -i \
   /etc/cortx/s3/conf/s3config.yaml
 
 # 'manual' copy of S3 FID files, until we integrate with hare - FIXME
+mkdir -p /etc/cortx/s3/sysconfig
+cat s3server/s3server-1 > /etc/cortx/s3/sysconfig/s3server-1
+cat s3server/s3server-2 > /etc/cortx/s3/sysconfig/s3server-2
+cat s3server/s3server-3 > /etc/cortx/s3/sysconfig/s3server-3
+cat s3server/s3server-4 > /etc/cortx/s3/sysconfig/s3server-4
+cat s3server/s3server-5 > /etc/cortx/s3/sysconfig/s3server-5
+
+# copy s3 files at old location, while cortx-all is being rebuilt - FIXME
 cat s3server/s3server-1 > /etc/cortx/s3/s3server-1
 cat s3server/s3server-2 > /etc/cortx/s3/s3server-2
 cat s3server/s3server-3 > /etc/cortx/s3/s3server-3
