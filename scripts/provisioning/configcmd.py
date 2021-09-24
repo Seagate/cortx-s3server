@@ -443,14 +443,10 @@ class ConfigCmd(SetupCmd):
     return result
 
   def update_s3_bgdelete_bind_port(self, value_to_update, additional_param):
-    endpoint = self.parse_endpoint(value_to_update)
+    endpoint = self.get_endpoint_for_scheme(value_to_update)
     if 'port' not in endpoint:
-      #fetching default value from s3_provisioner private
-      default_value = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_S3_BGDELETE_CONSUMER_ENDPOINT')
-      endpoint = self.parse_endpoint(default_value)
-      if 'port' not in endpoint:
-        raise S3PROVError(f"BG Delete endpoint {value_to_update} does not have port specified.")
-    if ("K8" == str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :    
+      raise S3PROVError(f"BG Delete endpoint {value_to_update} does not have port specified.")
+    if ("K8" == str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
       return int(endpoint['port']) -1
     else :
       return int(endpoint['port'])
