@@ -21,6 +21,7 @@
 set -e -x
 
 ./sh/010-install-k8s.sh
+./sh/020-image-build.sh
 ./sh/030-common-k8s-definitions.sh
 ./sh/035-message-bus.sh
 ./sh/040-openldap.sh

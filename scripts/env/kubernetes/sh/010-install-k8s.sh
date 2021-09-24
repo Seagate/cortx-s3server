@@ -27,9 +27,13 @@ source ./sh/functions.sh
 set -x # print each statement before execution
 
 yum install -y yum-utils
-yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+if [ ! -f /etc/yum.repos.d/docker-ce.repo ]; then
+  yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+fi
 yum install -y docker-ce docker-ce-cli containerd.io
-systemctl start docker
+if ! systemctl status docker; then
+  systemctl start docker
+fi
 
 # authorize with docker.com (to fix rate limiting)
 if [ -n "${DOCKER_USER_NAME}${DOCKER_PASSWORD}" ]; then
