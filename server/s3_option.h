@@ -129,7 +129,8 @@ class S3Option {
   int read_ahead_multiple;
   int write_buffer_multiple;
   // When Lib event's write buffer is getting accumulated,
-  // Throttle S3 GET request by 's3_req_throttle_time' seconds
+  // Throttle S3 GET request by 's3_req_throttle_time' milliseconds.
+  // Time is specified in milliseconds
   int s3_req_throttle_time;
   std::string log_level;
   int log_file_max_size_mb;
@@ -222,8 +223,9 @@ class S3Option {
 
     read_ahead_multiple = 1;
     write_buffer_multiple = 1;
-    // Default, throttle S3 Get request for 3 seconds when there is memory issue
-    s3_req_throttle_time = 3;
+    // Default: Throttle S3 Get request for 500 milliseconds when there is
+    // memory issue
+    s3_req_throttle_time = 500;
 
     s3_default_endpoint = "s3.seagate.com";
     s3_region_endpoints.insert("s3-us.seagate.com");

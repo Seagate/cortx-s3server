@@ -315,8 +315,8 @@ int RequestObject::set_start_response_delay_timer(short int delay_in_milli_secs,
     return -1;
   }
   struct timeval tv;
-  tv.tv_usec = delay_in_milli_secs * 1000;
-  tv.tv_sec = 0;
+  tv.tv_sec = delay_in_milli_secs / 1000;
+  tv.tv_usec = (delay_in_milli_secs % 1000) * 1000;
   if (response_delay_timer_event == NULL) {
     // Create timer event
     response_delay_timer_event =

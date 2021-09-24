@@ -390,14 +390,14 @@ void S3GetObjectAction::read_object_data() {
   bool bcontinue = true;
   check_outbuffer_and_mempool_stats(bcontinue);
   if (!bcontinue) {
-    int throttle_for_secs =
+    int throttle_for_millisecs =
         S3Option::get_instance()->get_s3_req_throttle_time();
     // Throttle S3 Get API by adding delay using timer event
-    if (!request->set_start_response_delay_timer(throttle_for_secs,
+    if (!request->set_start_response_delay_timer(throttle_for_millisecs,
                                                  (void*)this)) {
       s3_log(S3_LOG_INFO, request_id,
-             "S3 GET API response will be throttled by: (%d) seconds\n",
-             throttle_for_secs);
+             "S3 GET API response will be throttled by: (%d) millisecs\n",
+             throttle_for_millisecs);
       return;
     } else {
       s3_log(S3_LOG_WARN, request_id,
