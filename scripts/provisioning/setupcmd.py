@@ -355,7 +355,7 @@ class SetupCmd(object):
     # Set argument file confstore
     argument_file_confstore = S3CortxConfStore(arg_file, 'argument_file_index')
     # Extract keys from argument file
-    arg_keys_list = argument_file_confstore.get_all_keys(recurse = False)
+    arg_keys_list = argument_file_confstore.get_all_keys(key_index = False)
     self.logger.info(f"template_list -> {arg_keys_list}")
     # Below algorithm uses tokenization
     # of both yardstick and argument key

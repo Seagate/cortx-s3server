@@ -55,12 +55,11 @@ class S3CortxConfStore:
       # Update the index backend.
       Conf.save(self.default_index)
 
-  def get_all_keys(self, recurse: bool = True):
+  def get_all_keys(self, key_index: bool = True):
     """Get all the key value pairs from confstore."""
-    # TODO recurse flag will be deprecated in future.
     # Do changes in all places wherever its applicable
     # refer validate_config_files() and phase_keys_validate() in setupcmd.py
-    return Conf.get_keys(self.default_index, recurse = recurse)
+    return Conf.get_keys(self.default_index, recurse = True, key_index = key_index)
 
   def delete_key(self, key: str, save: bool = False):
     """Deletes the specified key."""
