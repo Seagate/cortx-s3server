@@ -31,26 +31,26 @@ cortx:
       admin: "admin"
       secret: "gAAAAABgWFRxlYPfMDe3j03DlE1gDxsr8d7MJ5upQ2k8UC2fCU-kSWlf0tb5M3aBXOxNDnT8Rb_M2b0w9UOgw9CQH-fSKzn6sA=="
       endpoints:
-      - "ldap://127.0.0.1:389"
-      - "ssl://127.0.0.1:636"
+      - ldap://127.0.0.1:389
+      - ssl://127.0.0.1:636
       servers:
-      - "localhost"
-      - "localhost"
-      - "localhost"
+      - localhost
+      - localhost
+      - localhost
   s3:
     auth:
       secret: "gAAAAABgWFPz2w_t6IBVictZmgTCgBXn5V-oy2JUVtvZkJvHM5KaaZKXRwtz4YKYieIy8mVKF8PUaZ6WYJEttcsi2KDpLOk9Vg=="
     iam:
       endpoints:
-      - "https://iam.seagate.com:9443"
-      - "http://iam.seagate.com:9080"
+      - https://iam.seagate.com:9443
+      - http://iam.seagate.com:9080
     data:
       endpoints:
-      - "https://s3.seagate.com:443"
-      - "http://s3.seagate.com:80"
+      - https://s3.seagate.com:443
+      - http://s3.seagate.com:80
     internal:
       endpoints:
-      - "http://127.0.0.1:28049"
+      - http://127.0.0.1:28049
   software:
     storage:
       config: "/etc/cortx"
@@ -59,9 +59,9 @@ cluster:
   storage_set_count: "1"
   storage_set:
   - nodes:
-    - "1114a50a6bf6f9c93ebd3c49d07d3fd4"
-    - "1114a50a6bf6f9c93ebd3c49d07d3fd5"
-    - "1114a50a6bf6f9c93ebd3c49d07d3fd6"
+    - 1114a50a6bf6f9c93ebd3c49d07d3fd4
+    - 1114a50a6bf6f9c93ebd3c49d07d3fd5
+    - 1114a50a6bf6f9c93ebd3c49d07d3fd6
 node:
   1114a50a6bf6f9c93ebd3c49d07d3fd4:
     name: "POD-1"

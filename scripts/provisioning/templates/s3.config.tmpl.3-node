@@ -31,26 +31,26 @@ cortx:
       admin: "admin"
       secret: "TMPL_ROOT_SECRET_KEY"
       endpoints:
-      - "ldap://127.0.0.1:389"
-      - "ssl://127.0.0.1:636"
+      - ldap://127.0.0.1:389
+      - ssl://127.0.0.1:636
       servers:
-      - "localhost"
-      - "localhost"
-      - "localhost"
+      - localhost
+      - localhost
+      - localhost
   s3:
     auth:
       secret: "TMPL_SGIAM_SECRET_KEY"
     iam:
       endpoints:
-      - "https://iam.seagate.com:9443"
-      - "http://iam.seagate.com:9080"
+      - https://iam.seagate.com:9443
+      - http://iam.seagate.com:9080
     data:
       endpoints:
-      - "https://s3.seagate.com:443"
-      - "http://s3.seagate.com:80"
+      - https://s3.seagate.com:443
+      - http://s3.seagate.com:80
     internal:
       endpoints:
-      - "http://127.0.0.1:28049"
+      - http://127.0.0.1:28049
   software:
     storage:
       config: "/etc/cortx"
@@ -59,9 +59,9 @@ cluster:
   storage_set_count: "1"
   storage_set:
   - nodes:
-    - "TMPL_MACHINE_ID_1"
-    - "TMPL_MACHINE_ID_2"
-    - "TMPL_MACHINE_ID_3"
+    - TMPL_MACHINE_ID_1
+    - TMPL_MACHINE_ID_2
+    - TMPL_MACHINE_ID_3
 node:
   TMPL_MACHINE_ID_1:
     name: "POD-1"
