@@ -193,9 +193,9 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_WRITE_BUFFER_MULTIPLE");
       write_buffer_multiple =
           s3_option_node["S3_WRITE_BUFFER_MULTIPLE"].as<int>();
-      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_GET_THROTTLE_FOR_SEC");
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_GET_THROTTLE_TIME_MILLISEC");
       s3_req_throttle_time =
-          s3_option_node["S3_GET_THROTTLE_FOR_SEC"].as<int>();
+          s3_option_node["S3_GET_THROTTLE_TIME_MILLISEC"].as<int>();
 
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_DEFAULT_ENDPOINT");
       s3_default_endpoint =
@@ -546,9 +546,9 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_WRITE_BUFFER_MULTIPLE");
       write_buffer_multiple =
           s3_option_node["S3_WRITE_BUFFER_MULTIPLE"].as<int>();
-      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_GET_THROTTLE_FOR_SEC");
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_GET_THROTTLE_TIME_MILLISEC");
       s3_req_throttle_time =
-          s3_option_node["S3_GET_THROTTLE_FOR_SEC"].as<int>();
+          s3_option_node["S3_GET_THROTTLE_TIME_MILLISEC"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MAX_RETRY_COUNT");
       max_retry_count =
           s3_option_node["S3_MAX_RETRY_COUNT"].as<unsigned short>();
@@ -976,7 +976,7 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_READ_AHEAD_MULTIPLE = %d\n", read_ahead_multiple);
   s3_log(S3_LOG_INFO, "", "S3_WRITE_BUFFER_MULTIPLE = %d\n",
          write_buffer_multiple);
-  s3_log(S3_LOG_INFO, "", "S3_GET_THROTTLE_FOR_SEC = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_GET_THROTTLE_TIME_MILLISEC = %d\n",
          s3_req_throttle_time);
   s3_log(S3_LOG_INFO, "", "S3_PERF_LOG_FILENAME = %s\n", perf_log_file.c_str());
   s3_log(S3_LOG_INFO, "", "S3_SERVER_DEFAULT_ENDPOINT = %s\n",

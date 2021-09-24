@@ -305,7 +305,7 @@ void RequestObject::set_start_client_request_read_timeout() {
 }
 
 // Used in throttling S3 Get requests when there is memory issue
-int RequestObject::set_start_response_delay_timer(short int delay_in_seconds,
+int RequestObject::set_start_response_delay_timer(short int delay_in_milli_secs,
                                                   void* action_obj) {
   // Set the timer event when the size of outstanding response buffer
   // to client crosses some threshold, causing memory shortage in S3 server.
@@ -315,8 +315,8 @@ int RequestObject::set_start_response_delay_timer(short int delay_in_seconds,
     return -1;
   }
   struct timeval tv;
-  tv.tv_usec = 0;
-  tv.tv_sec = delay_in_seconds;
+  tv.tv_usec = delay_in_milli_secs * 1000;
+  tv.tv_sec = 0;
   if (response_delay_timer_event == NULL) {
     // Create timer event
     response_delay_timer_event =

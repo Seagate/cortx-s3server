@@ -143,7 +143,7 @@ class RequestObject {
   const char* c_get_file_name();
   virtual bool is_valid_ipaddress(std::string& ipaddr);
   virtual void set_start_client_request_read_timeout();
-  virtual int set_start_response_delay_timer(short int delay_in_seconds,
+  virtual int set_start_response_delay_timer(short int delay_in_milli_secs,
                                              void* action_obj);
   void free_response_delay_timer(bool s3_response_delay_timedout);
   virtual void stop_client_read_timer();
