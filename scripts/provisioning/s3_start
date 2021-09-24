@@ -62,7 +62,7 @@ def main():
       # Add action and remove pass
       if not args.index:
         raise Exception("provide instance id")
-      fid_path = "/etc/cortx/s3/s3server-" + args.index
+      fid_path = "/etc/cortx/s3/sysconfig/s3server-" + args.index
       Fid = get_fid(fid_path)
       os.system(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3config_path} -d")
     elif args.service == 's3authserver':
