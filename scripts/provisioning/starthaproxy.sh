@@ -18,18 +18,17 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-# Copy the SSL certificate file
-#if ! [ -f "/etc/cortx/s3/stx/stx.pem" ]; then
-#  if ! ( mkdir -p /etc/cortx/s3/stx/ && \
-#         cp /opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem /etc/cortx/s3/stx/stx.pem ) \
-#  then
-#    echo "Failed to update SSL cert file /etc/cortx/s3/stx/stx.pem from /etc/ssl/stx/stx.pem."
-#    exit 1
-#  fi
-#fi
+set -e -x
+
+source /etc/cortx/s3/sysconfig/haproxy
+
+if [ -z "$LOG_FILE" ]; then
+  echo 'LOG_FILE is not specified.'
+  exit 1
+fi
+
+# Create log dir
+mkdir -p "$(dirname "$LOG_FILE")"
 
 # Run the configured haproxy
-mkdir -p /var/log/cortx/s3
-/usr/sbin/haproxy -Ws -f /etc/cortx/s3/haproxy.cfg -p /run/haproxy.pid 1>>/var/log/cortx/s3/haproxy.log 2>&1
-      # TODO: logging path has to come from conf store -- to be fixed during
-      # end-to-end logging integration.
+/usr/sbin/haproxy -Ws -f /etc/cortx/s3/haproxy.cfg -p /run/haproxy.pid 1>>"$LOG_FILE" 2>&1
