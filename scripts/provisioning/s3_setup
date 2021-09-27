@@ -28,13 +28,10 @@ import socket
 from logging import handlers
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
-<<<<<<< HEAD
 #Logger details
 s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
 s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
-=======
->>>>>>> a805bacd983465ff87ea490b934dccfbd73f36fd
 def main():
 
   parser = argparse.ArgumentParser("S3server setup command")
