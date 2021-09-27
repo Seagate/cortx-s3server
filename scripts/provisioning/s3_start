@@ -124,8 +124,11 @@ def create_logger_directory():
     if not os.path.isdir(_logger_directory):
         try:
             os.makedirs(_logger_directory)
-        except BaseException:
-            raise Exception(f"{_logger_directory} Could not be created")
+        except OSError as e:
+            if e.errno == errno.EEXIST:
+                pass
+            else:
+                raise Exception("Startup Logger Could not be created")
 
 def get_fid(fid_path):
     """ Get FID from FID file"""
