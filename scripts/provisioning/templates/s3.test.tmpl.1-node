@@ -27,3 +27,5 @@ test:
 cortx:
   common:
     setup_type: "VM"
+    storage:
+      log: "/var/log/cortx/"

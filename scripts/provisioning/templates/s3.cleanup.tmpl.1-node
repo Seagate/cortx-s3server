@@ -20,7 +20,8 @@
 cortx:
   common:
     setup_type: "VM"
+    storage:
+      log: "/var/log/cortx/"
   software:
-    base_log_path: "/var/log/cortx"
-    base_config_path: "/etc/cortx"
-
+    storage:
+      config: "/etc/cortx"
