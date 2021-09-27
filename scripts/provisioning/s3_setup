@@ -28,6 +28,13 @@ import socket
 from logging import handlers
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
+<<<<<<< HEAD
+#Logger details
+s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
+s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+=======
+>>>>>>> a805bacd983465ff87ea490b934dccfbd73f36fd
 def main():
 
   parser = argparse.ArgumentParser("S3server setup command")
@@ -175,19 +182,16 @@ def create_logger_directory(config_file):
     s3_confkeys_store = S3CortxConfStore(f'yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml', 'machine_id_index')
     s3_provkeys_store = S3CortxConfStore(f'yaml://{config_file}', 'config_log_index')
 
-    #Logger details
-    global s3deployment_logger_name, s3deployment_log_file, s3deployment_log_directory, s3deployment_log_format
-    s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
     s3_prov_config_path = s3_provkeys_store.get_config('cortx>common>storage>log')
+    global s3deployment_log_file
     s3deployment_log_file = os.path.join(s3_prov_config_path, "s3", s3_confkeys_store.get_machine_id(), "s3deployment/s3deployment.log")
     s3deployment_log_directory = os.path.join(s3_prov_config_path, "s3", s3_confkeys_store.get_machine_id(), "s3deployment")
-    s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    _logger_directory = os.path.join(s3deployment_log_directory)
-    if not os.path.isdir(_logger_directory):
+
+    if not os.path.isdir(s3deployment_log_directory):
         try:
-            os.makedirs(_logger_directory)
+            os.makedirs(s3deployment_log_directory)
         except BaseException:
-            raise Exception(f"{_logger_directory} Could not be created")
+            raise Exception(f"{s3deployment_log_directory} Could not be created")
 
 
 if __name__ == '__main__':
