@@ -19,6 +19,7 @@
 #
 
 import sys
+import errno
 import argparse
 import traceback
 import errno

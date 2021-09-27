@@ -24,6 +24,7 @@ the underlying messaging platform.
 #!/usr/bin/python3.6
 
 import os
+import errno
 import traceback
 import sched
 import time
