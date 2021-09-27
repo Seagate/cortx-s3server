@@ -76,8 +76,8 @@ def main():
 
   args = parser.parse_args()
 
-  create_logger_directory(args.config)
-  logger = create_logger()
+  logger_dir_path = create_logger_directory(args.config)
+  logger = create_logger(logger_dir_path)
 
   try:
     if args.command == 'post_install':
@@ -143,11 +143,13 @@ def main():
 
   return 0
 
-def create_logger():
+def create_logger(log_dir_path):
     """Create logger, file handler, console handler and formatter."""
     # create logger with "S3 deployment logger"
     logger = logging.getLogger(s3deployment_logger_name)
     logger.setLevel(logging.DEBUG)
+
+    s3deployment_log_file = os.path.join(log_dir_path, "s3deployment.log")
     #with maxBytes to 5242880, will allow base file s3deployment.log to rotate after every 5MB.
     #with a backupCount of 5, will get s3deployment.log, s3deployment.log.1, s3deployment.log.2, up to s3deployment.log.5.
     #The file being written to is always s3deployment.log.
@@ -180,8 +182,6 @@ def create_logger_directory(config_file):
     s3_provkeys_store = S3CortxConfStore(f'yaml://{config_file}', 'config_log_index')
 
     s3_prov_config_path = s3_provkeys_store.get_config('cortx>common>storage>log')
-    global s3deployment_log_file
-    s3deployment_log_file = os.path.join(s3_prov_config_path, "s3", s3_confkeys_store.get_machine_id(), "s3deployment/s3deployment.log")
     s3deployment_log_directory = os.path.join(s3_prov_config_path, "s3", s3_confkeys_store.get_machine_id(), "s3deployment")
 
     if not os.path.isdir(s3deployment_log_directory):
@@ -190,6 +190,7 @@ def create_logger_directory(config_file):
         except BaseException:
             raise Exception(f"{s3deployment_log_directory} Could not be created")
 
+    return s3deployment_log_directory
 
 if __name__ == '__main__':
   sys.exit(main())
