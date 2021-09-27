@@ -28,13 +28,8 @@ import socket
 from logging import handlers
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
-# Get the machine id from confstore
-s3_confkeys_store = S3CortxConfStore(f'yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml', 'machine_id_index')
-
 #Logger details
 s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
-s3deployment_log_file =  os.path.join("/var/log/cortx/s3", s3_confkeys_store.get_machine_id(), "s3deployment/s3deployment.log")
-s3deployment_log_directory =  os.path.join("/var/log/cortx/s3", s3_confkeys_store.get_machine_id(), "s3deployment")
 s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 def main():
@@ -81,8 +76,8 @@ def main():
 
   args = parser.parse_args()
 
-  create_logger_directory()
-  logger = create_logger()
+  logger_dir_path = create_logger_directory(args.config)
+  logger = create_logger(logger_dir_path)
 
   try:
     if args.command == 'post_install':
@@ -148,11 +143,13 @@ def main():
 
   return 0
 
-def create_logger():
+def create_logger(log_dir_path):
     """Create logger, file handler, console handler and formatter."""
     # create logger with "S3 deployment logger"
     logger = logging.getLogger(s3deployment_logger_name)
     logger.setLevel(logging.DEBUG)
+
+    s3deployment_log_file = os.path.join(log_dir_path, "s3deployment.log")
     #with maxBytes to 5242880, will allow base file s3deployment.log to rotate after every 5MB.
     #with a backupCount of 5, will get s3deployment.log, s3deployment.log.1, s3deployment.log.2, up to s3deployment.log.5.
     #The file being written to is always s3deployment.log.
@@ -178,14 +175,22 @@ def create_logger():
 
     return logger
 
-def create_logger_directory():
-    """Create log directory if not exsists."""
-    _logger_directory = os.path.join(s3deployment_log_directory)
-    try:
-        os.makedirs(_logger_directory, exist_ok=True)
-    except BaseException:
-        raise Exception(f"{_logger_directory} Could not be created")
+def create_logger_directory(config_file):
+    """Create log directory if not exists."""
+    # Get the machine id from confstore
+    s3_confkeys_store = S3CortxConfStore(f'yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml', 'machine_id_index')
+    s3_provkeys_store = S3CortxConfStore(f'yaml://{config_file}', 'config_log_index')
 
+    s3_prov_config_path = s3_provkeys_store.get_config('cortx>common>storage>log')
+    s3deployment_log_directory = os.path.join(s3_prov_config_path, "s3", s3_confkeys_store.get_machine_id(), "s3deployment")
+
+    try:
+        os.makedirs(s3deployment_log_directory, exist_ok=True)
+    except BaseException:
+        raise Exception(f"{s3deployment_log_directory} Could not be created")
+
+    #returning log_dir_path to be used by s3_deployment_log_file in create_logger function
+    return s3deployment_log_directory
 
 if __name__ == '__main__':
   sys.exit(main())
