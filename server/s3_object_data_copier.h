@@ -44,13 +44,16 @@ class S3ObjectDataCopier {
   std::function<bool(void)> check_shutdown_and_rollback;
   std::function<void(void)> on_success;
   std::function<void(void)> on_failure;
+  std::function<void(int)> on_success_for_fragments;
+  std::function<void(int)> on_failure_for_fragments;
 
   std::shared_ptr<RequestObject> request_object;
   std::shared_ptr<S3MotrWiter> motr_writer;
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
   std::shared_ptr<MotrAPI> motr_api;
   std::shared_ptr<S3MotrReader> motr_reader;
-
+  bool copy_parts_fragment = 0;
+  int vector_index;
   S3BufferSequence data_blocks_read;  // Source's data has been read but not
                                       // taken for writing.
 
@@ -77,9 +80,10 @@ class S3ObjectDataCopier {
 
  public:
   S3ObjectDataCopier(std::shared_ptr<RequestObject> request_object,
-                     std::shared_ptr<S3MotrWiter> motr_writer,
-                     std::shared_ptr<S3MotrReaderFactory> motr_reader_factory,
-                     std::shared_ptr<MotrAPI> motr_api);
+                     std::shared_ptr<S3MotrWiter> motr_writer = nullptr,
+                     std::shared_ptr<S3MotrReaderFactory> motr_reader_factory =
+                         nullptr,
+                     std::shared_ptr<MotrAPI> motr_api = nullptr);
 
   ~S3ObjectDataCopier();
 
@@ -89,12 +93,20 @@ class S3ObjectDataCopier {
             std::function<void(void)> on_success,
             std::function<void(void)> on_failure);
 
+  void copy_part_fragment(
+      std::vector<struct s3_part_frag_context> fragment_context_list,
+      struct m0_uint128 target_obj_id, int index_to_fragment_context,
+      std::function<bool(void)> check_shutdown_and_rollback,
+      std::function<void(int)> on_success_for_fragment,
+      std::function<void(int)> on_failure_for_fragment);
+
   const std::string& get_s3_error() { return s3_error; }
   // Trims input 'buffer' to the expected size
   // Used when we need specific portion of 'buffer', discarding the remianing
   // data.
   void get_buffers(S3BufferSequence& buffer, size_t total_size,
                    size_t expected_size);
+  void set_s3_copy_failed();
 
   friend class S3ObjectDataCopierTest;
 
