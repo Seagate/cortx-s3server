@@ -161,7 +161,21 @@ int S3MempoolManager::release_buffer_for_unit_size(void *buf,
            "Found pool for unit_size[%zu] to release memory\n", unit_size);
     // We have required memory pool.
     MemoryPoolHandle handle = item->second;
-    return mempool_releasebuffer(handle, buf, unit_size);
+    int retn = mempool_releasebuffer(handle, buf, unit_size);
+    const char *log_memool_stats =
+        "S3 Mempool stats during release:"
+        "mempool_item_size = %zu "
+        "free_bufs_in_pool = %d "
+        "number_of_bufs_shared = %d "
+        "total_bufs_allocated_by_pool = %d\n";
+    char log_mem_stats[1024];
+    struct pool_info poolinfo = {0};
+    mempool_getinfo(handle, &poolinfo);
+    snprintf(log_mem_stats, sizeof(log_mem_stats), log_memool_stats,
+             poolinfo.mempool_item_size, poolinfo.free_bufs_in_pool,
+             poolinfo.expandable_size, poolinfo.total_bufs_allocated_by_pool);
+    s3_log(S3_LOG_DEBUG, "S3_Mempool_Stats", "%s\n", log_mem_stats);
+    return retn;
   }
   s3_log(S3_LOG_ERROR, "", "%s Exit: Not found unit_size[%zu]\n", __func__,
          unit_size);

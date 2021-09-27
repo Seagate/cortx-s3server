@@ -61,7 +61,8 @@ class EvhtpInterface {
   virtual void http_send_reply_body(evhtp_request_t *request, evbuf_t *buf) = 0;
   virtual void http_send_reply_end(evhtp_request_t *request) = 0;
   virtual void close_connection_after_writing(evhtp_connection_t *) = 0;
-
+  virtual size_t http_response_outstanding_buffer_length(
+      evhtp_connection_t *conn) = 0;
   // Libevent wrappers
   virtual size_t evbuffer_get_length(const struct evbuffer *buf) = 0;
 };
@@ -88,7 +89,7 @@ class EvhtpWrapper : public EvhtpInterface {
   void http_send_reply_body(evhtp_request_t *request, evbuf_t *buf);
   void http_send_reply_end(evhtp_request_t *request);
   void close_connection_after_writing(evhtp_connection_t *) override;
-
+  size_t http_response_outstanding_buffer_length(evhtp_connection_t *conn);
   // Libevent wrappers
   size_t evbuffer_get_length(const struct evbuffer *buf);
 };

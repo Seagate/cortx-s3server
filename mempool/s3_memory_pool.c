@@ -331,6 +331,20 @@ void *mempool_getbuffer(MemoryPoolHandle handle, size_t expected_buffer_size) {
     pool->number_of_bufs_shared++;
   }
 
+  if (pool->log_callback_func) {
+    char log_mem_stats[1024];
+    char *log_memool_stats =
+        "S3 Mempool stats after allocation:"
+        "mempool_item_size = %zu "
+        "free_bufs_in_pool = %d "
+        "number_of_bufs_shared = %d "
+        "total_bufs_allocated_by_pool = %d\n";
+    snprintf(log_mem_stats, sizeof(log_mem_stats), log_memool_stats,
+             pool->mempool_item_size, pool->free_bufs_in_pool,
+             pool->number_of_bufs_shared, pool->total_bufs_allocated_by_pool);
+    pool->log_callback_func(MEMPOOL_LOG_INFO, log_mem_stats);
+  }
+
   if ((pool->flags & ENABLE_LOCKING) != 0) {
     pthread_mutex_unlock(&pool->lock);
   }
@@ -380,10 +394,23 @@ int mempool_releasebuffer(MemoryPoolHandle handle, void *buf,
 
   pool->number_of_bufs_shared--;
 
+  if (pool->log_callback_func) {
+    char log_mem_stats[1024];
+    char *log_memool_stats =
+        "S3 Mempool stats after de-allocation:"
+        "mempool_item_size = %zu "
+        "free_bufs_in_pool = %d "
+        "number_of_bufs_shared = %d "
+        "total_bufs_allocated_by_pool = %d\n";
+    snprintf(log_mem_stats, sizeof(log_mem_stats), log_memool_stats,
+             pool->mempool_item_size, pool->free_bufs_in_pool,
+             pool->number_of_bufs_shared, pool->total_bufs_allocated_by_pool);
+    pool->log_callback_func(MEMPOOL_LOG_INFO, log_mem_stats);
+  }
+
   if ((pool->flags & ENABLE_LOCKING) != 0) {
     pthread_mutex_unlock(&pool->lock);
   }
-
   return 0;
 }
 

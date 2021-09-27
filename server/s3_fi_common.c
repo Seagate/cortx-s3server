@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef ENABLE_FAULT_INJECTION
+#if ENABLE_FAULT_INJECTION
 
 enum {
   S3_FP_ARRAY_SIZE = 64 * 1024,
