@@ -54,10 +54,10 @@ int S3Evbuffer::init() {
       struct pool_info poolinfo;
       int rc = event_mempool_getinfo(&poolinfo);
       if (rc != 0) {
-        s3_log(S3_LOG_FATAL, "", "Issue with memory pool!\n");
+        s3_log(S3_LOG_FATAL, "", "Issue reading memory pool stats!\n");
       } else {
-        s3_log(S3_LOG_ERROR, "",
-               "mempool info during init failure : mempool_item_size = %zu "
+        s3_log(S3_LOG_DEBUG, "",
+               "mempool stats when allocation failed : mempool_item_size = %zu "
                "free_bufs_in_pool = %d "
                "number_of_bufs_shared = %d "
                "total_bufs_allocated_by_pool = %d\n",
@@ -72,6 +72,21 @@ int S3Evbuffer::init() {
              "evbuffer_commit_space failed i = %zu, nvecs = %zu\n", i, nvecs);
       return -1;
     }
+  }
+  // Log mempool stats
+  struct pool_info poolinfo;
+  int rc = event_mempool_getinfo(&poolinfo);
+  if (rc != 0) {
+    s3_log(S3_LOG_FATAL, "", "Issue with memory pool!\n");
+  } else {
+    s3_log(S3_LOG_DEBUG, "",
+           "mempool info after allocation : mempool_item_size = %zu "
+           "free_bufs_in_pool = %d "
+           "number_of_bufs_shared = %d "
+           "total_bufs_allocated_by_pool = %d\n",
+           poolinfo.mempool_item_size, poolinfo.free_bufs_in_pool,
+           poolinfo.number_of_bufs_shared,
+           poolinfo.total_bufs_allocated_by_pool);
   }
   return 0;
 }

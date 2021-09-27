@@ -98,7 +98,8 @@ int main(int argc, char **argv) {
 
   event_use_mempool(libevent_pool_buffer_size, libevent_pool_buffer_size * 100,
                     libevent_pool_buffer_size * 100,
-                    libevent_pool_buffer_size * 500, libevent_mempool_flags);
+                    libevent_pool_buffer_size * 500, NULL,
+                    libevent_mempool_flags);
 
   rc = S3MempoolManager::create_pool(
       g_option_instance->get_motr_read_pool_max_threshold(),

@@ -127,6 +127,15 @@ void EvhtpWrapper::close_connection_after_writing(evhtp_connection_t *p_conn) {
   }
 }
 
+size_t EvhtpWrapper::http_response_outstanding_buffer_length(
+    evhtp_connection_t *p_conn) {
+  if (p_conn) {
+    struct evbuffer *p_evbuf = bufferevent_get_output(p_conn->bev);
+    return evbuffer_get_length(p_evbuf);
+  }
+  return 0;
+}
+
 // Libevent wrappers
 size_t EvhtpWrapper::evbuffer_get_length(const struct evbuffer *buf) {
   return ::evbuffer_get_length(buf);
