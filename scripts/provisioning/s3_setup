@@ -28,18 +28,6 @@ import socket
 from logging import handlers
 from s3confstore.cortx_s3_confstore import S3CortxConfStore
 
-# Get the machine id from confstore
-s3_confkeys_store = S3CortxConfStore(f'yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml', 'machine_id_index')
-s3_provkeys_store = S3CortxConfStore(f'yaml:///opt/seagate/cortx/s3/conf/s3.config.tmpl.1-node', 'config_log_index')
-
-#Logger details
-s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
-s3_config_key = s3_confkeys_store.get_config('CONFIG>CONFSTORE_BASE_LOG_PATH')
-s3_prov_config_path = s3_provkeys_store.get_config(s3_config_key)
-s3deployment_log_file =  os.path.join(s3_prov_config_path, s3_confkeys_store.get_machine_id(), "s3deployment/s3deployment.log")
-s3deployment_log_directory =  os.path.join(s3_prov_config_path, s3_confkeys_store.get_machine_id(), "s3deployment")
-s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-
 def main():
 
   parser = argparse.ArgumentParser("S3server setup command")
@@ -84,7 +72,7 @@ def main():
 
   args = parser.parse_args()
 
-  create_logger_directory()
+  create_logger_directory(args.config)
   logger = create_logger()
 
   try:
@@ -181,8 +169,19 @@ def create_logger():
 
     return logger
 
-def create_logger_directory():
-    """Create log directory if not exsists."""
+def create_logger_directory(config_file):
+    """Create log directory if not exists."""
+    # Get the machine id from confstore
+    s3_confkeys_store = S3CortxConfStore(f'yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml', 'machine_id_index')
+    s3_provkeys_store = S3CortxConfStore(f'yaml://{config_file}', 'config_log_index')
+
+    #Logger details
+    global s3deployment_logger_name, s3deployment_log_file, s3deployment_log_directory, s3deployment_log_format
+    s3deployment_logger_name = "s3-deployment-logger-" + "[" + str(socket.gethostname()) + "]"
+    s3_prov_config_path = s3_provkeys_store.get_config('cortx>common>storage>log')
+    s3deployment_log_file = os.path.join(s3_prov_config_path, "s3", s3_confkeys_store.get_machine_id(), "s3deployment/s3deployment.log")
+    s3deployment_log_directory = os.path.join(s3_prov_config_path, "s3", s3_confkeys_store.get_machine_id(), "s3deployment")
+    s3deployment_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     _logger_directory = os.path.join(s3deployment_log_directory)
     if not os.path.isdir(_logger_directory):
         try:
