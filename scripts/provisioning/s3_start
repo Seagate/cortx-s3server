@@ -37,27 +37,46 @@ s3_single_entry_log_format = \
     "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 def main():
+  """
 
+  Main method takes care of calling
+  a startup script of service given
+  as a argument.
+
+  """
+  s3config_path = "/opt/seagate/cortx/s3/conf/s3config.yaml"
   parser = argparse.ArgumentParser("S3server single entry command")
   parser.add_argument("--service", required=True)
+  parser.add_argument("--index", required=False)
 
   args = parser.parse_args()
 
   create_logger_directory()
   logger = create_logger()
 
+  # TODO: to be removed when end-to-end logging integration is done:
+  os.makedirs("/var/log/cortx/s3", mode=0o755, exist_ok=True)
+
   try:
     if args.service == 's3server':
       # Add action and remove pass
+      if not args.index:
+        raise Exception("provide instance id")
+      fid_path = "/etc/cortx/s3/s3server-" + args.index
+      Fid = get_fid(fid_path)
+      os.system(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3config_path} -d")
       pass
     elif args.service == 's3authserver':
-      os.system("sh /opt/seagate/cortx/auth/startauth.sh")
+      os.system("sh /opt/seagate/cortx/auth/startauth.sh /opt/seagate/cortx")
     elif args.service == 's3bgproducer':
-      # Add action and remove pass
-      pass
+      os.system("sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh")
     elif args.service == 's3bgconsumer':
       # Add action and remove pass
       pass
+    elif args.service == 'haproxy':
+      # TODO: logging path has to come from conf store -- to be fixed during
+      # end-to-end logging integration.
+      os.system("/usr/sbin/haproxy -Ws -f /etc/cortx/s3/haproxy.cfg -p /run/haproxy.pid 1>/var/log/cortx/s3/haproxy.log 2>&1")
     else:
       logger.error(f"Invalid argument {args.service}")
   except Exception as e:
@@ -108,6 +127,21 @@ def create_logger_directory():
         except BaseException:
             raise Exception(f"{_logger_directory} Could not be created")
 
+def get_fid(fid_path):
+    """ Get FID from FID file"""
+    Fid = None
+    with open(fid_path) as file1:
+      Lines = file1.readlines()
+      for line in Lines:
+        if(line.startswith('MOTR_PROCESS_FID')):
+          Fid = line.split("=")[1]
+          break
+    if not Fid:
+      raise Exception("FID is not present in Fid path")
+    Fid = Fid.strip("\n")
+    Fid = Fid.strip("''")
+
+    return Fid
 
 if __name__ == '__main__':
   sys.exit(main())

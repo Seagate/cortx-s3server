@@ -310,7 +310,23 @@ void S3PutObjectAction::create_object_successful() {
   new_object_metadata->set_layout_id(layout_id);
   new_object_metadata->set_pvid(motr_writer->get_ppvid());
 
-  add_object_oid_to_probable_dead_oid_list();
+  if (object_metadata->is_object_extended()) {
+    // Read the extended parts of the object from extended index table
+    std::shared_ptr<S3ObjectExtendedMetadata> extended_obj_metadata =
+        object_metadata_factory->create_object_ext_metadata_obj(
+            request, request->get_bucket_name(), request->get_object_name(),
+            object_metadata->get_obj_version_key(),
+            object_metadata->get_number_of_parts(),
+            object_metadata->get_number_of_fragments(),
+            bucket_metadata->get_extended_metadata_index_layout());
+    extended_obj_metadata->load(
+        std::bind(&S3PutObjectAction::fetch_ext_object_info_success, this),
+        std::bind(&S3PutObjectAction::fetch_ext_object_info_failed, this));
+    object_metadata->set_extended_object_metadata(extended_obj_metadata);
+  } else {
+    add_object_oid_to_probable_dead_oid_list();
+  }
+
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
@@ -649,9 +665,12 @@ void S3PutObjectAction::add_part_object_to_probable_dead_oid_list(
     // object has some parts
     const std::map<int, std::vector<struct s3_part_frag_context>>&
         ext_entries_mp = object_ext_metadata->get_raw_extended_entries();
-    for (unsigned int key_indx = 1; key_indx <= total_parts; key_indx++) {
-      const std::vector<struct s3_part_frag_context>& part_entry =
-          ext_entries_mp.at(key_indx);
+
+    std::map<int, std::vector<struct s3_part_frag_context>>::const_iterator it =
+        ext_entries_mp.begin();
+
+    while (it != ext_entries_mp.end()) {
+      const std::vector<struct s3_part_frag_context>& part_entry = it->second;
       // Assuming part is not fragmented, the only part is at part_entry[0]
       if (part_entry.size() != 0 &&
           (part_entry[0].motr_OID.u_hi || part_entry[0].motr_OID.u_lo)) {
@@ -684,13 +703,33 @@ void S3PutObjectAction::add_part_object_to_probable_dead_oid_list(
             bucket_metadata->get_objects_version_list_index_layout().oid,
             object_metadata->get_version_key_in_index(),
             false /* force_delete */, part_entry[0].is_multipart, {0ULL, 0ULL},
-            1, key_indx,
+            1, it->first,
             bucket_metadata->get_extended_metadata_index_layout().oid,
             part_entry[0].versionID));
         parts_probable_del_rec_list.push_back(std::move(ext_del_rec));
+        it++;
       }
     }  // End of For
   }
+}
+
+void S3PutObjectAction::fetch_ext_object_info_success() {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  add_object_oid_to_probable_dead_oid_list();
+  s3_log(S3_LOG_DEBUG, request_id, "%s Exit\n", __func__);
+}
+
+void S3PutObjectAction::fetch_ext_object_info_failed() {
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  s3_log(S3_LOG_ERROR, request_id, "%s Failed Reading Ext md info.\n",
+         __func__);
+
+  s3_put_action_state = S3PutObjectActionState::writeFailed;
+  set_s3_error("InternalError");
+
+  // Clean up will be done after response.
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, request_id, "%s Exit\n", __func__);
 }
 
 void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
@@ -703,7 +742,7 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
     assert(!old_oid_str.empty());
     if (number_of_parts != 0) {
       // This object was uploaded previously in multipart fashion
-      add_part_object_to_probable_dead_oid_list(new_object_metadata,
+      add_part_object_to_probable_dead_oid_list(object_metadata,
                                                 probable_del_rec_list);
       for (auto& probable_rec : probable_del_rec_list) {
         probable_oid_list[probable_rec->get_key()] = probable_rec->to_json();
@@ -806,7 +845,14 @@ void S3PutObjectAction::send_response_to_s3_client() {
     }
 
     if (get_s3_error_code() == "ServiceUnavailable") {
-      request->set_out_header_value("Retry-After", "1");
+      if (reject_if_shutting_down()) {
+        int retry_after_period =
+            S3Option::get_instance()->get_s3_retry_after_sec();
+        request->set_out_header_value("Retry-After",
+                                      std::to_string(retry_after_period));
+      } else {
+        request->set_out_header_value("Retry-After", "1");
+      }
     }
 
     request->send_response(error.get_http_status_code(), response_xml);
