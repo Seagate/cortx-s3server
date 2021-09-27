@@ -190,6 +190,7 @@ def create_logger_directory(config_file):
         except BaseException:
             raise Exception(f"{s3deployment_log_directory} Could not be created")
 
+    #returning log_dir_path to be used by s3_deployment_log_file in create_logger function
     return s3deployment_log_directory
 
 if __name__ == '__main__':
