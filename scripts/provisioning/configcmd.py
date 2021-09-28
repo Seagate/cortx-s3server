@@ -586,13 +586,13 @@ class ConfigCmd(SetupCmd):
     if endpoint is None:
       raise S3PROVError(f"BG Producer endpoint for scheme 'http' is not specified")
     return endpoint['scheme'] + "://" + endpoint['fqdn'] + ":" + endpoint['port']
-  
+
   def update_bgdelete_consumer_endpoint(self, value_to_update, additional_param):
     if isinstance(value_to_update, str):
       value_to_update = literal_eval(value_to_update)
     endpoint = self.get_endpoint_for_scheme(value_to_update, "http")
     if endpoint is None:
-      raise S3PROVError(f"BG Consumer endpoint for scheme 'http' is not specified")
+    raise S3PROVError(f"BG Consumer endpoint for scheme 'http' is not specified")
     if ("K8" == str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
       endpoint['port'] = int(endpoint['port']) -1
     else :
