@@ -23,8 +23,12 @@ set -e # exit immediatly on errors
 source ./config.sh
 source ./env.sh
 source ./sh/functions.sh
+source ./sh/045-prepare-s3-containers-configs.sh
 
 set -x # print each statement before execution
+
+# Update producer endpoint
+set_bg_config_param  producer_endpoint '"http://$CORTX_IO_SVC:28049"'
 
 add_separator Creating BG POD.
 

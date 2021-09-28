@@ -64,3 +64,20 @@ set_var_POD_IP io-pod
 echo "IO_POD_IP='$POD_IP'" >> env.sh
 
 add_separator SUCCESSFULLY CREATED IO POD AND CONTAINERS.
+
+add_separator Creating Service for IO Pod
+
+# Creating endpoint for service
+kubectl apply -f k8s-blueprints/cortx-io-ep.yaml
+# Creating service
+kubectl apply -f k8s-blueprints/cortx-io-svc.yaml
+
+if [ `kubectl get svc | grep cortx-io-svc | wc -l` -lt 1 ]
+then
+   add_separator FAILED. cortx io service does not seem to be running.
+fi
+
+set_var_SVC_IP cortx-io-svc
+echo "CORTX_IO_SVC='$SVC_IP'" >> env.sh 
+
+add_separator SUCCESSFULLY CREATED IO SERVICE.

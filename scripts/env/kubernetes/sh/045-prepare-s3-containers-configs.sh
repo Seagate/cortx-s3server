@@ -128,7 +128,7 @@ set_bg_config_param() {
 }
 
 # 'manual' fix until s3_setup is able to handle BG Producer - FIXME
-set_bg_config_param  producer_endpoint  '"http://192.168.134.219:28049"'
+#set_bg_config_param  producer_endpoint  '"http://192.168.134.219:28049"'
 
 # adjust delay delete parameters to speed up testing
 set_bg_config_param  scheduler_schedule_interval      60

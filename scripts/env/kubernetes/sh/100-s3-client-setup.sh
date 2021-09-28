@@ -39,13 +39,13 @@ if ! which aws; then
   exit 1
 fi
 
-# Add POD IP address to /etc/hosts file, for s3.seagate.com and iam.seagate.com
+# Add Service IP address to /etc/hosts file, for s3.seagate.com and iam.seagate.com
 sed -i \
   -e 's,\b\(dummy\.\)*\(iam\|s3\)\.seagate\.com\b,dummy.\2.seagate.com,g' \
-  -e "/$IO_POD_IP/d" \
+  -e "/$CORTX_IO_SVC/d" \
   /etc/hosts
 
-echo "$IO_POD_IP s3.seagate.com iam.seagate.com" >> /etc/hosts
+echo "$CORTX_IO_SVC s3.seagate.com iam.seagate.com" >> /etc/hosts
 
 mkdir -p /var/log/seagate/auth/
 
