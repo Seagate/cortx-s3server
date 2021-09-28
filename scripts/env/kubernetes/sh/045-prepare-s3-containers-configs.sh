@@ -81,6 +81,41 @@ chmod 755 /var/log/cortx/utils/message_bus/message_bus.log
 cp message-bus/cortx.conf /etc/cortx
 
 
+##############################
+# hare mini provisioner call #
+##############################
+
+kube_run cp /opt/seagate/cortx/hare/conf/hare.config.conf.tmpl.1-node /etc/cortx
+
+set_kv() {
+  sed -i "s;$1;$2;" /etc/cortx/hare.config.tmpl.1-node
+}
+set_kv TMPL_CLUSTER_ID               3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6
+set_kv TMPL_MACHINE_ID               "$MACHINE_ID"
+set_kv TMPL_HOSTNAME                 s3-setup-pod
+set_kv TMPL_STORAGESET_COUNT         1
+set_kv TMPL_POOL_TYPE                FIXME
+set_kv TMPL_DATA_UNITS_COUNT         FIXME
+set_kv TMPL_PARITY_UNITS_COUNT       FIXME
+set_kv TMPL_SPARE_UNITS_COUNT        FIXME
+set_kv TMPL_STORAGESET_NAME          FIXME
+set_kv TMPL_S3SERVER_INSTANCES_COUNT 2
+set_kv TMPL_SERVER_NODE_NAME         FIXME
+set_kv TMPL_DATA_INTERFACE_TYPE      FIXME
+set_kv TMPL_PRIVATE_FQDN             FIXME
+set_kv TMPL_PRIVATE_DATA_INTERFACE_1 FIXME
+set_kv TMPL_PRIVATE_DATA_INTERFACE_2 FIXME
+set_kv TMPL_STORAGE_SET_ID           FIXME
+set_kv TMPL_CVG_COUNT                FIXME
+set_kv TMPL_DATA_DEVICE_1            FIXME
+set_kv TMPL_DATA_DEVICE_2            FIXME
+set_kv TMPL_METADATA_DEVICE          FIXME
+
+# kube_run /opt/seagate/cortx/hare/bin/hare_setup config \
+#              --config json:///etc/cortx/hare.config.conf.1-node \
+#              --file /root/cluster-containers.yaml
+
+
 ############################
 # S3 mini provisioner call #
 ############################
