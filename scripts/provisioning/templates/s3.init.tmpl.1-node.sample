@@ -55,7 +55,7 @@ cortx:
 cluster:
   id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
   storage_set:
-  - nodes:
+    nodes:
     - 1114a50a6bf6f9c93ebd3c49d07d3fd4
 node:
   1114a50a6bf6f9c93ebd3c49d07d3fd4:

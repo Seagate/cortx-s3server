@@ -55,7 +55,7 @@ cortx:
 cluster:
   id: "TMPL_CLUSTER_ID"
   storage_set:
-  - nodes:
+    nodes:
     - TMPL_MACHINE_ID_1
     - TMPL_MACHINE_ID_2
     - TMPL_MACHINE_ID_3
