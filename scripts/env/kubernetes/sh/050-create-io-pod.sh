@@ -75,6 +75,7 @@ kubectl apply -f k8s-blueprints/cortx-io-svc.yaml
 if [ `kubectl get svc | grep cortx-io-svc | wc -l` -lt 1 ]
 then
    add_separator FAILED. cortx io service does not seem to be running.
+   exit 1
 fi
 
 set_var_SVC_IP cortx-io-svc
