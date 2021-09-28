@@ -24,6 +24,8 @@ source ./config.sh
 source ./env.sh
 source ./sh/functions.sh
 
+set -x # print each statement before execution
+
 add_separator Creating BG POD.
 
 # update image link for bgdelete-producer pod
