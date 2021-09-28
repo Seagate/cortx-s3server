@@ -23,7 +23,6 @@ set -e # exit immediatly on errors
 source ./config.sh
 source ./env.sh
 source ./sh/functions.sh
-source ./sh/045-prepare-s3-containers-configs.sh
 
 # Update producer endpoint
 sed -i -e "s,producer_endpoint:.*,producer_endpoint: '"http://$CORTX_IO_SVC:28049"'," /etc/cortx/s3/s3backgrounddelete/config.yaml
