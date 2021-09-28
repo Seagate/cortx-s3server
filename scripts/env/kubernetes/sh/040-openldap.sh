@@ -26,6 +26,9 @@ source ./sh/functions.sh
 
 add_separator "Creating OpenLDAP POD"
 
+# FIXME: symas?
+# FIXME: use image and scripts from services team
+
 mkdir -p /var/lib/ldap
 echo "ldap:x:55:" >> /etc/group
 echo "ldap:x:55:55:OpenLDAP server:/var/lib/ldap:/sbin/nologin" >> /etc/passwd
