@@ -40,11 +40,7 @@ if [ -n "${DOCKER_USER_NAME}${DOCKER_PASSWORD}" ]; then
   docker login -u "$DOCKER_USER_NAME" -p "$DOCKER_PASSWORD"
 fi
 
-# self-check
-# add_separator Testing docker.
-# commenting out this check, as it is reaching Docker (and has rate limits)
-# sudo docker run hello-world
-
+# install kubernetes
 cat <<EOF > /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
 name=Kubernetes
