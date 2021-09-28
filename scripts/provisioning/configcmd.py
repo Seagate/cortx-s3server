@@ -570,7 +570,7 @@ class ConfigCmd(SetupCmd):
     """ Update s3 bgdelete configs."""
     self.logger.info("Update s3 bgdelete config file started")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_INTERNAL_ENDPOINTS", "cortx_s3>producer_endpoint",self.update_bgdelete_producer_endpoint)
-    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_CONSUMER_ENDPOINT", "cortx_s3>consumer_endpoint")
+    self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_CONSUMER_ENDPOINT", "cortx_s3>consumer_endpoint", self.update_bgdelete_consumer_endpoint)
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_SCHEDULER_SCHEDULE_INTERVAL", "cortx_s3>scheduler_schedule_interval")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_S3_BGDELETE_MAX_KEYS", "indexid>max_keys")
     self.update_config_value("S3_BGDELETE_CONFIG_FILE", "yaml", "CONFIG>CONFSTORE_BASE_LOG_PATH", "logconfig>processor_logger_directory", self.update_bgdelete_processor_log_dir)
@@ -585,6 +585,18 @@ class ConfigCmd(SetupCmd):
     endpoint = self.get_endpoint_for_scheme(value_to_update, "http")
     if endpoint is None:
       raise S3PROVError(f"BG Producer endpoint for scheme 'http' is not specified")
+    return endpoint['scheme'] + "://" + endpoint['fqdn'] + ":" + endpoint['port']
+  
+  def update_bgdelete_consumer_endpoint(self, value_to_update, additional_param):
+    if isinstance(value_to_update, str):
+      value_to_update = literal_eval(value_to_update)
+    endpoint = self.get_endpoint_for_scheme(value_to_update, "http")
+    if endpoint is None:
+      raise S3PROVError(f"BG Consumer endpoint for scheme 'http' is not specified")
+    if ("K8" == str(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_SETUP_TYPE'))) :
+      endpoint['port'] = int(endpoint['port']) -1
+    else :
+      endpoint['port'] = int(endpoint['port'])
     return endpoint['scheme'] + "://" + endpoint['fqdn'] + ":" + endpoint['port']
 
   # In producer we do not append machine ID to path but below two functtions are for future 
