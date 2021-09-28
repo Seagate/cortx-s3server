@@ -231,45 +231,33 @@ class ConfigCmd(SetupCmd):
     # Delete ldap replication cofiguration
     self.delete_replication_config()
     self.logger.info('Open ldap replication configuration started')
-    storage_set_count = self.get_confvalue(self.get_confkey(
-        'CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY').replace("cluster-id", self.cluster_id))
+    server_nodes_list = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY')
 
-    index = 0
-    while index < int(storage_set_count):
-      server_nodes_list = self.get_confkey(
-        'CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("cluster-id", self.cluster_id).replace("storage-set-count", str(index))
-      server_nodes_list = self.get_confvalue(server_nodes_list)
-      if type(server_nodes_list) is str:
-        # list is stored as string in the confstore file
-        server_nodes_list = literal_eval(server_nodes_list)
+    if len(server_nodes_list) > 1:
+      Path(self.s3_tmp_dir).mkdir(parents=True, exist_ok=True)
+      ldap_hosts_list_file = os.path.join(self.s3_tmp_dir, "ldap_hosts_list_file.txt")
+      with open(ldap_hosts_list_file, "w") as f:
+        for node_machine_id in server_nodes_list:
+          self.logger.info(f'Setting ldap-replication for node-id: {node_machine_id}')
+          private_fqdn = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_PRIVATE_FQDN_KEY').replace('machine-id', node_machine_id))
+          f.write(f'{private_fqdn}\n')
+          self.logger.info(f'output of ldap_hosts_list_file.txt: {private_fqdn}')
 
-      if len(server_nodes_list) > 1:
-        self.logger.info(f'Setting ldap-replication for storage_set:{index}')
+      cmd = ['/opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh',
+            '-h',
+            ldap_hosts_list_file,
+            '-p',
+            f'{self.rootdn_passwd}']
+      handler = SimpleProcess(cmd)
+      stdout, stderr, retcode = handler.run()
+      self.logger.info(f'output of setupReplicationScript.sh: {stdout}')
+      os.remove(ldap_hosts_list_file)
 
-        Path(self.s3_tmp_dir).mkdir(parents=True, exist_ok=True)
-        ldap_hosts_list_file = os.path.join(self.s3_tmp_dir, "ldap_hosts_list_file.txt")
-        with open(ldap_hosts_list_file, "w") as f:
-          for node_machine_id in server_nodes_list:
-            private_fqdn = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_PRIVATE_FQDN_KEY').replace('machine-id', node_machine_id))
-            f.write(f'{private_fqdn}\n')
-            self.logger.info(f'output of ldap_hosts_list_file.txt: {private_fqdn}')
-
-        cmd = ['/opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh',
-             '-h',
-             ldap_hosts_list_file,
-             '-p',
-             f'{self.rootdn_passwd}']
-        handler = SimpleProcess(cmd)
-        stdout, stderr, retcode = handler.run()
-        self.logger.info(f'output of setupReplicationScript.sh: {stdout}')
-        os.remove(ldap_hosts_list_file)
-
-        if retcode != 0:
-          self.logger.error(f'error of setupReplicationScript.sh: {stderr}')
-          raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
-        else:
-          self.logger.warning(f'warning of setupReplicationScript.sh: {stderr}')
-      index += 1
+      if retcode != 0:
+        self.logger.error(f'error of setupReplicationScript.sh: {stderr}')
+        raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
+      else:
+        self.logger.warning(f'warning of setupReplicationScript.sh: {stderr}')
     # TODO: set replication across storage-sets
     self.logger.info('Open ldap replication configuration completed')
 
