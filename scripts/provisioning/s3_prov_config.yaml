@@ -63,7 +63,8 @@ CONFIG:
 
   CONFSTORE_S3_CLUSTER_ID: "cluster>id" #M (Usedby: None)
   CONFSTORE_BASE_CONFIG_PATH: "cortx>common>storage>config"  #O default - /etc/cortx (Usedby: s3_deployment)
-
+  CONFSTORE_STORAGE_SET_SERVER_NODES_KEY: "cluster>storage_set>nodes" #M (Usedby: s3_deployment)
+  CONFSTORE_NODE_TYPE: "node>node-id>type" #M (Usedby: s3_deployment)
 
   ##################################################################################################
   # Private keys which don't come from provisioner and which MUST have default values.

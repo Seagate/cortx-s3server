@@ -286,24 +286,25 @@ class ConfigCmd(SetupCmd):
 
   def get_msgbus_partition_count(self):
     """get total server nodes which will act as partition count."""
-    storage_set_count = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY')
-    srv_count=0
-    index = 0
-    while index < int(storage_set_count):
-      server_nodes_list = self.get_confkey(
-        'CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("cluster-id", self.cluster_id).replace("storage-set-count", str(index))
-      server_nodes_list = self.get_confvalue(server_nodes_list)
-      if type(server_nodes_list) is str:
-        # list is stored as string in the confstore file
-        server_nodes_list = literal_eval(server_nodes_list)
+    srv_io_node_count = 0
+    # Get all server nodes
+    server_nodes_list = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY')
+    for server_node_id in server_nodes_list:
+      server_node_type_key = self.get_confkey('CONFIG>CONFSTORE_NODE_TYPE').replace('node-id', server_node_id)
+      self.logger.info(f"server_node_type_key : {server_node_type_key}")
+      # Get the type of each server node
+      server_node_type = self.get_confvalue(server_node_type_key)
+      self.logger.info(f"server_node_type : {server_node_type}")
+      if server_node_type == "storage_node":
+        self.logger.info(f"Node type is storage_node")
+        srv_io_node_count += 1
 
-      srv_count += len(server_nodes_list)
-      index += 1
-    self.logger.info(f"Server node count : {srv_count}")
+    self.logger.info(f"Server io node count : {srv_io_node_count}")
+
     # Partition count should be ( number of hosts * 2 )
-    srv_count = srv_count * 2
-    self.logger.info(f"Partition count : {srv_count}")
-    return srv_count
+    partition_count = srv_io_node_count * 2
+    self.logger.info(f"Partition count : {partition_count}")
+    return partition_count
 
   def configure_haproxy(self):
     """Configure haproxy service."""

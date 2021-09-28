@@ -368,13 +368,8 @@ class SetupCmd(object):
         key_yard = key_yard.replace("machine-id", self.machine_id)
       if "cluster-id" in key_yard:
         key_yard = key_yard.replace("cluster-id", self.cluster_id)
-        #index = 0
-        #print(key_yard)
-        #while index < storage_set_val:
-        #  key_yard_server_nodes = self.get_confvalue(key_yard.replace("storage-set-count", str(index)))
-        #  if key_yard_server_nodes is None:
-        #    raise Exception("Validation for server_nodes failed")
-        #  index += 1
+      if "node-id" in key_yard:
+        key_yard = key_yard.replace("node-id", self.machine_id)
       else:
         if key_yard in arg_keys_list:
           self.key_value_verify(key_yard)
