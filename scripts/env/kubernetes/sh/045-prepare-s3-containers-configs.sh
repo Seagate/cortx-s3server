@@ -127,9 +127,6 @@ set_bg_config_param() {
   sed -i -e "s,$key:.*,$key: $val," /etc/cortx/s3/s3backgrounddelete/config.yaml
 }
 
-# 'manual' fix until s3_setup is able to handle BG Producer - FIXME
-#set_bg_config_param  producer_endpoint  '"http://192.168.134.219:28049"'
-
 # adjust delay delete parameters to speed up testing
 set_bg_config_param  scheduler_schedule_interval      60
 set_bg_config_param  leak_processing_delay_in_mins     1

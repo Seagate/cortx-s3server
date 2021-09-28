@@ -24,9 +24,6 @@ source ./config.sh
 source ./env.sh
 source ./sh/functions.sh
 
-# Update producer endpoint
-sed -i -e "s,producer_endpoint:.*,producer_endpoint: '"http://$CORTX_IO_SVC:28049"'," /etc/cortx/s3/s3backgrounddelete/config.yaml
-
 add_separator Creating BG POD.
 
 # update image link for bgdelete-producer pod
