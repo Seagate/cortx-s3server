@@ -25,10 +25,8 @@ source ./env.sh
 source ./sh/functions.sh
 source ./sh/045-prepare-s3-containers-configs.sh
 
-set -x # print each statement before execution
-
 # Update producer endpoint
-set_bg_config_param  producer_endpoint '"http://$CORTX_IO_SVC:28049"'
+sed -i -e "s,producer_endpoint:.*,producer_endpoint: '"http://$CORTX_IO_SVC:28049"'," /etc/cortx/s3/s3backgrounddelete/config.yaml
 
 add_separator Creating BG POD.
 
