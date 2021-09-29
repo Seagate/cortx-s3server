@@ -40,12 +40,30 @@ public class AccountParameterValidator extends AbstractParameterValidator {
      */
     @Override
     public Boolean isValidCreateParams(Map<String, String> requestBody) {
-        if (!S3ParameterValidatorUtil.isValidEmail(requestBody.get("Email"))) {
-            return false;
+        int validParamsCount = 0;
+        if (S3ParameterValidatorUtil.isValidEmail(
+                requestBody.get("Email"))) {
+            validParamsCount++;
         }
 
-        return S3ParameterValidatorUtil.isValidName(
-                requestBody.get("AccountName"));
+        if(S3ParameterValidatorUtil.isValidName(
+                requestBody.get("AccountName"))) {
+            validParamsCount++;
+        }
+
+        String accessKey = requestBody.get("AccessKey");
+        String secretKey = requestBody.get("SecretKey");
+
+        if (accessKey != null || secretKey != null) {
+            if(S3ParameterValidatorUtil.isValidCustomAccessKey(accessKey) &&
+                    S3ParameterValidatorUtil.isValidCustomSecretKey(secretKey)) {
+                validParamsCount++;
+            }
+        } else {
+            validParamsCount++;
+        }
+
+        return validParamsCount == 3;
     }
 
     /**

@@ -41,6 +41,7 @@ import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AccountResponseGenerator;
 import com.seagates3.s3service.S3AccountNotifier;
 import com.seagates3.util.KeyGenUtil;
+import com.seagates3.service.AccessKeyService;
 import com.seagates3.service.GlobalDataStore;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -96,6 +97,8 @@ public class AccountController extends AbstractController {
     public ServerResponse create() {
         String name = requestBody.get("AccountName");
         String email = requestBody.get("Email");
+        String accessKey = requestBody.get("AccessKey");
+        String secretKey = requestBody.get("SecretKey");
         Account account;
         int accountCount = 0;
         LOGGER.info("Creating account: " + name);
@@ -176,7 +179,23 @@ public class AccountController extends AbstractController {
 
         AccessKey rootAccessKey;
         try {
-            rootAccessKey = createRootAccessKey(root);
+            rootAccessKey = accessKeyDAO.find(accessKey);
+        } catch (DataAccessException ex) {
+          LOGGER.error("Failed to find access key in ldap -" + ex);
+            return accountResponseGenerator.internalServerError();
+        }
+
+        if (rootAccessKey.exists()) {
+            return accountResponseGenerator.accessKeyAlreadyExists();
+        }
+
+        try {
+            if (accessKey == null) {
+                rootAccessKey = AccessKeyService.createAccessKey(root);
+            } else {
+                rootAccessKey = AccessKeyService.createAccessKey(root,
+                                                    accessKey, secretKey);
+            }
         } catch (DataAccessException ex) {
             return accountResponseGenerator.internalServerError();
         }
