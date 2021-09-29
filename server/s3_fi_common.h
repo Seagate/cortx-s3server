@@ -44,7 +44,7 @@ typedef struct m0_fi_fault_point s3_fp;
 #define S3_FI_FUNC_NAME "s3_fi_is_enabled"
 #define S3_MODULE_NAME "UNKNOWN"
 
-#ifdef ENABLE_FAULT_INJECTION
+#if ENABLE_FAULT_INJECTION
 #include "lib/finject_internal.h"
 
 /**

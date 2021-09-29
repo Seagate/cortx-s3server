@@ -67,8 +67,8 @@ void S3CopyObjectAction::setup_steps() {
   ACTION_TASK_ADD(S3CopyObjectAction::set_source_bucket_authorization_metadata,
                   this);
   ACTION_TASK_ADD(S3CopyObjectAction::check_source_bucket_authorization, this);
-  ACTION_TASK_ADD(S3CopyObjectAction::create_object, this);
-  ACTION_TASK_ADD(S3CopyObjectAction::copy_object, this);
+  ACTION_TASK_ADD(S3CopyObjectAction::create_one_or_more_objects, this);
+  ACTION_TASK_ADD(S3CopyObjectAction::copy_one_or_more_objects, this);
   ACTION_TASK_ADD(S3CopyObjectAction::save_metadata, this);
   ACTION_TASK_ADD(S3CopyObjectAction::send_response_to_s3_client, this);
 }
@@ -148,6 +148,33 @@ bool S3CopyObjectAction::copy_object_cb() {
   return false;
 }
 
+void S3CopyObjectAction::create_one_or_more_objects() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  if (additional_object_metadata->get_number_of_fragments() == 0) {
+    create_object();
+  } else {
+    // Incase of fragments or multipart upload
+    // each part copy needs seperate object creation
+    create_objects();
+  }
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Exit", __func__);
+}
+
+// Copy source object(s) to destination object(s)
+void S3CopyObjectAction::copy_one_or_more_objects() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  max_parallel_copy = MAX_PARALLEL_COPY;
+  if (additional_object_metadata->get_number_of_fragments() == 0) {
+    copy_object();
+  } else {
+    total_parts_fragment_to_be_copied = total_objects;
+    if (max_parallel_copy > total_objects) {
+      max_parallel_copy = total_objects;
+    }
+    copy_fragments();
+  }
+}
+
 // Copy source object to destination object
 void S3CopyObjectAction::copy_object() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
@@ -182,9 +209,9 @@ void S3CopyObjectAction::copy_object() {
 
     set_s3_error("InternalError");
     send_response_to_s3_client();
-
-  } else if (total_data_to_stream > MINIMUM_ALLOWED_PART_SIZE) {
-
+    return;
+  }
+  if (total_data_to_stream > MINIMUM_ALLOWED_PART_SIZE) {
     start_response();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -212,6 +239,155 @@ void S3CopyObjectAction::copy_object_failed() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+void S3CopyObjectAction::copy_fragments() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  parts_frg_copy_in_flight_copied_or_failed = max_parallel_copy;
+  parts_frg_copy_in_flight = max_parallel_copy;
+  for (int i = 0; i < max_parallel_copy; i++) {
+    // Handle fragments -- TODO
+    copy_each_part_fragment(i);
+  }
+}
+
+void S3CopyObjectAction::copy_each_part_fragment(int index) {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  bool f_success = false;
+  try {
+    fragment_data_copier =
+        std::make_shared<S3ObjectDataCopier>(request, motr_writer_list[index]);
+    fragment_data_copier_list.push_back(std::move(fragment_data_copier));
+    s3_log(S3_LOG_INFO, stripped_request_id,
+           "Copying fragment [index = %d part_number = %d OID="
+           "%" SCNx64 " : %" SCNx64 "",
+           index, part_fragment_context_list[index].part_number,
+           part_fragment_context_list[index].motr_OID.u_hi,
+           part_fragment_context_list[index].motr_OID.u_lo);
+    fragment_data_copier_list[index]->copy_part_fragment(
+        part_fragment_context_list, new_part_frag_ctx_list[index].motr_OID,
+        index, std::bind(&S3CopyObjectAction::copy_object_cb, this),
+        std::bind(&S3CopyObjectAction::copy_part_fragment_success, this,
+                  std::placeholders::_1),
+        std::bind(&S3CopyObjectAction::copy_part_fragment_failed, this,
+                  std::placeholders::_1));
+    f_success = true;
+  }
+  catch (const std::exception& ex) {
+    s3_log(S3_LOG_ERROR, stripped_request_id, "%s", ex.what());
+  }
+  catch (...) {
+    s3_log(S3_LOG_ERROR, stripped_request_id, "Non-standard C++ exception");
+  }
+
+  if (!f_success) {
+    for (unsigned int i = 0; i < fragment_data_copier_list.size(); i++) {
+      if (fragment_data_copier_list[i]) {
+        fragment_data_copier_list[i].reset();
+      }
+    }
+    set_s3_error("InternalError");
+    send_response_to_s3_client();
+    return;
+  }
+  // Send white space to client only if total number of fragments are more
+  // or max part size is greater than some value
+  if ((total_parts_fragment_to_be_copied > MAX_FRAGMENTS_WITHOUT_WHITESPACE) ||
+      (max_part_size > MAX_PART_SIZE_WITHOUT_WHITESPACE)) {
+    start_response();
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3CopyObjectAction::copy_part_fragment_success(int index) {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  fragment_data_copier_list[index].reset();
+  fragment_data_copier_list[index] = nullptr;
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "Copied target fragment [index = %d part_number = %d OID="
+         "%" SCNx64 " : %" SCNx64 "",
+         index, new_part_frag_ctx_list[index].part_number,
+         new_part_frag_ctx_list[index].motr_OID.u_hi,
+         new_part_frag_ctx_list[index].motr_OID.u_lo);
+  s3_log(
+      S3_LOG_DEBUG, stripped_request_id,
+      "parts_fragment_copied_or_failed = %d, parts_frg_copy_in_flight = %d\n",
+      parts_fragment_copied_or_failed, parts_frg_copy_in_flight);
+  
+  // Success callback, so reduce in flight copy operation count
+  parts_frg_copy_in_flight = parts_frg_copy_in_flight - 1;
+
+  if (s3_put_action_state == S3PutObjectActionState::writeFailed) {
+    // This part/fragment got copied, however some another part/fragment
+    // failed to copy, client is send error only when
+    // all the in flight copy request is done
+    // say part 2 copy failed part 3 copy succeeds
+    if ((total_parts_fragment_to_be_copied ==
+         ++parts_fragment_copied_or_failed) ||
+        (parts_frg_copy_in_flight == 0)) {
+      // error is send by last in flight request or last request
+      send_response_to_s3_client();
+      return;
+    }
+  }
+  // Dont save metadata or invoke another copy operation if at all
+  // any of the previous copy operation of the part/fragment failed
+  if (s3_put_action_state != S3PutObjectActionState::writeFailed) {
+    if (total_parts_fragment_to_be_copied ==
+        ++parts_fragment_copied_or_failed) {
+      // This happens to be the last part/fragment which is sucessful
+      // so finally save metadata
+      s3_put_action_state = S3PutObjectActionState::writeComplete;
+      next();
+    } else if (parts_frg_copy_in_flight_copied_or_failed <
+               total_parts_fragment_to_be_copied) {
+      // Only allow max max_parallel_copy copy opration in flight
+      if (parts_frg_copy_in_flight < max_parallel_copy) {
+        parts_frg_copy_in_flight_copied_or_failed =
+            parts_frg_copy_in_flight_copied_or_failed + 1;
+        parts_frg_copy_in_flight = parts_frg_copy_in_flight + 1;
+        // index starts from 0, start another copy of part/fragment
+        copy_each_part_fragment(parts_frg_copy_in_flight_copied_or_failed - 1);
+      }
+    }
+  }
+  s3_log(S3_LOG_DEBUG, stripped_request_id, "%s Exit", __func__);
+}
+
+void S3CopyObjectAction::copy_part_fragment_failed(int index) {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+
+  s3_put_action_state = S3PutObjectActionState::writeFailed;
+  set_s3_error(fragment_data_copier_list[index]->get_s3_error());
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "Copy failed for target fragment [index = %d part_number = %d OID="
+         "%" SCNx64 " : %" SCNx64 "",
+         index, new_part_frag_ctx_list[index].part_number,
+         new_part_frag_ctx_list[index].motr_OID.u_hi,
+         new_part_frag_ctx_list[index].motr_OID.u_lo);
+
+  s3_log(
+      S3_LOG_DEBUG, stripped_request_id,
+      "parts_fragment_copied_or_failed = %d, parts_frg_copy_in_flight = %d\n",
+      parts_fragment_copied_or_failed, parts_frg_copy_in_flight);
+  parts_frg_copy_in_flight = parts_frg_copy_in_flight - 1;
+
+  fragment_data_copier_list[index].reset();
+  fragment_data_copier_list[index] = nullptr;
+  for (unsigned int i = 0; i < fragment_data_copier_list.size(); i++) {
+    if (fragment_data_copier_list[i]) {
+      // Will make the running copy operations to bail out sooner
+      fragment_data_copier_list[i]->set_s3_copy_failed();
+    }
+  }
+
+  if ((total_parts_fragment_to_be_copied ==
+       ++parts_fragment_copied_or_failed) ||
+      (parts_frg_copy_in_flight == 0)) {
+    // error is send by last in flight copy request or last copy request
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
 void S3CopyObjectAction::save_metadata() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
@@ -222,8 +398,15 @@ void S3CopyObjectAction::save_metadata() {
   new_object_metadata->set_content_length(std::to_string(total_data_to_stream));
   new_object_metadata->set_content_type(
       additional_object_metadata->get_content_type());
-  new_object_metadata->set_md5(motr_writer->get_content_md5());
+  // Set the MD5 of source object
+  new_object_metadata->set_md5(additional_object_metadata->get_md5());
   new_object_metadata->setacl(auth_acl);
+  new_object_metadata->set_number_of_parts(
+      additional_object_metadata->get_number_of_parts());
+  new_object_metadata->set_number_of_fragments(
+      additional_object_metadata->get_number_of_fragments());
+  new_object_metadata->set_primary_obj_size(
+      additional_object_metadata->get_primary_obj_size());
 
   // put source object tags on new object
   s3_log(S3_LOG_DEBUG, stripped_request_id,

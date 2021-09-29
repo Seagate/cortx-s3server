@@ -78,11 +78,13 @@ class RequestObject {
   std::string account_id;  // Unique
   int http_status;
   struct event* client_read_timer_event;
+  // Delay the response to client by specific seconds
+  // This is needed when the response is consuming more memory
+  struct event* response_delay_timer_event;
 
   std::string request_id;
   std::string stripped_request_id;
   bool is_service_req_head;
-
   std::string error_code_str;
 
   bool is_paused;  // indicates whether request is explicitly paused
@@ -141,6 +143,9 @@ class RequestObject {
   const char* c_get_file_name();
   virtual bool is_valid_ipaddress(std::string& ipaddr);
   virtual void set_start_client_request_read_timeout();
+  virtual int set_start_response_delay_timer(short int delay_in_milli_secs,
+                                             void* action_obj);
+  void free_response_delay_timer(bool s3_response_delay_timedout);
   virtual void stop_client_read_timer();
   virtual void restart_client_read_timer();
   virtual void free_client_read_timer(bool s3_client_read_timedout = false);
@@ -173,7 +178,9 @@ class RequestObject {
   virtual std::string get_header_value(std::string key);
   virtual std::string get_host_header();
   virtual std::string get_host_name();
-
+  // The length of outstanding write/output buffer not yet
+  // written to the client socket
+  virtual size_t get_write_buffer_outstanding_length();
   virtual std::string get_headers_copysource();
   // returns x-amz-decoded-content-length OR Content-Length
   // Always prefer get_data_length*() version since it takes
@@ -339,7 +346,10 @@ class RequestObject {
   std::shared_ptr<S3AsyncBufferOptContainer> get_buffered_input() {
     return buffered_input;
   }
-
+  size_t get_mempool_buffer_count() { return used_mempool_buffer_count; }
+  void add_to_mempool_buffer_count(size_t& buffer_cnt) {
+    used_mempool_buffer_count += buffer_cnt;
+  }
   // See detailed comment in Action::addb_request_id.
   const uint64_t addb_request_id;
   // Helper counter for assigning unique addb_request_id's for each request.
@@ -348,6 +358,7 @@ class RequestObject {
   // Response Helpers
  private:
   struct evbuffer* reply_buffer;
+  size_t used_mempool_buffer_count;
 
  public:
   virtual void send_response(int code, std::string body = "");

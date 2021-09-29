@@ -190,6 +190,13 @@ bool S3Option::load_section(std::string section_name,
 
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_AHEAD_MULTIPLE");
       read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_WRITE_BUFFER_MULTIPLE");
+      write_buffer_multiple =
+          s3_option_node["S3_WRITE_BUFFER_MULTIPLE"].as<int>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_GET_THROTTLE_TIME_MILLISEC");
+      s3_req_throttle_time =
+          s3_option_node["S3_GET_THROTTLE_TIME_MILLISEC"].as<int>();
+
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_DEFAULT_ENDPOINT");
       s3_default_endpoint =
           s3_option_node["S3_SERVER_DEFAULT_ENDPOINT"].as<std::string>();
@@ -536,6 +543,12 @@ bool S3Option::load_section(std::string section_name,
 
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_AHEAD_MULTIPLE");
       read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_WRITE_BUFFER_MULTIPLE");
+      write_buffer_multiple =
+          s3_option_node["S3_WRITE_BUFFER_MULTIPLE"].as<int>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_GET_THROTTLE_TIME_MILLISEC");
+      s3_req_throttle_time =
+          s3_option_node["S3_GET_THROTTLE_TIME_MILLISEC"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MAX_RETRY_COUNT");
       max_retry_count =
           s3_option_node["S3_MAX_RETRY_COUNT"].as<unsigned short>();
@@ -961,6 +974,10 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_SERVER_SSL_SESSION_TIMEOUT = %d\n",
          s3server_ssl_session_timeout_in_sec);
   s3_log(S3_LOG_INFO, "", "S3_READ_AHEAD_MULTIPLE = %d\n", read_ahead_multiple);
+  s3_log(S3_LOG_INFO, "", "S3_WRITE_BUFFER_MULTIPLE = %d\n",
+         write_buffer_multiple);
+  s3_log(S3_LOG_INFO, "", "S3_GET_THROTTLE_TIME_MILLISEC = %d\n",
+         s3_req_throttle_time);
   s3_log(S3_LOG_INFO, "", "S3_PERF_LOG_FILENAME = %s\n", perf_log_file.c_str());
   s3_log(S3_LOG_INFO, "", "S3_SERVER_DEFAULT_ENDPOINT = %s\n",
          s3_default_endpoint.c_str());
@@ -1258,6 +1275,10 @@ int S3Option::get_s3server_ssl_session_timeout() {
 std::string S3Option::get_perf_log_filename() { return perf_log_file; }
 
 int S3Option::get_read_ahead_multiple() { return read_ahead_multiple; }
+
+int S3Option::get_write_buffer_multiple() { return write_buffer_multiple; }
+
+int S3Option::get_s3_req_throttle_time() { return s3_req_throttle_time; }
 
 std::string S3Option::get_ipv4_bind_addr() { return s3_ipv4_bind_addr; }
 

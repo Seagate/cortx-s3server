@@ -52,8 +52,15 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
 
   std::shared_ptr<S3MotrReaderFactory> motr_reader_factory;
   std::unique_ptr<S3ObjectDataCopier> object_data_copier;
+  std::shared_ptr<S3ObjectDataCopier> fragment_data_copier;
+  std::vector<std::shared_ptr<S3ObjectDataCopier>> fragment_data_copier_list;
 
   bool response_started = false;
+  int total_parts_fragment_to_be_copied = 0;
+  int parts_fragment_copied_or_failed = 0;
+  int max_parallel_copy = 0;
+  int parts_frg_copy_in_flight_copied_or_failed = 0;
+  int parts_frg_copy_in_flight = 0;
 
   bool if_source_and_destination_same();
 
@@ -63,6 +70,7 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   void check_source_bucket_authorization_failed();
   void set_source_bucket_authorization_metadata();
   void check_destination_bucket_authorization_failed();
+  void copy_each_part_fragment(int index);
 
  public:
   S3CopyObjectAction(
@@ -80,10 +88,18 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   std::string get_response_xml();
 
   void validate_copyobject_request();
+  void create_one_or_more_objects();
+  void copy_one_or_more_objects();
   void copy_object();
   bool copy_object_cb();
   void copy_object_success();
   void copy_object_failed();
+  void copy_fragments();
+  void copy_part_fragment_success(int index);
+  void copy_part_fragment_failed(int index);
+  void save_fragment_metadata();
+  void save_fragment_metadata_successful();
+  void save_fragment_metadata_failed();
   void save_metadata();
   void save_object_metadata_success();
   void save_object_metadata_failed();

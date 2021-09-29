@@ -41,7 +41,6 @@ sys.path.append(
 from s3backgrounddelete.object_recovery_scheduler import ObjectRecoveryScheduler
 from s3backgrounddelete.object_recovery_processor import ObjectRecoveryProcessor
 from s3backgrounddelete.cortx_s3_config import CORTXS3Config
-from s3backgrounddelete.cortx_s3_object_api import CORTXS3ObjectApi
 from s3backgrounddelete.cortx_s3_index_api import CORTXS3IndexApi
 from s3backgrounddelete.cortx_s3_error_respose import CORTXS3ErrorResponse
 
@@ -109,20 +108,35 @@ def restore_configuration():
     del os.environ["AWS_SECRET_ACCESS_KEY"]
 
 
-# Call HEAD object api on oids
-def perform_head_object(oid_dict):
-    print("Validating non-existence of oids using HEAD object api")
-    print("Probable dead list should not contain :" + str(list(oid_dict.keys())))
+# Check probable delete record - Ensure that entry for leaked object does not exist
+def check_object_in_probable_delete_index(oid_dict):
+    oid_str = str(list(oid_dict.keys()))
+    oid_list = list(oid_dict.keys())
+    oid_deleted = False
+    print("Probable delete list index should not contain: [" + oid_str + "]")
     config = CORTXS3Config()
-    for oid,layout_id in oid_dict.items():
-        response = CORTXS3ObjectApi(config, CONNECTION_TYPE_PRODUCER).head(oid, layout_id)
-        assert response is not None
-        assert response[0] is False
-        assert isinstance(response[1], CORTXS3ErrorResponse)
-        assert response[1].get_error_status() == 404
-        assert response[1].get_error_reason() == "Not Found"
-        print("Object oid \"" + oid + "\" is not present in list..")
-    print("HEAD object validation completed..")
+    result, index_response = CORTXS3IndexApi(config, CONNECTION_TYPE_PRODUCER).list(config.get_probable_delete_index_id(), config.get_max_keys())
+    if result:
+        if index_response is None:
+            raise AssertionError
+        probable_delete_json = index_response.get_index_content()
+        probable_delete_oid_list = probable_delete_json["Keys"]
+        if (probable_delete_oid_list is not None and len(probable_delete_oid_list) > 0):
+            print("Probable delete list is non-empty. Checking presence of oid:[" + oid_str + "] ...")
+            if any(oid in probable_delete_oid_list for oid in oid_list):
+                print("Probable delete list contains oid [" + oid_str + "]. Expected no such oid")
+                raise AssertionError
+            else:
+                oid_deleted = True
+        else:
+            print("Probable delete list is empty")
+            oid_deleted = True
+    else:
+        # Something failed badly
+        raise AssertionError
+
+    if (oid_deleted):
+        print("Success - Object oid [" + oid_str + "] is not present in list")
 
 
 # *********************Create account s3-background-delete-svc************************
@@ -202,7 +216,7 @@ processor.consume()
 print("Processor has stopped...")
 
 # ************* Verify OID is not present in list*******
-perform_head_object(object1_oid_dict)
+check_object_in_probable_delete_index(object1_oid_dict)
 
 # ************* Verify cleanup of Object using aws s3api head-object api******
 AwsTest('Do head-object for "object1" on bucket "seagatebucket"')\
@@ -260,7 +274,7 @@ processor.consume()
 print("Processor has stopped...")
 
 # *********** Validate OID is not present in list**********
-perform_head_object(object2_oid_dict)
+check_object_in_probable_delete_index(object2_oid_dict)
 
 # ************* Verify cleanup of Object using aws s3api head-object api******
 AwsTest('Do head-object for "object2" on bucket "seagatebucket"')\
@@ -328,7 +342,7 @@ processor.consume()
 print("Processor has stopped...")
 
 # *********** Validate old oid is not present in list**********************************
-perform_head_object(object3_new_oid_dict)
+check_object_in_probable_delete_index(object3_new_oid_dict)
 
 # ********** Delete object "object3" *************
 AwsTest('Delete Object "object3"').delete_object("seagatebucket", "object3")\
@@ -391,8 +405,8 @@ processor.consume()
 print("Processor has stopped...")
 
 # ************* Verify OID are not present in list*******
-perform_head_object(object4_oid_dict)
-perform_head_object(object5_oid_dict)
+check_object_in_probable_delete_index(object4_oid_dict)
+check_object_in_probable_delete_index(object5_oid_dict)
 
 # ************* Verify cleanup of Object using aws s3api head-object api******
 AwsTest('Do head-object for "object4" on bucket "seagatebucket"')\
@@ -487,7 +501,7 @@ processor.consume()
 print("Processor has stopped...")
 
 # ************* Verify clean up of OID's*****************
-perform_head_object(object6_oid_dict)
+check_object_in_probable_delete_index(object6_oid_dict)
 
 # * ********** Delete object "object6 10Mbfile" *************
 AwsTest('Delete Object "object6"').delete_object("seagatebucket", "object6")\
@@ -551,7 +565,7 @@ processor.consume()
 print("Processor has stopped...")
 
 # ************* Verify clean up of OID's*****************
-perform_head_object(multipart_oid_dict)
+check_object_in_probable_delete_index(multipart_oid_dict)
 
 # ************* Verify cleanup of Object using aws s3api head-object api******
 AwsTest('Do head-object for "object7" on bucket "seagatebucket"')\
@@ -631,7 +645,7 @@ processor.consume()
 print("Processor has stopped...")
 
 # ************* Verify clean up of OID's*****************
-perform_head_object(multipart_oid_dict)
+check_object_in_probable_delete_index(multipart_oid_dict)
 
 # ************* Verify cleanup of Object using aws s3api head-object api*****************
 AwsTest('Do head-object for "object8" on bucket "seagatebucket"')\
@@ -691,7 +705,7 @@ processor.consume()
 print("Processor has stopped...")
 
 # ************* Verify OID is not present in list*******
-perform_head_object(object1_oid_dict)
+check_object_in_probable_delete_index(object1_oid_dict)
 
 # ************* Verify cleanup of Object using aws s3api head-object api******
 AwsTest('Do head-object for "object1" on bucket "seagatebucket"')\
@@ -789,8 +803,8 @@ processor.consume()
 print("Processor has stopped...")
 
 # ************* Verify OID are not present in list*******
-perform_head_object(object4_oid_dict)
-perform_head_object(object5_oid_dict)
+check_object_in_probable_delete_index(object4_oid_dict)
+check_object_in_probable_delete_index(object5_oid_dict)
 
 # ************* Verify cleanup of Object using aws s3api head-object api******
 AwsTest('Do head-object for "object2" on bucket "seagatebucket"')\
