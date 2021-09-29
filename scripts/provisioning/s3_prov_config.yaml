@@ -28,8 +28,6 @@
 # "machine-id"- used to substitute machine id of the node
 # "cluster-id"- used to substitute cluster id of the setup, not to be confused
 #               with cluster_id which is component of a key.
-# "storage-set-count"- storage set count, not to be confused with
-#                      storage_set_count which is component of a key.
 
 POST_INSTALL:
 PREPARE:
@@ -64,10 +62,9 @@ CONFIG:
   #CONFSTORE_S3_MACHINE_NAME: "node>machine-id>name" #M (Usedby: None)
 
   CONFSTORE_S3_CLUSTER_ID: "cluster>id" #M (Usedby: None)
-  CONFSTORE_STORAGE_SET_COUNT_KEY: "cluster>storage_set_count" #M (Usedby: s3_deployment)
-  CONFSTORE_STORAGE_SET_SERVER_NODES_KEY: "cluster>storage_set[storage-set-count]>nodes"  #M (Usedby: s3_deployment)
-  CONFSTORE_BASE_CONFIG_PATH: "cortx>software>storage>config"  #O default - /etc/cortx (Usedby: s3_deployment)
-
+  CONFSTORE_BASE_CONFIG_PATH: "cortx>common>storage>config"  #O default - /etc/cortx (Usedby: s3_deployment)
+  CONFSTORE_STORAGE_SET_SERVER_NODES_KEY: "cluster>storage_set>nodes" #M (Usedby: s3_deployment)
+  CONFSTORE_NODE_TYPE: "node>node-id>type" #M (Usedby: s3_deployment)
 
   ##################################################################################################
   # Private keys which don't come from provisioner and which MUST have default values.
