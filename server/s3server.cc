@@ -60,7 +60,7 @@
 #define MIN_RESERVE_SIZE 32768
 
 #define WEBSTORE "/home/seagate/webstore"
-#define MOTR_INIT_MAX_ALLOWED_TIME 15
+#define MOTR_INIT_MAX_ALLOWED_TIME 60
 
 /* Program options */
 #include <unistd.h>
@@ -943,7 +943,7 @@ int main(int argc, char **argv) {
 
     struct timeval tv;
     tv.tv_usec = 0;
-    tv.tv_sec = sleep_time;
+    tv.tv_sec = MOTR_INIT_MAX_ALLOWED_TIME;
 
     struct event *timer_event =
         event_new(global_evbase_handle, -1, 0, s3_motr_init_timeout_cb, NULL);
