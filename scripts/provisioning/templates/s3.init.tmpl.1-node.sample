@@ -25,7 +25,8 @@ cortx:
     setup_type: "VM"
     storage:
       log: "/var/log/cortx/"
-      misc: "/var/data/cortx/"
+      shared: /share
+      config: "/etc/cortx"
   external:
     openldap:
       admin: "admin"
@@ -51,17 +52,14 @@ cortx:
     internal:
       endpoints:
       - http://127.0.0.1:28049
-  software:
-    storage:
-      config: "/etc/cortx"
 cluster:
   id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
-  storage_set_count: "1"
   storage_set:
-  - nodes:
+    nodes:
     - 1114a50a6bf6f9c93ebd3c49d07d3fd4
 node:
   1114a50a6bf6f9c93ebd3c49d07d3fd4:
     name: "POD-1"
     hostname: "ssc-vm-0080.colo.seagate.com"
     cluster_id: "3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6"
+    type: storage_node
