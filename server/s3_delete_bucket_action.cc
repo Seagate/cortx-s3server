@@ -231,11 +231,16 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
       part_oids_str += " " + std::to_string(part_idx_layout.oid.u_hi) + " " +
                        std::to_string(part_idx_layout.oid.u_lo);
 
+#if 0
+      // Unlike in R1, multipart table contains OID without
+      // any actual object allocation from motr, hence
+      // not needed to delete
       if (multipart_obj_oid.u_hi != 0ULL || multipart_obj_oid.u_lo != 0ULL) {
         multipart_object_oids.push_back(multipart_obj_oid);
         multipart_object_layoutids.push_back(object->get_layout_id());
         multipart_object_pv_ids.push_back(object->get_pvid());
       }
+#endif
     }
     return_list_size++;
     if (--length == 0 || return_list_size == count_we_requested) {

@@ -907,7 +907,6 @@ void S3GetObjectAction::send_data_to_client() {
   s3_log(S3_LOG_DEBUG, request_id, "Sending %zu bytes to client.\n",
          bytes_sent);
   s3_timer.stop();
-<<<<<<< HEAD
   // Dump Mem pool stats after sending data to client
   struct pool_info poolinfo;
   int rc = event_mempool_getinfo(&poolinfo);
@@ -926,13 +925,45 @@ void S3GetObjectAction::send_data_to_client() {
   }
 
   if (request->client_connected()) {
-    if (data_sent_to_client != requested_content_length) {
-      read_object_data();
-    } else {
-      const auto mss = s3_timer.elapsed_time_in_millisec();
-      LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);
-      s3_stats_timing("get_object_send_data", mss);
 
+    s3_log(S3_LOG_INFO, request_id,
+           "Client disconnected. Aborting S3 GET operation\n");
+    set_s3_error("InternalError");
+    send_response_to_s3_client();
+
+    if (!object_metadata->is_object_extended()) {
+      // For normal object
+      if (data_sent_to_client != requested_content_length) {
+        read_object_data();
+      } else {
+        const auto mss = s3_timer.elapsed_time_in_millisec();
+        LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);
+        s3_stats_timing("get_object_send_data", mss);
+
+        send_response_to_s3_client();
+      }
+    } else {
+      // For fragmented object
+      if (data_sent_to_client_for_object !=
+          extended_objects[next_fragment_object].requested_object_size) {
+        read_object_data();
+      } else {
+        // Read next fragmented object
+        next_fragment_object++;
+        if (next_fragment_object < total_objects_to_read) {
+          s3_log(S3_LOG_DEBUG, request_id,
+                 "Read next object fragment at index (%u)\n",
+                 next_fragment_object);
+          read_fragmented_object();
+        } else {
+          send_response_to_s3_client();
+        }
+      }
+    }
+    else {
+      s3_log(S3_LOG_INFO, request_id,
+             "Client disconnected. Aborting S3 GET operation\n");
+      set_s3_error("InternalError");
       send_response_to_s3_client();
     }
   } else {
@@ -940,37 +971,6 @@ void S3GetObjectAction::send_data_to_client() {
            "Client disconnected. Aborting S3 GET operation\n");
     set_s3_error("InternalError");
     send_response_to_s3_client();
-=======
-
-  if (!object_metadata->is_object_extended()) {
-    // For normal object
-    if (data_sent_to_client != requested_content_length) {
-      read_object_data();
-    } else {
-      const auto mss = s3_timer.elapsed_time_in_millisec();
-      LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);
-      s3_stats_timing("get_object_send_data", mss);
-
-      send_response_to_s3_client();
-    }
-  } else {
-    // For fragmented object
-    if (data_sent_to_client_for_object !=
-        extended_objects[next_fragment_object].requested_object_size) {
-      read_object_data();
-    } else {
-      // Read next fragmented object
-      next_fragment_object++;
-      if (next_fragment_object < total_objects_to_read) {
-        s3_log(S3_LOG_DEBUG, request_id,
-               "Read next object fragment at index (%u)\n",
-               next_fragment_object);
-        read_fragmented_object();
-      } else {
-        send_response_to_s3_client();
-      }
-    }
->>>>>>> 9d6ea390 (EOS-16889: s3faulttolerence - Changes in Object listing (#656))
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
