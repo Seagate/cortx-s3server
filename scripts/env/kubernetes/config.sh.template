@@ -19,7 +19,7 @@ NODE_NAME=node1
 #                    #
 ######################
 
-S3_CORTX_ALL_IMAGE_TAG=2.0.0-177-custom-ci
+S3_CORTX_ALL_IMAGE_TAG=2.0.0-194-custom-ci
 #S3_CORTX_ALL_IMAGE_TAG=2.0.0-latest-custom-ci
   # Specifies which image to use for S3 containers.
   # Update if you want to test specific build instead of latest.
@@ -30,6 +30,12 @@ S3_CORTX_ALL_IMAGE_TAG=2.0.0-177-custom-ci
 S3_CORTX_ALL_CUSTOM_CI_NUMBER=
   # Specify number (e.g. 174), if you need to build image locally instead of
   # downloading from ghcr.  This number should be number of your custom-ci job.
+
+PRVSNR_CORTX_ALL_IMAGE_TAG=
+  # Image to use for provisioner.  Leave empty to use same image as for S3, or
+  # specify tag.  Tag examples:
+#PRVSNR_CORTX_ALL_IMAGE_TAG=2.0.0-177-custom-ci
+#PRVSNR_CORTX_ALL_IMAGE_TAG=2.0.0-latest-custom-ci
 
 MOTR_CORTX_ALL_IMAGE_TAG=2.0.0-2042-custom-ci # latest known working image from Motr team
   # Specifies which image to use for Motr containers.

@@ -88,7 +88,7 @@ cp message-bus/cortx.conf /etc/cortx
 kube_run cp /opt/seagate/cortx/hare/conf/hare.config.conf.tmpl.1-node /etc/cortx
 
 set_kv() {
-  sed -i "s;$1;$2;" /etc/cortx/hare.config.tmpl.1-node
+  sed -i "s;$1;$2;" /etc/cortx/hare.config.conf.tmpl.1-node
 }
 set_kv TMPL_CLUSTER_ID               3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6
 set_kv TMPL_MACHINE_ID               "$MACHINE_ID"
