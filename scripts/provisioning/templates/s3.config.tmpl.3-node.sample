@@ -25,7 +25,6 @@ cortx:
     setup_type: "VM"
     storage:
       log: "/var/log/cortx/"
-      shared: /share
       config: /etc/cortx
   external:
     openldap:
@@ -39,8 +38,7 @@ cortx:
       - localhost
       - localhost
   s3:
-    auth:
-      secret: "gAAAAABgWFPz2w_t6IBVictZmgTCgBXn5V-oy2JUVtvZkJvHM5KaaZKXRwtz4YKYieIy8mVKF8PUaZ6WYJEttcsi2KDpLOk9Vg=="
+    auth_secret: "gAAAAABgWFPz2w_t6IBVictZmgTCgBXn5V-oy2JUVtvZkJvHM5KaaZKXRwtz4YKYieIy8mVKF8PUaZ6WYJEttcsi2KDpLOk9Vg=="
     iam:
       endpoints:
       - https://iam.seagate.com:9443
