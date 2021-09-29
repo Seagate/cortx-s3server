@@ -52,11 +52,12 @@ cortx:
       - http://127.0.0.1:28049
 cluster:
   id: "TMPL_CLUSTER_ID"
+  storage_set_count: 1
   storage_set:
-    nodes:
-    - TMPL_MACHINE_ID_1
-    - TMPL_MACHINE_ID_2
-    - TMPL_MACHINE_ID_3
+    - nodes:
+      - TMPL_MACHINE_ID_1
+      - TMPL_MACHINE_ID_2
+      - TMPL_MACHINE_ID_3
 node:
   TMPL_MACHINE_ID_1:
     name: "POD-1"
