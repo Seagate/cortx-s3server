@@ -160,6 +160,7 @@ class Action {
   Action(std::shared_ptr<RequestObject> req, bool check_shutdown = true,
          std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr,
          bool skip_auth = false, bool skip_authorization = true);
+  std::string get_request_id() { return request_id; }
   virtual ~Action();
 
   void set_s3_error(std::string code);

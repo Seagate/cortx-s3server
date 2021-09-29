@@ -70,6 +70,22 @@
 #define OBJECT_PROBABLE_DEAD_OID_LIST_INDEX_OID_U_LO 3
 #define GLOBAL_INSTANCE_INDEX_U_LO 4
 
+extern "C" void mem_log_msg_func(int mempool_log_level, const char *msg) {
+  if (mempool_log_level == MEMPOOL_LOG_INFO) {
+    s3_log(S3_LOG_INFO, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_FATAL) {
+    s3_log(S3_LOG_FATAL, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_ERROR) {
+    s3_log(S3_LOG_ERROR, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_WARN) {
+    s3_log(S3_LOG_WARN, "", "%s\n", msg);
+  } else if (mempool_log_level == MEMPOOL_LOG_DEBUG) {
+    s3_log(S3_LOG_DEBUG, "", "%s\n", msg);
+  } else {
+    s3_log(S3_LOG_FATAL, "", "Invalid mempool log level. %s\n", msg);
+  }
+}
+
 S3Option *g_option_instance = NULL;
 evhtp_ssl_ctx_t *g_ssl_auth_ctx = NULL;
 evbase_t *global_evbase_handle;
@@ -97,7 +113,7 @@ std::set<struct s3_motr_obj_context *> global_motr_obj;
 void s3_motr_init_timeout_cb(evutil_socket_t fd, short event, void *arg) {
   // s3_iem(LOG_ALERT, S3_IEM_MOTR_CONN_FAIL, S3_IEM_MOTR_CONN_FAIL_STR,
   //     S3_IEM_MOTR_CONN_FAIL_JSON);
-  s3_log(S3_LOG_ERROR, "", "Motr connection failed\n");
+  s3_log(S3_LOG_FATAL, "", "Motr connection timet out (hang)\n");
   event_base_loopbreak(global_evbase_handle);
   return;
 }
@@ -267,7 +283,7 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
     s3_log(S3_LOG_FATAL, "", "Issue with memory pool!\n");
   } else {
     s3_log(S3_LOG_DEBUG, "",
-           "mempool info: mempool_item_size = %zu "
+           "mempool stats during new request: mempool_item_size = %zu "
            "free_bufs_in_pool = %d "
            "number_of_bufs_shared = %d "
            "total_bufs_allocated_by_pool = %d\n",
@@ -278,13 +294,15 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
 
   // Check if we have enough approx memory to proceed with request
   if (s3_request->get_api_type() == S3ApiType::object &&
-      s3_request->http_verb() == S3HttpVerb::PUT) {
+      (s3_request->http_verb() == S3HttpVerb::PUT ||
+       (s3_request->http_verb() == S3HttpVerb::GET))) {
     int layout_id = S3MotrLayoutMap::get_instance()->get_layout_for_object_size(
         s3_request->get_data_length());
     if (!S3MemoryProfile().we_have_enough_memory_for_put_obj(layout_id) ||
         !S3MemoryProfile().free_memory_in_pool_above_threshold_limits()) {
-      s3_log(S3_LOG_DEBUG, s3_request->get_request_id().c_str(),
-             "Limited memory: Rejecting PUT object/part request with retry.\n");
+      s3_log(S3_LOG_INFO, s3_request->get_request_id().c_str(),
+             "Limited memory: Rejecting PUT/GET object/part request with "
+             "retry.\n");
       s3_request->respond_retry_after(1);
       return EVHTP_RES_OK;
     } else if (req->buffer_out) {
@@ -406,6 +424,15 @@ static evhtp_res process_request_data(evhtp_request_t *p_evhtp_req,
     s3_log(S3_LOG_DEBUG, request_id,
            "Received Request body %zu bytes for sock = %d\n",
            evbuffer_get_length(buf), p_evhtp_req->conn->sock);
+    size_t pool_buffer_sz =
+        S3Option::get_instance()->get_libevent_pool_buffer_size();
+    size_t buff_count =
+        (evbuffer_get_length(buf) + pool_buffer_sz - 1) / pool_buffer_sz;
+    s3_log(S3_LOG_DEBUG, request_id,
+           "S3 request [%s] allocated mempool buffer(16k) with total buffer "
+           "count = %zu\n",
+           request_id.c_str(), buff_count);
+    p_s3_req->add_to_mempool_buffer_count(buff_count);
 
     if (!p_s3_req->is_incoming_data_ignored()) {
       evbuf_t *s3_buf = evbuffer_new();
@@ -789,7 +816,7 @@ int main(int argc, char **argv) {
                          g_option_instance->get_libevent_pool_initial_size(),
                          g_option_instance->get_libevent_pool_expandable_size(),
                          g_option_instance->get_libevent_pool_max_threshold(),
-                         libevent_mempool_flags);
+                         mem_log_msg_func, libevent_mempool_flags);
 
   if (rc != 0) {
     s3daemon.delete_pidfile();

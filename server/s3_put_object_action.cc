@@ -820,7 +820,9 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list_failed() {
 
 void S3PutObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-
+  s3_log(S3_LOG_DEBUG, request_id,
+         "S3 request [%s] with total allocated mempool buffers = %zu\n",
+         request_id.c_str(), request->get_mempool_buffer_count());
   if (S3Option::get_instance()->is_getoid_enabled()) {
 
     request->set_out_header_value("x-stx-oid",
@@ -854,7 +856,10 @@ void S3PutObjectAction::send_response_to_s3_client() {
         request->set_out_header_value("Retry-After", "1");
       }
     }
-
+    // Dump request that failed
+    s3_log(S3_LOG_ERROR, request_id,
+           "S3 Put request failed. HTTP status code = %d\n",
+           error.get_http_status_code());
     request->send_response(error.get_http_status_code(), response_xml);
   } else {
     // Metadata saved implies its success.

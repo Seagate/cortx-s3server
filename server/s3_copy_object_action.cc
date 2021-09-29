@@ -267,7 +267,8 @@ void S3CopyObjectAction::copy_each_part_fragment(int index) {
         index, std::bind(&S3CopyObjectAction::copy_object_cb, this),
         std::bind(&S3CopyObjectAction::copy_part_fragment_success, this,
                   std::placeholders::_1),
-        std::bind(&S3CopyObjectAction::copy_part_fragment_failed, this, std::placeholders::_1));
+        std::bind(&S3CopyObjectAction::copy_part_fragment_failed, this,
+                  std::placeholders::_1));
     f_success = true;
   }
   catch (const std::exception& ex) {
@@ -301,15 +302,16 @@ void S3CopyObjectAction::copy_part_fragment_success(int index) {
   fragment_data_copier_list[index].reset();
   fragment_data_copier_list[index] = nullptr;
   s3_log(S3_LOG_INFO, stripped_request_id,
-          "Copied target fragment [index = %d part_number = %d OID="
-          "%" SCNx64 " : %" SCNx64 "",
-          index, new_part_frag_ctx_list[index].part_number,
-          new_part_frag_ctx_list[index].motr_OID.u_hi,
-          new_part_frag_ctx_list[index].motr_OID.u_lo);
-  s3_log(S3_LOG_DEBUG, stripped_request_id,
-         "parts_fragment_copied_or_failed = %d, parts_frg_copy_in_flight = %d\n",
-         parts_fragment_copied_or_failed, parts_frg_copy_in_flight);
-
+         "Copied target fragment [index = %d part_number = %d OID="
+         "%" SCNx64 " : %" SCNx64 "",
+         index, new_part_frag_ctx_list[index].part_number,
+         new_part_frag_ctx_list[index].motr_OID.u_hi,
+         new_part_frag_ctx_list[index].motr_OID.u_lo);
+  s3_log(
+      S3_LOG_DEBUG, stripped_request_id,
+      "parts_fragment_copied_or_failed = %d, parts_frg_copy_in_flight = %d\n",
+      parts_fragment_copied_or_failed, parts_frg_copy_in_flight);
+  
   // Success callback, so reduce in flight copy operation count
   parts_frg_copy_in_flight = parts_frg_copy_in_flight - 1;
 
@@ -356,15 +358,16 @@ void S3CopyObjectAction::copy_part_fragment_failed(int index) {
   s3_put_action_state = S3PutObjectActionState::writeFailed;
   set_s3_error(fragment_data_copier_list[index]->get_s3_error());
   s3_log(S3_LOG_INFO, stripped_request_id,
-          "Copy failed for target fragment [index = %d part_number = %d OID="
-          "%" SCNx64 " : %" SCNx64 "",
-          index, new_part_frag_ctx_list[index].part_number,
-          new_part_frag_ctx_list[index].motr_OID.u_hi,
-          new_part_frag_ctx_list[index].motr_OID.u_lo);
+         "Copy failed for target fragment [index = %d part_number = %d OID="
+         "%" SCNx64 " : %" SCNx64 "",
+         index, new_part_frag_ctx_list[index].part_number,
+         new_part_frag_ctx_list[index].motr_OID.u_hi,
+         new_part_frag_ctx_list[index].motr_OID.u_lo);
 
-  s3_log(S3_LOG_DEBUG, stripped_request_id,
-         "parts_fragment_copied_or_failed = %d, parts_frg_copy_in_flight = %d\n",
-         parts_fragment_copied_or_failed, parts_frg_copy_in_flight);
+  s3_log(
+      S3_LOG_DEBUG, stripped_request_id,
+      "parts_fragment_copied_or_failed = %d, parts_frg_copy_in_flight = %d\n",
+      parts_fragment_copied_or_failed, parts_frg_copy_in_flight);
   parts_frg_copy_in_flight = parts_frg_copy_in_flight - 1;
 
   fragment_data_copier_list[index].reset();

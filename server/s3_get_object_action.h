@@ -86,8 +86,12 @@ class S3GetObjectAction : public S3ObjectAction {
 
   void read_object_data();
   void read_object_data_failed();
+  void check_outbuffer_and_mempool_stats(bool& bcontinue);
+  void resume_action_handler();
   void send_data_to_client();
   void send_response_to_s3_client();
+  // Overridden from base
+  void resume_action_step();
 
   FRIEND_TEST(S3GetObjectActionTest, ConstructorTest);
   FRIEND_TEST(S3GetObjectActionTest, FetchBucketInfo);

@@ -229,6 +229,11 @@ void S3ObjectAction::load_metadata() {
   fetch_bucket_info();
 }
 
+void S3ObjectAction::on_action_delay_timeout_cb() {
+  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
+  // Derived classes to implement specific functionality
+}
+
 void S3ObjectAction::fetch_additional_object_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
   next();
