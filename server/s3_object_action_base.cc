@@ -202,7 +202,27 @@ void S3ObjectAction::fetch_additional_object_info() {
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
-void S3ObjectAction::fetch_additional_object_info_success() { next(); }
+void S3ObjectAction::fetch_additional_object_info_success() {
+  // request->set_object_size(object_metadata->get_content_length());
+  if (additional_object_metadata->is_object_extended()) {
+    // Read the extended parts of the object from extended index table
+    std::shared_ptr<S3ObjectExtendedMetadata> extended_obj_metadata =
+        object_metadata_factory->create_object_ext_metadata_obj(
+            request, additional_object_metadata->get_bucket_name(),
+            additional_object_metadata->get_object_name(),
+            additional_object_metadata->get_obj_version_key(),
+            additional_object_metadata->get_number_of_parts(),
+            additional_object_metadata->get_number_of_fragments(),
+            additional_bucket_metadata->get_extended_metadata_index_layout());
+    additional_object_metadata->set_extended_object_metadata(
+        extended_obj_metadata);
+    extended_obj_metadata->load(
+        std::bind(&S3ObjectAction::fetch_ext_object_info_success, this),
+        std::bind(&S3ObjectAction::fetch_ext_object_info_failed, this));
+  } else {
+    next();
+  }
+}
 
 void S3ObjectAction::load_metadata() {
   s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);

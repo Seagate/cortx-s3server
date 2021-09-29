@@ -448,6 +448,7 @@ struct s3_part_frag_context {
   std::string versionID;
   size_t item_size;
   int layout_id;
+  int part_number;
   bool is_multipart;
 };
 

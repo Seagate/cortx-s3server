@@ -1275,6 +1275,8 @@ int S3ObjectExtendedMetadata::from_json(std::string key, std::string content) {
       ((tokens.size() == 3) && (tokens[2].find("P", 0) != std::string::npos))) {
     // multipart (could be fragmented)
     item_ctx.is_multipart = true;
+    // Get numeral post 'P' for part number
+    item_ctx.part_number = atoi(tokens[2].substr(1).c_str());
   } else {
     // not multipart
   }
