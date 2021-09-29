@@ -45,18 +45,11 @@ cat k8s-blueprints/shim-pod.yaml.template \
 # credentials, and so is suffering from rate limits.
 pull_images_for_pod k8s-blueprints/shim-pod.yaml
 
+delete_pod_if_exists shim-pod
+
 kubectl apply -f k8s-blueprints/shim-pod.yaml
 
-set +x
-while [ `kubectl get pod | grep shim-pod | grep Running | wc -l` -lt 1 ]; do
-  echo
-  kubectl get pod | grep 'NAME\|shim-pod'
-  echo
-  echo shim-pod is not yet in Running state, re-checking ...
-  echo '(hit CTRL-C if it is taking too long)'
-  sleep 5
-done
-set -x
+wait_till_pod_is_Running  shim-pod
 
 kube_run() {
   kubectl exec -i shim-pod -c shim -- "$@"
@@ -120,15 +113,38 @@ set_kv TMPL_METADATA_DEVICE          FIXME
 # S3 mini provisioner call #
 ############################
 
-kube_run "$src_dir/s3server/s3-mini-prov.sh"
+if [ "$USE_PROVISIONING" = yes ]; then
+  kube_run "$src_dir/s3server/shim-provisioner.sh"
+else
+  # update solution config with proper values
 
+  python3 <<EOF
+import sys
+import yaml
 
-# 'manual' step for machine-id (until proper solution is merged) FIXME
-kube_run sh -c 'cat /etc/machine-id > /etc/cortx/s3/machine-id'
+data = yaml.load(open("/etc/cortx/s3/solution.cpy/config.yaml"))
+
+data['cortx']['external']['kafka']['endpoints'] = ['$KAFKA_EXTERNAL_IP']
+
+data['cortx']['common']['security']['domain_certificate'] = '/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem'
+data['cortx']['common']['security']['device_certificate'] = '/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem'
+
+# FIXME: using hard-coded IP address. Remove this line once Saumitra's change is in, which creates io service with k8s.
+data['cortx']['s3']['internal']['endpoints'] = 'http://192.168.134.219:28049'
+
+with open("/etc/cortx/s3/solution.cpy/config.yaml", 'w') as f:
+  f.write(yaml.dump(data))
+EOF
+
+  kube_run "$src_dir/s3server/s3-mini-prov.sh"
+fi
 
 # #############
 # # S3 server #
 # #############
+
+# 'manual' step for machine-id (until proper solution is merged) FIXME
+kube_run sh -c 'cat /etc/machine-id | sed "s,-,,g" > /etc/cortx/s3/machine-id'
 
 # Increase retry interval
 sed -i \

@@ -19,23 +19,20 @@ NODE_NAME=node1
 #                    #
 ######################
 
-S3_CORTX_ALL_IMAGE_TAG=2.0.0-194-custom-ci
+S3_CORTX_ALL_IMAGE_TAG= # leaving empty as we'll be building custom image, see below
+#S3_CORTX_ALL_IMAGE_TAG=2.0.0-194-custom-ci
 #S3_CORTX_ALL_IMAGE_TAG=2.0.0-latest-custom-ci
   # Specifies which image to use for S3 containers.
   # Update if you want to test specific build instead of latest.
-  # 
+  #
   # List of avilable images here:
   # https://github.com/Seagate/cortx-re/pkgs/container/cortx-all
 
-S3_CORTX_ALL_CUSTOM_CI_NUMBER=
+S3_CORTX_ALL_CUSTOM_CI_NUMBER=205
   # Specify number (e.g. 174), if you need to build image locally instead of
   # downloading from ghcr.  This number should be number of your custom-ci job.
-
-PRVSNR_CORTX_ALL_IMAGE_TAG=
-  # Image to use for provisioner.  Leave empty to use same image as for S3, or
-  # specify tag.  Tag examples:
-#PRVSNR_CORTX_ALL_IMAGE_TAG=2.0.0-177-custom-ci
-#PRVSNR_CORTX_ALL_IMAGE_TAG=2.0.0-latest-custom-ci
+  # This only affects S3_CORTX_ALL_IMAGE_TAG, MOTR_CORTX_ALL_IMAGE_TAG is not
+  # afected by this setting.
 
 MOTR_CORTX_ALL_IMAGE_TAG=2.0.0-2042-custom-ci # latest known working image from Motr team
   # Specifies which image to use for Motr containers.
@@ -44,3 +41,14 @@ DOCKER_USER_NAME=
 DOCKER_PASSWORD=
   # www.docker.com credentials.  Optional.  Fill in if you need to avoid Rate
   # Limiting issue.
+
+###########################################################################
+#                  #
+# for provisioning #
+#                  #
+####################
+
+USE_PROVISIONING=yes
+  # yes/no.
+  # When yes, it will try to create confstore from solution config.
+  # When no, it will use S3 template files.

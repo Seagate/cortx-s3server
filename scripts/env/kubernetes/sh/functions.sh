@@ -108,3 +108,27 @@ pull_images_for_pod() {
     | xargs --no-run-if-empty -n1 docker pull
   # grep -v is needed to prevent downloading of locally-built image
 }
+
+wait_till_pod_is_Running() {
+  pod_name="$1"
+  shift
+  ( set +x
+    add_separator "Waiting till pod '$pod_name' becomes Running"
+    while [ $(kubectl get pod "$@" | grep "$pod_name" | grep Running | wc -l) -lt 1 ]; do
+      echo
+      kubectl get pod "$@" | grep 'NAME\|'"$pod_name"
+      echo
+      echo "Pod named '$pod_name' is not yet in Running state, re-checking ..."
+      echo '(hit CTRL-C if it is taking too many iterations)'
+      date
+      sleep 5
+    done
+  )
+}
+
+delete_pod_if_exists() {
+  pod_name="$1"
+  if kubectl get pod "$pod_name" &>/dev/null; then
+    kubectl delete pod "$pod_name"
+  fi
+}

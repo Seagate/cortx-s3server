@@ -16,6 +16,8 @@ spec:
           mountPath: /var/log/cortx
         - name: var-data-cortx
           mountPath: /var/data/cortx
+        - name: cortx-secret
+          mountPath: /etc/cortx/solution/secret
       command:
          - "/bin/bash"
          - "-c"
@@ -23,6 +25,9 @@ spec:
       args:
          - 'sleep infinity'
   volumes:
+      - name: cortx-secret
+        secret:
+          secretName: cortx-secret
       - name: etc-cortx
         persistentVolumeClaim:
           claimName: etc-cortx
