@@ -29,13 +29,27 @@
 
 S3ObjectDataCopier::S3ObjectDataCopier(
     std::shared_ptr<RequestObject> request_object,
-    std::shared_ptr<S3MotrWiter> motr_writer,
-    std::shared_ptr<S3MotrReaderFactory> motr_reader_factory,
-    std::shared_ptr<MotrAPI> motr_api)
-    : request_object(std::move(request_object)),
-      motr_writer(std::move(motr_writer)),
-      motr_reader_factory(std::move(motr_reader_factory)),
-      motr_api(std::move(motr_api)) {
+    std::shared_ptr<S3MotrWiter> s3_motr_writer,
+    std::shared_ptr<S3MotrReaderFactory> s3_motr_reader_factory,
+    std::shared_ptr<MotrAPI> s3_motr_api)
+    : request_object(std::move(request_object)) {
+  if (s3_motr_api) {
+    motr_api = std::move(s3_motr_api);
+  } else {
+    motr_api = std::make_shared<ConcreteMotrAPI>();
+  }
+
+  if (s3_motr_writer) {
+    motr_writer = std::move(s3_motr_writer);
+  } else {
+    motr_writer = std::make_shared<S3MotrWiter>(request_object, motr_api);
+  }
+
+  if (s3_motr_reader_factory) {
+    motr_reader_factory = std::move(s3_motr_reader_factory);
+  } else {
+    motr_reader_factory = std::make_shared<S3MotrReaderFactory>();
+  }
 
   request_id = this->request_object->get_request_id();
   size_of_ev_buffer = g_option_instance->get_libevent_pool_buffer_size();
@@ -58,7 +72,6 @@ void S3ObjectDataCopier::read_data_block() {
   assert(data_blocks_read.empty());
   assert(!p_evbuffer_read);
   assert(bytes_left_to_read > 0);
-
   const auto n_blocks = std::min<size_t>(
       S3Option::get_instance()->get_motr_units_per_request(),
       (bytes_left_to_read + motr_unit_size - 1) / motr_unit_size);
@@ -80,7 +93,11 @@ void S3ObjectDataCopier::read_data_block() {
                      ? "ServiceUnavailable"
                      : "InternalError");
     if (!write_in_progress) {
-      this->on_failure();
+      if (copy_parts_fragment) {
+        this->on_failure_for_fragments(vector_index);
+      } else {
+        this->on_failure();
+      }
     }
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -101,7 +118,11 @@ void S3ObjectDataCopier::read_data_block_success() {
   if (copy_failed) {
     assert(!write_in_progress);
 
-    this->on_failure();
+    if (copy_parts_fragment) {
+      this->on_failure_for_fragments(vector_index);
+    } else {
+      this->on_failure();
+    }
     return;
   }
   assert(data_blocks_read.empty());
@@ -122,7 +143,11 @@ void S3ObjectDataCopier::read_data_block_success() {
     set_s3_error("InternalError");
 
     if (!write_in_progress) {
-      this->on_failure();
+      if (copy_parts_fragment) {
+        this->on_failure_for_fragments(vector_index);
+      } else {
+        this->on_failure();
+      }
     }
     return;
   }
@@ -177,7 +202,11 @@ void S3ObjectDataCopier::read_data_block_failed() {
                    ? "ServiceUnavailable"
                    : "InternalError");
   if (!write_in_progress) {
-    this->on_failure();
+    if (copy_parts_fragment) {
+      this->on_failure_for_fragments(vector_index);
+    } else {
+      this->on_failure();
+    }
   }
 
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
@@ -209,7 +238,11 @@ void S3ObjectDataCopier::write_data_block() {
     set_s3_error("ServiceUnavailable");
 
     if (!read_in_progress) {
-      this->on_failure();
+      if (copy_parts_fragment) {
+        this->on_failure_for_fragments(vector_index);
+      } else {
+        this->on_failure();
+      }
     }
   } else {
     write_in_progress = true;
@@ -233,8 +266,11 @@ void S3ObjectDataCopier::write_data_block_success() {
   }
   if (copy_failed) {
     assert(!read_in_progress);
-
-    this->on_failure();
+    if (copy_parts_fragment) {
+      this->on_failure_for_fragments(vector_index);
+    } else {
+      this->on_failure();
+    }
     return;
   }
   if (!data_blocks_read.empty()) {
@@ -259,7 +295,11 @@ void S3ObjectDataCopier::write_data_block_success() {
     // did not start writing.
     // It means that the function did not find data ready for writing.
     // So all data has been written.
-    this->on_success();
+    if (copy_parts_fragment) {
+      this->on_success_for_fragments(vector_index);
+    } else {
+      this->on_success();
+    }
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -277,7 +317,11 @@ void S3ObjectDataCopier::write_data_block_failed() {
                    ? "ServiceUnavailable"
                    : "InternalError");
   if (!read_in_progress) {
-    this->on_failure();
+    if (copy_parts_fragment) {
+      this->on_failure_for_fragments(vector_index);
+    } else {
+      this->on_failure();
+    }
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
@@ -318,9 +362,54 @@ void S3ObjectDataCopier::copy(
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
 
+void S3ObjectDataCopier::copy_part_fragment(
+    std::vector<struct s3_part_frag_context> part_fragment_context_list,
+    struct m0_uint128 target_obj_id, int index,
+    std::function<bool(void)> check_shutdown_and_rollback,
+    std::function<void(int)> on_success_for_fragments,
+    std::function<void(int)> on_failure_for_fragments) {
+  s3_log(S3_LOG_INFO, request_id, "%s Entry\n", __func__);
+
+  assert(non_zero(part_fragment_context_list[index].motr_OID));
+  assert(non_zero(target_obj_id));
+  assert(part_fragment_context_list[index].item_size > 0);
+  assert(part_fragment_context_list[index].layout_id > 0);
+  assert(check_shutdown_and_rollback);
+  assert(on_success_for_fragments);
+  assert(on_failure_for_fragments);
+  copy_parts_fragment = true;
+  this->check_shutdown_and_rollback = std::move(check_shutdown_and_rollback);
+  this->on_success_for_fragments = std::move(on_success_for_fragments);
+  this->on_failure_for_fragments = std::move(on_failure_for_fragments);
+  // Index of the part/fragment info vector
+  this->vector_index = index;
+  copy_parts_fragment = true;
+
+  motr_unit_size = S3MotrLayoutMap::get_instance()->get_unit_size_for_layout(
+      part_fragment_context_list[index].layout_id);
+
+  motr_reader = motr_reader_factory->create_motr_reader(
+      request_object, part_fragment_context_list[index].motr_OID,
+      part_fragment_context_list[index].layout_id,
+      part_fragment_context_list[index].PVID, motr_api);
+  motr_reader->set_last_index(0);
+
+  bytes_left_to_read = part_fragment_context_list[index].item_size;
+
+  copy_failed = false;
+  read_in_progress = false;
+  write_in_progress = false;
+
+  read_data_block();
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
 void S3ObjectDataCopier::set_s3_error(std::string s3_error) {
   this->s3_error = std::move(s3_error);
 }
+
+void S3ObjectDataCopier::set_s3_copy_failed() { copy_failed = true; }
 
 // Trims the input buffer (in-place) to the specified expected size
 void S3ObjectDataCopier::get_buffers(S3BufferSequence& buffer,

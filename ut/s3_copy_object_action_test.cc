@@ -547,12 +547,6 @@ TEST_F(S3CopyObjectActionTest, SaveMetadata) {
               reset_date_time_to_current()).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
               set_content_length(Eq("1024"))).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
-              get_content_md5())
-      .Times(AtLeast(1))
-      .WillOnce(Return("abcd1234abcd"));
-  EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata,
-              set_md5(Eq("abcd1234abcd"))).Times(AtLeast(1));
 
   EXPECT_CALL(*ptr_mock_object_meta_factory->mock_object_metadata, setacl(_))
       .Times(1);
