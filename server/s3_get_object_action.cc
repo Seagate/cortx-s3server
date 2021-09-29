@@ -953,8 +953,8 @@ void S3GetObjectAction::send_data_to_client() {
           send_response_to_s3_client();
         }
       }
-    }
-  } else {
+   }
+} else {
     s3_log(S3_LOG_INFO, request_id,
            "Client disconnected. Aborting S3 GET operation\n");
     set_s3_error("InternalError");

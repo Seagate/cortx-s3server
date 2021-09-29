@@ -311,7 +311,7 @@ void S3CopyObjectAction::copy_part_fragment_success(int index) {
       S3_LOG_DEBUG, stripped_request_id,
       "parts_fragment_copied_or_failed = %d, parts_frg_copy_in_flight = %d\n",
       parts_fragment_copied_or_failed, parts_frg_copy_in_flight);
-
+  
   // Success callback, so reduce in flight copy operation count
   parts_frg_copy_in_flight = parts_frg_copy_in_flight - 1;
 
