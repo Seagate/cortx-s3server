@@ -25,7 +25,8 @@ cortx:
     setup_type: "VM"
     storage:
       log: "/var/log/cortx/"
-      misc: "/var/data/cortx/"
+      shared: /share
+      config: "/etc/cortx"
   external:
     openldap:
       admin: "admin"
@@ -51,17 +52,14 @@ cortx:
     internal:
       endpoints:
       - http://127.0.0.1:28049
-  software:
-    storage:
-      config: "/etc/cortx"
 cluster:
   id: "TMPL_CLUSTER_ID"
-  storage_set_count: "1"
   storage_set:
-  - nodes:
+    nodes:
     - TMPL_MACHINE_ID
 node:
   TMPL_MACHINE_ID:
     name: "POD-1"
     hostname: "TMPL_HOSTNAME"
     cluster_id: "TMPL_CLUSTER_ID"
+    type: storage_node

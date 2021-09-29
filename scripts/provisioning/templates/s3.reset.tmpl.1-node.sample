@@ -22,7 +22,4 @@ cortx:
     setup_type: "VM"
     storage:
       log: "/var/log/cortx/"
-  software:
-    storage:
       config: "/etc/cortx"
-
