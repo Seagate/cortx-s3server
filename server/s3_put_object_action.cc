@@ -742,7 +742,6 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
     assert(!old_oid_str.empty());
     if (number_of_parts != 0) {
       // This object was uploaded previously in multipart fashion
-
       add_part_object_to_probable_dead_oid_list(object_metadata,
                                                 probable_del_rec_list);
       for (auto& probable_rec : probable_del_rec_list) {
