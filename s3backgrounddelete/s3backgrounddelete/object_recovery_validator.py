@@ -203,12 +203,12 @@ class ObjectRecoveryValidator:
                             str(part_no) + "|" + "F" + \
                             str(frag_no)
             self._logger.info("obj_ext_key : " + obj_ext_key)
+
             try:
                 object_extended_md_index_id = self.object_leak_info["extended_md_idx_oid"]
             except Exception as e:
                 self._logger.error("Exception : " + str(e))
                 object_extended_md_index_id = None
-
 
         if (delete_obj_from_store):
             index_key_list = [(object_version_list_index_id, obj_ver_key, \
@@ -218,7 +218,6 @@ class ObjectRecoveryValidator:
                 self._logger.info("Extended Metadata Index is present.")
                 index_key_list.append((object_extended_md_index_id, obj_ext_key, \
                                 ext_motr_oid_key, ext_layout_id_key, ext_api_prefix))
-
 
             for (index, key_in_index, oid_key, layout_id_key, api_prefix) in index_key_list:
                 if ((index is None) or (key_in_index is None) or (len(key_in_index) == 0)):
