@@ -284,7 +284,6 @@ class SetupCmd(object):
     #   CONFIG>CONFSTORE_LDAPADMIN_USER_KEY
     #   INIT
     # Example of "Actual Key" :
-    #   cluster>cluster-id>site>storage_set_count
     #   cortx>software>openldap>sgiam>user
     #
     # When we call get_all_keys on s3 prov config
@@ -342,11 +341,6 @@ class SetupCmd(object):
 
   def phase_keys_validate(self, arg_file: str, phase_name: str):
     """Validate keys of each phase derived from s3_prov_config and compare with argument file."""
-    storage_set_count_str = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_STORAGE_SET_COUNT_KEY')
-    if storage_set_count_str is not None:
-      storage_set_val = int(storage_set_count_str)
-    else:
-      storage_set_val = 0
     # Set phase name to upper case required for inheritance
     phase_name = phase_name.upper()
     # Extract keys from yardstick file for current phase considering inheritance
@@ -374,15 +368,8 @@ class SetupCmd(object):
         key_yard = key_yard.replace("machine-id", self.machine_id)
       if "cluster-id" in key_yard:
         key_yard = key_yard.replace("cluster-id", self.cluster_id)
-      if "nodes" in key_yard:
-        key_yard = key_yard.replace("[storage-set-count]", '')
-        #index = 0
-        #print(key_yard)
-        #while index < storage_set_val:
-        #  key_yard_server_nodes = self.get_confvalue(key_yard.replace("storage-set-count", str(index)))
-        #  if key_yard_server_nodes is None:
-        #    raise Exception("Validation for server_nodes failed")
-        #  index += 1
+      if "node-id" in key_yard:
+        key_yard = key_yard.replace("node-id", self.machine_id)
       else:
         if key_yard in arg_keys_list:
           self.key_value_verify(key_yard)
