@@ -597,7 +597,7 @@ class ConfigCmd(SetupCmd):
       endpoint['port'] = int(endpoint['port']) -1
     else :
       endpoint['port'] = int(endpoint['port'])
-    return endpoint['scheme'] + "://" + endpoint['fqdn'] + ":" + endpoint['port']
+    return endpoint['scheme'] + "://" + endpoint['fqdn'] + ":" + str(endpoint['port'])
 
   # In producer we do not append machine ID to path but below two functtions are for future 
   def update_bgdelete_scheduler_log_dir(self, value_to_update, additional_param):
