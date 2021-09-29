@@ -97,7 +97,7 @@ S3PostCompleteAction::S3PostCompleteAction(
   obj_metadata_updated = false;
   validated_parts_count = 0;
   set_abort_multipart(false);
-  count_we_requested = S3Option::get_instance()->get_motr_idx_fetch_count();
+  count_we_requested = MAX_MULTIPART_EXTENDED_ENTRIES;
   setup_steps();
 }
 
