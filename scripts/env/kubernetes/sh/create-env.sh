@@ -24,7 +24,7 @@ source ./sh/functions.sh
 set -e # exit immediatly on errors
 set -x # print each statement before execution
 
-> ./env.sh
+echo "AUTOMATION_BASE_DIR='$(pwd)'" > ./env.sh
 
 hostname=`hostname`
 set +x

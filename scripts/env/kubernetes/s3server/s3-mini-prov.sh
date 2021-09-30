@@ -25,29 +25,47 @@ src_dir="$s3_repo_dir"/scripts/env/kubernetes
 
 source "$src_dir/env.sh"
 
+MACHINE_ID=211072f61c4b4949839c624d6ed95115
+
+echo "$MACHINE_ID" > /etc/machine-id
+
 config_tmpl=/opt/seagate/cortx/s3/conf/s3.config.tmpl.1-node
 init_tmpl=/opt/seagate/cortx/s3/conf/s3.init.tmpl.1-node
 
 for f in "$config_tmpl" "$init_tmpl"; do
-  sed -i -e "/endpoints:.*ldap:/ s,\('[a-z]*://\)[^:]*:,\1${OPENLDAP_SVC}:,g" "$f"
+  sed -i \
+    -e "s/TMPL_ROOT_SECRET_KEY/gAAAAABhQHB7hl-zHPmL3fcNWB9qXjZIWXAAH8uPec3ZuTo2JLRHdJPYDrbYBW90mPF3NmbSAZhQxnclbkwNEMLmINLx-JULUw==/g" \
+    -e "s/TMPL_SGIAM_SECRET_KEY/gAAAAABhQHB7hl-zHPmL3fcNWB9qXjZIWXAAH8uPec3ZuTo2JLRHdJPYDrbYBW90mPF3NmbSAZhQxnclbkwNEMLmINLx-JULUw==/g" \
+    -e "s/TMPL_CLUSTER_ID/3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6/g" \
+    -e "s/TMPL_MACHINE_ID/$MACHINE_ID/g" \
+    -e "s/TMPL_HOSTNAME/s3-setup-pod/g" \
+    "$f"
+  # Update LDAP endpoints; not easy to do with SED.
+  python3 <<EOF
+#!/usr/bin/python3
+
+import yaml
+import urllib.parse
+
+with open("$f") as f:
+  y = yaml.safe_load(f)
+  lst = y['cortx']['external']['openldap']['endpoints']
+  lnew = []
+  for ep in lst:
+    result1 = urllib.parse.urlparse(ep)
+    result2 = result1.netloc.split(':')
+    result = { 'scheme': result1.scheme, 'fqdn': result2[0] }
+    ep_new = result1.scheme + '://${OPENLDAP_SVC}:' + result2[1]
+    lnew.append(ep_new)
+  y['cortx']['external']['openldap']['endpoints'] = lnew
+with open("$f", 'w') as f:
+  f.write(yaml.dump(y, default_flow_style=False, sort_keys=False))
+EOF
 done
 
-MACHINE_ID=211072f61c4b4949839c624d6ed95115
-
-sed -i "s/TMPL_ROOT_SECRET_KEY/gAAAAABhQHB7hl-zHPmL3fcNWB9qXjZIWXAAH8uPec3ZuTo2JLRHdJPYDrbYBW90mPF3NmbSAZhQxnclbkwNEMLmINLx-JULUw==/g" /opt/seagate/cortx/s3/conf/s3.config.tmpl.1-node
-sed -i "s/TMPL_SGIAM_SECRET_KEY/gAAAAABhQHB7hl-zHPmL3fcNWB9qXjZIWXAAH8uPec3ZuTo2JLRHdJPYDrbYBW90mPF3NmbSAZhQxnclbkwNEMLmINLx-JULUw==/g" /opt/seagate/cortx/s3/conf/s3.config.tmpl.1-node
-sed -i "s/TMPL_CLUSTER_ID/3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6/g" /opt/seagate/cortx/s3/conf/s3.config.tmpl.1-node
-sed -i "s/TMPL_MACHINE_ID/$MACHINE_ID/g" /opt/seagate/cortx/s3/conf/s3.config.tmpl.1-node
-sed -i "s/TMPL_HOSTNAME/s3-setup-pod/g" /opt/seagate/cortx/s3/conf/s3.config.tmpl.1-node
-sed -i "s/TMPL_ROOT_SECRET_KEY/gAAAAABhQHB7hl-zHPmL3fcNWB9qXjZIWXAAH8uPec3ZuTo2JLRHdJPYDrbYBW90mPF3NmbSAZhQxnclbkwNEMLmINLx-JULUw==/g" /opt/seagate/cortx/s3/conf/s3.init.tmpl.1-node
-sed -i "s/TMPL_SGIAM_SECRET_KEY/gAAAAABhQHB7hl-zHPmL3fcNWB9qXjZIWXAAH8uPec3ZuTo2JLRHdJPYDrbYBW90mPF3NmbSAZhQxnclbkwNEMLmINLx-JULUw==/g" /opt/seagate/cortx/s3/conf/s3.init.tmpl.1-node
-sed -i "s/TMPL_CLUSTER_ID/3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6/g" /opt/seagate/cortx/s3/conf/s3.init.tmpl.1-node
-sed -i "s/TMPL_MACHINE_ID/211072f61c4b4949839c624d6ed95115/g" /opt/seagate/cortx/s3/conf/s3.init.tmpl.1-node
-sed -i "s/TMPL_HOSTNAME/s3-setup-pod/g" /opt/seagate/cortx/s3/conf/s3.init.tmpl.1-node
-echo "$MACHINE_ID" > /etc/machine-id
 
 /opt/seagate/cortx/s3/bin/s3_setup post_install --config "yaml:///opt/seagate/cortx/s3/conf/s3.post_install.tmpl.1-node" --services=io
-/opt/seagate/cortx/s3/bin/s3_setup prepare --config "yaml:///opt/seagate/cortx/s3/conf/s3.prepare.tmpl.1-node" --services=io
-/opt/seagate/cortx/s3/bin/s3_setup config --config "yaml:///opt/seagate/cortx/s3/conf/s3.config.tmpl.1-node" --services=io
-/opt/seagate/cortx/s3/bin/s3_setup init --config "yaml:///opt/seagate/cortx/s3/conf/s3.init.tmpl.1-node" --services=io
+/opt/seagate/cortx/s3/bin/s3_setup prepare      --config "yaml:///opt/seagate/cortx/s3/conf/s3.prepare.tmpl.1-node"      --services=io
+/opt/seagate/cortx/s3/bin/s3_setup config       --config "yaml:///opt/seagate/cortx/s3/conf/s3.config.tmpl.1-node"       --services=io
+/opt/seagate/cortx/s3/bin/s3_setup init         --config "yaml:///opt/seagate/cortx/s3/conf/s3.init.tmpl.1-node"         --services=io
 
