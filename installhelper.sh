@@ -297,7 +297,7 @@ cp -f scripts/ldap/rsyslog.d/slapdlog.conf $S3_INSTALL_LOCATION/install/ldap/rsy
 cp -f scripts/ldap/s3slapdindex.ldif $S3_INSTALL_LOCATION/install/ldap/
 
 cp -f scripts/ldap/cfg_ldap.ldif $S3_INSTALL_LOCATION/install/ldap/
-cp -f scripts/ldap/cn={2}s3user.ldif $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/cn=s3user.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/iam-admin-access.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/iam-admin.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/iam-constraints.ldif $S3_INSTALL_LOCATION/install/ldap/
