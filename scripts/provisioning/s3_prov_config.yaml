@@ -45,8 +45,8 @@ CONFIG:
   CONFSTORE_S3_OPENLDAP_SERVERS: "cortx>external>openldap>servers" #M (Usedby : s3_deployment)
   CONFSTORE_S3_OPENLDAP_BASE_DN: "cortx>external>openldap>base_dn" #O default - dc=seagate,dc=com (Usedby : s3_deployment)
 
-  CONFSTORE_LDAPADMIN_USER_KEY: "cortx>s3>auth>admin" #O default - sgiamadmin (Usedby : s3_deployment, auth)
-  CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>s3>auth>secret" #M default - encrypted string (Usedby : s3_deployment, auth)
+  CONFSTORE_LDAPADMIN_USER_KEY: "cortx>s3>auth_admin" #O default - sgiamadmin (Usedby : s3_deployment, auth)
+  CONFSTORE_LDAPADMIN_PASSWD_KEY: "cortx>s3>auth_secret" #M default - encrypted string (Usedby : s3_deployment, auth)
   
   CONFSTORE_S3_MOTR_MAX_UNITS_PER_REQUEST : "cortx>s3>io_max_units" #O default - VM :8 , h/w : 32 (Usedby : s3_deployment, s3)
   CONFSTORE_S3INSTANCES_KEY: "cortx>s3>service_instances" #O default - 1 (change to 5 once we have stable deployment) (Usedby : s3_deployment, s3)
@@ -62,9 +62,10 @@ CONFIG:
   #CONFSTORE_S3_MACHINE_NAME: "node>machine-id>name" #M (Usedby: None)
 
   CONFSTORE_S3_CLUSTER_ID: "cluster>id" #M (Usedby: None)
-  CONFSTORE_BASE_CONFIG_PATH: "cortx>common>storage>config"  #O default - /etc/cortx (Usedby: s3_deployment)
-  CONFSTORE_STORAGE_SET_SERVER_NODES_KEY: "cluster>storage_set>nodes" #M (Usedby: s3_deployment)
+  CONFSTORE_BASE_CONFIG_PATH: "cortx>common>storage>local"  #O default - /etc/cortx (Usedby: s3_deployment)
+  CONFSTORE_STORAGE_SET_SERVER_NODES_KEY: "cluster>storage_set[storage_set_count]>nodes" #M (Usedby: s3_deployment)
   CONFSTORE_NODE_TYPE: "node>node-id>type" #M (Usedby: s3_deployment)
+  CONFSTORE_STORAGE_SET_COUNT: "cluster>storage_set_count" #M (Usedby: s3_deployment)
 
   ##################################################################################################
   # Private keys which don't come from provisioner and which MUST have default values.
