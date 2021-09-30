@@ -231,33 +231,42 @@ class ConfigCmd(SetupCmd):
     # Delete ldap replication cofiguration
     self.delete_replication_config()
     self.logger.info('Open ldap replication configuration started')
-    server_nodes_list = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY')
+    # Get storage set count to loop over to get all nodes
+    storage_set_count = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_STORAGE_SET_COUNT')
+    self.logger.info(f"storage_set_count : {storage_set_count}")
+    srv_io_node_count = 0
+    index = 0
+    while index < int(storage_set_count):
+      # Get all server nodes
+      server_nodes_list_key = self.get_confkey('CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("storage_set_count", str(index))
+      self.logger.info(f"server_nodes_list_key : {server_nodes_list_key}")
+      server_nodes_list = self.get_confvalue(server_nodes_list_key)
+      if len(server_nodes_list) > 1:
+        Path(self.s3_tmp_dir).mkdir(parents=True, exist_ok=True)
+        ldap_hosts_list_file = os.path.join(self.s3_tmp_dir, "ldap_hosts_list_file.txt")
+        with open(ldap_hosts_list_file, "w") as f:
+          for node_machine_id in server_nodes_list:
+            self.logger.info(f'Setting ldap-replication for node-id: {node_machine_id}')
+            private_fqdn = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_PRIVATE_FQDN_KEY').replace('machine-id', node_machine_id))
+            f.write(f'{private_fqdn}\n')
+            self.logger.info(f'output of ldap_hosts_list_file.txt: {private_fqdn}')
 
-    if len(server_nodes_list) > 1:
-      Path(self.s3_tmp_dir).mkdir(parents=True, exist_ok=True)
-      ldap_hosts_list_file = os.path.join(self.s3_tmp_dir, "ldap_hosts_list_file.txt")
-      with open(ldap_hosts_list_file, "w") as f:
-        for node_machine_id in server_nodes_list:
-          self.logger.info(f'Setting ldap-replication for node-id: {node_machine_id}')
-          private_fqdn = self.get_confvalue(self.get_confkey('CONFIG>CONFSTORE_PRIVATE_FQDN_KEY').replace('machine-id', node_machine_id))
-          f.write(f'{private_fqdn}\n')
-          self.logger.info(f'output of ldap_hosts_list_file.txt: {private_fqdn}')
+        cmd = ['/opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh',
+              '-h',
+              ldap_hosts_list_file,
+              '-p',
+              f'{self.rootdn_passwd}']
+        handler = SimpleProcess(cmd)
+        stdout, stderr, retcode = handler.run()
+        self.logger.info(f'output of setupReplicationScript.sh: {stdout}')
+        os.remove(ldap_hosts_list_file)
 
-      cmd = ['/opt/seagate/cortx/s3/install/ldap/replication/setupReplicationScript.sh',
-            '-h',
-            ldap_hosts_list_file,
-            '-p',
-            f'{self.rootdn_passwd}']
-      handler = SimpleProcess(cmd)
-      stdout, stderr, retcode = handler.run()
-      self.logger.info(f'output of setupReplicationScript.sh: {stdout}')
-      os.remove(ldap_hosts_list_file)
-
-      if retcode != 0:
-        self.logger.error(f'error of setupReplicationScript.sh: {stderr}')
-        raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
-      else:
-        self.logger.warning(f'warning of setupReplicationScript.sh: {stderr}')
+        if retcode != 0:
+          self.logger.error(f'error of setupReplicationScript.sh: {stderr}')
+          raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
+        else:
+          self.logger.warning(f'warning of setupReplicationScript.sh: {stderr}')
+      index += 1
     # TODO: set replication across storage-sets
     self.logger.info('Open ldap replication configuration completed')
 
@@ -274,18 +283,27 @@ class ConfigCmd(SetupCmd):
 
   def get_msgbus_partition_count(self):
     """get total server nodes which will act as partition count."""
+    # Get storage set count to loop over to get all nodes
+    storage_set_count = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_STORAGE_SET_COUNT')
+    self.logger.info(f"storage_set_count : {storage_set_count}")
     srv_io_node_count = 0
-    # Get all server nodes
-    server_nodes_list = self.get_confvalue_with_defaults('CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY')
-    for server_node_id in server_nodes_list:
-      server_node_type_key = self.get_confkey('CONFIG>CONFSTORE_NODE_TYPE').replace('node-id', server_node_id)
-      self.logger.info(f"server_node_type_key : {server_node_type_key}")
-      # Get the type of each server node
-      server_node_type = self.get_confvalue(server_node_type_key)
-      self.logger.info(f"server_node_type : {server_node_type}")
-      if server_node_type == "storage_node":
-        self.logger.info(f"Node type is storage_node")
-        srv_io_node_count += 1
+    index = 0
+    while index < int(storage_set_count):
+      # Get all server nodes
+      server_nodes_list_key = self.get_confkey('CONFIG>CONFSTORE_STORAGE_SET_SERVER_NODES_KEY').replace("storage_set_count", str(index))
+      self.logger.info(f"server_nodes_list_key : {server_nodes_list_key}")
+      server_nodes_list = self.get_confvalue(server_nodes_list_key)
+      for server_node_id in server_nodes_list:
+        self.logger.info(f"server_node_id : {server_node_id}")
+        server_node_type_key = self.get_confkey('CONFIG>CONFSTORE_NODE_TYPE').replace('node-id', server_node_id)
+        self.logger.info(f"server_node_type_key : {server_node_type_key}")
+        # Get the type of each server node
+        server_node_type = self.get_confvalue(server_node_type_key)
+        self.logger.info(f"server_node_type : {server_node_type}")
+        if server_node_type == "storage_node":
+          self.logger.info(f"Node type is storage_node")
+          srv_io_node_count += 1
+      index += 1
 
     self.logger.info(f"Server io node count : {srv_io_node_count}")
 
