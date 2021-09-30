@@ -925,12 +925,6 @@ void S3GetObjectAction::send_data_to_client() {
   }
 
   if (request->client_connected()) {
-
-    s3_log(S3_LOG_INFO, request_id,
-           "Client disconnected. Aborting S3 GET operation\n");
-    set_s3_error("InternalError");
-    send_response_to_s3_client();
-
     if (!object_metadata->is_object_extended()) {
       // For normal object
       if (data_sent_to_client != requested_content_length) {
@@ -959,12 +953,6 @@ void S3GetObjectAction::send_data_to_client() {
           send_response_to_s3_client();
         }
       }
-    }
-    else {
-      s3_log(S3_LOG_INFO, request_id,
-             "Client disconnected. Aborting S3 GET operation\n");
-      set_s3_error("InternalError");
-      send_response_to_s3_client();
     }
   } else {
     s3_log(S3_LOG_INFO, request_id,
