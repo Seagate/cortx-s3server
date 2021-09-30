@@ -266,7 +266,7 @@ class ConfigCmd(SetupCmd):
           raise S3PROVError(f"{cmd} failed with err: {stderr}, out: {stdout}, ret: {retcode}")
         else:
           self.logger.warning(f'warning of setupReplicationScript.sh: {stderr}')
-    index += 1
+      index += 1
     # TODO: set replication across storage-sets
     self.logger.info('Open ldap replication configuration completed')
 

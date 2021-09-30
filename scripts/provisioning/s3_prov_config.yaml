@@ -62,7 +62,7 @@ CONFIG:
   #CONFSTORE_S3_MACHINE_NAME: "node>machine-id>name" #M (Usedby: None)
 
   CONFSTORE_S3_CLUSTER_ID: "cluster>id" #M (Usedby: None)
-  CONFSTORE_BASE_CONFIG_PATH: "cortx>common>storage>config"  #O default - /etc/cortx (Usedby: s3_deployment)
+  CONFSTORE_BASE_CONFIG_PATH: "cortx>common>storage>local"  #O default - /etc/cortx (Usedby: s3_deployment)
   CONFSTORE_STORAGE_SET_SERVER_NODES_KEY: "cluster>storage_set[storage_set_count]>nodes" #M (Usedby: s3_deployment)
   CONFSTORE_NODE_TYPE: "node>node-id>type" #M (Usedby: s3_deployment)
   CONFSTORE_STORAGE_SET_COUNT: "cluster>storage_set_count" #M (Usedby: s3_deployment)
