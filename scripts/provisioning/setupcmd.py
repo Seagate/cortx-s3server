@@ -375,7 +375,7 @@ class SetupCmd(object):
         self.logger.info(f"storage_set_count : {storage_set_count}")
         index = 0
         while index < int(storage_set_count):
-          key_yard_server_nodes_key = key_yard.replace("storage-set-count", str(index))
+          key_yard_server_nodes_key = key_yard.replace("storage_set_count", str(index))
           self.logger.info(f"key_yard_server_nodes_key : {key_yard_server_nodes_key}")
           key_yard_server_nodes = self.get_confvalue(key_yard_server_nodes_key)
           if key_yard_server_nodes is None:
