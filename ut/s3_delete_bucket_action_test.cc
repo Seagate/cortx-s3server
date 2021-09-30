@@ -324,7 +324,7 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectSuccess) {
   action_under_test->fetch_multipart_objects_successful();
   EXPECT_STREQ("file2", action_under_test->last_key.c_str());
   EXPECT_EQ(2, action_under_test->part_idx_layouts.size());
-  EXPECT_EQ(2, action_under_test->multipart_object_oids.size());
+  EXPECT_EQ(0, action_under_test->multipart_object_oids.size());
   EXPECT_EQ(1, call_count_one);
 }
 
@@ -387,7 +387,7 @@ TEST_F(S3DeleteBucketActionTest,
   action_under_test->fetch_multipart_objects_successful();
   EXPECT_STREQ("file1", action_under_test->last_key.c_str());
   EXPECT_EQ(1, action_under_test->part_idx_layouts.size());
-  EXPECT_EQ(1, action_under_test->multipart_object_oids.size());
+  EXPECT_EQ(0, action_under_test->multipart_object_oids.size());
   EXPECT_EQ(1, call_count_one);
   S3Option::get_instance()->set_motr_idx_fetch_count(old_idx_fetch_count);
 }
