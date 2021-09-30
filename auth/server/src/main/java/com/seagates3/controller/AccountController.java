@@ -151,6 +151,18 @@ public class AccountController extends AbstractController {
 
         account.setEmail(email);
 
+        AccessKey existingAccessKey;
+        try {
+            existingAccessKey = accessKeyDAO.find(accessKey);
+        } catch (DataAccessException ex) {
+            LOGGER.error("Failed to find access key in ldap -" + ex);
+            return accountResponseGenerator.internalServerError();
+        }
+
+        if (existingAccessKey.exists()) {
+            return accountResponseGenerator.accessKeyAlreadyExists();
+        }
+
         try {
             accountDao.save(account);
         } catch (DataAccessException ex) {
@@ -178,16 +190,6 @@ public class AccountController extends AbstractController {
         }
 
         AccessKey rootAccessKey;
-        try {
-            rootAccessKey = accessKeyDAO.find(accessKey);
-        } catch (DataAccessException ex) {
-          LOGGER.error("Failed to find access key in ldap -" + ex);
-            return accountResponseGenerator.internalServerError();
-        }
-
-        if (rootAccessKey.exists()) {
-            return accountResponseGenerator.accessKeyAlreadyExists();
-        }
 
         try {
             if (accessKey == null) {
@@ -308,7 +310,7 @@ public class AccountController extends AbstractController {
         LOGGER.debug("Creating new access key for account: " + name);
         AccessKey rootAccessKey;
         try {
-            rootAccessKey = createRootAccessKey(root);
+            rootAccessKey = AccessKeyService.createAccessKey(root);
         } catch (DataAccessException ex) {
             return accountResponseGenerator.internalServerError();
         }
@@ -341,21 +343,6 @@ public class AccountController extends AbstractController {
 
         userDAO.save(user);
         return user;
-    }
-
-    /*
-     * Create access keys for the root user.
-     */
-    private AccessKey createRootAccessKey(User root) throws DataAccessException {
-        AccessKey accessKey = new AccessKey();
-        accessKey.setUserId(root.getId());
-        accessKey.setId(KeyGenUtil.createUserAccessKeyId(true));
-        accessKey.setSecretKey(KeyGenUtil.generateSecretKey());
-        accessKey.setStatus(AccessKeyStatus.ACTIVE);
-
-        accessKeyDAO.save(accessKey);
-
-        return accessKey;
     }
 
     @Override
