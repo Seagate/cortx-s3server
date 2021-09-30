@@ -25,7 +25,6 @@ cortx:
     setup_type: "VM"
     storage:
       log: "/var/log/cortx/"
-      shared: /share
       config: /etc/cortx
   external:
     openldap:
@@ -39,8 +38,7 @@ cortx:
       - localhost
       - localhost
   s3:
-    auth:
-      secret: "TMPL_SGIAM_SECRET_KEY"
+    auth_secret: "TMPL_SGIAM_SECRET_KEY"
     iam:
       endpoints:
       - https://iam.seagate.com:9443
@@ -54,11 +52,12 @@ cortx:
       - http://127.0.0.1:28049
 cluster:
   id: "TMPL_CLUSTER_ID"
+  storage_set_count: 1
   storage_set:
-    nodes:
-    - TMPL_MACHINE_ID_1
-    - TMPL_MACHINE_ID_2
-    - TMPL_MACHINE_ID_3
+    - nodes:
+      - TMPL_MACHINE_ID_1
+      - TMPL_MACHINE_ID_2
+      - TMPL_MACHINE_ID_3
 node:
   TMPL_MACHINE_ID_1:
     name: "POD-1"
