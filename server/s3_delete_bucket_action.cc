@@ -210,7 +210,6 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
   bool atleast_one_json_error = false;
 
   const auto& mp_idx_lo = bucket_metadata->get_multipart_index_layout();
-
   for (auto& kv : kvps) {
     s3_log(S3_LOG_DEBUG, request_id, "Parsing Multipart object metadata = %s\n",
            kv.first.c_str());
@@ -230,7 +229,6 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
       part_idx_layouts.push_back(part_idx_layout);
       part_oids_str += " " + std::to_string(part_idx_layout.oid.u_hi) + " " +
                        std::to_string(part_idx_layout.oid.u_lo);
-
 #if 0
       // Unlike in R1, multipart table contains OID without
       // any actual object allocation from motr, hence
