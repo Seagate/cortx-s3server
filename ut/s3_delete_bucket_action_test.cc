@@ -19,7 +19,6 @@
  */
 
 #include <memory>
-
 #include "mock_s3_motr_wrapper.h"
 #include "mock_s3_factory.h"
 #include "mock_s3_request_object.h"
