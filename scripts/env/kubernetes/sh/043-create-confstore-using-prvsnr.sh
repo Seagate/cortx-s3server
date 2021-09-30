@@ -37,7 +37,7 @@ cat k8s-blueprints/prvsnr-pod.yaml.template \
   > k8s-blueprints/prvsnr-pod.yaml
 
 # git clone https://github.com/Seagate/cortx-prvsnr -b kubernetes
-git clone -b kubernetes https://github.com/sachitanands/cortx-prvsnr-Kubernetes cortx-prvsnr
+git clone -b br/sachit/new-s3-config https://github.com/sachitanands/cortx-prvsnr-Kubernetes cortx-prvsnr
 
 cd cortx-prvsnr/test/deploy/kubernetes
 
