@@ -110,13 +110,6 @@ class ConfigCmd(SetupCmd):
       self.read_ldap_root_credentials()
       self.logger.info("read ldap credentials completed")
 
-      # disable S3server, S3authserver, haproxy, BG delete services on reboot as
-      # it will be managed by HA
-      self.logger.info('Disable services on reboot started')
-      services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver"]
-      self.disable_services(services_list)
-      self.logger.info('Disable services on reboot completed')
-
       self.logger.info('create auth jks password started')
       self.create_auth_jks_password()
       self.logger.info('create auth jks password completed')
