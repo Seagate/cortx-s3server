@@ -54,7 +54,7 @@ def main():
     s3_confkeys_store = S3CortxConfStore\
         (f'yaml:///opt/seagate/cortx/s3/mini-prov/s3_prov_config.yaml', \
           's3_index')
-    prov_confkeys_store = S3CortxConfStore(f'yaml://{confstore_url}', \
+    prov_confkeys_store = S3CortxConfStore(f'{confstore_url}', \
           'prov_index')
     machine_id = s3_confkeys_store.get_machine_id()
 
@@ -66,9 +66,6 @@ def main():
     logdir_key = s3_confkeys_store.get_config\
                      ("CONFIG>CONFSTORE_BASE_LOG_PATH")
     base_logdir_path = prov_confkeys_store.get_config(logdir_key)
-
-    #Sys config path
-    sysconfig_path = os.path.join(base_config_path, "s3", "sysconfig")
 
     #Logging path details
     s3_single_entry_log_directory = \
@@ -86,6 +83,9 @@ def main():
     if args.service == 's3server':
       if not args.index:
         raise Exception("provide instance id")
+
+      #Sys config path
+      sysconfig_path = os.path.join(base_config_path, "s3", machine_id, "sysconfig")
 
       fid_file = "s3server-" + args.index
       fid_path = os.path.join(sysconfig_path, fid_file)
