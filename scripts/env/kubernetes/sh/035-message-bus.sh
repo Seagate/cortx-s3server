@@ -31,8 +31,17 @@ add_separator "Creating Message Bus PODs"
 pull_images_for_pod ./k8s-blueprints/zookeper.yaml
 pull_images_for_pod ./k8s-blueprints/kafka.yaml
 
-kubectl create -f ./k8s-blueprints/zookeper.yaml
-kubectl create -f ./k8s-blueprints/kafka.yaml
+if kubectl get pods | grep zookeeper; then
+  add_separator  zookeeper pod is already deployed.
+else
+  kubectl create -f ./k8s-blueprints/zookeper.yaml
+fi
+
+if kubectl get pods | grep kafka; then
+  add_separator  kafka pod is already deployed.
+else
+  kubectl create -f ./k8s-blueprints/kafka.yaml
+fi
 
 set +x
 while [ `kubectl get pod | safe_grep 'zookeper\|kafka' | safe_grep Running | wc -l` -lt 1 ]; do

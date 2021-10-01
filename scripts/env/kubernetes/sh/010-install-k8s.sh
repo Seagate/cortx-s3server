@@ -26,6 +26,16 @@ source ./sh/functions.sh
 
 set -x # print each statement before execution
 
+# check if this has already been executed
+if kubectl get node "$HOST_FQDN" --show-labels | grep node-name="$NODE_NAME"; then
+  add_separator "K8S INSTALLATION FOR THIS NODE ALREADY DONE BEFORE"
+  exit 0
+fi
+
+
+add_separator INSTALLING KUBERNETES ON THE NODE.
+
+
 yum install -y yum-utils
 if [ ! -f /etc/yum.repos.d/docker-ce.repo ]; then
   yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo

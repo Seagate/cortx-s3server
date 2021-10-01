@@ -17,10 +17,18 @@ spec:
         - name: var-data-cortx
           mountPath: /var/data/cortx
       command:
-         - "/opt/seagate/cortx/s3/bin/s3_start"
+         - "/bin/bash"
+         - "-c"
+         - "--"
       args:
-         - "--service"
-         - "s3bgproducer"
+         - "/etc/cortx/s3/fix-container.sh && /opt/seagate/cortx/s3/bin/s3_start --service s3bgproducer -c yaml:///etc/cortx/cluster.conf"
+#     command:
+#        - "/opt/seagate/cortx/s3/bin/s3_start"
+#     args:
+#        - "--service"
+#        - "s3bgproducer"
+#        - -c
+#        - yaml:///etc/cortx/cluster.conf
   volumes:
       - name: etc-cortx
         persistentVolumeClaim:

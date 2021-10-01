@@ -36,6 +36,14 @@ cat k8s-blueprints/io-pod.yaml.template \
   | sed "s,<motr-cortx-all-image>,ghcr.io/seagate/cortx-all:${MOTR_CORTX_ALL_IMAGE_TAG}," \
   > k8s-blueprints/io-pod.yaml
 
+# FIXME: work-arounds for s3 containers
+cp s3server/fix-container.sh /etc/cortx/s3
+
+# FIXME: work-around for machine-id (dashes vs no-dashes) motr/provisioner dependency
+machine_id_full="$(cat /etc/cortx/s3/machine-id-with-dashes)"
+machine_id_short="$(cat /etc/cortx/s3/machine-id)"
+ln -s "/etc/cortx/s3/$machine_id_full" "/etc/cortx/s3/$machine_id_short"
+
 # pull the images
 pull_images_for_pod k8s-blueprints/io-pod.yaml
 

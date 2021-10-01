@@ -26,10 +26,13 @@ source ./sh/functions.sh
 
 set -x # print each statement before execution
 
+# clean old entries from env.sh
+sed -e '/^S3_CORTX_ALL_IMAGE_TAG=/d' -i env.sh
+
 # See if we even asked to build image.
 if [ -z "$S3_CORTX_ALL_CUSTOM_CI_NUMBER" ]; then
   # no need to build image. cleanup env.sh
-  sed -e '/^S3_CORTX_ALL_IMAGE_TAG=/d' -i env.sh
+  add_separator  No S3_CORTX_ALL_CUSTOM_CI_NUMBER specified, nothing to build.
   exit 0
 fi
 
@@ -38,12 +41,15 @@ new_image_tag="2.0.0-${S3_CORTX_ALL_CUSTOM_CI_NUMBER}-custom-ci"
 # see if maybe image is already built?
 if [ -n "$(docker images ghcr.io/seagate/cortx-all | safe_grep "$new_image_tag")" ]; then
   # image already built
+  add_separator  "Image $new_image_tag is already built locally."
+  echo "S3_CORTX_ALL_IMAGE_TAG='$new_image_tag'" >> env.sh
   exit 0
 fi
 
 # see if maybe image already available on github container registry?
 if docker pull "ghcr.io/seagate/cortx-all:$new_image_tag"; then
   # available
+  add_separator  "Image $new_image_tag is already available on GitHub CR, no need to build."
   exit 0
 fi
 

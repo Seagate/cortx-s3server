@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,27 +19,9 @@
 #
 
 set -euo pipefail # exit on failures
+set -x
 
-source ./config.sh
-source ./env.sh
-source ./sh/functions.sh
-
-set -x # print each statement before execution
-
-add_separator Creating BG POD.
-
-# update image link for bgdelete-producer pod
-cat k8s-blueprints/s3-bg-producer-pod.yaml.template \
-| sed "s,<s3-cortx-all-image>,ghcr.io/seagate/cortx-all:${S3_CORTX_ALL_IMAGE_TAG}," \
-> k8s-blueprints/s3-bg-producer-pod.yaml
-
-# pull the images
-pull_images_for_pod k8s-blueprints/s3-bg-producer-pod.yaml
-
-delete_pod_if_exists "s3-bg-producer-pod"
-
-kubectl apply -f k8s-blueprints/s3-bg-producer-pod.yaml
-
-wait_till_pod_is_Running  s3-bg-producer-pod
-
-add_separator SUCCESSFULLY CREATED BG POD.
+# FIXME: motr/provisioner dependency on machine-id file
+cat /etc/cortx/s3/machine-id > /etc/machine-id
+# FIXME: quick fix for rebase failure as of 2021-10-01, remove next day
+sed -e 's,get_confkey,get_config,g' -i "/opt/seagate/cortx/s3/bin/s3_start"

@@ -45,7 +45,7 @@ done
 
 add_separator Checking if S3 is responsive
 
-while ! curl -I "http://$IO_POD_IP:28071"; do
+while ! curl -I "http://$IO_POD_IP:80"; do
   set +x
   echo
   echo "S3 is not yet listening on the port, re-trying..."

@@ -19,7 +19,8 @@ NODE_NAME=node1
 #                    #
 ######################
 
-S3_CORTX_ALL_IMAGE_TAG=2.0.0-206-custom-ci
+S3_CORTX_ALL_IMAGE_TAG= # leaving empty; will use custom build, see below
+#S3_CORTX_ALL_IMAGE_TAG=2.0.0-206-custom-ci
 #S3_CORTX_ALL_IMAGE_TAG=2.0.0-latest-custom-ci
   # Specifies which image to use for S3 containers.
   # Update if you want to test specific build instead of latest.
@@ -27,7 +28,7 @@ S3_CORTX_ALL_IMAGE_TAG=2.0.0-206-custom-ci
   # List of avilable images here:
   # https://github.com/Seagate/cortx-re/pkgs/container/cortx-all
 
-S3_CORTX_ALL_CUSTOM_CI_NUMBER=
+S3_CORTX_ALL_CUSTOM_CI_NUMBER=223
   # Specify number (e.g. 174), if you need to build image locally instead of
   # downloading from ghcr.  This number should be number of your custom-ci job.
   # This only affects S3_CORTX_ALL_IMAGE_TAG, MOTR_CORTX_ALL_IMAGE_TAG is not

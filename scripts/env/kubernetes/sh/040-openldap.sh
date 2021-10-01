@@ -60,6 +60,7 @@ else
   # download images using docker -- 'kubectl init' is not able to apply user
   # credentials, and so is suffering from rate limits.
   pull_images_for_pod ./k8s-blueprints/openldap-stateful.yaml
+  delete_pod_if_exists  openldap
   kubectl apply -f ./k8s-blueprints/openldap-stateful.yaml
   wait_till_pod_is_Running  openldap
 
