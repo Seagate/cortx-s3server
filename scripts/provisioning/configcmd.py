@@ -117,7 +117,7 @@ class ConfigCmd(SetupCmd):
 
       if not 'openldap' in self.services:
         sysconfig_path = os.path.join(self.base_config_file_path,"s3", self.machine_id, "sysconfig")
-        file_name = sysconfig_path + '/*s3server*'
+        file_name = sysconfig_path + '/s3server-0x*'
         list_matching = []
         for name in glob.glob(file_name):
           list_matching.append(name)
@@ -126,11 +126,13 @@ class ConfigCmd(SetupCmd):
         s3_instance_count = int(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_S3INSTANCES_KEY'))
         self.logger.info(f"s3_instance_count : {s3_instance_count}")
         if count != s3_instance_count:
-          raise Exception("S3 server instance count and s3server file count does not match")
+          raise Exception("HARE-sysconfig file count does not match s3 instance count")
         index = 1
         for src_path in list_matching:
           file_name = 's3server-' + str(index)
           dst_path = os.path.join(sysconfig_path, file_name)
+          if os.path.exists(dst_path):
+            os.unlink(dst_path)
           os.symlink(src_path, dst_path)
           index += 1
 
