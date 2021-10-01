@@ -151,16 +151,18 @@ public class AccountController extends AbstractController {
 
         account.setEmail(email);
 
-        AccessKey existingAccessKey;
-        try {
-            existingAccessKey = accessKeyDAO.find(accessKey);
-        } catch (DataAccessException ex) {
-            LOGGER.error("Failed to find access key in ldap -" + ex);
-            return accountResponseGenerator.internalServerError();
-        }
+        if (accessKey != null) {
+            AccessKey existingAccessKey;
+            try {
+                existingAccessKey = accessKeyDAO.find(accessKey);
+            } catch (DataAccessException ex) {
+                LOGGER.error("Failed to find access key in ldap -" + ex);
+                return accountResponseGenerator.internalServerError();
+            }
 
-        if (existingAccessKey.exists()) {
-            return accountResponseGenerator.accessKeyAlreadyExists();
+            if (existingAccessKey.exists()) {
+                return accountResponseGenerator.accessKeyAlreadyExists();
+            }
         }
 
         try {
