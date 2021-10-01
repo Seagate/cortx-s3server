@@ -100,7 +100,7 @@ def main():
       s3_log_dir = read_config_value("S3_CONFIG_FILE", "yaml", "S3_SERVER_CONFIG>S3_LOG_DIR")
       logger.info(f"s3_log_dir : {s3_log_dir}")
       # Append FID directory and SERVER.INFO
-      s3_log_file_path = os.path.join(s3_log_file_path, fid_file, "SERVER.INFO")
+      s3_log_file_path = os.path.join(s3_log_dir, fid_file, "SERVER.INFO")
       logger.info(f"s3_log_file_path : {s3_log_file_path}")
 
       # Print last few line of S3 server log file
