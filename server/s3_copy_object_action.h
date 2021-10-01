@@ -142,6 +142,14 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
               FetchDestinationBucketInfoFailedInternalError);
   FRIEND_TEST(S3CopyObjectActionTest, FetchDestinationObjectInfoFailed);
   FRIEND_TEST(S3CopyObjectActionTest, FetchDestinationObjectInfoSuccess);
+  FRIEND_TEST(S3CopyObjectActionTest, CreateOneOrMoreObjects);
+  //   FRIEND_TEST(S3CopyObjectActionTest, CopyOneOrMoreObjects);
+  FRIEND_TEST(S3CopyObjectActionTest, CopyFragments);
+  FRIEND_TEST(S3CopyObjectActionTest, CopyPartFragmentFailed);
+  //   FRIEND_TEST(S3CopyObjectActionTest, CopyOneOrMoreObjects);
+  //   FRIEND_TEST(S3CopyObjectActionTest, CopyOneOrMoreObjects);
+  //   FRIEND_TEST(S3CopyObjectActionTest, CopyOneOrMoreObjects);
+  //   FRIEND_TEST(S3CopyObjectActionTest, CopyOneOrMoreObjects);
   FRIEND_TEST(S3CopyObjectActionTest, CreateObjectFirstAttempt);
   FRIEND_TEST(S3CopyObjectActionTest, CreateObjectSecondAttempt);
   FRIEND_TEST(S3CopyObjectActionTest, CreateObjectFailedTestWhileShutdown);
