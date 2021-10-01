@@ -60,8 +60,9 @@ void MotrDeleteObjectAction::validate_request() {
   } else {
     std::string object_layout_id = request->get_query_string_value("layout-id");
     std::string pv_id_str = request->get_query_string_value("pvid");
-
-    if (!S3CommonUtilities::stoi(object_layout_id, layout_id) &&
+    s3_log(S3_LOG_DEBUG, request_id, "Object layout id = [%s], pv_id = [%s]",
+           object_layout_id.c_str(), pv_id_str.c_str());
+    if (!S3CommonUtilities::stoi(object_layout_id, layout_id) ||
         !S3M0Uint128Helper::to_m0_fid(pv_id_str, pv_id_fid)) {
       s3_log(S3_LOG_ERROR, request_id,
              "Invalid object layout-id: %s or pvid %s\n",

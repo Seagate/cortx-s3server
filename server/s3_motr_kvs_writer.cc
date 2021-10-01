@@ -328,6 +328,7 @@ void S3MotrKVSWriter::delete_index(const struct s3_motr_idx_layout &idx_lo,
   idx_ctx->idx->in_attr.idx_pver = idx_lo.pver;
   idx_ctx->idx->in_attr.idx_layout_type = idx_lo.layout_type;
 
+  idx_ctx->idx[0].in_entity.en_flags |= M0_ENF_META;
   int rc = s3_motr_api->motr_entity_open(&(idx_ctx->idx[0].in_entity),
                                          &(idx_op_ctx->ops[0]));
   if (rc != 0) {

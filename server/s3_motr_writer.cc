@@ -214,7 +214,7 @@ int S3MotrWiter::open_objects() {
     } else {
       obj_ctx->n_initialized_contexts += 1;
     }
-
+    obj_ctx->objs[i].ob_entity.en_flags |= M0_ENF_META;
     int rc = s3_motr_api->motr_entity_open(&(obj_ctx->objs[i].ob_entity),
                                            &(ctx->ops[i]));
     if (rc != 0) {
@@ -589,8 +589,9 @@ void S3MotrWiter::delete_object(std::function<void(void)> on_success,
                                 std::function<void(void)> on_failed,
                                 const struct m0_uint128 &object_id,
                                 int layoutid, const struct m0_fid &pv_id) {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry with layoutid = %d\n",
-         __func__, layoutid);
+  s3_log(S3_LOG_INFO, stripped_request_id,
+         "%s Entry with layoutid = %d, pvid: (%" SCNx64 " : %" SCNx64 ")\n",
+         __func__, layoutid, pv_id.f_container, pv_id.f_key);
 
   handler_on_success = std::move(on_success);
   handler_on_failed = std::move(on_failed);
@@ -643,6 +644,7 @@ void S3MotrWiter::delete_objects() {
     ctx->cbs[i].oop_failed = s3_motr_op_failed;
     memcpy(&obj_ctx->objs[i].ob_attr.oa_pver, &pv_ids[i],
            sizeof(struct m0_fid));
+    obj_ctx->objs[i].ob_entity.en_flags |= M0_ENF_META;
     int rc = s3_motr_api->motr_entity_delete(&(obj_ctx->objs[i].ob_entity),
                                              &(ctx->ops[i]));
     if (rc != 0) {

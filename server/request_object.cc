@@ -90,6 +90,20 @@ void s3_client_read_timeout_cb(evutil_socket_t fd, short event, void* arg) {
   request->trigger_client_read_timeout_callback();
 }
 
+void s3_response_delay_timeout_cb(evutil_socket_t fd, short event, void* arg) {
+  s3_log(S3_LOG_DEBUG, "", "%s Entry\n", __func__);
+
+  S3Action* action_obj = static_cast<S3Action*>(arg);
+
+  if (!action_obj) {
+    s3_log(S3_LOG_WARN, "", "Action object == NULL\n");
+    return;
+  }
+  s3_log(S3_LOG_INFO, action_obj->get_request_id().c_str(),
+         "Response delay timeout occured\n");
+  action_obj->resume_action_step();
+}
+
 void RequestObject::listen_for_incoming_data(std::function<void()> callback,
                                              size_t notify_on_size) {
   if (is_s3_client_read_error()) {
@@ -127,7 +141,8 @@ RequestObject::RequestObject(
       // proper globally unique IDs here.  Specifically, we'll need to address
       // uniqueness across all instances of S3 Server.
       addb_request_id(++addb_request_id_gc),
-      reply_buffer(NULL) {
+      reply_buffer(NULL),
+      used_mempool_buffer_count(0) {
 
   S3Uuid uuid;
   request_id = uuid.get_string_uuid();
@@ -176,6 +191,7 @@ RequestObject::RequestObject(
   is_service_req_head = false;
   request_error = S3RequestError::None;
   client_read_timer_event = NULL;
+  response_delay_timer_event = NULL;
   evhtp_obj.reset(evhtp_obj_ptr);
   if (ev_req != NULL) {
     http_method = (S3HttpVerb)ev_req->method;
@@ -286,6 +302,56 @@ void RequestObject::set_start_client_request_read_timeout() {
          "Setting client read timeout to %ld seconds\n", tv.tv_sec);
   event_obj->add_event(client_read_timer_event, &tv);
   return;
+}
+
+// Used in throttling S3 Get requests when there is memory issue
+int RequestObject::set_start_response_delay_timer(short int delay_in_milli_secs,
+                                                  void* action_obj) {
+  // Set the timer event when the size of outstanding response buffer
+  // to client crosses some threshold, causing memory shortage in S3 server.
+  s3_log(S3_LOG_DEBUG, request_id, "%s Entry\n", __func__);
+  if (!client_connected()) {
+    s3_log(S3_LOG_DEBUG, request_id, "Client is disconnected");
+    return -1;
+  }
+  struct timeval tv;
+  tv.tv_sec = delay_in_milli_secs / 1000;
+  tv.tv_usec = (delay_in_milli_secs % 1000) * 1000;
+  if (response_delay_timer_event == NULL) {
+    // Create timer event
+    response_delay_timer_event =
+        event_obj->new_event(g_option_instance->get_eventbase(), -1, 0,
+                             s3_response_delay_timeout_cb, (void*)action_obj);
+  } else {
+    event_obj->free_event(response_delay_timer_event);
+    response_delay_timer_event = NULL;
+    // Re-create timer event
+    response_delay_timer_event =
+        event_obj->new_event(g_option_instance->get_eventbase(), -1, 0,
+                             s3_response_delay_timeout_cb, (void*)action_obj);
+  }
+
+  if (response_delay_timer_event == NULL) {
+    s3_log(S3_LOG_DEBUG, request_id, "Failed to create response delay event");
+    return -1;
+  }
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Setting client response delay to %ld seconds\n", tv.tv_sec);
+  event_obj->add_event(response_delay_timer_event, &tv);
+  return 0;
+}
+
+void RequestObject::free_response_delay_timer(bool s3_response_delay_timedout) {
+  if (response_delay_timer_event != NULL) {
+    if (!s3_response_delay_timedout &&
+        event_obj->pending_event(response_delay_timer_event, EV_TIMEOUT)) {
+      s3_log(S3_LOG_DEBUG, request_id, "Deleting client read timer\n");
+      event_obj->del_event(response_delay_timer_event);
+    }
+    s3_log(S3_LOG_DEBUG, request_id, "Calling event free\n");
+    event_obj->free_event(response_delay_timer_event);
+    response_delay_timer_event = NULL;
+  }
 }
 
 void RequestObject::stop_client_read_timer() {
@@ -437,6 +503,14 @@ std::string RequestObject::get_host_name() {
     }
   }
   return host_name;
+}
+
+size_t RequestObject::get_write_buffer_outstanding_length() {
+  if (!client_connected() || !ev_req) {
+    s3_log(S3_LOG_DEBUG, request_id, "S3 client disconnected.\n");
+    return 0;
+  }
+  return evhtp_obj->http_response_outstanding_buffer_length(ev_req->conn);
 }
 
 void RequestObject::set_out_header_value(std::string key, std::string value) {
