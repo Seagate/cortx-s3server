@@ -279,6 +279,32 @@ std::string S3BucketMetadata::get_tags_as_xml() {
   return tags_as_xml_str;
 }
 
+std::string S3BucketMetadata::get_bucket_versioning_status_as_xml() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  std::string versioning_status;
+  std::string versioning_status_as_xml_str;
+
+  if (bucket_versioning_status.empty()) {
+    return versioning_status_as_xml_str;
+  } else {
+    if (bucket_versioning_status.compare("Unversioned") != 0) {
+      versioning_status += "<VersioningConfiguration>" +
+                           S3CommonUtilities::format_xml_string(
+                               "Status", bucket_versioning_status.c_str()) +
+                           "</VersioningConfiguration>";
+
+    } else {
+      versioning_status += "<VersioningConfiguration/>";
+    }
+    versioning_status_as_xml_str =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + versioning_status;
+  }
+  s3_log(S3_LOG_DEBUG, request_id, "Version xml: %s\n",
+         versioning_status_as_xml_str.c_str());
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Exit", __func__);
+  return versioning_status_as_xml_str;
+}
+
 bool S3BucketMetadata::check_bucket_tags_exists() const {
   return !bucket_tags.empty();
 }
