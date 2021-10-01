@@ -132,7 +132,7 @@ class ConfigCmd(SetupCmd):
         self.logger.info(f"s3server FID file count : {count}")
         s3_instance_count = int(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_S3INSTANCES_KEY'))
         self.logger.info(f"s3_instance_count : {s3_instance_count}")
-        if count != s3_instance_count:
+        if count < s3_instance_count:
           raise Exception("HARE-sysconfig file count does not match s3 instance count")
         index = 1
         for src_path in list_matching:
@@ -339,7 +339,7 @@ class ConfigCmd(SetupCmd):
     self.logger.info('haproxy configuration started')
     try:
       # Create sysconfig file for haproxy.
-      sysconfig_file = os.path.join(self.base_config_file_path, 's3/sysconfig/haproxy')
+      sysconfig_file = os.path.join(self.base_config_file_path, self.get_confkey("S3_HAPROXY_LOG_CONFIG_FILE"))
       os.makedirs(os.path.dirname(sysconfig_file), exist_ok=True)
       with open(sysconfig_file, 'w') as sysconfig:
         log_file = os.path.join(self.base_log_file_path, 's3', self.machine_id, 'haproxy/haproxy.log')
