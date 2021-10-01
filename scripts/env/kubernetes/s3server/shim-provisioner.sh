@@ -38,4 +38,14 @@ yq -r '.node | map_values(.name) ' /etc/cortx/cluster.conf \
   | awk -F: '{print $1}' \
   | sed 's,[ "],,g' > /etc/machine-id
 
+MACHINE_ID="$(cat /etc/machine-id)"
+sysconfig_dir="/etc/cortx/s3/sysconfig/$MACHINE_ID/"
+mkdir -p "$sysconfig_dir"
+( for f in "$src_dir"/s3server/s3server-*; do
+    source "$f"
+    /usr/bin/cp -f "$f" "$sysconfig_dir"
+    cat "$f" > "$sysconfig_dir/s3server-$MOTR_PROCESS_FID"
+  done
+)
+
 cortx_setup cluster bootstrap -c yaml:///etc/cortx/cluster.conf
