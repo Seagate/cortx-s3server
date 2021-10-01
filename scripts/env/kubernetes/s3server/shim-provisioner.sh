@@ -39,7 +39,7 @@ yq -r '.node | map_values(.name) ' /etc/cortx/cluster.conf \
   | sed 's,[ "],,g' > /etc/machine-id
 
 MACHINE_ID="$(cat /etc/machine-id)"
-sysconfig_dir="/etc/cortx/s3/sysconfig/$MACHINE_ID/"
+sysconfig_dir="/etc/cortx/s3/$MACHINE_ID/sysconfig/"
 mkdir -p "$sysconfig_dir"
 ( for f in "$src_dir"/s3server/s3server-*; do
     source "$f"
