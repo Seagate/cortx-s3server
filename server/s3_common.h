@@ -57,7 +57,7 @@
 #define MINIMUM_PART_NUMBER 1
 // Maxmimum part number for multipart operations
 #define MAXIMUM_PART_NUMBER 10000
-// If fragments/parts greater than 8 then whitespace send to client
+// If fragments/parts greater than 4 then whitespace send to client
 #define MAX_FRAGMENTS_WITHOUT_WHITESPACE 4
 // If any part/fragment size is greater than 10MB, white space send to client
 #define MAX_PART_SIZE_WITHOUT_WHITESPACE 10485760
