@@ -20,8 +20,19 @@
 
 set -e -x
 
-source /etc/cortx/s3/sysconfig/haproxy
+if [ $# -ne 1 ]
+then
+  echo "Invalid number of arguments passed to the script"
+  echo "Usage: starthaproxy.sh <haproxy config path>"
+  exit 1
+fi
 
+haproxy_config_path=$1
+
+log_file_source_path="$haproxy_config_path/s3/sysconfig/haproxy"
+haproxy_cfg_file_path="$haproxy_config_path/s3/haproxy.cfg"
+
+source "$log_file_source_path"
 if [ -z "$LOG_FILE" ]; then
   echo 'LOG_FILE is not specified.'
   exit 1
@@ -31,4 +42,4 @@ fi
 mkdir -p "$(dirname "$LOG_FILE")"
 
 # Run the configured haproxy
-/usr/sbin/haproxy -Ws -f /etc/cortx/s3/haproxy.cfg -p /run/haproxy.pid 1>>"$LOG_FILE" 2>&1
+/usr/sbin/haproxy -Ws -f $haproxy_cfg_file_path -p /run/haproxy.pid 1>>"$LOG_FILE" 2>&1
