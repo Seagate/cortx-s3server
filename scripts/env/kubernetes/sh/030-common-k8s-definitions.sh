@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -e # exit immediatly on errors
+set -euo pipefail # exit on failures
 
 source ./config.sh
 source ./env.sh
@@ -42,7 +42,7 @@ set +x
 
 add_separator Waiting for PVs to become Bound
 
-while [ -n "`kubectl get pv | grep -v ^NAME | grep -v Bound`" ]; do
+while [ -n "`kubectl get pv | grep -v ^NAME | safe_grep -v Bound`" ]; do
   echo
   kubectl get pv | grep -v Bound
   echo
@@ -52,7 +52,7 @@ while [ -n "`kubectl get pv | grep -v ^NAME | grep -v Bound`" ]; do
 done
 
 add_separator Waiting for PVCs to become Bound
-while [ -n "`kubectl get pvc | grep -v ^NAME | grep -v Bound`" ]; do
+while [ -n "`kubectl get pvc | grep -v ^NAME | safe_grep -v Bound`" ]; do
   echo
   kubectl get pvc | grep -v Bound
   echo

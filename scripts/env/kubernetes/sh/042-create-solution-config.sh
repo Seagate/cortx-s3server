@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -e # exit immediatly on errors
+set -euo pipefail # exit on failures
 
 source ./config.sh
 source ./env.sh
@@ -27,14 +27,6 @@ source ./sh/functions.sh
 set -x # print each statement before execution
 
 add_separator Creating solution configs from provisioner repo.
-
-image_tag="$PRVSNR_CORTX_ALL_IMAGE_TAG"
-if [ -z "$image_tag" ]; then
-  image_tag="$S3_CORTX_ALL_IMAGE_TAG"
-fi
-cat k8s-blueprints/cortx-provisioner-pod.yaml.template \
-  | sed "s,<prvsnr-cortx-all-image>,ghcr.io/seagate/cortx-all:${image_tag}," \
-  > k8s-blueprints/cortx-provisioner-pod.yaml
 
 if [ ! -d 'cortx-prvsnr' ]; then
   # git clone https://github.com/Seagate/cortx-prvsnr -b kubernetes
@@ -47,6 +39,7 @@ fi
 
 mkdir -p /etc/cortx/s3/solution.cpy/
 cp cortx-prvsnr/test/deploy/kubernetes/solution-config/* /etc/cortx/s3/solution.cpy/
+  # FIXME: Ujjwal said all must use cortx-prvsnr/conf/*.template files, not this test folder
 
 #kubectl apply -f /etc/cortx/s3/solution.cpy/secrets.yaml
 kubectl apply -f k8s-blueprints/secrets.yaml

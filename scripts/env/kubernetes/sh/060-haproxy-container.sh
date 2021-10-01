@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -e # exit immediatly on errors
+set -euo pipefail # exit on failures
 
 source ./config.sh
 source ./env.sh
@@ -33,7 +33,7 @@ kube_run() {
 }
 
 ## Find haproxy version:
-#haproxy_ver=$( kube_run yum list installed | grep haproxy | awk '{print $2}' )
+#haproxy_ver=$( kube_run yum list installed | safe_grep haproxy | awk '{print $2}' )
 #
 #if [[ ! "$haproxy_ver" =~ ^2\.2\. ]]; then
 #  self_check "Haproxy version is <$haproxy_ver>; expected is 2.2.x.  Are you sure you want to continue?"
@@ -44,7 +44,7 @@ kube_run() {
 #sleep 1
 
 set +x
-if [ -z "`kube_run ps ax | grep 'haproxy.pid'`" ]; then
+if [ -z "`kube_run ps ax | safe_grep 'haproxy.pid'`" ]; then
   echo
   kube_run ps ax
   echo

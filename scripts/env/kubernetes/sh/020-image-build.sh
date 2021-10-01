@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -e # exit immediatly on errors
+set -euo pipefail # exit on failures
 
 source ./config.sh
 source ./env.sh
@@ -36,7 +36,7 @@ fi
 new_image_tag="2.0.0-${S3_CORTX_ALL_CUSTOM_CI_NUMBER}-custom-ci"
 
 # see if maybe image is already built?
-if [ -n "$(docker images ghcr.io/seagate/cortx-all | grep "$new_image_tag")" ]; then
+if [ -n "$(docker images ghcr.io/seagate/cortx-all | safe_grep "$new_image_tag")" ]; then
   # image already built
   exit 0
 fi

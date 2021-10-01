@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -e # exit immediatly on errors
+set -euo pipefail # exit on failures
 
 source ./config.sh
 source ./env.sh
@@ -35,7 +35,7 @@ kubectl create -f ./k8s-blueprints/zookeper.yaml
 kubectl create -f ./k8s-blueprints/kafka.yaml
 
 set +x
-while [ `kubectl get pod | grep 'zookeper\|kafka' | grep Running | wc -l` -lt 1 ]; do
+while [ `kubectl get pod | safe_grep 'zookeper\|kafka' | safe_grep Running | wc -l` -lt 1 ]; do
   echo
   kubectl get pod | grep 'NAME\|zookeper\|kafka'
   echo

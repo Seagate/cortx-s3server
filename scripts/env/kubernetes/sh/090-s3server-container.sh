@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -e # exit immediatly on errors
+set -euo pipefail # exit on failures
 
 source ./config.sh
 source ./env.sh
@@ -40,7 +40,7 @@ while sleep 2; do
     break
   fi
   kubectl get pod io-pod
-  kubectl exec -i io-pod -c hare-motr -- ps ax | grep m0d || true
+  ps ax | safe_grep m0d
 done
 
 add_separator Checking if S3 is responsive
@@ -61,21 +61,5 @@ while ! curl -I "http://$IO_POD_IP:28071"; do
   date
   sleep 2
 done
-
-# add_separator Checking if S3 is up
-# 
-# sleep 10
-# 
-# set +x
-# if [ "`kube_run ps ax | grep 's3server --s3pidfile' | wc -l`" -ne 1 ]; then
-#   echo
-#   kubectl logs io-pod s3server-1
-#   echo
-#   kube_run ps ax
-#   echo
-#   add_separator FAILED.  S3 Server does not seem to be running properly.
-#   false
-# fi
-# set -x
 
 add_separator S3SERVER CONTAINER IS HEALTHY.

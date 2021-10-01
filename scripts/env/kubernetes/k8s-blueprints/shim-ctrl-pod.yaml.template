@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: shim-ctrl-pod
+spec:
+  containers:
+    - name: shim
+      image: <s3-cortx-all-image>
+      imagePullPolicy: Never
+      volumeMounts:
+        - name: etc-cortx
+          mountPath: /etc/cortx
+        - name: var-log-cortx
+          mountPath: /var/log/cortx
+        - name: var-data-cortx
+          mountPath: /var/data/cortx
+        - name: cortx-secret
+          mountPath: /etc/cortx/solution/secret
+      command:
+         - "/bin/bash"
+         - "-c"
+         - "--"
+      args:
+         - 'sleep infinity'
+  volumes:
+      - name: etc-cortx
+        persistentVolumeClaim:
+          claimName: etc-cortx
+      - name: var-log-cortx
+        persistentVolumeClaim:
+          claimName: var-log-cortx
+      - name: var-data-cortx
+        persistentVolumeClaim:
+          claimName: var-data-cortx
+      - name: var-motr
+        persistentVolumeClaim:
+          claimName: var-motr
+      - name: motr-sdb
+        persistentVolumeClaim:
+          claimName: motr-sdb
+      - name: motr-sdc
+        persistentVolumeClaim:
+          claimName: motr-sdc
+      - name: motr-sdd
+        persistentVolumeClaim:
+          claimName: motr-sdd
+      - name: motr-sde
+        persistentVolumeClaim:
+          claimName: motr-sde
+      - name: motr-sdf
+        persistentVolumeClaim:
+          claimName: motr-sdf
+      - name: motr-sdg
+        persistentVolumeClaim:
+          claimName: motr-sdg
+      - name: motr-sdh
+        persistentVolumeClaim:
+          claimName: motr-sdh
+      - name: motr-sdi
+        persistentVolumeClaim:
+          claimName: motr-sdi
+      - name: motr-sdj
+        persistentVolumeClaim:
+          claimName: motr-sdj
+      - name: motr-sdk
+        persistentVolumeClaim:
+          claimName: motr-sdk
+      - name: motr-sdl
+        persistentVolumeClaim:
+          claimName: motr-sdl
+      - name: motr-sdm
+        persistentVolumeClaim:
+          claimName: motr-sdm
+      - name: cortx-secret
+        secret:
+          secretName: cortx-secret

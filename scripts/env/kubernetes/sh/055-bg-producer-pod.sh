@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -e # exit immediatly on errors
+set -euo pipefail # exit on failures
 
 source ./config.sh
 source ./env.sh
@@ -38,15 +38,6 @@ pull_images_for_pod k8s-blueprints/s3-bg-producer-pod.yaml
 
 kubectl apply -f k8s-blueprints/s3-bg-producer-pod.yaml
 
-set +x
-while [ `kubectl get pod | grep s3-bg-producer-pod | grep Running | wc -l` -lt 1 ]; do
-  echo
-  kubectl get pod | grep 'NAME\|s3-bg-producer-pod'
-  echo
-  echo s3-bg-producer-pod is not yet in Running state, re-checking ...
-  echo '(hit CTRL-C if it is taking too long)'
-  sleep 5
-done
-set -x
+wait_till_pod_is_Running  s3-bg-producer-pod
 
 add_separator SUCCESSFULLY CREATED BG POD.

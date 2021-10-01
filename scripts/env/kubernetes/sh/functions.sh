@@ -47,7 +47,6 @@ self_check() {
   )
 }
 
-
 hit_enter_when_done() {
   ( set +x +e
     add_separator
@@ -63,6 +62,12 @@ validate_ip() {
     return
   fi
   true
+}
+
+safe_grep() {
+  # by default grep returns nonzero error code if no match found.
+  # this functin will always return success from grep invocation.
+  grep "$@" || true
 }
 
 ###########################################################################
@@ -103,8 +108,8 @@ set_var_POD_IP() {
 }
 
 pull_images_for_pod() {
-  cat "$1" | grep 'image:' | awk '{print $2}' \
-    | grep -v "2.0.0-${S3_CORTX_ALL_CUSTOM_CI_NUMBER}-custom-ci" \
+  cat "$1" | safe_grep 'image:' | awk '{print $2}' \
+    | safe_grep -v "2.0.0-${S3_CORTX_ALL_CUSTOM_CI_NUMBER}-custom-ci" \
     | xargs --no-run-if-empty -n1 docker pull
   # grep -v is needed to prevent downloading of locally-built image
 }
@@ -114,7 +119,7 @@ wait_till_pod_is_Running() {
   shift
   ( set +x
     add_separator "Waiting till pod '$pod_name' becomes Running"
-    while [ $(kubectl get pod "$@" | grep "$pod_name" | grep Running | wc -l) -lt 1 ]; do
+    while [ $(kubectl get pod "$@" | safe_grep "$pod_name" | grep Running | wc -l) -lt 1 ]; do
       echo
       kubectl get pod "$@" | grep 'NAME\|'"$pod_name"
       echo

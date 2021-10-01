@@ -21,7 +21,7 @@
 source ./config.sh
 source ./sh/functions.sh
 
-set -e # exit immediatly on errors
+set -euo pipefail # exit on failures
 set -x # print each statement before execution
 
 echo "AUTOMATION_BASE_DIR='$(pwd)'" > ./env.sh
@@ -37,7 +37,7 @@ set -x
 
 echo "HOST_FQDN=$hostname" >> ./env.sh
 
-if [ -z "`cat /etc/*rele* | grep 7.9.2009`" ]; then
+if [ -z "`cat /etc/*rele* | safe_grep 7.9.2009`" ]; then
   self_check "This automation has only been tested on CentOS 7.9.2009. It's not recommented to try on other OS versions.  Your OS version is different.  Are you sure you want to proceed?"
 fi
 

@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: symas-pod
+  labels:
+    name: symas-svc-connect
+spec:
+  containers:
+    - name: ldap
+      image: ghcr.io/seagate/symas-openldap:2.4.58
+      imagePullPolicy: Never
+      ports:
+        - containerPort: 389
+          name: "ldapport"
+      command:
+        - "/opt/entrypoint.sh"
+      args:
+        - "--rootdnpassword"
+        - "seagate2"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openldap-svc
+spec:
+  selector:
+    name: symas-svc-connect
+  ports:
+    - name: port389
+      protocol: TCP
+      port: 389
+      targetPort: 389

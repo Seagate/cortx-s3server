@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -e # exit immediatly on errors
+set -euo pipefail # exit on failures
 
 source ./config.sh
 source ./env.sh
@@ -142,7 +142,7 @@ fi
 
 set +x
 add_separator Checking kube-system PODs status
-while [ -n "`kubectl get pods -n kube-system | grep -v NAME | grep -v Running`" ]; do
+while [ -n "`kubectl get pods -n kube-system | grep -v NAME | safe_grep -v Running`" ]; do
   echo
   kubectl get pods -n kube-system | grep -v Running
   echo
@@ -155,7 +155,7 @@ set -x
 
 set +x
 add_separator Checking node status
-while [ -n "`kubectl get nodes | grep -v NAME | grep -v Ready`" ]; do
+while [ -n "`kubectl get nodes | grep -v NAME | safe_grep -v Ready`" ]; do
   echo
   kubectl get nodes | grep -v Running
   echo

@@ -18,13 +18,13 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -e -x
+set -euo pipefail # exit on failures
 
 kubectl delete -f k8s-blueprints/io-pod.yaml
 kubectl apply -f k8s-blueprints/io-pod.yaml
 
 set +x
-while [ `kubectl get pod | grep io-pod | grep Running | wc -l` -lt 1 ]; do
+while [ `kubectl get pod | safe_grep io-pod | safe_grep Running | wc -l` -lt 1 ]; do
   echo
   kubectl get pod | grep 'NAME\|io-pod'
   echo

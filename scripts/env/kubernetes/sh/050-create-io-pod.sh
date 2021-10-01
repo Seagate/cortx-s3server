@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -e # exit immediatly on errors
+set -euo pipefail # exit on failures
 
 source ./config.sh
 source ./env.sh
@@ -57,7 +57,7 @@ kubectl apply -f k8s-blueprints/cortx-io-ep.yaml
 # Creating service
 kubectl apply -f k8s-blueprints/cortx-io-svc.yaml
 
-if [ `kubectl get svc | grep cortx-io-svc | wc -l` -lt 1 ]
+if [ `kubectl get svc | safe_grep cortx-io-svc | wc -l` -lt 1 ]
 then
    add_separator FAILED. cortx io service does not seem to be running.
    exit 1

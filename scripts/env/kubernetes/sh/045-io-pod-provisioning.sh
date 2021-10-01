@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -e # exit immediatly on errors
+set -euo pipefail # exit on failures
 
 source ./config.sh
 source ./env.sh
@@ -56,57 +56,39 @@ kube_run() {
 }
 
 
-###############
-# Message Bus #
-###############
-
-mkdir -p /etc/cortx/utils/
-cat message-bus/message_bus.conf.template | \
-  sed -e "s/<kafka-external-ip>/$KAFKA_EXTERNAL_IP/" \
-  > /etc/cortx/utils/message_bus.conf
-
-mkdir -p /var/log/cortx/utils/message_bus
-chmod 755 /var/log/cortx/utils/*
-chmod 755 /var/log/cortx/utils/message_bus
-touch /var/log/cortx/utils/message_bus/message_bus.log
-chmod 755 /var/log/cortx/utils/message_bus/message_bus.log
-
-cp message-bus/cortx.conf /etc/cortx
-
-
 ##############################
 # hare mini provisioner call #
 ##############################
 
-kube_run cp /opt/seagate/cortx/hare/conf/hare.config.conf.tmpl.1-node /etc/cortx
-
-set_kv() {
-  sed -i "s;$1;$2;" /etc/cortx/hare.config.conf.tmpl.1-node
-}
-set_kv TMPL_CLUSTER_ID               3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6
-set_kv TMPL_MACHINE_ID               "$MACHINE_ID"
-set_kv TMPL_HOSTNAME                 s3-setup-pod
-set_kv TMPL_STORAGESET_COUNT         1
-set_kv TMPL_POOL_TYPE                FIXME
-set_kv TMPL_DATA_UNITS_COUNT         FIXME
-set_kv TMPL_PARITY_UNITS_COUNT       FIXME
-set_kv TMPL_SPARE_UNITS_COUNT        FIXME
-set_kv TMPL_STORAGESET_NAME          FIXME
-set_kv TMPL_S3SERVER_INSTANCES_COUNT 2
-set_kv TMPL_SERVER_NODE_NAME         FIXME
-set_kv TMPL_DATA_INTERFACE_TYPE      FIXME
-set_kv TMPL_PRIVATE_FQDN             FIXME
-set_kv TMPL_PRIVATE_DATA_INTERFACE_1 FIXME
-set_kv TMPL_PRIVATE_DATA_INTERFACE_2 FIXME
-set_kv TMPL_STORAGE_SET_ID           FIXME
-set_kv TMPL_CVG_COUNT                FIXME
-set_kv TMPL_DATA_DEVICE_1            FIXME
-set_kv TMPL_DATA_DEVICE_2            FIXME
-set_kv TMPL_METADATA_DEVICE          FIXME
-
-# kube_run /opt/seagate/cortx/hare/bin/hare_setup config \
-#              --config json:///etc/cortx/hare.config.conf.1-node \
-#              --file /root/cluster-containers.yaml
+#kube_run cp /opt/seagate/cortx/hare/conf/hare.config.conf.tmpl.1-node /etc/cortx
+#
+#set_kv() {
+#  sed -i "s;$1;$2;" /etc/cortx/hare.config.conf.tmpl.1-node
+#}
+#set_kv TMPL_CLUSTER_ID               3f670dd0-17cf-4ef3-9d8b-e1fb6a14c0f6
+#set_kv TMPL_MACHINE_ID               "$MACHINE_ID"
+#set_kv TMPL_HOSTNAME                 s3-setup-pod
+#set_kv TMPL_STORAGESET_COUNT         1
+#set_kv TMPL_POOL_TYPE                FIXME
+#set_kv TMPL_DATA_UNITS_COUNT         FIXME
+#set_kv TMPL_PARITY_UNITS_COUNT       FIXME
+#set_kv TMPL_SPARE_UNITS_COUNT        FIXME
+#set_kv TMPL_STORAGESET_NAME          FIXME
+#set_kv TMPL_S3SERVER_INSTANCES_COUNT 2
+#set_kv TMPL_SERVER_NODE_NAME         FIXME
+#set_kv TMPL_DATA_INTERFACE_TYPE      FIXME
+#set_kv TMPL_PRIVATE_FQDN             FIXME
+#set_kv TMPL_PRIVATE_DATA_INTERFACE_1 FIXME
+#set_kv TMPL_PRIVATE_DATA_INTERFACE_2 FIXME
+#set_kv TMPL_STORAGE_SET_ID           FIXME
+#set_kv TMPL_CVG_COUNT                FIXME
+#set_kv TMPL_DATA_DEVICE_1            FIXME
+#set_kv TMPL_DATA_DEVICE_2            FIXME
+#set_kv TMPL_METADATA_DEVICE          FIXME
+#
+## kube_run /opt/seagate/cortx/hare/bin/hare_setup config \
+##              --config json:///etc/cortx/hare.config.conf.1-node \
+##              --file /root/cluster-containers.yaml
 
 
 ############################
@@ -114,28 +96,8 @@ set_kv TMPL_METADATA_DEVICE          FIXME
 ############################
 
 if [ "$USE_PROVISIONING" = yes ]; then
-  kube_run "$src_dir/s3server/shim-provisioner.sh"
+  kube_run "$src_dir/s3server/shim-provisioner.sh" io-pod
 else
-  # update solution config with proper values
-
-  python3 <<EOF
-import sys
-import yaml
-
-data = yaml.load(open("/etc/cortx/s3/solution.cpy/config.yaml"))
-
-data['cortx']['external']['kafka']['endpoints'] = ['$KAFKA_EXTERNAL_IP']
-
-data['cortx']['common']['security']['domain_certificate'] = '/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem'
-data['cortx']['common']['security']['device_certificate'] = '/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem'
-
-# FIXME: using hard-coded IP address. Remove this line once Saumitra's change is in, which creates io service with k8s.
-data['cortx']['s3']['internal']['endpoints'] = 'http://192.168.134.219:28049'
-
-with open("/etc/cortx/s3/solution.cpy/config.yaml", 'w') as f:
-  f.write(yaml.dump(data))
-EOF
-
   kube_run "$src_dir/s3server/s3-mini-prov.sh"
 fi
 
@@ -144,6 +106,7 @@ fi
 # #############
 
 # 'manual' step for machine-id (until proper solution is merged) FIXME
+kube_run sh -c 'cat /etc/machine-id > /etc/cortx/s3/machine-id-with-dashes'
 kube_run sh -c 'cat /etc/machine-id | sed "s,-,,g" > /etc/cortx/s3/machine-id'
 
 # Increase retry interval

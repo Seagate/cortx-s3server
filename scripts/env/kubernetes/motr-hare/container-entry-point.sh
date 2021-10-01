@@ -18,7 +18,8 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -x -e
+set -euo pipefail # exit on failures
+set -x
 
 sync_file_path=/var/data/cortx/motr-hare-is-up.txt
   # This file will be created after Motr is up and rummings -- so that other
@@ -67,9 +68,11 @@ sleep 5
 
 sleep 5
 
-if [ "`ps ax | grep /usr/bin/m0d | grep -v grep | wc -l`" -ne 4 ]; then
+if [ "`ps ax | grep /usr/bin/m0d | { grep -v grep || true } | wc -l`" -ne 4 ]; then
   echo
   ps ax
+  echo
+  tail -n4 /var/log/cortx/motr-0x{7,a,d,1a}.log
   echo
   echo FAILED.  Motr does not seem to be running properly.
   exit 1

@@ -18,7 +18,8 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -e -x
+set -euo pipefail # exit on failures
+set -x
 
 s3_repo_dir=/var/data/cortx/cortx-s3server
 src_dir="$s3_repo_dir"/scripts/env/kubernetes
