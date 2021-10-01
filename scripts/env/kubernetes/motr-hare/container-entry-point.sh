@@ -38,12 +38,12 @@ mkdir /etc/motr
 
 src_dir=/var/data/cortx/cortx-s3server/scripts/env/kubernetes/motr-hare/
 
-cp "$src_dir"/confd.xc                   /etc/motr/confd.xc
+cp "$src_dir"/confd.xc                    /etc/motr/confd.xc
 cp "$src_dir"/m0d-0x7200000000000001-0x1a /etc/sysconfig/m0d-0x7200000000000001:0x1a
-cp "$src_dir"/m0d-0x7200000000000001-0xa /etc/sysconfig/m0d-0x7200000000000001:0xa
-cp "$src_dir"/m0d-0x7200000000000001-0xd /etc/sysconfig/m0d-0x7200000000000001:0xd
-cp "$src_dir"/m0d-0x7200000000000001-0x7 /etc/sysconfig/m0d-0x7200000000000001:0x7
-cp "$src_dir"/motr-deploy                /root/motr-deploy
+cp "$src_dir"/m0d-0x7200000000000001-0xa  /etc/sysconfig/m0d-0x7200000000000001:0xa
+cp "$src_dir"/m0d-0x7200000000000001-0xd  /etc/sysconfig/m0d-0x7200000000000001:0xd
+cp "$src_dir"/m0d-0x7200000000000001-0x7  /etc/sysconfig/m0d-0x7200000000000001:0x7
+cp "$src_dir"/motr-deploy                 /root/motr-deploy
 
 chmod +x /root/motr-deploy
 

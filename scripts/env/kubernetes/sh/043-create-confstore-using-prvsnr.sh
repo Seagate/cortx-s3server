@@ -26,45 +26,30 @@ source ./sh/functions.sh
 
 set -x # print each statement before execution
 
-add_separator RUNNING PROVISIONER TO CREATE CONFSTORE.
+add_separator Creating solution configs from provisioner repo.
 
 image_tag="$PRVSNR_CORTX_ALL_IMAGE_TAG"
 if [ -z "$image_tag" ]; then
-  image_tag="$S3_CORTX_ALL_IMAGE_TAG}"
+  image_tag="$S3_CORTX_ALL_IMAGE_TAG"
 fi
-cat k8s-blueprints/prvsnr-pod.yaml.template \
-  | sed "s,<s3-cortx-all-image>,ghcr.io/seagate/cortx-all:${PRVSNR_CORTX_ALL_IMAGE_TAG}," \
-  > k8s-blueprints/prvsnr-pod.yaml
+cat k8s-blueprints/cortx-provisioner-pod.yaml.template \
+  | sed "s,<prvsnr-cortx-all-image>,ghcr.io/seagate/cortx-all:${image_tag}," \
+  > k8s-blueprints/cortx-provisioner-pod.yaml
 
-# git clone https://github.com/Seagate/cortx-prvsnr -b kubernetes
-git clone -b kubernetes https://github.com/sachitanands/cortx-prvsnr-Kubernetes cortx-prvsnr
+if [ ! -d 'cortx-prvsnr' ]; then
+  # git clone https://github.com/Seagate/cortx-prvsnr -b kubernetes
+  git clone -b br/sachit/new-s3-config https://github.com/sachitanands/cortx-prvsnr-Kubernetes cortx-prvsnr
+else
+  cd cortx-prvsnr
+  git pull --ff-only
+  cd -
+fi
 
-cd cortx-prvsnr/test/deploy/kubernetes
+mkdir -p /etc/cortx/s3/solution.cpy/
+cp cortx-prvsnr/test/deploy/kubernetes/solution-config/* /etc/cortx/s3/solution.cpy/
 
-sh ./deploy.sh
+#kubectl apply -f /etc/cortx/s3/solution.cpy/secrets.yaml
+kubectl apply -f k8s-blueprints/secrets.yaml
+  # FIXME: using local copy until it's not merged upstream
 
-#cp solution-config/config.yaml /etc/cortx/solution
-
-kubectl apply -f "$AUTOMATION_BASE_DIR"/k8s-blueprints/prvsnr-pv.yaml --namespace cortx
-kubectl apply -f "$AUTOMATION_BASE_DIR"/k8s-blueprints/prvsnr-pvc.yaml --namespace cortx
-kubectl apply -f ./solution-config/cortx-secret.yaml --namespace cortx
-kubectl apply -f "$AUTOMATION_BASE_DIR"/k8s-blueprints/prvsnr-pod.yaml --namespace cortx
-
-# save result, as it will be deleted by destroy.sh
-cp /etc/cortx/cluster.conf "$AUTOMATION_BASE_DIR"
-
-sed -i -e 's,--force,--wait=false,' ./destroy.sh
-
-kubectl delete -f "$AUTOMATION_BASE_DIR"/k8s-blueprints/prvsnr-pod.yaml --namespace cortx
-kubectl delete -f ./solution-config/cortx-secret.yaml --namespace cortx
-kubectl delete -f "$AUTOMATION_BASE_DIR"/k8s-blueprints/prvsnr-pvc.yaml --namespace cortx
-kubectl delete -f "$AUTOMATION_BASE_DIR"/k8s-blueprints/prvsnr-pv.yaml --namespace cortx
-
-sh ./destroy.sh
-
-cd - # back to main src dir
-
-# copy result confstore back to /etc/cortx
-cp cluster.conf /etc/cortx
-
-add_separator SUCCESSFULLY CREATED CONFSTORE.
+add_separator SUCCESSFULLY CREATED SOLUTION CONFIG TEMPLATE.

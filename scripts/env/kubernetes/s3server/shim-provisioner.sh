@@ -20,19 +20,22 @@
 
 set -e -x
 
-./sh/010-install-k8s.sh
-./sh/020-image-build.sh
-./sh/030-common-k8s-definitions.sh
-./sh/035-message-bus.sh
-./sh/040-openldap.sh
-./sh/043-create-confstore-using-prvsnr.sh
-./sh/045-prepare-s3-containers-configs.sh
-./sh/050-create-io-pod.sh
-./sh/055-bg-producer-pod.sh
-./sh/060-haproxy-container.sh
-./sh/070-authserver-container.sh
-./sh/080-motr-hare-container.sh
-./sh/090-s3server-container.sh
-./sh/095-bg-containers.sh
-./sh/100-s3-client-setup.sh
-./sh/110-io-testing.sh
+s3_repo_dir=/var/data/cortx/cortx-s3server
+src_dir="$s3_repo_dir"/scripts/env/kubernetes
+
+source "$src_dir/env.sh"
+
+# FIXME: manual fix for known problem as of 2021-09-30 (remove disabling services)
+sed -i -e '/self.disable_services(services_list)/ d' "/opt/seagate/cortx/s3/bin/configcmd.py"
+
+rm -f /etc/cortx/cluster.conf
+
+cortx_setup config apply -f yaml:///etc/cortx/s3/solution.cpy/cluster.yaml -c yaml:///etc/cortx/cluster.conf
+cortx_setup config apply -f yaml:///etc/cortx/s3/solution.cpy/config.yaml  -c yaml:///etc/cortx/cluster.conf
+
+yq -r '.node | map_values(.name) ' /etc/cortx/cluster.conf \
+  | grep storage-node1 \
+  | awk -F: '{print $1}' \
+  | sed 's,[ "],,g' > /etc/machine-id
+
+cortx_setup cluster bootstrap -c yaml:///etc/cortx/cluster.conf

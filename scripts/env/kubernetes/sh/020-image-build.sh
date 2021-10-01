@@ -26,12 +26,28 @@ source ./sh/functions.sh
 
 set -x # print each statement before execution
 
-add_separator BUILDING CORTX-ALL IMAGE LOCALLY.
-
+# See if we even asked to build image.
 if [ -z "$S3_CORTX_ALL_CUSTOM_CI_NUMBER" ]; then
-  # no need to build image
+  # no need to build image. cleanup env.sh
+  sed -e '/^S3_CORTX_ALL_IMAGE_TAG=/d' -i env.sh
   exit 0
 fi
+
+new_image_tag="2.0.0-${S3_CORTX_ALL_CUSTOM_CI_NUMBER}-custom-ci"
+
+# see if maybe image is already built?
+if [ -n "$(docker images ghcr.io/seagate/cortx-all | grep "$new_image_tag")" ]; then
+  # image already built
+  exit 0
+fi
+
+# see if maybe image already available on github container registry?
+if docker pull "ghcr.io/seagate/cortx-all:$new_image_tag"; then
+  # available
+  exit 0
+fi
+
+add_separator BUILDING CORTX-ALL IMAGE LOCALLY.
 
 if ! which docker-compose; then
   sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
@@ -53,6 +69,6 @@ fi
   ./build.sh -b custom-build-"$S3_CORTX_ALL_CUSTOM_CI_NUMBER"
 )
 
-echo "S3_CORTX_ALL_IMAGE_TAG=2.0.0-${S3_CORTX_ALL_CUSTOM_CI_NUMBER}-custom-ci" >> env.sh
+echo "S3_CORTX_ALL_IMAGE_TAG='$new_image_tag'" >> env.sh
 
 add_separator SUCCESSFULLY BUILT CORTX-ALL IMAGE LOCALLY.
