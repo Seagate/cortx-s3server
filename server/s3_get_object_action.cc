@@ -892,9 +892,18 @@ void S3GetObjectAction::send_data_to_client() {
   // that is requested content length is lesser than the sum of data has been
   // sent to client and current read block size
   if (((data_sent_to_client + length_in_evbuf) >= requested_content_length) ||
-      (p_evbuffer->get_evbuff_length() >= requested_content_length)) {
+      (p_evbuffer->get_evbuff_length() >= requested_content_length) ||
+      (object_metadata->is_object_extended() &&
+       ((data_sent_to_client_for_object + length_in_evbuf) >=
+        extended_objects[next_fragment_object].object_size))) {
     // length will have the size of remaining byte to sent
-    int length = requested_content_length - data_sent_to_client;
+    int length;
+    if (object_metadata->is_object_extended()) {
+      length = extended_objects[next_fragment_object].object_size -
+               data_sent_to_client_for_object;
+    } else {
+      length = requested_content_length - data_sent_to_client;
+    }
     p_evbuffer->read_drain_data_from_buffer(length);
   }
   size_t bytes_sent = p_evbuffer->get_evbuff_length();

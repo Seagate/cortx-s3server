@@ -247,6 +247,12 @@ void S3CopyObjectAction::copy_fragments() {
     // Handle fragments -- TODO
     copy_each_part_fragment(i);
   }
+  // Send white space to client only if total number of fragments are more
+  // or max part size is greater than some value
+  if ((total_parts_fragment_to_be_copied > MAX_FRAGMENTS_WITHOUT_WHITESPACE) ||
+      (max_part_size > MAX_PART_SIZE_WITHOUT_WHITESPACE)) {
+    start_response();
+  }
 }
 
 void S3CopyObjectAction::copy_each_part_fragment(int index) {
@@ -286,13 +292,6 @@ void S3CopyObjectAction::copy_each_part_fragment(int index) {
     }
     set_s3_error("InternalError");
     send_response_to_s3_client();
-    return;
-  }
-  // Send white space to client only if total number of fragments are more
-  // or max part size is greater than some value
-  if ((total_parts_fragment_to_be_copied > MAX_FRAGMENTS_WITHOUT_WHITESPACE) ||
-      (max_part_size > MAX_PART_SIZE_WITHOUT_WHITESPACE)) {
-    start_response();
   }
   s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
