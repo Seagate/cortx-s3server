@@ -100,6 +100,8 @@ def main():
       # get the s3 config file path from S3 Provisioner config file
       s3configfile = s3_confkeys_store.get_config("S3_CONFIG_FILE").replace("/opt/seagate/cortx", base_config_path)
 
+      logger.info(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3configfile} -d")
+      logger.info(f"Starting S3 Server with FID {Fid}...")
       # Start S3 Server
       os.system(f"sh /opt/seagate/cortx/s3/s3startsystem.sh -F {Fid} -P {fid_path} -C {s3configfile} -d")
 
@@ -114,6 +116,8 @@ def main():
       os.system(f"tail -f {s3_log_file_path}")
     elif args.service == 's3authserver':
       # Start S3 Auth Server
+      logger.info(f"sh /opt/seagate/cortx/auth/startauth.sh {base_config_path}")
+      logger.info(f"Starting S3 Auth Server...")
       os.system(f"sh /opt/seagate/cortx/auth/startauth.sh {base_config_path}")
 
       # Read the log directory path from s3 authserver config file
@@ -126,7 +130,9 @@ def main():
       # Print last few line of S3 authserver log  file
       os.system(f"tail -f {s3_auth_server_log_file_path}")
     elif args.service == 's3bgproducer':
-      # Start S3 Background Producer 
+      # Start S3 Background Producer
+      logger.info(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh")
+      logger.info(f"Starting S3 Background delete Producer...")
       os.system("sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundproducer.sh")
 
       # Read the log directory path from s3 bgdelete config file
@@ -137,6 +143,8 @@ def main():
       os.system(f"tail -f {s3_bgdelete_producer_log_file_path}")
     elif args.service == 's3bgconsumer':
       # Start the Background Consumer
+      logger.info(f"sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.sh")
+      logger.info(f"Starting S3 Background delete Consumer...")
       os.system("sh /opt/seagate/cortx/s3/s3backgrounddelete/starts3backgroundconsumer.sh")
 
       # Read the log directory path from s3 bgdelete config file
@@ -147,6 +155,8 @@ def main():
       os.system(f"tail -f {s3_bgdelete_consumer_log_file_path}")
     elif args.service == 'haproxy':
       # Start haproxy
+      logger.info(f"sh /opt/seagate/cortx/s3/bin/starthaproxy.sh {base_config_path}")
+      logger.info(f"Starting HAProxy...")
       os.system(f"sh /opt/seagate/cortx/s3/bin/starthaproxy.sh {base_config_path}")
 
       # Read the log directory path from haproxy config file (e.g /etc/cortx/s3/sysconfig/haproxy)
