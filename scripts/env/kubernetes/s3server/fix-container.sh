@@ -21,11 +21,18 @@
 set -euo pipefail # exit on failures
 set -x
 
+###########################################################################
+#
+# This script runs in every s3 IO container right before entry-point
+# script, so use it for whatever ad-hoc fixes needed in container.
+#
+# Make sure it's indempotent, i.e. repeated runs do not create
+# problems (since k8s will be re-starting containers).
+#
+###########################################################################
+
 # FIXME: motr/provisioner dependency on machine-id file
 cat /etc/cortx/s3/machine-id > /etc/machine-id
-
-# FIXME: quick fix for rebase failure as of 2021-10-01, remove next day
-sed -e 's,get_confkey,get_config,g' -i "/opt/seagate/cortx/s3/bin/s3_start"
 
 # FIXME: use hard-coded cortx-utils version; newer ones have some unknown changes
 rpm -e --nodeps cortx-py-utils
