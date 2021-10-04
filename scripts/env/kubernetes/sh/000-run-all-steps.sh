@@ -31,11 +31,11 @@ set -x
 ./sh/044-ctrl-pod-provisioning.sh
 ./sh/045-io-pod-provisioning.sh
 ./sh/050-create-io-pod.sh
-./sh/055-bg-producer-pod.sh
-#./sh/060-haproxy-container.sh
-#./sh/070-authserver-container.sh
-./sh/090-s3server-container.sh
-#./sh/095-bg-containers.sh
+./sh/055-create-bg-producer-pod.sh
+#./sh/060-check-haproxy-container.sh
+#./sh/070-check-authserver-container.sh
+./sh/090-check-s3server-container.sh
+#./sh/095-check-bg-containers.sh
 ./sh/100-s3-client-setup.sh
 ./sh/110-io-testing.sh
 ./sh/120-confirm-bg-works.sh
