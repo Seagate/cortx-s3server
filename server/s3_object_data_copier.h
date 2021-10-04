@@ -117,6 +117,7 @@ class S3ObjectDataCopier {
   FRIEND_TEST(S3ObjectDataCopierTest, ReadDataBlockSuccessShouldStartWrite);
   FRIEND_TEST(S3ObjectDataCopierTest, ReadDataBlockFailed);
   FRIEND_TEST(S3ObjectDataCopierTest, WriteObjectStarted);
+  FRIEND_TEST(S3ObjectDataCopierTest, SetS3CopyFailed);
   FRIEND_TEST(S3ObjectDataCopierTest, WriteObjectFailedShouldUndoMarkProgress);
   FRIEND_TEST(S3ObjectDataCopierTest, WriteObjectFailedDuetoEntityOpenFailure);
   FRIEND_TEST(S3ObjectDataCopierTest, WriteObjectSuccessfulWhileShuttingDown);

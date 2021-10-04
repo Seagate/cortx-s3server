@@ -406,6 +406,14 @@ TEST_F(S3CopyObjectActionTest, FetchDestinationObjectInfoSuccess) {
   EXPECT_EQ(1, call_count_one);
 }
 
+TEST_F(S3CopyObjectActionTest, CreateOneOrMoreObjects) {
+
+  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
+              create_object(_, _, _, _)).Times(AtLeast(1));
+
+  action_under_test->create_object();
+}
+
 TEST_F(S3CopyObjectActionTest, CreateObjectFirstAttempt) {
   action_under_test->total_data_to_stream = 1024;
 

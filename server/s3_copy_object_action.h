@@ -143,6 +143,7 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   FRIEND_TEST(S3CopyObjectActionTest, FetchDestinationObjectInfoFailed);
   FRIEND_TEST(S3CopyObjectActionTest, FetchDestinationObjectInfoSuccess);
   FRIEND_TEST(S3CopyObjectActionTest, CreateObjectFirstAttempt);
+  FRIEND_TEST(S3CopyObjectActionTest, CreateOneOrMoreObjects);
   FRIEND_TEST(S3CopyObjectActionTest, CreateObjectSecondAttempt);
   FRIEND_TEST(S3CopyObjectActionTest, CreateObjectFailedTestWhileShutdown);
   FRIEND_TEST(S3CopyObjectActionTest,
