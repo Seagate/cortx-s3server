@@ -250,10 +250,9 @@ std::string S3BucketMetadata::replication_config_from_json_to_xml(
 
   Json::Value rule_array = newroot["Rules"];
   Json::Value rule_object;
-  // Iterate over the number of rules present in replication configuration
 
-  for (unsigned int index = 0; index < rule_array.size(); ++index)  //
-  {
+  // Iterate over the number of rules present in replication configuration
+  for (unsigned int index = 0; index < rule_array.size(); ++index) {
 
     xml_str += "<Rule>";
     rule_object = rule_array[index];

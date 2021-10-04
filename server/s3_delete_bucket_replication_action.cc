@@ -18,61 +18,69 @@
  *
  */
 
-#include "s3_get_bucket_replication_action.h"
+#include "s3_delete_bucket_replication_action.h"
 #include "s3_error_codes.h"
 #include "s3_log.h"
 
-S3GetBucketReplicationAction::S3GetBucketReplicationAction(
+S3DeleteBucketReplicationAction::S3DeleteBucketReplicationAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
-    : S3BucketAction(std::move(req), std::move(bucket_meta_factory), false) {
+    : S3BucketAction(std::move(req), std::move(bucket_meta_factory)) {
   s3_log(S3_LOG_DEBUG, request_id, "%s Ctor\n", __func__);
 
   s3_log(S3_LOG_INFO, stripped_request_id,
-         "S3 API: Get Bucket Replication. Bucket[%s]\n",
+         "S3 API: Delete Bucket Replication. Bucket[%s]\n",
          request->get_bucket_name().c_str());
 
   setup_steps();
 }
 
-void S3GetBucketReplicationAction::setup_steps() {
+void S3DeleteBucketReplicationAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  ACTION_TASK_ADD(S3GetBucketReplicationAction::check_metadata_missing_status,
+  ACTION_TASK_ADD(S3DeleteBucketReplicationAction::delete_bucket_replication,
                   this);
-  ACTION_TASK_ADD(S3GetBucketReplicationAction::send_response_to_s3_client,
+  ACTION_TASK_ADD(S3DeleteBucketReplicationAction::send_response_to_s3_client,
                   this);
   // ...
 }
 
-void S3GetBucketReplicationAction::check_metadata_missing_status() {
+void S3DeleteBucketReplicationAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
-  if (!(bucket_metadata->check_bucket_replication_exists())) {
-    set_s3_error("NoSuchReplicationConfiguration");
-  }
-  next();
-  s3_log(S3_LOG_INFO, "", "%s Exit", __func__);
-}
-
-void S3GetBucketReplicationAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry get_metadata_failed\n",
-         __func__);
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Bucket metadata load operation failed due to pre launch failure\n");
     set_s3_error("ServiceUnavailable");
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    s3_log(S3_LOG_ERROR, request_id, "Bucket metadata load operation failed\n");
     set_s3_error("NoSuchBucket");
   } else {
     set_s3_error("InternalError");
-    s3_log(S3_LOG_ERROR, request_id,
-           "Bucket metadata load operation failed due to internal error\n");
   }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
   send_response_to_s3_client();
-  s3_log(S3_LOG_INFO, "", "%s Exit", __func__);
 }
 
-void S3GetBucketReplicationAction::send_response_to_s3_client() {
+void S3DeleteBucketReplicationAction::delete_bucket_replication() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  bucket_metadata->delete_bucket_replication_config();
+  bucket_metadata->update(
+      std::bind(&S3DeleteBucketReplicationAction::next, this),
+      std::bind(
+          &S3DeleteBucketReplicationAction::delete_bucket_replication_failed,
+          this));
+
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+}
+
+void S3DeleteBucketReplicationAction::delete_bucket_replication_failed() {
+  s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
+  if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+  } else {
+    set_s3_error("InternalError");
+  }
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
+  next();
+}
+
+void S3DeleteBucketReplicationAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, stripped_request_id, "%s Entry\n", __func__);
 
   if (reject_if_shutting_down() ||
@@ -83,6 +91,11 @@ void S3GetBucketReplicationAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
+
+    if (get_s3_error_code() == "ServiceUnavailable" ||
+        get_s3_error_code() == "InternalError") {
+      request->set_out_header_value("Connection", "close");
+    }
 
     if (get_s3_error_code() == "ServiceUnavailable") {
       if (reject_if_shutting_down()) {
@@ -96,12 +109,11 @@ void S3GetBucketReplicationAction::send_response_to_s3_client() {
     }
 
     request->send_response(error.get_http_status_code(), response_xml);
+
   } else {
-    std::string response_xml = bucket_metadata->get_replication_config_as_xml();
-    request->set_bytes_sent(response_xml.length());
-    request->send_response(S3HttpSuccess200, response_xml);
+    request->send_response(S3HttpSuccess204);
   }
 
-  s3_log(S3_LOG_INFO, "", "%s Exit", __func__);
   done();
+  s3_log(S3_LOG_DEBUG, "", "%s Exit", __func__);
 }
