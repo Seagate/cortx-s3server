@@ -36,9 +36,6 @@ else
   exit 1
 fi
 
-# FIXME: manual fix for known problem as of 2021-09-30 (remove disabling services)
-sed -i -e '/self.disable_services(services_list)/ d' "/opt/seagate/cortx/s3/bin/configcmd.py"
-
 rm -f /etc/cortx/cluster.conf
 
 # FIXME: use hard-coded cortx-utils version

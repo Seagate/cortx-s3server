@@ -78,8 +78,7 @@ kube_run "$src_dir/s3server/shim-provisioner.sh" ctrl-pod
 #data['cortx']['common']['security']['domain_certificate'] = '/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem'
 #data['cortx']['common']['security']['device_certificate'] = '/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem'
 #
-## FIXME: using hard-coded IP address. Remove this line once Saumitra's change is in, which creates io service with k8s.
-#data['cortx']['s3']['internal']['endpoints'] = 'http://192.168.134.219:28049'
+#data['cortx']['s3']['internal']['endpoints'] = 'http://cortx-io-svc:28049'
 #
 #with open("/etc/cortx/s3/solution.cpy/config.yaml", 'w') as f:
 #  f.write(yaml.dump(data))
