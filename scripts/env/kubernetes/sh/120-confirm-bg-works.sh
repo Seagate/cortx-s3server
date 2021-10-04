@@ -29,8 +29,8 @@ set -x # print each statement before execution
 add_separator CHECKING BG IS WORKING.
 
 MACHINE_ID="$(cat /etc/cortx/s3/machine-id-with-dashes)"
-consumer_log="/var/log/cortx/s3/$MACHINE_ID/s3backgrounddelete/object_recovery_processor.log"
-producer_log='/var/log/cortx/s3/s3backgrounddelete/object_recovery_scheduler.log'
+consumer_log="/share/var/log/cortx/s3/$MACHINE_ID/s3backgrounddelete/object_recovery_processor.log"
+producer_log='/share/var/log/cortx/s3/s3backgrounddelete/object_recovery_scheduler.log'
 while [ 0 -eq "$(cat "$consumer_log" | safe_grep 'Leak entry' | safe_grep 'processed successfully and deleted' | wc -l)" ]; do
   set -x
   add_separator 'Checking BG status...'

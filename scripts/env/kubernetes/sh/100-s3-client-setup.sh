@@ -28,8 +28,8 @@ set -x # print each statement before execution
 
 add_separator CONFIGURING S3 CLIENTS.
 
-yum-config-manager --add-repo http://cortx-storage.colo.seagate.com/releases/cortx/uploads/centos/centos-7.8.2003/s3server_uploads/
-yum-config-manager --add-repo http://cortx-storage.colo.seagate.com/releases/cortx/github/main/centos-7.8.2003/last_successful/
+yum-config-manager --add-repo http://cortx-storage.colo.seagate.com/releases/cortx/uploads/centos/centos-7.8.2003/s3server_uploads/ || true
+yum-config-manager --add-repo http://cortx-storage.colo.seagate.com/releases/cortx/github/main/centos-7.8.2003/last_successful/ || true
 yum install -y cortx-s3iamcli --nogpgcheck
 pip3 install awscli
 pip3 install awscli-plugin-endpoint
@@ -47,7 +47,14 @@ sed -i \
 
 echo "$CORTX_IO_SVC s3.seagate.com iam.seagate.com" >> /etc/hosts
 
-mkdir -p /var/log/seagate/auth/
+mkdir -p /share/var/log/seagate/auth/
+
+# initial run of s3iamcli -- this creates config file.  This will fail (due to
+# hard-coded log path), then we can edit it in config file.  So we're ignoring
+# retcode in this call.
+rm -f /root/.sgs3iamcli/config.yaml
+s3iamcli ListAccounts --ldapuser sgiamadmin --ldappasswd ldapadmin --no-ssl || true
+sed -i 's/\/var\/\log/\/share\/var\/log/g' /root/.sgs3iamcli/config.yaml
 
 s3iamcli ListAccounts --ldapuser sgiamadmin --ldappasswd ldapadmin --no-ssl
 

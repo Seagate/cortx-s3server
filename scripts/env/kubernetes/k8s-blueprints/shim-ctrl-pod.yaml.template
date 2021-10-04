@@ -11,7 +11,7 @@ spec:
         - name: etc-cortx
           mountPath: /etc/cortx
         - name: var-log-cortx
-          mountPath: /var/log/cortx
+          mountPath: /share/var/log/cortx
         - name: var-data-cortx
           mountPath: /var/data/cortx
         - name: cortx-secret

@@ -40,11 +40,11 @@ cat message-bus/message_bus.conf.template | \
   sed -e "s/<kafka-external-ip>/$KAFKA_EXTERNAL_IP/" \
   > /etc/cortx/utils/message_bus.conf
 
-mkdir -p /var/log/cortx/utils/message_bus
-chmod 755 /var/log/cortx/utils/*
-chmod 755 /var/log/cortx/utils/message_bus
-touch /var/log/cortx/utils/message_bus/message_bus.log
-chmod 755 /var/log/cortx/utils/message_bus/message_bus.log
+mkdir -p /share/var/log/cortx/utils/message_bus
+chmod 755 /share/var/log/cortx/utils/*
+chmod 755 /share/var/log/cortx/utils/message_bus
+touch /share/var/log/cortx/utils/message_bus/message_bus.log
+chmod 755 /share/var/log/cortx/utils/message_bus/message_bus.log
 
 mkdir -p /etc/cortx/utils/conf/
 cp message-bus/cortx.conf /etc/cortx
