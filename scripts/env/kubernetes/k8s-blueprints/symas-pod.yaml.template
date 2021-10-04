@@ -7,16 +7,18 @@ metadata:
 spec:
   containers:
     - name: ldap
-      image: ghcr.io/seagate/symas-openldap:2.4.58
+      image: <symas-image>
       imagePullPolicy: Never
       ports:
         - containerPort: 389
           name: "ldapport"
       command:
-        - "/opt/entrypoint.sh"
+        - /bin/bash
       args:
-        - "--rootdnpassword"
-        - "seagate2"
+        - -c
+        - set -exuo pipefail;
+          /opt/entrypoint.sh "--rootdnpassword" "seagate2"
+
 ---
 apiVersion: v1
 kind: Service

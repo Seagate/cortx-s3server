@@ -36,6 +36,10 @@ S3_CORTX_ALL_CUSTOM_CI_NUMBER=
 MOTR_CORTX_ALL_IMAGE_TAG=2.0.0-2042-custom-ci # latest known working image from Motr team
   # Specifies which image to use for Motr containers.
 
+SYMAS_IMAGE='ghcr.io/seagate/symas-openldap@sha256:9d64225c4728f1b0c1fc7ae5bd65228945d38fcf0b003d5f6301db64181aeb1f'
+#SYMAS_IMAGE=ghcr.io/seagate/symas-openldap:2.4.58  # use this for latest
+  # Symas image to use.
+
 DOCKER_USER_NAME=
 DOCKER_PASSWORD=
   # www.docker.com credentials.  Optional.  Fill in if you need to avoid Rate

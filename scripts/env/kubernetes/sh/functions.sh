@@ -108,7 +108,7 @@ set_var_POD_IP() {
 }
 
 pull_images_for_pod() {
-  cat "$1" | safe_grep 'image:' | awk '{print $2}' \
+  cat "$1" | safe_grep 'image:' | awk '{print $2}' | sed "s,',,g" \
     | safe_grep -v "2.0.0-${S3_CORTX_ALL_CUSTOM_CI_NUMBER}-custom-ci" \
     | xargs --no-run-if-empty -n1 docker pull
   # grep -v is needed to prevent downloading of locally-built image

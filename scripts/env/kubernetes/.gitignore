@@ -3,6 +3,8 @@ config.sh
 env.sh
 k8s-blueprints/io-pod.yaml
 k8s-blueprints/shim-pod.yaml
+k8s-blueprints/shim-ctrl-pod.yaml
+k8s-blueprints/symas-pod.yaml
 kubeadm-init.log
 kubeadm-join-cmd.sh
 s3-account.txt
@@ -10,3 +12,4 @@ k8s-blueprints/openldap-pv.yaml
 k8s-blueprints/s3-bg-producer-pod.yaml
 cortx-prvsnr
 centos-7.9.2009.tar
+test-obj.bin

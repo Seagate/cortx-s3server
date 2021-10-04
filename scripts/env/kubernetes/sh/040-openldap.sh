@@ -37,6 +37,10 @@ else
 fi
 
 if [ "$ldap_kind" = symas ]; then
+  # update image link for containers
+  cat k8s-blueprints/symas-pod.yaml.template \
+    | sed "s,<symas-image>,'$SYMAS_IMAGE'," \
+    > k8s-blueprints/symas-pod.yaml
   pull_images_for_pod k8s-blueprints/symas-pod.yaml
   delete_pod_if_exists  symas-pod
   kubectl apply -f k8s-blueprints/symas-pod.yaml
