@@ -25,7 +25,7 @@
 
 #include "s3_addb_map.h"
 
-const uint64_t g_s3_to_addb_idx_func_name_map_size = 214;
+const uint64_t g_s3_to_addb_idx_func_name_map_size = 219;
 
 const char* g_s3_to_addb_idx_func_name_map[] = {
     "Action::check_authentication",
@@ -97,6 +97,9 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3DeleteBucketActionTest::func_callback_one",
     "S3DeleteBucketPolicyAction::delete_bucket_policy",
     "S3DeleteBucketPolicyAction::send_response_to_s3_client",
+    "S3DeleteBucketReplicationAction::delete_bucket_replication",
+    "S3DeleteBucketReplicationAction::send_response_to_s3_client",
+    "S3DeleteBucketReplicationActionTest::func_callback_one",
     "S3DeleteBucketTaggingAction::delete_bucket_tags",
     "S3DeleteBucketTaggingAction::send_response_to_s3_client",
     "S3DeleteBucketTaggingActionTest::func_callback_one",
@@ -118,6 +121,8 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3GetBucketAction::validate_request",
     "S3GetBucketPolicyAction::check_metadata_missing_status",
     "S3GetBucketPolicyAction::send_response_to_s3_client",
+    "S3GetBucketReplicationAction::check_metadata_missing_status",
+    "S3GetBucketReplicationAction::send_response_to_s3_client",
     "S3GetBucketTaggingAction::check_metadata_missing_status",
     "S3GetBucketTaggingAction::send_response_to_s3_client",
     "S3GetBucketlocationAction::fetch_bucket_info",

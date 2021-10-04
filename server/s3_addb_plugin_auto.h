@@ -91,6 +91,8 @@ enum S3AddbActionTypeId {
   S3_ADDB_S3_DELETE_BUCKET_ACTION_ID,
   /* S3DeleteBucketPolicyAction: */
   S3_ADDB_S3_DELETE_BUCKET_POLICY_ACTION_ID,
+  /* S3DeleteBucketReplicationAction: */
+  S3_ADDB_S3_DELETE_BUCKET_REPLICATION_ACTION_ID,
   /* S3DeleteBucketTaggingAction: */
   S3_ADDB_S3_DELETE_BUCKET_TAGGING_ACTION_ID,
   /* S3DeleteMultipleObjectsAction: */
@@ -107,6 +109,8 @@ enum S3AddbActionTypeId {
   S3_ADDB_S3_GET_BUCKET_ACTION_V2_ID,
   /* S3GetBucketPolicyAction: */
   S3_ADDB_S3_GET_BUCKET_POLICY_ACTION_ID,
+  /* S3GetBucketReplicationAction: */
+  S3_ADDB_S3_GET_BUCKET_REPLICATION_ACTION_ID,
   /* S3GetBucketTaggingAction: */
   S3_ADDB_S3_GET_BUCKET_TAGGING_ACTION_ID,
   /* S3GetBucketlocationAction: */
