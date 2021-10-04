@@ -122,7 +122,7 @@ class ConfigCmd(SetupCmd):
       self.create_auth_jks_password()
       self.logger.info('create auth jks password completed')
 
-      if not 'openldap' in self.services:
+      if (self.services is not None) and (not 'openldap' in self.services):
         sysconfig_path = os.path.join(self.base_config_file_path,"s3", self.machine_id, "sysconfig")
         file_name = sysconfig_path + '/s3server-0x*'
         list_matching = []
