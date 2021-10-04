@@ -38,7 +38,7 @@ spec:
     namespace: default
     name: var-log-cortx
   local:
-    path: /var/log/cortx
+    path: /share/var/log/cortx
   nodeAffinity:
     required:
       nodeSelectorTerms:
