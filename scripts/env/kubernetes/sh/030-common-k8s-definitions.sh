@@ -26,6 +26,11 @@ source ./sh/functions.sh
 
 add_separator "Creating common k8s definitions"
 
+# cleanup -- remove all config files from previous runs
+if [ -d /etc/cortx ]; then
+  rm -fR /etc/cortx/*
+fi
+
 kubectl apply -f k8s-blueprints/storage-class.yaml
 
 mkdir -p /var/motr
