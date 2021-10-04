@@ -26,7 +26,7 @@ set -x # print each statement before execution
 
 echo "AUTOMATION_BASE_DIR='$(pwd)'" > ./env.sh
 
-hostname=`hostname`
+hostname="$(hostname)"
 set +x
 echo
 read -p "Input node FQDN (or hit Enter if default value is correct) [$hostname]:" var
@@ -37,13 +37,13 @@ set -x
 
 echo "HOST_FQDN=$hostname" >> ./env.sh
 
-if [ -z "`cat /etc/*rele* | safe_grep 7.9.2009`" ]; then
+if [ -z "$(cat /etc/*rele* | safe_grep 7.9.2009)" ]; then
   self_check "This automation has only been tested on CentOS 7.9.2009. It's not recommented to try on other OS versions.  Your OS version is different.  Are you sure you want to proceed?"
 fi
 
-NUM_CPU=`lscpu | grep '^CPU(s):' | awk -F: '{ gsub(/ /, "", $2); print $2 }'`
-RAM_SIZE=`free | grep ^Mem | awk '{ print $2 }'`
-NUM_DATA_DRIVES=$[ `ls /dev/sd? -1 | wc -l` - 1 ]
+NUM_CPU="$(lscpu | grep '^CPU(s):' | awk -F: '{ gsub(/ /, "", $2); print $2 }')"
+RAM_SIZE="$(free | grep ^Mem | awk '{ print $2 }')"
+NUM_DATA_DRIVES=$[ $(ls /dev/sd? -1 | wc -l) - 1 ]
 
 if [ "$NUM_CPU" -lt 16 ]; then
   self_check "Number of CPU is $NUM_CPU, which is less than 16. This automation has only been tested on 16 CPUs, smaller number is not recommended. Are you sure you want to proceed?"

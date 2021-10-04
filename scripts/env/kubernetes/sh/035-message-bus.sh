@@ -44,7 +44,7 @@ else
 fi
 
 set +x
-while [ `kubectl get pod | safe_grep 'zookeper\|kafka' | safe_grep Running | wc -l` -lt 1 ]; do
+while [ "$(kubectl get pod | safe_grep 'zookeper\|kafka' | safe_grep Running | wc -l)" -lt 1 ]; do
   echo
   kubectl get pod | grep 'NAME\|zookeper\|kafka'
   echo

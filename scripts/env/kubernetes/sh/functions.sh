@@ -76,7 +76,7 @@ safe_grep() {
 
 set_var_SVC_IP() {
   service_name="$1"
-  SVC_IP=`kubectl get svc "$service_name" | grep -v ^NAME | awk '{print $3}'`
+  SVC_IP="$(kubectl get svc "$service_name" | grep -v ^NAME | awk '{print $3}')"
   if ! validate_ip "$SVC_IP"; then
     add_separator "FAILED. service endpoint '$service_name' is not valid"
     kubectl get svc "$service_name"
@@ -87,7 +87,7 @@ set_var_SVC_IP() {
 
 set_var_SVC_EXTERNAL_IP() {
   service_name="$1"
-  SVC_EXTERNAL_IP=`kubectl get svc "$service_name" | grep -v ^NAME | awk '{print $4}'`
+  SVC_EXTERNAL_IP="$(kubectl get svc "$service_name" | grep -v ^NAME | awk '{print $4}')"
   if ! validate_ip "$SVC_EXTERNAL_IP"; then
     add_separator "FAILED. service endpoint '$service_name' is not valid"
     kubectl get svc "$service_name"
@@ -98,7 +98,7 @@ set_var_SVC_EXTERNAL_IP() {
 
 set_var_POD_IP() {
   pod_name="$1"
-  POD_IP=`kubectl describe pod "$pod_name" | grep '^IP:' | awk '{print $2}'`
+  POD_IP="$(kubectl describe pod "$pod_name" | grep '^IP:' | awk '{print $2}')"
   if ! validate_ip "$POD_IP"; then
     add_separator "FAILED. Cannot derive POD IP address of POD named '$pod_name'"
     kubectl get pod "$pod_name" -o wide

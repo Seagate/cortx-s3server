@@ -76,7 +76,7 @@ cat s3-account.txt
 
 set_VAL_for_key() {
   key="$1"
-  VAL=`cat s3-account.txt | sed 's/ *, */\n/g' | grep "$key" | sed "s,^$key *= *,,"`
+  VAL="$(cat s3-account.txt | sed 's/ *, */\n/g' | grep "$key" | sed "s,^$key *= *,,")"
 }
 
 set_VAL_for_key AccessKeyId

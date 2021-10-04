@@ -68,7 +68,7 @@ sleep 5
 
 sleep 5
 
-if [ "`ps ax | grep /usr/bin/m0d | { grep -v grep || true; } | wc -l`" -ne 4 ]; then
+if [ "$(ps ax | grep /usr/bin/m0d | { grep -v grep || true; } | wc -l)" -ne 4 ]; then
   echo
   ps ax
   echo

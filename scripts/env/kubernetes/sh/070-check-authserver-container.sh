@@ -37,7 +37,7 @@ kube_run() {
 sleep 1
 
 set +x
-if [ -z "`kube_run ps ax | safe_grep 'java -jar AuthServer'`" ]; then
+if [ -z "$(kube_run ps ax | safe_grep 'java -jar AuthServer')" ]; then
   echo
   kube_run ps ax
   echo

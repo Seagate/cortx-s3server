@@ -35,7 +35,7 @@ kube_run() {
 }
 
 set +x
-if [ "`kube_run ps ax | safe_grep '/opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer' | wc -l`" -ne 1 ]; then
+if [ "$(kube_run ps ax | safe_grep '/opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundconsumer' | wc -l)" -ne 1 ]; then
   echo
   kubectl logs io-pod s3-bg-consumer
   echo
@@ -57,7 +57,7 @@ kube_run() {
 }
 
 set +x
-if [ "`kube_run ps ax | safe_grep '/opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer' | wc -l`" -ne 1 ]; then
+if [ "$(kube_run ps ax | safe_grep '/opt/seagate/cortx/s3/s3backgrounddelete/s3backgroundproducer' | wc -l)" -ne 1 ]; then
   echo
   kubectl logs s3-bg-producer-pod s3-bg-producer
   echo

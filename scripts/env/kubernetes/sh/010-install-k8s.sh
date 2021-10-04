@@ -93,7 +93,7 @@ if [ "$actual" -ne 1 ]; then
 fi
 set -x
 
-if [ `getenforce` != 'Disabled' ]; then
+if [ "$(getenforce)" != 'Disabled' ]; then
   setenforce 0
   sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
 fi
@@ -102,7 +102,7 @@ sed -i '/swap/d' /etc/fstab
 swapoff -a
 
 set +x
-if [ "`free | grep ^Swap | awk '{print $2+$3+$4}'`" -ne 0 ]; then
+if [ "$(free | grep ^Swap | awk '{print $2+$3+$4}')" -ne 0 ]; then
   add_separator 'FAILURE: Failed to disable swap'
   set -x
   free
@@ -157,7 +157,7 @@ fi
 
 set +x
 add_separator Checking kube-system PODs status
-while [ -n "`kubectl get pods -n kube-system | grep -v NAME | safe_grep -v Running`" ]; do
+while [ -n "$(kubectl get pods -n kube-system | grep -v NAME | safe_grep -v Running)" ]; do
   echo
   kubectl get pods -n kube-system | grep -v Running
   echo
@@ -170,7 +170,7 @@ set -x
 
 set +x
 add_separator Checking node status
-while [ -n "`kubectl get nodes | grep -v NAME | safe_grep -v Ready`" ]; do
+while [ -n "$(kubectl get nodes | grep -v NAME | safe_grep -v Ready)" ]; do
   echo
   kubectl get nodes | grep -v Running
   echo

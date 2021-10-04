@@ -44,7 +44,7 @@ kube_run() {
 #sleep 1
 
 set +x
-if [ -z "`kube_run ps ax | safe_grep 'haproxy.pid'`" ]; then
+if [ -z "$(kube_run ps ax | safe_grep 'haproxy.pid')" ]; then
   echo
   kube_run ps ax
   echo
