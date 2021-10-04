@@ -49,6 +49,12 @@ if kubectl get node "$HOST_FQDN" --show-labels | grep node-name="$NODE_NAME"; th
   exit 0
 fi
 
+# pre-install centos 7.9 image, if available.  Will speed up things later.
+if wget http://cortx-storage.colo.seagate.com/releases/cortx/images/centos-7.9.2009.tar; then
+  docker image load -i centos-7.9.2009.tar || true
+    # ok to ignore error; will be properly loaded later anyway.
+fi
+
 # install kubernetes
 cat <<EOF > /etc/yum.repos.d/kubernetes.repo
 [kubernetes]

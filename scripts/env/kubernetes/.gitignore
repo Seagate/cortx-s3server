@@ -9,3 +9,4 @@ s3-account.txt
 k8s-blueprints/openldap-pv.yaml
 k8s-blueprints/s3-bg-producer-pod.yaml
 cortx-prvsnr
+centos-7.9.2009.tar
