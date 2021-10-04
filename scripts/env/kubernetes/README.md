@@ -50,7 +50,7 @@ save.
 ```
 cd /var/data/cortx/cortx-s3server/scripts/env/kubernetes
 cp config.sh.template config.sh
-vi config.sh
+vim config.sh
 ```
 
 # 2.2. Auto-detected environment parameters
