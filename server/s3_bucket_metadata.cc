@@ -250,9 +250,16 @@ std::string S3BucketMetadata::replication_config_from_json_to_xml(
 
   Json::Value rule_array = newroot["Rules"];
   Json::Value rule_object;
+<<<<<<< HEAD
 
   // Iterate over the number of rules present in replication configuration
   for (unsigned int index = 0; index < rule_array.size(); ++index) {
+=======
+  // Iterate over the number of rules present in replication configuration
+
+  for (unsigned int index = 0; index < rule_array.size(); ++index)  //
+  {
+>>>>>>> 9c1b328d (Rebased with putBucketReplication changes PR -https://github.com/Seagate/cortx-s3server/pull/1294)
 
     xml_str += "<Rule>";
     rule_object = rule_array[index];
@@ -309,7 +316,11 @@ std::string S3BucketMetadata::replication_config_from_json_to_xml(
           xml_str += "<Tag><Key>" + key_str + "</Key><Value>" + val_str +
                      "</Value></Tag>";
         }
+<<<<<<< HEAD
         xml_str += "</And></Filter>";
+=======
+        xml_str += "</And> </Filter> ";
+>>>>>>> 9c1b328d (Rebased with putBucketReplication changes PR -https://github.com/Seagate/cortx-s3server/pull/1294)
       } else if (!rule_object["Filter"]["And"]["Tag"].isNull() &&
                  !rule_object["Filter"]["And"]["Prefix"].isNull()) {
         // If tag,and,Prefix nodes are present  in filter
@@ -327,7 +338,11 @@ std::string S3BucketMetadata::replication_config_from_json_to_xml(
           xml_str += "<Tag><Key>" + key_str + "</Key><Value>" + val_str +
                      "</Value></Tag>";
         }
+<<<<<<< HEAD
         xml_str += "</And></Filter>";
+=======
+        xml_str += "</And> </Filter> ";
+>>>>>>> 9c1b328d (Rebased with putBucketReplication changes PR -https://github.com/Seagate/cortx-s3server/pull/1294)
       } else if (!rule_object["Filter"]["Tag"].isNull()) {
         // If only tag node is present in filter
 
