@@ -24,8 +24,10 @@
 #include <libxml/xmlmemory.h>
 
 #include <regex>
+
 #include "s3_log.h"
 #include "s3_put_replication_body.h"
+#include "s3_common_utilities.h"
 
 // This might change in future
 #define NO_OF_RULES_SUPPORTED 50
@@ -376,10 +378,10 @@ bool S3PutReplicationBody::read_rule_node(
 
           xmlChar *val = xmlNodeGetContent(rule_child_node);
           std::string rule_priority_str = reinterpret_cast<char *>(val);
-          rule_priority = atoi(rule_priority_str.c_str());
+          S3CommonUtilities::stoi(rule_priority_str.c_str(), rule_priority);
 
-          if (rule_priority < 0 ||
-              rule_priority > std::numeric_limits<int>::max()) {
+          if ((rule_priority < 0 ||
+               rule_priority > std::numeric_limits<int>::max())) {
             s3_log(S3_LOG_WARN, request_id, "XML rule priority Invalid.\n");
             s3_error = "InvalidRequestForPriority";
             return false;
