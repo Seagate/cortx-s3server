@@ -59,15 +59,9 @@ public class AccessKeyService {
      */
     public static AccessKey createAccessKey(User user)
             throws DataAccessException {
-        AccessKeyDAO accessKeyDAO = (AccessKeyDAO) DAODispatcher.getResourceDAO(
-                DAOResource.ACCESS_KEY);
-        AccessKey accessKey = new AccessKey();
-        accessKey.setUserId(user.getId());
-        accessKey.setId(KeyGenUtil.createUserAccessKeyId(true));
-        accessKey.setSecretKey(KeyGenUtil.generateSecretKey());
-        accessKey.setStatus(AccessKeyStatus.ACTIVE);
-
-        accessKeyDAO.save(accessKey);
+        String accessKeyId = KeyGenUtil.createUserAccessKeyId(true);
+        String secretKey = KeyGenUtil.generateSecretKey();
+        AccessKey accessKey = createAccessKey(user, accessKeyId, secretKey);
 
         return accessKey;
     }
