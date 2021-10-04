@@ -84,7 +84,7 @@ def main():
         raise Exception("provide instance id")
 
       #Sys config path
-      sysconfig_path = os.path.join(base_config_path, "s3", machine_id, "sysconfig")
+      sysconfig_path = os.path.join(base_config_path, "s3", "sysconfig",machine_id)
 
       fid_file = "s3server-" + args.index
       fid_path = os.path.join(sysconfig_path, fid_file)
