@@ -378,15 +378,14 @@ bool S3PutReplicationBody::read_rule_node(
 
           xmlChar *val = xmlNodeGetContent(rule_child_node);
           std::string rule_priority_str = reinterpret_cast<char *>(val);
-          S3CommonUtilities::stoi(rule_priority_str.c_str(), rule_priority);
 
-          if ((rule_priority < 0 ||
-               rule_priority > std::numeric_limits<int>::max())) {
-            s3_log(S3_LOG_WARN, request_id, "XML rule priority Invalid.\n");
+          if (!S3CommonUtilities::stoi(rule_priority_str.c_str(),
+                                       rule_priority) ||
+              rule_priority < 0) {
+            s3_log(S3_LOG_WARN, request_id, "XML rule priority is Invalid.\n");
             s3_error = "InvalidRequestForPriority";
             return false;
           }
-
           if (rule_priority_set.find(rule_priority) !=
               rule_priority_set.end()) {
 
