@@ -30,7 +30,7 @@ add_separator Creating solution configs from provisioner repo.
 
 if [ ! -d 'cortx-prvsnr' ]; then
   # git clone https://github.com/Seagate/cortx-prvsnr -b kubernetes
-  git clone -b br/sachit/new-s3-config https://github.com/sachitanands/cortx-prvsnr-Kubernetes cortx-prvsnr
+  git clone -b br/sachit/share-var-log-branch https://github.com/sachitanands/cortx-prvsnr-Kubernetes cortx-prvsnr
 else
   cd cortx-prvsnr
   git pull --ff-only
