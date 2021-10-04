@@ -47,7 +47,7 @@ sed -i \
 
 echo "$CORTX_IO_SVC s3.seagate.com iam.seagate.com" >> /etc/hosts
 
-mkdir -p /var/log/seagate/auth/
+mkdir -p /share/var/log/seagate/auth/
 
 s3iamcli ListAccounts --ldapuser sgiamadmin --ldappasswd ldapadmin --no-ssl
 

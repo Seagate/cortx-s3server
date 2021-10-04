@@ -29,7 +29,7 @@ add_separator "Creating common k8s definitions"
 kubectl apply -f k8s-blueprints/storage-class.yaml
 
 mkdir -p /var/motr
-mkdir -p /etc/cortx /var/log/cortx /var/data/cortx
+mkdir -p /etc/cortx /share/var/log/cortx /var/data/cortx
 
 kubectl apply -f k8s-blueprints/motr-pv.yaml
 kubectl apply -f k8s-blueprints/motr-pvc.yaml

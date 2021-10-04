@@ -51,20 +51,20 @@ chmod +x /root/motr-deploy
 m0setup -Mv -p "/dev/sd[b-m]" --no-m0t1fs || true
   # ignoring error code, it's expected to fail due to D-Bus issue
 sleep 5
-/root/motr-deploy -s 0x7200000000000001:0x7 &>/var/log/cortx/motr-0x7.log &
+/root/motr-deploy -s 0x7200000000000001:0x7 &>/share/var/log/cortx/motr-0x7.log &
 sleep 5
 
-/root/motr-deploy -s 0x7200000000000001:0xa &>/var/log/cortx/motr-0xa.log &
+/root/motr-deploy -s 0x7200000000000001:0xa &>/share/var/log/cortx/motr-0xa.log &
 
 sleep 5
 
-/root/motr-deploy -s 0x7200000000000001:0xd &>/var/log/cortx/motr-0xd.log &
+/root/motr-deploy -s 0x7200000000000001:0xd &>/share/var/log/cortx/motr-0xd.log &
   # Note: (confd) this service will throw rc = -111 error after start
   # and this errors will disappear once below command ioservice is started:
 
 sleep 5
 
-/root/motr-deploy -s 0x7200000000000001:0x1a &>/var/log/cortx/motr-0x1a.log &
+/root/motr-deploy -s 0x7200000000000001:0x1a &>/share/var/log/cortx/motr-0x1a.log &
 
 sleep 5
 
@@ -72,7 +72,7 @@ if [ "`ps ax | grep /usr/bin/m0d | { grep -v grep || true; } | wc -l`" -ne 4 ]; 
   echo
   ps ax
   echo
-  tail -n4 /var/log/cortx/motr-0x{7,a,d,1a}.log
+  tail -n4 /share/var/log/cortx/motr-0x{7,a,d,1a}.log
   echo
   echo FAILED.  Motr does not seem to be running properly.
   exit 1

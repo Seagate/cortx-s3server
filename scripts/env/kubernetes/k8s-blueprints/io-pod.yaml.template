@@ -13,7 +13,7 @@ spec:
         - name: etc-cortx
           mountPath: /etc/cortx
         - name: var-log-cortx
-          mountPath: /var/log/cortx
+          mountPath: /share/var/log/cortx
         - name: var-data-cortx
           mountPath: /var/data/cortx
       ports:
@@ -46,7 +46,7 @@ spec:
         - name: etc-cortx
           mountPath: /etc/cortx
         - name: var-log-cortx
-          mountPath: /var/log/cortx
+          mountPath: /share/var/log/cortx
         - name: var-data-cortx
           mountPath: /var/data/cortx
       command:
@@ -70,7 +70,7 @@ spec:
         - name: etc-cortx
           mountPath: /etc/cortx
         - name: var-log-cortx
-          mountPath: /var/log/cortx
+          mountPath: /share/var/log/cortx
         - name: var-data-cortx
           mountPath: /var/data/cortx
       volumeDevices:
@@ -107,7 +107,7 @@ spec:
         - name: etc-cortx
           mountPath: /etc/cortx
         - name: var-log-cortx
-          mountPath: /var/log/cortx
+          mountPath: /share/var/log/cortx
         - name: var-data-cortx
           mountPath: /var/data/cortx
       command:
@@ -132,7 +132,7 @@ spec:
         - name: etc-cortx
           mountPath: /etc/cortx
         - name: var-log-cortx
-          mountPath: /var/log/cortx
+          mountPath: /share/var/log/cortx
         - name: var-data-cortx
           mountPath: /var/data/cortx
       command:
@@ -157,7 +157,7 @@ spec:
         - name: etc-cortx
           mountPath: /etc/cortx
         - name: var-log-cortx
-          mountPath: /var/log/cortx
+          mountPath: /share/var/log/cortx
         - name: var-data-cortx
           mountPath: /var/data/cortx
       command:
