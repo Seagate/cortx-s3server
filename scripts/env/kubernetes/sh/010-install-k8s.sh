@@ -119,17 +119,19 @@ EOF
 sudo systemctl restart docker
 
 if [ "$THIS_IS_PRIMARY_K8S_NODE" = yes ]; then
-  kubeadm init --pod-network-cidr=192.168.0.0/16 2>&1 | tee kubeadm-init.log
-  cat kubeadm-init.log
-  mkdir -p $HOME/.kube
-  # This is a workaround for SSC machines where root cannot write to /home
-  (sudo cat /etc/kubernetes/admin.conf) > ~/.kube/config
-  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+  if [ ! -f kubeadm-join-cmd.sh ]; then
+    kubeadm init --pod-network-cidr=192.168.0.0/16 2>&1 | tee kubeadm-init.log
+    cat kubeadm-init.log
+    mkdir -p $HOME/.kube
+    # This is a workaround for SSC machines where root cannot write to /home
+    (sudo cat /etc/kubernetes/admin.conf) > ~/.kube/config
+    sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
-  # save kubeadm join command to separate file
-  cat kubeadm-init.log \
-    | grep 'kubeadm join\|--token\|--discovery-token-ca-cert-hash' \
-    > kubeadm-join-cmd.sh
+    # save kubeadm join command to separate file
+    cat kubeadm-init.log \
+      | grep 'kubeadm join\|--token\|--discovery-token-ca-cert-hash' \
+      > kubeadm-join-cmd.sh
+  fi
 
   curl https://docs.projectcalico.org/manifests/calico.yaml -O
   # download images using docker -- 'kubectl init' is not able to apply user
