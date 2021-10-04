@@ -524,6 +524,16 @@ TEST_F(S3CopyObjectActionTest, CreateNewOidTest) {
   EXPECT_OID_NE(old_oid, action_under_test->new_object_oid);
 }
 
+TEST_F(S3CopyObjectActionTest, CopyFragments) {
+  action_under_test->total_parts_fragment_to_be_copied = 3;
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(0);
+  EXPECT_CALL(*ptr_mock_request, send_reply_start(_)).Times(0);
+  EXPECT_CALL(*ptr_mock_request, send_reply_body(_, _)).Times(0);
+
+  action_under_test->copy_fragments();
+}
+
 TEST_F(S3CopyObjectActionTest, ZeroSizeObject) {
   action_under_test->total_data_to_stream = 0;
   action_under_test->clear_tasks();

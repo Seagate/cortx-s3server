@@ -152,6 +152,7 @@ class S3CopyObjectAction : public S3PutObjectActionBase {
   FRIEND_TEST(S3CopyObjectActionTest, CreateObjectFailedTest);
   FRIEND_TEST(S3CopyObjectActionTest, CreateObjectFailedToLaunchTest);
   FRIEND_TEST(S3CopyObjectActionTest, CreateNewOidTest);
+  FRIEND_TEST(S3CopyObjectActionTest, CopyFragments);
   FRIEND_TEST(S3CopyObjectActionTest, ZeroSizeObject);
   FRIEND_TEST(S3CopyObjectActionTest, SaveMetadata);
   FRIEND_TEST(S3CopyObjectActionTest, SaveObjectMetadataFailed);
