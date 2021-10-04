@@ -53,8 +53,9 @@ yq -r '.node | map_values(.name) ' /etc/cortx/cluster.conf \
   | awk -F: '{print $1}' \
   | sed 's,[ "],,g' > /etc/machine-id
 
+# FIXME: copying FID files, till we ingtegrate HARE provisioner to automation
 MACHINE_ID="$(cat /etc/machine-id)"
-sysconfig_dir="/etc/cortx/s3/$MACHINE_ID/sysconfig/"
+sysconfig_dir="/etc/cortx/s3/sysconfig/$MACHINE_ID/"
 mkdir -p "$sysconfig_dir"
 ( set -exuo pipefail # print all commands and exit on failures
   for f in "$src_dir"/s3server/s3server-*; do
@@ -63,5 +64,12 @@ mkdir -p "$sysconfig_dir"
     cat "$f" > "$sysconfig_dir/s3server-$MOTR_PROCESS_FID"
   done
 )
+
+# FIXME: hotfix for issue with libmotr that needs no-dashes, vs s3server that needs dashes
+MACHINE_ID_NO_DASHES="$(cat /etc/machine-id | sed s,-,,g)"
+if [ "$MACHINE_ID" != "$MACHINE_ID_NO_DASHES" ]; then
+  tgt="/etc/cortx/s3/sysconfig/$MACHINE_ID_NO_DASHES"
+  ln -fs "/etc/cortx/s3/sysconfig/$MACHINE_ID" "$tgt"
+fi
 
 cortx_setup cluster bootstrap -c yaml:///etc/cortx/cluster.conf

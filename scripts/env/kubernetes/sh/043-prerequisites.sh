@@ -51,24 +51,4 @@ cp message-bus/cortx.conf /etc/cortx
 cp message-bus/cortx.conf /etc/cortx/utils/conf/
 
 
-# #############
-# # S3 server #
-# #############
-
-# FIXME: create FID files manually (till hare prvsnr is ready)
-mkdir -p /etc/cortx/s3/sysconfig
-cat s3server/s3server-1 > '/etc/cortx/s3/sysconfig/s3server-0x7200000000000001:0x27'
-cat s3server/s3server-2 > '/etc/cortx/s3/sysconfig/s3server-0x7200000000000001:0x2a'
-cat s3server/s3server-3 > '/etc/cortx/s3/sysconfig/s3server-0x7200000000000001:0x2d'
-cat s3server/s3server-4 > '/etc/cortx/s3/sysconfig/s3server-0x7200000000000001:0x30'
-cat s3server/s3server-5 > '/etc/cortx/s3/sysconfig/s3server-0x7200000000000001:0x33'
-
-# FIXME: 'manual' mapping of S3 FID files, until setupcmd.py fixes are ready to automate this
-mkdir -p /etc/cortx/s3/sysconfig
-cat s3server/s3server-1 > /etc/cortx/s3/sysconfig/s3server-1
-cat s3server/s3server-2 > /etc/cortx/s3/sysconfig/s3server-2
-cat s3server/s3server-3 > /etc/cortx/s3/sysconfig/s3server-3
-cat s3server/s3server-4 > /etc/cortx/s3/sysconfig/s3server-4
-cat s3server/s3server-5 > /etc/cortx/s3/sysconfig/s3server-5
-
 add_separator SUCCESSFULLY CREATED PREREQUISITES.
