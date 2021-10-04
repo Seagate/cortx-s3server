@@ -53,7 +53,11 @@ mkdir -p /share/var/log/seagate/auth/
 # hard-coded log path), then we can edit it in config file.  So we're ignoring
 # retcode in this call.
 rm -f /root/.sgs3iamcli/config.yaml
-s3iamcli ListAccounts --ldapuser sgiamadmin --ldappasswd ldapadmin --no-ssl || true
+s3iamcli ListAccounts \
+    --ldapuser sgiamadmin --ldappasswd ldapadmin \
+    --no-ssl \
+    &>/dev//null \
+  || true
 sed -i 's/\/var\/\log/\/share\/var\/log/g' /root/.sgs3iamcli/config.yaml
 
 s3iamcli ListAccounts --ldapuser sgiamadmin --ldappasswd ldapadmin --no-ssl
