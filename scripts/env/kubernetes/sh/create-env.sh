@@ -35,6 +35,11 @@ if [ -n "$var" ]; then
 fi
 set -x
 
+if ! ping -c1 "$hostname"; then
+  add_separator "Hostname is not reacheable: <$hostname>"
+  exit 1
+fi
+
 echo "HOST_FQDN=$hostname" >> ./env.sh
 
 if [ -z "$(cat /etc/*rele* | safe_grep 7.9.2009)" ]; then
