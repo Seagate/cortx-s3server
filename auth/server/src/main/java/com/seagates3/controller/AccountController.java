@@ -32,7 +32,6 @@ import com.seagates3.dao.UserDAO;
 import com.seagates3.dao.ldap.LDAPUtils;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
-import com.seagates3.model.AccessKey.AccessKeyStatus;
 import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.Role;
