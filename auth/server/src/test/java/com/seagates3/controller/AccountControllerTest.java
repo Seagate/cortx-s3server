@@ -55,13 +55,15 @@ import com.seagates3.model.Role;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.s3service.S3AccountNotifier;
+import com.seagates3.service.AccessKeyService;
 import com.seagates3.util.KeyGenUtil;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 @RunWith(PowerMockRunner.class)
     @PrepareForTest({DAODispatcher.class,    KeyGenUtil.class,
-                     AuthServerConfig.class, AccountController.class})
+                     AuthServerConfig.class, AccountController.class,
+                     AccessKeyService.class})
     @PowerMockIgnore(
         {"javax.management.*"}) public class AccountControllerTest {
 
