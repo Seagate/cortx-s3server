@@ -40,12 +40,40 @@ public class AccountParameterValidator extends AbstractParameterValidator {
      */
     @Override
     public Boolean isValidCreateParams(Map<String, String> requestBody) {
-        if (!S3ParameterValidatorUtil.isValidEmail(requestBody.get("Email"))) {
-            return false;
+        Boolean isValidParameters = S3ParameterValidatorUtil.isValidEmail(
+                                                    requestBody.get("Email"));
+
+        if (isValidParameters) {
+            isValidParameters = S3ParameterValidatorUtil.isValidName(
+                                                requestBody.get("AccountName"));
         }
 
-        return S3ParameterValidatorUtil.isValidName(
-                requestBody.get("AccountName"));
+        if (isValidParameters) {
+        	isValidParameters = isAccessKeySecretKeyCombinationValid(requestBody.get("AccessKey"), requestBody.get("SecretKey"));
+        }
+
+        return isValidParameters;
+    }
+    
+    /**
+     * Validate access key and secret key combination. Either both valid values
+     * of access key and secret key should be provided or not provided at all.
+     *
+     * @param accessKey accessKey provided.
+     * @param secretKey secretKey provided.
+     * @return true if both valid access key and secret key are provided
+     * or not provided at all.
+     */
+    private Boolean isAccessKeySecretKeyCombinationValid(String accessKey, String secretKey) {
+    	Boolean isValid = true;
+        if (accessKey != null || secretKey != null) {
+        	isValid = (
+               S3ParameterValidatorUtil.isValidCustomAccessKey(accessKey) &&
+               S3ParameterValidatorUtil.isValidCustomSecretKey(secretKey)
+            );
+        }
+        
+        return isValid;
     }
 
     /**
