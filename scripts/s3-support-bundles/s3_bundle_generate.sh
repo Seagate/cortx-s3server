@@ -59,6 +59,7 @@ haproxy_log="/var/log/haproxy.log"
 ldap_log="/var/log/slapd.log"
 
 s3server_config="/opt/seagate/cortx/s3/conf/s3config.yaml"
+s3_cluster_config="/opt/seagate/cortx/s3/s3backgrounddelete/s3_cluster.yaml"
 authserver_config="/opt/seagate/cortx/auth/resources/authserver.properties"
 backgrounddelete_config="/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml"
 s3startsystem_script="/opt/seagate/cortx/s3/s3startsystem.sh"
@@ -350,6 +351,12 @@ fi
 if [ -f "$backgrounddelete_config" ];
 then
     args=$args" "$backgrounddelete_config
+fi
+
+# Collect s3 cluster config file if available
+if [ -f "$s3_cluster_config" ];
+then
+    args=$args" "$s3_cluster_config
 fi
 
 # Collect s3startsystem script file if available
