@@ -202,6 +202,13 @@ TEST_F(S3ObjectDataCopierTest, ReadDataBlockFailed) {
   EXPECT_TRUE(f_failed);
 }
 
+TEST_F(S3ObjectDataCopierTest, SetS3CopyFailed) {
+  entity_under_test->copy_failed = true;
+  entity_under_test->set_s3_copy_failed();
+
+  EXPECT_TRUE(entity_under_test->copy_failed);
+}
+
 TEST_F(S3ObjectDataCopierTest, WriteObjectStarted) {
 
   entity_under_test->data_blocks_read.emplace_back(nullptr, 0);
