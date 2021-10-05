@@ -340,8 +340,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         Mockito.doReturn(account).when(accountDAO).find("s3test");
         Mockito.doNothing().when(accountDAO).save(any(Account.class));
         Mockito.doNothing().when(userDAO).save(any(User.class));
-        PowerMockito.doThrow(new DataAccessException("failed to save root access key.\n"))
-        	.when(AccessKeyService.class, "createAccessKey", any(User.class));
+        PowerMockito.doThrow(new DataAccessException(
+                                 "failed to save root access key.\n"))
+            .when(AccessKeyService.class, "createAccessKey", any(User.class));
         Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
             "can1234");
 
