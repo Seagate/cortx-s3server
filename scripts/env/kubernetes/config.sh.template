@@ -19,7 +19,7 @@ NODE_NAME=node1
 #                    #
 ######################
 
-S3_CORTX_ALL_IMAGE_TAG='2.0.0-239-custom-ci'   # <<<<<<< latest validated image
+S3_CORTX_ALL_IMAGE_TAG='2.0.0-246-custom-ci'   # <<<<<<< latest validated image
 #S3_CORTX_ALL_IMAGE_TAG='2.0.0-latest-custom-ci'
   # Specifies which image to use for S3 containers.
   # Update if you want to test specific build instead of latest.
@@ -39,6 +39,8 @@ MOTR_CORTX_ALL_IMAGE_TAG='2.0.0-2042-custom-ci' # latest known working image fro
 SYMAS_IMAGE='ghcr.io/seagate/symas-openldap@sha256:9d64225c4728f1b0c1fc7ae5bd65228945d38fcf0b003d5f6301db64181aeb1f'
 #SYMAS_IMAGE='ghcr.io/seagate/symas-openldap:2.4.58'  # use this for latest
   # Symas image to use.
+  # Full list of untagged images is available here:
+  # https://github.com/Seagate/cortx/pkgs/container/symas-openldap/versions?filters%5Bversion_type%5D=untagged
 
 DOCKER_USER_NAME=
 DOCKER_PASSWORD=
