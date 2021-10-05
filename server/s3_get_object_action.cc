@@ -892,18 +892,16 @@ void S3GetObjectAction::send_data_to_client() {
   // that is requested content length is lesser than the sum of data has been
   // sent to client and current read block size
   if (((data_sent_to_client + length_in_evbuf) >= requested_content_length) ||
-      (p_evbuffer->get_evbuff_length() >= requested_content_length) ||
-      (object_metadata->is_object_extended() &&
-       ((data_sent_to_client_for_object + length_in_evbuf) >=
-        extended_objects[next_fragment_object].object_size))) {
+      (p_evbuffer->get_evbuff_length() >= requested_content_length)) {
     // length will have the size of remaining byte to sent
-    int length;
-    if (object_metadata->is_object_extended()) {
-      length = extended_objects[next_fragment_object].object_size -
-               data_sent_to_client_for_object;
-    } else {
-      length = requested_content_length - data_sent_to_client;
-    }
+    size_t length = requested_content_length - data_sent_to_client;
+    p_evbuffer->read_drain_data_from_buffer(length);
+  } else if (object_metadata->is_object_extended() &&
+             ((data_sent_to_client_for_object + length_in_evbuf) >=
+              extended_objects[next_fragment_object].object_size)) {
+    // Remaining bytes in the fragment object
+    size_t length = extended_objects[next_fragment_object].object_size -
+                    data_sent_to_client_for_object;
     p_evbuffer->read_drain_data_from_buffer(length);
   }
   size_t bytes_sent = p_evbuffer->get_evbuff_length();
@@ -947,6 +945,14 @@ void S3GetObjectAction::send_data_to_client() {
       }
     } else {
       // For fragmented object
+      if (data_sent_to_client == requested_content_length) {
+        const auto mss = s3_timer.elapsed_time_in_millisec();
+        LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);
+        s3_stats_timing("get_object_send_data", mss);
+        send_response_to_s3_client();
+        return;
+      }
+
       if (data_sent_to_client_for_object !=
           extended_objects[next_fragment_object].requested_object_size) {
         read_object_data();
