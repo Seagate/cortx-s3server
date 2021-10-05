@@ -122,9 +122,22 @@ export LD_LIBRARY_PATH="$(pwd)/third_party/motr/motr/.libs/:"\
 "$(pwd)/third_party/motr/extra-libs/gf-complete/src/.libs/"
 
 # Get local address
-modprobe lnet
-lctl network up &>> /dev/null
-local_nid=`lctl list_nids | head -1`
+trans=$(whereis fi_info | cut -d ':' -f2)
+if [[ ! -z "$trans" ]]; then
+    trans=libfab
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/
+    iface=`cat /etc/libfab.conf | grep '\S' | grep --invert-match "^ *#" | cut -d "(" -f2 | cut -d ")" -f1`
+    proto=`cat /etc/libfab.conf | grep '\S' | grep --invert-match "^ *#" | cut -d "=" -f2 | cut -d "(" -f1`
+    ip_addr=`ip addr show $iface |grep inet| head -1 | awk '{print $2}'|cut -d '/' -f1`
+    local_nid=$ip_addr@$proto
+else
+    echo 'libfab is not installed. lnet is selected' >&2
+    trans=lnet
+    modprobe lnet
+    lctl network up &>> /dev/null
+    local_nid=`lctl list_nids | head -1`
+fi
+
 local_ep=$local_nid:12345:33
 ha_ep=$local_nid:12345:34:1
 
