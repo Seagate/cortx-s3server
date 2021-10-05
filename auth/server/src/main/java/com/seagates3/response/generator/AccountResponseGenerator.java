@@ -115,6 +115,15 @@ public class AccountResponseGenerator extends AbstractResponseGenerator {
      return formatResponse(HttpResponseStatus.CONFLICT, "EmailAlreadyExists",
                            errorMessage);
    }
+  
+  public
+  ServerResponse accessKeyAlreadyExists() {
+    String errorMessage = "The request was rejected because " +
+                          "account with this access key already exists.";
+
+    return formatResponse(HttpResponseStatus.CONFLICT, "AccessKeyAlreadyExists",
+                          errorMessage);
+  }
 
   public
    ServerResponse maxAccountLimitExceeded(int limit) {
