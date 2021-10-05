@@ -406,6 +406,14 @@ TEST_F(S3CopyObjectActionTest, FetchDestinationObjectInfoSuccess) {
   EXPECT_EQ(1, call_count_one);
 }
 
+TEST_F(S3CopyObjectActionTest, CreateOneOrMoreObjects) {
+
+  EXPECT_CALL(*ptr_mock_motr_writer_factory->mock_motr_writer,
+              create_object(_, _, _, _)).Times(AtLeast(1));
+
+  action_under_test->create_object();
+}
+
 TEST_F(S3CopyObjectActionTest, CreateObjectFirstAttempt) {
   action_under_test->total_data_to_stream = 1024;
 
@@ -514,6 +522,16 @@ TEST_F(S3CopyObjectActionTest, CreateNewOidTest) {
   action_under_test->create_new_oid(old_oid);
 
   EXPECT_OID_NE(old_oid, action_under_test->new_object_oid);
+}
+
+TEST_F(S3CopyObjectActionTest, CopyFragments) {
+  action_under_test->total_parts_fragment_to_be_copied = 3;
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(0);
+  EXPECT_CALL(*ptr_mock_request, send_reply_start(_)).Times(0);
+  EXPECT_CALL(*ptr_mock_request, send_reply_body(_, _)).Times(0);
+
+  action_under_test->copy_fragments();
 }
 
 TEST_F(S3CopyObjectActionTest, ZeroSizeObject) {
