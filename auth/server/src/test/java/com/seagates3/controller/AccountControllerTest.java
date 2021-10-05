@@ -369,6 +369,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         ServerResponse resp = new ServerResponse();
         resp.setResponseStatus(HttpResponseStatus.OK);
 
+        mockCreateAccessKey();
         PowerMockito.doReturn("AKIASIAS")
             .when(KeyGenUtil.class, "createUserAccessKeyId", true);
 
