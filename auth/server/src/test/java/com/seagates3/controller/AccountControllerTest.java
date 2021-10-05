@@ -338,10 +338,10 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         ServerResponse resp = new ServerResponse();
         resp.setResponseStatus(HttpResponseStatus.OK);
 
-        User mockUser = Mockito.mock(User.class);
+        User mockUser = mock(User.class);
         Mockito.when(mockUser.getId()).thenReturn(USER_ID);
 
-        AccessKey mockAccessKey = Mockito.mock(AccessKey.class);
+        AccessKey mockAccessKey = mock(AccessKey.class);
         Mockito.when(mockAccessKey.getId()).thenReturn("AKIASIAS");
         Mockito.when(mockAccessKey.getSecretKey()).thenReturn("htuspscae/123");
         Mockito.when(mockAccessKey.getStatus()).thenReturn("Active");
@@ -419,10 +419,10 @@ import io.netty.handler.codec.http.HttpResponseStatus;
       Account account = new Account();
       account.setName("s3test");
 
-      User mockUser = Mockito.mock(User.class);
+      User mockUser = mock(User.class);
       Mockito.when(mockUser.getId()).thenReturn(USER_ID);
 
-      AccessKey mockAccessKey = Mockito.mock(AccessKey.class);
+      AccessKey mockAccessKey = mock(AccessKey.class);
       Mockito.when(mockAccessKey.getId()).thenReturn("AKIASIAS");
       Mockito.when(mockAccessKey.getSecretKey()).thenReturn("htuspscae/123");
       Mockito.when(mockAccessKey.getStatus()).thenReturn("Active");
@@ -543,10 +543,10 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         root.setId("AKIASIAS");
         AccessKey[] accessKeys = new AccessKey[1];
 
-        User mockUser = Mockito.mock(User.class);
+        User mockUser = mock(User.class);
         Mockito.when(mockUser.getId()).thenReturn(USER_ID);
 
-        AccessKey mockAccessKey = Mockito.mock(AccessKey.class);
+        AccessKey mockAccessKey = mock(AccessKey.class);
         Mockito.when(mockAccessKey.getId()).thenReturn("AKIASIAS");
         Mockito.when(mockAccessKey.getSecretKey()).thenReturn("htuspscae/123");
         Mockito.when(mockAccessKey.getStatus()).thenReturn("Active");
