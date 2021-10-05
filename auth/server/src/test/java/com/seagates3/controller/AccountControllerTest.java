@@ -67,7 +67,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     @PowerMockIgnore(
         {"javax.management.*"}) public class AccountControllerTest {
 
-    private static final String USER_ID = "UserId";
+ private
+  static final String USER_ID = "UserId";
     private final AccountController accountController;
     private final AccountDAO accountDAO;
     private final UserDAO userDAO;
