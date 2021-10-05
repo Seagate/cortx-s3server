@@ -67,8 +67,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     @PowerMockIgnore(
         {"javax.management.*"}) public class AccountControllerTest {
 
- private
-  static final String USER_ID = "UserId";
     private final AccountController accountController;
     private final AccountDAO accountDAO;
     private final UserDAO userDAO;
@@ -114,6 +112,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         PowerMockito.mockStatic(DAODispatcher.class);
         PowerMockito.mockStatic(KeyGenUtil.class);
         PowerMockito.mockStatic(AuthServerConfig.class);
+        PowerMockito.mockStatic(AccessKeyService.class);
 
         PowerMockito.doReturn("987654352188")
             .when(KeyGenUtil.class, "createAccountId");
@@ -338,16 +337,13 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         ServerResponse resp = new ServerResponse();
         resp.setResponseStatus(HttpResponseStatus.OK);
 
-        User mockUser = mock(User.class);
-        Mockito.when(mockUser.getId()).thenReturn(USER_ID);
-
         AccessKey mockAccessKey = mock(AccessKey.class);
         Mockito.when(mockAccessKey.getId()).thenReturn("AKIASIAS");
         Mockito.when(mockAccessKey.getSecretKey()).thenReturn("htuspscae/123");
         Mockito.when(mockAccessKey.getStatus()).thenReturn("Active");
 
         PowerMockito.doReturn(mockAccessKey)
-            .when(AccessKeyService.class, "createAccessKey", mockUser);
+            .when(AccessKeyService.class, "createAccessKey", any(User.class));
 
         Mockito.doReturn(new Account[0]).when(accountDAO).findAll();
         Mockito.doReturn(account).when(accountDAO).find("s3test");
@@ -419,16 +415,13 @@ import io.netty.handler.codec.http.HttpResponseStatus;
       Account account = new Account();
       account.setName("s3test");
 
-      User mockUser = mock(User.class);
-      Mockito.when(mockUser.getId()).thenReturn(USER_ID);
-
       AccessKey mockAccessKey = mock(AccessKey.class);
       Mockito.when(mockAccessKey.getId()).thenReturn("AKIASIAS");
       Mockito.when(mockAccessKey.getSecretKey()).thenReturn("htuspscae/123");
       Mockito.when(mockAccessKey.getStatus()).thenReturn("Active");
 
       PowerMockito.doReturn(mockAccessKey)
-          .when(AccessKeyService.class, "createAccessKey", mockUser);
+          .when(AccessKeyService.class, "createAccessKey", any(User.class));
 
       ServerResponse resp = new ServerResponse();
       resp.setResponseStatus(HttpResponseStatus.OK);
@@ -543,16 +536,13 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         root.setId("AKIASIAS");
         AccessKey[] accessKeys = new AccessKey[1];
 
-        User mockUser = mock(User.class);
-        Mockito.when(mockUser.getId()).thenReturn(USER_ID);
-
         AccessKey mockAccessKey = mock(AccessKey.class);
         Mockito.when(mockAccessKey.getId()).thenReturn("AKIASIAS");
         Mockito.when(mockAccessKey.getSecretKey()).thenReturn("htuspscae/123");
         Mockito.when(mockAccessKey.getStatus()).thenReturn("Active");
 
         PowerMockito.doReturn(mockAccessKey)
-            .when(AccessKeyService.class, "createAccessKey", mockUser);
+            .when(AccessKeyService.class, "createAccessKey", any(User.class));
 
         accessKeys[0] = mock(AccessKey.class);
         Mockito.when(accountDAO.find("s3test")).thenReturn(account);
