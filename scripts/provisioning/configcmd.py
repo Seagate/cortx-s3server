@@ -25,6 +25,7 @@ import shutil
 import math
 import urllib
 import fcntl
+import glob
 from pathlib import Path
 from  ast import literal_eval
 from os import path
@@ -110,16 +111,31 @@ class ConfigCmd(SetupCmd):
       self.read_ldap_root_credentials()
       self.logger.info("read ldap credentials completed")
 
-      # disable S3server, S3authserver, haproxy, BG delete services on reboot as
-      # it will be managed by HA
-      self.logger.info('Disable services on reboot started')
-      services_list = ["haproxy", "s3backgroundproducer", "s3backgroundconsumer", "s3server@*", "s3authserver"]
-      self.disable_services(services_list)
-      self.logger.info('Disable services on reboot completed')
-
       self.logger.info('create auth jks password started')
       self.create_auth_jks_password()
       self.logger.info('create auth jks password completed')
+
+
+      if (self.services is not None) and (not 'openldap' in self.services):
+        sysconfig_path = os.path.join(self.base_config_file_path,"s3","sysconfig",self.machine_id)
+        file_name = sysconfig_path + '/s3server-0x*'
+        list_matching = []
+        for name in glob.glob(file_name):
+          list_matching.append(name)
+        count = len(list_matching)
+        self.logger.info(f"s3server FID file count : {count}")
+        s3_instance_count = int(self.get_confvalue_with_defaults('CONFIG>CONFSTORE_S3INSTANCES_KEY'))
+        self.logger.info(f"s3_instance_count : {s3_instance_count}")
+        if count < s3_instance_count:
+          raise Exception("HARE-sysconfig file count does not match s3 instance count")
+        index = 1
+        for src_path in list_matching:
+          file_name = 's3server-' + str(index)
+          dst_path = os.path.join(sysconfig_path, file_name)
+          if os.path.exists(dst_path):
+            os.unlink(dst_path)
+          os.symlink(src_path, dst_path)
+          index += 1
 
       if(self.services is None or 'openldap' in self.services):
         # Configure openldap only
@@ -245,7 +261,7 @@ class ConfigCmd(SetupCmd):
     self.logger.info('haproxy configuration started')
     try:
       # Create sysconfig file for haproxy.
-      sysconfig_file = os.path.join(self.base_config_file_path, 's3/sysconfig/haproxy')
+      sysconfig_file = os.path.join(self.base_config_file_path, self.get_confkey("S3_HAPROXY_LOG_CONFIG_FILE"))
       os.makedirs(os.path.dirname(sysconfig_file), exist_ok=True)
       with open(sysconfig_file, 'w') as sysconfig:
         log_file = os.path.join(self.base_log_file_path, 's3', self.machine_id, 'haproxy/haproxy.log')

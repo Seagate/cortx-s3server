@@ -87,6 +87,7 @@ then
 fi
 
 op=$(ldapsearch -w "$ROOTDNPASSWORD" -x -D cn=admin,cn=config -b cn=schema,cn=config -h "$host")
+
 if [[ $op == *"s3user"* ]];then
     echo "Skipping s3 schema configuration as its already present on ${host}"
     exit 0
@@ -107,6 +108,7 @@ sed -i "$EXPR" "$ADMIN_USERS_FILE"
 
 # add S3 schema
 ldapadd -x -D "cn=admin,cn=config" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/cn\=s3user.ldif -h "$host"
+
 
 # initialize ldap
 ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w "$ROOTDNPASSWORD" -f "$INSTALLDIR"/s3-ldap-init.ldif -h "$host" || /bin/true

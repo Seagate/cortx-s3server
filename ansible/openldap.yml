@@ -128,7 +128,6 @@
         file:
           state: absent
           path: /etc/openldap/slapd.d/cn=config/cn=schema/cn=s3user.ldif
-
       - name: Start slapd
         service:
           name: slapd
