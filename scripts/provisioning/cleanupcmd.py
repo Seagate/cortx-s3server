@@ -42,7 +42,7 @@ class CleanupCmd(SetupCmd):
   # ldap config and schema related constants
   ldap_configs = {
                   "files": [
-                             "/etc/openldap/slapd.d/cn=config/cn=schema/cn={2}s3user.ldif"
+                             "/etc/openldap/slapd.d/cn=config/cn=schema/cn=s3user.ldif"
                            ]
                  }
 
