@@ -86,4 +86,3 @@ class MockS3ObjectMetadata : public S3ObjectMetadata {
 };
 
 #endif
-

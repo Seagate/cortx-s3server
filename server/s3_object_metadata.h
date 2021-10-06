@@ -45,7 +45,7 @@ enum class S3ObjectMetadataState {
   deleted,  // Metadata deleted from store.
   failed,
   failed_to_launch,  // pre launch operation failed.
-  invalid   // Metadata invalid or corrupted
+  invalid            // Metadata invalid or corrupted
 };
 
 struct S3ExtendedObjectInfo {

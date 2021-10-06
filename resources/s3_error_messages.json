@@ -194,5 +194,33 @@
   "MissingContentLength": {
     "Description": "You must provide the Content-Length HTTP header.",
     "httpcode": 411
+  },
+  "InvalidArgumentDestinationBucket": {
+    "Description": "Destination bucket cannot be null or empty.",
+    "httpcode": 400
+  },
+  "InvalidArgumentDuplicateRuleID": {
+    "Description": "Rule Id must be unique.",
+    "httpcode": 400
+  },
+  "InvalidArgumentDuplicateRulePriority": {
+    "Description": "Rule priority must be unique.",
+    "httpcode": 400
+  },
+  "InvalidRequestForFilter": {
+    "Description": "Filter is not supported if priority and delete Marker replication is not specified. ",
+    "httpcode": 400
+  },
+  "InvalidRequestForTagFilter": {
+    "Description": "Delete marker replication is not supported if any Tag filter is specified. ",
+    "httpcode": 400
+  },
+  "NoSuchReplicationConfiguration": {
+    "Description": "The replication configuration was not found.",
+    "httpcode": 400
+  },
+  "InvalidRequestForPriority": {
+    "Description": "Priority must be between 0 and 2147483647. ",
+    "httpcode": 400
   }
 }
