@@ -125,6 +125,11 @@ void S3BucketMetadata::set_tags(
   bucket_tags = tags_as_map;
 }
 
+void S3BucketMetadata::set_bucket_replication_configuration(
+    const std::string& bucket_replication_config) {
+  bucket_replication_configuration = bucket_replication_config;
+}
+
 // Streaming to json
 std::string S3BucketMetadata::to_json() {
   s3_log(S3_LOG_DEBUG, request_id, "Called\n");

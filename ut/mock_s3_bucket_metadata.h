@@ -48,6 +48,8 @@ class MockS3BucketMetadata : public S3BucketMetadata {
   MOCK_METHOD(void, setpolicy, (std::string), (override));
   MOCK_METHOD1(set_tags,
                void(const std::map<std::string, std::string>& tags_str));
+  MOCK_METHOD1(set_bucket_replication_configuration,
+               void(const std::string& bucket_replication_config));
   MOCK_METHOD1(setacl, void(const std::string& acl_str));
   MOCK_METHOD2(save, void(std::function<void(void)> on_success,
                           std::function<void(void)> on_failed));
