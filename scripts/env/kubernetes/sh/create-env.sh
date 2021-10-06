@@ -27,14 +27,10 @@ set -x # print each statement before execution
 echo "AUTOMATION_BASE_DIR='$(pwd)'" > ./env.sh
 
 hostname="$(hostname)"
-set +x
-echo
-read -p "Input node FQDN (or hit Enter if default value is correct) [$hostname]:" var
-if [ -n "$var" ]; then
-  hostname="$var"
+if ! [[ $hostname = *.seagate.com ]]; then
+  add_separator "Hosname <$hostname> does not look like a valid FQDN."
+  exit 1
 fi
-set -x
-
 if ! ping -c1 "$hostname"; then
   add_separator "Hostname is not reacheable: <$hostname>"
   exit 1
