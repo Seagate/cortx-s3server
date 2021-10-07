@@ -991,6 +991,10 @@ int main(int argc, char **argv) {
         s3_log(S3_LOG_FATAL, "", "motr_init failed!\n");
       }
     }
+    // For testing motr hang issue
+    int x = 1;
+    while (x)
+      ;
     // delete the timer event
     event_del(timer_event);
     event_free(timer_event);
