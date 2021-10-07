@@ -19,7 +19,7 @@ NODE_NAME=node1
 #                    #
 ######################
 
-S3_CORTX_ALL_IMAGE_TAG='2.0.0-248-custom-ci'   # <<<<<<< latest validated image
+S3_CORTX_ALL_IMAGE_TAG='2.0.0-252-custom-ci'   # <<<<<<< latest validated image
 #S3_CORTX_ALL_IMAGE_TAG='2.0.0-latest-custom-ci'
   # Specifies which image to use for S3 containers.
   # Update if you want to test specific build instead of latest.
