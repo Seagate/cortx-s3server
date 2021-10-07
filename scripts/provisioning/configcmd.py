@@ -145,9 +145,7 @@ class ConfigCmd(SetupCmd):
         for src_path in list_matching:
           file_name = 's3server-' + str(index)
           dst_path = os.path.join(sysconfig_path, file_name)
-          if os.path.exists(dst_path):
-            os.unlink(dst_path)
-          os.symlink(src_path, dst_path)
+          self.create_symbolic_link(src_path, dst_path)
           index += 1
 
       if configure_only_openldap == True:
@@ -178,6 +176,17 @@ class ConfigCmd(SetupCmd):
       self.logger.info("create background delete account completed")
     except Exception as e:
       raise S3PROVError(f'process() failed with exception: {e}')
+
+  def create_symbolic_link(self, src_path: str, dst_path: str):
+    """create symbolic link."""
+    self.logger.info(f"symbolic link source path: {src_path}")
+    self.logger.info(f"symbolic link destination path: {dst_path}")
+    if os.path.exists(dst_path):
+      self.logger.info(f"symbolic link is already present")
+      os.unlink(dst_path)
+      self.logger.info("symbolic link is unlinked")
+    os.symlink(src_path, dst_path)
+    self.logger.info(f"symbolic link created successfully")
 
   def get_endpoint(self, confstore_key, expected_token,  endpoint_type):
     """1.Fetch confstore value from given key i.e. confstore_key
@@ -347,11 +356,17 @@ class ConfigCmd(SetupCmd):
     try:
       # Create sysconfig file for haproxy.
       sysconfig_file = os.path.join(self.base_config_file_path, self.get_confkey("S3_HAPROXY_LOG_CONFIG_FILE"))
+      # create empty file
+      # load with confstore with yaml format
+      # set key LOG_FILE with value {log_file}
       os.makedirs(os.path.dirname(sysconfig_file), exist_ok=True)
       with open(sysconfig_file, 'w') as sysconfig:
         log_file = os.path.join(self.base_log_file_path, 's3', self.machine_id, 'haproxy/haproxy.log')
         os.makedirs(os.path.dirname(log_file), exist_ok=True)
         sysconfig.write(f"LOG_FILE='{log_file}'\n")
+      
+      # create symbolic link for this config file to be used by log rotation
+      self.create_symbolic_link(sysconfig_file, "/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy_sysconfig.conf")
 
       # Create main config file for haproxy.
       S3HaproxyConfig(self.url).process()

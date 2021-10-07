@@ -333,6 +333,7 @@ echo "[cortx-s3server-rpm] INFO: S3 RPM Clean section completed"
 /opt/seagate/cortx/s3/install/haproxy/haproxy_osver7.cfg
 /opt/seagate/cortx/s3/install/haproxy/haproxy_osver8.cfg
 /opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy
+/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxylogfilerollover.sh
 /opt/seagate/cortx/s3/install/haproxy/logrotate/logrotate
 /opt/seagate/cortx/s3/install/haproxy/rsyslog.d/haproxy.conf
 /opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.crt

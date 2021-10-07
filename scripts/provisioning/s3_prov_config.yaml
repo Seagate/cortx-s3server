@@ -169,6 +169,7 @@ S3_AUTHSERVER_LOG4J2_CONFIG_FILE: "/opt/seagate/cortx/auth/resources/authserver-
 # S3 logrotation config files path
 S3_LOGROTATE_AUDITLOG: "/opt/seagate/cortx/s3/install/logrotate/s3auditlog"
 S3_LOGROTATE_HAPROXY: "/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxy"
+S3_LOGROTATE_HAPROXY_ROLLOVER: "/opt/seagate/cortx/s3/install/haproxy/logrotate/haproxylogfilerollover.sh"
 S3_LOGROTATE_S3LOG: "/opt/seagate/cortx/s3/install/logrotate/s3logfilerollover.sh"
 S3_LOGROTATE_M0TRACE: "/opt/seagate/cortx/s3/install/logrotate/s3m0tracelogfilerollover.sh"
 S3_LOGROTATE_ADDB: "/opt/seagate/cortx/s3/install/logrotate/s3addblogfilerollover.sh"
